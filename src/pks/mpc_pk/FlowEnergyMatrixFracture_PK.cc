@@ -21,6 +21,7 @@
 #include "UniqueLocalIndex.hh"
 
 #include "FlowEnergyMatrixFracture_PK.hh"
+#include "FractureInsertion.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Physical.hh"
 
@@ -198,99 +199,56 @@ void FlowEnergyMatrixFracture_PK::Initialize()
   auto& gmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", true)->Map();
   int npoints_owned = mmap.NumMyPoints();
 
-  auto cvs_matrix = Teuchos::rcp(new CompositeVectorSpace());
-  auto cvs_fracture = Teuchos::rcp(new CompositeVectorSpace());
-
-  cvs_matrix->SetMesh(mesh_matrix)->SetGhosted(true)
-            ->AddComponent("face", AmanziMesh::FACE, Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap), 1);
-
-  cvs_fracture->SetMesh(mesh_fracture)->SetGhosted(true)
-              ->AddComponent("cell", AmanziMesh::CELL, 1);
-
   // -- indices transmissibimility coefficients for matrix-fracture flux
   const auto& kn = *S_->Get<CV_t>(normal_permeability_key_).ViewComponent("cell");
   const auto& tn = *S_->Get<CV_t>(normal_conductivity_key_).ViewComponent("cell");
   double gravity = norm(S_->Get<AmanziGeometry::Point>("gravity"));
 
-  int ncells_owned_f = mesh_fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
-  auto inds_fracture = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
-  auto values_kn = std::make_shared<std::vector<double> >(npoints_owned);
-  auto values_tn = std::make_shared<std::vector<double> >(npoints_owned);
-
-  int np(0);
-  for (int c = 0; c < ncells_owned_f; ++c) {
-    int f = mesh_fracture->entity_get_parent(AmanziMesh::CELL, c);
-    double area = mesh_fracture->cell_volume(c);
-    int first = mmap.FirstPointInElement(f);
-    int ndofs = mmap.ElementSize(f);
-
-    for (int k = 0; k < ndofs; ++k) {
-      (*inds_matrix)[np].resize(1);
-      (*inds_fracture)[np].resize(1);
-      (*inds_matrix)[np][0] = first + k;
-      (*inds_fracture)[np][0] = c;
-
-      (*values_kn)[np] = kn[0][c] * area / gravity;
-      (*values_tn)[np] = tn[0][c] * area;
-      np++;
-    }
-  }
-
-  inds_matrix->resize(np);
-  inds_fracture->resize(np);
-  values_kn->resize(np);
-  values_tn->resize(np);
+  FractureInsertion fi(mesh_matrix, mesh_fracture);
+  fi.InitMatrixFaceToFractureCell(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
 
   // -- operators (flow)
-  AddCouplingFluxes_(cvs_matrix, cvs_fracture,
-                     inds_matrix, inds_fracture, values_kn, 0, 2, op_tree_matrix_);
+  fi.SetValues(kn, 1.0 / gravity);
+  AddCouplingFluxes_(fi.get_cvs_matrix(), fi.get_cvs_fracture(),
+                     fi.get_inds_matrix(), fi.get_inds_fracture(),
+                     fi.get_values(), 0, 2, op_tree_matrix_);
 
   // diagonal coupling terms were added in the previous call
-  AddCouplingFluxes_(cvs_matrix, cvs_fracture,
-                     inds_matrix, inds_fracture, values_kn, 0, 2, op_tree_pc_);
+  AddCouplingFluxes_(fi.get_cvs_matrix(), fi.get_cvs_fracture(),
+                     fi.get_inds_matrix(), fi.get_inds_fracture(),
+                     fi.get_values(), 0, 2, op_tree_pc_);
 
   // -- operators (energy)
-  AddCouplingFluxes_(cvs_matrix, cvs_fracture,
-                     inds_matrix, inds_fracture, values_tn, 1, 3, op_tree_matrix_);
+  fi.SetValues(tn, 1.0);
+  AddCouplingFluxes_(fi.get_cvs_matrix(), fi.get_cvs_fracture(),
+                     fi.get_inds_matrix(), fi.get_inds_fracture(),
+                     fi.get_values(), 1, 3, op_tree_matrix_);
 
-  AddCouplingFluxes_(cvs_matrix, cvs_fracture,
-                     inds_matrix, inds_fracture, values_tn, 1, 3, op_tree_pc_);
+  AddCouplingFluxes_(fi.get_cvs_matrix(), fi.get_cvs_fracture(),
+                     fi.get_inds_matrix(), fi.get_inds_fracture(),
+                     fi.get_values(), 1, 3, op_tree_pc_);
 
   // -- indices transmissibimility coefficients for matrix-fracture advective flux
-  auto inds_matrix_adv = std::make_shared<std::vector<std::vector<int> > >(2 * ncells_owned_f);
-  auto inds_fracture_adv = std::make_shared<std::vector<std::vector<int> > >(2 * ncells_owned_f);
-  auto values_adv = std::make_shared<std::vector<double> >(2 * ncells_owned_f, 0.0);
-
-  np = 0;
-  AmanziMesh::Entity_ID_List cells;
-
-  for (int c = 0; c < ncells_owned_f; ++c) {
-    int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
-    mesh_domain_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    int ncells = cells.size();
-    AMANZI_ASSERT(ncells == 2);
-
-    for (int k = 0; k < ncells; ++k) {
-      (*inds_matrix_adv)[np].resize(1);
-      (*inds_fracture_adv)[np].resize(1);
-      (*inds_matrix_adv)[np][0] = cells[k];
-      (*inds_fracture_adv)[np][0] = c;
-      np++;
-    }
-  }
+  FractureInsertion fia(mesh_matrix, mesh_fracture);
+  fia.InitMatrixCellToFractureCell();
 
   // -- operators (energy)
-  cvs_matrix = Teuchos::rcp(new CompositeVectorSpace());
+  auto cvs_matrix = Teuchos::rcp(new CompositeVectorSpace());
   cvs_matrix->SetMesh(mesh_matrix)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
 
+  auto cvs_fracture = Teuchos::rcp(new CompositeVectorSpace());
+  cvs_fracture->SetMesh(mesh_fracture)->SetGhosted(true)
+              ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   adv_coupling_matrix_ = AddCouplingFluxes_(
-      cvs_matrix, cvs_fracture,
-      inds_matrix_adv, inds_fracture_adv, values_adv, 1, 3, op_tree_matrix_);
+      fia.get_cvs_matrix(), fia.get_cvs_fracture(),
+      fia.get_inds_matrix(), fia.get_inds_fracture(),
+      fia.get_values(), 1, 3, op_tree_matrix_);
 
   adv_coupling_pc_ = AddCouplingFluxes_(
-      cvs_matrix, cvs_fracture,
-      inds_matrix_adv, inds_fracture_adv, values_adv, 1, 3, op_tree_pc_);
+      fia.get_cvs_matrix(), fia.get_cvs_fracture(),
+      fia.get_inds_matrix(), fia.get_inds_fracture(),
+      fia.get_values(), 1, 3, op_tree_pc_);
 
   // create global matrix
   op_tree_pc_->SymbolicAssembleMatrix();
@@ -451,8 +409,8 @@ int FlowEnergyMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVect
 ******************************************************************* */
 std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> >
     FlowEnergyMatrixFracture_PK::AddCouplingFluxes_(
-    Teuchos::RCP<CompositeVectorSpace>& cvs_matrix,
-    Teuchos::RCP<CompositeVectorSpace>& cvs_fracture,
+    const Teuchos::RCP<CompositeVectorSpace>& cvs_matrix,
+    const Teuchos::RCP<CompositeVectorSpace>& cvs_fracture,
     std::shared_ptr<const std::vector<std::vector<int> > > inds_matrix,
     std::shared_ptr<const std::vector<std::vector<int> > > inds_fracture,
     std::shared_ptr<const std::vector<double> > values,

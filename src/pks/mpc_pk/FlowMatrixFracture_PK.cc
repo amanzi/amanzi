@@ -162,7 +162,7 @@ void FlowMatrixFracture_PK::Initialize()
   double gravity = norm(S_->Get<AmanziGeometry::Point>("gravity"));
 
   FractureInsertion fi(mesh_matrix, mesh_fracture); 
-  fi.Init(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
+  fi.InitMatrixFaceToFractureCell(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
   fi.SetValues(kn, 1.0 / gravity);
 
   // -- operators

@@ -33,8 +33,9 @@ class FractureInsertion {
                     Teuchos::RCP<const AmanziMesh::Mesh>& mesh_fracture);
 
   // inialization tools
-  void Init(Teuchos::RCP<const Epetra_BlockMap> mmap = Teuchos::null,
-            Teuchos::RCP<const Epetra_BlockMap> gmap = Teuchos::null);
+  void InitMatrixFaceToFractureCell(Teuchos::RCP<const Epetra_BlockMap> mmap,
+                                    Teuchos::RCP<const Epetra_BlockMap> gmap);
+  void InitMatrixCellToFractureCell();
 
   void SetValues(const Epetra_MultiVector& values, double scale);
 

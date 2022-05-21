@@ -199,7 +199,7 @@ bool TransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool re
     auto& gmap = *cvs0->Map("face", true);
 
     FractureInsertion fi(mesh_matrix, mesh_fracture); 
-    fi.Init(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
+    fi.InitMatrixFaceToFractureCell(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
     fi.SetValues(kn, 1.0);
 
     // -- generate add interface operators to the tree operator

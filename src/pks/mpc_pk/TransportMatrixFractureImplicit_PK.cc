@@ -22,6 +22,7 @@
 #include "UniqueLocalIndex.hh"
 #include "InverseFactory.hh"
 
+#include "FractureInsertion.hh"
 #include "TransportMatrixFractureImplicit_PK.hh"
 
 namespace Amanzi {
@@ -133,57 +134,34 @@ void TransportMatrixFractureImplicit_PK::Initialize()
 
   // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
-  auto cvs_matrix = Teuchos::rcp(new CompositeVectorSpace());
-  auto cvs_fracture = Teuchos::rcp(new CompositeVectorSpace());
-
-  cvs_matrix->SetMesh(mesh_domain_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
-  cvs_fracture->SetMesh(mesh_fracture_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  // -- indices are fluxes on matrix-fracture interface
-  int ncells_owned_f = mesh_fracture_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(2 * ncells_owned_f);
-  auto inds_fracture = std::make_shared<std::vector<std::vector<int> > >(2 * ncells_owned_f);
-  auto values = std::make_shared<std::vector<double> >(2 * ncells_owned_f, 0.0);
-
-  int np(0);
-  AmanziMesh::Entity_ID_List cells;
-
-  for (int c = 0; c < ncells_owned_f; ++c) {
-    int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
-    mesh_domain_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    int ncells = cells.size();
-    AMANZI_ASSERT(ncells == 2);
-
-    for (int k = 0; k < ncells; ++k) {
-      (*inds_matrix)[np].resize(1);
-      (*inds_fracture)[np].resize(1);
-      (*inds_matrix)[np][0] = cells[k];
-      (*inds_fracture)[np][0] = c;
-      np++;
-    }
-  }
+  FractureInsertion fi(mesh_domain_, mesh_fracture_);
+  fi.InitMatrixCellToFractureCell();
 
   // -- operators
   Teuchos::ParameterList oplist;
 
   op_coupling00_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, cvs_matrix, cvs_matrix, inds_matrix, inds_matrix, pk_matrix->op()));
-  op_coupling00_->Setup(values, 1.0);
+      oplist, fi.get_cvs_matrix(), fi.get_cvs_matrix(), 
+              fi.get_inds_matrix(), fi.get_inds_matrix(), pk_matrix->op()));
+  op_coupling00_->Setup(fi.get_values(), 1.0);
   op_coupling00_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   op_coupling01_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, cvs_matrix, cvs_fracture, inds_matrix, inds_fracture));
-  op_coupling01_->Setup(values, -1.0);
+      oplist, fi.get_cvs_matrix(), fi.get_cvs_fracture(),
+              fi.get_inds_matrix(), fi.get_inds_fracture()));
+  op_coupling01_->Setup(fi.get_values(), -1.0);
   op_coupling01_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   op_coupling10_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, cvs_fracture, cvs_matrix, inds_fracture, inds_matrix));
-  op_coupling10_->Setup(values, -1.0);
+      oplist, fi.get_cvs_fracture(), fi.get_cvs_matrix(),
+              fi.get_inds_fracture(), fi.get_inds_matrix()));
+  op_coupling10_->Setup(fi.get_values(), -1.0);
   op_coupling10_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   op_coupling11_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, cvs_fracture, cvs_fracture, inds_fracture, inds_fracture, pk_fracture->op()));
-  op_coupling11_->Setup(values, 1.0);
+      oplist, fi.get_cvs_fracture(), fi.get_cvs_fracture(),
+              fi.get_inds_fracture(), fi.get_inds_fracture(), pk_fracture->op()));
+  op_coupling11_->Setup(fi.get_values(), 1.0);
   op_coupling11_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   op_tree_matrix_->set_operator_block(0, 1, op_coupling01_->global_operator());

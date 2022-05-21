@@ -30,9 +30,9 @@ FractureInsertion::FractureInsertion(
 
 
 /* *******************************************************************
-* Inialization with optional block maps for new matrix mesh topology.
+* Inialization for matrix faces coupled to to fracture cells.
 ******************************************************************* */
-void FractureInsertion::Init(
+void FractureInsertion::InitMatrixFaceToFractureCell(
    Teuchos::RCP<const Epetra_BlockMap> mmap,
    Teuchos::RCP<const Epetra_BlockMap> gmap)
 {
@@ -71,6 +71,43 @@ void FractureInsertion::Init(
   inds_matrix_->resize(np);
   inds_fracture_->resize(np);
   values_->resize(np);
+}
+
+
+/* *******************************************************************
+* Inialization with optional block maps for new matrix mesh topology.
+******************************************************************* */
+void FractureInsertion::InitMatrixCellToFractureCell()
+{
+  cvs_matrix_ = Teuchos::rcp(new CompositeVectorSpace());
+  cvs_fracture_ = Teuchos::rcp(new CompositeVectorSpace());
+
+  cvs_matrix_->SetMesh(mesh_matrix_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs_fracture_->SetMesh(mesh_fracture_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  // -- indices are fluxes on matrix-fracture interface
+  int ncells_owned_f = mesh_fracture_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  inds_matrix_ = std::make_shared<std::vector<std::vector<int> > >(2 * ncells_owned_f);
+  inds_fracture_ = std::make_shared<std::vector<std::vector<int> > >(2 * ncells_owned_f);
+  values_ = std::make_shared<std::vector<double> >(2 * ncells_owned_f, 0.0);
+
+  int np(0);
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int c = 0; c < ncells_owned_f; ++c) {
+    int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
+    mesh_matrix_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+    AMANZI_ASSERT(ncells == 2);
+
+    for (int k = 0; k < ncells; ++k) {
+      (*inds_matrix_)[np].resize(1);
+      (*inds_fracture_)[np].resize(1);
+      (*inds_matrix_)[np][0] = cells[k];
+      (*inds_fracture_)[np][0] = c;
+      np++;
+    }
+  }
 }
 
 
