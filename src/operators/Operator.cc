@@ -723,14 +723,6 @@ Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action)
 
 
 /* ******************************************************************
-* Push back.
-****************************************************************** */
-void Operator::OpPushBack(const Teuchos::RCP<Op>& block) {
-  ops_.push_back(block);
-}
-
-
-/* ******************************************************************
 * Add more operators to the existing list.
 ****************************************************************** */
 void Operator::OpExtend(op_iterator begin, op_iterator end)

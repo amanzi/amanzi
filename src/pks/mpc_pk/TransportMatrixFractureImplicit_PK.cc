@@ -281,7 +281,7 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     pk_fracture->op_acc()->local_op(0)->Rescale(0.0);
     pk_fracture->op_acc()->AddAccumulationDelta(*tv_one->SubVector(1)->Data(), phi_f, phi_f, dt, "cell");
 
-    // assemble the operators
+    // assemble the advection operators
     pk_matrix->op_adv()->UpdateMatrices(S_->GetPtr<CV_t>("darcy_flux", Tags::DEFAULT).ptr());
     pk_matrix->op_adv()->ApplyBCs(true, true, true);
 

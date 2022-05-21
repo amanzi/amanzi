@@ -136,8 +136,6 @@ TEST(DISPERSION) {
 
     TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
   }
- 
-  
 }
 
 
@@ -238,8 +236,6 @@ TEST(DIFFUSION) {
   GMV::start_data();
   GMV::write_cell_data(*tcc, 0, "Component_0");
   GMV::close_data_file();
-
-  
 }
 
 
@@ -354,8 +350,6 @@ TEST(GAS_DIFFUSION) {
   GMV::write_cell_data(tcc, 0, "Component_0");
   GMV::write_cell_data(tcc, 1, "Component_1");
   GMV::close_data_file();
-
-  
 }
 
 

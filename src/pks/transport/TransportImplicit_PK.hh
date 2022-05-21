@@ -43,6 +43,7 @@
 #include "BDF1_TI.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwind.hh"
+#include "PDE_Diffusion.hh"
 #include "PK_BDF.hh"
 #include "PK_Factory.hh"
 #include "TreeVector.hh"
@@ -126,6 +127,7 @@ class TransportImplicit_PK : public Transport_PK,
   // solvers
   Teuchos::RCP<Operators::Operator> op_;
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_adv_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op_diff_;
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
   Teuchos::RCP<Operators::BCs> op_bc_;
   std::string solver_name_, solver_name_constraint_;

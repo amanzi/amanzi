@@ -165,9 +165,14 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
                     SOURCE test/Main.cc test/transport_multiscale.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(transport_implicit transport_implicit
+    add_amanzi_test(transport_implicit_2D transport_implicit_2D
                     KIND unit
-                    SOURCE test/Main.cc test/transport_implicit.cc
+                    SOURCE test/Main.cc test/transport_implicit_2D.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(transport_implicit_3D transport_implicit_3D
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_implicit_3D.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(transport_subcycling transport_subcycling

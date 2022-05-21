@@ -171,7 +171,7 @@ bool TransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool re
 
   int num_aqueous = tcc_next_m.NumVectors();
 
-  for (int i = 0; i < num_aqueous; i++) {
+  for (int i = 0; i < num_aqueous; ++i) {
     auto op0 = pk0->DispersionSolver(tcc_prev_m, tcc_next_m, t_old, t_new, i);
     auto op1 = pk1->DispersionSolver(tcc_prev_f, tcc_next_f, t_old, t_new, i);
 

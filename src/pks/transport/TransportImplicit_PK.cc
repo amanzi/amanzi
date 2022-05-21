@@ -104,15 +104,36 @@ void TransportImplicit_PK::Initialize()
   op_bc_->bc_value();  // allocate internal
   op_bc_->bc_model();  // memory
 
-  Teuchos::ParameterList& oplist = tp_list_->sublist("operators")
-                                            .sublist("advection operator")
-                                            .sublist("matrix");
+  // operators
+  // -- diffusion
+  if (flag_dispersion_) {
+    D_.resize(ncells_owned);
+    Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D_);
+    Teuchos::ParameterList& oplist_d = tp_list_->sublist("operators")
+                                                .sublist("diffusion operator")
+                                                .sublist("matrix");
+
+    Operators::PDE_DiffusionFactory diff_factory;
+    op_diff_ = diff_factory.Create(oplist_d, mesh_);
+    op_diff_->Setup(Dptr, Teuchos::null, Teuchos::null);
+    op_diff_->SetBCs(op_bc_, op_bc_);
+    op_ = op_diff_->global_operator();
+  }
+
+  // -- advection
+  Teuchos::ParameterList& oplist_a = tp_list_->sublist("operators")
+                                              .sublist("advection operator")
+                                              .sublist("matrix");
 
   Operators::PDE_AdvectionUpwindFactory adv_factory;
-  op_adv_ = adv_factory.Create(oplist, mesh_);
+  if (op_.get()) {
+    op_adv_ = adv_factory.Create(oplist_a, op_);
+  } else {
+    op_adv_ = adv_factory.Create(oplist_a, mesh_);
+    op_ = op_adv_->global_operator();
+  }
   op_adv_->SetBCs(op_bc_, op_bc_);
-  op_ = op_adv_->global_operator();
-  
+
   // refresh data BC and source data  
   UpdateBoundaryData(t_physics_, t_physics_, 0);
 
@@ -189,6 +210,17 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     // apply boundary conditions
     op_adv_->UpdateMatrices(S_->GetPtr<CompositeVector>(darcy_flux_key_, Tags::DEFAULT).ptr());
     op_adv_->ApplyBCs(true, true, true);
+
+    if (flag_dispersion_) {
+      int phase;
+      double md;
+      CalculateDispersionTensor_(*transport_phi, *ws);
+      FindDiffusionValue(component_names_[i], &md, &phase);
+      if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, *ws);
+
+      op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+      op_diff_->ApplyBCs(true, true, true);
+    }
 
     // add sources
     ComputeSources_(t_new, t_new - t_old, rhs_cell, *tcc->ViewComponent("cell"), i, i);
