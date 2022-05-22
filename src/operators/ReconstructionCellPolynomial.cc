@@ -109,7 +109,7 @@ void ReconstructionCellPolynomial::Compute(
       for (int i = 0; i < d_; ++i) coef(i) = xcc[i];
 
       // -- Hessian terms
-      int n(0);
+      n = 0;
       for (int i = 0; i < d_; ++i) {
         for (int j = i; j < d_; ++j, ++n) {
           quad(0) = -(*ortho_c_)[n][c];
@@ -140,7 +140,7 @@ void ReconstructionCellPolynomial::Compute(
           for (int i = 0; i < d_; ++i) coef(i) = xcc[i];
 
           // -- Hessian terms
-          int n(0);
+          n = 0;
           for (int i = 0; i < d_; ++i) {
             for (int j = i; j < d_; ++j, ++n) coef(d_ + n) = xcc[i] * xcc[j] - (*ortho_c_)[n][c];
           }
@@ -226,8 +226,8 @@ void ReconstructionCellPolynomial::CellAllAdjFaces_(
   AmanziMesh::Entity_ID_List cfaces, fcells;
 
   faces.clear();
-  for (int c : cells) {
-    mesh_->cell_get_faces(c, &cfaces);
+  for (int c1 : cells) {
+    mesh_->cell_get_faces(c1, &cfaces);
     for (int f : cfaces) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
       if (fcells.size() == 1 && faces.find(f) == faces.end()) faces.insert(f);

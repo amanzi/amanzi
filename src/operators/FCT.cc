@@ -30,7 +30,6 @@ void FCT::Compute(const CompositeVector& flux_lo,
 {
   int nfaces_owned = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int ncells_owned = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   AmanziMesh::Entity_ID_List cells, faces;
 

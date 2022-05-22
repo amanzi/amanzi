@@ -197,7 +197,6 @@ void FlowEnergyMatrixFracture_PK::Initialize()
 
   auto& mmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", false)->Map();
   auto& gmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", true)->Map();
-  int npoints_owned = mmap.NumMyPoints();
 
   // -- indices transmissibimility coefficients for matrix-fracture flux
   const auto& kn = *S_->Get<CV_t>(normal_permeability_key_).ViewComponent("cell");

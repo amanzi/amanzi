@@ -75,10 +75,10 @@ using namespace Amanzi::AmanziGeometry;
   double rho = 998.2;
   double mu = 0.001002;
   double K1 = 1.0e-11;
-  double kn = 4.0e-8;
+  double gravity = 9.81;
+  double kn = 3.9240e-7 / gravity;  // 4e-08;
   double L = 120.0;
   double q0 = -2.0e-3;
-  double gravity = 9.81;
 
   // test pressure in fracture
   K1 *= rho / mu;

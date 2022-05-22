@@ -9,9 +9,9 @@
 #include <VisMF.H>
 #include <Utility.H>
 
-static Real H = 107.52;
-static Real W = H/16;
-static int NyFAC = 16;
+// static Real H = 107.52;
+// static Real W = H/16;
+// static int NyFAC = 16;
 
 static Real dt_init = 1;
 static int Niter = 60;

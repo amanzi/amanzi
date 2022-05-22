@@ -7503,7 +7503,6 @@ PorousMedia::derive_Hydraulic_Head(Real      time,
                                    MultiFab& mf,
                                    int       dcomp)
 {
-  int ncomp = 1;
   int ngrow = mf.nGrow();
   const Real* plo = geom.ProbLo();
   const Real* dx = geom.CellSize();

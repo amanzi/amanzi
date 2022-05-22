@@ -775,7 +775,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
 
   // output statistics
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    Teuchos::OSTab tab = vo_->getOSTab();
+    Teuchos::OSTab tab2 = vo_->getOSTab();
     *vo_->os() << "active BCs: ";
     for (std::set<std::string>::iterator it = active_bcs.begin(); it != active_bcs.end(); ++it) {
       *vo_->os() << *it << ", ";

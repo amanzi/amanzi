@@ -36,14 +36,14 @@ void TransportExplicit_PK::FunctionalTimeDerivative(
 * Monotonic Upstream-centered Scheme for Conservation Laws
 ****************************************************************** */
 void TransportExplicit_PK::FunctionalTimeDerivative_MUSCL_(
-    double t, const CompositeVector& component, CompositeVector& f)
+    double t, const CompositeVector& component, CompositeVector& func)
 {
   auto darcy_flux = S_->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
 
   // distribute vector
   component.ScatterMasterToGhosted("cell");
   const auto& component_c = *component.ViewComponent("cell", true);
-  auto& f_c = *f.ViewComponent("cell", true);
+  auto& f_c = *func.ViewComponent("cell", true);
 
   // extract boundary conditions for the current component
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
@@ -83,7 +83,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative_MUSCL_(
 
   const auto& flux_map = S_->Get<CompositeVector>(darcy_flux_key_).Map().Map("face", true);
 
-  f.PutScalar(0.0);
+  func.PutScalar(0.0);
   for (int f = 0; f < nfaces_wghost; f++) {
     c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
     c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
@@ -129,7 +129,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative_MUSCL_(
   }
 
   // BOUNDARY CONDITIONS for ADVECTION
-  f.PutScalarGhosted(0.0);
+  func.PutScalarGhosted(0.0);
   int flag(0);
 
   for (int m = 0; m < bcs_.size(); m++) {
@@ -165,7 +165,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative_MUSCL_(
 
   int flag_tmp(flag);
   mesh_->get_comm()->MaxAll(&flag_tmp, &flag, 1);
-  if (flag == 1) f.GatherGhostedToMaster("cell");
+  if (flag == 1) func.GatherGhostedToMaster("cell");
 
   // process external sources
   if (srcs_.size() != 0) {
@@ -186,7 +186,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative_MUSCL_(
 * Flux corrected transport
 ****************************************************************** */
 void TransportExplicit_PK::FunctionalTimeDerivative_FCT_(
-    double t, const CompositeVector& component, CompositeVector& f)
+    double t, const CompositeVector& component, CompositeVector& func)
 {
   auto darcy_flux = S_->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
 
@@ -203,7 +203,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative_FCT_(
   // distribute vector
   component.ScatterMasterToGhosted("cell");
   const auto& component_c = *component.ViewComponent("cell", true);
-  auto& f_c = *f.ViewComponent("cell", true);
+  auto& f_c = *func.ViewComponent("cell", true);
 
   // extract boundary conditions for the current component
   auto bcs = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR)); 

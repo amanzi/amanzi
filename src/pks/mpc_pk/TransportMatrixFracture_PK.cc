@@ -248,7 +248,7 @@ bool TransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool re
     *rhs.SubVector(0)->Data() = *op0->rhs();
     *rhs.SubVector(1)->Data() = *op1->rhs();
 
-    int ierr = op_dispersion_->ApplyInverse(rhs, sol);
+    op_dispersion_->ApplyInverse(rhs, sol);
 
     // copy only cell component from potentially larger solution vector
     *(*S_->GetW<CV_t>(tcc_matrix_key_, Tags::COPY, passwd).ViewComponent("cell"))(i) =

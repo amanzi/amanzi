@@ -182,7 +182,8 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
 
     // -- quadrature based on tensor product
     int mmax = order / 2;
-    double val2(0.0), exact(0.196349540849362);
+    double val2(0.0);
+    exact = 0.196349540849362;
     AmanziGeometry::Point q(2);
 
     for (int i = 0; i <= mmax; ++i) { 

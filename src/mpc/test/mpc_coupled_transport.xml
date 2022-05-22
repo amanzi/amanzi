@@ -205,7 +205,6 @@
         </ParameterList>
       </ParameterList>
 
-
       <ParameterList name="total_component_concentration">
         <ParameterList name="function">
           <ParameterList name="Computational domain">
@@ -223,7 +222,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
       <ParameterList name="fracture-total_component_concentration">
         <ParameterList name="function">
           <ParameterList name="Computational domain">
@@ -263,6 +261,20 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="fracture-normal_diffusion">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

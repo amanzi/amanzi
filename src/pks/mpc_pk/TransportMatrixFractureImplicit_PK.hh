@@ -24,6 +24,7 @@
 #include "PDE_CouplingFlux.hh"
 #include "TreeOperator.hh"
 
+#include "FractureInsertion.hh"
 #include "TransportMatrixFracture_PK.hh"
 
 namespace Amanzi {
@@ -61,6 +62,11 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
 
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling00_, op_coupling01_;
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling10_, op_coupling11_;
+
+  bool flag_dispersion_;
+  Teuchos::RCP<FractureInsertion> fid_;
+  Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling00d_, op_coupling01d_;
+  Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling10d_, op_coupling11d_;
 
   Teuchos::RCP<TimestepController> ts_control_;
 

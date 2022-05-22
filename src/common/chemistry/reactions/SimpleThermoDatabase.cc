@@ -77,8 +77,8 @@ void SimpleThermoDatabase::Initialize(BeakerState& state,
   }
 
   // aqueous complexes
-  const auto& tmp = plist_->sublist("aqueous equilibrium complexes");
-  auto aqlist = RebuildAqueousComplexes_(tmp);
+  const auto& aux = plist_->sublist("aqueous equilibrium complexes");
+  auto aqlist = RebuildAqueousComplexes_(aux);
 
   id = 0;
   for (auto it = aqlist.begin(); it != aqlist.end(); ++it, ++id) {

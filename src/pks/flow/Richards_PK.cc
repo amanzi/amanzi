@@ -401,13 +401,13 @@ void Richards_PK::Setup()
     }
 
     Teuchos::ParameterList elist(alpha_key_);
-    Teuchos::Array<std::string> list0, list1;
-    list0.push_back(Keys::getVarName(kkey));
-    list0.push_back(Keys::getVarName(mol_density_liquid_key_));
-    list1.push_back(Keys::getVarName(viscosity_liquid_key_));
+    Teuchos::Array<std::string> listm, listr;
+    listm.push_back(Keys::getVarName(kkey));
+    listm.push_back(Keys::getVarName(mol_density_liquid_key_));
+    listr.push_back(Keys::getVarName(viscosity_liquid_key_));
     elist.set<std::string>("my key", alpha_key_)
-         .set<Teuchos::Array<std::string> >("multiplicative dependencies", list0)
-         .set<Teuchos::Array<std::string> >("reciprocal dependencies", list1)
+         .set<Teuchos::Array<std::string> >("multiplicative dependencies", listm)
+         .set<Teuchos::Array<std::string> >("reciprocal dependencies", listr)
          .set<std::string>("tag", "");
 
     S_->RequireDerivative<CV_t, CVS_t>(alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
@@ -764,11 +764,11 @@ void Richards_PK::Initialize()
   // Development: miscalleneous
   algebraic_water_content_balance_ = fp_list_->get<bool>("algebraic water content balance", false);
   if (algebraic_water_content_balance_) {
-    CompositeVectorSpace cvs; 
-    cvs.SetMesh(mesh_)->SetGhosted(false)
+    CompositeVectorSpace cvs1; 
+    cvs1.SetMesh(mesh_)->SetGhosted(false)
         ->AddComponent("cell", AmanziMesh::CELL, 1)
         ->AddComponent("dpre", AmanziMesh::CELL, 1);
-    cnls_limiter_ = Teuchos::rcp(new CompositeVector(cvs));
+    cnls_limiter_ = Teuchos::rcp(new CompositeVector(cvs1));
   }
 
   // NOTE: this is alternatively called "linear solver" or "preconditioner

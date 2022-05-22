@@ -163,7 +163,9 @@ void TransportImplicit_PK::Initialize()
   
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << vo_->color("green") << "Initialization of PK is complete." 
+    *vo_->os() << "matrix:" << std::endl
+               << op_->PrintDiagnostics() << std::endl
+               << vo_->color("green") << "Initialization of PK is complete." 
                << vo_->reset() << std::endl << std::endl;
   }
 }

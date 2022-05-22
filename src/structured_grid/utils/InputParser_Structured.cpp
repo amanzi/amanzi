@@ -3914,7 +3914,6 @@ namespace Amanzi {
           const CompMap comp_map = stateDef[phaseLabel];
           for (CompMap::const_iterator cit = comp_map.begin(); cit!=comp_map.end() && !found_solute; ++cit) 
           {
-            const std::string& compLabel = cit->first;
             const Array<TRACER>& solutes = cit->second.getTracerArray();
             for (int i=0; i<solutes.size(); ++i)
             {
@@ -4019,7 +4018,7 @@ namespace Amanzi {
           for (int j=0; j<src_f_or_s_labels.size(); ++j) {
             const std::string& src_f_or_s_label = src_f_or_s_labels[j];
 
-            bool function_set = false;
+            function_set = false;
             if (src_f_or_s_label == Solute_Source_str) {
               // Do solute sources
 

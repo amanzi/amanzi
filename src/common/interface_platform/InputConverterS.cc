@@ -345,7 +345,6 @@ void InputConverterS::ParseDefinitions_()
         DOMElement* time_macro = static_cast<DOMElement*>(time_macros[i]);
         string macro_name = GetAttributeValueS_(time_macro, "name");
         time_macro_names.push_back(macro_name);
-        vector<string> times;
 
         // Before we look for specific times, check for other stuff.
         string start = GetChildValueS_(time_macro, "start", found);

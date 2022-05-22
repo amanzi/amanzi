@@ -61,11 +61,6 @@ using namespace Amanzi::AmanziGeometry;
     
     AmanziGeometry::Point node_crd;
     mesh->node_get_coordinates(n, &node_crd);
-    double x = node_crd[0], y = node_crd[1], z = node_crd[2];
-    
-    // if (std::abs(z - 10) < 1.e-12) {
-    //   node_crd[2] += 0.0;
-    // }
     new_positions.push_back(node_crd);
   }
   mesh->deform(nodeids, new_positions, false, &final_positions);

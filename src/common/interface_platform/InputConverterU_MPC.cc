@@ -336,7 +336,6 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       PopulatePKTree_(pk_tree_list, Keys::merge(mode, "multiphase", delimiter));
       break;
     default:
-      Errors::Message msg;
       msg << "The model with id=" << transient_model << " is not supported by the MPC.\n";
       Exceptions::amanzi_throw(msg);
     }

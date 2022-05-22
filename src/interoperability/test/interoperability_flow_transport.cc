@@ -68,6 +68,8 @@ class ATS_Richards : public Richards {
       S_->Get<CompositeVector>("saturation_liquid", Tags::NEXT);
 
     Richards::AdvanceStep(t_old, t_new, reinit);
+
+    return false;
   }
 
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override {

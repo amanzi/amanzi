@@ -15,15 +15,15 @@ namespace Amanzi {
 namespace ShallowWater {
 
 void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
-                                               TreeVector& f)
+                                               TreeVector& fun)
 {
   bool failed = false;
   
   const auto& h_temp = *A.SubVector(0)->Data()->ViewComponent("cell", true);
   const auto& q_temp = *A.SubVector(1)->Data()->ViewComponent("cell", true);
   
-  auto& f_temp0 = *f.SubVector(0)->Data()->ViewComponent("cell");
-  auto& f_temp1 = *f.SubVector(1)->Data()->ViewComponent("cell");
+  auto& f_temp0 = *fun.SubVector(0)->Data()->ViewComponent("cell");
+  auto& f_temp1 = *fun.SubVector(1)->Data()->ViewComponent("cell");
   
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);

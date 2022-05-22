@@ -291,7 +291,6 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
         PopulatePKTree_(pk_tree_list, "transient:coupled flow and reactive transport");
       break;
     default:
-      Errors::Message msg;
       msg << "The model with id=" << transient_model << " is not supported by the MPC.\n";
       Exceptions::amanzi_throw(msg);
     }
