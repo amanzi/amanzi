@@ -402,7 +402,7 @@ void WriteStateStatistics(const State& S, const VerboseObject& vo)
             std::string namedot(Keys::getKey(display_name, r.first)), name_comp(c_it->first);
             if (vmin.size() != 1) namedot.append("." + name_comp);
             namedot.resize(40, '.');
-            *vo.os() << namedot << " " << c_it->second << " / "
+            *vo.os() << std::defaultfloat << namedot << " " << c_it->second << " / "
                      << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;
           }
 

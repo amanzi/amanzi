@@ -3,11 +3,11 @@
 
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot_matrix"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 10, -1}"/>
   </ParameterList>
   <ParameterList name="visualization data fracture">
     <Parameter name="file name base" type="string" value="plot_fracture"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 10, -1}"/>
   </ParameterList>
 
   <ParameterList name="regions">
@@ -70,11 +70,11 @@
             </ParameterList>
           </ParameterList>
 	</ParameterList>
-	<Parameter name="initial time step" type="double" value="1.0e+4"/>
+	<Parameter name="initial time step" type="double" value="3.0e+3"/>
 	<Parameter name="start period time" type="double" value="0.0"/>
 	<Parameter name="end period time" type="double" value="1.0e+5"/>
-        <Parameter name="maximum time step" type="double" value="1.0e+4"/>
-        <Parameter name="maximum cycle number" type="int" value="20"/>        
+        <Parameter name="maximum time step" type="double" value="3.0e+3"/>
+        <Parameter name="maximum cycle number" type="int" value="-1"/> 
       </ParameterList>
     </ParameterList>
 
@@ -129,7 +129,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.2"/>
+                <Parameter name="value" type="double" value="0.1"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -356,8 +356,8 @@
           <Parameter name="regions" type="Array(string)" value="{All}"/>
           <Parameter name="model" type="string" value="Bear"/>
           <ParameterList name="parameters for Bear">
-            <Parameter name="alpha_l" type="double" value="0.1"/>
-            <Parameter name="alpha_t" type="double" value="0.01"/>
+            <Parameter name="alpha_l" type="double" value="1.0e-8"/>
+            <Parameter name="alpha_t" type="double" value="1.0e-8"/>
           </ParameterList>
           <Parameter name="aqueous tortuosity" type="double" value="1.0"/>
         </ParameterList>
@@ -411,8 +411,8 @@
           <Parameter name="regions" type="Array(string)" value="{All}"/>
           <Parameter name="model" type="string" value="Bear"/>
           <ParameterList name="parameters for Bear">
-            <Parameter name="alpha_l" type="double" value="0.1"/>
-            <Parameter name="alpha_t" type="double" value="0.01"/>
+            <Parameter name="alpha_l" type="double" value="1.0e-8"/>
+            <Parameter name="alpha_t" type="double" value="1.0e-8"/>
           </ParameterList>
           <Parameter name="aqueous tortuosity" type="double" value="1.0"/>
         </ParameterList>

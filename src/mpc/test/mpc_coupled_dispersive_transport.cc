@@ -25,7 +25,7 @@
 #include "State.hh"
 
 
-double RunTest(double darcy_flux_f,
+double RunTest(int icase, double u_f,
                double mol_diff_f, double mol_diff_m,
                double normal_diff) {
 using namespace Amanzi;
@@ -41,7 +41,7 @@ using namespace Amanzi::AmanziGeometry;
   plist->sublist("state").sublist("initial conditions")
         .sublist("fracture-darcy_flux").sublist("function")
         .sublist("All domain").sublist("function").sublist("dof 1 function")
-        .sublist("function-constant").set<double>("value", darcy_flux_f);
+        .sublist("function-constant").set<double>("value", u_f);
 
   std::vector<double> tmp_f({ mol_diff_f });
   plist->sublist("PKs").sublist("transport fracture").sublist("molecular diffusion")
@@ -63,7 +63,7 @@ using namespace Amanzi::AmanziGeometry;
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({Framework::MSTK}));
-  auto mesh = factory.create(0.0, 0.0, 0.0, 12.0, 1.0, 6.0, 96, 1, 6);
+  auto mesh = factory.create(0.0, 0.0, 0.0, 12.0, 1.0, 6.0, 96, 1, 8);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -102,8 +102,15 @@ using namespace Amanzi::AmanziGeometry;
       fmin = std::min(fmin, tcc_f[0][c]);
       fmax = std::max(fmax, tcc_f[0][c]);
     }
-    err += fabs(tcc_f[0][c] - std::erfc(xc[0] / 2));
-if (darcy_flux_f > 0) std::cout << xc << " " << tcc_f[0][c] << std::endl;
+    if (icase == 1) {
+      err += fabs(tcc_f[0][c] - std::erfc(xc[0] / 2));
+    } else {
+      double t(1.0e+5), b(0.1), Dm(1.0e-7);
+      double kn = Dm / 2;  
+      double Tm = u_f * t / b - xc[0];
+      if (Tm > 0.0) err += fabs(tcc_f[0][c] - std::erfc(xc[0] * kn * std::sqrt(b / (u_f * Dm * Tm)) / 2));
+      // std::cout << xc[0] << " " << std::erfc(xc[0] * kn * std::sqrt(b / (u_f * Dm * std::max(1e-5, Tm))) / 2) << " " << tcc_f[0][c] << std::endl;
+    }
   }
   double err_tmp(err);
   mesh->get_comm()->SumAll(&err_tmp, &err, 1);
@@ -118,12 +125,13 @@ if (darcy_flux_f > 0) std::cout << xc << " " << tcc_f[0][c] << std::endl;
 
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_0) {
   // no coupling, only diffusion
-  double err = RunTest(0.0, 1e-5, 0.0, 0.0);
-  CHECK(err < 3e-3);
+  double err = RunTest(1, 0.0, 1e-5, 0.0, 0.0);
+  CHECK(err < 3.0e-3);
 }
 
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_1) {
-  double err = RunTest(1.0e-4, 0.0, 1.0e-7, 2.0e-4);
-  CHECK(err < 100.0);
+  // Dm = kn / 2 for the analytic solution
+  double err = RunTest(2, 1.0e-5, 0.0, 1.0e-7, 1.0e-7/2);
+  CHECK(err < 2.0e-2);
 }
 
