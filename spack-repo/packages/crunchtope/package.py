@@ -24,9 +24,9 @@ class Crunchtope(CMakePackage):
 
     # Mandatory 
     depends_on('mpi')
-    depends_on('petsc@3.13.3')
-    depends_on('hdf5@1.10.6 +mpi+fortran+hl+shared',when='+shared')
-    depends_on('hdf5@1.10.6 +mpi+fortran+hl~shared',when='-shared')
+    depends_on('petsc@3.16.4:3.16.5')
+    depends_on('hdf5 +mpi+fortran+hl+shared',when='+shared')
+    depends_on('hdf5 +mpi+fortran+hl~shared',when='-shared')
     depends_on('alquimia@1.0.9')
     depends_on('pflotran@3.0.2')
 

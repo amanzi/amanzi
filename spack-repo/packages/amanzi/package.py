@@ -83,12 +83,10 @@ class Amanzi(CMakePackage):
 
     #### Geochemistry ####
     geochemistry = {
-            'alquimia@1.0.9','petsc@3.16.4:3.16.5'
+            'alquimia@1.0.9','petsc@3.16.4:3.16.5', 'pflotran@3.0.2', 'crunchtope'
     }
     for dep in geochemistry: 
         depends_on(dep, when='+geochemistry'); 
-
-    depends_on('pflotran@3.0.2', when='+geochemistry')
 
     ##### Hypre #####
     depends_on('superlu@5.2.2', when='+hypre')
@@ -192,16 +190,13 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_PFLOTRAN=ON')
             options.append('-DPFLOTRAN_LIBRARY_DIR=' + self.spec['pflotran'].prefix + '/lib')
             options.append('-DAlquimia_DIR=' + self.spec['alquimia'].prefix) 
-            options.append('-DAlquimia_INCLUDE_DIR=' + self.spec['alquimia'].prefix + 'include/alquimia') 
+            options.append('-DAlquimia_INCLUDE_DIR=' + self.spec['alquimia'].prefix + 'include/alquimia')
+            options.append('-DENABLE_CRUNCHTOPE=ON')
+            options.append('-DCRUNCHTOPE_DIR=' + self.spec['crunchtope'].prefix)
         else:
             options.append('-DENABLE_ALQUIMIA=OFF')
             options.append('-DENABLE_PETSC=OFF')
             options.append('-DENABLE_PFLOTRAN=OFF')
-
-        if '+crunchtope' in self.spec: 
-            options.append('-DENABLE_CRUNCHTOPE=ON')
-            options.append('-DCRUNCHTOPE_DIR=' + self.spec['crunchtope'].prefix)
-        else: 
             options.append('-DENABLE_CRUNCHTOPE=OFF')
 
         if 'physics=amanzi' in self.spec: 
