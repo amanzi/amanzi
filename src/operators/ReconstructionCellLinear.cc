@@ -88,7 +88,8 @@ void ReconstructionCellLinear::Compute(
     double norm = matrix.NormInf();
 
     if (det < pow(norm, 1.0/dim)) {
-      norm *= OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION;
+      norm *= OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION;  // relative 
+      norm += OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION;  // absolute
       for (int i = 0; i < dim; i++) matrix(i, i) += norm;
     }
 

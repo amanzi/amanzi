@@ -84,7 +84,7 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
   auto& grad_computed = *lifting.data()->ViewComponent("cell");
 
   ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
-  CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
+  CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-10);
 
   if (MyPID == 0) printf("errors (interior & global): %8.4f %8.4f\n", err_int, err_glb);
 }
@@ -142,7 +142,7 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
   auto& grad_computed = *lifting.data()->ViewComponent("cell");
 
   ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
-  CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
+  CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-10);
 
   if (MyPID == 0) printf("errors (interior & global): %8.4f %8.4f\n", err_int, err_glb);
 }

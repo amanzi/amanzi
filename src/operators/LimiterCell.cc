@@ -348,8 +348,6 @@ void LimiterCell::LimiterTensorial_(
 ******************************************************************* */
 void LimiterCell::LimiterExtensionTransportTensorial_()
 {
-  AMANZI_ASSERT(upwind_cells_.size() > 0);
-
   double u1f, u1;
 
   auto& grad_c = *lifting_->data()->ViewComponent("cell");

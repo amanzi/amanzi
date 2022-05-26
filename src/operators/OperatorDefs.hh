@@ -120,7 +120,7 @@ const int OPERATOR_GRAVITY_HH = 1;
 const int OPERATOR_GRAVITY_FV = 2;
 
 // reconstruction options
-const double OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION = 1e-15;
+const double OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION = 1e-12;
 
 // limiting options
 const int OPERATOR_LIMITER_BARTH_JESPERSEN = 1;

@@ -163,8 +163,8 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
 
     ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
     // Michalak-Gooch limiter is not linearity preserving near boundary
-    CHECK_CLOSE(0.0, err_int, 1.0e-12);
-    if (i < 6) CHECK_CLOSE(0.0, err_glb, 1.0e-12);
+    CHECK_CLOSE(0.0, err_int, 1.0e-10);
+    if (i < 6) CHECK_CLOSE(0.0, err_glb, 1.0e-10);
 
     if (MyPID == 0)
         printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), err_int, err_glb);
@@ -288,7 +288,7 @@ TEST(LIMITER_LINEAR_FUNCTION_3D) {
     auto& grad_computed = *lifting->data()->ViewComponent("cell");
 
     ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
-    CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
+    CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-10);
 
     if (MyPID == 0)
         printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), err_int, err_glb);
@@ -802,7 +802,7 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES) {
     auto& grad_computed = *lifting.data()->ViewComponent("cell");
 
     ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
-    CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
+    CHECK_CLOSE(0.0, err_int + err_glb, 2.0e-10);
 
     if (MyPID == 0)
         printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), err_int, err_glb);
