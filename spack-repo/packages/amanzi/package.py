@@ -132,6 +132,11 @@ class Amanzi(CMakePackage):
         options.append('-DCMAKE_CXX_COMPILER=' + self.spec['mpi'].mpicxx)
         options.append('-DCMAKE_Fortran_COMPILER=' + self.spec['mpi'].mpifc)
 
+        mpiexec_bin = join_path(self.spec['mpi'].prefix.bin, 'mpiexec')
+        options.append('-DMPI_EXEC:PATH='+mpiexec_bin)
+        options.append('-DMPI_EXEC_NUMPROCS_FLAG:STRING=-n')
+        options.append('-DTESTS_REQUIRE_MPIEXEC:BOOL=ON')
+
         # Tags 
         if self.spec.satisfies('@spack'):
             options.append('-DSPACK_AMANZI_VERSION_MAJOR=1')
@@ -153,7 +158,6 @@ class Amanzi(CMakePackage):
         options.append('-DXERCES_DIR=' + self.spec['xerces-c'].prefix)
         options.append('-DSEACAS_DIR=' + self.spec['seacas'].prefix)
         options.append('-DSuperLU_DIR=' + self.spec['superlu'].prefix)
-        options.append('-DHYPRE_DIR=' + self.spec['hypre'].prefix)
         options.append('-DTrilinos_INSTALL_PREFIX:PATH=' + self.spec['trilinos'].prefix)
 
         # not supported or always off/on options
@@ -263,6 +267,7 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_CCSE_TOOLS=OFF')
         
         if '+hypre' in self.spec: 
+            options.append('-DHYPRE_DIR=' + self.spec['hypre'].prefix)
             options.append('-DENABLE_SUPERLU=ON')
             options.append('-DENABLE_HYPRE=ON')
         else: 
@@ -282,6 +287,10 @@ class Amanzi(CMakePackage):
         #    options.append('-DAMANZI_ARCH=\'\'')
 
         # unused 
-        
-        
         return options
+
+    def build(self,spec,prefix): 
+        with working_dir(self.build_directory):
+            make(*self.build_targets)
+            if '+tests' in self.spec: 
+                make("test")
