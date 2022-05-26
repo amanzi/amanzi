@@ -104,12 +104,13 @@ using namespace Amanzi::AmanziGeometry;
     }
     if (icase == 1) {
       err += fabs(tcc_f[0][c] - std::erfc(xc[0] / 2));
-    } else {
+    } else if (icase == 2) {
       double t(1.0e+5), b(0.1), Dm(1.0e-7);
       double kn = Dm / 2;  
       double Tm = u_f * t / b - xc[0];
       if (Tm > 0.0) err += fabs(tcc_f[0][c] - std::erfc(xc[0] * kn * std::sqrt(b / (u_f * Dm * Tm)) / 2));
-      // std::cout << xc[0] << " " << std::erfc(xc[0] * kn * std::sqrt(b / (u_f * Dm * std::max(1e-5, Tm))) / 2) << " " << tcc_f[0][c] << std::endl;
+    } else{
+      std::cout << xc[0] << " " << tcc_f[0][c] << std::endl;
     }
   }
   double err_tmp(err);
@@ -123,6 +124,10 @@ using namespace Amanzi::AmanziGeometry;
 }
 
 
+// double Integrate(const WhetStone::Function& fun) {
+// }
+
+
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_0) {
   // no coupling, only diffusion
   double err = RunTest(1, 0.0, 1e-5, 0.0, 0.0);
@@ -134,4 +139,13 @@ TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_1) {
   double err = RunTest(2, 1.0e-5, 0.0, 1.0e-7, 1.0e-7/2);
   CHECK(err < 2.0e-2);
 }
+
+/*
+TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_2) {
+  // Dm = kn / 2 for the analytic solution
+  double err = RunTest(3, 1.0e-5, 1.0e-5, 1.0e-6, 1.0e-6/2);
+  CHECK(err < 100);
+}
+*/
+
 

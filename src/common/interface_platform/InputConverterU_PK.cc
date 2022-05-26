@@ -369,7 +369,7 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
     stensil[1] = "cell";
     tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
 
-    if (pc_method != "linearized_operator") stensil.remove(1);
+    if (pc_method != "linearized_operator" && !fractures_) stensil.remove(1);
     tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
     tmp_list.set<bool>("gravity", gravity);
     if (gravity && nonlinear_coef == "upwind-amanzi_new")

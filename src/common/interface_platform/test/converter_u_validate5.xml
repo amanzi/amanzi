@@ -748,6 +748,8 @@
     <ParameterList name="transient:coupled transport">
       <Parameter name="PKs order" type="Array(string)" value="{transient:transport matrix, transient:transport fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="solver" type="string" value="Dispersion Solver"/>
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
     </ParameterList>
     
     <ParameterList name="transient:transport matrix">
@@ -782,14 +784,14 @@
             <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
             <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
           </ParameterList>
           <ParameterList name="preconditioner">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
             <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
           </ParameterList>
         </ParameterList>
@@ -830,6 +832,7 @@
         <Parameter name="effective transport porosity" type="bool" value="false"/>
         <Parameter name="use dispersion solver" type="bool" value="false"/>
         <Parameter name="permeability field is required" type="bool" value="false"/>
+        <Parameter name="transport in fractures" type="bool" value="true"/>
       </ParameterList>
 
       <Parameter name="domain name" type="string" value="fracture"/>      
@@ -868,14 +871,14 @@
             <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
             <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
           </ParameterList>
           <ParameterList name="preconditioner">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
             <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
           </ParameterList>
         </ParameterList>

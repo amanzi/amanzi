@@ -275,7 +275,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   out_list.sublist("physical models and assumptions")
       .set<bool>("permeability field is required", transport_permeability_);
 
-  if (fractures_ && domain != "domain") {
+  if (fractures_ && domain == "fracture") {
     out_list.sublist("physical models and assumptions").set<bool>("transport in fractures", true);
   }
 

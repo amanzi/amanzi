@@ -301,6 +301,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   // optional fracture network
   node = GetUniqueElementByTagsString_("fracture_network", flag);
   if (flag) {
+    fractures_ = true;
     AddIndependentFieldEvaluator_(out_ev, "fracture-mass_density_liquid", "FRACTURE_NETWORK_INTERNAL", rho_);
   }
 
@@ -729,12 +730,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   if (flag) {
     text_content = mm.transcode(node->getTextContent());
     out_list.set<Teuchos::Array<std::string> >("whitelist", CharToStrings_(text_content));
-  }
-
-  // temporary fix for fractures
-  if (fractures_) {
-    Teuchos::ParameterList empty;
-    out_list.sublist("initial conditions").sublist("permeability") = empty;
   }
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");

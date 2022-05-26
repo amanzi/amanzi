@@ -747,6 +747,9 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
         out_list.sublist(pk).set<int>("master PK index", 0);
 
+        out_list.sublist(pk).set<std::string>("solver", "Dispersion Solver")
+                            .set<std::string>("preconditioner", LINEAR_SOLVER_PC);
+
         // implicit PK derived from a strongly coupled MPC needs a time integrator 
         if (transport_implicit_) {
           std::string nonlinear_solver("nka"), tags_default("unstructured_controls, unstr_nonlinear_solver");

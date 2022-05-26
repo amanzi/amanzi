@@ -125,6 +125,8 @@ Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
   double tol(LINEAR_SOLVER_TOL);
   std::string tags_default("unstructured_controls, unstr_linear_solver");
   std::string method(method_default), prec(LINEAR_SOLVER_PC);
+  std::string verbosity("low");
+  std::vector<std::string> criteria;
 
   // verify that method is admissible
   bool flag;
@@ -150,13 +152,19 @@ Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
   if (flag) maxiter = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);
   node = GetUniqueElementByTagsString_(tags + ", max_iterations", flag);
   if (flag) maxiter = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);
+  node = GetUniqueElementByTagsString_(tags + ", convergence_criteria", flag);
+  if (flag) criteria = CharToStrings_(mm.transcode(node->getTextContent()));
+  node = GetUniqueElementByTagsString_(tags + ", verbosity", flag);
+  if (flag) verbosity = mm.transcode(node->getTextContent());
 
   // populate parameter list
   plist.set<std::string>("iterative method", method);
  
   Teuchos::ParameterList& slist = plist.sublist(method + " parameters");
-  slist.set<double>("error tolerance", tol);
-  slist.set<int>("maximum number of iterations", maxiter);
+  slist.set<double>("error tolerance", tol)
+       .set<int>("maximum number of iterations", maxiter);
+  if (criteria.size() > 0)
+    slist.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
 
   // parameters without 2.x support
   if (method == "gmres") {
@@ -165,7 +173,7 @@ Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
   }
 
   slist.sublist("verbose object") = verb_list_.sublist("verbose object");
-  slist.sublist("verbose object").set<std::string>("verbosity level", "low");
+  slist.sublist("verbose object").set<std::string>("verbosity level", verbosity);
 
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
