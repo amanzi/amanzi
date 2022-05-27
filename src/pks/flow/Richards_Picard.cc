@@ -75,7 +75,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
     // update diffusion coefficients
     // -- function
-    darcy_flux_copy->ScatterMasterToGhosted("face");
+    vol_flowrate_copy->ScatterMasterToGhosted("face");
 
     pressure_eval_->SetChanged();
     auto& alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
@@ -83,7 +83,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
   
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
-    upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *alpha_upwind_);
+    upwind_->Compute(*vol_flowrate_copy, *solution, bc_model, *alpha_upwind_);
 
     // -- derivative 
     S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
@@ -92,12 +92,12 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
-    upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *alpha_upwind_dP_);
+    upwind_->Compute(*vol_flowrate_copy, *solution, bc_model, *alpha_upwind_dP_);
 
     // create algebraic problem (matrix = preconditioner)
     op_preconditioner_->Init();
-    op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
-    op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), Teuchos::null, molar_rho_);
+    op_preconditioner_diff_->UpdateMatrices(vol_flowrate_copy.ptr(), solution.ptr());
+    op_preconditioner_diff_->UpdateMatricesNewtonCorrection(vol_flowrate_copy.ptr(), Teuchos::null, molar_rho_);
     op_preconditioner_diff_->ApplyBCs(true, true, true);
 
     Teuchos::RCP<CompositeVector> rhs = op_preconditioner_->rhs();  // export RHS from the matrix class

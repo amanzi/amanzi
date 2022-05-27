@@ -92,7 +92,7 @@ TEST(DISPERSION) {
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
-  auto& flux = *S->GetW<CompositeVector>("darcy_flux", passwd).ViewComponent("face");
+  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -193,7 +193,7 @@ TEST(DIFFUSION) {
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
-  auto& flux = *S->GetW<CompositeVector>("darcy_flux", passwd).ViewComponent("face");
+  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(0.5, 0.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -296,7 +296,7 @@ TEST(GAS_DIFFUSION) {
   std::string passwd("state"); 
   S->GetW<CompositeVector>("prev_saturation_liquid", passwd).PutScalar(0.4);
   S->GetW<CompositeVector>("saturation_liquid", passwd).PutScalar(0.4);
-  auto& flux = *S->GetW<CompositeVector>("darcy_flux", passwd).ViewComponent("face");
+  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(0.1, 0.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);

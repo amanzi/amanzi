@@ -77,7 +77,7 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
-  auto& flux = *S->GetW<CompositeVector>("darcy_flux", passwd).ViewComponent("face");
+  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.5);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);

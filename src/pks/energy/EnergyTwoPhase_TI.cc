@@ -31,7 +31,7 @@ void EnergyTwoPhase_PK::FunctionalResidual(
   temperature_eval_->SetChanged();
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 
-  auto flux = S_->GetPtr<CompositeVector>(darcy_flux_key_, Tags::DEFAULT);
+  auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
 
   S_->GetEvaluator(conductivity_key_).Update(*S_, passwd_);
   if (upwind_.get()) {
@@ -107,7 +107,7 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
     const auto& conductivity = S_->Get<CompositeVector>(conductivity_key_);
     *upw_conductivity_->ViewComponent("cell") = *conductivity.ViewComponent("cell");
 
-    auto flux = S_->GetPtr<CompositeVector>(darcy_flux_key_, Tags::DEFAULT);
+    auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
     const auto& bc_model = op_bc_->bc_model();
     Operators::CellToBoundaryFaces(bc_model, *upw_conductivity_);
     upwind_->Compute(*flux, *up->Data(), bc_model, *upw_conductivity_);
@@ -130,7 +130,7 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
 
   // add advection term dHdT
   if (prec_include_enthalpy_) {
-    auto flux = S_->GetPtr<CompositeVector>(darcy_flux_key_, Tags::DEFAULT);
+    auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
 
     S_->GetEvaluator(enthalpy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
     auto dHdT = S_->GetDerivativePtrW<CompositeVector>(

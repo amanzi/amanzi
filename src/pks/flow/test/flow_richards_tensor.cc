@@ -117,7 +117,7 @@ void TestLinearPressure(bool saturated) {
 
   /* check accuracy */
   const auto& pressure = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
-  const auto& flux = *S->Get<CompositeVector>("darcy_flux").ViewComponent("face");
+  const auto& flux = *S->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face");
 
   double err_p = 0.0, err_u = 0.0;
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

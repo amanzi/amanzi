@@ -749,7 +749,7 @@
               <Parameter name="spatial distribution method" type="string" value="domain coupling" />
               <Parameter name="submodel" type="string" value="rate" />
               <ParameterList name="sink">
-                <Parameter name="flux key" type="string" value="darcy_flux" />
+                <Parameter name="flux key" type="string" value="volumetric_flow_rate" />
                 <Parameter name="external field key" type="string" value="total_component_concentration" />
               </ParameterList>
             </ParameterList>

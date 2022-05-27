@@ -77,22 +77,22 @@ void FlowMatrixFracture_PK::Setup()
   }
 
   // -- darcy flux
-  if (!S_->HasRecord("darcy_flux")) {
+  if (!S_->HasRecord("volumetric_flow_rate")) {
     std::string name("face");
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S_->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "flow")
+    S_->Require<CV_t, CVS_t>("volumetric_flow_rate", Tags::DEFAULT, "flow")
       .SetMesh(mesh_domain_)->SetGhosted(true)
       ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
-    AddDefaultPrimaryEvaluator_("darcy_flux", Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator_("volumetric_flow_rate", Tags::DEFAULT);
   }
 
   // -- darcy flux for fracture
-  if (!S_->HasRecord("fracture-darcy_flux")) {
+  if (!S_->HasRecord("fracture-volumetric_flow_rate")) {
     auto cvs2 = Operators::CreateNonManifoldCVS(mesh_fracture_);
-    *S_->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "flow")
+    *S_->Require<CV_t, CVS_t>("fracture-volumetric_flow_rate", Tags::DEFAULT, "flow")
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
-    AddDefaultPrimaryEvaluator_("fracture-darcy_flux", Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator_("fracture-volumetric_flow_rate", Tags::DEFAULT);
   }
 
   // Require additional fields and evaluators

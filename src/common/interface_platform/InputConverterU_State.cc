@@ -478,9 +478,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         velocity.push_back(GetAttributeValueD_(node, coords_[1].c_str()));
         if (dim_ == 3) velocity.push_back(GetAttributeValueD_(node, coords_[2].c_str()));
 
-        Teuchos::ParameterList& darcy_flux_ic = out_ic.sublist("darcy_flux");
+        Teuchos::ParameterList& flowrate_ic = out_ic.sublist("volumetric_flux_rate");
         Teuchos::ParameterList& tmp_list =
-            darcy_flux_ic.set<bool>("dot with normal", true)
+            flowrate_ic.set<bool>("dot with normal", true)
             .sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
             .set<std::string>("component", "face")

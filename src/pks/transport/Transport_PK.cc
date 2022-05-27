@@ -180,8 +180,8 @@ void Transport_PK::Setup()
   porosity_key_ = Keys::getKey(domain_, "porosity"); 
   transport_porosity_key_ = Keys::getKey(domain_, "transport_porosity"); 
 
-  std::string tmp = physical_models->get<std::string>("darcy flux key", "darcy_flux");
-  darcy_flux_key_ = Keys::getKey(domain_, tmp); 
+  std::string tmp = physical_models->get<std::string>("volumetric flow rate key", "volumetric_flow_rate");
+  vol_flowrate_key_ = Keys::getKey(domain_, tmp); 
 
   tmp = physical_models->get<std::string>("saturation key", "saturation_liquid");
   saturation_liquid_key_ = Keys::getKey(domain_, tmp); 
@@ -201,12 +201,12 @@ void Transport_PK::Setup()
     S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_).
       SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, dim);
   }
-  if (!S_->HasRecord(darcy_flux_key_)) {
+  if (!S_->HasRecord(vol_flowrate_key_)) {
     if (transport_on_manifold) {
       auto cvs = Operators::CreateNonManifoldCVS(mesh_);
-      *S_->Require<CV_t, CVS_t>(darcy_flux_key_, Tags::DEFAULT, passwd_).SetMesh(mesh_)->SetGhosted(true) = *cvs;
+      *S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_).SetMesh(mesh_)->SetGhosted(true) = *cvs;
     } else {
-      S_->Require<CV_t, CVS_t>(darcy_flux_key_, Tags::DEFAULT, passwd_)
+      S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
     }
   }
@@ -351,7 +351,7 @@ void Transport_PK::Initialize()
   InitializeAll_();
  
   // pointers to state variables (move in subroutines for consistency)
-  S_->Get<CV_t>(darcy_flux_key_).ScatterMasterToGhosted("face");
+  S_->Get<CV_t>(vol_flowrate_key_).ScatterMasterToGhosted("face");
 
   ws = S_->Get<CV_t>(saturation_liquid_key_).ViewComponent("cell");
   ws_prev = S_->Get<CV_t>(prev_saturation_liquid_key_).ViewComponent("cell");
@@ -912,11 +912,11 @@ bool Transport_PK::ComputeBCs_(
 ******************************************************************* */
 void Transport_PK::IdentifyUpwindCells()
 {
-  const auto& darcy_flux = S_->Get<CV_t>(darcy_flux_key_);
-  darcy_flux.ScatterMasterToGhosted("face");
+  const auto& flowrate = S_->Get<CV_t>(vol_flowrate_key_);
+  flowrate.ScatterMasterToGhosted("face");
 
-  const auto& darcy_flux_f = *darcy_flux.ViewComponent("face", true);
-  const auto& map = darcy_flux.Map().Map("face", true);
+  const auto& flowrate_f = *flowrate.ViewComponent("face", true);
+  const auto& map = flowrate.Map().Map("face", true);
 
   upwind_cells_.clear();
   downwind_cells_.clear();
@@ -959,30 +959,30 @@ void Transport_PK::IdentifyUpwindCells()
           int pos = Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
           // define only upwind cell
-          double tmp = darcy_flux_f[0][g + pos] * dirs[i];
+          double tmp = flowrate_f[0][g + pos] * dirs[i];
 
           if (tmp >= 0.0) {
             upwind_cells_[f][pos] = c;
-            upwind_flux_[f][pos] = darcy_flux_f[0][g + pos];
+            upwind_flux_[f][pos] = flowrate_f[0][g + pos];
           } else {
             downwind_cells_[f][pos] = c;
-            downwind_flux_[f][pos] = darcy_flux_f[0][g + pos];
+            downwind_flux_[f][pos] = flowrate_f[0][g + pos];
           }
         }
         else {
-          double tmp = darcy_flux_f[0][g] * dirs[i];
+          double tmp = flowrate_f[0][g] * dirs[i];
           if (tmp >= 0.0) {
             upwind_cells_[f][0] = c;
-            upwind_flux_[f][0] = darcy_flux_f[0][g];
+            upwind_flux_[f][0] = flowrate_f[0][g];
           } else if (tmp < 0.0) {
             downwind_cells_[f][0] = c;
-            downwind_flux_[f][0] = darcy_flux_f[0][g];
+            downwind_flux_[f][0] = flowrate_f[0][g];
           } else if (dirs[i] > 0) {
             upwind_cells_[f][0] = c;
-            upwind_flux_[f][0] = darcy_flux_f[0][g];            
+            upwind_flux_[f][0] = flowrate_f[0][g];            
           } else {
             downwind_cells_[f][0] = c;
-            downwind_flux_[f][0] = darcy_flux_f[0][g];
+            downwind_flux_[f][0] = flowrate_f[0][g];
           }
         }
       }
@@ -1001,7 +1001,7 @@ void Transport_PK::IdentifyUpwindCells()
         int ndofs = map->ElementSize(f);
         if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
-        double u = darcy_flux_f[0][g] * dirs[i];  // external flux for cell c
+        double u = flowrate_f[0][g] * dirs[i];  // external flux for cell c
         if (u >= 0.0) {
           upwind_cells_[f].push_back(c);
           upwind_flux_[f].push_back(u);

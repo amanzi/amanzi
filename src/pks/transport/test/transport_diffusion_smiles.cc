@@ -67,7 +67,7 @@ TEST(DIFFUSION_GAS_SMILES) {
   double sl(0.01);
   S->GetW<CompositeVector>("prev_saturation_liquid", passwd).PutScalar(sl);
   S->GetW<CompositeVector>("saturation_liquid", passwd).PutScalar(sl);
-  auto& flux = *S->GetW<CompositeVector>("darcy_flux", passwd).ViewComponent("face");
+  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
   flux.PutScalar(0.0);
 
   auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");

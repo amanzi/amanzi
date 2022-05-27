@@ -62,23 +62,26 @@ void TransportMatrixFractureImplicit_PK::Setup()
   mesh_domain_ = S_->GetMesh();
   mesh_fracture_ = S_->GetMesh("fracture");
 
+  matrix_vol_flowrate_key_ = "volumetric_flow_rate";
+  fracture_vol_flowrate_key_ = "fracture-volumetric_flow_rate";
+
   // primary and secondary fields for matrix affected by non-uniform
   // distribution of DOFs
 
   // -- darcy flux in matrix
-  if (!S_->HasRecord("darcy_flux")) {
+  if (!S_->HasRecord(matrix_vol_flowrate_key_)) {
     auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S_->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "state")
+    S_->Require<CV_t, CVS_t>(matrix_vol_flowrate_key_, Tags::DEFAULT, "state")
       .SetMesh(mesh_domain_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
   }
 
   // -- darcy flux in fracture
-  if (!S_->HasRecord("fracture-darcy_flux")) {
+  if (!S_->HasRecord(fracture_vol_flowrate_key_)) {
     auto cvs = Operators::CreateNonManifoldCVS(mesh_fracture_);
-    *S_->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "state")
+    *S_->Require<CV_t, CVS_t>(fracture_vol_flowrate_key_, Tags::DEFAULT, "state")
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
   }
 
@@ -233,7 +236,7 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 
   int np(0), dir, shift;
   AmanziMesh::Entity_ID_List cells;
-  const auto& flux = *S_->Get<CV_t>("darcy_flux").ViewComponent("face");
+  const auto& flux = *S_->Get<CV_t>(matrix_vol_flowrate_key_).ViewComponent("face");
   const auto& mmap = flux.Map();
 
   for (int c = 0; c < ncells_owned_f; ++c) {
@@ -284,10 +287,10 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     pk_fracture->op_acc()->AddAccumulationDelta(*tv_one->SubVector(1)->Data(), phi_f, phi_f, dt, "cell");
 
     // assemble advection operators
-    pk_matrix->op_adv()->UpdateMatrices(S_->GetPtr<CV_t>("darcy_flux", Tags::DEFAULT).ptr());
+    pk_matrix->op_adv()->UpdateMatrices(S_->GetPtr<CV_t>(matrix_vol_flowrate_key_, Tags::DEFAULT).ptr());
     pk_matrix->op_adv()->ApplyBCs(true, true, true);
 
-    pk_fracture->op_adv()->UpdateMatrices(S_->GetPtr<CV_t>("fracture-darcy_flux", Tags::DEFAULT).ptr());
+    pk_fracture->op_adv()->UpdateMatrices(S_->GetPtr<CV_t>(fracture_vol_flowrate_key_, Tags::DEFAULT).ptr());
     pk_fracture->op_adv()->ApplyBCs(true, true, true);
 
     op_coupling00_->Setup(values1, 1.0);

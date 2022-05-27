@@ -93,8 +93,8 @@ using namespace Amanzi::AmanziGeometry;
   // test flux in bottom domain
   Amanzi::AmanziGeometry::Point uf_exact(0.0, 0.0, q0);
 
-  const auto& uf = *S->Get<CompositeVector>("darcy_flux").ViewComponent("face");
-  const auto& fmap = *S->Get<CompositeVector>("darcy_flux").ComponentMap("face");
+  const auto& uf = *S->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face");
+  const auto& fmap = *S->Get<CompositeVector>("volumetric_flow_rate").ComponentMap("face");
 
   bool flag(true);
   int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);

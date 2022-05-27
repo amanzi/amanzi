@@ -72,6 +72,9 @@ void FlowEnergyMatrixFracture_PK::Setup()
   normal_permeability_key_ = "fracture-normal_permeability";
   normal_conductivity_key_ = "fracture-normal_conductivity";
 
+  matrix_vol_flowrate_key_ = "volumetric_flow_rate";
+  fracture_vol_flowrate_key_ = "fracture-volumetric_flow_rate";
+
   // primary and secondary fields for matrix affected by non-uniform
   // distribution of DOFs, so we need to define it here
   // -- pressure
@@ -89,20 +92,20 @@ void FlowEnergyMatrixFracture_PK::Setup()
   }
 
   // -- darcy flux
-  if (!S_->HasRecord("darcy_flux")) {
+  if (!S_->HasRecord(matrix_vol_flowrate_key_)) {
     std::string name("face");
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S_->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "flow")
+    S_->Require<CV_t, CVS_t>(matrix_vol_flowrate_key_, Tags::DEFAULT, "flow")
       .SetMesh(mesh_domain_)->SetGhosted(true)
       ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
-    AddDefaultPrimaryEvaluator_("darcy_flux", Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator_(matrix_vol_flowrate_key_, Tags::DEFAULT);
   }
 
   // -- darcy flux for fracture
-  if (!S_->HasRecord("fracture-darcy_flux")) {
+  if (!S_->HasRecord(fracture_vol_flowrate_key_)) {
     auto cvs2 = Operators::CreateNonManifoldCVS(mesh_fracture_);
-    *S_->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "flow")
+    *S_->Require<CV_t, CVS_t>(fracture_vol_flowrate_key_, Tags::DEFAULT, "flow")
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
   }
 
@@ -476,7 +479,7 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
   S_->Get<CV_t>("enthalpy").ScatterMasterToGhosted("cell");
   S_->Get<CV_t>("molar_density_liquid").ScatterMasterToGhosted("cell");
   S_->Get<CV_t>("temperature").ScatterMasterToGhosted("cell");
-  S_->Get<CV_t>("darcy_flux").ScatterMasterToGhosted("face");
+  S_->Get<CV_t>(matrix_vol_flowrate_key_).ScatterMasterToGhosted("face");
 
   // extract enthalpy fields
   S_->GetEvaluator("enthalpy").Update(*S_, "enthalpy");
@@ -496,7 +499,7 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
 
   int np(0), dir, shift;
   AmanziMesh::Entity_ID_List cells;
-  const auto& flux = *S_->Get<CV_t>("darcy_flux").ViewComponent("face", true);
+  const auto& flux = *S_->Get<CV_t>(matrix_vol_flowrate_key_).ViewComponent("face", true);
   const auto& mmap = flux.Map();
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);

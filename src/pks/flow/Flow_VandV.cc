@@ -28,11 +28,11 @@ void Flow_PK::VV_FractureConservationLaw() const
 {
   if (!coupled_to_matrix_ || fabs(dt_) < 1e+10) return;
 
-  const auto& fracture_flux = *S_->Get<CompositeVector>("fracture-darcy_flux").ViewComponent("face", true);
-  const auto& matrix_flux = *S_->Get<CompositeVector>("darcy_flux").ViewComponent("face", true);
+  const auto& fracture_flux = *S_->Get<CompositeVector>("fracture-volumetric_flow_rate").ViewComponent("face", true);
+  const auto& matrix_flux = *S_->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face", true);
 
-  const auto& fracture_map = S_->Get<CompositeVector>("fracture-darcy_flux").Map().Map("face", true);
-  const auto& matrix_map = S_->Get<CompositeVector>("darcy_flux").Map().Map("face", true);
+  const auto& fracture_map = S_->Get<CompositeVector>("fracture-volumetric_flow_rate").Map().Map("face", true);
+  const auto& matrix_map = S_->Get<CompositeVector>("volumetric_flow_rate").Map().Map("face", true);
 
   auto mesh_matrix = S_->GetMesh("domain");
 
@@ -173,11 +173,11 @@ void Flow_PK::VV_ValidateBCs() const
 void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
 {
   const auto& phi = *S->Get<CompositeVector>(porosity_key_).ViewComponent("cell");
-  const auto& flux = *S->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
+  const auto& flowrate = *S->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
   const auto& ws = *S->Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
 
   std::vector<int>& bc_model = op_bc_->bc_model();
-  double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dt_;
+  double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flowrate) * rho_ * dt_;
 
   double mass_amanzi = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
@@ -207,7 +207,7 @@ void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
 ******************************************************************* */
 void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const
 {
-  const auto& flux = *S->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face");
+  const auto& flowrate = *S->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face");
 
   int dir, f, c, nbcs(0);
   double tmp, outflow(0.0);
@@ -220,7 +220,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) c
         if (f < nfaces_owned) {
           c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
           mesh_->face_normal(f, false, c, &dir);
-          tmp = flux[0][f] * dir;
+          tmp = flowrate[0][f] * dir;
           if (tmp > 0.0) outflow += tmp;
         }
       }

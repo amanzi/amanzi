@@ -173,20 +173,20 @@ class DarcyProblem {
   }
 
   double calculateDarcyFluxError(AmanziGeometry::Point& velocity_exact) {
-    auto& flux = *S->Get<CompositeVector>("darcy_flux").ViewComponent("face");
+    auto& flowrate = *S->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face");
 
     double error_L2 = 0.0;
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
-      error_L2 += std::pow(flux[0][f] - velocity_exact * normal, 2.0);
-      // if (MyPID == 0) std::cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << std::endl;
+      error_L2 += std::pow(flowrate[0][f] - velocity_exact * normal, 2.0);
+      // if (MyPID == 0) std::cout << f << " " << flowrate[0][f] << " exact=" << velocity_exact * normal << std::endl;
     }
     return sqrt(error_L2);
   }
 
   double calculateDarcyDivergenceError() {
-    auto& cv = S->GetW<CompositeVector>("darcy_flux", Tags::DEFAULT, passwd);
+    auto& cv = S->GetW<CompositeVector>("volumetric_flow_rate", Tags::DEFAULT, passwd);
     cv.ScatterMasterToGhosted("face");
     Epetra_MultiVector& flux = *cv.ViewComponent("face", true);
 

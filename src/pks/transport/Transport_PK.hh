@@ -185,7 +185,7 @@ class Transport_PK : public PK_Physical {
 
   // names of state fields 
   Key tcc_key_;
-  Key darcy_flux_key_;
+  Key vol_flowrate_key_;
   Key porosity_key_, transport_porosity_key_, permeability_key_;
   Key saturation_liquid_key_, prev_saturation_liquid_key_;
   Key water_content_key_, prev_water_content_key_;

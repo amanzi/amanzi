@@ -107,7 +107,7 @@
         <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
       </ParameterList>
 
-      <ParameterList name="darcy_flux">
+      <ParameterList name="volumetric_flow_rate">
         <Parameter name="dot with normal" type="bool" value="true"/>
         <ParameterList name="function">
           <ParameterList name="All domain">

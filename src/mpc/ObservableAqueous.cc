@@ -232,12 +232,12 @@ void ObservableAqueous::ComputeObservation(
     // }
   } else if (variable_ == "aqueous mass flow rate" || 
              variable_ == "aqueous volumetric flow rate") {
-    Key darcy_flux_key = Keys::getKey(domain_, "darcy_flux");
+    Key vol_flowrate_key = Keys::getKey(domain_, "volumetric_flow_rate");
     Teuchos::RCP<const Epetra_MultiVector> aperture_rcp;
-    const auto& darcy_flux = *S.Get<CompositeVector>(darcy_flux_key).ViewComponent("face");
+    const auto& flowrate = *S.Get<CompositeVector>(vol_flowrate_key).ViewComponent("face");
     if (domain_ == "fracture")
       aperture_rcp = S.Get<CompositeVector>("fracture-aperture").ViewComponent("cell");
-    const auto& fmap = *S.Get<CompositeVector>(darcy_flux_key).Map().Map("face", true);
+    const auto& fmap = *S.Get<CompositeVector>(vol_flowrate_key).Map().Map("face", true);
     Amanzi::AmanziMesh::Entity_ID_List cells;
     
     if (obs_boundary_ == 1) { // observation is on a boundary set
@@ -256,7 +256,7 @@ void ObservableAqueous::ComputeObservation(
           tmp = (rho_c.get()) ? (*rho_c)[0][c] / CommonDefs::MOLAR_MASS_H2O : rho;
 
         int g = fmap.FirstPointInElement(f);
-        *value  += sign * darcy_flux[0][g] * tmp * scale;
+        *value  += sign * flowrate[0][g] * tmp * scale;
         *volume += area * scale;
       }
     } else if (obs_planar_) {  // observation is on an interior planar set
@@ -277,7 +277,7 @@ void ObservableAqueous::ComputeObservation(
           tmp = (rho_c.get()) ? (*rho_c)[0][c] / CommonDefs::MOLAR_MASS_H2O : rho;
 
         int g = fmap.FirstPointInElement(f);        
-        *value  += sign * darcy_flux[0][g] * tmp * scale;
+        *value  += sign * flowrate[0][g] * tmp * scale;
         *volume += area * scale;
       }
     } else {

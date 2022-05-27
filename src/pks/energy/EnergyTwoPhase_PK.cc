@@ -197,7 +197,7 @@ void EnergyTwoPhase_PK::Initialize()
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = opfactory_adv.Create(oplist_adv, mesh_);
 
-  const auto& flux = S_->Get<CV_t>(darcy_flux_key_);
+  const auto& flux = S_->Get<CV_t>(vol_flowrate_key_);
   op_matrix_advection_->Setup(flux);
   op_matrix_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
   op_advection_ = op_matrix_advection_->global_operator();

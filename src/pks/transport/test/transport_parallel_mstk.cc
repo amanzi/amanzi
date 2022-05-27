@@ -72,7 +72,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
-  auto& flux = *S->GetW<CompositeVector>("darcy_flux", passwd).ViewComponent("face");
+  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);

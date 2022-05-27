@@ -208,7 +208,7 @@ void Darcy_PK::Setup()
     elist.set<std::string>("domain name", domain_)
          .set("names", Teuchos::Array<std::string>({ darcy_velocity_key_ }))
          .set("tags", Teuchos::Array<std::string>({ "" }))
-         .set<std::string>("darcy flux key", darcy_flux_key_);
+         .set<std::string>("volumetric flow rate key", vol_flowrate_key_);
     auto eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S_->SetEvaluator(darcy_velocity_key_, Tags::DEFAULT, eval);
   }
@@ -237,7 +237,7 @@ void Darcy_PK::Setup()
   }
 
   // save frequently used evaluators 
-  darcy_flux_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(darcy_flux_key_, Tags::DEFAULT));
+  vol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT));
 }
 
 
@@ -531,16 +531,16 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 ****************************************************************** */
 void Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
-  // calculate Darcy mass flux
-  auto flux = S_->GetPtrW<CV_t>(darcy_flux_key_, Tags::DEFAULT, passwd_);
+  // calculate mass flow rate first, then scale it by density
+  auto flowrate = S_->GetPtrW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
 
   if (coupled_to_matrix_ || flow_on_manifold_) {
-    op_diff_->UpdateFluxNonManifold(solution.ptr(), flux.ptr());
-    flux->Scale(1.0 / rho_);
+    op_diff_->UpdateFluxNonManifold(solution.ptr(), flowrate.ptr());
+    flowrate->Scale(1.0 / rho_);
     VV_FractureConservationLaw();
   } else {
-    op_diff_->UpdateFlux(solution.ptr(), flux.ptr());
-    flux->Scale(1.0 / rho_);
+    op_diff_->UpdateFlux(solution.ptr(), flowrate.ptr());
+    flowrate->Scale(1.0 / rho_);
   }
 
   // update time derivative

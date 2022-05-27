@@ -93,7 +93,7 @@ void RunTestConvergence(std::string input_xml) {
 
     double pressure_err, flux_err, div_err;  // error checks
     const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
-    const auto& flux = *S->GetW<CompositeVector>("darcy_flux", "flow").ViewComponent("face", true);
+    const auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", "flow").ViewComponent("face", true);
 
     pressure_err = CalculatePressureCellError(mesh, p);
     flux_err = CalculateDarcyFluxError(mesh, flux);

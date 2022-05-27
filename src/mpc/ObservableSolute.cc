@@ -104,7 +104,7 @@ void ObservableSolute::ComputeObservation(
   Key ws_key =  Keys::getKey(domain_, "saturation_liquid");
   Key tcc_key = Keys::getKey(domain_, "total_component_concentration");
   Key poro_key = Keys::getKey(domain_, "porosity");
-  Key darcy_key = Keys::getKey(domain_, "darcy_flux");
+  Key darcy_key = Keys::getKey(domain_, "volumetric_flow_rate");
   
   // fields below are subject to various input conditions
   Key total_sorbed_key = Keys::getKey(domain_, "total_sorbed");
@@ -173,7 +173,7 @@ void ObservableSolute::ComputeObservation(
 
   } else if (variable_ == comp_names_[tcc_index_] + " volumetric flow rate" ||
              variable_ == comp_names_[tcc_index_] + " breakthrough curve") {
-    const auto& darcy_flux = *S.Get<CompositeVector>(darcy_key).ViewComponent("face");
+    const auto& flowrate = *S.Get<CompositeVector>(darcy_key).ViewComponent("face");
     const auto& fmap = *S.Get<CompositeVector>(darcy_key).Map().Map("face", true);
     Amanzi::AmanziMesh::Entity_ID_List cells;
 
@@ -188,7 +188,7 @@ void ObservableSolute::ComputeObservation(
         double factor = units_.concentration_factor();
         int g = fmap.FirstPointInElement(f);
 
-        *value += std::max(0.0, sign * darcy_flux[0][g]) * tcc[tcc_index_][c] * factor;
+        *value += std::max(0.0, sign * flowrate[0][g]) * tcc[tcc_index_][c] * factor;
         *volume += area * factor;
       }
 
@@ -199,14 +199,14 @@ void ObservableSolute::ComputeObservation(
 
         int csign, c = cells[0];
         const AmanziGeometry::Point& face_normal = mesh_->face_normal(f, false, c, &csign);
-        if (darcy_flux[0][f] * csign < 0) c = cells[1];
+        if (flowrate[0][f] * csign < 0) c = cells[1];
 
         double area = mesh_->face_area(f);
         double sign = (reg_normal_ * face_normal) * csign / area;
         double factor = units_.concentration_factor();
         int g = fmap.FirstPointInElement(f);
         
-        *value += sign * darcy_flux[0][g] * tcc[tcc_index_][c] * factor;
+        *value += sign * flowrate[0][g] * tcc[tcc_index_][c] * factor;
         *volume += area * factor;
       }
 

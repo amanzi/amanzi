@@ -279,8 +279,8 @@ void TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
       tcc_next[i][c] = tcc_prev[i][c] * vol_phi_ws;
   }
 
-  auto darcy_flux = *S_->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
-  const auto& flux_map = S_->Get<CompositeVector>(darcy_flux_key_).Map().Map("face", true);
+  auto flowrate = *S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
+  const auto& flux_map = S_->Get<CompositeVector>(vol_flowrate_key_).Map().Map("face", true);
  
   // advance all components at once
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
@@ -290,7 +290,7 @@ void TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
       int c1 = upwind_cells_[f][j];
       int c2 = downwind_cells_[f][j];
                 
-      double u = fabs(darcy_flux[0][g + j]);
+      double u = fabs(flowrate[0][g + j]);
 
       if (c1 >=0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
         for (int i = 0; i < num_advect; i++) {

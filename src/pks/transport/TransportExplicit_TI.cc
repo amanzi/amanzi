@@ -38,7 +38,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative(
 void TransportExplicit_PK::FunctionalTimeDerivative_MUSCL_(
     double t, const CompositeVector& component, CompositeVector& func)
 {
-  auto darcy_flux = S_->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
+  auto flowrate = S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
 
   // distribute vector
   component.ScatterMasterToGhosted("cell");
@@ -71,7 +71,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative_MUSCL_(
   lifting_->Init(plist);
   lifting_->Compute(component_rcp);
 
-  limiter_->Init(plist, darcy_flux);
+  limiter_->Init(plist, flowrate);
   limiter_->ApplyLimiter(component_rcp, 0, lifting_, bc_model, bc_value);
   lifting_->data()->ScatterMasterToGhosted("cell");
 
@@ -81,7 +81,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative_MUSCL_(
   int c1, c2;
   double u, u1, u2, umin, umax, upwind_tcc, tcc_flux;
 
-  const auto& flux_map = S_->Get<CompositeVector>(darcy_flux_key_).Map().Map("face", true);
+  const auto& flux_map = S_->Get<CompositeVector>(vol_flowrate_key_).Map().Map("face", true);
 
   func.PutScalar(0.0);
   for (int f = 0; f < nfaces_wghost; f++) {
@@ -100,7 +100,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative_MUSCL_(
     }
 
     int g = flux_map->FirstPointInElement(f);
-    u = fabs((*darcy_flux)[0][g]);
+    u = fabs((*flowrate)[0][g]);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
     if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
@@ -152,7 +152,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative_MUSCL_(
               g += Operators::UniqueIndexFaceToCells(*mesh_, f, c2);
 
               if (c2 >=0) {
-                u = fabs((*darcy_flux)[0][g]);
+                u = fabs((*flowrate)[0][g]);
                 tcc_flux = u * values[i];
                 f_c[0][c2] += tcc_flux;
               }
@@ -188,7 +188,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative_MUSCL_(
 void TransportExplicit_PK::FunctionalTimeDerivative_FCT_(
     double t, const CompositeVector& component, CompositeVector& func)
 {
-  auto darcy_flux = S_->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
+  auto flowrate = S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
 
   auto poro = S_->Get<CompositeVector>(porosity_key_).ViewComponent("cell", true);
   auto prev_sat = S_->Get<CompositeVector>(prev_saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell", true);
@@ -253,7 +253,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative_FCT_(
     c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
     c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
 
-    u = dt_ * fabs((*darcy_flux)[0][f]);
+    u = dt_ * fabs((*flowrate)[0][f]);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
     if (c1 == cells[0]) {
@@ -272,7 +272,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative_FCT_(
   }
 
   // boundary fluxes
-  const auto& flux_map = S_->Get<CompositeVector>(darcy_flux_key_).Map().Map("face", true);
+  const auto& flux_map = S_->Get<CompositeVector>(vol_flowrate_key_).Map().Map("face", true);
 
   for (int m = 0; m < bcs_.size(); m++) {
     std::vector<int>& tcc_index = bcs_[m]->tcc_index();
@@ -290,7 +290,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative_FCT_(
               g += Operators::UniqueIndexFaceToCells(*mesh_, f, c2);
 
               if (c2 >=0) {
-                u = dt_ * fabs((*darcy_flux)[0][g]);
+                u = dt_ * fabs((*flowrate)[0][g]);
                 tcc_flux = u * it->second[i];
                 flux_lo_f[0][f] = -tcc_flux;
                 flux_ho_f[0][f] = -tcc_flux;

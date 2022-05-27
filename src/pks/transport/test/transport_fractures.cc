@@ -94,8 +94,8 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   S->set_final_time(0.0);
 
   // modify the default state
-  auto& flux = *S->GetW<CompositeVector>("darcy_flux", "state").ViewComponent("face", true);
-  const auto flux_map = S->GetW<CompositeVector>("darcy_flux", "state").Map().Map("face", true);
+  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", "state").ViewComponent("face", true);
+  const auto flux_map = S->GetW<CompositeVector>("volumetric_flow_rate", "state").Map().Map("face", true);
 
   int dir;
   AmanziGeometry::Point velocity(1.0, 0.2, -0.1);
@@ -114,7 +114,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
       flux[0][g] = (velocity * normal) * dir;
     }
   }
-  S->GetRecordW("darcy_flux", "state").set_initialized();
+  S->GetRecordW("volumetric_flow_rate", "state").set_initialized();
 
   // initialize the transport process kernel
   TPK.Initialize();

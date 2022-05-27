@@ -60,6 +60,8 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
+  Key matrix_vol_flowrate_key_, fracture_vol_flowrate_key_;
+
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling00_, op_coupling01_;
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling10_, op_coupling11_;
 

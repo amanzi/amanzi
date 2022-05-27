@@ -239,7 +239,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   auto& mdf_list = mp_list_->sublist("operators").sublist("molecular diffusion operator").sublist("preconditioner");
 
   // work memory for miscalleneous operator
-  auto flux_tmp = Teuchos::rcp(new CompositeVector(S_->Get<CompositeVector>(darcy_flux_liquid_key_)));
+  auto flux_tmp = Teuchos::rcp(new CompositeVector(S_->Get<CompositeVector>(vol_flowrate_liquid_key_)));
   auto flux_acc = Teuchos::rcp(new CompositeVector(*flux_tmp));
 
   auto kr = CreateCVforUpwind(mesh_);

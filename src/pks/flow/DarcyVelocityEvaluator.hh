@@ -9,7 +9,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov) 
            Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Evaluator for determining darcy_velocity(darcy_flux).
+  Evaluator for computing the Darcy velocity.
 */
 
 #ifndef AMANZI_FLOW_DARCY_VELOCITY_EVALUATOR_
@@ -37,7 +37,7 @@ class DarcyVelocityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector
   // since cell requires face, the default behavior is not applicable
   virtual void EnsureCompatibility_ToDeps_(State& S) override {
     // if this were implemented, it should call something like:
-    // S.Require<CompositeVector,CompositeVectorSpace>(darcy_flux_key, tag)
+    // S.Require<CompositeVector,CompositeVectorSpace>(vol_flowrate_key, tag)
     //  .SetMesh(... the mesh ...)
     //  ->AddComponent("face", FACE, 1);
     //
@@ -46,7 +46,7 @@ class DarcyVelocityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector
   };
 
  protected:
-  Key darcy_flux_key_;
+  Key vol_flowrate_key_;
 };
 
 }  // namespace Flow

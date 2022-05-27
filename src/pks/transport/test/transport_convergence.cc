@@ -91,7 +91,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
 
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
-    auto& flux = *S->GetW<CompositeVector>("darcy_flux", passwd).ViewComponent("face", true);
+    auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face", true);
 
     AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
@@ -208,7 +208,7 @@ void ConvergenceBoxMeshes(int order, double tol, std::string limiter)
 
     // modify the default state for the problem at hand 
     std::string passwd("state"); 
-    auto& flux = *S->GetW<CompositeVector>("darcy_flux", passwd).ViewComponent("face", true);
+    auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face", true);
 
     AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
@@ -348,7 +348,7 @@ void ConvergencePolyMeshes(int order, double tol, std::string limiter)
 
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
-    auto& flux = *S->GetW<CompositeVector>("darcy_flux", passwd).ViewComponent("face", true);
+    auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face", true);
 
     AmanziGeometry::Point velocity(1.0, 0.0);
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);

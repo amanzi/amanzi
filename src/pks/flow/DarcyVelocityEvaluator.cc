@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Evaluator for darcy_velocity(darcy_flux)
+  Evaluator for Darcy velocity.
 */
 
 #include "MFD3D_Diffusion.hh"
@@ -26,8 +26,8 @@ DarcyVelocityEvaluator::DarcyVelocityEvaluator(Teuchos::ParameterList& plist)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   AMANZI_ASSERT(my_keys_.size() > 0);
-  darcy_flux_key_ = plist.get<std::string>("darcy flux key");
-  dependencies_.insert(std::make_pair(darcy_flux_key_, Tags::DEFAULT));
+  vol_flowrate_key_ = plist.get<std::string>("volumetric flow rate key");
+  dependencies_.insert(std::make_pair(vol_flowrate_key_, Tags::DEFAULT));
 }
 
 
@@ -36,7 +36,7 @@ DarcyVelocityEvaluator::DarcyVelocityEvaluator(Teuchos::ParameterList& plist)
 ****************************************************************** */
 DarcyVelocityEvaluator::DarcyVelocityEvaluator(const DarcyVelocityEvaluator& other)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      darcy_flux_key_(other.darcy_flux_key_) {}
+      vol_flowrate_key_(other.vol_flowrate_key_) {}
 
 
 /* ******************************************************************
@@ -54,12 +54,12 @@ void DarcyVelocityEvaluator::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
   Key domain = plist_.get<std::string>("domain name");
-  S.Get<CompositeVector>(darcy_flux_key_).ScatterMasterToGhosted("face");
+  S.Get<CompositeVector>(vol_flowrate_key_).ScatterMasterToGhosted("face");
 
-  const auto& flux = *S.Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
+  const auto& flux = *S.Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
   auto& result_c = *results[0]->ViewComponent("cell");
 
-  const auto& fmap = *S.Get<CompositeVector>(darcy_flux_key_).Map().Map("face", true);
+  const auto& fmap = *S.Get<CompositeVector>(vol_flowrate_key_).Map().Map("face", true);
 
   auto mesh = S.GetMesh(domain);
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

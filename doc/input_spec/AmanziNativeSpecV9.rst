@@ -416,7 +416,7 @@ Primary and derived fields
 
   * saturation [-]
   * hydraulic_head [m]
-  * darcy_flux (more precisely, volumetric flow rate) [m^3/s] 
+  * volumetric_flow_rate [m^3/s] 
   * permeability [m^2]
   * porosity [-]
   * specific_storage [m^-1]
@@ -751,7 +751,7 @@ The difference lies in the definition of the function which is now a multi-value
   is `"composite function`".
 
 * `"dot with normal`" [bool] triggers the special initialization of a
-  vector field such as the `"darcy_flux`". This field is defined by
+  vector field such as the `"volumetric_flow_rate`". This field is defined by
   projection of the velocity (a vector field) on face normals.
   Changing value to *false* will produce the vector field.
 
@@ -762,7 +762,7 @@ checkpoints of vis files. Default values are *true*.
 .. code-block:: xml
 
   <ParameterList name="initial conditions">  <!-- parent list -->
-  <ParameterList name="darcy_flux">
+  <ParameterList name="volumetric_flow_rate">
     <Parameter name="write checkpoint" type="bool" value="true"/>
     <Parameter name="write vis" type="bool" value="false"/>
     <Parameter name="dot with normal" type="bool" value="true"/>

@@ -39,7 +39,7 @@ using namespace Amanzi::AmanziGeometry;
 
   // modify the test
   plist->sublist("state").sublist("initial conditions")
-        .sublist("fracture-darcy_flux").sublist("function")
+        .sublist("fracture-volumetric_flow_rate").sublist("function")
         .sublist("All domain").sublist("function").sublist("dof 1 function")
         .sublist("function-constant").set<double>("value", u_f);
 

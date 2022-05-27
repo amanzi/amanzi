@@ -43,7 +43,7 @@ void Transport_PK::CalculateDispersionTensor_(
   D_.resize(ncells_owned);
   for (int c = 0; c < ncells_owned; c++) D_[c].Init(dim, 1);
 
-  const auto& darcy_flux = *S_->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
+  const auto& flowrate = *S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
 
   AmanziGeometry::Point velocity(dim);
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
@@ -56,7 +56,7 @@ void Transport_PK::CalculateDispersionTensor_(
     std::vector<WhetStone::Polynomial> flux(nfaces);
     for (int n = 0; n < nfaces; n++) {
       flux[n].Reshape(dim, 0);
-      flux[n](0) = darcy_flux[0][faces[n]];
+      flux[n](0) = flowrate[0][faces[n]];
     }
     mfd3d.L2Cell(c, flux, flux, NULL, poly);
 

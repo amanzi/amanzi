@@ -530,7 +530,7 @@
           <Parameter name="spatial distribution method" type="string" value="domain coupling"/>
           <Parameter name="submodel" type="string" value="flux exchange"/>
           <ParameterList name="source">
-            <Parameter name="flux key" type="string" value="darcy_flux"/>
+            <Parameter name="flux key" type="string" value="volumetric_flow_rate"/>
             <Parameter name="external field key" type="string" value="molar_density_liquid"/>
           </ParameterList>
         </ParameterList>

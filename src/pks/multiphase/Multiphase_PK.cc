@@ -127,8 +127,8 @@ void Multiphase_PK::Setup()
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid"); 
   mass_density_gas_key_ = Keys::getKey(domain_, "mass_density_gas"); 
 
-  darcy_flux_liquid_key_ = Keys::getKey(domain_, "darcy_flux_liquid"); 
-  darcy_flux_gas_key_ = Keys::getKey(domain_, "darcy_flux_gas"); 
+  vol_flowrate_liquid_key_ = Keys::getKey(domain_, "volumetric_flow_rate_liquid"); 
+  vol_flowrate_gas_key_ = Keys::getKey(domain_, "volumetric_flow_rate_gas"); 
 
   tws_key_ = Keys::getKey(domain_, "total_water_storage");
   tcs_key_ = Keys::getKey(domain_, "total_component_storage");
@@ -253,13 +253,13 @@ void Multiphase_PK::Setup()
   }
 
   // Darcy volume fluxes
-  if (!S_->HasRecord(darcy_flux_liquid_key_)) {
-    S_->Require<CV_t, CVS_t>(darcy_flux_liquid_key_, Tags::DEFAULT, passwd_)
+  if (!S_->HasRecord(vol_flowrate_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(vol_flowrate_liquid_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
   }
 
-  if (!S_->HasRecord(darcy_flux_gas_key_)) {
-    S_->Require<CV_t, CVS_t>(darcy_flux_gas_key_, Tags::DEFAULT, passwd_)
+  if (!S_->HasRecord(vol_flowrate_gas_key_)) {
+    S_->Require<CV_t, CVS_t>(vol_flowrate_gas_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
   }
 
@@ -514,7 +514,7 @@ void Multiphase_PK::Initialize()
   smooth_mu_ = mp_list_->get<double>("smoothing parameter mu", 0.0);
 
   // some defaults
-  flux_names_ = { darcy_flux_liquid_key_, darcy_flux_gas_key_ };
+  flux_names_ = { vol_flowrate_liquid_key_, vol_flowrate_gas_key_ };
 
   auto aux_list = mp_list_->sublist("molecular diffusion");
   mol_diff_l_ = aux_list.get<Teuchos::Array<double> >("aqueous values").toVector();
@@ -732,8 +732,8 @@ void Multiphase_PK::InitializeFields_()
   if (system_["energy eqn"])
     InitializeFieldFromField_(prev_energy_key_, energy_key_, true);
 
-  InitializeField_(darcy_flux_liquid_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeField_(darcy_flux_gas_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeField_(vol_flowrate_liquid_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeField_(vol_flowrate_gas_key_, Tags::DEFAULT, passwd_, 0.0);
 }
 
 
@@ -774,8 +774,8 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   auto copy_names = soln_names_;
   copy_names.push_back(prev_tws_key_);
   copy_names.push_back(prev_tcs_key_);
-  copy_names.push_back(darcy_flux_liquid_key_);
-  copy_names.push_back(darcy_flux_gas_key_);
+  copy_names.push_back(vol_flowrate_liquid_key_);
+  copy_names.push_back(vol_flowrate_gas_key_);
   if (system_["energy eqn"])
     copy_names.push_back(prev_energy_key_);
 
@@ -850,7 +850,7 @@ void Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   std::vector<std::string> relperm_name{advection_liquid_key_, advection_gas_key_};
   std::vector<std::string> viscosity_name{viscosity_liquid_key_, viscosity_gas_key_};
   std::vector<std::string> varp_name{pressure_liquid_key_, pressure_gas_key_};
-  std::vector<std::string> flux_name{darcy_flux_liquid_key_, darcy_flux_gas_key_};
+  std::vector<std::string> flux_name{vol_flowrate_liquid_key_, vol_flowrate_gas_key_};
 
   for (int phase = 0; phase < 2; ++phase) {
     S_->GetEvaluator(relperm_name[phase]).Update(*S_, passwd_);

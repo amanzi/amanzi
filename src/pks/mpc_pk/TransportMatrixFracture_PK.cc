@@ -64,19 +64,19 @@ void TransportMatrixFracture_PK::Setup()
 
   // darcy fluxes use non-uniform distribution of DOFs
   // -- darcy flux for matrix
-  if (!S_->HasRecord("darcy_flux")) {
+  if (!S_->HasRecord("volumetric_flow_rate")) {
     auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S_->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "transport")
+    S_->Require<CV_t, CVS_t>("volumetric_flow_rate", Tags::DEFAULT, "transport")
       .SetMesh(mesh_domain_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
   }
 
   // -- darcy flux for fracture
-  if (!S_->HasRecord("fracture-darcy_flux")) {
+  if (!S_->HasRecord("fracture-volumetric_flow_rate")) {
     auto cvs = Operators::CreateNonManifoldCVS(mesh_fracture_);
-    *S_->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "transport")
+    *S_->Require<CV_t, CVS_t>("fracture-volumetric_flow_rate", Tags::DEFAULT, "transport")
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
   }
 
@@ -114,7 +114,7 @@ void TransportMatrixFracture_PK::Setup()
 
    srclist.sublist("sink")
          .set<std::string>("external field key", tcc_matrix_key_)
-         .set<std::string>("flux key", "darcy_flux");
+         .set<std::string>("flux key", "volumetric_flow_rate");
 
   // setup the sub-PKs
   PK_MPCWeak::Setup();

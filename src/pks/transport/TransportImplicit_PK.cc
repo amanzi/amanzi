@@ -137,7 +137,7 @@ void TransportImplicit_PK::Initialize()
   // refresh data BC and source data  
   UpdateBoundaryData(t_physics_, t_physics_, 0);
 
-  auto flux = S_->GetPtr<CompositeVector>(darcy_flux_key_, Tags::DEFAULT);
+  auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
   op_adv_->Setup(*flux);
   op_adv_->UpdateMatrices(flux.ptr());
 
@@ -210,7 +210,7 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
   
     // apply boundary conditions
-    op_adv_->UpdateMatrices(S_->GetPtr<CompositeVector>(darcy_flux_key_, Tags::DEFAULT).ptr());
+    op_adv_->UpdateMatrices(S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT).ptr());
     op_adv_->ApplyBCs(true, true, true);
 
     if (flag_dispersion_) {

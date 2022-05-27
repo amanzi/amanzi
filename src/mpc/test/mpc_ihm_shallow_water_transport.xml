@@ -354,7 +354,7 @@
         <Parameter name="effective transport porosity" type="bool" value="false"/>
         <Parameter name="permeability field is required" type="bool" value="false"/>
         <Parameter name="eos lookup table" type="string" value="false"/>
-        <Parameter name="darcy flux key" type="string" value="riemann_flux"/>
+        <Parameter name="volumetric flow rate key" type="string" value="riemann_flux"/>
         <Parameter name="saturation key" type="string" value="ponded_depth"/>
       </ParameterList>
       <ParameterList name="verbose object">

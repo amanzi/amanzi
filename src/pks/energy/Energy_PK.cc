@@ -85,7 +85,7 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
   mol_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas");
   x_gas_key_ = Keys::getKey(domain_, "molar_fraction_gas");
 
-  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
+  vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate"); 
 }
 
 
@@ -167,8 +167,8 @@ void Energy_PK::Setup()
   }
 
   // -- darcy flux
-  if (!S_->HasRecord(darcy_flux_key_)) {
-    S_->Require<CV_t, CVS_t>(darcy_flux_key_, Tags::DEFAULT, passwd_)
+  if (!S_->HasRecord(vol_flowrate_key_)) {
+    S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
   }
 }
@@ -254,13 +254,13 @@ void Energy_PK::InitializeFields_()
         *vo_->os() << "initialized temperature to default value 298 K." << std::endl;  
   }
 
-  if (S_->GetRecord(darcy_flux_key_).owner() == passwd_) {
-    if (!S_->GetRecord(darcy_flux_key_).initialized()) {
-      S_->GetW<CV_t>(darcy_flux_key_, passwd_).PutScalar(0.0);
-      S_->GetRecordW(darcy_flux_key_, passwd_).set_initialized();
+  if (S_->GetRecord(vol_flowrate_key_).owner() == passwd_) {
+    if (!S_->GetRecord(vol_flowrate_key_).initialized()) {
+      S_->GetW<CV_t>(vol_flowrate_key_, passwd_).PutScalar(0.0);
+      S_->GetRecordW(vol_flowrate_key_, passwd_).set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initialized darcy_flux to default value 0.0" << std::endl;  
+          *vo_->os() << "initialized volumetric_flow_rate to default value 0.0" << std::endl;  
     }
   }
 }

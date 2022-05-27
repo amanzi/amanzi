@@ -431,7 +431,7 @@ void Richards_PK::Setup()
     Teuchos::ParameterList elist(darcy_velocity_key_);
     elist.set<std::string>("domain name", domain_);
     elist.set<std::string>("darcy velocity key", darcy_velocity_key_)
-         .set<std::string>("darcy flux key", darcy_flux_key_)
+         .set<std::string>("volumetric flow rate key", vol_flowrate_key_)
          .set<std::string>("tag", "");
 
     auto eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
@@ -452,7 +452,7 @@ void Richards_PK::Setup()
   // Since high-level PK may own some fields, we have to populate 
   // frequently used evaluators outside of field registration
   pressure_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));
-  darcy_flux_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(darcy_flux_key_, Tags::DEFAULT));
+  vol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT));
 }
 
 
@@ -513,7 +513,7 @@ void Richards_PK::Initialize()
   else upwind_frequency_ = FLOW_UPWIND_UPDATE_TIMESTEP;  
 
   // face component of upwind field matches that of the flow field 
-  auto cvs = S_->Get<CV_t>(darcy_flux_key_).Map();
+  auto cvs = S_->Get<CV_t>(vol_flowrate_key_).Map();
   cvs.SetOwned(false);
   cvs.AddComponent("cell", AmanziMesh::CELL, 1);
   alpha_upwind_ = Teuchos::rcp(new CompositeVector(cvs));
@@ -592,7 +592,7 @@ void Richards_PK::Initialize()
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap_owned));
 
   // Initialize flux copy for the upwind operator.
-  darcy_flux_copy = Teuchos::rcp(new CompositeVector(S_->Get<CV_t>(darcy_flux_key_)));
+  vol_flowrate_copy = Teuchos::rcp(new CompositeVector(S_->Get<CV_t>(vol_flowrate_key_)));
 
   // Conditional initialization of lambdas from pressures.
   auto& pressure = S_->GetW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_);
@@ -651,8 +651,8 @@ void Richards_PK::Initialize()
 
   op_preconditioner_->Init();
   op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);
-  op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
-  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr(), molar_rho_);
+  op_preconditioner_diff_->UpdateMatrices(vol_flowrate_copy.ptr(), solution.ptr());
+  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(vol_flowrate_copy.ptr(), solution.ptr(), molar_rho_);
   op_preconditioner_diff_->ApplyBCs(true, true, true);
 
   if (vapor_diffusion_) {
@@ -734,13 +734,12 @@ void Richards_PK::Initialize()
   // Trigger update of secondary fields depending on the primary pressure.
   pressure_eval_->SetChanged();
 
-  // Derive mass flux (state may not have it at time 0)
+  // Derive mass flow rate (state may not have it at time 0)
   double tmp;
-  darcy_flux_copy->Norm2(&tmp);
+  vol_flowrate_copy->Norm2(&tmp);
   if (tmp == 0.0) {
-    op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux_copy.ptr());
-
-    darcy_flux_copy->ScaleMasterAndGhosted(1.0 / molar_rho_);
+    op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate_copy.ptr());
+    vol_flowrate_copy->ScaleMasterAndGhosted(1.0 / molar_rho_);
   }
 
   // Subspace entering: re-initialize lambdas.
@@ -754,10 +753,10 @@ void Richards_PK::Initialize()
       // update mass flux
       op_matrix_->Init();
       op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-      op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux_copy.ptr());
+      op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate_copy.ptr());
 
       // normalize to Darcy flux, m/s
-      darcy_flux_copy->ScaleMasterAndGhosted(1.0 / molar_rho_);
+      vol_flowrate_copy->ScaleMasterAndGhosted(1.0 / molar_rho_);
     }
   }
 
@@ -1033,18 +1032,18 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void Richards_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   // calculate Darcy mass flux
-  auto darcy_flux = S_->GetPtrW<CV_t>(darcy_flux_key_, Tags::DEFAULT, passwd_);
+  auto vol_flowrate = S_->GetPtrW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
 
   if (coupled_to_matrix_ || flow_on_manifold_) {
-    op_matrix_diff_->UpdateFluxNonManifold(solution.ptr(), darcy_flux.ptr());
+    op_matrix_diff_->UpdateFluxNonManifold(solution.ptr(), vol_flowrate.ptr());
     VV_FractureConservationLaw();
   } else {
-    op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux.ptr());
+    op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate.ptr());
   }
 
-  Epetra_MultiVector& flux = *darcy_flux->ViewComponent("face", true);
-  flux.Scale(1.0 / molar_rho_);
-  *darcy_flux_copy->ViewComponent("face", true) = flux;
+  Epetra_MultiVector& flowrate = *vol_flowrate->ViewComponent("face", true);
+  flowrate.Scale(1.0 / molar_rho_);
+  *vol_flowrate_copy->ViewComponent("face", true) = flowrate;
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;

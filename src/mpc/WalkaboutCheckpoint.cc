@@ -51,8 +51,8 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
   int nnodes_owned  = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 
   double rho = S->Get<double>("const_fluid_density");
-  S->Get<CompositeVector>("darcy_flux").ScatterMasterToGhosted();
-  const auto& flux = *S->Get<CompositeVector>("darcy_flux").ViewComponent("face", true);
+  S->Get<CompositeVector>("volumetric_flow_rate").ScatterMasterToGhosted();
+  const auto& flux = *S->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face", true);
   
   int d = mesh->space_dimension();
   AmanziGeometry::Point node_velocity(d);

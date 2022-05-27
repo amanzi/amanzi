@@ -74,7 +74,7 @@ void Flow_PK::Setup()
 
   // register fields
   // -- keys
-  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
+  vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate"); 
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
   diffusion_liquid_key_ = Keys::getKey(domain_, physical_models->get<std::string>("diffusion liquid key", "diffusion_liquid"));
   aperture_key_ = Keys::getKey(domain_, "aperture"); 
@@ -129,20 +129,20 @@ void Flow_PK::Setup()
     }
   }
 
-  // -- darcy flux
-  if (!S_->HasRecord(darcy_flux_key_)) {
+  // -- volumetric flow rate
+  if (!S_->HasRecord(vol_flowrate_key_)) {
     if (flow_on_manifold_) {
       auto cvs = Operators::CreateNonManifoldCVS(mesh_);
-      *S_->Require<CV_t, CVS_t>(darcy_flux_key_, Tags::DEFAULT, passwd_)
+      *S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true) = *cvs;
     } else {
-      S_->Require<CV_t, CVS_t>(darcy_flux_key_, Tags::DEFAULT, passwd_)
+      S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
     }
   }
 
-  if (!S_->HasEvaluator(darcy_flux_key_, Tags::DEFAULT)) {
-    AddDefaultPrimaryEvaluator_(darcy_flux_key_);
+  if (!S_->HasEvaluator(vol_flowrate_key_, Tags::DEFAULT)) {
+    AddDefaultPrimaryEvaluator_(vol_flowrate_key_);
   }
 
   // Wells
@@ -256,7 +256,7 @@ void Flow_PK::InitializeFields_()
   InitializeField_(hydraulic_head_key_, Tags::DEFAULT, passwd_, 0.0);
   InitializeField_(pressure_head_key_, Tags::DEFAULT, passwd_, 0.0);
 
-  InitializeField_(darcy_flux_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeField_(vol_flowrate_key_, Tags::DEFAULT, passwd_, 0.0);
 }
 
 
@@ -293,7 +293,7 @@ void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
   }
 
   // calculate full velocity vector
-  darcy_flux_eval_->SetChanged();
+  vol_flowrate_eval_->SetChanged();
   S->GetEvaluator(darcy_velocity_key_, Tags::DEFAULT).Update(*S, darcy_velocity_key_);
 }
 
@@ -749,9 +749,9 @@ void Flow_PK::DeriveFaceValuesFromCellValues(
 * Calculate change of water volume per second due to boundary flux.                                          
 ****************************************************************** */
 double Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
-                                           const Epetra_MultiVector& darcy_flux) const
+                                           const Epetra_MultiVector& vol_flowrate) const
 {
-  const auto& fmap = darcy_flux.Map();
+  const auto& fmap = vol_flowrate.Map();
 
   double volume = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
@@ -764,9 +764,9 @@ double Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
       if (bc_model[f] != Operators::OPERATOR_BC_NONE && f < nfaces_owned) {
         int g = fmap.FirstPointInElement(f);
         if (fdirs[i] >= 0) {
-          volume -= darcy_flux[0][g];
+          volume -= vol_flowrate[0][g];
         } else {
-          volume += darcy_flux[0][g];
+          volume += vol_flowrate[0][g];
         }
       }
     }

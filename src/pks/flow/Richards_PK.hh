@@ -210,7 +210,7 @@ class Richards_PK : public Flow_PK {
   int functional_max_cell;
 
   // copies of state fields
-  Teuchos::RCP<CompositeVector> darcy_flux_copy;
+  Teuchos::RCP<CompositeVector> vol_flowrate_copy;
 
   // upwind
   int upwind_frequency_;

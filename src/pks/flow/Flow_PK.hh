@@ -84,7 +84,7 @@ class Flow_PK : public PK_PhysicalBDF {
 
   // -- utilities
   double WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
-                                    const Epetra_MultiVector& darcy_flux) const;
+                                    const Epetra_MultiVector& vol_flowrate) const;
 
   // -- V&V
   void VV_ValidateBCs() const;
@@ -149,7 +149,7 @@ class Flow_PK : public PK_PhysicalBDF {
   mutable double mass_bc, seepage_mass_, mass_initial;
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
-  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > darcy_flux_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > vol_flowrate_eval_;
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > pressure_eval_, pressure_msp_eval_;
 
   // DFN model
@@ -158,7 +158,7 @@ class Flow_PK : public PK_PhysicalBDF {
 
   // names of state fields 
   Key pressure_key_;
-  Key darcy_flux_key_, specific_storage_key_, specific_yield_key_;
+  Key vol_flowrate_key_, specific_storage_key_, specific_yield_key_;
   Key saturation_liquid_key_, prev_saturation_liquid_key_;
   Key porosity_key_, hydraulic_head_key_, pressure_head_key_;
   Key permeability_key_, diffusion_liquid_key_;
