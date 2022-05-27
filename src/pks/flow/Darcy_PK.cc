@@ -339,8 +339,8 @@ void Darcy_PK::Initialize()
     Ktmp(0, 0) = rho_ / mu;
     opfactory.SetConstantTensorCoefficient(Ktmp);
 
-    S_->GetEvaluator(permeability_key_).Update(*S_, permeability_key_);
-    auto kptr = S_->GetPtr<CV_t>(permeability_key_, Tags::DEFAULT);
+    S_->GetEvaluator(diffusion_liquid_key_).Update(*S_, diffusion_liquid_key_);
+    auto kptr = S_->GetPtr<CV_t>(diffusion_liquid_key_, Tags::DEFAULT);
     opfactory.SetVariableScalarCoefficient(kptr);
   }
 

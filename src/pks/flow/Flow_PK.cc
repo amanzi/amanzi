@@ -15,6 +15,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "EvaluatorMultiplicativeReciprocal.hh"
 #include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "Mesh_Algorithms.hh"
@@ -75,6 +76,7 @@ void Flow_PK::Setup()
   // -- keys
   darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
+  diffusion_liquid_key_ = Keys::getKey(domain_, physical_models->get<std::string>("diffusion liquid key", "diffusion_liquid"));
   aperture_key_ = Keys::getKey(domain_, "aperture"); 
 
   // -- constant fields
@@ -102,8 +104,21 @@ void Flow_PK::Setup()
     if (!S_->HasRecord(aperture_key_)) {
       S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-
       S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+    }
+
+    {
+      S_->Require<CV_t, CVS_t>(diffusion_liquid_key_, Tags::DEFAULT, diffusion_liquid_key_)
+        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+
+      Teuchos::ParameterList elist(diffusion_liquid_key_);
+      std::vector<std::string> listm({ Keys::getVarName(aperture_key_), 
+                                       Keys::getVarName(permeability_key_) });
+      elist.set<std::string>("my key", diffusion_liquid_key_)
+           .set<Teuchos::Array<std::string> >("multiplicative dependencies", listm)
+           .set<std::string>("tag", "");
+      auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
+      S_->SetEvaluator(diffusion_liquid_key_, Tags::DEFAULT, eval);
     }
 
   // -- matrix absolute permeability

@@ -400,11 +400,11 @@ void Richards_PK::Setup()
       kkey = relperm_key_;
     }
 
+    std::vector<std::string> listm({ Keys::getVarName(kkey), Keys::getVarName(mol_density_liquid_key_) });
+    std::vector<std::string> listr({ Keys::getVarName(viscosity_liquid_key_) });
+    if (flow_on_manifold_) listm.push_back(Keys::getVarName(aperture_key_));
+
     Teuchos::ParameterList elist(alpha_key_);
-    Teuchos::Array<std::string> listm, listr;
-    listm.push_back(Keys::getVarName(kkey));
-    listm.push_back(Keys::getVarName(mol_density_liquid_key_));
-    listr.push_back(Keys::getVarName(viscosity_liquid_key_));
     elist.set<std::string>("my key", alpha_key_)
          .set<Teuchos::Array<std::string> >("multiplicative dependencies", listm)
          .set<Teuchos::Array<std::string> >("reciprocal dependencies", listr)

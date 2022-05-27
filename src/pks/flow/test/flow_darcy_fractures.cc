@@ -23,6 +23,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "IO.hh"
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
@@ -45,7 +46,7 @@ TEST(DARCY_TWO_FRACTURES) {
 
   // read parameter list
   std::string xmlFileName = "test/flow_darcy_fractures.xml";
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+  auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -115,6 +116,8 @@ TEST(DARCY_TWO_FRACTURES) {
   for (int c = 0; c < p.MyLength(); c++) {
     CHECK(p[0][c] > -1.0 && p[0][c] < 2.0);
   }
+  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Darcy", *plist));
+  WriteStateStatistics(*S, *vo);
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
@@ -122,8 +125,6 @@ TEST(DARCY_TWO_FRACTURES) {
     GMV::write_cell_data(p, 0, "pressure");
     GMV::close_data_file();
   }
-
-  
 }
 
 
