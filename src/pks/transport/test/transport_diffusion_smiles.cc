@@ -54,7 +54,7 @@ TEST(DIFFUSION_GAS_SMILES) {
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup();
-  TPK.CreateDefaultState(mesh, 1);
+  S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
   S->set_time(0.0);
@@ -64,9 +64,6 @@ TEST(DIFFUSION_GAS_SMILES) {
 
   // modify the default state for the problem at hand
   std::string passwd("state"); 
-  double sl(0.01);
-  S->GetW<CompositeVector>("prev_saturation_liquid", passwd).PutScalar(sl);
-  S->GetW<CompositeVector>("saturation_liquid", passwd).PutScalar(sl);
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
   flux.PutScalar(0.0);
 
@@ -75,6 +72,7 @@ TEST(DIFFUSION_GAS_SMILES) {
   // initialize a transport process kernel
   Amanzi::VerboseObject::global_hide_line_prefix = true;
   TPK.Initialize();
+  WriteStateStatistics(*S);
 
   // advance the state
   int iter = 0;
@@ -92,10 +90,10 @@ TEST(DIFFUSION_GAS_SMILES) {
     printf("AAA: %g %16.10g %16.10g ... %16.10g   %16.10g\n", t_new, tcc[0][0], tcc[0][1], tcc[0][25], tcc[1][25]);
   }
 
-  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Smiles", *plist));
-  WriteStateStatistics(*S, *vo);
+  WriteStateStatistics(*S);
 
   // check for values
+  double sl(0.01);
   double tcc_eff = tcc[0][25] + tcc[1][25] * (1 - sl) / sl;
   printf("Normalized effective liquid concentration: %g \n", tcc_eff);
   CHECK_CLOSE(0.14, tcc_eff, 0.002);

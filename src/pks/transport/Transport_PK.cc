@@ -23,6 +23,7 @@
 // Amanzi
 #include "BCs.hh"
 #include "errors.hh"
+#include "EvaluatorMultiplicativeReciprocal.hh"
 #include "Mesh.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_Diffusion.hh"
@@ -168,7 +169,7 @@ void Transport_PK::Setup()
   auto physical_models = Teuchos::sublist(tp_list_, "physical models and assumptions");
   bool abs_perm = physical_models->get<bool>("permeability field is required", false);
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single continuum");
-  bool transport_on_manifold = physical_models->get<bool>("transport in fractures", false);
+  transport_on_manifold_ = physical_models->get<bool>("transport in fractures", false);
   use_transport_porosity_ = physical_models->get<bool>("effective transport porosity", false);
   use_effective_diffusion_ = physical_models->get<bool>("effective transport diffusion", false);
   use_dispersion_ = physical_models->get<bool>("use dispersion solver", true);
@@ -185,7 +186,6 @@ void Transport_PK::Setup()
 
   tmp = physical_models->get<std::string>("saturation key", "saturation_liquid");
   saturation_liquid_key_ = Keys::getKey(domain_, tmp); 
-  prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_" + tmp); 
 
   water_content_key_ = Keys::getKey(domain_, "water_content"); 
   prev_water_content_key_ = Keys::getKey(domain_, "prev_water_content"); 
@@ -193,6 +193,8 @@ void Transport_PK::Setup()
   porosity_msp_key_ = Keys::getKey(domain_, "porosity_msp"); 
   water_content_msp_key_ = Keys::getKey(domain_, "water_content_msp"); 
   prev_water_content_msp_key_ = Keys::getKey(domain_, "prev_water_content_msp"); 
+
+  aperture_key_ = Keys::getKey(domain_, "aperture"); 
 
   // require state fields when Flow PK is off
   S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
@@ -202,7 +204,7 @@ void Transport_PK::Setup()
       SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, dim);
   }
   if (!S_->HasRecord(vol_flowrate_key_)) {
-    if (transport_on_manifold) {
+    if (transport_on_manifold_) {
       auto cvs = Operators::CreateNonManifoldCVS(mesh_);
       *S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_).SetMesh(mesh_)->SetGhosted(true) = *cvs;
     } else {
@@ -212,14 +214,15 @@ void Transport_PK::Setup()
   }
 
   if (!S_->HasRecord(saturation_liquid_key_)) {
-    S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, passwd_)
+    S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    // S_->RequireEvaluator(saturation_liquid_key_, Tags::DEFAULT);
+    S_->RequireEvaluator(saturation_liquid_key_, Tags::DEFAULT);
   }
-  if (!S_->HasRecord(prev_saturation_liquid_key_)) {
-    S_->Require<CV_t, CVS_t>(prev_saturation_liquid_key_, Tags::DEFAULT, passwd_)
+
+  if (transport_on_manifold_) {
+    S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->GetRecordW(prev_saturation_liquid_key_, passwd_).set_io_vis(false);
+    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
   }
 
   // require state fields when Transport PK is on
@@ -250,6 +253,27 @@ void Transport_PK::Setup()
     }
   }
 
+  // -- water content (should we move it Flow PK ???)
+  if (!S_->HasRecord(water_content_key_)) {
+    S_->Require<CV_t, CVS_t>(water_content_key_, Tags::DEFAULT, water_content_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    std::vector<std::string> listm({ Keys::getVarName(porosity_key_), Keys::getVarName(saturation_liquid_key_) });
+    if (transport_on_manifold_) listm.push_back(Keys::getVarName(aperture_key_));
+
+    Teuchos::ParameterList elist(water_content_key_);
+    elist.set<std::string>("my key", water_content_key_)
+         .set<Teuchos::Array<std::string> >("multiplicative dependencies", listm)
+         .set<std::string>("tag", "");
+    auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
+    S_->SetEvaluator(water_content_key_, Tags::DEFAULT, eval);
+  }
+  if (!S_->HasRecord(prev_water_content_key_)) {
+    S_->Require<CV_t, CVS_t>(prev_water_content_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->GetRecordW(prev_water_content_key_, passwd_).set_io_vis(false);
+  }
+
   // require multiscale fields
   multiscale_porosity_ = false;
   if (multiscale_model == "dual continuum discontinuous matrix") {
@@ -272,18 +296,7 @@ void Transport_PK::Setup()
       }
     }
 
-    // -- water content in fractures
-    if (!S_->HasRecord(water_content_key_)) {
-      S_->Require<CV_t, CVS_t>(water_content_key_, Tags::DEFAULT, passwd_)
-        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    }
-    if (!S_->HasRecord(prev_water_content_key_)) {
-      S_->Require<CV_t, CVS_t>(prev_water_content_key_, Tags::DEFAULT, passwd_)
-        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-      S_->GetRecordW(prev_water_content_key_, passwd_).set_io_vis(false);
-    }
-
-    // -- water content in matrix
+    // -- water content for multiscale models (a dual porosity model)
     if (!S_->HasRecord(water_content_msp_key_)) {
       S_->Require<CV_t, CVS_t>(water_content_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -353,10 +366,7 @@ void Transport_PK::Initialize()
   // pointers to state variables (move in subroutines for consistency)
   S_->Get<CV_t>(vol_flowrate_key_).ScatterMasterToGhosted("face");
 
-  ws = S_->Get<CV_t>(saturation_liquid_key_).ViewComponent("cell");
-  ws_prev = S_->Get<CV_t>(prev_saturation_liquid_key_).ViewComponent("cell");
   phi = S_->Get<CV_t>(porosity_key_).ViewComponent("cell");
-
   if (use_transport_porosity_) {
     transport_phi = S_->Get<CV_t>(transport_porosity_key_).ViewComponent("cell");
   } else {
@@ -376,8 +386,8 @@ void Transport_PK::Initialize()
   current_component_ = -1;
 
   const Epetra_Map& cmap_owned = mesh_->cell_map(false);
-  ws_subcycle_start = Teuchos::rcp(new Epetra_Vector(cmap_owned));
-  ws_subcycle_end = Teuchos::rcp(new Epetra_Vector(cmap_owned));
+  wc_subcycle_start = Teuchos::rcp(new Epetra_Vector(cmap_owned));
+  wc_subcycle_end = Teuchos::rcp(new Epetra_Vector(cmap_owned));
 
   // reconstruction initialization
   lifting_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
@@ -568,16 +578,15 @@ void Transport_PK::InitializeFields_()
 
   // set popular default values when flow PK is off
   InitializeField_(saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
+  InitializeField_(aperture_key_, Tags::DEFAULT, passwd_, 1.0);
 
-  InitializeFieldFromField_(water_content_key_, porosity_key_, false);
+  // we assume that liquid saturation is 1 if wwater content was uninitialized
   InitializeFieldFromField_(prev_water_content_key_, water_content_key_, false);
 
   InitializeFieldFromField_(water_content_msp_key_, porosity_msp_key_, false);
   InitializeFieldFromField_(prev_water_content_msp_key_, water_content_msp_key_, false);
 
-  InitializeFieldFromField_(prev_saturation_liquid_key_, saturation_liquid_key_, false);
   InitializeFieldFromField_("total_component_concentration_msp", tcc_key_, false);
-
   InitializeField_("total_component_concentration_msp_aux", Tags::DEFAULT, passwd_, 0.0);
 }
 
@@ -621,6 +630,9 @@ void Transport_PK::InitializeFieldFromField_(
 double Transport_PK::StableTimeStep()
 {
   IdentifyUpwindCells();
+
+  const auto& wc = *S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& wc_prev = *S_->Get<CompositeVector>(prev_water_content_key_, Tags::DEFAULT).ViewComponent("cell");
 
   // Accumulate upwinding fluxes.
   std::vector<double> total_outflux(ncells_wghost, 0.0);
@@ -670,7 +682,7 @@ double Transport_PK::StableTimeStep()
     outflux = total_outflux[c];
     if (outflux) {
       vol = mesh_->cell_volume(c);
-      dt_cell = vol * (*phi)[0][c] * std::min((*ws_prev)[0][c], (*ws)[0][c]) / outflux;
+      dt_cell = vol * std::min(wc_prev[0][c], wc[0][c]) / outflux;
     }
     if (dt_cell < dt_) {
       dt_ = dt_cell;
@@ -685,7 +697,7 @@ double Transport_PK::StableTimeStep()
 
   // communicate global time step
   double dt_tmp = dt_;
-  ws_prev->Comm().MinAll(&dt_tmp, &dt_, 1);
+  wc_prev.Comm().MinAll(&dt_tmp, &dt_, 1);
 
   // incorporate developers and CFL constraints
   dt_ = std::min(dt_, dt_debug_);
@@ -696,7 +708,7 @@ double Transport_PK::StableTimeStep()
     int cmin_dt_unique = (fabs(dt_tmp * cfl_ - dt_) < 1e-6 * dt_) ? cmin_dt : -2;
  
     int cmin_dt_tmp = cmin_dt_unique;
-    ws_prev->Comm().MaxAll(&cmin_dt_tmp, &cmin_dt_unique, 1);
+    wc_prev.Comm().MaxAll(&cmin_dt_tmp, &cmin_dt_unique, 1);
     if (cmin_dt == cmin_dt_unique && cmin_dt >= 0) {
       const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dt);
 

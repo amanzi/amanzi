@@ -65,7 +65,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup();
-  TPK.CreateDefaultState(mesh, 1);
+  S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
   S->set_time(0.0);

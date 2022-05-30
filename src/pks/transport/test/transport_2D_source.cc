@@ -71,7 +71,7 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup();
-  TPK.CreateDefaultState(mesh, 2);
+  S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 

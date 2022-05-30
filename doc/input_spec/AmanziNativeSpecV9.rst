@@ -1089,7 +1089,7 @@ The conceptual PDE model for the partially saturated flow is
   (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g})
 
 where 
-:math:`\theta` is total water content [:math:`mol/m^3`],
+:math:`\theta` is total water storage [:math:`mol/m^3`],
 :math:`\eta_l` is molar density of liquid [:math:`mol/m^3`],
 :math:`\rho_l` is fluid density [:math:`kg/m^3`],
 :math:`Q` is source or sink term [:math:`mol/m^3/s`],
@@ -1122,7 +1122,7 @@ includes liquid phase (liquid water) and gas phase (water vapor):
   (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g})
 
 where 
-:math:`\theta` is total water content [:math:`mol/m^3`],
+:math:`\theta` is total water storage [:math:`mol/m^3`],
 :math:`\eta_l` is molar density of liquid (water) [:math:`mol/m^3`],
 :math:`\rho_l` is fluid density [:math:`kg/m^3`],
 :math:`Q` is source or sink term [:math:`mol/m^3/s`],
@@ -1215,7 +1215,7 @@ The equation for water balance in the matrix is
 
 where 
 :math:`Q_m` is source or sink term [:math:`kg / m^3 / s`].
-The volumetric volumetric water contents are defined as
+The water storages are defined as
 
 .. math::
   \theta_f = \phi_f\, \eta_l\, s_{lf},\quad
@@ -1538,6 +1538,32 @@ relative permeability, density and viscosity.
   </ParameterList>  
   </ParameterList>  
 
+
+Fracture permeability models
+............................
+
+A list of permeability models in a fracture network contains similar sublists
+that must cover all network. 
+Each sublist has two paremeters.
+
+* `"region`" [string] defines region where model applies.
+
+* `"model`" [string] specifies the model name. Currently only one parameter
+  is available, `"cubic law`".
+
+.. code-block:: xml
+
+  <ParameterList name="flow">  <!-- parent list -->
+  <ParameterList name="fracture permeability models">
+    <ParameterList name="_ONE FRACTURE LEAVE">
+      <Parameter name="region" type="string" value="fracture"/>
+      <Parameter name="model" type="string" value="cubic law"/>
+    </ParameterList>
+  </ParameterList>
+
+
+Diffusion operators
+...................
 
 Diffusion operators
 ...................
@@ -2024,8 +2050,8 @@ The remaining *flow* parameters are
 
 * `"plot time history`" [bool] produces an ASCII file with the time history. Default is `"false`".
 
-* `"algebraic water content balance`" [bool] uses algebraic correction to enforce consistency of 
-  water content and Darcy fluxes. It leads to a monotone transport. Default is *false*.
+* `"algebraic water storage balance`" [bool] uses algebraic correction to enforce consistency of 
+  water storage and Darcy fluxes. It leads to a monotone transport. Default is *false*.
 
 .. code-block:: xml
 
@@ -2036,7 +2062,7 @@ The remaining *flow* parameters are
   </ParameterList>	
 
   <Parameter name="plot time history" type="bool" value="false"/>
-  <Parameter name="algebraic water content balance" type="bool" value="false"/>
+  <Parameter name="algebraic water storage balance" type="bool" value="false"/>
   </ParameterList>	
 
 
@@ -3427,7 +3453,7 @@ The conceptual PDE model of the coupled flow and energy equations is
   \end{array}
 
 In the first equation,
-:math:`\theta` is total water content (we use non-conventional definition) [:math:`mol/m^3`],
+:math:`\theta` is total water storage (we use non-conventional definition) [:math:`mol/m^3`],
 :math:`\eta_l` is molar density of liquid [:math:`mol/m^3`],
 :math:`\rho_l` is fluid density [:math:`kg/m^3`],
 :math:`Q_1` is source or sink term,

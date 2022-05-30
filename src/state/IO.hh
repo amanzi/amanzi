@@ -47,6 +47,7 @@ void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& va
 
 // Statistics
 void WriteStateStatistics(const State& S, const VerboseObject& vo);
+void WriteStateStatistics(const State& S);
 
 }  // namespace Amanzi
 

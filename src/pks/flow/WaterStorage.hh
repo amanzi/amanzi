@@ -8,21 +8,23 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  Field evaluator for total volumetric water content which is the 
-  conserved quantity in the Richards equation.
+  Field evaluator for water storage which is the conserved quantity 
+  in the Richards equation.
 
-  Wrapping this conserved quantity as a field evaluator makes it
-  easier to take derivatives, keep updated, and the like.
+  Wrapping this conserved quantity water storage (WS) as a field evaluator 
+  makes it easier to take derivatives, keep updated, and the like.
   The equation for this is simply:
 
-    VWC = phi * (s_liquid * n_liquid + X_gas * s_gas * n_gas)
+    WS = a * phi * (s_liquid * n_liquid + X_gas * s_gas * n_gas)
 
-  where X_gas is the molar fraction of water in the gas phase.
+  where X_gas is the molar fraction of water in the gas phase,
+  a is the optional fracture aperture (default is a = 1), and
+  s_liquid + s_gas = 1.
 */
 
 
-#ifndef AMANZI_FLOW_VWCONTENT_EVALUATOR_HH_
-#define AMANZI_FLOW_VWCONTENT_EVALUATOR_HH_
+#ifndef AMANZI_FLOW_WATER_STORAGE_EVALUATOR_HH_
+#define AMANZI_FLOW_WATER_STORAGE_EVALUATOR_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -33,10 +35,10 @@
 namespace Amanzi {
 namespace Flow {
 
-class VWContentEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class WaterStorage : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit VWContentEvaluator(Teuchos::ParameterList& plist);
-  VWContentEvaluator(const VWContentEvaluator& other);
+  explicit WaterStorage(Teuchos::ParameterList& plist);
+  WaterStorage(const WaterStorage& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -50,11 +52,11 @@ class VWContentEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Co
   void Init_();
 
  protected:
-  bool water_vapor_;
-  Key saturation_key_, porosity_key_, mol_density_liquid_key_;
+  bool water_vapor_, aperture_;
+  Key saturation_key_, porosity_key_, mol_density_liquid_key_, aperture_key_;
   
  private:
-  static Utils::RegisteredFactory<Evaluator, VWContentEvaluator> reg_;
+  static Utils::RegisteredFactory<Evaluator, WaterStorage> reg_;
 };
 
 }  // namespace Flow

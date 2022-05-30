@@ -25,59 +25,6 @@ namespace Amanzi {
 namespace Transport {
 
 using CV_t = CompositeVector;
-using CVS_t = CompositeVectorSpace;
-
-/* ****************************************************************
-* Construct default state for unit tests.
-**************************************************************** */
-void Transport_PK::CreateDefaultState(
-    Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents) 
-{
-  std::string name("state"); 
-  S_->Require<double>("const_fluid_density", Tags::DEFAULT, name);
-
-  if (!S_->HasRecord(saturation_liquid_key_)) {
-    S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, name)
-      .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-  
-  if (!S_->HasRecord(prev_saturation_liquid_key_)) {
-    S_->Require<CV_t, CVS_t>(prev_saturation_liquid_key_, Tags::DEFAULT, name)
-      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  if (!S_->HasRecord(vol_flowrate_key_)) {
-    S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, name)
-      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
-  }
-  
-  if (!S_->HasRecord(tcc_key_)) {
-    S_->Require<CV_t, CVS_t>(tcc_key_, Tags::DEFAULT, name, component_names_)
-      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
-  }
-
-  // initialize fields
-  S_->Setup();
- 
-  // set popular default values
-  S_->GetW<double>("const_fluid_density", name) = 1000.0;
-  S_->GetRecordW("const_fluid_density", name).set_initialized();
-
-  S_->GetW<CV_t>(saturation_liquid_key_, name).PutScalar(1.0);
-  S_->GetRecordW(saturation_liquid_key_, name).set_initialized();
-
-  S_->GetW<CV_t>(prev_saturation_liquid_key_, name).PutScalar(1.0);
-  S_->GetRecordW(prev_saturation_liquid_key_, name).set_initialized();
-
-  S_->GetW<CV_t>(tcc_key_, name).PutScalar(0.0);
-  S_->GetRecordW(tcc_key_, name).set_initialized();
-
-  S_->GetW<CV_t>(vol_flowrate_key_, name).PutScalar(0.0);
-  S_->GetRecordW(vol_flowrate_key_, name).set_initialized();
-
-  S_->InitializeFields();
-}
-
 
 /* *******************************************************************
 * Routine verifies that the velocity field is divergence free                 
@@ -102,6 +49,7 @@ void Transport_PK::VV_PrintSoluteExtrema(
     const Epetra_MultiVector& tcc_next, double dT_MPC, const std::string& mesh_id)
 {
   const auto& flowrate = *S_->Get<CV_t>(vol_flowrate_key_).ViewComponent("face", true);
+  const auto& wc = *S_->Get<CV_t>(water_content_key_).ViewComponent("cell");
 
   int num_components = tcc_next.NumVectors();
   double tccmin_vec[num_components];
@@ -154,7 +102,7 @@ void Transport_PK::VV_PrintSoluteExtrema(
     double mass_solute(0.0);
     for (int c = 0; c < ncells_owned; c++) {
       double vol = mesh_->cell_volume(c);
-      mass_solute += (*ws)[0][c] * (*phi)[0][c] * tcc_next[i][c] * vol;
+      mass_solute += wc[0][c] * tcc_next[i][c] * vol;
     }
     mass_solute *= units_.concentration_factor();
 

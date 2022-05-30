@@ -72,7 +72,7 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup();
-  TPK.CreateDefaultState(mesh, 2);
+  S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
   S->set_time(0.0);

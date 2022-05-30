@@ -94,9 +94,9 @@ void Richards_PK::FunctionalResidual(
   S_->GetEvaluator(porosity_key_).Update(*S_, "flow");
   const auto& phi_c = *S_->Get<CompositeVector>(porosity_key_).ViewComponent("cell");
 
-  S_->GetEvaluator(water_content_key_).Update(*S_, "flow");
-  const auto& wc_c = *S_->Get<CompositeVector>(water_content_key_).ViewComponent("cell");
-  const auto& wc_prev_c = *S_->Get<CompositeVector>(prev_water_content_key_).ViewComponent("cell");
+  S_->GetEvaluator(water_storage_key_).Update(*S_, "flow");
+  const auto& wc_c = *S_->Get<CompositeVector>(water_storage_key_).ViewComponent("cell");
+  const auto& wc_prev_c = *S_->Get<CompositeVector>(prev_water_storage_key_).ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
     double wc1 = wc_c[0][c];
@@ -111,7 +111,7 @@ void Richards_PK::FunctionalResidual(
     Functional_AddVaporDiffusion_(f->Data());
   }
 
-  // add water content in matrix
+  // add water storage in matrix
   if (multiscale_porosity_) {
     pressure_msp_eval_->SetChanged();
     Functional_AddMassTransferMatrix_(dtp, f->Data());
@@ -142,8 +142,8 @@ void Richards_PK::FunctionalResidual(
 *    D_g   - diffusion coefficient
 *    X_g   - the molar fraction of water in gas (vapor) phase
 *
-* Accumulation term due to water vapor is included in the volumetric
-* water content field.
+* Accumulation term due to water vapor is included in the water
+* content field.
 ****************************************************************** */
 void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
 {
@@ -262,8 +262,8 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
   S_->GetEvaluator(porosity_msp_key_).Update(*S_, "flow");
   const auto& phi = *S_->Get<CompositeVector>(porosity_msp_key_).ViewComponent("cell");
 
-  const auto& wcm_prev = *S_->Get<CompositeVector>(prev_water_content_msp_key_).ViewComponent("cell");
-  auto& wcm = *S_->Get<CompositeVector>(water_content_msp_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& wcm_prev = *S_->Get<CompositeVector>(prev_water_storage_msp_key_).ViewComponent("cell");
+  auto& wcm = *S_->Get<CompositeVector>(water_storage_msp_key_, Tags::DEFAULT).ViewComponent("cell");
 
   Epetra_MultiVector& fc = *f->ViewComponent("cell");
 
@@ -290,14 +290,14 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
 
 
 /* ******************************************************************
-* Calculate volumetric water content in matrix
+* Calculate water storage in matrix
 ****************************************************************** */
-void Richards_PK::CalculateVWContentMatrix_()
+void Richards_PK::CalculateWaterStorageMultiscale_()
 {
   S_->GetEvaluator(porosity_msp_key_).Update(*S_, "flow");
   const auto& pcm = *S_->Get<CompositeVector>(pressure_msp_key_).ViewComponent("cell");
   const auto& phi = *S_->Get<CompositeVector>(porosity_msp_key_).ViewComponent("cell");
-  auto& wcm = *S_->GetW<CompositeVector>(water_content_msp_key_, passwd_).ViewComponent("cell");
+  auto& wcm = *S_->GetW<CompositeVector>(water_storage_msp_key_, passwd_).ViewComponent("cell");
 
   double phi0, pcm0;
   for (int c = 0; c < ncells_owned; ++c) {
@@ -375,15 +375,15 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   // add time derivative
   if (dtp > 0.0) {
-    S_->GetEvaluator(water_content_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
+    S_->GetEvaluator(water_storage_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
     auto& dwc_dp = S_->GetDerivativeW<CompositeVector>(
-        water_content_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, water_content_key_);
+        water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, water_storage_key_);
 
     op_acc_->AddAccumulationDelta(*u->Data(), dwc_dp, dwc_dp, dtp, "cell");
  
     // estimate CNLS limiters
-    if (algebraic_water_content_balance_) {
-      const auto& wc = S_->Get<CompositeVector>(water_content_key_);
+    if (algebraic_water_storage_balance_) {
+      const auto& wc = S_->Get<CompositeVector>(water_storage_key_);
       CalculateCNLSLimiter_(wc, dwc_dp, bdf1_dae_->tol_solver());
     }
   }
@@ -435,7 +435,7 @@ double Richards_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
   // exact algebraic relation between saturation and Darcy flux
   // requires to save the last increment.
-  if (algebraic_water_content_balance_) {
+  if (algebraic_water_storage_balance_) {
     *cnls_limiter_->ViewComponent("dpre") = *du->Data()->ViewComponent("cell");
   }
  

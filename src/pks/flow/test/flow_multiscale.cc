@@ -22,6 +22,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "IO.hh"
 #include "GMVMesh.hh"
 #include "MeshAudit.hh"
 #include "MeshFactory.hh"
@@ -106,4 +107,6 @@ TEST(FLOW_2D_MULTISCALE) {
 
   // check the pressure
   for (int c = 0; c < 60; c++) CHECK_CLOSE(pm[0][c], pf[0][c], 0.2);
+
+  WriteStateStatistics(*S);
 }

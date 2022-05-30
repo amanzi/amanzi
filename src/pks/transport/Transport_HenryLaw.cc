@@ -58,7 +58,7 @@ void Transport_PK::PrepareAirWaterPartitioning_()
 void Transport_PK::MakeAirWaterPartitioning_()
 {
   auto& tcc_c = *tcc_tmp->ViewComponent("cell");
-  const auto& sat_l = *ws;
+  const auto& sat_l = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
   int ig, il;
   double sl, total;

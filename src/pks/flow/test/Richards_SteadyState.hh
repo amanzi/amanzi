@@ -80,16 +80,16 @@ int AdvanceToSteadyState(
     auto& s_l_prev = S->GetW<CompositeVector>("prev_saturation_liquid", "flow");
     s_l_prev = s_l;
 
-    // update and swap water content
-    S->GetEvaluator("water_content").Update(*S, "flow");
-    const auto& wc = S->Get<CompositeVector>("water_content");
-    auto& wc_prev = S->GetW<CompositeVector>("prev_water_content", "flow");
+    // update and swap water storage
+    S->GetEvaluator("water_storage").Update(*S, "flow");
+    const auto& wc = S->Get<CompositeVector>("water_storage");
+    auto& wc_prev = S->GetW<CompositeVector>("prev_water_storage", "flow");
     wc_prev = wc;
 
-    // update and swap matrix water content
-    if (S->HasRecord("water_content_msp")) {
-      const auto& wcm = S->Get<CompositeVector>("water_content_msp");
-      auto& wcm_prev = S->GetW<CompositeVector>("prev_water_content_msp", "flow");
+    // update and swap multiscale water storage
+    if (S->HasRecord("water_storage_msp")) {
+      const auto& wcm = S->Get<CompositeVector>("water_storage_msp");
+      auto& wcm_prev = S->GetW<CompositeVector>("prev_water_storage_msp", "flow");
       wcm_prev = wcm;
     }
 

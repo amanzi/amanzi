@@ -42,7 +42,7 @@ double MultiscaleFlowPorosity_DPM::ComputeField(double phi, double n_l, double p
 
 
 /* ******************************************************************
-* Main capability: cell-based Newton solver. It returns water content, 
+* Main capability: cell-based Newton solver. It returns water storage, 
 * pressure in the matrix. max_itrs is input/output parameter.
 ****************************************************************** */
 double MultiscaleFlowPorosity_DPM::WaterContentMatrix(

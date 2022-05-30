@@ -175,9 +175,9 @@ void TransportExplicit_PK::FunctionalTimeDerivative_MUSCL_(
 
   for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantatity
     double a = t / dt_;
-    double ws = a * (*ws_end)[0][c] + (1.0 - a) * (*ws_start)[0][c]; 
-    double vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * ws;
-    f_c[0][c] /= vol_phi_ws;
+    double wc = a * (*wc_end)[0][c] + (1.0 - a) * (*wc_start)[0][c]; 
+    double vol_wc = mesh_->cell_volume(c) * wc;
+    f_c[0][c] /= vol_wc;
   }
 }  
 
@@ -190,14 +190,9 @@ void TransportExplicit_PK::FunctionalTimeDerivative_FCT_(
 {
   auto flowrate = S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
 
-  auto poro = S_->Get<CompositeVector>(porosity_key_).ViewComponent("cell", true);
-  auto prev_sat = S_->Get<CompositeVector>(prev_saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell", true);
-  auto sat = S_->Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell", true);
-
-  auto weight1 = Teuchos::rcp(new Epetra_MultiVector(*poro));
-  auto weight0 = Teuchos::rcp(new Epetra_MultiVector(*poro));
-  weight0->Multiply(1.0, *poro, *prev_sat, 0.0);
-  weight1->Multiply(1.0, *poro, *sat, 0.0);
+  S_->GetEvaluator(water_content_key_).Update(*S_, "transport");
+  auto weight1 = S_->Get<CompositeVector>(water_content_key_).ViewComponent("cell", true);
+  auto weight0 = S_->Get<CompositeVector>(prev_water_content_key_).ViewComponent("cell", true);
 
   // distribute vector
   // distribute vector
@@ -339,9 +334,9 @@ void TransportExplicit_PK::FunctionalTimeDerivative_FCT_(
 
   for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantity
     double a = t / dt_;
-    double ws = a * (*ws_end)[0][c] + (1.0 - a) * (*ws_start)[0][c]; 
-    double vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * ws;
-    f_c[0][c] /= vol_phi_ws;
+    double wc = a * (*wc_end)[0][c] + (1.0 - a) * (*wc_start)[0][c]; 
+    double vol_wc = mesh_->cell_volume(c) * wc;
+    f_c[0][c] /= vol_wc;
   }
 }
 

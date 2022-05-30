@@ -63,7 +63,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup();
-  TPK.CreateDefaultState(mesh, 2);
+  S->Setup();
 
   S->InitializeFields();
   S->InitializeEvaluators();

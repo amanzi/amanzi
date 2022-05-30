@@ -286,7 +286,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0e-5"/>
+                <Parameter name="value" type="double" value="4.6416e-4"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -803,7 +803,6 @@
 	<ParameterList name="FPM for Entire Domain">
 	  <Parameter name="region" type="string" value="All"/>
 	  <Parameter name="model" type="string" value="cubic law"/>
-	  <Parameter name="aperture" type="double" value="1.0"/>
 	</ParameterList>
       </ParameterList>
       <ParameterList name="relative permeability">

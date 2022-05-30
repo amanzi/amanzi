@@ -8,21 +8,12 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  Field evaluator for total volumetric water content which is the 
-  conserved quantity in Richards's equation.
-
-  Wrapping this conserved quantity as a field evaluator makes it
-  easier to take derivatives, keep updated, and the like.
-  The equation for this is simply:
-
-    WC = phi * (s_liquid * n_liquid + X_gas * s_gas * n_gas)
-
-  where X_gas is the molar fraction of water in the gas phase and
-  s_liquid + s_gas = 1
+  Field evaluator for water storage which is the conserved quantity 
+  in Richards' equation.
 */
 
 #include "CommonDefs.hh"
-#include "VWContentEvaluator.hh"
+#include "WaterStorage.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -30,8 +21,9 @@ namespace Flow {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-VWContentEvaluator::VWContentEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist) {
+WaterStorage::WaterStorage(Teuchos::ParameterList& plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
+    aperture_(false) {
   Init_();
 };
 
@@ -39,10 +31,10 @@ VWContentEvaluator::VWContentEvaluator(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Initialization.
 ****************************************************************** */
-void VWContentEvaluator::Init_()
+void WaterStorage::Init_()
 {
   if (my_keys_.size() == 0) {
-    my_keys_.push_back(std::make_pair(plist_.get<std::string>("water content key"), Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("water storage key"), Tags::DEFAULT));
   }
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
@@ -60,26 +52,32 @@ void VWContentEvaluator::Init_()
     dependencies_.insert(std::make_pair(Keys::getKey(domain, "molar_density_gas"), Tags::DEFAULT));
     dependencies_.insert(std::make_pair(Keys::getKey(domain, "molar_fraction_gas"), Tags::DEFAULT));
   }
+
+  if (plist_.isParameter("aperture key")) {
+    aperture_key_ = plist_.get<std::string>("aperture key");
+    aperture_ = true;
+  }
 }
 
 
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-VWContentEvaluator::VWContentEvaluator(const VWContentEvaluator& other)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      water_vapor_(other.water_vapor_) {};
+WaterStorage::WaterStorage(const WaterStorage& other)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+    water_vapor_(other.water_vapor_),
+    aperture_(other.aperture_) {};
 
 
-Teuchos::RCP<Evaluator> VWContentEvaluator::Clone() const {
-  return Teuchos::rcp(new VWContentEvaluator(*this));
+Teuchos::RCP<Evaluator> WaterStorage::Clone() const {
+  return Teuchos::rcp(new WaterStorage(*this));
 }
 
 
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void VWContentEvaluator::Evaluate_(
+void WaterStorage::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& s_l = *S.Get<CompositeVector>(saturation_key_).ViewComponent("cell");
@@ -87,29 +85,35 @@ void VWContentEvaluator::Evaluate_(
 
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   auto& result_v = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell");
 
   if (water_vapor_) {
     const auto& n_g = *S.Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
     const auto& x_g = *S.Get<CompositeVector>("molar_fraction_gas").ViewComponent("cell");
     
-    int ncells = results[0]->size("cell");
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = phi[0][c] * (s_l[0][c] * n_l[0][c]
                                   + (1.0 - s_l[0][c]) * n_g[0][c] * x_g[0][c]);
     }
   } else {
-    int ncells = results[0]->size("cell");
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c];
     }
-  }      
+  } 
+     
+  if (aperture_) {
+    const auto& aperture = *S.Get<CompositeVector>(aperture_key_).ViewComponent("cell");
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] *= aperture[0][c];
+    }
+  }
 }
 
 
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void VWContentEvaluator::EvaluatePartialDerivative_(
+void WaterStorage::EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
@@ -118,7 +122,6 @@ void VWContentEvaluator::EvaluatePartialDerivative_(
 
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   auto& result_v = *results[0]->ViewComponent("cell");
-
   int ncells = results[0]->size("cell");
 
   if (water_vapor_) {
@@ -145,10 +148,14 @@ void VWContentEvaluator::EvaluatePartialDerivative_(
       for (int c = 0; c != ncells; ++c) {
         result_v[0][c] = phi[0][c] * (1.0 - s_l[0][c]) * n_g[0][c];
       }
+    } else if (wrt_key == aperture_key_ && aperture_) {
+      for (int c = 0; c != ncells; ++c) {
+        result_v[0][c] = phi[0][c] * (s_l[0][c] * n_l[0][c] + (1.0 - s_l[0][c]) * n_g[0][c] * x_g[0][c]);
+      }
     } else {
       AMANZI_ASSERT(0);
     }
-    
+
   } else {
     if (wrt_key == porosity_key_) {
       for (int c = 0; c != ncells; ++c) {
@@ -162,8 +169,19 @@ void VWContentEvaluator::EvaluatePartialDerivative_(
       for (int c = 0; c != ncells; ++c) {
         result_v[0][c] = phi[0][c] * s_l[0][c];
       }
+    } else if (wrt_key == aperture_key_ && aperture_) {
+      for (int c = 0; c != ncells; ++c) {
+        result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c];
+      }
     } else {
       AMANZI_ASSERT(0);
+    }
+  }
+
+  if (aperture_ && wrt_key != aperture_key_) {
+    const auto& aperture = *S.Get<CompositeVector>(aperture_key_).ViewComponent("cell");
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] *= aperture[0][c];
     }
   }
 }

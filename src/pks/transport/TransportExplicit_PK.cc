@@ -123,6 +123,12 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   tcc = S_->GetPtrW<CompositeVector>(tcc_key_, Tags::DEFAULT, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
+  auto wc = S_->GetW<CompositeVector>(water_content_key_, Tags::DEFAULT, water_content_key_).ViewComponent("cell");
+  auto wc_prev = S_->GetW<CompositeVector>(prev_water_content_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+
+  *wc_prev = *wc;
+  S_->GetEvaluator(water_content_key_).Update(*S_, "transport");
+
   // calculate stable time step
   double dt_shift = 0.0, dt_global = dt_MPC;
   double time = S_->intermediate_time();
@@ -134,18 +140,18 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   StableTimeStep();
   double dt_original = dt_;  // advance routines override dt_
-  int interpolate_ws = (dt_ < dt_global) ? 1 : 0;
+  int interpolate_wc = (dt_ < dt_global) ? 1 : 0;
 
   // start subcycling
   double dt_sum = 0.0;
   double dt_cycle;
-  if (interpolate_ws) {
+  if (interpolate_wc) {
     dt_cycle = dt_original;
-    InterpolateCellVector(*ws_prev, *ws, dt_shift, dt_global, *ws_subcycle_start);
+    InterpolateCellVector(*wc_prev, *wc, dt_shift, dt_global, *wc_subcycle_start);
   } else {
     dt_cycle = dt_MPC;
-    ws_start = ws_prev;
-    ws_end = ws;
+    wc_start = wc_prev;
+    wc_end = wc;
   }
 
   int ncycles = 0, swap = 1;
@@ -172,19 +178,19 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     t_physics_ += dt_cycle;
     dt_sum += dt_cycle;
 
-    if (interpolate_ws) {
+    if (interpolate_wc) {
       if (swap) {  // Initial water saturation is in 'start'.
-        ws_start = ws_subcycle_start;
-        ws_end = ws_subcycle_end;
+        wc_start = wc_subcycle_start;
+        wc_end = wc_subcycle_end;
 
         double dt_int = dt_sum + dt_shift;
-        InterpolateCellVector(*ws_prev, *ws, dt_int, dt_global, *ws_subcycle_end);
+        InterpolateCellVector(*wc_prev, *wc, dt_int, dt_global, *wc_subcycle_end);
       } else {  // Initial water saturation is in 'end'.
-        ws_start = ws_subcycle_end;
-        ws_end = ws_subcycle_start;
+        wc_start = wc_subcycle_end;
+        wc_end = wc_subcycle_start;
 
         double dt_int = dt_sum + dt_shift;
-        InterpolateCellVector(*ws_prev, *ws, dt_int, dt_global, *ws_subcycle_start);
+        InterpolateCellVector(*wc_prev, *wc, dt_int, dt_global, *wc_subcycle_start);
       }
       swap = 1 - swap;
     }
@@ -227,7 +233,7 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   if (use_dispersion_) {
     if (use_effective_diffusion_) {
-      CalculateDispersionTensor_(*transport_phi, *ws);
+      CalculateDispersionTensor_(*transport_phi, *wc);
       DiffusionSolverEffective(tcc_next, t_old, t_new);
     } else {
       DispersionSolver(tcc_prev, tcc_next, t_old, t_new);
@@ -267,16 +273,16 @@ void TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
   // prepare conservative state in master and slave cells
-  double vol_phi_ws, tcc_flux;
+  double vol_wc, tcc_flux;
 
   // We advect only aqueous components.
   int num_advect = num_aqueous;
 
   for (int c = 0; c < ncells_owned; c++) {
-    vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_start)[0][c];
+    vol_wc = mesh_->cell_volume(c) * (*wc_start)[0][c];
 
     for (int i = 0; i < num_advect; i++)
-      tcc_next[i][c] = tcc_prev[i][c] * vol_phi_ws;
+      tcc_next[i][c] = tcc_prev[i][c] * vol_wc;
   }
 
   auto flowrate = *S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
@@ -359,8 +365,8 @@ void TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
 
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
-    vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_end)[0][c];
-    for (int i = 0; i < num_advect; i++) tcc_next[i][c] /= vol_phi_ws;
+    vol_wc = mesh_->cell_volume(c) * (*wc_end)[0][c];
+    for (int i = 0; i < num_advect; i++) tcc_next[i][c] /= vol_wc;
   }
 
   // update mass balance
@@ -388,16 +394,16 @@ void TransportExplicit_PK::AdvanceDonorUpwindNonManifold(double dt_cycle)
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
   // prepare conservative state in master and slave cells
-  double u, vol_phi_ws, tcc_flux;
+  double u, vol_wc, tcc_flux;
 
   // We advect only aqueous components.
   int num_advect = num_aqueous;
 
   for (int c = 0; c < ncells_owned; c++) {
-    vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_start)[0][c];
+    vol_wc = mesh_->cell_volume(c) * (*wc_start)[0][c];
 
     for (int i = 0; i < num_advect; i++)
-      tcc_next[i][c] = tcc_prev[i][c] * vol_phi_ws;
+      tcc_next[i][c] = tcc_prev[i][c] * vol_wc;
   }
 
   // advance all components at once
@@ -477,8 +483,8 @@ void TransportExplicit_PK::AdvanceDonorUpwindNonManifold(double dt_cycle)
 
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
-    vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_end)[0][c];
-    for (int i = 0; i < num_advect; i++) tcc_next[i][c] /= vol_phi_ws;
+    vol_wc = mesh_->cell_volume(c) * (*wc_end)[0][c];
+    for (int i = 0; i < num_advect; i++) tcc_next[i][c] /= vol_wc;
   }
 
   // update mass balance

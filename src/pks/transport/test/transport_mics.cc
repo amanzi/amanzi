@@ -70,7 +70,7 @@ TEST(CONSTRUCTOR) {
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup();
-  TPK.CreateDefaultState(mesh, 2);
+  S->Setup();
 
   // initialize a transport process kernel from a transport state
   TPK.Initialize();

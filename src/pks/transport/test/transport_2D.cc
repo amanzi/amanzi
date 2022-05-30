@@ -24,6 +24,7 @@
 
 // Amanzi
 #include "GMVMesh.hh"
+#include "IO.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "State.hh"
@@ -51,10 +52,9 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
   // read parameter list
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlfile);
 
-  /* create a mesh framework */
+  // create a mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
@@ -81,7 +81,7 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
         .set<std::string>("limiter stencil", stencil);
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup();
-  TPK.CreateDefaultState(mesh, 2);
+  S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
   S->set_time(0.0);
@@ -157,6 +157,8 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
       CHECK_CLOSE(0.0, (*tcc)[0][k], 2e-6);
     }
   }
+
+  WriteStateStatistics(*S);
 }
 
 

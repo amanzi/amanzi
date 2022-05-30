@@ -122,8 +122,6 @@ class TransportImplicit_PK : public Transport_PK,
   TransportImplicit_PK& operator=(const TransportImplicit_PK&);
 
  private:
-  Teuchos::RCP<CompositeVector> acc_term_, acc_term_prev_;
-  
   // solvers
   Teuchos::RCP<Operators::Operator> op_;
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_adv_;

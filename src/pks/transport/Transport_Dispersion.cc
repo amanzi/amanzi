@@ -33,7 +33,7 @@ namespace Transport {
 * assumed to be scaled by face area.
 ******************************************************************* */
 void Transport_PK::CalculateDispersionTensor_(
-    const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
+    const Epetra_MultiVector& porosity, const Epetra_MultiVector& water_content)
 {
   if (!flag_dispersion_) {
     D_.clear();
@@ -62,7 +62,7 @@ void Transport_PK::CalculateDispersionTensor_(
 
     for (int k = 0; k < dim; ++k) velocity[k] = poly(k + 1);
     D_[c] = mdm_->second[(*mdm_->first)[c]]->mech_dispersion(
-        velocity, axi_symmetry_[c], saturation[0][c], porosity[0][c]);
+        velocity, axi_symmetry_[c], water_content[0][c], porosity[0][c]);
   }
 }
 
@@ -87,13 +87,12 @@ void Transport_PK::CalculateDiffusionTensor_(
       std::string region = (spec->regions)[r];
       mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
 
-      AmanziMesh::Entity_ID_List::iterator c;
       if (phase == TRANSPORT_PHASE_LIQUID) {
-        for (c = block.begin(); c != block.end(); c++) {
+        for (auto c = block.begin(); c != block.end(); c++) {
           D_[*c] += md * spec->tau[phase] * porosity[0][*c] * saturation[0][*c];
         }
       } else if (phase == TRANSPORT_PHASE_GAS) {
-        for (c = block.begin(); c != block.end(); c++) {
+        for (auto c = block.begin(); c != block.end(); c++) {
           D_[*c] += md * spec->tau[phase] * porosity[0][*c] * (1.0 - saturation[0][*c]);
         }
       }
@@ -154,7 +153,12 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     const Epetra_MultiVector& tcc_next,
     double t_old, double t_new, int comp0)
 {
-  CalculateDispersionTensor_(*transport_phi, *ws);
+  const auto& wc = S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT);
+  const auto& wc_c = *wc.ViewComponent("cell");
+  const auto& wc_prev_c = *S_->Get<CompositeVector>(prev_water_content_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& sat_c = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+
+  CalculateDispersionTensor_(*transport_phi, wc_c);
 
   int i0 = (comp0 >= 0) ? comp0 : 0;
 
@@ -200,7 +204,7 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     md_old = md_new;
 
     if (md_change != 0.0 || D_.size() == 0) {
-      CalculateDiffusionTensor_(md_change, phase, *transport_phi, *ws);
+      CalculateDiffusionTensor_(md_change, phase, *transport_phi, sat_c);
     }
 
     // set the initial guess
@@ -223,11 +227,7 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     ComputeBCs_(bc_model, bc_value, i);
 
     // add accumulation term
-    Epetra_MultiVector& fac = *factor.ViewComponent("cell");
-    for (int c = 0; c < ncells_owned; c++) {
-      fac[0][c] = (*phi)[0][c] * (*ws)[0][c];
-    }
-    op2->AddAccumulationDelta(sol, factor, factor, dt_MPC, "cell");
+    op2->AddAccumulationDelta(sol, wc, wc, dt_MPC, "cell");
     op1->ApplyBCs(true, true, true);
     if (comp0 >= 0) return op;
 
@@ -260,7 +260,7 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     md_old = md_new;
 
     if (md_change != 0.0 || i == num_aqueous) {
-      CalculateDiffusionTensor_(md_change, phase, *transport_phi, *ws);
+      CalculateDiffusionTensor_(md_change, phase, *transport_phi, sat_c);
     }
 
     // set initial guess
@@ -286,14 +286,15 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     ComputeSources_(t_new, 1.0, rhs_cell, tcc_prev, i, i);
     op1->ApplyBCs(true, true, true);
 
-    // add accumulation term
+    // add accumulation term.
+    AMANZI_ASSERT(!transport_on_manifold_);
     Epetra_MultiVector& fac1 = *factor.ViewComponent("cell");
     Epetra_MultiVector& fac0 = *factor0.ViewComponent("cell");
 
     for (int c = 0; c < ncells_owned; c++) {
-      fac1[0][c] = (*phi)[0][c] * (1.0 - (*ws)[0][c]);
-      fac0[0][c] = (*phi)[0][c] * (1.0 - (*ws_prev)[0][c]);
-      if ((*ws)[0][c] == 1.0) fac1[0][c] = 1.0;  // hack so far
+      fac1[0][c] = (*phi)[0][c] * (1.0 - wc_c[0][c]);
+      fac0[0][c] = (*phi)[0][c] * (1.0 - wc_prev_c[0][c]);
+      if (sat_c[0][c] == 1.0) fac1[0][c] = 1.0;  // FIXME
     }
     op2->AddAccumulationDelta(sol, factor0, factor, dt_MPC, "cell");
     if (comp0 >= 0) return op;

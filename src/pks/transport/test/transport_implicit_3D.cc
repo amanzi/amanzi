@@ -75,7 +75,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
   TransportImplicit_PK TPK(pk_tree, plist, S, soln);
 
   TPK.Setup();
-  TPK.CreateDefaultState(mesh, 2);
+  S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
   S->set_time(0.0);

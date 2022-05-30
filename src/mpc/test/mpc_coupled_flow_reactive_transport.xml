@@ -160,7 +160,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="3.46410000000000026e-05"/>
+                <Parameter name="value" type="double" value="1.0627e-03"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -902,7 +902,6 @@
         <ParameterList name="FPM for fracture">
           <Parameter name="region" type="string" value="fracture"/>
           <Parameter name="model" type="string" value="cubic law"/>
-          <Parameter name="aperture" type="double" value="3.46410000000000026e-05"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="physical models and assumptions">

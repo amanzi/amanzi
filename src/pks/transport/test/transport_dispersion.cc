@@ -82,7 +82,7 @@ TEST(DISPERSION) {
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup();
-  TPK.CreateDefaultState(mesh, 1);
+  S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
   S->set_time(0.0);
@@ -183,7 +183,7 @@ TEST(DIFFUSION) {
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup();
-  TPK.CreateDefaultState(mesh, 1);
+  S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
   S->set_time(0.0);
@@ -284,7 +284,7 @@ TEST(GAS_DIFFUSION) {
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup();
-  TPK.CreateDefaultState(mesh, 1);
+  S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
   S->set_time(0.0);
@@ -294,8 +294,6 @@ TEST(GAS_DIFFUSION) {
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
-  S->GetW<CompositeVector>("prev_saturation_liquid", passwd).PutScalar(0.4);
-  S->GetW<CompositeVector>("saturation_liquid", passwd).PutScalar(0.4);
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(0.1, 0.0);

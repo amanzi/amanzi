@@ -95,7 +95,6 @@ class Transport_PK : public PK_Physical {
   Teuchos::RCP<CompositeVector> total_component_concentration() { return tcc_tmp; }
 
   // -- control members
-  void CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents);
   void Policy(Teuchos::Ptr<State> S);
 
   void VV_CheckGEDproperty(Epetra_MultiVector& tracer) const; 
@@ -134,7 +133,7 @@ class Transport_PK : public PK_Physical {
   // physical models
   // -- dispersion and diffusion
   void CalculateDispersionTensor_(
-      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
+      const Epetra_MultiVector& porosity, const Epetra_MultiVector& water_content);
 
   void CalculateDiffusionTensor_(
       double md, int phase,
@@ -185,9 +184,9 @@ class Transport_PK : public PK_Physical {
 
   // names of state fields 
   Key tcc_key_;
-  Key vol_flowrate_key_;
+  Key vol_flowrate_key_, aperture_key_;
   Key porosity_key_, transport_porosity_key_, permeability_key_;
-  Key saturation_liquid_key_, prev_saturation_liquid_key_;
+  Key saturation_liquid_key_;
   Key water_content_key_, prev_water_content_key_;
 
   Key porosity_msp_key_;
@@ -199,12 +198,12 @@ class Transport_PK : public PK_Physical {
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
-  Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi, transport_phi;
+  Teuchos::RCP<const Epetra_MultiVector> phi, transport_phi;
     
-  Teuchos::RCP<const Epetra_MultiVector> ws_start, ws_end;  // data for subcycling 
-  Teuchos::RCP<Epetra_MultiVector> ws_subcycle_start, ws_subcycle_end;
+  Teuchos::RCP<const Epetra_MultiVector> wc_start, wc_end;  // data for subcycling 
+  Teuchos::RCP<Epetra_MultiVector> wc_subcycle_start, wc_subcycle_end;
 
-  std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // Sources and sinks
+  std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // sources and sinks
   std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
@@ -213,6 +212,7 @@ class Transport_PK : public PK_Physical {
   std::string passwd_;
   Method_t method_;
 
+  bool transport_on_manifold_;
   bool subcycling_, use_transport_porosity_, use_effective_diffusion_;
   int dim;
 
@@ -234,7 +234,7 @@ class Transport_PK : public PK_Physical {
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
-  // mechanical dispersion and molecual diffusion
+  // mechanical dispersion and molecular diffusion
   Teuchos::RCP<MDMPartition> mdm_;
   std::vector<WhetStone::Tensor> D_;
 

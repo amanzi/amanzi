@@ -33,10 +33,10 @@ class MultiscaleFlowPorosity_DPM : public MultiscaleFlowPorosity {
   MultiscaleFlowPorosity_DPM(Teuchos::ParameterList& plist);
   ~MultiscaleFlowPorosity_DPM() {};
 
-  // Calculate field water content assuming pressure equilibrium
+  // Calculate field water storage assuming pressure equilibrium
   virtual double ComputeField(double phi, double n_l, double pcm) override;
 
-  // local (cell-based) solver returns water content and capilalry
+  // local (cell-based) solver returns water storage and capilalry
   // pressure in the matrix. max_itrs is input/output parameter
   virtual double WaterContentMatrix(
       double pcf0, WhetStone::DenseVector& pcm,

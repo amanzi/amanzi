@@ -141,11 +141,6 @@ void TransportImplicit_PK::Initialize()
   op_adv_->Setup(*flux);
   op_adv_->UpdateMatrices(flux.ptr());
 
-  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  acc_term_ = Teuchos::rcp(new CompositeVector(*cvs));
-  acc_term_prev_ = Teuchos::rcp(new CompositeVector(*cvs));
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_));
 
   op_->CreateCheckPoint();
@@ -183,25 +178,22 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // populating next state of concentrations
   tcc->ScatterMasterToGhosted("cell");
 
-  CompositeVector tcc_aux(*acc_term_);
+  S_->GetEvaluator(water_content_key_).Update(*S_, "transport");
+  const auto& wc = S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT);
+  const auto& wc_prev = S_->Get<CompositeVector>(prev_water_content_key_, Tags::DEFAULT);
+
+  const auto& wc_c = *wc.ViewComponent("cell");
+  const auto& sat_c = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
   int icount(0);
+  CompositeVector tcc_aux(wc);
 
   for (int i = 0; i < num_aqueous; i++) {
     op_->RestoreCheckPoint();
     // op_acc_->local_op(0)->Rescale(0.0);
   
-    // add accumulation term
-    Epetra_MultiVector& acc_term_c = *acc_term_->ViewComponent("cell");
-    Epetra_MultiVector& acc_term_prev_c = *acc_term_prev_->ViewComponent("cell");
-  
-    for (int c = 0; c < ncells_owned; c++) {
-      acc_term_c[0][c] = (*phi)[0][c] * (*ws)[0][c];
-      acc_term_prev_c[0][c] = (*phi)[0][c] * (*ws_prev)[0][c];    
-    }
-
     *(*tcc_aux.ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(i);  
-    op_acc_->AddAccumulationDelta(tcc_aux, *acc_term_prev_, *acc_term_, dt_, "cell");
+    op_acc_->AddAccumulationDelta(tcc_aux, wc_prev, wc, dt_, "cell");
 
     // refresh data BC and source data  
     UpdateBoundaryData(t_old, t_new, i);
@@ -216,9 +208,9 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     if (flag_dispersion_) {
       int phase;
       double md;
-      CalculateDispersionTensor_(*transport_phi, *ws);
+      CalculateDispersionTensor_(*transport_phi, wc_c);
       FindDiffusionValue(component_names_[i], &md, &phase);
-      if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, *ws);
+      if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, sat_c);
 
       op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
       op_diff_->ApplyBCs(true, true, true);

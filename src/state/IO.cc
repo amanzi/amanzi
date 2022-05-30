@@ -425,4 +425,16 @@ void WriteStateStatistics(const State& S, const VerboseObject& vo)
   }
 }
 
+
+// -----------------------------------------------------------------------------
+// Prints state statistics
+// -----------------------------------------------------------------------------
+void WriteStateStatistics(const State& S)
+{
+  Teuchos::ParameterList plist;
+  plist.sublist("verbose object").set<std::string>("verbosity level", "high");
+  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Test", plist));
+  WriteStateStatistics(S, *vo);
+}
+
 }  // namespace Amanzi

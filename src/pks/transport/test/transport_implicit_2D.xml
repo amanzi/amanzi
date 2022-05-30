@@ -55,6 +55,21 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="saturation_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -109,20 +124,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
-      <ParameterList name="saturation_liquid">
-        <ParameterList name="function">
-          <ParameterList name="ALL">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
     </ParameterList>
 
     <ParameterList name="mesh partitions">
@@ -157,7 +158,7 @@
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, make one iteration}"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="medium"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -248,6 +249,9 @@
 	    </ParameterList>
 	  </ParameterList>
 	</ParameterList>
+      </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

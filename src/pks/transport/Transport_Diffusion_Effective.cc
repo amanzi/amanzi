@@ -67,6 +67,9 @@ void Transport_PK::DiffusionSolverEffective(
 {
   double dt_MPC = t_new - t_old;
 
+  const auto& wc = S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT);
+  const auto& sat_c = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+
   Teuchos::ParameterList& op_list = 
       tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
 
@@ -92,7 +95,7 @@ void Transport_PK::DiffusionSolverEffective(
   op->InitializeInverse();
 
   const CompositeVectorSpace& cvs = op1->global_operator()->DomainMap();
-  CompositeVector sol(cvs), factor(cvs), source(cvs);
+  CompositeVector sol(cvs);
 
   int il, ig, phase;
   double sl, total, mdl, mdg;
@@ -104,7 +107,7 @@ void Transport_PK::DiffusionSolverEffective(
     ig = num_aqueous + i;
     il = air_water_map_[i];
     for (int c = 0; c < ncells_owned; ++c) {
-      sl = (*ws)[0][c];
+      sl = sat_c[0][c];
       total = tcc_next[il][c] * sl + tcc_next[ig][c] * (1.0 - sl);
 
       tcc_next[il][c] = total / sl;
@@ -113,7 +116,7 @@ void Transport_PK::DiffusionSolverEffective(
 
     FindDiffusionValue(component_names_[il], &mdl, &phase);
     FindDiffusionValue(component_names_[ig], &mdg, &phase);
-    CalculateDiffusionTensorEffective_(mdl, mdg, kH_[i], *transport_phi, *ws);
+    CalculateDiffusionTensorEffective_(mdl, mdg, kH_[i], *transport_phi, sat_c);
 
     // set the initial guess
     auto& sol_cell = *sol.ViewComponent("cell");
@@ -130,11 +133,7 @@ void Transport_PK::DiffusionSolverEffective(
     op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
     // add accumulation term
-    Epetra_MultiVector& fac = *factor.ViewComponent("cell");
-    for (int c = 0; c < ncells_owned; c++) {
-      fac[0][c] = (*phi)[0][c] * (*ws)[0][c];
-    }
-    op2->AddAccumulationDelta(sol, factor, factor, dt_MPC, "cell");
+    op2->AddAccumulationDelta(sol, wc, wc, dt_MPC, "cell");
  
     op1->ApplyBCs(true, true, true);
     op->ComputeInverse();

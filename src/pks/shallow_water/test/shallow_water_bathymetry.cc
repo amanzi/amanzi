@@ -79,8 +79,7 @@ Epetra_MultiVector RunTest(int ntest) {
   const auto& B = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
 
   // create screen io
-  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", *plist));
-  WriteStateStatistics(*S, *vo);
+  WriteStateStatistics(*S);
 
   // advance in time
   double t_old(0.0), t_new(0.0), dt;
@@ -120,7 +119,7 @@ Epetra_MultiVector RunTest(int ntest) {
     iter++;
   }
 
-  WriteStateStatistics(*S, *vo);
+  WriteStateStatistics(*S);
   
   return hh;
 }

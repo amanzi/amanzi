@@ -17,10 +17,11 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "IO.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
 
-// Transport
+// Amanzi::Transport
 #include "TransportImplicit_PK.hh"
 
 
@@ -67,7 +68,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
   TransportImplicit_PK TPK(pk_tree, plist, S, soln);
 
   TPK.Setup();
-  TPK.CreateDefaultState(mesh, 2);
+  S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
   S->set_time(0.0);
@@ -102,6 +103,8 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
   err /= tcc.GlobalLength();
   std::cout << "Mean error in fracture: " << err << std::endl;
   CHECK(err < 1e-3);
+
+  WriteStateStatistics(*S);
 }
  
 

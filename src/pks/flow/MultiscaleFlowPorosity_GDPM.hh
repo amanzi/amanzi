@@ -43,10 +43,10 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
   ~MultiscaleFlowPorosity_GDPM() {};
 
   // interface for porosity models
-  // -- calculate field water content assuming pressure equilibrium
+  // -- calculate field water storage assuming pressure equilibrium
   virtual double ComputeField(double phi, double n_l, double pcm) override;
 
-  // -- local (cell-based) solver returns water content and capilalry
+  // -- local (cell-based) solver returns water storage and capilalry
   //   pressure in the matrix. max_itrs is input/output parameter
   virtual double WaterContentMatrix(
       double pcf0, WhetStone::DenseVector& pcm,

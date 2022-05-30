@@ -124,7 +124,7 @@ class Richards_PK : public Flow_PK {
   double CalculateRelaxationFactor(const Epetra_MultiVector& uold, const Epetra_MultiVector& unew);
 
   // -- mutiscale methods
-  void CalculateVWContentMatrix_();
+  void CalculateWaterStorageMultiscale_();
   void VV_ReportMultiscale();
 
   // -- miscaleneous methods
@@ -157,7 +157,7 @@ class Richards_PK : public Flow_PK {
 
   void Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f);
 
-  // The water content change in a cell equals exactly to the balance of Darcy fluxes.
+  // The water storage change in a cell equals exactly to the balance of Darcy fluxes.
   // This balance leads to a monotone translport.
   void CalculateCNLSLimiter_(const CompositeVector& wc, const CompositeVector& dwc_dp, double tol);
   void ApplyCNLSLimiter_();
@@ -190,7 +190,7 @@ class Richards_PK : public Flow_PK {
   // multiscale models
   Key pressure_msp_key_;
   Key porosity_msp_key_;
-  Key water_content_msp_key_, prev_water_content_msp_key_;
+  Key water_storage_msp_key_, prev_water_storage_msp_key_;
 
   bool multiscale_porosity_;
   int ms_itrs_, ms_calls_;
@@ -220,8 +220,8 @@ class Richards_PK : public Flow_PK {
   Key relperm_key_, alpha_key_;
   Teuchos::RCP<RelPermEvaluator> rel_perm_eval_;
 
-  // consistent water content and Darcy fluxes
-  bool algebraic_water_content_balance_;
+  // consistent water storage and Darcy fluxes
+  bool algebraic_water_storage_balance_;
   Teuchos::RCP<CompositeVector> cnls_limiter_;
 
  private:

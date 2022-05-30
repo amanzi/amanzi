@@ -38,7 +38,7 @@
 #include "DarcyVelocityEvaluator.hh"
 #include "PorosityModelEvaluator.hh"
 #include "Richards_PK.hh"
-#include "VWContentEvaluator.hh"
+#include "WaterStorage.hh"
 #include "WRMEvaluator.hh"
 #include "WRM.hh"
 
@@ -136,13 +136,13 @@ void Richards_PK::Setup()
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
   prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
 
-  water_content_key_ = Keys::getKey(domain_, "water_content"); 
-  prev_water_content_key_ = Keys::getKey(domain_, "prev_water_content"); 
+  water_storage_key_ = Keys::getKey(domain_, "water_storage"); 
+  prev_water_storage_key_ = Keys::getKey(domain_, "prev_water_storage"); 
 
   pressure_msp_key_ = Keys::getKey(domain_, "pressure_msp"); 
   porosity_msp_key_ = Keys::getKey(domain_, "porosity_msp"); 
-  water_content_msp_key_ = Keys::getKey(domain_, "water_content_msp"); 
-  prev_water_content_msp_key_ = Keys::getKey(domain_, "prev_water_content_msp"); 
+  water_storage_msp_key_ = Keys::getKey(domain_, "water_storage_msp"); 
+  prev_water_storage_msp_key_ = Keys::getKey(domain_, "prev_water_storage_msp"); 
 
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid"); 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid"); 
@@ -186,34 +186,36 @@ void Richards_PK::Setup()
   }
 
   // Require conserved quantity.
-  // -- water content
-  if (!S_->HasRecord(water_content_key_)) {
-    S_->Require<CV_t, CVS_t>(water_content_key_, Tags::DEFAULT, water_content_key_)
+  // -- water storage
+  if (!S_->HasRecord(water_storage_key_)) {
+    S_->Require<CV_t, CVS_t>(water_storage_key_, Tags::DEFAULT, water_storage_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::ParameterList elist(water_content_key_);
-    elist.set<std::string>("water content key", water_content_key_)
+    Teuchos::ParameterList elist(water_storage_key_);
+    elist.set<std::string>("water storage key", water_storage_key_)
          .set<std::string>("tag", "")
          .set<std::string>("pressure key", pressure_key_)
          .set<std::string>("saturation key", saturation_liquid_key_)
          .set<std::string>("porosity key", porosity_key_)
          .set<bool>("water vapor", vapor_diffusion_);
+    if (flow_on_manifold_) 
+      elist.set<std::string>("aperture key", aperture_key_);
 
-    S_->RequireDerivative<CV_t, CVS_t>(water_content_key_, Tags::DEFAULT,
-                                      pressure_key_, Tags::DEFAULT, water_content_key_);
+    S_->RequireDerivative<CV_t, CVS_t>(water_storage_key_, Tags::DEFAULT,
+                                      pressure_key_, Tags::DEFAULT, water_storage_key_);
 
-    auto eval = Teuchos::rcp(new VWContentEvaluator(elist));
-    S_->SetEvaluator(water_content_key_, Tags::DEFAULT, eval);
+    auto eval = Teuchos::rcp(new WaterStorage(elist));
+    S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
   }
 
-  // -- water content from the previous time step
-  if (!S_->HasRecord(prev_water_content_key_)) {
-    S_->Require<CV_t, CVS_t>(prev_water_content_key_, Tags::DEFAULT, passwd_)
+  // -- water storage from the previous time step
+  if (!S_->HasRecord(prev_water_storage_key_)) {
+    S_->Require<CV_t, CVS_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->GetRecordW(prev_water_content_key_, passwd_).set_io_vis(false);
+    S_->GetRecordW(prev_water_storage_key_, passwd_).set_io_vis(false);
   }
 
-  // -- multiscale extension: secondary (immobile water content)
+  // -- multiscale extension: secondary (immobile water storage)
   if (multiscale_model == "dual continuum discontinuous matrix") {
     if (!S_->HasRecord(pressure_msp_key_)) {
       S_->Require<CV_t, CVS_t>(pressure_msp_key_, Tags::DEFAULT, passwd_)
@@ -228,14 +230,14 @@ void Richards_PK::Setup()
     Teuchos::RCP<Teuchos::ParameterList> msp_list = Teuchos::sublist(fp_list_, "multiscale models", true);
     msp_ = CreateMultiscaleFlowPorosityPartition(mesh_, msp_list);
 
-    if (!S_->HasRecord(water_content_msp_key_)) {
-      S_->Require<CV_t, CVS_t>(water_content_msp_key_, Tags::DEFAULT, passwd_)
+    if (!S_->HasRecord(water_storage_msp_key_)) {
+      S_->Require<CV_t, CVS_t>(water_storage_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     }
-    if (!S_->HasRecord(prev_water_content_msp_key_)) {
-      S_->Require<CV_t, CVS_t>(prev_water_content_msp_key_, Tags::DEFAULT, passwd_)
+    if (!S_->HasRecord(prev_water_storage_msp_key_)) {
+      S_->Require<CV_t, CVS_t>(prev_water_storage_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-      S_->GetRecordW(prev_water_content_msp_key_, passwd_).set_io_vis(false);
+      S_->GetRecordW(prev_water_storage_msp_key_, passwd_).set_io_vis(false);
     }
 
     S_->Require<CV_t, CVS_t>(porosity_msp_key_, Tags::DEFAULT, porosity_msp_key_)
@@ -254,9 +256,9 @@ void Richards_PK::Setup()
     int nnodes, nnodes_tmp = NumberMatrixNodes(msp_);
     mesh_->get_comm()->MaxAll(&nnodes_tmp, &nnodes, 1);
     if (nnodes > 1) {
-      S_->Require<CV_t, CVS_t>("water_content_ms_aux", Tags::DEFAULT, passwd_)
+      S_->Require<CV_t, CVS_t>("water_storage_ms_aux", Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
-      S_->GetRecordW("water_content_ms_aux", passwd_).set_io_vis(false);
+      S_->GetRecordW("water_storage_ms_aux", passwd_).set_io_vis(false);
 
       S_->Require<CV_t, CVS_t>("pressure_msp_aux", Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
@@ -451,8 +453,10 @@ void Richards_PK::Setup()
 
   // Since high-level PK may own some fields, we have to populate 
   // frequently used evaluators outside of field registration
-  pressure_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));
-  vol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT));
+  pressure_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(
+      S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));
+  vol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(
+      S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT));
 }
 
 
@@ -718,9 +722,9 @@ void Richards_PK::Initialize()
     auto& s_l_prev = S_->GetW<CV_t>(prev_saturation_liquid_key_, Tags::DEFAULT, passwd_);
     s_l_prev = s_l;
 
-    S_->GetEvaluator(water_content_key_).Update(*S_, "flow");
-    auto& wc = S_->GetW<CV_t>(water_content_key_, Tags::DEFAULT, water_content_key_);
-    auto& wc_prev = S_->GetW<CV_t>(prev_water_content_key_, Tags::DEFAULT, passwd_);
+    S_->GetEvaluator(water_storage_key_).Update(*S_, "flow");
+    auto& wc = S_->GetW<CV_t>(water_storage_key_, Tags::DEFAULT, water_storage_key_);
+    auto& wc_prev = S_->GetW<CV_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_);
     wc_prev = wc;
 
     // We start with pressure equilibrium
@@ -734,7 +738,7 @@ void Richards_PK::Initialize()
   // Trigger update of secondary fields depending on the primary pressure.
   pressure_eval_->SetChanged();
 
-  // Derive mass flow rate (state may not have it at time 0)
+  // Derive volumetric flow rate (state may not have it at time 0)
   double tmp;
   vol_flowrate_copy->Norm2(&tmp);
   if (tmp == 0.0) {
@@ -754,15 +758,13 @@ void Richards_PK::Initialize()
       op_matrix_->Init();
       op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
       op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate_copy.ptr());
-
-      // normalize to Darcy flux, m/s
       vol_flowrate_copy->ScaleMasterAndGhosted(1.0 / molar_rho_);
     }
   }
 
   // Development: miscalleneous
-  algebraic_water_content_balance_ = fp_list_->get<bool>("algebraic water content balance", false);
-  if (algebraic_water_content_balance_) {
+  algebraic_water_storage_balance_ = fp_list_->get<bool>("algebraic water storage balance", false);
+  if (algebraic_water_storage_balance_) {
     CompositeVectorSpace cvs1; 
     cvs1.SetMesh(mesh_)->SetGhosted(false)
         ->AddComponent("cell", AmanziMesh::CELL, 1)
@@ -815,7 +817,7 @@ void Richards_PK::InitializeFields_()
   }
 
   InitializeFieldFromField_(prev_saturation_liquid_key_, saturation_liquid_key_, true);
-  InitializeFieldFromField_(prev_water_content_key_, water_content_key_, true);
+  InitializeFieldFromField_(prev_water_storage_key_, water_storage_key_, true);
 
   // set matrix fields assuming presure equilibrium
   // -- pressure
@@ -833,18 +835,18 @@ void Richards_PK::InitializeFields_()
     // }
   }
 
-  // -- water contents 
-  if (S_->HasRecord(water_content_msp_key_)) {
-    if (!S_->GetRecord(water_content_msp_key_, Tags::DEFAULT).initialized()) {
-      CalculateVWContentMatrix_();
-      S_->GetRecordW(water_content_msp_key_, Tags::DEFAULT, passwd_).set_initialized();
+  // -- water storage
+  if (S_->HasRecord(water_storage_msp_key_)) {
+    if (!S_->GetRecord(water_storage_msp_key_, Tags::DEFAULT).initialized()) {
+      CalculateWaterStorageMultiscale_();
+      S_->GetRecordW(water_storage_msp_key_, Tags::DEFAULT, passwd_).set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initialized water_content_msp to VWContent(pressure_msp)" << std::endl;  
+          *vo_->os() << "initialized water_storage_msp to WaterStorage(pressure_msp)" << std::endl;  
     }
   }
 
-  InitializeFieldFromField_(prev_water_content_msp_key_, water_content_msp_key_, false);
+  InitializeFieldFromField_(prev_water_storage_msp_key_, water_storage_msp_key_, false);
 }
 
 
@@ -946,12 +948,12 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   copies.emplace(prev_saturation_liquid_key_, sat_prev);
   sat_prev = sat;
 
-  // -- water_content, swap prev <- current
-  S_->GetEvaluator(water_content_key_).Update(*S_, "flow");
-  auto& wc = S_->GetW<CV_t>(water_content_key_, Tags::DEFAULT, water_content_key_);
-  auto& wc_prev = S_->GetW<CV_t>(prev_water_content_key_, Tags::DEFAULT, passwd_);
+  // -- water_storage, swap prev <- current
+  S_->GetEvaluator(water_storage_key_).Update(*S_, "flow");
+  auto& wc = S_->GetW<CV_t>(water_storage_key_, Tags::DEFAULT, water_storage_key_);
+  auto& wc_prev = S_->GetW<CV_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_);
 
-  copies.emplace(prev_water_content_key_, wc_prev);
+  copies.emplace(prev_water_storage_key_, wc_prev);
   wc_prev = wc;
 
   // -- field for multiscale models, save and swap
@@ -959,10 +961,10 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (multiscale_porosity_) {
     copies.emplace(pressure_msp_key_, S_->Get<CV_t>(pressure_msp_key_));
 
-    auto& wc_matrix = S_->GetW<CV_t>(water_content_msp_key_, Tags::DEFAULT, passwd_);
-    auto& wc_matrix_prev = S_->GetW<CV_t>(prev_water_content_msp_key_, Tags::DEFAULT, passwd_);
+    auto& wc_matrix = S_->GetW<CV_t>(water_storage_msp_key_, Tags::DEFAULT, passwd_);
+    auto& wc_matrix_prev = S_->GetW<CV_t>(prev_water_storage_msp_key_, Tags::DEFAULT, passwd_);
 
-    copies.emplace(prev_water_content_msp_key_, wc_matrix_prev);
+    copies.emplace(prev_water_storage_msp_key_, wc_matrix_prev);
     wc_matrix_prev = wc_matrix;
   }
 
