@@ -954,12 +954,13 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_(const std::strin
     // get permeability
     node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
     if (flag)  {
-      double aperture(0.0);
+      double aperture(0.0), value(0.0);
       std::string type, model;
 
       type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
       if (type == "") aperture = GetAttributeValueD_(node, "aperture", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
-      model = GetAttributeValueS_(node, "model", "cubic law, linear");
+      model = GetAttributeValueS_(node, "model", "cubic law, linear, constant");
+      if (model == "constant") value = GetAttributeValueD_(node, "parallel", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m^2", true);
 
       for (auto it = regions.begin(); it != regions.end(); ++it) {
         std::stringstream ss;
@@ -969,7 +970,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_(const std::strin
         fam_list.set<std::string>("region", *it);
 
         fam_list.set<std::string>("model", model);
-        fam_list.set<double>("aperture", aperture);
+        if (model == "constant") 
+          fam_list.set<double>("value", value);
+        else 
+          fam_list.set<double>("aperture", aperture);
       }
     }
   }

@@ -203,7 +203,7 @@ void Alquimia_PK::Initialize()
 
   // initialize fields as soon as possible
   for (size_t i = 0; i < aux_names_.size(); ++i) {
-    InitializeField_(aux_names_[i], Tags::DEFAULT, passwd_, 0.0);
+    InitializeCVField(S_, *vo_, aux_names_[i], Tags::DEFAULT, passwd_, 0.0);
   }
 
   // Initialize the data structures that we will use to traffic data between 

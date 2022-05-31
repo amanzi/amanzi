@@ -197,7 +197,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="porosity_matrix">
+      <ParameterList name="porosity_msp">
         <ParameterList name="function">
           <ParameterList name="RegionMiddle">
             <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>

@@ -577,8 +577,8 @@ void Transport_PK::InitializeFields_()
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // set popular default values when flow PK is off
-  InitializeField_(saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
-  InitializeField_(aperture_key_, Tags::DEFAULT, passwd_, 1.0);
+  InitializeCVField(S_, *vo_, saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
+  InitializeCVField(S_, *vo_, aperture_key_, Tags::DEFAULT, passwd_, 1.0);
 
   // we assume that liquid saturation is 1 if wwater content was uninitialized
   InitializeFieldFromField_(prev_water_content_key_, water_content_key_, false);
@@ -587,7 +587,7 @@ void Transport_PK::InitializeFields_()
   InitializeFieldFromField_(prev_water_content_msp_key_, water_content_msp_key_, false);
 
   InitializeFieldFromField_("total_component_concentration_msp", tcc_key_, false);
-  InitializeField_("total_component_concentration_msp_aux", Tags::DEFAULT, passwd_, 0.0);
+  InitializeCVField(S_, *vo_, "total_component_concentration_msp_aux", Tags::DEFAULT, passwd_, 0.0);
 }
 
 

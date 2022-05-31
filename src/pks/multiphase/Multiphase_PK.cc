@@ -732,8 +732,8 @@ void Multiphase_PK::InitializeFields_()
   if (system_["energy eqn"])
     InitializeFieldFromField_(prev_energy_key_, energy_key_, true);
 
-  InitializeField_(vol_flowrate_liquid_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeField_(vol_flowrate_gas_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeCVField(S_, *vo_, vol_flowrate_liquid_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeCVField(S_, *vo_, vol_flowrate_gas_key_, Tags::DEFAULT, passwd_, 0.0);
 }
 
 

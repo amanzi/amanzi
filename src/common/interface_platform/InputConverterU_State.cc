@@ -293,7 +293,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- dual porosity: matrix porosity
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
       if (flag) {
-        TranslateFieldIC_(node, "porosity_matrix", "-", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, "porosity_msp", "-", reg_str, regions, out_ic, out_ev);
       }
     }
   }
@@ -478,7 +478,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         velocity.push_back(GetAttributeValueD_(node, coords_[1].c_str()));
         if (dim_ == 3) velocity.push_back(GetAttributeValueD_(node, coords_[2].c_str()));
 
-        Teuchos::ParameterList& flowrate_ic = out_ic.sublist("volumetric_flux_rate");
+        Teuchos::ParameterList& flowrate_ic = out_ic.sublist("volumetric_flow_rate");
         Teuchos::ParameterList& tmp_list =
             flowrate_ic.set<bool>("dot with normal", true)
             .sublist("function").sublist(reg_str)

@@ -269,7 +269,7 @@ void ShallowWater_PK::Initialize()
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   if (!S_->GetRecord(bathymetry_key_).initialized()) {
-    InitializeField_(bathymetry_key_, Tags::DEFAULT, passwd_, 0.0);
+    InitializeCVField(S_, *vo_, bathymetry_key_, Tags::DEFAULT, passwd_, 0.0);
   }
   
   const auto& B_n = *S_->Get<CV_t>(bathymetry_key_).ViewComponent("node");
@@ -329,13 +329,13 @@ void ShallowWater_PK::Initialize()
     S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
   }
 
-  InitializeField_(velocity_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeField_(discharge_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeCVField(S_, *vo_, velocity_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeCVField(S_, *vo_, discharge_key_, Tags::DEFAULT, passwd_, 0.0);
 
   // secondary fields
   S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
 
-  InitializeField_(riemann_flux_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeCVField(S_, *vo_, riemann_flux_key_, Tags::DEFAULT, passwd_, 0.0);
   InitializeFieldFromField_(prev_ponded_depth_key_, ponded_depth_key_, false);
   
   // soln_ is the TreeVector of conservative variables [h hu hv]

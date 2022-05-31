@@ -386,8 +386,8 @@ void Darcy_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  InitializeField_(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_, 1.0);
-  InitializeField_(prev_saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
+  InitializeCVField(S_, *vo_, saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_, 1.0);
+  InitializeCVField(S_, *vo_, prev_saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
 }
 
 

@@ -73,6 +73,7 @@ set(flow_inc_files
   Flow_PK.hh
   FlowTypeDefs.hh
   FracturePermModel.hh
+  FracturePermModel_Constant.hh
   FracturePermModel_CubicLaw.hh
   FracturePermModel_Linear.hh
   FracturePermModelPartition.hh

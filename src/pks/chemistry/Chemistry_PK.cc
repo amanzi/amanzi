@@ -167,50 +167,50 @@ void Chemistry_PK::Initialize()
   // Aqueous species 
   if (number_aqueous_components_ > 0) {
     if (!S_->GetRecordW(tcc_key_, passwd_).initialized()) {
-      InitializeField_(tcc_key_, Tags::DEFAULT, passwd_, 0.0);
+      InitializeCVField(S_, *vo_, tcc_key_, Tags::DEFAULT, passwd_, 0.0);
     }
  
-    InitializeField_(primary_activity_coeff_key_, Tags::DEFAULT, passwd_, 1.0);    
-    InitializeField_(free_ion_species_key_, Tags::DEFAULT, passwd_, 1.0e-9);    
+    InitializeCVField(S_, *vo_, primary_activity_coeff_key_, Tags::DEFAULT, passwd_, 1.0);    
+    InitializeCVField(S_, *vo_, free_ion_species_key_, Tags::DEFAULT, passwd_, 1.0e-9);    
 
     // Sorption sites: all will have a site density, but we can default to zero
     if (using_sorption_) {
-      InitializeField_(total_sorbed_key_, Tags::DEFAULT, passwd_, 0.0);
+      InitializeCVField(S_, *vo_, total_sorbed_key_, Tags::DEFAULT, passwd_, 0.0);
     }
 
     // Sorption isotherms: Kd required, Langmuir and Freundlich optional
     if (using_sorption_isotherms_) {
-      InitializeField_(isotherm_kd_key_, Tags::DEFAULT, passwd_, -1.0);
-      InitializeField_(isotherm_freundlich_n_key_, Tags::DEFAULT, passwd_, 1.0);
-      InitializeField_(isotherm_langmuir_b_key_, Tags::DEFAULT, passwd_, 1.0);
+      InitializeCVField(S_, *vo_, isotherm_kd_key_, Tags::DEFAULT, passwd_, -1.0);
+      InitializeCVField(S_, *vo_, isotherm_freundlich_n_key_, Tags::DEFAULT, passwd_, 1.0);
+      InitializeCVField(S_, *vo_, isotherm_langmuir_b_key_, Tags::DEFAULT, passwd_, 1.0);
     }
   }
 
   // Minerals: vol frac and surface areas
   if (number_minerals_ > 0) {
-    InitializeField_(min_vol_frac_key_, Tags::DEFAULT, passwd_, 0.0);
-    InitializeField_(min_ssa_key_, Tags::DEFAULT, passwd_, 1.0);
+    InitializeCVField(S_, *vo_, min_vol_frac_key_, Tags::DEFAULT, passwd_, 0.0);
+    InitializeCVField(S_, *vo_, min_ssa_key_, Tags::DEFAULT, passwd_, 1.0);
 
   }
 
   // Aqueous kinetics
   if (number_aqueous_kinetics_ > 0) {
-    InitializeField_(first_order_decay_constant_key_, Tags::DEFAULT, passwd_, 0.0);
+    InitializeCVField(S_, *vo_, first_order_decay_constant_key_, Tags::DEFAULT, passwd_, 0.0);
   }
   
   // Ion exchange sites: default to 1
   if (number_ion_exchange_sites_ > 0) {
-    InitializeField_(ion_exchange_sites_key_, Tags::DEFAULT, passwd_, 1.0);
-    InitializeField_(ion_exchange_ref_cation_conc_key_, Tags::DEFAULT, passwd_, 1.0);
+    InitializeCVField(S_, *vo_, ion_exchange_sites_key_, Tags::DEFAULT, passwd_, 1.0);
+    InitializeCVField(S_, *vo_, ion_exchange_ref_cation_conc_key_, Tags::DEFAULT, passwd_, 1.0);
   }
 
   if (number_sorption_sites_ > 0) {
-    InitializeField_(sorp_sites_key_, Tags::DEFAULT, passwd_, 1.0);
-    InitializeField_(surf_cfsc_key_, Tags::DEFAULT, passwd_, 1.0);
+    InitializeCVField(S_, *vo_, sorp_sites_key_, Tags::DEFAULT, passwd_, 1.0);
+    InitializeCVField(S_, *vo_, surf_cfsc_key_, Tags::DEFAULT, passwd_, 1.0);
   }
 
   // auxiliary fields
-  InitializeField_(alquimia_aux_data_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeCVField(S_, *vo_, alquimia_aux_data_key_, Tags::DEFAULT, passwd_, 0.0);
 
   // miscaleneous controls
   initial_conditions_time_ = cp_list_->get<double>("initial conditions time", S_->get_time());

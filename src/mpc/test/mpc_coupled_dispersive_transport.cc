@@ -96,6 +96,12 @@ using namespace Amanzi::AmanziGeometry;
   const auto& tcc_f = *S->Get<CompositeVector>("fracture-total_component_concentration").ViewComponent("cell");
   double fmin(1e+99), fmax(-1e+99), err(0.0);
 
+  double b = (*S->Get<CompositeVector>("fracture-aperture").ViewComponent("cell"))[0][0];
+  double kn = (*S->Get<CompositeVector>("fracture-normal_diffusion").ViewComponent("cell"))[0][0];
+
+  double t(1e+5), Df(mol_diff_f / b), Dm(mol_diff_m);
+  CHECK_CLOSE(kn, Dm / 2, 1e-12);
+
   for (int c = 0; c < tcc_f.MyLength(); ++c) {
     const auto& xc = mesh_fracture->cell_centroid(c);
     if (std::fabs(xc[0] - 4.0625) < 1e-3) {
@@ -103,10 +109,8 @@ using namespace Amanzi::AmanziGeometry;
       fmax = std::max(fmax, tcc_f[0][c]);
     }
     if (icase == 1) {
-      err += fabs(tcc_f[0][c] - std::erfc(xc[0] / 2));
+      err += fabs(tcc_f[0][c] - std::erfc(xc[0] / std::sqrt(Df * t) / 2));
     } else if (icase == 2) {
-      double t(1.0e+5), b(0.1), Dm(1.0e-7);
-      double kn = Dm / 2;  
       double Tm = u_f * t / b - xc[0];
       if (Tm > 0.0) err += fabs(tcc_f[0][c] - std::erfc(xc[0] * kn * std::sqrt(b / (u_f * Dm * Tm)) / 2));
     } else{
@@ -130,19 +134,20 @@ using namespace Amanzi::AmanziGeometry;
 
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_0) {
   // no coupling, only diffusion
-  double err = RunTest(1, 0.0, 1e-5, 0.0, 0.0);
+  double err = RunTest(1, 0.0, 1e-6, 0.0, 0.0);
   CHECK(err < 3.0e-3);
 }
 
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_1) {
-  // Dm = kn / 2 for the analytic solution
+  // d(a C)/dt + d(u C)/dx - (Dm/2) (Cm - C) = 0
+  // kn = Dm/2 for the analytic solution
   double err = RunTest(2, 1.0e-5, 0.0, 1.0e-7, 1.0e-7/2);
   CHECK(err < 2.0e-2);
 }
 
 /*
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_2) {
-  // Dm = kn / 2 for the analytic solution
+  // d(a C)/dt + d(u C)/dx - a Df d^2(C)/dx^2 - (Dm/2) (Cm - C) = 0
   double err = RunTest(3, 1.0e-5, 1.0e-5, 1.0e-6, 1.0e-6/2);
   CHECK(err < 100);
 }

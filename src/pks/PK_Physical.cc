@@ -49,19 +49,20 @@ void PK_Physical::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
 // -----------------------------------------------------------------------------
 // Helper method to initialize a CV field
 // -----------------------------------------------------------------------------
-void PK_Physical::InitializeField_(const Key& key, const Tag& tag, const Key& passwd,
-        double default_val)
+void InitializeCVField(const Teuchos::RCP<State>& S, const VerboseObject& vo,
+                       const Key& key, const Tag& tag, const Key& passwd,
+                       double default_val)
 {
-  Teuchos::OSTab tab = vo_->getOSTab();
+  Teuchos::OSTab tab = vo.getOSTab();
 
-  if (S_->HasRecord(key, tag)) {
-    if (S_->GetRecord(key, tag).owner() == passwd) {
-      if (!S_->GetRecord(key, tag).initialized()) {
-        S_->GetW<CompositeVector>(key, tag, passwd).PutScalar(default_val);
-        S_->GetRecordW(key, tag, passwd).set_initialized();
+  if (S->HasRecord(key, tag)) {
+    if (S->GetRecord(key, tag).owner() == passwd) {
+      if (!S->GetRecord(key, tag).initialized()) {
+        S->GetW<CompositeVector>(key, tag, passwd).PutScalar(default_val);
+        S->GetRecordW(key, tag, passwd).set_initialized();
 
-        if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-          *vo_->os() << "initialized \"" << key << "\" to value " << default_val << std::endl;
+        if (vo.os_OK(Teuchos::VERB_MEDIUM))
+          *vo.os() << "initialized \"" << key << "\" to value " << default_val << std::endl;
       }
     }
   }

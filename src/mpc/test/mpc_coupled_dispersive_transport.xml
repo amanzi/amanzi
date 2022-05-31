@@ -118,8 +118,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <!--Parameter name="value" type="double" value="1.0e-5"/-->
-                <Parameter name="value" type="double" value="1.0"/>
+                <Parameter name="value" type="double" value="0.1"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -133,7 +132,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.1"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

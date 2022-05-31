@@ -58,10 +58,6 @@ class PK_Physical : virtual public PK {
   void AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag = Tags::DEFAULT);
   void AddDefaultPrimaryEvaluator_(const Tag& tag = Tags::DEFAULT) { AddDefaultPrimaryEvaluator_(key_, tag); }
 
-  // Helper method to initialize a CV field
-  void InitializeField_(const Key& key, const Tag& tag, const Key& passwd,
-                        double default_val);
-
 protected:
   // name of domain, associated mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -73,6 +69,12 @@ protected:
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> db_;
 };
+
+
+// non-meber Helper method to initialize a CV field
+void InitializeCVField(const Teuchos::RCP<State>& S, const VerboseObject& vo,
+                       const Key& key, const Tag& tag, const Key& passwd,
+                       double default_val);
 
 } // namespace Amanzi
 

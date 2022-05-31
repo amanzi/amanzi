@@ -14,7 +14,6 @@
 */
 
 #include "Op_Diagonal.hh"
-#include "PK_BDF.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "TransportImplicit_PK.hh"
@@ -206,6 +205,9 @@ void TransportMatrixFractureImplicit_PK::Initialize()
   op_tree_matrix_->set_inverse_parameters(inv_list);
   op_tree_matrix_->InitializeInverse();
 
+  if (!flag_dispersion_)
+    InitializeCVField(S_, *vo_, "fracture-normal_diffusion", Tags::DEFAULT, "state", 0.0);
+
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
   // ver.CheckMatrixSPD();
@@ -264,8 +266,8 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   }
 
   // update accumulation term and the right-hand side
-  const auto& phi_m = S_->Get<CV_t>("porosity");
-  const auto& phi_f = S_->Get<CV_t>("fracture-porosity");
+  const auto& phi_m = S_->Get<CV_t>("water_content");
+  const auto& phi_f = S_->Get<CV_t>("fracture-water_content");
   const auto& tcc_m = S_->Get<CV_t>("total_component_concentration");
   const auto& tcc_f = S_->Get<CV_t>("fracture-total_component_concentration");
 
