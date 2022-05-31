@@ -68,10 +68,13 @@ void EnergyOnePhase_PK::Setup()
 
     Teuchos::ParameterList elist = ep_list_->sublist("energy evaluator");
     elist.set<std::string>("energy key", energy_key_)
-         .set<std::string>("tag", "")
-         .set<bool>("vapor diffusion", false)
          .set<std::string>("particle density key", particle_density_key_)
-         .set<std::string>("internal energy rock key", ie_rock_key_);
+         .set<std::string>("internal energy rock key", ie_rock_key_)
+         .set<bool>("vapor diffusion", false)
+         .set<std::string>("tag", "");
+    if (flow_on_manifold_) 
+      elist.set<std::string>("aperture key", aperture_key_);
+
     elist.setName(energy_key_);
     auto ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
     S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
@@ -165,8 +168,8 @@ void EnergyOnePhase_PK::Initialize()
     op_matrix_diff_->SetScalarCoefficient(upw_conductivity_, Teuchos::null);
     op_preconditioner_diff_->SetScalarCoefficient(upw_conductivity_, Teuchos::null);
   } else {
-    op_matrix_diff_->SetScalarCoefficient(S_->GetPtr<CV_t>(conductivity_key_, Tags::DEFAULT), Teuchos::null);
-    op_preconditioner_diff_->SetScalarCoefficient(S_->GetPtr<CV_t>(conductivity_key_, Tags::DEFAULT), Teuchos::null);
+    op_matrix_diff_->SetScalarCoefficient(S_->GetPtr<CV_t>(conductivity_gen_key_, Tags::DEFAULT), Teuchos::null);
+    op_preconditioner_diff_->SetScalarCoefficient(S_->GetPtr<CV_t>(conductivity_gen_key_, Tags::DEFAULT), Teuchos::null);
   }
 
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));

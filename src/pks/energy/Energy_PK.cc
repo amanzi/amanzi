@@ -14,6 +14,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "EvaluatorMultiplicativeReciprocal.hh"
 #include "EvaluatorPrimary.hh"
 #include "Mesh.hh"
 #include "Mesh_Algorithms.hh"
@@ -39,7 +40,8 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<TreeVector>& soln) :
     PK_PhysicalBDF(pk_tree, glist, S, soln),
     glist_(glist),
-    passwd_("thermal")
+    passwd_("thermal"),
+    flow_on_manifold_(false)
 {
   std::string pk_name = pk_tree.name();
   auto found = pk_name.rfind("->");
@@ -66,7 +68,17 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  // keys
+  // workflow can be affected by the list of models
+  auto physical_models = Teuchos::sublist(ep_list_, "physical models and assumptions");
+  flow_on_manifold_ = physical_models->get<bool>("flow in fractures", false);
+}
+
+
+/* ******************************************************************
+* Construction of PK global variables.
+****************************************************************** */
+void Energy_PK::Setup()
+{
   temperature_key_ = Keys::getKey(domain_, "temperature"); 
 
   energy_key_ = Keys::getKey(domain_, "energy"); 
@@ -74,6 +86,10 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
   enthalpy_key_ = Keys::getKey(domain_, "enthalpy");
   conductivity_key_ = Keys::getKey(domain_, "thermal_conductivity");
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
+
+  aperture_key_ = Keys::getKey(domain_, "aperture"); 
+  conductivity_eff_key_ = Keys::getKey(domain_, "conductivity_effective");
+  conductivity_gen_key_ = (!flow_on_manifold_) ? conductivity_key_ : conductivity_eff_key_;
 
   ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
   ie_gas_key_ = Keys::getKey(domain_, "internal_energy_gas");
@@ -86,14 +102,6 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
   x_gas_key_ = Keys::getKey(domain_, "molar_fraction_gas");
 
   vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate"); 
-}
-
-
-/* ******************************************************************
-* Construction of PK global variables.
-****************************************************************** */
-void Energy_PK::Setup()
-{
   // require first-requested state variables
   if (!S_->HasRecord("atmospheric_pressure")) {
     S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
@@ -113,7 +121,8 @@ void Energy_PK::Setup()
     temperature_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
     S_->SetEvaluator(temperature_key_, Tags::DEFAULT, temperature_eval_);
   } else {
-    temperature_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(temperature_key_, Tags::DEFAULT));
+    temperature_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t> >(
+      S_->GetEvaluatorPtr(temperature_key_, Tags::DEFAULT));
   }
 
   // conserved quantity from the last time step.
@@ -166,10 +175,29 @@ void Energy_PK::Setup()
                                        temperature_key_, Tags::DEFAULT, mass_density_liquid_key_);
   }
 
-  // -- darcy flux
+  // -- volumetric flow rate
   if (!S_->HasRecord(vol_flowrate_key_)) {
     S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+
+  // -- effective fracture conductivity
+  if (flow_on_manifold_) {
+    S_->Require<CV_t, CVS_t>(conductivity_eff_key_, Tags::DEFAULT, conductivity_eff_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+
+    Teuchos::ParameterList elist(conductivity_eff_key_);
+    std::vector<std::string> listm({ Keys::getVarName(aperture_key_), 
+                                     Keys::getVarName(conductivity_key_) });
+    elist.set<std::string>("my key", conductivity_eff_key_)
+         .set<Teuchos::Array<std::string> >("multiplicative dependencies", listm)
+         .set<std::string>("tag", "");
+    auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
+    S_->SetEvaluator(conductivity_eff_key_, Tags::DEFAULT, eval);
   }
 }
 
@@ -271,9 +299,9 @@ void Energy_PK::InitializeFields_()
 ****************************************************************** */
 bool Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 {
-  bool update = S->GetEvaluator(conductivity_key_).Update(*S, passwd_);
+  bool update = S->GetEvaluator(conductivity_gen_key_).Update(*S, passwd_);
   if (update) {
-    const auto& conductivity = *S->Get<CV_t>(conductivity_key_).ViewComponent("cell");
+    const auto& conductivity = *S->Get<CV_t>(conductivity_gen_key_).ViewComponent("cell");
     WhetStone::Tensor Ktmp(dim, 1);
 
     K.clear();

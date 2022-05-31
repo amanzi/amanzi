@@ -35,9 +35,9 @@ void EnergyOnePhase_PK::FunctionalResidual(
 
   auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
 
-  S_->GetEvaluator(conductivity_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd_);
   if (upwind_.get()) {
-     const auto& conductivity = S_->Get<CompositeVector>(conductivity_key_);
+     const auto& conductivity = S_->Get<CompositeVector>(conductivity_gen_key_);
     *upw_conductivity_->ViewComponent("cell") = *conductivity.ViewComponent("cell");
 
     const auto& bc_model = op_bc_->bc_model();
@@ -102,10 +102,10 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
   // update BCs and conductivity
   UpdateSourceBoundaryData(t, t + dt, *up->Data());
 
-  S_->GetEvaluator(conductivity_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd_);
 
   if (upwind_.get()) {
-    const auto& conductivity = S_->Get<CompositeVector>(conductivity_key_);
+    const auto& conductivity = S_->Get<CompositeVector>(conductivity_gen_key_);
     *upw_conductivity_->ViewComponent("cell") = *conductivity.ViewComponent("cell");
 
     auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);

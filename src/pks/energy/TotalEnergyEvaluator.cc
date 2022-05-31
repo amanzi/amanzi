@@ -8,11 +8,10 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 
-  FieldEvaluator for the total internal energy. Wrapping this conserved
-  quantity as a field evaluator makes it easier to take derivatives, 
-  keep updated, and the like. The equation for this is simply:
+  Field evaluator for the total internal energy:
 
-    IE = phi * (s_liquid * n_liquid * u_liquid + s_gas * n_gas * u_gas)
+    IE = phi * s_liquid * n_liquid * u_liquid 
+       + phi * s_gas * n_gas * u_gas
        + (1 - phi) * rho_rock * u_rock
 */
 
@@ -25,7 +24,8 @@ namespace Energy {
 * Constructor from ParameterList
 ****************************************************************** */
 TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
+      aperture_(false)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("energy key"), Tags::DEFAULT));
@@ -56,6 +56,11 @@ TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist)
 
   dependencies_.insert(std::make_pair(ie_rock_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(particle_density_key_, Tags::DEFAULT));
+
+  if (plist_.isParameter("aperture key")) {
+    aperture_key_ = plist_.get<std::string>("aperture key");
+    aperture_ = true;
+  }
 }
 
 
@@ -112,6 +117,13 @@ void TotalEnergyEvaluator::Evaluate_(
     if (vapor_diffusion_) {
       double s_g = 1.0 - s_l[0][c];
       result_v[0][c] += phi[0][c] * s_g * (*n_g)[0][c] * (*u_g)[0][c];
+    }
+  }
+     
+  if (aperture_) {
+    const auto& aperture = *S.Get<CompositeVector>(aperture_key_).ViewComponent("cell");
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] *= aperture[0][c];
     }
   }
 }
@@ -187,6 +199,13 @@ void TotalEnergyEvaluator::EvaluatePartialDerivative_(
     }
   } else {
     AMANZI_ASSERT(0);
+  }
+
+  if (aperture_) {
+    const auto& aperture = *S.Get<CompositeVector>(aperture_key_).ViewComponent("cell");
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] *= aperture[0][c];
+    }
   }
 }
 

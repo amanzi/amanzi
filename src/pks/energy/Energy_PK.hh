@@ -128,11 +128,12 @@ class Energy_PK : public PK_PhysicalBDF {
   // names of state fields 
   Key temperature_key_;
   Key energy_key_, prev_energy_key_;
-  Key enthalpy_key_, conductivity_key_;
+  Key enthalpy_key_, aperture_key_;
   Key ie_liquid_key_, ie_gas_key_, ie_rock_key_;
   Key vol_flowrate_key_, particle_density_key_;
   Key mol_density_liquid_key_, mass_density_liquid_key_;
   Key mol_density_gas_key_, x_gas_key_;
+  Key conductivity_gen_key_, conductivity_key_, conductivity_eff_key_;
 
   // conductivity tensor
   std::vector<WhetStone::Tensor> K; 
@@ -157,6 +158,9 @@ class Energy_PK : public PK_PhysicalBDF {
   // upwinding 
   Teuchos::RCP<CompositeVector> upw_conductivity_;
   Teuchos::RCP<Operators::Upwind> upwind_;  // int implies fake model
+
+  // fracture network
+  bool flow_on_manifold_;
 };
 
 }  // namespace Energy

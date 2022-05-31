@@ -76,7 +76,7 @@ void Flow_PK::Setup()
   // -- keys
   vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate"); 
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
-  diffusion_liquid_key_ = Keys::getKey(domain_, physical_models->get<std::string>("diffusion liquid key", "diffusion_liquid"));
+  permeability_eff_key_ = Keys::getKey(domain_, "permeability_effective");
   aperture_key_ = Keys::getKey(domain_, "aperture"); 
 
   // -- constant fields
@@ -108,17 +108,17 @@ void Flow_PK::Setup()
     }
 
     {
-      S_->Require<CV_t, CVS_t>(diffusion_liquid_key_, Tags::DEFAULT, diffusion_liquid_key_)
+      S_->Require<CV_t, CVS_t>(permeability_eff_key_, Tags::DEFAULT, permeability_eff_key_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-      Teuchos::ParameterList elist(diffusion_liquid_key_);
+      Teuchos::ParameterList elist(permeability_eff_key_);
       std::vector<std::string> listm({ Keys::getVarName(aperture_key_), 
                                        Keys::getVarName(permeability_key_) });
-      elist.set<std::string>("my key", diffusion_liquid_key_)
+      elist.set<std::string>("my key", permeability_eff_key_)
            .set<Teuchos::Array<std::string> >("multiplicative dependencies", listm)
            .set<std::string>("tag", "");
       auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
-      S_->SetEvaluator(diffusion_liquid_key_, Tags::DEFAULT, eval);
+      S_->SetEvaluator(permeability_eff_key_, Tags::DEFAULT, eval);
     }
 
   // -- matrix absolute permeability
