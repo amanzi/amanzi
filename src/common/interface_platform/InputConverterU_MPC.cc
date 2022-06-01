@@ -992,6 +992,17 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
              .sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
     }
 
+    if (basename == "coupled transport") {
+      std::string transport_m = Keys::merge(prefix, "transport matrix", delimiter);
+      auto& tmp = pk_list.sublist(transport_m).sublist("operators");
+      if (tmp.isSublist("diffusion operator")) {
+        tmp.sublist("diffusion operator")
+           .sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+        tmp.sublist("diffusion operator")
+           .sublist("preconditioner").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+      }
+    }
+
     if (basename == "coupled flow and energy") {
       std::vector<std::string> name_pks = { "flow and energy", "flow and energy fracture",
                                             "flow", "energy", "flow fracture", "energy fracture"};

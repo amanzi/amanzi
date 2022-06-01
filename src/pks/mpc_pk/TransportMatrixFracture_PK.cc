@@ -46,6 +46,7 @@ TransportMatrixFracture_PK::TransportMatrixFracture_PK(Teuchos::ParameterList& p
   plist_ = Teuchos::sublist(pks_list, name_);
 
   Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object") = plist_->sublist("verbose object");
   vo_ = Teuchos::rcp(new VerboseObject("TransportMatrixFracture_PK", vlist)); 
 }
 
@@ -176,8 +177,8 @@ bool TransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool re
   int num_aqueous = tcc_next_m.NumVectors();
 
   for (int i = 0; i < num_aqueous; ++i) {
-    auto op0 = pk0->DispersionSolver(tcc_prev_m, tcc_next_m, t_old, t_new, i);
-    auto op1 = pk1->DispersionSolver(tcc_prev_f, tcc_next_f, t_old, t_new, i);
+    auto op0 = pk0->DispersionSolver(tcc_prev_m, tcc_next_m, t_old, t_new, i)->Clone();
+    auto op1 = pk1->DispersionSolver(tcc_prev_f, tcc_next_f, t_old, t_new, i)->Clone();
 
     // since solution's map could be anything, to create a global operator,
     // we have to rely on pk's operator structure.
@@ -255,10 +256,17 @@ bool TransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool re
     op_dispersion_->ApplyInverse(rhs, sol);
 
     // copy only cell component from potentially larger solution vector
-    *(*S_->GetW<CV_t>(tcc_matrix_key_, Tags::COPY, passwd).ViewComponent("cell"))(i) =
-        *(*sol.SubVector(0)->Data()->ViewComponent("cell"))(0);
-    *(*S_->GetW<CV_t>(tcc_fracture_key_, Tags::COPY, passwd).ViewComponent("cell"))(i) =
-        *(*sol.SubVector(1)->Data()->ViewComponent("cell"))(0);
+    auto& tcc_m = *S_->GetW<CV_t>(tcc_matrix_key_, Tags::COPY, passwd).ViewComponent("cell");
+    *tcc_m(i) = *(*sol.SubVector(0)->Data()->ViewComponent("cell"))(0);
+
+    auto& tcc_f = *S_->GetW<CV_t>(tcc_fracture_key_, Tags::COPY, passwd).ViewComponent("cell");
+    *tcc_f(i) = *(*sol.SubVector(1)->Data()->ViewComponent("cell"))(0);
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      pk0->VV_PrintSoluteExtrema(tcc_m, t_new - t_old, " (domain)");
+      pk1->VV_PrintSoluteExtrema(tcc_f, t_new - t_old, " (fracture)");
+    }
   }
 
   return fail;
