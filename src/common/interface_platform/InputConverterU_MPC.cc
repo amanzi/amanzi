@@ -960,8 +960,9 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       tmp_m.set<std::string>("time integration method", "none");
       tmp_m.remove("BDF1", false);
       tmp_m.remove("initialization", false);
-      pk_list.sublist(flow_m).sublist("operators")
-         .sublist("diffusion operator").sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+      auto& tmp = pk_list.sublist(flow_m).sublist("operators").sublist("diffusion operator");
+      tmp.sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+      tmp.sublist("preconditioner").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
 
       auto& tmp_f = pk_list.sublist(flow_f).sublist("time integrator");
       tmp_f.set<std::string>("time integration method", "none");
