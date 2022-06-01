@@ -230,7 +230,6 @@ IndependentVariableFieldEvaluatorFromFile::LoadFile_(int i) {
   for (int j=0; j!=ndofs_; ++j) {
     std::stringstream varname;
     varname << varname_ << "." << locname_ << "." << j << "//" << i;
-    std::cout << "Output: "<<varname.str()<<"\n";
     if (!file_input->readData(*vec(j), varname.str())) {
       Exceptions::amanzi_throw(Errors::Message("Read ERROR! Variable is not found"));
     }
