@@ -677,7 +677,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="physical models and assumptions">
-        <Parameter name="flow in fractures" type="bool" value="true"/>
+        <Parameter name="flow and transport in fractures" type="bool" value="true"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
@@ -1012,11 +1012,11 @@
         <ParameterList name="FPM for fracture">
           <Parameter name="region" type="string" value="fracture"/>
           <Parameter name="model" type="string" value="cubic law"/>
-          <Parameter name="aperture" type="double" value="0.00000000000000000e+00"/>
+          <Parameter name="aperture" type="double" value="0.0"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="physical models and assumptions">
-        <Parameter name="flow in fractures" type="bool" value="true"/>
+        <Parameter name="flow and transport in fractures" type="bool" value="true"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="absolute permeability">

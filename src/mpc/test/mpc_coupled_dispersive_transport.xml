@@ -429,7 +429,7 @@
         <Parameter name="permeability field is required" type="bool" value="false"/>
         <Parameter name="eos lookup table" type="bool" value="false"/>
         <Parameter name="use dispersion solver" type="bool" value="false"/>
-        <Parameter name="transport in fractures" type="bool" value="true"/>
+        <Parameter name="flow and transport in fractures" type="bool" value="true"/>
       </ParameterList>
 
       <ParameterList name="reconstruction">

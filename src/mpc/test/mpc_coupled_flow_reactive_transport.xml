@@ -905,7 +905,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="physical models and assumptions">
-        <Parameter name="flow in fractures" type="bool" value="true"/>
+        <Parameter name="flow and transport in fractures" type="bool" value="true"/>
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
@@ -1133,7 +1133,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="physical models and assumptions">
-        <Parameter name="flow in fractures" type="bool" value="true"/>
+        <Parameter name="flow and transport in fractures" type="bool" value="true"/>
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
       <ParameterList name="absolute permeability">

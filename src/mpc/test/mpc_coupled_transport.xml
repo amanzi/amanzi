@@ -439,7 +439,7 @@
       <!-- end of developers parameters -->
 
       <ParameterList name="physical models and assumptions">
-        <!--Parameter name="transport in fractures" type="bool" value="true"/-->
+        <!--Parameter name="flow and transport in fractures" type="bool" value="true"/-->
       </ParameterList>
 
       <ParameterList name="reconstruction">

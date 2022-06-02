@@ -65,7 +65,7 @@ void Flow_PK::Setup()
   auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
 
   // -- type of the flow (in matrix or on manifold)
-  flow_on_manifold_ = physical_models->get<bool>("flow in fractures", false);
+  flow_on_manifold_ = physical_models->get<bool>("flow and transport in fractures", false);
   flow_on_manifold_ &= (mesh_->manifold_dimension() != mesh_->space_dimension());
 
   // -- coupling with other PKs

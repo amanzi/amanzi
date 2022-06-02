@@ -1252,7 +1252,7 @@ Combination of both approaches may lead to a more efficient code.
 * `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
   e.g. by EnergyFlow PK. The default value is `"false`".
 
-* `"flow in fractures`" [bool] indicates that Darcy flow is calculated in fractures. 
+* `"flow and transport in fractures`" [bool] indicates that Darcy flow is calculated in fractures. 
   This option is ignored is mesh dimentionaly equals to manifold dimensionality.
 
 * `"multiscale model`" [string] specifies a multiscale model.

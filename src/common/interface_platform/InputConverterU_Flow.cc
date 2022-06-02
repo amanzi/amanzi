@@ -70,7 +70,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
   out_list.sublist("fracture permeability models") = TranslateFlowFractures_(domain);
   if (out_list.sublist("fracture permeability models").numParams() > 0) {
     out_list.sublist("physical models and assumptions")
-        .set<bool>("flow in fractures", true);
+        .set<bool>("flow and transport in fractures", true);
   }
 
   if (pk_model_["flow"] == "darcy") {

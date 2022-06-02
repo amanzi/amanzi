@@ -495,7 +495,7 @@
     <ParameterList name="flow fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="physical models and assumptions">
-	<Parameter name="flow in fractures" type="bool" value="true"/>
+	<Parameter name="flow and transport in fractures" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture permeability models">
 	<ParameterList name="FPM for Entire Domain">

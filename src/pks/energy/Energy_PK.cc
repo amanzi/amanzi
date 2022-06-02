@@ -70,7 +70,7 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
 
   // workflow can be affected by the list of models
   auto physical_models = Teuchos::sublist(ep_list_, "physical models and assumptions");
-  flow_on_manifold_ = physical_models->get<bool>("flow in fractures", false);
+  flow_on_manifold_ = physical_models->get<bool>("flow and transport in fractures", false);
 }
 
 
