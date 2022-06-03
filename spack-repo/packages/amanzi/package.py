@@ -121,8 +121,8 @@ class Amanzi(CMakePackage):
 
     ##### Other #####
     depends_on('trilinos@13.0.0 +boost +hdf5 +hypre '
-               '+anasazi +amesos2 +epetra +ml '
-               '+zoltan +nox +ifpack +muelu -ifpack2 cxxstd=11')
+               '+anasazi +amesos2 +epetra +ml +epetraext +belos +aztec'
+               '+zoltan +nox +ifpack +muelu +basker -ifpack2 cxxstd=11')
 
     conflicts('physics=ats', when='mesh_type=structured', msg='ERROR: ats physics is not supported in the structured mesh framework.')
     conflicts('physics=ats', when='mesh_framework=moab', msg='ERROR: ats physics needs mstk on.')
@@ -196,7 +196,7 @@ class Amanzi(CMakePackage):
             options.append('-DAlquimia_DIR=' + self.spec['alquimia'].prefix) 
             options.append('-DAlquimia_INCLUDE_DIR=' + self.spec['alquimia'].prefix + 'include/alquimia')
             options.append('-DENABLE_CRUNCHTOPE=ON')
-            options.append('-DCRUNCHTOPE_DIR=' + self.spec['crunchtope'].prefix)
+            options.append('-DCrunchTope_DIR=' + self.spec['crunchtope'].prefix)
         else:
             options.append('-DENABLE_ALQUIMIA=OFF')
             options.append('-DENABLE_PETSC=OFF')

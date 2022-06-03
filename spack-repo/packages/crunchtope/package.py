@@ -27,14 +27,13 @@ class Crunchtope(CMakePackage):
     depends_on('petsc@3.16.4:3.16.5')
     depends_on('hdf5 +mpi+fortran+hl+shared',when='+shared')
     depends_on('hdf5 +mpi+fortran+hl~shared',when='-shared')
-    depends_on('alquimia@1.0.9')
+    #depends_on('alquimia@1.0.9')
     depends_on('pflotran@3.0.2')
 
     def cmake_args(self):
         options = ['-DCMAKE_BUILD_TYPE=debug']
         options.append('-DCMAKE_Fortran_COMPILER=' + self.spec['mpi'].mpifc)
-        options.append('-DCMAKE_Fortran_FLAGS=-ffree-line-length-512')        
-
+        options.append('-DCMAKE_Fortran_FLAGS=-DALQUIMIA -ffree-line-length-512')      
 
         return options
 
