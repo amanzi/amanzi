@@ -113,7 +113,8 @@ class InputConverterU : public InputConverter {
       const std::string& pk = "flow");
   Teuchos::ParameterList TranslateTimeIntegrator_(
       const std::string& err_options, const std::string& nonlinear_solver,
-      bool modify_correction, const std::string& unstr_controls,
+      bool modify_correction, const std::string& nonsolver_controls,
+      const std::string& linsolver,
       double dt_cut_default, double dt_inc_default);
   Teuchos::ParameterList TranslateInitialization_(
       const std::string& unstr_controls);

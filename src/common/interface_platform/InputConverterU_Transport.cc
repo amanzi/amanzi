@@ -154,7 +154,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
                     (doc_->getElementsByTagName(mm.transcode("tortuosity"))->getLength() > 0);
 
   // create dispersion list
-  if (dispersion && domain != "fracture") {
+  if (dispersion) {
     node_list = doc_->getElementsByTagName(mm.transcode("materials"));
 
     Teuchos::ParameterList& mat_list = out_list.sublist("material properties");

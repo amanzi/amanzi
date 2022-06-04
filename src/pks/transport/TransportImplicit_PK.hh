@@ -109,18 +109,14 @@ class TransportImplicit_PK : public Transport_PK,
   //    scheme is changing the value of the solution in state.
   virtual void ChangedSolution() override {};
 
+  void UpdateLinearSystem(double t_old, double t_new, int component);
   void UpdateBoundaryData(double t_old, double t_new, int component);
 
   // access
   Teuchos::RCP<Operators::Operator> op() { return op_; }
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_adv() { return op_adv_; }
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc() { return op_acc_; }
-  Teuchos::RCP<Operators::BCs> op_bc() { return op_bc_; }
   
-  // Forbidden.
-  TransportImplicit_PK(const TransportImplicit_PK&);
-  TransportImplicit_PK& operator=(const TransportImplicit_PK&);
-
  private:
   // solvers
   Teuchos::RCP<Operators::Operator> op_;

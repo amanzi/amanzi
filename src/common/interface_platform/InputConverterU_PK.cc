@@ -35,7 +35,8 @@ XERCES_CPP_NAMESPACE_USE
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
     const std::string& err_options, const std::string& nonlinear_solver,
-    bool modify_correction, const std::string& unstr_controls,
+    bool modify_correction, const std::string& nonsolver_controls,
+    const std::string& linsolver,
     double dt_cut_default, double dt_inc_default)
 {
   Teuchos::ParameterList out_list;
@@ -54,10 +55,10 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
   // linear solver
   bool flag;
   std::string prec(TI_PRECONDITIONER);
-  node = GetUniqueElementByTagsString_(unstr_controls + ", preconditioner", flag);
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", preconditioner", flag);
   if (flag) prec = mm.transcode(node->getTextContent());
 
-  out_list.set<std::string>("linear solver", TI_SOLVER);
+  out_list.set<std::string>("linear solver", linsolver);
   out_list.set<std::string>("preconditioner", prec);
   // out_list.set<std::string>("preconditioner enhancement", "none");
 
@@ -73,7 +74,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
 
   // use standard timestep controller type
   std::string name(TI_TIMESTEP_CONTROLLER);
-  node = GetUniqueElementByTagsString_(unstr_controls + ", timestep_controller", flag);
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", timestep_controller", flag);
   if (flag) name = mm.transcode(node->getTextContent());
 
   bdf1.set<std::string>("timestep controller type", name);
@@ -160,69 +161,69 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
   bdf1.set<double>("restart tolerance relaxation factor damping", TI_TOL_RELAX_FACTOR_DAMPING);
   bdf1.set<int>("nonlinear iteration initial guess extrapolation order", 1);
 
-  node = GetUniqueElementByTagsString_(unstr_controls + ", max_iterations", flag);
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", max_iterations", flag);
   if (flag) controller.set<int>("max iterations",
       strtol(mm.transcode(node->getTextContent()), NULL, 10));
 
-  node = GetUniqueElementByTagsString_(unstr_controls + ", min_iterations", flag);
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", min_iterations", flag);
   if (flag) controller.set<int>("min iterations",
       strtol(mm.transcode(node->getTextContent()), NULL, 10));
 
-  node = GetUniqueElementByTagsString_(unstr_controls + ", limit_iterations", flag);
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", limit_iterations", flag);
   if (flag) solver->set<int>("limit iterations",
       strtol(mm.transcode(node->getTextContent()), NULL, 10));
 
-  node = GetUniqueElementByTagsString_(unstr_controls + ", nonlinear_tolerance", flag); 
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", nonlinear_tolerance", flag); 
   double nonlinear_tol(NONLINEAR_TOLERANCE);
   if (flag) {
     nonlinear_tol = strtod(mm.transcode(node->getTextContent()), NULL);
     solver->set<double>("nonlinear tolerance", nonlinear_tol);
   }
 
-  node = GetUniqueElementByTagsString_(unstr_controls + ", time_step_reduction_factor", flag); 
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", time_step_reduction_factor", flag); 
   if (flag) controller.set<double>("time step reduction factor",
       strtod(mm.transcode(node->getTextContent()), NULL));
 
-  node = GetUniqueElementByTagsString_(unstr_controls + ", time_step_increase_factor", flag); 
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", time_step_increase_factor", flag); 
   if (flag) controller.set<double>("time step increase factor",
       strtod(mm.transcode(node->getTextContent()), NULL));
 
-  node = GetUniqueElementByTagsString_(unstr_controls + ", max_preconditioner_lag_iterations", flag); 
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", max_preconditioner_lag_iterations", flag); 
   if (flag) bdf1.set<int>("max preconditioner lag iterations",
       strtol(mm.transcode(node->getTextContent()), NULL, 10));
 
-  node = GetUniqueElementByTagsString_(unstr_controls + ", max_divergent_iterations", flag); 
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", max_divergent_iterations", flag); 
   if (flag) solver->set<int>("max divergent iterations",
       strtol(mm.transcode(node->getTextContent()), NULL, 10));
 
-  node = GetUniqueElementByTagsString_(unstr_controls + ", nonlinear_iteration_damping_factor", flag); 
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", nonlinear_iteration_damping_factor", flag); 
   if (flag) bdf1.set<double>("nonlinear iteration damping factor",
       strtod(mm.transcode(node->getTextContent()), NULL));
 
   node = GetUniqueElementByTagsString_(
-      unstr_controls + ", nonlinear_iteration_initial_guess_extrapolation_order", flag); 
+      nonsolver_controls + ", nonlinear_iteration_initial_guess_extrapolation_order", flag); 
   if (flag) bdf1.set<int>("nonlinear iteration initial guess extrapolation order",
       strtol(mm.transcode(node->getTextContent()), NULL, 10));
 
-  node = GetUniqueElementByTagsString_(unstr_controls + ", restart_tolerance_relaxation_factor", flag); 
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", restart_tolerance_relaxation_factor", flag); 
   if (flag) bdf1.set<double>("restart tolerance relaxation factor",
       strtod(mm.transcode(node->getTextContent()), NULL));
 
   node = GetUniqueElementByTagsString_(
-      unstr_controls + ", restart_tolerance_relaxation_factor_damping", flag); 
+      nonsolver_controls + ", restart_tolerance_relaxation_factor_damping", flag); 
   if (flag) bdf1.set<double>("restart tolerance relaxation factor damping",
       strtod(mm.transcode(node->getTextContent()), NULL));
 
   node = GetUniqueElementByTagsString_(
-      unstr_controls + ", nonlinear_iteration_divergence_factor", flag); 
+      nonsolver_controls + ", nonlinear_iteration_divergence_factor", flag); 
   if (flag) solver->set<double>("max du growth factor",
        strtod(mm.transcode(node->getTextContent()), NULL));
 
-  node = GetUniqueElementByTagsString_(unstr_controls + ", error_control_options", flag); 
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", error_control_options", flag); 
   if (flag) out_list.set<Teuchos::Array<std::string> >("error control options",
       CharToStrings_(mm.transcode(node->getTextContent())));
 
-  node = GetUniqueElementByTagsString_(unstr_controls + ", preconditioner", flag); 
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", preconditioner", flag); 
   if (flag) {
     std::string text = GetTextContentS_(node, "hypre_amg, trilinos_ml, block_ilu");
     if (text == "hypre_amg") text = "Hypre AMG";
@@ -233,16 +234,16 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
 
   // special cases
   if (flow_single_phase_) {
-    node = GetUniqueElementByTagsString_(unstr_controls + ", time_step_increase_factor", flag); 
+    node = GetUniqueElementByTagsString_(nonsolver_controls + ", time_step_increase_factor", flag); 
     if (flag) controller.set<double>("time step increase factor",
         strtol(mm.transcode(node->getTextContent()), NULL, 10));
   }
 
   // initialization
-  node = GetUniqueElementByTagsString_(unstr_controls + ", unstr_initialization", flag); 
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", unstr_initialization", flag); 
   if (flag) {
     Teuchos::ParameterList& init = out_list.sublist("initialization");
-    init = TranslateInitialization_(unstr_controls);
+    init = TranslateInitialization_(nonsolver_controls);
   }
 
   // overwrite parameters for special solvers

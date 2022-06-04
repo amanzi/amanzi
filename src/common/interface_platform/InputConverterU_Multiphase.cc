@@ -68,7 +68,7 @@ Teuchos::ParameterList InputConverterU::TranslateMultiphase_(
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
 
   out_list.sublist("time integrator") = TranslateTimeIntegrator_(
-      err_options, nonlinear_solver, modify_correction, unstr_controls,
+      err_options, nonlinear_solver, modify_correction, unstr_controls, TI_SOLVER,
       TI_TS_REDUCTION_FACTOR, TI_TS_INCREASE_FACTOR);  
 
   // boundary and initial conditions

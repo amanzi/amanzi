@@ -179,7 +179,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
   
   if (pk_master_.find("flow") != pk_master_.end()) {
     flow_list->sublist("time integrator") = TranslateTimeIntegrator_(
-        err_options, nonlinear_solver, modify_correction, unstr_controls,
+        err_options, nonlinear_solver, modify_correction, unstr_controls, TI_SOLVER,
         dt_cut_[mode], dt_inc_[mode]);
   }
 

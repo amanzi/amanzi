@@ -117,8 +117,10 @@ void TransportMatrixFractureImplicit_PK::Initialize()
   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(pk_fracture->op()->get_row_map())));
   op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
-  op_tree_matrix_->set_operator_block(0, 0, pk_matrix->op());
-  op_tree_matrix_->set_operator_block(1, 1, pk_fracture->op());
+  auto op0 = pk_matrix->op()->Clone();
+  auto op1 = pk_fracture->op()->Clone();
+  op_tree_matrix_->set_operator_block(0, 0, op0);
+  op_tree_matrix_->set_operator_block(1, 1, op1);
 
   // off-diagonal blocks represent coupling terms
   FractureInsertion fia(mesh_domain_, mesh_fracture_);
@@ -129,7 +131,7 @@ void TransportMatrixFractureImplicit_PK::Initialize()
 
   op_coupling00_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, fia.get_cvs_matrix(), fia.get_cvs_matrix(), 
-              fia.get_inds_matrix(), fia.get_inds_matrix(), pk_matrix->op()));
+              fia.get_inds_matrix(), fia.get_inds_matrix(), op0));
   op_coupling00_->Setup(fia.get_values(), 1.0);
   op_coupling00_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -147,7 +149,7 @@ void TransportMatrixFractureImplicit_PK::Initialize()
 
   op_coupling11_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, fia.get_cvs_fracture(), fia.get_cvs_fracture(),
-              fia.get_inds_fracture(), fia.get_inds_fracture(), pk_fracture->op()));
+              fia.get_inds_fracture(), fia.get_inds_fracture(), op1));
   op_coupling11_->Setup(fia.get_values(), 1.0);
   op_coupling11_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -170,7 +172,7 @@ void TransportMatrixFractureImplicit_PK::Initialize()
 
     op_coupling00d_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
         oplist, fid_->get_cvs_matrix(), fid_->get_cvs_matrix(), 
-                fid_->get_inds_matrix(), fid_->get_inds_matrix(), pk_matrix->op()));
+                fid_->get_inds_matrix(), fid_->get_inds_matrix(), op0));
     op_coupling00d_->Setup(fid_->get_values(), 1.0);
     op_coupling00d_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -188,7 +190,7 @@ void TransportMatrixFractureImplicit_PK::Initialize()
 
     op_coupling11d_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
         oplist, fid_->get_cvs_fracture(), fid_->get_cvs_fracture(),
-                fid_->get_inds_fracture(), fid_->get_inds_fracture(), pk_fracture->op()));
+                fid_->get_inds_fracture(), fid_->get_inds_fracture(), op1));
     op_coupling11d_->Setup(fid_->get_values(), 1.0);
     op_coupling11d_->UpdateMatrices(Teuchos::null, Teuchos::null);
   }
@@ -231,6 +233,9 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
   auto pk_fracture = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[1]);
 
+  // make copy of primary unknowns, i.e. solution 
+  TreeVector my_solution_copy(*my_solution_);
+
   // update coupling terms
   int ncells_owned_f = mesh_fracture_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   auto values1 = std::make_shared<std::vector<double> >(2 * ncells_owned_f, 0.0);
@@ -266,8 +271,6 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   }
 
   // update accumulation term and the right-hand side
-  const auto& phi_m = S_->Get<CV_t>("water_content");
-  const auto& phi_f = S_->Get<CV_t>("fracture-water_content");
   const auto& tcc_m = S_->Get<CV_t>("total_component_concentration");
   const auto& tcc_f = S_->Get<CV_t>("fracture-total_component_concentration");
 
@@ -277,23 +280,8 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   for (int i = 0; i < num_aqueous; i++) {
     auto tv_one = ExtractComponent_(tcc_m, tcc_f, i);
 
-    pk_matrix->UpdateBoundaryData(t_old, t_new, i);
-    pk_fracture->UpdateBoundaryData(t_old, t_new, i);
-
-    pk_matrix->op()->rhs()->PutScalar(0.0);
-    pk_matrix->op_acc()->local_op(0)->Rescale(0.0);
-    pk_matrix->op_acc()->AddAccumulationDelta(*tv_one->SubVector(0)->Data(), phi_m, phi_m, dt, "cell");
-
-    pk_fracture->op()->rhs()->PutScalar(0.0);
-    pk_fracture->op_acc()->local_op(0)->Rescale(0.0);
-    pk_fracture->op_acc()->AddAccumulationDelta(*tv_one->SubVector(1)->Data(), phi_f, phi_f, dt, "cell");
-
-    // assemble advection operators
-    pk_matrix->op_adv()->UpdateMatrices(S_->GetPtr<CV_t>(matrix_vol_flowrate_key_, Tags::DEFAULT).ptr());
-    pk_matrix->op_adv()->ApplyBCs(true, true, true);
-
-    pk_fracture->op_adv()->UpdateMatrices(S_->GetPtr<CV_t>(fracture_vol_flowrate_key_, Tags::DEFAULT).ptr());
-    pk_fracture->op_adv()->ApplyBCs(true, true, true);
+    pk_matrix->UpdateLinearSystem(t_old, t_new, i);
+    pk_fracture->UpdateLinearSystem(t_old, t_new, i);
 
     op_coupling00_->Setup(values1, 1.0);
     op_coupling00_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -326,6 +314,7 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     }
 
     // create solver
+    op_tree_matrix_->AssembleMatrix();
     op_tree_matrix_->ComputeInverse();
 
     TreeVector rhs(*tv_one), tv_aux(*tv_one);
@@ -335,11 +324,17 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     int ierr = op_tree_matrix_->ApplyInverse(rhs, tv_aux);
     SaveComponent_(tv_aux, my_solution_, i);
 
-    // process error code
+    // recover the original solution 
     bool fail = (ierr != 0);
     if (fail) {
+      *my_solution_ = my_solution_copy;
+      ChangedSolution();
+
+      dt_ = ts_control_->get_timestep(dt_, -1);
+
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Step failed." << std::endl;
+      *vo_->os() << "Step failed: recover (" << my_solution_->size() << ") primary field" << std::endl;
+
       return fail;
     }
   }

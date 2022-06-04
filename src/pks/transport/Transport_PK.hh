@@ -263,10 +263,6 @@ class Transport_PK : public PK_Physical {
 
   // io
   Utils::Units units_;
-
-  // Forbidden.
-  Transport_PK(const Transport_PK&);
-  Transport_PK& operator=(const Transport_PK&);
 };
 
 }  // namespace Transport

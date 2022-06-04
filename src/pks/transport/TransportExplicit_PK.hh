@@ -61,10 +61,6 @@ class TransportExplicit_PK : public Transport_PK,
   
   ~TransportExplicit_PK() {};
   
-  // Forbidden.
-  TransportExplicit_PK(const TransportExplicit_PK&);
-  TransportExplicit_PK& operator=(const TransportExplicit_PK&);
-
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
 
   virtual void FunctionalTimeDerivative(double t, const CompositeVector& component, CompositeVector& f) override;

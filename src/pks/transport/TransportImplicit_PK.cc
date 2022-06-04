@@ -105,8 +105,8 @@ void TransportImplicit_PK::Initialize()
   op_bc_->bc_model();  // memory
 
   // operators
-  // -- diffusion
-  if (flag_dispersion_) {
+  // -- dispertion and/or diffusion
+  if (use_dispersion_) {
     D_.resize(ncells_owned);
     Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D_);
     Teuchos::ParameterList& oplist_d = tp_list_->sublist("operators")
@@ -205,7 +205,7 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     op_adv_->UpdateMatrices(S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT).ptr());
     op_adv_->ApplyBCs(true, true, true);
 
-    if (flag_dispersion_) {
+    if (use_dispersion_) {
       int phase;
       double md;
       CalculateDispersionTensor_(*transport_phi, wc_c);
@@ -243,6 +243,50 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // dt_desirable_ = ts_control_->get_timestep(dt_MPC, 1);
 
   return fail;
+}
+
+
+/* ******************************************************************* 
+* Recompute linear system for the given component.
+******************************************************************* */
+void TransportImplicit_PK::UpdateLinearSystem(double t_old, double t_new, int component) 
+{
+  S_->GetEvaluator(water_content_key_).Update(*S_, "transport");
+  const auto& wc = S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT);
+  const auto& wc_prev = S_->Get<CompositeVector>(prev_water_content_key_, Tags::DEFAULT);
+
+  const auto& wc_c = *wc.ViewComponent("cell");
+  const auto& sat_c = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+
+  CompositeVector tcc_aux(wc);
+  *(*tcc_aux.ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(component);
+
+  double dt = t_new - t_old;
+  op_->RestoreCheckPoint();
+
+  op_->rhs()->PutScalar(0.0);
+  // op_acc_->local_op(0)->Rescale(0.0);
+  op_acc_->AddAccumulationDelta(tcc_aux, wc_prev, wc, dt, "cell");
+
+  UpdateBoundaryData(t_old, t_new, component);
+
+  op_adv_->UpdateMatrices(S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT).ptr());
+  op_adv_->ApplyBCs(true, true, true);
+
+  if (use_dispersion_) {
+    int phase;
+    double md;
+    CalculateDispersionTensor_(*transport_phi, wc_c);
+    FindDiffusionValue(component_names_[component], &md, &phase);
+    if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, sat_c);
+
+    op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+    op_diff_->ApplyBCs(true, true, true);
+  }
+
+  // add sources
+  Epetra_MultiVector& rhs_cell = *op_->rhs()->ViewComponent("cell");
+  ComputeSources_(t_new, dt, rhs_cell, *tcc->ViewComponent("cell"), component, component);
 }
 
 

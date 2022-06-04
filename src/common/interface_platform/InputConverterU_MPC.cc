@@ -403,7 +403,7 @@ void InputConverterU::PopulatePKTree_(
        .set<std::string>("PK type", pk_model_["flow"]);
   }
   else if (basename == "coupled transport") {
-    use_transport_dispersion_ = false;
+    use_transport_dispersion_ = !(implicit == "");
     tmp.set<std::string>("PK type", "transport matrix fracture" + implicit);
     tmp.sublist(Keys::merge(prefix, "transport matrix", delimiter)).set<std::string>("PK type", "transport" + implicit);
     tmp.sublist(Keys::merge(prefix, "transport fracture", delimiter)).set<std::string>("PK type", "transport" + implicit);
@@ -747,9 +747,6 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
         out_list.sublist(pk).set<int>("master PK index", 0);
 
-        out_list.sublist(pk).set<std::string>("solver", "Dispersion Solver")
-                            .set<std::string>("preconditioner", LINEAR_SOLVER_PC);
-
         // implicit PK derived from a strongly coupled MPC needs a time integrator 
         if (transport_implicit_) {
           std::string nonlinear_solver("nka"), tags_default("unstructured_controls, unstr_nonlinear_solver");
@@ -758,8 +755,11 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
           if (flag) nonlinear_solver = GetAttributeValueS_(node, "name", TYPE_NONE, false, "nka"); 
 
           out_list.sublist(pk).sublist("time integrator") = TranslateTimeIntegrator_(
-              err_options, nonlinear_solver, false, tags_default,
+              err_options, nonlinear_solver, false, tags_default, "Dispersion Solver",
               dt_cut_[mode], dt_inc_[mode]);
+        } else {
+          out_list.sublist(pk).set<std::string>("solver", "Dispersion Solver")
+                              .set<std::string>("preconditioner", LINEAR_SOLVER_PC);
         }
       }
       else if (basename == "coupled chemistry") {
@@ -916,7 +916,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         if (!out_list.sublist(pk).isSublist("time integrator")) {
           out_list.sublist(pk).sublist("time integrator") = TranslateTimeIntegrator_(
               err_options, "nka", false,
-              "unstructured_controls, unstr_transient_controls",
+              "unstructured_controls, unstr_transient_controls", TI_SOLVER,
               dt_cut_[mode], dt_inc_[mode]);
           out_list.sublist(pk).sublist("verbose object") = verb_list_.sublist("verbose object");
         }
