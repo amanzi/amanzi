@@ -131,9 +131,9 @@ Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
   // verify that method is admissible
   bool flag;
   node = GetUniqueElementByTagsString_(tags_default + ", method", flag);
-  if (flag) method = GetTextContentS_(node, "pcg, gmres"); 
+  if (flag) method = GetTextContentS_(node, "pcg, gmres, nka"); 
   node = GetUniqueElementByTagsString_(tags + ", method", flag);
-  if (flag) method = GetTextContentS_(node, "pcg, gmres"); 
+  if (flag) method = GetTextContentS_(node, "pcg, gmres, nka"); 
 
   if (method_enforce != "" && method != method_enforce) {
     msg << "Expect method=\"" << method_enforce 
