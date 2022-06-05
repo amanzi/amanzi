@@ -278,7 +278,7 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   int num_aqueous = tcc_m.ViewComponent("cell")->NumVectors();
 
   for (int i = 0; i < num_aqueous; i++) {
-    auto tv_one = ExtractComponent_(tcc_m, tcc_f, i);
+    ExtractComponent_(tcc_m, tcc_f, i);
 
     pk_matrix->UpdateLinearSystem(t_old, t_new, i);
     pk_fracture->UpdateLinearSystem(t_old, t_new, i);
@@ -316,13 +316,14 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     // create solver
     op_tree_matrix_->AssembleMatrix();
     op_tree_matrix_->ComputeInverse();
+ 
+    auto& tvs = op_tree_matrix_->DomainMap();
+    TreeVector rhs_one(tvs), sol_one(tvs);
+    *rhs_one.SubVector(0)->Data() = *pk_matrix->op()->rhs();
+    *rhs_one.SubVector(1)->Data() = *pk_fracture->op()->rhs();
 
-    TreeVector rhs(*tv_one), tv_aux(*tv_one);
-    *rhs.SubVector(0)->Data() = *pk_matrix->op()->rhs();
-    *rhs.SubVector(1)->Data() = *pk_fracture->op()->rhs();
-
-    int ierr = op_tree_matrix_->ApplyInverse(rhs, tv_aux);
-    SaveComponent_(tv_aux, my_solution_, i);
+    int ierr = op_tree_matrix_->ApplyInverse(rhs_one, sol_one);
+    SaveComponent_(sol_one, my_solution_, i);
 
     // recover the original solution 
     bool fail = (ierr != 0);
