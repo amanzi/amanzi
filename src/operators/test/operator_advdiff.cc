@@ -190,7 +190,7 @@ void AdvectionDiffusionStatic(int nx, double* error)
   op_adv->ApplyBCs(false, true, false);
 
   global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
-          "AztecOO CG", plist.sublist("solvers"));
+          "NKA", plist.sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
 

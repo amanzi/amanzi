@@ -609,16 +609,6 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Dispersion Solver">
-      <Parameter name="iterative method" type="string" value="pcg"/>
-      <ParameterList name="pcg parameters">
-        <Parameter name="error tolerance" type="double" value="1.0e-15"/>
-        <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="PCG with Hypre AMG">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">

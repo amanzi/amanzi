@@ -40,7 +40,8 @@ EnergyTwoPhase_PK::EnergyTwoPhase_PK(
                    const Teuchos::RCP<TreeVector>& soln) :
     PK(pk_tree, glist, S, soln),
     Energy_PK(pk_tree, glist, S, soln),
-    soln_(soln)
+    soln_(soln),
+    dt_(0.0)
 {
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = ep_list_->sublist("verbose object");

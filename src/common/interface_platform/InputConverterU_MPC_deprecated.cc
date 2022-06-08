@@ -199,6 +199,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
     } else if (strcmp(tagname, "transport") == 0) {
       transient_model += 2 * pk_state[tagname];
+      pk_model_["transport"] = "transport";
       pk_domain_["transport"] = "domain";
     }
   }

@@ -275,10 +275,8 @@ int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y, double scal
 ****************************************************************** */
 int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
 {
-#if TEST_MAPS
-  AMANZI_ASSERT(get_domain_map().SubsetOf(Y.Map()));
-  AMANZI_ASSERT(get_range_map().SubsetOf(X.Map()));
-#endif
+  // AMANZI_ASSERT(get_domain_map()->SubsetOf(Y.Map()));
+  // AMANZI_ASSERT(get_range_map()->SubsetOf(X.Map()));
 
   int ierr = 0;
   if (get_operator() != Teuchos::null) {
@@ -666,6 +664,7 @@ std::string TreeOperator::PrintDiagnostics(int prefix) const
       }
     }
   }
+
   return msg.str();
 }
 

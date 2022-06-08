@@ -212,6 +212,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       } else if (strcmp(tagname, "transport") == 0) {
         GetAttributeValueS_(jnode, "state", "on");
         transient_model += 2;
+        pk_model_["transport"] = "transport";
         pk_domain_["transport"] = "domain";
 
       } else if (strcmp(tagname, "energy") == 0) {

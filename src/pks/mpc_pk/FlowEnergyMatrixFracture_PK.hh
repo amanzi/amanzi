@@ -74,7 +74,7 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
       std::shared_ptr<const std::vector<std::vector<int> > > inds_matrix,
       std::shared_ptr<const std::vector<std::vector<int> > > inds_fracture,
       std::shared_ptr<const std::vector<double> > values,
-      int i, int j, Teuchos::RCP<Operators::TreeOperator>& op_tree);
+      int i, Teuchos::RCP<Operators::TreeOperator>& op_tree);
 
   void UpdateCouplingFluxes_(
       const std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> >& adv_coupling);
@@ -106,29 +106,6 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   // factory registration
   static RegisteredPKFactory<FlowEnergyMatrixFracture_PK> reg_;
 };
-
-
-// non-member function
-int ApplyFlattened(const Operators::TreeOperator& op, const TreeVector& X, TreeVector& Y);
-
-
-// supporting class that is used to due to ApplyFlattened
-namespace Operators {
-
-class FlatTreeOperator : public Operators::TreeOperator {
- public:
-  using Vector_t = TreeVector;
-  using VectorSpace_t = TreeVector::VectorSpace_t;
-
-  FlatTreeOperator(const Teuchos::RCP<const TreeVectorSpace>& tvs) 
-    : TreeOperator(tvs) {};
-
-  virtual int Apply(const TreeVector& X, TreeVector& Y) const override {
-    return ApplyFlattened(*this, X, Y);
-  }
-};
-
-}  // namespace Operators
 
 }  // namespace Amanzi
 #endif

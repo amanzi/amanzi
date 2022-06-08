@@ -227,7 +227,7 @@ TEST(NKA_SOLVER) {
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
 
-  // create the pcg operator
+  // create NKA operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
   AmanziSolvers::IterativeMethodNKA<Matrix,Matrix,Epetra_Vector,Epetra_Map> nka;
   nka.set_matrices(m,m);

@@ -40,7 +40,8 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(
                    const Teuchos::RCP<TreeVector>& soln) :
     PK(pk_tree, glist, S, soln),
     Energy_PK(pk_tree, glist, S, soln),
-    soln_(soln)
+    soln_(soln),
+    dt_(0.0)
 {
   // verbose object
   Teuchos::ParameterList vlist;

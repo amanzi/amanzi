@@ -172,24 +172,24 @@ void FlowEnergyMatrixFracture_PK::Initialize()
   // NOTE: In this PK, the solution is 2-deep, with 2 sub-PKs (matrix,
   // fracture) each with 2 sub-pks of their own (flow,energy).  Currently
   // TreeOperator cannot handle this, so instead we must flatten the map.
-  auto tvs = Teuchos::rcp(new TreeVectorSpace());
-  for (const auto& pk : sub_pks_) {
-    auto mpc_pk = Teuchos::rcp_dynamic_cast<PK_MPCStrong>(pk);
-    auto sub_tvs = mpc_pk->op_tree_matrix()->DomainMap();
-    for (const auto& tmp : sub_tvs) tvs->PushBack(tmp);
+  auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
+  op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  for (int i = 0; i < 2; ++i) {
+    const auto& row = solution_->SubVector(i)->get_map();
+    for (int j = 0; j < 2; ++j) {
+      const auto& col = solution_->SubVector(j)->get_map();
+      op_tree_matrix_->set_block(i, j, Teuchos::rcp(new Operators::TreeOperator(row, col)));
+    }
   }
 
-  AMANZI_ASSERT(tvs->size() == 4);
-  op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
-  op_tree_pc_ = Teuchos::rcp(new Operators::FlatTreeOperator(tvs));
-
-  for (int l = 0; l < 2; ++l) {
-    for (int m = 0; m < 2; ++m) {
-      auto op1 = pk_matrix->op_tree_pc()->get_operator_block(l, m);
-      auto op2 = pk_fracture->op_tree_pc()->get_operator_block(l, m);
-
-      if (op1 != Teuchos::null) op_tree_pc_->set_operator_block(l, m, op1->Clone());
-      if (op2 != Teuchos::null) op_tree_pc_->set_operator_block(2 + l, 2 + m, op2->Clone());
+  op_tree_pc_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  op_tree_pc_->set_block(0, 0, pk_matrix->op_tree_pc()->Clone());
+  op_tree_pc_->set_block(1, 1, pk_fracture->op_tree_pc()->Clone());
+  for (int i = 0; i < 2; ++i) {
+    const auto& row = solution_->SubVector(i)->get_map();
+    for (int j = 0; j < 2; ++j) {
+      const auto& col = solution_->SubVector(j)->get_map();
+      if (i != j) op_tree_pc_->set_block(i, j, Teuchos::rcp(new Operators::TreeOperator(row, col)));
     }
   }
 
@@ -213,22 +213,22 @@ void FlowEnergyMatrixFracture_PK::Initialize()
   fi.SetValues(kn, 1.0 / gravity);
   AddCouplingFluxes_(fi.get_cvs_matrix(), fi.get_cvs_fracture(),
                      fi.get_inds_matrix(), fi.get_inds_fracture(),
-                     fi.get_values(), 0, 2, op_tree_matrix_);
+                     fi.get_values(), 0, op_tree_matrix_);
 
   // diagonal coupling terms were added in the previous call
   AddCouplingFluxes_(fi.get_cvs_matrix(), fi.get_cvs_fracture(),
                      fi.get_inds_matrix(), fi.get_inds_fracture(),
-                     fi.get_values(), 0, 2, op_tree_pc_);
+                     fi.get_values(), 0, op_tree_pc_);
 
   // -- operators (energy)
   fi.SetValues(tn, 1.0);
   AddCouplingFluxes_(fi.get_cvs_matrix(), fi.get_cvs_fracture(),
                      fi.get_inds_matrix(), fi.get_inds_fracture(),
-                     fi.get_values(), 1, 3, op_tree_matrix_);
+                     fi.get_values(), 1, op_tree_matrix_);
 
   AddCouplingFluxes_(fi.get_cvs_matrix(), fi.get_cvs_fracture(),
                      fi.get_inds_matrix(), fi.get_inds_fracture(),
-                     fi.get_values(), 1, 3, op_tree_pc_);
+                     fi.get_values(), 1, op_tree_pc_);
 
   // -- indices transmissibimility coefficients for matrix-fracture advective flux
   FractureInsertion fia(mesh_matrix, mesh_fracture);
@@ -245,19 +245,22 @@ void FlowEnergyMatrixFracture_PK::Initialize()
   adv_coupling_matrix_ = AddCouplingFluxes_(
       fia.get_cvs_matrix(), fia.get_cvs_fracture(),
       fia.get_inds_matrix(), fia.get_inds_fracture(),
-      fia.get_values(), 1, 3, op_tree_matrix_);
+      fia.get_values(), 1, op_tree_matrix_);
 
   adv_coupling_pc_ = AddCouplingFluxes_(
       fia.get_cvs_matrix(), fia.get_cvs_fracture(),
       fia.get_inds_matrix(), fia.get_inds_fracture(),
-      fia.get_values(), 1, 3, op_tree_pc_);
+      fia.get_values(), 1, op_tree_pc_);
 
   // create global matrix
   op_tree_pc_->SymbolicAssembleMatrix();
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << op_tree_matrix_->PrintDiagnostics() << std::endl
+    *vo_->os() << "solution vector:\n";
+    solution_->Print(*vo_->os(), false);
+    *vo_->os() << "\nmatrix:" << std::endl
+               << op_tree_matrix_->PrintDiagnostics() 
                << "preconditioner:" << std::endl
                << op_tree_pc_->PrintDiagnostics() << std::endl
                << vo_->color("green") << "Initialization of PK is complete: my dT=" << get_dt()
@@ -336,7 +339,7 @@ void FlowEnergyMatrixFracture_PK::FunctionalResidual(
 
   UpdateCouplingFluxes_(adv_coupling_matrix_);
 
-  ApplyFlattened(*op_tree_matrix_, *u_new, g);
+  op_tree_matrix_->Apply(*u_new, g);
   f->Update(1.0, g, 1.0);
 
   // convergence control
@@ -359,7 +362,6 @@ void FlowEnergyMatrixFracture_PK::UpdatePreconditioner(
   Teuchos::ParameterList pc_list = preconditioner_list_->sublist(pc_name);
 
   op_tree_pc_->AssembleMatrix();
-  // std::cout << *op_tree_pc_->A() << std::endl; exit(0);
 
   // block indices for preconditioner are (0, 1, 0, 1)
   auto smap = op_tree_pc_->get_row_supermap();
@@ -416,14 +418,14 @@ std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> >
     std::shared_ptr<const std::vector<std::vector<int> > > inds_matrix,
     std::shared_ptr<const std::vector<std::vector<int> > > inds_fracture,
     std::shared_ptr<const std::vector<double> > values,
-    int i, int j, Teuchos::RCP<Operators::TreeOperator>& op_tree)
+    int i, Teuchos::RCP<Operators::TreeOperator>& op_tree)
 {
   Teuchos::ParameterList oplist;
 
-  auto op00 = Teuchos::rcp_const_cast<Operators::Operator>(op_tree->get_operator_block(i, i));
-  auto op01 = Teuchos::rcp_const_cast<Operators::Operator>(op_tree->get_operator_block(i, j));
-  auto op10 = Teuchos::rcp_const_cast<Operators::Operator>(op_tree->get_operator_block(j, i));
-  auto op11 = Teuchos::rcp_const_cast<Operators::Operator>(op_tree->get_operator_block(j, j));
+  auto op00 = op_tree->get_block(0, 0)->get_operator_block(i, i);
+  auto op01 = op_tree->get_block(0, 1)->get_operator_block(i, i);
+  auto op10 = op_tree->get_block(1, 0)->get_operator_block(i, i);
+  auto op11 = op_tree->get_block(1, 1)->get_operator_block(i, i);
 
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling00, op_coupling11;
   // add diagonal
@@ -438,10 +440,10 @@ std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> >
   op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   if (op00 == Teuchos::null)
-    op_tree->set_operator_block(i, i, op_coupling00->global_operator());
+    op_tree->get_block(0, 0)->set_operator_block(i, i, op_coupling00->global_operator());
 
   if (op11 == Teuchos::null)
-    op_tree->set_operator_block(j, j, op_coupling11->global_operator());
+    op_tree->get_block(1, 1)->set_operator_block(i, i, op_coupling11->global_operator());
 
   auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_matrix, cvs_fracture, inds_matrix, inds_fracture, op01));
@@ -454,10 +456,10 @@ std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> >
   op_coupling10->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   if (op10 == Teuchos::null)
-    op_tree->set_operator_block(j, i, op_coupling10->global_operator());
+    op_tree->get_block(1, 0)->set_operator_block(i, i, op_coupling10->global_operator());
 
   if (op01 == Teuchos::null)
-    op_tree->set_operator_block(i, j, op_coupling01->global_operator());
+    op_tree->get_block(0, 1)->set_operator_block(i, i, op_coupling01->global_operator());
 
   // return operators
   std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> > ops;
@@ -581,32 +583,6 @@ void FlowEnergyMatrixFracture_PK::SwapEvaluatorField_(
     fdf_copy = Teuchos::rcp(new CompositeVector(fd));
     fd = ev;
   }
-}
-
-
-/* ******************************************************************
-* Calculate Y = A * X using matrix-free matvec on blocks of operators.
-****************************************************************** */
-int ApplyFlattened(const Operators::TreeOperator& op, const TreeVector& X, TreeVector& Y)
-{
-  Y.PutScalar(0.0);
-
-  auto Xtv = collectTreeVectorLeaves_const(X);
-  auto Ytv = collectTreeVectorLeaves(Y);
-
-  int ierr(0), n(0);
-  for (auto jt = Ytv.begin(); jt != Ytv.end(); ++jt, ++n) {
-    CompositeVector& yN = *(*jt)->Data();
-    int m(0);
-    for (auto it = Xtv.begin(); it != Xtv.end(); ++it, ++m) {
-      auto block = op.get_operator_block(n,m);
-      if (block != Teuchos::null) {
-        const CompositeVector& xN = *(*it)->Data();
-        ierr |= block->Apply(xN, yN, 1.0);
-      }
-    }
-  }
-  return ierr;
 }
 
 
