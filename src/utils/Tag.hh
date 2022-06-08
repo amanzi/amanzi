@@ -16,8 +16,9 @@ namespace Amanzi {
 
 class Tag {
  public:
-  Tag() : tag_("") {};
+  Tag() : tag_("") {}
   explicit Tag(const std::string& tag) : tag_(tag) {}
+  Tag(const Tag& other) = default;
 
   void set(const std::string& key) { tag_ = key; }
   std::string get() const { return tag_; }

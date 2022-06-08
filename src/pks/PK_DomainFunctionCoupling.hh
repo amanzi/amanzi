@@ -158,23 +158,23 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
   // get keys of owned (in) and exterior (out) fields
   if (submodel_ == "rate" || submodel_ == "flux exchange") {
     flux_key_ = slist.get<std::string>("flux key");
-    copy_flux_tag_ = make_tag(slist.get<std::string>("flux copy key", ""));
+    copy_flux_tag_ = Keys::readTag(slist, "flux copy key");
 
   } else if (submodel_ == "conserved quantity") {
     field_cons_key_ = slist.get<std::string>("conserved quantity key");
-    copy_field_cons_tag_ = make_tag(slist.get<std::string>("conserved quantity copy key", ""));
+    copy_field_cons_tag_ = Keys::readTag(slist, "conserved quantity copy key");
 
   } else if (submodel_ == "field") {
     // pass
 
   } else {
-    msg << "unknown DomainFunctionCoupling submodel \"" << submodel_ 
+    msg << "unknown DomainFunctionCoupling submodel \"" << submodel_
         << "\", valid option: \"field\", \"rate\", \"flux exchange\", and \"conserved quantity\"";
     Exceptions::amanzi_throw(msg);
   }
 
   field_out_key_ = slist.get<std::string>("external field key");
-  copy_field_out_tag_ = make_tag(slist.get<std::string>("external field copy key", ""));
+  copy_field_out_tag_ = Keys::readTag(slist, "external field copy key");
 
   // create a list of domain ids
   RegionList regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();

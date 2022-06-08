@@ -126,6 +126,11 @@ Key standardize(const Key& other) {
   return other;
 }
 
+// creates a clean name to be used as a variable name, domain name, tag name,
+// etc, that has no delimiters in it, no spaces (which make for uglier IO),
+// etc.
+Key cleanName(const std::string& name);
+
 // is this valid?
 bool validKey(const Key& key);
 
@@ -258,6 +263,12 @@ Key readKey(Teuchos::ParameterList& list,
 Teuchos::Array<Key>
 readKeys(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
          Teuchos::Array<Key> const* const default_names=nullptr);
+
+// Read a dependency tag or tag list from a parameter list, given some default
+// information.
+Tag readTag(Teuchos::ParameterList& list, const Tag& default_tag=Tag{});
+Tag readTag(Teuchos::ParameterList& list, const std::string& param, const Tag& default_tag=Tag{});
+
 
 
 } // namespace Keys

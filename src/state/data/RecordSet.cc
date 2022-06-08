@@ -22,24 +22,24 @@ namespace Amanzi {
 // pass-throughs for other functionality
 void RecordSet::WriteVis(const Visualization& vis) const {
   for (auto& e : records_) {
-    e.second->WriteVis(vis);
+    e.second->WriteVis(vis, subfieldnames());
   }
 }
 void RecordSet::WriteCheckpoint(const Checkpoint& chkp) const {
   for (auto& e : records_) {
-    e.second->WriteCheckpoint(chkp);
+    e.second->WriteCheckpoint(chkp, e.first, subfieldnames());
   }
 }
 void RecordSet::ReadCheckpoint(const Checkpoint& chkp) {
   for (auto& e : records_) {
-    e.second->ReadCheckpoint(chkp);
+    e.second->ReadCheckpoint(chkp, e.first, subfieldnames());
     e.second->set_initialized();
   }
 }
 bool RecordSet::Initialize(Teuchos::ParameterList& plist) {
   bool init = false;
   for (auto& e : records_) {
-    init |= e.second->Initialize(plist);
+    init |= e.second->Initialize(plist, subfieldnames());
   }
   return init;
 }
@@ -81,21 +81,34 @@ const Record& RecordSet::GetRecord(const Tag& tag) const {
 
 void RecordSet::AliasRecord(const Tag& target, const Tag& alias) {
   records_[alias] = std::make_shared<Record>(*records_[target]);
-  if (!alias.get().empty())
-    records_[alias]->set_vis_fieldname(Keys::getKey(vis_fieldname(), alias));
-  else
-    records_[alias]->set_vis_fieldname(vis_fieldname());
+  // if (!alias.get().empty())
+  //   records_[alias]->set_vis_fieldname(Keys::getKey(vis_fieldname(), alias));
+  // else
+  //   records_[alias]->set_vis_fieldname(vis_fieldname());
   aliases_[alias] = target;
 }
 
 
-Record& RecordSet::RequireRecord(const Tag& tag, const Key& owner) {
+Record& RecordSet::RequireRecord(const Tag& tag, const Key& owner, bool alias_ok) {
+  // Check if this should be an aliased record
+  if (!HasRecord(tag) && alias_ok && tag == Tags::NEXT) {
+    for (const auto& other_tag : records_) {
+      if (other_tag.first != Tags::NEXT &&
+          Keys::in(other_tag.first.get(), "next")) {
+        // alias!
+        AliasRecord(other_tag.first, Tags::NEXT);
+        return *other_tag.second;
+      }
+    }
+  }
+
+  // otherwise create the record
   if (!HasRecord(tag)) {
     records_.emplace(tag, std::make_shared<Record>(fieldname(), owner));
     auto& r = records_.at(tag);
-    if (!tag.get().empty()) {
-      r->set_vis_fieldname(Keys::getKey(vis_fieldname(), tag));
-    }
+    // if (!tag.get().empty()) {
+    //   r->set_vis_fieldname(Keys::getKey(vis_fieldname(), tag));
+    // }
     return *r;
   } else {
     auto& r = records_.at(tag);

@@ -152,7 +152,7 @@ class Data {
 
   // virtual interface for ad-hoc polymorphism
   void WriteVis(const Visualization& vis, const Key& fieldname,
-                const std::vector<std::string>& subfieldnames) const {
+                const std::vector<std::string>* subfieldnames) const {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or State::CreateData()";
@@ -160,8 +160,9 @@ class Data {
     }
     p_->WriteVis(vis, fieldname, subfieldnames);
   }
+
   void WriteCheckpoint(const Checkpoint& chkp, const Key& fieldname,
-                       const std::vector<std::string>& subfieldnames) const {
+                       const std::vector<std::string>* subfieldnames) const {
 
     if (!p_) {
       Errors::Message msg;
@@ -170,8 +171,9 @@ class Data {
     }
     p_->WriteCheckpoint(chkp, fieldname, subfieldnames);
   }
+
   void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
-                      const std::vector<std::string>& subfieldnames) const {
+                      const std::vector<std::string>* subfieldnames) const {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or State::CreateData()";
@@ -179,8 +181,9 @@ class Data {
     }
     p_->ReadCheckpoint(chkp, fieldname, subfieldnames);
   }
+
   bool Initialize(Teuchos::ParameterList& plist, const Key& fieldname,
-                  const std::vector<std::string>& subfieldnames) {
+                  const std::vector<std::string>* subfieldnames) {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or State::CreateData()";

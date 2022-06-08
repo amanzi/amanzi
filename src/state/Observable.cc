@@ -49,7 +49,7 @@ Observable::Observable(Teuchos::ParameterList& plist)
   variable_ = plist.get<std::string>("variable");
   region_ = plist.get<std::string>("region");
   location_ = plist.get<std::string>("location name", "cell");
-  tag_ = Tag(plist.get<std::string>("tag", ""));
+  tag_ = Tag(plist.get<std::string>("tag", Tags::DEFAULT.get()));
 
   // Note: -1 here means either take it from the physics if possible, or if
   // this variable is not in the physics, instead will default to 1.
