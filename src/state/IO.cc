@@ -44,12 +44,22 @@ void WriteVis(Visualization& vis, const State& S)
     vis.CreateTimestep(S.get_time(), S.get_cycle(), tag.get());
 
     for (auto r = S.data_begin(); r != S.data_end(); ++r) {
-      // note, no type checking is required -- the type knows if it can be
-      // visualized. However, since overwriting of attributes does not work
-      // properly, we skip them. FIXME
-      for (const auto& e : *r->second) {
-        if (!e.second->ValidType<double>() && !e.second->ValidType<int>())
-          e.second->WriteVis(vis);
+      if (vis.WritesDomain(Keys::getDomain(r->first))) {
+        // note, no type checking is required -- the type knows if it can be
+        // visualized. However, since overwriting of attributes does not work
+        // properly, we skip them. FIXME
+        //
+        // Should we vis all tags or just the default tag?
+        // for (const auto& e : *r->second) {
+        //   if (!e.second->ValidType<double>() &&
+        //       !e.second->ValidType<int>())
+        //     e.second->WriteVis(vis);
+        // }
+        if (r->second->HasRecord(Tags::DEFAULT)) {
+          auto& record = r->second->GetRecord(Tags::DEFAULT);
+          if (!record.ValidType<double>() && !record.ValidType<int>())
+            record.WriteVis(vis);
+        }
       }
     }
     vis.WriteRegions();

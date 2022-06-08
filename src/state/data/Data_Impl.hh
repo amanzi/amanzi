@@ -57,18 +57,18 @@ class Data_Intf {
   // virtual interface for ad-hoc polymorphism
   virtual
   void WriteVis(const Visualization& vis, const Key& fieldname,
-                const std::vector<std::string>& subfieldnames) const = 0;
+                const std::vector<std::string>* subfieldnames) const = 0;
   virtual
   void WriteCheckpoint(const Checkpoint& chkp, const Key& fieldname,
-                       const std::vector<std::string>& subfieldnames) const = 0;
+                       const std::vector<std::string>* subfieldnames) const = 0;
 
   virtual
   void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
-                      const std::vector<std::string>& subfieldnames) const = 0;
+                      const std::vector<std::string>* subfieldnames) const = 0;
 
   virtual
   bool Initialize(Teuchos::ParameterList& plist, const Key& fieldname,
-                  const std::vector<std::string>& subfieldnames) = 0;
+                  const std::vector<std::string>* subfieldnames) = 0;
 
   virtual
   void Assign(const Data_Intf& other) = 0;
@@ -116,26 +116,26 @@ template <typename T> class Data_Impl : public Data_Intf {
   // virtual interface for ad-hoc polymorphism
   virtual
   void WriteVis(const Visualization& vis, const Key& fieldname,
-                const std::vector<std::string>& subfieldnames) const override {
+                const std::vector<std::string>* subfieldnames) const override {
     ::Amanzi::Helpers::WriteVis(vis, fieldname, subfieldnames, *t_);
   }
 
   virtual
   void WriteCheckpoint(const Checkpoint& chkp, const Key& fieldname,
-                       const std::vector<std::string>& subfieldnames) const override {
+                       const std::vector<std::string>* subfieldnames) const override {
     ::Amanzi::Helpers::WriteCheckpoint(chkp, fieldname, subfieldnames, *t_);
   }
 
   virtual
   void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
-                      const std::vector<std::string>& subfieldnames) const override {
+                      const std::vector<std::string>* subfieldnames) const override {
 
     ::Amanzi::Helpers::ReadCheckpoint(chkp, fieldname, subfieldnames, *t_);
   }
 
   virtual
   bool Initialize(Teuchos::ParameterList& plist, const Key& fieldname,
-                  const std::vector<std::string>& subfieldnames) override {
+                  const std::vector<std::string>* subfieldnames) override {
     return ::Amanzi::Helpers::Initialize(plist, *t_, fieldname, subfieldnames);
   }
 

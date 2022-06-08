@@ -68,6 +68,20 @@ KeyPair split(const Key& name, const char& delimiter)
     return std::make_pair(name.substr(0,pos), name.substr(pos+1,std::string::npos));
 }
 
+// creates a clean name to be used as a variable name, domain name, tag name,
+// etc, that has no delimiters in it, no spaces (which make for uglier IO),
+// etc.
+Key cleanName(const std::string& name)
+{
+  Key result(name);
+  std::replace(result.begin(), result.end(), name_delimiter, '_');
+  std::replace(result.begin(), result.end(), deriv_delimiter, '_');
+  std::replace(result.begin(), result.end(), dset_delimiter, '_');
+  std::replace(result.begin(), result.end(), tag_delimiter, '_');
+  std::replace(result.begin(), result.end(), ' ', '_');
+  return result;
+}
+
 
 //
 // Working with DOMAINs
@@ -457,6 +471,19 @@ readKeys(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
   }
 }
 
+
+Tag
+readTag(Teuchos::ParameterList& list, const Tag& default_tag)
+{
+  return readTag(list, "dependency tag", default_tag);
+}
+
+Tag
+readTag(Teuchos::ParameterList& list, const std::string& param, const Tag& default_tag)
+{
+  std::string tag_str = list.get<std::string>(param, default_tag.get());
+  return Tag{tag_str};
+}
 
 
 } // namespace

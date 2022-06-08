@@ -16,6 +16,14 @@
 namespace Amanzi {
 
 void
+VisualizationDomainSet::set_subdomain_mesh(const Key& subdomain,
+        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+{
+  subdomains_[Keys::getDomainSetIndex(subdomain)] = mesh;
+}
+
+
+void
 VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const
 {
   Key varname = Keys::getVarName(names[0]);
@@ -35,7 +43,7 @@ VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec, const std::ve
 
   // copy from the domain-set vector into the lifted vector
   Epetra_MultiVector& lifted_vec = *lifted_vectors_[varname].first;
-  auto subdomain = subdomains_.at(Keys::getDomain(names[0]));
+  auto subdomain = subdomains_.at(Keys::getDomainSetIndex(Keys::getDomain(names[0])));
   for (int j=0; j!=vec.NumVectors(); ++j) {
     for (int c=0; c!=vec.MyLength(); ++c) {
       lifted_vec[j][subdomain->entity_get_parent(AmanziMesh::Entity_kind::CELL, c)] = vec[j][c];
@@ -63,7 +71,7 @@ VisualizationDomainSet::WriteVector(const Epetra_Vector& vec, const std::string&
 
   // copy from the domain-set vector into the lifted vector
   Epetra_MultiVector& lifted_vec = *lifted_vectors_[varname].first;
-  auto subdomain = subdomains_.at(Keys::getDomain(name));
+  auto subdomain = subdomains_.at(Keys::getDomainSetIndex(Keys::getDomain(name)));
   for (int c=0; c!=vec.MyLength(); ++c) {
     lifted_vec[0][subdomain->entity_get_parent(AmanziMesh::Entity_kind::CELL, c)] = vec[c];
   }

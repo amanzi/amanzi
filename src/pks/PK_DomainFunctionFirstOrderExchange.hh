@@ -77,7 +77,7 @@ void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Init(
   tcc_key_ = Keys::readKey(blist, blist.get<std::string>("domain name", "domain"),
                            "total component concentration",
                            "total_component_concentration");
-  tcc_copy_ = make_tag(blist.get<std::string>("total component concentration copy", ""));
+  tcc_copy_ = Keys::readTag(blist, "total component concentration copy");
 
   // get and check the regions
   std::vector<std::string> regions =

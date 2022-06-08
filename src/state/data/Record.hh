@@ -51,8 +51,6 @@ class Record {
   Key vis_fieldname() const { return vis_key_; }
   bool io_checkpoint() const { return io_checkpoint_; }
   bool io_vis() const { return io_vis_; }
-  Utils::Units units() const { return units_; }
-  const std::vector<std::string>& subfieldnames() const { return subfieldnames_; }
 
   // mutators
   void set_fieldname(const Key& fieldname) { fieldname_ = fieldname; }
@@ -61,14 +59,16 @@ class Record {
   void set_vis_fieldname(const Key& key) { vis_key_ = key; }
   void set_io_checkpoint(bool io_checkpoint = true) { io_checkpoint_ = io_checkpoint; }
   void set_io_vis(bool io_vis = true) { io_vis_ = io_vis; }
-  void set_units(const Utils::Units& units) { units_ = units; }
-  void set_subfieldnames(const std::vector<std::string>& subfieldnames) { subfieldnames_ = subfieldnames; }
 
   // pass-throughs for other functionality
-  void WriteVis(const Visualization& vis) const;
-  void WriteCheckpoint(const Checkpoint& chkp) const;
-  void ReadCheckpoint(const Checkpoint& chkp);
-  bool Initialize(Teuchos::ParameterList& plist);
+  void WriteVis(const Visualization& vis,
+                const std::vector<std::string>* subfieldnames=nullptr) const;
+  void WriteCheckpoint(const Checkpoint& chkp, const Tag& tag,
+                       const std::vector<std::string>* subfieldnames=nullptr) const;
+  void ReadCheckpoint(const Checkpoint& chkp, const Tag& tag,
+                      const std::vector<std::string>* subfieldnames=nullptr);
+  bool Initialize(Teuchos::ParameterList& plist,
+                  const std::vector<std::string>* subfieldnames=nullptr);
 
   // Data setters/getters
   template <typename T> const T& Get() const {
@@ -149,13 +149,10 @@ class Record {
   Key fieldname_;
   Key owner_;
   Key vis_key_;
-  std::vector<std::string> subfieldnames_;
 
   bool initialized_;
   bool io_checkpoint_;
   bool io_vis_;
-
-  Utils::Units units_;
 
   Data data_;
 

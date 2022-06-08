@@ -50,13 +50,20 @@ class RecordSet {
   const Key& fieldname() const { return fieldname_; }
   const Key& vis_fieldname() const { return vis_fieldname_; }
   Utils::Units units() const { return units_; }
+  const std::vector<std::string>* subfieldnames() const {
+    return subfieldnames_.get(); }
 
   // mutate
-  void set_fieldname(Key fieldname) { fieldname_ = std::move(fieldname); }
-  void set_vis_fieldname(Key vis_fieldname) {
-    vis_fieldname_ = std::move(vis_fieldname);
+  void set_fieldname(const Key& fieldname) { fieldname_ = fieldname; }
+  void set_vis_fieldname(const Key& vis_fieldname) {
+    vis_fieldname_ = vis_fieldname;
   }
-  void set_units(Utils::Units units) { units_ = std::move(units); }
+  void set_units(const Utils::Units& units) { units_ = units; }
+  void set_subfieldnames(const std::vector<std::string>& subfieldnames) {
+    if (!subfieldnames_)
+      subfieldnames_ = std::make_unique<std::vector<std::string>>(subfieldnames);
+    else *subfieldnames_ = subfieldnames;
+  }
 
   // pass-throughs for other functionality
   void WriteVis(const Visualization& vis) const;
@@ -71,7 +78,7 @@ class RecordSet {
   Record& GetRecord(const Tag& tag);
   void AliasRecord(const Tag& target, const Tag& alias);
 
-  Record& RequireRecord(const Tag& tag, const Key& owner);
+  Record& RequireRecord(const Tag& tag, const Key& owner, bool alias_ok=true);
 
   //  void SwitchCopies(const Tag& tag1, const Tag& tag2); // needs owner
   //  information?
@@ -182,8 +189,9 @@ class RecordSet {
   Key fieldname_;
   Key vis_fieldname_;
   Utils::Units units_;
-  std::map<Tag,Tag> aliases_;
+  std::unique_ptr<std::vector<std::string> > subfieldnames_;
 
+  std::map<Tag,Tag> aliases_;
   DataFactory factory_;
   RecordMap records_;
 };

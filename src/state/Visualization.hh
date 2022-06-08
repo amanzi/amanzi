@@ -126,7 +126,7 @@ class Visualization : public IOEvent {
 template <>
 inline void Visualization::Write<Epetra_Vector>(const std::string& name,
                                                 const Epetra_Vector& t) const {
-  visualization_output_->WriteVector(t, name, AmanziMesh::CELL);
+  WriteVector(t, name);
 }
 
 template <>

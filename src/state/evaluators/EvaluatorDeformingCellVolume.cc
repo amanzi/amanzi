@@ -29,7 +29,7 @@ EvaluatorDeformingCellVolume::EvaluatorDeformingCellVolume(Teuchos::ParameterLis
   // stick in the deformation key as my leaf node.
   Key deformation_key = Keys::readKey(plist, Keys::getDomain(my_keys_.front().first),
           "deformation key", "base_porosity");
-  Tag deformation_tag(plist.get<std::string>("tag", my_keys_.front().second.get()));
+  Tag deformation_tag(plist.get<std::string>("dependency tag", my_keys_.front().second.get()));
   dependencies_.insert(KeyTag(deformation_key, deformation_tag));
 }
 

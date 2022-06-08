@@ -294,6 +294,24 @@ Evaluator& State::RequireEvaluator(const Key& key, const Tag& tag)
     }
   }
 
+  // Check if this should be an aliased evaluator
+  //
+  // NOTE: rather than a pointer to the other evaluator, likely this should be
+  // a special class that puts some guardrails on to make sure this evaluator
+  // is ONLY used when the times match, or some data is valid, or some other
+  // constraint.  This should not be used during this tag's subcycling, only
+  // after subcycling/during syncronization/during another tag's
+  // subcycling. --ETC
+  if (tag == Tags::NEXT && evaluators_.count(key)) {
+    for (const auto& other_tag : evaluators_.at(key)) {
+      if (Keys::in(other_tag.first.get(), "next")) {
+        // alias!
+        SetEvaluator(key, tag, other_tag.second);
+        return *other_tag.second;
+      }
+    }
+  }
+
   // Create the evaluator from State's plist
   // -- Get the Field Evaluator plist
   Teuchos::ParameterList& fm_plist = state_plist_.sublist("evaluators");
@@ -457,10 +475,10 @@ void State::Setup()
   require_cycle(Tags::DEFAULT);
   GetRecordSetW("cycle").initializeTags();
 
-  Require<double>("dt", Tags::DEFAULT, "dt");
+  Require<double>("dt", Tags::DEFAULT, "dt", false);
   GetRecordW("dt", Tags::DEFAULT, "dt").set_initialized();
 
-  Require<int>("position", Tags::DEFAULT, "position");
+  Require<int>("position", Tags::DEFAULT, "position", false);
   GetRecordSetW("position").initializeTags();
 
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -656,7 +674,7 @@ void State::InitializeFields(const Tag& tag)
       auto owner = GetRecord(it->first, tag).owner();
       auto& r = GetRecordW(it->first, tag, owner);
       if (r.ValidType<CompositeVector>()) {
-        r.ReadCheckpoint(file_input);
+        r.ReadCheckpoint(file_input, tag);
 
         // this is pretty hacky -- why are these ICs not in the PK's list?  And
         // if they aren't owned by a PK, they should be independent variables
@@ -860,6 +878,11 @@ void State::CheckIsDebugEval_(const Key& key, const Tag& tag)
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << "State: Evaluator for debug field \"" << key << "@" << tag << "\" was required." << std::endl;
     }
+    if (tag == Tags::DEFAULT) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << " -- default tag" << std::endl;
+      }
+    }
   }
 #endif
 }
@@ -874,6 +897,11 @@ void State::CheckIsDebugData_(const Key& key, const Tag& tag)
   if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << "State: data for debug field \"" << key << "@" << tag << "\" was required." << std::endl;
+    }
+    if (tag == Tags::DEFAULT) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << " -- default tag" << std::endl;
+      }
     }
   }
 #endif
