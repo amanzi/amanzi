@@ -658,22 +658,22 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
     (*aqueous_components)[i][cell] = state.total_mobile.data[i];
 
     if (using_sorption_) {
-      const auto& sorbed = *S_->Get<CompositeVector>(total_sorbed_key_).ViewComponent("cell");
+      auto& sorbed = *S_->GetW<CompositeVector>(total_sorbed_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
       sorbed[i][cell] = state.total_immobile.data[i];
     }
   }
 
   // Free ion species.
-  const auto& free_ion = *S_->Get<CompositeVector>(free_ion_species_key_).ViewComponent("cell");
+  auto& free_ion = *S_->GetW<CompositeVector>(free_ion_species_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
   for (int i = 0; i < number_aqueous_components_; ++i) {
     free_ion[i][cell] = aux_output.primary_free_ion_concentration.data[i];
   }
 
   // Mineral properties.
   if (number_minerals_ > 0) {
-    const auto& mineral_vf = *S_->Get<CompositeVector>(min_vol_frac_key_).ViewComponent("cell");
-    const auto& mineral_ssa = *S_->Get<CompositeVector>(min_ssa_key_).ViewComponent("cell");
-    const auto& mineral_rate = *S_->Get<CompositeVector>(mineral_rate_constant_key_).ViewComponent("cell");
+    auto& mineral_vf = *S_->GetW<CompositeVector>(min_vol_frac_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+    auto& mineral_ssa = *S_->GetW<CompositeVector>(min_ssa_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+    auto& mineral_rate = *S_->GetW<CompositeVector>(mineral_rate_constant_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
     for (int i = 0; i < number_minerals_; ++i) {
       mineral_vf[i][cell] = state.mineral_volume_fraction.data[i];
@@ -684,7 +684,7 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
 
   // ion exchange
   if (number_ion_exchange_sites_ > 0) {
-    const auto& ion_exchange = *S_->Get<CompositeVector>(ion_exchange_sites_key_).ViewComponent("cell");
+    auto& ion_exchange = *S_->GetW<CompositeVector>(ion_exchange_sites_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
     for (unsigned int i = 0; i < number_ion_exchange_sites_; i++) {
       ion_exchange[i][cell] = state.cation_exchange_capacity.data[i];
     }
@@ -692,8 +692,7 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
 
   // surface complexation
   if (number_sorption_sites_ > 0) {
-    const auto& sorption_sites = *S_->Get<CompositeVector>(sorp_sites_key_).ViewComponent("cell");
-
+    auto& sorption_sites = *S_->GetW<CompositeVector>(sorp_sites_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
     for (unsigned int i = 0; i < number_sorption_sites_; i++) {
       sorption_sites[i][cell] = state.surface_site_density.data[i];
     }
@@ -716,9 +715,9 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
   }
 
   if (using_sorption_isotherms_) {
-    const auto& isotherm_kd = *S_->Get<CompositeVector>(isotherm_kd_key_).ViewComponent("cell");
-    const auto& isotherm_freundlich_n = *S_->Get<CompositeVector>(isotherm_freundlich_n_key_).ViewComponent("cell");
-    const auto& isotherm_langmuir_b = *S_->Get<CompositeVector>(isotherm_langmuir_b_key_).ViewComponent("cell");
+    auto& isotherm_kd = *S_->GetW<CompositeVector>(isotherm_kd_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+    auto& isotherm_freundlich_n = *S_->GetW<CompositeVector>(isotherm_freundlich_n_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+    auto& isotherm_langmuir_b = *S_->GetW<CompositeVector>(isotherm_langmuir_b_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
     for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
       isotherm_kd[i][cell] = mat_props.isotherm_kd.data[i];

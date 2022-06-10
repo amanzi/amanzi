@@ -112,7 +112,7 @@ class Transport_PK : public PK_Physical {
   // -- otherwise, it returns global operator for component comp0.
   Teuchos::RCP<Operators::Operator> DispersionSolver(
       const Epetra_MultiVector& tcc_prev,
-      const Epetra_MultiVector& tcc_next,
+      Epetra_MultiVector& tcc_next,
       double t_old, double t_new, int comp0 = -1);
 
  protected:
@@ -148,7 +148,7 @@ class Transport_PK : public PK_Physical {
       double mdl, double mdg, double kH,
       const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
-  void DiffusionSolverEffective(const Epetra_MultiVector& tcc_next,
+  void DiffusionSolverEffective(Epetra_MultiVector& tcc_next,
                                 double t_old, double t_new);
 
   // -- air-water partitioning using Henry's law. This is a temporary

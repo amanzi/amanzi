@@ -56,7 +56,7 @@ class HeatConduction {
   // main members
   void UpdateValues(const CompositeVector& u) { 
     const Epetra_MultiVector& uc = *u.ViewComponent("cell", true); 
-    const Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true); 
+    Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true); 
 
     int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     for (int c = 0; c < ncells; c++) {
@@ -64,7 +64,7 @@ class HeatConduction {
     }
 
     const Epetra_MultiVector& uf = *u.ViewComponent("face", true); 
-    const Epetra_MultiVector& values_f = *values_->ViewComponent("face", true); 
+    Epetra_MultiVector& values_f = *values_->ViewComponent("face", true); 
     int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     for (int f = 0; f < nfaces; f++) {
       values_f[0][f] = 0.3 + uf[0][f];

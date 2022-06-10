@@ -62,7 +62,7 @@ void Transport_PK::CalculateDiffusionTensorEffective_(
 * One-phase solver based on effective diffusion
 ****************************************************************** */
 void Transport_PK::DiffusionSolverEffective(
-    const Epetra_MultiVector& tcc_next,
+    Epetra_MultiVector& tcc_next,
     double t_old, double t_new)
 {
   double dt_MPC = t_new - t_old;

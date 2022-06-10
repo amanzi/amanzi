@@ -140,7 +140,6 @@ void LimiterCellDG::LimiterScalarDG_(
       }
     }
 
-    for (int i = 1; i < nk; ++i) (*field_)[i][c] *= climiter;
     (*limiter_)[c] = climiter;
   }
 }
@@ -246,8 +245,6 @@ void LimiterCellDG::LimiterHierarchicalDG_(
     }
 
     climiter = std::max(climiter, hlimiter);
-    for (int i = 0; i < dim; ++i) (*field_)[i + 1][c] *= climiter;
-    for (int i = dim + 1; i < nk; ++i) (*field_)[i][c] *= climiter;
     (*limiter_)[c] = climiter;
   }
 }

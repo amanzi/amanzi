@@ -239,7 +239,7 @@ void RemapDG_Helper::StaticCellCoVelocity()
 ***************************************************************** */
 void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
 {
-  const Epetra_MultiVector& x_c = *x.ViewComponent("cell", true);
+  auto& x_c = *x.ViewComponent("cell", true);
   int nk = x_c.NumVectors();
 
   // create list of cells where to apply limiter

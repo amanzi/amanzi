@@ -34,7 +34,7 @@ class HeatConduction {
                     const std::vector<int>& bc_model,
                     const std::vector<double>& bc_value) { 
     const Epetra_MultiVector& uc = *u.ViewComponent("cell", true); 
-    const Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true); 
+    Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true); 
 
     int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     for (int c = 0; c < ncells; c++) {

@@ -273,7 +273,7 @@ void ShallowWater_PK::Initialize()
   }
   
   const auto& B_n = *S_->Get<CV_t>(bathymetry_key_).ViewComponent("node");
-  const auto& B_c = *S_->Get<CV_t>(bathymetry_key_).ViewComponent("cell");
+  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
   
   // compute B_c from B_n for well balanced scheme (Beljadid et. al. 2016)
   S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("node");
@@ -308,7 +308,7 @@ void ShallowWater_PK::Initialize()
   
   // initialize h from ht or ht from h
   if (!S_->GetRecord(ponded_depth_key_, Tags::DEFAULT).initialized()) {
-    const auto& h_c = *S_->Get<CV_t>(ponded_depth_key_).ViewComponent("cell");
+    auto& h_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
     auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
     for (int c = 0; c < ncells_owned; c++) {

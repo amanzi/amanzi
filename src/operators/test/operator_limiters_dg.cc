@@ -280,6 +280,9 @@ void RunTestGaussPoints(const std::string& limiter_name)
   LimiterCellDG limiter(mesh);
   limiter.Init(plist);
   limiter.ApplyLimiterDG(field_c, dg, bc_model, bc_value);
+  const auto& factor = *limiter.limiter();
+  for (int c = 0; c < ncells_owned; ++c) 
+    for (int i = 1; i < nk; ++i) (*field_c)[i][c] *= factor[c];
 
   double minlim, avglim, maxlim;
   limiter.limiter()->MinValue(&minlim);
