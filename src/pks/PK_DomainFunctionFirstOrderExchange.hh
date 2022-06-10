@@ -137,18 +137,17 @@ void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, doubl
     // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
     int nfun = (*uspec)->first->second->size();
     std::vector<double> val_vec(nfun,0.);
-    
+
     for (auto c = ids->begin(); c != ids->end(); ++c) {
       auto xc = PKUtils_EntityCoordinates(*c, kind_, *mesh_);
 
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-            
+
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
       for (int i = 0; i < nfun; ++i) {
         val_vec[i] = -(*(*uspec)->first->second)(args)[i] * tcc[i][*c] * ws_[i][*c] * phi_[i][*c] * mol_dens_[i][*c];
       }
       value_[*c] = val_vec;
-      if (*c == 0) std::cout << "Computed FOE src term with val = " << val_vec[0] << std::endl;
     }
   }
 }
