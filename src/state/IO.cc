@@ -93,7 +93,7 @@ void WriteCheckpoint(Checkpoint& chkp, const Comm_ptr_type& comm,
 void ReadCheckpoint(const Comm_ptr_type& comm, State& S,
                     const std::string& filename)
 {
-  Checkpoint chkp(filename, comm);
+  Checkpoint chkp(filename, S);
 
   // Load the number of processes and ensure they are the same.
   int num_procs(-1);

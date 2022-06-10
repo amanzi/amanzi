@@ -68,17 +68,59 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const State& S)
 }
 
 
-// this constructor makes an object for reading
-Checkpoint::Checkpoint(bool old) :
-  IOEvent(),
-  old_(old)
-{}
+// Constructor for reading
+Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S)
+    : IOEvent()
+{
+  // if provided a directory, use new style
+  if (boost::filesystem::is_directory(file_or_dirname)) {
+    old_ = false;
+  } else if (boost::filesystem::is_regular_file(file_or_dirname)) {
+    old_ = true;
+  } else {
+    Errors::Message message;
+    message << "Checkpoint::Read: location \"" << file_or_dirname << "\" does not exist.";
+    Exceptions::amanzi_throw(message);
+  }
+
+  // create the readers
+  auto comm = S.GetMesh()->get_comm();
+  if (old_) {
+    output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, file_or_dirname));
+    output_["domain"]->open_h5file(true);
+
+  } else {
+    for (auto domain=S.mesh_begin(); domain!=S.mesh_end(); ++domain) {
+      const auto& mesh = S.GetMesh(domain->first);
+
+      boost::filesystem::path chkp_file = boost::filesystem::path(file_or_dirname) / (domain->first+".h5");
+      output_[domain->first] = Teuchos::rcp(new HDF5_MPI(mesh->get_comm(), chkp_file.string()));
+      output_[domain->first]->open_h5file(true);
+    }
+  }
+}
 
 
+// Constructor for reading
 Checkpoint::Checkpoint(const std::string& filename, const Comm_ptr_type& comm)
-    : IOEvent() {
+    : IOEvent()
+{
+  // if provided a directory, use new style
+  if (boost::filesystem::is_directory(filename)) {
+    Errors::Message message;
+    message << "Checkpoint::Read: location \"" << filename << "\" cannot be used with the \"restart file\" option -- provide a full path to the filename, not a directory.";
+    Exceptions::amanzi_throw(message);
+
+  } else if (boost::filesystem::is_regular_file(filename)) {
+    old_ = true;
+  } else {
+    Errors::Message message;
+    message << "Checkpoint::Read: location \"" << filename << "\" does not exist.";
+    Exceptions::amanzi_throw(message);
+  }
+
   output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, filename));
-  output_["domain"]->open_h5file();
+  output_["domain"]->open_h5file(true);
 }
 
 
@@ -316,5 +358,6 @@ void Checkpoint::WriteObservations(ObservationData* obs_data)
     if (tmp_data != NULL) free(tmp_data);
   }
 }
+
 
 }  // namespace Amanzi

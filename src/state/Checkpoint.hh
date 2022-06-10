@@ -71,11 +71,15 @@ class State;
 
 class Checkpoint : public IOEvent {
  public:
+  // constructor for writing
   Checkpoint(Teuchos::ParameterList& plist, const State& S);
-  Checkpoint(const std::string& filename, const Comm_ptr_type& comm);
 
-  // constructors for object that cannot write, but can read
-  Checkpoint(bool old_style = true);
+  // constructor for reading, potentially on multiple communicators from
+  // multiple files in this directory.
+  Checkpoint(const std::string& file_or_dirname, const State& S);
+
+  // constructor for reading a single field from a specific file
+  Checkpoint(const std::string& filename, const Comm_ptr_type& comm);
 
   // public interface for coordinator clients
   template <typename T>
@@ -133,8 +137,9 @@ inline void Checkpoint::Write<int>(const std::string& name,
 
 template <>
 inline void Checkpoint::Read<Epetra_Vector>(const std::string& name,
-                                            Epetra_Vector& t) const {
-  output_.at("domain")->readData(t, name);
+        Epetra_Vector& t) const {
+  auto domain = old_ ? std::string("domain") : Keys::getDomain(name);
+  output_.at(domain)->readData(t, name);
 }
 
 template <>

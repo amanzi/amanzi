@@ -668,8 +668,7 @@ void State::InitializeFields(const Tag& tag)
   if (state_plist_.isParameter("initialization filename")) {
     pre_initialization = true;
     std::string filename = state_plist_.get<std::string>("initialization filename");
-    Amanzi::Checkpoint file_input(filename, GetMesh()->get_comm());
-    // file_input.open_h5file();
+    Amanzi::Checkpoint file_input(filename, *this);
 
     for (auto it = data_.begin(); it != data_.end(); ++it) {
       auto owner = GetRecord(it->first, tag).owner();
