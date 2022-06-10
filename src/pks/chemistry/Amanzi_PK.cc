@@ -180,47 +180,7 @@ void Amanzi_PK::Initialize()
   SetupAuxiliaryOutput();
 
   // populate list of beaker fields 
-  bf_.porosity = S_->Get<CompositeVector>(poro_key_).ViewComponent("cell");
-  bf_.density = S_->Get<CompositeVector>(fluid_den_key_).ViewComponent("cell");
-  bf_.saturation = S_->Get<CompositeVector>(saturation_key_).ViewComponent("cell");
-  bf_.free_ion = S_->GetW<CompositeVector>(free_ion_species_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-  bf_.activity = S_->GetW<CompositeVector>(primary_activity_coeff_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-
-  if (chem_->secondary_species().size() > 0) {
-    bf_.secondary_activity = S_->GetW<CompositeVector>(secondary_activity_coeff_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-  }
-
-  if (number_ion_exchange_sites_ > 0) {
-    bf_.ion_exchange_sites = S_->GetW<CompositeVector>(ion_exchange_sites_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-    bf_.ion_exchange_ref_cation_conc = S_->GetW<CompositeVector>(ion_exchange_ref_cation_conc_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-  }
-
-  if (number_minerals_ > 0) {
-    bf_.mineral_vf = S_->GetW<CompositeVector>(min_vol_frac_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-    bf_.mineral_ssa = S_->GetW<CompositeVector>(min_ssa_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-  }
-
-  if (using_sorption_) {
-    bf_.sorbed = S_->GetW<CompositeVector>(total_sorbed_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-  }
-
-  if (using_sorption_isotherms_) {
-    bf_.isotherm_kd = S_->GetW<CompositeVector>(isotherm_kd_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-    bf_.isotherm_freundlich_n = S_->GetW<CompositeVector>(isotherm_freundlich_n_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-    bf_.isotherm_langmuir_b = S_->GetW<CompositeVector>(isotherm_langmuir_b_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-  }
-
-  if (number_sorption_sites_ > 0) {
-    bf_.sorption_sites = S_->GetW<CompositeVector>(sorp_sites_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-  }
-
-  if (beaker_state_.surface_complex_free_site_conc.size() > 0) {
-    bf_.surface_complex = S_->GetW<CompositeVector>(surf_cfsc_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-  }
-
-  if (S_->HasRecord(temperature_key_)) {
-    bf_.temperature = S_->Get<CompositeVector>(temperature_key_).ViewComponent("cell");
-  }
+  InitializeBeakerFields_();
 
   if (ncells_owned_ > 0) {
     CopyCellStateToBeakerState(0, tcc);
@@ -698,6 +658,57 @@ void Amanzi_PK::CommitStep(double t_old, double t_new, const Tag& tag)
     // made in many places.
     double tmp(dt_next_);
     mesh_->get_comm()->MinAll(&tmp, &dt_next_, 1);
+  }
+}
+
+
+/* ******************************************************************
+* Extract poiters to state fields and place them in a simple struct.
+******************************************************************* */
+void Amanzi_PK::InitializeBeakerFields_()
+{
+  Tag tag(Tags::DEFAULT);
+
+  // constant (tmeporarily) fields
+  bf_.porosity = S_->Get<CompositeVector>(poro_key_).ViewComponent("cell");
+  bf_.density = S_->Get<CompositeVector>(fluid_den_key_).ViewComponent("cell");
+  bf_.saturation = S_->Get<CompositeVector>(saturation_key_).ViewComponent("cell");
+  if (S_->HasRecord(temperature_key_))
+    bf_.temperature = S_->Get<CompositeVector>(temperature_key_).ViewComponent("cell");
+
+  bf_.free_ion = S_->GetW<CompositeVector>(free_ion_species_key_, tag, passwd_).ViewComponent("cell");
+  bf_.activity = S_->GetW<CompositeVector>(primary_activity_coeff_key_, tag, passwd_).ViewComponent("cell");
+
+  if (chem_->secondary_species().size() > 0) {
+    bf_.secondary_activity = S_->GetW<CompositeVector>(secondary_activity_coeff_key_, tag, passwd_).ViewComponent("cell");
+  }
+
+  if (number_ion_exchange_sites_ > 0) {
+    bf_.ion_exchange_sites = S_->GetW<CompositeVector>(ion_exchange_sites_key_, tag, passwd_).ViewComponent("cell");
+    bf_.ion_exchange_ref_cation_conc = S_->GetW<CompositeVector>(ion_exchange_ref_cation_conc_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  }
+
+  if (number_minerals_ > 0) {
+    bf_.mineral_vf = S_->GetW<CompositeVector>(min_vol_frac_key_, tag, passwd_).ViewComponent("cell");
+    bf_.mineral_ssa = S_->GetW<CompositeVector>(min_ssa_key_, tag, passwd_).ViewComponent("cell");
+  }
+
+  if (using_sorption_) {
+    bf_.sorbed = S_->GetW<CompositeVector>(total_sorbed_key_, tag, passwd_).ViewComponent("cell");
+  }
+
+  if (using_sorption_isotherms_) {
+    bf_.isotherm_kd = S_->GetW<CompositeVector>(isotherm_kd_key_, tag, passwd_).ViewComponent("cell");
+    bf_.isotherm_freundlich_n = S_->GetW<CompositeVector>(isotherm_freundlich_n_key_, tag, passwd_).ViewComponent("cell");
+    bf_.isotherm_langmuir_b = S_->GetW<CompositeVector>(isotherm_langmuir_b_key_, tag, passwd_).ViewComponent("cell");
+  }
+
+  if (number_sorption_sites_ > 0) {
+    bf_.sorption_sites = S_->GetW<CompositeVector>(sorp_sites_key_, tag, passwd_).ViewComponent("cell");
+  }
+
+  if (beaker_state_.surface_complex_free_site_conc.size() > 0) {
+    bf_.surface_complex = S_->GetW<CompositeVector>(surf_cfsc_key_, tag, passwd_).ViewComponent("cell");
   }
 }
 
