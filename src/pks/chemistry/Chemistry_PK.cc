@@ -192,7 +192,9 @@ void Chemistry_PK::Initialize()
     if (!S_->GetRecordW(tcc_key_, passwd_).initialized()) {
       InitializeCVField(S_, *vo_, tcc_key_, tag_next_, passwd_, 0.0);
     }
- 
+    set_aqueous_components(S_->GetPtrW<CompositeVector>(tcc_key_, tag_next_, passwd_)
+                             ->ViewComponent("cell", false));
+
     InitializeCVField(S_, *vo_, primary_activity_coeff_key_, tag_next_, passwd_, 1.0);    
     InitializeCVField(S_, *vo_, free_ion_species_key_, tag_next_, passwd_, 1.0e-9);    
 

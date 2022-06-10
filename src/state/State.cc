@@ -472,6 +472,8 @@ void State::Setup()
 {
   require_time(Tags::DEFAULT);
   GetRecordSetW("time").initializeTags();
+  require_time(Tags::CURRENT);
+  GetRecordSetW("time").initializeTags();
 
   require_cycle(Tags::DEFAULT);
   GetRecordSetW("cycle").initializeTags();

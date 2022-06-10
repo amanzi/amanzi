@@ -276,7 +276,7 @@ void Alquimia_PK::Initialize()
 int Alquimia_PK::InitializeSingleCell(int cell, const std::string& condition) 
 {
   // auto tcc = S_->GetW<CompositeVector>(tcc_key_, tag_next_, passwd_).ViewComponent("cell", true);
-  CopyToAlquimia(cell, aqueous_components_, alq_mat_props_, alq_state_, alq_aux_data_, Tags::DEFAULT);
+  CopyToAlquimia(cell, aqueous_components_, alq_mat_props_, alq_state_, alq_aux_data_, tag_next_);
 
   chem_engine_->EnforceCondition(condition, current_time_, alq_mat_props_, 
           alq_state_, alq_aux_data_, alq_aux_output_);
@@ -476,13 +476,11 @@ void Alquimia_PK::XMLParameters()
 *
 ******************************************************************* */
 void Alquimia_PK::CopyToAlquimia(int cell,
-                                 AlquimiaProperties& mat_props,
-                                 AlquimiaState& state,
+        AlquimiaProperties& mat_props,
+        AlquimiaState& state,
         AlquimiaAuxiliaryData& aux_data,
-                                         const Tag& sat_tag)
-
+        const Tag& sat_tag)
 {
-  //  auto tcc = S_->GetW<CompositeVector>(tcc_key_, tag_next_, passwd_).ViewComponent("cell", true);
   CopyToAlquimia(cell, aqueous_components_, mat_props, state, aux_data, sat_tag);
 }
 

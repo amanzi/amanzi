@@ -82,6 +82,7 @@ Developer's note:
 #include "State.hh"
 #include "Tag.hh"
 #include "TreeVector.hh"
+#include "AmanziComm.hh"
 
 namespace Amanzi {
 
@@ -118,7 +119,10 @@ class PK {
       vo_plist = Teuchos::rcp(new Teuchos::ParameterList(*plist_));
       vo_plist->set("verbose object", plist_->sublist(name_ + " verbose object"));
     }
-    vo_ = Teuchos::rcp(new VerboseObject(solution->Comm(), name_, *vo_plist));
+
+    //  some tests provide nullptr
+    if (solution.get()) vo_ = Teuchos::rcp(new VerboseObject(solution->Comm(), name_, *vo_plist));
+    else vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
   };
 
   // Virtual destructor
