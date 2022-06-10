@@ -20,6 +20,7 @@
 
 // Amanzi
 #include "Beaker.hh"
+#include "BeakerFields.hh"
 #include "BeakerState.hh"
 #include "Chemistry_PK.hh"
 #include "PK_Factory.hh"
@@ -79,6 +80,7 @@ class Amanzi_PK : public Chemistry_PK {
   Beaker* chem_;
   BeakerParameters beaker_parameters_;
   BeakerState beaker_state_, beaker_state_copy_;
+  BeakerFields bf_;
 
   std::string dt_control_method_;
   double current_time_, saved_time_;
