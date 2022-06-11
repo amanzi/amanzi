@@ -71,6 +71,8 @@ class State;
 
 class Checkpoint : public IOEvent {
  public:
+  Checkpoint(bool old = true) : IOEvent(), old_(old) {};
+
   // constructor for writing
   Checkpoint(Teuchos::ParameterList& plist, const State& S);
 
