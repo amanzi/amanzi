@@ -71,7 +71,8 @@ class State;
 
 class Checkpoint : public IOEvent {
  public:
-  Checkpoint(bool old = true) : IOEvent(), old_(old) {};
+  // constructor for do-it-yourself
+  Checkpoint(bool single_file = true);
 
   // constructor for writing
   Checkpoint(Teuchos::ParameterList& plist, const State& S);
@@ -115,7 +116,7 @@ class Checkpoint : public IOEvent {
   std::string filebasename_;
   int filenamedigits_;
   int restart_cycle_;
-  bool old_;
+  bool single_file_;
 
   std::map<std::string,Teuchos::RCP<Amanzi::HDF5_MPI>> output_;
 };
@@ -140,7 +141,7 @@ inline void Checkpoint::Write<int>(const std::string& name,
 template <>
 inline void Checkpoint::Read<Epetra_Vector>(const std::string& name,
         Epetra_Vector& t) const {
-  auto domain = old_ ? std::string("domain") : Keys::getDomain(name);
+  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
   output_.at(domain)->readData(t, name);
 }
 
