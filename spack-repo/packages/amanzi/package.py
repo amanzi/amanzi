@@ -69,7 +69,7 @@ class Amanzi(CMakePackage):
 
     core_dependencies = {
         'zlib','metis', 'parmetis', 'seacas -x11',
-        'boost@1.69.0 cxxstd=11 +program_options',
+        'boost@1.79.0 cxxstd=14 +program_options +system +filesystem +regex',
         'netcdf-c +parallel-netcdf', 'hdf5 +mpi+fortran+hl api=default', 
         'ascemio'
     }
@@ -79,7 +79,8 @@ class Amanzi(CMakePackage):
 
     # The following core dependencies do not support +shared/~shared
     depends_on('xerces-c')
-    depends_on('unittest-cpp', when='+tests')
+    #depends_on('unittest-cpp', when='+tests')
+    depends_on('unittest-cpp')
 
     #### Geochemistry ####
     geochemistry = {
@@ -122,7 +123,7 @@ class Amanzi(CMakePackage):
     ##### Other #####
     depends_on('trilinos@13.0.0 +boost +hdf5 +hypre '
                '+anasazi +amesos2 +epetra +ml +epetraext +belos +aztec'
-               '+zoltan +nox +ifpack +muelu +basker -ifpack2 cxxstd=11')
+               '+zoltan +nox +ifpack +muelu +basker -ifpack2 cxxstd=14')
 
     conflicts('physics=ats', when='mesh_type=structured', msg='ERROR: ats physics is not supported in the structured mesh framework.')
     conflicts('physics=ats', when='mesh_framework=moab', msg='ERROR: ats physics needs mstk on.')
