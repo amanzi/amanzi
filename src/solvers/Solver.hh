@@ -38,7 +38,7 @@ class Solver {
 
   // mutators
   virtual void set_tolerance(double tol) = 0;
-  virtual void set_pc_lag(double pc_lag) = 0;
+  virtual void set_pc_lag(int pc_lag) = 0;
   virtual void set_db(const Teuchos::RCP<ResidualDebugger>& db) {}
   
   // access 
