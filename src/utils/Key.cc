@@ -458,6 +458,19 @@ readKeys(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
 }
 
 
+Tag
+readTag(Teuchos::ParameterList& list, const Tag& default_tag)
+{
+  return readTag(list, "dependency tag", default_tag);
+}
+
+
+Tag
+readTag(Teuchos::ParameterList& list, const std::string& param, const Tag& default_tag)
+{
+  std::string tag_str = list.get<std::string>(param, default_tag.get());
+  return Tag{tag_str};
+}
 
 } // namespace
 } // namespace

@@ -25,37 +25,34 @@
 #include "TransportImplicit_PK.hh"
 
 
-TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
+void runTest(int order, const std::string& linsolver)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::string framework_name = "MSTK";
-  Framework framework = Framework::MSTK;
-  
-  std::cout << "Test: implicit advance "<< std::endl;
+  std::cout << "\nTEST: implicit advance, spatial order="<< order << std::endl;
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
 
-  // read parameter list
+  // read and modify parameter list
   std::string xmlFileName("test/transport_implicit_2D.xml");
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+
+  plist->sublist("PKs").sublist("transport")
+      .set<int>("spatial discretization order", order);
+  plist->sublist("PKs").sublist("transport").sublist("time integrator")
+      .set<std::string>("linear solver", linsolver);
 
   // create a mesh
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
-  Preference pref;
-  pref.clear();
-  pref.push_back(framework);
-
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(pref);
-  RCP<const Mesh> mesh;
-
-  mesh = meshfactory.create(0.0, 0.0, 6.0, 2.0, 192, 2);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 6.0, 2.0, 192, 2);
   
   Teuchos::ParameterList state_list = plist->sublist("state");  
   RCP<State> S = rcp(new State(state_list));
@@ -108,4 +105,11 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
 }
  
 
+TEST(IMPLICIT_TRANSPORT_2D_FIRST_ORDER) {
+  // runTest(1, "PCG");
+}
+
+TEST(IMPLICIT_TRANSPORT_2D_SECOND_ORDER) {
+  runTest(2, "");
+}
 

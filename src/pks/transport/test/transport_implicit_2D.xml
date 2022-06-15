@@ -197,6 +197,21 @@
             <Parameter name="min time step" type="double" value="0.0"/>
             <Parameter name="max time step" type="double" value="1.0"/>
           </ParameterList>
+
+	  <Parameter name="solver type" type="string" value="nka"/>
+	  <ParameterList name="nka parameters">
+	    <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
+	    <Parameter name="diverged tolerance" type="double" value="1e+10"/>
+	    <Parameter name="limit iterations" type="int" value="12"/>
+	    <Parameter name="max du growth factor" type="double" value="1e+5"/>
+	    <Parameter name="max divergent iterations" type="int" value="3"/>
+	    <Parameter name="max nka vectors" type="int" value="10"/>
+            <Parameter name="monitor" type="string" value="monitor update"/>
+            <Parameter name="make one iteration" type="bool" value="true"/>
+	    <ParameterList name="verbose object">
+	      <Parameter name="verbosity level" type="string" value="high"/>
+	    </ParameterList>
+	  </ParameterList>
         </ParameterList>
       </ParameterList>
 

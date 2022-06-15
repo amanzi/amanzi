@@ -118,6 +118,9 @@ class Transport_PK : public PK_Physical {
  protected:
   void InitializeFields_();
 
+  void FunctionalTimeDerivative_MUSCL_(double t, const CompositeVector& component, CompositeVector& f, bool scale);
+  void FunctionalTimeDerivative_FCT_(double t, const CompositeVector& component, CompositeVector& f);
+
   // sources and sinks for components from n0 to n1 including
   void ComputeSources_(double tp, double dtp, Epetra_MultiVector& tcc,
                        const Epetra_MultiVector& tcc_prev, int n0, int n1);
@@ -230,6 +233,8 @@ class Transport_PK : public PK_Physical {
   Teuchos::RCP<Operators::ReconstructionCellLinear> lifting_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
   Teuchos::RCP<Operators::FCT> fct_;
+
+  double limiter_mean_;
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;

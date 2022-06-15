@@ -54,8 +54,8 @@ using CVS_t = CompositeVectorSpace;
 Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            const Teuchos::RCP<State>& S,
-                           const Teuchos::RCP<TreeVector>& soln) :
-  soln_(soln)
+                           const Teuchos::RCP<TreeVector>& soln)
+  : soln_(soln)
 {
   S_ = S;
 

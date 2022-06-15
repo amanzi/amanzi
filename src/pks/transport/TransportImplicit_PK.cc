@@ -48,10 +48,10 @@ namespace Transport {
 * New constructor compatible with new MPC framework.
 ****************************************************************** */
 TransportImplicit_PK::TransportImplicit_PK(Teuchos::ParameterList& pk_tree,
-                           const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                           const Teuchos::RCP<State>& S,
-                           const Teuchos::RCP<TreeVector>& soln) :
-    Transport_PK(pk_tree, glist, S, soln)
+                                           const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                                           const Teuchos::RCP<State>& S,
+                                           const Teuchos::RCP<TreeVector>& soln)
+  : Transport_PK(pk_tree, glist, S, soln)
 {
   if (tp_list_->isSublist("time integrator"))
     ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
@@ -95,9 +95,13 @@ void TransportImplicit_PK::Initialize()
   auto vo_list = tp_list_->sublist("verbose object"); 
   vo_ = Teuchos::rcp(new VerboseObject("TransportImpl-" + domain, *tp_list_)); 
 
-  // Create pointers to the primary solution field tcc.
-  auto solution = S_->GetPtrW<CompositeVector>(tcc_key_, Tags::DEFAULT, "state");
-  soln_->SetData(solution); 
+  // Solution vector does not match tcc in general, even for one species.
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1)->SetOwned(false);
+  if (use_dispersion_) cvs.AddComponent("face", AmanziMesh::FACE, 1);
+
+  solution_ = Teuchos::rcp(new CompositeVector(cvs));
+  soln_->SetData(solution_); 
   
   // boundary conditions
   op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
@@ -145,6 +149,19 @@ void TransportImplicit_PK::Initialize()
 
   op_->CreateCheckPoint();
 
+  // initialize time integrator
+  if (spatial_disc_order > 1) {
+    std::string ti_name = ti_list_->get<std::string>("time integration method", "none");
+    if (ti_name == "BDF1") {
+      Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
+      bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+    } else {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;
+    }
+    op_pc_solver_ = op_;
+  }
+
   // generic linear solver or preconditioner
   if (ti_list_ != Teuchos::null) {
     solver_name_ = ti_list_->get<std::string>("linear solver", "");
@@ -167,10 +184,26 @@ void TransportImplicit_PK::Initialize()
 
 
 /* ******************************************************************* 
-* Performs one time step from t_old to t_new. The boundary conditions
-* are calculated only once, during the initialization step.  
+* Maybe we need a separate PK instead of the if-clause
 ******************************************************************* */
 bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
+{
+  bool fail;
+
+  if (spatial_disc_order == 1) {
+    fail = AdvanceStepLO_(t_old, t_new, reinit);
+  } else { 
+    fail = AdvanceStepHO_(t_old, t_new, reinit);
+  }
+
+  return fail;
+}
+
+
+/* ******************************************************************* 
+* BCs are calculated only once, during the initialization step.  
+******************************************************************* */
+bool TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, bool reinit) 
 {
   bool fail = false;
   dt_ = t_new - t_old;
@@ -243,6 +276,50 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // dt_desirable_ = ts_control_->get_timestep(dt_MPC, 1);
 
   return fail;
+}
+
+
+/* ******************************************************************* 
+*
+******************************************************************* */
+bool TransportImplicit_PK::AdvanceStepHO_(double t_old, double t_new, bool reinit) 
+{
+  bool failed = false;
+  double dt_next;
+
+  dt_ = t_new - t_old;
+
+  auto& tcc_c = *S_->GetW<CompositeVector>(tcc_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  auto& sol_c = *solution_->ViewComponent("cell");
+
+  for (int i = 0; i < num_aqueous; i++) {
+    current_component_ = i;
+
+    for (int c = 0; c < ncells_owned; c++) {
+      sol_c[0][c] = tcc_c[i][c];
+    }
+
+    failed = bdf1_dae_->TimeStep(dt_, dt_next, soln_);
+    dt_ = dt_next;
+
+    if (failed) {
+      // revover the original primary solution, pressure
+      AMANZI_ASSERT(false);
+      return failed;
+    }
+
+    for (int c = 0; c < ncells_owned; c++) {
+      tcc_c[i][c] = sol_c[0][c];
+    }
+  }
+
+  bdf1_dae_->CommitSolution(dt_, soln_);
+
+  if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "mean limiter=" << limiter_mean_ << std::endl;
+  }
+  return failed;
 }
 
 
