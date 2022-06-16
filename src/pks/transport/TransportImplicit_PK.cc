@@ -95,14 +95,6 @@ void TransportImplicit_PK::Initialize()
   auto vo_list = tp_list_->sublist("verbose object"); 
   vo_ = Teuchos::rcp(new VerboseObject("TransportImpl-" + domain, *tp_list_)); 
 
-  // Solution vector does not match tcc in general, even for one species.
-  CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1)->SetOwned(false);
-  if (use_dispersion_) cvs.AddComponent("face", AmanziMesh::FACE, 1);
-
-  solution_ = Teuchos::rcp(new CompositeVector(cvs));
-  soln_->SetData(solution_); 
-  
   // boundary conditions
   op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   op_bc_->bc_value();  // allocate internal
@@ -124,6 +116,14 @@ void TransportImplicit_PK::Initialize()
     op_ = op_diff_->global_operator();
   }
 
+  // Solution vector does not match tcc in general, even for one species.
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1)->SetGhosted(true);
+  if (use_dispersion_) cvs = op_diff_->global_operator()->DomainMap();
+
+  solution_ = Teuchos::rcp(new CompositeVector(cvs));
+  soln_->SetData(solution_); 
+  
   // -- advection
   Teuchos::ParameterList& oplist_a = tp_list_->sublist("operators")
                                               .sublist("advection operator")
@@ -147,14 +147,16 @@ void TransportImplicit_PK::Initialize()
 
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_));
 
-  op_->CreateCheckPoint();
-
   // initialize time integrator
   if (spatial_disc_order > 1) {
     std::string ti_name = ti_list_->get<std::string>("time integration method", "none");
     if (ti_name == "BDF1") {
       Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
       bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+
+      auto udot = Teuchos::rcp(new TreeVector(*soln_));
+      udot->PutScalar(0.0);
+      bdf1_dae_->SetInitialState(0.0, soln_, udot);
     } else {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;
@@ -175,7 +177,7 @@ void TransportImplicit_PK::Initialize()
   
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "matrix:" << std::endl
+    *vo_->os() << "preconditioner:" << std::endl
                << op_->PrintDiagnostics() << std::endl
                << vo_->color("green") << "Initialization of PK is complete." 
                << vo_->reset() << std::endl << std::endl;
@@ -189,11 +191,23 @@ void TransportImplicit_PK::Initialize()
 bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
 {
   bool fail;
+  int tot_itrs;
 
   if (spatial_disc_order == 1) {
-    fail = AdvanceStepLO_(t_old, t_new, reinit);
+    fail = AdvanceStepLO_(t_old, t_new, &tot_itrs);
   } else { 
-    fail = AdvanceStepHO_(t_old, t_new, reinit);
+    fail = AdvanceStepHO_(t_old, t_new, &tot_itrs);
+  }
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    double sol_norm;
+    tcc_tmp->Norm2(&sol_norm);
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "transport solver (" << solver_name_
+               << "): ||sol||=" << sol_norm 
+               << "  avg itrs=" << tot_itrs / num_aqueous << std::endl;
+      VV_PrintSoluteExtrema(*tcc_tmp->ViewComponent("cell"), t_new - t_old, "");
   }
 
   return fail;
@@ -203,7 +217,7 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 /* ******************************************************************* 
 * BCs are calculated only once, during the initialization step.  
 ******************************************************************* */
-bool TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, bool reinit) 
+bool TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs) 
 {
   bool fail = false;
   dt_ = t_new - t_old;
@@ -218,12 +232,11 @@ bool TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, bool reini
   const auto& wc_c = *wc.ViewComponent("cell");
   const auto& sat_c = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
-  int icount(0);
+  *tot_itrs = 0;
   CompositeVector tcc_aux(wc);
 
   for (int i = 0; i < num_aqueous; i++) {
-    op_->RestoreCheckPoint();
-    // op_acc_->local_op(0)->Rescale(0.0);
+    op_->Init();
   
     *(*tcc_aux.ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(i);  
     op_acc_->AddAccumulationDelta(tcc_aux, wc_prev, wc, dt_, "cell");
@@ -258,18 +271,7 @@ bool TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, bool reini
     *(*tcc_tmp->ViewComponent("cell"))(i) = *(*tcc_aux.ViewComponent("cell"))(0);
 
     // statistics
-    icount += op_->num_itrs();
-  }
-
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    double sol_norm;
-    tcc_tmp->Norm2(&sol_norm);
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "transport solver (" << solver_name_
-               << "): ||sol||=" << sol_norm 
-               << "  avg itrs=" << icount / num_aqueous << std::endl;
-      VV_PrintSoluteExtrema(*tcc->ViewComponent("cell"), t_new - t_old, "");
+    *tot_itrs += op_->num_itrs();
   }
 
   // estimate time multiplier
@@ -282,38 +284,27 @@ bool TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, bool reini
 /* ******************************************************************* 
 *
 ******************************************************************* */
-bool TransportImplicit_PK::AdvanceStepHO_(double t_old, double t_new, bool reinit) 
+bool TransportImplicit_PK::AdvanceStepHO_(double t_old, double t_new, int* tot_itrs) 
 {
   bool failed = false;
   double dt_next;
 
   dt_ = t_new - t_old;
-
-  auto& tcc_c = *S_->GetW<CompositeVector>(tcc_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-  auto& sol_c = *solution_->ViewComponent("cell");
+  *tot_itrs = bdf1_dae_->number_nonlinear_steps();
 
   for (int i = 0; i < num_aqueous; i++) {
     current_component_ = i;
-
-    for (int c = 0; c < ncells_owned; c++) {
-      sol_c[0][c] = tcc_c[i][c];
-    }
+    *(*solution_->ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(i);  
 
     failed = bdf1_dae_->TimeStep(dt_, dt_next, soln_);
     dt_ = dt_next;
+    if (failed) return failed;
 
-    if (failed) {
-      // revover the original primary solution, pressure
-      AMANZI_ASSERT(false);
-      return failed;
-    }
-
-    for (int c = 0; c < ncells_owned; c++) {
-      tcc_c[i][c] = sol_c[0][c];
-    }
+    *(*tcc_tmp->ViewComponent("cell"))(i) = *(*solution_->ViewComponent("cell"))(0);
   }
 
   bdf1_dae_->CommitSolution(dt_, soln_);
+  *tot_itrs = bdf1_dae_->number_nonlinear_steps() - *tot_itrs;
 
   if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -339,10 +330,8 @@ void TransportImplicit_PK::UpdateLinearSystem(double t_old, double t_new, int co
   *(*tcc_aux.ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(component);
 
   double dt = t_new - t_old;
-  op_->RestoreCheckPoint();
 
   op_->rhs()->PutScalar(0.0);
-  // op_acc_->local_op(0)->Rescale(0.0);
   op_acc_->AddAccumulationDelta(tcc_aux, wc_prev, wc, dt, "cell");
 
   UpdateBoundaryData(t_old, t_new, component);

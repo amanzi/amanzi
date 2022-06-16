@@ -31,7 +31,11 @@ void TransportImplicit_PK::FunctionalResidual(
 
   wc_start = wcprev_c;
   wc_end = wc_c;
+
+  // since dA(C)/dt = F(C), explicit and implicit schemes use F(C) with signs.
+  f->PutScalar(0.0);
   FunctionalTimeDerivative_MUSCL_(t_new, *u_new->Data(), *f->Data(), false);
+  f->Scale(-1.0);
 
   auto& uold_c = *u_old->Data()->ViewComponent("cell");
   auto& unew_c = *u_new->Data()->ViewComponent("cell");
@@ -44,6 +48,7 @@ void TransportImplicit_PK::FunctionalResidual(
     FindDiffusionValue(component_names_[current_component_], &md, &phase);
     if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, sat_c);
 
+    op_diff_->global_operator()->Init();
     op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
     op_diff_->ApplyBCs(true, true, true);
 
@@ -52,6 +57,7 @@ void TransportImplicit_PK::FunctionalResidual(
     f->Data()->Update(1.0, g, 1.0);
   }
 
+  // storage term
   for (int c = 0; c < ncells_owned; ++c) {
     double factor = mesh_->cell_volume(c) / dtp;
     f_c[0][c] += ((*wc_c)[0][c] * unew_c[0][c] - (*wcprev_c)[0][c] * uold_c[0][c]) * factor;
@@ -68,7 +74,7 @@ void TransportImplicit_PK::UpdatePreconditioner(
   S_->GetEvaluator(water_content_key_).Update(*S_, "transport");
   const auto& wc = S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT);
 
-  op_->RestoreCheckPoint();
+  op_->Init();
   
   op_acc_->AddAccumulationTerm(wc, dtp, "cell");
 
@@ -109,6 +115,9 @@ double TransportImplicit_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     double tmp = fabs(duc[0][c]) / (1.0 + fabs(uc[0][c]));
     error = std::max(error, tmp);
   }
+
+  double buf = error;
+  du->Comm()->MaxAll(&buf, &error, 1);
 
   return error;
 }

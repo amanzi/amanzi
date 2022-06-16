@@ -819,8 +819,7 @@ void Transport_PK::AddMultiscalePorosity_(
 ******************************************************************* */
 void Transport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
-  auto tcc_aux = S_->GetPtrW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_);
-  *tcc_aux = *tcc_tmp;
+  S_->GetW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_) = *tcc_tmp;
 }
 
 

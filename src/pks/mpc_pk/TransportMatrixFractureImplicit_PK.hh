@@ -49,12 +49,6 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
   virtual std::string name() override { return "coupled transport implicit"; } 
 
  private:
-  Teuchos::RCP<TreeVector> ExtractComponent_(
-      const CompositeVector& tcc_m, const CompositeVector& tcc_f, int component);
-  void SaveComponent_(const TreeVector& tv_one,
-                      const Teuchos::RCP<TreeVector>& tv_all, int component);
-
- private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> tp_list_;
 

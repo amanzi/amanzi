@@ -120,8 +120,8 @@ class TransportImplicit_PK : public Transport_PK,
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc() { return op_acc_; }
 
  private:  
-  bool AdvanceStepLO_(double t_old, double t_new, bool reinit);
-  bool AdvanceStepHO_(double t_old, double t_new, bool reinit);
+  bool AdvanceStepLO_(double t_old, double t_new, int* tot_itrs);
+  bool AdvanceStepHO_(double t_old, double t_new, int* tot_itrs);
 
  private:
   // solvers

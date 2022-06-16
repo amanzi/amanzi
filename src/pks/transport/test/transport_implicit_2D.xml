@@ -136,7 +136,6 @@
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
-      <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
@@ -188,6 +187,9 @@
         <Parameter name="linear solver" type="string" value="PCG"/>
 
         <ParameterList name="BDF1">
+	  <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
+	  <Parameter name="extrapolate initial guess" type="bool" value="false"/>
+
           <Parameter name="timestep controller type" type="string" value="standard"/>
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="min iterations" type="int" value="5"/>

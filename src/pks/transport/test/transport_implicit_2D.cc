@@ -79,6 +79,8 @@ void runTest(int order, const std::string& linsolver)
   while(t_new < 1.0e+5) {
     t_new = t_old + dt;
     
+    if (comm->MyPID() == 0) 
+      std::cout << "\nCycle: T=" << t_old << " dT=" << dt << std::endl;
     TPK.AdvanceStep(t_old, t_new);
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
     
@@ -106,7 +108,7 @@ void runTest(int order, const std::string& linsolver)
  
 
 TEST(IMPLICIT_TRANSPORT_2D_FIRST_ORDER) {
-  // runTest(1, "PCG");
+  runTest(1, "PCG");
 }
 
 TEST(IMPLICIT_TRANSPORT_2D_SECOND_ORDER) {
