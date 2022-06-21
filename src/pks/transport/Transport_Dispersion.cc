@@ -150,7 +150,7 @@ void Transport_PK::CalculateAxiSymmetryDirection()
 ****************************************************************** */
 Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     const Epetra_MultiVector& tcc_prev,
-    const Epetra_MultiVector& tcc_next,
+    Epetra_MultiVector& tcc_next,
     double t_old, double t_new, int comp0)
 {
   const auto& wc = S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT);

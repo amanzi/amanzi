@@ -233,9 +233,6 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
   auto pk_fracture = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[1]);
 
-  // make copy of primary unknowns, i.e. solution 
-  TreeVector my_solution_copy(*my_solution_);
-
   // update coupling terms
   int ncells_owned_f = mesh_fracture_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   auto values1 = std::make_shared<std::vector<double> >(2 * ncells_owned_f, 0.0);
@@ -270,16 +267,16 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     }
   }
 
-  // update accumulation term and the right-hand side
-  const auto& tcc_m = S_->Get<CV_t>("total_component_concentration");
-  const auto& tcc_f = S_->Get<CV_t>("fracture-total_component_concentration");
+  // make copy of primary unknowns, i.e. solution 
+  auto& tcc_m = S_->GetW<CV_t>("total_component_concentration", Tags::DEFAULT, "state");
+  auto& tcc_f = S_->GetW<CV_t>("fracture-total_component_concentration", Tags::DEFAULT, "state");
+
+  CompositeVector tcc_m_copy(tcc_m), tcc_f_copy(tcc_f);
 
   // we assume that all components are aquesous
   int num_aqueous = tcc_m.ViewComponent("cell")->NumVectors();
 
   for (int i = 0; i < num_aqueous; i++) {
-    ExtractComponent_(tcc_m, tcc_f, i);
-
     pk_matrix->UpdateLinearSystem(t_old, t_new, i);
     pk_fracture->UpdateLinearSystem(t_old, t_new, i);
 
@@ -323,12 +320,15 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     *rhs_one.SubVector(1)->Data() = *pk_fracture->op()->rhs();
 
     int ierr = op_tree_matrix_->ApplyInverse(rhs_one, sol_one);
-    SaveComponent_(sol_one, my_solution_, i);
+    *(*tcc_m.ViewComponent("cell"))(i) = *(*sol_one.SubVector(0)->Data()->ViewComponent("cell"))(0);
+    *(*tcc_f.ViewComponent("cell"))(i) = *(*sol_one.SubVector(1)->Data()->ViewComponent("cell"))(0);
 
     // recover the original solution 
     bool fail = (ierr != 0);
     if (fail) {
-      *my_solution_ = my_solution_copy;
+      tcc_m = tcc_m_copy;
+      tcc_f = tcc_f_copy;
+      //*my_solution_ = my_solution_copy;
       ChangedSolution();
 
       dt_ = ts_control_->get_timestep(dt_, -1);
@@ -343,8 +343,8 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   // output
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    pk_matrix->VV_PrintSoluteExtrema(*my_solution_->SubVector(0)->Data()->ViewComponent("cell"), dt, " (m)");
-    pk_fracture->VV_PrintSoluteExtrema(*my_solution_->SubVector(1)->Data()->ViewComponent("cell"), dt, " (f)");
+    pk_matrix->VV_PrintSoluteExtrema(*tcc_m.ViewComponent("cell"), dt, " (m)");
+    pk_fracture->VV_PrintSoluteExtrema(*tcc_f.ViewComponent("cell"), dt, " (f)");
   }
 
   dt_ = ts_control_->get_timestep(dt_, 1);
@@ -354,54 +354,11 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 
 
 /* ******************************************************************
-* Spezialized implementation of implicit transport
+* Data were copied in the advance step
 ****************************************************************** */
 void TransportMatrixFractureImplicit_PK::CommitStep(
     double t_old, double t_new, const Tag& tag)
 {
-  S_->GetW<CV_t>("total_component_concentration", "state") = *my_solution_->SubVector(0)->Data();
-  S_->GetW<CV_t>("fracture-total_component_concentration", "state") = *my_solution_->SubVector(1)->Data();
-}
-
-
-/* ******************************************************************
-* Create a copy of the i-th component
-****************************************************************** */
-Teuchos::RCP<TreeVector> TransportMatrixFractureImplicit_PK::ExtractComponent_(
-    const CompositeVector& tcc_m, const CompositeVector& tcc_f, int component)
-{
-  auto tv = Teuchos::rcp(new TreeVector());
-  auto tv1 = Teuchos::rcp(new TreeVector());
-  auto tv2 = Teuchos::rcp(new TreeVector());
-  tv->PushBack(tv1);
-  tv->PushBack(tv2);
-
-  CompositeVectorSpace cvs_m, cvs_f;
-  cvs_m.SetMesh(mesh_domain_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
-  cvs_f.SetMesh(mesh_fracture_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  auto cv0 = Teuchos::rcp(new CompositeVector(cvs_m));
-  tv->SubVector(0)->SetData(cv0);
-  *(*cv0->ViewComponent("cell"))(0) = *(*tcc_m.ViewComponent("cell"))(component);
-
-  auto cv1 = Teuchos::rcp(new CompositeVector(cvs_f));
-  tv->SubVector(1)->SetData(cv1);
-  *(*cv1->ViewComponent("cell"))(0) = *(*tcc_f.ViewComponent("cell"))(component);
-
-  return tv;
-}
-
-
-/* ******************************************************************
-* Save the i-th component to a solution vector
-****************************************************************** */
-void TransportMatrixFractureImplicit_PK::SaveComponent_(
-    const TreeVector& tv_one, const Teuchos::RCP<TreeVector>& tv_all, int component)
-{
-  for (int i = 0; i < 2; ++i) {
-    *(*tv_all->SubVector(i)->Data()->ViewComponent("cell"))(component) =
-        *(*tv_one.SubVector(i)->Data()->ViewComponent("cell"))(0);
-  }
 }
 
 }  // namespace Amanzi

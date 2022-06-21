@@ -92,12 +92,10 @@ void TransportExplicit_PK::AdvanceSecondOrderUpwindRKn(double dt_cycle)
     ti_method = Explicit_TI::runge_kutta_4th_order;
   }
 
-  // We interpolate ws using dt which becomes local time.
+  // Advect only aqueous components.
+  // We interpolate water content using dt which becomes local time.
   double T = 0.0; 
-  // We advect only aqueous components.
-  int ncomponents = num_aqueous;
-
-  for (int i = 0; i < ncomponents; i++) {
+  for (int i = 0; i < num_aqueous; i++) {
     current_component_ = i;  // it is needed in BJ called inside RK::fun
     *(*component_prev.ViewComponent("cell", true))(0) = *(*tcc->ViewComponent("cell", true))(i);
 

@@ -72,9 +72,6 @@ class TransportExplicit_PK : public Transport_PK,
   void AdvanceDonorUpwindNonManifold(double dT);
 
  private:
-  void FunctionalTimeDerivative_MUSCL_(double t, const CompositeVector& component, CompositeVector& f);
-  void FunctionalTimeDerivative_FCT_(double t, const CompositeVector& component, CompositeVector& f);
-
   void AdvanceSecondOrderUpwindRKn(double dt_cycle);
   void AdvanceSecondOrderUpwindRK2(double dt_cycle);
   

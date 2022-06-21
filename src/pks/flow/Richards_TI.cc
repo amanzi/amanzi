@@ -257,13 +257,13 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
 void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f)
 {
   const auto& pcf = *S_->Get<CompositeVector>(pressure_key_).ViewComponent("cell");
-  const auto& pcm = *S_->Get<CompositeVector>(pressure_msp_key_).ViewComponent("cell");
+  auto& pcm = *S_->GetW<CompositeVector>(pressure_msp_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
   S_->GetEvaluator(porosity_msp_key_).Update(*S_, "flow");
   const auto& phi = *S_->Get<CompositeVector>(porosity_msp_key_).ViewComponent("cell");
 
   const auto& wcm_prev = *S_->Get<CompositeVector>(prev_water_storage_msp_key_).ViewComponent("cell");
-  auto& wcm = *S_->Get<CompositeVector>(water_storage_msp_key_, Tags::DEFAULT).ViewComponent("cell");
+  auto& wcm = *S_->GetW<CompositeVector>(water_storage_msp_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
   Epetra_MultiVector& fc = *f->ViewComponent("cell");
 
@@ -517,7 +517,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
                                   Teuchos::RCP<TreeVector> du)
 {
   const Epetra_MultiVector& uc = *u->Data()->ViewComponent("cell");
-  const Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell");
+  Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell");
 
   AmanziGeometry::Point face_centr, cell_cntr;
   double max_sat_pert(0.25), damping_factor(0.5);

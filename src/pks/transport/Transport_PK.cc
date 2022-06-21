@@ -54,8 +54,8 @@ using CVS_t = CompositeVectorSpace;
 Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            const Teuchos::RCP<State>& S,
-                           const Teuchos::RCP<TreeVector>& soln) :
-  soln_(soln)
+                           const Teuchos::RCP<TreeVector>& soln)
+  : soln_(soln)
 {
   S_ = S;
 
@@ -819,8 +819,7 @@ void Transport_PK::AddMultiscalePorosity_(
 ******************************************************************* */
 void Transport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
-  auto tcc_aux = S_->GetPtrW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_);
-  *tcc_aux = *tcc_tmp;
+  S_->GetW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_) = *tcc_tmp;
 }
 
 

@@ -269,7 +269,5 @@ readKeys(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
 Tag readTag(Teuchos::ParameterList& list, const Tag& default_tag=Tag{});
 Tag readTag(Teuchos::ParameterList& list, const std::string& param, const Tag& default_tag=Tag{});
 
-
-
 } // namespace Keys
 } // namespace Amanzi

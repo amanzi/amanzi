@@ -608,7 +608,7 @@ void AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
 {
   if (name == "none") return;
 
-  const Epetra_MultiVector& u_c = *u.ViewComponent("cell", true);
+  Epetra_MultiVector& u_c = *u.ViewComponent("cell", true);
   int dim = mesh_->space_dimension();
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -659,6 +659,9 @@ void AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
 
     auto lifting = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_, grad));
     limiter.ApplyLimiter(u.ViewComponent("cell", true), 0, lifting, bc_model, bc_value);
+    const auto& factor = *limiter.limiter();
+    for (int c = 0; c < ncells_owned; ++c) 
+      for (int i = 1; i < nk; ++i) u_c[i][c] *= factor[c];
 
     for (int c = 0; c < ncells_owned; ++c) {
       data(0) = u_c[0][c];

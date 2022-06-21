@@ -112,11 +112,14 @@ class Transport_PK : public PK_Physical {
   // -- otherwise, it returns global operator for component comp0.
   Teuchos::RCP<Operators::Operator> DispersionSolver(
       const Epetra_MultiVector& tcc_prev,
-      const Epetra_MultiVector& tcc_next,
+      Epetra_MultiVector& tcc_next,
       double t_old, double t_new, int comp0 = -1);
 
  protected:
   void InitializeFields_();
+
+  void FunctionalTimeDerivative_MUSCL_(double t, const CompositeVector& component, CompositeVector& f, bool scale);
+  void FunctionalTimeDerivative_FCT_(double t, const CompositeVector& component, CompositeVector& f);
 
   // sources and sinks for components from n0 to n1 including
   void ComputeSources_(double tp, double dtp, Epetra_MultiVector& tcc,
@@ -148,7 +151,7 @@ class Transport_PK : public PK_Physical {
       double mdl, double mdg, double kH,
       const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
-  void DiffusionSolverEffective(const Epetra_MultiVector& tcc_next,
+  void DiffusionSolverEffective(Epetra_MultiVector& tcc_next,
                                 double t_old, double t_new);
 
   // -- air-water partitioning using Henry's law. This is a temporary
@@ -230,6 +233,8 @@ class Transport_PK : public PK_Physical {
   Teuchos::RCP<Operators::ReconstructionCellLinear> lifting_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
   Teuchos::RCP<Operators::FCT> fct_;
+
+  double limiter_mean_;
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;

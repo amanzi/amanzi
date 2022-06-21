@@ -103,7 +103,7 @@ set(Boost_ADDITIONAL_VERSIONS
     1.52 1.52.0
     1.53 1.53.0
     1.54 1.55.0)
-find_package(Boost COMPONENTS system filesystem program_options regex REQUIRED)
+find_package(Boost COMPONENTS filesystem system program_options regex REQUIRED)
 set_package_properties(Boost PROPERTIES
                  DESCRIPTION "C++ Extension library"
                  URL "http://www.boost.org"

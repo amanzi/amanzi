@@ -562,7 +562,7 @@ void Darcy_PK::UpdateSpecificYield_()
 
   // populate ghost cells
   specific_yield_copy_->ScatterMasterToGhosted();
-  const Epetra_MultiVector& specific_yield = *specific_yield_copy_->ViewComponent("cell", true);
+  Epetra_MultiVector& specific_yield = *specific_yield_copy_->ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;

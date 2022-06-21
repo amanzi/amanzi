@@ -47,7 +47,7 @@ class LimiterCell {
             Teuchos::RCP<const Epetra_MultiVector> flux = Teuchos::null);
 
   // -- limit reconstructed data (typically gradeient) using neighboors
-  //    and boundary data. Actual work is done by the 4th function.
+  //    and boundary data. Actual work is done by the 4th function down.
   void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field, int component,
                     const Teuchos::RCP<Reconstruction>& lifting,
                     const Teuchos::RCP<const BCs>& bc);

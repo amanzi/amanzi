@@ -69,17 +69,19 @@ class TransportImplicit_PK : public Transport_PK,
   virtual void Initialize() override;  
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override ; 
 
+  virtual double get_dt() override { return dt_; }
+
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   virtual void FunctionalResidual(
       const double t_old, double t_new, 
       Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
-      Teuchos::RCP<TreeVector> f) override {};
-  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override { return 0.0; }
+      Teuchos::RCP<TreeVector> f) override;
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
 
   // -- management of the preconditioner
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override { return 0; }
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt) override {};
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt) override;
 
   // -- check the admissibility of a solution
   //    override with the actual admissibility check
@@ -116,7 +118,11 @@ class TransportImplicit_PK : public Transport_PK,
   Teuchos::RCP<Operators::Operator> op() { return op_; }
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_adv() { return op_adv_; }
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc() { return op_acc_; }
-  
+
+ private:  
+  bool AdvanceStepLO_(double t_old, double t_new, int* tot_itrs);
+  bool AdvanceStepHO_(double t_old, double t_new, int* tot_itrs);
+
  private:
   // solvers
   Teuchos::RCP<Operators::Operator> op_;
@@ -125,6 +131,10 @@ class TransportImplicit_PK : public Transport_PK,
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
   Teuchos::RCP<Operators::BCs> op_bc_;
   std::string solver_name_, solver_name_constraint_;
+
+  Teuchos::RCP<CompositeVector> solution_;
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae_;
+  Teuchos::RCP<Matrix<CompositeVector,CompositeVectorSpace>> op_pc_solver_;
 
   Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
