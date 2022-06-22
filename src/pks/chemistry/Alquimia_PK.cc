@@ -291,8 +291,9 @@ void Alquimia_PK::Initialize()
 ******************************************************************* */
 int Alquimia_PK::InitializeSingleCell(int cell, const std::string& condition) 
 {
-  // auto tcc = S_->GetW<CompositeVector>(tcc_key_, tag_next_, passwd_).ViewComponent("cell", true);
-  CopyToAlquimia(cell, aqueous_components_, alq_mat_props_, alq_state_, alq_aux_data_, tag_next_);
+  // NOTE: this should get set not to be hard-coded to Tags::DEFAULT, but
+  // should use the same tag as transport.  See #673
+  CopyToAlquimia(cell, aqueous_components_, alq_mat_props_, alq_state_, alq_aux_data_, Tags::DEFAULT);
 
   chem_engine_->EnforceCondition(condition, current_time_, alq_mat_props_, 
           alq_state_, alq_aux_data_, alq_aux_output_);
@@ -495,9 +496,9 @@ void Alquimia_PK::CopyToAlquimia(int cell,
         AlquimiaProperties& mat_props,
         AlquimiaState& state,
         AlquimiaAuxiliaryData& aux_data,
-        const Tag& sat_tag)
+        const Tag& water_tag)
 {
-  CopyToAlquimia(cell, aqueous_components_, mat_props, state, aux_data, sat_tag);
+  CopyToAlquimia(cell, aqueous_components_, mat_props, state, aux_data, water_tag);
 }
 
 
@@ -509,10 +510,11 @@ void Alquimia_PK::CopyToAlquimia(int cell,
                                  AlquimiaProperties& mat_props,
                                  AlquimiaState& state,
                                  AlquimiaAuxiliaryData& aux_data,
-                                 const Tag& sat_tag)
+                                 const Tag& water_tag)
 {
-  const auto& porosity = *S_->Get<CompositeVector>(poro_key_, Tags::DEFAULT).ViewComponent("cell", true);
-  const auto& fluid_density = *S_->Get<CompositeVector>(fluid_den_key_, Tags::DEFAULT).ViewComponent("cell", true);
+  const auto& porosity = *S_->Get<CompositeVector>(poro_key_, water_tag).ViewComponent("cell", true);
+  const auto& fluid_density = *S_->Get<CompositeVector>(fluid_den_key_, water_tag).ViewComponent("cell", true);
+  const auto& water_saturation = *S_->Get<CompositeVector>(saturation_key_, water_tag).ViewComponent("cell", true);
 
   state.water_density = fluid_density[0][cell]; 
   state.porosity = porosity[0][cell];
@@ -578,8 +580,6 @@ void Alquimia_PK::CopyToAlquimia(int cell,
       aux_data.aux_doubles.data[i] = cell_aux_doubles[cell];
     }
   }
-
-  const auto& water_saturation = *S_->Get<CompositeVector>(saturation_key_, sat_tag).ViewComponent("cell", true);
 
   mat_props.volume = mesh_->cell_volume(cell);
   mat_props.saturation = water_saturation[0][cell];
@@ -748,9 +748,11 @@ int Alquimia_PK::AdvanceSingleCell(
 {
   // Copy the state and property information from Amanzi's state within 
   // this cell to Alquimia.
-  // THIS SHOULD BECOME DEFAULT, not CURRENT see #646
-  CopyToAlquimia(cell, aqueous_components, 
-                 alq_mat_props_, alq_state_, alq_aux_data_, Tags::CURRENT);
+  //
+  // NOTE: this should get set not to be hard-coded to Tags::DEFAULT, but
+  // should use the same tag as transport.  See #673
+  CopyToAlquimia(cell, aqueous_components,
+                 alq_mat_props_, alq_state_, alq_aux_data_, Tags::DEFAULT);
 
   int num_iterations = 0;
   if (alq_mat_props_.saturation > saturation_tolerance_) {

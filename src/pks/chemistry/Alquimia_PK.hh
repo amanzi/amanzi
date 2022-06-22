@@ -59,7 +59,7 @@ class Alquimia_PK: public Chemistry_PK {
                       AlquimiaProperties& mat_props,
                       AlquimiaState& state,
                       AlquimiaAuxiliaryData& aux_data,
-                      const Tag& sat_tag=Tags::DEFAULT);
+                      const Tag& water_tag=Tags::DEFAULT);
   
  private:
   // Copy cell state to the given Alquimia containers taking 
@@ -69,7 +69,7 @@ class Alquimia_PK: public Chemistry_PK {
                       AlquimiaProperties& mat_props,
                       AlquimiaState& state,
                       AlquimiaAuxiliaryData& aux_data,
-                      const Tag& sat_tag=Tags::DEFAULT);
+                      const Tag& water_tag=Tags::DEFAULT);
 
   // Copy the data in the given Alquimia containers to the given cell state.
   // The aqueous components are placed into the given multivector.
