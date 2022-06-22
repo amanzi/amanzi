@@ -145,7 +145,7 @@ void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, doubl
 
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
       for (int i = 0; i < nfun; ++i) {
-        val_vec[i] = -(*(*uspec)->first->second)(args)[i] * tcc[i][*c] * ws_[i][*c] * phi_[i][*c] * mol_dens_[i][*c];
+        val_vec[i] = -(*(*uspec)->first->second)(args)[i] * tcc[i][*c] * ws_[0][*c] * phi_[0][*c] * mol_dens_[0][*c];
       }
       value_[*c] = val_vec;
     }

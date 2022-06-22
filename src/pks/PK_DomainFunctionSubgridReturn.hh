@@ -174,7 +174,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
       }
 
       for (int k=0; k!=nfun; ++k) {
-        val[k] *= ws_[k][*c] * phi_[k][*c] * mol_dens_[k][*c] / ncells_sg;
+        val[k] *= ws_[0][*c] * phi_[0][*c] * mol_dens_[0][*c] / ncells_sg;
       }
       value_[*c] = val;
       if (*c == 0) std::cout << "Computed return src term with val = " << val[0] << std::endl;
