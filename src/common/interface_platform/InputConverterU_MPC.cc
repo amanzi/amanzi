@@ -113,7 +113,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       "numerical_controls, unstructured_controls, unstr_transport_controls, algorithm", flag);
   if (flag) {
     std::string algorithm = TrimString_(mm.transcode(node->getTextContent()));
-    transport_implicit_ = (algorithm == "implicit");
+    transport_implicit_ = (algorithm == "implicit" || algorithm == "implicit second-order");
   }
 
   // parse execution_control

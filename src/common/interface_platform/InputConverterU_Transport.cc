@@ -86,17 +86,18 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
     out_list.set<std::string>("method", text);
   }
 
-  int poly_order(0);
+  int nspace(1), ntime(1), poly_order(0);
   std::string tags_default("unstructured_controls, unstr_transport_controls");
   node = GetUniqueElementByTagsString_(tags_default + ", algorithm", flag);
   if (flag) {
-    std::string order = GetTextContentS_(node, "explicit first-order, explicit second-order, explicit, implicit");
+    std::string order = GetTextContentS_(node, "explicit, explicit first-order, explicit second-order, "
+                                               "implicit, implicit second-order");
     if (order == "explicit first-order") {
-      out_list.set<int>("spatial discretization order", 1);
-      out_list.set<int>("temporal discretization order", 1);
+      nspace = 1;
+      ntime = 1;
     } else if (order == "explicit second-order") {
-      out_list.set<int>("spatial discretization order", 2);
-      out_list.set<int>("temporal discretization order", 2);
+      nspace = 2;
+      ntime = 2;
       poly_order = 1;
     } else if (order == "explicit") {
       int nspace(-1), ntime(-1);
@@ -113,8 +114,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
         Exceptions::amanzi_throw(msg);
       }
 
-      out_list.set<int>("spatial discretization order", nspace);
-      out_list.set<int>("temporal discretization order", ntime);
       poly_order = 1;
     } else if (order == "implicit") {
       std::vector<std::string> dofs({"cell"});
@@ -123,7 +122,19 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
               .set<int>("method order", 0)
               .set<std::string>("matrix type", "advection");
       poly_order = 1;
+    } else if (order == "implicit second-order") {
+      nspace = 2;
+      ntime = 1;
+      std::vector<std::string> dofs({"cell"});
+      adv_list.sublist("matrix")
+              .set<Teuchos::Array<std::string> >("schema", dofs)
+              .set<int>("method order", 0)
+              .set<std::string>("matrix type", "advection");
+      poly_order = 1;
     }
+
+    out_list.set<int>("spatial discretization order", nspace);
+    out_list.set<int>("temporal discretization order", ntime);
   }
 
   // high-order transport

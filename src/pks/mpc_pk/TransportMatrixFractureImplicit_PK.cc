@@ -223,10 +223,38 @@ void TransportMatrixFractureImplicit_PK::Initialize()
 }
 
 
+/* ******************************************************************* 
+* Maybe we need a separate PK instead of the if-clause
+******************************************************************* */
+bool TransportMatrixFractureImplicit_PK::AdvanceStep(
+    double t_old, double t_new, bool reinit) 
+{
+  bool fail;
+  int nspace_m, nspace_f, ntime, tot_itrs;
+
+  auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
+  auto pk_fracture = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[1]);
+
+  pk_matrix->get_discretization_order(&nspace_m, &ntime);
+  pk_fracture->get_discretization_order(&nspace_f, &ntime);
+
+  if (nspace_m == 1 && nspace_f == 1) {
+    fail = AdvanceStepLO_(t_old, t_new, &tot_itrs);
+  } else if (nspace_m == 2 && nspace_f == 2) {
+    fail = AdvanceStepHO_(t_old, t_new, &tot_itrs);
+  } else {
+    AMANZI_ASSERT(false);
+  }
+
+  return fail;
+}
+
+
 /* *******************************************************************
 * Performs one time step.
 ******************************************************************* */
-bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+bool TransportMatrixFractureImplicit_PK::AdvanceStepLO_(
+    double t_old, double t_new, int* tot_itrs)
 {
   double dt = t_new - t_old;
 
@@ -274,9 +302,9 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   CompositeVector tcc_m_copy(tcc_m), tcc_f_copy(tcc_f);
 
   // we assume that all components are aquesous
-  int num_aqueous = tcc_m.ViewComponent("cell")->NumVectors();
+  num_aqueous_ = tcc_m.ViewComponent("cell")->NumVectors();
 
-  for (int i = 0; i < num_aqueous; i++) {
+  for (int i = 0; i < num_aqueous_; i++) {
     pk_matrix->UpdateLinearSystem(t_old, t_new, i);
     pk_fracture->UpdateLinearSystem(t_old, t_new, i);
 
@@ -350,6 +378,38 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   dt_ = ts_control_->get_timestep(dt_, 1);
 
   return false;
+}
+
+
+/* ******************************************************************* 
+*
+******************************************************************* */
+bool TransportMatrixFractureImplicit_PK::AdvanceStepHO_(
+    double t_old, double t_new, int* tot_itrs) 
+{
+  bool failed = false;
+  double dt_next;
+
+  dt_ = t_new - t_old;
+  *tot_itrs = bdf1_dae_->number_nonlinear_steps();
+
+  Teuchos::RCP<TreeVector> soln_;
+
+  for (int i = 0; i < num_aqueous_; i++) {
+    // current_component_ = i;
+    // *(*solution_->ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(i);  
+
+    failed = bdf1_dae_->TimeStep(dt_, dt_next, soln_);
+    dt_ = dt_next;
+    if (failed) return failed;
+
+    // *(*tcc_tmp->ViewComponent("cell"))(i) = *(*solution_->ViewComponent("cell"))(0);
+  }
+
+  bdf1_dae_->CommitSolution(dt_, soln_);
+  *tot_itrs = bdf1_dae_->number_nonlinear_steps() - *tot_itrs;
+
+  return failed;
 }
 
 

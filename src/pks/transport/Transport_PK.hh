@@ -93,6 +93,10 @@ class Transport_PK : public PK_Physical {
   bool get_flag_dispersion() { return flag_dispersion_ || flag_diffusion_; }
   Teuchos::RCP<const State> state() { return S_; }
   Teuchos::RCP<CompositeVector> total_component_concentration() { return tcc_tmp; }
+  void get_discretization_order(int* spatial, int* temporal) {
+    *spatial = spatial_disc_order;
+    *temporal = temporal_disc_order;
+  }
 
   // -- control members
   void Policy(Teuchos::Ptr<State> S);
