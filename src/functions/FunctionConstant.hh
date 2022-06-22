@@ -37,7 +37,7 @@ class FunctionConstant : public Function {
  public:
   FunctionConstant(double c) : c_(c) {}
   FunctionConstant* Clone() const { return new FunctionConstant(*this); }
-  double operator()(const Kokkos::View<double*>& x) const { return c_; }
+  double operator()(const Kokkos::View<double*,Kokkos::HostSpace>& x) const { return c_; }
 
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const
   {

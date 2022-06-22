@@ -11,8 +11,12 @@ set(Ginkgo_CMAKE_ARGS "-DGINKGO_BUILD_HWLOC:BOOL=OFF")
 list(APPEND Ginkgo_CMAKE_ARGS "-DGINKGO_BUILD_HIP:BOOL=OFF")
 list(APPEND Ginkgo_CMAKE_ARGS "-DGINKGO_BUILD_OMP:BOOL=OFF")
 
-if(ENABLE_CUDA)
+if(ENABLE_CUDA OR ENABLE_UVM)
     list(APPEND Ginkgo_CMAKE_ARGS "-DGINKGO_BUILD_CUDA:BOOL=ON")
+endif()
+
+if (ENABLE_OpenMP)
+  list(APPEND Ginkgo_CMAKE_ARGS "-DGINKGO_BUILD_OMP:BOOL=ON")
 endif()
 
 # --- Define the Ginkgo location
@@ -46,9 +50,6 @@ ExternalProject_Add(${Ginkgo_BUILD_TARGET}
                     CMAKE_ARGS        ${Ginkgo_Config_File_ARGS}
                     CMAKE_CACHE_ARGS  ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
                                       ${Ginkgo_CMAKE_ARGS} 
-                                      #-DGINKGO_BUILD_HIP:BOOL=OFF
-                                      #-DGINKGO_BUILD_HWLOC:BOOL=OFF
-                                      #-DGINKGO_BUILD_OMP:BOOL=OFF
                                       -DCMAKE_CXX_COMPILER:STRING=${CMAKE_CXX_COMPILER}
                                       -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CMAKE_CXX_FLAGS}
                                       -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}

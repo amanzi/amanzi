@@ -124,13 +124,13 @@ class MeshLogical : public Mesh {
   //---------------------
   // Get nodes of a cell
   virtual void cell_get_nodes(const Entity_ID cellid,
-                              Entity_ID_List* nodeids) const override;
+                              Entity_ID_List& nodeids) const override;
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
-  virtual void
-  cell_get_faces_and_bisectors(const Entity_ID cellid, Entity_ID_List* faceids,
-                               std::vector<AmanziGeometry::Point>* bisectors,
-                               const bool ordered = false) const override;
+  KOKKOS_INLINE_FUNCTION virtual void 
+  cell_get_faces_and_bisectors(const Entity_ID cellid, 
+                      Kokkos::View<Entity_ID*>& faceids,
+                      Kokkos::View<AmanziGeometry::Point*>& bisectors) const override;
 
   // Get nodes of face
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face
@@ -139,7 +139,7 @@ class MeshLogical : public Mesh {
   // with the face normal
   // In 2D, nfnodes is 2
   virtual void face_get_nodes(const Entity_ID faceid,
-                              Entity_ID_List* nodeids) const override;
+                              Entity_ID_List& nodeids) const override;
 
 
   // Get nodes of edge
@@ -153,14 +153,14 @@ class MeshLogical : public Mesh {
   // not guaranteed to be the same for corresponding nodes on
   // different processors
   virtual void node_get_cells(const Entity_ID nodeid, const Parallel_type ptype,
-                              Entity_ID_List* cellids) const override;
+                              Entity_ID_List& cellids) const override;
 
 
   // Faces of type 'ptype' connected to a node - The order of faces is
   // not guarnateed to be the same for corresponding nodes on
   // different processors
   virtual void node_get_faces(const Entity_ID nodeid, const Parallel_type ptype,
-                              Entity_ID_List* faceids) const override;
+                              Entity_ID_List& faceids) const override;
 
   // Get faces of ptype of a particular cell that are connected to the
   // given node - The order of faces is not guarnateed to be the same
@@ -168,13 +168,13 @@ class MeshLogical : public Mesh {
   virtual void
   node_get_cell_faces(const Entity_ID nodeid, const Entity_ID cellid,
                       const Parallel_type ptype,
-                      Entity_ID_List* faceids) const override;
+                      Entity_ID_List& faceids) const override;
 
   // Cells of type 'ptype' connected to an edge - The order of cells is
   // not guaranteed to be the same for corresponding edges on
   // different processors
   virtual void edge_get_cells(const Entity_ID edgeid, const Parallel_type ptype,
-                              Entity_ID_List* cellids) const override
+                              Entity_ID_List& cellids) const override
   {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
@@ -193,14 +193,14 @@ class MeshLogical : public Mesh {
   // faces given by cell_get_faces
   virtual void
   cell_get_face_adj_cells(const Entity_ID cellid, const Parallel_type ptype,
-                          Entity_ID_List* fadj_cellids) const override;
+                          Entity_ID_List& fadj_cellids) const override;
 
   // Node connected neighboring cells of given cell
   // (a hex in a structured mesh has 26 node connected neighbors)
   // The cells are returned in no particular order
   virtual void
   cell_get_node_adj_cells(const Entity_ID cellid, const Parallel_type ptype,
-                          Entity_ID_List* nadj_cellids) const override;
+                          Entity_ID_List& nadj_cellids)  const override;
 
   //
   // Mesh entity geometry
@@ -215,18 +215,18 @@ class MeshLogical : public Mesh {
 
   // Face coordinates - conventions same as face_to_nodes call
   // Number of nodes is the vector size divided by number of spatial dimensions
-  virtual void face_get_coordinates(
-    const Entity_ID faceid,
-    std::vector<AmanziGeometry::Point>* fcoords) const override;
+  virtual void
+  face_get_coordinates(const Entity_ID faceid,
+                       std::vector<AmanziGeometry::Point>& fcoords) const override;
 
   // Coordinates of cells in standard order (Exodus II convention)
   // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
   // For a general polyhedron this will return the node coordinates in
   // arbitrary order
   // Number of nodes is vector size divided by number of spatial dimensions
-  virtual void cell_get_coordinates(
-    const Entity_ID cellid,
-    std::vector<AmanziGeometry::Point>* ccoords) const override;
+  virtual void
+  cell_get_coordinates(const Entity_ID cellid,
+                       std::vector<AmanziGeometry::Point>& ccoords) const override;
 
   //
   // Mesh modification
@@ -273,15 +273,15 @@ class MeshLogical : public Mesh {
   // Get list of entities of type 'category' in set
   using Mesh::get_set_entities;
 
-  virtual void get_set_entities(const Set_ID setid, const Entity_kind kind,
-                                const Parallel_type ptype,
-                                Entity_ID_List* entids) const override;
+  virtual void get_set_entities(const std::string setname, const Entity_kind kind,
+                   const Parallel_type ptype,
+                   Entity_ID_List& entids) const override;
 
   virtual void
   get_set_entities_and_vofs(const std::string setname, const Entity_kind kind,
                             const Parallel_type ptype,
-                            Kokkos::View<Entity_ID*>& entids,
-                            Kokkos::View<double*>* vofs) const override;
+                            Entity_ID_List& entids,
+                            std::vector<double>* vofs) const override;
 
 
   // Miscellaneous functions
@@ -293,10 +293,10 @@ class MeshLogical : public Mesh {
   virtual int
   compute_cell_geometry_(const Entity_ID cellid, double* volume,
                          AmanziGeometry::Point* centroid) const override;
-  virtual int compute_face_geometry_(
-    const Entity_ID faceid, double* area, AmanziGeometry::Point* centroid,
-    std::vector<AmanziGeometry::Point>* normals) const override;
-
+  virtual int compute_face_geometry_(const Entity_ID faceid, double* area,
+                         AmanziGeometry::Point* centroid,
+                         std::vector<AmanziGeometry::Point>& normals) const override;
+                
   // build the cache
   virtual int compute_cell_geometric_quantities_() const override;
   virtual int compute_face_geometric_quantities_() const override;

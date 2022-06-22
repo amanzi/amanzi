@@ -16,20 +16,24 @@
 
 namespace Amanzi {
 
-FunctionDistance::FunctionDistance(const Kokkos::View<double*>& x0,
-                                   const Kokkos::View<double*>& metric)
+FunctionDistance::FunctionDistance(const Kokkos::View<double*,Kokkos::HostSpace>& x0,
+                                   const Kokkos::View<double*,Kokkos::HostSpace>& metric)
 {
   if (x0.extent(0) != metric.extent(0)) {
     Errors::Message m;
     m << "Mismatch of metric and point dimensions.";
     Exceptions::amanzi_throw(m);
   }
-  x0_ = x0;
-  metric_ = metric;
+  Kokkos::resize(x0_,x0.extent(0)); 
+  Kokkos::resize(metric_,metric.extent(0)); 
+  Kokkos::deep_copy(x0_.view_host(),x0);
+  Kokkos::deep_copy(x0_.view_device(),x0);
+  Kokkos::deep_copy(metric_.view_device(),metric);
+  Kokkos::deep_copy(metric_.view_device(),metric);
 }
 
 double
-FunctionDistance::operator()(const Kokkos::View<double*>& x) const
+FunctionDistance::operator()(const Kokkos::View<double*,Kokkos::HostSpace>& x) const
 {
   double tmp(0.0), y(0.0);
   if (x.extent(0) < x0_.extent(0)) {
@@ -39,8 +43,8 @@ FunctionDistance::operator()(const Kokkos::View<double*>& x) const
     // Exceptions::amanzi_throw(m);
   }
   for (int j = 0; j < x0_.extent(0); ++j) {
-    tmp = x[j] - x0_[j];
-    y += metric_[j] * tmp * tmp;
+    tmp = x[j] - x0_.view_host()[j];
+    y += metric_.view_host()[j] * tmp * tmp;
   }
   y = sqrt(y);
   return y;

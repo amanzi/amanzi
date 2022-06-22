@@ -113,6 +113,6 @@ if (BUILD_TESTS)
   add_amanzi_test(functions_multi functions_multi
                   KIND unit
                   SOURCE test/functions_multi.cc
-		  LINK_LIBS functions ${UnitTest_LIBRARIES})
+               	  LINK_LIBS functions ${UnitTest_LIBRARIES})
 
 endif()

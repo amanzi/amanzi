@@ -64,7 +64,7 @@ class FunctionStaticHead : public Function {
   ~FunctionStaticHead() {}
   FunctionStaticHead* Clone() const { return new FunctionStaticHead(*this); }
   // The array (t,x,y,z) is passed as *x, so that x[dim_] is z in 3D, y in 2D
-  double operator()(const Kokkos::View<double*>& x) const
+  double operator()(const Kokkos::View<double*,Kokkos::HostSpace>& x) const
   {
     return patm_ + rho_g_ * ((*h_)(x)-x(dim_));
   }

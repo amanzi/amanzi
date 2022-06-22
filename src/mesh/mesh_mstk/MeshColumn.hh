@@ -426,8 +426,8 @@ class MeshColumn : public Mesh {
     // NOTE: the face directions with respect to the cell may be at
     // odds with how it is in the parent mesh but within this mesh its
     // consistent - so we think everything will work as it should
-    Kokkos::View<Entity_ID*> faceids_extracted;
-    Kokkos::View<int*> face_dirs_extracted;
+    Kokkos::View<Entity_ID*,Kokkos::HostSpace> faceids_extracted;
+    Kokkos::View<int*,Kokkos::HostSpace> face_dirs_extracted;
     extracted_->cell_get_faces_and_dirs(
       cellid, faceids_extracted, face_dirs_extracted);
 

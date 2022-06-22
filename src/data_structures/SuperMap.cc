@@ -67,7 +67,7 @@ int
 copyToSuperVector(const SuperMap& map, const BlockVector<Vector_type::scalar_type>& bv,
                   Vector_type& sv, int block_num)
 {
-  auto svv = sv.getLocalViewDevice();
+  auto svv = sv.getLocalViewDevice(Tpetra::Access::ReadWrite);
   for (const auto& compname : bv) {
     if (map.HasComponent(block_num, compname)) {
       auto data = bv.ViewComponent(compname, false);
@@ -89,7 +89,7 @@ int
 copyFromSuperVector(const SuperMap& map, const Vector_type& sv,
                     BlockVector<Vector_type::scalar_type>& bv, int block_num)
 {
-  auto svv = sv.getLocalViewDevice();
+  auto svv = sv.getLocalViewDevice(Tpetra::Access::ReadOnly);
   for (const auto& compname : bv) {
     if (map.HasComponent(block_num, compname)) {
       auto data = bv.ViewComponent(compname, false);
@@ -111,7 +111,7 @@ int
 addFromSuperVector(const SuperMap& map, const Vector_type& sv,
                    BlockVector<Vector_type::scalar_type>& bv, int block_num)
 {
-  auto svv = sv.getLocalViewDevice();
+  auto svv = sv.getLocalViewDevice(Tpetra::Access::ReadOnly);
   for (const auto& compname : bv) {
     if (map.HasComponent(block_num, compname)) {
       auto data = bv.ViewComponent(compname, false);
@@ -197,7 +197,7 @@ SuperMap::SuperMap(const Comm_ptr_type& comm,
   std::map<std::string, std::size_t> dofnums;
   std::map<std::string, BlockMap_ptr_type> master_maps;
   std::map<std::string, BlockMap_ptr_type> ghost_maps;
-
+  
   // this groups maps by map equivalence, not component names.
 
   // loop over nodes, finding unique component names on unique meshes

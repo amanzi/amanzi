@@ -78,14 +78,14 @@ SUITE(COMPOSITE_VECTOR)
 
     if (size == 2) {
       CHECK_EQUAL(
-        4, x->getMap()->ComponentMap("cell", false)->getNodeNumElements());
+        4, x->getMap()->ComponentMap("cell", false)->getLocalNumElements());
       CHECK_EQUAL(
-        5, x->getMap()->ComponentMap("cell", true)->getNodeNumElements());
+        5, x->getMap()->ComponentMap("cell", true)->getLocalNumElements());
     } else {
       CHECK_EQUAL(
-        8, x->getMap()->ComponentMap("cell", false)->getNodeNumElements());
+        8, x->getMap()->ComponentMap("cell", false)->getLocalNumElements());
       CHECK_EQUAL(
-        8, x->getMap()->ComponentMap("cell", true)->getNodeNumElements());
+        8, x->getMap()->ComponentMap("cell", true)->getLocalNumElements());
     }
 
     // check zero initialization

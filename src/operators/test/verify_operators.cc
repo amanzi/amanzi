@@ -29,6 +29,7 @@ static int MyPID;
 
 int main(int argc, char *argv[])
 {
+
   if (argc < 4) {
     std::cout <<
       "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol  nloops  linsolver  test_id  device\n\n"
@@ -172,7 +173,9 @@ TEST(Verify_Mesh_and_Operators) {
       .set<int>("maximum number of iterations", 5000)
       .set<double>("error tolerance", tol)
       .set<int>("size of Krylov space", 20)
-      .set<bool>("release Krylov vectors", "false");
+      .set<bool>("release Krylov vectors", "false")
+      .sublist("verbose object")
+      .set<std::string>("verbosity level","medium");
 
   plist->sublist("solvers").sublist("Amesos1: KLU")
       .set<std::string>("direct method", "amesos").sublist("amesos parameters")
@@ -215,6 +218,10 @@ TEST(Verify_Mesh_and_Operators) {
         .set<int>("verbosity", 1)
         .set<int>("coarsening type", 8) /* 8: PMIS */
         .set<int>("interpolation type", 6) 
+        //.set<int>("max coarse size", 10000000) 
+        //.set<int>("max multigrid levels", 1)
+
+
         /* From Hypre 2.22.0 Manual */
         /*3:  direct
           15: BAMG-direct

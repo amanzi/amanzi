@@ -86,7 +86,7 @@ TEST(MESH_COLUMNS)
     // Identify cell above and cell below
 
     for (int c = 0; c < ncells; c++) {
-      Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(c);
+      Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid_host(c);
 
       int expcellabove = -1, expcellbelow = -1;
       bool found_above = false, found_below = false;
@@ -103,7 +103,7 @@ TEST(MESH_COLUMNS)
         int c2 = adjcells[k];
         if (c == c2) continue;
 
-        Amanzi::AmanziGeometry::Point ccen2 = mesh->cell_centroid(c2);
+        Amanzi::AmanziGeometry::Point ccen2 = mesh->cell_centroid_host(c2);
 
         if (fabs(ccen2[0] - ccen[0]) > 1.0e-10 ||
             fabs(ccen2[1] - ccen[1]) > 1.0e-10)
@@ -121,10 +121,9 @@ TEST(MESH_COLUMNS)
       CHECK(found_below);
       CHECK(found_above);
 
-      CHECK_EQUAL(expcellabove, mesh->cell_get_cell_above(c));
-      CHECK_EQUAL(expcellbelow, mesh->cell_get_cell_below(c));
+      CHECK_EQUAL(expcellabove, mesh->cell_get_cell_above_host(c));
+      CHECK_EQUAL(expcellbelow, mesh->cell_get_cell_below_host(c));
     }
-
 
     int nnodes = mesh->num_entities(Amanzi::AmanziMesh::CELL,
                                     Amanzi::AmanziMesh::Parallel_type::OWNED);
@@ -174,7 +173,7 @@ TEST(MESH_COLUMNS)
       }
       CHECK(found_above);
 
-      CHECK_EQUAL(expnodeabove, mesh->node_get_node_above(n));
+      CHECK_EQUAL(expnodeabove, mesh->node_get_node_above_host(n));
     }
 
   } // for each framework i

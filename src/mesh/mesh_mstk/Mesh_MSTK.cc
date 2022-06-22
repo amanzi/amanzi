@@ -2524,7 +2524,7 @@ Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
       int ncell = num_entities(CELL, Parallel_type::ALL);
 
       for (int icell = 0; icell < ncell; icell++)
-        if (region->inside(cell_centroid(icell)))
+        if (region->inside(cell_centroid_host(icell)))
           MSet_Add(mset, cell_id_to_handle[icell]);
 
     } else if (region->type() == AmanziGeometry::ALL) {
@@ -2669,8 +2669,8 @@ Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
 
       if (nface > 0) {
         if (!mesh_cache_.kdtree_faces_initialized_) {
-          face_centroid(0);
-          mesh_cache_.kdtree_faces_.Init(mesh_cache_.face_centroids_);
+          face_centroid_host(0);
+          mesh_cache_.kdtree_faces_.Init(mesh_cache_.face_centroids_.view_host());
           mesh_cache_.kdtree_faces_initialized_ = true;
         }
 
@@ -2685,7 +2685,7 @@ Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
 
         for (int i = 0; i < idx.size(); ++i) {
           int iface = idx[i];
-          if (region->inside(face_centroid(iface)))
+          if (region->inside(face_centroid_host(iface)))
             MSet_Add(mset, face_id_to_handle[iface]);
         }
       }
@@ -2738,7 +2738,7 @@ Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
       const auto& fmap = *face_map(true);
       const auto& map = *exterior_face_map(true);
 
-      int nface = map.getNodeNumElements();
+      int nface = map.getLocalNumElements();
 
       for (int iface = 0; iface < nface; iface++) {
         int lid = fmap.getLocalElement(map.getGlobalElement(iface));
@@ -3458,7 +3458,7 @@ Mesh_MSTK::init_face_map()
     auto lc_id_av = Teuchos::arrayView(lc_id.data(), nnotowned);
     extface_map_wo_ghosts_->getRemoteIndexList(gl_id_av, pr_id_av, lc_id_av);
 
-    int n_extface_w_ghosts = extface_map_wo_ghosts_->getNodeNumElements();
+    int n_extface_w_ghosts = extface_map_wo_ghosts_->getLocalNumElements();
 
     // Add to maping only external faces (which belong to local mapping on other
     // processors

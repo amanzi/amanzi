@@ -31,7 +31,7 @@ class Op_Cell_FaceCell : public Op {
     A = DenseMatrix_Vector(ncells_owned); 
 
     for (int c=0; c!=ncells_owned; ++c) {
-      AmanziMesh::Entity_ID_View faces;
+      Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
       mesh->cell_get_faces(c, faces);      // This perform the prefix_sum
       int nfaces = faces.extent(0); 
       A.set_shape(c, nfaces+1,nfaces+1);

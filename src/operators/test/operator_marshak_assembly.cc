@@ -99,7 +99,7 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
     const auto& bf_map = *mesh->map(AmanziMesh::BOUNDARY_FACE, false);
     const auto& f_map = *mesh->map(AmanziMesh::FACE, false);
       
-    for (int bf=0; bf!=bf_map.getNodeNumElements(); ++bf) {
+    for (int bf=0; bf!=bf_map.getLocalNumElements(); ++bf) {
       auto f = f_map.getLocalElement(bf_map.getGlobalElement(bf));
       auto xf = mesh->face_centroid(f);
 
@@ -130,14 +130,14 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
   {
     auto soln_c = solution->ViewComponent<Amanzi::MirrorHost>("cell", false);
     for (int c = 0; c < ncells_owned; ++c) {
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+      const AmanziGeometry::Point& xc = mesh->cell_centroid_host(c);
       soln_c(c,0) = knc->exact(t, xc);
     }
   }
   if (solution->HasComponent("face")) {
     auto soln_f = solution->ViewComponent<Amanzi::MirrorHost>("face", false);
     for (int f = 0; f < nfaces_owned; ++f) {
-      const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+      const AmanziGeometry::Point& xf = mesh->face_centroid_host(f);
       soln_f(f,0) = knc->exact(t, xf);
     }
   }
@@ -238,7 +238,6 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
   filename_test = filename_gold;
 #endif
 
-  int ierr = 0;
 
   // write to disk
   global_op->WriteMatrix(filename_test);
@@ -254,18 +253,18 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
     auto test_map = test_mat->getRowMap();
     auto gold_map = gold_mat->getRowMap();
 
-    for (int i=0; i!=test_map->getNodeNumElements(); ++i) {
+    for (int i=0; i!=test_map->getLocalNumElements(); ++i) {
       int test_n_cols = -1;
-      const double* test_vals = nullptr;
-      const int* test_cols = nullptr;
-      ierr = test_mat->getLocalRowView(i, test_n_cols, test_vals, test_cols);
-      CHECK(!ierr);
-
+      Kokkos::View<const double*, Layout, Amanzi::HostSpace, Kokkos::MemoryManaged> test_vals; 
+      Kokkos::View<const int*, Layout, Amanzi::HostSpace, Kokkos::MemoryManaged> test_cols;
+      test_mat->getLocalRowView(i,test_cols,test_vals);
+      test_n_cols = test_cols.size(); 
+      
       int gold_n_cols = -1;
-      const double* gold_vals = nullptr;
-      const int* gold_cols = nullptr;
-      ierr = gold_mat->getLocalRowView(i, gold_n_cols, gold_vals, gold_cols);
-      CHECK(!ierr);
+      Kokkos::View<const double*, Layout, Amanzi::HostSpace, Kokkos::MemoryManaged> gold_vals; 
+      Kokkos::View<const int*, Layout, Amanzi::HostSpace, Kokkos::MemoryManaged> gold_cols;
+      gold_mat->getLocalRowView(i, gold_cols, gold_vals);
+      gold_n_cols = gold_cols.size(); 
       
       std::cout << i << ": ";
       CHECK_EQUAL(gold_n_cols, test_n_cols);

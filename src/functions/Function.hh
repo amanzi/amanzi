@@ -66,6 +66,7 @@ END
 #include <cassert>
 
 #include "Kokkos_Core.hpp"
+#include "Kokkos_DualView.hpp"
 
 namespace Amanzi {
 
@@ -75,7 +76,7 @@ class Function {
   virtual Function* Clone() const = 0;
 
   // Keep host version working
-  virtual double operator()(const Kokkos::View<double*>&) const = 0;
+  virtual double operator()(const Kokkos::View<double*,Kokkos::HostSpace>&) const = 0;
 
   virtual void
   apply(const Kokkos::View<double**>&, Kokkos::View<double*>&) const = 0;

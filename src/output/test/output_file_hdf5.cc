@@ -131,7 +131,7 @@ SUITE(FILE_HDF5)
 
     Vector_ptr_type vec = Teuchos::rcp(new Vector_type(map));
     {
-      auto vecv = vec->getLocalViewHost();
+      auto vecv = vec->getLocalViewHost(Tpetra::Access::ReadWrite);
       for (int i = 0; i != vecv.extent(0); ++i) { vecv(i, 0) = i + rank * 3; }
     }
 
@@ -175,7 +175,7 @@ SUITE(FILE_HDF5)
 
     MultiVector_ptr_type multivec = Teuchos::rcp(new MultiVector_type(map, 2));
     {
-      auto mvv = multivec->getLocalViewHost();
+      auto mvv = multivec->getLocalViewHost(Tpetra::Access::ReadWrite);
       for (int i = 0; i != mvv.extent(0); ++i) {
         mvv(i, 0) = (i + rank * 3) * 2;
         mvv(i, 1) = (i + rank * 3) * 2 + 1;
@@ -234,7 +234,7 @@ TEST(MULTIVECTOR_BLOCK_WRITE_READ) {
   
   MultiVector_ptr_type multivec = Teuchos::rcp(new MultiVector_type(map, 2));
   {
-    auto mvv = multivec->getLocalViewHost();
+    auto mvv = multivec->getLocalViewHost(Tpetra::Access::ReadWrite);
     CHECK_EQUAL(3, mvv.extent(0));
     CHECK_EQUAL(2, mvv.extent(1));
 
@@ -248,7 +248,7 @@ TEST(MULTIVECTOR_BLOCK_WRITE_READ) {
   }
 
   { // test our test to make sure we understand layout
-    auto mvv2 = multivec->getLocalViewHost();
+    auto mvv2 = multivec->getLocalViewHost(Tpetra::Access::ReadWrite);
     for (int i=0; i!=3; ++i) {
       CHECK_CLOSE((i+rank*3)*2, mvv2(i,0), 1.e-10);
       CHECK_CLOSE((i+rank*3)*2+1, mvv2(i,1), 1.e-10);
@@ -256,7 +256,7 @@ TEST(MULTIVECTOR_BLOCK_WRITE_READ) {
 
     // and in 1d to make sure we understand layout
     // NOTE: this would have to change for LayoutRight
-    auto mvv1 = multivec->get1dView();
+    auto mvv1 = multivec->get1dView(Tpetra::Access::ReadWrite);
     for (int i=0; i!=3*2; ++i) {
       std::cout << " " << i << "," << (i%2)*3 + i/2 << "," << mvv1[i] << std::endl;
       CHECK_CLOSE(rank*3*2 + (i%3)*2 + i/3, mvv1[i], 1.e-10);
@@ -325,7 +325,7 @@ TEST(MULTIVECTOR_BLOCK_WRITE_READ) {
                                        "/group/map.global" };
     auto multivec = Teuchos::rcp(new MultiVector_type(map, 2));
     {
-      auto mvv = multivec->getLocalViewHost();
+      auto mvv = multivec->getLocalViewHost(Tpetra::Access::ReadWrite);
       for (int i = 0; i != mvv.extent(0); ++i) {
         mvv(i, 0) = i;
         mvv(i, 1) = map->getGlobalElement(i);

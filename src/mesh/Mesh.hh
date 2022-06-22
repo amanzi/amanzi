@@ -194,6 +194,12 @@ class Mesh {
     return mesh_cache_.entity_get_parent(kind,entid); 
   }
 
+  Entity_ID
+  entity_get_parent_host(const Entity_kind kind, const Entity_ID entid) const
+  {
+    return mesh_cache_.entity_get_parent_host(kind,entid); 
+  }
+
 
   virtual Entity_ID
   entity_get_parent_type(const Entity_kind kind, const Entity_ID entid) const;
@@ -233,16 +239,13 @@ class Mesh {
   // On a distributed mesh, this will count all the faces of the
   // cell, OWNED or GHOST.
   KOKKOS_INLINE_FUNCTION unsigned int cell_get_num_faces(const Entity_ID cellid) const{
-    #if AMANZI_MESH_CACHE_VARS != 0
       return mesh_cache_.cell_get_num_faces(cellid); 
-    #else // Non-cached version
-      Entity_ID_List cfaceids;
-      std::vector<int> cfacedirs;
-      cell_get_faces_and_dirs_internal_(cellid, &cfaceids, &cfacedirs, false);
-      return cfaceids.size();
-    #endif
   }
-  
+
+  unsigned int cell_get_num_faces_host(const Entity_ID cellid) const{
+      return mesh_cache_.cell_get_num_faces_host(cellid); 
+  }
+
   unsigned int cell_get_max_faces() const;
   unsigned int cell_get_max_nodes() const;
   unsigned int cell_get_max_edges() const;
@@ -259,9 +262,10 @@ class Mesh {
   // send-receive protocols and mesh query operators are designed, a side
   // effect of this is that master and ghost entities will have the same
   // hierarchical topology.
+  template<class S>
   KOKKOS_INLINE_FUNCTION void
   cell_get_faces(const Entity_ID cellid,
-                 Kokkos::View<Entity_ID*>& faceids) const
+                 Kokkos::View<Entity_ID*,S>& faceids) const
   {
     mesh_cache_.cell_get_faces(cellid,faceids); 
   }
@@ -278,10 +282,11 @@ class Mesh {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
+  template<typename S> 
   KOKKOS_INLINE_FUNCTION void
   cell_get_faces_and_dirs(const Entity_ID cellid,
-                          Kokkos::View<Entity_ID*>& faceids,
-                          Kokkos::View<int*>& face_dirs) const
+                          Kokkos::View<Entity_ID*,S>& faceids,
+                          Kokkos::View<int*,S>& face_dirs) const
   {
     mesh_cache_.cell_get_faces_and_dirs(cellid,faceids,face_dirs); 
   }
@@ -297,8 +302,8 @@ class Mesh {
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   KOKKOS_INLINE_FUNCTION void 
   cell_get_faces_and_bisectors(const Entity_ID cellid, 
-                      Kokkos::View<Entity_ID*>& faceids,
-                      Kokkos::View<AmanziGeometry::Point*>& bisectors) const
+                      Kokkos::View<Entity_ID*,Amanzi::DeviceOnlyMemorySpace>& faceids,
+                      Kokkos::View<AmanziGeometry::Point*,Amanzi::DeviceOnlyMemorySpace>& bisectors) const
   {
     mesh_cache_.cell_get_faces_and_bisectors(cellid,faceids,bisectors); 
   }
@@ -362,9 +367,15 @@ class Mesh {
   // processors
   KOKKOS_INLINE_FUNCTION void
   face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
-                 Kokkos::View<Entity_ID*>& cellids) const
+                 Kokkos::View<Entity_ID*,Amanzi::DeviceOnlyMemorySpace>& cellids) const
   {
     mesh_cache_.face_get_cells(faceid,ptype,cellids); 
+  }
+  void
+  face_get_cells_host(const Entity_ID faceid, const Parallel_type ptype,
+                 Kokkos::View<Entity_ID*, Kokkos::HostSpace>& cellids) const
+  {
+    mesh_cache_.face_get_cells_host(faceid,ptype,cellids); 
   }
 
 
@@ -440,14 +451,17 @@ class Mesh {
   // Given a cell, get the id of the cell above it in the column - must call
   // build_columns before calling
   Entity_ID cell_get_cell_above(const Entity_ID cellid) const;
+  Entity_ID cell_get_cell_above_host(const Entity_ID cellid) const;
 
   // Given a cell, get the id of the cell below it in the column - must call
   // build_columns before calling
   Entity_ID cell_get_cell_below(const Entity_ID cellid) const;
+  Entity_ID cell_get_cell_below_host(const Entity_ID cellid) const;
 
   // Given a node, get the id of the node above it in the column - must call
   // build_columns before calling
   Entity_ID node_get_node_above(const Entity_ID nodeid) const;
+  Entity_ID node_get_node_above_host(const Entity_ID nodeid) const;
 
 
   //
@@ -473,15 +487,14 @@ class Mesh {
   cell_get_coordinates(const Entity_ID cellid,
                        std::vector<AmanziGeometry::Point>& ccoords) const = 0;
 
-  // Volume/Area of cell
-  double cell_volume(const Entity_ID cellid, const bool recompute) const
-  {
-    return mesh_cache_.cell_volume(cellid,recompute); 
-  }
-
   KOKKOS_INLINE_FUNCTION double cell_volume(const Entity_ID cellid) const
   {
     return mesh_cache_.cell_volume(cellid);
+  }
+
+  KOKKOS_INLINE_FUNCTION double cell_volume_host(const Entity_ID cellid) const
+  {
+    return mesh_cache_.cell_volume_host(cellid);
   }
 
   // Area/length of face
@@ -489,6 +502,13 @@ class Mesh {
   face_area(const Entity_ID faceid, const bool recompute = false) const
   {
     return mesh_cache_.face_area(faceid,recompute);
+  }
+
+  // Area/length of face
+  double
+  face_area_host(const Entity_ID faceid, const bool recompute = false) const
+  {
+    return mesh_cache_.face_area_host(faceid,recompute);
   }
 
   // Length of edge
@@ -514,6 +534,12 @@ class Mesh {
     return mesh_cache_.cell_centroid(cellid); 
   }
 
+  AmanziGeometry::Point
+  cell_centroid_host(const Entity_ID cellid) const
+  {
+    return mesh_cache_.cell_centroid_host(cellid); 
+  }
+
   // Centroid of face (center of gravity not just the average of node
   // coordinates)
   //
@@ -522,10 +548,34 @@ class Mesh {
   // decomposition of the face. Each triangular facet is formed by the
   // connecting the face center (average of face nodes) to the two
   // nodes of an edge of the face
+
+#if 0 
+  template<typename DEVICE = Kokkos::DefaultExecutionSpace>
   KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
   face_centroid(const Entity_ID faceid, const bool recompute = false) const
   {
     return mesh_cache_.face_centroid(faceid,recompute);
+  }
+
+  template<>
+  KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
+  face_centroid<Kokkos::HostSpace>(const Entity_ID faceid, const bool recompute = false) const
+  {
+    return mesh_cache_.face_centroid_host(faceid,recompute);
+  }
+#endif 
+
+
+  KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
+  face_centroid(const Entity_ID faceid, const bool recompute = false) const
+  {
+    return mesh_cache_.face_centroid(faceid,recompute);
+  }
+
+  AmanziGeometry::Point
+  face_centroid_host(const Entity_ID faceid, const bool recompute = false) const
+  {
+    return mesh_cache_.face_centroid_host(faceid,recompute);
   }
 
   void display_cache(){
@@ -543,6 +593,12 @@ class Mesh {
     return mesh_cache_.face_normal(faceid,recompute,cellid,orientation); 
   }
 
+  AmanziGeometry::Point
+  face_normal_host(const Entity_ID faceid, const bool recompute = false,
+              const Entity_ID cellid = -1, int* orientation = NULL) const
+  {
+    return mesh_cache_.face_normal_host(faceid,recompute,cellid,orientation); 
+  }
 
   // Edge vector
   //
@@ -713,7 +769,7 @@ class Mesh {
 
   void get_set_entities(const Set_ID setid, const Entity_kind kind,
                         const Parallel_type ptype,
-                        Entity_ID_View& entids) const {
+                        Kokkos::View<AmanziMesh::Entity_ID*>& entids) const {
     Entity_ID_List ids_list;
     get_set_entities(setid, kind, ptype, ids_list);
     Kokkos::resize(entids, ids_list.size());
@@ -814,17 +870,22 @@ public:
   // operator will return a single edge and a direction of 1. However,
   // this direction cannot be relied upon to compute, say, a contour
   // integral around the 2D cell.
-  void
+  KOKKOS_INLINE_FUNCTION void
   face_get_edges_and_dirs(const Entity_ID faceid,
-                                Kokkos::View<Entity_ID*>& edgeids,
-                                Kokkos::View<int*>* edge_dirs,
+                                Kokkos::View<Entity_ID*,Amanzi::DeviceOnlyMemorySpace>& edgeids,
+                                Kokkos::View<int*,Amanzi::DeviceOnlyMemorySpace>* edge_dirs,
                                 const bool ordered = false) const
   {
-  #if AMANZI_MESH_CACHE_VARS != 0
     mesh_cache_.face_get_edges_and_dirs(faceid,edgeids,edge_dirs,ordered);
-  #else // Non-cached version
-    face_get_edges_and_dirs_internal_(faceid, edgeids, edge_dirs, ordered);
-  #endif
+  }
+
+  void
+  face_get_edges_and_dirs_host(const Entity_ID faceid,
+                                Kokkos::View<Entity_ID*,Kokkos::HostSpace>& edgeids,
+                                Kokkos::View<int*,Kokkos::HostSpace>* edge_dirs,
+                                const bool ordered = false) const
+  {
+    mesh_cache_.face_get_edges_and_dirs_host(faceid,edgeids,edge_dirs,ordered);
   }
 
 
@@ -858,15 +919,17 @@ public:
   }
 
   // Get edges of a cell
-  void cell_get_edges(const Entity_ID cellid,
-                      Kokkos::View<Entity_ID*>& edgeids) const
+  KOKKOS_INLINE_FUNCTION void cell_get_edges(const Entity_ID cellid,
+                      Kokkos::View<Entity_ID*,Amanzi::DeviceOnlyMemorySpace>& edgeids) const
   {
-  #if AMANZI_MESH_CACHE_VARS != 0
     mesh_cache_.cell_get_edges(cellid,edgeids);
-  #else // Non-cached version
-    cell_get_edges_internal_(cellid, edgeids);
+  }
 
-  #endif
+  // Get edges of a cell
+  void cell_get_edges_host(const Entity_ID cellid,
+                      Kokkos::View<Entity_ID*,Kokkos::HostSpace>& edgeids) const
+  {
+    mesh_cache_.cell_get_edges_host(cellid,edgeids);
   }
 
 public: 
@@ -877,26 +940,42 @@ public:
                                        std::vector<int>* edge_dirs) const = 0;
 
   // edges and directions of a 2D cell
-  void cell_2D_get_edges_and_dirs(const Entity_ID cellid,
-                                  Kokkos::View<Entity_ID*>& edgeids,
-                                  Kokkos::View<int*>* edgedirs) const
+  KOKKOS_INLINE_FUNCTION void cell_2D_get_edges_and_dirs(const Entity_ID cellid,
+                                  Kokkos::View<Entity_ID*,Amanzi::DeviceOnlyMemorySpace>& edgeids,
+                                  Kokkos::View<int*,Amanzi::DeviceOnlyMemorySpace>* edgedirs) const
   {
-  #if AMANZI_MESH_CACHE_VARS != 0
     mesh_cache_.cell_2D_get_edges_and_dirs(cellid,edgeids,edgedirs); 
-  #else // Non-cached version
-    cell_2D_get_edges_and_dirs_internal_(cellid, edgeids, edgedirs);
-
-  #endif
   }
 
-  MeshCache& getMeshCache() const{
-    return mesh_cache_; 
+  // edges and directions of a 2D cell
+  void cell_2D_get_edges_and_dirs_host(const Entity_ID cellid,
+                                  Kokkos::View<Entity_ID*,Kokkos::HostSpace>& edgeids,
+                                  Kokkos::View<int*,Kokkos::HostSpace>* edgedirs) const
+  {
+    mesh_cache_.cell_2D_get_edges_and_dirs_host(cellid,edgeids,edgedirs); 
+  }
+
+  MeshCache* getMeshCache() const{
+    return &mesh_cache_; 
   }
 
  public:
   void PrintMeshStatistics() const;
 
-  Kokkos::View<double*> cell_volumes() const { return mesh_cache_.cell_volumes(); }
+#if 0
+  template<class DEVICE = DefaultExecutionSpace> 
+  // KOKKOS_INLINE_FUNCTION
+  Kokkos::View<double*, DEVICE> cell_volumes() const 
+  {
+    return mesh_cache_.
+    cell_volumes(); 
+  }
+#endif 
+
+#if 1
+  KOKKOS_INLINE_FUNCTION Kokkos::View<double*,Amanzi::DeviceOnlyMemorySpace> cell_volumes() const { return mesh_cache_.cell_volumes(); }
+  Kokkos::View<double*,Kokkos::HostSpace> cell_volumes_host() const { return mesh_cache_.cell_volumes_host(); }
+#endif 
 
  protected:
   Comm_ptr_type comm_;
@@ -912,6 +991,17 @@ public:
 
   mutable MeshCache mesh_cache_; 
 };
+
+#if 0
+// Sepcialization for host device 
+template<>
+//KOKKOS_INLINE_FUNCTION 
+Kokkos::View<double*,Kokkos::HostSpace> Mesh::cell_volumes<Kokkos::HostSpace>() const 
+{ 
+  return mesh_cache_.cell_volumes_host(); 
+}
+#endif 
+
 
 // Get a coordinate
 AmanziGeometry::Point

@@ -57,7 +57,7 @@ SUITE(COMMON_CSR)
       });
     csr_mat.update_entries_host();
     for(int f = 0 ; f < csr_mat.size(); ++f){
-      WhetStone::DenseMatrix<Kokkos::HostSpace> lm = getFromCSR_host<WhetStone::DenseMatrix>(csr_mat,f); 
+      WhetStone::DenseMatrix<HostSpace> lm = getFromCSR_host<WhetStone::DenseMatrix>(csr_mat,f); 
       for(int i = 0 ; i < nrows; ++i){
         for(int j = 0 ; j < ncols; ++j){
           if(lm(i,j) != i*nrows+j)

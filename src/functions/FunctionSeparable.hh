@@ -60,7 +60,7 @@ class FunctionSeparable : public Function {
   ~FunctionSeparable() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
   FunctionSeparable* Clone() const { return new FunctionSeparable(*this); }
 
-  double operator()(const Kokkos::View<double*>& x) const
+  double operator()(const Kokkos::View<double*,Kokkos::HostSpace>& x) const
   {
     // std::vector<double>::const_iterator xb = x.begin(); xb++;
     // std::vector<double> y(xb, x.end());

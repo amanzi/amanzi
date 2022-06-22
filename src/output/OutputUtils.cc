@@ -22,14 +22,14 @@ GetNaturalMap(const Map_ptr_type& ghosted_map, const Map_ptr_type& owned_map)
 {
   // create the owned natural map.
   Map_type owned_natural(owned_map->getGlobalNumElements(),
-                         owned_map->getNodeNumElements(),
+                         owned_map->getLocalNumElements(),
                          0,
                          owned_map->getComm());
 
   Vector_type_<Map_type::global_ordinal_type> natural(ghosted_map);
   {
-    auto nv = natural.getLocalViewHost();
-    for (int i = 0; i != owned_map->getNodeNumElements(); ++i) {
+    auto nv = natural.getLocalViewHost(Tpetra::Access::ReadWrite);
+    for (int i = 0; i != owned_map->getLocalNumElements(); ++i) {
       nv(i, 0) = owned_natural.getGlobalElement(i);
     }
   }

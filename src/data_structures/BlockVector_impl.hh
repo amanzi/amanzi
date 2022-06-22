@@ -31,7 +31,6 @@
 #include "AmanziMap.hh"
 #include "AmanziVector.hh"
 
-#include "VectorHarness.hh"
 
 namespace Amanzi {
 
@@ -70,7 +69,9 @@ BlockVector<Scalar>::BlockVector(const BlockVector<Scalar>& other,
     // }
   } else {
     CreateData_(mode);
-    if (mode == InitMode::COPY) { *this = other; }
+    if (mode == InitMode::COPY) { 
+      *this = other; 
+    }
   }
 };
 
@@ -193,8 +194,7 @@ cMultiVectorView_type_<DeviceType, Scalar>
 BlockVector<Scalar>::ViewComponent(const std::string& name, bool ghosted) const
 {
   using memory_space = typename DeviceType::memory_space;
-  return VectorHarness::getMultiVector(
-    VectorHarness::readOnly(*GetComponent_(name, ghosted)).on(memory_space()));
+  return GetComponent_(name,ghosted)->template getLocalView<memory_space>(Tpetra::Access::ReadOnly);
 }
 
 template <typename Scalar>
@@ -203,8 +203,7 @@ MultiVectorView_type_<DeviceType, Scalar>
 BlockVector<Scalar>::ViewComponent(const std::string& name, bool ghosted)
 {
   using memory_space = typename DeviceType::memory_space;
-  return VectorHarness::getMultiVector(
-    VectorHarness::readWrite(*GetComponent_(name, ghosted)).on(memory_space()));
+  return  GetComponent_(name,ghosted)->template getLocalView<memory_space>(Tpetra::Access::ReadWrite);
 }
 
 // -- SubView of a component vector
@@ -214,7 +213,6 @@ cVectorView_type_<DeviceType, Scalar>
 BlockVector<Scalar>::ViewComponent(const std::string& name, std::size_t dof,
                                    bool ghosted) const
 {
-  using memory_space = typename DeviceType::memory_space;
   return Kokkos::subview(
     ViewComponent<DeviceType>(name, ghosted), Kokkos::ALL(), dof);
 }
@@ -225,7 +223,6 @@ VectorView_type_<DeviceType, Scalar>
 BlockVector<Scalar>::ViewComponent(const std::string& name, std::size_t dof,
                                    bool ghosted)
 {
-  using memory_space = typename DeviceType::memory_space;
   return Kokkos::subview(
     ViewComponent<DeviceType>(name, ghosted), Kokkos::ALL(), dof);
 }
@@ -458,6 +455,7 @@ BlockVector<Scalar>::elementWiseMultiply(Scalar scalarAB,
                                          Scalar scalarThis)
 {
   for (const auto& name : *this) {
+
     // There is a nasty gotcha here -- if this is A, when we call getVector we
     // clobber data and break things without erroring.  But this being B is ok.
     //

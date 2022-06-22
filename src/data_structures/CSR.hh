@@ -97,6 +97,50 @@ public:
     update_sizes_device_();
   }
 
+  void prefix_sum_device(){
+
+    Kokkos::parallel_for(
+      "",
+      row_map_.view_device().extent(0),
+      KOKKOS_LAMBDA(const int i){
+        printf("%d - ",row_map_.d_view(i)); 
+      }
+    ); 
+    Kokkos::fence(); 
+
+    Kokkos::parallel_scan(
+      row_map_.view_device().extent(0),
+      KOKKOS_LAMBDA(const int i, int& update, bool final){
+        update += row_map_.d_view(i);
+        if(final) { row_map_.d_view(i) = update; }
+      }
+    );
+    
+    Kokkos::fence(); 
+    Kokkos::parallel_for(
+      "",
+      row_map_.view_device().extent(0),
+      KOKKOS_LAMBDA(const int i){
+        printf("%d - ",row_map_.d_view(i)); 
+      }
+    ); 
+    Kokkos::fence(); 
+    exit(0); 
+
+    //int tmp1 = row_map_.view_host()(0);
+    //row_map_.view_host()(0) = 0;
+    //for(int i = 0 ; i < row_map_.view_host().extent(0); ++i){ 
+    //  int tmp2 = row_map_.view_host()(i+1);
+    //  row_map_.view_host()(i+1) = tmp1 + row_map_.view_host()(i);
+    //  tmp1 = tmp2;
+    //}
+    //if (entries_.view_host().extent(0) < 
+    //      row_map_.view_host()(row_map_.view_host().extent(0)-1))
+    //  entries_.realloc(row_map_.view_host()(row_map_.extent(0)-1));
+    // Transfer to device 
+    //update_row_map_device_(); 
+    //update_sizes_device_();
+  }
 
   // Host side functions ------------------------------------------------------
 

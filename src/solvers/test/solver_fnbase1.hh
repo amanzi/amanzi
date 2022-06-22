@@ -16,8 +16,8 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Vector_type>
 
   void Residual(const Teuchos::RCP<Vector_type>& u,
                 const Teuchos::RCP<Vector_type>& f) {
-    auto uv = u->getLocalViewDevice();
-    auto fv = f->getLocalViewDevice();
+    auto uv = u->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto fv = f->getLocalViewDevice(Tpetra::Access::ReadWrite);
     assert(uv != fv);
     Kokkos::parallel_for(
       "solver_fnbase1::Residual",
@@ -45,8 +45,8 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Vector_type>
     std::cout << "SolverFnBase1: up = " << Amanzi::Debug::get0(*up) << std::endl;
 
     if (exact_jacobian_) {
-      auto upv = up->getLocalViewDevice();
-      auto hv = h_->getLocalViewDevice();
+      auto upv = up->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto hv = h_->getLocalViewDevice(Tpetra::Access::ReadWrite);
       Kokkos::parallel_for(
         "solver_fnbase1::UpdatePreconditioner loop 1",
         hv.extent(0), KOKKOS_LAMBDA(const int c) {
@@ -54,8 +54,8 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Vector_type>
         hv(c, 0) = 3 * x * x + 1.0;
       });
     } else {
-      auto upv = up->getLocalViewDevice();
-      auto hv = h_->getLocalViewDevice();
+      auto upv = up->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto hv = h_->getLocalViewDevice(Tpetra::Access::ReadWrite);
       Kokkos::parallel_for(
         "solver_fnbase1::UpdatePreconditioner loop 2",
         hv.extent(0), KOKKOS_LAMBDA(const int c) {

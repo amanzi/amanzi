@@ -80,7 +80,6 @@ void UpwindFlux::Compute(
   flux.ScatterMasterToGhosted("face");
 
   const auto& flx_face = flux.ViewComponent("face", true);
-  // const Multivector_type& sol_face = *solution.ViewComponent("face", true);
 
   const auto& fld_cell = field.ViewComponent("cell", true);
   const auto& fld_boundary = field.ViewComponent("dirichlet_faces", true);
@@ -121,8 +120,8 @@ void UpwindFlux::Compute(
 
       // We average field on almost vertical faces. 
       if (fabs(flx_face(f,0)) <= tol) { 
-        double v1 = mesh_->cell_volume(c1);
-        double v2 = mesh_->cell_volume(c2);
+        double v1 = mesh_->cell_volume_host(c1);
+        double v2 = mesh_->cell_volume_host(c2);
 
         double tmp = v2 / (v1 + v2);
         upw_face(f,0) = kc1 * tmp + kc2 * (1.0 - tmp); 

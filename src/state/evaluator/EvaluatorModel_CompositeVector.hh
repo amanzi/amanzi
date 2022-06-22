@@ -71,6 +71,8 @@ class EvaluatorModel_CompositeVector
   using View_type = VectorView_type<Device_type>;
   using cView_type = cVectorView_type<Device_type>;
 
+  Teuchos::ParameterList plist_; 
+
   EvaluatorModel_CompositeVector(Teuchos::ParameterList& plist);
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -102,6 +104,7 @@ template <template <class, class> class Model, class Device_type>
 EvaluatorModel_CompositeVector<Model, Device_type>::
   EvaluatorModel_CompositeVector(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
+    plist_(plist),
     model_(Teuchos::rcp(new Model_type(plist))),
     name_(plist.name()),
     tag_(plist.get<std::string>("tag"))
@@ -156,6 +159,8 @@ EvaluatorModel_CompositeVector<Model, Device_type>::Evaluate_(
     Kokkos::parallel_for(
       name_, range, *model_);
   }
+  // Empty model to free views 
+  model_ = Teuchos::rcp<Model_type>(new Model_type(plist_));  
   Debug_(S);
 }
 
@@ -198,6 +203,8 @@ EvaluatorModel_CompositeVector<Model, Device_type>::EvaluatePartialDerivative_(
       launcher(name_, wrt, dependencies_, *model_);
     launcher.launch(result_views[0].extent(0));
   }
+    // Empty model to free views 
+  model_ = Teuchos::rcp<Model_type>(new Model_type(plist_));  
 }
 
 } // namespace Amanzi

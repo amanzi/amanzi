@@ -88,7 +88,10 @@ SUITE(PKS_INCREMENT)
   {
     auto run = create("Veg");
     auto nsteps = run_test(run->S, run->pk);
-    CHECK_CLOSE(0.1, run->S->Get<PFTList>("PFT_A")[0].Bleaf, 1.e-8);
+    auto v = run->S->Get<PFTList>("PFT_A"); 
+    Kokkos::View<PFT*, Kokkos::HostSpace> vh("",v.size());
+    Kokkos::deep_copy(vh,v);  
+    CHECK_CLOSE(0.1, vh[0].Bleaf,1.e-8);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
@@ -112,7 +115,10 @@ SUITE(PKS_INCREMENT)
       "BC weak mixed explicit", "Veg", "C, backward euler subcycled, forced");
     auto nsteps = run_test(run->S, run->pk);
 
-    CHECK_CLOSE(0.1, run->S->Get<PFTList>("PFT_A")[0].Bleaf, 1.e-8);
+    auto v = run->S->Get<PFTList>("PFT_A"); 
+    Kokkos::View<PFT*, Kokkos::HostSpace> vh("",v.size());
+    Kokkos::deep_copy(vh,v);  
+    CHECK_CLOSE(0.1, vh[0].Bleaf,1.e-8);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }

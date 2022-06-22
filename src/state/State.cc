@@ -299,6 +299,26 @@ State::GetEvaluator(const Key& key, const Key& tag) const
   }
 };
 
+Teuchos::ParameterList&
+State::GetEvaluatorList(const Key& key)
+{
+  if (FEList().isParameter(key)) {
+    return FEList().sublist(key);
+  } else {
+    // check for domain set
+    KeyTriple split;
+    bool is_ds = Keys::splitDomainSet(key, split);
+    if (is_ds) {
+      Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
+      if (FEList().isParameter(lifted_key)) {
+        return FEList().sublist(lifted_key);
+      }
+    }
+  }
+  // return an empty new list
+  return FEList().sublist(key);
+}
+
 Teuchos::RCP<Evaluator>
 State::GetEvaluatorPtr(const Key& key, const Key& tag)
 {
@@ -521,29 +541,6 @@ State::WriteDependencyGraph() const
     os.close();
   }
 }
-
-
-Teuchos::ParameterList&
-State::GetEvaluatorList(const Key& key)
-{
-  if (FEList().isParameter(key)) {
-    return FEList().sublist(key);
-  } else {
-    // check for domain set
-    KeyTriple split;
-    bool is_ds = Keys::splitDomainSet(key, split);
-    if (is_ds) {
-      Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
-      if (FEList().isParameter(lifted_key)) {
-        return FEList().sublist(lifted_key);
-      }
-    }
-  }
-  // return an empty new list
-  return FEList().sublist(key);
-}
-
-
 
 // Non-member function for vis.
 void

@@ -1,0 +1,264 @@
+diff --git a/packages/ifpack/src/Ifpack_Hypre.cpp b/packages/ifpack/src/Ifpack_Hypre.cpp
+index 84a8cebc2c4..1a9a94fea07 100644
+--- a/packages/ifpack/src/Ifpack_Hypre.cpp
++++ b/packages/ifpack/src/Ifpack_Hypre.cpp
+@@ -750,6 +750,7 @@ int Ifpack_Hypre::Compute(){
+     IFPACK_CHK_ERR(Initialize());
+   }
+   Time_.ResetStartTime();
++  CopyEpetraToHypre();
+ 
+   // Create the Hypre matrix and copy values.  Note this uses values (which
+   // Initialize() shouldn't do) but it doesn't care what they are (for
+diff --git a/packages/ifpack2/src/Ifpack2_Hypre_decl.hpp b/packages/ifpack2/src/Ifpack2_Hypre_decl.hpp
+index d2d3c0abc27..81c5c1884d3 100644
+--- a/packages/ifpack2/src/Ifpack2_Hypre_decl.hpp
++++ b/packages/ifpack2/src/Ifpack2_Hypre_decl.hpp
+@@ -122,6 +122,10 @@ class Hypre:
+                                                                        typename MatrixType::node_type> >
+ {
+ public:
++  
++  //! Copies matrix data from Tpetra matrix to Hypre matrix.
++  int CopyTpetraToHypre();
++
+ public:
+   //! \name Typedefs
+   //@{
+@@ -555,9 +559,6 @@ private:
+   //! Create the Preconditioner.
+   int CreatePrecond();
+ 
+-  //! Copies matrix data from Tpetra matrix to Hypre matrix.
+-  int CopyTpetraToHypre();
+-
+   //! Add a function to be called in Compute()
+   int AddFunToList(Teuchos::RCP<FunctionParameter> NewFun);
+ 
+diff --git a/packages/ifpack2/src/Ifpack2_Hypre_def.hpp b/packages/ifpack2/src/Ifpack2_Hypre_def.hpp
+index e64942b407e..ac912292886 100644
+--- a/packages/ifpack2/src/Ifpack2_Hypre_def.hpp
++++ b/packages/ifpack2/src/Ifpack2_Hypre_def.hpp
+@@ -59,6 +59,8 @@
+ #include "HYPRE_parcsr_mv.h"
+ #include "HYPRE.h"
+ 
++#include <nvToolsExt.h> 
++
+ 
+ using Teuchos::RCP;
+ using Teuchos::rcp;
+@@ -511,11 +513,15 @@ void Hypre<MatrixType>::compute(){
+   double startTime = timer->wallTime();
+   // Start timing here.
+   {
++    nvtxRangePush("H::compute() init");
++
+     Teuchos::TimeMonitor timeMon (*timer);
+ 
+     if(isInitialized() == false){
+       initialize();
+     }
++    nvtxRangePop(); 
++    nvtxRangePush("H::compute() create");
+ 
+     // Create the Hypre matrix and copy values.  Note this uses values (which
+     // Initialize() shouldn't do) but it doesn't care what they are (for
+@@ -526,9 +532,18 @@ void Hypre<MatrixType>::compute(){
+     global_ordinal_type ilower = GloballyContiguousRowMap_->getMinGlobalIndex();
+     global_ordinal_type iupper = GloballyContiguousRowMap_->getMaxGlobalIndex();
+     IFPACK2_CHK_ERR(HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_));
++    nvtxRangePop(); 
++    nvtxRangePush("H::compute() set");
++
+     IFPACK2_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR));
++    nvtxRangePop(); 
++    nvtxRangePush("H::compute() minit");
+     IFPACK2_CHK_ERR(HYPRE_IJMatrixInitialize(HypreA_));
++    nvtxRangePop(); 
++    nvtxRangePush("H::compute() copy");
+     CopyTpetraToHypre();
++    nvtxRangePop(); 
++    nvtxRangePush("H::compute() precond");
+     if(SolveOrPrec_ == Hypre_Is_Solver) {
+       IFPACK2_CHK_ERR(SetSolverType(SolverType_));
+       if (SolverPrecondPtr_ != NULL && UsePreconditioner_) {
+@@ -543,15 +558,19 @@ void Hypre<MatrixType>::compute(){
+       IFPACK2_CHK_ERR(SetPrecondType(PrecondType_));
+       CallFunctions();
+     }
++    nvtxRangePop(); 
++    nvtxRangePush("H::compute() setG");
+ 
+     if (!G_.is_null()) {
+       SetDiscreteGradient(G_);
+     }
+-
++    nvtxRangePop(); 
++    nvtxRangePush("H::compute() setC");
+     if (!Coords_.is_null()) {
+       SetCoordinates(Coords_);
+     }
+-           
++    nvtxRangePop(); 
++    nvtxRangePush("H::compute() setup");
+     // Hypre Setup must be called after matrix has values
+     if(SolveOrPrec_ == Hypre_Is_Solver){
+       IFPACK2_CHK_ERR(SolverSetupPtr_(Solver_, ParMatrix_, ParX_, ParY_));
+@@ -561,6 +580,7 @@ void Hypre<MatrixType>::compute(){
+     
+     IsComputed_ = true;
+     NumCompute_++;
++    nvtxRangePop(); 
+   }
+   
+   ComputeTime_ += (timer->wallTime() - startTime);
+@@ -604,7 +624,6 @@ void Hypre<MatrixType>::apply (const Tpetra::MultiVector<scalar_type,local_ordin
+     if(&X == &Y) { //FIXME: Maybe not the right way to check this
+       SameVectors = true;
+     }
+-    
+     // NOTE: Here were assuming that the local ordering of Epetra's X/Y-vectors and 
+     // Hypre's X/Y-vectors are the same.  Seeing as as this is more or less how we constructed
+     // the Hypre matrices, this seems pretty reasoanble.
+@@ -612,20 +631,21 @@ void Hypre<MatrixType>::apply (const Tpetra::MultiVector<scalar_type,local_ordin
+     for(int VecNum = 0; VecNum < (int) NumVectors; VecNum++) {
+       //Get values for current vector in multivector.
+       // FIXME amk Nov 23, 2015: This will not work for funky data layouts
+-      SC * XValues = const_cast<SC*>(X.getData(VecNum).getRawPtr());
++      SC * XValues = const_cast<SC*>(X.getLocalViewDevice(Tpetra::Access::ReadOnly).data());
+       SC * YValues;
+       if(!SameVectors){
+-        YValues = const_cast<SC*>(Y.getData(VecNum).getRawPtr());
++        YValues = const_cast<SC*>(Y.getLocalViewDevice(Tpetra::Access::ReadOnly).data());
+       } else {
+         YValues = VectorCache_.getRawPtr();
+       }
++
++
+       // Temporarily make a pointer to data in Hypre for end
+       SC *XTemp = XLocal_->data;
+       // Replace data in Hypre vectors with Epetra data
+       XLocal_->data = XValues;
+       SC *YTemp = YLocal_->data;
+       YLocal_->data = YValues;
+-      
+       IFPACK2_CHK_ERR(HYPRE_ParVectorSetConstantValues(ParY_, 0.0));
+       if(SolveOrPrec_ == Hypre_Is_Solver){
+         // Use the solver methods
+@@ -634,7 +654,6 @@ void Hypre<MatrixType>::apply (const Tpetra::MultiVector<scalar_type,local_ordin
+         // Apply the preconditioner
+         IFPACK2_CHK_ERR(PrecondSolvePtr_(Preconditioner_, ParMatrix_, ParX_, ParY_));
+       }
+-
+       if(SameVectors){
+         Teuchos::ArrayView<SC> Yv =  Y.getDataNonConst(VecNum)();
+         LO NumEntries = Y.getLocalLength();
+@@ -644,6 +663,7 @@ void Hypre<MatrixType>::apply (const Tpetra::MultiVector<scalar_type,local_ordin
+       XLocal_->data = XTemp;
+       YLocal_->data = YTemp;
+     }
++
+     NumApply_++;
+   }
+   ApplyTime_ += (timer->wallTime() - startTime);
+@@ -887,26 +907,53 @@ int Hypre<MatrixType>::CopyTpetraToHypre(){
+   using SC = scalar_type;
+ 
+   Teuchos::RCP<const crs_matrix_type> Matrix = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_);
++
+   if(Matrix.is_null()) 
+     throw std::runtime_error("Hypre<MatrixType>: Unsupported matrix configuration: Tpetra::CrsMatrix required");
+ 
+-  std::vector<GO> new_indices(Matrix->getNodeMaxNumRowEntries());
+-  for(LO i = 0; i < (LO) Matrix->getNodeNumRows(); i++){
+-    Teuchos::ArrayView<const SC> values;
+-    Teuchos::ArrayView<const LO> indices;
+-    Matrix->getLocalRowView(i, indices, values);
+-    for(LO j = 0; j < (LO)indices.size(); j++){
+-      new_indices[j] = GloballyContiguousColMap_->getGlobalElement(indices[j]);
++  LO nrows = Matrix->getNodeNumRows();
++
++  Kokkos::View<LO*,Kokkos::DefaultExecutionSpace> colsperrow("ColsPerRow",nrows);
++  auto rowPtrs = Matrix->getCrsGraph()->getLocalGraph().row_map;
++  Kokkos::parallel_for(nrows,
++    KOKKOS_LAMBDA(const int i){
++      colsperrow(i) = rowPtrs[i+1]-rowPtrs[i];
++  });
++  auto rowindices = Matrix->getRowMap()->getMyGlobalIndices();
++
++  auto values = Matrix->getLocalValuesView(); 
++  auto colindices = Matrix->getCrsGraph()->getLocalGraph().entries;
++  decltype(colindices) nci("",colindices.size()); 
++  //Kokkos::View<GO*,Kokkos::HostSpace>
++  //  new_colindices("nci",colindices.size());
++  //auto sz = colindices.size(); 
++  // Copy colIndices to the Host 
++  //auto h_ci = Kokkos::create_mirror_view(colindices); 
++  //Kokkos::resize(h_ci,colindices.size());
++  //Kokkos::deep_copy(h_ci,colindices);  
++
++
++  // Is this available on the device? => avoid deep_copy 
++  auto ge = GloballyContiguousColMap_->getMyGlobalIndices(); 
++  Kokkos::View<GO*,Kokkos::DefaultExecutionSpace> dge("",ge.size());
++  Kokkos::deep_copy(dge,ge);  
++  Kokkos::parallel_for(
++    "", 
++    colindices.size(), 
++    KOKKOS_LAMBDA(const int i){
++      nci[i] = dge(colindices[i]);
++
+     }
+-    GO GlobalRow[1];
+-    GO numEntries = (GO) indices.size();
+-    GlobalRow[0] = GloballyContiguousRowMap_->getGlobalElement(i);    
+-    IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, new_indices.data(), values.getRawPtr()));
+-  }
++  );
++
++  IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_,nrows,colsperrow.data(),
++                                         rowindices.data(),nci.data(),values.data()));
++
+   IFPACK2_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
+   IFPACK2_CHK_ERR(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
++
+   if (Dump_)
+-    HYPRE_ParCSRMatrixPrint(ParMatrix_,"A.mat");
++    IFPACK2_CHK_ERR(HYPRE_ParCSRMatrixPrint(ParMatrix_,"A.mat"));
+   return 0;
+ } //CopyTpetraToHypre()
+ 
+diff --git a/packages/teuchos/parameterlist/src/Teuchos_XMLParameterListReader.cpp b/packages/teuchos/parameterlist/src/Teuchos_XMLParameterListReader.cpp
+index 20ad54e5b94..1e53739da71 100644
+--- a/packages/teuchos/parameterlist/src/Teuchos_XMLParameterListReader.cpp
++++ b/packages/teuchos/parameterlist/src/Teuchos_XMLParameterListReader.cpp
+@@ -219,9 +219,9 @@ XMLParameterListReader::convertParameterList(const XMLObject& xml,
+           TEUCHOS_TEST_FOR_EXCEPTION(
+             _allowDuplicateSublists == false
+             &&
+-            parentList->isSublist(name) == true,
++            (parentList->isSublist(name) == true || parentList->isParameter(name) == true), 
+             DuplicateParameterSublist,
+-            "XMLParameterListReader encountered duplicate sublist \"" << name << "\", in violation"
++            "XMLParameterListReader encountered duplicate sublist or parameter \"" << name << "\", in violation"
+             << " of the policy specified by XMLParameterListReader::setAllowsDuplicateSublists()." );
+           RCP<ParameterList> newList = sublist(parentList, name);
+           convertParameterList(child, newList, entryIDsMap, validatorIDsMap);
+@@ -233,8 +233,14 @@ XMLParameterListReader::convertParameterList(const XMLObject& xml,
+               "All child nodes of a ParameterList must have a name attribute!" <<
+               std::endl << std::endl);
+           name = child.getRequired(XMLParameterListWriter::getNameAttributeName());
+-          parentList->setEntry(
+-            name, ParameterEntryXMLConverterDB::convertXML(child));
++          TEUCHOS_TEST_FOR_EXCEPTION( 
++            _allowDuplicateSublists == false
++            &&
++            (parentList->isSublist(name) == true || parentList->isParameter(name) == true), 
++            DuplicateParameterSublist,
++            "XMLParameterListReader encountered duplicate sublist or parameter \"" << name << "\", in violation"
++            << " of the policy specified by XMLParameterListReader::setAllowsDuplicateSublists()." );
++          parentList->setEntry(name, ParameterEntryXMLConverterDB::convertXML(child));
+           if(child.hasAttribute(ValidatorXMLConverter::getIdAttributeName())){
+             IDtoValidatorMap::const_iterator result = validatorIDsMap.find(
+               child.getRequired<ParameterEntryValidator::ValidatorID>(

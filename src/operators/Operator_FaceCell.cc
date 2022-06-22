@@ -60,7 +60,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
     ncells_owned, 
     KOKKOS_LAMBDA(const int& c){
       AmanziMesh::Entity_ID_View faces;
-      mc.cell_get_faces(c, faces);
+      mc->cell_get_faces(c, faces);
       int nfaces = faces.size();
 
       auto lv = local_v[c];
@@ -140,7 +140,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
 
   auto Xf = X.ViewComponent<>("face", false);
   auto Yf = Y.ViewComponent<>("face", false);
-  auto diag = op.diag->getLocalViewDevice();
+  auto diag = op.diag->getLocalViewDevice(Tpetra::Access::ReadOnly);
   const AmanziMesh::Mesh* mesh = op.mesh.get();
   
   Kokkos::parallel_for(
@@ -217,7 +217,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   const auto cell_row_inds = map.GhostIndices<MirrorHost>(my_block_row, "cell", 0);
   const auto cell_col_inds = map.GhostIndices<MirrorHost>(my_block_col, "cell", 0);
 
-  AmanziMesh::Entity_ID_View faces;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
   for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, faces);
     int nfaces = faces.size();
@@ -249,7 +249,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
   const auto face_col_inds = map.GhostIndices<MirrorHost>(my_block_col, "face", 0);
 
   for (int c = 0; c != ncells_owned; ++c) {
-    AmanziMesh::Entity_ID_View faces;
+    Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
     mesh_->cell_get_faces(c, faces);
     int nfaces = faces.size();
 
@@ -330,9 +330,9 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
   const auto cell_col_inds = map.GhostIndices<>(my_block_col, "cell", 0);        
 
   // hard-coded version, interfaces TBD...
-  auto proc_mat = mat.getLocalMatrix();
-  auto offproc_mat = mat.getOffProcLocalMatrix();
-  int nrows_local = mat.getMatrix()->getNodeNumRows();
+  auto proc_mat = mat.getLocalMatrixDevice();
+  auto offproc_mat = mat.getOffProcLocalMatrixDevice();
+  int nrows_local = mat.getMatrix()->getLocalNumRows();
 
   const AmanziMesh::Mesh* mesh = mesh_.get();
 
@@ -421,6 +421,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
     
     ierr |= mat.sumIntoValues(lid_r.data(), lid_c.data(), op.matrices[c]);
   }
+
   AMANZI_ASSERT(!ierr);
 }
 #endif 
@@ -437,9 +438,9 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
   // ELEMENT: cell, DOFS: cell and face
   auto face_row_inds = map.GhostIndices(my_block_row, "face", 0);
   auto face_col_inds = map.GhostIndices(my_block_col, "face", 0);
-  const auto diag = op.diag->getLocalViewDevice(); 
+  const auto diag = op.diag->getLocalViewDevice(Tpetra::Access::ReadOnly); 
 
-  auto proc_mat = mat.getLocalMatrix();
+  auto proc_mat = mat.getLocalMatrixDevice();
 
   const AmanziMesh::Mesh* mesh = op.mesh.get();
 
@@ -465,9 +466,9 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
   auto face_col_inds = map.GhostIndices(my_block_col, "face", 0);
 
   // hard-coded version, interfaces TBD...
-  auto proc_mat = mat.getLocalMatrix();
-  auto offproc_mat = mat.getOffProcLocalMatrix();
-  int nrows_local = mat.getMatrix()->getNodeNumRows();
+  auto proc_mat = mat.getLocalMatrixDevice();
+  auto offproc_mat = mat.getOffProcLocalMatrixDevice();
+  int nrows_local = mat.getMatrix()->getLocalNumRows();
 
   const AmanziMesh::Mesh* mesh = op.mesh.get();
   

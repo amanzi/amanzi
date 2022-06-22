@@ -35,8 +35,8 @@ GraphFE::GraphFE(const Map_ptr_type& row_map,
   if (col_map_ == Teuchos::null) col_map_ = ghosted_row_map_;
 
   // create the offproc maps
-  n_used_ = ghosted_row_map_->getNodeNumElements();
-  n_owned_ = row_map_->getNodeNumElements();
+  n_used_ = ghosted_row_map_->getLocalNumElements();
+  n_owned_ = row_map_->getLocalNumElements();
 
   // offproc graph is not empty when at least one processor has a ghost cell
   int tmp2, tmp1(n_used_ - n_owned_);
@@ -72,8 +72,8 @@ GraphFE::GraphFE(const Map_ptr_type& row_map,
   if (col_map_ == Teuchos::null) col_map_ = ghosted_row_map_;
 
   // create the offproc maps
-  n_used_ = ghosted_row_map_->getNodeNumElements();
-  n_owned_ = row_map_->getNodeNumElements();
+  n_used_ = ghosted_row_map_->getLocalNumElements();
+  n_owned_ = row_map_->getLocalNumElements();
 
   // offproc graph is not empty when at least one processor has a ghost cell
   int tmp2, tmp1(n_used_ - n_owned_);

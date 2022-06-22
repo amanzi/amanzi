@@ -50,8 +50,8 @@ TEST(MSTK_EXTFACE_MAP_4P)
 
     CHECK_EQUAL(face_map->getGlobalElement(f2), gid);
 
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fcells;
-    mesh->face_get_cells(f2, Amanzi::AmanziMesh::Parallel_type::OWNED, fcells);
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> fcells;
+    mesh->face_get_cells_host(f2, Amanzi::AmanziMesh::Parallel_type::OWNED, fcells);
     CHECK_EQUAL(1, fcells.extent(0));
   }
 
@@ -72,7 +72,6 @@ TEST(MSTK_EXTFACE_MAP_4P)
   // Check if the importer got the right values from allvec into bdryvec
   // by checking if the values in the bdryvec minus the offset correspond
   // to the correct global IDs.
-  bdryvec.sync_host();
   {
     auto bdryvec_v = bdryvec.getData();
     for (int f = extface_map->getMinLocalIndex();
@@ -83,8 +82,8 @@ TEST(MSTK_EXTFACE_MAP_4P)
 
   // Check if ghostmap contains only boundary faces
   auto extface_map_wghost = mesh->exterior_face_map(true);
-  int nowned_bnd = extface_map->getNodeNumElements();
-  int nnotowned_bnd = extface_map_wghost->getNodeNumElements() - nowned_bnd;
+  int nowned_bnd = extface_map->getLocalNumElements();
+  int nnotowned_bnd = extface_map_wghost->getLocalNumElements() - nowned_bnd;
 
   std::vector<int> gl_id(nnotowned_bnd), pr_id(nnotowned_bnd),
     lc_id(nnotowned_bnd);

@@ -89,10 +89,10 @@ TEST(Extract_Surface_MSTK1_4P)
   // parent (face) in the volume mesh
   for (int k = 0; k < ncells_surf; k++) {
     Amanzi::AmanziMesh::Entity_ID parent =
-      surfmesh.entity_get_parent(Amanzi::AmanziMesh::CELL, k);
+      surfmesh.entity_get_parent_host(Amanzi::AmanziMesh::CELL, k);
 
-    Amanzi::AmanziGeometry::Point centroid1 = mesh->face_centroid(parent);
-    Amanzi::AmanziGeometry::Point centroid2 = surfmesh.cell_centroid(k);
+    Amanzi::AmanziGeometry::Point centroid1 = mesh->face_centroid_host(parent);
+    Amanzi::AmanziGeometry::Point centroid2 = surfmesh.cell_centroid_host(k);
     CHECK_ARRAY_EQUAL(centroid1, centroid2, 3);
   }
 
@@ -106,7 +106,7 @@ TEST(Extract_Surface_MSTK1_4P)
   // parent node in the volume mesh
   for (int k = 0; k < nnodes_surf; k++) {
     Amanzi::AmanziMesh::Entity_ID parent =
-      surfmesh.entity_get_parent(Amanzi::AmanziMesh::NODE, k);
+      surfmesh.entity_get_parent_host(Amanzi::AmanziMesh::NODE, k);
     Amanzi::AmanziGeometry::Point coord1;
     mesh->node_get_coordinates(parent, &coord1);
     Amanzi::AmanziGeometry::Point coord2;
@@ -191,10 +191,10 @@ TEST(Extract_Surface_MSTK2_4P)
 
   for (int k = 0; k < ncells_surf; k++) {
     Amanzi::AmanziMesh::Entity_ID parent =
-      surfmesh.entity_get_parent(Amanzi::AmanziMesh::CELL, k);
+      surfmesh.entity_get_parent_host(Amanzi::AmanziMesh::CELL, k);
 
-    Amanzi::AmanziGeometry::Point centroid1 = mesh->face_centroid(parent);
-    Amanzi::AmanziGeometry::Point centroid2 = surfmesh.cell_centroid(k);
+    Amanzi::AmanziGeometry::Point centroid1 = mesh->face_centroid_host(parent);
+    Amanzi::AmanziGeometry::Point centroid2 = surfmesh.cell_centroid_host(k);
     CHECK_EQUAL(2, centroid2.dim());
     CHECK_CLOSE(centroid1[0], centroid1[0], 1.0e-10);
     CHECK_CLOSE(centroid1[1], centroid1[1], 1.0e-10);
@@ -215,7 +215,7 @@ TEST(Extract_Surface_MSTK2_4P)
     //    if (nodecells.size() == 0) continue;
 
     Amanzi::AmanziMesh::Entity_ID parent =
-      surfmesh.entity_get_parent(Amanzi::AmanziMesh::NODE, k);
+      surfmesh.entity_get_parent_host(Amanzi::AmanziMesh::NODE, k);
     Amanzi::AmanziGeometry::Point coord1;
     mesh->node_get_coordinates(parent, &coord1);
     Amanzi::AmanziGeometry::Point coord2;
@@ -285,10 +285,10 @@ TEST(Extract_Surface_MSTK3_4P)
 
   for (int k = 0; k < ncells_surf; k++) {
     Amanzi::AmanziMesh::Entity_ID parent =
-      surfmesh.entity_get_parent(Amanzi::AmanziMesh::CELL, k);
+      surfmesh.entity_get_parent_host(Amanzi::AmanziMesh::CELL, k);
 
-    Amanzi::AmanziGeometry::Point centroid1 = mesh->face_centroid(parent);
-    Amanzi::AmanziGeometry::Point centroid2 = surfmesh.cell_centroid(k);
+    Amanzi::AmanziGeometry::Point centroid1 = mesh->face_centroid_host(parent);
+    Amanzi::AmanziGeometry::Point centroid2 = surfmesh.cell_centroid_host(k);
     CHECK_ARRAY_EQUAL(centroid1, centroid2, 3);
   }
 
@@ -306,7 +306,7 @@ TEST(Extract_Surface_MSTK3_4P)
     //    if (nodecells.size() == 0) continue;
 
     Amanzi::AmanziMesh::Entity_ID parent =
-      surfmesh.entity_get_parent(Amanzi::AmanziMesh::NODE, k);
+      surfmesh.entity_get_parent_host(Amanzi::AmanziMesh::NODE, k);
     Amanzi::AmanziGeometry::Point coord1;
     mesh->node_get_coordinates(parent, &coord1);
     Amanzi::AmanziGeometry::Point coord2;

@@ -55,8 +55,8 @@ curl_binary=`which curl`
 # CMake
 cmake_binary=`which cmake`
 ctest_binary=`which ctest`
-cmake_version=3.11.4
-cmake_url=https://cmake.org/files/v3.11
+cmake_version=3.13.3
+cmake_url=https://cmake.org/files/v3.13
 cmake_archive_file=cmake-${cmake_version}.tar.gz
 
 # Build configuration
@@ -64,6 +64,7 @@ parallel_jobs=2
 build_type=Release
 trilinos_build_type=Release
 tpls_build_type=Release
+dbc=${TRUE}
 
 # Compiler definitions
 build_c_compiler=
@@ -78,9 +79,10 @@ build_link_flags=
 
 # Accelerators
 epetra=${TRUE}
-kokkos=${FALSE}
-kokkos_cuda=${FALSE}
-kokkos_openmp=${FALSE}
+tpetra=${FALSE}
+cuda=${FALSE}
+openmp=${FALSE}
+uvm=${FALSE}
 
 # MPI installation
 tools_mpi=openmpi
@@ -88,6 +90,16 @@ mpi_root_dir=
 mpi_exec_args=
 
 # TPL (Third Party Libraries)
+# BLAS / LAPACK
+blas_dir=
+blas_vendor=
+lapack_dir=
+
+# python for regression tests
+python_exec=
+
+# Debugging options for CMake configuration phase
+debug_find_blas=$FALSE
 
 # Spack
 Spack=$FALSE
@@ -97,6 +109,9 @@ build_Spack=$FALSE
 # xSDK installation (optional)
 xsdk=$FALSE #default is to not use
 xsdk_root_dir=
+
+# Enable/Disable Downloads
+external_downloads=$TRUE
 
 # Tools build parameters
 tools_build_dir=${dflt_build_prefix}/build/tools
@@ -130,8 +145,8 @@ clm=${FALSE}
 
 # -- mesh frameworks
 #    stk framewotk was deprecated and removed
-mstk_mesh=$TRUE
-moab_mesh=$FALSE
+mesh_mstk=$TRUE
+mesh_moab=$FALSE
 
 # -- tools
 amanzi_branch=
@@ -148,6 +163,7 @@ dry_run=${FALSE}
 # -- tpls
 alquimia=${FALSE}
 hypre=${TRUE}
+ginkgo=${FALSE}
 superlu=${TRUE}
 netcdf4=${TRUE}
 petsc=${FALSE}
@@ -248,6 +264,8 @@ function download_file()
   else
     curl_opts="--remote-name"
   fi
+  # Problems with self-signed certificate from cmake
+  # curl_opts="--insecure ${curl_opts}"
   cmd="${curl_binary} ${curl_opts} $url/$file"
   echo $cmd
   ${curl_binary} $curl_opts $url/$file
@@ -347,10 +365,11 @@ Value in brackets indicates default setting.
   ccse_tools              build structured AMR tools for post processing and tecplot ['"${ccse_tools}"']
 
   unstructured            build unstructured mesh capability ['"${unstructured}"']
-  mstk_mesh               build the MSTK Mesh Toolkit ['"${mstk_mesh}"']
-  moab_mesh               build the MOAB Mesh Toolkit ['"${moab_mesh}"']
+  mesh_mstk               build the MSTK Mesh Toolkit ['"${mesh_mstk}"']
+  mesh_moab               build the MOAB Mesh Toolkit ['"${mesh_moab}"']
 
   hypre                   build the HYPRE solver APIs ['"${hypre}"']
+  ginkgo                  build the Ginkgo solver APIs ['"${ginkgo}"']
   superlu                 build the SuperLU solver ['"${superlu}"']
   petsc                   build the PETSc solver APIs ['"${petsc}"']
 
@@ -363,17 +382,26 @@ Value in brackets indicates default setting.
   ats_physics             build ATS physics package (currently mutually exclusive) ['"${ats_physics}"']
   clm                     build CLM library for surface processes (currently only ATS) ['"${clm}"']
 
+  dbc                     design-by-contract.  Extra (potentially time-consuming) error-checking
+                          intended for developers ['"${dbc}"']
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi or ATS Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
+  external_downloads      allow TPL tar balls or git repos to be downloaded directly from 
+                          external sites ['"${external_downloads}"']
   Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
 
-  epetra                  build the Epetra stack of TPLs ['"${epetra}"']
-  kokkos                  build the Tpetra/Kokkos stack of TPLs ['"${kokkos}"']
-  kokkos_cuda             build Kokkos with Cuda node support (currently only Kokkos) ['"${kokkos_cuda}"']
-  kokkos_openmp           build Kokkos with OpenMP node support (currently only Kokkos) ['"${kokkos_openmp}"']
+  epetra                  build Amanzi using the Epetra stack of TPLs ['"${epetra}"']
+  tpetra                  build Amanzi using the Tpetra/Kokkos stack of TPLs ['"${tpetra}"']
+                          NOTE: enabling both builds TPLs that are compatible with both Amanzi
+                          variants, but will error prior to building Amanzi.
+  cuda                    build with Cuda support, currently used by Kokkos, Hypre, Ginkgo and Trilinos ['"${cuda}"']
+  openmp                  build with OpenMP support, currently used by Kokkos, Hypre and Trilinos ['"${openmp}"']
+                          Note that this option may conflict with structured, so use of --enable-openmp
+                          may require the use of --disable-structured.
+  uvm                     build with UVM support, currently used by Kokkos, Hypre and Trilinos ['"${uvm}"']
 
   build_amanzi            build TPLs and Amanzi ['"${build_amanzi}"']
   build_user_guide        build TPLs, Amanzi, and UserGuide ['"${build_user_guide}"']
@@ -403,6 +431,26 @@ Tool definitions:
   --with-xsdk=DIR            use libraries already available in xSDK installation in lieu of
                              downloading and installing them individually. ['"${xsdk_root_dir}"']
 
+  --with-python=FILE         FILE is the python executable, must be python3 and include numpy and h5py, for
+                             use with ATS regression testing.
+
+System/Vendor Supported Third Party Libraries (TPLs):
+Bootstrap builds community supported TPLs, however, some TPLs have vendor or compiler optimized versions
+and are provided on the system.  Some of these libraries may be in nonstandard locations.
+
+  --with-blas=DIR                Search for the BLAS libraries only in DIR
+                                 [default is blank so CMake searches in system directories] 
+
+  --blas-vendor=VENDOR           Specify the vendor (usually the system name) for the BLAS and LAPACK libraries
+                                 [default All] is implicit in findBLAS.cmake and will search all supported names.
+                                 To focus the search and simplify debegging, specify a VENDOR name. Supported
+                                 VENDOR names include, Generic, OpenBLAS, CRAYSCI, Apple, FLAME, and NAS.
+
+  --with-lapack=DIR              Search for the LAPACK libraries only in DIR
+                                 [default is blank so CMake searches in system directories] 
+
+  --debug_find_blas              Turn on additional CMake messages to help resolve system configuration
+                                 problems that cause the automatic search mechanism to fail [default: '"${debug_find_blas}"']
 
 Directories and file names: 
 
@@ -459,6 +507,32 @@ OSX C and C++ compilers and Fortran compiler from MacPorts:
                  --enable-alquimia --enable-pflotran --enable-crunchtope 
                  --enable-petsc
                  --tools-mpi=openmpi
+
+Example that uses the system MPI, provides a path (/usr/local/lib) and
+turns on debugging to find BLAS and LAPACK libraries, builds the TPLs
+(with geochemistry libraries enabled), and finally Amanzi:
+
+  ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-0.98.0-gcc-9.3.0-openmpi-4.0.3
+                 --with-mpi=/usr
+                 --with-blas=/usr/local/lib
+                 --with-lapack=/usr/local/lib
+                 --debug_find_blas
+                 --parallel=8 
+                 --enable-geochemistry
+
+Example that builds a set of TPLs that can support main-branch
+development (Epetra), tpetra-branch development (Tpetra) and
+structured builds.  Note that optionally, the --enable-cuda or
+--enable-openmp flags could be added (though note that --enable-openmp
+currently requires --disable-structured).
+
+  ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-0.98.0-gcc-9.3.0-openmpi-4.0.3
+                 --with-mpi=/usr
+                 --enable-epetra
+                 --enable-tpetra
+                 --enable-geochemistry
+                 --disable-structured
+                 --enable-openmp
 '
 }
 
@@ -480,6 +554,7 @@ Compilers and Flags:
 
 Build configuration:
     build_type          = '"${build_type}"'
+    dbc                 = '"${dbc}"'
     build_stage_1       = '"${build_stage_1}"'
     build_stage_2       = '"${build_stage_2}"'
     parallel            = '"${parallel_jobs}"'
@@ -489,6 +564,10 @@ Build configuration:
     trilinos_build_type = '"${trilinos_build_type}"'
     tpls_build_type     = '"${tpls_build_type}"'
     tpl_config_file     = '"${tpl_config_file}"'
+    blas_dir        = '"${blas_dir}"'
+    lapack_dir      = '"${lapack_dir}"'
+    blas_vendor     = '"${blas_vendor}"'
+    debug_find_blas     = '"${debug_find_blas}"'
     amanzi_arch         = '"${amanzi_arch}"'
 
 Amanzi Components:   
@@ -503,18 +582,23 @@ Amanzi Components:
 Amanzi TPLs:
     alquimia     = '"${alquimia}"'
     crunchtope   = '"${crunchtope}"'
-    mstk_mesh    = '"${mstk_mesh}"'
-    moab_mesh    = '"${moab_mesh}"'
+    mesh_mstk    = '"${mesh_mstk}"'
+    mesh_moab    = '"${mesh_moab}"'
     netcdf4      = '"${netcdf4}"'
     hypre        = '"${hypre}"'
+    ginkgo       = '"${ginkgo}"'
     superlu      = '"${superlu}"'
     petsc        = '"${petsc}"'
     epetra       = '"${epetra}"'
-    kokkos       = '"${kokkos}"' (Cuda='"${kokkos_cuda}"', OpenMP='"${kokkos_openmp}"')
+    tpetra       = '"${tpetra}"'
+    cuda         = '"${cuda}"'
+    openmp       = '"${openmp}"'
+    uvm          = '"${uvm}"'
     pflotran     = '"${pflotran}"'
     silo         = '"${silo}"'
     Spack        = '"${Spack}"'
     xsdk         = '"${xsdk}"'
+    external_downloads = '"${external_downloads}"'
 
 Tools and Tests:
     ccse_tools   = '"${ccse_tools}"'
@@ -526,6 +610,7 @@ Tools and Tests:
     reg_tests    = '"${reg_tests}"'
     test_suite   = '"${test_suite}"'
     tools_mpi    = '"${tools_mpi}"'
+    python_exec  = '"${python_exec}"'
 
 Directories:
     prefix                = '"${prefix}"'
@@ -567,7 +652,7 @@ List of INPUT parameters
 
       --arch=*)
                  amanzi_arch=`parse_option_with_equal "${opt}" 'arch'`
-		 ;;
+                 ;;
 
       --parallel=[0-9]*)
                  parallel_jobs=`parse_option_with_equal "${opt}" 'parallel'`
@@ -601,10 +686,12 @@ List of INPUT parameters
       --debug_trilinos)
                  trilinos_build_type=Debug
                  ;;
+      --debug_find_blas)
+                 debug_find_blas=${TRUE}
+                 ;;
       --dry_run)
                  dry_run=${TRUE}
                  ;;
-
       --disable-*)
                  feature=`parse_feature "${opt}"`
                  set_feature ${feature} 'disable'
@@ -695,10 +782,30 @@ List of INPUT parameters
                  mpi_root_dir=$tmp
                  ;;
 
+      --with-python=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-python'`
+                 python_exec=$tmp
+                 ;;
+      
       --with-xsdk=*)
                  tmp=`parse_option_with_equal "${opt}" 'with-xsdk'`
                  xsdk_root_dir=`make_fullpath $tmp`
                  XSDK=TRUE
+                 ;;
+
+      --with-blas=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-blas'`
+                 blas_dir=$tmp
+                 ;;
+
+      --blas-vendor=*)
+                 tmp=`parse_option_with_equal "${opt}" 'blas-vendor'`
+                 blas_vendor=$tmp
+                 ;;
+
+      --with-lapack=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-lapack'`
+                 lapack_dir=$tmp
                  ;;
 
       --amanzi-build-dir=*)
@@ -767,30 +874,40 @@ List of INPUT parameters
       i=$[$i+1]
   done
 
+  # TPLs CMake option is "disable_external_downloads"
+  if [ "${external_downloads}" -eq "${TRUE}" ]; then
+      disable_external_downloads=${FALSE}
+  else
+      disable_external_downloads=${TRUE}
+  fi
+  
 # ---------------------------------------------------------------------------- #
 # Enforce implicit TPL dependencies
-  # ---------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------- #
   if [ "${build_user_guide}" -eq "${TRUE}" ]; then
     build_amanzi=${TRUE}
   fi
 
   if [ "${unstructured}" -eq "${FALSE}" ]; then
-    mstk_mesh=${FALSE}
-    moab_mesh=${FALSE}
+    mesh_mstk=${FALSE}
+    mesh_moab=${FALSE}
     stk_mesh=${FALSE}
   else
     if [ "${epetra}" -eq "${FALSE}" ]; then
-      warning_message "Disabling all of 'geochemistry', 'hypre', and 'superlu' as they are not required when disabling 'epetra'"
+      warning_message "Disabling all of 'geochemistry' as it is not yet supported when disabling 'epetra'"
       geochemistry=${FALSE}
-      hypre=${FALSE}
-      superlu=${FALSE}
       alquimia=${FALSE}
       pflotran=${FALSE}
       crunchtope=${FALSE}
       petsc=${FALSE}
 
-      if [ "${kokkos}" -eq "${FALSE}" ]; then
-        error_message "One of 'epetra' or 'kokkos' must be enabled"
+      if [ "${hypre}" -eq "${FALSE}" ]; then
+          warning_message "Disabling 'superlu' as it is not used when disabling 'epetra' and 'hypre'"
+          superlu=${FALSE}
+      fi
+      
+      if [ "${tpetra}" -eq "${FALSE}" ]; then
+        error_message "One of 'epetra' or 'tpetra' must be enabled"
         exit_now 30
       fi
     fi
@@ -857,6 +974,30 @@ List of INPUT parameters
       superlu=${TRUE}
     fi
   fi
+
+  # BLAS
+  if [ ! -z "${blas_dir}" ]; then
+      blas_opts=-DTPL_BLAS_DIR:FILEPATH=${blas_dir}
+  fi
+
+  # BLAS Vendor (Generic, All, Apple, etc.)
+  if [ ! -z "${blas_vendor}" ]; then
+      blas_vendor_opts=-DTPL_BLAS_VENDOR:STRING=${blas_vendor}
+  fi
+
+  # Debug FindBLAS.cmake
+  if [ "${debug_find_blas}" -eq "${TRUE}" ]; then
+      debug_find_blas_tmp=-DTPL_DEBUG_FIND_BLAS:BOOL=${TRUE}
+  else
+      debug_find_blas_tmp=-DTPL_DEBUG_FIND_BLAS:BOOL=${FALSE}
+  fi
+  
+  # LAPACK
+  if [ ! -z "${lapack_dir}" ]; then
+      lapack_opts=-DTPL_LAPACK_DIR:FILEPATH=${lapack_dir}
+  fi
+
+  blas_lapack_opts="${blas_opts} ${blas_vendor_opts} ${debug_find_blas_tmp} ${lapack_opts}"
   
   # deprecated options
   if [ "${tpls_only}" ]; then
@@ -1439,8 +1580,6 @@ function define_install_directories
   status_message "TPL installation: ${tpl_install_prefix}"
 }    
 
-
-
 # ---------------------------------------------------------------------------- #
 # Arch-specific functions
 # ---------------------------------------------------------------------------- #
@@ -1458,8 +1597,8 @@ function define_nersc_options
                    -DMPI_EXEC:STRING=srun \
                    -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
                    -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
-                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static} \
-                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}" 
+#                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
   
    arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
                      -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
@@ -1475,8 +1614,8 @@ function define_nersc_options
                    -DMPI_EXEC:STRING=srun \
                    -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
                    -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
-                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static} \
-                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}"
+#                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
   
     arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
                       -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
@@ -1493,11 +1632,13 @@ function define_nersc_options
 
 function define_summit_options
 {
-  if [ "${kokkos_cuda}" -eq "${TRUE}" ]; then
+  if [ "${cuda}" -eq "${TRUE}" ]; then
     mpi_exec_args="-a 1 -c 1 -g 1" # 1 gpu per mpi rank, max 6 ranks
-  elif [ "${kokkos_openmp}" -eq "${TRUE}" ]; then
+  elif [ "${openmp}" -eq "${TRUE}" ]; then
     mpi_exec_args="-a 1 -c 7" # 7 cpus per mpi rank, max 6 ranks
-  fi
+  elif ["${uvm}" -eq "${TRUE}" ]; then 
+    mpi_exec_args="-a 1 -c 1 -g 1" # 1 gpu per mpi rank, max 6 ranks
+  fi 
   
   arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
                  -DMPI_EXEC:STRING=jsrun \
@@ -1672,10 +1813,11 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_Unstructured:BOOL=${unstructured} \
       -DENABLE_CCSE_TOOLS:BOOL=${ccse_tools} \
       -DCCSE_BL_SPACEDIM:INT=${spacedim} \
-      -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
-      -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
+      -DENABLE_MESH_MOAB:BOOL=${mesh_moab} \
+      -DENABLE_MESH_MSTK:BOOL=${mesh_mstk} \
       -DENABLE_NetCDF4:BOOL=${netcdf4} \
       -DENABLE_HYPRE:BOOL=${hypre} \
+      -DENABLE_GINKGO:BOOL=${ginkgo} \
       -DENABLE_SUPERLU:BOOL=${superlu} \
       -DENABLE_PETSC:BOOL=${petsc} \
       -DENABLE_ALQUIMIA:BOOL=${alquimia} \
@@ -1684,15 +1826,18 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_Silo:BOOL=${silo} \
       -DENABLE_CLM:BOOL=${clm} \
       -DENABLE_SPACK:BOOL=${Spack} \
-      -DENABLE_EPETRA:BOOL=${epetra} \
-      -DENABLE_KOKKOS:BOOL=${kokkos} \
-      -DENABLE_KOKKOS_CUDA:BOOL=${kokkos_cuda} \
-      -DENABLE_KOKKOS_OPENMP:BOOL=${kokkos_openmp} \
+      -DENABLE_Epetra:BOOL=${epetra} \
+      -DENABLE_Tpetra:BOOL=${tpetra} \
+      -DENABLE_CUDA:BOOL=${cuda} \
+      -DENABLE_OpenMP:BOOL=${openmp} \
+      -DENABLE_UVM:BOOL=${uvm} \
       -DSPACK_BINARY:STRING=${Spack_binary} \
       -DBUILD_SPACK:BOOL=${build_Spack} \
       -DENABLE_XSDK:BOOL=${xsdk} \
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
+      -DDISABLE_EXTERNAL_DOWNLOAD=${disable_external_downloads} \
+      ${blas_lapack_opts} \
       ${arch_tpl_opts} \
       ${tpl_build_src_dir}"
 
@@ -1796,26 +1941,30 @@ cmd_configure="${cmake_binary} \
     -DCMAKE_BUILD_TYPE:STRING=${build_type} \
     -DENABLE_Structured:BOOL=${structured} \
     -DENABLE_Unstructured:BOOL=${unstructured} \
-    -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
-    -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
+    -DENABLE_MESH_MOAB:BOOL=${mesh_moab} \
+    -DENABLE_MESH_MSTK:BOOL=${mesh_mstk} \
     -DENABLE_SUPERLU:BOOL=${superlu} \
     -DENABLE_HYPRE:BOOL=${hypre} \
+    -DENABLE_GINKGO:BOOL=${ginkgo} \
     -DENABLE_PETSC:BOOL=${petsc} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
     -DENABLE_CLM:BOOL=${clm} \
     -DENABLE_Silo:BOOL=${silo} \
-    -DENABLE_EPETRA:BOOL=${epetra} \
-    -DENABLE_KOKKOS:BOOL=${kokkos} \
-    -DENABLE_KOKKOS_CUDA:BOOL=${kokkos_cuda} \
-    -DENABLE_KOKKOS_OPENMP:BOOL=${kokkos_openmp} \
+    -DENABLE_Epetra:BOOL=${epetra} \
+    -DENABLE_Tpetra:BOOL=${tpetra} \
+    -DENABLE_CUDA:BOOL=${cuda} \
+    -DENABLE_OpenMP:BOOL=${openmp} \
+    -DENABLE_UVM:BOOL=${uvm} \
     -DENABLE_AmanziPhysicsModule:BOOL=${amanzi_physics} \
     -DENABLE_ATSPhysicsModule:BOOL=${ats_physics} \
+    -DENABLE_DBC:BOOL=${dbc} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
-    -DMPI_EXEC_GLOBAL_ARGS:STRING=${mpi_exec_args}\
+    -DMPI_EXEC_GLOBAL_ARGS:STRING=${mpi_exec_args} \
+    -DPYTHON_EXECUTABLE:STRING=${python_exec} \
     ${arch_amanzi_opts} \
     ${amanzi_source_dir}"
 
@@ -1923,4 +2072,3 @@ fi
 status_message "Bootstrap complete"
 
 exit_now 0
-

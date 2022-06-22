@@ -108,16 +108,16 @@ TEST(COLUMN_MESH_3D)
   CHECK_EQUAL(20, nnodes);
 
   for (int j = 0; j < ncells; j++) {
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
-    Kokkos::View<int*> cfdirs;
-    colmesh.cell_get_faces_and_dirs(j, cfaces, cfdirs);
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> cfaces;
+    Kokkos::View<int*,Kokkos::HostSpace> cfdirs;
+    colmesh.cell_get_faces_and_dirs<Kokkos::HostSpace>(j, cfaces, cfdirs);
 
     CHECK_EQUAL(2, cfaces.extent(0));
   }
  
   for (int j = 0; j < nfaces; j++) {
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fcells;
-    colmesh.face_get_cells(j, Amanzi::AmanziMesh::Parallel_type::OWNED, fcells);
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> fcells;
+    colmesh.face_get_cells_host(j, Amanzi::AmanziMesh::Parallel_type::OWNED, fcells);
 
     if (j == 0) {
       CHECK_EQUAL(1, fcells.extent(0));
@@ -133,17 +133,17 @@ TEST(COLUMN_MESH_3D)
   // centroid of base face
 
   Amanzi::AmanziGeometry::Point fcenbase(3);
-  fcenbase = colmesh.face_centroid(0);
+  fcenbase = colmesh.face_centroid_host(0);
 
   // area of base face
-  double fareabase = colmesh.face_area(0);
+  double fareabase = colmesh.face_area_host(0);
 
   // Make sure centroids of other faces are stacked up
   // exactly above that of the base face
 
   for (int j = 1; j < nfaces; j++) {
     Amanzi::AmanziGeometry::Point fcen(3);
-    fcen = colmesh.face_centroid(j);
+    fcen = colmesh.face_centroid_host(j);
     CHECK_EQUAL(fcenbase[0], fcen[0]);
     CHECK_EQUAL(fcenbase[1], fcen[1]);
   }
@@ -151,7 +151,7 @@ TEST(COLUMN_MESH_3D)
   // Make sure the normals of the faces are have only a Z component
   for (int j = 0; j < nfaces; j++) {
     Amanzi::AmanziGeometry::Point normal(3);
-    normal = colmesh.face_normal(j);
+    normal = colmesh.face_normal_host(j);
     CHECK_EQUAL(0.0, normal[0]);
     CHECK_EQUAL(0.0, normal[1]);
     CHECK_EQUAL(1.0, fabs(normal[2]));
@@ -164,10 +164,10 @@ TEST(COLUMN_MESH_3D)
   for (int i = 0; i < ncells; i++) {
     Amanzi::AmanziGeometry::Point ccen(3), fcen0(3), fcen1(3);
 
-    ccen = colmesh.cell_centroid(i);
+    ccen = colmesh.cell_centroid_host(i);
 
-    fcen0 = colmesh.face_centroid(i);
-    fcen1 = colmesh.face_centroid(i + 1);
+    fcen0 = colmesh.face_centroid_host(i);
+    fcen1 = colmesh.face_centroid_host(i + 1);
 
     CHECK_EQUAL(fcenbase[0], ccen[0]);
     CHECK_EQUAL(fcenbase[1], ccen[1]);
@@ -182,18 +182,18 @@ TEST(COLUMN_MESH_3D)
   // face of the cell and the upper face of the cell
 
   for (int j = 0; j < ncells; j++) {
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> cfaces;
     colmesh.cell_get_faces(j, cfaces);
 
     Amanzi::AmanziGeometry::Point locen(3), hicen(3);
-    locen = colmesh.face_centroid(cfaces(0));
-    hicen = colmesh.face_centroid(cfaces(1));
+    locen = colmesh.face_centroid_host(cfaces(0));
+    hicen = colmesh.face_centroid_host(cfaces(1));
 
     double height = norm(hicen - locen);
 
     double expvolume = fareabase * height;
 
-    double volume = colmesh.cell_volume(j, false);
+    double volume = colmesh.cell_volume_host(j);
 
     CHECK_CLOSE(expvolume, volume, 1.0e-08);
   }
@@ -206,8 +206,8 @@ TEST(COLUMN_MESH_3D)
                            Amanzi::AmanziMesh::Parallel_type::ALL,
                            myregion);
   CHECK_EQUAL(2, myregion.size());
-  CHECK(colmesh.cell_centroid(myregion[0])[2] >= 2.5);
-  CHECK(colmesh.cell_centroid(myregion[1])[2] >= 2.5);
+  CHECK(colmesh.cell_centroid_host(myregion[0])[2] >= 2.5);
+  CHECK(colmesh.cell_centroid_host(myregion[1])[2] >= 2.5);
   std::cout << "End first" << std::endl;
 }
 
@@ -275,16 +275,16 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   CHECK_EQUAL(20, nnodes);
 
   for (int j = 0; j < ncells; j++) {
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
-    Kokkos::View<int*> cfdirs;
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> cfaces;
+    Kokkos::View<int*,Kokkos::HostSpace> cfdirs;
     colmesh.cell_get_faces_and_dirs(j, cfaces, cfdirs);
 
     CHECK_EQUAL(2, cfaces.extent(0));
   }
 
   for (int j = 0; j < nfaces; j++) {
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fcells;
-    colmesh.face_get_cells(j, Amanzi::AmanziMesh::Parallel_type::OWNED, fcells);
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> fcells;
+    colmesh.face_get_cells_host(j, Amanzi::AmanziMesh::Parallel_type::OWNED, fcells);
 
     if (j == 0) {
       CHECK_EQUAL(1, fcells.extent(0));
@@ -300,17 +300,17 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   // centroid of base face
 
   Amanzi::AmanziGeometry::Point fcenbase(3);
-  fcenbase = colmesh.face_centroid(0);
+  fcenbase = colmesh.face_centroid_host(0);
 
   // area of base face
-  double fareabase = colmesh.face_area(0);
+  double fareabase = colmesh.face_area_host(0);
 
   // Make sure centroids of other faces are stacked up
   // exactly above that of the base face
 
   for (int j = 1; j < nfaces; j++) {
     Amanzi::AmanziGeometry::Point fcen(3);
-    fcen = colmesh.face_centroid(j);
+    fcen = colmesh.face_centroid_host(j);
     CHECK_EQUAL(fcenbase[0], fcen[0]);
     CHECK_EQUAL(fcenbase[1], fcen[1]);
   }
@@ -318,7 +318,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   // Make sure the normals of the faces are have only a Z component
   for (int j = 0; j < nfaces; j++) {
     Amanzi::AmanziGeometry::Point normal(3);
-    normal = colmesh.face_normal(j);
+    normal = colmesh.face_normal_host(j);
     CHECK_EQUAL(0.0, normal[0]);
     CHECK_EQUAL(0.0, normal[1]);
     CHECK_EQUAL(1.0, fabs(normal[2]));
@@ -331,10 +331,10 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   for (int i = 0; i < ncells; i++) {
     Amanzi::AmanziGeometry::Point ccen(3), fcen0(3), fcen1(3);
 
-    ccen = colmesh.cell_centroid(i);
+    ccen = colmesh.cell_centroid_host(i);
 
-    fcen0 = colmesh.face_centroid(i);
-    fcen1 = colmesh.face_centroid(i + 1);
+    fcen0 = colmesh.face_centroid_host(i);
+    fcen1 = colmesh.face_centroid_host(i + 1);
 
     CHECK_EQUAL(fcenbase[0], ccen[0]);
     CHECK_EQUAL(fcenbase[1], ccen[1]);
@@ -349,18 +349,18 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   // face of the cell and the upper face of the cell
 
   for (int j = 0; j < ncells; j++) {
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> cfaces;
     colmesh.cell_get_faces(j, cfaces);
 
     Amanzi::AmanziGeometry::Point locen(3), hicen(3);
-    locen = colmesh.face_centroid(cfaces(0));
-    hicen = colmesh.face_centroid(cfaces(1));
+    locen = colmesh.face_centroid_host(cfaces(0));
+    hicen = colmesh.face_centroid_host(cfaces(1));
 
     double height = norm(hicen - locen);
 
     double expvolume = fareabase * height;
 
-    double volume = colmesh.cell_volume(j, false);
+    double volume = colmesh.cell_volume_host(j);
 
     CHECK_CLOSE(expvolume, volume, 1.0e-08);
   }
@@ -373,6 +373,6 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
                            Amanzi::AmanziMesh::Parallel_type::ALL,
                            myregion);
   CHECK_EQUAL(2, myregion.size());
-  CHECK(colmesh.cell_centroid(myregion[0])[2] >= 2.5);
-  CHECK(colmesh.cell_centroid(myregion[1])[2] >= 2.5);
+  CHECK(colmesh.cell_centroid_host(myregion[0])[2] >= 2.5);
+  CHECK(colmesh.cell_centroid_host(myregion[1])[2] >= 2.5);
 }

@@ -69,9 +69,8 @@ TEST(Explicit_RK_Euler)
     y = y_new;
   } while (t < 1.0);
 
-  y.sync_host();
   {
-    auto yv = y.getLocalViewHost();
+    auto yv = y.getLocalViewHost(Tpetra::Access::ReadOnly);
     CHECK_CLOSE(yv(0, 0), exp(t), 2.0 * h);
   }
 }
@@ -102,9 +101,8 @@ TEST(Explicit_RK_Heun)
     y = y_new;
   } while (t < 1.0);
 
-  y.sync_host();
   {
-    auto yv = y.getLocalViewHost();
+    auto yv = y.getLocalViewHost(Tpetra::Access::ReadOnly);
     CHECK_CLOSE(yv(0, 0), exp(t), pow(h, 2));
   }
 }
@@ -137,9 +135,8 @@ TEST(Explicit_RK_Midpoint)
     y = y_new;
   } while (t < 1.0);
 
-  y.sync_host();
   {
-    auto yv = y.getLocalViewHost();
+    auto yv = y.getLocalViewHost(Tpetra::Access::ReadOnly);
     CHECK_CLOSE(yv(0, 0), exp(t), pow(h, 2));
   }
 }
@@ -172,9 +169,8 @@ TEST(Explicit_RK_Ralston)
     y = y_new;
   } while (t < 1.0);
 
-  y.sync_host();
   {
-    auto yv = y.getLocalViewHost();
+    auto yv = y.getLocalViewHost(Tpetra::Access::ReadOnly);
     CHECK_CLOSE(yv(0, 0), exp(t), pow(h, 2));
   }
 }
@@ -205,9 +201,8 @@ TEST(Explicit_TVD_RK3)
     y = y_new;
   } while (t < 1.0);
 
-  y.sync_host();
   {
-    auto yv = y.getLocalViewHost();
+    auto yv = y.getLocalViewHost(Tpetra::Access::ReadOnly);
     CHECK_CLOSE(yv(0, 0), exp(t), pow(h, 3));
   }
 }
@@ -238,9 +233,8 @@ TEST(Explicit_TVD_RK3_Exact)
     y = y_new;
   } while (t < 1.0);
 
-  y.sync_host();
   {
-    auto yv = y.getLocalViewHost();
+    auto yv = y.getLocalViewHost(Tpetra::Access::ReadOnly);
     CHECK_CLOSE(0.0, yv(0, 0) - t * t * t / 3, 1e-15);
   }
 }
@@ -273,9 +267,8 @@ TEST(Explicit_RK_Kutta3D)
     y = y_new;
   } while (t < 1.0);
 
-  y.sync_host();
   {
-    auto yv = y.getLocalViewHost();
+    auto yv = y.getLocalViewHost(Tpetra::Access::ReadOnly);
     CHECK_CLOSE(yv(0, 0), exp(t), pow(h, 3));
   }
 }
@@ -320,9 +313,8 @@ TEST(Explicit_RK_UserDefined)
     y = y_new;
   } while (t < 1.0);
 
-  y.sync_host();
   {
-    auto yv = y.getLocalViewHost();
+    auto yv = y.getLocalViewHost(Tpetra::Access::ReadOnly);
     CHECK_CLOSE(yv(0, 0), exp(t), pow(h, 2));
   }
 }
@@ -355,9 +347,8 @@ TEST(Explicit_RK_RK4)
     y = y_new;
   } while (t < 1.0);
 
-  y.sync_host();
   {
-    auto yv = y.getLocalViewHost();
+    auto yv = y.getLocalViewHost(Tpetra::Access::ReadOnly);
     CHECK_CLOSE(yv(0, 0), exp(t), pow(h, 4));
   }
 }

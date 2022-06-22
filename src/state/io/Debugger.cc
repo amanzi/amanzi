@@ -185,8 +185,8 @@ Debugger::WriteCellInfo(bool include_faces)
                       << std::endl;
 
       if (include_faces) {
-        AmanziMesh::Entity_ID_View fnums0;
-        Kokkos::View<int*> dirs;
+        Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> fnums0;
+        Kokkos::View<int*,Kokkos::HostSpace> dirs;
         mesh_->cell_get_faces_and_dirs(c0, fnums0, dirs);
 
         if (dcvo_->os_OK(verb_level_)) {

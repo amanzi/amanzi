@@ -62,8 +62,8 @@ Mesh::get_set_entities_box_vofs_(
       double volume;
 
       Entity_ID_List cnodes, fnodes; 
-      Kokkos::View<Entity_ID*> faces;
-      Kokkos::View<int*> dirs;
+      Kokkos::View<Entity_ID*,Kokkos::HostSpace> faces;
+      Kokkos::View<int*, Kokkos::HostSpace> dirs;
       std::vector<AmanziGeometry::Point> polytope_nodes;
       std::vector<std::vector<int>> polytope_faces;
 
@@ -109,7 +109,7 @@ Mesh::get_set_entities_box_vofs_(
             Kokkos::resize(*volume_fractions,
                            (*volume_fractions).extent(0) + 1);
             (*volume_fractions)(volume_fractions_size++) =
-              volume / cell_volume(c, false);
+              volume / cell_volume_host(c);
           }
         }
       }

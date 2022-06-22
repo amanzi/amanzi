@@ -119,10 +119,10 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
       // check containment
       if ((*r)->space_dimension() == 3) {
         sets_[(*r)->id()] =
-          (*r)->inside(parent_mesh->face_centroid(parent_face_));
+          (*r)->inside(parent_mesh->face_centroid_host(parent_face_));
 
       } else if ((*r)->space_dimension() == 2 && flatten) {
-        sets_[(*r)->id()] = (*r)->inside(cell_centroid(0));
+        sets_[(*r)->id()] = (*r)->inside(cell_centroid_host(0));
       }
     }
   }

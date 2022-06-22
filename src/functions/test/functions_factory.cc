@@ -87,7 +87,7 @@ SUITE(constant_factory)
     sublist.set("value", 2.0);
     FunctionFactory fact;
     Function* f = fact.Create(list);
-    Kokkos::View<double*> x("x", 1);
+    Kokkos::View<double*,Kokkos::HostSpace> x("x", 1);
     x(0) = 9.0;
     CHECK_EQUAL((*f)(x), 2.0);
   }
@@ -116,7 +116,7 @@ SUITE(tabular_factory)
     sublist.set("y values", y);
     FunctionFactory fact;
     Function* f = fact.Create(list);
-    Kokkos::View<double*> t("t", 1);
+    Kokkos::View<double*,Kokkos::HostSpace> t("t", 1);
     t(0) = 0.5;
     CHECK_EQUAL((*f)(t), 2.5);
   }
@@ -135,7 +135,7 @@ SUITE(tabular_factory)
     sublist.set("y values", y);
     FunctionFactory fact;
     Function* f = fact.Create(list);
-    Kokkos::View<double*> t("t", 1);
+    Kokkos::View<double*,Kokkos::HostSpace> t("t", 1);
     t(0) = 0.5;
     CHECK_EQUAL((*f)(t), 2.5);
   }
@@ -155,7 +155,7 @@ SUITE(tabular_factory)
     sublist.set("forms", forms);
     FunctionFactory fact;
     Function* f = fact.Create(list);
-    Kokkos::View<double*> t("t", 1);
+    Kokkos::View<double*,Kokkos::HostSpace> t("t", 1);
     t(0) = 0.5;
     CHECK_EQUAL(2.0, (*f)(t));
   }
@@ -258,7 +258,7 @@ SUITE(bilinear_factory)
     sublist.set("value header", "/values");
     FunctionFactory fact;
     Function* f = fact.Create(list);
-    Kokkos::View<double*> t("t", 2);
+    Kokkos::View<double*,Kokkos::HostSpace> t("t", 2);
     t(0) = 2.;
     t(1) = 2.;
     CHECK_EQUAL((*f)(t), 14.);
@@ -339,7 +339,7 @@ SUITE(smooth_step_factory)
     sublist.set("y1", 4.0);
     FunctionFactory fact;
     Function* f = fact.Create(list);
-    Kokkos::View<double*> x("x", 1);
+    Kokkos::View<double*,Kokkos::HostSpace> x("x", 1);
     x(0) = 2.;
     CHECK_EQUAL((*f)(x), 3.0);
   }
@@ -382,7 +382,7 @@ SUITE(polynomial_factory)
     sublist.set("exponents", p);
     FunctionFactory fact;
     Function* f = fact.Create(list);
-    Kokkos::View<double*> t("t", 1);
+    Kokkos::View<double*,Kokkos::HostSpace> t("t", 1);
     t(0) = 0.5;
     CHECK_EQUAL((*f)(t), 2.5);
     delete f;
@@ -449,7 +449,7 @@ SUITE(linear_factory)
     sublist.set("gradient", grad);
     FunctionFactory fact;
     Function* f = fact.Create(list);
-    Kokkos::View<double*> x("x", 2);
+    Kokkos::View<double*,Kokkos::HostSpace> x("x", 2);
     x(0) = 1.;
     x(1) = 2.;
     CHECK_EQUAL(6.0, (*f)(x));
@@ -524,7 +524,7 @@ SUITE(separable_factory)
     flist2.set("gradient", grad);
     FunctionFactory factory;
     Function* f = factory.Create(list);
-    Kokkos::View<double*> x("x", 3);
+    Kokkos::View<double*,Kokkos::HostSpace> x("x", 3);
     x(0) = 0.;
     x(1) = 1.;
     x(2) = -1.;
@@ -572,7 +572,7 @@ SUITE(separable_factory)
     flistz.set("value", 4.0);
     FunctionFactory factory;
     Function* f = factory.Create(list);
-    Kokkos::View<double*> x("x", 3);
+    Kokkos::View<double*,Kokkos::HostSpace> x("x", 3);
     x(0) = 0.;
     x(1) = 0.;
     x(2) = 0.;
@@ -610,13 +610,13 @@ SUITE(static_head_factory)
       .set("value", 3.0);
     FunctionFactory factory;
     Function* f = factory.Create(list);
-    Kokkos::View<double*> x("x", 4);
+    Kokkos::View<double*,Kokkos::HostSpace> x("x", 4);
     x(0) = 0.;
     x(1) = 0.;
     x(2) = 0.;
     x(3) = 1.;
     CHECK_EQUAL(5.0, (*f)(x));
-    Kokkos::View<double*> y("y", 4);
+    Kokkos::View<double*,Kokkos::HostSpace> y("y", 4);
     y(0) = 1.;
     y(1) = 1.;
     y(2) = 1.;
@@ -671,7 +671,7 @@ SUITE(distance_factory)
       "metric", metric);
     FunctionFactory fact;
     Function* f = fact.Create(list);
-    Kokkos::View<double*> x("x", 2);
+    Kokkos::View<double*,Kokkos::HostSpace> x("x", 2);
     x(0) = 2.;
     x(1) = 2.;
     CHECK_EQUAL((*f)(x), 5.0);

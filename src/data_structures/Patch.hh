@@ -125,6 +125,9 @@ struct MultiPatchSpace {
 // A set of entity IDs and data on those entities.
 //
 struct Patch {
+
+  using ViewType = Kokkos::View<double**, Kokkos::LayoutLeft>; 
+
   Patch(const PatchSpace& space_) :
       space(space_) {
     Kokkos::resize(data, space.size(), space.n_dofs);
@@ -136,7 +139,7 @@ struct Patch {
   // note, this layout is required to ensure that function is slowest-varying,
   // and so can be used with MultiFunction::apply(). See note in
   // MultiFunction.hh
-  Kokkos::View<double**, Kokkos::LayoutLeft> data;
+  ViewType data;
 
   std::size_t size() const { return data.extent(0); }
   std::size_t n_dofs() const { return data.extent(1); }

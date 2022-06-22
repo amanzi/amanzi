@@ -42,14 +42,14 @@ namespace Amanzi {
 
 class FunctionSquareDistance : public Function {
  public:
-  FunctionSquareDistance(const Kokkos::View<double*>& x0,
-                         const Kokkos::View<double*>& metric);
+  FunctionSquareDistance(const Kokkos::View<double*,Kokkos::HostSpace>& x0,
+                         const Kokkos::View<double*,Kokkos::HostSpace>& metric);
   ~FunctionSquareDistance() {}
   FunctionSquareDistance* Clone() const
   {
     return new FunctionSquareDistance(*this);
   }
-  double operator()(const Kokkos::View<double*>& x) const;
+  double operator()(const Kokkos::View<double*,Kokkos::HostSpace>& x) const;
 
   KOKKOS_INLINE_FUNCTION double
   apply_gpu(const Kokkos::View<double**>& x, const int i) const
@@ -60,8 +60,8 @@ class FunctionSquareDistance : public Function {
              "FunctionSquareDistance expects higher-dimensional argument.");
     }
     for (int j = 0; j < x0_.extent(0); ++j) {
-      tmp = x(j, i) - x0_[j];
-      y += metric_[j] * tmp * tmp;
+      tmp = x(j, i) - x0_.view_device()[j];
+      y += metric_.view_device()[j] * tmp * tmp;
     }
     return y;
   }
@@ -75,7 +75,7 @@ class FunctionSquareDistance : public Function {
 
 
  private:
-  Kokkos::View<double*> x0_, metric_;
+  Kokkos::DualView<double*> x0_, metric_;
 };
 
 } // namespace Amanzi

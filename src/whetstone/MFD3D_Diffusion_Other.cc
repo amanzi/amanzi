@@ -30,8 +30,8 @@ namespace WhetStone {
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor<>& K, DenseMatrix<>& W)
 {
-  AmanziMesh::Entity_ID_View faces;
-  Kokkos::View<int*> dirs;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
+  Kokkos::View<int*,Kokkos::HostSpace> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.size();
@@ -87,9 +87,9 @@ double MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor<>& K)
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor<>& K, DenseMatrix<>& W)
 {
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume_host(c);
 
-  AmanziMesh::Entity_ID_View faces;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
   mesh_->cell_get_faces(c, faces);
   int nfaces = faces.size();
 
@@ -110,8 +110,8 @@ int MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor<>& K, DenseMa
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor<>& K, DenseMatrix<>& W)
 {
-  AmanziMesh::Entity_ID_View faces;
-  Kokkos::View<int*> fdirs;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
+  Kokkos::View<int*,Kokkos::HostSpace> fdirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, fdirs);
   int num_faces = faces.size();
@@ -164,7 +164,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor<>& K, DenseMatrix<>
   // rescale corner weights
   double factor = 0.0;
   for (int n = 0; n < nnodes; n++) factor += cwgt[n];
-  factor = mesh_->cell_volume(c) / factor;
+  factor = mesh_->cell_volume_host(c) / factor;
 
   for (int n = 0; n < nnodes; n++) cwgt[n] *= factor;
 

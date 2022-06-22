@@ -182,7 +182,7 @@ void PDE_DiffusionFVwithGravity::AnalyticJacobian_(const CompositeVector& u)
 
           // find the face direction from cell 0 to cell 1
           AmanziMesh::Entity_ID_View cfaces;
-          Kokkos::View<int*> fdirs;
+          AmanziMesh::Entity_Dir_View fdirs;
           mesh->cell_get_faces_and_dirs(cells(0), cfaces, fdirs);
           int f_index;
           for (f_index=0; f_index!=cfaces.extent(0); ++f_index) {
@@ -282,7 +282,7 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
         KOKKOS_LAMBDA(const int c) {
 
           AmanziMesh::Entity_ID_View faces;
-          Kokkos::View<AmanziGeometry::Point*> bisectors;
+          Kokkos::View<AmanziGeometry::Point*,Amanzi::DeviceOnlyMemorySpace> bisectors;
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
           WhetStone::Tensor<DeviceOnlyMemorySpace> Kc = K->at(c);

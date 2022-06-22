@@ -61,8 +61,10 @@ TEST_FIXTURE(reference_mesh, basic_patch)
 
   computeMeshFunction(*f1, 0.0, p);
   CHECK_EQUAL(4, p.size());
-  CHECK_EQUAL(1.0, p.data(0,0));
-  CHECK_EQUAL(1.0, p.data(3,0));
+  Patch::ViewType::HostMirror vh = Kokkos::create_mirror_view(p.data);  
+  Kokkos::deep_copy(vh,p.data);
+  CHECK_EQUAL(1.0, vh(0,0));
+  CHECK_EQUAL(1.0, vh(3,0));
 }
 
 
@@ -84,10 +86,13 @@ TEST_FIXTURE(reference_mesh, values1)
   auto funcs = std::vector<Teuchos::RCP<const MultiFunction>>{f1,f2,f3};
 
   computeMeshFunction(funcs, 0.0, mp);
+  
+  for(int i = 0 ; i < 3; ++i){
+    Patch::ViewType::HostMirror vh = Kokkos::create_mirror_view(mp[i].data);  
+    Kokkos::deep_copy(vh,mp[i].data);
 
-  CHECK_EQUAL(1.0, mp[0].data(3,0));
-  CHECK_EQUAL(2.0, mp[1].data(3,0));
-  CHECK_EQUAL(3.0, mp[2].data(3,0));
+    CHECK_EQUAL(static_cast<double>(i+1), vh(3,0));
+  }
 }
 
 

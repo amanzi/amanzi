@@ -53,7 +53,7 @@ main(int argc, char* argv[])
 TEST_FIXTURE(reference_mesh, cv_function)
 {
   // make the mesh function
-  Kokkos::View<double*> grad("grad", 4);
+  Kokkos::View<double*,Kokkos::HostSpace> grad("grad", 4);
   grad(0) = 0.0;
   grad(1) = 0.0;
   grad(2) = 0.0;

@@ -115,6 +115,21 @@ Key standardize(const Key& other) {
   return other;
 }
 
+inline KeyPair
+split(const std::string& input, const char& divider, const std::string& def, bool null_first)
+{
+  std::size_t pos = input.find(divider);
+  if (pos == std::string::npos) {
+    if (null_first) {
+      return std::make_pair(def, input);
+    } else {
+      return std::make_pair(input, def);
+    }
+  } else {
+    return std::make_pair(input.substr(0, pos), input.substr(pos+1, input.size()));
+  }
+}
+
 // is this valid?
 bool validKey(const Key& key);
 
@@ -140,6 +155,8 @@ Key getVarName(const Key& name);
 // Domain Sets are of the form NAME:ID, where ID is an integer or
 // region string indexing the domain set.
 Key getDomainInSet(const Key& ds_name, const Key& subdomain);
+
+Key merge(const Key& domain, const Key& name, const char& delimiter); 
 
 Key getDomainInSet(const Key& ds_name, const int& subdomain);
 

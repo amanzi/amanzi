@@ -88,12 +88,12 @@ TEST(MSTK_DEFORM_VOLS_2D)
   min_volumes.reserve(nc);
 
   for (int i = 0; i < nc; i++) {
-    orig_volumes[i] = mesh->cell_volume(i, false);
+    orig_volumes[i] = mesh->cell_volume_host(i);
     // target_volumes[i] = orig_volumes[i];
     target_volumes[i] = 0.0;
     min_volumes[i] = 0.25 * orig_volumes[i];
 
-    Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(i);
+    Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid_host(i);
     if (fabs(ccen[0]) < 3.0)
       if (ccen[1] > 3.1 && ccen[1] < 4.1)
         target_volumes[i] = 0.90 * orig_volumes[i];
@@ -113,15 +113,15 @@ TEST(MSTK_DEFORM_VOLS_2D)
   for (int i = 0; i < nc; i++) {
     if (target_volumes[i] > 0.0 && target_volumes[i] < orig_volumes[i]) {
       double voldiff =
-        (mesh->cell_volume(i, false) - target_volumes[i]) / target_volumes[i];
+        (mesh->cell_volume_host(i) - target_volumes[i]) / target_volumes[i];
 
       // Check if volume difference is with 5% of target volume
       CHECK_CLOSE(0, voldiff, 5.0e-02);
     }
 
     // Check that we didn't fall below the minimum prescribed volume
-    if (mesh->cell_volume(i, false) < min_volumes[i])
-      std::cerr << "Cell volume = " << mesh->cell_volume(i, false)
+    if (mesh->cell_volume_host(i) < min_volumes[i])
+      std::cerr << "Cell volume = " << mesh->cell_volume_host(i)
                 << " is less than min volume = " << min_volumes[i] << std::endl;
     //    CHECK(mesh->cell_volume(i,false) >= min_volumes[i]);
   }
@@ -190,11 +190,11 @@ TEST(MSTK_DEFORM_VOLS_3D)
   min_volumes.reserve(ncused);
 
   for (int i = 0; i < ncused; i++) {
-    orig_volumes[i] = mesh->cell_volume(i, false);
+    orig_volumes[i] = mesh->cell_volume_host(i);
     target_volumes[i] = orig_volumes[i];
     min_volumes[i] = 0.90 * orig_volumes[i];
 
-    Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(i);
+    Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid_host(i);
     if (ccen[0] > 2.0 && ccen[0] < 8.0) { // row of cells along x axis
       if (ccen[2] > 3.1 && ccen[2] < 4.1) {
         target_volumes[i] = 0.85 * orig_volumes[i];
@@ -220,7 +220,7 @@ TEST(MSTK_DEFORM_VOLS_3D)
   for (int i = 0; i < ncowned; i++) {
     if (target_volumes[i] > 0.0 && target_volumes[i] < orig_volumes[i]) {
       double voldiff =
-        (mesh->cell_volume(i, false) - target_volumes[i]) / target_volumes[i];
+        (mesh->cell_volume_host(i) - target_volumes[i]) / target_volumes[i];
 
       // Check if volume difference is with 5% of target volume
       CHECK_CLOSE(0, voldiff, 5e-02);
@@ -232,14 +232,14 @@ TEST(MSTK_DEFORM_VOLS_3D)
     // give some margin of numerical error
 
     double eps = 1.0e-6 * orig_volumes[i];
-    CHECK(mesh->cell_volume(i, false) + eps >= min_volumes[i]);
-    if (!(mesh->cell_volume(i, false) + eps >= min_volumes[i])) {
-      double diff = mesh->cell_volume(i, false) - min_volumes[i];
+    CHECK(mesh->cell_volume_host(i) + eps >= min_volumes[i]);
+    if (!(mesh->cell_volume_host(i) + eps >= min_volumes[i])) {
+      double diff = mesh->cell_volume_host(i) - min_volumes[i];
       std::cerr << "Cell Global ID "
                 << mesh->getGlobalElement(i, Amanzi::AmanziMesh::CELL)
                 << " Cell Local ID " << i << " Rank " << comm->getRank()
                 << ": Min volume = " << min_volumes[i] << "    "
-                << "Cell volume = " << mesh->cell_volume(i, false)
+                << "Cell volume = " << mesh->cell_volume_host(i)
                 << "  Diff = " << diff << std::endl;
     }
   }

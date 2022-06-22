@@ -55,11 +55,11 @@ namespace Amanzi {
 
 class FunctionMonomial : public Function {
  public:
-  FunctionMonomial(double c, const Kokkos::View<double*>& x0,
-                   const Kokkos::View<int*>& p);
+  FunctionMonomial(double c, const Kokkos::View<double*,Kokkos::HostSpace>& x0,
+                   const Kokkos::View<int*,Kokkos::HostSpace>& p);
   ~FunctionMonomial() {}
   FunctionMonomial* Clone() const { return new FunctionMonomial(*this); }
-  double operator()(const Kokkos::View<double*>&) const;
+  double operator()(const Kokkos::View<double*,Kokkos::HostSpace>&) const;
 
   KOKKOS_INLINE_FUNCTION double
   apply_gpu(const Kokkos::View<double**>& x, const int i) const
@@ -68,7 +68,7 @@ class FunctionMonomial : public Function {
     if (x.extent(0) < x0_.extent(0)) {
       assert(false && "FunctionMonomial expects higher-dimensional argument.");
     }
-    for (int j = 0; j < x0_.extent(0); ++j) y *= pow(x(j, i) - x0_[j], p_[j]);
+    for (int j = 0; j < x0_.extent(0); ++j) y *= pow(x(j, i) - x0_.view_device()[j], p_.view_device()[j]);
     return y;
   }
 
@@ -81,8 +81,8 @@ class FunctionMonomial : public Function {
 
  private:
   double c_;
-  Kokkos::View<double*> x0_;
-  Kokkos::View<int*> p_;
+  Kokkos::DualView<double*> x0_;
+  Kokkos::DualView<int*> p_;
 };
 
 } // namespace Amanzi

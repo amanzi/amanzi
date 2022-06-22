@@ -42,9 +42,9 @@ main(int argc, char* argv[])
 TEST(constant_test)
 {
   Function* f = new FunctionConstant(1.0);
-  Kokkos::View<double*> x("x", 2);
-  x(0) = 1;
-  x(1) = 3.0;
+  Kokkos::View<double*,Kokkos::HostSpace> x("x", 2); 
+  x(0) = 1; 
+  x(1) = 3.0; 
   CHECK_EQUAL((*f)(x), 1.0);
   Function* g = f->Clone();
   delete f;
@@ -55,7 +55,7 @@ TEST(constant_test)
 TEST(smooth_step_test)
 {
   Function* f = new FunctionSmoothStep(1.0, 1.0, 3.0, 0.0);
-  Kokkos::View<double*> x("x", 2);
+  Kokkos::View<double*,Kokkos::HostSpace> x("x", 2);
   x(0) = 1;
   x(1) = 0.0;
   x[0] = 0.0;
@@ -83,23 +83,23 @@ TEST(smooth_step_test)
 
 TEST(tabular_test)
 {
-  Kokkos::View<double*> x("x", 5);
+  Kokkos::View<double*,Kokkos::HostSpace> x("x", 5);
   x(0) = 0.0;
   x(1) = 1.0;
   x(2) = 3.0;
   x(3) = 3.5;
   x(4) = 3.5;
-  Kokkos::View<double*> y("y", 5);
+  Kokkos::View<double*,Kokkos::HostSpace> y("y", 5);
   y(0) = 1.0;
   y(1) = 3.0;
   y(2) = 2.0;
   y(3) = 0.0;
   y(4) = 0.0;
-  Kokkos::View<double*> xvec = Kokkos::subview(x, Kokkos::make_pair(0, 4));
-  Kokkos::View<double*> yvec = Kokkos::subview(y, Kokkos::make_pair(0, 4));
+  Kokkos::View<double*,Kokkos::HostSpace> xvec = Kokkos::subview(x, Kokkos::make_pair(0, 4));
+  Kokkos::View<double*,Kokkos::HostSpace> yvec = Kokkos::subview(y, Kokkos::make_pair(0, 4));
   int xi = 0;
   Function* f = new FunctionTabular(xvec, yvec, xi);
-  Kokkos::View<double*> z("z", 1);
+  Kokkos::View<double*,Kokkos::HostSpace> z("z", 1);
   z(0) = -1;
   CHECK_EQUAL((*f)(z), 1.0);
   z[0] = 0.0;
@@ -125,11 +125,11 @@ TEST(tabular_test)
   delete g;
 
   // Now try with optional form argument
-  Kokkos::View<FunctionTabular::Form*> form("form", 3);
+  Kokkos::View<FunctionTabular::Form*,Kokkos::HostSpace> form("form", 3);
   form(0) = FunctionTabular::CONSTANT;
   form(1) = FunctionTabular::LINEAR;
   form(2) = FunctionTabular::CONSTANT;
-  Kokkos::View<FunctionTabular::Form*> formvec =
+  Kokkos::View<FunctionTabular::Form*,Kokkos::HostSpace> formvec =
     Kokkos::subview(form, Kokkos::make_pair(0, 3));
 
   f = new FunctionTabular(xvec, yvec, xi, formvec);
@@ -182,16 +182,16 @@ SUITE(polynomial_test)
   TEST(poly1)
   {
     // polynomial with all positive powers
-    Kokkos::View<double*> c("c", 2);
+    Kokkos::View<double*,Kokkos::HostSpace> c("c", 2);
     c(0) = -1.0;
     c(1) = 2.0;
-    Kokkos::View<int*> p("p", 2);
+    Kokkos::View<int*,Kokkos::HostSpace> p("p", 2);
     p(0) = 3;
     p(1) = 1;
-    Kokkos::View<double*> cvec = Kokkos::subview(c, Kokkos::make_pair(0, 2));
-    Kokkos::View<int*> pvec = Kokkos::subview(p, Kokkos::make_pair(0, 2));
+    Kokkos::View<double*,Kokkos::HostSpace> cvec = Kokkos::subview(c, Kokkos::make_pair(0, 2));
+    Kokkos::View<int*,Kokkos::HostSpace> pvec = Kokkos::subview(p, Kokkos::make_pair(0, 2));
     Function* f = new FunctionPolynomial(cvec, pvec);
-    Kokkos::View<double*> x("x", 1);
+    Kokkos::View<double*,Kokkos::HostSpace> x("x", 1);
     x(0) = 2.0;
     CHECK_EQUAL((*f)(x), -4.0);
     x[0] = -2.0;
@@ -208,20 +208,20 @@ SUITE(polynomial_test)
   TEST(poly2)
   {
     // polynomial with positive powers, constant term, and repeated power
-    Kokkos::View<double*> c("c", 4);
+    Kokkos::View<double*,Kokkos::HostSpace> c("c", 4);
     c(0) = -1.0;
     c(1) = 4.0;
     c(2) = 3.0;
     c(3) = -1.0;
-    Kokkos::View<int*> p("p", 4);
+    Kokkos::View<int*,Kokkos::HostSpace> p("p", 4);
     p(0) = 3;
     p(1) = 0;
     p(2) = 1;
     p(3) = 1;
-    Kokkos::View<double*> cvec = Kokkos::subview(c, Kokkos::make_pair(0, 4));
-    Kokkos::View<int*> pvec = Kokkos::subview(p, Kokkos::make_pair(0, 4));
+    Kokkos::View<double*,Kokkos::HostSpace> cvec = Kokkos::subview(c, Kokkos::make_pair(0, 4));
+    Kokkos::View<int*,Kokkos::HostSpace> pvec = Kokkos::subview(p, Kokkos::make_pair(0, 4));
     Function* f = new FunctionPolynomial(cvec, pvec);
-    Kokkos::View<double*> x("x", 1);
+    Kokkos::View<double*,Kokkos::HostSpace> x("x", 1);
     x(0) = 2.0;
     CHECK_EQUAL((*f)(x), 0.0);
     x[0] = 0.0;
@@ -234,20 +234,20 @@ SUITE(polynomial_test)
   {
     // polynomial with negative powers only
     // double c[2] = {2.0, -1.0};
-    Kokkos::View<double*> c("c", 2);
+    Kokkos::View<double*,Kokkos::HostSpace> c("c", 2);
     c(0) = 2.0;
     c(1) = -1.0;
     // int p[2] = {-3, -2};
-    Kokkos::View<int*> p("p", 2);
+    Kokkos::View<int*,Kokkos::HostSpace> p("p", 2);
     p(0) = -3;
     p(1) = -2;
     // std::vector<double> cvec(c, c+2);
-    Kokkos::View<double*> cvec = Kokkos::subview(c, Kokkos::make_pair(0, 2));
+    Kokkos::View<double*,Kokkos::HostSpace> cvec = Kokkos::subview(c, Kokkos::make_pair(0, 2));
     // std::vector<int> pvec(p, p+2);
-    Kokkos::View<int*> pvec = Kokkos::subview(p, Kokkos::make_pair(0, 2));
+    Kokkos::View<int*,Kokkos::HostSpace> pvec = Kokkos::subview(p, Kokkos::make_pair(0, 2));
     Function* f = new FunctionPolynomial(cvec, pvec, 1.0);
     // std::vector<double> x(1,3.0);
-    Kokkos::View<double*> x("x", 1);
+    Kokkos::View<double*,Kokkos::HostSpace> x("x", 1);
     x(0) = 3.0;
     CHECK_EQUAL((*f)(x), 0.0);
     x[0] = 2.0;
@@ -259,20 +259,20 @@ SUITE(polynomial_test)
   TEST(poly4)
   {
     // polynomial with positive and negative powers
-    Kokkos::View<double*> c("c", 4);
+    Kokkos::View<double*,Kokkos::HostSpace> c("c", 4);
     c(0) = 2.0;
     c(1) = -1.0;
     c(2) = -2.0;
     c(3) = 4.0;
-    Kokkos::View<int*> p("p", 4);
+    Kokkos::View<int*,Kokkos::HostSpace> p("p", 4);
     p(0) = 1;
     p(1) = 3;
     p(2) = 0;
     p(3) = -2;
-    Kokkos::View<double*> cvec = Kokkos::subview(c, Kokkos::make_pair(0, 4));
-    Kokkos::View<int*> pvec = Kokkos::subview(p, Kokkos::make_pair(0, 4));
+    Kokkos::View<double*,Kokkos::HostSpace> cvec = Kokkos::subview(c, Kokkos::make_pair(0, 4));
+    Kokkos::View<int*,Kokkos::HostSpace> pvec = Kokkos::subview(p, Kokkos::make_pair(0, 4));
     Function* f = new FunctionPolynomial(cvec, pvec);
-    Kokkos::View<double*> x("x", 1);
+    Kokkos::View<double*,Kokkos::HostSpace> x("x", 1);
     x(0) = 2.0;
     CHECK_EQUAL((*f)(x), -5.0);
     x[0] = 1.0;
@@ -286,20 +286,20 @@ SUITE(polynomial_test)
   TEST(poly_clone)
   {
     // polynomial with positive and negative powers
-    Kokkos::View<double*> c("c", 4);
+    Kokkos::View<double*,Kokkos::HostSpace> c("c", 4);
     c(0) = 2.0;
     c(1) = -1.0;
     c(2) = -2.0;
     c(3) = 4.0;
-    Kokkos::View<int*> p("p", 4);
+    Kokkos::View<int*,Kokkos::HostSpace> p("p", 4);
     p(0) = 1;
     p(1) = 3;
     p(2) = 0;
     p(3) = -2;
-    Kokkos::View<double*> cvec = Kokkos::subview(c, Kokkos::make_pair(0, 4));
-    Kokkos::View<int*> pvec = Kokkos::subview(p, Kokkos::make_pair(0, 4));
+    Kokkos::View<double*,Kokkos::HostSpace> cvec = Kokkos::subview(c, Kokkos::make_pair(0, 4));
+    Kokkos::View<int*,Kokkos::HostSpace> pvec = Kokkos::subview(p, Kokkos::make_pair(0, 4));
     FunctionPolynomial* f = new FunctionPolynomial(cvec, pvec);
-    Kokkos::View<double*> x("x", 1);
+    Kokkos::View<double*,Kokkos::HostSpace> x("x", 1);
     x(0) = 2.0;
     CHECK_EQUAL((*f)(x), -5.0);
     FunctionPolynomial* g = f->Clone();
@@ -313,20 +313,20 @@ SUITE(polynomial_test)
 TEST(linear_test)
 {
   double y0 = 1.0;
-  Kokkos::View<double*> grad("grad", 3);
+  Kokkos::View<double*,Kokkos::HostSpace> grad("grad", 3);
   grad(0) = 1.0;
   grad(1) = 2.0;
   grad(2) = -3.0;
-  Kokkos::View<double*> gradvec =
+  Kokkos::View<double*,Kokkos::HostSpace> gradvec =
     Kokkos::subview(grad, Kokkos::make_pair(0, 3));
   Function* f;
   // Three variable linear function.
   f = new FunctionLinear(y0, gradvec);
-  Kokkos::View<double*> a("a", 3);
+  Kokkos::View<double*,Kokkos::HostSpace> a("a", 3);
   a(0) = 3.;
   a(1) = 2.;
   a(2) = 1.;
-  Kokkos::View<double*> b("b", 3);
+  Kokkos::View<double*,Kokkos::HostSpace> b("b", 3);
   b(0) = 1.;
   b(1) = -1.;
   b(2) = 1.;
@@ -337,17 +337,17 @@ TEST(linear_test)
   CHECK_EQUAL(-3.0, (*g)(b));
   delete g;
   // Two variable linear function with x0.
-  Kokkos::View<double*> x0("x0", 3);
+  Kokkos::View<double*,Kokkos::HostSpace> x0("x0", 3);
   x0(0) = 1.0;
   x0(1) = 2.0;
   x0(2) = 3.0;
-  Kokkos::View<double*> x0vec = Kokkos::subview(x0, Kokkos::make_pair(0, 2));
+  Kokkos::View<double*,Kokkos::HostSpace> x0vec = Kokkos::subview(x0, Kokkos::make_pair(0, 2));
   gradvec = Kokkos::subview(grad, Kokkos::make_pair(0, 2));
   f = new FunctionLinear(y0, gradvec, x0vec);
   CHECK_EQUAL(3.0, (*f)(a));
   CHECK_EQUAL(-5.0, (*f)(b));
   // -- check error in case of point smaller than gradient
-  Kokkos::View<double*> c("c", 1);
+  Kokkos::View<double*,Kokkos::HostSpace> c("c", 1);
   c(0) = 1.;
   CHECK_THROW((*f)(c), Errors::Message);
   delete f;
@@ -374,16 +374,16 @@ SUITE(separable_test)
     // First function a smooth step function
     FunctionSmoothStep f1(1.0, 1.0, 3.0, 0.0);
     // Second function a linear function
-    Kokkos::View<double*> grad("grad", 3);
+    Kokkos::View<double*,Kokkos::HostSpace> grad("grad", 3);
     grad(0) = 1.0;
     grad(1) = 2.0;
     grad(2) = 3.0;
-    Kokkos::View<double*> gradvec =
+    Kokkos::View<double*,Kokkos::HostSpace> gradvec =
       Kokkos::subview(grad, Kokkos::make_pair(0, 3));
     Function* f2 = new FunctionLinear(1.0, gradvec);
     Function* f = new FunctionSeparable(f1, *f2);
     delete f2;
-    Kokkos::View<double*> x("x", 4);
+    Kokkos::View<double*,Kokkos::HostSpace> x("x", 4);
     x(0) = 0.;
     x(1) = 1.;
     x(2) = 2.;
@@ -405,7 +405,7 @@ SUITE(separable_test)
     delete fy;
     delete fz;
     delete fyz;
-    Kokkos::View<double*> x0("x0", 3);
+    Kokkos::View<double*,Kokkos::HostSpace> x0("x0", 3);
     x0(0) = 0.;
     x0(1) = 0.;
     x0(2) = 0.;
@@ -418,7 +418,7 @@ SUITE(separable_test)
     x0[1] = 0.;
     x0[2] = 1.;
     CHECK_EQUAL(4.0, (*fxyz)(x0));
-    Kokkos::View<double*> x4("x4", 3);
+    Kokkos::View<double*,Kokkos::HostSpace> x4("x4", 3);
     x4(0) = 0.5;
     x4(1) = 0.5;
     x4(2) = 0.5;
@@ -431,23 +431,23 @@ TEST(static_head_test)
 {
   // txy-linear height function
   double y0 = 1.0;
-  Kokkos::View<double*> grad("grad", 3);
+  Kokkos::View<double*,Kokkos::HostSpace> grad("grad", 3);
   grad(0) = 0.0;
   grad(1) = 2.0;
   grad(2) = 3.0;
-  Kokkos::View<double*> gradvec =
+  Kokkos::View<double*,Kokkos::HostSpace> gradvec =
     Kokkos::subview(grad, Kokkos::make_pair(0, 3));
   Function* h = new FunctionLinear(y0, gradvec);
   double patm = -1.0, rho = 0.5, g = 4.0;
   Function* f = new FunctionStaticHead(patm, rho, g, *h, 3);
-  Kokkos::View<double*> a("a", 4);
+  Kokkos::View<double*,Kokkos::HostSpace> a("a", 4);
   a(0) = 0.;
   a(1) = 1.;
   a(2) = 0.5;
   a(3) = 2.;
   CHECK_EQUAL(patm + rho * g * (y0 + grad[1] * a[1] + grad[2] * a[2] - a[3]),
               (*f)(a));
-  Kokkos::View<double*> b("b", 4);
+  Kokkos::View<double*,Kokkos::HostSpace> b("b", 4);
   b(0) = 1.;
   b(1) = 2.;
   b(2) = 1.;
@@ -505,22 +505,23 @@ TEST(bilinear_test)
   HDF5Reader reader(filename);
   std::string row_name = "times";
   // std::vector<double> vec_x;
-  Kokkos::View<double*> vec_x;
+  // HostSpace test 
+  Kokkos::View<double*,Kokkos::HostSpace> vec_x;
   int xi = 0;
   reader.ReadData(row_name, vec_x);
   std::string col_name = "x";
   // std::vector<double> vec_y;
-  Kokkos::View<double*> vec_y;
+  Kokkos::View<double*,Kokkos::HostSpace> vec_y;
   int yi = 1;
   reader.ReadData(col_name, vec_y);
   std::string v_name = "values";
 
-  Kokkos::View<double**> mat_v;
+  Kokkos::View<double**,Kokkos::HostSpace> mat_v;
   reader.ReadMatData(v_name, mat_v);
   Function* f = new FunctionBilinear(vec_x, vec_y, mat_v, xi, yi);
   // Corners
   // std::vector<double> z(2,0.);
-  Kokkos::View<double*> z("z", 2);
+  Kokkos::View<double*,Kokkos::HostSpace> z("z", 2);
   z[0] = 0.;
   z[1] = 0.;
   CHECK_EQUAL((*f)(z), 0.0);
@@ -578,14 +579,14 @@ TEST(bilinear_test)
 }
 
 double
-f_using_no_params(const Kokkos::View<double*>& x,
-                  const Kokkos::View<double*>& p)
+f_using_no_params(const Kokkos::View<double*,Kokkos::HostSpace>& x,
+                  const Kokkos::View<double*,Kokkos::HostSpace>& p)
 {
   return x[1] - x[0];
 }
 
 double
-f_using_params(const Kokkos::View<double*>& x, const Kokkos::View<double*>& p)
+f_using_params(const Kokkos::View<double*,Kokkos::HostSpace>& x, const Kokkos::View<double*,Kokkos::HostSpace>& p)
 {
   return p[1] * x[1] - p[0] * x[0];
 }

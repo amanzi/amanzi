@@ -66,7 +66,7 @@ struct HDF5Reader {
     herr_t status = H5Dread(
       dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, arr.data());
   }
-  void ReadData(std::string varname, Kokkos::View<double*>& vec)
+  void ReadData(std::string varname, Kokkos::View<double*,Kokkos::HostSpace>& vec)
   {
     hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
     hid_t dataspace = H5Dget_space(dataset);
@@ -91,7 +91,7 @@ struct HDF5Reader {
     herr_t status = H5Dread(
       dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, mat.values());
   }
-  void ReadMatData(std::string varname, Kokkos::View<double**>& mat)
+  void ReadMatData(std::string varname, Kokkos::View<double**,Kokkos::HostSpace>& mat)
   {
     Teuchos::SerialDenseMatrix<std::size_t, double> m;
     ReadMatData(varname, m);

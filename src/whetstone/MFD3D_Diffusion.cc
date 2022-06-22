@@ -35,8 +35,8 @@ namespace WhetStone {
 int MFD3D_Diffusion::L2consistencyScaledArea(
     int c, const Tensor<>& K, DenseMatrix<>& N, DenseMatrix<>& Mc, bool symmetry)
 {
-  AmanziMesh::Entity_ID_View faces;
-  Kokkos::View<int*> dirs;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
+  Kokkos::View<int*,Kokkos::HostSpace> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.size();
@@ -44,7 +44,7 @@ int MFD3D_Diffusion::L2consistencyScaledArea(
   N.reshape(nfaces, d_);
   Mc.reshape(nfaces, nfaces);
 
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume_host(c);
 
   AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
@@ -86,8 +86,8 @@ int MFD3D_Diffusion::L2consistencyScaledArea(
 int MFD3D_Diffusion::L2consistencyInverseScaledArea(
     int c, const Tensor<>& K, DenseMatrix<>& R, DenseMatrix<>& Wc, bool symmetry)
 {
-  AmanziMesh::Entity_ID_View faces;
-  Kokkos::View<int*> dirs;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
+  Kokkos::View<int*,Kokkos::HostSpace> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.size();
@@ -96,7 +96,7 @@ int MFD3D_Diffusion::L2consistencyInverseScaledArea(
   Wc.reshape(nfaces, nfaces);
 
   AmanziGeometry::Point v1(d_);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume_host(c);
 
   Tensor<> Kt(K);
   Kt.Transpose();
@@ -138,8 +138,8 @@ int MFD3D_Diffusion::H1consistency(
     int c, const Tensor<>& K, DenseMatrix<>& N, DenseMatrix<>& Ac)
 {
   Entity_ID_List nodes;
-  AmanziMesh::Entity_ID_View faces;
-  Kokkos::View<int*> dirs;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
+  Kokkos::View<int*,Kokkos::HostSpace> dirs;
 
   mesh_->cell_get_nodes(c, nodes);
   int nnodes = nodes.size();
@@ -149,7 +149,7 @@ int MFD3D_Diffusion::H1consistency(
 
   mesh_->cell_get_faces_and_dirs(c, faces, dirs);
 
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume_host(c);
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
   // to calculate matrix R, we use temporary matrix N
@@ -332,8 +332,8 @@ void MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial<>>& ve,
 {
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
-  AmanziMesh::Entity_ID_View faces;
-  Kokkos::View<int*> dirs;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
+  Kokkos::View<int*,Kokkos::HostSpace> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int num_faces = faces.size();
@@ -349,7 +349,7 @@ void MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial<>>& ve,
     }
   }
 
-  vc *= -1.0 / mesh_->cell_volume(c);
+  vc *= -1.0 / mesh_->cell_volume_host(c);
 }
 
 
@@ -358,8 +358,8 @@ void MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial<>>& ve,
 ****************************************************************** */
 int MFD3D_Diffusion::DivergenceMatrix(int c, DenseMatrix<>& A)
 {
-  AmanziMesh::Entity_ID_View faces;
-  Kokkos::View<int*> dirs;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
+  Kokkos::View<int*,Kokkos::HostSpace> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.size();
@@ -386,8 +386,8 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
     DenseMatrix<>& R, DenseMatrix<>& Wc)
 {
   Entity_ID_List nodes;
-  AmanziMesh::Entity_ID_View faces; 
-  Kokkos::View<int*> dirs;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces; 
+  Kokkos::View<int*,Kokkos::HostSpace> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.size();
@@ -404,7 +404,7 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
 
   // populate matrix W_0
   AmanziGeometry::Point v1(d_), v2(d_);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume_host(c);
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
@@ -551,7 +551,7 @@ int MFD3D_Diffusion::MassMatrixInverseDivKScaled(
 ****************************************************************** */
 void MFD3D_Diffusion::RescaleMassMatrixInverse_(int c, DenseMatrix<>& W)
 {
-  AmanziMesh::Entity_ID_View faces;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
 
   mesh_->cell_get_faces(c, faces);
   int num_faces = faces.size();
@@ -560,7 +560,7 @@ void MFD3D_Diffusion::RescaleMassMatrixInverse_(int c, DenseMatrix<>& W)
   std::vector<double> areas(num_faces, 0.0);
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
-    areas[i] = norm(mesh_->face_normal(f));
+    areas[i] = norm(mesh_->face_normal_host(f));
   }
 
   // back to area-weighted fluxes
@@ -586,8 +586,8 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor<>& K, DenseMatrix<
   int map[nrows];
   for (int i = 0; i < nrows; i++) map[i] = i;
 
-  AmanziMesh::Entity_ID_View faces;
-  Kokkos::View<int*> dirs;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
+  Kokkos::View<int*,Kokkos::HostSpace> dirs;
   mesh_->cell_get_faces_and_dirs(c, faces, dirs);
 
   int i1, i2, k, l;
@@ -657,7 +657,7 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor<>& K, DenseMatrix<
   }
 
   // add stability term D_ik T1_kl D_il
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume_host(c);
   for (int i = 0; i < nrows; i++) {
     i1 = i / 2;
     k = map[i];

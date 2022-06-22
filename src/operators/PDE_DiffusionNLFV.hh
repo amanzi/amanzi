@@ -93,8 +93,8 @@ class PDE_DiffusionNLFV : public PDE_Diffusion {
 
   bool stencil_initialized_;
   Teuchos::RCP<CompositeVector> stencil_data_;
-  std::vector<Teuchos::RCP<Epetra_IntVector> > stencil_faces_;
-  std::vector<Teuchos::RCP<Epetra_IntVector> > stencil_cells_;
+  std::vector<Teuchos::RCP<CompositeVector> > stencil_faces_;
+  std::vector<Teuchos::RCP<CompositeVector> > stencil_cells_;
 };
 
 }  // namespace Operators

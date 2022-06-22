@@ -70,11 +70,11 @@ class EvaluatorModelByMaterial
 public:
   virtual void Evaluate_(const State& S,
                          const std::vector<CompositeVector*>& results) override;
-
-protected:
   virtual void EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Key& wrt_tag,
     const std::vector<CompositeVector*>& results) override;
+protected:
+
 
   std::vector<std::pair<std::string, Teuchos::RCP<Model_type>>> models_;
   std::string name_;
@@ -182,9 +182,10 @@ EvaluatorModelByMaterial<Model, Device_type>::Evaluate_(
         AmanziMesh::Parallel_type::OWNED,
         material_ids);
       AmanziMesh::Entity_ID_View material_ids_v("",material_ids.size());
-      for(int i = 0 ; i < material_ids.size(); ++i){
-        material_ids_v[i] = material_ids[i]; 
-      }
+      Kokkos::parallel_for(
+        "",material_ids.size(), KOKKOS_LAMBDA(const int i){
+          material_ids_v[i] = material_ids[i]; 
+        }); 
 
       // set up the model and range and then dispatch
       region_model.second->SetViews(dependency_views, result_views, S);
@@ -249,9 +250,10 @@ EvaluatorModelByMaterial<Model, Device_type>::EvaluatePartialDerivative_(
         AmanziMesh::Parallel_type::OWNED,
         material_ids);
       AmanziMesh::Entity_ID_View material_ids_v("",material_ids.size());
-      for(int i = 0 ; i < material_ids.size(); ++i){
+      Kokkos::parallel_for(
+        "", material_ids.size(), KOKKOS_LAMBDA(const int i){
         material_ids_v[i] = material_ids[i]; 
-      }
+      }); 
 
       // set up the model and range and then dispatch
       region_model.second->SetViews(dependency_views, result_views, S);

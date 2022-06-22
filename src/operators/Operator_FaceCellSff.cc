@@ -44,7 +44,7 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
   // and no other CELL schemas that are not simply diagonal CELL_CELL.
   // Additionally, collect the diagonal for inversion.
   MultiVector_type D_c(mesh_->cell_map(false),1);
-  auto D_c_view = D_c.getLocalViewHost(); 
+  auto D_c_view = D_c.getLocalViewHost(Tpetra::Access::ReadWrite); 
 
   int num_with_cells = 0;
   for (const_op_iterator it = begin(); it != end(); ++it) {
@@ -52,7 +52,7 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
       if (((*it)->schema_old == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
           && ((*it)->diag->getLocalLength() == ncells_owned)) {
         // diagonal schema
-        auto diag_view = (*it)->diag->getLocalViewHost(); 
+        auto diag_view = (*it)->diag->getLocalViewHost(Tpetra::Access::ReadOnly); 
         for (int c = 0; c != ncells_owned; ++c) {
           D_c_view(c,0) += diag_view(c,0);
         }
@@ -87,7 +87,7 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
       {
         auto Tf = T.ViewComponent("face", true);
         for (int c = 0; c < ncells_owned; c++) {
-          AmanziMesh::Entity_ID_View faces;
+          Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
           mesh_->cell_get_faces(c, faces);
           int nfaces = faces.size();
 
@@ -121,7 +121,7 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
         auto Yc = Y.ViewComponent("cell", false);
         // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
         for (int c = 0; c < ncells_owned; c++) {
-          AmanziMesh::Entity_ID_View faces;
+          Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
           mesh_->cell_get_faces(c, faces);
           int nfaces = faces.size();
 
@@ -151,7 +151,7 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   // and no other CELL schemas that are not simply diagonal CELL_CELL.
   // Additionally, collect the diagonal for inversion.
   MultiVector_type D_c(mesh_->cell_map(false), 1);
-  auto D_c_view = D_c.getLocalViewHost(); 
+  auto D_c_view = D_c.getLocalViewHost(Tpetra::Access::ReadWrite); 
 
   int num_with_cells = 0;
   for (const_op_iterator it = begin(); it != end(); ++it) {
@@ -159,7 +159,7 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       if (((*it)->schema_old == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
           && ((*it)->diag->getLocalLength() == ncells_owned)) {
         // diagonal schema
-        auto diag_view = (*it)->diag->getLocalViewHost(); 
+        auto diag_view = (*it)->diag->getLocalViewHost(Tpetra::Access::ReadOnly); 
         for (int c = 0; c != ncells_owned; ++c) {
           D_c_view(c,0) += diag_view(c,0);
         }
@@ -203,7 +203,7 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 
       // populate the schur component
       for (int c = 0; c != ncells_owned; ++c) {
-        AmanziMesh::Entity_ID_View faces;
+        Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
         mesh_->cell_get_faces(c, faces);
         int nfaces = faces.size();
 
@@ -251,7 +251,7 @@ int Operator_FaceCellSff::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
     auto Yc = Y.ViewComponent("cell");
 
     for (int c=0; c!=ncells_owned; ++c) {
-      AmanziMesh::Entity_ID_View faces;
+      Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
       mesh_->cell_get_faces(c, faces);
       int nfaces = faces.size();
 

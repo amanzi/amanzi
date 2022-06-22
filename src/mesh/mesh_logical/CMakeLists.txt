@@ -75,7 +75,7 @@ if (BUILD_TESTS)
    include_directories(${UnitTest_INCLUDE_DIRS})
 
    # Test link libraries
-   set(test_link_libs mesh_logical mesh mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+   set(test_link_libs mesh_logical mesh mesh_mstk geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
    # Test: init
    set(test_src_files test/Main.cc test/demo_mesh.cc test/test_mesh_logical.cc)

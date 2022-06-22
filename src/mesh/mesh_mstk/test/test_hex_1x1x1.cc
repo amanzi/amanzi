@@ -26,9 +26,9 @@
 TEST(MSTK_HEX1)
 {
   int i, j, k, err, nc, nv;
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> faces("", 6);
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces("", 6);
   Amanzi::AmanziMesh::Entity_ID_List cellnodes(8), facenodes(4);
-  Kokkos::View<int*> facedirs("", 6);
+  Kokkos::View<int*,Kokkos::HostSpace> facedirs("", 6);
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
   int NV = 8;
@@ -77,7 +77,7 @@ TEST(MSTK_HEX1)
     CHECK_ARRAY_EQUAL(xyz[cellnodes[j]], ccoords[j], 3);
   }
 
-  mesh->cell_get_faces_and_dirs(0, faces, facedirs);
+  mesh->cell_get_faces_and_dirs<Kokkos::HostSpace>(0, faces, facedirs);
 
   for (j = 0; j < 6; j++) {
     mesh->face_get_nodes(faces(j), facenodes);

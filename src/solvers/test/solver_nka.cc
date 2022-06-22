@@ -35,20 +35,18 @@ struct test_data {
   {
     // initial guess
     {
-      auto vecv = vec->getLocalViewHost();
+      auto vecv = vec->getLocalViewHost(Tpetra::Access::ReadWrite);
       vecv(0, 0) = -0.9;
       vecv(1, 0) = 0.9;
     }
-    vec->sync_device();
 
     // solve
     int ierr = solver->Solve(vec);
 
     // test
     if (!ierr) {
-      vec->sync_host();
       {
-        auto vecv = vec->getLocalViewHost();
+        auto vecv = vec->getLocalViewHost(Tpetra::Access::ReadOnly);
         CHECK_CLOSE(0., vecv(0, 0), 1.e-6);
         CHECK_CLOSE(0., vecv(1, 0), 1.e-6);
       }

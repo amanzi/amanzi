@@ -100,10 +100,32 @@ This is provided when using the `"preconditioning method`"=`"euclid`" or
 #include "Teuchos_ParameterList.hpp"
 #include "Tpetra_RowMatrix_decl.hpp"
 
-#include "Ifpack2_Hypre_decl.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+
+#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_ArrayRCP.hpp"
+
+#include "AmanziTypes.hh"
+#include "AmanziComm.hh"
+#include "HYPRE_IJ_mv.h"
+#include "HYPRE_parcsr_ls.h"
+#include "krylov.h"
+#include "_hypre_parcsr_mv.h"
+#include "_hypre_IJ_mv.h"
+#include "HYPRE_parcsr_mv.h"
+#include "HYPRE.h"
+
+#include "cuda_decl.h"
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
+
+#define HAVE_IFPACK2_HYPRE
 
 namespace Amanzi {
 
@@ -113,18 +135,55 @@ namespace AmanziSolvers {
 
 class PreconditionerHypre : public Preconditioner {
 
-  using RowMatrix_type = Tpetra::RowMatrix<Matrix_type::scalar_type,
-                                        Matrix_type::local_ordinal_type,
-                                        Matrix_type::global_ordinal_type>;
+  enum HyprePreconditioners {Boomer, Euclid};
+  
+  using RowMatrix_type = Tpetra::RowMatrix<double_type,LO,GO>;
 
  public:
+
+  ~PreconditionerHypre(){
+    HYPRE_IJVectorDestroy(XHypre_);
+    HYPRE_IJVectorDestroy(YHypre_);
+    if(PrecondType == Boomer){
+      HYPRE_BoomerAMGDestroy(HyprePrecond_);
+    } else if(PrecondType == Euclid){
+      HYPRE_EuclidDestroy(HyprePrecond_); 
+    }
+  }
+
+  static void init(){
+    nvtxRangePush("HP: init");
+    if(!inited){
+      HYPRE_Init(); 
+      HYPRE_SetMemoryLocation(HYPRE_MEMORY_DEVICE);
+      HYPRE_SetExecutionPolicy(HYPRE_EXEC_DEVICE);
+      HYPRE_SetSpGemmUseCusparse(true);
+      HYPRE_SetUseGpuRand(true);
+      //if (useHypreGpuMemPool)
+      //{
+        /* use hypre's GPU memory pool */
+        //HYPRE_SetGPUMemoryPoolSize(bin_growth, min_bin, max_bin, max_bytes);
+      //}
+      //else if (useUmpireGpuMemPool)
+      //{
+        /* or use Umpire GPU memory pool */
+      //  HYPRE_SetUmpireUMPoolName("HYPRE_UM_POOL_TEST");
+      //  HYPRE_SetUmpireDevicePoolName("HYPRE_DEVICE_POOL_TEST");
+      //}
+      inited = true; 
+    }
+    nvtxRangePop(); 
+  }
+
   PreconditionerHypre() :
       Preconditioner(),
       num_blocks_(0),
       block_indices_(Teuchos::null),
-      IfpHypre_(Teuchos::null),
+      HyprePrecond_(),
       returned_code_(0)
-  {}
+  {
+    init(); 
+  }
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final;
   virtual void initializeInverse() override final;
@@ -134,22 +193,44 @@ class PreconditionerHypre : public Preconditioner {
   virtual int returned_code() const override final { return returned_code_; }
   virtual std::string returned_code_string() const override final {
     return "success";
-  }
+  }  
+  
+  // Need to be public for Kokkos::parallel_for
+  void copy_matrix_(); 
+
 
  private:
-  void Init_();
+  void Init_(){};
   void InitBoomer_();
   void InitEuclid_();
+  
+  Teuchos::RCP<const Map_type> make_contiguous_(Teuchos::RCP<const RowMatrix_type> &Matrix); 
 
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
-
-  Hypre_Solver method_;
+  
   Teuchos::RCP<std::vector<int> > block_indices_;
   int num_blocks_;
-
   mutable int returned_code_;
-  Teuchos::RCP<Ifpack2::Hypre<RowMatrix_type> > IfpHypre_;
+
+  Teuchos::RCP<const Map_type> GloballyContiguousRowMap_;
+  Teuchos::RCP<const Map_type> GloballyContiguousColMap_;
+
+  HYPRE_Solver HyprePrecond_;
+  HYPRE_ParCSRMatrix ParMatrix_;
+  HYPRE_IJMatrix HypreA_;
+  HYPRE_ParVector ParX_;
+  HYPRE_ParVector ParY_;  
+  HYPRE_IJVector XHypre_;
+  HYPRE_IJVector YHypre_;
+  Teuchos::RCP<hypre_ParVector> XVec_;
+  Teuchos::RCP<hypre_ParVector> YVec_;
+
+  Teuchos::RCP<RowMatrix_type> h_row;
+
+  static bool inited; 
+  HyprePreconditioners PrecondType = Boomer; 
+
 };
 
 }  // namespace AmanziSolvers

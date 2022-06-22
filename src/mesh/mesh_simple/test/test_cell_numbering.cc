@@ -76,9 +76,9 @@ TEST(NUMBERING)
   // Write cell face-node connectivity
   //  Amanzi::AmanziMesh::Entity_ID cface[6];
   //  int fdir[6];
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cface;
-  Kokkos::View<int*> fdir;
-  mesh->cell_get_faces_and_dirs(0, cface, fdir);
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> cface;
+  Kokkos::View<int*,Kokkos::HostSpace> fdir;
+  mesh->cell_get_faces_and_dirs<Kokkos::HostSpace>(0, cface, fdir);
   for (int i = 0; i < 6; ++i) {
     CHECK_EQUAL(expcellfaces[i], cface(i));
     CHECK_EQUAL(expfacedirs[i], fdir(i));

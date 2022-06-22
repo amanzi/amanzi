@@ -68,7 +68,6 @@ struct TensorVector {
     if(data.size() != size) 
       data.set_size(size); 
 
-    std::size_t total_size = 0; 
     // 1 compute total size: 
     for(int i = 0 ; i < size; ++i){
       const auto& t = f_e(i); 
@@ -130,7 +129,6 @@ struct TensorVector {
     return std::move(WhetStone::Tensor<DeviceOnlyMemorySpace>(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2)));
   }
 
-  KOKKOS_INLINE_FUNCTION
   WhetStone::Tensor<Kokkos::HostSpace> at_host(const int& i) const {
     // FIXME -- not const correct, but to do so needs a const-correct WhetStone::Tensor,
     // e.g. a WhetStone::Tensor that takes a Kokkos::View<const double*> --etc
@@ -157,7 +155,7 @@ struct TensorVector {
     // how many entities?
     int count = 0;
     for (const auto& comp : map)
-      count += map.getMap(comp, ghosted)->getNodeNumElements();
+      count += map.getMap(comp, ghosted)->getLocalNumElements();
 
     data = std::move(CSR_Tensor(count));
   }

@@ -39,12 +39,7 @@
 
 #include "DiffusionFixtureOld.hh"
 
-#ifdef ENABLE_CUDA
-#include "nvToolsExt.h"
-#else
-void inline nvtxRangePushA(const std::string&) {}
-void inline nvtxRangePop() {}
-#endif
+#include "cuda_decl.h"
 
 
 struct TestHarness {};

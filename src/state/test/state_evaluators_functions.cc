@@ -77,7 +77,7 @@ struct tester {
       S->set_time(times[i]);
       S->GetEvaluator(fname).Update(*S, "test");
 
-      auto fv = S->Get<CompositeVector>(fname).ViewComponent<MirrorHost>(
+      auto fv = S->Get<CompositeVector>(fname).ViewComponent<HostSpaceSpecial>(
         "cell", false);
       CHECK_CLOSE(results[i][0], fv(0, 0), 1.e-10);
       CHECK_CLOSE(results[i][1], fv(1, 0), 1.e-10);
@@ -90,8 +90,8 @@ SUITE(STATE_EVALUATORS_FUNCTIONS)
 {
   TEST_FIXTURE(tester, TEST_THE_TEST)
   {
-    CHECK_CLOSE(1.0, S->GetMesh()->cell_centroid(0)[0], 1.e-10);
-    CHECK_CLOSE(3.0, S->GetMesh()->cell_centroid(1)[0], 1.e-10);
+    CHECK_CLOSE(1.0, S->GetMesh()->cell_centroid_host(0)[0], 1.e-10);
+    CHECK_CLOSE(3.0, S->GetMesh()->cell_centroid_host(1)[0], 1.e-10);
   }
 
   TEST_FIXTURE(tester, INDEPENDENT_FROM_FUNCTION)

@@ -142,7 +142,7 @@ void PDE_Accumulation::AddAccumulationDelta(
 
   auto volc = vol.ViewComponent(name); 
   auto rhs = global_operator()->rhs()->ViewComponent(name);
-  auto diag_view = diag.getLocalViewHost(); 
+  auto diag_view = diag.getLocalViewHost(Tpetra::Access::ReadWrite); 
 
 
   int n = u0c.size();
@@ -231,7 +231,7 @@ void PDE_Accumulation::CalculateEntityVolume_(
     auto vol = volume.ViewComponent(name); 
 
     for (int c = 0; c != ncells_owned; ++c) {
-      vol(c,0) = mesh_->cell_volume(c); 
+      vol(c,0) = mesh_->cell_volume_host(c); 
     }
 
   } else if (name == "face" && volume.HasComponent("face")) {
@@ -246,12 +246,12 @@ void PDE_Accumulation::CalculateEntityVolume_(
     }
 
     for (int c = 0; c != ncells_owned; ++c) {
-      Kokkos::View<AmanziMesh::Entity_ID*> edges;  
-      mesh_->cell_get_edges(c, edges);
+      Kokkos::View<AmanziMesh::Entity_ID*,Amanzi::HostSpace> edges;  
+      mesh_->cell_get_edges_host(c, edges);
       int nedges = edges.size();
 
       for (int i = 0; i < nedges; i++) {
-        vol(0,edges[i]) += mesh_->cell_volume(c) / nedges; 
+        vol(0,edges[i]) += mesh_->cell_volume_host(c) / nedges; 
       }
     }
     volume.GatherGhostedToMaster(name);

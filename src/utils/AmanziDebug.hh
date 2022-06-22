@@ -27,7 +27,7 @@ int isSame(const Vector& v1, const Vector& v2) { return -1; }
 
 template<>
 inline int isSame(const Vector_type& v1, const Vector_type& v2) {
-  return int(v1.getLocalViewHost() == v2.getLocalViewHost());
+  return int(v1.getLocalViewHost(Tpetra::Access::ReadOnly) == v2.getLocalViewHost(Tpetra::Access::ReadOnly));
 }
 
 

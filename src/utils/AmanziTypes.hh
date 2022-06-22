@@ -38,6 +38,8 @@
 
 #include "Kokkos_Core.hpp"
 
+//#define OUTPUT_CUDA
+#undef OUTPUT_CUDA 
 
 namespace Amanzi {
 
@@ -47,28 +49,93 @@ using DefaultHostExecutionSpace = Kokkos::DefaultHostExecutionSpace;
 using DefaultMemorySpace = DefaultExecutionSpace::memory_space;
 using DefaultHostMemorySpace = DefaultHostExecutionSpace::memory_space;
 
+using HostSpace = Kokkos::HostSpace; 
+
 using DefaultDevice =
-  Kokkos::Device<DefaultExecutionSpace, DefaultExecutionSpace::memory_space>;
+  Kokkos::Device<DefaultExecutionSpace, DefaultMemorySpace>;
 
 using DefaultHost =
   Kokkos::Device<DefaultHostExecutionSpace, DefaultHostMemorySpace>;
 
   
+// KOKKOS UVM
 #ifdef KOKKOS_ENABLE_CUDA_UVM
+#define NOTSERIAL
 // If we are using UVM, we sometimes prefer to turn it off to avoid unnecessary
 // syncing when we want to stay fully on the device and never come back to the
 // host.
 using DeviceOnlyMemorySpace = Kokkos::CudaSpace;
+using HostSpaceSpecial = Kokkos::CudaUVMSpace; 
+using DeviceSpaceSpecial = Kokkos::CudaUVMSpace; 
+
+using DeviceSpecial = Kokkos::Device<Kokkos::HostSpace::execution_space, Kokkos::Cuda::memory_space>; 
 
 // If we are using UVM, dual views are not synced to DefaultHostMemorySpace,
 // but to CudaUVMSpace even on the host_mirror
 using MirrorHost =
   Kokkos::Device<DefaultExecutionSpace, Kokkos::CudaUVMSpace>;
+using NT = Kokkos::Compat::KokkosCudaWrapperNode;
+using Layout = Kokkos::LayoutLeft;  
+#endif 
 
-#else // KOKKOS_ENABLE_CUDA_UVM
-  
+// KOKKOS CUDA 
+#ifdef KOKKOS_ENABLE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA_UVM 
+#define NOTSERIAL
+
+using DeviceOnlyMemorySpace = Kokkos::CudaSpace;
+//using MirrorHost = 
+//  Kokkos::Device<Kokkos::DefaultHostExecutionSpace, DefaultMemorySpace>;
+using MirrorHost = 
+  Kokkos::Device<DefaultExecutionSpace, DefaultHostMemorySpace>;
+//using MirrorHost = 
+//  Kokkos::Device<Kokkos::DefaultHostExecutionSpace, DefaultHostMemorySpace>;
+//using MirrorHost = 
+//  Kokkos::Device<Kokkos::DefaultExecutionSpace, DefaultMemorySpace>;
+using NT = Kokkos::Compat::KokkosCudaWrapperNode; 
+using Layout = Kokkos::LayoutLeft; 
+
+using HostSpaceSpecial = Kokkos::HostSpace; 
+using DeviceSpaceSpecial = Amanzi::DeviceOnlyMemorySpace; 
+
+
+using DeviceSpecial = Kokkos::Device<Kokkos::HostSpace::execution_space, Kokkos::HostSpace::memory_space>; 
+
+
+#endif 
+
+// KOKKOS OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
+#define NOTSERIAL
+using DeviceOnlyMemorySpace = Kokkos::OMPSpace;
+//using MirrorHost = 
+//  Kokkos::Device<Kokkos::DefaultHostExecutionSpace, DefaultMemorySpace>;
+using MirrorHost = 
+  Kokkos::Device<DefaultExecutionSpace, DefaultHostMemorySpace>;
+//using MirrorHost = 
+//  Kokkos::Device<Kokkos::DefaultHostExecutionSpace, DefaultHostMemorySpace>;
+//using MirrorHost = 
+//  Kokkos::Device<Kokkos::DefaultExecutionSpace, DefaultMemorySpace>;
+using NT = Kokkos::Compat::KokkosCudaWrapperNode; 
+using Layout = Kokkos::LayoutRight
+
+using HostSpaceSpecial = Kokkos::HostSpace; 
+using DeviceSpaceSpecial = Amanzi::DeviceOnlyMemorySpace; 
+using DeviceSpecial = Kokkos::Device<Kokkos::HostSpace::execution_space, Kokkos::Cuda::memory_space>; 
+
+#endif 
+#endif 
+
+// KOKKOS SERIAL 
+#ifndef NOTSERIAL
+
+using HostSpaceSpecial = Kokkos::HostSpace; 
+using DeviceSpaceSpecial = Kokkos::HostSpace; 
+using NT = Kokkos::Compat::KokkosSerialWrapperNode;
 using DeviceOnlyMemorySpace = DefaultExecutionSpace::memory_space;
 using MirrorHost = DefaultHost;
+using Layout = Kokkos::LayoutRight;
+using DeviceSpecial = Kokkos::Device<Kokkos::HostSpace::execution_space, Kokkos::HostSpace::memory_space>; 
 
 #endif
 

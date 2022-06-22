@@ -237,7 +237,7 @@ if (BUILD_TESTS)
     message(DEBUG "KokkosKernels_LIBRARIES = ${KokkosKernels_LIBRARIES}")
     set(operators_test_link_libs geometry atk mesh mesh_factory  data_structures operators whetstone output atk ${KokkosKernels_LIBRARIES})
 
-    if(ENABLE_KOKKOS_CUDA)
+    if(ENABLE_CUDA OR ENABLE_UVM)
       set(operators_test_link_libs ${operators_test_link_libs} "-lnvToolsExt")
     endif()
     
@@ -254,6 +254,7 @@ if (BUILD_TESTS)
     #                 SOURCE test/Main.cc test/operator_parabolic_surface.cc
     #                 LINK_LIBS ${operators_test_link_libs})
 
+if(0)
     add_amanzi_test(operators_marshak_assembly operators_marshak_assembly
                     KIND unit
                     NPROCS 1
@@ -267,7 +268,7 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/operator_marshak.cc
                            #test/operator_marshak_logical.cc
                     LINK_LIBS ${UnitTest_LIBRARIES} ${operators_test_link_libs})
-
+endif()
     
     # add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
     #                 KIND unit

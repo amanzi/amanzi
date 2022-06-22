@@ -67,7 +67,7 @@ FunctionStandardMath::FunctionStandardMath(std::string op, double amplitude,
 
 
 double
-FunctionStandardMath::operator()(const Kokkos::View<double*>& x) const
+FunctionStandardMath::operator()(const Kokkos::View<double*,Kokkos::HostSpace>& x) const
 {
   double x0 = x[0] - shift_;
   switch (op_) {

@@ -70,11 +70,13 @@ TEST(MSTK_EDGES_2D)
                                     Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < nc_owned; ++c) {
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fedges, cfaces, cedges;
-    Kokkos::View<int*> cfdirs, fedirs, cedirs;
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> fedges, cedges;
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> cfaces;
+    Kokkos::View<int*,Kokkos::HostSpace> fedirs, cedirs;
+    Kokkos::View<int*,Kokkos::HostSpace> cfdirs;
 
-    mesh->cell_2D_get_edges_and_dirs(c, cedges, &cedirs);
-    mesh->cell_get_faces_and_dirs(c, cfaces, cfdirs);
+    mesh->cell_2D_get_edges_and_dirs_host(c, cedges, &cedirs);
+    mesh->cell_get_faces_and_dirs<Kokkos::HostSpace>(c, cfaces, cfdirs);
 
     for (int e = 0; e < cedges.extent(0); ++e) {
       CHECK_EQUAL(mesh->getGlobalElement(cedges(e), Amanzi::AmanziMesh::EDGE),
@@ -90,7 +92,7 @@ TEST(MSTK_EDGES_2D)
 
       evec = mesh->edge_vector(cedges(e)) * cedirs(e);
 
-      fnormal = mesh->face_normal(cfaces(e)) * cfdirs(e);
+      fnormal = mesh->face_normal_host(cfaces(e)) * cfdirs(e);
       ftangent.set(-fnormal[1], fnormal[0]);
 
       CHECK_EQUAL(evec[0], ftangent[0]);
@@ -99,7 +101,7 @@ TEST(MSTK_EDGES_2D)
 
 
     for (int f = 0; f < cfaces.extent(0); ++f) {
-      mesh->face_get_edges_and_dirs(cfaces(f), fedges, &fedirs);
+      mesh->face_get_edges_and_dirs_host(cfaces(f), fedges, &fedirs);
 
       CHECK_EQUAL(1, fedges.extent(0)); // face is same as edge in 2D
       CHECK_EQUAL(1, fedirs(0));        // direction is always 1
@@ -190,14 +192,16 @@ TEST(MSTK_EDGES_3D)
                                     Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < nc_owned; ++c) {
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces, fedges, cedges;
-    Kokkos::View<int*> cfdirs, fedirs;
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> cedges, fedges;
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> cfaces;
+    Kokkos::View<int*,Kokkos::HostSpace> cfdirs;
+    Kokkos::View<int*,Kokkos::HostSpace> fedirs;
 
-    mesh->cell_get_edges(c, cedges);
-    mesh->cell_get_faces_and_dirs(c, cfaces, cfdirs);
+    mesh->cell_get_edges_host(c, cedges);
+    mesh->cell_get_faces_and_dirs<Kokkos::HostSpace>(c, cfaces, cfdirs);
 
     for (int f = 0; f < cfaces.extent(0); ++f) {
-      mesh->face_get_edges_and_dirs(cfaces(f), fedges, &fedirs);
+      mesh->face_get_edges_and_dirs_host(cfaces(f), fedges, &fedirs);
 
       // check the face-edges to cell-edges map
 

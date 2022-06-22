@@ -168,7 +168,7 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
                               Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nf; f++) {
     Amanzi::AmanziMesh::Entity_ID_List fcells;
-    mesh->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &fcells);
+    mesh->face_get_cells_host(f, Amanzi::AmanziMesh::Parallel_type::ALL, &fcells);
 
     std::vector<Amanzi::AmanziGeometry::Point> fnormals(fcells.size());
 

@@ -963,7 +963,7 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
         ncells_owned, 
         KOKKOS_LAMBDA(const int& c){
           AmanziMesh::Entity_ID_View faces;
-          Kokkos::View<int*> dirs;
+          AmanziMesh::Entity_Dir_View dirs;
           mesh->cell_get_faces_and_dirs(c, faces, dirs);
           int nfaces = faces.size();
 
@@ -1486,8 +1486,8 @@ double PDE_DiffusionMFD::ComputeTransmissibility(int f) const
 {
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 
-  AmanziMesh::Entity_ID_View cells;
-  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> cells;
+  mesh_->face_get_cells_host(f, AmanziMesh::Parallel_type::ALL, cells);
   int c = cells[0];
 
   if (K_.get()) {

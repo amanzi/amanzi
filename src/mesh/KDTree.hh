@@ -51,13 +51,13 @@ class PointCloud {
     return false;
   }
 
-  void Init(const Kokkos::View<AmanziGeometry::Point*> points)
+  void Init(const Kokkos::View<AmanziGeometry::Point*,Kokkos::HostSpace> points)
   {
     points_ = points;
   }
 
  private:
-  Kokkos::View<AmanziGeometry::Point*> points_;
+  Kokkos::View<AmanziGeometry::Point*,Kokkos::HostSpace> points_;
 };
 
 
@@ -72,7 +72,7 @@ class KDTree {
   ~KDTree(){};
 
   // main member function
-  void Init(const Kokkos::View<AmanziGeometry::Point*> points)
+  void Init(const Kokkos::View<AmanziGeometry::Point*,Kokkos::HostSpace> points)
   {
     int d = points(0).dim();
     cloud_.Init(points);

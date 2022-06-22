@@ -62,7 +62,7 @@ class FunctionMultiplicative : public Function {
   {
     return new FunctionMultiplicative(*this);
   }
-  double operator()(const Kokkos::View<double*>& x) const
+  double operator()(const Kokkos::View<double*,Kokkos::HostSpace>& x) const
   {
     return (*f1_)(x) * (*f2_)(x);
   }

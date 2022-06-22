@@ -194,18 +194,17 @@ TEST(SUPERMAP_MANUAL)
   Import_type importer(map.getMap(), map.getGhostedMap());
 
   {
-    auto owned_v = owned.getLocalViewHost();
-    for (int i = 0; i != map.getMap()->getNodeNumElements(); ++i) {
+    auto owned_v = owned.getLocalViewHost(Tpetra::Access::ReadWrite);
+    for (int i = 0; i != map.getMap()->getLocalNumElements(); ++i) {
       owned_v(i, 0) = map.getMap()->getGlobalElement(i);
     }
   }
 
   ghosted.putScalar(0);
   ghosted.doImport(owned, importer, Tpetra::INSERT);
-  ghosted.sync_host();
   {
-    auto ghosted_v = ghosted.getLocalViewHost();
-    for (int i = 0; i != map.getGhostedMap()->getNodeNumElements(); ++i) {
+    auto ghosted_v = ghosted.getLocalViewHost(Tpetra::Access::ReadOnly);
+    for (int i = 0; i != map.getGhostedMap()->getLocalNumElements(); ++i) {
       CHECK_EQUAL(ghosted_v(i, 0), map.getGhostedMap()->getGlobalElement(i));
     }
   }
@@ -336,9 +335,9 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
 
   // check basic sizes
   CHECK_EQUAL(2 * ncells_owned + 2 * nfaces_owned,
-              map->getMap()->getNodeNumElements());
+              map->getMap()->getLocalNumElements());
   CHECK_EQUAL(2 * ncells_used + 2 * nfaces_used,
-              map->getGhostedMap()->getNodeNumElements());
+              map->getGhostedMap()->getLocalNumElements());
 
   // check CompMaps
   CHECK(mesh->cell_map(false)->isSameAs(*map->ComponentMap(0, "cell")));
@@ -440,8 +439,8 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS)
   int ncells_used = mesh->num_entities(CELL, Parallel_type::ALL);
 
   // check basic sizes
-  CHECK_EQUAL(2 * ncells_owned, map->getMap()->getNodeNumElements());
-  CHECK_EQUAL(2 * ncells_used, map->getGhostedMap()->getNodeNumElements());
+  CHECK_EQUAL(2 * ncells_owned, map->getMap()->getLocalNumElements());
+  CHECK_EQUAL(2 * ncells_used, map->getGhostedMap()->getLocalNumElements());
 
   // check CompMaps
   CHECK(mesh->cell_map(false)->isSameAs(*map->ComponentMap(0, "cellA")));
@@ -691,7 +690,7 @@ TEST(SUPERMAP_FROM_SAME_NAME_DIFFERENT_MAP)
 
 //   Teuchos::RCP<const Epetra_BlockMap> block_cell_map = Teuchos::rcp(new
 //   Epetra_BlockMap(cell_map.NumGlobalElements(),
-//   cell_map.getNodeNumElements(), gids, &element_size[0], 0, comm));
+//   cell_map.getLocalNumElements(), gids, &element_size[0], 0, comm));
 
 //   const auto& cell_mapg = mesh->cell_map(true);
 //   Epetra_Import importer(cell_map, cell_mapg);
@@ -701,7 +700,7 @@ TEST(SUPERMAP_FROM_SAME_NAME_DIFFERENT_MAP)
 //   cell_mapg.MyGlobalElements(gids, llgids);
 //   Teuchos::RCP<const Epetra_BlockMap> block_cell_map_g = Teuchos::rcp(new
 //   Epetra_BlockMap(cell_mapg.NumGlobalElements(),
-//   cell_mapg.getNodeNumElements(), gids, &element_sizeg[0], 0, comm));
+//   cell_mapg.getLocalNumElements(), gids, &element_sizeg[0], 0, comm));
 
 
 //   CompositeVectorSpace cvA;
@@ -888,7 +887,7 @@ TEST(SUPERMAP_COPY_INTS)
   CHECK_EQUAL(2 * ncells + 2 * nfaces, vec.getLocalLength());
 
   {
-    auto vec_v = vec.getLocalViewHost();
+    auto vec_v = vec.getLocalViewHost(Tpetra::Access::ReadOnly);
     for (int i = 0; i != ncells; ++i) {
       CHECK_EQUAL(3., vec_v(i * 2,0));
       CHECK_EQUAL(4., vec_v(i * 2 + 1,0));

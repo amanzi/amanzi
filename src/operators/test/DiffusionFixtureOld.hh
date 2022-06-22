@@ -77,21 +77,21 @@ struct DiffusionFixture {
     op->Init();
 
     // modify diffusion coefficient
-    const AmanziGeometry::Point& xc0 = mesh->cell_centroid(0);
+    const AmanziGeometry::Point& xc0 = mesh->cell_centroid_host(0);
     int rank = ana->TensorDiffusivity(xc0, 0.0).rank();
     int mem = ana->TensorDiffusivity(xc0, 0.0).mem();
-
     CompositeVectorSpace K_map;
     K_map.SetMesh(mesh);
     K_map.AddComponent("cell", AmanziMesh::CELL, mem);
     auto K = Teuchos::rcp(new TensorVector(K_map));
-
-    std::vector<WhetStone::Tensor<DefaultHostMemorySpace>> host_tensors(K->size());
-    for (int c = 0; c < K->size(); c++) {
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      host_tensors[c].assign(ana->TensorDiffusivity(xc, 0.0));
-    }
-    K->Init(host_tensors);
+    K->Init(
+      K->size(), 
+      //size function: size of element c 
+      [&] (int c) -> const Amanzi::WhetStone::Tensor<Kokkos::HostSpace>& {
+        const AmanziGeometry::Point& xc = mesh->cell_centroid_host(c); 
+        return ana->TensorDiffusivity_host(xc,0.0); 
+      }
+    );
     op->SetTensorCoefficient(K);
 
     // boundary condition
@@ -116,12 +116,14 @@ struct DiffusionFixture {
     K_map.AddComponent("cell", AmanziMesh::CELL, 1);
     auto K = Teuchos::rcp(new TensorVector(K_map));
 
-    std::vector<WhetStone::Tensor<DefaultHostMemorySpace>> host_tensors(K->size());
-    for (int c = 0; c < K->size(); c++) {
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      host_tensors[c].assign(ana->TensorDiffusivity(xc, 0.0));
-    }
-    K->Init(host_tensors);
+    K->Init(
+      K->size(), 
+      //size function: size of element c 
+      [&] (int c) -> const Amanzi::WhetStone::Tensor<Kokkos::HostSpace>& {
+        const AmanziGeometry::Point& xc = mesh->cell_centroid_host(c); 
+        return ana->TensorDiffusivity_host(xc,0.0); 
+      }
+    );
 
     op->SetTensorCoefficient(K);
 
@@ -139,7 +141,7 @@ struct DiffusionFixture {
       kr = space.Create();
       auto vec = kr->ViewComponent<MirrorHost>("cell", true);
       for (int i=0; i!=mesh->num_entities(kind, AmanziMesh::Parallel_type::ALL); ++i) {
-        vec(i,0) = ana->ScalarDiffusivity(mesh->cell_centroid(i), 0.0);
+        vec(i,0) = ana->ScalarDiffusivity(mesh->cell_centroid_host(i), 0.0);
       }
 
     } else if (kind == AmanziMesh::FACE) {
@@ -147,24 +149,24 @@ struct DiffusionFixture {
       kr = space.Create();
       auto vec = kr->ViewComponent<MirrorHost>("face", true);
       for (int i=0; i!=mesh->num_entities(kind, AmanziMesh::Parallel_type::ALL); ++i) {
-        vec(i,0) = ana->ScalarDiffusivity(mesh->face_centroid(i), 0.0);
+        vec(i,0) = ana->ScalarDiffusivity(mesh->face_centroid_host(i), 0.0);
       }
     }
     op->SetScalarCoefficient(kr, Teuchos::null);
   }
 
   void setBCsDirichlet() {
-    auto bc_value = bc->bc_value();
-    auto bc_model = bc->bc_model();
+    auto bc_value = bc->bc_value_host();
+    auto bc_model = bc->bc_model_host();
 
     if (bc->kind() == AmanziMesh::FACE) {
       const auto& bf_map = *mesh->map(AmanziMesh::BOUNDARY_FACE, false);
       const auto& f_map = *mesh->map(AmanziMesh::FACE, false);
 
-      for (int bf=0; bf!=bf_map.getNodeNumElements(); ++bf) {
+      for (int bf=0; bf!=bf_map.getLocalNumElements(); ++bf) {
         auto f = f_map.getLocalElement(bf_map.getGlobalElement(bf));
         bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_value[f] = ana->pressure_exact(mesh->face_centroid(f), 0.0);
+        bc_value[f] = ana->pressure_exact(mesh->face_centroid_host(f), 0.0);
       }
     } else {
       assert(false && "OperatorDiffusion test harness not implemented for this kind.");
@@ -172,25 +174,25 @@ struct DiffusionFixture {
   }
 
   void setBCsDirichletNeumannBox() {
-    auto bc_value = bc->bc_value();
-    auto bc_model = bc->bc_model();
+    auto bc_value = bc->bc_value_host();
+    auto bc_model = bc->bc_model_host();
 
     if (bc->kind() == AmanziMesh::FACE) {
       const auto& bf_map = *mesh->map(AmanziMesh::BOUNDARY_FACE, false);
       const auto& f_map = *mesh->map(AmanziMesh::FACE, false);
 
-      for (int bf=0; bf!=bf_map.getNodeNumElements(); ++bf) {
+      for (int bf=0; bf!=bf_map.getLocalNumElements(); ++bf) {
         auto f = f_map.getLocalElement(bf_map.getGlobalElement(bf));
-        auto fc = mesh->face_centroid(f);
+        auto fc = mesh->face_centroid_host(f);
         if (fc[0] < 1.e-6) {
           bool flag;
           AmanziGeometry::Point normal = FaceNormalExterior(*mesh, f, &flag);
-          AmanziGeometry::Point xf = mesh->face_centroid(f);
+          AmanziGeometry::Point xf = mesh->face_centroid_host(f);
           bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-          bc_value[f] = ana->velocity_exact(xf, 0.0) * normal / mesh->face_area(f);
+          bc_value[f] = ana->velocity_exact(xf, 0.0) * normal / mesh->face_area_host(f);
         } else {
           bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-          bc_value[f] = ana->pressure_exact(mesh->face_centroid(f), 0.0);
+          bc_value[f] = ana->pressure_exact(mesh->face_centroid_host(f), 0.0);
         }
       }
     } else {
@@ -224,12 +226,16 @@ struct DiffusionFixture {
     global_op->Zero();
     op->UpdateMatrices(Teuchos::null, solution.ptr());
 
-    CompositeVector& rhs = *global_op->rhs();
-    auto rhs_c = rhs.ViewComponent<MirrorHost>("cell", false);
-    for (int c=0; c!=mesh->num_entities(AmanziMesh::Entity_kind::CELL,
-            AmanziMesh::Parallel_type::OWNED); ++c) {
-      const auto& xc = mesh->cell_centroid(c);
-      rhs_c(c,0) += ana->source_exact(xc, 0.0) * mesh->cell_volume(c);
+    // Caution, rhs is used inside the following function 
+    // ApplyBC: need to free the host view
+    {
+      CompositeVector& rhs = *global_op->rhs();
+      auto rhs_c = rhs.ViewComponent<MirrorHost>("cell", false);
+      for (int c=0; c!=mesh->num_entities(AmanziMesh::Entity_kind::CELL,
+              AmanziMesh::Parallel_type::OWNED); ++c) {
+        const auto& xc = mesh->cell_centroid_host(c);
+        rhs_c(c,0) += ana->source_exact(xc, 0.0) * mesh->cell_volume_host(c);
+      }
     }
     op->ApplyBCs(true, true, true);
 

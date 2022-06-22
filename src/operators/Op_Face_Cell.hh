@@ -30,8 +30,8 @@ class Op_Face_Cell : public Op {
     A = DenseMatrix_Vector(nfaces_owned); 
 
     for (int f=0; f!=nfaces_owned; ++f) {
-      AmanziMesh::Entity_ID_View cells;
-      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);      // This perform the prefix_sum
+      Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> cells;
+      mesh->face_get_cells_host(f, AmanziMesh::Parallel_type::ALL, cells);      // This perform the prefix_sum
       int ncells = cells.extent(0); 
       A.set_shape(f, ncells,ncells);
     }

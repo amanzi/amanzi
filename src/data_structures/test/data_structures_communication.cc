@@ -59,10 +59,9 @@ TEST(COMMUNICATION_PATTERN_DISTINCT_VECTORS)
   ghost->doImport(*owned, importer, Tpetra::INSERT);
 
   // manually get a host view and check
-  ghost->sync_host();
   {
     // NOTE INDICES HERE -- they are backwards relative to Epetra!
-    auto ghost_v = ghost->getLocalViewHost();
+    auto ghost_v = ghost->getLocalViewHost(Tpetra::Access::ReadWrite);
     if (rank == 0) {
       CHECK_CLOSE(1.0, ghost_v(0, 0), 1.e-6);
       CHECK_CLOSE(2.0, ghost_v(2, 0), 1.e-6);
@@ -108,10 +107,9 @@ TEST(COMMUNICATION_PATTERN_OFFSET_VIEW)
   ghost->doImport(*owned, importer, Tpetra::INSERT);
 
   // manually get a host view and check
-  ghost->sync_host();
   {
     // NOTE INDICES HERE -- they are backwards relative to Epetra!
-    auto ghost_v = ghost->getLocalViewHost();
+    auto ghost_v = ghost->getLocalViewHost(Tpetra::Access::ReadWrite);
     if (rank == 0) {
       CHECK_CLOSE(1.0, ghost_v(0, 0), 1.e-6);
       CHECK_CLOSE(2.0, ghost_v(2, 0), 1.e-6);
@@ -158,12 +156,12 @@ TEST(OFFSET_VIEW_1D_VIEW)
   CHECK_EQUAL(n_vecs, owned->getNumVectors());
 
   {
-    auto ghost_v = ghost->getLocalViewHost();
+    auto ghost_v = ghost->getLocalViewHost(Tpetra::Access::ReadWrite);
     CHECK_EQUAL(3, ghost_v.extent(0));
     CHECK_EQUAL(3 * n_vecs, ghost_v.span());
     CHECK_EQUAL(n_vecs, ghost_v.extent(1));
 
-    auto owned_v = owned->getLocalViewHost();
+    auto owned_v = owned->getLocalViewHost(Tpetra::Access::ReadWrite);
     CHECK_EQUAL(2, owned_v.extent(0));
 
     // NOTE: this currently fails, and likely SHOULD fail according to Trilinos
@@ -223,10 +221,9 @@ TEST(COMMUNICATION_PATTERN_VANDELAY)
   ghost->doImport(*owned, importer, Tpetra::INSERT);
 
   // manually get a host view and check
-  ghost->sync_host();
   {
     // NOTE INDICES HERE -- they are backwards relative to Epetra!
-    auto ghost_v = ghost->getLocalViewHost();
+    auto ghost_v = ghost->getLocalViewHost(Tpetra::Access::ReadWrite);
     if (rank == 0) {
       CHECK_CLOSE(1.0, ghost_v(0, 0), 1.e-6);
       CHECK_CLOSE(2.0, ghost_v(2, 0), 1.e-6);
@@ -238,10 +235,9 @@ TEST(COMMUNICATION_PATTERN_VANDELAY)
 
   // check the vandelay map
   vand->doImport(*owned, vandelay_importer, Tpetra::INSERT);
-  vand->sync_host();
   {
     // NOTE INDICES HERE -- they are backwards relative to Epetra!
-    auto vand_v = vand->getLocalViewHost();
+    auto vand_v = vand->getLocalViewHost(Tpetra::Access::ReadWrite);
     if (rank == 0) {
       CHECK_CLOSE(1.0, vand_v(0, 0), 1.e-6);
     } else {
@@ -276,10 +272,9 @@ TEST(COMMUNICATION_INTERMEDIATE)
   ghost->doImport(*owned, importer, Tpetra::INSERT);
 
   // manually get a host view and check
-  ghost->sync_host();
   {
     // NOTE INDICES HERE -- they are backwards relative to Epetra!
-    auto ghost_v = ghost->getLocalViewHost();
+    auto ghost_v = ghost->getLocalViewHost(Tpetra::Access::ReadWrite);
     if (rank == 0) {
       CHECK_CLOSE(1.0, ghost_v(0, 0), 1.e-6);
       CHECK_CLOSE(2.0,
@@ -302,10 +297,9 @@ TEST(COMMUNICATION_INTERMEDIATE)
   vand->doImport(*owned, vimporter, Tpetra::INSERT);
   // auto vimporter = mesh->exterior_face_importer();
   // vand->doImport(*owned, *vimporter, Tpetra::INSERT);
-  vand->sync_host();
   {
     // NOTE INDICES HERE -- they are backwards relative to Epetra!
-    auto vand_v = vand->getLocalViewHost();
+    auto vand_v = vand->getLocalViewHost(Tpetra::Access::ReadWrite);
     if (rank == 0) {
       CHECK_CLOSE(1.0, vand_v(0, 0), 1.e-6);
     } else {
@@ -348,7 +342,7 @@ TEST(IMPORTERS_BOUNDARY_FACES)
   // go from bf to f
   IntVector_type vec(boundary_face_map);
   {
-    auto vec_view = vec.getLocalViewDevice();
+    auto vec_view = vec.getLocalViewDevice(Tpetra::Access::ReadWrite);
     auto import_view = importer.getPermuteFromLIDs_dv().view<MirrorHost>();
     auto import_to_view = importer.getPermuteToLIDs_dv().view<MirrorHost>();
 

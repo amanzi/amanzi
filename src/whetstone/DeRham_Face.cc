@@ -26,8 +26,8 @@ namespace WhetStone {
 int DeRham_Face::L2consistency(
     int c, const Tensor<>& K, DenseMatrix<>& N, DenseMatrix<>& Mc, bool symmetry)
 {
-  AmanziMesh::Entity_ID_View faces;
-  Kokkos::View<int*> dirs;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
+  Kokkos::View<int*,Kokkos::HostSpace> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.size();
@@ -37,7 +37,7 @@ int DeRham_Face::L2consistency(
 
   AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume_host(c);
 
   Tensor<> Kinv(K);
   Kinv.Inverse();
@@ -94,8 +94,8 @@ int DeRham_Face::MassMatrix(int c, const Tensor<>& K, DenseMatrix<>& M)
 int DeRham_Face::L2consistencyInverse(
     int c, const Tensor<>& K, DenseMatrix<>& R, DenseMatrix<>& Wc, bool symmetry)
 {
-  AmanziMesh::Entity_ID_View faces;
-  Kokkos::View<int*> dirs;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
+  Kokkos::View<int*,Kokkos::HostSpace> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.size();
@@ -107,32 +107,32 @@ int DeRham_Face::L2consistencyInverse(
   std::vector<double> areas(nfaces, 0.0);
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    areas[i] = norm(mesh_->face_normal(f));
+    areas[i] = norm(mesh_->face_normal_host(f));
   }
 
   // populate matrix W_0
   AmanziGeometry::Point v1(d_);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume_host(c);
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh_->face_normal_host(f);
 
     v1 = K * normal;
 
     for (int j = i; j < nfaces; j++) {
       f = faces[j];
-      const AmanziGeometry::Point& v2 = mesh_->face_normal(f);
+      const AmanziGeometry::Point& v2 = mesh_->face_normal_host(f);
       Wc(i, j) = (v1 * v2) / (dirs[i] * dirs[j] * volume * areas[i] * areas[j]);
     }
   }
 
   // populate matrix R
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& cm = mesh_->cell_centroid_host(c);
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& fm = mesh_->face_centroid_host(f);
     for (int k = 0; k < d_; k++) R(i, k) = (fm[k] - cm[k]) * areas[i];
   }
 

@@ -120,7 +120,7 @@ OutputXDMF::WriteMesh_(int cycle)
 
   // count total connections
   Tpetra::global_size_t local_conns(0); // length of MixedElements
-  for (AmanziMesh::Entity_ID c = 0; c != cell_map->getNodeNumElements(); ++c) {
+  for (AmanziMesh::Entity_ID c = 0; c != cell_map->getLocalNumElements(); ++c) {
     AmanziMesh::Cell_type ctype = mesh_->cell_get_type(c);
     if (ctype != AmanziMesh::POLYGON) {
       AmanziMesh::Entity_ID_List nodes;
@@ -160,7 +160,7 @@ OutputXDMF::WriteMesh_(int cycle)
   // Get and write coordinates and coordinate map
   // -- create and store a vector of coordinates
   Kokkos::View<double**, Kokkos::LayoutRight, DefaultHost> coords(
-    "coordinates", node_map->getNodeNumElements(), 3);
+    "coordinates", node_map->getLocalNumElements(), 3);
   AmanziGeometry::Point p;
   for (AmanziMesh::Entity_ID i = 0; i != coords.extent(0); ++i) {
     mesh_->node_get_coordinates(i, &p);
@@ -185,9 +185,9 @@ OutputXDMF::WriteMesh_(int cycle)
   {
     int lcv = 0;
     int lcv_entity = 0;
-    auto connv = conns.getLocalViewHost();
+    auto connv = conns.getLocalViewHost(Tpetra::Access::ReadWrite);
 
-    for (int c = 0; c != cell_map->getNodeNumElements(); ++c) {
+    for (int c = 0; c != cell_map->getLocalNumElements(); ++c) {
       AmanziMesh::Cell_type ctype = mesh_->cell_get_type(c);
       if (ctype != AmanziMesh::POLYGON) {
         // store cell type id

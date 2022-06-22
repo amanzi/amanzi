@@ -27,8 +27,8 @@ MatrixFE::MatrixFE(const Teuchos::RCP<const GraphFE>& graph) :
     graph_(graph) {
 
   // create the crs matrices
-  n_used_ = graph_->getGhostedRowMap()->getNodeNumElements();
-  n_owned_ = graph_->getRowMap()->getNodeNumElements();
+  n_used_ = graph_->getGhostedRowMap()->getLocalNumElements();
+  n_owned_ = graph_->getRowMap()->getLocalNumElements();
 
   matrix_ = Teuchos::rcp(new Matrix_type(graph_->getGraph()));
   if (graph_->includes_offproc())
@@ -81,7 +81,7 @@ MatrixFE::sumIntoLocalValues(const int *row_indices, const int *col_indices,
 void
 MatrixFE::diagonalShift(double shift) {
   matrix_->resumeFill();
-  LO local_len = graph_->getRowMap()->getNodeNumElements();
+  LO local_len = graph_->getRowMap()->getLocalNumElements();
   for (LO i=0; i!=local_len; ++i) {
     sumIntoLocalValues(i, 1, &shift, &i);
   }
@@ -100,11 +100,14 @@ MatrixFE::insertLocalValues(int row, int count, const double *values, const int 
   }
 }
 
-
 void
-MatrixFE::getLocalRowView(int row, int& count, const double* &values, const int* &indices) const {
+MatrixFE::getLocalRowView(int row,     
+    Kokkos::View<const int *, Layout,
+    Amanzi::DeviceSpecial, Kokkos::MemoryManaged> & indices,
+    Kokkos::View<const double*, Layout, 
+     Amanzi::DeviceSpecial, Kokkos::MemoryManaged> & values) const {
   if (row < n_owned_) {
-    matrix_->getLocalRowView(row, count, values, indices);
+    matrix_->getLocalRowView(row, indices, values);
   } else {
     Errors::Message message("MatrixFE does not support offproc Extract semantics.");
     Exceptions::amanzi_throw(message);

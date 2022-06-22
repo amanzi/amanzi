@@ -155,7 +155,7 @@ EvaluatorIndependentFromFile::Update_(State& S)
 
   double t = S.time();
   if (time_func_ != Teuchos::null) {
-    Kokkos::View<double*> point("time", 1);
+    Kokkos::View<double*,Kokkos::HostSpace> point("time", 1);
     point(0) = t;
     t = (*time_func_)(point);
   }
