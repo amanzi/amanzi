@@ -95,6 +95,22 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   number_aqueous_components_ = comp_names_.size();
   number_free_ion_ = number_aqueous_components_;
   number_total_sorbed_ = number_aqueous_components_;
+
+  // This intentionally overrides the PK construction of vo_ to set the name to
+  // what Konstantin wants it to be for Alquimia_PK.  This needs more
+  // discussion -- see #672.
+  //
+  // overriding the vo plist for individual PKs in a collection of PKs
+  Teuchos::RCP<Teuchos::ParameterList> vo_plist = plist_;
+  if (plist_->isSublist(name_ + " verbose object")) {
+    vo_plist = Teuchos::rcp(new Teuchos::ParameterList(*plist_));
+    vo_plist->set("verbose object", plist_->sublist(name_ + " verbose object"));
+  }
+
+  //  some tests provide nullptr
+  name_ = "Alquimia_PK:"+domain_;
+  if (solution_.get()) vo_ = Teuchos::rcp(new VerboseObject(solution_->Comm(), name_, *vo_plist));
+  else vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
 }
 
 

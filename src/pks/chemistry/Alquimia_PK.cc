@@ -109,6 +109,22 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
 
   chem_engine_->GetAqueousKineticNames(aqueous_kinetics_names_);
   number_aqueous_kinetics_ = aqueous_kinetics_names_.size();
+
+  // This intentionally overrides the PK construction of vo_ to set the name to
+  // what Konstantin wants it to be for Alquimia_PK.  This needs more
+  // discussion -- see #672.
+  //
+  // overriding the vo plist for individual PKs in a collection of PKs
+  Teuchos::RCP<Teuchos::ParameterList> vo_plist = plist_;
+  if (plist_->isSublist(name_ + " verbose object")) {
+    vo_plist = Teuchos::rcp(new Teuchos::ParameterList(*plist_));
+    vo_plist->set("verbose object", plist_->sublist(name_ + " verbose object"));
+  }
+
+  //  some tests provide nullptr
+  name_ = "Alquimia_PK:"+domain_;
+  if (solution_.get()) vo_ = Teuchos::rcp(new VerboseObject(solution_->Comm(), name_, *vo_plist));
+  else vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
 }
 
 
@@ -563,11 +579,6 @@ void Alquimia_PK::CopyToAlquimia(int cell,
     }
   }
 
-  // These should be DEFAULT (or really tag_next_) but are left as CURRENT to
-  // mimic a bug in the old code for testing.  THIS SHOULD NOT BE COMMITTED and
-  // MUST be fixed prior to MERGE WITH MASTER! See ATS #129
-  //
-  // note, this should be changed to not be Tags::DEFAULT, but tag_next_, see amanzi/amanzi#646 --etc
   const auto& water_saturation = *S_->Get<CompositeVector>(saturation_key_, sat_tag).ViewComponent("cell", true);
 
   mat_props.volume = mesh_->cell_volume(cell);
