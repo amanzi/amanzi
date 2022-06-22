@@ -47,18 +47,16 @@ void WriteVis(Visualization& vis, const State& S)
       if (vis.WritesDomain(Keys::getDomain(r->first))) {
         // note, no type checking is required -- the type knows if it can be
         // visualized. However, since overwriting of attributes does not work
-        // properly, we skip them. FIXME
-        //
-        // Should we vis all tags or just the default tag?
-        // for (const auto& e : *r->second) {
-        //   if (!e.second->ValidType<double>() &&
-        //       !e.second->ValidType<int>())
-        //     e.second->WriteVis(vis);
-        // }
-        if (r->second->HasRecord(Tags::DEFAULT)) {
-          auto& record = r->second->GetRecord(Tags::DEFAULT);
-          if (!record.ValidType<double>() && !record.ValidType<int>())
-            record.WriteVis(vis);
+        // properly, we skip them.  This should get fixed by writing attributes
+        // as an attribute of the step or something similar. FIXME --ETC
+        if (!r->second->ValidType<double>() && !r->second->ValidType<int>()) {
+          // Should we vis all tags or just the default tag?
+          // -- write all tags
+          // r->WriteVis(vis, nullptr);
+
+          // -- write default tag
+          Tag tag;
+          r->second->WriteVis(vis, &tag);
         }
       }
     }

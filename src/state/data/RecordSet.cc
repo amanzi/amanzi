@@ -20,9 +20,13 @@
 namespace Amanzi {
 
 // pass-throughs for other functionality
-void RecordSet::WriteVis(const Visualization& vis) const {
-  for (auto& e : records_) {
-    e.second->WriteVis(vis, subfieldnames());
+void RecordSet::WriteVis(const Visualization& vis, Tag const * const tag) const {
+  if (tag && HasRecord(*tag)) {
+    GetRecord(*tag).WriteVis(vis, subfieldnames());
+  } else {
+    for (auto& e : records_) {
+      e.second->WriteVis(vis, subfieldnames());
+    }
   }
 }
 void RecordSet::WriteCheckpoint(const Checkpoint& chkp) const {
