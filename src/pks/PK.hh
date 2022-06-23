@@ -82,6 +82,7 @@ Developer's note:
 #include "State.hh"
 #include "Tag.hh"
 #include "TreeVector.hh"
+#include "AmanziComm.hh"
 
 namespace Amanzi {
 
@@ -118,11 +119,14 @@ class PK {
       vo_plist = Teuchos::rcp(new Teuchos::ParameterList(*plist_));
       vo_plist->set("verbose object", plist_->sublist(name_ + " verbose object"));
     }
-    vo_ = Teuchos::rcp(new VerboseObject(solution->Comm(), name_, *vo_plist));
+
+    //  some tests provide nullptr
+    if (solution.get()) vo_ = Teuchos::rcp(new VerboseObject(solution->Comm(), name_, *vo_plist));
+    else vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
   };
 
   // Virtual destructor
-  virtual ~PK() {};
+  virtual ~PK() = default;
 
   // Setup
   virtual void Setup() = 0;
@@ -156,9 +160,7 @@ class PK {
 
   // This is called if ANY PK has failed; do what is needed to back up for a
   // new attempt at the step.
-  virtual void FailStep(double t_old, double t_new, const Tag& tag) {
-    AMANZI_ASSERT(false);
-  }
+  virtual void FailStep(double t_old, double t_new, const Tag& tag) {}
 
   // Calculate any diagnostics at S->time(), currently for visualization.
   virtual void CalculateDiagnostics(const Tag& tag) {}

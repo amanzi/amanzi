@@ -36,21 +36,25 @@ using MyPointList = std::vector<MyPoint>;
 
 bool inline UserInitialize(Teuchos::ParameterList& plist, MyPointList& t,
                            const Amanzi::Key& fieldname,
-                           const std::vector<std::string>& subfieldnames) {
+                           const std::vector<std::string>* subfieldnames) {
   std::cout << "found it!" << std::endl;
   return true;
 }
 
 void UserWriteVis(const Amanzi::Visualization& vis,
                   const Amanzi::Key& fieldname,
-                  const std::vector<std::string>& subfieldnames,
+                  const std::vector<std::string>* subfieldnames,
                   const MyPointList& vec) {}
 
 void UserWriteCheckpoint(const Amanzi::Checkpoint& chkp,
-                         const Amanzi::Key& fieldname, const MyPointList& vec) {
+                         const Amanzi::Key& fieldname,
+                         const std::vector<std::string>* subfieldnames,
+                         const MyPointList& vec) {
 }
 void UserReadCheckpoint(const Amanzi::Checkpoint& chkp,
-                        const Amanzi::Key& fieldname, MyPointList& vec) {}
+                        const Amanzi::Key& fieldname,
+                        const std::vector<std::string>* subfieldnames,
+                        MyPointList& vec) {}
 
 TEST(STATE_EXTENSIBILITY_CREATION) {
   using namespace Amanzi;

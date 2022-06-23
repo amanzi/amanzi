@@ -45,35 +45,36 @@ class Data_Intf {
   virtual std::unique_ptr<Data_Intf> CloneEmpty() const = 0;
 
   template <typename T> const T& Get() const;
-
   template <typename T> T& GetW();
 
   template <typename T> Teuchos::RCP<const T> GetPtr() const;
-
   template <typename T> Teuchos::RCP<T> GetPtrW();
 
   template <typename T> void SetPtr(Teuchos::RCP<T> t);
-
   template <typename T> void Assign(const T& t);
-
   template <typename T> bool ValidType() const;
 
   // virtual interface for ad-hoc polymorphism
   virtual
   void WriteVis(const Visualization& vis, const Key& fieldname,
-                const std::vector<std::string>& subfieldnames) const = 0;
+                const std::vector<std::string>* subfieldnames) const = 0;
   virtual
-  void WriteCheckpoint(const Checkpoint& chkp, const Key& fieldname) const = 0;
+  void WriteCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+                       const std::vector<std::string>* subfieldnames) const = 0;
 
   virtual
-  void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname) = 0;
+  void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+                      const std::vector<std::string>* subfieldnames) const = 0;
 
   virtual
   bool Initialize(Teuchos::ParameterList& plist, const Key& fieldname,
-                  const std::vector<std::string>& subfieldnames) = 0;
+                  const std::vector<std::string>* subfieldnames) = 0;
 
   virtual
   void Assign(const Data_Intf& other) = 0;
+
+  virtual
+  const Data_Intf& operator=(const Data_Intf& other) = 0;
 };
 
 
@@ -96,7 +97,12 @@ template <typename T> class Data_Impl : public Data_Intf {
     return std::unique_ptr<Data_Impl<T>>(new Data_Impl<T>());
   }
 
-  Data_Impl<T>& operator=(Data_Impl<T> other) = delete;
+  virtual const Data_Intf& operator=(const Data_Intf& other) override {
+    auto other_as_T = dynamic_cast<const Data_Impl<T>*>(&other);
+    AMANZI_ASSERT(other_as_T != nullptr);
+    t_ = other_as_T->t_;
+    return *this;
+  }
 
   const T& Get() const { return *t_; }
   T& GetW() { return *t_; }
@@ -110,24 +116,26 @@ template <typename T> class Data_Impl : public Data_Intf {
   // virtual interface for ad-hoc polymorphism
   virtual
   void WriteVis(const Visualization& vis, const Key& fieldname,
-                const std::vector<std::string>& subfieldnames) const override {
+                const std::vector<std::string>* subfieldnames) const override {
     ::Amanzi::Helpers::WriteVis(vis, fieldname, subfieldnames, *t_);
   }
 
   virtual
-  void WriteCheckpoint(const Checkpoint& chkp,
-                       const Key& fieldname) const override {
-    ::Amanzi::Helpers::WriteCheckpoint(chkp, fieldname, *t_);
+  void WriteCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+                       const std::vector<std::string>* subfieldnames) const override {
+    ::Amanzi::Helpers::WriteCheckpoint(chkp, fieldname, subfieldnames, *t_);
   }
 
   virtual
-  void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname) override {
-    ::Amanzi::Helpers::ReadCheckpoint(chkp, fieldname, *t_);
+  void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+                      const std::vector<std::string>* subfieldnames) const override {
+
+    ::Amanzi::Helpers::ReadCheckpoint(chkp, fieldname, subfieldnames, *t_);
   }
 
   virtual
   bool Initialize(Teuchos::ParameterList& plist, const Key& fieldname,
-                  const std::vector<std::string>& subfieldnames) override {
+                  const std::vector<std::string>* subfieldnames) override {
     return ::Amanzi::Helpers::Initialize(plist, *t_, fieldname, subfieldnames);
   }
 

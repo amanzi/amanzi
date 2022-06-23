@@ -23,7 +23,7 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 EvaluatorPrimary_::EvaluatorPrimary_(Teuchos::ParameterList& plist)
     : my_key_(Keys::cleanPListName(plist.name())),
-      my_tag_(make_tag(plist.get<std::string>("tag", ""))),
+      my_tag_(Keys::readTag(plist, "tag")),
       vo_(Keys::cleanPListName(plist.name()), plist)
 {
   type_ = EvaluatorType::PRIMARY;

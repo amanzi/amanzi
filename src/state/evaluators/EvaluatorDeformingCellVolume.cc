@@ -24,15 +24,12 @@ namespace Amanzi {
 EvaluatorDeformingCellVolume::EvaluatorDeformingCellVolume(Teuchos::ParameterList& plist)
     : EvaluatorSecondary(plist)
 {
-  if (plist.isParameter("mesh name")) {
-    my_mesh_ = plist.get<std::string>("mesh name");
-  } else {
-    my_mesh_ = Keys::getDomain(my_keys_.front().first);
-  }
+  domain_ = Keys::readDomain(plist, "", Keys::getDomain(my_keys_.front().first));
 
   // stick in the deformation key as my leaf node.
-  Key deformation_key = plist.get<std::string>("deformation key");
-  Tag deformation_tag(plist.get<std::string>("tag", ""));
+  Key deformation_key = Keys::readKey(plist, Keys::getDomain(my_keys_.front().first),
+          "deformation key", "base_porosity");
+  Tag deformation_tag(plist.get<std::string>("dependency tag", my_keys_.front().second.get()));
   dependencies_.insert(KeyTag(deformation_key, deformation_tag));
 }
 
@@ -40,18 +37,25 @@ EvaluatorDeformingCellVolume::EvaluatorDeformingCellVolume(Teuchos::ParameterLis
 // ---------------------------------------------------------------------------
 // Virutal copy constructor for Evaluator.
 // ---------------------------------------------------------------------------
-Teuchos::RCP<Evaluator> EvaluatorDeformingCellVolume::Clone() const {
+Teuchos::RCP<Evaluator> EvaluatorDeformingCellVolume::Clone() const
+{
   return Teuchos::rcp(new EvaluatorDeformingCellVolume(*this));
 }
 
 
-void EvaluatorDeformingCellVolume::EnsureCompatibility(State& S) {
+void EvaluatorDeformingCellVolume::EnsureCompatibility(State& S)
+{
   Key key = my_keys_.front().first;
   Tag tag = my_keys_.front().second;
-  S.Require<CompositeVector,CompositeVectorSpace>(key, tag)
-    .SetMesh(S.GetMesh(my_mesh_))
-    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  S.Require<CompositeVector,CompositeVectorSpace>(key, tag, key)
+    .SetMesh(S.GetMesh(domain_))
+    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
+  // For dependencies, all we really care is whether there is an evaluator or
+  // not.  We do not use the data at all.
+  for (const auto& dep : dependencies_) {
+    S.RequireEvaluator(dep.first, dep.second);
+  }
   EnsureCompatibility_Flags_(S);
 }
 
@@ -59,10 +63,11 @@ void EvaluatorDeformingCellVolume::EnsureCompatibility(State& S) {
 // ---------------------------------------------------------------------------
 // Evaluates the cell volume from the mesh values.
 // ---------------------------------------------------------------------------
-void EvaluatorDeformingCellVolume::Update_(State& S) {
-  auto& cv = *S.GetW<CompositeVector>(my_key_, Tags::DEFAULT, my_key_).ViewComponent("cell");
-
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S.GetMesh(my_mesh_);
+void EvaluatorDeformingCellVolume::Update_(State& S)
+{
+  auto key_tag = my_keys_.front();
+  auto& cv = *S.GetW<CompositeVector>(key_tag.first, key_tag.second, key_tag.first).ViewComponent("cell");
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S.GetMesh(domain_);
 
   // initialize from mesh
   int ncells = cv.MyLength();

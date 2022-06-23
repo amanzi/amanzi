@@ -88,16 +88,12 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
         dependencies_.insert(KeyTag(dep, make_tag(tags[i])));
         ++i;
       }
-    } else if (plist_.get<bool>("dependency tags are my tag", true)) {
-      auto my_tag = my_keys_.front().second;
-      for (const auto& dep : deps) {
-        dependencies_.insert(KeyTag(dep, my_tag));
-      }
     } else {
-      Errors::Message message;
-      message << "EvalutorSecondary for " << my_keys_[0].first
-              << " was not provided its dependencies' tags.";
-      throw(message);
+      auto my_tag = my_keys_.front().second;
+      auto dep_tag = Keys::readTag(plist_, my_tag);
+      for (const auto& dep : deps) {
+        dependencies_.insert(KeyTag(dep, dep_tag));
+      }
     }
 
   } else if (plist_.isParameter("dependency suffixes")) {
@@ -119,16 +115,12 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
                 make_tag(tags[i])));
         ++i;
       }
-    } else if (plist_.get<bool>("dependency tags are my tag", false)) {
-      const auto& my_tag = my_keys_[0].second;
-      for (const auto& suffix : dep_suff) {
-        dependencies_.insert(KeyTag(Keys::getKey(domain, suffix), my_tag));
-      }
     } else {
-      Errors::Message message;
-      message << "EvalutorSecondary for " << my_keys_[0].first
-              << " was not provided its dependencies' tags.";
-      throw(message);
+      const auto& my_tag = my_keys_[0].second;
+      auto dep_tag = Keys::readTag(plist_, my_tag);
+      for (const auto& suffix : dep_suff) {
+        dependencies_.insert(KeyTag(Keys::getKey(domain, suffix), dep_tag));
+      }
     }
   }
 

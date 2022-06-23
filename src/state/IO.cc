@@ -44,12 +44,20 @@ void WriteVis(Visualization& vis, const State& S)
     vis.CreateTimestep(S.get_time(), S.get_cycle(), tag.get());
 
     for (auto r = S.data_begin(); r != S.data_end(); ++r) {
-      // note, no type checking is required -- the type knows if it can be
-      // visualized. However, since overwriting of attributes does not work
-      // properly, we skip them. FIXME
-      for (const auto& e : *r->second) {
-        if (!e.second->ValidType<double>() && !e.second->ValidType<int>())
-          e.second->WriteVis(vis);
+      if (vis.WritesDomain(Keys::getDomain(r->first))) {
+        // note, no type checking is required -- the type knows if it can be
+        // visualized. However, since overwriting of attributes does not work
+        // properly, we skip them.  This should get fixed by writing attributes
+        // as an attribute of the step or something similar. FIXME --ETC
+        if ((!r->second->ValidType<double>()) && (!r->second->ValidType<int>())) {
+          // Should we vis all tags or just the default tag?
+          // -- write all tags
+          // r->WriteVis(vis, nullptr);
+
+          // -- write default tag
+          Tag tag;
+          r->second->WriteVis(vis, &tag);
+        }
       }
     }
     vis.WriteRegions();
@@ -83,7 +91,7 @@ void WriteCheckpoint(Checkpoint& chkp, const Comm_ptr_type& comm,
 void ReadCheckpoint(const Comm_ptr_type& comm, State& S,
                     const std::string& filename)
 {
-  Checkpoint chkp(filename, comm);
+  Checkpoint chkp(filename, S);
 
   // Load the number of processes and ensure they are the same.
   int num_procs(-1);
