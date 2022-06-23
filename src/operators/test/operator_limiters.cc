@@ -163,7 +163,7 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
 
     ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
     // Michalak-Gooch limiter is not linearity preserving near boundary
-    CHECK_CLOSE(0.0, err_int, 1.0e-10);
+    CHECK_CLOSE(0.0, err_int, 2.0e-9);
     if (i < 6) CHECK_CLOSE(0.0, err_glb, 1.0e-10);
 
     if (MyPID == 0)

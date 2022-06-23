@@ -56,7 +56,7 @@ void ComputePolyError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       gnorm += poly_exact[i][c] * poly_exact[i][c] * volume;
     }
   }
-  err_int = err_glb - err_bnd;
+  err_int = std::abs(err_glb - err_bnd);
 
 #ifdef HAVE_MPI
     double tmp = err_int;
