@@ -122,8 +122,8 @@ class State {
   typedef std::map<Key, Teuchos::RCP<AmanziMesh::DomainSet>> DomainSetMap;
   typedef std::map<Key, Teuchos::RCP<Functions::MeshPartition> > MeshPartitionMap;
 
-  using RecordSetMap = std::unordered_map<Key, std::unique_ptr<RecordSet> >;
-  using EvaluatorMap = std::unordered_map<Key, std::unordered_map<Tag, Teuchos::RCP<Evaluator> > >;
+  using RecordSetMap = std::map<Key, std::unique_ptr<RecordSet> >;
+  using EvaluatorMap = std::map<Key, std::unordered_map<Tag, Teuchos::RCP<Evaluator> > >;
 
  public:
   State();
@@ -212,33 +212,36 @@ class State {
   //  F is a factory, which must provide a method Create() that makes a T
   //    (optional)
   template <typename T, typename F>
-  F& Require(const Key& fieldname, const Tag& tag, const Key& owner = "") {
+  F& Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true) {
+    CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
-    GetRecordSetW(fieldname).RequireRecord(tag, owner);
+    GetRecordSetW(fieldname).RequireRecord(tag, owner, alias_ok);
     return GetRecordSetW(fieldname).SetType<T, F>();
   }
 
   template <typename T>
-  void Require(const Key& fieldname, const Tag& tag, const Key& owner = "") {
+  void Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true) {
+    CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
     auto& rs = GetRecordSetW(fieldname);
-    rs.RequireRecord(tag, owner);
+    rs.RequireRecord(tag, owner, alias_ok);
     rs.SetType<T>();
   }
 
   template <typename T, typename F>
   F& Require(const Key& fieldname, const Tag& tag, const Key& owner,
-             const std::vector<std::string>& subfield_names) {
+             const std::vector<std::string>& subfield_names, bool alias_ok = true) {
+    CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
     auto& rs = GetRecordSetW(fieldname);
-    auto& r = rs.RequireRecord(tag, owner);
-    r.set_subfieldnames(subfield_names);
+    rs.set_subfieldnames(subfield_names);
+    auto& r = rs.RequireRecord(tag, owner, alias_ok);
     return rs.SetType<T, F>();
   }
 
@@ -473,7 +476,7 @@ class State {
   // Time tags and vector copies
   // -----------------------------------------------------------------------------
   // Time accessor and mutators.
-  void require_time(const Tag& tag, const Key& owner = "time") { return Require<double>("time", tag, owner); }
+  void require_time(const Tag& tag, const Key& owner = "time") { return Require<double>("time", tag, owner, false); }
   double get_time(const Tag& tag = Tags::DEFAULT) const { return Get<double>("time", tag); }
   void set_time(const Tag& tag, double value) { Assign("time", tag, "time", value); }
   void set_time(double value) { Assign("time", Tags::DEFAULT, "time", value); }
@@ -497,7 +500,7 @@ class State {
   void set_initial_time( double initial_time) { initial_time_ = initial_time; }
 
   // Cycle accessor and mutators.
-  void require_cycle(const Tag& tag) { Require<int>("cycle", tag, "cycle"); }
+  void require_cycle(const Tag& tag) { Require<int>("cycle", tag, "cycle", false); }
   int get_cycle(Tag tag = Tags::DEFAULT) const {
     return Get<int>("cycle", tag);
   }
@@ -520,7 +523,8 @@ class State {
   Teuchos::RCP<const Functions::MeshPartition> GetMeshPartition_(Key);
 
   // a hook to allow debuggers to connect
-  void CheckIsDebugEval_(const Key& key);
+  void CheckIsDebugEval_(const Key& key, const Tag& tag);
+  void CheckIsDebugData_(const Key& key, const Tag& tag);
 
  private:
   Teuchos::RCP<VerboseObject> vo_;

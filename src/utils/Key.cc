@@ -68,6 +68,20 @@ KeyPair split(const Key& name, const char& delimiter)
     return std::make_pair(name.substr(0,pos), name.substr(pos+1,std::string::npos));
 }
 
+// creates a clean name to be used as a variable name, domain name, tag name,
+// etc, that has no delimiters in it, no spaces (which make for uglier IO),
+// etc.
+Key cleanName(const std::string& name)
+{
+  Key result(name);
+  std::replace(result.begin(), result.end(), name_delimiter, '_');
+  std::replace(result.begin(), result.end(), deriv_delimiter, '_');
+  std::replace(result.begin(), result.end(), dset_delimiter, '_');
+  std::replace(result.begin(), result.end(), tag_delimiter, '_');
+  std::replace(result.begin(), result.end(), ' ', '_');
+  return result;
+}
+
 
 //
 // Working with DOMAINs
@@ -324,7 +338,7 @@ Key cleanPListName(const std::string& name)
 Key readDomain(Teuchos::ParameterList& plist,
                const Key& prefix)
 {
-  if (prefix.empty()) {
+  if (prefix.empty() || prefix == "domain") {
     return plist.get<std::string>("domain name");
   } else {
     return plist.get<std::string>(prefix+" domain name");
@@ -336,7 +350,7 @@ Key readDomain(Teuchos::ParameterList& plist,
                const Key& prefix,
                const Key& default_name)
 {
-  if (prefix.empty()) {
+  if (prefix.empty() || prefix == "domain") {
     return plist.get<std::string>("domain name", default_name);
   } else {
     return plist.get<std::string>(prefix+" domain name", default_name);

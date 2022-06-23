@@ -26,6 +26,10 @@
 
 SUITE(RESTART2) {
 
+/* This tests the ability to read checkpoint capabilities when the underlying
+  meshes live on subcommunicators (in this case COMM_SELF and not on
+  COMM_WORLD.
+*/
 TEST(HDF5_MPI_AND_SERIAL) {
   using namespace Amanzi;
 
@@ -52,7 +56,7 @@ TEST(HDF5_MPI_AND_SERIAL) {
     .SetMesh(domain_mesh)->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
   S->Require<CompositeVector, CompositeVectorSpace>(serial_fname, Tags::DEFAULT, serial_fname)
-    .SetMesh(domain_mesh)->SetGhosted(true)
+    .SetMesh(serial_mesh)->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
 
   S->Setup();
@@ -90,7 +94,7 @@ TEST(HDF5_MPI_AND_SERIAL) {
     ->SetComponent("cell", AmanziMesh::CELL, 1);
   S2.Setup();
 
-  ReadCheckpoint(comm, S2, "checkpoint00000/domain.h5");
+  ReadCheckpoint(comm, S2, "checkpoint00000");
 
   S2.GetW<CompositeVector>("my_field", Tags::DEFAULT, "my_field")
     .Update(-1.0, S->Get<CompositeVector>("my_field"), 1.0);

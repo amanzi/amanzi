@@ -58,12 +58,10 @@ class VisualizationDomainSet : public Visualization {
     write_partition_ = false; // doesn't work yet
   }
 
-  void set_subdomain_mesh(const Key& subdomain, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
-    subdomains_[subdomain] = mesh;
-  }
+  void set_subdomain_mesh(const Key& subdomain, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // public interface for data clients
-  virtual void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const override;
+  virtual void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const override;
   virtual void WriteVector(const Epetra_Vector& vec, const std::string& name ) const override;
 
   virtual void FinalizeTimestep() const override;

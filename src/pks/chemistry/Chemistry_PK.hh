@@ -36,7 +36,11 @@ namespace AmanziChemistry {
 class Chemistry_PK : public PK_Physical {
  public:
   Chemistry_PK();
-  virtual ~Chemistry_PK() {};
+  Chemistry_PK(Teuchos::ParameterList& pk_tree,
+               const Teuchos::RCP<Teuchos::ParameterList>& glist,
+               const Teuchos::RCP<State>& S,
+               const Teuchos::RCP<TreeVector>& soln);
+  virtual ~Chemistry_PK() = default;
 
   // required members for PK interface
   virtual void Setup() override;
@@ -57,7 +61,7 @@ class Chemistry_PK : public PK_Physical {
   // -- process various objects before/during setup phase
   void InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist);
   void InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
-                               Teuchos::RCP<Teuchos::ParameterList> state_list);
+                               Teuchos::ParameterList& ic_list);
 
   virtual void CopyFieldstoNewState(const Teuchos::RCP<State>& S_next);
   // -- access
@@ -71,7 +75,7 @@ class Chemistry_PK : public PK_Physical {
 
  protected:
   std::string passwd_;
-  Teuchos::RCP<Teuchos::ParameterList> glist_, cp_list_;
+  Teuchos::RCP<Teuchos::ParameterList> glist_;
 
   int number_aqueous_components_;
   std::vector<std::string> comp_names_;

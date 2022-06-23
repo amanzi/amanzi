@@ -71,11 +71,18 @@ class State;
 
 class Checkpoint : public IOEvent {
  public:
-  Checkpoint(Teuchos::ParameterList& plist, const State& S);
-  Checkpoint(const std::string& filename, const Comm_ptr_type& comm);
+  // constructor for do-it-yourself
+  Checkpoint(bool single_file = true);
 
-  // constructors for object that cannot write, but can read
-  Checkpoint(bool old_style = true);
+  // constructor for writing
+  Checkpoint(Teuchos::ParameterList& plist, const State& S);
+
+  // constructor for reading, potentially on multiple communicators from
+  // multiple files in this directory.
+  Checkpoint(const std::string& file_or_dirname, const State& S);
+
+  // constructor for reading a single field from a specific file
+  Checkpoint(const std::string& filename, const Comm_ptr_type& comm);
 
   // public interface for coordinator clients
   template <typename T>
@@ -109,17 +116,15 @@ class Checkpoint : public IOEvent {
   std::string filebasename_;
   int filenamedigits_;
   int restart_cycle_;
-  bool old_;
+  bool single_file_;
 
   std::map<std::string,Teuchos::RCP<Amanzi::HDF5_MPI>> output_;
 };
 
 
 template <>
-inline void Checkpoint::Write<Epetra_Vector>(const std::string& name,
-                                             const Epetra_Vector& t) const {
-  output_.at("domain")->writeCellDataReal(t, name);
-}
+void Checkpoint::Write<Epetra_Vector>(const std::string& name,
+        const Epetra_Vector& t) const;
 
 template <>
 inline void Checkpoint::Write<double>(const std::string& name,
@@ -135,8 +140,9 @@ inline void Checkpoint::Write<int>(const std::string& name,
 
 template <>
 inline void Checkpoint::Read<Epetra_Vector>(const std::string& name,
-                                            Epetra_Vector& t) const {
-  output_.at("domain")->readData(t, name);
+        Epetra_Vector& t) const {
+  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  output_.at(domain)->readData(t, name);
 }
 
 template <>

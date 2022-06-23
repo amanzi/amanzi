@@ -42,7 +42,7 @@ class PK_Physical : virtual public PK {
   };
 
   // Virtual destructor
-  virtual ~PK_Physical() override {};
+  virtual ~PK_Physical() = default;
 
   // Default implementations of PK methods.
   // -- transfer operators -- pointer copies only
