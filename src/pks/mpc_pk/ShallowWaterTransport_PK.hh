@@ -29,7 +29,7 @@ class ShallowWaterTransport_PK : public PK_MPCWeak {
 
   // PK methods
   // -- setup coupling information
-  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup() override;
 
  private:
   // factory registration

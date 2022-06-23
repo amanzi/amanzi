@@ -129,7 +129,7 @@ else()
   set(CONFIG_PETSc_SHARED --with-shared-libraries=0)
 endif()
 
-if (DEFINED ENV{NERSC_HOST})
+if ( ${AMANZI_ARCH_NERSC} OR ${AMANZI_ARCH_CHICOMA} )
   set(petsc_mpi_flags --with-mpi=1)
   set(petsc_compilers --with-cc=${CMAKE_C_COMPILER} 
                       --with-cxx=${CMAKE_CXX_COMPILER} 

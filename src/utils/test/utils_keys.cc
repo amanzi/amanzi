@@ -134,6 +134,12 @@ TEST(KEY_OPERATIONS) {
 
   CHECK_EQUAL("dwater_content|dpressure", getDerivKey("water_content", "pressure"));
   CHECK_EQUAL("dsurface-water_content|dpressure", getDerivKey("surface-water_content", "pressure"));
+
+  {
+    CHECK_EQUAL("density", splitKeyTag("density@pressure").first);
+    CHECK_EQUAL("pressure", splitKeyTag("density@pressure").second.get());
+    CHECK_EQUAL("density@pressure", getKey("density", Tag("pressure")));
+  }
 }
 
 
@@ -180,32 +186,34 @@ TEST(READS_DOMAINS) {
     CHECK_EQUAL("surface:4", readDomainHint(plist, "surface:4", "surface", "surface"));
   }
 
-
-  {
+  // snow, surface, domain
+  {  // surface --> snow
     Teuchos::ParameterList plist;
     CHECK_EQUAL("snow", readDomainHint(plist, "surface", "surface", "snow"));
   }
-  {
+  {  // surface --> domain
     Teuchos::ParameterList plist;
     CHECK_EQUAL("domain", readDomainHint(plist, "surface", "surface", "subsurface"));
   }
-  {
-    Teuchos::ParameterList plist;
-    CHECK_EQUAL("domain", readDomainHint(plist, "surface", "surface", "subsurface"));
-  }
-  {
+  { // surface --> domain
     Teuchos::ParameterList plist;
     CHECK_EQUAL("domain", readDomainHint(plist, "surface", "surface", "domain"));
   }
-  {
-    Teuchos::ParameterList plist;
-    CHECK_EQUAL("domain", readDomainHint(plist, "surface", "surface", "domain"));
-  }
-  {
+  { // "" --> surface
     Teuchos::ParameterList plist;
     CHECK_EQUAL("surface", readDomainHint(plist, "", "domain", "surface"));
   }
-  {
+  { // domain --> surface
+    Teuchos::ParameterList plist;
+    CHECK_EQUAL("surface", readDomainHint(plist, "domain", "domain", "surface"));
+  }
+  { // domain --> surface
+    Teuchos::ParameterList plist;
+    CHECK_EQUAL("surface", readDomainHint(plist, "domain", "subsurface", "surface"));
+  }
+
+  // with domain sets
+  { // domain:4 --> surface:4
     Teuchos::ParameterList plist;
     CHECK_EQUAL("surface:4", readDomainHint(plist, "domain:4", "domain", "surface"));
   }
@@ -230,14 +238,6 @@ TEST(READS_DOMAINS) {
   {
     Teuchos::ParameterList plist;
     CHECK_EQUAL("domain:4", readDomainHint(plist, "surface:4", "surface", "subsurface"));
-  }
-  {
-    Teuchos::ParameterList plist;
-    CHECK_EQUAL("domain:4", readDomainHint(plist, "surface:4", "surface", "subsurface"));
-  }
-  {
-    Teuchos::ParameterList plist;
-    CHECK_EQUAL("domain:4", readDomainHint(plist, "surface:4", "surface", "domain"));
   }
   {
     Teuchos::ParameterList plist;

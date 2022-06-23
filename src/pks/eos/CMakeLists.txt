@@ -21,23 +21,25 @@ include_directories(${ATK_SOURCE_DIR})
 # Library: eos
 #
 set(eos_src_files 
+    COM_MillingtonQuirk.cc
     EOSDensityEvaluator.cc
     EOSViscosityEvaluator.cc
     H2O_Density.cc
     H2O_DensityFEHM.cc
+    H2O_DensityTabular.cc
     H2O_ThermalConductivity.cc
     H2O_SaturatedVaporPressure.cc
     H2O_Viscosity.cc
     H2O_ViscosityConstant.cc
     H2O_ViscosityFEHM.cc
     H2O_ViscosityTabular.cc
-    H2O_DensityTabular.cc
     Henry_Solubility.cc
     IdealGas_Density.cc
     IsobaricEOSEvaluator.cc
     LookupTable.cc
     MolarFractionGasEvaluator.cc
     VaporInGas_Density.cc
+    VaporInGas_Diffusion.cc
    )
 
 add_amanzi_library(eos
@@ -51,9 +53,11 @@ endif()
 # Install Targets
 #
 set(eos_inc_files 
+    COM_MillingtonQuirk.hh
     EOSDensityEvaluator.hh
     EOSViscosityEvaluator.hh
     EOS_Density.hh
+    EOS_Diffusion.hh
     EOS_SaturatedVaporPressure.hh
     H2O_ThermalConductivity.hh
     EOS_Utils.hh
@@ -74,6 +78,7 @@ set(eos_inc_files
     LookupTable.hh
     MolarFractionGasEvaluator.hh
     VaporInGas_Density.hh
+    VaporInGas_Diffusion.hh
    )
 
 # install headers into a subdirectory
@@ -90,7 +95,7 @@ if (BUILD_TESTS)
         file(COPY ${DataFiles} DESTINATION ${EOS_BINARY_DIR}/test/)
     endif()
 
-    set(amanzi_libs eos atk)
+    set(amanzi_libs eos atk operators)
 
     # Test: Multiscale
     add_amanzi_test(eos_evaluators eos_evaluators

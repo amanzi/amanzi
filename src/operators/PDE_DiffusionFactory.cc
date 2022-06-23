@@ -36,8 +36,8 @@ namespace Operators {
 PDE_DiffusionFactory::PDE_DiffusionFactory(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
   : mesh_(mesh),
-    gravity_(false),
     const_k_(1.0),
+    gravity_(false),
     const_b_(0.0)
 {};
 
@@ -47,8 +47,8 @@ PDE_DiffusionFactory::PDE_DiffusionFactory(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   : oplist_(oplist),
     mesh_(mesh),
-    gravity_(false),
     const_k_(1.0),
+    gravity_(false),
     const_b_(0.0)
 {
   if (oplist.isParameter("diffusion coefficient")) {
@@ -352,6 +352,7 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
   std::string name = oplist.get<std::string>("discretization primary");
+  bool fractured_matrix = oplist.isParameter("fracture");
   
   if (name == "fv: default") {
     auto op = Teuchos::rcp(new PDE_DiffusionFV(oplist, mesh));
@@ -363,6 +364,13 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
 
   } else if (name == "nlfv: bnd_faces") {
     auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist, mesh)); 
+    return op;
+
+  // MFD methods with non-uniform DOFs
+  } else if (fractured_matrix) {
+    AmanziGeometry::Point g(mesh->space_dimension());
+    auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist, mesh, 0.0, g));
+    op->Init(oplist);
     return op;
 
   // MFD methods    

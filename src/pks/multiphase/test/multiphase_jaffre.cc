@@ -23,6 +23,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "IO.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "MeshExtractedManifold.hh"
@@ -31,7 +32,7 @@
 #include "OutputXDMF.hh"
 
 // Multiphase
-#include "MultiphaseJaffre_PK.hh"
+#include "Multiphase_PK.hh"
 
 
 /* **************************************************************** */
@@ -80,16 +81,17 @@ void run_test(const std::string& domain, const std::string& filename)
   // create a solution vector
   ParameterList pk_tree = plist->sublist("PKs").sublist("multiphase");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  auto MPK = Teuchos::rcp(new MultiphaseJaffre_PK(pk_tree, plist, S, soln));
+  auto MPK = Teuchos::rcp(new Multiphase_PK(pk_tree, plist, S, soln));
 
-  MPK->Setup(S.ptr());
+  MPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   // initialize the multiphase process kernel
-  MPK->Initialize(S.ptr());
+  MPK->Initialize();
   S->CheckAllFieldsInitialized();
+  // S->WriteDependencyGraph();
   WriteStateStatistics(*S, *vo);
 
   // initialize io
@@ -103,7 +105,7 @@ void run_test(const std::string& domain, const std::string& filename)
   while (t < tend && iloop < 400) {
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 10; }
 
-    MPK->CommitStep(t, t + dt, S);
+    MPK->CommitStep(t, t + dt, Tags::DEFAULT);
     S->advance_cycle();
 
     S->advance_time(dt);
@@ -114,13 +116,13 @@ void run_test(const std::string& domain, const std::string& filename)
     // output solution
     if (iloop % 5 == 0) {
       io->InitializeCycle(t, iloop, "");
-      const auto& u0 = *S->GetFieldData("pressure_liquid")->ViewComponent("cell");
-      const auto& u1 = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
-      const auto& u2 = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
-      const auto& u3 = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
+      const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
+      const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
+      const auto& u2 = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
+      const auto& u3 = *S->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
 
       io->WriteVector(*u0(0), "pressure", AmanziMesh::CELL);
-      io->WriteVector(*u1(0), "saturation", AmanziMesh::CELL);
+      io->WriteVector(*u1(0), "saturation_liquid", AmanziMesh::CELL);
       io->WriteVector(*u2(0), "liquid hydrogen", AmanziMesh::CELL);
       io->WriteVector(*u3(0), "gas hydrogen", AmanziMesh::CELL);
       io->FinalizeCycle();
@@ -133,15 +135,15 @@ void run_test(const std::string& domain, const std::string& filename)
 
   // verification
   double dmin, dmax;
-  const auto& sl = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
+  const auto& sl = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
   sl.MinValue(&dmin);
   sl.MaxValue(&dmax);
   CHECK(dmin >= 0.0 && dmax <= 1.0 && dmin < 0.999);
   
-  S->GetFieldData("ncp_fg")->NormInf(&dmax);
-  CHECK(dmax <= 1.0e-13);
+  S->Get<CompositeVector>("ncp_fg").NormInf(&dmax);
+  CHECK(dmax <= 1.0e-9);
 
-  const auto& xg = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
+  const auto& xg = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
   xg.MinValue(&dmin);
   CHECK(dmin >= 0.0);
 }

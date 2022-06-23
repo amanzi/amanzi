@@ -264,11 +264,6 @@ struct Problem {
         bc_value1[f] = ana->exact1(xf, 0.0);
         
       } else if (fabs(xf[1] - 1.0) < 1e-12) {
-        double area = mesh->face_area(f);
-        int dir = 0;
-        int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
-        const AmanziGeometry::Point& normal = mesh->face_normal(f, false, c, &dir);
-
         // y = 1 boudaries
         bc_model0[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value0[f] = ana->exact0(xf, 0.0);

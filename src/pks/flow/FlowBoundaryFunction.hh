@@ -40,9 +40,9 @@ class FlowBoundaryFunction : public PK_DomainFunction {
         relative_to_top_(false),
         relative_to_bottom_(false),
         no_flow_above_water_table_(false),
+        seepage_flux_threshold_(0.0),
         bc_name_("underfined"),
-        seepage_model_(""),
-        seepage_flux_threshold_(0.0) {};
+        seepage_model_("") {}
 
   FlowBoundaryFunction(const Teuchos::ParameterList& plist);
   void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);

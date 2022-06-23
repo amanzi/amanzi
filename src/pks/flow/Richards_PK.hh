@@ -53,24 +53,24 @@ class Richards_PK : public Flow_PK {
   ~Richards_PK() {};
 
   // methods required for PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
+  virtual void Setup() final;
+  virtual void Initialize() final;
 
   virtual double get_dt() override { return dt_; }
   virtual void set_dt(double dt) override { dt_ = dt; dt_desirable_ = dt_; }
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
+  virtual void CalculateDiagnostics(const Tag& tag) override;
 
   virtual std::string name() override { return "richards"; }
 
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
-  virtual void FunctionalResidual(
-      const double t_old, double t_new, 
-      Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
-      Teuchos::RCP<TreeVector> f) override;
+  virtual
+  void FunctionalResidual(const double t_old, double t_new, 
+                          Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
+                          Teuchos::RCP<TreeVector> f) override;
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
 
   // -- management of the preconditioner
@@ -102,7 +102,7 @@ class Richards_PK : public Flow_PK {
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
   virtual void ChangedSolution() override {
-    pressure_eval_->SetFieldAsChanged(S_.ptr());
+    pressure_eval_->SetChanged();
   }
 
   // -- returns the number of linear iterations.
@@ -124,7 +124,7 @@ class Richards_PK : public Flow_PK {
   double CalculateRelaxationFactor(const Epetra_MultiVector& uold, const Epetra_MultiVector& unew);
 
   // -- mutiscale methods
-  void CalculateVWContentMatrix_();
+  void CalculateWaterStorageMultiscale_();
   void VV_ReportMultiscale();
 
   // -- miscaleneous methods
@@ -157,7 +157,7 @@ class Richards_PK : public Flow_PK {
 
   void Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f);
 
-  // The water content change in a cell equals exactly to the balance of Darcy fluxes.
+  // The water storage change in a cell equals exactly to the balance of Darcy fluxes.
   // This balance leads to a monotone translport.
   void CalculateCNLSLimiter_(const CompositeVector& wc, const CompositeVector& dwc_dp, double tol);
   void ApplyCNLSLimiter_();
@@ -188,6 +188,10 @@ class Richards_PK : public Flow_PK {
   bool vapor_diffusion_;
 
   // multiscale models
+  Key pressure_msp_key_;
+  Key porosity_msp_key_;
+  Key water_storage_msp_key_, prev_water_storage_msp_key_;
+
   bool multiscale_porosity_;
   int ms_itrs_, ms_calls_;
   Teuchos::RCP<MultiscaleFlowPorosityPartition> msp_;
@@ -206,7 +210,7 @@ class Richards_PK : public Flow_PK {
   int functional_max_cell;
 
   // copies of state fields
-  Teuchos::RCP<CompositeVector> darcy_flux_copy;
+  Teuchos::RCP<CompositeVector> vol_flowrate_copy;
 
   // upwind
   int upwind_frequency_;
@@ -216,8 +220,8 @@ class Richards_PK : public Flow_PK {
   Key relperm_key_, alpha_key_;
   Teuchos::RCP<RelPermEvaluator> rel_perm_eval_;
 
-  // consistent water content and Darcy fluxes
-  bool algebraic_water_content_balance_;
+  // consistent water storage and Darcy fluxes
+  bool algebraic_water_storage_balance_;
   Teuchos::RCP<CompositeVector> cnls_limiter_;
 
  private:

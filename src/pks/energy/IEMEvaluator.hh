@@ -18,7 +18,7 @@
 // Amanzi
 #include "Key.hh"
 #include "Factory.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 // Amanzi::Energy
 #include "IEM.hh"
@@ -29,20 +29,20 @@ namespace Energy {
 typedef std::vector<Teuchos::RCP<IEM> > IEMList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, IEMList> IEMPartition;
 
-class IEMEvaluator : public SecondaryVariableFieldEvaluator {
+class IEMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
   explicit
   IEMEvaluator(Teuchos::ParameterList& plist);
   IEMEvaluator(const IEMEvaluator& other);
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& results);
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& results);
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
   Teuchos::RCP<IEMPartition> iem_partition() { return iem_; }
 
@@ -58,14 +58,15 @@ class IEMEvaluator : public SecondaryVariableFieldEvaluator {
   AmanziMesh::Entity_ID MyModel_(AmanziMesh::Entity_kind kind, AmanziMesh::Entity_ID id);
 
  protected:
-  Key temperature_key_, pressure_key_;
   Key domain_;
+  Key temperature_key_, pressure_key_;
+  Tag tag_;
   Teuchos::RCP<IEMPartition> iem_;
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  static Utils::RegisteredFactory<FieldEvaluator,IEMEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, IEMEvaluator> factory_;
 };
 
 }  // namespace Energy

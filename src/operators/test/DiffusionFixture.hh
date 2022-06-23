@@ -42,8 +42,8 @@ using namespace Amanzi;
 
 struct DiffusionFixture {
   DiffusionFixture(Teuchos::RCP<Teuchos::ParameterList> plist_)
-    : plist(plist_),
-      comm(Amanzi::getDefaultComm()) {};
+    : comm(Amanzi::getDefaultComm()),
+      plist(plist_) {};
 
   void Discretize(const std::string& name, AmanziMesh::Entity_kind kind);
   void DiscretizeWithGravity(const std::string& name, double gravity, AmanziMesh::Entity_kind kind);

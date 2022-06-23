@@ -174,7 +174,10 @@
   </ParameterList>
 
   <ParameterList name="state">
-    <ParameterList name="field evaluators">
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+    <ParameterList name="evaluators">
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -187,10 +190,10 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="saturation_liquid">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="ALL">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
@@ -204,7 +207,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="porosity">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
             <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
@@ -230,10 +233,10 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="fracture-porosity">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="fracture">
             <Parameter name="regions" type="Array(string)" value="{fracture}"/>
@@ -247,7 +250,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-saturation_liquid">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="ALL">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
@@ -261,7 +264,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-aperture">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="fracture">
             <Parameter name="regions" type="Array(string)" value="{fracture}"/>
@@ -619,6 +622,7 @@
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="gravity" type="bool" value="true"/>
 	    <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+	    <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
 	  </ParameterList>
 	  <ParameterList name="vapor matrix">
 	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -678,7 +682,7 @@
     <ParameterList name="steady:flow fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="physical models and assumptions">
-	<Parameter name="flow in fractures" type="bool" value="true"/>
+	<Parameter name="flow and transport in fractures" type="bool" value="true"/>
       </ParameterList>
 
       <ParameterList name="absolute permeability">
@@ -745,6 +749,8 @@
     <ParameterList name="transient:coupled transport">
       <Parameter name="PKs order" type="Array(string)" value="{transient:transport matrix, transient:transport fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="solver" type="string" value="Dispersion Solver"/>
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
     </ParameterList>
     
     <ParameterList name="transient:transport matrix">
@@ -752,10 +758,12 @@
 
       <ParameterList name="physical models and assumptions">
         <Parameter name="effective transport porosity" type="bool" value="false"/>
+        <Parameter name="use dispersion solver" type="bool" value="false"/>
         <Parameter name="permeability field is required" type="bool" value="false"/>
       </ParameterList>
 
       <Parameter name="cfl" type="double" value="1.0"/>   
+      <Parameter name="method" type="string" value="muscl"/>
       <Parameter name="spatial discretization order" type="int" value="1"/>   
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="transport subcycling" type="bool" value="false"/>      
@@ -777,15 +785,17 @@
             <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
             <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
           </ParameterList>
           <ParameterList name="preconditioner">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
             <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -823,11 +833,14 @@
     <ParameterList name="transient:transport fracture">
       <ParameterList name="physical models and assumptions">
         <Parameter name="effective transport porosity" type="bool" value="false"/>
+        <Parameter name="use dispersion solver" type="bool" value="false"/>
         <Parameter name="permeability field is required" type="bool" value="false"/>
+        <Parameter name="flow and transport in fractures" type="bool" value="true"/>
       </ParameterList>
 
       <Parameter name="domain name" type="string" value="fracture"/>      
       <Parameter name="cfl" type="double" value="1.0"/>   
+      <Parameter name="method" type="string" value="muscl"/>
       <Parameter name="spatial discretization order" type="int" value="1"/>   
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="transport subcycling" type="bool" value="false"/>
@@ -861,14 +874,14 @@
             <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
             <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
           </ParameterList>
           <ParameterList name="preconditioner">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
             <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
           </ParameterList>
         </ParameterList>

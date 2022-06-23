@@ -1,6 +1,4 @@
 # -*- mode: cmake -*-
-
-
 #
 #  Amanzi Tool Kit (ATK)
 #    General utilities
@@ -29,40 +27,42 @@ include_directories(${DBC_SOURCE_DIR})
 
 add_amanzi_library(atk
                    SOURCE AmanziComm.cc
-                          Timer.cc
+                          ExprTK.cc
                           HDF5Reader.cc
+                          IOEvent.cc
+                          Key.cc
+                          LeastSquare.cc 
+                          Spline.cc
+                          SplinedCurve.cc
+                          Timer.cc
                           TimerManager.cc
                           TimeStepManager.cc
                           Units.cc
-                          XMLParameterListWriter.cc 
-                          LeastSquare.cc 
                           VerboseObject.cc
-                          IOEvent.cc
-                          Spline.cc
-                          SplinedCurve.cc
-                          Key.cc
-                          ExprTK.cc
-                   HEADERS HDF5Reader.hh
-                           Utils.hh
-                           Units.hh
+                          XMLParameterListWriter.cc 
+                   HEADERS AmanziComm.hh
                            AmanziTypes.hh
-                           AmanziComm.hh
-                           Timer.hh
-                           TimerManager.hh
-                           TimeStepManager.hh
-                           XMLParameterListWriter.hh
-                           VerboseObject.hh
-                           VerboseObject_objs.hh
+                           ExprTK.hh
+                           Factory.hh
+                           FIFO_Set.hh
+                           HDF5Reader.hh
                            IOEvent.hh
                            Iterators.hh
-                           Factory.hh
+                           Key.hh
                            LeastSquare.hh
                            ObservationData.hh
                            Spline.hh
                            SplinedCurve.hh
-                           Key.hh
-                           ExprTK.hh
                            StringExt.hh
+                           Tag.hh
+                           Timer.hh
+                           TimerManager.hh
+                           TimeStepManager.hh
+                           Units.hh
+                           Utils.hh
+                           VerboseObject.hh
+                           VerboseObject_objs.hh
+                           XMLParameterListWriter.hh
                            StringReducer.hh
                     LINK_LIBS error_handling ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${HDF5_LIBRARIES})
 

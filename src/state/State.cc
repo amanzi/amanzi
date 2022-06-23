@@ -1,17 +1,19 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+  State
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-Implementation for the State.  State is a simple data-manager, allowing PKs to
-require, read, and write various fields.  Provides some data protection by
-providing both const and non-const fields to PKs.  Provides some
-initialization capability -- this is where all independent variables can be
-initialized (as independent variables are owned by state, not by any PK).
+  Author: Ethan Coon
 
-------------------------------------------------------------------------- */
+  Implementation for the State.  State is a simple data-manager, allowing PKs to
+  require, read, and write various fields.  Provides some data protection by
+  providing both const and non-const fields to PKs.  Provides some
+  initialization capability -- this is where all independent variables can be
+  initialized (as independent variables are owned by state, not by any PK).
+*/
 
 #include <iostream>
 #include <map>
@@ -24,171 +26,33 @@ initialized (as independent variables are owned by state, not by any PK).
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_Vector.h"
 
+// Amanzi
+#include "CompositeVector.hh"
+#include "DomainSet.hh"
 #include "errors.hh"
 #include "Mesh.hh"
-#include "DomainSet.hh"
 #include "MeshPartition.hh"
-#include "CompositeVector.hh"
-#include "FieldEvaluator_Factory.hh"
-#include "cell_volume_evaluator.hh"
-#include "rank_evaluator.hh"
-#include "primary_variable_field_evaluator.hh"
+#include "StringExt.hh"
+
+// Amanzi::State
+#include "Evaluator_Factory.hh"
+#include "EvaluatorCellVolume.hh"
+#include "EvaluatorPrimary.hh"
 #include "State.hh"
 #include "StateDefs.hh"
-#include "StringExt.hh"
 
 namespace Amanzi {
 
+// -----------------------------------------------------------------------------
+// Constructors
+// -----------------------------------------------------------------------------
 State::State() {
   vo_ = Teuchos::rcp(new VerboseObject("State", "none"));
 };
 
 State::State(Teuchos::ParameterList& state_plist) :
-    state_plist_(state_plist),
-    time_(0.0),
-    cycle_(0),
-    position_in_tp_(TIME_PERIOD_START)
-{
+    state_plist_(state_plist) {
   vo_ = Teuchos::rcp(new VerboseObject("State", state_plist_));
-};
-
-
-// copy constructor:
-// Create a new State with different data but the same values.
-//
-// Could get a better implementation with a CopyMode, see TransportState in
-// Amanzi as an example.  I'm not sure its needed at this point, however.
-State::State(const State& other, StateConstructMode mode) :
-    state_plist_(other.state_plist_),
-    meshes_(other.meshes_),
-    field_factories_(other.field_factories_),
-    time_(other.time_),
-    position_in_tp_(other.position_in_tp_),
-    domain_sets_(other.domain_sets_),
-    cycle_(other.cycle_),
-    vo_(other.vo_)
-{
-
-  if (mode == STATE_CONSTRUCT_MODE_COPY_DATA) {
-    for (FieldMap::const_iterator f_it=other.fields_.begin();
-         f_it!=other.fields_.end(); ++f_it) {
-      fields_[f_it->first] = f_it->second->Clone();
-    }
-
-    for (const auto& fm_it : other.field_evaluators_) {
-      bool copied = false;
-      for (auto& fm_my : field_evaluators_) {
-        if (fm_my.second->ProvidesKey(fm_it.first)) {
-          field_evaluators_[fm_it.first] = fm_my.second;
-          copied = true;
-          break;
-        }
-      }
-      if (!copied)
-        field_evaluators_[fm_it.first] = fm_it.second->Clone();
-    }
-
-  } else {
-    for (FieldMap::const_iterator f_it=other.fields_.begin();
-         f_it!=other.fields_.end(); ++f_it) {
-      fields_[f_it->first] = f_it->second;
-    }
-
-    for (FieldEvaluatorMap::const_iterator fm_it=other.field_evaluators_.begin();
-         fm_it!=other.field_evaluators_.end(); ++fm_it) {
-      field_evaluators_[fm_it->first] = fm_it->second;
-    }
-  }
-
-  // pointer copy MeshPartitions -- const after initing.
-  for (MeshPartitionMap::const_iterator mp_it=other.mesh_partitions_.begin();
-       mp_it!=other.mesh_partitions_.end(); ++mp_it) {
-    mesh_partitions_[mp_it->first] = mp_it->second;
-  }
-};
-
-// operator=:
-//  Assign a state's data from another state.  Note this
-// implementation requires the State being copied has the same structure (in
-// terms of fields, order of fields, etc) as *this.  This really means that
-// it should be a previously-copy-constructed version of the State.  One and
-// only one State should be instantiated and populated -- all other States
-// should be copy-constructed from that initial State.
-State& State::operator=(const State& other) {
-  if (this != &other) {
-    for (FieldMap::const_iterator f_it=other.fields_.begin();
-         f_it!=other.fields_.end(); ++f_it) {
-      Teuchos::RCP<Field> myfield = GetField_(f_it->first);
-      if (myfield == Teuchos::null) {
-        myfield = f_it->second->Clone();
-        fields_[f_it->first] = myfield;
-      }
-
-      Teuchos::RCP<const Field> otherfield = f_it->second;
-      myfield->set_io_checkpoint(otherfield->io_checkpoint());
-      myfield->set_io_vis(otherfield->io_vis());
-      myfield->set_initialized(otherfield->initialized());
-
-      if (myfield->type() == COMPOSITE_VECTOR_FIELD) {
-        myfield->SetData(*otherfield->GetFieldData());
-      } else if (myfield->type() == CONSTANT_VECTOR) {
-        myfield->SetData(*otherfield->GetConstantVectorData());
-      } else if (myfield->type() == CONSTANT_SCALAR) {
-        myfield->SetData(*otherfield->GetScalarData());
-      }
-    }
-
-    for (FieldEvaluatorMap::const_iterator fm_it=other.field_evaluators_.begin();
-         fm_it!=other.field_evaluators_.end(); ++fm_it) {
-      Teuchos::RCP<FieldEvaluator> myfm = GetFieldEvaluator_(fm_it->first);
-      if (myfm == Teuchos::null) {
-        myfm = fm_it->second->Clone();
-        field_evaluators_[fm_it->first] = myfm;
-      }
-      *myfm = *fm_it->second;
-    }
-
-    time_ = other.time_;
-    cycle_ = other.cycle_;
-    meshes_ = other.meshes_;
-  }
-  return *this;
-};
-
-
-//  Assign a state's data from another state.  Note this
-// implementation requires the State being copied has the same structure (in
-// terms of fields, order of fields, etc) as *this.  This really means that
-// it should be a previously-copy-constructed version of the State.  One and
-// only one State should be instantiated and populated -- all other States
-// should be copy-constructed from that initial State.
-void State::AssignDomain(const State& other, const std::string& domain)
-{
-  if (this != &other) {
-    for (auto f_it : other.fields_) {
-      if (Keys::getDomain(f_it.first) == domain) {
-        auto myfield = GetField_(f_it.first);
-        auto otherfield = f_it.second;
-
-        if (myfield != Teuchos::null) {
-          if (myfield->type() == COMPOSITE_VECTOR_FIELD) {
-            myfield->SetData(*otherfield->GetFieldData());
-          } else if (myfield->type() == CONSTANT_VECTOR) {
-            myfield->SetData(*otherfield->GetConstantVectorData());
-          } else if (myfield->type() == CONSTANT_SCALAR) {
-            myfield->SetData(*otherfield->GetScalarData());
-          }
-        }
-      }
-    }
-
-    for (auto fm_it : other.field_evaluators_) {
-      if (Keys::getDomain(fm_it.first) == domain) {
-        auto myfm = GetFieldEvaluator_(fm_it.first);
-        *myfm = *fm_it.second;
-      }
-    }
-  }
 };
 
 
@@ -220,17 +84,14 @@ void State::AliasMesh(const Key& target, const Key& alias) {
   }
 };
 
+
 bool State::IsAliasedMesh(const Key& key) const {
-  return (bool) mesh_aliases_.count(key);
+  return Keys::hasKey(mesh_aliases_, key);
 }
 
 
-void State::RemoveMesh(const Key& key) {
-  meshes_.erase(key);
-};
-
-
-Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh(const Key& key) const {
+Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh(const Key& key) const
+{
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
   if (key.empty()) {
     mesh = GetMesh_("domain");
@@ -247,7 +108,8 @@ Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh(const Key& key) const {
 };
 
 
-Teuchos::RCP<AmanziMesh::Mesh> State::GetDeformableMesh(Key key) {
+Teuchos::RCP<AmanziMesh::Mesh> State::GetDeformableMesh(Key key)
+{
   if (key.empty()) key = "domain";
 
   mesh_iterator lb = meshes_.lower_bound(key);
@@ -267,10 +129,11 @@ Teuchos::RCP<AmanziMesh::Mesh> State::GetDeformableMesh(Key key) {
     Exceptions::amanzi_throw(message);
   }
   return Teuchos::null;
-};
+}
 
 
-bool State::IsDeformableMesh(const Key& key) const {
+bool State::IsDeformableMesh(const Key& key) const
+{
   mesh_iterator lb = meshes_.lower_bound(key);
   if (lb != meshes_.end() && !(meshes_.key_comp()(key, lb->first))) {
     return lb->second.second;
@@ -280,19 +143,20 @@ bool State::IsDeformableMesh(const Key& key) const {
     Exceptions::amanzi_throw(msg);
   }
   return false;
-};
+}
 
 
-Teuchos::RCP<AmanziMesh::Mesh> State::GetMesh_(const Key& key) const {
+Teuchos::RCP<AmanziMesh::Mesh> State::GetMesh_(const Key& key) const
+{
   if (key.empty()) return GetMesh_("domain");
-  
+
   mesh_iterator lb = meshes_.lower_bound(key);
   if (lb != meshes_.end() && !(meshes_.key_comp()(key, lb->first))) {
     return lb->second.first;
   } else {
     return Teuchos::null;
   }
-};
+}
 
 
 void State::RegisterDomainSet(const Key& name,
@@ -314,194 +178,200 @@ State::GetDomainSet(const Key& name) const {
   return domain_sets_.at(name);
 }
 
+// -----------------------------------------------------------------------------
+// State handles data
+// -----------------------------------------------------------------------------
+//
+// RecordSets
+//
+bool State::HasRecordSet(const Key& fieldname) const {
+  return Keys::hasKey(data_, fieldname);
+}
+
+const RecordSet& State::GetRecordSet(const Key& fieldname) const {
+  if (!HasRecordSet(fieldname)) {
+    Errors::Message msg;
+    msg << "State does not have a RecordSet named \"" << fieldname << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
+  return *data_.at(fieldname);
+}
+
+RecordSet& State::GetRecordSetW(const Key& fieldname) {
+  if (!HasRecordSet(fieldname)) {
+    Errors::Message msg;
+    msg << "State does not have a RecordSet named \"" << fieldname << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
+  return *data_.at(fieldname);
+}
+
+
+//
+// Records
+//
+bool State::HasRecord(const Key& fieldname, const Tag& tag) const {
+  return HasRecordSet(fieldname) && GetRecordSet(fieldname).HasRecord(tag);
+}
+
+const Record& State::GetRecord(const Key& fieldname, const Tag& tag) const {
+  return GetRecordSet(fieldname).GetRecord(tag);
+}
+
+Record& State::GetRecordW(const Key& fieldname, const Key& owner) {
+  auto& r = GetRecordSetW(fieldname).GetRecord(Tags::DEFAULT);
+  r.AssertOwnerOrDie(owner);
+  return r;
+}
+Record& State::GetRecordW(const Key& fieldname, const Tag& tag, const Key& owner) {
+  auto& r = GetRecordSetW(fieldname).GetRecord(tag);
+  r.AssertOwnerOrDie(owner);
+  return r;
+}
+
+//
+// Derivative RecordSets
+//
+bool State::HasDerivativeSet(const Key& fieldname, const Tag& tag) const {
+  return Keys::hasKey(derivs_, Keys::getKey(fieldname, tag));
+}
+
+const RecordSet& State::GetDerivativeSet(const Key& fieldname, const Tag& tag) const {
+  if (!HasDerivativeSet(fieldname, tag)) {
+    Errors::Message msg;
+    msg << "State does not have a Derivative RecordSet for field \"" << fieldname << "\" at tag \""
+        << tag.get() << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
+  return *derivs_.at(Keys::getKey(fieldname, tag));
+}
+
+RecordSet& State::GetDerivativeSetW(const Key& fieldname, const Tag& tag) {
+  if (!HasDerivativeSet(fieldname, tag)) {
+    Errors::Message msg;
+    msg << "State does not have a Derivative RecordSet for field \"" << fieldname << "\" at tag \""
+        << tag.get() << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
+  return *derivs_.at(Keys::getKey(fieldname, tag));
+}
+
+//
+// Derivative Records -- note, there is currently no interface for directly
+// getting the Derivative Record.  We expect this is not necessary.
+//
+bool State::HasDerivative(const Key& key, const Tag& tag,
+                          const Key& wrt_key, const Tag& wrt_tag) const {
+  auto keytag = Keys::getKey(key, tag);
+  if (Keys::hasKey(derivs_, keytag)) {
+    Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
+    return derivs_.at(keytag)->HasRecord(der_tag);
+  }
+  return false;
+}
+bool State::HasDerivative(const Key& key, const Key& wrt_key) const {
+  return HasDerivative(key, Tags::DEFAULT, wrt_key, Tags::DEFAULT);
+}
+
 
 // -----------------------------------------------------------------------------
 // State handles data evaluation.
 // -----------------------------------------------------------------------------
-Teuchos::RCP<FieldEvaluator>
-State::RequireFieldEvaluator(Key key) {
-  CheckIsDebugEval_(key);
+Evaluator& State::RequireEvaluator(const Key& key, const Tag& tag)
+{
+  CheckIsDebugEval_(key, tag);
 
-  Teuchos::RCP<FieldEvaluator> evaluator = GetFieldEvaluator_(key);
+  // does it already exist?
+  if (HasEvaluator(key, tag)) return GetEvaluator(key, tag);
 
-  // Get the evaluator from state's Plist
-  if (evaluator == Teuchos::null) {
-    // -- Get the Field Evaluator plist
-    Teuchos::ParameterList& fm_plist = FEList();
-    if (fm_plist.isSublist(key)) {
-      // -- Get this evaluator's plist.
-      Teuchos::ParameterList sublist = fm_plist.sublist(key);
-      sublist.set<Key>("evaluator name", key);
+  // See if the key is provided by another existing evaluator.
+  for (auto& e : evaluators_) {
+    if (Keys::hasKey(e.second, tag) &&
+        e.second.at(tag)->ProvidesKey(key, tag)) {
+      auto& evaluator = e.second.at(tag);
+      SetEvaluator(key, tag, evaluator);
+      return *evaluator;
+    }
+  }
 
-      // -- Get the model plist.
-      Teuchos::ParameterList model_plist;
-      if (state_plist_.isSublist("model parameters")) {
-        model_plist = state_plist_.sublist("model parameters");
+  // Check if this should be an aliased evaluator
+  //
+  // NOTE: rather than a pointer to the other evaluator, likely this should be
+  // a special class that puts some guardrails on to make sure this evaluator
+  // is ONLY used when the times match, or some data is valid, or some other
+  // constraint.  This should not be used during this tag's subcycling, only
+  // after subcycling/during syncronization/during another tag's
+  // subcycling. --ETC
+  if (tag == Tags::NEXT && evaluators_.count(key)) {
+    for (const auto& other_tag : evaluators_.at(key)) {
+      if (Keys::in(other_tag.first.get(), "next")) {
+        // alias!
+        SetEvaluator(key, tag, other_tag.second);
+        return *other_tag.second;
       }
+    }
+  }
 
-      // -- Insert any model parameters.
-      if (sublist.isParameter("model parameters")) {
-        std::string modelname = sublist.get<std::string>("model parameters");
-        Teuchos::ParameterList modellist = GetModelParameters(modelname);
+  // Create the evaluator from State's plist
+  // -- Get the Field Evaluator plist
+  Teuchos::ParameterList& fm_plist = state_plist_.sublist("evaluators");
+
+  if (HasEvaluatorList(key)) {
+    // -- Get this evaluator's plist.
+    Teuchos::ParameterList sublist = GetEvaluatorList(key);
+    sublist.setName(key);
+
+    // -- Insert any model parameters.
+    if (sublist.isParameter("model parameters")) {
+      std::string modelname = sublist.get<std::string>("model parameters");
+      Teuchos::ParameterList modellist = GetModelParameters(modelname);
+      std::string modeltype = modellist.get<std::string>("model type");
+      sublist.set(modeltype, modellist);
+    } else if (sublist.isParameter("models parameters")) {
+      Teuchos::Array<std::string> modelnames = sublist.get<Teuchos::Array<std::string>>("models parameters");
+      for (auto modelname = modelnames.begin(); modelname != modelnames.end(); ++modelname) {
+        Teuchos::ParameterList modellist = GetModelParameters(*modelname);
         std::string modeltype = modellist.get<std::string>("model type");
         sublist.set(modeltype, modellist);
-      } else if (sublist.isParameter("models parameters")) {
-        Teuchos::Array<std::string> modelnames =
-            sublist.get<Teuchos::Array<std::string> >("models parameters");
-        for (Teuchos::Array<std::string>::const_iterator modelname=modelnames.begin();
-             modelname!=modelnames.end(); ++modelname) {
-          Teuchos::ParameterList modellist = GetModelParameters(*modelname);
-          std::string modeltype = modellist.get<std::string>("model type");
-          sublist.set(modeltype, modellist);
-        }
-      }
-
-      // -- Create and set the evaluator.
-      FieldEvaluator_Factory evaluator_factory;
-      evaluator = evaluator_factory.createFieldEvaluator(sublist);
-      SetFieldEvaluator(key, evaluator);
-    }
-  }
-
-  // check to see if we have a flyweight evaluator
-  if (evaluator == Teuchos::null) {
-    KeyTriple split;
-    bool is_ds = Keys::splitDomainSet(key, split);
-    if (is_ds) {
-      Key ds_name = std::get<0>(split);
-      if (HasDomainSet(std::get<0>(split))) {
-        auto ds = GetDomainSet(ds_name);
-        // The name is a domain set prefixed name, and we have a domain set
-        // of that name.  Grab the parameter list for the set's list and use
-        // that to construct the evaluator.
-        // -- Get this evaluator's plist.
-        Key lifted_key = Keys::getKey(ds_name, "*", std::get<2>(split));
-
-        Teuchos::ParameterList& fm_plist = FEList();
-        if (fm_plist.isSublist(lifted_key)) {
-          Teuchos::ParameterList sublist = fm_plist.sublist(lifted_key);
-          sublist.set("evaluator name", key);
-          sublist.setName(key);
-
-          // -- Get the model plist.
-          Teuchos::ParameterList model_plist;
-          if (state_plist_.isSublist("model parameters")) {
-            model_plist = state_plist_.sublist("model parameters");
-          }
-
-          // -- Insert any model parameters.
-          if (sublist.isParameter("model parameters")) {
-            std::string modelname = sublist.get<std::string>("model parameters");
-            Teuchos::ParameterList modellist = GetModelParameters(modelname);
-            std::string modeltype = modellist.get<std::string>("model type");
-            sublist.set(modeltype, modellist);
-          } else if (sublist.isParameter("models parameters")) {
-            Teuchos::Array<std::string> modelnames =
-                sublist.get<Teuchos::Array<std::string> >("models parameters");
-            for (Teuchos::Array<std::string>::const_iterator modelname=modelnames.begin();
-                 modelname!=modelnames.end(); ++modelname) {
-              Teuchos::ParameterList modellist = GetModelParameters(*modelname);
-              std::string modeltype = modellist.get<std::string>("model type");
-              sublist.set(modeltype, modellist);
-            }
-          }
-
-          // -- Create and set the evaluator.
-          fm_plist.set(key, sublist);
-          FieldEvaluator_Factory evaluator_factory;
-          evaluator = evaluator_factory.createFieldEvaluator(sublist);
-
-          SetFieldEvaluator(key, evaluator);
-        }
-      } else {
-        Errors::Message msg;
-        msg << "Model for field \"" << key << "\" is on a DomainSet, but no DomainSet of name \"" << ds_name << "\" exists in State.";
-        Exceptions::amanzi_throw(msg);
       }
     }
+
+    // -- Create and set the evaluator.
+    Evaluator_Factory evaluator_factory;
+    sublist.set("tag", tag.get());
+    auto evaluator = evaluator_factory.createEvaluator(sublist);
+    SetEvaluator(key, tag, evaluator);
+    return *evaluator;
   }
 
-  // Try a cell_volume.
-  if (evaluator == Teuchos::null) {
-    Key cell_vol("cell_volume");
-    if (key.length() >= cell_vol.length() &&
-        (0 == key.compare(key.length()-cell_vol.length(), cell_vol.length(), cell_vol))) {
-      Teuchos::ParameterList model_plist = state_plist_.sublist("model parameters");
-      Teuchos::ParameterList plist = model_plist.sublist(key);
-      plist.set("evaluator name", key);
-      evaluator = Teuchos::rcp(new CellVolumeEvaluator(plist));
-      SetFieldEvaluator(key, evaluator);
-    }
+  // is it cell volume?
+  if (Keys::getVarName(key) == "cell_volume") {
+    Teuchos::ParameterList& cv_list = GetEvaluatorList(key);
+    cv_list.set("evaluator type", "cell volume");
+    return RequireEvaluator(key, tag);
   }
 
   // cannot find the evaluator, error
-  if (evaluator == Teuchos::null) {
-    std::stringstream msg;
-    msg << "\nModel for field \"" << key << "\" cannot be created in State.\n";
-    // for (auto fe = field_evaluator_begin(); fe != field_evaluator_end(); ++fe) {
-    //   msg << fe->first << ":\n" << fe->second;
-    // }
-    Errors::Message message(msg.str());
-    Exceptions::amanzi_throw(message);
-  }
-  return evaluator;
+  Errors::Message message;
+  message << "Evaluator \"" << key << "@" << tag.get() << "\" cannot be created in State. "
+          << "Verify (1) SetEvaluator is called or (2) name exists in state->evaluators.";
+  Exceptions::amanzi_throw(message);
+  return *Evaluator_Factory().createEvaluator(fm_plist); // silences warning
 }
 
 
-Teuchos::RCP<FieldEvaluator>
-State::RequireFieldEvaluator(Key key, Teuchos::ParameterList& plist) {
-  CheckIsDebugEval_(key);
-
-  Teuchos::RCP<FieldEvaluator> evaluator = GetFieldEvaluator_(key);
-
-  // Create a new evaluator.
-  if (evaluator == Teuchos::null) {
-    // -- Create and set the evaluator.
-    FieldEvaluator_Factory evaluator_factory;
-    evaluator = evaluator_factory.createFieldEvaluator(plist);
-    SetFieldEvaluator(key, evaluator);
-  }
-  return evaluator;
-}
-
-
-Teuchos::RCP<FieldEvaluator> State::GetFieldEvaluator(const Key& key) {
-  Teuchos::RCP<FieldEvaluator> evaluator = GetFieldEvaluator_(key);
-  if (evaluator == Teuchos::null) {
-    std::stringstream messagestream;
-    messagestream << "Model for field " << key << " does not exist in the state.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
-  return evaluator;
-};
-
-
-Teuchos::RCP<FieldEvaluator> State::GetFieldEvaluator_(const Key& key) {
-  auto f_it = field_evaluators_.find(key);
-  if (f_it != field_evaluators_.end()) {
-    return f_it->second;;
+bool State::HasEvaluator(const Key& key, const Tag& tag)
+{
+  if (Keys::hasKey(evaluators_, key)) {
+    return Keys::hasKey(evaluators_.at(key), tag);
   } else {
-    // See if the key is provided by another existing evaluator.
-    for (evaluator_iterator f_it2 = field_evaluator_begin();
-         f_it2 != field_evaluator_end(); ++f_it2) {
-      if (f_it2->second->ProvidesKey(key)) {
-        SetFieldEvaluator(key, f_it2->second);
-        return f_it2->second;
-      }
-    }
+    return false;
   }
-  return Teuchos::null;
-};
+}
 
 
-void State::SetFieldEvaluator(Key key, const Teuchos::RCP<FieldEvaluator>& evaluator) {
-  AMANZI_ASSERT(field_evaluators_[key] == Teuchos::null);
-  field_evaluators_[key] = evaluator;
-};
-
-
-Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition(Key key) {
+Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition(Key key)
+{
   Teuchos::RCP<const Functions::MeshPartition> mp = GetMeshPartition_(key);
   if (mp == Teuchos::null) {
     std::stringstream messagestream;
@@ -510,10 +380,11 @@ Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition(Key key) {
     Exceptions::amanzi_throw(message);
   }
   return mp;
-};
+}
 
 
-Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key) {
+Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key)
+{
   MeshPartitionMap::iterator lb = mesh_partitions_.lower_bound(key);
   if (lb != mesh_partitions_.end() && !(mesh_partitions_.key_comp()(key, lb->first))) {
     return lb->second;
@@ -535,330 +406,56 @@ Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key) {
     }
     return Teuchos::null;
   }
-};
-
-
-void State::WriteDependencyGraph() const {
-  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-    std::ofstream os("dependency_graph.txt", std::ios::out);
-    for (auto fe=field_evaluator_begin(); fe!=field_evaluator_end(); ++fe) {
-      os << *fe->second;
-    }
-    os.close();
-  }
 }
 
 
-// -----------------------------------------------------------------------------
-// State handles data management.
-// -----------------------------------------------------------------------------
-Teuchos::RCP<Field> State::GetField_(Key fieldname) {
-  FieldMap::iterator lb = fields_.lower_bound(fieldname);
-  if (lb != fields_.end() && !(fields_.key_comp()(fieldname, lb->first))) {
-    return lb->second;
-  } else {
-    return Teuchos::null;
-  }
-};
+void State::WriteDependencyGraph() const
+{
+  // FIXME -- this is not what it used to be.  This simply writes data
+  // struture, and is not the dependency graph information at all.  Rename
+  // this, then recover the old WriteDependencyGraph method, which wrote a list
+  // of all evaluators and their dependnecies that could be read in networkx
+  // for plotting the dag. --ETC
 
-Teuchos::RCP<const Field> State::GetField_(Key fieldname) const {
-  FieldMap::const_iterator lb = fields_.lower_bound(fieldname);
-  if (lb != fields_.end() && !(fields_.key_comp()(fieldname, lb->first))) {
-    return lb->second;
-  } else {
-    return Teuchos::null;
-  }
-};
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "------------------------------------------" << std::endl
+               << "Dependency & Structure list for evaluators" << std::endl
+               << "------------------------------------------" << std::endl;
+    for (auto& e : evaluators_) {
+      for (auto& r : e.second) *vo_->os() << *r.second;
+      if (GetRecord(e.first, e.second.begin()->first).ValidType<CompositeVector>()) {
+        Teuchos::OSTab tab1 = vo_->getOSTab();
+        Teuchos::OSTab tab2 = vo_->getOSTab();
+        data_.at(e.first)->GetFactory<CompositeVector, CompositeVectorSpace>().Print(*vo_->os());
+        *vo_->os() << std::endl;
+      }
+    }
 
-
-// Scalar requires
-void State::RequireScalar(Key fieldname, Key owner) {
-  Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname, CONSTANT_SCALAR, owner);
-
-  if (field == Teuchos::null) {
-    Teuchos::RCP<Field_Scalar> newfield = Teuchos::rcp(new Field_Scalar(fieldname, owner));
-    fields_[fieldname] = newfield;
-  } else if (owner != Key("state")) {
-    field->set_owner(owner);
-  }
-};
-
-
-// Require a constant vector of a given size.
-void State::RequireConstantVector(Key fieldname, Key owner,
-              int dimension) {
-  Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname, CONSTANT_VECTOR, owner);
-
-  if (field == Teuchos::null) {
-    field = Teuchos::rcp(new Field_ConstantVector(fieldname, Key("state"), dimension));
-    fields_[fieldname] = field;
-  } else {
-    Teuchos::RCP<Field_ConstantVector> cv =
-        Teuchos::rcp_static_cast<Field_ConstantVector>(field);
-    cv->set_dimension(dimension);
-
-    if (owner != Key("state")) {
-      cv->set_owner(owner);
+    *vo_->os() << "------------------------------" << std::endl
+               << "Structure list for derivatives" << std::endl
+               << "------------------------------" << std::endl;
+    for (auto& e : derivs_) {
+      *vo_->os() << "D" << e.first << "/D{ ";
+      for (const auto& wrt : *e.second) *vo_->os() << wrt.first.get() << " ";
+      *vo_->os() << "}" << std::endl;
+      auto wrt_tag = e.second->begin();
+      if (e.second->GetRecord(wrt_tag->first).ValidType<CompositeVector>()) {
+        Teuchos::OSTab tab1 = vo_->getOSTab();
+        Teuchos::OSTab tab2 = vo_->getOSTab();
+        e.second->GetFactory<CompositeVector, CompositeVectorSpace>().Print(*vo_->os());
+        *vo_->os() << std::endl;
+      }
     }
   }
-};
-
-void State::RequireConstantVector(Key fieldname, int dimension) {
-  RequireConstantVector(fieldname, Key("state"), dimension);
-};
-
-// Vector Field requires
-Teuchos::RCP<CompositeVectorSpace>
-State::RequireField(Key fieldname, Key owner) {
-  CheckIsDebugField_(fieldname);
-
-  Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname,
-          COMPOSITE_VECTOR_FIELD, owner);
-
-  if (field == Teuchos::null) {
-    // Create the field and CV factory.
-    field = Teuchos::rcp(new Field_CompositeVector(fieldname, owner));
-    fields_[fieldname] = field;
-    field_factories_[fieldname] = Teuchos::rcp(new CompositeVectorSpace());
-  } else if (owner != Key("state")) {
-    field->set_owner(owner);
-  }
-
-  return field_factories_[fieldname];
-};
-
-// Vector Field requires
-Teuchos::RCP<CompositeVectorSpace>
-State::RequireField(Key fieldname, Key owner,
-                    const std::vector<std::vector<std::string> >& subfield_names) {
-  CheckIsDebugField_(fieldname);
-
-  Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname,
-          COMPOSITE_VECTOR_FIELD, owner);
-
-  if (field == Teuchos::null) {
-    // Create the field and CV factory.
-    field = Teuchos::rcp(new Field_CompositeVector(fieldname, owner, subfield_names));
-    fields_[fieldname] = field;
-    field_factories_[fieldname] = Teuchos::rcp(new CompositeVectorSpace());
-  } else if (owner != Key("state")) {
-    field->set_owner(owner);
-  }
-
-  return field_factories_[fieldname];
-};
-
-
-void State::RequireTimeTag(Key timetag) {
-
-  for (int i=0; i<copy_tag_.size(); ++i) {
-    if (copy_tag_[i] == timetag) return;
-  }
-  copy_tag_.push_back(timetag);
 }
-
-bool State::HasTimeTag(Key timetag) { 
-
-  for (int i=0; i<copy_tag_.size(); ++i) {
-    if (copy_tag_[i] == timetag) return true;
-  }
-  return false;
-}
-
-bool State::HasFieldCopy(Key key, Key timetag) {
-
-  Teuchos::RCP<const Field> field = GetField_(key);
-  if (field == Teuchos::null) return false;
-  if (HasTimeTag(timetag)) return field->HasCopy(timetag);
-  else return false;
-}
-
-Teuchos::RCP<Field> State::GetFieldCopy(Key fieldname, Key timetag, Key pk_name) {
-
-  Key field_owner = GetField(fieldname)->owner();
-  Teuchos::RCP<Field> field = GetField(fieldname, field_owner);
-  return field->GetCopy(timetag, pk_name);
-
-}
-
-Teuchos::RCP<const Field> State::GetFieldCopy(Key fieldname, Key timetag) const{
-
-  Teuchos::RCP<const Field> field = GetField(fieldname);
-  return field->GetCopy(timetag);
-
-}
-
-void State::SetFieldCopy(Key fieldname, Key timetag, Key pk_name, const Teuchos::RCP<Field>& fieldcopy) {
-
-   Teuchos::RCP<Field> field = GetField(fieldname, pk_name);
-   return field->SetCopy(timetag, fieldcopy);
-
-}
-
-
-void State::RequireFieldCopy(Key fieldname, Key timetag, Key copy_owner) {
-
-  Key field_owner = GetField(fieldname)->owner();
-  Teuchos::RCP<Field> field = GetField(fieldname, field_owner);
-  field->RequireCopy(timetag, copy_owner);
-}
-
-
-void State::CopyField(Key fieldname, Key timetag, Key pk_name) {
-
-  Key field_owner = GetField(fieldname)->owner();
-  Teuchos::RCP<Field> field = GetField(fieldname, field_owner);
-  Teuchos::RCP<Field> field_copy = field->GetCopy(timetag, pk_name);
-
-  *field_copy->GetFieldData() = *field->GetFieldData();
-}
-
-
-Teuchos::RCP<const CompositeVector> State::GetFieldCopyData(Key fieldname, Key tag) const{
-  if (tag=="default") 
-    return GetField(fieldname)->GetFieldData();
-  else
-    return GetField(fieldname)->GetCopy(tag)->GetFieldData();
-}
-
-
-Teuchos::RCP<CompositeVector> State::GetFieldCopyData(Key fieldname, Key tag, Key pk_name) {
-
-  if (tag=="default") {
-    Teuchos::RCP<Field> field = GetField(fieldname, pk_name);
-    return field->GetFieldData();
-  }
-  else {
-    Key field_owner = GetField(fieldname)->owner();
-    Teuchos::RCP<Field> field = GetField(fieldname, field_owner);
-    return field->GetCopy(tag, pk_name)->GetFieldData();
-  }
-}
-
-
-void State::RequireGravity() {
-  int dim = 3;
-  Key fieldname("gravity");
-  RequireConstantVector(fieldname, dim);
-  std::vector<Key> subfield_names(dim);
-  subfield_names[0] = "x";
-  if (dim > 1) subfield_names[1] = "y";
-  if (dim > 2) subfield_names[2] = "z";
-  Teuchos::RCP<Field> field = GetField_(fieldname);
-  Teuchos::RCP<Field_ConstantVector> cvfield =
-    Teuchos::rcp_dynamic_cast<Field_ConstantVector>(field, true);
-  cvfield->set_subfield_names(subfield_names);
-  cvfield->CreateData();
-  cvfield->Initialize(state_plist_.sublist("initial conditions").sublist("gravity"));
-};
-
-
-// -- access methods -- Const methods should be used by PKs who don't own
-// the field, i.e.  flow accessing a temperature field if an energy PK owns
-// the temperature field.  This ensures a PK cannot mistakenly alter data it
-// doesn't own.  Non-const methods get used by the owning PK.
-Teuchos::RCP<const double>
-State::GetScalarData(Key fieldname) const {
-  return GetField(fieldname)->GetScalarData();
-};
-
-Teuchos::RCP<double>
-State::GetScalarData(Key fieldname, Key pk_name) {
-  return GetField(fieldname, pk_name)->GetScalarData();
-};
-
-Teuchos::RCP<const Epetra_Vector>
-State::GetConstantVectorData(Key fieldname) const {
-  return GetField(fieldname)->GetConstantVectorData();
-};
-
-Teuchos::RCP<Epetra_Vector>
-State::GetConstantVectorData(Key fieldname, Key pk_name) {
-  return GetField(fieldname, pk_name)->GetConstantVectorData();
-};
-
-Teuchos::RCP<const CompositeVector>
-State::GetFieldData(Key fieldname) const {
-  return GetField(fieldname)->GetFieldData();
-};
-
-Teuchos::RCP<CompositeVector>
-State::GetFieldData(Key fieldname, Key pk_name) {
-  return GetField(fieldname, pk_name)->GetFieldData();
-};
-
-
-// Access to the full field record, not just the data.
-Teuchos::RCP<Field> State::GetField(Key fieldname, Key pk_name) {
-  Teuchos::RCP<Field> record = GetField_(fieldname);
-
-  if (record == Teuchos::null) {
-    std::stringstream messagestream;
-    messagestream << "Field " << fieldname << " does not exist in the state, pk=" << pk_name;
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  } else if (record->owner() != pk_name) {
-    std::stringstream messagestream;
-    messagestream << "PK \"" << pk_name
-                  << "\" is attempting write access to field \"" << fieldname
-                  << "\" which is owned by \"" << GetField_(fieldname)->owner() <<"\"";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
-  return record;
-};
-
-Teuchos::RCP<const Field> State::GetField(Key fieldname) const {
-  Teuchos::RCP<const Field> record = GetField_(fieldname);
-
-  if (record == Teuchos::null) {
-    std::stringstream messagestream;
-    messagestream << "Field " << fieldname << " does not exist in the state.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
-  return record;
-};
-
-void State::SetField(Key fieldname, Key pk_name,
-                     const Teuchos::RCP<Field>& new_record) {
-  Teuchos::RCP<const Field> old_record = GetField_(fieldname);
-  if (old_record != Teuchos::null) {
-    if (old_record->owner() != pk_name) {
-      std::stringstream messagestream;
-      messagestream << "PK " << pk_name
-                    << " is attempting to overwrite field " << fieldname
-                    << " which is owned by " << old_record->owner();
-      Errors::Message message(messagestream.str());
-      Exceptions::amanzi_throw(message);
-    }
-  }
-  fields_[fieldname] = new_record;
-}
-
-// modify methods
-// -- modify by pointer, no copy
-void State::SetData(Key fieldname, Key pk_name,
-                    const Teuchos::RCP<double>& data) {
-  GetField(fieldname, pk_name)->SetData(data);
-};
-
-void State::SetData(Key fieldname, Key pk_name,
-                    const Teuchos::RCP<Epetra_Vector>& data) {
-  GetField(fieldname, pk_name)->SetData(data);
-};
-
-void State::SetData(Key fieldname, Key pk_name,
-                    const Teuchos::RCP<CompositeVector>& data) {
-  GetField(fieldname, pk_name)->SetData(data);
-};
 
 
 // -----------------------------------------------------------------------------
 // State handles model parameters.
 // -----------------------------------------------------------------------------
 Teuchos::ParameterList
-State::GetModelParameters(std::string modelname) {
+State::GetModelParameters(std::string modelname)
+{
   AMANZI_ASSERT(state_plist_.isSublist("model parameters"));
   Teuchos::ParameterList model_plist = state_plist_.sublist("model parameters");
   AMANZI_ASSERT(model_plist.isSublist(modelname));
@@ -871,132 +468,145 @@ State::GetModelParameters(std::string modelname) {
 // -----------------------------------------------------------------------------
 // Initialize data, allowing values to be specified here or in the owning PK.
 // All independent variables must be initialized here.
-void State::Setup() {
+void State::Setup()
+{
+  require_time(Tags::DEFAULT);
+  GetRecordSetW("time").initializeTags();
+  require_time(Tags::CURRENT);
+  GetRecordSetW("time").initializeTags();
+
+  require_cycle(Tags::DEFAULT);
+  GetRecordSetW("cycle").initializeTags();
+
+  Require<double>("dt", Tags::DEFAULT, "dt", false);
+  GetRecordW("dt", Tags::DEFAULT, "dt").set_initialized();
+
+  Require<int>("position", Tags::DEFAULT, "position", false);
+  GetRecordSetW("position").initializeTags();
+
   Teuchos::OSTab tab = vo_->getOSTab();
-  // State-required data
-  if (state_plist_.isParameter("visualize mesh ranks")) {
-    for (mesh_iterator mesh_it=meshes_.begin();
-         mesh_it!=meshes_.end(); ++mesh_it) {
-      Key rank_key;
-      if (mesh_it->first == "domain") {
-        rank_key = "mpi_comm_rank";
-      } else {
-        rank_key = mesh_it->first + "_mpi_comm_rank";
+
+  // Ensure consistency of the dependency graph.  This takes two steps -- the
+  // first pass ensures that all evaluators are present and instantiated,
+  // completed the dag.  The second pass sets data requirements, and makes sure
+  // data requirements are consistent.
+  //
+  // Note that the first pass may modify the graph, but since it is a DAG, and
+  // this is called recursively, we can just call it on the nodes that appear
+  // initially.
+  { // scope for copy
+    EvaluatorMap evaluators_copy(evaluators_);
+    for (auto& e : evaluators_copy) {
+      for (auto& r : e.second) {
+        // if (!r.second->ProvidesKey(e.first, r.first)) {
+        //   Errors::Message msg;
+        //   msg << "Evaluator \"" << e.first << "\" with tag \"" << r.first.get()
+        //       << "\" does not provide its own key.";
+        //   Exceptions::amanzi_throw(msg);
+        // }
+
+        if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+          Teuchos::OSTab tab1 = vo_->getOSTab();
+          *vo_->os() << "ensure evaluators: \"" << e.first << "\" @ \""
+                     << r.first << "\"" << std::endl;
+        }
+        r.second->EnsureEvaluators(*this);
       }
-      Teuchos::ParameterList plist;
-      plist.set("evaluator name", rank_key);
-      plist.set("mesh name", mesh_it->first);
-      SetFieldEvaluator(rank_key, Teuchos::rcp(new RankEvaluator(plist)));
     }
   }
 
-  // Ensure compatibility of all the evaluators -- each evaluator's dependencies must
-  // provide what is required of that evaluator.
-  for (FieldEvaluatorMap::iterator evaluator=field_evaluators_.begin();
-       evaluator!=field_evaluators_.end(); ++evaluator) {
-    if (!evaluator->second->ProvidesKey(evaluator->first)) {
-      std::stringstream messagestream;
-      messagestream << "Field Evaluator " << evaluator->first
-                    << " does not provide its own key.";
-      Errors::Message message(messagestream.str());
-      Exceptions::amanzi_throw(message);
+  // Second pass calls EnsureCompatibility, which checks data consistency.
+  // This pass does not modify the graph.
+  for (auto& e : evaluators_) {
+    for (auto& r : e.second) {
+      r.second->EnsureCompatibility(*this);
     }
+  }
+
+  // Create the data for all fields.
+  for (auto& r : data_) {
+    r.second->CreateData();
+
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-      Teuchos::OSTab tab1 = vo_->getOSTab();
-      *vo_->os() << "checking compatibility: " << *evaluator->second;
-    }
-    evaluator->second->EnsureCompatibility(Teuchos::ptr(this));
-  }
+      *vo_->os() << "RecordSet \"" << r.first << "\", tags: ";
 
-  // Create all data for vector fields.
-  // -- First use factories to instantiate composite vectors.
-  for (FieldFactoryMap::iterator fac_it=field_factories_.begin();
-       fac_it!=field_factories_.end(); ++fac_it) {
-    GetField_(fac_it->first)->SetData(Teuchos::rcp(new CompositeVector(*fac_it->second)));
-  }
-
-  // -- Now create the data for all fields.
-  for (field_iterator f_it = field_begin(); f_it != field_end(); ++f_it) {
-    if (!f_it->second->initialized()) {
-      f_it->second->CreateData();
-    }
-    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_->os() << "Field " << f_it->first << ": ";
-      if (f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
-        auto cv = f_it->second->GetFieldData();
-        for (auto comp=cv->begin(); comp!=cv->end(); ++comp) *vo_->os() << *comp << " ";
+      for(auto& e : *r.second) *vo_->os() << "\"" << e.first.get() << "\" ";
+      if (r.second->ValidType<CompositeVector, CompositeVectorSpace>()) {
+        const auto& cvs = r.second->GetFactory<CompositeVector, CompositeVectorSpace>();
+        *vo_->os() << "comps: ";
+        for (const auto& comp : cvs) *vo_->os() << comp << " ";
+      } else {
+        *vo_->os() << "not CV";
       }
       *vo_->os() << "\n";
     }
   }
-};
+
+  // Create the data for all derivatives
+  for (auto& deriv : derivs_) {
+    deriv.second->CreateData();
+  }
+
+  // -- Write DAG to disk for visualization
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    WriteDependencyGraph();
+    *vo_->os() << "Setup is complete.\n\n";
+  }
+}
 
 
-void State::Initialize() {
-  // Initialize any other fields from state plist.
+void State::Initialize()
+{
+  // Set metadata
+  GetW<int>("cycle", Tags::DEFAULT, "cycle") = 0;
+  GetRecordSetW("cycle").initializeTags();
+
+  GetW<double>("time", Tags::DEFAULT, "time") = 0.0;
+  GetRecordSetW("time").initializeTags();
+
+  GetW<double>("dt", Tags::DEFAULT, "dt") = 0.;
+  GetRecordSetW("dt").initializeTags();
+
+  // Initialize data from initial conditions.
   InitializeFields();
 
-  // Ensure that non-evaluator-based fields are initialized.
-  CheckNotEvaluatedFieldsInitialized();
-
-  // Initialize other field evaluators.
+  // Initialize evaluators.
   InitializeEvaluators();
 
   // Ensure everything is owned and initialized.
   CheckAllFieldsInitialized();
 
-  // Write dependency graph.
-  WriteDependencyGraph();
-
   // Reset io_vis flags using blacklist and whitelist
   InitializeIOFlags();
-};
+}
 
 
-void State::Initialize(Teuchos::RCP<State> S) {
+//
+// NOTE: this method assumes all Records have a DEFAULT tag
+//
+void State::Initialize(const State& other)
+{
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab1 = vo_->getOSTab();
     *vo_->os() << "copying fields to new state.." << std::endl;
   }
 
-  for (FieldMap::iterator f_it = fields_.begin();
-       f_it != fields_.end(); ++f_it) {
-    Teuchos::RCP<Field> field = f_it->second;
-    Teuchos::RCP<Field> copy = S->GetField_(field->fieldname());
+  for (auto& e : data_) {
+    if (other.HasRecord(e.first, Tags::DEFAULT)) {
+      auto owner = GetRecord(e.first, Tags::DEFAULT).owner();
+      auto& field = GetRecordW(e.first, Tags::DEFAULT, owner);
+      const auto& copy = other.GetRecord(e.first, Tags::DEFAULT);
 
-    if (copy != Teuchos::null) {
-      if (field->type() != copy->type()) {
-        std::stringstream messagestream;
-        messagestream << "States has fields with the same name but different types\n";
-        Errors::Message message(messagestream.str());
-        Exceptions::amanzi_throw(message);
+      if (copy.initialized()) {
+        field.Assign(copy);
+        field.set_initialized();
       }
-      if (copy->initialized()) {
-        switch (field->type()) {
-        case CONSTANT_SCALAR:
-          *field->GetScalarData() = *copy->GetScalarData();
-          break;
-        case CONSTANT_VECTOR:
-          *field->GetConstantVectorData() = *copy->GetConstantVectorData();
-          break;
-        case COMPOSITE_VECTOR_FIELD:
-          *field->GetFieldData() = *copy->GetFieldData();
-          break;
-        default:
-          Errors::Message message("Copy field with unknown type\n");
-          Exceptions::amanzi_throw(message);
-        }
-        field->set_initialized();      
-      }
-    }   
+    }
   }
 
   // Initialize any other fields from state plist.
   InitializeFields();
-
-  // Ensure that non-evaluator-based fields are initialized.
-  // CheckNotEvaluatedFieldsInitialized();
 
   // Initialize other field evaluators.
   InitializeEvaluators();
@@ -1004,519 +614,222 @@ void State::Initialize(Teuchos::RCP<State> S) {
   // Ensure everything is owned and initialized.
   // CheckAllFieldsInitialized();
 
-  // Write dependency graph.
-  WriteDependencyGraph();
-
   // Reset io_vis flags using blacklist and whitelist
   InitializeIOFlags();
-};
+}
 
 
-void State::InitializeEvaluators() {
-  VerboseObject vo("State", state_plist_); 
-  if (vo.os_OK(Teuchos::VERB_EXTREME)) {
-    Teuchos::OSTab tab = vo.getOSTab();
-    *vo.os() << "initializing evaluators..." << std::endl;
-  }
-  for (evaluator_iterator f_it = field_evaluator_begin(); f_it != field_evaluator_end(); ++f_it) {
-    if (f_it->second->get_type() != EvaluatorType::PRIMARY) {
-      f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
-      fields_[f_it->first]->set_initialized();
+void State::InitializeEvaluators()
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+  for (const auto& e : evaluators_) {
+    for (const auto& tag : e.second) {
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        *vo_->os() << "initializing eval: \"" << e.first << "\" @ \"" << tag.first << "\"" << std::endl;
+      }
+
+      tag.second->Update(*this, "state");
     }
+    GetRecordSetW(e.first).initializeTags();
   }
-};
+}
 
-void State::InitializeFieldCopies() {
-  VerboseObject vo("State", state_plist_); 
+
+void State::InitializeFieldCopies(const Tag& reference_tag)
+{
+  VerboseObject vo("State", state_plist_);
   if (vo.os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab = vo.getOSTab();
     *vo.os() << "initializing field copies..." << std::endl;
   }
 
-  for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
-    Teuchos::RCP<Field> field = f_it->second;
-    for (Amanzi::Field::copy_iterator cp_it = field->copy_begin(); cp_it != field->copy_end(); ++cp_it){
-      Key owner_key = field->GetCopy(cp_it->first)->owner();
-      *field->GetCopy(cp_it->first,owner_key)->GetFieldData() = *field->GetFieldData();
-    } 
-  }
-
-};
-
-
-void State::InitializeFields() {
-  bool pre_initialization = false;
-  VerboseObject vo("State", state_plist_); 
-
-  if (state_plist_.isParameter("initialization filename")) {
-    pre_initialization = true;
-    std::string filename = state_plist_.get<std::string>("initialization filename");
-    Amanzi::HDF5_MPI file_input(GetMesh()->get_comm(), filename);
-    file_input.open_h5file();
-    for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
-      if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
-        bool read_complete = f_it->second->ReadCheckpoint(file_input);
-        if (read_complete){
-          if (HasFieldEvaluator(f_it->first)) {
-            Teuchos::RCP<FieldEvaluator> fm = GetFieldEvaluator(f_it->first);
-            Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator =
-              Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-            if (solution_evaluator != Teuchos::null){
-              Teuchos::Ptr<State> S_ptr(this);
-              solution_evaluator->SetFieldAsChanged(S_ptr);
-            }
-          }          
-          f_it->second->set_initialized();
-        }
-      }
-    }
-    file_input.close_h5file();
-  }
-   
-  // Initialize through initial condition
-  if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
-    Teuchos::OSTab tab = vo.getOSTab();
-    *vo.os() << "initializing fields through initial conditions..." << std::endl;
-  }
-
-  for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
-    if (pre_initialization || (!f_it->second->initialized())) {
-      if (state_plist_.isSublist("initial conditions")) {
-        if (state_plist_.sublist("initial conditions").isSublist(f_it->first)) {
-          Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
-          f_it->second->Initialize(sublist);
-        } else {
-          // check for domain set
-          KeyTriple split;
-          bool is_ds = Keys::splitDomainSet(f_it->first, split);
-          Key ds_name = std::get<0>(split);
-          if (is_ds) {
-            Key lifted_key = Keys::getKey(ds_name, "*", std::get<2>(split));
-            if (state_plist_.sublist("initial conditions").isSublist(lifted_key)) {
-              Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(lifted_key);
-              sublist.set("evaluator name", f_it->first);
-              //sublist.setName(f_it->first);
-              //state_plist_.sublist("initial conditions").set(f_it->first, sublist);
-              //sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
-              f_it->second->Initialize(sublist);
-            }
+  for (auto& e : data_) {
+    if (HasRecord(e.first, reference_tag)) {
+      const auto& copy = GetRecord(e.first, reference_tag);
+      if (copy.initialized() && copy.ValidType<CompositeVector>()) {
+        for (auto& r : *e.second) {
+          if (!r.second->initialized()) {
+            r.second->Assign(copy);
+            r.second->set_initialized();
           }
         }
       }
     }
   }
-};
+}
 
 
-// Make sure all fields that are not evaluated by a FieldEvaluator are
-// initialized.  Such fields may be used by an evaluator field but are not in
-// the dependency tree due to poor design.
-bool State::CheckNotEvaluatedFieldsInitialized() {
-  for (FieldMap::iterator f_it = fields_.begin();
-       f_it != fields_.end(); ++f_it) {
-    Teuchos::RCP<Field> field = f_it->second;
-    if (!HasFieldEvaluator(f_it->first)) {
-      // first check and see if there is a FieldEvaluator, but we haven't yet used it.
-      Teuchos::RCP<FieldEvaluator> found_eval;
-      for (evaluator_iterator f_eval_it = field_evaluator_begin();
-         f_eval_it != field_evaluator_end(); ++f_eval_it) {
-        if (f_eval_it->second->ProvidesKey(f_it->first)) {
-          found_eval = f_eval_it->second;
-          break;
+void State::InitializeFields(const Tag& tag)
+{
+  bool pre_initialization = false;
+  VerboseObject vo("State", state_plist_);
+
+  // this directly overlaps with "initial conditions" --> "varname" -->
+  // "restart file" capability, but is done globally instead of by variable.
+  // Can the be refactored to use that instead?
+  if (state_plist_.isParameter("initialization filename")) {
+    pre_initialization = true;
+    std::string filename = state_plist_.get<std::string>("initialization filename");
+    Amanzi::Checkpoint file_input(filename, *this);
+
+    for (auto it = data_.begin(); it != data_.end(); ++it) {
+      auto owner = GetRecord(it->first, tag).owner();
+      auto& r = GetRecordW(it->first, tag, owner);
+      if (r.ValidType<CompositeVector>()) {
+        r.ReadCheckpoint(file_input, tag);
+
+        // this is pretty hacky -- why are these ICs not in the PK's list?  And
+        // if they aren't owned by a PK, they should be independent variables
+        // not primary variables.
+        if (HasEvaluator(it->first, tag)) {
+          Evaluator& fm = GetEvaluator(it->first, tag);
+          auto tmp = dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>* >(&fm);
+          if (tmp != nullptr) {
+            tmp->SetChanged();
+          }
+        }
+        it->second->initializeTags();
+      }
+
+      if (vo.os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = vo.getOSTab();
+        *vo_->os() << "initializing from HDF5 file: \"" << it->first << std::endl;
+      }
+    }
+    // file_input.close_h5file();
+  }
+
+  // Initialize through initial condition
+  if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
+    Teuchos::OSTab tab = vo.getOSTab();
+    *vo.os() << "initializing data through initial conditions..." << std::endl;
+  }
+
+  Tag failed;
+  if (state_plist_.isSublist("initial conditions")) {
+    for (auto& e : data_) {
+      std::string flag("... skipped");
+      if (pre_initialization || !e.second->isInitialized(failed)) {
+        if (state_plist_.sublist("initial conditions").isSublist(e.first)) {
+          flag = "[ok]";
+          Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(e.first);
+          e.second->Initialize(sublist);
+        } else {
+          // check for domain set
+          KeyTriple split;
+          bool is_ds = Keys::splitDomainSet(e.first, split);
+          Key ds_name = std::get<0>(split);
+          if (is_ds) {
+            Key lifted_key = Keys::getKey(ds_name, "*", std::get<2>(split));
+            if (state_plist_.sublist("initial conditions").isSublist(lifted_key)) {
+              flag = "[ok]";
+              Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(lifted_key);
+              sublist.set("evaluator name", e.first);
+              e.second->Initialize(sublist);
+            }
+          }
         }
       }
 
-      if (found_eval != Teuchos::null) {
-        // found an evaluator that provides this key, set it.
-        SetFieldEvaluator(f_it->first, found_eval);
-      } else if (!field->initialized()) {
-        // No evaluator, not intialized... FAIL.
-        std::stringstream messagestream;
-        messagestream << "Field " << field->fieldname() << " was not initialized. Owner:" << field->owner();
-        Errors::Message message(messagestream.str());
-        Exceptions::amanzi_throw(message);
-        return false;
+      if (vo.os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = vo.getOSTab();
+        *vo_->os() << "initializing \"" << e.first << "\" " << flag << std::endl;
       }
     }
   }
-  return true;
-};
-
-// Make sure all fields that are not evaluated by a FieldEvaluator are
-// initialized.  Such fields may be used by an evaluator field but are not in
-// the dependency tree due to poor design.
-bool State::CheckNotEvaluatedFieldsInitialized(Teuchos::RCP<State> S) {
-  for (FieldMap::iterator f_it = fields_.begin();
-       f_it != fields_.end(); ++f_it) {
-    Teuchos::RCP<Field> field = f_it->second;
-    if (!HasFieldEvaluator(f_it->first)) {
-      // first check and see if there is a FieldEvaluator, but we haven't yet used it.
-      Teuchos::RCP<FieldEvaluator> found_eval;
-      for (evaluator_iterator f_eval_it = field_evaluator_begin();
-         f_eval_it != field_evaluator_end(); ++f_eval_it) {
-        if (f_eval_it->second->ProvidesKey(f_it->first)) {
-          found_eval = f_eval_it->second;
-          break;
-        }
-      }
-
-      if (found_eval != Teuchos::null) {
-        // found an evaluator that provides this key, set it.
-        SetFieldEvaluator(f_it->first, found_eval);
-      } else if (!field->initialized()) {
-        // No evaluator, not intialized... FAIL.
-        std::stringstream messagestream;
-        messagestream << "Field " << field->fieldname() << " was not initialized. Owner:" << field->owner();
-        Errors::Message message(messagestream.str());
-        Exceptions::amanzi_throw(message);
-        return false;
-      }
-    }
-  }
-  return true;
-};
+}
 
 
 // Make sure all fields have gotten their IC, either from State or the owning PK.
-bool State::CheckAllFieldsInitialized() {
-  for (FieldMap::iterator f_it = fields_.begin();
-       f_it != fields_.end(); ++f_it) {
-    Teuchos::RCP<Field> field = f_it->second;
-    if (!field->initialized()) {
-      // field was not initialized
-      std::stringstream messagestream;
-      messagestream << "Field " << field->fieldname() << " was not initialized. Owner:" << field->owner();
-      Errors::Message message(messagestream.str());
-      Exceptions::amanzi_throw(message);
+bool State::CheckAllFieldsInitialized()
+{
+  Tag failed;
+  for (auto& e : data_) {
+    if (!e.second->isInitialized(failed)) {
+      std::stringstream ss;
+      ss << "Variable \"" << e.first << "\" with tag \"" << failed.get() << "\" was not initialized\n";
+      Errors::Message msg(ss.str());
+      Exceptions::amanzi_throw(msg);
       return false;
     }
   }
   return true;
-};
-
-
-
-// Make sure all fields have gotten their IC, either from State or the owning PK.
-// if state S has the same filed the data is copied
-
-bool State::CheckAllFieldsInitialized(Teuchos::RCP<State> S) {
-
-
-  for (FieldMap::iterator f_it = fields_.begin();
-       f_it != fields_.end(); ++f_it) {
-    Teuchos::RCP<Field> field = f_it->second;
-    Teuchos::RCP<Field> copy = S->GetField_(field->fieldname());
-    if (copy != Teuchos::null) {
-      if (field->type() != copy->type()) {
-        std::stringstream messagestream;
-        messagestream << "States has fields with the same name but different types\n";
-        Errors::Message message(messagestream.str());
-        Exceptions::amanzi_throw(message);
-        return false;
-      }
-      switch (field->type()) {
-      case CONSTANT_SCALAR:
-        *field->GetScalarData() = *copy->GetScalarData();
-        break;
-      case CONSTANT_VECTOR:
-        *field->GetConstantVectorData() = *copy->GetConstantVectorData();
-        break;
-      case COMPOSITE_VECTOR_FIELD:
-        *field->GetFieldData() = *copy->GetFieldData();
-        break;
-      default:
-        Errors::Message message("Copy field with unknown type\n");
-        Exceptions::amanzi_throw(message);
-        return false;
-      }
-      field->set_initialized();
-    }   
-  }
-
-
-  for (FieldMap::iterator f_it = fields_.begin();
-       f_it != fields_.end(); ++f_it) {
-    Teuchos::RCP<Field> field = f_it->second;
-    if (!field->initialized()) {
-      // field was not initialized
-      std::stringstream messagestream;
-      messagestream << "Field " << field->fieldname() << " was not initialized. Owner:" << field->owner();
-      Errors::Message message(messagestream.str());
-      Exceptions::amanzi_throw(message);
-      return false;
-    }
-  }
-  return true;
-};
-
-
-// Check the consistency of a field's meta-data.
-Teuchos::RCP<Field>
-State::CheckConsistent_or_die_(Key fieldname, FieldType type, Key owner) {
-  AMANZI_ASSERT(fieldname != Key(""));
-
-  Teuchos::RCP<Field> record = GetField_(fieldname);
-  if (record == Teuchos::null) {
-    // No existing field of that fieldname, so anything is ok.
-    return record;
-  }
-
-  if (owner == Key("state") ||
-      record->owner() == Key("state") ||
-      owner == record->owner()) {
-
-    if (record->type() != type) {
-      std::stringstream messagestream;
-      messagestream << "Requested field " << fieldname << " of type "
-                    << type << " already exists and is of type "
-                    << record->type();
-      Errors::Message message(messagestream.str());
-      Exceptions::amanzi_throw(message);
-    }
-  } else {
-    // Field exists and is owned
-    std::stringstream messagestream;
-    messagestream << "Requested field " << fieldname << " already exists and is owned by "
-                  << record->owner();
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
-
-  return record;
-};
-
-
-// Set the State's time and evaluate any state-owned scalar/vector fields at
-// the new time if they have an associated function.
-void State::set_time( double new_time ) {
-  for (FieldMap::iterator f_it = fields_.begin();
-       f_it != fields_.end(); ++f_it) {
-    f_it->second->Compute(new_time);
-  }
-  time_ = new_time;
 }
 
 
 // Utility for setting vis flags
-void State::InitializeIOFlags() {
+void State::InitializeIOFlags()
+{
   Teuchos::Array<std::string> empty;
 
   // removing fields from vis dump
-  std::vector<std::string> blacklist = 
+  std::vector<std::string> blacklist =
       state_plist_.get<Teuchos::Array<std::string> >("blacklist", empty).toVector();
 
-  for (State::field_iterator field=field_begin(); field!=field_end(); ++field) {
+  for (auto it = data_begin(); it != data_end(); ++it) {
     bool io_block(false);
     for (int m = 0; m < blacklist.size(); ++m) {
       std::regex pattern(blacklist[m]);
-      io_block |= std::regex_match(field->first, pattern);
+      io_block |= std::regex_match(it->first, pattern);
     }
-    field->second->set_io_vis(!io_block);
+    for (auto& r : *it->second) r.second->set_io_vis(!io_block);
   }
 
   // adding fields to vis dump
   std::vector<std::string> whitelist =
       state_plist_.get<Teuchos::Array<std::string> >("whitelist", empty).toVector();
 
-  for (State::field_iterator field=field_begin(); field!=field_end(); ++field) {
+  for (auto it = data_begin(); it != data_end(); ++it) {
     bool io_allow(false);
     for (int m = 0; m < whitelist.size(); ++m) {
       std::regex pattern(whitelist[m]);
-      io_allow |= std::regex_match(field->first, pattern);
+      io_allow |= std::regex_match(it->first, pattern);
     }
-    if (io_allow) field->second->set_io_vis(true);
+    if (io_allow) {
+      for (auto& r : *it->second) r.second->set_io_vis(true);
+    }
   }
 }
 
 
-// Non-member function for vis.
-void WriteVis(Visualization& vis,
-              State& S) {
-  if (!vis.is_disabled()) {
-    // Create the new time step
-    vis.CreateTimestep(S.time(), S.cycle(), vis.get_tag());
-
-    // Write all fields to the visualization file, the fields know if they
-    // need to be written.
-    Key vis_domain = vis.get_name();
-    for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
-      field->second->WriteVis(vis);
-    }
-    vis.WriteRegions();
-    vis.WritePartition();
-
-    // Finalize i/o.
-    vis.FinalizeTimestep();
-  }
-};
-
-
-// Non-member function for checkpointing.
-double ReadCheckpoint(State& S, const std::string& filename) {
-  Checkpoint chkp;
-  return chkp.Read(S, filename);
-};
-
-// Non-member function for checkpointing.
-double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
-                                 std::string filename) {
-  if (!Keys::ends_with(filename, ".h5")) {
-    // new style checkpoint
-    boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
-    filename = filepath.string();
-  }
-  HDF5_MPI checkpoint(comm, filename);
-
-  // load the attributes
-  double time(0.);
-  checkpoint.open_h5file();
-  checkpoint.readAttrReal(time, "time");
-  checkpoint.close_h5file();
-  return time;
-};
-
-// Non-member function for checkpointing position.
-int ReadCheckpointPosition(const Comm_ptr_type& comm,
-                           std::string filename) {
-  if (!Keys::ends_with(filename, ".h5")) {
-    // new style checkpoint
-    boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
-    filename = filepath.string();
-  }
-  HDF5_MPI checkpoint(comm, filename);
-
-  // load the attributes
-  int pos = 0;
-  checkpoint.open_h5file();
-  checkpoint.readAttrInt(pos, "position");
-  checkpoint.close_h5file();
-  return pos;
-};
-
-// Non-member function for checkpointing observations.
-void ReadCheckpointObservations(const Comm_ptr_type& comm,
-                                std::string filename,
-                                Amanzi::ObservationData& obs_data) {
-  if (!Keys::ends_with(filename, ".h5")) {
-    // new style checkpoint
-    boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
-    filename = filepath.string();
-  }
-
-  HDF5_MPI checkpoint(comm, filename);
-  checkpoint.open_h5file();
-
-  // read observations
-  int nlabels, ndata(0), ndata_glb(0);
-  int* nobs;
-  char** tmp_labels;
-  double* tmp_data(NULL);
-
-  checkpoint.readDataString(&tmp_labels, &nlabels, "obs_names");
-  if (nlabels > 0) { 
-    checkpoint.readAttrInt(&nobs, &nlabels, "obs_numbers");
-  }
-  for (int i = 0; i < nlabels; ++i) ndata_glb += 2 * nobs[i];
-  ndata = (comm->MyPID() == 0) ? ndata_glb : 0;
-  checkpoint.readDatasetReal(&tmp_data, ndata, "obs_values");
-
-  checkpoint.close_h5file();
-
-  // populated observations on root
-  if (comm->MyPID() == 0) {
-    int m(0);
-    Amanzi::ObservationData::DataQuadruple data_quad;
-
-    for (int i = 0; i < nlabels; ++i) {
-      std::vector<ObservationData::DataQuadruple>& od = obs_data[tmp_labels[i]];
-      for (int k = 0; k < nobs[i]; ++k) {
-        data_quad.time = tmp_data[m++];
-        data_quad.value = tmp_data[m++];
-        data_quad.is_valid = true;
-        od.push_back(data_quad);
-      }
-    }
-  }
-
-  // clean memory
-  for (int i = 0; i < nlabels; i++) free(tmp_labels[i]);
-  if (nlabels > 0) {
-    free(tmp_labels);
-    free(nobs);
-    if (tmp_data != NULL) free(tmp_data); 
-  }
-}
-
-// Non-member function for deforming the mesh after reading a checkpoint file
-// that contains the vertex coordinate field (this is written by deformation pks)
-void DeformCheckpointMesh(State& S, Key domain) {
-  if (S.HasField(Keys::getKey(domain,"vertex_coordinate"))) { 
-    // only deform mesh if vertex coordinate field exists
-    AmanziMesh::Mesh * write_access_mesh_ =  const_cast<AmanziMesh::Mesh*>(&*S.GetMesh(domain));
-
-    // get vertex coordinates state
-    Teuchos::RCP<const CompositeVector> vc = S.GetFieldData(Keys::getKey(domain,"vertex_coordinate"));
-    vc->ScatterMasterToGhosted("node");
-    const Epetra_MultiVector& vc_n = *vc->ViewComponent("node",true);
-
-    int dim = write_access_mesh_->space_dimension();
-    Amanzi::AmanziMesh::Entity_ID_List nodeids;
-    Amanzi::AmanziGeometry::Point new_coords(dim);
-    AmanziGeometry::Point_List new_pos, final_pos;
-    // loop over vertices and update vc
-    unsigned int nV = vc_n.MyLength();
-    for (unsigned int iV=0; iV!=nV; ++iV) {
-      // set the coords of the node
-      for (unsigned int s=0; s!=dim; ++s) new_coords[s] = vc_n[s][iV];
-
-      // push back for deform method
-      nodeids.push_back(iV);
-      new_pos.push_back(new_coords);
-    }
-
-    // deform
-    if (boost::starts_with(domain, "column"))
-      write_access_mesh_->deform( nodeids, new_pos, false, &final_pos); // deforms the mesh
-    else
-      write_access_mesh_->deform( nodeids, new_pos, true, &final_pos); // deforms the mesh
-  }
+Evaluator& State::GetEvaluator(const Key& key, const Tag& tag) {
+  return *GetEvaluatorPtr(key, tag);
 }
 
 
-// Non-member function for statistics
-void WriteStateStatistics(const State& S, const VerboseObject& vo)
+const Evaluator& State::GetEvaluator(const Key& key, const Tag& tag) const
 {
-  if (vo.os_OK(Teuchos::VERB_HIGH)) {
-    Teuchos::OSTab tab = vo.getOSTab();
-    *vo.os() << "\nField                                    Min/Max/Avg" << std::endl;
-
-    for (auto f_it = S.field_begin(); f_it != S.field_end(); ++f_it) {
-      std::string name(f_it->first);
-      if (name.size() > 33) replace_all(name, "temperature", "temp");
-      if (name.size() > 33) replace_all(name, "internal_energy", "ie");
-      if (name.size() > 33) replace_all(name, "molar", "mol");
-
-      if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
-        std::map<std::string, double> vmin, vmax, vavg;
-        f_it->second->GetFieldData()->MinValue(vmin);
-        f_it->second->GetFieldData()->MaxValue(vmax);
-        f_it->second->GetFieldData()->MeanValue(vavg);
-
-        for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
-          std::string namedot(name), name_comp(c_it->first);
-          if (vmin.size() != 1) namedot.append("." + name_comp);
-          namedot.resize(40, '.');
-          *vo.os() << namedot << " " << c_it->second << " / " 
-                    << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;
-        }
-      } else if (f_it->second->type() == CONSTANT_SCALAR) {
-        double vmin = *f_it->second->GetScalarData();
-        name.resize(40, '.');
-        *vo.os() << name << " " << vmin << std::endl;
-      }
-    }
+  try {
+    return *evaluators_.at(key).at(tag);
+  } catch (std::out_of_range) {
+    std::stringstream ss;
+    ss << "Evaluator for field \"" << key << "\" at tag \"" << tag
+       << "\" does not exist in the state.";
+    Errors::Message message(ss.str());
+    throw(message);
   }
-};
+}
+
+
+Teuchos::RCP<Evaluator> State::GetEvaluatorPtr(const Key& key, const Tag& tag)
+{
+  try {
+    return evaluators_.at(key).at(tag);
+  } catch (std::out_of_range) {
+    std::stringstream ss;
+    ss << "Evaluator for field \"" << key << "\" at tag \"" << tag
+       << "\" does not exist in the state.";
+    Errors::Message message(ss.str());
+    throw(message);
+  }
+}
+
+
+// Key defines field, Tag defines particular copy of field
+void State::SetEvaluator(const Key& key, const Tag& tag,
+                         const Teuchos::RCP<Evaluator>& evaluator) {
+  evaluators_[key][tag] = evaluator;
+}
 
 
 Teuchos::ParameterList&
@@ -1535,9 +848,11 @@ State::GetEvaluatorList(const Key& key)
       }
     }
   }
+
   // return an empty new list
   return FEList().sublist(key);
 }
+
 
 bool
 State::HasEvaluatorList(const Key& key)
@@ -1554,7 +869,7 @@ State::HasEvaluatorList(const Key& key)
 }
 
 
-void State::CheckIsDebugEval_(const Key& key)
+void State::CheckIsDebugEval_(const Key& key, const Tag& tag)
 {
   // check for debugging.  This provides a line for setting breakpoints for
   // debugging PK and Evaluator dependencies.
@@ -1563,23 +878,35 @@ void State::CheckIsDebugEval_(const Key& key)
           Teuchos::Array<Key>());
   if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << "State: Evaluator for debug field \"" << key << "\" was required." << std::endl;
+      *vo_->os() << "State: Evaluator for debug field \"" << key << "@" << tag << "\" was required." << std::endl;
+    }
+    if (tag == Tags::DEFAULT) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << " -- default tag" << std::endl;
+      }
     }
   }
 #endif
 }
 
-void State::CheckIsDebugField_(const Key& fieldname)
+void State::CheckIsDebugData_(const Key& key, const Tag& tag)
 {
+  // check for debugging.  This provides a line for setting breakpoints for
+  // debugging PK and Evaluator dependencies.
 #ifdef ENABLE_DBC
-  Teuchos::Array<Key> debug_fields = state_plist_.sublist("debug").get<Teuchos::Array<std::string>>("fields",
+  Teuchos::Array<Key> debug_evals = state_plist_.sublist("debug").get<Teuchos::Array<std::string>>("data",
           Teuchos::Array<Key>());
-  if (std::find(debug_fields.begin(), debug_fields.end(), fieldname) != debug_fields.end()) {
+  if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << "State: Field for debug field \"" << fieldname << "\" was required." << std::endl;
+      *vo_->os() << "State: data for debug field \"" << key << "@" << tag << "\" was required." << std::endl;
+    }
+    if (tag == Tags::DEFAULT) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << " -- default tag" << std::endl;
+      }
     }
   }
 #endif
 }
 
-} // namespace Amanzi
+}  // namespace Amanzi

@@ -8,7 +8,7 @@
 class nonlinearODE : public Amanzi::BDFFnBase<Epetra_Vector> {
 public:
   nonlinearODE(double atol, double rtol, bool exact_jacobian) :
-      rtol_(rtol), atol_(atol), exact_jacobian_(exact_jacobian) {
+      exact_jacobian_(exact_jacobian), atol_(atol), rtol_(rtol) {
   }
 
   void FunctionalResidual(double told, double tnew, Teuchos::RCP<Epetra_Vector> uold,

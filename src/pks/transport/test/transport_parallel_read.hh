@@ -58,38 +58,36 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+  TransportExplicit_PK TPK(plist, S, "transport", component_names);
+  TPK.Setup();
+  S->Setup();
+  S->InitializeFields();
+  S->InitializeEvaluators();
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
 
-  TransportExplicit_PK TPK(plist, S, "transport", component_names);
-  TPK.Setup(S.ptr());
-  TPK.CreateDefaultState(mesh, 2);
-  S->InitializeFields();
-  S->InitializeEvaluators();
-
   // modify the default state for the problem at hand
   std::string passwd("state"); 
-  Teuchos::RCP<Epetra_MultiVector> 
-      flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    (*flux)[0][f] = velocity * normal;
+    flux[0][f] = velocity * normal;
   }
  
-  Teuchos::RCP<Epetra_MultiVector>
-      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell");
+  auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-    (*tcc)[0][c] = f_step(xc, 0.0);
+    tcc[0][c] = f_step(xc, 0.0);
   }
 
   // initialize a transport process kernel from a transport state
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
 
   // advance the state
   double t_old(0.0), t_new(0.0), dt;
@@ -105,17 +103,17 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
     t_new = t_old + dt;
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new, S);
+    TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
     iter++;
 
     if (iter < 10 && TPK.MyPID == 2) {
       printf("T=%7.2f  C_0(x):", t_new);
-      for (int k = 0; k < 2; k++) printf("%7.4f", (*tcc)[0][k]); std::cout << std::endl;
+      for (int k = 0; k < 2; k++) printf("%7.4f", tcc[0][k]); std::cout << std::endl;
     }
   }
 
   for (int k = 0; k < 12; k++) 
-    CHECK_CLOSE((*tcc)[0][k], 1.0, 1e-6);
+    CHECK_CLOSE(tcc[0][k], 1.0, 1e-6);
 }

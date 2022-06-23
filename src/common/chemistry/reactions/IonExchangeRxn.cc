@@ -23,9 +23,9 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 IonExchangeRxn::IonExchangeRxn()
-  : ref_cation_sorbed_conc_(1.e-9),
-    uniform_z_(false),
-    uniform_z_set_(false)
+  : uniform_z_(false),
+    uniform_z_set_(false),
+    ref_cation_sorbed_conc_(1.e-9)
 {
   ionx_site_.clear();
   ionx_complexes_.clear();
@@ -35,9 +35,9 @@ IonExchangeRxn::IonExchangeRxn()
 IonExchangeRxn::IonExchangeRxn(
     IonExchangeSite* ionx_sites,
     const std::vector<IonExchangeComplex>& ionx_complexes) 
-    : ref_cation_sorbed_conc_(1.e-9),
-      uniform_z_(false),
-      uniform_z_set_(false) {
+    : uniform_z_(false),
+      uniform_z_set_(false),
+      ref_cation_sorbed_conc_(1.e-9) {
   // surface site
   ionx_site_.push_back(*ionx_sites);
 
@@ -50,9 +50,9 @@ IonExchangeRxn::IonExchangeRxn(
 
 
 IonExchangeRxn::IonExchangeRxn(IonExchangeSite ionx_sites) 
-    : ref_cation_sorbed_conc_(1.e-9),
-      uniform_z_(false),
-      uniform_z_set_(false)
+    : uniform_z_(false),
+      uniform_z_set_(false),
+      ref_cation_sorbed_conc_(1.e-9)
 {
   ionx_site_.push_back(ionx_sites);
   ionx_complexes_.clear();

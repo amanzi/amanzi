@@ -27,6 +27,9 @@
 namespace Amanzi {
 namespace Energy {
 
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
+
 /* ******************************************************************
 * Default constructor for Thermal Richrads PK.
 ****************************************************************** */
@@ -37,7 +40,8 @@ EnergyTwoPhase_PK::EnergyTwoPhase_PK(
                    const Teuchos::RCP<TreeVector>& soln) :
     PK(pk_tree, glist, S, soln),
     Energy_PK(pk_tree, glist, S, soln),
-    soln_(soln)
+    soln_(soln),
+    dt_(0.0)
 {
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = ep_list_->sublist("verbose object");
@@ -49,49 +53,100 @@ EnergyTwoPhase_PK::EnergyTwoPhase_PK(
 * Create the physical evaluators for energy, enthalpy, thermal
 * conductivity, and any sources.
 ****************************************************************** */
-void EnergyTwoPhase_PK::Setup(const Teuchos::Ptr<State>& S)
+void EnergyTwoPhase_PK::Setup()
 {
   // basic class setup
-  Energy_PK::Setup(S);
+  Energy_PK::Setup();
 
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
-  if (!S->HasField(energy_key_)) {
-    S->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasRecord(energy_key_)) {
+    S_->Require<CV_t, CVS_t>(energy_key_, Tags::DEFAULT, energy_key_)
+      .SetMesh(mesh_)->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("energy evaluator");
     elist.set<std::string>("energy key", energy_key_)
-         .set<bool>("vapor diffusion", true)
          .set<std::string>("particle density key", particle_density_key_)
-         .set<std::string>("internal energy rock key", ie_rock_key_);
-    Teuchos::RCP<TotalEnergyEvaluator> ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
-    S->SetFieldEvaluator(energy_key_, ee);
+         .set<std::string>("internal energy rock key", ie_rock_key_)
+         .set<bool>("vapor diffusion", true)
+         .set<std::string>("tag", "");
+    elist.setName(energy_key_);
+    if (flow_on_manifold_) 
+      elist.set<std::string>("aperture key", aperture_key_);
+
+    auto ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
+    S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
+
+    S_->RequireDerivative<CV_t, CVS_t>(energy_key_, Tags::DEFAULT,
+                                       temperature_key_, Tags::DEFAULT, energy_key_);
   }
 
   // -- advection of enthalpy
-  if (!S->HasField(enthalpy_key_)) {
-    S->RequireField(enthalpy_key_)->SetMesh(mesh_)
-      ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->SetGhosted()->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  if (!S_->HasRecord(enthalpy_key_)) {
+    S_->Require<CV_t, CVS_t>(enthalpy_key_, Tags::DEFAULT, enthalpy_key_)
+      .SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("enthalpy evaluator");
-    elist.set("enthalpy key", enthalpy_key_);
+    elist.set("enthalpy key", enthalpy_key_)
+         .set<std::string>("tag", "");
+    elist.setName(enthalpy_key_);
 
     auto enth = Teuchos::rcp(new EnthalpyEvaluator(elist));
-    S->SetFieldEvaluator(enthalpy_key_, enth);
+    S_->SetEvaluator(enthalpy_key_, Tags::DEFAULT, enth);
+
+    S_->RequireDerivative<CV_t, CVS_t>(enthalpy_key_, Tags::DEFAULT,
+                                       temperature_key_, Tags::DEFAULT, enthalpy_key_);
   }
 
   // -- thermal conductivity
-  if (!S->HasField(conductivity_key_)) {
-    S->RequireField(conductivity_key_)->SetMesh(mesh_)
-      ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasRecord(conductivity_key_)) {
+    S_->Require<CV_t, CVS_t>(conductivity_key_, Tags::DEFAULT, conductivity_key_)
+      .SetMesh(mesh_)->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("thermal conductivity evaluator");
-    elist.set("thermal conductivity key", conductivity_key_);
+    elist.set("thermal conductivity key", conductivity_key_)
+         .set<std::string>("tag", "");
+    elist.setName(conductivity_key_);
 
     auto tcm = Teuchos::rcp(new TCMEvaluator_TwoPhase(elist));
-    S->SetFieldEvaluator(conductivity_key_, tcm);
+    S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, tcm);
+  }
+
+  // -- densities
+  S_->Require<CV_t, CVS_t>(mol_density_gas_key_, Tags::DEFAULT, mol_density_gas_key_)
+    .SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  S_->RequireEvaluator(mol_density_gas_key_, Tags::DEFAULT);
+
+  S_->RequireDerivative<CV_t, CVS_t>(mol_density_gas_key_, Tags::DEFAULT,
+                                    temperature_key_, Tags::DEFAULT, mol_density_gas_key_);
+
+  // -- energies (gas)
+  S_->Require<CV_t, CVS_t>(ie_gas_key_, Tags::DEFAULT, ie_gas_key_)
+    .SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  S_->RequireEvaluator(ie_gas_key_, Tags::DEFAULT);
+
+  S_->RequireDerivative<CV_t, CVS_t>(ie_gas_key_, Tags::DEFAULT,
+                                     temperature_key_, Tags::DEFAULT, ie_gas_key_);
+
+  // -- molar/mass
+  S_->Require<CV_t, CVS_t>(x_gas_key_, Tags::DEFAULT, x_gas_key_)
+    .SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  S_->RequireEvaluator(x_gas_key_, Tags::DEFAULT);
+
+  S_->RequireDerivative<CV_t, CVS_t>(x_gas_key_, Tags::DEFAULT,
+                                     temperature_key_, Tags::DEFAULT, x_gas_key_);
+
+  // other evalautors
+  if (!S_->HasRecord(particle_density_key_)) {
+    S_->Require<CV_t, CVS_t>(particle_density_key_, Tags::DEFAULT, particle_density_key_);
   }
 }
 
@@ -99,17 +154,17 @@ void EnergyTwoPhase_PK::Setup(const Teuchos::Ptr<State>& S)
 /* ******************************************************************
 * Initialize the needed models to plug in enthalpy.
 ****************************************************************** */
-void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
+void EnergyTwoPhase_PK::Initialize()
 {
   // times, initialization could be done on any non-zero interval.
-  double t_old = S->time(); 
+  double t_old = S_->get_time(); 
   dt_ = ti_list_->get<double>("initial time step", 1.0);
 
   // Call the base class initialize.
-  Energy_PK::Initialize(S);
+  Energy_PK::Initialize();
 
   // Create pointers to the primary flow field pressure.
-  solution = S->GetFieldData(temperature_key_, passwd_);
+  solution = S_->GetPtrW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_);
   soln_->SetData(solution); 
 
   // Create local evaluators. Initialize local fields.
@@ -117,13 +172,13 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Create specific evaluators (not used yet)
   /*
-  Teuchos::RCP<FieldEvaluator> eos_fe = S->GetFieldEvaluator("molar_density_liquid");
+  Teuchos::RCP<FieldEvaluator> eos_fe = S_->GetFieldEvaluator("molar_density_liquid");
   eos_fe->HasFieldChanged(S.ptr(), "molar_density_liquid");
   Teuchos::RCP<Relations::EOSEvaluator> eos_eval = Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
   AMANZI_ASSERT(eos_eval != Teuchos::null);
   eos_liquid_ = eos_eval->get_EOS();
 
-  Teuchos::RCP<FieldEvaluator> iem_fe = S->GetFieldEvaluator("internal_energy_liquid");
+  Teuchos::RCP<FieldEvaluator> iem_fe = S_->GetFieldEvaluator("internal_energy_liquid");
   Teuchos::RCP<IEMEvaluator> iem_eval = Teuchos::rcp_dynamic_cast<IEMEvaluator>(iem_fe);
   AMANZI_ASSERT(iem_eval != Teuchos::null);
   iem_liquid_ = iem_eval->get_IEM();
@@ -145,7 +200,7 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = opfactory_adv.Create(oplist_adv, mesh_);
 
-  const CompositeVector& flux = *S->GetFieldData(darcy_flux_key_);
+  const auto& flux = S_->Get<CV_t>(vol_flowrate_key_);
   op_matrix_advection_->Setup(flux);
   op_matrix_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
   op_advection_ = op_matrix_advection_->global_operator();
@@ -165,8 +220,8 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
     op_matrix_diff_->SetScalarCoefficient(upw_conductivity_, Teuchos::null);
     op_preconditioner_diff_->SetScalarCoefficient(upw_conductivity_, Teuchos::null);
   } else {
-    op_matrix_diff_->SetScalarCoefficient(S->GetFieldData(conductivity_key_), Teuchos::null);
-    op_preconditioner_diff_->SetScalarCoefficient(S->GetFieldData(conductivity_key_), Teuchos::null);
+    op_matrix_diff_->SetScalarCoefficient(S_->GetPtr<CV_t>(conductivity_gen_key_, Tags::DEFAULT), Teuchos::null);
+    op_preconditioner_diff_->SetScalarCoefficient(S_->GetPtr<CV_t>(conductivity_gen_key_, Tags::DEFAULT), Teuchos::null);
   }
 
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));
@@ -192,8 +247,8 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // initialize boundary conditions
-  double t_ini = S->time(); 
-  auto temperature = *S->GetFieldData(temperature_key_, passwd_);
+  double t_ini = S_->get_time(); 
+  auto temperature = S_->GetW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_);
   UpdateSourceBoundaryData(t_ini, t_ini, temperature);
 
   // output of initialization summary
@@ -222,16 +277,16 @@ void EnergyTwoPhase_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  if (S_->HasField(prev_energy_key_)) {
-    if (!S_->GetField(prev_energy_key_, passwd_)->initialized()) {
-      temperature_eval_->SetFieldAsChanged(S_.ptr());
-      S_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  if (S_->HasRecord(prev_energy_key_)) {
+    if (!S_->GetRecord(prev_energy_key_, Tags::DEFAULT).initialized()) {
+      temperature_eval_->SetChanged();
+      S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
 
-      const CompositeVector& e1 = *S_->GetFieldData(energy_key_);
-      CompositeVector& e0 = *S_->GetFieldData(prev_energy_key_, passwd_);
+      const auto& e1 = S_->Get<CV_t>(energy_key_);
+      auto& e0 = S_->GetW<CV_t>(prev_energy_key_, Tags::DEFAULT, passwd_);
       e0 = e1;
 
-      S_->GetField(prev_energy_key_, passwd_)->set_initialized();
+      S_->GetRecordW(prev_energy_key_, passwd_).set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initialized prev_energy to previous energy" << std::endl;  
@@ -249,12 +304,12 @@ bool EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   dt_ = t_new - t_old;
 
   // save a copy of pressure
-  CompositeVector temperature_copy(*S_->GetFieldData(temperature_key_, passwd_));
+  CompositeVector temperature_copy(S_->Get<CV_t>(temperature_key_));
 
   // swap conserved field (i.e., energy) and save
-  S_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const CompositeVector& e = *S_->GetFieldData(energy_key_);
-  CompositeVector& e_prev = *S_->GetFieldData(prev_energy_key_, passwd_);
+  S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
+  const auto& e = S_->Get<CV_t>(energy_key_);
+  auto& e_prev = S_->GetW<CV_t>(prev_energy_key_, Tags::DEFAULT, passwd_);
 
   CompositeVector e_prev_copy(e_prev);
   e_prev = e;
@@ -276,11 +331,11 @@ bool EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     dt_ = dt_next_;
 
     // restore the original primary solution, temperature
-    *S_->GetFieldData(temperature_key_, passwd_) = temperature_copy;
-    temperature_eval_->SetFieldAsChanged(S_.ptr());
+    S_->GetW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_) = temperature_copy;
+    temperature_eval_->SetChanged();
 
     // restore the original fields
-    *S_->GetFieldData(prev_energy_key_, passwd_) = e_prev_copy;
+    S_->GetW<CV_t>(prev_energy_key_, Tags::DEFAULT, passwd_) = e_prev_copy;
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Step failed. Restored temperature, prev_energy." << std::endl;
@@ -290,7 +345,7 @@ bool EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // commit solution (should we do it here ?)
   bdf1_dae_->CommitSolution(dt_, soln_);
-  temperature_eval_->SetFieldAsChanged(S_.ptr());
+  temperature_eval_->SetChanged();
 
   num_itrs_++;
   dt_ = dt_next_;
@@ -302,7 +357,7 @@ bool EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 /* ******************************************************************
 * TBW 
 ****************************************************************** */
-void EnergyTwoPhase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
+void EnergyTwoPhase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   dt_ = dt_next_;
 }

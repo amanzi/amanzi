@@ -12,6 +12,7 @@
 // Amanzi
 #include "CycleDriver.hh"
 #include "eos_registration.hh"
+#include "mdm_transport_registration.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
@@ -76,7 +77,7 @@ using namespace Amanzi::AmanziGeometry;
   K1 *= rho / mu;
   double pf_exact = p0 - q0 * (L / K1 / 2 + 1.0 / kn) - g * rho * L / 2;
 
-  double pf = (*S->GetFieldData("fracture-pressure")->ViewComponent("cell"))[0][0];
+  double pf = (*S->Get<CompositeVector>("fracture-pressure").ViewComponent("cell"))[0][0];
   std::cout << "Fracture pressure: " << pf << ",  exact: " << pf_exact << std::endl;
   CHECK(std::fabs(pf - pf_exact) < 0.05 * std::fabs(pf_exact));
 

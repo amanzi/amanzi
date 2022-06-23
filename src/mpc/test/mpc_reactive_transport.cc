@@ -36,8 +36,7 @@ using namespace Amanzi::AmanziGeometry;
   
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   // create mesh
   Preference pref;
@@ -62,7 +61,7 @@ using namespace Amanzi::AmanziGeometry;
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     cycle_driver.Go();
-    S->GetFieldData("total_component_concentration")->MeanValue(&avg1);
+    S->Get<CompositeVector>("total_component_concentration").MeanValue(&avg1);
   }
 
   // restart simulation and compare results

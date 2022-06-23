@@ -38,7 +38,7 @@ MDM_LichtnerKelkarRobinson::MDM_LichtnerKelkarRobinson(Teuchos::ParameterList& p
 * Anisotropic tensor defined by four parameters.
 ****************************************************************** */
 WhetStone::Tensor MDM_LichtnerKelkarRobinson::mech_dispersion(
-    const AmanziGeometry::Point& u, int axi_symmetry, double s, double phi) const
+    const AmanziGeometry::Point& u, int axi_symmetry, double wc, double phi) const
 {
   AMANZI_ASSERT(axi_symmetry >= 0 && axi_symmetry < 3);
   WhetStone::Tensor D(dim_, 2);
@@ -72,7 +72,7 @@ WhetStone::Tensor MDM_LichtnerKelkarRobinson::mech_dispersion(
       }
     }
 
-    D *= phi * s;
+    D *= wc;
   }
   return D;
 }

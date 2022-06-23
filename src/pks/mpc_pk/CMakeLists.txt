@@ -54,6 +54,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 if (ENABLE_AmanziPhysicsModule)
   set(mpc_tree_inc_files
+      FractureInsertion.hh
       PK_MPCStrong.hh
       PK_MPCWeak.hh
       PK_MPCSequential.hh
@@ -73,6 +74,7 @@ if (ENABLE_AmanziPhysicsModule)
       SurfaceSubsurface_PK.hh)
 
   set(mpc_tree_src_files 
+      FractureInsertion.cc
       PK_MPCWeak.cc 
       PK_MPCSequential.cc 
       PK_MPCSubcycled.cc 
@@ -138,9 +140,9 @@ if (BUILD_TESTS)
 
     # Test: 1
     #if (ENABLE_AmanziPhysicsModule) 
-    #  add_amanzi_test(energy_test energy_test
+    #  add_amanzi_test(mpc_pks_test mpc_pks_test
     #                  KIND int
-    #                  SOURCE test/Main.cc test/energy_test.cc
+    #                  SOURCE test/Main.cc test/mpc_pks_test.cc
     #                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     #endif()
 endif()

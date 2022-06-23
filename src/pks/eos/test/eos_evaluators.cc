@@ -127,7 +127,7 @@ TEST(FactoryEOS) {
          .set<std::string>("eos type", "liquid water " + name);
 
     EOSFactory<EOS_Density> factory;
-    auto eos = factory.CreateEOS(plist);
+    auto eos = factory.Create(plist);
 
     std::cout << name << ": water density at 20C and 1atm = " << eos->Density(293.15, 101325.0) << std::endl;
   }
@@ -141,7 +141,7 @@ TEST(FactoryEOS) {
          .set<std::string>("eos type", "liquid water " + name);
 
     EOSFactory<EOS_Viscosity> factory;
-    auto eos = factory.CreateEOS(plist);
+    auto eos = factory.Create(plist);
 
     std::cout << name << ": water viscosity at 20C and 1atm = " << eos->Viscosity(293.15, 101325.0) << std::endl;
   }
@@ -163,7 +163,7 @@ TEST(Exceptions) {
     // density
     {
       EOSFactory<EOS_Density> factory;
-      auto eos = factory.CreateEOS(plist);
+      auto eos = factory.Create(plist);
 
       try {
         eos->Density(193.15, -10.0);
@@ -178,7 +178,7 @@ TEST(Exceptions) {
     // viscosity
     {
       EOSFactory<EOS_Viscosity> factory;
-      auto eos = factory.CreateEOS(plist);
+      auto eos = factory.Create(plist);
 
       try {
         eos->Viscosity(193.15, 1.0e+10);
@@ -195,7 +195,7 @@ TEST(Exceptions) {
   Teuchos::ParameterList plist;
   plist.set<std::string>("eos type", "water vapor over water/ice");
   EOSFactory<EOS_SaturatedVaporPressure> factory;
-  auto eos = factory.CreateEOS(plist);
+  auto eos = factory.Create(plist);
 
   try {
     eos->Pressure(93.15);

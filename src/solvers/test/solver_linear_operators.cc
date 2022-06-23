@@ -40,7 +40,7 @@ class Matrix {
   }
 
   // 5-point FD stencil
-  virtual int Apply(const Epetra_Vector& v, Epetra_Vector& mv) const {
+  int Apply(const Epetra_Vector& v, Epetra_Vector& mv) const {
     int n = std::pow(v.Map().NumMyElements(), 0.5);
     for (int i = 0; i < n; i++) {
       for (int j = 0; j < n; j++) {
@@ -56,10 +56,10 @@ class Matrix {
     return 0;
   }
 
-  virtual void ComputeInverse() {}
-  virtual void InitializeInverse() {}
+  void ComputeInverse() {}
+  void InitializeInverse() {}
 
-  virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const {
+  int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const {
     int n = v.Map().NumMyElements();
     for (int i = 0; i < n; i++) hv[i] = v[i];
     return 0;
@@ -85,9 +85,9 @@ class Matrix {
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; }
   Teuchos::RCP<Amanzi::Operators::SuperMap> get_supermap() const { return Teuchos::null; }
 
-  virtual const Epetra_Map& DomainMap() const { return *map_; }
-  virtual const Epetra_Map& RangeMap() const { return *map_; }
-  virtual double* x() { return x_; }
+  const Epetra_Map& DomainMap() const { return *map_; }
+  const Epetra_Map& RangeMap() const { return *map_; }
+  double* x() { return x_; }
 
  private:
   Teuchos::RCP<Epetra_Map> map_;
@@ -227,7 +227,7 @@ TEST(NKA_SOLVER) {
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
 
-  // create the pcg operator
+  // create NKA operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
   AmanziSolvers::IterativeMethodNKA<Matrix,Matrix,Epetra_Vector,Epetra_Map> nka;
   nka.set_matrices(m,m);

@@ -18,14 +18,14 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 VirialCoefficient::VirialCoefficient()
-  : isp1(-1),
+  : npol(0),
+    virial(0.0),
+    isp1(-1),
     isp2(-1),
     isp3(-1),
-    npol(0),
     ifun1(-1),
     ifun2(-1),
-    ifun3(-1),
-    virial(0.0) {
+    ifun3(-1) {
 }
 
 

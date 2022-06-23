@@ -63,7 +63,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
 
   // create a MSTK mesh framework
   ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
+  auto gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));

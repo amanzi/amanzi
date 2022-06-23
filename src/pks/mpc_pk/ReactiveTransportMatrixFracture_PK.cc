@@ -20,6 +20,9 @@
 
 namespace Amanzi {
 
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
+
 // -----------------------------------------------------------------------------
 // Standard constructor
 // -----------------------------------------------------------------------------
@@ -37,33 +40,35 @@ ReactiveTransportMatrixFracture_PK::ReactiveTransportMatrixFracture_PK(
 // -----------------------------------------------------------------------------
 // Setup delegates work to base PK
 // -----------------------------------------------------------------------------
-void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
+void ReactiveTransportMatrixFracture_PK::Setup()
 {
-  mesh_domain_ = S->GetMesh();
-  mesh_fracture_ = S->GetMesh("fracture");
+  mesh_domain_ = S_->GetMesh();
+  mesh_fracture_ = S_->GetMesh("fracture");
 
   // darcy fluxes use non-uniform distribution of DOFs
   // -- darcy flux for matrix
-  if (!S->HasField("darcy_flux")) {
+  if (!S_->HasRecord("volumetric_flow_rate")) {
     auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S->RequireField("darcy_flux", "transport")->SetMesh(mesh_domain_)->SetGhosted(true) 
+    S_->Require<CV_t, CVS_t>("volumetric_flow_rate", Tags::DEFAULT, "transport")
+      .SetMesh(mesh_domain_)->SetGhosted(true) 
       ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
   }
 
   // -- darcy flux for fracture
-  if (!S->HasField("fracture-darcy_flux")) {
+  if (!S_->HasRecord("fracture-volumetric_flow_rate")) {
     auto cvs = Operators::CreateNonManifoldCVS(mesh_fracture_);
-    *S->RequireField("fracture-darcy_flux", "transport")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
+    *S_->Require<CV_t, CVS_t>("fracture-volumetric_flow_rate", Tags::DEFAULT, "transport")
+      .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
   }
 
-  tcc_matrix_key_="total_component_concentration";
-  tcc_fracture_key_="fracture-total_component_concentration";
+  tcc_matrix_key_ = "total_component_concentration";
+  tcc_fracture_key_ = "fracture-total_component_concentration";
   
   // evaluators in fracture
-  Teuchos::ParameterList& elist = S->FEList();
-  Teuchos::ParameterList& ilist = S->ICList();
+  Teuchos::ParameterList& elist = S_->FEList();
+  Teuchos::ParameterList& ilist = S_->ICList();
 
   double rho = ilist.sublist("const_fluid_density").get<double>("value");
   elist.sublist("fracture-mass_density_liquid").sublist("function").sublist("All")
@@ -72,7 +77,11 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
       .sublist("function").sublist("function-constant")
       .set<double>("value", rho);
   elist.sublist("fracture-mass_density_liquid")
-        .set<std::string>("field evaluator type", "independent variable");
+        .set<std::string>("evaluator type", "independent variable");
+
+  // copies
+  S_->Require<CV_t, CVS_t>(tcc_matrix_key_, Tags::COPY, "state");
+  S_->Require<CV_t, CVS_t>(tcc_fracture_key_, Tags::COPY, "state");
 
   // communicate chemistry engine to transport.
   auto ic = coupled_chemistry_pk_->begin();
@@ -93,19 +102,16 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
     }
   }
 
-  Amanzi::PK_MPCAdditive<PK>::Setup(S);
+  Amanzi::PK_MPCAdditive<PK>::Setup();
 }
 
   
 // -----------------------------------------------------------------------------
 // Initialization of copies requires fileds to exists
 // -----------------------------------------------------------------------------
-void ReactiveTransportMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
+void ReactiveTransportMatrixFracture_PK::Initialize()
 {
-  S->RequireFieldCopy(tcc_matrix_key_, "matrix_copy", "state");
-  S->RequireFieldCopy(tcc_fracture_key_, "fracture_copy", "state");
-
-  Amanzi::PK_MPCAdditive<PK>::Initialize(S);
+  Amanzi::PK_MPCAdditive<PK>::Initialize();
 }
   
 
@@ -147,8 +153,8 @@ bool ReactiveTransportMatrixFracture_PK::AdvanceStep(
   if (fail) return fail;
 
   // save copy of fields (FIXME)
-  S_->CopyField(tcc_matrix_key_, "matrix_copy", "state");
-  S_->CopyField(tcc_fracture_key_, "fracture_copy", "state");  
+  S_->Assign(tcc_matrix_key_, Tags::COPY, Tags::DEFAULT);
+  S_->Assign(tcc_fracture_key_, Tags::COPY, Tags::DEFAULT);  
   
   try {
     std::vector<Teuchos::RCP<AmanziChemistry::Chemistry_PK> > subpks;
@@ -158,21 +164,23 @@ bool ReactiveTransportMatrixFracture_PK::AdvanceStep(
     }
     
     // tell chemistry PKs to work with copies
-    auto tcc_m_copy = S_->GetFieldCopyData(tcc_matrix_key_, "matrix_copy", "state")->ViewComponent("cell", true);
-    auto tcc_f_copy = S_->GetFieldCopyData(tcc_fracture_key_, "fracture_copy", "state")->ViewComponent("cell", true);  
+    auto tcc_m_copy = S_->GetW<CV_t>(tcc_matrix_key_, Tags::COPY, "state").ViewComponent("cell", true);
+    auto tcc_f_copy = S_->GetW<CV_t>(tcc_fracture_key_, Tags::COPY, "state").ViewComponent("cell", true);  
 
     subpks[0]->set_aqueous_components(tcc_m_copy);
     subpks[1]->set_aqueous_components(tcc_f_copy);
 
     fail = coupled_chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
  
-    *S_->GetFieldData(tcc_matrix_key_, "state")
-      ->ViewComponent("cell", true) = *subpks[0]->aqueous_components();
+    *S_->GetW<CV_t>(tcc_matrix_key_, Tags::DEFAULT, "state")
+      .ViewComponent("cell", true) = *subpks[0]->aqueous_components();
 
-    *S_->GetFieldData(tcc_fracture_key_, "state")
-      ->ViewComponent("cell", true) = *subpks[1]->aqueous_components();
+    *S_->GetW<CV_t>(tcc_fracture_key_, Tags::DEFAULT, "state")
+      .ViewComponent("cell", true) = *subpks[1]->aqueous_components();
   }
   catch (const Errors::Message& chem_error) {
+    fail = true;
+  } catch (...) {
     fail = true;
   }
 

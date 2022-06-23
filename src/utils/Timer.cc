@@ -20,16 +20,16 @@ unsigned Timer::_numTimerInstances = 0;
  *  \param[in]  Name of the timer
  */
 Timer::Timer(std::string name, Type type) :
+    _name(name), 
     _startTime(0), 
     _stopTime(0), 
     _running(false), 
-    _name(name), 
-    _type(type), 
     _runningTotal(0), 
     _numInvocations(1), 
-    _avg_elapsed(0.0), 
+    _type(type), 
     _max_elapsed(0.0), 
-    _min_elapsed(0.0)
+    _min_elapsed(0.0),
+    _avg_elapsed(0.0) 
 {
   // We increment the number of timer instances and grab the current number 
   // for our own

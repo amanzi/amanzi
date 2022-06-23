@@ -17,11 +17,13 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "independent_variable_field_evaluator_fromfunction.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorIndependentFunction.hh"
+#include "EvaluatorSecondary.hh"
+#include "Key.hh"
 #include "PK_BDF.hh"
 #include "PK_MPCWeak.hh"
 #include "PK_Factory.hh"
+#include "TreeOperator.hh"
 
 namespace Amanzi {
 
@@ -33,27 +35,27 @@ class TransportMatrixFracture_PK : public PK_MPCWeak {
                              const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
-  // -- setup
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-
-  // -- dt is the minimum of the sub pks
-  virtual double get_dt();
-  // virtual void set_dt(double dt);
-
-  // -- advance each sub pk from t_old to t_new.
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
-  // virtual void CommitStep(double t_old, double t_new);
+  virtual void Setup() override;
+  virtual void Initialize() override;
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
+  virtual double get_dt() override;  // the minimum of sub-pks's dt
 
   // -- miscaleneous methods
-  virtual std::string name() { return "coupled transport"; } 
+  virtual std::string name() override { return "coupled transport"; } 
   // virtual void CalculateDiagnostics() {};
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
-  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> matrix_bc;
-  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> fracture_src;
+  Teuchos::RCP<EvaluatorIndependentFunction> matrix_bc;
+  Teuchos::RCP<EvaluatorIndependentFunction> fracture_src;
+
+  bool flag_dispersion_;
+  Teuchos::RCP<Operators::TreeOperator> op_dispersion_;
+
+  Key tcc_matrix_key_, tcc_fracture_key_;
+  Key normal_diffusion_key_;
 
   // factory registration
   static RegisteredPKFactory<TransportMatrixFracture_PK> reg_;

@@ -153,7 +153,7 @@ RK<Vector>::RK(fnBase<Vector>& fn,
     plist_(plist)
 { 
   std::string methodstring = plist_.get<std::string>("RK method", "forward euler");
-  method_t method;
+  method_t method(forward_euler);
   if (methodstring == "forward euler") {
     method = forward_euler;
   } else if (methodstring == "heun euler") {

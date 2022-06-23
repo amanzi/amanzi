@@ -52,6 +52,42 @@
   <ParameterList name="PKs"> <!-- no shift -->
   <ParameterList name="multiphase">
     <Parameter name="domain name" type="string" value="domain"/>
+    <Parameter name="evaluators" type="Array(string)" value="{ ncp_g,
+                                                               total_water_storage,
+                                                               total_component_storage,
+                                                               advection_water,
+                                                               advection_liquid,
+                                                               advection_gas,
+                                                               diffusion_liquid }"/>
+    <ParameterList name="system">
+      <ParameterList name="pressure eqn">
+        <Parameter name="primary unknown" type="string" value="pressure_liquid"/>
+        <Parameter name="advection liquid" type="Array(string)" value="{ advection_water, pressure_liquid }"/>
+        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+
+        <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_liquid, molar_density_liquid }"/>
+        <Parameter name="diffusion factors" type="Array(double)" value="{ -0.1111111111111111,  -0.1111111111111111 }"/>
+
+        <Parameter name="accumulation" type="string" value="total_water_storage"/>
+      </ParameterList>
+
+      <ParameterList name="solute eqn">
+        <Parameter name="primary unknown" type="string" value="molar_density_liquid"/>
+        <Parameter name="advection liquid" type="Array(string)" value="{ advection_liquid, pressure_liquid }"/>
+        <Parameter name="advection gas" type="Array(string)" value="{ advection_gas, pressure_gas }"/>
+        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+
+        <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_liquid, molar_density_liquid }"/>
+        <Parameter name="diffusion factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+
+        <Parameter name="accumulation" type="string" value="total_component_storage"/>
+      </ParameterList>
+
+      <ParameterList name="constraint eqn">
+        <Parameter name="primary unknown" type="string" value="saturation_liquid"/>
+        <Parameter name="ncp evaluators" type="Array(string)" value="{ ncp_f, ncp_g }"/>
+      </ParameterList>
+    </ParameterList>
 
     <Parameter name="Jacobian type" type="string" value="analytic"/>
     <Parameter name="linear solver" type="string" value="GMRES"/>
@@ -335,9 +371,84 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="field evaluators">
+    <ParameterList name="evaluators">
+      <ParameterList name="temperature">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="302.9998973209611"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="ncp_g">
+        <Parameter name="evaluator type" type="string" value="ncp henry law"/>
+        <Parameter name="tag" type="string" value=""/>
+        <Parameter name="pressure gas key" type="string" value="pressure_gas"/>
+        <Parameter name="molar density liquid key" type="string" value="molar_density_liquid"/>
+      </ParameterList>
+
+      <ParameterList name="total_water_storage">
+        <Parameter name="evaluator type" type="string" value="product"/>
+        <Parameter name="dependencies" type="Array(string)" value="{ molar_density_water,
+                                                                     porosity,
+                                                                     saturation_liquid }"/>
+        <Parameter name="powers" type="Array(int)" value="{ 1, 1, 1 }"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+
+      <ParameterList name="total_component_storage">
+        <Parameter name="evaluator type" type="string" value="storage component jaffre"/>
+        <Parameter name="saturation liquid key" type="string" value="saturation_liquid"/>
+        <Parameter name="porosity key" type="string" value="porosity"/>
+        <Parameter name="molar density liquid key" type="string" value="molar_density_liquid"/>
+        <Parameter name="molar density gas key" type="string" value="molar_density_gas"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+
+      <!-- advection -->
+      <ParameterList name="advection_water">
+        <Parameter name="evaluator type" type="string" value="product"/>
+        <Parameter name="dependencies" type="Array(string)" value="{ molar_density_water,
+                                                                     rel_permeability_liquid,
+                                                                     viscosity_liquid }"/>
+        <Parameter name="powers" type="Array(int)" value="{ 1, 1, -1 }"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+      <ParameterList name="advection_liquid">
+        <Parameter name="evaluator type" type="string" value="product"/>
+        <Parameter name="dependencies" type="Array(string)" value="{ molar_density_liquid,
+                                                                     rel_permeability_liquid,
+                                                                     viscosity_liquid }"/>
+        <Parameter name="powers" type="Array(int)" value="{ 1, 1, -1 }"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+      <ParameterList name="advection_gas">
+        <Parameter name="evaluator type" type="string" value="product"/>
+        <Parameter name="dependencies" type="Array(string)" value="{ molar_density_gas,
+                                                                     rel_permeability_gas,
+                                                                     viscosity_gas }"/>
+        <Parameter name="powers" type="Array(int)" value="{ 1, 1, -1 }"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+
+      <ParameterList name="diffusion_liquid">
+        <Parameter name="evaluator type" type="string" value="product"/>
+        <Parameter name="dependencies" type="Array(string)" value="{ molecular_diff_liquid,
+                                                                     porosity,
+                                                                     saturation_liquid }"/>
+        <Parameter name="powers" type="Array(int)" value="{ 1, 1, 1 }"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+
       <ParameterList name="porosity">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -352,7 +463,7 @@
       </ParameterList>
 
       <ParameterList name="viscosity_liquid">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
@@ -367,7 +478,7 @@
       </ParameterList>
 
       <ParameterList name="viscosity_gas">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
@@ -382,7 +493,7 @@
       </ParameterList>
 
       <ParameterList name="molar_density_water">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -397,7 +508,7 @@
       </ParameterList>
 
       <ParameterList name="molar_density_gas">
-        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="eos basis" type="string" value="molar"/>
         <Parameter name="molar density key" type="string" value="molar_density_gas"/>
         <Parameter name="pressure key" type="string" value="pressure_gas"/>
@@ -411,7 +522,7 @@
       </ParameterList>
 
       <ParameterList name="molecular_diff_liquid">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -419,21 +530,6 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="3.0e-9"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="temperature">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="302.9998973209611"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

@@ -26,19 +26,18 @@ class NCP_HenryLaw : public MultiphaseBaseEvaluator {
   NCP_HenryLaw(Teuchos::ParameterList& plist);
   NCP_HenryLaw(const NCP_HenryLaw& other);
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(
-      const Teuchos::Ptr<State>& S,
-      const Teuchos::Ptr<CompositeVector>& result);
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluateFieldPartialDerivative_(
-      const Teuchos::Ptr<State>& S, Key wrt_key,
-      const Teuchos::Ptr<CompositeVector>& result);
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
  protected:
-  Key pressure_gas_key_, molar_density_liquid_key_;
+  Key pressure_gas_key_, mol_density_liquid_key_;
+
+  static Utils::RegisteredFactory<Evaluator, NCP_HenryLaw> fac_;
 };
 
 }  // namespace Multiphase

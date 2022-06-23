@@ -31,6 +31,7 @@
 // Amanzi
 #include "Checkpoint.hh"
 #include "errors.hh"
+#include "IO.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
 #include "ObservationData.hh"
@@ -76,8 +77,8 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
                          Teuchos::RCP<Amanzi::State>& S,
                          const Comm_ptr_type& comm,
                          Amanzi::ObservationData& observations_data) :
-    glist_(glist),
     S_(S),
+    glist_(glist),
     comm_(comm),
     observations_data_(observations_data),
     restart_requested_(false) {
@@ -224,8 +225,9 @@ void CycleDriver::Setup() {
     }
   }
 
-  pk_->Setup(S_.ptr());
-  S_->RequireScalar("dt", "coordinator");
+  pk_->Setup();
+  pk_->set_tags(Tags::CURRENT, Tags::NEXT);
+  S_->Require<double>("dt", Tags::NEXT, "dt");
   S_->Setup();
 
   // create the time step manager
@@ -267,27 +269,23 @@ void CycleDriver::Setup() {
 ****************************************************************** */
 void CycleDriver::Initialize() {
  
-  *S_->GetScalarData("dt", "coordinator") = tp_dt_[0];
-  S_->GetField("dt", "coordinator")->set_initialized();
+  S_->GetW<double>("dt", Tags::DEFAULT, "dt") = tp_dt_[0];
+  S_->GetRecordW("dt", "dt").set_initialized();
 
   // Initialize the state (initializes all dependent variables).
   S_->InitializeFields();
   S_->InitializeEvaluators();
 
-  // Initialize the process kernels
-  pk_->Initialize(S_.ptr());
-
-  // Final checks.
-  S_->CheckNotEvaluatedFieldsInitialized();
+  // Initialize the process kernels and verify
+  pk_->Initialize();
   S_->CheckAllFieldsInitialized();
 
   // S_->WriteDependencyGraph();
   S_->InitializeIOFlags(); 
 
   // commit the initial conditions.
-  // pk_->CommitStep(t0_-get_dt(), get_dt());
   if (!restart_requested_) {
-    pk_->CommitStep(S_->time(), S_->time(), S_);
+    pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT);
   }
 }
 
@@ -299,8 +297,8 @@ void CycleDriver::Initialize() {
 * This really should be removed, but for now is left to help stupid developers.
 ****************************************************************** */
 void CycleDriver::Finalize() {
-  if (!checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
-    pk_->CalculateDiagnostics(S_);
+  if (!checkpoint_->DumpRequested(S_->get_cycle(), S_->get_time())) {
+    pk_->CalculateDiagnostics(Tags::DEFAULT);
     checkpoint_->Write(*S_, 0.0, true, &observations_data_);
   }
 }
@@ -341,7 +339,7 @@ void CycleDriver::ReportMemory() {
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "======================================================================" << std::endl;
-    *vo_->os() << "Simulation made " << S_->cycle() << " cycles.\n";
+    *vo_->os() << "Simulation made " << S_->get_cycle() << " cycles.\n";
     *vo_->os() << "All meshes combined have " << global_ncells << " cells.\n";
     *vo_->os() << "Memory usage (high water mark):\n";
     *vo_->os() << std::fixed << std::setprecision(1);
@@ -357,8 +355,10 @@ void CycleDriver::ReportMemory() {
   }
 
   double doubles_count(0.0);
-  for (State::field_iterator field = S_->field_begin(); field != S_->field_end(); ++field) {
-    doubles_count += static_cast<double>(field->second->GetLocalElementCount());
+  for (auto it = S_->data_begin(); it != S_->data_end(); ++it) {
+    if (S_->GetRecord(it->first).ValidType<CompositeVector>()) {
+      doubles_count += static_cast<double>(S_->Get<CompositeVector>(it->first).GetLocalElementCount());
+    }
   }
   double global_doubles_count(0.0);
   double min_doubles_count(0.0);
@@ -367,14 +367,16 @@ void CycleDriver::ReportMemory() {
   comm_->MinAll(&doubles_count,&min_doubles_count,1);
   comm_->MaxAll(&doubles_count,&max_doubles_count,1);
 
-  Teuchos::OSTab tab = vo_->getOSTab();
-  *vo_->os() << "Doubles allocated in state fields " << std::endl;
-  *vo_->os() << "  Maximum per core:   " << std::setw(7)
-             << max_doubles_count*8/1024/1024 << " MBytes" << std::endl;
-  *vo_->os() << "  Minimum per core:   " << std::setw(7)
-             << min_doubles_count*8/1024/1024 << " MBytes" << std::endl; 
-  *vo_->os() << "  Total:              " << std::setw(7)
-             << global_doubles_count*8/1024/1024 << " MBytes" << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_LOW)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Doubles allocated in state fields " << std::endl;
+    *vo_->os() << "  Maximum per core:   " << std::setw(7)
+               << max_doubles_count*8/1024/1024 << " MBytes" << std::endl;
+    *vo_->os() << "  Minimum per core:   " << std::setw(7)
+               << min_doubles_count*8/1024/1024 << " MBytes" << std::endl; 
+    *vo_->os() << "  Total:              " << std::setw(7)
+               << global_doubles_count*8/1024/1024 << " MBytes" << std::endl;
+  }
 }
 
 
@@ -427,17 +429,6 @@ void CycleDriver::ReadParameterList_() {
           << "\" does not exist or is not a regular file.";
       Exceptions::amanzi_throw(msg);
     }
-
-    // if (restart_requested_) {
-    //   if (vo_->os_OK(Teuchos::VERB_LOW)) {
-    //     *vo_->os() << "Restarting from checkpoint file: " << restart_filename_ << std::endl;
-    //   }
-    // } else {
-    //   if (vo_->os_OK(Teuchos::VERB_LOW)) {
-    //     *vo_->os() << "Initializing data from checkpoint file: " << restart_filename_ << std::endl
-    //                << "    (Ignoring all initial conditions.)" << std::endl;
-    //   }
-    // }
   }
 
   if (coordinator_list_->isSublist("time period control")) {
@@ -492,7 +483,7 @@ double CycleDriver::get_dt(bool after_failure) {
   std::vector<std::pair<double,double> >::iterator it_max;
 
   for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end(); ++it, ++it_max) {    
-    if (S_->time() == it->first) {
+    if (S_->get_time() == it->first) {
       if (reset_max_.size() > 0) {
         max_dt_ = it_max->second;
       }
@@ -519,8 +510,8 @@ double CycleDriver::get_dt(bool after_failure) {
     Exceptions::amanzi_throw(message);
   }
 
-  if (S_->time() > 0) {
-    if (dt / S_->time() < 1e-14) {
+  if (S_->get_time() > 0) {
+    if (dt / S_->get_time() < 1e-14) {
       Errors::Message message("CycleDriver: error, timestep too small with respect to current time");
       Exceptions::amanzi_throw(message);
     }
@@ -528,7 +519,7 @@ double CycleDriver::get_dt(bool after_failure) {
 
 
   // ask the step manager if this step is ok
-  dt = tsm_->TimeStep(S_->time(), dt, after_failure);
+  dt = tsm_->TimeStep(S_->get_time(), dt, after_failure);
 
 
   // cap the max step size
@@ -561,7 +552,7 @@ void CycleDriver::set_dt(double dt) {
   }
 
   // ask the step manager if this step is ok
-  dt_ = tsm_->TimeStep(S_->time() + dt, dt);
+  dt_ = tsm_->TimeStep(S_->get_time() + dt, dt);
 
   // set the physical step size
   pk_->set_dt(dt_);
@@ -586,7 +577,7 @@ double CycleDriver::Advance(double dt) {
   if (advance) {
     std::vector<std::pair<double,double> >::const_iterator it;
     for (it = reset_info_.begin(); it != reset_info_.end(); ++it) {
-      if (it->first == S_->time()) break;
+      if (it->first == S_->get_time()) break;
     }
 
     if (it != reset_info_.end()) {
@@ -597,11 +588,11 @@ double CycleDriver::Advance(double dt) {
       reinit = true;
     }      
 
-    fail = pk_->AdvanceStep(S_->time(), S_->time()+dt, reinit);
+    fail = pk_->AdvanceStep(S_->get_time(), S_->get_time() + dt, reinit);
   }
 
   if (!fail) {
-    pk_->CommitStep(S_->last_time(), S_->time(), S_);
+    pk_->CommitStep(S_->get_time(), S_->get_time() + dt, Tags::DEFAULT);
     // advance the iteration count and timestep size
     if (advance) {
       S_->advance_cycle();
@@ -612,7 +603,7 @@ double CycleDriver::Advance(double dt) {
     bool force_check(false);
     bool force_obser(false);
 
-    if (abs(S_->time() - tp_end_[time_period_id_]) < 1e-10) {
+    if (abs(S_->get_time() - tp_end_[time_period_id_]) < 1e-10) {
       force_vis = true;
       force_check = true;                       
       force_obser = true;
@@ -622,13 +613,13 @@ double CycleDriver::Advance(double dt) {
     dt_new = get_dt(fail);
 
     if (!reset_info_.empty())
-        if (S_->time() == reset_info_.front().first)
+        if (S_->get_time() == reset_info_.front().first)
             force_check = true;
 
     // make vis, observations, and checkpoints in this order
     // Amanzi::timer_manager.start("I/O");
     if (advance) {
-      pk_->CalculateDiagnostics(S_);
+      pk_->CalculateDiagnostics(Tags::DEFAULT);
       Visualize(force_vis);
       Observations(force_obser, true);
       WriteCheckpoint(dt_new, force_check);   // write Checkpoint with new dt
@@ -638,7 +629,7 @@ double CycleDriver::Advance(double dt) {
 
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       Utils::Units units("molar");
-      *vo_->os() << "New time = " << units.OutputTime(S_->time()) << std::endl;
+      *vo_->os() << "New time = " << units.OutputTime(S_->get_time()) << std::endl;
     }
   } else {
     dt_new = get_dt(fail);
@@ -665,11 +656,11 @@ void CycleDriver::Observations(bool force, bool integrate) {
     // integrate continuous observations in time and save results in internal variables
     if (integrate) observations_->MakeContinuousObservations(*S_);
 
-    if (observations_->DumpRequested(S_->cycle(), S_->time()) || force) {
+    if (observations_->DumpRequested(S_->get_cycle(), S_->get_time()) || force) {
       // continuous observations are not updated here
       int n = observations_->MakeObservations(*S_);
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Cycle " << S_->cycle() << ": writing observations... " << n << std::endl;
+      *vo_->os() << "Cycle " << S_->get_cycle() << ": writing observations... " << n << std::endl;
     }
   }
 }
@@ -678,12 +669,12 @@ void CycleDriver::Observations(bool force, bool integrate) {
 /* ******************************************************************
 * Write visualization file with extension (cycle + tag) if requested.
 ****************************************************************** */
-void CycleDriver::Visualize(bool force, const std::string& tag) {
+void CycleDriver::Visualize(bool force, const Tag& tag) {
   bool dump = force;
   if (!dump) {
     for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
          vis!=visualization_.end(); ++vis) {
-      if ((*vis)->DumpRequested(S_->cycle(), S_->time())) {
+      if ((*vis)->DumpRequested(S_->get_cycle(), S_->get_time())) {
         dump = true;
       }
     }
@@ -692,7 +683,7 @@ void CycleDriver::Visualize(bool force, const std::string& tag) {
   //if (dump || force) //pk_->CalculateDiagnostics();
   
   for (const auto& vis : visualization_) {
-    if (force || vis->DumpRequested(S_->cycle(), S_->time())) {
+    if (force || vis->DumpRequested(S_->get_cycle(), S_->get_time())) {
       vis->set_tag(tag);
       WriteVis(*vis, *S_);
       Teuchos::OSTab tab = vo_->getOSTab();
@@ -706,26 +697,28 @@ void CycleDriver::Visualize(bool force, const std::string& tag) {
 * Write a checkpoint file if requested.
 ****************************************************************** */
 void CycleDriver::WriteCheckpoint(double dt, bool force) {
-  if (force || checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
+  if (force || checkpoint_->DumpRequested(S_->get_cycle(), S_->get_time())) {
     bool final = false;
 
-    if (fabs( S_->time() - tp_end_[num_time_periods_-1]) < 1e-6) {
+    if (fabs( S_->get_time() - tp_end_[num_time_periods_-1]) < 1e-6) {
       final = true;
     }
 
     checkpoint_->Write(*S_, dt, final, &observations_data_);
     
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "writing checkpoint file" << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_LOW)) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "writing checkpoint file" << std::endl;
+    }
   }
 }
 
 
 void CycleDriver::WriteWalkabout(bool force) {
   if (walkabout_ != Teuchos::null) {
-    if (walkabout_->DumpRequested(S_->cycle(), S_->time()) || force) {
+    if (walkabout_->DumpRequested(S_->get_cycle(), S_->get_time()) || force) {
       if (!walkabout_->is_disabled())
-         *vo_->os() << "Cycle " << S_->cycle() << ": writing walkabout file" << std::endl;
+         *vo_->os() << "Cycle " << S_->get_cycle() << ": writing walkabout file" << std::endl;
       walkabout_->WriteDataFile(S_, pk_);
     }
   }
@@ -748,17 +741,18 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
     Init_PK(time_period_id_);
 
-    // start at time t = t0 and initialize the state.
+    Setup();
+
+    // start at time t = t0 and initialize data.
     S_->set_time(tp_start_[time_period_id_]);
     S_->set_cycle(cycle0_);
     S_->set_position(TIME_PERIOD_START);
     
-    Setup();
     Initialize();
 
     dt = tp_dt_[time_period_id_];
     max_dt_ = tp_max_dt_[time_period_id_];
-    dt = tsm_->TimeStep(S_->time(), dt);
+    dt = tsm_->TimeStep(S_->get_time(), dt);
     pk_->set_dt(dt);
 
   } else {
@@ -788,12 +782,13 @@ Teuchos::RCP<State> CycleDriver::Go() {
     S_->GetMeshPartition("materials");
     
     // re-initialize the state object
-    restart_dT = ReadCheckpoint(*S_, restart_filename_);
+    ReadCheckpoint(comm_, *S_, restart_filename_);
+    restart_dT = S_->Get<double>("dt");
 
-    cycle0_ = S_->cycle();
+    cycle0_ = S_->get_cycle();
     for (std::vector<std::pair<double,double> >::iterator it = reset_info_.begin();
           it != reset_info_.end(); ++it) {
-      if (it->first <= S_->time()) it = reset_info_.erase(it);
+      if (it->first <= S_->get_time()) it = reset_info_.erase(it);
       if (it == reset_info_.end() ) break;
     }
 
@@ -809,26 +804,24 @@ Teuchos::RCP<State> CycleDriver::Go() {
         restart_dT =  tp_dt_[time_period_id_];
       }
       else {
-        pk_->Initialize(S_.ptr());
+        pk_->Initialize();
       }     
     } else {
       // Initialize the process kernels
-      pk_->Initialize(S_.ptr());
+      pk_->Initialize();
     }
 
-    S_->set_initial_time(S_->time());
-    dt = tsm_->TimeStep(S_->time(), restart_dT);
+    S_->set_initial_time(S_->get_time());
+    dt = tsm_->TimeStep(S_->get_time(), restart_dT);
     pk_->set_dt(dt);
   }
 
   // enfoce consistent physics after initialization
   // this is optional but helps with statistics
+  S_->GetW<double>("dt", Tags::NEXT, "dt") = dt;
+  S_->GetRecordW("dt", Tags::NEXT, "dt").set_initialized();
+
   S_->InitializeEvaluators();
-
-  *S_->GetScalarData("dt", "coordinator") = dt;
-  S_->GetField("dt","coordinator")->set_initialized();
-
-  S_->CheckNotEvaluatedFieldsInitialized();
   S_->CheckAllFieldsInitialized();
 
   // visualization at IC
@@ -836,7 +829,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
   // after initialization of State and PK we know all fields and clean of
   S_->InitializeIOFlags(); 
 
-  pk_->CalculateDiagnostics(S_);
+  pk_->CalculateDiagnostics(Tags::DEFAULT);
   Visualize();
   Observations();
   WriteCheckpoint(dt);
@@ -856,14 +849,14 @@ Teuchos::RCP<State> CycleDriver::Go() {
 #endif
 
     while (time_period_id_ < num_time_periods_) {
-      int start_cycle_num = S_->cycle();
+      int start_cycle_num = S_->get_cycle();
       //  do 
-      while ((S_->time() < tp_end_[time_period_id_]) && 
+      while ((S_->get_time() < tp_end_[time_period_id_]) && 
              ((tp_max_cycle_[time_period_id_] == -1) || 
-              (S_->cycle() - start_cycle_num < tp_max_cycle_[time_period_id_])))
+              (S_->get_cycle() - start_cycle_num < tp_max_cycle_[time_period_id_])))
       {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-          if (S_->cycle() % 100 == 0 && S_->cycle() > 0) {
+          if (S_->get_cycle() % 100 == 0 && S_->get_cycle() > 0) {
             WriteStateStatistics(*S_, *vo_);
             Teuchos::OSTab tab = vo_->getOSTab();
             *vo_->os() << "\nSimulation end time: " << tp_end_[time_period_id_] << " sec." << std::endl;
@@ -871,14 +864,14 @@ Teuchos::RCP<State> CycleDriver::Go() {
           }
           Utils::Units units("molar");
           Teuchos::OSTab tab = vo_->getOSTab();
-          *vo_->os() << "\nCycle " << S_->cycle()
-                     << ": time = " << units.OutputTime(S_->time())
+          *vo_->os() << "\nCycle " << S_->get_cycle()
+                     << ": time = " << units.OutputTime(S_->get_time())
                      << ", dt = " << units.OutputTime(dt) << "\n";
         }
-        *S_->GetScalarData("dt", "coordinator") = dt;
-        S_->set_initial_time(S_->time());
-        S_->set_final_time(S_->time() + dt);
-        S_->set_intermediate_time(S_->time());
+        S_->GetW<double>("dt", Tags::DEFAULT, "dt") = dt;
+        S_->set_initial_time(S_->get_time());
+        S_->set_final_time(S_->get_time() + dt);
+        S_->set_intermediate_time(S_->get_time());
         S_->set_position(TIME_PERIOD_INSIDE);
 
         dt = Advance(dt);
@@ -942,11 +935,6 @@ void CycleDriver::ResetDriver(int time_pr_id) {
     S_->RegisterMesh(it->first, it->second.first);
   }    
   
-  //  S_->RegisterMesh("domain", mesh);
-  S_->set_cycle(S_old_->cycle());
-  S_->set_time(tp_start_[time_pr_id]); 
-  S_->set_position(TIME_PERIOD_START);
-
   // delete the old global solution vector
   pk_ = Teuchos::null;
   soln_ = Teuchos::null;
@@ -961,30 +949,33 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   //if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_);
 
   // Setup
-  pk_->Setup(S_.ptr());
+  pk_->Setup();
+  pk_->set_tags(Tags::CURRENT, Tags::NEXT);
 
-  S_->RequireScalar("dt", "coordinator");
+  S_->Require<double>("dt", Tags::NEXT, "dt");
   S_->Setup();
-  *S_->GetScalarData("dt", "coordinator") = tp_dt_[time_pr_id];
-  S_->GetField("dt", "coordinator")->set_initialized();
+
+  S_->set_cycle(S_old_->get_cycle());
+  S_->set_time(tp_start_[time_pr_id]); 
+  S_->set_position(TIME_PERIOD_START);
+
+  S_->GetW<double>("dt", Tags::NEXT, "dt") = tp_dt_[time_pr_id];
+  S_->GetRecordW("dt", Tags::NEXT, "dt").set_initialized();
 
   // Initialize
   S_->InitializeFields();
   S_->InitializeEvaluators();
 
   // Initialize the state from the old state.
-  S_->Initialize(S_old_);
+  S_->Initialize(*S_old_);
 
-  // Initialize the process kernels variables 
-  pk_->Initialize(S_.ptr());
-
-  // Final checks
-  S_->CheckNotEvaluatedFieldsInitialized();
+  // Initialize the process kernels and verify
+  pk_->Initialize();
   S_->CheckAllFieldsInitialized();
 
   S_->GetMeshPartition("materials");
 
-  pk_->CalculateDiagnostics(S_);
+  pk_->CalculateDiagnostics(Tags::DEFAULT);
   Observations();
 
   pk_->set_dt(tp_dt_[time_pr_id]);
@@ -994,7 +985,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   // new fields are added/removed to/from the state
   auto fields_old = StateVisFields(*S_old_);
   auto fields = StateVisFields(*S_);
-  if (fields_old != fields) Visualize(true, "ic");
+  if (fields_old != fields) Visualize(true, make_tag("ic"));
 
   S_old_ = Teuchos::null;
 }

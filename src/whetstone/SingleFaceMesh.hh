@@ -37,25 +37,25 @@ class SingleFaceMesh : public AmanziMesh::MeshLight {
     BuildCache_(mesh, f, coordsys);
    }
 
-  ~SingleFaceMesh() {};
+  virtual ~SingleFaceMesh() {};
 
   // ---------------------
   // Downward connectivity
   // ---------------------
   virtual void cell_get_nodes(const AmanziMesh::Entity_ID c,
-                              AmanziMesh::Entity_ID_List *nodes) const {
+                              AmanziMesh::Entity_ID_List *nodes) const override {
     AMANZI_ASSERT(c == 0);
     *nodes = cell_node_ids_;
   }
 
   virtual void face_get_nodes(const AmanziMesh::Entity_ID f,
-                              AmanziMesh::Entity_ID_List *nodes) const {
+                              AmanziMesh::Entity_ID_List *nodes) const override {
     AMANZI_ASSERT(f < nnodes_);
     *nodes = face_node_ids_[f];
   }
 
   virtual void edge_get_nodes(const AmanziMesh::Entity_ID e,
-                              AmanziMesh::Entity_ID* n0, AmanziMesh::Entity_ID* n1) const {
+                              AmanziMesh::Entity_ID* n0, AmanziMesh::Entity_ID* n1) const override {
     AMANZI_ASSERT(e < nnodes_);
     *n0 = face_node_ids_[e][0]; 
     *n1 = face_node_ids_[e][1]; 
@@ -67,12 +67,12 @@ class SingleFaceMesh : public AmanziMesh::MeshLight {
   virtual void node_get_cells(
           const AmanziMesh::Entity_ID v,
           const AmanziMesh::Parallel_type ptype,
-          AmanziMesh::Entity_ID_List *cells) const { AMANZI_ASSERT(v < nnodes_); cells->resize(1, 0); }
+          AmanziMesh::Entity_ID_List *cells) const override { AMANZI_ASSERT(v < nnodes_); cells->resize(1, 0); }
 
   virtual void node_get_faces(
           const AmanziMesh::Entity_ID v,
           const AmanziMesh::Parallel_type ptype,
-          AmanziMesh::Entity_ID_List *faces) const {
+          AmanziMesh::Entity_ID_List *faces) const override {
     AMANZI_ASSERT(v < nnodes_);
     faces->resize(2);
     (*faces)[0] = v; 
@@ -83,13 +83,13 @@ class SingleFaceMesh : public AmanziMesh::MeshLight {
   // Geometry
   // --------
   virtual void node_get_coordinates(
-          const AmanziMesh::Entity_ID v, AmanziGeometry::Point* xp) const {
+          const AmanziMesh::Entity_ID v, AmanziGeometry::Point* xp) const override {
     AMANZI_ASSERT(v < nnodes_); *xp = cell_coords_[v];
   }
 
   virtual void face_get_coordinates(
           const AmanziMesh::Entity_ID f,
-          std::vector<AmanziGeometry::Point> *fcoords) const {
+          std::vector<AmanziGeometry::Point> *fcoords) const override {
     AMANZI_ASSERT(f < nnodes_);
     fcoords->resize(2);
     const auto& nodes = face_node_ids_[f];
@@ -99,16 +99,16 @@ class SingleFaceMesh : public AmanziMesh::MeshLight {
 
   virtual void cell_get_coordinates(
           const AmanziMesh::Entity_ID c,
-          std::vector<AmanziGeometry::Point> *ccoords) const { *ccoords = cell_coords_; }
+          std::vector<AmanziGeometry::Point> *ccoords) const override { *ccoords = cell_coords_; }
 
   virtual unsigned int num_entities(
           const AmanziMesh::Entity_kind kind,
-          const AmanziMesh::Parallel_type ptype) const {
+          const AmanziMesh::Parallel_type ptype) const override {
     return (kind == AmanziMesh::CELL) ? 1 : nnodes_;
   }
 
   virtual AmanziMesh::Parallel_type entity_get_ptype(
-          const AmanziMesh::Entity_kind kind, const AmanziMesh::Entity_ID ent) const {
+          const AmanziMesh::Entity_kind kind, const AmanziMesh::Entity_ID ent) const override {
     return AmanziMesh::Parallel_type::OWNED;
   }
 
@@ -118,39 +118,39 @@ class SingleFaceMesh : public AmanziMesh::MeshLight {
           const AmanziMesh::Entity_ID c,
           AmanziMesh::Entity_ID_List* faces,
           std::vector<int>* fdirs,
-          const bool ordered = false) const {};
+          const bool ordered = false) const override {};
 
   virtual void cell_get_edges_internal_(
           const AmanziMesh::Entity_ID c,
-          AmanziMesh::Entity_ID_List* edges) const {};
+          AmanziMesh::Entity_ID_List* edges) const override {};
 
   virtual void face_get_edges_and_dirs_internal_(
           const AmanziMesh::Entity_ID f,
           AmanziMesh::Entity_ID_List* edges,
           std::vector<int>* edirs,
-          const bool ordered = true) const {};
+          const bool ordered = true) const override {};
 
   virtual void face_get_cells_internal_(
           const AmanziMesh::Entity_ID f,
           const AmanziMesh::Parallel_type ptype,
-          AmanziMesh::Entity_ID_List* cells) const {};
+          AmanziMesh::Entity_ID_List* cells) const override {};
 
   // geometries
   virtual int compute_cell_geometry_(
           const AmanziMesh::Entity_ID c,
           double* volume,
-          AmanziGeometry::Point* xc) const { return 0; }
+          AmanziGeometry::Point* xc) const override { return 0; }
 
   virtual int compute_face_geometry_(
           const AmanziMesh::Entity_ID f,
           double* area,
           AmanziGeometry::Point* xf,
-          std::vector<AmanziGeometry::Point> *normals) const { return 0; }
+          std::vector<AmanziGeometry::Point> *normals) const override { return 0; }
 
   virtual int compute_edge_geometry_(
           const AmanziMesh::Entity_ID e,
           double *length,
-          AmanziGeometry::Point* tau) const { return 0; }
+          AmanziGeometry::Point* tau) const override { return 0; }
 
  private:
   void BuildCache_(

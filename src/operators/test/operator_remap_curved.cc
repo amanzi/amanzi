@@ -47,8 +47,8 @@ class MyRemapDGc : public Operators::RemapDG<CompositeVector> {
             Teuchos::ParameterList& plist, double T1)
     : RemapDG<CompositeVector>(mesh0, mesh1, plist),
       tprint_(0.0),
-      l2norm_(-1.0),
       dt_output_(0.1),
+      l2norm_(-1.0),
       T1_(T1),
       tini_(0.0) {};
   ~MyRemapDGc() {};
@@ -464,15 +464,15 @@ void RemapTestsCurved(std::string file_name,
   Entity_ID_List nodes;
   AmanziGeometry::Point v0(dim), v1(dim), tau(dim);
 
-  double pnorm, l2_err, inf_err, l20_err, inf0_err;
+  double pnorm, l2_err, inf_err, l20_err, l10_err, inf0_err;
   ana.ComputeCellErrorRemap(*dg, p2c, tend, 0, mesh1,
-                            pnorm, l2_err, inf_err, l20_err, inf0_err);
+                            pnorm, l2_err, inf_err, l20_err, l10_err, inf0_err);
 
   CHECK(l20_err < 0.2 / (order + 1));
 
   if (MyPID == 0) {
-    printf("nx=%3d (orig) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
-        nx, l20_err, l2_err, inf0_err, inf_err);
+    printf("nx=%3d (orig) L1=%12.8g(mean) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
+        nx, l10_err, l20_err, l2_err, inf0_err, inf_err);
   }
 
   // optional projection on the space of polynomials 

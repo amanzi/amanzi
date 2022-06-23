@@ -91,7 +91,7 @@ class SolverAA : public Solver<Vector,VectorSpace> {
 
   // mutators
   void set_tolerance(double tol) { tol_ = tol; }
-  void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
+  void set_pc_lag(int pc_lag) { pc_lag_ = pc_lag; }
 
   // access
   double tolerance() { return tol_; }

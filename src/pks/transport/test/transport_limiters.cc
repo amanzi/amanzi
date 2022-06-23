@@ -75,8 +75,7 @@ TEST(LIMITER_BARTH_JESPERSEN) {
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
-  Teuchos::RCP<Epetra_MultiVector> 
-      flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+  auto flux = S->GetFieldData("volumetric_flow_rate", passwd)->ViewComponent("face", false);
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -117,9 +116,6 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   for (int c = 0; c < ncells - 1; c++) {  // the corner cell gives limiter=0
     CHECK_CLOSE(1.0, (*limiter)[c], 1e-6);
   }
- 
-  
 }
-
 
 

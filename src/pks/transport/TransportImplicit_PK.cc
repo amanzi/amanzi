@@ -24,7 +24,6 @@
 // Amanzi
 #include "BCs.hh"
 #include "errors.hh"
-#include "FieldEvaluator.hh"
 #include "Mesh.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwindFactory.hh"
@@ -49,10 +48,10 @@ namespace Transport {
 * New constructor compatible with new MPC framework.
 ****************************************************************** */
 TransportImplicit_PK::TransportImplicit_PK(Teuchos::ParameterList& pk_tree,
-                           const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                           const Teuchos::RCP<State>& S,
-                           const Teuchos::RCP<TreeVector>& soln) :
-    Transport_PK(pk_tree, glist, S, soln)
+                                           const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                                           const Teuchos::RCP<State>& S,
+                                           const Teuchos::RCP<TreeVector>& soln)
+  : Transport_PK(pk_tree, glist, S, soln)
 {
   if (tp_list_->isSublist("time integrator"))
     ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
@@ -87,48 +86,83 @@ TransportImplicit_PK::TransportImplicit_PK(const Teuchos::RCP<Teuchos::Parameter
 /* ******************************************************************
 * Initialization
 ****************************************************************** */
-void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
+void TransportImplicit_PK::Initialize()
 {
-  Transport_PK::Initialize(S);  
+  Transport_PK::Initialize();  
 
   // domain name
   Key domain = tp_list_->template get<std::string>("domain name", "domain");
   auto vo_list = tp_list_->sublist("verbose object"); 
   vo_ = Teuchos::rcp(new VerboseObject("TransportImpl-" + domain, *tp_list_)); 
 
-  // Create pointers to the primary solution field tcc.
-  const auto& solution = S->GetFieldData(tcc_key_, "state");
-  soln_->SetData(solution); 
-  
   // boundary conditions
   op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
-  op_bc_->bc_value();  // allocate intermal
+  op_bc_->bc_value();  // allocate internal
   op_bc_->bc_model();  // memory
 
-  Teuchos::ParameterList& oplist = tp_list_->sublist("operators")
-                                            .sublist("advection operator")
-                                            .sublist("matrix");
+  // operators
+  // -- dispertion and/or diffusion
+  if (use_dispersion_) {
+    D_.resize(ncells_owned);
+    Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D_);
+    Teuchos::ParameterList& oplist_d = tp_list_->sublist("operators")
+                                                .sublist("diffusion operator")
+                                                .sublist("matrix");
+
+    Operators::PDE_DiffusionFactory diff_factory;
+    op_diff_ = diff_factory.Create(oplist_d, mesh_);
+    op_diff_->Setup(Dptr, Teuchos::null, Teuchos::null);
+    op_diff_->SetBCs(op_bc_, op_bc_);
+    op_ = op_diff_->global_operator();
+  }
+
+  // Solution vector does not match tcc in general, even for one species.
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1)->SetGhosted(true);
+  if (use_dispersion_) cvs = op_diff_->global_operator()->DomainMap();
+
+  solution_ = Teuchos::rcp(new CompositeVector(cvs));
+  soln_->SetData(solution_); 
+  
+  // -- advection
+  Teuchos::ParameterList& oplist_a = tp_list_->sublist("operators")
+                                              .sublist("advection operator")
+                                              .sublist("matrix");
 
   Operators::PDE_AdvectionUpwindFactory adv_factory;
-  op_adv_ = adv_factory.Create(oplist, mesh_);
+  if (op_.get()) {
+    op_adv_ = adv_factory.Create(oplist_a, op_);
+  } else {
+    op_adv_ = adv_factory.Create(oplist_a, mesh_);
+    op_ = op_adv_->global_operator();
+  }
   op_adv_->SetBCs(op_bc_, op_bc_);
-  op_ = op_adv_->global_operator();
-  
+
   // refresh data BC and source data  
   UpdateBoundaryData(t_physics_, t_physics_, 0);
 
-  auto flux = S->GetFieldData(darcy_flux_key_);
+  auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
   op_adv_->Setup(*flux);
   op_adv_->UpdateMatrices(flux.ptr());
 
-  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  acc_term_ = Teuchos::rcp(new CompositeVector(*cvs));
-  acc_term_prev_ = Teuchos::rcp(new CompositeVector(*cvs));
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_));
 
-  op_->CreateCheckPoint();
+  // initialize time integrator
+  if (spatial_disc_order > 1) {
+    std::string ti_name = ti_list_->get<std::string>("time integration method", "none");
+    if (ti_name == "BDF1") {
+      Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
+      bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+
+      auto udot = Teuchos::rcp(new TreeVector(*soln_));
+      udot->PutScalar(0.0);
+      bdf1_dae_->SetInitialState(0.0, soln_, udot);
+    } else {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;
+    }
+    op_pc_solver_ = op_;
+  }
 
   // generic linear solver or preconditioner
   if (ti_list_ != Teuchos::null) {
@@ -143,17 +177,47 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
   
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << vo_->color("green") << "Initialization of PK is complete." 
+    *vo_->os() << "preconditioner:" << std::endl
+               << op_->PrintDiagnostics() << std::endl
+               << vo_->color("green") << "Initialization of PK is complete." 
                << vo_->reset() << std::endl << std::endl;
   }
 }
 
 
 /* ******************************************************************* 
-* Performs one time step from t_old to t_new. The boundary conditions
-* are calculated only once, during the initialization step.  
+* Maybe we need a separate PK instead of the if-clause
 ******************************************************************* */
 bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
+{
+  bool fail;
+  int tot_itrs;
+
+  if (spatial_disc_order == 1) {
+    fail = AdvanceStepLO_(t_old, t_new, &tot_itrs);
+  } else { 
+    fail = AdvanceStepHO_(t_old, t_new, &tot_itrs);
+  }
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    double sol_norm;
+    tcc_tmp->Norm2(&sol_norm);
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "transport solver (" << solver_name_
+               << "): ||sol||=" << sol_norm 
+               << "  avg itrs=" << tot_itrs / num_aqueous << std::endl;
+      VV_PrintSoluteExtrema(*tcc_tmp->ViewComponent("cell"), t_new - t_old, "");
+  }
+
+  return fail;
+}
+
+
+/* ******************************************************************* 
+* BCs are calculated only once, during the initialization step.  
+******************************************************************* */
+bool TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs) 
 {
   bool fail = false;
   dt_ = t_new - t_old;
@@ -161,25 +225,21 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // populating next state of concentrations
   tcc->ScatterMasterToGhosted("cell");
 
-  CompositeVector tcc_aux(*acc_term_);
+  S_->GetEvaluator(water_content_key_).Update(*S_, "transport");
+  const auto& wc = S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT);
+  const auto& wc_prev = S_->Get<CompositeVector>(prev_water_content_key_, Tags::DEFAULT);
 
-  int icount(0);
+  const auto& wc_c = *wc.ViewComponent("cell");
+  const auto& sat_c = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+
+  *tot_itrs = 0;
+  CompositeVector tcc_aux(wc);
 
   for (int i = 0; i < num_aqueous; i++) {
-    op_->RestoreCheckPoint();
-    // op_acc_->local_op(0)->Rescale(0.0);
+    op_->Init();
   
-    // add accumulation term
-    Epetra_MultiVector& acc_term_c = *acc_term_->ViewComponent("cell");
-    Epetra_MultiVector& acc_term_prev_c = *acc_term_prev_->ViewComponent("cell");
-  
-    for (int c = 0; c < ncells_owned; c++) {
-      acc_term_c[0][c] = (*phi)[0][c] * (*ws)[0][c];
-      acc_term_prev_c[0][c] = (*phi)[0][c] * (*ws_prev)[0][c];    
-    }
-
     *(*tcc_aux.ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(i);  
-    op_acc_->AddAccumulationDelta(tcc_aux, *acc_term_prev_, *acc_term_, dt_, "cell");
+    op_acc_->AddAccumulationDelta(tcc_aux, wc_prev, wc, dt_, "cell");
 
     // refresh data BC and source data  
     UpdateBoundaryData(t_old, t_new, i);
@@ -188,8 +248,19 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
   
     // apply boundary conditions
-    op_adv_->UpdateMatrices(S_->GetFieldData(darcy_flux_key_).ptr());
+    op_adv_->UpdateMatrices(S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT).ptr());
     op_adv_->ApplyBCs(true, true, true);
+
+    if (use_dispersion_) {
+      int phase;
+      double md;
+      CalculateDispersionTensor_(*transport_phi, wc_c);
+      FindDiffusionValue(component_names_[i], &md, &phase);
+      if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, sat_c);
+
+      op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+      op_diff_->ApplyBCs(true, true, true);
+    }
 
     // add sources
     ComputeSources_(t_new, t_new - t_old, rhs_cell, *tcc->ViewComponent("cell"), i, i);
@@ -200,24 +271,88 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *(*tcc_tmp->ViewComponent("cell"))(i) = *(*tcc_aux.ViewComponent("cell"))(0);
 
     // statistics
-    icount += op_->num_itrs();
-  }
-
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    double sol_norm;
-    tcc_tmp->Norm2(&sol_norm);
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "transport solver (" << solver_name_
-               << "): ||sol||=" << sol_norm 
-               << "  avg itrs=" << icount / num_aqueous << std::endl;
-      VV_PrintSoluteExtrema(*tcc->ViewComponent("cell"), t_new - t_old, "");
+    *tot_itrs += op_->num_itrs();
   }
 
   // estimate time multiplier
   // dt_desirable_ = ts_control_->get_timestep(dt_MPC, 1);
 
   return fail;
+}
+
+
+/* ******************************************************************* 
+*
+******************************************************************* */
+bool TransportImplicit_PK::AdvanceStepHO_(double t_old, double t_new, int* tot_itrs) 
+{
+  bool failed = false;
+  double dt_next;
+
+  dt_ = t_new - t_old;
+  *tot_itrs = bdf1_dae_->number_nonlinear_steps();
+
+  for (int i = 0; i < num_aqueous; i++) {
+    current_component_ = i;
+    *(*solution_->ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(i);  
+
+    failed = bdf1_dae_->TimeStep(dt_, dt_next, soln_);
+    dt_ = dt_next;
+    if (failed) return failed;
+
+    *(*tcc_tmp->ViewComponent("cell"))(i) = *(*solution_->ViewComponent("cell"))(0);
+  }
+
+  bdf1_dae_->CommitSolution(dt_, soln_);
+  *tot_itrs = bdf1_dae_->number_nonlinear_steps() - *tot_itrs;
+
+  if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "mean limiter=" << limiter_mean_ << std::endl;
+  }
+  return failed;
+}
+
+
+/* ******************************************************************* 
+* Recompute linear system for the given component.
+******************************************************************* */
+void TransportImplicit_PK::UpdateLinearSystem(double t_old, double t_new, int component) 
+{
+  S_->GetEvaluator(water_content_key_).Update(*S_, "transport");
+  const auto& wc = S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT);
+  const auto& wc_prev = S_->Get<CompositeVector>(prev_water_content_key_, Tags::DEFAULT);
+
+  const auto& wc_c = *wc.ViewComponent("cell");
+  const auto& sat_c = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+
+  CompositeVector tcc_aux(wc);
+  *(*tcc_aux.ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(component);
+
+  double dt = t_new - t_old;
+
+  op_->rhs()->PutScalar(0.0);
+  op_acc_->AddAccumulationDelta(tcc_aux, wc_prev, wc, dt, "cell");
+
+  UpdateBoundaryData(t_old, t_new, component);
+
+  op_adv_->UpdateMatrices(S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT).ptr());
+  op_adv_->ApplyBCs(true, true, true);
+
+  if (use_dispersion_) {
+    int phase;
+    double md;
+    CalculateDispersionTensor_(*transport_phi, wc_c);
+    FindDiffusionValue(component_names_[component], &md, &phase);
+    if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, sat_c);
+
+    op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+    op_diff_->ApplyBCs(true, true, true);
+  }
+
+  // add sources
+  Epetra_MultiVector& rhs_cell = *op_->rhs()->ViewComponent("cell");
+  ComputeSources_(t_new, dt, rhs_cell, *tcc->ViewComponent("cell"), component, component);
 }
 
 

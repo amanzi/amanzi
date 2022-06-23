@@ -16,19 +16,20 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "IO.hh"
 #include "LeastSquare.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "OutputXDMF.hh"
 
 #include "ShallowWater_PK.hh"
 
-#include "OutputXDMF.hh"
+using namespace Amanzi;
 
 //--------------------------------------------------------------
 // Analytic solution
 //--------------------------------------------------------------
-double hf(double x)
-{
+double hf(double x) {
   return 2.*cos(x) + 2.*x*sin(x) + 1./8.*cos(2.*x) + x/4.*sin(2.*x) + 12./16.*x*x;
 }
 
@@ -87,11 +88,11 @@ void vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos:
 
   std::string passwd = "state";
 
-  Epetra_MultiVector& B_vec_c = *S->GetFieldData("surface-bathymetry",passwd)->ViewComponent("cell");
-  Epetra_MultiVector& h_vec_c = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
-  Epetra_MultiVector& ht_vec_c = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("cell");
-  Epetra_MultiVector& vel_vec_c = *S->GetFieldData("surface-velocity",passwd)->ViewComponent("cell");
-  Epetra_MultiVector& q_vec_c = *S->GetFieldData("surface-discharge", "surface-discharge")->ViewComponent("cell");
+  const auto& B_vec_c = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
+  auto& h_vec_c = *S->GetW<CompositeVector>("surface-ponded_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& ht_vec_c = *S->GetW<CompositeVector>("surface-total_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& vel_vec_c = *S->GetW<CompositeVector>("surface-velocity", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& q_vec_c = *S->GetW<CompositeVector>("surface-discharge", Tags::DEFAULT, "surface-discharge").ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; c++) {
     const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
@@ -175,7 +176,6 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     Teuchos::ParameterList state_list = plist->sublist("state");
     RCP<State> S = rcp(new State(state_list));
     S->RegisterMesh("surface", mesh);
-    S->set_time(0.0);
 
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
 
@@ -183,20 +183,21 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
     // create a shallow water PK
     ShallowWater_PK SWPK(pk_tree,plist,S,soln);
-    SWPK.Setup(S.ptr());
+    SWPK.Setup();
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
-    SWPK.Initialize(S.ptr());
+    S->set_time(0.0);
+    SWPK.Initialize();
 
     vortex_2D_setIC(mesh, S);
     S->CheckAllFieldsInitialized();
 
-    const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
-    const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
-    const Epetra_MultiVector& vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
-    const Epetra_MultiVector& q = *S->GetFieldData("surface-discharge")->ViewComponent("cell");
-    const Epetra_MultiVector& B = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
+    const auto& hh = *S->Get<CompositeVector>("surface-ponded_depth").ViewComponent("cell");
+    const auto& ht = *S->Get<CompositeVector>("surface-total_depth").ViewComponent("cell");
+    const auto& vel = *S->Get<CompositeVector>("surface-velocity").ViewComponent("cell");
+    const auto& q = *S->Get<CompositeVector>("surface-discharge").ViewComponent("cell");
+    const auto& B = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
 
     // create pid vector
     Epetra_MultiVector pid(B);
@@ -252,7 +253,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
       dt_max = std::max(dt_max, dt);
 
       SWPK.AdvanceStep(t_old, t_new);
-      SWPK.CommitStep(t_old, t_new, S);
+      SWPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
       t_old = t_new;
       iter++;

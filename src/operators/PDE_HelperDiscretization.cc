@@ -594,7 +594,7 @@ Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
 
 
 /* ******************************************************************
-* Composite vector space with one face component having multiple DOFs
+* Composite vector space with some faces having multiple DOFs
 ****************************************************************** */
 Teuchos::RCP<CompositeVectorSpace> CreateNonManifoldCVS(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)

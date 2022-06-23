@@ -99,7 +99,10 @@
   </ParameterList>
 
   <ParameterList name="state">
-    <ParameterList name="field evaluators">
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+    <ParameterList name="evaluators">
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -112,7 +115,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
@@ -126,7 +129,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="saturation_liquid">
         <ParameterList name="function">
@@ -140,7 +143,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="initial conditions">
@@ -623,6 +626,7 @@
       <Parameter name="spatial discretization order" type="int" value="1"/>
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="cfl" type="double" value="1.0"/>
+      <Parameter name="method" type="string" value="muscl"/>
       <Parameter name="flow mode" type="string" value="transient"/>
       <Parameter name="solver" type="string" value="Dispersion Solver"/>
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
@@ -689,6 +693,7 @@
       <Parameter name="number of gaseous components" type="int" value="0"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="effective transport porosity" type="bool" value="false"/>
+        <Parameter name="use dispersion solver" type="bool" value="true"/>
         <Parameter name="permeability field is required" type="bool" value="false"/>
       </ParameterList>
       <ParameterList name="verbose object">

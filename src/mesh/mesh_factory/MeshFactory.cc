@@ -64,9 +64,9 @@ MeshFactory::MeshFactory(const Comm_ptr_type& comm,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                          const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : comm_(comm),
-    gm_(gm),
+    preference_(),
     plist_(plist),
-    preference_()
+    gm_(gm)
 {
   if (comm_ == Teuchos::null) {
     comm_ = Amanzi::getDefaultComm();

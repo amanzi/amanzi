@@ -31,12 +31,9 @@ namespace Flow {
 void Richards_PK::SolveFullySaturatedProblem(
     double t_old, CompositeVector& u, const std::string& solver_name)
 {
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
-
   UpdateSourceBoundaryData(t_old, t_old, u);
 
-  const auto& mu = S_->GetFieldData(viscosity_liquid_key_);
+  const auto& mu = S_->GetPtr<CompositeVector>(viscosity_liquid_key_, Tags::DEFAULT);
   alpha_upwind_->PutScalarMasterAndGhosted(molar_rho_);
   Operators::CellToFace_ScaleInverse(mu, alpha_upwind_);
 
@@ -97,8 +94,6 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
 {
   std::vector<int>& bc_model = op_bc_->bc_model();
 
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
-
   UpdateSourceBoundaryData(t_new, t_new, *u);
 
   CompositeVector utmp(*u);
@@ -107,24 +102,24 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
 
   // update diffusion coefficient
   // -- function
-  darcy_flux_copy->ScatterMasterToGhosted("face");
-
-  pressure_eval_->SetFieldAsChanged(S_.ptr());
-  auto alpha = S_->GetFieldData(alpha_key_, alpha_key_);
-  S_->GetFieldEvaluator(alpha_key_)->HasFieldChanged(S_.ptr(), "flow");
+  vol_flowrate_copy->ScatterMasterToGhosted("face");
+ 
+  pressure_eval_->SetChanged();
+  auto& alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
+  S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
   
-  *alpha_upwind_->ViewComponent("cell") = *alpha->ViewComponent("cell");
-  Operators::BoundaryFacesToFaces(bc_model, *alpha, *alpha_upwind_);
-  upwind_->Compute(*darcy_flux_copy, *u, bc_model, *alpha_upwind_);
+  *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
+  Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
+  upwind_->Compute(*vol_flowrate_copy, *u, bc_model, *alpha_upwind_);
 
   // -- derivative
-  Key der_key = Keys::getDerivKey(alpha_key_, pressure_key_);
-  S_->GetFieldEvaluator(alpha_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, pressure_key_);
-  auto alpha_dP = S_->GetFieldData(der_key);
+  S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
+  auto& alpha_dP = S_->GetDerivativeW<CompositeVector>(
+      alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
-  *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP->ViewComponent("cell");
-  Operators::BoundaryFacesToFaces(bc_model, *alpha_dP, *alpha_upwind_dP_);
-  upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *alpha_upwind_dP_);
+  *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
+  Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
+  upwind_->Compute(*vol_flowrate_copy, *solution, bc_model, *alpha_upwind_dP_);
 
   // modify relative permeability coefficient for influx faces
   UpwindInflowBoundary(u);
@@ -182,7 +177,7 @@ void Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
 
-  auto& mu_c = *S_->GetFieldData(viscosity_liquid_key_)->ViewComponent("cell");
+  const auto& mu_c = *S_->Get<CompositeVector>(viscosity_liquid_key_).ViewComponent("cell");
   const auto& u_cell = *u->ViewComponent("cell");
   auto& k_face = *alpha_upwind_->ViewComponent("face", true);
 
@@ -217,7 +212,7 @@ void Richards_PK::UpwindInflowBoundary_New(Teuchos::RCP<const CompositeVector> u
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
 
-  auto& mu_c = *S_->GetFieldData(viscosity_liquid_key_)->ViewComponent("cell");
+  const auto& mu_c = *S_->Get<CompositeVector>(viscosity_liquid_key_).ViewComponent("cell");
   auto& k_face = *alpha_upwind_->ViewComponent("face", true);
 
   for (int f = 0; f < nfaces_owned; f++) {

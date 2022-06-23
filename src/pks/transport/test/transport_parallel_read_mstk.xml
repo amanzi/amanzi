@@ -27,7 +27,6 @@
       <Parameter name="cfl" type="double" value="0.5"/>   
       <Parameter name="spatial discretization order" type="int" value="2"/>   
       <Parameter name="temporal discretization order" type="int" value="1"/>   
-      <Parameter name="generic RK implementation" type="bool" value="true"/>
       <!-- developers parameters --> 
       <Parameter name="enable internal tests" type="bool" value="true"/>   
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
@@ -77,12 +76,12 @@
   </ParameterList>
 
   <ParameterList name="state">
-    <ParameterList name="field evaluators">
+    <ParameterList name="evaluators">
       <ParameterList name="porosity">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="Computational domain"/>
@@ -90,6 +89,20 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="saturation_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Evaluator for darcy_velocity(darcy_flux)
+  Evaluator for Darcy velocity.
 */
 
 #include "MFD3D_Diffusion.hh"
@@ -22,27 +22,27 @@ namespace Flow {
 /* ******************************************************************
 * A simple constructor: create dependencies.
 ****************************************************************** */
-DarcyVelocityEvaluator::DarcyVelocityEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist) {
-  // hard-coded keys
-  my_key_ = plist.get<std::string>("darcy velocity key");
-  darcy_flux_key_ = plist.get<std::string>("darcy flux key");
-  dependencies_.insert(darcy_flux_key_);
+DarcyVelocityEvaluator::DarcyVelocityEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+{
+  AMANZI_ASSERT(my_keys_.size() > 0);
+  vol_flowrate_key_ = plist.get<std::string>("volumetric flow rate key");
+  dependencies_.insert(std::make_pair(vol_flowrate_key_, Tags::DEFAULT));
 }
 
 
 /* ******************************************************************
 * A copy constructor.
 ****************************************************************** */
-DarcyVelocityEvaluator::DarcyVelocityEvaluator(const DarcyVelocityEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other),
-    darcy_flux_key_(other.darcy_flux_key_) {}
+DarcyVelocityEvaluator::DarcyVelocityEvaluator(const DarcyVelocityEvaluator& other)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+      vol_flowrate_key_(other.vol_flowrate_key_) {}
 
 
 /* ******************************************************************
 * Clone with unclear yet purpose.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> DarcyVelocityEvaluator::Clone() const {
+Teuchos::RCP<Evaluator> DarcyVelocityEvaluator::Clone() const {
   return Teuchos::rcp(new DarcyVelocityEvaluator(*this));
 }
 
@@ -50,18 +50,18 @@ Teuchos::RCP<FieldEvaluator> DarcyVelocityEvaluator::Clone() const {
 /* ******************************************************************
 * Required member function: basic algorithm.
 ****************************************************************** */
-void DarcyVelocityEvaluator::EvaluateField_(
-    const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result) 
+void DarcyVelocityEvaluator::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
   Key domain = plist_.get<std::string>("domain name");
-  S->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
+  S.Get<CompositeVector>(vol_flowrate_key_).ScatterMasterToGhosted("face");
 
-  const Epetra_MultiVector& flux = *S->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
-  Epetra_MultiVector& result_c = *(result->ViewComponent("cell", false));
+  const auto& flux = *S.Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
+  auto& result_c = *results[0]->ViewComponent("cell");
 
-  const auto& fmap = *S->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
+  const auto& fmap = *S.Get<CompositeVector>(vol_flowrate_key_).Map().Map("face", true);
 
-  auto mesh = S->GetMesh(domain);
+  auto mesh = S.GetMesh(domain);
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int dim = mesh->space_dimension();
 

@@ -28,15 +28,15 @@ class MeshLight {
  public:
   MeshLight()
     : space_dim_(-1),
+      faces_requested_(false),
+      edges_requested_(false),
       cell2face_info_cached_(false),
       cell2edge_info_cached_(false),
-      face2cell_info_cached_(false),
       face2edge_info_cached_(false),
+      face2cell_info_cached_(false),
       cell_geometry_precomputed_(false),
       face_geometry_precomputed_(false),
-      edge_geometry_precomputed_(false),
-      faces_requested_(false),
-      edges_requested_(false) {};
+      edge_geometry_precomputed_(false) {};
 
   // initializing mesh
   void BuildCache();

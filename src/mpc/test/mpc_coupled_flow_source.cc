@@ -71,7 +71,7 @@ using namespace Amanzi::AmanziGeometry;
 
   // verify solution symmetry
   int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
-  auto& pc = *S->GetFieldData("pressure")->ViewComponent("cell");
+  const auto& pc = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
 
   Amanzi::AmanziGeometry::Point x0(5.0, 5.0, 5.0);
   std::vector<double> dist({ 1.03752, 1.88568, 2.77273, 3.67058 });

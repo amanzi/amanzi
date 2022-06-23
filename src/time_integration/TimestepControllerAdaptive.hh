@@ -63,7 +63,7 @@ template<class Vector>
 TimestepControllerAdaptive<Vector>::TimestepControllerAdaptive(
     Teuchos::ParameterList& plist,
     Teuchos::RCP<Vector> udot, Teuchos::RCP<Vector> udot_prev)
-    : plist_(plist), udot_(udot), udot_prev_(udot_prev)
+    : plist_(plist), udot_prev_(udot_prev), udot_(udot)
 {
   max_its_ = plist_.get<int>("max iterations");
   min_its_ = plist_.get<int>("min iterations");

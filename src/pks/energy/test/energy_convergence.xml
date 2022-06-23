@@ -206,9 +206,9 @@
    <ParameterList name="verbose object">
      <Parameter name="verbosity level" type="string" value="none"/>
     </ParameterList>
-    <ParameterList name="field evaluators">
+    <ParameterList name="evaluators">
       <ParameterList name="particle_density">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -223,7 +223,7 @@
       </ParameterList>
       <!-- setting it to one, removes molar density from the test -->
       <ParameterList name="molar_density_liquid">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -248,11 +248,11 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <!-- setting it to one, removes rock conductivity from the test -->
       <ParameterList name="porosity">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -266,7 +266,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="saturation_liquid">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -280,7 +280,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="pressure">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -294,7 +294,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="internal_energy_liquid">
-        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
         <ParameterList name="IEM parameters">
           <ParameterList name="Material1">
@@ -311,7 +311,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="internal_energy_rock">
-        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
         <ParameterList name="IEM parameters">
           <ParameterList name="Material1">
@@ -376,7 +376,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="darcy_flux">
+      <ParameterList name="volumetric_flow_rate">
         <Parameter name="dot with normal" type="bool" value="true"/>
         <ParameterList name="function">
           <ParameterList name="domain">

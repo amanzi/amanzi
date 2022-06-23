@@ -42,6 +42,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 #include "mdm_transport_registration.hh"
+#include "multiphase_evaluators_registration.hh"
 #include "multiscale_flow_registration.hh"
 #include "multiscale_transport_registration.hh"
 #include "mpc_pks_registration.hh"
@@ -78,7 +79,7 @@ Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
                                             Amanzi::ObservationData& observations_data)
 {
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  // Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   // Teuchos::OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 

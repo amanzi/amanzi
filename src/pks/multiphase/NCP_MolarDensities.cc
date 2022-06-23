@@ -20,14 +20,16 @@ namespace Multiphase {
 NCP_MolarDensities::NCP_MolarDensities(Teuchos::ParameterList& plist)
   : MultiphaseBaseEvaluator(plist)
 {
-  my_key_ = plist_.get<std::string>("my key");
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
+  }
   x_vapor_key_ = plist_.get<std::string>("mole fraction vapor key");
-  molar_density_gas_key_ = plist_.get<std::string>("molar density gas key");
+  mol_density_gas_key_ = plist_.get<std::string>("molar density gas key");
   tcc_gas_key_ = plist_.get<std::string>("tcc gas key");
 
-  dependencies_.insert(x_vapor_key_);
-  dependencies_.insert(molar_density_gas_key_);
-  dependencies_.insert(tcc_gas_key_);
+  dependencies_.insert(std::make_pair(x_vapor_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(mol_density_gas_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(tcc_gas_key_, Tags::DEFAULT));
 }
 
 
@@ -38,7 +40,7 @@ NCP_MolarDensities::NCP_MolarDensities(const NCP_MolarDensities& other)
   : MultiphaseBaseEvaluator(other) {};
 
 
-Teuchos::RCP<FieldEvaluator> NCP_MolarDensities::Clone() const {
+Teuchos::RCP<Evaluator> NCP_MolarDensities::Clone() const {
   return Teuchos::rcp(new NCP_MolarDensities(*this));
 }
 
@@ -46,15 +48,15 @@ Teuchos::RCP<FieldEvaluator> NCP_MolarDensities::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void NCP_MolarDensities::EvaluateField_(
-    const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result)
+void NCP_MolarDensities::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& xg = *S->GetFieldData(x_vapor_key_)->ViewComponent("cell");
-  const auto& ng = *S->GetFieldData(molar_density_gas_key_)->ViewComponent("cell");
-  const auto& tcc = *S->GetFieldData(tcc_gas_key_)->ViewComponent("cell");
+  const auto& xg = *S.Get<CompositeVector>(x_vapor_key_).ViewComponent("cell");
+  const auto& ng = *S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
+  const auto& tcc = *S.Get<CompositeVector>(tcc_gas_key_).ViewComponent("cell");
 
-  auto& result_c = *result->ViewComponent("cell");
-  int ncells = result->size("cell", false);
+  auto& result_c = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell", false);
 
   for (int c = 0; c != ncells; ++c) {
     double sum = ng[0][c] * xg[0][c];
@@ -67,20 +69,20 @@ void NCP_MolarDensities::EvaluateField_(
 /* ******************************************************************
 * Required member: field derivative calculation.
 ****************************************************************** */
-void NCP_MolarDensities::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void NCP_MolarDensities::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  const auto& xg = *S->GetFieldData(x_vapor_key_)->ViewComponent("cell");
-  const auto& ng = *S->GetFieldData(molar_density_gas_key_)->ViewComponent("cell");
+  const auto& xg = *S.Get<CompositeVector>(x_vapor_key_).ViewComponent("cell");
+  const auto& ng = *S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
 
-  auto& result_c = *result->ViewComponent("cell");
-  int ncells = result->size("cell", false);
+  auto& result_c = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell", false);
 
   if (wrt_key == x_vapor_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = -ng[0][c];
   }
-  else if (wrt_key == molar_density_gas_key_) {
+  else if (wrt_key == mol_density_gas_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = 1.0 - xg[0][c];
   }
   else if (wrt_key == tcc_gas_key_) {

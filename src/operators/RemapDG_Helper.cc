@@ -16,6 +16,7 @@
 
 #include "Epetra_Vector.h"
 
+#include "ReconstructionCellLinear.hh"
 #include "RemapDG.hh"
 #include "WhetStoneDefs.hh"
 
@@ -31,8 +32,8 @@ RemapDG_Helper::RemapDG_Helper(
     Teuchos::ParameterList& plist) 
   : mesh0_(mesh0),
     mesh1_(mesh1),
-    plist_(plist),
-    dim_(mesh0->space_dimension())
+    dim_(mesh0->space_dimension()),
+    plist_(plist)
 {
   // mesh data
   ncells_owned_ = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -61,7 +62,7 @@ RemapDG_Helper::RemapDG_Helper(
 
   if (is_limiter_) {
     smoothness_ = limlist.template get<std::string>("smoothness indicator", "none");
-    limiter_ = Teuchos::rcp(new LimiterCell(mesh0_));
+    limiter_ = Teuchos::rcp(new LimiterCellDG(mesh0_));
     limiter_->Init(limlist);
   }
 
@@ -238,7 +239,7 @@ void RemapDG_Helper::StaticCellCoVelocity()
 ***************************************************************** */
 void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
 {
-  const Epetra_MultiVector& x_c = *x.ViewComponent("cell", true);
+  auto& x_c = *x.ViewComponent("cell", true);
   int nk = x_c.NumVectors();
 
   // create list of cells where to apply limiter
@@ -273,10 +274,10 @@ void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
 
   x.ScatterMasterToGhosted("cell");
 
-  if (limiter_->type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG ||
-      limiter_->type() == OPERATOR_LIMITER_MICHALAK_GOOCH_DG ||
-      limiter_->type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL) { 
-    limiter_->ApplyLimiter(ids, x.ViewComponent("cell", true), *dg_, bc_model, bc_value);
+  if (limiter_->get_type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG ||
+      limiter_->get_type() == OPERATOR_LIMITER_MICHALAK_GOOCH_DG ||
+      limiter_->get_type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL) { 
+    limiter_->ApplyLimiterDG(ids, x.ViewComponent("cell", true), *dg_, bc_model, bc_value);
   } else {
     // -- create gradient in the natural basis
     WhetStone::DenseVector data(nk);
@@ -286,9 +287,9 @@ void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
     auto grad = Teuchos::rcp(new CompositeVector(cvs));
     Epetra_MultiVector& grad_c = *grad->ViewComponent("cell", true);
 
-    // -- mean value is preserved automatiacally for the partially orthogonalized basis
+    // -- mean value is preserved automatically for the partially orthogonalized basis
     //    otherwise, a more complicated algorithm is needed
-    AMANZI_ASSERT(dg_->cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
+    AMANZI_ASSERT(nk > dim_ || dg_->cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
     for (int c = 0; c < ncells_wghost_; ++c) {
       for (int i = 0; i < nk; ++i) data(i) = x_c[i][c];
@@ -300,7 +301,9 @@ void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
     }
 
     // -- limit gradient and save it to solution
-    limiter_->ApplyLimiter(ids, x.ViewComponent("cell", true), 0, grad, bc_model, bc_value);
+    //    Reconstruction object does nothing but keeping poiter to gradient
+    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh0_, grad));
+    limiter_->ApplyLimiter(ids, x.ViewComponent("cell", true), 0, lifting, bc_model, bc_value);
 
     for (int n = 0; n < ids.size(); ++n) {
       int c = ids[n];

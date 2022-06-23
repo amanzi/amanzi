@@ -15,6 +15,8 @@
 namespace Amanzi {
 namespace Transport {
 
+enum class Method_t { MUSCL = 1, FCT };
+
 const int TRANSPORT_PHASE_LIQUID = 0;  // phases from 0 to 1
 const int TRANSPORT_PHASE_GAS = 1;
 const int TRANSPORT_NUMBER_PHASES = 2;

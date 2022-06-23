@@ -43,7 +43,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   }
 
   // first we write initial conditions for scalars and vectors, not region-specific
-  Teuchos::ParameterList& out_ev = out_list.sublist("field evaluators");
+  Teuchos::ParameterList& out_ev = out_list.sublist("evaluators");
   Teuchos::ParameterList& out_ic = out_list.sublist("initial conditions");
 
   MemoryManager mm;
@@ -241,7 +241,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         std::string model = GetAttributeValueS_(node, "model", "linear");
 
         Teuchos::ParameterList& field_ev = out_ev.sublist("internal_energy_liquid");
-        field_ev.set<std::string>("field evaluator type", "iem")
+        field_ev.set<std::string>("evaluator type", "iem")
             .set<std::string>("internal energy key", "internal_energy_liquid");
 
         field_ev.sublist("IEM parameters").sublist(reg_str)
@@ -266,7 +266,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         std::string model = GetAttributeValueS_(node, "model", "linear");
 
         Teuchos::ParameterList& field_ev = out_ev.sublist("internal_energy_rock");
-        field_ev.set<std::string>("field evaluator type", "iem")
+        field_ev.set<std::string>("evaluator type", "iem")
             .set<std::string>("internal energy key", "internal_energy_rock");
 
         field_ev.sublist("IEM parameters").sublist(reg_str)
@@ -293,7 +293,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- dual porosity: matrix porosity
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
       if (flag) {
-        TranslateFieldIC_(node, "porosity_matrix", "-", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, "porosity_msp", "-", reg_str, regions, out_ic, out_ev);
       }
     }
   }
@@ -301,6 +301,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   // optional fracture network
   node = GetUniqueElementByTagsString_("fracture_network", flag);
   if (flag) {
+    fractures_ = true;
     AddIndependentFieldEvaluator_(out_ev, "fracture-mass_density_liquid", "FRACTURE_NETWORK_INTERNAL", rho_);
   }
 
@@ -333,6 +334,11 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         Exceptions::amanzi_throw(msg);
       }
 
+      node = GetUniqueElementByTagsString_(inode, "fracture_diffusivity", flag);
+      if (flag) {
+        TranslateFieldIC_(node, "fracture-normal_diffusion", "m/s", reg_str, regions, out_ic, out_ev, "normal");
+      }
+
       // -- particle density
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);
       if (flag) {
@@ -358,7 +364,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         std::string model = GetAttributeValueS_(node, "model", "linear");
 
         Teuchos::ParameterList& field_ev = out_ev.sublist("fracture-internal_energy_liquid");
-        field_ev.set<std::string>("field evaluator type", "iem")
+        field_ev.set<std::string>("evaluator type", "iem")
             .set<std::string>("internal energy key", "fracture-internal_energy_liquid");
 
         field_ev.sublist("IEM parameters").sublist(reg_str)
@@ -472,9 +478,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         velocity.push_back(GetAttributeValueD_(node, coords_[1].c_str()));
         if (dim_ == 3) velocity.push_back(GetAttributeValueD_(node, coords_[2].c_str()));
 
-        Teuchos::ParameterList& darcy_flux_ic = out_ic.sublist("darcy_flux");
+        Teuchos::ParameterList& flowrate_ic = out_ic.sublist("volumetric_flow_rate");
         Teuchos::ParameterList& tmp_list =
-            darcy_flux_ic.set<bool>("dot with normal", true)
+            flowrate_ic.set<bool>("dot with normal", true)
             .sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
             .set<std::string>("component", "face")
@@ -726,11 +732,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
     out_list.set<Teuchos::Array<std::string> >("whitelist", CharToStrings_(text_content));
   }
 
-  // temporary fix for fractures
-  if (fractures_) {
-    Teuchos::ParameterList empty;
-    out_list.sublist("initial conditions").sublist("permeability") = empty;
-  }
+  out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
 
   return out_list;
 }
@@ -752,13 +754,13 @@ void InputConverterU::TranslateFieldEvaluator_(
     field_ic.set<std::string>("restart file", filename);
 
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
-    field_ev.set<std::string>("field evaluator type", "constant variable");
+    field_ev.set<std::string>("evaluator type", "constant variable");
   } else if (type == "h5file") {  // regular h5 file
     std::string filename = GetAttributeValueS_(node, "filename");
     bool temporal = GetAttributeValueS_(node, "constant_in_time", TYPE_NUMERICAL, false, "true") == "true";
 
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
-    field_ev.set<std::string>("field evaluator type", "independent variable from file")
+    field_ev.set<std::string>("evaluator type", "independent variable from file")
         .set<std::string>("filename", filename)
         .set<std::string>("domain name", domain)
         .set<std::string>("component name", "cell")
@@ -775,7 +777,7 @@ void InputConverterU::TranslateFieldEvaluator_(
         .set<std::string>("component", "cell")
         .sublist("function").sublist("function-constant")
         .set<double>("value", val);
-    field_ev.set<std::string>("field evaluator type", "independent variable");
+    field_ev.set<std::string>("evaluator type", "independent variable");
   }
 }
 
@@ -942,7 +944,7 @@ void InputConverterU::AddIndependentFieldEvaluator_(
       .set<double>("value", val);
 
   out_ev.sublist(field)
-      .set<std::string>("field evaluator type", "independent variable");
+      .set<std::string>("evaluator type", "independent variable");
 }
 
 
@@ -956,7 +958,7 @@ void InputConverterU::AddSecondaryFieldEvaluator_(
     const std::string& eos_table_name)
 {
   out_ev.sublist(field)
-    .set<std::string>("field evaluator type", type)
+    .set<std::string>("evaluator type", type)
     .set<std::string>(key, field);
 
   out_ev.sublist(field).sublist("EOS parameters")

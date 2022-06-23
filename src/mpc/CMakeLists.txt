@@ -44,6 +44,8 @@ include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR}/data)
+include_directories(${STATE_SOURCE_DIR}/evaluators)
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${TRANSPORT_SOURCE_DIR})
 include_directories(${SHALLOW_WATER_SOURCE_DIR})
@@ -180,6 +182,12 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_coupled_transport.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
 
+    add_amanzi_test(mpc_coupled_dispersive_transport mpc_coupled_dispersive_transport
+                    KIND      int
+                    NPROCS    2
+                    SOURCE    test/Main.cc test/mpc_coupled_dispersive_transport.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
+
     add_amanzi_test(mpc_coupled_flow_transport mpc_coupled_flow_transport
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_coupled_flow_transport.cc
@@ -249,6 +257,13 @@ if (BUILD_TESTS)
     add_amanzi_test(mpc_walkabout mpc_walkabout 
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_walkabout.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+
+    # Test: default MPCs
+    add_amanzi_test(mpc_default mpc_default
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_default.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 

@@ -27,7 +27,6 @@ namespace
   // not accessible to this derived class...should fix
   // NOTE: Defaults set in Initialize block below
   //
-  bool pmamr_initialized = false;
   int  regrid_on_restart;
   int  use_efficient_regrid;
   int  compute_new_dt_on_regrid;
@@ -883,8 +882,6 @@ PMAmr::InitializeInit(Real              strt_time,
     //
     // Init problem dependent data.
     //
-    int init = true;
-
     if (!probin_file.empty()) {
       //readProbinFile(init);
     }
@@ -1057,8 +1054,6 @@ PMAmr::restart (const std::string& filename)
     //
     // Init problem dependent data.
     //
-    int init = false;
-
     // THE WHOLE READON FOR THIS ABOMINATION IS THE FOLLOWING COMMENT
     // readProbinFile(init);
     //
@@ -1319,8 +1314,6 @@ PMAmr::restart (const std::string& filename)
 
 void PMAmr::InitializeControlEvents()
 {
-  Real time_eps = 1.e-6; // FIXME: needs to be computed
-
   // Build time macros
   ParmParse ppa("amr");
 

@@ -24,6 +24,7 @@
 
 // Amanzi
 #include "GMVMesh.hh"
+#include "IO.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "State.hh"
@@ -51,10 +52,9 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
   // read parameter list
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlfile);
 
-  /* create a mesh framework */
+  // create a mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
@@ -75,20 +75,20 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
-  S->set_time(0.0);
 
   plist->sublist("PKs").sublist("transport").sublist("reconstruction")
         .set<std::string>("limiter", limiter)
         .set<std::string>("limiter stencil", stencil);
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
-  TPK.Setup(S.ptr());
-  TPK.CreateDefaultState(mesh, 2);
+  TPK.Setup();
+  S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
+  S->set_time(0.0);
 
   // modify the default state for the problem at hand
   std::string passwd("state"); 
-  Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 1.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -98,15 +98,14 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
   }
 
   // initialize a transport process kernel from a transport state
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
 
   // advance the transport state 
   int iter;
   double t_old(0.0), t_new(0.0), dt;
   bool flag(true);
 
-  Teuchos::RCP<Epetra_MultiVector> 
-      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+  auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   iter = 0;
   while (t_new < 0.5) {
@@ -124,7 +123,7 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
     S->set_final_time(t_new);
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new, S);
+    TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
     iter++;
@@ -159,7 +158,7 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
     }
   }
 
-  
+  WriteStateStatistics(*S);
 }
 
 
@@ -167,14 +166,15 @@ TEST(ADVANCE_2D_MESH) {
   // no velocity switch
   runTest(1.0, "test/transport_2D.xml", "", "tensorial", "face to cells");
   runTest(1.0, "test/transport_2D.xml", "test/median7x8.exo", "Barth-Jespersen", "cell to closest cells");
+  runTest(1.0, "test/transport_2D.xml", "", "Kuzmin", "node to cells");
 }
 
 TEST(ADVANCE_2D_MESH_SWITCH_FLOW) {
-  runTest(0.16, "test/transport_2D.xml", "", "tensorial", "face to cells");
-  runTest(0.16, "test/transport_2D.xml", "", "tensorial", "cell to closest cells");
+  // runTest(0.16, "test/transport_2D.xml", "", "tensorial", "face to cells");
+  // runTest(0.16, "test/transport_2D.xml", "", "tensorial", "cell to closest cells");
 }
 
 TEST(ADVANCE_2D_MESH_SWITCH_FLOW_KUZMIN) {
-  runTest(0.16, "test/transport_2D.xml", "", "Kuzmin", "node to cells");
+  // runTest(0.16, "test/transport_2D.xml", "", "Kuzmin", "node to cells");
 }
 

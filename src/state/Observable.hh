@@ -100,6 +100,7 @@ to disk by the UnstructuredObservation_ object.
 #include "Teuchos_RCP.hpp"
 
 #include "AmanziTypes.hh"
+#include "Key.hh"
 #include "Point.hh"
 #include "MeshDefs.hh"
 #include "IOEvent.hh"
@@ -140,10 +141,11 @@ class Observable {
   std::string flux_normalize_region_;
 
   std::string name_;
-  std::string variable_;
+  Key variable_;
   std::string region_;
   std::string functional_;
   std::string location_;
+  Tag tag_;
   int num_vectors_;
   int dof_;
   bool time_integrated_;
