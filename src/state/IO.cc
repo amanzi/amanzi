@@ -49,7 +49,7 @@ void WriteVis(Visualization& vis, const State& S)
         // visualized. However, since overwriting of attributes does not work
         // properly, we skip them.  This should get fixed by writing attributes
         // as an attribute of the step or something similar. FIXME --ETC
-        if (!r->second->ValidType<double>() && !r->second->ValidType<int>()) {
+        if ((!r->second->ValidType<double>()) && (!r->second->ValidType<int>())) {
           // Should we vis all tags or just the default tag?
           // -- write all tags
           // r->WriteVis(vis, nullptr);

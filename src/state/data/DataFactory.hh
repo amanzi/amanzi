@@ -42,7 +42,10 @@ class DataFactory {
 
   DataFactory(DataFactory&& other) noexcept : p_(std::move(other.p_)) {}
 
-  void swap(DataFactory& other) noexcept { p_.swap(other.p_); }
+  void swap(DataFactory& other) noexcept {
+    p_.swap(other.p_);
+    data_p_.swap(other.data_p_);
+  }
 
   DataFactory& operator=(DataFactory other) {
     if (&other != this)
@@ -52,12 +55,12 @@ class DataFactory {
 
   bool HasType() const { return p_.get(); }
 
-  template <typename T, typename F> bool ValidType() const {
-    return p_->ValidType<T, F>();
-  }
-
   template <typename T> bool ValidType() const {
     return data_p_->ValidType<T>();
+  }
+
+  template <typename T, typename F> bool ValidType() const {
+    return p_->ValidType<T,F>();
   }
 
   template <typename T, typename F> const F& Get() const {

@@ -170,12 +170,12 @@ class RecordSet {
   }
 
   template <typename T, typename F>
-  bool ValidType() {
+  bool ValidType() const {
     return factory_.ValidType<T,F>();
   }
 
   template <typename T>
-  bool ValidType() {
+  bool ValidType() const {
     return factory_.ValidType<T>();
   }
 

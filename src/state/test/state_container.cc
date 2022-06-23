@@ -23,6 +23,12 @@ TEST(STATE_CREATION) {
   State s;
   s.Require<double>("my_double", Tags::DEFAULT, "my_double");
   s.Setup();
+
+  CHECK(s.GetRecord("my_double", Tags::DEFAULT).ValidType<double>());
+  CHECK(!s.GetRecord("my_double", Tags::DEFAULT).ValidType<int>());
+
+  CHECK(s.GetRecordSet("my_double").ValidType<double>());
+  CHECK(!s.GetRecordSet("my_double").ValidType<int>());
 }
 
 TEST(STATE_ASSIGNMENT) {
