@@ -9,7 +9,6 @@
   Author: Markus Brendt (brendt@lanl.gov)
 */
 
-#include "mpi.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -18,7 +17,7 @@
 
 
 struct AmanziUnstructuredGridSimulationDriver
-    : Amanzi::Simulator, 
+    : Amanzi::Simulator,
       public Teuchos::VerboseObject<AmanziUnstructuredGridSimulationDriver>
 {
  public:
@@ -30,11 +29,8 @@ struct AmanziUnstructuredGridSimulationDriver
                                          xercesc::DOMDocument* input,
                                          const std::string& output_prefix);
 
-  // Destructor.
-  ~AmanziUnstructuredGridSimulationDriver() {};
-
-  ReturnType Run(const MPI_Comm& mpi_comm,
-                 Amanzi::ObservationData& observations_data);
+  Amanzi::Simulator::ReturnType Run(const Amanzi::Comm_ptr_type& comm,
+                 Amanzi::ObservationData& observations_data) override;
 
  private:
   // Read our parameter list.

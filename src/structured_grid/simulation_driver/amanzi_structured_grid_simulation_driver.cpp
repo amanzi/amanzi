@@ -9,7 +9,6 @@
 #include "PMAMR_Labels.H"
 #include "PorousMedia.H"
 #include "InputParser_Structured.H"
-
 #include "ParmParseHelpers.H"
 
 XERCES_CPP_NAMESPACE_USE
@@ -128,7 +127,7 @@ AmanziStructuredGridSimulationDriver::~AmanziStructuredGridSimulationDriver()
 }
 
 Amanzi::Simulator::ReturnType
-AmanziStructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
+AmanziStructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
                                           Amanzi::ObservationData& output_observations)
 {
     ParmParse pp;
@@ -176,8 +175,13 @@ AmanziStructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     // KL: boxlib uses argv[0][0], so memory should be allocated.
     char* tmp = (char*)malloc(10);
     strcpy(tmp, "/");
+
+    // must have mpi
+    auto mpi_comm = Teuchos::rcp_dynamic_cast<MpiComm_type>(comm);
+    AMANZI_ASSERT(mpi_comm.get());
+
     argv = &tmp;
-    BoxLib::Initialize(argc,argv,false,mpi_comm);
+    BoxLib::Initialize(argc,argv,false,mpi_comm.GetMpiComm());
 
     BL_PROFILE_VAR("main()", pmain);
 

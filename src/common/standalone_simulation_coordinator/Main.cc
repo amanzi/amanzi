@@ -6,6 +6,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "ErrorHandler.hpp"
 #include "SimulatorFactory.hh"
@@ -232,7 +233,6 @@ int main(int argc, char *argv[]) {
 
     if (rank == 0) {
       std::cout << "Amanzi::SIMULATION_SUCCESSFUL\n\n";
-      std::cout << Amanzi::timer_manager << std::endl;
     }
   }
   catch (std::string& s) {
