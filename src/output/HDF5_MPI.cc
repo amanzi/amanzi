@@ -705,7 +705,7 @@ void HDF5_MPI::createTimestep(double time, int iteration, const std::string& tag
     Teuchos::XMLObject tmp("Xdmf");
     tmp.addChild(addXdmfHeaderLocal_("Mesh",time,iteration));
     std::stringstream filename;
-    filename << H5DataFilename() << "." << iteration << ".xmf";
+    filename << H5DataFilename() << "." << iteration << tag << ".xmf";
     of_timestep_.open(filename.str().c_str());
     // channel will be closed when the endTimestep() is called
     setxdmfStepFilename(filename.str());
@@ -1156,7 +1156,7 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, const std::string& varnam
   //MB: }
 
   if (TrackXdmf()) {
-    h5path << "/" << Iteration();
+    h5path << "/" << Iteration() << get_tag();
   }
 
   char *tmp;

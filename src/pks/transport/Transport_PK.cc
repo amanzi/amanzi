@@ -314,12 +314,12 @@ void Transport_PK::Setup()
     }
   }
 
+  // temporary fields
+  S_->Require<CV_t, CVS_t>(tcc_key_, Tags::COPY, passwd_, component_names_);
+
 #ifdef ALQUIMIA_ENABLED
   SetupAlquimia();
 #endif
-
-  // temporary fields
-  S_->Require<CV_t, CVS_t>(tcc_key_, Tags::COPY, passwd_, component_names_);
 }
 
 
