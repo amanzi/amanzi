@@ -1,9 +1,4 @@
-#include "SimulatorFactory.hh"
-
 #include <iostream>
-
-#include <Epetra_MpiComm.h>
-#include "Epetra_SerialComm.h"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -20,8 +15,8 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-#include "TimerManager.hh"
 #include "VerboseObject_objs.hh"
+#include "AmanziComm.hh"
 
 // include fenv if it exists
 #include "boost/version.hpp"
@@ -54,7 +49,6 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
   int rank = mpiSession.getRank();
-  // int num_proc = mpiSession.getNProc();
 
   try {
     Teuchos::CommandLineProcessor CLP;
@@ -65,8 +59,8 @@ int main(int argc, char *argv[]) {
     std::string xmlInFileName = "";
     CLP.setOption("xml_file", &xmlInFileName, "XML options file");
 
-    std::string xmlSchema = ""; 
-    CLP.setOption("xml_schema", &xmlSchema, "XML schema file"); 
+    std::string xmlSchema = "";
+    CLP.setOption("xml_schema", &xmlSchema, "XML schema file");
 
     std::string outputPrefix = "";
     CLP.setOption("output_prefix", &outputPrefix, "Path to output data");
@@ -78,10 +72,10 @@ int main(int argc, char *argv[]) {
     CLP.setOption("print_tplversions", "no_print_tplversions", &print_tpl_versions, "Print version numbers of third party libraries and exit.");
 
     bool print_all(false);
-    CLP.setOption("print_all", "no_print_all", &print_all, "Print all pre-run information.");    
+    CLP.setOption("print_all", "no_print_all", &print_all, "Print all pre-run information.");
 
     bool print_paths(false);
-    CLP.setOption("print_paths", "no_print_paths", &print_paths, "Print paths of the xml input file and the xml schema file.");    
+    CLP.setOption("print_paths", "no_print_paths", &print_paths, "Print paths of the xml input file and the xml schema file.");
 
     CLP.throwExceptions(false);
     CLP.recogniseAllOptions(true);
@@ -91,7 +85,7 @@ int main(int argc, char *argv[]) {
 
     if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
       throw std::string("amanzi not run");
-    }    
+    }
     if (parseReturn == Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION) {
       throw std::string("amanzi not run");
     }
@@ -149,15 +143,15 @@ int main(int argc, char *argv[]) {
         std::cout << "  HYPRE          " << XSTR(HYPRE_MAJOR) << "." << XSTR(HYPRE_MINOR) << "." << XSTR(HYPRE_PATCH) << std::endl;
 #endif
 #ifdef METIS_MAJOR
-        std::cout << "  METIS          " << XSTR(METIS_MAJOR) << "." << XSTR(METIS_MINOR) << "." << XSTR(METIS_PATCH) << std::endl;	
+        std::cout << "  METIS          " << XSTR(METIS_MAJOR) << "." << XSTR(METIS_MINOR) << "." << XSTR(METIS_PATCH) << std::endl;
 #endif
 #ifdef MOAB_MAJOR
         std::cout << "  MOAB           " << XSTR(MOAB_MAJOR) << "." << XSTR(MOAB_MINOR) << "." << XSTR(MOAB_PATCH) << std::endl;
 #endif
-#ifdef MSTK_MAJOR 
+#ifdef MSTK_MAJOR
         std::cout << "  MSTK           " << XSTR(MSTK_MAJOR) << "." << XSTR(MSTK_MINOR) << "." << XSTR(MSTK_PATCH) << std::endl;
 #endif
-#ifdef Nanoflann_MAJOR 
+#ifdef Nanoflann_MAJOR
         std::cout << "  Nanoflann      " << XSTR(Nanoflann_MAJOR) << "." << XSTR(Nanoflann_MINOR) << "." << XSTR(Nanoflann_PATCH) << std::endl;
 #endif
 #ifdef NetCDF_MAJOR
@@ -170,7 +164,7 @@ int main(int argc, char *argv[]) {
         std::cout << "  ParMetis       " << XSTR(ParMetis_MAJOR) << "." << XSTR(ParMetis_MINOR) << "." << XSTR(ParMetis_PATCH) << std::endl;
 #endif
 #ifdef PETSc_MAJOR
-        std::cout << "  PETSc          " << XSTR(PETSc_MAJOR) << "." << XSTR(PETSc_MINOR) << "." << XSTR(PETSc_PATCH) << std::endl;	
+        std::cout << "  PETSc          " << XSTR(PETSc_MAJOR) << "." << XSTR(PETSc_MINOR) << "." << XSTR(PETSc_PATCH) << std::endl;
 #endif
 #ifdef PFLOTRAN_MAJOR
         std::cout << "  PFLOTRAN       " << XSTR(PFLOTRAN_MAJOR) << "." << XSTR(PFLOTRAN_MINOR) << "." << XSTR(PFLOTRAN_PATCH) << std::endl;
@@ -211,48 +205,41 @@ int main(int argc, char *argv[]) {
     if (xmlInFileName.size() == 0) {
       if (rank == 0) {
         std::cout << "ERROR: No xml input file was specified. Use the command line option --xml_file to specify one." << std::endl;
-      }      
-      throw std::string("Amanzi not run");      
+      }
+      throw std::string("Amanzi not run");
     }
 
     // check if the input file actually exists
     if (!exists(xmlInFileName)) {
       if (rank == 0) {
-        std::cout << "ERROR: The xml input file \"" << xmlInFileName 
+        std::cout << "ERROR: The xml input file \"" << xmlInFileName
                   << "\" specified with the command line option --xml_file does not exist." << std::endl;
       }
       throw std::string("Amanzi not run");
     }
 
     // Create a simulator that corresponds to our input file.
-    Amanzi::Simulator* simulator = Amanzi::SimulatorFactory::Create(xmlInFileName, outputPrefix);
+    auto simulator = Amanzi::SimulatorFactory::Create(xmlInFileName, outputPrefix);
 
-    // Start timers.
-    Amanzi::timer_manager.add("Full Simulation", Amanzi::Timer::ONCE);
-    Amanzi::timer_manager.start("Full Simulation");
-
-    MPI_Comm mpi_comm(MPI_COMM_WORLD);
+    auto comm = Amanzi::getDefaultComm();
     Amanzi::ObservationData observations_data;
-    Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm, observations_data);
+    Amanzi::Simulator::ReturnType ret = simulator->Run(comm, observations_data);
+    Teuchos::TimeMonitor::summarize();
 
     if (ret == Amanzi::Simulator::FAIL) {
       amanzi_throw(Errors::Message("The amanzi simulator returned an error code, this is most likely due to an error in the mesh creation."));
     }
 
-    Amanzi::timer_manager.stop("Full Simulation");
-    Amanzi::timer_manager.parSync(mpi_comm);
-
     if (rank == 0) {
       std::cout << "Amanzi::SIMULATION_SUCCESSFUL\n\n";
       std::cout << Amanzi::timer_manager << std::endl;
     }
-    delete simulator;
   }
   catch (std::string& s) {
     if (rank == 0) {
       if (s == "Amanzi not run") {
         std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n";
-      } 
+      }
     }
     return 1;
   }
@@ -269,7 +256,7 @@ int main(int argc, char *argv[]) {
   }
   catch (int& ierr) {
     if (rank == 0) {
-      std::cout << "Caught unknown exception with integer code " << ierr 
+      std::cout << "Caught unknown exception with integer code " << ierr
         << ". Known sources: Epetra_MultiVector::AllocateForCopy" << std::endl;
       std::cout << "Amanzi::SIMULATION_FAILED\n";
     }

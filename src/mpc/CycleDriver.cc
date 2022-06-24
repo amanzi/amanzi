@@ -35,7 +35,6 @@
 #include "PK.hh"
 #include "PK_Factory.hh"
 #include "ObservationData.hh"
-#include "TimerManager.hh"
 #include "TimeStepManager.hh"
 #include "TreeVector.hh"
 #include "State.hh"
