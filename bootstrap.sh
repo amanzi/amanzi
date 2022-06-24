@@ -1872,6 +1872,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
       -DDISABLE_EXTERNAL_DOWNLOAD=${disable_external_downloads} \
+      -DPYTHON_EXECUTABLE:STRING=${python_exec} \
       ${blas_lapack_opts} \
       ${arch_tpl_opts} \
       ${tpl_build_src_dir}"
