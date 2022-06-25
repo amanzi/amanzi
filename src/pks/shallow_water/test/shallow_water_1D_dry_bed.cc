@@ -60,6 +60,9 @@ void dry_bed_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos
       
     if (icase == 1) {
       B_n[0][n] = 0.0; // zero bathymetry
+      if (x > 7.0 + 1.e-12) {
+        B_n[0][n] = 0.2;
+      }
     }
   }
   
@@ -103,11 +106,11 @@ void dry_bed_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos
     }
         
     // Set dam break conditions
-    if ( xc[0] < 5.0 + 1.e-12 ) {
+    if ( xc[0] < 2.0 + 1.e-12 ) {
       ht_c[0][c] = 1.0;
     }
     else {
-      ht_c[0][c] = 0.0;
+      ht_c[0][c] = B_c[0][c];
     }
         
     h_c[0][c] = ht_c[0][c] - B_c[0][c];
@@ -162,7 +165,7 @@ void RunTest(int icase)
   RCP<Mesh> mesh;
   if (icase == 1) {
     // Rectangular mesh
-    mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 50, 1, request_faces, request_edges);
+    mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 10, 1, request_faces, request_edges);
   }
   // Other polygonal meshes
 //  RCP<Mesh> mesh = meshfactory.create ("test/median15x16.exo");
@@ -228,7 +231,7 @@ void RunTest(int icase)
    
     double t_out = t_new;
             
-    if (iter % 5 == 0) {
+    if (iter % 1 == 0) {
                
       io.InitializeCycle(t_out, iter, "");
                 

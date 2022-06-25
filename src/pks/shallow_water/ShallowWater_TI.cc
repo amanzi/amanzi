@@ -41,6 +41,9 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   auto& vel_c = *S_->GetW<CompositeVector>(velocity_key_, passwd_).ViewComponent("cell", true);
   auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_).ViewComponent("face", true);
   
+  // reconstruct total depth gradient for positive ponded depth h
+  //TotalDepthReconstruct();
+  
   for (int c = 0; c < ncells_wghost; ++c) {
     double factor = inverse_with_tolerance(h_temp[0][c]);
     vel_c[0][c] = factor * q_temp[0][c];
@@ -100,6 +103,9 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
   total_depth_grad_->data()->ScatterMasterToGhosted("cell");
   
+  // Total depth gradient recalculation
+  TotalDepthReconstruct();
+  
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
   if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_, bc_model, bc_value_qx);
@@ -155,7 +161,7 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     double ht_rec = total_depth_grad_->getValue(c1, xf);
     double B_rec = BathymetryEdgeValue(f, B_n);
-
+    
     if (ht_rec < B_rec) {
       ht_rec = ht_c[0][c1];
       B_rec = B_c[0][c1];

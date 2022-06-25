@@ -87,6 +87,9 @@ class ShallowWater_PK : public PK_Physical,
   // Bathymetry reconstruction on cell edge midpoints
   double BathymetryRectangularCellValue(int c, const AmanziGeometry::Point& xp, const Epetra_MultiVector& Bn);
   double BathymetryEdgeValue(int e, const Epetra_MultiVector& Bn);
+                          
+  // Recalculate total depth gradient for positivity
+  void TotalDepthReconstruct();
 
   // due to rotational invariance of SW equations, we need flux in the x-direction only.
   std::vector<double> PhysicalFlux_x(const std::vector<double>&);

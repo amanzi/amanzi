@@ -510,6 +510,42 @@ void ShallowWater_PK::CommitStep(
   Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(ponded_depth_key_, Tags::DEFAULT))->SetChanged();
 }
 
+//--------------------------------------------------------------------
+// Recalculate total depth gradient for positivity of ponded depth h
+//--------------------------------------------------------------------
+void ShallowWater_PK::TotalDepthReconstruct()
+{
+  const auto& B_n = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
+  auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_).ViewComponent("cell", true);
+  auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
+  
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  
+  AmanziMesh::Entity_ID_List cnodes;
+  AmanziGeometry::Point xv;
+
+  int cell_visited_flag;
+  double ht_node;
+  
+  for (int c = 0; c < ncells_owned; ++c) {
+    const auto& xc = mesh_->cell_centroid(c);
+    mesh_->cell_get_nodes(c, &cnodes);
+    
+    cell_visited_flag = 0;
+    
+    for (int i = 0; i < cnodes.size(); ++i) {
+      mesh_->node_get_coordinates(cnodes[i], &xv);
+      ht_node = total_depth_grad_->getValue(c, xv);
+      
+      if ( ht_node < B_n[0][cnodes[i]] ) {
+        cell_visited_flag = 1;
+        ht_grad[0][c] = (B_n[0][cnodes[i]] - ht_c[0][c]) / (xv[0] - xc[0]);
+        ht_grad[1][c] = (B_n[0][cnodes[i]] - ht_c[0][c]) / (xv[1] - xc[1]);
+      }
+    }
+  }
+}
+
 
 //--------------------------------------------------------------------
 // Discretization of the source term (well-balanced for lake at rest)
