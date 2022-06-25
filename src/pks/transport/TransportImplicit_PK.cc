@@ -331,7 +331,7 @@ void TransportImplicit_PK::UpdateLinearSystem(double t_old, double t_new, int co
 
   double dt = t_new - t_old;
 
-  op_->rhs()->PutScalar(0.0);
+  op_->Init();
   op_acc_->AddAccumulationDelta(tcc_aux, wc_prev, wc, dt, "cell");
 
   UpdateBoundaryData(t_old, t_new, component);
