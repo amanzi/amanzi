@@ -87,7 +87,7 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
   CoordinatorInit_();
 
   vo_ = Teuchos::rcp(new VerboseObject("CycleDriver", glist_->sublist("cycle driver")));
-};
+}
 
 
 /* ******************************************************************

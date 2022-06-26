@@ -126,6 +126,7 @@
     </ParameterList>
 
     <Parameter name="component names" type="Array(string)" value="{Tc-99, CO2}"/>
+    <Parameter name="component molar masses" type="Array(double)" value="{1.0, 1.0}"/>
     
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{6.153732e+10, 6.15688776e+10}"/>
@@ -822,6 +823,24 @@
 
       <ParameterList name="boundary conditions">      
       </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="observation data">
+    <Parameter name="observation output filename" type="string" value="obs_implicit.out"/>
+    <Parameter name="precision" type="int" value="10"/>
+    <ParameterList name="OBS-1">
+      <Parameter name="region" type="string" value="All"/>
+      <Parameter name="functional" type="string" value="observation data: integral"/>
+      <Parameter name="variable" type="string" value="Tc-99 aqueous concentration"/>
+      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
+    </ParameterList>
+    <ParameterList name="OBS-2">
+      <Parameter name="region" type="string" value="All"/>
+      <Parameter name="domain name" type="string" value="fracture"/>
+      <Parameter name="functional" type="string" value="observation data: integral"/>
+      <Parameter name="variable" type="string" value="Tc-99 aqueous concentration"/>
+      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
     </ParameterList>
   </ParameterList>
 </ParameterList>
