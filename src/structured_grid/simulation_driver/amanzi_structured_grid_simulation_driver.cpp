@@ -177,11 +177,11 @@ AmanziStructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
     strcpy(tmp, "/");
 
     // must have mpi
-    auto mpi_comm = Teuchos::rcp_dynamic_cast<MpiComm_type>(comm);
-    AMANZI_ASSERT(mpi_comm.get());
+    auto mpi_comm = Teuchos::rcp_dynamic_cast<const Amanzi::MpiComm_type>(comm);
+    BL_ASSERT(mpi_comm.get());
 
     argv = &tmp;
-    BoxLib::Initialize(argc,argv,false,mpi_comm.GetMpiComm());
+    BoxLib::Initialize(argc,argv,false,mpi_comm->GetMpiComm());
 
     BL_PROFILE_VAR("main()", pmain);
 
