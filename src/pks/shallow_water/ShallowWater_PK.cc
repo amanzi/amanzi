@@ -635,6 +635,7 @@ double ShallowWater_PK::get_dt()
       dt = std::min(d / (2 * (std::abs(vn) + std::sqrt(g_ * h))), dt);
     }
   }
+  //dt = std::min(dt, 1.e-3);
   
   double dt_min;
   mesh_->get_comm()->MinAll(&dt, &dt_min, 1);
@@ -653,6 +654,9 @@ double ShallowWater_PK::get_dt()
     return 0.1 * cfl_ * dt_min;
   else
     return cfl_ * dt_min;
+  
+  //return 1.e-5;
+  
 }
 
 

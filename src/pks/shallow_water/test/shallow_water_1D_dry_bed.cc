@@ -59,10 +59,11 @@ void dry_bed_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos
     double x = node_crd[0], y = node_crd[1];
       
     if (icase == 1) {
-      B_n[0][n] = 0.0; // zero bathymetry
-      if (x > 7.0 + 1.e-12) {
-        B_n[0][n] = 0.2;
-      }
+      B_n[0][n] = x / 10.0;
+      
+//      if (x > 7.0 + 1.e-12) {
+//        B_n[0][n] = 0.8;
+//      }
     }
   }
   
@@ -105,14 +106,13 @@ void dry_bed_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos
       B_c[0][c] += (area / mesh->cell_volume(c)) * (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 2;
     }
         
-    // Set dam break conditions
-    if ( xc[0] < 2.0 + 1.e-12 ) {
-      ht_c[0][c] = 1.0;
+    ht_c[0][c] = std::max(0.5, B_c[0][c]);
+    
+    // perturb the total height
+    if ( std::abs(xc[0] - 2.0) < 0.25 + 1.e-12 ) {
+      ht_c[0][c] = ht_c[0][c] + 0.2;
     }
-    else {
-      ht_c[0][c] = B_c[0][c];
-    }
-        
+    
     h_c[0][c] = ht_c[0][c] - B_c[0][c];
     vel_c[0][c] = 0.0;
     vel_c[1][c] = 0.0;
@@ -165,7 +165,7 @@ void RunTest(int icase)
   RCP<Mesh> mesh;
   if (icase == 1) {
     // Rectangular mesh
-    mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 10, 1, request_faces, request_edges);
+    mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 40, 1, request_faces, request_edges);
   }
   // Other polygonal meshes
 //  RCP<Mesh> mesh = meshfactory.create ("test/median15x16.exo");
@@ -227,11 +227,11 @@ void RunTest(int icase)
   int iter = 0;
   std::vector<double> dx, Linferror, L1error, L2error;
   
-  while (t_new < 10.0) {
+  while (t_new < 5.0) {
    
     double t_out = t_new;
             
-    if (iter % 1 == 0) {
+    if (iter % 5000 == 0) {
                
       io.InitializeCycle(t_out, iter, "");
                 
