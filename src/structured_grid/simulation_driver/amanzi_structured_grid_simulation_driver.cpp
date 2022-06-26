@@ -2,6 +2,8 @@
 #define ENABLE_Structured
 #endif
 
+#include "Teuchos_TimeMonitor.hpp"
+
 #include "InputConverterS.hh"
 #include "amanzi_structured_grid_simulation_driver.H"
 #include "ParmParse.H"
@@ -130,6 +132,9 @@ Amanzi::Simulator::ReturnType
 AmanziStructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
                                           Amanzi::ObservationData& output_observations)
 {
+    auto sim_timer = Teuchos::TimeMonitor::getNewCounter("Full Simulation");
+    Teuchos::TimeMonitor sim_tm(*sim_timer);
+
     ParmParse pp;
     int argc=0;
     char** argv;
