@@ -734,7 +734,7 @@ void HDF5_MPI::endTimestep()
 
     // add a new time step to global VisIt xdmf files
     // TODO(barker): how to get to grid collection node, rather than root???
-    std::string record = H5DataFilename() + "." + std::to_string(Iteration()) + ".xmf";
+    std::string record = H5DataFilename() + "." + std::to_string(Iteration()) + tag_ + ".xmf";
     writeXdmfVisitGrid_(record);
     // TODO(barker): where to write out depends on where the root node is
     // ?? how to terminate stream or switch to new file out??
