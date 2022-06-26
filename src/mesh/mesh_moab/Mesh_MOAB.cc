@@ -2015,6 +2015,7 @@ const Epetra_Import& Mesh_MOAB::exterior_face_importer(void) const
 {
   Errors::Message mesg("Exterior face importer is not implemented");
   amanzi_throw(mesg);
+  throw(mesg); // this silences compiler warnings but is never called
 }
 
 

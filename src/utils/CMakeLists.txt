@@ -34,8 +34,6 @@ add_amanzi_library(atk
                           LeastSquare.cc 
                           Spline.cc
                           SplinedCurve.cc
-                          Timer.cc
-                          TimerManager.cc
                           TimeStepManager.cc
                           Units.cc
                           VerboseObject.cc
@@ -55,8 +53,6 @@ add_amanzi_library(atk
                            SplinedCurve.hh
                            StringExt.hh
                            Tag.hh
-                           Timer.hh
-                           TimerManager.hh
                            TimeStepManager.hh
                            Units.hh
                            Utils.hh
