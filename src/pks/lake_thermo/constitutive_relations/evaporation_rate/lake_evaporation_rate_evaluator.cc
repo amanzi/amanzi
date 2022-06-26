@@ -103,7 +103,7 @@ void LakeEvaporationRateEvaluator::EvaluateField_(
     double tpsf_Rd_o_Rv  = tpsf_R_dryair/tpsf_R_watvap;
     double q_s = tpsf_Rd_o_Rv*wvpres_s/(P_a-(1.-tpsf_Rd_o_Rv)*wvpres_s);
 
-    double height_tq = 2;
+    double height_tq = 2.;
     double tpsf_kappa_q_a   = 2.4e-05; // Molecular diffusivity of air for water vapour [m^{2} s^{-1}]
 
     double LE = -tpsf_kappa_q_a*(q_a-q_s)/height_tq;
@@ -120,7 +120,7 @@ void LakeEvaporationRateEvaluator::EvaluateField_(
     LE = Q_watvap*LE;
 
     double row0 = 1.e+3;
-    double evap_rate = LE/(row0*tpsf_L_evap); //*1000.;
+    double evap_rate = LE/(row0*tpsf_L_evap); //*row0;
     evap_rate = abs(evap_rate);
 
     for (int i=0; i!=ncomp; ++i) {

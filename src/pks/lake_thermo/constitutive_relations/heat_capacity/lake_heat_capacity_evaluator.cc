@@ -91,6 +91,8 @@ void LakeHeatCapacityEvaluator::EvaluateField_(
 
     int ncomp = result->size(*comp, false);
 
+    std::vector<double> cc(ncomp);
+
     for (int i=0; i!=ncomp; ++i) {
 
 //      double W = wc_v[0][i]; // * 1.8e-5; // CONVERTED UNITS from mol/m^3 to volume ratio
@@ -99,9 +101,17 @@ void LakeHeatCapacityEvaluator::EvaluateField_(
 //      result_v[0][i] = cw*W + ci*I;
 
       double T = T_v[0][i];
-      result_v[0][i] = (T < 273.15) ? ci : cw;
+//      result_v[0][i] = cw; //(T < 273.15) ? ci : cw;
+      cc[i] = cw; //(T < 273.15) ? ci : cw;
 
     } // i
+
+
+    result_v[0][0] = cc[0];
+    for (int i=1; i!=ncomp; ++i) {
+      result_v[0][i] = 0.5*(cc[i]+cc[i-1]);
+    }
+
   }
 
 }

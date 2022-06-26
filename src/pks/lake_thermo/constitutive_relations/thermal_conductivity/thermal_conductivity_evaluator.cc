@@ -138,38 +138,38 @@ void ThermalConductivityEvaluator::EvaluateField_(
     std::vector<double> lambda_new(ncomp);
 
     for (int i=0; i!=ncomp; ++i) {
-      lambda_new[i] = -1.; //result_v[0][i];
+      lambda_new[i] = result_v[0][i];
     }
 
     if (ice_cover_ && d_thawed > 0) {
 
-      std::cout << "i_ice_min = " << i_ice_min << std::endl;
-      std::cout << "i_ice_max = " << i_ice_max << std::endl;
-      std::cout << "d_thawed = " << d_thawed << std::endl;
-      std::cout << "d_ice    = " << d_ice << std::endl;
+//      std::cout << "i_ice_min = " << i_ice_min << std::endl;
+//      std::cout << "i_ice_max = " << i_ice_max << std::endl;
+//      std::cout << "d_thawed = " << d_thawed << std::endl;
+//      std::cout << "d_ice    = " << d_ice << std::endl;
 
-      std::cout << "lambda before swap " << std::endl;
+//      std::cout << "lambda before swap " << std::endl;
       for (int i=ncomp-1; i!=-1; --i) {
-        std::cout << "result_v[0][" << i << "] = " << result_v[0][i] << std::endl;
+//        std::cout << "result_v[0][" << i << "] = " << result_v[0][i] << std::endl;
       }
 
       // if thawing occured at the top, swap cells
       for (int i=0; i < d_ice; ++i) { // push ice to the surface
-        std::cout << "copy cell " << i_ice_max-i << " to " << ncomp-1-i << std::endl;
+//        std::cout << "copy cell " << i_ice_max-i << " to " << ncomp-1-i << std::endl;
         lambda_new[ncomp-1-i] = result_v[0][i_ice_max-i];
       }
       for (int i=0; i < d_thawed; ++i) { // push water to the bottom
         lambda_new[i_ice_min+i] = result_v[0][i_ice_max+1+i];
-        std::cout << "copy cell " << i_ice_max+1+i << " to " << i_ice_min+i << std::endl;
+//        std::cout << "copy cell " << i_ice_max+1+i << " to " << i_ice_min+i << std::endl;
       } // i
 
       for (int i=0; i!=ncomp; ++i) {
         result_v[0][i] = lambda_new[i];
       }
 
-      std::cout << "lambda after swap " << std::endl;
+//      std::cout << "lambda after swap " << std::endl;
       for (int i=ncomp-1; i!=-1; --i) {
-        std::cout << "result_v[0][" << i << "] = " << result_v[0][i] << std::endl;
+//        std::cout << "result_v[0][" << i << "] = " << result_v[0][i] << std::endl;
         if (result_v[0][i] < 0.) exit(0);
       }
 

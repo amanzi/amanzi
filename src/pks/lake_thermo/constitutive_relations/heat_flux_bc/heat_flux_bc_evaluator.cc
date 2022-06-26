@@ -38,7 +38,8 @@ HeatFluxBCEvaluator::HeatFluxBCEvaluator(
 
   // later: read these parameters from xml
   SS = 0.;      // solar radiation (read from met data)
-  alpha = 0.07; // water albedo
+  alpha_w = 0.06; // water albedo
+  alpha_i = 0.40; // ice albedo
   E_a = 0.;     // atmospheric downward radiation (read from met data)
   E_s = 0.;     // surface radiation (Stefan-Boltzman law)
   H = 0.;       // "sensible" heat
@@ -51,7 +52,8 @@ HeatFluxBCEvaluator::HeatFluxBCEvaluator(
     const HeatFluxBCEvaluator& other) :
             SecondaryVariableFieldEvaluator(other),
             SS(other.SS),
-            alpha(other.alpha),
+            alpha_w(other.alpha_w),
+            alpha_i(other.alpha_i),
             E_a(other.E_a),
             E_s(other.E_s),
             H(other.H),
@@ -155,7 +157,15 @@ void HeatFluxBCEvaluator::EvaluateField_(
       if (h_ice >= h_Ice_min_flk) LE = LE + tpl_L_f;   // Add latent heat of fusion over ice
       LE = Q_watvap*LE;
 
-      result_v[0][i] = 0.1*SS*(1.-alpha) + E_a - E_s - H - LE;
+      double alpha;
+
+      alpha = (T_s < 273.15) ? alpha_i : alpha_w;
+
+      double hour_sec = 60.*60;
+      double interval = 24.;
+      SS = SS/(hour_sec*interval);
+
+      result_v[0][i] = SS*(1.-alpha) + E_a - E_s - H - LE;
 
       result_v[0][i] *= -1.; ///cond_v[0][i];
 

@@ -332,8 +332,9 @@ protected:
   double R_s_;
   double R_b_;
 
-  // extinction coefficient
-  double alpha_e_;
+  // extinction coefficients
+  double alpha_e_w_; // water
+  double alpha_e_i_; // ice
 
   // solar radiation maximum
   double S0_;

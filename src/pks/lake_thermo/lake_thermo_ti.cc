@@ -49,6 +49,7 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   const Epetra_MultiVector& cv =
          *S_inter_->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
 
+  /*
   for (int i=0; i!=ncomp; ++i) {
     if (temp_v[0][i] < 273.15) { // check if there is ice cover
       ice_cover_ = true;
@@ -72,7 +73,7 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   std::vector<double> temp_new(ncomp); // new temperatures for swapping the cells
 
   for (int i=0; i!=ncomp; ++i) {
-    temp_new[i] = -100.; //temp_v[0][i];
+    temp_new[i] = temp_v[0][i]; //-100.; //temp_v[0][i];
   }
 
   if (ice_cover_ && d_thawed > 0) {
@@ -113,6 +114,7 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
 //    if (d_ice < d_thawed) exit(0);
 
   }
+  */
 
   // get conductivity
   S_inter_->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S_inter_.ptr(), name_);
@@ -169,25 +171,25 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
       *S_inter_->GetFieldData(evaporation_rate_key_)->ViewComponent("cell",false);
   E_ = E_v[0][0]; // same everywhere
 
-  // update depth
+//  // update depth
   double dt = S_next_->time() - S_inter_->time();
-  double dhdt = r_ - E_ - R_s_ - R_b_;
-  h_ += dhdt*dt;
+//  double dhdt = r_ - E_ - R_s_ - R_b_;
+//  h_ += dhdt*dt;
 
   std::cout << "h_    = " << h_ << std::endl;
   std::cout << "h_ice = " << h_ice_ << std::endl;
-  double freeze_rate = (h_ice_-h_ice_prev)/dt*86400./2.54*100.;
-  if (freeze_rate > 0.) std::cout << "freeze rate = " << freeze_rate << " inch/day" << std::endl;
+//  double freeze_rate = (h_ice_-h_ice_prev)/dt*86400./2.54*100.;
+//  if (freeze_rate > 0.) std::cout << "freeze rate = " << freeze_rate << " inch/day" << std::endl;
 
 
-  // save file with freezing rates
-  if (int(t_new) % 86400 == 0) {
-    std::string ncells(std::to_string(ncomp));
-    std::ofstream tempfile;
-    tempfile.open ("freeze_rate"+ncells+".txt", std::ios::app);
-    tempfile << int(t_new) / 86400 << " " << freeze_rate << " ";
-    tempfile << "\n";
-  }
+//  // save file with freezing rates
+//  if (int(t_new) % 86400 == 0) {
+//    std::string ncells(std::to_string(ncomp));
+//    std::ofstream tempfile;
+//    tempfile.open ("freeze_rate"+ncells+".txt", std::ios::app);
+//    tempfile << int(t_new) / 86400 << " " << freeze_rate << " ";
+//    tempfile << "\n";
+//  }
 
   S_inter_->GetFieldData(depth_key_,name_)->PutScalar(h_);
 

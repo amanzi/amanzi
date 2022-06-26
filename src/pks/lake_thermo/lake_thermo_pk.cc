@@ -474,7 +474,8 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 
   R_s_ = 0.;
   R_b_ = 0.;
-  alpha_e_ = 0.;
+  alpha_e_w_ = 0.;
+  alpha_e_i_ = 0.;
   S0_ = 0.;
 
 #if MORE_DEBUG_FLAG
@@ -581,6 +582,227 @@ void Lake_Thermo_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Commiting state." << std::endl;
   PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
+
+  // get temperature
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
+
+  const Epetra_MultiVector& temp_v = *temp->ViewComponent("cell",false);
+
+  // cell volumes
+  const Epetra_MultiVector& cv =
+         *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
+
+  // ice marker
+  const Epetra_MultiVector& ice =
+         *S->GetFieldData(cell_is_ice_key_)->ViewComponent("cell",false);
+  S->GetFieldData(cell_is_ice_key_, name_)->PutScalar(false);
+
+  int ncomp = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+  bool ice_cover_ = false; // first always assume that there is no ice
+
+  int i_ice_max = 0;
+  int i_ice_min = ncomp-1;
+  int d_ice = 0;
+
+  for (int i=0; i!=ncomp; ++i) {
+    if (temp_v[0][i] < 273.15) { // check if there is ice cover
+      ice_cover_ = true;
+      i_ice_max = i;
+      ice[0][i] = true;
+      d_ice++;
+    }
+  } // i
+
+  for (int i=ncomp-1; i!=-1; --i) {
+    if (temp_v[0][i] < 273.15) { // check if there is ice cover
+      ice_cover_ = true;
+      i_ice_min = i;
+    }
+  } // i
+
+  int d_thawed = ncomp-1-i_ice_max;  // thickness of thawed layer [cells]
+//  int d_ice = i_ice_max-i_ice_min+1; // thickness of ice layer [cells]
+
+  double h_ice_prev = h_ice_;
+  if (h_ice_ > 0) h_ice_ = d_ice*cv[0][0]*1.5; // in [m], assume uniform mesh
+
+  std::vector<double> temp_new(ncomp); // new temperatures for swapping the cells
+
+  for (int i=0; i!=ncomp; ++i) {
+    temp_new[i] = temp_v[0][i]; //-100.; //temp_v[0][i];
+  }
+
+  if (ice_cover_ && d_thawed > 0) {
+
+    std::cout << "i_ice_min = " << i_ice_min << std::endl;
+    std::cout << "i_ice_max = " << i_ice_max << std::endl;
+    std::cout << "d_thawed = " << d_thawed << std::endl;
+    std::cout << "d_ice    = " << d_ice << std::endl;
+
+
+    std::cout << "Temperature before swap " << std::endl;
+    for (int i=ncomp-1; i!=-1; --i) {
+      std::cout << "temp_v[0][" << i << "] = " << temp_v[0][i] << std::endl;
+    }
+
+    // if thawing occured at the top, swap cells
+    for (int i=0; i < d_ice; ++i) { // push ice to the surface
+      std::cout << "copy cell " << i_ice_max-i << " to " << ncomp-1-i << std::endl;
+      temp_new[ncomp-1-i] = temp_v[0][i_ice_max-i];
+    }
+    for (int i=0; i < d_thawed; ++i) { // push water to the bottom
+      temp_new[i_ice_min+i] = temp_v[0][i_ice_max+1+i];
+      std::cout << "copy cell " << i_ice_max+1+i << " to " << i_ice_min+i << std::endl;
+    } // i
+
+    for (int i=0; i!=ncomp; ++i) {
+      temp_v[0][i] = temp_new[i];
+    }
+
+    std::cout << "Temperature after swap " << std::endl;
+    for (int i=ncomp-1; i!=-1; --i) {
+      std::cout << "temp_v[0][" << i << "] = " << temp_v[0][i] << std::endl;
+      if (temp_v[0][i] < 0.) exit(0);
+    }
+
+//    exit(0);
+  }
+
+  i_ice_max = 0;
+  i_ice_min = ncomp-1;
+  d_ice = 0;
+
+  for (int i=0; i!=ncomp; ++i) {
+    if (temp_v[0][i] < 273.15) { // check if there is ice cover
+      ice_cover_ = true;
+      i_ice_max = i;
+      ice[0][i] = true;
+      d_ice++;
+    }
+  } // i
+
+  for (int i=ncomp-1; i!=-1; --i) {
+    if (temp_v[0][i] < 273.15) { // check if there is ice cover
+      ice_cover_ = true;
+      i_ice_min = i;
+    }
+  } // i
+
+  d_thawed = ncomp-1-i_ice_max;  // thickness of thawed layer [cells]
+//  d_ice = i_ice_max-i_ice_min+1; // thickness of ice layer [cells]
+
+  h_ice_prev = h_ice_;
+  if (d_ice > 0) h_ice_ = d_ice*cv[0][0]*1.5; // in [m], assume uniform mesh
+
+  Teuchos::ParameterList& param_list = plist_->sublist("met data");
+  FunctionFactory fac;
+  Teuchos::RCP<Function> r_func_ = Teuchos::rcp(fac.Create(param_list.sublist("precipitation")));
+  Teuchos::RCP<Function> E_func_ = Teuchos::rcp(fac.Create(param_list.sublist("evaporation")));
+  Teuchos::RCP<Function> SS_func_ = Teuchos::rcp(fac.Create(param_list.sublist("solar radiation")));
+  Teuchos::RCP<Amanzi::Function> T_a_func_ = Teuchos::rcp(fac.Create(param_list.sublist("air temperature")));
+
+  std::vector<double> args(1);
+  args[0] = S->time();
+  r_ = (*r_func_)(args);
+  E_ = (*E_func_)(args);
+  double SS = (*SS_func_)(args);
+  double T_a = (*T_a_func_)(args);
+
+  // Compute evaporartion rate
+  S->GetFieldEvaluator(evaporation_rate_key_)->HasFieldChanged(S.ptr(), name_);
+  const Epetra_MultiVector& E_v =
+      *S->GetFieldData(evaporation_rate_key_)->ViewComponent("cell",false);
+  E_ = E_v[0][0]; // same everywhere
+
+  // update depth
+  double dhdt = r_ - E_ - R_s_ - R_b_;
+  h_ += dhdt*dt;
+
+  // compute freeze rate
+  double freeze_rate = (h_ice_-h_ice_prev)/dt*86400./2.54*100.;
+  if (freeze_rate > 0.) std::cout << "freeze rate = " << freeze_rate << " inch/day" << std::endl;
+
+  S->GetFieldEvaluator(surface_flux_key_)->HasFieldChanged(S.ptr(), name_);
+  const Epetra_MultiVector& flux =
+      *S->GetFieldData(surface_flux_key_)->ViewComponent("cell",false);
+
+  // get temperature
+  const Epetra_MultiVector& cond_v = *S->GetFieldData(conductivity_key_)
+      ->ViewComponent("cell",false);
+
+  double bc_flux = flux[0][ncomp-1]/cond_v[0][ncomp-1]*h_/cv[0][ncomp-1];
+
+  // save file with depth
+  if (int(t_new) % 86400 == 0) {
+    std::string ncells(std::to_string(ncomp));
+    std::ofstream tempfile;
+    tempfile.open ("depth_lake_"+ncells+".txt", std::ios::app);
+    tempfile << int(t_new) / 86400 << " " << h_ << " ";
+    tempfile << "\n";
+
+    std::ofstream tempfile_ice;
+    tempfile_ice.open ("depth_ice_"+ncells+".txt", std::ios::app);
+    tempfile_ice << int(t_new) / 86400 << " " << h_ice_ << " " << d_ice << " " << i_ice_min << " " << i_ice_max;
+    tempfile_ice << "\n";
+
+    std::ofstream tempfile_freeze;
+    tempfile_freeze.open ("freeze_rate_"+ncells+".txt", std::ios::app);
+    tempfile_freeze << int(t_new) / 86400 << " " << freeze_rate << " ";
+    tempfile_freeze << "\n";
+
+    std::ofstream tempfile_precip;
+    tempfile_precip.open ("precip_rate_"+ncells+".txt", std::ios::app);
+    tempfile_precip << int(t_new) / 86400 << " " << r_ << " ";
+    tempfile_precip << "\n";
+
+    std::ofstream tempfile_evap;
+    tempfile_evap.open ("evap_rate_"+ncells+".txt", std::ios::app);
+    tempfile_evap << int(t_new) / 86400 << " " << E_ << " ";
+    tempfile_evap << "\n";
+
+    std::ofstream tempfile_sol_rad;
+    tempfile_sol_rad.open ("solar_rad_"+ncells+".txt", std::ios::app);
+    tempfile_sol_rad << int(t_new) / 86400 << " " << SS << " ";
+    tempfile_sol_rad << "\n";
+
+    std::ofstream tempfile_surftemp;
+    tempfile_surftemp.open ("surf_temp_"+ncells+".txt", std::ios::app);
+    tempfile_surftemp << int(t_new) / 86400 << " " << temp_v[0][ncomp-1] << " ";
+    tempfile_surftemp << "\n";
+
+    std::ofstream tempfile_bottomtemp;
+    tempfile_bottomtemp.open ("bottom_temp_"+ncells+".txt", std::ios::app);
+    tempfile_bottomtemp << int(t_new) / 86400 << " " << temp_v[0][0] << " ";
+    tempfile_bottomtemp << "\n";
+
+    std::ofstream tempfile_surfflux;
+    tempfile_surfflux.open ("surf_flux_"+ncells+".txt", std::ios::app);
+    tempfile_surfflux << int(t_new) / 86400 << " " << bc_flux << " ";
+    tempfile_surfflux << "\n";
+
+    std::ofstream tempfile_airtemp;
+    tempfile_airtemp.open ("air_temp_"+ncells+".txt", std::ios::app);
+    tempfile_airtemp << int(t_new) / 86400 << " " << T_a << " ";
+    tempfile_airtemp << "\n";
+
+  }
+
+  // create a mesh
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, plist_->sublist("regions"), *comm));
+  bool request_faces = true, request_edges = true;
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Amanzi::AmanziMesh::Preference({Amanzi::AmanziMesh::Framework::MSTK}));
+
+  std::cout << "h_ = " << h_ << std::endl;
+//  mesh_scaled_ = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, h_, 1, 1, ncomp, request_faces, request_edges);
+
+  mesh_ = S->GetMesh(domain_);
+  std::cout << "domain_ = " << domain_ << std::endl;
+  std::cout << "mesh_ = " << mesh_ << std::endl;
+  mesh_->set_vis_mesh(mesh_);
+//  mesh_->vis_mesh_ = mesh_; //mesh_scaled_;
 
   bc_temperature_->Compute(S->time());
   bc_diff_flux_->Compute(S->time());
@@ -741,12 +963,23 @@ void Lake_Thermo_PK::UpdateBoundaryConditions_(
   const Epetra_MultiVector& cond_v = *S->GetFieldData(conductivity_key_)
 	    ->ViewComponent("cell",false);
 
+  const Epetra_MultiVector& cv =
+          *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
+
+  int ncomp = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   // Neumann diffusive flux, not Neumann TOTAL flux.  Potentially advective flux.
   for (Functions::BoundaryFunction::Iterator bc=bc_diff_flux_->begin();
       bc!=bc_diff_flux_->end(); ++bc) {
     int f = bc->first;
+    AmanziMesh::Entity_ID_List fcells;
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
+    std::cout << "f = " << f << ", fcells = " << fcells[0] << " " << fcells[1] << std::endl;
     markers[f] = Operators::OPERATOR_BC_NEUMANN;
-    values[f] = flux[0][39]/cond_v[0][39]*h_; ///cond_v[0][39]*h_; //bc->second;
+    if (fcells[0] == 0) { //bottom
+      values[f] = 0.;
+    } else {
+      values[f] = flux[0][ncomp-1]/cond_v[0][ncomp-1]*h_/cv[0][ncomp-1]; ///cond_v[0][ncomp-1]*h_; //bc->second;
+    }
     adv_markers[f] = Operators::OPERATOR_BC_NEUMANN;
     adv_values[f] = 0.;
   }

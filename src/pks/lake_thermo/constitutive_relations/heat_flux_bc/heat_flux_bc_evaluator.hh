@@ -42,7 +42,8 @@ class HeatFluxBCEvaluator :
   bool ice_cover_ = false;
 
   double SS;
-  double alpha;
+  double alpha_w;
+  double alpha_i;
   double E_a;
   double E_s;
   double H;

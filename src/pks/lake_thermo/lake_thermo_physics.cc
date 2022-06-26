@@ -56,12 +56,13 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 
   const Epetra_MultiVector& g_c = *g->ViewComponent("cell", false);
 
+  const Epetra_MultiVector& cv =
+        *S_inter_->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
+
   unsigned int ncells = g_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
-    g_c[0][c] += cp[0][c]*rho[0][c]*(T1_c[0][c]-T0_c[0][c])/dt;
+    g_c[0][c] += cp[0][c]*rho[0][c]*(T1_c[0][c]-T0_c[0][c])/dt ; //* cv[0][c] ;
   }
-
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
 };
 
@@ -126,17 +127,45 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
 
   double dt = S_next_->time() - S_inter_->time();
 
+  const Epetra_MultiVector& cv =
+          *S_inter_->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
+
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
 
-    AmanziGeometry::Point normal = mesh_->face_normal(f);
-    normal /= norm(normal);
+//    AmanziGeometry::Point normal = mesh_->face_normal(f);
+//    normal /= norm(normal);
 
     double cp;     // cell-based but we need face values for the flux
     double rho;
 
     AmanziMesh::Entity_ID_List f_cells;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &f_cells);
+
+    int orientation;
+    AmanziGeometry::Point normal = mesh_->face_normal(f, false, f_cells[0], &orientation);
+
+//    double *area;
+//    AmanziGeometry::Point centroid;
+//    std::vector<AmanziGeometry::Point> normals;
+//    mesh_->compute_face_geometry_(f,area,centroid,normals);
+
+//    AmanziMesh::Entity_ID_List cellfaceids;
+//    std::vector<int> cellfacedirs;
+//    int dir = 1;
+//
+//    if (f_cells.size() == 1) mesh_->cell_get_faces_and_dirs(f_cells[0], &cellfaceids, &cellfacedirs);
+//    if (f_cells.size() == 2) mesh_->cell_get_faces_and_dirs(f_cells[1], &cellfaceids, &cellfacedirs);
+//
+//    for (int j = 0; j < cellfaceids.size(); j++) {
+//      if (cellfaceids[j] == f) {
+//        dir = cellfacedirs[j];
+//        break;
+//      }
+//    }
+
+//    normal = normal*dir;
+
     if (f_cells.size() == 1) {
       // boundary face, use the cell value
       cp  = cp_v[0][f_cells[0]];
@@ -148,8 +177,10 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
       rho = (rho_v[0][f_cells[0]] + rho_v[0][f_cells[1]]) / 2.;
     }
 
-    flux_f[0][f] = -1.*cp*rho*(dhdt*(1.-xcf[2]) - B_w)/(h_+1.e-6); // *normal or not?
+    flux_f[0][f] = -1.*cp*rho*(dhdt*(1.-xcf[2]) - B_w)/(h_+1.e-6) / cv[0][f_cells[0]];;// * normal[2] ; // / cv[0][f_cells[0]]; //*normal[2]; // *normal or not?
+//    std::cout << "f = " << f << ", normal = " << normal << ", dir = " << dir << std::endl;
   }
+//  exit(0);
 
   db_->WriteVector(" adv flux", flux.ptr(), true);
   matrix_adv_->global_operator()->Init();
@@ -263,21 +294,33 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
         *S->GetFieldData(heat_capacity_key_)->ViewComponent("cell",false);
 
     // water extinction coefficient
-    alpha_e_ = 1.04;
+    alpha_e_w_ = 1.04;
+    // ice extinction coefficient
+    alpha_e_i_ = 1.0;
+
+    double alpha;
 
     // Add into residual
     unsigned int ncells = g_c.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-      if (temp[0][ncells-1] < 273.15) {
-        S0_ = 0.;
-      } else {
-        S0_ = 0.1*SS;
-      }
+//      if (temp[0][ncells-1] < 273.15) {
+//        S0_ = 0.;
+//      } else {
+//        S0_ = SS;
+//      }
+
+      alpha = (temp[0][c] < 273.15) ? alpha_e_i_ : alpha_e_w_;
+
+      double hour_sec = 60.*60;
+      double interval = 24.;
+      SS = SS/(hour_sec*interval);
+
+      S0_ = SS;
 
       // -1.* because I switched to vertical xi coordinate
-      g_c[0][c] += -1.*( (S0_*exp(-alpha_e_*h_*(1.-xc[2]))*(alpha_e_*h_)/(h_+1.e-6) - cp[0][c]*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) );// * cv[0][c] );
+      g_c[0][c] += -1.*( (S0_*exp(-alpha*h_*(1.-xc[2]))*(alpha*h_)/(h_+1.e-6) - cp[0][c]*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) ); // * cv[0][c] ;
 
       /* TESTING
 //      // manufactured solution 1: linear temperature distribution
