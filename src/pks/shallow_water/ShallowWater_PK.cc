@@ -111,8 +111,12 @@ void ShallowWater_PK::Setup()
 
   // -- total depth
   if (!S_->HasRecord(total_depth_key_)) {
+    std::vector<std::string> names({"cell", "node"});
+    std::vector<int> ndofs(2, 1);
+    std::vector<AmanziMesh::Entity_kind> locations({AmanziMesh::CELL, AmanziMesh::NODE});
+    
     S_->Require<CV_t, CVS_t>(total_depth_key_, Tags::DEFAULT, passwd_)
-      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    .SetMesh(mesh_)->SetGhosted(true)->SetComponents(names, locations, ndofs);
   }
 
   // -- velocity
@@ -511,39 +515,76 @@ void ShallowWater_PK::CommitStep(
 }
 
 //--------------------------------------------------------------------
-// Recalculate total depth gradient for positivity of ponded depth h
+// Recalculate total depth for positivity of ponded depth h
 //--------------------------------------------------------------------
 void ShallowWater_PK::TotalDepthReconstruct()
 {
   const auto& B_n = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
   auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_).ViewComponent("cell", true);
+  auto& ht_n = *S_->GetW<CompositeVector>(total_depth_key_, passwd_).ViewComponent("node", true);
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
   
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
   AmanziMesh::Entity_ID_List cnodes;
   AmanziGeometry::Point xv;
-
-  int cell_visited_flag;
-  double ht_node;
   
+  double ht_node;
   for (int c = 0; c < ncells_owned; ++c) {
     const auto& xc = mesh_->cell_centroid(c);
     mesh_->cell_get_nodes(c, &cnodes);
-    
-    cell_visited_flag = 0;
     
     for (int i = 0; i < cnodes.size(); ++i) {
       mesh_->node_get_coordinates(cnodes[i], &xv);
       ht_node = total_depth_grad_->getValue(c, xv);
       
-      if ( ht_node < B_n[0][cnodes[i]] ) {
-        cell_visited_flag = 1;
-        ht_grad[0][c] = (B_n[0][cnodes[i]] - ht_c[0][c]) / (xv[0] - xc[0]);
-        ht_grad[1][c] = (B_n[0][cnodes[i]] - ht_c[0][c]) / (xv[1] - xc[1]);
+      if (ht_node < B_n[0][cnodes[i]] + 1.e-12) {
+        ht_n[0][cnodes[i]] = B_n[0][cnodes[i]];
+      } else {
+        ht_n[0][cnodes[i]] = ht_node;
       }
     }
   }
+
+//  int cell_partially_wet;
+//
+//  for (int c = 0; c < ncells_owned; ++c) {
+//    const auto& xc = mesh_->cell_centroid(c);
+//    mesh_->cell_get_nodes(c, &cnodes);
+//
+//    cell_partially_wet = 0;
+//    // determine if cell is partially/ totally wet
+//    for (int i = 0; i < cnodes.size(); ++i) {
+//      mesh_->node_get_coordinates(cnodes[i], &xv);
+//      ht_node = total_depth_grad_->getValue(c, xv);
+//
+//      if ( ht_node < B_n[0][cnodes[i]] ) {
+//        cell_partially_wet = 1;
+//      }
+//    }
+//
+//    if (cell_partially_wet == 1) {
+//      for (int i = 0; i < cnodes.size(); ++i) {
+//        mesh_->node_get_coordinates(cnodes[i], &xv);
+//        ht_node = total_depth_grad_->getValue(c, xv);
+////        ht_grad[0][c] = (B_n[0][cnodes[i]] - ht_c[0][c]) / (xv[0] - xc[0]);
+////        ht_grad[1][c] = (B_n[0][cnodes[i]] - ht_c[0][c]) / (xv[1] - xc[1]);
+//      }
+//    }
+//  }
+  
+  
+}
+
+//--------------------------------------------------------------
+// Total Depth ht = h + B (Evaluate value at edge midpoint for a polygonal cell)
+//--------------------------------------------------------------
+double ShallowWater_PK::TotalDepthEdgeValue(int c, int e, std::vector<std::vector<double>> ht_n)
+{
+  AmanziMesh::Entity_ID_List nodes;
+  mesh_->face_get_nodes(e, &nodes);
+
+  return (ht_n[c][nodes[0]] + ht_n[c][nodes[1]]) / 2;
 }
 
 
@@ -606,13 +647,19 @@ std::vector<double> ShallowWater_PK::NumericalSource(
 //--------------------------------------------------------------
 double ShallowWater_PK::get_dt()
 {
-  double d, vn, dt = 1.e10;
+  double d, vn, dt = 1.e10, dt_cell_dry = 1.e0;
 
   const auto& h_c = *S_->Get<CV_t>(ponded_depth_key_).ViewComponent("cell", true);
   const auto& vel_c = *S_->Get<CV_t>(velocity_key_).ViewComponent("cell", true);
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List cfaces;
+  
+//  for (int c = 0; c < ncells_owned; c++) {
+//    std::cout<<"h_c: "<<c<<" = "<<h_c[0][c]<<std::endl;
+//    std::cout<<"vel_x: "<<c<<" = "<<vel_c[0][c]<<std::endl;
+//    std::cout<<"vel_y: "<<c<<" = "<<vel_c[1][c]<<std::endl;
+//  }
   
   for (int c = 0; c < ncells_owned; c++) {
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -632,10 +679,14 @@ double ShallowWater_PK::get_dt()
       // computing local (cell, face) time step using Kurganov's estimate d / (2a)
       vn = (vx * normal[0] + vy * normal[1]) / farea;
       d = norm(xc - xf);
+      if ( std::abs(vn) + std::sqrt(std::abs(g_ * h)) < 1.e-12 ) { // completely dry conditions i.e. h = 0, [u v] = 0
+        //dt = dt_cell_dry * d;
+        //dt = std::min(d / (2 * (std::abs(vn) + std::sqrt(g_ * h))), dt);
+      } else {
       dt = std::min(d / (2 * (std::abs(vn) + std::sqrt(g_ * h))), dt);
+      }
     }
   }
-  //dt = std::min(dt, 1.e-3);
   
   double dt_min;
   mesh_->get_comm()->MinAll(&dt, &dt_min, 1);
@@ -650,13 +701,16 @@ double ShallowWater_PK::get_dt()
     *vo_->os() << "switching from reduced to regular cfl=" << cfl_ << std::endl;
   }
   
-  if (iters_ < max_iters_)
+  if (iters_ < max_iters_) {
+    //std::cout<<"returning dt = "<<0.1 * cfl_ * dt_min<<std::endl;
     return 0.1 * cfl_ * dt_min;
-  else
+  }
+  else {
+    //std::cout<<"returning dt = "<<cfl_ * dt_min<<std::endl;
     return cfl_ * dt_min;
+  }
   
-  //return 1.e-5;
-  
+//  return 1.e-4;
 }
 
 
@@ -724,8 +778,10 @@ double inverse_with_tolerance(double h)
 bool ShallowWater_PK::ErrorDiagnostics_(int c, double h, double B, double ht)
 {
   if (h < 0.0) {
+    const auto& xc = mesh_->cell_centroid(c);
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "negative height in cell " << c
+               << ", centroid coordinates ("<<xc[0]<<", "<<xc[1]<<")"
                << ", total=" << ht
                << ", bathymetry=" << B
                << ", height=" << h << std::endl;

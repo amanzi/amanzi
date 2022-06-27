@@ -38,11 +38,9 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   const auto& B_c = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("cell", true);
   const auto& B_n = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
   auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_).ViewComponent("cell", true);
+  //auto& ht_n = *S_->GetW<CompositeVector>(total_depth_key_, passwd_).ViewComponent("node", true);
   auto& vel_c = *S_->GetW<CompositeVector>(velocity_key_, passwd_).ViewComponent("cell", true);
   auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_).ViewComponent("face", true);
-  
-  // reconstruct total depth gradient for positive ponded depth h
-  //TotalDepthReconstruct();
   
   for (int c = 0; c < ncells_wghost; ++c) {
     double factor = inverse_with_tolerance(h_temp[0][c]);
@@ -103,8 +101,45 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
   total_depth_grad_->data()->ScatterMasterToGhosted("cell");
   
-  // Total depth gradient recalculation
-  TotalDepthReconstruct();
+  // Total depth recalculation
+  //TotalDepthReconstruct();
+  auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
+  
+//  for (int c = 0; c < ncells_owned; ++c) {
+//    std::cout<<"c: "<<c<<std::endl;
+//    std::cout<<std::setprecision(10)<<"ht_c: "<<ht_c[0][c]<<", ht_grad: "<<ht_grad[0][c]<<", "<<ht_grad[1][c]<<std::endl;
+//  }
+  
+//  std::vector<std::vector<double>> ht_f;
+//  ht_f.resize(ncells_owned);
+//  {
+//    AmanziMesh::Entity_ID_List cfaces;
+//    AmanziGeometry::Point xf;
+//
+//    double ht_face_midpoint;
+//    for (int c = 0; c < ncells_owned; ++c) {
+//      ht_f[c].resize(nfaces_wghost);
+//
+//      const auto& xc = mesh_->cell_centroid(c);
+//      mesh_->cell_get_faces(c, &cfaces);
+//
+//      for (int f = 0; f < cfaces.size(); ++f) {
+//        xf = mesh_->face_centroid(cfaces[f]);
+//        ht_face_midpoint = total_depth_grad_->getValue(c, xf);
+//        //ht_face_midpoint = ht_c[0][c];
+//
+//        double B_face_midpoint = BathymetryEdgeValue(cfaces[f], B_n);
+//
+//        if (ht_face_midpoint < B_face_midpoint + 1.e-12) {
+//          ht_grad[0][c] = (ht_face_midpoint - ht_c[0][c]) / (xf[0] - xc[0]);
+//          ht_f[c][cfaces[f]] = B_face_midpoint;
+//        } else {
+//          ht_f[c][cfaces[f]] = ht_face_midpoint;
+//        }
+//      }
+//    }
+//  }
+//
   
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
@@ -162,11 +197,18 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double ht_rec = total_depth_grad_->getValue(c1, xf);
     double B_rec = BathymetryEdgeValue(f, B_n);
     
+    const auto& xc = mesh_->cell_centroid(c1);
+//    std::cout<<"xf: "<<xf[0]<<", "<<xf[1]<<", ht_rec "<<ht_rec<<std::endl;
+//    std::cout<<"xc: "<<xc[0]<<", "<<xc[1]<<", ht_c: "<<ht_c[0][c1]<<std::endl;
+//    std::cout<<"B_rec: "<<B_rec<<", B_c: "<<B_c[0][c1]<<std::endl;
+    
     if (ht_rec < B_rec) {
       ht_rec = ht_c[0][c1];
-      B_rec = B_c[0][c1];
+      ht_rec = B_rec;
+      //B_rec = B_c[0][c1];
     }
     double h_rec = ht_rec - B_rec;
+    if (std::abs(h_rec) < 1.e-12) { h_rec = 0.0; }
     failed = ErrorDiagnostics_(c1, h_rec, B_rec, ht_rec);
 
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
@@ -195,13 +237,17 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         UR = UL;
       }
     } else {
+      
       ht_rec = total_depth_grad_->getValue(c2, xf);
-
+//      std::cout<<"f= "<<xf[0]<<", "<<xf[1]<<", c1 = "<<c1<<", c2 = "<<c2<<" ht_rec c1 = "<<ht_f[c1][f]<<", ht_rec c2 = "<<ht_f[c2][f]<<",  B_rec = "<<B_rec<<std::endl;
+      
       if (ht_rec < B_rec) {
         ht_rec = ht_c[0][c2];
-        B_rec = B_c[0][c2];
+        ht_rec = B_rec;
+        //B_rec = B_c[0][c2];
       }
       h_rec = ht_rec - B_rec;
+      if (std::abs(h_rec) < 1.e-12) { h_rec = 0.0; }
       failed = ErrorDiagnostics_(c2, h_rec, B_rec, ht_rec);
 
       qx_rec = discharge_x_grad_->getValue(c2, xf);
@@ -217,8 +263,11 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       UR[0] = h_rec;
       UR[1] = h_rec * vn;
       UR[2] = h_rec * vt;
+      
+//      std::cout<<"f = "<<xf[0]<<", "<<xf[1]<<", UL: "<<UL[0]<<", "<<UL[1]<<", "<<UL[2]<<std::endl;
+//      std::cout<<"f = "<<xf[0]<<", "<<xf[1]<<", UR: "<<UR[0]<<", "<<UR[1]<<", "<<UR[2]<<std::endl;
     }
-
+    
     FNum_rot = numerical_flux_->Compute(UL, UR);
 
     h  = FNum_rot[0];

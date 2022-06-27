@@ -6,13 +6,19 @@
     <ParameterList name="Computational domain">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{10.0,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left">
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Right">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{10.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -48,7 +54,17 @@
             <ParameterList name="ponded-depth">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
-                <Parameter name="formula" type="string" value="2.0"/>
+                <Parameter name="formula" type="string" value="0.5"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="BC 2">
+            <Parameter name="regions" type="Array(string)" value="{Right}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="ponded-depth">
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="4"/>
+                <Parameter name="formula" type="string" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
