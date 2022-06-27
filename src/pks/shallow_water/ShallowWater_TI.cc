@@ -204,8 +204,8 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     
     if (ht_rec < B_rec) {
       ht_rec = ht_c[0][c1];
-      ht_rec = B_rec;
-      //B_rec = B_c[0][c1];
+      //ht_rec = B_rec;
+      B_rec = B_c[0][c1];
     }
     double h_rec = ht_rec - B_rec;
     if (std::abs(h_rec) < 1.e-12) { h_rec = 0.0; }
@@ -243,8 +243,8 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       
       if (ht_rec < B_rec) {
         ht_rec = ht_c[0][c2];
-        ht_rec = B_rec;
-        //B_rec = B_c[0][c2];
+        //ht_rec = B_rec;
+        B_rec = B_c[0][c2];
       }
       h_rec = ht_rec - B_rec;
       if (std::abs(h_rec) < 1.e-12) { h_rec = 0.0; }
