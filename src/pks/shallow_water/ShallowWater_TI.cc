@@ -227,8 +227,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     //    "<<ht_c[0][c1]<<std::endl; std::cout<<"B_rec: "<<B_rec<<", B_c:
     //    "<<B_c[0][c1]<<std::endl;
 
-    if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-12) {
-    	std::cout<<"negative h 1: "<<ht_rec<<" < "<<B_rec<<std::endl;
+    if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-15) {
+    	std::cout<<"negative h 1 = : "<<ht_rec-B_rec<<" | ht_rec = "<<ht_rec<<" < "<<B_rec<<std::endl;
       ht_rec = ht_c[0][c1];
       //ht_rec = B_rec;
       B_rec = B_c[0][c1];
@@ -268,7 +268,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       //      "<<c2<<" ht_rec c1 = "<<ht_f[c1][f]<<", ht_rec c2 =
       //      "<<ht_f[c2][f]<<",  B_rec = "<<B_rec<<std::endl;
 
-      if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-12) {
+      if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-15) {
       	std::cout<<"negative h 2"<<std::endl;
         ht_rec = ht_c[0][c2];
         //ht_rec = B_rec;
