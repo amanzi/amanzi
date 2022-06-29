@@ -176,7 +176,64 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 			//
 		}	
 	}
-
+	
+/*	
+	// populate ht_cell_face
+	 AmanziGeometry::Point xf_neg, xf_pos;
+  int n_neg_faces, n_pos_faces, neg_face1, neg_face2, pos_face1, pos_face2;
+	
+	AmanziMesh::Entity_ID_List cfaces;
+	ht_cell_face.resize(ncells_owned);
+	
+	for (int c = 0; c < ncells_owned; ++c) {
+		ht_cell_face[c].resize(nfaces_wghost);
+		const auto& xc = mesh_->cell_centroid(c);
+		mesh_->cell_get_faces(c, &cfaces);
+		ht_grad[0][c] = 0.0;
+		ht_grad[1][c] = 0.0;
+    // triangular cell
+   	if (cfaces.size() == 3) {
+   		n_neg_faces = 0;
+   		n_pos_faces = 0;
+   		for (int f = 0; f < cfaces.size(); ++f) { 
+   			const AmanziGeometry::Point& xf = mesh_->face_centroid(cfaces[f]);
+   			ht_rec = total_depth_grad_->getValue(c, xf);
+   			ht_cell_face[c][cfaces[f]] = ht_rec;
+   			
+   			if (ht_rec < BathymetryEdgeValue(cfaces[f], B_n) && std::abs(ht_rec - BathymetryEdgeValue(cfaces[f], B_n)) > 1.e-15 ) {
+    				n_neg_faces += 1;
+						if (n_neg_faces == 1) {
+							neg_face1 = cfaces[f];
+						} else if (n_neg_faces == 2) {
+							neg_face2 = cfaces[f];
+						}	
+    			} else {
+    			n_pos_faces += 1;
+    			if (n_pos_faces == 1) {
+    				pos_face1 = cfaces[f];
+    			} else if (n_pos_faces == 2) {
+    				pos_face2 = cfaces[f];
+    			}
+    		}
+    	}
+    	if (n_neg_faces >= 1) {
+    		if (n_pos_faces == 1) {
+    			ht_cell_face[c][pos_face1] = (3.0) * (ht_c[0][c] - B_c[0][c]) + BathymetryEdgeValue(pos_face1, B_n);
+    			ht_cell_face[c][neg_face1] = BathymetryEdgeValue(neg_face1, B_n);
+    			ht_cell_face[c][neg_face2] = BathymetryEdgeValue(neg_face2, B_n);
+    		}	else if (n_pos_faces == 2) {
+    			ht_cell_face[c][pos_face1] = (1.5) * (ht_c[0][c] - B_c[0][c]) + BathymetryEdgeValue(pos_face1, B_n);
+    			ht_cell_face[c][pos_face2] = (1.5) * (ht_c[0][c] - B_c[0][c]) + BathymetryEdgeValue(pos_face2, B_n);
+    			ht_cell_face[c][neg_face1] = BathymetryEdgeValue(neg_face1, B_n);
+    		}
+    	}
+    	
+   	} else {
+    	// not triangular cell
+			std::cout<<"Not triangular cell"<<std::endl;
+    }
+	}
+*/
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
   if (use_limiter_)
@@ -231,6 +288,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     normal /= farea;
 
     double ht_rec = total_depth_grad_->getValue(c1, xf);
+    //ht_rec = ht_cell_face[c1][f];
     double B_rec = BathymetryEdgeValue(f, B_n);
     
     const auto& xc = mesh_->cell_centroid(c1);
@@ -272,6 +330,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       }
     } else {
       ht_rec = total_depth_grad_->getValue(c2, xf);
+      //ht_rec = ht_cell_face[c2][f];
 
       if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-14) {
       	std::cout<<"time: t = "<<t<<", c = "<<c2<<", negative h 2 = : "<<ht_rec-B_rec<<" | ht_rec = "<<ht_rec<<" < "<<B_rec<<std::endl;

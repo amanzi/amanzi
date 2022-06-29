@@ -141,6 +141,9 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
+  
+  // total depth cell face
+  std::vector<std::vector<double>> ht_cell_face;
 
   // source terms
   std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;
