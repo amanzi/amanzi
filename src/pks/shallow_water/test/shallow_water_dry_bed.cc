@@ -79,7 +79,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     if (icase == 1) {
       // B_n[0][n] = x / 10.0;
       B_n[0][n] = 0.0;
-      if ((x - 0.3)*(x - 0.3) + (y - 0.3)*(y - 0.3) < 0.1*0.1 + 1.e-12) {
+      if ((x - 0.6)*(x - 0.6) + (y - 0.5)*(y - 0.5) < 0.1*0.1 + 1.e-12) {
         B_n[0][n] = 0.6;
       }
 
@@ -127,12 +127,12 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                    (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 2;
     }
 
-    ht_c[0][c] = std::max(0.5, B_c[0][c]);
+    ht_c[0][c] = std::max(0.0, B_c[0][c]);
 
     // perturb the total height
     if (icase == 1) {
       if ((xc[0] - 0.8)*(xc[0] - 0.8) + (xc[1] - 0.8)*(xc[1] - 0.8) < 0.1*0.1 + 1.e-12) {
-        ht_c[0][c] = ht_c[0][c] + 0.2;
+        ht_c[0][c] = ht_c[0][c] + 0.0;
       }
     } else if (icase == 2) {
       if ((xc[0] - 5.0) * (xc[0] - 5.0) + (xc[1] - 5.0) * (xc[1] - 5.0) <
@@ -203,7 +203,7 @@ RunTest(int icase)
     // Rectangular mesh
     //mesh = meshfactory.create(
     //  0.0, 0.0, 1.0, 1.0, 10, 10, request_faces, request_edges);
-    mesh = meshfactory.create ("test/triangular8.exo");
+    mesh = meshfactory.create ("test/triangular16.exo");
       
   } else if (icase == 2) {
     mesh = meshfactory.create(
@@ -277,15 +277,15 @@ RunTest(int icase)
 
   double Tend;
   if (icase == 1) {
-    Tend = 10.0;
+    Tend = 5.0;
   } else if (icase == 2) {
     Tend = 30.0;
   }
 
   while ((t_new < Tend) && (iter >= 0)) {
     double t_out = t_new;
-		//std::cout<<" new time step ------------------------------------------------------------------ "<<std::endl;
-    if (iter % 5 == 0) {
+
+    if (iter % 10 == 0) {
       io.InitializeCycle(t_out, iter, "");
 
       io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);

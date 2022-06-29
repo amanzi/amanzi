@@ -122,7 +122,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   	// triangular meshes only [Bryson et al.' 11]
   AmanziMesh::Entity_ID_List cnodes;
   AmanziGeometry::Point xv, xv_neg, xv_pos;
-  
   double ht_rec, ht_pos, ht_neg;
   int n_neg_nodes, neg_node, pos_node;
   
@@ -134,36 +133,49 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     	//std::cout<<"Error! number of nodes not 3"<<std::endl;
     }
     else {
-    n_neg_nodes = 0;
-    for (int i = 0; i < cnodes.size(); ++i) {
-    	mesh_->node_get_coordinates(cnodes[i], &xv);
-    	ht_rec = total_depth_grad_->getValue(c, xv);
-
-    	if (ht_rec < B_n[0][cnodes[i]]) {
-    		n_neg_nodes += 1;
-				xv_neg = xv;
-				neg_node = cnodes[i];  
-				ht_neg = B_n[0][cnodes[i]]; 		
-    	} else {
-    		xv_pos = xv;
-    		pos_node = cnodes[i];
+//    	ht_grad[0][c] = 0.0;
+//    	ht_grad[1][c] = 0.0;
+    	if (ht_c[0][c] < B_c[0][c]) {
+    		std::cout<<"cell c = "<<c<<" ht_c = "<<ht_c[0][c]<<" < "<<B_c[0][c]<<std::endl;
     	}
-    } 
-		if (n_neg_nodes == 1){
-			ht_pos = (1.5) * (ht_c[0][c] - B_c[0][c]) + B_n[0][pos_node];
-		} else {
-			ht_pos = (3.0) * (ht_c[0][c] - B_c[0][c]) + B_n[0][pos_node];
-		}
-    
-    if (n_neg_nodes > 0) {
-    	ht_grad[0][c] = ( (xv_pos[1] - xc[1])*(ht_neg - ht_c[0][c]) - (xv_neg[1] - xc[1])*(ht_pos - ht_c[0][c]) ) / ( (xv_neg[0] - xc[0])*(xv_pos[1] - xc[1]) - (xv_neg[1] - xc[1])*(xv_pos[0] - xc[0]) );
     	
-    	ht_grad[1][c] = -( (xv_pos[0] - xc[0])*(ht_neg - ht_c[0][c]) - (xv_neg[0] - xc[0])*(ht_pos - ht_c[0][c]) ) / ( (xv_neg[0] - xc[0])*(xv_pos[1] - xc[1]) - (xv_neg[1] - xc[1])*(xv_pos[0] - xc[0]) );
-  	}
-	}
-	}
+    	n_neg_nodes = 0;
+    	for (int i = 0; i < cnodes.size(); ++i) {
+    		mesh_->node_get_coordinates(cnodes[i], &xv);
+    		ht_rec = total_depth_grad_->getValue(c, xv);
 
-  
+    		if (ht_rec < B_n[0][cnodes[i]] && std::abs(ht_rec - B_n[0][cnodes[i]]) > 1.e-15 ) {
+    			n_neg_nodes += 1;
+					xv_neg = xv;
+					neg_node = cnodes[i];  
+					ht_neg = B_n[0][cnodes[i]]; 		
+    		} else {
+    			xv_pos = xv;
+    			pos_node = cnodes[i];
+    		}	
+    	} 
+			if (n_neg_nodes == 1){
+				ht_pos = (1.5) * (ht_c[0][c] - B_c[0][c]) + B_n[0][pos_node];
+			} else if (n_neg_nodes >= 2) {
+				ht_pos = (3.0) * (ht_c[0][c] - B_c[0][c]) + B_n[0][pos_node];
+			}
+    
+    	if (n_neg_nodes > 0) {
+   		 	ht_grad[0][c] = ( (xv_pos[1] - xc[1])*(ht_neg - ht_c[0][c]) - (xv_neg[1] - xc[1])*(ht_pos - ht_c[0][c]) ) / ( (xv_neg[0] - xc[0])*(xv_pos[1] - xc[1]) - (xv_neg[1] - xc[1])*(xv_pos[0] - xc[0]) );
+    	
+  	  	ht_grad[1][c] = -( (xv_pos[0] - xc[0])*(ht_neg - ht_c[0][c]) - (xv_neg[0] - xc[0])*(ht_pos - ht_c[0][c]) ) / ( (xv_neg[0] -xc[0])*(xv_pos[1] - xc[1]) - (xv_neg[1] - xc[1])*(xv_pos[0] - xc[0]) );
+  		}
+  	// print stuff	
+//  	std::cout<<"cell c = "<<c<<", n_neg_nodes = "<<n_neg_nodes<<std::endl;
+//  	std::cout<<"ht_c = "<<ht_c[0][c]<<", B_c = "<<B_c[0][c]<<std::endl;
+//		for (int i = 0; i < cnodes.size(); ++i) {
+//			mesh_->node_get_coordinates(cnodes[i], &xv);
+//			double ht_rec = total_depth_grad_->getValue(c, xv);
+//			std::cout<<"vertex: "<<xv[0]<<", "<<xv[1]<<", ht_rec = "<<ht_rec<<", B_n = "<<B_n[0][cnodes[i]]<<std::endl;
+//			}
+			//
+		}	
+	}
 
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
@@ -220,22 +232,18 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     double ht_rec = total_depth_grad_->getValue(c1, xf);
     double B_rec = BathymetryEdgeValue(f, B_n);
-
+    
     const auto& xc = mesh_->cell_centroid(c1);
-    //    std::cout<<"xf: "<<xf[0]<<", "<<xf[1]<<", ht_rec "<<ht_rec<<std::endl;
-    //    std::cout<<"xc: "<<xc[0]<<", "<<xc[1]<<", ht_c:
-    //    "<<ht_c[0][c1]<<std::endl; std::cout<<"B_rec: "<<B_rec<<", B_c:
-    //    "<<B_c[0][c1]<<std::endl;
 
-    if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-15) {
-    	std::cout<<"negative h 1 = : "<<ht_rec-B_rec<<" | ht_rec = "<<ht_rec<<" < "<<B_rec<<std::endl;
-      ht_rec = ht_c[0][c1];
-      //ht_rec = B_rec;
-      B_rec = B_c[0][c1];
-    }
+    if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-14) {
+    	std::cout<<"time: t = "<<t<<", c = "<<c1<<", negative h 1 = : "<<ht_rec-B_rec<<" | ht_rec = "<<ht_rec<<" < "<<B_rec<<std::endl;
+      //ht_rec = ht_c[0][c1];
+      ht_rec = B_rec;
+      //B_rec = B_c[0][c1];
+    } 
     double h_rec = ht_rec - B_rec;
-    if (std::abs(h_rec) < 1.e-12) { h_rec = 0.0; }
-    failed = ErrorDiagnostics_(c1, h_rec, B_rec, ht_rec);
+    if (std::abs(h_rec) < 1.e-14) { h_rec = 0.0; }
+    failed = ErrorDiagnostics_(t, c1, h_rec, B_rec, ht_rec);
 
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
@@ -264,19 +272,16 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       }
     } else {
       ht_rec = total_depth_grad_->getValue(c2, xf);
-      //      std::cout<<"f= "<<xf[0]<<", "<<xf[1]<<", c1 = "<<c1<<", c2 =
-      //      "<<c2<<" ht_rec c1 = "<<ht_f[c1][f]<<", ht_rec c2 =
-      //      "<<ht_f[c2][f]<<",  B_rec = "<<B_rec<<std::endl;
 
-      if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-15) {
-      	std::cout<<"negative h 2"<<std::endl;
-        ht_rec = ht_c[0][c2];
-        //ht_rec = B_rec;
-        B_rec = B_c[0][c2];
+      if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-14) {
+      	std::cout<<"time: t = "<<t<<", c = "<<c2<<", negative h 2 = : "<<ht_rec-B_rec<<" | ht_rec = "<<ht_rec<<" < "<<B_rec<<std::endl;
+        //ht_rec = ht_c[0][c2];
+        ht_rec = B_rec;
+        //B_rec = B_c[0][c2];
       }
       h_rec = ht_rec - B_rec;
-      if (std::abs(h_rec) < 1.e-12) { h_rec = 0.0; }
-      failed = ErrorDiagnostics_(c2, h_rec, B_rec, ht_rec);
+      if (std::abs(h_rec) < 1.e-14) { h_rec = 0.0; }
+      failed = ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
 
       qx_rec = discharge_x_grad_->getValue(c2, xf);
       qy_rec = discharge_y_grad_->getValue(c2, xf);
@@ -291,10 +296,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       UR[0] = h_rec;
       UR[1] = h_rec * vn;
       UR[2] = h_rec * vt;
-
-      //      std::cout<<"f = "<<xf[0]<<", "<<xf[1]<<", UL: "<<UL[0]<<",
-      //      "<<UL[1]<<", "<<UL[2]<<std::endl; std::cout<<"f = "<<xf[0]<<",
-      //      "<<xf[1]<<", UR: "<<UR[0]<<", "<<UR[1]<<", "<<UR[2]<<std::endl;
     }
 
     FNum_rot = numerical_flux_->Compute(UL, UR);

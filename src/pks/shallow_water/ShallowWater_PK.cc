@@ -727,7 +727,7 @@ ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
 double
 ShallowWater_PK::get_dt()
 {
-  double d, vn, dt = 1.e10, dt_cell_dry = 1.e0;
+  double d, d_min = 1.e10, vn, dt = 1.e10, dt_dry = 1.e-2;
 
   const auto& h_c =
     *S_->Get<CV_t>(ponded_depth_key_).ViewComponent("cell", true);
@@ -762,6 +762,7 @@ ShallowWater_PK::get_dt()
       // (2a)
       vn = (vx * normal[0] + vy * normal[1]) / farea;
       d = norm(xc - xf);
+      d_min = std::min(d_min, d);
       if (std::abs(vn) + std::sqrt(std::abs(g_ * h)) <
           1.e-12) { // completely dry conditions i.e. h = 0, [u v] = 0
         // dt = dt_cell_dry * d;
@@ -771,7 +772,12 @@ ShallowWater_PK::get_dt()
       }
     }
   }
-
+	
+	// reduce dt_min for completely dry conditions (h = 0, qx = 0, qy = 0) 
+	if (dt > 1.e8) {
+		dt = d_min * dt_dry;
+	}
+	
   double dt_min;
   mesh_->get_comm()->MinAll(&dt, &dt_min, 1);
 
@@ -792,8 +798,6 @@ ShallowWater_PK::get_dt()
     // std::cout<<"returning dt = "<<cfl_ * dt_min<<std::endl;
     return cfl_ * dt_min;
   }
-
-  //  return 1.e-4;
 }
 
 
@@ -862,12 +866,12 @@ inverse_with_tolerance(double h)
 // Error diagnostics
 //--------------------------------------------------------------
 bool
-ShallowWater_PK::ErrorDiagnostics_(int c, double h, double B, double ht)
+ShallowWater_PK::ErrorDiagnostics_(double t, int c, double h, double B, double ht)
 {
   if (h < 0.0) {
     const auto& xc = mesh_->cell_centroid(c);
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "negative height in cell " << c << ", centroid coordinates ("
+    *vo_->os() << "time t = "<<t<<", negative height in cell " << c << ", centroid coordinates ("
                << xc[0] << ", " << xc[1] << ")"
                << ", total=" << ht << ", bathymetry=" << B << ", height=" << h
                << std::endl;
