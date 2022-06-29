@@ -121,11 +121,11 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   tcc = S_->GetPtrW<CompositeVector>(tcc_key_, Tags::DEFAULT, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
-  auto wc = S_->GetW<CompositeVector>(water_content_key_, Tags::DEFAULT, water_content_key_).ViewComponent("cell");
-  auto wc_prev = S_->GetW<CompositeVector>(prev_water_content_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  auto wc = S_->GetW<CompositeVector>(wc_key_, Tags::DEFAULT, wc_key_).ViewComponent("cell");
+  auto wc_prev = S_->GetW<CompositeVector>(prev_wc_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
   *wc_prev = *wc;
-  S_->GetEvaluator(water_content_key_).Update(*S_, "transport");
+  S_->GetEvaluator(wc_key_).Update(*S_, "transport");
 
   // calculate stable time step
   double dt_shift = 0.0, dt_global = dt_MPC;

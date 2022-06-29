@@ -67,7 +67,7 @@ void Transport_PK::DiffusionSolverEffective(
 {
   double dt_MPC = t_new - t_old;
 
-  const auto& wc = S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT);
+  const auto& wc = S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT);
   const auto& sat_c = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
   Teuchos::ParameterList& op_list = 

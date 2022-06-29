@@ -187,8 +187,8 @@ void Transport_PK::Setup()
   tmp = physical_models->get<std::string>("saturation key", "saturation_liquid");
   saturation_liquid_key_ = Keys::getKey(domain_, tmp); 
 
-  water_content_key_ = Keys::getKey(domain_, "water_content"); 
-  prev_water_content_key_ = Keys::getKey(domain_, "prev_water_content"); 
+  wc_key_ = Keys::getKey(domain_, "water_content"); 
+  prev_wc_key_ = Keys::getKey(domain_, "prev_water_content"); 
 
   porosity_msp_key_ = Keys::getKey(domain_, "porosity_msp"); 
   water_content_msp_key_ = Keys::getKey(domain_, "water_content_msp"); 
@@ -254,24 +254,24 @@ void Transport_PK::Setup()
   }
 
   // -- water content (should we move it Flow PK ???)
-  if (!S_->HasRecord(water_content_key_)) {
-    S_->Require<CV_t, CVS_t>(water_content_key_, Tags::DEFAULT, water_content_key_)
+  if (!S_->HasRecord(wc_key_)) {
+    S_->Require<CV_t, CVS_t>(wc_key_, Tags::DEFAULT, wc_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
     std::vector<std::string> listm({ Keys::getVarName(porosity_key_), Keys::getVarName(saturation_liquid_key_) });
     if (transport_on_manifold_) listm.push_back(Keys::getVarName(aperture_key_));
 
-    Teuchos::ParameterList elist(water_content_key_);
-    elist.set<std::string>("my key", water_content_key_)
+    Teuchos::ParameterList elist(wc_key_);
+    elist.set<std::string>("my key", wc_key_)
          .set<Teuchos::Array<std::string> >("multiplicative dependencies", listm)
          .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
-    S_->SetEvaluator(water_content_key_, Tags::DEFAULT, eval);
+    S_->SetEvaluator(wc_key_, Tags::DEFAULT, eval);
   }
-  if (!S_->HasRecord(prev_water_content_key_)) {
-    S_->Require<CV_t, CVS_t>(prev_water_content_key_, Tags::DEFAULT, passwd_)
+  if (!S_->HasRecord(prev_wc_key_)) {
+    S_->Require<CV_t, CVS_t>(prev_wc_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->GetRecordW(prev_water_content_key_, passwd_).set_io_vis(false);
+    S_->GetRecordW(prev_wc_key_, passwd_).set_io_vis(false);
   }
 
   // require multiscale fields
@@ -581,7 +581,7 @@ void Transport_PK::InitializeFields_()
   InitializeCVField(S_, *vo_, aperture_key_, Tags::DEFAULT, passwd_, 1.0);
 
   // we assume that liquid saturation is 1 if wwater content was uninitialized
-  InitializeFieldFromField_(prev_water_content_key_, water_content_key_, false);
+  InitializeFieldFromField_(prev_wc_key_, wc_key_, false);
 
   InitializeFieldFromField_(water_content_msp_key_, porosity_msp_key_, false);
   InitializeFieldFromField_(prev_water_content_msp_key_, water_content_msp_key_, false);
@@ -631,8 +631,8 @@ double Transport_PK::StableTimeStep()
 {
   IdentifyUpwindCells();
 
-  const auto& wc = *S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT).ViewComponent("cell");
-  const auto& wc_prev = *S_->Get<CompositeVector>(prev_water_content_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& wc = *S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& wc_prev = *S_->Get<CompositeVector>(prev_wc_key_, Tags::DEFAULT).ViewComponent("cell");
 
   // Accumulate upwinding fluxes.
   std::vector<double> total_outflux(ncells_wghost, 0.0);
@@ -748,8 +748,8 @@ void Transport_PK::AddMultiscalePorosity_(
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell");
   auto& tcc_matrix = *S_->GetW<CV_t>("total_component_concentration_msp", passwd_).ViewComponent("cell");
 
-  const auto& wcf_prev = *S_->Get<CV_t>(prev_water_content_key_).ViewComponent("cell");
-  const auto& wcf = *S_->Get<CV_t>(water_content_key_).ViewComponent("cell");
+  const auto& wcf_prev = *S_->Get<CV_t>(prev_wc_key_).ViewComponent("cell");
+  const auto& wcf = *S_->Get<CV_t>(wc_key_).ViewComponent("cell");
 
   const auto& wcm_prev = *S_->Get<CV_t>(prev_water_content_msp_key_).ViewComponent("cell");
   const auto& wcm = *S_->Get<CV_t>(water_content_msp_key_).ViewComponent("cell");

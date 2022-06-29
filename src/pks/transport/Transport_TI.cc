@@ -185,9 +185,9 @@ void Transport_PK::FunctionalTimeDerivative_FCT_(
 {
   auto flowrate = S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
 
-  S_->GetEvaluator(water_content_key_).Update(*S_, "transport");
-  auto weight1 = S_->Get<CompositeVector>(water_content_key_).ViewComponent("cell", true);
-  auto weight0 = S_->Get<CompositeVector>(prev_water_content_key_).ViewComponent("cell", true);
+  S_->GetEvaluator(wc_key_).Update(*S_, "transport");
+  auto weight1 = S_->Get<CompositeVector>(wc_key_).ViewComponent("cell", true);
+  auto weight0 = S_->Get<CompositeVector>(prev_wc_key_).ViewComponent("cell", true);
 
   // distribute vector
   // distribute vector

@@ -225,9 +225,9 @@ bool TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_i
   // populating next state of concentrations
   tcc->ScatterMasterToGhosted("cell");
 
-  S_->GetEvaluator(water_content_key_).Update(*S_, "transport");
-  const auto& wc = S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT);
-  const auto& wc_prev = S_->Get<CompositeVector>(prev_water_content_key_, Tags::DEFAULT);
+  S_->GetEvaluator(wc_key_).Update(*S_, "transport");
+  const auto& wc = S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT);
+  const auto& wc_prev = S_->Get<CompositeVector>(prev_wc_key_, Tags::DEFAULT);
 
   const auto& wc_c = *wc.ViewComponent("cell");
   const auto& sat_c = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
@@ -319,9 +319,9 @@ bool TransportImplicit_PK::AdvanceStepHO_(double t_old, double t_new, int* tot_i
 ******************************************************************* */
 void TransportImplicit_PK::UpdateLinearSystem(double t_old, double t_new, int component) 
 {
-  S_->GetEvaluator(water_content_key_).Update(*S_, "transport");
-  const auto& wc = S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT);
-  const auto& wc_prev = S_->Get<CompositeVector>(prev_water_content_key_, Tags::DEFAULT);
+  S_->GetEvaluator(wc_key_).Update(*S_, "transport");
+  const auto& wc = S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT);
+  const auto& wc_prev = S_->Get<CompositeVector>(prev_wc_key_, Tags::DEFAULT);
 
   const auto& wc_c = *wc.ViewComponent("cell");
   const auto& sat_c = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");

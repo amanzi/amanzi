@@ -194,7 +194,7 @@ class Transport_PK : public PK_Physical {
   Key vol_flowrate_key_, aperture_key_;
   Key porosity_key_, transport_porosity_key_, permeability_key_;
   Key saturation_liquid_key_;
-  Key water_content_key_, prev_water_content_key_;
+  Key wc_key_, prev_wc_key_;
 
   Key porosity_msp_key_;
   Key water_content_msp_key_, prev_water_content_msp_key_;

@@ -153,9 +153,9 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     Epetra_MultiVector& tcc_next,
     double t_old, double t_new, int comp0)
 {
-  const auto& wc = S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT);
+  const auto& wc = S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT);
   const auto& wc_c = *wc.ViewComponent("cell");
-  const auto& wc_prev_c = *S_->Get<CompositeVector>(prev_water_content_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& wc_prev_c = *S_->Get<CompositeVector>(prev_wc_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& sat_c = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
   CalculateDispersionTensor_(*transport_phi, wc_c);
