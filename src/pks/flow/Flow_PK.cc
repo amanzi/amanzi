@@ -96,7 +96,7 @@ void Flow_PK::Setup()
       Teuchos::ParameterList elist(permeability_key_);
       elist.set<std::string>("permeability key", permeability_key_)
            .set<std::string>("aperture key", aperture_key_)
-           .set<std::string>("tag", Tags::DEFAULT.get());
+           .set<std::string>("tag", "");
       Teuchos::RCP<FracturePermModelEvaluator> eval = Teuchos::rcp(new FracturePermModelEvaluator(elist, fpm));
       S_->SetEvaluator(permeability_key_, Tags::DEFAULT, eval);
     }
