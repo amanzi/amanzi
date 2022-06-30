@@ -85,6 +85,9 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
     } else if (icase == 2) {
       B_n[0][n] = 0.0;
+      if (x >= 0.5 + 1.e-12) {
+        B_n[0][n] = 0.6;
+      }
     }
   }
 
@@ -135,8 +138,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
         ht_c[0][c] = ht_c[0][c] + 0.0;
       }
     } else if (icase == 2) {
-      if ((xc[0] - 5.0) * (xc[0] - 5.0) + (xc[1] - 5.0) * (xc[1] - 5.0) <
-          0.5 * 0.5 + 1.e-12) {
+      if ((xc[0] - 0.8)*(xc[0] - 0.8) + (xc[1] - 0.8)*(xc[1] - 0.8) < 0.1*0.1 + 1.e-12) {
         ht_c[0][c] = ht_c[0][c] + 0.0;
       }
     }
@@ -207,7 +209,7 @@ RunTest(int icase)
       
   } else if (icase == 2) {
     mesh = meshfactory.create(
-      0.0, 0.0, 10.0, 10.0, 40, 40, request_faces, request_edges);
+      0.0, 0.0, 1.0, 1.0, 20, 20, request_faces, request_edges);
   }
   // Other polygonal meshes
   //  RCP<Mesh> mesh = meshfactory.create ("test/median15x16.exo");
@@ -279,7 +281,7 @@ RunTest(int icase)
   if (icase == 1) {
     Tend = 5.0;
   } else if (icase == 2) {
-    Tend = 30.0;
+    Tend = 5.0;
   }
 
   while ((t_new < Tend) && (iter >= 0)) {
@@ -335,5 +337,5 @@ RunTest(int icase)
 
 TEST(SHALLOW_WATER_DRY_BED)
 {
-  RunTest(1);
+  RunTest(2);
 }

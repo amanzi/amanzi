@@ -130,7 +130,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     const auto& xc = mesh_->cell_centroid(c);
     mesh_->cell_get_nodes(c, &cnodes);
     if (cnodes.size() != 3) {
-    	//std::cout<<"Error! number of nodes not 3"<<std::endl;
+    	// mesh not triangular
+    	break;
     }
     else {
 //    	ht_grad[0][c] = 0.0;
@@ -165,17 +166,38 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     	
   	  	ht_grad[1][c] = -( (xv_pos[0] - xc[0])*(ht_neg - ht_c[0][c]) - (xv_neg[0] - xc[0])*(ht_pos - ht_c[0][c]) ) / ( (xv_neg[0] -xc[0])*(xv_pos[1] - xc[1]) - (xv_neg[1] - xc[1])*(xv_pos[0] - xc[0]) );
   		}
-  	// print stuff	
-//  	std::cout<<"cell c = "<<c<<", n_neg_nodes = "<<n_neg_nodes<<std::endl;
-//  	std::cout<<"ht_c = "<<ht_c[0][c]<<", B_c = "<<B_c[0][c]<<std::endl;
-//		for (int i = 0; i < cnodes.size(); ++i) {
-//			mesh_->node_get_coordinates(cnodes[i], &xv);
-//			double ht_rec = total_depth_grad_->getValue(c, xv);
-//			std::cout<<"vertex: "<<xv[0]<<", "<<xv[1]<<", ht_rec = "<<ht_rec<<", B_n = "<<B_n[0][cnodes[i]]<<std::endl;
-//			}
-			//
 		}	
 	}
+	
+	// STRICTLY rectangular meshes ONLY [Kurganov' 18]
+	AmanziMesh::Entity_ID_List cfaces;
+	int x_grad_flag, y_grad_flag;
+	
+	for (int c = 0; c < ncells_owned; ++c) {
+		mesh_->cell_get_faces(c, &cfaces);
+		const auto& xc = mesh_->cell_centroid(c);
+		ht_grad[0][c] = 0.0;
+		ht_grad[1][c] = 0.0;
+		x_grad_flag = 0;
+		y_grad_flag = 0;
+		for (int f = 0; f < cfaces.size(); ++f) {
+			const AmanziGeometry::Point& xf = mesh_->face_centroid(cfaces[f]);
+			ht_rec = total_depth_grad_->getValue(c, xf);
+			
+			if (ht_rec < BathymetryEdgeValue(cfaces[f], B_n) && std::abs(ht_rec - BathymetryEdgeValue(cfaces[f], B_n)) > 1.e-15 ) {
+				
+				// parallel to x axis
+				if (std::abs(xf[1] - xc[1]) < 1.e-15 && x_grad_flag == 0 ) {
+					ht_grad[0][c] = (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (norm(xf - xc)) * (xf[0] - xc[0]) / (norm(xf - xc));
+					x_grad_flag = 1;
+				} else if (std::abs(xf[0] - xc[0]) < 1.e-15 && y_grad_flag == 0 ) {
+					ht_grad[1][c] = (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (norm(xf - xc)) * (xf[1] - xc[1]) / (norm(xf - xc));
+					y_grad_flag = 1;
+				}
+			}
+		}
+	}
+	
 	
 /*	
 	// populate ht_cell_face
