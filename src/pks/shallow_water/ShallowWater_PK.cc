@@ -574,80 +574,112 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 }
 
 //--------------------------------------------------------------------
-// Recalculate total depth for positivity of ponded depth h (triangular mesh for now)
+// Recalculate total depth for positivity of ponded depth h (triangular/ rectangular mesh for now)
 //--------------------------------------------------------------------
 void
 ShallowWater_PK::TotalDepthReconstruct()
 {
-  const auto& B_n =
-    *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
-    const auto& B_c =
-    *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("cell", true);
-  auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_)
-                  .ViewComponent("cell", true);
-  auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
-
   int ncells_owned =
     mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nnodes_wghost =
-  	mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);  
+    
+  const auto& B_c =
+    *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("cell", true);
+  const auto& B_n =
+    *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
+  auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_)
+                  .ViewComponent("cell", true);
 
-	// triangular meshes only [Bryson et al.' 11]
+	auto tmp1 =
+    S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_)
+      .ViewComponent("cell", true);
+  total_depth_grad_->Compute(tmp1);
+  total_depth_grad_->data()->ScatterMasterToGhosted("cell");
+  
+  auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
+  
   AmanziMesh::Entity_ID_List cnodes;
   AmanziGeometry::Point xv, xv_neg, xv_pos;
-  
   double ht_rec, ht_pos, ht_neg;
   int n_neg_nodes, neg_node, pos_node;
   
-  // loop over all nodes of the cell to determine how many have negative depth
+ 	// triangular meshes only [Bryson et al.' 11]
   for (int c = 0; c < ncells_owned; ++c) {
     const auto& xc = mesh_->cell_centroid(c);
     mesh_->cell_get_nodes(c, &cnodes);
     if (cnodes.size() != 3) {
-    	//std::cout<<"Error! number of nodes not 3"<<std::endl;
+    	// mesh not triangular
+    	break;
     }
     else {
-    n_neg_nodes = 0;
-    for (int i = 0; i < cnodes.size(); ++i) {
-    	mesh_->node_get_coordinates(cnodes[i], &xv);
-    	ht_rec = total_depth_grad_->getValue(c, xv);
-
-    	if (ht_rec < B_n[0][cnodes[i]]) {
-    		n_neg_nodes += 1;
-				xv_neg = xv;
-				neg_node = cnodes[i];  
-				ht_neg = B_n[0][cnodes[i]]; 		
-    	} else {
-    		xv_pos = xv;
-    		pos_node = cnodes[i];
+    	if (ht_c[0][c] < B_c[0][c]) {
+    		std::cout<<"cell c = "<<c<<" ht_c = "<<ht_c[0][c]<<" < "<<B_c[0][c]<<std::endl;
     	}
-    } 
-    // assert that n_neg_nodes <= 2?
-//    if (n_neg_nodes > 2) {
-//    	std::cout<<"Error! number of negative nodes >2 "<<std::endl;
-//    	std::cout<<"cell: "<<c<<" : "<<xc[0]<<", "<<xc[1]<<std::endl;
-//    	for (int i = 0; i < cnodes.size(); ++i) {
-//    		mesh_->node_get_coordinates(cnodes[i], &xv);
-//    		ht_rec = total_depth_grad_->getValue(c, xv);
-//    		std::cout<<"Node: "<<xv[0]<<", "<<xv[1]<<std::endl;
-//    		std::cout<<"ht_rec: "<<ht_rec<<" < B_n = "<<B_n[0][cnodes[i]]<<std::endl;
-//    	}
-//    } else {
-//    	ht_pos = (3 / (3 - n_neg_nodes)) * (ht_c[0][c] - B_c[0][c]) + B_n[0][pos_node];
-//    }
-		if (n_neg_nodes == 1){
-			ht_pos = (1.5) * (ht_c[0][c] - B_c[0][c]) + B_n[0][pos_node];
-		} else {
-			ht_pos = (3.0) * (ht_c[0][c] - B_c[0][c]) + B_n[0][pos_node];
-		}
-    
-    if (n_neg_nodes > 0) {
-    	ht_grad[0][c] = ( (xv_pos[1] - xc[1])*(ht_neg - ht_c[0][c]) - (xv_neg[1] - xc[1])*(ht_pos - ht_c[0][c]) ) / ( (xv_neg[0] - xc[0])*(xv_pos[1] - xc[1]) - (xv_neg[1] - xc[1])*(xv_pos[0] - xc[0]) );
+    	ht_grad[0][c] = 0.0;
+    	ht_grad[1][c] = 0.0;
     	
-    	ht_grad[1][c] = -( (xv_pos[0] - xc[0])*(ht_neg - ht_c[0][c]) - (xv_neg[0] - xc[0])*(ht_pos - ht_c[0][c]) ) / ( (xv_neg[0] - xc[0])*(xv_pos[1] - xc[1]) - (xv_neg[1] - xc[1])*(xv_pos[0] - xc[0]) );
-  	}
+    	n_neg_nodes = 0;
+    	for (int i = 0; i < cnodes.size(); ++i) {
+    		mesh_->node_get_coordinates(cnodes[i], &xv);
+    		ht_rec = total_depth_grad_->getValue(c, xv);
+
+    		if (ht_rec < B_n[0][cnodes[i]] && std::abs(ht_rec - B_n[0][cnodes[i]]) > 1.e-15 ) {
+    			n_neg_nodes += 1;
+					xv_neg = xv;
+					neg_node = cnodes[i];  
+					ht_neg = B_n[0][cnodes[i]]; 		
+    		} else {
+    			xv_pos = xv;
+    			pos_node = cnodes[i];
+    		}	
+    	} 
+			if (n_neg_nodes == 1){
+				ht_pos = (1.5) * (ht_c[0][c] - B_c[0][c]) + B_n[0][pos_node];
+			} else if (n_neg_nodes >= 2) {
+				ht_pos = (3.0) * (ht_c[0][c] - B_c[0][c]) + B_n[0][pos_node];
+			}
+    
+    	if (n_neg_nodes > 0) {
+   		 	ht_grad[0][c] = ( (xv_pos[1] - xc[1])*(ht_neg - ht_c[0][c]) - (xv_neg[1] - xc[1])*(ht_pos - ht_c[0][c]) ) / ( (xv_neg[0] - xc[0])*(xv_pos[1] - xc[1]) - (xv_neg[1] - xc[1])*(xv_pos[0] - xc[0]) );
+    	
+  	  	ht_grad[1][c] = -( (xv_pos[0] - xc[0])*(ht_neg - ht_c[0][c]) - (xv_neg[0] - xc[0])*(ht_pos - ht_c[0][c]) ) / ( (xv_neg[0] -xc[0])*(xv_pos[1] - xc[1]) - (xv_neg[1] - xc[1])*(xv_pos[0] - xc[0]) );
+  		}
+		}	
 	}
+	
+	// STRICTLY rectangular meshes ONLY [Kurganov' 18]
+	/*
+	AmanziMesh::Entity_ID_List cfaces;
+	int x_grad_flag, y_grad_flag;
+	
+	for (int c = 0; c < ncells_owned; ++c) {
+		mesh_->cell_get_faces(c, &cfaces);
+		const auto& xc = mesh_->cell_centroid(c);
+		ht_grad[0][c] = 0.0;
+		ht_grad[1][c] = 0.0;
+		x_grad_flag = 0;
+		y_grad_flag = 0;
+		
+		for (int f = 0; f < cfaces.size(); ++f) {
+			const AmanziGeometry::Point& xf = mesh_->face_centroid(cfaces[f]);
+			ht_rec = total_depth_grad_->getValue(c, xf);
+				
+			if (ht_rec < BathymetryEdgeValue(cfaces[f], B_n) && std::abs(ht_rec - BathymetryEdgeValue(cfaces[f], B_n)) > 1.e-14 ) {
+				
+				// parallel to x axis
+				if (std::abs(xf[1] - xc[1]) < 1.e-14 && x_grad_flag == 0 ) {
+					ht_grad[0][c] = (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (norm(xf - xc)) * (xf[0] - xc[0]) / (norm(xf - xc));
+					x_grad_flag = 1;
+				} 
+				// parallel to y axis
+				else if (std::abs(xf[0] - xc[0]) < 1.e-14 && y_grad_flag == 0 ) {
+					ht_grad[1][c] = (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (norm(xf - xc)) * (xf[1] - xc[1]) / (norm(xf - xc));
+					y_grad_flag = 1;
+				}
+			}
+		}
 	}
+	*/
+	
 }
 
 //--------------------------------------------------------------
@@ -732,16 +764,14 @@ ShallowWater_PK::get_dt()
   const auto& h_c =
     *S_->Get<CV_t>(ponded_depth_key_).ViewComponent("cell", true);
   const auto& vel_c = *S_->Get<CV_t>(velocity_key_).ViewComponent("cell", true);
+  
+    S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
+  auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_)
+                 .ViewComponent("cell", true);
 
   int ncells_owned =
     mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List cfaces;
-
-  //  for (int c = 0; c < ncells_owned; c++) {
-  //    std::cout<<"h_c: "<<c<<" = "<<h_c[0][c]<<std::endl;
-  //    std::cout<<"vel_x: "<<c<<" = "<<vel_c[0][c]<<std::endl;
-  //    std::cout<<"vel_y: "<<c<<" = "<<vel_c[1][c]<<std::endl;
-  //  }
 
   for (int c = 0; c < ncells_owned; c++) {
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -792,10 +822,8 @@ ShallowWater_PK::get_dt()
   }
 
   if (iters_ < max_iters_) {
-    // std::cout<<"returning dt = "<<0.1 * cfl_ * dt_min<<std::endl;
     return 0.1 * cfl_ * dt_min;
   } else {
-    // std::cout<<"returning dt = "<<cfl_ * dt_min<<std::endl;
     return cfl_ * dt_min;
   }
 }

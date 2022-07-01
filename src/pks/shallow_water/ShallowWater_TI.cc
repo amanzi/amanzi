@@ -114,148 +114,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
   total_depth_grad_->data()->ScatterMasterToGhosted("cell");
 
-  // Total depth recalculation
+  // Total depth recalculation for positivity
   //TotalDepthReconstruct();
   
-  auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
-  
-  	// triangular meshes only [Bryson et al.' 11]
-  AmanziMesh::Entity_ID_List cnodes;
-  AmanziGeometry::Point xv, xv_neg, xv_pos;
-  double ht_rec, ht_pos, ht_neg;
-  int n_neg_nodes, neg_node, pos_node;
-  
-  // loop over all nodes of the cell to determine how many have negative depth
-  for (int c = 0; c < ncells_owned; ++c) {
-    const auto& xc = mesh_->cell_centroid(c);
-    mesh_->cell_get_nodes(c, &cnodes);
-    if (cnodes.size() != 3) {
-    	// mesh not triangular
-    	break;
-    }
-    else {
-//    	ht_grad[0][c] = 0.0;
-//    	ht_grad[1][c] = 0.0;
-    	if (ht_c[0][c] < B_c[0][c]) {
-    		std::cout<<"cell c = "<<c<<" ht_c = "<<ht_c[0][c]<<" < "<<B_c[0][c]<<std::endl;
-    	}
-    	
-    	n_neg_nodes = 0;
-    	for (int i = 0; i < cnodes.size(); ++i) {
-    		mesh_->node_get_coordinates(cnodes[i], &xv);
-    		ht_rec = total_depth_grad_->getValue(c, xv);
-
-    		if (ht_rec < B_n[0][cnodes[i]] && std::abs(ht_rec - B_n[0][cnodes[i]]) > 1.e-15 ) {
-    			n_neg_nodes += 1;
-					xv_neg = xv;
-					neg_node = cnodes[i];  
-					ht_neg = B_n[0][cnodes[i]]; 		
-    		} else {
-    			xv_pos = xv;
-    			pos_node = cnodes[i];
-    		}	
-    	} 
-			if (n_neg_nodes == 1){
-				ht_pos = (1.5) * (ht_c[0][c] - B_c[0][c]) + B_n[0][pos_node];
-			} else if (n_neg_nodes >= 2) {
-				ht_pos = (3.0) * (ht_c[0][c] - B_c[0][c]) + B_n[0][pos_node];
-			}
-    
-    	if (n_neg_nodes > 0) {
-   		 	ht_grad[0][c] = ( (xv_pos[1] - xc[1])*(ht_neg - ht_c[0][c]) - (xv_neg[1] - xc[1])*(ht_pos - ht_c[0][c]) ) / ( (xv_neg[0] - xc[0])*(xv_pos[1] - xc[1]) - (xv_neg[1] - xc[1])*(xv_pos[0] - xc[0]) );
-    	
-  	  	ht_grad[1][c] = -( (xv_pos[0] - xc[0])*(ht_neg - ht_c[0][c]) - (xv_neg[0] - xc[0])*(ht_pos - ht_c[0][c]) ) / ( (xv_neg[0] -xc[0])*(xv_pos[1] - xc[1]) - (xv_neg[1] - xc[1])*(xv_pos[0] - xc[0]) );
-  		}
-		}	
-	}
-	
-	// STRICTLY rectangular meshes ONLY [Kurganov' 18]
-	AmanziMesh::Entity_ID_List cfaces;
-	int x_grad_flag, y_grad_flag;
-	
-	for (int c = 0; c < ncells_owned; ++c) {
-		mesh_->cell_get_faces(c, &cfaces);
-		const auto& xc = mesh_->cell_centroid(c);
-		ht_grad[0][c] = 0.0;
-		ht_grad[1][c] = 0.0;
-		x_grad_flag = 0;
-		y_grad_flag = 0;
-		for (int f = 0; f < cfaces.size(); ++f) {
-			const AmanziGeometry::Point& xf = mesh_->face_centroid(cfaces[f]);
-			ht_rec = total_depth_grad_->getValue(c, xf);
-			
-			if (ht_rec < BathymetryEdgeValue(cfaces[f], B_n) && std::abs(ht_rec - BathymetryEdgeValue(cfaces[f], B_n)) > 1.e-15 ) {
-				
-				// parallel to x axis
-				if (std::abs(xf[1] - xc[1]) < 1.e-15 && x_grad_flag == 0 ) {
-					ht_grad[0][c] = (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (norm(xf - xc)) * (xf[0] - xc[0]) / (norm(xf - xc));
-					x_grad_flag = 1;
-				} else if (std::abs(xf[0] - xc[0]) < 1.e-15 && y_grad_flag == 0 ) {
-					ht_grad[1][c] = (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (norm(xf - xc)) * (xf[1] - xc[1]) / (norm(xf - xc));
-					y_grad_flag = 1;
-				}
-			}
-		}
-	}
-	
-	
-/*	
-	// populate ht_cell_face
-	 AmanziGeometry::Point xf_neg, xf_pos;
-  int n_neg_faces, n_pos_faces, neg_face1, neg_face2, pos_face1, pos_face2;
-	
-	AmanziMesh::Entity_ID_List cfaces;
-	ht_cell_face.resize(ncells_owned);
-	
-	for (int c = 0; c < ncells_owned; ++c) {
-		ht_cell_face[c].resize(nfaces_wghost);
-		const auto& xc = mesh_->cell_centroid(c);
-		mesh_->cell_get_faces(c, &cfaces);
-		ht_grad[0][c] = 0.0;
-		ht_grad[1][c] = 0.0;
-    // triangular cell
-   	if (cfaces.size() == 3) {
-   		n_neg_faces = 0;
-   		n_pos_faces = 0;
-   		for (int f = 0; f < cfaces.size(); ++f) { 
-   			const AmanziGeometry::Point& xf = mesh_->face_centroid(cfaces[f]);
-   			ht_rec = total_depth_grad_->getValue(c, xf);
-   			ht_cell_face[c][cfaces[f]] = ht_rec;
-   			
-   			if (ht_rec < BathymetryEdgeValue(cfaces[f], B_n) && std::abs(ht_rec - BathymetryEdgeValue(cfaces[f], B_n)) > 1.e-15 ) {
-    				n_neg_faces += 1;
-						if (n_neg_faces == 1) {
-							neg_face1 = cfaces[f];
-						} else if (n_neg_faces == 2) {
-							neg_face2 = cfaces[f];
-						}	
-    			} else {
-    			n_pos_faces += 1;
-    			if (n_pos_faces == 1) {
-    				pos_face1 = cfaces[f];
-    			} else if (n_pos_faces == 2) {
-    				pos_face2 = cfaces[f];
-    			}
-    		}
-    	}
-    	if (n_neg_faces >= 1) {
-    		if (n_pos_faces == 1) {
-    			ht_cell_face[c][pos_face1] = (3.0) * (ht_c[0][c] - B_c[0][c]) + BathymetryEdgeValue(pos_face1, B_n);
-    			ht_cell_face[c][neg_face1] = BathymetryEdgeValue(neg_face1, B_n);
-    			ht_cell_face[c][neg_face2] = BathymetryEdgeValue(neg_face2, B_n);
-    		}	else if (n_pos_faces == 2) {
-    			ht_cell_face[c][pos_face1] = (1.5) * (ht_c[0][c] - B_c[0][c]) + BathymetryEdgeValue(pos_face1, B_n);
-    			ht_cell_face[c][pos_face2] = (1.5) * (ht_c[0][c] - B_c[0][c]) + BathymetryEdgeValue(pos_face2, B_n);
-    			ht_cell_face[c][neg_face1] = BathymetryEdgeValue(neg_face1, B_n);
-    		}
-    	}
-    	
-   	} else {
-    	// not triangular cell
-			std::cout<<"Not triangular cell"<<std::endl;
-    }
-	}
-*/
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
   if (use_limiter_)
@@ -317,9 +178,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-14) {
     	std::cout<<"time: t = "<<t<<", c = "<<c1<<", negative h 1 = : "<<ht_rec-B_rec<<" | ht_rec = "<<ht_rec<<" < "<<B_rec<<std::endl;
-      //ht_rec = ht_c[0][c1];
-      ht_rec = B_rec;
-      //B_rec = B_c[0][c1];
+      ht_rec = ht_c[0][c1];
+      //ht_rec = B_rec;
+      B_rec = B_c[0][c1];
     } 
     double h_rec = ht_rec - B_rec;
     if (std::abs(h_rec) < 1.e-14) { h_rec = 0.0; }
@@ -356,9 +217,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
       if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-14) {
       	std::cout<<"time: t = "<<t<<", c = "<<c2<<", negative h 2 = : "<<ht_rec-B_rec<<" | ht_rec = "<<ht_rec<<" < "<<B_rec<<std::endl;
-        //ht_rec = ht_c[0][c2];
-        ht_rec = B_rec;
-        //B_rec = B_c[0][c2];
+        ht_rec = ht_c[0][c2];
+        //ht_rec = B_rec;
+        B_rec = B_c[0][c2];
       }
       h_rec = ht_rec - B_rec;
       if (std::abs(h_rec) < 1.e-14) { h_rec = 0.0; }

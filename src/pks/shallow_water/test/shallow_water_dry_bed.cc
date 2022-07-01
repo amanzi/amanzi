@@ -77,7 +77,6 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     double x = node_crd[0], y = node_crd[1];
 
     if (icase == 1) {
-      // B_n[0][n] = x / 10.0;
       B_n[0][n] = 0.0;
       if ((x - 0.6)*(x - 0.6) + (y - 0.5)*(y - 0.5) < 0.1*0.1 + 1.e-12) {
         B_n[0][n] = 0.6;
@@ -85,7 +84,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
     } else if (icase == 2) {
       B_n[0][n] = 0.0;
-      if (x >= 0.5 + 1.e-12) {
+      if ( std::abs(x - 0.6) <= 0.1 + 1.e-5 && std::abs(y - 0.5) <= 0.1 + 1.e-4) {
         B_n[0][n] = 0.6;
       }
     }
@@ -202,11 +201,7 @@ RunTest(int icase)
 
   RCP<Mesh> mesh;
   if (icase == 1) {
-    // Rectangular mesh
-    //mesh = meshfactory.create(
-    //  0.0, 0.0, 1.0, 1.0, 10, 10, request_faces, request_edges);
     mesh = meshfactory.create ("test/triangular16.exo");
-      
   } else if (icase == 2) {
     mesh = meshfactory.create(
       0.0, 0.0, 1.0, 1.0, 20, 20, request_faces, request_edges);
@@ -313,10 +308,15 @@ RunTest(int icase)
 
     t_old = t_new;
     iter += 1;
+    
+    if (iter % 100 == 0) {
+    	std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
+    }
   } // time loop
 
   if (MyPID == 0) { std::cout << "Time-stepping finished. " << std::endl; }
-
+	std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
+	
   double t_out = t_new;
 
   io.InitializeCycle(t_out, iter, "");
@@ -337,5 +337,5 @@ RunTest(int icase)
 
 TEST(SHALLOW_WATER_DRY_BED)
 {
-  RunTest(2);
+  RunTest(1);
 }
