@@ -84,7 +84,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
     } else if (icase == 2) {
       B_n[0][n] = 0.0;
-      if ( std::abs(x - 0.6) <= 0.1 + 1.e-5 && std::abs(y - 0.5) <= 0.1 + 1.e-4) {
+      if ( (x - 0.6)*(x - 0.6) + (y - 0.5)*(y - 0.5) < 0.2*0.2 + 1.e-12) {
         B_n[0][n] = 0.6;
       }
     }
@@ -203,8 +203,8 @@ RunTest(int icase)
   if (icase == 1) {
     mesh = meshfactory.create ("test/triangular16.exo");
   } else if (icase == 2) {
-    mesh = meshfactory.create(
-      0.0, 0.0, 1.0, 1.0, 20, 20, request_faces, request_edges);
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
+		//mesh = meshfactory.create ("test/median32x33.exo");
   }
   // Other polygonal meshes
   //  RCP<Mesh> mesh = meshfactory.create ("test/median15x16.exo");
@@ -282,7 +282,7 @@ RunTest(int icase)
   while ((t_new < Tend) && (iter >= 0)) {
     double t_out = t_new;
 
-    if (iter % 10 == 0) {
+    if (iter % 200 == 0) {
       io.InitializeCycle(t_out, iter, "");
 
       io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
@@ -309,7 +309,7 @@ RunTest(int icase)
     t_old = t_new;
     iter += 1;
     
-    if (iter % 100 == 0) {
+    if (iter % 200 == 0) {
     	std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
     }
   } // time loop

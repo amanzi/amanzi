@@ -115,7 +115,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   total_depth_grad_->data()->ScatterMasterToGhosted("cell");
 
   // Total depth recalculation for positivity
-  //TotalDepthReconstruct();
+  TotalDepthReconstruct();
   
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
@@ -170,8 +170,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
     normal /= farea;
 
-    double ht_rec = total_depth_grad_->getValue(c1, xf);
-    //ht_rec = ht_cell_face[c1][f];
+    //double ht_rec = total_depth_grad_->getValue(c1, xf);
+    double ht_rec = TotalDepthEdgeValue(c1, f);
     double B_rec = BathymetryEdgeValue(f, B_n);
     
     const auto& xc = mesh_->cell_centroid(c1);
@@ -212,8 +212,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         UR = UL;
       }
     } else {
-      ht_rec = total_depth_grad_->getValue(c2, xf);
-      //ht_rec = ht_cell_face[c2][f];
+      //ht_rec = total_depth_grad_->getValue(c2, xf);
+      ht_rec = TotalDepthEdgeValue(c2, f);
 
       if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-14) {
       	std::cout<<"time: t = "<<t<<", c = "<<c2<<", negative h 2 = : "<<ht_rec-B_rec<<" | ht_rec = "<<ht_rec<<" < "<<B_rec<<std::endl;

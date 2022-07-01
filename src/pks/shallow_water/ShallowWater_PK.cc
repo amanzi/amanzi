@@ -578,9 +578,11 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 //--------------------------------------------------------------------
 void
 ShallowWater_PK::TotalDepthReconstruct()
-{
+{	
   int ncells_owned =
     mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_wghost =
+    mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
     
   const auto& B_c =
     *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("cell", true);
@@ -597,11 +599,13 @@ ShallowWater_PK::TotalDepthReconstruct()
   
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
   
-  AmanziMesh::Entity_ID_List cnodes;
+  AmanziMesh::Entity_ID_List cnodes, cfaces;
   AmanziGeometry::Point xv, xv_neg, xv_pos;
   double ht_rec, ht_pos, ht_neg;
   int n_neg_nodes, neg_node, pos_node;
+	int x_grad_flag, y_grad_flag;
   
+  /*
  	// triangular meshes only [Bryson et al.' 11]
   for (int c = 0; c < ncells_owned; ++c) {
     const auto& xc = mesh_->cell_centroid(c);
@@ -614,8 +618,8 @@ ShallowWater_PK::TotalDepthReconstruct()
     	if (ht_c[0][c] < B_c[0][c]) {
     		std::cout<<"cell c = "<<c<<" ht_c = "<<ht_c[0][c]<<" < "<<B_c[0][c]<<std::endl;
     	}
-    	ht_grad[0][c] = 0.0;
-    	ht_grad[1][c] = 0.0;
+    	//ht_grad[0][c] = 0.0;
+    	//ht_grad[1][c] = 0.0;
     	
     	n_neg_nodes = 0;
     	for (int i = 0; i < cnodes.size(); ++i) {
@@ -645,11 +649,10 @@ ShallowWater_PK::TotalDepthReconstruct()
   		}
 		}	
 	}
+	*/
 	
 	// STRICTLY rectangular meshes ONLY [Kurganov' 18]
 	/*
-	AmanziMesh::Entity_ID_List cfaces;
-	int x_grad_flag, y_grad_flag;
 	
 	for (int c = 0; c < ncells_owned; ++c) {
 		mesh_->cell_get_faces(c, &cfaces);
@@ -680,19 +683,98 @@ ShallowWater_PK::TotalDepthReconstruct()
 	}
 	*/
 	
+	
+	// polygonal meshes; [Beljadid et al.' 16]
+	
+	ht_cell_node_.resize(ncells_owned);
+	bool cell_is_partially_wet;
+	
+	for (int c = 0; c < ncells_owned; ++c) {
+		const auto& xc = mesh_->cell_centroid(c);
+    mesh_->cell_get_nodes(c, &cnodes);
+ 		
+ 		ht_cell_node_[c].resize(nnodes_wghost);
+    cell_is_partially_wet = false;
+    
+    ht_grad[0][c] = 0.0;
+    ht_grad[1][c] = 0.0;
+    for (int i = 0; i < cnodes.size(); ++i) {
+    	mesh_->node_get_coordinates(cnodes[i], &xv);
+    	ht_rec = total_depth_grad_->getValue(c, xv);
+    	
+    	if(ht_rec < B_n[0][cnodes[i]] && std::abs(ht_rec - B_n[0][cnodes[i]]) > 1.e-15) {
+    		cell_is_partially_wet = true;
+    		break;
+    	} else {
+    		ht_cell_node_[c][cnodes[i]] = ht_rec;
+    	}
+    }
+    
+    if (cell_is_partially_wet == true) {
+    	mesh_->cell_get_faces(c, &cfaces);
+    	
+    	double mu_eps_sum = 0.0;
+    	
+    	for (int f = 0; f < cfaces.size(); ++f) {
+    		Amanzi::AmanziGeometry::Point x0, x1;
+      	int edge = cfaces[f];
+
+      	Amanzi::AmanziMesh::Entity_ID_List face_nodes;
+      	mesh_->face_get_nodes(edge, &face_nodes);
+
+      	mesh_->node_get_coordinates(face_nodes[0], &x0);
+      	mesh_->node_get_coordinates(face_nodes[1], &x1);
+
+      	Amanzi::AmanziGeometry::Point tria_edge0, tria_edge1;
+
+      	tria_edge0 = xc - x0;
+      	tria_edge1 = xc - x1;
+
+      	Amanzi::AmanziGeometry::Point area_cross_product =
+        	(0.5) * tria_edge0 ^ tria_edge1;
+
+      	double area = norm(area_cross_product);
+				
+				double epsilon;
+				
+				double ht_rec_x0 = total_depth_grad_->getValue(c, x0);
+				double ht_rec_x1 = total_depth_grad_->getValue(c, x1);
+				
+				if (ht_rec_x0 < B_n[0][face_nodes[0]] && ht_rec_x1 < B_n[0][face_nodes[1]]) {
+					epsilon  = 0.0;
+				} else if (ht_rec_x0 >= B_n[0][face_nodes[0]] && ht_rec_x1 >= B_n[0][face_nodes[1]]) {
+					epsilon = 1.0;
+				} else {
+					epsilon = 0.5;
+				}
+				
+      	mu_eps_sum += (area / mesh_->cell_volume(c)) * (epsilon);
+    	}
+    	
+    	for (int i = 0; i < cnodes.size(); ++i) {
+    		if (ht_c[0][c] < B_n[0][cnodes[i]]) {
+    			ht_cell_node_[c][cnodes[i]] = B_n[0][cnodes[i]];
+    		} else {
+    			ht_cell_node_[c][cnodes[i]] = B_n[0][cnodes[i]] + ( (ht_c[0][c] - B_c[0][c]) / mu_eps_sum );
+    		}
+    	}
+    	
+    }
+	}
+	
+	
 }
 
 //--------------------------------------------------------------
 // Total Depth ht = h + B (Evaluate value at edge midpoint for a polygonal cell)
 //--------------------------------------------------------------
 double
-ShallowWater_PK::TotalDepthEdgeValue(int c, int e,
-                                     std::vector<std::vector<double>> ht_n)
+ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
 {
   AmanziMesh::Entity_ID_List nodes;
   mesh_->face_get_nodes(e, &nodes);
 
-  return (ht_n[c][nodes[0]] + ht_n[c][nodes[1]]) / 2;
+  return (ht_cell_node_[c][nodes[0]] + ht_cell_node_[c][nodes[1]]) / 2.0;
 }
 
 
@@ -887,6 +969,9 @@ inverse_with_tolerance(double h)
 
   double h2 = h * h;
   return 2 * h / (h2 + std::fmax(h2, eps2));
+  
+  //double h4 = h2 * h2;
+  //return std::sqrt(2) * h / std::sqrt(h4 + std::max(h4, eps));
 }
 
 

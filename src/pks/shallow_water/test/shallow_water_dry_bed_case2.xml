@@ -50,12 +50,12 @@
         <Parameter name="limiter" type="string" value="Kuzmin"/>
         <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
         <Parameter name="limiter location" type="string" value="node"/>
-        <Parameter name="limiter cfl" type="double" value="0.001"/>
+        <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="cfl" type="double" value="0.5"/>
       <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
-      <Parameter name="numerical flux" type="string" value="central upwind"/>
+      <Parameter name="numerical flux" type="string" value="Rusanov"/>
       
 
       <ParameterList name="boundary conditions">
