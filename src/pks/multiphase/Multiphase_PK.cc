@@ -185,7 +185,7 @@ void Multiphase_PK::Setup()
     S_->SetEvaluator(pressure_liquid_key_, Tags::DEFAULT, eval);
 
     S_->RequireDerivative<CV_t, CVS_t>(pressure_liquid_key_, Tags::DEFAULT,
-                                       pressure_liquid_key_, Tags::DEFAULT, pressure_liquid_key_);
+                                       pressure_liquid_key_, Tags::DEFAULT, pressure_liquid_key_).SetGhosted();
   }
 
   // -- temperature
@@ -216,7 +216,7 @@ void Multiphase_PK::Setup()
     S_->SetEvaluator(primary_key, Tags::DEFAULT, eval);
 
     S_->RequireDerivative<CV_t, CVS_t>(primary_key, Tags::DEFAULT,
-                                       primary_key, Tags::DEFAULT, primary_key);
+                                       primary_key, Tags::DEFAULT, primary_key).SetGhosted();
   }
 
   // conserved quantities
@@ -229,7 +229,7 @@ void Multiphase_PK::Setup()
     S_->SetEvaluator(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_eval_);
 
     S_->RequireDerivative<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT,
-                                      saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_);
+                                      saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_).SetGhosted();
   }
 
   // total pressure gas
@@ -245,11 +245,11 @@ void Multiphase_PK::Setup()
     S_->SetEvaluator(pressure_gas_key_, Tags::DEFAULT, eval);
 
     S_->RequireDerivative<CV_t, CVS_t>(pressure_gas_key_, Tags::DEFAULT,
-                                      pressure_liquid_key_, Tags::DEFAULT, pressure_gas_key_);
+                                      pressure_liquid_key_, Tags::DEFAULT, pressure_gas_key_).SetGhosted();
     S_->RequireDerivative<CV_t, CVS_t>(pressure_gas_key_, Tags::DEFAULT,
-                                      pressure_liquid_key_, Tags::DEFAULT, pressure_gas_key_);
+                                      pressure_liquid_key_, Tags::DEFAULT, pressure_gas_key_).SetGhosted();
     S_->RequireDerivative<CV_t, CVS_t>(pressure_gas_key_, Tags::DEFAULT,
-                                      saturation_liquid_key_, Tags::DEFAULT, pressure_gas_key_);
+                                      saturation_liquid_key_, Tags::DEFAULT, pressure_gas_key_).SetGhosted();
   }
 
   // Darcy volume fluxes
@@ -284,7 +284,7 @@ void Multiphase_PK::Setup()
     S_->SetEvaluator(relperm_liquid_key_, Tags::DEFAULT, eval);
 
     S_->RequireDerivative<CV_t, CVS_t>(relperm_liquid_key_, Tags::DEFAULT,
-                                       saturation_liquid_key_, Tags::DEFAULT, relperm_liquid_key_);
+                                       saturation_liquid_key_, Tags::DEFAULT, relperm_liquid_key_).SetGhosted();
   }
 
   // relative permeability of gas phase
@@ -297,7 +297,7 @@ void Multiphase_PK::Setup()
     S_->SetEvaluator(relperm_gas_key_, Tags::DEFAULT, eval);
 
     S_->RequireDerivative<CV_t, CVS_t>(relperm_gas_key_, Tags::DEFAULT,
-                                      saturation_liquid_key_, Tags::DEFAULT, relperm_gas_key_);
+                                      saturation_liquid_key_, Tags::DEFAULT, relperm_gas_key_).SetGhosted();
   }
 
   // water vapor
@@ -341,7 +341,7 @@ void Multiphase_PK::Setup()
       S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
 
       S_->RequireDerivative<CV_t, CVS_t>(energy_key_, Tags::DEFAULT,
-                                        temperature_key_, Tags::DEFAULT, energy_key_);
+                                         temperature_key_, Tags::DEFAULT, energy_key_).SetGhosted();
     }
 
     // previous conserved quantities
@@ -356,19 +356,19 @@ void Multiphase_PK::Setup()
     S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
 
     S_->RequireDerivative<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT,
-                                       temperature_key_, Tags::DEFAULT, ie_liquid_key_);
+                                       temperature_key_, Tags::DEFAULT, ie_liquid_key_).SetGhosted();
 
     MyRequire_(ie_gas_key_, ie_gas_key_);
     S_->RequireEvaluator(ie_gas_key_, Tags::DEFAULT);
 
     S_->RequireDerivative<CV_t, CVS_t>(ie_gas_key_, Tags::DEFAULT,
-                                       temperature_key_, Tags::DEFAULT, ie_gas_key_);
+                                       temperature_key_, Tags::DEFAULT, ie_gas_key_).SetGhosted();
 
     MyRequire_(ie_rock_key_, ie_rock_key_);
     S_->RequireEvaluator(ie_rock_key_, Tags::DEFAULT);
 
     S_->RequireDerivative<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT,
-                                       temperature_key_, Tags::DEFAULT, ie_rock_key_);
+                                       temperature_key_, Tags::DEFAULT, ie_rock_key_).SetGhosted();
 
     // -- thermal conductivity
     if (!S_->HasRecord(conductivity_key_)) {
@@ -402,7 +402,7 @@ void Multiphase_PK::Setup()
       S_->SetEvaluator(enthalpy_liquid_key_, Tags::DEFAULT, enth);
 
       S_->RequireDerivative<CV_t, CVS_t>(enthalpy_liquid_key_, Tags::DEFAULT,
-                                         temperature_key_, Tags::DEFAULT, enthalpy_liquid_key_);
+                                         temperature_key_, Tags::DEFAULT, enthalpy_liquid_key_).SetGhosted();
     }
 
     // -- coefficient for enthalpy advection operator in liquid phase (4 fields)
@@ -453,7 +453,7 @@ void Multiphase_PK::Setup()
       S_->SetEvaluator(ncp_f_key_, Tags::DEFAULT, eval);
 
       S_->RequireDerivative<CV_t, CVS_t>(ncp_f_key_, Tags::DEFAULT,
-                                         saturation_liquid_key_, Tags::DEFAULT, ncp_f_key_);
+                                         saturation_liquid_key_, Tags::DEFAULT, ncp_f_key_).SetGhosted();
     }
 
     if (!S_->HasRecord(ncp_fg_key_)) {
@@ -492,7 +492,7 @@ void Multiphase_PK::Setup()
     for (const auto& name : soln_names_) {
       if (S_->GetEvaluator(key).IsDependency(*S_, name, Tags::DEFAULT)) {
         S_->RequireDerivative<CV_t, CVS_t>(key, Tags::DEFAULT,
-                                           name, Tags::DEFAULT, key);
+                                           name, Tags::DEFAULT, key).SetGhosted();
       }
     }
   }

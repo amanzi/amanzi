@@ -155,7 +155,7 @@ void FlowEnergy_PK::Setup()
   S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
   if (S_->GetEvaluator(mass_density_liquid_key_).IsDifferentiableWRT(*S_, pressure_key_, Tags::DEFAULT)) {
     S_->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT,
-                                      pressure_key_, Tags::DEFAULT, mass_density_liquid_key_);
+                                       pressure_key_, Tags::DEFAULT, mass_density_liquid_key_).SetGhosted();
   }
 
   // -- viscosity

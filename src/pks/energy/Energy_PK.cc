@@ -141,7 +141,7 @@ void Energy_PK::Setup()
   S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT,
-                                     temperature_key_, Tags::DEFAULT, ie_liquid_key_);
+                                     temperature_key_, Tags::DEFAULT, ie_liquid_key_).SetGhosted();
 
   S_->Require<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT, ie_rock_key_)
     .SetMesh(mesh_)->SetGhosted(true)
@@ -150,7 +150,7 @@ void Energy_PK::Setup()
   S_->RequireEvaluator(ie_rock_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT,
-                                     temperature_key_, Tags::DEFAULT, ie_rock_key_);
+                                     temperature_key_, Tags::DEFAULT, ie_rock_key_).SetGhosted();
 
   // -- densities
   S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
@@ -161,7 +161,7 @@ void Energy_PK::Setup()
 
   if (S_->GetEvaluator(mol_density_liquid_key_).IsDifferentiableWRT(*S_, temperature_key_, Tags::DEFAULT)) {
     S_->RequireDerivative<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT,
-                                       temperature_key_, Tags::DEFAULT, mol_density_liquid_key_);
+                                       temperature_key_, Tags::DEFAULT, mol_density_liquid_key_).SetGhosted();
   }
 
   S_->Require<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT, mass_density_liquid_key_)
@@ -172,7 +172,7 @@ void Energy_PK::Setup()
 
   if (S_->GetEvaluator(mass_density_liquid_key_).IsDifferentiableWRT(*S_, temperature_key_, Tags::DEFAULT)) {
     S_->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT,
-                                       temperature_key_, Tags::DEFAULT, mass_density_liquid_key_);
+                                       temperature_key_, Tags::DEFAULT, mass_density_liquid_key_).SetGhosted();
   }
 
   // -- volumetric flow rate

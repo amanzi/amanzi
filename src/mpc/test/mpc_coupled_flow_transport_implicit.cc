@@ -26,7 +26,7 @@
 #include "wrm_flow_registration.hh"
 
 
-TEST(MPC_DRIVER_COUPLED_FLOW_TRANSPORT_IMPLICIT) {
+void runTest(int order) {
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -34,9 +34,16 @@ using namespace Amanzi::AmanziGeometry;
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   
-  // setup a piecewice linear solution with a jump
+  std::cout << "\nTEST: copuled flow and transport, implicit scheme order=" << order << std::endl;
+
+  // read and modify input list
   std::string xmlInFileName = "test/mpc_coupled_flow_transport_implicit.xml";
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
+  auto plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
+
+  plist->sublist("PKs").sublist("transport matrix")
+      .set<int>("spatial discretization order", order);
+  plist->sublist("PKs").sublist("transport fracture")
+      .set<int>("spatial discretization order", order);
   
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -65,6 +72,7 @@ using namespace Amanzi::AmanziGeometry;
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   auto Snew = cycle_driver.Go();
 
+  // a piecewice linear solution with a jump
   // test pressure in fracture (5% error)
   double p0 = 101325.0;
   double rho = 998.2;
@@ -116,3 +124,6 @@ using namespace Amanzi::AmanziGeometry;
 }
 
 
+TEST(MPC_COUPLED_FLOW_TRANSPORT_IMPLICIT_1ST) {
+  runTest(1);
+}

@@ -202,7 +202,7 @@ void Richards_PK::Setup()
       elist.set<std::string>("aperture key", aperture_key_);
 
     S_->RequireDerivative<CV_t, CVS_t>(water_storage_key_, Tags::DEFAULT,
-                                      pressure_key_, Tags::DEFAULT, water_storage_key_);
+                                       pressure_key_, Tags::DEFAULT, water_storage_key_).SetGhosted();
 
     auto eval = Teuchos::rcp(new WaterStorage(elist));
     S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
@@ -290,7 +290,8 @@ void Richards_PK::Setup()
            .set<std::string>("tag", "");
       // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
-      S_->RequireDerivative<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, porosity_key_);
+      S_->RequireDerivative<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT,
+                                         pressure_key_, Tags::DEFAULT, porosity_key_).SetGhosted();
 
       auto eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
       S_->SetEvaluator(porosity_key_, Tags::DEFAULT, eval);
@@ -381,7 +382,8 @@ void Richards_PK::Setup()
     elist.set<std::string>("relative permeability key", relperm_key_)
          .set<std::string>("tag", "");
 
-    S_->RequireDerivative<CV_t, CVS_t>(relperm_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, relperm_key_);
+    S_->RequireDerivative<CV_t, CVS_t>(relperm_key_, Tags::DEFAULT,
+                                       pressure_key_, Tags::DEFAULT, relperm_key_).SetGhosted();
 
     auto eval = Teuchos::rcp(new Flow::RelPermEvaluator(elist, S_.ptr(), wrm_));
     S_->SetEvaluator(relperm_key_, Tags::DEFAULT, eval);
@@ -412,7 +414,8 @@ void Richards_PK::Setup()
          .set<Teuchos::Array<std::string> >("reciprocal dependencies", listr)
          .set<std::string>("tag", "");
 
-    S_->RequireDerivative<CV_t, CVS_t>(alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
+    S_->RequireDerivative<CV_t, CVS_t>(alpha_key_, Tags::DEFAULT,
+                                       pressure_key_, Tags::DEFAULT, alpha_key_).SetGhosted();
 
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(alpha_key_, Tags::DEFAULT, eval);
