@@ -88,7 +88,7 @@ void Energy_PK::Setup()
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
 
   aperture_key_ = Keys::getKey(domain_, "aperture"); 
-  conductivity_eff_key_ = Keys::getKey(domain_, "conductivity_effective");
+  conductivity_eff_key_ = Keys::getKey(domain_, "thermal_conductivity_effective");
   conductivity_gen_key_ = (!flow_on_manifold_) ? conductivity_key_ : conductivity_eff_key_;
 
   ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
