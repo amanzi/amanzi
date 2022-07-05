@@ -381,7 +381,7 @@ void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& va
 // -----------------------------------------------------------------------------
 // Prints state statistics
 // -----------------------------------------------------------------------------
-void WriteStateStatistics(const State& S, const VerboseObject& vo)
+void WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVerbosityLevel vl)
 {
   // sort data in alphabetic order
   std::set<std::string> sorted;
@@ -389,7 +389,7 @@ void WriteStateStatistics(const State& S, const VerboseObject& vo)
     sorted.insert(it->first);
   }
 
-  if (vo.os_OK(Teuchos::VERB_HIGH)) {
+  if (vo.os_OK(vl)) {
     Teuchos::OSTab tab = vo.getOSTab();
     *vo.os() << "\nField                                    Min/Max/Avg" << std::endl;
 
@@ -398,6 +398,7 @@ void WriteStateStatistics(const State& S, const VerboseObject& vo)
       if (name.size() > 33) replace_all(display_name, "temperature", "temp");
       if (name.size() > 33) replace_all(display_name, "internal_energy", "ie");
       if (name.size() > 33) replace_all(display_name, "molar", "mol");
+      replace_all(display_name, "surface_star", "star");
 
       for (const auto& r : S.GetRecordSet(name)) {
         if (r.second->ValidType<CompositeVector>()) {

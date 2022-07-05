@@ -30,16 +30,8 @@ class Visualization;
 class Record {
  public:
   Record() {};
-  Record(Key fieldname, Key owner = "");
-
-  Record(const Record& other);
-  Record(Record&& other) = default;
-  Record(const Record& other, Key fieldname) : Record(other) {
-    set_fieldname(fieldname);
-  }
-  Record(const Record& other, Key fieldname, Key owner) : Record(other, fieldname) {
-    set_owner(owner);
-  }
+  Record(Key fieldname, Tag tag, Key owner = "");
+  Record(const Record& other, const Tag* tag=nullptr);
 
   Record& operator=(const Record&) = default;
   Record& operator=(Record&&) = default;
@@ -147,6 +139,7 @@ class Record {
 
  private:
   Key fieldname_;
+  Tag tag_;
   Key owner_;
   Key vis_key_;
 
