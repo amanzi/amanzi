@@ -72,47 +72,84 @@ void Transport_PK::FunctionalTimeDerivative_MUSCL_(
   const auto& flux_map = S_->Get<CompositeVector>(vol_flowrate_key_).Map().Map("face", true);
 
   func.PutScalar(0.0);
-  for (int f = 0; f < nfaces_wghost; f++) {
-    c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
-    c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
+  if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
+    for (int f = 0; f < nfaces_wghost; f++) {
+      c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
+      c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
 
-    if (c1 >= 0 && c2 >= 0) {
-      u1 = component_c[0][c1];
-      u2 = component_c[0][c2];
-      umin = std::min(u1, u2);
-      umax = std::max(u1, u2);
-    } else if (c1 >= 0) {
-      u1 = u2 = umin = umax = component_c[0][c1];
-    } else if (c2 >= 0) {
-      u1 = u2 = umin = umax = component_c[0][c2];
+      if (c1 >= 0 && c2 >= 0) {
+        u1 = component_c[0][c1];
+        u2 = component_c[0][c2];
+        umin = std::min(u1, u2);
+        umax = std::max(u1, u2);
+      } else if (c1 >= 0) {
+        u1 = u2 = umin = umax = component_c[0][c1];
+      } else if (c2 >= 0) {
+        u1 = u2 = umin = umax = component_c[0][c2];
+      }
+
+      int g = flux_map->FirstPointInElement(f);
+      u = fabs((*flowrate)[0][g]);
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+
+      if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
+        upwind_tcc = limiter_->getValue(c1, xf);
+        upwind_tcc = std::max(upwind_tcc, umin);
+        upwind_tcc = std::min(upwind_tcc, umax);
+
+        tcc_flux = u * upwind_tcc;
+        f_c[0][c1] -= tcc_flux;
+        f_c[0][c2] += tcc_flux;
+      } else if (c1 >= 0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
+        upwind_tcc = limiter_->getValue(c1, xf);
+        upwind_tcc = std::max(upwind_tcc, umin);
+        upwind_tcc = std::min(upwind_tcc, umax);
+
+        tcc_flux = u * upwind_tcc;
+        f_c[0][c1] -= tcc_flux;
+      } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
+        upwind_tcc = limiter_->getValue(c1, xf);
+        upwind_tcc = std::max(upwind_tcc, umin);
+        upwind_tcc = std::min(upwind_tcc, umax);
+
+        tcc_flux = u * upwind_tcc;
+        f_c[0][c2] += tcc_flux;
+      }
     }
+  } else {
+    for (int f = 0; f < nfaces_wghost; f++) {
+      double flux_in(0.0), tcc_out(0.0);
 
-    int g = flux_map->FirstPointInElement(f);
-    u = fabs((*flowrate)[0][g]);
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      for (int n = 0; n < upwind_cells_[f].size(); ++n) {
+        int c = upwind_cells_[f][n];
+        u = upwind_flux_[f][n];
+        tcc_out += u * component_c[0][c];
+      }
 
-    if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      upwind_tcc = limiter_->getValue(c1, xf);
-      upwind_tcc = std::max(upwind_tcc, umin);
-      upwind_tcc = std::min(upwind_tcc, umax);
+      for (int n = 0; n < downwind_cells_[f].size(); ++n) {
+        flux_in -= downwind_flux_[f][n];
+      }
+      if (flux_in == 0.0) flux_in = 1e-12;
 
-      tcc_flux = u * upwind_tcc;
-      f_c[0][c1] -= tcc_flux;
-      f_c[0][c2] += tcc_flux;
-    } else if (c1 >= 0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
-      upwind_tcc = limiter_->getValue(c1, xf);
-      upwind_tcc = std::max(upwind_tcc, umin);
-      upwind_tcc = std::min(upwind_tcc, umax);
+      // update solutes
+      for (int n = 0; n < upwind_cells_[f].size(); ++n) {
+        int c = upwind_cells_[f][n];
+        u = upwind_flux_[f][n];
 
-      tcc_flux = u * upwind_tcc;
-      f_c[0][c1] -= tcc_flux;
-    } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      upwind_tcc = limiter_->getValue(c1, xf);
-      upwind_tcc = std::max(upwind_tcc, umin);
-      upwind_tcc = std::min(upwind_tcc, umax);
+        if (c < ncells_owned) {
+          f_c[0][c] -= u * component_c[0][c];
+        }
+      }
 
-      tcc_flux = u * upwind_tcc;
-      f_c[0][c2] += tcc_flux;
+      for (int n = 0; n < downwind_cells_[f].size(); ++n) {
+        int c = downwind_cells_[f][n];
+        u = downwind_flux_[f][n];
+
+        if (c < ncells_owned) {
+          double tmp = u / flux_in;
+          f_c[0][c] -= tmp * tcc_out;
+        }
+      }
     }
   }
 
