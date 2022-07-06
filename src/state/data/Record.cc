@@ -18,8 +18,9 @@
 namespace Amanzi {
 
 // Basic constructor
-Record::Record(Key fieldname, Key owner)
+Record::Record(Key fieldname, Tag tag, Key owner)
    : fieldname_(std::move(fieldname)),
+     tag_(std::move(tag)),
      owner_(std::move(owner)),
      vis_key_(fieldname_),
      initialized_(false),
@@ -27,12 +28,17 @@ Record::Record(Key fieldname, Key owner)
      io_vis_(true) {}
 
 // Copy constructor does not copy data!
-Record::Record(const Record& other)
-   : fieldname_(other.fieldname_), owner_(other.owner_),
+Record::Record(const Record& other, const Tag* tag)
+   : fieldname_(other.fieldname_),
+     tag_(other.tag_),
+     owner_(other.owner_),
      vis_key_(other.vis_key_),
      initialized_(other.initialized_),
      io_checkpoint_(other.io_checkpoint_),
-     io_vis_(other.io_vis_) {}
+     io_vis_(other.io_vis_)
+{
+  if (tag) tag_ = *tag;
+}
 
 // pass-throughs for other functionality
 void Record::WriteVis(const Visualization& vis,
@@ -110,7 +116,8 @@ void Record::AssertOwnerOrDie(const Key& test_owner) const
 {
   if (test_owner != owner()) {
     Errors::Message message;
-    message << "Record \"" << fieldname_ << "\" requested by \"" << test_owner
+    message << "Record \"" << fieldname_ << "@" << tag_.get()
+            << "\" requested by \"" << test_owner
             << "\" but is owned by \"" << owner() << "\"";
     throw(message);
   }

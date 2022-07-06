@@ -21,8 +21,10 @@ namespace Amanzi {
 
 // pass-throughs for other functionality
 void RecordSet::WriteVis(const Visualization& vis, Tag const * const tag) const {
-  if (tag && HasRecord(*tag)) {
-    GetRecord(*tag).WriteVis(vis, subfieldnames());
+  if (tag) {
+    if (HasRecord(*tag)) {
+      GetRecord(*tag).WriteVis(vis, subfieldnames());
+    }
   } else {
     for (auto& e : records_) {
       e.second->WriteVis(vis, subfieldnames());
@@ -84,11 +86,7 @@ const Record& RecordSet::GetRecord(const Tag& tag) const {
 
 
 void RecordSet::AliasRecord(const Tag& target, const Tag& alias) {
-  records_[alias] = std::make_shared<Record>(*records_[target]);
-  // if (!alias.get().empty())
-  //   records_[alias]->set_vis_fieldname(Keys::getKey(vis_fieldname(), alias));
-  // else
-  //   records_[alias]->set_vis_fieldname(vis_fieldname());
+  records_[alias] = std::make_shared<Record>(*records_[target], &alias);
   aliases_[alias] = target;
 }
 
@@ -108,7 +106,7 @@ Record& RecordSet::RequireRecord(const Tag& tag, const Key& owner, bool alias_ok
 
   // otherwise create the record
   if (!HasRecord(tag)) {
-    records_.emplace(tag, std::make_shared<Record>(fieldname(), owner));
+    records_.emplace(tag, std::make_shared<Record>(fieldname(), tag, owner));
     auto& r = records_.at(tag);
     // if (!tag.get().empty()) {
     //   r->set_vis_fieldname(Keys::getKey(vis_fieldname(), tag));
