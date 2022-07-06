@@ -106,16 +106,14 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   }
 
   // limited reconstructions using boundary data
-  auto tmp1 =
-    S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_)
-      .ViewComponent("cell", true);
+  auto tmp1 = S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   total_depth_grad_->Compute(tmp1);
   if (use_limiter_)
     limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
   total_depth_grad_->data()->ScatterMasterToGhosted("cell");
 
   // Total depth recalculation for positivity
-  TotalDepthReconstruct();
+  TotalDepthReconstruct(total_depth_grad_);
   
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
@@ -171,7 +169,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     normal /= farea;
 
     //double ht_rec = total_depth_grad_->getValue(c1, xf);
-    double ht_rec = TotalDepthEdgeValue(c1, f);
+    //double ht_rec = TotalDepthEdgeValue(c1, f);
+    double ht_rec = ht_cell_face_[c1][f];
+  
     double B_rec = BathymetryEdgeValue(f, B_n);
     
     const auto& xc = mesh_->cell_centroid(c1);
@@ -213,7 +213,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       }
     } else {
       //ht_rec = total_depth_grad_->getValue(c2, xf);
-      ht_rec = TotalDepthEdgeValue(c2, f);
+      //ht_rec = TotalDepthEdgeValue(c2, f);
+      ht_rec = ht_cell_face_[c2][f];
 
       if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-14) {
       	std::cout<<"time: t = "<<t<<", c = "<<c2<<", negative h 2 = : "<<ht_rec-B_rec<<" | ht_rec = "<<ht_rec<<" < "<<B_rec<<std::endl;
