@@ -2,7 +2,6 @@
 #define AMANZI_COLOR_FUNCTION_HH_
 
 #include <memory>
-#include "UniqueHelpers.hh"
 
 namespace Amanzi {
 

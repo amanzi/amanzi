@@ -186,8 +186,8 @@ class MeshLogical : public MeshFramework {
  protected:
   bool initialized_;
 
-  Double_View cell_volumes_;
-  Double_View face_areas_;
+  Double_List cell_volumes_;
+  Double_List face_areas_;
   Point_List cell_centroids_;
   RaggedArray<Entity_ID> face_cell_ids_;
 

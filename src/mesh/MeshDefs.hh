@@ -28,29 +28,54 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-// Necessary typedefs and enumerations
+//
+// Typedefs
+//
 using Entity_ID = int;
 using Entity_GID = int;
+using Set_ID = int;
+using size_type = Kokkos::View<int*, Kokkos::DefaultHost>::size_type;
+
+//
+// Lists are on host only
+//
 using Entity_ID_List = std::vector<Entity_ID>;
 using Entity_GID_List = std::vector<Entity_GID>;
 using Entity_Direction_List = std::vector<int>;
 using Point_List = std::vector<AmanziGeometry::Point>;
-
-template<typename T> using View_type = std::vector<T>;
-using Entity_ID_View = View_type<Entity_ID>;
-using Entity_GID_View = View_type<Entity_GID>;
-using Entity_Direction_View = View_type<int>;
-using Point_View = View_type<AmanziGeometry::Point>;
-
+using Double_List = std::vector<double>;
 template<typename T> using RaggedArray = std::vector<std::vector<T>>;
+
+//
+// Views are on host or device
+//
+template<typename T> using View_type = Kokkos::View<T*, Kokkos::DefaultHost>;
+using Entity_ID_View = View_type<Entity_ID>;
+using cEntity_ID_View = View_type<const Entity_ID>;
+using Entity_GID_View = View_type<Entity_GID>;
+using cEntity_GID_View = View_type<const Entity_GID>;
+using Entity_Direction_View = View_type<int>;
+using cEntity_Direction_View = View_type<const int>;
+using Point_View = View_type<AmanziGeometry::Point>;
+using cPoint_View = View_type<const AmanziGeometry::Point>;
 using Double_View = View_type<double>;
+using cDouble_View = View_type<const double>;
 
 using Map_type = Epetra_Map;
 using Map_ptr_type = Teuchos::RCP<Map_type>;
 using Import_type = Epetra_Import;
 using Import_ptr_type = Teuchos::RCP<Import_type>;
 
-using Set_ID = int;
+
+//
+// Conversion between list and view through deep_copy.
+//
+template<typename T, typename MemSpace>
+void deep_copy(Kokkos::View<T*, MemSpace>& out, const std::vector<T>& in) {
+  Kokkos::View<T*, Kokkos::DefaultHost, Kokkos::MemoryTraits<Kokkos::Unmanaged> > in_view(in.data(), in.size());
+  Kokkos::deep_copy(out, in_view);
+}
+
 
 // Cells (aka zones/elements) are the highest dimension entities in a mesh
 // Nodes (aka vertices) are lowest dimension entities in a mesh
@@ -189,6 +214,8 @@ enum class AccessPattern {
   RECOMPUTE,
   FRAMEWORK
 };
+
+
 
 }  // namespace AmanziMesh
 }  // namespace Amanzi

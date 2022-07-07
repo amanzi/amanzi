@@ -29,7 +29,6 @@ Note, this does not follow the `"typed`" format for legacy reasons.
 #define AMANZI_FUNCTION_HH_
 
 #include <vector>
-#include "UniqueHelpers.hh"
 
 namespace Amanzi {
 

@@ -22,7 +22,6 @@
 
 #include "Epetra_Vector.h"
 
-#include "UniqueHelpers.hh"
 #include "MeshDefs.hh"
 #include "Mesh.hh"
 #include "CompositeVectorSpace.hh"

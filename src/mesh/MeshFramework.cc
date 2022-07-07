@@ -383,7 +383,7 @@ MeshFrameworkAlgorithms::computeEdgeGeometry(const Mesh& mesh, const Entity_ID c
 }
 
 Point_List
-MeshFrameworkAlgorithms::computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_View& faces) const
+MeshFrameworkAlgorithms::computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_List& faces) const
 {
   return MeshAlgorithms::computeBisectors(mesh, c, faces);
 }

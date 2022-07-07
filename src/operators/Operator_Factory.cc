@@ -16,7 +16,6 @@
 #include <sstream>
 #include <tuple>
 
-#include "UniqueHelpers.hh"
 
 #include "Operator_Cell.hh"
 #include "Operator_FaceCell.hh"

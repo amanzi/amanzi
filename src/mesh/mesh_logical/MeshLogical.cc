@@ -94,7 +94,7 @@ MeshLogicalAlgorithms::computeEdgeGeometry(const Mesh& mesh, const Entity_ID e) 
 }
 
 Point_List
-MeshLogicalAlgorithms::computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_View& faces) const
+MeshLogicalAlgorithms::computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_List& faces) const
 {
   if (mesh.getMeshFramework() == Teuchos::null) {
     Errors::Message msg("MeshLogical: cannot recompute geometry without the framework.");

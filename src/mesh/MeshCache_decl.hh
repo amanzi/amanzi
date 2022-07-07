@@ -181,6 +181,7 @@ namespace AmanziMesh {
 class MeshFramework;
 class MeshFrameworkAlgorithms;
 
+template<typename MemSpace>
 struct MeshCache {
 
   MeshCache();
@@ -342,11 +343,11 @@ struct MeshCache {
   // -------------------
   //
   // a list of ALL face LIDs that are on the boundary
-  const Entity_ID_View& getBoundaryFaces() const {
+  cEntity_ID_View getBoundaryFaces() const {
     return maps_.getBoundaryFaces();
   }
   // a list of ALL node LIDs that are on the boundary
-  const Entity_ID_View& getBoundaryNodes() const {
+  cEntity_ID_View getBoundaryNodes() const {
     return maps_.getBoundaryNodes();
   }
   // maps define GIDs of each Entity_kind
@@ -383,11 +384,11 @@ struct MeshCache {
                  const Entity_kind kind,
                  const Parallel_type ptype) const;
 
-  const Entity_ID_View& getSetEntities(const std::string& region_name,
+  cEntity_ID_View getSetEntities(const std::string& region_name,
           const Entity_kind kind,
           const Parallel_type ptype) const;
 
-  const Entity_ID_View&
+  cEntity_ID_View
   getSetEntitiesAndVolumeFractions(const std::string& region_name,
           const Entity_kind kind,
           const Parallel_type ptype, Double_View* vol_fracs) const;
@@ -395,7 +396,7 @@ struct MeshCache {
   // ----------------
   // Entity meta-data
   // ----------------
-  std::size_t getNumEntities(const Entity_kind kind, const Parallel_type ptype) const;
+  Entity_ID getNumEntities(const Entity_kind kind, const Parallel_type ptype) const;
 
   // corresponding entity in the parent mesh
   //
@@ -410,45 +411,74 @@ struct MeshCache {
   //---------------------
   // Geometry
   //---------------------
-  // locations
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  // node locations
+  KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getNodeCoordinate(const Entity_ID n) const;
+
+  KOKKOS_INLINE_FUNCTION
+  const AmanziGeometry::Point& node_coordinates(const Entity_ID n) const;
+
+  cPoint_View node_coordinates() const;
+
+  KOKKOS_INLINE_FUNCTION
   void setNodeCoordinate(const Entity_ID n, const AmanziGeometry::Point& coord);
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  Point_View getEdgeCoordinates(const Entity_ID n) const;
+  // coordinate views
+  KOKKOS_INLINE_FUNCTION
+  cPoint_View getEdgeCoordinates(const Entity_ID e) const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  Point_View getFaceCoordinates(const Entity_ID n) const;
+  KOKKOS_INLINE_FUNCTION
+  cPoint_View getFaceCoordinates(const Entity_ID f) const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  Point_View getCellCoordinates(const Entity_ID n) const;
+  KOKKOS_INLINE_FUNCTION
+  cPoint_View getCellCoordinates(const Entity_ID c) const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  // cell centroids
+  KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getCellCentroid(const Entity_ID c) const;
+  KOKKOS_INLINE_FUNCTION
+  const AmanziGeometry::Point& cell_centroids(const Entity_ID c) const;
+  cPoint_View cell_centroids() const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  // face centroids
+  KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getFaceCentroid(const Entity_ID f) const;
+  KOKKOS_INLINE_FUNCTION
+  const AmanziGeometry::Point& face_centroids(const Entity_ID f) const;
+  cPoint_View face_centroids() const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getEdgeCentroid(const Entity_ID e) const;
+  KOKKOS_INLINE_FUNCTION
+  const AmanziGeometry::Point& edge_centroids(const Entity_ID e) const;
+  cPoint_View edge_centroids() const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getCentroid(const Entity_kind kind, const Entity_ID ent);
 
   // extent
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   double getCellVolume(const Entity_ID c) const;
+  KOKKOS_INLINE_FUNCTION
+  const double& cell_volumes(const Entity_ID c) const;
+  cDouble_View cell_volumes() const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   double getFaceArea(const Entity_ID f) const;
+  KOKKOS_INLINE_FUNCTION
+  const double& face_volumes(const Entity_ID f) const;
+  cDouble_View face_volumes() const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   double getEdgeLength(const Entity_ID e) const;
+  KOKKOS_INLINE_FUNCTION
+  const double& edge_volumes(const Entity_ID e) const;
+  cDouble_View edge_volumes() const;
 
   // Normal vector of a face
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getFaceNormal(const Entity_ID f) const;
+  const AmanziGeometry::Point& face_normals(const Entity_ID f) const;
 
   // Normal vector and natural direction of a face, outward with respect to a
   // cell.
@@ -458,7 +488,7 @@ struct MeshCache {
   // The orientation is 1 if the outward normal is the same direction as the
   // natural normal, -1 if in opposite directions, and 0 if there is no natural
   // normal.
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getFaceNormal(const Entity_ID f,
           const Entity_ID c, int* orientation=nullptr) const;
 
@@ -466,7 +496,7 @@ struct MeshCache {
   //
   // Orientation is the natural orientation, e.g. that it points from node 0 to
   // node 1 with respect to edge_node adjacency information.
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getEdgeVector(const Entity_ID e) const;
 
   //---------------------
@@ -491,63 +521,65 @@ struct MeshCache {
   // than those that return void and expect the return value as an argument --
   // this new-style interface works better with Kokkos and should be more
   // efficient in all cases.
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  std::size_t getCellNumFaces(const Entity_ID c) const;
+  KOKKOS_INLINE_FUNCTION
+  size_type getCellNumFaces(const Entity_ID c) const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  const Entity_ID_View getCellFaces(const Entity_ID c) const;
+  KOKKOS_INLINE_FUNCTION
+  cEntity_ID_View getCellFaces(const Entity_ID c) const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  const Entity_Direction_View getCellFaceDirections(const Entity_ID c) const;
+  KOKKOS_INLINE_FUNCTION
+  const Entity_ID& cell_faces(const Entity_ID c, size_type i) const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  std::pair<const Entity_ID_View, const Entity_Direction_View>
+  KOKKOS_INLINE_FUNCTION
+  cEntity_Direction_View getCellFaceDirections(const Entity_ID c) const;
+
+  KOKKOS_INLINE_FUNCTION
+  const int& cell_face_directions(const Entity_ID c, size_type i) const;
+
+  KOKKOS_INLINE_FUNCTION
+  std::pair<cEntity_ID_View, cEntity_Direction_View>
   getCellFacesAndDirections(const Entity_ID c) const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  std::pair<const Entity_ID_View, const Point_View>
+  KOKKOS_INLINE_FUNCTION
+  std::pair<cEntity_ID_View, cPoint_View>
   getCellFacesAndBisectors(const Entity_ID c) const;
 
   // NOTE: all deprecated pragmas should go back in after finished refactoring
   // [[deprecated("Prefer to use non-void variant that returns faces directly")]]
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   void getCellFaces(const Entity_ID c,
-                    Entity_ID_View& faces) const;
+                    cEntity_ID_View& faces) const;
 
   //[[deprecated("Prefer to use non-void variant that returns faces directly")]]
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   void getCellFacesAndDirs(const Entity_ID c,
-                           Entity_ID_View& faces,
-                           Entity_Direction_View * const dirs) const;
+                           cEntity_ID_View& faces,
+                           cEntity_Direction_View * const dirs) const;
 
   //[[deprecated("Prefer to use non-void variant that returns faces directly")]]
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   void getCellFacesAndBisectors(
           const Entity_ID c,
-          Entity_ID_View& faces,
-          Point_View * const bisectors) const;
+          cEntity_ID_View& faces,
+          cPoint_View * const bisectors) const;
 
-  // Get edges of a cell.
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  std::size_t getCellNumEdges(const Entity_ID c) const;
-
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  const Entity_ID_View getCellEdges(const Entity_ID c) const;
+  //
+  // Downward adjacency -- edges of a cell
+  //
+  KOKKOS_INLINE_FUNCTION
+  cEntity_ID_View getCellEdges(const Entity_ID c) const;
 
   //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  void getCellEdges(const Entity_ID c, Entity_ID_View& edges) const;
+  KOKKOS_INLINE_FUNCTION
+  void getCellEdges(const Entity_ID c, cEntity_ID_View& edges) const;
 
   // Get nodes of a cell.
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  std::size_t getCellNumNodes(const Entity_ID c) const;
-
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  const Entity_ID_View getCellNodes(const Entity_ID c) const;
+  KOKKOS_INLINE_FUNCTION
+  cEntity_ID_View getCellNodes(const Entity_ID c) const;
 
   //[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  void getCellNodes(const Entity_ID c, Entity_ID_View& nodes) const;
+  KOKKOS_INLINE_FUNCTION
+  void getCellNodes(const Entity_ID c, cEntity_ID_View& nodes) const;
 
   // Get edges of a face and directions in which the face uses the edges.
   //
@@ -563,70 +595,78 @@ struct MeshCache {
   // operator will return a single edge and a direction of 1. However,
   // this direction cannot be relied upon to compute, say, a contour
   // integral around the 2D cell.
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  std::size_t getFaceNumEdges(const Entity_ID f) const;
+  KOKKOS_INLINE_FUNCTION
+  size_type getFaceNumEdges(const Entity_ID f) const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  const Entity_ID_View getFaceEdges(const Entity_ID f) const;
+  KOKKOS_INLINE_FUNCTION
+  cEntity_ID_View getFaceEdges(const Entity_ID f) const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  std::pair<const Entity_ID_View, const Entity_Direction_View>
+  KOKKOS_INLINE_FUNCTION
+  const Entity_ID& face_edges(const Entity_ID f, const size_type i) const;
+
+  KOKKOS_INLINE_FUNCTION
+  std::pair<cEntity_ID_View, cEntity_Direction_View>
   getFaceEdgesAndDirections(const Entity_ID f) const;
 
   //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  void getFaceEdges(const Entity_ID f,
-                    Entity_ID_View& edges) const;
+  KOKKOS_INLINE_FUNCTION
+  void getFaceEdges(const Entity_ID f, cEntity_ID_View& edges) const;
 
   //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   void getFaceEdgesAndDirs(const Entity_ID f,
-                           Entity_ID_View& edges,
-                           Entity_Direction_View * const dirs=nullptr) const;
+                           cEntity_ID_View& edges,
+                           cEntity_Direction_View * const dirs=nullptr) const;
 
   // Get nodes of face
   //
   // In 3D, the nodes of the face are returned in ccw order consistent
   // with the face normal.
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  std::size_t getFaceNumNodes(const Entity_ID f) const;
+  KOKKOS_INLINE_FUNCTION
+  size_type getFaceNumNodes(const Entity_ID f) const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  const Entity_ID_View getFaceNodes(const Entity_ID f) const;
+  KOKKOS_INLINE_FUNCTION
+  cEntity_ID_View getFaceNodes(const Entity_ID f) const;
+
+  KOKKOS_INLINE_FUNCTION
+  const Entity_ID& face_nodes(const Entity_ID f, const size_type i) const;
 
   //[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  void getFaceNodes(const Entity_ID f, Entity_ID_View& nodes) const;
+  KOKKOS_INLINE_FUNCTION
+  void getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) const;
 
   //
   // NOT CURRENTLY IMPLEMENTED, here to satisfy the interface
   //
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  const Point_View getFaceHOCoordinates(const Entity_ID f) const {
+  KOKKOS_INLINE_FUNCTION
+  cPoint_View getFaceHOCoordinates(const Entity_ID f) const {
     return Point_View();
   }
 
   // Get nodes of edge
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  std::size_t getEdgeNumNodes(const Entity_ID e) const;
+  KOKKOS_INLINE_FUNCTION
+  size_type getEdgeNumNodes(const Entity_ID e) const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  const Entity_ID_View getEdgeNodes(const Entity_ID e) const;
+  KOKKOS_INLINE_FUNCTION
+  cEntity_ID_View getEdgeNodes(const Entity_ID e) const;
+
+  KOKKOS_INLINE_FUNCTION
+  const Entity_ID& edge_nodes(const Entity_ID e, const size_type i) const;
 
   //
   // NOT CURRENTLY IMPLEMENTED, here to satisfy the interface
   //
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  const Point_View getEdgeHOCoordinates(const Entity_ID e) const {
+  KOKKOS_INLINE_FUNCTION
+  cPoint_View getEdgeHOCoordinates(const Entity_ID e) const {
     return Point_View();
   }
 
   //[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  void getEdgeNodes(const Entity_ID e, Entity_ID_View& nodes) const;
+  KOKKOS_INLINE_FUNCTION
+  void getEdgeNodes(const Entity_ID e, cEntity_ID_View& nodes) const;
 
   //[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   void getEdgeNodes(const Entity_ID e, Entity_ID* n0, Entity_ID* n1) const;
 
   //-------------------
@@ -635,34 +675,33 @@ struct MeshCache {
   // The cells are returned in no particular order. Also, the order of cells
   // is not guaranteed to be the same for corresponding faces on different
   // processors
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  std::size_t getFaceNumCells(const Entity_ID f, const Parallel_type ptype) const;
+  KOKKOS_INLINE_FUNCTION
+  size_type getFaceNumCells(const Entity_ID f, const Parallel_type ptype) const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  const Entity_ID_View getFaceCells(const Entity_ID f, const Parallel_type ptype) const;
+  KOKKOS_INLINE_FUNCTION
+  cEntity_ID_View getFaceCells(const Entity_ID f, const Parallel_type ptype) const;
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
+  const Entity_ID& face_cells(const Entity_ID c, const size_type i) const;
+
+  //[[deprecated("Prefer to use non-void variant that returns cells directly")]]
+  KOKKOS_INLINE_FUNCTION
   void getFaceCells(const Entity_ID f,
                     const Parallel_type ptype,
-                    Entity_ID_View& cells) const;
+                    cEntity_ID_View& cells) const;
 
   // Cells of a given Parallel_type connected to an edge
   //
   // The order of cells is not guaranteed to be the same for corresponding
   // edges on different processors
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  std::size_t getEdgeNumCells(const Entity_ID e) const {
+  KOKKOS_INLINE_FUNCTION
+  cEntity_ID_View getEdgeCells(const Entity_ID e) const {
     Errors::Message msg("MeshCache::getEdgeCells not implemented");
     Exceptions::amanzi_throw(msg);
   }
 
-  template<AccessPattern AP=AccessPattern::DEFAULT>
-  const Entity_ID_View getEdgeCells(const Entity_ID e) const {
-    Errors::Message msg("MeshCache::getEdgeCells not implemented");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
+  KOKKOS_INLINE_FUNCTION
   void getEdgeCells(const Entity_ID e,
                     const Parallel_type ptype,
                     Entity_ID_View& cells) const;
@@ -670,9 +709,9 @@ struct MeshCache {
   // Faces of type 'ptype' connected to an edge
   // NOTE: The order of faces is not guaranteed to be the same for
   // corresponding edges on different processors
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   void getEdgeFaces(const Entity_ID edgeid,
-                            const Parallel_type ptype,
+                    const Parallel_type ptype,
                     Entity_ID_View& faces) const {
     Errors::Message msg("MeshCache::getEdgeFaces not implemented");
     Exceptions::amanzi_throw(msg);
@@ -681,7 +720,7 @@ struct MeshCache {
   // Cells of type 'ptype' connected to a node
   // NOTE: The order of cells is not guaranteed to be the same for
   // corresponding nodes on different processors
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   void getNodeCells(const Entity_ID n,
                     const Parallel_type ptype,
                     Entity_ID_View& cells) const;
@@ -689,7 +728,7 @@ struct MeshCache {
   // Faces of type parallel 'ptype' connected to a node
   // NOTE: The order of faces is not guarnateed to be the same for
   // corresponding nodes on different processors
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   void getNodeFaces(const Entity_ID n,
                     const Parallel_type ptype,
                     Entity_ID_View& faces) const {
@@ -701,7 +740,7 @@ struct MeshCache {
   //
   // The order of edges is not guaranteed to be the same for corresponding
   // node on different processors
-  template<AccessPattern AP=AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   void getNodeEdges(const Entity_ID n,
                     const Parallel_type ptype,
                     Entity_ID_View& edgeids) const {
@@ -718,47 +757,48 @@ struct MeshCache {
   Entity_ID nboundary_faces_owned, nboundary_faces_all;
   Entity_ID nboundary_nodes_owned, nboundary_nodes_all;
 
+private:
   // geometry
-  Point_View node_coordinates;
-  Point_View cell_centroids;
-  Point_View face_centroids;
-  Point_View edge_centroids;
-  RaggedArray<AmanziGeometry::Point> cell_coordinates;
-  RaggedArray<AmanziGeometry::Point> face_coordinates;
-  RaggedArray<AmanziGeometry::Point> edge_coordinates;
+  Point_View node_coordinates_;
+  Point_View cell_centroids_;
+  Point_View face_centroids_;
+  Point_View edge_centroids_;
+  RaggedArray<AmanziGeometry::Point> cell_coordinates_;
+  RaggedArray<AmanziGeometry::Point> face_coordinates_;
+  RaggedArray<AmanziGeometry::Point> edge_coordinates_;
 
-  Double_View cell_volumes;
-  Double_View face_areas;
+  Double_View cell_volumes_;
+  Double_View face_areas_;
 
-  RaggedArray<AmanziGeometry::Point> face_normals;
-  RaggedArray<int> face_normal_directions;
-  Point_View edge_vectors;
+  RaggedArray<AmanziGeometry::Point> face_normals_;
+  RaggedArray<int> face_normal_directions_;
+  Point_View edge_vectors_;
 
   // downward adjacencies
-  RaggedArray<Entity_ID> cell_faces;
-  RaggedArray<int> cell_face_directions;
-  RaggedArray<AmanziGeometry::Point> cell_face_bisectors;
+  RaggedArray<Entity_ID> cell_faces_;
+  RaggedArray<int> cell_face_directions_;
+  RaggedArray<AmanziGeometry::Point> cell_face_bisectors_;
 
-  RaggedArray<Entity_ID> cell_edges;
-  RaggedArray<Entity_ID> cell_nodes;
-  RaggedArray<Entity_ID> face_edges;
-  RaggedArray<int> face_edge_directions;
-  RaggedArray<Entity_ID> face_nodes;
-  RaggedArray<Entity_ID> edge_nodes;
+  RaggedArray<Entity_ID> cell_edges_;
+  RaggedArray<Entity_ID> cell_nodes_;
+  RaggedArray<Entity_ID> face_edges_;
+  RaggedArray<int> face_edge_directions_;
+  RaggedArray<Entity_ID> face_nodes_;
+  RaggedArray<Entity_ID> edge_nodes_;
 
   // upward adjacencies
-  RaggedArray<Entity_ID> face_cells;
-  RaggedArray<Entity_ID> edge_cells;
-  RaggedArray<Entity_ID> edge_faces;
-  RaggedArray<Entity_ID> node_cells;
-  RaggedArray<Entity_ID> node_faces;
-  RaggedArray<Entity_ID> node_edges;
+  RaggedArray<Entity_ID> face_cells_;
+  RaggedArray<Entity_ID> edge_cells_;
+  RaggedArray<Entity_ID> edge_faces_;
+  RaggedArray<Entity_ID> node_cells_;
+  RaggedArray<Entity_ID> node_faces_;
+  RaggedArray<Entity_ID> node_edges_;
 
   // parent entities
-  Entity_ID_View parent_nodes;
-  Entity_ID_View parent_edges;
-  Entity_ID_View parent_faces;
-  Entity_ID_View parent_cells;
+  Entity_ID_View parent_nodes_;
+  Entity_ID_View parent_edges_;
+  Entity_ID_View parent_faces_;
+  Entity_ID_View parent_cells_;
 
   // initialized flags
   bool nodes_initialized;

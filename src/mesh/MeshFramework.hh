@@ -82,7 +82,7 @@ struct MeshFrameworkAlgorithms {
   computeEdgeGeometry(const Mesh& mesh, const Entity_ID e) const;
 
   virtual Point_List
-  computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_View& faces) const;
+  computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_List& faces) const;
 };
 
 
