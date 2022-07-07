@@ -27,7 +27,7 @@ namespace Keys {
 // -----------------------------------------------------------------------------
 bool starts_with(const Key& key, const char& c)
 {
-  return key.length() >= 1 && key[0] == c;
+  return key.length() >= 1 && c == key.front();
 }
 bool starts_with(const Key& key, const std::string& substr)
 {
@@ -36,7 +36,7 @@ bool starts_with(const Key& key, const std::string& substr)
 
 bool ends_with(const Key& key, const char& c)
 {
-  return key.length() >= 1 && key[std::string::npos-1] == c;
+  return key.length() >= 1 && c == key.back();
 }
 bool ends_with(const Key& key, const std::string& substr)
 {
