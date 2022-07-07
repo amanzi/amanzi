@@ -232,7 +232,7 @@ struct MeshCacheData {
 
 template<MemSpace_type MEM>
 struct MeshCache {
-  MeshCache();
+  MeshCache(MeshCacheData& mcd_) : mcd(mcd_) {}
 
   //
   // To be used by non-framework meshes
@@ -451,6 +451,7 @@ struct MeshCache {
   // Note the kind refers to the kind in _this_ mesh -- for some lifted meshes,
   // this may not be the same as the entity kind in the parent mesh.  That
   // logic is left to the user of this class -- we simply store the IDs.
+  KOKKOS_INLINE_FUNCTION
   Entity_ID getEntityParent(const Entity_kind kind, const Entity_ID entid) const;
 
   Cell_type getCellType(const Entity_ID c) const;
@@ -462,7 +463,8 @@ struct MeshCache {
   // node locations
   template<AccessPattern = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION
-  AmanziGeometry::Point getNodeCoordinate(const Entity_ID n) const;
+  decltype(auto)  // AmanziGeometry::Point
+  getNodeCoordinate(const Entity_ID n) const;
 
   template<AccessPattern = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION
