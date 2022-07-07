@@ -26,7 +26,7 @@ TEST(Geometric_Ops)
 
   int nf = 6;
 
-  std::vector<unsigned int> nfnodes;
+  std::vector<std::size_t> nfnodes;
   for (int i = 0; i < 6; i++) nfnodes.push_back(4);
 
   int hex_fnodes[6][4] = {{0,3,2,1},{1,2,6,5},{5,6,7,4},

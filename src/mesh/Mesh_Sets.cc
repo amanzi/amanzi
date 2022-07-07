@@ -43,7 +43,7 @@ bool Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
   } catch (...) {
     return false;
   }
-  return valid_set_name(rgn->name(), kind);
+  return valid_set_name(rgn->get_name(), kind);
 }
 
 
@@ -64,14 +64,14 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
     return false;
   }
 
-  unsigned int rdim = rgn->manifold_dimension();
+  unsigned int rdim = rgn->get_manifold_dimension();
 
   // For regions of type Color Function, the dimension
   // parameter is not guaranteed to be correct
-  if (rgn->type() == AmanziGeometry::COLORFUNCTION) return true;
+  if (rgn->get_type() == AmanziGeometry::RegionType::COLORFUNCTION) return true;
 
   // For regions of type Labeled set, extract some more info and verify
-  if (rgn->type() == AmanziGeometry::LABELEDSET) {
+  if (rgn->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
     auto lsrgn = Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
     std::string entity_type = lsrgn->entity_str();
 
@@ -140,7 +140,7 @@ void Mesh::get_set_entities_box_vofs_(
   switch (kind) {      
   case CELL:
   {
-    std::string name = region->name() + "_cell";
+    std::string name = region->get_name() + "_cell";
 
     if (region_ids.find(name) != region_ids.end()) {
       *setents = region_ids[name];
@@ -178,7 +178,7 @@ void Mesh::get_set_entities_box_vofs_(
 
         if ((volume = region->intersect(polytope_nodes, polytope_faces)) > 0.0) {
           setents->push_back(c);
-          if (region->type()==AmanziGeometry::LINE_SEGMENT) volume_fractions->push_back(volume);
+          if (region->get_type()==AmanziGeometry::RegionType::LINE_SEGMENT) volume_fractions->push_back(volume);
           else volume_fractions->push_back(volume /cell_volume(c));
         }
       }
@@ -191,7 +191,7 @@ void Mesh::get_set_entities_box_vofs_(
 
   case FACE:
   {
-    std::string name = region->name() + "_face";
+    std::string name = region->get_name() + "_face";
 
     if (region_ids.find(name) != region_ids.end()) {
       *setents = region_ids[name];
@@ -252,7 +252,7 @@ void Mesh::get_set_entities_box_vofs_(
   get_comm()->SumAll(&nents_tmp, &nents, 1);
   if (nents == 0) {
     Errors::Message msg;
-    msg << "Could not retrieve any mesh entities for set \"" << region->name() << "\".\n";
+    msg << "Could not retrieve any mesh entities for set \"" << region->get_name() << "\".\n";
     Exceptions::amanzi_throw(msg);
   }
 }

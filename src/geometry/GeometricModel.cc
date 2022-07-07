@@ -55,28 +55,32 @@ GeometricModel::GeometricModel(unsigned int dim,
 void
 GeometricModel::AddRegion(const Teuchos::RCP<Region>& reg)
 {
-  if (dim_ < reg->space_dimension()) {
-    Errors::Message mesg;
-    mesg << "Dimension of geometric model less than that of region \""
-         << reg->name() << "\" space dimension";
-    Exceptions::amanzi_throw(mesg);
-  }
+  // NOTE: extracted regions may break this -- for instance a 3D region on a 2D
+  // surface mesh is the restriction of the parent entities of the 3D region on
+  // the parent mesh.
+  //
+  // if (dim_ < reg->get_space_dimension()) {
+  //   Errors::Message mesg;
+  //   mesg << "Dimension of geometric model less than that of region \""
+  //        << reg->get_name() << "\" space dimension";
+  //   Exceptions::amanzi_throw(mesg);
+  // }
 
-  if (dim_ < reg->manifold_dimension()) {
+  if (dim_ < reg->get_manifold_dimension()) {
     Errors::Message mesg;
     mesg << "Dimension of geometric model less than that of region \""
-         << reg->name() << "\" topological dimension";
+         << reg->get_name() << "\" topological dimension";
     Exceptions::amanzi_throw(mesg);
   }
 
   reg->set_id(size());
 
   Teuchos::RCP<const Region> rc = reg;
-  regions_name_[reg->name()] = rc;
+  regions_name_[reg->get_name()] = rc;
 
 
   Teuchos::RCP<const Region> rc2 = reg;
-  regions_id_[reg->id()] = rc2;
+  regions_id_[reg->get_id()] = rc2;
 
   regions_.push_back(reg);
 
