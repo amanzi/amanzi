@@ -38,34 +38,30 @@ requirement here that a minimal representation of the framework has been cached
 before it is destroyed.  But many of these _can_ be recomputed; for instance,
 one can determine cell coordinates from node coordinates and cell-node
 adjacency, which itself can be computed from cell-face and face-node adjacency
-information.  Therefore, it is often better to recompute with MeshCache, using
+information.  Therefore, it is likely faster to recompute with MeshCache, using
 other cached values, than to ask the framework, which likely will use the same
 algorithm but using uncached values.
 
 So the default API typically tries to use a cached value first (if it is
 available), then falls back on either the framework (for fundamental things
-that probably shouldn't or can't computed) or the algorithm (for everything
+that probably shouldn't or can't be computed) or the algorithm (for everything
 else).
 
-"Fast" access can be done through the method (the standard mesh interface), but
-MeshCache will also expose all underlying cache data as public, allowing direct
-access.  This "breaking encapsulation" is particularly crucial for novel
-architectures, where we might want to perform a kernel launch over a view of
-the data.  Note also that users may query whether something was cached or not
-via, e.g., cell_coordinates_cached boolean.
+The framework is split into two classes: MeshFramework, which supplies all
+topological information, nodal coordinates, and a fully featured API, and
+MeshFrameworkAlgorithms, which is a namespace of algorithmic helper functions.
+This split is done so that one can destroy the MeshFramework but still use the
+original algorithms.
 
-Finally, the framework is split into two classes: MeshFramework, which supplies
-all topological information, nodal coordinates, and a fully featured API, and
-MeshFrameworkAlgorithms, which is a virtual class of algorithmic helper
-functions.  This split is done so that one can destroy the MeshFramework but
-still use the original algorithms.
+This class is also designed to be used on either a MemSpace_type::HOST or
+MemSpace_type::DEVICE.  To do this, the cache itself is all dual views, and
+these are stored in a struct that can be shared across all MeshCaches of the
+same mesh.  Then, the DEVICE template parameter is used to get the "right" view
+on any given device.  For now, all will be HOST.
 
-In general, all things are returned by value.  When this class migrates to
-Kokkos::Views, these will return by value, but will be pointers into the data,
-matching the Kokkos View semantics.
 
-Therefore, a standard user pattern might look like PDE_OperatorFV, which needs
-face-cell (bidirectional) adjacencies, face normals, cell volumes, and
+As an example, a standard user pattern might look like PDE_OperatorFV, which
+needs face-cell (bidirectional) adjacencies, face normals, cell volumes, and
 cell-face bisectors, but doesn't really need coordinates, edges, etc.  This
 would result in only using "fast" access patterns.
 
@@ -82,7 +78,7 @@ would result in only using "fast" access patterns.
 
    // ONE WAY: get the view
    for (Entity_ID f=0; f!=m.nfaces_owned; ++f) {
-     const Entity_ID_View& fcells = m.getFaceCells(f);
+     auto fcells = m.getFaceCells(f);
      for (int i=0; i!=fcells.size(); ++i) {
        ... with fcells[i] ...
      }
@@ -90,10 +86,15 @@ would result in only using "fast" access patterns.
 
    // OR ANOTHER: direct access
    for (Entity_ID f=0; f!=m.nfaces_owned; ++f) {
-     for (int i=0; i!=m.getFaceNumCells(f); ++i) {
-       ... with m.face_cells[f][i] ..
+     auto ncells = m.getFaceNumCells<CACHED>(f)
+     for (size_type i=0; i!=ncells; ++i) {
+       auto&& c = m.getFaceCell(f, i);
      }
    }
+
+Note the use of `auto&& c = ...` which allows the user to write code that
+doesn't care whether the returned thing is returned by value or reference.
+This is more important for Point objects, for instance.
 
 
 Alternatively, for instance, PDE_OperatorMFD may need cell coordinates to
@@ -123,13 +124,13 @@ from the cell-node adjacencies and the node coordinates.  This would be the
    // in faces, creating a set of nodes, and creating the Point_View of those
    // node coordinates.
    for (Entity_ID c=0; c!=m.ncells_owned; ++c) {
-     auto ccoords = m.getCellCoordinates(c); // calls the slow access method
+     auto ccoords = m.getCellCoordinates(c);
      ...
    }
 
    // This would be an out of bounds error, because we did not cache
    for (Entity_ID c=0; c!=m.ncells_owned; ++c) {
-     auto ccoords = m.cell_coordinates[c];
+     auto ccoords = m.getCellCoordinates<CACHED>(c);
      // out of bounds error
      ...
    }
