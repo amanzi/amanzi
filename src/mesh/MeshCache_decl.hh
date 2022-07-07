@@ -181,7 +181,56 @@ namespace AmanziMesh {
 class MeshFramework;
 class MeshFrameworkAlgorithms;
 
-template<typename MemSpace>
+namespace Impl {
+struct MeshCacheData {
+  // geometry
+  Point_DualView node_coordinates;
+  Point_DualView cell_centroids;
+  Point_DualView face_centroids;
+  Point_DualView edge_centroids;
+  RaggedArray_DualView<AmanziGeometry::Point> cell_coordinates;
+  RaggedArray_DualView<AmanziGeometry::Point> face_coordinates;
+  RaggedArray_DualView<AmanziGeometry::Point> edge_coordinates;
+
+  Double_DualView cell_volumes;
+  Double_DualView face_areas;
+
+  RaggedArray_DualView<AmanziGeometry::Point> face_normals;
+  RaggedArray_DualView<int> face_normal_directions;
+  Point_DualView edge_vectors;
+
+  // downward adjacencies
+  RaggedArray_DualView<Entity_ID> cell_faces;
+  RaggedArray_DualView<int> cell_face_directions;
+  RaggedArray_DualView<AmanziGeometry::Point> cell_face_bisectors;
+
+  RaggedArray_DualView<Entity_ID> cell_edges;
+  RaggedArray_DualView<Entity_ID> cell_nodes;
+  RaggedArray_DualView<Entity_ID> face_edges;
+  RaggedArray_DualView<int> face_edge_directions;
+  RaggedArray_DualView<Entity_ID> face_nodes;
+  RaggedArray_DualView<Entity_ID> edge_nodes;
+
+  // upward adjacencies
+  RaggedArray_DualView<Entity_ID> face_cells;
+  RaggedArray_DualView<Entity_ID> edge_cells;
+  RaggedArray_DualView<Entity_ID> edge_faces;
+  RaggedArray_DualView<Entity_ID> node_cells;
+  RaggedArray_DualView<Entity_ID> node_faces;
+  RaggedArray_DualView<Entity_ID> node_edges;
+
+  // parent entities
+  Entity_ID_DualView parent_nodes;
+  Entity_ID_DualView parent_edges;
+  Entity_ID_DualView parent_faces;
+  Entity_ID_DualView parent_cells;
+
+};
+
+} // namespace Impl
+
+
+template<MemSpace_type MEM>
 struct MeshCache {
 
   MeshCache();
@@ -412,13 +461,9 @@ struct MeshCache {
   // Geometry
   //---------------------
   // node locations
+  template<AccessPattern = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getNodeCoordinate(const Entity_ID n) const;
-
-  KOKKOS_INLINE_FUNCTION
-  const AmanziGeometry::Point& node_coordinates(const Entity_ID n) const;
-
-  cPoint_View node_coordinates() const;
 
   KOKKOS_INLINE_FUNCTION
   void setNodeCoordinate(const Entity_ID n, const AmanziGeometry::Point& coord);
@@ -434,51 +479,40 @@ struct MeshCache {
   cPoint_View getCellCoordinates(const Entity_ID c) const;
 
   // cell centroids
+  template<AccessPattern = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getCellCentroid(const Entity_ID c) const;
-  KOKKOS_INLINE_FUNCTION
-  const AmanziGeometry::Point& cell_centroids(const Entity_ID c) const;
-  cPoint_View cell_centroids() const;
 
   // face centroids
+  template<AccessPattern = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getFaceCentroid(const Entity_ID f) const;
-  KOKKOS_INLINE_FUNCTION
-  const AmanziGeometry::Point& face_centroids(const Entity_ID f) const;
-  cPoint_View face_centroids() const;
 
+  template<AccessPattern = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getEdgeCentroid(const Entity_ID e) const;
-  KOKKOS_INLINE_FUNCTION
-  const AmanziGeometry::Point& edge_centroids(const Entity_ID e) const;
-  cPoint_View edge_centroids() const;
 
+  template<AccessPattern = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getCentroid(const Entity_kind kind, const Entity_ID ent);
 
   // extent
+  template<AccessPattern = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION
   double getCellVolume(const Entity_ID c) const;
-  KOKKOS_INLINE_FUNCTION
-  const double& cell_volumes(const Entity_ID c) const;
-  cDouble_View cell_volumes() const;
 
+  template<AccessPattern = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION
   double getFaceArea(const Entity_ID f) const;
-  KOKKOS_INLINE_FUNCTION
-  const double& face_volumes(const Entity_ID f) const;
-  cDouble_View face_volumes() const;
 
+  template<AccessPattern = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION
   double getEdgeLength(const Entity_ID e) const;
-  KOKKOS_INLINE_FUNCTION
-  const double& edge_volumes(const Entity_ID e) const;
-  cDouble_View edge_volumes() const;
 
   // Normal vector of a face
+  template<AccessPattern = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getFaceNormal(const Entity_ID f) const;
-  const AmanziGeometry::Point& face_normals(const Entity_ID f) const;
 
   // Normal vector and natural direction of a face, outward with respect to a
   // cell.
@@ -488,6 +522,7 @@ struct MeshCache {
   // The orientation is 1 if the outward normal is the same direction as the
   // natural normal, -1 if in opposite directions, and 0 if there is no natural
   // normal.
+  template<AccessPattern = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getFaceNormal(const Entity_ID f,
           const Entity_ID c, int* orientation=nullptr) const;
@@ -496,6 +531,7 @@ struct MeshCache {
   //
   // Orientation is the natural orientation, e.g. that it points from node 0 to
   // node 1 with respect to edge_node adjacency information.
+  template<AccessPattern = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION
   AmanziGeometry::Point getEdgeVector(const Entity_ID e) const;
 
@@ -528,13 +564,10 @@ struct MeshCache {
   cEntity_ID_View getCellFaces(const Entity_ID c) const;
 
   KOKKOS_INLINE_FUNCTION
-  const Entity_ID& cell_faces(const Entity_ID c, size_type i) const;
+  const Entity_ID& getCellFace(const Entity_ID c, const size_type i) const;
 
   KOKKOS_INLINE_FUNCTION
   cEntity_Direction_View getCellFaceDirections(const Entity_ID c) const;
-
-  KOKKOS_INLINE_FUNCTION
-  const int& cell_face_directions(const Entity_ID c, size_type i) const;
 
   KOKKOS_INLINE_FUNCTION
   std::pair<cEntity_ID_View, cEntity_Direction_View>
@@ -602,7 +635,7 @@ struct MeshCache {
   cEntity_ID_View getFaceEdges(const Entity_ID f) const;
 
   KOKKOS_INLINE_FUNCTION
-  const Entity_ID& face_edges(const Entity_ID f, const size_type i) const;
+  const Entity_ID& getFaceEdge(const Entity_ID f, const size_type i) const;
 
   KOKKOS_INLINE_FUNCTION
   std::pair<cEntity_ID_View, cEntity_Direction_View>
@@ -651,7 +684,7 @@ struct MeshCache {
   cEntity_ID_View getEdgeNodes(const Entity_ID e) const;
 
   KOKKOS_INLINE_FUNCTION
-  const Entity_ID& edge_nodes(const Entity_ID e, const size_type i) const;
+  const Entity_ID& getEdgeNode(const Entity_ID e, const size_type i) const;
 
   //
   // NOT CURRENTLY IMPLEMENTED, here to satisfy the interface
@@ -721,17 +754,30 @@ struct MeshCache {
   // NOTE: The order of cells is not guaranteed to be the same for
   // corresponding nodes on different processors
   KOKKOS_INLINE_FUNCTION
+  cEntity_ID_View getNodeCells(const Entity_ID n,
+          const Parallel_type ptype) const;
+
+  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
+  KOKKOS_INLINE_FUNCTION
   void getNodeCells(const Entity_ID n,
                     const Parallel_type ptype,
-                    Entity_ID_View& cells) const;
+                    cEntity_ID_View& cells) const;
 
   // Faces of type parallel 'ptype' connected to a node
   // NOTE: The order of faces is not guarnateed to be the same for
   // corresponding nodes on different processors
   KOKKOS_INLINE_FUNCTION
+  cEntity_ID_View getNodeFaces(const Entity_ID n,
+          const Parallel_type ptype) const {
+    Errors::Message msg("MeshCache::getNodeFaces not implemented");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
+  KOKKOS_INLINE_FUNCTION
   void getNodeFaces(const Entity_ID n,
                     const Parallel_type ptype,
-                    Entity_ID_View& faces) const {
+                    cEntity_ID_View& faces) const {
     Errors::Message msg("MeshCache::getNodeFaces not implemented");
     Exceptions::amanzi_throw(msg);
   }
@@ -741,9 +787,18 @@ struct MeshCache {
   // The order of edges is not guaranteed to be the same for corresponding
   // node on different processors
   KOKKOS_INLINE_FUNCTION
+  cEntity_ID_View getNodeEdges(const Entity_ID n,
+          const Parallel_type ptype) const {
+    Errors::Message msg("MeshCache::getNodeEdges not implemented");
+    Exceptions::amanzi_throw(msg);
+  }
+
+
+  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
+  KOKKOS_INLINE_FUNCTION
   void getNodeEdges(const Entity_ID n,
                     const Parallel_type ptype,
-                    Entity_ID_View& edgeids) const {
+                    cEntity_ID_View& edgeids) const {
     Errors::Message msg("MeshCache::getNodeEdges not implemented");
     Exceptions::amanzi_throw(msg);
   }
@@ -756,49 +811,6 @@ struct MeshCache {
   Entity_ID nnodes_owned, nnodes_all;
   Entity_ID nboundary_faces_owned, nboundary_faces_all;
   Entity_ID nboundary_nodes_owned, nboundary_nodes_all;
-
-private:
-  // geometry
-  Point_View node_coordinates_;
-  Point_View cell_centroids_;
-  Point_View face_centroids_;
-  Point_View edge_centroids_;
-  RaggedArray<AmanziGeometry::Point> cell_coordinates_;
-  RaggedArray<AmanziGeometry::Point> face_coordinates_;
-  RaggedArray<AmanziGeometry::Point> edge_coordinates_;
-
-  Double_View cell_volumes_;
-  Double_View face_areas_;
-
-  RaggedArray<AmanziGeometry::Point> face_normals_;
-  RaggedArray<int> face_normal_directions_;
-  Point_View edge_vectors_;
-
-  // downward adjacencies
-  RaggedArray<Entity_ID> cell_faces_;
-  RaggedArray<int> cell_face_directions_;
-  RaggedArray<AmanziGeometry::Point> cell_face_bisectors_;
-
-  RaggedArray<Entity_ID> cell_edges_;
-  RaggedArray<Entity_ID> cell_nodes_;
-  RaggedArray<Entity_ID> face_edges_;
-  RaggedArray<int> face_edge_directions_;
-  RaggedArray<Entity_ID> face_nodes_;
-  RaggedArray<Entity_ID> edge_nodes_;
-
-  // upward adjacencies
-  RaggedArray<Entity_ID> face_cells_;
-  RaggedArray<Entity_ID> edge_cells_;
-  RaggedArray<Entity_ID> edge_faces_;
-  RaggedArray<Entity_ID> node_cells_;
-  RaggedArray<Entity_ID> node_faces_;
-  RaggedArray<Entity_ID> node_edges_;
-
-  // parent entities
-  Entity_ID_View parent_nodes_;
-  Entity_ID_View parent_edges_;
-  Entity_ID_View parent_faces_;
-  Entity_ID_View parent_cells_;
 
   // initialized flags
   bool nodes_initialized;
@@ -819,8 +831,7 @@ private:
     columns.initialize(*this, regions);
   }
 
-private:
-
+ private:
   // common error messaging
   void throwAccessError_(const std::string& func_name) const;
 
@@ -841,10 +852,10 @@ private:
   Teuchos::RCP<const MeshCache> vis_mesh_;
 
   // helper classes
+  mutable Impl::MeshCacheData& data_;
   MeshMaps maps_;
   mutable MeshSets sets_;
   mutable MeshSetVolumeFractions set_vol_fracs_;
-
 };
 
 

@@ -44,7 +44,7 @@ using Entity_GID_List = std::vector<Entity_GID>;
 using Entity_Direction_List = std::vector<int>;
 using Point_List = std::vector<AmanziGeometry::Point>;
 using Double_List = std::vector<double>;
-template<typename T> using RaggedArray = std::vector<std::vector<T>>;
+template<typename T> using RaggedArray_List = std::vector<std::vector<T>>;
 
 //
 // Views are on host or device
@@ -60,6 +60,26 @@ using Point_View = View_type<AmanziGeometry::Point>;
 using cPoint_View = View_type<const AmanziGeometry::Point>;
 using Double_View = View_type<double>;
 using cDouble_View = View_type<const double>;
+
+//
+// This may not be necessary?
+//
+template<typename T>
+struct RaggedArray_View {
+  Entity_ID_View rows;
+  Entity_ID_View entries;
+}
+
+template<typename T> using DualView_type = Kokkos::DualView<T*, Kokkos::DefaultHost>;
+using Entity_ID_DualView = DualView_type<Entity_ID>;
+using Entity_GID_DualView = DualView_type<Entity_GID>;
+using Entity_Direction_DualView = DualView_type<int>;
+using Point_DualView = DualView_type<AmanziGeometry::Point>;
+using Double_DualView = DualView_type<double>;
+
+template<typename T>
+using RaggedArray_DualView = RaggedArray<T, 1, Kokkos::DefaultHost>;
+
 
 using Map_type = Epetra_Map;
 using Map_ptr_type = Teuchos::RCP<Map_type>;
@@ -210,12 +230,16 @@ Partitioner_type createPartitionerType(const std::string& pstring) {
 
 enum class AccessPattern {
   DEFAULT,
+  ANY,
   CACHE,
-  RECOMPUTE,
+  COMPUTE,
   FRAMEWORK
 };
 
-
+enum class MemSpace_type {
+  HOST,
+  DEVICE
+}
 
 }  // namespace AmanziMesh
 }  // namespace Amanzi
