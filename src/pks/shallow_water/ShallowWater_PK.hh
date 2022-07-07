@@ -94,7 +94,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   TotalDepthEdgeValue(int c, int e);
   //void TotalDepthReconstruct(Teuchos::RCP<Operators::ReconstructionCellLinear>& total_depth_grad_);
   void TotalDepthReconstruct();
-
+  bool PointInTriangle(AmanziGeometry::Point xv1, AmanziGeometry::Point xv2, AmanziGeometry::Point xv3, AmanziGeometry::Point X);
 
   // due to rotational invariance of SW equations, we need flux in the
   // x-direction only.

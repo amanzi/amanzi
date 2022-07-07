@@ -592,6 +592,8 @@ ShallowWater_PK::TotalDepthReconstruct()
     *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
   auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_)
                   .ViewComponent("cell", true);
+  auto& h_c = *S_->GetW<CompositeVector>(ponded_depth_key_, passwd_).ViewComponent("cell", true);
+
 
 	//auto tmp1 =
   //  S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_)
@@ -753,21 +755,6 @@ ShallowWater_PK::TotalDepthReconstruct()
         ht_cell_node_grad_x_[c][cnodes[i]] = 0.0;
         ht_cell_node_grad_y_[c][cnodes[i]] = 0.0;
       }
-      for (int f = 0; f < cfaces.size(); ++f) {
-        AmanziMesh::Entity_ID_List nodes;
-        mesh_->face_get_nodes(cfaces[f], &nodes);
-
-        //ht_cell_face_[c][cfaces[f]] = (ht_cell_node_[c][nodes[0]] + ht_cell_node_[c][nodes[1]]) / 2.0;
-        double diff = (ht_cell_node_[c][nodes[0]] + ht_cell_node_[c][nodes[1]] ) / 2.0 - BathymetryEdgeValue(cfaces[f],B_n);
-        if (std::abs(diff) > 1.e-14) {
-          const AmanziGeometry::Point& xf = mesh_->face_centroid(cfaces[f]);
-          std::cout<<"xf: "<<xf[0]<<", "<<xf[1]<<std::endl;
-          std::cout<<"ht_node: "<<ht_cell_node_[c][nodes[0]]<<", "<<ht_cell_node_[c][nodes[1]]<<std::endl;
-          std::cout<<"B: "<<B_n[0][nodes[0]]<<", "<<B_n[0][nodes[1]]<<std::endl;
-          
-        }
-      }
-
     } else if (n_neg_nodes == 0) {
       cell_is_fully_flooded = true;
       for (int f = 0; f < cfaces.size(); ++f) {
@@ -842,6 +829,8 @@ ShallowWater_PK::TotalDepthReconstruct()
 
   // identify type of cells i.e. type 1 or type 2
   for (int c = 0; c < ncells_owned; ++c) {
+    const auto& xc = mesh_->cell_centroid(c);
+
     if (cell_is_partially_wet == true) {
      // order bathymetry nodes into B13 >= B12 > B23
       double B13, B12, B23;
@@ -852,14 +841,14 @@ ShallowWater_PK::TotalDepthReconstruct()
       i13 = cnodes[0]; i12 = cnodes[1]; i23 = cnodes[2];
       // fix this sorting method...
       for (int i = 0; i < cnodes.size(); ++i) {
-        if (B13 < B_n[0][cnodes[i]]) {
+        if (B13 <= B_n[0][cnodes[i]]) {
           B13 = B_n[0][cnodes[i]];
           i13 = cnodes[i];
         }
       }
       for (int i = 0; i < cnodes.size(); ++i) {
         if (cnodes[i] != i13) {
-          if (B23 < B_n[0][cnodes[i]] ) {
+          if (B12 <= B_n[0][cnodes[i]] ) {
             B12 = B_n[0][cnodes[i]];
             i12 = cnodes[i];
           }
@@ -869,7 +858,6 @@ ShallowWater_PK::TotalDepthReconstruct()
         if (cnodes[i] != i13 && cnodes[i] != i12) {
           B23 = B_n[0][cnodes[i]];
           i23 = cnodes[i];
-
         }
       }
       // done sorting B vertices
@@ -881,9 +869,9 @@ ShallowWater_PK::TotalDepthReconstruct()
       xf3 = (xv23 + xv13) / 2.0;
 
       // check if cell is type 1
-      if (ht_c[0][c] <= ( B12 + (B13 - B12) * (B13 - B12) / (B13 - B23) )) {
+      if (ht_c[0][c] <= ( B12 + (B13 - B12) * (B13 - B12) / (3.0 *(B13 - B23)) )) {
         cell_is_type_1 = true;
-        double wj = B23 + std::pow((3.0 * (ht_c[0][c] - B_c[0][c]) * (B13 - B23) * (B12 - B23)), 1.0/3);
+        double wj = B23 + std::pow((3.0 * (h_c[0][c]) * (B13 - B23) * (B12 - B23)), 1.0/3);
         
         // find A2 and A3
         // A2
@@ -899,10 +887,14 @@ ShallowWater_PK::TotalDepthReconstruct()
             if (alpha2 > 0.5) {
               ht_cell_face_[c][cfaces[f]] = wj;
 
+              ht_cell_node_[c][i12] = B12;
+
               ht_cell_node_grad_x_[c][i12] = (B12 - wj) / (xv12[0] - A2[0]);
               ht_cell_node_grad_y_[c][i12] = (B12 - wj) / (xv12[1] - A2[1]);
             } else {
               ht_cell_face_[c][cfaces[f]] = BathymetryEdgeValue(cfaces[f], B_n);
+
+              ht_cell_node_[c][i12] = B12;
 
               ht_cell_node_grad_x_[c][i12] = (B12 - BathymetryEdgeValue(cfaces[f], B_n)) / (xv12[0] - xf2[0]);
               ht_cell_node_grad_y_[c][i12] = (B12 - BathymetryEdgeValue(cfaces[f], B_n)) / (xv12[1] - xf2[1]);
@@ -911,10 +903,14 @@ ShallowWater_PK::TotalDepthReconstruct()
             if (alpha3 > 0.5) {
               ht_cell_face_[c][cfaces[f]] = wj;
 
+              ht_cell_node_[c][i23] = wj;
+
               ht_cell_node_grad_x_[c][i23] = 0.0;
               ht_cell_node_grad_y_[c][i23] = 0.0;
             } else {
               ht_cell_face_[c][cfaces[f]] = BathymetryEdgeValue(cfaces[f], B_n);
+
+              ht_cell_node_[c][i23] = wj;
 
               ht_cell_node_grad_x_[c][i23] = 0.0;
               ht_cell_node_grad_y_[c][i23] = 0.0;
@@ -922,13 +918,19 @@ ShallowWater_PK::TotalDepthReconstruct()
           } else {
             ht_cell_face_[c][cfaces[f]] = BathymetryEdgeValue(cfaces[f], B_n);
             
+            ht_cell_node_[c][i13] = B13;
+
             ht_cell_node_grad_x_[c][i13] = (B13 - B12) / (xv13[0] - xv12[0]);
             ht_cell_node_grad_y_[c][i13] = (B13 - B12) / (xv13[1] - xv12[1]);
           }
         }
 
         // ht_c
-        
+        if (PointInTriangle(A2, xv23, A3, xc) == true) {
+          ht_c[0][c] = wj;
+        } else {
+          ht_c[0][c] = B_c[0][c];
+        }
       }
       else {
         // otherwise cell is type 2
@@ -937,7 +939,7 @@ ShallowWater_PK::TotalDepthReconstruct()
         double tol = 0.0, tol_max = 1.e-12;
         double wj = 1.0;
         for (int it = 1; it < it_max; ++it) {
-          double residual = std::pow(wj, 3.0) - 3.0*(B13*wj*wj) + 3.0*(B23*B13 + B12*B13 - B12*B23)*wj + (3.0*(ht_c[0][c] - B_c[0][c])*(B13 - B12) - B12*(B12 + B23))*(B13 - B23) - B23*B23*B13;
+          double residual = std::pow(wj, 3.0) - 3.0*(B13*wj*wj) + 3.0*(B23*B13 + B12*B13 - B12*B23)*wj + (3.0*(h_c[0][c])*(B13 - B12) - B12*(B12 + B23))*(B13 - B23) - B23*B23*B13;
           double dJ = 3.0*wj*wj - 6.0*B13*wj + 3.0*(B23*B13 + B12*B13 - B12*B23);
           double delta = -1.0 * residual / dJ;
           if (std::abs(delta) < tol_max) {
@@ -960,10 +962,14 @@ ShallowWater_PK::TotalDepthReconstruct()
             if (alpha1 > 0.5) {
               ht_cell_face_[c][cfaces[f]] = wj;
 
+              ht_cell_node_[c][i13] = B13;
+
               ht_cell_node_grad_x_[c][i13] = (B13 - wj) / (xv13[0] - A1[0]);
               ht_cell_node_grad_y_[c][i13] = (B13 - wj) / (xv13[1] - A1[1]);
             } else {
               ht_cell_face_[c][cfaces[f]] = BathymetryEdgeValue(cfaces[f], B_n);
+
+              ht_cell_node_[c][i13] = B13;
 
               ht_cell_node_grad_x_[c][i13] = (B13 - BathymetryEdgeValue(cfaces[f], B_n)) / (xv13[0] - xf1[0]);
               ht_cell_node_grad_y_[c][i13] = (B13 - BathymetryEdgeValue(cfaces[f], B_n)) / (xv13[1] - xf1[1]);
@@ -972,20 +978,33 @@ ShallowWater_PK::TotalDepthReconstruct()
             if (alpha3 > 0.5) {
               ht_cell_face_[c][cfaces[f]] = wj;
 
+              ht_cell_node_[c][i23] = wj;
+
               ht_cell_node_grad_x_[c][i23] = 0.0;
               ht_cell_node_grad_y_[c][i23] = 0.0;
             } else {
               ht_cell_face_[c][cfaces[f]] = BathymetryEdgeValue(cfaces[f], B_n);
+              
+              ht_cell_node_[c][i23] = wj;
 
               ht_cell_node_grad_x_[c][i23] = 0.0;
               ht_cell_node_grad_y_[c][i23] = 0.0;
             }
           } else {
             ht_cell_face_[c][cfaces[f]] = wj;
+            
+            ht_cell_node_[c][i12] = wj;
 
             ht_cell_node_grad_x_[c][i12] = 0.0;
             ht_cell_node_grad_y_[c][i12] = 0.0;
           } 
+        }
+
+        // ht_c
+        if (PointInTriangle(xv13, A1, A3, xc) == true) {
+          ht_c[0][c] = B_c[0][c];
+        } else {
+          ht_c[0][c] = wj;
         }
       }
     } // cell is partially wet
@@ -994,6 +1013,35 @@ ShallowWater_PK::TotalDepthReconstruct()
 
 
 // end of function
+}
+
+//--------------------------------------------------------------
+// Check if point is inside a triangle
+//--------------------------------------------------------------
+bool
+ShallowWater_PK::PointInTriangle(AmanziGeometry::Point xv1, AmanziGeometry::Point xv2, AmanziGeometry::Point xv3, AmanziGeometry::Point X)
+{
+  AmanziGeometry::Point tria_edge0, tria_edge1, tria_edge2;
+  tria_edge0 = xv1 - X;
+  tria_edge1 = xv2 - X;
+  tria_edge2 = xv3 - X;
+  
+  double A0, A1, A2, A;
+  A0 = norm( 0.5 * tria_edge0 ^ tria_edge1);
+  A1 = norm( 0.5 * tria_edge1 ^ tria_edge2);
+  A2 = norm( 0.5 * tria_edge2 ^ tria_edge0);
+
+  AmanziGeometry::Point Ltria_edge0, Ltria_edge1;
+  Ltria_edge0 = xv2 - xv1;
+  Ltria_edge1 = xv3 - xv1;
+
+  A = norm( 0.5 * Ltria_edge0 ^  Ltria_edge1);
+
+  if (std::abs(A0 + A1 + A2 - A) < 1.e-14) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 //--------------------------------------------------------------
@@ -1022,8 +1070,9 @@ ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
   auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_)
                   .ViewComponent("cell", true);
 
-  AmanziMesh::Entity_ID_List cfaces;
+  AmanziMesh::Entity_ID_List cfaces, cnodes;
   mesh_->cell_get_faces(c, &cfaces);
+  mesh_->cell_get_nodes(c, &cnodes);
 
   int orientation;
   double S1(0.0), S2(0.0);
@@ -1035,12 +1084,13 @@ ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
     const auto& xcf = mesh_->face_centroid(f);
 
     double ht_rec = total_depth_grad_->getValue(c, xcf);
+    ht_rec = ht_cell_face_[c][f];
     double B_rec = BathymetryEdgeValue(f, B_n);
 
-    if (ht_rec < B_rec) {
-      ht_rec = ht_c[0][c];
-      B_rec = B_c[0][c];
-    }
+   // if (ht_rec < B_rec) {
+   //   ht_rec = ht_c[0][c];
+   //   B_rec = B_c[0][c];
+   // }
 
     // Polygonal meshes Beljadid et. al. 2016
     S1 += (0.5) * (ht_rec - B_rec) * (ht_rec - B_rec) * normal[0];
@@ -1051,8 +1101,16 @@ ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
 
   S1 /= vol;
   S2 /= vol;
-  S1 -= ht_grad[0][c] * U[0];
-  S2 -= ht_grad[1][c] * U[0];
+  //S1 -= ht_grad[0][c] * U[0];
+  //S2 -= ht_grad[1][c] * U[0];
+  //S1 *= g_;
+  //S2 *= g_;
+  
+  for (int i = 0; i < cnodes.size(); ++i) {
+    S1 -= (1.0/3.0) * (ht_cell_node_[c][cnodes[i]] - B_n[0][cnodes[i]]) * ht_cell_node_grad_x_[c][cnodes[i]];
+    S2 -= (1.0/3.0) * (ht_cell_node_[c][cnodes[i]] - B_n[0][cnodes[i]]) * ht_cell_node_grad_y_[c][cnodes[i]];
+  }
+  
   S1 *= g_;
   S2 *= g_;
 
