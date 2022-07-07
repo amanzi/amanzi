@@ -129,7 +129,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                    (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 2;
     }
 
-    ht_c[0][c] = std::max(0.0, B_c[0][c]);
+    ht_c[0][c] = std::max(0.5, B_c[0][c]);
 
     // perturb the total height
     if (icase == 1) {
@@ -276,7 +276,7 @@ RunTest(int icase)
 
   double Tend;
   if (icase == 1) {
-    Tend = 2.0;
+    Tend = 1.0;
   } else if (icase == 2) {
     Tend = 2.0;
   }
@@ -284,7 +284,7 @@ RunTest(int icase)
   while ((t_new < Tend) && (iter >= 0)) {
     double t_out = t_new;
 
-    if (iter % 1000 == 0) {
+    if (iter % 100 == 0) {
       io.InitializeCycle(t_out, iter, "");
 
       io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
@@ -311,7 +311,7 @@ RunTest(int icase)
     t_old = t_new;
     iter += 1;
     
-    if (iter % 1000 == 0) {
+    if (iter % 100 == 0) {
     	std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
     }
   } // time loop

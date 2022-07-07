@@ -92,7 +92,9 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   // Recalculate total depth for positivity of ponded depth
   double
   TotalDepthEdgeValue(int c, int e);
-  void TotalDepthReconstruct(Teuchos::RCP<Operators::ReconstructionCellLinear> total_depth_grad_);
+  //void TotalDepthReconstruct(Teuchos::RCP<Operators::ReconstructionCellLinear>& total_depth_grad_);
+  void TotalDepthReconstruct();
+
 
   // due to rotational invariance of SW equations, we need flux in the
   // x-direction only.
@@ -145,6 +147,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   // total depth [cell, node] and [cell, face]
   std::vector<std::vector<double>> ht_cell_node_;
   std::vector<std::vector<double>> ht_cell_face_;
+  std::vector<std::vector<double>> ht_cell_node_grad_x_;
+  std::vector<std::vector<double>> ht_cell_node_grad_y_;
 
   // source terms
   std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;
