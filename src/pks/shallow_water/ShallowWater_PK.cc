@@ -726,25 +726,29 @@ ShallowWater_PK::TotalDepthReconstruct()
     cell_is_dry = false;
     cell_is_fully_flooded = true; // default
 	    	
-   // ht_grad[0][c] = 0.0;
-   // ht_grad[1][c] = 0.0;
+    //ht_grad[0][c] = 0.0;
+    //ht_grad[1][c] = 0.0;
     
     n_neg_nodes = 0;
 	  for (int i = 0; i < cnodes.size(); ++i) {
 	    mesh_->node_get_coordinates(cnodes[i], &xv);
       ht_rec = total_depth_grad_->getValue(c, xv);
 
-   	  if((ht_rec < B_n[0][cnodes[i]] ) || std::abs(ht_rec - B_n[0][cnodes[i]]) < 1.e-14) {
+   	  if((ht_rec < B_n[0][cnodes[i]] ) || std::abs(ht_rec - B_n[0][cnodes[i]]) < 1.e-15) {
 		    cell_is_fully_flooded = false;
         n_neg_nodes += 1;
-      } else {
+      } else if (ht_c[0][c] >= B_n[0][cnodes[i]] && h_c[0][c] > 0.0) {
 		    ht_cell_node_[c][cnodes[i]] = ht_rec;
         ht_cell_node_grad_x_[c][cnodes[i]] = ht_grad[0][c];
         ht_cell_node_grad_y_[c][cnodes[i]] = ht_grad[1][c];
       }
+      else {
+        cell_is_fully_flooded = false;
+        cell_is_partially_wet = true;
+      }
     }
 	  
-    if (n_neg_nodes == cnodes.size()) {
+    if (n_neg_nodes == cnodes.size() || std::abs(ht_c[0][c] - B_c[0][c]) < 1.e-15) {
       cell_is_dry = true;
     
       for (int f = 0; f < cfaces.size(); ++f) {
@@ -755,7 +759,7 @@ ShallowWater_PK::TotalDepthReconstruct()
         ht_cell_node_grad_x_[c][cnodes[i]] = 0.0;
         ht_cell_node_grad_y_[c][cnodes[i]] = 0.0;
       }
-    } else if (n_neg_nodes == 0) {
+    } else if (n_neg_nodes == 0 || cell_is_fully_flooded == true) {
       cell_is_fully_flooded = true;
       for (int f = 0; f < cfaces.size(); ++f) {
         AmanziMesh::Entity_ID_List nodes;
@@ -822,23 +826,18 @@ ShallowWater_PK::TotalDepthReconstruct()
         ht_cell_face_[c][cfaces[f]] = (ht_cell_node_[c][nodes[0]] + ht_cell_node_[c][nodes[1]]) / 2.0;
       }
     }
-  }
+  // cell c
    
-  
   // well balanced for triangular cells [Section 3.1, Liu et al.' 18]
 
   // identify type of cells i.e. type 1 or type 2
-  for (int c = 0; c < ncells_owned; ++c) {
-    const auto& xc = mesh_->cell_centroid(c);
-
     if (cell_is_partially_wet == true) {
      // order bathymetry nodes into B13 >= B12 > B23
       double B13, B12, B23;
       int i13, i12, i23;
       
       mesh_->cell_get_nodes(c, &cnodes);
-      B13 = B_n[0][cnodes[0]]; B12 = B_n[0][cnodes[1]]; B23 = B_n[0][cnodes[2]];
-      i13 = cnodes[0]; i12 = cnodes[1]; i23 = cnodes[2];
+      B13 = 0.0; B12 = 0.0; B23 = 0.0;
       // fix this sorting method...
       for (int i = 0; i < cnodes.size(); ++i) {
         if (B13 <= B_n[0][cnodes[i]]) {
@@ -860,6 +859,8 @@ ShallowWater_PK::TotalDepthReconstruct()
           i23 = cnodes[i];
         }
       }
+      std::cout<<"xv13 = "<<xv13[0]<<", "<<xv13[1]<<", xv12 = "<<xv12[0]<<", "<<xv12[1]<<", xv23 = "<<xv23[0]<<", "<<xv23[1]<<std::endl;
+      std::cout<<B13<<" > "<<B12<<" > "<<B23<<std::endl;
       // done sorting B vertices
       mesh_->node_get_coordinates(i13, &xv13);
       mesh_->node_get_coordinates(i12, &xv12);
@@ -867,11 +868,13 @@ ShallowWater_PK::TotalDepthReconstruct()
       xf1 = (xv13 + xv12) / 2.0;
       xf2 = (xv12 + xv23) / 2.0;
       xf3 = (xv23 + xv13) / 2.0;
-
+      
+      double wj;
       // check if cell is type 1
       if (ht_c[0][c] <= ( B12 + (B13 - B12) * (B13 - B12) / (3.0 *(B13 - B23)) )) {
         cell_is_type_1 = true;
-        double wj = B23 + std::pow((3.0 * (h_c[0][c]) * (B13 - B23) * (B12 - B23)), 1.0/3);
+        std::cout<<"cell is type 1"<<std::endl;
+        wj = B23 + std::pow((3.0 * (h_c[0][c]) * (B13 - B23) * (B12 - B23)), 1.0/3.0);
         
         // find A2 and A3
         // A2
@@ -880,7 +883,8 @@ ShallowWater_PK::TotalDepthReconstruct()
         // A3
         double alpha3 = (wj - B23) / (B13 - B23);
         A3 = alpha3 * xv13 + (1.0 - alpha3) * xv23; 
-
+        std::cout<<"alpha2 = "<<alpha2<<std::endl;
+        std::cout<<"alpha3 = "<<alpha3<<std::endl;
         for (int f = 0; f < cfaces.size(); ++f) {
           const AmanziGeometry::Point& xf = mesh_->face_centroid(cfaces[f]);
           if (norm(xf - xf2) < 1.e-14) {
@@ -926,25 +930,31 @@ ShallowWater_PK::TotalDepthReconstruct()
         }
 
         // ht_c
-        if (PointInTriangle(A2, xv23, A3, xc) == true) {
-          ht_c[0][c] = wj;
-        } else {
-          ht_c[0][c] = B_c[0][c];
-        }
+       // if (PointInTriangle(A2, xv23, A3, xc) == true) {
+       //   ht_c[0][c] = wj;
+       // } else {
+       //   ht_c[0][c] = B_c[0][c];
+       // }
       }
       else {
         // otherwise cell is type 2
+        std::cout<<"cell is type 2"<<std::endl;
         // solve cubic equation [Pg. 220]
         int it_max = 30;
-        double tol = 0.0, tol_max = 1.e-12;
-        double wj = 1.0;
+        double tol = 0.0, tol_max = 1.e-15;
+        wj = (B13 + B12) / 2.0;
         for (int it = 1; it < it_max; ++it) {
           double residual = std::pow(wj, 3.0) - 3.0*(B13*wj*wj) + 3.0*(B23*B13 + B12*B13 - B12*B23)*wj + (3.0*(h_c[0][c])*(B13 - B12) - B12*(B12 + B23))*(B13 - B23) - B23*B23*B13;
           double dJ = 3.0*wj*wj - 6.0*B13*wj + 3.0*(B23*B13 + B12*B13 - B12*B23);
-          double delta = -1.0 * residual / dJ;
-          if (std::abs(delta) < tol_max) {
+          if (std::abs(residual) < tol_max) {
             break;
+          } else if (it == it_max - 1) {
+            std::cout<<"No convergence of Newton's method"<<std::endl;
           } else {
+            double delta = -1.0 * residual / dJ;
+            if (std::abs(dJ) < 1.e-14) {
+              std::cout<<"DJ approx 0"<<std::endl;
+            }
             wj = wj + delta;
           }
         }
@@ -955,7 +965,9 @@ ShallowWater_PK::TotalDepthReconstruct()
         // A3
         double alpha3 = (wj - B23) / (B13 - B23);
         A3 = alpha3 * xv13 + (1.0 - alpha3) * xv23;
-
+          
+        std::cout<<"alpha1 = "<<alpha1<<std::endl;
+        std::cout<<"alpha3 = "<<alpha3<<std::endl;
         for (int f = 0; f < cfaces.size(); ++f) {
           const AmanziGeometry::Point& xf = mesh_->face_centroid(cfaces[f]);
           if (norm(xf - xf1) < 1.e-14) {
@@ -1001,14 +1013,15 @@ ShallowWater_PK::TotalDepthReconstruct()
         }
 
         // ht_c
-        if (PointInTriangle(xv13, A1, A3, xc) == true) {
-          ht_c[0][c] = B_c[0][c];
-        } else {
-          ht_c[0][c] = wj;
-        }
+       // if (PointInTriangle(xv13, A1, A3, xc) == true) {
+       //   ht_c[0][c] = B_c[0][c];
+       // } else {
+       //  ht_c[0][c] = wj;
+       // }
       }
+      std::cout<<"ht_cell_node_ = "<<ht_cell_node_[c][i13]<<", "<<ht_cell_node_[c][i12]<<", "<<ht_cell_node_[c][i23]<<std::endl;
+      std::cout<<"ht_c = "<<ht_c[0][c]<<", wj = "<<wj<<", B_c = "<<B_c[0][c]<<", h_c = "<<h_c[0][c]<<std::endl;
     } // cell is partially wet
-
   } // cell c
 
 
@@ -1083,8 +1096,8 @@ ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
     const auto& normal = mesh_->face_normal(f, false, c, &orientation);
     const auto& xcf = mesh_->face_centroid(f);
 
-    double ht_rec = total_depth_grad_->getValue(c, xcf);
-    ht_rec = ht_cell_face_[c][f];
+    //double ht_rec = total_depth_grad_->getValue(c, xcf);
+    double ht_rec = ht_cell_face_[c][f];
     double B_rec = BathymetryEdgeValue(f, B_n);
 
    // if (ht_rec < B_rec) {

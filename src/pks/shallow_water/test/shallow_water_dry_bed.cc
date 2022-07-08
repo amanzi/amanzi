@@ -79,7 +79,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     if (icase == 1) {
       B_n[0][n] = 0.0;
       if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.2*0.2 + 1.e-12) {
-        B_n[0][n] = 0.6;
+        B_n[0][n] = 0.8;
       }
 
     } else if (icase == 2) {
@@ -102,7 +102,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
     int nfaces_cell = cfaces.size();
 
-    B_c[0][c] = 0;
+    B_c[0][c] = 0.0;
 
     // Compute cell averaged bathymetrt (Bc)
     for (int f = 0; f < nfaces_cell; ++f) {
@@ -126,7 +126,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       double area = norm(area_cross_product);
 
       B_c[0][c] += (area / mesh->cell_volume(c)) *
-                   (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 2;
+                   (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 2.0;
     }
 
     ht_c[0][c] = std::max(0.5, B_c[0][c]);
@@ -276,7 +276,7 @@ RunTest(int icase)
 
   double Tend;
   if (icase == 1) {
-    Tend = 1.0;
+    Tend = 0.5;
   } else if (icase == 2) {
     Tend = 2.0;
   }

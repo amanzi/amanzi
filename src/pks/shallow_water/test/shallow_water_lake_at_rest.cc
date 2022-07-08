@@ -166,7 +166,7 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
     // Perturb the solution; change time period t_new to at least 10.0
     if ((xc[0] - 0.3)*(xc[0] - 0.3) + (xc[1] - 0.3)*(xc[1] - 0.3) < 0.1 * 0.1) {
-      ht_c[0][c] = H_inf + 0.1;
+      ht_c[0][c] = H_inf + 0.0*0.1;
      } else {
       ht_c[0][c] = H_inf;   
     }
@@ -458,6 +458,6 @@ RunTest(int icase)
 
 TEST(SHALLOW_WATER_LAKE_AT_REST)
 {
-  RunTest(1); // rectangular mesh
-  //RunTest(2); // triangular mesh
+  //RunTest(1); // rectangular mesh
+  RunTest(2); // triangular mesh
 }
