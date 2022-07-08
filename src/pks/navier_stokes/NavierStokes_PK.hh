@@ -22,6 +22,7 @@
 
 // Amanzi
 #include "BDF1_TI.hh"
+#include "EvaluatorPrimary.hh"
 #include "Key.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_Abstract.hh"
@@ -29,7 +30,6 @@
 #include "PK.hh"
 #include "PK_Factory.hh"
 #include "PK_PhysicalBDF.hh"
-#include "primary_variable_field_evaluator.hh"
 #include "State.hh"
 #include "TreeOperator.hh"
 #include "TreeVector.hh"
@@ -56,15 +56,15 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   ~NavierStokes_PK() {};
 
   // methods required for PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup() final;
+  virtual void Initialize() final;
 
-  virtual double get_dt() { return dt_; }
-  virtual void set_dt(double dt) { dt_ = dt; dt_desirable_ = dt_; }
+  virtual double get_dt() final { return dt_; }
+  virtual void set_dt(double dt) final { dt_ = dt; dt_desirable_ = dt_; }
 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) final;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
+  virtual void CalculateDiagnostics(const Tag& tag) final {};
 
   virtual std::string name() { return passwd_; }
 
@@ -109,8 +109,8 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
   void ChangedSolution() {
-    pressure_eval_->SetFieldAsChanged(S_.ptr());
-    fluid_velocity_eval_->SetFieldAsChanged(S_.ptr());
+    pressure_eval_->SetChanged();
+    fluid_velocity_eval_->SetChanged();
   }
 
   // other methods
@@ -141,7 +141,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<CompositeVector> soln_p_, soln_u_;
 
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, fluid_velocity_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > pressure_eval_, fluid_velocity_eval_;
 
   // solvers
   Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_, op_pc_solver_;
@@ -154,6 +154,8 @@ class NavierStokes_PK : public PK_PhysicalBDF {
  private:
   std::string passwd_;
   int dim;
+
+  Key pressure_key_, velocity_key_;
 
   // time integrators
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae_;

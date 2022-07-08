@@ -43,8 +43,8 @@ protected:
   ChemistryHelper_Structured* mChemHelper;
 };
 
-class ChemConstraint
-  : public IdxRegionData
+
+class ChemConstraint : public IdxRegionData
 {
 public:
   ChemConstraint(const std::string&          label,
@@ -53,7 +53,7 @@ public:
                  const IdxRDEval&            eval)
     : IdxRegionData(label,regions,typeStr,eval) {}
 
-  ~ChemConstraint();
+  ~ChemConstraint() {};
 
   virtual void apply(FArrayBox&       fab, int vcomp,
 		     FArrayBox&       aux, int acomp,

@@ -1,0 +1,45 @@
+diff -ruNbB ascemio-2.4-source-old/src/parallelIO.c ascemio-2.4-source/src/parallelIO.c
+--- ascemio-2.4-source-old/src/parallelIO.c	2022-01-18 20:04:46.000000000 -0700
++++ ascemio-2.4-source/src/parallelIO.c	2022-01-18 20:08:28.000000000 -0700
+@@ -104,12 +104,14 @@
+ 			/* if ( myIOgroupConf->preferredGroupSize == 0) */
+ 				/* fprintf(stderr, "ASCEMIO_Info: Preferred group size is not set\n"); */
+ 
++                        /*
+ 			if ( myIOgroup->globalsize % myIOgroupConf->numIOgroups != 0)
+ 			{
+ 				fprintf(stderr, "ASCEMIO_Info: nprocs is not exactly divisible by numIOgroups\n");
+ 				fprintf(stderr, "ASCEMIO_Info: numIOgroups will be one more than requested, the last group containing the remaining processes. \n");
+ 			}
+ 			fprintf(stderr, "ASCEMIO_Info: Preferred group size is set to nprocs/numIOgroups (%d/%d) \n", myIOgroup->globalsize, myIOgroupConf->numIOgroups);
++                        */
+ 
+ 		}
+ 
+@@ -127,11 +129,13 @@
+ 
+ 	if ( myIOgroupConf->preferredGroupSize <= 0 || myIOgroupConf->preferredGroupSize > myIOgroup->globalsize)
+ 	{
++                /*
+ 		if (myIOgroup->globalrank == 0 )
+ 		{
+ 			fprintf(stderr, "ASCEMIO_Error: Preferred group size should be > 0 and < number of processors. Given size = %d\n",myIOgroupConf->preferredGroupSize);
+ 			fprintf(stderr, "ASCEMIO_Info: Setting Preferred group size to total number of procs to continue execution \n");
+ 		}
++                */
+ 
+ 		/* Set group size to total number of processes */
+ 		/* Manually set preferredGroupSize in configuration struct too for subsequent calculations */
+@@ -171,10 +175,12 @@
+ 	PRINT_MSG(( ASCEMIO_INFO, "numIOgroups: %d, iogroupSize: %d, iogroupRank: %d", myIOgroup->numIOgroups, myIOgroup->iogroupSize, myIOgroup->iogroupRank));
+ 
+ 
++        /*
+ 	if (myIOgroup->globalrank == 0 )
+ 	{	
+ 		fprintf(stderr, "ASCEMIO_Info: Preferred group size is set to %d \n",myIOgroup->preferredGroupSize);
+ 	}
++        */
+ 
+ 
+ 	ierr = MPI_Comm_split(myIOgroup->globalcomm, myIOgroup->iogroupRank, myIOgroup->globalrank, &myIOgroup->localcomm); 

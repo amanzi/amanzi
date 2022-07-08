@@ -1,5 +1,5 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -20,12 +20,13 @@ This class calculates the actual observation value.
 #include "mpi.h"
 #include "Key.hh"
 #include "errors.hh"
+#include "Key.hh"
 #include "Mesh.hh"
-#include "State.hh"
-#include "Field.hh"
-#include "FieldEvaluator.hh"
 
+// Amanzi::State
+#include "Evaluator.hh"
 #include "Observable.hh"
+#include "State.hh"
 
 namespace Amanzi {
 
@@ -40,17 +41,18 @@ double ObservableMax(double a, double b, double vol) { return std::max(a,b); }
 
 const double Observable::nan = std::numeric_limits<double>::quiet_NaN();
 
-Observable::Observable(const Comm_ptr_type& comm,
-                       Teuchos::ParameterList& plist)
-  : comm_(comm),
+Observable::Observable(Teuchos::ParameterList& plist)
+  : comm_(Teuchos::null),
     old_time_(nan),
-    has_eval_(false)
+    has_eval_(false),
+    has_data_(false)
 {
   // process the spec
   name_ = Keys::cleanPListName(plist.name());
   variable_ = plist.get<std::string>("variable");
   region_ = plist.get<std::string>("region");
   location_ = plist.get<std::string>("location name", "cell");
+  tag_ = Tag(plist.get<std::string>("tag", Tags::DEFAULT.get()));
 
   // Note: -1 here means either take it from the physics if possible, or if
   // this variable is not in the physics, instead will default to 1.
@@ -117,48 +119,52 @@ Observable::Observable(const Comm_ptr_type& comm,
 
 void Observable::Setup(const Teuchos::Ptr<State>& S)
 {
-  // not all meshes exist on all ranks, so not all variables do either.  If it
-  // doesn't exist, this process doesn't participate in this observation.
-  on_proc_ = S->HasMesh(Keys::getDomain(variable_));
+  // Do we participate in this communicator?
+  if (comm_ == Teuchos::null) return;
+
+  // We may be in the comm, but not have this variable.
+  Key domain = Keys::getDomain(variable_);
+  if (!S->HasMesh(domain)) return;
+
+  // If we have gotten to this point, we must have data
+  has_data_ = true;
 
   // does the observed quantity have an evaluator?  Or can we make one? Note
   // that a non-evaluator based observation must already have been created by
   // PKs by now, because PK->Setup() has already been run.
-  if (on_proc_) {
-    if (!S->HasField(variable_)) {
-      // not yet created, require the eval
-      S->RequireFieldEvaluator(variable_);
+  if (!S->HasRecord(variable_, tag_)) {
+    // not yet created, require evaluator
+    S->RequireEvaluator(variable_, tag_);
+    has_eval_ = true;
+  } else {
+    // does it have an evaluator or can we make one?
+    if (S->HasEvaluatorList(variable_)) {
+      S->RequireEvaluator(variable_, tag_);
       has_eval_ = true;
     } else {
-      // does it have an evaluator or can we make one?
-      try {
-        S->RequireFieldEvaluator(variable_);
-        has_eval_ = true;
-      } catch(...) {
-        has_eval_ = false;
-      }
+      has_eval_ = false;
+    }
+  }
+
+  // try to set requirements on the field, if they are not already set
+  if (!S->HasRecord(variable_, tag_)) {
+    // require the field
+    auto& cvs = S->Require<CompositeVector, CompositeVectorSpace>(variable_, tag_);
+
+    // we have to set the mesh now -- assume it is provided by the domain
+    cvs.SetMesh(S->GetMesh(Keys::getDomain(variable_)));
+
+    // was num_vectors set?  if not use default of 1
+    if (num_vectors_ < 0) num_vectors_ = 1;
+    if (num_vectors_ < dof_) {
+      Errors::Message msg;
+      msg << "Observable \"" << name_ << "\": inconsistent request of degree of freedom "
+          << dof_ << " for a vector with only " << num_vectors_ << " degrees of freedom.";
+      Exceptions::amanzi_throw(msg);
     }
 
-    // try to set requirements on the field, if they are not already set
-    if (!S->HasField(variable_)) {
-      // require the field
-      auto cvs = S->RequireField(variable_);
-
-      // we have to set the mesh now -- assume it is provided by the domain
-      cvs->SetMesh(S->GetMesh(Keys::getDomain(variable_)));
-
-      // was num_vectors set?  if not use default of 1
-      if (num_vectors_ < 0) num_vectors_ = 1;
-      if (num_vectors_ < dof_) {
-        Errors::Message msg;
-        msg << "Observable \"" << name_ << "\": inconsistent request of degree of freedom "
-            << dof_ << " for a vector with only " << num_vectors_ << " degrees of freedom.";
-        Exceptions::amanzi_throw(msg);
-      }
-
-      // require the component on location_ with num_vectors_
-      cvs->AddComponent(location_, AmanziMesh::entity_kind(location_), num_vectors_);
-    }
+    // require the component on location_ with num_vectors_
+    cvs.AddComponent(location_, AmanziMesh::entity_kind(location_), num_vectors_);
   }
 
   // communicate so that all ranks know number of vectors
@@ -169,45 +175,60 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
 
 void Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
 {
-  if (num_vectors_ < 0) {
-    if (on_proc_) {
-      // one last check that the structure is all set up and consistent
-      const auto& field = *S->GetFieldData(variable_);
-      if (!field.HasComponent(location_)) {
-        Errors::Message msg;
-        msg << "Observable: \"" << name_ << "\" uses variable \""
-            << variable_ << "\" but this field does not have the observed component \""
-            << location_ << "\"";
-        Exceptions::amanzi_throw(msg);
-      } else {
-        num_vectors_ = field.NumVectors(location_);
-      }
+  // if we don't have a communicator, we can't participate in this
+  if (comm_ == Teuchos::null) return;
 
-      if (num_vectors_ < dof_) {
-        Errors::Message msg;
-        msg << "Observable \"" << name_ << "\": inconsistent request of degree of freedom "
-            << dof_ << " for a vector with only " << num_vectors_ << " degrees of freedom.";
-        Exceptions::amanzi_throw(msg);
-      }
+  // one last check that the structure is all set up and consistent
+  if (has_data_ && num_vectors_ < 0) {
+    const auto& field = S->Get<CompositeVector>(variable_, tag_);
+
+    if (!field.HasComponent(location_)) {
+      Errors::Message msg;
+      msg << "Observable: \"" << name_ << "\" uses variable \""
+          << variable_ << "\" but this field does not have the observed component \""
+          << location_ << "\"";
+      Exceptions::amanzi_throw(msg);
+    } else {
+      num_vectors_ = field.NumVectors(location_);
+    }
+
+    if (num_vectors_ < dof_) {
+      Errors::Message msg;
+      msg << "Observable \"" << name_ << "\": inconsistent request of degree of freedom "
+          << dof_ << " for a vector with only " << num_vectors_ << " degrees of freedom.";
+      Exceptions::amanzi_throw(msg);
     }
 
     // communicate so that all ranks know number of vectors
     int num_vectors_local = num_vectors_;
     comm_->MaxAll(&num_vectors_local, &num_vectors_, 1);
   }
+
+  // must communicate the number of vectors so that all in comm have the right
+  // size and get_num_vectors() is valid
+  int num_vectors_l(num_vectors_);
+  comm_->MaxAll(&num_vectors_l, &num_vectors_, 1);
 }
+
 
 void Observable::Update(const Teuchos::Ptr<State>& S,
                         std::vector<double>& data, int start_loc)
 {
+  // if we don't have a communicator, we do not participate, so leave the value at NaN
+  if (comm_ == Teuchos::null) return;
+
   // deal with the time integrated case for the first observation
   if (time_integrated_ && std::isnan(old_time_)) {
     for (int i=0; i!=get_num_vectors(); ++i) data[start_loc+i] = 0.;
-    old_time_ = S->time();
+    old_time_ = S->get_time();
     return;
   }
 
-  // set up temporary space on all ranks to store the local value
+  // from this point forward, has_data_ may be true or false, but we know that
+  // the comm is valid so we must participate in communication!  This deals
+  // with the case of an observation not on comm's rank 0, but must be
+  // communicated to rank 0 to write.  We do know that get_num_vectors() is valid though.
+  AMANZI_ASSERT(get_num_vectors() >= 0);
   std::vector<double> value;
   if (functional_ == "minimum") {
     value.resize(get_num_vectors() + 1, 1.e20);
@@ -217,25 +238,33 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
     value.resize(get_num_vectors() + 1, 0.);
   }
 
-  if (on_proc_) {
-    // update the variable
-    if (has_eval_)
-      S->GetFieldEvaluator(variable_)->HasFieldChanged(S, "observation");
+  // update the variable
+  if (has_eval_)
+    S->GetEvaluator(variable_, tag_).Update(*S, "observation");
 
-    Teuchos::RCP<const CompositeVector> vec = S->GetFieldData(variable_);
-    AMANZI_ASSERT(vec->HasComponent(location_));
+  bool has_record = S->HasRecord(variable_, tag_);
+  if (has_record && S->GetRecord(variable_, tag_).ValidType<double>()) {
+    // scalars, just return the value
+    value[0] = S->GetRecord(variable_, tag_).Get<double>();
+    value[1] = 1;
+
+  } else if (has_record && S->GetRecord(variable_, tag_).ValidType<CompositeVector>()) {
+    // vector field
+    const auto& vec = S->GetRecord(variable_, tag_).Get<CompositeVector>();
+    AMANZI_ASSERT(vec.HasComponent(location_));
 
     // get the region
     AmanziMesh::Entity_kind entity = AmanziMesh::entity_kind(location_);
     AmanziMesh::Entity_ID_List ids;
-    vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
 
     // get the vector component
-    const Epetra_MultiVector& subvec = *vec->ViewComponent(location_, false);
+    vec.Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
+    const Epetra_MultiVector& subvec = *vec.ViewComponent(location_, false);
 
     if (entity == AmanziMesh::CELL) {
       for (auto id : ids) {
-        double vol = vec->Mesh()->cell_volume(id);
+        double vol = vec.Mesh()->cell_volume(id);
+
         if (dof_ < 0) {
           for (int i=0; i!=get_num_vectors(); ++i) {
             value[i] = (*function_)(value[i], subvec[i][id], vol);
@@ -247,25 +276,25 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
       }
     } else if (entity == AmanziMesh::FACE) {
       for (auto id : ids) {
-        double vol = vec->Mesh()->face_area(id);
+        double vol = vec.Mesh()->face_area(id);
 
         // hack to orient flux to outward-normal along a boundary only
         double sign = 1;
         if (flux_normalize_) {
           if (direction_.get()) {
             // normalize to the provided vector
-            AmanziGeometry::Point normal = vec->Mesh()->face_normal(id);
+            AmanziGeometry::Point normal = vec.Mesh()->face_normal(id);
             sign = (normal * (*direction_)) / AmanziGeometry::norm(normal);
 
           } else if (!flux_normalize_region_.empty()) {
             // normalize to outward normal relative to a volumetric region
             AmanziMesh::Entity_ID_List vol_cells;
-            vec->Mesh()->get_set_entities(flux_normalize_region_,
+            vec.Mesh()->get_set_entities(flux_normalize_region_,
                     AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL, &vol_cells);
 
             // which cell of the face is "inside" the volume
             AmanziMesh::Entity_ID_List cells;
-            vec->Mesh()->face_get_cells(id, AmanziMesh::Parallel_type::ALL, &cells);
+            vec.Mesh()->face_get_cells(id, AmanziMesh::Parallel_type::ALL, &cells);
             AmanziMesh::Entity_ID c = -1;
             for (const auto& cc : cells) {
               if (std::find(vol_cells.begin(), vol_cells.end(), cc) != vol_cells.end()) {
@@ -278,7 +307,7 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
               msg << "Observeable on face region \"" << region_
                   << "\" flux normalized relative to volumetric region \""
                   << flux_normalize_region_ << "\" but face "
-                  << vec->Mesh()->face_map(true).GID(id)
+                  << vec.Mesh()->face_map(true).GID(id)
                   << " does not border the volume region.";
               Exceptions::amanzi_throw(msg);
             }
@@ -286,17 +315,19 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
             // normalize with respect to that cell's direction
             AmanziMesh::Entity_ID_List faces;
             std::vector<int> dirs;
-            vec->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+            vec.Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
             int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
+
             sign = dirs[i];
 
           } else {
             // normalize to outward normal
             AmanziMesh::Entity_ID_List cells;
-            vec->Mesh()->face_get_cells(id, AmanziMesh::Parallel_type::ALL, &cells);
+            vec.Mesh()->face_get_cells(id, AmanziMesh::Parallel_type::ALL, &cells);
             AmanziMesh::Entity_ID_List faces;
             std::vector<int> dirs;
-            vec->Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
+            vec.Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
             int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
             sign = dirs[i];
           }
@@ -360,16 +391,19 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
     std::vector<double> global_value(value);
     comm_->MaxAll(value.data(), global_value.data(), value.size()-1);
     value = global_value;
+  } else {
+    AMANZI_ASSERT(false);
   }
 
+  // copy back from value into the data array
   for (int i=0; i!=get_num_vectors(); ++i) {
     data[start_loc+i] = value[i];
   }
 
-  // deal with time integration
+  // factor of dt for time integration
   if (time_integrated_) {
-    double dt = S->time() - old_time_;
-    old_time_ = S->time();
+    double dt = S->get_time() - old_time_;
+    old_time_ = S->get_time();
     for (int i=0; i!=get_num_vectors(); ++i) {
       data[start_loc+i] *= dt;
     }

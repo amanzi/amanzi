@@ -19,9 +19,11 @@ namespace Multiphase {
 ****************************************************************** */
 NCP_F::NCP_F(Teuchos::ParameterList& plist) : MultiphaseBaseEvaluator(plist)
 {
-  my_key_ = plist_.get<std::string>("my key");
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
+  }
   saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
-  dependencies_.insert(std::string(saturation_liquid_key_));
+  dependencies_.insert(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
 }
 
 
@@ -31,7 +33,7 @@ NCP_F::NCP_F(Teuchos::ParameterList& plist) : MultiphaseBaseEvaluator(plist)
 NCP_F::NCP_F(const NCP_F& other) : MultiphaseBaseEvaluator(other) {};
 
 
-Teuchos::RCP<FieldEvaluator> NCP_F::Clone() const {
+Teuchos::RCP<Evaluator> NCP_F::Clone() const {
   return Teuchos::rcp(new NCP_F(*this));
 }
 
@@ -39,13 +41,13 @@ Teuchos::RCP<FieldEvaluator> NCP_F::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void NCP_F::EvaluateField_(const Teuchos::Ptr<State>& S,
-                           const Teuchos::Ptr<CompositeVector>& result)
+void NCP_F::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& sl = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
+  const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
 
-  auto& result_c = *result->ViewComponent("cell");
-  int ncells = result->size("cell", false);
+  auto& result_c = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell", false);
 
   for (int c = 0; c != ncells; ++c) {
     result_c[0][c] = 1.0 - sl[0][c];
@@ -56,12 +58,12 @@ void NCP_F::EvaluateField_(const Teuchos::Ptr<State>& S,
 /* ******************************************************************
 * Required member: field derivative calculation.
 ****************************************************************** */
-void NCP_F::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void NCP_F::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  auto& result_c = *result->ViewComponent("cell");
-  int ncells = result->size("cell", false);
+  auto& result_c = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell", false);
 
   if (wrt_key == saturation_liquid_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = -1.0;

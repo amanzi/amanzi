@@ -156,7 +156,7 @@ void RunTest(double gravity) {
     // -- modify right-hand side and solution
     const auto& old_c = *solution.ViewComponent("cell");
     const auto& new_c = *solution_new.ViewComponent("cell");
-    const auto& rhs_c = *rhs.ViewComponent("cell");
+    auto& rhs_c = *rhs.ViewComponent("cell");
     for (int c = 0; c < ncells_owned; ++c) 
       rhs_c[0][c] += (new_c[0][c] - old_c[0][c]) * mesh->cell_volume(c) / dt;
 

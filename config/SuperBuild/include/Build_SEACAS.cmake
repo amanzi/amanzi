@@ -126,6 +126,7 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DTPL_ENABLE_Pthread:BOOL=FALSE
                     -DSEACASExodus_ENABLE_THREADSAFE:BOOL=OFF
                     -DSEACASIoss_ENABLE_THREADSAFE:BOOL=OFF
+                    -DPYTHON_EXECUTABLE:STRING=${PYTHON_EXECUTABLE}
                     ${seacas_install_rpath})
 
 # --- Add external project build and tie to the SEACAS build target

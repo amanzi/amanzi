@@ -1334,18 +1334,11 @@ void Beaker::ScaleRHSAndJacobian()
 
 void Beaker::UpdateMolalitiesWithTruncation(const double max_ln_change)
 {
-  double max_linear_change = std::pow(10.0, max_ln_change); // log10 vs ln... close enough
-  double max_change;
-  if (use_log_formulation_) {
-    max_change = max_ln_change;
-  } else {
-    max_change = max_linear_change;
-  }
-  
+  double max_change = use_log_formulation_ ? max_ln_change : std::pow(10.0, max_ln_change);
   double min_ratio = 1.0e20; // large number
 
   for (int i = 0; i < ncomp_; i++) {
-    // truncate the rhs to max_change
+    // truncate solution (rhs) to +- max_change
     if (rhs_.at(i) > max_change) {
       rhs_.at(i) = max_change;
     } else if (rhs_.at(i) < -max_change) {
@@ -1371,8 +1364,8 @@ void Beaker::UpdateMolalitiesWithTruncation(const double max_ln_change)
       molality = prev_molal_.at(i) * std::exp(-rhs_.at(i));
     } else {
       if (min_ratio < 1.0) {
-        // scale by 0.99 to make the update slightly smaller than the min_ratio
-        rhs_.at(i) *= min_ratio*0.99;
+        // make the update slightly smaller than the min_ratio
+        rhs_.at(i) *= min_ratio * 0.99;
       }
       molality = prev_molal_.at(i) - rhs_.at(i);
     }

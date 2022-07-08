@@ -27,7 +27,7 @@ class MDM {
 
   // returns dispersion tensor.
   virtual WhetStone::Tensor mech_dispersion(
-      const AmanziGeometry::Point& u, int axi_symmetry, double s, double phi) const = 0;
+      const AmanziGeometry::Point& u, int axi_symmetry, double wc, double phi) const = 0;
 
   // The model is valid if at least one parameter is not zero.
   virtual bool is_valid() const = 0;

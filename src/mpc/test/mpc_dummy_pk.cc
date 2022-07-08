@@ -38,8 +38,7 @@ using namespace std;
   Teuchos::ParameterList reg_params = plist.sublist("regions");
 
   int spdim = 2;
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model_ptr =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, *comm));
+  auto geom_model_ptr = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, *comm));
 
   Amanzi::AmanziGeometry::Domain *simdomain_ptr = new Amanzi::AmanziGeometry::Domain(spdim);
 
@@ -103,7 +102,7 @@ using namespace std;
 
   double dt_last; 
   dt_last = cycle_driver.get_dt();
-  int cycle = S->cycle();
+  int cycle = S->get_cycle();
 
   
 

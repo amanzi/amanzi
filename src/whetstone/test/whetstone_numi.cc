@@ -24,6 +24,15 @@
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"
 
+class TestFunction : public Amanzi::WhetStone::WhetStoneFunction {
+ public:
+  virtual double Value(const Amanzi::AmanziGeometry::Point& xp) const {
+    double a = norm(xp - Amanzi::AmanziGeometry::Point(0.5, 0.5));
+    return (a < 0.25) ? 1.0 : 0.0;
+    // return (1.0 + tanh((a - 0.5) * 10)) / 2;
+  }
+};
+
 
 /* **************************************************************** */
 TEST(NUMI_CELL_2D_EULER_FORMULA) {
@@ -92,7 +101,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
   std::vector<const WhetStoneFunction*> polys(1);
   polys[0] = &poly;
 
-  for (int order = 1; order < 10; ++order) {
+  for (int order = 1; order < 14; ++order) {
     val1 = numi.IntegrateFunctionsTriangulatedCell(cell, polys, order);
 
     printf("order=%d  value=%10.6g\n", order, val1);
@@ -100,7 +109,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
   }
  
   // cross-comparison of integrators
-  for (int order = 1; order < 10; ++order) {
+  for (int order = 1; order < 14; ++order) {
     poly.Reshape(2, order, true);
     poly(order, 0) = 1.0;
 
@@ -138,7 +147,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
   int cell(3), face(9);
   double val, exact;
 
-  for (int order = 1; order < 10; ++order) {
+  for (int order = 1; order < 14; ++order) {
     Polynomial poly(2, order);
     poly(order, 0) = 1.0;
 
@@ -153,8 +162,39 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
 
     // face of a square
     val = numi.IntegrateFunctionsTriangulatedFace(face, polys, order);
-    printf("FACE: order=%d  values: %10.6g %10.6g\n", order, val, exact);
+    printf("FACE: order=%d  values: %10.6g %10.6g  err=%10.6g\n", order, val, exact, val - exact);
     CHECK_CLOSE(val, exact, 1e-12);
+
+    // add y-component to polynomial
+    int k = MonomialSpaceDimension(2, order);
+    poly(order, k - 1) = 1.0;
+    val = numi.IntegrateFunctionsTriangulatedCell(cell, polys, order);
+    CHECK_CLOSE(val, 2 * exact, 1e-12);
+
+    // functions with sharp features
+    // -- quadrature based on partition
+    TestFunction f;
+    if (order > 6) {
+      polys[0] = &f;
+      val = numi.IntegrateFunctionsTriangulatedCell(cell, polys, order);
+      CHECK_CLOSE(val, 0.1963, 0.1);
+    }
+
+    // -- quadrature based on tensor product
+    int mmax = order / 2;
+    double val2(0.0);
+    exact = 0.196349540849362;
+    AmanziGeometry::Point q(2);
+
+    for (int i = 0; i <= mmax; ++i) { 
+      q[0] = q1d_points[mmax][i];
+      for (int j = 0; j <= mmax; ++j) { 
+        q[1] = q1d_points[mmax][j];
+        val2 += f.Value(q) * q1d_weights[mmax][i] * q1d_weights[mmax][j];
+      }
+    }
+    std::cout << "n=" << order << " " << val << " " << val2 
+              << " errs: " << val - exact << " " << val2 - exact << std::endl;
   }
 }
 

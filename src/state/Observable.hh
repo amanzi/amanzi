@@ -106,6 +106,8 @@ variable and/or mesh do not exist on this process.
 #include "Teuchos_RCP.hpp"
 
 #include "AmanziComm.hh"
+#include "AmanziTypes.hh"
+#include "Key.hh"
 #include "Point.hh"
 #include "MeshDefs.hh"
 #include "IOEvent.hh"
@@ -118,14 +120,21 @@ class Observable {
  public:
   static const double nan;
 
-  Observable(const Comm_ptr_type& comm,
-             Teuchos::ParameterList& plist);
+  Observable(Teuchos::ParameterList& plist);
+  Observable(const Comm_ptr_type& comm, Teuchos::ParameterList& plist)
+    : Observable(plist) {
+    set_comm(comm);
+  }
 
-  const std::string& get_name() { return name_; }
-  const std::string& get_variable() { return variable_; }
-  const std::string& get_region() { return region_; }
-  const std::string& get_location() { return location_; }
-  const std::string& get_functional() { return functional_; }
+  const std::string& get_name() const { return name_; }
+  const std::string& get_variable() const { return variable_; }
+  const std::string& get_region() const { return region_; }
+  const std::string& get_location() const { return location_; }
+  const std::string& get_functional() const { return functional_; }
+
+  const Comm_ptr_type& get_comm() const { return comm_; }
+  void set_comm(const Comm_ptr_type& comm) { comm_ = comm; }
+
   bool is_time_integrated() { return time_integrated_; }
   int get_num_vectors() {
     return (dof_ >= 0) ? 1 : num_vectors_;
@@ -138,22 +147,24 @@ class Observable {
 
  protected:
   Comm_ptr_type comm_;
-  bool on_proc_;
 
   bool flux_normalize_;
   Teuchos::RCP<AmanziGeometry::Point> direction_;
   std::string flux_normalize_region_;
 
   std::string name_;
-  std::string variable_;
+  Key variable_;
   std::string region_;
   std::string functional_;
   std::string location_;
+  Tag tag_;
   int num_vectors_;
   int dof_;
   bool time_integrated_;
   double old_time_;
-  bool has_eval_;
+
+  bool has_eval_; // is there an evaluator for this variable_
+  bool has_data_; // is there data on this rank for this variable_
 
   double (*function_)(double a, double b, double vol);
 };

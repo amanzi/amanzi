@@ -10,7 +10,7 @@
 class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vector> {
  public:
   NonlinearProblem(double atol, double rtol, bool exact_jacobian) :
-    rtol_(rtol), atol_(atol), exact_jacobian_(exact_jacobian) {}
+    atol_(atol), rtol_(rtol), exact_jacobian_(exact_jacobian) {}
 
   void Residual(const Teuchos::RCP<Epetra_Vector>& u,
                 const Teuchos::RCP<Epetra_Vector>& f) {

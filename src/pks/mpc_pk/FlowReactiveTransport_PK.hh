@@ -39,7 +39,7 @@ class FlowReactiveTransport_PK : public PK_MPCSubcycled {
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag);
 
   std::string name() { return "flow reactive transport";} 
 

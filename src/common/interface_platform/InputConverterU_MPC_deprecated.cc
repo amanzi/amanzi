@@ -199,6 +199,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
     } else if (strcmp(tagname, "transport") == 0) {
       transient_model += 2 * pk_state[tagname];
+      pk_model_["transport"] = "transport";
       pk_domain_["transport"] = "domain";
     }
   }
@@ -247,7 +248,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       "numerical_controls, unstructured_controls, unstr_transport_controls, algorithm", flag);
   if (flag) {
     std::string algorithm = TrimString_(mm.transcode(node->getTextContent()));
-    transport_implicit_ = (algorithm == "implicit");
+    transport_implicit_ = (algorithm == "implicit" || algorithm == "implicit second-order");
   }
 
   std::string submodel;
@@ -291,7 +292,6 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
         PopulatePKTree_(pk_tree_list, "transient:coupled flow and reactive transport");
       break;
     default:
-      Errors::Message msg;
       msg << "The model with id=" << transient_model << " is not supported by the MPC.\n";
       Exceptions::amanzi_throw(msg);
     }

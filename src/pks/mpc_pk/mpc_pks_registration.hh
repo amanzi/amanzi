@@ -9,14 +9,13 @@
   Registration of MPC PKs.
 */
 
+#include "PK_MPCStrong.hh"
 #include "PK_MPCSubcycled.hh"
 
-#ifndef DISABLE_PHYSICS
 #include "FlowEnergy_PK.hh"
 #include "FlowEnergyMatrixFracture_PK.hh"
 #include "FlowMatrixFracture_PK.hh"
 #include "FlowReactiveTransport_PK.hh"
-#endif
 
 #include "ChemistryMatrixFracture_PK.hh"
 #include "ReactiveTransport_PK.hh"
@@ -28,15 +27,15 @@
 
 namespace Amanzi {
 
+template<>
+RegisteredPKFactory<PK_MPCStrong<PK_BDF> > PK_MPCStrong<PK_BDF>::reg_("mpc strong");
 RegisteredPKFactory<PK_MPCSubcycled> PK_MPCSubcycled::reg_("mpc subcycled");
 RegisteredPKFactory<PK_MPCWeak> PK_MPCWeak::reg_("mpc weak");
 
-#ifndef DISABLE_PHYSICS
 RegisteredPKFactory<FlowEnergy_PK> FlowEnergy_PK::reg_("thermal flow");
 RegisteredPKFactory<FlowEnergyMatrixFracture_PK> FlowEnergyMatrixFracture_PK::reg_("thermal flow matrix fracture");
 RegisteredPKFactory<FlowReactiveTransport_PK> FlowReactiveTransport_PK::reg_("flow reactive transport");
 RegisteredPKFactory<FlowMatrixFracture_PK> FlowMatrixFracture_PK::reg_("darcy matrix fracture");
-#endif
 
 RegisteredPKFactory<ReactiveTransport_PK> ReactiveTransport_PK::reg_("reactive transport");
 

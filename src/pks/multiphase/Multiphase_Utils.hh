@@ -17,12 +17,17 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "Key.hh"
+
 namespace Amanzi {
 namespace Multiphase {
 
 // no-member functions
 void ConvertFieldToTensor(const Teuchos::RCP<State>& S, int dim,
                           const std::string& key, std::vector<WhetStone::Tensor>& K);
+
+KeyPair splitPhase(const Key& name);
+Key mergePhase(const Key& name, const int phase);
 
 }  // namespace Multiphase
 }  // namespace Amanzi

@@ -21,6 +21,7 @@ ENV https_proxy=$https_proxy \
 
 # Make sure we have updated branch information
 RUN echo "Amanzi branch = $amanzi_branch"
+RUN git remote prune origin
 RUN git pull
 RUN git branch --list
 # Checkout the branch and update it

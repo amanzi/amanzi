@@ -32,7 +32,6 @@ class Newton {
   std::vector<double> x_;
   std::vector<double> r_;
 
-  double d_;
   std::vector<int> indices_;
   std::vector<double> vv_;
 };

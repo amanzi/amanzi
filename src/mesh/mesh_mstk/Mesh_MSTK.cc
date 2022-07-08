@@ -122,14 +122,13 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
                      const bool request_faces,
                      const bool request_edges) :
     Mesh(comm, gm, plist, request_faces, request_edges),
-    meshxyz(nullptr), 
     faces_initialized(false), edges_initialized(false),
-    target_cell_volumes_(nullptr), min_cell_volumes_(nullptr),
     extface_map_w_ghosts_(nullptr), extface_map_wo_ghosts_(nullptr),
     extnode_map_w_ghosts_(nullptr), extnode_map_wo_ghosts_(nullptr),
-    owned_to_extface_importer_(nullptr)
+    owned_to_extface_importer_(nullptr),
+    meshxyz(nullptr), 
+    target_cell_volumes_(nullptr), min_cell_volumes_(nullptr)
 {
-  
   // extract optional control parameters, but first specify defaults
   contiguous_gids_ = true;
   Partitioner_type partitioner = PARTITIONER_DEFAULT;
@@ -239,12 +238,12 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
                      const bool request_faces,
                      const bool request_edges) :
     Mesh(comm, gm, plist, request_faces,request_edges), 
-    meshxyz(nullptr), 
     faces_initialized(false), edges_initialized(false),
-    target_cell_volumes_(nullptr), min_cell_volumes_(nullptr),
     extface_map_w_ghosts_(nullptr), extface_map_wo_ghosts_(nullptr),
     extnode_map_w_ghosts_(nullptr), extnode_map_wo_ghosts_(nullptr),
-    owned_to_extface_importer_(nullptr)
+    owned_to_extface_importer_(nullptr),
+    meshxyz(nullptr), 
+    target_cell_volumes_(nullptr), min_cell_volumes_(nullptr)
 {
   // extract optional control parameters, but first specify defaults
   contiguous_gids_ = true;
@@ -350,12 +349,12 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
                      const bool request_faces,
                      const bool request_edges) :
     Mesh(comm, gm, plist, request_faces, request_edges), 
-    meshxyz(nullptr), 
     faces_initialized(false), edges_initialized(false),
-    target_cell_volumes_(nullptr), min_cell_volumes_(nullptr),
     extface_map_w_ghosts_(nullptr), extface_map_wo_ghosts_(nullptr),
     extnode_map_w_ghosts_(nullptr), extnode_map_wo_ghosts_(nullptr),
-    owned_to_extface_importer_(nullptr)
+    owned_to_extface_importer_(nullptr),
+    meshxyz(nullptr), 
+    target_cell_volumes_(nullptr), min_cell_volumes_(nullptr)
 {
   // extract optional control parameters, but first specify defaults
   contiguous_gids_ = true;
@@ -465,10 +464,10 @@ Mesh_MSTK::Mesh_MSTK(const Teuchos::RCP<const Mesh>& parent_mesh,
     Mesh(comm, gm == Teuchos::null ? parent_mesh->geometric_model() : gm,
          plist == Teuchos::null ? parent_mesh->parameter_list() : plist,
          request_faces, request_edges),
-    parent_mesh_(Teuchos::rcp_dynamic_cast<const Mesh_MSTK>(parent_mesh)),
     extface_map_w_ghosts_(nullptr), extface_map_wo_ghosts_(nullptr),
     extnode_map_w_ghosts_(nullptr), extnode_map_wo_ghosts_(nullptr),
-    owned_to_extface_importer_(nullptr)
+    owned_to_extface_importer_(nullptr),
+    parent_mesh_(Teuchos::rcp_dynamic_cast<const Mesh_MSTK>(parent_mesh))
 {  
   if (!parent_mesh_.get()) {
     Errors::Message mesg("Cannot extract an MSTK mesh from a non-MSTK mesh.");

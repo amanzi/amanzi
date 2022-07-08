@@ -73,12 +73,12 @@ void RunTestConvergence(std::string input_xml) {
     /* create Richards process kernel */
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
     Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
-    RPK->Setup(S.ptr());
+    RPK->Setup();
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
 
-    RPK->Initialize(S.ptr());
+    RPK->Initialize();
     S->CheckAllFieldsInitialized();
 
     // solve the problem
@@ -89,11 +89,11 @@ void RunTestConvergence(std::string input_xml) {
     ti_specs.max_itrs = 2000;
 
     AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-    RPK->CommitStep(0.0, 1.0, S);  // dummy times
+    RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times
 
     double pressure_err, flux_err, div_err;  // error checks
-    const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
-    const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
+    const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
+    const auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", "flow").ViewComponent("face", true);
 
     pressure_err = CalculatePressureCellError(mesh, p);
     flux_err = CalculateDarcyFluxError(mesh, flux);
@@ -125,9 +125,9 @@ void RunTestConvergence(std::string input_xml) {
 /* *****************************************************************
 * Run with various discretization methods
 * **************************************************************** */
-// TEST(FLOW_RICHARDS_CONVERGENCE_MFD) {
-//   RunTestConvergence("test/flow_richards_convergence.xml");
-// }
+TEST(FLOW_RICHARDS_CONVERGENCE_MFD) {
+  RunTestConvergence("test/flow_richards_convergence.xml");
+}
 
 TEST(FLOW_RICHARDS_CONVERGENCE_NLFV) {
   RunTestConvergence("test/flow_richards_convergence_nlfv.xml");

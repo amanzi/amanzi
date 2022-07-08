@@ -68,10 +68,10 @@ Mesh::Mesh(const Comm_ptr_type& comm,
            const bool request_edges)
     : plist_(plist),
       mesh_type_(GENERAL),
-      parent_(Teuchos::null),
       logical_(false),
-      columns_built_(false),
-      kdtree_faces_initialized_(false)
+      parent_(Teuchos::null),
+      kdtree_faces_initialized_(false),
+      columns_built_(false)
 {
   comm_ = comm;
 
@@ -688,7 +688,6 @@ int
 Mesh::build_columns(const std::string& setname) const
 {
   if (columns_built_) return 0;
-  int rank = get_comm()->MyPID();
 
   // Allocate space and initialize.
   int nn = num_entities(NODE,Parallel_type::ALL);

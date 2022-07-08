@@ -66,6 +66,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   out_list.set<int>("temporal discretization order", 1);
   out_list.set<double>("cfl", cfl);
   out_list.set<std::string>("flow mode", "transient");
+  out_list.set<std::string>("method", "muscl");
 
   out_list.set<std::string>("solver", "Dispersion Solver");
   out_list.set<std::string>("preconditioner", LINEAR_SOLVER_PC);
@@ -79,17 +80,24 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
     out_list.set<bool>("transport subcycling", (strcmp(text, "on") == 0));
   }
 
-  int poly_order(0);
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, flux_method", flag);
+  if (flag) {
+    text = mm.transcode(node->getTextContent());
+    out_list.set<std::string>("method", text);
+  }
+
+  int nspace(1), ntime(1), poly_order(0);
   std::string tags_default("unstructured_controls, unstr_transport_controls");
   node = GetUniqueElementByTagsString_(tags_default + ", algorithm", flag);
   if (flag) {
-    std::string order = GetTextContentS_(node, "explicit first-order, explicit second-order, explicit, implicit");
+    std::string order = GetTextContentS_(node, "explicit, explicit first-order, explicit second-order, "
+                                               "implicit, implicit second-order");
     if (order == "explicit first-order") {
-      out_list.set<int>("spatial discretization order", 1);
-      out_list.set<int>("temporal discretization order", 1);
+      nspace = 1;
+      ntime = 1;
     } else if (order == "explicit second-order") {
-      out_list.set<int>("spatial discretization order", 2);
-      out_list.set<int>("temporal discretization order", 2);
+      nspace = 2;
+      ntime = 2;
       poly_order = 1;
     } else if (order == "explicit") {
       int nspace(-1), ntime(-1);
@@ -106,9 +114,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
         Exceptions::amanzi_throw(msg);
       }
 
-      out_list.set<int>("spatial discretization order", nspace);
-      out_list.set<int>("temporal discretization order", ntime);
-      out_list.set<bool>("generic RK implementation", true);
       poly_order = 1;
     } else if (order == "implicit") {
       std::vector<std::string> dofs({"cell"});
@@ -117,7 +122,19 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
               .set<int>("method order", 0)
               .set<std::string>("matrix type", "advection");
       poly_order = 1;
+    } else if (order == "implicit second-order") {
+      nspace = 2;
+      ntime = 1;
+      std::vector<std::string> dofs({"cell"});
+      adv_list.sublist("matrix")
+              .set<Teuchos::Array<std::string> >("schema", dofs)
+              .set<int>("method order", 0)
+              .set<std::string>("matrix type", "advection");
+      poly_order = 1;
     }
+
+    out_list.set<int>("spatial discretization order", nspace);
+    out_list.set<int>("temporal discretization order", ntime);
   }
 
   // high-order transport
@@ -148,7 +165,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
                     (doc_->getElementsByTagName(mm.transcode("tortuosity"))->getLength() > 0);
 
   // create dispersion list
-  if (dispersion && domain != "fracture") {
+  if (dispersion) {
     node_list = doc_->getElementsByTagName(mm.transcode("materials"));
 
     Teuchos::ParameterList& mat_list = out_list.sublist("material properties");
@@ -262,14 +279,15 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   out_list.set<int>("number of gaseous components", phases_["air"].size());
 
   out_list.sublist("physical models and assumptions")
-      .set<bool>("effective transport porosity", use_transport_porosity_);
+      .set<bool>("effective transport porosity", use_transport_porosity_)
+      .set<bool>("use dispersion solver", use_transport_dispersion_);
 
   // cross coupling of PKs
   out_list.sublist("physical models and assumptions")
       .set<bool>("permeability field is required", transport_permeability_);
 
-  if (fractures_ && domain != "domain") {
-    out_list.sublist("physical models and assumptions").set<bool>("transport in fractures", true);
+  if (fractures_ && domain == "fracture") {
+    out_list.sublist("physical models and assumptions").set<bool>("flow and transport in fractures", true);
   }
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");

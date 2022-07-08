@@ -5,7 +5,7 @@
 #include <RSdata.H>
 #include <NLSstatus.H>
 
-class RSdata; // Forward ref
+struct RSdata; // Forward ref
 
 struct NLScontrol
 {

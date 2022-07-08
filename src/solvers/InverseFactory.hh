@@ -200,8 +200,6 @@ Teuchos::RCP<Inverse<Operator,Preconditioner,Vector,VectorSpace>>
 createIterativeMethod(const std::string& method_name,
                       Teuchos::ParameterList& inv_list)
 {
-  auto& method_list = Impl::getMethodSublist(inv_list, method_name);
-
   Teuchos::RCP<Inverse<Operator,Preconditioner,Vector,VectorSpace>> inv;
   if (method_name == "gmres") {
     inv = Teuchos::rcp(new IterativeMethodGMRES<Operator,Preconditioner,Vector,VectorSpace>());
@@ -217,10 +215,6 @@ createIterativeMethod(const std::string& method_name,
     Exceptions::amanzi_throw(msg);
   }
 
-  if (inv.get()) {
-    inv->set_name(Keys::cleanPListName(inv_list.name()));
-    inv->set_inverse_parameters(method_list);
-  }
   return inv;
 }
 
@@ -240,6 +234,11 @@ createIterativeMethod(Teuchos::ParameterList& inv_list,
   auto method_name = inv_list.get<std::string>("iterative method");
   auto inv = createIterativeMethod<Operator,Preconditioner,Vector,VectorSpace>(method_name, inv_list);
   inv->set_matrices(m, h);
+
+  auto& method_list = Impl::getMethodSublist(inv_list, method_name);
+  inv->set_name(Keys::cleanPListName(inv_list.name()));
+  inv->set_inverse_parameters(method_list);
+
   return inv;
 }
 
@@ -253,6 +252,11 @@ createIterativeMethod(Teuchos::ParameterList& inv_list,
   auto method_name = inv_list.get<std::string>("iterative method");
   auto inv = createIterativeMethod<Operator,Operator,Vector,VectorSpace>(method_name, inv_list);
   inv->set_matrices(m, m);
+
+  auto& method_list = Impl::getMethodSublist(inv_list, method_name);
+  inv->set_name(Keys::cleanPListName(inv_list.name()));
+  inv->set_inverse_parameters(method_list);
+
   return inv;
 }
 

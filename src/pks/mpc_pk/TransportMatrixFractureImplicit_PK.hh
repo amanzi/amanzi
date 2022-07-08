@@ -24,6 +24,7 @@
 #include "PDE_CouplingFlux.hh"
 #include "TreeOperator.hh"
 
+#include "FractureInsertion.hh"
 #include "TransportMatrixFracture_PK.hh"
 
 namespace Amanzi {
@@ -37,21 +38,19 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
 
   // PK methods
   // -- setup
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup() override;
+  virtual void Initialize() override;
 
   // -- advance each sub pk from t_old to t_new.
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
   // miscaleneous methods
-  virtual std::string name() { return "coupled transport implicit"; } 
+  virtual std::string name() override { return "coupled transport implicit"; } 
 
  private:
-  Teuchos::RCP<TreeVector> ExtractComponent_(
-      const CompositeVector& tcc_m, const CompositeVector& tcc_f, int component);
-  void SaveComponent_(const TreeVector& tv_one,
-                      const Teuchos::RCP<TreeVector>& tv_all, int component);
+  bool AdvanceStepLO_(double t_old, double t_new, int* tot_itrs);
+  bool AdvanceStepHO_(double t_old, double t_new, int* tot_itrs);
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -59,8 +58,18 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
+  Key matrix_vol_flowrate_key_, fracture_vol_flowrate_key_;
+
+  int num_aqueous_;
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae_;
+
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling00_, op_coupling01_;
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling10_, op_coupling11_;
+
+  bool flag_dispersion_;
+  Teuchos::RCP<FractureInsertion> fid_;
+  Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling00d_, op_coupling01d_;
+  Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling10d_, op_coupling11d_;
 
   Teuchos::RCP<TimestepController> ts_control_;
 

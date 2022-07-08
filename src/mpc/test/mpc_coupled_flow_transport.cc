@@ -49,7 +49,7 @@ using namespace Amanzi::AmanziGeometry;
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({Framework::MSTK}));
-  auto mesh = factory.create(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 9, 2, 20);
+  auto mesh = factory.create(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 9, 2, 20, true, true);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -73,6 +73,8 @@ using namespace Amanzi::AmanziGeometry;
   std::vector<std::string> names;
   names.push_back("fracture");
   auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
+  // auto mesh_fracture = Teuchos::rcp(new MeshExtractedManifold(
+  //     mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list, true, false));
 
   S->RegisterMesh("fracture", mesh_fracture);
 
@@ -84,16 +86,16 @@ using namespace Amanzi::AmanziGeometry;
   double rho = 998.2;
   double mu = 0.001002;
   double K1 = 1.0e-11;
-  double kn = 4.0e-8;
-  double L = 60.0;
+  double gravity = 9.81;
+  double kn = 4.0e-8 / gravity;
+  double L = 120.0;
   double q0 = -2.0e-3;
 
   K1 *= rho / mu;
-  double pf_exact = p0 - q0 * (L / K1 / 2 + 1.0 / kn);
+  double pf_exact = p0 - q0 * (L / K1 / 2 + 1.0 / kn) - gravity * rho * L / 2;
 
-  // double pf = (*S->GetFieldData("fracture-pressure")->ViewComponent("cell"))[0][0];
-  // std::cout << "Fracture pressure: " << pf << ",  exact: " << pf_exact << std::endl;
-  // CHECK(std::fabs(pf - pf_exact) < 0.05 * std::fabs(pf_exact));
+  double pf = (*S->Get<CompositeVector>("fracture-pressure").ViewComponent("cell"))[0][0];
+  std::cout << "Fracture pressure: " << pf << ",  exact: " << pf_exact << std::endl;
+  CHECK(std::fabs(pf - pf_exact) < 0.05 * std::fabs(pf_exact));
 }
-
 

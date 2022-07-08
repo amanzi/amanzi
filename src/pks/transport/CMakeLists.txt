@@ -64,11 +64,15 @@ set(transport_inc_files
   TransportSourceFunction_Alquimia.hh
   TransportDefs.hh
   Transport_PK.hh
-  TransportImplicit_PK.hh  TransportExplicit_PK.hh)
+  TransportImplicit_PK.hh
+  TransportExplicit_PK.hh)
 
-set(transport_src_files Transport_PK.cc TransportImplicit_PK.cc TransportExplicit_PK.cc
-                        TransportExplicit_TI.cc Transport_VandV.cc Transport_Initialize.cc 
-                        Transport_Dispersion.cc Transport_HenryLaw.cc
+set(transport_src_files Transport_PK.cc Transport_TI.cc
+                        TransportImplicit_PK.cc TransportImplicit_TI.cc 
+                        TransportExplicit_PK.cc TransportExplicit_TI.cc 
+                        Transport_VandV.cc Transport_Initialize.cc 
+                        Transport_Dispersion.cc Transport_Diffusion_Effective.cc
+                        Transport_HenryLaw.cc
                         MDM_Isotropic.cc MDM_Bear.cc MDM_BurnettFrind.cc MDM_LichtnerKelkarRobinson.cc
                         MDMPartition.cc MDMFactory.cc
                         MultiscaleTransportPorosityFactory.cc
@@ -128,9 +132,15 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
                     SOURCE test/Main.cc test/transport_convergence.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    # diffusion and dispersion
     add_amanzi_test(transport_dispersion transport_dispersion
                     KIND unit
                     SOURCE test/Main.cc test/transport_dispersion.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(transport_diffusion_smiles transport_diffusion_smiles
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_diffusion_smiles.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(transport_2D transport_2D
@@ -153,9 +163,19 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
                     SOURCE test/Main.cc test/transport_3D_long.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(transport_implicit transport_implicit
+    add_amanzi_test(transport_multiscale transport_multiscale
                     KIND unit
-                    SOURCE test/Main.cc test/transport_implicit.cc
+                    SOURCE test/Main.cc test/transport_multiscale.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(transport_implicit_2D transport_implicit_2D
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_implicit_2D.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(transport_implicit_3D transport_implicit_3D
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_implicit_3D.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(transport_subcycling transport_subcycling
@@ -183,4 +203,17 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
                     NPROCS 2
                     SOURCE test/Main.cc test/transport_fractures.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(transport_fractures_implicit transport_fractures_implicit
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_fractures_implicit.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # fct
+    add_amanzi_test(transport_fct transport_fct
+                    KIND unit
+                    NPROCS 2
+                    SOURCE test/Main.cc test/transport_fct.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
 endif()

@@ -52,14 +52,14 @@ class PK_MPCAdditive :  public PK_MPC<PK> {
 
   // PK methods
   // -- sets up sub-PKs
-  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup();
 
   // -- calls all sub-PK initialize() methods
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize();
 
   // -- loops over sub-PKs
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag);
+  virtual void CalculateDiagnostics(const Tag& tag);
   virtual double get_dt();
   virtual void set_dt(double dt);
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
@@ -70,10 +70,11 @@ class PK_MPCAdditive :  public PK_MPC<PK> {
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-PK_MPCAdditive<PK_Base>::PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
-                        const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-                        const Teuchos::RCP<State>& S,
-                        const Teuchos::RCP<TreeVector>& soln)
+PK_MPCAdditive<PK_Base>::PK_MPCAdditive(
+    Teuchos::ParameterList& pk_tree,
+    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+    const Teuchos::RCP<State>& S,
+    const Teuchos::RCP<TreeVector>& soln)
 {
   pk_tree_ = pk_tree;
   global_list_ = global_list;
@@ -122,9 +123,9 @@ PK_MPCAdditive<PK_Base>::PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void PK_MPCAdditive<PK_Base>::Setup(const Teuchos::Ptr<State>& S) {
+void PK_MPCAdditive<PK_Base>::Setup() {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-    (*pk)->Setup(S);
+    (*pk)->Setup();
   }
 }
 
@@ -133,9 +134,9 @@ void PK_MPCAdditive<PK_Base>::Setup(const Teuchos::Ptr<State>& S) {
 // Loop over sub-PKs, calling their initialization methods
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void PK_MPCAdditive<PK_Base>::Initialize(const Teuchos::Ptr<State>& S) {
+void PK_MPCAdditive<PK_Base>::Initialize() {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-    (*pk)->Initialize(S);
+    (*pk)->Initialize();
   }
 }
 
@@ -144,9 +145,9 @@ void PK_MPCAdditive<PK_Base>::Initialize(const Teuchos::Ptr<State>& S) {
 // loop over sub-PKs, calling their commit state method
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void PK_MPCAdditive<PK_Base>::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+void PK_MPCAdditive<PK_Base>::CommitStep(double t_old, double t_new, const Tag& tag) {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-    (*pk)->CommitStep(t_old, t_new, S);
+    (*pk)->CommitStep(t_old, t_new, tag);
   }
 }
 
@@ -155,9 +156,9 @@ void PK_MPCAdditive<PK_Base>::CommitStep(double t_old, double t_new, const Teuch
 // loop over sub-PKs, calling their CalculateDiagnostics method
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void PK_MPCAdditive<PK_Base>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
+void PK_MPCAdditive<PK_Base>::CalculateDiagnostics(const Tag& tag) {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-    (*pk)->CalculateDiagnostics(S);
+    (*pk)->CalculateDiagnostics(tag);
   }
 }
 

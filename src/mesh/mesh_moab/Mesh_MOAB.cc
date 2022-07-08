@@ -1503,7 +1503,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string& setname,
       amanzi_throw(mesg);
     } 
 
-    Tag tag;
+    moab::Tag tag;
     if (kind == CELL) tag = cstag;
     else if (kind == FACE) tag = sstag;
     else if (kind == NODE) tag = nstag;
@@ -2015,6 +2015,7 @@ const Epetra_Import& Mesh_MOAB::exterior_face_importer(void) const
 {
   Errors::Message mesg("Exterior face importer is not implemented");
   amanzi_throw(mesg);
+  throw(mesg); // this silences compiler warnings but is never called
 }
 
 

@@ -21,7 +21,7 @@
 
 #include "Debugger.hh"
 #include "Key.hh"
-#include "primary_variable_field_evaluator.hh"
+#include "EvaluatorPrimary.hh"
 #include "PK.hh"
 
 namespace Amanzi {
@@ -42,35 +42,39 @@ class PK_Physical : virtual public PK {
   };
 
   // Virtual destructor
-  virtual ~PK_Physical() {};
+  virtual ~PK_Physical() = default;
 
   // Default implementations of PK methods.
   // -- transfer operators -- pointer copies only
-  virtual void State_to_Solution(const Teuchos::RCP<State>& S, TreeVector& soln);
-  virtual void Solution_to_State(TreeVector& soln, const Teuchos::RCP<State>& S);
-  virtual void Solution_to_State(const TreeVector& soln, const Teuchos::RCP<State>& S);
-
-  // overloaded function also gets the primary field evaulator.
-  virtual void set_states(const Teuchos::RCP<State>& S,
-                          const Teuchos::RCP<State>& S_inter,
-                          const Teuchos::RCP<State>& S_next);
+  virtual void State_to_Solution(const Tag& tag, TreeVector& soln) override;
+  virtual void Solution_to_State(const TreeVector& soln, const Tag& tag) override;
 
   // access
   Key domain() { return domain_; }
   Teuchos::RCP<Debugger> debugger() { return db_; }
 
  protected:
+  // Helper method to add a primary variable evaluator
+  void AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag = Tags::DEFAULT);
+  void AddDefaultPrimaryEvaluator_(const Tag& tag = Tags::DEFAULT) { AddDefaultPrimaryEvaluator_(key_, tag); }
+
+protected:
   // name of domain, associated mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Key domain_;
 
   // solution and evaluator
   std::string key_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator_;
 
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> db_;
 };
+
+
+// non-meber Helper method to initialize a CV field
+void InitializeCVField(const Teuchos::RCP<State>& S, const VerboseObject& vo,
+                       const Key& key, const Tag& tag, const Key& passwd,
+                       double default_val);
 
 } // namespace Amanzi
 

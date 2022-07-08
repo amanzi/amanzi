@@ -10,7 +10,7 @@
 #include <BCRec.H>
 
 struct Layout;
-struct Stencil;
+class Stencil;
 struct IVSMap;
 
 struct MFTower

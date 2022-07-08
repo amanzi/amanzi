@@ -5,6 +5,8 @@
   #include <xmmintrin.h>
 #endif
 
+#include "boost/detail/fenv.hpp"
+
 #include <cstdlib>
 #include <cctype>
 #include <iostream>
@@ -75,6 +77,7 @@ void RunBatchNative(const std::string& filexml,
 #endif
 
   // default i/o level
+  double dt0 = dt;
   auto plist = Teuchos::getParametersFromXmlFile(filexml);
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Beaker", *plist));
 
@@ -156,14 +159,20 @@ void RunBatchNative(const std::string& filexml,
     double time(0.0);
 
     for (int n = 0; n < max_dt_steps; ++n) {
-      chem->ReactionStep(&state, parameters, dt);
-      // chem->CopyBeakerToState(&state);
-      time += dt;
-      if ((n + 1) % frequency == 0) chem->DisplayTotalColumns(time, state, false);
+      try {
+        chem->ReactionStep(&state, parameters, dt);
+        // chem->CopyBeakerToState(&state);
+        time += dt;
+        if ((n + 1) % frequency == 0) chem->DisplayTotalColumns(time, state, false);
+        dt = std::min(dt0, dt * 1.1);
 
-      // non-conservative clipping of small values
-      // for (int i = 0; i < ncomp; ++i)
-      //   state.total[i] = std::max(1.0e-200, state.total[i]);
+        // non-conservative clipping of small values
+        // for (int i = 0; i < ncomp; ++i)
+        //   state.total[i] = std::max(1.0e-200, state.total[i]);
+      } catch (...) {
+        chem->CopyStateToBeaker(state);
+        dt /= 2;
+      }
     }
     chem->Speciate(&state);
     chem->DisplayResults();
@@ -178,7 +187,6 @@ void RunBatchNative(const std::string& filexml,
   // cleanup memory
   delete chem;
 }
-
 
 TEST(NATIVE_CA_DEBYE_HUCKEL) {
   std::vector<double> ict = {3.0e-3, 1.0e-3, 1.0e-3};

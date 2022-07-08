@@ -416,7 +416,7 @@ Primary and derived fields
 
   * saturation [-]
   * hydraulic_head [m]
-  * darcy_flux (more precisely, volumetric flow rate) [m^3/s] 
+  * volumetric_flow_rate [m^3/s] 
   * permeability [m^2]
   * porosity [-]
   * specific_storage [m^-1]
@@ -751,7 +751,7 @@ The difference lies in the definition of the function which is now a multi-value
   is `"composite function`".
 
 * `"dot with normal`" [bool] triggers the special initialization of a
-  vector field such as the `"darcy_flux`". This field is defined by
+  vector field such as the `"volumetric_flow_rate`". This field is defined by
   projection of the velocity (a vector field) on face normals.
   Changing value to *false* will produce the vector field.
 
@@ -762,7 +762,7 @@ checkpoints of vis files. Default values are *true*.
 .. code-block:: xml
 
   <ParameterList name="initial conditions">  <!-- parent list -->
-  <ParameterList name="darcy_flux">
+  <ParameterList name="volumetric_flow_rate">
     <Parameter name="write checkpoint" type="bool" value="true"/>
     <Parameter name="write vis" type="bool" value="false"/>
     <Parameter name="dot with normal" type="bool" value="true"/>
@@ -1089,7 +1089,7 @@ The conceptual PDE model for the partially saturated flow is
   (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g})
 
 where 
-:math:`\theta` is total water content [:math:`mol/m^3`],
+:math:`\theta` is total water storage [:math:`mol/m^3`],
 :math:`\eta_l` is molar density of liquid [:math:`mol/m^3`],
 :math:`\rho_l` is fluid density [:math:`kg/m^3`],
 :math:`Q` is source or sink term [:math:`mol/m^3/s`],
@@ -1122,7 +1122,7 @@ includes liquid phase (liquid water) and gas phase (water vapor):
   (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g})
 
 where 
-:math:`\theta` is total water content [:math:`mol/m^3`],
+:math:`\theta` is total water storage [:math:`mol/m^3`],
 :math:`\eta_l` is molar density of liquid (water) [:math:`mol/m^3`],
 :math:`\rho_l` is fluid density [:math:`kg/m^3`],
 :math:`Q` is source or sink term [:math:`mol/m^3/s`],
@@ -1215,7 +1215,7 @@ The equation for water balance in the matrix is
 
 where 
 :math:`Q_m` is source or sink term [:math:`kg / m^3 / s`].
-The volumetric volumetric water contents are defined as
+The water storages are defined as
 
 .. math::
   \theta_f = \phi_f\, \eta_l\, s_{lf},\quad
@@ -1252,7 +1252,7 @@ Combination of both approaches may lead to a more efficient code.
 * `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
   e.g. by EnergyFlow PK. The default value is `"false`".
 
-* `"flow in fractures`" [bool] indicates that Darcy flow is calculated in fractures. 
+* `"flow and transport in fractures`" [bool] indicates that Darcy flow is calculated in fractures. 
   This option is ignored is mesh dimentionaly equals to manifold dimensionality.
 
 * `"multiscale model`" [string] specifies a multiscale model.
@@ -1538,6 +1538,32 @@ relative permeability, density and viscosity.
   </ParameterList>  
   </ParameterList>  
 
+
+Fracture permeability models
+............................
+
+A list of permeability models in a fracture network contains similar sublists
+that must cover all network. 
+Each sublist has two paremeters.
+
+* `"region`" [string] defines region where model applies.
+
+* `"model`" [string] specifies the model name. Currently only one parameter
+  is available, `"cubic law`".
+
+.. code-block:: xml
+
+  <ParameterList name="flow">  <!-- parent list -->
+  <ParameterList name="fracture permeability models">
+    <ParameterList name="_ONE FRACTURE LEAVE">
+      <Parameter name="region" type="string" value="fracture"/>
+      <Parameter name="model" type="string" value="cubic law"/>
+    </ParameterList>
+  </ParameterList>
+
+
+Diffusion operators
+...................
 
 Diffusion operators
 ...................
@@ -2024,8 +2050,8 @@ The remaining *flow* parameters are
 
 * `"plot time history`" [bool] produces an ASCII file with the time history. Default is `"false`".
 
-* `"algebraic water content balance`" [bool] uses algebraic correction to enforce consistency of 
-  water content and Darcy fluxes. It leads to a monotone transport. Default is *false*.
+* `"algebraic water storage balance`" [bool] uses algebraic correction to enforce consistency of 
+  water storage and Darcy fluxes. It leads to a monotone transport. Default is *false*.
 
 .. code-block:: xml
 
@@ -2036,7 +2062,7 @@ The remaining *flow* parameters are
   </ParameterList>	
 
   <Parameter name="plot time history" type="bool" value="false"/>
-  <Parameter name="algebraic water content balance" type="bool" value="false"/>
+  <Parameter name="algebraic water storage balance" type="bool" value="false"/>
   </ParameterList>	
 
 
@@ -2186,6 +2212,9 @@ This list is often generated or extended by a high-level MPC PK.
 
 * `"eos lookup table`" [string] provides the name for optional EOS lookup table.
 
+* `"use dispersion solver`" [bool] instructs PK to instantiate a solver but do
+  not call it. It is used now by MPC to form a global solver. Default is *false*.
+
 .. code-block:: xml
 
   <ParameterList name="_TRANSPORT">  <!-- parent list -->
@@ -2195,6 +2224,7 @@ This list is often generated or extended by a high-level MPC PK.
     <Parameter name="multiscale model" type="string" value="single porosity"/>
     <Parameter name="effective transport porosity" type="bool" value="false"/>
     <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
+    <Parameter name="use dispersion solver" type="bool" value="false"/>
   </ParameterList>
   </ParameterList>
 
@@ -2214,12 +2244,13 @@ and temporal accuracy, and verbosity:
 
 * `"cfl`" [double] Time step limiter, a number less than 1. Default value is 1.
    
+* `"method`" [string] defines flux method. Available options are `"muscl`" (default) and `"fct`".
+   
 * `"spatial discretization order`" [int] defines accuracy of spatial discretization.
   It permits values 1 or 2. Default value is 1. 
   
 * `"temporal discretization order`" [int] defines accuracy of temporal discretization.
-  It permits values 1 or 2 and values 3 or 4 when expert parameter 
-  `"generic RK implementation`" is set to true. Note that RK3 is not monotone.
+  It permits values 1 or 2 and values 3 or 4. Note that RK3 is not monotone.
   Default value is 1.
 
 * `"reconstruction`" [list] collects reconstruction parameters. The available options are
@@ -2241,6 +2272,7 @@ and temporal accuracy, and verbosity:
   <ParameterList name="_TRANSPORT">
     <Parameter name="domain name" type="string" value="domain"/>
     <Parameter name="cfl" type="double" value="1.0"/>
+    <Parameter name="method" type="string" value="muscl"/>
     <Parameter name="spatial discretization order" type="int" value="1"/>
     <Parameter name="temporal discretization order" type="int" value="1"/>
     <Parameter name="solver" type="string" value="_PCG_SOLVER"/>
@@ -2602,9 +2634,6 @@ The remaining parameters that can be used by a developer include
 
 * `"enable internal tests`" [bool] turns on various internal tests during
   run time. Default value is `"false`".
-   
-* `"generic RK implementation`" [bool] leads to generic implementation of 
-  all Runge-Kutta methods. Default value is `"false`".
    
 * `"internal tests tolerance`" [double] tolerance for internal tests such as the 
   divergence-free condition. The default value is 1e-6.
@@ -3424,7 +3453,7 @@ The conceptual PDE model of the coupled flow and energy equations is
   \end{array}
 
 In the first equation,
-:math:`\theta` is total water content (we use non-conventional definition) [:math:`mol/m^3`],
+:math:`\theta` is total water storage (we use non-conventional definition) [:math:`mol/m^3`],
 :math:`\eta_l` is molar density of liquid [:math:`mol/m^3`],
 :math:`\rho_l` is fluid density [:math:`kg/m^3`],
 :math:`Q_1` is source or sink term,
@@ -6893,7 +6922,7 @@ time step values or intervals corresponding to the cycle number; writes are cont
 
     <ParameterList name="write regions">
       <Parameter name="regions" type="Array(string)" value="{_OBS1, _OBS2, _OBS3}"/>
-   A  <Parameter name="wells" type="Array(string)" value="{_OBS4}"/>
+      <Parameter name="wells" type="Array(string)" value="{_OBS4}"/>
     </ParameterList>
   </ParameterList>
   </ParameterList>

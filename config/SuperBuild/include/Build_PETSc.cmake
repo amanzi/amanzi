@@ -129,20 +129,22 @@ else()
   set(CONFIG_PETSc_SHARED --with-shared-libraries=0)
 endif()
 
-if (DEFINED ENV{NERSC_HOST})
+if ( ${AMANZI_ARCH_NERSC} OR ${AMANZI_ARCH_CHICOMA} )
   set(petsc_mpi_flags --with-mpi=1)
   set(petsc_compilers --with-cc=${CMAKE_C_COMPILER} 
                       --with-cxx=${CMAKE_CXX_COMPILER} 
                       --with-fc=${CMAKE_Fortran_COMPILER})
   set(petsc_compiler_flags --CFLAGS=${petsc_cflags}
-                           --CXXFLAGS=${petsc_cxxflags})
+                           --CXXFLAGS=${petsc_cxxflags}
+			   --FFLAGS=${petsc_fcflags})
 #                           --with-clib-autodetect=0 
 #                           --with-cxxlib-autodetect=0)
 else()
   set(petsc_mpi_flags --with-mpi=1 --with-mpi-dir=${MPI_PREFIX})
   set(petsc_compilers)
   set(petsc_compiler_flags --CFLAGS=${petsc_cflags} 
-                           --CXXFLAGS=${petsc_cxxflags})
+                           --CXXFLAGS=${petsc_cxxflags}
+			   --FFLAGS=${petsc_fcflags})
 endif()
 
 set(petsc_mpi_compilers ${petsc_mpi_flags} ${petsc_compilers} ${petsc_compiler_flags})

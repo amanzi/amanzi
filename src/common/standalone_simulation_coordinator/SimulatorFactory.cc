@@ -29,7 +29,8 @@ XERCES_CPP_NAMESPACE_USE
 namespace Amanzi {
 namespace SimulatorFactory {
 
-Simulator* Create(const std::string& input_filename, const std::string& output_prefix)
+std::unique_ptr<Simulator>
+Create(const std::string& input_filename, const std::string& output_prefix)
 {
   XercesDOMParser* parser = Amanzi::AmanziInput::CreateXMLParser();
   DOMDocument* doc = Amanzi::AmanziInput::OpenXMLInput(parser, input_filename);
@@ -78,23 +79,23 @@ Simulator* Create(const std::string& input_filename, const std::string& output_p
   }
 
   // Create the appropriate simulator.
-  Simulator* simulator = NULL;
+  std::unique_ptr<Simulator> simulator = nullptr;
   if (type == "structured") {
 #ifdef ENABLE_Structured
     if (version == "v2")
-      simulator = new AmanziStructuredGridSimulationDriver(input_filename, doc, output_prefix);
-    else 
+      simulator = std::make_unique<AmanziStructuredGridSimulationDriver>(input_filename, doc, output_prefix);
+    else
       amanzi_throw(Errors::Message("Input spec v1 is no longer supported by Amanzi-S."));
 #else
     amanzi_throw(Errors::Message("Structured not supported in current build"));
 #endif
-  } 
+  }
   else if (type == "unstructured") {
 #ifdef ENABLE_Unstructured
     if (version == "v2")
-      simulator = new AmanziUnstructuredGridSimulationDriver(input_filename, doc, output_prefix);
+      simulator = std::make_unique<AmanziUnstructuredGridSimulationDriver>(input_filename, doc, output_prefix);
     else
-      simulator = new AmanziUnstructuredGridSimulationDriver(input_filename);
+      simulator = std::make_unique<AmanziUnstructuredGridSimulationDriver>(input_filename);
 #else
     amanzi_throw(Errors::Message("Unstructured not supported in current build"));
 #endif

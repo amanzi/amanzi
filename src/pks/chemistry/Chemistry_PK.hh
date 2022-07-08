@@ -36,11 +36,18 @@ namespace AmanziChemistry {
 class Chemistry_PK : public PK_Physical {
  public:
   Chemistry_PK();
-  virtual ~Chemistry_PK() {};
+  Chemistry_PK(Teuchos::ParameterList& pk_tree,
+               const Teuchos::RCP<Teuchos::ParameterList>& glist,
+               const Teuchos::RCP<State>& S,
+               const Teuchos::RCP<TreeVector>& soln);
+  virtual ~Chemistry_PK() = default;
 
   // required members for PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup() override;
+  virtual void Initialize() override;
+
+  virtual void set_dt(double dt) override {};
+  virtual double get_dt() override { return dt_next_; }
 
   // Required members for chemistry interface
   // -- output of auxillary cellwise data from chemistry
@@ -54,7 +61,7 @@ class Chemistry_PK : public PK_Physical {
   // -- process various objects before/during setup phase
   void InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist);
   void InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
-                               Teuchos::RCP<Teuchos::ParameterList> state_list);
+                               Teuchos::ParameterList& ic_list);
 
   virtual void CopyFieldstoNewState(const Teuchos::RCP<State>& S_next);
   // -- access
@@ -68,7 +75,7 @@ class Chemistry_PK : public PK_Physical {
 
  protected:
   std::string passwd_;
-  Teuchos::RCP<Teuchos::ParameterList> glist_, cp_list_;
+  Teuchos::RCP<Teuchos::ParameterList> glist_;
 
   int number_aqueous_components_;
   std::vector<std::string> comp_names_;
@@ -108,6 +115,9 @@ class Chemistry_PK : public PK_Physical {
 #endif
 
   // time controls
+  int dt_cut_threshold_, dt_increase_threshold_;
+  double dt_min_, dt_max_, dt_prev_, dt_next_, dt_cut_factor_, dt_increase_factor_;
+
   int num_iterations_, num_successful_steps_;
   double initial_conditions_time_;
 };

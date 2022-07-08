@@ -1,0 +1,149 @@
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+
+  <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="mesh::simple"/>
+  </ParameterList>    
+   
+  <ParameterList name="regions">
+    <ParameterList name="Computational domain">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Left side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.5,0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0,0.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Bottom side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,-1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+ 
+  <ParameterList name="PKs">
+    <ParameterList name="transport">
+      <Parameter name="cfl" type="double" value="0.5"/>   
+      <Parameter name="spatial discretization order" type="int" value="1"/>   
+      <Parameter name="temporal discretization order" type="int" value="1"/>   
+      <Parameter name="advection limiter" type="string" value="tensorial"/>
+      <!-- developers parameters --> 
+      <Parameter name="enable internal tests" type="bool" value="true"/>   
+      <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
+      <!-- end of developers parameters -->
+
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="multiscale model" type="string" value="dual continuum discontinuous matrix"/>
+      </ParameterList>
+
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+
+      <ParameterList name="molecular diffusion">
+        <Parameter name="aqueous names" type="Array(string)" value="{Component 0, Component 1}"/>
+        <Parameter name="aqueous values" type="Array(double)" value="{1.0e-09, 1.0e-09}"/>
+        <Parameter name="molar masses" type="Array(double)" value="{9.89e-02, 9.89e-02}"/>
+      </ParameterList>
+
+      <ParameterList name="multiscale models">
+        <ParameterList name="MSM 0">
+          <ParameterList name="dual porosity parameters">
+            <Parameter name="matrix tortuosity" type="double" value="9.0e-01"/>
+            <Parameter name="Warren Root parameter" type="double" value="4.0"/>
+            <Parameter name="matrix depth" type="double" value="0.08"/>
+            <Parameter name="matrix volume fraction" type="double" value="9.999e-01"/>
+          </ParameterList>
+          <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+          <Parameter name="multiscale model" type="string" value="dual porosity"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="boundary conditions">
+        <ParameterList name="concentration">
+          <ParameterList name="Component 0">
+            <ParameterList name="BC for left side">
+              <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <ParameterList name="boundary concentration">
+                <ParameterList name="function-tabular">
+                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
+                  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Component 1">
+            <ParameterList name="BC for left side">
+              <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <ParameterList name="boundary concentration">
+                <ParameterList name="function-tabular">
+                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
+                  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>        
+    </ParameterList>        
+  </ParameterList>
+
+  <ParameterList name="state">
+    <ParameterList name="evaluators">
+      <ParameterList name="porosity">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="saturation_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="initial conditions">
+      <ParameterList name="porosity_msp">
+        <ParameterList name="function">
+          <ParameterList name="RegionMiddle">
+            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.5e-01"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+

@@ -313,7 +313,7 @@ int main (int argc, char *argv[])
     std::cout << std::endl;
     
     // create Mesh group
-    hid_t group = H5Gcreate(new_file, "/Mesh",H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    H5Gcreate(new_file, "/Mesh",H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     
     // write out mesh
     std::cout << "E>> write out new nodes" << std::endl;

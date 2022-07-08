@@ -17,8 +17,11 @@
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
+#include "BCs.hh"
+#include "CompositeVector.hh"
 #include "Mesh.hh"
 #include "Point.hh"
+#include "Polynomial.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -33,11 +36,19 @@ class Reconstruction {
   // main members
   virtual void Init(Teuchos::ParameterList& plist) = 0;
 
-  virtual void ComputeGradient(const Teuchos::RCP<const Epetra_MultiVector>& field,
-                               int component = 0) {
+  virtual void Compute(const Teuchos::RCP<const Epetra_MultiVector>& field,
+                       int component = 0,
+                       const Teuchos::RCP<const BCs>& bc = Teuchos::null) {
     field_ = field;
     component_ = component;
   }
+
+  virtual double getValue(int c, const AmanziGeometry::Point& p) = 0;
+  virtual double getValueSlope(int c, const AmanziGeometry::Point& p) = 0;
+  virtual WhetStone::Polynomial getPolynomial(int c) const = 0;
+
+  // access function returns slope (gradient and higher-order derivatives)
+  virtual Teuchos::RCP<CompositeVector> data() = 0;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

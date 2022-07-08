@@ -14,7 +14,7 @@ diff -Naur alquimia-dev-1.0.8/cmake/Modules/FindPETSc.cmake alquimia-dev-1.0.8-n
 +    else ( ) 
 +       set (SLURM_HOST_BASENAME "undefined" )
 +    endif ( )		      
-+    if ( (${${runs}}) OR (DEFINED ENV{NERSC_HOST}) OR (${SLURM_HOST_BASENAME} STREQUAL "darwin") )
++    if ( (${${runs}}) OR ${AMANZI_ARCH_NERSC} OR ${AMANZI_ARCH_CHICOMA} OR (${SLURM_HOST_BASENAME} STREQUAL "darwin") )
        set (PETSC_EXECUTABLE_RUNS "YES" CACHE BOOL
          "Can the system successfully run a PETSc executable?  This variable can be manually set to \"YES\" to force CMake to accept a given PETSc configuration, but this will almost always result in a broken build.  If you change PETSC_DIR, PETSC_ARCH, or PETSC_CURRENT you would have to reset this variable." FORCE)
 -    endif (${${runs}})

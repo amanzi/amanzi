@@ -58,13 +58,13 @@ TEST(NAVIER_STOKES_2D) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<NavierStokes_PK> NSPK = Teuchos::rcp(new NavierStokes_PK(plist, "navier stokes", S, soln));
 
-  NSPK->Setup(S.ptr());
+  NSPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   // initialize the Navier Stokes process kernel
-  NSPK->Initialize(S.ptr());
+  NSPK->Initialize();
   S->CheckAllFieldsInitialized();
  
   // solve the problem 
@@ -94,18 +94,18 @@ TEST(NAVIER_STOKES_2D) {
     itrs++;
 
     // reset primary fields
-    Teuchos::RCP<PrimaryVariableFieldEvaluator> fluid_velocity_eval =
-       Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("pressure"));
-    *S->GetFieldData("fluid_velocity", "navier stokes") = *soln->SubVector(0)->Data();
-    fluid_velocity_eval->SetFieldAsChanged(S.ptr());
+    auto fluid_velocity_eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
+        S->GetEvaluatorPtr("pressure", Tags::DEFAULT));
+    S->GetW<CompositeVector>("fluid_velocity", Tags::DEFAULT, "navier stokes") = *soln->SubVector(0)->Data();
+    fluid_velocity_eval->SetChanged();
 
-    Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval =
-       Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("pressure"));
-    *S->GetFieldData("pressure", "navier stokes") = *soln->SubVector(1)->Data();
-    pressure_eval->SetFieldAsChanged(S.ptr());
+    auto pressure_eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
+        S->GetEvaluatorPtr("pressure", Tags::DEFAULT));
+    S->GetW<CompositeVector>("pressure", Tags::DEFAULT, "navier stokes") = *soln->SubVector(1)->Data();
+    pressure_eval->SetChanged();
 
     // commit step
-    NSPK->CommitStep(T - dT, T, S);
+    NSPK->CommitStep(T - dT, T, Tags::DEFAULT);
   }
 
   // initialize I/O
@@ -114,8 +114,8 @@ TEST(NAVIER_STOKES_2D) {
   OutputXDMF io(iolist, mesh, true, false);
 
   io.InitializeCycle(T, 1, "");
-  const auto& u = *S->GetFieldData("fluid_velocity")->ViewComponent("node");
-  const auto& p = *S->GetFieldData("pressure")->ViewComponent("cell");
+  const auto& u = *S->Get<CompositeVector>("fluid_velocity").ViewComponent("node");
+  const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
   io.WriteVector(*u(0), "velocity_x", AmanziMesh::NODE);
   io.WriteVector(*u(1), "velocity_y", AmanziMesh::NODE);
   io.WriteVector(*p(0), "pressure", AmanziMesh::CELL);

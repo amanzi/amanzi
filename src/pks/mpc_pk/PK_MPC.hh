@@ -51,26 +51,20 @@ class PK_MPC : virtual public PK {
 
   // PK methods
   // -- sets up sub-PKs
-  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup();
 
   // -- calls all sub-PK initialize() methods
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize();
+
+  // -- set tags for integration period
+  virtual void set_tags(const Tag& current, const Tag& next);
 
   // -- loops over sub-PKs
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag);
+  virtual void CalculateDiagnostics(const Tag& tag);
 
-  virtual void set_states(const Teuchos::RCP<State>& S,
-                          const Teuchos::RCP<State>& S_inter,
-                          const Teuchos::RCP<State>& S_next);
-
-  virtual void Solution_to_State(TreeVector& soln,
-                                 const Teuchos::RCP<State>& S) {};
-  virtual void Solution_to_State(const TreeVector& soln,
-                                 const Teuchos::RCP<State>& S) {};
-
-  virtual void State_to_Solution(const Teuchos::RCP<State>& S,
-                                 TreeVector& soln) {};
+  virtual void State_to_Solution(const Tag& tag, TreeVector& soln) {};
+  virtual void Solution_to_State(const TreeVector& soln, const Tag& tag) {};
 
   // iterator over pks
   typename std::vector<Teuchos::RCP<PK_Base> >::iterator begin() { return sub_pks_.begin(); }
@@ -155,9 +149,9 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void PK_MPC<PK_Base>::Setup(const Teuchos::Ptr<State>& S) {
+void PK_MPC<PK_Base>::Setup() {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-    (*pk)->Setup(S);
+    (*pk)->Setup();
   }
 }
 
@@ -166,10 +160,21 @@ void PK_MPC<PK_Base>::Setup(const Teuchos::Ptr<State>& S) {
 // Loop over sub-PKs, calling their initialization methods
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void PK_MPC<PK_Base>::Initialize(const Teuchos::Ptr<State>& S) {
+void PK_MPC<PK_Base>::Initialize() {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-    (*pk)->Initialize(S);
+    (*pk)->Initialize();
   }
+}
+
+
+// -----------------------------------------------------------------------------
+// Propagate tags to sub-PKs
+// -----------------------------------------------------------------------------
+template <class PK_Base>
+void PK_MPC<PK_Base>::set_tags(const Tag& current, const Tag& next)
+{
+  PK::set_tags(current, next);
+  for (auto& pk : sub_pks_) pk->set_tags(current, next);
 }
 
 
@@ -177,9 +182,9 @@ void PK_MPC<PK_Base>::Initialize(const Teuchos::Ptr<State>& S) {
 // loop over sub-PKs, calling their commit state method
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void PK_MPC<PK_Base>::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+void PK_MPC<PK_Base>::CommitStep(double t_old, double t_new, const Tag& tag) {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-    (*pk)->CommitStep(t_old, t_new, S);
+    (*pk)->CommitStep(t_old, t_new, tag);
   }
 }
 
@@ -188,21 +193,11 @@ void PK_MPC<PK_Base>::CommitStep(double t_old, double t_new, const Teuchos::RCP<
 // loop over sub-PKs, calling their CalculateDiagnostics method
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void PK_MPC<PK_Base>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
+void PK_MPC<PK_Base>::CalculateDiagnostics(const Tag& tag) {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-    (*pk)->CalculateDiagnostics(S);
+    (*pk)->CalculateDiagnostics(tag);
   }
 }
-
-template <class PK_Base>
-void PK_MPC<PK_Base> :: set_states(const Teuchos::RCP<State>& S,
-                                   const Teuchos::RCP<State>& S_inter,
-                                   const Teuchos::RCP<State>& S_next) {
-  for (typename SubPKList::iterator pk = sub_pks_.begin();
-       pk != sub_pks_.end(); ++pk) {
-    (*pk)->set_states(S, S_inter, S_next);
-  }
-};
 
 }  // namespace Amanzi
 

@@ -17,13 +17,13 @@
 
   The following parameter names were changed:
     "flux_key" -> "flux key"
-    "copy_flux_key" -> "flux copy key"
+    "copy_flux_tag" -> "flux copy key"
 
     "field_in_key" -> removed
     "copy_field_in_key" -> removed
 
     "field_out_key" -> "external field key"
-    "copy_field_out_key" -> "external field copy key"
+    "copy_field_out_tag" -> "external field copy key"
 
     "conserved_quantity_key" -> "conserved quantity key"
     "copy_conserved_quantity_key" -> "conserved quantity copy key"
@@ -97,9 +97,9 @@ class PK_DomainFunctionCoupling : public FunctionBase {
  private:
   std::string submodel_;
 
-  std::string flux_key_, copy_flux_key_;
-  std::string field_cons_key_, copy_field_cons_key_;
-  std::string field_out_key_, copy_field_out_key_;
+  Key flux_key_;
+  Key field_cons_key_, field_out_key_;
+  Tag copy_flux_tag_, copy_field_out_tag_, copy_field_cons_tag_;
 
   Teuchos::RCP<MeshIDs> entity_ids_;
   std::map<AmanziMesh::Entity_ID, AmanziMesh::Entity_ID> reverse_map_;
@@ -134,9 +134,9 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
   }
 
   //  deprecated
-  std::vector<std::string> deprecated = { "flux_key", "copy_flux_key",
+  std::vector<std::string> deprecated = { "flux_key", "copy_flux_tag",
                                           "field_in_key", "copy_field_in_key",
-                                          "field_out_key", "copy_field_out_key",
+                                          "field_out_key", "copy_field_out_tag",
                                           "conserved_quantity_key", "copy_conserved_quantity_key" };
   std::vector<std::string> newstyle = { "flux key", "flux copy key",
                                         "removed1", "removed2",
@@ -158,23 +158,23 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
   // get keys of owned (in) and exterior (out) fields
   if (submodel_ == "rate" || submodel_ == "flux exchange") {
     flux_key_ = slist.get<std::string>("flux key");
-    copy_flux_key_ = slist.get<std::string>("flux copy key", "default");
+    copy_flux_tag_ = Keys::readTag(slist, "flux copy key");
 
   } else if (submodel_ == "conserved quantity") {
     field_cons_key_ = slist.get<std::string>("conserved quantity key");
-    copy_field_cons_key_ = slist.get<std::string>("conserved quantity copy key", "default");
+    copy_field_cons_tag_ = Keys::readTag(slist, "conserved quantity copy key");
 
   } else if (submodel_ == "field") {
     // pass
 
   } else {
-    msg << "unknown DomainFunctionCoupling submodel \"" << submodel_ 
+    msg << "unknown DomainFunctionCoupling submodel \"" << submodel_
         << "\", valid option: \"field\", \"rate\", \"flux exchange\", and \"conserved quantity\"";
     Exceptions::amanzi_throw(msg);
   }
 
   field_out_key_ = slist.get<std::string>("external field key");
-  copy_field_out_key_ = slist.get<std::string>("external field copy key", "default");
+  copy_field_out_tag_ = Keys::readTag(slist, "external field copy key");
 
   // create a list of domain ids
   RegionList regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
@@ -205,8 +205,8 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 {
   Errors::Message msg;
 
-  // compute reverse map: cannot move this to Init() due to lack 
-  mesh_out_ = S_->GetFieldData(field_out_key_)->Mesh();
+  // compute reverse map: should we move this to Init() ??? 
+  mesh_out_ = S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).Mesh();
 
   if (submodel_ == "field" || submodel_ == "conserved quantity") {
     if (mesh_->space_dimension() == mesh_->manifold_dimension() && reverse_map_.size() == 0) {
@@ -220,11 +220,11 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
   // create the input tuple (time + space)
   if (submodel_ == "rate") {
-    const auto& flux = *S_->GetFieldCopyData(flux_key_, copy_flux_key_)->ViewComponent("face", true);
-    const auto& flux_map = S_->GetFieldData(flux_key_)->Map().Map("face", true);
+    const auto& flux = *S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).ViewComponent("face", true);
+    const auto& flux_map = S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).Map().Map("face", true);
 
-    const auto& field_out = *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
-    S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ScatterMasterToGhosted("cell");
+    const auto& field_out = *S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).ViewComponent("cell", true);
+    S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).ScatterMasterToGhosted("cell");
 
     int num_vec = field_out.NumVectors();
 
@@ -273,8 +273,8 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     }
 
   } else if (submodel_ == "flux exchange") {
-    const auto& flux = *S_->GetFieldCopyData(flux_key_, copy_flux_key_)->ViewComponent("face", true);
-    const auto& flux_map = S_->GetFieldData(flux_key_)->Map().Map("face", true);
+    const auto& flux = *S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).ViewComponent("face", true);
+    const auto& flux_map = S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).Map().Map("face", true);
 
     AmanziMesh::Entity_ID_List cells, faces;
     std::vector<int> dirs;
@@ -310,7 +310,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     }
 
   } else if (submodel_ == "field") {
-    const auto& field_out = *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
+    const auto& field_out = *S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).ViewComponent("cell", true);
 
     int num_vec = field_out.NumVectors();
     std::vector<double> val(num_vec);
@@ -327,8 +327,8 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     }
 
   } else if (submodel_ == "conserved quantity") {
-    const auto& field_out = *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
-    const auto& field_cons = *S_->GetFieldCopyData(field_cons_key_, copy_field_cons_key_)->ViewComponent("cell", true);
+    const auto& field_out = *S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).ViewComponent("cell", true);
+    const auto& field_cons = *S_->Get<CompositeVector>(field_cons_key_, copy_field_cons_tag_).ViewComponent("cell", true);
 
     int num_vec = field_out.NumVectors();
     std::vector<double> val(num_vec);

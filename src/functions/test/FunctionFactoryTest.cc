@@ -6,7 +6,7 @@
 #include "errors.hh"
 #include "VerboseObject_objs.hh"
 
-#include "UniqueHelpers.hh"
+#include <memory>
 #include "FunctionConstant.hh"
 #include "FunctionDistance.hh"
 #include "FunctionFactory.hh"
@@ -73,7 +73,6 @@ SUITE(constant_factory) {
   TEST(missing_parameter)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist = list.sublist("function-constant");
     FunctionFactory fact;
     CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
   }
@@ -640,7 +639,6 @@ SUITE(exprtk_factory) {
   TEST(missing_parameter)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList& sublist = list.sublist("function-exprtk");
     FunctionFactory fact;
     CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
   }

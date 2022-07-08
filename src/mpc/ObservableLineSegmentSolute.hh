@@ -65,8 +65,8 @@ void ObservableLineSegmentSolute::ComputeObservation(
       *volume += lofs_[i];
     }
   } else if (weighting_ == "flux norm") {
-    if (S.HasField("darcy_velocity")) {
-      const auto& darcy_vel =  *S.GetFieldData("darcy_velocity")->ViewComponent("cell");
+    if (S.HasRecord("darcy_velocity")) {
+      const auto& darcy_vel =  *S.Get<CompositeVector>("darcy_velocity").ViewComponent("cell");
       for (int i = 0; i < region_size_; i++) {
         int c = entity_ids_[i];
         double norm = 0.0;
@@ -91,31 +91,31 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
   Teuchos::RCP<const CompositeVector> cv;
     
   if (var == comp_names_[tcc_index_] + " aqueous concentration") {
-    if (!S.HasField("total_component_concentration")) {
+    if (!S.HasRecord("total_component_concentration")) {
       Errors::Message msg;
       msg <<"InterpolatedValue: field \"total_component_concentration\" doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
-    cv = S.GetFieldData("total_component_concentration");
+    cv = S.GetPtr<CompositeVector>("total_component_concentration", Tags::DEFAULT);
     vector = cv->ViewComponent("cell", true);
   } else {
-    if (!S.HasField(var)) {
+    if (!S.HasRecord(var)) {
       Errors::Message msg;
       msg <<"InterpolatedValue: field " << var << " doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
-    cv = S.GetFieldData(var);
+    cv = S.GetPtr<CompositeVector>(var, Tags::DEFAULT);
     vector = cv->ViewComponent("cell", true);
   }
 
   if (interpolation == "linear") {
     Teuchos::ParameterList plist;
-    Operators::ReconstructionCell lifting(mesh_);
+    auto lifting = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
       
     cv->ScatterMasterToGhosted();
 
-    lifting.Init(plist);
-    lifting.ComputeGradient(ids, vector, tcc_index_);
+    lifting->Init(plist);
+    lifting->Compute(ids, vector, tcc_index_);
 
     if (limiter_) {
       plist.set<std::string>("limiter", "Kuzmin");
@@ -124,12 +124,12 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
 
       Operators::LimiterCell limiter(mesh_); 
       limiter.Init(plist);
-      limiter.ApplyLimiter(ids, vector, 0, lifting.gradient(), bc_model, bc_value);
+      limiter.ApplyLimiter(ids, vector, 0, lifting, bc_model, bc_value);
     }
     
     for (int i = 0; i < ids.size(); i++) {
       int c = ids[i];
-      values[i] = lifting.getValue(c, line_pnts[i]);
+      values[i] = lifting->getValue(c, line_pnts[i]);
     }
 
   } else if (interpolation == "constant") {    

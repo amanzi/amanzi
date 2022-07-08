@@ -22,9 +22,9 @@ namespace Amanzi {
 void PKUtils_CalculatePermeabilityFactorInWell(
     const Teuchos::Ptr<State>& S, Teuchos::RCP<Epetra_Vector>& Kxy)
 {
-  if (!S->HasField("permeability")) return;
+  if (!S->HasRecord("permeability", Tags::DEFAULT)) return;
 
-  const CompositeVector& cv = *S->GetFieldData("permeability");
+  const auto& cv = S->Get<CompositeVector>("permeability", Tags::DEFAULT);
   cv.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& perm = *cv.ViewComponent("cell", true);
  
@@ -60,6 +60,7 @@ AmanziGeometry::Point PKUtils_EntityCoordinates(
   } else if (kind == AmanziMesh::EDGE) {
     return mesh.edge_centroid(id);
   }
+  return AmanziGeometry::Point();
 }
 
 }  // namespace Amanzi

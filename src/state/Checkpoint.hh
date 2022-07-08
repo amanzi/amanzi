@@ -1,7 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! Manages checkpoint/restart capability.
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -70,30 +70,44 @@ namespace Amanzi {
 class State;
 
 class Checkpoint : public IOEvent {
-
  public:
+  // constructor for do-it-yourself
+  Checkpoint(bool single_file = true);
+
+  // constructor for writing
   Checkpoint(Teuchos::ParameterList& plist, const State& S);
 
-  // constructor for object that cannot write, but can read
-  Checkpoint(bool old_style=true);
+  // constructor for reading, potentially on multiple communicators from
+  // multiple files in this directory.
+  Checkpoint(const std::string& file_or_dirname, const State& S);
+
+  // constructor for reading a single field from a specific file
+  Checkpoint(const std::string& filename, const Comm_ptr_type& comm);
 
   // public interface for coordinator clients
+  template <typename T>
+  void Write(const std::string& name, const T& t) const;
+
+  template <typename T>
+  void Read(const std::string& name, T& t) const {};
+
   void Write(const State& S,
              double dt,
-             bool final=false,
-             Amanzi::ObservationData* obs_data=nullptr);
-
-  double Read(State& S, const std::string& file_or_dirname);
+             bool final = false,
+             Amanzi::ObservationData* obs_data = nullptr);
 
   void CreateFile(int cycle);
   void CreateFinalFile(int cycle);
-  void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
-  void WriteAttributes(int comm_size, double time, double dt, int cycle, int pos) const;
-  void WriteAttributes(int comm_size, double time, double dt, int cycle) const;
-  void WriteAttributes(int comm_size, double time, int cycle) const;
-  void WriteObservations(ObservationData* obs_data);
   void Finalize();
 
+  // i/o
+  void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
+  void WriteAttributes(int comm_size) const;
+  void WriteObservations(ObservationData* obs_data);
+
+  void ReadAttributes(State& S);
+
+  // access
   void set_filebasename(std::string base) { filebasename_ = base; }
 
  protected:
@@ -102,10 +116,44 @@ class Checkpoint : public IOEvent {
   std::string filebasename_;
   int filenamedigits_;
   int restart_cycle_;
-  bool old_;
+  bool single_file_;
 
   std::map<std::string,Teuchos::RCP<Amanzi::HDF5_MPI>> output_;
 };
+
+
+template <>
+void Checkpoint::Write<Epetra_Vector>(const std::string& name,
+        const Epetra_Vector& t) const;
+
+template <>
+inline void Checkpoint::Write<double>(const std::string& name,
+                                      const double& t) const {
+  output_.at("domain")->writeAttrReal(t, name);
+}
+
+template <>
+inline void Checkpoint::Write<int>(const std::string& name,
+                                   const int& t) const {
+  output_.at("domain")->writeAttrInt(t, name);
+}
+
+template <>
+inline void Checkpoint::Read<Epetra_Vector>(const std::string& name,
+        Epetra_Vector& t) const {
+  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  output_.at(domain)->readData(t, name);
+}
+
+template <>
+inline void Checkpoint::Read<double>(const std::string&name, double& t) const {
+  output_.at("domain")->readAttrReal(t, name);
+}
+
+template <>
+inline void Checkpoint::Read<int>(const std::string& name, int& t) const {
+  output_.at("domain")->readAttrInt(t, name);
+}
 
 }  // namespace Amanzi
 #endif

@@ -17,8 +17,8 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "independent_variable_field_evaluator_fromfunction.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorIndependentFunction.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 #include "PK_BDF.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Factory.hh"
@@ -33,8 +33,8 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
                 const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;  
+  virtual void Setup() override;
+  virtual void Initialize() override;  
 
   // -- dt is the minimum of the sub pks
   // virtual double get_dt();
@@ -51,15 +51,15 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Key domain_;  // computational domain
 
-  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> particle_density_eval;
-  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> porosity_eval;
-  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> saturation_liquid_eval;
+  Teuchos::RCP<EvaluatorIndependentFunction> particle_density_eval;
+  Teuchos::RCP<EvaluatorIndependentFunction> porosity_eval;
+  Teuchos::RCP<EvaluatorIndependentFunction> saturation_liquid_eval;
 
   // keys
   Key ie_rock_key_, ie_gas_key_, ie_liquid_key_, energy_key_, prev_energy_key_;
   Key particle_density_key_;
   Key mol_density_liquid_key_, mol_density_gas_key_, mass_density_liquid_key_;
-  Key sat_liquid_key_, prev_sat_liquid_key_;
+  Key pressure_key_, sat_liquid_key_, prev_sat_liquid_key_;
   Key wc_key_, prev_wc_key_;
   Key viscosity_liquid_key_;
 

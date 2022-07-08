@@ -21,7 +21,7 @@ jobs:
     - name: Filter the branch name to generate a tag for Docker
       id: tag
       run:
-        echo "::set-output name=AMANZI_BRANCH_TAG::$(echo ${{steps.branch.outputs.AMANZI_BRANCH}} | sed -e 's/\//-/g')"
+        echo "::set-output name=AMANZI_BRANCH_TAG::$(echo ${{steps.branch.outputs.AMANZI_BRANCH}} | sed -e 's/\//-/g' | sed -e 's/+/x/g')"
     - name: Output the branch name
       run:
         echo "Amanzi Branch = ${{steps.branch.outputs.AMANZI_BRANCH}}"

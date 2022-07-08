@@ -70,6 +70,7 @@ add_amanzi_library(whetstone
                            DeRham_Node.hh DeRham_Edge.hh DeRham_Face.hh
                            GrammMatrix.hh
                            FunctionUpwind.hh
+                           FunctionComposite.hh
                            MFD3D.hh
                            MFD3D_BernardiRaugel.hh
                            MFD3D_CrouzeixRaviart.hh MFD3D_CrouzeixRaviartAnyOrder.hh

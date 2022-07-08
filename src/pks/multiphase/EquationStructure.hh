@@ -8,14 +8,15 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Collection of names of evaluators f1_ik, f2_ik, g1_ik, g2_ik, 
-  and h_k for each equation in a system of equations:
+  Collection of evaluator names f1_ik, f2_ik, field or evaluator
+  names g1_ik, g2_ik, and evaluators h_k for the k-th equation in
+  a multiphase system:
 
-    d h_k / dt - Sum_i { s1_ik div [K f1_ik grad g1_ik] } 
-               - Sum_i { s2_ik div [D f2_ik grad g2_ik] } = Q_k
+    d h_k / dt - Sum_i { a_ik div [K f1_ik grad g1_ik] } 
+               - Sum_i { b_ik div [D f2_ik grad g2_ik] } = Q_k
 
   subject to the constraint min(F, G) = 0. Here index i corresponds to
-  a phase and s1_ik, s2_ik are scalar factors. Temporarily, we separate
+  a phase and a_ik, b_ik are scalar factors. Temporarily, we separate
   advective fluxes (1-terms) from molecular diffusion fluxes (2-terms).
 */
 
@@ -41,16 +42,6 @@ struct EquationStructure {
   Key storage;
   EquationTerm constraint;
 };
-
-
-struct SolutionStructure {
- public:
-  SolutionStructure(int var0, int comp0, int eqn) : var(var0), comp(comp0), matching_eqn(eqn) {};
-
- public:
-  int var, comp, matching_eqn;
-};
-
 
 }  // namespace Multiphase
 }  // namespace Amanzi

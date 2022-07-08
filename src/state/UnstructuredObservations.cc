@@ -1,7 +1,7 @@
 /*
   This is the state component of the Amanzi code.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -13,11 +13,11 @@
 */
 
 #include <map>
+#include <memory>
 #include "boost/filesystem/operations.hpp"
 
 #include "UnstructuredObservations.hh"
 
-#include "UniqueHelpers.hh"
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
@@ -27,21 +27,32 @@ namespace Amanzi {
 
 UnstructuredObservations::UnstructuredObservations(
       Teuchos::ParameterList& plist)
-  : write_(false),
+  : IOEvent(plist),
+    write_(false),
+    num_total_(0),
     count_(0),
     time_integrated_(false),
-    num_total_(0),
-    observed_once_(false),
-    IOEvent(plist)
+    observed_once_(false)
 {
+  // file information
+  filename_ = plist.get<std::string>("observation output filename");
+  delimiter_ = plist.get<std::string>("delimiter", ",");
+  interval_ = plist.get<int>("write interval", 1);
+  time_unit_ = plist.get<std::string>("time units", "s");
+  Utils::Units unit;
+  bool flag = false;
+  time_unit_factor_ = unit.ConvertTime(1., "s", time_unit_, flag);
+
+  // this sets the communicator
+  writing_domain_ = plist.get<std::string>("domain", "domain");
+
   // interpret parameter list
   // loop over the sublists and create an observable for each
   if (plist.isSublist("observed quantities")) {
     Teuchos::ParameterList& oq_list = plist.sublist("observed quantities");
     for (auto it : oq_list) {
       if (oq_list.isSublist(it.first)) {
-        // for now, all of this is on MPI_COMM_WORLD
-        auto obs = Teuchos::rcp(new Observable(getDefaultComm(), oq_list.sublist(it.first)));
+        auto obs = Teuchos::rcp(new Observable(oq_list.sublist(it.first)));
         observables_.emplace_back(obs);
         time_integrated_ |= obs->is_time_integrated();
       } else {
@@ -59,43 +70,44 @@ UnstructuredObservations::UnstructuredObservations(
 
   } else {
     // old style, single list/single entry
-    auto obs = Teuchos::rcp(new Observable(getDefaultComm(), plist));
+    auto obs = Teuchos::rcp(new Observable(plist));
     observables_.emplace_back(obs);
     time_integrated_ |= obs->is_time_integrated();
   }
-
-  // file format
-  filename_ = plist.get<std::string>("observation output filename");
-  delimiter_ = plist.get<std::string>("delimiter", ",");
-  interval_ = plist.get<int>("write interval", 1);
-  time_unit_ = plist.get<std::string>("time units", "s");
-  Utils::Units unit;
-  bool flag = false;
-  time_unit_factor_ = unit.ConvertTime(1., "s", time_unit_, flag);
 }
 
 void UnstructuredObservations::Setup(const Teuchos::Ptr<State>& S)
 {
+  // set the communicator
+  comm_ = Teuchos::null;
+  if (S->HasMesh(writing_domain_))
+    comm_ = S->GetMesh(writing_domain_)->get_comm();
+
   // require fields, evaluators
-  for (auto& obs : observables_) obs->Setup(S);
+  for (auto& obs : observables_) {
+    obs->set_comm(comm_);
+    obs->Setup(S);
+  }
 
   // what rank writes the file?
   write_ = false;
-  if (getDefaultComm()->MyPID() == 0) write_ = true;
+  if (comm_ != Teuchos::null && comm_->MyPID() == 0)
+    write_ = true;
 }
 
 void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
 {
+  if (comm_ == Teuchos::null) return;
+
   if (!observed_once_) {
     // final setup, open file handle, etc
-    for (auto& obs : observables_) {
-      obs->FinalizeStructure(S);
-    }
+    for (auto& obs : observables_) obs->FinalizeStructure(S);
+
     num_total_ = 0;
     for (const auto& obs : observables_) {
       int num_local = obs->get_num_vectors();
       int num_global = -1;
-      getDefaultComm()->MaxAll(&num_local, &num_global, 1);
+      comm_->MaxAll(&num_local, &num_global, 1);
       num_total_ += num_global;
     }
     integrated_observation_.resize(num_total_);
@@ -104,7 +116,7 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
     if (write_) InitFile_();
   }
 
-  bool dump_requested = DumpRequested(S->cycle(), S->time());
+  bool dump_requested = DumpRequested(S->get_cycle(), S->get_time());
   if (time_integrated_) {
     if (dump_requested) {
       std::vector<double> observation(num_total_, Observable::nan);
@@ -121,7 +133,7 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
       }
 
       // write
-      if (write_) Write_(S->time() * time_unit_factor_, observation);
+      if (write_) Write_(S->get_time() * time_unit_factor_, observation);
     } else {
       std::vector<double> observation(num_total_, Observable::nan);
 
@@ -148,7 +160,7 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
     }
 
     // write
-    if (write_) Write_(S->time() * time_unit_factor_, observation);
+    if (write_) Write_(S->get_time() * time_unit_factor_, observation);
   }
 }
 

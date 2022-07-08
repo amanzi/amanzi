@@ -29,9 +29,9 @@ public:
             const Teuchos::RCP<Epetra_Map>& injection_,
             bool transpose_=false)
     : Op(schema_row, schema_col, mesh_row),
-      mesh_col_(mesh_col),
+      transpose(transpose_),
       injection(injection_),
-      transpose(transpose_)
+      mesh_col_(mesh_col)
   {
     AMANZI_ASSERT(schema_row_.size() == 1);
     AMANZI_ASSERT(schema_col_.size() == 1);
