@@ -43,6 +43,7 @@ bool Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
   } catch (...) {
     return false;
   }
+  if (rgn == Teuchos::null) return false;
   return valid_set_name(rgn->get_name(), kind);
 }
 
@@ -63,6 +64,8 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
   } catch (...) {
     return false;
   }
+  if (rgn == Teuchos::null) return false;
+
 
   unsigned int rdim = rgn->get_manifold_dimension();
 
