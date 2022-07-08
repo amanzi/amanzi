@@ -125,10 +125,11 @@ MeshCache::getSetSize(const std::string& region_name,
 // Don't cache "ALL" or "BOUNDARY" labeled sets.  Are there others that are
 // just as fast to create as to cache?
 //
-const Entity_ID_View&
-MeshCache::getSetEntities(const std::string& region_name,
-                          const Entity_kind kind,
-                          const Parallel_type ptype) const
+template<MemSpace_type MEM>
+cEntity_ID_View
+MeshCache<MEM>::getSetEntities(const std::string& region_name,
+        const Entity_kind kind,
+        const Parallel_type ptype) const
 {
   auto key = std::make_tuple(region_name, kind, ptype);
   if (!sets_.count(key)) {
@@ -138,7 +139,8 @@ MeshCache::getSetEntities(const std::string& region_name,
       msg << "Cannot find region of name \"" << region_name << "\" in the geometric model.";
       Exceptions::amanzi_throw(msg);
     }
-    sets_[key] = resolveMeshSet(*region, kind, ptype, *this);
+    MeshCache<MemSpace_type::HOST> this_on_host(*this);
+    sets_[key] = asDualView(resolveMeshSet(*region, kind, ptype, this_on_host));
 
     // Error on zero -- some zeros already error internally (at the framework
     // level) but others don't.  This is the highest level we can catch these at.
@@ -151,11 +153,12 @@ MeshCache::getSetEntities(const std::string& region_name,
       Exceptions::amanzi_throw(msg);
     }
   }
-  return sets_.at(key);
+  return view<MEM>(sets_.at(key));
 }
 
-const Entity_ID_View&
-MeshCache::getSetEntitiesAndVolumeFractions(const std::string& region_name,
+template<MemSpace_type MEM>
+cEntity_ID_View
+MeshCache<MEM>::getSetEntitiesAndVolumeFractions(const std::string& region_name,
         const Entity_kind kind,
         const Parallel_type ptype,
         Double_View* vol_fracs) const
@@ -170,14 +173,16 @@ MeshCache::getSetEntitiesAndVolumeFractions(const std::string& region_name,
       msg << "Cannot find region of name \"" << region_name << "\" in the geometric model.";
       Exceptions::amanzi_throw(msg);
     }
-    sets_[key] = resolveMeshSetVolumeFractions(*region, kind, ptype, *vol_fracs, *this);
-    set_vol_fracs_[key] = *vol_fracs;
-  } else {
-    *vol_fracs = set_vol_fracs_.at(key);
-  }
-  return sets_.at(key);
-}
 
+    Double_List vol_facs_list;
+    MeshCache<MemSpace_type::HOST> this_on_host(*this);
+    sets_[key] = asDualView(resolveMeshSetVolumeFractions(*region, kind, ptype, vol_fracs_list, this_on_host));
+    set_vol_fracs_[key] = asDualView(vol_fracs_list);
+  } else {
+    *vol_fracs = view<MEM>(set_vol_fracs_.at(key));
+  }
+  return view<MEM>(sets_.at(key));
+}
 
 
 std::size_t
@@ -507,7 +512,7 @@ void MeshCache::precacheLabeledSets()
         Entity_ID_List set_ents;
         framework_mesh_->getSetEntities(*rgn_lbl, entity_kind, Parallel_type::ALL, set_ents);
         auto key = std::make_tuple(rgn->get_name(), entity_kind, Parallel_type::ALL);
-        sets_[key] = set_ents;
+        sets_[key] = asDualView(set_ents);
       }
     }
   }

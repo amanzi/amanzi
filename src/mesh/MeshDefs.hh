@@ -61,6 +61,14 @@ using cPoint_View = View_type<const AmanziGeometry::Point>;
 using Double_View = View_type<double>;
 using cDouble_View = View_type<const double>;
 
+
+template<typename T> using DualView_type = Kokkos::DualView<T*, Kokkos::DefaultHost>;
+using Entity_ID_DualView = DualView_type<Entity_ID>;
+using Entity_GID_DualView = DualView_type<Entity_GID>;
+using Entity_Direction_DualView = DualView_type<int>;
+using Point_DualView = DualView_type<AmanziGeometry::Point>;
+using Double_DualView = DualView_type<double>;
+
 //
 // This may not be necessary?
 //
@@ -70,31 +78,11 @@ struct RaggedArray_View {
   Entity_ID_View entries;
 }
 
-template<typename T> using DualView_type = Kokkos::DualView<T*, Kokkos::DefaultHost>;
-using Entity_ID_DualView = DualView_type<Entity_ID>;
-using Entity_GID_DualView = DualView_type<Entity_GID>;
-using Entity_Direction_DualView = DualView_type<int>;
-using Point_DualView = DualView_type<AmanziGeometry::Point>;
-using Double_DualView = DualView_type<double>;
-
-template<typename T>
-using RaggedArray_DualView = RaggedArray<T, 1, Kokkos::DefaultHost>;
-
 
 using Map_type = Epetra_Map;
 using Map_ptr_type = Teuchos::RCP<Map_type>;
 using Import_type = Epetra_Import;
 using Import_ptr_type = Teuchos::RCP<Import_type>;
-
-
-//
-// Conversion between list and view through deep_copy.
-//
-template<typename T, typename MemSpace>
-void deep_copy(Kokkos::View<T*, MemSpace>& out, const std::vector<T>& in) {
-  Kokkos::View<T*, Kokkos::DefaultHost, Kokkos::MemoryTraits<Kokkos::Unmanaged> > in_view(in.data(), in.size());
-  Kokkos::deep_copy(out, in_view);
-}
 
 
 // Cells (aka zones/elements) are the highest dimension entities in a mesh
@@ -239,6 +227,47 @@ enum class AccessPattern {
 enum class MemSpace_type {
   HOST,
   DEVICE
+};
+
+
+//
+// Utility functions for Kokkos operations
+//
+
+//
+// Get the right view from a dual view
+//
+template<MemSpace_type M, typename DualView>
+auto&
+view(DualView& dv) {
+  if constexpr(MemSpace_type == MemSpace_type::HOST) {
+    return dv.h_view;
+  } else {
+    return dv.d_view;
+  }
+}
+
+//
+// Conversion between list and view through deep_copy.
+//
+template<typename T, typename MemSpace>
+void deep_copy(Kokkos::View<T*, MemSpace>& out, const std::vector<T>& in) {
+  Kokkos::View<T*, Kokkos::DefaultHost, Kokkos::MemoryTraits<Kokkos::Unmanaged> > in_view(in.data(), in.size());
+  Kokkos::deep_copy(out, in_view);
+}
+
+
+//
+// Conversion between list and dual view through deep copy and sync.
+//
+template<typename T, typename MemSpace>
+Kokkos::DualView<T*, MemSpace>
+asDualView(const std::vector<T>& in) {
+  using DV_type = Kokkos::DualView<T*, MemSpace>;
+  DV_type dv;
+  deep_copy(dv.h_view, in);
+  dv.template modify<typename DV_type::host_mirror_space>();
+  dv.template sync<typename DV_type::execution_space>();
 }
 
 }  // namespace AmanziMesh

@@ -439,7 +439,8 @@ struct MeshCache {
   cEntity_ID_View
   getSetEntitiesAndVolumeFractions(const std::string& region_name,
           const Entity_kind kind,
-          const Parallel_type ptype, Double_View* vol_fracs) const;
+          const Parallel_type ptype,
+          cDouble_View* vol_fracs) const;
 
   // ----------------
   // Entity meta-data
