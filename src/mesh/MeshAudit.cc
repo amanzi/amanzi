@@ -1596,7 +1596,7 @@ bool MeshAudit::check_get_set(AmanziMesh::Set_ID sid,
 
   // Get the size of the set.
   try {
-    std::string set_name = mesh->geometric_model()->FindRegion(sid)->name();
+    std::string set_name = mesh->geometric_model()->FindRegion(sid)->get_name();
     mesh->get_set_size(set_name, kind, ptype); // this may fail
   } catch (...) {
     os << "  ERROR: caught exception from get_set_size()" << std::endl;
@@ -1606,7 +1606,7 @@ bool MeshAudit::check_get_set(AmanziMesh::Set_ID sid,
   // Get the set.
   AmanziMesh::Entity_ID_List set;
   try {
-    std::string set_name = mesh->geometric_model()->FindRegion(sid)->name();
+    std::string set_name = mesh->geometric_model()->FindRegion(sid)->get_name();
     mesh->get_set_entities(set_name, kind, ptype, &set);  // this may fail
   } catch (...) {
     os << "  ERROR: caught exception from get_set()" << std::endl;
@@ -1657,7 +1657,7 @@ bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
   os << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
   return false;
 
-  std::string set_name = mesh->geometric_model()->FindRegion(sid)->name();
+  std::string set_name = mesh->geometric_model()->FindRegion(sid)->get_name();
 
   if (comm_->NumProc() == 1) {
     // In serial, the owned and used sets should be identical.

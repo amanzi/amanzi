@@ -48,8 +48,8 @@ TEST(PLANE_REGION)
   
   // See if we retrieved the name and id correctly
   
-  CHECK_EQUAL(reg->name(),reg_name);
-  CHECK_EQUAL(reg->id(),reg_id);
+  CHECK_EQUAL(reg->get_name(),reg_name);
+  CHECK_EQUAL(reg->get_id(),reg_id);
   
   
   // Get the min-max bounds of the region from the XML specification
@@ -71,7 +71,7 @@ TEST(PLANE_REGION)
  
   // Make sure that the region type is a Plane
 
-  CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::PLANE);
+  CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::RegionType::PLANE);
   
   // See if the min-max of the region were correctly retrieved
   

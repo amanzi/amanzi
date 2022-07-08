@@ -23,7 +23,6 @@
 #include "AmanziComm.hh"
 #include "AmanziUnstructuredGridSimulationDriver.hh"
 #include "CycleDriver.hh"
-#include "Domain.hh"
 #include "GeometricModel.hh"
 #include "InputAnalysis.hh"
 #include "InputConverterU.hh"
@@ -89,9 +88,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
   int rank = comm->MyPID();
   int size = comm->NumProc();
 
-  //------------ DOMAIN, GEOMETRIC MODEL, ETC ----------------------------
-  // Create the simulation domain
-  std::unique_ptr<Amanzi::AmanziGeometry::Domain> sim_domain;
+  //------------ GEOMETRIC MODEL ----------------------------
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model;
   auto geom_timer = Teuchos::TimeMonitor::getNewCounter("Geometric Model creation");
 
@@ -101,26 +98,10 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
     Teuchos::ParameterList domain_params = plist_->sublist("domain");
     unsigned int spdim = domain_params.get<int>("spatial dimension");
 
-    sim_domain = std::make_unique<Amanzi::AmanziGeometry::Domain>(spdim);
-
-    // Parse the domain description and create.
-
-    // Under the simulation domain we have different geometric
-    // models. We can also have free geometric regions not associated
-    // with a geometric model.
-
     // For now create one geometric model from all the regions in the spec
     Teuchos::ParameterList& reg_params = plist_->sublist("regions");
-
     geom_model = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, *comm));
-
-    // Add the geometric model to the domain
-    sim_domain->Add_Geometric_Model(geom_model);
   }
-
-  // If we had geometric models and free regions coexisting then we would
-  // create the free regions here and add them to the simulation domain
-  // Nothing to do for now
 
   // ---------------- MESH -----------------------------------------------
   // Prepare to read/create the mesh specification

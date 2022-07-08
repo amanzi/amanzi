@@ -41,12 +41,12 @@ int ObservableSolute::ComputeRegionSize()
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_->geometric_model();
   Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion(region_);
     
-  if (reg_ptr->type() == AmanziGeometry::POLYGON) {
+  if (reg_ptr->get_type() == AmanziGeometry::RegionType::POLYGON) {
     Teuchos::RCP<const AmanziGeometry::RegionPolygon> poly_reg =
         Teuchos::rcp_static_cast<const AmanziGeometry::RegionPolygon>(reg_ptr);
     reg_normal_ = poly_reg->normal();
     obs_planar_ = true;
-  } else if (reg_ptr->type() == AmanziGeometry::PLANE) {
+  } else if (reg_ptr->get_type() == AmanziGeometry::RegionType::PLANE) {
     Teuchos::RCP<const AmanziGeometry::RegionPlane> plane_reg =
         Teuchos::rcp_static_cast<const AmanziGeometry::RegionPlane>(reg_ptr);
     reg_normal_ = plane_reg->normal();

@@ -72,7 +72,7 @@ Teuchos::RCP<Observable> CreateObservable(Teuchos::ParameterList& coord_plist,
  
   if (obs_solute) {
 
-    if (reg_ptr->type() == AmanziGeometry::LINE_SEGMENT) {
+    if (reg_ptr->get_type() == AmanziGeometry::RegionType::LINE_SEGMENT) {
       observe = Teuchos::rcp(new ObservableLineSegmentSolute(var, region, func, observable_plist, units_plist, mesh));
     } else{
       observe = Teuchos::rcp(new ObservableSolute(var, region, func, observable_plist, units_plist, mesh));
@@ -81,7 +81,7 @@ Teuchos::RCP<Observable> CreateObservable(Teuchos::ParameterList& coord_plist,
     
   } else if (obs_aqueous) {
 
-    if (reg_ptr->type() == AmanziGeometry::LINE_SEGMENT) {
+    if (reg_ptr->get_type() == AmanziGeometry::RegionType::LINE_SEGMENT) {
       observe = Teuchos::rcp(new ObservableLineSegmentAqueous(var, region, func, observable_plist, units_plist, mesh));
     } else {
       observe = Teuchos::rcp(new ObservableAqueous(var, region, func, observable_plist, units_plist, mesh));

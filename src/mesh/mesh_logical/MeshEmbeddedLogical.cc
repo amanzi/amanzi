@@ -611,7 +611,7 @@ MeshEmbeddedLogical::get_set_entities(const std::string& setname,
                                       Entity_ID_List *entids) const {
   Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(setname);
 
-  if (rgn->type() == AmanziGeometry::ALL) {
+  if (rgn->get_type() == AmanziGeometry::RegionType::ALL) {
     int nent = num_entities(kind, ptype);
     entids->resize(num_entities(kind, ptype));
     for (int i=0; i!=nent; ++i) {
@@ -622,10 +622,10 @@ MeshEmbeddedLogical::get_set_entities(const std::string& setname,
 
   // ASSUMES that logical mesh is EnumeratedSets, bg mesh is all others.
   // This is bad.  --etc
-  if (rgn->type() == AmanziGeometry::ENUMERATED) {
-    log_mesh_->get_set_entities(rgn->name(), kind, ptype, entids);
+  if (rgn->get_type() == AmanziGeometry::RegionType::ENUMERATED) {
+    log_mesh_->get_set_entities(rgn->get_name(), kind, ptype, entids);
   } else {
-    bg_mesh_->get_set_entities(rgn->name(), kind, ptype, entids);
+    bg_mesh_->get_set_entities(rgn->get_name(), kind, ptype, entids);
 
     // shift local indices
     Entity_ID shift = num_entities(kind, ptype)
