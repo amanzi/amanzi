@@ -131,7 +131,8 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   std::string reset() const;
   std::string clock() const;
 
-  void set_name(const std::string& name);
+  // width parameter provides width of the header
+  void set_name(std::string name, int width=-1);
 
  protected:
   Teuchos::RCP<Teuchos::FancyOStream> out_;

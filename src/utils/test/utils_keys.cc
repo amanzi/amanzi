@@ -227,7 +227,7 @@ TEST(READS_DOMAINS) {
   }
   {
     Teuchos::ParameterList plist;
-    CHECK_EQUAL("column:4", readDomainHint(plist, "surface_column:4", "surface", "subsurface"));
+    CHECK_EQUAL("column:4", readDomainHint(plist, "surface_column:4", "surface", "domain"));
   }
 
 
