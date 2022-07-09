@@ -57,6 +57,9 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   auto& ht_c =
     *S->GetW<CompositeVector>("surface-total_depth", Tags::DEFAULT, passwd)
        .ViewComponent("cell");
+  auto& ht_n =
+    *S->GetW<CompositeVector>("surface-total_depth", Tags::DEFAULT, passwd)
+       .ViewComponent("node");
   auto& vel_c =
     *S->GetW<CompositeVector>("surface-velocity", Tags::DEFAULT, passwd)
        .ViewComponent("cell");
@@ -81,6 +84,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.2*0.2 + 1.e-12) {
         B_n[0][n] = 0.8;
       }
+      ht_n[0][n] = std::max(0.5, B_n[0][n]);
 
     } else if (icase == 2) {
       B_n[0][n] = 0.0;
@@ -103,6 +107,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     int nfaces_cell = cfaces.size();
 
     B_c[0][c] = 0.0;
+    ht_c[0][c] = 0.0;
 
     // Compute cell averaged bathymetrt (Bc)
     for (int f = 0; f < nfaces_cell; ++f) {
@@ -127,9 +132,12 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
       B_c[0][c] += (area / mesh->cell_volume(c)) *
                    (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 2.0;
+      
+      ht_c[0][c] += (area / mesh->cell_volume(c)) *
+                   (ht_n[0][face_nodes[0]] + ht_n[0][face_nodes[1]]) / 2.0;
     }
 
-    ht_c[0][c] = std::max(0.5, B_c[0][c]);
+    ht_c[0][c] = std::max(0.0, B_c[0][c]);
 
     // perturb the total height
     if (icase == 1) {
@@ -201,9 +209,9 @@ RunTest(int icase)
 
   RCP<Mesh> mesh;
   if (icase == 1) {
-    mesh = meshfactory.create ("test/triangular16.exo");
-   // mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 20, request_faces, request_edges);
-    //mesh = meshfactory.create ("test/median32x33.exo");
+   // mesh = meshfactory.create ("test/triangular16.exo");
+    //mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 20, request_faces, request_edges);
+    mesh = meshfactory.create ("test/median32x33.exo");
   } else if (icase == 2) {
     mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
 		//mesh = meshfactory.create ("test/median32x33.exo");
@@ -276,7 +284,7 @@ RunTest(int icase)
 
   double Tend;
   if (icase == 1) {
-    Tend = 0.5;
+    Tend = 2.0;
   } else if (icase == 2) {
     Tend = 2.0;
   }

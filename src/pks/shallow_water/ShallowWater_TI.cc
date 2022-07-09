@@ -256,6 +256,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     h_c_tmp[0][c1] -= h * factor;
     q_c_tmp[0][c1] -= qx * factor;
     q_c_tmp[1][c1] -= qy * factor;
+    
+//    if (c1 == 430 || c1 == 428 || c1 == 565) {
+//      std::cout<<"c1 = "<<c1<<", FNum_rot[0] * factor = "<<-FNum_rot[0]*factor<<std::endl;
+//    }
 
     if (c2 != -1) {
       vol = mesh_->cell_volume(c2);
@@ -263,6 +267,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       h_c_tmp[0][c2] += h * factor;
       q_c_tmp[0][c2] += qx * factor;
       q_c_tmp[1][c2] += qy * factor;
+      
+//      if (c2 == 430 || c2 == 428 || c2 == 565) {
+//        std::cout<<"c2 = "<<c2<<", FNum_rot[0] * factor = "<<FNum_rot[0]*factor<<std::endl;
+//      }
     }
   }
 
@@ -280,10 +288,15 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     h = h_c_tmp[0][c] + (S[0] + ext_S_cell[c]);
     qx = q_c_tmp[0][c] + S[1];
     qy = q_c_tmp[1][c] + S[2];
-
+    
     f_temp0[0][c] = h;
     f_temp1[0][c] = qx;
     f_temp1[1][c] = qy;
+    
+//    if (c == 430) {
+//      std::cout<<"S[1] = "<<S[1]<<std::endl;
+//      std::cout<<"S[2] = "<<S[2]<<std::endl;
+//    }
   }
 }
 
