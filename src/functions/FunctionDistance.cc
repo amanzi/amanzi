@@ -28,7 +28,7 @@ FunctionDistance::FunctionDistance(const Kokkos::View<double*,Kokkos::HostSpace>
   Kokkos::resize(metric_,metric.extent(0)); 
   Kokkos::deep_copy(x0_.view_host(),x0);
   Kokkos::deep_copy(x0_.view_device(),x0);
-  Kokkos::deep_copy(metric_.view_device(),metric);
+  Kokkos::deep_copy(metric_.view_host(),metric);
   Kokkos::deep_copy(metric_.view_device(),metric);
 }
 

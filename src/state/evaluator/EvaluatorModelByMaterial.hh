@@ -181,21 +181,24 @@ EvaluatorModelByMaterial<Model, Device_type>::Evaluate_(
         mesh_location,
         AmanziMesh::Parallel_type::OWNED,
         material_ids);
+      Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> hv("",material_ids.size()); 
       AmanziMesh::Entity_ID_View material_ids_v("",material_ids.size());
-      Kokkos::parallel_for(
-        "",material_ids.size(), KOKKOS_LAMBDA(const int i){
-          material_ids_v[i] = material_ids[i]; 
-        }); 
+      for(int i = 0 ; i < material_ids.size(); ++i)
+        hv[i] = material_ids[i]; 
+      Kokkos::deep_copy(material_ids_v,hv);
 
       // set up the model and range and then dispatch
       region_model.second->SetViews(dependency_views, result_views, S);
+
+      auto&& f = *(region_model.second); 
 
       Kokkos::RangePolicy<typename Device_type::execution_space> range(
         0, material_ids_v.size());
       Kokkos::parallel_for(
         name_, range, KOKKOS_LAMBDA(const int i) {
-        (*region_model.second)(material_ids_v[i]);
+        f(material_ids_v[i]);
       });
+      Kokkos::fence();
     }
   }
   Debug_(S);
@@ -249,11 +252,11 @@ EvaluatorModelByMaterial<Model, Device_type>::EvaluatePartialDerivative_(
         mesh_location,
         AmanziMesh::Parallel_type::OWNED,
         material_ids);
+      Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> hv("",material_ids.size()); 
       AmanziMesh::Entity_ID_View material_ids_v("",material_ids.size());
-      Kokkos::parallel_for(
-        "", material_ids.size(), KOKKOS_LAMBDA(const int i){
-        material_ids_v[i] = material_ids[i]; 
-      }); 
+      for(int i = 0 ; i < material_ids.size(); ++i)
+        hv[i] = material_ids[i]; 
+      Kokkos::deep_copy(material_ids_v,hv);
 
       // set up the model and range and then dispatch
       region_model.second->SetViews(dependency_views, result_views, S);
@@ -263,6 +266,7 @@ EvaluatorModelByMaterial<Model, Device_type>::EvaluatePartialDerivative_(
                                    Device_type>
         launcher(name_, wrt, dependencies_, *region_model.second);
       launcher.launch(material_ids_v);
+      Kokkos::fence(); 
     }
   }
 }

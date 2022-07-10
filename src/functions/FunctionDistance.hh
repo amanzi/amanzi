@@ -63,7 +63,7 @@ class FunctionDistance : public Function {
       // Exceptions::amanzi_throw(m);
     }
     for (int j = 0; j < x0_.extent(0); ++j) {
-      tmp = x(j, i) - x0_.view_device()[j];
+      tmp = x(j,i) - x0_.view_device()[j];
       y += metric_.view_device()[j] * tmp * tmp;
     }
     y = sqrt(y);

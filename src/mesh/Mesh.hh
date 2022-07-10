@@ -115,8 +115,8 @@ class Mesh {
   virtual Teuchos::RCP<const Mesh> parent() const { return parent_; }
 
   // Set/get the space dimension
-  void set_space_dimension(const unsigned int dim) { space_dim_ = dim; }
-  unsigned int space_dimension() const { return space_dim_; }
+  KOKKOS_INLINE_FUNCTION void set_space_dimension(const unsigned int dim) { space_dim_ = dim; }
+  KOKKOS_INLINE_FUNCTION unsigned int space_dimension() const { return space_dim_; }
 
   // Set/get the manifold dimension
   void set_manifold_dimension(const unsigned int dim)

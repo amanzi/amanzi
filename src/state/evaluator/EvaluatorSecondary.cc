@@ -150,7 +150,7 @@ EvaluatorSecondary::Update(State& S, const Key& request)
 
     // If so, update ourselves, empty our list of filled requests, and return.
     Update_(S);
-    requests_.clear();
+    requests.clear();
     requests_.insert(request);
     return true;
   } else {

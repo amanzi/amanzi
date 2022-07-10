@@ -102,7 +102,6 @@ EvaluatorCellToFaceUpwind::Update_(State& S)
 void
 EvaluatorCellToFaceUpwind::UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag)
 {
-std::cout << "START: UpdateDerivative_" << std::endl;
   // hacked together implementation...
   const auto& cells = S.GetDerivative<CompositeVector>(dependencies_[0].first, dependencies_[0].second,
           wrt_key, wrt_tag);

@@ -41,6 +41,7 @@ class FunctionConstant : public Function {
 
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const
   {
+    assert(in.extent(1) == out.extent(0)); 
     Kokkos::parallel_for(
       "FunctionConstant::apply",
       in.extent(1),

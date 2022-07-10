@@ -158,9 +158,10 @@ EvaluatorModel_CompositeVector<Model, Device_type>::Evaluate_(
       0, result_views[0].extent(0));
     Kokkos::parallel_for(
       name_, range, *model_);
+    Kokkos::fence();
+    // Reset views
+    model_ = Teuchos::rcp<Model_type>(new Model_type(plist_));  
   }
-  // Empty model to free views 
-  model_ = Teuchos::rcp<Model_type>(new Model_type(plist_));  
   Debug_(S);
 }
 
@@ -202,9 +203,9 @@ EvaluatorModel_CompositeVector<Model, Device_type>::EvaluatePartialDerivative_(
                                  Device_type>
       launcher(name_, wrt, dependencies_, *model_);
     launcher.launch(result_views[0].extent(0));
+    Kokkos::fence();
+    model_ = Teuchos::rcp<Model_type>(new Model_type(plist_)); 
   }
-    // Empty model to free views 
-  model_ = Teuchos::rcp<Model_type>(new Model_type(plist_));  
 }
 
 } // namespace Amanzi

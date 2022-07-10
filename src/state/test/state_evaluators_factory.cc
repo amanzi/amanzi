@@ -63,7 +63,6 @@ TEST(EVALUATOR_FACTORY) {    // create a mesh
     auto cvv =
         S.Get<CompositeVector>("water_content", "").ViewComponent<HostSpaceSpecial>(
             "cell", 0, false);
-    std::cout << "deriv = " << cvv(0) << "," << cvv(1) << std::endl;
     CHECK_CLOSE(1212.946, cvv(0), 1.e-3);
     CHECK_CLOSE(9252.804, cvv(1), 1.e-3);
   }
@@ -73,7 +72,6 @@ TEST(EVALUATOR_FACTORY) {    // create a mesh
   {
     auto cvv = S.GetDerivative<CompositeVector>("water_content", "", "pressure", "")
                .ViewComponent<HostSpaceSpecial>("cell", 0, false);
-    std::cout << "deriv = " << cvv(0) << "," << cvv(1) << std::endl;
     CHECK_CLOSE(0.10689, cvv(0), 1.e-5);
     CHECK_CLOSE(0.292203, cvv(1), 1.e-5);
   }
