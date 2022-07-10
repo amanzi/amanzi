@@ -726,8 +726,8 @@ ShallowWater_PK::TotalDepthReconstruct()
     cell_is_dry = false;
     cell_is_fully_flooded = false; // default?
 	    	
-    //ht_grad[0][c] = 0.0;
-    //ht_grad[1][c] = 0.0;
+//    ht_grad[0][c] = 0.0;
+//    ht_grad[1][c] = 0.0;
     
     n_neg_nodes = 0;
     
@@ -834,7 +834,9 @@ ShallowWater_PK::TotalDepthReconstruct()
 //    }
     
   // well balanced for triangular cells [Section 3.1, Liu et al.' 18]
-  /*
+    
+    
+  // /*
   // identify type of cells i.e. type 1 or type 2
     if (cell_is_partially_wet == true) {
      // order bathymetry nodes into B13 >= B12 > B23
@@ -1036,6 +1038,8 @@ ShallowWater_PK::TotalDepthReconstruct()
 //      std::cout<<"ht_c = "<<ht_c[0][c]<<", wj = "<<wj<<", B_c = "<<B_c[0][c]<<", h_c = "<<h_c[0][c]<<std::endl;
 //      }
     } // cell is partially wet
+//     */
+    
     
 //    if (c == 430 || c == 428 || c == 565) {
 //      for (int  i = 0; i < cnodes.size(); ++i) {
@@ -1045,7 +1049,7 @@ ShallowWater_PK::TotalDepthReconstruct()
 //        std::cout<<"c = "<<c<<", ht face = "<<ht_cell_face_[c][cfaces[f]]<<std::endl;
 //      }
 //    }
-   */
+   
    
   } // cell c
 
@@ -1121,8 +1125,8 @@ ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
     const auto& normal = mesh_->face_normal(f, false, c, &orientation);
     const auto& xcf = mesh_->face_centroid(f);
 
-    double ht_rec = total_depth_grad_->getValue(c, xcf);
-    //double ht_rec = ht_cell_face_[c][f];
+    //double ht_rec = total_depth_grad_->getValue(c, xcf);
+    double ht_rec = ht_cell_face_[c][f];
     double B_rec = BathymetryEdgeValue(f, B_n);
 
    // if (ht_rec < B_rec) {
@@ -1139,18 +1143,18 @@ ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
 
   S1 /= vol;
   S2 /= vol;
-  S1 -= ht_grad[0][c] * U[0];
-  S2 -= ht_grad[1][c] * U[0];
-  S1 *= g_;
-  S2 *= g_;
-  
-//  for (int i = 0; i < cnodes.size(); ++i) {
-//    S1 -= (1.0/3.0) * (ht_cell_node_[c][cnodes[i]] - B_n[0][cnodes[i]]) * ht_cell_node_grad_x_[c][cnodes[i]];
-//    S2 -= (1.0/3.0) * (ht_cell_node_[c][cnodes[i]] - B_n[0][cnodes[i]]) * ht_cell_node_grad_y_[c][cnodes[i]];
-//  }
-  
+//  S1 -= ht_grad[0][c] * U[0];
+//  S2 -= ht_grad[1][c] * U[0];
 //  S1 *= g_;
 //  S2 *= g_;
+  
+  for (int i = 0; i < cnodes.size(); ++i) {
+    S1 -= (1.0/3.0) * (ht_cell_node_[c][cnodes[i]] - B_n[0][cnodes[i]]) * ht_cell_node_grad_x_[c][cnodes[i]];
+    S2 -= (1.0/3.0) * (ht_cell_node_[c][cnodes[i]] - B_n[0][cnodes[i]]) * ht_cell_node_grad_y_[c][cnodes[i]];
+  }
+  
+  S1 *= g_;
+  S2 *= g_;
 
   std::vector<double> S(3);
 

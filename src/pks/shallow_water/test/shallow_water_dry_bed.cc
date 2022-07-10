@@ -81,7 +81,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
     if (icase == 1) {
       B_n[0][n] = 0.0;
-      if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.2*0.2 + 1.e-12) {
+      if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.3*0.3 + 1.e-12) {
         B_n[0][n] = 0.8;
       }
       ht_n[0][n] = std::max(0.5, B_n[0][n]);
@@ -137,7 +137,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                    (ht_n[0][face_nodes[0]] + ht_n[0][face_nodes[1]]) / 2.0;
     }
 
-    ht_c[0][c] = std::max(0.0, B_c[0][c]);
+    ht_c[0][c] = std::max(0.5, B_c[0][c]);
 
     // perturb the total height
     if (icase == 1) {
@@ -156,6 +156,75 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     q_c[0][c] = h_c[0][c] * vel_c[0][c];
     q_c[1][c] = h_c[0][c] * vel_c[1][c];
     p_c[0][c] = patm + rho * g * h_c[0][c];
+  }
+  
+  double wj = 0.5;
+  for (int c = 0; c < ncells_wghost; ++c) {
+    Amanzi::AmanziMesh::Entity_ID_List cnodes;
+    mesh->cell_get_nodes(c, &cnodes);
+    
+    // order bathymetry nodes into B13 >= B12 > B23
+     double B13, B12, B23;
+     int i13, i12, i23;
+     
+     mesh->cell_get_nodes(c, &cnodes);
+     B13 = 0.0; B12 = 0.0; B23 = 0.0;
+     // fix this sorting method...
+     for (int i = 0; i < cnodes.size(); ++i) {
+       if (B13 <= B_n[0][cnodes[i]]) {
+         B13 = B_n[0][cnodes[i]];
+         i13 = cnodes[i];
+       }
+     }
+     for (int i = 0; i < cnodes.size(); ++i) {
+       if (cnodes[i] != i13) {
+         if (B12 <= B_n[0][cnodes[i]] ) {
+           B12 = B_n[0][cnodes[i]];
+           i12 = cnodes[i];
+         }
+       }
+     }
+     for (int i = 0; i < cnodes.size(); ++i) {
+       if (cnodes[i] != i13 && cnodes[i] != i12) {
+         B23 = B_n[0][cnodes[i]];
+         i23 = cnodes[i];
+       }
+     }
+    
+    // fully flooded
+    if(ht_c[0][c] >= std::max(std::max(B13, B12), B23) && (h_c[0][c] > 0.0)) {
+      h_c[0][c] = ht_c[0][c] - B_c[0][c];
+    }
+    // dry
+    else if (std::abs(ht_c[0][c] - B_c[0][c]) < 1.e-14) {
+      h_c[0][c] = 0.0;
+    }
+    // partially wet
+    else {
+      
+//      if (ht_c[0][c] <= ( B12 + (B13 - B12) * (B13 - B12) / (3.0 *(B13 - B23)) ) ) {
+//        h_c[0][c] = std::pow((wj - B23), 3.0) / ( 3.0*(B13 - B23) * (B12 - B23) );
+//      }
+//      else {
+        h_c[0][c] =  1.0/(3.0*(B13-B12)) * ( (-wj*wj*wj + 3.0*B13*wj*wj - 3.0*(B23*B13 + B12*B13 - B12*B23)*wj + B23*B23*B13) / (B13 - B23) + B12*(B12 + B23) );
+     // /
+    }
+    
+    if (std::abs(B13 + B12 + B23 - 0.0) < 1.e-14) {
+      h_c[0][c] = wj;
+    } else if (std::abs(B13 + B12 + B23 - 0.8) < 1.e-14) {
+      h_c[0][c] =  1.0/(3.0*(B13-B12)) * ( (-wj*wj*wj + 3.0*B13*wj*wj - 3.0*(B23*B13 + B12*B13 - B12*B23)*wj + B23*B23*B13) / (B13 - B23) + B12*(B12 + B23) );
+    } else if (std::abs(B13 + B12 + B23 - 1.6) < 1.e-14) {
+      h_c[0][c] = std::pow((wj - B23), 3.0) / ( 3.0*(B13 - B23) * (B12 - B23) );
+    }
+    else {
+      h_c[0][c] = 0.0;
+    }
+  }
+  
+  for (int c = 0; c < ncells_wghost; ++c) {
+    ht_c[0][c] = h_c[0][c] + B_c[0][c];
+    
   }
 
   S->Get<CompositeVector>("surface-bathymetry").ScatterMasterToGhosted("cell");
@@ -209,9 +278,9 @@ RunTest(int icase)
 
   RCP<Mesh> mesh;
   if (icase == 1) {
-   // mesh = meshfactory.create ("test/triangular16.exo");
+    mesh = meshfactory.create ("test/triangular16.exo");
     //mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 20, request_faces, request_edges);
-    mesh = meshfactory.create ("test/median32x33.exo");
+   // mesh = meshfactory.create ("test/median32x33.exo");
   } else if (icase == 2) {
     mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
 		//mesh = meshfactory.create ("test/median32x33.exo");
