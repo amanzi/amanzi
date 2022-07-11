@@ -47,6 +47,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Function.hh"
 #include "FunctionFactory.hh"
+#include "AmanziTypes.hh"
 
 namespace Amanzi {
 
@@ -59,7 +60,7 @@ class MultiFunction {
   ~MultiFunction();
 
   int size() const;
-  Kokkos::View<double*> operator()(const Kokkos::View<double*>& xt) const;
+  Kokkos::View<double*,Kokkos::HostSpace> operator()(const Kokkos::View<double*,Kokkos::HostSpace>& xt) const;
 
   //
   // NOTE: this requirement of the out to be LayoutLeft is because of the
@@ -84,7 +85,7 @@ class MultiFunction {
 
  private:
   std::vector<Teuchos::RCP<const Function>> functions_;
-  Kokkos::View<double*> values_;
+  Kokkos::DualView<double*,Amanzi::DeviceOnlyMemorySpace> values_;
 };
 
 } // namespace Amanzi

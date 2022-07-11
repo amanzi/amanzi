@@ -62,7 +62,7 @@ template <template <typename> class Model,
           class DeviceType = DefaultDevice>
 void
 ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
-             const Entity_ID_View& entities,
+             const Kokkos::View<AmanziMesh::Entity_ID*>& entities,
              DeviceType /* dev */ = DeviceType())
 {
   using execution_space = typename DeviceType::execution_space;
@@ -79,7 +79,7 @@ template <template <typename> class Model, class TagType,
           class DeviceType = DefaultDevice>
 void
 ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
-             TagType /* tag */, const Entity_ID_View& entities,
+             TagType /* tag */, const Kokkos::View<AmanziMesh::Entity_ID*>& entities,
              DeviceType /* dev */ = DeviceType())
 {
   using execution_space = typename DeviceType::execution_space;

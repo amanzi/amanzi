@@ -76,8 +76,8 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA)
   GraphFE graph_local(cell_map, cell_map_ghosted, cell_map_ghosted, 5);
   GraphFE graph_global(cell_map, cell_map_ghosted, cell_map_ghosted, 5);
 
-  Entity_ID_View faces;
-  Entity_ID_View face_cells;
+  Kokkos::View<Entity_ID*,Kokkos::HostSpace> faces;
+  Kokkos::View<Entity_ID*,Kokkos::HostSpace> face_cells;
   std::vector<int> neighbor_cells;
   for (int c = 0; c != ncells; ++c) {
     neighbor_cells.resize(0);
@@ -85,7 +85,7 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA)
 
     mesh->cell_get_faces(c, faces);
     for (int n = 0; n != faces.size(); ++n) {
-      mesh->face_get_cells(
+      mesh->face_get_cells_host(
         faces[n], AmanziMesh::Parallel_type::ALL, face_cells);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] :
@@ -155,8 +155,8 @@ TEST(FE_GRAPH_FACE_FACE)
   GraphFE graph_local(face_map, face_map_ghosted, face_map_ghosted, 7);
   GraphFE graph_global(face_map, face_map_ghosted, face_map_ghosted, 7);
 
-  Entity_ID_View faces;
-  Entity_ID_View face_cells;
+  Kokkos::View<Entity_ID*,Kokkos::HostSpace> faces;
+  Kokkos::View<Entity_ID*,Kokkos::HostSpace> face_cells;
   for (int c = 0; c != ncells; ++c) {
     mesh->cell_get_faces(c, faces);
 

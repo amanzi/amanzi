@@ -17,6 +17,7 @@
 #include <vector>
 #include <string>
 #include "boost/algorithm/string.hpp"
+#include "Kokkos_DualView.hpp"
 
 #include "AmanziTypes.hh"
 #include "errors.hh"
@@ -24,12 +25,18 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
+template<typename T, typename MEM>
+struct DualCrs{
+  Kokkos::DualView<int*, MEM> row_map; 
+  Kokkos::DualView<T, MEM> entries; 
+};
+
 // Necessary typedefs and enumerations
 typedef int Set_ID;
 typedef LO Entity_ID;
 typedef std::vector<Entity_ID> Entity_ID_List;
-typedef Kokkos::View<Entity_ID*> Entity_ID_View;
-typedef Kokkos::View<int*> Entity_Dir_View;
+typedef Kokkos::View<Entity_ID*,Amanzi::DeviceOnlyMemorySpace> Entity_ID_View;
+typedef Kokkos::View<int*,Amanzi::DeviceOnlyMemorySpace> Entity_Dir_View;
 
 // Recongnize special meshes
 enum Mesh_type {

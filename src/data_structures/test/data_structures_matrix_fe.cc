@@ -83,8 +83,8 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
   // create the graph
   auto graph = Teuchos::rcp(new GraphFE(cell_map, cell_map_ghosted, cell_map_ghosted, 5));
   
-  Entity_ID_View faces;
-  Entity_ID_View face_cells;
+  Kokkos::View<Entity_ID*,HostSpace> faces;
+  Kokkos::View<Entity_ID*,HostSpace> face_cells;
   std::vector<int> neighbor_cells;
   for (int c = 0; c != ncells; ++c) {
     neighbor_cells.resize(0);
@@ -92,7 +92,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
 
     mesh->cell_get_faces(c, faces);
     for (int n = 0; n != faces.size(); ++n) {
-      mesh->face_get_cells(
+      mesh->face_get_cells_host(
         faces[n], AmanziMesh::Parallel_type::ALL, face_cells);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] :
@@ -117,7 +117,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
 
     mesh->cell_get_faces(c, faces);
     for (int n = 0; n != faces.size(); ++n) {
-      mesh->face_get_cells(
+      mesh->face_get_cells_host(
         faces[n], AmanziMesh::Parallel_type::ALL, face_cells);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] :
@@ -150,13 +150,17 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
 
   // check matrix equality
   for (int c=0; c!=ncells; ++c) {
-    const double *ctrl_vals, *mat_vals;
-    const int *ctrl_inds, *mat_inds;
+    Kokkos::View<const double*, Amanzi::Layout, 
+    Amanzi::DeviceSpecial, Kokkos::MemoryManaged> mat_vals, ctrl_vals;
+    Kokkos::View<const int *, Amanzi::Layout,
+    Amanzi::DeviceSpecial, Kokkos::MemoryManaged>  mat_inds, ctrl_inds;
     int ctrl_nentries, mat_nentries;
 
-    matrix.getLocalRowView(c, mat_nentries, mat_vals, mat_inds);
+    matrix.getLocalRowView(c, mat_inds, mat_vals);
+    mat_nentries = mat_vals.size(); 
 
-    control.getLocalRowView(c, ctrl_nentries, ctrl_vals, ctrl_inds);
+    control.getLocalRowView(c, ctrl_inds, ctrl_vals);
+    ctrl_nentries = ctrl_vals.size(); 
 
     CHECK_EQUAL(ctrl_nentries, mat_nentries);
     for (int i=0; i!=std::min(ctrl_nentries, mat_nentries); ++i) {
@@ -208,8 +212,8 @@ TEST(FE_MATRIX_FACE_FACE)
   Teuchos::RCP<GraphFE> graph =
     Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 7));
 
-  Entity_ID_View faces;
-  Entity_ID_View face_cells;
+  Kokkos::View<Entity_ID*,HostSpace> faces;
+  Kokkos::View<Entity_ID*,HostSpace> face_cells;
   for (int c = 0; c != ncells; ++c) {
     mesh->cell_get_faces(c, faces);
     for (int n = 0; n != faces.size(); ++n) {
@@ -249,12 +253,17 @@ TEST(FE_MATRIX_FACE_FACE)
   // check matrix equality
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f=0; f!=nfaces; ++f) {
-    const double *ctrl_vals, *mat_vals;
-    const int *ctrl_inds, *mat_inds;
+    Kokkos::View<const double*, Amanzi::Layout, 
+    Amanzi::DeviceSpecial, Kokkos::MemoryManaged> mat_vals, ctrl_vals;
+    Kokkos::View<const int *, Amanzi::Layout,
+    Amanzi::DeviceSpecial, Kokkos::MemoryManaged>  mat_inds, ctrl_inds;
     int ctrl_nentries, mat_nentries;
 
-    matrix.getLocalRowView(f, mat_nentries, mat_vals, mat_inds);
-    control.getLocalRowView(f, ctrl_nentries, ctrl_vals, ctrl_inds);
+    matrix.getLocalRowView(f, mat_inds, mat_vals);
+    mat_nentries = mat_vals.size(); 
+    
+    control.getLocalRowView(f, ctrl_inds, ctrl_vals);
+    ctrl_nentries = ctrl_vals.size(); 
 
     CHECK_EQUAL(ctrl_nentries, mat_nentries);
     for (int i=0; i!=std::min(ctrl_nentries, mat_nentries); ++i) {

@@ -105,7 +105,7 @@ Mesh::cell_get_max_faces() const
 {
   unsigned int n(0);
   int ncells = num_entities(CELL, Parallel_type::OWNED);
-  for (int c = 0; c < ncells; ++c) { n = std::max(n, cell_get_num_faces(c)); }
+  for (int c = 0; c < ncells; ++c) { n = std::max(n, cell_get_num_faces_host(c)); }
   return n;
 }
 
@@ -133,8 +133,8 @@ Mesh::cell_get_max_edges() const
   if (mesh_cache_.edges_requested_) {
     int ncells = num_entities(CELL, Parallel_type::OWNED);
     for (int c = 0; c < ncells; ++c) {
-      Kokkos::View<AmanziMesh::Entity_ID*> edges;
-      cell_get_edges(c, edges);
+      Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> edges;
+      cell_get_edges_host(c, edges);
       n = std::max(n, (unsigned int)edges.extent(0));
     }
   }
@@ -288,9 +288,9 @@ Mesh::point_in_cell(const AmanziGeometry::Point& p,
     // and send it into the polyhedron volume and centroid
     // calculation routine
     int nf;
-    Kokkos::View<Entity_ID*> faces;
+    Kokkos::View<Entity_ID*,Kokkos::HostSpace> faces;
     std::vector<unsigned int> nfnodes;
-    Kokkos::View<int*> fdirs;
+    Kokkos::View<int*,Kokkos::HostSpace> fdirs;
     std::vector<AmanziGeometry::Point> cfcoords;
 
     cell_get_faces_and_dirs(cellid, faces, fdirs);
@@ -392,7 +392,7 @@ Mesh::deform(const Kokkos::View<Entity_ID*>& nodeids,
 
   int nc = num_entities(CELL, Parallel_type::ALL);
   for (int c = 0; c != nc; ++c) {
-    if (cell_volume(c, false) < 0.) return 0;
+    if (cell_volume_host(c) < 0.) return 0;
   }
   return 1;
 }
@@ -450,11 +450,15 @@ Mesh::deform(const Entity_ID_List& nodeids,
 
         if (keep_valid) { // check if the cells remain valid
           allvalid = true;
-          for (int k = 0; k < nc; k++)
+          for (int k = 0; k < nc; k++)              
+            assert(false&&"disabled functionability"); 
+            #if 0 
+            // Neeed to be addded back to mesh functionability 
             if (cell_volume(cells[k], true) < 0.0) {
               allvalid = false;
               break;
             }
+            #endif  
         }
 
         if (allvalid)

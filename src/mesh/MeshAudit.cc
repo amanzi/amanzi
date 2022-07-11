@@ -35,9 +35,9 @@ MeshAudit::MeshAudit(Teuchos::RCP<AmanziMesh::Mesh>& mesh, std::ostream& os)
   : mesh_(mesh),
     comm_(mesh->get_comm()),
     os_(os),
-    nnode(mesh->node_map(true)->getNodeNumElements()),
-    nface(mesh->face_map(true)->getNodeNumElements()),
-    ncell(mesh->cell_map(true)->getNodeNumElements()),
+    nnode(mesh->node_map(true)->getLocalNumElements()),
+    nface(mesh->face_map(true)->getLocalNumElements()),
+    ncell(mesh->cell_map(true)->getLocalNumElements()),
     MAX_OUT(5)
 {
   create_test_dependencies();
@@ -306,7 +306,7 @@ MeshAudit::check_entity_counts() const
 
   // Check the number of owned nodes.
   n = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  nref = mesh_->node_map(false)->getNodeNumElements();
+  nref = mesh_->node_map(false)->getLocalNumElements();
   if (n != nref) {
     os_ << ": ERROR: num_entities(NODE,OWNED)=" << n << "; should be " << nref
         << std::endl;
@@ -315,7 +315,7 @@ MeshAudit::check_entity_counts() const
 
   // Check the number of used nodes.
   n = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
-  nref = mesh_->node_map(true)->getNodeNumElements();
+  nref = mesh_->node_map(true)->getLocalNumElements();
   if (n != nref) {
     os_ << "ERROR: num_entities(NODE,ALL)=" << n << "; should be " << nref
         << std::endl;
@@ -324,7 +324,7 @@ MeshAudit::check_entity_counts() const
 
   // Check the number of owned faces.
   n = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  nref = mesh_->face_map(false)->getNodeNumElements();
+  nref = mesh_->face_map(false)->getLocalNumElements();
   if (n != nref) {
     os_ << "ERROR: num_entities(FACE,OWNED)=" << n << "; should be " << nref
         << std::endl;
@@ -333,7 +333,7 @@ MeshAudit::check_entity_counts() const
 
   // Check the number of used faces.
   n = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  nref = mesh_->face_map(true)->getNodeNumElements();
+  nref = mesh_->face_map(true)->getLocalNumElements();
   if (n != nref) {
     os_ << "ERROR: num_entities(FACE,ALL)=" << n << "; should be " << nref
         << std::endl;
@@ -342,7 +342,7 @@ MeshAudit::check_entity_counts() const
 
   // Check the number of owned cells.
   n = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  nref = mesh_->cell_map(false)->getNodeNumElements();
+  nref = mesh_->cell_map(false)->getLocalNumElements();
   if (n != nref) {
     os_ << "ERROR: num_entities(CELL,OWNED)=" << n << "; should be " << nref
         << std::endl;
@@ -351,7 +351,7 @@ MeshAudit::check_entity_counts() const
 
   // Check the number of used cells.
   n = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  nref = mesh_->cell_map(true)->getNodeNumElements();
+  nref = mesh_->cell_map(true)->getLocalNumElements();
   if (n != nref) {
     os_ << "ERROR: num_entities(CELL,ALL)=" << n << "; should be " << nref
         << std::endl;
@@ -445,11 +445,11 @@ MeshAudit::check_cell_to_faces() const
   AmanziMesh::Entity_ID_List bad_cells, bad_cells1;
   AmanziMesh::Entity_ID_List bad_faces;
   AmanziMesh::Entity_ID_List free_faces;
-  Kokkos::View<AmanziMesh::Entity_ID*> cface;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> cface;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     try {
-      mesh_->cell_get_faces(j, cface); // this may fail
+      mesh_->cell_get_faces<Kokkos::HostSpace>(j, cface); // this may fail
       bool invalid_refs = false;
       for (int k = 0; k < cface.extent(0); ++k) {
         if (cface(k) >= nface) invalid_refs = true;
@@ -485,11 +485,11 @@ MeshAudit::check_cell_to_faces() const
 bool
 MeshAudit::check_face_refs_by_cells() const
 {
-  Kokkos::View<AmanziMesh::Entity_ID*> cface;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> cface;
   vector<unsigned int> refs(nface, 0);
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    mesh_->cell_get_faces(j, cface);
+    mesh_->cell_get_faces<Kokkos::HostSpace>(j, cface);
     for (int k = 0; k < cface.extent(0); ++k) (refs[cface(k)])++;
   }
 
@@ -600,14 +600,14 @@ MeshAudit::check_node_refs_by_faces() const
 bool
 MeshAudit::check_cell_to_face_dirs() const
 {
-  Kokkos::View<AmanziMesh::Entity_ID*> faces;
-  Kokkos::View<int*> fdirs;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
+  Kokkos::View<int*,Kokkos::HostSpace> fdirs;
   AmanziMesh::Entity_ID_List bad_cells, bad_cells_exc;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     // fdirs.assign(6, INT_MAX);
     try {
-      mesh_->cell_get_faces_and_dirs(j, faces, fdirs); // this may fail
+      mesh_->cell_get_faces_and_dirs<Kokkos::HostSpace>(j, faces, fdirs); // this may fail
       bool bad_data = false;
       for (int k = 0; k < fdirs.extent(0); ++k)
         if (fdirs(k) != -1 && fdirs(k) != 1) bad_data = true;
@@ -676,10 +676,10 @@ bool
 MeshAudit::check_cell_to_faces_to_nodes() const
 {
   AmanziMesh::Entity_ID_List cnode;
-  Kokkos::View<AmanziMesh::Entity_ID*> cface;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> cface;
   AmanziMesh::Entity_ID_List fnode_ref;
   AmanziMesh::Entity_ID_List fnode;
-  Kokkos::View<int*> fdirs;
+  Kokkos::View<int*,Kokkos::HostSpace> fdirs;
   AmanziMesh::Entity_ID_List bad_cells0;
   AmanziMesh::Entity_ID_List bad_cells1;
 
@@ -695,7 +695,7 @@ MeshAudit::check_cell_to_faces_to_nodes() const
 
     mesh_->cell_get_nodes(j, cnode); // this should not fail
 
-    mesh_->cell_get_faces_and_dirs(j, cface, fdirs); // this should not fail
+    mesh_->cell_get_faces_and_dirs<Kokkos::HostSpace>(j, cface, fdirs); // this should not fail
 
     bool bad_face = false;
     bool bad_dir = false;
@@ -913,7 +913,7 @@ MeshAudit::check_cell_geometry() const
   AmanziMesh::Entity_ID_List bad_cells;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    hvol = mesh_->cell_volume(j, false);
+    hvol = mesh_->cell_volume_host(j);
 
     if (hvol <= 0.0) bad_cells.push_back(j);
   }
@@ -985,12 +985,12 @@ MeshAudit::check_maps(const Map_ptr_type& map_own,
   // Check that the global ID space is contiguously divided (but not
   // necessarily uniformly) across all processers
 
-  std::vector<GO> owned_GIDs(map_own->getNodeNumElements());
-  for (int i = 0; i < map_own->getNodeNumElements(); i++)
+  std::vector<GO> owned_GIDs(map_own->getLocalNumElements());
+  for (int i = 0; i < map_own->getLocalNumElements(); i++)
     owned_GIDs[i] = map_own->getGlobalElement(i);
   std::sort(owned_GIDs.begin(), owned_GIDs.end());
 
-  for (int i = 0; i < map_own->getNodeNumElements() - 1; i++) {
+  for (int i = 0; i < map_own->getLocalNumElements() - 1; i++) {
     int diff = owned_GIDs[i + 1] - owned_GIDs[i];
     if (diff > 1) {
       os_ << "ERROR: owned map is not contiguous" << std::endl;
@@ -1018,8 +1018,8 @@ MeshAudit::check_maps(const Map_ptr_type& map_own,
   } else {
     // Multi-process MPI
 
-    int num_own = map_own->getNodeNumElements();
-    int num_use = map_use->getNodeNumElements();
+    int num_own = map_own->getLocalNumElements();
+    int num_use = map_use->getLocalNumElements();
     int num_ovl = num_use - num_own;
 
     // Verify that the used map extends the owned map.
@@ -1088,8 +1088,8 @@ MeshAudit::check_node_to_coordinates_ghost_data() const
   // auto node_map_own = mesh_->node_map(false);
   // auto node_map_use = mesh_->node_map(true);
 
-  // int nnode_own = node_map_own->getNodeNumElements();
-  // int nnode_use = node_map_use->getNodeNumElements();
+  // int nnode_own = node_map_own->getLocalNumElements();
+  // int nnode_use = node_map_use->getLocalNumElements();
 
   // AmanziGeometry::Point coord(spdim);
   // AmanziMesh::Entity_ID_List bad_nodes;
@@ -1140,8 +1140,8 @@ MeshAudit::check_face_to_nodes_ghost_data() const
   // auto face_map_own = mesh_->face_map(false);
   // auto face_map_use = mesh_->face_map(true);
 
-  // int nface_own = face_map_own->getNodeNumElements();
-  // int nface_use = face_map_use->getNodeNumElements();
+  // int nface_own = face_map_own->getLocalNumElements();
+  // int nface_use = face_map_use->getLocalNumElements();
 
   // AmanziMesh::Entity_ID_List fnode;
   // AmanziMesh::Entity_ID_List bad_faces, bad_faces1, bad_faces2;
@@ -1264,8 +1264,8 @@ MeshAudit::check_cell_to_nodes_ghost_data() const
   // auto cell_map_own = mesh_->cell_map(false);
   // auto cell_map_use = mesh_->cell_map(true);
 
-  // int ncell_own = cell_map_own->getNodeNumElements();
-  // int ncell_use = cell_map_use->getNodeNumElements();
+  // int ncell_own = cell_map_own->getLocalNumElements();
+  // int ncell_use = cell_map_use->getLocalNumElements();
 
   // AmanziMesh::Entity_ID_List cnode;
   // AmanziMesh::Entity_ID_List bad_cells;
@@ -1349,8 +1349,8 @@ MeshAudit::check_cell_to_faces_ghost_data() const
   // auto cell_map_own = mesh_->cell_map(false);
   // auto cell_map_use = mesh_->cell_map(true);
 
-  // int ncell_own = cell_map_own->getNodeNumElements();
-  // int ncell_use = cell_map_use->getNodeNumElements();
+  // int ncell_own = cell_map_own->getLocalNumElements();
+  // int ncell_use = cell_map_use->getLocalNumElements();
 
   // AmanziMesh::Entity_ID_List cface;
   // AmanziMesh::Entity_ID_List bad_cells;
@@ -1830,19 +1830,19 @@ MeshAudit::check_face_partition() const
   // Mark all the faces contained by owned cells.
   bool owned[nface];
   for (int j = 0; j < nface; ++j) owned[j] = false;
-  Kokkos::View<AmanziMesh::Entity_ID*> cface;
-  Kokkos::View<int*> dfaces;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> cface;
+  Kokkos::View<int*,Kokkos::HostSpace> dfaces;
   for (AmanziMesh::Entity_ID j = 0;
-       j < mesh_->cell_map(false)->getNodeNumElements();
+       j < mesh_->cell_map(false)->getLocalNumElements();
        ++j) {
-    mesh_->cell_get_faces_and_dirs(j, cface, dfaces);
+    mesh_->cell_get_faces_and_dirs<Kokkos::HostSpace>(j, cface, dfaces);
     for (int k = 0; k < cface.extent(0); ++k) owned[cface(k)] = true;
   }
 
   // Verify that every owned face has been marked as belonging to an owned cell.
   AmanziMesh::Entity_ID_List bad_faces;
   for (AmanziMesh::Entity_ID j = 0;
-       j < mesh_->face_map(false)->getNodeNumElements();
+       j < mesh_->face_map(false)->getLocalNumElements();
        ++j)
     if (!owned[j]) bad_faces.push_back(j);
 
@@ -1866,7 +1866,7 @@ MeshAudit::check_node_partition() const
   for (int j = 0; j < nnode; ++j) owned[j] = false;
   AmanziMesh::Entity_ID_List cnode;
   for (AmanziMesh::Entity_ID j = 0;
-       j < mesh_->cell_map(false)->getNodeNumElements();
+       j < mesh_->cell_map(false)->getLocalNumElements();
        ++j) {
     mesh_->cell_get_nodes(j, cnode);
     for (int k = 0; k < cnode.size(); ++k) owned[cnode[k]] = true;
@@ -1875,7 +1875,7 @@ MeshAudit::check_node_partition() const
   // Verify that every owned node has been marked as belonging to an owned cell.
   AmanziMesh::Entity_ID_List bad_nodes;
   for (AmanziMesh::Entity_ID j = 0;
-       j < mesh_->node_map(false)->getNodeNumElements();
+       j < mesh_->node_map(false)->getLocalNumElements();
        ++j)
     if (!owned[j]) bad_nodes.push_back(j);
 

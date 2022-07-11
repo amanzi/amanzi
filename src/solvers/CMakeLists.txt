@@ -38,6 +38,7 @@ include_directories(${ASCEMIO_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${Ifpack2_INCLUDE_DIRS})
 include_directories(${MueLu_INCLUDE_DIRS})
+include_directories(${HYPRE_INCLUDE_DIRS})
 
 #
 # Library: solvers
@@ -53,17 +54,19 @@ set(solvers_source_files
   )
 
 set(kokkos_cuda_libs)
-if(ENABLE_KOKKOS_CUDA)
-  set(kokkos_cuda_libs curand cusparse)
+if(ENABLE_CUDA OR ENABLE_UVM)
+  set(kokkos_cuda_libs curand cusparse "-lnvToolsExt")
 endif()
 if(ENABLE_KOKKOS_OPENMP)
   add_definitions("-DHAVE_OPENMP")
 endif()
 
+message(STATUS "GINKGO LIBRARIES: ${Ginkgo_LIBRARIES}")
+
 set(solvers_tpl_libs ${DBC_LIBRARIES}
 		     ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
                      ${Belos_LIBRARIES} ${NOX_LIBRARIES} ${Amesos2_LIBRARIES}
-                     ${Ifpack2_LIBRARIES} ${kokkos_cuda_libs} ${HYPRE_LIBRARY} muelu xpetra-sup muelu-adapters muelu-interface )
+                     ${Ifpack2_LIBRARIES} ${kokkos_cuda_libs} ${HYPRE_LIBRARY} ${HYPRE_LIBRARIES} ${Ginkgo_LIBRARIES} muelu xpetra-sup muelu-adapters muelu-interface )
 list(REVERSE solvers_tpl_libs)
 list(REMOVE_DUPLICATES solvers_tpl_libs)
 list(REVERSE solvers_tpl_libs)

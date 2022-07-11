@@ -100,7 +100,7 @@ SUITE(COMMON_MESH_OPERATIONS)
     // test on the host
     {
       Teuchos::RCP<const CompositeVector> wc_c(wc);
-      auto wc_view = wc_c->ViewComponent<MirrorHost>("cell", 0, false);
+      auto wc_view = wc_c->ViewComponent<Amanzi::HostSpaceSpecial>("cell", 0, false);
       for (LO i = 0; i != wc_view.extent(0); ++i) {
         CHECK_CLOSE(0.5 * 0.25 * 8.0, wc_view(i), 1.e-10);
       }
@@ -127,7 +127,7 @@ SUITE(COMMON_MESH_OPERATIONS)
         double area = m->face_area(f);
 
         // neighbor cells
-        Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cellids;
+        Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Amanzi::DeviceOnlyMemorySpace> cellids;
         m->face_get_cells(f, Parallel_type::ALL, cellids);
 
         // this could be a kokkos reduction...

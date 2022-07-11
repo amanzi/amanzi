@@ -145,7 +145,7 @@ MeshColumn::compute_special_node_coordinates_()
     extracted_->face_get_nodes(column_faces_[j], face_nodes);
     extracted_->face_get_coordinates(column_faces_[j], face_coordinates);
 
-    AmanziGeometry::Point fcen = extracted_->face_centroid(column_faces_[j]);
+    AmanziGeometry::Point fcen = extracted_->face_centroid_host(column_faces_[j]);
 
     for (int i = 0; i != nfnodes_; ++i) {
       AmanziGeometry::Point coords(space_dim_);

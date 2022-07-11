@@ -41,9 +41,9 @@ SuperMapLumped::CreateIndexing_()
     int offset = 0;
     for (const auto& compname : *comp_maps_) {
       counts_[compname] =
-        comp_maps_->ComponentMap(compname, false)->getNodeNumElements();
+        comp_maps_->ComponentMap(compname, false)->getLocalNumElements();
       ghosted_counts_[compname] =
-        comp_maps_->ComponentMap(compname, true)->getNodeNumElements() -
+        comp_maps_->ComponentMap(compname, true)->getLocalNumElements() -
         counts_[compname];
       offsets_[compname] = offset;
       offset += comp_maps_->getNumVectors(compname) * counts_[compname];
@@ -80,9 +80,9 @@ SuperMapLumped::CreateIndexing_()
     LO nentities = nentities_owned + ghosted_counts_.at(compname);
 
     auto index_view =
-      indices_->ViewComponent<MirrorHost>(compname, false);
+      indices_->ViewComponent<Amanzi::HostSpaceSpecial>(compname, false);
     auto global_index_view =
-      gids_comp.ViewComponent<MirrorHost>(compname, false);
+      gids_comp.ViewComponent<Amanzi::HostSpaceSpecial>(compname, false);
 
     int offset = offsets_.at(compname);
     int n_dofs = comp_maps_->getNumVectors(compname);
@@ -96,7 +96,7 @@ SuperMapLumped::CreateIndexing_()
       }
     }
   }
-
+     
   // communicate the GIDs
   gids_comp.ScatterMasterToGhosted();
 
@@ -130,6 +130,17 @@ SuperMapLumped::CreateIndexing_()
   // -- construct
   ghosted_map_ = Teuchos::rcp(new Map_type(
     n_global_ghosted, gids_flat.data(), n_local_ghosted_, 0, indices_->Comm()));
+
+
+  for (const auto& compname : *comp_maps_) {
+    LO nentities_owned = counts_.at(compname);
+    LO nentities = nentities_owned + ghosted_counts_.at(compname);
+    int n_dofs = comp_maps_->getNumVectors(compname);
+
+    auto index_view =
+      indices_->ViewComponent(compname, true);
+  }
+  
 }
 
 

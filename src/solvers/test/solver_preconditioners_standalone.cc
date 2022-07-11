@@ -28,14 +28,14 @@ inline Teuchos::RCP<Matrix_type> matrix(const Teuchos::RCP<Map_type>& map) {
     int inds0[2] = {0,1};
     A_->insertLocalValues(0, 2, v0, inds0);
 
-    for (int i = 1; i < map->getNodeNumElements()-1; i++) {
+    for (int i = 1; i < map->getLocalNumElements()-1; i++) {
       int indices[3];
       double values[3] = { double(-i), double(2 * i + 1), double(-i - 1) };
       for (int k = 0; k < 3; k++) indices[k] = i + k - 1;
       A_->insertLocalValues(i, 3, values, indices);
     }
 
-    int i = map->getNodeNumElements()-1;
+    int i = map->getLocalNumElements()-1;
     double vN[2] = {double(-i), double(2*i+1)};
     int indsN[2] = {i-1,i};
     A_->insertLocalValues(i, 2, vN, indsN);
@@ -110,8 +110,8 @@ int main(int argc, char* argv[]){
     "identity", 
     "diagonal", 
     "ifpack2: ILUT",
-    "ifpack2: RILUK",
-    "ifpack2: KSPILUK" 
+    "ifpack2: FAST_ILU"
+    //"ifpack2: KSPILUK" 
     //"boomer amg", 
     //"euclid",
     //"ml"

@@ -99,6 +99,8 @@ MeshLogical::MeshLogical(
     f_id++;
   }
 
+  init_cache();
+
   // toggle flags
   cell_geometry_precomputed_ = false;
   face_geometry_precomputed_ = false;
@@ -251,6 +253,8 @@ MeshLogical::MeshLogical(
     f_id++;
   }
 
+  init_cache(); 
+
   // toggle flags
   cell_geometry_precomputed_ = true;
   face_geometry_precomputed_ = true;
@@ -362,9 +366,9 @@ MeshLogical::init_maps()
     Teuchos::rcp(new Import_type(maps_[BOUNDARY_FACE], face_map));
 
 
-  num_entities_[CELL] = maps_[CELL]->getNodeNumElements();
-  num_entities_[FACE] = maps_[FACE]->getNodeNumElements();
-  num_entities_[BOUNDARY_FACE] = maps_[BOUNDARY_FACE]->getNodeNumElements();
+  num_entities_[CELL] = maps_[CELL]->getLocalNumElements();
+  num_entities_[FACE] = maps_[FACE]->getLocalNumElements();
+  num_entities_[BOUNDARY_FACE] = maps_[BOUNDARY_FACE]->getLocalNumElements();
   num_entities_[NODE] = 0;
 }
 

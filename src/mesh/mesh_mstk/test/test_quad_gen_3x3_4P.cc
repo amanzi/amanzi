@@ -44,7 +44,7 @@ TEST(MSTK_QUAD_GEN_3x3_4P)
     new Amanzi::AmanziMesh::Mesh_MSTK(0.0, 0.0, 1.0, 1.0, 3, 3, comm));
 
 
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> c2f("", 4);
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> c2f("", 4);
   auto cell_map = mesh->cell_map(false);
   auto face_map = mesh->face_map(true);
 
@@ -52,7 +52,7 @@ TEST(MSTK_QUAD_GEN_3x3_4P)
        c++) {
     CHECK_EQUAL(cell_map->getGlobalElement(c),
                 mesh->getGlobalElement(c, Amanzi::AmanziMesh::CELL));
-    mesh->cell_get_faces(c, c2f);
+    mesh->cell_get_faces<Kokkos::HostSpace>(c, c2f);
 
     for (int j = 0; j < 4; j++) {
       int f = face_map->getLocalElement(

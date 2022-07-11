@@ -214,7 +214,7 @@ write_node_data(const Epetra_Vector& x, std::string varname)
 
 
 void
-write_node_data(const Epetra_MultiVector& x, const unsigned int component,
+write_node_data(const MultiVector_type& x, const unsigned int component,
                 std::string varname)
 {
   double** node_data;
@@ -235,7 +235,7 @@ write_cell_data(const Epetra_Vector& x, std::string varname)
 
 
 void
-write_cell_data(const Epetra_MultiVector& x, const unsigned int component,
+write_cell_data(const MultiVector_type& x, const unsigned int component,
                 std::string varname)
 {
   double** cell_data;

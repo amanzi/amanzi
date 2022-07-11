@@ -137,6 +137,31 @@ TEST(STATE_HETEROGENEOUS_DATA)
   
 }
 
+// The check (Kokkos::parallel_for) cannot be performed from the test: 
+// "The enclosing parent function for an extended 
+// __host__ __device__ lambda cannot have private or protected access 
+// within its class" 
+void check_values(
+  Amanzi::State& s){
+  using namespace Amanzi; 
+  {
+    auto& mp = s.GetW<MultiPatch>("multipatch","","multipatch");
+    CHECK_EQUAL(7, mp[0].data.extent(0));
+    CHECK_EQUAL(1, mp[0].data.extent(1));
+    Kokkos::parallel_for(
+      "",1,KOKKOS_LAMBDA(const int i){
+        mp[0].data(3,0) = 1.0;
+      }); 
+  }
+
+  {
+    const auto& mp = s.Get<MultiPatch>("multipatch", "");
+    Kokkos::parallel_for(
+      "",1,KOKKOS_LAMBDA(const int i){
+        assert(1.0 == mp[0].data(3,0));
+      }); 
+  } 
+}      
 
 
 TEST(STATE_PATCH_DATA)
@@ -171,18 +196,7 @@ TEST(STATE_PATCH_DATA)
 
   // existence
   CHECK(s.HasData("multipatch"));
-
-  {
-    auto& mp = s.GetW<MultiPatch>("multipatch","","multipatch");
-    CHECK_EQUAL(7, mp[0].data.extent(0));
-    CHECK_EQUAL(1, mp[0].data.extent(1));
-    mp[0].data(3,0) = 1.0;
-  }
-
-  {
-    const auto& mp = s.Get<MultiPatch>("multipatch", "");
-    CHECK_EQUAL(1.0, mp[0].data(3,0));
-  }  
+  check_values(s); 
 }
-                    
-             
+         
+

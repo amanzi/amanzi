@@ -117,12 +117,12 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
   // get num_nodes, num_cells
   const Map_ptr_type &nmap = vis_mesh.node_map(false);
-  int nnodes_local = nmap->getNodeNumElements();
+  int nnodes_local = nmap->getLocalNumElements();
   int nnodes_global = nmap->getGlobalNumElements();
   const Map_ptr_type &ngmap = vis_mesh.node_map(true);
 
   const Map_ptr_type &cmap = vis_mesh.cell_map(false);
-  int ncells_local = cmap->getNodeNumElements();
+  int ncells_local = cmap->getLocalNumElements();
 
   // get space dimension
   int space_dim = vis_mesh.space_dimension();
@@ -160,7 +160,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   delete [] xyz;
 
   // -- write out node map
-  ids = new int[nmap->getNodeNumElements()];
+  ids = new int[nmap->getLocalNumElements()];
   for (int i=0; i<nnodes_local; i++) {
     ids[i] = nmap->getGlobalElement(i);
   }
@@ -222,7 +222,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   // -- pass 1: count total connections, total entities
   int local_conn(0); // length of MixedElements
   int local_entities(0); // length of ElementMap (num_cells if non-POLYHEDRON mesh)
-  AmanziMesh::Entity_ID_View faces;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces;
   AmanziMesh::Entity_ID_List nodes;
 
   for (int c=0; c!=ncells_local; ++c) {
@@ -445,7 +445,7 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
 
   // get num_nodes, num_cells
   const Map_ptr_type &nmap = vis_mesh.cell_map(false);
-  int nnodes_local = nmap->getNodeNumElements();
+  int nnodes_local = nmap->getLocalNumElements();
   int nnodes_global = nmap->getGlobalNumElements();
   const Map_ptr_type &ngmap = vis_mesh.cell_map(true);
 
@@ -484,7 +484,7 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   delete [] nodes;
 
   // -- write out node map
-  ids = new int[nmap->getNodeNumElements()];
+  ids = new int[nmap->getLocalNumElements()];
   for (int i=0; i<nnodes_local; i++) {
     ids[i] = nmap->getGlobalElement(i);
   }
@@ -525,13 +525,13 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   // For the dual, connections are all faces with > 1 cells.
   int local_conn(0); // length of MixedElements
   int local_entities(0); // length of ElementMap (num_cells if non-POLYHEDRON mesh)
-  AmanziMesh::Entity_ID_View cells;
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> cells;
 
   const Map_ptr_type &fmap = vis_mesh.face_map(false);
-  int nfaces_local = fmap->getNodeNumElements();
+  int nfaces_local = fmap->getLocalNumElements();
 
   for (int f=0; f!=nfaces_local; ++f) {
-    vis_mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+    vis_mesh.face_get_cells_host(f, AmanziMesh::Parallel_type::ALL, cells);
     if (cells.size() > 1) {
       local_conn += cells.size();
       local_entities++;
@@ -564,7 +564,7 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int lcv_entity = 0;
   int internal_f = 0;
   for (int f=0; f!=nfaces_local; ++f) {
-    vis_mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+    vis_mesh.face_get_cells_host(f, AmanziMesh::Parallel_type::ALL, cells);
     if (cells.size() > 1) {
       // store cell type id
       // conn[lcv++] = 2;
@@ -1266,8 +1266,7 @@ bool HDF5_MPI::readFieldData_(Vector_type &x, const std::string& varname,
 
   // Trilinos' ReplaceMyValues() works with elements only and cannot 
   // be used here for points
-  x.sync_host();
-  auto xv = x.getLocalViewHost();  
+  auto xv = x.getLocalViewHost(Tpetra::Access::ReadWrite);  
   for (int i=0; i<localdims[0]; ++i) xv(i,0) = data[i];
 
   delete [] data;

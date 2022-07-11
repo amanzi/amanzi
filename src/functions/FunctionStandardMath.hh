@@ -98,7 +98,7 @@ class FunctionStandardMath : public Function {
   {
     return new FunctionStandardMath(*this);
   }
-  double operator()(const Kokkos::View<double*>&) const;
+  double operator()(const Kokkos::View<double*,Kokkos::HostSpace>&) const;
 
   KOKKOS_INLINE_FUNCTION double
   apply_gpu(const Kokkos::View<double**>& x, const int i) const
@@ -136,12 +136,12 @@ class FunctionStandardMath : public Function {
       return amplitude_ * exp(parameter_ * x0);
       break;
     case LOG:
-      assert(x0 > 0);
+      assert(x0 >= 0);
       // if (x0 <= 0) InvalidDomainError_(x[0]);
       return amplitude_ * log(parameter_ * x0);
       break;
     case LOG10:
-      assert(x0 > 0);
+      assert(x0 >= 0);
       // if (x0 <= 0) InvalidDomainError_(x[0]);
       return amplitude_ * log10(parameter_ * x0);
       break;

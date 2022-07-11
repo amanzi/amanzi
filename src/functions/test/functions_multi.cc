@@ -62,33 +62,35 @@ TEST_FIXTURE(test, values1)
   constexpr size_t dims = 3;
   constexpr size_t nvalues = 20;
   size_t nfunctions = 0;
-  Kokkos::View<double**> xyz_nolayout("xyz_nolayout", dims, nvalues);
-  for (int i = 0; i < xyz_nolayout.extent(1); ++i) {
-    for (int j = 0; j < xyz_nolayout.extent(0); ++j) {
+  Kokkos::DualView<double**> xyz_nolayout("xyz_nolayout", dims, nvalues);
+  for (int i = 0; i < xyz_nolayout.extent(0); ++i) {
+    for (int j = 0; j < xyz_nolayout.extent(1); ++j) {
       // Values between [0-10]
-      xyz_nolayout(j, i) =
+      xyz_nolayout.view_host()(i, j) =
         (static_cast<double>(rand()) / static_cast<double>(RAND_MAX)) * 10.;
     }
   }
+  Kokkos::deep_copy(xyz_nolayout.view_device(),xyz_nolayout.view_host()); 
 
-  Kokkos::View<double**, Kokkos::LayoutLeft> xyz_layout_left(
-    "xyz_layout_left", dims, nvalues);
-  for (int i = 0; i < xyz_layout_left.extent(1); ++i) {
-    for (int j = 0; j < xyz_layout_left.extent(0); ++j) {
+  Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::HostSpace> xyz_layout_left_h(
+    "xyz_layout_left_h", dims, nvalues);
+  for (int i = 0; i < xyz_layout_left_h.extent(0); ++i) {
+    for (int j = 0; j < xyz_layout_left_h.extent(1); ++j) {
       // Values between [0-10]
-      xyz_layout_left(j, i) = xyz_nolayout(j, i);
+      xyz_layout_left_h(i,j) = xyz_nolayout.view_host()(i, j);
     }
   }
+
   // vector of functions
   std::vector<Teuchos::RCP<const Function>> functions;
 
   // Function Constant --------------------------------------------
   functions.push_back(Teuchos::rcp(new FunctionConstant(1.5)));
-
+ 
   // Function Bilinear --------------------------------------------
-  Kokkos::View<double*> x_b("x_b", 4);
-  Kokkos::View<double*> y_b("y_b", 4);
-  Kokkos::View<double**> v_b("v_b", 4, 4);
+  Kokkos::View<double*,Kokkos::HostSpace> x_b("x_b", 4);
+  Kokkos::View<double*,Kokkos::HostSpace> y_b("y_b", 4);
+  Kokkos::View<double**,Kokkos::HostSpace> v_b("v_b", 4, 4);
   x_b(0) = 0.0;
   x_b(1) = 2;
   x_b(2) = 4;
@@ -114,34 +116,35 @@ TEST_FIXTURE(test, values1)
   v_b(3, 2) = 7.0;
   v_b(3, 3) = 9.5;
   functions.push_back(Teuchos::rcp(new FunctionBilinear(x_b, y_b, v_b, 0, 0)));
-
+ 
   // Function Distance -------------------------------------------
-  Kokkos::View<double*> x0("x_a", dims);
-  Kokkos::View<double*> metric("metric", dims);
+  Kokkos::View<double*,Kokkos::HostSpace> x0("x_a", dims);
+  Kokkos::View<double*,Kokkos::HostSpace> metric("metric", dims);
   metric(0) = 1;
   metric(1) = 1;
   metric(2) = 1;
-  x0(0) = xyz_nolayout(0, 0);
-  x0(1) = xyz_nolayout(1, 0);
-  x0(2) = xyz_nolayout(2, 0);
+  x0(0) = xyz_nolayout.view_host()(0, 0);
+  x0(1) = xyz_nolayout.view_host()(1, 0);
+  x0(2) = xyz_nolayout.view_host()(2, 0);
   functions.push_back(Teuchos::rcp(new FunctionDistance(x0, metric)));
 
+ 
   // Function Linear ---------------------------------------------
-  Kokkos::View<double*> grad("grad", dims);
+  Kokkos::View<double*,Kokkos::HostSpace> grad("grad", dims);
   grad(0) = 1;
   grad(1) = 2;
   grad(2) = 3;
   functions.push_back(Teuchos::rcp(new FunctionLinear(0, grad)));
 
   // Function Monomial -------------------------------------------
-  Kokkos::View<int*> p("p", dims);
+  Kokkos::View<int*,Kokkos::HostSpace> p("p", dims);
   p(0) = 1;
   p(1) = 2;
   p(2) = 3;
   functions.push_back(Teuchos::rcp(new FunctionMonomial(1.25, x0, p)));
 
   // Function Polynomial------------------------------------------
-  Kokkos::View<double*> c("c", dims);
+  Kokkos::View<double*,Kokkos::HostSpace> c("c", dims);
   c(0) = 1;
   c(1) = 2;
   c(2) = 3;
@@ -183,12 +186,12 @@ TEST_FIXTURE(test, values1)
 
   // Function Separable ------------------------------------------
   std::unique_ptr<Function> f7(new FunctionConstant(0.01));
-  Kokkos::View<double*> x0_l("x0_l", dims - 1);
-  Kokkos::View<int*> p_l("p_l", dims - 1);
+  Kokkos::View<double*,Kokkos::HostSpace> x0_l("x0_l", dims - 1);
+  Kokkos::View<int*,Kokkos::HostSpace> p_l("p_l", dims - 1);
   p_l(0) = 1;
   p_l(1) = 2;
-  x0_l(0) = xyz_nolayout(0, 0);
-  x0_l(1) = xyz_nolayout(1, 0);
+  x0_l(0) = xyz_nolayout.view_host()(0, 0);
+  x0_l(1) = xyz_nolayout.view_host()(1, 0);
   std::unique_ptr<Function> f8(new FunctionMonomial(1., x0_l, p_l));
   functions.push_back(
     Teuchos::rcp(new FunctionSeparable(std::move(f7), std::move(f8))));
@@ -199,7 +202,7 @@ TEST_FIXTURE(test, values1)
     Teuchos::rcp(new FunctionStaticHead(1.0, 1.0, 1.0, std::move(f9), 2)));
 
   // Function Tabular --------------------------------------------
-  Kokkos::View<double*> x0_i("x0_i", dims);
+  Kokkos::View<double*,Kokkos::HostSpace> x0_i("x0_i", dims);
   x0_i(0) = 1.0;
   x0_i(1) = 2.0;
   x0_i(2) = 3.0;
@@ -207,30 +210,33 @@ TEST_FIXTURE(test, values1)
 
   nfunctions = functions.size();
 
-
   // Create the multifunction
   MultiFunction mf = MultiFunction(functions);
 
-  Kokkos::View<double**> result("result", nvalues, nfunctions);
+  Kokkos::View<double**,Kokkos::HostSpace> result("result", nvalues, nfunctions);
   Kokkos::View<double**, Kokkos::LayoutLeft> result_gpu(
     "result", nvalues, nfunctions);
 
-  mf.apply(xyz_nolayout, result_gpu);
+  mf.apply(xyz_nolayout.view_device(), result_gpu);
 
   for (int i = 0; i < nvalues; ++i) {
-    Kokkos::View<double*> t = Kokkos::subview(xyz_layout_left, Kokkos::ALL, i);
-    Kokkos::View<double*> tmp_res = mf(t);
+    Kokkos::View<double*,Kokkos::HostSpace> t = Kokkos::subview(xyz_layout_left_h, Kokkos::ALL, i);
+    Kokkos::View<double*,Kokkos::HostSpace> tmp_res = mf(t);
     for (int j = 0; j < tmp_res.extent(0); ++j) { result(i, j) = tmp_res(j); }
   }
+  // Copy GPU computation back 
+  Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::HostSpace> result_gpu_host("result gpu host",nvalues,nfunctions);
+  Kokkos::deep_copy(result_gpu_host,result_gpu);  
 
   for (int j = 0; j < nfunctions; ++j) {
     for (int i = 0; i < nvalues; ++i) {
-      if (fabs(result_gpu(i, j) - result(i, j)) >= 1.0e-10) {
+      if (fabs(result_gpu_host(i, j) - result(i, j)) >= 1.0e-10) {
         std::cerr << "Function: " << j << " ";
         std::cerr << result(i, j) << " == ";
-        std::cerr << result_gpu(i, j) << " ; ";
+        std::cerr << result_gpu_host(i, j) << " ; ";
       }
-      CHECK_CLOSE(result(i, j), result_gpu(i, j), 1.0e-10);
+      CHECK_CLOSE(result(i, j), result_gpu_host(i, j), 1.0e-10);
     }
   }
+ 
 }

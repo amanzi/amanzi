@@ -46,6 +46,26 @@ class BlockVector {
   BlockVector<Scalar>& operator=(const BlockVector<Scalar>& other);
   void assign(const BlockVector<Scalar>& other) { *this = other; }
 
+  void sync_device(const std::string& name){
+    master_data_.at(name)->sync_device(); 
+  }
+
+  void modify_device(const std::string& name){
+    master_data_.at(name)->modify_device(); 
+  }
+
+  void sync_host(const std::string& name){
+    master_data_.at(name)->sync_host(); 
+  }
+
+  void modify_host(const std::string& name){
+    master_data_.at(name)->modify_host(); 
+  }
+
+  void clear_sync_state(const std::string& name){
+    master_data_.at(name)->clear_sync_state(); 
+  }
+  
   //
   // Meta-data delegated to map
   // ---------------------------------------------
@@ -228,7 +248,7 @@ class BlockVector {
   }
   virtual MultiVector_ptr_type_<Scalar>
   GetComponent_(const std::string& name, bool ghosted = false)
-  {
+  {    
     if (!HasComponent(name)) {
       Errors::Message msg;
       msg << "Vector does not have component \"" << name << "\"";

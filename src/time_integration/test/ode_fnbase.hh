@@ -53,9 +53,9 @@ class nonlinearODE : public Amanzi::BDFFnBase<Vector_type> {
     std::cout << "nonlinearODE::Residual u = " << Debug::get0(*unew) << std::endl;
 
     {
-      auto u0v = uold->getLocalViewHost();
-      auto u1v = unew->getLocalViewHost();
-      auto fv = f->getLocalViewHost();
+      auto u0v = uold->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto u1v = unew->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto fv = f->getLocalViewHost(Tpetra::Access::ReadOnly);
       std::cout.precision(10);
       for (int c = 0; c != unew->getLocalLength(); ++c) {
         std::cout << "Res: u_old = " << u0v(c, 0) << ", u_new = " << u1v(c, 0)

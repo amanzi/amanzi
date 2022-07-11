@@ -54,7 +54,7 @@ SUITE(MeshSimple)
 
     std::vector<Amanzi::AmanziGeometry::Point> x(8);
     Amanzi::AmanziMesh::Entity_ID_List nodes(8);
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> faces("", 6);
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> faces("", 6);
 
     for (auto i = 0;
          i < Mm.num_entities(Amanzi::AmanziMesh::CELL,
@@ -70,7 +70,7 @@ SUITE(MeshSimple)
         CHECK_ARRAY_EQUAL(expnodecoords[expcellnodes[j]], x[j], 3);
       }
 
-      Mm.cell_get_faces(i, faces);
+      Mm.cell_get_faces<Kokkos::HostSpace>(i, faces);
       double xx[4][3];
       for (int j = 0; j < 6; j++) {
         Amanzi::AmanziMesh::Entity_ID_List fnodes;

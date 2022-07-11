@@ -32,7 +32,7 @@ TEST(NANOFLANN)
   double range(1.0);
   double query_pt[2] = { 0.5, 0.5 };
   Amanzi::AmanziGeometry::Point p(0.5, 0.5);
-  Kokkos::View<Amanzi::AmanziGeometry::Point*> points("", n);
+  Kokkos::View<Amanzi::AmanziGeometry::Point*,Kokkos::HostSpace> points("", n);
 
   for (int i = 0; i < n; ++i) {
     double x = range * (rand() % 1000) / 1000.0;

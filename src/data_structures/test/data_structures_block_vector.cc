@@ -85,14 +85,14 @@ SUITE(_VECTOR)
 
     if (size == 2) {
       CHECK_EQUAL(
-        4, x->getMap()->ComponentMap("cell", false)->getNodeNumElements());
+        4, x->getMap()->ComponentMap("cell", false)->getLocalNumElements());
       CHECK_EQUAL(
-        5, x->getMap()->ComponentMap("cell", true)->getNodeNumElements());
+        5, x->getMap()->ComponentMap("cell", true)->getLocalNumElements());
     } else {
       CHECK_EQUAL(
-        8, x->getMap()->ComponentMap("cell", false)->getNodeNumElements());
+        8, x->getMap()->ComponentMap("cell", false)->getLocalNumElements());
       CHECK_EQUAL(
-        8, x->getMap()->ComponentMap("cell", true)->getNodeNumElements());
+        8, x->getMap()->ComponentMap("cell", true)->getLocalNumElements());
     }
   }
 
@@ -102,7 +102,7 @@ SUITE(_VECTOR)
     x->putScalar(2.0);
     {
       // check on owned
-      auto v1 = x->ViewComponent<MirrorHost>("cell", false);
+      auto v1 = x->ViewComponent<Amanzi::HostSpaceSpecial>("cell", false);
       CHECK_CLOSE(2.0, v1(0, 0), 0.00001);
       CHECK_CLOSE(2.0, v1(0, 1), 0.00001);
 

@@ -107,7 +107,7 @@ BlockSpace::getLocalLength(bool ghosted) const
   GO count = 0;
   for (const auto& name : names_) {
     count +=
-      ComponentMap(name, ghosted)->getNodeNumElements() * getNumVectors(name);
+      ComponentMap(name, ghosted)->getLocalNumElements() * getNumVectors(name);
   }
   return count;
 }

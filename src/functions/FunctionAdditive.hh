@@ -59,7 +59,7 @@ class FunctionAdditive : public Function {
   ~FunctionAdditive(){};
   FunctionAdditive* Clone() const { return new FunctionAdditive(*this); }
 
-  double operator()(const Kokkos::View<double*>& x) const
+  double operator()(const Kokkos::View<double*,Kokkos::HostSpace>& x) const
   {
     return (*f1_)(x) + (*f2_)(x);
   }

@@ -94,44 +94,57 @@ TEST_FIXTURE(test, MESH_GEOMETRY_PLANAR)
     const int nnodes = mesh->num_entities(
       Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
 
+    Kokkos::View<Amanzi::AmanziGeometry::Point*,Kokkos::HostSpace> exp_cell_centroid_view_h("ccv_h",
+                                                                        4);
+    exp_cell_centroid_view_h(0) = { 0.25, 0.25 };
+    exp_cell_centroid_view_h(1) = { 0.25, 0.75 };
+    exp_cell_centroid_view_h(2) = { 0.75, 0.25 };
+    exp_cell_centroid_view_h(3) = { 0.75, 0.75 };
     Kokkos::View<Amanzi::AmanziGeometry::Point*> exp_cell_centroid_view("ccv",
                                                                         4);
-    exp_cell_centroid_view(0) = { 0.25, 0.25 };
-    exp_cell_centroid_view(1) = { 0.25, 0.75 };
-    exp_cell_centroid_view(2) = { 0.75, 0.25 };
-    exp_cell_centroid_view(3) = { 0.75, 0.75 };
+    Kokkos::deep_copy(exp_cell_centroid_view,exp_cell_centroid_view_h); 
+
+    Kokkos::View<double*,Kokkos::HostSpace> exp_cell_volume_view_h("cvv_h", 4);
+    exp_cell_volume_view_h(0) = 0.25;
+    exp_cell_volume_view_h(1) = 0.25;
+    exp_cell_volume_view_h(2) = 0.25;
+    exp_cell_volume_view_h(3) = 0.25;
     Kokkos::View<double*> exp_cell_volume_view("cvv", 4);
-    exp_cell_volume_view(0) = 0.25;
-    exp_cell_volume_view(1) = 0.25;
-    exp_cell_volume_view(2) = 0.25;
-    exp_cell_volume_view(3) = 0.25;
+    Kokkos::deep_copy(exp_cell_volume_view,exp_cell_volume_view_h); 
+
+    Kokkos::View<double*,Kokkos::HostSpace> exp_face_area_view_h("fav_h", 12);
+    exp_face_area_view_h(0) = 0.5;
+    exp_face_area_view_h(1) = 0.5;
+    exp_face_area_view_h(2) = 0.5;
+    exp_face_area_view_h(3) = 0.5;
+    exp_face_area_view_h(4) = 0.5;
+    exp_face_area_view_h(5) = 0.5;
+    exp_face_area_view_h(6) = 0.5;
+    exp_face_area_view_h(7) = 0.5;
+    exp_face_area_view_h(8) = 0.5;
+    exp_face_area_view_h(9) = 0.5;
+    exp_face_area_view_h(10) = 0.5;
+    exp_face_area_view_h(11) = 0.5;
     Kokkos::View<double*> exp_face_area_view("fav", 12);
-    exp_face_area_view(0) = 0.5;
-    exp_face_area_view(1) = 0.5;
-    exp_face_area_view(2) = 0.5;
-    exp_face_area_view(3) = 0.5;
-    exp_face_area_view(4) = 0.5;
-    exp_face_area_view(5) = 0.5;
-    exp_face_area_view(6) = 0.5;
-    exp_face_area_view(7) = 0.5;
-    exp_face_area_view(8) = 0.5;
-    exp_face_area_view(9) = 0.5;
-    exp_face_area_view(10) = 0.5;
-    exp_face_area_view(11) = 0.5;
+    Kokkos::deep_copy(exp_face_area_view,exp_face_area_view_h); 
+
+    Kokkos::View<Amanzi::AmanziGeometry::Point*,Kokkos::HostSpace> exp_face_centroid_view_h("fcv_h",
+                                                                        12);
+    exp_face_centroid_view_h(0) = { 0.25, 0.0 };
+    exp_face_centroid_view_h(1) = { 0.5, 0.25 };
+    exp_face_centroid_view_h(2) = { 0.25, 0.5 };
+    exp_face_centroid_view_h(3) = { 0.0, 0.25 };
+    exp_face_centroid_view_h(4) = { 0.5, 0.75 };
+    exp_face_centroid_view_h(5) = { 0.25, 1.0 };
+    exp_face_centroid_view_h(6) = { 0.0, 0.75 };
+    exp_face_centroid_view_h(7) = { 0.75, 0.0 };
+    exp_face_centroid_view_h(8) = { 1.0, 0.25 };
+    exp_face_centroid_view_h(9) = { 0.75, 0.5 };
+    exp_face_centroid_view_h(10) = { 1.0, 0.75 };
+    exp_face_centroid_view_h(11) = { 0.75, 1.0 };
     Kokkos::View<Amanzi::AmanziGeometry::Point*> exp_face_centroid_view("fcv",
                                                                         12);
-    exp_face_centroid_view(0) = { 0.25, 0.0 };
-    exp_face_centroid_view(1) = { 0.5, 0.25 };
-    exp_face_centroid_view(2) = { 0.25, 0.5 };
-    exp_face_centroid_view(3) = { 0.0, 0.25 };
-    exp_face_centroid_view(4) = { 0.5, 0.75 };
-    exp_face_centroid_view(5) = { 0.25, 1.0 };
-    exp_face_centroid_view(6) = { 0.0, 0.75 };
-    exp_face_centroid_view(7) = { 0.75, 0.0 };
-    exp_face_centroid_view(8) = { 1.0, 0.25 };
-    exp_face_centroid_view(9) = { 0.75, 0.5 };
-    exp_face_centroid_view(10) = { 1.0, 0.75 };
-    exp_face_centroid_view(11) = { 0.75, 1.0 };
+    Kokkos::deep_copy(exp_face_centroid_view,exp_face_centroid_view_h); 
 
     const int space_dim_ = 2;
 
@@ -155,7 +168,7 @@ TEST_FIXTURE(test, MESH_GEOMETRY_PLANAR)
       }
       assert(result_found(0) == true);
 
-      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
+      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Amanzi::DeviceOnlyMemorySpace> cfaces;
       Amanzi::AmanziGeometry::Point normal_sum(2), normal(2);
       m->cell_get_faces(i, cfaces);
       normal_sum.set(0.0);
@@ -185,7 +198,7 @@ TEST_FIXTURE(test, MESH_GEOMETRY_PLANAR)
           // Check the natural normal
           Amanzi::AmanziGeometry::Point normal = m->face_normal(i);
           // Check the normal with respect to each connected cell
-          Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cellids;
+          Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Amanzi::DeviceOnlyMemorySpace> cellids;
           m->face_get_cells(i, Amanzi::AmanziMesh::Parallel_type::ALL, cellids);
 
           for (int k = 0; k < cellids.extent(0); k++) {
@@ -232,7 +245,7 @@ TEST(MESH_GEOMETRY_SURFACE)
   std::vector<Amanzi::AmanziMesh::Framework> frameworks;
   std::vector<std::string> framework_names;
 
-#  ifdef HAVE_MSTK_MESH
+#  ifdef HAVE_MESH_MSTK
   frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
   framework_names.push_back("MSTK");
 #  endif
@@ -414,7 +427,7 @@ TEST_FIXTURE(test, MESH_GEOMETRY_SOLID)
   frameworks.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
   framework_names.push_back("Simple");
 
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
   frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
   framework_names.push_back("MSTK");
 #endif
@@ -451,73 +464,88 @@ TEST_FIXTURE(test, MESH_GEOMETRY_SOLID)
 
     CHECK_EQUAL(aerr, 0);
 
-    Kokkos::View<double*> exp_cell_volume_view("ecvv", 8);
-    exp_cell_volume_view(0) = 0.125;
-    exp_cell_volume_view(1) = 0.125;
-    exp_cell_volume_view(2) = 0.125;
-    exp_cell_volume_view(3) = 0.125;
-    exp_cell_volume_view(4) = 0.125;
-    exp_cell_volume_view(5) = 0.125;
-    exp_cell_volume_view(6) = 0.125;
-    exp_cell_volume_view(7) = 0.125;
+    Kokkos::View<double*,Kokkos::HostSpace> exp_cell_volume_view_h("ecvv_h", 8);
+    exp_cell_volume_view_h(0) = 0.125;
+    exp_cell_volume_view_h(1) = 0.125;
+    exp_cell_volume_view_h(2) = 0.125;
+    exp_cell_volume_view_h(3) = 0.125;
+    exp_cell_volume_view_h(4) = 0.125;
+    exp_cell_volume_view_h(5) = 0.125;
+    exp_cell_volume_view_h(6) = 0.125;
+    exp_cell_volume_view_h(7) = 0.125;
+    Kokkos::View<double*> exp_cell_volume_view("ecvv",8);
+    Kokkos::deep_copy(exp_cell_volume_view,exp_cell_volume_view_h);  
+
+    Kokkos::View<Amanzi::AmanziGeometry::Point*,Kokkos::HostSpace> exp_cell_centroid_view_h("eccv_h",
+                                                                        8);
+    exp_cell_centroid_view_h(0) = { 0.25, 0.25, 0.25 };
+    exp_cell_centroid_view_h(1) = { 0.75, 0.25, 0.25 };
+    exp_cell_centroid_view_h(2) = { 0.25, 0.75, 0.25 };
+    exp_cell_centroid_view_h(3) = { 0.75, 0.75, 0.25 };
+    exp_cell_centroid_view_h(4) = { 0.25, 0.25, 0.75 };
+    exp_cell_centroid_view_h(5) = { 0.75, 0.25, 0.75 };
+    exp_cell_centroid_view_h(6) = { 0.25, 0.75, 0.75 };
+    exp_cell_centroid_view_h(7) = { 0.75, 0.75, 0.75 };
     Kokkos::View<Amanzi::AmanziGeometry::Point*> exp_cell_centroid_view("eccv",
                                                                         8);
-    exp_cell_centroid_view(0) = { 0.25, 0.25, 0.25 };
-    exp_cell_centroid_view(1) = { 0.75, 0.25, 0.25 };
-    exp_cell_centroid_view(2) = { 0.25, 0.75, 0.25 };
-    exp_cell_centroid_view(3) = { 0.75, 0.75, 0.25 };
-    exp_cell_centroid_view(4) = { 0.25, 0.25, 0.75 };
-    exp_cell_centroid_view(5) = { 0.75, 0.25, 0.75 };
-    exp_cell_centroid_view(6) = { 0.25, 0.75, 0.75 };
-    exp_cell_centroid_view(7) = { 0.75, 0.75, 0.75 };
+    Kokkos::deep_copy(exp_cell_centroid_view,exp_cell_centroid_view_h); 
+
+    Kokkos::View<double*,Kokkos::HostSpace> exp_face_area_view_h("efav_h", 36);
+    for (int i = 0; i < 36; ++i) exp_face_area_view_h(i) = 0.25;
     Kokkos::View<double*> exp_face_area_view("efav", 36);
-    for (int i = 0; i < 36; ++i) exp_face_area_view(i) = 0.25;
+    Kokkos::deep_copy(exp_face_area_view,exp_face_area_view_h); 
+
+
+    Kokkos::View<Amanzi::AmanziGeometry::Point*,Kokkos::HostSpace> exp_face_centroid_view_h("efcv_h",
+                                                                        36);
+    exp_face_centroid_view_h(0) = { 0.0, 0.25, 0.25 };
+    exp_face_centroid_view_h(1) = { 0.0, 0.75, 0.25 };
+    exp_face_centroid_view_h(2) = { 0.0, 0.25, 0.75 };
+    exp_face_centroid_view_h(3) = { 0.0, 0.75, 0.75 };
+
+    exp_face_centroid_view_h(4) = { 0.5, 0.25, 0.25 };
+    exp_face_centroid_view_h(5) = { 0.5, 0.75, 0.25 };
+    exp_face_centroid_view_h(6) = { 0.5, 0.25, 0.75 };
+    exp_face_centroid_view_h(7) = { 0.5, 0.75, 0.75 };
+
+    exp_face_centroid_view_h(8) = { 1.0, 0.25, 0.25 };
+    exp_face_centroid_view_h(9) = { 1.0, 0.75, 0.25 };
+    exp_face_centroid_view_h(10) = { 1.0, 0.25, 0.75 };
+    exp_face_centroid_view_h(11) = { 1.0, 0.75, 0.75 };
+
+    exp_face_centroid_view_h(12) = { 0.25, 0.0, 0.25 };
+    exp_face_centroid_view_h(13) = { 0.75, 0.0, 0.25 };
+    exp_face_centroid_view_h(14) = { 0.25, 0.0, 0.75 };
+    exp_face_centroid_view_h(15) = { 0.75, 0.0, 0.75 };
+
+    exp_face_centroid_view_h(16) = { 0.25, 0.5, 0.25 };
+    exp_face_centroid_view_h(17) = { 0.75, 0.5, 0.25 };
+    exp_face_centroid_view_h(18) = { 0.25, 0.5, 0.75 };
+    exp_face_centroid_view_h(19) = { 0.75, 0.5, 0.75 };
+
+    exp_face_centroid_view_h(20) = { 0.25, 1.0, 0.25 };
+    exp_face_centroid_view_h(21) = { 0.75, 1.0, 0.25 };
+    exp_face_centroid_view_h(22) = { 0.25, 1.0, 0.75 };
+    exp_face_centroid_view_h(23) = { 0.75, 1.0, 0.75 };
+
+    exp_face_centroid_view_h(24) = { 0.25, 0.25, 0.0 };
+    exp_face_centroid_view_h(25) = { 0.75, 0.25, 0.0 };
+    exp_face_centroid_view_h(26) = { 0.25, 0.75, 0.0 };
+    exp_face_centroid_view_h(27) = { 0.75, 0.75, 0.0 };
+
+    exp_face_centroid_view_h(28) = { 0.25, 0.25, 0.5 };
+    exp_face_centroid_view_h(29) = { 0.75, 0.25, 0.5 };
+    exp_face_centroid_view_h(30) = { 0.25, 0.75, 0.5 };
+    exp_face_centroid_view_h(31) = { 0.75, 0.75, 0.5 };
+
+    exp_face_centroid_view_h(32) = { 0.25, 0.25, 1.0 };
+    exp_face_centroid_view_h(33) = { 0.75, 0.25, 1.0 };
+    exp_face_centroid_view_h(34) = { 0.25, 0.75, 1.0 };
+    exp_face_centroid_view_h(35) = { 0.75, 0.75, 1.0 };
+
     Kokkos::View<Amanzi::AmanziGeometry::Point*> exp_face_centroid_view("efcv",
                                                                         36);
-    exp_face_centroid_view(0) = { 0.0, 0.25, 0.25 };
-    exp_face_centroid_view(1) = { 0.0, 0.75, 0.25 };
-    exp_face_centroid_view(2) = { 0.0, 0.25, 0.75 };
-    exp_face_centroid_view(3) = { 0.0, 0.75, 0.75 };
-
-    exp_face_centroid_view(4) = { 0.5, 0.25, 0.25 };
-    exp_face_centroid_view(5) = { 0.5, 0.75, 0.25 };
-    exp_face_centroid_view(6) = { 0.5, 0.25, 0.75 };
-    exp_face_centroid_view(7) = { 0.5, 0.75, 0.75 };
-
-    exp_face_centroid_view(8) = { 1.0, 0.25, 0.25 };
-    exp_face_centroid_view(9) = { 1.0, 0.75, 0.25 };
-    exp_face_centroid_view(10) = { 1.0, 0.25, 0.75 };
-    exp_face_centroid_view(11) = { 1.0, 0.75, 0.75 };
-
-    exp_face_centroid_view(12) = { 0.25, 0.0, 0.25 };
-    exp_face_centroid_view(13) = { 0.75, 0.0, 0.25 };
-    exp_face_centroid_view(14) = { 0.25, 0.0, 0.75 };
-    exp_face_centroid_view(15) = { 0.75, 0.0, 0.75 };
-
-    exp_face_centroid_view(16) = { 0.25, 0.5, 0.25 };
-    exp_face_centroid_view(17) = { 0.75, 0.5, 0.25 };
-    exp_face_centroid_view(18) = { 0.25, 0.5, 0.75 };
-    exp_face_centroid_view(19) = { 0.75, 0.5, 0.75 };
-
-    exp_face_centroid_view(20) = { 0.25, 1.0, 0.25 };
-    exp_face_centroid_view(21) = { 0.75, 1.0, 0.25 };
-    exp_face_centroid_view(22) = { 0.25, 1.0, 0.75 };
-    exp_face_centroid_view(23) = { 0.75, 1.0, 0.75 };
-
-    exp_face_centroid_view(24) = { 0.25, 0.25, 0.0 };
-    exp_face_centroid_view(25) = { 0.75, 0.25, 0.0 };
-    exp_face_centroid_view(26) = { 0.25, 0.75, 0.0 };
-    exp_face_centroid_view(27) = { 0.75, 0.75, 0.0 };
-
-    exp_face_centroid_view(28) = { 0.25, 0.25, 0.5 };
-    exp_face_centroid_view(29) = { 0.75, 0.25, 0.5 };
-    exp_face_centroid_view(30) = { 0.25, 0.75, 0.5 };
-    exp_face_centroid_view(31) = { 0.75, 0.75, 0.5 };
-
-    exp_face_centroid_view(32) = { 0.25, 0.25, 1.0 };
-    exp_face_centroid_view(33) = { 0.75, 0.25, 1.0 };
-    exp_face_centroid_view(34) = { 0.25, 0.75, 1.0 };
-    exp_face_centroid_view(35) = { 0.75, 0.75, 1.0 };
+    Kokkos::deep_copy(exp_face_centroid_view,exp_face_centroid_view_h);
 
     int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,
                                     Amanzi::AmanziMesh::Parallel_type::OWNED);
@@ -548,7 +576,7 @@ TEST_FIXTURE(test, MESH_GEOMETRY_SOLID)
       }
       assert(found == true);
 
-      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
+      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Amanzi::DeviceOnlyMemorySpace> cfaces;
       Amanzi::AmanziGeometry::Point normal_sum(3), normal(3);
 
       m->cell_get_faces(i, cfaces);
@@ -581,7 +609,7 @@ TEST_FIXTURE(test, MESH_GEOMETRY_SOLID)
           // Check the natural normal
           Amanzi::AmanziGeometry::Point normal = m->face_normal(i);
           // Check the normal with respect to each connected cell
-          Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cellids;
+          Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Amanzi::DeviceOnlyMemorySpace> cellids;
           m->face_get_cells(i, Amanzi::AmanziMesh::Parallel_type::ALL, cellids);
 
           for (int k = 0; k < cellids.extent(0); k++) {
@@ -628,7 +656,7 @@ TEST_FIXTURE(test, MESH_GEOMETRY_SOLID)
     Kokkos::parallel_for(
       "test_mesh_geometry::MESH_GEOMETRY_SOLID loop 3",
       ncells, KOKKOS_LAMBDA(const int& i) {
-      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
+      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Amanzi::DeviceOnlyMemorySpace> cfaces;
       Amanzi::AmanziGeometry::Point normal_sum(3), normal(3);
 
       m->cell_get_faces(i, cfaces);
@@ -642,6 +670,6 @@ TEST_FIXTURE(test, MESH_GEOMETRY_SOLID)
       double val = L22(normal_sum);
       assert(val < 1.0e-20);
     });
-
+    
   } // for each framework i
 }

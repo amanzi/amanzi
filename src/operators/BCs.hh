@@ -142,21 +142,21 @@ class BCs {
   }  
 
   
-  Kokkos::View<int*> bc_model(bool ghosted=true)
+  Kokkos::View<int*,Amanzi::HostSpaceSpecial> bc_model_host(bool ghosted=true)
   {
-    return Kokkos::subview(model_->ViewComponent(kind_str_, ghosted), Kokkos::ALL, 0);
-  }
-  
-
-  Kokkos::View<double*> bc_value(bool ghosted=true)
-  {
-    return Kokkos::subview(value_->ViewComponent(kind_str_, ghosted), Kokkos::ALL, 0);
+    return Kokkos::subview(model_->ViewComponent<Amanzi::HostSpaceSpecial>(kind_str_, ghosted), Kokkos::ALL, 0);
   }
 
-  Kokkos::View<double*> bc_mixed(bool ghosted=true)
+
+  Kokkos::View<double*, Amanzi::HostSpaceSpecial> bc_value_host(bool ghosted=true)
+  {
+    return Kokkos::subview(value_->ViewComponent<Amanzi::HostSpaceSpecial>(kind_str_, ghosted), Kokkos::ALL, 0);
+  }
+
+  Kokkos::View<double*,Amanzi::HostSpaceSpecial> bc_mixed_host(bool ghosted=true)
   {
     if (!mixed_.get()) mixed_ = cvs_.Create();
-    return Kokkos::subview(mixed_->ViewComponent(kind_str_, ghosted), Kokkos::ALL, 0);
+    return Kokkos::subview(mixed_->ViewComponent<Amanzi::HostSpaceSpecial>(kind_str_, ghosted), Kokkos::ALL, 0);
   }
 
   // Kokkos::View<AmanziGeometry::Point*> bc_value_point()
@@ -178,13 +178,13 @@ class BCs {
   //   return bc_value_vector_;
   // }
 
-  Kokkos::View<const int*> bc_model(bool ghosted=true) const {
+  Kokkos::View<int*> bc_model(bool ghosted=true) const {
     return Kokkos::subview(model_->ViewComponent(kind_str_, ghosted), Kokkos::ALL, 0);
   }
-  Kokkos::View<const double*> bc_value(bool ghosted=true) const {
+  Kokkos::View<double*> bc_value(bool ghosted=true) const {
     return Kokkos::subview(value_->ViewComponent(kind_str_, ghosted), Kokkos::ALL, 0);
   }
-  Kokkos::View<const double*> bc_mixed(bool ghosted=true) const {
+  Kokkos::View<double*> bc_mixed(bool ghosted=true) const {
     if (!mixed_.get()) mixed_ = cvs_.Create();
     return Kokkos::subview(mixed_->ViewComponent(kind_str_, ghosted), Kokkos::ALL, 0);
   }

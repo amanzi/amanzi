@@ -126,10 +126,10 @@ FileHDF5::WriteVector(const std::string& var_name, const Map_type& vec)
   }
   int globaldims[] = { static_cast<int>(globallength_raw), 1 };
 
-  std::size_t locallength = vec.getNodeNumElements();
+  std::size_t locallength = vec.getLocalNumElements();
   int localdims[] = { static_cast<int>(locallength), 1 };
 
-  Teuchos::Array<int> map_data(vec.getNodeNumElements());
+  Teuchos::Array<int> map_data(vec.getLocalNumElements());
   {
     auto vec_data = vec.getMyGlobalIndices();
     for (int i = 0; i != map_data.size(); ++i) { map_data[i] = vec_data[i]; }

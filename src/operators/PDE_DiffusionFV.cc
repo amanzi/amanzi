@@ -185,7 +185,7 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
 
     // preparing upwind data
     const auto k_face = ScalarCoefficientFaces(true);
-    const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
+    const Amanzi::AmanziMesh::Mesh* m = mesh_.get(); 
     DenseMatrix_Vector& A = local_op_->A; 
 
     // updating matrix blocks
@@ -252,10 +252,9 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
 ****************************************************************** */
 void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
+  auto rhs = global_op_->rhs()->ViewComponent<DefaultDevice>("cell", true);
   AMANZI_ASSERT(bcs_trial_.size() > 0);
-  const auto bc_model = bcs_trial_[0]->bc_model();
-  const auto bc_value = bcs_trial_[0]->bc_value();
-  
+
   if (local_op_.get()) {
     auto local_op = local_op_.get(); 
     // prep views
@@ -263,6 +262,8 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
     const auto rhs_cell = global_op_->rhs()->ViewComponent<DefaultDevice>("cell", true);
     auto trans_face = transmissibility_->ViewComponent<DefaultDevice>("face", true);
     const Amanzi::AmanziMesh::Mesh* m = mesh_.get(); 
+    const auto bc_model = bcs_trial_[0]->bc_model();
+    const auto bc_value = bcs_trial_[0]->bc_value();
     Kokkos::parallel_for(
         "PDE_DiffusionFV::ApplyBCs",
         nfaces_owned,
@@ -327,7 +328,8 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
       "PDE_DiffusionFV::UpdateFlux outer loop",
       ncells_owned,
       KOKKOS_LAMBDA(const int c) {
-        AmanziMesh::Entity_ID_View cells, faces;
+        AmanziMesh::Entity_ID_View cells; 
+        AmanziMesh::Entity_ID_View faces;
         AmanziMesh::Entity_Dir_View dirs;
         m->cell_get_faces_and_dirs(c, faces, dirs);
         int nfaces = faces.size();
@@ -517,7 +519,7 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
         KOKKOS_LAMBDA(const int c) {
 
           AmanziMesh::Entity_ID_View faces;
-          Kokkos::View<AmanziGeometry::Point*> bisectors;
+          Kokkos::View<AmanziGeometry::Point*,Amanzi::DeviceOnlyMemorySpace> bisectors;
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
           WhetStone::Tensor<DeviceOnlyMemorySpace> Kc = K->at(c);

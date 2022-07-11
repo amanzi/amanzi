@@ -153,7 +153,7 @@
       <ParameterList name="A_local" type="ParameterList">
         <Parameter name="evaluator type" type="string" value="diffusion operator" />
         <Parameter name="local operator key" type="string" value="A_local" />
-        <Parameter name="rhs key" type="string" value="A_rhs" />
+        <Parameter name="rhs key" type="string" value="A_local_rhs" />
         <Parameter name="flux key" type="string" value="A_flux" />
         <Parameter name="tensor coefficient key" type="string" value="tensor_coefficient" />
         <Parameter name="scalar coefficient key" type="string" value="scalar_coefficient" />

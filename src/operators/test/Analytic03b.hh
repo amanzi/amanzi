@@ -36,8 +36,13 @@ class Analytic03b : public AnalyticBase {
 
   std::string name() const override { return "Analytic03b"; }
   
-  const Amanzi::WhetStone::Tensor<Kokkos::HostSpace>&
+  const KOKKOS_INLINE_FUNCTION Amanzi::WhetStone::Tensor<DefaultExecutionSpace>&
   TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const override {
+    return std::move(K_device_);
+  }
+
+  const Amanzi::WhetStone::Tensor<Kokkos::HostSpace>& 
+  TensorDiffusivity_host(const Amanzi::AmanziGeometry::Point& p, double t) const override {
     return std::move(K_);
   }
 

@@ -37,8 +37,8 @@ MeshLogicalAudit::MeshLogicalAudit(
     comm_(mesh_->get_comm()),
     getRank(mesh_->get_comm()->getRank()),
     os(os_),
-    nface(mesh_->face_map(true)->getNodeNumElements()),
-    ncell(mesh_->cell_map(true)->getNodeNumElements()),
+    nface(mesh_->face_map(true)->getLocalNumElements()),
+    ncell(mesh_->cell_map(true)->getLocalNumElements()),
     MAX_OUT(5)
 {
   create_test_dependencies();
@@ -191,7 +191,7 @@ MeshLogicalAudit::check_entity_counts() const
 
   // Check the number of owned faces.
   n = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  nref = mesh->face_map(false)->getNodeNumElements();
+  nref = mesh->face_map(false)->getLocalNumElements();
   if (n != nref) {
     os << "ERROR: num_entities(FACE,OWNED)=" << n << "; should be " << nref
        << std::endl;
@@ -200,7 +200,7 @@ MeshLogicalAudit::check_entity_counts() const
 
   // Check the number of used faces.
   n = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  nref = mesh->face_map(true)->getNodeNumElements();
+  nref = mesh->face_map(true)->getLocalNumElements();
   if (n != nref) {
     os << "ERROR: num_entities(FACE,ALL)=" << n << "; should be " << nref
        << std::endl;
@@ -209,7 +209,7 @@ MeshLogicalAudit::check_entity_counts() const
 
   // Check the number of owned cells.
   n = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  nref = mesh->cell_map(false)->getNodeNumElements();
+  nref = mesh->cell_map(false)->getLocalNumElements();
   if (n != nref) {
     os << "ERROR: num_entities(CELL,OWNED)=" << n << "; should be " << nref
        << std::endl;
@@ -218,7 +218,7 @@ MeshLogicalAudit::check_entity_counts() const
 
   // Check the number of used cells.
   n = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  nref = mesh->cell_map(true)->getNodeNumElements();
+  nref = mesh->cell_map(true)->getLocalNumElements();
   if (n != nref) {
     os << "ERROR: num_entities(CELL,ALL)=" << n << "; should be " << nref
        << std::endl;
@@ -564,12 +564,12 @@ MeshLogicalAudit::check_maps(const Map_ptr_type& map_own,
   // Check that the global ID space is contiguously divided (but not
   // necessarily uniformly) across all processers
 
-  std::vector<GO> owned_GIDs(map_own->getNodeNumElements());
-  for (int i = 0; i < map_own->getNodeNumElements(); i++)
+  std::vector<GO> owned_GIDs(map_own->getLocalNumElements());
+  for (int i = 0; i < map_own->getLocalNumElements(); i++)
     owned_GIDs[i] = map_own->getGlobalElement(i);
   std::sort(owned_GIDs.begin(), owned_GIDs.end());
 
-  for (int i = 0; i < map_own->getNodeNumElements() - 1; i++) {
+  for (int i = 0; i < map_own->getLocalNumElements() - 1; i++) {
     int diff = owned_GIDs[i + 1] - owned_GIDs[i];
     if (diff > 1) {
       os << "ERROR: owned map is not contiguous" << std::endl;
@@ -597,8 +597,8 @@ MeshLogicalAudit::check_maps(const Map_ptr_type& map_own,
   } else {
     // Multi-process MPI
 
-    int num_own = map_own->getNodeNumElements();
-    int num_use = map_use->getNodeNumElements();
+    int num_own = map_own->getLocalNumElements();
+    int num_use = map_use->getLocalNumElements();
     int num_ovl = num_use - num_own;
 
     // Verify that the used map extends the owned map.
@@ -674,8 +674,8 @@ MeshLogicalAudit::check_cell_to_faces_ghost_data() const
   // auto cell_map_own = mesh->cell_map(false);
   // auto cell_map_use = mesh->cell_map(true);
 
-  // int ncell_own = cell_map_own->getNodeNumElements();
-  // int ncell_use = cell_map_use->getNodeNumElements();
+  // int ncell_own = cell_map_own->getLocalNumElements();
+  // int ncell_use = cell_map_use->getLocalNumElements();
 
   // AmanziMesh::Entity_ID_List cface;
   // AmanziMesh::Entity_ID_List bad_cells;
@@ -745,7 +745,7 @@ MeshLogicalAudit::check_face_partition() const
   for (int j = 0; j < nface; ++j) owned[j] = false;
   AmanziMesh::Entity_ID_List cface;
   for (AmanziMesh::Entity_ID j = 0;
-       j < mesh->cell_map(false)->getNodeNumElements();
+       j < mesh->cell_map(false)->getLocalNumElements();
        ++j) {
     mesh->cell_get_faces(j, &cface);
     for (int k = 0; k < cface.size(); ++k) owned[cface[k]] = true;
@@ -754,7 +754,7 @@ MeshLogicalAudit::check_face_partition() const
   // Verify that every owned face has been marked as belonging to an owned cell.
   AmanziMesh::Entity_ID_List bad_faces;
   for (AmanziMesh::Entity_ID j = 0;
-       j < mesh->face_map(false)->getNodeNumElements();
+       j < mesh->face_map(false)->getLocalNumElements();
        ++j)
     if (!owned[j]) bad_faces.push_back(j);
 

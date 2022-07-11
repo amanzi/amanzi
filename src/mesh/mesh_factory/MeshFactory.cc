@@ -18,10 +18,10 @@
 
 #include "Mesh_simple.hh"
 
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
 #  include "Mesh_MSTK.hh"
 #endif
-#ifdef HAVE_MOAB_MESH
+#ifdef HAVE_MESH_MOAB
 #  include "Mesh_MOAB.hh"
 #endif
 
@@ -87,7 +87,7 @@ MeshFactory::create(const std::string& filename, const bool request_faces,
   for (auto p : preference_) {
     int nproc = comm_->getSize();
 
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
       if ((nproc == 1 && fmt == FileFormat::EXODUS_II) ||
           (nproc > 1 &&
@@ -99,7 +99,7 @@ MeshFactory::create(const std::string& filename, const bool request_faces,
     }
 #endif
 
-#ifdef HAVE_MOAB_MESH
+#ifdef HAVE_MESH_MOAB
     if (p == Framework::MOAB) {
       if (fmt == FileFormat::MOAB_HDF5 ||
           (nproc == 1 && fmt == FileFormat::EXODUS_II)) {
@@ -171,7 +171,7 @@ MeshFactory::create(const double x0, const double y0, const double z0,
       break;
     }
 
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
       mesh = Teuchos::rcp(new Mesh_MSTK(x0,
                                         y0,
@@ -230,7 +230,7 @@ MeshFactory::create(const double x0, const double y0, const double x1,
   Teuchos::RCP<Mesh> mesh = Teuchos::null;
 
   for (auto p : preference_) {
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
       mesh = Teuchos::rcp(new Mesh_MSTK(x0,
                                         y0,
@@ -362,7 +362,7 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
   Teuchos::RCP<Mesh> mesh = Teuchos::null;
   // extract
   for (auto p : preference_) {
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
       return Teuchos::rcp(new Mesh_MSTK(inmesh,
                                         setids,

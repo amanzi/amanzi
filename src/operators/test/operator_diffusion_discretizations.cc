@@ -176,21 +176,21 @@ SUITE(DIFFUSION) {
 
     CompositeVector& rhs = *fix.global_op->rhs();
     {
-      auto rhs_c = rhs.ViewComponent<MirrorHost>("cell", false);
+      auto rhs_c = rhs.ViewComponent<HostSpaceSpecial>("cell", false);
       for (int c=0; c!=fix.mesh->num_entities(AmanziMesh::Entity_kind::CELL,
               AmanziMesh::Parallel_type::OWNED); ++c) {
-        const auto& xc = fix.mesh->cell_centroid(c);
-        rhs_c(c,0) += ana->source_exact(xc, 0.0) * fix.mesh->cell_volume(c);
+        const auto& xc = fix.mesh->cell_centroid_host(c);
+        rhs_c(c,0) += ana->source_exact(xc, 0.0) * fix.mesh->cell_volume_host(c);
       }
     }
 
     fix.op->ApplyBCs(true, true, true);
 
     {
-      auto soln_c = fix.solution->ViewComponent<MirrorHost>("cell", false);
+      auto soln_c = fix.solution->ViewComponent<HostSpaceSpecial>("cell", false);
       for (int c=0; c!=fix.mesh->num_entities(AmanziMesh::Entity_kind::CELL,
               AmanziMesh::Parallel_type::OWNED); ++c) {
-        const auto& xc = fix.mesh->cell_centroid(c);
+        const auto& xc = fix.mesh->cell_centroid_host(c);
         soln_c(c,0) = ana->pressure_exact(xc, 0.0);
       }
     }
@@ -227,29 +227,29 @@ SUITE(DIFFUSION) {
 
     CompositeVector& rhs = *fix.global_op->rhs();
     {
-      auto rhs_c = rhs.ViewComponent<MirrorHost>("cell", false);
+      auto rhs_c = rhs.ViewComponent<HostSpaceSpecial>("cell", false);
       for (int c=0; c!=fix.mesh->num_entities(AmanziMesh::Entity_kind::CELL,
               AmanziMesh::Parallel_type::OWNED); ++c) {
-        const auto& xc = fix.mesh->cell_centroid(c);
-        rhs_c(c,0) += ana->source_exact(xc, 0.0) * fix.mesh->cell_volume(c);
+        const auto& xc = fix.mesh->cell_centroid_host(c);
+        rhs_c(c,0) += ana->source_exact(xc, 0.0) * fix.mesh->cell_volume_host(c);
       }
     }
 
     fix.op->ApplyBCs(true, true, true);
 
     {
-      auto soln_c = fix.solution->ViewComponent<MirrorHost>("cell", false);
+      auto soln_c = fix.solution->ViewComponent<HostSpaceSpecial>("cell", false);
       for (int c=0; c!=fix.mesh->num_entities(AmanziMesh::Entity_kind::CELL,
               AmanziMesh::Parallel_type::OWNED); ++c) {
-        const auto& xc = fix.mesh->cell_centroid(c);
+        const auto& xc = fix.mesh->cell_centroid_host(c);
         soln_c(c,0) = ana->pressure_exact(xc, 0.0);
       }
     }
     {
-      auto soln_f = fix.solution->ViewComponent<MirrorHost>("face", false);
+      auto soln_f = fix.solution->ViewComponent<HostSpaceSpecial>("face", false);
       for (int f=0; f!=fix.mesh->num_entities(AmanziMesh::Entity_kind::FACE,
               AmanziMesh::Parallel_type::OWNED); ++f) {
-        const auto& xf = fix.mesh->face_centroid(f);
+        const auto& xf = fix.mesh->face_centroid_host(f);
         soln_f(f,0) = ana->pressure_exact(xf, 0.0);
       }
     }
@@ -302,12 +302,12 @@ SUITE(DIFFUSION) {
         ana, 1.1, "diagonal", "Dirichlet", "Generate2D",
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   } 
-#endif
+#endif 
 
 #if MFD 
 
 // Not working
-#if 0 
+#if 0
   TEST(Analytic00_Linear1_MFD_Dirichlet_Generate2D_identity) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
     test<Operators::PDE_DiffusionMFD>(
@@ -524,7 +524,7 @@ SUITE(DIFFUSION) {
         ana, 1.1, "diagonal", "DirichletNeumannBox", "Generate2D",
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
-#endif
+#endif 
 #if MFD  
   TEST(Analytic00_LinearK_MFD_DirichletNeumannBox_Generate2D_diagona) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 3.14, 0.0));
@@ -908,7 +908,8 @@ SUITE(DIFFUSION) {
   // NOTE: FV cannot be exact
   //       MFD is still exact
   //       NLFV must converge to be exact. By design, NLFV loses symmetry as it iterates.
-#if FV
+//#if FV
+#if 0 
   TEST(Analytic03b_Linear1_FV_Dirichlet_Poly_ifpack2_ILUT) {
     auto ana = Teuchos::rcp(new Analytic03b());
     test<Operators::PDE_DiffusionFV>(
@@ -916,7 +917,8 @@ SUITE(DIFFUSION) {
         "fv", false, AmanziMesh::Entity_kind::FACE, 2.7e-2);
   }
 #endif
-#if MFD
+//#if MFD 
+#if 0
   TEST(Analytic03b_Linear1_MFD_Dirichlet_Poly_ifpack2_ILUT) {
     auto ana = Teuchos::rcp(new Analytic03b());
     test<Operators::PDE_DiffusionMFD>(
@@ -946,7 +948,7 @@ SUITE(DIFFUSION) {
         ana, "diagonal", "Dirichlet", "Generate2D",
         "fv", false, AmanziMesh::Entity_kind::FACE, 2.7e-2);
   }
-#endif
+#endif 
 #if MFD
   TEST(Analytic03b_Linear1_MFD_Dirichlet_Poly_ifpack2_diagonal) {
     auto ana = Teuchos::rcp(new Analytic03b());

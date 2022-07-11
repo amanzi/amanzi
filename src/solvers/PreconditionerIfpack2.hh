@@ -18,6 +18,8 @@
 #include "exceptions.hh"
 #include "Preconditioner.hh"
 
+#include "cuda_decl.h"
+
 namespace Amanzi {
 namespace AmanziSolvers {
 
@@ -39,26 +41,32 @@ class PreconditionerIfpack2 : public Preconditioner {
   }
 
   virtual void initializeInverse() override {
+    nvtxRangePush("init-inv");
     Ifpack2::Factory factory;
     A_ = h_;
     std::string method = plist_.get<std::string>("method");
-
     pc_ = factory.create(method, A_);
     pc_->setParameters(plist_);
     pc_->initialize();
     if (vo_->os_OK(Teuchos::VERB_HIGH)) plist_.print(*vo_->os());
+    nvtxRangePop(); 
   }
 
   virtual void computeInverse() override {
+    nvtxRangePush("comp-inv"); 
     pc_->compute();
     if (vo_->os_OK(Teuchos::VERB_HIGH)) pc_->describe(*vo_->os(), vo_->getVerbLevel());
+    nvtxRangePop(); 
   }
 
   virtual int returned_code() const override final { return returned_code_; }
 
   virtual int applyInverse(const Vector_type& v, Vector_type& hv) const override {
+    nvtxRangePush("app-inv"); 
+
     pc_->apply(v, hv);
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) pc_->describe(*vo_->os(), vo_->getVerbLevel());
+    nvtxRangePop(); 
     return 0;
   }
 

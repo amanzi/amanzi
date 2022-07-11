@@ -31,7 +31,7 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
   SumLocalDiag(CompositeVector& X) const
   {
     auto Xv = X.ViewComponent("face", false);
-    auto diag_v = diag->getLocalViewHost();
+    auto diag_v = diag->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
     const AmanziMesh::Mesh* mesh_ = mesh.get();
     Kokkos::parallel_for(
@@ -73,7 +73,7 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
                 AmanziMesh::Parallel_type::OWNED)) {
 
       const auto s_f = scaling.ViewComponent("face", false);
-      auto diag_v = diag->getLocalViewDevice();
+      auto diag_v = diag->getLocalViewDevice(Tpetra::Access::ReadWrite);
       const AmanziMesh::Mesh* mesh_ = mesh.get();
 
       Kokkos::parallel_for(

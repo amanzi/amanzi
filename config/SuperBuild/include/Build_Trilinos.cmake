@@ -5,13 +5,12 @@
 #    
 # --- Define all the directories and common external project flags
 if (ENABLE_XSDK)
-    set(trilinos_depend_projects XSDK SEACAS)
+  set(trilinos_depend_projects XSDK SEACAS)
 else()
-    set(trilinos_depend_projects NetCDF Boost SEACAS SuperLUDist ParMetis)
-endif() 
-
-if (ENABLE_HYPRE AND NOT ENABLE_XSDK)
-  list(APPEND trilinos_depend_projects HYPRE)
+  set(trilinos_depend_projects NetCDF Boost SEACAS ParMetis)
+  if (ENABLE_SUPERLU)
+    list(APPEND trilinos_depend_projects SuperLUDist)
+  endif()
 endif()
 
 define_external_project_args(Trilinos
@@ -26,78 +25,129 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # --- Define the configuration parameters   
 
 #  - Trilinos Package Configuration
-
-#if(Trilinos_Build_Config_File)
-#  message(STATUS "Including Trilinos build configuration file ${Trilinos_Build_Config_File}")
-#  if ( NOT EXISTS ${Trilinos_Build_Config_File} )
-#    message(FATAL_ERROR "File ${Trilinos_Build_Config_File} does not exist.")
-#  endif()
-#  include(${Trilinos_Build_Config_File})
-#endif()
-
 # List of packages enabled in the Trilinos build
-set(Trilinos_PACKAGE_LIST Teuchos)
+set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos)
 
-if (ENABLE_EPETRA)
-  list(APPEND Trilinos_PACKAGE_LIST Epetra EpetraExt Amesos Amesos2 Belos NOX Ifpack AztecOO)
-  if (ENABLE_Unstructured)
-    list(APPEND Trilinos_PACKAGE_LIST ML)
+# Epetra - vectors & matrices using MPI
+if (ENABLE_Epetra)
+  list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Epetra)
+endif()
+
+# Tpetra - vectors & matrices using MPI+X
+if (ENABLE_Tpetra)
+  list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Kokkos KokkosKernels Tpetra)
+endif()
+  
+if (ENABLE_Unstructured)
+  if (ENABLE_Epetra)
+    # NOX     - nonlinear solver
+    # ML      - multilevel preconditioner
+    # Amesos2 - direct solvers using Kokkos
+    # Ifpack  - wrappers to external solvers (Hypre) and also block
+    #           solvers (block ILU, additive Schwarz, etc)
+    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST EpetraExt Basker Amesos Amesos2 Ifpack NOX Belos ML AztecOO )
+  endif()
+  if (ENABLE_Tpetra)
+    # Amesos2 - direct solvers using Kokkos
+    # MueLu   - multilevel preconditioner
+    # Ifpack2 - wrappers to external solvers (Hypre) and also block
+    #           solvers (block ILU, additive Schwarz, etc)
+    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Ifpack2 Amesos2 Basker MueLu ShyLU ShyLU_Node ShyLU_NodeFastILU)
+    # Xpetra?
   endif()
 endif()
 
-if (ENABLE_KOKKOS)
-  list(APPEND Trilinos_PACKAGE_LIST Kokkos KokkosKernels Tpetra Ifpack2 MueLu Xpetra)
-endif()
-
+# MSTK needs Zoltan for partitioning
 if (ENABLE_MESH_MSTK)
-  list(APPEND Trilinos_PACKAGE_LIST Zoltan)
+  list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Zoltan)
 endif()
 
 # Generate the Trilinos Package CMake Arguments
 set(Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF")
-foreach(package ${Trilinos_PACKAGE_LIST})
+foreach(package ${Trilinos_REQUIRED_PACKAGE_LIST})
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_${package}:STRING=ON")
 endforeach()
+message(STATUS "Trilinos Packages Required: ${Trilinos_REQUIRED_PACKAGE_LIST}")
+
+# also store a list of ARCH args.  These could probalby be lumped into
+# package args, but are kept separate for debugging.
+set(Trilinos_CMAKE_ARCH_ARGS "")
+
 
 # Add support of parallel LU solvers
 list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_Basker:BOOL=ON")
 
-# not sure why we don't like Stratimikos...
-list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_Stratimikos:BOOL=FALSE")
-
 # have already built SEACAS
 list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_SEACAS:BOOL=FALSE")
 
-# use MueLu on master and Tpetra branches
+# Using CXX 14 Standard
+list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DCMAKE_CXX_STANDARD:STRING=14")
 
-# we use ints for GOs in Tpetra only (for now)
-if (ENABLE_KOKKOS)
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Epetra:BOOL=OFF")
+# we use ints for GOs in Tpetra only
+if (ENABLE_Tpetra)
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Tpetra:BOOL=ON")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_INT:BOOL=ON")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG:BOOL=OFF")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG_LONG:BOOL=OFF")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_Epetra_NO_64BIT_GLOBAL_INDICIES:BOOL=ON")
-  if(ENABLE_KOKKOS_OPENMP)
-    message(STATUS "OpenMP enabled")
+  
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_KLU2:BOOL=ON")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_ShyLU_NodeBasker:BOOL=ON")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_TIMERS:BOOL=ON")
+
+  if (ENABLE_OpenMP)
+    message(STATUS "Kokkos OpenMP enabled")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTPL_ENABLE_OpenMP:BOOL=ON")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_OpenMP:BOOL=ON")
-    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_CAN_USE_SERIAL:BOOL=OFF")
-    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=OFF")
-    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_OPENMP:BOOL=ON")
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_OPENMP:BOOL=ON") 
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OPENMP:BOOL=ON")
+    #list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_CAN_USE_SERIAL:BOOL=OFF")
   else()
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTPL_ENABLE_OpenMP:BOOL=OFF")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_OpenMP:BOOL=OFF")
-    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=ON") 
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_OPENMP:BOOL=OFF") 
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OPENMP:BOOL=OFF")
   endif()
+
+  if (ENABLE_CUDA OR ENABLE_UVM)
+    message(STATUS "Kokkos CUDA enabled")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTPL_ENABLE_CUDA:BOOL=ON")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_CUDA:BOOL=ON")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_CUDA:BOOL=ON")
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_CUSPARSE:BOOL=ON")
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_CUDA:BOOL=ON")
+    if(ENABLE_UVM)
+      list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DHAVE_TPETRA_ENABLE_CUDA_UVM:BOOL=ON")
+      list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetraCore_ENABLE_CUDA_UVM:BOOL=ON")
+      list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON")
+    else()
+      list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DHAVE_TPETRA_ENABLE_CUDA_UVM:BOOL=OFF")
+      list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetraCore_ENABLE_CUDA_UVM:BOOL=OFF")
+      list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DKokkos_ENABLE_CUDA_UVM:BOOL=OFF")
+    endif()
+  else()
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_CUDA:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTPL_ENABLE_CUDA:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_CUDA:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_CUDA:BOOL=OFF")
+  endif()
+
+  message(STATUS "Kokkos Serial enabled")
+  list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_SERIAL:BOOL=ON")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=ON")
+    
 else() 
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Epetra:BOOL=ON")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Tpetra:BOOL=OFF")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_Tpetra:BOOL=OFF")
 endif()
 
+# MueLu is not required by Epetra at the moment...
+# if (ENABLE_Epetra)
+#   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Epetra:BOOL=ON")
+# else()
+#   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Epetra:BOOL=OFF")
+# endif()
 
-# Build PyTrilinos if shared
-# if (BUILD_SHARED_LIBS)
-#   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_PyTrilinos:BOOL=ON")
-#endif()
 
 #  - Trilinos TPL Configuration
 set(Trilinos_CMAKE_TPL_ARGS)
@@ -150,16 +200,6 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_Netcdf_INCLUDE_DIRS:FILEPATH=${NetCDF_INCLUDE_DIRS}"
             "-DTPL_Netcdf_LIBRARIES:STRING=${NetCDF_C_LIBRARIES}")
 
-# HYPRE
-if (ENABLE_HYPRE)
-  message(STATUS "Enabling support for Hypre in Trilinos")
-  list(APPEND Trilinos_CMAKE_TPL_ARGS
-              "-DTPL_ENABLE_HYPRE:BOOL=ON"
-              "-DTPL_HYPRE_LIBRARIES:STRING=${HYPRE_LIBRARIES}"
-              "-DHYPRE_LIBRARY_DIRS:FILEPATH=${HYPRE_DIR}/lib"
-              "-DHYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include"
-              "-DTPL_HYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include")
-endif()
 
 # SuperLUDist
 if (ENABLE_SUPERLU)
@@ -195,8 +235,12 @@ else()
 endif()
 
 if (${Trilinos_BUILD_TYPE} STREQUAL "Debug")
-  list(APPEND Trilinos_CMAKE_EXTRA_ARGS "-DEpetra_ENABLE_FATAL_MESSAGES:BOOL=ON")
-  list(APPEND Trilinos_CMAKE_EXTRA_ARGS "-DTpetra_ENABLE_DEBUG:BOOL=ON")
+  if (ENABLE_Epetra) 
+    list(APPEND Trilinos_CMAKE_EXTRA_ARGS "-DEpetra_ENABLE_FATAL_MESSAGES:BOOL=ON")
+  endif()
+  if (ENABLE_Tpetra)
+    list(APPEND Trilinos_CMAKE_EXTRA_ARGS "-DTpetra_ENABLE_DEBUG:BOOL=ON")
+  endif()
 endif()
 
 if (BUILD_SHARED_LIBS)
@@ -217,53 +261,35 @@ set(Trilinos_CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
 set(Trilinos_CMAKE_Fortran_FLAGS ${CMAKE_Fortran_FLAGS})
 message(DEBUG "Trilinos_CMAKE_CXX_FLAGS = ${Trilinos_CMAKE_CXX_FLAGS}")
 
-# - Architecture Args.... these will need work.
-set(Trilinos_CMAKE_ARCH_ARGS "")
-if (ENABLE_KOKKOS)
-  if (ENABLE_KOKKOS_CUDA)
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTPL_ENABLE_CUDA:BOOL=ON")
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_CUDA:BOOL=ON")
-  else()
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_CUDA:BOOL=OFF")
-  endif()
-  if (ENABLE_KOKKOS_OPENMP)
-    # NOTE: This is not yet tested and may need more flags set
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_OpenMP:BOOL=ON")
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OPENMP:BOOL=ON")
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_OpenMP:BOOL=ON")
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_SERIAL:BOOL=OFF")
-  else()
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_OpenMP:BOOL=OFF")
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OPENMP:BOOL=OFF")
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_SERIAL:BOOL=ON")
-  endif()
-endif()
-
 # By default compiler with the standard mpi compiler 
 set(Trilinos_CXX_COMPILER ${CMAKE_CXX_COMPILER})
-if (ENABLE_KOKKOS_CUDA)
-   set(NVCC_WRAPPER_DEFAULT_COMPILER "${CMAKE_CXX_COMPILER}")
-   set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
-   message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER ${NVCC_WRAPPER_DEFAULT_COMPILER}")
+if (ENABLE_CUDA OR ENABLE_UVM)
+  set(NVCC_WRAPPER_DEFAULT_COMPILER "${CMAKE_CXX_COMPILER}")
+  set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
+  message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER ${NVCC_WRAPPER_DEFAULT_COMPILER}")
+  set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} \
+  -Wno-deprecated-declarations -lineinfo \
+  -Xcudafe --diag_suppress=conversion_function_not_usable \
+  -Xcudafe --diag_suppress=cc_clobber_ignored \
+  -Xcudafe --diag_suppress=code_is_unreachable")
+  list(APPEND Trilinos_CMAKE_ARCH_ARGS
+    "-DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON") 
+  if(ENABLE_UVM)
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS
+      "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON")
+  else() 
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS
+      "-DKokkos_ENABLE_CUDA_UVM:BOOL=OFF")
+  endif() 
+  # Change the default compiler for Trilinos to use nvcc_wrapper 
+  set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
 endif()
 
 # Set ARCH-specific options
 if ( "${AMANZI_ARCH}" STREQUAL "Summit" )
-  if (ENABLE_KOKKOS_CUDA) 
-    if(NOT DEFINED ENV{CUDA_LAUNCH_BLOCKING}) 
-      message(FATAL_ERROR "Environment variable CUDA_LAUNCH_BLOCKING has to be set to 1 to continue")
-    endif() 
-    set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} \
-         -Wno-deprecated-declarations -lineinfo \
-         -Xcudafe --diag_suppress=conversion_function_not_usable \
-         -Xcudafe --diag_suppress=cc_clobber_ignored \
-         -Xcudafe --diag_suppress=code_is_unreachable")
+  if (ENABLE_CUDA OR ENABLE_UVM) 
     list(APPEND Trilinos_CMAKE_ARCH_ARGS
-         "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
-         "-DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON"
-         "-DKOKKOS_ARCH:STRING=Power9;Volta70") 
-    # Change the default compiler for Trilinos to use nvcc_wrapper 
-    set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
+      "-DKOKKOS_ARCH:STRING=Power9;Volta70") 
   endif()
 endif()
 
@@ -287,7 +313,7 @@ if (ENABLE_Trilinos_Patch)
   set(Trilinos_patch_file
     trilinos-duplicate-parameters.patch
     trilinos-superludist.patch
-    trilinos-ifpack.patch
+    trilinos_ifpack2.patch 
     )
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                  ${Trilinos_prefix_dir}/trilinos-patch-step.sh

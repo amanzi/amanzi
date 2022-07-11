@@ -15,8 +15,8 @@
 
 namespace Amanzi {
 
-FunctionLinear::FunctionLinear(double y0, const Kokkos::View<double*>& grad,
-                               const Kokkos::View<double*>& x0)
+FunctionLinear::FunctionLinear(double y0, const Kokkos::View<double*,Kokkos::HostSpace>& grad,
+                               const Kokkos::View<double*,Kokkos::HostSpace>& x0)
 {
   if (grad.extent(0) < 1) {
     Errors::Message m;
@@ -29,11 +29,18 @@ FunctionLinear::FunctionLinear(double y0, const Kokkos::View<double*>& grad,
     Exceptions::amanzi_throw(m);
   }
   y0_ = y0;
-  grad_ = grad;
-  x0_ = x0;
+
+  Kokkos::resize(x0_,x0.extent(0)); 
+  Kokkos::resize(grad_,grad.extent(0)); 
+
+  Kokkos::deep_copy(x0_.view_host(),x0); 
+  Kokkos::deep_copy(grad_.view_host(),grad); 
+
+  Kokkos::deep_copy(x0_.view_device(),x0); 
+  Kokkos::deep_copy(grad_.view_device(),grad); 
 }
 
-FunctionLinear::FunctionLinear(double y0, const Kokkos::View<double*>& grad)
+FunctionLinear::FunctionLinear(double y0, const Kokkos::View<double*,Kokkos::HostSpace>& grad)
 {
   if (grad.extent(0) < 1) {
     Errors::Message m;
@@ -41,14 +48,18 @@ FunctionLinear::FunctionLinear(double y0, const Kokkos::View<double*>& grad)
     Exceptions::amanzi_throw(m);
   }
   y0_ = y0;
-  grad_ = grad;
+
   Kokkos::resize(x0_, grad.extent(0));
-  for (int i = 0; i < x0_.extent(0); ++i) { x0_(i) = 0.0; }
-  // x0_.assign(grad.size(), 0.0);
+  for (int i = 0; i < x0_.extent(0); ++i) { x0_.view_host()(i) = 0.0; }
+
+  Kokkos::resize(grad_,grad.extent(0)); 
+  Kokkos::deep_copy(grad_.view_host(),grad); 
+  Kokkos::deep_copy(x0_.view_device(),x0_.view_host()); 
+  Kokkos::deep_copy(grad_.view_device(),grad); 
 }
 
 double
-FunctionLinear::operator()(const Kokkos::View<double*>& x) const
+FunctionLinear::operator()(const Kokkos::View<double*,Kokkos::HostSpace>& x) const
 {
   double y = y0_;
   if (x.extent(0) < grad_.extent(0)) {
@@ -56,7 +67,7 @@ FunctionLinear::operator()(const Kokkos::View<double*>& x) const
     m << "FunctionLinear expects higher-dimensional argument.";
     Exceptions::amanzi_throw(m);
   }
-  for (int j = 0; j < grad_.extent(0); ++j) y += grad_[j] * (x[j] - x0_[j]);
+  for (int j = 0; j < grad_.extent(0); ++j) y += grad_.view_host()[j] * (x[j] - x0_.view_host()[j]);
   return y;
 }
 

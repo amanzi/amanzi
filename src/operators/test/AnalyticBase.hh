@@ -59,7 +59,7 @@ using namespace Amanzi;
 class AnalyticBase { //: public WhetStone::WhetStoneFunction {
  public:
   AnalyticBase(int d) 
-    : d_(d), K_(d,1) {};
+    : d_(d), K_(d,1), K_device_(d,1) {};
   virtual ~AnalyticBase() {};
 
   virtual std::string name() const = 0;
@@ -67,10 +67,16 @@ class AnalyticBase { //: public WhetStone::WhetStoneFunction {
 
   // analytic solution for diffusion problem with gravity
   // -- tensorial diffusion coefficient
-  virtual const WhetStone::Tensor<Kokkos::HostSpace>&
+  virtual KOKKOS_INLINE_FUNCTION const WhetStone::Tensor<DefaultExecutionSpace>&
   TensorDiffusivity(const AmanziGeometry::Point& p, double t) const {
+    return K_device_;
+  }
+
+  virtual const Amanzi::WhetStone::Tensor<Kokkos::HostSpace>& 
+  TensorDiffusivity_host(const Amanzi::AmanziGeometry::Point& p, double t) const {
     return K_;
   }
+
     
 
   // -- scalar diffusion coefficient
@@ -100,7 +106,7 @@ class AnalyticBase { //: public WhetStone::WhetStoneFunction {
   // derived quantity: Darcy velocity -K k grad(h)
   virtual AmanziGeometry::Point
   velocity_exact(const AmanziGeometry::Point& p, double t) const {
-    auto K = TensorDiffusivity(p, t);
+    auto K = TensorDiffusivity_host(p, t);
     double kr = ScalarDiffusivity(p, t);
     auto grad = gradient_exact(p, t);
     return -(K * grad) * kr;
@@ -109,6 +115,8 @@ class AnalyticBase { //: public WhetStone::WhetStoneFunction {
  protected:
   int d_;
   WhetStone::Tensor<Kokkos::HostSpace> K_;
+  WhetStone::Tensor<DefaultExecutionSpace> K_device_;
+
 };
 
 //
@@ -122,14 +130,14 @@ inline
 AmanziGeometry::Point
 FaceNormalExterior(const AmanziMesh::Mesh& mesh, int f, bool* flag)
 {
-  AmanziMesh::Entity_ID_View cells;
-  mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+  Kokkos::View<AmanziMesh::Entity_ID*, Kokkos::HostSpace> cells;
+  mesh.face_get_cells_host(f, AmanziMesh::Parallel_type::ALL, cells);
   *flag = (cells.extent(0) == 1);
 
   int dir;
   AmanziGeometry::Point normal;
   if (*flag) 
-    normal = mesh.face_normal(f, false, cells[0], &dir);
+    normal = mesh.face_normal_host(f, false, cells[0], &dir);
 
   return normal;
 }
@@ -171,10 +179,12 @@ void ComputeCellError(const AnalyticBase& ana,
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   auto p = p_vec.ViewComponent<MirrorHost>("cell", false);
+
+
   for (int c = 0; c < ncells; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->cell_centroid_host(c);
     double tmp = ana.pressure_exact(xc, t);
-    double volume = mesh->cell_volume(c);
+    double volume = mesh->cell_volume_host(c);
 
     l2_err += std::pow(tmp - p(c,0), 2.0) * volume;
     inf_err = std::max(inf_err, fabs(tmp - p(c,0)));
@@ -206,16 +216,14 @@ void ComputeFaceError(const AnalyticBase& ana,
   unorm = 0.0;
   l2_err = 0.0;
   inf_err = 0.0;
-
   auto u = u_vec.ViewComponent<MirrorHost>("face", false);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    double area = mesh->face_area(f);
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+    double area = mesh->face_area_host(f);
+    const AmanziGeometry::Point& normal = mesh->face_normal_host(f);
+    const AmanziGeometry::Point& xf = mesh->face_centroid_host(f);
     const AmanziGeometry::Point& velocity = ana.velocity_exact(xf, t);
     double tmp = velocity * normal;
-
     l2_err += std::pow((tmp - u(f,0)) / area, 2.0);
     inf_err = std::max(inf_err, fabs(tmp - u(f,0)) / area);
     unorm += std::pow(tmp / area, 2.0);
@@ -262,7 +270,7 @@ void ComputeNodeError(const AnalyticBase& ana,
 
   auto p = p_vec.ViewComponent<MirrorHost>("node", false);
   for (int c = 0; c < ncells; c++) {
-    double volume = mesh->cell_volume(c);
+    double volume = mesh->cell_volume_host(c);
 
     mesh->cell_get_nodes(c, nodes);
     int nnodes = nodes.size();
@@ -334,7 +342,7 @@ void ComputeEdgeError(const AnalyticBase& ana,
 
   auto p = p_vec.ViewComponent<MirrorHost>("edge", false);
   for (int c = 0; c < ncells; c++) {
-    double volume = mesh->cell_volume(c);
+    double volume = mesh->cell_volume_host(c);
 
     mesh->cell_get_edges(c, edges);
     int nedges = edges.size();
@@ -384,7 +392,7 @@ void ComputeEdgeMomentsError(const AnalyticBase& ana,
 
   auto p = p_vec.ViewComponent<MirrorHost>("edge_moments", false); // likely this will fail, not sure what it sould be.  fix when it fails.
   for (int c = 0; c < ncells; c++) {
-    double volume = mesh->cell_volume(c);
+    double volume = mesh->cell_volume_host(c);
 
     mesh->cell_get_edges(c, edges);
     int nedges = edges.size();

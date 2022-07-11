@@ -75,7 +75,7 @@ Mesh::column_ID(const Entity_ID cellid) const
     Errors::Message mesg("column_ID called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return mesh_cache_.columnID_[cellid];
+  return mesh_cache_.columnID_.view_device()[cellid];
 }
 
 
@@ -87,9 +87,19 @@ Mesh::cell_get_cell_above(const Entity_ID cellid) const
       "cell_get_cell_above called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return mesh_cache_.cell_cellabove_[cellid];
+  return mesh_cache_.cell_cellabove_.view_device()[cellid];
 }
 
+inline Entity_ID
+Mesh::cell_get_cell_above_host(const Entity_ID cellid) const
+{
+  if (!mesh_cache_.columns_built_) {
+    Errors::Message mesg(
+      "cell_get_cell_above called before calling build_columns");
+    Exceptions::amanzi_throw(mesg);
+  }
+  return mesh_cache_.cell_cellabove_.view_host()[cellid];
+}
 
 inline Entity_ID
 Mesh::cell_get_cell_below(const Entity_ID cellid) const
@@ -99,9 +109,19 @@ Mesh::cell_get_cell_below(const Entity_ID cellid) const
       "cell_get_cell_below called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return mesh_cache_.cell_cellbelow_[cellid];
+  return mesh_cache_.cell_cellbelow_.view_device()[cellid];
 }
 
+inline Entity_ID
+Mesh::cell_get_cell_below_host(const Entity_ID cellid) const
+{
+  if (!mesh_cache_.columns_built_) {
+    Errors::Message mesg(
+      "cell_get_cell_below called before calling build_columns");
+    Exceptions::amanzi_throw(mesg);
+  }
+  return mesh_cache_.cell_cellbelow_.view_host()[cellid];
+}
 
 inline Entity_ID
 Mesh::node_get_node_above(const Entity_ID nodeid) const
@@ -111,7 +131,18 @@ Mesh::node_get_node_above(const Entity_ID nodeid) const
       "node_get_node_above called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return mesh_cache_.node_nodeabove_[nodeid];
+  return mesh_cache_.node_nodeabove_.view_device()[nodeid];
+}
+
+inline Entity_ID
+Mesh::node_get_node_above_host(const Entity_ID nodeid) const
+{
+  if (!mesh_cache_.columns_built_) {
+    Errors::Message mesg(
+      "node_get_node_above called before calling build_columns");
+    Exceptions::amanzi_throw(mesg);
+  }
+  return mesh_cache_.node_nodeabove_.view_host()[nodeid];
 }
 
 

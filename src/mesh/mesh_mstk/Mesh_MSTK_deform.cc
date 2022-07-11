@@ -132,7 +132,7 @@ Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
   for (int i = 0; i < nc; ++i) {
     if (target_cell_volumes_[i] > 0.0) {
-      double vol = cell_volume(i, false);
+      double vol = cell_volume_host(i);
       if (vol == target_cell_volumes_[i]) target_cell_volumes_[i] = 0.0;
     }
   }
@@ -321,7 +321,7 @@ Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
       int curid = id - 1;
       bool done = false;
       while (!done) {
-        int nextid = this->node_get_node_above(curid);
+        int nextid = this->node_get_node_above_host(curid);
         if (nextid == -1) {
           done = true;
           continue;

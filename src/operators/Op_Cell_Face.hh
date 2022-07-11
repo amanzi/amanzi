@@ -39,6 +39,32 @@ class Op_Cell_Face : public Op {
     A.Init();
   }
 
+
+  virtual void
+  SumLocalDiag(CompositeVector& X) const
+  {
+    assert(false); 
+    std::cout<<"Op_Cell_Face.hh::SumLocalDiag"<<std::endl;
+    
+    AmanziMesh::Mesh const * mesh_ = mesh.get();
+    auto Xf = X.ViewComponent("face", true);
+    auto Xc = X.ViewComponent("cell", false);
+   
+    Kokkos::parallel_for(
+        "Op_Cell_Face::GetLocalDiagCopy",
+        A.size(),
+        KOKKOS_LAMBDA(const int c) {
+          // Extract matrix
+          auto lA = A[c];
+
+          AmanziMesh::Entity_ID_View faces;
+          mesh_->cell_get_faces(c, faces);
+          int nfaces = faces.extent(0);
+          for (int m=0; m!=nfaces; ++m)
+            Kokkos::atomic_add(&Xf(faces(m), 0), lA(m,m));
+        }); 
+  }
+
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
           const CompositeVector& X, CompositeVector& Y) const {
     assembler->ApplyMatrixFreeOp(*this, X, Y);

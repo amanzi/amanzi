@@ -56,12 +56,12 @@ namespace Amanzi {
 
 class FunctionLinear : public Function {
  public:
-  FunctionLinear(double y0, const Kokkos::View<double*>& grad);
-  FunctionLinear(double y0, const Kokkos::View<double*>& grad,
-                 const Kokkos::View<double*>& x0);
+  FunctionLinear(double y0, const Kokkos::View<double*,Kokkos::HostSpace>& grad);
+  FunctionLinear(double y0, const Kokkos::View<double*,Kokkos::HostSpace>& grad,
+                 const Kokkos::View<double*,Kokkos::HostSpace>& x0);
   ~FunctionLinear() {}
   FunctionLinear* Clone() const { return new FunctionLinear(*this); }
-  double operator()(const Kokkos::View<double*>&) const;
+  double operator()(const Kokkos::View<double*,Kokkos::HostSpace>&) const;
 
   KOKKOS_INLINE_FUNCTION double
   apply_gpu(const Kokkos::View<double**>& x, const int i) const
@@ -71,7 +71,7 @@ class FunctionLinear : public Function {
       assert(false && "FunctionLinear expects higher-dimensional argument.");
     }
     for (int j = 0; j < grad_.extent(0); ++j)
-      y += grad_[j] * (x(j, i) - x0_[j]);
+      y += grad_.view_device()[j] * (x(j, i) - x0_.view_device()[j]);
     return y;
   }
 
@@ -84,7 +84,7 @@ class FunctionLinear : public Function {
 
  private:
   double y0_;
-  Kokkos::View<double*> grad_, x0_;
+  Kokkos::DualView<double*> grad_, x0_;
 };
 
 } // namespace Amanzi

@@ -62,7 +62,7 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
           ncells_owned,
           KOKKOS_LAMBDA(const int& c) {
             AmanziMesh::Entity_ID_View faces;
-            Kokkos::View<int*> dirs;            
+            AmanziMesh::Entity_Dir_View dirs;            
             mesh->cell_get_faces_and_dirs(c, faces, dirs);
             int nfaces = faces.size();
 
@@ -104,7 +104,7 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
             // Amanzi's first upwind: the family of DIVK methods uses hydraulic
             // head as the primary variable and linear transformation for pressure.
             if (!fv_flag) {
-              AMANZI_ASSERT(false); // crud -- we used v for kr, and now we
+              assert(false); // crud -- we used v for kr, and now we
                                     // need all three v, Av, and kr?  Is there
                                     // a way around this?
               // WhetStone::DenseVector v(nfaces), av(nfaces);

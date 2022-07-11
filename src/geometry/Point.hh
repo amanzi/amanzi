@@ -85,7 +85,7 @@ class Point {
   }
   KOKKOS_INLINE_FUNCTION void set(const int N, const double* val)
   {
-    AMANZI_ASSERT(val);
+    assert(val);
     d = N;
     set(val);
   }

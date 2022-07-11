@@ -100,7 +100,7 @@ SUITE(PKS_PDE)
       PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default>>>>;
     auto run = createRunPDE<PK_t>("diffusion FE implicit", "test/pks_pde.xml");
     auto nsteps = run_test(run->S, run->pk, 20.0);
-
+    
     // print final solution
     std::cout << "Final solution" << std::endl;
     run->S->Get<CompositeVector>("u").print(std::cout);
@@ -110,9 +110,9 @@ SUITE(PKS_PDE)
     int ncells =
       m->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     {
-      auto u = run->S->Get<CompositeVector>("u").ViewComponent<MirrorHost>("cell", false);
+      auto u = run->S->Get<CompositeVector>("u").ViewComponent<HostSpaceSpecial>("cell", false);
       for (int c = 0; c != ncells; ++c) {
-        auto p = m->cell_centroid(c);
+        auto p = m->cell_centroid_host(c);
         double val = std::cos(PI_2 * p[0]);
         CHECK_CLOSE(val, u(c,0), 1.e-3);
       }

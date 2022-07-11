@@ -45,24 +45,24 @@ set(mesh_factory_files
     MeshFactory.cc) 
 file(GLOB mesh_factory_inc_files "*.hh")
 
-list(APPEND mesh_factory_frameworks simple_mesh)
+list(APPEND mesh_factory_frameworks mesh_simple)
 
-if (ENABLE_STK_Mesh)
+if (ENABLE_MESH_STK)
     include_directories(${STK_INCLUDE_DIR} ${STK_SOURCE_DIR})
     list(APPEND mesh_factory_frameworks stk_mesh exodus_reader mesh_data)
-    add_definitions("-DHAVE_STK_MESH")
+    add_definitions("-DHAVE_MESH_STK")
 endif()
 
-if (ENABLE_MOAB_Mesh)
+if (ENABLE_MESH_MOAB)
     include_directories(${MOAB_INCLUDE_DIR} ${MOAB_SOURCE_DIR})
     list(APPEND mesh_factory_frameworks moab_mesh)
-    add_definitions("-DHAVE_MOAB_MESH")
+    add_definitions("-DHAVE_MESH_MOAB")
 endif()
 
-if (ENABLE_MSTK_Mesh)
+if (ENABLE_MESH_MSTK)
     include_directories(${MSTK_INCLUDE_DIR} ${MSTK_SOURCE_DIR})
-    list(APPEND mesh_factory_frameworks mstk_mesh)
-    add_definitions("-DHAVE_MSTK_MESH -DMSTK_HAVE_MPI")
+    list(APPEND mesh_factory_frameworks mesh_mstk)
+    add_definitions("-DHAVE_MESH_MSTK -DMSTK_HAVE_MPI")
 endif()
 
 add_amanzi_library(mesh_factory

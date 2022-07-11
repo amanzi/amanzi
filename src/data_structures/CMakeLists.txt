@@ -121,19 +121,19 @@ if (BUILD_TESTS)
         file(COPY ${DataFiles} DESTINATION ${DATA_STRUCTURES_BINARY_DIR}/test/)
     endif()
 
-    set(data_structures_test_link_libs data_structures geometry mstk_mesh mesh_factory mesh)
+    set(data_structures_test_link_libs data_structures geometry mesh_mstk mesh_factory mesh)
 
     add_amanzi_test(data_structures_vectors data_structures_vectors
     		    --kokkos-ndevices=1
                     KIND unit
                     NPROCS 2
         	    SOURCE test/Main.cc
-                           test/data_structures_communication.cc
+               test/data_structures_communication.cc
         		   test/data_structures_block_vector.cc
         		   test/data_structures_composite_vector.cc
         		   test/data_structures_int_composite_vector.cc
         		   test/data_structures_tree_vector.cc
-                           test/data_structures_vandelay.cc
+               test/data_structures_vandelay.cc
                     LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
 
     # Test: tests for FE graph and matrices
@@ -172,7 +172,7 @@ if (BUILD_TESTS)
     add_amanzi_test(data_structures_common_patterns, data_structures_common_patterns
                     KIND unit
                     SOURCE test/Main.cc test/data_structures_common_patterns.cc
-                    LINK_LIBS data_structures mesh geometry mesh_factory simple_mesh ${UnitTest_LIBRARIES})
+                    LINK_LIBS data_structures mesh geometry mesh_factory mesh_simple ${UnitTest_LIBRARIES})
 
     add_amanzi_test(data_structures_CSR, data_structures_CSR
                     KIND unit
@@ -183,5 +183,5 @@ if (BUILD_TESTS)
     add_amanzi_test(data_structures_patch, data_structures_patch
                     KIND unit
                     SOURCE test/Main.cc test/data_structures_patch.cc
-                    LINK_LIBS data_structures mesh geometry mesh_factory simple_mesh ${UnitTest_LIBRARIES})
+                    LINK_LIBS data_structures mesh geometry mesh_factory mesh_simple ${UnitTest_LIBRARIES})
 endif()

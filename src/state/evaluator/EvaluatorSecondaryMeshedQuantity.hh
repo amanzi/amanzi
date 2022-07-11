@@ -116,6 +116,7 @@ namespace Impl {
           KOKKOS_LAMBDA(const int& c) {
             vv(c,0) = mesh->cell_volume(c);
           });
+      Kokkos::fence(); 
     }
 
     const static AmanziMesh::Entity_kind component = AmanziMesh::Entity_kind::CELL;

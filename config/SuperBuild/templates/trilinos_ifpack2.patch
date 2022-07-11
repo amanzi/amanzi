@@ -1,0 +1,88 @@
+diff --git a/packages/ifpack2/src/Ifpack2_Details_CrsArrays.hpp b/packages/ifpack2/src/Ifpack2_Details_CrsArrays.hpp
+index e5db37c943c..d6958c3a63d 100644
+--- a/packages/ifpack2/src/Ifpack2_Details_CrsArrays.hpp
++++ b/packages/ifpack2/src/Ifpack2_Details_CrsArrays.hpp
+@@ -105,7 +105,8 @@ struct CrsArrayReader
+       Teuchos::Array<LocalOrdinal> indicesArray(entries);
+       auto valsView = valsArray();
+       auto indicesView = indicesArray();
+-      A->getLocalRowCopy(row, indicesView, valsView, entries);
++      assert(false); 
++      //A->getLocalRowCopy(row, indicesView, valsView, entries);
+       std::sort(indicesView.getRawPtr(), indicesView().getRawPtr() + entries);
+       for(LocalOrdinal i = 0; i < entries; i++)
+       {
+@@ -130,7 +131,8 @@ struct CrsArrayReader
+       Teuchos::Array<LocalOrdinal> indicesArray(entries);
+       auto valsView = valsArray();
+       auto indicesView = indicesArray();
+-      A->getLocalRowCopy(row, indicesView, valsView, entries);
++      assert(false); 
++      //A->getLocalRowCopy(row, indicesView, valsView, entries);
+       Tpetra::sort2(indicesView.getRawPtr(), indicesView.getRawPtr() + entries, valsView.getRawPtr());
+       for(LocalOrdinal i = 0; i < entries; i++)
+       {
+@@ -210,21 +212,23 @@ struct CrsArrayReader
+   //! Faster specialization of getValues() for when A is a Tpetra::CrsMatrix.
+   static void getValuesCrs(const TCrsMatrix* A, ScalarArray& vals)
+   {
+-    vals = A->getLocalMatrix().values;
++    assert(false); 
++    //vals = A->getLocalMatrix().values;
+   }
+ 
+   //! Faster specialization of getStructure() for when A is a Tpetra::CrsMatrix.
+   static void getStructureCrs(const TCrsMatrix* A, OrdinalArray& rowptrs, OrdinalArray& colinds)
+   {
++    assert(false); 
+     //rowptrs really have data type size_t, but need them as LocalOrdinal, so must convert manually
+-    auto rowmap = A->getLocalMatrix().graph.row_map;
++    //auto rowmap = A->getLocalMatrix().graph.row_map;
+     //allocate rowptrs, it's a deep copy (colinds is a shallow copy so not necessary for it)
+-    rowptrs = OrdinalArray("RowPtrs", A->getLocalNumRows() + 1);
+-    for(size_t i = 0; i < rowmap.extent(0); i++)
+-    {
+-      rowptrs[i] = rowmap[i];
+-    }
+-    colinds = A->getLocalMatrix().graph.entries;
++    //rowptrs = OrdinalArray("RowPtrs", A->getLocalNumRows() + 1);
++    //for(size_t i = 0; i < rowmap.extent(0); i++)
++    //{
++    //  rowptrs[i] = rowmap[i];
++    //}
++    //colinds = A->getLocalMatrix().graph.entries;
+   }
+ };
+ 
+diff --git a/packages/ifpack2/src/Ifpack2_Details_FastILU_Base_def.hpp b/packages/ifpack2/src/Ifpack2_Details_FastILU_Base_def.hpp
+index 7f06dfc4011..f304b1dd96f 100644
+--- a/packages/ifpack2/src/Ifpack2_Details_FastILU_Base_def.hpp
++++ b/packages/ifpack2/src/Ifpack2_Details_FastILU_Base_def.hpp
+@@ -120,10 +120,11 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+   if(nvecs == 1)
+   {
+     auto x2d = X.template getLocalView<execution_space>(Tpetra::Access::ReadOnly);
+-    auto y2d = Y.template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
++    auto y2d = Y.template getLocalView<execution_space>(Tpetra::Access::ReadOnly);
+     auto x1d = Kokkos::subview(x2d, Kokkos::ALL(), 0);
+     auto y1d = Kokkos::subview(y2d, Kokkos::ALL(), 0);
+-    applyLocalPrec(x1d, y1d);
++    assert(false); 
++    //applyLocalPrec(x1d, y1d);
+   }
+   else
+   {
+@@ -133,10 +134,11 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+       auto Xcol = X.getVector(i);
+       auto Ycol = Y.getVector(i);
+       auto xColView2d = Xcol->template getLocalView<execution_space>(Tpetra::Access::ReadOnly);
+-      auto yColView2d = Ycol->template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
++      auto yColView2d = Ycol->template getLocalView<execution_space>(Tpetra::Access::ReadOnly);
+       auto xColView1d = Kokkos::subview(xColView2d, Kokkos::ALL(), 0);
+       auto yColView1d = Kokkos::subview(yColView2d, Kokkos::ALL(), 0);
+-      applyLocalPrec(xColView1d, yColView1d);
++      assert(false); 
++      //applyLocalPrec(xColView1d, yColView1d);
+     }
+   }
+ }

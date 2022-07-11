@@ -80,7 +80,7 @@ set(output_source_files OutputUtils.cc
 add_amanzi_library(output 
                    SOURCE ${output_source_files}
                    HEADERS ${output_inc_files}
-                   LINK_LIBS data_structures mstk_mesh mesh geometry error_handling ${output_tpl_list})
+                   LINK_LIBS data_structures mesh_mstk mesh geometry error_handling ${output_tpl_list})
 
 
 # #

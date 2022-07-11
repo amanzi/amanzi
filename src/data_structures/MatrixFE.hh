@@ -60,10 +60,15 @@ class MatrixFE {
   Matrix_ptr_type getOffProcMatrix() { return offproc_matrix_; }
 
   // accessor to local matrices
-  using LocalMatrix_type = Matrix_type::local_matrix_type;
-  LocalMatrix_type getLocalMatrix() const { return matrix_->getLocalMatrix(); }
-  LocalMatrix_type getOffProcLocalMatrix() const {
-    return offproc_matrix_.get() ? offproc_matrix_->getLocalMatrix() : LocalMatrix_type();
+  using LocalMatrix_device_type = Matrix_type::local_matrix_device_type;
+  using LocalMatrix_host_type = Matrix_type::local_matrix_host_type;
+  LocalMatrix_device_type getLocalMatrixDevice() const { return matrix_->getLocalMatrixDevice(); }
+  LocalMatrix_device_type getOffProcLocalMatrixDevice() const {
+    return offproc_matrix_.get() ? offproc_matrix_->getLocalMatrixDevice() : LocalMatrix_device_type();
+  }
+  LocalMatrix_host_type getLocalMatrixHost() const { return matrix_->getLocalMatrixHost(); }
+  LocalMatrix_host_type getOffProcLocalMatrixHost() const {
+    return offproc_matrix_.get() ? offproc_matrix_->getLocalMatrixHost() : LocalMatrix_host_type();
   }
 
   // zero to allow mation
@@ -106,7 +111,11 @@ class MatrixFE {
   // FillComplete called between, but I don't see a need for this
   // functionality.  If you do, ask. --etc
   void insertLocalValues(int row, int count, const double *values, const int *indices);
-  void getLocalRowView(int row, int& count, const double* &values, const int* &indices) const;
+  void getLocalRowView(int row,     
+    Kokkos::View<const int *, Layout,
+    Amanzi::DeviceSpecial, Kokkos::MemoryManaged> & indices,
+    Kokkos::View<const double*, Layout,
+    Amanzi::DeviceSpecial, Kokkos::MemoryManaged> & values) const;
   
   // finish fill
   void resumeFill();

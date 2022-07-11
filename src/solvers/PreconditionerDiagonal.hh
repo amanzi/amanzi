@@ -32,6 +32,9 @@ No parameters are required.
 #include "exceptions.hh"
 #include "Preconditioner.hh"
 
+
+#include "cuda_decl.h"
+
 namespace Amanzi {
 namespace AmanziSolvers {
 
@@ -40,15 +43,20 @@ class PreconditionerDiagonal : public Preconditioner {
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final {};
   virtual void initializeInverse() override final {}
   virtual void computeInverse() override final {
+    nvtxRangePush("PreconditionerDiagonal::computeInverse");    
     diagonal_ = Teuchos::rcp(new Vector_type(h_->getRowMap()));
     diagonal_->putScalar(0.);
     h_->getLocalDiagCopy(*diagonal_);
     diagonal_->reciprocal(*diagonal_);
+    nvtxRangePop();
   };
 
   virtual int applyInverse(const Vector_type& v, Vector_type& hv) const override final {
+    nvtxRangePush("PreconditionerDiagonal::applyInverse");
+
     AMANZI_ASSERT(diagonal_.get()); // Compute called
     hv.elementWiseMultiply(1., v, *diagonal_, 0.);
+    nvtxRangePop();
     return 0;
   }
 

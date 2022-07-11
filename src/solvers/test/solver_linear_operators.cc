@@ -57,12 +57,12 @@ SUITE(SOLVERS)
     // 5-point FD stencil
     virtual int apply(const Vector_t& v, Vector_t& mv) const
     {
-      int N = v.getMap()->getNodeNumElements();
+      int N = v.getMap()->getLocalNumElements();
       int n = std::pow(N, 0.5);
 
       double coefs[5] = { -1., -1., 4., -1., -1. };
-      auto vv = v.getLocalViewDevice();
-      auto mvv = mv.getLocalViewDevice();
+      auto vv = v.getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto mvv = mv.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
       typedef Kokkos::TeamPolicy<>::member_type MemberType;
       // Create an instance of the policy
@@ -101,7 +101,7 @@ SUITE(SOLVERS)
     // 3-point FD stencil
     void init()
     {
-      int n = map_->getNodeNumElements();
+      int n = map_->getLocalNumElements();
       A_ = Teuchos::rcp(new CrsMatrix_type(map_, map_, 3));
       for (int i = 0; i < n; i++) {
         int indices[3];
@@ -150,10 +150,9 @@ SUITE(SOLVERS)
     // initial guess
     Vector_type u(map);
     {
-      auto uv = u.getLocalViewHost();
+      auto uv = u.getLocalViewHost(Tpetra::Access::ReadWrite);
       uv(55, 0) = 1.0;
     }
-    u.sync_device();
 
     // solve
     Vector_type v(map);
@@ -161,9 +160,8 @@ SUITE(SOLVERS)
     CHECK(ierr > 0);
     CHECK_EQUAL(45, pcg.num_itrs());
 
-    v.sync_host();
     {
-      auto vv = v.getLocalViewHost();
+      auto vv = v.getLocalViewHost(Tpetra::Access::ReadOnly);
       for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i, 0), 1e-6);
     }
   };
@@ -192,19 +190,17 @@ SUITE(SOLVERS)
       // initial guess
       Vector_type u(map);
       {
-        auto uv = u.getLocalViewHost();
+        auto uv = u.getLocalViewHost(Tpetra::Access::ReadWrite);
         uv(55, 0) = 1.0;
       }
-      u.sync_device();
 
       // solve
       Vector_type v(map);
       int ierr = gmres.applyInverse(u, v);
       CHECK(ierr == 0);
       CHECK_EQUAL(nits[loop], gmres.num_itrs());
-      v.sync_host();
       {
-        auto vv = v.getLocalViewHost();
+        auto vv = v.getLocalViewHost(Tpetra::Access::ReadOnly);
         for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i, 0), 1e-6);
       }
     }
@@ -235,19 +231,17 @@ SUITE(SOLVERS)
       // initial guess
       Vector_type u(map);
       {
-        auto uv = u.getLocalViewHost();
+        auto uv = u.getLocalViewHost(Tpetra::Access::ReadWrite);
         uv(55, 0) = 1.0;
       }
-      u.sync_device();
 
       // solve
       Vector_type v(map);
       int ierr = gmres.applyInverse(u, v);
       CHECK(ierr == 0);
       CHECK_EQUAL(nits[loop], gmres.num_itrs());
-      v.sync_host();
       {
-        auto vv = v.getLocalViewHost();
+        auto vv = v.getLocalViewHost(Tpetra::Access::ReadOnly);
         for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i, 0), 1e-6);
       }
     }
@@ -280,19 +274,17 @@ SUITE(SOLVERS)
     // initial guess
     Vector_type u(map);
     {
-      auto uv = u.getLocalViewHost();
+      auto uv = u.getLocalViewHost(Tpetra::Access::ReadWrite);
       uv(55, 0) = 1.0;
     }
-    u.sync_device();
 
   //   // solve
     Vector_type v(map);
     int ierr = gmres.applyInverse(u, v);
     CHECK(ierr == 0);
     CHECK_EQUAL(60, gmres.num_itrs());
-    v.sync_host();
     {
-      auto vv = v.getLocalViewHost();
+      auto vv = v.getLocalViewHost(Tpetra::Access::ReadOnly);
       for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i, 0), 1e-6);
     }
   };
@@ -317,19 +309,17 @@ SUITE(SOLVERS)
     // initial guess
     Vector_type u(map);
     {
-      auto uv = u.getLocalViewHost();
+      auto uv = u.getLocalViewHost(Tpetra::Access::ReadWrite);
       uv(55, 0) = 1.0;
     }
-    u.sync_device();
 
     // solve
     Vector_type v(map);
     int ierr = nka.applyInverse(u, v);
     CHECK(ierr > 0);
     //CHECK_EQUAL(62, nka.num_itrs());
-    v.sync_host();
     {
-      auto vv = v.getLocalViewHost();
+      auto vv = v.getLocalViewHost(Tpetra::Access::ReadOnly);
       for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i, 0), 1e-6);
     }
   };
@@ -449,18 +439,16 @@ SUITE(SOLVERS)
     // initial guess
     Vector_type u(map);
     {
-      auto uv = u.getLocalViewHost();
+      auto uv = u.getLocalViewHost(Tpetra::Access::ReadWrite);
       uv(55, 0) = 1.0;
     }
-    u.sync_device();
 
     // solve
     Vector_type v(map);
     int ierr = solver->applyInverse(u, v);
     CHECK(ierr > 0);
-    v.sync_host();
     {
-      auto vv = v.getLocalViewHost();
+      auto vv = v.getLocalViewHost(Tpetra::Access::ReadOnly);
       for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i, 0), 1e-6);
     }
   };
@@ -493,18 +481,16 @@ SUITE(SOLVERS)
     // initial guess
     Vector_type u(map);
     {
-      auto uv = u.getLocalViewHost();
+      auto uv = u.getLocalViewHost(Tpetra::Access::ReadWrite);
       uv(55, 0) = 1.0;
     }
-    u.sync_device();
 
     // solve
     Vector_type v(map);
     int ierr = gmres.applyInverse(u, v);
     CHECK(ierr > 0);
-    v.sync_host();
     {
-      auto vv = v.getLocalViewHost();
+      auto vv = v.getLocalViewHost(Tpetra::Access::ReadOnly);
       for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i, 0), 1e-6);
     }
   };

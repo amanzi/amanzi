@@ -60,12 +60,14 @@ set(operators_inc_files
   Operator.hh
   Operator_Cell.hh
   Operator_FaceCell.hh
+  Operator_FacCellSff.hh
 #  Operator_CellBndFace.hh
   Operator_Factory.hh
   TreeOperator.hh
   BCs.hh
   PDE_HelperBCsList.hh
   PDE_HelperDiscretization.hh
+  PDE_Accumulation.hh
   PDE_Diffusion.hh
   PDE_DiffusionFV.hh
   PDE_DiffusionFVwithGravity.hh
@@ -81,9 +83,11 @@ set(operators_src_files
   Operator.cc
   Operator_Cell.cc
   Operator_FaceCell.cc
+  Operator_FaceCellSff.cc
 #  Operator_CellBndFace.cc
   Operator_Factory.cc
   TreeOperator.cc
+  PDE_Accumulation.cc
   PDE_HelperDiscretization.cc
   PDE_DiffusionFV.cc
   PDE_DiffusionFVwithGravity.cc
@@ -233,7 +237,7 @@ if (BUILD_TESTS)
     message(DEBUG "KokkosKernels_LIBRARIES = ${KokkosKernels_LIBRARIES}")
     set(operators_test_link_libs geometry atk mesh mesh_factory  data_structures operators whetstone output atk ${KokkosKernels_LIBRARIES})
 
-    if(ENABLE_KOKKOS_CUDA)
+    if(ENABLE_CUDA OR ENABLE_UVM)
       set(operators_test_link_libs ${operators_test_link_libs} "-lnvToolsExt")
     endif()
     
@@ -250,6 +254,7 @@ if (BUILD_TESTS)
     #                 SOURCE test/Main.cc test/operator_parabolic_surface.cc
     #                 LINK_LIBS ${operators_test_link_libs})
 
+if(0)
     add_amanzi_test(operators_marshak_assembly operators_marshak_assembly
                     KIND unit
                     NPROCS 1
@@ -257,13 +262,13 @@ if (BUILD_TESTS)
                     LINK_LIBS ${UnitTest_LIBRARIES} ${operators_test_link_libs})
     add_amanzi_test(operators_marshak_assembly_3pe operators_marshak_assembly NPROCS 3 KIND unit)
                   
-    # add_amanzi_test(operators_marshak operators_marshak
-    #                 KIND unit
-    #                 NPROCS 3
-    #                 SOURCE test/Main.cc test/operator_marshak.cc
-    #                        test/operator_marshak_logical.cc
-    #                 LINK_LIBS ${operators_test_link_libs})
-
+    add_amanzi_test(operators_marshak operators_marshak
+                    KIND unit
+                    NPROCS 3
+                    SOURCE test/Main.cc test/operator_marshak.cc
+                           #test/operator_marshak_logical.cc
+                    LINK_LIBS ${UnitTest_LIBRARIES} ${operators_test_link_libs})
+endif()
     
     # add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
     #                 KIND unit

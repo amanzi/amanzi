@@ -48,26 +48,27 @@ namespace Amanzi {
 
 class FunctionPolynomial : public Function {
  public:
-  FunctionPolynomial(const Kokkos::View<double*>& c,
-                     const Kokkos::View<int*>& p, double x0 = 0.0);
+  FunctionPolynomial(const Kokkos::View<double*,Kokkos::HostSpace>& c,
+                     const Kokkos::View<int*,Kokkos::HostSpace>& p, double x0 = 0.0);
   ~FunctionPolynomial() {}
   FunctionPolynomial* Clone() const { return new FunctionPolynomial(*this); }
-  double operator()(const Kokkos::View<double*>&) const;
+  double operator()(const Kokkos::View<double*,Kokkos::HostSpace>&) const;
 
   KOKKOS_INLINE_FUNCTION double
   apply_gpu(const Kokkos::View<double**>& x, const int i) const
   {
+    auto vc = c_.view_device(); 
     // Polynomial terms with non-negative exponents
-    double y = c_[pmax_ - pmin_];
+    double y = vc[pmax_ - pmin_];
     if (pmax_ > 0) {
       double z = x(0, i) - x0_;
-      for (int j = pmax_; j > 0; --j) y = c_[j - 1 - pmin_] + z * y;
+      for (int j = pmax_; j > 0; --j) y = vc[j - 1 - pmin_] + z * y;
     }
     // Polynomial terms with negative exponents.
     if (pmin_ < 0) {
-      double w = c_[0];
+      double w = vc[0];
       double z = 1.0 / (x(0, i) - x0_);
-      for (int j = pmin_; j < -1; ++j) w = c_[j + 1 - pmin_] + z * w;
+      for (int j = pmin_; j < -1; ++j) w = vc[j + 1 - pmin_] + z * w;
       y += z * w;
     }
     return y;
@@ -85,7 +86,7 @@ class FunctionPolynomial : public Function {
   int pmin_;
   int pmax_;
   double x0_;
-  Kokkos::View<double*> c_;
+  Kokkos::DualView<double*> c_;
 };
 
 } // namespace Amanzi

@@ -59,12 +59,12 @@ namespace Amanzi {
 
 class FunctionBilinear : public Function {
  public:
-  FunctionBilinear(const Kokkos::View<double*>& x,
-                   const Kokkos::View<double*>& y,
-                   const Kokkos::View<double**>& v, const int xi, const int yi);
+  FunctionBilinear(const Kokkos::View<double*,Kokkos::HostSpace>& x,
+                   const Kokkos::View<double*,Kokkos::HostSpace>& y,
+                   const Kokkos::View<double**,Kokkos::HostSpace>& v, const int xi, const int yi);
   ~FunctionBilinear(){};
   FunctionBilinear* Clone() const { return new FunctionBilinear(*this); }
-  double operator()(const Kokkos::View<double*>&) const;
+  double operator()(const Kokkos::View<double*,Kokkos::HostSpace>&) const;
 
   KOKKOS_INLINE_FUNCTION double
   apply_gpu(const Kokkos::View<double**>& x, const int& i) const
@@ -74,22 +74,25 @@ class FunctionBilinear : public Function {
     int ny = y_.extent(0);
     double xv = x(xi_, i);
     double yv = x(yi_, i);
+    auto vv = v_.view_device(); 
+    auto vx = x_.view_device(); 
+    auto vy = y_.view_device(); 
     // if xv and yv are out of bounds
-    if (xv <= x_[0] && yv <= y_[0]) {
-      v = v_(0, 0);
-    } else if (xv >= x_[nx - 1] && yv <= y_[0]) {
-      v = v_(nx - 1, 0);
-    } else if (xv >= x_[nx - 1] && yv >= y_[ny - 1]) {
-      v = v_(nx - 1, ny - 1);
-    } else if (xv <= x_[0] && yv >= y_[ny - 1]) {
-      v = v_(0, ny - 1);
+    if (xv <= vx[0] && yv <= vy[0]) {
+      v = vv(0, 0);
+    } else if (xv >= vx[nx - 1] && yv <= vy[0]) {
+      v = vv(nx - 1, 0);
+    } else if (xv >= vx[nx - 1] && yv >= vy[ny - 1]) {
+      v = vv(nx - 1, ny - 1);
+    } else if (xv <= vx[0] && yv >= vy[ny - 1]) {
+      v = vv(0, ny - 1);
     } else {
       // binary search to find interval containing xv
       int j1 = 0, j2 = nx - 1;
       while (j2 - j1 > 1) {
         int j = (j1 + j2) / 2;
-        if (xv >= x_[j]) { // right continuous
-                           // if (xv > x_[j]) { // left continuous
+        if (xv >= vx[j]) { // right continuous
+                           // if (xv > vx[j]) { // left continuous
           j1 = j;
         } else {
           j2 = j;
@@ -99,36 +102,36 @@ class FunctionBilinear : public Function {
       int k1 = 0, k2 = ny - 1;
       while (k2 - k1 > 1) {
         int k = (k1 + k2) / 2;
-        if (yv >= y_[k]) { // right continuous
-                           // if (yv > y_[k]) { // left continuous
+        if (yv >= vy[k]) { // right continuous
+                           // if (yv > vy[k]) { // left continuous
           k1 = k;
         } else {
           k2 = k;
         }
       }
       // if only xv is out of bounds, linear interpolation
-      if (xv <= x_[0] && yv > y_[0] && yv < y_[ny - 1]) {
-        v = v_(0, k1) +
-            ((v_(0, k2) - v_(0, k1)) / (y_[k2] - y_[k1])) * (yv - y_[k1]);
-      } else if (xv > x_[nx - 1] && yv > y_[0] && yv < y_[ny - 1]) {
-        v = v_(nx - 1, k1) +
-            ((v_(nx - 1, k2) - v_(nx - 1, k1)) / (y_[k2] - y_[k1])) *
-              (yv - y_[k1]);
+      if (xv <= vx[0] && yv > vy[0] && yv < vy[ny - 1]) {
+        v = vv(0, k1) +
+            ((vv(0, k2) - vv(0, k1)) / (vy[k2] - vy[k1])) * (yv - vy[k1]);
+      } else if (xv > vx[nx - 1] && yv > vy[0] && yv < vy[ny - 1]) {
+        v = vv(nx - 1, k1) +
+            ((vv(nx - 1, k2) - vv(nx - 1, k1)) / (vy[k2] - vy[k1])) *
+              (yv - vy[k1]);
         // if only yv is out of bounds, linear interpolation
-      } else if (yv <= y_[0] && xv > x_[0] && xv < x_[nx - 1]) {
-        v = v_(j1, 0) +
-            ((v_(j2, 0) - v_(j1, 0)) / (x_[j2] - x_[j1])) * (xv - x_[j1]);
-      } else if (yv > y_[ny - 1] && xv > x_[0] && xv < x_[nx - 1]) {
-        v = v_(j1, ny - 1) +
-            ((v_(j2, ny - 1) - v_(j1, ny - 1)) / (x_[j2] - x_[j1])) *
-              (xv - x_[j1]);
+      } else if (yv <= vy[0] && xv > vx[0] && xv < vx[nx - 1]) {
+        v = vv(j1, 0) +
+            ((vv(j2, 0) - vv(j1, 0)) / (vx[j2] - vx[j1])) * (xv - vx[j1]);
+      } else if (yv > vy[ny - 1] && xv > vx[0] && xv < vx[nx - 1]) {
+        v = vv(j1, ny - 1) +
+            ((vv(j2, ny - 1) - vv(j1, ny - 1)) / (vx[j2] - vx[j1])) *
+              (xv - vx[j1]);
       } else {
         // bilinear interpolation
-        v = v_(j1, k1) * (x_[j2] - xv) * (y_[k2] - yv) +
-            v_(j2, k1) * (xv - x_[j1]) * (y_[k2] - yv) +
-            v_(j1, k2) * (x_[j2] - xv) * (yv - y_[k1]) +
-            v_(j2, k2) * (xv - x_[j1]) * (yv - y_[k1]);
-        v = v / ((x_[j2] - x_[j1]) * (y_[k2] - y_[k1]));
+        v = vv(j1, k1) * (vx[j2] - xv) * (vy[k2] - yv) +
+            vv(j2, k1) * (xv - vx[j1]) * (vy[k2] - yv) +
+            vv(j1, k2) * (vx[j2] - xv) * (yv - vy[k1]) +
+            vv(j2, k2) * (xv - vx[j1]) * (yv - vy[k1]);
+        v = v / ((vx[j2] - vx[j1]) * (vy[k2] - vy[k1]));
       }
     }
     return v;
@@ -143,13 +146,13 @@ class FunctionBilinear : public Function {
   }
 
  private:
-  Kokkos::View<double*> x_, y_;
-  Kokkos::View<double**> v_;
+  Kokkos::DualView<double*> x_, y_;
+  Kokkos::DualView<double**> v_;
   int xi_, yi_;
 
  private: // helper functions
-  void check_args(const Kokkos::View<double*>&, const Kokkos::View<double*>&,
-                  const Kokkos::View<double**>&) const;
+  void check_args(const Kokkos::View<double*,Kokkos::HostSpace>&, const Kokkos::View<double*,Kokkos::HostSpace>&,
+                  const Kokkos::View<double**,Kokkos::HostSpace>&) const;
 };
 
 } // namespace Amanzi

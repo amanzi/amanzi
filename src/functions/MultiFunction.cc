@@ -106,11 +106,11 @@ MultiFunction::size() const
 };
 
 
-Kokkos::View<double*>
-MultiFunction::operator()(const Kokkos::View<double*>& xt) const
+Kokkos::View<double*,Kokkos::HostSpace>
+MultiFunction::operator()(const Kokkos::View<double*,Kokkos::HostSpace>& xt) const
 {
-  for (int i = 0; i != size(); ++i) { values_[i] = (*functions_[i])(xt); }
-  return values_;
+  for (int i = 0; i != size(); ++i) { values_.view_host()[i] = (*functions_[i])(xt); }
+  return values_.view_host();
 };
 
 

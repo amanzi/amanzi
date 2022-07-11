@@ -10,7 +10,6 @@
 
 //! Hypre based preconditioners include Algebraic MultiGrid and global ILU
 
-#include "HYPRE_parcsr_ls.h"
 #include "Teuchos_RCP.hpp"
 
 #include "dbc.hh"
@@ -19,30 +18,112 @@
 #include "VerboseObject.hh"
 #include "PreconditionerHypre.hh"
 
-
-// Temporary
-// Useful functions to trace NVIDIA calls 
-#if 0 
-#include <nvToolsExt.h> 
-#else
-void nvtxRangePush(const char*){}
-void nvtxRangePop(){}
-#endif 
+#include "cuda_decl.h"
 
 namespace Amanzi {
 
 namespace AmanziSolvers {
+
+bool PreconditionerHypre::inited = false; 
+
+void PreconditionerHypre::copy_matrix_(){
+  nvtxRangePush("HP: copy");
+
+  Teuchos::RCP<const Matrix_type> Matrix = Teuchos::rcp_dynamic_cast<const Matrix_type>(h_row);
+  if(Matrix.is_null()) 
+    throw std::runtime_error("Hypre<MatrixType>: Unsupported matrix configuration: Tpetra::CrsMatrix required");
+
+  LO nrows = Matrix->getLocalNumRows();
+
+  #if 1
+  Kokkos::View<LO*,Kokkos::DefaultExecutionSpace> colsperrow("ColsPerRow",nrows);
+  auto rowPtrs = Matrix->getCrsGraph()->getLocalGraphDevice().row_map;
+  Kokkos::parallel_for(nrows,
+  KOKKOS_LAMBDA(const int i){
+    colsperrow(i) = rowPtrs[i+1]-rowPtrs[i];
+  });
+
+  auto rowindices = Matrix->getRowMap()->getMyGlobalIndices();
+
+  Kokkos::View<GO *, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> rid("",rowindices.size());
+  Kokkos::deep_copy(rid,rowindices);
+
+  auto values = Matrix->getLocalValuesDevice(Tpetra::Access::ReadOnly); 
+  auto colindices = Matrix->getCrsGraph()->getLocalGraphDevice().entries;
+  decltype(colindices) nci("",colindices.size()); 
+  auto ge = GloballyContiguousColMap_->getMyGlobalIndices(); 
+
+  Kokkos::View<GO*,Kokkos::DefaultExecutionSpace> dge("",ge.size());
+  Kokkos::deep_copy(dge,ge);  
+  Kokkos::parallel_for(
+    "", 
+    colindices.size(), 
+    KOKKOS_LAMBDA(const int i){
+      nci[i] = dge(colindices[i]);
+     }
+  );
+  #else 
+  Kokkos::View<LO*,Kokkos::HostSpace> colsperrow("ColsPerRow",nrows);
+  auto rowPtrs = Matrix->getCrsGraph()->getLocalGraphHost().row_map;
+  for(int i = 0 ; i < nrows; ++i){
+    colsperrow(i) = rowPtrs[i+1]-rowPtrs[i];
+  }
+  auto rowindices = Matrix->getRowMap()->getMyGlobalIndices();
+
+  Kokkos::View<GO *, Kokkos::LayoutLeft, Kokkos::HostSpace> rid("",rowindices.size());
+  Kokkos::deep_copy(rid,rowindices);
+
+  auto values = Matrix->getLocalValuesHost(Tpetra::Access::ReadOnly); 
+  auto colindices = Matrix->getCrsGraph()->getLocalGraphHost().entries;
+  decltype(colindices) nci("",colindices.size()); 
+  auto ge = GloballyContiguousColMap_->getMyGlobalIndices(); 
+
+  Kokkos::View<GO*,Kokkos::HostSpace> dge("",ge.size());
+  Kokkos::deep_copy(dge,ge);  
+  for(int i = 0 ; i < colindices.size() ; ++i){
+      nci[i] = dge(colindices[i]);
+  }
+  #endif 
+
+  HYPRE_IJMatrixSetValues(HypreA_,nrows,colsperrow.data(),
+                                         rid.data(),nci.data(),values.data());
+  HYPRE_IJMatrixAssemble(HypreA_);
+  HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_);
+  nvtxRangePop();
+}
 
 /* ******************************************************************
 * Apply the preconditioner.
 ****************************************************************** */
 int PreconditionerHypre::applyInverse(const Vector_type& v, Vector_type& hv) const
 {
-  nvtxRangePush(__FUNCTION__);
-  IfpHypre_->apply(v, hv);
-  returned_code_ = 0;
-  return returned_code_;
+  nvtxRangePush("HP: apply");
+  assert(v.getNumVectors() == 1);
+  assert(hv.getNumVectors() == 1);
+  assert(&v != &hv);
+
+  hypre_Vector *XLocal_ = hypre_ParVectorLocalVector(XVec_);
+  hypre_Vector *YLocal_ = hypre_ParVectorLocalVector(YVec_);
+
+  double_type * XValues = const_cast<double_type*>(v.getLocalViewDevice(Tpetra::Access::ReadOnly).data());
+  double_type * YValues = const_cast<double_type*>(hv.getLocalViewDevice(Tpetra::Access::ReadWrite).data());
+
+  double_type *XTemp = XLocal_->data;
+  XLocal_->data = XValues;
+  double_type *YTemp = YLocal_->data;
+  YLocal_->data = YValues;
+  
+  HYPRE_ParVectorSetConstantValues(ParY_, 0.0); 
+  if(PrecondType == Boomer){
+    HYPRE_BoomerAMGSolve(HyprePrecond_,ParMatrix_ ,ParX_, ParY_);
+  } else if (PrecondType == Euclid){
+    HYPRE_EuclidSolve(HyprePrecond_,ParMatrix_ ,ParX_, ParY_);
+  }
+
+  XLocal_->data = XTemp;
+  YLocal_->data = YTemp;
   nvtxRangePop();
+  return 0;
 }
 
 
@@ -51,27 +132,16 @@ int PreconditionerHypre::applyInverse(const Vector_type& v, Vector_type& hv) con
 ****************************************************************** */
 void PreconditionerHypre::set_inverse_parameters(Teuchos::ParameterList& list)
 {
-  nvtxRangePush(__FUNCTION__);
   plist_ = list;
 
   std::string vo_name = this->name()+" ("+plist_.get<std::string>("method")+")";
   vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist_));
-  nvtxRangePop();
-}
-
-void PreconditionerHypre::Init_()
-{
-#ifdef HAVE_IFPACK2_HYPRE
-#endif
 }
 
 void PreconditionerHypre::InitBoomer_()
 {
-  nvtxRangePush(__FUNCTION__);
-  Init_();
-
+  nvtxRangePush("HP: initBoomer");
 #ifdef HAVE_IFPACK2_HYPRE
-  method_ = BoomerAMG;
 
   // check for old input spec and error
   if (plist_.isParameter("number of cycles")) {
@@ -80,47 +150,61 @@ void PreconditionerHypre::InitBoomer_()
   }
 
   // verbosity
-  int vlevel_int = 0;
+  int vlevel_int = 1;
   std::string vlevel = plist_.sublist("verbose object").get<std::string>("verbosity level", "medium");
   if (vlevel == "high") {
-    vlevel_int = 1;
+    vlevel_int = 2;
   } else if (vlevel == "extreme") {
     vlevel_int = 3;
   }
 
   if (plist_.isParameter("verbosity")) vlevel_int = plist_.get<int>("verbosity");
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel,vlevel_int);
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetTol, plist_.get<double>("tolerance", 0.0));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxIter, plist_.get<int>("cycle applications", 5));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCoarsenType, plist_.get<int>("coarsen type", 0));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetStrongThreshold, plist_.get<double>("strong threshold", 0.5));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleType, plist_.get<int>("cycle type", 1));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetNumSweeps, plist_.get<int>("smoother sweeps", 3));
+  HYPRE_BoomerAMGSetPrintLevel(HyprePrecond_,vlevel_int);
+  HYPRE_BoomerAMGSetTol(HyprePrecond_, plist_.get<double>("tolerance", 0.0));
+  HYPRE_BoomerAMGSetMaxIter(HyprePrecond_, plist_.get<int>("cycle applications", 5));
+  HYPRE_BoomerAMGSetCoarsenType(HyprePrecond_, plist_.get<int>("coarsen type", 0));
+  HYPRE_BoomerAMGSetStrongThreshold(HyprePrecond_, plist_.get<double>("strong threshold", 0.5));
+  HYPRE_BoomerAMGSetCycleType(HyprePrecond_, plist_.get<int>("cycle type", 1));
+  HYPRE_BoomerAMGSetNumSweeps(HyprePrecond_, plist_.get<int>("smoother sweeps", 3));
 
   if (plist_.isParameter("relaxation type down") && plist_.isParameter("relaxation type up")) {
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleRelaxType, plist_.get<int>("relaxation type down"), 1);
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleRelaxType, plist_.get<int>("relaxation type up"), 2);
+    HYPRE_BoomerAMGSetCycleRelaxType(HyprePrecond_, plist_.get<int>("relaxation type down"), 1);
+    HYPRE_BoomerAMGSetCycleRelaxType(HyprePrecond_, plist_.get<int>("relaxation type up"), 2);
   } else if (plist_.isParameter("relaxation type")) {
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxType, plist_.get<int>("relaxation type")); 
+    HYPRE_BoomerAMGSetRelaxType(HyprePrecond_, plist_.get<int>("relaxation type")); 
   } else { 
     // use Hypre's defaults
   }
 
   if (plist_.isParameter("coarsening type")) 
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCoarsenType, plist_.get<int>("coarsening type"));
+    HYPRE_BoomerAMGSetCoarsenType(HyprePrecond_, plist_.get<int>("coarsening type"));
   if (plist_.isParameter("interpolation type")) 
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetInterpType, plist_.get<int>("interpolation type"));
+    HYPRE_BoomerAMGSetInterpType(HyprePrecond_, plist_.get<int>("interpolation type"));
   if (plist_.isParameter("relaxation order")) 
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxOrder, plist_.get<int>("relaxation order"));
+   HYPRE_BoomerAMGSetRelaxOrder(HyprePrecond_, plist_.get<int>("relaxation order"));
   if (plist_.isParameter("max multigrid levels"))
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxLevels, plist_.get<int>("max multigrid levels"));
+    HYPRE_BoomerAMGSetMaxLevels(HyprePrecond_, plist_.get<int>("max multigrid levels"));
   if (plist_.isParameter("max coarse size"))
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxCoarseSize, plist_.get<int>("max coarse size"));
+    HYPRE_BoomerAMGSetMaxCoarseSize(HyprePrecond_, plist_.get<int>("max coarse size"));
+
+
+  if (block_indices_.get()) {
+    // must NEW the index array EVERY time, as it gets freed every time by
+    // Hypre on cleanup.  This is pretty stupid, but we can't reuse it.  --etc
+    //
+    // Note this is not a memory leak -- this gets freed the second time
+    // IfpHypre_::Compute() gets called (for every call but the last) and when
+    // IfpHypre_ gets destroyed (for the last call).
+    int* indices = new int[block_indices_->size()];
+    for (int i=0; i!=block_indices_->size(); ++i) {
+      indices[i] = (*block_indices_)[i];
+    }
+    HYPRE_BoomerAMGSetDofFunc(HyprePrecond_, indices);
+  }
 
   if (plist_.get<bool>("use block indices", false)) {
     num_blocks_ = plist_.get<int>("number of unique block indices");
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetNumFunctions, num_blocks_);
-
+    HYPRE_BoomerAMGSetNumFunctions(HyprePrecond_, num_blocks_);
     // Block indices is an array of integers, indicating what unknowns are
     // coarsened as a system.
     block_indices_ = plist_.get<Teuchos::RCP<std::vector<int> > >("block indices");
@@ -144,7 +228,7 @@ void PreconditionerHypre::InitBoomer_()
     // http://lists.mcs.anl.gov/pipermail/petsc-users/2007-April/001487.html
 
     int num_funcs = plist_.get<int>("number of functions");
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetNumFunctions, num_funcs);
+    HYPRE_BoomerAMGSetNumFunctions(HyprePrecond_, num_funcs);
 
     // additional options
     if (num_funcs > 1) {
@@ -156,7 +240,7 @@ void PreconditionerHypre::InitBoomer_()
       // norm.  This does NOT tell AMG to use nodal relaxation.
       if (plist_.isParameter("nodal strength of connection norm")) {
         int nodal = plist_.get<int>("nodal strength of connection norm", 0);
-        IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetNodal, nodal);
+        HYPRE_BoomerAMGSetNodal(HyprePrecond_, nodal);
       }
 
       // You can additionally do nodal relaxation via the schwarz
@@ -177,16 +261,16 @@ void PreconditionerHypre::InitBoomer_()
 
         // I believe this works, but needs testing -- we do not pop previous
         // settings, and instead just call the function twice. --ETC
-        IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetSmoothType, 6);
-        IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDomainType, 1);
-        IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetOverlap, 0);
-        IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetSmoothNumLevels, num_levels);
-        IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetSchwarzUseNonSymm, 1); // should provide an option for non-sym
+        HYPRE_BoomerAMGSetSmoothType(HyprePrecond_, 6);
+        HYPRE_BoomerAMGSetDomainType(HyprePrecond_, 1);
+        HYPRE_BoomerAMGSetOverlap(HyprePrecond_, 0);
+        HYPRE_BoomerAMGSetSmoothNumLevels(HyprePrecond_, num_levels);
+        HYPRE_BoomerAMGSetSchwarzUseNonSymm(HyprePrecond_, 1); // should provide an option for non-sym
 
         // Note that if num_levels > 1, you MUST also do nodal coarsening (to maintain the nodes on coarser grids).
         if (num_levels > 1) {
           int nodal = plist_.get<int>("nodal strength of connection norm", 1);
-          IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetNodal, nodal);
+          HYPRE_BoomerAMGSetNodal(HyprePrecond_, nodal);
         }
       }
     }
@@ -208,21 +292,18 @@ void PreconditionerHypre::InitEuclid_()
   Init_();
 
 #ifdef HAVE_IFPACK2_HYPRE
-  method_ = Euclid;
 
-  if (plist_.isParameter("verbosity"))
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_EuclidSetStats, plist_.get<int>("verbosity"));
+  HYPRE_EuclidSetStats(HyprePrecond_,plist_.get<int>("verbosity"));
 
-  if (plist_.isParameter("ilu(k) fill level"))
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_EuclidSetLevel, plist_.get<int>("ilu(k) fill level"));
+  HYPRE_EuclidSetLevel(HyprePrecond_, plist_.get<int>("ilu(k) fill level"));
 
   if (plist_.isParameter("rescale rows")) {
     bool rescale_rows = plist_.get<bool>("rescale rows");
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_EuclidSetRowScale, rescale_rows ? 1 : 0);
+    HYPRE_EuclidSetRowScale(HyprePrecond_,rescale_rows ? 1 : 0);
   }
 
   if (plist_.isParameter("ilut drop tolerance"))
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_EuclidSetILUT, plist_.get<double>("ilut drop tolerance"));
+    HYPRE_EuclidSetILUT(HyprePrecond_, plist_.get<double>("ilut drop tolerance"));
 #else
   Errors::Message msg("Hypre (Euclid) is not available in this installation of Amanzi.  To use Hypre, please reconfigure.");
   Exceptions::amanzi_throw(msg);
@@ -232,57 +313,105 @@ void PreconditionerHypre::InitEuclid_()
 
 void PreconditionerHypre::initializeInverse()
 {
-  nvtxRangePush(__FUNCTION__);
+  nvtxRangePush("HP: initInverse");
+  int count =0; 
 
   // must be row matrix
-  Teuchos::RCP<RowMatrix_type> h_row = h_;
-  IfpHypre_ = Teuchos::rcp(new Ifpack2::Hypre<RowMatrix_type>(h_row));
+  h_row = h_;
+  //IfpHypre_ = Teuchos::rcp(new Ifpack2::Hypre<RowMatrix_type>(h_row));
+
+  if (h_row->getRowMap()->isContiguous()) {
+    GloballyContiguousRowMap_ = h_row->getRowMap();
+    GloballyContiguousColMap_ = h_row->getColMap();
+  } else {  
+    assert(false); 
+  }
+
+  MPI_Comm comm = * (Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(h_row->getRowMap()->getComm())->getRawMpiComm());
+
+  // Next create vectors that will be used when ApplyInverse() is called
+  GO ilower = GloballyContiguousRowMap_->getMinGlobalIndex();
+  GO iupper = GloballyContiguousRowMap_->getMaxGlobalIndex();
+  // X in AX = Y
+  HYPRE_IJVectorCreate(comm, ilower, iupper, &XHypre_);
+  HYPRE_IJVectorSetObjectType(XHypre_, HYPRE_PARCSR);
+  HYPRE_IJVectorInitialize(XHypre_);
+  HYPRE_IJVectorAssemble(XHypre_);
+  HYPRE_IJVectorGetObject(XHypre_, (void**) &ParX_);
+  XVec_ = Teuchos::rcp((hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) XHypre_)),false);
+
+  // Y in AX = Y
+  HYPRE_IJVectorCreate(comm, ilower, iupper, &YHypre_);
+  HYPRE_IJVectorSetObjectType(YHypre_, HYPRE_PARCSR);
+  HYPRE_IJVectorInitialize(YHypre_);
+  HYPRE_IJVectorAssemble(YHypre_);
+  HYPRE_IJVectorGetObject(YHypre_, (void**) &ParY_);
+  YVec_ = Teuchos::rcp((hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_)),false);
 
   std::string method_name = plist_.get<std::string>("method");
   if (method_name == "boomer amg") {
-    InitBoomer_();
+    PrecondType = Boomer; 
   } else if (method_name == "euclid") {
-    InitEuclid_();
+    PrecondType = Euclid; 
   } else {
     Errors::Message msg;
     msg << "PreconditionerHypre: unknown method name \"" << method_name << "\"";
     Exceptions::amanzi_throw(msg);
   }
 
-  // must reset the parameters every time to reset the block index
-  IfpHypre_->SetParameter((Hypre_Chooser)1, method_);
-  IfpHypre_->SetParameter((Hypre_Chooser)1);
-  IfpHypre_->SetParameter(true);
-
-  if (block_indices_.get()) {
-    // must NEW the index array EVERY time, as it gets freed every time by
-    // Hypre on cleanup.  This is pretty stupid, but we can't reuse it.  --etc
-    //
-    // Note this is not a memory leak -- this gets freed the second time
-    // IfpHypre_::Compute() gets called (for every call but the last) and when
-    // IfpHypre_ gets destroyed (for the last call).
-    int* indices = new int[block_indices_->size()];
-    for (int i=0; i!=block_indices_->size(); ++i) {
-      indices[i] = (*block_indices_)[i];
-    }
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDofFunc, indices);
-  }
-
-  IfpHypre_->initialize();
-  nvtxRangePop();
 }
 
+Teuchos::RCP<const Map_type> 
+PreconditionerHypre::make_contiguous_(Teuchos::RCP<const RowMatrix_type> &Matrix){
+  using import_type     = Tpetra::Import<LO,GO,NT>;
+  using go_vector_type  = Tpetra::Vector<GO,LO,GO,NT>;
+
+  // Must create GloballyContiguous DomainMap (which is a permutation of Matrix_'s
+  // DomainMap) and the corresponding permuted ColumnMap.
+  //   Epetra_GID  --------->   LID   ----------> HYPRE_GID
+  //           via DomainMap.LID()       via GloballyContiguousDomainMap.GID()
+  if(Matrix.is_null()) 
+    throw std::runtime_error("Hypre<MatrixType>: Unsupported matrix configuration: Tpetra::CrsMatrix required");
+  Teuchos::RCP<const Map_type> DomainMap = Matrix->getDomainMap();
+  Teuchos::RCP<const Map_type> ColumnMap = Matrix->getColMap();
+  //Teuchos::RCP<const import_type> importer = Matrix->getGraph()->getImporter();
+
+  if(DomainMap->isContiguous() ) {
+    // If the domain map is linear, then we can just use the column map as is.
+    return ColumnMap;
+  }
+  else {
+    assert(false); 
+    return ColumnMap; 
+  }  
+  nvtxRangePop();
+}
 
 /* ******************************************************************
 * Rebuild the preconditioner using the given matrix A.
 ****************************************************************** */
 void PreconditionerHypre::computeInverse()
 {
-  nvtxRangePush(__FUNCTION__);
-
+  nvtxRangePush("HP: compute");
 #ifdef HAVE_IFPACK2_HYPRE
-  AMANZI_ASSERT(IfpHypre_.get());
-  IfpHypre_->compute();
+  MPI_Comm comm = * (Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(h_row->getRowMap()->getComm())->getRawMpiComm());
+  GO ilower = GloballyContiguousRowMap_->getMinGlobalIndex();
+  GO iupper = GloballyContiguousRowMap_->getMaxGlobalIndex();
+  HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_);
+  HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR);
+  HYPRE_IJMatrixInitialize(HypreA_);
+  copy_matrix_();
+  if(PrecondType == Boomer){
+    HYPRE_BoomerAMGCreate(&HyprePrecond_);
+    // can only set parameter when the preconditioner is created  
+    InitBoomer_();
+    // Hypre Setup must be called after matrix has values
+    HYPRE_BoomerAMGSetup(HyprePrecond_, ParMatrix_, ParX_, ParY_);
+  } else if (PrecondType == Euclid){
+    HYPRE_EuclidCreate(comm,&HyprePrecond_); 
+    InitEuclid_(); 
+    HYPRE_EuclidSetup(HyprePrecond_, ParMatrix_, ParX_, ParY_); 
+  }
 #endif
   nvtxRangePop();
 }

@@ -29,7 +29,7 @@
 #include "OperatorDefs.hh"
 #include "Operator_FaceCell.hh"
 //#include "Operator_FaceCellScc.hh"
-//#include "Operator_FaceCellSff.hh"
+#include "Operator_FaceCellSff.hh"
 //#include "Operator_Node.hh"
 //#include "Operator_ConsistentFace.hh"
 #include "UniqueLocalIndex.hh"
@@ -963,7 +963,7 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
         ncells_owned, 
         KOKKOS_LAMBDA(const int& c){
           AmanziMesh::Entity_ID_View faces;
-          Kokkos::View<int*> dirs;
+          AmanziMesh::Entity_Dir_View dirs;
           mesh->cell_get_faces_and_dirs(c, faces, dirs);
           int nfaces = faces.size();
 
@@ -1175,15 +1175,14 @@ void PDE_DiffusionMFD::ParsePList_()
     mfd_primary_ = WhetStone::DIFFUSION_TPFA;
   } else if (primary == "mfd: default") {
      mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
-  // } else if (primary == "mfd: optimized for sparsity") {
-  //   mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
+  } else if (primary == "mfd: optimized for sparsity") {
+     mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
   // } else if (primary == "mfd: support operator") {
   //   mfd_primary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
   } else {
-    AMANZI_ASSERT(false);
-  //   Errors::Message msg;
-  //   msg << "PDE_DiffusionMFD: primary discretization method \"" << primary << "\" is not supported.";
-  //   Exceptions::amanzi_throw(msg);
+    Errors::Message msg;
+    msg << "PDE_DiffusionMFD: primary discretization method \"" << primary << "\" is not supported.";
+    Exceptions::amanzi_throw(msg);
   }
 
   // Secondary discretization methods
@@ -1191,15 +1190,14 @@ void PDE_DiffusionMFD::ParsePList_()
     mfd_secondary_ = WhetStone::DIFFUSION_TPFA;
   } else if (secondary == "mfd: default") {
     mfd_secondary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
-  // } else if (secondary == "mfd: optimized for sparsity") {
-  //   mfd_secondary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
+  } else if (secondary == "mfd: optimized for sparsity") {
+    mfd_secondary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
   // } else if (secondary == "mfd: support operator") {
   //   mfd_secondary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
   } else {
-    AMANZI_ASSERT(false);
-    // Errors::Message msg;
-    // msg << "PDE_DiffusionMFD: secondary discretization method \"" << secondary << "\" is not supported.";
-    // Exceptions::amanzi_throw(msg);
+    Errors::Message msg;
+    msg << "PDE_DiffusionMFD: secondary discretization method \"" << secondary << "\" is not supported.";
+    Exceptions::amanzi_throw(msg);
   }
 
   // Define stencil for the MFD diffusion method.
@@ -1275,29 +1273,26 @@ void PDE_DiffusionMFD::Init()
     if (global_op_schema & OPERATOR_SCHEMA_DOFS_FACE){
       cvs->AddComponent("face", AmanziMesh::FACE, 1);
     }
-    if (global_op_schema & OPERATOR_SCHEMA_DOFS_NODE)
+    if (global_op_schema & OPERATOR_SCHEMA_DOFS_NODE){
       cvs->AddComponent("node", AmanziMesh::NODE, 1);
+    }
 
     // choose the Operator from the prec schema
     if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_NODE) {
       assert(false); 
       //global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist_));
-    } 
-    else if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
+    } else if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
       assert(false); 
       // cvs->AddComponent("face", AmanziMesh::FACE, 1);
       // global_op_ = Teuchos::rcp(new Operator_FaceCellScc(cvs, plist_));
-      global_op_ = Teuchos::rcp(new Operator_Cell(cvs->CreateSpace(), plist_, schema_prec_dofs_));
-    } 
-    else if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_FACE) {
-      assert(false); 
-      //cvs->AddComponent("cell", AmanziMesh::CELL, 1);
-      //global_op_ = Teuchos::rcp(new Operator_FaceCellSff(cvs, plist_));
-    } 
-    else if (schema_prec_dofs_ == (OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+      //global_op_ = Teuchos::rcp(new Operator_Cell(cvs->CreateSpace(), plist_, schema_prec_dofs_));
+    } else if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_FACE) {
+      //assert(false); 
+      cvs->AddComponent("cell", AmanziMesh::CELL, 1);
+      global_op_ = Teuchos::rcp(new Operator_FaceCellSff(cvs, plist_));
+    } else if (schema_prec_dofs_ == (OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       global_op_ = Teuchos::rcp(new Operator_FaceCell(cvs->CreateSpace(), plist_));
-    } 
-    else {
+    } else {
       Errors::Message msg;
       msg << "PDE_DiffusionMFD: \"preconditioner schema\" must be NODE, CELL, FACE, or FACE+CELL";
       Exceptions::amanzi_throw(msg);
@@ -1491,8 +1486,8 @@ double PDE_DiffusionMFD::ComputeTransmissibility(int f) const
 {
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 
-  AmanziMesh::Entity_ID_View cells;
-  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> cells;
+  mesh_->face_get_cells_host(f, AmanziMesh::Parallel_type::ALL, cells);
   int c = cells[0];
 
   if (K_.get()) {

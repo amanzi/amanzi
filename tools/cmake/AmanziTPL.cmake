@@ -284,11 +284,6 @@ if (Trilinos_FOUND)
       message(SEND_ERROR "Trilinos in ${Trilinos_DIR} does not have the Ifpack package")
     endif()
 
-    if (NOT Ifpack_ENABLE_HYPRE)
-      message(WARNING "ENABLE_HYPRE requires the Trilinos package Ifpack with enabled HYPRE."
-                      " Deactivating HYPRE APIs")
-      set(ENABLE_HYPRE OFF CACHE BOOL "Disable the HYPRE APIs" FORCE)                 
-    endif()
   endif()
   # Now update the Trilinos_LIBRARIES and INCLUDE_DIRS
   foreach( _inc "${Trilinos_TPL_INCLUDE_DIRS}")
@@ -411,6 +406,26 @@ if (ENABLE_Structured)
   endif()
 endif()
 
+##############################################################################
+# Ginkgo
+##############################################################################
+
+if (ENABLE_GINKGO)
+  find_package(Ginkgo)
+
+  if (Ginkgo_FOUND)
+    message(STATUS "Ginkgo Package information")
+    message(STATUS "\tGinkgo_VERSION      = ${Ginkgo_VERSION}")
+    message(STATUS "\tGinkgo_INCLUDE_DIRS = ${Ginkgo_INCLUDE_DIRS}")
+    message(STATUS "\tGinkgo_LIBRARY_DIR  = ${Ginkgo_LIBRARY_DIR}")
+    message(STATUS "\tGinkgo_LIBRARY      = ${Ginkgo_LIBRARY}")
+    message(STATUS "\tGinkgo_LIBRARIES    = ${Ginkgo_LIBRARIES}")
+    print_link_libraries(${Ginkgo_LIBRARY})
+    message(STATUS "")
+  else()
+      message(FATAL_ERROR "Can not locate Ginkgo library and/or include\n")
+  endif()
+endif() 
 
 ##############################################################################
 ############################ Option Processing ###############################
@@ -575,6 +590,15 @@ if (ENABLE_OpenMP)
   find_package(OpenMP_Fortran)
 endif()
 
+
+##############################################################################
+# CUDA
+##############################################################################
+option(ENABLE_CUDA "Build Amanzi with CUDA support in Trilinos and/or Hypre" FALSE)
+option(ENABLE_UVM "Build Amanzi with UVM support in Trilinos and/or Hypre" FALSE)
+if (ENABLE_CUDA OR ENABLE_UVM)
+  find_package(CUDA)
+endif()
 
 ##############################################################################
 # PETSc - http://www.mcs.anl.gov/petsc

@@ -59,9 +59,9 @@ class FunctionComposition : public Function {
   ~FunctionComposition() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
   FunctionComposition* Clone() const { return new FunctionComposition(*this); }
 
-  double operator()(const Kokkos::View<double*>& x) const
+  double operator()(const Kokkos::View<double*,Kokkos::HostSpace>& x) const
   {
-    Kokkos::View<double*> y("y", x.extent(0));
+    Kokkos::View<double*,Kokkos::HostSpace> y("y", x.extent(0));
     Kokkos::deep_copy(y, x);
     y(0) = (*f2_)(x);
     return (*f1_)(y);

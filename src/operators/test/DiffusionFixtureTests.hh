@@ -55,7 +55,7 @@ void test(const std::string& prec_solver,
     fix.SetBCsDirichletNeumannRobin();
   } else {
     AMANZI_ASSERT(false);
-  }     
+  }
   fix.Setup(prec_solver, symmetric);
 
 

@@ -195,35 +195,26 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
   Vector r(f, Teuchos::Copy);
   Vector p(f, Teuchos::Copy);
 
-  // Vector w(f.getMap()), r(f.getMap()), p(f.getMap()); // construct empty vectors
-  // r.assign(f);
-  // p.assign(f);
-  // w.assign(f);
-
   double s[krylov_dim_ + 1], cs[krylov_dim_ + 1], sn[krylov_dim_ + 1];
   WhetStone::DenseMatrix<> T(krylov_dim_ + 1, krylov_dim_); T = 0.;
   num_itrs_inner_ = 0;
 
   // h_->applyInverse(f, r);
   // r.Dot(fnorm, f);  This is the preconditioned norm of the residual.
-  double fnorm = f.norm2();
+  double fnorm = w.norm2();
   fnorm_ = fnorm;
 
   // initial residual is r = f - M x for the right preconditioner
   // and r = H (f - M x)  for the left preconditioner
   if (left_pc_) {
     m_->apply(x, p);
-    //std::cout << "GMRES: p0 = " << Debug::get0(p) << std::endl;
     p.update(1.0, f, -1.0);
     h_->applyInverse(p, r);
-    //std::cout << "GMRES: r0 = " << Debug::get0(r) << std::endl;
+
   } else {
-    //std::cout << "GMRES: x0 = " << Debug::get0(x) << std::endl;
     m_->apply(x, r);
     r.update(1.0, f, -1.0);
-    //std::cout << "GMRES: r0 = " << Debug::get0(r) << std::endl;
   }
-
   double rnorm0 = r.norm2();
   residual_ = rnorm0;
   if (rnorm0_ < 0.0) rnorm0_ = rnorm0;
@@ -243,8 +234,6 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
 
   v_[0] = Teuchos::rcp(new Vector(r, Teuchos::DataAccess::Copy));
   v_[0]->update(0.0, r, 1.0 / rnorm0);
-  // v_[0] = Teuchos::rcp(new Vector(r.getMap()));
-  // v_[0]->update(1.0 / rnorm0, r, 0.);
 
   s[0] = rnorm0;
 
@@ -259,7 +248,6 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
       h_->applyInverse(*(v_[i]), p);
       m_->apply(p, w);
     }
-    //std::cout << "GMRES: w" << i << " = " << Debug::get0(w) << std::endl;
 
     double tmp(0.0);
     for (int k = 0; k <= i; k++) {  // Arnoldi algorithm
@@ -270,7 +258,6 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
     tmp = w.norm2();
     T(i + 1, i) = tmp;
     s[i + 1] = 0.0;
-    //std::cout << "GMRES: 2nd w" << i << " = " << Debug::get0(w) << std::endl;
 
     for (int k = 0; k < i; k++) {
       ApplyGivensRotation_(T(k, i), T(k + 1, i), cs[k], sn[k]);
@@ -280,7 +267,6 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
     ApplyGivensRotation_(T(i, i), T(i + 1, i), cs[i], sn[i]);
     ApplyGivensRotation_(s[i],    s[i + 1],    cs[i], sn[i]);
     residual_ = fabs(s[i + 1]);
-
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
     }

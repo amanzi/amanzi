@@ -49,7 +49,7 @@ TEST(MSTK_HEX_3x3x3_4P)
     new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo", comm));
 
 
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> c2f("", 6);
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*,Kokkos::HostSpace> c2f("", 6);
   auto cell_map = mesh->cell_map(false);
   auto face_map = mesh->face_map(true);
 
@@ -57,7 +57,7 @@ TEST(MSTK_HEX_3x3x3_4P)
        c++) {
     CHECK_EQUAL(cell_map->getGlobalElement(c),
                 mesh->getGlobalElement(c, Amanzi::AmanziMesh::CELL));
-    mesh->cell_get_faces(c, c2f);
+    mesh->cell_get_faces<Kokkos::HostSpace>(c, c2f);
 
     for (int j = 0; j < 6; j++) {
       int f = face_map->getLocalElement(

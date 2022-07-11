@@ -134,8 +134,8 @@ TEST(SURFACE_COLUMN_MESH_3D)
   CHECK_EQUAL(0, cells_in_surf_2D[0]);
 
   // -- check volumes
-  CHECK_CLOSE(1.0, col_surf.cell_volume(0, false), 1.e-9);
-  CHECK_CLOSE(1.0, col_surf.face_area(3), 1.e-9);
+  CHECK_CLOSE(1.0, col_surf.cell_volume_host(0), 1.e-9);
+  CHECK_CLOSE(1.0, col_surf.face_area_host(3), 1.e-9);
 }
 
 TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
@@ -210,6 +210,6 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
   CHECK_EQUAL(1, cells_in_surf.size());
   CHECK_EQUAL(0, cells_in_surf[0]);
 
-  CHECK_CLOSE(6400.0, col_surf.cell_volume(0, false), 1.e-9);
-  CHECK_CLOSE(80.0, col_surf.face_area(3), 1.e-9);
+  CHECK_CLOSE(6400.0, col_surf.cell_volume_host(0), 1.e-9);
+  CHECK_CLOSE(80.0, col_surf.face_area_host(3), 1.e-9);
 }

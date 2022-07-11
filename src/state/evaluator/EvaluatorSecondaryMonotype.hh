@@ -179,6 +179,7 @@ EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::Update_(State& S)
 
   // call the evaluate method
   Evaluate_(S, results);
+  Kokkos::fence(); 
 }
 
 // ---------------------------------------------------------------------------

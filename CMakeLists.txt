@@ -7,7 +7,7 @@
 
 # Require cmake version same as the version used to buildg TPLs 
 #(see SuperBuild/CMakeLists.txt)
-cmake_minimum_required(VERSION 3.11.4)
+cmake_minimum_required(VERSION 3.13.3)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -41,6 +41,24 @@ set(CMAKE_MODULE_PATH
     ${AMANZI_MODULE_PATH}/Modules
     ${AMANZI_MODULE_PATH}/Utils)
 
+# Append user supplied flags to base CMAKE_<LANL>_FLAGS and remove duplicates
+
+string(CONCAT CMAKE_C_FLAGS_TMP ${TPL_CMAKE_C_FLAGS} " " ${CMAKE_C_FLAGS})
+string(CONCAT CMAKE_CXX_FLAGS_TMP ${TPL_CMAKE_CXX_FLAGS} " " ${CMAKE_CXX_FLAGS})
+string(CONCAT CMAKE_Fortran_FLAGS_TMP ${TPL_CMAKE_Fortran_FLAGS} " " ${CMAKE_Fortran_FLAGS})
+
+separate_arguments(CMAKE_C_FLAGS_TMP)
+separate_arguments(CMAKE_CXX_FLAGS_TMP)
+separate_arguments(CMAKE_Fortran_FLAGS_TMP)
+
+list(REMOVE_DUPLICATES CMAKE_C_FLAGS_TMP)
+list(REMOVE_DUPLICATES CMAKE_CXX_FLAGS_TMP)
+list(REMOVE_DUPLICATES CMAKE_Fortran_FLAGS_TMP)
+
+string(JOIN " " CMAKE_C_FLAGS ${CMAKE_C_FLAGS_TMP})
+string(JOIN " " CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_TMP})
+string(JOIN " " CMAKE_Fortran_FLAGS ${CMAKE_Fortran_FLAGS_TMP})
+
 # Code version defined
 include(AmanziVersion)
 
@@ -70,28 +88,24 @@ endif()
 
 # Check the mesh framework choice
 if ((ENABLE_Unstructured)  AND
-    (NOT ENABLE_STK_Mesh)  AND
-    (NOT ENABLE_MOAB_Mesh) AND
-    (NOT ENABLE_MSTK_Mesh))
+    (NOT ENABLE_MESH_MOAB) AND
+    (NOT ENABLE_MESH_MSTK))
   message(FATAL_ERROR "Missing a mesh framework\n"
                       "Please enable at least one of the following mesh frameworks\n"
-                      "-D ENABLE_MOAB_Mesh:BOOL=ON\n"
-                      "-D ENABLE_STK_Mesh:BOOL=ON\n"
-                      "-D ENABLE_MSTK_Mesh:BOOL=ON\n")
-endif()   
+                      "-D ENABLE_MESH_MOAB:BOOL=ON\n"
+                      "-D ENABLE_MESH_MSTK:BOOL=ON\n")
+endif()    
 
 if(ENABLE_OpenMP)
   find_package(OpenMP REQUIRED)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-
-if(ENABLE_CUDA) 
+if(ENABLE_CUDA OR ENABLE_UVM) 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
-    -Wno-deprecated-declarations -lineinfo -lcusparse \
     -arch=sm_70 \
+    -lineinfo -Wno-deprecated-declarations \
     -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored \
     -Xcudafe --diag_suppress=conversion_function_not_usable \
     -Xcudafe --diag_suppress=cc_clobber_ignored \
@@ -102,6 +116,7 @@ if(ENABLE_CUDA)
     -Xcudafe --diag_suppress=virtual_function_decl_hidden \
     -Xcudafe --diag_suppress=probable_guiding_friend \
     -Xcudafe --display_error_number \
+    -lcublas -lcudadevrt -lcuda -lcudart -lcusparse \
     --expt-extended-lambda")  
   message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER: $ENV{NVCC_WRAPPER_DEFAULT_COMPILER}")  
   message(STATUS "CMAKE_CXX_COMPILER ${CMAKE_CXX_COMPILER}")  
@@ -142,6 +157,29 @@ add_subdirectory(tools/py_lib)
 # Define a list of all enabled TPLs. Must do this AFTER all the 
 # CMakelist.txt files have been processed!
 get_property(AMANZI_ENABLED_TPLS GLOBAL PROPERTY PACKAGES_FOUND)
+
+
+# Show TPL and current CMake_<LANG>_FLAGS
+#
+string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UC)
+
+message(STATUS "------------------------------------------------")
+message(STATUS "CMake Compiler Configuration for TPLs ... ")
+message(STATUS "TPL_CMAKE_C_FLAGS       = ${TPL_CMAKE_C_FLAGS}")
+message(STATUS "TPL_CMAKE_CXX_FLAGS     = ${TPL_CMAKE_CXX_FLAGS}")
+message(STATUS "TPL_CMAKE_Fortran_FLAGS = ${TPL_CMAKE_Fortran_FLAGS}")
+message(STATUS "------------------------------------------------")
+message(STATUS "")
+message(STATUS "CMake Compiler Configuration ... ")
+message(STATUS "")
+message(STATUS "CMAKE_C_FLAGS       = ${CMAKE_C_FLAGS}")
+message(STATUS "CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_UC} = ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_UC}}")
+message(STATUS "CMAKE_CXX_FLAGS     = ${CMAKE_CXX_FLAGS}")
+message(STATUS "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE_UC} = ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE_UC}}")
+message(STATUS "CMAKE_Fortran_FLAGS = ${CMAKE_Fortran_FLAGS}")
+message(STATUS "CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE_UC} = ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE_UC}}")
+message(STATUS "CMAKE_BUILD_TYPE    = ${CMAKE_BUILD_TYPE}")
+message(STATUS "------------------------------------------------")
 
 # Make the exports only _after_ doing the build
 create_exports()

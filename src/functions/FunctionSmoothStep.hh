@@ -47,7 +47,7 @@ class FunctionSmoothStep : public Function {
   FunctionSmoothStep(double x0, double y0, double x1, double y1);
   ~FunctionSmoothStep(){};
   FunctionSmoothStep* Clone() const { return new FunctionSmoothStep(*this); }
-  double operator()(const Kokkos::View<double*>&) const;
+  double operator()(const Kokkos::View<double*,Kokkos::HostSpace>&) const;
 
   KOKKOS_INLINE_FUNCTION double
   apply_gpu(const Kokkos::View<double**>& x, const int i) const

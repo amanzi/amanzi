@@ -28,7 +28,7 @@ class Operator_FaceCellSff : public Operator_FaceCell {
   //   The CVS is the domain and range of the operator
   Operator_FaceCellSff(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                        Teuchos::ParameterList& plist) :
-      Operator_FaceCell(cvs, plist) {
+      Operator_FaceCell(cvs->CreateSpace(), plist) {
     // changing schema for the Schur complement
     int schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE;
     schema_col_.Init(schema);

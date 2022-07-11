@@ -176,7 +176,7 @@ class make_state {
   void check_close(double val1, double val2, const std::string& name)
   {
     auto cvv =
-      S.Get<CompositeVector>(name, "").ViewComponent<MirrorHost>(
+      S.Get<CompositeVector>(name, "").ViewComponent<HostSpaceSpecial>(
         "cell", 0, false);
     CHECK_CLOSE(val1, cvv(0), 1.e-10);
     CHECK_CLOSE(val2, cvv(1), 1.e-10);
@@ -186,7 +186,7 @@ class make_state {
                          const std::string& wrt)
   {
     auto cvv = S.GetDerivative<CompositeVector>(name, "", wrt, "")
-                 .ViewComponent<MirrorHost>("cell", 0, false);
+                 .ViewComponent<HostSpaceSpecial>("cell", 0, false);
     CHECK_CLOSE(val1, cvv(0), 1.e-10);
     CHECK_CLOSE(val2, cvv(1), 1.e-10);
   }
@@ -256,6 +256,7 @@ SUITE(DAG)
     CHECK(changed);
   }
 
+#if 0 
   TEST_FIXTURE(make_state, DAG_TWO_FIELDS_BY_MATERIAL)
   {
     requireEvaluatorsByMaterial();
@@ -306,4 +307,5 @@ SUITE(DAG)
     check_close_deriv(8640.0, 8640.0, "A", "G");
     CHECK(changed);
   }
+#endif 
 }

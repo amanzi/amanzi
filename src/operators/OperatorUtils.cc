@@ -32,7 +32,7 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n
     unsigned int i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
 
     for (int c = 0; c < mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED); ++c) {
-      i = std::max(i, mesh.cell_get_num_faces(c));
+      i = std::max(i, mesh.cell_get_num_faces_host(c));
     }
     row_size += 2 * i;
   }

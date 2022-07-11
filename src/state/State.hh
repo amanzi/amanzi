@@ -427,11 +427,15 @@ class State {
   //
   // Access to the FEList -- this allows PKs to add to this list for custom
   // evaluators.
+
+
+  Teuchos::ParameterList&
+  GetEvaluatorList(const Key&); 
+
   Teuchos::ParameterList& FEList()
   {
     return state_plist_->sublist("evaluators");
   }
-  Teuchos::ParameterList& GetEvaluatorList(const Key& key);
 
   // Require Evaluators.
   Evaluator& RequireEvaluator(const Key&, const Key& tag = "");
