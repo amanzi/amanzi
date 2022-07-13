@@ -121,10 +121,17 @@ shows  packages that were installed explicitly rather than pulled in as a depend
 ```
 spack find ^mpich
 ```
-returns every installed package that depends on MPICH. To show the full spec of a package, use:
+returns every installed package that depends on MPICH. To show the full spec of a package (without dependencies), use:
 
 ```
 spack find -v
+
+```
+
+To see the full spec of a package with dependencies use:
+
+```
+spack spec <package>
 ```
 
 To see what has been loaded using `spack load` type:
