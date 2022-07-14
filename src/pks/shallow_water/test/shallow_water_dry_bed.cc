@@ -81,7 +81,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
     if (icase == 1) {
       B_n[0][n] = 0.0;
-      if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.3*0.3 + 1.e-12) {
+      if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.2*0.2 + 1.e-12) {
         B_n[0][n] = 0.8;
       }
       ht_n[0][n] = std::max(0.5, B_n[0][n]);
@@ -158,7 +158,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     p_c[0][c] = patm + rho * g * h_c[0][c];
   }
   
-  double wj = 0.5;
+  double wj = 1.0;
   for (int c = 0; c < ncells_wghost; ++c) {
     Amanzi::AmanziMesh::Entity_ID_List cnodes;
     mesh->cell_get_nodes(c, &cnodes);
@@ -191,26 +191,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
        }
      }
     
-    // fully flooded
-    if(ht_c[0][c] >= std::max(std::max(B13, B12), B23) && (h_c[0][c] > 0.0)) {
-      h_c[0][c] = ht_c[0][c] - B_c[0][c];
-    }
-    // dry
-    else if (std::abs(ht_c[0][c] - B_c[0][c]) < 1.e-14) {
-      h_c[0][c] = 0.0;
-    }
-    // partially wet
-    else {
-      
-//      if (ht_c[0][c] <= ( B12 + (B13 - B12) * (B13 - B12) / (3.0 *(B13 - B23)) ) ) {
-//        h_c[0][c] = std::pow((wj - B23), 3.0) / ( 3.0*(B13 - B23) * (B12 - B23) );
-//      }
-//      else {
-        h_c[0][c] =  1.0/(3.0*(B13-B12)) * ( (-wj*wj*wj + 3.0*B13*wj*wj - 3.0*(B23*B13 + B12*B13 - B12*B23)*wj + B23*B23*B13) / (B13 - B23) + B12*(B12 + B23) );
-     // /
-    }
-    
-    if (std::abs(B13 + B12 + B23 - 0.0) < 1.e-14) {
+     if (std::abs(B13 + B12 + B23 - 0.0) < 1.e-14) {
       h_c[0][c] = wj;
     } else if (std::abs(B13 + B12 + B23 - 0.8) < 1.e-14) {
       h_c[0][c] =  1.0/(3.0*(B13-B12)) * ( (-wj*wj*wj + 3.0*B13*wj*wj - 3.0*(B23*B13 + B12*B13 - B12*B23)*wj + B23*B23*B13) / (B13 - B23) + B12*(B12 + B23) );
@@ -220,11 +201,17 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     else {
       h_c[0][c] = 0.0;
     }
-  }
+  } 
   
+   
   for (int c = 0; c < ncells_wghost; ++c) {
+    ht_c[0][c] = std::max(0.0, B_c[0][c]);
+    h_c[0][c] = ht_c[0][c] - B_c[0][c];
+    const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    if ((xc[0]-0.2)*(xc[0]-0.2) + (xc[1]-0.2)*(xc[1]-0.2) < 0.1*0.1 + 1.e-12) {
+      h_c[0][c] += 0.000;
+    }
     ht_c[0][c] = h_c[0][c] + B_c[0][c];
-    
   }
 
   S->Get<CompositeVector>("surface-bathymetry").ScatterMasterToGhosted("cell");
@@ -278,8 +265,8 @@ RunTest(int icase)
 
   RCP<Mesh> mesh;
   if (icase == 1) {
-    mesh = meshfactory.create ("test/triangular16.exo");
-    //mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 20, request_faces, request_edges);
+    //mesh = meshfactory.create ("test/triangular16.exo");
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 40, 40, request_faces, request_edges);
    // mesh = meshfactory.create ("test/median32x33.exo");
   } else if (icase == 2) {
     mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
@@ -353,7 +340,7 @@ RunTest(int icase)
 
   double Tend;
   if (icase == 1) {
-    Tend = 2.0;
+    Tend = 1.0;
   } else if (icase == 2) {
     Tend = 2.0;
   }
@@ -361,7 +348,7 @@ RunTest(int icase)
   while ((t_new < Tend) && (iter >= 0)) {
     double t_out = t_new;
 
-    if (iter % 100 == 0) {
+    if (iter % 20 == 0) {
       io.InitializeCycle(t_out, iter, "");
 
       io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
@@ -388,7 +375,7 @@ RunTest(int icase)
     t_old = t_new;
     iter += 1;
     
-    if (iter % 100 == 0) {
+    if (iter % 20 == 0) {
     	std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
     }
   } // time loop

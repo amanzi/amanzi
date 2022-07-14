@@ -114,6 +114,20 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   // Total depth recalculation for positivity
   TotalDepthReconstruct();
+  
+  CompositeVectorSpace ht_cf_, ht_cn_;
+  ht_cf_.SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, nfaces_wghost);
+  ht_cn_.SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, nnodes_wghost);
+
+  CompositeVector ht_c_f_(ht_cf_), ht_c_n_(ht_cn_);
+  Epetra_MultiVector& ht_c_f_v = *ht_c_f_.ViewComponent("cell");
+  Epetra_MultiVector& ht_c_n_v = *ht_c_n_.ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    for (int f = 0; f < nfaces_wghost; ++f) {
+      ht_c_f_v[f][c] = ht_cell_face_[c][f];
+    }
+  }
 
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);

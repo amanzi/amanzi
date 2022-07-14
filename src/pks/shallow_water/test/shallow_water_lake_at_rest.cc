@@ -115,10 +115,7 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     double x = node_crd[0], y = node_crd[1];
 
     if (icase == 1) {
-      B_n[0][n] =
-        std::max(0.0,
-                 0.25 - 5 * ((x - 0.5) * (x - 0.5) +
-                             (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
+      B_n[0][n] =std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
     } else if (icase == 2) {
       B_n[0][n] =
         0.25 - 0.25 * x * std::sin(pi * y); // non-zero bathymetry at boundary
@@ -166,7 +163,7 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
     // Perturb the solution; change time period t_new to at least 10.0
     if ((xc[0] - 0.3)*(xc[0] - 0.3) + (xc[1] - 0.3)*(xc[1] - 0.3) < 0.1 * 0.1) {
-      ht_c[0][c] = H_inf + 0.0*0.1;
+      ht_c[0][c] = H_inf + 0.01;
      } else {
       ht_c[0][c] = H_inf;   
     }
@@ -371,7 +368,7 @@ RunTest(int icase)
   int iter = 0;
   std::vector<double> dx, Linferror, L1error, L2error;
 
-  while (t_new < 1.0) {
+  while (t_new < 10.0) {
     double t_out = t_new;
 
     Epetra_MultiVector ht_ex(ht);
