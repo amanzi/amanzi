@@ -157,9 +157,9 @@ From a login node, add the following specs to the packages.yaml file:
 packages:
   mpich:
     externals:
-     - spec: mpich@7.7.10
+     - spec: mpich@7.7.19
        modules:
-         - cray-mpich/7.7.10
+         - cray-mpich/7.7.19
   cray-libsci:
     externals:
     - spec: cray-libsci@20.09.1
