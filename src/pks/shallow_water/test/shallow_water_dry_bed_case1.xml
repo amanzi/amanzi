@@ -47,10 +47,10 @@
       <ParameterList name="reconstruction">
         <Parameter name="use limiter" type="string" value="true"/>
         <Parameter name="polynomial order" type="int" value="0"/>
-        <Parameter name="limiter" type="string" value="Kuzmin"/>
-        <Parameter name="limiter stencil" type="string" value="cell to all cells"/>
+        <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+        <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
         <Parameter name="limiter location" type="string" value="node"/>
-        <Parameter name="limiter cfl" type="double" value="1.0"/>
+        <Parameter name="limiter cfl" type="double" value="0.8"/>
       </ParameterList>
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="cfl" type="double" value="0.5"/>

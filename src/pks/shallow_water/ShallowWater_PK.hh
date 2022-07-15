@@ -90,10 +90,9 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   double BathymetryEdgeValue(int e, const Epetra_MultiVector& Bn);
 
   // Recalculate total depth for positivity of ponded depth
-  double
-  TotalDepthEdgeValue(int c, int e);
+  double TotalDepthEdgeValue(int c, int e);
   //void TotalDepthReconstruct(Teuchos::RCP<Operators::ReconstructionCellLinear>& total_depth_grad_);
-  void TotalDepthReconstruct();
+  void TotalDepthReconstruct(); 
   bool PointInTriangle(AmanziGeometry::Point xv1, AmanziGeometry::Point xv2, AmanziGeometry::Point xv3, AmanziGeometry::Point X);
 
   // due to rotational invariance of SW equations, we need flux in the
