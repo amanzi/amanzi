@@ -77,7 +77,9 @@ protected:
 
   // may need to check for dependencies on other ranks
   virtual Teuchos::Ptr<const Comm_type> get_comm_(const State& s) const { return Teuchos::null; }
-  void EnsureCompatibility_Flags_(State& S);
+
+  // some may override this to force checkpointing
+  virtual void EnsureCompatibility_Flags_(State& S);
 
 protected:
   KeyTagVector my_keys_;
