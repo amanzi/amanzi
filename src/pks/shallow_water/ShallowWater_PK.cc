@@ -115,15 +115,10 @@ ShallowWater_PK::Setup()
 
   // -- total depth
   if (!S_->HasRecord(total_depth_key_)) {
-    std::vector<std::string> names({ "cell", "node" });
-    std::vector<int> ndofs(2, 1);
-    std::vector<AmanziMesh::Entity_kind> locations(
-      { AmanziMesh::CELL, AmanziMesh::NODE });
-
     S_->Require<CV_t, CVS_t>(total_depth_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponents(names, locations, ndofs);
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // -- velocity
@@ -307,6 +302,8 @@ ShallowWater_PK::Initialize()
   // default
   int ncells_owned =
     mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = 
+    mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   if (!S_->GetRecord(bathymetry_key_).initialized()) {
     InitializeCVField(S_, *vo_, bathymetry_key_, Tags::DEFAULT, passwd_, 0.0);
@@ -361,6 +358,11 @@ ShallowWater_PK::Initialize()
     S_->GetRecordW(ponded_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
   }
 
+  ht_cell_node_.resize(ncells_wghost);
+  ht_cell_node_grad_x_.resize(ncells_wghost);
+  ht_cell_node_grad_y_.resize(ncells_wghost);
+  ht_cell_face_.resize(ncells_wghost);
+
   if (!S_->GetRecord(total_depth_key_).initialized()) {
     const auto& h_c = *S_->Get<CV_t>(ponded_depth_key_).ViewComponent("cell");
     auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_)
@@ -377,6 +379,13 @@ ShallowWater_PK::Initialize()
   InitializeCVField(S_, *vo_, discharge_key_, Tags::DEFAULT, passwd_, 0.0);
 
   // secondary fields
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  CompositeVectorSpace ht_cf_;
+  ht_cf_.SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, nfaces_wghost);
+//  ht_c_f_(*ht_cf_);
+
+
+
   S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
 
   InitializeCVField(S_, *vo_, riemann_flux_key_, Tags::DEFAULT, passwd_, 0.0);
@@ -581,6 +590,8 @@ ShallowWater_PK::TotalDepthReconstruct()
 {	
   int ncells_owned =
     mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost =
+    mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nnodes_wghost =
     mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost =
@@ -708,12 +719,12 @@ ShallowWater_PK::TotalDepthReconstruct()
 	*/
   // polygonal meshes; [Beljadid et al.' 16]
     
-  ht_cell_node_.resize(ncells_owned);
-  ht_cell_node_grad_x_.resize(ncells_owned);
-  ht_cell_node_grad_y_.resize(ncells_owned);
-  ht_cell_face_.resize(ncells_owned);
+ // ht_cell_node_.resize(ncells_wghost);
+ // ht_cell_node_grad_x_.resize(ncells_wghost);
+ // ht_cell_node_grad_y_.resize(ncells_wghost);
+ // ht_cell_face_.resize(ncells_wghost);
 
-  for (int c = 0; c < ncells_owned; ++c) {
+  for (int c = 0; c < ncells_wghost; ++c) {
     const auto& xc = mesh_->cell_centroid(c);		
     mesh_->cell_get_nodes(c, &cnodes);
     mesh_->cell_get_faces(c, &cfaces);

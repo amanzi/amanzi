@@ -111,24 +111,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   if (use_limiter_)
     limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
   total_depth_grad_->data()->ScatterMasterToGhosted("cell");
-
+  
   // Total depth recalculation for positivity
   TotalDepthReconstruct();
   
-  CompositeVectorSpace ht_cf_, ht_cn_;
-  ht_cf_.SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, nfaces_wghost);
-  ht_cn_.SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, nnodes_wghost);
-
-  CompositeVector ht_c_f_(ht_cf_), ht_c_n_(ht_cn_);
-  Epetra_MultiVector& ht_c_f_v = *ht_c_f_.ViewComponent("cell");
-  Epetra_MultiVector& ht_c_n_v = *ht_c_n_.ViewComponent("cell");
-
-  for (int c = 0; c < ncells_owned; ++c) {
-    for (int f = 0; f < nfaces_wghost; ++f) {
-      ht_c_f_v[f][c] = ht_cell_face_[c][f];
-    }
-  }
-
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
   if (use_limiter_)
@@ -182,9 +168,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
     normal /= farea;
 
-    //double ht_rec = total_depth_grad_->getValue(c1, xf);
+    double ht_rec = total_depth_grad_->getValue(c1, xf);
     //double ht_rec = TotalDepthEdgeValue(c1, f);
-    double ht_rec = ht_cell_face_[c1][f];
+   // double ht_rec = ht_cell_face_[c1][f];
 
     double B_rec = BathymetryEdgeValue(f, B_n);
     
@@ -226,9 +212,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         UR = UL;
       }
     } else {
-      //ht_rec = total_depth_grad_->getValue(c2, xf);
+      ht_rec = total_depth_grad_->getValue(c2, xf);
       //ht_rec = TotalDepthEdgeValue(c2, f);
-      ht_rec = ht_cell_face_[c2][f];
+      //ht_rec = ht_cell_face_[c2][f];
 
       if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-14) {
       	std::cout<<"time: t = "<<t<<", c = "<<c2<<", negative h 2 = : "<<ht_rec-B_rec<<" | ht_rec = "<<ht_rec<<" < "<<B_rec<<std::endl;
@@ -270,10 +256,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     h_c_tmp[0][c1] -= h * factor;
     q_c_tmp[0][c1] -= qx * factor;
     q_c_tmp[1][c1] -= qy * factor;
-    
-//    if (c1 == 430 || c1 == 428 || c1 == 565) {
-//      std::cout<<"c1 = "<<c1<<", FNum_rot[0] * factor = "<<-FNum_rot[0]*factor<<std::endl;
-//    }
 
     if (c2 != -1) {
       vol = mesh_->cell_volume(c2);
