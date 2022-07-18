@@ -40,7 +40,6 @@ SUITE(MR_GARK_Tests) {
     Teuchos::ParameterList plist;
 
     test_data() {
-      std::cout << "Intializing Data" << std::endl;
       // comm and mesh for maps
       comm = new Epetra_MpiComm(MPI_COMM_SELF);
       Epetra_Map map(2,0,*comm);
@@ -53,32 +52,27 @@ SUITE(MR_GARK_Tests) {
 
       A_fast = Teuchos::rcp(new Epetra_CrsMatrix(Copy, map_matrix, 2, true));
       A_slow = Teuchos::rcp(new Epetra_CrsMatrix(Copy, map_matrix, 2, true));
-
-      
-      std::cout << "Intialized Data" << std::endl;
       
       const int row_index[2] = {0,1};
-      double values[2] = {-2.0,1.0};
+      double values[2] = {-3.0,1.0};
       A_fast->InsertGlobalValues(0, 2, values, row_index);
 
       values[0] = 0.0;
-      values[1] = -0.0;
+      values[1] = 1.0;
       A_fast->InsertGlobalValues(1, 2, values, row_index);
 
       
-      values[0] = -0.0;
+      values[0] = 1.0;
       values[1] = 0.0;
       A_slow->InsertGlobalValues(0, 2, values, row_index);
 
       
-      values[0] = 1.0;
-      values[1] = -2.0;
+      values[0] = 2.0;
+      values[1] = -10.0;
       A_slow->InsertGlobalValues(1, 2, values, row_index);
 
       A_fast->FillComplete();
       A_slow->FillComplete();
-
-      std::cout << "Set Matrices Data" << std::endl;
 
     }
     ~test_data() {
@@ -103,7 +97,9 @@ SUITE(MR_GARK_Tests) {
 
     MRG_EXIM_linear2d_ODE ToyProblem(0.0, 1.0, true, A_fast, A_slow, comm);
 
+    std::cout << "Slow Partition" << std::endl;
     A_slow->Print(std::cout);
+    std::cout << "Fast Partition" << std::endl;
     A_fast->Print(std::cout);
 
     std::cout << "Problem Initalized" << std::endl;
@@ -128,7 +124,7 @@ SUITE(MR_GARK_Tests) {
     double hnext;
 
     //TimeStep Ratio
-    int M  = 1;
+    int M  = 4;
 
     // iterate until the final time
     int i=0;

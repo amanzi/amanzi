@@ -232,6 +232,7 @@ namespace Amanzi
       k_slow_[i] = Teuchos::rcp(new Vector(*initvector));
       k_fast_[i] = Teuchos::rcp(new Vector(*initvector));
       k_slowfast_[i] = Teuchos::rcp(new Vector(*initvector));
+
       k_slowfast_[i]->Scale(0.0);
     }
 
@@ -389,12 +390,13 @@ namespace Amanzi
               y_exp_s_->Update(a_slowfast_local_[index], *k_fast_[k], 1.0);
             }
           }
-          y_exp_s_->Update(1.0, *k_slowfast_[q_slow], 1.0);
+          if (i > 0)
+          {
+            y_exp_s_->Update(1.0, *k_slowfast_[q_slow], 1.0);
+          }
 
           //Solve nonlinear system
           int flag = SolveNonlinearSystem(slow_time, slow_time_old, h * a_slowslow_[q_slow * (stage_ + 1)], y_ns_old, y_ns);
-
-          y_ns->Print(std::cout);
 
           if (flag)
           {
@@ -403,10 +405,7 @@ namespace Amanzi
           }
 
           fn_->ModifySolutionSlow(slow_time, y_ns);
-
           fn_->FunctionalTimeDerivativeSlow(slow_time, y_ns, k_slow_[q_slow]);
-
-          k_slow_[q_slow]->Print(std::cout);
           k_slow_[q_slow]->Scale(h);
 
           q_slow++;
@@ -441,20 +440,21 @@ namespace Amanzi
         k_fast_[j]->Scale(h_fast);
       }
 
-      //Accumalate the fast k's for the next iteration of the slow stages
-      //TODO: Optimize out when no slow stages are left.
+      //Accumalate y_lambda for next fast setup
       for (int j = 0; j < stage_; j++)
       {
         if (b_fast_[j] != 0)
         {
           y_lambda_->Update(b_fast_[j], *k_fast_[j], 1.0);
         }
-        for (int k = 0; k < stage_; k++)
+
+        //Accumalate only the k's for the needed slow internals
+        for (int k = q_slow; k < stage_; k++)
         {
           int index = j*stage_ + k;
           if (a_slowfast_local_[index] != 0)
           {
-            k_slowfast_[j]->Update(a_slowfast_local_[index], *k_fast_[k], 1.0);
+            k_slowfast_[j]->Update(a_slowfast_local_[index], *k_fast_[k], (i > 0) ? 1.0 : 0.0);
           }
         }
       }
@@ -554,8 +554,6 @@ namespace Amanzi
     }
     
     if (ierr == 0) {
-        *vo_->os() << "success: " << itr << " nonlinear itrs" 
-                  << " error=" << solverslow_->residual() << std::endl;
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
         *vo_->os() << "success: " << itr << " nonlinear itrs" 
                   << " error=" << solverslow_->residual() << std::endl;

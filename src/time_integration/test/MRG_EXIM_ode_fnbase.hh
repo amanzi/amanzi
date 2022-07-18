@@ -106,7 +106,7 @@ public:
   /**
    * @brief Produces the Preconditioner for solving the nonlinear system
    * 
-   *  The preconditioner is:   I/scaling + J(t, u)
+   *  The preconditioner is:   scaling*J(t, u) - I
    * 
    * @param t 
    * @param scaling 
