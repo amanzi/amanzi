@@ -1113,6 +1113,10 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
   const auto& B_n =
     *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
 
+  auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
+ // ht_grad[0][c] = 0.0;
+ // ht_grad[1][c] = 0.0;
+
   const auto& xc = mesh_->cell_centroid(c);
   const auto& xf = mesh_->face_centroid(e);
   Amanzi::AmanziMesh::Entity_ID_List cnodes;
@@ -1137,7 +1141,18 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
       cell_is_partially_wet = true;
   }
 
-  if (cell_is_fully_flooded == true) {;
+  if (cell_is_fully_flooded == true) {
+        double alpha = 1.0;
+        Amanzi::AmanziGeometry::Point xi;
+        for(int i = 0; i < cnodes.size(); ++i) {
+          mesh_->node_get_coordinates(cnodes[i], &xi);
+          double ht_rec = total_depth_grad_->getValue(c, xi);
+          if (ht_rec - B_n[0][cnodes[i]] < 0.0) {
+            alpha = std::min(alpha, (B_n[0][cnodes[i]] - ht_c[0][c]) / (ht_rec - ht_c[0][c]));
+          }
+        }
+        ht_grad[0][c] *= alpha;
+        ht_grad[1][c] *= alpha;
         ht_edge = total_depth_grad_->getValue(c, xf);
       //  ht_edge = ht_c[0][c];
     } else if (cell_is_dry == true) {
