@@ -78,7 +78,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
     if (icase == 1) {
       B_n[0][n] = 0.0;
-      if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.2*0.2 + 1.e-12) {
+      if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.35*0.35 + 1.e-12) {
         B_n[0][n] = 0.8;
       }
 
@@ -259,9 +259,9 @@ RunTest(int icase)
 
   RCP<Mesh> mesh;
   if (icase == 1) {
-    mesh = meshfactory.create ("test/triangular16.exo");
-    //mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 40, 40, request_faces, request_edges);
-   // mesh = meshfactory.create ("test/median32x33.exo");
+    //mesh = meshfactory.create ("test/triangular16.exo");
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
+    //mesh = meshfactory.create ("test/median32x33.exo");
   } else if (icase == 2) {
     mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
 		//mesh = meshfactory.create ("test/median32x33.exo");
@@ -334,7 +334,7 @@ RunTest(int icase)
 
   double Tend;
   if (icase == 1) {
-    Tend = 0.2;
+    Tend = 0.5;
   } else if (icase == 2) {
     Tend = 2.0;
   }
