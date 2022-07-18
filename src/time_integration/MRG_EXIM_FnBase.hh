@@ -32,9 +32,9 @@ class MRG_EXIM_FnBase : public PartitionFnBase<Vector> {
    */
   virtual void SlowFunctionalResidual(double t_old, double t_new, double scaling,
   Teuchos::RCP<Vector> u_old,  Teuchos::RCP<Vector> u_exp,
-  Teuchos::RCP<Vector> u_new,  Teuchos::RCP<Vector> f_eval) = 0  ;
+  const Teuchos::RCP<Vector> u_new,  const Teuchos::RCP<Vector> &f_eval) = 0  ;
 
-  virtual int ApplySlowPreconditioner(Teuchos::RCP<const Vector> u_slow, Teuchos::RCP<Vector> u_eval) = 0;
+  virtual int ApplySlowPreconditioner(const Teuchos::RCP<const Vector>& u_slow, const Teuchos::RCP<Vector>& u_eval) = 0;
 
 
   // updates the preconditioner

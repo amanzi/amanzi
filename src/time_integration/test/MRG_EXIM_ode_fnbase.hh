@@ -11,6 +11,13 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_DataAccess.h"
+#include "Epetra_LinearProblem.h"
+
+#include "Amesos2.hpp"
+#include "Amesos2_Version.hpp"
+#include "Amesos2_MatrixAdapter.hpp"
+#include "Amesos2_SolverCore.hpp"
+#include "Amesos2_MultiVecAdapter.hpp"
 
 #include "MRG_EXIM_FnBase.hh"
 #include "FnBaseDefs.hh"
@@ -19,8 +26,8 @@
 #include <cmath>
 
 // ODE for testing
-class MRG_EXIM_linear2d_ODE :  public Amanzi::ode_2d<Amanzi::MRG_EXIM_FnBase<Epetra_MultiVector>>  {
-  using Vector = Epetra_MultiVector;
+class MRG_EXIM_linear2d_ODE :  public Amanzi::ode_2d<Amanzi::MRG_EXIM_FnBase<Epetra_Vector>>  {
+  using Vector = Epetra_Vector;
   using Matrix = Epetra_CrsMatrix;
 
 private:
@@ -29,6 +36,8 @@ private:
   double atol_, rtol_;
   Teuchos::RCP<Matrix> Pu_slow;
   Teuchos::RCP<Vector> temp_memory_;
+
+  Teuchos::RCP<Amesos2::Solver<Matrix, Epetra_MultiVector>> solver;
 
 
 public:
@@ -57,25 +66,32 @@ public:
         temp_memory_ = Teuchos::rcp(new Epetra_Vector(map));
         
         Pu_slow = Teuchos::rcp(new Matrix(*A_));
-        
+
+        //initalize the solver
+        solver = Amesos2::create<Epetra_CrsMatrix,Epetra_MultiVector>("KLU2", Pu_slow, temp_memory_, temp_memory_);
+    
   }
 
   void SlowFunctionalResidual(double t_old, double t_new, double scaling,
   Teuchos::RCP<Vector> u_old,  Teuchos::RCP<Vector> u_exp,
-  Teuchos::RCP<Vector> u_new,  Teuchos::RCP<Vector> f_eval) override {
+  const Teuchos::RCP<Vector> u_new,  const Teuchos::RCP<Vector>& f_eval) override {
 
     *f_eval = *u_new;
     f_eval->Update(1.0, *u_old , 1.0, *u_exp, -1.0);
 
-
     FunctionalTimeDerivativeSlow(t_new, u_new, temp_memory_);
 
-    f_eval->Update(1.0, *temp_memory_, 1.0/scaling);
-
+    f_eval->Update(scaling, *temp_memory_, 1.0);
   }
 
-  int  ApplySlowPreconditioner(Teuchos::RCP<const Vector> u_slow, Teuchos::RCP<Vector> u_eval) override {
-    return Pu_slow->ApplyInverse(*u_slow, *u_eval);
+  int  ApplySlowPreconditioner(const Teuchos::RCP<const Vector>& u_slow, const Teuchos::RCP<Vector>& u_eval) override {
+
+    solver->setB(u_slow);
+    solver->setX(u_eval);
+
+    solver->symbolicFactorization().numericFactorization().solve();
+
+    return 0;
   }
   
   // computes a norm on u-du and returns the result
@@ -83,7 +99,8 @@ public:
     double norm_du, norm_u;
     du->NormInf(&norm_du);
     u->NormInf(&norm_u);
-    return norm_du / ( atol_ + rtol_ * norm_u);
+
+    return norm_du;
   }
 
   /**
@@ -104,9 +121,9 @@ public:
       {
         for (auto j = 0; j < matrix_n; ++j)
         {
-          (*Pu_slow)[i][j] = (*A_slow_)[i][j];
+          (*Pu_slow)[i][j] = scaling * (*A_slow_)[i][j];
 
-          if (i == j) (*Pu_slow)[i][j] -= 1.0 / scaling;
+          if (i == j) (*Pu_slow)[i][j] -= 1.0;
         }
         
       }

@@ -15,8 +15,6 @@
 
 #include "PartitionFnBase.hh"
 
-#include "MRG_EXIM_FnBase.hh"
-
 
 namespace Amanzi
 {
@@ -30,7 +28,7 @@ namespace Amanzi
   template<class Interface>
   class ode_2d : public Interface
   {
-    using Vector = Epetra_MultiVector;
+    using Vector = Epetra_Vector;
     using Matrix = Epetra_CrsMatrix;
   protected :
     
@@ -106,6 +104,7 @@ namespace Amanzi
     
     A_ =  Teuchos::rcp(new Matrix(Copy, *matrix_map, 2, true));
 
+    //Initalize the Full A
     *A_ = *A_fast_;
 
     int numEntries = 0;
@@ -118,6 +117,7 @@ namespace Amanzi
       A_->SumIntoGlobalValues(i, numEntries, vals, indices);
     }
 
+    //Initalize the Partition Matrix
     for (int i = 0; i < matrix_n; i++)
     {
       A_fast_->ExtractGlobalRowCopy(i, 2, numEntries, vals, indices);
@@ -183,8 +183,16 @@ namespace Amanzi
  */
   template<class Interface>
   void ode_2d<Interface>::exact_rhs(double t, Teuchos::RCP<Vector> u_eval){
+    if ((*A_)[0][1] == 0 && (*A_)[1][0] == 0)
+    {
+      (*u_eval)[0] = exp((*A_)[0][0] * t);
+      (*u_eval)[1] = exp((*A_)[1][1] * t);
+
+      return;
+    }
     
-    double temp_e = exp((1.0/2.0) * t *  (*A_)[0][0] * (*A_)[1][0]);
+    
+    double temp_e = exp((1.0/2.0) * t *  ((*A_)[0][0] + (*A_)[1][1]));
     
     double temp_sqrt = sqrt(4.0 * (*A_)[0][1] * (*A_)[1][0] + pow(((*A_)[0][0] - (*A_)[1][1]),2.0));
     
@@ -192,8 +200,8 @@ namespace Amanzi
 
     double temp_sinh = temp_e * sinh((1.0/2.0) * t * temp_sqrt) / temp_sqrt;
 
-    (*u_eval)[0][0] = temp_cosh + temp_sinh * ((*A_)[0][0] + 2.0*(*A_)[0][1] - (*A_)[1][1]);
-    (*u_eval)[0][1] = temp_cosh + temp_sinh * (-(*A_)[0][0] + 2.0*(*A_)[1][0] - (*A_)[1][1]);
+    (*u_eval)[0] = temp_cosh + temp_sinh * ((*A_)[0][0] + 2.0*(*A_)[0][1] - (*A_)[1][1]);
+    (*u_eval)[1] = temp_cosh + temp_sinh * (-(*A_)[0][0] + 2.0*(*A_)[1][0] + (*A_)[1][1]);
   }
 
 }

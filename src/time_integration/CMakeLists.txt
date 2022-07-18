@@ -50,7 +50,14 @@ list(REVERSE time_int_new_tpl_libs)
 list(REMOVE_DUPLICATES time_int_new_tpl_libs)
 list(REVERSE time_int_new_tpl_libs)
 
-set(time_integration_link_libs solvers data_structures output mesh geometry error_handling whetstone atk)
+set(time_integration_link_libs solvers
+							data_structures
+							output
+							mesh
+							geometry
+							error_handling
+							whetstone
+							atk)
 
 add_amanzi_library(time_integration
                    SOURCE ${time_int_new_source_files}
@@ -85,6 +92,17 @@ if (BUILD_TESTS)
 			  ${UnitTest_LIBRARIES}	  
 			  ${time_integration_tpl_libs})
 
+	add_amanzi_test(time_integration_mr test_mr_time_integration
+					KIND units
+			SOURCE
+					test/Main.cc
+				test/test_MR.cc
+			LINK_LIBS
+				time_integration
+			${time_integration_link_libs}
+			${UnitTest_LIBRARIES}
+			${time_integration_tpl_libs})
+
     add_amanzi_test(time_integration_nka test_nka_time_integration
                     KIND unit
 		    SOURCE
@@ -95,17 +113,6 @@ if (BUILD_TESTS)
 			  ${time_integration_link_libs}
 			  ${UnitTest_LIBRARIES}
 			  ${time_int_new_tpl_libs})
-
-	add_amanzi_test(time_integration_mr test_mr_time_integration
-					KIND unit
-			SOURCE
-				test/Main.cc
-			  test/test_MR.cc
-			LINK_LIBS
-				time_integration	
-			${time_integration_link_libs}
-			${UnitTest_LIBRARIES}
-			${time_integration_tpl_libs})
 
     add_amanzi_test(time_integration_rk test_rk_time_integration
                     KIND unit

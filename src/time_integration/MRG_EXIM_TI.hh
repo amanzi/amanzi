@@ -19,24 +19,21 @@ TODO: expand documentation
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-
-#include "Teuchos_RCP.hpp"
+#include <typeinfo>
 #include <functional>
 #include "errors.hh"
-#include "Epetra_Vector.h"
-#include "Epetra_Map.h"
-
 #include "dbc.hh"
-
-#include "PartitionFnBase.hh"
-#include "MRG_EXIM_FnBase.hh"
-#include "MRG_EXIM_SolverFnBase.hh"
 #include "VerboseObject.hh"
-
 
 #include "Solver.hh"
 #include "SolverFactory.hh"
 #include "SolverDefs.hh"
+#include "SolverFnBase.hh"
+
+#include "PartitionFnBase.hh"
+#include "MRG_EXIM_FnBase.hh"
+#include "MRG_EXIM_SolverFnBase.hh"
+
 
 namespace Amanzi
 {
@@ -52,10 +49,11 @@ namespace Amanzi
     user_defiend
   };
 
+
   template <class Vector, class VectorSpace>
   class MRG_EXIM_TI
   {
-  private:
+  protected:
     //RHS
     Teuchos::RCP<MRG_EXIM_FnBase<Vector>> fn_;
 
@@ -82,16 +80,15 @@ namespace Amanzi
 
     // Allocate the coupling matrices based of M and update when a new M is given
     int prev_M_ = 0;
-    std::vector<double> a_fastfast_local_, b_fast_local_, c_fast_local_;
     std::vector<double> a_slowfast_local_;
     std::vector<double> a_fastslow_local_;
 
     //Internal Stage Derivatives
     std::vector<Teuchos::RCP<Vector>> k_fast_;
     std::vector<Teuchos::RCP<Vector>> k_slow_;
+    std::vector<Teuchos::RCP<Vector>> k_slowfast_;
 
     //Extra Storage to prevent reallocation
-    Teuchos::RCP<Vector> ya_slowfast_;
     Teuchos::RCP<Vector> y_lambda_;
     Teuchos::RCP<Vector> y_ns;
     Teuchos::RCP<Vector> y_ns_old;
@@ -102,7 +99,7 @@ namespace Amanzi
     void InitMemory(const Teuchos::RCP<Vector> initvector);
     void InitCoefficentMemory();
     void InitSolvers(Teuchos::ParameterList& plist, const Teuchos::RCP<Vector> initvector);
-    int SolveNonlinearSystem(double t_n1, double t_n0, double h, double scaling, Teuchos::RCP<Vector> y_old, const Teuchos::RCP<Vector>& y_new);
+    int SolveNonlinearSystem(double t_n1, double t_n0, double scaling, Teuchos::RCP<Vector> y_old, const Teuchos::RCP<Vector>& y_new);
 
   public:
 
@@ -149,6 +146,7 @@ namespace Amanzi
   void MRG_EXIM_TI<Vector, VectorSpace>::InitMethod(const method_t method)
   {
 
+    //Functions are prescaled by the M given
     switch (method)
     {
     case MrGark_EXIM_2:
@@ -172,9 +170,9 @@ namespace Amanzi
       };
 
       a_slowfast_ = [invsqrt_2] ( double M, double lambda, std::vector<double>& a){
-        a[0] = (lambda == 1) ? (M - M * invsqrt_2) : 0;
-        a[2] = 1.0/4.0;
-        a[3] = 3.0/4.0;
+        a[0] = (lambda == 1) ? M *(1 - invsqrt_2) : 0;
+        a[2] = 1.0/(4.0);
+        a[3] = 3.0/(4.0);
       };
       }
       
@@ -211,9 +209,6 @@ namespace Amanzi
    */
   template <class Vector, class VectorSpace>
   void MRG_EXIM_TI<Vector, VectorSpace>::InitCoefficentMemory() {
-    a_fastfast_local_.resize(stage_ * stage_);
-    b_fast_local_.resize(stage_);
-    c_fast_local_.resize(stage_);
     a_slowfast_local_.resize(stage_ * stage_); 
     a_fastslow_local_.resize(stage_ * stage_); 
     }
@@ -231,13 +226,15 @@ namespace Amanzi
   {
     k_slow_.resize(stage_);
     k_fast_.resize(stage_);
+    k_slowfast_.resize(stage_);
     for (int i = 0; i < stage_; ++i)
     {
       k_slow_[i] = Teuchos::rcp(new Vector(*initvector));
       k_fast_[i] = Teuchos::rcp(new Vector(*initvector));
+      k_slowfast_[i] = Teuchos::rcp(new Vector(*initvector));
+      k_slowfast_[i]->Scale(0.0);
     }
 
-    ya_slowfast_ = Teuchos::rcp(new Vector(*initvector));
 
     y_lambda_ = Teuchos::rcp(new Vector(*initvector));
     y_exp_f_ = Teuchos::rcp(new Vector(*initvector));
@@ -258,19 +255,18 @@ namespace Amanzi
   void MRG_EXIM_TI<Vector, VectorSpace>::InitSolvers(Teuchos::ParameterList& plist, const Teuchos::RCP<Vector> initvector){
     
     // update the verbose options
-    vo_ = Teuchos::rcp(new VerboseObject(initvector->Comm(), "TI::MRG_EXIM", plist));
-    db_ = Teuchos::rcp(new AmanziSolvers::ResidualDebugger(plist.sublist("residual debugger")));
+    vo_ = Teuchos::rcp(new VerboseObject(initvector->Comm(), "TI::MRG_EXIM", plist_));
+    db_ = Teuchos::rcp(new AmanziSolvers::ResidualDebugger(plist_.sublist("residual debugger")));
 
     // Set up the nonlinear solver
     // -- initialized the SolverFnBase interface
     solver_fn_slow_ = Teuchos::rcp(new MRG_EXIM_SolverFnBase<Vector>(plist_, fn_));
 
-    //FIXME: Linkage Errors from lines below
-
     AmanziSolvers::SolverFactory<Vector,VectorSpace> factory;
-    solverslow_ =  factory.Create(plist_);
+    solverslow_ = factory.Create(plist_);
     solverslow_->set_db(db_);
     solverslow_->Init(solver_fn_slow_, initvector->Map());
+
   }
 
 
@@ -288,6 +284,7 @@ namespace Amanzi
     MRG_EXIM_TI<Vector, VectorSpace>::InitCoefficentMemory();
     MRG_EXIM_TI<Vector, VectorSpace>::InitSolvers( plist, initvector);
 
+    
   }
 
   template <class Vector, class VectorSpace>
@@ -347,6 +344,7 @@ namespace Amanzi
     double sum_timef = t;
 
     *y_lambda_ = *y;
+    *y_ns_old = *y;
     int q_slow = 0;
     double h_fast = h / static_cast<double>(M);
 
@@ -354,25 +352,6 @@ namespace Amanzi
     double slow_time = t;
     
     double M_cast = static_cast<double>(M);
-
-    // Intalize coefficents for scaled M only when it is different
-    if (M != prev_M_)
-    {
-      a_fastfast_local_ = a_fastfast_;
-      for (int i = 0; i < a_fastfast_local_.size(); i++)
-      {
-        a_fastfast_local_[i] /= M_cast;
-      }
-      b_fast_local_ = b_fast_;
-      c_fast_local_ = c_fast_;
-      for (int i = 0; i < stage_; i++)
-      {
-        b_fast_local_[i] /= M_cast;
-        c_fast_local_[i] /= M_cast;
-      }
-
-      prev_M_ = M;
-    }
 
     for (int i = 0; i < M; ++i)
     {
@@ -383,13 +362,13 @@ namespace Amanzi
 
       for (int j = 0; j < stage_; ++j)
       {
-        sum_timef = t + ((static_cast<double>(i) + c_fast_[j])/M_cast) * h_fast;
+        sum_timef = t + (static_cast<double>(i) + c_fast_[j]) * h_fast;
 
         //Check if a slow stage needs to be computed
         if (q_slow < stage_ && a_fastslow_local_[j*stage_ + q_slow] != 0)
         {
           slow_time = t + h*c_slow_[q_slow];
-          y_exp_s_->Update(1.0, *y, 0.0);
+          y_exp_s_->Scale(0.0);
 
           //Accumulate slow stages
           for (int k = 0; k < q_slow; k++)
@@ -404,40 +383,43 @@ namespace Amanzi
           //Accumulate fast coupled stages
           for (int k = 0; k < j; k++)
           {
-            int index = j * stage_ + k;
+            int index = q_slow * stage_ + k;
             if (a_slowfast_local_[index] != 0)
             {
               y_exp_s_->Update(a_slowfast_local_[index], *k_fast_[k], 1.0);
             }
           }
-          y_exp_s_->Update(1.0, *ya_slowfast_, 1.0);
+          y_exp_s_->Update(1.0, *k_slowfast_[q_slow], 1.0);
 
           //Solve nonlinear system
-          //FIXME: Linkage Errors 
-          int flag = SolveNonlinearSystem(slow_time, slow_time_old, h, a_slowslow_[q_slow * (stage_ + 1)], y_ns_old, y_ns);
+          int flag = SolveNonlinearSystem(slow_time, slow_time_old, h * a_slowslow_[q_slow * (stage_ + 1)], y_ns_old, y_ns);
+
+          y_ns->Print(std::cout);
 
           if (flag)
           {
             
             //TODO: add flag based operations
           }
-          
 
-          fn_->ModifySolutionSlow(sum_timef, y_ns);
-          fn_->FunctionalTimeDerivativeSlow(sum_timef, y_ns, k_slow_[j]);
-          k_slow_[j]->Scale(h);
+          fn_->ModifySolutionSlow(slow_time, y_ns);
+
+          fn_->FunctionalTimeDerivativeSlow(slow_time, y_ns, k_slow_[q_slow]);
+
+          k_slow_[q_slow]->Print(std::cout);
+          k_slow_[q_slow]->Scale(h);
 
           q_slow++;
+          slow_time_old = slow_time;
           *y_ns_old = *y_ns;
         }
 
-        
-        y_exp_f_->Update(1.0, *y_lambda_, 0.0);
+        *y_exp_f_ = *y_lambda_;
 
         // Add coupled slow stages
         for (int k = 0; k < q_slow; ++k)
         {
-          int index = q_slow * stage_ + k;
+          int index = j * stage_ + k;
           if (a_fastslow_local_[index] != 0)
           {
             y_exp_f_->Update(a_fastslow_local_[index], *k_slow_[k], 1.0);
@@ -448,9 +430,9 @@ namespace Amanzi
         for (int k = 0; k < j; ++k)
         {
           int index = j * stage_ + k;
-          if (a_fastfast_local_[index] != 0)
+          if (a_fastfast_[index] != 0)
           {
-            y_exp_f_->Update(a_fastfast_local_[ index ], *k_fast_[k], 1.0);
+            y_exp_f_->Update(a_fastfast_[ index ], *k_fast_[k], 1.0);
           }
         }
 
@@ -459,22 +441,62 @@ namespace Amanzi
         k_fast_[j]->Scale(h_fast);
       }
 
+      //Accumalate the fast k's for the next iteration of the slow stages
+      //TODO: Optimize out when no slow stages are left.
       for (int j = 0; j < stage_; j++)
       {
-        if (b_fast_local_[j] != 0)
+        if (b_fast_[j] != 0)
         {
-          y_lambda_->Update(b_fast_local_[j], *k_fast_[j], 1.0);
+          y_lambda_->Update(b_fast_[j], *k_fast_[j], 1.0);
         }
         for (int k = 0; k < stage_; k++)
         {
           int index = j*stage_ + k;
           if (a_slowfast_local_[index] != 0)
           {
-            ya_slowfast_->Update(a_slowfast_local_[index], *k_slow_[k], 1.0);
+            k_slowfast_[j]->Update(a_slowfast_local_[index], *k_fast_[k], 1.0);
           }
         }
       }
     }
+
+    //Get remander of the k slows incase they were not done
+    while (q_slow < stage_)
+    {
+      slow_time = t + h*c_slow_[q_slow];
+      y_exp_s_->Scale(0.0);
+
+      //Accumulate slow stages
+      for (int k = 0; k < q_slow; k++)
+      {
+        int index = q_slow * stage_ + k;
+        if (a_slowslow_[index] != 0)
+        {
+          y_exp_s_->Update(a_slowslow_[index], *k_slow_[k], 1.0);
+        }
+      }
+
+      //Accumalte Fast Stages
+      y_exp_s_->Update(1.0, *k_slowfast_[q_slow], 1.0);
+
+      //Solve nonlinear system
+      int flag = SolveNonlinearSystem(slow_time, slow_time_old, h * a_slowslow_[q_slow * (stage_ + 1)], y_ns_old, y_ns);
+
+      if (flag)
+      {
+        
+        //TODO: add flag based operations
+      }
+
+      fn_->ModifySolutionSlow(slow_time, y_ns);
+      fn_->FunctionalTimeDerivativeSlow(slow_time, y_ns, k_slow_[q_slow]);
+      k_slow_[q_slow]->Scale(h);
+
+      q_slow++;
+      slow_time_old = slow_time;
+      *y_ns_old = *y_ns;
+    }
+    
 
     *y_new = *y_lambda_;
     for (int i = 0; i < stage_; i++)
@@ -506,10 +528,15 @@ namespace Amanzi
    * @return int the a_slowslowociated error code TODO: Add error codes (Could be an enum instead)
    */
   template <class Vector, class VectorSpace>
-  int MRG_EXIM_TI<Vector, VectorSpace>::SolveNonlinearSystem(double t_n1, double t_n0, double h, double scaling, Teuchos::RCP<Vector> y_old, const Teuchos::RCP<Vector>& y_new){
+  int MRG_EXIM_TI<Vector, VectorSpace>::SolveNonlinearSystem(double t_n1, double t_n0, double scaling, Teuchos::RCP<Vector> y_old, const Teuchos::RCP<Vector>& y_new){
+    db_->StartIteration<VectorSpace>(t_n0, 0, 1, y_new->Map());
+
+    *y_new = *y_old;
+    
     solver_fn_slow_->SetTimes(t_n0, t_n1);
     solver_fn_slow_->SetPreviousTimeSolution(y_old);
     solver_fn_slow_->SetExplicitTerms(y_exp_s_);
+    solver_fn_slow_->SetScaling(scaling);
 
      // Solve the nonlinear system.
     int ierr, code, itr;
@@ -525,6 +552,19 @@ namespace Amanzi
         *vo_->os() << e.what() << std::endl;
       }
     }
+    
+    if (ierr == 0) {
+        *vo_->os() << "success: " << itr << " nonlinear itrs" 
+                  << " error=" << solverslow_->residual() << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        *vo_->os() << "success: " << itr << " nonlinear itrs" 
+                  << " error=" << solverslow_->residual() << std::endl;
+      }
+    } else {
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        *vo_->os() << vo_->color("red") << "step failed with error code " << code << vo_->reset() << std::endl;
+      }
+    } 
 
 
     return ierr;

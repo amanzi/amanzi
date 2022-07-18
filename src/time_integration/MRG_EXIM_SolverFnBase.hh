@@ -99,7 +99,7 @@ class MRG_EXIM_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
 template<class Vector>
 void MRG_EXIM_SolverFnBase<Vector>::Residual(const Teuchos::RCP<Vector>& u,
                                          const Teuchos::RCP<Vector>& r) {
-  slow_fn_->SlowFunctionalResidual(t_old_, t_new_, h_ * scaling_, u_old_, u_expterms_, u, r);
+  slow_fn_->SlowFunctionalResidual(t_old_, t_new_, scaling_, u_old_, u_expterms_, u, r);
 }
 
 // preconditioner application
@@ -112,7 +112,7 @@ int  MRG_EXIM_SolverFnBase<Vector>::ApplyPreconditioner(const Teuchos::RCP<const
 // preconditioner update
 template<class Vector>
 void MRG_EXIM_SolverFnBase<Vector>::UpdatePreconditioner(const Teuchos::RCP<const Vector>& u) {
-  slow_fn_->UpdateSlowPreconditioner(t_new_, scaling_ * h_, u);
+  slow_fn_->UpdateSlowPreconditioner(t_new_, scaling_, u);
 }
 
 // error norm

@@ -16,18 +16,14 @@
 #include "MRG_EXIM_ode_fnbase.hh"
 #include "PartitionFnBase.hh"
 
-#include "Solver.hh"
-#include "SolverFactory.hh"
-
 #include "dbc.hh"
 #include "exceptions.hh"
 #include "errors.hh"
 #include "FnBaseDefs.hh"
 
-#include "ode_fnbase.hh"
 
 using namespace Amanzi;
-using namespace Amanzi::AmanziSolvers;
+using namespace AmanziSolvers;
 
 
 SUITE(MR_GARK_Tests) {
@@ -37,7 +33,6 @@ SUITE(MR_GARK_Tests) {
 
     Teuchos::RCP<Epetra_Vector> init;
     Teuchos::RCP<Epetra_Vector> u;
-    Teuchos::RCP<Epetra_Vector> u_dot;
     Teuchos::RCP<Epetra_Vector> u_eval;
     Teuchos::RCP<Epetra_CrsMatrix> A_fast;
     Teuchos::RCP<Epetra_CrsMatrix> A_slow;
@@ -54,7 +49,6 @@ SUITE(MR_GARK_Tests) {
 
       // u, u_dot, and exact soln
       u = Teuchos::rcp(new Epetra_Vector(*init));
-      u_dot = Teuchos::rcp(new Epetra_Vector(*init));
       u_eval = Teuchos::rcp(new Epetra_Vector(*init));
 
       A_fast = Teuchos::rcp(new Epetra_CrsMatrix(Copy, map_matrix, 2, true));
@@ -64,21 +58,21 @@ SUITE(MR_GARK_Tests) {
       std::cout << "Intialized Data" << std::endl;
       
       const int row_index[2] = {0,1};
-      double values[2] = {2.0,1.0};
+      double values[2] = {-2.0,1.0};
       A_fast->InsertGlobalValues(0, 2, values, row_index);
 
       values[0] = 0.0;
-      values[1] = 2.0;
+      values[1] = -0.0;
       A_fast->InsertGlobalValues(1, 2, values, row_index);
 
       
-      values[0] = 1.0;
+      values[0] = -0.0;
       values[1] = 0.0;
       A_slow->InsertGlobalValues(0, 2, values, row_index);
 
       
       values[0] = 1.0;
-      values[1] = 1.0;
+      values[1] = -2.0;
       A_slow->InsertGlobalValues(1, 2, values, row_index);
 
       A_fast->FillComplete();
@@ -106,16 +100,22 @@ SUITE(MR_GARK_Tests) {
     plist.sublist("nka parameters").set("diverged tolerance",1.0e4);
     plist.sublist("nka parameters").set("convergence monitor","monitor update");
     // create the PDE problem
-    
-    MRG_EXIM_linear2d_ODE ToyProblem(1., 1., true, A_fast, A_slow, comm);
+
+    MRG_EXIM_linear2d_ODE ToyProblem(0.0, 1.0, true, A_fast, A_slow, comm);
+
+    A_slow->Print(std::cout);
+    A_fast->Print(std::cout);
+
+    std::cout << "Problem Initalized" << std::endl;
 
     // create the time stepper
-    Teuchos::RCP<Amanzi::MRG_EXIM_TI<Epetra_MultiVector, Epetra_BlockMap> > TS =
-        Teuchos::rcp(new MRG_EXIM_TI<Epetra_MultiVector, Epetra_BlockMap>(ToyProblem, MrGark_EXIM_2, plist, init ));
+    Teuchos::RCP<Amanzi::MRG_EXIM_TI<Epetra_Vector, Epetra_BlockMap> > TS =
+        Teuchos::rcp(new MRG_EXIM_TI<Epetra_Vector, Epetra_BlockMap>(ToyProblem, MrGark_EXIM_2, plist, init ));
+
+    std::cout << "Time Integrator Intialized" << std::endl;
 
     // initial value
     u->PutScalar(1.0);
-    u_dot->PutScalar(1.0);
 
     // initial time
     double t=0.0;
@@ -128,13 +128,15 @@ SUITE(MR_GARK_Tests) {
     double hnext;
 
     //TimeStep Ratio
-    int M  = 3;
+    int M  = 1;
 
     // iterate until the final time
     int i=0;
     double tlast = t;
 
     std::cout << "starting time integration" << std::endl;
+    std::cout << "Constant Step Size of : " << h << std::endl;
+    std::cout << "M (Stepsize Ratio) : " << M << std::endl;
     do {
       if (tlast + h > tout) {
         std::cout << "adjusting h, to hit the final time exactly...\n";
@@ -146,18 +148,21 @@ SUITE(MR_GARK_Tests) {
         redo = TS->TimeStep(tlast, h, M, u, u_eval);
       } while (redo);
 
-      u_eval->Print(std::cout);
-
-      h = hnext;
       i++;
 
       *u = *u_eval;
 
+      // u->Print(std::cout);
+
+      tlast += h;
     } while (tout > tlast);
 
     ToyProblem.exact_rhs(tout, u_eval);
 
+    std::cout << "Exact Solution" << std::endl;
     u_eval->Print(std::cout);
+
+    std::cout << "Numerical Solution" << std::endl;
     u->Print(std::cout);
 
     u_eval->Update(-1.0, *u, 1.0);
