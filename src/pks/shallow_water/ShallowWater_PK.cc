@@ -1119,7 +1119,7 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
 
   const auto& xc = mesh_->cell_centroid(c);
   const auto& xf = mesh_->face_centroid(e);
-  Amanzi::AmanziMesh::Entity_ID_List cnodes;
+  Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
   mesh_->cell_get_nodes(c, &cnodes);
 
   // characterize cell
@@ -1212,6 +1212,41 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
       }
       ht_edge /= 2.0;
     }
+  
+  // well-balanced reconstruction for partially wet triangular cells
+  if (cell_is_partially_wet == true) {
+    
+    // loop over subcells  determined by faces
+    mesh_->cell_get_faces(c, &cfaces);
+    Amanzi::AmanziMesh::Entity_ID_List face_nodes;
+    for (int f = 0; f < cfaces.size(); ++f) { 
+      
+      // order bathymetry nodes into B13 >= B12 > B23
+      double B13, B12, B23;
+      int i13, i12, i23;
+      
+      mesh_->face_get_nodes(cfaces[f], &face_nodes);
+    
+      B13 = std::max(B_c[0][c], std::max(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]])); 
+      B23 = std::min(B_c[0][c], std::min(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]]));
+      for(int i = 0; i < 2; ++i) {
+        if (std::abs(B_n[0][face_nodes[i]] - B13) < 1.e-15) {
+          i13 = face_nodes[i];
+        } else if (std::abs(B_n[0][face_nodes[i]] - B23) < 1.e-15) {
+          i23 = face_nodes[i];
+        } else {
+          i12 = face_nodes[i];
+          B12 = face_nodes[i];
+        }
+      }
+      if (std::abs(B_c[0][c] - B13) < 1.e-15) {
+        
+      }
+    
+      // done sorting B_n nodes
+    }
+  }
+
 
   return ht_edge;
 }
