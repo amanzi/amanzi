@@ -148,6 +148,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   std::vector<std::vector<double>> ht_cell_face_;
   std::vector<std::vector<double>> ht_cell_node_grad_x_;
   std::vector<std::vector<double>> ht_cell_node_grad_y_;
+  std::vector<std::vector<double>> ht_face_grad_x_;
+  std::vector<std::vector<double>> ht_face_grad_y_;
 
   // source terms
   std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;
