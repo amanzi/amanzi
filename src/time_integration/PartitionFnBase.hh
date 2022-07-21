@@ -41,9 +41,6 @@ public:
     virtual void FunctionalTimeDerivativeFast(const double t, const Teuchos::RCP<Vector> u, Teuchos::RCP<Vector> u_eval) = 0;
 
     
-  // computes a norm on u-du and returns the result
-  virtual double ErrorNorm(Teuchos::RCP<const Vector> u, Teuchos::RCP<const Vector> du) = 0;
-
 };
 
 #endif

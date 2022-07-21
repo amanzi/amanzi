@@ -42,11 +42,11 @@ namespace Amanzi
    * @brief Method enums
    * TODO: Add appropiate names and order 3 coefficents
    */
-  enum method_t
+  enum EXIM_method_t
   {
     MrGark_EXIM_2,
-    temp3,
-    user_defiend
+    MrGark_EXIM_temp3,
+    MrGark_EXIM_user_defiend
   };
 
 
@@ -57,7 +57,7 @@ namespace Amanzi
     //RHS
     Teuchos::RCP<MRG_EXIM_FnBase<Vector>> fn_;
 
-    method_t method_;
+    EXIM_method_t method_;
 
     // Solver Parameters
     Teuchos::RCP<AmanziSolvers::Solver<Vector,VectorSpace> > solverslow_;
@@ -78,8 +78,6 @@ namespace Amanzi
     std::function<void(double, double, std::vector<double>&)> a_slowfast_;
     std::function<void(double, double, std::vector<double>&)> a_fastslow_;
 
-    // Allocate the coupling matrices based of M and update when a new M is given
-    int prev_M_ = 0;
     std::vector<double> a_slowfast_local_;
     std::vector<double> a_fastslow_local_;
 
@@ -95,7 +93,7 @@ namespace Amanzi
     Teuchos::RCP<Vector> y_exp_f_;
     Teuchos::RCP<Vector> y_exp_s_;
 
-    void InitMethod(const method_t method);
+    void InitMethod(const EXIM_method_t method);
     void InitMemory(const Teuchos::RCP<Vector> initvector);
     void InitCoefficentMemory();
     void InitSolvers(Teuchos::ParameterList& plist, const Teuchos::RCP<Vector> initvector);
@@ -104,7 +102,7 @@ namespace Amanzi
   public:
 
     MRG_EXIM_TI(MRG_EXIM_FnBase<Vector> &fn,
-                const method_t method,
+                const EXIM_method_t method,
                 Teuchos::ParameterList& plist,
                 const Teuchos::RCP<Vector> initvector);
 
@@ -143,7 +141,7 @@ namespace Amanzi
   };
 
   template <class Vector, class VectorSpace>
-  void MRG_EXIM_TI<Vector, VectorSpace>::InitMethod(const method_t method)
+  void MRG_EXIM_TI<Vector, VectorSpace>::InitMethod(const EXIM_method_t method)
   {
 
     //Functions are prescaled by the M given
@@ -182,7 +180,7 @@ namespace Amanzi
 
       break;
 
-    case temp3:
+    case MrGark_EXIM_temp3:
       // Order 3 method
       stage_ = 3;
       order_ = 3;
@@ -192,8 +190,8 @@ namespace Amanzi
     default:
       // TODO:
       
-      stage_ = -1;
-      order_ = -1;
+      stage_ = c_fast_.size();
+      order_ = 0;
 
       break;
     }
@@ -274,7 +272,7 @@ namespace Amanzi
 
   template <class Vector, class VectorSpace>
   MRG_EXIM_TI<Vector, VectorSpace>::MRG_EXIM_TI(MRG_EXIM_FnBase<Vector> &fn,
-                                              const method_t method,
+                                              const EXIM_method_t method,
                                               Teuchos::ParameterList& plist,
                                               const Teuchos::RCP<Vector> initvector) : plist_(plist)
   {
@@ -301,7 +299,7 @@ namespace Amanzi
                                               const std::function<void(double, double, std::vector<double>&)> a_slowfast,
                                               const std::function<void(double, double, std::vector<double>&)> a_fastslow,
                                               Teuchos::ParameterList& plist,
-                                              const Teuchos::RCP<Vector> initvector) : order_(order), stage_(stage), method_(user_defiend),
+                                              const Teuchos::RCP<Vector> initvector) : order_(order), stage_(stage), method_(MrGark_EXIM_user_defiend),
                                                                           a_slowfast_(a_slowfast), a_fastslow_(a_fastslow), plist_(plist)
   {
     fn_ = Teuchos::rcpFromRef(fn);
@@ -320,6 +318,8 @@ namespace Amanzi
     a_slowslow_.resize(a_slowslow.size());
     a_fastfast_ = a_fastfast;
     a_slowslow_ = a_slowslow;
+    
+    stage_ = c_fast_.size();
 
     MRG_EXIM_TI<Vector, VectorSpace>::InitMemory(initvector);
     MRG_EXIM_TI<Vector, VectorSpace>::InitCoefficentMemory();

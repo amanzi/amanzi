@@ -68,7 +68,7 @@ public:
         Pu_slow = Teuchos::rcp(new Matrix(*A_));
 
         //initalize the solver
-        solver = Amesos2::create<Epetra_CrsMatrix,Epetra_MultiVector>("KLU2", Pu_slow, temp_memory_, temp_memory_);
+        solver = Amesos2::create<Matrix,Epetra_MultiVector>("KLU2", Pu_slow, temp_memory_, temp_memory_);
     
   }
 

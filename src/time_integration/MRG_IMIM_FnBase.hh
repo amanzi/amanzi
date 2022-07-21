@@ -26,7 +26,7 @@ namespace Amanzi {
  * @tparam Vector templated class to provide based of TreeVector.hh
  */
 
-template<class Vector>
+template<class Vector, class MultiVector>
 class MRG_IMIM_FnBase : public PartitionFnBase<Vector>  {
 
  public:
@@ -34,30 +34,42 @@ class MRG_IMIM_FnBase : public PartitionFnBase<Vector>  {
   
   // computes the non-linear functional f = f(t,u,udot)
   virtual void FunctionalResidualFull(double t_old, double t_new, std::vector<double> scalings,
-                                    Teuchos::RCP<Vector> u_old_slow,  Teuchos::RCP<Vector> u_new_slow, Teuchos::RCP<Vector> slow_exp,
-                                    Teuchos::RCP<Vector> u_old_fast,  Teuchos::RCP<Vector> u_new_fast, Teuchos::RCP<Vector> fast_exp,
-                                    Teuchos::RCP<Vector> f_slow, Teuchos::RCP<Vector> f_fast) = 0;
+      Teuchos::RCP<MultiVector> u_old_full,  Teuchos::RCP<MultiVector> u_new_full, Teuchos::RCP<MultiVector> u_exp_full,
+      Teuchos::RCP<MultiVector> f_eval_full) = 0;
 
   
   virtual void FunctionalResidualFast(double t_old, double t_new, double scaling,
-                                    Teuchos::RCP<Vector> u_old_fast,  Teuchos::RCP<Vector> u_new_fast,
-                                    Teuchos::RCP<Vector> fast_exp,  Teuchos::RCP<Vector> f_fast) = 0;
+    Teuchos::RCP<Vector> u_old_fast,  Teuchos::RCP<Vector> u_new_fast,
+    Teuchos::RCP<Vector> u_exp_fast,  Teuchos::RCP<Vector> f_eval_fast) = 0;
 
   // applies preconditioner to u and returns the result in Pu
-  virtual int ApplyPreconditionerFull(Teuchos::RCP<const Vector> u_full, Teuchos::RCP<Vector> Pu_full) = 0;
+  virtual int ApplyPreconditionerFull(Teuchos::RCP<const MultiVector> u_full, Teuchos::RCP<MultiVector> u_eval) = 0;
 
-  virtual int ApplyPreconditionerFast(Teuchos::RCP<const Vector> u_fast, Teuchos::RCP<Vector> Pu_fast) = 0;
+  virtual int ApplyPreconditionerFast(Teuchos::RCP<const Vector> u_fast, Teuchos::RCP<Vector> u_eval) = 0;
   
   // updates the preconditioner
   // TODO: Provide interface for coefficents to scale for both Full and Fast
-  virtual void UpdatePreconditionerFull(double t, std::vector<double> scalings, Teuchos::RCP<const Vector> up_slow, Teuchos::RCP<const Vector> up_fast) = 0;
+  virtual void UpdatePreconditionerFull(double t, std::vector<double> scalings, Teuchos::RCP<const MultiVector> u_full) = 0;
 
-  virtual void UpdatePreconditionerFast(double t, double scaling, Teuchos::RCP<const Vector> up) = 0;
+  virtual void UpdatePreconditionerFast(double t, double scaling, Teuchos::RCP<const Vector> u_fast) = 0;
+
+  
+  // computes a norm on u-du and returns the result
+  virtual double ErrorNorm(Teuchos::RCP<const Vector> u, Teuchos::RCP<const Vector> du) = 0;
+
+
+  // computes a norm on u-du and returns the result
+  virtual double ErrorNorm(Teuchos::RCP<const MultiVector> u, Teuchos::RCP<const MultiVector> du) = 0;
 
   // check the admissibility of a solution
   // override with the actual admissibility check
   // TODO: Not too sure on whether this needs to be done for both fast and slow
-  virtual bool IsAdmissible(Teuchos::RCP<const Vector> up) = 0;
+  virtual bool IsAdmissible(Teuchos::RCP<const Vector> u) = 0;
+
+  // check the admissibility of a solution
+  // override with the actual admissibility check
+  // TODO: Not too sure on whether this needs to be done for both fast and slow
+  virtual bool IsAdmissible(Teuchos::RCP<const MultiVector> u) = 0;
 
   // possibly modifies the predictor that is going to be used as a
   // starting value for the nonlinear solve in the time integrator,
@@ -67,8 +79,7 @@ class MRG_IMIM_FnBase : public PartitionFnBase<Vector>  {
   // modified, false if not
 
   // TODO: Is full or fast needed for modify predictor (I guess for performance?)
-  virtual bool ModifyPredictorFull(double h, Teuchos::RCP<const Vector> u0_fast, Teuchos::RCP<const Vector> u0_slow,
-                                   Teuchos::RCP<Vector> u_fast, Teuchos::RCP<Vector> u_slow) = 0;
+  virtual bool ModifyPredictorFull(double h, Teuchos::RCP<const MultiVector> u0_full, Teuchos::RCP<MultiVector> u_full) = 0;
 
   virtual bool ModifyPredictorFast(double h, Teuchos::RCP<const Vector> u0_fast, Teuchos::RCP<Vector> u_fast) = 0;
 
@@ -80,9 +91,8 @@ class MRG_IMIM_FnBase : public PartitionFnBase<Vector>  {
 
   // TODO: IS full or fast needed for modify correction (Perhaps for performance?)
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult 
-      ModifyCorrectionFull(double h, Teuchos::RCP<const Vector> res_slow, Teuchos::RCP<const Vector> res_fast,
-                       Teuchos::RCP<const Vector> u_slow, Teuchos::RCP<Vector> du_slow,
-                       Teuchos::RCP<const Vector> u_fast, Teuchos::RCP<Vector> du_fast) = 0;
+      ModifyCorrectionFull(double h, Teuchos::RCP<const MultiVector> res_full,
+                       Teuchos::RCP<const MultiVector> u_full, Teuchos::RCP<MultiVector> du_full) = 0;
 
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult 
       ModifyCorrectionFast(double h, Teuchos::RCP<const Vector> res,

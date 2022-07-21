@@ -40,6 +40,11 @@ class MRG_EXIM_FnBase : public PartitionFnBase<Vector> {
   // updates the preconditioner
   virtual void UpdateSlowPreconditioner(double t, double scaling, Teuchos::RCP<const Vector> u) = 0;
 
+  
+  // computes a norm on u-du and returns the result
+  virtual double ErrorNorm(Teuchos::RCP<const Vector> u, Teuchos::RCP<const Vector> du) = 0;
+
+
   // check the admissibility of a solution
   // override with the actual admissibility check
   virtual bool IsAdmissible(Teuchos::RCP<const Vector> up) = 0;

@@ -16,6 +16,12 @@
 #include "MRG_EXIM_ode_fnbase.hh"
 #include "PartitionFnBase.hh"
 
+#include "MRG_IMIM_FnBase.hh"
+#include "MRG_IMIM_ode_fnbase.hh"
+#include "MRG_IMIM_SolverFnBase_Fast.hh"
+#include "MRG_IMIM_SolverFnBase_Full.hh"
+#include "MRG_IMIM_TI.hh"
+
 #include "dbc.hh"
 #include "exceptions.hh"
 #include "errors.hh"
@@ -32,6 +38,7 @@ SUITE(MR_GARK_Tests) {
     Epetra_MpiComm *comm;
 
     Teuchos::RCP<Epetra_Vector> init;
+    Teuchos::RCP<Epetra_MultiVector> init_full;
     Teuchos::RCP<Epetra_Vector> u;
     Teuchos::RCP<Epetra_Vector> u_eval;
     Teuchos::RCP<Epetra_CrsMatrix> A_fast;
@@ -44,7 +51,9 @@ SUITE(MR_GARK_Tests) {
       comm = new Epetra_MpiComm(MPI_COMM_SELF);
       Epetra_Map map(2,0,*comm);
       Epetra_Map map_matrix(2, 0, *comm);
+      Epetra_Map map_full(4, 0, *comm);
       init = Teuchos::rcp(new Epetra_Vector(map));
+      init_full = Teuchos::rcp(new Epetra_MultiVector(map_full, 2));
 
       // u, u_dot, and exact soln
       u = Teuchos::rcp(new Epetra_Vector(*init));
@@ -102,11 +111,91 @@ SUITE(MR_GARK_Tests) {
     std::cout << "Fast Partition" << std::endl;
     A_fast->Print(std::cout);
 
-    std::cout << "Problem Initalized" << std::endl;
-
     // create the time stepper
     Teuchos::RCP<Amanzi::MRG_EXIM_TI<Epetra_Vector, Epetra_BlockMap> > TS =
         Teuchos::rcp(new MRG_EXIM_TI<Epetra_Vector, Epetra_BlockMap>(ToyProblem, MrGark_EXIM_2, plist, init ));
+
+    // initial value
+    u->PutScalar(1.0);
+
+    // initial time
+    double t=0.0;
+
+    // final time
+    double tout = 2.0;
+
+    // initial time step
+    double h = 1.0e-3;
+    double hnext;
+
+    //TimeStep Ratio
+    int M  = 4;
+
+    // iterate until the final time
+    int i=0;
+    double tlast = t;
+
+    std::cout << "starting time integration" << std::endl;
+    std::cout << "Constant Step Size of : " << h << std::endl;
+    std::cout << "M (Stepsize Ratio) : " << M << std::endl;
+    do {
+      if (tlast + h > tout) {
+        std::cout << "adjusting h, to hit the final time exactly...\n";
+        h = tout - tlast;
+      }
+
+      int redo = 0;
+      do {
+        redo = TS->TimeStep(tlast, h, M, u, u_eval);
+      } while (redo);
+
+      i++;
+
+      *u = *u_eval;
+
+      // u->Print(std::cout);
+
+      tlast += h;
+    } while (tout > tlast);
+
+    ToyProblem.exact_rhs(tout, u_eval);
+
+    std::cout << "Exact Solution" << std::endl;
+    u_eval->Print(std::cout);
+
+    std::cout << "Numerical Solution" << std::endl;
+    u->Print(std::cout);
+
+    u_eval->Update(-1.0, *u, 1.0);
+
+    double norm;
+    u_eval->NormInf(&norm);
+
+    std::cout << "Absolute Error: " << norm << std::endl;
+
+    CHECK_CLOSE(0.0,norm,1e-3);
+  }
+
+  TEST_FIXTURE(test_data, ODE2D_MRG_IMIM_NKA_TrueJacobian) {
+    std::cout << "Test: ODE 2D on MR-GARK IMIM (Order 2)" << std::endl;
+    std::cout << "\twith NKA, PC is True Jacobian (Fixed Step)" << std::endl;
+
+    // set the parameter list for BDF1
+    // set up solver params
+    plist.set("solver type", "nka");
+    plist.sublist("nka parameters").set("limit iterations", 20);
+    plist.sublist("nka parameters").set("nonlinear tolerance",1e-10);
+    plist.sublist("nka parameters").set("diverged tolerance",1.0e4);
+    plist.sublist("nka parameters").set("convergence monitor","monitor update");
+    // create the PDE problem
+
+    MRG_IMIM_linear2d_ODE ToyProblem(0.0, 1.0, true, A_fast, A_slow, comm);
+
+    std::cout << "Problem Initalized" << std::endl;
+
+    // create the time stepper
+    Teuchos::RCP<Amanzi::MRG_IMIM_TI<Epetra_Vector, Epetra_BlockMap, Epetra_MultiVector, Epetra_BlockMap> > TS =
+        Teuchos::rcp(new MRG_IMIM_TI<Epetra_Vector, Epetra_BlockMap, Epetra_MultiVector, Epetra_BlockMap>(ToyProblem, MrGark_IMIM_2, plist, plist, init, init_full));
 
     std::cout << "Time Integrator Intialized" << std::endl;
 
@@ -124,7 +213,7 @@ SUITE(MR_GARK_Tests) {
     double hnext;
 
     //TimeStep Ratio
-    int M  = 4;
+    int M  = 1;
 
     // iterate until the final time
     int i=0;
