@@ -132,6 +132,13 @@ if (BUILD_TESTS)
                     NPROCS 3
                     SOURCE test/Main.cc test/shallow_water_dry_bed.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-              
+    
+    # Test: dry bed well balancing 
+    add_amanzi_test(shallow_water_dry_bed_wb shallow_water_dry_bed_wb
+                    KIND int
+                    NPROCS 3
+                    SOURCE test/Main.cc test/shallow_water_dry_bed_wb.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
 endif()
 
