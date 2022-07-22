@@ -274,6 +274,9 @@ void FlowEnergyMatrixFracture_PK::Initialize()
 ******************************************************************* */
 bool FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
+  auto counter = Teuchos::TimeMonitor::getNewCounter("Flow-Energy MPC PK");
+  Teuchos::TimeMonitor tm(*counter);
+
   // make copy of evaluators
   std::vector<Key> names = { "saturation_liquid", "water_content", "energy" };
   std::vector<std::string> passwds = { "flow", "state", "thermal" };
