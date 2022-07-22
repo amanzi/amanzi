@@ -38,9 +38,6 @@ void ReconstructionCellLinear::Init(Teuchos::ParameterList& plist)
 
   gradient_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
   gradient_c_ = gradient_->ViewComponent("cell", true);
-
-  // process other parameters
-  poly_order_ = plist.get<int>("polynomial order", 0);
 }
 
 
@@ -69,7 +66,7 @@ void ReconstructionCellLinear::Compute(
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
     // mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
-    CellFaceAdjCellsNonManifold_(c, AmanziMesh::Parallel_type::ALL, cells);
+    CellFaceAdjCellsManifold_(c, AmanziMesh::Parallel_type::ALL, cells);
     int ncells = cells.size();
 
     matrix.PutScalar(0.0);
@@ -129,7 +126,7 @@ void ReconstructionCellLinear::PopulateLeastSquareSystem_(
 * On intersecting manifolds, we extract neighboors living in the same 
 * manifold using a smoothness criterion.
 ****************************************************************** */
-void ReconstructionCellLinear::CellFaceAdjCellsNonManifold_(
+void ReconstructionCellLinear::CellFaceAdjCellsManifold_(
     AmanziMesh::Entity_ID c, AmanziMesh::Parallel_type ptype,
     std::vector<AmanziMesh::Entity_ID>& cells) const
 {

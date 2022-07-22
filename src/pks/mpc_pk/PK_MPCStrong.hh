@@ -211,15 +211,7 @@ bool PK_MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new, bool reinit)
   if (!fail) {
     // commit the step as successful
     time_stepper_->CommitSolution(dt_, solution_);
-
-    // update the timestep size
-    if (dt_solver < dt_ && dt_solver >= dt_) {
-      // We took a smaller step than we recommended, and it worked fine (not
-      // suprisingly).  Likely this was due to constraints from other PKs or
-      // vis.  Do not reduce our recommendation.
-    } else {
-      dt_ = dt_solver;
-    }
+    dt_ = dt_solver;
   } else {
     // take the decreased timestep size
     dt_ = dt_solver;

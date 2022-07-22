@@ -79,7 +79,7 @@ void TransportMatrixFractureImplicit_PK::Setup()
 
   // -- darcy flux in fracture
   if (!S_->HasRecord(fracture_vol_flowrate_key_)) {
-    auto cvs = Operators::CreateNonManifoldCVS(mesh_fracture_);
+    auto cvs = Operators::CreateManifoldCVS(mesh_fracture_);
     *S_->Require<CV_t, CVS_t>(fracture_vol_flowrate_key_, Tags::DEFAULT, "state")
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
   }

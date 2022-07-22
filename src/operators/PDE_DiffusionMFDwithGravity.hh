@@ -117,8 +117,8 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD,
 
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
-  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                     const Teuchos::Ptr<CompositeVector>& flux) override;
+  virtual void UpdateFluxManifold(const Teuchos::Ptr<const CompositeVector>& u,
+                                  const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // -- problem initialiation
   using PDE_DiffusionMFD::Setup;
