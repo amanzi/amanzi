@@ -152,11 +152,13 @@ void TransportImplicit_PK::Initialize()
     std::string ti_name = ti_list_->get<std::string>("time integration method", "none");
     if (ti_name == "BDF1") {
       Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
-      bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
-
       auto udot = Teuchos::rcp(new TreeVector(*soln_));
       udot->PutScalar(0.0);
-      bdf1_dae_->SetInitialState(0.0, soln_, udot);
+
+      for (int i = 0; i < num_aqueous; i++) {
+        bdf1_dae_.push_back(Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_)));
+        bdf1_dae_[i]->SetInitialState(0.0, soln_, udot);
+      }
     } else {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;
@@ -290,21 +292,27 @@ bool TransportImplicit_PK::AdvanceStepHO_(double t_old, double t_new, int* tot_i
   double dt_next;
 
   dt_ = t_new - t_old;
-  *tot_itrs = bdf1_dae_->number_nonlinear_steps();
 
+  *tot_itrs = 0;
   for (int i = 0; i < num_aqueous; i++) {
     current_component_ = i;
+
+    int num_itrs = bdf1_dae_[i]->number_nonlinear_steps();
     *(*solution_->ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(i);  
 
-    failed = bdf1_dae_->TimeStep(dt_, dt_next, soln_);
+    failed = bdf1_dae_[i]->TimeStep(dt_, dt_next, soln_);
     dt_ = dt_next;
     if (failed) return failed;
 
     *(*tcc_tmp->ViewComponent("cell"))(i) = *(*solution_->ViewComponent("cell"))(0);
+    *tot_itrs += bdf1_dae_[i]->number_nonlinear_steps() - num_itrs;
   }
 
-  bdf1_dae_->CommitSolution(dt_, soln_);
-  *tot_itrs = bdf1_dae_->number_nonlinear_steps() - *tot_itrs;
+  // if we reach this point, we can commit solution
+  for (int i = 0; i < num_aqueous; i++) {
+    *(*solution_->ViewComponent("cell"))(0) = *(*tcc_tmp->ViewComponent("cell"))(i);  
+    bdf1_dae_[i]->CommitSolution(dt_, soln_);
+  }
 
   if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
