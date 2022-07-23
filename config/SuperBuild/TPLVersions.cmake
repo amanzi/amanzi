@@ -162,6 +162,7 @@
 #   0.98.1       - configuratoin updates fixing consistency of meshing options (required changes in Amanzi build as well).
 #   0.98.2       - update Hypre to 2.22.0
 #   0.98.3       - enforced c++14 standard for Trilinos and Amanzi
+#   0.98.4       - add cybernetic patch from Glenn for PFLOTRAN
 
 
 include(CMakeParseArguments)
@@ -215,7 +216,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 3)
+set(AMANZI_TPLS_VERSION_PATCH 4)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
