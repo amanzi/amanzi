@@ -30,8 +30,7 @@ using namespace Amanzi;
 
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = glist->sublist("regions");
-  Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, *comm));
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   // create mesh
   auto mesh_list = Teuchos::sublist(glist, "mesh");
@@ -68,8 +67,8 @@ using namespace Amanzi;
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  auto& flow = *S->GetFieldData("darcy_flux", "flow")->ViewComponent("face");
-  auto& pres = *S->GetFieldData("pressure", "flow")->ViewComponent("cell");
+  auto& flow = *S->GetW<CompositeVector>("volumetric_flow_rate", "flow").ViewComponent("face");
+  auto& pres = *S->GetW<CompositeVector>("pressure", "flow").ViewComponent("cell");
   
   // -- overwite with constant velocity
   AmanziGeometry::Point vel(1.0, 2.0);
@@ -149,8 +148,8 @@ using namespace Amanzi;
   int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
-  auto& flow = *S->GetFieldData("darcy_flux", "flow")->ViewComponent("face");
-  auto& pres = *S->GetFieldData("pressure", "flow")->ViewComponent("cell");
+  auto& flow = *S->GetW<CompositeVector>("volumetric_flow_rate", "flow").ViewComponent("face");
+  auto& pres = *S->GetW<CompositeVector>("pressure", "flow").ViewComponent("cell");
 
   for (int f = 0; f < nfaces; ++f) {
     flow[0][f] = vel * mesh->face_normal(f);

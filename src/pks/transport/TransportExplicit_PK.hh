@@ -16,9 +16,7 @@
 #define AMANZI_TRANSPORT_EXPLICIT_PK_HH_
 
 // TPLs
-#include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
-#include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
@@ -29,7 +27,6 @@
 #include "PK.hh"
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
-#include "ReconstructionCell.hh"
 #include "State.hh"
 #include "Tensor.hh"
 #include "Units.hh"
@@ -50,7 +47,7 @@ namespace Amanzi {
 namespace Transport {
 
 class TransportExplicit_PK : public Transport_PK,
-                             public PK_Explicit<Epetra_Vector> {
+                             public PK_Explicit<CompositeVector> {
  public:
   TransportExplicit_PK(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -64,21 +61,15 @@ class TransportExplicit_PK : public Transport_PK,
   
   ~TransportExplicit_PK() {};
   
-  // Forbidden.
-  TransportExplicit_PK(const TransportExplicit_PK&);
-  TransportExplicit_PK& operator=(const TransportExplicit_PK&);
-
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
 
-  virtual void FunctionalTimeDerivative(double t, const Epetra_Vector& component,
-                                        Epetra_Vector& f_component) override;
-  void DudtOld(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+  virtual void FunctionalTimeDerivative(double t, const CompositeVector& component, CompositeVector& f) override;
 
   // advection members
   // -- advection in matrix
   void AdvanceDonorUpwind(double dT);
   // -- advection on non-manifolds
-  void AdvanceDonorUpwindNonManifold(double dT);
+  void AdvanceDonorUpwindManifold(double dT);
 
  private:
   void AdvanceSecondOrderUpwindRKn(double dt_cycle);

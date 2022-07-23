@@ -1,6 +1,6 @@
 /*
 
-  Copyright 2010-201x held jointly by LANS/LANL, ORNL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by LANS/LANL, ORNL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -12,6 +12,7 @@
 
 #include "AmanziComm.hh"
 #include "CompositeVector.hh"
+#include "IO.hh"
 #include "MeshColumn.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
@@ -52,7 +53,10 @@ bool compareFiles(const std::string& p1, const std::string& p2) {
 
 
 struct obs_test {
-public:
+ using CV = CompositeVector;
+ using CVS = CompositeVectorSpace;
+
+ public:
   obs_test() {
     auto comm = Amanzi::getDefaultComm();
 
@@ -77,8 +81,7 @@ public:
     one_side_side.set<Teuchos::Array<double>>("low coordinate", std::vector<double>{-.35, -1, -1});
     one_side_side.set<Teuchos::Array<double>>("high coordinate", std::vector<double>{-0.3, 1, 1});
 
-    Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
+    auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
     auto plist = Teuchos::rcp(new Teuchos::ParameterList("mesh factory"));
     plist->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
@@ -86,56 +89,66 @@ public:
     Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory.create(-1,-1,-1,1,1,1,3,3,3);
 
     Teuchos::ParameterList state_list("state");
+    state_list.sublist("verbose object")
+        .set<std::string>("verbosity level", "extreme");
 
     S = Teuchos::rcp(new State(state_list));
     S->RegisterMesh("domain", mesh);
-    S->RequireField("constant")->SetMesh(mesh)->SetGhosted(false)
+
+    S->Require<CompositeVector, CompositeVectorSpace>("constant", Tags::DEFAULT, "my_password")
+      .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireField("linear")->SetMesh(mesh)->SetGhosted(false)
+    S->Require<CompositeVector, CompositeVectorSpace>("linear", Tags::DEFAULT, "my_password")
+      .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireField("id")->SetMesh(mesh)->SetGhosted(false)
+    S->Require<CompositeVector, CompositeVectorSpace>("id", Tags::DEFAULT, "my_password")
+      .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireField("flux")->SetMesh(mesh)->SetGhosted(false)
+    S->Require<CompositeVector, CompositeVectorSpace>("flux", Tags::DEFAULT, "my_password")
+      .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("face", AmanziMesh::FACE, 1);
-    S->RequireField("multi_dof")->SetMesh(mesh)->SetGhosted(false)
+    S->Require<CompositeVector, CompositeVectorSpace>("multi_dof", Tags::DEFAULT, "my_password")
+      .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 3);
-    S->set_time(0.);
+    S->Setup();
+
+    S->set_time(0.0);
     S->set_cycle(0);
   }
 
   void setup() {
     S->Setup();
-    S->GetFieldData("constant", "state")->PutScalar(2.0);
-    S->GetFieldData("linear", "state")->PutScalar(0.);
+    S->GetW<CompositeVector>("constant", Tags::DEFAULT, "my_password").PutScalar(2.0);
+    S->GetW<CompositeVector>("linear", Tags::DEFAULT, "my_password").PutScalar(0.0);
 
-    (*S->GetFieldData("multi_dof", "state")->ViewComponent("cell", false))(0)->PutScalar(0.);
-    (*S->GetFieldData("multi_dof", "state")->ViewComponent("cell", false))(1)->PutScalar(1.);
-    (*S->GetFieldData("multi_dof", "state")->ViewComponent("cell", false))(2)->PutScalar(2.);
+    (*S->GetW<CV>("multi_dof", Tags::DEFAULT, "my_password").ViewComponent("cell"))(0)->PutScalar(0.0);
+    (*S->GetW<CV>("multi_dof", Tags::DEFAULT, "my_password").ViewComponent("cell"))(1)->PutScalar(1.0);
+    (*S->GetW<CV>("multi_dof", Tags::DEFAULT, "my_password").ViewComponent("cell"))(2)->PutScalar(2.0);
 
     auto mesh = S->GetMesh("domain");
-
-    Epetra_MultiVector& flux_f = *S->GetFieldData("flux", "state")
-      ->ViewComponent("face", false);
+    Epetra_MultiVector& flux_f = *S->GetW<CV>("flux", Tags::DEFAULT, "my_password")
+      .ViewComponent("face");
     AmanziGeometry::Point plus_xz(1.0, 0.0, 1.0);
-    for (int f=0; f!=flux_f.MyLength(); ++f) {
+
+    for (int f = 0; f != flux_f.MyLength(); ++f) {
       flux_f[0][f] = mesh->face_normal(f) * plus_xz;
     }
 
-    Epetra_MultiVector& id_c = *S->GetFieldData("id", "state")
-      ->ViewComponent("cell", false);
+    Epetra_MultiVector& id_c = *S->GetW<CV>("id", Tags::DEFAULT, "my_password").ViewComponent("cell");
     auto& cell_map = S->GetMesh("domain")->map(AmanziMesh::CELL, false);
-    for (int c=0; c!=id_c.MyLength(); ++c) {
+
+    for (int c = 0; c != id_c.MyLength(); ++c) {
       id_c[0][c] = cell_map.GID(c);
     }
   }
 
   void advance(double dt) {
     S->advance_time(dt);
-    S->GetFieldData("linear", "state")->PutScalar(S->time() * 0.1);
+    S->GetW<CV>("linear", Tags::DEFAULT, "my_password").PutScalar(S->get_time() * 0.1);
     S->advance_cycle();
   }
 
-public:
+ public:
   Teuchos::RCP<State> S;
 };
 
@@ -170,8 +183,8 @@ struct obs_domain_set_test : public obs_test {
     }
 
     for (auto& ds : *domain_set) {
-      S->RequireField(Keys::getKey(ds,"variable"))->SetMesh(S->GetMesh(ds))
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+      S->Require<CompositeVector,CompositeVectorSpace>(Keys::getKey(ds,"variable"), Tags::DEFAULT, "my_password")
+        .SetMesh(S->GetMesh(ds))->SetComponent("cell", AmanziMesh::CELL, 1);
     }
   }
 
@@ -180,7 +193,8 @@ struct obs_domain_set_test : public obs_test {
     auto ds = S->GetDomainSet("column");
     for (auto& dname : *ds) {
       int index = Keys::getDomainSetIndex<int>(dname);
-      S->GetFieldData(Keys::getKey(dname,"variable"),"state")->PutScalar(index);
+      S->GetW<CompositeVector>(Keys::getKey(dname,"variable"),Tags::DEFAULT, "my_password")
+        .PutScalar(index);
     }
   }
 };
@@ -207,6 +221,7 @@ TEST_FIXTURE(obs_test, Assumptions) {
   CHECK_EQUAL(27, cells_all_total);
 }
 
+
 TEST_FIXTURE(obs_test, ObservePoint) {
   setup();
   // integrate an observable
@@ -216,6 +231,10 @@ TEST_FIXTURE(obs_test, ObservePoint) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "point");
 
+  Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+  auto vo = Teuchos::rcp(new VerboseObject("Test", vlist));
+
   Observable obs(obs_list);
   obs.set_comm(S->GetMesh("domain")->get_comm());
   obs.Setup(S.ptr());
@@ -223,9 +242,11 @@ TEST_FIXTURE(obs_test, ObservePoint) {
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
+  WriteStateStatistics(*S, *vo);
   obs.Update(S.ptr(), observation, 0);
   CHECK_CLOSE(2.0, observation[0], 1.e-10);
 }
+
 
 TEST_FIXTURE(obs_test, ObserveIntensiveIntegral) {
   setup();
@@ -400,6 +421,7 @@ TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ALL) {
   CHECK_CLOSE(2.0, observation[2], 1.e-10);
 }
 
+
 TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ONE) {
   setup();
   // direction nomralized flux relative to region allows normalizing in an
@@ -421,7 +443,6 @@ TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ONE) {
   obs.Update(S.ptr(), observation, 0);
   CHECK_CLOSE(2.0, observation[0], 1.e-10);
 }
-
 
 
 TEST_FIXTURE(obs_test, FileOne) {
@@ -483,7 +504,6 @@ TEST_FIXTURE(obs_test, FileTwo) {
 }
 
 
-
 TEST_FIXTURE(obs_test, TimeIntegrated) {
   setup();
   //  one observation in a file
@@ -519,6 +539,7 @@ TEST_FIXTURE(obs_test, TimeIntegrated) {
   // valuesB: 2, 2
   CHECK(compareFiles("obs3.dat", "test/obs3.dat.gold"));
 }
+
 
 TEST_FIXTURE(obs_test, WritesNaN) {
   setup();
@@ -617,7 +638,5 @@ TEST_FIXTURE(obs_domain_set_test, ObsDomainSetSubCommunicator) {
   // valuesB: 8,8
   CHECK(compareFiles("obs_ds2.dat", "test/obs_ds2.dat.gold"));
 }
-
-
 
 }

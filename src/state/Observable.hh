@@ -89,6 +89,12 @@ to disk by the UnstructuredObservation_ object.
       time-integral, observing on all cycles and accumulating the
       backwards-Euler product of dt times the observable at the new time.
 
+
+Developer note: the communicator pass into this class is likely MPI_COMM_WORLD,
+and must be a (non-proper) superset of the communicator on which the variable
+is defined.  Care is taken to make sure that this object is valid even if the
+variable and/or mesh do not exist on this process.
+
 */
 
 #ifndef AMANZI_OBSERVABLE_HH_
@@ -99,7 +105,9 @@ to disk by the UnstructuredObservation_ object.
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "AmanziComm.hh"
 #include "AmanziTypes.hh"
+#include "Key.hh"
 #include "Point.hh"
 #include "MeshDefs.hh"
 #include "IOEvent.hh"
@@ -113,6 +121,10 @@ class Observable {
   static const double nan;
 
   Observable(Teuchos::ParameterList& plist);
+  Observable(const Comm_ptr_type& comm, Teuchos::ParameterList& plist)
+    : Observable(plist) {
+    set_comm(comm);
+  }
 
   const std::string& get_name() const { return name_; }
   const std::string& get_variable() const { return variable_; }
@@ -135,15 +147,17 @@ class Observable {
 
  protected:
   Comm_ptr_type comm_;
+
   bool flux_normalize_;
   Teuchos::RCP<AmanziGeometry::Point> direction_;
   std::string flux_normalize_region_;
 
   std::string name_;
-  std::string variable_;
+  Key variable_;
   std::string region_;
   std::string functional_;
   std::string location_;
+  Tag tag_;
   int num_vectors_;
   int dof_;
   bool time_integrated_;

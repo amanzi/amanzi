@@ -62,7 +62,7 @@ using namespace Amanzi::AmanziGeometry;
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   cycle_driver.Go();
 
-  const auto& tcc_m = *S->GetFieldData("total_component_concentration")->ViewComponent("cell");
+  const auto& tcc_m = *S->Get<CompositeVector>("total_component_concentration").ViewComponent("cell");
   double cmin(1e+99);
   double cmax = -1e+99;
   for (int c = 0; c < 216; ++c) {
@@ -74,7 +74,7 @@ using namespace Amanzi::AmanziGeometry;
   }
   CHECK_CLOSE(cmin, cmax, 1e-12);
 
-  const auto& tcc_f = *S->GetFieldData("fracture-total_component_concentration")->ViewComponent("cell");
+  const auto& tcc_f = *S->Get<CompositeVector>("fracture-total_component_concentration").ViewComponent("cell");
   for (int c = 0; c < 36; ++c) {
     const auto& xc = mesh->cell_centroid(c);
     if (std::fabs(xc[0] - 5.5) < 1e-3) {

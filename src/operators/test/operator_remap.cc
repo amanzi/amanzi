@@ -45,8 +45,8 @@ class MyRemapDG : public Operators::RemapDG<CompositeVector> {
             Teuchos::ParameterList& plist)
     : Operators::RemapDG<CompositeVector>(mesh0, mesh1, plist),
       tprint_(0.0),
-      l2norm_(-1.0),
-      dt_output_(0.1) {};
+      dt_output_(0.1),
+      l2norm_(-1.0) {};
   ~MyRemapDG() {};
 
   // time control
@@ -292,15 +292,15 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
   Epetra_MultiVector& pec = *perr.ViewComponent("cell");
   q2c = p2c;
 
-  double pnorm, l2_err, inf_err, l20_err, inf0_err;
+  double pnorm, l2_err, inf_err, l20_err, l10_err, inf0_err;
   ana.ComputeCellErrorRemap(*dg, p2c, tend, 0, mesh1,
-                            pnorm, l2_err, inf_err, l20_err, inf0_err, &pec);
+                            pnorm, l2_err, inf_err, l20_err, l10_err, inf0_err, &pec);
 
   CHECK(((dim == 2) ? l2_err : l20_err) < 0.12 / (order + 1));
 
   if (MyPID == 0) {
-    printf("nx=%3d (orig) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
-        nx, l20_err, l2_err, inf0_err, inf_err);
+    printf("nx=%3d (orig) L1=%12.8g(mean) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
+        nx, l10_err, l20_err, l2_err, inf0_err, inf_err);
   }
 
   // optional projection on the space of polynomials 
@@ -318,11 +318,11 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
   }
 
   ana.ComputeCellErrorRemap(*dg, q2c, tend, 1, mesh1,
-                            pnorm, l2_err, inf_err, l20_err, inf0_err);
+                            pnorm, l2_err, inf_err, l20_err, l10_err, inf0_err);
 
   if (MyPID == 0) {
-    printf("nx=%3d (proj) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
-        nx, l20_err, l2_err, inf0_err, inf_err);
+    printf("nx=%3d (proj) L1=%12.8g(mean) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
+        nx, l10_err, l20_err, l2_err, inf0_err, inf_err);
   }
 
   // concervation errors: mass and volume (CGL)

@@ -28,12 +28,12 @@
 #include "BDFFnBase.hh"
 #include "Checkpoint.hh"
 #include "CompositeVectorSpace.hh"
-#include "independent_variable_field_evaluator_fromfunction.hh"
+#include "EvaluatorIndependentFunction.hh"
 #include "Key.hh"
 #include "Operator.hh"
 #include "PK_DomainFunction.hh"
 #include "PK_PhysicalBDF.hh"
-#include "primary_variable_field_evaluator.hh"
+#include "EvaluatorPrimary.hh"
 #include "Tensor.hh"
 #include "Units.hh"
 #include "VerboseObject.hh"
@@ -56,8 +56,8 @@ class Flow_PK : public PK_PhysicalBDF {
   virtual ~Flow_PK() {};
 
   // members required by PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
+  virtual void Setup() override;
+  virtual void Initialize() override;
 
   // other members of this PK.
   // -- initialize simple fields common for both flow models.
@@ -84,7 +84,7 @@ class Flow_PK : public PK_PhysicalBDF {
 
   // -- utilities
   double WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
-                                    const Epetra_MultiVector& darcy_flux) const;
+                                    const Epetra_MultiVector& vol_flowrate) const;
 
   // -- V&V
   void VV_ValidateBCs() const;
@@ -149,8 +149,8 @@ class Flow_PK : public PK_PhysicalBDF {
   mutable double mass_bc, seepage_mass_, mass_initial;
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, pressure_matrix_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > vol_flowrate_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > pressure_eval_, pressure_msp_eval_;
 
   // DFN model
   bool flow_on_manifold_;  // true for the DFN model
@@ -158,13 +158,14 @@ class Flow_PK : public PK_PhysicalBDF {
 
   // names of state fields 
   Key pressure_key_;
-  Key darcy_flux_key_, specific_storage_key_, specific_yield_key_;
+  Key vol_flowrate_key_, specific_storage_key_, specific_yield_key_;
   Key saturation_liquid_key_, prev_saturation_liquid_key_;
   Key porosity_key_, hydraulic_head_key_, pressure_head_key_;
-  Key permeability_key_;
+  Key permeability_key_, permeability_eff_key_;
   Key darcy_velocity_key_;
-  Key water_content_key_, prev_water_content_key_;
+  Key water_storage_key_, prev_water_storage_key_;
   Key viscosity_liquid_key_, mol_density_liquid_key_;
+  Key aperture_key_;
 
   // io
   Utils::Units units_;

@@ -71,7 +71,7 @@ TEST(FLOW_3D_RICHARDS) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
 
-  RPK->Setup(S.ptr());
+  RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -79,16 +79,14 @@ TEST(FLOW_3D_RICHARDS) {
   // modify the default state for the problem at hand
   std::string passwd("flow"); 
 
-  *S->GetScalarData("const_fluid_density", passwd) = 1.0;
-  S->GetFieldData("viscosity_liquid", "viscosity_liquid")->PutScalar(1.0);
+  S->GetW<double>("const_fluid_density", "state") = 1.0;
+  S->GetW<CompositeVector>("viscosity_liquid", Tags::DEFAULT, "viscosity_liquid").PutScalar(1.0);
   // S->GetField("viscosity_liquid", passwd)->set_initialized();
 
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
-  gravity[2] = -1.0;
-  S->GetField("gravity", "state")->set_initialized();
+  auto gravity = S->Get<AmanziGeometry::Point>("gravity");
 
   // create the initial pressure function
-  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
+  auto& p = *S->GetW<CompositeVector>("pressure", Tags::DEFAULT, passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -96,7 +94,7 @@ TEST(FLOW_3D_RICHARDS) {
   }
 
   // initialize the Richards process kernel
-  RPK->Initialize(S.ptr());
+  RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   /* solve the problem */
@@ -107,7 +105,7 @@ TEST(FLOW_3D_RICHARDS) {
   ti_specs.max_itrs = 400;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0, S);  // dummy times
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");

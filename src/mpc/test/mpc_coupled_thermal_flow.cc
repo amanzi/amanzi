@@ -49,7 +49,7 @@ using namespace Amanzi::AmanziGeometry;
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({Framework::MSTK}));
-  auto mesh = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true);
+  auto mesh = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, true, true);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    

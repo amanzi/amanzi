@@ -37,6 +37,7 @@ AmanziGeometry::Point Rotation2D(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point CompressionExpansion(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point BubbleFace3D(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point Unused(double t, const AmanziGeometry::Point& xv);
+AmanziGeometry::Point SineProduct(double t, const AmanziGeometry::Point& xv);
 
 
 /* *****************************************************************
@@ -161,6 +162,9 @@ AmanziGeometry::Point MovePoint(double t, const AmanziGeometry::Point& xv, int d
   case 2: 
     yv = Unused(t, xv);
     break;
+  case 3: 
+    yv = SineProduct(t, xv);
+    break;
   case 4:
     AMANZI_ASSERT(false);
     break;
@@ -262,6 +266,24 @@ AmanziGeometry::Point Unused(double t, const AmanziGeometry::Point& xv)
   AmanziGeometry::Point yv(2);
   yv[0] = xv[0] * xv[1] + (1.0 - xv[1]) * std::pow(xv[0], 0.8);
   yv[1] = xv[1] * xv[0] + (1.0 - xv[0]) * std::pow(xv[1], 0.8);
+  return yv;
+}
+
+
+/* *****************************************************************
+* Sine-type 
+***************************************************************** */
+inline
+AmanziGeometry::Point SineProduct(double t, const AmanziGeometry::Point& xv)
+{
+  int d = xv.dim();
+  double phi = 2 * M_PI;
+
+  AmanziGeometry::Point yv(xv);
+  double tmp = t * 0.1;
+  for (int i = 0; i < d; ++i) tmp *= std::sin(xv[i] * phi);
+
+  for (int i = 0; i < d; ++i) yv[i] = xv[i] + tmp;
   return yv;
 }
 

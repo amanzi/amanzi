@@ -67,7 +67,7 @@ class RegionBoxVolumeFractions : public Region {
                            const Point& p0, 
                            const Point& p1,
                            const std::vector<Point>& normals,
-                           const LifeCycleType lifecycle=PERMANENT);
+                           const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
 
   // Is the specified point inside this region?
   bool inside(const Point& p) const;

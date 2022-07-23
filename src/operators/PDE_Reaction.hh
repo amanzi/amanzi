@@ -32,16 +32,16 @@ namespace Operators {
 class PDE_Reaction : public PDE_HelperDiscretization {
  public:
   PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
-      K_(Teuchos::null),
       PDE_HelperDiscretization(global_op),
+      K_(Teuchos::null),
       coef_type_(CoefType::CONSTANT),
       static_matrices_initialized_(false) {
     InitReaction_(plist);
   }
 
   PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh) : 
-      K_(Teuchos::null),
       PDE_HelperDiscretization(mesh),
+      K_(Teuchos::null),
       coef_type_(CoefType::CONSTANT),
       static_matrices_initialized_(false) {
     InitReaction_(plist);

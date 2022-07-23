@@ -61,7 +61,7 @@ using namespace Amanzi::AmanziGeometry;
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     try {
       cycle_driver.Go();
-      S->GetFieldData("saturation_liquid")->MeanValue(&avg1);
+      S->Get<CompositeVector>("saturation_liquid").MeanValue(&avg1);
     } catch (...) {
       CHECK(false);
     }
@@ -78,7 +78,7 @@ using namespace Amanzi::AmanziGeometry;
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     try {
       cycle_driver.Go();
-      S->GetFieldData("saturation_liquid")->MeanValue(&avg2);
+      S->Get<CompositeVector>("saturation_liquid").MeanValue(&avg2);
     } catch (...) {
       CHECK(false);
     }

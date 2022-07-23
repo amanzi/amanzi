@@ -49,8 +49,8 @@ namespace AmanziChemistry {
 ******************************************************************* */
 SimpleThermoDatabase::SimpleThermoDatabase(Teuchos::RCP<Teuchos::ParameterList> plist,
                                            Teuchos::RCP<VerboseObject> vo)
-  : plist_(plist),
-    Beaker(vo.ptr()) {};
+  : Beaker(vo.ptr()),
+    plist_(plist) {};
 
 
 /* *******************************************************************
@@ -77,8 +77,8 @@ void SimpleThermoDatabase::Initialize(BeakerState& state,
   }
 
   // aqueous complexes
-  const auto& tmp = plist_->sublist("aqueous equilibrium complexes");
-  auto aqlist = RebuildAqueousComplexes_(tmp);
+  const auto& aux = plist_->sublist("aqueous equilibrium complexes");
+  auto aqlist = RebuildAqueousComplexes_(aux);
 
   id = 0;
   for (auto it = aqlist.begin(); it != aqlist.end(); ++it, ++id) {
@@ -86,8 +86,6 @@ void SimpleThermoDatabase::Initialize(BeakerState& state,
     if (aqlist.isSublist(name)) {
       auto tmp = aqlist.sublist(name);
       tmp.set<double>("temperature", state.temperature);
-
-      double h2o_stoich(0.0);
 
       AqueousEquilibriumComplex secondary(id, name, tmp, this->primary_species());
       AddAqueousEquilibriumComplex(secondary);

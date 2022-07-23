@@ -578,8 +578,9 @@ void Operator_Schema::AssembleMatrixOp(const Op_Node_Node& op,
   AMANZI_ASSERT(!ierr);
 }
 
+
 /* ******************************************************************
-* Assemble an injectino
+* Assemble an injection
 ****************************************************************** */
 void Operator_Schema::AssembleMatrixOp(const Op_MeshInjection& op,
                                        const SuperMap& map, MatrixFE& mat,

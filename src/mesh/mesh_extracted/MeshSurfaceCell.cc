@@ -83,27 +83,27 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
 
   for (auto& r : *gm) {
     // set to false as default
-    sets_[r->id()] = false;
+    sets_[r->get_id()] = false;
 
     // determine if true
-    if ((r->type() == AmanziGeometry::LABELEDSET ||
-         r->type() == AmanziGeometry::ENUMERATED) &&
-        parent_->valid_set_name(r->name(), FACE)) {
+    if ((r->get_type() == AmanziGeometry::RegionType::LABELEDSET ||
+         r->get_type() == AmanziGeometry::RegionType::ENUMERATED) &&
+        parent_->valid_set_name(r->get_name(), FACE)) {
       // label pulled from parent
       Entity_ID_List faces_in_set;
       std::vector<double> vofs;
-      parent_->get_set_entities_and_vofs(r->name(), FACE, Parallel_type::OWNED, &faces_in_set, &vofs);
-      sets_[r->id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
+      parent_->get_set_entities_and_vofs(r->get_name(), FACE, Parallel_type::OWNED, &faces_in_set, &vofs);
+      sets_[r->get_id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
               parent_face_) != faces_in_set.end();
-    } else if (r->type() == AmanziGeometry::ALL) {
-      sets_[r->id()] = true;
+    } else if (r->get_type() == AmanziGeometry::RegionType::ALL) {
+      sets_[r->get_id()] = true;
     } else if (r->is_geometric()) {
       // check containment
-      if (r->space_dimension() == 3) {
-        sets_[r->id()] = r->inside(parent_->face_centroid(parent_face_));
+      if (r->get_space_dimension() == 3) {
+        sets_[r->get_id()] = r->inside(parent_->face_centroid(parent_face_));
 
-      } else if (r->space_dimension() == 2 && flatten) {
-        sets_[r->id()] = r->inside(cell_centroid(0));
+      } else if (r->get_space_dimension() == 2 && flatten) {
+        sets_[r->get_id()] = r->inside(cell_centroid(0));
       }
     }
   }
@@ -261,11 +261,11 @@ int MeshSurfaceCell::deform(const std::vector<double>& target_cell_volumes_in,
 //
 bool MeshSurfaceCell::valid_set_type(const AmanziGeometry::RegionType rtype,
         const Entity_kind kind) const {
-  if (rtype == AmanziGeometry::LABELEDSET && kind == CELL) return true;
-  if (rtype == AmanziGeometry::ENUMERATED && kind == CELL) return true;
-  if (rtype == AmanziGeometry::BOX) return true;
-  if (rtype == AmanziGeometry::PLANE) return true;
-  if (rtype == AmanziGeometry::POINT) return true;
+  if (rtype == AmanziGeometry::RegionType::LABELEDSET && kind == CELL) return true;
+  if (rtype == AmanziGeometry::RegionType::ENUMERATED && kind == CELL) return true;
+  if (rtype == AmanziGeometry::RegionType::BOX) return true;
+  if (rtype == AmanziGeometry::RegionType::PLANE) return true;
+  if (rtype == AmanziGeometry::RegionType::POINT) return true;
   return false;
 }
 
@@ -274,7 +274,7 @@ unsigned int
 MeshSurfaceCell::get_set_size(const std::string& setname,
         const Entity_kind kind,
         const Parallel_type ptype) const {
-  auto setid = geometric_model()->FindRegion(setname)->id();
+  auto setid = geometric_model()->FindRegion(setname)->get_id();
   if (sets_.at(setid)) {
     return kind == CELL ? 1 : nodes_.size();
   }
@@ -287,7 +287,7 @@ void MeshSurfaceCell::get_set_entities_and_vofs(const std::string& setname,
         const Parallel_type ptype,
         Entity_ID_List *entids,
         std::vector<double> *vofs) const {
-  auto setid = geometric_model()->FindRegion(setname)->id();
+  auto setid = geometric_model()->FindRegion(setname)->get_id();
   if (sets_.at(setid)) {
     if (kind == CELL) {
       entids->resize(1,0);

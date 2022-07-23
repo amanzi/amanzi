@@ -7,7 +7,7 @@ namespace Amanzi {
 
 FunctionStandardMath::FunctionStandardMath(std::string op,
         double amplitude, double parameter, double shift) :
-    op_(op), amplitude_(amplitude), parameter_(parameter), shift_(shift) {
+    parameter_(parameter), amplitude_(amplitude), shift_(shift), op_(op) {
   if (!((op_ == "cos") ||
         (op_ == "sin") ||
         (op_ == "tan") ||

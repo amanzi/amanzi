@@ -27,7 +27,7 @@
 #include "Mesh_Algorithms.hh"
 #include "OperatorDefs.hh"
 #include "ParallelCommunication.hh"
-#include "ReconstructionCell.hh"
+#include "ReconstructionCellLinear.hh"
 #include "Tensor.hh"
 #include "WhetStoneMeshUtils.hh"
 
@@ -50,9 +50,9 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
 
   int nnodes_owned  = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 
-  double rho = *S->GetScalarData("const_fluid_density");
-  S->GetFieldData("darcy_flux")->ScatterMasterToGhosted();
-  const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
+  double rho = S->Get<double>("const_fluid_density");
+  S->Get<CompositeVector>("volumetric_flow_rate").ScatterMasterToGhosted();
+  const auto& flux = *S->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face", true);
   
   int d = mesh->space_dimension();
   AmanziGeometry::Point node_velocity(d);
@@ -180,23 +180,23 @@ void WalkaboutCheckpoint::CalculateData(
     std::vector<int>& material_ids)
 {
   const auto& mesh = S->GetMesh();
-  S->GetFieldData("porosity")->ScatterMasterToGhosted();
-  S->GetFieldData("saturation_liquid")->ScatterMasterToGhosted();
-  S->GetFieldData("pressure")->ScatterMasterToGhosted();
+  S->Get<CompositeVector>("porosity").ScatterMasterToGhosted();
+  S->Get<CompositeVector>("saturation_liquid").ScatterMasterToGhosted();
+  S->Get<CompositeVector>("pressure").ScatterMasterToGhosted();
 
-  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell", true);
-  const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", true);
-  auto p = S->GetFieldData("pressure")->ViewComponent("cell", true);
+  const auto& phi = *S->Get<CompositeVector>("porosity").ViewComponent("cell", true);
+  const auto& ws = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell", true);
+  auto p = S->Get<CompositeVector>("pressure").ViewComponent("cell", true);
 
   int nnodes_owned = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 
   // process non-flow state variables
   bool flag(false);
   Teuchos::RCP<const Epetra_MultiVector> kd;
-  if (S->HasField("isotherm_kd")) {
+  if (S->HasRecord("isotherm_kd")) {
     flag = true;
-    S->GetFieldData("isotherm_kd")->ScatterMasterToGhosted();
-    kd = S->GetFieldData("isotherm_kd")->ViewComponent("cell", true);
+    S->Get<CompositeVector>("isotherm_kd").ScatterMasterToGhosted();
+    kd = S->Get<CompositeVector>("isotherm_kd").ViewComponent("cell", true);
   }
 
   CalculateDarcyVelocity(S, xyz, velocity);
@@ -234,9 +234,9 @@ void WalkaboutCheckpoint::CalculateData(
   Teuchos::ParameterList plist;
   plist.set<std::string>("limiter", "tensorial");
 
-  Operators::ReconstructionCell lifting(mesh);
+  Operators::ReconstructionCellLinear lifting(mesh);
   lifting.Init(plist);
-  lifting.ComputeGradient(p);
+  lifting.Compute(p);
 
   // Populate state data at mesh nodes
   porosity.clear();
@@ -298,7 +298,7 @@ void WalkaboutCheckpoint::WriteDataFile(
 {
   if (!is_disabled()) {
     pk_ = pk;
-    CreateFile(S->cycle());
+    CreateFile(S->get_cycle());
 
     std::vector<AmanziGeometry::Point> xyz;
     std::vector<AmanziGeometry::Point> velocity;
@@ -437,7 +437,7 @@ void WalkaboutCheckpoint::WriteDataFile(
     }
 
     // timestamp and cycle number 
-    WriteAttributes(mesh.get_comm()->NumProc(), S->time(), S->cycle());    
+    WriteAttributes(mesh.get_comm()->NumProc());
     Finalize();
   }
 }

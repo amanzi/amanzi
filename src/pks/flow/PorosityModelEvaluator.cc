@@ -26,24 +26,24 @@ namespace Flow {
 * Two constructors.
 ****************************************************************** */
 PorosityModelEvaluator::PorosityModelEvaluator(
-    Teuchos::ParameterList& plist, Teuchos::RCP<PorosityModelPartition> pom) :
-    SecondaryVariablesFieldEvaluator(plist),
-    pom_(pom)
+    Teuchos::ParameterList& plist, Teuchos::RCP<PorosityModelPartition> pom)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
+      pom_(pom)
 {
   InitializeFromPlist_();
 }
 
 
-PorosityModelEvaluator::PorosityModelEvaluator(const PorosityModelEvaluator& other) :
-    SecondaryVariablesFieldEvaluator(other),
-    pressure_key_(other.pressure_key_),
-    pom_(other.pom_) {};
+PorosityModelEvaluator::PorosityModelEvaluator(const PorosityModelEvaluator& other)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+      pom_(other.pom_),
+      pressure_key_(other.pressure_key_) {};
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> PorosityModelEvaluator::Clone() const {
+Teuchos::RCP<Evaluator> PorosityModelEvaluator::Clone() const {
   return Teuchos::rcp(new PorosityModelEvaluator(*this));
 }
 
@@ -51,25 +51,26 @@ Teuchos::RCP<FieldEvaluator> PorosityModelEvaluator::Clone() const {
 /* ******************************************************************
 * Initialization.
 ****************************************************************** */
-void PorosityModelEvaluator::InitializeFromPlist_() {
-  // my key is for saturation
-  my_keys_.push_back(plist_.get<std::string>("porosity key"));
+void PorosityModelEvaluator::InitializeFromPlist_()
+{
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("porosity key"), Tags::DEFAULT));
+  }
 
   // my dependency is pressure.
   pressure_key_ = plist_.get<std::string>("pressure key");
-  dependencies_.insert(pressure_key_);
+  dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
 }
 
 
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void PorosityModelEvaluator::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const std::vector<Teuchos::Ptr<CompositeVector> >& results)
+void PorosityModelEvaluator::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  Epetra_MultiVector& phi_c = *results[0]->ViewComponent("cell", false);
-  const Epetra_MultiVector& pres_c = *S->GetFieldData(pressure_key_)->ViewComponent("cell", false);
+  auto& phi_c = *results[0]->ViewComponent("cell", false);
+  const auto& pres_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
 
   int ncells = phi_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
@@ -81,13 +82,12 @@ void PorosityModelEvaluator::EvaluateField_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void PorosityModelEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key,
-    const std::vector<Teuchos::Ptr<CompositeVector> >& results)
+void PorosityModelEvaluator::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  Epetra_MultiVector& phi_c = *results[0]->ViewComponent("cell", false);
-  const Epetra_MultiVector& pres_c = *S->GetFieldData(pressure_key_)->ViewComponent("cell", false);
+  auto& phi_c = *results[0]->ViewComponent("cell");
+  const auto& pres_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
 
   int ncells = phi_c.MyLength();
   for (int c = 0; c != ncells; ++c) {

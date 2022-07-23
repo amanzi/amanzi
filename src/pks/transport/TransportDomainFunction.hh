@@ -30,9 +30,13 @@ namespace Transport {
 
 class TransportDomainFunction {
  public:
-  TransportDomainFunction() : domain_volume_(-1.0) {};
-  TransportDomainFunction(const Teuchos::ParameterList& plist) : domain_volume_(-1.0) {};
-  ~TransportDomainFunction() {};
+  TransportDomainFunction()
+    : domain_volume_(-1.0),
+      location_("boundary") {};
+  TransportDomainFunction(const Teuchos::ParameterList& plist)
+    : domain_volume_(-1.0),
+      location_("boundary") {};
+  virtual ~TransportDomainFunction() {};
 
   // source term on time interval (t0, t1]
   virtual void Compute(double t0, double t1) { AMANZI_ASSERT(false); }
@@ -40,7 +44,11 @@ class TransportDomainFunction {
                                Teuchos::RCP<CompositeVector> tcc) {};
 
   // model name
-  virtual std::string name() const { return "undefined"; } 
+  virtual std::string name() const { return "undefined"; }
+
+  // location where model is applied (boundary or interface)
+  void set_location(const std::string& location) { location_ = location; }
+  std::string get_location() const { return location_; }
 
   // access
   // -- volume of the regions
@@ -64,6 +72,8 @@ class TransportDomainFunction {
 
  protected:
   double domain_volume_;
+  std::string location_;
+
   std::map<int, std::vector<double> > value_;  // tcc values on boundary faces or 
                                                // src values in domain cells
   std::map<int, double> linear_term_;  // linearized term, e.g. [mol / s] for sources

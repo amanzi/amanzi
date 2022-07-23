@@ -91,7 +91,7 @@ TEST(StringReducer_SOME_EMPTY)
   auto comm = getDefaultComm();
   StringReducer<20> red(comm);
 
-  int size = comm->NumProc();
+  // int size = comm->NumProc();
   int rank = comm->MyPID();
 
   // first and last are diff

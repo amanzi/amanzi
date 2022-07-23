@@ -30,7 +30,7 @@ void Darcy_PK::FunctionalResidual(
 
   // calculate and assemble elemental stiffness matrices
   double factor = 1.0 / g_;
-  const CompositeVector& ss = *S_->GetFieldData(specific_storage_key_);
+  const auto& ss = S_->Get<CompositeVector>(specific_storage_key_);
   CompositeVector ss_g(ss); 
   ss_g.Update(0.0, ss, factor);
 
@@ -43,8 +43,8 @@ void Darcy_PK::FunctionalResidual(
   op_acc_->AddAccumulationDeltaNoVolume(*u_old->Data(), sy_g, "cell");
 
   // Peaceman model
-  if (S_->HasField("well_index")) {
-    const CompositeVector& wi = *S_->GetFieldData("well_index");
+  if (S_->HasRecord("well_index")) {
+    const auto& wi = S_->Get<CompositeVector>("well_index");
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 

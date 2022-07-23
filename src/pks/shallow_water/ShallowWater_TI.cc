@@ -15,35 +15,31 @@ namespace Amanzi {
 namespace ShallowWater {
 
 void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
-                                               TreeVector& f)
+                                               TreeVector& fun)
 {
   bool failed = false;
   
   const auto& h_temp = *A.SubVector(0)->Data()->ViewComponent("cell", true);
   const auto& q_temp = *A.SubVector(1)->Data()->ViewComponent("cell", true);
   
-  auto& f_temp0 = *f.SubVector(0)->Data()->ViewComponent("cell");
-  auto& f_temp1 = *f.SubVector(1)->Data()->ViewComponent("cell");
+  auto& f_temp0 = *fun.SubVector(0)->Data()->ViewComponent("cell");
+  auto& f_temp1 = *fun.SubVector(1)->Data()->ViewComponent("cell");
   
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
   
-  double tmp[1];
-  S_->GetConstantVectorData("gravity", "state")->Norm2(tmp);
-  double g = tmp[0];
-
   // distribute data to ghost cells
   A.SubVector(0)->Data()->ScatterMasterToGhosted("cell");
   A.SubVector(1)->Data()->ScatterMasterToGhosted("cell");
 
   // save a copy of primary and conservative fields
-  Epetra_MultiVector& B_c = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& B_n = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("node", true);
-  Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& vel_c = *S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& riemann_f = *S_->GetFieldData(riemann_flux_key_, passwd_)->ViewComponent("face", true);
+  const auto& B_c = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("cell", true);
+  const auto& B_n = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
+  auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_).ViewComponent("cell", true);
+  auto& vel_c = *S_->GetW<CompositeVector>(velocity_key_, passwd_).ViewComponent("cell", true);
+  auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_).ViewComponent("face", true);
   
   for (int c = 0; c < ncells_wghost; ++c) {
     double factor = inverse_with_tolerance(h_temp[0][c]);
@@ -64,7 +60,6 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     bcs_[i]->Compute(t, t);
   }
   
-  int bc_h_index, bc_vel_index;
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value_hn(nnodes_wghost, 0.0);
   std::vector<double> bc_value_h(nfaces_wghost, 0.0);
@@ -100,22 +95,20 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   }
     
   // limited reconstructions using boundary data
-  bool use_limter = sw_list_->get<bool>("use limiter", true);
-  
-  auto tmp1 = S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
-  total_depth_grad_->ComputeGradient(tmp1);
-  if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient(), bc_model, bc_value_ht);
-  total_depth_grad_->gradient()->ScatterMasterToGhosted("cell");
+  auto tmp1 = S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  total_depth_grad_->Compute(tmp1);
+  if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
+  total_depth_grad_->data()->ScatterMasterToGhosted("cell");
   
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
-  discharge_x_grad_->ComputeGradient(tmp5, 0);
-  if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient(), bc_model, bc_value_qx);
-  discharge_x_grad_->gradient()->ScatterMasterToGhosted("cell");
+  discharge_x_grad_->Compute(tmp5, 0);
+  if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_, bc_model, bc_value_qx);
+  discharge_x_grad_->data()->ScatterMasterToGhosted("cell");
   
   auto tmp6 = A.SubVector(1)->Data()->ViewComponent("cell", true);
-  discharge_y_grad_->ComputeGradient(tmp6, 1);
-  if (use_limiter_) limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient(), bc_model, bc_value_qy);
-  discharge_y_grad_->gradient()->ScatterMasterToGhosted("cell");
+  discharge_y_grad_->Compute(tmp6, 1);
+  if (use_limiter_) limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_, bc_model, bc_value_qy);
+  discharge_y_grad_->data()->ScatterMasterToGhosted("cell");
   
   // update source (external) terms
   for (int i = 0; i < srcs_.size(); ++i) {
@@ -137,7 +130,7 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // U_t + F_x(U) + G_y(U) = S(U)
 
   int dir, c1, c2;
-  double h, u, v, qx, qy, factor;
+  double h, qx, qy, factor;
   AmanziMesh::Entity_ID_List cells;
 
   std::vector<double> FNum_rot;  // fluxes

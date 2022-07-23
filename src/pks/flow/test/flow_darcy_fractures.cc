@@ -23,6 +23,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "IO.hh"
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
@@ -45,7 +46,7 @@ TEST(DARCY_TWO_FRACTURES) {
 
   // read parameter list
   std::string xmlFileName = "test/flow_darcy_fractures.xml";
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+  auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -77,7 +78,7 @@ TEST(DARCY_TWO_FRACTURES) {
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
-  DPK->Setup(S.ptr());
+  DPK->Setup();
 
   S->Setup();
   S->InitializeFields();
@@ -85,20 +86,20 @@ TEST(DARCY_TWO_FRACTURES) {
 
   // modify the default state
   // -- storativity
-  S->GetFieldData("specific_storage", "flow")->PutScalar(2.0);
-  S->GetField("specific_storage", "flow")->set_initialized();
+  S->GetW<CompositeVector>("specific_storage", Tags::DEFAULT, "flow").PutScalar(2.0);
+  S->GetRecordW("specific_storage", Tags::DEFAULT, "flow").set_initialized();
 
   // create the initial pressure function
-  Epetra_MultiVector& p = *S->GetFieldData("pressure", "flow")->ViewComponent("cell", false);
+  auto& p = *S->GetW<CompositeVector>("pressure", Tags::DEFAULT, "flow").ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
     p[0][c] = xc[0] * (xc[1] + 2.0);
   }
-  S->GetField("pressure", "flow")->set_initialized();
+  S->GetRecordW("pressure", "flow").set_initialized();
 
   // initialize the Darcy process kernel
-  DPK->Initialize(S.ptr());
+  DPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   // transient solution
@@ -107,7 +108,7 @@ TEST(DARCY_TWO_FRACTURES) {
     t_new = t_old + dt;
 
     DPK->AdvanceStep(t_old, t_new);
-    DPK->CommitStep(t_old, t_new, S);
+    DPK->CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
   }
@@ -115,6 +116,8 @@ TEST(DARCY_TWO_FRACTURES) {
   for (int c = 0; c < p.MyLength(); c++) {
     CHECK(p[0][c] > -1.0 && p[0][c] < 2.0);
   }
+  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Darcy", *plist));
+  WriteStateStatistics(*S, *vo);
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
@@ -122,8 +125,6 @@ TEST(DARCY_TWO_FRACTURES) {
     GMV::write_cell_data(p, 0, "pressure");
     GMV::close_data_file();
   }
-
-  
 }
 
 

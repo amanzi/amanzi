@@ -107,10 +107,10 @@ namespace Amanzi {
 // Constructor
 CompositeVector::CompositeVector(const CompositeVectorSpace& space) :
     map_(Teuchos::rcp(new CompositeVectorSpace(space))),
-    names_(space.names_),
+    ghosted_(space.ghosted_),
     indexmap_(space.indexmap_),
-    ghost_are_current_(space.NumComponents(),false),
-    ghosted_(space.ghosted_)
+    names_(space.names_),
+    ghost_are_current_(space.NumComponents(),false)
 {
   InitMap_(*map_);
   CreateData_();
@@ -119,10 +119,10 @@ CompositeVector::CompositeVector(const CompositeVectorSpace& space) :
 
 CompositeVector::CompositeVector(const CompositeVectorSpace& space, bool ghosted) :
     map_(Teuchos::rcp(new CompositeVectorSpace(space,ghosted))),
-    names_(space.names_),
+    ghosted_(ghosted),
     indexmap_(space.indexmap_),
-    ghost_are_current_(space.NumComponents(),false),
-    ghosted_(ghosted)
+    names_(space.names_),
+    ghost_are_current_(space.NumComponents(),false)
 {
   InitMap_(*map_);
   CreateData_();
@@ -132,10 +132,10 @@ CompositeVector::CompositeVector(const CompositeVectorSpace& space, bool ghosted
 CompositeVector::CompositeVector(const CompositeVector& other,
                                  InitMode mode) :
     map_(Teuchos::rcp(new CompositeVectorSpace(*other.map_))),
-    names_(other.names_),
+    ghosted_(other.ghosted_),
     indexmap_(other.indexmap_),
-    ghost_are_current_(other.map_->NumComponents(),false),
-    ghosted_(other.ghosted_)
+    names_(other.names_),
+    ghost_are_current_(other.map_->NumComponents(),false)
 {
   InitMap_(*map_);
   CreateData_();
@@ -145,10 +145,10 @@ CompositeVector::CompositeVector(const CompositeVector& other,
 CompositeVector::CompositeVector(const CompositeVector& other, bool ghosted,
                                  InitMode mode) :
     map_(Teuchos::rcp(new CompositeVectorSpace(*other.map_,ghosted))),
-    names_(other.names_),
+    ghosted_(ghosted),
     indexmap_(other.indexmap_),
-    ghost_are_current_(other.map_->NumComponents(),false),
-    ghosted_(ghosted)
+    names_(other.names_),
+    ghost_are_current_(other.map_->NumComponents(),false)
 {
   InitMap_(*map_);
   CreateData_();

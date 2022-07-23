@@ -43,11 +43,11 @@ TEST(COLORFUNCTION_REGION)
 					   reg_params, *ecomm);
   
     // See if we retrieved the name and id correctly
-    CHECK_EQUAL(reg->name(),reg_name);
-    CHECK_EQUAL(reg->id(),reg_id);
+    CHECK_EQUAL(reg->get_name(),reg_name);
+    CHECK_EQUAL(reg->get_id(),reg_id);
   
     // Make sure that the region type is an Indicator Function
-    CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::COLORFUNCTION);
+    CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::RegionType::COLORFUNCTION);
 
     // Check if two known points are in the appropriate regions
     Amanzi::AmanziGeometry::Point p(3);

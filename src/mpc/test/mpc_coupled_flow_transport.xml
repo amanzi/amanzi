@@ -97,7 +97,6 @@
   </ParameterList>
 
   <ParameterList name="cycle driver">
-    <Parameter name="max time step size" type="double" value="1.00000000000000000e+06"/>    
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
@@ -142,7 +141,7 @@
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{6.153732e+10, 6.15688776e+10}"/>
       <Parameter name="initial time step" type="Array(double)" value="{10.0, 10.0}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{4.3234e+4, 4.3234e+4}"/>
+      <Parameter name="maximum time step" type="Array(double)" value="{4.3234e+17, 4.3234e+17}"/>
     </ParameterList>
 
     <ParameterList name="verbose object">
@@ -151,9 +150,9 @@
   </ParameterList>
 
   <ParameterList name="state">
-    <ParameterList name="field evaluators">
+    <ParameterList name="evaluators">
       <ParameterList name="porosity">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -167,21 +166,21 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-aperture">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="regions" type="Array(string)" value="{RegionBottom,RegionTop}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0e-5"/>
+                <Parameter name="value" type="double" value="4.6416e-4"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-porosity">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -189,6 +188,35 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.5"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="saturation_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-saturation_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -254,12 +282,27 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
+                <!--Parameter name="value" type="double" value="3.9240e-07"/-->
                 <Parameter name="value" type="double" value="4.0e-8"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="fracture-normal_diffusion">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="permeability">
         <ParameterList name="function">
           <ParameterList name="RegionBottom">
@@ -364,7 +407,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
       <ParameterList name="fracture-total_component_concentration">
         <ParameterList name="function">
           <ParameterList name="Computational domain">
@@ -387,7 +429,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>      
-      
+
       <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="ALL">
@@ -421,7 +463,6 @@
         <Parameter name="region list" type="Array(string)" value="{RegionBottom, RegionTop}"/>
       </ParameterList>
     </ParameterList>
-    
   </ParameterList>
 
   <ParameterList name="preconditioners">
@@ -497,9 +538,10 @@
             <Parameter name="max time step" type="double" value="6.0e+10"/>
             <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
           </ParameterList>
+
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-9"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
@@ -507,16 +549,18 @@
             <Parameter name="limit iterations" type="int" value="20"/>
             <Parameter name="modify correction" type="bool" value="false"/>
             <Parameter name="monitor" type="string" value="monitor l2 residual"/>
+            <ParameterList name="verbose object">
+              <Parameter name="verbosity level" type="string" value="high"/>
+            </ParameterList>                        
           </ParameterList>
-          <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
+
+          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
           <Parameter name="extrapolate initial guess" type="bool" value="true"/>
           <Parameter name="nonlinear iteration damping factor" type="double" value="1.0e+00"/>
+          <Parameter name="freeze preconditioner" type="bool" value="true"/>
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
-        </ParameterList>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -533,7 +577,7 @@
 	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="gravity" type="bool" value="false"/>
+	    <Parameter name="gravity" type="bool" value="true"/>
 	    <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
 	  </ParameterList>
 	</ParameterList>
@@ -578,28 +622,27 @@
       </ParameterList>
 
       <ParameterList name="time integrator">
-        <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
-        <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
-        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
+	<Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
+	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
-        <Parameter name="time integration method" type="string" value="none"/>
+	<Parameter name="time integration method" type="string" value="none"/>
 
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
-        </ParameterList>
+	<ParameterList name="verbose object">
+	  <Parameter name="verbosity level" type="string" value="high"/>
+	</ParameterList>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="flow fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="physical models and assumptions">
-	<Parameter name="flow in fractures" type="bool" value="true"/>
+	<Parameter name="flow and transport in fractures" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture permeability models">
 	<ParameterList name="FPM for Entire Domain">
 	  <Parameter name="region" type="string" value="All"/>
 	  <Parameter name="model" type="string" value="cubic law"/>
-	  <Parameter name="aperture" type="double" value="1.0"/>
 	</ParameterList>
       </ParameterList>
 
@@ -614,11 +657,11 @@
 	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="gravity" type="bool" value="false"/>
+	    <Parameter name="gravity" type="bool" value="true"/>
+	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
 	  </ParameterList>
 	</ParameterList>
       </ParameterList>
-
       <ParameterList name="boundary conditions">
       </ParameterList>
 
@@ -628,6 +671,7 @@
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
 	<Parameter name="time integration method" type="string" value="none"/>
+
 	<ParameterList name="verbose object">
 	  <Parameter name="verbosity level" type="string" value="high"/>
 	</ParameterList>
@@ -637,13 +681,6 @@
     <ParameterList name="coupled transport">
       <Parameter name="PKs order" type="Array(string)" value="{transport matrix, transport fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
-
-      <!-- <ParameterList name="time integrator"> -->
-      <!--   <Parameter name="error control options" type="Array(string)" value="{pressure, pressure fracture}"/> -->
-      <!--   <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/> -->
-      <!--   <Parameter name="preconditioner" type="string" value="Hypre AMG"/> -->
-      <!--   <Parameter name="time integration method" type="string" value="BDF1"/> -->
-      <!-- </ParameterList> -->
     </ParameterList>
     
     <ParameterList name="transport matrix">
@@ -675,7 +712,7 @@
               <Parameter name="regions" type="Array(string)" value="{fracture}" />
               <ParameterList name="boundary concentration">
                 <Parameter name="external field key" type="string" value="fracture-total_component_concentration" />
-                <Parameter name="external field copy key" type="string" value="default" />
+                <Parameter name="external field copy key" type="string" value="" />
               </ParameterList>
             </ParameterList>
           </ParameterList>          
@@ -740,14 +777,13 @@
               <Parameter name="spatial distribution method" type="string" value="domain coupling" />
               <Parameter name="submodel" type="string" value="rate" />
               <ParameterList name="sink">
-                <Parameter name="flux key" type="string" value="darcy_flux" />
+                <Parameter name="flux key" type="string" value="volumetric_flow_rate" />
                 <Parameter name="external field key" type="string" value="total_component_concentration" />
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      
     </ParameterList>
   </ParameterList>
 </ParameterList>

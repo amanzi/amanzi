@@ -32,8 +32,8 @@ class Analytic00b : public AnalyticBase {
   Analytic00b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double gx, double gy, double gz, int order,
               const Amanzi::AmanziGeometry::Point v = Amanzi::AmanziGeometry::Point(3)) :
       AnalyticBase(mesh),
-      poly_(3, order),
-      v_(v) {
+      v_(v),
+      poly_(3, order) {
     poly_(0, 0) = 1.0;
 
     if (order > 0) {

@@ -171,19 +171,20 @@ class CompositeVector {
   name_iterator begin() const { return map_->begin(); }
   name_iterator end() const { return map_->end(); }
   unsigned int size() const { return map_->size(); }
+
   Comm_ptr_type Comm() const { return map_->Comm(); }
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return map_->Mesh(); }
-  bool HasComponent(std::string name) const { return map_->HasComponent(name); }
+  bool HasComponent(const std::string& name) const { return map_->HasComponent(name); }
   int NumComponents() const { return size(); }
-  int NumVectors(std::string name) const { return map_->NumVectors(name); }
-  int GlobalLength() { return mastervec_->GlobalLength(); }
   AmanziMesh::Entity_kind Location(std::string name) const { return map_->Location(name); }
+
+  int NumVectors(const std::string& name) const { return map_->NumVectors(name); }
+  int GlobalLength() const { return mastervec_->GlobalLength(); }
+  long int GetLocalElementCount() const { return mastervec_->GetLocalElementCount(); }
 
   // Provides the size of each component's vector, either ghosted or non-ghosted.
   unsigned int size(std::string name, bool ghosted=false) const {
     return ghosted ? ghostvec_->size(name) : mastervec_->size(name); }
-
-  int GlobalLength() const { return mastervec_->GlobalLength(); }
 
   // Access the VectorSpace for each component.
   Teuchos::RCP<const Epetra_BlockMap> ComponentMap(std::string name,
@@ -382,7 +383,7 @@ class CompositeVector {
   // -- Utilities --
 
   // Write components to outstream.
-  void Print(std::ostream &os, bool data_io = true) const;
+  void Print(std::ostream& os, bool data_io = true) const;
 
   // Populate by random numbers between -1 and 1.
   int Random();

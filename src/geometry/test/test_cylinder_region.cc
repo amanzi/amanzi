@@ -30,13 +30,13 @@ TEST(CYLINDER_REGION)
   auto reg = Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, *ecomm);
   
   // See if we retrieved the name, id, and type correctly
-  CHECK_EQUAL(reg->name(), reg_name);
-  CHECK_EQUAL(reg->id(), reg_id);
+  CHECK_EQUAL(reg->get_name(), reg_name);
+  CHECK_EQUAL(reg->get_id(), reg_id);
   CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(reg_spec.begin())), true);
-  CHECK_EQUAL(reg->type(), Amanzi::AmanziGeometry::CYLINDER);
+  CHECK_EQUAL(reg->get_type(), Amanzi::AmanziGeometry::RegionType::CYLINDER);
 
   // Make sure that the region dimension is 3
-  CHECK_EQUAL(reg->manifold_dimension(), 3);
+  CHECK_EQUAL(reg->get_manifold_dimension(), 3);
   
   // test the functionality of the region
   std::vector<Amanzi::AmanziGeometry::Point> pin;

@@ -63,6 +63,7 @@ class TreeVector {
 
   // Access to the space.
   const TreeVectorSpace& Map() const { return *map_; }
+  const Teuchos::RCP<TreeVectorSpace>& get_map() const { return map_; }
 
   // Access to SubVectors
   typedef std::vector<Teuchos::RCP<TreeVector> > SubVectorsContainer;

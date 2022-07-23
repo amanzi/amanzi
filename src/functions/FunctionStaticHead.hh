@@ -52,11 +52,11 @@ namespace Amanzi {
 class FunctionStaticHead : public Function {
  public:
   FunctionStaticHead(double patm, double rho, double g, std::unique_ptr<Function> h, int dim)
-      : patm_(patm), rho_g_(rho*g), h_(std::move(h)), dim_(dim) {}
+      : dim_(dim), patm_(patm), rho_g_(rho*g), h_(std::move(h)) {}
   FunctionStaticHead(double patm, double rho, double g, const Function& h, int dim)
-      : patm_(patm), rho_g_(rho*g), h_(h.Clone()), dim_(dim) {}
+      : dim_(dim), patm_(patm), rho_g_(rho*g), h_(h.Clone()) {}
   FunctionStaticHead(const FunctionStaticHead& src)
-      : patm_(src.patm_), rho_g_(src.rho_g_), h_(src.h_->Clone()), dim_(src.dim_) {}
+      : dim_(src.dim_), patm_(src.patm_), rho_g_(src.rho_g_), h_(src.h_->Clone()) {}
   ~FunctionStaticHead() {}
   std::unique_ptr<Function> Clone() const {
     return std::make_unique<FunctionStaticHead>(*this);

@@ -48,7 +48,7 @@ else()
 endif()
 
 # Force executables to built with all static libs.
-if ((DEFINED ENV{NERSC_HOST}) AND (NOT BUILD_SHARED_LIBS))
+if ((${AMANZI_ARCH_NERSC} OR ${AMANZI_ARCH_CHICOMA}) AND (NOT BUILD_SHARED_LIBS))
     set(LIBTOOL_STATIC "LIBTOOL_STATIC=-all-static")
 else()
     set(LIBTOOL_STATIC "")

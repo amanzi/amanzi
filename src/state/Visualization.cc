@@ -1,7 +1,7 @@
 /*
   State
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -33,7 +33,7 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Constructor
 // -----------------------------------------------------------------------------
-Visualization::Visualization (Teuchos::ParameterList& plist)
+Visualization::Visualization(Teuchos::ParameterList& plist)
   : IOEvent(plist),
     time_unit_written_(false)
 {
@@ -55,7 +55,7 @@ Visualization::Visualization (Teuchos::ParameterList& plist)
 // -----------------------------------------------------------------------------
 // Constructor for a disabled Vis.
 // -----------------------------------------------------------------------------
-Visualization::Visualization ()
+Visualization::Visualization()
   : IOEvent(),
     my_units_("y"),
     time_unit_written_(false)

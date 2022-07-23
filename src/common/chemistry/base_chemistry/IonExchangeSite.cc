@@ -26,8 +26,8 @@ namespace AmanziChemistry {
 
 IonExchangeSite::IonExchangeSite()
   : name_(),
-    cation_exchange_capacity_(0.0),
     mineral_name_("bulk"),
+    cation_exchange_capacity_(0.0),
     charge_(0.0) {
 }
 

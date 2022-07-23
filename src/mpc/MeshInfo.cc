@@ -9,14 +9,19 @@
 
 namespace Amanzi {
 
-void MeshInfo::WriteMeshCentroids(std::string domain, const AmanziMesh::Mesh& mesh) {
-
+void MeshInfo::WriteMeshCentroids(std::string domain, const AmanziMesh::Mesh& mesh)
+{
   std::string filename = plist_.get<std::string>("filename", "meshinfo");
 
-  if (old_) domain = "domain";
-  AMANZI_ASSERT(output_.count(domain));
-  output_.at(domain)->createDataFile(filename);
-  output_.at(domain)->open_h5file();
+  Teuchos::RCP<Amanzi::HDF5_MPI> output;
+  if (single_file_) {
+    output = output_.at("domain");
+  } else {
+    output = output_.at(domain);
+  }
+
+  output->createDataFile(filename);
+  output->open_h5file();
 
   int ncells_owned = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int n_glob;
@@ -27,13 +32,13 @@ void MeshInfo::WriteMeshCentroids(std::string domain, const AmanziMesh::Mesh& me
   // create an auxiliary vector that will hold the centroid and velocity
   int dim = mesh.space_dimension();
   Teuchos::RCP<Epetra_MultiVector> aux = Teuchos::rcp(new Epetra_MultiVector(map, dim));
-    
+
   std::vector<std::string> name;
   name.resize(0);
   name.push_back("x");
   name.push_back("y");
   if (dim > 2) name.push_back("z");
-   
+
 
   for (int n = 0; n < ncells_owned; n++) {
     const AmanziGeometry::Point& xc = mesh.cell_centroid(n);
@@ -43,8 +48,7 @@ void MeshInfo::WriteMeshCentroids(std::string domain, const AmanziMesh::Mesh& me
   }
 
   WriteVector(*aux, name);
-
-  output_.at(domain)->close_h5file(); 
+  output->close_h5file();
 }
 
 } // namespace Amanzi

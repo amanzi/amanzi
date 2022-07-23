@@ -27,8 +27,8 @@ class MyPDE_DiffusionMFD : public virtual PDE_DiffusionMFD {
  public:
   MyPDE_DiffusionMFD(Teuchos::ParameterList& plist,
                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_DiffusionMFD(plist, mesh),
-      PDE_Diffusion(mesh) {};
+      PDE_Diffusion(mesh),
+      PDE_DiffusionMFD(plist, mesh) {};
 
   // -- To calculate elemetal matrices, we can use input parameters flux 
   //    and u from the previous nonlinear iteration. Otherwise, use null-pointers.

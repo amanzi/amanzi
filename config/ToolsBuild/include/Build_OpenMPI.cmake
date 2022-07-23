@@ -33,7 +33,6 @@ ExternalProject_Add(${OpenMPI_BUILD_TARGET}
                                            --prefix=${TOOLS_INSTALL_PREFIX}
                                            --enable-option-checking
                                            --enable-mpi-fortran
-                                           --enable-mpi-cxx
                                            --enable-binaries
                                            --enable-shared
                                            --enable-static

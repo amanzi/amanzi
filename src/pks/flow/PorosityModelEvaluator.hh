@@ -17,14 +17,16 @@
 #define AMANZI_FLOW_POROSITY_EVALUATOR_HH_
 
 #include "Factory.hh"
-#include "secondary_variables_field_evaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
+#include "Tag.hh"
+
 #include "PorosityModel.hh"
 #include "PorosityModelPartition.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class PorosityModelEvaluator : public SecondaryVariablesFieldEvaluator {
+class PorosityModelEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
   explicit
@@ -32,16 +34,16 @@ class PorosityModelEvaluator : public SecondaryVariablesFieldEvaluator {
                          Teuchos::RCP<PorosityModelPartition> pom);
   PorosityModelEvaluator(const PorosityModelEvaluator& other);
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
  protected:
   void InitializeFromPlist_();
-
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const std::vector<Teuchos::Ptr<CompositeVector> >& results);
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results);
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -49,7 +51,7 @@ class PorosityModelEvaluator : public SecondaryVariablesFieldEvaluator {
   Key pressure_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator, PorosityModelEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, PorosityModelEvaluator> factory_;
 };
 
 }  // namespace Flow

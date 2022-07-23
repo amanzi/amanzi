@@ -36,8 +36,8 @@ SUITE(GeochemistryTestsSurfaceSite) {
   };  // end class SurfaceSiteTest
 
   SurfaceSiteTest::SurfaceSiteTest()
-    : id_(5),
-      name_(">FeOH"),
+    : name_(">FeOH"),
+      id_(5),
       molar_density_(1.23456)
   {
     Teuchos::ParameterList plist;

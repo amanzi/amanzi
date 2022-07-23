@@ -34,18 +34,18 @@ namespace Amanzi {
 template<class Vector>
 struct BDF1_State {
   BDF1_State() :
-      maxpclag(0),
       freeze_pc(false),
+      maxpclag(0),
       extrapolate_guess(true),
+      uhist_size(2),
+      pc_calls(0),
       seq(-1),
       failed_solve(0),
       failed_current(0),
-      solve_itrs(0),
-      pc_calls(0),
       pc_updates(0),
-      uhist_size(2),
+      hmin(std::numeric_limits<double>::max()),
       hmax(std::numeric_limits<double>::min()),
-      hmin(std::numeric_limits<double>::max()) {}
+      solve_itrs(0) {}
 
   // Parameters and control
   bool freeze_pc;  // freeze initial preconditioner

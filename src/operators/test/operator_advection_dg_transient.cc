@@ -37,11 +37,12 @@
 #include "WhetStoneDefs.hh"
 
 // Operators
-#include "LimiterCell.hh"
+#include "LimiterCellDG.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"
 #include "PDE_Reaction.hh"
+#include "ReconstructionCellLinear.hh"
 
 #include "AnalyticDG02b.hh"
 #include "AnalyticDG06.hh"
@@ -200,14 +201,16 @@ AdvectionFn<Analytic>::AdvectionFn(
     const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
     Teuchos::RCP<WhetStone::DG_Modal> dg,  
     bool conservative_form, std::string weak_form)
-    : plist_(plist), nx_(nx), dt_(dt), 
+    : dt_stable_min(1e+99),
+      limiter_min(-1.0),
+      limiter_mean(-1.0),
+      ana_(mesh, dg->get_order(), true),
+      plist_(plist),
+      nx_(nx),
+      dt_(dt), 
       mesh_(mesh),
       dg_(dg), 
-      ana_(mesh, dg->get_order(), true),
-      conservative_form_(conservative_form),
-      dt_stable_min(1e+99),
-      limiter_min(-1.0),
-      limiter_mean(-1.0)
+      conservative_form_(conservative_form)
 {
   divergence_term_ = !conservative_form_;
   if (weak_form == "dual") {
@@ -354,7 +357,7 @@ void AdvectionFn<Analytic>::FunctionalTimeDerivative(
   // populate the global operator
   op_flux->SetBCs(bc, bc);
   op_flux->Setup(velc, velf);
-  op_flux->UpdateMatrices(velf.ptr());
+  op_flux->UpdateMatrices(*velf);
   op_flux->local_op()->Rescale(weak_sign_);
   op_flux->ApplyBCs(true, true, true);
 
@@ -605,7 +608,7 @@ void AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
 {
   if (name == "none") return;
 
-  const Epetra_MultiVector& u_c = *u.ViewComponent("cell", true);
+  Epetra_MultiVector& u_c = *u.ViewComponent("cell", true);
   int dim = mesh_->space_dimension();
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -623,13 +626,13 @@ void AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
   plist.set<int>("limiter points", 3);
 
   // limit gradient and save it to solution
-  Operators::LimiterCell limiter(mesh_);
+  Operators::LimiterCellDG limiter(mesh_);
   limiter.Init(plist);
 
   u.ScatterMasterToGhosted();
 
   if (name == "Barth-Jespersen dg") {
-    limiter.ApplyLimiter(u.ViewComponent("cell", true), *dg_, bc_model, bc_value);
+    limiter.ApplyLimiterDG(u.ViewComponent("cell", true), *dg_, bc_model, bc_value);
   } else {
     int nk = u_c.NumVectors();
     WhetStone::DenseVector data(nk);
@@ -654,7 +657,11 @@ void AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
 
     grad->ScatterMasterToGhosted("cell");
 
-    limiter.ApplyLimiter(u.ViewComponent("cell", true), 0, grad, bc_model, bc_value);
+    auto lifting = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_, grad));
+    limiter.ApplyLimiter(u.ViewComponent("cell", true), 0, lifting, bc_model, bc_value);
+    const auto& factor = *limiter.limiter();
+    for (int c = 0; c < ncells_owned; ++c) 
+      for (int i = 1; i < nk; ++i) u_c[i][c] *= factor[c];
 
     for (int c = 0; c < ncells_owned; ++c) {
       data(0) = u_c[0][c];

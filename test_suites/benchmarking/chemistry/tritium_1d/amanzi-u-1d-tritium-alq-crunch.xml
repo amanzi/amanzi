@@ -28,7 +28,6 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <!-- <chemistry engine="pflotran" state="on" database="tritium.dat" /> -->
     <chemistry engine="crunchflow" state="on" input_filename="1d-tritium-crunch.in" database="tritium.dbs" />
   </process_kernels>
 
@@ -40,6 +39,7 @@
       <dissolved_components>
         <primaries>
           <primary coefficient_of_diffusion="1.0E-9" first_order_decay_constant="1.78577e-09">Tritium</primary>
+          <primary coefficient_of_diffusion="1.0E-9">Daughter</primary>
         </primaries>
       </dissolved_components>
     </liquid_phase>
@@ -128,9 +128,11 @@
       <constraints>
         <constraint name="initial">
           <primary name="Tritium" type="total" value="1.0e-20"/>
+          <primary name="Daughter" type="total" value="1.0e-20"/>
         </constraint>
         <constraint name="west">
           <primary name="Tritium" type="total" value="1e-3"/>
+          <primary name="Daughter" type="total" value="1.0e-20"/>
         </constraint>
       </constraints>
   </geochemistry>

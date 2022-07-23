@@ -22,11 +22,11 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "EnthalpyEvaluator.hh"
 #include "GMVMesh.hh"
 #include "LeastSquare.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "secondary_variable_field_evaluator.hh"
 #include "State.hh"
 
 // Energy
@@ -46,40 +46,41 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
   TestEnthalpyEvaluator(Teuchos::ParameterList& plist) :
       EnthalpyEvaluator(plist) {};
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const {
     return Teuchos::rcp(new TestEnthalpyEvaluator(*this));
   }
 
   // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(
-          const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result) {
-    for (auto comp = result->begin(); comp != result->end(); ++comp) {
-      const auto& temp_c = *S->GetFieldData("temperature")->ViewComponent(*comp);
-      auto& result_c = *result->ViewComponent(*comp);
+  virtual void Evaluate_(
+          const State& S, const std::vector<CompositeVector*>& results) {
+    for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
+      const auto& temp_c = *S.Get<CompositeVector>("temperature").ViewComponent(*comp);
+      auto& result_c = *results[0]->ViewComponent(*comp);
 
-      int ncomp = result->size(*comp, false);
+      int ncomp = results[0]->size(*comp, false);
       for (int i = 0; i != ncomp; ++i) {
         result_c[0][i] = std::pow(temp_c[0][i], 3.0);
       }
     }
   }
 
-  virtual void EvaluateFieldPartialDerivative_(
-          const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    for (auto comp = result->begin(); comp != result->end(); ++comp) {
-      const auto& temp_c = *S->GetFieldData("temperature")->ViewComponent(*comp);
-      Epetra_MultiVector& result_c = *result->ViewComponent(*comp);
+  virtual void EvaluatePartialDerivative_(
+          const State& S, const Key& wrt_key, const Tag& wrt_tag,
+          const std::vector<CompositeVector*>& results) {
+    for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
+      const auto& temp_c = *S.Get<CompositeVector>("temperature").ViewComponent(*comp);
+      Epetra_MultiVector& result_c = *results[0]->ViewComponent(*comp);
 
-      int ncomp = result->size(*comp, false);
+      int ncomp = results[0]->size(*comp, false);
       for (int i = 0; i != ncomp; ++i) {
         result_c[0][i] = 3.0 * std::pow(temp_c[0][i], 2.0);
       }
     }
   }
-
-  virtual double EvaluateFieldSingle(const Teuchos::Ptr<State>& S, int c, double T) {
+ 
+  using EnthalpyEvaluator::EvaluateFieldSingle;
+  double EvaluateFieldSingle(const Teuchos::Ptr<State>& S, int c, double T) {
     return std::pow(T, 3.0);
   }
 };
@@ -130,19 +131,27 @@ TEST(ENERGY_CONVERGENCE) {
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;
     ev_list.set<std::string>("enthalpy key", "enthalpy")
-           .set<bool>("include work term", false);
-    S->RequireField("enthalpy")->SetMesh(mesh)->SetGhosted(true)
+           .set<bool>("include work term", false)
+           .set<std::string>("tag", "");
+    ev_list.setName("enthalpy");
+
+    S->Require<CompositeVector, CompositeVectorSpace>("enthalpy", Tags::DEFAULT, "enthalpy")
+      .SetMesh(mesh)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-    auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
-    S->SetFieldEvaluator("enthalpy", enthalpy);
 
-    EPK->Setup(S.ptr());
+    S->RequireDerivative<CompositeVector, CompositeVectorSpace>(
+        "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy").SetGhosted();
+
+    auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
+    S->SetEvaluator("enthalpy", Tags::DEFAULT, enthalpy);
+
+    EPK->Setup();
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
 
-    EPK->Initialize(S.ptr());
+    EPK->Initialize();
     S->CheckAllFieldsInitialized();
 
     // constant time stepping 
@@ -150,8 +159,8 @@ TEST(ENERGY_CONVERGENCE) {
     double t(0.0), t1(0.5), dt_next;
     while (std::fabs(t - t1) > 1e-6) {
       // swap conserved quntity (no backup, we check dt_next instead)
-      const CompositeVector& e = *S->GetFieldData("energy");
-      CompositeVector& e_prev = *S->GetFieldData("prev_energy", "thermal");
+      const auto& e = S->Get<CompositeVector>("energy");
+      auto& e_prev = S->GetW<CompositeVector>("prev_energy", Tags::DEFAULT, "thermal");
       e_prev = e;
 
       if (itrs == 0) {
@@ -165,16 +174,17 @@ TEST(ENERGY_CONVERGENCE) {
       CHECK(!failed);
       CHECK(dt_next >= dt);
       EPK->bdf1_dae()->CommitSolution(dt, soln);
-      Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("temperature"))->SetFieldAsChanged(S.ptr());
+      Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
+          S->GetEvaluatorPtr("temperature", Tags::DEFAULT))->SetChanged();
 
       t += dt;
       itrs++;
     }
 
-    EPK->CommitStep(0.0, 1.0, S);
+    EPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
     // calculate errors
-    Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+    auto temp = S->GetPtr<CompositeVector>("temperature", Tags::DEFAULT);
     Analytic01 ana(temp, mesh);
 
     double l2_norm, l2_err, inf_err;  // error checks
@@ -236,19 +246,27 @@ TEST(ENERGY_PRECONDITIONER) {
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;
     ev_list.set<std::string>("enthalpy key", "enthalpy")
-           .set<bool>("include work term", false);
-    S->RequireField("enthalpy")->SetMesh(mesh)->SetGhosted()
+           .set<bool>("include work term", false)
+           .set<std::string>("tag", "");
+    ev_list.setName("enthalpy");
+
+    S->Require<CompositeVector, CompositeVectorSpace>("enthalpy", Tags::DEFAULT, "enthalpy")
+      .SetMesh(mesh)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-    auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
-    S->SetFieldEvaluator("enthalpy", enthalpy);
 
-    EPK->Setup(S.ptr());
+    S->RequireDerivative<CompositeVector, CompositeVectorSpace>(
+        "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy").SetGhosted();
+
+    auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
+    S->SetEvaluator("enthalpy", Tags::DEFAULT, enthalpy);
+
+    EPK->Setup();
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
 
-    EPK->Initialize(S.ptr());
+    EPK->Initialize();
     S->CheckAllFieldsInitialized();
 
     // constant time stepping 
@@ -256,12 +274,12 @@ TEST(ENERGY_PRECONDITIONER) {
     double t(0.0), t1(0.5), dt(0.02), dt_next;
     while (t < t1) {
       // swap conserved quntity (no backup, we check dt_next instead)
-      const CompositeVector& e = *S->GetFieldData("energy");
-      CompositeVector& e_prev = *S->GetFieldData("prev_energy", "thermal");
+      const auto& e = S->Get<CompositeVector>("energy");
+      auto& e_prev = S->GetW<CompositeVector>("prev_energy", Tags::DEFAULT, "thermal");
       e_prev = e;
 
       if (itrs == 0) {
-        Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
+        auto udot = Teuchos::rcp(new TreeVector(*soln));
         udot->PutScalar(0.0);
         EPK->bdf1_dae()->SetInitialState(t, soln, udot);
         EPK->UpdatePreconditioner(t, soln, dt);
@@ -270,13 +288,14 @@ TEST(ENERGY_PRECONDITIONER) {
       EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
       CHECK(dt_next >= dt);
       EPK->bdf1_dae()->CommitSolution(dt, soln);
-      Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("temperature"))->SetFieldAsChanged(S.ptr());
+      Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
+          S->GetEvaluatorPtr("temperature", Tags::DEFAULT))->SetChanged();
 
       t += dt;
       itrs++;
     }
 
-    EPK->CommitStep(0.0, 1.0, S);
+    EPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
     num_itrs[loop] = EPK->bdf1_dae()->number_nonlinear_steps();
     printf("number of nonlinear steps: %d  enthalphy term=%d\n", num_itrs[loop], 1-loop);
     plist->sublist("PKs").sublist("energy").sublist("operators")

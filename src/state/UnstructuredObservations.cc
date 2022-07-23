@@ -1,7 +1,7 @@
 /*
   This is the state component of the Amanzi code.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -27,12 +27,12 @@ namespace Amanzi {
 
 UnstructuredObservations::UnstructuredObservations(
       Teuchos::ParameterList& plist)
-  : write_(false),
+  : IOEvent(plist),
+    write_(false),
+    num_total_(0),
     count_(0),
     time_integrated_(false),
-    num_total_(0),
-    observed_once_(false),
-    IOEvent(plist)
+    observed_once_(false)
 {
   // file information
   filename_ = plist.get<std::string>("observation output filename");
@@ -104,14 +104,19 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
     for (auto& obs : observables_) obs->FinalizeStructure(S);
 
     num_total_ = 0;
-    for (const auto& obs : observables_) num_total_ += obs->get_num_vectors();
+    for (const auto& obs : observables_) {
+      int num_local = obs->get_num_vectors();
+      int num_global = -1;
+      comm_->MaxAll(&num_local, &num_global, 1);
+      num_total_ += num_global;
+    }
     integrated_observation_.resize(num_total_);
     observed_once_ = true;
 
     if (write_) InitFile_();
   }
 
-  bool dump_requested = DumpRequested(S->cycle(), S->time());
+  bool dump_requested = DumpRequested(S->get_cycle(), S->get_time());
   if (time_integrated_) {
     if (dump_requested) {
       std::vector<double> observation(num_total_, Observable::nan);
@@ -128,7 +133,7 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
       }
 
       // write
-      if (write_) Write_(S->time() * time_unit_factor_, observation);
+      if (write_) Write_(S->get_time() * time_unit_factor_, observation);
     } else {
       std::vector<double> observation(num_total_, Observable::nan);
 
@@ -155,7 +160,7 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
     }
 
     // write
-    if (write_) Write_(S->time() * time_unit_factor_, observation);
+    if (write_) Write_(S->get_time() * time_unit_factor_, observation);
   }
 }
 

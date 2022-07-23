@@ -46,10 +46,10 @@ class Op {
  public:
   Op(int schema, const std::string& schema_string_,
      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+      schema_string(schema_string_),
       schema_old_(schema),
       schema_row_(schema),
       schema_col_(schema),
-      schema_string(schema_string_),
       mesh_(mesh)
   {};
 
@@ -62,8 +62,8 @@ class Op {
   }
 
   Op(int schema, const std::string& schema_string_) :
-      schema_old_(schema),
       schema_string(schema_string_),
+      schema_old_(schema),
       mesh_(Teuchos::null)
   {};
 

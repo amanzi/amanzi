@@ -42,10 +42,10 @@ namespace Amanzi {
 
 Teuchos::RCP<PK>
 PKFactory::CreatePK(std::string pk_name,
-                     Teuchos::ParameterList& pk_tree,
-                     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-                     const Teuchos::RCP<State>& state,
-                     const Teuchos::RCP<TreeVector>& soln)
+                    Teuchos::ParameterList& pk_tree,
+                    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                    const Teuchos::RCP<State>& state,
+                    const Teuchos::RCP<TreeVector>& soln)
 {
   // make sure we can find PKs
   if (!global_list->isSublist("PKs")) {

@@ -49,8 +49,8 @@ void FlowReactiveTransport_PK::set_dt(double dt) {
 // -----------------------------------------------------------------------------
 // Make necessary operatios by the end of the time steps.
 // -----------------------------------------------------------------------------
-void FlowReactiveTransport_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
-  sub_pks_[slave_]->CommitStep(t_old, t_new, S);
+void FlowReactiveTransport_PK::CommitStep(double t_old, double t_new, const Tag& tag) {
+  sub_pks_[slave_]->CommitStep(t_old, t_new, tag);
 }
 
 
@@ -66,7 +66,7 @@ bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool rein
 
   master_dt_ = t_new - t_old;
 
-  sub_pks_[master_]->CommitStep(t_old, t_new, S_);
+  sub_pks_[master_]->CommitStep(t_old, t_new, Tags::DEFAULT);
 
   slave_dt_ = sub_pks_[slave_]->get_dt();
 
@@ -95,7 +95,7 @@ bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool rein
       // -- etc: unclear if state should be commited or not?
       // set the intermediate time
       S_->set_intermediate_time(t_old + dt_done + dt_next);
-      sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, S_);
+      sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, Tags::DEFAULT);
       dt_done += dt_next;
       // allow dt to grow only when success
       dt_next = sub_pks_[slave_]->get_dt();

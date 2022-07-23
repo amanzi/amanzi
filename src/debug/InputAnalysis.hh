@@ -16,7 +16,7 @@ namespace Amanzi {
 class InputAnalysis {
  public:
   InputAnalysis(Teuchos::RCP<const AmanziMesh::Mesh> mesh, const std::string& domain) 
-    : vo_(NULL), mesh_(mesh), domain_(domain) {};
+    : mesh_(mesh), domain_(domain), vo_(NULL) {};
   ~InputAnalysis() {
     if (vo_ != NULL) delete vo_;
   };

@@ -32,8 +32,9 @@
 // Amanzi::Operators
 #include "AnalyticDG08b.hh"
 #include "ErrorAnalysis.hh"
-#include "LimiterCell.hh"
+#include "LimiterCellDG.hh"
 #include "OperatorDefs.hh"
+#include "ReconstructionCellLinear.hh"
 
 const std::string LIMITERS[3] = {"B-J", "B-J c2c", "B-J all"};
 
@@ -144,13 +145,14 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     }
 
     // Apply limiter
+    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh, grad));
     LimiterCell limiter(mesh);
     limiter.Init(plist);
-    limiter.ApplyLimiter(ids, field_c, 0, grad, bc_model, bc_value);
+    limiter.ApplyLimiter(ids, field_c, 0, lifting, bc_model, bc_value);
 
     // calculate gradient error
     double err_int, err_glb, gnorm;
-    ComputeGradError(mesh, grad_c, grad_exact, err_int, err_glb, gnorm);
+    ComputePolyError(mesh, grad_c, grad_exact, err_int, err_glb, gnorm);
     // CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
 
     int nids, itmp = ids.size();
@@ -275,9 +277,12 @@ void RunTestGaussPoints(const std::string& limiter_name)
   }
 
   // Apply limiter
-  LimiterCell limiter(mesh);
+  LimiterCellDG limiter(mesh);
   limiter.Init(plist);
-  limiter.ApplyLimiter(field_c, dg, bc_model, bc_value);
+  limiter.ApplyLimiterDG(field_c, dg, bc_model, bc_value);
+  const auto& factor = *limiter.limiter();
+  for (int c = 0; c < ncells_owned; ++c) 
+    for (int i = 1; i < nk; ++i) (*field_c)[i][c] *= factor[c];
 
   double minlim, avglim, maxlim;
   limiter.limiter()->MinValue(&minlim);

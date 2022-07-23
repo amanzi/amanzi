@@ -20,12 +20,14 @@ namespace Multiphase {
 NCP_MoleFractions::NCP_MoleFractions(Teuchos::ParameterList& plist)
   : MultiphaseBaseEvaluator(plist)
 {
-  my_key_ = plist_.get<std::string>("my key");
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
+  }
   x_vapor_key_ = plist_.get<std::string>("mole fraction vapor key");
   x_gas_key_ = plist_.get<std::string>("mole fraction gas key");
 
-  dependencies_.insert(x_vapor_key_);
-  dependencies_.insert(x_gas_key_);
+  dependencies_.insert(std::make_pair(x_vapor_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(x_gas_key_, Tags::DEFAULT));
 }
 
 
@@ -36,7 +38,7 @@ NCP_MoleFractions::NCP_MoleFractions(const NCP_MoleFractions& other)
   : MultiphaseBaseEvaluator(other) {};
 
 
-Teuchos::RCP<FieldEvaluator> NCP_MoleFractions::Clone() const {
+Teuchos::RCP<Evaluator> NCP_MoleFractions::Clone() const {
   return Teuchos::rcp(new NCP_MoleFractions(*this));
 }
 
@@ -44,14 +46,14 @@ Teuchos::RCP<FieldEvaluator> NCP_MoleFractions::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void NCP_MoleFractions::EvaluateField_(
-    const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result)
+void NCP_MoleFractions::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& vg = *S->GetFieldData(x_vapor_key_)->ViewComponent("cell");
-  const auto& xg = *S->GetFieldData(x_gas_key_)->ViewComponent("cell");
+  const auto& vg = *S.Get<CompositeVector>(x_vapor_key_).ViewComponent("cell");
+  const auto& xg = *S.Get<CompositeVector>(x_gas_key_).ViewComponent("cell");
 
-  auto& result_c = *result->ViewComponent("cell");
-  int ncells = result->size("cell", false);
+  auto& result_c = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell", false);
 
   for (int c = 0; c != ncells; ++c) {
     double sum(vg[0][c]);
@@ -64,12 +66,12 @@ void NCP_MoleFractions::EvaluateField_(
 /* ******************************************************************
 * Required member: field derivative calculation.
 ****************************************************************** */
-void NCP_MoleFractions::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void NCP_MoleFractions::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  auto& result_c = *result->ViewComponent("cell");
-  int ncells = result->size("cell", false);
+  auto& result_c = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell", false);
 
   if (wrt_key == x_vapor_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = -1.0;
