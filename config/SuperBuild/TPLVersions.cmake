@@ -162,15 +162,16 @@
 #   0.98.1       - configuratoin updates fixing consistency of meshing options (required changes in Amanzi build as well).
 #   0.98.2       - update Hypre to 2.22.0
 #   0.98.3       - enforced c++14 standard for Trilinos and Amanzi
-#   0.98.4a      - update HDF5 to 1.12.1
+#   0.98.4       - add cybernetic patch from Glenn for PFLOTRAN
+#   0.98.5a      - update HDF5 to 1.12.1
 #                - update netcdf-c to 4.8.1
 #                - update netcdf-fortran to 4.5.4
-#   0.98.4b      - update SILO to 4.11 is needed
-#   0.98.4c      - update SEACAS to date tag v2022-02-16
-#   0.98.4d      - update Nanoflann to 1.4.2
-#   0.98.4e      - update ExprTk to 0.0.1
-#   0.98.4f      - update Boost to 1.78.0
-#   0.98.5       - tentative release number
+#   0.98.5b      - update SILO to 4.11 is needed
+#   0.98.5c      - update SEACAS to date tag v2022-02-16
+#   0.98.5d      - update Nanoflann to 1.4.2
+#   0.98.5e      - update ExprTk to 0.0.1
+#   0.98.5f      - update Boost to 1.78.0
+#   0.98.6       - tentative release number
 
 include(CMakeParseArguments)
 
@@ -223,7 +224,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 5)
+set(AMANZI_TPLS_VERSION_PATCH 6)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
