@@ -94,6 +94,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
   --enable-alquimia --enable-pflotran --enable-crunchtope \
   --enable-pf_clm \
   --with-mpi=/usr \
+  --with-python=/usr/bin/python \
   && git checkout master \
   && rm -r /home/amanzi_user/amanzi_builddir
 
