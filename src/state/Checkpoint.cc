@@ -108,25 +108,26 @@ Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S)
 
 
 // Constructor for reading
-Checkpoint::Checkpoint(const std::string& filename, const Comm_ptr_type& comm)
+Checkpoint::Checkpoint(const std::string& filename, const Comm_ptr_type& comm, const std::string& domain)
     : IOEvent()
 {
   // if provided a directory, use new style
   if (boost::filesystem::is_directory(filename)) {
-    Errors::Message message;
-    message << "Checkpoint::Read: location \"" << filename << "\" cannot be used with the \"restart file\" option -- provide a full path to the filename, not a directory.";
-    Exceptions::amanzi_throw(message);
+    boost::filesystem::path chkp_file = boost::filesystem::path(filename) / (domain+".h5");
+    single_file_ = false;
+    output_[domain] = Teuchos::rcp(new HDF5_MPI(comm, chkp_file.string()));
+    output_[domain]->open_h5file(true);
 
   } else if (boost::filesystem::is_regular_file(filename)) {
     single_file_ = true;
+    output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, filename));
+    output_["domain"]->open_h5file(true);
   } else {
     Errors::Message message;
     message << "Checkpoint::Read: location \"" << filename << "\" does not exist.";
     Exceptions::amanzi_throw(message);
   }
 
-  output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, filename));
-  output_["domain"]->open_h5file(true);
 }
 
 

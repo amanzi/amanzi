@@ -82,7 +82,8 @@ class Checkpoint : public IOEvent {
   Checkpoint(const std::string& file_or_dirname, const State& S);
 
   // constructor for reading a single field from a specific file
-  Checkpoint(const std::string& filename, const Comm_ptr_type& comm);
+  Checkpoint(const std::string& filename, const Comm_ptr_type& comm,
+             const std::string& domain = "domain");
 
   // public interface for coordinator clients
   template <typename T>
