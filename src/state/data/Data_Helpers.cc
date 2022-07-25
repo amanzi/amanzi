@@ -137,20 +137,24 @@ void WriteVis<CompositeVector>(const Visualization& vis, const Key& fieldname,
         throw(msg);
       }
 
-      // I feel like this could be fixed with boost zip_iterator, but the
-      // Epetra vectors need iterated over and they aren't, by default,
-      // iterable.
+      std::vector<Key> full_names;
       for (int i = 0; i != vec_c.NumVectors(); ++i) {
-        Key fullname = fieldname + ".cell." + (*subfieldnames)[i];
-        vis.Write(fullname, *vec_c(i));
+        Key full_name = fieldname + "." + (*subfieldnames)[i];
+        full_names.emplace_back(full_name);
       }
+      vis.WriteVector(vec_c, full_names);
 
     } else {
-      for (int i = 0; i != vec_c.NumVectors(); ++i) {
-        std::stringstream name;
-        name << fieldname << ".cell." << i;
-        vis.Write(name.str(), *vec_c(i));
+      std::vector<Key> full_names;
+      if (vec_c.NumVectors() > 1) {
+        for (int i = 0; i != vec_c.NumVectors(); ++i) {
+          Key full_name = fieldname + "." + std::to_string(i);
+          full_names.emplace_back(full_name);
+        }
+      } else {
+        full_names.emplace_back(fieldname);
       }
+      vis.WriteVector(vec_c, full_names);
     }
   }
 }

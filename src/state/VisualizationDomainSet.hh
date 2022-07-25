@@ -52,13 +52,17 @@ Example:
 
 namespace Amanzi {
 
+namespace AmanziMesh {
+class DomainSet;
+}
+
 class VisualizationDomainSet : public Visualization {
  public:
   VisualizationDomainSet(Teuchos::ParameterList& plist) : Visualization(plist) {
     write_partition_ = false; // doesn't work yet
   }
 
-  void set_subdomain_mesh(const Key& subdomain, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  void set_domain_set(const Teuchos::RCP<const AmanziMesh::DomainSet>& ds) { ds_ = ds; }
 
   // public interface for data clients
   virtual void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const override;
@@ -71,8 +75,8 @@ class VisualizationDomainSet : public Visualization {
   // Note that this relies on map being ORDERED!
   mutable std::map<std::string, std::pair<Teuchos::RCP<Epetra_MultiVector>, std::vector<std::string>>> lifted_vectors_;
   mutable std::vector<std::string> lifted_vector_names_;
-
-  std::map<Key, Teuchos::RCP<const AmanziMesh::Mesh>> subdomains_;
+  Teuchos::RCP<const AmanziMesh::DomainSet> ds_;
+  std::string dset_name_;
 };
 
 } // Amanzi namespace
