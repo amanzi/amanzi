@@ -535,7 +535,7 @@ void Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   auto flowrate = S_->GetPtrW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
 
   if (coupled_to_matrix_ || flow_on_manifold_) {
-    op_diff_->UpdateFluxNonManifold(solution.ptr(), flowrate.ptr());
+    op_diff_->UpdateFluxManifold(solution.ptr(), flowrate.ptr());
     flowrate->Scale(1.0 / rho_);
     VV_FractureConservationLaw();
   } else {

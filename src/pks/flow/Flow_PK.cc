@@ -132,7 +132,7 @@ void Flow_PK::Setup()
   // -- volumetric flow rate
   if (!S_->HasRecord(vol_flowrate_key_)) {
     if (flow_on_manifold_) {
-      auto cvs = Operators::CreateNonManifoldCVS(mesh_);
+      auto cvs = Operators::CreateManifoldCVS(mesh_);
       *S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true) = *cvs;
     } else {

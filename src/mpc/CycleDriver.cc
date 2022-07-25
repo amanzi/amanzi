@@ -671,15 +671,14 @@ void CycleDriver::Observations(bool force, bool integrate) {
 void CycleDriver::Visualize(bool force, const Tag& tag) {
   bool dump = force;
   if (!dump) {
-    for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
-         vis!=visualization_.end(); ++vis) {
+    for (auto vis = visualization_.begin(); vis != visualization_.end(); ++vis) {
       if ((*vis)->DumpRequested(S_->get_cycle(), S_->get_time())) {
         dump = true;
       }
     }
   }
 
-  //if (dump || force) //pk_->CalculateDiagnostics();
+  // if (dump || force) pk_->CalculateDiagnostics();
   
   for (const auto& vis : visualization_) {
     if (force || vis->DumpRequested(S_->get_cycle(), S_->get_time())) {

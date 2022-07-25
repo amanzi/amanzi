@@ -1040,7 +1040,7 @@ void Richards_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   auto vol_flowrate = S_->GetPtrW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
 
   if (coupled_to_matrix_ || flow_on_manifold_) {
-    op_matrix_diff_->UpdateFluxNonManifold(solution.ptr(), vol_flowrate.ptr());
+    op_matrix_diff_->UpdateFluxManifold(solution.ptr(), vol_flowrate.ptr());
     VV_FractureConservationLaw();
   } else {
     op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate.ptr());

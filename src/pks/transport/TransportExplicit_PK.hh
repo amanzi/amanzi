@@ -69,7 +69,7 @@ class TransportExplicit_PK : public Transport_PK,
   // -- advection in matrix
   void AdvanceDonorUpwind(double dT);
   // -- advection on non-manifolds
-  void AdvanceDonorUpwindNonManifold(double dT);
+  void AdvanceDonorUpwindManifold(double dT);
 
  private:
   void AdvanceSecondOrderUpwindRKn(double dt_cycle);

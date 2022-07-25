@@ -90,7 +90,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
 
   //------------ GEOMETRIC MODEL ----------------------------
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model;
-  auto geom_timer = Teuchos::TimeMonitor::getNewCounter("Geometric Model creation");
+  auto geom_timer = Teuchos::TimeMonitor::getNewCounter("Geometric Model Creation");
 
   { // context for timer
     Teuchos::TimeMonitor geom_tm(*geom_timer);
@@ -120,7 +120,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
   auto mesh_vo = Teuchos::rcp(new Amanzi::VerboseObject("Mesh", *mesh_params));
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm, geom_model, mesh_params);
 
-  auto mesh_timer = Teuchos::TimeMonitor::getNewCounter("Mesh creation");
+  auto mesh_timer = Teuchos::TimeMonitor::getNewCounter("Mesh Creation");
   { // context for timer
     Teuchos::TimeMonitor mesh_tm(*mesh_timer);
     try {
@@ -142,8 +142,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
             prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
           } else if (framework == Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MSTK)) {
             prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
-          } else if (framework == Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::STK)) {
-            prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::STK);
           } else if (framework == Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MOAB)) {
             prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::MOAB);
             // } else if (framework == "") {

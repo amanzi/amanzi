@@ -122,7 +122,7 @@ Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
 
-Teuchos::RCP<CompositeVectorSpace> CreateNonManifoldCVS(
+Teuchos::RCP<CompositeVectorSpace> CreateManifoldCVS(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
 void CellToBoundaryFaces(

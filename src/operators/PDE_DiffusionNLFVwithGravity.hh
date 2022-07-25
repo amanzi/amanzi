@@ -122,8 +122,6 @@ class PDE_DiffusionNLFVwithGravity : public PDE_DiffusionNLFV,
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
-  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                     const Teuchos::Ptr<CompositeVector>& flux) override {};
 
   // -- modify an operator
   virtual void ModifyMatrices(const CompositeVector& u) override {};

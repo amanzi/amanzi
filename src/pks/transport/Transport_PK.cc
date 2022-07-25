@@ -205,7 +205,7 @@ void Transport_PK::Setup()
   }
   if (!S_->HasRecord(vol_flowrate_key_)) {
     if (transport_on_manifold_) {
-      auto cvs = Operators::CreateNonManifoldCVS(mesh_);
+      auto cvs = Operators::CreateManifoldCVS(mesh_);
       *S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_).SetMesh(mesh_)->SetGhosted(true) = *cvs;
     } else {
       S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)

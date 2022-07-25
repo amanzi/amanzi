@@ -201,7 +201,7 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       }
     } else {  // transport on intersecting manifolds
       if (spatial_disc_order == 1) {
-        AdvanceDonorUpwindNonManifold(dt_cycle);
+        AdvanceDonorUpwindManifold(dt_cycle);
       } else {
         AdvanceSecondOrderUpwindRKn(dt_cycle);
       }
@@ -381,7 +381,7 @@ void TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
 /* ******************************************************************* 
 * A simple first-order upwind method on non-manifolds.
 ******************************************************************* */
-void TransportExplicit_PK::AdvanceDonorUpwindNonManifold(double dt_cycle)
+void TransportExplicit_PK::AdvanceDonorUpwindManifold(double dt_cycle)
 {
   dt_ = dt_cycle;  // overwrite the maximum stable transport step
   mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);

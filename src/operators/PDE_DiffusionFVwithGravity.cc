@@ -189,19 +189,6 @@ void PDE_DiffusionFVwithGravity::ComputeJacobianLocal_(
 
 
 /* ******************************************************************
-* Calculate flux from cell-centered data
-****************************************************************** */
-void PDE_DiffusionFVwithGravity::UpdateFluxNonManifold(
-    const Teuchos::Ptr<const CompositeVector>& u,
-    const Teuchos::Ptr<CompositeVector>& flux)
-{
-  Errors::Message msg;
-  msg << "DiffusionFV: missing support for non-manifolds.";
-  Exceptions::amanzi_throw(msg);
-}
-
-
-/* ******************************************************************
 * Compute transmissibilities on faces. Requires K, g, rho.
 ****************************************************************** */
 void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(

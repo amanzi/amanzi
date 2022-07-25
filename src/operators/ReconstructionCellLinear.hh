@@ -88,11 +88,11 @@ class ReconstructionCellLinear : public Reconstruction {
 
   // On intersecting manifolds, we extract neighboors living in the same manifold
   // using a smoothness criterion.
-  void CellFaceAdjCellsNonManifold_(AmanziMesh::Entity_ID c,
-                                    AmanziMesh::Parallel_type ptype,
-                                    std::vector<AmanziMesh::Entity_ID>& cells) const;
+  void CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
+                                 AmanziMesh::Parallel_type ptype,
+                                 std::vector<AmanziMesh::Entity_ID>& cells) const;
  private:
-  int dim, poly_order_;
+  int dim;
   Teuchos::RCP<CompositeVector> gradient_;
   Teuchos::RCP<Epetra_MultiVector> gradient_c_;
 };
