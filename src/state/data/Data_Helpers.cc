@@ -230,7 +230,7 @@ bool Initialize<CompositeVector>(
   // ------ Try to set values from a restart file -----
   if (plist.isParameter("restart file")) {
     auto filename = plist.get<std::string>("restart file");
-    Checkpoint chkp(filename, t.Comm());
+    Checkpoint chkp(filename, t.Comm(), Keys::getDomain(fieldname));
     ReadCheckpoint(chkp, fieldname, subfieldnames, t);
     chkp.Finalize();
     initialized = true;

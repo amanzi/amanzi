@@ -99,7 +99,8 @@ Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S)
     for (auto domain=S.mesh_begin(); domain!=S.mesh_end(); ++domain) {
       const auto& mesh = S.GetMesh(domain->first);
 
-      boost::filesystem::path chkp_file = boost::filesystem::path(file_or_dirname) / (domain->first+".h5");
+      Key domain_name = Keys::replace_all(domain->first, ":", "-");
+      boost::filesystem::path chkp_file = boost::filesystem::path(file_or_dirname) / (domain_name+".h5");
       output_[domain->first] = Teuchos::rcp(new HDF5_MPI(mesh->get_comm(), chkp_file.string()));
       output_[domain->first]->open_h5file(true);
     }
@@ -113,7 +114,8 @@ Checkpoint::Checkpoint(const std::string& filename, const Comm_ptr_type& comm, c
 {
   // if provided a directory, use new style
   if (boost::filesystem::is_directory(filename)) {
-    boost::filesystem::path chkp_file = boost::filesystem::path(filename) / (domain+".h5");
+    Key domain_name = Keys::replace_all(domain, ":", "-");
+    boost::filesystem::path chkp_file = boost::filesystem::path(filename) / (domain_name+".h5");
     single_file_ = false;
     output_[domain] = Teuchos::rcp(new HDF5_MPI(comm, chkp_file.string()));
     output_[domain]->open_h5file(true);
@@ -157,7 +159,8 @@ void Checkpoint::CreateFile(const int cycle) {
   } else {
     boost::filesystem::create_directory(oss.str());
     for (const auto& file_out : output_) {
-      boost::filesystem::path chkp_file = boost::filesystem::path(oss.str()) / file_out.first;
+      Key filename = Keys::replace_all(file_out.first, ":", "-");
+      boost::filesystem::path chkp_file = boost::filesystem::path(oss.str()) / filename;
       file_out.second->createDataFile(chkp_file.string());
       file_out.second->open_h5file();
     }
