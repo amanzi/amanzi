@@ -77,8 +77,8 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     double x = node_crd[0], y = node_crd[1];
       
     B_n[0][n] = 0.0;
-    if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.2*0.2 + 1.e-12) {
-      B_n[0][n] = 0.8;  
+    if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.1*0.1 + 1.e-12) {
+      B_n[0][n] = 1.2;
     }
   }
 
@@ -122,8 +122,14 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     }
 
     ht_c[0][c] = std::max(0.5, B_c[0][c]);
-
+    
+    
+    
+    if ((xc[0] - 0.2)*(xc[0] - 0.2) + (xc[1] - 0.2)*(xc[1] - 0.2) < 0.05*0.05) {
+      ht_c[0][c] += 0.1;
+    }
     h_c[0][c] = ht_c[0][c] - B_c[0][c];
+    
     vel_c[0][c] = 0.0;
     vel_c[1][c] = 0.0;
     q_c[0][c] = h_c[0][c] * vel_c[0][c];
@@ -249,7 +255,7 @@ RunTest(int icase)
   std::vector<double> dx, Linferror, L1error, L2error;
 
   double Tend;
-  Tend = 2.0;
+  Tend = 10.0;
 
   while ((t_new < Tend) && (iter >= 0)) {
     double t_out = t_new;

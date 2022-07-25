@@ -53,7 +53,7 @@
         <Parameter name="limiter cfl" type="double" value="0.8"/>
       </ParameterList>
       <Parameter name="temporal discretization order" type="int" value="1"/>
-      <Parameter name="cfl" type="double" value="0.10"/>
+      <Parameter name="cfl" type="double" value="0.1"/>
       <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
       <Parameter name="numerical flux" type="string" value="Rusanov"/>
       
@@ -66,7 +66,7 @@
             <ParameterList name="ponded-depth">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
-                <Parameter name="formula" type="string" value="0.5"/>
+                <Parameter name="formula" type="string" value="0.6"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

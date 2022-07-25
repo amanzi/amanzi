@@ -1115,8 +1115,8 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
     *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
 
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
- // ht_grad[0][c] = 0.0;
- // ht_grad[1][c] = 0.0;
+//  ht_grad[0][c] = 0.0;
+//  ht_grad[1][c] = 0.0;
 
   const auto& xc = mesh_->cell_centroid(c);
   const auto& xf = mesh_->face_centroid(e);
@@ -1214,9 +1214,12 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
       ht_edge /= 2.0;
     }
   
+  
   // well-balanced reconstruction for partially wet cells
-  if (cell_is_partially_wet == true) {
-    
+  double a = 0.0;
+  if (cell_is_partially_wet == true && a == 1.0) {
+    ht_grad[0][c] = 0.0;
+    ht_grad[1][c] = 0.0;
     // consider subcell determined by edge "e"
     Amanzi::AmanziMesh::Entity_ID_List face_nodes; 
       
@@ -1225,6 +1228,28 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
     Amanzi::AmanziGeometry::Point xv13, xv12, xv23;
       
     mesh_->face_get_nodes(e, &face_nodes);
+    
+//    if (ht_c[0][c] > std::max(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]])) {
+//      ht_edge = ht_c[0][c];
+//    } else if (std::abs(h_c[0][c] - B_c[0][c]) < 1.e-15) {
+//      ht_edge = BathymetryEdgeValue(e, B_n);
+//    } else if (std::abs(B_n[0][face_nodes[0]] - B_n[0][face_nodes[1]]) > 1.e-15) {
+//      double B1 = std::min(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]]);
+//      double B2 = std::max(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]]);
+//
+//      double alpha = (ht_c[0][c] - B1) / (B2 - B1);
+//
+//      if (alpha >= 0.5) {
+//        ht_edge = ht_c[0][c];
+//      } else {
+//        ht_edge = BathymetryEdgeValue(e, B_n);
+//      }
+//    }
+//  }
+    
+    
+    
+    // ----
     
     B13 = std::max(B_c[0][c], std::max(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]])); 
     B23 = std::min(B_c[0][c], std::min(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]]));
@@ -1289,10 +1314,10 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
     // characterize subcell
     double Bcf = (B13 + B12 + B23) / 3.0;
     double htcf = (h_c[0][c]) + Bcf;
-    if ( (htcf >= B13) && (h_c[0][c] > 0.0) ) {
+    if ( (ht_c[0][c] >= B13) && (h_c[0][c] > 0.0) ) {
     // subcell is fully flooded; do nothing
       ht_edge = total_depth_grad_->getValue(c, xf);
-    } else if (std::abs(htcf - Bcf) < 1.e-15) {
+    } else if (std::abs(h_c[0][c]) < 1.e-15) {
        ht_edge = BathymetryEdgeValue(e, B_n);
     } else {
       ht_edge = ht_type12_cell(c, e, Bi, xv13, xv12, xv23);
@@ -1304,6 +1329,10 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
 //    std::cout<<"xc = "<<xc[0]<<", "<<xc[1]<<", e = "<<e<<", "<<xf[0]<<", "<<xf[1]<<", ht_edge = "<<ht_edge<<std::endl;
 //    std::cout<<"B_c = "<<B_c[0][c]<<", edge = "<<BathymetryEdgeValue(e, B_n)<<std::endl;
 //  }
+   
+    //----
+    
+  
   return ht_edge;
 }
 
@@ -1387,11 +1416,11 @@ double ShallowWater_PK::ht_type12_cell(int c, int e, std::vector<double> Bi, Ama
         }
       } 
     }
-    if (c == 436) {
-      std::cout<<"Bn "<<B13<<">"<<B12<<">"<<B23<<std::endl;
-      std::cout<<"xv: "<<xv13[0]<<", "<<xv13[1]<<" | "<<xv12[0]<<", "<<xv12[1]<<" | "<<xv23[0]<<", "<<xv23[1]<<std::endl;
-      std::cout<<"type1 wj = "<<wj<<", ht_edge = "<<ht_edge<<std::endl;
-    } 
+//    if (c == 436) {
+//      std::cout<<"Bn "<<B13<<">"<<B12<<">"<<B23<<std::endl;
+//      std::cout<<"xv: "<<xv13[0]<<", "<<xv13[1]<<" | "<<xv12[0]<<", "<<xv12[1]<<" | "<<xv23[0]<<", "<<xv23[1]<<std::endl;
+//      std::cout<<"type1 wj = "<<wj<<", ht_edge = "<<ht_edge<<std::endl;
+//    }
   } // type 1 cell
 
   // else type 2 cell
@@ -1441,9 +1470,9 @@ double ShallowWater_PK::ht_type12_cell(int c, int e, std::vector<double> Bi, Ama
           }
         } 
       }
-    if (c == 436) {
-      std::cout<<"type2 wj = "<<wj<<", ht_edge = "<<ht_edge<<std::endl;
-    }
+//    if (c == 436) {
+//      std::cout<<"type2 wj = "<<wj<<", ht_edge = "<<ht_edge<<std::endl;
+//    }
     } // type 2 cell
 
   return ht_edge;
