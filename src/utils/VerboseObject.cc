@@ -19,6 +19,7 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "AmanziComm.hh"
+#include "Key.hh"
 #include "VerboseObject.hh"
 
 namespace Amanzi {
@@ -131,6 +132,10 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm, const std::string& name,
 void VerboseObject::set_name(std::string name, int width)
 {
   if (width < 0) width = global_line_prefix_size;
+
+  if (name.size() > width) name = Keys::abbreviate(name, width);
+
+  // hard cut/pad to size
   if (name.size() > width) {
     name.erase(width);
   } else if (name.size() < width) {

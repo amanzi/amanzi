@@ -54,6 +54,22 @@ bool in(const Key& key, const std::string& substr)
   return key.find(substr) != std::string::npos;
 }
 
+Key replace_all(Key key, const std::string& find_s, const std::string& replace_s)
+{
+  std::size_t index = 0;
+  while (true) {
+    index = key.find(find_s, index);
+    if (index == std::string::npos) break;
+
+    key.replace(index, find_s.size(), replace_s);
+
+    // Advance index forward so the next iteration doesn't pick it up as well.
+    // This avoids problems with e.g. abc --> abcabc
+    index += replace_s.size();
+  }
+  return key;
+}
+
 Key merge(const Key& domain, const Key& name, const char& delimiter)
 {
   return domain+delimiter+name;
@@ -191,6 +207,18 @@ Key getVarName(const Key& name)
   else
     return splitKey(split(name, deriv_delimiter).first).second;
 }
+
+// abbreviate
+Key abbreviate(Key name, int max_len)
+{
+  for (const auto abbvs : abbreviations) {
+    name = replace_all(name, abbvs.first, abbvs.second);
+    if (max_len > 0 && name.size() < max_len) break;
+  }
+  return name;
+}
+
+
 
 // Domain Sets are of the form NAME:ID, where ID is an integer or
 // region string indexing the domain set.

@@ -66,6 +66,7 @@
 #include <set>
 #include "Teuchos_ParameterList.hpp"
 #include "Tag.hh"
+#include "Abbreviations.hh"
 #include "FIFO_Set.hh"
 
 namespace Amanzi {
@@ -107,6 +108,7 @@ bool ends_with(const Key& key, const char& c);
 bool ends_with(const Key& key, const std::string& substr);
 bool in(const Key& key, const char& c);
 bool in(const Key& key, const std::string& c);
+Key replace_all(Key key, const std::string& find_s, const std::string& replace_s);
 
 Key merge(const Key& domain, const Key& name, const char& delimiter);
 KeyPair split(const Key& name, const char& delimiter);
@@ -149,6 +151,11 @@ Key getDomainPrefix(const Key& name);
 
 // Grab the varname suffix of a DOMAIN-VARNAME Key
 Key getVarName(const Key& name);
+
+// abbreviate.  If max_len > 0, stops once the string is shorter than this
+// value.
+Key abbreviate(Key name, int max_len = -1);
+
 
 //
 // Domain Sets
