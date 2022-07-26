@@ -1115,8 +1115,8 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
     *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
 
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
-//  ht_grad[0][c] = 0.0;
-//  ht_grad[1][c] = 0.0;
+  //ht_grad[0][c] = 0.0;
+  //ht_grad[1][c] = 0.0;
 
   const auto& xc = mesh_->cell_centroid(c);
   const auto& xf = mesh_->face_centroid(e);
@@ -1152,6 +1152,7 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
             alpha = std::min(alpha, (B_n[0][cnodes[i]] - ht_c[0][c]) / (ht_rec - ht_c[0][c]));
           }
         }
+
         ht_grad[0][c] *= alpha;
         ht_grad[1][c] *= alpha;
         ht_edge = total_depth_grad_->getValue(c, xf);
@@ -1212,6 +1213,8 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
         }
       }
       ht_edge /= 2.0;
+      ht_grad[0][c] = 0.0;
+      ht_grad[1][c] = 0.0;
     }
   
   
@@ -1229,26 +1232,26 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
       
     mesh_->face_get_nodes(e, &face_nodes);
     
-//    if (ht_c[0][c] > std::max(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]])) {
-//      ht_edge = ht_c[0][c];
-//    } else if (std::abs(h_c[0][c] - B_c[0][c]) < 1.e-15) {
-//      ht_edge = BathymetryEdgeValue(e, B_n);
-//    } else if (std::abs(B_n[0][face_nodes[0]] - B_n[0][face_nodes[1]]) > 1.e-15) {
-//      double B1 = std::min(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]]);
-//      double B2 = std::max(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]]);
-//
-//      double alpha = (ht_c[0][c] - B1) / (B2 - B1);
-//
-//      if (alpha >= 0.5) {
-//        ht_edge = ht_c[0][c];
-//      } else {
-//        ht_edge = BathymetryEdgeValue(e, B_n);
-//      }
-//    }
-//  }
+    if (ht_c[0][c] > std::max(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]])) {
+      ht_edge = ht_c[0][c];
+    } else if (std::abs(h_c[0][c] - B_c[0][c]) < 1.e-15) {
+      ht_edge = BathymetryEdgeValue(e, B_n);
+    } else if (std::abs(B_n[0][face_nodes[0]] - B_n[0][face_nodes[1]]) > 1.e-15) {
+      double B1 = std::min(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]]);
+      double B2 = std::max(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]]);
+
+      double alpha = (ht_c[0][c] - B1) / (B2 - B1);
+
+      if (alpha >= 0.5) {
+        ht_edge = ht_c[0][c];
+      } else {
+        ht_edge = BathymetryEdgeValue(e, B_n);
+      }
+    }
+  }
     
     
-    
+    /*
     // ----
     
     B13 = std::max(B_c[0][c], std::max(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]])); 
@@ -1331,7 +1334,7 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
 //  }
    
     //----
-    
+    */
   
   return ht_edge;
 }
@@ -1522,12 +1525,12 @@ ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
 
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
 
-//  S1 /= vol;
-//  S2 /= vol;
-//  S1 -= ht_grad[0][c] * U[0];
-//  S2 -= ht_grad[1][c] * U[0];
-//  S1 *= g_;
-//  S2 *= g_;
+  S1 /= vol;
+  S2 /= vol;
+  S1 -= ht_grad[0][c] * U[0];
+  S2 -= ht_grad[1][c] * U[0];
+  S1 *= g_;
+  S2 *= g_;
   
 //  for (int i = 0; i < cnodes.size(); ++i) {
 //    S1 -= (1.0/3.0) * (ht_cell_node_[c][cnodes[i]] - B_n[0][cnodes[i]]) * ht_cell_node_grad_x_[c][cnodes[i]];
@@ -1537,6 +1540,8 @@ ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
 //  S1 *= g_;
 //  S2 *= g_;
 //
+
+  /*
 //  new scheme 
   S1 /= vol;
   S2 /= vol;
@@ -1570,6 +1575,8 @@ ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
   
   S1 *= g_;
   S2 *= g_;
+  */
+
 
   std::vector<double> S(3);
 

@@ -77,8 +77,8 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     double x = node_crd[0], y = node_crd[1];
       
     B_n[0][n] = 0.0;
-    if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.1*0.1 + 1.e-12) {
-      B_n[0][n] = 1.2;
+    if ((x - 1.5)*(x - 1.5) + (y - 0.5)*(y - 0.5) < 0.2*0.2 + 1.e-12) {
+      B_n[0][n] = 0.8;
     }
   }
 
@@ -121,12 +121,12 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                    (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 2.0;
     }
 
-    ht_c[0][c] = std::max(0.5, B_c[0][c]);
+    ht_c[0][c] = std::max(0.0, B_c[0][c]);
     
     
     
-    if ((xc[0] - 0.2)*(xc[0] - 0.2) + (xc[1] - 0.2)*(xc[1] - 0.2) < 0.05*0.05) {
-      ht_c[0][c] += 0.1;
+    if ((xc[0] - 0.5)*(xc[0] - 0.5) + (xc[1] - 0.5)*(xc[1] - 0.5) < 0.1*0.1) {
+      ht_c[0][c] += 0.5;
     }
     h_c[0][c] = ht_c[0][c] - B_c[0][c];
     
@@ -185,7 +185,7 @@ RunTest(int icase)
 
   RCP<Mesh> mesh;
   //mesh = meshfactory.create ("test/triangular16.exo");
-  mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
+  mesh = meshfactory.create(0.0, 0.0, 2.0, 1.0, 50, 25, request_faces, request_edges);
   //mesh = meshfactory.create ("test/median32x33.exo");
 
   // Other polygonal meshes
@@ -255,12 +255,13 @@ RunTest(int icase)
   std::vector<double> dx, Linferror, L1error, L2error;
 
   double Tend;
+  //Tend = 50000.0;
   Tend = 10.0;
 
   while ((t_new < Tend) && (iter >= 0)) {
     double t_out = t_new;
 
-    if (iter % 100 == 0) {
+    if (iter % 500 == 0) {
       io.InitializeCycle(t_out, iter, "");
 
       io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
@@ -287,7 +288,7 @@ RunTest(int icase)
     t_old = t_new;
     iter += 1;
     
-    if (iter % 100 == 0) {
+    if (iter % 500 == 0) {
     	std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
     }
   } // time loop

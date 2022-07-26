@@ -17,7 +17,7 @@
     </ParameterList>
     <ParameterList name="Right">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{2.0,0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
@@ -50,7 +50,7 @@
         <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
         <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
         <Parameter name="limiter location" type="string" value="node"/>
-        <Parameter name="limiter cfl" type="double" value="0.8"/>
+        <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="cfl" type="double" value="0.1"/>
@@ -66,7 +66,7 @@
             <ParameterList name="ponded-depth">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
-                <Parameter name="formula" type="string" value="0.6"/>
+                <Parameter name="formula" type="string" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
