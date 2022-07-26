@@ -123,8 +123,30 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
   if (comm_ == Teuchos::null) return;
 
   // We may be in the comm, but not have this variable.
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh;
   Key domain = Keys::getDomain(variable_);
-  if (!S->HasMesh(domain)) return;
+  KeyTriple ds_names;
+  if (Keys::splitDomainSet(variable_, ds_names) && (std::get<1>(ds_names) == "*")) {
+    // is a domain set -- create a lifted eval for a new variable
+    variable_ = Keys::getKey(std::get<0>(ds_names), std::get<2>(ds_names));
+
+    // on the domain set's reference mesh
+    auto ds = S->GetDomainSet(std::get<0>(ds_names));
+    mesh = ds->get_referencing_parent();
+    AMANZI_ASSERT(mesh != Teuchos::null);
+
+    if (!S->HasEvaluatorList(variable_)) {
+      // create a lifted evaluator
+      Teuchos::ParameterList& eval_list = S->GetEvaluatorList(variable_);
+      eval_list.set<std::string>("evaluator type", "subgrid aggregate evaluator");
+      eval_list.set<std::string>("source domain name", domain);
+      eval_list.set("visualize", false); // turn off vis -- this is unnecessary
+    }
+  } else {
+    // not a domain set, just use as normal
+    if (!S->HasMesh(domain)) return;
+    mesh = S->GetMesh(domain);
+  }
 
   // If we have gotten to this point, we must have data
   has_data_ = true;
@@ -152,7 +174,7 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
     auto& cvs = S->Require<CompositeVector, CompositeVectorSpace>(variable_, tag_);
 
     // we have to set the mesh now -- assume it is provided by the domain
-    cvs.SetMesh(S->GetMesh(Keys::getDomain(variable_)));
+    cvs.SetMesh(mesh);
 
     // was num_vectors set?  if not use default of 1
     if (num_vectors_ < 0) num_vectors_ = 1;
