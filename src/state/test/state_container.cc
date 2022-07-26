@@ -41,7 +41,7 @@ TEST(STATE_ASSIGNMENT) {
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
 }
 
-TEST(STATE_FACTORIES_PERSIST) {
+TEST(STATE_FACTORIES_WITH_CREATE) {
   using namespace Amanzi;
 
   // create a mesh
@@ -63,6 +63,33 @@ TEST(STATE_FACTORIES_PERSIST) {
 
   s.Setup();
 }
+
+TEST(STATE_FACTORIES_WITH_CONSTRUCTOR) {
+  using namespace Amanzi;
+  auto comm = Amanzi::getDefaultComm();
+  State s;
+  Epetra_Map my_map(-1, 3, 0, *comm);
+  s.Require<Epetra_Vector, Epetra_Map>(my_map, "e_vec", Tags::DEFAULT, "e_vec");
+  s.Setup();
+
+  CHECK_EQUAL(comm->NumProc() * 3, s.Get<Epetra_Vector>("e_vec", Tags::DEFAULT).MyLength());
+}
+
+
+//
+// NOTE: This cannot compile because there is no default constructor for Epetra_Map.  Yay!
+//
+// TEST(STATE_FACTORIES_WITH_CONSTRUCTOR2) {
+//   using namespace Amanzi;
+//   auto comm = Amanzi::getDefaultComm();
+//   State s;
+//   Epetra_Map my_map(-1, 3, 0, *comm);
+//   s.Require<Epetra_Vector, Epetra_Map>("e_vec", Tags::DEFAULT, "e_vec");
+//   s.Setup();
+
+//   CHECK_EQUAL(comm->NumProc() * 3, s.Get<Epetra_Vector>("e_vec", Tags::DEFAULT).MyLength());
+// }
+
 
 TEST(STATE_HETEROGENEOUS_DATA) {
   using namespace Amanzi;

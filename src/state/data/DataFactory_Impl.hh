@@ -30,6 +30,23 @@
 #include "dbc.hh"
 
 namespace Amanzi {
+namespace Impl {
+
+template <typename T>
+class HasCreate {
+ private:
+  HasCreate() = delete;
+
+  struct one { char x[1]; };
+  struct two { char x[2]; };
+
+  template <typename C> static one test( decltype(void(std::declval<C &>().Create())) * ) ;
+  template <typename C> static two test(...);
+
+ public:
+  static constexpr bool value = sizeof(test<T>(0)) == sizeof(one);
+};
+
 
 // thing factory base class
 class DataFactory_Intf {
@@ -53,7 +70,8 @@ class DataFactory_Intf {
 template <typename T, typename F>
 class DataFactory_Impl : public DataFactory_Intf {
 public:
-  DataFactory_Impl() : f_(std::move(std::unique_ptr<F>(new F()))) {}
+  explicit
+  DataFactory_Impl(const F& f) : f_(std::move(std::unique_ptr<F>(new F(f)))) {}
 
   DataFactory_Impl(const DataFactory_Impl& other)
       : f_(std::move(std::unique_ptr<F>(new F(*other.f_)))) {}
@@ -63,9 +81,14 @@ public:
         new DataFactory_Impl<T, F>(*this));
   }
 
-  void Create(Data& t) const override { t.SetPtr<T>(f_->Create()); }
+  void Create(Data& t) const override {
+    t = Create();
+    return;
+  }
 
-  Data Create() const override { return data<T>(f_->Create()); }
+  Data Create() const override {
+    return Create_();
+  }
 
   const F& Get() const { return *f_; }
 
@@ -73,6 +96,24 @@ public:
 
  private:
   std::unique_ptr<F> f_;
+
+
+  // two ways to Create a T from an F.  Either:
+  // Constructor:  T(F);
+  // Create method: Teuchos::RCP<T> = F.Create();
+  //
+  template<class Q=F>
+  typename std::enable_if<HasCreate<Q>::value, Data>::type
+  Create_() const {
+    return data<T>(f_->Create());
+  }
+
+  template<class Q=F>
+  typename std::enable_if<!HasCreate<Q>::value, Data>::type
+  Create_() const {
+    return data<T>(Teuchos::rcp(new T(*f_)));
+  }
+
 };
 
 
@@ -80,8 +121,9 @@ public:
 template <typename T>
 class DataFactory_Impl<T, NullFactory> : public DataFactory_Intf {
 public:
-  DataFactory_Impl()
-      : f_(std::unique_ptr<NullFactory>(new NullFactory())) {};
+  explicit
+  DataFactory_Impl(const NullFactory& f)
+      : f_(std::unique_ptr<NullFactory>(new NullFactory(f))) {};
 
   DataFactory_Impl(const DataFactory_Impl& other)
       : f_(std::unique_ptr<NullFactory>(new NullFactory(*other.f_))) {};
@@ -135,6 +177,7 @@ template <typename T, typename F> F& DataFactory_Intf::GetW() {
   return p->GetW();
 }
 
+} // namespace Impl
 } // namespace Amanzi
 
 #endif

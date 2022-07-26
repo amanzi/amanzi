@@ -352,6 +352,70 @@ bool Initialize<CompositeVector>(
   return initialized;
 }
 
+
+// ======================================================================
+// Specializations for Epetra_Vector
+// ======================================================================
+template <>
+void WriteVis<Epetra_Vector>(const Visualization& vis, const Key& fieldname,
+                             const std::vector<std::string>* subfieldnames,
+                             const Epetra_Vector& vec)
+{
+  vis.Write(fieldname, vec);
+}
+
+template <>
+void WriteCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
+                                      const Key& fieldname,
+                                      const std::vector<std::string>* subfieldnames,
+                                      const Epetra_Vector& vec) {
+  chkp.Write(fieldname, vec);
+}
+
+template <>
+void ReadCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
+                                     const Key& fieldname,
+                                     const std::vector<std::string>* subfieldnames,
+                                     Epetra_Vector& vec) {
+  chkp.Read(fieldname, vec);
+}
+
+template <>
+bool Initialize<Epetra_Vector>(
+    Teuchos::ParameterList& plist, Epetra_Vector& t, const Key& fieldname,
+    const std::vector<std::string>* subfieldnames) {
+  bool initialized = false;
+
+  // First try all initialization method which set the entire data structure.
+  // ------ Try to set values from a restart file -----
+  if (plist.isParameter("restart file")) {
+    auto filename = plist.get<std::string>("restart file");
+    auto comm = Teuchos::rcpFromRef(t.Comm());
+    Checkpoint chkp(filename, comm);
+    ReadCheckpoint(chkp, fieldname, subfieldnames, t);
+    chkp.Finalize();
+    initialized = true;
+  }
+
+  // ------ Set values using a constant -----
+  if (plist.isParameter("constant")) {
+    double value = plist.get<double>("constant");
+    t.PutScalar(value);
+    initialized = true;
+  }
+  if (plist.isParameter("value")) {
+    double value = plist.get<double>("value");
+    t.PutScalar(value);
+    initialized = true;
+  }
+  return initialized;
+}
+
+template <>
+bool Equivalent(const Epetra_Map& one, const Epetra_Map& two) {
+  return one.SameAs(two);
+}
+
 }  // namespace Helpers
 }  // namespace Amanzi
 

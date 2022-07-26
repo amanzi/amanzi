@@ -96,7 +96,7 @@ class RecordSet {
   void CreateData() {
     for (auto& e : records_) {
       if (!aliases_.count(e.first)) {
-        e.second->data_ = std::forward<Data>(factory_.Create());
+        e.second->data_ = std::forward<Impl::Data>(factory_.Create());
       }
     }
     for (auto& pair : aliases_) {
@@ -154,9 +154,24 @@ class RecordSet {
   bool HasType() { return factory_.HasType(); }
 
   template <typename T, typename F>
+  F& SetType(const F& f) {
+    if (!factory_.HasType()) {
+      factory_ = Impl::dataFactory<T, F>(f);
+    } else {
+      if (!Helpers::Equivalent(f, GetFactory<T,F>())) {
+        Errors::Message msg;
+        msg << "Factory required for field \"" << fieldname_
+            << "\" differs from previous requirement call.";
+        Exceptions::amanzi_throw(msg);
+      }
+    }
+    return GetFactory<T, F>();
+  }
+
+  template <typename T, typename F>
   F& SetType() {
     if (!factory_.HasType()) {
-      factory_ = dataFactory<T, F>();
+      factory_ = Impl::dataFactory<T, F>();
     }
     return GetFactory<T, F>();
   }
@@ -164,7 +179,7 @@ class RecordSet {
   template <typename T>
   void SetType() {
     if (!factory_.HasType()) {
-      factory_ = dataFactory<T, NullFactory>();
+      factory_ = Impl::dataFactory<T, NullFactory>();
     }
     GetFactory<T, NullFactory>();  // checks valid type
   }
@@ -192,7 +207,7 @@ class RecordSet {
   std::unique_ptr<std::vector<std::string> > subfieldnames_;
 
   std::map<Tag,Tag> aliases_;
-  DataFactory factory_;
+  Impl::DataFactory factory_;
   RecordMap records_;
 };
 
