@@ -50,7 +50,7 @@ class RecordSet {
   const Key& fieldname() const { return fieldname_; }
   const Key& vis_fieldname() const { return vis_fieldname_; }
   Utils::Units units() const { return units_; }
-  const std::vector<std::string>* subfieldnames() const {
+  std::vector<std::string> const * subfieldnames() const {
     return subfieldnames_.get(); }
 
   // mutate
