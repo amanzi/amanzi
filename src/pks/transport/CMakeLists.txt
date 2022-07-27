@@ -196,12 +196,13 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
                        SOURCE test/Main.cc test/transport_parallel_read_mstk.cc
                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
     
-      # fractures
-      add_amanzi_test(transport_fractures transport_fractures
-                    KIND unit
-                    NPROCS 2
-                    SOURCE test/Main.cc test/transport_fractures.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+       # fractures
+       add_amanzi_test(transport_fractures transport_fractures
+                      KIND unit
+                      NPROCS 2
+                      SOURCE test/Main.cc test/transport_fractures.cc
+                      LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    endif()
 
     add_amanzi_test(transport_fractures_implicit transport_fractures_implicit
                     KIND unit
@@ -214,5 +215,5 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
                     NPROCS 2
                     SOURCE test/Main.cc test/transport_fct.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
 endif()
+

@@ -176,7 +176,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     URL_MD5       ${PETSc_MD5_SUM}          # md5sum of the archive file
                     DOWNLOAD_NAME ${PETSc_SAVEAS_FILE}      # file name to store (if not end of URL)
                     # -- Patch 
-                    PATCH_COMMAND ${PETSc_PATCH_COMMAND}
+                    # PATCH_COMMAND ${PETSc_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${PETSc_source_dir}       # Source directory
                     CONFIGURE_COMMAND
@@ -189,6 +189,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                               --with-debugging=${petsc_debug_flag}
                               --without-valgrind
                               --with-cxx-dialect=C++11
+                              --with-hdf5-dir=${TPL_INSTALL_PREFIX}
                               ${petsc_lapack_option}
                               ${petsc_blas_option}
                               ${petsc_package_flags}

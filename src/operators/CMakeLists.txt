@@ -406,21 +406,6 @@ if (BUILD_TESTS)
                     NPROCS 2
                     KIND unit)
 
-    # remap tests
-    add_amanzi_test(operators_remap operators_remap
-                    KIND unit
-                    NPROCS 2
-                    SOURCE test/Main.cc test/operator_remap.cc
-                                        test/operator_remap_curved.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    add_amanzi_test(operators_remap_gcl operators_remap_gcl
-                    KIND unit
-                    NPROCS 3
-                    SOURCE test/Main.cc test/operator_remap_gcl.cc
-                                        test/operator_remap_gcl_reinit.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
     # fct tests
     add_amanzi_test(operators_fct operators_fct
                     KIND unit

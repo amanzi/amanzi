@@ -72,7 +72,7 @@
 #   0.93.1       - update Boost to version 1.61.0
 #   0.93.2       - update Alquimia to version 1.0.3
 #   0.93.3       - update Alquimia to version 1.0.4
-
+#
 #   0.94.1       - updates several TPLs, new versions are:
 #                - Trilinos 12.10.1
 #                - zlib 1.2.11
@@ -163,15 +163,19 @@
 #   0.98.2       - update Hypre to 2.22.0
 #   0.98.3       - enforced c++14 standard for Trilinos and Amanzi
 #   0.98.4       - add cybernetic patch from Glenn for PFLOTRAN
-#   0.98.5a      - update HDF5 to 1.12.1
+#                - update HDF5 to 1.12.1
 #                - update netcdf-c to 4.8.1
 #                - update netcdf-fortran to 4.5.4
-#   0.98.5b      - update SILO to 4.11 is needed
-#   0.98.5c      - update SEACAS to date tag v2022-02-16
-#   0.98.5d      - update Nanoflann to 1.4.2
-#   0.98.5e      - update ExprTk to 0.0.1
-#   0.98.5f      - update Boost to 1.78.0
-#   0.98.6       - tentative release number
+#                - update SILO to 4.11 is needed
+#                - update SEACAS to date tag v2022-02-16
+#                - update Nanoflann to 1.4.2
+#                - update ExprTk to 0.0.1
+#   0.98.5       - update Boost to 1.78.0
+#                - update MOAB to 5.3.1
+#                - update Sowing to 1.1.26-p2
+#                - update PFLOTRAN to 3.0.2 (compatible with PETSc and Alqumia)
+#                - update PETSc to 3.16.0
+#   0.93.6       - update Alquimia to version 1.0.9
 
 include(CMakeParseArguments)
 
@@ -402,13 +406,13 @@ set(MSTK_MD5_SUM        3ab4d8811257cb7a487a24e0c866a4db)
 # TPL: MOAB
 #
 set(MOAB_VERSION_MAJOR  5)
-set(MOAB_VERSION_MINOR  2)
-set(MOAB_VERSION_PATCH  0)
+set(MOAB_VERSION_MINOR  3)
+set(MOAB_VERSION_PATCH  1)
 set(MOAB_VERSION ${MOAB_VERSION_MAJOR}.${MOAB_VERSION_MINOR}.${MOAB_VERSION_PATCH})
 set(MOAB_URL_STRING     ftp://ftp.mcs.anl.gov/pub/fathom)
 set(MOAB_ARCHIVE_FILE   moab-${MOAB_VERSION}.tar.gz)
 set(MOAB_SAVEAS_FILE    ${MOAB_ARCHIVE_FILE})
-set(MOAB_MD5_SUM        dd2cf5c32ede64dfd7e9b04e0387c4b4)
+set(MOAB_MD5_SUM        935d18f8edf7dc3df625d9426a2d59e1)
 
 #
 # TPL: HYPRE
@@ -465,25 +469,25 @@ set(SuperLUDist_MD5_SUM        7b9fa7c047fd1988b61f9c6f744c829b)
 #
 set(Sowing_VERSION_MAJOR  1)
 set(Sowing_VERSION_MINOR  1)
-set(Sowing_VERSION_PATCH  25-p1)
+set(Sowing_VERSION_PATCH  26-p2)
 set(Sowing_VERSION  ${Sowing_VERSION_MAJOR}.${Sowing_VERSION_MINOR}.${Sowing_VERSION_PATCH})
 set(Sowing_URL_STRING     "https://bitbucket.org/petsc/pkg-sowing/get")
 set(Sowing_ARCHIVE_FILE   v${Sowing_VERSION}.tar.gz)
 set(Sowing_SAVEAS_FILE    sowing-${Sowing_VERSION}.tar.gz)
-set(Sowing_MD5_SUM        30ae83576038f00def33619a31f6a14c)
+set(Sowing_MD5_SUM        3a25a300eba1616e0560bfeed4673d7d)
 
 #
 # TPL: PETSc
 #
 set(PETSc_VERSION_MAJOR  3)
-set(PETSc_VERSION_MINOR  13)
+set(PETSc_VERSION_MINOR  16)
 set(PETSc_VERSION_PATCH  0)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
-set(PETSc_URL_STRING     "https://gitlab.com/petsc/petsc/-/archive/v${PETSc_VERSION}")
+set(PETSc_URL_STRING     "https://gitlab.com/petsc/petsc/-/archive/v${PETSc_ARCHIVE_VERSION}")
 set(PETSc_ARCHIVE_FILE   petsc-v${PETSc_VERSION}.tar.gz)
 set(PETSc_SAVEAS_FILE    petsc-${PETSc_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        c1bfeeb3613f59049d312713b461a1b1)
+set(PETSc_MD5_SUM        b231f5dcb7ecbb11c6ccf4caa2472fee)
 
 
 #
@@ -514,28 +518,28 @@ set(SEACAS_MD5_SUM        40452d7badecb05a0e859eeeb010003d)
 #
 # TPL: PFLOTRAN
 #
-set(PFLOTRAN_VERSION_MAJOR 0)
+set(PFLOTRAN_VERSION_MAJOR 3)
 set(PFLOTRAN_VERSION_MINOR 0)
-set(PFLOTRAN_VERSION_PATCH 1ba735f)
+set(PFLOTRAN_VERSION_PATCH 2)
 set(PFLOTRAN_VERSION ${PFLOTRAN_VERSION_MAJOR}.${PFLOTRAN_VERSION_MINOR}.${PFLOTRAN_VERSION_PATCH})
 set(PFLOTRAN_URL_STRING     "https://bitbucket.org/pflotran/pflotran/get/release")
-set(PFLOTRAN_ARCHIVE_FILE   pflotran-1ba735f-17Jul2020.tar.gz)
-set(PFLOTRAN_SAVEAS_FILE    pflotran-1ba735f-17Jul2020.tar.gz)
+set(PFLOTRAN_ARCHIVE_FILE   pflotran-9e07f41-28Sep2021.tar.gz)
+set(PFLOTRAN_SAVEAS_FILE    pflotran-9e07f41-28Sep2021.tar.gz)
 set(PFLOTRAN_MD5_SUM        486b0981a90aa662644b907f0a42e7fe)
 set(PFLOTRAN_GIT_REPOSITORY "https://bitbucket.org/pflotran/pflotran/src/master")
-set(PFLOTRAN_GIT_TAG        "1ba735f1a64a12315c52a64107a75571c53492b3")
+set(PFLOTRAN_GIT_TAG        "9e07f41")
 
 #
 # TPL: Alquimia
 #
 set(Alquimia_VERSION_MAJOR 1)
 set(Alquimia_VERSION_MINOR 0)
-set(Alquimia_VERSION_PATCH 8)
+set(Alquimia_VERSION_PATCH 9)
 set(Alquimia_VERSION ${Alquimia_VERSION_MAJOR}.${Alquimia_VERSION_MINOR}.${Alquimia_VERSION_PATCH})
-set(Alquimia_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive)
-set(Alquimia_ARCHIVE_FILE   v${Alquimia_VERSION}.tar.gz)
+set(Alquimia_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive/refs/tags/)
+set(Alquimia_ARCHIVE_FILE   v.${Alquimia_VERSION}.tar.gz)
 set(Alquimia_SAVEAS_FILE    alquimia-dev-${Alquimia_VERSION}.tar.gz)
-set(Alquimia_MD5_SUM        20c9d27ba6dd00e56b7deaeab903ccbe)
+set(Alquimia_MD5_SUM        e336e980d17a15cf3d5b6f7892f04b87)
 
 #
 # TPL: Silo
