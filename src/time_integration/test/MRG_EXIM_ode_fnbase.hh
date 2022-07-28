@@ -21,12 +21,12 @@
 
 #include "MRG_EXIM_FnBase.hh"
 #include "FnBaseDefs.hh"
-#include "ode_2d.hh"
+#include "ode_2d_Epetra.hh"
 #include <vector>
 #include <cmath>
 
 // ODE for testing
-class MRG_EXIM_linear2d_ODE :  public Amanzi::ode_2d<Amanzi::MRG_EXIM_FnBase<Epetra_Vector>>  {
+class MRG_EXIM_linear2d_ODE :  public Amanzi::ode_2d_Epetra<Epetra_Vector, Amanzi::MRG_EXIM_FnBase<Epetra_Vector>>  {
   using Vector = Epetra_Vector;
   using Matrix = Epetra_CrsMatrix;
 
@@ -60,7 +60,7 @@ public:
    */
   MRG_EXIM_linear2d_ODE(double atol, double rtol, bool exact_jacobian, 
   Teuchos::RCP< Matrix> A_fast, Teuchos::RCP< Matrix> A_slow, Epetra_MpiComm* comm) :
-      ode_2d(A_fast, A_slow, comm), exact_jacobian_(exact_jacobian), atol_(atol), rtol_(rtol){
+      ode_2d_Epetra(A_fast, A_slow, comm), exact_jacobian_(exact_jacobian), atol_(atol), rtol_(rtol){
 
         Epetra_Map map(2,0,*comm);
         temp_memory_ = Teuchos::rcp(new Epetra_Vector(map));

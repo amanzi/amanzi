@@ -25,10 +25,10 @@ namespace Amanzi
    *                   must provide the given overrides to be valid:
    *                    FunctionalTimeDerivativeFull, FunctionalTimeDerivativeFast, FunctionalTimeDerivativeSlow  
    */
-  template<class Interface>
-  class ode_2d : public Interface
+  template<class Vector, class Interface>
+  class ode_2d_Epetra : public Interface
   {
-    using Vector = Epetra_Vector;
+    // using Vector = Epetra_Vector;
     using Matrix = Epetra_CrsMatrix;
   protected :
     
@@ -84,16 +84,18 @@ namespace Amanzi
     }
 
   public:
-      ode_2d(Teuchos::RCP< Matrix> A_fast, Teuchos::RCP< Matrix> A_slow, Epetra_MpiComm* comm);
+      ode_2d_Epetra(Teuchos::RCP< Matrix> A_fast, Teuchos::RCP< Matrix> A_slow, Epetra_MpiComm* comm);
       void FunctionalTimeDerivativeFull(const double t, const Teuchos::RCP<Vector> u, Teuchos::RCP<Vector> u_eval) override;
       void FunctionalTimeDerivativeSlow(const double t, const Teuchos::RCP<Vector> u, Teuchos::RCP<Vector> f) override;
       void FunctionalTimeDerivativeFast(const double t, const Teuchos::RCP<Vector> u, Teuchos::RCP<Vector> f) override;
-      void exact_rhs(double t, Teuchos::RCP<Vector> u_eval);
+      
+      //Need to be different for access individual entries
+      void exact_rhs(double t, Teuchos::RCP<Epetra_MultiVector> u_eval);
   };
 
   
-  template<class Interface>
-  ode_2d<Interface>::ode_2d(Teuchos::RCP< Matrix> A_fast, Teuchos::RCP< Matrix> A_slow, Epetra_MpiComm* comm):
+  template<class Vector, class Interface>
+  ode_2d_Epetra<Vector, Interface>::ode_2d_Epetra(Teuchos::RCP< Matrix> A_fast, Teuchos::RCP< Matrix> A_slow, Epetra_MpiComm* comm):
           A_fast_(A_fast), A_slow_(A_slow)
   {
     
@@ -146,8 +148,8 @@ namespace Amanzi
  * @param u 
  * @param u_eval results
  */
-  template<class Interface>
-  void ode_2d<Interface>::FunctionalTimeDerivativeFull(const double t, const Teuchos::RCP<Vector> u, Teuchos::RCP<Vector> u_eval) {
+  template<class Vector, class Interface>
+  void ode_2d_Epetra<Vector, Interface>::FunctionalTimeDerivativeFull(const double t, const Teuchos::RCP<Vector> u, Teuchos::RCP<Vector> u_eval) {
     A_->Multiply(false, *u, *u_eval);
   }
 
@@ -158,13 +160,13 @@ namespace Amanzi
  * @param u 
  * @param u_eval 
  */
-  template<class Interface>
-  void ode_2d<Interface>::FunctionalTimeDerivativeSlow(const double t, const Teuchos::RCP<Vector> u, Teuchos::RCP<Vector> u_eval){
+  template<class Vector, class Interface>
+  void ode_2d_Epetra<Vector, Interface>::FunctionalTimeDerivativeSlow(const double t, const Teuchos::RCP<Vector> u, Teuchos::RCP<Vector> u_eval){
     A_slow_->Multiply(false, *u, *u_eval);
   }
 
-  template<class Interface>
-  void ode_2d<Interface>::FunctionalTimeDerivativeFast(const double t, const Teuchos::RCP<Vector> u, Teuchos::RCP<Vector> u_eval){
+  template<class Vector, class Interface>
+  void ode_2d_Epetra<Vector, Interface>::FunctionalTimeDerivativeFast(const double t, const Teuchos::RCP<Vector> u, Teuchos::RCP<Vector> u_eval){
     A_fast_->Multiply(false, *u, *u_eval);
   }
 
@@ -181,12 +183,12 @@ namespace Amanzi
  * @param t 
  * @param u_eval 
  */
-  template<class Interface>
-  void ode_2d<Interface>::exact_rhs(double t, Teuchos::RCP<Vector> u_eval){
+  template<class Vector, class Interface>
+  void ode_2d_Epetra<Vector, Interface>::exact_rhs(double t, Teuchos::RCP<Epetra_MultiVector> u_eval){
     if ((*A_)[0][1] == 0 && (*A_)[1][0] == 0)
     {
-      (*u_eval)[0] = exp((*A_)[0][0] * t);
-      (*u_eval)[1] = exp((*A_)[1][1] * t);
+      (*u_eval)[0][0] = exp((*A_)[0][0] * t);
+      (*u_eval)[0][1] = exp((*A_)[1][1] * t);
 
       return;
     }
@@ -200,8 +202,8 @@ namespace Amanzi
 
     double temp_sinh = temp_e * sinh((1.0/2.0) * t * temp_sqrt) / temp_sqrt;
 
-    (*u_eval)[0] = temp_cosh + temp_sinh * ((*A_)[0][0] + 2.0*(*A_)[0][1] - (*A_)[1][1]);
-    (*u_eval)[1] = temp_cosh + temp_sinh * (-(*A_)[0][0] + 2.0*(*A_)[1][0] + (*A_)[1][1]);
+    (*u_eval)[0][0] = temp_cosh + temp_sinh * ((*A_)[0][0] + 2.0*(*A_)[0][1] - (*A_)[1][1]);
+    (*u_eval)[0][1] = temp_cosh + temp_sinh * (-(*A_)[0][0] + 2.0*(*A_)[1][0] + (*A_)[1][1]);
   }
 
 }

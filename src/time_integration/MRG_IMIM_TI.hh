@@ -8,6 +8,8 @@ TODO: expand documentation
  - User Defined
 
 
+NOTE: Can only support TreeVectors
+
 */
 
 #ifndef AMANZI_MRG_IMIM_TI_HH_
@@ -50,28 +52,26 @@ namespace Amanzi
   /**
    * @brief Class for the IMIM MR GARK Time Integration method
    * 
-   * Note: MultiVector is need to support easy concatination of vectors for full solve
+   * Note: Vector is need to support easy concatination of vectors for full solve
    * 
    * @tparam Vector 
    * @tparam VectorSpace 
-   * @tparam MultiVector 
-   * @tparam MultiVectorSpace 
    */
-  template <class Vector, class VectorSpace, class MultiVector, class MultiVectorSpace>
+  template <class Vector, class VectorSpace>
   class MRG_IMIM_TI
   {
   protected:
-    Teuchos::RCP<MRG_IMIM_FnBase<Vector, MultiVector>> fn_;
+    Teuchos::RCP<MRG_IMIM_FnBase<Vector>> fn_;
     
     IMIM_method_t method_;
 
     //FIXME: This should give a Linking error
-    Teuchos::RCP<AmanziSolvers::Solver<MultiVector,MultiVectorSpace> > solverfull_;
-    Teuchos::RCP<MRG_IMIM_SolverFnBase_Full<Vector, MultiVector> > solver_fn_full_;
+    Teuchos::RCP<AmanziSolvers::Solver<Vector,VectorSpace> > solverfull_;
+    Teuchos::RCP<MRG_IMIM_SolverFnBase_Full<Vector> > solver_fn_full_;
     Teuchos::ParameterList plist_full_;
 
     Teuchos::RCP<AmanziSolvers::Solver<Vector,VectorSpace> > solverfast_;
-    Teuchos::RCP<MRG_IMIM_SolverFnBase_Fast<Vector, MultiVector> > solver_fn_fast_;
+    Teuchos::RCP<MRG_IMIM_SolverFnBase_Fast<Vector> > solver_fn_fast_;
     Teuchos::ParameterList plist_fast_;
 
     //FIXME: Set these up
@@ -101,13 +101,14 @@ namespace Amanzi
     std::vector<Teuchos::RCP<Vector>> k_slowfast_;
 
     //Full Vectors for the nonlinear solver
-    Teuchos::RCP<MultiVector> y_n_full_;
-    Teuchos::RCP<MultiVector> y_n_full_old_;
-    Teuchos::RCP<MultiVector> y_exp_full_;
+    //Data used through the algorithim
+    Teuchos::RCP<Vector> y_n_full_;
+    Teuchos::RCP<Vector> y_n_full_old_;
+    Teuchos::RCP<Vector> y_exp_full_;
     Teuchos::RCP<Vector> y_lambda_;
 
-    //Data used through the algorithim
     //Each points to the respective subvector of the fulls
+    //Only Views
     Teuchos::RCP<Vector> y_exp_f_;
     Teuchos::RCP<Vector> y_exp_s_;
     Teuchos::RCP<Vector> y_ns;
@@ -117,22 +118,21 @@ namespace Amanzi
 
 
     void InitMethod(const IMIM_method_t method);
-    void InitMemory(const Teuchos::RCP<Vector> initvector_fast, const Teuchos::RCP<MultiVector> initvector_full);
+    void InitMemory(const Teuchos::RCP<Vector> initvector_fast, const Teuchos::RCP<Vector> initvector_full);
     void InitCoefficentMemory();
-    void InitSolvers(Teuchos::ParameterList& plist_fast,Teuchos::ParameterList& plist_full , const Teuchos::RCP<Vector> initvector_fast, const Teuchos::RCP<MultiVector> initvector_full);
+    void InitSolvers(Teuchos::ParameterList& plist_fast,Teuchos::ParameterList& plist_full , const Teuchos::RCP<Vector> initvector_fast, const Teuchos::RCP<Vector> initvector_full);
     int SolveNonlinearSystemFast(double t_n1, double t_n0, double scaling, Teuchos::RCP<Vector> y_old, const Teuchos::RCP<Vector>& y_new);
-    int SolveNonlinearSystemFull(double t_n1, double t_n0, std::vector<double> scalings, Teuchos::RCP<MultiVector> y_old, const Teuchos::RCP<MultiVector>& y_new);
-
-
+    int SolveNonlinearSystemFull(double t_n1, double t_n0, std::vector<double> scalings, Teuchos::RCP<Vector> y_old, const Teuchos::RCP<Vector>& y_new);
+    
   public:
-    MRG_IMIM_TI(MRG_IMIM_FnBase<Vector, MultiVector> &fn,
+    MRG_IMIM_TI(MRG_IMIM_FnBase<Vector> &fn,
                const IMIM_method_t method,
                Teuchos::ParameterList& plist_full,
                Teuchos::ParameterList& plist_fast,
                 const Teuchos::RCP<Vector> initvector_fast,
-                const Teuchos::RCP<MultiVector> initvector_full);
+                const Teuchos::RCP<Vector> initvector_full);
 
-    MRG_IMIM_TI(MRG_IMIM_FnBase<Vector, MultiVector> &fn,
+    MRG_IMIM_TI(MRG_IMIM_FnBase<Vector> &fn,
                const int order,
                const int stage,
                const std::vector<double> a_fastfast,
@@ -146,7 +146,7 @@ namespace Amanzi
                Teuchos::ParameterList& plist_full,
                Teuchos::ParameterList& plist_fast,
                 const Teuchos::RCP<Vector> initvector_fast,
-                const Teuchos::RCP<MultiVector> initvector_full);
+                const Teuchos::RCP<Vector> initvector_full);
 
     int TimeStep(const double t, const double h, const int M, const Teuchos::RCP<Vector> y, Teuchos::RCP<Vector> y_new);
 
@@ -154,8 +154,8 @@ namespace Amanzi
     int stage() { return stage_; };
   };
 
-  template <class Vector, class VectorSpace, class MultiVector, class MultiVectorSpace>
-  void MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::InitMethod(const IMIM_method_t method)
+  template <class Vector, class VectorSpace>
+  void MRG_IMIM_TI<Vector, VectorSpace>::InitMethod(const IMIM_method_t method)
   {
 
     switch (method)
@@ -163,36 +163,76 @@ namespace Amanzi
     case MrGark_IMIM_2:
       // Order 2 method
       {
-      double alpha = 1 - 1/sqrt(2);
+      double alpha = 1.0 - 1.0/sqrt(2.0);
 
-      a_fastfast_ = {alpha, 0, 1 - alpha, alpha};
-      b_fast_= {1 - alpha, alpha};
-      c_fast_ = {alpha, 1};
+      a_fastfast_ = {alpha, 0, 1.0 - alpha, alpha};
+      b_fast_= {1.0 - alpha, alpha};
+      c_fast_ = {alpha, 1.0};
 
-      a_slowslow_ = {alpha, 0, 1 - alpha, alpha};
-      b_slow_= {1 - alpha, alpha};
-      c_slow_ = {alpha, 1};
+      a_slowslow_ = {alpha, 0, 1.0 - alpha, alpha};
+      b_slow_= {1.0 - alpha, alpha};
+      c_slow_ = {alpha, 1.0};
 
       // The conditional coupling coefficents
       a_fastslow_ = [alpha] ( double M, double lambda, std::vector<double>& a){
-        a[0] = (lambda - 1 + alpha) / M;
+        a[0] = (lambda - 1.0 + alpha) / M;
         if (lambda == M)
         {
-          a[2] = 1 - alpha;
+          a[2] = 1.0 - alpha;
           a[3] = alpha;
         }
         else
         {
           a[2] = lambda / M;
-          a[3] = 0;
+          a[3] = 0.0;
         }
       };
 
       a_slowfast_ = [alpha] ( double M, double lambda, std::vector<double>& a){
-        a[0] = (lambda == 1) ? M * alpha : 0;
-        a[2] = (1 - alpha);
+        a[0] = (lambda == 1.0) ? M * alpha : 0.0;
+        a[2] = (1.0 - alpha);
         a[3] = alpha;
       };
+
+      //TEST: These are testing coefficents. TODO: Remove bad ones.
+
+      // // The conditional coupling coefficents
+      // a_fastslow_ = [alpha] ( double M, double lambda, std::vector<double>& a){
+      //   a[0] = alpha * (2.0*lambda - 1.0) / M;
+      //   a[1] = (lambda - 1.0)*(1.0 - 2.0*alpha)/M;
+      //   a[2] = (1.0 - 3.0*alpha + 2.0 * lambda * alpha) / M;
+      //   a[3] = (3.0*alpha - 1.0 + (1.0 - 2.0 * alpha)*lambda)/M;
+      // };
+
+      // // The conditional coupling coefficents
+      // a_fastslow_ = [alpha, this] ( double M, double lambda, std::vector<double>& a){
+      //   if (lambda == 1.0)
+      //   {
+      //     a = a_fastfast_;
+      //   }
+      //   else
+      //   {
+      //     double denominator = M * (alpha - 1);
+      //     a[0] = -alpha*((M-2.0)*alpha + 3.0) + (2.0*alpha-1.0)*lambda + 1.0 / denominator;
+      //     a[1] = alpha*((M - 1.0)* alpha - lambda + 1.0) / denominator;
+      //     a[2] = (-M * alpha * alpha + 2.0 * lambda * alpha - lambda) / denominator;
+      //     a[3] = alpha * (M * alpha - lambda) / denominator;
+      //   }
+      // };
+
+      // a_slowfast_ = [alpha, this] ( double M, double lambda, std::vector<double>& a){
+      //   if (lambda == 1.0)
+      //   {
+      //     a = a_fastfast_;
+      //   }
+      //   else
+      //   {
+      //     a[0] = 0;
+      //     a[1] = 0;
+      //     a[2] = 0;
+      //     a[3] = 0;
+      //   }        
+      // };
       }
 
       
@@ -226,8 +266,8 @@ namespace Amanzi
    * @tparam Vector 
    * @tparam VectorSpace 
    */
-template <class Vector, class VectorSpace, class MultiVector, class MultiVectorSpace>
-  void MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::InitCoefficentMemory()
+template <class Vector, class VectorSpace>
+  void MRG_IMIM_TI<Vector, VectorSpace>::InitCoefficentMemory()
   {
     a_slowfast_local_.resize(stage_ * stage_);
     a_fastslow_local_.resize(stage_ * stage_);
@@ -240,8 +280,8 @@ template <class Vector, class VectorSpace, class MultiVector, class MultiVectorS
  * @tparam VectorSpace 
  * @param initvector 
  */
-  template <class Vector, class VectorSpace, class MultiVector, class MultiVectorSpace>
-  void MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::InitMemory(const Teuchos::RCP<Vector> initvector_fast, const Teuchos::RCP<MultiVector> initvector_full)
+  template <class Vector, class VectorSpace>
+  void MRG_IMIM_TI<Vector, VectorSpace>::InitMemory(const Teuchos::RCP<Vector> initvector_fast, const Teuchos::RCP<Vector> initvector_full)
   {
     k_slow_.resize(stage_);
     k_fast_.resize(stage_);
@@ -255,26 +295,27 @@ template <class Vector, class VectorSpace, class MultiVector, class MultiVectorS
 
     //nonlinear Solver Vectors
     //Data Vectors
-    y_exp_full_ = Teuchos::rcp(new MultiVector(*initvector_full));
-    y_n_full_ = Teuchos::rcp(new MultiVector(*initvector_full));
-    y_n_full_old_ = Teuchos::rcp(new MultiVector(*initvector_full));
+    //Each have two entries
+    y_exp_full_ = Teuchos::rcp(new Vector(*initvector_full));
+    y_n_full_ = Teuchos::rcp(new Vector(*initvector_full));
+    y_n_full_old_ = Teuchos::rcp(new Vector(*initvector_full));
 
     y_lambda_ = Teuchos::rcp(new Vector(*initvector_fast));
 
-    //Reference Pointers
-    y_exp_f_ = Teuchos::rcp(y_exp_full_->operator()(0), false);
-    y_exp_s_ = Teuchos::rcp(y_exp_full_->operator()(1), false);
+    //Reference Pointers to view the sub tree subvectors
+    y_exp_f_ = y_exp_full_->SubVector(0);
+    y_exp_s_ = y_exp_full_->SubVector(1);
+
+    y_nf = y_n_full_->SubVector(0);
+    y_ns = y_n_full_->SubVector(1);
     
-    y_nf = Teuchos::rcp(y_n_full_->operator()(0), false);
-    y_ns = Teuchos::rcp(y_n_full_->operator()(1), false);
-    
-    y_nf_old = Teuchos::rcp(y_n_full_old_->operator()(0), false);
-    y_ns_old = Teuchos::rcp(y_n_full_old_->operator()(1), false);
+    y_nf_old = y_n_full_old_->SubVector(0);
+    y_ns_old = y_n_full_old_->SubVector(1);
     
   }
   
-  template <class Vector, class VectorSpace, class MultiVector, class MultiVectorSpace>
-  void MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::InitSolvers(Teuchos::ParameterList& plist_fast,Teuchos::ParameterList& plist_full , const Teuchos::RCP<Vector> initvector_fast, const Teuchos::RCP<MultiVector> initvector_full)
+  template <class Vector, class VectorSpace>
+  void MRG_IMIM_TI<Vector, VectorSpace>::InitSolvers(Teuchos::ParameterList& plist_fast,Teuchos::ParameterList& plist_full , const Teuchos::RCP<Vector> initvector_fast, const Teuchos::RCP<Vector> initvector_full)
   {
     
     AmanziSolvers::SolverFactory<Vector,VectorSpace> factory;
@@ -285,14 +326,14 @@ template <class Vector, class VectorSpace, class MultiVector, class MultiVectorS
 
     // Set up the nonlinear solver
     // -- initialized the SolverFnBase interface
-    solver_fn_fast_ = Teuchos::rcp(new MRG_IMIM_SolverFnBase_Fast<Vector, MultiVector>(plist_fast_, fn_));
+    solver_fn_fast_ = Teuchos::rcp(new MRG_IMIM_SolverFnBase_Fast<Vector>(plist_fast_, fn_));
 
     solverfast_ = factory.Create(plist_fast_);
     solverfast_->set_db(db_fast_);
     solverfast_->Init(solver_fn_fast_, initvector_fast->Map());
 
     
-    AmanziSolvers::SolverFactory<MultiVector,MultiVectorSpace> factory_full;
+    AmanziSolvers::SolverFactory<Vector,VectorSpace> factory_full;
 
     // update the verbose options
     vo_full_ = Teuchos::rcp(new VerboseObject(initvector_full->Comm(), "TI::MRG_IMIM_Full", plist_full_));
@@ -300,7 +341,7 @@ template <class Vector, class VectorSpace, class MultiVector, class MultiVectorS
 
     // Set up the nonlinear solver
     // -- initialized the SolverFnBase interface
-    solver_fn_full_ = Teuchos::rcp(new MRG_IMIM_SolverFnBase_Full<Vector, MultiVector>(plist_full_, fn_));
+    solver_fn_full_ = Teuchos::rcp(new MRG_IMIM_SolverFnBase_Full<Vector>(plist_full_, fn_));
 
     solverfull_ = factory_full.Create(plist_full_);
     solverfull_->set_db(db_full_);
@@ -308,25 +349,25 @@ template <class Vector, class VectorSpace, class MultiVector, class MultiVectorS
   }
     
 
-  template <class Vector, class VectorSpace, class MultiVector, class MultiVectorSpace>
-  MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::MRG_IMIM_TI(MRG_IMIM_FnBase<Vector, MultiVector> &fn,
+  template <class Vector, class VectorSpace>
+  MRG_IMIM_TI<Vector, VectorSpace>::MRG_IMIM_TI(MRG_IMIM_FnBase<Vector> &fn,
                                               const IMIM_method_t method,
                                               Teuchos::ParameterList& plist_full,
                                               Teuchos::ParameterList& plist_fast,
                                               const Teuchos::RCP<Vector> initvector_fast,
-                                              const Teuchos::RCP<MultiVector> initvector_full)
+                                              const Teuchos::RCP<Vector> initvector_full) : plist_fast_(plist_fast), plist_full_(plist_full)
   {
     
     fn_ = Teuchos::rcpFromRef(fn);
 
-    MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::InitMethod(method);
-    MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::InitMemory(initvector_fast, initvector_full);
-    MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::InitCoefficentMemory();
-    MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::InitSolvers(plist_fast_, plist_full_, initvector_fast, initvector_full);
+    MRG_IMIM_TI<Vector, VectorSpace>::InitMethod(method);
+    MRG_IMIM_TI<Vector, VectorSpace>::InitMemory(initvector_fast, initvector_full);
+    MRG_IMIM_TI<Vector, VectorSpace>::InitCoefficentMemory();
+    MRG_IMIM_TI<Vector, VectorSpace>::InitSolvers(plist_fast_, plist_full_, initvector_fast, initvector_full);
   }
 
-  template <class Vector, class VectorSpace, class MultiVector, class MultiVectorSpace>
-  MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::MRG_IMIM_TI(MRG_IMIM_FnBase<Vector, MultiVector> &fn,
+  template <class Vector, class VectorSpace>
+  MRG_IMIM_TI<Vector, VectorSpace>::MRG_IMIM_TI(MRG_IMIM_FnBase<Vector> &fn,
                                               const int order,
                                               const int stage,
                                               const std::vector<double> a_fastfast,
@@ -340,8 +381,8 @@ template <class Vector, class VectorSpace, class MultiVector, class MultiVectorS
                                               Teuchos::ParameterList& plist_full,
                                               Teuchos::ParameterList& plist_fast,
                                               const Teuchos::RCP<Vector> initvector_fast,
-                                              const Teuchos::RCP<MultiVector> initvector_full) : order_(order), stage_(stage), method_(MrGark_IMIM_user_defiend),
-                                                                          a_slowfast_(a_slowfast), a_fastslow_(a_fastslow)
+                                              const Teuchos::RCP<Vector> initvector_full) : order_(order), stage_(stage), method_(MrGark_IMIM_user_defiend),
+                                                                          a_slowfast_(a_slowfast), a_fastslow_(a_fastslow), plist_fast_(plist_fast), plist_full_(plist_full)
   {
     
     fn_ = Teuchos::rcpFromRef(fn);
@@ -363,15 +404,15 @@ template <class Vector, class VectorSpace, class MultiVector, class MultiVectorS
 
     stage_ = c_fast_.size();
 
-    MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::InitMemory(initvector_fast, initvector_full);
-    MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::InitCoefficentMemory();
-    MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::InitSolvers(plist_fast_, plist_full_, initvector_fast, initvector_full);
+    MRG_IMIM_TI<Vector, VectorSpace>::InitMemory(initvector_fast, initvector_full);
+    MRG_IMIM_TI<Vector, VectorSpace>::InitCoefficentMemory();
+    MRG_IMIM_TI<Vector, VectorSpace>::InitSolvers(plist_fast_, plist_full_, initvector_fast, initvector_full);
   
   }
 
 
-  template <class Vector, class VectorSpace, class MultiVector, class MultiVectorSpace>
-  int MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::TimeStep(const double t, const double h, const int M, const Teuchos::RCP<Vector> y, Teuchos::RCP<Vector> y_new)
+  template <class Vector, class VectorSpace>
+  int MRG_IMIM_TI<Vector, VectorSpace>::TimeStep(const double t, const double h, const int M, const Teuchos::RCP<Vector> y, Teuchos::RCP<Vector> y_new)
   {
 
     // Could simplify with templates and commands as many operations repeat
@@ -420,7 +461,7 @@ template <class Vector, class VectorSpace, class MultiVector, class MultiVectorS
         }
 
         //Assume there are no slow only stages
-        if (q_slow <= stage_ && a_fastslow_local_[j*stage_ + q_slow] != 0 && a_slowfast_local_[q_slow * stage_ + j])
+        if (q_slow < stage_ && a_fastslow_local_[j*stage_ + q_slow] != 0 && a_slowfast_local_[q_slow * stage_ + j])
         {
           y_exp_s_->Scale(0.0);
 
@@ -457,17 +498,16 @@ template <class Vector, class VectorSpace, class MultiVector, class MultiVectorS
           {
             //TODO: add flag based operations
           }
-          
 
           fn_->ModifySolutionSlow(sum_time, y_ns);
-          fn_->FunctionalTimeDerivativeSlow(sum_time, y_ns, k_slow_[j]);
-          k_slow_[j]->Scale(h);
+          fn_->FunctionalTimeDerivativeSlow(sum_time, y_ns, k_slow_[q_slow]);
+          k_slow_[q_slow]->Scale(h);
 
           q_slow++;
         }
         else
         {
-          int flag_fast = SolveNonlinearSystemFast(sum_time, sum_time_old, h_fast*a_fastfast_[j * (stage_ + 1)], y_nf_old, y_nf);
+          int flag_fast = SolveNonlinearSystemFast(sum_time, sum_time_old, h_fast*a_fastfast_[j * (stage_ + 1)], y_nf_old,  y_nf);
 
           if (flag_fast)
           {
@@ -484,6 +524,7 @@ template <class Vector, class VectorSpace, class MultiVector, class MultiVectorS
 
       }
 
+      //Accumalate y_lambda for next fast macro step
       for (int j = 0; j < stage_; j++)
       {
         if (b_fast_[j] != 0)
@@ -499,7 +540,11 @@ template <class Vector, class VectorSpace, class MultiVector, class MultiVectorS
           }
         }
       }
+
+      *y_nf_old = *y_lambda_;
     }
+
+    //Assume that all slows are coupled with one fast so all stages are solved unlike EXIM
 
     *y_new = *y_lambda_;
     for (int i = 0; i < stage_; i++)
@@ -515,9 +560,9 @@ template <class Vector, class VectorSpace, class MultiVector, class MultiVectorS
 
 
   
-  //TODO: Implement
-  template <class Vector, class VectorSpace, class MultiVector, class MultiVectorSpace>
-  int MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::SolveNonlinearSystemFast(double t_n1, double t_n0, double scaling, Teuchos::RCP<Vector> y_old, const Teuchos::RCP<Vector>& y_new)
+  //TODO: Documentation
+  template <class Vector, class VectorSpace>
+  int MRG_IMIM_TI<Vector, VectorSpace>::SolveNonlinearSystemFast(double t_n1, double t_n0, double scaling, Teuchos::RCP<Vector> y_old, const Teuchos::RCP<Vector>& y_new)
   {
     db_fast_->StartIteration<VectorSpace>(t_n0, 0, 1, y_new->Map());
 
@@ -558,9 +603,9 @@ template <class Vector, class VectorSpace, class MultiVector, class MultiVectorS
     return ierr;
   }
 
-  //TODO: Implement
-  template <class Vector, class VectorSpace, class MultiVector, class MultiVectorSpace>
-  int MRG_IMIM_TI<Vector, VectorSpace, MultiVector, MultiVectorSpace>::SolveNonlinearSystemFull(double t_n1, double t_n0, std::vector<double> scalings, Teuchos::RCP<MultiVector> y_old, const Teuchos::RCP<MultiVector>& y_new)
+  //TODO: Documentation
+  template <class Vector, class VectorSpace>
+  int MRG_IMIM_TI<Vector, VectorSpace>::SolveNonlinearSystemFull(double t_n1, double t_n0, std::vector<double> scalings, Teuchos::RCP<Vector> y_old, const Teuchos::RCP<Vector>& y_new)
   {
     db_full_->StartIteration<VectorSpace>(t_n0, 0, 1, y_new->Map());
 

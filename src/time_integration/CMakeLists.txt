@@ -80,6 +80,8 @@ if (BUILD_TESTS)
     include_directories(${TIME_INTEGRATION_SOURCE_DIR}/test)
     include_directories(${SOLVERS_SOURCE_DIR})
     include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+	include_directories(${MESH_SIMPLE_SOURCE_DIR})
+	include_directories(${MESH_FACTORY_SOURCE_DIR})
 
     add_amanzi_test(time_integration test_time_integration
                     KIND unit
@@ -92,14 +94,29 @@ if (BUILD_TESTS)
 			  ${UnitTest_LIBRARIES}	  
 			  ${time_integration_tpl_libs})
 
-	add_amanzi_test(time_integration_mr test_mr_time_integration
+	add_amanzi_test(time_integration_mr_exim test_mr_exim_time_integration
 					KIND units
 			SOURCE
 					test/Main.cc
-				test/test_MR.cc
+				test/test_MR_EXIM.cc
 			LINK_LIBS
 				time_integration
 			${time_integration_link_libs}
+			${UnitTest_LIBRARIES}
+			${time_integration_tpl_libs})
+	
+	add_amanzi_test(time_integration_mr_imim test_mr_imim_time_integration
+					KIND units
+			SOURCE
+					test/Main.cc
+				test/test_MR_IMIM.cc
+			LINK_LIBS
+				time_integration
+			${time_integration_link_libs}
+				geometry
+				mesh_mstk
+				mesh_factory
+				mesh
 			${UnitTest_LIBRARIES}
 			${time_integration_tpl_libs})
 

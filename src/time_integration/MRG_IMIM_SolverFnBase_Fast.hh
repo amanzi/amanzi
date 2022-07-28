@@ -17,7 +17,7 @@ TODO: Finish up nonlinear Solver Interface
 
 namespace Amanzi {
 
-template<class Vector, class MultiVector>
+template<class Vector>
 class MRG_IMIM_SolverFnBase_Fast : public AmanziSolvers::SolverFnBase<Vector> {
 
  protected:
@@ -29,14 +29,14 @@ class MRG_IMIM_SolverFnBase_Fast : public AmanziSolvers::SolverFnBase<Vector> {
   Teuchos::RCP<Vector> u_old_fast_;
   Teuchos::RCP<Vector> u_expterms_fast_;
 
-  Teuchos::RCP<Amanzi::MRG_IMIM_FnBase<Vector, MultiVector> > fn_;
+  Teuchos::RCP<Amanzi::MRG_IMIM_FnBase<Vector> > fn_;
 
 
  public:
  //isfull determines if interface is for full or fast partition
  //TODO: Setup isfull selection
   MRG_IMIM_SolverFnBase_Fast(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<MRG_IMIM_FnBase<Vector, MultiVector> >& fn) :
+                    const Teuchos::RCP<MRG_IMIM_FnBase<Vector> >& fn) :
       plist_(plist),
       fn_(fn) {};
 
@@ -96,8 +96,8 @@ class MRG_IMIM_SolverFnBase_Fast : public AmanziSolvers::SolverFnBase<Vector> {
 };
 
 // computes the non-linear functional r = F(u)
-template<class Vector, class MultiVector>
-void MRG_IMIM_SolverFnBase_Fast<Vector, MultiVector>::Residual(const Teuchos::RCP<Vector>& u,
+template<class Vector>
+void MRG_IMIM_SolverFnBase_Fast<Vector>::Residual(const Teuchos::RCP<Vector>& u,
                                         const Teuchos::RCP<Vector>& r) {
   
   fn_->FunctionalResidualFast(t_old_, t_new_, scaling_, u_old_fast_, u_expterms_fast_, u, r);
@@ -105,21 +105,21 @@ void MRG_IMIM_SolverFnBase_Fast<Vector, MultiVector>::Residual(const Teuchos::RC
 }
 
 // preconditioner application
-template<class Vector, class MultiVector>
-int  MRG_IMIM_SolverFnBase_Fast<Vector, MultiVector>::ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
+template<class Vector>
+int  MRG_IMIM_SolverFnBase_Fast<Vector>::ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
                                                     const Teuchos::RCP<Vector>& Pr) {
   return fn_->ApplyPreconditionerFast(r, Pr);
 }
 
 // preconditioner update
-template<class Vector, class MultiVector>
-void MRG_IMIM_SolverFnBase_Fast<Vector, MultiVector>::UpdatePreconditioner(const Teuchos::RCP<const Vector>& u) {
+template<class Vector>
+void MRG_IMIM_SolverFnBase_Fast<Vector>::UpdatePreconditioner(const Teuchos::RCP<const Vector>& u) {
   return fn_->UpdatePreconditionerFast(t_new_, scaling_, u);
 }
 
 // error norm
-template<class Vector, class MultiVector>
-double MRG_IMIM_SolverFnBase_Fast<Vector, MultiVector>::ErrorNorm(const Teuchos::RCP<const Vector>& u,
+template<class Vector>
+double MRG_IMIM_SolverFnBase_Fast<Vector>::ErrorNorm(const Teuchos::RCP<const Vector>& u,
                                             const Teuchos::RCP<const Vector>& du) {
   return fn_->ErrorNorm(u, du);
 }
@@ -127,27 +127,27 @@ double MRG_IMIM_SolverFnBase_Fast<Vector, MultiVector>::ErrorNorm(const Teuchos:
 
 // Check the admissibility of an inner iterate (ensures preconditions for
 // F(u) to be defined).
-template<class Vector, class MultiVector>
-bool MRG_IMIM_SolverFnBase_Fast<Vector, MultiVector>::IsAdmissible(const Teuchos::RCP<const Vector>& up) {
+template<class Vector>
+bool MRG_IMIM_SolverFnBase_Fast<Vector>::IsAdmissible(const Teuchos::RCP<const Vector>& up) {
   return fn_->IsAdmissible(up);
 }
 
 // Hack a correction for some reason.
-template<class Vector, class MultiVector>
-AmanziSolvers::FnBaseDefs::ModifyCorrectionResult MRG_IMIM_SolverFnBase_Fast<Vector, MultiVector>::ModifyCorrection(const Teuchos::RCP<const Vector>& res,
+template<class Vector>
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult MRG_IMIM_SolverFnBase_Fast<Vector>::ModifyCorrection(const Teuchos::RCP<const Vector>& res,
                                                                   const Teuchos::RCP<const Vector>& u,
                                                                   const Teuchos::RCP<Vector>& du) {
   return fn_->ModifyCorrectionFast(h_, res, u, du);
 }
 
-template<class Vector, class MultiVector>
-void MRG_IMIM_SolverFnBase_Fast<Vector, MultiVector>::UpdateContinuationParameter(double lambda) {
+template<class Vector>
+void MRG_IMIM_SolverFnBase_Fast<Vector>::UpdateContinuationParameter(double lambda) {
   fn_->UpdateContinuationParameter(lambda);
 }
 
 // bookkeeping for state
-template<class Vector, class MultiVector>
-void MRG_IMIM_SolverFnBase_Fast<Vector, MultiVector>::ChangedSolution() {
+template<class Vector>
+void MRG_IMIM_SolverFnBase_Fast<Vector>::ChangedSolution() {
   fn_->ChangedSolution();
 }
 } // namespace Amanzi
