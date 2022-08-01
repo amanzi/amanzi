@@ -77,9 +77,12 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     double x = node_crd[0], y = node_crd[1];
       
     B_n[0][n] = 0.0;
-    if ((x - 1.5)*(x - 1.5) + (y - 0.5)*(y - 0.5) < 0.2*0.2 + 1.e-12) {
-      B_n[0][n] = 0.8;
+    if (std::abs(x - 0.5) <= 0.3 && std::abs(y - 0.3) <= 1.2) {
+      B_n[0][n] = 3.0*3.0 *  (x - 0.2) * (0.8 - x) * (y - 0.2);
     }
+
+    B_n[0][n] = std::sin(pi * x) * std::sin(pi * y);
+    //B_n[0][n] = x; 
   }
 
   S->Get<CompositeVector>("surface-bathymetry").ScatterMasterToGhosted("node");
@@ -125,8 +128,8 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     
     
     
-    if ((xc[0] - 0.5)*(xc[0] - 0.5) + (xc[1] - 0.5)*(xc[1] - 0.5) < 0.1*0.1) {
-      ht_c[0][c] += 0.5;
+    if ((xc[0] - 0.2)*(xc[0] - 0.2) + (xc[1] - 0.5)*(xc[1] - 0.5) < 0.1*0.1) {
+      ht_c[0][c] += 0.0;
     }
     h_c[0][c] = ht_c[0][c] - B_c[0][c];
     
@@ -185,7 +188,7 @@ RunTest(int icase)
 
   RCP<Mesh> mesh;
   //mesh = meshfactory.create ("test/triangular16.exo");
-  mesh = meshfactory.create(0.0, 0.0, 2.0, 1.0, 50, 25, request_faces, request_edges);
+  mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
   //mesh = meshfactory.create ("test/median32x33.exo");
 
   // Other polygonal meshes
@@ -256,7 +259,7 @@ RunTest(int icase)
 
   double Tend;
   //Tend = 50000.0;
-  Tend = 10.0;
+  Tend = 20.0;
 
   while ((t_new < Tend) && (iter >= 0)) {
     double t_out = t_new;
@@ -290,6 +293,7 @@ RunTest(int icase)
     
     if (iter % 500 == 0) {
     	std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
+      std::cout<<" ------------------------------------------------------------------------ "<<std::endl;
     }
   } // time loop
 

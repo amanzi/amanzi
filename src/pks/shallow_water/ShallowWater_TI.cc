@@ -174,7 +174,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     double B_rec = BathymetryEdgeValue(f, B_n);
     
-    const auto& xc = mesh_->cell_centroid(c1);
+    //const auto& xc = mesh_->cell_centroid(c1);
 
     if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-14) {
     	std::cout<<"time: t = "<<t<<", c = "<<c1<<", negative h 1 = : "<<ht_rec-B_rec<<" | ht_rec = "<<ht_rec<<" < "<<B_rec<<std::endl;
@@ -190,6 +190,24 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
 
     factor = inverse_with_tolerance(h_rec);
+
+    //qx_rec *= h_rec; 
+    //qx_rec *= factor;
+    //qy_rec *= h_rec;
+    //qy_rec *= factor;
+    
+    /*
+    if (f == 592 || f == 600 || f == 604) {
+      const auto& xc = mesh_->cell_centroid(c1);
+      std::cout<<"c1 : "<<c1<<"; "<<xc[0]<<", "<<xc[1]<<std::endl;
+      std::cout<<"f = "<<f<<"; "<<xf[0]<<", "<<xf[1]<<std::endl;
+      std::cout<<"ht_rec = "<<ht_rec<<", B_rec = "<<B_rec<<std::endl;
+      std::cout<<"h_rec: "<<h_rec<<std::endl;
+      std::cout<<"q_rec : "<<qx_rec<<", "<<qy_rec<<", factor = "<<factor<<std::endl;
+      std::cout<<"ht_c = "<<ht_c[0][c1]<<", B_c = "<<B_c[0][c1]<<", h_c = "<<h_temp[0][c1]<<std::endl;
+    }
+    */
+
     double vx_rec = factor * qx_rec;
     double vy_rec = factor * qy_rec;
 
@@ -230,8 +248,26 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       qy_rec = discharge_y_grad_->getValue(c2, xf);
 
       factor = inverse_with_tolerance(h_rec);
+
+      //qx_rec *= h_rec;
+      //qx_rec *= factor;
+      //qy_rec *= h_rec;
+      //qy_rec *= factor;
+
       vx_rec = factor * qx_rec;
       vy_rec = factor * qy_rec;
+      
+     /* 
+      if (f == 592 || f == 600 || f == 604) {
+        const auto& xc = mesh_->cell_centroid(c2);
+        std::cout<<"c2 : "<<c2<<"; "<<xc[0]<<", "<<xc[1]<<std::endl;
+        std::cout<<"f = "<<f<<"; "<<xf[0]<<", "<<xf[1]<<std::endl;  
+        std::cout<<"ht_rec = "<<ht_rec<<", B_rec = "<<B_rec<<std::endl;
+        std::cout<<"h_rec: "<<h_rec<<std::endl;
+        std::cout<<"q_rec : "<<qx_rec<<", "<<qy_rec<<", factor = "<<factor<<std::endl;
+        std::cout<<"ht_c = "<<ht_c[0][c2]<<", B_c = "<<B_c[0][c2]<<", h_c = "<<h_temp[0][c2]<<std::endl;
+      }
+      */
 
       vn = vx_rec * normal[0] + vy_rec * normal[1];
       vt = -vx_rec * normal[1] + vy_rec * normal[0];
@@ -263,10 +299,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       h_c_tmp[0][c2] += h * factor;
       q_c_tmp[0][c2] += qx * factor;
       q_c_tmp[1][c2] += qy * factor;
-      
-//      if (c2 == 430 || c2 == 428 || c2 == 565) {
-//        std::cout<<"c2 = "<<c2<<", FNum_rot[0] * factor = "<<FNum_rot[0]*factor<<std::endl;
-//      }
     }
   }
 

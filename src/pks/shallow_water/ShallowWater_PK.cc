@@ -1134,9 +1134,9 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
     Bmax = std::max(B_n[0][cnodes[i]], Bmax);
   }
 
-  if ( (ht_c[0][c] >= Bmax) && (ht_c[0][c] - B_c[0][c] > 0.0) ) {
+  if ( (ht_c[0][c] > Bmax) && (ht_c[0][c] - B_c[0][c] > 0.0) ) {
     cell_is_fully_flooded = true;
-  } else if (std::abs(ht_c[0][c] - B_c[0][c]) < 1.e-14) {
+  } else if (std::abs(ht_c[0][c] - B_c[0][c]) < 1.e-15) {
       cell_is_dry = true;
   } else {
       cell_is_partially_wet = true;
@@ -1152,7 +1152,8 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
             alpha = std::min(alpha, (B_n[0][cnodes[i]] - ht_c[0][c]) / (ht_rec - ht_c[0][c]));
           }
         }
-
+        
+        alpha = 1.0;
         ht_grad[0][c] *= alpha;
         ht_grad[1][c] *= alpha;
         ht_edge = total_depth_grad_->getValue(c, xf);
@@ -1189,6 +1190,9 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
 
 				double ht_rec_x0 = total_depth_grad_->getValue(c, x0);
 				double ht_rec_x1 = total_depth_grad_->getValue(c, x1);
+        
+        //ht_rec_x0 = ht_c[0][c];
+        //ht_rec_x1 = ht_c[0][c];
 
 				if (ht_rec_x0 < B_n[0][face_nodes[0]] && ht_rec_x1 < B_n[0][face_nodes[1]]) {
 					epsilon  = 0.0;
@@ -1219,10 +1223,10 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
   
   
   // well-balanced reconstruction for partially wet cells
-  double a = 0.0;
-  if (cell_is_partially_wet == true && a == 1.0) {
-    ht_grad[0][c] = 0.0;
-    ht_grad[1][c] = 0.0;
+  double a = 1.0;
+  if (cell_is_partially_wet == true && a == 0.0) {
+    //ht_grad[0][c] = 0.0;
+    //ht_grad[1][c] = 0.0;
     // consider subcell determined by edge "e"
     Amanzi::AmanziMesh::Entity_ID_List face_nodes; 
       
@@ -1232,6 +1236,7 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
       
     mesh_->face_get_nodes(e, &face_nodes);
     
+    /*
     if (ht_c[0][c] > std::max(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]])) {
       ht_edge = ht_c[0][c];
     } else if (std::abs(h_c[0][c] - B_c[0][c]) < 1.e-15) {
@@ -1248,10 +1253,10 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
         ht_edge = BathymetryEdgeValue(e, B_n);
       }
     }
-  }
+  
+    */
     
     
-    /*
     // ----
     
     B13 = std::max(B_c[0][c], std::max(B_n[0][face_nodes[0]], B_n[0][face_nodes[1]])); 
@@ -1325,16 +1330,12 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
     } else {
       ht_edge = ht_type12_cell(c, e, Bi, xv13, xv12, xv23);
     }
+    ht_grad[0][c] = 0.0;
+    ht_grad[1][c] = 0.0;
   } // cell_is_partially_wet loop
 
-//  if (c == 436) {
-//    std::cout<<"partially wet = "<<cell_is_partially_wet<<std::endl;
-//    std::cout<<"xc = "<<xc[0]<<", "<<xc[1]<<", e = "<<e<<", "<<xf[0]<<", "<<xf[1]<<", ht_edge = "<<ht_edge<<std::endl;
-//    std::cout<<"B_c = "<<B_c[0][c]<<", edge = "<<BathymetryEdgeValue(e, B_n)<<std::endl;
-//  }
-   
     //----
-    */
+    
   
   return ht_edge;
 }
@@ -1389,9 +1390,10 @@ double ShallowWater_PK::ht_type12_cell(int c, int e, std::vector<double> Bi, Ama
   xc_subcell = (xv13 + xv12 + xv23) / (3.0);
   
   // check if cell is type1 or type2
-  if ( ( h_c[0][c] + (B13 + B12 + B23)/ 3.0 ) <= ( B12 + (B13 - B12) * (B13 - B12) / (3.0 *(B13 - B23)) )) {
+//  if ( ( h_c[0][c] + (B13 + B12 + B23)/ 3.0 ) <= ( B12 + (B13 - B12) * (B13 - B12) / (3.0 *(B13 - B23)) )) {
+  if ( ( ht_c[0][c] ) <= ( B12 + (B13 - B12) * (B13 - B12) / (3.0 *(B13 - B23)) )) {
     // reconstruct surface
-    double wj = B23 + std::pow((3.0 * (h_c[0][c]) * (B13 - B23) * (B12 - B23)), 1.0/3.0);
+    double wj = B23 + std::pow((3.0 * (ht_c[0][c] - (B13 + B12 + B23)/3.0  ) * (B13 - B23) * (B12 - B23)), 1.0/3.0);
     
     // find A2 and A3
     // A2
@@ -1433,7 +1435,7 @@ double ShallowWater_PK::ht_type12_cell(int c, int e, std::vector<double> Bi, Ama
     double tol = 0.0, tol_max = 1.e-15;
     double wj = (B13 + B12) / 2.0;
     for (int it = 1; it < it_max; ++it) {
-      double residual = std::pow(wj, 3.0) - 3.0*(B13*wj*wj) + 3.0*(B23*B13 + B12*B13 - B12*B23)*wj + (3.0*(h_c[0][c])*(B13 - B12) - B12*(B12 + B23))*(B13 - B23) - B23*B23*B13;
+      double residual = std::pow(wj, 3.0) - 3.0*(B13*wj*wj) + 3.0*(B23*B13 + B12*B13 - B12*B23)*wj + (3.0*(ht_c[0][c]- (B13+B12+B23)/3.0)*(B13 - B12) - B12*(B12 + B23))*(B13 - B23) - B23*B23*B13;
       double dJ = 3.0*wj*wj - 6.0*B13*wj + 3.0*(B23*B13 + B12*B13 - B12*B23);
       if (std::abs(residual) < tol_max) {
         break;
@@ -1594,7 +1596,7 @@ ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
 double
 ShallowWater_PK::get_dt()
 {
-  double d, d_min = 1.e10, vn, dt = 1.e10, dt_dry = 1.e-2;
+  double d, d_min = 1.e10, vn, dt = 1.e10, dt_dry = 1.e-3;
 
   const auto& h_c =
     *S_->Get<CV_t>(ponded_depth_key_).ViewComponent("cell", true);
@@ -1716,15 +1718,15 @@ ShallowWater_PK::BathymetryEdgeValue(int e, const Epetra_MultiVector& B_n)
 double
 inverse_with_tolerance(double h)
 {
-  double eps(1e-6), eps2(1e-12); // hard-coded tolerances
+  double eps(1e-5), delta(1.e-5), eps2(1e-12); // hard-coded tolerances
 
   if (h > eps) return 1.0 / h;
 
   double h2 = h * h;
-  return 2 * h / (h2 + std::fmax(h2, eps2));
+  return 2 * h / (h2 + std::max(h2, delta));
   
   //double h4 = h2 * h2;
-  //return std::sqrt(2) * h / std::sqrt(h4 + std::max(h4, eps));
+  //return std::sqrt(2) * h / std::sqrt(h4 + std::max(h4, delta));
 }
 
 
