@@ -85,7 +85,7 @@ class OutputSilo : public Output {
  protected:
   void Init_(Teuchos::ParameterList& plist);
   void ReadThrowsError_() const;
-  void CloseFile_();
+  void CloseFile_()  const;
   void WriteMesh_();
   std::string FixName_(const std::string& instring) const;
   
@@ -96,7 +96,7 @@ class OutputSilo : public Output {
   int sigfigs_;
   
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  DBfile* fid_;
+  mutable DBfile* fid_;
 };
   
 } // namespace Amanzi
