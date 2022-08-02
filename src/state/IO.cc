@@ -55,8 +55,25 @@ void WriteVis(Visualization& vis, const State& S)
           // r->WriteVis(vis, nullptr);
 
           // -- write default tag
+          // Tag tag;
+          // r->second->WriteVis(vis, &tag);
+
+          // -- write default tag if it exists, else write another tag with the
+          // -- same time
           Tag tag;
-          r->second->WriteVis(vis, &tag);
+          if (r->second->HasRecord(tag)) {
+            r->second->WriteVis(vis, &tag);
+          } else {
+            // try to find a record at the same time
+            double time = S.get_time();
+            for (const auto& time_record : S.GetRecordSet("time")) {
+              if (r->second->HasRecord(time_record.first) &&
+                  S.get_time(time_record.first) == time) {
+                r->second->WriteVis(vis, &time_record.first);
+                break;
+              }
+            }
+          }
         }
       }
     }
