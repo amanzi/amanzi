@@ -248,8 +248,8 @@ void EvaluatorIndependentFromFile::LoadFile_(int i)
     bool successful = file_input->readData(*vec(j), varname.str());
     if (!successful) {
       Errors::Message msg;
-      msg << "EvaluatorIndependentFromFile for \"" << my_keys_.front().first
-          << "\" cannot read variable \"" << varname << "\" from file \""
+      msg << "EvaluatorIndependentFromFile for \"" << my_key_
+          << "\" cannot read variable \"" << varname.str() << "\" from file \""
           << filename_ << "\"";
       Exceptions::amanzi_throw(msg);
     }
