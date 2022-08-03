@@ -245,7 +245,14 @@ void EvaluatorIndependentFromFile::LoadFile_(int i)
   for (int j = 0; j != ndofs_; ++j) {
     std::stringstream varname;
     varname << varname_ << "." << locname_ << "." << j << "//" << i;
-    file_input->readData(*vec(j), varname.str());
+    bool successful = file_input->readData(*vec(j), varname.str());
+    if (!successful) {
+      Errors::Message msg;
+      msg << "EvaluatorIndependentFromFile for \"" << my_keys_.front().first
+          << "\" cannot read variable \"" << varname << "\" from file \""
+          << filename_ << "\"";
+      Exceptions::amanzi_throw(msg);
+    }
   }
 
   // close file
