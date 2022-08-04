@@ -67,7 +67,7 @@ class RecordSet {
 
   // pass-throughs for other functionality
   void WriteVis(const Visualization& vis, Tag const * const=nullptr) const;
-  void WriteCheckpoint(const Checkpoint& chkp) const;
+  void WriteCheckpoint(const Checkpoint& chkp, bool post_mortem=false) const;
   void ReadCheckpoint(const Checkpoint& chkp);
   bool Initialize(Teuchos::ParameterList& plist);
   void Assign(const Tag& dest, const Tag& source);

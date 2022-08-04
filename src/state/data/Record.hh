@@ -56,6 +56,7 @@ class Record {
   void WriteVis(const Visualization& vis,
                 const std::vector<std::string>* subfieldnames=nullptr) const;
   void WriteCheckpoint(const Checkpoint& chkp, const Tag& tag,
+                       bool post_mortem=false,
                        const std::vector<std::string>* subfieldnames=nullptr) const;
   void ReadCheckpoint(const Checkpoint& chkp, const Tag& tag,
                       const std::vector<std::string>* subfieldnames=nullptr);

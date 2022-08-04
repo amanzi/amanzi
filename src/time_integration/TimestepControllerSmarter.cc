@@ -100,9 +100,9 @@ TimestepControllerSmarter::get_timestep(double dt, int iterations) {
   // check min step size
   if (dt_next < min_dt_) {
     if (iterations < 0) {
-      std::string msg = "Timestep failed: Time step crash";
-      Errors::Message m(msg);
-      Exceptions::amanzi_throw(m);
+      Errors::TimeStepCrash msg;
+      msg << "Timestep failed: dT less than minimum (" << min_dt_ << ").";
+      Exceptions::amanzi_throw(msg);
     } else {
       dt_next = min_dt_;
     }
@@ -111,9 +111,8 @@ TimestepControllerSmarter::get_timestep(double dt, int iterations) {
   // check that if we have failed, our step size has decreased.
   if (iterations < 0) {
     if (dt - dt_next < 1.e-10) {
-      std::string msg = "Timestep failed: Time step crash";
-      Errors::Message m(msg);
-      Exceptions::amanzi_throw(m);
+      Errors::TimeStepCrash msg("Timestep failed: dT change is too small (check reduction_factor).");
+      Exceptions::amanzi_throw(msg);
     }
   }
 

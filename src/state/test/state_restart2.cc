@@ -79,7 +79,7 @@ TEST(HDF5_MPI_AND_SERIAL) {
   Teuchos::ParameterList chkplist("checkpoint");
   chkplist.set("single file checkpoint", false);
   Checkpoint chkp(chkplist, *S);
-  WriteCheckpoint(chkp, comm, *S, 0.0);
+  chkp.Write(*S);
 
   // make sure we can read them all
   State S2;

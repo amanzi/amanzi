@@ -31,9 +31,9 @@ void RecordSet::WriteVis(const Visualization& vis, Tag const * const tag) const 
     }
   }
 }
-void RecordSet::WriteCheckpoint(const Checkpoint& chkp) const {
+void RecordSet::WriteCheckpoint(const Checkpoint& chkp, bool post_mortem) const {
   for (auto& e : records_) {
-    e.second->WriteCheckpoint(chkp, e.first, subfieldnames());
+    e.second->WriteCheckpoint(chkp, e.first, post_mortem, subfieldnames());
   }
 }
 void RecordSet::ReadCheckpoint(const Checkpoint& chkp) {

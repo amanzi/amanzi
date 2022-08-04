@@ -87,24 +87,6 @@ void WriteVis(Visualization& vis, const State& S)
 // -----------------------------------------------------------------------------
 // Non-member function for checkpointing.
 // -----------------------------------------------------------------------------
-void WriteCheckpoint(Checkpoint& chkp, const Comm_ptr_type& comm,
-                     const State& S, bool final)
-{
-  if (!chkp.is_disabled()) {
-    // chkp.SetFinal(final);
-    chkp.CreateFile(S.get_cycle());
-    for (auto r = S.data_begin(); r != S.data_end(); ++r) {
-      r->second->WriteCheckpoint(chkp);
-    }
-    chkp.Write("mpi_num_procs", comm->NumProc());
-    chkp.Finalize();
-  }
-}
-
-
-// -----------------------------------------------------------------------------
-// Non-member function for checkpointing.
-// -----------------------------------------------------------------------------
 void ReadCheckpoint(const Comm_ptr_type& comm, State& S,
                     const std::string& filename)
 {

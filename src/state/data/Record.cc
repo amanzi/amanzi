@@ -49,10 +49,10 @@ void Record::WriteVis(const Visualization& vis,
   }
 }
 
-void Record::WriteCheckpoint(const Checkpoint& chkp, const Tag& tag,
+void Record::WriteCheckpoint(const Checkpoint& chkp, const Tag& tag, bool post_mortem,
                              const std::vector<std::string>* subfieldnames) const
 {
-  if (io_checkpoint()) {
+  if (post_mortem || io_checkpoint()) {
     auto name = Keys::getKey(vis_fieldname(), tag);
     data_.WriteCheckpoint(chkp, name, subfieldnames);
   }

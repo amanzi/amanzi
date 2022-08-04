@@ -222,21 +222,24 @@ void Checkpoint::Finalize() {
 
 
 void Checkpoint::Write(const State& S,
-                       double dt,
-                       bool final,
+                       WriteType write_type,
                        Amanzi::ObservationData* obs_data)
 {
   if (!is_disabled()) {
     CreateFile(S.get_cycle());
 
+    // write num procs, as checkpoint files are specific to this
+    Write("mpi_num_procs", getDefaultComm()->NumProc());
+
     // create hard link to the final file
-    if (final && S.GetMesh()->get_comm()->MyPID() == 0)
+    if ((write_type == WriteType::FINAL) &&
+        S.GetMesh()->get_comm()->MyPID() == 0)
       CreateFinalFile(S.get_cycle());
 
     for (auto it = S.data_begin(); it != S.data_end(); ++it) {
-      it->second->WriteCheckpoint(*this);
+      it->second->WriteCheckpoint(*this, write_type == WriteType::POST_MORTEM);
     }
-    WriteAttributes(S.GetMesh("domain")->get_comm()->NumProc());
+
     WriteObservations(obs_data);
     Finalize();
   }
@@ -295,15 +298,6 @@ void Checkpoint::Write(const std::string& name, const Epetra_Vector& vec) const
 
     output->writeCellDataReal(vec, name);
   }
-}
-
-
-// -----------------------------------------------------------------------------
-// Write simple attributes.
-// -----------------------------------------------------------------------------
-void Checkpoint::WriteAttributes(int comm_size) const {
-  const auto& output = output_.at("domain");
-  output->writeAttrInt(comm_size, "mpi_num_procs");
 }
 
 

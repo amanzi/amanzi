@@ -88,6 +88,6 @@ TEST(STATE_EXTENSIBILITY_CREATION) {
   WriteVis(vis, s);
 
   Checkpoint chkp(plist->sublist("checkpoint"), s);
-  Amanzi::WriteCheckpoint(chkp, comm, s, 0.0);
+  chkp.Write(s);
 }
 

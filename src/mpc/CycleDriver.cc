@@ -298,7 +298,7 @@ void CycleDriver::Initialize() {
 void CycleDriver::Finalize() {
   if (!checkpoint_->DumpRequested(S_->get_cycle(), S_->get_time())) {
     pk_->CalculateDiagnostics(Tags::DEFAULT);
-    checkpoint_->Write(*S_, 0.0, true, &observations_data_);
+    checkpoint_->Write(*S_, Checkpoint::WriteType::FINAL, &observations_data_);
   }
 }
 
@@ -696,13 +696,13 @@ void CycleDriver::Visualize(bool force, const Tag& tag) {
 ****************************************************************** */
 void CycleDriver::WriteCheckpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_->get_cycle(), S_->get_time())) {
-    bool final = false;
+    Checkpoint::WriteType write_type = Checkpoint::WriteType::STANDARD;
 
     if (fabs( S_->get_time() - tp_end_[num_time_periods_-1]) < 1e-6) {
-      final = true;
+      write_type = Checkpoint::WriteType::FINAL;
     }
 
-    checkpoint_->Write(*S_, dt, final, &observations_data_);
+    checkpoint_->Write(*S_, write_type, &observations_data_);
     
     if (vo_->os_OK(Teuchos::VERB_LOW)) {
       Teuchos::OSTab tab = vo_->getOSTab();
@@ -897,7 +897,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     // catch errors to dump two checkpoints -- one as a "last good" checkpoint
     // and one as a "debugging data" checkpoint.
     checkpoint_->set_filebasename("error_checkpoint");
-    checkpoint_->Write(*S_, dt);
+    checkpoint_->Write(*S_);
     throw e;
   }
 #endif

@@ -71,6 +71,13 @@ class State;
 
 class Checkpoint : public IOEvent {
  public:
+
+  enum class WriteType {
+    STANDARD = 0,
+    FINAL,
+    POST_MORTEM
+  };
+
   // constructor for do-it-yourself
   Checkpoint(bool single_file = true);
 
@@ -93,8 +100,7 @@ class Checkpoint : public IOEvent {
   void Read(const std::string& name, T& t) const {};
 
   void Write(const State& S,
-             double dt,
-             bool final = false,
+             WriteType write_type = WriteType::STANDARD,
              Amanzi::ObservationData* obs_data = nullptr);
 
   void CreateFile(int cycle);
@@ -103,7 +109,6 @@ class Checkpoint : public IOEvent {
 
   // i/o
   void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
-  void WriteAttributes(int comm_size) const;
   void WriteObservations(ObservationData* obs_data);
 
   void ReadAttributes(State& S);
