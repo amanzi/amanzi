@@ -54,7 +54,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
                        .ViewComponent("face", true);
 
   for (int c = 0; c < ncells_wghost; ++c) {
-    double factor = inverse_with_tolerance(h_temp[0][c]);
+    double factor = inverse_with_tolerance(h_temp[0][c], cell_area_max_);
     vel_c[0][c] = factor * q_temp[0][c];
     vel_c[1][c] = factor * q_temp[1][c];
     ht_c[0][c] = h_temp[0][c] + B_c[0][c];
@@ -189,8 +189,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
 
-    factor = inverse_with_tolerance(h_rec);
-
+    factor = inverse_with_tolerance(h_rec, cell_area_max_);
+    if (std::abs(factor - 0.0) < 1.e-15) {
+      //h_rec = 0.0;
+    }
     //qx_rec *= h_rec; 
     //qx_rec *= factor;
     //qy_rec *= h_rec;
@@ -247,7 +249,12 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       qx_rec = discharge_x_grad_->getValue(c2, xf);
       qy_rec = discharge_y_grad_->getValue(c2, xf);
 
-      factor = inverse_with_tolerance(h_rec);
+      factor = inverse_with_tolerance(h_rec, cell_area_max_);
+      
+      if (std::abs(factor - 0.0) < 1.e-15) {
+        //h_rec = 0.0;
+        //h_c[0][c2] = 0.0;
+      }
 
       //qx_rec *= h_rec;
       //qx_rec *= factor;

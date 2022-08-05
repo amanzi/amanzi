@@ -48,7 +48,7 @@ namespace ShallowWater {
 
 // inversion operation protected for small values
 double
-inverse_with_tolerance(double h);
+inverse_with_tolerance(double h, double tol);
 
 class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
  public:
@@ -115,7 +115,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   // temporal discretization order
   int temporal_disc_order;
-
+  
+  double cell_area_max_;
  private:
   void
   InitializeFieldFromField_(const std::string& field0,
@@ -152,7 +153,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   std::vector<std::vector<double>> ht_cell_node_grad_y_;
   std::vector<std::vector<double>> ht_face_grad_x_;
   std::vector<std::vector<double>> ht_face_grad_y_;
-
+  bool edge_is_partially_wet;
+  
   // source terms
   std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;
   double total_source_;
