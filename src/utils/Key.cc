@@ -174,12 +174,22 @@ KeyPair splitKey(const Key& name)
 // Grab the domain prefix of a DOMAIN-VARNAME key.
 Key getDomain(const Key& name)
 {
+  if (name.find(tag_delimiter) != std::string::npos) {
+    // includes tag, split the tag
+    KeyTag key_tag = splitKeyTag(name);
+    Key domain_in_tag = getDomain(key_tag.second.get());
+    if (domain_in_tag != "domain") return domain_in_tag;
+    return getDomain(key_tag.first);
+  }
+
   if (name.find(deriv_delimiter) == std::string::npos) {
     // not a derivative
     auto split = splitKey(name);
     if (split.first.empty()) return "domain";
     else return split.first;
+
   } else {
+    // is a derivative
     auto split = splitKey(name);
     if (split.first.size() == 0) {
       return "domain";

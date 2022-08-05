@@ -42,8 +42,8 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const State& S)
 
   // Set up the HDF5 objects
   if (single_file_) {
-    // Single_File style is one checkpoint file on MPI_COMM_WORLD
-    auto comm = Amanzi::getDefaultComm();
+    // Single_File style is one checkpoint file on "domain"'s comm
+    auto comm = S.GetMesh()->get_comm();
     output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm));
     output_["domain"]->setTrackXdmf(false);
 
@@ -90,8 +90,8 @@ Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S)
   }
 
   // create the readers
-  auto comm = S.GetMesh()->get_comm();
   if (single_file_) {
+    auto comm = S.GetMesh()->get_comm();
     output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, file_or_dirname));
     output_["domain"]->open_h5file(true);
 
@@ -194,23 +194,24 @@ void Checkpoint::CreateFinalFile(const int cycle) {
 
 
 void Checkpoint::ReadAttributes(State& S) {
-  double time(0.0);
-  output_["domain"]->readAttrReal(time, "time");
-  S.set_time(time);
-  S.GetW<double>("time", Tags::DEFAULT, "time") = time;
+  // These are just plain old data in the state now -- can we not read these
+  // here?  They will get picked up in the data loop of reads.
 
-  double dt(0.0);
-  output_["domain"]->readAttrReal(dt, "dt");
-  S.GetW<double>("dt", Tags::DEFAULT, "dt") = dt;
+  // double time(0.0);
+  // output_["domain"]->readAttrReal(time, "time");
+  // S.set_time(time);
 
-  int cycle(0);
-  output_["domain"]->readAttrInt(cycle, "cycle");
-  S.set_cycle(cycle);
-  S.GetW<int>("cycle", Tags::DEFAULT, "cycle") = cycle;
+  // double dt(0.0);
+  // output_["domain"]->readAttrReal(dt, "dt");
+  // S.Assign("dt", Tags::DEFAULT, "dt", dt);
 
-  int pos(0);
-  output_["domain"]->readAttrInt(pos, "position");
-  S.set_position(pos);
+  // int cycle(0);
+  // output_["domain"]->readAttrInt(cycle, "cycle");
+  // S.set_cycle(cycle);
+
+  // int pos(0);
+  // output_["domain"]->readAttrInt(pos, "position");
+  // S.set_position(pos);
 }
 
 
@@ -229,7 +230,7 @@ void Checkpoint::Write(const State& S,
     CreateFile(S.get_cycle());
 
     // write num procs, as checkpoint files are specific to this
-    Write("mpi_num_procs", getDefaultComm()->NumProc());
+    Write("mpi_num_procs", S.GetMesh()->get_comm()->NumProc());
 
     // create hard link to the final file
     if ((write_type == WriteType::FINAL) &&

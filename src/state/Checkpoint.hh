@@ -135,13 +135,15 @@ void Checkpoint::Write<Epetra_Vector>(const std::string& name,
 template <>
 inline void Checkpoint::Write<double>(const std::string& name,
                                       const double& t) const {
-  output_.at("domain")->writeAttrReal(t, name);
+  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  output_.at(domain)->writeAttrReal(t, name);
 }
 
 template <>
 inline void Checkpoint::Write<int>(const std::string& name,
                                    const int& t) const {
-  output_.at("domain")->writeAttrInt(t, name);
+  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  output_.at(domain)->writeAttrInt(t, name);
 }
 
 template <>
@@ -153,12 +155,14 @@ inline void Checkpoint::Read<Epetra_Vector>(const std::string& name,
 
 template <>
 inline void Checkpoint::Read<double>(const std::string&name, double& t) const {
-  output_.at("domain")->readAttrReal(t, name);
+  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  output_.at(domain)->readAttrReal(t, name);
 }
 
 template <>
 inline void Checkpoint::Read<int>(const std::string& name, int& t) const {
-  output_.at("domain")->readAttrInt(t, name);
+  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  output_.at(domain)->readAttrInt(t, name);
 }
 
 }  // namespace Amanzi
