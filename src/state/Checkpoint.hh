@@ -138,6 +138,7 @@ template <>
 inline void Checkpoint::Write<double>(const std::string& name,
                                       const double& t) const {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  if (!output_.count(domain)) domain = "domain";
   output_.at(domain)->writeAttrReal(t, name);
 }
 
@@ -145,6 +146,7 @@ template <>
 inline void Checkpoint::Write<int>(const std::string& name,
                                    const int& t) const {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  if (!output_.count(domain)) domain = "domain";
   output_.at(domain)->writeAttrInt(t, name);
 }
 
@@ -152,12 +154,14 @@ template <>
 inline void Checkpoint::Read<Epetra_Vector>(const std::string& name,
         Epetra_Vector& t) const {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  if (!output_.count(domain)) domain = "domain";
   output_.at(domain)->readData(t, name);
 }
 
 template <>
 inline void Checkpoint::Read<double>(const std::string&name, double& t) const {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  if (!output_.count(domain)) domain = "domain";
   std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
   std::fstream str(fname);
   str << "rank (" << output_.at("domain")->Comm()->MyPID() << "/" << output_.at("domain")->Comm()->NumProc()
@@ -171,6 +175,7 @@ inline void Checkpoint::Read<double>(const std::string&name, double& t) const {
 template <>
 inline void Checkpoint::Read<int>(const std::string& name, int& t) const {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  if (!output_.count(domain)) domain = "domain";
   std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
   std::fstream str(fname);
   str << "rank (" << output_.at("domain")->Comm()->MyPID() << "/" << output_.at("domain")->Comm()->NumProc()

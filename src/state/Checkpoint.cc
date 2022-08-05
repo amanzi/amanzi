@@ -262,7 +262,7 @@ void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
     // double check that the comms are consistent and that the user is
     // following naming best practices
     Key domain_name = Keys::getDomain(names[0]);
-    if (domain_name.empty()) domain_name = "domain";
+    if (!output_.count(domain_name)) domain_name = "domain";
     const auto& output = output_.at(domain_name);
 
     if (!sameComm(*output->Comm(), vec.Comm())) {
@@ -288,7 +288,7 @@ void Checkpoint::Write(const std::string& name, const Epetra_Vector& vec) const
     // double check that the comms are consistent and that the user is
     // following naming best practices
     Key domain_name = Keys::getDomain(name);
-    if (domain_name.empty()) domain_name = "domain";
+    if (!output_.count(domain_name)) domain_name = "domain";
     const auto& output = output_.at(domain_name);
 
     if (!sameComm(*output->Comm(), vec.Comm())) {

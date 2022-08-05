@@ -79,7 +79,6 @@ Developer's note:
 #include "Teuchos_ParameterList.hpp"
 
 #include "EvaluatorPrimary.hh"
-#include "State.hh"
 #include "Tag.hh"
 #include "TreeVector.hh"
 #include "AmanziComm.hh"

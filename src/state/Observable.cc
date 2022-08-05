@@ -141,6 +141,7 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
       eval_list.set<std::string>("evaluator type", "subgrid aggregate evaluator");
       eval_list.set<std::string>("source domain name", domain);
       eval_list.set("visualize", false); // turn off vis -- this is unnecessary
+      eval_list.set("checkpoint", false); // turn off checkpoint -- this is unnecessary
     }
   } else {
     // not a domain set, just use as normal
