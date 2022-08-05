@@ -58,6 +58,8 @@ every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be 
 #ifndef AMANZI_STATE_CHECKPOINT_HH_
 #define AMANZI_STATE_CHECKPOINT_HH_
 
+#include <fstream>
+
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
@@ -156,12 +158,26 @@ inline void Checkpoint::Read<Epetra_Vector>(const std::string& name,
 template <>
 inline void Checkpoint::Read<double>(const std::string&name, double& t) const {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
+  std::fstream str(fname);
+  str << "rank (" << output_.at("domain")->Comm()->MyPID() << "/" << output_.at("domain")->Comm()->NumProc()
+      << ") on comm ("
+      << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
+      << ") reading \"" << name << "\" from domain \"" << domain << "\" in file \""
+      << output_.at(domain)->H5DataFilename() << std::endl;
   output_.at(domain)->readAttrReal(t, name);
 }
 
 template <>
 inline void Checkpoint::Read<int>(const std::string& name, int& t) const {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
+  std::fstream str(fname);
+  str << "rank (" << output_.at("domain")->Comm()->MyPID() << "/" << output_.at("domain")->Comm()->NumProc()
+      << ") on comm ("
+      << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
+      << ") reading \"" << name << "\" from domain \"" << domain << "\" in file \""
+      << output_.at(domain)->H5DataFilename() << std::endl;
   output_.at(domain)->readAttrInt(t, name);
 }
 

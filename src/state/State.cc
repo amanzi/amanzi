@@ -38,8 +38,9 @@
 #include "Evaluator_Factory.hh"
 #include "EvaluatorCellVolume.hh"
 #include "EvaluatorPrimary.hh"
-#include "State.hh"
 #include "StateDefs.hh"
+#include "State.hh"
+#include "Checkpoint.hh"
 
 namespace Amanzi {
 
