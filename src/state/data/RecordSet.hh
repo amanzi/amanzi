@@ -31,7 +31,9 @@ class Visualization;
 
 class RecordSet {
  private:
-  using RecordMap = std::unordered_map<Tag, std::shared_ptr<Record>>;
+  // this must be std::map because we loop over these for checkpoint/restart, which
+  // requires a known (alphabetic) order across ranks.
+  using RecordMap = std::map<Tag, std::shared_ptr<Record>>;
 
  public:
   // constructors
