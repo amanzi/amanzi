@@ -41,6 +41,9 @@ if (ENABLE_Unstructured)
   # Output
   add_subdirectory(output)
 
+  # Build State
+  add_subdirectory(state)
+
   # Solvers
   add_subdirectory(solvers)
 
@@ -50,8 +53,6 @@ if (ENABLE_Unstructured)
   # Operators
   add_subdirectory(operators)
 
-  # Build State
-  add_subdirectory(state)
 endif()
 
 if (ENABLE_AmanziPhysicsModule)

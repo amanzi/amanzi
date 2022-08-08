@@ -68,8 +68,8 @@ set(state_inc_files
   data/Record.hh
   evaluators/Evaluator.hh
   evaluators/Evaluator_Factory.hh
-  evaluators/Evaluator_OperatorApply.hh
-  evaluators/Evaluator_PDE_Diffusion.hh
+  # evaluators/Evaluator_OperatorApply.hh
+  # evaluators/Evaluator_PDE_Diffusion.hh
   evaluators/EvaluatorCellVolume.hh
   evaluators/EvaluatorDeformingCellVolume.hh
   evaluators/EvaluatorIndependent.hh
@@ -95,8 +95,8 @@ add_amanzi_library(state
                           chemistry_data.cc
                           evaluators/Evaluator.cc
                           evaluators/Evaluator_Factory.cc
-                          evaluators/Evaluator_PDE_Diffusion.cc
-                          evaluators/Evaluator_OperatorApply.cc
+                          # evaluators/Evaluator_PDE_Diffusion.cc
+                          # evaluators/Evaluator_OperatorApply.cc
                           evaluators/EvaluatorCellVolume.cc
                           evaluators/EvaluatorDeformingCellVolume.cc
                           evaluators/EvaluatorIndependent.cc
@@ -230,12 +230,12 @@ if (BUILD_TESTS)
                     LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions
                               ${state_tpl_list} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(state_container state_container
-                    KIND unit
-                    SOURCE test/Main.cc
-                           test/state_container.cc
-                    LINK_LIBS atk mesh_factory mesh operators data_structures mesh_functions operators state
-                              ${state_tpl_list} ${UnitTest_LIBRARIES})
+    # add_amanzi_test(state_container state_container
+    #                 KIND unit
+    #                 SOURCE test/Main.cc
+    #                        test/state_container.cc
+    #                 LINK_LIBS atk mesh_factory mesh operators data_structures mesh_functions operators state
+    #                           ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_extensibility state_extensibility
                     KIND int
@@ -258,19 +258,19 @@ if (BUILD_TESTS)
                     LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(state_evaluators_op state_evaluators_op
-                    KIND int
-                    SOURCE test/Main.cc
-                           test/state_evaluators_op.cc
-                    LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions 
-                              ${UnitTest_LIBRARIES})
+    # add_amanzi_test(state_evaluators_op state_evaluators_op
+    #                 KIND int
+    #                 SOURCE test/Main.cc
+    #                        test/state_evaluators_op.cc
+    #                 LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions 
+    #                           ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(state_evaluators_op_inverse state_evaluators_op_inverse
-                    KIND int
-                    SOURCE test/Main.cc
-                           test/state_evaluators_op_inverse.cc
-                    LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions 
-                              ${UnitTest_LIBRARIES})
+    # add_amanzi_test(state_evaluators_op_inverse state_evaluators_op_inverse
+    #                 KIND int
+    #                 SOURCE test/Main.cc
+    #                        test/state_evaluators_op_inverse.cc
+    #                 LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions 
+    #                           ${UnitTest_LIBRARIES})
 
 endif()
 
