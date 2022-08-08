@@ -5,12 +5,15 @@
 // module that is part of LANL's Truchas code.
 // Modified for Amanzi.
 
+#include <type_traits>
+
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 
 #include "dbc.hh"
 #include "errors.hh"
+#include "State.hh"
 
 namespace Amanzi {
 
@@ -21,8 +24,9 @@ namespace Amanzi {
 template<class Vector>
 class SolutionHistory {
  public:
-  SolutionHistory(int mvec, double t, const Vector& x);
-  SolutionHistory(int mvec, double t, const Vector& x, const Vector& xdot);
+  SolutionHistory(const std::string& name, int mvec, double t, const Vector& x, const Teuchos::RCP<State>& S = Teuchos::null);
+  SolutionHistory(const std::string& name, int mvec, double t, const Vector& x, const Vector& xdot,
+                  const Teuchos::RCP<State>& S = Teuchos::null);
 
   // Flushes the accumulated solution vectors from an existing history
   // structure, and records the solution vector X with time index T as
@@ -74,6 +78,9 @@ class SolutionHistory {
   // between 0 and the value of MVEC used to create the structure.
   int history_size() { return nvec_; }
 
+  // copies pointers from our d_ array to the State
+  void MoveToState();
+
  protected:
   void Initialize_(int mvec, const Vector& initvec);
 
@@ -81,6 +88,8 @@ class SolutionHistory {
   unsigned int nvec_;
   std::vector<double> times_;
   std::vector<Teuchos::RCP<Vector> > d_; // divided differences
+  Teuchos::RCP<State> S_;
+  std::string name_;
 };
 
 
@@ -88,14 +97,24 @@ class SolutionHistory {
 * Constructors
 ****************************************************************** */
 template<class Vector>
-SolutionHistory<Vector>::SolutionHistory(int mvec, double t, const Vector& x) {
+SolutionHistory<Vector>::SolutionHistory(const std::string& name, int mvec, double t, const Vector& x,
+        const Teuchos::RCP<State>& S)
+  : S_(S),
+    nvec_(0),
+    name_(name)
+{
   Initialize_(mvec, x);
   RecordSolution(t, x);
 }
 
 
 template<class Vector>
-SolutionHistory<Vector>::SolutionHistory(int mvec, double t, const Vector& x, const Vector& xdot) {
+SolutionHistory<Vector>::SolutionHistory(const std::string& name, int mvec, double t, const Vector& x, const Vector& xdot,
+        const Teuchos::RCP<State>& S)
+  : S_(S),
+    nvec_(0),
+    name_(name)
+{
   Initialize_(mvec, x);
   RecordSolution(t, x, xdot);
 }
@@ -112,6 +131,14 @@ void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
 
   for (int j=0; j<mvec; j++)
     d_[j] = Teuchos::rcp(new Vector(initvec));
+
+  // require data in state
+  if (S_ != Teuchos::null) {
+    for (int j=0; j<mvec; j++) {
+      S_->Require<Vector>(name_+"_"+std::to_string(j), Tags::DEFAULT, name_);
+    }
+    MoveToState();
+  }
 }
 
 
@@ -163,6 +190,9 @@ void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x) {
     double div = 1.0 / (times_[0] - times_[j]);
     d_[j]->Update(div, *d_[j - 1], -div);
   }
+
+  // update pointers in state
+  if (S_ != Teuchos::null) MoveToState();
 }
 
 
@@ -198,6 +228,9 @@ void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, const Ve
       d_[j]->Update(div, *d_[j-1], -div);
     }
   }
+
+  // update pointers in state
+  if (S_ != Teuchos::null) MoveToState();
 }
 
 
@@ -251,6 +284,22 @@ void SolutionHistory<Vector>::TimeDeltas(std::vector<double>& h)
     h[j] = times_[0] - times_[j + 1];
   }
 }
+
+
+/* ******************************************************************
+* Save our history in state to allow checkpoint/restart
+****************************************************************** */
+template<class Vector>
+void SolutionHistory<Vector>::MoveToState()
+{
+  if (S_ != Teuchos::null) {
+    for (int j = 0; j != d_.size(); ++j) {
+      std::string varname = name_ + "_" + std::to_string(j);
+      S_->SetPtr<Vector>(varname, Tags::DEFAULT, name_, d_[j]);
+    }
+  }
+}
+
 
 
 }  // namespace Amanzi

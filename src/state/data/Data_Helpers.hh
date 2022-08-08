@@ -18,20 +18,15 @@
 
 #include "errors.hh"
 
-#include "FunctionFactory.hh"
-
 #include "StateDefs.hh"
-#include "Checkpoint.hh"
-#include "Visualization.hh"
-
-// note, the following INCLUDE files define objects that are DEFINED outside of this library?
 #include "Operator_DataHelpers.hh"
 
 namespace Amanzi {
 
-class CompositeVector;
-class TensorVector;
 namespace Functions { class BoundaryFunction; }
+class TensorVector;
+class CompositeVector;
+class TreeVector;
 
 namespace Helpers {
 
@@ -213,6 +208,29 @@ void ReadCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
 template <>
 bool Initialize<Epetra_Vector>(Teuchos::ParameterList& plist,
                                  Epetra_Vector& t, const Key& fieldname,
+
+// Specializations for TreeVector
+// ======================================================================
+template <>
+void WriteVis<TreeVector>(const Visualization& vis, const Key& fieldname,
+                               const std::vector<std::string>* subfieldnames,
+                               const TreeVector& vec);
+
+template <>
+void WriteCheckpoint<TreeVector>(const Checkpoint& chkp,
+                                      const Key& fieldname,
+                                      const std::vector<std::string>* subfieldnames,
+                                      const TreeVector& vec);
+
+template <>
+void ReadCheckpoint<TreeVector>(const Checkpoint& chkp,
+                                     const Key& fieldname,
+                                     const std::vector<std::string>* subfieldnames,
+                                     TreeVector& vec);
+
+template <>
+bool Initialize<TreeVector>(Teuchos::ParameterList& plist,
+                                 TreeVector& t, const Key& fieldname,
                                  const std::vector<std::string>* subfieldnames);
 
 

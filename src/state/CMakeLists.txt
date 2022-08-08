@@ -253,6 +253,5 @@ if (BUILD_TESTS)
                     LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES})
 
-
 endif()
 

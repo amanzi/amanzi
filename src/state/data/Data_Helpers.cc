@@ -11,6 +11,12 @@
   Helpers that know how to read/write/etc data.
 */
 
+#include "CompositeVector.hh"
+#include "TensorVector.hh"
+#include "BCs.hh"
+#include "BoundaryFunction.hh"
+#include "TreeVector.hh"
+
 #include "ColumnMeshFunction.hh"
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
@@ -417,6 +423,67 @@ bool Initialize<Epetra_Vector>(
 template <>
 bool Equivalent(const Epetra_Map& one, const Epetra_Map& two) {
   return one.SameAs(two);
+}
+
+
+// ======================================================================
+// Specializations for TreeVector
+// ======================================================================
+template <>
+void WriteVis<TreeVector>(const Visualization& vis, const Key& fieldname,
+                               const std::vector<std::string>* subfieldnames,
+                               const TreeVector& vec)
+{
+  int i = 0;
+  for (const auto& subvec : vec) {
+    std::string subvec_name = fieldname+"_"+std::to_string(i);
+    WriteVis(vis, subvec_name, nullptr, *subvec);
+    ++i;
+  }
+  if (vec.Data() != Teuchos::null) {
+    WriteVis(vis, fieldname+"_data", nullptr, *vec.Data());
+  }
+}
+
+template <>
+void WriteCheckpoint<TreeVector>(const Checkpoint& chkp,
+                                      const Key& fieldname,
+                                      const std::vector<std::string>* subfieldnames,
+                                      const TreeVector& vec)
+{
+  int i = 0;
+  for (const auto& subvec : vec) {
+    std::string subvec_name = fieldname+"_"+std::to_string(i);
+    WriteCheckpoint(chkp, subvec_name, nullptr, *subvec);
+    ++i;
+  }
+  if (vec.Data() != Teuchos::null) {
+    WriteCheckpoint(chkp, fieldname+"_data", nullptr, *vec.Data());
+  }
+}
+
+template <>
+void ReadCheckpoint<TreeVector>(const Checkpoint& chkp,
+                                     const Key& fieldname,
+                                     const std::vector<std::string>* subfieldnames,
+                                     TreeVector& vec)
+{
+  int i = 0;
+  for (const auto& subvec : vec) {
+    std::string subvec_name = fieldname+"_"+std::to_string(i);
+    ReadCheckpoint(chkp, subvec_name, nullptr, *subvec);
+    ++i;
+  }
+  if (vec.Data() != Teuchos::null) {
+    ReadCheckpoint(chkp, fieldname+"_data", nullptr, *vec.Data());
+  }
+}
+
+template <>
+bool Initialize<TreeVector>(Teuchos::ParameterList& plist,
+                            TreeVector& t, const Key& fieldname,
+                            const std::vector<std::string>* subfieldnames) {
+  return false;
 }
 
 
