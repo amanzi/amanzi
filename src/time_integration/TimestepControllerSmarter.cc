@@ -18,16 +18,17 @@
 
 namespace Amanzi {
 
-TimestepControllerSmarter::TimestepControllerSmarter(Teuchos::ParameterList& plist,
+TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
+        Teuchos::ParameterList& plist,
         const Teuchos::RCP<State>& S) :
     plist_(plist),
     count_increased_before_increase_(0),
     successive_increases_(0),
     last_fail_(0),
+    name_(name),
     S_(S)
 {
   // allocate space for state -- done manually because Setup() has already been called
-  name_ = plist.sublist("verbose object").get<std::string>("name", "TimestepControllerSmarter");
   if (S_ != Teuchos::null) {
     std::string varname = name_+"_increase_factor";
     S_->Require<double>(varname, Tags::DEFAULT, name_);

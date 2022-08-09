@@ -47,7 +47,8 @@ class State;
 class TimestepControllerSmarter : public TimestepController {
 
  public:
-  TimestepControllerSmarter(Teuchos::ParameterList& plist,
+  TimestepControllerSmarter(const std::string& name,
+                            Teuchos::ParameterList& plist,
                             const Teuchos::RCP<State>& S = Teuchos::null);
 
   // single method for timestep control
