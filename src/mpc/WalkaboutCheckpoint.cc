@@ -436,8 +436,12 @@ void WalkaboutCheckpoint::WriteDataFile(
       }
     }
 
-    // timestamp and cycle number 
-    WriteAttributes(mesh.get_comm()->NumProc());
+    // timestamp and cycle number
+    const auto& output = output_.at("domain");
+    output->writeAttrInt(mesh.get_comm()->NumProc(), "mpi_num_procs");
+    output->writeAttrReal(S->get_time(), "time");
+    output->writeAttrReal(S->Get<double>("dt", Tags:DEFAULT), "dt");
+    output->writeAttrInt(S->get_cycle(), "cycle");
     Finalize();
   }
 }
