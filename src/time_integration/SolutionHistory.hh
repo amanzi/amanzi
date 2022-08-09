@@ -24,8 +24,9 @@ namespace Amanzi {
 template<class Vector>
 class SolutionHistory {
  public:
-  SolutionHistory(const std::string& name, int mvec, double t, const Vector& x, const Teuchos::RCP<State>& S = Teuchos::null);
-  SolutionHistory(const std::string& name, int mvec, double t, const Vector& x, const Vector& xdot,
+  SolutionHistory(const std::string& name, int mvec, double t,
+                  const Vector& x,
+                  Vector const* xdot = nullptr,
                   const Teuchos::RCP<State>& S = Teuchos::null);
 
   // Flushes the accumulated solution vectors from an existing history
@@ -33,8 +34,7 @@ class SolutionHistory {
   // the initial solution vector of a new history.  If XDOT is specified
   // it is also recorded as the solution vector time derivative at time
   // index T.
-  void FlushHistory(double t, const Vector& x);
-  void FlushHistory(double t, const Vector& x, const Vector& xdot);
+  void FlushHistory(double t, const Vector& x, Vector const* xdot = nullptr);
 
   // Records the vector X with time index T as the most recent solution
   // vector in the history structure.  If the vector XDOT is present,
@@ -43,8 +43,7 @@ class SolutionHistory {
   // is present) is discarded once the history is fully populated with MVEC
   // vectors.  Note that when only one of a X/XDOT pair of vectors is
   // discarded, it is the derivative vector that gets discarded.
-  void RecordSolution(double t, const Vector& x);
-  void RecordSolution(double t, const Vector& x, const Vector& xdot);
+  void RecordSolution(double t, const Vector& x, Vector const* xdot = nullptr);
 
   // Computes the interpolated (or extrapolated) vector X at time T using
   // polynomial interpolation from the set of solution vectors maintained
@@ -97,19 +96,9 @@ class SolutionHistory {
 * Constructors
 ****************************************************************** */
 template<class Vector>
-SolutionHistory<Vector>::SolutionHistory(const std::string& name, int mvec, double t, const Vector& x,
-        const Teuchos::RCP<State>& S)
-  : S_(S),
-    nvec_(0),
-    name_(name)
-{
-  Initialize_(mvec, x);
-  RecordSolution(t, x);
-}
-
-
-template<class Vector>
-SolutionHistory<Vector>::SolutionHistory(const std::string& name, int mvec, double t, const Vector& x, const Vector& xdot,
+SolutionHistory<Vector>::SolutionHistory(const std::string& name, int mvec, double t,
+        const Vector& x,
+        Vector const* xdot,
         const Teuchos::RCP<State>& S)
   : S_(S),
     nvec_(0),
@@ -135,7 +124,7 @@ void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
   // require data in state
   if (S_ != Teuchos::null) {
     for (int j=0; j<mvec; j++) {
-      S_->Require<Vector>(name_+"_"+std::to_string(j), Tags::DEFAULT, name_);
+      S_->Require<Vector>(initvec.Map(), name_+"_"+std::to_string(j), Tags::DEFAULT, name_);
     }
     MoveToState();
   }
@@ -146,24 +135,18 @@ void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
 * Modify history
 ****************************************************************** */
 template<class Vector>
-void SolutionHistory<Vector>::FlushHistory(double t, const Vector& x) {
-  nvec_ = 0;
-  RecordSolution(t, x);
-}
-
-
-template<class Vector>
-void SolutionHistory<Vector>::FlushHistory(double t, const Vector& x, const Vector& xdot) {
+void SolutionHistory<Vector>::FlushHistory(double t, const Vector& x, Vector const* xdot) {
   nvec_ = 0;
   RecordSolution(t, x, xdot);
 }
 
 
 /* *****************************************************************
-* Update history.
+* Update history
 ****************************************************************** */
 template<class Vector>
-void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x) {
+void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, Vector const* xdot)
+{
   // update the number of vectors
   nvec_++;
   if (nvec_ > d_.size()) nvec_ = d_.size();
@@ -191,41 +174,30 @@ void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x) {
     d_[j]->Update(div, *d_[j - 1], -div);
   }
 
-  // update pointers in state
-  if (S_ != Teuchos::null) MoveToState();
-}
+  if (xdot) {
+    // update the number of vectors
+    nvec_++;
+    if (nvec_ > d_.size()) nvec_ = d_.size();
 
+    if (d_.size()>1) {
+      // shift the divided differences, except the first; the new vector and
+      // time index are the same as the most recent.
+      Teuchos::RCP<Vector> tmp = d_[nvec_-1];
+      for (unsigned int j = nvec_ - 1; j >= 2; j--) {
+        times_[j] = times_[j - 1];
+        d_[j] = d_[j - 1];
+      }
 
-/* *****************************************************************
-* Update history, including differences.
-****************************************************************** */
-template<class Vector>
-void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, const Vector& xdot)
-{
-  RecordSolution(t, x);
+      // the first divided difference (same time index) is the specified derivative.
+      times_[1] = times_[0];
+      d_[1] = tmp;
+      *d_[1] = *xdot;
 
-  // update the number of vectors
-  nvec_++;
-  if (nvec_ > d_.size()) nvec_ = d_.size();
-
-  if (d_.size()>1) {
-    // shift the divided differences, except the first; the new vector and
-    // time index are the same as the most recent.
-    Teuchos::RCP<Vector> tmp = d_[nvec_-1];
-    for (unsigned int j = nvec_ - 1; j >= 2; j--) {
-      times_[j] = times_[j - 1];
-      d_[j] = d_[j - 1];
-    }
-
-    // the first divided difference (same time index) is the specified derivative.
-    times_[1] = times_[0];
-    d_[1] = tmp;
-    *d_[1] = xdot;
-
-    // update the rest of the divided differences
-    for (unsigned int j = 2; j <= nvec_-1; j++) {
-      double div = 1.0 / (times_[0] - times_[j]);
-      d_[j]->Update(div, *d_[j-1], -div);
+      // update the rest of the divided differences
+      for (unsigned int j = 2; j <= nvec_-1; j++) {
+        double div = 1.0 / (times_[0] - times_[j]);
+        d_[j]->Update(div, *d_[j-1], -div);
+      }
     }
   }
 
@@ -240,8 +212,7 @@ void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, const Ve
 template<class Vector>
 void SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x)
 {
-  unsigned int order = nvec_ - 1;
-  InterpolateSolution(t, x, order);
+  InterpolateSolution(t, x, nvec_ - 1);
 }
 
 

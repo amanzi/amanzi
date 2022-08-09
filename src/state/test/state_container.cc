@@ -9,6 +9,7 @@
 
 #include "IO.hh"
 #include "MeshFactory.hh"
+#include "TreeVector.hh"
 #include "State.hh"
 #include "errors.hh"
 
@@ -60,6 +61,16 @@ TEST(STATE_FACTORIES_WITH_CREATE) {
       "cell", AmanziMesh::CELL, 1);
 
   s.Setup();
+  Teuchos::RCP<CompositeVector> cv = s.GetPtrW<CompositeVector>("my_vec", Tags::DEFAULT, "my_vec_owner");
+  // putting TreeVectors into state is a little tricky because they are
+  // typically created from existing CompositeVectors.  We setup first, then
+  // Require and stuff the pointer in.
+  s.Require<TreeVector, TreeVectorSpace>("my_tree_vec", Tags::DEFAULT, "my_tree_vec");
+  Teuchos::RCP<TreeVector> tv = Teuchos::rcp(new TreeVector());
+  tv->SetData(cv);
+  s.SetPtr<TreeVector>("my_tree_vec", Tags::DEFAULT, "my_tree_vec", tv);
+
+
 }
 
 TEST(STATE_FACTORIES_WITH_CONSTRUCTOR) {

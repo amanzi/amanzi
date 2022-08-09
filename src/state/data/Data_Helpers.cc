@@ -11,20 +11,18 @@
   Helpers that know how to read/write/etc data.
 */
 
+#include "Data_Helpers.hh"
+
 #include "CompositeVector.hh"
 #include "TensorVector.hh"
-#include "BCs.hh"
 #include "BoundaryFunction.hh"
 #include "TreeVector.hh"
+#include "TensorVector.hh"
 
 #include "ColumnMeshFunction.hh"
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
-
-#include "Data_Helpers.hh"
 #include "IO.hh"
-
-#include "TensorVector.hh"
 
 namespace Amanzi {
 namespace Helpers {
@@ -422,6 +420,11 @@ bool Initialize<Epetra_Vector>(
 
 template <>
 bool Equivalent(const Epetra_Map& one, const Epetra_Map& two) {
+  return one.SameAs(two);
+}
+
+template <>
+bool Equivalent(const Epetra_BlockMap& one, const Epetra_BlockMap& two) {
   return one.SameAs(two);
 }
 

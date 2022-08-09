@@ -112,6 +112,8 @@ bool Equivalent(const F& one, const F& two) {
 
 template <>
 bool Equivalent(const Epetra_Map& one, const Epetra_Map& two);
+template <>
+bool Equivalent(const Epetra_BlockMap& one, const Epetra_BlockMap& two);
 
 
 // ======================================================================
@@ -190,24 +192,25 @@ bool Initialize<CompositeVector>(Teuchos::ParameterList& plist,
 // ======================================================================
 template <>
 void WriteVis<Epetra_Vector>(const Visualization& vis, const Key& fieldname,
-                               const std::vector<std::string>* subfieldnames,
-                               const Epetra_Vector& vec);
+                             const std::vector<std::string>* subfieldnames,
+                             const Epetra_Vector& vec);
 
 template <>
 void WriteCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
-                                      const Key& fieldname,
-                                      const std::vector<std::string>* subfieldnames,
-                                      const Epetra_Vector& vec);
+        const Key& fieldname,
+        const std::vector<std::string>* subfieldnames,
+        const Epetra_Vector& vec);
 
 template <>
 void ReadCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
-                                     const Key& fieldname,
-                                     const std::vector<std::string>* subfieldnames,
-                                     Epetra_Vector& vec);
+        const Key& fieldname,
+        const std::vector<std::string>* subfieldnames,
+        Epetra_Vector& vec);
 
 template <>
 bool Initialize<Epetra_Vector>(Teuchos::ParameterList& plist,
-                                 Epetra_Vector& t, const Key& fieldname,
+        Epetra_Vector& t, const Key& fieldname,
+        const std::vector<std::string>* subfieldnames);
 
 // Specializations for TreeVector
 // ======================================================================

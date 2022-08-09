@@ -196,7 +196,7 @@ void BDF1_TI<Vector,VectorSpace>::SetInitialState(const double t,
         const Teuchos::RCP<Vector>& x,
         const Teuchos::RCP<Vector>& xdot) {
   // set a clean initial state for when the time integrator is reinitialized
-  state_->uhist->FlushHistory(t, *x, *xdot);
+  state_->uhist->FlushHistory(t, *x, xdot.get());
   state_->seq = 0;
   state_->pc_lag = 0;
 }
