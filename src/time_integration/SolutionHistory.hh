@@ -123,8 +123,10 @@ void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
 
   // require data in state
   if (S_ != Teuchos::null) {
+    // also need to save nvec_, as this can change dynamically
+    S_->Require<int>(name_+"_num_vectors", Tags::DEFAULT, name_);
     for (int j=0; j<mvec; j++) {
-      S_->Require<Vector>(initvec.Map(), name_+"_"+std::to_string(j), Tags::DEFAULT, name_);
+      S_->Require<Vector>(initvec.Map(), name_, Tag(std::to_string(j)), name_);
     }
     MoveToState();
   }
@@ -264,9 +266,9 @@ template<class Vector>
 void SolutionHistory<Vector>::MoveToState()
 {
   if (S_ != Teuchos::null) {
+    S_->Assign(name_+"_num_vectors", Tags::DEFAULT, name_, nvec_);
     for (int j = 0; j != d_.size(); ++j) {
-      std::string varname = name_ + "_" + std::to_string(j);
-      S_->SetPtr<Vector>(varname, Tags::DEFAULT, name_, d_[j]);
+      S_->SetPtr<Vector>(name_, Tag(std::to_string(j)), name_, d_[j]);
     }
   }
 }
