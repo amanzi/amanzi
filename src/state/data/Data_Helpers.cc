@@ -16,6 +16,7 @@
 #include "CompositeVector.hh"
 #include "TensorVector.hh"
 #include "BoundaryFunction.hh"
+#include "TreeVectorSpace.hh"
 #include "TreeVector.hh"
 #include "TensorVector.hh"
 
@@ -429,6 +430,11 @@ bool Equivalent(const Epetra_Map& one, const Epetra_Map& two) {
 
 template <>
 bool Equivalent(const Epetra_BlockMap& one, const Epetra_BlockMap& two) {
+  return one.SameAs(two);
+}
+
+template <>
+bool Equivalent(const TreeVectorSpace& one, const TreeVectorSpace& two) {
   return one.SameAs(two);
 }
 
