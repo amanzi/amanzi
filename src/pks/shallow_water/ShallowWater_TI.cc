@@ -188,6 +188,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
+    
+    //qx_rec = q_temp[0][c1];
+    //qy_rec = q_temp[1][c1];
 
     factor = inverse_with_tolerance(h_rec, cell_area_max_);
     if (std::abs(factor - 0.0) < 1.e-15) {
@@ -197,7 +200,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     //qx_rec *= factor;
     //qy_rec *= h_rec;
     //qy_rec *= factor;
-    
+   
     /*
     if (f == 592 || f == 600 || f == 604) {
       const auto& xc = mesh_->cell_centroid(c1);
@@ -248,7 +251,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
       qx_rec = discharge_x_grad_->getValue(c2, xf);
       qy_rec = discharge_y_grad_->getValue(c2, xf);
-
+      
+      //qx_rec = q_temp[0][c2];
+      //qy_rec = q_temp[1][c2];
       factor = inverse_with_tolerance(h_rec, cell_area_max_);
       
       if (std::abs(factor - 0.0) < 1.e-15) {

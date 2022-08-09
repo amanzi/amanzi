@@ -61,11 +61,11 @@
         <Parameter name="polynomial order" type="int" value="0"/>
         <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
         <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
-        <Parameter name="limiter location" type="string" value="node"/>
-        <Parameter name="limiter cfl" type="double" value="0.1"/>
+        <Parameter name="limiter location" type="string" value="face"/>
+        <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
       <Parameter name="temporal discretization order" type="int" value="1"/>
-      <Parameter name="cfl" type="double" value="0.025"/>
+      <Parameter name="cfl" type="double" value="0.1"/>
       <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
       <Parameter name="numerical flux" type="string" value="Rusanov"/>
       
@@ -78,7 +78,7 @@
             <ParameterList name="ponded-depth">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
-                <Parameter name="formula" type="string" value="0.5"/>
+                <Parameter name="formula" type="string" value="0.80*0.5*(sgn(0.1 - t)+1.0) + 0.80*0.5*(sgn(t - 0.1) + 1.0)"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

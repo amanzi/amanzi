@@ -557,13 +557,19 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   for (int c = 0; c < ncells_owned; ++c) {
     double factor = inverse_with_tolerance(h_temp[0][c], cell_area_max_);
     h_c[0][c] = h_temp[0][c];
+    if (h_c[0][c] < 0.0) {
+      failed = true;
+    }
     q_c[0][c] = q_temp[0][c];
     q_c[1][c] = q_temp[1][c];
     vel_c[0][c] = factor * q_temp[0][c];
     vel_c[1][c] = factor * q_temp[1][c];
     ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
-
+  
+  if (failed == true){
+    //std::cout<<"Negative depth... choosing smaller time step"<<std::endl;
+  }
   return failed;
 }
 
@@ -1117,8 +1123,9 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
     *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
 
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
-  //ht_grad[0][c] = 0.0;
-  //ht_grad[1][c] = 0.0;
+  // set ht_grad = 0 for first order reconstruction
+  ht_grad[0][c] = 0.0;
+  ht_grad[1][c] = 0.0;
 
   const auto& xc = mesh_->cell_centroid(c);
   const auto& xf = mesh_->face_centroid(e);
@@ -1148,10 +1155,10 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
   }
 
   if (h_c[0][c] < 0.0) {
-    std::cout<<"ERROR: NEGATIVE h_c = "<<h_c[0][c]<<std::endl;
+    //std::cout<<"ERROR: NEGATIVE h_c = "<<h_c[0][c]<<std::endl;
   }
   
-  double a0 = 1.0;
+  double a0 = 0.0;
   if (cell_is_fully_flooded == true) {
         double alpha = 1.0;
         Amanzi::AmanziGeometry::Point xi;
@@ -1236,7 +1243,7 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
   
   
   // well-balanced reconstruction for partially wet cells
-  double a = 0.0;
+  double a = 1.0;
   if (cell_is_partially_wet == true && a == 1.0) {
     ht_grad[0][c] = 0.0;
     ht_grad[1][c] = 0.0;
@@ -1890,10 +1897,10 @@ inverse_with_tolerance(double h, double tol)
   if (h > eps) return 1.0 / h;
 
   double h2 = h * h;
-  //return 2 * h / (h2 + std::max(h2, delta));
+  return 2 * h / (h2 + std::max(h2, delta));
   
   double h4 = h2 * h2;
-  return std::sqrt(2) * h / std::sqrt(h4 + std::max(h4, delta));
+  //return std::sqrt(2) * h / std::sqrt(h4 + std::max(h4, delta));
   
   //return 0.0;
 }

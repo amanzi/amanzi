@@ -26,6 +26,8 @@
 
 using namespace Amanzi;
 
+double mass_eq = 0.0;
+
 // ---- ---- ---- ---- ---- ---- ---- ----
 // Inital Conditions
 // ---- ---- ---- ---- ---- ---- ---- ----
@@ -151,6 +153,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     q_c[1][c] = h_c[0][c] * vel_c[1][c];
     p_c[0][c] = patm + rho * g * h_c[0][c];
   }
+  
 
   // triangular mesh only; well-balanced IC [Liu et al.' 18]
   for (int c = 0; c < ncells_wghost; ++c) {
@@ -222,7 +225,30 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
      if ((xc[0] - 0.1)*(xc[0] - 0.1) + (xc[1] - 0.1)*(xc[1] - 0.1) < 0.05*0.05) {
        ht_c[0][c] += 0.0;
      }
+     if (c == 430) {
+      ht_c[0][c] += 0.00;
+     }
      h_c[0][c] = ht_c[0][c] - B_c[0][c];
+      
+      double weq = 0.80, hceq; // equilibrium free water surface
+      // fully flooded cell
+      if (weq >= B13 && weq >= B12 && weq >= B23) {
+        hceq = (weq - B_c[0][c]);
+      } else if (weq < B23) {
+        hceq = 0.0;
+      } else {
+        // type 1 cell
+        if (weq >= B23 && weq < B12 ) {
+          hceq = std::pow((weq - B23), 3.0) / (3.0 * (B13 - B23) * (B12 - B23));
+        } else if (weq >= B12 && weq < B13) {
+          hceq = ( -weq*weq*weq + 3.0*B13*weq*weq - 3.0*(B23*B13 + B12*B13 - B12*B23)*weq + B23*B23*B13) / (B13 - B23) + B12*(B12 + B23);
+          hceq /= 3.0*(B13 - B12);
+       }
+      }
+
+      mass_eq += hceq * mesh->cell_volume(c);
+
+ 
   }
   
   S->Get<CompositeVector>("surface-bathymetry").ScatterMasterToGhosted("cell");
@@ -303,6 +329,8 @@ RunTest(int icase)
   dry_bed_setIC(mesh, S, icase);
   S->CheckAllFieldsInitialized();
 
+  int ncells_wghost = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);\
+
   const auto& B =
     *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
   const auto& Bn =
@@ -344,12 +372,12 @@ RunTest(int icase)
 
   double Tend;
   //Tend = 50000.0;
-  Tend = 5.0;
-
+  Tend = 1.0;
+  
   while ((t_new < Tend) && (iter >= 0)) {
     double t_out = t_new;
 
-    if (iter % 1000 == 0) {
+    if (iter % 100 == 0) {
       io.InitializeCycle(t_out, iter, "");
 
       io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
@@ -376,8 +404,14 @@ RunTest(int icase)
     t_old = t_new;
     iter += 1;
     
-    if (iter % 1000 == 0) {
+    if (iter % 100 == 0) {
     	std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
+      double mass_end = 0.0;
+      for (int c = 0; c < ncells_wghost; ++c) {
+        mass_end += hh[0][c] * mesh->cell_volume(c);
+      }
+      std::cout<<"Equilibrium mass = "<<mass_eq<<"; Actual calculated = "<<mass_end<<"; difference = "<<std::abs(mass_end - mass_eq)<<std::endl;
+
       std::cout<<" ------------------------------------------------------------------------ "<<std::endl;
     }
   } // time loop
