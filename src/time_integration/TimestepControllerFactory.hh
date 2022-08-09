@@ -54,7 +54,8 @@ struct TimestepControllerFactory {
  public:
   Teuchos::RCP<TimestepController>
   Create(const Teuchos::ParameterList& prec_list,
-         Teuchos::RCP<Vector> udot, Teuchos::RCP<Vector> udot_prev);
+         Teuchos::RCP<Vector> udot, Teuchos::RCP<Vector> udot_prev,
+         const Teuchos::RCP<State>& S = Teuchos::null);
 };
 
 
@@ -64,7 +65,8 @@ struct TimestepControllerFactory {
 template<class Vector>
 Teuchos::RCP<TimestepController> TimestepControllerFactory<Vector>::Create(
     const Teuchos::ParameterList& slist,
-    Teuchos::RCP<Vector> udot, Teuchos::RCP<Vector> udot_prev)
+    Teuchos::RCP<Vector> udot, Teuchos::RCP<Vector> udot_prev,
+    const Teuchos::RCP<State>& S)
 {
   if (slist.isParameter("timestep controller type")) {
     std::string type = slist.get<std::string>("timestep controller type");
@@ -91,7 +93,7 @@ Teuchos::RCP<TimestepController> TimestepControllerFactory<Vector>::Create(
         Exceptions::amanzi_throw(msg);
       }
       Teuchos::ParameterList tslist = slist.sublist("timestep controller smarter parameters");
-      return Teuchos::rcp(new TimestepControllerSmarter(tslist));
+      return Teuchos::rcp(new TimestepControllerSmarter(tslist, S));
 
     } else if (type == "adaptive") {
       if (!slist.isSublist("timestep controller adaptive parameters")) {
