@@ -124,11 +124,20 @@ void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
   // require data in state
   if (S_ != Teuchos::null) {
     // also need to save nvec_, as this can change dynamically
-    S_->Require<int>(name_+"_num_vectors", Tags::DEFAULT, name_);
+    std::string nvecs_name = name_+"_num_vectors";
+    S_->Require<int>(nvecs_name, Tags::DEFAULT, name_);
+    // note we have to give it data here, because Setup() has already been called
+    S_->SetPtr<int>(nvecs_name, Tags::DEFAULT, name_, Teuchos::rcp(new int(0)));
+    S_->GetRecordW(nvecs_name, Tags::DEFAULT, name_).set_initialized();
+    S_->GetRecordW(nvecs_name, Tags::DEFAULT, name_).set_io_checkpoint();
     for (int j=0; j<mvec; j++) {
       S_->Require<Vector>(initvec.Map(), name_, Tag(std::to_string(j)), name_);
     }
     MoveToState();
+    for (int j=0; j<mvec; j++) {
+      S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_initialized();
+      S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_io_checkpoint();
+    }
   }
 }
 
@@ -266,7 +275,7 @@ template<class Vector>
 void SolutionHistory<Vector>::MoveToState()
 {
   if (S_ != Teuchos::null) {
-    S_->Assign(name_+"_num_vectors", Tags::DEFAULT, name_, nvec_);
+    S_->Assign(name_+"_num_vectors", Tags::DEFAULT, name_, (int)nvec_);
     for (int j = 0; j != d_.size(); ++j) {
       S_->SetPtr<Vector>(name_, Tag(std::to_string(j)), name_, d_[j]);
     }
