@@ -42,34 +42,41 @@ nonlinearities.
 
 namespace Amanzi {
 
+class State;
+
 class TimestepControllerSmarter : public TimestepController {
 
  public:
-  TimestepControllerSmarter(Teuchos::ParameterList& plist);
+  TimestepControllerSmarter(Teuchos::ParameterList& plist,
+                            const Teuchos::RCP<State>& S = Teuchos::null);
 
   // single method for timestep control
   double get_timestep(double dt, int iterations);
 
  protected:
   Teuchos::ParameterList plist_;
+  std::string name_;
 
   int max_its_;
   int min_its_;
 
   double reduction_factor_;
 
-  double increase_factor_;
   double increase_factor0_;
   double max_increase_factor_;
   int count_increased_before_increase_;
-  int successive_increases_;
 
   double max_dt_;
   double min_dt_;
 
-  int last_fail_;
-  int growth_wait_after_fail_;
   int growth_wait_after_fail0_;
+
+  // State variables stored in RCP to keep in state for checkpointing
+  Teuchos::RCP<State> S_;
+  Teuchos::RCP<double> increase_factor_;
+  Teuchos::RCP<int> successive_increases_;
+  Teuchos::RCP<int> last_fail_;
+  Teuchos::RCP<int> growth_wait_after_fail_;
 };
 
 } // namespace

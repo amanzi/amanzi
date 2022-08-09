@@ -181,7 +181,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
 
   // timestep controller
   TimestepControllerFactory<Vector> fac;
-  ts_control_ = fac.Create(plist, udot_, udot_prev_);
+  ts_control_ = fac.Create(plist, udot_, udot_prev_, S);
 
   // misc internal parameters
   tol_solver_=solver_->tolerance();
