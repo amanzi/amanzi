@@ -92,8 +92,14 @@ Teuchos::RCP<TimestepController> TimestepControllerFactory<Vector>::Create(
         Errors::Message msg("TimestepControllerFactory: missing sublist \"timestep controller smarter parameters\"");
         Exceptions::amanzi_throw(msg);
       }
+      std::string name = "TimestepControllerSmarter";
+      if (slist.isSublist("verbose object")) {
+        if (slist.sublist("verbose object").isParameter("name")) {
+          name = slist.sublist("verbose object").get<std::string>("name");
+        }
+      }
       Teuchos::ParameterList tslist = slist.sublist("timestep controller smarter parameters");
-      return Teuchos::rcp(new TimestepControllerSmarter(tslist, S));
+      return Teuchos::rcp(new TimestepControllerSmarter(name, tslist, S));
 
     } else if (type == "adaptive") {
       if (!slist.isSublist("timestep controller adaptive parameters")) {
