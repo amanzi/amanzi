@@ -27,6 +27,7 @@ namespace Functions { class BoundaryFunction; }
 class TensorVector;
 class CompositeVector;
 class TreeVector;
+class TreeVectorSpace;
 
 namespace Helpers {
 
@@ -105,6 +106,7 @@ Assign(T& dest, const T& source) {
 //
 // Only needed for factories that cannot be default-constructed.
 // ======================================================================
+// another that is much easier in C++17, but until then we spell it out
 template <typename F>
 bool Equivalent(const F& one, const F& two) {
   return one == two;
@@ -114,6 +116,8 @@ template <>
 bool Equivalent(const Epetra_Map& one, const Epetra_Map& two);
 template <>
 bool Equivalent(const Epetra_BlockMap& one, const Epetra_BlockMap& two);
+template <>
+bool Equivalent(const TreeVectorSpace& one, const TreeVectorSpace& two);
 
 
 // ======================================================================
