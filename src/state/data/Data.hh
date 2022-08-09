@@ -50,6 +50,8 @@ namespace Amanzi {
 class Visualization;
 class Checkpoint;
 
+namespace Impl {
+
 // Interface of a Data
 //
 // This interface allows Data objects to be kept in containers by
@@ -211,6 +213,7 @@ template <typename T> Data data(const Teuchos::RCP<T>& p) {
   return Data(std::unique_ptr<Data_Intf>(new Data_Impl<T>(p)));
 }
 
+} // namespace Impl
 } // namespace Amanzi
 
 #endif

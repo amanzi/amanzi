@@ -56,6 +56,7 @@ scale the linear operators by dh/dp. --etc
 #ifndef AMANZI_STATE_EVALUATOR_OPERATOR_APPLY_HH_
 #define AMANZI_STATE_EVALUATOR_OPERATOR_APPLY_HH_
 
+#include "Operator_DataHelpers.hh"
 #include "Evaluator_Factory.hh"
 #include "EvaluatorSecondary.hh"
 #include "Tag.hh"

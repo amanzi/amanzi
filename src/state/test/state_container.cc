@@ -9,12 +9,11 @@
 
 #include "IO.hh"
 #include "MeshFactory.hh"
+#include "TreeVector.hh"
 #include "State.hh"
 #include "errors.hh"
 
 #include "Data_Helpers.hh"
-#include "Op_Cell_Cell.hh"
-#include "Op_Factory.hh"
 #include "Vec.hh"
 
 TEST(STATE_CREATION) {
@@ -41,7 +40,7 @@ TEST(STATE_ASSIGNMENT) {
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
 }
 
-TEST(STATE_FACTORIES_PERSIST) {
+TEST(STATE_FACTORIES_WITH_CREATE) {
   using namespace Amanzi;
 
   // create a mesh
@@ -62,7 +61,44 @@ TEST(STATE_FACTORIES_PERSIST) {
       "cell", AmanziMesh::CELL, 1);
 
   s.Setup();
+  Teuchos::RCP<CompositeVector> cv = s.GetPtrW<CompositeVector>("my_vec", Tags::DEFAULT, "my_vec_owner");
+  // putting TreeVectors into state is a little tricky because they are
+  // typically created from existing CompositeVectors.  We setup first, then
+  // Require and stuff the pointer in.
+  s.Require<TreeVector, TreeVectorSpace>("my_tree_vec", Tags::DEFAULT, "my_tree_vec");
+  Teuchos::RCP<TreeVector> tv = Teuchos::rcp(new TreeVector());
+  tv->SetData(cv);
+  s.SetPtr<TreeVector>("my_tree_vec", Tags::DEFAULT, "my_tree_vec", tv);
+
+
 }
+
+TEST(STATE_FACTORIES_WITH_CONSTRUCTOR) {
+  using namespace Amanzi;
+  auto comm = Amanzi::getDefaultComm();
+  State s;
+  Epetra_Map my_map(-1, 3, 0, *comm);
+  s.Require<Epetra_Vector, Epetra_Map>(my_map, "e_vec", Tags::DEFAULT, "e_vec");
+  s.Setup();
+
+  CHECK_EQUAL(comm->NumProc() * 3, s.Get<Epetra_Vector>("e_vec", Tags::DEFAULT).MyLength());
+}
+
+
+//
+// NOTE: This cannot compile because there is no default constructor for Epetra_Map.  Yay!
+//
+// TEST(STATE_FACTORIES_WITH_CONSTRUCTOR2) {
+//   using namespace Amanzi;
+//   auto comm = Amanzi::getDefaultComm();
+//   State s;
+//   Epetra_Map my_map(-1, 3, 0, *comm);
+//   s.Require<Epetra_Vector, Epetra_Map>("e_vec", Tags::DEFAULT, "e_vec");
+//   s.Setup();
+
+//   CHECK_EQUAL(comm->NumProc() * 3, s.Get<Epetra_Vector>("e_vec", Tags::DEFAULT).MyLength());
+// }
+
 
 TEST(STATE_HETEROGENEOUS_DATA) {
   using namespace Amanzi;
@@ -126,32 +162,4 @@ TEST(STATE_HETEROGENEOUS_DATA) {
   s.GetW<double>("my_double", tag_prev, "my_double_prev_owner") = 3.3;
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
   CHECK_EQUAL(3.3, s.Get<double>("my_double", tag_prev));
-}
-
-TEST(STATE_VIRTUAL_DATA) {
-  using namespace Amanzi;
-
-  // create a mesh
-  Comm_ptr_type comm = Amanzi::getDefaultComm();
-  AmanziMesh::MeshFactory fac(comm);
-  auto mesh = fac.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
-
-  // create a state
-  State s;
-  s.RegisterDomainMesh(mesh);
-
-  // require some data
-  auto& f = s.Require<Operators::Op, Operators::Op_Factory>("my_op", Tags::DEFAULT, "my_op_owner");
-  f.set_mesh(mesh);
-  f.set_name("cell");
-  f.set_schema(Operators::Schema{Operators::OPERATOR_SCHEMA_BASE_CELL |
-                                 Operators::OPERATOR_SCHEMA_DOFS_CELL});
-
-  s.Setup();
-
-  // existence
-  CHECK(s.HasRecord("my_op"));
-  CHECK_EQUAL(Operators::OPERATOR_SCHEMA_DOFS_CELL |
-                  Operators::OPERATOR_SCHEMA_BASE_CELL,
-              s.Get<Operators::Op>("my_op").schema_old());
 }

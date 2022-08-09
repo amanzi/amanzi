@@ -33,6 +33,7 @@
 #include "Data_Helpers.hh"
 
 namespace Amanzi {
+namespace Impl {
 
 // underlying interface with type erasure
 class Data_Intf {
@@ -217,6 +218,7 @@ template <typename T> bool Data_Intf::ValidType() const {
   else return true;
 }
 
+} // namespace Impl
 } // namespace Amanzi
 
 #endif
