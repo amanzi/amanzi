@@ -52,7 +52,9 @@ struct TensorVector {
 
   const WhetStone::Tensor& operator[](std::size_t i) const { return data[i]; }
   WhetStone::Tensor& operator[](std::size_t i) { return data[i]; }
-  
+
+  TensorVector& operator=(const TensorVector& other) = default;
+
   std::vector<WhetStone::Tensor> data;
   CompositeVectorSpace map;
   bool ghosted;

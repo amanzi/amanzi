@@ -18,6 +18,8 @@
 #include "Data_Helpers.hh"
 #include "IO.hh"
 
+#include "TensorVector.hh"
+
 namespace Amanzi {
 namespace Helpers {
 
@@ -411,10 +413,12 @@ bool Initialize<Epetra_Vector>(
   return initialized;
 }
 
+
 template <>
 bool Equivalent(const Epetra_Map& one, const Epetra_Map& two) {
   return one.SameAs(two);
 }
+
 
 }  // namespace Helpers
 }  // namespace Amanzi

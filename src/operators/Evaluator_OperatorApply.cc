@@ -41,6 +41,7 @@ Note that we can infer some constraints here:
 */
 
 #include "Evaluator_OperatorApply.hh"
+
 #include "Op_Factory.hh"
 #include "Operator.hh"
 #include "Operator_Factory.hh"

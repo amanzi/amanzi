@@ -29,7 +29,6 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_MSTK_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
-include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR}/data)
@@ -68,8 +67,6 @@ set(state_inc_files
   data/Record.hh
   evaluators/Evaluator.hh
   evaluators/Evaluator_Factory.hh
-  evaluators/Evaluator_OperatorApply.hh
-  evaluators/Evaluator_PDE_Diffusion.hh
   evaluators/EvaluatorCellVolume.hh
   evaluators/EvaluatorDeformingCellVolume.hh
   evaluators/EvaluatorIndependent.hh
@@ -95,8 +92,6 @@ add_amanzi_library(state
                           chemistry_data.cc
                           evaluators/Evaluator.cc
                           evaluators/Evaluator_Factory.cc
-                          evaluators/Evaluator_PDE_Diffusion.cc
-                          evaluators/Evaluator_OperatorApply.cc
                           evaluators/EvaluatorCellVolume.cc
                           evaluators/EvaluatorDeformingCellVolume.cc
                           evaluators/EvaluatorIndependent.cc
@@ -118,7 +113,7 @@ add_amanzi_library(state
                           data/Data_Helpers.cc
                           Debugger.cc
                    HEADERS ${state_inc_files}
-		   LINK_LIBS operators data_structures functions mesh_functions output mesh atk
+		   LINK_LIBS data_structures functions mesh_functions output mesh atk
 		   ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
@@ -156,7 +151,7 @@ if (BUILD_TESTS)
 	  	          test/Main.cc
 	 		  test/state_restart.cc
 	 		  test/state_vis.cc
-                    LINK_LIBS state mesh_factory mesh data_structures operators mesh_functions functions 
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(state_restart2 state_restart2
@@ -165,40 +160,40 @@ if (BUILD_TESTS)
 	  	          test/Main.cc
 	 		  test/state_restart2.cc
                     NPROCS 2
-                    LINK_LIBS state mesh_factory mesh data_structures operators mesh_functions functions 
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
                             
     add_amanzi_test(state_copy state_copy
                     KIND int
                     SOURCE test/Main.cc test/state_copy.cc
-                    LINK_LIBS state mesh_factory mesh data_structures operators mesh_functions functions 
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(state_dag state_dag
                     KIND int
                     SOURCE test/Main.cc test/state_dag.cc
-                    LINK_LIBS state mesh_factory mesh data_structures operators mesh_functions functions 
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(state_functional_evaluators state_functional_evaluators
                     KIND int
                     SOURCE test/Main.cc
 	 		   test/state_functional_evaluators.cc
-                    LINK_LIBS state mesh_factory mesh data_structures operators mesh_functions functions 
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(state_init state_init
                     KIND int
                     SOURCE test/Main.cc
 	 		   test/state_init.cc
-                    LINK_LIBS state mesh_factory mesh data_structures operators mesh_functions functions 
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(state_observations state_observations
                     KIND int
                     SOURCE test/Main.cc
 	 		   test/state_observations.cc
-                    LINK_LIBS state mesh_factory mesh data_structures operators mesh_functions functions 
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
     add_amanzi_test(state_observations_np2 state_observations NPROCS 2 KIND unit)
 
@@ -206,71 +201,58 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc 
                            test/state_data_factory.cc
-                    LINK_LIBS error_handling atk mesh operators data_structures mesh_functions state
+                    LINK_LIBS error_handling atk mesh data_structures mesh_functions state
                               ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_record state_record
                     KIND unit
                     SOURCE test/Main.cc
                            test/state_record.cc
-                    LINK_LIBS atk mesh operators data_structures mesh_functions state
+                    LINK_LIBS atk mesh data_structures mesh_functions state
                               ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_mesh state_mesh
                     KIND unit
                     SOURCE test/Main.cc
                            test/state_mesh.cc
-                    LINK_LIBS atk mesh_factory mesh operators data_structures mesh_functions state
+                    LINK_LIBS atk mesh_factory mesh data_structures mesh_functions state
                               ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_vis state_vis
                     KIND int
                     SOURCE test/Main.cc
                            test/state_vis.cc
-                    LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions
                               ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_container state_container
                     KIND unit
                     SOURCE test/Main.cc
                            test/state_container.cc
-                    LINK_LIBS atk mesh_factory mesh operators data_structures mesh_functions operators state
+                    LINK_LIBS atk mesh_factory mesh data_structures mesh_functions state
                               ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_extensibility state_extensibility
                     KIND int
                     SOURCE test/Main.cc
                            test/state_extensibility.cc
-                    LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions 
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${state_tpl_list} ${UnitTest_LIBRARIES})
     
     add_amanzi_test(state_evaluators state_evaluators
                     KIND int
                     SOURCE test/Main.cc
                            test/state_evaluators.cc
-                    LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions 
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_evaluators_cv state_evaluators_cv
                     KIND int
                     SOURCE test/Main.cc
                            test/state_evaluators_cv.cc
-                    LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions 
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(state_evaluators_op state_evaluators_op
-                    KIND int
-                    SOURCE test/Main.cc
-                           test/state_evaluators_op.cc
-                    LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions 
-                              ${UnitTest_LIBRARIES})
-
-    add_amanzi_test(state_evaluators_op_inverse state_evaluators_op_inverse
-                    KIND int
-                    SOURCE test/Main.cc
-                           test/state_evaluators_op_inverse.cc
-                    LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions 
-                              ${UnitTest_LIBRARIES})
 
 endif()
 
