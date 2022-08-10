@@ -122,7 +122,7 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm, const std::string& name,
   getOStream()->setProcRankAndSize(pid, size);
 
   // -- write from a different rank than 0
-  int root = plist.get<int>("write on rank", 0);
+  int root = plist.get<int>("write on rank", (int) global_writing_rank);
   getOStream()->setOutputToRootOnly(root);
 
   out_ = getOStream();
