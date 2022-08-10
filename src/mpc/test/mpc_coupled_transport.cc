@@ -24,16 +24,23 @@
 #include "State.hh"
 
 
-TEST(MPC_DRIVER_TRANSPORT_MATRIX_FRACTURE) {
+void RunTest(int order) {
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 
+  std::cout << "\nTEST: coupled transport, implicit scheme order=" << order << std::endl;
+
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   
   std::string xmlInFileName = "test/mpc_coupled_transport.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
+
+  plist->sublist("PKs").sublist("transport matrix")
+      .set<int>("spatial discretization order", order);
+  plist->sublist("PKs").sublist("transport fracture")
+      .set<int>("spatial discretization order", order);
   
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -85,4 +92,12 @@ using namespace Amanzi::AmanziGeometry;
   CHECK_CLOSE(cmin, cmax, 1e-12);
 }
 
+
+TEST(MPC_DRIVER_COUPLED_TRANSPORT_1ST) {
+  RunTest(1);
+}
+
+// TEST(MPC_DRIVER_COUPLED_TRANSPORT_2ND) {
+//   RunTest(2);
+// }
 
