@@ -82,7 +82,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       
     B_n[0][n] = 0.0;
     if (std::abs(x - 0.5) <= 0.3 && std::abs(y - 0.5) <= 0.3) {
-      B_n[0][n] = 1.0 * std::sin(pi * x) * std::sin(pi * y);
+      B_n[0][n] = 0.5 * std::sin(pi * x) * std::sin(pi * y);
     }
     
     //B_n[0][n] = std::sin(pi * x) * std::sin(pi * y);
@@ -219,14 +219,17 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
      }
 
      ht_c[0][c] = h_c[0][c] + B_c[0][c];
+
+     ht_c[0][c] = std::max(0.0, B_c[0][c]);
      
      //ht_c[0][c]  = std::max(0.8, B_c[0][c]);
      const Amanzi::AmanziGeometry::Point &xc = mesh->cell_centroid(c);
      if ((xc[0] - 0.1)*(xc[0] - 0.1) + (xc[1] - 0.1)*(xc[1] - 0.1) < 0.05*0.05) {
        ht_c[0][c] += 0.0;
      }
-     if (c == 430) {
+     if (c == 179) {
       ht_c[0][c] += 0.00;
+      std::cout<<"cell = "<<c<<"; center = "<<xc[0]<<", "<<xc[1]<<std::endl;
      }
      h_c[0][c] = ht_c[0][c] - B_c[0][c];
       
@@ -298,8 +301,8 @@ RunTest(int icase)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   RCP<Mesh> mesh;
-  mesh = meshfactory.create ("test/triangular16.exo");
-  //mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
+  //mesh = meshfactory.create ("test/triangular16.exo");
+  mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 50, 50, request_faces, request_edges);
   //mesh = meshfactory.create ("test/median32x33.exo");
 
   // Other polygonal meshes
@@ -372,12 +375,12 @@ RunTest(int icase)
 
   double Tend;
   //Tend = 50000.0;
-  Tend = 1.0;
+  Tend = 20.0;
   
   while ((t_new < Tend) && (iter >= 0)) {
     double t_out = t_new;
 
-    if (iter % 100 == 0) {
+    if (iter % 1000 == 0) {
       io.InitializeCycle(t_out, iter, "");
 
       io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
@@ -404,7 +407,7 @@ RunTest(int icase)
     t_old = t_new;
     iter += 1;
     
-    if (iter % 100 == 0) {
+    if (iter % 1000 == 0) {
     	std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
       double mass_end = 0.0;
       for (int c = 0; c < ncells_wghost; ++c) {

@@ -1155,10 +1155,10 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
   }
 
   if (h_c[0][c] < 0.0) {
-    //std::cout<<"ERROR: NEGATIVE h_c = "<<h_c[0][c]<<std::endl;
+    std::cout<<"ERROR: NEGATIVE h_c = "<<h_c[0][c]<<std::endl;
   }
   
-  double a0 = 0.0;
+  double a0 = 1.0;
   if (cell_is_fully_flooded == true) {
         double alpha = 1.0;
         Amanzi::AmanziGeometry::Point xi;
@@ -1243,7 +1243,7 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
   
   
   // well-balanced reconstruction for partially wet cells
-  double a = 1.0;
+  double a = 0.0;
   if (cell_is_partially_wet == true && a == 1.0) {
     ht_grad[0][c] = 0.0;
     ht_grad[1][c] = 0.0;

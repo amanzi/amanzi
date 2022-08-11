@@ -230,6 +230,12 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         UR[0] = bc_value_h[f];
         UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
         UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
+
+        if (iters_ > 1 && t <= 8.0) { 
+          UR[0] = t * 0.05;
+        } else {
+          UR[0] = 0.4;
+        }
       } else {
         // default outflow BC
         UR = UL;
