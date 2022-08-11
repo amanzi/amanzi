@@ -431,7 +431,9 @@ void TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
     vol_wc = mesh_->cell_volume(c) * (*wc_end)[0][c];
-    for (int i = 0; i < num_advect; i++) tcc_next[i][c] /= vol_wc;
+    if (vol_wc > 0.0) {
+      for (int i = 0; i < num_advect; i++) tcc_next[i][c] /= vol_wc;
+    }
   }
 
   // update mass balance

@@ -634,7 +634,7 @@ double Transport_PK::StableTimeStep()
   const auto& wc = *S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& wc_prev = *S_->Get<CompositeVector>(prev_wc_key_, Tags::DEFAULT).ViewComponent("cell");
 
-  // Accumulate upwinding fluxes.
+  // Accumulate upwind fluxes
   std::vector<double> total_outflux(ncells_wghost, 0.0);
 
   for (int f = 0; f < nfaces_wghost; f++) {
@@ -674,7 +674,7 @@ double Transport_PK::StableTimeStep()
     }
   }
 
-  // loop over cells and calculate minimal time step
+  // loop over wet cells and calculate minimal time step
   double vol, outflux, dt_cell;
   dt_ = dt_cell = TRANSPORT_LARGE_TIME_STEP;
   int cmin_dt = -1;
@@ -684,7 +684,7 @@ double Transport_PK::StableTimeStep()
       vol = mesh_->cell_volume(c);
       dt_cell = vol * std::min(wc_prev[0][c], wc[0][c]) / outflux;
     }
-    if (dt_cell < dt_) {
+    if (dt_cell > 0.0 && dt_cell < dt_) {
       dt_ = dt_cell;
       cmin_dt = c;
     }
