@@ -39,7 +39,6 @@ Teuchos::ParameterList InputConverter::TranslateThermodynamicDatabase_()
   Teuchos::ParameterList out_list;
 
   MemoryManager mm;
-  char* text;
   DOMNode *node, *inode, *knode;
   DOMNodeList *children;
   DOMElement* element;

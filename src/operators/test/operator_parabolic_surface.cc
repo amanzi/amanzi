@@ -68,12 +68,12 @@ void RunTest(std::string op_list_name) {
   // extract surface mesh
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top surface"));
-  RCP<Mesh> surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::Entity_kind::FACE);
+  RCP<Mesh> surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::FACE);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffsuion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -82,7 +82,7 @@ void RunTest(std::string op_list_name) {
   }
 
   // create boundary data (no mixed bc)
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   bc->bc_model();  // allocate internal
   bc->bc_value();  // memory
 
@@ -90,9 +90,9 @@ void RunTest(std::string op_list_name) {
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(surfmesh);
   cvs->SetGhosted(true);
-  cvs->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  cvs->SetComponent("cell", AmanziMesh::CELL, 1);
   cvs->SetOwned(false);
-  cvs->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+  cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
   // create source and add it to the operator
   CompositeVector source(*cvs);
@@ -124,7 +124,7 @@ void RunTest(std::string op_list_name) {
   Teuchos::RCP<Operator> global_op = op.global_operator();
 
   // add accumulation terms
-  PDE_Accumulation op_acc(AmanziMesh::Entity_kind::CELL, global_op);
+  PDE_Accumulation op_acc(AmanziMesh::CELL, global_op);
   op_acc.AddAccumulationDelta(solution, phi, phi, dT, "cell");
 
   // apply BCs and assemble

@@ -40,6 +40,7 @@
 #include "operator_marshak_testclass.hh"
 
 void RunTestMarshakLogical(std::string op_list_name) {
+  using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -52,11 +53,11 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
   // read parameter list
   std::string xmlFileName = "test/operator_marshak_logical.xml";
-  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-  Teuchos::ParameterList plist = xmlreader.getParameters();
+  ParameterXMLFileReader xmlreader(xmlFileName);
+  ParameterList plist = xmlreader.getParameters();
 
   // create a logical mesh
-  Teuchos::ParameterList region_list = plist.sublist("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
   MeshLogicalFactory fac(comm, gm);
@@ -66,8 +67,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
   fac.AddSegment(100,begin,end,1.0,
 		 MeshLogicalFactory::LogicalTip_t::BOUNDARY,MeshLogicalFactory::LogicalTip_t::BOUNDARY,
 		 "myregion",&cells, &faces);
-  Teuchos::RCP<MeshFramework> mesh_fw = fac.Create();
-  Teuchos::RCP<const Mesh> mesh = Teuchos::rcp(new Mesh(mesh_fw));
+  RCP<const Mesh> mesh = fac.Create();
 
   // Create nonlinear coefficient.
   Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh, 0.0));
@@ -75,8 +75,8 @@ void RunTestMarshakLogical(std::string op_list_name) {
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -85,12 +85,12 @@ void RunTestMarshakLogical(std::string op_list_name) {
   }
 
   // create boundary data (no mixed bc)
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = mesh->getFaceCentroid(f);
+    const Point& xf = mesh->face_centroid(f);
 
     if (fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -108,9 +108,9 @@ void RunTestMarshakLogical(std::string op_list_name) {
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh);
   cvs->SetGhosted(true);
-  cvs->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  cvs->SetComponent("cell", AmanziMesh::CELL, 1);
   cvs->SetOwned(false);
-  cvs->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+  cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
   // create and initialize state variables.
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(*cvs));
@@ -118,7 +118,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
   Point velocity(0.0, 0.0);
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& normal = mesh->getFaceNormal(f);
+    const Point& normal = mesh->face_normal(f);
     flx[0][f] = velocity * normal;
   }
 
@@ -129,8 +129,8 @@ void RunTestMarshakLogical(std::string op_list_name) {
   heat_capacity.PutScalar(1.0);
 
   // Create upwind model
-  Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
-  UpwindFlux<HeatConduction> upwind(mesh, knc);
+  ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
+  UpwindFlux upwind(mesh);
   upwind.Init(ulist);
 
   // MAIN LOOP
@@ -143,7 +143,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
     // update bc
     for (int f = 0; f < nfaces_wghost; f++) {
-      const Point& xf = mesh->getFaceCentroid(f);
+      const Point& xf = mesh->face_centroid(f);
       if (fabs(xf[0]) < 1e-6) bc_value[f] = knc->exact(T + dT, xf);
     }
 
@@ -163,7 +163,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
     Teuchos::RCP<Operator> global_op = op.global_operator();
 
     // add accumulation terms
-    PDE_Accumulation op_acc(AmanziMesh::Entity_kind::CELL, global_op);
+    PDE_Accumulation op_acc(AmanziMesh::CELL, global_op);
     op_acc.AddAccumulationDelta(solution, heat_capacity, heat_capacity, dT, "cell");
 
     // apply BCs and assemble
@@ -215,7 +215,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
   double pl2_err(0.0), pnorm(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
+    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double err = p[0][c] - knc->exact(T, xc);
     pl2_err += err * err;
     pnorm += p[0][c] * p[0][c];

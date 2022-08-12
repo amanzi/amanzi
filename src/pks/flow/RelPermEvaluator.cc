@@ -11,7 +11,7 @@
   Rel perm( pc ( sat ) ).
 */
 
-#include "FlowDefs.hh"
+#include "Mesh_Algorithms.hh"
 #include "RelPermEvaluator.hh"
 
 namespace Amanzi {
@@ -21,31 +21,24 @@ namespace Flow {
 * Two constructors.
 ****************************************************************** */
 RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
-                                   Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                                   double patm,
-                                   const Teuchos::RCP<WRMPartition>& wrm) :
-    SecondaryVariableFieldEvaluator(plist),
-    mesh_(mesh),
-    wrm_(wrm),
-    patm_(patm),
-    min_value_(0.0),
-    max_value_(1.0) {
-  InitializeFromPlist_();
+                                   const Teuchos::Ptr<State>& S,
+                                   const Teuchos::RCP<WRMPartition>& wrm)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
+      wrm_(wrm) {
+  InitializeFromPlist_(S);
 }
 
-RelPermEvaluator::RelPermEvaluator(const RelPermEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other),
-    wrm_(other.wrm_),
-    pressure_key_(other.pressure_key_),
-    patm_(other.patm_),
-    min_value_(other.min_value_),
-    max_value_(other.max_value_) {};
+RelPermEvaluator::RelPermEvaluator(const RelPermEvaluator& other)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+      wrm_(other.wrm_),
+      pressure_key_(other.pressure_key_),
+      patm_(other.patm_) {};
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> RelPermEvaluator::Clone() const {
+Teuchos::RCP<Evaluator> RelPermEvaluator::Clone() const {
   return Teuchos::rcp(new RelPermEvaluator(*this));
 }
 
@@ -53,45 +46,79 @@ Teuchos::RCP<FieldEvaluator> RelPermEvaluator::Clone() const {
 /* ******************************************************************
 * Initialization.
 ****************************************************************** */
-void RelPermEvaluator::InitializeFromPlist_()
+void RelPermEvaluator::InitializeFromPlist_(const Teuchos::Ptr<State>& S)
 {
   // my keys is for rel perm.
-  if (my_key_ == std::string("")) {
-    my_key_ = plist_.get<std::string>("rel perm key", "relative_permeability");
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("relative permeability key"), Tags::DEFAULT));
   }
 
   // my dependency is pressure.
-  pressure_key_ = plist_.get<std::string>("pressure key", "pressure");
-  dependencies_.insert(pressure_key_);
-
-  // use rel perm class for calcualtion
-  Teuchos::ParameterList plist;
-  relperm_ = Teuchos::rcp(new RelPerm(plist, mesh_, patm_, wrm_));
+  std::string domain = Keys::getDomain(my_keys_[0].first);
+  pressure_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
+  dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
 }
 
 
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void RelPermEvaluator::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const Teuchos::Ptr<CompositeVector>& result)
+void RelPermEvaluator::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  AMANZI_ASSERT(false);
-  // relperm_->Compute(S->GetFieldData(pressure_key_), result);
+  patm_ = S.Get<double>("atmospheric_pressure");
+  const auto& pres = S.Get<CompositeVector>(pressure_key_); 
+
+  for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
+    const auto& pres_c = *pres.ViewComponent(*comp);
+    auto& result_c = *results[0]->ViewComponent(*comp);
+
+    int nids = pres_c.MyLength();
+    if (*comp == "cell") {
+      for (int c = 0; c != nids; ++c) {
+        result_c[0][c] = wrm_->second[(*wrm_->first)[c]]->k_relative(patm_ - pres_c[0][c]);
+      }
+    } else if (*comp == "boundary_face") {
+      for (int bf = 0; bf != nids; ++bf) {
+        int c = AmanziMesh::getBoundaryFaceInternalCell(*pres.Mesh(), bf);
+        result_c[0][bf] = wrm_->second[(*wrm_->first)[c]]->k_relative(patm_ - pres_c[0][bf]);
+      }
+    }
+  }
 }
 
 
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void RelPermEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key,
-    const Teuchos::Ptr<CompositeVector>& result)
+void RelPermEvaluator::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  AMANZI_ASSERT(wrt_key == pressure_key_);
-  // relperm_->ComputeDerivative(S->GetFieldData(pressure_key_), result);
+  patm_ = S.Get<double>("atmospheric_pressure");
+  const auto& pres = S.Get<CompositeVector>(pressure_key_); 
+
+  if (wrt_key == pressure_key_) {
+    for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
+      const auto& pres_c = *pres.ViewComponent(*comp);
+      auto& result_c = *results[0]->ViewComponent(*comp);
+
+      int nids = pres_c.MyLength();
+      if (*comp == "cell") {
+        for (int c = 0; c != nids; ++c) {
+          // Negative sign indicates that dKdP = -dKdPc.
+          result_c[0][c] = -wrm_->second[(*wrm_->first)[c]]->dKdPc(patm_ - pres_c[0][c]);
+        }
+      } else if (*comp == "boundary_face") {
+        for (int bf = 0; bf != nids; ++bf) {
+          int c = AmanziMesh::getBoundaryFaceInternalCell(*pres.Mesh(), bf);
+          result_c[0][bf] = -wrm_->second[(*wrm_->first)[c]]->dKdPc(patm_ - pres_c[0][bf]);
+        }
+      }
+    }
+  } else {
+    AMANZI_ASSERT(0);
+  }
 }
 
 }  // namespace Flow

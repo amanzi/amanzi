@@ -110,19 +110,19 @@ class BCs {
   // -- vector is a general vector DOF (example: moments of pressure)
   // -- normal-component is a geometric DOF (example: normal component of fluid velocity)
   BCs(Teuchos::RCP<const AmanziMesh::Mesh> mesh, AmanziMesh::Entity_kind kind, WhetStone::DOF_Type type) : 
-      mesh_(mesh),
       kind_(kind),
-      type_(type) {};
+      type_(type),
+      mesh_(mesh) {};
   ~BCs() {};
 
-  // access
+  // non-const access
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
   AmanziMesh::Entity_kind kind() const { return kind_; }
   WhetStone::DOF_Type type() const { return type_; }
 
   std::vector<int>& bc_model() { 
     if (bc_model_.size() == 0) {
-      int nent = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_type::ALL);
+      int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
       bc_model_.resize(nent, Operators::OPERATOR_BC_NONE);
     }
     return bc_model_; 
@@ -130,7 +130,7 @@ class BCs {
 
   std::vector<double>& bc_value() {
     if (bc_value_.size() == 0) {
-      int nent = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_type::ALL);
+      int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
       bc_value_.resize(nent, 0.0);
     }
     return bc_value_;
@@ -138,7 +138,7 @@ class BCs {
 
   std::vector<double>& bc_mixed() {
     if (bc_mixed_.size() == 0) {
-      int nent = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_type::ALL);
+      int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
       bc_mixed_.resize(nent, 0.0);
     }
     return bc_mixed_;
@@ -146,8 +146,8 @@ class BCs {
 
   std::vector<AmanziGeometry::Point>& bc_value_point() {
     if (bc_value_point_.size() == 0) {
-      AmanziGeometry::Point p(mesh_->getSpaceDimension());
-      int nent = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_type::ALL);
+      AmanziGeometry::Point p(mesh_->space_dimension());
+      int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
       bc_value_point_.resize(nent, p);
     }
     return bc_value_point_;
@@ -155,7 +155,7 @@ class BCs {
 
   std::vector<std::vector<double> >& bc_value_vector(int n = 1) {
     if (bc_value_vector_.size() == 0) {
-      int nent = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_type::ALL);
+      int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
       bc_value_vector_.resize(nent);
 
       for (int i = 0; i < nent; ++i) {
@@ -165,6 +165,7 @@ class BCs {
     return bc_value_vector_;
   }
 
+  // const access
   const std::vector<int>& bc_model() const { return bc_model_; }
   const std::vector<double>& bc_value() const { return bc_value_; }
   const std::vector<double>& bc_mixed() const { return bc_mixed_; }

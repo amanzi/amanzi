@@ -21,17 +21,20 @@ namespace Energy {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist)
+TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
-  my_key_ = plist_.get<std::string>("thermal conductivity key");
-  auto prefix = Keys::getDomainPrefix(my_key_);
+  tag_ = Tags::DEFAULT;
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(make_pair(plist_.get<std::string>("thermal conductivity key"), tag_));
+  }
+  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
 
   porosity_key_ = plist_.get<std::string>("porosity key", prefix + "porosity");
-  dependencies_.insert(porosity_key_);
+  dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
 
   saturation_key_ = plist_.get<std::string>("saturation key", prefix + "saturation_liquid");
-  dependencies_.insert(saturation_key_);
+  dependencies_.insert(std::make_pair(saturation_key_, Tags::DEFAULT));
 
   AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
@@ -43,17 +46,17 @@ TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(Teuchos::ParameterList& plist) :
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(const TCMEvaluator_TwoPhase& other) :
-    SecondaryVariableFieldEvaluator(other),
-    porosity_key_(other.porosity_key_),
-    saturation_key_(other.saturation_key_),
-    tc_(other.tc_) {};
+TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(const TCMEvaluator_TwoPhase& other)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+      tc_(other.tc_),
+      porosity_key_(other.porosity_key_),
+      saturation_key_(other.saturation_key_) {}
 
 
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> TCMEvaluator_TwoPhase::Clone() const {
+Teuchos::RCP<Evaluator> TCMEvaluator_TwoPhase::Clone() const {
   return Teuchos::rcp(new TCMEvaluator_TwoPhase(*this));
 }
 
@@ -61,20 +64,20 @@ Teuchos::RCP<FieldEvaluator> TCMEvaluator_TwoPhase::Clone() const {
 /* ******************************************************************
 * Evaluator body.
 ****************************************************************** */
-void TCMEvaluator_TwoPhase::EvaluateField_(
-    const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result)
+void TCMEvaluator_TwoPhase::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
   // pull out the dependencies
-  Teuchos::RCP<const CompositeVector> poro = S->GetFieldData(porosity_key_);
-  Teuchos::RCP<const CompositeVector> sat = S->GetFieldData(saturation_key_);
+  auto poro = S.GetPtr<CompositeVector>(porosity_key_, tag_);
+  auto sat = S.GetPtr<CompositeVector>(saturation_key_, tag_);
 
-  for (auto comp = result->begin(); comp != result->end(); ++comp) {
+  for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
     // much more efficient to pull out vectors first
-    const Epetra_MultiVector& poro_v = *poro->ViewComponent(*comp);
-    const Epetra_MultiVector& sat_v = *sat->ViewComponent(*comp);
-    Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
+    const auto& poro_v = *poro->ViewComponent(*comp);
+    const auto& sat_v = *sat->ViewComponent(*comp);
+    Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
 
-    int ncomp = result->size(*comp);
+    int ncomp = results[0]->size(*comp);
     for (int i = 0; i != ncomp; ++i) {
       result_v[0][i] = tc_->ThermalConductivity(poro_v[0][i], sat_v[0][i]);
     }
@@ -83,13 +86,14 @@ void TCMEvaluator_TwoPhase::EvaluateField_(
 
 
 /* ******************************************************************
-* Evaluator of derivarives.
+* Evaluator of derivarives. Mot yet implemented due to TCM
 ****************************************************************** */
-void TCMEvaluator_TwoPhase::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void TCMEvaluator_TwoPhase::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  AMANZI_ASSERT(0);
+  results[0]->PutScalar(0.0);
+  // AMANZI_ASSERT(0);
 }
 
 }  // namespace Energy

@@ -120,9 +120,9 @@
   </ParameterList>
 
   <ParameterList name="state">
-    <ParameterList name="field evaluators">
+    <ParameterList name="evaluators">
       <ParameterList name="viscosity_liquid">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
@@ -136,7 +136,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="porosity">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="Region Middle">
             <Parameter name="regions" type="Array(string)" value="{Region Middle}"/>
@@ -175,6 +175,9 @@
       </ParameterList>
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="9.982e+02"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_viscosity">
+        <Parameter name="value" type="double" value="0.001"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>

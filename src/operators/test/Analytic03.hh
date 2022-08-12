@@ -33,7 +33,7 @@ class Analytic03 : public AnalyticBase {
     a2 = 1.0 / k2;
     b2 = (a1 - a2) / 4;
 
-    dim = mesh_->getSpaceDimension();
+    dim = mesh_->space_dimension();
   }
   ~Analytic03() {};
 

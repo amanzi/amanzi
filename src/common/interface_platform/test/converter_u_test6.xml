@@ -159,6 +159,7 @@
           <porosity value="0.004"/>
         </mechanical_properties>
         <fracture_permeability model="cubic law" type="h5file" filename="aperture.h5" normal="20.0"/>
+        <fracture_diffusivity normal="1.0e-9"/>
         <assigned_regions>fracture</assigned_regions>
       </material>
     </materials>
@@ -204,8 +205,8 @@
       </isotherms>
 
       <radioactive_decay>
-        <reaction reactant="A" product="B" half_life="12.5 y"/>
-        <reaction reactant="B" product="C" half_life="25.0 y"/>
+        <reaction reactant="A" product="1.0 B" half_life="12.5 y"/>
+        <reaction reactant="B" product="1.0 C" half_life="25.0 y"/>
         <reaction reactant="C" product="" half_life="5.0 y"/>
       </radioactive_decay>
     </thermodynamic_database>

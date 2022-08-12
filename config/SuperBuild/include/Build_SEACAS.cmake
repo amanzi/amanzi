@@ -80,7 +80,10 @@ endif()
 #
 set(ENABLE_SEACAS_Patch ON)
 if (ENABLE_SEACAS_Patch)
-  set(SEACAS_patch_file seacas-nemslice.patch)
+  set(SEACAS_patch_file
+    seacas-nemslice.patch
+    seacas-exoduspy.patch
+    )
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/seacas-patch-step.sh.in
                  ${SEACAS_prefix_dir}/seacas-patch-step.sh
                  @ONLY)
@@ -123,6 +126,7 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DTPL_ENABLE_Pthread:BOOL=FALSE
                     -DSEACASExodus_ENABLE_THREADSAFE:BOOL=OFF
                     -DSEACASIoss_ENABLE_THREADSAFE:BOOL=OFF
+                    -DPYTHON_EXECUTABLE:STRING=${PYTHON_EXECUTABLE}
                     ${seacas_install_rpath})
 
 # --- Add external project build and tie to the SEACAS build target

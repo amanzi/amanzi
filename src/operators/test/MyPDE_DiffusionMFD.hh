@@ -27,8 +27,8 @@ class MyPDE_DiffusionMFD : public virtual PDE_DiffusionMFD {
  public:
   MyPDE_DiffusionMFD(Teuchos::ParameterList& plist,
                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_DiffusionMFD(plist, mesh),
-      PDE_Diffusion(mesh) {};
+      PDE_Diffusion(mesh),
+      PDE_DiffusionMFD(plist, mesh) {};
 
   // -- To calculate elemetal matrices, we can use input parameters flux 
   //    and u from the previous nonlinear iteration. Otherwise, use null-pointers.
@@ -62,13 +62,13 @@ void MyPDE_DiffusionMFD::UpdateMatrices(
   }
 
   // update matrix blocks
-  int dim = mesh_->getSpaceDimension();
+  int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   WhetStone::DenseMatrix Wff;
 
   AmanziMesh::Entity_ID_List cells;
 
-  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
+  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
   
   for (int c = 0; c < ncells_owned; c++) {
@@ -78,7 +78,7 @@ void MyPDE_DiffusionMFD::UpdateMatrices(
     for (int i = 0; i < dim; i++) kgrad[i] = (*k_grad)[i][c];
  
     // upwinded values of nonlinear factor
-    const auto& faces = mesh_->getCellFaces(c);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
     std::vector<double> kf(nfaces, 1.0); 
     if (k_twin == Teuchos::null) {
@@ -86,7 +86,7 @@ void MyPDE_DiffusionMFD::UpdateMatrices(
     } else {
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         kf[n] = (c == cells[0]) ? (*k_face)[0][f] : (*k_twin)[0][f];
       }
     }

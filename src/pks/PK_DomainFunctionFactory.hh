@@ -37,14 +37,17 @@ class PK_DomainFunctionFactory : public FunctionBase {
     : mesh_(mesh), S_(S) {};
   ~PK_DomainFunctionFactory() {};
 
-  Teuchos::RCP<FunctionBase> Create(const Teuchos::ParameterList& plist,
+  Teuchos::RCP<FunctionBase> Create(Teuchos::ParameterList& plist,
                                     AmanziMesh::Entity_kind kind,
-                                    Teuchos::RCP<const Epetra_Vector> weight);
+                                    Teuchos::RCP<const Epetra_Vector> weight,
+                                    const Tag& tag=Tags::DEFAULT);
 
-  Teuchos::RCP<FunctionBase> Create(const Teuchos::ParameterList& plist,
+  Teuchos::RCP<FunctionBase> Create(Teuchos::ParameterList& plist,
                                     const std::string& keyword,
                                     AmanziMesh::Entity_kind kind,
-                                    Teuchos::RCP<const Epetra_Vector> weight);
+                                    Teuchos::RCP<const Epetra_Vector> weight,
+                                    const Tag& tag=Tags::DEFAULT);
+
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -54,10 +57,11 @@ class PK_DomainFunctionFactory : public FunctionBase {
 
 template <class FunctionBase>
 Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
-    const Teuchos::ParameterList& plist,
+    Teuchos::ParameterList& plist,
     const std::string& keyword,
     AmanziMesh::Entity_kind kind,
-    Teuchos::RCP<const Epetra_Vector> weight)
+    Teuchos::RCP<const Epetra_Vector> weight,
+    const Tag& tag)
 {
   // verify completeness of the list
   Errors::Message msg;
@@ -102,6 +106,7 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
     return func; 
   }
   else if (model == "domain coupling") {
+    plist.set<std::string>("external field copy key", tag.get());
     Teuchos::RCP<PK_DomainFunctionCoupling<FunctionBase> >
        func = Teuchos::rcp(new PK_DomainFunctionCoupling<FunctionBase>(mesh_, S_));
     func->Init(plist, keyword, kind);
@@ -109,6 +114,7 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
   }
   else if (model == "first order exchange") {
     AMANZI_ASSERT(kind == AmanziMesh::CELL);
+    plist.sublist("source function").set<std::string>("total component concentration copy", tag.get());
     Teuchos::RCP<PK_DomainFunctionFirstOrderExchange<FunctionBase> >
         func = Teuchos::rcp(new PK_DomainFunctionFirstOrderExchange<FunctionBase>(mesh_, plist, kind));
     func->Init(plist, keyword);
@@ -116,6 +122,7 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
   }
   else if (model == "subgrid") {
     AMANZI_ASSERT(kind == AmanziMesh::FACE);
+    plist.sublist(keyword).set<std::string>("copy_field_out_tag", tag.get());
     Teuchos::RCP<PK_DomainFunctionSubgrid<FunctionBase> >
        func = Teuchos::rcp(new PK_DomainFunctionSubgrid<FunctionBase>(mesh_));
     func->Init(plist, keyword, kind);
@@ -123,6 +130,7 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
   }
   else if (model == "subgrid return") {
     AMANZI_ASSERT(kind == AmanziMesh::CELL);
+    plist.sublist("source function").set<std::string>("copy subgrid field", tag.get());
     Teuchos::RCP<PK_DomainFunctionSubgridReturn<FunctionBase> >
         func = Teuchos::rcp(new PK_DomainFunctionSubgridReturn<FunctionBase>(mesh_, plist));
     func->Init(plist, keyword);
@@ -147,9 +155,10 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
 
 template <class FunctionBase>
 Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
-    const Teuchos::ParameterList& plist,
+    Teuchos::ParameterList& plist,
     AmanziMesh::Entity_kind kind,
-    Teuchos::RCP<const Epetra_Vector> weight)
+    Teuchos::RCP<const Epetra_Vector> weight,
+    const Tag& tag)
 {
   int n(0);
   std::string keyword;
@@ -165,7 +174,7 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
     Exceptions::amanzi_throw(msg);
   }
 
-  return Create(plist, keyword, kind, weight);
+  return Create(plist, keyword, kind, weight, tag);
 }
 
 }  // namespace Amanzi

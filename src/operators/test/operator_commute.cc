@@ -65,8 +65,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
 
   // modify diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -75,12 +75,12 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = mesh->getFaceCentroid(f);
+    const Point& xf = mesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
@@ -91,16 +91,16 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   // create the global operator space
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh)->SetGhosted(true);
-  cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-  cvs->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+  cvs->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
   // create velocity field
   Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(*cvs));
   Epetra_MultiVector& uf = *u->ViewComponent("face");
-  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   Point vel(4.0, 4.0);
   for (int f = 0; f < nfaces; f++) {
-    uf[0][f] = vel * mesh->getFaceNormal(f);
+    uf[0][f] = vel * mesh->face_normal(f);
   }
 
   // create the global op
@@ -190,8 +190,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -200,12 +200,12 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = mesh->getFaceCentroid(f);
+    const Point& xf = mesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
@@ -216,16 +216,16 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   // create the global operator space
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh)->SetGhosted(true);
-  cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-  cvs->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+  cvs->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
   // create velocity field
   Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(*cvs));
   Epetra_MultiVector& uf = *u->ViewComponent("face");
-  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   Point vel(4.0, 4.0);
   for (int f = 0; f < nfaces; f++) {
-    uf[0][f] = vel * mesh->getFaceNormal(f);
+    uf[0][f] = vel * mesh->face_normal(f);
   }
 
   // create the global op

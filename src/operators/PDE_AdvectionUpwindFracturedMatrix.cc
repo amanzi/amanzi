@@ -50,7 +50,7 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
-    mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
@@ -70,10 +70,12 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
     matrix[f] = Aface;
   }
 
-  // removed matrices fof faces where fracture is located
+  // removed matrices on faces where fracture is located
+  AmanziMesh::Entity_ID_List block;
+  std::vector<double> vofs;
   for (int i = 0; i < fractures_.size(); ++i) {
-    auto block = mesh_->getSetEntities(fractures_[i], AmanziMesh::Entity_kind::FACE,
-            AmanziMesh::Parallel_type::OWNED);
+    mesh_->get_set_entities_and_vofs(fractures_[i], AmanziMesh::FACE, 
+                                     AmanziMesh::Parallel_type::OWNED, &block, &vofs);
 
     for (int n = 0; n < block.size(); ++n) {
       matrix[block[n]] *= 0.0;
@@ -106,7 +108,7 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
-    mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
@@ -127,9 +129,11 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
   }
 
   // removed matrices fof faces where fracture is located
+  AmanziMesh::Entity_ID_List block;
+  std::vector<double> vofs;
   for (int i = 0; i < fractures_.size(); ++i) {
-    auto block = mesh_->getSetEntities(fractures_[i], AmanziMesh::Entity_kind::FACE,
-            AmanziMesh::Parallel_type::OWNED);
+    mesh_->get_set_entities_and_vofs(fractures_[i], AmanziMesh::FACE, 
+                                     AmanziMesh::Parallel_type::OWNED, &block, &vofs);
 
     for (int n = 0; n < block.size(); ++n) {
       matrix[block[n]] *= 0.0;
@@ -148,7 +152,7 @@ void PDE_AdvectionUpwindFracturedMatrix::IdentifyUpwindCells_(const CompositeVec
   const Epetra_MultiVector& uf = *u.ViewComponent("face", true);
   const auto& gmap = uf.Map();
 
-  const Epetra_Map& fmap_wghost = mesh_->getMap(AmanziMesh::Entity_kind::FACE, true);
+  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   upwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));
   downwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));
 
@@ -158,8 +162,8 @@ void PDE_AdvectionUpwindFracturedMatrix::IdentifyUpwindCells_(const CompositeVec
   }
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const auto& faces = mesh_->getCellFaces(c);
-    const auto& fdirs = mesh_->getCellFaceDirections(c);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& fdirs = mesh_->cell_get_face_dirs(c);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];

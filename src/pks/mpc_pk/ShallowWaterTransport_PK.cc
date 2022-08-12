@@ -18,9 +18,9 @@ namespace Amanzi {
 /* ******************************************************************
 * Setup of PK
 ****************************************************************** */
-void ShallowWaterTransport_PK::Setup(const Teuchos::Ptr<State>& S)
+void ShallowWaterTransport_PK::Setup()
 {
-  PK_MPCWeak::Setup(S);
+  PK_MPCWeak::Setup();
 }
 
 }  // namespace Amanzi

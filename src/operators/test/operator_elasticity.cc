@@ -58,14 +58,14 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   // -- geometric model is not created. Instead, we specify boundary conditions
   // -- using centroids of mesh faces.
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 5);
 
   // -- general information about mesh
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // select an analytic solution for error calculations and setup of
   // boundary conditions
@@ -73,21 +73,21 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->getCellCentroid(c);
+    const Point& xc = mesh->cell_centroid(c);
     const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
     K->push_back(Kc);
   }
 
   // populate boundary conditions: type (called model) and value
   // -- normal component of velocity on boundary faces (a scalar)
-  Teuchos::RCP<BCs> bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bcf_model = bcf->bc_model();
   std::vector<double>& bcf_value = bcf->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = mesh->getFaceCentroid(f);
-    const Point& normal = mesh->getFaceNormal(f);
-    double area = mesh->getFaceArea(f);
+    const Point& xf = mesh->face_centroid(f);
+    const Point& normal = mesh->face_normal(f);
+    double area = mesh->face_area(f);
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
@@ -98,12 +98,12 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   // -- full velocity at boundary nodes (a vector)
   Point xv(2);
-  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
+  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::POINT));
   std::vector<int>& bcv_model = bcv->bc_model();
   std::vector<Point>& bcv_value = bcv->bc_value_point();
 
   for (int v = 0; v < nnodes_wghost; ++v) {
-    xv = mesh->getNodeCoordinate(v);
+    mesh->node_get_coordinates(v, &xv);
 
     if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
         fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
@@ -129,7 +129,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   Epetra_MultiVector& src = *source.ViewComponent("node");
 
   for (int v = 0; v < nnodes; v++) {
-    xv = mesh->getNodeCoordinate(v);
+    mesh->node_get_coordinates(v, &xv);
     Point tmp(ana.source_exact(xv, 0.0));
     for (int k = 0; k < 2; ++k) src[k][v] = tmp[k];
   }

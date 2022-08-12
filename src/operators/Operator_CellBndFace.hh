@@ -36,6 +36,7 @@ class Operator_CellBndFace : public Operator_Cell {
   }
 
   // visit methods for apply
+  using Operator_Cell::ApplyMatrixFreeOp;
   virtual int ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
                                 const CompositeVector& X, CompositeVector& Y) const;
 
@@ -45,6 +46,7 @@ class Operator_CellBndFace : public Operator_Cell {
                                 const CompositeVector& X, CompositeVector& Y) const;
 
   // visit methods for symbolic assemble
+  using Operator_Cell::SymbolicAssembleMatrixOp;
   virtual void SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op,
                                         const SuperMap& map, GraphFE& graph,
                                         int my_block_row, int my_block_col) const;
@@ -57,6 +59,7 @@ class Operator_CellBndFace : public Operator_Cell {
                                         int my_block_row, int my_block_col) const;
   
   // visit methods for assemble
+  using Operator_Cell::AssembleMatrixOp;
   virtual void AssembleMatrixOp(const Op_Face_CellBndFace& op,
                                 const SuperMap& map, MatrixFE& mat,
                                 int my_block_row, int my_block_col) const;

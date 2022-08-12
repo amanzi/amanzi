@@ -39,7 +39,7 @@ int Operator_ConsistentFace::ApplyMatrixFreeOp(
 
     AmanziMesh::Entity_ID_List faces;
     for (int c=0; c!=ncells_owned; ++c) {
-      mesh_->getCellFaces(c, faces);
+      mesh_->cell_get_faces(c, &faces);
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces), av(nfaces);
@@ -83,7 +83,7 @@ void Operator_ConsistentFace::SymbolicAssembleMatrixOp(
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;
   for (int c=0; c!=ncells_owned; ++c) {
-    mesh_->getCellFaces(c, faces);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     for (int n=0; n!=nfaces; ++n) {
@@ -118,7 +118,7 @@ void Operator_ConsistentFace::AssembleMatrixOp(
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;
   for (int c=0; c!=ncells_owned; ++c) {
-    mesh_->getCellFaces(c, faces);
+    mesh_->cell_get_faces(c, &faces);
     
     int nfaces = faces.size();
     for (int n=0; n!=nfaces; ++n) {

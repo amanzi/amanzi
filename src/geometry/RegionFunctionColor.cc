@@ -42,7 +42,7 @@ RegionFunctionColor::RegionFunctionColor(const std::string& name,
 {
   FunctionColorFactory colfunc_factory;
   colorfunc_ = Teuchos::rcp(colfunc_factory.Create(file_, comm));
-  set_space_dimension(colorfunc_->get_dimension());
+  set_space_dimension(colorfunc_->getDimension());
 }
 
 

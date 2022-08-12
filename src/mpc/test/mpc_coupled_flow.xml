@@ -7,11 +7,11 @@
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1000, -1}"/>
   </ParameterList>
   <ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="plot_coupled_matrix"/>
+    <Parameter name="file name base" type="string" value="plot_matrix"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 6, -1}"/>
   </ParameterList>
   <ParameterList name="visualization data fracture">
-    <Parameter name="file name base" type="string" value="plot_coupled_fracture"/>
+    <Parameter name="file name base" type="string" value="plot_fracture"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 6, -1}"/>
   </ParameterList>
 
@@ -120,9 +120,9 @@
   </ParameterList>
 
   <ParameterList name="state">
-    <ParameterList name="field evaluators">
+    <ParameterList name="evaluators">
       <ParameterList name="porosity">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="ALL"/>
@@ -136,7 +136,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-aperture">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="regions" type="Array(string)" value="{RegionBottom,RegionTop}"/>
@@ -150,7 +150,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-porosity">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="ALL"/>
@@ -480,7 +480,7 @@
       </ParameterList>
 
       <ParameterList name="time integrator">
-	<Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 	<Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
@@ -495,7 +495,7 @@
     <ParameterList name="flow fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="physical models and assumptions">
-	<Parameter name="flow in fractures" type="bool" value="true"/>
+	<Parameter name="flow and transport in fractures" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture permeability models">
 	<ParameterList name="FPM for Entire Domain">
@@ -525,7 +525,7 @@
       </ParameterList>
 
       <ParameterList name="time integrator">
-	<Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 	<Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 

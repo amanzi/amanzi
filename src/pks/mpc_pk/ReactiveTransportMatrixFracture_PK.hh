@@ -46,8 +46,8 @@ class ReactiveTransportMatrixFracture_PK : public PK_MPCAdditive<PK> {
   virtual double get_dt() override;
   virtual void set_dt(double dt) override;
 
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;  
+  virtual void Setup() override;
+  virtual void Initialize() override;  
 
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;

@@ -59,41 +59,38 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  auto mesh_plist = Teuchos::rcp(new Teuchos::ParameterList());
-  mesh_plist->set("request edges", true);
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm, mesh_plist);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-
-  Teuchos::RCP<const Mesh> mesh;
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  RCP<const Mesh> mesh;
   if (dim == 2)
-    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 6, 7);
-    // mesh = meshfactory.create("test/median32x33.exo");
-  else
-    mesh = meshfactory.create(filename);
-    // mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 1, 1);
-
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 6, 7, true, true);
+    // mesh = meshfactory.create("test/median32x33.exo", true, true);
+  else 
+    mesh = meshfactory.create(filename, true, true);
+    // mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 1, 1, true, true);
+  
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nedges_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
 
   Analytic ana(mesh);
 
   for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->getCellCentroid(c);
+    const Point& xc = mesh->cell_centroid(c);
     const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::EDGE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   int d = dim - 1;
   for (int e = 0; e < nedges_wghost; ++e) {
-    const Point& xe = mesh->getEdgeCentroid(e);
+    const Point& xe = mesh->edge_centroid(e);
     if (fabs(xe[0]) < 1e-6 || fabs(xe[0] - 1.0) < 1e-6 ||
         fabs(xe[1]) < 1e-6 || fabs(xe[1] - 1.0) < 1e-6 ||
         fabs(xe[d]) < 1e-6 || fabs(xe[d] - 1.0) < 1e-6) {
@@ -114,11 +111,11 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
   src.PutScalar(0.0);
 
   for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->getCellCentroid(c);
-    double volume = mesh->getCellVolume(c);
+    const Point& xc = mesh->cell_centroid(c);
+    double volume = mesh->cell_volume(c);
 
     AmanziMesh::Entity_ID_List edges;
-    mesh->getCellEdges(c, edges);
+    mesh->cell_get_edges(c, &edges);
     int nedges = edges.size();
 
     for (int k = 0; k < nedges; k++) {

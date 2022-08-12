@@ -4,7 +4,7 @@
 
 #include <Amr.H>
 
-class Layout; 
+struct Layout; 
 class MFTGrowFill; 
 
 #include <Layout.H>

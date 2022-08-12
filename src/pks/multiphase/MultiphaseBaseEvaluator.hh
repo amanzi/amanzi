@@ -15,25 +15,28 @@
 #define AMANZI_MULTIPHASE_BASE_EVALUATOR_HH_
 
 // Amanzi
-#include "primary_variable_field_evaluator.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class MultiphaseBaseEvaluator : public SecondaryVariableFieldEvaluator {
+class MultiphaseBaseEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   MultiphaseBaseEvaluator(Teuchos::ParameterList& plist)
-    : SecondaryVariableFieldEvaluator(plist), n_(0), kH_(1.0) {};
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
+      n_(0), kH_(1.0) {};
 
   // inteface functions to FieldEvaluator
   MultiphaseBaseEvaluator(const MultiphaseBaseEvaluator& other)
-    : SecondaryVariableFieldEvaluator(other) { n_ = other.n_; kH_ = other.kH_; }
+      : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other) {
+    n_ = other.n_; kH_ = other.kH_;
+  }
 
-  bool HasFieldChanged(const Teuchos::Ptr<State>& S, Key request, bool force) {
-    bool ok = SecondaryVariableFieldEvaluator::HasFieldChanged(S, request);
+  using EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::Update;
+  bool Update(State& S, Key request, bool force) {
+    bool ok = EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::Update(S, request);
     if (force) {
-      UpdateField_(S);
+      Update_(S);
       requests_.clear();
       requests_.insert(request);
     }

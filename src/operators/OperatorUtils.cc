@@ -82,9 +82,13 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
 unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs)
 {
   unsigned int row_size(0);
-  int dim = mesh.getSpaceDimension();
+  int dim = mesh.space_dimension();
   if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
-    unsigned int i = AmanziMesh::MeshAlgorithms::getMaxCellNumFaces(mesh);
+    unsigned int i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
+
+    for (int c = 0; c < mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED); ++c) {
+      i = std::max(i, mesh.cell_get_num_faces(c));
+    }
     row_size += 2 * i;
   }
 
@@ -103,7 +107,7 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n
   }
 
   return row_size * n_dofs;
-}
+}    
 
 
 /* ******************************************************************
@@ -112,20 +116,20 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n
 unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, const Schema& schema)
 {
   unsigned int row_size(0);
-  int dim = mesh.getSpaceDimension();
+  int dim = mesh.space_dimension();
 
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     int num, ndofs(0);
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, num) = *it;
 
-    if (kind == AmanziMesh::Entity_kind::FACE) {
+    if (kind == AmanziMesh::FACE) {
       ndofs = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
-    } else if (kind == AmanziMesh::Entity_kind::CELL) {
+    } else if (kind == AmanziMesh::CELL) {
       ndofs = 1;
-    } else if (kind == AmanziMesh::Entity_kind::NODE) {
+    } else if (kind == AmanziMesh::NODE) {
       ndofs = (dim == 2) ? OPERATOR_QUAD_NODES : OPERATOR_HEX_NODES;
-    } else if (kind == AmanziMesh::Entity_kind::EDGE) {
+    } else if (kind == AmanziMesh::EDGE) {
       ndofs = (dim == 2) ? OPERATOR_QUAD_EDGES : OPERATOR_HEX_EDGES;
     }
 
@@ -153,9 +157,9 @@ CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
 
   for (int i=0; i<locations.size(); ++i) {
-    Teuchos::RCP<const Epetra_BlockMap> master_mp(&mesh->getMap(locations[i], false), false);
+    Teuchos::RCP<const Epetra_BlockMap> master_mp(&mesh->map(locations[i], false), false);
     mastermaps[names[i]] = master_mp;
-    Teuchos::RCP<const Epetra_BlockMap> ghost_mp(&mesh->getMap(locations[i], true), false);
+    Teuchos::RCP<const Epetra_BlockMap> ghost_mp(&mesh->map(locations[i], true), false);
     ghostmaps[names[i]] = ghost_mp;
   }
        

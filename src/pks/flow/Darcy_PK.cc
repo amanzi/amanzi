@@ -17,16 +17,14 @@
 #include "Epetra_Vector.h"
 
 // Amanzi
-#include "constant_variable_field_evaluator.hh"
+#include "EvaluatorPrimary.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+#include "Mesh_Algorithms.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
-#include "primary_variable_field_evaluator.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
-#include "UniqueLocalIndex.hh"
-#include "WhetStoneMeshUtils.hh"
 
 // Amanzi::Flow
 #include "Darcy_PK.hh"
@@ -35,6 +33,9 @@
 
 namespace Amanzi {
 namespace Flow {
+
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
 
 /* ******************************************************************
 * New constructor: extracts lists and requires fields.
@@ -96,10 +97,10 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 /* ******************************************************************
 * Define structure of this PK.
 ****************************************************************** */
-void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
+void Darcy_PK::Setup()
 {
   dt_ = -1.0;
-  mesh_ = S->GetMesh(domain_);
+  mesh_ = S_->GetMesh(domain_);
   dim = mesh_->space_dimension();
 
   // generate keys here to be available for setup of the base class
@@ -118,7 +119,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   pressure_head_key_ = Keys::getKey(domain_, "pressure_head"); 
 
   // set up the base class 
-  Flow_PK::Setup(S);
+  Flow_PK::Setup();
 
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
@@ -135,7 +136,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   Teuchos::RCP<Teuchos::ParameterList> list3 = Teuchos::sublist(list2, "matrix", true);
   std::string name = list3->get<std::string>("discretization primary");
 
-  if (!S->HasField(pressure_key_)) {
+  if (!S_->HasRecord(pressure_key_)) {
     std::vector<std::string> names;
     std::vector<AmanziMesh::Entity_kind> locations;
     std::vector<int> ndofs;
@@ -150,65 +151,66 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
       ndofs.push_back(1);
     }
 
-    S->RequireField(pressure_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponents(names, locations, ndofs);
+    S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponents(names, locations, ndofs);
 
     AddDefaultPrimaryEvaluator_(pressure_key_);
   }
 
   // require additional fields for this PK
-  if (!S->HasField(specific_storage_key_)) {
-    S->RequireField(specific_storage_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasRecord(specific_storage_key_)) {
+    S_->Require<CV_t, CVS_t>(specific_storage_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S->HasField(specific_yield_key_)) {
-    S->RequireField(specific_yield_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasRecord(specific_yield_key_)) {
+    S_->Require<CV_t, CVS_t>(specific_yield_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S->HasField(saturation_liquid_key_)) {
-    S->RequireField(saturation_liquid_key_, saturation_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasRecord(saturation_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
     AddDefaultPrimaryEvaluator_(saturation_liquid_key_);
   }
 
-  if (!S->HasField(prev_saturation_liquid_key_)) {
-    S->RequireField(prev_saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasRecord(prev_saturation_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(prev_saturation_liquid_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // Require additional field evaluators for this PK.
   // -- porosity
-  if (!S->HasField(porosity_key_)) {
-    S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(porosity_key_);
+  if (!S_->HasRecord(porosity_key_)) {
+    S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
   // -- viscosity
-  if (!S->HasField("const_fluid_viscosity")) {
-    S->RequireScalar("const_fluid_viscosity", passwd_);
+  if (!S_->HasRecord("const_fluid_viscosity")) {
+    S_->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
   }
 
   // Local fields and evaluators.
-  if (!S->HasField(hydraulic_head_key_)) {
-    S->RequireField(hydraulic_head_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasRecord(hydraulic_head_key_)) {
+    S_->Require<CV_t, CVS_t>(hydraulic_head_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // full velocity vector
-  if (!S->HasField(darcy_velocity_key_)) {
-    S->RequireField(darcy_velocity_key_, darcy_velocity_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, dim);
+  if (!S_->HasRecord(darcy_velocity_key_)) {
+    S_->Require<CV_t, CVS_t>(darcy_velocity_key_, Tags::DEFAULT, darcy_velocity_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, dim);
 
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("domain name", domain_);
-    elist.set<std::string>("darcy velocity key", darcy_velocity_key_)
-         .set<std::string>("darcy flux key", darcy_flux_key_);
-    Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
-    S->SetFieldEvaluator(darcy_velocity_key_, eval);
+    Teuchos::ParameterList elist(darcy_velocity_key_);
+    elist.set<std::string>("domain name", domain_)
+         .set("names", Teuchos::Array<std::string>({ darcy_velocity_key_ }))
+         .set("tags", Teuchos::Array<std::string>({ "" }))
+         .set<std::string>("volumetric flow rate key", vol_flowrate_key_);
+    auto eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
+    S_->SetEvaluator(darcy_velocity_key_, Tags::DEFAULT, eval);
   }
 
   // Require additional components for the existing fields
@@ -217,7 +219,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   int noff = abs_perm.get<int>("off-diagonal components", 0);
  
   if (noff > 0) {
-    CompositeVectorSpace& cvs = *S->RequireField(permeability_key_, passwd_);
+    CompositeVectorSpace& cvs = S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_);
     cvs.SetOwned(false);
     cvs.AddComponent("offd", AmanziMesh::CELL, noff)->SetOwned(true);
   }
@@ -227,26 +229,26 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     std::vector<std::string> fields = fp_list_->get<Teuchos::Array<std::string> >("optional fields").toVector();
     for (auto it = fields.begin(); it != fields.end(); ++it) {
       Key optional_key = Keys::getKey(domain_, *it); 
-      if (!S->HasField(optional_key)) {
-        S->RequireField(optional_key, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-          ->SetComponent("cell", AmanziMesh::CELL, 1);
+      if (!S_->HasRecord(optional_key)) {
+        S_->Require<CV_t, CVS_t>(optional_key, Tags::DEFAULT, passwd_)
+          .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
       }
     }
   }
 
   // save frequently used evaluators 
-  darcy_flux_eval_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator(darcy_flux_key_));
+  vol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT));
 }
 
 
 /* ******************************************************************
 * Extract information from parameter list and initialize data.
 ****************************************************************** */
-void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
+void Darcy_PK::Initialize()
 {
   // Initialize miscalleneous defaults.
   // -- times
-  double t_ini = S->time(); 
+  double t_ini = S_->get_time(); 
   dt_next_ = dt_;
   dt_desirable_ = dt_;  // The minimum desirable time step from now on.
   dt_history_.clear();
@@ -264,14 +266,14 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   vo_ = Teuchos::rcp(new VerboseObject(ioname, vlist)); 
 
   // Initilize various base class data.
-  Flow_PK::Initialize(S);
+  Flow_PK::Initialize();
 
   // Initialize local fields and evaluators. 
   InitializeFields_();
-  UpdateLocalFields_(S);
+  UpdateLocalFields_(S_.ptr());
 
   // Create solution and auxiliary data for time history.
-  solution = S->GetFieldData(pressure_key_, passwd_);
+  solution = S_->GetPtrW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_);
   soln_->SetData(solution); 
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
@@ -297,7 +299,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   UpdateSpecificYield_();
 
   // Initialize lambdas. It may be used by boundary conditions.
-  CompositeVector& pressure = *S->GetFieldData(pressure_key_, passwd_);
+  auto& pressure = S_->GetW<CompositeVector>(pressure_key_, Tags::DEFAULT, passwd_);
 
   if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
     std::string method = ti_list_->sublist("pressure-lambda constraints").get<std::string>("method");
@@ -306,7 +308,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
       Epetra_MultiVector& lambda = *solution->ViewComponent("face");
 
       DeriveFaceValuesFromCellValues(p, lambda);
-      Teuchos::rcp_dynamic_cast<Field_CompositeVector>(S->GetField(pressure_key_, passwd_))->set_initialized("face");
+      S_->GetRecordW(pressure_key_, Tags::DEFAULT, passwd_).set_initialized("face");
     }
   }
 
@@ -317,7 +319,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Initialize diffusion operator and solver.
   // -- instead of scaling K, we scale the elemental mass matrices 
-  double mu = *S->GetScalarData("const_fluid_viscosity");
+  double mu = S_->Get<double>("const_fluid_viscosity");
   Teuchos::ParameterList& oplist = fp_list_->sublist("operators")
                                             .sublist("diffusion operator")
                                             .sublist("matrix");
@@ -337,8 +339,8 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
     Ktmp(0, 0) = rho_ / mu;
     opfactory.SetConstantTensorCoefficient(Ktmp);
 
-    S_->GetFieldEvaluator(permeability_key_)->HasFieldChanged(S_.ptr(), permeability_key_);
-    auto kptr = S_->GetFieldData(permeability_key_);
+    S_->GetEvaluator(permeability_eff_key_).Update(*S_, permeability_eff_key_);
+    auto kptr = S_->GetPtr<CV_t>(permeability_eff_key_, Tags::DEFAULT);
     opfactory.SetVariableScalarCoefficient(kptr);
   }
 
@@ -384,8 +386,8 @@ void Darcy_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  InitializeField_(S_.ptr(), saturation_liquid_key_, saturation_liquid_key_, 1.0);
-  InitializeField_(S_.ptr(), passwd_, prev_saturation_liquid_key_, 1.0);
+  InitializeCVField(S_, *vo_, saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_, 1.0);
+  InitializeCVField(S_, *vo_, prev_saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
 }
 
 
@@ -395,7 +397,7 @@ void Darcy_PK::InitializeFields_()
 void Darcy_PK::InitializeStatistics_(bool init_darcy)
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    double mu = *S_->GetScalarData("const_fluid_viscosity");
+    double mu = S_->Get<double>("const_fluid_viscosity");
     std::string ti_name = ti_list_->get<std::string>("time integration method", "none");
     std::string ts_name = (ti_name == "BDF1") ? ti_list_->sublist(ti_name).get<std::string>("timestep controller type") 
                                               : "timestep controller is not defined";
@@ -429,7 +431,7 @@ void Darcy_PK::InitializeStatistics_(bool init_darcy)
     VV_PrintSourceExtrema();
 
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
-               << S_->time() << " dT=" << get_dt() << vo_->reset() << std::endl << std::endl;
+               << S_->get_time() << " dT=" << get_dt() << vo_->reset() << std::endl << std::endl;
   }
 
   if (dirichlet_bc_faces_ == 0 &&
@@ -454,7 +456,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // calculate and assemble elemental stiffness matrices
   double factor = 1.0 / g_;
-  const CompositeVector& ss = *S_->GetFieldData(specific_storage_key_);
+  const auto& ss = S_->Get<CV_t>(specific_storage_key_, Tags::DEFAULT);
   CompositeVector ss_g(ss); 
   ss_g.Update(0.0, ss, factor);
 
@@ -467,8 +469,8 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   op_acc_->AddAccumulationDeltaNoVolume(*solution, sy_g, "cell");
 
   // Peaceman model
-  if (S_->HasField("well_index")) {
-    const CompositeVector& wi = *S_->GetFieldData("well_index");
+  if (S_->HasRecord("well_index")) {
+    const auto& wi = S_->Get<CV_t>("well_index");
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
@@ -527,18 +529,18 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 * Transfer data from the external flow state FS_MPC. MPC may request
 * to populate the original state FS. 
 ****************************************************************** */
-void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
+void Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
-  // calculate Darcy mass flux
-  Teuchos::RCP<CompositeVector> flux = S->GetFieldData(darcy_flux_key_, passwd_);
+  // calculate mass flow rate first, then scale it by density
+  auto flowrate = S_->GetPtrW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
 
   if (coupled_to_matrix_ || flow_on_manifold_) {
-    op_diff_->UpdateFluxNonManifold(solution.ptr(), flux.ptr());
-    flux->Scale(1.0 / rho_);
-    FractureConservationLaw_();
+    op_diff_->UpdateFluxManifold(solution.ptr(), flowrate.ptr());
+    flowrate->Scale(1.0 / rho_);
+    VV_FractureConservationLaw();
   } else {
-    op_diff_->UpdateFlux(solution.ptr(), flux.ptr());
-    flux->Scale(1.0 / rho_);
+    op_diff_->UpdateFlux(solution.ptr(), flowrate.ptr());
+    flowrate->Scale(1.0 / rho_);
   }
 
   // update time derivative
@@ -551,7 +553,7 @@ void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
 ****************************************************************** */
 void Darcy_PK::UpdateSpecificYield_()
 {
-  specific_yield_copy_ = Teuchos::rcp(new CompositeVector(*S_->GetFieldData(specific_yield_key_), true));
+  specific_yield_copy_ = Teuchos::rcp(new CompositeVector(S_->Get<CV_t>(specific_yield_key_), true));
 
   // do we have non-zero specific yield? 
   double tmp;
@@ -560,7 +562,7 @@ void Darcy_PK::UpdateSpecificYield_()
 
   // populate ghost cells
   specific_yield_copy_->ScatterMasterToGhosted();
-  const Epetra_MultiVector& specific_yield = *specific_yield_copy_->ViewComponent("cell", true);
+  Epetra_MultiVector& specific_yield = *specific_yield_copy_->ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -574,7 +576,7 @@ void Darcy_PK::UpdateSpecificYield_()
       int nfaces = faces.size();
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        int c2 = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
+        int c2 = cell_get_face_adj_cell(*mesh_, c, f);
 
         if (c2 >= 0) {
           if (specific_yield[0][c2] <= 0.0)  // cell in the fully saturated layer
@@ -601,69 +603,8 @@ void Darcy_PK::UpdateSpecificYield_()
 /* ******************************************************************
 * This is strange.
 ****************************************************************** */
-void Darcy_PK::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
-  UpdateLocalFields_(S.ptr());
-}
-
-
-/* ******************************************************************
-* TBW
-****************************************************************** */
-void Darcy_PK::FractureConservationLaw_()
-{
-  if (!coupled_to_matrix_ || fabs(dt_) < 1e+10) return;
-
-  const auto& fracture_flux = *S_->GetFieldData("fracture-darcy_flux")->ViewComponent("face", true);
-  const auto& matrix_flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
-
-  const auto& fracture_map = S_->GetFieldData("fracture-darcy_flux")->Map().Map("face", true);
-  const auto& matrix_map = S_->GetFieldData("darcy_flux")->Map().Map("face", true);
-
-  auto mesh_matrix = S_->GetMesh("domain");
-
-  std::vector<int> dirs;
-  double err(0.0), flux_max(0.0);
-  AmanziMesh::Entity_ID_List faces, cells;
-
-  for (int c = 0; c < ncells_owned; c++) {
-    double flux_sum(0.0);
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    for (int i = 0; i < faces.size(); i++) {
-      int f = faces[i];
-      int g = fracture_map->FirstPointInElement(f);
-      int ndofs = fracture_map->ElementSize(f);
-      if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
-
-      flux_sum += fracture_flux[0][g] * dirs[i];
-      flux_max = std::max<double>(flux_max, std::fabs(fracture_flux[0][g]));
-    }
-
-    // sum into fluxes from matrix
-    auto f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-    mesh_matrix->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    int pos = Operators::UniqueIndexFaceToCells(*mesh_matrix, f, cells[0]);
-
-    for (int j = 0; j != cells.size(); ++j) {
-      mesh_matrix->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
-
-      for (int i = 0; i < faces.size(); i++) {
-        if (f == faces[i]) {
-          int g = matrix_map->FirstPointInElement(f);            
-          double fln = matrix_flux[0][g + (pos + j) % 2] * dirs[i];
-          flux_sum -= fln;
-          flux_max = std::max<double>(flux_max, std::fabs(fln));
-          break;
-        }
-      }
-    }
-
-    err = std::max<double>(err, fabs(flux_sum));
-  }
-
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "maximum error in conservation law:" << err << " flux_max=" << flux_max << std::endl;
-  }
+void Darcy_PK::CalculateDiagnostics(const Tag& tag) {
+  UpdateLocalFields_(S_.ptr());
 }
 
 }  // namespace Flow

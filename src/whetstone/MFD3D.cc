@@ -407,6 +407,11 @@ int MFD3D::StabilityMMatrix_(
     if (k < mx) u[k] = T(i,0);
   }
 
+  // verify solution feasibility 
+  double unorm(0.0);
+  for (int i = 0; i < mx; i++) unorm = std::max(unorm, std::fabs(u[i]));
+  if (unorm < 1e-8) return 1;
+
   // add matrix D' U D
   for (int i = 0; i < nrows; i++) {
     for (int j = i; j < nrows; j++) { 

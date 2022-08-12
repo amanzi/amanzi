@@ -37,34 +37,34 @@ void Schema::Init(Teuchos::RCP<const WhetStone::BilinearForm> form,
 ****************************************************************** */
 void Schema::Init(int i)
 { 
-  base_ = AmanziMesh::Entity_kind::CELL;  // default
+  base_ = AmanziMesh::CELL;  // default
 
   if (i & OPERATOR_SCHEMA_BASE_NODE) {
-    base_ = AmanziMesh::Entity_kind::NODE;
+    base_ = AmanziMesh::NODE;
   } else if (i & OPERATOR_SCHEMA_BASE_EDGE) {
-    base_ = AmanziMesh::Entity_kind::EDGE;
+    base_ = AmanziMesh::EDGE;
   } else if (i & OPERATOR_SCHEMA_BASE_FACE) {
-    base_ = AmanziMesh::Entity_kind::FACE;
+    base_ = AmanziMesh::FACE;
   } else if (i & OPERATOR_SCHEMA_BASE_CELL) {
-    base_ = AmanziMesh::Entity_kind::CELL;
+    base_ = AmanziMesh::CELL;
   }
 
   items_.clear();
 
   if (i & OPERATOR_SCHEMA_DOFS_NODE) {
-    items_.push_back(std::make_tuple(AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR, 1));
+    items_.push_back(std::make_tuple(AmanziMesh::NODE, WhetStone::DOF_Type::SCALAR, 1));
   }
   if (i & OPERATOR_SCHEMA_DOFS_EDGE) {
-    items_.push_back(std::make_tuple(AmanziMesh::Entity_kind::EDGE, WhetStone::DOF_Type::SCALAR, 1));
+    items_.push_back(std::make_tuple(AmanziMesh::EDGE, WhetStone::DOF_Type::SCALAR, 1));
   }
   if (i & OPERATOR_SCHEMA_DOFS_FACE) {
-    items_.push_back(std::make_tuple(AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR, 1));
+    items_.push_back(std::make_tuple(AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR, 1));
   }
   if (i & OPERATOR_SCHEMA_DOFS_CELL) {
-    items_.push_back(std::make_tuple(AmanziMesh::Entity_kind::CELL, WhetStone::DOF_Type::SCALAR, 1));
+    items_.push_back(std::make_tuple(AmanziMesh::CELL, WhetStone::DOF_Type::SCALAR, 1));
   }
   if (i & OPERATOR_SCHEMA_DOFS_BNDFACE) {
-    items_.push_back(std::make_tuple(AmanziMesh::Entity_kind::BOUNDARY_FACE, WhetStone::DOF_Type::SCALAR, 1));
+    items_.push_back(std::make_tuple(AmanziMesh::BOUNDARY_FACE, WhetStone::DOF_Type::SCALAR, 1));
   }
 }
 
@@ -95,7 +95,7 @@ void Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     std::tie(kind, std::ignore, num) = *it;
 
     offset_.push_back(m);
-    int nent = mesh->getNumEntities(kind, AmanziMesh::Parallel_type::OWNED);
+    int nent = mesh->num_entities(kind, AmanziMesh::Parallel_type::OWNED);
     m += nent * num;
   }
 }
@@ -116,19 +116,19 @@ void Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, num) = *it;
 
-    if (kind == AmanziMesh::Entity_kind::NODE) {
+    if (kind == AmanziMesh::NODE) {
       AmanziMesh::Entity_ID_List nodes;
-      mesh->getCellNodes(c, nodes);
+      mesh->cell_get_nodes(c, &nodes);
       ndofs = nodes.size();
     }
-    else if (kind == AmanziMesh::Entity_kind::EDGE) {
-      const auto& edges = mesh->getCellEdges(c);
+    else if (kind == AmanziMesh::EDGE) {
+      const auto& edges = mesh->cell_get_edges(c);
       ndofs = edges.size();
     }
-    else if (kind == AmanziMesh::Entity_kind::FACE) {
-      ndofs = mesh->getCellNumFaces(c);
+    else if (kind == AmanziMesh::FACE) {
+      ndofs = mesh->cell_get_num_faces(c);
     }
-    else if (kind == AmanziMesh::Entity_kind::CELL) {
+    else if (kind == AmanziMesh::CELL) {
       ndofs = 1;
     }
 
@@ -145,13 +145,13 @@ int Schema::OldSchema() const
   int i(0);
 
   // convert base
-  if (base_ == AmanziMesh::Entity_kind::NODE) {
+  if (base_ == AmanziMesh::NODE) {
     i = OPERATOR_SCHEMA_BASE_NODE;
-  } else if (base_ == AmanziMesh::Entity_kind::EDGE) {
+  } else if (base_ == AmanziMesh::EDGE) {
     i = OPERATOR_SCHEMA_BASE_EDGE;
-  } else if (base_ == AmanziMesh::Entity_kind::FACE) {
+  } else if (base_ == AmanziMesh::FACE) {
     i = OPERATOR_SCHEMA_BASE_FACE;
-  } else if (base_ == AmanziMesh::Entity_kind::CELL) {
+  } else if (base_ == AmanziMesh::CELL) {
     i = OPERATOR_SCHEMA_BASE_CELL;
   }
 
@@ -159,15 +159,15 @@ int Schema::OldSchema() const
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, std::ignore) = *it;
 
-    if (kind == AmanziMesh::Entity_kind::NODE) {
+    if (kind == AmanziMesh::NODE) {
       i += OPERATOR_SCHEMA_DOFS_NODE; 
-    } else if (kind == AmanziMesh::Entity_kind::EDGE) {
+    } else if (kind == AmanziMesh::EDGE) {
       i += OPERATOR_SCHEMA_DOFS_EDGE; 
-    } else if (kind == AmanziMesh::Entity_kind::FACE) {
+    } else if (kind == AmanziMesh::FACE) {
       i += OPERATOR_SCHEMA_DOFS_FACE; 
-    } else if (kind == AmanziMesh::Entity_kind::CELL) {
+    } else if (kind == AmanziMesh::CELL) {
       i += OPERATOR_SCHEMA_DOFS_CELL;     
-    } else if (kind == AmanziMesh::Entity_kind::BOUNDARY_FACE) {
+    } else if (kind == AmanziMesh::BOUNDARY_FACE) {
       i += OPERATOR_SCHEMA_DOFS_BNDFACE;     
     }
   }
@@ -180,15 +180,15 @@ int Schema::OldSchema() const
 ****************************************************************** */
 std::string Schema::KindToString(AmanziMesh::Entity_kind kind) const 
 {
-  if (kind == AmanziMesh::Entity_kind::NODE) {
+  if (kind == AmanziMesh::NODE) {
     return "node";
-  } else if (kind == AmanziMesh::Entity_kind::EDGE) {
+  } else if (kind == AmanziMesh::EDGE) {
     return "edge";
-  } else if (kind == AmanziMesh::Entity_kind::FACE) {
+  } else if (kind == AmanziMesh::FACE) {
     return "face";
-  } else if (kind == AmanziMesh::Entity_kind::CELL) {
+  } else if (kind == AmanziMesh::CELL) {
     return "cell";
-  } else if (kind == AmanziMesh::Entity_kind::BOUNDARY_FACE) {
+  } else if (kind == AmanziMesh::BOUNDARY_FACE) {
     return "boundary_face";
   }
   return "null";
@@ -200,7 +200,7 @@ std::string Schema::KindToString(AmanziMesh::Entity_kind kind) const
 ****************************************************************** */
 AmanziMesh::Entity_kind Schema::StringToKind(const std::string& name) const 
 {
-  return AmanziMesh::createEntityKind(name);
+  return AmanziMesh::entity_kind(name);
 }
 
 

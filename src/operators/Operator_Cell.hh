@@ -34,14 +34,14 @@ class Operator_Cell : public Operator {
                 int schema) :
       Operator(cvs, plist, schema) {
     set_schema_string("CELL");
-    cell_max_faces = AmanziMesh::MeshAlgorithms::getMaxCellNumFaces(*mesh_);
+    cell_max_faces = mesh_->cell_get_max_faces();
   }
 
   virtual Teuchos::RCP<Operator> Clone() const;
 
   // rhs update which multiplies by cell
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included);
-
+  
   // visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_Cell& op,
       const CompositeVector& X, CompositeVector& Y) const;

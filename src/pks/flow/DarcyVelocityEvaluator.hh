@@ -9,36 +9,44 @@
   Authors: Ethan Coon (ecoon@lanl.gov) 
            Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Evaluator for determining darcy_velocity(darcy_flux).
+  Evaluator for computing the Darcy velocity.
 */
 
 #ifndef AMANZI_FLOW_DARCY_VELOCITY_EVALUATOR_
 #define AMANZI_FLOW_DARCY_VELOCITY_EVALUATOR_
 
-// #include "Factory.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class DarcyVelocityEvaluator : public SecondaryVariableFieldEvaluator {
+class DarcyVelocityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit
-  DarcyVelocityEvaluator(Teuchos::ParameterList& plist);
+  explicit DarcyVelocityEvaluator(Teuchos::ParameterList& plist);
   DarcyVelocityEvaluator(const DarcyVelocityEvaluator& other);
 
-  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) {};
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
 
  protected:
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result);
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {};  // should not be called
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override {};
+
+  // since cell requires face, the default behavior is not applicable
+  virtual void EnsureCompatibility_ToDeps_(State& S) override {
+    // if this were implemented, it should call something like:
+    // S.Require<CompositeVector,CompositeVectorSpace>(vol_flowrate_key, tag)
+    //  .SetMesh(... the mesh ...)
+    //  ->AddComponent("face", FACE, 1);
+    //
+    // Since it is not implemented, you're relying on someone else to make sure
+    // that flux has the expected structure.
+  };
 
  protected:
-  Key darcy_flux_key_;
+  Key vol_flowrate_key_;
 };
 
 }  // namespace Flow

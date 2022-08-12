@@ -107,10 +107,10 @@ namespace Amanzi {
 // Constructor
 CompositeVector::CompositeVector(const CompositeVectorSpace& space) :
     map_(Teuchos::rcp(new CompositeVectorSpace(space))),
-    names_(space.names_),
+    ghosted_(space.ghosted_),
     indexmap_(space.indexmap_),
-    ghost_are_current_(space.NumComponents(),false),
-    ghosted_(space.ghosted_)
+    names_(space.names_),
+    ghost_are_current_(space.NumComponents(),false)
 {
   InitMap_(*map_);
   CreateData_();
@@ -119,10 +119,10 @@ CompositeVector::CompositeVector(const CompositeVectorSpace& space) :
 
 CompositeVector::CompositeVector(const CompositeVectorSpace& space, bool ghosted) :
     map_(Teuchos::rcp(new CompositeVectorSpace(space,ghosted))),
-    names_(space.names_),
+    ghosted_(ghosted),
     indexmap_(space.indexmap_),
-    ghost_are_current_(space.NumComponents(),false),
-    ghosted_(ghosted)
+    names_(space.names_),
+    ghost_are_current_(space.NumComponents(),false)
 {
   InitMap_(*map_);
   CreateData_();
@@ -132,10 +132,10 @@ CompositeVector::CompositeVector(const CompositeVectorSpace& space, bool ghosted
 CompositeVector::CompositeVector(const CompositeVector& other,
                                  InitMode mode) :
     map_(Teuchos::rcp(new CompositeVectorSpace(*other.map_))),
-    names_(other.names_),
+    ghosted_(other.ghosted_),
     indexmap_(other.indexmap_),
-    ghost_are_current_(other.map_->NumComponents(),false),
-    ghosted_(other.ghosted_)
+    names_(other.names_),
+    ghost_are_current_(other.map_->NumComponents(),false)
 {
   InitMap_(*map_);
   CreateData_();
@@ -145,10 +145,10 @@ CompositeVector::CompositeVector(const CompositeVector& other,
 CompositeVector::CompositeVector(const CompositeVector& other, bool ghosted,
                                  InitMode mode) :
     map_(Teuchos::rcp(new CompositeVectorSpace(*other.map_,ghosted))),
-    names_(other.names_),
+    ghosted_(ghosted),
     indexmap_(other.indexmap_),
-    ghost_are_current_(other.map_->NumComponents(),false),
-    ghosted_(ghosted)
+    names_(other.names_),
+    ghost_are_current_(other.map_->NumComponents(),false)
 {
   InitMap_(*map_);
   CreateData_();
@@ -639,7 +639,7 @@ void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
 // -----------------------------------------------------------------------------
 // Non-member function: extension of a vector via data copy.
 // -----------------------------------------------------------------------------
-void AddComponent(Teuchos::RCP<CompositeVector> cv,
+void AddComponent(Teuchos::RCP<CompositeVector>& cv,
                   const std::string& name, AmanziMesh::Entity_kind kind, int dim) {
   // copy construct the CVS making it not owned and add the new component
   CompositeVectorSpace new_space(cv->Map());
@@ -649,10 +649,9 @@ void AddComponent(Teuchos::RCP<CompositeVector> cv,
   // create the new vector and copy data
   Teuchos::RCP<CompositeVector> new_cv = Teuchos::rcp(new CompositeVector(new_space));
   bool ghost = new_space.Ghosted();
-  std::vector<std::string>::const_iterator it;
-  for (it = cv->Map().begin(); it != cv->Map().end(); ++it) {
-    Teuchos::RCP<Epetra_MultiVector> data1 = cv->ViewComponent(*it, ghost);
-    Teuchos::RCP<Epetra_MultiVector> data2 = new_cv->ViewComponent(*it, ghost);
+  for (auto it = cv->Map().begin(); it != cv->Map().end(); ++it) {
+    auto data1 = cv->ViewComponent(*it, ghost);
+    auto data2 = new_cv->ViewComponent(*it, ghost);
     *data2 = *data1;
   }
 

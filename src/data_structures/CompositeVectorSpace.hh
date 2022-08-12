@@ -1,9 +1,9 @@
 /*
   Data Structures
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon
@@ -46,10 +46,10 @@ public:
 
   // assignment
   CompositeVectorSpace& operator=(const CompositeVectorSpace&) = default;
-  
+
   // CompositeVectorSpace is a factory of CompositeVectors
   Teuchos::RCP<CompositeVector> Create() const;
-  
+
   // Checks equality
   bool SameAs(const CompositeVectorSpace& other) const;
   bool SubsetOf(const CompositeVectorSpace& other) const;
@@ -97,6 +97,9 @@ public:
   // Update all specs from another space's specs.
   // Useful for PKs to maintain default factories that apply to multiple CVs.
   CompositeVectorSpace* Update(const CompositeVectorSpace& other);
+
+  // Update only the components from other
+  CompositeVectorSpace* UpdateComponents(const CompositeVectorSpace& other);
 
   // component specification
 
@@ -152,6 +155,13 @@ public:
                 std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps,
                 const std::vector<int>& num_dofs);
 
+  // Write components to outstream.
+  void Print(std::ostream& os) const {
+    for (int i = 0; i != names_.size(); ++i) {
+      os << "comp=" << names_[i] << " location=" << locations_[i] << " dofs=" << num_dofs_[i] << std::endl;
+    }
+  }
+
 private:
   // Indexing of name->int
   int Index_(const std::string& name) const {
@@ -179,7 +189,7 @@ private:
                            std::vector<std::string>& names2,
                            std::vector<AmanziMesh::Entity_kind>& locations2,
                            std::vector<int>& num_dofs2);
-  
+
   bool UnionAndConsistent_(const std::vector<std::string>& names1,
                            const std::vector<AmanziMesh::Entity_kind>& locations1,
                            const std::vector<int>& num_dofs1,
@@ -201,11 +211,11 @@ private:
   std::map<std::string, int> indexmap_;
 
   std::vector<AmanziMesh::Entity_kind> locations_;
-  
+
   std::vector<int> num_dofs_;
   std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps_;
   std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps_;
-  
+
   friend class CompositeVector;
 };
 

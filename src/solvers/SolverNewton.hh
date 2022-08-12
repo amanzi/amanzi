@@ -98,7 +98,7 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
 
   // mutators
   void set_tolerance(double tol) { tol_ = tol; }
-  void set_pc_lag(double pc_lag) {};  // Newton does not need it
+  void set_pc_lag(int pc_lag) {};  // Newton does not need it
 
   // access
   double tolerance() { return tol_; }

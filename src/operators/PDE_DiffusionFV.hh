@@ -19,15 +19,15 @@
   defined on things less "mesh-like" and more topological.  To
   facilitate that, the needed mesh interface is:
 
-    - getSpaceDimension()
+    - space_dimension()
     - num_entities(CELL,FACE,NODE)
     - face_get_cells()
     - cell_get_faces_and_dirs()
     - cell_map()
-    - getFaceArea()
-    - getFaceNormal()
-    - getFaceCentroid()
-    - getCellCentroid()
+    - face_area()
+    - face_normal()
+    - face_centroid()
+    - cell_centroid()
    
     NOTE: actually, cell-to-cell distance, face-to-cell distance, not
     necessarily centroid locations are necessary, but this is not in
@@ -107,8 +107,6 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
   
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
-  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                     const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;

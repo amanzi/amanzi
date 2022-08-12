@@ -114,17 +114,17 @@ NKA_Base<Vector, VectorSpace>::NKA_Base(int mvec, double vtol, const VectorSpace
       mvec_(std::max(mvec, 1)),
       vtol_(vtol)
 {
-  v_.resize(mvec_+1);
-  w_.resize(mvec_+1);
+  v_.resize(mvec_ + 1);
+  w_.resize(mvec_ + 1);
 
   for (int i = 0; i < mvec_ + 1; i++) {
     v_[i] = Teuchos::rcp(new Vector(map));
-    v_[i]->PutScalar(0.);
+    v_[i]->PutScalar(0.0);
     w_[i] = Teuchos::rcp(new Vector(map));
-    w_[i]->PutScalar(0.);
+    w_[i]->PutScalar(0.0);
   }
 
-  h_.Shape(mvec_+1,mvec_+1);
+  h_.Shape(mvec_ + 1, mvec_ + 1);
   
   next_v_.resize(mvec_ + 1, NKA_EOL);
   prev_v_.resize(mvec_ + 1, NKA_EOL);
@@ -326,7 +326,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     subspace_ = true; // the acceleration subspace_ isn't empty
   }
 
-  //  ACCELERATED CORRECTION
+  // ACCELERATED CORRECTION
   dir = f;
   Vector dir_update(dir);
 
@@ -339,7 +339,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   *w_[new_v] = f;
 
   if (subspace_) {
-    std::vector<double> c(mvec_+1,0.);
+    std::vector<double> c(mvec_ + 1, 0.0);
 
     // Project f onto the span of the w vectors:
     // forward substitution

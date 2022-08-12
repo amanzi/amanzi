@@ -107,8 +107,12 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
           const Teuchos::Ptr<const CompositeVector>& factor) = 0;
 
   // -- additional interface on non-manifolds
-  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                     const Teuchos::Ptr<CompositeVector>& flux) = 0;
+  virtual void UpdateFluxManifold(const Teuchos::Ptr<const CompositeVector>& u,
+                                  const Teuchos::Ptr<CompositeVector>& flux) {
+    Errors::Message msg;
+    msg << "Missing support for diffusion discretization of manifolds.";
+    Exceptions::amanzi_throw(msg);
+  }
 
   // -- matrix modifications
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
@@ -151,13 +155,13 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
       return out;
     }
     if (little_k_ != OPERATOR_LITTLE_K_UPWIND) {
-      out.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+      out.AddComponent("cell", AmanziMesh::CELL, 1);
     }
     if (little_k_ != OPERATOR_LITTLE_K_STANDARD) {
-      out.AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+      out.AddComponent("face", AmanziMesh::FACE, 1);
     }
     if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
-      out.AddComponent("twin", AmanziMesh::Entity_kind::FACE, 1);
+      out.AddComponent("twin", AmanziMesh::FACE, 1);
     }
     return out;          
   }

@@ -37,8 +37,8 @@ class AnalyticDGBase {
   AnalyticDGBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
     : mesh_(mesh),
       order_(order),
-      advection_(advection),
-      d_(mesh_->getSpaceDimension()) {};
+      d_(mesh_->space_dimension()),
+      advection_(advection) {};
   ~AnalyticDGBase() {};
 
   // analytic data in conventional Taylor basis
@@ -102,7 +102,7 @@ class AnalyticDGBase {
   void ComputeCellErrorRemap(const Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p, double t,
                              int p_location, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh1,
                              double& pnorm, double& l2_err, double& inf_err,
-                             double& l20_err, double& inf0_err,
+                             double& l20_err, double& l10_err, double& inf0_err,
                              Epetra_MultiVector* perr = NULL);
 
   // utilities
@@ -126,10 +126,10 @@ void AnalyticDGBase::InitialGuess(
     const Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p, double t,
     bool inside(const Amanzi::AmanziGeometry::Point&))
 {
-  int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells; ++c) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     if (inside != NULL) 
       if (! inside(xc)) continue;
 
@@ -161,10 +161,10 @@ void AnalyticDGBase::ComputeCellError(
 
   Amanzi::WhetStone::NumericalIntegration numi(mesh_);
 
-  int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells; c++) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
-    double volume = mesh_->getCellVolume(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    double volume = mesh_->cell_volume(c);
 
     int nk = p.NumVectors();
     Amanzi::WhetStone::DenseVector data(nk);
@@ -234,11 +234,11 @@ void AnalyticDGBase::ComputeFaceError(
   Amanzi::WhetStone::DenseVector data(nk);
   Amanzi::AmanziMesh::Entity_ID_List cells;
 
-  int nfaces = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; ++f) {
-    const Amanzi::AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+    const Amanzi::AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
-    mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_type::ALL, cells);
+    mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     double err(0.0);
@@ -247,7 +247,7 @@ void AnalyticDGBase::ComputeFaceError(
 
     for (int n = 0; n < ncells; ++n) {
       int c = cells[n];
-      const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+      const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
       // convert analytic solution from my to natural basis 
       const Amanzi::WhetStone::Basis& basis = dg.cell_basis(c);
@@ -292,20 +292,20 @@ void AnalyticDGBase::ComputeCellErrorRemap(
     Epetra_MultiVector& p, double t, int p_location,
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh1,
     double& pnorm, double& l2_err, double& inf_err,
-                   double& l20_err, double& inf0_err,
+                   double& l20_err, double& l10_err, double& inf0_err,
     Epetra_MultiVector* perr)
 {
   auto& mesh0 = mesh_;
 
   pnorm = 0.0;
   l2_err = inf_err = 0.0;
-  l20_err = inf0_err = 0.0;
+  l20_err = l10_err = inf0_err = 0.0;
 
-  int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells; ++c) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh0->getCellCentroid(c);
-    const Amanzi::AmanziGeometry::Point& yc = mesh1->getCellCentroid(c);
-    double volume = mesh1->getCellVolume(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& yc = mesh1->cell_centroid(c);
+    double volume = mesh1->cell_volume(c);
 
     int nk = p.NumVectors();
     Amanzi::WhetStone::DenseVector data(nk);
@@ -326,15 +326,16 @@ void AnalyticDGBase::ComputeCellErrorRemap(
 
     inf0_err = std::max(inf0_err, fabs(err));
     l20_err += err * err * volume;
+    l10_err += fabs(err) * volume;
 
     Amanzi::AmanziGeometry::Point v0(d_), v1(d_);
     Amanzi::AmanziMesh::Entity_ID_List nodes;
 
-    mesh0->getCellNodes(c, nodes);
+    mesh0->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();  
     for (int i = 0; i < nnodes; ++i) {
-      v0 = mesh0->getNodeCoordinate(nodes[i]);
-      v1 = mesh1->getNodeCoordinate(nodes[i]);
+      mesh0->node_get_coordinates(nodes[i], &v0);
+      mesh1->node_get_coordinates(nodes[i], &v1);
       if (p_location == 1) v0 = v1;
 
       double tmp = poly.Value(v0) - SolutionExact(v1, t);
@@ -347,6 +348,7 @@ void AnalyticDGBase::ComputeCellErrorRemap(
   GlobalOp("sum", &pnorm, 1);
   GlobalOp("sum", &l2_err, 1);
   GlobalOp("sum", &l20_err, 1);
+  GlobalOp("sum", &l10_err, 1);
   GlobalOp("max", &inf_err, 1);
   GlobalOp("max", &inf0_err, 1);
 #endif
@@ -363,13 +365,13 @@ inline
 Amanzi::AmanziGeometry::Point AnalyticDGBase::face_normal_exterior(int f, bool* flag)
 {
   Amanzi::AmanziMesh::Entity_ID_List cells;
-  mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_type::ALL, cells);
+  mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
   *flag = (cells.size() == 1);
 
   int dir;
   Amanzi::AmanziGeometry::Point normal(d_);
   if (*flag) 
-    normal = mesh_->getFaceNormal(f,  cells[0], &dir);
+    normal = mesh_->face_normal(f, false, cells[0], &dir);
 
   return normal;
 }
@@ -385,9 +387,9 @@ void AnalyticDGBase::GlobalOp(std::string op, double* val, int n)
   for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
   if (op == "sum") 
-    mesh_->getComm()->SumAll(val_tmp, val, n);
+    mesh_->get_comm()->SumAll(val_tmp, val, n);
   else if (op == "max") 
-    mesh_->getComm()->MaxAll(val_tmp, val, n);
+    mesh_->get_comm()->MaxAll(val_tmp, val, n);
 
   delete[] val_tmp;
 }

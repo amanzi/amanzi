@@ -36,12 +36,12 @@ class Observable : public IOEvent {
 	     Teuchos::ParameterList& plist,
 	     Teuchos::ParameterList& units_plist,
 	     Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : variable_(variable),
-      region_(region),
+    : IOEvent(plist),
+      variable_(variable),
       functional_(functional),
       sum_(0.0),
       mesh_(mesh),
-      IOEvent(plist)
+      region_(region)
   {
     ReadParameters_();
     

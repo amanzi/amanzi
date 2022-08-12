@@ -37,7 +37,7 @@ void PDE_MagneticDiffusion::UpdateMatrices(
   WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
   WhetStone::DenseMatrix Mcell, Ccell, Acell;
 
-  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
+  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
   
   for (int c = 0; c < ncells_owned; c++) {
@@ -75,9 +75,9 @@ void PDE_MagneticDiffusion::ModifyMatrices(
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    const auto& faces = mesh_->getCellFaces(c);
-    const auto& dirs = mesh_->getCellFaceDirections(c);
-    mesh_->getCellEdges(c, edges);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
+    mesh_->cell_get_edges(c, &edges);
 
     int nfaces = faces.size();
     int nedges = edges.size();
@@ -90,7 +90,7 @@ void PDE_MagneticDiffusion::ModifyMatrices(
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      v1(n) = Bf[0][f] * dirs[n] * mesh_->getFaceArea(f);
+      v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f);
     }
 
     Mcell.Multiply(v1, v2, false);
@@ -124,9 +124,9 @@ void PDE_MagneticDiffusion::ModifyFields(
   for (int c = 0; c < ncells_owned; ++c) {
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    const auto& faces = mesh_->getCellFaces(c);
-    const auto& dirs = mesh_->getCellFaceDirections(c);
-    mesh_->getCellEdges(c, edges);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
+    mesh_->cell_get_edges(c, &edges);
 
     int nfaces = faces.size();
     int nedges = edges.size();
@@ -143,7 +143,7 @@ void PDE_MagneticDiffusion::ModifyFields(
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
       if (!fflag[f]) {
-        Bf[0][f] -= dt * v2(n) * dirs[n] / mesh_->getFaceArea(f);
+        Bf[0][f] -= dt * v2(n) * dirs[n] / mesh_->face_area(f);
         fflag[f] = true;
       }
     }
@@ -165,7 +165,7 @@ double PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
 
   double energy(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->getCellEdges(c, edges);
+    mesh_->cell_get_edges(c, &edges);
     int nedges = edges.size();
 
     WhetStone::DenseMatrix Mcell;
@@ -184,7 +184,7 @@ double PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
 
   // parallel collective operation
   double tmp(energy);
-  mesh_->getComm()->SumAll(&tmp, &energy, 1);
+  mesh_->get_comm()->SumAll(&tmp, &energy, 1);
 
   return energy;
 }
@@ -200,8 +200,8 @@ double PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
 
   double energy(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    const auto& faces = mesh_->getCellFaces(c);
-    const auto& dirs = mesh_->getCellFaceDirections(c);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
     int nfaces = faces.size();
 
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
@@ -210,7 +210,7 @@ double PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      v1(n) = Bf[0][f] * dirs[n] * mesh_->getFaceArea(f);
+      v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f);
     }
 
     Mcell.Multiply(v1, v2, false);
@@ -219,7 +219,7 @@ double PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
 
   // parallel collective operation
   double tmp(energy);
-  mesh_->getComm()->SumAll(&tmp, &energy, 1);
+  mesh_->get_comm()->SumAll(&tmp, &energy, 1);
 
   return energy / 2;
 }
@@ -233,16 +233,16 @@ double PDE_MagneticDiffusion::CalculateDivergence(
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
   
-  const auto& faces = mesh_->getCellFaces(c);
-  const auto& dirs = mesh_->getCellFaceDirections(c);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   double div(0.0);
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    div += Bf[0][f] * dirs[n] * mesh_->getFaceArea(f);
+    div += Bf[0][f] * dirs[n] * mesh_->face_area(f);
   }
-  div /= mesh_->getCellVolume(c);
+  div /= mesh_->cell_volume(c);
 
   return div;
 }

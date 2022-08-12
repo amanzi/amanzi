@@ -31,11 +31,11 @@ namespace Operators {
 void PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
 {
   // extract mesh in fractures
-  AmanziMesh::MeshFactory meshfactory(mesh_->getComm(), mesh_->getGeometricModel());
+  AmanziMesh::MeshFactory meshfactory(mesh_->get_comm(), mesh_->geometric_model());
   meshfactory.set_preference(AmanziMesh::Preference({AmanziMesh::Framework::MSTK}));
 
   std::vector<std::string> names = plist.get<Teuchos::Array<std::string> >("fracture").toVector();
-  Teuchos::RCP<const AmanziMesh::Mesh> fracture = meshfactory.create(mesh_, names, AmanziMesh::Entity_kind::FACE);
+  Teuchos::RCP<const AmanziMesh::Mesh> fracture = meshfactory.create(mesh_, names, AmanziMesh::FACE);
 
   // create global operator
   cvs_ = CreateFracturedMatrixCVS(mesh_, fracture);
@@ -74,14 +74,14 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
 
   const auto& fmap = *cvs_->Map("face", true);
 
-  int dim = mesh_->getSpaceDimension();
+  int dim = mesh_->space_dimension();
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
   Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
 
   global_op_->rhs()->PutScalarGhosted(0.0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    const auto& faces = mesh_->getCellFaces(c);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     std::vector<int> map(nfaces + 1), lid(nfaces);
@@ -120,13 +120,13 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
 
     // shift gravity
     if (gravity_) {
-      double zc = (mesh_->getCellCentroid(c))[dim - 1];
+      double zc = (mesh_->cell_centroid(c))[dim - 1];
       WhetStone::DenseMatrix& Wff = Wff_cells_[c];
       WhetStone::DenseVector v(nfaces), av(nfaces);
 
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        double zf = (mesh_->getFaceCentroid(f))[dim - 1];
+        double zf = (mesh_->face_centroid(f))[dim - 1];
         v(n) = -(zf - zc) * rho_ * norm(g_);
       }
 
@@ -171,7 +171,7 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
   const auto& fmap = *cvs_->Map("face", true);
 
   for (int c = 0; c != ncells_owned; ++c) {
-    const auto& faces = mesh_->getCellFaces(c);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
     
     bool flag(true);
@@ -199,7 +199,7 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
         bcval[np] = bc_value[f];
         if (bc_mixed.size() > 0) bcmix[np] = bc_mixed[f];
 
-        bcarea[np] = mesh_->getFaceArea(f);
+        bcarea[np] = mesh_->face_area(f);
         if (k == shift) mydof[np] = 1;
         np++;
       }
@@ -279,7 +279,7 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
   const Epetra_MultiVector& u_face = *u->ViewComponent("face", true);
   Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
 
-  int dim = mesh_->getSpaceDimension();
+  int dim = mesh_->space_dimension();
   const auto& fmap = *cvs_->Map("face", true);
 
   int ndofs_owned = flux->ViewComponent("face")->MyLength();
@@ -288,10 +288,10 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
   std::vector<int> hits(ndofs_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    const auto& faces = mesh_->getCellFaces(c);
-    const auto& dirs = mesh_->getCellFaceDirections(c);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
     int nfaces = faces.size();
-    double zc = mesh_->getCellCentroid(c)[dim - 1];
+    double zc = mesh_->cell_centroid(c)[dim - 1];
 
     // un-roll multiple DOFs in a linear array
     int nrows = 2 * nfaces;  // pessimistic estimate
@@ -332,7 +332,7 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
       WhetStone::DenseVector w(nfaces), aw(nfaces);
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        double zf = (mesh_->getFaceCentroid(f))[dim - 1];
+        double zf = (mesh_->face_centroid(f))[dim - 1];
         w(n) = -(zf - zc) * rho_ * norm(g_);
       }
 

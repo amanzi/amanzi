@@ -65,17 +65,18 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 40, 40, 5);
+  RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 
   // extract surface mesh
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top surface"));
 
-  RCP<Mesh> surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::Entity_kind::FACE);
+  RCP<Mesh> surfmesh = meshfactory.create(mesh_mstk, setnames, AmanziMesh::FACE);
 
   /* modify diffusion coefficient */
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -84,13 +85,13 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = surfmesh->getFaceCentroid(f);
+    const Point& xf = surfmesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
@@ -120,10 +121,10 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   // get a flux field
   Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& uf = *u->ViewComponent("face");
-  int nfaces = surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   Point vel(4.0, 4.0, 0.0);
   for (int f = 0; f < nfaces; f++) {
-    uf[0][f] = vel * surfmesh->getFaceNormal(f, surfmesh->getFaceCells(f, AmanziMesh::Parallel_type::ALL)[0]);
+    uf[0][f] = vel * surfmesh->face_normal(f);
   }
 
   op_adv->Setup(*u);
@@ -137,7 +138,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   phi.PutScalar(0.2);
 
   double dT = 0.02;
-  Teuchos::RCP<PDE_Accumulation> op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::Entity_kind::CELL, global_op));
+  Teuchos::RCP<PDE_Accumulation> op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::CELL, global_op));
   op_acc->AddAccumulationDelta(solution, phi, phi, dT, "cell");
 
   // BCs and assemble

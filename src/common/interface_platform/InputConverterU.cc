@@ -60,6 +60,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   out_list.sublist("domain").set<int>("spatial dimension", dim_);
   out_list.sublist("regions") = TranslateRegions_();
 
+  // Parse various material data 
   out_list.sublist("state") = TranslateState_();
 
   const Teuchos::ParameterList& tmp = TranslateOutput_();
@@ -100,9 +101,9 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
         .sublist("function").sublist("function-constant")
         .set<double>("value", 1.0);
 
-    auto& ev_m = out_list.sublist("state").sublist("field evaluators").sublist("saturation_liquid");
+    auto& ev_m = out_list.sublist("state").sublist("evaluators").sublist("saturation_liquid");
     ev_m = ic_m;
-    ev_m.set<std::string>("field evaluator type", "independent variable");
+    ev_m.set<std::string>("evaluator type", "independent variable");
 
     if (fracture_regions_.size() > 0) {
       auto& ic_f = out_list.sublist("state").sublist("initial conditions").sublist("fracture-saturation_liquid");
@@ -112,9 +113,9 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
           .sublist("function").sublist("function-constant")
           .set<double>("value", 1.0);
 
-      auto& ev_f = out_list.sublist("state").sublist("field evaluators").sublist("fracture-saturation_liquid");
+      auto& ev_f = out_list.sublist("state").sublist("evaluators").sublist("fracture-saturation_liquid");
       ev_f = ic_f;
-      ev_f.set<std::string>("field evaluator type", "independent variable");
+      ev_f.set<std::string>("evaluator type", "independent variable");
     }
   }
 

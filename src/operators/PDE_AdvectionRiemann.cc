@@ -94,9 +94,9 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   }
 
   // register the advection Op
-  if (local_schema_col_.get_base() == AmanziMesh::Entity_kind::CELL) {
+  if (local_schema_col_.get_base() == AmanziMesh::CELL) {
     local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
-  } else if (local_schema_col_.get_base() == AmanziMesh::Entity_kind::FACE) {
+  } else if (local_schema_col_.get_base() == AmanziMesh::FACE) {
     local_op_ = Teuchos::rcp(new Op_Face_Schema(global_schema_row_, global_schema_col_, mesh_));
   }
 
@@ -109,7 +109,7 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 * u is the given velocity field and C is the advected field.
 ****************************************************************** */
 void PDE_AdvectionRiemann::UpdateMatrices(
-    const Teuchos::Ptr<const std::vector<WhetStone::Polynomial> >& u)
+    const std::vector<WhetStone::Polynomial>& u)
 {
   double flux;
   WhetStone::DenseMatrix Aface;
@@ -117,29 +117,29 @@ void PDE_AdvectionRiemann::UpdateMatrices(
 
   if (matrix_ == "flux" && flux_ == "upwind") {
     for (int f = 0; f < nfaces_owned; ++f) {
-      dg_->FluxMatrix(f, (*u)[f], Aface, true, jump_on_test_, &flux);
+      dg_->FluxMatrix(f, u[f], Aface, true, jump_on_test_, &flux);
       matrix[f] = Aface;
     }
   } else if (matrix_ == "flux" && flux_ == "downwind") {
     for (int f = 0; f < nfaces_owned; ++f) {
-      dg_->FluxMatrix(f, (*u)[f], Aface, false, jump_on_test_, &flux);
+      dg_->FluxMatrix(f, u[f], Aface, false, jump_on_test_, &flux);
       matrix[f] = Aface;
     }
   } else if (matrix_ == "flux" && flux_ == "upwind at gauss points") {
     for (int f = 0; f < nfaces_owned; ++f) {
-      dg_->FluxMatrixGaussPoints(f, (*u)[f], Aface, true, jump_on_test_);
+      dg_->FluxMatrixGaussPoints(f, u[f], Aface, true, jump_on_test_);
       matrix[f] = Aface;
     }
   } else if (matrix_ == "flux" && flux_ == "downwind at gauss points") {
     for (int f = 0; f < nfaces_owned; ++f) {
-      dg_->FluxMatrixGaussPoints(f, (*u)[f], Aface, false, jump_on_test_);
+      dg_->FluxMatrixGaussPoints(f, u[f], Aface, false, jump_on_test_);
       matrix[f] = Aface;
     }
   } else if (matrix_ == "flux" && flux_ == "Rusanov") {
     // Polynomial Kc should be distributed here
     AmanziMesh::Entity_ID_List cells;
     for (int f = 0; f < nfaces_owned; ++f) {
-      mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c1 = cells[0];
       int c2 = (cells.size() == 2) ? cells[1] : c1;
       dg_->FluxMatrixRusanov(f, (*Kc_)[c1], (*Kc_)[c2], (*Kf_)[f], Aface);
@@ -219,17 +219,17 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
 
   AmanziMesh::Entity_ID_List cells;
 
-  int d = mesh_->getSpaceDimension();
+  int d = mesh_->space_dimension();
   std::vector<AmanziGeometry::Point> tau(d - 1);
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET ||
         bc_model[f] == OPERATOR_BC_DIRICHLET_TYPE2) {
       // common section
-      mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
 
-      const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
       // --set polynomial with Dirichlet data
       WhetStone::DenseVector coef(nk);
@@ -241,7 +241,7 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
       pf.set_origin(xf);
 
       // -- convert boundary polynomial to regularized space polynomial
-      pf.ChangeOrigin(mesh_->getCellCentroid(c));
+      pf.ChangeOrigin(mesh_->cell_centroid(c));
 
       // -- extract coefficients and update right-hand side 
       WhetStone::DenseMatrix& Aface = local_op_->matrices[f];

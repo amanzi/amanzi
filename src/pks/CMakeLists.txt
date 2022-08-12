@@ -14,25 +14,27 @@
 project(PKS)
 
 # Amanzi include directories
-include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${DBC_SOURCE_DIR})
+include_directories(${FUNCS_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
-include_directories(${DATA_STRUCTURES_SOURCE_DIR})
-include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${WHETSTONE_SOURCE_DIR})
-include_directories(${OPERATORS_SOURCE_DIR})
-include_directories(${TIME_INTEGRATION_SOURCE_DIR})
-include_directories(${SOLVERS_SOURCE_DIR})
-include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
-include_directories(${STATE_SOURCE_DIR})
+include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR}/data)
+include_directories(${STATE_SOURCE_DIR}/evaluators)
+include_directories(${TIME_INTEGRATION_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 
 # External (TPL) include directories
+include_directories(${ASCEMIO_INCLUDE_DIR})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
-include_directories(${ASCEMIO_INCLUDE_DIR})
 
 #
 # Library: pks
@@ -82,25 +84,22 @@ if (BUILD_TESTS)
 endif()
 
 if (ENABLE_AmanziPhysicsModule)
+  # this should go first
   add_subdirectory(eos)
+
   add_subdirectory(flow)
+  add_subdirectory(energy)
   add_subdirectory(multiphase)
   add_subdirectory(navier_stokes)
 endif()
 
-# chemistry isn't REALLY physics...
-add_subdirectory(chemistry)
-
-# ok, transport is physics but oh well...
-add_subdirectory(transport)
-
-# add shallow water
-add_subdirectory(shallow_water)
+  # chemistry should be processed before transport
+  add_subdirectory(chemistry)
+  add_subdirectory(transport)
+  add_subdirectory(shallow_water)
 
 if (ENABLE_AmanziPhysicsModule)
-  add_subdirectory(energy)
   add_subdirectory(dummy)
+  add_subdirectory(mpc_pk)
 endif()
-
-add_subdirectory(mpc_pk)
 

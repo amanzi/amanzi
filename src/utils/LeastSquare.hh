@@ -9,7 +9,6 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#include "TimerManager.hh"
 #ifndef AMANZI_UTILS_LEAST_SQUARE_HH_
 #define AMANZI_UTILS_LEAST_SQUARE_HH_
 

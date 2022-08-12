@@ -23,18 +23,21 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "MeshFactory.hh"
+#include "IO.hh"
 #include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "MeshExtractedManifold.hh"
 #include "State.hh"
 #include "OperatorDefs.hh"
 #include "OutputXDMF.hh"
 
 // Multiphase
-#include "MultiphaseJaffre_PK.hh"
+#include "Multiphase_PK.hh"
 
 
 /* **************************************************************** */
-TEST(MULTIPHASE_2P2C) {
+void run_test(const std::string& domain, const std::string& filename)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -43,21 +46,29 @@ TEST(MULTIPHASE_2P2C) {
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
+  if (MyPID == 0) std::cout << "Test: multiphase pk, model Jaffre, domain=" << domain << std::endl;
 
-  if (MyPID == 0) std::cout << "Test: multiphase pk, model Jaffre" << std::endl;
+  int d = (domain == "2D") ? 2 : 3;
 
   // read parameter list
-  std::string xmlFileName = "test/multiphase_jaffre.xml";
-  auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+  auto plist = Teuchos::getParametersFromXmlFile(filename);
 
   // create a MSTK mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(d, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 10);
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 12.0, 50, 3);
+  RCP<const Mesh> mesh;
+  if (d == 2) {
+    // mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 10);
+    mesh = meshfactory.create(0.0, 0.0, 200.0, 12.0, 50, 3);
+  } else if (domain == "fractures") {
+    auto mesh3D = meshfactory.create(0.0, 0.0, 0.0, 200.0, 12.0, 12.0, 50, 3, 6, true, true);
+    std::vector<std::string> names;
+    names.push_back("fracture");
+    mesh = meshfactory.create(mesh3D, names, AmanziMesh::FACE);
+  }
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -70,16 +81,17 @@ TEST(MULTIPHASE_2P2C) {
   // create a solution vector
   ParameterList pk_tree = plist->sublist("PKs").sublist("multiphase");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  auto MPK = Teuchos::rcp(new MultiphaseJaffre_PK(pk_tree, plist, S, soln));
+  auto MPK = Teuchos::rcp(new Multiphase_PK(pk_tree, plist, S, soln));
 
-  MPK->Setup(S.ptr());
+  MPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   // initialize the multiphase process kernel
-  MPK->Initialize(S.ptr());
+  MPK->Initialize();
   S->CheckAllFieldsInitialized();
+  // S->WriteDependencyGraph();
   WriteStateStatistics(*S, *vo);
 
   // initialize io
@@ -93,7 +105,7 @@ TEST(MULTIPHASE_2P2C) {
   while (t < tend && iloop < 400) {
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 10; }
 
-    MPK->CommitStep(t, t + dt, S);
+    MPK->CommitStep(t, t + dt, Tags::DEFAULT);
     S->advance_cycle();
 
     S->advance_time(dt);
@@ -104,13 +116,13 @@ TEST(MULTIPHASE_2P2C) {
     // output solution
     if (iloop % 5 == 0) {
       io->InitializeCycle(t, iloop, "");
-      const auto& u0 = *S->GetFieldData("pressure_liquid")->ViewComponent("cell");
-      const auto& u1 = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
-      const auto& u2 = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
-      const auto& u3 = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
+      const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
+      const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
+      const auto& u2 = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
+      const auto& u3 = *S->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
 
       io->WriteVector(*u0(0), "pressure", AmanziMesh::CELL);
-      io->WriteVector(*u1(0), "saturation", AmanziMesh::CELL);
+      io->WriteVector(*u1(0), "saturation_liquid", AmanziMesh::CELL);
       io->WriteVector(*u2(0), "liquid hydrogen", AmanziMesh::CELL);
       io->WriteVector(*u3(0), "gas hydrogen", AmanziMesh::CELL);
       io->FinalizeCycle();
@@ -123,15 +135,21 @@ TEST(MULTIPHASE_2P2C) {
 
   // verification
   double dmin, dmax;
-  const auto& sl = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
+  const auto& sl = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
   sl.MinValue(&dmin);
   sl.MaxValue(&dmax);
   CHECK(dmin >= 0.0 && dmax <= 1.0 && dmin < 0.999);
   
-  S->GetFieldData("ncp_fg")->NormInf(&dmax);
-  CHECK(dmax <= 1.0e-13);
+  S->Get<CompositeVector>("ncp_fg").NormInf(&dmax);
+  CHECK(dmax <= 1.0e-9);
 
-  const auto& xg = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
+  const auto& xg = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
   xg.MinValue(&dmin);
   CHECK(dmin >= 0.0);
+}
+
+
+TEST(MULTIPHASE_2P2C) {
+  run_test("2D", "test/multiphase_jaffre.xml");
+  run_test("fractures", "test/multiphase_jaffre_fractures.xml");
 }

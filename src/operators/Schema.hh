@@ -120,7 +120,7 @@ inline CompositeVectorSpace cvsFromSchema(
     int num;
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, num) = item;
-    cvs.AddComponent(AmanziMesh::to_string(kind), kind, num);
+    cvs.AddComponent(AmanziMesh::entity_kind_string(kind), kind, num);
   }
   return cvs;
 }

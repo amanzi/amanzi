@@ -39,7 +39,7 @@ void PDE_DiffusionFV::Init_(Teuchos::ParameterList& plist)
     // build the CVS from the global schema
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
-    cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    cvs->AddComponent("cell", AmanziMesh::CELL, 1);
 
     global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, global_op_schema_));
 
@@ -124,7 +124,7 @@ void PDE_DiffusionFV::Init_(Teuchos::ParameterList& plist)
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_);
   cvs.SetGhosted(true);
-  cvs.SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+  cvs.SetComponent("face", AmanziMesh::FACE, 1);
   transmissibility_ = Teuchos::rcp(new CompositeVector(cvs, true));
 }
 
@@ -186,7 +186,7 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
     AmanziMesh::Entity_ID_List cells, faces;
 
     for (int f = 0; f != nfaces_owned; ++f) {
-      mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       WhetStone::DenseMatrix Aface(ncells, ncells);
@@ -274,7 +274,7 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
     for (int f = 0; f < nfaces_owned; f++) {
       if (bc_model[f] != OPERATOR_BC_NONE) {
-        mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
         if (bc_model[f] == OPERATOR_BC_DIRICHLET && primary) {
@@ -284,7 +284,7 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
           local_op_->matrices[f](0,0) = 0.0;
 
           if (primary)
-            rhs_cell[0][c] -= bc_value[f] * mesh_->getFaceArea(f);
+            rhs_cell[0][c] -= bc_value[f] * mesh_->face_area(f);
         }
       }
     }
@@ -329,8 +329,8 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
   std::vector<int> flag(nfaces_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    const auto& faces = mesh_->getCellFaces(c);
-    const auto& dirs = mesh_->getCellFaceDirections(c);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; n++) {
@@ -344,12 +344,12 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
 
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         double value = bc_value[f];
-        double area = mesh_->getFaceArea(f);
+        double area = mesh_->face_area(f);
         flux[0][f] = dirs[n] * value * area;
         
       } else {
         if (f < nfaces_owned && !flag[f]) {
-          mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
+          mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
           if (cells.size() <= 1) {
             Errors::Message msg("Flow PK: These boundary conditions are not supported by FV.");
             Exceptions::amanzi_throw(msg);
@@ -367,18 +367,6 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
       }
     }
   }
-}
-
-
-/* ******************************************************************
-* Calculate flux from cell-centered data
-****************************************************************** */
-void PDE_DiffusionFV::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                            const Teuchos::Ptr<CompositeVector>& flux)
-{
-  Errors::Message msg;
-  msg << "DiffusionFV: missing support for non-manifolds.";
-  Exceptions::amanzi_throw(msg);
 }
 
 
@@ -405,7 +393,7 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
   }
 
   for (int f=0; f!=nfaces_owned; ++f) {
-    mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int mcells = cells.size();
 
     WhetStone::DenseMatrix Aface(mcells, mcells);
@@ -421,8 +409,8 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
     }
 
     // find the face direction from cell 0 to cell 1
-    const auto& cfaces = mesh_->getCellFaces(cells[0]);
-    const auto& fdirs = mesh_->getCellFaceDirections(cells[0]);
+    const auto& cfaces = mesh_->cell_get_faces(cells[0]);
+    const auto& fdirs = mesh_->cell_get_face_dirs(cells[0]);
 
     int f_index = std::find(cfaces.begin(), cfaces.end(), f) - cfaces.begin();
     ComputeJacobianLocal_(mcells, f, fdirs[f_index], bc_model[f], bc_value[f],
@@ -497,7 +485,7 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_);
   cvs.SetGhosted(true);
-  cvs.SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+  cvs.SetComponent("face", AmanziMesh::FACE, 1);
 
   CompositeVector beta(cvs, true);
   Epetra_MultiVector& beta_face = *beta.ViewComponent("face", true);
@@ -506,19 +494,19 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<AmanziGeometry::Point> bisectors;
   AmanziGeometry::Point a_dist;
-  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1); 
+  WhetStone::Tensor Kc(mesh_->space_dimension(), 1); 
   Kc(0, 0) = 1.0;
 
   for (int c = 0; c < ncells_owned; ++c) {
     if (K_.get()) Kc = (*K_)[c];
-    mesh_->getCellFacesAndBisectors(c, faces, &bisectors);
+    mesh_->cell_get_faces_and_bisectors(c, &faces, &bisectors);
     int nfaces = faces.size();
 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
       const AmanziGeometry::Point& a = bisectors[i];
-      const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
-      double area = mesh_->getFaceArea(f);
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      double area = mesh_->face_area(f);
 
       double h_tmp = norm(a);
       double s = area / h_tmp;

@@ -18,7 +18,7 @@ class FunctionGridColor : public FunctionColor {
   }
   int operator()(const double* ) const;
 
-  int get_dimension() const { return dim_; }
+  int getDimension() const { return dim_; }
 
 private:
   int dim_;

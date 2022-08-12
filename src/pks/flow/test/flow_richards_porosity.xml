@@ -219,6 +219,9 @@
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="10.0"/>
       </ParameterList>
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.0, -9.8}"/>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 

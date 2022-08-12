@@ -227,9 +227,9 @@
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="low"/>
     </ParameterList>
-    <ParameterList name="field evaluators">
+    <ParameterList name="evaluators">
      <ParameterList name="porosity">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -275,7 +275,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="darcy_flux">
+      <ParameterList name="volumetric_flow_rate">
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>

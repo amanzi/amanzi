@@ -61,8 +61,8 @@ void MiniDiffusion1D_Constant(double bcl, int type_l, double bcr, int type_r) {
     // create right-hand side
     WhetStone::DenseVector& rhs = op.rhs();
     for (int i = 0; i < ncells; ++i) { 
-      double xc = op.mesh_getCellCentroid(i);
-      double hc = op.mesh_getCellVolume(i);
+      double xc = op.mesh_cell_centroid(i);
+      double hc = op.mesh_cell_volume(i);
       rhs(i) = -12.0 * xc * hc;
     }
 
@@ -79,8 +79,8 @@ void MiniDiffusion1D_Constant(double bcl, int type_l, double bcr, int type_r) {
     ph1_err[loop] = 0.0;
 
     for (int i = 0; i < ncells; ++i) {
-      hc = op.mesh_getCellVolume(i);
-      xc = op.mesh_getCellCentroid(i);
+      hc = op.mesh_cell_volume(i);
+      xc = op.mesh_cell_centroid(i);
       err = xc * xc * xc - sol(i);
 
       pl2_err[loop] += err * err * hc;
@@ -131,7 +131,7 @@ void MiniDiffusion1D_Variable(double bcl, int type_l, double bcr, int type_r) {
 
     auto K = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(ncells));
     for (int i = 0; i < ncells; ++i) {
-      double xc = op.mesh_getCellCentroid(i);
+      double xc = op.mesh_cell_centroid(i);
       (*K)(i) = xc + 1.0;
     }
     op.Setup(K, NULL, NULL);
@@ -141,8 +141,8 @@ void MiniDiffusion1D_Variable(double bcl, int type_l, double bcr, int type_r) {
     // create right-hand side
     WhetStone::DenseVector& rhs = op.rhs();
     for (int i = 0; i < ncells; ++i) { 
-      double xc = op.mesh_getCellCentroid(i);
-      double hc = op.mesh_getCellVolume(i);
+      double xc = op.mesh_cell_centroid(i);
+      double hc = op.mesh_cell_volume(i);
       rhs(i) = -(4 * xc + 2.0) * hc;
     }
 
@@ -159,8 +159,8 @@ void MiniDiffusion1D_Variable(double bcl, int type_l, double bcr, int type_r) {
     ph1_err[loop] = 0.0;
 
     for (int i = 0; i < ncells; ++i) {
-      hc = op.mesh_getCellVolume(i);
-      xc = op.mesh_getCellCentroid(i);
+      hc = op.mesh_cell_volume(i);
+      xc = op.mesh_cell_centroid(i);
       err = xc * xc - sol(i);
 
       pl2_err[loop] += err * err * hc;

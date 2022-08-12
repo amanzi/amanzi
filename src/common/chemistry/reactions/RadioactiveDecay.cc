@@ -18,6 +18,7 @@
 
 // Amanzi
 #include "errors.hh"
+#include "StringExt.hh"
 
 // Chemistry
 #include "ChemistryUtilities.hh"
@@ -67,19 +68,34 @@ RadioactiveDecay::RadioactiveDecay(const Teuchos::ParameterList& plist,
   stoichiometry_.push_back(-1.0);
 
   std::string progeny = plist.get<std::string>("product");
+  trim(progeny);
 
-  // NOTE: we allow zero progeny
+  // NOTE: we allow empty progeny
   if (progeny.size() > 0) {
-    int id2 = name_to_id.at(progeny);
-    if (id2 < 0) {
+    double coeff;
+    std::string name;
+    std::istringstream iss2(progeny);
+    while (iss2 >> coeff || !iss2.eof()) {
+      iss2 >> name;
+      int id2 = name_to_id.at(name);
+
+      if (id2 < 0) {
+        std::stringstream ss;
+        ss << "Unknown product species '" << progeny << "'.\n"
+           << "Product species must be in the primary species list.\n";
+        Exceptions::amanzi_throw(Errors::Message(ss.str()));
+      }
+
+      species_names_.push_back(name);
+      species_ids_.push_back(id2);
+      stoichiometry_.push_back(coeff);
+    }
+    
+    if (species_ids_.size() < 2) {
       std::stringstream ss;
-      ss << "Unknown progeny species '" << progeny << "'.\n"
-         << "Progeny species must be in the primary species list.\n";
+      ss << "Mis-formatted product part of equation '" << progeny << "'.\n";
       Exceptions::amanzi_throw(Errors::Message(ss.str()));
     }
-    species_names_.push_back(progeny);
-    species_ids_.push_back(id2);
-    stoichiometry_.push_back(1.0);
   }
 
   // we assume that species_names[0] etc is for the parent, any
@@ -145,13 +161,14 @@ void RadioactiveDecay::AddContributionToJacobian(
   // to species in column j
 
   // column loop
+  int icomp0 = species_ids_.at(0);
   for (int i = 0; i < species_ids_.size(); ++i) {
     int icomp = species_ids_.at(i);
     // row loop
     for (int j = 0; j < J->size(); ++j) {
-      double tempd = dtotal(icomp, j) * volume_h2o;
+      double tempd = dtotal(icomp0, j) * volume_h2o;
       if (dtotal_sorbed.size() > 0) {
-        tempd += dtotal_sorbed(icomp, j) * bulk_volume;
+        tempd += dtotal_sorbed(icomp0, j) * bulk_volume;
       }
       tempd *= -rate_constant() * stoichiometry_.at(i);
       J->AddValue(icomp, j, tempd);

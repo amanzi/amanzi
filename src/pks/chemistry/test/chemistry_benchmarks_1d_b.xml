@@ -48,7 +48,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="state">
-    <ParameterList name="field evaluators">
+    <ParameterList name="evaluators">
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -61,7 +61,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
@@ -75,7 +75,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="saturation_liquid">
         <ParameterList name="function">
@@ -89,7 +89,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="initial conditions">
@@ -409,9 +409,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
-      </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
@@ -610,9 +607,6 @@
             <Parameter name="use area fractions" type="bool" value="false"/>
           </ParameterList>
         </ParameterList>
-      </ParameterList>
-      <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
       </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>

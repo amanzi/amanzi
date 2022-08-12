@@ -27,7 +27,6 @@ namespace Flow {
 int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 {
   std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
 
   // create verbosity object
   VerboseObject* vo = new VerboseObject("Amanzi::Picard", *fp_list_); 
@@ -40,7 +39,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
   Epetra_MultiVector& pnew_cell = *solution_new.ViewComponent("cell");
 
   // update steady state boundary conditions
-  double time = S_->time();
+  double time = S_->get_time();
   for (int i = 0; i < bcs_.size(); i++) {
     bcs_[i]->Compute(time, time);
     bcs_[i]->ComputeSubmodel(mesh_);
@@ -50,8 +49,6 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
   for (int i = 0; i < srcs.size(); ++i) {
     srcs[i]->Compute(time, time); 
   }
-
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
 
   std::string linear_solver = plist.get<std::string>("linear solver");
   Teuchos::ParameterList lin_solve_list = linear_operator_list_->sublist(linear_solver);
@@ -76,23 +73,31 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     }
     ComputeOperatorBCs(*solution);
 
-    // update permeabilities
-    darcy_flux_copy->ScatterMasterToGhosted("face");
+    // update diffusion coefficients
+    // -- function
+    vol_flowrate_copy->ScatterMasterToGhosted("face");
 
-    relperm_->Compute(solution, bc_model, bc_value, krel_);
-    upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *krel_);
-    Operators::CellToFace_ScaleInverse(mu, krel_);
-    krel_->ScaleMasterAndGhosted(molar_rho_);
+    pressure_eval_->SetChanged();
+    auto& alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
+    S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
+  
+    *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
+    Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
+    upwind_->Compute(*vol_flowrate_copy, *solution, bc_model, *alpha_upwind_);
 
-    relperm_->ComputeDerivative(solution, bc_model, bc_value, dKdP_);
-    upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *dKdP_);
-    Operators::CellToFace_ScaleInverse(mu, dKdP_);
-    dKdP_->ScaleMasterAndGhosted(molar_rho_);
+    // -- derivative 
+    S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
+    auto& alpha_dP = S_->GetDerivativeW<CompositeVector>(
+        alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
+
+    *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
+    Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
+    upwind_->Compute(*vol_flowrate_copy, *solution, bc_model, *alpha_upwind_dP_);
 
     // create algebraic problem (matrix = preconditioner)
     op_preconditioner_->Init();
-    op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
-    op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), Teuchos::null, molar_rho_);
+    op_preconditioner_diff_->UpdateMatrices(vol_flowrate_copy.ptr(), solution.ptr());
+    op_preconditioner_diff_->UpdateMatricesNewtonCorrection(vol_flowrate_copy.ptr(), Teuchos::null, molar_rho_);
     op_preconditioner_diff_->ApplyBCs(true, true, true);
 
     Teuchos::RCP<CompositeVector> rhs = op_preconditioner_->rhs();  // export RHS from the matrix class
@@ -140,13 +145,12 @@ double Richards_PK::CalculateRelaxationFactor(const Epetra_MultiVector& uold,
                                               const Epetra_MultiVector& unew)
 { 
   double relaxation = 1.0;
+  double patm = S_->Get<double>("atmospheric_pressure");
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
-    Epetra_MultiVector dSdP(uold);
-    relperm_->Compute_dSdP(uold, dSdP);
-
     for (int c = 0; c < ncells_owned; c++) {
-      double diff = dSdP[0][c] * fabs(unew[0][c] - uold[0][c]);
+      double dSdP = wrm_->second[(*wrm_->first)[c]]->k_relative(patm - uold[0][c]);
+      double diff = dSdP * fabs(unew[0][c] - uold[0][c]);
       if (diff > 3e-2) relaxation = std::min(relaxation, 3e-2 / diff);
     }
   }

@@ -26,7 +26,7 @@ class Op_Cell_Edge : public Op {
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       Op(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_EDGE, name, mesh) {
     WhetStone::DenseMatrix null_matrix;
-    matrices.resize(mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED), null_matrix);
+    matrices.resize(mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED), null_matrix);
     matrices_shadow = matrices;
   }
 
@@ -53,7 +53,7 @@ class Op_Cell_Edge : public Op {
       AmanziMesh::Entity_ID_List nodes;
 
       for (int c = 0; c != matrices.size(); ++c) {
-        mesh_->getCellNodes(c, nodes);
+        mesh_->cell_get_nodes(c, &nodes);
         for (int n = 0; n != nodes.size(); ++n) {
           for (int m = 0; m != nodes.size(); ++m) {
             matrices[c](n, m) *= s_n[0][nodes[n]];

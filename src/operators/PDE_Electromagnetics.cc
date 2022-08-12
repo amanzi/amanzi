@@ -42,7 +42,7 @@ void PDE_Electromagnetics::SetTensorCoefficient(
     const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
 {
   K_ = K;
-  if (K_ != Teuchos::null && K_.get() && mesh_->getSpaceDimension() == 3) 
+  if (K_ != Teuchos::null && K_.get() && mesh_->space_dimension() == 3) 
     AMANZI_ASSERT(K_->size() == ncells_owned);
 }
 
@@ -57,7 +57,7 @@ void PDE_Electromagnetics::UpdateMatrices(
 {
   WhetStone::DenseMatrix Acell;
 
-  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
+  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
   
   for (int c = 0; c < ncells_owned; c++) {
@@ -76,12 +76,12 @@ void PDE_Electromagnetics::UpdateMatrices(
 ****************************************************************** */
 void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  if (local_schema_col_.get_base() == AmanziMesh::Entity_kind::CELL && mesh_->getSpaceDimension() == 3) {
+  if (local_schema_col_.get_base() == AmanziMesh::CELL && mesh_->space_dimension() == 3) {
     Teuchos::RCP<const BCs> bc_f, bc_e;
     for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
-      if ((*bc)->kind() == AmanziMesh::Entity_kind::FACE) {
+      if ((*bc)->kind() == AmanziMesh::FACE) {
         bc_f = *bc;
-      } else if ((*bc)->kind() == AmanziMesh::Entity_kind::EDGE) {
+      } else if ((*bc)->kind() == AmanziMesh::EDGE) {
         bc_e = *bc;
       }
     }
@@ -106,14 +106,14 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
 
   // support of surface integrals
   Teuchos::ParameterList plist;
-  int dim = mesh_->getSpaceDimension();
+  int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Electromagnetics mfd3d(plist, mesh_);
 
   // calculate number of cells for each edge 
   // move to properties of BCs (lipnikov@lanl.gov)
   std::vector<int> edge_ncells(nedges_wghost, 0);
   for (int c = 0; c != ncells_wghost; ++c) {
-    mesh_->getCellEdges(c, edges);
+    mesh_->cell_get_edges(c, &edges);
     int nedges = edges.size();
 
     for (int n = 0; n < nedges; ++n) {
@@ -130,8 +130,8 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
       const std::vector<int>& bc_model = bc_f->bc_model();
       const std::vector<AmanziGeometry::Point>& bc_value = bc_f->bc_value_point();
 
-      const auto& faces = mesh_->getCellFaces(c);
-      const auto& fdirs = mesh_->getCellFaceDirections(c);
+      const auto& faces = mesh_->cell_get_faces(c);
+      const auto& fdirs = mesh_->cell_get_face_dirs(c);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {
@@ -139,18 +139,18 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
         const AmanziGeometry::Point& value = bc_value[f];
 
         if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
-          const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
-          double area = mesh_->getFaceArea(f);
+          const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+          double area = mesh_->face_area(f);
 
-          mesh_->getFaceEdgesAndDirs(f, edges, &edirs);
+          mesh_->face_get_edges_and_dirs(f, &edges, &edirs);
           int nedges = edges.size();
 
           // project magnetic flux on mesh edges
           WhetStone::DenseVector b(nedges), mb(nedges); 
           for (int i = 0; i != nedges; ++i) {
             int e = edges[i];
-            const AmanziGeometry::Point& tau = mesh_->getEdgeVector(e);
-            double len = mesh_->getEdgeLength(e);
+            const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
+            double len = mesh_->edge_length(e);
             b(i) = ((value^normal) * tau) / (area * len) * edirs[i];
           }
 
@@ -176,7 +176,7 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
       const std::vector<int>& bc_model = bc_e->bc_model();
       const std::vector<double>& bc_value = bc_e->bc_value();
 
-      mesh_->getCellEdges(c, edges);
+      mesh_->cell_get_edges(c, &edges);
       int nedges = edges.size();
 
       // essential conditions for test functions
@@ -226,7 +226,7 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
 ****************************************************************** */
 void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
 {
-  int dim = mesh_->getSpaceDimension();
+  int dim = mesh_->space_dimension();
 
   // domain and range of this operator are equal
   Teuchos::ParameterList domain = plist.sublist("schema electric");
@@ -261,10 +261,10 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
   }
 
   // create the local Op and register it with the global Operator
-  if (local_schema_col_.get_base() == AmanziMesh::Entity_kind::CELL && dim == 3) {
+  if (local_schema_col_.get_base() == AmanziMesh::CELL && dim == 3) {
     std::string name = "Electromagnetics: CELL_EDGE";
     local_op_ = Teuchos::rcp(new Op_Cell_Edge(name, mesh_));
-  } else if (local_schema_col_.get_base() == AmanziMesh::Entity_kind::CELL && dim == 2) {
+  } else if (local_schema_col_.get_base() == AmanziMesh::CELL && dim == 2) {
     std::string name = "Electromagnetics: CELL_NODE";
     local_op_ = Teuchos::rcp(new Op_Cell_Node(name, mesh_));
   } else {
@@ -283,13 +283,13 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
 ****************************************************************** */
 Teuchos::RCP<Epetra_MultiVector> PDE_Electromagnetics::GraphGeometry()
 {
-  int d = mesh_->getSpaceDimension();
-  auto map = mesh_->getMap(AmanziMesh::Entity_kind::NODE, false);
+  int d = mesh_->space_dimension();
+  auto map = mesh_->node_map(false);
   auto xyz = Teuchos::rcp(new Epetra_MultiVector(map, d));
 
   AmanziGeometry::Point xv;
   for (int n = 0; n < nnodes_owned; ++n) {
-    xv = mesh_->getNodeCoordinate(n);
+    mesh_->node_get_coordinates(n, &xv);
     for (int i = 0; i < d; ++i) (*xyz)[i][n] = xv[i];
   }
 
@@ -302,17 +302,17 @@ Teuchos::RCP<Epetra_MultiVector> PDE_Electromagnetics::GraphGeometry()
 ****************************************************************** */
 Teuchos::RCP<Epetra_CrsMatrix> PDE_Electromagnetics::GradientOperator()
 {
-  auto map_row = mesh_->getMap(AmanziMesh::Entity_kind::EDGE, false);
-  auto map_col = mesh_->getMap(AmanziMesh::Entity_kind::NODE, false);
-  auto map_col_wghost = mesh_->getMap(AmanziMesh::Entity_kind::NODE, true);
+  auto map_row = mesh_->edge_map(false);
+  auto map_col = mesh_->node_map(false);
+  auto map_col_wghost = mesh_->node_map(true);
   auto G = Teuchos::rcp(new Epetra_CrsMatrix(Copy, map_row, map_col_wghost, 2));
 
   int ierr(0), n1, n2, lid_c[2];
   double values[2];
 
   for (int e = 0; e != nedges_owned; ++e) {
-    double len = mesh_->getEdgeLength(e);
-    mesh_->getEdgeNodes(e, &n1, &n2);
+    double len = mesh_->edge_length(e);
+    mesh_->edge_get_nodes(e, &n1, &n2);
 
     lid_c[0] = map_col_wghost.GID(n1); 
     lid_c[1] = map_col_wghost.GID(n2); 

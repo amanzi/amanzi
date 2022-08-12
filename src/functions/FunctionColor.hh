@@ -11,7 +11,7 @@ class FunctionColor {
   virtual std::unique_ptr<FunctionColor> Clone() const = 0;
   virtual int operator()(const double* ) const = 0;
 
-  virtual int get_dimension() const = 0;
+  virtual int getDimension() const = 0;
 };
 
 } // namespace Amanzi

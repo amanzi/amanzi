@@ -82,7 +82,7 @@ void Mini_Diffusion1D::UpdateJacobian(
 
   // derivatives of A(k(p))
   Kc = (K_ != NULL) ? (*K_)(0) : Kconst_;
-  hl = Kc / mesh_getCellVolume(0);
+  hl = Kc / mesh_cell_volume(0);
   al = 2 * hl;
   tmp0 = al;
   bl = al * p(0);
@@ -107,7 +107,7 @@ void Mini_Diffusion1D::UpdateJacobian(
   }
 
   Kc = (K_ != NULL) ? (*K_)(ncells - 1) : Kconst_;
-  hr = Kc / mesh_getCellVolume(ncells - 1);
+  hr = Kc / mesh_cell_volume(ncells - 1);
   ar = 2 * hr;
   tmp1 = ar;
   br = ar * p(ncells - 1);

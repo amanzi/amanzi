@@ -66,6 +66,7 @@ class MFD3D_Electromagnetics : public DeRham_Edge {
 
   int MassMatrixDiagonal(int c, const Tensor& T, DenseMatrix& M);
 
+  using BilinearForm::StiffnessMatrix;
   int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C);
   int StiffnessMatrix_GradCorrection(int c, const Tensor& T, DenseMatrix& A);
 

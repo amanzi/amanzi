@@ -1,0 +1,179 @@
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+
+  <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="mesh::simple"/>
+  </ParameterList>    
+   
+  <ParameterList name="regions">
+    <ParameterList name="Computational domain">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{10.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Left side">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.0,0.5}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+ 
+  <!-- SOLVERS -->
+  <ParameterList name="solvers">
+    <ParameterList name="Dispersion Solver">
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="maximum number of iterations" type="int" value="400"/>
+        <Parameter name="error tolerance" type="double" value="1e-20"/>
+        <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, make one iteration}"/>
+        <Parameter name="size of Krylov space" type="int" value="5"/>
+
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="PKs">
+    <ParameterList name="transport">
+      <Parameter name="cfl" type="double" value="0.5"/>   
+      <Parameter name="spatial discretization order" type="int" value="2"/>   
+      <Parameter name="temporal discretization order" type="int" value="1"/>   
+      <Parameter name="solver" type="string" value="Dispersion Solver"/>
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="effective transport diffusion" type="bool" value="true"/>
+      </ParameterList>
+
+      <ParameterList name="material properties">
+        <ParameterList name="Brown soil">
+          <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+          <Parameter name="aqueous tortuosity" type="double" value="1.0"/>
+          <Parameter name="gaseous tortuosity" type="double" value="1.0"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="molecular diffusion">
+        <Parameter name="aqueous names" type="Array(string)" value="{Tritium(l)}"/>
+        <Parameter name="aqueous values" type="Array(double)" value="{1e-9}"/>
+        <Parameter name="gaseous names" type="Array(string)" value="{Tritium(g)}"/>
+        <Parameter name="gaseous values" type="Array(double)" value="{1e-5}"/>
+        <Parameter name="air-water partitioning coefficient" type="Array(double)" value="{1.76e-5}"/>
+      </ParameterList>
+
+      <ParameterList name="operators">
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="fv: default"/>
+            <Parameter name="discretization secondary" type="string" value="fv: default"/>
+            <Parameter name="schema" type="Array(string)" value="{cell}"/>
+            <Parameter name="gravity" type="bool" value="false"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <!-- developers parameters --> 
+      <Parameter name="enable internal tests" type="bool" value="true"/>   
+      <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
+      <!-- end of developers parameters -->
+
+      <ParameterList name="reconstruction">
+        <Parameter name="polynomial order" type="int" value="1"/>
+        <Parameter name="limiter" type="string" value="tensorial"/>
+        <Parameter name="limiter extension for transport" type="bool" value="true"/>
+      </ParameterList>
+
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+
+      <ParameterList name="boundary conditions">
+        <ParameterList name="concentration">
+          <ParameterList name="Tritium(l)">
+            <ParameterList name="BC for left side">
+              <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <ParameterList name="boundary concentration">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>        
+
+      <Parameter name="number of aqueous components" type="int" value="1"/>
+      <Parameter name="number of gaseous components" type="int" value="1"/>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- PRECONDITIONERS -->
+  <ParameterList name="preconditioners">
+    <ParameterList name="Hypre AMG">
+      <Parameter name="discretization method" type="string" value="optimized mfd"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="cycle applications" type="int" value="5"/>
+        <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="state">
+    <ParameterList name="evaluators">
+      <ParameterList name="porosity">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="saturation_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.01"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="initial conditions">
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="101325.0"/>
+      </ParameterList>
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.81}"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_density">
+        <Parameter name="value" type="double" value="1000.0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="verbose object">
+    <Parameter name="verbosity level" type="string" value="high"/>
+  </ParameterList>
+</ParameterList>
+

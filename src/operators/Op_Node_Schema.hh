@@ -30,7 +30,7 @@ class Op_Node_Schema : public Op {
                  const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       Op(schema_row, schema_col, mesh) {
     WhetStone::DenseMatrix null_matrix;
-    matrices.resize(mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED), null_matrix);
+    matrices.resize(mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED), null_matrix);
     matrices_shadow = matrices;
   }
 

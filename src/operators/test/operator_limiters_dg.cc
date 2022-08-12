@@ -32,8 +32,9 @@
 // Amanzi::Operators
 #include "AnalyticDG08b.hh"
 #include "ErrorAnalysis.hh"
-#include "LimiterCell.hh"
+#include "LimiterCellDG.hh"
 #include "OperatorDefs.hh"
+#include "ReconstructionCellLinear.hh"
 
 const std::string LIMITERS[3] = {"B-J", "B-J c2c", "B-J all"};
 
@@ -59,7 +60,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
   // create and initialize cell-based field 
   int nk(6), dim(2);
   CompositeVectorSpace cvs1;
-  cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
+  cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
   auto field = Teuchos::rcp(new CompositeVector(cvs1));
   auto field_c = field->ViewComponent("cell", true);
 
@@ -75,12 +76,12 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
   ana.InitialGuess(dg, *field_c, 0.0);
   field->ScatterMasterToGhosted("cell");
 
-  int ncells_owned  = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned  = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // memory for gradient
   CompositeVectorSpace cvs2;
-  cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, dim);
+  cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim);
   auto grad = Teuchos::rcp(new CompositeVector(cvs2));
   Epetra_MultiVector& grad_c = *grad->ViewComponent("cell");
 
@@ -103,11 +104,11 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     std::vector<int> bc_model(nfaces_wghost, 0);
     std::vector<double> bc_value(nfaces_wghost, 0.0);
 
-    const auto& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
-    const auto& bmap = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
+    const auto& fmap = mesh->face_map(true);
+    const auto& bmap = mesh->exterior_face_map(true);
     for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
       int f = fmap.LID(bmap.GID(bf));
-      const auto& xf = mesh->getFaceCentroid(f);
+      const auto& xf = mesh->face_centroid(f);
       bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.SolutionExact(xf, 0.0);
     }
@@ -144,17 +145,18 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     }
 
     // Apply limiter
+    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh, grad));
     LimiterCell limiter(mesh);
     limiter.Init(plist);
-    limiter.ApplyLimiter(ids, field_c, 0, grad, bc_model, bc_value);
+    limiter.ApplyLimiter(ids, field_c, 0, lifting, bc_model, bc_value);
 
     // calculate gradient error
     double err_int, err_glb, gnorm;
-    ComputeGradError(mesh, grad_c, grad_exact, err_int, err_glb, gnorm);
+    ComputePolyError(mesh, grad_c, grad_exact, err_int, err_glb, gnorm);
     // CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
 
     int nids, itmp = ids.size();
-    mesh->getComm()->SumAll(&itmp, &nids, 1);
+    mesh->get_comm()->SumAll(&itmp, &nids, 1);
     double fraction = 100.0 * nids / grad_c.GlobalLength();
     if (MyPID == 0) 
       printf("%9s: errors: %10.6f %10.6f  ||grad||=%8.4f  indicator=%5.1f%%\n",
@@ -189,9 +191,9 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     }
 
     double tmp = err;
-    mesh->getComm()->SumAll(&tmp, &err, 1);
+    mesh->get_comm()->SumAll(&tmp, &err, 1);
     tmp = l2norm;
-    mesh->getComm()->SumAll(&tmp, &l2norm, 1);
+    mesh->get_comm()->SumAll(&tmp, &l2norm, 1);
     if (MyPID == 0) 
       printf("       sol errors: %10.6f   ||u||=%8.4f\n", std::pow(err, 0.5), std::pow(l2norm, 0.5));
     CHECK(err < 0.02);
@@ -231,7 +233,7 @@ void RunTestGaussPoints(const std::string& limiter_name)
   // create and initialize cell-based field 
   int nk(6), dim(2);
   CompositeVectorSpace cvs1;
-  cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
+  cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
   auto field = Teuchos::rcp(new CompositeVector(cvs1));
   auto field_c = field->ViewComponent("cell", true);
 
@@ -247,12 +249,12 @@ void RunTestGaussPoints(const std::string& limiter_name)
   ana.InitialGuess(dg, *field_c, 0.0);
   field->ScatterMasterToGhosted("cell");
 
-  int ncells_owned  = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned  = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // memory for gradient
   CompositeVectorSpace cvs2;
-  cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, dim);
+  cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim);
 
   Teuchos::ParameterList plist;
   plist.set<int>("polynomial_order", 2)
@@ -265,19 +267,22 @@ void RunTestGaussPoints(const std::string& limiter_name)
   std::vector<int> bc_model(nfaces_wghost, 0);
   std::vector<double> bc_value(nfaces_wghost, 0.0);
 
-  const auto& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
-  const auto& bmap = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
+  const auto& fmap = mesh->face_map(true);
+  const auto& bmap = mesh->exterior_face_map(true);
   for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
     int f = fmap.LID(bmap.GID(bf));
-    const auto& xf = mesh->getFaceCentroid(f);
+    const auto& xf = mesh->face_centroid(f);
     bc_model[f] = OPERATOR_BC_DIRICHLET;
     bc_value[f] = ana.SolutionExact(xf, 0.0);
   }
 
   // Apply limiter
-  LimiterCell limiter(mesh);
+  LimiterCellDG limiter(mesh);
   limiter.Init(plist);
-  limiter.ApplyLimiter(field_c, dg, bc_model, bc_value);
+  limiter.ApplyLimiterDG(field_c, dg, bc_model, bc_value);
+  const auto& factor = *limiter.limiter();
+  for (int c = 0; c < ncells_owned; ++c) 
+    for (int i = 1; i < nk; ++i) (*field_c)[i][c] *= factor[c];
 
   double minlim, avglim, maxlim;
   limiter.limiter()->MinValue(&minlim);
@@ -294,9 +299,9 @@ void RunTestGaussPoints(const std::string& limiter_name)
   }
 
   double tmp = umin;
-  mesh->getComm()->MinAll(&tmp, &umin, 1);
+  mesh->get_comm()->MinAll(&tmp, &umin, 1);
   tmp = umax;
-  mesh->getComm()->MaxAll(&tmp, &umax, 1);
+  mesh->get_comm()->MaxAll(&tmp, &umax, 1);
   if (MyPID == 0) {
     printf("function min/max: %10.6f %10.6f\n", umin, umax);
     printf("limiter min/avg/max: %10.6f %10.6f %10.6f\n", minlim, avglim, maxlim);

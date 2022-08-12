@@ -14,7 +14,7 @@ cmake_minimum_required(VERSION 3.11.4)
 # Language standard
 # NB: Seems like a good idea to have this before project() call.
 #
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ############################################################################ #
@@ -454,10 +454,15 @@ endif()
 # LAPACK/BLAS Configuration 
 # ############################################################################ #
 
+message(STATUS "Amanzi Arch: " ${AMANZI_ARCH})
+string(COMPARE EQUAL "${AMANZI_ARCH}" "Chicoma" AMANZI_ARCH_CHICOMA)
+string(COMPARE EQUAL "${AMANZI_ARCH}" "NERSC" AMANZI_ARCH_NERSC)
+string(COMPARE EQUAL "${AMANZI_ARCH}" "Summit" AMANZI_ARCH_Summit)
+
 option(TPL_BLAS_VENDOR "Identifies the vendor for BLAS and LAPACK library search" All)
 set(BLA_VENDOR ${TPL_BLAS_VENDOR})
 
-if ( DEFINED ENV{NERSC_HOST} )
+if ( ${AMANZI_ARCH_NERSC} )
    
    set(BLA_VENDOR "CRAYSCI")
    string(TOLOWER ${CMAKE_Fortran_COMPILER_ID} _lib_compiler_id)
@@ -470,6 +475,20 @@ if ( DEFINED ENV{NERSC_HOST} )
    message(STATUS ">>> Amanzi: On NERSC system BLA_DIR = ${BLA_DIR}")
    message(STATUS ">>> Amanzi: On NERSC system LAPCK_DIR = ${LAPCK_DIR}")
    
+elseif ( ${AMANZI_ARCH_CHICOMA} )
+   
+   set(BLA_VENDOR "CRAYSCI")
+   string(TOLOWER ${CMAKE_Fortran_COMPILER_ID} _lib_compiler_id)
+   set(LIBBLAS_BASE_NAME "sci_${_lib_compiler_id}")
+   set(LIBLAPACK_BASE_NAME "sci_${_lib_compiler_id}")
+   # string (REPLACE "-" "_" CRAY_CPU_TEMP $ENV{CRAY_CPU_TARGET})
+   # string (REPLACE "x86_64" "${CRAY_CPU_TEMP}/lib" BLA_DIR $ENV{CRAY_LIBSCI_PREFIX_DIR})
+   set(BLA_DIR $ENV{CRAY_LIBSCI_PREFIX_DIR}/lib)
+   set(LAPCK_DIR ${BLA_DIR})
+   
+   message(STATUS ">>> Amanzi: On LANL-IC Chicoma system BLA_DIR = ${BLA_DIR}")
+   message(STATUS ">>> Amanzi: On LANL-IC Chicoma system LAPCK_DIR = ${LAPCK_DIR}")
+
 endif()
 
 # Search for BLAS (Basic Linear Algebra Subprograms) http://www.netlib.org/blas

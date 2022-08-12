@@ -20,8 +20,8 @@ namespace Amanzi {
 TimestepControllerSmarter::TimestepControllerSmarter(Teuchos::ParameterList& plist) :
     plist_(plist),
     count_increased_before_increase_(0),
-    last_fail_(0),
-    successive_increases_(0) {
+    successive_increases_(0),
+    last_fail_(0) {
   max_its_ = plist_.get<int>("max iterations");
   min_its_ = plist_.get<int>("min iterations");
   AMANZI_ASSERT(max_its_ > min_its_);

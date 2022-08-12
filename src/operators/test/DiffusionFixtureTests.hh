@@ -28,7 +28,7 @@ void test(const std::string& prec_solver,
   DiffusionFixture fix(plist);
   fix.Init(dim, nx, mesh_type);
 
-  if (fix.getComm()->MyPID() == 0) {
+  if (fix.get_comm()->MyPID() == 0) {
     std::cout 
       << "================================================================================" << std::endl
       << "Diffusion Test (np=" << fix.comm->NumProc() << "): " << disc_type 
@@ -65,7 +65,7 @@ void test(const std::string& prec_solver,
     fix.Go(tol);
   }
 
-  if (fix.getComm()->MyPID() == 0) {
+  if (fix.get_comm()->MyPID() == 0) {
     std::cout << "================================================================================" 
               << std::endl << std::endl;
   }
@@ -88,7 +88,7 @@ void testWGravity(double gravity,
   DiffusionFixture fix(plist);
   fix.Init(dim, nx, mesh_type);
 
-  if (fix.getComm()->MyPID() == 0) {
+  if (fix.get_comm()->MyPID() == 0) {
     std::cout
       << "================================================================================" << std::endl
       << "DiffusionWithGravity Test (np=" << fix.comm->NumProc() << "): "
@@ -118,7 +118,7 @@ void testWGravity(double gravity,
   for (int i = 0; i < niters - 1; ++i) fix.Go(0.0);
   fix.Go(tol);
 
-  if (fix.getComm()->MyPID() == 0) {
+  if (fix.get_comm()->MyPID() == 0) {
     std::cout << "================================================================================" 
               << std::endl << std::endl;
   }

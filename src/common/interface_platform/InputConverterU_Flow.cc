@@ -70,7 +70,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
   out_list.sublist("fracture permeability models") = TranslateFlowFractures_(domain);
   if (out_list.sublist("fracture permeability models").numParams() > 0) {
     out_list.sublist("physical models and assumptions")
-        .set<bool>("flow in fractures", true);
+        .set<bool>("flow and transport in fractures", true);
   }
 
   if (pk_model_["flow"] == "darcy") {
@@ -179,18 +179,13 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
   
   if (pk_master_.find("flow") != pk_master_.end()) {
     flow_list->sublist("time integrator") = TranslateTimeIntegrator_(
-        err_options, nonlinear_solver, modify_correction, unstr_controls,
+        err_options, nonlinear_solver, modify_correction, unstr_controls, TI_SOLVER,
         dt_cut_[mode], dt_inc_[mode]);
   }
 
   // insert boundary conditions and source terms
   flow_list->sublist("boundary conditions") = TranslateFlowBCs_(domain);
   flow_list->sublist("source terms") = TranslateSources_(domain, "flow");
-
-  // models and default assumptions. 
-  // Note that MPC/PKs may overwrite these parameters
-  flow_list->sublist("physical models and assumptions")
-      .set<std::string>("water content model", "constant density");
 
   flow_list->sublist("verbose object") = verb_list_.sublist("verbose object");
 
@@ -780,7 +775,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
 
   // output statistics
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    Teuchos::OSTab tab = vo_->getOSTab();
+    Teuchos::OSTab tab2 = vo_->getOSTab();
     *vo_->os() << "active BCs: ";
     for (std::set<std::string>::iterator it = active_bcs.begin(); it != active_bcs.end(); ++it) {
       *vo_->os() << *it << ", ";
@@ -959,12 +954,13 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_(const std::strin
     // get permeability
     node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
     if (flag)  {
-      double aperture(0.0);
+      double aperture(0.0), value(0.0);
       std::string type, model;
 
       type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
       if (type == "") aperture = GetAttributeValueD_(node, "aperture", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
-      model = GetAttributeValueS_(node, "model", "cubic law, linear");
+      model = GetAttributeValueS_(node, "model", "cubic law, linear, constant");
+      if (model == "constant") value = GetAttributeValueD_(node, "parallel", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m^2", true);
 
       for (auto it = regions.begin(); it != regions.end(); ++it) {
         std::stringstream ss;
@@ -974,7 +970,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_(const std::strin
         fam_list.set<std::string>("region", *it);
 
         fam_list.set<std::string>("model", model);
-        fam_list.set<double>("aperture", aperture);
+        if (model == "constant") 
+          fam_list.set<double>("value", value);
+        else 
+          fam_list.set<double>("aperture", aperture);
       }
     }
   }

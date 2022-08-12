@@ -16,12 +16,15 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "IO.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "OutputXDMF.hh"
 
 #include "ShallowWater_PK.hh"
 
-#include "OutputXDMF.hh"
+
+using namespace Amanzi;
 
 //--------------------------------------------------------------
 // analytic solution
@@ -33,9 +36,9 @@ void dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
   std::string passwd = "state";
 
-  Epetra_MultiVector& B_vec_c = *S->GetFieldData("surface-bathymetry",passwd)->ViewComponent("cell");
-  Epetra_MultiVector& h_vec_c = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
-  Epetra_MultiVector& ht_vec_c = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("cell");
+  auto& B_vec_c = *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& h_vec_c = *S->GetW<CompositeVector>("surface-ponded_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& ht_vec_c = *S->GetW<CompositeVector>("surface-total_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; c++) {
     Amanzi::AmanziGeometry::Point xc = mesh->cell_centroid(c);
@@ -47,8 +50,8 @@ void dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     ht_vec_c[0][c] = h_vec_c[0][c] + B_vec_c[0][c];
   }
 
-  S->GetFieldData("surface-velocity", passwd)->PutScalar(0.0);
-  S->GetFieldData("surface-discharge", "surface-discharge")->PutScalar(0.0);
+  S->GetW<CompositeVector>("surface-velocity", Tags::DEFAULT, passwd).PutScalar(0.0);
+  S->GetW<CompositeVector>("surface-discharge", Tags::DEFAULT, "surface-discharge").PutScalar(0.0);
 }
 
 
@@ -180,7 +183,6 @@ TEST(SHALLOW_WATER_1D) {
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterMesh("surface", mesh);
-  S->set_time(0.0);
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
 
@@ -188,20 +190,21 @@ TEST(SHALLOW_WATER_1D) {
 
   // create a shallow water PK
   ShallowWater_PK SWPK(sw_list,plist,S,soln);
-  SWPK.Setup(S.ptr());
+  SWPK.Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
-  SWPK.Initialize(S.ptr());
+  S->set_time(0.0);
+  SWPK.Initialize();
 
   dam_break_1D_setIC(mesh, S);
   S->CheckAllFieldsInitialized();
 
-  const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
-  const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
-  const Epetra_MultiVector& vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
-  const Epetra_MultiVector& q = *S->GetFieldData("surface-discharge")->ViewComponent("cell");
-  const Epetra_MultiVector& B = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
+  const auto& hh = *S->Get<CompositeVector>("surface-ponded_depth").ViewComponent("cell");
+  const auto& ht = *S->Get<CompositeVector>("surface-total_depth").ViewComponent("cell");
+  const auto& vel = *S->Get<CompositeVector>("surface-velocity").ViewComponent("cell");
+  const auto& q = *S->Get<CompositeVector>("surface-discharge").ViewComponent("cell");
+  const auto& B = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
 
   // create pid vector
   Epetra_MultiVector pid(B);
@@ -235,7 +238,7 @@ TEST(SHALLOW_WATER_1D) {
 
     dam_break_1D_exact_field(mesh, hh_ex, vel_ex, t_out);
 
-    if (iter % 5 == 0) {
+    if (iter % 25 == 0) {
       io.InitializeCycle(t_out, iter, "");
       io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
       io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
@@ -256,7 +259,7 @@ TEST(SHALLOW_WATER_1D) {
     t_new = t_old + dt;
 
     SWPK.AdvanceStep(t_old, t_new);
-    SWPK.CommitStep(t_old, t_new, S);
+    SWPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
     iter++;

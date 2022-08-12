@@ -35,7 +35,7 @@ class WRMmp_vanGenuchten : public WRMmp {
   // required methods from the base class
   virtual double k_relative(double sl, int phase);
   virtual double capillaryPressure(double saturation);
-  virtual double dPc_dS(double saturation);
+  virtual double dPc_dS(double sl);
   virtual double dKdS(double sl, int phase);
 
  private:

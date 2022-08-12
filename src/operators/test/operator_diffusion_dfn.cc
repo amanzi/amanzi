@@ -22,10 +22,8 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "exceptions.hh"
-#include "errors.hh"
 #include "GMVMesh.hh"
-//#include "MeshExtractedManifold.hh"
+#include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
@@ -41,6 +39,7 @@
 * TBW.
 * **************************************************************** */
 void RunTest(int icase, double gravity) {
+  using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -56,40 +55,36 @@ void RunTest(int icase, double gravity) {
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create an SIMPLE mesh framework
-  Teuchos::ParameterList region_list = plist->sublist("regions");
+  ParameterList region_list = plist->sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  auto mesh_plist = Teuchos::rcp(new Teuchos::ParameterList());
-  mesh_plist->set("request edges", true);
-  MeshFactory meshfactory(comm, gm, mesh_plist);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> surfmesh;
+  RCP<Mesh> surfmesh;
 
   if (icase == 0) {
     if (comm->NumProc() > 1) return;
-    Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
+    RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
     // extract fractures mesh
     std::vector<std::string> setnames;
     setnames.push_back("fracture 1");
     setnames.push_back("fracture 2");
-    surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::Entity_kind::FACE);
+    surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::FACE);
   } else if (icase == 1) {
     surfmesh = meshfactory.create("test/fractures.exo");
   } else if (icase == 2) {
-    Errors::Message msg("MeshExtractedManifold not refactored yet");
-    Exceptions::amanzi_throw(msg);
-    // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
-    // std::string setname("fractures");
-    // surfmesh = Teuchos::rcp(new MeshExtractedManifold(
-    //     mesh, setname, AmanziMesh::Entity_kind::FACE, comm, gm, plist));
+    RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, true, true);
+    std::string setname("fractures");
+    surfmesh = Teuchos::rcp(new MeshExtractedManifold(
+        mesh, setname, AmanziMesh::FACE, comm, gm, plist, true, false));
   }
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_owned = surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   WhetStone::Tensor Kc(2, 1);
   Kc(0, 0) = 1.0;
@@ -99,12 +94,12 @@ void RunTest(int icase, double gravity) {
   Analytic02 ana(surfmesh, v, gravity, Kc);
 
   // create boundary data (no mixed bc)
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = surfmesh->getFaceCentroid(f);
+    const Point& xf = surfmesh->face_centroid(f);
     if (fabs(xf[2] - 0.5) < 1e-6 && 
         (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
          fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6)) { 
@@ -122,8 +117,8 @@ void RunTest(int icase, double gravity) {
   // create solution 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(surfmesh)->SetGhosted(true);
-  cvs->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1)->SetOwned(false);
-  cvs->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+  cvs->SetComponent("cell", AmanziMesh::CELL, 1)->SetOwned(false);
+  cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
   auto solution = Teuchos::rcp(new CompositeVector(*cvs));
   solution->PutScalar(0.0);
@@ -158,10 +153,10 @@ void RunTest(int icase, double gravity) {
   global_op->ApplyInverse(rhs, *solution);
 
   // post-processing
-  auto cvs2 = Operators::CreateNonManifoldCVS(surfmesh);
+  auto cvs2 = Operators::CreateManifoldCVS(surfmesh);
   auto flux = Teuchos::rcp(new CompositeVector(*cvs2));
 
-  op->UpdateFluxNonManifold(solution.ptr(), flux.ptr());
+  op->UpdateFluxManifold(solution.ptr(), flux.ptr());
 
   // statistics
   int ndofs = global_op->A()->NumGlobalRows();
@@ -186,7 +181,7 @@ void RunTest(int icase, double gravity) {
   // collapse flux on fracture interface
   double unorm, ul2_err, uinf_err;
   Epetra_MultiVector& flx_long = *flux->ViewComponent("face", true);
-  Epetra_MultiVector flx_short(surfmesh->getMap(AmanziMesh::Entity_kind::FACE, false), 1);
+  Epetra_MultiVector flx_short(surfmesh->face_map(false), 1);
 
   const auto& fmap = *flux->Map().Map("face", true);
   for (int f = 0; f < nfaces_owned; ++f) {
@@ -205,7 +200,7 @@ void RunTest(int icase, double gravity) {
   // remove gravity to check symmetry
   if (gravity > 0.0) { 
     for (int c = 0; c < ncells_owned; c++) {
-      const Point& xc = surfmesh->getCellCentroid(c);
+      const Point& xc = surfmesh->cell_centroid(c);
       p[0][c] -= rho * gvec[2] * xc[2];
     }
   }
@@ -226,8 +221,6 @@ TEST(FRACTURES_EXTRACTION) {
 TEST(FRACTURES_INPUT_EXODUS_FILE_GRAVITY) {
   RunTest(1, 2.0);
 }
-
-
 
 TEST(FRACTURES_MESH_EXTRACTION_MANIFOLD) {
   RunTest(2, 0.0);

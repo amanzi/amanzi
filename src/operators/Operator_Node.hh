@@ -29,7 +29,7 @@ class Operator_Node : public Operator {
                Teuchos::ParameterList& plist) :
       Operator(cvs, plist, OPERATOR_SCHEMA_DOFS_NODE) {
     set_schema_string("NODE");
-    cell_max_nodes = AmanziMesh::MeshAlgorithms::getMaxCellNumNodes(*mesh_);
+    cell_max_nodes = mesh_->cell_get_max_nodes();
   }
 
   // copy constructor

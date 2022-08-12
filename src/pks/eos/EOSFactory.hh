@@ -27,9 +27,17 @@ class EOSFactory : public Utils::Factory<EOS> {
  public:
   using Utils::Factory<EOS>::CreateInstance;
 
-  Teuchos::RCP<EOS> CreateEOS(Teuchos::ParameterList& plist) {
-    std::string eos_typename = plist.get<std::string>("eos type");
-    return Teuchos::rcp(CreateInstance(eos_typename, plist));
+  Teuchos::RCP<EOS> Create(Teuchos::ParameterList& plist) {
+    std::string name;
+
+    if (plist.isParameter("eos type")) {
+      name = plist.get<std::string>("eos type");
+    }
+    else if (plist.isParameter("com type")) {
+      name = plist.get<std::string>("com type");
+    }
+
+    return Teuchos::rcp(CreateInstance(name, plist));
   }
 };
 

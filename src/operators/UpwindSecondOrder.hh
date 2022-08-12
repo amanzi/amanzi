@@ -30,12 +30,9 @@
 namespace Amanzi {
 namespace Operators {
 
-template<class Model>
-class UpwindSecondOrder : public Upwind<Model> {
+class UpwindSecondOrder : public Upwind {
  public:
-  UpwindSecondOrder(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                 Teuchos::RCP<const Model> model)
-      : Upwind<Model>(mesh, model) {};
+  UpwindSecondOrder(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : Upwind(mesh) {};
   ~UpwindSecondOrder() {};
 
   // main methods
@@ -52,111 +49,16 @@ class UpwindSecondOrder : public Upwind<Model> {
   Teuchos::RCP<CompositeVectorSpace> Map() {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true)
-       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
-       ->AddComponent("dirichlet_faces", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1)
-       ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1)
-       ->AddComponent("grad", AmanziMesh::Entity_kind::CELL, mesh_->getSpaceDimension());
+       ->AddComponent("cell", AmanziMesh::CELL, 1)
+       ->AddComponent("face", AmanziMesh::FACE, 1)
+       ->AddComponent("grad", AmanziMesh::CELL, mesh_->space_dimension());
     return cvs;
   }
-
- private:
-  using Upwind<Model>::mesh_;
-  using Upwind<Model>::model_;
-  using Upwind<Model>::face_comp_;
 
  private:
   int method_, order_;
   double tolerance_;
 };
-
-
-/* ******************************************************************
-* Public init method. It is not yet used.
-****************************************************************** */
-template<class Model>
-void UpwindSecondOrder<Model>::Init(Teuchos::ParameterList& plist)
-{
-  method_ = Operators::OPERATOR_UPWIND_FLUX_SECOND_ORDER;
-  tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
-  order_ = plist.get<int>("polynomial order", 2);
-}
-
-
-/* ******************************************************************
-* Flux-based upwind consistent with mimetic discretization.
-****************************************************************** */
-template<class Model>
-void UpwindSecondOrder<Model>::Compute(
-    const CompositeVector& flux, const CompositeVector& solution,
-    const std::vector<int>& bc_model, CompositeVector& field)
-{
-  AMANZI_ASSERT(field.HasComponent("cell"));
-  AMANZI_ASSERT(field.HasComponent("grad"));
-  AMANZI_ASSERT(field.HasComponent(face_comp_));
-
-  field.ScatterMasterToGhosted("cell");
-  flux.ScatterMasterToGhosted("face");
-
-  const Epetra_MultiVector& flx_face = *flux.ViewComponent("face", true);
-  // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
-
-  const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& fld_grad = *field.ViewComponent("grad", true);
-  const Epetra_MultiVector& fld_boundary = *field.ViewComponent("dirichlet_faces", true);
-  const Epetra_Map& ext_face_map = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
-  const Epetra_Map& face_map = mesh_->getMap(AmanziMesh::Entity_kind::FACE, true);
-  Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
-  upw_face.PutScalar(0.0);
-
-  double flxmin, flxmax;
-  flx_face.MinValue(&flxmin);
-  flx_face.MaxValue(&flxmax);
-  double tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
-
-  int dim = mesh_->getSpaceDimension();
-  AmanziGeometry::Point grad(dim);
-
-  int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
-  for (int c = 0; c < ncells_wghost; c++) {
-    const auto& faces = mesh_->getCellFaces(c);
-    const auto& dirs = mesh_->getCellFaceDirections(c);
-    int nfaces = faces.size();
-
-    double kc(fld_cell[0][c]);
-    const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
-    for (int i = 0; i < dim; i++) grad[i] = fld_grad[i][c];
-
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      bool flag = (flx_face[0][f] * dirs[n] <= -tol);  // upwind flag
-      
-      // Internal faces. We average field on almost vertical faces. 
-      if (bc_model[f] == OPERATOR_BC_NONE && fabs(flx_face[0][f]) <= tol) { 
-        double tmp(0.5);
-        int c2 = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
-        if (c2 >= 0) { 
-          double v1 = mesh_->getCellVolume(c);
-          double v2 = mesh_->getCellVolume(c2);
-          tmp = v2 / (v1 + v2);
-        }
-        const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
-        upw_face[0][f] += (kc + grad * (xf - xc)) * tmp;
-      // Boundary faces. We upwind only on inflow dirichlet faces.
-      } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
-        upw_face[0][f] = fld_boundary[0][ext_face_map.LID(face_map.GID(f))];
-      } else if (bc_model[f] == OPERATOR_BC_NEUMANN && flag) {
-        // upw[0][f] = ((*model_).*Value)(c, sol_face[0][f]);
-        upw_face[0][f] = kc;
-      } else if (bc_model[f] == OPERATOR_BC_MIXED && flag) {
-        upw_face[0][f] = kc;
-      // Internal and boundary faces. 
-      } else if (!flag) {
-        const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
-        upw_face[0][f] = kc + grad * (xf - xc);
-      }
-    }
-  }
-}
 
 }  // namespace Operators
 }  // namespace Amanzi

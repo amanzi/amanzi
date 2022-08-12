@@ -63,32 +63,32 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                    int schema) :
     cvs_row_(cvs),
     cvs_col_(cvs),
-    schema_row_(schema),
-    schema_col_(schema),
-    shift_(0.0),
-    shift_min_(0.0),
     plist_(plist),
     num_colors_(0),
     coloring_(Teuchos::null),
     inverse_pars_set_(false),
     initialize_complete_(false),
     compute_complete_(false),
-    assembly_complete_(false)
+    assembly_complete_(false),
+    schema_row_(schema),
+    schema_col_(schema),
+    shift_(0.0),
+    shift_min_(0.0)
 {
   mesh_ = cvs_col_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
 
-  ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  nfaces_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
-  nnodes_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 
-  ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
-  nfaces_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
-  nnodes_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
-  if (mesh_->hasEdges()) {
-    nedges_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_type::OWNED);
-    nedges_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_type::ALL);
+  if (mesh_->valid_edges()) {
+    nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
+    nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
   } else {
     nedges_owned = 0;
     nedges_wghost = 0;
@@ -119,32 +119,32 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
                    const Schema& schema_col) :
     cvs_row_(cvs_row),
     cvs_col_(cvs_col),
-    schema_row_(schema_row),
-    schema_col_(schema_col),
-    shift_(0.0),
-    shift_min_(0.0),
     plist_(plist),
     num_colors_(0),
     coloring_(Teuchos::null),
     inverse_pars_set_(false),
     initialize_complete_(false),
     compute_complete_(false),
-    assembly_complete_(false)
+    assembly_complete_(false),
+    schema_row_(schema_row),
+    schema_col_(schema_col),
+    shift_(0.0),
+    shift_min_(0.0)
 {
   mesh_ = cvs_col_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
 
-  ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  nfaces_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
-  nnodes_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 
-  ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
-  nfaces_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
-  nnodes_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
-  if (mesh_->hasEdges()) {
-    nedges_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_type::OWNED);
-    nedges_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_type::ALL);
+  if (mesh_->valid_edges()) {
+    nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
+    nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
   } else {
     nedges_owned = 0;
     nedges_wghost = 0;
@@ -719,14 +719,6 @@ Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action)
   }
 
   return end();
-}
-
-
-/* ******************************************************************
-* Push back.
-****************************************************************** */
-void Operator::OpPushBack(const Teuchos::RCP<Op>& block) {
-  ops_.push_back(block);
 }
 
 

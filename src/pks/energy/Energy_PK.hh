@@ -20,6 +20,7 @@
 
 // Amanzi
 #include "CompositeVector.hh"
+#include "EvaluatorPrimary.hh"
 #include "Key.hh"
 #include "Operator.hh"
 #include "PDE_Accumulation.hh"
@@ -29,7 +30,6 @@
 #include "PK_BDF.hh"
 #include "PK_DomainFunction.hh"
 #include "PK_PhysicalBDF.hh"
-#include "primary_variable_field_evaluator.hh"
 #include "Tensor.hh"
 #include "TreeVector.hh"
 #include "Upwind.hh"
@@ -47,8 +47,8 @@ class Energy_PK : public PK_PhysicalBDF {
   virtual ~Energy_PK() {};
 
   // methods required by PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
+  virtual void Setup() override;
+  virtual void Initialize() override;
   virtual std::string name() override { return passwd_; }
 
   // methods required for time integration
@@ -87,7 +87,7 @@ class Energy_PK : public PK_PhysicalBDF {
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
   void ChangedSolution() override {
-    temperature_eval_->SetFieldAsChanged(S_.ptr());
+    temperature_eval_->SetChanged();
   }
 
   // other methods
@@ -123,14 +123,17 @@ class Energy_PK : public PK_PhysicalBDF {
 
   // primary field
   std::string passwd_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > temperature_eval_;
 
   // names of state fields 
   Key temperature_key_;
   Key energy_key_, prev_energy_key_;
-  Key enthalpy_key_, conductivity_key_;
-  Key darcy_flux_key_, particle_density_key_, ie_liquid_key_, ie_rock_key_;
+  Key enthalpy_key_, aperture_key_;
+  Key ie_liquid_key_, ie_gas_key_, ie_rock_key_;
+  Key vol_flowrate_key_, particle_density_key_;
   Key mol_density_liquid_key_, mass_density_liquid_key_;
+  Key mol_density_gas_key_, x_gas_key_;
+  Key conductivity_gen_key_, conductivity_key_, conductivity_eff_key_;
 
   // conductivity tensor
   std::vector<WhetStone::Tensor> K; 
@@ -154,7 +157,10 @@ class Energy_PK : public PK_PhysicalBDF {
 
   // upwinding 
   Teuchos::RCP<CompositeVector> upw_conductivity_;
-  Teuchos::RCP<Operators::Upwind<int> > upwind_;  // int implies fake model
+  Teuchos::RCP<Operators::Upwind> upwind_;  // int implies fake model
+
+  // fracture network
+  bool flow_on_manifold_;
 };
 
 }  // namespace Energy

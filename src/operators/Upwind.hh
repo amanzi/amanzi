@@ -35,9 +35,8 @@ namespace Operators {
 * contains (up to) three components:
 *
 * "cell" - cell-centered values of the field.
-* "dirichlet_faces" - boundary_face values of the field evaluated on
-*          the boundary (either as a function of the internal cell
-*          or as a function of the Dirichlet data)
+* "boundary_face" - field values evaluated on the boundary either 
+           from internal cell or as a function of Dirichlet data.
 * "grad" - (optional) eatimate of the gradient of the input field.
 *          It is used in the second-order upwind schemes.
 *
@@ -52,16 +51,13 @@ namespace Operators {
 * Amanzi combines the input and output field in one variable.
 ****************************************************************** */ 
 
-template<class Model>
 class Upwind {
  public:
   Upwind() {};
-  Upwind(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-         Teuchos::RCP<const Model> model) :
+  Upwind(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       mesh_(mesh),
-      model_(model),
       face_comp_("face") {};
-  ~Upwind() {};
+  virtual ~Upwind() {};
 
   // main methods
   // -- initialization of control parameters
@@ -77,50 +73,18 @@ class Upwind {
   virtual Teuchos::RCP<CompositeVectorSpace> Map() {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true)
-        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
-        ->AddComponent("dirichlet_faces", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1)
-        ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+        ->AddComponent("cell", AmanziMesh::CELL, 1)
+        ->AddComponent("face", AmanziMesh::FACE, 1);
     return cvs;
   }
-
-  void CellToDirichletFaces(const std::vector<int>& bc_model, CompositeVector& field);
 
   // modifiers
   void set_face_comp(const std::string& name) { face_comp_ = name; }
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<const Model> model_;
-
-  // component name where to write the upwinded field.
-  std::string face_comp_;
+  std::string face_comp_;  // component where to write the upwinded field.
 };
-
-
-/* ******************************************************************
-* Support function: copy data from cells to dirichlet faces
-****************************************************************** */
-template<class Model>
-void Upwind<Model>::CellToDirichletFaces(const std::vector<int>& bc_model,
-                                         CompositeVector& field)
-{
-  Epetra_MultiVector& field_df = *field.ViewComponent("dirichlet_faces", true);
-  Epetra_MultiVector& field_c = *field.ViewComponent("cell", true);
-
-  const Epetra_Map& ext_face_map = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
-  const Epetra_Map& face_map = mesh_->getMap(AmanziMesh::Entity_kind::FACE, true);
-
-  for (int f = 0; f != face_map.NumMyElements(); ++f) {
-    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      int bf = ext_face_map.LID(face_map.GID(f));
-
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
-
-      field_df[0][bf] = field_c[0][cells[0]];
-    }
-  }
-}
 
 }  // namespace Operators
 }  // namespace Amanzi

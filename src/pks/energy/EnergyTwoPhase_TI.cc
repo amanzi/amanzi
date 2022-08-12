@@ -10,9 +10,10 @@
 */
 
 #include "Key.hh"
+#include "PDE_HelperDiscretization.hh"
 
-#include "FieldEvaluator.hh"
 #include "EnergyTwoPhase_PK.hh"
+#include "Evaluator.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -27,18 +28,18 @@ void EnergyTwoPhase_PK::FunctionalResidual(
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // update BCs and conductivity
-  temperature_eval_->SetFieldAsChanged(S_.ptr());
+  temperature_eval_->SetChanged();
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 
-  Teuchos::RCP<const CompositeVector> flux = S_->GetFieldData(darcy_flux_key_);
+  auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
 
-  S_->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd_);
   if (upwind_.get()) {
-    const auto& conductivity = S_->GetFieldData(conductivity_key_);
-    *upw_conductivity_->ViewComponent("cell") = *conductivity->ViewComponent("cell");
+    const auto& conductivity = S_->Get<CompositeVector>(conductivity_gen_key_);
+    *upw_conductivity_->ViewComponent("cell") = *conductivity.ViewComponent("cell");
 
     const auto& bc_model = op_bc_->bc_model();
-    upwind_->CellToDirichletFaces(bc_model, *upw_conductivity_);
+    Operators::CellToBoundaryFaces(bc_model, *upw_conductivity_);
     upwind_->Compute(*flux, *u_new->Data(), bc_model, *upw_conductivity_);
   }
 
@@ -57,10 +58,10 @@ void EnergyTwoPhase_PK::FunctionalResidual(
   double dt = t_new - t_old;
 
   // update the energy at the new time.
-  S_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
 
-  const Epetra_MultiVector& e1 = *S_->GetFieldData(energy_key_)->ViewComponent("cell");
-  const Epetra_MultiVector& e0 = *S_->GetFieldData(prev_energy_key_)->ViewComponent("cell");
+  const auto& e1 = *S_->Get<CompositeVector>(energy_key_).ViewComponent("cell");
+  const auto& e0 = *S_->Get<CompositeVector>(prev_energy_key_).ViewComponent("cell");
   Epetra_MultiVector& g_c = *g->Data()->ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
@@ -69,9 +70,9 @@ void EnergyTwoPhase_PK::FunctionalResidual(
   }
 
   // advect tmp = molar_density_liquid * enthalpy 
-  S_->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const CompositeVector& enthalpy = *S_->GetFieldData(enthalpy_key_);
-  const CompositeVector& n_l = *S_->GetFieldData(mol_density_liquid_key_);
+  S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
+  const auto& enthalpy = S_->Get<CompositeVector>(enthalpy_key_);
+  const auto& n_l = S_->Get<CompositeVector>(mol_density_liquid_key_);
 
   op_matrix_advection_->Setup(*flux);
   op_matrix_advection_->UpdateMatrices(flux.ptr());
@@ -100,15 +101,15 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
 
   // update BCs and conductivity
   UpdateSourceBoundaryData(t, t + dt, *up->Data());
-  S_->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd_);
 
   if (upwind_.get()) {
-    const auto& conductivity = S_->GetFieldData(conductivity_key_);
-    *upw_conductivity_->ViewComponent("cell") = *conductivity->ViewComponent("cell");
+    const auto& conductivity = S_->Get<CompositeVector>(conductivity_gen_key_);
+    *upw_conductivity_->ViewComponent("cell") = *conductivity.ViewComponent("cell");
 
-    Teuchos::RCP<const CompositeVector> flux = S_->GetFieldData(darcy_flux_key_);
+    auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
     const auto& bc_model = op_bc_->bc_model();
-    upwind_->CellToDirichletFaces(bc_model, *upw_conductivity_);
+    Operators::CellToBoundaryFaces(bc_model, *upw_conductivity_);
     upwind_->Compute(*flux, *up->Data(), bc_model, *upw_conductivity_);
   }
 
@@ -119,9 +120,9 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
 
   // update with accumulation terms
   // update the accumulation derivatives, dE/dT
-  auto der_name = Keys::getDerivKey(energy_key_, temperature_key_);
-  S_->GetFieldEvaluator(energy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, temperature_key_);
-  CompositeVector& dEdT = *S_->GetFieldData(der_name, energy_key_);
+  S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
+  auto& dEdT = S_->GetDerivativeW<CompositeVector>(
+      energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, energy_key_);
 
   if (dt > 0.0) {
     op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell");
@@ -129,13 +130,13 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
 
   // add advection term dHdT
   if (prec_include_enthalpy_) {
-    Teuchos::RCP<const CompositeVector> flux = S_->GetFieldData(darcy_flux_key_);
+    auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
 
-    der_name = Keys::getDerivKey(enthalpy_key_, temperature_key_);
-    S_->GetFieldEvaluator(enthalpy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, temperature_key_);
-    Teuchos::RCP<CompositeVector> dHdT = S_->GetFieldData(der_name, enthalpy_key_);
+    S_->GetEvaluator(enthalpy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
+    auto dHdT = S_->GetDerivativePtrW<CompositeVector>(
+        enthalpy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, enthalpy_key_);
 
-    const CompositeVector& n_l = *S_->GetFieldData("molar_density_liquid");
+    const auto& n_l = S_->Get<CompositeVector>("molar_density_liquid");
     dHdT->Multiply(1.0, *dHdT, n_l, 0.0);
 
     op_preconditioner_advection_->Setup(*flux);

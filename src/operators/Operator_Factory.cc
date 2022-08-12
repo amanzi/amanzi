@@ -15,7 +15,7 @@
 
 #include <sstream>
 #include <tuple>
-
+#include <memory>
 
 #include "Operator_Cell.hh"
 #include "Operator_FaceCell.hh"
@@ -47,7 +47,7 @@ Operator_Factory::Create()
       // build the CVS from the global schema
       Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
       cvs->SetMesh(mesh_)->SetGhosted(true);
-      cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+      cvs->AddComponent("cell", AmanziMesh::CELL, 1);
 
       return Teuchos::rcp(new Operator_Cell(cvs, *plist_, OPERATOR_SCHEMA_DOFS_CELL));
 
@@ -84,7 +84,7 @@ Operator_Factory::CreateFromSchema()
 {
   AMANZI_ASSERT(schema_row_.size() > 0 && schema_col_.size() > 0);
   AMANZI_ASSERT(schema_row_.get_base() == schema_col_.get_base());
-  AMANZI_ASSERT(schema_row_.get_base() == AmanziMesh::Entity_kind::CELL);
+  AMANZI_ASSERT(schema_row_.get_base() == AmanziMesh::CELL);
 
   if (!plist_.get())
     plist_ = Teuchos::rcp(new Teuchos::ParameterList("operator"));
@@ -100,14 +100,14 @@ Operator_Factory::CreateFromSchema()
     int old_schema = schema_row_.OldSchema();
     auto entity = std::get<0>(schema_row_[0]);  
 
-    if (entity == AmanziMesh::Entity_kind::CELL) {
+    if (entity == AmanziMesh::CELL) {
       return Teuchos::rcp(new Operator_Cell(cvs1, *plist_, old_schema));
-    } else if (entity == AmanziMesh::Entity_kind::FACE) {
-      cvs1->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    } else if (entity == AmanziMesh::FACE) {
+      cvs1->AddComponent("cell", AmanziMesh::CELL, 1);
       return Teuchos::rcp(new Operator_FaceCellSff(cvs1, *plist_));
-    } else if (entity == AmanziMesh::Entity_kind::EDGE) {
+    } else if (entity == AmanziMesh::EDGE) {
       return Teuchos::rcp(new Operator_Edge(cvs1, *plist_));
-    } else if (entity == AmanziMesh::Entity_kind::NODE) {
+    } else if (entity == AmanziMesh::NODE) {
       return Teuchos::rcp(new Operator_Node(cvs1, *plist_));
     }
   } 
@@ -119,8 +119,8 @@ Operator_Factory::CreateFromSchema()
     auto ent1 = std::get<0>(schema_row_[0]);  
     auto ent2 = std::get<0>(schema_row_[1]);
     if (num1 == num2 && num1 == 1) {
-      if ((ent1 == AmanziMesh::Entity_kind::CELL && ent2 == AmanziMesh::Entity_kind::FACE) ||
-          (ent2 == AmanziMesh::Entity_kind::CELL && ent1 == AmanziMesh::Entity_kind::FACE))
+      if ((ent1 == AmanziMesh::CELL && ent2 == AmanziMesh::FACE) ||
+          (ent2 == AmanziMesh::CELL && ent1 == AmanziMesh::FACE))
       return Teuchos::rcp(new Operator_FaceCell(cvs1, *plist_));
     }
   }

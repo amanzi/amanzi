@@ -35,14 +35,12 @@
 namespace Amanzi {
 namespace Operators {
 
-template<class Model>
-class UpwindFluxAndGravity : public Upwind<Model> {
+class UpwindFluxAndGravity : public Upwind {
  public:
-  UpwindFluxAndGravity(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                       Teuchos::RCP<const Model> model) :
-      Upwind<Model>(mesh, model),
-      upwind_flux_(mesh, model),
-      upwind_gravity_(mesh, model) {};
+  UpwindFluxAndGravity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : Upwind(mesh),
+      upwind_flux_(mesh),
+      upwind_gravity_(mesh) {};
   ~UpwindFluxAndGravity() {};
 
   // main methods
@@ -59,30 +57,24 @@ class UpwindFluxAndGravity : public Upwind<Model> {
   Teuchos::RCP<CompositeVectorSpace> Map() {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true)
-       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
-       ->AddComponent("dirichlet_faces", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1)
-       ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1)
-       ->AddComponent("grav", AmanziMesh::Entity_kind::FACE, 1);
+       ->AddComponent("cell", AmanziMesh::CELL, 1)
+       ->AddComponent("face", AmanziMesh::FACE, 1)
+       ->AddComponent("grav", AmanziMesh::FACE, 1);
     return cvs;
   }
 
  private:
-  using Upwind<Model>::mesh_;
-  using Upwind<Model>::model_;
-  using Upwind<Model>::face_comp_;
-
- private:
   int method_;
-  UpwindFlux<Model> upwind_flux_;
-  UpwindGravity<Model> upwind_gravity_;
+  UpwindFlux upwind_flux_;
+  UpwindGravity upwind_gravity_;
 };
 
 
 /* ******************************************************************
 * Public init method. It is not yet used.
 ****************************************************************** */
-template<class Model>
-void UpwindFluxAndGravity<Model>::Init(Teuchos::ParameterList& plist)
+inline
+void UpwindFluxAndGravity::Init(Teuchos::ParameterList& plist)
 {
   upwind_flux_.Init(plist);
   upwind_gravity_.Init(plist);
@@ -95,8 +87,8 @@ void UpwindFluxAndGravity<Model>::Init(Teuchos::ParameterList& plist)
 * Upwind field is placed in component "face" of field.
 * Upwinded field must be calculated on all faces of the owned cells.
 ****************************************************************** */
-template<class Model>
-void UpwindFluxAndGravity<Model>::Compute(
+inline
+void UpwindFluxAndGravity::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, CompositeVector& field)
 {

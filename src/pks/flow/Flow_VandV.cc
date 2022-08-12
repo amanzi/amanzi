@@ -14,11 +14,73 @@
 #include "errors.hh"
 #include "Mesh_Algorithms.hh"
 #include "OperatorDefs.hh"
+#include "UniqueLocalIndex.hh"
 
 #include "Flow_PK.hh"
 
 namespace Amanzi {
 namespace Flow {
+
+/* ******************************************************************
+* TBW
+****************************************************************** */
+void Flow_PK::VV_FractureConservationLaw() const
+{
+  if (!coupled_to_matrix_ || fabs(dt_) < 1e+10) return;
+
+  const auto& fracture_flux = *S_->Get<CompositeVector>("fracture-volumetric_flow_rate").ViewComponent("face", true);
+  const auto& matrix_flux = *S_->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face", true);
+
+  const auto& fracture_map = S_->Get<CompositeVector>("fracture-volumetric_flow_rate").Map().Map("face", true);
+  const auto& matrix_map = S_->Get<CompositeVector>("volumetric_flow_rate").Map().Map("face", true);
+
+  auto mesh_matrix = S_->GetMesh("domain");
+
+  std::vector<int> dirs;
+  double err(0.0), flux_max(0.0);
+  AmanziMesh::Entity_ID_List faces, cells;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    double flux_sum(0.0);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    for (int i = 0; i < faces.size(); i++) {
+      int f = faces[i];
+      int g = fracture_map->FirstPointInElement(f);
+      int ndofs = fracture_map->ElementSize(f);
+      if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
+
+      flux_sum += fracture_flux[0][g] * dirs[i];
+      flux_max = std::max<double>(flux_max, std::fabs(fracture_flux[0][g]));
+    }
+
+    // sum into fluxes from matrix
+    auto f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    mesh_matrix->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int pos = Operators::UniqueIndexFaceToCells(*mesh_matrix, f, cells[0]);
+
+    for (int j = 0; j != cells.size(); ++j) {
+      mesh_matrix->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
+
+      for (int i = 0; i < faces.size(); i++) {
+        if (f == faces[i]) {
+          int g = matrix_map->FirstPointInElement(f);            
+          double fln = matrix_flux[0][g + (pos + j) % 2] * dirs[i];
+          flux_sum -= fln;
+          flux_max = std::max<double>(flux_max, std::fabs(fln));
+          break;
+        }
+      }
+    }
+
+    err = std::max<double>(err, fabs(flux_sum));
+  }
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "maximum error in conservation law:" << err << " flux_max=" << flux_max << std::endl;
+  }
+}
+
 
 /* ******************************************************************
 * TODO: Verify that a BC has been applied to every boundary face.
@@ -110,12 +172,12 @@ void Flow_PK::VV_ValidateBCs() const
 ******************************************************************* */
 void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
 {
-  const Epetra_MultiVector& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell", false);
-  const Epetra_MultiVector& flux = *S->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
-  const Epetra_MultiVector& ws = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell", false);
+  const auto& phi = *S->Get<CompositeVector>(porosity_key_).ViewComponent("cell");
+  const auto& flowrate = *S->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
+  const auto& ws = *S->Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
 
   std::vector<int>& bc_model = op_bc_->bc_model();
-  double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dt_;
+  double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flowrate) * rho_ * dt_;
 
   double mass_amanzi = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
@@ -145,7 +207,7 @@ void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
 ******************************************************************* */
 void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const
 {
-  const Epetra_MultiVector& flux = *S->GetFieldData(darcy_flux_key_)->ViewComponent("face");
+  const auto& flowrate = *S->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face");
 
   int dir, f, c, nbcs(0);
   double tmp, outflow(0.0);
@@ -158,7 +220,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) c
         if (f < nfaces_owned) {
           c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
           mesh_->face_normal(f, false, c, &dir);
-          tmp = flux[0][f] * dir;
+          tmp = flowrate[0][f] * dir;
           if (tmp > 0.0) outflow += tmp;
         }
       }

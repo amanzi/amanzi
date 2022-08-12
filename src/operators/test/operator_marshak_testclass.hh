@@ -9,19 +9,20 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "Mesh_Algorithms.hh"
+
 namespace Amanzi{
 
 class HeatConduction {
  public:
   HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh, double T0)
-    : mesh_(mesh),
+    : TemperatureSource(100.0),
       TemperatureFloor(T0),
-      TemperatureSource(100.0) { 
+      mesh_(mesh) {
     CompositeVectorSpace cvs;
     cvs.SetMesh(mesh_)->SetGhosted(true)
-        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
-        ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1)
-        ->AddComponent("dirichlet_faces", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
+        ->AddComponent("cell", AmanziMesh::CELL, 1)
+        ->AddComponent("face", AmanziMesh::FACE, 1);
 
     values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
     derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
@@ -33,24 +34,18 @@ class HeatConduction {
                     const std::vector<int>& bc_model,
                     const std::vector<double>& bc_value) { 
     const Epetra_MultiVector& uc = *u.ViewComponent("cell", true); 
-    const Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true); 
+    Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true); 
 
-    int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     for (int c = 0; c < ncells; c++) {
       values_c[0][c] = std::pow(uc[0][c], 3.0);
     }
 
     // add boundary face component
-    Epetra_MultiVector& vbf = *values_->ViewComponent("dirichlet_faces", true);
-    const Epetra_Map& ext_face_map = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
-    const Epetra_Map& face_map = mesh_->getMap(AmanziMesh::Entity_kind::FACE, true);
-    for (int f=0; f!=face_map.NumMyElements(); ++f) {
+    Epetra_MultiVector& values_f = *values_->ViewComponent("face", true);
+    for (int f = 0; f != bc_model.size(); ++f) {
       if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-        AmanziMesh::Entity_ID_List cells;
-        mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
-        AMANZI_ASSERT(cells.size() == 1);
-        int bf = ext_face_map.LID(face_map.GID(f));
-        vbf[0][bf] = std::pow(bc_value[f], 3.0);
+        values_f[0][f] = std::pow(bc_value[f], 3.0);
       }
     }
     

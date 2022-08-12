@@ -25,9 +25,9 @@ OutputSilo::OutputSilo(Teuchos::ParameterList& plist,
                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                        bool is_vis,
                        bool is_dynamic)
-    : mesh_(mesh),
-      fid_(NULL),
-      count_(0)
+    : count_(0),
+      mesh_(mesh),
+      fid_(NULL)
 {
   if (mesh_->getComm()->NumProc() > 1) {
     Errors::Message msg("OutputSilo does not yet support parallel runs.");

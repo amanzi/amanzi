@@ -48,9 +48,9 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
   // schema which connects cells to faces, and no other CELL schemas that are
   // not simply diagonal CELL_CELL.  Additionally, collect the diagonal for
   // inversion.
-  Epetra_MultiVector D_c(h_->Mesh()->getMap(AmanziMesh::Entity_kind::CELL, false),1);
+  Epetra_MultiVector D_c(h_->Mesh()->cell_map(false),1);
   int ncells_owned = D_c.MyLength();
-  int nfaces_owned = h_->Mesh()->getNumEntities(AmanziMesh::Entity_kind::FACE,
+  int nfaces_owned = h_->Mesh()->num_entities(AmanziMesh::FACE,
           AmanziMesh::Parallel_type::OWNED);
 
   int nschema_coupling = 0;
@@ -109,7 +109,7 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
       {
         Epetra_MultiVector& Tf = *T.ViewComponent("face", true);
         for (int c = 0; c < ncells_owned; c++) {
-          const auto& faces = h_->Mesh()->getCellFaces(c);
+          const auto& faces = h_->Mesh()->cell_get_faces(c);
           int nfaces = faces.size();
 
           WhetStone::DenseMatrix& Acell = op->matrices[c];
@@ -139,7 +139,7 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
         Epetra_MultiVector& Yc = *Y.ViewComponent("cell", false);
         // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
         for (int c = 0; c < ncells_owned; c++) {
-          const auto& faces = h_->Mesh()->getCellFaces(c);
+          const auto& faces = h_->Mesh()->cell_get_faces(c);
           int nfaces = faces.size();
           
           WhetStone::DenseMatrix& Acell = op->matrices[c];

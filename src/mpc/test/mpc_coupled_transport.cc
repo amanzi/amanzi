@@ -24,16 +24,23 @@
 #include "State.hh"
 
 
-TEST(MPC_DRIVER_TRANSPORT_MATRIX_FRACTURE) {
+void RunTest(int order) {
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 
+  std::cout << "\nTEST: coupled transport, implicit scheme order=" << order << std::endl;
+
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   
   std::string xmlInFileName = "test/mpc_coupled_transport.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
+
+  plist->sublist("PKs").sublist("transport matrix")
+      .set<int>("spatial discretization order", order);
+  plist->sublist("PKs").sublist("transport fracture")
+      .set<int>("spatial discretization order", order);
   
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -62,7 +69,7 @@ using namespace Amanzi::AmanziGeometry;
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   cycle_driver.Go();
 
-  const auto& tcc_m = *S->GetFieldData("total_component_concentration")->ViewComponent("cell");
+  const auto& tcc_m = *S->Get<CompositeVector>("total_component_concentration").ViewComponent("cell");
   double cmin(1e+99);
   double cmax = -1e+99;
   for (int c = 0; c < 216; ++c) {
@@ -74,7 +81,7 @@ using namespace Amanzi::AmanziGeometry;
   }
   CHECK_CLOSE(cmin, cmax, 1e-12);
 
-  const auto& tcc_f = *S->GetFieldData("fracture-total_component_concentration")->ViewComponent("cell");
+  const auto& tcc_f = *S->Get<CompositeVector>("fracture-total_component_concentration").ViewComponent("cell");
   for (int c = 0; c < 36; ++c) {
     const auto& xc = mesh->cell_centroid(c);
     if (std::fabs(xc[0] - 5.5) < 1e-3) {
@@ -85,4 +92,12 @@ using namespace Amanzi::AmanziGeometry;
   CHECK_CLOSE(cmin, cmax, 1e-12);
 }
 
+
+TEST(MPC_DRIVER_COUPLED_TRANSPORT_1ST) {
+  RunTest(1);
+}
+
+// TEST(MPC_DRIVER_COUPLED_TRANSPORT_2ND) {
+//   RunTest(2);
+// }
 

@@ -314,7 +314,6 @@ Observation::integral_and_volume (Real time)
   Real int_inside = 0.0;
   Real vol_inside = 0;  
   
-  Real vol_scale_lev = 1;
   const Region& region = GetRegion(region_name);
 
   for (int lev = 0; lev <= finest_level; lev++)

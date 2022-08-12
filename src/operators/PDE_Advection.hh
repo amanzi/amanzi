@@ -34,6 +34,8 @@ class PDE_Advection : public PDE_HelperDiscretization {
     global_op_ = Teuchos::null;
   }
 
+  virtual ~PDE_Advection() {};
+
   // main members
   // -- setup
   virtual void Setup(const CompositeVector& u) = 0;

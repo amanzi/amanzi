@@ -25,6 +25,7 @@
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
+#include "Explicit_TI_RK.hh"
 #include "Key.hh"
 #include "LimiterCell.hh"
 #include "NumericalFlux.hh"
@@ -33,7 +34,7 @@
 #include "PK_Factory.hh"
 #include "PK_Physical.hh"
 #include "PK_DomainFunction.hh"
-#include "ReconstructionCell.hh"
+#include "ReconstructionCellLinear.hh"
 #include "State.hh"
 #include "Tensor.hh"
 #include "Units.hh"
@@ -44,9 +45,12 @@
 
 namespace Amanzi {
 namespace ShallowWater {
+
+// inversion operation protected for small values
+double inverse_with_tolerance(double h);
     
 class ShallowWater_PK : public PK_Physical,
-                        public PK_Explicit<Epetra_Vector> {
+                        public PK_Explicit<TreeVector> {
  public:
   ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                   const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -60,8 +64,8 @@ class ShallowWater_PK : public PK_Physical,
 
   ~ShallowWater_PK() {};
 
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
+  virtual void Setup() override;
+  virtual void Initialize() override;
 
   virtual double get_dt() override;
   virtual void set_dt(double dt) override {};
@@ -69,14 +73,15 @@ class ShallowWater_PK : public PK_Physical,
   // Advance PK by step size dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
 
-  virtual void FunctionalTimeDerivative(double t, const Epetra_Vector& component,
-                                        Epetra_Vector& f_component) override;
+  virtual void FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector& f) override;
+
+  virtual void ModifySolution(double t, TreeVector& A) override;
 
   // Commit any secondary (dependent) variables.
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
   // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {};
+  virtual void CalculateDiagnostics(const Tag& tag) override {};
 
   virtual std::string name() override { return "shallow water"; }
                             
@@ -95,6 +100,9 @@ class ShallowWater_PK : public PK_Physical,
 
   // access
   double get_total_source() const { return total_source_; }
+                          
+  // temporal discretization order
+  int temporal_disc_order;
 
  private:
   void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
@@ -136,8 +144,9 @@ class ShallowWater_PK : public PK_Physical,
   double g_;
 
   // limited reconstruction
-  Teuchos::RCP<Operators::ReconstructionCell> total_depth_grad_, bathymetry_grad_;
-  Teuchos::RCP<Operators::ReconstructionCell> discharge_x_grad_, discharge_y_grad_;
+  bool use_limiter_;
+  Teuchos::RCP<Operators::ReconstructionCellLinear> total_depth_grad_, bathymetry_grad_;
+  Teuchos::RCP<Operators::ReconstructionCellLinear> discharge_x_grad_, discharge_y_grad_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
 
   // advanced cfl control
@@ -153,3 +162,5 @@ class ShallowWater_PK : public PK_Physical,
 }  // namespace Amanzi
 
 #endif
+
+

@@ -45,8 +45,8 @@ class MyRemapDG : public Operators::RemapDG<CompositeVector> {
             Teuchos::ParameterList& plist)
     : Operators::RemapDG<CompositeVector>(mesh0, mesh1, plist),
       tprint_(0.0),
-      l2norm_(-1.0),
-      dt_output_(0.1) {};
+      dt_output_(0.1),
+      l2norm_(-1.0) {};
   ~MyRemapDG() {};
 
   // time control
@@ -78,8 +78,8 @@ double MyRemapDG::StabilityCondition()
   double dt(1e+99), alpha(0.2), tmp;
 
   for (int f = 0; f < nfaces_wghost_; ++f) {
-    double area = mesh0_->getFaceArea(f);
-    const AmanziGeometry::Point& xf = mesh0_->getFaceCentroid(f);
+    double area = mesh0_->face_area(f);
+    const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
     velf_vec_[f].Value(xf).Norm2(&tmp);
     dt = std::min(dt, area / tmp);
   }
@@ -107,7 +107,7 @@ double MyRemapDG::InitialMass(const CompositeVector& p1, int order)
     mass += numi.IntegratePolynomialCell(c, poly);
   }
 
-  mesh0_->getComm()->SumAll(&mass, &mass0, 1);
+  mesh0_->get_comm()->SumAll(&mass, &mass0, 1);
   return mass0;
 }
 
@@ -140,7 +140,7 @@ void MyRemapDG::CollectStatistics(double t, const CompositeVector& u)
       lim.MeanValue(&lavg);
     }
 
-    if (mesh0_->getComm()->MyPID() == 0) {
+    if (mesh0_->get_comm()->MyPID() == 0) {
       printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  limiter: %6.3f %6.3f %6.3f  umax/umin: %9.5g %9.5g\n",
              tglob, l2norm_, nfun_, sharp_, lmax, lmin, lavg, xmax[0], xmin[0]);
     }
@@ -214,32 +214,32 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(dim, region_list, *comm));
 
   auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
-  if (dim == 3) mesh_plist->set("request edges", true);
   MeshFactory meshfactory(comm, gm, mlist);
   meshfactory.set_preference(Preference({AmanziMesh::Framework::MSTK}));
 
   Teuchos::RCP<const Mesh> mesh0;
   Teuchos::RCP<Mesh> mesh1;
   if (file_name != "") {
-    mesh0 = meshfactory.create(file_name);
-    mesh1 = meshfactory.create(file_name);
+    bool request_edges = (dim == 3);
+    mesh0 = meshfactory.create(file_name, true, request_edges);
+    mesh1 = meshfactory.create(file_name, true, request_edges);
   } else if (dim == 2) {
     mesh0 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
     mesh1 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
-  } else {
-    mesh0 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz);
-    mesh1 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz);
+  } else { 
+    mesh0 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
+    mesh1 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
   }
 
-  int ncells_owned = mesh0->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1, cvs2;
-  cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
+  cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
   Teuchos::RCP<CompositeVector> p1 = Teuchos::rcp(new CompositeVector(cvs1));
   Epetra_MultiVector& p1c = *p1->ViewComponent("cell", true);
 
-  cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
+  cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
   CompositeVector p2(cvs2);
   Epetra_MultiVector& p2c = *p2.ViewComponent("cell");
 
@@ -292,15 +292,15 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
   Epetra_MultiVector& pec = *perr.ViewComponent("cell");
   q2c = p2c;
 
-  double pnorm, l2_err, inf_err, l20_err, inf0_err;
+  double pnorm, l2_err, inf_err, l20_err, l10_err, inf0_err;
   ana.ComputeCellErrorRemap(*dg, p2c, tend, 0, mesh1,
-                            pnorm, l2_err, inf_err, l20_err, inf0_err, &pec);
+                            pnorm, l2_err, inf_err, l20_err, l10_err, inf0_err, &pec);
 
   CHECK(((dim == 2) ? l2_err : l20_err) < 0.12 / (order + 1));
 
   if (MyPID == 0) {
-    printf("nx=%3d (orig) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
-        nx, l20_err, l2_err, inf0_err, inf_err);
+    printf("nx=%3d (orig) L1=%12.8g(mean) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
+        nx, l10_err, l20_err, l2_err, inf0_err, inf_err);
   }
 
   // optional projection on the space of polynomials 
@@ -312,17 +312,17 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
     if (order > 0 && order < 3 && dim == 2) {
       poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
       remap.maps()->ProjectPolynomial(c, poly);
-      poly.ChangeOrigin(mesh1->getCellCentroid(c));
+      poly.ChangeOrigin(mesh1->cell_centroid(c));
       for (int i = 0; i < nk; ++i) q2c[i][c] = poly(i);
     }
   }
 
   ana.ComputeCellErrorRemap(*dg, q2c, tend, 1, mesh1,
-                            pnorm, l2_err, inf_err, l20_err, inf0_err);
+                            pnorm, l2_err, inf_err, l20_err, l10_err, inf0_err);
 
   if (MyPID == 0) {
-    printf("nx=%3d (proj) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
-        nx, l20_err, l2_err, inf0_err, inf_err);
+    printf("nx=%3d (proj) L1=%12.8g(mean) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
+        nx, l10_err, l20_err, l2_err, inf0_err, inf_err);
   }
 
   // concervation errors: mass and volume (CGL)
@@ -332,7 +332,7 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
 
   for (int c = 0; c < ncells_owned; ++c) {
     double vol1 = numi.IntegratePolynomialCell(c, det[c].Value(1.0));
-    double vol2 = mesh1->getCellVolume(c);
+    double vol2 = mesh1->cell_volume(c);
 
     area += vol1;
     area1 += vol2;
@@ -346,7 +346,7 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
     auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
 
     WhetStone::Polynomial tmp(det[c].Value(1.0));
-    tmp.ChangeOrigin(mesh0->getCellCentroid(c));
+    tmp.ChangeOrigin(mesh0->cell_centroid(c));
     poly *= tmp;
     mass1 += numi.IntegratePolynomialCell(c, poly);
   }
@@ -370,8 +370,8 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
   OutputXDMF io(iolist, mesh1, true, false);
 
   io.InitializeCycle(t, 1, "");
-  io.WriteVector(*p2c(0), "solution", AmanziMesh::Entity_kind::CELL);
-  io.WriteVector(*q2c(0), "solution-prj", AmanziMesh::Entity_kind::CELL);
+  io.WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
+  io.WriteVector(*q2c(0), "solution-prj", AmanziMesh::CELL);
   io.FinalizeCycle();
 }
 

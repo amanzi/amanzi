@@ -20,6 +20,7 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${EOS_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
@@ -43,10 +44,10 @@ set(flow_src_files Flow_PK.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
                    Richards_Picard.cc Richards_LinearOperator.cc Richards_CNLS.cc
                    PorosityModelPartition.cc PorosityModelEvaluator.cc
-                   RelPerm.cc RelPermEvaluator.cc
+                   RelPermEvaluator.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc 
                    WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
-                   VWContentEvaluator.cc
+                   WaterStorage.cc
                    DarcyVelocityEvaluator.cc
                    MultiscaleFlowPorosityFactory.cc MultiscaleFlowPorosityPartition.cc
                    MultiscaleFlowPorosity_DPM.cc
@@ -58,7 +59,7 @@ if (Ifpack_ENABLE_HYPRE)
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARY})
 endif()
 add_amanzi_library(flow SOURCE ${flow_src_files}
-                   LINK_LIBS pks operators state functions 
+                   LINK_LIBS pks eos operators state functions 
                              mesh_functions time_integration data_structures
                              ${flow_tpl_libs})
 
@@ -72,6 +73,7 @@ set(flow_inc_files
   Flow_PK.hh
   FlowTypeDefs.hh
   FracturePermModel.hh
+  FracturePermModel_Constant.hh
   FracturePermModel_CubicLaw.hh
   FracturePermModel_Linear.hh
   FracturePermModelPartition.hh
@@ -83,8 +85,6 @@ set(flow_inc_files
   MultiscaleFlowPorosityPartition.hh
   PorosityModel.hh
   PorosityModelPartition.hh
-  RelPerm.hh
-  RelPermEvaluator.hh
   Richards_PK.hh
   WRM.hh
   WRM_BrooksCorey.hh

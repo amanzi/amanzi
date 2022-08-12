@@ -40,18 +40,29 @@ void PREFIX DGESV_F77(int* n, int* nrhs, double* a, int* lda, int* ipiv,
 
 class LUSolver {
  public:
-  LUSolver() : system_size_(0) { ipiv_.clear(); }
+  LUSolver() : size_(0) { ipiv_.clear(); }
   ~LUSolver() {};
 
   void Initialize(int size) {
-    system_size_ = size;
+    size_ = size;
     ipiv_.resize(size);
   }
 
-  void Solve(MatrixBlock* A, std::vector<double>* b) {
+  void Solve(MatrixBlock* A, std::vector<double>* b)
+  {
+    // scale A x = b
     int ierr, nrhs(1), n(A->size());
-    int ipiv[n];
-    DGESV_F77(&n, &nrhs, A->GetValues(), &n, &(ipiv[0]), &(*b)[0], &n, &ierr);
+    for (int i = 0; i < n; ++i) {
+      double big(0.0);
+      for (int j = 0; j < n; ++j) {
+        big = std::max(big, fabs((*A)(i, j)));
+      }
+      for (int j = 0; j < n; ++j) (*A)(i, j) /= big;
+      (*b)[i] /= big;
+    }
+
+    // run solver
+    DGESV_F77(&n, &nrhs, A->GetValues(), &n, &(ipiv_[0]), &(*b)[0], &n, &ierr);
 
     if (ierr != 0) {
       std::string msg("LUSolver::Decomposition() : Singular matrix.");
@@ -60,10 +71,11 @@ class LUSolver {
   }
 
  private:
-  int system_size_;
+  int size_;
   std::vector<int> ipiv_;
 };
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
+
 #endif

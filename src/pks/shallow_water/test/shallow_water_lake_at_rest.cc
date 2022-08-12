@@ -14,6 +14,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "IO.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "ShallowWater_PK.hh"
@@ -23,12 +24,14 @@
 #define _USE_MATH_DEFINES
 #include "math.h"
 
+using namespace Amanzi;
+
 double H_inf = 0.5; // Lake at rest total height
 
 // ---- ---- ---- ---- ---- ---- ---- ----
 // Exact Solution
 // ---- ---- ---- ---- ---- ---- ---- ----
-void lake_at_rest_exact(double t, double x, double y, double &ht, double &u, double &v)
+void lake_at_rest_exact(double t, double x, double y, double& ht, double& u, double& v)
 {
   ht = H_inf;
   u = 0;
@@ -36,14 +39,14 @@ void lake_at_rest_exact(double t, double x, double y, double &ht, double &u, dou
 }
 
 void lake_at_rest_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-                               Epetra_MultiVector &ht_ex, Epetra_MultiVector &vel_ex, double t)
+                               Epetra_MultiVector& ht_ex, Epetra_MultiVector& vel_ex, double t)
 {
   double x, y, ht, u, v;
     
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
     
   for (int c = 0; c < ncells_owned; ++c) {
-    const Amanzi::AmanziGeometry::Point &xc = mesh->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
         
     x = xc[0]; y = xc[1];
         
@@ -58,51 +61,54 @@ void lake_at_rest_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 // ---- ---- ---- ---- ---- ---- ---- ----
 // Inital Conditions
 // ---- ---- ---- ---- ---- ---- ---- ----
-void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<Amanzi::State> &S)
+void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<Amanzi::State>& S, int icase)
 {
   double pi = M_PI;
-  const double rho = *S->GetScalarData("const_fluid_density");
-  const double patm = *S->GetScalarData("atmospheric_pressure");
+  const double rho = S->Get<double>("const_fluid_density");
+  const double patm = S->Get<double>("atmospheric_pressure");
   
-  double tmp[1];
-  S->GetConstantVectorData("gravity", "state")->Norm2(tmp);
-  double g = tmp[0];
+  double g = norm(S->Get<AmanziGeometry::Point>("gravity"));
     
-  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
   std::string passwd = "state";
     
-  int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
-    
-  Epetra_MultiVector &B_c = *S->GetFieldData("surface-bathymetry", passwd)->ViewComponent ("cell");
-  Epetra_MultiVector &B_n = *S->GetFieldData("surface-bathymetry", passwd)->ViewComponent ("node");
-  Epetra_MultiVector &h_c = *S->GetFieldData("surface-ponded_depth", passwd)->ViewComponent ("cell");
-  Epetra_MultiVector &ht_c = *S->GetFieldData("surface-total_depth", passwd)->ViewComponent ("cell");
-  Epetra_MultiVector &vel_c = *S->GetFieldData("surface-velocity", passwd)->ViewComponent ("cell");
-  Epetra_MultiVector &q_c = *S->GetFieldData("surface-discharge", "surface-discharge")->ViewComponent ("cell");
-  Epetra_MultiVector &p_c = *S->GetFieldData("surface-ponded_pressure", "surface-ponded_pressure")->ViewComponent ("cell");
+  auto& B_c = *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent ("cell");
+  auto& B_n = *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent ("node");
+  auto& h_c = *S->GetW<CompositeVector>("surface-ponded_depth", Tags::DEFAULT, passwd).ViewComponent ("cell");
+  auto& ht_c = *S->GetW<CompositeVector>("surface-total_depth", Tags::DEFAULT, passwd).ViewComponent ("cell");
+  auto& vel_c = *S->GetW<CompositeVector>("surface-velocity", Tags::DEFAULT, passwd).ViewComponent ("cell");
+  auto& q_c = *S->GetW<CompositeVector>("surface-discharge", Tags::DEFAULT, "surface-discharge").ViewComponent ("cell");
+  auto& p_c = *S->GetW<CompositeVector>("surface-ponded_pressure", Tags::DEFAULT, "surface-ponded_pressure").ViewComponent ("cell");
 
   // Define bathymetry at the cell vertices (Bn)
-  for (int n = 0; n < nnodes; ++n) {
+  for (int n = 0; n < nnodes_wghost; ++n) {
 
     Amanzi::AmanziGeometry::Point node_crd;
         
     mesh->node_get_coordinates(n, &node_crd); // Coordinate of current node
         
     double x = node_crd[0], y = node_crd[1];
-        
-    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
+      
+    if (icase == 1) {
+      B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
+    }
+    else if (icase == 2) {
+      B_n[0][n] = 0.25 - 0.25 * x * std::sin(pi*y); // non-zero bathymetry at boundary
+    }
   }
+  
+  S->Get<CompositeVector>("surface-bathymetry").ScatterMasterToGhosted("node");
     
-  for (int c = 0; c < ncells_owned; ++c) {
+  for (int c = 0; c < ncells_wghost; ++c) {
     
-    const Amanzi::AmanziGeometry::Point &xc = mesh->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
         
     Amanzi::AmanziMesh::Entity_ID_List cfaces, cnodes, cedges;
     mesh->cell_get_faces(c, &cfaces);
     mesh->cell_get_nodes(c, &cnodes);
     mesh->cell_get_edges(c, &cedges);
         
-    int nedges_cell = cedges.size();
     int nfaces_cell = cfaces.size();
         
     B_c[0][c] = 0;
@@ -133,7 +139,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
         
     // Perturb the solution; change time period t_new to at least 10.0
 //    if ((xc[0] - 0.3)*(xc[0] - 0.3) + (xc[1] - 0.3)*(xc[1] - 0.3) < 0.1 * 0.1) {
-//      ht_c[0][c] = H_inf + 0.01;
+//      ht_c[0][c] = H_inf + 0.1;
 //    }
 //    else {
 //      ht_c[0][c] = H_inf;
@@ -143,10 +149,16 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     h_c[0][c] = ht_c[0][c] - B_c[0][c];
     vel_c[0][c] = 0.0;
     vel_c[1][c] = 0.0;
-    q_c[0][c] = 0.0;
-    q_c[1][c] = 0.0;
+    q_c[0][c] = h_c[0][c]*vel_c[0][c];
+    q_c[1][c] = h_c[0][c]*vel_c[1][c];
     p_c[0][c] = patm + rho * g * h_c[0][c];
   }
+  
+  S->Get<CompositeVector>("surface-bathymetry").ScatterMasterToGhosted("cell");
+  S->Get<CompositeVector>("surface-total_depth").ScatterMasterToGhosted("cell");
+  S->Get<CompositeVector>("surface-ponded_depth").ScatterMasterToGhosted("cell");
+  S->Get<CompositeVector>("surface-velocity").ScatterMasterToGhosted("cell");
+  S->Get<CompositeVector>("surface-discharge").ScatterMasterToGhosted("cell");
 }
 
 
@@ -154,9 +166,9 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
 // Error
 // ---- ---- ---- ---- ---- ---- ---- ----
 void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-            Epetra_MultiVector &ht_ex, Epetra_MultiVector &vel_ex,
-            const Epetra_MultiVector &ht, const Epetra_MultiVector &vel,
-            double &err_max, double &err_L1, double &hmax)
+            Epetra_MultiVector& ht_ex, Epetra_MultiVector& vel_ex,
+            const Epetra_MultiVector& ht, const Epetra_MultiVector& vel,
+            double& err_max, double& err_L1, double& hmax)
 {
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
     
@@ -231,7 +243,13 @@ void RunTest(int icase)
   }
     
   // Read parameter list
-  std::string xmlFilename = "test/shallow_water_lake_at_rest.xml";
+  std::string xmlFilename;
+  if (icase == 1) {
+    xmlFilename = "test/shallow_water_lake_at_rest_case1.xml";
+  }
+  else if (icase == 2) {
+    xmlFilename = "test/shallow_water_lake_at_rest_case2.xml";
+  }
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFilename);
     
   // Create a mesh framework
@@ -261,7 +279,6 @@ void RunTest(int icase)
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterMesh("surface", mesh);
-  S->set_time(0.0);
         
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp (new TreeVector());
           
@@ -269,22 +286,23 @@ void RunTest(int icase)
 
   // Create a shallow water PK
   ShallowWater_PK SWPK(sw_list, plist, S, soln);
-  SWPK.Setup(S.ptr());
+  SWPK.Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
-  SWPK.Initialize(S.ptr());
+  S->set_time(0.0);
+  SWPK.Initialize();
     
-  lake_at_rest_setIC(mesh, S);
+  lake_at_rest_setIC(mesh, S, icase);
   S->CheckAllFieldsInitialized();
         
-  const Epetra_MultiVector &B = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
-  const Epetra_MultiVector &Bn = *S->GetFieldData("surface-bathymetry")->ViewComponent("node");
-  const Epetra_MultiVector &hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
-  const Epetra_MultiVector &ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
-  const Epetra_MultiVector &vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
-  const Epetra_MultiVector &q = *S->GetFieldData("surface-discharge")->ViewComponent("cell");
-  const Epetra_MultiVector &p = *S->GetFieldData("surface-ponded_pressure")->ViewComponent("cell");
+  const auto &B = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
+  const auto &Bn = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("node");
+  const auto &hh = *S->Get<CompositeVector>("surface-ponded_depth").ViewComponent("cell");
+  const auto &ht = *S->Get<CompositeVector>("surface-total_depth").ViewComponent("cell");
+  const auto &vel = *S->Get<CompositeVector>("surface-velocity").ViewComponent("cell");
+  const auto &q = *S->Get<CompositeVector>("surface-discharge").ViewComponent("cell");
+  const auto &p = *S->Get<CompositeVector>("surface-ponded_pressure").ViewComponent("cell");
         
   // Create a pid vector
   Epetra_MultiVector pid(B);
@@ -348,7 +366,7 @@ void RunTest(int icase)
     t_new = t_old + dt;
             
     SWPK.AdvanceStep(t_old, t_new);
-    SWPK.CommitStep(t_old, t_new, S);
+    SWPK.CommitStep(t_old, t_new, Tags::DEFAULT);
             
     t_old = t_new;
     iter += 1;

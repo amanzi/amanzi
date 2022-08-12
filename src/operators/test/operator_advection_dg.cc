@@ -64,7 +64,6 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  int comm_size = comm->NumProc();
 
   std::string problem = (conservative_form) ? ", conservative formulation" : "";
   if (MyPID == 0) std::cout << "\nTest: " << dim 
@@ -79,10 +78,9 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   ParameterList plist = xmlreader.getParameters();
 
   // create a mesh framework
-  auto mesh_plist = Teuchos::rcp(new Teuchos::ParameterList());
-  mesh_plist->set("request edges", true);
-  MeshFactory meshfactory(comm,Teuchos::null, mesh_plist);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<GeometricModel> gm;
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
 
   double weak_sign = 1.0;
   std::string pk_name;
@@ -90,7 +88,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
   if (dim == 2) {
     // mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx);
-    mesh = meshfactory.create(filename);
+    mesh = meshfactory.create(filename, true, true);
     pk_name = "PK operator 2D";
 
     if (weak_form == "primal") {
@@ -102,13 +100,14 @@ void AdvectionSteady(int dim, std::string filename, int nx,
       pk_name = "PK operator 2D: gauss points";
     }
   } else {
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx);
+    bool request_faces(true), request_edges(true);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, request_faces, request_edges);
     pk_name = "PK operator 3D";
   }
 
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // create global operator 
   // -- flux term
@@ -140,7 +139,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   // -- reaction function
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh)->SetGhosted(true);
-  cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  cvs->AddComponent("cell", AmanziMesh::CELL, 1);
 
   auto K = Teuchos::rcp(new CompositeVector(*cvs));
   auto Kc = K->ViewComponent("cell", true);
@@ -162,7 +161,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   }
 
   for (int f = 0; f < nfaces_wghost; ++f) {
-    (*velf)[f] = v * (mesh->getFaceNormal(f) * weak_sign);
+    (*velf)[f] = v * (mesh->face_normal(f) * weak_sign);
   }
 
   // -- divergence of velocity
@@ -187,7 +186,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
   Epetra_MultiVector& rhs_c = *global_op->rhs()->ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) {
-    const Point& xc = mesh->getCellCentroid(c);
+    const Point& xc = mesh->cell_centroid(c);
 
     v.ChangeOrigin(xc);
     divv.ChangeOrigin(xc);
@@ -216,15 +215,15 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   }
 
   // -- boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::VECTOR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
 
   WhetStone::Polynomial coefs;
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = mesh->getFaceCentroid(f);
-    const Point& normal = mesh->getFaceNormal(f);
+    const Point& xf = mesh->face_centroid(f);
+    const Point& normal = mesh->face_normal(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
         fabs(xf[dim - 1]) < 1e-6 || fabs(xf[dim - 1] - 1.0) < 1e-6) {
@@ -249,7 +248,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   // populate the global operator
   op_flux->SetBCs(bc, bc);
   op_flux->Setup(velc, velf);
-  op_flux->UpdateMatrices(velf.ptr());
+  op_flux->UpdateMatrices(*velf);
   op_flux->ApplyBCs(true, true, true);
 
   op_adv->Setup(velc, false);
@@ -279,18 +278,16 @@ void AdvectionSteady(int dim, std::string filename, int nx,
               << " code=" << global_op->returned_code() 
               << " order=" << order << std::endl;
 
-    if (comm_size == 1) {
-      // visualization
-      const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-      GMV::open_data_file(*mesh, (std::string)"operators.gmv");
-      GMV::start_data();
-      GMV::write_cell_data(p, 0, "solution");
-      if (order > 0) {
-        GMV::write_cell_data(p, 1, "gradx");
-        GMV::write_cell_data(p, 2, "grady");
-      }
-      GMV::close_data_file();
+    // visualization
+    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(p, 0, "solution");
+    if (order > 0) {
+      GMV::write_cell_data(p, 1, "gradx");
+      GMV::write_cell_data(p, 2, "grady");
     }
+    GMV::close_data_file();
   }
 
   CHECK(global_op->num_itrs() < 200);
@@ -313,42 +310,16 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 }
 
 
-#ifdef SINGLE_FACE_MESH
-
-TEST(OPERATOR_ADVECTION_STEADY_DG_PRIMAL_ORTHONORMALIZED) {
+TEST(OPERATOR_ADVECTION_STEADY_DG) {
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "orthonormalized");
-}
-
-TEST(OPERATOR_ADVECTION_STEADY_DG_PRIMAL_NORMALIZED) {
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "normalized");
-}
-
-TEST(OPERATOR_ADVECTION_STEADY_DG_PRIMAL_REGULARIZED) {
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "regularized");
-}
-
-TEST(OPERATOR_ADVECTION_STEADY_DG_DUAL_NORMALIZED) {
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", true, "normalized");
-}
-
-TEST(OPERATOR_ADVECTION_STEADY_DG_DUAL_REGULARIZED) {
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", true, "regularized");
-}
-
-TEST(OPERATOR_ADVECTION_STEADY_DG_DUAL) {
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", false);
-}
-
-TEST(OPERATOR_ADVECTION_STEADY_DG02) {
   AdvectionSteady<AnalyticDG02>(3, "cubic", 3, "dual", true);
-}
 
-#endif
-
-TEST(OPERATOR_ADVECTION_STEADY_DG_GAUSS) {
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "gauss points", false, "orthonormalized");
 }
-
-
 
 

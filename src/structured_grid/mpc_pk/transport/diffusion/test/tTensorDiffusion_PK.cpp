@@ -111,7 +111,6 @@ diffuse_tracer(Real                   t_old,
   if (add_old_time_divFlux) {
     Real a = 0.0;
     Real b = -(1.0-be_cn_theta)*dt;
-    Real scale_old = 0;
     TensorOp* op_old = getOp(a,b,bd_old,sComp_bd_old,1,W_old,sComp_W_old,1,W_half,sComp_W_half,W_flag,
 			     betan,sComp_betan,1,beta1n,sComp_beta1n,1,volume,area,alpha_in,sComp_alpha_in);
     op_old->maxOrder(max_order);

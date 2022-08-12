@@ -52,9 +52,12 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 set(operators_inc_files
     BCs.hh
+    BoundaryFlux.hh
     CoefficientModel.hh
+    FCT.hh
     InterfaceWhetStone.hh
     LimiterCell.hh
+    LimiterCellDG.hh
     Mini_Diffusion1D.hh
     Mini_Operator1D.hh
     OperatorDefs.hh
@@ -85,7 +88,6 @@ set(operators_inc_files
     Operator_Factory.hh
     Operator_Node.hh
     Operator_Schema.hh
-    BoundaryFlux.hh
     PDE_Abstract.hh
     PDE_Accumulation.hh
     PDE_Advection.hh
@@ -118,9 +120,12 @@ set(operators_inc_files
     RemapUtils.hh
     Schema.hh
     SchemaUtils.hh
+    SmoothnessIndicator.hh
+    SmoothnessIndicatorShu.hh
     TreeOperator.hh
     Reconstruction.hh
-    ReconstructionCell.hh
+    ReconstructionCellLinear.hh
+    ReconstructionCellPolynomial.hh
     UniqueLocalIndex.hh
     Upwind.hh
     UpwindArithmeticAverage.hh
@@ -132,7 +137,8 @@ set(operators_inc_files
 )
 
 add_amanzi_library(operators 
-                   SOURCE LimiterCell.cc
+                   SOURCE FCT.cc
+                          LimiterCell.cc LimiterCellDG.cc
                           Mini_Diffusion1D.cc
                           Mini_Operator1D.cc
                           OperatorUtils.cc
@@ -165,11 +171,16 @@ add_amanzi_library(operators
                           PDE_MagneticDiffusion.cc PDE_MagneticDiffusion_TM.cc
                           PDE_Reaction.cc
                           Schema.cc SchemaUtils.cc
+                          SmoothnessIndicatorShu.cc
                           TreeOperator.cc
-                          ReconstructionCell.cc
+                          ReconstructionCellLinear.cc
+                          ReconstructionCellPolynomial.cc
                           RemapDG.cc RemapUtils.cc
                           UniqueLocalIndex.cc
                           RemapDG_Helper.cc RemapUtils.cc
+                          UpwindFlux.cc
+                          UpwindGravity.cc
+                          UpwindSecondOrder.cc
                           HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh mesh_factory error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
 # Add useful utility
@@ -209,13 +220,12 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/operator_parabolic_surface.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # commenting out til we get better performance
-    # add_amanzi_test(operators_marshak operators_marshak
-    #                 KIND unit
-    #                 NPROCS 2
-    #                 SOURCE test/Main.cc test/operator_marshak.cc
-    #                                     test/operator_marshak_logical.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    add_amanzi_test(operators_marshak operators_marshak
+                    KIND unit
+                    NPROCS 2
+                    SOURCE test/Main.cc test/operator_marshak.cc
+                                        test/operator_marshak_logical.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
                     KIND unit
@@ -288,13 +298,13 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/operator_advdiff_surface.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # COMMENTING OUT UNTIL MeshExtractedManifold is supported
-    # add_amanzi_test(operators_dfn operators_dfn
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/operator_advection_dfn.cc
-    #                                     test/operator_diffusion_dfn.cc
-    #                 LINK_LIBS mesh_extracted ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-    # add_amanzi_test(operators_dfn_4pe operators_dfn NPROCS 4 KIND unit)
+    add_amanzi_test(operators_dfn operators_dfn
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_advection_dfn.cc
+                                        test/operator_diffusion_dfn.cc
+                    LINK_LIBS mesh_extracted ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(operators_dfn_4pe operators_dfn NPROCS 4 KIND unit)
 
     # Test: electromagnetics 
     add_amanzi_test(operators_electromagnetics operators_electromagnetics
@@ -366,23 +376,27 @@ if (BUILD_TESTS)
                     NPROCS 2
                     KIND unit)
 
-    # MeshCurved is not yet reimplemented, so MeshDeformation.hh code
-    # is not yet supported.
-    #                   
-    # # remap tests
-    # add_amanzi_test(operators_remap operators_remap
-    #                 KIND unit
-    #                 NPROCS 2
-    #                 SOURCE test/Main.cc test/operator_remap.cc
-    #                                     test/operator_remap_curved.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # remap tests
+    add_amanzi_test(operators_remap operators_remap
+                    KIND unit
+                    NPROCS 2
+                    SOURCE test/Main.cc test/operator_remap.cc
+                                        test/operator_remap_curved.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # add_amanzi_test(operators_remap_gcl operators_remap_gcl
-    #                 KIND unit
-    #                 NPROCS 3
-    #                 SOURCE test/Main.cc test/operator_remap_gcl.cc
-    #                                     test/operator_remap_gcl_reinit.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    add_amanzi_test(operators_remap_gcl operators_remap_gcl
+                    KIND unit
+                    NPROCS 3
+                    SOURCE test/Main.cc test/operator_remap_gcl.cc
+                                        test/operator_remap_gcl_reinit.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # fct tests
+    add_amanzi_test(operators_fct operators_fct
+                    KIND unit
+                    NPROCS 2
+                    SOURCE test/Main.cc test/operator_fct.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # high-order diffusion test
     add_amanzi_test(operators_diffusion_high_order operators_diffusion_high_order
@@ -409,7 +423,6 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/operator_tree.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
 
 endif()
                 

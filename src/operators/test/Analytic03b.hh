@@ -29,7 +29,7 @@ class Analytic03 : public AnalyticBase {
     a2 = 1.0 / k2;
     b2 = (a1 - a2) / 4;
 
-    dim = mesh_->getSpaceDimension();
+    dim = mesh_->space_dimension();
   }
   ~Analytic03() {};
 
@@ -96,7 +96,6 @@ class Analytic03 : public AnalyticBase {
 
   double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
-    double y = p[1];
 
     double plaplace, pmean, kmean;
     Amanzi::AmanziGeometry::Point pgrad(dim), kgrad(dim);

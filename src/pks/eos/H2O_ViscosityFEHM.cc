@@ -62,7 +62,7 @@ double H2O_ViscosityFEHM::DViscosityDT(double T, double p) {
 
 
 double H2O_ViscosityFEHM::DViscosityDp(double T, double p) {
-  Errors::Message message("EOS viscosity of water: derivative not implemented");
+  Errors::Message message("FEHM viscosity of water: dVis/dP is not implemented");
   Exceptions::amanzi_throw(message);
   return -1.0;
 };

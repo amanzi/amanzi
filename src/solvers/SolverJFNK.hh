@@ -76,7 +76,7 @@ class SolverJFNK : public Solver<Vector, VectorSpace> {
 
   // mutators
   void set_tolerance(double tol) { solver_->set_tolerance(tol); }
-  void set_pc_lag(double pc_lag) { solver_->set_pc_lag(pc_lag); }
+  void set_pc_lag(int pc_lag) { solver_->set_pc_lag(pc_lag); }
 
   // access
   double tolerance() { return solver_->tolerance(); }

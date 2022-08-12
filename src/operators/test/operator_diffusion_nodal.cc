@@ -48,7 +48,6 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  int comm_size = comm->NumProc();
 
   if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, nodal discretization" << std::endl;
 
@@ -59,38 +58,38 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   // create an SIMPLE mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
   // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 30, 30);
   RCP<const Mesh> mesh = meshfactory.create("test/median15x16.exo");
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   Analytic01 ana(mesh);
 
   for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->getCellCentroid(c);
+    const Point& xc = mesh->cell_centroid(c);
     const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
 
   // create boundary data
   Point xv(2);
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
-  const auto& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
-  const auto& bmap = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
+  const auto& fmap = mesh->face_map(true);
+  const auto& bmap = mesh->exterior_face_map(true);
 
   for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
     int f = fmap.LID(bmap.GID(bf));
     AmanziMesh::Entity_ID_List nodes; 
-    mesh->getFaceNodes(f, nodes);
+    mesh->face_get_nodes(f, &nodes);
     for (int n = 0; n < nodes.size(); ++n) {
       int v = nodes[n];
-      xv = mesh->getNodeCoordinate(v);
+      mesh->node_get_coordinates(v, &xv);
       bc_model[v] = OPERATOR_BC_DIRICHLET;
       bc_value[v] = ana.pressure_exact(xv, 0.0);
     }
@@ -109,11 +108,11 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   src.PutScalar(0.0);
 
   for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->getCellCentroid(c);
-    double volume = mesh->getCellVolume(c);
+    const Point& xc = mesh->cell_centroid(c);
+    double volume = mesh->cell_volume(c);
 
     AmanziMesh::Entity_ID_List nodes;
-    mesh->getCellNodes(c, nodes);
+    mesh->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
 
     for (int k = 0; k < nnodes; k++) {
@@ -155,14 +154,12 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
               << " itr=" << global_op->num_itrs()
               << " code=" << global_op->returned_code() << std::endl;
 
-    if (comm_size == 1) {
-      // visualization
-      const Epetra_MultiVector& p = *solution.ViewComponent("node");
-      GMV::open_data_file(*mesh, (std::string)"operators.gmv");
-      GMV::start_data();
-      GMV::write_node_data(p, 0, "solution");
-      GMV::close_data_file();
-    }
+    // visualization
+    const Epetra_MultiVector& p = *solution.ViewComponent("node");
+    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
+    GMV::start_data();
+    GMV::write_node_data(p, 0, "solution");
+    GMV::close_data_file();
   }
 
   CHECK(global_op->num_itrs() < 10);
@@ -209,21 +206,21 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
 
   // create an SIMPLE mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
   // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4);
   RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   Analytic02 ana(mesh);
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const Point& xc = mesh->getCellCentroid(c);
+    const Point& xc = mesh->cell_centroid(c);
     const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
@@ -232,26 +229,26 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
 
   // create boundary data (no mixed bc)
   Point xv(2);
-  Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model_v = bc_v->bc_model();
   std::vector<double>& bc_value_v = bc_v->bc_value();
 
   for (int v = 0; v < nnodes_wghost; v++) {
-    xv = mesh->getNodeCoordinate(v);
+    mesh->node_get_coordinates(v, &xv);
     if (fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
       bc_model_v[v] = OPERATOR_BC_DIRICHLET;
       bc_value_v[v] = ana.pressure_exact(xv, 0.0);
     }
   }
 
-  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model_f = bc_f->bc_model();
   std::vector<double>& bc_value_f = bc_f->bc_value();
   std::vector<double>& bc_mixed_f = bc_f->bc_mixed();
 
   int nn=0; int nm=0;
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = mesh->getFaceCentroid(f);
+    const Point& xf = mesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6) {
       nn++;
       bc_model_f[f] = OPERATOR_BC_NEUMANN;

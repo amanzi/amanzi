@@ -23,6 +23,7 @@
 // Amanzi
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
+#include "Mesh_Algorithms.hh"
 #include "VerboseObject.hh"
 
 // Operators
@@ -79,14 +80,14 @@ void RunTestUpwind(std::string method) {
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
 
   for (int n = 4; n < 17; n *= 2) {
     Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
 
-    int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
-    int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
-    int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
     // create model of nonlinearity
     Teuchos::RCP<Model> model = Teuchos::rcp(new Model(mesh));
@@ -95,7 +96,7 @@ void RunTestUpwind(std::string method) {
     std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
     std::vector<double> bc_value(nfaces_wghost);
     for (int f = 0; f < nfaces_wghost; f++) {
-      const Point& xf = mesh->getFaceCentroid(f);
+      const Point& xf = mesh->face_centroid(f);
       if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
           fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
           fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) 
@@ -107,49 +108,41 @@ void RunTestUpwind(std::string method) {
     // create and initialize cell-based field 
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh)->SetGhosted(true)
-       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
-       ->AddComponent("dirichlet_faces", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1)
-       ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+       ->AddComponent("cell", AmanziMesh::CELL, 1)
+       ->AddComponent("face", AmanziMesh::FACE, 1);
 
     CompositeVector field(*cvs);
     Epetra_MultiVector& fcells = *field.ViewComponent("cell", true);
     Epetra_MultiVector& ffaces = *field.ViewComponent("face", true);
-    Epetra_MultiVector& fbfs = *field.ViewComponent("dirichlet_faces", true);
 
     for (int c = 0; c < ncells_wghost; c++) {
-      const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
+      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       fcells[0][c] = model->Value(c, xc[0]); 
     }
 
     // add boundary face component
-    const Epetra_Map& ext_face_map = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
-    const Epetra_Map& face_map = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
-    for (int f=0; f!=face_map.NumMyElements(); ++f) {
+    for (int f = 0; f != bc_model.size(); ++f) {
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-        AmanziMesh::Entity_ID_List cells;
-        mesh->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
-        AMANZI_ASSERT(cells.size() == 1);
-        int bf = ext_face_map.LID(face_map.GID(f));
-        fbfs[0][bf] = model->Value(cells[0], bc_value[f]);
+        int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
+        ffaces[0][f] = model->Value(c, bc_value[f]);
       }
     }
-    
 
     // create and initialize face-based flux field
-    cvs = CreateCompositeVectorSpace(mesh, "face", AmanziMesh::Entity_kind::FACE, 1, true);
+    cvs = CreateCompositeVectorSpace(mesh, "face", AmanziMesh::FACE, 1, true);
 
     CompositeVector flux(*cvs), solution(*cvs);
     Epetra_MultiVector& u = *flux.ViewComponent("face", true);
   
     Point vel(1.0, 2.0, 3.0);
     for (int f = 0; f < nfaces_wghost; f++) {
-      const Point& normal = mesh->getFaceNormal(f);
+      const Point& normal = mesh->face_normal(f);
       u[0][f] = vel * normal;
     }
 
     // Create two upwind models
     Teuchos::ParameterList& ulist = plist.sublist("upwind");
-    UpwindClass upwind(mesh, model);
+    UpwindClass upwind(mesh);
     upwind.Init(ulist);
 
     upwind.Compute(flux, solution, bc_model, field);
@@ -157,7 +150,7 @@ void RunTestUpwind(std::string method) {
     // calculate errors
     double error(0.0);
     for (int f = 0; f < nfaces_owned; f++) {
-      const Point& xf = mesh->getFaceCentroid(f);
+      const Point& xf = mesh->face_centroid(f);
       double exact = model->analytic(xf[0]);
 
       error += pow(exact - ffaces[0][f], 2.0);
@@ -166,9 +159,9 @@ void RunTestUpwind(std::string method) {
     }
 #ifdef HAVE_MPI
     double tmp = error;
-    mesh->getComm()->SumAll(&tmp, &error, 1);
+    mesh->get_comm()->SumAll(&tmp, &error, 1);
     int itmp = nfaces_owned;
-    mesh->getComm()->SumAll(&itmp, &nfaces_owned, 1);
+    mesh->get_comm()->SumAll(&itmp, &nfaces_owned, 1);
 #endif
     error = sqrt(error / nfaces_owned);
   
@@ -178,18 +171,18 @@ void RunTestUpwind(std::string method) {
 }
 
 TEST(UPWIND_FLUX) {
-  RunTestUpwind<UpwindFlux<Model> >("flux");
+  RunTestUpwind<UpwindFlux>("flux");
 }
 
 TEST(UPWIND_DIVK) {
-  RunTestUpwind<UpwindDivK<Model> >("divk");
+  RunTestUpwind<UpwindDivK>("divk");
 }
 
 TEST(UPWIND_GRAVITY) {
-  RunTestUpwind<UpwindGravity<Model> >("gravity");
+  RunTestUpwind<UpwindGravity>("gravity");
 }
 
 // TEST(UPWIND_FLUX_GRAVITY) {
-//  RunTestUpwind<UpwindFluxAndGravity<Model> >("flux_gravity");
+//  RunTestUpwind<UpwindFluxAndGravity>("flux_gravity");
 // }
 

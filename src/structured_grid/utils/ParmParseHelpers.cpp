@@ -10,18 +10,6 @@
 typedef std::list<ParmParse::PP_entry>::iterator list_iterator;
 typedef std::list<ParmParse::PP_entry>::const_iterator const_list_iterator;
 
-static std::list<std::string>
-split_string_to_list(const std::string& str)
-{
-  std::vector<std::string> tokens = BoxLib::Tokenize(str," ,");
-  std::list<std::string> token_list;
-  for (int i=0; i<tokens.size(); ++i)
-    {
-      token_list.push_back(tokens[i]);
-    }
-  return token_list;
-}
-
 static std::stack<std::string> prefix;
 
 static std::string
@@ -139,6 +127,7 @@ bldTable (Teuchos::ParameterList& params,
     prefix.pop();
 }
 
+/*
 static void
 print_table (const std::string& pfx, const ParmParse::Table& table)
 {
@@ -172,6 +161,7 @@ print_table (const std::string& pfx, const ParmParse::Table& table)
 	}
     }
 }
+*/
 
 void
 BoxLib::Initialize_ParmParse(Teuchos::ParameterList& params)

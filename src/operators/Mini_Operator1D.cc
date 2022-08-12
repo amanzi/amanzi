@@ -59,7 +59,7 @@ void Mini_Operator1D::AddAccumulationTerm(
 {
   int ncells = diag_.NumRows();
   for (int i = 0; i < ncells; ++i) {
-    double h = mesh_getCellVolume(i);
+    double h = mesh_cell_volume(i);
     diag_(i) += s1(i) * h / dt;
     rhs_(i) += s0(i) * sol(i) * h / dt;
   }
@@ -69,7 +69,7 @@ void Mini_Operator1D::AddAccumulationTerm(const WhetStone::DenseVector& s1)
 {
   int ncells = diag_.NumRows();
   for (int i = 0; i < ncells; ++i) {
-    diag_(i) += s1(i) * mesh_getCellVolume(i);
+    diag_(i) += s1(i) * mesh_cell_volume(i);
   }
 }
 

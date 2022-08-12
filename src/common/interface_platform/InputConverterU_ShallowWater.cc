@@ -143,28 +143,39 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWaterBCs_()
     // create names, modify data
     std::string bcname;
     if (bctype == "ponded_depth") {
-      bctype = "velocity";
-      bcname = "velocity";
+      bctype = "ponded-depth";
+      bcname = "ponded-depth";
     }
     std::stringstream ss;
     ss << "BC " << ibc++;
 
-    // save in the XML files  
-    Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
-    Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
-    bc.set<Teuchos::Array<std::string> >("regions", regions)
-      .set<std::string>("spatial distribution method", "none");
+    // ponded depth
+    {
+      Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
+      Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
+      bc.set<Teuchos::Array<std::string> >("regions", regions)
+        .set<std::string>("spatial distribution method", "none");
 
-    Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-    bcfn.set<int>("number of dofs", 3)
-        .set<std::string>("function type", "composite function");
-    Teuchos::ParameterList& dofs = bcfn.sublist("dof 1 function");
- 
-    TranslateGenericMath_(times, values, forms, formulas, dofs);
+      Teuchos::ParameterList& bcfn = bc.sublist(bcname);
+      TranslateGenericMath_(times, values, forms, formulas, bcfn);
+    }
 
-    // work around (FIXME)
-    bcfn.sublist("dof 2 function").sublist("function-constant").set<double>("value", 0.0);
-    bcfn.sublist("dof 3 function").sublist("function-constant").set<double>("value", 0.0);
+    // velocity FIXME
+    {
+      bctype = "velocity";
+      bcname = "velocity";
+      Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
+      Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
+      bc.set<Teuchos::Array<std::string> >("regions", regions)
+        .set<std::string>("spatial distribution method", "none");
+
+      Teuchos::ParameterList& bcfn = bc.sublist(bcname);
+      bcfn.set<int>("number of dofs", 2)
+          .set<std::string>("function type", "composite function");
+
+      bcfn.sublist("dof 1 function").sublist("function-constant").set<double>("value", 0.0);
+      bcfn.sublist("dof 2 function").sublist("function-constant").set<double>("value", 0.0);
+    }
   }
 
   return out_list;
