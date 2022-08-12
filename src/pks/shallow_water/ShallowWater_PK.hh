@@ -73,8 +73,9 @@ class ShallowWater_PK : public PK_Physical,
   // Advance PK by step size dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
 
-  virtual void FunctionalTimeDerivative(double t, const TreeVector& A,
-                                        TreeVector& f) override;
+  virtual void FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector& f) override;
+
+  virtual void ModifySolution(double t, TreeVector& A) override;
 
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
