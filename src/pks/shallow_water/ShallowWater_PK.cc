@@ -795,8 +795,7 @@ ShallowWater_PK::get_dt()
       double vx = vel_c[0][c];
       double vy = vel_c[1][c];
 
-      // computing local (cell, face) time step using Kurganov's estimate d /
-      // (2a)
+      // computing local (cell, face) time step using Kurganov's estimate d / (2a)
       vn = (vx * normal[0] + vy * normal[1]) / farea;
       d = norm(xc - xf);
       d_min = std::min(d_min, d);
@@ -805,8 +804,8 @@ ShallowWater_PK::get_dt()
     }
   }
 	
-	// reduce dt_min for completely dry conditions (h = 0, qx = 0, qy = 0) 
-	if (dt >= 0.5 * d_min * 1.e8 - 1.e-12) {
+	// reduce dt_min when dt is too large for completely dry conditions (h = 0, qx = 0, qy = 0)
+	if (dt >= d_min * 1.e8) {
 		dt = d_min * dt_dry;
 	}
 	

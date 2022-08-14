@@ -125,15 +125,8 @@ if (BUILD_TESTS)
                     NPROCS 3
                     SOURCE test/Main.cc test/shallow_water_Thacker.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    # Test: flow over dry bed with zero and non-zero bathymetry
-    add_amanzi_test(shallow_water_dry_bed shallow_water_dry_bed
-                    KIND int
-                    NPROCS 3
-                    SOURCE test/Main.cc test/shallow_water_dry_bed.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
     
-    # Test: dry bed well balancing 
+    # Test: flow over dry bed with non-zero bathymetry
     add_amanzi_test(shallow_water_dry_bed_wb shallow_water_dry_bed_wb
                     KIND int
                     NPROCS 3
