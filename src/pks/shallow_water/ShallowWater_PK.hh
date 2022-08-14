@@ -91,12 +91,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   // Recalculate total depth for positivity of ponded depth
   double TotalDepthEdgeValue(int c, int e);
-  //void TotalDepthReconstruct(Teuchos::RCP<Operators::ReconstructionCellLinear>& total_depth_grad_);
-  void TotalDepthReconstruct(); 
-  bool PointInTriangle(AmanziGeometry::Point xv1, AmanziGeometry::Point xv2, AmanziGeometry::Point xv3, AmanziGeometry::Point X);
-  //double ht_type12_cell(int c, int e, std::vector<double> Bi, std::vector<AmanziGeometry::Point> xvi);
-  double ht_type12_cell(int c, int e, std::vector<double> Bi, AmanziGeometry::Point xv1, AmanziGeometry::Point xv2, AmanziGeometry::Point xv3);
-  
+
   // due to rotational invariance of SW equations, we need flux in the
   // x-direction only.
   std::vector<double> PhysicalFlux_x(const std::vector<double>&);
@@ -115,8 +110,9 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   // temporal discretization order
   int temporal_disc_order;
-  
+  // maximum cell area
   double cell_area_max_;
+  
  private:
   void
   InitializeFieldFromField_(const std::string& field0,
@@ -145,15 +141,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
-  
-  // total depth [cell, node] and [cell, face]
-  std::vector<std::vector<double>> ht_cell_node_;
-  std::vector<std::vector<double>> ht_cell_face_;
-  std::vector<std::vector<double>> ht_cell_node_grad_x_;
-  std::vector<std::vector<double>> ht_cell_node_grad_y_;
-  std::vector<std::vector<double>> ht_face_grad_x_;
-  std::vector<std::vector<double>> ht_face_grad_y_;
-  bool edge_is_partially_wet;
   
   // source terms
   std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;

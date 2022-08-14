@@ -26,8 +26,6 @@
 
 using namespace Amanzi;
 
-double mass_eq = 0.0;
-
 // ---- ---- ---- ---- ---- ---- ---- ----
 // Inital Conditions
 // ---- ---- ---- ---- ---- ---- ---- ----
@@ -59,8 +57,6 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   auto& ht_c =
     *S->GetW<CompositeVector>("surface-total_depth", Tags::DEFAULT, passwd)
        .ViewComponent("cell");
-  //need to implement auto& ht_n = *S->GetW<CompositeVector>("surface-total_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
-
   auto& vel_c =
     *S->GetW<CompositeVector>("surface-velocity", Tags::DEFAULT, passwd)
        .ViewComponent("cell");
@@ -75,78 +71,60 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   // Define bathymetry at the cell vertices (Bn)
   for (int n = 0; n < nnodes_wghost; ++n) {
     Amanzi::AmanziGeometry::Point node_crd;
-
-    mesh->node_get_coordinates(n, &node_crd); // Coordinate of current node
-
-    double x = node_crd[0], y = node_crd[1];
-      
-    B_n[0][n] = 0.0;
-    if (std::abs(x - 0.5) <= 0.3 && std::abs(y - 0.5) <= 0.3) {
-      B_n[0][n] = 0.5 * std::sin(pi * x) * std::sin(pi * y);
-    }
     
-    //B_n[0][n] = std::sin(pi * x) * std::sin(pi * y);
-
-    //B_n[0][n] = x;
-    if (x >= 0.3) { 
-     // B_n[0][n] = 0.0 * std::sin(0.5 * pi * x);
-     // B_n[0][n] = x;
+    mesh->node_get_coordinates(n, &node_crd); // Coordinate of current node
+    
+    double x = node_crd[0], y = node_crd[1];
+    
+    B_n[0][n] = 0.0;
+    if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.35*0.35 + 1.e-12) {
+      B_n[0][n] = 0.8;
     }
-
   }
-
+  
   S->Get<CompositeVector>("surface-bathymetry").ScatterMasterToGhosted("node");
-
+  
   for (int c = 0; c < ncells_wghost; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-
+    
     Amanzi::AmanziMesh::Entity_ID_List cfaces, cnodes, cedges;
     mesh->cell_get_faces(c, &cfaces);
     mesh->cell_get_nodes(c, &cnodes);
     mesh->cell_get_edges(c, &cedges);
-
+    
     int nfaces_cell = cfaces.size();
-
+    
     B_c[0][c] = 0.0;
-    h_c[0][c] = 0.0;
-    ht_c[0][c] = 0.0;
-
-    // Compute cell averaged bathymetrt (Bc)
+    
+    // Compute cell averaged bathymetry (Bc)
     for (int f = 0; f < nfaces_cell; ++f) {
       Amanzi::AmanziGeometry::Point x0, x1;
       int edge = cfaces[f];
-
+      
       Amanzi::AmanziMesh::Entity_ID_List face_nodes;
       mesh->face_get_nodes(edge, &face_nodes);
-
+      
       mesh->node_get_coordinates(face_nodes[0], &x0);
       mesh->node_get_coordinates(face_nodes[1], &x1);
-
+      
       Amanzi::AmanziGeometry::Point tria_edge0, tria_edge1;
-
+      
       tria_edge0 = xc - x0;
       tria_edge1 = xc - x1;
-
+      
       Amanzi::AmanziGeometry::Point area_cross_product =
-        (0.5) * tria_edge0 ^ tria_edge1;
-
+      (0.5) * tria_edge0 ^ tria_edge1;
+      
       double area = norm(area_cross_product);
-
+      
       B_c[0][c] += (area / mesh->cell_volume(c)) *
-                   (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 2.0;
-
-      ht_c[0][c] += (area / mesh->cell_volume(c)) * (std::max(0.5, B_n[0][face_nodes[0]])  + std::max(0.5, B_n[0][face_nodes[1]]) ) / 2.0;
+      (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 2.0;
     }
-
-    ht_c[0][c] = std::max(0.5, B_c[0][c]);
     
-    //ht_c[0][c] = h_c[0][c] + B_c[0][c];
+    // start with dry bed
+    ht_c[0][c] = std::max(0.0, B_c[0][c]);
     
-    if ((xc[0] - 0.2)*(xc[0] - 0.2) + (xc[1] - 0.5)*(xc[1] - 0.5) < 0.1*0.1) {
-      ht_c[0][c] += 0.1;
-    }
     h_c[0][c] = ht_c[0][c] - B_c[0][c];
-    
     vel_c[0][c] = 0.0;
     vel_c[1][c] = 0.0;
     q_c[0][c] = h_c[0][c] * vel_c[0][c];
@@ -154,110 +132,9 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     p_c[0][c] = patm + rho * g * h_c[0][c];
   }
   
-
-  // triangular mesh only; well-balanced IC [Liu et al.' 18]
-  for (int c = 0; c < ncells_wghost; ++c) {
-    AmanziMesh::Entity_ID_List cnodes;
-    mesh->cell_get_nodes(c, &cnodes);
-   
-    double B13, B12, B23; 
-   
-    B13 = std::max( std::max(B_n[0][cnodes[0]], B_n[0][cnodes[1]]), B_n[0][cnodes[2]] );
-    B23 = std::min( std::min(B_n[0][cnodes[0]], B_n[0][cnodes[1]]), B_n[0][cnodes[2]] );
-    B12 = (B_n[0][cnodes[0]] + B_n[0][cnodes[1]] + B_n[0][cnodes[2]] ) - (B13 + B23); 
-    
-    Amanzi::AmanziGeometry::Point xv13, xv12, xv23;
-    int i13, i12, i23;
-    for (int i = 0; i < cnodes.size(); ++i) {
-       if(std::abs(B13 - B_n[0][cnodes[i]]) < 1.e-15 ) {
-         mesh->node_get_coordinates(cnodes[i], &xv13);
-         i13 = cnodes[i];
-       }
-     }
-     
-     for (int i = 0; i < cnodes.size(); ++i) {
-       if (std::abs(B12 - B_n[0][cnodes[i]]) < 1.e-15 && i13 != cnodes[i]) {
-         mesh->node_get_coordinates(cnodes[i], &xv12);
-         i12 = cnodes[i];
-       }
-     }
- 
-     for (int i = 0; i < cnodes.size(); ++i) {
-       if (cnodes[i] != i13 && cnodes[i] != i12) {
-         mesh->node_get_coordinates(cnodes[i], &xv23);
-         i23 = cnodes[i];
-       }
-     }
- 
- 
-     // store sorted nodes and coordinates
-     std::vector<double> Bi(3);
-     Bi[0] = B13;
-     Bi[1] = B12;
-     Bi[2] = B23;
- 
-     std::vector<AmanziGeometry::Point> xvi(3);
-     xvi[0] = xv13;
-     xvi[1] = xv12;
-     xvi[2] = xv23;
-
-     double w = 0.8; // free water surface
-    
-     // fully flooded cell
-     if (w >= B13 && w >= B12 && w >= B23) {
-       h_c[0][c] = (w - B_c[0][c]);
-     } else if (w < B23) {
-       h_c[0][c] = 0.0;
-     } else {
-       // type 1 cell
-       if (w >= B23 && w < B12 ) {
-         h_c[0][c] = std::pow((w - B23), 3.0) / (3.0 * (B13 - B23) * (B12 - B23)); 
-       } else if (w >= B12 && w < B13) {
-         h_c[0][c] = ( -w*w*w + 3.0*B13*w*w - 3.0*(B23*B13 + B12*B13 - B12*B23)*w + B23*B23*B13) / (B13 - B23) + B12*(B12 + B23);
-         h_c[0][c] /= 3.0*(B13 - B12);
-       }
-     }
-
-     ht_c[0][c] = h_c[0][c] + B_c[0][c];
-
-     ht_c[0][c] = std::max(0.0, B_c[0][c]);
-     
-     //ht_c[0][c]  = std::max(0.8, B_c[0][c]);
-     const Amanzi::AmanziGeometry::Point &xc = mesh->cell_centroid(c);
-     if ((xc[0] - 0.1)*(xc[0] - 0.1) + (xc[1] - 0.1)*(xc[1] - 0.1) < 0.05*0.05) {
-       ht_c[0][c] += 0.0;
-     }
-     if (c == 179) {
-      ht_c[0][c] += 0.00;
-      std::cout<<"cell = "<<c<<"; center = "<<xc[0]<<", "<<xc[1]<<std::endl;
-     }
-     h_c[0][c] = ht_c[0][c] - B_c[0][c];
-      
-      double weq = 0.80, hceq; // equilibrium free water surface
-      // fully flooded cell
-      if (weq >= B13 && weq >= B12 && weq >= B23) {
-        hceq = (weq - B_c[0][c]);
-      } else if (weq < B23) {
-        hceq = 0.0;
-      } else {
-        // type 1 cell
-        if (weq >= B23 && weq < B12 ) {
-          hceq = std::pow((weq - B23), 3.0) / (3.0 * (B13 - B23) * (B12 - B23));
-        } else if (weq >= B12 && weq < B13) {
-          hceq = ( -weq*weq*weq + 3.0*B13*weq*weq - 3.0*(B23*B13 + B12*B13 - B12*B23)*weq + B23*B23*B13) / (B13 - B23) + B12*(B12 + B23);
-          hceq /= 3.0*(B13 - B12);
-       }
-      }
-
-      mass_eq += hceq * mesh->cell_volume(c);
-
- 
-  }
-  
   S->Get<CompositeVector>("surface-bathymetry").ScatterMasterToGhosted("cell");
   S->Get<CompositeVector>("surface-total_depth").ScatterMasterToGhosted("cell");
-  S->Get<CompositeVector>("surface-ponded_depth")
-    .ScatterMasterToGhosted("cell");
+  S->Get<CompositeVector>("surface-ponded_depth").ScatterMasterToGhosted("cell");
   S->Get<CompositeVector>("surface-velocity").ScatterMasterToGhosted("cell");
   S->Get<CompositeVector>("surface-discharge").ScatterMasterToGhosted("cell");
 }
@@ -279,13 +156,12 @@ RunTest(int icase)
 
   if (MyPID == 0) {
     std::cout
-      << "Test: Shallow water: Dry bed well balancing"
+      << "Test: Shallow water: Flow over dry bed (with B = 0, B > 0 cases) "
       << std::endl;
   }
 
   // Read parameter list
   std::string xmlFilename;
-  
   xmlFilename = "test/shallow_water_dry_bed_wb.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist =
     Teuchos::getParametersFromXmlFile(xmlFilename);
@@ -301,16 +177,16 @@ RunTest(int icase)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   RCP<Mesh> mesh;
-  //mesh = meshfactory.create ("test/triangular16.exo");
-  mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 50, 50, request_faces, request_edges);
-  //mesh = meshfactory.create ("test/median32x33.exo");
-
-  // Other polygonal meshes
-  //  RCP<Mesh> mesh = meshfactory.create ("test/median15x16.exo");
-  //  RCP<Mesh> mesh = meshfactory.create ("test/random40.exo");
+  if (icase == 1) {
+    mesh = meshfactory.create ("test/triangular16.exo");
+    //mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
+    //mesh = meshfactory.create ("test/median32x33.exo");
+  } else if (icase == 2) {
+    //mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
+    mesh = meshfactory.create ("test/median32x33.exo");
+  }
 
   // Create a state
-
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterMesh("surface", mesh);
@@ -331,8 +207,6 @@ RunTest(int icase)
 
   dry_bed_setIC(mesh, S, icase);
   S->CheckAllFieldsInitialized();
-
-  int ncells_wghost = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);\
 
   const auto& B =
     *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
@@ -373,14 +247,15 @@ RunTest(int icase)
   int iter = 0;
   std::vector<double> dx, Linferror, L1error, L2error;
 
-  double Tend;
-  //Tend = 50000.0;
-  Tend = 20.0;
+  double Tend = 1.0;
+
+  int ncells_wghost = mesh->num_entities(
+    Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
   
   while ((t_new < Tend) && (iter >= 0)) {
     double t_out = t_new;
 
-    if (iter % 1000 == 0) {
+    if (iter % 50 == 0) {
       io.InitializeCycle(t_out, iter, "");
 
       io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
@@ -407,21 +282,19 @@ RunTest(int icase)
     t_old = t_new;
     iter += 1;
     
-    if (iter % 1000 == 0) {
-    	std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
-      double mass_end = 0.0;
-      for (int c = 0; c < ncells_wghost; ++c) {
-        mass_end += hh[0][c] * mesh->cell_volume(c);
-      }
-      std::cout<<"Equilibrium mass = "<<mass_eq<<"; Actual calculated = "<<mass_end<<"; difference = "<<std::abs(mass_end - mass_eq)<<std::endl;
-
-      std::cout<<" ------------------------------------------------------------------------ "<<std::endl;
+    if (iter % 50 == 0) {
+      std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
+    }
+    
+    // check depth positivity
+    for (int c = 0; c < ncells_wghost; ++c) {
+      CHECK(hh[0][c] >= 0.0);
     }
   } // time loop
 
   if (MyPID == 0) { std::cout << "Time-stepping finished. " << std::endl; }
-	std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
-	
+  std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
+  
   double t_out = t_new;
 
   io.InitializeCycle(t_out, iter, "");
@@ -440,7 +313,7 @@ RunTest(int icase)
   io.FinalizeCycle();
 }
 
-TEST(SHALLOW_WATER_DRY_BED_WB)
+TEST(SHALLOW_WATER_DRY_BED)
 {
   RunTest(1);
 }

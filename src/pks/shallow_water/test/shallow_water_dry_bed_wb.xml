@@ -65,7 +65,7 @@
         <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
       <Parameter name="temporal discretization order" type="int" value="1"/>
-      <Parameter name="cfl" type="double" value="0.1"/>
+      <Parameter name="cfl" type="double" value="0.2"/>
       <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
       <Parameter name="numerical flux" type="string" value="Rusanov"/>
       
@@ -73,12 +73,12 @@
       <ParameterList name="boundary conditions">
         <ParameterList name="ponded-depth">
           <ParameterList name="BC 0">
-            <Parameter name="regions" type="Array(string)" value="{Left, Right, Top, Bottom}"/>
+            <Parameter name="regions" type="Array(string)" value="{Left}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="ponded-depth">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
-                <Parameter name="formula" type="string" value="0.80*0.5*(sgn(0.1 - t)+1.0) + 0.80*0.5*(sgn(t - 0.1) + 1.0)"/>
+                <Parameter name="formula" type="string" value="0.50"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -95,7 +95,7 @@
         </ParameterList>
         <ParameterList name="velocity">
           <ParameterList name="BC 2">
-            <Parameter name="regions" type="Array(string)" value="{Left, Right, Top, Bottom}"/>
+            <Parameter name="regions" type="Array(string)" value="{Left}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="velocity">
               <Parameter name="number of dofs" type="int" value="2"/>

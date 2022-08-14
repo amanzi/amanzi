@@ -46,8 +46,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
   auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_)
                   .ViewComponent("cell", true);
-  // auto& ht_n = *S_->GetW<CompositeVector>(total_depth_key_,
-  // passwd_).ViewComponent("node", true);
   auto& vel_c = *S_->GetW<CompositeVector>(velocity_key_, passwd_)
                    .ViewComponent("cell", true);
   auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_)
@@ -168,18 +166,14 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
     normal /= farea;
 
-    //double ht_rec = total_depth_grad_->getValue(c1, xf);
     double ht_rec = TotalDepthEdgeValue(c1, f);
-   // double ht_rec = ht_cell_face_[c1][f];
 
     double B_rec = BathymetryEdgeValue(f, B_n);
     
-    //const auto& xc = mesh_->cell_centroid(c1);
 
     if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-14) {
     	std::cout<<"time: t = "<<t<<", c = "<<c1<<", negative h 1 = : "<<ht_rec-B_rec<<" | ht_rec = "<<ht_rec<<" < "<<B_rec<<std::endl;
       ht_rec = ht_c[0][c1];
-      //ht_rec = B_rec;
       B_rec = B_c[0][c1];
     } 
     double h_rec = ht_rec - B_rec;
@@ -188,31 +182,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
-    
-    //qx_rec = q_temp[0][c1];
-    //qy_rec = q_temp[1][c1];
 
     factor = inverse_with_tolerance(h_rec, cell_area_max_);
-    if (std::abs(factor - 0.0) < 1.e-15) {
-      //h_rec = 0.0;
-    }
-    //qx_rec *= h_rec; 
-    //qx_rec *= factor;
-    //qy_rec *= h_rec;
-    //qy_rec *= factor;
-   
-    /*
-    if (f == 592 || f == 600 || f == 604) {
-      const auto& xc = mesh_->cell_centroid(c1);
-      std::cout<<"c1 : "<<c1<<"; "<<xc[0]<<", "<<xc[1]<<std::endl;
-      std::cout<<"f = "<<f<<"; "<<xf[0]<<", "<<xf[1]<<std::endl;
-      std::cout<<"ht_rec = "<<ht_rec<<", B_rec = "<<B_rec<<std::endl;
-      std::cout<<"h_rec: "<<h_rec<<std::endl;
-      std::cout<<"q_rec : "<<qx_rec<<", "<<qy_rec<<", factor = "<<factor<<std::endl;
-      std::cout<<"ht_c = "<<ht_c[0][c1]<<", B_c = "<<B_c[0][c1]<<", h_c = "<<h_temp[0][c1]<<std::endl;
-    }
-    */
-
+  
     double vx_rec = factor * qx_rec;
     double vy_rec = factor * qy_rec;
 
@@ -231,24 +203,16 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
         UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
 
-        if (iters_ > 1 && t <= 8.0) { 
-          UR[0] = t * 0.05;
-        } else {
-          UR[0] = 0.4;
-        }
       } else {
         // default outflow BC
         UR = UL;
       }
     } else {
-      //ht_rec = total_depth_grad_->getValue(c2, xf);
       ht_rec = TotalDepthEdgeValue(c2, f);
-      //ht_rec = ht_cell_face_[c2][f];
 
       if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-14) {
       	std::cout<<"time: t = "<<t<<", c = "<<c2<<", negative h 2 = : "<<ht_rec-B_rec<<" | ht_rec = "<<ht_rec<<" < "<<B_rec<<std::endl;
         ht_rec = ht_c[0][c2];
-        //ht_rec = B_rec;
         B_rec = B_c[0][c2];
       }
       h_rec = ht_rec - B_rec;
@@ -258,34 +222,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       qx_rec = discharge_x_grad_->getValue(c2, xf);
       qy_rec = discharge_y_grad_->getValue(c2, xf);
       
-      //qx_rec = q_temp[0][c2];
-      //qy_rec = q_temp[1][c2];
       factor = inverse_with_tolerance(h_rec, cell_area_max_);
-      
-      if (std::abs(factor - 0.0) < 1.e-15) {
-        //h_rec = 0.0;
-        //h_c[0][c2] = 0.0;
-      }
-
-      //qx_rec *= h_rec;
-      //qx_rec *= factor;
-      //qy_rec *= h_rec;
-      //qy_rec *= factor;
 
       vx_rec = factor * qx_rec;
       vy_rec = factor * qy_rec;
-      
-     /* 
-      if (f == 592 || f == 600 || f == 604) {
-        const auto& xc = mesh_->cell_centroid(c2);
-        std::cout<<"c2 : "<<c2<<"; "<<xc[0]<<", "<<xc[1]<<std::endl;
-        std::cout<<"f = "<<f<<"; "<<xf[0]<<", "<<xf[1]<<std::endl;  
-        std::cout<<"ht_rec = "<<ht_rec<<", B_rec = "<<B_rec<<std::endl;
-        std::cout<<"h_rec: "<<h_rec<<std::endl;
-        std::cout<<"q_rec : "<<qx_rec<<", "<<qy_rec<<", factor = "<<factor<<std::endl;
-        std::cout<<"ht_c = "<<ht_c[0][c2]<<", B_c = "<<B_c[0][c2]<<", h_c = "<<h_temp[0][c2]<<std::endl;
-      }
-      */
 
       vn = vx_rec * normal[0] + vy_rec * normal[1];
       vt = -vx_rec * normal[1] + vy_rec * normal[0];
@@ -338,11 +278,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     f_temp0[0][c] = h;
     f_temp1[0][c] = qx;
     f_temp1[1][c] = qy;
-    
-//    if (c == 430) {
-//      std::cout<<"S[1] = "<<S[1]<<std::endl;
-//      std::cout<<"S[2] = "<<S[2]<<std::endl;
-//    }
   }
 }
 
