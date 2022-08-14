@@ -156,13 +156,13 @@ RunTest(int icase)
 
   if (MyPID == 0) {
     std::cout
-      << "Test: Shallow water: Flow over dry bed (with B = 0, B > 0 cases) "
+      << "Test: Shallow water: Flow over dry bed with B > 0"
       << std::endl;
   }
 
   // Read parameter list
   std::string xmlFilename;
-  xmlFilename = "test/shallow_water_dry_bed_wb.xml";
+  xmlFilename = "test/shallow_water_dry_bed.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist =
     Teuchos::getParametersFromXmlFile(xmlFilename);
 
@@ -179,10 +179,7 @@ RunTest(int icase)
   RCP<Mesh> mesh;
   if (icase == 1) {
     mesh = meshfactory.create ("test/triangular16.exo");
-    //mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
-    //mesh = meshfactory.create ("test/median32x33.exo");
   } else if (icase == 2) {
-    //mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
     mesh = meshfactory.create ("test/median32x33.exo");
   }
 
@@ -248,6 +245,9 @@ RunTest(int icase)
   std::vector<double> dx, Linferror, L1error, L2error;
 
   double Tend = 0.5;
+  if (icase == 2) {
+    Tend = 0.25;
+  }
 
   int ncells_wghost = mesh->num_entities(
     Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
@@ -315,5 +315,6 @@ RunTest(int icase)
 
 TEST(SHALLOW_WATER_DRY_BED)
 {
-  RunTest(1);
+  RunTest(1); // triangular mesh
+  RunTest(2); // hexagonal mesh
 }
