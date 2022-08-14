@@ -449,8 +449,8 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   bool failed = false;
 
-  int ncells_owned =
-    mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
 
@@ -485,7 +485,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Epetra_MultiVector& q_old =
     *soln_->SubVector(1)->Data()->ViewComponent("cell");
 
-  for (int c = 0; c < ncells_owned; ++c) {
+  for (int c = 0; c < ncells_wghost; ++c) {
     double factor = inverse_with_tolerance(h_old[0][c], cell_area_max_);
     h_c[0][c] = h_old[0][c];
     q_c[0][c] = q_old[0][c];
@@ -542,7 +542,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *soln_->SubVector(1)->Data()->ViewComponent("cell");
 
   // update solution
-  for (int c = 0; c < ncells_owned; ++c) {
+  for (int c = 0; c < ncells_wghost; ++c) {
     double factor = inverse_with_tolerance(h_temp[0][c], cell_area_max_);
     h_c[0][c] = h_temp[0][c];
     q_c[0][c] = q_temp[0][c];
@@ -767,7 +767,7 @@ ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
 double
 ShallowWater_PK::get_dt()
 {
-  double d, d_min = 1.e10, vn, dt = 1.e10, dt_dry = 1.e-3;
+  double d, d_min = 1.e10, vn, dt = 1.e10, dt_dry = 1.e-1;
 
   const auto& h_c =
     *S_->Get<CV_t>(ponded_depth_key_).ViewComponent("cell", true);
@@ -777,11 +777,10 @@ ShallowWater_PK::get_dt()
   auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_)
                  .ViewComponent("cell", true);
 
-  int ncells_owned =
-    mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   AmanziMesh::Entity_ID_List cfaces;
 
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int c = 0; c < ncells_wghost; c++) {
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
     mesh_->cell_get_faces(c, &cfaces);
@@ -807,7 +806,7 @@ ShallowWater_PK::get_dt()
   }
 	
 	// reduce dt_min for completely dry conditions (h = 0, qx = 0, qy = 0) 
-	if (dt >= 0.5 * d_min * 1.e12 - 1.e-12) {
+	if (dt >= 0.5 * d_min * 1.e8 - 1.e-12) {
 		dt = d_min * dt_dry;
 	}
 	
