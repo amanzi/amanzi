@@ -247,7 +247,7 @@ RunTest(int icase)
   int iter = 0;
   std::vector<double> dx, Linferror, L1error, L2error;
 
-  double Tend = 1.0;
+  double Tend = 0.5;
 
   int ncells_wghost = mesh->num_entities(
     Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
