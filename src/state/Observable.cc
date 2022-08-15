@@ -17,6 +17,8 @@ This class calculates the actual observation value.
 #include <string>
 #include <algorithm>
 
+#include "mpi.h"
+#include "Key.hh"
 #include "errors.hh"
 #include "Key.hh"
 #include "Mesh.hh"
@@ -40,7 +42,8 @@ double ObservableMax(double a, double b, double vol) { return std::max(a,b); }
 const double Observable::nan = std::numeric_limits<double>::quiet_NaN();
 
 Observable::Observable(Teuchos::ParameterList& plist)
-  : old_time_(nan),
+  : comm_(Teuchos::null),
+    old_time_(nan),
     has_eval_(false),
     has_data_(false)
 {
@@ -163,6 +166,10 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
     // require the component on location_ with num_vectors_
     cvs.AddComponent(location_, AmanziMesh::entity_kind(location_), num_vectors_);
   }
+
+  // communicate so that all ranks know number of vectors
+  int num_vectors_local = num_vectors_;
+  comm_->MaxAll(&num_vectors_local, &num_vectors_, 1);
 }
 
 
@@ -191,6 +198,10 @@ void Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
           << dof_ << " for a vector with only " << num_vectors_ << " degrees of freedom.";
       Exceptions::amanzi_throw(msg);
     }
+
+    // communicate so that all ranks know number of vectors
+    int num_vectors_local = num_vectors_;
+    comm_->MaxAll(&num_vectors_local, &num_vectors_, 1);
   }
 
   // must communicate the number of vectors so that all in comm have the right
@@ -246,33 +257,33 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
     AmanziMesh::Entity_kind entity = AmanziMesh::entity_kind(location_);
     AmanziMesh::Entity_ID_List ids;
 
+    // get the vector component
     vec.Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
     const Epetra_MultiVector& subvec = *vec.ViewComponent(location_, false);
 
     if (entity == AmanziMesh::CELL) {
-      for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
-           id!=ids.end(); ++id) {
-        double vol = vec.Mesh()->cell_volume(*id);
+      for (auto id : ids) {
+        double vol = vec.Mesh()->cell_volume(id);
+
         if (dof_ < 0) {
           for (int i=0; i!=get_num_vectors(); ++i) {
-            value[i] = (*function_)(value[i], subvec[i][*id], vol);
+            value[i] = (*function_)(value[i], subvec[i][id], vol);
           }
         } else {
-          value[0] = (*function_)(value[0], subvec[dof_][*id], vol);
+          value[0] = (*function_)(value[0], subvec[dof_][id], vol);
         }
         value[get_num_vectors()] += vol;
       }
     } else if (entity == AmanziMesh::FACE) {
-      for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
-           id!=ids.end(); ++id) {
-        double vol = vec.Mesh()->face_area(*id);
+      for (auto id : ids) {
+        double vol = vec.Mesh()->face_area(id);
 
         // hack to orient flux to outward-normal along a boundary only
         double sign = 1;
         if (flux_normalize_) {
           if (direction_.get()) {
             // normalize to the provided vector
-            AmanziGeometry::Point normal = vec.Mesh()->face_normal(*id);
+            AmanziGeometry::Point normal = vec.Mesh()->face_normal(id);
             sign = (normal * (*direction_)) / AmanziGeometry::norm(normal);
 
           } else if (!flux_normalize_region_.empty()) {
@@ -283,7 +294,7 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
 
             // which cell of the face is "inside" the volume
             AmanziMesh::Entity_ID_List cells;
-            vec.Mesh()->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
+            vec.Mesh()->face_get_cells(id, AmanziMesh::Parallel_type::ALL, &cells);
             AmanziMesh::Entity_ID c = -1;
             for (const auto& cc : cells) {
               if (std::find(vol_cells.begin(), vol_cells.end(), cc) != vol_cells.end()) {
@@ -296,7 +307,7 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
               msg << "Observeable on face region \"" << region_
                   << "\" flux normalized relative to volumetric region \""
                   << flux_normalize_region_ << "\" but face "
-                  << vec.Mesh()->face_map(true).GID(*id)
+                  << vec.Mesh()->face_map(true).GID(id)
                   << " does not border the volume region.";
               Exceptions::amanzi_throw(msg);
             }
@@ -304,49 +315,50 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
             // normalize with respect to that cell's direction
             AmanziMesh::Entity_ID_List faces;
             std::vector<int> dirs;
+
             vec.Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
-            int i = std::find(faces.begin(), faces.end(), *id) - faces.begin();
+            int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
+
             sign = dirs[i];
 
           } else {
             // normalize to outward normal
             AmanziMesh::Entity_ID_List cells;
-            vec.Mesh()->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
+            vec.Mesh()->face_get_cells(id, AmanziMesh::Parallel_type::ALL, &cells);
             AmanziMesh::Entity_ID_List faces;
             std::vector<int> dirs;
             vec.Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
-            int i = std::find(faces.begin(), faces.end(), *id) - faces.begin();
+            int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
             sign = dirs[i];
           }
         }
 
         if (dof_ < 0) {
           for (int i=0; i!=get_num_vectors(); ++i) {
-            value[i] = (*function_)(value[i], sign*subvec[i][*id], vol);
+            value[i] = (*function_)(value[i], sign*subvec[i][id], vol);
           }
         } else {
-          value[0] = (*function_)(value[0], sign*subvec[dof_][*id], vol);
+          value[0] = (*function_)(value[0], sign*subvec[dof_][id], vol);
         }
         value[get_num_vectors()] += std::abs(vol);
       }
     } else if (entity == AmanziMesh::NODE) {
-      for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
-           id!=ids.end(); ++id) {
+      for (auto id : ids) {
         double vol = 1.0;
 
         if (dof_ < 0) {
           for (int i=0; i!=get_num_vectors(); ++i) {
-            value[i] = (*function_)(value[i], subvec[i][*id], vol);
+            value[i] = (*function_)(value[i], subvec[i][id], vol);
           }
         } else {
-          value[0] = (*function_)(value[0], subvec[dof_][*id], vol);
+          value[0] = (*function_)(value[0], subvec[dof_][id], vol);
         }
         value[get_num_vectors()] += vol;
       }
     }
   }
 
-  // syncronize the result across processors
+  // syncronize the result across all processes on the provided comm
   if (functional_ == "point" ||
       functional_ == "integral" ||
       functional_ == "average" ||
@@ -397,7 +409,6 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
     }
   }
 }
-
 
 } // namespace
 

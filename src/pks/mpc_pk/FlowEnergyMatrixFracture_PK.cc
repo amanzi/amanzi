@@ -104,7 +104,7 @@ void FlowEnergyMatrixFracture_PK::Setup()
 
   // -- darcy flux for fracture
   if (!S_->HasRecord(fracture_vol_flowrate_key_)) {
-    auto cvs2 = Operators::CreateNonManifoldCVS(mesh_fracture_);
+    auto cvs2 = Operators::CreateManifoldCVS(mesh_fracture_);
     *S_->Require<CV_t, CVS_t>(fracture_vol_flowrate_key_, Tags::DEFAULT, "flow")
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
   }
@@ -274,9 +274,12 @@ void FlowEnergyMatrixFracture_PK::Initialize()
 ******************************************************************* */
 bool FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
+  auto counter = Teuchos::TimeMonitor::getNewCounter("Flow-Energy MPC PK");
+  Teuchos::TimeMonitor tm(*counter);
+
   // make copy of evaluators
   std::vector<Key> names = { "saturation_liquid", "water_content", "energy" };
-  std::vector<std::string> passwds = { "flow", "flow", "thermal" };
+  std::vector<std::string> passwds = { "flow", "state", "thermal" };
   Teuchos::RCP<CompositeVector> copies[6];
 
   int k(0), nnames(names.size());

@@ -81,7 +81,7 @@ void EnergyOnePhase_PK::Setup()
     S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
 
     S_->RequireDerivative<CV_t, CVS_t>(energy_key_, Tags::DEFAULT,
-                                      temperature_key_, Tags::DEFAULT, energy_key_);
+                                       temperature_key_, Tags::DEFAULT, energy_key_).SetGhosted();
   }
 
   // -- advection of enthalpy
@@ -99,7 +99,7 @@ void EnergyOnePhase_PK::Setup()
     S_->SetEvaluator(enthalpy_key_, Tags::DEFAULT, enth);
 
     S_->RequireDerivative<CV_t, CVS_t>(enthalpy_key_, Tags::DEFAULT,
-                                       temperature_key_, Tags::DEFAULT, enthalpy_key_);
+                                       temperature_key_, Tags::DEFAULT, enthalpy_key_).SetGhosted();
   }
 
   // -- thermal conductivity

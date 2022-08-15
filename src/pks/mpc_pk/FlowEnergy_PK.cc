@@ -155,7 +155,7 @@ void FlowEnergy_PK::Setup()
   S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
   if (S_->GetEvaluator(mass_density_liquid_key_).IsDifferentiableWRT(*S_, pressure_key_, Tags::DEFAULT)) {
     S_->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT,
-                                      pressure_key_, Tags::DEFAULT, mass_density_liquid_key_);
+                                       pressure_key_, Tags::DEFAULT, mass_density_liquid_key_).SetGhosted();
   }
 
   // -- viscosity
@@ -183,7 +183,7 @@ void FlowEnergy_PK::Setup()
 
   // copies of fields (must be called after PKs)
   if (S_->HasRecord(prev_wc_key_)) {
-    S_->Require<CV_t, CVS_t>(prev_wc_key_, Tags::COPY, prev_wc_key_);
+    S_->Require<CV_t, CVS_t>(prev_wc_key_, Tags::COPY, "state");
     S_->GetRecordW(prev_wc_key_, Tags::COPY, prev_wc_key_).set_initialized();
   }
 }
@@ -253,7 +253,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     S_->GetEvaluator(wc_key_).Update(*S_, "flow");
     const auto& wc = S_->Get<CV_t>(wc_key_);
-    auto& wc_prev = S_->GetW<CV_t>(prev_wc_key_, "flow");
+    auto& wc_prev = S_->GetW<CV_t>(prev_wc_key_, Tags::DEFAULT, "state");
     wc_prev = wc;
   }
 

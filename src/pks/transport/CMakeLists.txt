@@ -204,11 +204,22 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
                     SOURCE test/Main.cc test/transport_fractures.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(transport_fractures_implicit transport_fractures_implicit
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_fractures_implicit.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # fct
     add_amanzi_test(transport_fct transport_fct
                     KIND unit
                     NPROCS 2
                     SOURCE test/Main.cc test/transport_fct.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # wet/dry
+    add_amanzi_test(transport_wet_dry transport_wet_dry
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_wet_dry.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 endif()

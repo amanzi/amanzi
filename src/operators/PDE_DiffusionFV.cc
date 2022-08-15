@@ -371,18 +371,6 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
 
 
 /* ******************************************************************
-* Calculate flux from cell-centered data
-****************************************************************** */
-void PDE_DiffusionFV::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                            const Teuchos::Ptr<CompositeVector>& flux)
-{
-  Errors::Message msg;
-  msg << "DiffusionFV: missing support for non-manifolds.";
-  Exceptions::amanzi_throw(msg);
-}
-
-
-/* ******************************************************************
 * Computation the part of the Jacobian which depends on derivatives 
 * of the relative permeability wrt to capillary pressure. They must
 * be added to the existing matrix structure.

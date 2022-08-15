@@ -89,7 +89,7 @@ void FlowMatrixFracture_PK::Setup()
 
   // -- darcy flux for fracture
   if (!S_->HasRecord("fracture-volumetric_flow_rate")) {
-    auto cvs2 = Operators::CreateNonManifoldCVS(mesh_fracture_);
+    auto cvs2 = Operators::CreateManifoldCVS(mesh_fracture_);
     *S_->Require<CV_t, CVS_t>("fracture-volumetric_flow_rate", Tags::DEFAULT, "flow")
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
     AddDefaultPrimaryEvaluator_("fracture-volumetric_flow_rate", Tags::DEFAULT);

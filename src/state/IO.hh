@@ -46,7 +46,7 @@ void DeformCheckpointMesh(State& S, Key domain);
 void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& var);
 
 // Statistics
-void WriteStateStatistics(const State& S, const VerboseObject& vo);
+void WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVerbosityLevel vl=Teuchos::VERB_HIGH);
 void WriteStateStatistics(const State& S);
 
 }  // namespace Amanzi

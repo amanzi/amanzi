@@ -22,7 +22,7 @@ namespace AmanziGeometry {
 RegionAll::RegionAll(const std::string& name,
                      const int id,
                      const LifeCycleType lifecycle)
-  : Region(name, id, false, ALL, 0, 0, lifecycle) {
+  : Region(name, id, false, RegionType::ALL, 0, 0, lifecycle) {
   // Region dimension is set arbitrarily as 0 since the set of
   // entities in the mesh will determine the dimension
 }

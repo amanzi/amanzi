@@ -1022,7 +1022,7 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
 * calculing fluxes due to presence of multiple normals on some
 * non-manifold faces.
 * **************************************************************** */
-void PDE_DiffusionMFD::UpdateFluxNonManifold(
+void PDE_DiffusionMFD::UpdateFluxManifold(
     const Teuchos::Ptr<const CompositeVector>& u,
     const Teuchos::Ptr<CompositeVector>& flux)
 {

@@ -49,7 +49,7 @@ void Transport_PK::VV_PrintSoluteExtrema(
     const Epetra_MultiVector& tcc_next, double dT_MPC, const std::string& mesh_id)
 {
   const auto& flowrate = *S_->Get<CV_t>(vol_flowrate_key_).ViewComponent("face", true);
-  const auto& wc = *S_->Get<CV_t>(water_content_key_).ViewComponent("cell");
+  const auto& wc = *S_->Get<CV_t>(wc_key_).ViewComponent("cell");
 
   int num_components = tcc_next.NumVectors();
   double tccmin_vec[num_components];

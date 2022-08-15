@@ -104,7 +104,12 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
     for (auto& obs : observables_) obs->FinalizeStructure(S);
 
     num_total_ = 0;
-    for (const auto& obs : observables_) num_total_ += obs->get_num_vectors();
+    for (const auto& obs : observables_) {
+      int num_local = obs->get_num_vectors();
+      int num_global = -1;
+      comm_->MaxAll(&num_local, &num_global, 1);
+      num_total_ += num_global;
+    }
     integrated_observation_.resize(num_total_);
     observed_once_ = true;
 

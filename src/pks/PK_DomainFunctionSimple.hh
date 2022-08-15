@@ -102,36 +102,30 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
   if (unique_specs_.size() == 0) return;
 
   // create the input tuple (time + space)
+  double dt = t1 - t0;
   int dim = mesh_->space_dimension();
   std::vector<double> args(1 + dim);
 
   for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end(); ++uspec) {
-    args[0] = t1;
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
     // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
     int nfun = (*uspec)->first->second->size();
-    std::vector<double> val_vec(nfun);  
 
     for (auto c = ids->begin(); c != ids->end(); ++c) {
+      value_[*c].resize(nfun);
+
+      args[0] = t1;
       auto xc = PKUtils_EntityCoordinates(*c, kind_, *mesh_);
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
       
-      for (int i = 0; i < nfun; ++i) {
-        val_vec[i] = (*(*uspec)->first->second)(args)[i];
-      }
-      value_[*c] = val_vec;
-    }
+      const double* val1 = (*(*uspec)->first->second)(args);
+      for (int i = 0; i < nfun; ++i) value_[*c][i] = val1[i];
 
-    if (submodel_ == "integrated source") {
-      double dt = t1 - t0;
- 
-      args[0] = t0;
-      for (auto c = ids->begin(); c != ids->end(); ++c) {
-        auto xc = PKUtils_EntityCoordinates(*c, kind_, *mesh_);
-
-        for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
+      if (submodel_ == "integrated source") {
+        args[0] = t0;
+        const double* val0 = (*(*uspec)->first->second)(args);
         for (int i = 0; i < nfun; ++i) {
-          value_[*c][i] -= (*(*uspec)->first->second)(args)[i];
+          value_[*c][i] -= val0[i];
           if (dt > 0.0) value_[*c][i] /= dt;
         }
       }

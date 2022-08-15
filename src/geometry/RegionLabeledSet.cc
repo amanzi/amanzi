@@ -43,7 +43,7 @@ RegionLabeledSet::RegionLabeledSet(const std::string& name,
                                    const std::string& format,
                                    const std::string& label,
                                    const LifeCycleType lifecycle)
-  : Region(name, id, false, LABELEDSET, 0, 0, lifecycle),
+  : Region(name, id, false, RegionType::LABELEDSET, 0, 0, lifecycle),
     entity_str_(entity_str),
     file_(file),
     format_(format),

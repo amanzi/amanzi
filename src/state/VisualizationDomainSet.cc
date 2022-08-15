@@ -29,7 +29,8 @@ VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec, const std::ve
   Key varname = Keys::getVarName(names[0]);
   if (!lifted_vectors_.count(varname)) {
     // create a lifted vector if we don't currently have one
-    auto lifted_vec = Teuchos::rcp(new Epetra_MultiVector(mesh()->cell_map(false), vec.NumVectors()));
+    auto lifted_vec = Teuchos::rcp(new Epetra_MultiVector(mesh()->cell_map(false),
+            vec.NumVectors()));
 
     // also create a lifted set of names
     std::vector<std::string> lifted_names;
@@ -46,7 +47,8 @@ VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec, const std::ve
   auto subdomain = subdomains_.at(Keys::getDomainSetIndex(Keys::getDomain(names[0])));
   for (int j=0; j!=vec.NumVectors(); ++j) {
     for (int c=0; c!=vec.MyLength(); ++c) {
-      lifted_vec[j][subdomain->entity_get_parent(AmanziMesh::Entity_kind::CELL, c)] = vec[j][c];
+      auto parent_id = subdomain->entity_get_parent(AmanziMesh::Entity_kind::CELL, c);
+      lifted_vec[j][parent_id] = vec[j][c];
     }
   }
 }

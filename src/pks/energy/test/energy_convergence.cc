@@ -141,7 +141,7 @@ TEST(ENERGY_CONVERGENCE) {
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
     S->RequireDerivative<CompositeVector, CompositeVectorSpace>(
-        "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy");
+        "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy").SetGhosted();
 
     auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
     S->SetEvaluator("enthalpy", Tags::DEFAULT, enthalpy);
@@ -256,7 +256,7 @@ TEST(ENERGY_PRECONDITIONER) {
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
     S->RequireDerivative<CompositeVector, CompositeVectorSpace>(
-        "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy");
+        "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy").SetGhosted();
 
     auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
     S->SetEvaluator("enthalpy", Tags::DEFAULT, enthalpy);

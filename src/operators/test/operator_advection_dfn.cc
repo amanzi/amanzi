@@ -72,7 +72,7 @@ void RunTest(double gravity) {
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // create Darcy flux
-  auto cvsf = Operators::CreateNonManifoldCVS(mesh);
+  auto cvsf = Operators::CreateManifoldCVS(mesh);
   auto flux = Teuchos::rcp(new CompositeVector(*cvsf));
   Epetra_MultiVector& flux_f = *flux->ViewComponent("face", true);
   const auto& map = flux->Map().Map("face", true);

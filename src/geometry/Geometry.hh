@@ -33,8 +33,8 @@ namespace AmanziGeometry
   // a face center and an edge of the face      
   
   void polyhed_get_vol_centroid(const std::vector<Point> ccoords,
-                                const unsigned int nf,
-                                const std::vector<unsigned int> nfnodes,
+                                const std::size_t nf,
+                                const std::vector<std::size_t> nfnodes,
                                 const std::vector<Point> fcoords,
                                 double *volume,
                                 Point *centroid);
@@ -43,8 +43,8 @@ namespace AmanziGeometry
 
   bool point_in_polyhed(const Point testpnt,
                         const std::vector<Point> ccoords,
-                        const unsigned int nf,
-                        const std::vector<unsigned int> nfnodes,
+                        const std::size_t nf,
+                        const std::vector<std::size_t> nfnodes,
                         const std::vector<Point> fcoords);
 
   

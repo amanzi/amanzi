@@ -70,6 +70,71 @@ TransportExplicit_PK::TransportExplicit_PK(const Teuchos::RCP<Teuchos::Parameter
 
 /* ******************************************************************* 
 * Advance each component independently due to different field
+* reconstructions. This routine uses custom implementation of the 
+* second-order predictor-corrector time integration scheme. 
+******************************************************************* */
+void TransportExplicit_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
+{
+  dt_ = dt_cycle;  // overwrite the maximum stable transport step
+  mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
+
+  // work memory
+  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+  Epetra_Vector f_component(cmap_wghost);
+
+  // distribute old vector of concentrations
+  S_->Get<CompositeVector>(tcc_key_).ScatterMasterToGhosted("cell");
+  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
+  Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
+
+  Epetra_Vector wc_ratio(Copy, *wc_start, 0);
+  for (int c = 0; c < ncells_owned; c++) wc_ratio[c] /= (*wc_end)[0][c];
+
+  // We advect only aqueous components.
+  int num_advect = num_aqueous;
+
+  // predictor step
+  for (int i = 0; i < num_advect; i++) {
+    current_component_ = i;  // needed by BJ 
+
+    double T = t_physics_;
+    Epetra_Vector*& component = tcc_prev(i);
+    DudtOld_(T, *component, f_component);
+
+    for (int c = 0; c < ncells_owned; c++) {
+      tcc_next[i][c] = (tcc_prev[i][c] + dt_ * f_component[c]) * wc_ratio[c];
+    }
+  }
+
+  tcc_tmp->ScatterMasterToGhosted("cell");
+
+  // corrector step
+  for (int i = 0; i < num_advect; i++) {
+    current_component_ = i;  // needed in BJ for BCs
+
+    double T = t_physics_;
+    Epetra_Vector*& component = tcc_next(i);
+    DudtOld_(T, *component, f_component);
+
+    for (int c = 0; c < ncells_owned; c++) {
+      double value = (tcc_prev[i][c] + dt_ * f_component[c]) * wc_ratio[c];
+      tcc_next[i][c] = (tcc_next[i][c] + value) / 2;
+    }
+  }
+
+  // update mass balance
+  for (int i = 0; i < num_aqueous + num_gaseous; i++) {
+    mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_ / 2;
+  }
+
+  if (internal_tests_) {
+    VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
+  }
+}
+
+
+/* ******************************************************************* 
+* Advance each component independently due to different field
 * reconstructions. This routine uses generic explicit time integrator. 
 ******************************************************************* */
 void TransportExplicit_PK::AdvanceSecondOrderUpwindRKn(double dt_cycle)
@@ -121,11 +186,11 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   tcc = S_->GetPtrW<CompositeVector>(tcc_key_, Tags::DEFAULT, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
-  auto wc = S_->GetW<CompositeVector>(water_content_key_, Tags::DEFAULT, water_content_key_).ViewComponent("cell");
-  auto wc_prev = S_->GetW<CompositeVector>(prev_water_content_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  auto wc = S_->GetW<CompositeVector>(wc_key_, Tags::DEFAULT, wc_key_).ViewComponent("cell");
+  auto wc_prev = S_->GetW<CompositeVector>(prev_wc_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
   *wc_prev = *wc;
-  S_->GetEvaluator(water_content_key_).Update(*S_, "transport");
+  S_->GetEvaluator(wc_key_).Update(*S_, "transport");
 
   // calculate stable time step
   double dt_shift = 0.0, dt_global = dt_MPC;
@@ -196,12 +261,14 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
       if (spatial_disc_order == 1) {
         AdvanceDonorUpwind(dt_cycle);
+      } else if (spatial_disc_order == 2 && temporal_disc_order == 2) {
+        AdvanceSecondOrderUpwindRK2(dt_cycle);
       } else if (spatial_disc_order == 2) {
         AdvanceSecondOrderUpwindRKn(dt_cycle);
       }
     } else {  // transport on intersecting manifolds
       if (spatial_disc_order == 1) {
-        AdvanceDonorUpwindNonManifold(dt_cycle);
+        AdvanceDonorUpwindManifold(dt_cycle);
       } else {
         AdvanceSecondOrderUpwindRKn(dt_cycle);
       }
@@ -364,7 +431,9 @@ void TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
     vol_wc = mesh_->cell_volume(c) * (*wc_end)[0][c];
-    for (int i = 0; i < num_advect; i++) tcc_next[i][c] /= vol_wc;
+    if (vol_wc > 0.0) {
+      for (int i = 0; i < num_advect; i++) tcc_next[i][c] /= vol_wc;
+    }
   }
 
   // update mass balance
@@ -381,7 +450,7 @@ void TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
 /* ******************************************************************* 
 * A simple first-order upwind method on non-manifolds.
 ******************************************************************* */
-void TransportExplicit_PK::AdvanceDonorUpwindNonManifold(double dt_cycle)
+void TransportExplicit_PK::AdvanceDonorUpwindManifold(double dt_cycle)
 {
   dt_ = dt_cycle;  // overwrite the maximum stable transport step
   mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
@@ -491,5 +560,138 @@ void TransportExplicit_PK::AdvanceDonorUpwindNonManifold(double dt_cycle)
   }
 }
 
+
+/* ******************************************************************* 
+* Routine takes a parallel overlapping vector C and returns parallel
+* overlapping vector F(C). Old version.
+****************************************************************** */
+void TransportExplicit_PK::DudtOld_(double t,
+                                    const Epetra_Vector& component,
+                                    Epetra_Vector& f_component)
+{
+  auto flowrate = S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
+
+  // transport routines need an RCP pointer
+  Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);
+
+  Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
+  lifting_->Init(plist);
+  lifting_->Compute(component_rcp);
+
+  // extract boundary conditions for the current component
+  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value(nfaces_wghost);
+
+  for (int m = 0; m < bcs_.size(); m++) {
+    std::vector<int>& tcc_index = bcs_[m]->tcc_index();
+    int ncomp = tcc_index.size();
+
+    for (int i = 0; i < ncomp; i++) {
+      if (current_component_ == tcc_index[i]) {
+        for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+          int f = it->first;
+
+          std::vector<double>& values = it->second;
+
+          bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+          bc_value[f] = values[i];
+        }
+      }
+    }
+  }
+
+  limiter_->Init(plist, flowrate);
+  limiter_->ApplyLimiter(component_rcp, 0, lifting_, bc_model, bc_value);
+  lifting_->data()->ScatterMasterToGhosted("cell");
+
+  // ADVECTIVE FLUXES
+  // We assume that limiters made their job up to round-off errors.
+  // Min-max condition will enforce robustness w.r.t. these errors.
+  int c1, c2;
+  double u, u1, u2, umin, umax, upwind_tcc, tcc_flux;
+
+  f_component.PutScalar(0.0);
+  for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
+    c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
+    c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
+
+    if (c1 >= 0 && c2 >= 0) {
+      u1 = component[c1];
+      u2 = component[c2];
+      umin = std::min(u1, u2);
+      umax = std::max(u1, u2);
+    } else if (c1 >= 0) {
+      u1 = u2 = umin = umax = component[c1];
+    } else if (c2 >= 0) {
+      u1 = u2 = umin = umax = component[c2];
+    }
+
+    u = fabs((*flowrate)[0][f]);
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+
+    if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
+      upwind_tcc = limiter_->getValue(c1, xf);
+      upwind_tcc = std::max(upwind_tcc, umin);
+      upwind_tcc = std::min(upwind_tcc, umax);
+
+      tcc_flux = u * upwind_tcc;
+      f_component[c1] -= tcc_flux;
+      f_component[c2] += tcc_flux;
+    } else if (c1 >= 0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
+      upwind_tcc = limiter_->getValue(c1, xf);
+      upwind_tcc = std::max(upwind_tcc, umin);
+      upwind_tcc = std::min(upwind_tcc, umax);
+
+      tcc_flux = u * upwind_tcc;
+      f_component[c1] -= tcc_flux;
+    } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
+      upwind_tcc = limiter_->getValue(c1, xf);
+      upwind_tcc = std::max(upwind_tcc, umin);
+      upwind_tcc = std::min(upwind_tcc, umax);
+
+      tcc_flux = u * upwind_tcc;
+      f_component[c2] += tcc_flux;
+    }
+  }
+
+  // process external sources
+  if (srcs_.size() != 0) {
+    ComputeSources_(t, 1.0, f_component, 
+                    *component_rcp, current_component_, current_component_);
+  }
+
+  for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantatity
+    double vol_phi_ws = mesh_->cell_volume(c) * (*wc_start)[0][c];
+    f_component[c] /= vol_phi_ws;
+  }
+
+  // BOUNDARY CONDITIONS for ADVECTION
+  for (int m = 0; m < bcs_.size(); m++) {
+    std::vector<int>& tcc_index = bcs_[m]->tcc_index();
+    int ncomp = tcc_index.size();
+
+    for (int i = 0; i < ncomp; i++) {
+      if (current_component_ == tcc_index[i]) {
+        for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+          int f = it->first;
+
+          std::vector<double>& values = it->second;
+
+          if (downwind_cells_[f].size() > 0 && f < nfaces_owned) {
+            for (int j = 0; j < downwind_cells_[f].size(); j++) {
+              c2 = downwind_cells_[f][0];
+              if (c2 < 0) continue;
+              u = fabs((*flowrate)[0][f]);
+              double vol_phi_ws = mesh_->cell_volume(c2) * (*wc_start)[0][c2];
+              tcc_flux = u * values[i];
+              f_component[c2] += tcc_flux / vol_phi_ws;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+ 
 }  // namespace Transport
 }  // namespace Amazni

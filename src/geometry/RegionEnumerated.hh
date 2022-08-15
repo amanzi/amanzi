@@ -56,7 +56,7 @@ public:
                    const int id,
                    const std::string& entity_str,
                    const std::vector<Entity_ID>& ents,
-                   const LifeCycleType lifecycle=PERMANENT);
+                   const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
 
   const std::vector<Entity_ID>& entities() const { return entities_; }
   const std::string& entity_str() const { return entity_str_; }

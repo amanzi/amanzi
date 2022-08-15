@@ -78,7 +78,7 @@ void EnergyTwoPhase_PK::Setup()
     S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
 
     S_->RequireDerivative<CV_t, CVS_t>(energy_key_, Tags::DEFAULT,
-                                       temperature_key_, Tags::DEFAULT, energy_key_);
+                                       temperature_key_, Tags::DEFAULT, energy_key_).SetGhosted();
   }
 
   // -- advection of enthalpy
@@ -97,7 +97,7 @@ void EnergyTwoPhase_PK::Setup()
     S_->SetEvaluator(enthalpy_key_, Tags::DEFAULT, enth);
 
     S_->RequireDerivative<CV_t, CVS_t>(enthalpy_key_, Tags::DEFAULT,
-                                       temperature_key_, Tags::DEFAULT, enthalpy_key_);
+                                       temperature_key_, Tags::DEFAULT, enthalpy_key_).SetGhosted();
   }
 
   // -- thermal conductivity
@@ -122,7 +122,7 @@ void EnergyTwoPhase_PK::Setup()
   S_->RequireEvaluator(mol_density_gas_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(mol_density_gas_key_, Tags::DEFAULT,
-                                    temperature_key_, Tags::DEFAULT, mol_density_gas_key_);
+                                     temperature_key_, Tags::DEFAULT, mol_density_gas_key_).SetGhosted();
 
   // -- energies (gas)
   S_->Require<CV_t, CVS_t>(ie_gas_key_, Tags::DEFAULT, ie_gas_key_)
@@ -132,7 +132,7 @@ void EnergyTwoPhase_PK::Setup()
   S_->RequireEvaluator(ie_gas_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(ie_gas_key_, Tags::DEFAULT,
-                                     temperature_key_, Tags::DEFAULT, ie_gas_key_);
+                                     temperature_key_, Tags::DEFAULT, ie_gas_key_).SetGhosted();
 
   // -- molar/mass
   S_->Require<CV_t, CVS_t>(x_gas_key_, Tags::DEFAULT, x_gas_key_)
@@ -142,7 +142,7 @@ void EnergyTwoPhase_PK::Setup()
   S_->RequireEvaluator(x_gas_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(x_gas_key_, Tags::DEFAULT,
-                                     temperature_key_, Tags::DEFAULT, x_gas_key_);
+                                     temperature_key_, Tags::DEFAULT, x_gas_key_).SetGhosted();
 
   // other evalautors
   if (!S_->HasRecord(particle_density_key_)) {

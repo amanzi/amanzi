@@ -515,7 +515,7 @@ Mesh_MSTK::internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>
 
   std::string internal_name;
   
-  if (r->type() == AmanziGeometry::LABELEDSET) {
+  if (r->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
     
     Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
         Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(r);
@@ -532,13 +532,13 @@ Mesh_MSTK::internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>
   }
   else {
     if (entity_kind == CELL)
-      internal_name = "CELLSET_" + r->name();
+      internal_name = "CELLSET_" + r->get_name();
     else if (entity_kind == FACE)
-      internal_name = "FACESET_" + r->name();
+      internal_name = "FACESET_" + r->get_name();
     else if (entity_kind == EDGE)
-      internal_name = "EDGESET_" + r->name();
+      internal_name = "EDGESET_" + r->get_name();
     else if (entity_kind == NODE)
-      internal_name = "NODESET_" + r->name();
+      internal_name = "NODESET_" + r->get_name();
   }
 
   return internal_name;
@@ -556,7 +556,7 @@ Mesh_MSTK::other_internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::R
 
   std::string internal_name;
   
-  if (r->type() == AmanziGeometry::LABELEDSET && entity_kind == CELL) {
+  if (r->get_type() == AmanziGeometry::RegionType::LABELEDSET && entity_kind == CELL) {
     
     Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
         Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(r);
@@ -2535,9 +2535,9 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     enttype = (celldim == 3) ? MREGION : MFACE;
     mset = MSet_New(mesh_,internal_name.c_str(),enttype);
       
-    if (region->type() == AmanziGeometry::BOX ||
-        region->type() == AmanziGeometry::CYLINDER ||
-        region->type() == AmanziGeometry::COLORFUNCTION) {
+    if (region->get_type() == AmanziGeometry::RegionType::BOX ||
+        region->get_type() == AmanziGeometry::RegionType::CYLINDER ||
+        region->get_type() == AmanziGeometry::RegionType::COLORFUNCTION) {
 
       int ncell = num_entities(CELL, Parallel_type::ALL);              
 
@@ -2546,7 +2546,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
           MSet_Add(mset,cell_id_to_handle[icell]);
 
     }
-    else if (region->type() == AmanziGeometry::ALL)  {
+    else if (region->get_type() == AmanziGeometry::RegionType::ALL)  {
 
       int ncell = num_entities(CELL, Parallel_type::ALL);              
 
@@ -2554,7 +2554,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         MSet_Add(mset,cell_id_to_handle[icell]);
 
     }
-    else if (region->type() == AmanziGeometry::ENUMERATED)  {
+    else if (region->get_type() == AmanziGeometry::RegionType::ENUMERATED)  {
       auto rgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionEnumerated>(region);
       int ncell = num_entities(CELL, Parallel_type::ALL);
 
@@ -2569,7 +2569,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       }
 
     }
-    else if (region->type() == AmanziGeometry::POINT) {
+    else if (region->get_type() == AmanziGeometry::RegionType::POINT) {
       AmanziGeometry::Point vpnt(space_dim);
       AmanziGeometry::Point rgnpnt(space_dim);
 
@@ -2613,8 +2613,8 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       }
 
     }
-    else if ((region->type() == AmanziGeometry::PLANE)||
-             (region->type() == AmanziGeometry::POLYGON)) {
+    else if ((region->get_type() == AmanziGeometry::RegionType::PLANE)||
+             (region->get_type() == AmanziGeometry::RegionType::POLYGON)) {
 
       if (celldim == 2) {
 
@@ -2639,10 +2639,10 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       }
 
     }
-    else if (region->type() == AmanziGeometry::LOGICAL) {
+    else if (region->get_type() == AmanziGeometry::RegionType::LOGICAL) {
       // will process later in this subroutine
     }
-    else if (region->type() == AmanziGeometry::LABELEDSET) {
+    else if (region->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
       if (parent_mesh_.get() != NULL) {
         auto lsrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(region);
         std::string label = lsrgn->label();
@@ -2650,7 +2650,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 
         if (kind == CELL && entity_type != "FACE") {
           if (vo_.get() && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-            *(vo_->os()) << "Found labeled set region \"" << region->name() 
+            *(vo_->os()) << "Found labeled set region \"" << region->get_name() 
                              << "\" but it contains entities of type " << entity_type 
                              << ", not the requested type.\n";
           }
@@ -2661,7 +2661,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
           // Build set on a fly.
           // -- first request the set on the parent to make sure it was constructed in MSTK in all cases.
           AmanziMesh::Entity_ID_List parent_ids;
-          parent_mesh_->get_set_entities(region->name(), FACE, Parallel_type::ALL, &parent_ids);
+          parent_mesh_->get_set_entities(region->get_name(), FACE, Parallel_type::ALL, &parent_ids);
 
           int ival;
           double rval;
@@ -2683,7 +2683,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
             if (comm_->NumProc() == 1) {
               Errors::Message msg;
               msg << "Could not find labeled set \"" << label 
-                  << "\" in mesh file to initialize mesh set \"" << region->name()  
+                  << "\" in mesh file to initialize mesh set \"" << region->get_name()  
                   << "\". Verify mesh file.";
               amanzi_throw(msg);
             }
@@ -2699,7 +2699,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 
         if (entity_type != "CELL") {
           Errors::Message mesg;
-          mesg << "Entity type of labeled set region \"" << region->name() 
+          mesg << "Entity type of labeled set region \"" << region->get_name() 
                << "\" and build_set request (cell) do not match";
           Exceptions::amanzi_throw(mesg);
         }
@@ -2732,9 +2732,9 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     else {
       if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *(vo_->os()) << "Requested CELLS on region " << region->name() 
-            << " of type " << region->type()  
-            << " and dimension " << region->manifold_dimension() << ".\n"
+        *(vo_->os()) << "Requested CELLS on region " << region->get_name() 
+            << " of type " << region->get_type()  
+            << " and dimension " << region->get_manifold_dimension() << ".\n"
             << "This request will result in an empty set";
       }
     }
@@ -2746,7 +2746,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     //
     // Commented out so that we can ask for a face set in a 3D box
     //
-    //          if (region->manifold_dimension() != celldim-1) 
+    //          if (region->get_manifold_dimension() != celldim-1) 
     //            {
     //              std::cerr << "No region of dimension " << celldim-1 << " defined in geometric model" << std::endl;
     //              std::cerr << "Cannot construct cell set from region " << setname << std::endl;
@@ -2755,8 +2755,8 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     enttype = (celldim == 3) ? MFACE : MEDGE;
     mset = MSet_New(mesh_,internal_name.c_str(),enttype);
 
-    if (region->type() == AmanziGeometry::BOX ||
-        region->type() == AmanziGeometry::CYLINDER) {
+    if (region->get_type() == AmanziGeometry::RegionType::BOX ||
+        region->get_type() == AmanziGeometry::RegionType::CYLINDER) {
       int nface = num_entities(FACE, Parallel_type::ALL);
 
       if (nface > 0) { 
@@ -2781,7 +2781,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         }
       }
     }
-    else if (region->type() == AmanziGeometry::ALL)  {
+    else if (region->get_type() == AmanziGeometry::RegionType::ALL)  {
 
       int nface = num_entities(FACE, Parallel_type::ALL);
         
@@ -2789,8 +2789,8 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         MSet_Add(mset, face_id_to_handle[iface]);
       }
     }
-    else if (region->type() == AmanziGeometry::PLANE ||
-             region->type() == AmanziGeometry::POLYGON) {
+    else if (region->get_type() == AmanziGeometry::RegionType::PLANE ||
+             region->get_type() == AmanziGeometry::RegionType::POLYGON) {
 
       int nface = num_entities(FACE, Parallel_type::ALL);
               
@@ -2812,7 +2812,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       }
 
     }
-    else if (region->type() == AmanziGeometry::LABELEDSET) {
+    else if (region->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
       // Just retrieve and return the set
 
       Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
@@ -2822,17 +2822,17 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 
       if (entity_type != "FACE") {
         Errors::Message mesg;
-        mesg << "Entity type of labeled set region \"" << region->name() 
+        mesg << "Entity type of labeled set region \"" << region->get_name() 
              << "\" and build_set request (face) do not match";
         Exceptions::amanzi_throw(mesg);
       }
 
       mset = MESH_MSetByName(mesh_,internal_name.c_str());
     }
-    else if (region->type() == AmanziGeometry::LOGICAL) {
+    else if (region->get_type() == AmanziGeometry::RegionType::LOGICAL) {
       // Will handle it later in the routine
     }
-    else if (region->type() == AmanziGeometry::BOUNDARY)  {
+    else if (region->get_type() == AmanziGeometry::RegionType::BOUNDARY)  {
 
       const Epetra_Map& fmap = face_map(true); 
       const Epetra_Map& map = exterior_face_map(true); 
@@ -2848,9 +2848,9 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       Teuchos::RCP<const VerboseObject> verbobj = verbosity_obj();
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
-        *(verbobj->os()) << "Requested FACES on region " << region->name()
-            << " of type " << region->type() << " and dimension "
-            << region->manifold_dimension() << ".\n" 
+        *(verbobj->os()) << "Requested FACES on region " << region->get_name()
+            << " of type " << region->get_type() << " and dimension "
+            << region->get_manifold_dimension() << ".\n" 
             << "This request will result in an empty set\n";
       }
     }
@@ -2861,9 +2861,9 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     enttype = MEDGE;
     mset = MSet_New(mesh_,internal_name.c_str(),enttype);
 
-    if (region->type() == AmanziGeometry::BOX ||
-        region->type() == AmanziGeometry::PLANE ||
-        region->type() == AmanziGeometry::POLYGON) {
+    if (region->get_type() == AmanziGeometry::RegionType::BOX ||
+        region->get_type() == AmanziGeometry::RegionType::PLANE ||
+        region->get_type() == AmanziGeometry::RegionType::POLYGON) {
 
       int nedge = num_entities(EDGE, Parallel_type::ALL);
 
@@ -2875,16 +2875,16 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         }
       }
     }
-    else if (region->type() == AmanziGeometry::LOGICAL) {
+    else if (region->get_type() == AmanziGeometry::RegionType::LOGICAL) {
       // We will handle it later in the routine
     }
     else {
       Teuchos::RCP<const VerboseObject> verbobj = verbosity_obj();
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
-        *(verbobj->os()) << "Requested EDGEs on region " << region->name() 
-            << " of type " << region->type() << " and dimension " 
-            << region->manifold_dimension() << ".\n" 
+        *(verbobj->os()) << "Requested EDGEs on region " << region->get_name() 
+            << " of type " << region->get_type() << " and dimension " 
+            << region->get_manifold_dimension() << ".\n" 
             << "This request will result in an empty set\n";
       }
     }
@@ -2896,11 +2896,11 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     enttype = MVERTEX;
     mset = MSet_New(mesh_,internal_name.c_str(),enttype);
 
-    if (region->type() == AmanziGeometry::BOX ||
-        region->type() == AmanziGeometry::PLANE ||
-        region->type() == AmanziGeometry::POLYGON ||
-        region->type() == AmanziGeometry::CYLINDER ||
-        region->type() == AmanziGeometry::POINT) {
+    if (region->get_type() == AmanziGeometry::RegionType::BOX ||
+        region->get_type() == AmanziGeometry::RegionType::PLANE ||
+        region->get_type() == AmanziGeometry::RegionType::POLYGON ||
+        region->get_type() == AmanziGeometry::RegionType::CYLINDER ||
+        region->get_type() == AmanziGeometry::RegionType::POINT) {
 
       int nnode = num_entities(NODE, Parallel_type::ALL);
 
@@ -2913,12 +2913,12 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
           MSet_Add(mset,vtx_id_to_handle[inode]);
 
           // Only one node per point region
-          if (region->type() == AmanziGeometry::POINT)
+          if (region->get_type() == AmanziGeometry::RegionType::POINT)
             break;      
         }
       }
     }
-    else if (region->type() == AmanziGeometry::ALL)  {
+    else if (region->get_type() == AmanziGeometry::RegionType::ALL)  {
 
       int nnode = num_entities(NODE, Parallel_type::ALL);
 
@@ -2926,7 +2926,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         MSet_Add(mset,vtx_id_to_handle[inode]);
 
     }
-    else if (region->type() == AmanziGeometry::LABELEDSET) {
+    else if (region->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
       // Just retrieve and return the set
 
       Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
@@ -2936,17 +2936,17 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 
       if (entity_type != "FACE") {
         Errors::Message mesg;
-        mesg << "Entity type of labeled set region \"" << region->name() 
+        mesg << "Entity type of labeled set region \"" << region->get_name() 
              << "\" and build_set request (face) do not match";
         Exceptions::amanzi_throw(mesg);
       }
 
       mset = MESH_MSetByName(mesh_,internal_name.c_str());
     }
-    else if (region->type() == AmanziGeometry::LOGICAL) {
+    else if (region->get_type() == AmanziGeometry::RegionType::LOGICAL) {
       // We will handle it later in the routine
     }
-    else if (region->type() == AmanziGeometry::BOUNDARY)  {
+    else if (region->get_type() == AmanziGeometry::RegionType::BOUNDARY)  {
 
       const Epetra_Map& vmap = node_map(true); 
       const Epetra_Map& map = exterior_node_map(true); 
@@ -2962,9 +2962,9 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       Teuchos::RCP<const VerboseObject> verbobj = verbosity_obj();
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
-        *(verbobj->os()) << "Requested POINTS on region " << region->name() 
-            << " of type " << region->type() << " and dimension " 
-            << region->manifold_dimension() << ".\n" 
+        *(verbobj->os()) << "Requested POINTS on region " << region->get_name() 
+            << " of type " << region->get_type() << " and dimension " 
+            << region->get_manifold_dimension() << ".\n" 
             << "This request will result in an empty set\n";
       }
     }
@@ -2976,10 +2976,10 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
   }
 
 
-  if (region->type() == AmanziGeometry::LOGICAL) {
+  if (region->get_type() == AmanziGeometry::RegionType::LOGICAL) {
     Teuchos::RCP<const AmanziGeometry::RegionLogical> boolregion =
         Teuchos::rcp_static_cast<const AmanziGeometry::RegionLogical>(region);
-    const std::vector<std::string> region_names = boolregion->component_regions();
+    const std::vector<std::string> region_names = boolregion->get_component_regions();
     int nreg = region_names.size();
     
     std::vector<MSet_ptr> msets;
@@ -3025,7 +3025,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     
     int mkid = MSTK_GetMarker();
       
-    if (boolregion->operation() == AmanziGeometry::COMPLEMENT) {
+    if (boolregion->get_operation() == AmanziGeometry::BoolOpType::COMPLEMENT) {
       
       for (int ms = 0; ms < msets.size(); ms++)
         MSet_Mark(msets[ms],mkid);
@@ -3063,7 +3063,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         MSet_Unmark(msets[ms],mkid);
 
     }
-    else if (boolregion->operation() == AmanziGeometry::UNION) {
+    else if (boolregion->get_operation() == AmanziGeometry::BoolOpType::UNION) {
 
       for (int ms = 0; ms < msets.size(); ms++) {
         MEntity_ptr ment;
@@ -3077,7 +3077,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       MSet_Unmark(mset,mkid);
       
     }
-    else if (boolregion->operation() == AmanziGeometry::SUBTRACT) {
+    else if (boolregion->get_operation() == AmanziGeometry::BoolOpType::SUBTRACT) {
 
       /* Mark entities in all sets except the first */
       
@@ -3098,7 +3098,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         MSet_Unmark(msets[ms],mkid);
 
     }
-    else if (boolregion->operation() == AmanziGeometry::INTERSECT) {
+    else if (boolregion->get_operation() == AmanziGeometry::BoolOpType::INTERSECT) {
 
       /* Can't do this using markers alone - need attributes */
       
@@ -3148,7 +3148,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 
     for (int ms = 0; ms < msets.size(); ms++) {
       MSet_Unmark(msets[ms],mkid);
-      if (regions[ms]->lifecycle() == AmanziGeometry::TEMPORARY)
+      if (regions[ms]->get_lifecycle() == AmanziGeometry::LifeCycleType::TEMPORARY)
         MSet_Delete(msets[ms]);
     }
   }
@@ -3206,7 +3206,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string& setname,
   // probably defficiency of the internal naming convention (KL).
   // Finally, build a new mesh set for the region.
   
-  if (rgn->type() == AmanziGeometry::LABELEDSET && parent_mesh_.get() == NULL) {
+  if (rgn->get_type() == AmanziGeometry::RegionType::LABELEDSET && parent_mesh_.get() == NULL) {
     auto lsrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
     std::string label = lsrgn->label();
     std::string entity_type = lsrgn->entity_str();
@@ -3249,8 +3249,8 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string& setname,
       }
     }
   }
-  else if ((rgn->type() == AmanziGeometry::BOX_VOF) || 
-           (rgn->type() == AmanziGeometry::LINE_SEGMENT)) {
+  else if ((rgn->get_type() == AmanziGeometry::RegionType::BOX_VOF) || 
+           (rgn->get_type() == AmanziGeometry::RegionType::LINE_SEGMENT)) {
     // Call routine from the base class and exit.
     Mesh::get_set_entities_box_vofs_(rgn, kind, ptype, setents, vofs);
     return;
@@ -4491,7 +4491,7 @@ void Mesh_MSTK::init_set_info()
     Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(i);
 
     MType entdim;
-    if (rgn->type() == AmanziGeometry::LABELEDSET) {
+    if (rgn->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
 
       Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
           Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
@@ -5439,7 +5439,7 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt,
   for (int i = 0; i < ngr; ++i) {
     Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(i);
 
-    if (rgn->type() == AmanziGeometry::LABELEDSET) {
+    if (rgn->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
 
       // Get the set from the parent mesh
 

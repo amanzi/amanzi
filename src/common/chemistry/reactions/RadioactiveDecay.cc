@@ -18,6 +18,7 @@
 
 // Amanzi
 #include "errors.hh"
+#include "StringExt.hh"
 
 // Chemistry
 #include "ChemistryUtilities.hh"
@@ -67,6 +68,7 @@ RadioactiveDecay::RadioactiveDecay(const Teuchos::ParameterList& plist,
   stoichiometry_.push_back(-1.0);
 
   std::string progeny = plist.get<std::string>("product");
+  trim(progeny);
 
   // NOTE: we allow empty progeny
   if (progeny.size() > 0) {
@@ -79,14 +81,20 @@ RadioactiveDecay::RadioactiveDecay(const Teuchos::ParameterList& plist,
 
       if (id2 < 0) {
         std::stringstream ss;
-        ss << "Unknown progeny species '" << progeny << "'.\n"
-           << "Progeny species must be in the primary species list.\n";
+        ss << "Unknown product species '" << progeny << "'.\n"
+           << "Product species must be in the primary species list.\n";
         Exceptions::amanzi_throw(Errors::Message(ss.str()));
       }
 
       species_names_.push_back(name);
       species_ids_.push_back(id2);
       stoichiometry_.push_back(coeff);
+    }
+    
+    if (species_ids_.size() < 2) {
+      std::stringstream ss;
+      ss << "Mis-formatted product part of equation '" << progeny << "'.\n";
+      Exceptions::amanzi_throw(Errors::Message(ss.str()));
     }
   }
 

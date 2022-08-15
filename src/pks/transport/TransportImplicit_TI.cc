@@ -24,9 +24,9 @@ void TransportImplicit_PK::FunctionalResidual(
 { 
   double dtp(t_new - t_old);
 
-  S_->GetEvaluator(water_content_key_).Update(*S_, "transport");
-  const auto wc_c = S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT).ViewComponent("cell");
-  const auto wcprev_c = S_->Get<CompositeVector>(prev_water_content_key_, Tags::DEFAULT).ViewComponent("cell");
+  S_->GetEvaluator(wc_key_).Update(*S_, "transport");
+  const auto wc_c = S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto wcprev_c = S_->Get<CompositeVector>(prev_wc_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& sat_c = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
   wc_start = wcprev_c;
@@ -71,8 +71,8 @@ void TransportImplicit_PK::FunctionalResidual(
 void TransportImplicit_PK::UpdatePreconditioner(
     double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
-  S_->GetEvaluator(water_content_key_).Update(*S_, "transport");
-  const auto& wc = S_->Get<CompositeVector>(water_content_key_, Tags::DEFAULT);
+  S_->GetEvaluator(wc_key_).Update(*S_, "transport");
+  const auto& wc = S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT);
 
   op_->Init();
   

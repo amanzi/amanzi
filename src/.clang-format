@@ -19,7 +19,7 @@ AlwaysBreakAfterReturnType: TopLevel
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: Yes
 BinPackArguments: false
-BinPackParameters: true
+BinPackParameters: false
 BraceWrapping:
   AfterClass:      false
   AfterControlStatement: false
@@ -45,8 +45,8 @@ BreakConstructorInitializersBeforeComma: false
 BreakConstructorInitializers: BeforeColon
 BreakAfterJavaFieldAnnotations: false
 BreakStringLiterals: true
-ColumnLimit:     80
-CommentPragmas:  '^ IWYU pragma:'
+ColumnLimit:     100
+#CommentPragmas:  '^[^ ]'
 CompactNamespaces: false
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 ConstructorInitializerIndentWidth: 2
@@ -94,7 +94,7 @@ PenaltyExcessCharacter: 1000000
 PenaltyReturnTypeOnItsOwnLine: 1
 #PenaltyReturnTypeOnItsOwnLine: 200
 PointerAlignment: Left
-ReflowComments:  true
+ReflowComments:  false
 SortIncludes:    false
 SortUsingDeclarations: false
 SpaceAfterCStyleCast: false

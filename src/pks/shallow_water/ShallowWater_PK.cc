@@ -10,6 +10,7 @@
 */
 
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <vector>
 
@@ -447,10 +448,9 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double dt = t_new - t_old;
   iters_++;
 
-  bool failed = false;
-
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
 
@@ -461,24 +461,22 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->Get<CV_t>(discharge_key_).ScatterMasterToGhosted("cell");
 
   // save a copy of primary and conservative fields
-  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_)
-                 .ViewComponent("cell", true);
-  auto& h_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_)
-                 .ViewComponent("cell", true);
-  auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_)
-                  .ViewComponent("cell", true);
-  auto& vel_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_)
-                   .ViewComponent("cell", true);
-  // auto& riemann_f = *S_->GetW<CV_t>(riemann_flux_key_,
-  // passwd_).ViewComponent("face", true);
-
+  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& h_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& vel_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  
   S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
   auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_)
                  .ViewComponent("cell", true);
 
   // create copies of primary fields
-  *S_->GetW<CV_t>(prev_ponded_depth_key_, Tags::DEFAULT, passwd_)
-     .ViewComponent("cell", true) = h_c;
+  std::map<std::string, CompositeVector> copies;
+  copies.emplace(ponded_depth_key_, S_->Get<CV_t>(ponded_depth_key_, Tags::DEFAULT));
+  copies.emplace(discharge_key_, S_->Get<CV_t>(discharge_key_, Tags::DEFAULT));
+
+  Epetra_MultiVector& h_old = *soln_->SubVector(0)->Data()->ViewComponent("cell");
+  Epetra_MultiVector& q_old = *soln_->SubVector(1)->Data()->ViewComponent("cell");
 
   Epetra_MultiVector& h_old =
     *soln_->SubVector(0)->Data()->ViewComponent("cell");
@@ -532,8 +530,18 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     rk1.TimeStep(t_old, dt, *soln_old, *soln_new);
 
     *soln_ = *soln_new;
-  } catch (...) {
-    AMANZI_ASSERT(false);
+  } catch(...) {
+    // revover corrupted state fields
+    for (auto it = copies.begin(); it != copies.end(); ++it) {
+      S_->GetW<CV_t>(it->first, passwd_) = it->second;
+
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Reverted field \"" << it->first << "\"" << std::endl;
+    }
+    Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(ponded_depth_key_, Tags::DEFAULT))->SetChanged();
+    Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))->SetChanged();
+
+    return true;
   }
 
   Epetra_MultiVector& h_temp =
@@ -551,8 +559,33 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     vel_c[1][c] = factor * q_temp[1][c];
     ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
+
+  S_->GetW<CV_t>(prev_ponded_depth_key_, Tags::DEFAULT, passwd_) = copies.at(ponded_depth_key_);
+  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(ponded_depth_key_, Tags::DEFAULT))->SetChanged();
+  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))->SetChanged();
   
-  return failed;
+  // min-max values 
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    double hmin(DBL_MAX), hmax(DBL_MIN);
+    for (int c = 0; c < ncells_owned; ++c) {
+      hmin = std::min(hmin, h_c[0][c]);
+      hmax = std::max(hmax, h_c[0][c]);
+    }
+
+    double qmin(DBL_MAX), qmax(DBL_MIN);
+    auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_).ViewComponent("face");
+    for (int f = 0; f < nfaces_owned; ++f) {
+      double flux = riemann_f[0][f] / mesh_->face_area(f);
+      qmin = std::min(qmin, flux);
+      qmax = std::max(qmax, flux);
+    }
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "min/max(h): " << hmin << "/" << hmax
+               << ", min/max(flux): " << qmin << "/" << qmax << std::endl;
+  }
+
+  return false;
 }
 
 
@@ -563,13 +596,6 @@ void
 ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
-
-  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-    S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))
-    ->SetChanged();
-  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-    S_->GetEvaluatorPtr(ponded_depth_key_, Tags::DEFAULT))
-    ->SetChanged();
 }
 
 

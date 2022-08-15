@@ -91,12 +91,14 @@ class Transport_PK : public PK_Physical {
   // -- access members  
   double cfl() { return cfl_; }
   bool get_flag_dispersion() { return flag_dispersion_ || flag_diffusion_; }
-  Teuchos::RCP<const State> state() { return S_; }
   Teuchos::RCP<CompositeVector> total_component_concentration() { return tcc_tmp; }
   void get_discretization_order(int* spatial, int* temporal) {
     *spatial = spatial_disc_order;
     *temporal = temporal_disc_order;
   }
+
+  // -- modifiers
+  void set_current_component(int i) { current_component_ = i; }
 
   // -- control members
   void Policy(Teuchos::Ptr<State> S);
@@ -194,7 +196,7 @@ class Transport_PK : public PK_Physical {
   Key vol_flowrate_key_, aperture_key_;
   Key porosity_key_, transport_porosity_key_, permeability_key_;
   Key saturation_liquid_key_;
-  Key water_content_key_, prev_water_content_key_;
+  Key wc_key_, prev_wc_key_;
 
   Key porosity_msp_key_;
   Key water_content_msp_key_, prev_water_content_msp_key_;

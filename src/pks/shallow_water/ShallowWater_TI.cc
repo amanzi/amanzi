@@ -9,6 +9,8 @@
  Author: Svetlana Tokareva (tokareva@lanl.gov)
  */
 
+#include "errors.hh"
+
 #include "ShallowWater_PK.hh"
 
 namespace Amanzi {
@@ -39,18 +41,13 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   A.SubVector(0)->Data()->ScatterMasterToGhosted("cell");
   A.SubVector(1)->Data()->ScatterMasterToGhosted("cell");
 
-  // save a copy of primary and conservative fields
-  const auto& B_c =
-    *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("cell", true);
-  const auto& B_n =
-    *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
-  auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_)
-                  .ViewComponent("cell", true);
-  auto& vel_c = *S_->GetW<CompositeVector>(velocity_key_, passwd_)
-                   .ViewComponent("cell", true);
-  auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_)
-                       .ViewComponent("face", true);
-
+  // get primary and conservative fields
+  const auto& B_c = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("cell", true);
+  const auto& B_n = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
+  auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_).ViewComponent("cell", true);
+  auto& vel_c = *S_->GetW<CompositeVector>(velocity_key_, passwd_).ViewComponent("cell", true);
+  auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_).ViewComponent("face", true);
+ 
   for (int c = 0; c < ncells_wghost; ++c) {
     double factor = inverse_with_tolerance(h_temp[0][c], cell_area_max_);
     vel_c[0][c] = factor * q_temp[0][c];
@@ -58,7 +55,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     ht_c[0][c] = h_temp[0][c] + B_c[0][c];
   }
 
-  // create copies of primary fields
+  // allocate memory for temporary fields
   Epetra_MultiVector h_c_tmp(h_temp);
   Epetra_MultiVector q_c_tmp(q_temp);
 
@@ -278,6 +275,24 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     f_temp0[0][c] = h;
     f_temp1[0][c] = qx;
     f_temp1[1][c] = qy;
+  }
+}
+
+
+//--------------------------------------------------------------
+// Throws an error if solution u is not valid.
+//--------------------------------------------------------------
+void ShallowWater_PK::ModifySolution(double t, TreeVector& u) 
+{
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  const auto& h_c = *u.SubVector(0)->Data()->ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    if (h_c[0][c] < 0.0) {
+      Errors::Message msg;
+      msg << "Negative ponded depth.\n";
+      Exceptions::amanzi_throw(msg);
+    }
   }
 }
 

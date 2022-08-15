@@ -49,7 +49,7 @@ class RegionBoundary : public Region {
  public:
   RegionBoundary(const std::string& name,
                  const int id,
-                 const LifeCycleType lifecycle=PERMANENT);
+                 const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
 
   // Is the the specified point inside this region
   bool inside(const Point& p) const;

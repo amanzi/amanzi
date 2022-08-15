@@ -1,5 +1,6 @@
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
+#include <sstream>
 #include <cmath>
 
 // TPLs
@@ -25,7 +26,7 @@
 #include "wrm_flow_registration.hh"
 
 
-TEST(MPC_DRIVER_COUPLED_FLOW_TRANSPORT_IMPLICIT) {
+void runTest(int order) {
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -33,9 +34,16 @@ using namespace Amanzi::AmanziGeometry;
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   
-  // setup a piecewice linear solution with a jump
+  std::cout << "\nTEST: copuled flow and transport, implicit scheme order=" << order << std::endl;
+
+  // read and modify input list
   std::string xmlInFileName = "test/mpc_coupled_flow_transport_implicit.xml";
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
+  auto plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
+
+  plist->sublist("PKs").sublist("transport matrix")
+      .set<int>("spatial discretization order", order);
+  plist->sublist("PKs").sublist("transport fracture")
+      .set<int>("spatial discretization order", order);
   
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -62,8 +70,9 @@ using namespace Amanzi::AmanziGeometry;
   S->RegisterMesh("fracture", mesh_fracture);
 
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
-  cycle_driver.Go();
+  auto Snew = cycle_driver.Go();
 
+  // a piecewice linear solution with a jump
   // test pressure in fracture (5% error)
   double p0 = 101325.0;
   double rho = 998.2;
@@ -84,6 +93,37 @@ using namespace Amanzi::AmanziGeometry;
   // checking that we created only three PKs each time period
   CHECK(PKFactory::num_pks == 6);
   std::cout << PKFactory::list_pks << std::endl;
+
+  // verify total concentration
+  auto& tcc_m = *Snew->Get<CompositeVector>("total_component_concentration", Tags::DEFAULT).ViewComponent("cell");
+  auto& tcc_f = *Snew->Get<CompositeVector>("fracture-total_component_concentration", Tags::DEFAULT).ViewComponent("cell");
+
+  for (int c = 0; c < tcc_m.MyLength(); ++c)
+    CHECK(tcc_m[0][c] <= 1.0 && tcc_m[0][c] >= 0.0);
+
+  for (int c = 0; c < tcc_f.MyLength(); ++c)
+    CHECK(tcc_f[0][c] <= 1.0 && tcc_f[0][c] >= 0.0);
+
+  // verify solute observations
+  int count(0);
+  double value(0.0), value_prev;
+  std::string str, name, tmp; 
+  std::ifstream file("obs_implicit.out");
+  while (std::getline(file, str)) {
+    count++;
+    if (count > 2) {
+      value_prev = value;
+      std::stringstream ss(str);
+      ss >> name;
+
+      for (int i = 0; i < 8; ++i) ss >> tmp;
+      ss >> value;
+      if (value > 1e-6) CHECK(value_prev <= value);
+    }
+  }
 }
 
 
+TEST(MPC_COUPLED_FLOW_TRANSPORT_IMPLICIT_1ST) {
+  runTest(1);
+}

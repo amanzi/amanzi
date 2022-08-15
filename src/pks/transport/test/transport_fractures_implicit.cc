@@ -24,24 +24,24 @@
 
 // Amanzi
 #include "IO.hh"
-#include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
+#include "OutputXDMF.hh"
 #include "State.hh"
 #include "UniqueLocalIndex.hh"
 
 // Transport
-#include "TransportExplicit_PK.hh"
+#include "TransportImplicit_PK.hh"
 
-/* **************************************************************** */
-TEST(ADVANCE_TWO_FRACTURES) {
+
+void runTest(int order, const std::string& linsolver) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-std::cout << "Test: Advance on a 2D square mesh" << std::endl;
+std::cout << "\nTest: Implicit transport in fractures, order=" << order << std::endl;
 #ifdef HAVE_MPI
   Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
@@ -49,18 +49,23 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 #endif
 
   // read parameter list
-  std::string xmlFileName = "test/transport_fractures.xml";
+  std::string xmlFileName = "test/transport_fractures_implicit.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  // create a mesh framework
+  // read and modify parameter list
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
+  plist->sublist("PKs").sublist("transport")
+      .set<int>("spatial discretization order", order);
+  plist->sublist("PKs").sublist("transport").sublist("time integrator")
+      .set<std::string>("linear solver", linsolver);
+
+  // create meshes
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
   RCP<const Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
-  // extract fractures mesh
   std::vector<std::string> setnames;
   setnames.push_back("fracture 1");
   setnames.push_back("fracture 2");
@@ -74,17 +79,24 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   std::cout << "pid=" << comm->MyPID() << " cells: " << ncells_owned 
                                        << " faces: " << nfaces_owned << std::endl;
 
+  // initialize io
+  Teuchos::ParameterList iolist;
+  iolist.get<std::string>("file name base", "transport");
+  OutputXDMF io(iolist, mesh, true, false);
+
   // create a simple state and populate it
   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   std::vector<std::string> component_names;
-  component_names.push_back("Component 0");
+  component_names.push_back("tracer");
 
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  TransportExplicit_PK TPK(plist, S, "transport", component_names);
+  Teuchos::ParameterList pk_tree = plist->sublist("cycle driver").sublist("pk_tree").sublist("transport");
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+  TransportImplicit_PK TPK(pk_tree, plist, S, soln);
   TPK.Setup();
   S->Setup();
   S->InitializeFields();
@@ -99,7 +111,8 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   const auto flux_map = S->GetW<CompositeVector>("volumetric_flow_rate", "state").Map().Map("face", true);
 
   int dir;
-  AmanziGeometry::Point velocity(1.0, 0.2, -0.1);
+  AmanziGeometry::Point velocity(1.0, 0.2, -0.2);
+  velocity /= 4e+5;
 
   for (int c = 0; c < ncells_wghost; c++) {
     const auto& faces = mesh->cell_get_faces(c);
@@ -121,14 +134,16 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   TPK.Initialize();
 
   // advance the transport state 
-  int iter;
-  double t_old(0.0), t_new(0.0), dt;
+  int iter(0);
+  double tol = (order == 1) ? 1e-8 : 1e-4;
+  double t_old(0.0), t_new(0.0), dt(2.0e+3);
   auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", "state").ViewComponent("cell");
 
-  iter = 0;
-  while (t_new < 0.2) {
-    dt = TPK.StableTimeStep();
+  while(t_new < 1.0e+5) {
     t_new = t_old + dt;
+
+    if (comm->MyPID() == 0) 
+      std::cout << "\nCycle: T=" << t_old << " dT=" << dt << std::endl;
 
     TPK.AdvanceStep(t_old, t_new);
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
@@ -137,8 +152,14 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
     iter++;
 
     // verify solution
-    for (int c = 0; c < ncells_owned; ++c) 
-        CHECK(tcc[0][c] >= 0.0 && tcc[0][c] <= 1.0);
+    for (int c = 0; c < ncells_owned; ++c)
+      CHECK(tcc[0][c] >= -tol && tcc[0][c] <= 1.0 + tol);
+
+    if (iter % 2 == 0) {
+      io.InitializeCycle(t_new, iter, "");
+      io.WriteVector(*tcc(0), "tcc", AmanziMesh::CELL);
+      io.FinalizeCycle();
+    }
   }
 
   // test the maximum principle
@@ -149,20 +170,23 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   double tcc_max(0.0);
   for (int n = 0; n < block.size(); ++n) {
     tcc_max = std::max(tcc_max, tcc[0][block[n]]);
+    // std::cout << n << " " << tcc[0][block[n]] << " " << tcc_max << std::endl;
   }
   double tmp = tcc_max;
   mesh->get_comm()->MaxAll(&tmp, &tcc_max, 1);
   CHECK(tcc_max > 0.25);
 
   WriteStateStatistics(*S);
-
-  GMV::open_data_file(*mesh, (std::string)"transport.gmv");
-  GMV::start_data();
-  GMV::write_cell_data(tcc, 0, "Component_0");
-  GMV::close_data_file();
 }
 
 
+TEST(IMPLICIT_TRANSPORT_TWO_FRACTURES_1ST) {
+  runTest(1, "PCG");
+}
 
+
+TEST(IMPLICIT_TRANSPORT_TWO_FRACTURES_2ND) {
+  runTest(2, "GMRES");
+}
 
 

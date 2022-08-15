@@ -590,7 +590,7 @@ void Mesh_MOAB::init_set_info()
   for (int i = 0; i < ngr; i++) {
     Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(i);
 
-    if (rgn->type() == AmanziGeometry::LABELEDSET) {
+    if (rgn->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
       Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
           Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
 
@@ -622,7 +622,7 @@ void Mesh_MOAB::init_set_info()
     //  result = mbcore_->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER,
     //                                  tag, MB_TAG_CREAT|MB_TAG_SPARSE);
     //    if (result != MB_SUCCESS) {
-    //      std::cerr << "Could not create tag with name " << rgn->name() << std::endl;
+    //      std::cerr << "Could not create tag with name " << rgn->get_name() << std::endl;
     //      AMANZI_ASSERT(result != MB_SUCCESS);
     //    }
     //  }
@@ -1066,8 +1066,8 @@ moab::Tag Mesh_MOAB::build_set(
   // Create entity set based on the region defintion  
   switch (kind) {      
   case CELL:    // cellsets      
-    if (region->type() == AmanziGeometry::BOX ||
-        region->type() == AmanziGeometry::COLORFUNCTION) {
+    if (region->get_type() == AmanziGeometry::RegionType::BOX ||
+        region->get_type() == AmanziGeometry::RegionType::COLORFUNCTION) {
 
       mbcore_->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag,
                              MB_TAG_CREAT|MB_TAG_SPARSE);
@@ -1080,7 +1080,7 @@ moab::Tag Mesh_MOAB::build_set(
         }
       }
     }
-    else if (region->type() == AmanziGeometry::POINT) {
+    else if (region->get_type() == AmanziGeometry::RegionType::POINT) {
       AmanziGeometry::Point vpnt(space_dim);
       AmanziGeometry::Point rgnpnt(space_dim);
 
@@ -1122,7 +1122,7 @@ moab::Tag Mesh_MOAB::build_set(
       }
     }
 
-    else if (region->type() == AmanziGeometry::PLANE) {
+    else if (region->get_type() == AmanziGeometry::RegionType::PLANE) {
 
       mbcore_->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag,
                              MB_TAG_CREAT|MB_TAG_SPARSE);
@@ -1149,23 +1149,23 @@ moab::Tag Mesh_MOAB::build_set(
       }
 
     }
-    else if (region->type() == AmanziGeometry::LOGICAL) {
+    else if (region->get_type() == AmanziGeometry::RegionType::LOGICAL) {
       // will process later in this subroutine
     }
-    else if (region->type() == AmanziGeometry::LABELEDSET) {
+    else if (region->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
       // Nothing to do
       tag = cstag;
     }
     else {
       Errors::Message mesg;
-      mesg << "Region \"" << region->name() << "\" type not applicable/supported for cell sets";
+      mesg << "Region \"" << region->get_name() << "\" type not applicable/supported for cell sets";
       amanzi_throw(mesg);
     }
       
     break;
       
   case FACE:  // sidesets
-    if (region->type() == AmanziGeometry::BOX)  {
+    if (region->get_type() == AmanziGeometry::RegionType::BOX)  {
 
       mbcore_->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag,
                              MB_TAG_CREAT|MB_TAG_SPARSE);
@@ -1178,8 +1178,8 @@ moab::Tag Mesh_MOAB::build_set(
 
       }
     }
-    else if (region->type() == AmanziGeometry::PLANE ||
-             region->type() == AmanziGeometry::POLYGON) {
+    else if (region->get_type() == AmanziGeometry::RegionType::PLANE ||
+             region->get_type() == AmanziGeometry::RegionType::POLYGON) {
 
       mbcore_->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag,
                              MB_TAG_CREAT | MB_TAG_SPARSE);
@@ -1203,25 +1203,25 @@ moab::Tag Mesh_MOAB::build_set(
           mbcore_->tag_set_data(tag, &(face_id_to_handle[iface]), 1, &one);
       }
     }
-    else if (region->type() == AmanziGeometry::LABELEDSET) {
+    else if (region->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
       // Nothing to do
       tag = sstag;
     }
-    else if (region->type() == AmanziGeometry::LOGICAL) {
+    else if (region->get_type() == AmanziGeometry::RegionType::LOGICAL) {
       // Will handle it later in the routine
     }
     else {
       Errors::Message mesg;
-      mesg << "Region \"" << region->name() << "\" type not applicable/supported for face sets";
+      mesg << "Region \"" << region->get_name() << "\" type not applicable/supported for face sets";
       amanzi_throw(mesg);
     }
     break;
 
   case NODE: // Nodesets
-    if (region->type() == AmanziGeometry::BOX ||
-        region->type() == AmanziGeometry::PLANE ||
-        region->type() == AmanziGeometry::POLYGON ||
-        region->type() == AmanziGeometry::POINT) {
+    if (region->get_type() == AmanziGeometry::RegionType::BOX ||
+        region->get_type() == AmanziGeometry::RegionType::PLANE ||
+        region->get_type() == AmanziGeometry::RegionType::POLYGON ||
+        region->get_type() == AmanziGeometry::RegionType::POINT) {
 
       mbcore_->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag,
                              MB_TAG_CREAT|MB_TAG_SPARSE);
@@ -1237,16 +1237,16 @@ moab::Tag Mesh_MOAB::build_set(
           mbcore_->tag_set_data(tag, &(node_id_to_handle[inode]), 1, &one);
 
           // Only one node per point region
-          if (region->type() == AmanziGeometry::POINT)
+          if (region->get_type() == AmanziGeometry::RegionType::POINT)
             break;      
         }
       }
     }
-    else if (region->type() == AmanziGeometry::LABELEDSET) {
+    else if (region->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
       // Just retrieve and return the set
       tag = nstag;
     }
-    else if (region->type() == AmanziGeometry::LOGICAL) {
+    else if (region->get_type() == AmanziGeometry::RegionType::LOGICAL) {
       // We will handle it later in the routine
     }
     else {
@@ -1262,12 +1262,12 @@ moab::Tag Mesh_MOAB::build_set(
     break;
   }
 
-  if (region->type() == AmanziGeometry::LOGICAL) {
+  if (region->get_type() == AmanziGeometry::RegionType::LOGICAL) {
     std::string new_internal_name;
 
     Teuchos::RCP<const AmanziGeometry::RegionLogical> boolregion =
         Teuchos::rcp_static_cast<const AmanziGeometry::RegionLogical>(region);
-    std::vector<std::string> region_names = boolregion->component_regions();
+    std::vector<std::string> region_names = boolregion->get_component_regions();
     int nreg = region_names.size();
     
     std::vector<moab::Tag> tags;
@@ -1299,7 +1299,7 @@ moab::Tag Mesh_MOAB::build_set(
 
     // Check the entity types of the sets are consistent with the
     // entity type of the requested set
-    if (boolregion->operation() == AmanziGeometry::COMPLEMENT) {
+    if (boolregion->get_operation() == AmanziGeometry::BoolOpType::COMPLEMENT) {
       int *values[1] = {&one};
       moab::Range entset1, entset2;
 
@@ -1346,7 +1346,7 @@ moab::Tag Mesh_MOAB::build_set(
       new_internal_name = "NOT_" + new_internal_name;
     }
 
-    else if (boolregion->operation() == AmanziGeometry::UNION) {
+    else if (boolregion->get_operation() == AmanziGeometry::BoolOpType::UNION) {
       moab::Range entset1;
       switch (kind) {
       case CELL:
@@ -1387,7 +1387,7 @@ moab::Tag Mesh_MOAB::build_set(
         new_internal_name = new_internal_name + "+" + region_names[r];
     }
 
-    else if (boolregion->operation() == AmanziGeometry::SUBTRACT) {
+    else if (boolregion->get_operation() == AmanziGeometry::BoolOpType::SUBTRACT) {
       int *values[1] = { &one };
       moab::Range entset1, entset2;
 
@@ -1433,7 +1433,7 @@ moab::Tag Mesh_MOAB::build_set(
       for (int r = 0; r < nreg; r++)
         new_internal_name = new_internal_name + "-" + region_names[r];
     }
-    else if (boolregion->operation() == AmanziGeometry::INTERSECT) {
+    else if (boolregion->get_operation() == AmanziGeometry::BoolOpType::INTERSECT) {
       Errors::Message mesg("INTERSECT region not implemented in MOAB");
       amanzi_throw(mesg);
     }
@@ -1484,7 +1484,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string& setname,
 
   // If region is of type labeled set and a mesh set should have been
   // initialized from the input file
-  if (rgn->type() == AmanziGeometry::LABELEDSET) {
+  if (rgn->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
     Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
         Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
     std::string label = lsrgn->label();
@@ -2015,6 +2015,7 @@ const Epetra_Import& Mesh_MOAB::exterior_face_importer(void) const
 {
   Errors::Message mesg("Exterior face importer is not implemented");
   amanzi_throw(mesg);
+  throw(mesg); // this silences compiler warnings but is never called
 }
 
 
@@ -2078,7 +2079,7 @@ Mesh_MOAB::internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>
 {
   std::string internal_name;
   
-  if (r->type() == AmanziGeometry::LABELEDSET) {
+  if (r->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
     
     Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
         Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(r);
@@ -2093,11 +2094,11 @@ Mesh_MOAB::internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>
   }
   else {
     if (entity_kind == CELL)
-      internal_name = "CELLSET_" + r->name();
+      internal_name = "CELLSET_" + r->get_name();
     else if (entity_kind == FACE)
-      internal_name = "FACESET_" + r->name();
+      internal_name = "FACESET_" + r->get_name();
     else if (entity_kind == NODE)
-      internal_name = "NODESET_" + r->name();
+      internal_name = "NODESET_" + r->get_name();
   }
 
   return internal_name;
