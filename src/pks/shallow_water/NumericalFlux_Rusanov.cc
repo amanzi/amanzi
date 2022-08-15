@@ -39,13 +39,11 @@ std::vector<double> NumericalFlux_Rusanov::Compute(
 
   hL = UL[0];
   factor = 2.0 * hL / (hL * hL + std::fmax(hL * hL, eps * eps));
-  factor = hL / (hL*hL + eps*eps);
   uL = factor * UL[1];
   vL = factor * UL[2];
 
   hR = UR[0];
   factor = 2.0 * hR / (hR * hR + std::fmax(hR * hR, eps * eps));
-  factor = hR / (hR*hR + eps*eps);
   uR = factor * UR[1];
   vR = factor * UR[2];
 
