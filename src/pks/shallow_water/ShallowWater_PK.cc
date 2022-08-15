@@ -478,11 +478,6 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Epetra_MultiVector& h_old = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_old = *soln_->SubVector(1)->Data()->ViewComponent("cell");
 
-  Epetra_MultiVector& h_old =
-    *soln_->SubVector(0)->Data()->ViewComponent("cell");
-  Epetra_MultiVector& q_old =
-    *soln_->SubVector(1)->Data()->ViewComponent("cell");
-
   for (int c = 0; c < ncells_wghost; ++c) {
     double factor = inverse_with_tolerance(h_old[0][c], cell_area_max_);
     h_c[0][c] = h_old[0][c];
