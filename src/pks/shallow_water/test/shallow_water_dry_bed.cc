@@ -180,7 +180,7 @@ RunTest(int icase)
   if (icase == 1) {
     mesh = meshfactory.create ("test/triangular16.exo");
   } else if (icase == 2) {
-    mesh = meshfactory.create ("test/median32x33.exo");
+    mesh = meshfactory.create ("test/median15x16.exo");
   }
 
   // Create a state
@@ -245,9 +245,6 @@ RunTest(int icase)
   std::vector<double> dx, Linferror, L1error, L2error;
 
   double Tend = 0.5;
-  if (icase == 2) {
-    Tend = 0.20;
-  }
 
   int ncells_wghost = mesh->num_entities(
     Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
@@ -281,10 +278,6 @@ RunTest(int icase)
 
     t_old = t_new;
     iter += 1;
-    
-    if (iter % 50 == 0) {
-      std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
-    }
     
     // check depth positivity
     for (int c = 0; c < ncells_wghost; ++c) {
