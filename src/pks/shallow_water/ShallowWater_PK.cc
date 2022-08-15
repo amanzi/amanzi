@@ -581,129 +581,110 @@ double
 ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
 {
   double ht_edge; // value to return
-
+  
   auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_)
-                  .ViewComponent("cell", true);
+  .ViewComponent("cell", true);
   auto& h_c = *S_->GetW<CompositeVector>(ponded_depth_key_, passwd_).ViewComponent("cell", true);
   const auto& B_c =
-    *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("cell", true);
+  *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("cell", true);
   const auto& B_n =
-    *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
-
+  *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
+  
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
   // set ht_grad = 0 for first order reconstruction
-//  ht_grad[0][c] = 0.0;
-//  ht_grad[1][c] = 0.0;
-
+  //  ht_grad[0][c] = 0.0;
+  //  ht_grad[1][c] = 0.0;
+  
   const auto& xc = mesh_->cell_centroid(c);
   const auto& xf = mesh_->face_centroid(e);
   Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
   mesh_->cell_get_nodes(c, &cnodes);
-
+  
   bool cell_is_dry, cell_is_fully_flooded, cell_is_partially_wet;
   cell_is_partially_wet = false;
   cell_is_dry = false;
   cell_is_fully_flooded = false;
-    
+  
   // calculate maximum bathymetry value on cell nodes
   double Bmax = 0.0;
   for (int i = 0; i < cnodes.size(); ++i) {
     Bmax = std::max(B_n[0][cnodes[i]], Bmax);
   }
-
+  
   // characterize cell based on [Beljadid et al.' 16]
   if ( (ht_c[0][c] > Bmax) && (ht_c[0][c] - B_c[0][c] > 1.e-15) ) {
     cell_is_fully_flooded = true;
   } else if (std::abs(ht_c[0][c] - B_c[0][c]) < 1.e-15) {
-      cell_is_dry = true;
+    cell_is_dry = true;
   } else {
-      cell_is_partially_wet = true;
-  }
-
-  if (h_c[0][c] < 0.0) {
-    std::cout<<"ERROR: NEGATIVE h_c = "<<h_c[0][c]<<std::endl;
+    cell_is_partially_wet = true;
   }
   
   // depth poisitivity based on [Beljadid et al.' 16]
   if (cell_is_fully_flooded == true) {
-        double alpha = 1.0;
-        Amanzi::AmanziGeometry::Point xi;
-        for(int i = 0; i < cnodes.size(); ++i) {
-          mesh_->node_get_coordinates(cnodes[i], &xi);
-          double ht_rec = total_depth_grad_->getValue(c, xi);
-          if (ht_rec - B_n[0][cnodes[i]] < 0.0) {
-            alpha = std::min(alpha, (B_n[0][cnodes[i]] - ht_c[0][c]) / (ht_rec - ht_c[0][c]));
-          }
-        }
-        
-        alpha = 1.0;
-        ht_grad[0][c] *= alpha;
-        ht_grad[1][c] *= alpha;
-        ht_edge = total_depth_grad_->getValue(c, xf);
-      //  ht_edge = ht_c[0][c];
-    } else if (cell_is_dry == true) {
-        ht_edge = BathymetryEdgeValue(e, B_n);
-    } else if (cell_is_partially_wet == true) {
-
-      Amanzi::AmanziMesh::Entity_ID_List cfaces;
-      mesh_->cell_get_faces(c, &cfaces);
-
-			double mu_eps_sum = 0.0;
-
-	  	for (int f = 0; f < cfaces.size(); ++f) {
-				Amanzi::AmanziGeometry::Point x0, x1;
-				int edge = cfaces[f];
-
-				Amanzi::AmanziMesh::Entity_ID_List face_nodes;
-				mesh_->face_get_nodes(edge, &face_nodes);
-
-				mesh_->node_get_coordinates(face_nodes[0], &x0);
-	  		mesh_->node_get_coordinates(face_nodes[1], &x1);
-
-				Amanzi::AmanziGeometry::Point tria_edge0, tria_edge1;
-
-				tria_edge0 = xc - x0;
-				tria_edge1 = xc - x1;
-
-				Amanzi::AmanziGeometry::Point area_cross_product = (0.5) * tria_edge0 ^ tria_edge1;
-
-				double area = norm(area_cross_product);
-
-				double epsilon;
-
-//				double ht_rec_x0 = total_depth_grad_->getValue(c, x0);
-//				double ht_rec_x1 = total_depth_grad_->getValue(c, x1);
-        
-        double ht_rec_x0 = ht_c[0][c];
-        double ht_rec_x1 = ht_c[0][c];
-
-				if (ht_rec_x0 < B_n[0][face_nodes[0]] && ht_rec_x1 < B_n[0][face_nodes[1]]) {
-					epsilon  = 0.0;
-				} else if (ht_rec_x0 >= B_n[0][face_nodes[0]] && ht_rec_x1 >= B_n[0][face_nodes[1]]) {
-					epsilon = 1.0;
-				} else {
-					epsilon = 0.5;
-				}
-
-				mu_eps_sum += (area / mesh_->cell_volume(c)) * (epsilon);
-			}
-
-			Amanzi::AmanziMesh::Entity_ID_List face_nodes;
-			mesh_->face_get_nodes(e, &face_nodes);
-
-      ht_edge = 0.0;
-      for (int  i = 0; i < face_nodes.size(); ++i) {
-        if (ht_c[0][c] < B_n[0][face_nodes[i]]) {
-          ht_edge += B_n[0][face_nodes[i]];
-        } else {
-          ht_edge += B_n[0][face_nodes[i]] + ( (ht_c[0][c] - B_c[0][c]) / mu_eps_sum );
-        }
+    ht_edge = total_depth_grad_->getValue(c, xf);
+    if (ht_edge - BathymetryEdgeValue(e, B_n) < 0.0) {
+      ht_edge = ht_c[0][c];
+    }
+  } else if (cell_is_dry == true) {
+    ht_edge = BathymetryEdgeValue(e, B_n);
+  } else if (cell_is_partially_wet == true) {
+    Amanzi::AmanziMesh::Entity_ID_List cfaces;
+    mesh_->cell_get_faces(c, &cfaces);
+    
+    double mu_eps_sum = 0.0;
+    
+    for (int f = 0; f < cfaces.size(); ++f) {
+      Amanzi::AmanziGeometry::Point x0, x1;
+      int edge = cfaces[f];
+      
+      Amanzi::AmanziMesh::Entity_ID_List face_nodes;
+      mesh_->face_get_nodes(edge, &face_nodes);
+      
+      mesh_->node_get_coordinates(face_nodes[0], &x0);
+      mesh_->node_get_coordinates(face_nodes[1], &x1);
+      
+      Amanzi::AmanziGeometry::Point tria_edge0, tria_edge1;
+      
+      tria_edge0 = xc - x0;
+      tria_edge1 = xc - x1;
+      
+      Amanzi::AmanziGeometry::Point area_cross_product = (0.5) * tria_edge0 ^ tria_edge1;
+      
+      double area = norm(area_cross_product);
+      
+      double epsilon;
+      
+      double ht_rec_x0 = ht_c[0][c];
+      double ht_rec_x1 = ht_c[0][c];
+      
+      if (ht_rec_x0 < B_n[0][face_nodes[0]] && ht_rec_x1 < B_n[0][face_nodes[1]]) {
+        epsilon  = 0.0;
+      } else if (ht_rec_x0 >= B_n[0][face_nodes[0]] && ht_rec_x1 >= B_n[0][face_nodes[1]]) {
+        epsilon = 1.0;
+      } else {
+        epsilon = 0.5;
       }
-      ht_edge /= 2.0;
-      ht_grad[0][c] = 0.0;
-      ht_grad[1][c] = 0.0;
+      
+      mu_eps_sum += (area / mesh_->cell_volume(c)) * (epsilon);
     }
     
+    Amanzi::AmanziMesh::Entity_ID_List face_nodes;
+    mesh_->face_get_nodes(e, &face_nodes);
+    
+    ht_edge = 0.0;
+    for (int  i = 0; i < face_nodes.size(); ++i) {
+      if (ht_c[0][c] < B_n[0][face_nodes[i]]) {
+        ht_edge += B_n[0][face_nodes[i]];
+      } else {
+        ht_edge += B_n[0][face_nodes[i]] + ( (ht_c[0][c] - B_c[0][c]) / mu_eps_sum );
+      }
+    }
+    ht_edge /= 2.0;
+    ht_grad[0][c] = 0.0;
+    ht_grad[1][c] = 0.0;
+  }
+  
   return ht_edge;
 }
 
@@ -882,17 +863,12 @@ ShallowWater_PK::BathymetryEdgeValue(int e, const Epetra_MultiVector& B_n)
 double
 inverse_with_tolerance(double h, double tol)
 {
-  double eps(1.e-4), delta(tol), eps2(1e-12); // hard-coded tolerances
+  double eps(1.e-4); // hard-coded tolerances
 
   if (h > eps) return 1.0 / h;
 
   double h2 = h * h;
-  return 2 * h / (h2 + std::max(h2, delta));
-  
-  double h4 = h2 * h2;
-  //return std::sqrt(2) * h / std::sqrt(h4 + std::max(h4, delta));
-  
-  //return 0.0;
+  return 2 * h / (h2 + std::max(h2, tol));
 }
 
 

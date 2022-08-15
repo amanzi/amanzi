@@ -246,7 +246,7 @@ RunTest(int icase)
 
   double Tend = 0.5;
   if (icase == 2) {
-    Tend = 0.25;
+    Tend = 0.20;
   }
 
   int ncells_wghost = mesh->num_entities(
