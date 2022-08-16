@@ -167,14 +167,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     double B_rec = BathymetryEdgeValue(f, B_n);
     
-
-    if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-14) {
-    	std::cout<<"time: t = "<<t<<", c = "<<c1<<", negative h 1 = : "<<ht_rec-B_rec<<" | ht_rec = "<<ht_rec<<" < "<<B_rec<<std::endl;
-      ht_rec = ht_c[0][c1];
-      B_rec = B_c[0][c1];
-    } 
     double h_rec = ht_rec - B_rec;
-    if (std::abs(h_rec) < 1.e-14) { h_rec = 0.0; }
     failed = ErrorDiagnostics_(t, c1, h_rec, B_rec, ht_rec);
 
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
@@ -207,13 +200,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     } else {
       ht_rec = TotalDepthEdgeValue(c2, f);
 
-      if (ht_rec < B_rec && std::abs(ht_rec - B_rec) > 1.e-14) {
-      	std::cout<<"time: t = "<<t<<", c = "<<c2<<", negative h 2 = : "<<ht_rec-B_rec<<" | ht_rec = "<<ht_rec<<" < "<<B_rec<<std::endl;
-        ht_rec = ht_c[0][c2];
-        B_rec = B_c[0][c2];
-      }
       h_rec = ht_rec - B_rec;
-      if (std::abs(h_rec) < 1.e-14) { h_rec = 0.0; }
       failed = ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
 
       qx_rec = discharge_x_grad_->getValue(c2, xf);
