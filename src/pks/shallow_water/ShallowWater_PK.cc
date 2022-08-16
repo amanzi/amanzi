@@ -292,11 +292,11 @@ ShallowWater_PK::Initialize()
   // compute B_c from B_n for well balanced scheme (Beljadid et. al. 2016)
   S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("node");
 
-  cell_area_max_ = 0.0;
+  double cell_area_max = 0.0;
   for (int c = 0; c < ncells_owned; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-    cell_area_max_ = std::max(cell_area_max_, mesh_->cell_volume(c) * mesh_->cell_volume(c));
+    cell_area_max = std::max(cell_area_max, mesh_->cell_volume(c));
     Amanzi::AmanziMesh::Entity_ID_List cfaces;
     mesh_->cell_get_faces(c, &cfaces);
     int nfaces_cell = cfaces.size();
@@ -321,6 +321,9 @@ ShallowWater_PK::Initialize()
   }
   // redistribute the result
   S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("cell");
+
+  // calculate cell area square (used as a tolerance)  
+  cell_area2_max_ = cell_area_max * cell_area_max;
 
   // initialize h from ht or ht from h
   if (!S_->GetRecord(ponded_depth_key_, Tags::DEFAULT).initialized()) {
@@ -444,7 +447,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Epetra_MultiVector& q_old = *soln_->SubVector(1)->Data()->ViewComponent("cell");
 
   for (int c = 0; c < ncells_wghost; ++c) {
-    double factor = inverse_with_tolerance(h_old[0][c], cell_area_max_);
+    double factor = inverse_with_tolerance(h_old[0][c], cell_area2_max_);
     h_c[0][c] = h_old[0][c];
     q_c[0][c] = q_old[0][c];
     q_c[1][c] = q_old[1][c];
@@ -512,7 +515,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // update solution
   for (int c = 0; c < ncells_wghost; ++c) {
-    double factor = inverse_with_tolerance(h_temp[0][c], cell_area_max_);
+    double factor = inverse_with_tolerance(h_temp[0][c], cell_area2_max_);
     h_c[0][c] = h_temp[0][c];
     q_c[0][c] = q_temp[0][c];
     q_c[1][c] = q_temp[1][c];

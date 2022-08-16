@@ -111,8 +111,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   // temporal discretization order
   int temporal_disc_order;
-  // maximum cell area
-  double cell_area_max_;
+  // maximum cell area square
+  double cell_area2_max_;
   
  private:
   void
