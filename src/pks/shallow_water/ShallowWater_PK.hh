@@ -86,12 +86,11 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   virtual std::string name() override { return "shallow water"; }
 
   // Bathymetry reconstruction on cell edge midpoints
-  double BathymetryRectangularCellValue(int c, const AmanziGeometry::Point& xp,
-                                        const Epetra_MultiVector& Bn);
+  double BathymetryRectangularCellValue(int c, const AmanziGeometry::Point& xp, const Epetra_MultiVector& Bn);
   double BathymetryEdgeValue(int e, const Epetra_MultiVector& Bn);
 
   // Recalculate total depth for positivity of ponded depth
-  double TotalDepthEdgeValue(int c, int e);
+  double TotalDepthEdgeValue(int c, int e, double htc, double Bc, Epetra_MultiVector B_n);
 
   // due to rotational invariance of SW equations, we need flux in the
   // x-direction only.
@@ -99,12 +98,10 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   std::vector<double>
   NumericalFlux_x(std::vector<double>&, std::vector<double>&);
-  std::vector<double> NumericalFlux_x_Rusanov(const std::vector<double>&,
-                                              const std::vector<double>&);
-  std::vector<double> NumericalFlux_x_CentralUpwind(const std::vector<double>&,
-                                                    const std::vector<double>&);
+  std::vector<double> NumericalFlux_x_Rusanov(const std::vector<double>&, const std::vector<double>&);
+  std::vector<double> NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
 
-  std::vector<double> NumericalSource(const std::vector<double>&, int);
+  std::vector<double> NumericalSource(int c, double htc, double Bc, const Epetra_MultiVector B_n);
 
   // access
   double get_total_source() const { return total_source_; }

@@ -569,14 +569,9 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 // Reconstruct if necessary for positivity
 //--------------------------------------------------------------
 double
-ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
+ShallowWater_PK::TotalDepthEdgeValue(int c, int e, double htc, double Bc, Epetra_MultiVector B_n)
 {
   double ht_edge; // value to return
-
-  auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_).ViewComponent("cell", true);
-  auto& h_c = *S_->GetW<CompositeVector>(ponded_depth_key_, passwd_).ViewComponent("cell", true);
-  const auto& B_c = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("cell", true);
-  const auto& B_n = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
 
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
   // set ht_grad = 0 for first order reconstruction
@@ -595,12 +590,14 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
 
   // calculate maximum bathymetry value on cell nodes
   double Bmax = 0.0;
-  for (int i = 0; i < cnodes.size(); ++i) { Bmax = std::max(B_n[0][cnodes[i]], Bmax); }
+  for (int i = 0; i < cnodes.size(); ++i) { 
+  	Bmax = std::max(B_n[0][cnodes[i]], Bmax); 
+  }
 
   // characterize cell based on [Beljadid et al.' 16]
-  if ((ht_c[0][c] > Bmax) && (ht_c[0][c] - B_c[0][c] > 1.e-15)) {
+  if ((htc > Bmax) && (htc - Bc > 1.e-15)) {
     cell_is_fully_flooded = true;
-  } else if (std::abs(ht_c[0][c] - B_c[0][c]) < 1.e-15) {
+  } else if (std::abs(htc- Bc) < 1.e-15) {
     cell_is_dry = true;
   } else {
     cell_is_partially_wet = true;
@@ -609,7 +606,9 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
   // depth poisitivity based on [Beljadid et al.' 2016, Computers and Fluids]
   if (cell_is_fully_flooded == true) {
     ht_edge = total_depth_grad_->getValue(c, xf);
-    if (ht_edge - BathymetryEdgeValue(e, B_n) < 0.0) { ht_edge = ht_c[0][c]; }
+    if (ht_edge - BathymetryEdgeValue(e, B_n) < 0.0) { 
+    	ht_edge = htc; 
+    }
   } else if (cell_is_dry == true) {
     ht_edge = BathymetryEdgeValue(e, B_n);
   } else if (cell_is_partially_wet == true) {
@@ -639,8 +638,8 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
 
       double epsilon;
 
-      double ht_rec_x0 = ht_c[0][c];
-      double ht_rec_x1 = ht_c[0][c];
+      double ht_rec_x0 = htc;
+      double ht_rec_x1 = htc;
 
       if (ht_rec_x0 < B_n[0][face_nodes[0]] && ht_rec_x1 < B_n[0][face_nodes[1]]) {
         epsilon = 0.0;
@@ -658,10 +657,10 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
 
     ht_edge = 0.0;
     for (int i = 0; i < face_nodes.size(); ++i) {
-      if (ht_c[0][c] < B_n[0][face_nodes[i]]) {
+      if (htc < B_n[0][face_nodes[i]]) {
         ht_edge += B_n[0][face_nodes[i]];
       } else {
-        ht_edge += B_n[0][face_nodes[i]] + ((ht_c[0][c] - B_c[0][c]) / mu_eps_sum);
+        ht_edge += B_n[0][face_nodes[i]] + ((htc - Bc) / mu_eps_sum);
       }
     }
     ht_edge /= 2.0;
@@ -677,13 +676,8 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
 // Discretization of the source term (well-balanced for lake at rest)
 //--------------------------------------------------------------------
 std::vector<double>
-ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
+ShallowWater_PK::NumericalSource(int c, double htc, double Bc, const Epetra_MultiVector B_n)
 {
-  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  auto& B_n = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("node", true);
-  auto& ht_c =
-    *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-
   AmanziMesh::Entity_ID_List cfaces, cnodes;
   mesh_->cell_get_faces(c, &cfaces);
   mesh_->cell_get_nodes(c, &cnodes);
@@ -696,8 +690,8 @@ ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
     int f = cfaces[n];
     const auto& normal = mesh_->face_normal(f, false, c, &orientation);
     const auto& xcf = mesh_->face_centroid(f);
-
-    double ht_rec = TotalDepthEdgeValue(c, f);
+		
+    double ht_rec = TotalDepthEdgeValue(c, f, htc, Bc, B_n);
     double B_rec = BathymetryEdgeValue(f, B_n);
 
     // Polygonal meshes [Beljadid et al.' 2016, Computers and Fluids]
@@ -709,8 +703,8 @@ ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
 
   S1 /= vol;
   S2 /= vol;
-  S1 -= ht_grad[0][c] * U[0];
-  S2 -= ht_grad[1][c] * U[0];
+  S1 -= ht_grad[0][c] * (htc - Bc);
+  S2 -= ht_grad[1][c] * (htc - Bc);
   S1 *= g_;
   S2 *= g_;
 

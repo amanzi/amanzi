@@ -160,7 +160,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
     normal /= farea;
 
-    double ht_rec = TotalDepthEdgeValue(c1, f);
+    double ht_rec = TotalDepthEdgeValue(c1, f, ht_c[0][c1], B_c[0][c1], B_n);
 
     double B_rec = BathymetryEdgeValue(f, B_n);
     
@@ -195,7 +195,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         UR = UL;
       }
     } else {
-      ht_rec = TotalDepthEdgeValue(c2, f);
+      ht_rec = TotalDepthEdgeValue(c2, f, ht_c[0][c2], B_c[0][c2], B_n);
 
       h_rec = ht_rec - B_rec;
       failed = ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
@@ -250,7 +250,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     U[1] = q_temp[0][c];
     U[2] = q_temp[1][c];
 
-    S = NumericalSource(U, c);
+    S = NumericalSource(c, U[0] + B_c[0][c], B_c[0][c], B_n);
 
     h = h_c_tmp[0][c] + (S[0] + ext_S_cell[c]);
     qx = q_c_tmp[0][c] + S[1];
