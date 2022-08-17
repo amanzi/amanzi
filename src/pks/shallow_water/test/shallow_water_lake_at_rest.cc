@@ -83,28 +83,13 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
   std::string passwd = "state";
 
-  auto& B_c =
-    *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd)
-       .ViewComponent("cell");
-  auto& B_n =
-    *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd)
-       .ViewComponent("node");
-  auto& h_c =
-    *S->GetW<CompositeVector>("surface-ponded_depth", Tags::DEFAULT, passwd)
-       .ViewComponent("cell");
-  auto& ht_c =
-    *S->GetW<CompositeVector>("surface-total_depth", Tags::DEFAULT, passwd)
-       .ViewComponent("cell");
-  auto& vel_c =
-    *S->GetW<CompositeVector>("surface-velocity", Tags::DEFAULT, passwd)
-       .ViewComponent("cell");
-  auto& q_c = *S->GetW<CompositeVector>(
-                  "surface-discharge", Tags::DEFAULT, "surface-discharge")
-                 .ViewComponent("cell");
-  auto& p_c = *S->GetW<CompositeVector>("surface-ponded_pressure",
-                                        Tags::DEFAULT,
-                                        "surface-ponded_pressure")
-                 .ViewComponent("cell");
+  auto& B_c = *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& B_n = *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("node");
+  auto& h_c = *S->GetW<CompositeVector>("surface-ponded_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& ht_c = *S->GetW<CompositeVector>("surface-total_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& vel_c = *S->GetW<CompositeVector>("surface-velocity", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& q_c = *S->GetW<CompositeVector>("surface-discharge", Tags::DEFAULT, "surface-discharge").ViewComponent("cell");
+  auto& p_c = *S->GetW<CompositeVector>("surface-ponded_pressure", Tags::DEFAULT, "surface-ponded_pressure").ViewComponent("cell");
 
   // Define bathymetry at the cell vertices (Bn)
   for (int n = 0; n < nnodes_wghost; ++n) {
@@ -186,8 +171,7 @@ error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       const Epetra_MultiVector& ht, const Epetra_MultiVector& vel,
       double& err_max, double& err_L1, double& hmax)
 {
-  int ncells_owned = mesh->num_entities(
-    Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   err_max = 0.0;
   err_L1 = 0.0;
@@ -305,8 +289,7 @@ RunTest(int icase)
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
 
-  Teuchos::ParameterList sw_list =
-    plist->sublist("PKs").sublist("shallow water");
+  Teuchos::ParameterList sw_list = plist->sublist("PKs").sublist("shallow water");
 
   // Create a shallow water PK
   ShallowWater_PK SWPK(sw_list, plist, S, soln);
@@ -320,20 +303,13 @@ RunTest(int icase)
   lake_at_rest_setIC(mesh, S, icase);
   S->CheckAllFieldsInitialized();
 
-  const auto& B =
-    *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
-  const auto& Bn =
-    *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("node");
-  const auto& hh =
-    *S->Get<CompositeVector>("surface-ponded_depth").ViewComponent("cell");
-  const auto& ht =
-    *S->Get<CompositeVector>("surface-total_depth").ViewComponent("cell");
-  const auto& vel =
-    *S->Get<CompositeVector>("surface-velocity").ViewComponent("cell");
-  const auto& q =
-    *S->Get<CompositeVector>("surface-discharge").ViewComponent("cell");
-  const auto& p =
-    *S->Get<CompositeVector>("surface-ponded_pressure").ViewComponent("cell");
+  const auto& B = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
+  const auto& Bn = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("node");
+  const auto& hh = *S->Get<CompositeVector>("surface-ponded_depth").ViewComponent("cell");
+  const auto& ht = *S->Get<CompositeVector>("surface-total_depth").ViewComponent("cell");
+  const auto& vel = *S->Get<CompositeVector>("surface-velocity").ViewComponent("cell");
+  const auto& q = *S->Get<CompositeVector>("surface-discharge").ViewComponent("cell");
+  const auto& p = *S->Get<CompositeVector>("surface-ponded_pressure").ViewComponent("cell");
 
   // Create a pid vector
   Epetra_MultiVector pid(B);
