@@ -22,7 +22,7 @@ include_directories(${ATK_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${PETSC_INCLUDE_DIRS})
+include_directories(${PETSc_INCLUDE_DIRS})
 
 set(CXX_header_files amanzi_structured_grid_simulation_driver.H)
 set(CXX_source_files amanzi_structured_grid_simulation_driver.cpp)
