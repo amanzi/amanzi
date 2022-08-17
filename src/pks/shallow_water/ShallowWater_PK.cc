@@ -632,9 +632,9 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e, double htc, double Bc, const 
 
       double epsilon;
 
-      if (htc < B_n[0][n0] && htc < B_n[0][n1]) {
+      if ((htc < B_n[0][n0]) && (htc < B_n[0][n1])) {
         epsilon = 0.0;
-      } else if (htc >= B_n[0][n0] && htc >= B_n[0][n1]) {
+      } else if ((htc >= B_n[0][n0]) && (htc >= B_n[0][n1])) {
         epsilon = 1.0;
       } else {
         epsilon = 0.5;

@@ -28,14 +28,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   auto& f_temp0 = *fun.SubVector(0)->Data()->ViewComponent("cell");
   auto& f_temp1 = *fun.SubVector(1)->Data()->ViewComponent("cell");
 
-  int ncells_owned =
-    mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost =
-    mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost =
-    mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost =
-    mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // distribute data to ghost cells
   A.SubVector(0)->Data()->ScatterMasterToGhosted("cell");
@@ -89,13 +85,13 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         mesh_->face_get_nodes(f, &nodes);
+        int n0 = nodes[0], n1 = nodes[1];
 
         bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_value_h[f] = (bc_value_hn[nodes[0]] + bc_value_hn[nodes[1]]) / 2;
+        bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
         bc_value_qx[f] = bc_value_h[f] * it->second[0];
         bc_value_qy[f] = bc_value_h[f] * it->second[1];
-        bc_value_ht[f] =
-          bc_value_h[f] + (B_n[0][nodes[0]] + B_n[0][nodes[1]]) / 2;
+        bc_value_ht[f] = bc_value_h[f] + (B_n[0][n0] + B_n[0][n1]) / 2.0;
       }
     }
   }

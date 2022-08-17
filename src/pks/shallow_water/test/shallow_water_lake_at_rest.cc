@@ -47,8 +47,7 @@ lake_at_rest_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 {
   double x, y, ht, u, v;
 
-  int ncells_owned = mesh->num_entities(
-    Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
@@ -77,10 +76,8 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
   double g = norm(S->Get<AmanziGeometry::Point>("gravity"));
 
-  int ncells_wghost = mesh->num_entities(
-    Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->num_entities(
-    Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
   std::string passwd = "state";
 
   auto& B_c = *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("cell");
@@ -177,8 +174,7 @@ error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   err_L1 = 0.0;
   hmax = 0.0;
 
-  double err_max_u = 0.0, err_max_v = 0.0, err_L1_u = 0.0, err_L1_v = 0.0,
-         tmp_hmax = 0.0;
+  double err_max_u = 0.0, err_max_v = 0.0, err_L1_u = 0.0, err_L1_v = 0.0, tmp_hmax = 0.0;
 
   for (int c = 0; c < ncells_owned; ++c) {
     double tmp = std::abs(ht_ex[0][c] - ht[0][c]);
