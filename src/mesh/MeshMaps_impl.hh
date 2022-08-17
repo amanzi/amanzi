@@ -66,7 +66,7 @@ void MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
   // -- get a list of all owned face LIDs with 1 cell
   std::size_t nfaces_owned = mesh.getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
   std::size_t nfaces_all = mesh.getNumEntities(Entity_kind::FACE, Parallel_type::ALL);
-  boundary_faces_.resize(nfaces_all, -1);
+  Entity_ID_List boundary_faces(nfaces_all, -1);
 
   std::size_t nbf_owned = 0;
   std::size_t nbf_all = 0;
@@ -74,16 +74,16 @@ void MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
     Entity_ID_List fcells;
     mesh.getFaceCells(f, Parallel_type::ALL, fcells);
     if (fcells.size() == 1) {
-      boundary_faces_[nbf_all++] = f;
+      boundary_faces[nbf_all++] = f;
       if (f < nfaces_owned) nbf_owned = nbf_all;
     }
   }
 
   // -- convert to GID
-  Entity_GID_List boundary_face_GIDs(boundary_faces_.size());
+  Entity_GID_List boundary_face_GIDs(boundary_faces.size());
   const auto& fmap_all = getMap(Entity_kind::FACE, true);
   for (std::size_t i=0; i!=nbf_all; ++i) {
-    boundary_face_GIDs[i] = fmap_all.GID(boundary_faces_[i]);
+    boundary_face_GIDs[i] = fmap_all.GID(boundary_faces[i]);
   }
 
   // -- construct owned map
@@ -104,13 +104,16 @@ void MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
   int nbf_notowned_tight = 0;
   for (int i=0; i!=nbf_notowned; ++i) {
     if (pr_id[i] >= 0) {
-      boundary_faces_[nbf_owned+nbf_notowned_tight] = boundary_faces_[nbf_owned+i];
+      boundary_faces[nbf_owned+nbf_notowned_tight] = boundary_faces[nbf_owned+i];
       boundary_face_GIDs[nbf_owned+nbf_notowned_tight] = boundary_face_GIDs[nbf_owned+i];
       ++nbf_notowned_tight;
     }
   }
   nbf_all = nbf_owned + nbf_notowned_tight;
-  boundary_faces_.resize(nbf_all);
+  boundary_faces.resize(nbf_all);
+
+  // create the dual view
+  boundary_faces_ = asDualView(boundary_faces);
 
   // -- construct the all map
   all_[Entity_kind::BOUNDARY_FACE] =
@@ -127,22 +130,24 @@ void MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
     std::set<Entity_ID> bnodes_lid;
     for (std::size_t i=0; i!=nbf_all; ++i) {
       Entity_ID_List fnodes;
-      mesh.getFaceNodes(boundary_faces_[i], fnodes);
+      mesh.getFaceNodes(boundary_faces[i], fnodes);
       for (const auto& n : fnodes) bnodes_lid.insert(n);
     }
 
     // -- convert to GID
-    boundary_nodes_.resize(bnodes_lid.size());
+    Entity_ID_List boundary_nodes(bnodes_lid.size(), -1);
     Entity_GID_List boundary_node_GIDs(bnodes_lid.size());
     std::size_t nnodes_owned = mesh.getNumEntities(Entity_kind::NODE, Parallel_type::OWNED);
     std::size_t nbn_owned = 0;
     std::size_t nbn_all = 0;
     const auto& nmap_all = getMap(Entity_kind::NODE, true);
     for (const auto& bn : bnodes_lid) {
-      boundary_nodes_[nbn_all] = bn;
+      boundary_nodes[nbn_all] = bn;
       boundary_node_GIDs[nbn_all++] = nmap_all.GID(bn);
       if (bn < nnodes_owned) nbn_owned = nbn_all;
     }
+    // create dual view
+    boundary_nodes_ = asDualView(boundary_nodes);
 
     // -- construct map, importer
     all_[Entity_kind::BOUNDARY_NODE] =

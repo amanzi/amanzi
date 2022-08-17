@@ -13,7 +13,6 @@
 #include "Point.hh"
 #include "Geometry.hh"
 #include "MeshDefs.hh"
-#include "Mesh.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -81,33 +80,6 @@ int getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entit
     if (cfaces[j] == f) {
       dir = dirs[j];
       break;
-    }
-  }
-  return dir;
-}
-
-
-template<> inline
-int getFaceDirectionInCell(const Mesh& mesh, const Entity_ID f, const Entity_ID c)
-{
-  int dir = 0;
-  if (mesh.cell_faces_cached) {
-    auto nfaces = mesh.cell_faces[c].size();
-    for (int j=0; j!=nfaces; ++j) {
-      if (mesh.cell_faces[c][j] == f) {
-        dir = mesh.cell_face_directions[c][j];
-        break;
-      }
-    }
-  } else {
-    Entity_ID_List cfaces;
-    Entity_Direction_List dirs;
-    mesh.getCellFacesAndDirs(c, cfaces, &dirs);
-    for (int j=0; j!=cfaces.size(); ++j) {
-      if (cfaces[j] == f) {
-        dir = dirs[j];
-        break;
-      }
     }
   }
   return dir;
@@ -465,20 +437,6 @@ deform(Mesh_type& mesh,
 {
   return Impl::setNodeCoordinates(mesh, nodeids, newpos);
 }
-
-inline int
-deform(AmanziMesh::Mesh& mesh,
-       const Entity_ID_List& nodeids,
-       const Point_List& newpos)
-{
-  int ierr = Impl::setNodeCoordinates(mesh, nodeids, newpos);
-  recacheGeometry(mesh);
-  return ierr;
-}
-
-
-
-
 
 
 } // namespace MeshAlgorithms

@@ -49,8 +49,7 @@ class GeometricModel;
 }
 
 namespace AmanziMesh {
-class MeshCache;
-using Mesh = MeshCache;
+
 class MeshFramework;
 
 //
@@ -65,24 +64,24 @@ struct MeshFrameworkAlgorithms {
   virtual std::pair<double, AmanziGeometry::Point>
   computeCellGeometry(const MeshFramework& mesh, const Entity_ID c) const;
 
-  // replicated because of a lack of templated virtual functions
-  virtual std::pair<double, AmanziGeometry::Point>
-  computeCellGeometry(const Mesh& mesh, const Entity_ID c) const;
+  // // replicated because of a lack of templated virtual functions
+  // virtual std::pair<double, AmanziGeometry::Point>
+  // computeCellGeometry(const Mesh& mesh, const Entity_ID c) const;
 
   virtual std::tuple<double, AmanziGeometry::Point, Point_List>
   computeFaceGeometry(const MeshFramework& mesh, const Entity_ID f) const;
 
-  virtual std::tuple<double, AmanziGeometry::Point, Point_List>
-  computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const;
+  // virtual std::tuple<double, AmanziGeometry::Point, Point_List>
+  // computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const;
 
   virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
   computeEdgeGeometry(const MeshFramework& mesh, const Entity_ID e) const;
 
-  virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-  computeEdgeGeometry(const Mesh& mesh, const Entity_ID e) const;
+  // virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
+  // computeEdgeGeometry(const Mesh& mesh, const Entity_ID e) const;
 
-  virtual Point_List
-  computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_List& faces) const;
+  // virtual Point_List
+  // computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_List& faces) const;
 };
 
 
@@ -280,10 +279,15 @@ class MeshFramework  {
   // send-receive protocols and mesh query operators are designed, a side 
   // effect of this is that master and ghost entities will have the same
   // hierarchical topology.
-  void getCellFaces(
-       const Entity_ID c,
-       Entity_ID_List& faces) const {
+  void getCellFaces(const Entity_ID c,
+                    Entity_ID_List& faces) const {
     getCellFacesAndDirs(c, faces, nullptr);
+  }
+
+  void getCellFaceDirs(const Entity_ID c,
+                       Entity_Direction_List& dirs) const {
+    Entity_ID_List faces;
+    getCellFacesAndDirs(c, faces, &dirs);
   }
 
   // Get faces of a cell and directions in which the cell uses the face

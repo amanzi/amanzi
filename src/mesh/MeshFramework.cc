@@ -354,39 +354,39 @@ MeshFrameworkAlgorithms::computeCellGeometry(const MeshFramework& mesh, const En
 {
   return MeshAlgorithms::computeCellGeometry(mesh, c);
 }
-std::pair<double, AmanziGeometry::Point>
-MeshFrameworkAlgorithms::computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
-{
-  return MeshAlgorithms::computeCellGeometry(mesh, c);
-}
+// std::pair<double, AmanziGeometry::Point>
+// MeshFrameworkAlgorithms::computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
+// {
+//   return MeshAlgorithms::computeCellGeometry(mesh, c);
+// }
 
 std::tuple<double, AmanziGeometry::Point, Point_List>
 MeshFrameworkAlgorithms::computeFaceGeometry(const MeshFramework& mesh, const Entity_ID f) const
 {
   return MeshAlgorithms::computeFaceGeometry(mesh, f);
 }
-std::tuple<double, AmanziGeometry::Point, Point_List>
-MeshFrameworkAlgorithms::computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const
-{
-  return MeshAlgorithms::computeFaceGeometry(mesh, f);
-}
+// std::tuple<double, AmanziGeometry::Point, Point_List>
+// MeshFrameworkAlgorithms::computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const
+// {
+//   return MeshAlgorithms::computeFaceGeometry(mesh, f);
+// }
 
 std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
 MeshFrameworkAlgorithms::computeEdgeGeometry(const MeshFramework& mesh, const Entity_ID c) const
 {
   return MeshAlgorithms::computeEdgeGeometry(mesh, c);
 }
-std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-MeshFrameworkAlgorithms::computeEdgeGeometry(const Mesh& mesh, const Entity_ID c) const
-{
-  return MeshAlgorithms::computeEdgeGeometry(mesh, c);
-}
+// std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
+// MeshFrameworkAlgorithms::computeEdgeGeometry(const Mesh& mesh, const Entity_ID c) const
+// {
+//   return MeshAlgorithms::computeEdgeGeometry(mesh, c);
+// }
 
-Point_List
-MeshFrameworkAlgorithms::computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_List& faces) const
-{
-  return MeshAlgorithms::computeBisectors(mesh, c, faces);
-}
+// Point_List
+// MeshFrameworkAlgorithms::computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_List& faces) const
+// {
+//   return MeshAlgorithms::computeBisectors(mesh, c, faces);
+// }
 
 
 

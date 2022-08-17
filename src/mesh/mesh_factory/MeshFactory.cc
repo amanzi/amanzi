@@ -30,7 +30,7 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
   }
   Teuchos::RCP<MeshFramework> mesh_fw =
     MeshFrameworkFactory::create(parent_mesh->getMeshFramework(), setids, setkind, flatten);
-  auto mesh = Teuchos::rcp(new MeshCache(mesh_fw));
+  auto mesh = Teuchos::rcp(new MeshCache<MemSpace_type::HOST>(mesh_fw));
   mesh->setParentMesh(parent_mesh);
   MeshAlgorithms::cacheDefault(*mesh);
   return mesh;
@@ -46,7 +46,7 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
   Entity_ID_List entities;
   for (const auto& setname : setnames) {
     auto l_entities = parent_mesh->getSetEntities(setname, setkind, Parallel_type::OWNED);
-    for (const auto& ent : l_entities) entities.emplace_back(ent);
+    for (int i=0; i!=l_entities.size(); ++i) entities.emplace_back(l_entities[i]);
   }
   return create(parent_mesh, entities, setkind, flatten);
 }
@@ -54,7 +54,7 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
 // Create a 1D Column Mesh from a columnar structured volume mesh.
 //
 Teuchos::RCP<Mesh>
-MeshFactory::createColumn(const Teuchos::RCP<const Mesh>& parent, int col_id)
+MeshFactory::createColumn(const Teuchos::RCP<Mesh>& parent, int col_id)
 {
   if (parent->getMeshFramework() == Teuchos::null) {
     Errors::Message msg("Cannot create a column mesh from a parent whose framework has been deleted.");
@@ -64,7 +64,8 @@ MeshFactory::createColumn(const Teuchos::RCP<const Mesh>& parent, int col_id)
   parent->buildColumns();
   Teuchos::RCP<MeshFramework> column_extracted_3D =
     MeshFrameworkFactory::create(parent->getMeshFramework(),
-            parent->columns.cells[col_id], Entity_kind::CELL, false);
+            asVector(parent->columns.getCells<MemSpace_type::HOST>(col_id)),
+            Entity_kind::CELL, false);
 
   // create the MeshFrameworkColumn
   Teuchos::RCP<MeshFramework> column_1D =

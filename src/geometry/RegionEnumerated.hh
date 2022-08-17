@@ -50,8 +50,7 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 class RegionEnumerated : public Region {
-public:
-
+ public:
   RegionEnumerated(const std::string& name,
                    const int id,
                    const std::string& entity_str,
@@ -63,8 +62,8 @@ public:
 
   // Is the the specified point inside this region
   bool inside(const Point& p) const;
-  
-protected:
+
+ protected:
   std::string entity_str_; // what kind of entities make up this set
   const std::vector<Entity_ID> entities_; // list of those included
 };

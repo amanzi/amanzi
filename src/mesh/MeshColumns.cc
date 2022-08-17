@@ -9,18 +9,18 @@
 // Helper struct for resolving columnar structure of meshes.
 
 
+#include "MeshUtils.hh"
 #include "MeshColumns.hh"
 #include "MeshCache.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
 
-
 //
 // Constructor that guesses how to infer columnar structure.
 //
 void
-MeshColumns::initialize(const MeshCache& mesh)
+MeshColumns::initialize(const MeshCache<MemSpace_type::HOST>& mesh)
 {
   AMANZI_ASSERT(mesh.getSpaceDimension() == 3);
   AMANZI_ASSERT(mesh.getManifoldDimension() == 3);
@@ -38,11 +38,12 @@ MeshColumns::initialize(const MeshCache& mesh)
   initialize(mesh, surface_faces);
 }
 
+
 //
 // Constructor that infers columnar structure from a mesh set.
 //
 void
-MeshColumns::initialize(const MeshCache& mesh, const std::vector<std::string>& regions)
+MeshColumns::initialize(const MeshCache<MemSpace_type::HOST>& mesh, const std::vector<std::string>& regions)
 {
   AMANZI_ASSERT(mesh.getSpaceDimension() == 3);
   AMANZI_ASSERT(mesh.getManifoldDimension() == 3);
@@ -65,19 +66,28 @@ MeshColumns::initialize(const MeshCache& mesh, const std::vector<std::string>& r
   initialize(mesh, surface_faces);
 }
 
+
 void
-MeshColumns::initialize(const MeshCache& mesh, const Entity_ID_List& surface_faces)
+MeshColumns::initialize(const MeshCache<MemSpace_type::HOST>& mesh, const Entity_ID_List& surface_faces)
 {
   // figure out the correct size
   // Note, this is done to make life easier for Kokkos
-  cells.resize(surface_faces.size());
-  faces.resize(surface_faces.size());
+  cells_.rows.resize(surface_faces.size()+1);
+  faces_.rows.resize(surface_faces.size()+1);
+
   int i = 0;
+  int ncells = 0;
+  int nfaces = 0;
   for (Entity_ID f : surface_faces) {
+    view<MemSpace_type::HOST>(cells_.rows)[i] = ncells;
+    view<MemSpace_type::HOST>(faces_.rows)[i] = nfaces;
     auto size = Impl::countCellsInColumn(mesh, f);
-    cells[i].resize(size);
-    faces[i++].resize(size+1);
+    ncells += size;
+    nfaces += size+1;
+    ++i;
   }
+  view<MemSpace_type::HOST>(cells_.rows)[i] = ncells;
+  view<MemSpace_type::HOST>(faces_.rows)[i] = nfaces;
 
   // fill
   i = 0;
@@ -93,7 +103,7 @@ MeshColumns::initialize(const MeshCache& mesh, const Entity_ID_List& surface_fac
 // Actually does the work of building the column, starting at f.
 //
 void
-MeshColumns::buildColumn_(const MeshCache& mesh, Entity_ID f, int col)
+MeshColumns::buildColumn_(const MeshCache<MemSpace_type::HOST>& mesh, Entity_ID f, int col)
 {
   Parallel_type ptype = mesh.getParallelType(Entity_kind::FACE, f);
 
@@ -105,8 +115,8 @@ MeshColumns::buildColumn_(const MeshCache& mesh, Entity_ID f, int col)
   bool done = false;
   int i = 0;
   while (!done) {
-    cells[col][i] = c;
-    faces[col][i] = f;
+    cells.get<MemSpace_type::HOST>(col, i) = c;
+    faces.get<MemSpace_type::HOST>(col, i) = f;
 
     Entity_ID f_opp = Impl::findDownFace(mesh, c);
     if (mesh.getParallelType(Entity_kind::FACE, f_opp) != ptype) {
@@ -117,7 +127,7 @@ MeshColumns::buildColumn_(const MeshCache& mesh, Entity_ID f, int col)
 
     Entity_ID c_opp = Impl::findOpposingCell(mesh, c, f_opp);
     if (c_opp < 0) {
-      faces[col][i+1] = f_opp;
+      faces.get<MemSpace_type::HOST>(col, i+1) = f_opp;
       done = true;
     } else {
       if (mesh.getParallelType(Entity_kind::CELL, c_opp) != ptype) {
@@ -134,7 +144,7 @@ MeshColumns::buildColumn_(const MeshCache& mesh, Entity_ID f, int col)
 namespace Impl {
 
 int
-orientFace(const MeshCache& mesh, const Entity_ID f, const Entity_ID c)
+orientFace(const MeshCache<MemSpace_type::HOST>& mesh, const Entity_ID f, const Entity_ID c)
 {
   auto normal = mesh.getFaceNormal(f, c);
   normal /= AmanziGeometry::norm(normal);
@@ -150,7 +160,7 @@ orientFace(const MeshCache& mesh, const Entity_ID f, const Entity_ID c)
 // Assumes this is well posed... e.g. that there is only one face of c that
 // shares no nodes with f.   Returns -1 if this is not possible.
 Entity_ID
-findDownFace(const MeshCache& mesh, const Entity_ID c)
+findDownFace(const MeshCache<MemSpace_type::HOST>& mesh, const Entity_ID c)
 {
   auto cfaces = mesh.getCellFaces(c);
   // find the one that is down
@@ -164,7 +174,7 @@ findDownFace(const MeshCache& mesh, const Entity_ID c)
 // Finds the cell in face cells that is not c, returning -1 if not possible.
 //
 Entity_ID
-findOpposingCell(const MeshCache& mesh, const Entity_ID c, const Entity_ID f)
+findOpposingCell(const MeshCache<MemSpace_type::HOST>& mesh, const Entity_ID c, const Entity_ID f)
 {
   auto fcells =  mesh.getFaceCells(f, Parallel_type::ALL);
   if (fcells.size() == 1) return -1;
@@ -176,7 +186,7 @@ findOpposingCell(const MeshCache& mesh, const Entity_ID c, const Entity_ID f)
 // Helper function for counting column size
 //
 std::size_t
-countCellsInColumn(const MeshCache& mesh, Entity_ID f)
+countCellsInColumn(const MeshCache<MemSpace_type::HOST>& mesh, Entity_ID f)
 {
   std::size_t count = 0;
   Entity_ID c = mesh.getFaceCells(f, Parallel_type::ALL)[0]; // guaranteed size 1
@@ -196,7 +206,6 @@ countCellsInColumn(const MeshCache& mesh, Entity_ID f)
   }
   return count;
 }
-
 
 
 } // namespace Impl

@@ -12,647 +12,597 @@
 
 #pragma once
 
-#include "MeshDefs.hh"
-#include "Mesh_Helpers.hh"
-#include "MeshFramework.hh"
 #include "MeshCache_decl.hh"
+#include "MeshUtils.hh"
+#include "MeshFramework.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
 
+template<MemSpace_type MEM>
+MeshCache<MEM>::MeshCache()
+  : is_ordered_(false),
+    has_edges_(false),
+    has_nodes_(true)
+{}
+
+
+template<MemSpace_type MEM>
+void MeshCache<MEM>::setParentMesh(const Teuchos::RCP<const MeshCache>& parent)
+{
+  if (parent_ != Teuchos::null && parent_ != parent) {
+    Errors::Message msg("MeshCache::setParentMesh given conflicting parent mesh.");
+    Exceptions::amanzi_throw(msg);
+  }
+  parent_ = parent;
+}
+
+template<MemSpace_type MEM>
+void MeshCache<MEM>::setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_mesh) {
+  framework_mesh_ = framework_mesh;
+  // always save the algorithms, so we can throw away the data
+  algorithms_ = framework_mesh->getAlgorithms();
+  has_edges_ = framework_mesh->hasEdges();
+  has_nodes_ = framework_mesh->hasNodes();
+  comm_ = framework_mesh_->getComm();
+  gm_ = framework_mesh_->getGeometricModel();
+  space_dim_ = framework_mesh_->getSpaceDimension();
+  manifold_dim_ = framework_mesh_->getManifoldDimension();
+  is_logical_ = framework_mesh_->isLogical();
+
+  is_ordered_ = framework_mesh_->isOrdered();
+  has_edges_ = framework_mesh_->hasEdges();
+
+  bool natural_ordered_maps = plist_->get<bool>("natural map ordering", false);
+  maps_.initialize(*framework_mesh_, natural_ordered_maps);
+}
+
+
+template<MemSpace_type MEM>
+bool
+MeshCache<MEM>::isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const {
+  if (rtype == AmanziGeometry::RegionType::LABELEDSET && framework_mesh_.get()) {
+    return framework_mesh_->isValidSetType(rtype, kind);
+  }
+  return true;
+}
+
+
+template<MemSpace_type MEM>
+int
+MeshCache<MEM>::getSetSize(const std::string& region_name,
+                      const Entity_kind kind,
+                      const Parallel_type ptype) const {
+  return getSetEntities(region_name, kind, ptype).size();
+}
+
+
 //
-// This is an example where all specializations are implemented
+// TODO --etc
+// This should be updated -- only cache the ALL set, then construct the
+// OWNED or GHOST set on demand.  No need to save both OWNED and ALL.
 //
-template<AccessPattern AP>
-AmanziGeometry::Point
-MeshCache::getNodeCoordinate(const Entity_ID n) const
-{
-  if (node_coordinates_cached) return node_coordinates[n];
-  if (framework_mesh_.get()) return framework_mesh_->getNodeCoordinate(n);
-  throwAccessError_("getNodeCoordinate");
-  return AmanziGeometry::Point();
-}
-
-template<> inline
-AmanziGeometry::Point
-MeshCache::getNodeCoordinate<AccessPattern::CACHE>(const Entity_ID n) const
-{
-  return node_coordinates[n];
-}
-
-template<> inline
-AmanziGeometry::Point
-MeshCache::getNodeCoordinate<AccessPattern::FRAMEWORK>(const Entity_ID n) const
-{
-  return framework_mesh_->getNodeCoordinate(n);
-}
-
-template<> inline
-AmanziGeometry::Point
-MeshCache::getNodeCoordinate<AccessPattern::RECOMPUTE>(const Entity_ID n) const
-{
-  throwAccessError_("getNodeCoordinate");
-  return AmanziGeometry::Point();
-}
-
+// TODO --etc
+// Don't cache "ALL" or "BOUNDARY" labeled sets.  Are there others that are
+// just as fast to create as to cache?
 //
-// This is an example where only the default is currently implemented because
-// there is no real need to use the framework in this case.  We COULD implement
-// all of these in the future, and the interface would allow this.
-//
-template<AccessPattern AP>
-Point_View
-MeshCache::getEdgeCoordinates(const Entity_ID n) const
+template<MemSpace_type MEM>
+decltype(auto)
+MeshCache<MEM>::getSetEntities(const std::string& region_name,
+        const Entity_kind kind,
+        const Parallel_type ptype) const
 {
-  if (edge_coordinates_cached) return edge_coordinates[n];
-  return MeshAlgorithms::getEdgeCoordinates(*this, n);
+  auto key = std::make_tuple(region_name, kind, ptype);
+  if (!sets_.count(key)) {
+    auto region = getGeometricModel()->FindRegion(region_name);
+    if (region == Teuchos::null) {
+      Errors::Message msg;
+      msg << "Cannot find region of name \"" << region_name << "\" in the geometric model.";
+      Exceptions::amanzi_throw(msg);
+    }
+    MeshCache<MemSpace_type::HOST> this_on_host(*this);
+    sets_[key] = asDualView(resolveMeshSet(*region, kind, ptype, this_on_host));
+
+    // Error on zero -- some zeros already error internally (at the framework
+    // level) but others don't.  This is the highest level we can catch these at.
+    int lsize = view<MEM>(sets_.at(key)).size();
+    int gsize = 0;
+    getComm()->SumAll(&lsize, &gsize, 1);
+    if (gsize == 0) {
+      Errors::Message msg;
+      msg << "Region \"" << region_name << "\" has no entities on this mesh of type " << to_string(kind);
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+  return view<MEM>(sets_.at(key));
 }
 
-template<AccessPattern AP>
-Point_View
-MeshCache::getFaceCoordinates(const Entity_ID n) const
+template<MemSpace_type MEM>
+decltype(auto)
+MeshCache<MEM>::getSetEntitiesAndVolumeFractions(const std::string& region_name,
+        const Entity_kind kind,
+        const Parallel_type ptype) const
 {
-  if (face_coordinates_cached) return face_coordinates[n];
-  return MeshAlgorithms::getFaceCoordinates(*this, n);
+  auto key = std::make_tuple(region_name, kind, ptype);
+  if (!set_vol_fracs_.count(key)) {
+    auto region = getGeometricModel()->FindRegion(region_name);
+    if (region == Teuchos::null) {
+      Errors::Message msg;
+      msg << "Cannot find region of name \"" << region_name << "\" in the geometric model.";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    Double_List vol_fracs_list;
+    MeshCache<MemSpace_type::HOST> this_on_host(*this);
+    sets_[key] = asDualView(resolveMeshSetVolumeFractions(*region, kind, ptype, vol_fracs_list, this_on_host));
+    set_vol_fracs_[key] = asDualView(vol_fracs_list);
+  }
+  return std::make_pair(view<MEM>(sets_.at(key)), view<MEM>(set_vol_fracs_.at(key)));
 }
 
-template<AccessPattern AP>
-Point_View
-MeshCache::getCellCoordinates(const Entity_ID n) const
-{
-  if (cell_coordinates_cached) return cell_coordinates[n];
-  return MeshAlgorithms::getCellCoordinates(*this, n);
-}
 
-template<AccessPattern AP>
-AmanziGeometry::Point
-MeshCache::getCellCentroid(const Entity_ID c) const
+template<MemSpace_type MEM>
+Entity_ID
+MeshCache<MEM>::getNumEntities(const Entity_kind kind, const Parallel_type ptype) const
 {
-  if (cell_geometry_cached) return cell_centroids[c];
-  auto vol_cent = algorithms_->computeCellGeometry(*this, c);
-  return vol_cent.second;
-}
-
-template<AccessPattern AP>
-AmanziGeometry::Point
-MeshCache::getFaceCentroid(const Entity_ID f) const
-{
-  if (face_geometry_cached) return face_centroids[f];
-  auto area_cent_norms = algorithms_->computeFaceGeometry(*this, f);
-  return std::get<1>(area_cent_norms);
-}
-
-template<AccessPattern AP>
-AmanziGeometry::Point
-MeshCache::getEdgeCentroid(const Entity_ID e) const
-{
-  if (edge_geometry_cached) return edge_centroids[e];
-  auto vec_cent = algorithms_->computeEdgeGeometry(*this, e);
-  return vec_cent.second;
-}
-
-template<AccessPattern AP>
-AmanziGeometry::Point
-MeshCache::getCentroid(const Entity_kind kind, const Entity_ID ent)
-{
+  Entity_ID nowned, nall;
   switch(kind) {
     case (Entity_kind::CELL) :
-      return getCellCentroid<AP>(ent);
+      nowned = ncells_owned; nall = ncells_all;
       break;
     case (Entity_kind::FACE) :
-      return getFaceCentroid<AP>(ent);
+      nowned = nfaces_owned; nall = nfaces_all;
       break;
     case (Entity_kind::EDGE) :
-      return getEdgeCentroid<AP>(ent);
+      nowned = nedges_owned; nall = nedges_all;
       break;
     case (Entity_kind::NODE) :
-      return getNodeCoordinate<AP>(ent);
+      nowned = nnodes_owned; nall = nnodes_all;
+      break;
+    case (Entity_kind::BOUNDARY_FACE) :
+      nowned = nboundary_faces_owned; nall = nboundary_faces_all;
+      break;
+    case (Entity_kind::BOUNDARY_NODE) :
+      nowned = nboundary_nodes_owned; nall = nboundary_nodes_all;
       break;
     default :
-      Errors::Message msg("Invalid argument kind to getCentroid");
-      Exceptions::amanzi_throw(msg);
+      nowned = -1; nall = -1;
   }
-  return AmanziGeometry::Point();
+
+  switch(ptype) {
+    case (Parallel_type::OWNED) :
+      return nowned;
+      break;
+    case (Parallel_type::ALL) :
+      return nall;
+      break;
+    case Parallel_type::GHOST :
+      return nall - nowned;
+      break;
+    default :
+      return 0;
+  }
 }
 
-// extent
-template<AccessPattern AP>
-double
-MeshCache::getCellVolume(const Entity_ID c) const
-{
-  if (cell_geometry_cached) return cell_volumes[c];
-  auto vol_cent = algorithms_->computeCellGeometry(*this, c);
-  return vol_cent.first;
-}
 
-template<AccessPattern AP>
-double
-MeshCache::getFaceArea(const Entity_ID f) const
-{
-  if (face_geometry_cached) return face_areas[f];
-  auto area_cent_norms = algorithms_->computeFaceGeometry(*this, f);
-  return std::get<0>(area_cent_norms);
-}
+// template<MemSpace_type MEM>
+// Cell_type MeshCache<MEM>::getCellType(const Entity_ID c) const
+// {
+//   return MeshAlgorithms::getCellType(*this, c);
+// }
 
-template<AccessPattern AP>
-double
-MeshCache::getEdgeLength(const Entity_ID e) const
-{
-  if (edge_geometry_cached) return AmanziGeometry::norm(edge_vectors[e]);
-  auto vec_cent = algorithms_->computeEdgeGeometry(*this, e);
-  return AmanziGeometry::norm(vec_cent.first);
-}
+// template<MemSpace_type MEM>
+// Parallel_type
+// MeshCache<MEM>::getParallelType(const Entity_kind& kind, const Entity_ID id) const
+// {
+//   if (id < getNumEntities(kind, Parallel_type::OWNED)) {
+//     return Parallel_type::OWNED;
+//   } else if (id < getNumEntities(kind, Parallel_type::ALL)) {
+//     return Parallel_type::GHOST;
+//   }
+//   return Parallel_type::UNKNOWN;
+// }
 
-// Normal vector of a face
-template<AccessPattern AP>
-AmanziGeometry::Point
-MeshCache::getFaceNormal(const Entity_ID f) const
-{
-  // if (face_geometry_cached) return face_normals[f][0];
-  // if (framework_mesh_.get()) return framework_mesh_->getFaceNormal(f);
-  // auto area_cent_norms = algorithms_->computeFaceGeometry(*this, f);
-  // return std::get<2>(area_cent_norms)[0];
-  // optimize this later! --etc
-  return getFaceNormal(f, -1, nullptr);
-}
 
-// Normal vector and natural direction of a face, outward with respect to a
-// cell.
+
 //
-// The vector is normalized and then weighted by the area of the face.
-//
-// The orientation is 1 if the outward normal is the same direction as the
-// natural normal, -1 if in opposite directions, and 0 if there is no natural
-// normal.
-template<AccessPattern AP>
-AmanziGeometry::Point
-MeshCache::getFaceNormal(const Entity_ID f,
-        const Entity_ID c, int* orientation) const
+// Build the cache, fine grained control
+// =============================================
+
+// // cell centroid, volume
+// void MeshCache<MEM>cacheCellGeometry()
+// {
+//   if (cell_geometry_cached) return;
+//   cell_volumes.resize(ncells_all);
+//   cell_centroids.resize(ncells_all);
+//   for (Entity_ID i=0; i!=ncells_all; ++i) {
+//     std::tie(cell_volumes[i], cell_centroids[i]) = framework_mesh_->computeCellGeometry(i);
+//   }
+//   cell_geometry_cached = true;
+// }
+
+// cell-face adjacencies
+template<MemSpace_type MEM>
+void MeshCache<MEM>::cacheCellFaces()
 {
-  AmanziGeometry::Point normal;
+  if (data_.cell_faces_cached) return;
+  Entity_ID num_cells = framework_mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  data_.cell_faces = asRaggedArray_DualView(std::bind(&MeshFramework::getCellFaces, framework_mesh_), num_cells);
+  data_.cell_face_directions = asRaggedArray_DualView<int>(std::bind(&MeshFramework::getCellFaces, framework_mesh_), num_cells);
+  data_.cell_faces_cached = true;
+}
 
-  if (face_geometry_cached) {
-    auto fcells = getFaceCells(f, Parallel_type::ALL);
-    if (orientation) *orientation = 0;
+// // cell-edge adjacencies
+// void MeshCache<MEM>cacheCellEdges()
+// {
+//   if (cell_edges_cached) return;
+//   framework_mesh_->hasEdgesOrThrow();
+//   cell_edges.resize(ncells_all);
+//   for (Entity_ID i=0; i!=ncells_all; ++i) {
+//     framework_mesh_->getCellEdges(i, cell_edges[i]);
+//   }
+//   cell_edges_cached = true;
+// }
 
-    Entity_ID cc;
-    std::size_t i;
-    if (c < 0) {
-      cc = fcells[0];
-      i = 0;
-    } else {
-      cc = c;
-      auto ncells = fcells.size();
-      for (i=0; i!=ncells; ++i)
-        if (fcells[i] == cc) break;
-    }
-    normal = face_normals[f][i];
+// // cell-node adjacencies
+// void MeshCache<MEM>cacheCellNodes()
+// {
+//   if (cell_nodes_cached) return;
+//   cell_nodes.resize(ncells_all);
+//   for (Entity_ID i=0; i!=ncells_all; ++i) {
+//     framework_mesh_->getCellNodes(i, cell_nodes[i]);
+//   }
+//   cell_nodes_cached = true;
+// }
 
-    if (getSpaceDimension() == getManifoldDimension()) {
-      if (c < 0) {
-        normal *= MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
-      } else if (orientation) {
-        *orientation = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
-      }
-    } else if (c < 0) {
-      Errors::Message msg("MeshFramework: asking for the natural normal of a submanifold mesh is not valid.");
-      Exceptions::amanzi_throw(msg);
-    }
+// // cell coordinates
+// void MeshCache<MEM>cacheCellCoordinates()
+// {
+//   if (cell_coordinates_cached) return;
+//   cell_coordinates.resize(ncells_all);
+//   for (Entity_ID i=0; i!=ncells_all; ++i) {
+//     cell_coordinates[i] = framework_mesh_->getCellCoordinates(i);
+//   }
+//   cell_coordinates_cached = true;
+// }
 
-  } else if (framework_mesh_.get()) {
-    normal = framework_mesh_->getFaceNormal(f, c, orientation);
 
-  } else {
-    auto geom = algorithms_->computeFaceGeometry(*this, f);
+// // face centroid, area, normal
+// void MeshCache<MEM>cacheFaceGeometry()
+// {
+//   if (face_geometry_cached) return;
+//   double area;
+//   face_centroids.resize(nfaces_all);
+//   face_areas.resize(nfaces_all);
+//   face_normals.resize(nfaces_all);
+//   for (Entity_ID i=0; i!=nfaces_all; ++i) {
+//     std::tie(face_areas[i], face_centroids[i], face_normals[i]) = framework_mesh_->computeFaceGeometry(i);
+//   }
 
-    auto fcells = getFaceCells(f, Parallel_type::ALL);
-    if (orientation) *orientation = 0;
-    Entity_ID cc = (c < 0) ? fcells[0] : c;
-    int i = std::find(fcells.begin(), fcells.end(), cc) - fcells.begin();
-    normal = std::get<2>(geom)[i];
+//   // this could get its own call...
+//   face_normal_directions.resize(nfaces_all);
+//   AMANZI_ASSERT(face_cells_cached);
+//   for (Entity_ID f=0; f!=face_cells.size(); ++f) {
+//     face_normal_directions[f].resize(face_cells[f].size());
+//     for (Entity_ID i=0; i!=face_cells[f].size(); ++i) {
+//       face_normals[f][i] = framework_mesh_->getFaceNormal(f, face_cells[f][i], &face_normal_directions[f][i]);
+//     }
+//   }
 
-    if (getSpaceDimension() == getManifoldDimension()) {
-      if (c < 0) {
-        normal *= MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
-      } else if (orientation) {
-        *orientation = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
-      }
-    } else if (c < 0) {
-      Errors::Message msg("MeshFramework: asking for the natural normal of a submanifold mesh is not valid.");
-      Exceptions::amanzi_throw(msg);
-    }
+//   // this could get its own call...
+//   cell_face_bisectors.resize(ncells_all);
+//   Entity_ID_List faces;
+//   for (Entity_ID i=0; i!=ncells_all; ++i) {
+//     framework_mesh_->getCellFacesAndBisectors(i, faces, &cell_face_bisectors[i]);
+//   }
+//   face_geometry_cached = true;
+// }
+
+// face-cell adjacencies
+template<MemSpace_type MEM>
+void MeshCache<MEM>::cacheFaceCells()
+{
+  if (data_.face_cells_cached) return;
+  data_.face_cells = asRaggedArray_DualView(std::bind(&MeshFramework::getFaceCells, framework_mesh_), nfaces_all);
+  data_.face_cells_cached = true;
+}
+
+// // face-edge adjacencies
+// void MeshCache<MEM>cacheFaceEdges()
+// {
+//   if (face_edges_cached) return;
+//   framework_mesh_->hasEdgesOrThrow();
+//   face_edges.resize(nfaces_all);
+//   face_edge_directions.resize(nfaces_all);
+//   for (Entity_ID i=0; i!=nfaces_all; ++i) {
+//     framework_mesh_->getFaceEdgesAndDirs(i, face_edges[i], &face_edge_directions[i]);
+//   }
+//   face_edges_cached = true;
+// }
+
+// face-node adjacencies
+template<MemSpace_type MEM>
+void MeshCache<MEM>::cacheFaceNodes()
+{
+  if (data_.face_nodes_cached) return;
+  data_.face_nodes = asRaggedArray_DualView(std::bind(&MeshFramework::getFaceNodes, framework_mesh_), nfaces_all);
+  data_.face_nodes_cached = true;
+}
+
+// // face coordinates
+// void MeshCache<MEM>cacheFaceCoordinates()
+// {
+//   if (face_coordinates_cached) return;
+//   face_coordinates.resize(nfaces_all);
+//   for (Entity_ID i=0; i!=nfaces_all; ++i) {
+//     face_coordinates[i] = framework_mesh_->getFaceCoordinates(i);
+//   }
+//   face_coordinates_cached = true;
+// }
+
+
+// // edge centroid, length, vector
+// void MeshCache<MEM>cacheEdgeGeometry()
+// {
+//   if (edge_geometry_cached) return;
+//   framework_mesh_->hasEdgesOrThrow();
+
+//   edge_centroids.resize(nedges_all);
+//   edge_vectors.resize(nedges_all);
+//   for (Entity_ID i=0; i!=nedges_all; ++i) {
+//     std::tie(edge_vectors[i], edge_centroids[i]) = framework_mesh_->computeEdgeGeometry(i);
+//   }
+//   edge_geometry_cached = true;
+// }
+
+// // edge-cell adjacencies
+// void MeshCache<MEM>cacheEdgeCells()
+// {
+//   if (edge_cells_cached) return;
+//   framework_mesh_->hasEdgesOrThrow();
+//   edge_cells.resize(nedges_all);
+//   for (Entity_ID i=0; i!=nedges_all; ++i) {
+//     framework_mesh_->getEdgeCells(i, Parallel_type::ALL, edge_cells[i]);
+//   }
+//   edge_cells_cached = true;
+// }
+
+// // edge-face adjacencies
+// void MeshCache<MEM>cacheEdgeFaces()
+// {
+//   if (edge_faces_cached) return;
+//   framework_mesh_->hasEdgesOrThrow();
+//   edge_faces.resize(nedges_all);
+//   for (Entity_ID i=0; i!=nedges_all; ++i) {
+//     framework_mesh_->getEdgeFaces(i, Parallel_type::ALL, edge_faces[i]);
+//   }
+//   edge_faces_cached = true;
+// }
+
+// // edge-node adjacencies
+// void MeshCache<MEM>cacheEdgeNodes()
+// {
+//   if (edge_nodes_cached) return;
+//   framework_mesh_->hasEdgesOrThrow();
+//   edge_nodes.resize(nedges_all);
+//   for (Entity_ID i=0; i!=nedges_all; ++i) {
+//     framework_mesh_->getEdgeNodes(i, edge_nodes[i]);
+//   }
+//   edge_nodes_cached = true;
+// }
+
+// // edge coordinates
+// void MeshCache<MEM>cacheEdgeCoordinates()
+// {
+//   if (edge_coordinates_cached) return;
+//   edge_coordinates.resize(nedges_all);
+//   for (Entity_ID i=0; i!=nedges_all; ++i) {
+//     edge_coordinates[i] = framework_mesh_->getEdgeCoordinates(i);
+//   }
+//   edge_coordinates_cached = true;
+// }
+
+
+// // node-cell adjacencies
+// void MeshCache<MEM>cacheNodeCells()
+// {
+//   if (node_cells_cached) return;
+//   node_cells.resize(nnodes_all);
+//   for (Entity_ID i=0; i!=nnodes_all; ++i) {
+//     framework_mesh_->getNodeCells(i, Parallel_type::ALL, node_cells[i]);
+//   }
+//   node_cells_cached = true;
+// }
+
+// // node-face adjacencies
+// void MeshCache<MEM>cacheNodeFaces()
+// {
+//   if (node_faces_cached) return;
+//   node_faces.resize(nnodes_all);
+//   for (Entity_ID i=0; i!=nnodes_all; ++i) {
+//     framework_mesh_->getNodeFaces(i, Parallel_type::ALL, node_faces[i]);
+//   }
+//   node_faces_cached = true;
+// }
+
+// // node-edge adjacencies
+// void MeshCache<MEM>cacheNodeEdges()
+// {
+//   if (node_edges_cached) return;
+//   framework_mesh_->hasEdgesOrThrow();
+//   node_edges.resize(nnodes_all);
+//   for (Entity_ID i=0; i!=nnodes_all; ++i) {
+//     framework_mesh_->getNodeEdges(i, Parallel_type::ALL, node_edges[i]);
+//   }
+//   node_edges_cached = true;
+// }
+
+// node coordinates
+template<MemSpace_type MEM>
+void MeshCache<MEM>::cacheNodeCoordinates()
+{
+  if (data_.node_coordinates_cached) return;
+  data_.node_coordinates.resize(nnodes_all);
+  for (Entity_ID i=0; i!=nnodes_all; ++i) {
+    view<MemSpace_type::HOST>(data_.node_coordinates)[i] = framework_mesh_->getNodeCoordinate(i);
   }
-  return normal;
+
+  data_.node_coordinates.template modify<typename Point_DualView::host_mirror_space>();
+  data_.node_coordinates.template sync<typename Point_DualView::execution_space>();
+  data_.node_coordinates_cached = true;
 }
 
-// Vector describing the edge, where the length is the edge length.
-//
-// Orientation is the natural orientation, e.g. that it points from node 0 to
-// node 1 with respect to edge_node adjacency information.
-template<AccessPattern AP>
-AmanziGeometry::Point
-MeshCache::getEdgeVector(const Entity_ID e) const
+
+// // Note that regions are cached on demand the first time they are requested,
+// // but labeled sets must be pre-cached if the framework mesh is to be
+// // destroyed.
+// void MeshCache<MEM>precacheLabeledSets()
+// {
+//   for (const auto& rgn : *getGeometricModel()) {
+//     if (rgn->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
+//       auto rgn_lbl = Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
+//       AMANZI_ASSERT(rgn_lbl);
+
+//       if (getParentMesh() != Teuchos::null) {
+//         AMANZI_ASSERT(false); // not yet implemented lifted sets
+//       } else {
+//         auto entity_kind = createEntityKind(rgn_lbl->entity_str());
+//         Entity_ID_List set_ents;
+//         framework_mesh_->getSetEntities(*rgn_lbl, entity_kind, Parallel_type::ALL, set_ents);
+//         auto key = std::make_tuple(rgn->get_name(), entity_kind, Parallel_type::ALL);
+//         sets_[key] = asDualView(set_ents);
+//       }
+//     }
+//   }
+// }
+
+// build the MeshMaps object
+// void MeshCache<MEM>::buildMaps_(bool natural)
+// {
+// }
+
+
+// void MeshCache<MEM>setNodeCoordinate(const Entity_ID n, const AmanziGeometry::Point& coord)
+// {
+//   if (framework_mesh_.get())
+//     framework_mesh_->setNodeCoordinate(n, coord);
+//   if (node_coordinates_cached)
+//     node_coordinates[n] = coord;
+// }
+
+// // common error messaging
+// void MeshCache<MEM>throwAccessError_(const std::string& func_name) const
+// {
+//   Errors::Message msg;
+//   msg << "MeshCache<MEM>" << func_name << " cannot compute this quantity -- not cached and framework does not exist.";
+//   Exceptions::amanzi_throw(msg);
+// }
+
+
+// Entity_ID
+// MeshCache<MEM>getEntityParent(const Entity_kind kind, const Entity_ID entid) const
+// {
+//   if (parent_entities_cached) {
+//     switch(kind) {
+//       case Entity_kind::CELL:
+//         return parent_cells[entid];
+//         break;
+//       case Entity_kind::FACE:
+//         return parent_faces[entid];
+//         break;
+//       case Entity_kind::EDGE:
+//         return parent_edges[entid];
+//         break;
+//       case Entity_kind::NODE:
+//         return parent_nodes[entid];
+//       default: {}
+//     }
+//   } else if (framework_mesh_.get()) {
+//     return framework_mesh_->getEntityParent(kind, entid);
+//   }
+//   return -1;
+// }
+
+
+
+
+// namespace MeshAlgorithms {
+
+// void cacheAll(MeshCache& mesh)
+// {
+//   // caches everything, likely just for testing
+//   mesh.cacheNodeCoordinates();
+
+//   mesh.cacheCellFaces();
+//   mesh.cacheCellNodes();
+//   mesh.cacheCellCoordinates();
+//   mesh.cacheFaceCells();
+//   mesh.cacheFaceNodes();
+//   mesh.cacheFaceCoordinates();
+//   mesh.cacheNodeCells();
+//   mesh.cacheNodeFaces();
+//   mesh.cacheFaceGeometry();
+//   mesh.cacheCellGeometry();
+
+//   if (mesh.hasEdges()) {
+//     mesh.cacheCellEdges();
+//     mesh.cacheEdgeCells();
+//     mesh.cacheFaceEdges();
+//     mesh.cacheEdgeFaces();
+//     mesh.cacheNodeEdges();
+//     mesh.cacheEdgeNodes();
+//     mesh.cacheEdgeGeometry();
+//   }
+// }
+
+template<MemSpace_type MEM>
+void cacheDefault(MeshCache<MEM>& mesh)
 {
-  if (edge_geometry_cached) return edge_vectors[e];
-  auto vec_cent = algorithms_->computeEdgeGeometry(*this, e);
-  return vec_cent.first;
-}
+  // caches what the developers currently think is best
+  mesh.cacheNodeCoordinates();
 
-//---------------------
-// Downward adjacencies
-//---------------------
-// Get faces of a cell
-//
-// On a distributed mesh, this will return all the faces of the
-// cell, OWNED or GHOST. If the framework supports it, the faces will be
-// returned in a standard order according to Exodus II convention
-// for standard cells in all other situations (not supported or
-// non-standard cells), the list of faces will be in arbitrary order
-//
-// In 3D manifolds and 2D manifolds of 2d space, the natural direction of a
-// face is defined by the right-hand-rule of the node ordering.  In 2D
-// manifolds of 3D space, there is no natural direction.
-//
-// Use of bisectors instead of coordinate geometry enables use of logical
-// meshes which may not have geometric coordinates.
-//
-// New interfaces that return by const reference should be preferred rather
-// than those that return void and expect the return value as an argument --
-// this new-style interface works better with Kokkos and should be more
-// efficient in all cases.
-template<AccessPattern AP>
-std::size_t
-MeshCache::getCellNumFaces(const Entity_ID c) const
-{
-  return getCellFaces(c).size();
-}
+  mesh.cacheCellFaces();
+  mesh.cacheFaceCells();
+  mesh.cacheFaceNodes();
+  // mesh.cacheFaceGeometry();
+  // mesh.cacheCellGeometry();
 
-template<AccessPattern AP>
-const Entity_ID_View
-MeshCache::getCellFaces(const Entity_ID c) const
-{
-  if (cell_geometry_cached) return cell_faces[c];
-  if (framework_mesh_.get()) {
-    Entity_ID_View cfaces;
-    framework_mesh_->getCellFaces(c, cfaces);
-    return cfaces;
-  }
-  throwAccessError_("getCellNumFaces");
-  return cell_faces[c]; // NOTE: silences compiler warnings
-}
-
-template<AccessPattern AP>
-const Entity_Direction_View
-MeshCache::getCellFaceDirections(const Entity_ID c) const
-{
-  if (cell_geometry_cached) return cell_face_directions[c];
-  if (framework_mesh_.get()) {
-    Entity_ID_View faces;
-    Entity_Direction_View dirs;
-    framework_mesh_->getCellFacesAndDirs(c, faces, &dirs);
-    return dirs;
-  }
-  throwAccessError_("getCellNumFaces");
-  return cell_face_directions[c]; // NOTE: silences compiler warnings
+  // if (mesh.hasEdges()) {
+  //   mesh.cacheFaceEdges();
+  //   mesh.cacheEdgeFaces();
+  //   mesh.cacheEdgeGeometry();
+  // }
 }
 
 
-template<AccessPattern AP>
-std::pair<const Entity_ID_View, const Entity_Direction_View>
-MeshCache::getCellFacesAndDirections(const Entity_ID c) const
-{
-  if (cell_geometry_cached) return std::make_pair(cell_faces[c], cell_face_directions[c]);
-  if (framework_mesh_.get()) {
-    Entity_ID_View faces;
-    Entity_Direction_View dirs;
-    framework_mesh_->getCellFacesAndDirs(c, faces, &dirs);
-    return std::make_pair(faces, dirs);
-  }
-  throwAccessError_("getCellNumFaces");
-  return std::make_pair(cell_faces[c], cell_face_directions[c]); // NOTE: silences compiler warnings
-}
-
-template<AccessPattern AP>
-std::pair<const Entity_ID_View, const Point_View>
-MeshCache::getCellFacesAndBisectors(const Entity_ID c) const
-{
-  if (face_geometry_cached) return std::make_pair(cell_faces[c], cell_face_bisectors[c]);
-  Entity_ID_View faces = getCellFaces(c);
-  Point_View bisectors = algorithms_->computeBisectors(*this, c, faces);
-  return std::make_pair(faces, bisectors);
-}
-
-// NOTE: all deprecated pragmas should go back in after finished refactoring
-// [[deprecated("Prefer to use non-void variant that returns faces directly")]]
-template<AccessPattern AP>
-void
-MeshCache::getCellFaces(const Entity_ID c,
-                        Entity_ID_View& faces) const
-{
-  faces = getCellFaces(c);
-}
-
-
-//[[deprecated("Prefer to use non-void variant that returns faces directly")]]
-template<AccessPattern AP>
-void
-MeshCache::getCellFacesAndDirs(const Entity_ID c,
-        Entity_ID_View& faces,
-        Entity_Direction_View * const dirs) const
-{
-  if (cell_geometry_cached) {
-    faces = cell_faces[c];
-    if (dirs) *dirs = cell_face_directions[c];
-    return;
-  }
-  if (dirs) std::tie(faces, *dirs) = getCellFacesAndDirections(c);
-  else faces = getCellFaces(c);
-}
-
-//[[deprecated("Prefer to use non-void variant that returns faces directly")]]
-template<AccessPattern AP>
-void
-MeshCache::getCellFacesAndBisectors(
-  const Entity_ID c,
-  Entity_ID_View& faces,
-  Point_View * const bisectors) const
-{
-  if (bisectors) std::tie(faces, *bisectors) = getCellFacesAndBisectors(c);
-  else faces = getCellFaces(c);
-}
-
-// Get edges of a cell.
-template<AccessPattern AP>
-std::size_t
-MeshCache::getCellNumEdges(const Entity_ID c) const
-{
-  return getCellEdges(c).size();
-}
-
-template<AccessPattern AP>
-const Entity_ID_View
-MeshCache::getCellEdges(const Entity_ID c) const
-{
-  if (cell_edges_cached) return cell_edges[c];
-  return MeshAlgorithms::computeCellEdges(*this, c);
-}
-
-//[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-template<AccessPattern AP>
-void
-MeshCache::getCellEdges(const Entity_ID c, Entity_ID_View& edges) const
-{
-  edges = getCellEdges(c);
-}
-
-// Get nodes of a cell.
-template<AccessPattern AP>
-std::size_t
-MeshCache::getCellNumNodes(const Entity_ID c) const
-{
-  return getCellNodes(c).size();
-}
-
-template<AccessPattern AP>
-const Entity_ID_View
-MeshCache::getCellNodes(const Entity_ID c) const
-{
-  if (cell_nodes_cached) return cell_nodes[c];
-  if (framework_mesh_) {
-    // note we prefer the framework to the algorithm, because the framework may
-    // provide these in a special order, while the algorithm does not!
-    //
-    // Note this opens up to possible bugs in 2D -- todo -- order nodes in the
-    // algorithm in 2D at least.
-    Entity_ID_View cnodes;
-    framework_mesh_->getCellNodes(c, cnodes);
-    return cnodes;
-  }
-  return MeshAlgorithms::computeCellNodes(*this, c);
-}
-
-//[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
-template<AccessPattern AP>
-void
-MeshCache::getCellNodes(const Entity_ID c, Entity_ID_View& nodes) const
-{
-  nodes = getCellNodes(c);
-}
-
-// Get edges of a face and directions in which the face uses the edges.
-//
-// In 3D, edge direction is 1 when it is oriented counter clockwise
-// with respect to the face natural normal.
-//
-// On a distributed mesh, this will return all the edges of the
-// face, OWNED or GHOST. If the framework supports it, the edges will be
-// returned in a ccw order around the face as it is naturally defined.
-//
-// IMPORTANT NOTE IN 2D: In meshes where the cells are two
-// dimensional, faces and edges are identical. For such cells, this
-// operator will return a single edge and a direction of 1. However,
-// this direction cannot be relied upon to compute, say, a contour
-// integral around the 2D cell.
-template<AccessPattern AP>
-std::size_t
-MeshCache::getFaceNumEdges(const Entity_ID f) const
-{
-  return getFaceEdges(f).size();
-}
-
-template<AccessPattern AP>
-const Entity_ID_View
-MeshCache::getFaceEdges(const Entity_ID f) const
-{
-  if (face_edges_cached) return face_edges[f];
-  if (framework_mesh_.get()) {
-    Entity_ID_List edges;
-    framework_mesh_->getFaceEdges(f, edges);
-    return edges;
-  }
-  throwAccessError_("getFaceEdges");
-  return face_edges[f]; // silences warnings
-}
-
-template<AccessPattern AP>
-std::pair<const Entity_ID_View, const Entity_Direction_View>
-MeshCache::getFaceEdgesAndDirections(const Entity_ID f) const
-{
-  if (face_edges_cached) return std::make_pair(face_edges[f], face_edge_directions[f]);
-  if (framework_mesh_.get()) {
-    Entity_ID_View edges;
-    Entity_Direction_View dirs;
-    framework_mesh_->getFaceEdgesAndDirs(f, edges, &dirs);
-    return std::make_pair(edges, dirs);
-  }
-  throwAccessError_("getFaceEdgesAndDirections");
-  return std::make_pair(Entity_ID_View(), Entity_Direction_View());
-}
-
-//[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-template<AccessPattern AP>
-void
-MeshCache::getFaceEdges(const Entity_ID f,
-                        Entity_ID_View& edges) const
-{
-  edges = getFaceEdges(f);
-}
-
-//[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-template<AccessPattern AP>
-void
-MeshCache::getFaceEdgesAndDirs(const Entity_ID f,
-        Entity_ID_View& edges,
-        Entity_Direction_View * const dirs) const
-{
-  if (dirs) std::tie(edges, *dirs) = getFaceEdgesAndDirections(f);
-  else edges = getFaceEdges(f);
-}
-
-// Get nodes of face
-//
-// In 3D, the nodes of the face are returned in ccw order consistent
-// with the face normal.
-template<AccessPattern AP>
-std::size_t
-MeshCache::getFaceNumNodes(const Entity_ID f) const
-{
-  return getFaceNodes(f).size();
-}
-
-template<AccessPattern AP>
-const Entity_ID_View
-MeshCache::getFaceNodes(const Entity_ID f) const
-{
-  if (face_nodes_cached) return face_nodes[f];
-  if (framework_mesh_.get()) {
-    Entity_ID_View fnodes;
-    framework_mesh_->getFaceNodes(f, fnodes);
-    return fnodes;
-  }
-  throwAccessError_("getFaceNodes");
-  return face_nodes[f]; // silence warnings
-}
-
-//[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
-template<AccessPattern AP>
-void
-MeshCache::getFaceNodes(const Entity_ID f, Entity_ID_View& nodes) const
-{
-  nodes = getFaceNodes(f);
-}
-
-// Get nodes of edge
-template<AccessPattern AP>
-std::size_t
-MeshCache::getEdgeNumNodes(const Entity_ID e) const
-{
-  return getEdgeNodes(e).size();
-}
-
-template<AccessPattern AP>
-const Entity_ID_View
-MeshCache::getEdgeNodes(const Entity_ID e) const
-{
-  if (edge_nodes_cached) return edge_nodes[e];
-  if (framework_mesh_.get()) {
-    Entity_ID_View enodes;
-    framework_mesh_->getEdgeNodes(e, enodes);
-    return enodes;
-  }
-  throwAccessError_("getEdgeNodes");
-  return edge_nodes[e];
-}
-
-//[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
-template<AccessPattern AP>
-void
-MeshCache::getEdgeNodes(const Entity_ID e, Entity_ID_View& nodes) const
-{
-  nodes = getEdgeNodes(e);
-}
-
-//[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
-template<AccessPattern AP>
-void
-MeshCache::getEdgeNodes(const Entity_ID e, Entity_ID* n0, Entity_ID* n1) const
-{
-  auto nodes = getEdgeNodes(e);
-  if (n0) *n0 = nodes[0];
-  if (n1) *n1 = nodes[1];
-}
-
-
-//-------------------
-// Upward adjacencies
-//-------------------
-// The cells are returned in no particular order. Also, the order of cells
-// is not guaranteed to be the same for corresponding faces on different
-// processors
-template<AccessPattern AP>
-std::size_t
-MeshCache::getFaceNumCells(const Entity_ID f, const Parallel_type ptype) const
-{
-  return getFaceCells(f, ptype).size();
-}
-
-template<AccessPattern AP>
-const Entity_ID_View
-MeshCache::getFaceCells(const Entity_ID f, const Parallel_type ptype) const
-{
-  if (face_cells_cached) return face_cells[f];
-  if (framework_mesh_.get()) {
-    Entity_ID_List fcells;
-    framework_mesh_->getFaceCells(f, ptype, fcells);
-    return fcells;
-  }
-  throwAccessError_("getFaceCells");
-  return face_cells[f]; // silences warnings
-}
-
-template<AccessPattern AP>
-void
-MeshCache::getFaceCells(const Entity_ID f,
-                        const Parallel_type ptype,
-                        Entity_ID_View& cells) const
-{
-  cells = getFaceCells(f, ptype);
-}
-
-template<AccessPattern AP>
-void
-MeshCache::getEdgeCells(const Entity_ID e,
-                        const Parallel_type ptype,
-                        Entity_ID_View& cells) const
-{
-  // FIXME -- this doesn't respect Parallel_type
-  if (edge_cells_cached) {
-    cells = edge_cells[e];
-  } else if (framework_mesh_) {
-    framework_mesh_->getEdgeCells(e, ptype, cells);
-  } else {
-    Errors::Message msg("MeshCache::getEdgeCells not implemented as generic algorithm.");
-    Exceptions::amanzi_throw(msg);
-  }
-}
-
-template<AccessPattern AP>
-void
-MeshCache::getNodeCells(const Entity_ID n,
-                        const Parallel_type ptype,
-                        Entity_ID_View& cells) const
-{
-  // FIXME -- this doesn't respect Parallel_type
-  if (node_cells_cached) {
-    cells = node_cells[n];
-  } else if (framework_mesh_) {
-    framework_mesh_->getNodeCells(n, ptype, cells);
-  } else {
-    Errors::Message msg("MeshCache::getNodeCells not implemented as generic algorithm.");
-    Exceptions::amanzi_throw(msg);
-  }
-}
-
+// void recacheGeometry(MeshCache& mesh)
+// {
+//   // recaches the geometry, as presumably the nodal coordinates have changed.
+//   if (mesh.edge_coordinates_cached) {
+//     mesh.edge_coordinates_cached = false;
+//     mesh.cacheEdgeCoordinates();
+//   }
+//   if (mesh.edge_geometry_cached) {
+//     mesh.edge_geometry_cached = false;
+//     mesh.cacheEdgeGeometry();
+//   }
+//   if(mesh.face_coordinates_cached) {
+//     mesh.face_coordinates_cached = false;
+//     mesh.cacheFaceCoordinates();
+//   }
+//   if (mesh.face_geometry_cached) {
+//     mesh.face_geometry_cached = false;
+//     mesh.cacheFaceGeometry();
+//   }
+//   if (mesh.cell_coordinates_cached) {
+//     mesh.cell_coordinates_cached = false;
+//     mesh.cacheCellCoordinates();
+//   }
+//   if (mesh.cell_geometry_cached) {
+//     mesh.cell_geometry_cached = false;
+//     mesh.cacheCellGeometry();
+//   }
+// }
 
 
 } // namespace AmanziMesh

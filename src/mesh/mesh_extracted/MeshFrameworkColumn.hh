@@ -68,9 +68,9 @@ struct MeshFrameworkColumnAlgorithms : public MeshFrameworkAlgorithms {
   virtual std::pair<double, AmanziGeometry::Point>
   computeCellGeometry(const MeshFramework& mesh, const Entity_ID c) const override;
 
-  // replicated because of a lack of templated virtual functions
-  virtual std::pair<double, AmanziGeometry::Point>
-  computeCellGeometry(const Mesh& mesh, const Entity_ID c) const override;
+  // // replicated because of a lack of templated virtual functions
+  // virtual std::pair<double, AmanziGeometry::Point>
+  // computeCellGeometry(const Mesh& mesh, const Entity_ID c) const override;
 };
 
 
@@ -116,7 +116,7 @@ class MeshFrameworkColumn : public MeshFramework {
     Entity_ID ent = -1;
     switch (kind) {
       case Entity_kind::FACE:
-        ent = col3D_mesh_->getEntityParent(kind, column_faces_[lid]);
+        ent = col3D_mesh_->getEntityParent(kind, column_faces_(lid));
         break;
       default:
         ent = col3D_mesh_->getEntityParent(kind, lid);
@@ -144,7 +144,7 @@ class MeshFrameworkColumn : public MeshFramework {
   virtual
   void getFaceNodes(const Entity_ID faceid,
                     Entity_ID_List& nodeids) const override {
-    col3D_mesh_->getFaceNodes(column_faces_[faceid], nodeids);
+    col3D_mesh_->getFaceNodes(column_faces_(faceid), nodeids);
   }
 
   // Upward adjacencies
@@ -217,7 +217,7 @@ class MeshFrameworkColumn : public MeshFramework {
   void getFaceCells(const Entity_ID faceid,
                     const Parallel_type ptype,
                     Entity_ID_List& cellids) const override {
-    col3D_mesh_->getFaceCells(column_faces_[faceid], ptype, cellids);
+    col3D_mesh_->getFaceCells(column_faces_(faceid), ptype, cellids);
   }
 
  protected:
@@ -227,7 +227,7 @@ class MeshFrameworkColumn : public MeshFramework {
   Teuchos::RCP<MeshFramework> col3D_mesh_;
   int nfnodes_;
   int column_id_;
-  Entity_ID_List column_faces_;
+  Kokkos::View<Entity_ID*, Kokkos::DefaultHostExecutionSpace> column_faces_;
   Entity_ID_List face_in_column_;
 };
 

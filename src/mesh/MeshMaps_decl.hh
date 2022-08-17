@@ -103,12 +103,18 @@ class MeshMaps {
   void initialize(const Mesh_type& mesh,
                   bool renumber=false);
 
-  const Entity_ID_View& getBoundaryFaces() const {
-    return boundary_faces_;
+  template<MemSpace_type MEM>
+  decltype(auto) // cEntity_ID_View
+  getBoundaryFaces() const {
+    return view<MEM>(boundary_faces_);
   }
-  const Entity_ID_View& getBoundaryNodes() const {
-    return boundary_nodes_;
+
+  template<MemSpace_type MEM>
+  decltype(auto) // cEntity_ID_View
+  getBoundaryNodes() const {
+    return view<MEM>(boundary_nodes_);
   }
+
   const Map_type& getMap(Entity_kind kind, bool include_ghost) const;
   const Import_type& getImporter(Entity_kind kind) const;
   const Import_type& getBoundaryFaceImporter() const {
@@ -124,9 +130,10 @@ class MeshMaps {
   std::map<Entity_kind, Import_ptr_type> importer_;
   Import_ptr_type boundary_face_importer_;
   Import_ptr_type boundary_node_importer_;
-  Entity_ID_View boundary_faces_;
-  Entity_ID_View boundary_nodes_;
+  Entity_ID_DualView boundary_faces_;
+  Entity_ID_DualView boundary_nodes_;
 };
+
 
 } // namespace AmanziMesh
 } // namespace Amanzi

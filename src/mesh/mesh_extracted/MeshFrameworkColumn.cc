@@ -18,11 +18,11 @@ MeshFrameworkColumnAlgorithms::computeCellGeometry(const MeshFramework& mesh, co
 {
   return MeshAlgorithms::computeMeshColumnCellGeometry(mesh, c);
 }
-std::pair<double, AmanziGeometry::Point>
-MeshFrameworkColumnAlgorithms::computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
-{
-  return MeshAlgorithms::computeMeshColumnCellGeometry(mesh, c);
-}
+// std::pair<double, AmanziGeometry::Point>
+// MeshFrameworkColumnAlgorithms::computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
+// {
+//   return MeshAlgorithms::computeMeshColumnCellGeometry(mesh, c);
+// }
 
 // -----------------------------------------------------------------------------
 // Constructor: instantiates base mesh, generates new nodal coordinates,
@@ -68,11 +68,11 @@ void MeshFrameworkColumn::computeSpecialNodeCoordinates_()
   // error will be zero.
 
   // Create a cached object, so that we can use columns.
-  MeshCache col3D_mesh(col3D_mesh_);
+  MeshCache<MemSpace_type::HOST> col3D_mesh(col3D_mesh_);
   col3D_mesh.buildColumns();
 
   // Get the ordered face indexes of the column
-  const Entity_ID_List& colfaces = col3D_mesh.columns.faces[0];
+  auto colfaces = col3D_mesh.columns.getFaces<MemSpace_type::HOST>(0);
   column_faces_ = colfaces;
 
   // mask for face index in the column of faces
@@ -80,7 +80,8 @@ void MeshFrameworkColumn::computeSpecialNodeCoordinates_()
           Parallel_type::ALL), -1);
 
   // How many nodes each "horizontal" face has in the column
-  auto face_nodes = col3D_mesh.getFaceNodes(column_faces_[0]);
+  Entity_ID_List face_nodes;
+  col3D_mesh_->getFaceNodes(column_faces_[0], face_nodes);
   nfnodes_ = face_nodes.size();
 
   // Set up the new node coordinates This is done in two passes, which may be
@@ -97,9 +98,9 @@ void MeshFrameworkColumn::computeSpecialNodeCoordinates_()
     face_in_column_[column_faces_[j]] = j;
 
     // calculate node coordinates
-    face_nodes = col3D_mesh.getFaceNodes(column_faces_[j]);
-    auto face_coordinates = col3D_mesh.getFaceCoordinates(column_faces_[j]);
-    auto fcen = col3D_mesh.getFaceCentroid(column_faces_[j]);
+    col3D_mesh_->getFaceNodes(column_faces_[j], face_nodes);
+    auto face_coordinates = col3D_mesh_->getFaceCoordinates(column_faces_[j]);
+    auto fcen = col3D_mesh_->getFaceCentroid(column_faces_[j]);
 
     for (int i=0; i!=nfnodes_; ++i) {
       AmanziGeometry::Point coords(space_dim);

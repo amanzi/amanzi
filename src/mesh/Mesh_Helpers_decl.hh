@@ -36,10 +36,6 @@
 
 namespace Amanzi {
 namespace AmanziMesh {
-
-class MeshCache;
-using Mesh = MeshCache;
-
 namespace MeshAlgorithms {
 
 //

@@ -75,7 +75,8 @@ set(mesh_factory_inc_files
 
 add_amanzi_library(mesh_factory
                    SOURCE ${mesh_factory_files} HEADERS ${mesh_factory_inc_files}
-                   LINK_LIBS ${mesh_factory_frameworks} mesh_extracted ${Boost_LIBRARIES})
+                   LINK_LIBS ${mesh_factory_frameworks} ${Boost_LIBRARIES})
+#                   LINK_LIBS ${mesh_factory_frameworks} mesh_extracted ${Boost_LIBRARIES})
 
 
 if (BUILD_TESTS)

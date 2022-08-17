@@ -19,6 +19,8 @@
 #include <vector>
 
 #include "Teuchos_RCP.hpp"
+#include "Kokkos_Core.hpp"
+#include "Kokkos_DualView.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
 
@@ -34,7 +36,13 @@ namespace AmanziMesh {
 using Entity_ID = int;
 using Entity_GID = int;
 using Set_ID = int;
-using size_type = Kokkos::View<int*, Kokkos::DefaultHost>::size_type;
+using size_type = Kokkos::View<int*, Kokkos::DefaultHostExecutionSpace>::size_type;
+
+enum class MemSpace_type {
+  HOST,
+  DEVICE
+};
+
 
 //
 // Lists are on host only
@@ -49,7 +57,7 @@ template<typename T> using RaggedArray_List = std::vector<std::vector<T>>;
 //
 // Views are on host or device
 //
-template<typename T> using View_type = Kokkos::View<T*, Kokkos::DefaultHost>;
+template<typename T> using View_type = Kokkos::View<T*, Kokkos::DefaultHostExecutionSpace>;
 using Entity_ID_View = View_type<Entity_ID>;
 using cEntity_ID_View = View_type<const Entity_ID>;
 using Entity_GID_View = View_type<Entity_GID>;
@@ -62,7 +70,7 @@ using Double_View = View_type<double>;
 using cDouble_View = View_type<const double>;
 
 
-template<typename T> using DualView_type = Kokkos::DualView<T*, Kokkos::DefaultHost>;
+template<typename T> using DualView_type = Kokkos::DualView<T*, Kokkos::DefaultHostExecutionSpace>;
 using Entity_ID_DualView = DualView_type<Entity_ID>;
 using Entity_GID_DualView = DualView_type<Entity_GID>;
 using Entity_Direction_DualView = DualView_type<int>;
@@ -72,11 +80,10 @@ using Double_DualView = DualView_type<double>;
 //
 // This may not be necessary?
 //
-template<typename T>
 struct RaggedArray_View {
   Entity_ID_View rows;
   Entity_ID_View entries;
-}
+};
 
 
 using Map_type = Epetra_Map;
@@ -224,51 +231,6 @@ enum class AccessPattern {
   FRAMEWORK
 };
 
-enum class MemSpace_type {
-  HOST,
-  DEVICE
-};
-
-
-//
-// Utility functions for Kokkos operations
-//
-
-//
-// Get the right view from a dual view
-//
-template<MemSpace_type M, typename DualView>
-auto&
-view(DualView& dv) {
-  if constexpr(MemSpace_type == MemSpace_type::HOST) {
-    return dv.h_view;
-  } else {
-    return dv.d_view;
-  }
-}
-
-//
-// Conversion between list and view through deep_copy.
-//
-template<typename T, typename MemSpace>
-void deep_copy(Kokkos::View<T*, MemSpace>& out, const std::vector<T>& in) {
-  Kokkos::View<T*, Kokkos::DefaultHost, Kokkos::MemoryTraits<Kokkos::Unmanaged> > in_view(in.data(), in.size());
-  Kokkos::deep_copy(out, in_view);
-}
-
-
-//
-// Conversion between list and dual view through deep copy and sync.
-//
-template<typename T, typename MemSpace>
-Kokkos::DualView<T*, MemSpace>
-asDualView(const std::vector<T>& in) {
-  using DV_type = Kokkos::DualView<T*, MemSpace>;
-  DV_type dv;
-  deep_copy(dv.h_view, in);
-  dv.template modify<typename DV_type::host_mirror_space>();
-  dv.template sync<typename DV_type::execution_space>();
-}
 
 }  // namespace AmanziMesh
 }  // namespace Amanzi

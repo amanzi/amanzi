@@ -52,11 +52,6 @@ Entity_ID_List resolveMeshSetVolumeFractions(
   const MeshCache<MemSpace_type::HOST>& mesh);
 
 
-//
-// Note that the Impl namespace is reserved for methods that should not be used
-// outside of the AmanziMesh namespace.  In particular, these are not intended
-// to be used outside of the above "public" function, resolveMeshSet().
-//
 namespace Impl {
 
 Entity_ID_List resolveMeshSet_(const AmanziGeometry::Region& region,

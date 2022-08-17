@@ -42,22 +42,22 @@ set(mesh_inc_files
   MeshMaps_decl.hh
   MeshMaps_impl.hh
   MeshMaps.hh
-  MeshSets.hh
-  MeshColumns.hh
   MeshCache.hh
-  Mesh.hh
-  Mesh_Algorithms.hh
-  DomainSet.hh
+  # MeshSets.hh
+  MeshColumns.hh
+  # Mesh.hh
+  # Mesh_Algorithms.hh
+  # DomainSet.hh
 )
 
 set(mesh_src_files
   GenerationSpec.cc
   MeshFramework.cc
-  MeshSets.cc
+  # MeshCache.cc
+  # MeshSets.cc
   MeshColumns.cc
-  MeshCache.cc
-  Mesh_Algorithms.cc
-  DomainSet.cc
+  # Mesh_Algorithms.cc
+  # DomainSet.cc
 )
 
 #
@@ -80,8 +80,8 @@ if (ENABLE_MESH_MSTK)
   add_subdirectory(mesh_mstk)
 endif(ENABLE_MESH_MSTK)    
 
-add_subdirectory(mesh_extracted)
-add_subdirectory(mesh_logical)
+# add_subdirectory(mesh_extracted)
+# add_subdirectory(mesh_logical)
 
 # Factory class
 add_subdirectory(mesh_factory)
@@ -121,7 +121,9 @@ if (BUILD_TESTS)
     endif()
 
     # Test link libraries
-    set(mesh_test_link_libs geometry mesh mesh_simple mesh_extracted mesh_factory
+    # set(mesh_test_link_libs geometry mesh mesh_simple mesh_extracted mesh_factory
+    #   ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    set(mesh_test_link_libs geometry mesh mesh_simple mesh_factory
       ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # MOAB Mesh framework
@@ -142,96 +144,105 @@ if (BUILD_TESTS)
     add_amanzi_test(mesh_framework_geometry_np2 mesh_framework_geometry NPROCS 2 KIND unit)
     add_amanzi_test(mesh_framework_geometry_np4 mesh_framework_geometry NPROCS 4 KIND unit)
 
-    # Test: tests MeshCache geometry without a cache on a variety of meshes
+    # Test: test test -- just tests that we can make something for
+    # forcing compilation of what is otherwise all header file
+    # implementations.
     add_amanzi_test(mesh_geometry mesh_geometry
                     KIND unit
-                    SOURCE test/Main.cc test/mesh_geometry.cc
+                    SOURCE test/Main.cc test/mesh_construction.cc
                     LINK_LIBS ${mesh_test_link_libs})
-    add_amanzi_test(mesh_geometry_np2 mesh_geometry NPROCS 2 KIND unit)
-    add_amanzi_test(mesh_geometry_np4 mesh_geometry NPROCS 4 KIND unit)
 
-    # Test: tests MeshCace geometry with a cache and no framework on a variety of meshes
-    add_amanzi_test(mesh_cache_geometry mesh_cache_geometry
-                    KIND unit
-                    SOURCE test/Main.cc test/mesh_cache_geometry.cc
-                    LINK_LIBS ${mesh_test_link_libs})
-    add_amanzi_test(mesh_cache_geometry_np2 mesh_cache_geometry NPROCS 2 KIND unit)
-    add_amanzi_test(mesh_cache_geometry_np4 mesh_cache_geometry NPROCS 4 KIND unit)
     
-    # Test: mesh sets
-    #   Tests the use of mesh sets on the above meshes and frameworks.
-    add_amanzi_test(mesh_sets mesh_sets
-                    KIND unit
-                    SOURCE test/Main.cc test/mesh_sets.cc
-                    LINK_LIBS ${mesh_test_link_libs})
-    add_amanzi_test(mesh_sets_np2 mesh_sets NPROCS 2 KIND unit)
-    add_amanzi_test(mesh_sets_np4 mesh_sets NPROCS 4 KIND unit)
-    
-    # Test: mesh deformation
-    #   A basic test of deforming volumetric and surface meshes and
-    #   making sure geometric quantities get updated correctly.
-    add_amanzi_test(mesh_deform mesh_deform
-                    KIND unit
-        	    SOURCE test/Main.cc test/mesh_deform.cc
-        	    LINK_LIBS ${mesh_test_link_libs})
-
-    # Test: mesh columns
-    #   Tests the buildColumns() capability for semi-structured meshes.              
-    add_amanzi_test(mesh_build_columns mesh_build_columns
-                    KIND unit
-        	    SOURCE test/Main.cc test/mesh_build_columns.cc
-        	    LINK_LIBS ${mesh_test_link_libs})
-    add_amanzi_test(mesh_build_columns_np2 mesh_build_columns NPROCS 2 KIND unit)
-
-    # Test: surface extracted mesh
-    #   Tests a surface mesh generated using the mesh framework
-    #   extraction constructor on FACEs with the flatten parameter,
-    #   currently only supported by MSTK.  This extracts a surface
-    #   mesh and checks MeshAudit, geometry, sets, and maps.
-    #
-    # NOTE: Currently, the MeshExtractedManifold tests in here are commented out!
-    add_amanzi_test(mesh_surface_extraction mesh_surface_extraction
-                    KIND unit
-                    SOURCE test/Main.cc test/mesh_surface_extraction.cc
-                    LINK_LIBS ${mesh_test_link_libs})
-    add_amanzi_test(mesh_surface_extraction_np2 mesh_surface_extraction NPROCS 2 KIND unit)
-    add_amanzi_test(mesh_surface_extraction_np4 mesh_surface_extraction NPROCS 4 KIND unit)
-    
-    # Test: volume extracted mesh
-    #   Tests a volumetric mesh generated using the mesh framework
-    #   extraction constructor on CELLs, currently only supported by
-    #   MSTK.  This extracts a set of cells, forms a mesh, and
-    #   checks MeshAudit, geometry, sets, and maps.
-    add_amanzi_test(mesh_volume_extraction mesh_volume_extraction
-                    KIND unit
-                    SOURCE test/Main.cc test/mesh_volume_extraction.cc
-                    LINK_LIBS ${mesh_test_link_libs})
-
-    # Test: column and surface cell extracted meshes
-    #   These are 1-off, simplified meshes that make 1D and 0D
-    #   conceptual meshes for use in subgrid models.  This extracts
-    #   the column, creates a column mesh, and creates a surface cell
-    #   mesh, all using the factory, and then checks sets on these.
-    add_amanzi_test(mesh_subgrid_extractions mesh_subgrid_extractions
-                    KIND unit
-                    SOURCE test/Main.cc test/mesh_subgrid_extractions.cc
-                    LINK_LIBS ${mesh_test_link_libs})
-                  
-    # Test: fracture extracted mesh
-    #   Tests a fracture mesh generated using the mesh framework
-    #   extraction constructor on FACES but not flattened, currently
-    #   only supported by MSTK.  This extracts a set of faces and
-    #   should recognize the shared edges between two intersecting
-    #   planes.
-    # add_amanzi_test(mesh_fracture_extraction mesh_fracture_extraction
+    # # Test: tests MeshCache geometry without a cache on a variety of meshes
+    # add_amanzi_test(mesh_geometry mesh_geometry
     #                 KIND unit
-    #                 SOURCE test/Main.cc test/mesh_fracture_extraction.cc
+    #                 SOURCE test/Main.cc test/mesh_geometry.cc
+    #                 LINK_LIBS ${mesh_test_link_libs})
+    # add_amanzi_test(mesh_geometry_np2 mesh_geometry NPROCS 2 KIND unit)
+    # add_amanzi_test(mesh_geometry_np4 mesh_geometry NPROCS 4 KIND unit)
+
+    # # Test: tests MeshCace geometry with a cache and no framework on a variety of meshes
+    # add_amanzi_test(mesh_cache_geometry mesh_cache_geometry
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/mesh_cache_geometry.cc
+    #                 LINK_LIBS ${mesh_test_link_libs})
+    # add_amanzi_test(mesh_cache_geometry_np2 mesh_cache_geometry NPROCS 2 KIND unit)
+    # add_amanzi_test(mesh_cache_geometry_np4 mesh_cache_geometry NPROCS 4 KIND unit)
+    
+    # # Test: mesh sets
+    # #   Tests the use of mesh sets on the above meshes and frameworks.
+    # add_amanzi_test(mesh_sets mesh_sets
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/mesh_sets.cc
+    #                 LINK_LIBS ${mesh_test_link_libs})
+    # add_amanzi_test(mesh_sets_np2 mesh_sets NPROCS 2 KIND unit)
+    # add_amanzi_test(mesh_sets_np4 mesh_sets NPROCS 4 KIND unit)
+    
+    # # Test: mesh deformation
+    # #   A basic test of deforming volumetric and surface meshes and
+    # #   making sure geometric quantities get updated correctly.
+    # add_amanzi_test(mesh_deform mesh_deform
+    #                 KIND unit
+    #     	    SOURCE test/Main.cc test/mesh_deform.cc
+    #     	    LINK_LIBS ${mesh_test_link_libs})
+
+    # # Test: mesh columns
+    # #   Tests the buildColumns() capability for semi-structured meshes.              
+    # add_amanzi_test(mesh_build_columns mesh_build_columns
+    #                 KIND unit
+    #     	    SOURCE test/Main.cc test/mesh_build_columns.cc
+    #     	    LINK_LIBS ${mesh_test_link_libs})
+    # add_amanzi_test(mesh_build_columns_np2 mesh_build_columns NPROCS 2 KIND unit)
+
+    # # Test: surface extracted mesh
+    # #   Tests a surface mesh generated using the mesh framework
+    # #   extraction constructor on FACEs with the flatten parameter,
+    # #   currently only supported by MSTK.  This extracts a surface
+    # #   mesh and checks MeshAudit, geometry, sets, and maps.
+    # #
+    # # NOTE: Currently, the MeshExtractedManifold tests in here are commented out!
+    # add_amanzi_test(mesh_surface_extraction mesh_surface_extraction
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/mesh_surface_extraction.cc
+    #                 LINK_LIBS ${mesh_test_link_libs})
+    # add_amanzi_test(mesh_surface_extraction_np2 mesh_surface_extraction NPROCS 2 KIND unit)
+    # add_amanzi_test(mesh_surface_extraction_np4 mesh_surface_extraction NPROCS 4 KIND unit)
+    
+    # # Test: volume extracted mesh
+    # #   Tests a volumetric mesh generated using the mesh framework
+    # #   extraction constructor on CELLs, currently only supported by
+    # #   MSTK.  This extracts a set of cells, forms a mesh, and
+    # #   checks MeshAudit, geometry, sets, and maps.
+    # add_amanzi_test(mesh_volume_extraction mesh_volume_extraction
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/mesh_volume_extraction.cc
     #                 LINK_LIBS ${mesh_test_link_libs})
 
-    # Test: mesh KD search
-    add_amanzi_test(mesh_nanoflann mesh_nanoflann
-                    KIND unit
-        	    SOURCE test/Main.cc test/mesh_nanoflann.cc
-        	    LINK_LIBS ${mesh_test_link_libs})
+    # # Test: column and surface cell extracted meshes
+    # #   These are 1-off, simplified meshes that make 1D and 0D
+    # #   conceptual meshes for use in subgrid models.  This extracts
+    # #   the column, creates a column mesh, and creates a surface cell
+    # #   mesh, all using the factory, and then checks sets on these.
+    # add_amanzi_test(mesh_subgrid_extractions mesh_subgrid_extractions
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/mesh_subgrid_extractions.cc
+    #                 LINK_LIBS ${mesh_test_link_libs})
+                  
+    # # Test: fracture extracted mesh
+    # #   Tests a fracture mesh generated using the mesh framework
+    # #   extraction constructor on FACES but not flattened, currently
+    # #   only supported by MSTK.  This extracts a set of faces and
+    # #   should recognize the shared edges between two intersecting
+    # #   planes.
+    # # add_amanzi_test(mesh_fracture_extraction mesh_fracture_extraction
+    # #                 KIND unit
+    # #                 SOURCE test/Main.cc test/mesh_fracture_extraction.cc
+    # #                 LINK_LIBS ${mesh_test_link_libs})
+
+    # # Test: mesh KD search
+    # add_amanzi_test(mesh_nanoflann mesh_nanoflann
+    #                 KIND unit
+    #     	    SOURCE test/Main.cc test/mesh_nanoflann.cc
+    #     	    LINK_LIBS ${mesh_test_link_libs})
 endif()
   
