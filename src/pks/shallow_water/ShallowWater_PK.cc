@@ -418,7 +418,6 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   iters_++;
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
@@ -446,7 +445,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Epetra_MultiVector& h_old = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_old = *soln_->SubVector(1)->Data()->ViewComponent("cell");
 
-  for (int c = 0; c < ncells_wghost; ++c) {
+  for (int c = 0; c < ncells_owned; ++c) {
     double factor = inverse_with_tolerance(h_old[0][c], cell_area2_max_);
     h_c[0][c] = h_old[0][c];
     q_c[0][c] = q_old[0][c];
@@ -514,7 +513,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Epetra_MultiVector& q_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");
 
   // update solution
-  for (int c = 0; c < ncells_wghost; ++c) {
+  for (int c = 0; c < ncells_owned; ++c) {
     double factor = inverse_with_tolerance(h_temp[0][c], cell_area2_max_);
     h_c[0][c] = h_temp[0][c];
     q_c[0][c] = q_temp[0][c];
@@ -607,7 +606,7 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e)
     cell_is_partially_wet = true;
   }
 
-  // depth poisitivity based on [Beljadid et al.' 16]
+  // depth poisitivity based on [Beljadid et al.' 2016, Computers and Fluids]
   if (cell_is_fully_flooded == true) {
     ht_edge = total_depth_grad_->getValue(c, xf);
     if (ht_edge - BathymetryEdgeValue(e, B_n) < 0.0) { ht_edge = ht_c[0][c]; }
@@ -701,7 +700,7 @@ ShallowWater_PK::NumericalSource(const std::vector<double>& U, int c)
     double ht_rec = TotalDepthEdgeValue(c, f);
     double B_rec = BathymetryEdgeValue(f, B_n);
 
-    // Polygonal meshes Beljadid et. al. 2016
+    // Polygonal meshes [Beljadid et al.' 2016, Computers and Fluids]
     S1 += (0.5) * (ht_rec - B_rec) * (ht_rec - B_rec) * normal[0];
     S2 += (0.5) * (ht_rec - B_rec) * (ht_rec - B_rec) * normal[1];
   }
