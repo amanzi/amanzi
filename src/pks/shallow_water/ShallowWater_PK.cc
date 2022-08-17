@@ -569,12 +569,12 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 // Reconstruct if necessary for positivity
 //--------------------------------------------------------------
 double
-ShallowWater_PK::TotalDepthEdgeValue(int c, int e, double htc, double Bc, Epetra_MultiVector B_n)
+ShallowWater_PK::TotalDepthEdgeValue(int c, int e, double htc, double Bc, const Epetra_MultiVector& B_n)
 {
   double ht_edge; // value to return
 
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
-  // set ht_grad = 0 for first order reconstruction
+  // set ht_grad = 0 for first order reconstruction (for debugging purposes)
   //  ht_grad[0][c] = 0.0;
   //  ht_grad[1][c] = 0.0;
 
@@ -604,14 +604,14 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e, double htc, double Bc, Epetra
   }
 
   // depth poisitivity based on [Beljadid et al.' 2016, Computers and Fluids]
-  if (cell_is_fully_flooded == true) {
+  if (cell_is_fully_flooded) {
     ht_edge = total_depth_grad_->getValue(c, xf);
     if (ht_edge - BathymetryEdgeValue(e, B_n) < 0.0) { 
     	ht_edge = htc; 
     }
-  } else if (cell_is_dry == true) {
+  } else if (cell_is_dry) {
     ht_edge = BathymetryEdgeValue(e, B_n);
-  } else if (cell_is_partially_wet == true) {
+  } else if (cell_is_partially_wet) {
     Amanzi::AmanziMesh::Entity_ID_List cfaces;
     mesh_->cell_get_faces(c, &cfaces);
 
@@ -623,27 +623,18 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e, double htc, double Bc, Epetra
 
       Amanzi::AmanziMesh::Entity_ID_List face_nodes;
       mesh_->face_get_nodes(edge, &face_nodes);
+      int n0 = face_nodes[0], n1 = face_nodes[1];
 
-      mesh_->node_get_coordinates(face_nodes[0], &x0);
-      mesh_->node_get_coordinates(face_nodes[1], &x1);
+      mesh_->node_get_coordinates(n0, &x0);
+      mesh_->node_get_coordinates(n1, &x1);
 
-      Amanzi::AmanziGeometry::Point tria_edge0, tria_edge1;
-
-      tria_edge0 = xc - x0;
-      tria_edge1 = xc - x1;
-
-      Amanzi::AmanziGeometry::Point area_cross_product = (0.5) * tria_edge0 ^ tria_edge1;
-
-      double area = norm(area_cross_product);
+      double area = norm((xc - x0) ^ (xc - x1)) / 2.0;
 
       double epsilon;
 
-      double ht_rec_x0 = htc;
-      double ht_rec_x1 = htc;
-
-      if (ht_rec_x0 < B_n[0][face_nodes[0]] && ht_rec_x1 < B_n[0][face_nodes[1]]) {
+      if (htc < B_n[0][n0] && htc < B_n[0][n1]) {
         epsilon = 0.0;
-      } else if (ht_rec_x0 >= B_n[0][face_nodes[0]] && ht_rec_x1 >= B_n[0][face_nodes[1]]) {
+      } else if (htc >= B_n[0][n0] && htc >= B_n[0][n1]) {
         epsilon = 1.0;
       } else {
         epsilon = 0.5;
@@ -676,7 +667,7 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e, double htc, double Bc, Epetra
 // Discretization of the source term (well-balanced for lake at rest)
 //--------------------------------------------------------------------
 std::vector<double>
-ShallowWater_PK::NumericalSource(int c, double htc, double Bc, const Epetra_MultiVector B_n)
+ShallowWater_PK::NumericalSource(int c, double htc, double Bc, const Epetra_MultiVector& B_n)
 {
   AmanziMesh::Entity_ID_List cfaces, cnodes;
   mesh_->cell_get_faces(c, &cfaces);
@@ -732,10 +723,10 @@ ShallowWater_PK::get_dt()
   S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
   auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List cfaces;
 
-  for (int c = 0; c < ncells_wghost; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
     mesh_->cell_get_faces(c, &cfaces);

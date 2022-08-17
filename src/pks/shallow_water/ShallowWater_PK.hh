@@ -90,7 +90,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   double BathymetryEdgeValue(int e, const Epetra_MultiVector& Bn);
 
   // Recalculate total depth for positivity of ponded depth
-  double TotalDepthEdgeValue(int c, int e, double htc, double Bc, Epetra_MultiVector B_n);
+  double TotalDepthEdgeValue(int c, int e, double htc, double Bc, const Epetra_MultiVector& B_n);
 
   // due to rotational invariance of SW equations, we need flux in the
   // x-direction only.
@@ -101,7 +101,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   std::vector<double> NumericalFlux_x_Rusanov(const std::vector<double>&, const std::vector<double>&);
   std::vector<double> NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
 
-  std::vector<double> NumericalSource(int c, double htc, double Bc, const Epetra_MultiVector B_n);
+  std::vector<double> NumericalSource(int c, double htc, double Bc, const Epetra_MultiVector& B_n);
 
   // access
   double get_total_source() const { return total_source_; }

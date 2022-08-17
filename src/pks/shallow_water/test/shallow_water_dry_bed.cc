@@ -86,22 +86,14 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       
       Amanzi::AmanziMesh::Entity_ID_List face_nodes;
       mesh->face_get_nodes(edge, &face_nodes);
+      int n0 = face_nodes[0], n1 = face_nodes[1];
       
-      mesh->node_get_coordinates(face_nodes[0], &x0);
-      mesh->node_get_coordinates(face_nodes[1], &x1);
+      mesh->node_get_coordinates(n0, &x0);
+      mesh->node_get_coordinates(n1, &x1);
       
-      Amanzi::AmanziGeometry::Point tria_edge0, tria_edge1;
+      double area = norm((xc - x0) ^ (xc - x1)) / 2.0;
       
-      tria_edge0 = xc - x0;
-      tria_edge1 = xc - x1;
-      
-      Amanzi::AmanziGeometry::Point area_cross_product =
-      (0.5) * tria_edge0 ^ tria_edge1;
-      
-      double area = norm(area_cross_product);
-      
-      B_c[0][c] += (area / mesh->cell_volume(c)) *
-      (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 2.0;
+      B_c[0][c] += (area / mesh->cell_volume(c)) * (B_n[0][n0] + B_n[0][n1]) / 2.0;
     }
     
     // start with dry bed
