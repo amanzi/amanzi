@@ -75,7 +75,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector& f) override;
 
-  virtual void ModifySolution(double t, TreeVector& A) override;
+  virtual void ModifySolution(double t, TreeVector& A) override { VerifySolution_(A); }
 
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
@@ -106,16 +106,13 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   // access
   double get_total_source() const { return total_source_; }
 
-  // temporal discretization order
-  int temporal_disc_order;
-  // maximum cell area square
-  double cell_area2_max_;
-  
  private:
   void
   InitializeFieldFromField_(const std::string& field0,
                             const std::string& field1, bool call_evaluator);
-  bool ErrorDiagnostics_(double t, int c, double h, double B, double ht);
+
+  void VerifySolution_(TreeVector& A);
+  void ErrorDiagnostics_(double t, int c, double h, double B, double ht);
 
  protected:
   Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -154,15 +151,17 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   // limited reconstruction
   bool use_limiter_;
-  Teuchos::RCP<Operators::ReconstructionCellLinear> total_depth_grad_,
-    bathymetry_grad_;
-  Teuchos::RCP<Operators::ReconstructionCellLinear> discharge_x_grad_,
-    discharge_y_grad_;
+  Teuchos::RCP<Operators::ReconstructionCellLinear> total_depth_grad_, bathymetry_grad_;
+  Teuchos::RCP<Operators::ReconstructionCellLinear> discharge_x_grad_, discharge_y_grad_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
 
   // advanced cfl control
   double cfl_;
   int iters_, max_iters_;
+
+  // control of PK
+  int temporal_disc_order_;
+  double cell_area2_max_;
 
  private:
   // factory registration

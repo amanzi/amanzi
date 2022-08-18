@@ -219,13 +219,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- specific_yield
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_yield", flag);
       if (flag) {
-        TranslateFieldIC_(node, "specific_yield", "-", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, "specific_yield", "-", reg_str, regions, out_ic);
       }
 
       // -- specific storage
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_storage", flag);
       if (flag) {
-        TranslateFieldIC_(node, "specific_storage", "m^-1", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, "specific_storage", "m^-1", reg_str, regions, out_ic);
       }
 
       // -- particle density
@@ -293,7 +293,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- dual porosity: matrix porosity
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
       if (flag) {
-        TranslateFieldIC_(node, "porosity_msp", "-", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, "porosity_msp", "-", reg_str, regions, out_ic);
       }
     }
   }
@@ -328,7 +328,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
       if (flag) {
         TranslateFieldEvaluator_(node, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "aperture", "fracture");
-        TranslateFieldIC_(node, "fracture-normal_permeability", "m^2*s/kg", reg_str, regions, out_ic, out_ev, "normal");
+        TranslateFieldIC_(node, "fracture-normal_permeability", "m^2*s/kg", reg_str, regions, out_ic, "normal");
       } else { 
         msg << "fracture_permeability element must be specified for all materials in fracture network.";
         Exceptions::amanzi_throw(msg);
@@ -336,7 +336,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
       node = GetUniqueElementByTagsString_(inode, "fracture_diffusivity", flag);
       if (flag) {
-        TranslateFieldIC_(node, "fracture-normal_diffusion", "m/s", reg_str, regions, out_ic, out_ev, "normal");
+        TranslateFieldIC_(node, "fracture-normal_diffusion", "m/s", reg_str, regions, out_ic, "normal");
       }
 
       // -- particle density
@@ -348,13 +348,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- specific storage
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_storage", flag);
       if (flag) {
-        TranslateFieldIC_(node, "fracture-specific_storage", "m^-1", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, "fracture-specific_storage", "m^-1", reg_str, regions, out_ic);
       }
 
       // -- thermal conductivity
       node = GetUniqueElementByTagsString_(inode, "fracture_conductivity", flag);
       if (flag) {
-        TranslateFieldIC_(node, "fracture-normal_conductivity", "", reg_str, regions, out_ic, out_ev, "normal");
+        TranslateFieldIC_(node, "fracture-normal_conductivity", "", reg_str, regions, out_ic, "normal");
       }
 
       // -- liquid heat capacity
@@ -613,7 +613,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       std::string domain = (dim_ == 2) ? "domain" : "surface";
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, ponded_depth", flag);
       if (flag) {
-        TranslateFieldIC_(node, Keys::getKey(domain, "ponded_depth"), "m", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, Keys::getKey(domain, "ponded_depth"), "m", reg_str, regions, out_ic);
+      }
+
+      // -- bathymetry
+      node = GetUniqueElementByTagsString_("geometric_model, bathymetry", flag);
+      if (flag) {
+        TranslateFieldIC_(node, Keys::getKey(domain, "bathymetry"), "", reg_str, regions, out_ic, "", { "cell", "node" });
       }
     }
   }
@@ -788,8 +794,8 @@ void InputConverterU::TranslateFieldEvaluator_(
 void InputConverterU::TranslateFieldIC_(
     DOMNode* node, std::string field, std::string unit,
     const std::string& reg_str, const std::vector<std::string>& regions,
-    Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
-    std::string data_key)
+    Teuchos::ParameterList& out_ic, std::string data_key,
+    const std::vector<std::string>& components)
 {
   MemoryManager mm;
 
@@ -806,10 +812,20 @@ void InputConverterU::TranslateFieldIC_(
 
       field_ic.sublist("function").sublist(reg_str)
         .set<Teuchos::Array<std::string> >("regions", regions)
-        .set<std::string>("component", "cell")
         .sublist("function").sublist("function-exprtk")
           .set<int>("number of arguments", dim_ + 1)
           .set<std::string>("formula", formula);
+
+      if (components.size() == 1) {
+        field_ic.sublist("function").sublist(reg_str)
+          .set<Teuchos::Array<std::string> >("regions", regions)
+          .set<std::string>("component", components[0]);
+      } else {
+        field_ic.sublist("function").sublist(reg_str)
+          .set<Teuchos::Array<std::string>>("regions", regions)
+          .set<Teuchos::Array<std::string>>("components", components);
+      }
+       
     } else {
       double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
 

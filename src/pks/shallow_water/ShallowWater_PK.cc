@@ -345,7 +345,7 @@ ShallowWater_PK::Initialize()
   }
 
   InitializeCVField(S_, *vo_, velocity_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeCVField(S_, *vo_, discharge_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeCVField(S_, *vo_, discharge_key_, Tags::DEFAULT, discharge_key_, 0.0);
 
   // secondary fields
   S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
@@ -367,7 +367,7 @@ ShallowWater_PK::Initialize()
   soln_->SubVector(1)->SetData(soln_q);
 
   // temporal discretization order
-  temporal_disc_order = sw_list_->get<int>("temporal discretization order", 1);
+  temporal_disc_order_ = sw_list_->get<int>("temporal discretization order", 1);
 
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -472,11 +472,11 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // initialize time integrator
   auto ti_method = Explicit_TI::forward_euler;
-  if (temporal_disc_order == 2) {
+  if (temporal_disc_order_ == 2) {
     ti_method = Explicit_TI::midpoint;
-  } else if (temporal_disc_order == 3) {
+  } else if (temporal_disc_order_ == 3) {
     ti_method = Explicit_TI::tvd_3rd_order;
-  } else if (temporal_disc_order == 4) {
+  } else if (temporal_disc_order_ == 4) {
     ti_method = Explicit_TI::runge_kutta_4th_order;
   }
 
@@ -491,20 +491,20 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     rk1.TimeStep(t_old, dt, *soln_old, *soln_new);
 
     *soln_ = *soln_new;
+    VerifySolution_(*soln_); 
   } catch (...) {
     // revover corrupted state fields
-    for (auto it = copies.begin(); it != copies.end(); ++it) {
-      S_->GetW<CV_t>(it->first, passwd_) = it->second;
+    S_->GetW<CV_t>(ponded_depth_key_, passwd_) = copies.at(ponded_depth_key_);
+    S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_) = copies.at(discharge_key_);
 
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Reverted field \"" << it->first << "\"" << std::endl;
-    }
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Reverted fields \"" << ponded_depth_key_ << "\" and \" " 
+               << discharge_key_ << "\"" << std::endl;
+
     Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-      S_->GetEvaluatorPtr(ponded_depth_key_, Tags::DEFAULT))
-      ->SetChanged();
+      S_->GetEvaluatorPtr(ponded_depth_key_, Tags::DEFAULT))->SetChanged();
     Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-      S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))
-      ->SetChanged();
+      S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))->SetChanged();
 
     return true;
   }
@@ -775,6 +775,24 @@ ShallowWater_PK::get_dt()
 
 
 //--------------------------------------------------------------
+// Throws an error if solution u is not valid.
+//--------------------------------------------------------------
+void ShallowWater_PK::VerifySolution_(TreeVector& u) 
+{
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  const auto& h_c = *u.SubVector(0)->Data()->ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    if (h_c[0][c] < 0.0) {
+      Errors::Message msg;
+      msg << "Negative ponded depth.\n";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+}
+
+
+//--------------------------------------------------------------
 // Bathymetry (Linear construction for a rectangular cell)
 //--------------------------------------------------------------
 /*
@@ -792,7 +810,6 @@ double ShallowWater_PK::BathymetryRectangularCellValue(
 
   Amanzi::AmanziGeometry::Point xl;
   mesh_->node_get_coordinates(nodes[0], &xl); // Lower left corner of the cell
-(for rectangular cell)
 
   // Values of B at the corners of the cell
   double B1 = B_n[0][nodes[0]];
@@ -801,8 +818,10 @@ double ShallowWater_PK::BathymetryRectangularCellValue(
   double B4 = B_n[0][nodes[2]];
 
   double xln = xl[0], yln = xl[1];
-  double B_rec = B1 + (B2 - B1)*(xp[0] - xln)/dx + (B3 - B1)*(xp[1] - yln)/dy +
-(B4 - B2 - B3 + B1)*(xp[0] - xln)*(xp[1] - yln)/(dx*dy) ; return B_rec;
+  double B_rec = B1 + (B2 - B1)*(xp[0] - xln)/dx 
+               + (B3 - B1)*(xp[1] - yln)/dy 
+               + (B4 - B2 - B3 + B1)*(xp[0] - xln)*(xp[1] - yln)/(dx*dy);
+  return B_rec;
 }
 */
 
@@ -832,24 +851,6 @@ inverse_with_tolerance(double h, double tol)
 
   double h2 = h * h;
   return 2 * h / (h2 + std::max(h2, tol));
-}
-
-
-//--------------------------------------------------------------
-// Error diagnostics
-//--------------------------------------------------------------
-bool
-ShallowWater_PK::ErrorDiagnostics_(double t, int c, double h, double B, double ht)
-{
-  if (h < 0.0) {
-    const auto& xc = mesh_->cell_centroid(c);
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "time t = " << t << ", negative height in cell " << c
-               << ", centroid coordinates (" << xc[0] << ", " << xc[1] << ")"
-               << ", total=" << ht << ", bathymetry=" << B << ", height=" << h << std::endl;
-    return true;
-  }
-  return false;
 }
 
 } // namespace ShallowWater

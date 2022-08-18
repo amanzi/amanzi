@@ -20,8 +20,6 @@ void
 ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
                                           TreeVector& fun)
 {
-  bool failed = false;
-
   const auto& h_temp = *A.SubVector(0)->Data()->ViewComponent("cell", true);
   const auto& q_temp = *A.SubVector(1)->Data()->ViewComponent("cell", true);
 
@@ -161,7 +159,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double B_rec = BathymetryEdgeValue(f, B_n);
     
     double h_rec = ht_rec - B_rec;
-    failed = ErrorDiagnostics_(t, c1, h_rec, B_rec, ht_rec);
+    ErrorDiagnostics_(t, c1, h_rec, B_rec, ht_rec);
 
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
@@ -194,7 +192,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       ht_rec = TotalDepthEdgeValue(c2, f, ht_c[0][c2], B_c[0][c2], B_n);
 
       h_rec = ht_rec - B_rec;
-      failed = ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
+      ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
 
       qx_rec = discharge_x_grad_->getValue(c2, xf);
       qy_rec = discharge_y_grad_->getValue(c2, xf);
@@ -260,19 +258,23 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
 
 //--------------------------------------------------------------
-// Throws an error if solution u is not valid.
+// Error diagnostics
 //--------------------------------------------------------------
-void ShallowWater_PK::ModifySolution(double t, TreeVector& u) 
+void
+ShallowWater_PK::ErrorDiagnostics_(double t, int c, double h, double B, double ht)
 {
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  const auto& h_c = *u.SubVector(0)->Data()->ViewComponent("cell");
+  if (h < 0.0) {
+    const auto& xc = mesh_->cell_centroid(c);
 
-  for (int c = 0; c < ncells_owned; ++c) {
-    if (h_c[0][c] < 0.0) {
-      Errors::Message msg;
-      msg << "Negative ponded depth.\n";
-      Exceptions::amanzi_throw(msg);
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "negative height in cell " << c << ", xc=(" << xc[0] << ", " << xc[1] << ")"
+                 << ", total=" << ht << ", bathymetry=" << B << ", height=" << h << std::endl;
     }
+
+    Errors::Message msg;
+    msg << "Negative ponded depth.\n";
+    Exceptions::amanzi_throw(msg);
   }
 }
 

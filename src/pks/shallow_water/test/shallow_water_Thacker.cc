@@ -172,7 +172,22 @@ void RunTest(int icase)
   std::string xmlFileName = "test/shallow_water_Thacker.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  /* create a mesh framework */
+  // set temporal discretization order
+  std::string temporal_order_string;
+  if (icase == 1) {
+    plist->sublist("PKs").sublist("shallow water").set<int>("temporal discretization order", 1);
+    temporal_order_string = "RK1: Explicit_RK_Euler";
+  }
+  else if (icase == 2) {
+    plist->sublist("PKs").sublist("shallow water").set<int>("temporal discretization order", 2);
+    temporal_order_string = "RK2: Explicit_RK_Midpoint";
+  }
+  else if (icase == 3) {
+    plist->sublist("PKs").sublist("shallow water").set<int>("temporal discretization order", 3);
+    temporal_order_string = "RK3: Explicit_TVD_RK3";
+  }
+
+  // create a mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
@@ -182,7 +197,6 @@ void RunTest(int icase)
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
   std::vector<double> dx, Linferror, L1error, L2error;
-  std::string temporal_order_string;
 
   for (int NN = 40; NN <= 160; NN *= 2) {
     
@@ -236,20 +250,6 @@ void RunTest(int icase)
 
     std::string passwd("state");
     
-    // set temporal discretization order
-    if (icase == 1) {
-      SWPK.temporal_disc_order = 1;
-      temporal_order_string = "RK1: Explicit_RK_Euler";
-    }
-    else if (icase == 2) {
-      SWPK.temporal_disc_order = 2;
-      temporal_order_string = "RK2: Explicit_RK_Midpoint";
-    }
-    else if (icase == 3) {
-      SWPK.temporal_disc_order = 3;
-      temporal_order_string = "RK3: Explicit_TVD_RK3";
-    }
-
     int iter = 0;
 
     while (t_new < 0.01) {
