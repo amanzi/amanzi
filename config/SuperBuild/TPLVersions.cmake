@@ -163,7 +163,7 @@
 #   0.98.2       - update Hypre to 2.22.0
 #   0.98.3       - enforced c++14 standard for Trilinos and Amanzi
 #   0.98.4       - add cybernetic patch from Glenn for PFLOTRAN
-#                - update HDF5 to 1.12.1
+#   0.98.5       - update HDF5 to 1.12.1
 #                - update netcdf-c to 4.8.1
 #                - update netcdf-fortran to 4.5.4
 #                - update SILO to 4.11 is needed
@@ -175,7 +175,7 @@
 #                - update Sowing to 1.1.26-p2
 #                - update PFLOTRAN to 3.0.2 (compatible with PETSc and Alqumia)
 #                - update PETSc to 3.16.0
-#   0.93.6       - update Alquimia to version 1.0.9
+#   0.98.6       - update Alquimia to version 1.0.9
 
 include(CMakeParseArguments)
 
