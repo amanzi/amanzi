@@ -170,7 +170,7 @@
 #                - update SEACAS to date tag v2022-02-16
 #                - update Nanoflann to 1.4.2
 #                - update ExprTk to 0.0.1
-#   0.98.5       - update Boost to 1.78.0
+#                - update Boost to 1.78.0
 #                - update MOAB to 5.3.1
 #                - update Sowing to 1.1.26-p2
 #                - update PFLOTRAN to 3.0.2 (compatible with PETSc and Alqumia)
