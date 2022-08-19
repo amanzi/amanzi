@@ -30,6 +30,7 @@ TEST(STATE_CREATION) {
   CHECK(!s.GetRecordSet("my_double").ValidType<int>());
 }
 
+
 TEST(STATE_ASSIGNMENT) {
   using namespace Amanzi;
 
@@ -39,6 +40,7 @@ TEST(STATE_ASSIGNMENT) {
   s.GetW<double>("my_double", "my_double") = 1.1;
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
 }
+
 
 TEST(STATE_FACTORIES_WITH_CREATE) {
   using namespace Amanzi;
@@ -69,9 +71,8 @@ TEST(STATE_FACTORIES_WITH_CREATE) {
   Teuchos::RCP<TreeVector> tv = Teuchos::rcp(new TreeVector());
   tv->SetData(cv);
   s.SetPtr<TreeVector>("my_tree_vec", Tags::DEFAULT, "my_tree_vec", tv);
-
-
 }
+
 
 TEST(STATE_FACTORIES_WITH_CONSTRUCTOR) {
   using namespace Amanzi;

@@ -373,17 +373,17 @@ void WriteVis<Epetra_Vector>(const Visualization& vis, const Key& fieldname,
 
 template <>
 void WriteCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
-                                      const Key& fieldname,
-                                      const std::vector<std::string>* subfieldnames,
-                                      const Epetra_Vector& vec) {
+                                    const Key& fieldname,
+                                    const std::vector<std::string>* subfieldnames,
+                                    const Epetra_Vector& vec) {
   chkp.Write(fieldname, vec);
 }
 
 template <>
 void ReadCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
-                                     const Key& fieldname,
-                                     const std::vector<std::string>* subfieldnames,
-                                     Epetra_Vector& vec) {
+                                   const Key& fieldname,
+                                   const std::vector<std::string>* subfieldnames,
+                                   Epetra_Vector& vec) {
   chkp.Read(fieldname, vec);
 }
 
@@ -440,8 +440,8 @@ bool Equivalent(const TreeVectorSpace& one, const TreeVectorSpace& two) {
 // ======================================================================
 template <>
 void WriteVis<TreeVector>(const Visualization& vis, const Key& fieldname,
-                               const std::vector<std::string>* subfieldnames,
-                               const TreeVector& vec)
+                          const std::vector<std::string>* subfieldnames,
+                          const TreeVector& vec)
 {
   int i = 0;
   for (const auto& subvec : vec) {
@@ -456,9 +456,9 @@ void WriteVis<TreeVector>(const Visualization& vis, const Key& fieldname,
 
 template <>
 void WriteCheckpoint<TreeVector>(const Checkpoint& chkp,
-                                      const Key& fieldname,
-                                      const std::vector<std::string>* subfieldnames,
-                                      const TreeVector& vec)
+                                 const Key& fieldname,
+                                 const std::vector<std::string>* subfieldnames,
+                                 const TreeVector& vec)
 {
   int i = 0;
   for (const auto& subvec : vec) {
@@ -473,9 +473,9 @@ void WriteCheckpoint<TreeVector>(const Checkpoint& chkp,
 
 template <>
 void ReadCheckpoint<TreeVector>(const Checkpoint& chkp,
-                                     const Key& fieldname,
-                                     const std::vector<std::string>* subfieldnames,
-                                     TreeVector& vec)
+                                const Key& fieldname,
+                                const std::vector<std::string>* subfieldnames,
+                                TreeVector& vec)
 {
   int i = 0;
   for (const auto& subvec : vec) {
