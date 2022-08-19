@@ -34,7 +34,7 @@ SUITE(SolutionHistoryTests) {
 
     // create a solution history of size three
     Teuchos::RCP<Amanzi::SolutionHistory<Epetra_Vector> > SH =
-        Teuchos::rcp(new Amanzi::SolutionHistory<Epetra_Vector>(3, 0.0, *x));
+      Teuchos::rcp(new Amanzi::SolutionHistory<Epetra_Vector>("myhist", 3, 0.0, *x));
     x->PutScalar(1.0);
     CHECK_EQUAL(SH->history_size(), 1);
     CHECK_EQUAL(SH->MostRecentTime(), 0.0);
@@ -106,11 +106,11 @@ SUITE(SolutionHistoryTests) {
     xdot->PutScalar(0.0);
     // create a solution history of size three
     Teuchos::RCP<Amanzi::SolutionHistory<Epetra_Vector> > SH =
-        Teuchos::rcp(new Amanzi::SolutionHistory<Epetra_Vector>(4, 0.0, *x, *xdot));
+      Teuchos::rcp(new Amanzi::SolutionHistory<Epetra_Vector>("myhist", 4, 0.0, *x, xdot.get()));
 
     x->PutScalar(1.0);
     xdot->PutScalar(2.0);
-    SH->RecordSolution(1.0, *x, *xdot);
+    SH->RecordSolution(1.0, *x, xdot.get());
 
     Teuchos::RCP<Epetra_Vector> y = Teuchos::rcp(new Epetra_Vector(*x));
 

@@ -17,11 +17,13 @@ Lots of options here, document me!
   
 */
 
+#include "Operator_DataHelpers.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "Op_Factory.hh"
 #include "BCs_Factory.hh"
 #include "Operator_Factory.hh"
+#include "TensorVector.hh"
 
 #include "Evaluator_PDE_Diffusion.hh"
 
