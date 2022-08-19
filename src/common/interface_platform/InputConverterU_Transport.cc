@@ -100,7 +100,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
       ntime = 2;
       poly_order = 1;
     } else if (order == "explicit") {
-      int nspace(-1), ntime(-1);
+      nspace = -1;
+      ntime = -1;
       node = GetUniqueElementByTagsString_(tags_default + ", spatial_order", flag);
       if (flag) nspace = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);
 

@@ -68,6 +68,22 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string
       .set<std::string>("limiter location", "face")
       .set<double>("limiter cfl", 0.5);
 
+  int nspace(1), ntime(1);
+  std::string tags_default("unstructured_controls, unstr_shallow_water_controls");
+  node = GetUniqueElementByTagsString_(tags_default + ", algorithm", flag);
+  if (flag) {
+    std::string order = GetTextContentS_(node, "explicit first-order, explicit second-order");
+    if (order == "explicit first-order") {
+      nspace = 1;
+      ntime = 1;
+    } else if (order == "explicit second-order") {
+      nspace = 2;
+      ntime = 2;
+    }
+  }
+  out_list.set<int>("spatial discretization order", nspace);
+  out_list.set<int>("temporal discretization order", ntime);
+
   // boundary conditions
   out_list.sublist("boundary conditions") = TranslateShallowWaterBCs_();
 

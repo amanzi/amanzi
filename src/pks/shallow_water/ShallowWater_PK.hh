@@ -1,11 +1,11 @@
 /*
  Shallow Water PK
- 
+
  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
  Amanzi is released under the three-clause BSD License.
  The terms of use and "as is" disclaimer for this license are
  provided in the top-level COPYRIGHT file.
- 
+
  Author: Svetlana Tokareva (tokareva@lanl.gov)
  */
 
@@ -47,10 +47,10 @@ namespace Amanzi {
 namespace ShallowWater {
 
 // inversion operation protected for small values
-double inverse_with_tolerance(double h);
-    
-class ShallowWater_PK : public PK_Physical,
-                        public PK_Explicit<TreeVector> {
+double
+inverse_with_tolerance(double h, double tol);
+
+class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
  public:
   ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                   const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -58,54 +58,60 @@ class ShallowWater_PK : public PK_Physical,
                   const Teuchos::RCP<TreeVector>& soln);
 
   ShallowWater_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                  Teuchos::RCP<State> S,
-                  const std::string& pk_list_name,
+                  Teuchos::RCP<State> S, const std::string& pk_list_name,
                   std::vector<std::string>& component_names);
 
-  ~ShallowWater_PK() {};
+  ~ShallowWater_PK(){};
 
   virtual void Setup() override;
   virtual void Initialize() override;
 
   virtual double get_dt() override;
-  virtual void set_dt(double dt) override {};
+  virtual void set_dt(double dt) override{};
 
   // Advance PK by step size dt.
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
+  virtual bool
+  AdvanceStep(double t_old, double t_new, bool reinit = false) override;
 
-  virtual void FunctionalTimeDerivative(double t, const TreeVector& A,
-                                        TreeVector& f) override;
+  virtual void FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector& f) override;
+
+  virtual void ModifySolution(double t, TreeVector& A) override { VerifySolution_(A); }
 
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
   // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics(const Tag& tag) override {};
+  virtual void CalculateDiagnostics(const Tag& tag) override{};
 
   virtual std::string name() override { return "shallow water"; }
-                            
+
   // Bathymetry reconstruction on cell edge midpoints
-  double BathymetryRectangularCellValue(int c, const AmanziGeometry::Point& xp, const Epetra_MultiVector& Bn);
   double BathymetryEdgeValue(int e, const Epetra_MultiVector& Bn);
 
-  // due to rotational invariance of SW equations, we need flux in the x-direction only.
+  // Recalculate total depth for positivity of ponded depth
+  double TotalDepthEdgeValue(int c, int e, double htc, double Bc, const Epetra_MultiVector& B_n);
+
+  // due to rotational invariance of SW equations, we need flux in the
+  // x-direction only.
   std::vector<double> PhysicalFlux_x(const std::vector<double>&);
 
-  std::vector<double> NumericalFlux_x(std::vector<double>&, std::vector<double>&);
+  std::vector<double>
+  NumericalFlux_x(std::vector<double>&, std::vector<double>&);
   std::vector<double> NumericalFlux_x_Rusanov(const std::vector<double>&, const std::vector<double>&);
   std::vector<double> NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
 
-  std::vector<double> NumericalSource(const std::vector<double>&, int);
+  std::vector<double> NumericalSource(int c, double htc, double Bc, const Epetra_MultiVector& B_n);
 
   // access
   double get_total_source() const { return total_source_; }
-                          
-  // temporal discretization order
-  int temporal_disc_order;
 
  private:
-  void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
-  bool ErrorDiagnostics_(int c, double h, double B, double ht);
+  void
+  InitializeFieldFromField_(const std::string& field0,
+                            const std::string& field1, bool call_evaluator);
+
+  void VerifySolution_(TreeVector& A);
+  void ErrorDiagnostics_(double t, int c, double h, double B, double ht);
 
  protected:
   Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -129,15 +135,15 @@ class ShallowWater_PK : public PK_Physical,
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
-                            
+  
   // source terms
-  std::vector<Teuchos::RCP<PK_DomainFunction> > srcs_;
+  std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;
   double total_source_;
 
  private:
   // boundary conditions
-  std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction> > bcs_;
-  std::vector<Teuchos::RCP<Operators::BCs> > op_bcs_;
+  std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction>> bcs_;
+  std::vector<Teuchos::RCP<Operators::BCs>> op_bcs_;
 
   // gravity magnitude
   double g_;
@@ -152,14 +158,16 @@ class ShallowWater_PK : public PK_Physical,
   double cfl_;
   int iters_, max_iters_;
 
+  // control of PK
+  int temporal_disc_order_;
+  double cell_area2_max_;
+
  private:
   // factory registration
   static RegisteredPKFactory<ShallowWater_PK> reg_;
 };
-    
-}  // namespace ShallowWater
-}  // namespace Amanzi
+
+} // namespace ShallowWater
+} // namespace Amanzi
 
 #endif
-
-

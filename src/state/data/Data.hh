@@ -58,7 +58,6 @@ namespace Impl {
 // providing all the necessary constructors, operator=, etc.  This is really
 // a wrapper for std::unique_ptr -- equivalent code could directly store
 // pointers to Data_Intf objects.
-
 class Data {
  public:
   // This should never be used, only exists to make containers happy. This is

@@ -62,7 +62,6 @@ class RemapDG : public Explicit_TI::fnBase<Vector>,
   // -- limit solution at all steps of the RK scheme
   virtual void ModifySolution(double t, Vector& u) override;
 
-
   // change between conservative and non-conservative variable
   void ConservativeToNonConservative(double t, const Vector& u, Vector& v);
   void NonConservativeToConservative(double t, const Vector& u, Vector& v);
