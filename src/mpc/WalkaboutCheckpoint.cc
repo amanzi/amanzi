@@ -440,7 +440,7 @@ void WalkaboutCheckpoint::WriteDataFile(
     const auto& output = output_.at("domain");
     output->writeAttrInt(mesh.get_comm()->NumProc(), "mpi_num_procs");
     output->writeAttrReal(S->get_time(), "time");
-    output->writeAttrReal(S->Get<double>("dt", Tags:DEFAULT), "dt");
+    output->writeAttrReal(S->Get<double>("dt", Tags::DEFAULT), "dt");
     output->writeAttrInt(S->get_cycle(), "cycle");
     Finalize();
   }
