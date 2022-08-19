@@ -52,7 +52,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   char* text_content;
 
   // --- eos lookup table
-  bool flag;
+  bool flag, flag1, flag2;
   DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, eos", flag);
   if (flag) {
     eos_lookup_table_ = GetTextContentS_(node, "", false);
@@ -327,8 +327,14 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- aperture
       node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
       if (flag) {
-        TranslateFieldEvaluator_(node, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "aperture", "fracture");
-        TranslateFieldIC_(node, "fracture-normal_permeability", "m^2*s/kg", reg_str, regions, out_ic, "normal");
+        auto tmp1 = GetUniqueElementByTagsString_(node, "aperture", flag1);
+        auto tmp2 = GetUniqueElementByTagsString_(node, "normal", flag2);
+        if (!flag1 || !flag2) {
+          msg << "fracture_permeability must have two elements: aperture and normal.";
+          Exceptions::amanzi_throw(msg);
+        }
+        TranslateFieldEvaluator_(tmp1, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "value", "fracture");
+        TranslateFieldIC_(tmp2, "fracture-normal_permeability", "m^2*s/kg", reg_str, regions, out_ic, "value");
       } else { 
         msg << "fracture_permeability element must be specified for all materials in fracture network.";
         Exceptions::amanzi_throw(msg);

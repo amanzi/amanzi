@@ -20,6 +20,9 @@
 #include "ShallowWater_PK.hh"
 #include "OutputXDMF.hh"
 
+// Amznzi::ShallowWater
+#include "ShallowWater_Helper.hh"
+
 // General
 #define _USE_MATH_DEFINES
 #include "math.h"
@@ -304,13 +307,8 @@ RunTest(int icase)
   const auto& hh = *S->Get<CompositeVector>("surface-ponded_depth").ViewComponent("cell");
   const auto& ht = *S->Get<CompositeVector>("surface-total_depth").ViewComponent("cell");
   const auto& vel = *S->Get<CompositeVector>("surface-velocity").ViewComponent("cell");
-  const auto& q = *S->Get<CompositeVector>("surface-discharge").ViewComponent("cell");
+  // const auto& q = *S->Get<CompositeVector>("surface-discharge").ViewComponent("cell");
   const auto& p = *S->Get<CompositeVector>("surface-ponded_pressure").ViewComponent("cell");
-
-  // Create a pid vector
-  Epetra_MultiVector pid(B);
-
-  for (int c = 0; c < pid.MyLength(); ++c) { pid[0][c] = MyPID; }
 
   // Create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", *plist));
@@ -339,25 +337,8 @@ RunTest(int icase)
 
     lake_at_rest_exact_field(mesh, ht_ex, vel_ex, t_out);
 
-    if (iter % 5 == 0) {
-      io.InitializeCycle(t_out, iter, "");
-
-      io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
-      io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
-      io.WriteVector(*vel(0), "vx", AmanziMesh::CELL);
-      io.WriteVector(*vel(1), "vy", AmanziMesh::CELL);
-      io.WriteVector(*q(0), "qx", AmanziMesh::CELL);
-      io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
-      io.WriteVector(*B(0), "B", AmanziMesh::CELL);
-      io.WriteVector(*p(0), "hyd pressure", AmanziMesh::CELL);
-      io.WriteVector(*Bn(0), "B_n", AmanziMesh::NODE);
-      io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
-
-      io.WriteVector(*ht_ex(0), "ht_ex", AmanziMesh::CELL);
-      io.WriteVector(*vel_ex(0), "vx_ex", AmanziMesh::CELL);
-      io.WriteVector(*vel_ex(1), "vy_ex", AmanziMesh::CELL);
-
-      io.FinalizeCycle();
+    if (iter % 30 == 0) {
+      IO_Fields(t_out, iter, MyPID, io, *S, nullptr, nullptr);
     }
 
     dt = SWPK.get_dt();
@@ -393,24 +374,7 @@ RunTest(int icase)
   CHECK_CLOSE(0.0, L1error[0], 1e-12);
   CHECK_CLOSE(0.0, Linferror[0], 1e-12);
 
-  io.InitializeCycle(t_out, iter, "");
-
-  io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
-  io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
-  io.WriteVector(*vel(0), "vx", AmanziMesh::CELL);
-  io.WriteVector(*vel(1), "vy", AmanziMesh::CELL);
-  io.WriteVector(*q(0), "qx", AmanziMesh::CELL);
-  io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
-  io.WriteVector(*B(0), "B", AmanziMesh::CELL);
-  io.WriteVector(*Bn(0), "B_n", AmanziMesh::NODE);
-  io.WriteVector(*p(0), "hyd pressure", AmanziMesh::CELL);
-  io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
-
-  io.WriteVector(*ht_ex(0), "ht_ex", AmanziMesh::CELL);
-  io.WriteVector(*vel_ex(0), "vx_ex", AmanziMesh::CELL);
-  io.WriteVector(*vel_ex(1), "vy_ex", AmanziMesh::CELL);
-
-  io.FinalizeCycle();
+  IO_Fields(t_out, iter, MyPID, io, *S, nullptr, nullptr);
 
   std::cout << "Computed error H (L_1): " << L1error[0] << std::endl;
   std::cout << "Computed error H (L_inf): " << Linferror[0] << std::endl;

@@ -17,8 +17,11 @@
 #include "IO.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "ShallowWater_PK.hh"
 #include "OutputXDMF.hh"
+
+// Amanzi::ShallowWater
+#include "ShallowWater_PK.hh"
+#include "ShallowWater_Helper.hh"
 
 // General
 #define _USE_MATH_DEFINES
@@ -182,13 +185,7 @@ RunTest(int icase)
   const auto& hh = *S->Get<CompositeVector>("surface-ponded_depth").ViewComponent("cell");
   const auto& ht = *S->Get<CompositeVector>("surface-total_depth").ViewComponent("cell");
   const auto& vel = *S->Get<CompositeVector>("surface-velocity").ViewComponent("cell");
-  const auto& q = *S->Get<CompositeVector>("surface-discharge").ViewComponent("cell");
   const auto& p = *S->Get<CompositeVector>("surface-ponded_pressure").ViewComponent("cell");
-
-  // Create a pid vector
-  Epetra_MultiVector pid(B);
-
-  for (int c = 0; c < pid.MyLength(); ++c) { pid[0][c] = MyPID; }
 
   // Create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", *plist));
@@ -217,21 +214,8 @@ RunTest(int icase)
   while ((t_new < Tend) && (iter >= 0)) {
     double t_out = t_new;
 
-    if (iter % 50 == 0) {
-      io.InitializeCycle(t_out, iter, "");
-
-      io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
-      io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
-      io.WriteVector(*vel(0), "vx", AmanziMesh::CELL);
-      io.WriteVector(*vel(1), "vy", AmanziMesh::CELL);
-      io.WriteVector(*q(0), "qx", AmanziMesh::CELL);
-      io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
-      io.WriteVector(*B(0), "B", AmanziMesh::CELL);
-      io.WriteVector(*p(0), "hyd pressure", AmanziMesh::CELL);
-      io.WriteVector(*Bn(0), "B_n", AmanziMesh::NODE);
-      io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
-
-      io.FinalizeCycle();
+    if (iter % 100 == 0) {
+      IO_Fields(t_out, iter, MyPID, io, *S, nullptr, nullptr);
     }
 
     dt = SWPK.get_dt();
@@ -254,21 +238,7 @@ RunTest(int icase)
   std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
   
   double t_out = t_new;
-
-  io.InitializeCycle(t_out, iter, "");
-
-  io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
-  io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
-  io.WriteVector(*vel(0), "vx", AmanziMesh::CELL);
-  io.WriteVector(*vel(1), "vy", AmanziMesh::CELL);
-  io.WriteVector(*q(0), "qx", AmanziMesh::CELL);
-  io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
-  io.WriteVector(*B(0), "B", AmanziMesh::CELL);
-  io.WriteVector(*Bn(0), "B_n", AmanziMesh::NODE);
-  io.WriteVector(*p(0), "hyd pressure", AmanziMesh::CELL);
-  io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
-
-  io.FinalizeCycle();
+  IO_Fields(t_out, iter, MyPID, io, *S, nullptr, nullptr);
 }
 
 TEST(SHALLOW_WATER_DRY_BED)

@@ -793,40 +793,6 @@ void ShallowWater_PK::VerifySolution_(TreeVector& u)
 
 
 //--------------------------------------------------------------
-// Bathymetry (Linear construction for a rectangular cell)
-//--------------------------------------------------------------
-/*
-double ShallowWater_PK::BathymetryRectangularCellValue(
-    int c, const AmanziGeometry::Point& xp, const Epetra_MultiVector& B_n)
-{
-  double x = xp[0], y = xp[1];
-
-  AmanziMesh::Entity_ID_List nodes, faces;
-
-  mesh_->cell_get_faces(c, &faces);
-  mesh_->cell_get_nodes(c, &nodes);
-
-  double dx = mesh_->face_area(faces[0]), dy = mesh_->face_area(faces[1]);
-
-  Amanzi::AmanziGeometry::Point xl;
-  mesh_->node_get_coordinates(nodes[0], &xl); // Lower left corner of the cell
-
-  // Values of B at the corners of the cell
-  double B1 = B_n[0][nodes[0]];
-  double B2 = B_n[0][nodes[1]];
-  double B3 = B_n[0][nodes[3]];
-  double B4 = B_n[0][nodes[2]];
-
-  double xln = xl[0], yln = xl[1];
-  double B_rec = B1 + (B2 - B1)*(xp[0] - xln)/dx 
-               + (B3 - B1)*(xp[1] - yln)/dy 
-               + (B4 - B2 - B3 + B1)*(xp[0] - xln)*(xp[1] - yln)/(dx*dy);
-  return B_rec;
-}
-*/
-
-
-//--------------------------------------------------------------
 // Bathymetry (Evaluate value at edge midpoint for a polygonal cell)
 //--------------------------------------------------------------
 double

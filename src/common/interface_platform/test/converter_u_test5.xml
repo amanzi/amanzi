@@ -158,7 +158,10 @@
         <mechanical_properties>
           <porosity value="0.004"/>
         </mechanical_properties>
-        <fracture_permeability model="cubic law" aperture="1e-4" normal="20.0"/>
+        <fracture_permeability model="cubic law">
+          <normal value="20.0"/>
+          <aperture value="1e-4"/>
+        </fracture_permeability>
         <assigned_regions>fracture</assigned_regions>
       </material>
     </materials>

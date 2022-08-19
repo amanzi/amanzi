@@ -19,8 +19,11 @@
 #include "LeastSquare.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "ShallowWater_PK.hh"
 #include "OutputXDMF.hh"
+
+// Amanzi::ShallowWater
+#include "ShallowWater_PK.hh"
+#include "ShallowWater_Helper.hh"
 
 //--------------------------------------------------------------
 // Analytic solution (Thacker's solution [Beljadid et. al. 2016]
@@ -227,12 +230,6 @@ void RunTest(int icase)
     const auto& hh = *S->Get<CompositeVector>("surface-ponded_depth").ViewComponent("cell");
     const auto& ht = *S->Get<CompositeVector>("surface-total_depth").ViewComponent("cell");
     const auto& vel = *S->Get<CompositeVector>("surface-velocity").ViewComponent("cell");
-    const auto& q = *S->Get<CompositeVector>("surface-discharge").ViewComponent("cell");
-    const auto& B = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
-
-    // create pid vector
-    Epetra_MultiVector pid(B);
-    for (int c = 0; c < pid.MyLength(); c++) pid[0][c] = MyPID;
 
     // create screen io
     auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", pk_tree));
@@ -253,7 +250,6 @@ void RunTest(int icase)
     int iter = 0;
 
     while (t_new < 0.01) {
-      // cycle 1, time t
       double t_out = t_new;
 
       Epetra_MultiVector hh_ex(hh);
@@ -262,20 +258,7 @@ void RunTest(int icase)
       analytical_exact_field(mesh, hh_ex, vel_ex, t_out);
 
       if (iter % 5 == 0) {
-        io.InitializeCycle(t_out, iter, "");
-        io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
-        io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
-        io.WriteVector(*vel(0), "vx", AmanziMesh::CELL);
-        io.WriteVector(*vel(1), "vy", AmanziMesh::CELL);
-        io.WriteVector(*q(0), "qx", AmanziMesh::CELL);
-        io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
-        io.WriteVector(*B(0), "B", AmanziMesh::CELL);
-        io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
-
-        io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
-        io.WriteVector(*vel_ex(0), "vx_ex", AmanziMesh::CELL);
-        io.WriteVector(*vel_ex(1), "vy_ex", AmanziMesh::CELL);
-        io.FinalizeCycle();
+        IO_Fields(t_out, iter, MyPID, io, *S, &hh_ex, &vel_ex);
       }
 
       dt = SWPK.get_dt();
@@ -307,20 +290,7 @@ void RunTest(int icase)
     Linferror.push_back(err_max);
     L1error.push_back(err_L1);
 
-    io.InitializeCycle(t_out, iter, "");
-    io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
-    io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
-    io.WriteVector(*vel(0), "vx", AmanziMesh::CELL);
-    io.WriteVector(*vel(1), "vy", AmanziMesh::CELL);
-    io.WriteVector(*q(0), "qx", AmanziMesh::CELL);
-    io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
-    io.WriteVector(*B(0), "B", AmanziMesh::CELL);
-    io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
-
-    io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
-    io.WriteVector(*vel_ex(0), "vx_ex", AmanziMesh::CELL);
-    io.WriteVector(*vel_ex(1), "vy_ex", AmanziMesh::CELL);
-    io.FinalizeCycle();
+    IO_Fields(t_out, iter, MyPID, io, *S, &hh_ex, &vel_ex);
   } // NN
   
   double L1_order = Amanzi::Utils::bestLSfit(dx, L1error);

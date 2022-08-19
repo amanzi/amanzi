@@ -86,7 +86,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   virtual std::string name() override { return "shallow water"; }
 
   // Bathymetry reconstruction on cell edge midpoints
-  double BathymetryRectangularCellValue(int c, const AmanziGeometry::Point& xp, const Epetra_MultiVector& Bn);
   double BathymetryEdgeValue(int e, const Epetra_MultiVector& Bn);
 
   // Recalculate total depth for positivity of ponded depth
