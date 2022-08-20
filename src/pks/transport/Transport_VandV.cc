@@ -135,7 +135,7 @@ void Transport_PK::VV_PrintLimiterStatistics()
           limiter->MeanValue(&vavg);
 
           *vo_->os() << name << ": limiter min/avg/max: " 
-                     << vmin << " " << vavg<< " " << vmax << std::endl;
+                     << vmin << " " << vavg << " " << vmax << std::endl;
         }
       }
     }

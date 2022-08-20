@@ -82,7 +82,7 @@ class Transport_PK : public PK_Physical {
 
   // main transport members
   // -- calculation of a stable time step needs saturations and darcy flux
-  double StableTimeStep();
+  double StableTimeStep(int n);
 
   // -- coupling with chemistry
   void SetupChemistry(Teuchos::RCP<AmanziChemistry::Chemistry_PK> chem_pk) { chem_pk_ = chem_pk; }

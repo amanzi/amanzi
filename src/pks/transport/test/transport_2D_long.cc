@@ -92,7 +92,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
   int iter = 0;
   bool flag = true;
   while (t_new < 0.25) {
-    dt = TPK.StableTimeStep();
+    dt = TPK.StableTimeStep(-1);
     t_new = t_old + dt;
 
     TPK.AdvanceStep(t_old, t_new);

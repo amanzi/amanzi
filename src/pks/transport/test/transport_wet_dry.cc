@@ -78,7 +78,7 @@ void runTest(std::string xmlfile) {
   auto tcc = S->GetW<CompositeVector>("total_component_concentration", "state").ViewComponent("cell");
 
   while (t_new < 0.5) {
-    dt = TPK.StableTimeStep();
+    dt = TPK.StableTimeStep(-1);
     t_new = t_old + dt;
 
     S->set_initial_time(t_old);

@@ -512,6 +512,8 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
 
+  // For consistency with other flow models, we need to track previous h
+  // which was placed earlier in the archive.
   S_->GetW<CV_t>(prev_ponded_depth_key_, Tags::DEFAULT, passwd_) = archive.get(ponded_depth_key_);
 
   Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
