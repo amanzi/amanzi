@@ -400,6 +400,7 @@ ShallowWater_PK::InitializeFieldFromField_(const std::string& field0,
 
         S_->GetRecordW(field0, passwd_).set_initialized();
 
+        Teuchos::OSTab tab = vo_->getOSTab();
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
       }
@@ -438,9 +439,9 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
 
   // create copies of primary fields
-  std::map<std::string, CompositeVector> copies;
-  copies.emplace(ponded_depth_key_, S_->Get<CV_t>(ponded_depth_key_, Tags::DEFAULT));
-  copies.emplace(discharge_key_, S_->Get<CV_t>(discharge_key_, Tags::DEFAULT));
+  StateArchive archive(S_, vo_);
+  archive.Add({ ponded_depth_key_ }, { discharge_key_ },
+              { ponded_depth_key_, velocity_key_ });
 
   Epetra_MultiVector& h_old = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_old = *soln_->SubVector(1)->Data()->ViewComponent("cell");
@@ -493,19 +494,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *soln_ = *soln_new;
     VerifySolution_(*soln_); 
   } catch (...) {
-    // revover corrupted state fields
-    S_->GetW<CV_t>(ponded_depth_key_, passwd_) = copies.at(ponded_depth_key_);
-    S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_) = copies.at(discharge_key_);
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Reverted fields \"" << ponded_depth_key_ << "\" and \" " 
-               << discharge_key_ << "\"" << std::endl;
-
-    Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-      S_->GetEvaluatorPtr(ponded_depth_key_, Tags::DEFAULT))->SetChanged();
-    Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-      S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))->SetChanged();
-
+    archive.Restore(passwd_);
     return true;
   }
 
@@ -523,11 +512,13 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
 
-  S_->GetW<CV_t>(prev_ponded_depth_key_, Tags::DEFAULT, passwd_) = copies.at(ponded_depth_key_);
-  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(S_->GetEvaluatorPtr(ponded_depth_key_, Tags::DEFAULT))
-    ->SetChanged();
-  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))
-    ->SetChanged();
+  S_->GetW<CV_t>(prev_ponded_depth_key_, Tags::DEFAULT, passwd_) = archive.get(ponded_depth_key_);
+
+  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+    S_->GetEvaluatorPtr(ponded_depth_key_, Tags::DEFAULT))->SetChanged();
+
+  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+    S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))->SetChanged();
 
   // min-max values
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {

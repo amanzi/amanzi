@@ -629,6 +629,7 @@ void Transport_PK::InitializeFieldFromField_(
 * ***************************************************************** */
 double Transport_PK::StableTimeStep()
 {
+  // this call scatters flux data to ghost values
   IdentifyUpwindCells();
 
   const auto& wc = *S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT).ViewComponent("cell");
@@ -713,9 +714,9 @@ double Transport_PK::StableTimeStep()
       const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dt);
 
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "cell " << cmin_dt << " has smallest dt, (" << p[0] << ", " << p[1];
+      *vo_->os() << "cell " << cmin_dt << " centered at (" << p[0] << ", " << p[1];
       if (p.dim() == 3) *vo_->os() << ", " << p[2];
-      *vo_->os() << ")" << std::endl;
+      *vo_->os() << ") has smallest dt=" << dt_ << std::endl;
     }
   }
   return dt_;
