@@ -14,6 +14,8 @@
 #include <string>
 
 #include "PK_Utils.hh"
+#include "Transport_PK.hh"
+
 #include "ShallowWaterTransport_PK.hh"
 
 namespace Amanzi {
@@ -27,11 +29,21 @@ ShallowWaterTransport_PK::ShallowWaterTransport_PK(
     const Teuchos::RCP<State>& S,
     const Teuchos::RCP<TreeVector>& soln)
   : PK_MPCWeak(pk_tree, global_list, S, soln),
+    cfl_(1.0),
     failed_steps_(0)
 {
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = my_list_->sublist("verbose object");
   vo_ = Teuchos::rcp(new VerboseObject("ShallowWaterTransport", vlist));
+}
+
+
+/* ******************************************************************
+* Calculate the min of sub-PKs timesteps and limit it.
+****************************************************************** */
+double ShallowWaterTransport_PK::get_dt()
+{
+  return cfl_ * PK_MPCWeak::get_dt();
 }
 
 
@@ -64,23 +76,28 @@ bool ShallowWaterTransport_PK::AdvanceStep(double t_old, double t_new, bool rein
 
   double dt0 = t_new - t_old;
   fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);
-  if (fail) return fail;
+  if (fail) {
+    cfl_ /= 2.0;
+    return fail;
+  }
 
   // Typically transport has bigger time step; however, numerics may
   // brings challenges. FIXME
-  double dt1 = sub_pks_[1]->get_dt();
-  if (dt1 < dt0 / 10) {
+  double dt1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[1])->StableTimeStep();
+  if (dt1 < dt0 / 100) {
     archive.Restore("state");
 
+    cfl_ /= 2.0;
     failed_steps_++;
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "total failed steps: " << failed_steps_ << std::endl;
     }
-
     return true;
   }
 
+  cfl_ = 1.0;
   fail = sub_pks_[1]->AdvanceStep(t_old, t_new, reinit);
   return fail;
 }

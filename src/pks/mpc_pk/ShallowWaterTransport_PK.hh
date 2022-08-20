@@ -27,10 +27,12 @@ class ShallowWaterTransport_PK : public PK_MPCWeak {
       const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
+  virtual double get_dt() override;
   virtual void Setup() override;
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override;
 
  private:
+  double cfl_;
   int failed_steps_;
 
  private:
