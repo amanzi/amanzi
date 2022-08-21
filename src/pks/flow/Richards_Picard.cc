@@ -48,6 +48,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
   // update steady state source conditions
   for (int i = 0; i < srcs.size(); ++i) {
     srcs[i]->Compute(time, time); 
+    srcs[i]->ComputeSubmodel(aperture_key_, *S_); 
   }
 
   std::string linear_solver = plist.get<std::string>("linear solver");

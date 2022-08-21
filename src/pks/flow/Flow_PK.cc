@@ -404,7 +404,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   // -- wells
   srcs.clear();
   if (plist.isSublist("source terms")) {
-    PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_, S_);
+    PK_DomainFunctionFactory<FlowSourceFunction> factory(mesh_, S_);
     PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
 
     Teuchos::ParameterList& src_list = plist.sublist("source terms");
@@ -504,6 +504,7 @@ void Flow_PK::UpdateSourceBoundaryData(double t_old, double t_new, const Composi
 {
   for (int i = 0; i < srcs.size(); ++i) {
     srcs[i]->Compute(t_old, t_new); 
+    srcs[i]->ComputeSubmodel(aperture_key_, *S_); 
   }
 
   for (int i = 0; i < bcs_.size(); i++) {
