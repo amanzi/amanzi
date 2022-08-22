@@ -1066,7 +1066,7 @@ The conceptual PDE model for the fully saturated flow is
 
 where 
 :math:`\phi` is porosity [-],
-:math:`s_s` and :math:`s_y` are specific storage [m] and specific yield [-], respectively,
+:math:`s_s` and :math:`s_y` are specific storage [1/m] and specific yield [-], respectively,
 :math:`L` is characteristic length [m],
 :math:`\rho_l` is fluid density [:math:`kg / m^3`],
 :math:`Q` is source or sink term [:math:`kg / m^3 / s`],

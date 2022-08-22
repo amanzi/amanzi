@@ -464,6 +464,12 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector sy_g(*specific_yield_copy_); 
   sy_g.Scale(factor);
 
+  if (flow_on_manifold_) {
+    const auto& aperture = S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
+    ss_g.Multiply(1.0, ss_g, aperture, 0.0);
+    sy_g.Multiply(1.0, sy_g, aperture, 0.0);
+  }
+
   op_->RestoreCheckPoint();
   op_acc_->AddAccumulationDelta(*solution, ss_g, ss_g, dt_, "cell");
   op_acc_->AddAccumulationDeltaNoVolume(*solution, sy_g, "cell");
