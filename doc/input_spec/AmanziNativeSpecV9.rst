@@ -379,13 +379,16 @@ The initialization sublist of *State* is named *initial conditions*.
   field using the provided checkpoint file. Second, regardless of the outcome of the
   previous step, we try to initialize the field using the sublist `"initial conditions`".
   By design, the second step allows us to overwrite only part for the
-  field. There are several options available to initialize field using
-  the sublist `"initial conditions`": `"restart file`" - read field
+  field. 
+
+* `"initial conditions`" [sublist] There are several options available to initialize 
+  fields using this sublist: `"restart file`" - read field
   from existing HDF55 file, `"exodus file initialization`" - read field
   from existing Exodus file, `"cells from file`" - read cell
   components from HDF5 file, `"constant`" - set field values to constant, `"initialize
   from 1D column`" - initialize 1D column from file and `"function`" -
-  field is initialized by function.
+  field is initialized by function. Initialization time is specified with `"time`"
+  that defaults to 0.
 
 
 .. code-block:: xml
@@ -397,6 +400,7 @@ The initialization sublist of *State* is named *initial conditions*.
        ... list of field evaluators
     </ParameterList>
     <ParameterList name="initial conditions">
+       <Parameter name="time" type="double" value="0.0"/>
       ... initialization of fields
     </ParameterList>
   </ParameterList>

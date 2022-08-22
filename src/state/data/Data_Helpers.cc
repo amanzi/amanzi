@@ -296,6 +296,7 @@ bool Initialize<CompositeVector>(
 
   // ------ Set values using a function -----
   if (plist.isSublist("function")) {
+    double t_ini = plist.get<double>("time", 0.0);
     Teuchos::ParameterList func_plist = plist.sublist("function");
 
     std::vector<std::string> complist;
@@ -319,7 +320,7 @@ bool Initialize<CompositeVector>(
 
       // Evaluate the velocity function
       auto func = Functions::CreateCompositeVectorFunction(func_plist, vel_vec->Map(), complist);
-      func->Compute(0.0, vel_vec.ptr());
+      func->Compute(t_ini, vel_vec.ptr());
 
       // CV's map may differ from the regular mesh map due to presense of fractures
       const auto& fmap = *t.Map().Map("face", true);
@@ -346,7 +347,7 @@ bool Initialize<CompositeVector>(
 
       // no map, just evaluate the function
       auto func = Functions::CreateCompositeVectorFunction(func_plist, t.Map(), complist);
-      func->Compute(0.0, t_ptr);
+      func->Compute(t_ini, t_ptr);
       initialized = true;
     }
   }

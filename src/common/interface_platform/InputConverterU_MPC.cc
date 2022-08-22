@@ -223,7 +223,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
         transient_model += 8;
 
       } else if (strcmp(tagname, "shallow_water") == 0) {
-        model = GetAttributeValueS_(jnode, "model");
+        model = GetAttributeValueS_(jnode, "model", "Rusanov, central upwind");
         pk_model_["shallow_water"] = model;
 
         std::string region = GetAttributeValueS_(jnode, "domain");
