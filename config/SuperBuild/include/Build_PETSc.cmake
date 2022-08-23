@@ -130,7 +130,7 @@ else()
 endif()
 
 if ( ${AMANZI_ARCH_NERSC} OR ${AMANZI_ARCH_CHICOMA} )
-  set(petsc_mpi_flags --with-mpi=1)
+  set(petsc_mpi_flags --with-mpi=1 --with-batch=1)
   set(petsc_compilers --with-cc=${CMAKE_C_COMPILER} 
                       --with-cxx=${CMAKE_CXX_COMPILER} 
                       --with-fc=${CMAKE_Fortran_COMPILER})
