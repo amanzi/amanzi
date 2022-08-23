@@ -35,7 +35,7 @@ using namespace Amanzi::AmanziGeometry;
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   *MyPID = comm->MyPID();
   
-  std::string xmlInFileName = "test/mpc_ihm_shallow_water_transport_thacker.xml";
+  std::string xmlInFileName = "test/mpc_ihm_shallow_water_transport_Thacker.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
   // For now create one geometric model from all the regions in the spec
