@@ -1,5 +1,6 @@
-#include <iostream>
 #include "stdlib.h"
+#include <iostream>
+#include <tuple>
 #include "math.h"
 
 // TPLs
@@ -26,12 +27,13 @@
 #include "pks_shallow_water_registration.hh"
 #include "State.hh"
 
-std::pair<double, double> RunTest(int n, int* ncycles) {
+std::tuple<double, double, double> RunTest(int n, int* ncycles, int* MyPID) {
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
+  *MyPID = comm->MyPID();
   
   std::string xmlInFileName = "test/mpc_ihm_shallow_water_transport_thacker.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
@@ -57,12 +59,13 @@ using namespace Amanzi::AmanziGeometry;
   
   // error calculations
   *ncycles = S->Get<int>("cycle", Tags::DEFAULT);
-  double err_h, err_v;
+  double err_h, err_v, err_tcc;
   auto h = S->Get<CompositeVector>("ponded_depth", Tags::DEFAULT);
   auto v = S->Get<CompositeVector>("velocity", Tags::DEFAULT);
+  auto tcc = S->Get<CompositeVector>("total_component_concentration", Tags::DEFAULT);
 
   Teuchos::ParameterList sublist;
-  CompositeVector h_ex(h), v_ex(v);
+  CompositeVector h_ex(h), v_ex(v), tcc_ex(tcc);
 
   // -- height
   std::vector<std::string> subfieldnames = { "cell" };
@@ -81,26 +84,40 @@ using namespace Amanzi::AmanziGeometry;
   v_ex.Update(-1.0, v, 1.0);
   v_ex.Norm1(&err_v);
 
+  // -- concentration
+  sublist = plist->sublist("state").sublist("initial conditions").sublist("total_component_concentration");
+  sublist.set<double>("time", 1.0);
+  Helpers::Initialize(sublist, tcc_ex, "total_component_conventration", &subfieldnames);
+
+  tcc_ex.Update(-1.0, tcc, 1.0);
+  tcc_ex.Norm1(&err_tcc);
+
   int ncells = h.GlobalLength();
-  return std::make_pair(err_h / ncells, err_v / ncells);
+  return std::make_tuple(err_h / ncells, err_v / ncells, err_tcc / ncells);
 }
 
 
 TEST(MPC_DRIVER_IHM_SHALLOW_WATER_TRANSPORT_THACKER) {
-  int i(0), ncycles;
-  std::vector<double> h(3), err_h(3), err_v(3);
+  int i(0), ncycles, MyPID;
+  std::vector<double> h(3), err_h(3), err_v(3), err_tcc(3);
   for (int n = 16; n < 80; n *= 2, ++i) {
-    auto errs = RunTest(n, &ncycles);
-    h[i] = 1.0 / ncycles;
-    err_h[i] = errs.first;
-    err_v[i] = errs.second;
-    std::cout << "Error: h=" << errs.first << " u=" << errs.second 
-              << " dx=" << 1.0 / n << " dt=" << h[i] << std::endl;
+    auto errs = RunTest(n, &ncycles, &MyPID);
+    h[i] = 1.0 / n;
+    err_h[i] = std::get<0>(errs);
+    err_v[i] = std::get<1>(errs);
+    err_tcc[i] = std::get<2>(errs);
+    if (MyPID == 0) {
+      std::cout << "Error: h=" << err_h[i] << " u=" << err_v[i] << " tcc=" << err_tcc[i]
+                << ",  dx=" << h[i] << " dt=" << 1.0 / ncycles << std::endl;
+    }
   }
 
   double rate1 = Amanzi::Utils::bestLSfit(h, err_h);
   double rate2 = Amanzi::Utils::bestLSfit(h, err_v);
-  std::cout << "Error convergence rates: " << rate1 << " " << rate2 << std::endl;
-  CHECK(rate1 > 0.9 && rate2 > 0.9);
+  double rate3 = Amanzi::Utils::bestLSfit(h, err_tcc);
+  if (MyPID == 0) {
+    std::cout << "Error convergence rates: " << rate1 << " " << rate2 << " " << rate3 << std::endl;
+  }
+  CHECK(rate1 > 1.9 && rate2 > 1.9 && rate3 > 1.8);
 }
 

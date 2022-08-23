@@ -114,8 +114,9 @@
               <Parameter name="number of dofs" type="int" value="1"/>
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
+                <ParameterList name="function-exprtk">
+                  <Parameter name="number of arguments" type="int" value="3"/>
+                  <Parameter name="formula" type="string" value="0.5*(x^2 + y^2)/(t^2+2.0642)"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -196,7 +197,7 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="1.0"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="0.1"/>
+        <Parameter name="initial time step" type="double" value="0.0001"/>
         <Parameter name="maximum time step" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
@@ -222,15 +223,15 @@
       <Parameter name="domain name" type="string" value="domain"/>
       <Parameter name="numerical flux" type="string" value="Rusanov"/>
       <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
-      <Parameter name="cfl" type="double" value="5.00000000000000000e-01"/>
+      <Parameter name="cfl" type="double" value="1.0"/>
       <Parameter name="spatial discretization order" type="int" value="2"/>
       <Parameter name="temporal discretization order" type="int" value="2"/>
       <ParameterList name="reconstruction">
-        <Parameter name="polynomial order" type="int" value="0"/>
+        <Parameter name="polynomial order" type="int" value="1"/>
         <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
         <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
         <Parameter name="limiter location" type="string" value="face"/>
-        <Parameter name="limiter cfl" type="double" value="0.5"/>
+        <Parameter name="limiter cfl" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="boundary conditions">
         <ParameterList name="ponded-depth">
@@ -316,10 +317,11 @@
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="transient:transport">
       <Parameter name="domain name" type="string" value="domain"/>
-      <Parameter name="spatial discretization order" type="int" value="1"/>
-      <Parameter name="temporal discretization order" type="int" value="1"/>
+      <Parameter name="spatial discretization order" type="int" value="2"/>
+      <Parameter name="temporal discretization order" type="int" value="2"/>
       <Parameter name="cfl" type="double" value="1.0"/>
       <Parameter name="flow mode" type="string" value="transient"/>
       <Parameter name="solver" type="string" value="Dispersion Solver"/>
@@ -361,8 +363,9 @@
             <ParameterList name="BC2">
               <Parameter name="regions" type="Array(string)" value="{Boundary}"/>
               <ParameterList name="boundary concentration">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0"/>
+                <ParameterList name="function-exprtk">
+                  <Parameter name="number of arguments" type="int" value="3"/>
+                  <Parameter name="formula" type="string" value="0.5*(x^2 + y^2)/(t^2+2.0642)"/>
                 </ParameterList>
               </ParameterList>
               <Parameter name="spatial distribution method" type="string" value="none"/>
