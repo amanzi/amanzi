@@ -170,11 +170,13 @@ void TransportImplicit_PK::Initialize()
   if (ti_list_ != Teuchos::null) {
     solver_name_ = ti_list_->get<std::string>("linear solver", "");
     auto pc_name = ti_list_->get<std::string>("preconditioner", "");
-    auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
-        pc_name, *preconditioner_list_,
-        solver_name_, *linear_solver_list_, true);
-    op_->set_inverse_parameters(inv_list);
-    op_->InitializeInverse();
+    if (solver_name_ != "" || pc_name != "") {
+      auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
+          pc_name, *preconditioner_list_,
+          solver_name_, *linear_solver_list_, true);
+      op_->set_inverse_parameters(inv_list);
+      op_->InitializeInverse();
+    }
   }
   
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {

@@ -41,7 +41,17 @@ void InputAnalysis::RegionAnalysis()
     for (int i = 0; i < regions.size(); i++) {
       AmanziMesh::Entity_ID_List block;
       std::vector<double> vofs;
-      mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block, &vofs);
+
+      try {
+        mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block, &vofs);
+      } catch(...) {
+        // for exodus labels and manifolds we need additional check
+        try {
+          mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block, &vofs);
+        } catch(...) {
+          block.clear();
+        }
+      }
       int nblock = block.size();
       int nvofs = vofs.size();
 
