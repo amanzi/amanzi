@@ -27,7 +27,9 @@
 #include "pks_shallow_water_registration.hh"
 #include "State.hh"
 
-std::tuple<double, double, double> RunTest(int n, int* ncycles, int* MyPID) {
+std::tuple<double, double, double> RunTest(
+    int n, const std::string& meshexo, int* ncycles, int* MyPID)
+{
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
@@ -40,13 +42,14 @@ using namespace Amanzi::AmanziGeometry;
   
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
   
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({Framework::MSTK}));
   auto mesh = factory.create(-3.0, -3.0, 3.0, 3.0, n, n, true, true);
+  if (meshexo != "") mesh = factory.create(meshexo, true, true);
   
   Amanzi::ObservationData obs_data;
   
@@ -101,8 +104,8 @@ TEST(MPC_DRIVER_IHM_SHALLOW_WATER_TRANSPORT_THACKER) {
   int i(0), ncycles, MyPID;
   std::vector<double> h(3), err_h(3), err_v(3), err_tcc(3);
   for (int n = 16; n < 80; n *= 2, ++i) {
-    auto errs = RunTest(n, &ncycles, &MyPID);
-    h[i] = 1.0 / n;
+    auto errs = RunTest(n, "", &ncycles, &MyPID);
+    h[i] = 6.0 / n;
     err_h[i] = std::get<0>(errs);
     err_v[i] = std::get<1>(errs);
     err_tcc[i] = std::get<2>(errs);
