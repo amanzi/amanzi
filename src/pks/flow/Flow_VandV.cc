@@ -333,21 +333,23 @@ void Flow_PK::VV_PrintSourceExtrema() const
 
     for (int i = 0; i < nsrcs; ++i) {
       for (auto it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
-        double tmp = it->second[0];
-        smin = std::min(smin, tmp);
-        smax = std::max(smax, tmp);
-
         int c = it->first;
-        double vol = mesh_->cell_volume(c);
+        if (c < ncells_owned) {
+          double tmp = it->second[0];
+          smin = std::min(smin, tmp);
+          smax = std::max(smax, tmp);
 
-        if (flow_on_manifold_) {
-          areas[i] += vol;
-          rates[i] += tmp * vol / (*aperture)[0][c];
-          vol *= (*aperture)[0][c];
-        } else {
-          rates[i] += tmp * vol;
+          double vol = mesh_->cell_volume(c);
+
+          if (flow_on_manifold_) {
+            areas[i] += vol;
+            rates[i] += tmp * vol / (*aperture)[0][c];
+            vol *= (*aperture)[0][c];
+          } else {
+            rates[i] += tmp * vol;
+          }
+          volumes[i] += vol;
         }
-        volumes[i] += vol;
       }
     }
 
@@ -355,11 +357,11 @@ void Flow_PK::VV_PrintSourceExtrema() const
     std::vector<double> aux1(rates), aux2(volumes);
     mesh_->get_comm()->MinAll(&tmp1, &smin, 1);
     mesh_->get_comm()->MaxAll(&tmp2, &smax, 1);
-    mesh_->get_comm()->MaxAll(aux1.data(), rates.data(), nsrcs);
-    mesh_->get_comm()->MaxAll(aux2.data(), volumes.data(), nsrcs);
+    mesh_->get_comm()->SumAll(aux1.data(), rates.data(), nsrcs);
+    mesh_->get_comm()->SumAll(aux2.data(), volumes.data(), nsrcs);
     if (flow_on_manifold_) {
       std::vector<double> aux3(areas);
-      mesh_->get_comm()->MaxAll(aux3.data(), areas.data(), nsrcs);
+      mesh_->get_comm()->SumAll(aux3.data(), areas.data(), nsrcs);
     }
 
     Teuchos::OSTab tab = vo_->getOSTab();
