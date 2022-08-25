@@ -3533,13 +3533,13 @@ The conceptual PDE model of the stationary coupled matrix-fracture flow is
 .. math::
   \begin{array}{l}
   \phi_m \frac{S_{s,m}}{g} \frac{\partial p_m}{\partial t}
-  - \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_m) = Q_m,
+  + \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_m) = Q_m,
   \quad
   \boldsymbol{q}_m = -\frac{\boldsymbol{K}_m}{\mu} 
   (\boldsymbol{\nabla} p_m - \rho_l \boldsymbol{g}) \\
   %
   \phi_f \frac{S_{s,f}}{g} \frac{\partial p_f}{\partial t}
-  -\boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_f) = 
+  + \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_f) = 
     -\rho_l [[ \tilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} ]],
   \quad
   \boldsymbol{q}_f = -\frac{\boldsymbol{K}_f}{\mu} 
