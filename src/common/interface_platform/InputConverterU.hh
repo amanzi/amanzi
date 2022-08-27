@@ -132,8 +132,8 @@ class InputConverterU : public InputConverter {
   void TranslateFieldIC_(
       DOMNode* node, std::string field, std::string unit,
       const std::string& reg_str, const std::vector<std::string>& regions,
-      Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
-      std::string data_key = "value");
+      Teuchos::ParameterList& out_ic, std::string data_key = "value",
+      const std::vector<std::string>& components = { "cell" });
 
   void AddIndependentFieldEvaluator_(
       Teuchos::ParameterList& out_ev,

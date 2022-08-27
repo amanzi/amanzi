@@ -85,7 +85,6 @@ Note this also accepts an object that provides the `BDF1 Solver Interface`_.
 #include "SolverDefs.hh"
 
 #include "BDF1_State.hh"
-#include "SolutionHistory.hh"
 #include "BDF1_SolverFnBase.hh"
 
 namespace Amanzi {
@@ -95,8 +94,10 @@ class BDF1_TI {
  public:
   // Create the BDF Dae solver object, the nonlinear problem must be
   // defined in a class that derives from the virtual base class FnBase.
-  BDF1_TI(BDFFnBase<Vector>& fn, Teuchos::ParameterList& plist,
-          const Teuchos::RCP<const Vector>& initvector);
+  BDF1_TI(BDFFnBase<Vector>& fn,
+          Teuchos::ParameterList& plist,
+          const Teuchos::RCP<const Vector>& initvector,
+          const Teuchos::RCP<State>& S = Teuchos::null);
 
   // initializes the state
   void SetInitialState(const double h,
@@ -151,8 +152,9 @@ class BDF1_TI {
 ****************************************************************** */
 template<class Vector,class VectorSpace>
 BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
-                     Teuchos::ParameterList& plist,
-                     const Teuchos::RCP<const Vector>& initvector) :
+        Teuchos::ParameterList& plist,
+        const Teuchos::RCP<const Vector>& initvector,
+        const Teuchos::RCP<State>& S) :
     plist_(plist) {
   fn_ = Teuchos::rcpFromRef(fn);
 
@@ -162,7 +164,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
 
   // Create the state.
   state_ = Teuchos::rcp(new BDF1_State<Vector>());
-  state_->InitializeFromPlist(plist_, initvector);
+  state_->InitializeFromPlist(plist_, initvector, S);
 
   // Set up the nonlinear solver
   // -- initialized the SolverFnBase interface
@@ -179,7 +181,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
 
   // timestep controller
   TimestepControllerFactory<Vector> fac;
-  ts_control_ = fac.Create(plist, udot_, udot_prev_);
+  ts_control_ = fac.Create(plist, udot_, udot_prev_, S);
 
   // misc internal parameters
   tol_solver_=solver_->tolerance();
@@ -194,7 +196,7 @@ void BDF1_TI<Vector,VectorSpace>::SetInitialState(const double t,
         const Teuchos::RCP<Vector>& x,
         const Teuchos::RCP<Vector>& xdot) {
   // set a clean initial state for when the time integrator is reinitialized
-  state_->uhist->FlushHistory(t, *x, *xdot);
+  state_->uhist->FlushHistory(t, *x, xdot.get());
   state_->seq = 0;
   state_->pc_lag = 0;
 }

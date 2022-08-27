@@ -707,12 +707,14 @@ void State::InitializeFields(const Tag& tag)
 
   Tag failed;
   if (state_plist_.isSublist("initial conditions")) {
+    double t_ini = state_plist_.sublist("initial conditions").get<double>("time", 0.0);
     for (auto& e : data_) {
       std::string flag("... skipped");
       if (pre_initialization || !e.second->isInitialized(failed)) {
         if (state_plist_.sublist("initial conditions").isSublist(e.first)) {
           flag = "[ok]";
           Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(e.first);
+          sublist.set<double>("time", t_ini);
           e.second->Initialize(sublist);
         } else {
           // check for domain set

@@ -223,7 +223,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
         transient_model += 8;
 
       } else if (strcmp(tagname, "shallow_water") == 0) {
-        model = GetAttributeValueS_(jnode, "model");
+        model = GetAttributeValueS_(jnode, "model", "Rusanov, central upwind");
         pk_model_["shallow_water"] = model;
 
         std::string region = GetAttributeValueS_(jnode, "domain");
@@ -907,7 +907,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
 
         // ... coupling information 
         out_list.sublist(pk_names[1]).sublist("physical models and assumptions")
-           .set<std::string>("darcy flux key", Keys::getKey(pk_domain_["shallow_water"], "riemann_flux"))
+           .set<std::string>("volumetric flow rate key", Keys::getKey(pk_domain_["shallow_water"], "riemann_flux"))
            .set<std::string>("saturation key", Keys::getKey(pk_domain_["shallow_water"], "ponded_depth"));
       }
 

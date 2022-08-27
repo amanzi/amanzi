@@ -82,7 +82,7 @@ class Transport_PK : public PK_Physical {
 
   // main transport members
   // -- calculation of a stable time step needs saturations and darcy flux
-  double StableTimeStep();
+  double StableTimeStep(int n);
 
   // -- coupling with chemistry
   void SetupChemistry(Teuchos::RCP<AmanziChemistry::Chemistry_PK> chem_pk) { chem_pk_ = chem_pk; }
@@ -91,12 +91,14 @@ class Transport_PK : public PK_Physical {
   // -- access members  
   double cfl() { return cfl_; }
   bool get_flag_dispersion() { return flag_dispersion_ || flag_diffusion_; }
-  Teuchos::RCP<const State> state() { return S_; }
   Teuchos::RCP<CompositeVector> total_component_concentration() { return tcc_tmp; }
   void get_discretization_order(int* spatial, int* temporal) {
     *spatial = spatial_disc_order;
     *temporal = temporal_disc_order;
   }
+
+  // -- modifiers
+  void set_current_component(int i) { current_component_ = i; }
 
   // -- control members
   void Policy(Teuchos::Ptr<State> S);

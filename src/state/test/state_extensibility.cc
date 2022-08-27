@@ -56,6 +56,7 @@ void UserReadCheckpoint(const Amanzi::Checkpoint& chkp,
                         const std::vector<std::string>* subfieldnames,
                         MyPointList& vec) {}
 
+
 TEST(STATE_EXTENSIBILITY_CREATION) {
   using namespace Amanzi;
 

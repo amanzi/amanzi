@@ -118,7 +118,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     int ncycles = 0, iter = 0;
     double t_old(0.0), t_new, dt, T1(1.0);
     while (t_old < T1) {
-      dt = std::min(TPK.StableTimeStep(), T1 - t_old);
+      dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
       dt = dt * 7.7;
       t_new = t_old + dt;
 
@@ -232,13 +232,13 @@ void ConvergenceBoxMeshes(int order, double tol, std::string limiter)
     TPK.spatial_disc_order = TPK.temporal_disc_order = order;
  
     // advance the state
-    if (nx == 20) dt0 = TPK.StableTimeStep();
+    if (nx == 20) dt0 = TPK.StableTimeStep(-1);
     else dt0 /= 2;
 
     int iter = 0;
     double t_old(0.0), t_new(0.0), dt, T1(2.0);
     while (t_new < T1) {
-      dt = std::min(TPK.StableTimeStep(), T1 - t_old);
+      dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
       dt = std::min(dt, dt0);
       t_new = t_old + dt;
 
@@ -375,7 +375,7 @@ void ConvergencePolyMeshes(int order, double tol, std::string limiter)
     int iter = 0;
     double t_old(0.0), t_new, dt, T1(0.2);
     while (t_old < T1) {
-      dt = std::min(TPK.StableTimeStep(), T1 - t_old);
+      dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
       t_new = t_old + dt;
 
       S->set_initial_time(t_old);

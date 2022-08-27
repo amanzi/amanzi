@@ -31,7 +31,7 @@ various fields.
 
    * `"initial conditions`" ``[list]`` A list of constant-in-time variables :
        `"initial conditions`" is a terrible name and will go away in the next
-       iteration of state.
+       iteration of state. 
 
 .. _evaluator-typedinline-spec:
 .. admonition:: evaluator-typedinline-spec
@@ -64,6 +64,7 @@ Example:
       </ParameterList>
 
       <ParameterList name="initial conditions">
+        <Parameter name="time" type="double" value="0.0">
         <ParameterList name="atmospheric pressure">
           <Parameter name="value" type="double" value="101325.0" />
         </ParameterList>
@@ -209,8 +210,13 @@ class State {
   //
   // Requiring data from State takes up to two template arguments:
   //  T is the data type required
-  //  F is a factory, which must provide a method Create() that makes a T
-  //    (optional)
+  //  F is a factory, which must provide a method Create() that makes a T, or
+  //    can be used in a constructor, e.g. T(F), or is optional if T needs no
+  //    metadata to be created, e.g. T == double.
+  //
+  //
+  // This Require call will not compile for factories F that do not have a
+  // default constructor (e.g. Epetra_Map).
   template <typename T, typename F>
   F& Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true) {
     CheckIsDebugData_(fieldname, tag);
@@ -221,6 +227,21 @@ class State {
     return GetRecordSetW(fieldname).SetType<T, F>();
   }
 
+  // This Require call is for factories that do not have a default constructor.
+  // (e.g. Epetra_Map).
+  template <typename T, typename F>
+  F& Require(const F& f, const Key& fieldname, const Tag& tag,
+             const Key& owner = "", bool alias_ok = true) {
+    CheckIsDebugData_(fieldname, tag);
+    if (!Keys::hasKey(data_, fieldname)) {
+      data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
+    }
+    GetRecordSetW(fieldname).RequireRecord(tag, owner, alias_ok);
+    return GetRecordSetW(fieldname).SetType<T, F>(f);
+  }
+
+  // This Require call is for default-constructible data that does not need a
+  // factory (e.g. plain-old-data like int, double, etc).
   template <typename T>
   void Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true) {
     CheckIsDebugData_(fieldname, tag);
@@ -232,6 +253,8 @@ class State {
     rs.SetType<T>();
   }
 
+  // This Require call will not compile for factories F that do not have a
+  // default constructor (e.g. Epetra_Map).
   template <typename T, typename F>
   F& Require(const Key& fieldname, const Tag& tag, const Key& owner,
              const std::vector<std::string>& subfield_names, bool alias_ok = true) {
@@ -245,6 +268,20 @@ class State {
     return rs.SetType<T, F>();
   }
 
+  // This Require call is for factories that do not have a default constructor.
+  // (e.g. Epetra_Map).
+  template <typename T, typename F>
+  F& Require(const F& f, const Key& fieldname, const Tag& tag, const Key& owner,
+             const std::vector<std::string>& subfield_names, bool alias_ok = true) {
+    CheckIsDebugData_(fieldname, tag);
+    if (!Keys::hasKey(data_, fieldname)) {
+      data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
+    }
+    auto& rs = GetRecordSetW(fieldname);
+    rs.set_subfieldnames(subfield_names);
+    auto& r = rs.RequireRecord(tag, owner, alias_ok);
+    return rs.SetType<T, F>(f);
+  }
 
   //
   // RecordSets are a collection of Records that share the same data factory

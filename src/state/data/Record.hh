@@ -147,7 +147,7 @@ class Record {
   bool io_checkpoint_;
   bool io_vis_;
 
-  Data data_;
+  Impl::Data data_;
 
   friend class RecordSet;
 };

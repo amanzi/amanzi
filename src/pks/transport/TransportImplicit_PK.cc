@@ -380,5 +380,17 @@ void TransportImplicit_PK::UpdateBoundaryData(double t_old, double t_new, int co
   ComputeBCs_(models, values, component);
 }
 
+
+/* ******************************************************************* 
+* Diagnostics
+******************************************************************* */
+void TransportImplicit_PK::CalculateDiagnostics(const Tag& tag)
+{
+  if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "mean limiter=" << limiter_mean_ << std::endl;
+  }
+}
+
 }  // namespace Transport
 }  // namespace Amazni

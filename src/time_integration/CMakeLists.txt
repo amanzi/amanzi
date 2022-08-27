@@ -32,6 +32,8 @@ include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR}/data)
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -50,7 +52,7 @@ list(REVERSE time_int_new_tpl_libs)
 list(REMOVE_DUPLICATES time_int_new_tpl_libs)
 list(REVERSE time_int_new_tpl_libs)
 
-set(time_integration_link_libs solvers data_structures output mesh geometry error_handling whetstone atk )
+set(time_integration_link_libs solvers state data_structures output mesh geometry error_handling whetstone atk )
 
 add_amanzi_library(time_integration
                    SOURCE ${time_int_new_source_files}

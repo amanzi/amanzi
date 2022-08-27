@@ -62,6 +62,7 @@
 
       <unstr_shallow_water_controls>
         <cfl>0.5</cfl>
+        <algorithm>explicit second-order</algorithm>
       </unstr_shallow_water_controls>
     </unstructured_controls>
   </numerical_controls>

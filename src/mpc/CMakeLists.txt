@@ -241,6 +241,13 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_ihm_shallow_water_transport.cc
         	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                
 
+    # Test: mpc driver for integrated hydrology: solute transport in shallow water: convergence
+    add_amanzi_test(mpc_ihm_shallow_water_transport_Thacker mpc_ihm_shallow_water_transport_Thacker
+                    KIND      int
+                    NPROCS    4
+                    SOURCE    test/Main.cc test/mpc_ihm_shallow_water_transport_Thacker.cc
+        	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                
+
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc_dummy mpc_dummy
                     KIND      int
