@@ -234,11 +234,11 @@
         <Parameter name="limiter cfl" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="boundary conditions">
-        <ParameterList name="ponded-depth">
+        <ParameterList name="ponded depth">
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{Boundary}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
-            <ParameterList name="ponded-depth">
+            <ParameterList name="ponded depth">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="3"/>
                 <Parameter name="formula" type="string" value="2*(2.0642/(t^2+2.0642) - (x^2+y^2)/19.0096/(t^2+2.0642)^2)"/>

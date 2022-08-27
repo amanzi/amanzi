@@ -68,7 +68,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   // extract velocity and compute qx, qy, h BC at faces
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->get_bc_name() == "ponded-depth") {
+    if (bcs_[i]->get_bc_name() == "ponded depth") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
         bc_value_hn[n] = it->second[0];

@@ -521,11 +521,11 @@
         <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
       <ParameterList name="boundary conditions">
-        <ParameterList name="ponded-depth">
+        <ParameterList name="ponded depth">
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{LeftTopEdge}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
-            <ParameterList name="ponded-depth">
+            <ParameterList name="ponded depth">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.00000000000000000e+01"/>
               </ParameterList>

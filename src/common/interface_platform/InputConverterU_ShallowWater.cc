@@ -159,8 +159,8 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWaterBCs_()
     // create names, modify data
     std::string bcname;
     if (bctype == "ponded_depth") {
-      bctype = "ponded-depth";
-      bcname = "ponded-depth";
+      bctype = "ponded depth";
+      bcname = "ponded depth";
     }
     std::stringstream ss;
     ss << "BC " << ibc++;
