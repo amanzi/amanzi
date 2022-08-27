@@ -16,6 +16,7 @@
   -- most likely this PK is an MPC of some type -- to do the actual work.
 */
 
+#include <ios>
 #include <iostream>
 #include <unistd.h>
 #include <sys/resource.h>
@@ -337,6 +338,8 @@ void CycleDriver::ReportMemory() {
     comm_->MaxAll(&mem,&max_mem,1);
 
     Teuchos::OSTab tab = vo_->getOSTab();
+    std::ios save(NULL);
+    save.copyfmt(*vo_->os());
     *vo_->os() << "======================================================================" << std::endl;
     *vo_->os() << "Simulation made " << S_->get_cycle() << " cycles.\n";
     *vo_->os() << "All meshes combined have " << global_ncells << " cells.\n";
@@ -351,6 +354,7 @@ void CycleDriver::ReportMemory() {
     *vo_->os() << "  Total:              " << std::setw(7) << total_mem 
                << " MBytes,  total per cell:   " << std::setw(7) << total_mem/global_ncells*1024*1024 
                << " Bytes" << std::endl;
+    vo_->os()->copyfmt(save);
   }
 
   double doubles_count(0.0);
@@ -685,7 +689,7 @@ void CycleDriver::Visualize(bool force, const Tag& tag) {
       vis->set_tag(tag);
       WriteVis(*vis, *S_);
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "writing visualization file" << std::endl;
+      *vo_->os() << "writing visualization file: " << vis->get_name() << std::endl;
     }
   }
 }
