@@ -30,11 +30,12 @@
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
 #include "State.hh"
+#include "Tag.hh"
 #include "Tensor.hh"
 #include "Units.hh"
 #include "VerboseObject.hh"
 
-// Amanzi
+// Amanzi::Transport
 #include "Transport_PK.hh"
 #include "TransportDefs.hh"
 #include "TransportDomainFunction.hh"
@@ -106,6 +107,8 @@ class TransportImplicit_PK : public Transport_PK,
                        Teuchos::RCP<TreeVector> du) override {
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
+
+  virtual void CalculateDiagnostics(const Tag& tag) override;
 
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.

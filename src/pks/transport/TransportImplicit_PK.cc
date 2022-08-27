@@ -170,13 +170,11 @@ void TransportImplicit_PK::Initialize()
   if (ti_list_ != Teuchos::null) {
     solver_name_ = ti_list_->get<std::string>("linear solver", "");
     auto pc_name = ti_list_->get<std::string>("preconditioner", "");
-    if (solver_name_ != "" || pc_name != "") {
-      auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
-          pc_name, *preconditioner_list_,
-          solver_name_, *linear_solver_list_, true);
-      op_->set_inverse_parameters(inv_list);
-      op_->InitializeInverse();
-    }
+    auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
+        pc_name, *preconditioner_list_,
+        solver_name_, *linear_solver_list_, true);
+    op_->set_inverse_parameters(inv_list);
+    op_->InitializeInverse();
   }
   
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -380,6 +378,18 @@ void TransportImplicit_PK::UpdateBoundaryData(double t_old, double t_new, int co
   auto& models = op_bc_->bc_model();
 
   ComputeBCs_(models, values, component);
+}
+
+
+/* ******************************************************************* 
+* Diagnostics
+******************************************************************* */
+void TransportImplicit_PK::CalculateDiagnostics(const Tag& tag)
+{
+  if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "mean limiter=" << limiter_mean_ << std::endl;
+  }
 }
 
 }  // namespace Transport
