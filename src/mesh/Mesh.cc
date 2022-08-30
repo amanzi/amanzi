@@ -68,10 +68,10 @@ Mesh::Mesh(const Comm_ptr_type& comm,
            const bool request_edges)
     : plist_(plist),
       mesh_type_(GENERAL),
-      parent_(Teuchos::null),
       logical_(false),
-      columns_built_(false),
-      kdtree_faces_initialized_(false)
+      parent_(Teuchos::null),
+      kdtree_faces_initialized_(false),
+      columns_built_(false)
 {
   comm_ = comm;
 
@@ -180,7 +180,7 @@ Mesh::compute_cell_geometry_(const Entity_ID cellid, double *volume,
     // without (but we have yet to put in the code for the standard
     // node ordering and computation for these special elements)
     Entity_ID_List faces;
-    std::vector<unsigned int> nfnodes;
+    std::vector<std::size_t> nfnodes;
     std::vector<int> fdirs;
     std::vector<AmanziGeometry::Point> ccoords, cfcoords, fcoords;
 
@@ -419,8 +419,8 @@ Mesh::set_id_from_name(const std::string setname) const
   for (int i = 0; i < ngr; i++) {
     Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(i);
 
-    if (rgn->name() == setname)
-      return rgn->id();
+    if (rgn->get_name() == setname)
+      return rgn->get_id();
   }
 
   return 0;
@@ -439,8 +439,8 @@ Mesh::set_name_from_id(const int setid) const
   for (int i = 0; i < ngr; i++) {
     Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(i);
 
-    if (rgn->id() == setid)
-      return rgn->name();
+    if (rgn->get_id() == setid)
+      return rgn->get_name();
   }
 
   return 0;
@@ -459,7 +459,7 @@ Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid) cons
     // calculation routine
     int nf;
     Entity_ID_List faces;
-    std::vector<unsigned int> nfnodes;
+    std::vector<std::size_t> nfnodes;
     std::vector<int> fdirs;
     std::vector<AmanziGeometry::Point> cfcoords;
 
@@ -688,7 +688,6 @@ int
 Mesh::build_columns(const std::string& setname) const
 {
   if (columns_built_) return 0;
-  int rank = get_comm()->MyPID();
 
   // Allocate space and initialize.
   int nn = num_entities(NODE,Parallel_type::ALL);

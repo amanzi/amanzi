@@ -68,6 +68,7 @@ class Operator_FaceCellSff : public Operator_FaceCell {
 
   // visit method for sparsity structure of Schur complement
   // handled in Schur complement -- no cell dofs.
+  using Operator_FaceCell::SymbolicAssembleMatrixOp;
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const override {};

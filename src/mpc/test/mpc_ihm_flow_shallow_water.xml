@@ -120,7 +120,7 @@
   </ParameterList>
 
   <ParameterList name="state">
-    <ParameterList name="field evaluators">
+    <ParameterList name="evaluators">
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -133,7 +133,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       
       <ParameterList name="porosity">
@@ -148,7 +148,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
     </ParameterList>
 
@@ -530,7 +530,7 @@
           <Parameter name="spatial distribution method" type="string" value="domain coupling"/>
           <Parameter name="submodel" type="string" value="flux exchange"/>
           <ParameterList name="source">
-            <Parameter name="flux key" type="string" value="darcy_flux"/>
+            <Parameter name="flux key" type="string" value="volumetric_flow_rate"/>
             <Parameter name="external field key" type="string" value="molar_density_liquid"/>
           </ParameterList>
         </ParameterList>

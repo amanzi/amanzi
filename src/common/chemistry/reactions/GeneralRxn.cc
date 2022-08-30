@@ -158,7 +158,6 @@ void GeneralRxn::AddContributionToJacobian(
     // column loop
     for (int j = 0; j < ncomp_forward_; j++) {
       int jcomp = species_ids_f_[j];
-      // double tempd = -stoichiometry_[j] *
       double tempd = orders_oc_[j] *
           std::exp(lnQkf_ - primary_species[jcomp].ln_molality()) * por_den_sat_vol;
       // row loop

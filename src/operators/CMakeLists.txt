@@ -52,9 +52,12 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 set(operators_inc_files
     BCs.hh
+    BoundaryFlux.hh
     CoefficientModel.hh
+    FCT.hh
     InterfaceWhetStone.hh
     LimiterCell.hh
+    LimiterCellDG.hh
     Mini_Diffusion1D.hh
     Mini_Operator1D.hh
     OperatorDefs.hh
@@ -85,7 +88,6 @@ set(operators_inc_files
     Operator_Factory.hh
     Operator_Node.hh
     Operator_Schema.hh
-    BoundaryFlux.hh
     PDE_Abstract.hh
     PDE_Accumulation.hh
     PDE_Advection.hh
@@ -118,9 +120,12 @@ set(operators_inc_files
     RemapUtils.hh
     Schema.hh
     SchemaUtils.hh
+    SmoothnessIndicator.hh
+    SmoothnessIndicatorShu.hh
     TreeOperator.hh
     Reconstruction.hh
-    ReconstructionCell.hh
+    ReconstructionCellLinear.hh
+    ReconstructionCellPolynomial.hh
     UniqueLocalIndex.hh
     Upwind.hh
     UpwindArithmeticAverage.hh
@@ -132,7 +137,8 @@ set(operators_inc_files
 )
 
 add_amanzi_library(operators 
-                   SOURCE LimiterCell.cc
+                   SOURCE FCT.cc
+                          LimiterCell.cc LimiterCellDG.cc
                           Mini_Diffusion1D.cc
                           Mini_Operator1D.cc
                           OperatorUtils.cc
@@ -165,8 +171,10 @@ add_amanzi_library(operators
                           PDE_MagneticDiffusion.cc PDE_MagneticDiffusion_TM.cc
                           PDE_Reaction.cc
                           Schema.cc SchemaUtils.cc
+                          SmoothnessIndicatorShu.cc
                           TreeOperator.cc
-                          ReconstructionCell.cc
+                          ReconstructionCellLinear.cc
+                          ReconstructionCellPolynomial.cc
                           RemapDG.cc RemapUtils.cc
                           UniqueLocalIndex.cc
                           RemapDG_Helper.cc RemapUtils.cc
@@ -398,6 +406,13 @@ if (BUILD_TESTS)
                     NPROCS 2
                     KIND unit)
 
+    # fct tests
+    add_amanzi_test(operators_fct operators_fct
+                    KIND unit
+                    NPROCS 2
+                    SOURCE test/Main.cc test/operator_fct.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # high-order diffusion test
     add_amanzi_test(operators_diffusion_high_order operators_diffusion_high_order
                     KIND unit
@@ -415,7 +430,6 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/operator_tree.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
 
 endif()
                 

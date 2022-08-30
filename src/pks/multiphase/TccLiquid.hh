@@ -8,11 +8,11 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Calculates liquid mole fraction from partial gas pressure.
+  Calculates liquid component concentration from gas concentration.
 */
 
-#ifndef AMANZI_MULTIPHASE_MOLAR_FRACTION_LIQUID_HH_
-#define AMANZI_MULTIPHASE_MOLAR_FRACTION_LIQUID_HH_
+#ifndef AMANZI_MULTIPHASE_TCC_LIQUID_HH_
+#define AMANZI_MULTIPHASE_TCC_LIQUID_HH_
 
 #include <string>
 #include <vector>
@@ -21,6 +21,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 // Amanzi
+#include "Factory.hh"
 
 // Multiphase
 #include "MultiphaseBaseEvaluator.hh"
@@ -33,17 +34,18 @@ class TccLiquid : public MultiphaseBaseEvaluator {
  public:
   TccLiquid(Teuchos::ParameterList& plist);
 
-  // interface methods from FieldEvaluator
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result);
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
  private:
   std::string tcc_gas_key_;
+
+  static Utils::RegisteredFactory<Evaluator, TccLiquid> fac_;
 };
 
 }  // namespace Flow

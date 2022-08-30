@@ -9,8 +9,6 @@
 #include "omp.h"
 #endif
 
-static double epsilon = 1.e-10;
-
 int main(int argc, char* argv[])
 {
     BoxLib::Initialize(argc,argv);

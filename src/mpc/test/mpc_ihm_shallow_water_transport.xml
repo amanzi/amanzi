@@ -50,7 +50,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="state">
-    <ParameterList name="field evaluators">
+    <ParameterList name="evaluators">
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -63,7 +63,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
@@ -77,7 +77,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
     </ParameterList>
 
@@ -354,7 +354,7 @@
         <Parameter name="effective transport porosity" type="bool" value="false"/>
         <Parameter name="permeability field is required" type="bool" value="false"/>
         <Parameter name="eos lookup table" type="string" value="false"/>
-        <Parameter name="darcy flux key" type="string" value="riemann_flux"/>
+        <Parameter name="volumetric flow rate key" type="string" value="riemann_flux"/>
         <Parameter name="saturation key" type="string" value="ponded_depth"/>
       </ParameterList>
       <ParameterList name="verbose object">

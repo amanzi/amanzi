@@ -75,16 +75,16 @@ using namespace Amanzi::AmanziGeometry;
   double rho = 998.2;
   double mu = 0.001002;
   double K1 = 1.0e-11;
-  double kn = 4.0e-8;
+  double gravity = 9.81;
+  double kn = 3.9240e-7 / gravity;  // 4e-08;
   double L = 120.0;
   double q0 = -2.0e-3;
-  double gravity = 9.81;
 
   // test pressure in fracture
   K1 *= rho / mu;
   double pf_exact = p0 - q0 * (L / K1 / 2 + 1.0 / kn) - gravity * rho * L / 2;
 
-  auto& pf = *S->GetFieldData("fracture-pressure")->ViewComponent("cell");
+  const auto& pf = *S->Get<CompositeVector>("fracture-pressure").ViewComponent("cell");
   for (int c = 0; c < pf.MyLength(); ++c) {
     if (c == 0) std::cout << "Fracture pressure: " << pf[0][c] << ",  exact: " << pf_exact << std::endl;
     CHECK(std::fabs(pf[0][c] - pf_exact) < 1e-8 * std::fabs(pf_exact));
@@ -93,8 +93,8 @@ using namespace Amanzi::AmanziGeometry;
   // test flux in bottom domain
   Amanzi::AmanziGeometry::Point uf_exact(0.0, 0.0, q0);
 
-  auto& uf = *S->GetFieldData("darcy_flux")->ViewComponent("face");
-  const auto& fmap = *S->GetFieldData("darcy_flux")->ComponentMap("face");
+  const auto& uf = *S->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face");
+  const auto& fmap = *S->Get<CompositeVector>("volumetric_flow_rate").ComponentMap("face");
 
   bool flag(true);
   int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);

@@ -26,6 +26,9 @@
 namespace Amanzi {
 namespace ShallowWater {
 
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
+
 //--------------------------------------------------------------
 // Standard constructor
 //--------------------------------------------------------------
@@ -34,9 +37,9 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                                  const Teuchos::RCP<State>& S,
                                  const Teuchos::RCP<TreeVector>& soln)
   : PK(pk_tree, glist, S, soln),
-    S_(S),
-    soln_(soln),
     glist_(glist),
+    soln_(soln),
+    S_(S),
     passwd_("state"),
     iters_(0)
 {
@@ -64,9 +67,9 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
 // Register fields and field evaluators with the state
 // Conservative variables: (h, hu, hv)
 //--------------------------------------------------------------
-void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
+void ShallowWater_PK::Setup()
 {
-  mesh_ = S->GetMesh(domain_);
+  mesh_ = S_->GetMesh(domain_);
   dim_ = mesh_->space_dimension();
 
   // domain name
@@ -83,88 +86,90 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   //-------------------------------
   // constant fields
   //-------------------------------
-  if (!S->HasField("gravity")) {
-    S->RequireConstantVector("gravity", passwd_, 2);
+  if (!S_->HasRecord("gravity")) {
+    S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
   }
   
   // required for calculating hydrostatic pressure
-  if (!S->HasField("const_fluid_density")) {
-    S->RequireScalar("const_fluid_density", passwd_);
+  if (!S_->HasRecord("const_fluid_density")) {
+    S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
   }
   
-  if (!S->HasField("atmospheric_pressure")) {
-    S->RequireScalar("atmospheric_pressure", passwd_);
+  if (!S_->HasRecord("atmospheric_pressure")) {
+    S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
   }
 
   //-------------------------------
   // primary fields
   //-------------------------------
   // -- ponded depth 
-  if (!S->HasField(ponded_depth_key_)) {
-    S->RequireField(ponded_depth_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasRecord(ponded_depth_key_)) {
+    S_->Require<CV_t, CVS_t>(ponded_depth_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     AddDefaultPrimaryEvaluator_(ponded_depth_key_);
   }
 
   // -- total depth
-  if (!S->HasField(total_depth_key_)) {
-    S->RequireField(total_depth_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasRecord(total_depth_key_)) {
+    S_->Require<CV_t, CVS_t>(total_depth_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // -- velocity
-  if (!S->HasField(velocity_key_)) {
-    S->RequireField(velocity_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 2);
+  if (!S_->HasRecord(velocity_key_)) {
+    S_->Require<CV_t, CVS_t>(velocity_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 2);
     AddDefaultPrimaryEvaluator_(velocity_key_);
   }
 
   // -- discharge
-  if (!S->HasField(discharge_key_)) {
-    S->RequireField(discharge_key_, discharge_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 2);
+  if (!S_->HasRecord(discharge_key_)) {
+    S_->Require<CV_t, CVS_t>(discharge_key_, Tags::DEFAULT, discharge_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 2);
 
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("my key", discharge_key_);
+    Teuchos::ParameterList elist(discharge_key_);
+    elist.set<std::string>("my key", discharge_key_)
+         .set<std::string>("tag", Tags::DEFAULT.get());
     auto eval = Teuchos::rcp(new DischargeEvaluator(elist));
-    S->SetFieldEvaluator(discharge_key_, eval);
+    S_->SetEvaluator(discharge_key_, Tags::DEFAULT, eval);
   }
 
   // -- bathymetry
-  if (!S->HasField(bathymetry_key_)) {
+  if (!S_->HasRecord(bathymetry_key_)) {
     std::vector<std::string> names({"cell", "node"});
     std::vector<int> ndofs(2, 1);
     std::vector<AmanziMesh::Entity_kind> locations({AmanziMesh::CELL, AmanziMesh::NODE});
     
-    S->RequireField(bathymetry_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponents(names, locations, ndofs);
+    S_->Require<CV_t, CVS_t>(bathymetry_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponents(names, locations, ndofs);
   }
 
   //-------------------------------
   // secondary fields
   //-------------------------------
   // -- hydrostatic pressure
-  if (!S->HasField(hydrostatic_pressure_key_)) {
-    S->RequireField(hydrostatic_pressure_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasRecord(hydrostatic_pressure_key_)) {
+    S_->Require<CV_t, CVS_t>(hydrostatic_pressure_key_, Tags::DEFAULT, hydrostatic_pressure_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("my key", hydrostatic_pressure_key_);
+    Teuchos::ParameterList elist(hydrostatic_pressure_key_);
+    elist.set<std::string>("my key", hydrostatic_pressure_key_)
+         .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new HydrostaticPressureEvaluator(elist));
-    S->SetFieldEvaluator(hydrostatic_pressure_key_, eval);
+    S_->SetEvaluator(hydrostatic_pressure_key_, Tags::DEFAULT, eval);
   }
 
   // -- riemann flux
-  if (!S->HasField(riemann_flux_key_)) {
-    S->RequireField(riemann_flux_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
+  if (!S_->HasRecord(riemann_flux_key_)) {
+    S_->Require<CV_t, CVS_t>(riemann_flux_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
   }
 
   // -- previous state of ponded depth (for coupling)
-  if (!S->HasField(prev_ponded_depth_key_)) {
-    S->RequireField(prev_ponded_depth_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->GetField(prev_ponded_depth_key_, passwd_)->set_io_vis(false);
+  if (!S_->HasRecord(prev_ponded_depth_key_)) {
+    S_->Require<CV_t, CVS_t>(prev_ponded_depth_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->GetRecordW(prev_ponded_depth_key_, passwd_).set_io_vis(false);
   }
 }
 
@@ -172,7 +177,7 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
 //--------------------------------------------------------------
 // Initialize internal data
 //--------------------------------------------------------------
-void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
+void ShallowWater_PK::Initialize()
 {
   // Create BC objects
   Teuchos::RCP<ShallowWaterBoundaryFunction> bc;
@@ -233,9 +238,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // gravity
-  double tmp[1];
-  S_->GetConstantVectorData("gravity", "state")->Norm2(tmp);
-  g_ = tmp[0];
+  g_ = norm(S_->Get<AmanziGeometry::Point>("gravity"));
 
   // numerical flux
   Teuchos::ParameterList model_list;
@@ -247,13 +250,13 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   // reconstruction
   Teuchos::ParameterList plist = sw_list_->sublist("reconstruction");
   
-  total_depth_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
+  total_depth_grad_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
   total_depth_grad_->Init(plist);
 
-  discharge_x_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
+  discharge_x_grad_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
   discharge_x_grad_->Init(plist);
 
-  discharge_y_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
+  discharge_y_grad_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
   discharge_y_grad_->Init(plist);
 
   use_limiter_ = sw_list_->get<bool>("use limiter", true);
@@ -265,15 +268,15 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   // default
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  if (!S_->GetField(bathymetry_key_, passwd_)->initialized()) {
-    InitializeField_(S_.ptr(), passwd_, bathymetry_key_, 0.0);
+  if (!S_->GetRecord(bathymetry_key_).initialized()) {
+    InitializeCVField(S_, *vo_, bathymetry_key_, Tags::DEFAULT, passwd_, 0.0);
   }
   
-  const auto& B_n = *S_->GetFieldData(bathymetry_key_)->ViewComponent("node");
-  const auto& B_c = *S_->GetFieldData(bathymetry_key_)->ViewComponent("cell");
+  const auto& B_n = *S_->Get<CV_t>(bathymetry_key_).ViewComponent("node");
+  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
   
   // compute B_c from B_n for well balanced scheme (Beljadid et. al. 2016)
-  S_->GetFieldData(bathymetry_key_)->ScatterMasterToGhosted("node");
+  S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("node");
 
   for (int c = 0; c < ncells_owned; ++c) {
     const Amanzi::AmanziGeometry::Point &xc = mesh_->cell_centroid(c);
@@ -301,38 +304,38 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
     B_c[0][c] = tmp / mesh_->cell_volume(c);
   }
   // redistribute the result
-  S_->GetFieldData(bathymetry_key_)->ScatterMasterToGhosted("cell");
+  S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("cell");
   
   // initialize h from ht or ht from h
-  if (!S_->GetField(ponded_depth_key_, passwd_)->initialized()) {
-    const auto& h_c = *S_->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
-    auto& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell");
+  if (!S_->GetRecord(ponded_depth_key_, Tags::DEFAULT).initialized()) {
+    auto& h_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+    auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
     for (int c = 0; c < ncells_owned; c++) {
       h_c[0][c] = ht_c[0][c] - B_c[0][c];
     }
 
-    S_->GetField(ponded_depth_key_, passwd_)->set_initialized();
+    S_->GetRecordW(ponded_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
   }
   
-  if (!S_->GetField(total_depth_key_, passwd_)->initialized()) {
-    const auto& h_c = *S_->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
-    auto& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell");
+  if (!S_->GetRecord(total_depth_key_).initialized()) {
+    const auto& h_c = *S_->Get<CV_t>(ponded_depth_key_).ViewComponent("cell");
+    auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
     for (int c = 0; c < ncells_owned; c++) {
       ht_c[0][c] = h_c[0][c] + B_c[0][c];
     }
 
-    S_->GetField(total_depth_key_, passwd_)->set_initialized();
+    S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
   }
 
-  InitializeField_(S_.ptr(), passwd_, velocity_key_, 0.0);
-  InitializeField_(S_.ptr(), passwd_, discharge_key_, 0.0);
+  InitializeCVField(S_, *vo_, velocity_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeCVField(S_, *vo_, discharge_key_, Tags::DEFAULT, passwd_, 0.0);
 
   // secondary fields
-  S_->GetFieldEvaluator(hydrostatic_pressure_key_)->HasFieldChanged(S.ptr(), passwd_);
+  S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
 
-  InitializeField_(S_.ptr(), passwd_, riemann_flux_key_, 0.0);
+  InitializeCVField(S_, *vo_, riemann_flux_key_, Tags::DEFAULT, passwd_, 0.0);
   InitializeFieldFromField_(prev_ponded_depth_key_, ponded_depth_key_, false);
   
   // soln_ is the TreeVector of conservative variables [h hu hv]
@@ -342,8 +345,8 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   soln_->PushBack(tmp_h);
   soln_->PushBack(tmp_q);
 
-  auto soln_h = S->GetFieldData(ponded_depth_key_, passwd_);
-  auto soln_q = S->GetFieldData(discharge_key_, discharge_key_);
+  auto soln_h = S_->GetPtrW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_);
+  auto soln_q = S_->GetPtrW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_);
 
   soln_->SubVector(0)->SetData(soln_h);
   soln_->SubVector(1)->SetData(soln_q);
@@ -369,17 +372,17 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 void ShallowWater_PK::InitializeFieldFromField_(
     const std::string& field0, const std::string& field1, bool call_evaluator)
 {
-  if (S_->HasField(field0)) {
-    if (S_->GetField(field0)->owner() == passwd_) {
-      if (!S_->GetField(field0, passwd_)->initialized()) {
+  if (S_->HasRecord(field0)) {
+    if (S_->GetRecord(field0).owner() == passwd_) {
+      if (!S_->GetRecord(field0).initialized()) {
         if (call_evaluator)
-            S_->GetFieldEvaluator(field1)->HasFieldChanged(S_.ptr(), passwd_);
+            S_->GetEvaluator(field1).Update(*S_, passwd_);
 
-        const CompositeVector& f1 = *S_->GetFieldData(field1);
-        CompositeVector& f0 = *S_->GetFieldData(field0, passwd_);
+        const auto& f1 = S_->Get<CV_t>(field1);
+        auto& f0 = S_->GetW<CV_t>(field0, Tags::DEFAULT, passwd_);
         f0 = f1;
 
-        S_->GetField(field0, passwd_)->set_initialized();
+        S_->GetRecordW(field0, passwd_).set_initialized();
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
             *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
@@ -400,29 +403,27 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   bool failed = false;
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  S_->GetFieldEvaluator(discharge_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
 
   // distribute data to ghost cells
-  S_->GetFieldData(total_depth_key_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(ponded_depth_key_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(velocity_key_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(discharge_key_)->ScatterMasterToGhosted("cell");
+  S_->Get<CV_t>(total_depth_key_).ScatterMasterToGhosted("cell");
+  S_->Get<CV_t>(ponded_depth_key_).ScatterMasterToGhosted("cell");
+  S_->Get<CV_t>(velocity_key_).ScatterMasterToGhosted("cell");
+  S_->Get<CV_t>(discharge_key_).ScatterMasterToGhosted("cell");
 
   // save a copy of primary and conservative fields
-  Epetra_MultiVector& B_c = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& B_n = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("node", true);
-  Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& vel_c = *S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& riemann_f = *S_->GetFieldData(riemann_flux_key_, passwd_)->ViewComponent("face", true);
+  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& h_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& vel_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  // auto& riemann_f = *S_->GetW<CV_t>(riemann_flux_key_, passwd_).ViewComponent("face", true);
     
-  S_->GetFieldEvaluator(discharge_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  Epetra_MultiVector& q_c = *S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
+  S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
+  auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
 
   // create copies of primary fields
-  *S_->GetFieldData(prev_ponded_depth_key_, passwd_)->ViewComponent("cell", true) = h_c;
+  *S_->GetW<CV_t>(prev_ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true) = h_c;
   
   Epetra_MultiVector& h_old = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_old = *soln_->SubVector(1)->Data()->ViewComponent("cell");
@@ -501,12 +502,12 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 // Advance conservative variables: (h, hu, hv)
 //--------------------------------------------------------------
 void ShallowWater_PK::CommitStep(
-    double t_old, double t_new, const Teuchos::RCP<State>& S)
+    double t_old, double t_new, const Tag& tag)
 {
-  S_->GetFieldEvaluator(hydrostatic_pressure_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
   
-  Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator(velocity_key_))->SetFieldAsChanged(S.ptr());
-  Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator(ponded_depth_key_))->SetFieldAsChanged(S.ptr());
+  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))->SetChanged();
+  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(ponded_depth_key_, Tags::DEFAULT))->SetChanged();
 }
 
 
@@ -516,12 +517,10 @@ void ShallowWater_PK::CommitStep(
 std::vector<double> ShallowWater_PK::NumericalSource(
     const std::vector<double>& U, int c)
 {
-  Epetra_MultiVector& B_c = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& B_n = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("node", true);
-  Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_, passwd_)->ViewComponent("cell", true);
+  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& B_n = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("node", true);
+  auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
 
-  const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   AmanziMesh::Entity_ID_List cfaces;
   mesh_->cell_get_faces(c, &cfaces);
 
@@ -547,7 +546,7 @@ std::vector<double> ShallowWater_PK::NumericalSource(
     S2 += (0.5) * (ht_rec - B_rec) * (ht_rec - B_rec) * normal[1];
   }
   
-  Epetra_MultiVector& ht_grad = *total_depth_grad_->gradient()->ViewComponent("cell", true);
+  auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
   
   S1 /= vol;
   S2 /= vol;
@@ -573,8 +572,8 @@ double ShallowWater_PK::get_dt()
 {
   double d, vn, dt = 1.e10;
 
-  Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& vel_c = *S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
+  const auto& h_c = *S_->Get<CV_t>(ponded_depth_key_).ViewComponent("cell", true);
+  const auto& vel_c = *S_->Get<CV_t>(velocity_key_).ViewComponent("cell", true);
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List cfaces;

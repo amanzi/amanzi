@@ -149,8 +149,8 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   // -- calculate the flux variable.
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
-  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                     const Teuchos::Ptr<CompositeVector>& flux) override;
+  virtual void UpdateFluxManifold(const Teuchos::Ptr<const CompositeVector>& u,
+                                  const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // Developments
   // -- working with consistent faces

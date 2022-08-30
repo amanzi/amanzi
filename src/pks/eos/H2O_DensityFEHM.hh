@@ -39,8 +39,8 @@ class H2O_DensityFEHM : public EOS_Density {
   // constants for water, hard-coded because it would be crazy to try to come
   // up with names for these in a parameter list...
   // -- temperature dependence of density
-  double y0_, y1_, y2_, y3_, y4_, y5_, y6_, y7_, y8_, y9_;
-  double z0_, z1_, z2_, z3_, z4_, z5_, z6_, z7_, z8_, z9_;
+  double y0_, z0_, y1_, z1_, y2_, z2_, y3_, z3_, y4_, z4_;
+  double y5_, z5_, y6_, z6_, y7_, z7_, y8_, z8_, y9_, z9_;
   double T0_;
 
   static Utils::RegisteredFactory<EOS_Density, H2O_DensityFEHM> factory_;

@@ -26,10 +26,10 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD,
                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                double rho, const AmanziGeometry::Point& g)
    :  PDE_Diffusion(mesh),
-      PDE_DiffusionWithGravity(mesh),
       PDE_DiffusionMFD(plist, mesh),
-      g_(g),
-      rho_(rho)
+      PDE_DiffusionWithGravity(mesh),
+      rho_(rho),
+      g_(g)
   {
     pde_type_ = PDE_DIFFUSION_FRACTURED_MATRIX;
   }

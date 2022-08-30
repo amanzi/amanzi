@@ -34,7 +34,7 @@
 #include "PK_Factory.hh"
 #include "PK_Physical.hh"
 #include "PK_DomainFunction.hh"
-#include "ReconstructionCell.hh"
+#include "ReconstructionCellLinear.hh"
 #include "State.hh"
 #include "Tensor.hh"
 #include "Units.hh"
@@ -64,8 +64,8 @@ class ShallowWater_PK : public PK_Physical,
 
   ~ShallowWater_PK() {};
 
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
+  virtual void Setup() override;
+  virtual void Initialize() override;
 
   virtual double get_dt() override;
   virtual void set_dt(double dt) override {};
@@ -77,10 +77,10 @@ class ShallowWater_PK : public PK_Physical,
                                         TreeVector& f) override;
 
   // Commit any secondary (dependent) variables.
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
   // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {};
+  virtual void CalculateDiagnostics(const Tag& tag) override {};
 
   virtual std::string name() override { return "shallow water"; }
                             
@@ -144,8 +144,8 @@ class ShallowWater_PK : public PK_Physical,
 
   // limited reconstruction
   bool use_limiter_;
-  Teuchos::RCP<Operators::ReconstructionCell> total_depth_grad_, bathymetry_grad_;
-  Teuchos::RCP<Operators::ReconstructionCell> discharge_x_grad_, discharge_y_grad_;
+  Teuchos::RCP<Operators::ReconstructionCellLinear> total_depth_grad_, bathymetry_grad_;
+  Teuchos::RCP<Operators::ReconstructionCellLinear> discharge_x_grad_, discharge_y_grad_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
 
   // advanced cfl control

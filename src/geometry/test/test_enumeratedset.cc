@@ -48,8 +48,8 @@ TEST(ENUMERATEDSET_REGION)
 					   reg_params, *ecomm);
   
     // See if we retrieved the name and id correctly
-    CHECK_EQUAL(reg->name(),reg_name);
-    CHECK_EQUAL(reg->id(),reg_id);
+    CHECK_EQUAL(reg->get_name(),reg_name);
+    CHECK_EQUAL(reg->get_id(),reg_id);
 
     // Get the entity type and mesh file name directly from the XML
     CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)),true);
@@ -59,7 +59,7 @@ TEST(ENUMERATEDSET_REGION)
     std::string in_entity_str = labset_params.get< std::string >("entity");
     
     // Make sure that the region type is a Enumerated Set
-    CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::ENUMERATED);
+    CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::RegionType::ENUMERATED);
   
     // See if the min-max of the region were correctly retrieved
     Amanzi::AmanziGeometry::Point p, n;

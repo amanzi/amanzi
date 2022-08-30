@@ -33,7 +33,7 @@ void VaporInGas_Density::InitializeFromPlist_()
 {
   Teuchos::ParameterList gas_plist = eos_plist_.sublist("gas EOS parameters");
   EOSFactory<EOS_Density> eos_factory;
-  gas_eos_ = eos_factory.CreateEOS(gas_plist);
+  gas_eos_ = eos_factory.Create(gas_plist);
 }
 
 }  // namespace AmanziEOS

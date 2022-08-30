@@ -16,13 +16,13 @@
 #define AMANZI_ENERGY_IEM_WATER_VAPOR_EVALUATOR_HH_
 
 #include "Factory.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 #include "IEM_WaterVapor.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-class IEM_WaterVaporEvaluator : public SecondaryVariableFieldEvaluator {
+class IEM_WaterVaporEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
   explicit
@@ -31,13 +31,13 @@ class IEM_WaterVaporEvaluator : public SecondaryVariableFieldEvaluator {
                           const Teuchos::RCP<IEM_WaterVapor>& iem);
   IEM_WaterVaporEvaluator(const IEM_WaterVaporEvaluator& other);
 
-  Teuchos::RCP<FieldEvaluator> Clone() const;
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& results);
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& results);
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
   Teuchos::RCP<IEM_WaterVapor> iem() { return iem_; }
 
@@ -49,7 +49,7 @@ class IEM_WaterVaporEvaluator : public SecondaryVariableFieldEvaluator {
   Teuchos::RCP<IEM_WaterVapor> iem_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,IEM_WaterVaporEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, IEM_WaterVaporEvaluator> factory_;
 };
 
 }  // namespace Energy

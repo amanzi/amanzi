@@ -26,6 +26,13 @@ MultiphaseBoundaryFunction::MultiphaseBoundaryFunction(const Teuchos::ParameterL
   if (plist.isParameter("name"))
     component_name_ = plist.get<std::string>("name");
 
+  component_phase_ = MULTIPHASE_PHASE_LIQUID;
+  if (plist.isParameter("phase")) {
+    std::string phase = plist.get<std::string>("phase");
+    if (phase == "gas") component_phase_ = MULTIPHASE_PHASE_GAS;
+    if (phase == "napl") component_phase_ = MULTIPHASE_PHASE_NAPL;
+  }
+
   if (plist.isParameter("rainfall")) 
     rainfall_ = plist.get<bool>("rainfall");
 }

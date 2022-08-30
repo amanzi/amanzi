@@ -55,7 +55,7 @@ class RegionCylinder : public Region {
                  const Point& axis,
                  const Point& p, 
                  double radius,
-                 const LifeCycleType lifecycle = PERMANENT);
+                 const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
   
   // Is the specified point inside this region - in this case it
   // means on the plane

@@ -22,6 +22,8 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "CompositeVector.hh"
+#include "IO.hh"
 #include "EnergyOnePhase_PK.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"
@@ -74,24 +76,32 @@ TEST(ENERGY_ONE_PHASE) {
   auto soln = Teuchos::rcp(new TreeVector());
   auto EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
 
-  EPK->Setup(S.ptr());
+  EPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
-  EPK->Initialize(S.ptr());
+  EPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("EnergyOnePhase", *plist));
   WriteStateStatistics(*S, *vo);
+
+  S->GetEvaluator("energy").UpdateDerivative(*S, "thermal", "temperature", Tags::DEFAULT);
+  int n0 = S->Get<CompositeVector>("energy").size("cell", false);
+  int n1 = S->Get<CompositeVector>("energy").size("cell", true);
+  int n2 = S->GetDerivativeW<CompositeVector>("energy", Tags::DEFAULT, "temperature",
+                                              Tags::DEFAULT, "energy").size("cell", true);
+  AMANZI_ASSERT(n0 < n1);
+  AMANZI_ASSERT(n1 == n2);
 
   // constant time stepping 
   int itrs(0);
   double t(0.0), dt(0.1), t1(5.5), dt_next;
   while (t < t1) {
     // swap conserved quntity (no backup, we check dt_next instead)
-    const CompositeVector& e = *S->GetFieldData("energy");
-    CompositeVector& e_prev = *S->GetFieldData("prev_energy", "thermal");
+    const auto& e = S->Get<CompositeVector>("energy");
+    auto& e_prev = S->GetW<CompositeVector>("prev_energy", "thermal");
     e_prev = e;
 
     if (itrs == 0) {
@@ -104,17 +114,18 @@ TEST(ENERGY_ONE_PHASE) {
     EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
     CHECK(dt_next >= dt);
     EPK->bdf1_dae()->CommitSolution(dt, soln);
-    Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("temperature"))->SetFieldAsChanged(S.ptr());
+    Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
+        S->GetEvaluatorPtr("temperature", Tags::DEFAULT))->SetChanged();
 
     t += dt;
     itrs++;
   }
 
-  EPK->CommitStep(0.0, 1.0, S);
+  EPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
   WriteStateStatistics(*S, *vo);
 
-  auto temp = *S->GetFieldData("temperature")->ViewComponent("cell");
-  for (int c = 0; c < 20; ++c) { 
+  auto temp = *S->Get<CompositeVector>("temperature").ViewComponent("cell");
+  for (int c = 0; c < 10; ++c) { 
     CHECK_CLOSE(1.5, temp[0][c], 2e-8);
   }
 }

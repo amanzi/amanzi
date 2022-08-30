@@ -63,7 +63,7 @@ class TransportBoundaryFunction_Chemistry : public TransportDomainFunction {
   
  private:
   Teuchos::RCP<AmanziChemistry::Amanzi_PK> amanzi_pk_;
-  AmanziChemistry::Beaker* chem_engine_;
+  std::shared_ptr<AmanziChemistry::Beaker> chem_engine_;
   std::vector<std::string> constraints_;
 };
 

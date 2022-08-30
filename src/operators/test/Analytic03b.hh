@@ -96,7 +96,6 @@ class Analytic03 : public AnalyticBase {
 
   double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
-    double y = p[1];
 
     double plaplace, pmean, kmean;
     Amanzi::AmanziGeometry::Point pgrad(dim), kgrad(dim);

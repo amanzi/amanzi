@@ -30,7 +30,7 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u)
 {
   // affine map of u. It is equivalent to calculating hydraulic head.
-  Teuchos::RCP<CompositeVector> hh = Teuchos::rcp(new CompositeVector(*u));
+  auto hh = Teuchos::rcp(new CompositeVector(*u));
   Epetra_MultiVector& hh_c = *hh->ViewComponent("cell");
   Epetra_MultiVector& hh_bnd = *hh->ViewComponent("boundary_face");
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");

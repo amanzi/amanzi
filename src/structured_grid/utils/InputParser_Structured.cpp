@@ -960,10 +960,6 @@ namespace Amanzi {
 		      std::string diff_greater_str = "Adjacent Difference Greater";
 		      std::string in_region_str = "Inside Region";
 
-		      bool do_greater = false;
-		      bool do_less    = false;
-		      bool do_diff    = false;
-		      bool do_region  = false;
 		      std::map<std::string,bool> pick_one;
 		      if (ref_list.isParameter(val_greater_str)) {
 			pick_one["do_greater"] = true;
@@ -2615,8 +2611,8 @@ namespace Amanzi {
 
       for (int i=0; i<phaseLabels.size(); ++i) {
         const std::string& phaseLabel = phaseLabels[i];
-        const ParameterList& psublist = plist.sublist(phaseLabel);
         const ParameterList& pplist = plist.sublist(phaseLabel);
+        const ParameterList& psublist = plist.sublist(phaseLabel);
 
         if (phaseLabel=="Solid") {
           PLoptions optP1(pplist,nullList,nullList,true,false);
@@ -2781,7 +2777,6 @@ namespace Amanzi {
         // The optional list is for the phase/comp func
         Array<std::string> phaseBCfuncs;
         const Array<std::string>& phaseBCentries = BCs.OptLists();
-        int nBCfuncs = 0;
         bool has_solute_bcs = false;
         for (int j=0; j<phaseBCentries.size(); ++j) {
           if (phaseBCentries[j] == solute_section_label) {
@@ -3826,7 +3821,6 @@ namespace Amanzi {
       ParameterList& phase_list  = struc_list.sublist("phase");
       ParameterList& comp_list   = struc_list.sublist("comp"); 
       ParameterList& solute_list = struc_list.sublist("tracer"); 
-      ParameterList& press_list  = struc_list.sublist("press");
     
       typedef StateDef::PhaseCompMap PhaseCompMap;
       typedef StateDef::CompMap  CompMap;
@@ -3920,7 +3914,6 @@ namespace Amanzi {
           const CompMap comp_map = stateDef[phaseLabel];
           for (CompMap::const_iterator cit = comp_map.begin(); cit!=comp_map.end() && !found_solute; ++cit) 
           {
-            const std::string& compLabel = cit->first;
             const Array<TRACER>& solutes = cit->second.getTracerArray();
             for (int i=0; i<solutes.size(); ++i)
             {
@@ -4025,7 +4018,7 @@ namespace Amanzi {
           for (int j=0; j<src_f_or_s_labels.size(); ++j) {
             const std::string& src_f_or_s_label = src_f_or_s_labels[j];
 
-            bool function_set = false;
+            function_set = false;
             if (src_f_or_s_label == Solute_Source_str) {
               // Do solute sources
 
@@ -4517,7 +4510,6 @@ namespace Amanzi {
       const std::string chk_cycles_str = "Cycle Macros";
       const std::string chk_cycle_str = "Cycle Macro";
       const std::string chk_digits_str = "File Name Digits";
-      bool cycle_macro_set = false;
       std::string chk_file = "chk";
       int check_digits = 5;
       Array<std::string> chk_cMacroNames;

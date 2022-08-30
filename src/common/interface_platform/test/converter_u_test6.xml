@@ -159,6 +159,7 @@
           <porosity value="0.004"/>
         </mechanical_properties>
         <fracture_permeability model="cubic law" type="h5file" filename="aperture.h5" normal="20.0"/>
+        <fracture_diffusivity normal="1.0e-9"/>
         <assigned_regions>fracture</assigned_regions>
       </material>
     </materials>

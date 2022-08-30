@@ -15,31 +15,33 @@
 #ifndef AMANZI_FLOW_WRM_EVALUATOR_HH_
 #define AMANZI_FLOW_WRM_EVALUATOR_HH_
 
+#include "EvaluatorSecondaryMonotype.hh"
 #include "Factory.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "Tag.hh"
+
 #include "WRM.hh"
 #include "WRMPartition.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class WRMEvaluator : public SecondaryVariableFieldEvaluator {
+class WRMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
   explicit
   WRMEvaluator(Teuchos::ParameterList& plist, const Teuchos::RCP<WRMPartition>& wrm);
   WRMEvaluator(const WRMEvaluator& other);
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
  protected:
   void InitializeFromPlist_();
-
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result);
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector> & result);
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -47,7 +49,7 @@ class WRMEvaluator : public SecondaryVariableFieldEvaluator {
   Key pressure_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator, WRMEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, WRMEvaluator> factory_;
 };
 
 }  // namespace Flow

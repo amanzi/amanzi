@@ -17,23 +17,22 @@
 #include "Teuchos_ParameterList.hpp"
 
 // Amanzi
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 namespace Amanzi {
 namespace ShallowWater {
 
-class HydrostaticPressureEvaluator : public SecondaryVariableFieldEvaluator {
+class HydrostaticPressureEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   HydrostaticPressureEvaluator(Teuchos::ParameterList& plist);
 
-  // interface methods from FieldEvaluator
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result);
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
  private:
   std::string ponded_depth_key_;

@@ -43,16 +43,12 @@ class Alquimia_PK: public Chemistry_PK {
   ~Alquimia_PK();
 
   // members required by PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup() final;
+  virtual void Initialize() final;
 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) { extra_chemistry_output_data(); }
-
-  virtual std::string name() { return "chemistry alquimia"; }
-
-  void CopyFieldstoNewState(const Teuchos::RCP<State>& S_next);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) final;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
+  virtual void CalculateDiagnostics(const Tag& tag) final { extra_chemistry_output_data(); }
 
   // Ben: the following routine provides the interface for
   // output of auxillary cellwise data from chemistry
@@ -62,7 +58,8 @@ class Alquimia_PK: public Chemistry_PK {
   void CopyToAlquimia(int cell_id,
                       AlquimiaProperties& mat_props,
                       AlquimiaState& state,
-                      AlquimiaAuxiliaryData& aux_data);
+                      AlquimiaAuxiliaryData& aux_data,
+                      const Tag& water_tag=Tags::DEFAULT);
   
  private:
   // Copy cell state to the given Alquimia containers taking 
@@ -71,7 +68,8 @@ class Alquimia_PK: public Chemistry_PK {
                       Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
                       AlquimiaProperties& mat_props,
                       AlquimiaState& state,
-                      AlquimiaAuxiliaryData& aux_data);
+                      AlquimiaAuxiliaryData& aux_data,
+                      const Tag& water_tag=Tags::DEFAULT);
 
   // Copy the data in the given Alquimia containers to the given cell state.
   // The aqueous components are placed into the given multivector.
@@ -102,12 +100,8 @@ class Alquimia_PK: public Chemistry_PK {
   // maps
   void InitializeAuxNamesMap_();
 
- protected:
-  Teuchos::RCP<TreeVector> soln_;
-
  private:
   // Time stepping controls. Some parameters are defined in the base class
-  double prev_time_step_;
   std::string dt_control_method_;
 
   bool chem_initialized_;

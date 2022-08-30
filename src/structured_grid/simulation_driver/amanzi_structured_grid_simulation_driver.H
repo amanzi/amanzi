@@ -18,7 +18,7 @@ struct AmanziStructuredGridSimulationDriver : Amanzi::Simulator {
   // Destructor
   ~AmanziStructuredGridSimulationDriver();
 
-  ReturnType Run(const MPI_Comm& mpi_comm,
+  ReturnType Run(const Amanzi::Comm_ptr_type& comm,
                  Amanzi::ObservationData& output_observations);
 };
 #endif

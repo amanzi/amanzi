@@ -37,8 +37,8 @@ class AnalyticDGBase {
   AnalyticDGBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
     : mesh_(mesh),
       order_(order),
-      advection_(advection),
-      d_(mesh_->space_dimension()) {};
+      d_(mesh_->space_dimension()),
+      advection_(advection) {};
   ~AnalyticDGBase() {};
 
   // analytic data in conventional Taylor basis
@@ -102,7 +102,7 @@ class AnalyticDGBase {
   void ComputeCellErrorRemap(const Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p, double t,
                              int p_location, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh1,
                              double& pnorm, double& l2_err, double& inf_err,
-                             double& l20_err, double& inf0_err,
+                             double& l20_err, double& l10_err, double& inf0_err,
                              Epetra_MultiVector* perr = NULL);
 
   // utilities
@@ -292,14 +292,14 @@ void AnalyticDGBase::ComputeCellErrorRemap(
     Epetra_MultiVector& p, double t, int p_location,
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh1,
     double& pnorm, double& l2_err, double& inf_err,
-                   double& l20_err, double& inf0_err,
+                   double& l20_err, double& l10_err, double& inf0_err,
     Epetra_MultiVector* perr)
 {
   auto& mesh0 = mesh_;
 
   pnorm = 0.0;
   l2_err = inf_err = 0.0;
-  l20_err = inf0_err = 0.0;
+  l20_err = l10_err = inf0_err = 0.0;
 
   int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells; ++c) {
@@ -326,6 +326,7 @@ void AnalyticDGBase::ComputeCellErrorRemap(
 
     inf0_err = std::max(inf0_err, fabs(err));
     l20_err += err * err * volume;
+    l10_err += fabs(err) * volume;
 
     Amanzi::AmanziGeometry::Point v0(d_), v1(d_);
     Amanzi::AmanziMesh::Entity_ID_List nodes;
@@ -347,6 +348,7 @@ void AnalyticDGBase::ComputeCellErrorRemap(
   GlobalOp("sum", &pnorm, 1);
   GlobalOp("sum", &l2_err, 1);
   GlobalOp("sum", &l20_err, 1);
+  GlobalOp("sum", &l10_err, 1);
   GlobalOp("max", &inf_err, 1);
   GlobalOp("max", &inf0_err, 1);
 #endif

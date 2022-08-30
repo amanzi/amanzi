@@ -53,7 +53,7 @@ class CycleDriver {
   void Finalize();
   void ReportMemory();
   double Advance(double dt);
-  void Visualize(bool force = false, const std::string& tag = "");
+  void Visualize(bool force = false, const Tag& tag = Tags::DEFAULT);
   void Observations(bool force = false, bool integrate = false);
   void WriteCheckpoint(double dt, bool force = false);
   void WriteWalkabout(bool force);
@@ -128,8 +128,11 @@ inline
 std::set<std::string> StateVisFields(const State& S)
 {
   std::set<std::string> fields;
-  for (auto it = S.field_begin(); it != S.field_end(); ++it) 
-    if (it->second->io_vis()) fields.insert(it->first);
+  for (auto it = S.data_begin(); it != S.data_end(); ++it) {
+    for (auto& e : *it->second) {
+      if (e.second->io_vis()) fields.insert(it->first);
+    }
+  }
   return fields;
 }
 

@@ -129,8 +129,8 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(
     int ndownwind = downwind_flux_dfn_[f].size();
 
     // We assume that only one cell is attached to a boundary face
-    if (nupwind == 0) Aface(0, 0) = fabs(downwind_flux_dfn_[f][0]);
-    if (ndownwind == 0) Aface(0, 0) = fabs(upwind_flux_dfn_[f][0]);
+    if (nupwind == 0) Aface(0, 0) = fabs(downwind_flux_dfn_[f][0]) * dHdT_c[0][cells[0]];
+    if (ndownwind == 0) Aface(0, 0) = fabs(upwind_flux_dfn_[f][0]) * dHdT_c[0][cells[0]];
 
     std::vector<int> upwind_loc(nupwind);
 

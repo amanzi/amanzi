@@ -24,22 +24,24 @@ namespace Multiphase {
 ****************************************************************** */
 PressureGasEvaluator::PressureGasEvaluator(
     Teuchos::ParameterList& plist, Teuchos::RCP<WRMmpPartition> wrm)
-  : SecondaryVariableFieldEvaluator(plist),
-    wrm_(wrm)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
+      wrm_(wrm)
 {
-  my_key_ = plist_.get<std::string>("my key");
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
+  }
   pressure_liquid_key_ = plist_.get<std::string>("pressure liquid key");
   saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
 
-  dependencies_.insert(std::string(pressure_liquid_key_));
-  dependencies_.insert(std::string(saturation_liquid_key_));
+  dependencies_.insert(std::make_pair(pressure_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
 }
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> PressureGasEvaluator::Clone() const {
+Teuchos::RCP<Evaluator> PressureGasEvaluator::Clone() const {
   return Teuchos::rcp(new PressureGasEvaluator(*this));
 }
 
@@ -47,13 +49,12 @@ Teuchos::RCP<FieldEvaluator> PressureGasEvaluator::Clone() const {
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void PressureGasEvaluator::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const Teuchos::Ptr<CompositeVector>& result)
+void PressureGasEvaluator::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& p_c = *S->GetFieldData(pressure_liquid_key_)->ViewComponent("cell");
-  const auto& sat_c = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-  auto& result_c = *result->ViewComponent("cell");
+  const auto& p_c = *S.Get<CompositeVector>(pressure_liquid_key_).ViewComponent("cell");
+  const auto& sat_c = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
+  auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
@@ -65,12 +66,12 @@ void PressureGasEvaluator::EvaluateField_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void PressureGasEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void PressureGasEvaluator::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  const auto& sat_c = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-  auto& result_c = *result->ViewComponent("cell");
+  const auto& sat_c = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
+  auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
   if (wrt_key == pressure_liquid_key_) {

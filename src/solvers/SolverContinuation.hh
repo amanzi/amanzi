@@ -76,7 +76,7 @@ class SolverContinuation : public Solver<Vector,VectorSpace> {
     tol_ = tol;
     solver_->set_tolerance(tol);
   }
-  void set_pc_lag(double pc_lag) {
+  void set_pc_lag(int pc_lag) {
     solver_->set_pc_lag(pc_lag);
   }
 

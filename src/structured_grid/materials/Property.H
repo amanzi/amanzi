@@ -74,8 +74,10 @@ public:
                 const Array<Real>&    _shift,
                 Property::CoarsenRule _coarsen_rule = Property::Arithmetic,
                 Property::RefineRule  _refine_rule = Property::PiecewiseConstant)
-    : ConstantProperty(_name,_avg,_coarsen_rule,_refine_rule), avg(_avg),
-      param_file(_param_file), data_file(_data_file), dataServices(0) {}
+    : ConstantProperty(_name,_avg,_coarsen_rule,_refine_rule),
+      dataServices(0),
+      avg(_avg),
+      param_file(_param_file), data_file(_data_file) {}
 
   virtual bool isTimeDependent() const {return false;}
   virtual bool Evaluate(Real t, Array<Real>& result) const;

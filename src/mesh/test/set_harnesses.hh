@@ -38,10 +38,10 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
   CHECK_EQUAL(3, mesh->space_dimension());
   CHECK_EQUAL(3, mesh->manifold_dimension());
   for (const auto& r : *gm) {
-    std::string r_name = r->name();
+    std::string r_name = r->get_name();
 
     if (r_name == "Entire Mesh") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
       // check that the sum of n_ents is the global number of cells, 3*3*3
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -54,7 +54,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
                   mesh->get_set_size(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL));
 
     } else if (r_name == "Bottom LS" || r_name == "Cell Set 1" || r_name == "Bottom ColFunc") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
       if (r_name == "Cell Set 1" && f == Framework::MOAB) continue; // MOAB cannot handle cell sets, only mat IDs
       // the bottom layer of cells
       if (labeled) {
@@ -71,7 +71,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
 
     } else if (r_name == "Middle LS" || r_name == "Cell Set 2" || r_name == "Middle ColFunc"
                || r_name == "Bottom+Middle Box - Bottom LS") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
       if (r_name == "Cell Set 2" && f == Framework::MOAB) continue; // MOAB cannot handle cell sets, only mat IDs
 
       // the middle layer of cells
@@ -90,7 +90,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
     } else if (r_name == "Top LS" || r_name == "Cell Set 3" || r_name == "Top ColFunc"
                || r_name == "Top Box"
                || r_name == "NOT_Bottom+Middle Box") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
       if (r_name == "Cell Set 3" && f == Framework::MOAB) continue; // MOAB cannot handle cell sets, only mat IDs
 
       // the top layer of cells
@@ -108,8 +108,8 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
 
     } else if (r_name == "Left Box") {
       // all should support this type
-      CHECK(mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL));
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      CHECK(mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL));
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
       // left-most layer (or west-most?)
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -123,7 +123,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "Bottom+Middle Box") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
       // the middle and bottom layers of cells
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -141,7 +141,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "Point" || r_name == "Sample Point InCell") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
       // the central-most cell
 
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -157,7 +157,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "Bottom LS+Point") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
       // logical -- union.  Needs labeled sets
       if (labeled) {
@@ -177,7 +177,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "Left Box INT Bottom LS") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
       // 3 cells in a row
       if (labeled) {
@@ -194,7 +194,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "Enumerated") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
       // if (framework == Framework::MSTK) { // logical only works in MSTK
         // // cells 1,2,3 -- only supported by MSTK
@@ -217,9 +217,9 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
     } else if (r_name == "Face 106" || r_name == "Top Face Plane") {
       if (r_name == "Top Face Plane") {
         // all should support this type
-        CHECK(mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::FACE));
+        CHECK(mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::FACE));
       }
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::FACE)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::FACE)) continue;
 
       // the top faces
       if (labeled || r_name == "Top Face Plane") {
@@ -238,9 +238,9 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
     } else if (r_name == "Face 103" || r_name == "West Face Plane") {
       if (r_name == "West Face Plane") {
         // all should support this type
-        CHECK(mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::FACE));
+        CHECK(mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::FACE));
       }
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::FACE)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::FACE)) continue;
 
       // the top faces
       if (labeled || r_name == "West Face Plane") {
@@ -259,9 +259,9 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
     } else if (r_name == "Central Face Box") {
       if (r_name == "Central Face Box") {
         // all should support this type
-        CHECK(mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::FACE));
+        CHECK(mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::FACE));
       }
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::FACE)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::FACE)) continue;
 
       // a single face in the middle bottom
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -277,7 +277,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "Face 106 - Central Face Box") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::FACE)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::FACE)) continue;
 
       if (labeled) {
         // all but the above box
@@ -298,7 +298,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "Domain Boundary") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::FACE)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::FACE)) continue;
 
       // all faces on the boundary
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -317,7 +317,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "Sample Point OnFace") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
       // // two cells -- two cells share the face
       // // does not work -- implementation currently assumes exact arithmetic
@@ -337,7 +337,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
       // }
 
     } else if (r_name == "Sample Point OnEdge") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
       // // four cells share the edge
       // // does not work -- implementation currently assumes exact arithmetic
@@ -356,7 +356,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
       // }
 
     } else if (r_name == "Sample Point OnVertex") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
       // // eight cells share the point
       // // does not work -- implementation currently assumes exact arithmetic
@@ -377,7 +377,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
       // }
 
     } else if (r_name == "Interior XY Plane") {
-      CHECK(mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::NODE));
+      CHECK(mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::NODE));
 
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
       CHECK_CLOSE_SUMALL(4*4, n_ents, *mesh->get_comm());
@@ -391,7 +391,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "Top Box Nodes") {
-      CHECK(mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::NODE));
+      CHECK(mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::NODE));
 
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
       CHECK_CLOSE_SUMALL(4, n_ents, *mesh->get_comm());
@@ -441,11 +441,11 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
   CHECK_EQUAL(2, mesh->manifold_dimension());
 
   for (const auto& r : *gm) {
-    std::string r_name = r->name();
-    std::cout << "Checking set: " << r->name() << std::endl;
+    std::string r_name = r->get_name();
+    std::cout << "Checking set: " << r->get_name() << std::endl;
 
     if (r_name == "Entire Mesh") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
       // check that the sum of n_ents is the global number of cells, 3*3
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -466,7 +466,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
       if (!extracted) continue; // only valid for extracted
       if (!labeled && r_name != "Top Face Plane") continue; // only valid for exo meshes
       if (r_name == "Top Face Plane") continue; // This only used to work due to a bug!
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
       if (r_name == "Cell Set 3" && f == Framework::MOAB) continue; // MOAB cannot handle cell sets, only mat IDs
       if (r_name == "Cell Set 3" && f == Framework::MSTK) continue; // MSTK does not correctly deal with surface cells inferred from the cell below the top surface
       if (r_name == "Top ColFunc") continue; // inferring cell-to-cell is not implemented
@@ -481,7 +481,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
 
     } else if (r_name == "Box") {
       // all should support this type
-      CHECK(mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL));
+      CHECK(mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL));
 
       // left-most layer (or west-most?)
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -495,7 +495,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "NOT_Box" || r_name == "Entire Mesh - Box") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
       // others
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -514,7 +514,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
     } else if (r_name == "Point" ||
                r_name == "Sample Point InCell" ||
                r_name == "Point intersects NOT_Box") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
       // the central-most cell
 
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -529,7 +529,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "Box+Point") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
       CHECK_CLOSE_SUMALL(3+1, n_ents, *mesh->get_comm());
@@ -546,7 +546,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "Enumerated") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
       // if (framework == Framework::MSTK) { // logical only works in MSTK
         // // cells 1,2,3 -- only supported by MSTK
@@ -567,7 +567,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
       // }
 
     } else if (r_name == "Face 103" || r_name == "Side Plane") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::FACE)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::FACE)) continue;
 
       // Face 103 is not correct in MeshExtractedManifold -- inheritance from
       // the subsurface does not seem to be quite right here.
@@ -588,7 +588,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "Central Face Box") {
-      CHECK(mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::FACE));
+      CHECK(mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::FACE));
 
       // a single face in the middle bottom
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -604,7 +604,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
 
     } else if (r_name == "Side Plane - Central Face Box" ||
                r_name == "Face 103 - Central Face Box") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::FACE)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::FACE)) continue;
 
       // Face 103 is not correct in MeshExtractedManifold -- inheritance from
       // the subsurface does not seem to be quite right here.
@@ -627,7 +627,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "Domain Boundary") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::FACE)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::FACE)) continue;
 
       // all faces on the boundary
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -644,7 +644,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "Sample Point OnFace") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
       // // two cells -- two cells share the face
       // // does not work -- implementation currently assumes exact arithmetic
@@ -664,7 +664,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
       // }
 
     } else if (r_name == "Sample Point OnVertex") {
-      if (!mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::CELL)) continue;
+      if (!mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
       // // four cells share the edge
       // // does not work -- implementation currently assumes exact arithmetic
@@ -683,7 +683,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
       // }
 
     } else if (r_name == "Interior XY Plane") {
-      CHECK(mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::NODE));
+      CHECK(mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::NODE));
 
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
       CHECK_CLOSE_SUMALL(4, n_ents, *mesh->get_comm());
@@ -697,7 +697,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
       }
 
     } else if (r_name == "Top Box Nodes") {
-      CHECK(mesh->valid_set_type(r->type(), AmanziMesh::Entity_kind::NODE));
+      CHECK(mesh->valid_set_type(r->get_type(), AmanziMesh::Entity_kind::NODE));
 
       int n_ents = mesh->get_set_size(r_name, AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
       CHECK_CLOSE_SUMALL(4, n_ents, *mesh->get_comm());

@@ -29,7 +29,7 @@ PK_MPCSubcycled::PK_MPCSubcycled(Teuchos::ParameterList& pk_tree,
 
   // Master PK is the PK whose time step size sets the size, the slave is subcycled.
   master_ = my_list_->get<int>("master PK index", 0);
-  slave_ = master_ == 1 ? 0 : 1;
+  slave_ = (master_ == 1) ? 0 : 1;
 
   if (sub_pks_.size() != 2) {
     Errors::Message message("PK_MPCSubcycled: only MPCs with two sub-PKs can currently be subcycled.");
@@ -69,7 +69,7 @@ bool PK_MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit) {
   slave_dt_ = sub_pks_[slave_]->get_dt();
 
   // --etc: unclear if state should be commited?
-  sub_pks_[master_]->CommitStep(t_old, t_new, S_);
+  sub_pks_[master_]->CommitStep(t_old, t_new, Tags::DEFAULT);
 
   // advance the slave, subcycling if needed
   S_->set_intermediate_time(t_old);
@@ -95,7 +95,7 @@ bool PK_MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit) {
     } else {
       // if success, commit the state and increment to next intermediate
       // -- etc: unclear if state should be commited or not?
-      sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, S_);
+      sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, Tags::DEFAULT);
       dt_done += dt_next;
     }
 
@@ -109,7 +109,7 @@ bool PK_MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit) {
   if (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) {
     // done, success
     // --etc: unclear if state should be commited or not?
-    CommitStep(t_old, t_new, S_);
+    CommitStep(t_old, t_new, Tags::DEFAULT);
     return false;
   } else {
     return true;

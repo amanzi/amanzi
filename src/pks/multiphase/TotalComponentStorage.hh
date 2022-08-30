@@ -11,7 +11,7 @@
   Field evaluator for a total component stirage (water, hydrogen,
   etc) storage, the conserved quantity:
 
-    TCS = phi * (rho_l * s_l * X_l + rho_g * s_g * X_g)
+    TCS = phi * (rho_l * s_l * x_l + rho_g * s_g * x_g)
 
   where x_p is the mole fraction of a component in phase p.
 */
@@ -34,26 +34,21 @@ class TotalComponentStorage : public MultiphaseBaseEvaluator {
   TotalComponentStorage(Teuchos::ParameterList& plist);
   TotalComponentStorage(const TotalComponentStorage& other);
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  virtual void Init_();
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  // interface to FieldEvaluator
-  virtual void EvaluateField_(
-      const Teuchos::Ptr<State>& S,
-      const Teuchos::Ptr<CompositeVector>& result);
-
-  virtual void EvaluateFieldPartialDerivative_(
-      const Teuchos::Ptr<State>& S, Key wrt_key,
-      const Teuchos::Ptr<CompositeVector>& result);
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
  protected:
   Key saturation_liquid_key_, porosity_key_;
-  Key molar_density_liquid_key_, molar_density_gas_key_;
-  Key mole_fraction_liquid_key_, mole_fraction_gas_key_;
+  Key mol_density_liquid_key_, mol_density_gas_key_;
+  Key x_liquid_key_, x_gas_key_;
   
  private:
-  static Utils::RegisteredFactory<FieldEvaluator, TotalComponentStorage> reg_;
+  static Utils::RegisteredFactory<Evaluator, TotalComponentStorage> fac_;
 };
 
 }  // namespace Multiphase

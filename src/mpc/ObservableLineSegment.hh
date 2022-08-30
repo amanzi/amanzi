@@ -51,7 +51,7 @@ int ObservableLineSegment::ComputeRegionSize() {
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_->geometric_model();
   Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion(region_);
 
-  if (reg_ptr->type() != AmanziGeometry::LINE_SEGMENT) {
+  if (reg_ptr->get_type() != AmanziGeometry::RegionType::LINE_SEGMENT) {
     msg << "ObservableLineSegment works only with LineSegment region";
     Exceptions::amanzi_throw(msg);
   }

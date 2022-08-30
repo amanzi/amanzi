@@ -62,7 +62,7 @@ public:
 		const Array<Real>&          times,
 		const Array<std::string>&   forms);
 
-  ~IdxRegionData();
+  virtual ~IdxRegionData();
 
   virtual void apply(FArrayBox&       fab,
                      const IArrayBox& idx,

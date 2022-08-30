@@ -24,7 +24,6 @@ ChemistryMatrixFracture_PK::ChemistryMatrixFracture_PK(Teuchos::ParameterList& p
                                                        const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                                        const Teuchos::RCP<State>& S,
                                                        const Teuchos::RCP<TreeVector>& soln) :
-    glist_(glist),
     Amanzi::PK(pk_tree, glist, S, soln),
     Amanzi::PK_MPCWeak(pk_tree, glist, S, soln)
 {
@@ -36,13 +35,13 @@ ChemistryMatrixFracture_PK::ChemistryMatrixFracture_PK(Teuchos::ParameterList& p
 /* ******************************************************************* 
 * Physics-based setup of PK.
 ******************************************************************* */
-void ChemistryMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
+void ChemistryMatrixFracture_PK::Setup()
 {
-  mesh_domain_ = S->GetMesh();
-  mesh_fracture_ = S->GetMesh("fracture");
+  mesh_domain_ = S_->GetMesh();
+  mesh_fracture_ = S_->GetMesh("fracture");
 
   // setup the sub-PKs
-  PK_MPCWeak::Setup(S);
+  PK_MPCWeak::Setup();
 }
 
 }  // namespace Amanzi

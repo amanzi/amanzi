@@ -31,10 +31,10 @@ BlockVector::BlockVector(const Comm_ptr_type& comm,
         std::vector<std::string>& names,
         std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
         std::vector<int> num_dofs) :
+    comm_(comm),
     names_(names),
-    maps_(maps),
     num_dofs_(num_dofs),
-    comm_(comm) {
+    maps_(maps) {
 
   num_components_ = maps_.size();
 
@@ -56,12 +56,12 @@ BlockVector::BlockVector(const Comm_ptr_type& comm,
 // copy constructor
 BlockVector::BlockVector(const BlockVector& other) :
     comm_(other.comm_),
-    names_(other.names_),
-    maps_(other.maps_),
-    num_dofs_(other.num_dofs_),
+    indexmap_(other.indexmap_),
     num_components_(other.num_components_),
-    sizes_(other.sizes_),
-    indexmap_(other.indexmap_) {
+    names_(other.names_),
+    num_dofs_(other.num_dofs_),
+    maps_(other.maps_),
+    sizes_(other.sizes_) {
 
   data_.resize(num_components_);
   for (int i=0; i != num_components_; ++i) {
@@ -112,6 +112,15 @@ int BlockVector::GlobalLength() const {
     gl += data_[i]->GlobalLength();
   }
   return gl;
+}
+
+
+long int BlockVector::GetLocalElementCount() const {
+  long int count(0);
+  for (int i = 0; i != num_components_; ++i) {
+    count += data_[i]->NumVectors() * data_[i]->MyLength();
+  }
+  return count;
 }
 
 

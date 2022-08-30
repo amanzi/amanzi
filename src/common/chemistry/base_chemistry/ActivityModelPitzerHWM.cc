@@ -57,9 +57,9 @@ ActivityModelPitzerHWM::ActivityModelPitzerHWM()
     index_cl_species(-1),
     index_h2o_species(-1),
     index_k_species(-1),
-    number_species(0),
     macinnes_scaled(false),
-    jfunction_approach("pitzer1975") {
+    jfunction_approach("pitzer1975"),
+    number_species(0) {
 }
 
 

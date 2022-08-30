@@ -35,6 +35,9 @@ void Transport_PK::InitializeAll_()
   // global transport parameters
   cfl_ = tp_list_->get<double>("cfl", 1.0);
 
+  std::string name = tp_list_->get<std::string>("method", "muscl");
+  method_ = (name == "fct") ? Method_t::FCT : Method_t::MUSCL;
+
   spatial_disc_order = tp_list_->get<int>("spatial discretization order", 1);
   temporal_disc_order = tp_list_->get<int>("temporal discretization order", 1);
 
@@ -47,12 +50,6 @@ void Transport_PK::InitializeAll_()
 
   if (tp_list_->isSublist("material properties")) {
     Teuchos::ParameterList& dlist = tp_list_->sublist("material properties");
-
-    if (!linear_solver_list_->isSublist(dispersion_solver)) {
-      Errors::Message msg;
-      msg << "Transport PK: sublist \"dispersion solver\" does not exist.\n";
-      Exceptions::amanzi_throw(msg);  
-    }
 
     int nblocks = 0; 
     for (auto i = dlist.begin(); i != dlist.end(); i++) {
@@ -94,6 +91,33 @@ void Transport_PK::InitializeAll_()
     }
   }
 
+  // do we really have mechanical dispersion?
+  flag_dispersion_ = false;
+  if (tp_list_->isSublist("material properties")) {
+    Teuchos::RCP<Teuchos::ParameterList>
+        mdm_list = Teuchos::sublist(tp_list_, "material properties");
+    mdm_ = CreateMDMPartition(mesh_, mdm_list, flag_dispersion_);
+    if (flag_dispersion_) CalculateAxiSymmetryDirection();
+  }
+
+  // do we really have molecular diffusion?
+  flag_diffusion_ = false;
+  for (int i = 0; i < 2; i++) {
+    if (diffusion_phase_[i] != Teuchos::null) {
+      if (diffusion_phase_[i]->values().size() != 0) flag_diffusion_ = true;
+    }
+  }
+  if (flag_diffusion_) {
+    // no molecular diffusion if all tortuosities are zero.
+    double tau(0.0);
+    for (int i = 0; i < mat_properties_.size(); i++) {
+      tau += mat_properties_[i]->tau[0] + mat_properties_[i]->tau[1];
+    }
+    if (tau == 0.0) flag_diffusion_ = false;
+  }
+
+  use_dispersion_ &= flag_dispersion_ || flag_diffusion_;
+
   // statistics of solutes
   if (tp_list_->isParameter("runtime diagnostics: solute names")) {
     runtime_solutes_ = tp_list_->get<Teuchos::Array<std::string> >("runtime diagnostics: solute names").toVector();
@@ -108,13 +132,12 @@ void Transport_PK::InitializeAll_()
     runtime_regions_ = tp_list_->get<Teuchos::Array<std::string> >("runtime diagnostics: regions").toVector();
   }
 
-  genericRK_ = tp_list_->get<bool>("generic RK implementation", false);
   internal_tests_ = tp_list_->get<bool>("enable internal tests", false);
   internal_tests_tol_ = tp_list_->get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
   dt_debug_ = tp_list_->get<double>("maximum time step", TRANSPORT_LARGE_TIME_STEP);
 
   if (spatial_disc_order < 1 || spatial_disc_order > 2 ||
-     temporal_disc_order < 1 || (temporal_disc_order > 2 && !genericRK_)) {
+     temporal_disc_order < 1 || temporal_disc_order > 4) {
     Errors::Message msg;
     msg << "TransportPK: unsupported combination of spatial or temporal discretization orders.\n";
     Exceptions::amanzi_throw(msg);  

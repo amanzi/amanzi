@@ -113,7 +113,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       "numerical_controls, unstructured_controls, unstr_transport_controls, algorithm", flag);
   if (flag) {
     std::string algorithm = TrimString_(mm.transcode(node->getTextContent()));
-    transport_implicit_ = (algorithm == "implicit");
+    transport_implicit_ = (algorithm == "implicit" || algorithm == "implicit second-order");
   }
 
   // parse execution_control
@@ -212,6 +212,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       } else if (strcmp(tagname, "transport") == 0) {
         GetAttributeValueS_(jnode, "state", "on");
         transient_model += 2;
+        pk_model_["transport"] = "transport";
         pk_domain_["transport"] = "domain";
 
       } else if (strcmp(tagname, "energy") == 0) {
@@ -336,7 +337,6 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       PopulatePKTree_(pk_tree_list, Keys::merge(mode, "multiphase", delimiter));
       break;
     default:
-      Errors::Message msg;
       msg << "The model with id=" << transient_model << " is not supported by the MPC.\n";
       Exceptions::amanzi_throw(msg);
     }
@@ -404,6 +404,7 @@ void InputConverterU::PopulatePKTree_(
        .set<std::string>("PK type", pk_model_["flow"]);
   }
   else if (basename == "coupled transport") {
+    use_transport_dispersion_ = !(implicit == "");
     tmp.set<std::string>("PK type", "transport matrix fracture" + implicit);
     tmp.sublist(Keys::merge(prefix, "transport matrix", delimiter)).set<std::string>("PK type", "transport" + implicit);
     tmp.sublist(Keys::merge(prefix, "transport fracture", delimiter)).set<std::string>("PK type", "transport" + implicit);
@@ -755,8 +756,11 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
           if (flag) nonlinear_solver = GetAttributeValueS_(node, "name", TYPE_NONE, false, "nka"); 
 
           out_list.sublist(pk).sublist("time integrator") = TranslateTimeIntegrator_(
-              err_options, nonlinear_solver, false, tags_default,
+              err_options, nonlinear_solver, false, tags_default, "Dispersion Solver",
               dt_cut_[mode], dt_inc_[mode]);
+        } else {
+          out_list.sublist(pk).set<std::string>("solver", "Dispersion Solver")
+                              .set<std::string>("preconditioner", LINEAR_SOLVER_PC);
         }
       }
       else if (basename == "coupled chemistry") {
@@ -803,7 +807,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "domain");
 
-        auto& tmp = glist.sublist("state").sublist("field evaluators");
+        auto& tmp = glist.sublist("state").sublist("evaluators");
         AddSecondaryFieldEvaluator_(tmp, 
             Keys::getKey("domain", "molar_density_liquid"), "molar density key",
             "eos", "liquid water 0-30C", "density");
@@ -837,7 +841,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "fracture");
 
-        auto& tmp = glist.sublist("state").sublist("field evaluators");
+        auto& tmp = glist.sublist("state").sublist("evaluators");
         AddSecondaryFieldEvaluator_(tmp, 
             Keys::getKey("fracture", "molar_density_liquid"), "molar density key",
             "eos", "liquid water 0-30C", "density");
@@ -913,7 +917,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         if (!out_list.sublist(pk).isSublist("time integrator")) {
           out_list.sublist(pk).sublist("time integrator") = TranslateTimeIntegrator_(
               err_options, "nka", false,
-              "unstructured_controls, unstr_transient_controls",
+              "unstructured_controls, unstr_transient_controls", TI_SOLVER,
               dt_cut_[mode], dt_inc_[mode]);
           out_list.sublist(pk).sublist("verbose object") = verb_list_.sublist("verbose object");
         }
@@ -957,8 +961,9 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       tmp_m.set<std::string>("time integration method", "none");
       tmp_m.remove("BDF1", false);
       tmp_m.remove("initialization", false);
-      pk_list.sublist(flow_m).sublist("operators")
-         .sublist("diffusion operator").sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+      auto& tmp = pk_list.sublist(flow_m).sublist("operators").sublist("diffusion operator");
+      tmp.sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+      tmp.sublist("preconditioner").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
 
       auto& tmp_f = pk_list.sublist(flow_f).sublist("time integrator");
       tmp_f.set<std::string>("time integration method", "none");
@@ -987,6 +992,17 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       std::string transport_m = Keys::merge(prefix, "transport matrix", delimiter);
       pk_list.sublist(transport_m).sublist("operators").sublist("advection operator")
              .sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+    }
+
+    if (basename == "coupled transport") {
+      std::string transport_m = Keys::merge(prefix, "transport matrix", delimiter);
+      auto& tmp = pk_list.sublist(transport_m).sublist("operators");
+      if (tmp.isSublist("diffusion operator")) {
+        tmp.sublist("diffusion operator")
+           .sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+        tmp.sublist("diffusion operator")
+           .sublist("preconditioner").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+      }
     }
 
     if (basename == "coupled flow and energy") {

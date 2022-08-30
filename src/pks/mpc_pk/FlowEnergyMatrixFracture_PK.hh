@@ -17,13 +17,13 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "independent_variable_field_evaluator_fromfunction.hh"
+#include "EvaluatorIndependentFunction.hh"
+#include "EvaluatorSecondary.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PK_BDF.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Factory.hh"
 #include "TreeOperator.hh"
-#include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 
@@ -35,42 +35,46 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
                               const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup() override;
+  virtual void Initialize() override;
 
   // -- dt is the minimum of the sub pks
   // virtual double get_dt();
   // virtual void set_dt(double dt);
 
   // -- advance each sub pk from t_old to t_new.
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
-  // virtual void CommitStep(double t_old, double t_new);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
+  // virtual void CommitStep(double t_old, double t_new, const Tag& tag);
 
   virtual void FunctionalResidual(
       double t_old, double t_new,
       Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new,
-      Teuchos::RCP<TreeVector> f);
+      Teuchos::RCP<TreeVector> f) override;
   
   // updates the preconditioner
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override;
   
   // preconditioner application
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual
+  int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
 
-  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, 
-                            Teuchos::RCP<const TreeVector> du);
+  virtual
+  double ErrorNorm(Teuchos::RCP<const TreeVector> u, 
+                   Teuchos::RCP<const TreeVector> du) override;
 
-  std::string name() { return "thermal flow matrix fracture"; } 
+  std::string name() override { return "thermal flow matrix fracture"; } 
 
  private:
+  void AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag);
+
   // use flag to avoid double counting of coupling terms for Darcy PK
   std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> > AddCouplingFluxes_(
-      Teuchos::RCP<CompositeVectorSpace>& cvs_matrix,
-      Teuchos::RCP<CompositeVectorSpace>& cvs_fracture,
+      const Teuchos::RCP<CompositeVectorSpace>& cvs_matrix,
+      const Teuchos::RCP<CompositeVectorSpace>& cvs_fracture,
       std::shared_ptr<const std::vector<std::vector<int> > > inds_matrix,
       std::shared_ptr<const std::vector<std::vector<int> > > inds_fracture,
       std::shared_ptr<const std::vector<double> > values,
-      int i, int j, Teuchos::RCP<Operators::TreeOperator>& op_tree);
+      int i, Teuchos::RCP<Operators::TreeOperator>& op_tree);
 
   void UpdateCouplingFluxes_(
       const std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> >& adv_coupling);
@@ -91,6 +95,7 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
   Key normal_permeability_key_, normal_conductivity_key_;
+  Key matrix_vol_flowrate_key_, fracture_vol_flowrate_key_;
 
   std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> > adv_coupling_matrix_, adv_coupling_pc_;
 
@@ -101,29 +106,6 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   // factory registration
   static RegisteredPKFactory<FlowEnergyMatrixFracture_PK> reg_;
 };
-
-
-// non-member function
-int ApplyFlattened(const Operators::TreeOperator& op, const TreeVector& X, TreeVector& Y);
-
-
-// supporting class that is used to due to ApplyFlattened
-namespace Operators {
-
-class FlatTreeOperator : public Operators::TreeOperator {
- public:
-  using Vector_t = TreeVector;
-  using VectorSpace_t = TreeVector::VectorSpace_t;
-
-  FlatTreeOperator(const Teuchos::RCP<const TreeVectorSpace>& tvs) 
-    : TreeOperator(tvs) {};
-
-  virtual int Apply(const TreeVector& X, TreeVector& Y) const override {
-    return ApplyFlattened(*this, X, Y);
-  }
-};
-
-}  // namespace Operators
 
 }  // namespace Amanzi
 #endif

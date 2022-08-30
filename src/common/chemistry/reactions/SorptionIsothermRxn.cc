@@ -25,8 +25,8 @@ namespace AmanziChemistry {
 SorptionIsothermRxn::SorptionIsothermRxn(const std::string& species_name, 
                                          const int species_id,
                                          std::shared_ptr<SorptionIsotherm> isotherm) 
-  : species_name_(species_name), 
-    species_id_(species_id), 
+  : species_id_(species_id), 
+    species_name_(species_name), 
     isotherm_(isotherm)
 {}
 

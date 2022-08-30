@@ -46,11 +46,13 @@ class Operator_FaceCellScc : public Operator_Cell {
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const override;
 
   // Special AssembleMatrix required to deal with schur complement
+  using Operator_Cell::AssembleMatrixOp;
   virtual void AssembleMatrix(const SuperMap& map,
           MatrixFE& matrix, int my_block_row, int my_block_col) const override;
 
   // visit method for Apply -- this is identical to Operator_FaceCell's
   // version.
+  using Operator_Cell::ApplyMatrixFreeOp;
   virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       const CompositeVector& X, CompositeVector& Y) const override;
 
@@ -58,6 +60,7 @@ class Operator_FaceCellScc : public Operator_Cell {
   virtual void SymbolicAssembleMatrix() override;
 
   // visit method for sparsity structure of Schur complement
+  using Operator_Cell::SymbolicAssembleMatrixOp;
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const override;

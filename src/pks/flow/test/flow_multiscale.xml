@@ -44,8 +44,9 @@
   </ParameterList>
 
   <ParameterList name="state">
-    <ParameterList name="field evaluators">
+    <ParameterList name="evaluators">
       <ParameterList name="porosity">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="RegionMiddle">
             <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
@@ -75,7 +76,6 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="initial conditions">

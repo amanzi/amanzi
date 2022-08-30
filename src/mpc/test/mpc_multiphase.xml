@@ -157,14 +157,14 @@
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
               <ParameterList name="function">
-                <Parameter name="Number of DoFs" type="int" value="2"/>
-                <Parameter name="Function type" type="string" value="composite function"/>
-                <ParameterList name="DoF 1 Function">
+                <Parameter name="number of dofs" type="int" value="2"/>
+                <Parameter name="function type" type="string" value="composite function"/>
+                <ParameterList name="dof 1 Function">
                   <ParameterList name="function-constant">
                     <Parameter name="value" type="double" value="9.869232667160131e-14"/>
                   </ParameterList>
                 </ParameterList>
-                <ParameterList name="DoF 2 Function">
+                <ParameterList name="dof 2 Function">
                   <ParameterList name="function-constant">
                     <Parameter name="value" type="double" value="9.869232667160131e-14"/>
                   </ParameterList>

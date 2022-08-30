@@ -25,8 +25,8 @@ namespace AmanziGeometry {
 // a face center and an edge of the face      
 
 void polyhed_get_vol_centroid(const std::vector<Point> ccoords, 
-                              const unsigned int nf, 
-                              const std::vector<unsigned int> nfnodes,
+                              const std::size_t nf, 
+                              const std::vector<std::size_t> nfnodes,
                               const std::vector<Point> fcoords,
                               double *volume,
                               Point *centroid)
@@ -140,8 +140,8 @@ void polyhed_get_vol_centroid(const std::vector<Point> ccoords,
 // forms a positive volume with each triangular subface 
 bool point_in_polyhed(const Point testpnt,
                       const std::vector<Point> ccoords, 
-                      const unsigned int nf, 
-                      const std::vector<unsigned int> nfnodes,
+                      const std::size_t nf, 
+                      const std::vector<std::size_t> nfnodes,
                       const std::vector<Point> fcoords)
 {
   int np = ccoords.size();
@@ -217,7 +217,7 @@ void polygon_get_area_centroid_normal(const std::vector<Point> coords,
   centroid->set(0.0);
   normal->set(0.0);
 
-  unsigned int np = coords.size();
+  std::size_t np = coords.size();
 
   if (np < 3) {
     cout << "Degenerate polygon - area is zero" << std::endl;

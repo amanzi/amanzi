@@ -118,12 +118,12 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   mesh_file_ = parallelIO_open_file(h5Filename_.c_str(), &IOgroup_, FILE_READWRITE);
 
   // get num_nodes, num_cells
-  const Epetra_Map &nmap = vis_mesh.node_map(false);
+  const Epetra_Map& nmap = vis_mesh.node_map(false);
   int nnodes_local = nmap.NumMyElements();
   int nnodes_global = nmap.NumGlobalElements();
-  const Epetra_Map &ngmap = vis_mesh.node_map(true);
+  const Epetra_Map& ngmap = vis_mesh.node_map(true);
 
-  const Epetra_Map &cmap = vis_mesh.cell_map(false);
+  const Epetra_Map& cmap = vis_mesh.cell_map(false);
   int ncells_local = cmap.NumMyElements();
 
   // get space dimension

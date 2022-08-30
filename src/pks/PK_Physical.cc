@@ -16,56 +16,56 @@
 namespace Amanzi {
 
 // -----------------------------------------------------------------------------
-// Transfer operators -- ONLY COPIES POINTERS
+// Transfer operators -- copies ONLY pointers
 // -----------------------------------------------------------------------------
-void PK_Physical::State_to_Solution(const Teuchos::RCP<State>& S,
-                                    TreeVector& solution) {
-  solution.SetData(S->GetFieldData(key_, name_));
-}
-
-
-// -----------------------------------------------------------------------------
-// Transfer operators -- ONLY COPIES POINTERS
-// -----------------------------------------------------------------------------
-void PK_Physical::Solution_to_State(TreeVector& solution,
-                                    const Teuchos::RCP<State>& S) {
-  AMANZI_ASSERT(solution.Data() == S->GetFieldData(key_));
-  //  S->SetData(key_, name_, solution->Data());
-  //  solution_evaluator_->SetFieldAsChanged();
+void PK_Physical::State_to_Solution(const Tag& tag,
+                                    TreeVector& solution)
+{
+  solution.SetData(S_->GetPtrW<CompositeVector>(key_, tag, name()));
 }
 
 
 void PK_Physical::Solution_to_State(const TreeVector& solution,
-                                    const Teuchos::RCP<State>& S) {
-  AMANZI_ASSERT(solution.Data() == S->GetFieldData(key_));
-  //  S->SetData(key_, name_, solution->Data());
-  //  solution_evaluator_->SetFieldAsChanged();
+                                    const Tag& tag)
+{
+  AMANZI_ASSERT(solution.Data() == S_->GetPtr<CompositeVector>(key_, tag));
 }
-  
+
 
 // -----------------------------------------------------------------------------
-// Experimental approach -- we must pull out S_next_'s solution_evaluator_ to
-// stay current for ChangedSolution()
+// Helper method to add a primary variable evaluator
 // -----------------------------------------------------------------------------
-void PK_Physical::set_states(const Teuchos::RCP<State>& S,
-                             const Teuchos::RCP<State>& S_inter,
-                             const Teuchos::RCP<State>& S_next) {
-  S_ = S;
-  S_inter_ = S_inter;
-  S_next_ = S_next;
-    
-  // Get the FE and mark it as changed.
-  // Note that this is necessary because we need this to point at the
-  // FE in S_next_, not the one which we created in S_.
-  Teuchos::RCP<FieldEvaluator> fm = S_next->GetFieldEvaluator(key_);
-#if ENABLE_DBC
-  solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  AMANZI_ASSERT(solution_evaluator_ != Teuchos::null);
-#else
-  solution_evaluator_ = Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
-#endif
+void PK_Physical::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
+{
+  AMANZI_ASSERT(S_ != Teuchos::null);
+  Teuchos::ParameterList elist = S_->GetEvaluatorList(key);
+  elist.set<std::string>("tag", tag.get());
+  elist.setName(key);
+  auto eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(elist));
+  S_->SetEvaluator(key, tag, eval);
+}
 
-  solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
+
+// -----------------------------------------------------------------------------
+// Helper method to initialize a CV field
+// -----------------------------------------------------------------------------
+void InitializeCVField(const Teuchos::RCP<State>& S, const VerboseObject& vo,
+                       const Key& key, const Tag& tag, const Key& passwd,
+                       double default_val)
+{
+  Teuchos::OSTab tab = vo.getOSTab();
+
+  if (S->HasRecord(key, tag)) {
+    if (S->GetRecord(key, tag).owner() == passwd) {
+      if (!S->GetRecord(key, tag).initialized()) {
+        S->GetW<CompositeVector>(key, tag, passwd).PutScalar(default_val);
+        S->GetRecordW(key, tag, passwd).set_initialized();
+
+        if (vo.os_OK(Teuchos::VERB_MEDIUM))
+          *vo.os() << "initialized \"" << key << "\" to value " << default_val << std::endl;
+      }
+    }
+  }
 }
 
 } // namespace Amanzi

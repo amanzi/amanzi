@@ -1,0 +1,97 @@
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+
+  <ParameterList name="regions">
+    <ParameterList name="Computational domain">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Left side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="PKs">
+    <ParameterList name="transport">
+      <Parameter name="cfl" type="double" value="0.5"/>   
+      <Parameter name="method" type="string" value="fct"/>   
+      <Parameter name="spatial discretization order" type="int" value="2"/>   
+      <Parameter name="temporal discretization order" type="int" value="1"/>   
+
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="low"/>
+      </ParameterList>
+
+      <ParameterList name="boundary conditions">
+        <ParameterList name="concentration">
+          <ParameterList name="Component 0">
+            <ParameterList name="BC for left side">
+              <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <ParameterList name="boundary concentration">
+                <ParameterList name="function-tabular">
+                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 0.2}"/>
+                  <Parameter name="y values" type="Array(double)" value="{1.0, 0.0}"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Component 1">
+            <ParameterList name="BC for left side">
+              <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <ParameterList name="boundary concentration">
+                <ParameterList name="function-tabular">
+                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 0.2}"/>
+                  <Parameter name="y values" type="Array(double)" value="{1.0, 0.0}"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>        
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="state">
+    <ParameterList name="evaluators">
+      <ParameterList name="porosity">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="saturation_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+

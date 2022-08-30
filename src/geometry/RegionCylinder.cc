@@ -30,7 +30,7 @@ RegionCylinder::RegionCylinder(const std::string& name,
                                const Point& p,
                                double radius,
                                const LifeCycleType lifecycle)
-    : Region(name, id, true, CYLINDER, p.dim(), p.dim(), lifecycle),
+    : Region(name, id, true, RegionType::CYLINDER, p.dim(), p.dim(), lifecycle),
       p_(p),
       axis_(axis/norm(axis)),
       rad2_(radius * radius)
@@ -38,7 +38,7 @@ RegionCylinder::RegionCylinder(const std::string& name,
   if (p_.dim() != axis_.dim()) {
     Errors::Message mesg;
     mesg << "Mismatch in point and axis dimensions of RegionCylinder "
-         << Region::name();
+         << Region::get_name();
     Exceptions::amanzi_throw(mesg);
   }
 }

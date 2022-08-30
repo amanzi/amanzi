@@ -77,19 +77,19 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   Teuchos::RCP<TreeVector> soln2 = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Richards_PK> RPK2 = Teuchos::rcp(new Richards_PK(plist, "flow", S2, soln2));
 
-  RPK1->Setup(S1.ptr());
+  RPK1->Setup();
   S1->Setup();
   S1->InitializeFields();
   S1->InitializeEvaluators();
 
-  RPK2->Setup(S2.ptr());
+  RPK2->Setup();
   S2->Setup();
   S2->InitializeFields();
   S2->InitializeEvaluators();
 
   // modify the default state for the problem at hand
   std::string passwd("flow"); 
-  Epetra_MultiVector& K1 = *S1->GetFieldData("permeability", passwd)->ViewComponent("cell"); 
+  auto& K1 = *S1->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");  
 
   AmanziMesh::Entity_ID_List block;
   mesh1->get_set_entities("All", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
@@ -99,9 +99,9 @@ TEST(FLOW_BOUNDARY_SOLVER) {
     K1[1][c] = 1e-9;
     K1[2][c] = 1e-9;
   }
-  S1->GetField("permeability", "flow")->set_initialized();
+  S1->GetRecordW("permeability", "permeability").set_initialized();
 
-  Epetra_MultiVector& K2 = *S2->GetFieldData("permeability", passwd)->ViewComponent("cell");  
+  auto& K2 = *S2->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");  
   mesh2->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
@@ -109,22 +109,19 @@ TEST(FLOW_BOUNDARY_SOLVER) {
     K2[1][c] = 1e-9;
     K2[2][c] = 1e-9;
   }
-  S2->GetField("permeability", "flow")->set_initialized();
+  S2->GetRecordW("permeability", "permeability").set_initialized();
 
   double atm_pressure = 101325.0;
-  double rho = *S1->GetScalarData("const_fluid_density", passwd);
+  double rho = S1->Get<double>("const_fluid_density");
 
-  Epetra_Vector& gravity1 = *S1->GetConstantVectorData("gravity", "state");
-  gravity1[2] = -9.8;
-  S1->GetField("gravity", "state")->set_initialized();
-
-  Epetra_Vector& gravity2 = *S2->GetConstantVectorData("gravity", "state");
-  gravity2[2] = -9.8;
-  S2->GetField("gravity", "state")->set_initialized();
+  auto gravity1 = S1->Get<AmanziGeometry::Point>("gravity");
+  auto gravity2 = S2->Get<AmanziGeometry::Point>("gravity");
+  S1->GetRecordW("gravity", "state").set_initialized();
+  S2->GetRecordW("gravity", "state").set_initialized();
 
   // create the initial pressure function
-  Epetra_MultiVector& p1 = *S1->GetFieldData("pressure", passwd)->ViewComponent("cell");
-  Epetra_MultiVector& p2 = *S2->GetFieldData("pressure", passwd)->ViewComponent("cell");
+  auto& p1 = *S1->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
+  auto& p2 = *S2->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   for (int c = 0; c < p1.MyLength(); c++) {
     const Point& xc = mesh1->cell_centroid(c);
@@ -133,9 +130,9 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   }
 
   // initialize the Richards process kernel
-  RPK1->Initialize(S1.ptr());
+  RPK1->Initialize();
   S1->CheckAllFieldsInitialized();
-  RPK2->Initialize(S2.ptr());
+  RPK2->Initialize();
   S2->CheckAllFieldsInitialized();
 
   std::cout << p1 << "\n";
@@ -152,7 +149,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
     int dir;
     const Point& norm = mesh1->face_normal(f, false, cells[0], &dir);
     if ((cells.size() == 1) && (norm[2] * dir > 0)) {
-      bnd_val1 = RPK1->BoundaryFaceValue(f, *S1->GetFieldData("pressure", passwd));
+      bnd_val1 = RPK1->BoundaryFaceValue(f, S1->GetW<CompositeVector>("pressure", passwd));
       std::cout << ": " << f << " " << bnd_val1 << "\n";
     }
   }
@@ -166,8 +163,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
     int dir;
     const Point& norm = mesh2->face_normal(f, false, cells[0], &dir);
     if ((cells.size() == 1) && (norm[2]*dir > 0)) {
-      // bnd_val1 = RPK1->BoundaryFaceValue(f, *S1->GetFieldData("pressure", passwd));
-      bnd_val2 = RPK2->BoundaryFaceValue(f, *S2->GetFieldData("pressure", passwd));
+      bnd_val2 = RPK2->BoundaryFaceValue(f, S2->GetW<CompositeVector>("pressure", passwd));
       std::cout << ": " << f << " " << bnd_val2 << "\n";
     }
   }

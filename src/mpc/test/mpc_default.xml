@@ -1,0 +1,293 @@
+<ParameterList>
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+
+  <ParameterList name="regions">
+    <ParameterList name="All">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{-9.99999999999999967e+98, -9.99999999999999967e+98}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{9.99999999999999967e+98, 9.99999999999999967e+98}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="2"/>
+  </ParameterList>
+
+  <ParameterList name="cycle driver">
+    <ParameterList name="time periods">
+      <ParameterList name="TP 0">
+	<ParameterList name="PK tree">
+	  <ParameterList name="pk0">
+	    <Parameter name="PK type" type="string" value="implicit pk"/>
+	  </ParameterList>
+	</ParameterList>
+	<Parameter name="start period time" type="double" value="0.0"/>
+	<Parameter name="end period time" type="double" value="1.0"/>
+	<Parameter name="initial time step" type="double" value="0.002"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="none"/>
+    </ParameterList>
+  </ParameterList>
+
+
+  <!-- PK TREEs -->
+  <ParameterList name="PK tree 1">
+    <ParameterList name="pk0">
+      <Parameter name="PK type" type="string" value="implicit pk"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="PK tree 2">
+    <ParameterList name="mpc_weak">
+      <Parameter name="PK type" type="string" value="mpc weak"/>
+      <ParameterList name="pk1">
+        <Parameter name="PK type" type="string" value="implicit pk"/>
+      </ParameterList>
+      <ParameterList name="pk2">
+        <Parameter name="PK type" type="string" value="implicit pk"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="PK tree 3">
+    <ParameterList name="mpc_weak_flipped">
+      <Parameter name="PK type" type="string" value="mpc weak"/>
+      <ParameterList name="pk2">
+        <Parameter name="PK type" type="string" value="implicit pk"/>
+      </ParameterList>
+      <ParameterList name="pk1">
+        <Parameter name="PK type" type="string" value="implicit pk"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="PK tree 4">
+    <ParameterList name="mpc_weak_three">
+      <Parameter name="PK type" type="string" value="mpc weak"/>
+      <ParameterList name="pk1b">
+        <Parameter name="PK type" type="string" value="implicit pk"/>
+      </ParameterList>
+      <ParameterList name="pk2b">
+        <Parameter name="PK type" type="string" value="implicit pk"/>
+      </ParameterList>
+      <ParameterList name="pk3b">
+        <Parameter name="PK type" type="string" value="implicit pk"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="PK tree 5">
+    <ParameterList name="mpc_subcycled">
+      <Parameter name="PK type" type="string" value="mpc subcycled"/>
+      <ParameterList name="pk1">
+        <Parameter name="PK type" type="string" value="implicit pk"/>
+      </ParameterList>
+      <ParameterList name="pk2a">
+        <Parameter name="PK type" type="string" value="implicit pk"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="PK tree 6">
+    <ParameterList name="mpc_strong">
+      <Parameter name="PK type" type="string" value="mpc strong"/>
+      <ParameterList name="pk1">
+        <Parameter name="PK type" type="string" value="implicit pk"/>
+      </ParameterList>
+      <ParameterList name="pk2">
+        <Parameter name="PK type" type="string" value="implicit pk"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="PK tree 7">
+    <ParameterList name="mpc_strong1a">
+      <Parameter name="PK type" type="string" value="mpc strong"/>
+      <ParameterList name="pk1b">
+        <Parameter name="PK type" type="string" value="implicit pk"/>
+      </ParameterList>
+      <ParameterList name="mpc_strong2a">
+        <Parameter name="PK type" type="string" value="mpc strong"/>
+        <ParameterList name="pk2b">
+          <Parameter name="PK type" type="string" value="implicit pk"/>
+        </ParameterList>
+        <ParameterList name="pk3b">
+          <Parameter name="PK type" type="string" value="implicit pk"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="PK tree 8">
+    <ParameterList name="mpc_weak1c">
+      <Parameter name="PK type" type="string" value="mpc subcycled"/>
+      <ParameterList name="pk1c">
+        <Parameter name="PK type" type="string" value="implicit pk"/>
+      </ParameterList>
+      <ParameterList name="mpc_weak2c">
+        <Parameter name="PK type" type="string" value="mpc subcycled"/>
+        <ParameterList name="pk2c">
+          <Parameter name="PK type" type="string" value="implicit pk"/>
+        </ParameterList>
+        <ParameterList name="pk3c">
+          <Parameter name="PK type" type="string" value="implicit pk"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
+  <!-- STATE -->
+  <ParameterList name="state">
+    <ParameterList name="mesh partitions">
+      <ParameterList name="materials">
+        <Parameter name="region list" type="Array(string)" value="{All}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
+  <ParameterList name="PKs">
+    <!-- SINGLE PKs -->
+    <ParameterList name="pk0">
+      <Parameter name="start id" type="int" value="0"/>
+      <Parameter name="end id" type="int" value="11"/>
+    </ParameterList>
+    <ParameterList name="pk1">
+      <Parameter name="start id" type="int" value="0"/>
+      <Parameter name="end id" type="int" value="5"/>
+    </ParameterList>
+    <ParameterList name="pk2">
+      <Parameter name="start id" type="int" value="6"/>
+      <Parameter name="end id" type="int" value="11"/>
+    </ParameterList>
+    <ParameterList name="pk2a">
+      <Parameter name="start id" type="int" value="6"/>
+      <Parameter name="end id" type="int" value="11"/>
+      <Parameter name="cfl" type="double" value="0.25"/>
+    </ParameterList>
+    <ParameterList name="pk1b">
+      <Parameter name="start id" type="int" value="0"/>
+      <Parameter name="end id" type="int" value="3"/>
+    </ParameterList>
+    <ParameterList name="pk2b">
+      <Parameter name="start id" type="int" value="4"/>
+      <Parameter name="end id" type="int" value="7"/>
+    </ParameterList>
+    <ParameterList name="pk3b">
+      <Parameter name="start id" type="int" value="8"/>
+      <Parameter name="end id" type="int" value="11"/>
+    </ParameterList>
+    <ParameterList name="pk1c">
+      <Parameter name="start id" type="int" value="0"/>
+      <Parameter name="end id" type="int" value="3"/>
+      <Parameter name="cfl" type="double" value="2.0"/>
+    </ParameterList>
+    <ParameterList name="pk2c">
+      <Parameter name="start id" type="int" value="4"/>
+      <Parameter name="end id" type="int" value="7"/>
+    </ParameterList>
+    <ParameterList name="pk3c">
+      <Parameter name="start id" type="int" value="8"/>
+      <Parameter name="end id" type="int" value="11"/>
+      <Parameter name="cfl" type="double" value="0.5"/>
+    </ParameterList>
+
+    <!-- MPC WEAK -->
+    <ParameterList name="mpc_weak">
+      <Parameter name="PKs order" type="Array(string)" value="{pk1, pk2}"/>
+      <Parameter name="master PK index" type="int" value="0"/>
+    </ParameterList>
+    <ParameterList name="mpc_weak_flipped">
+      <Parameter name="PKs order" type="Array(string)" value="{pk2, pk1}"/>
+      <Parameter name="master PK index" type="int" value="0"/>
+    </ParameterList>
+    <ParameterList name="mpc_weak_three">
+      <Parameter name="PKs order" type="Array(string)" value="{pk1b, pk2b, pk3b}"/>
+      <Parameter name="master PK index" type="int" value="0"/>
+    </ParameterList>
+    <ParameterList name="mpc_weak1c">
+      <Parameter name="PKs order" type="Array(string)" value="{pk1c, mpc_weak2c}"/>
+      <Parameter name="master PK index" type="int" value="0"/>
+    </ParameterList>
+    <ParameterList name="mpc_weak2c">
+      <Parameter name="PKs order" type="Array(string)" value="{pk2c, pk3c}"/>
+      <Parameter name="master PK index" type="int" value="0"/>
+    </ParameterList>
+
+    <!-- MPC SUBCYCLED -->
+    <ParameterList name="mpc_subcycled">
+      <Parameter name="PKs order" type="Array(string)" value="{pk1, pk2a}"/>
+      <Parameter name="master PK index" type="int" value="0"/>
+    </ParameterList>
+
+    <!-- MPC STRONG -->
+    <ParameterList name="mpc_strong">
+      <Parameter name="PKs order" type="Array(string)" value="{pk1, pk2}"/>
+      <Parameter name="master PK index" type="int" value="0"/>
+      <ParameterList name="time integrator">
+        <ParameterList name="BDF1">
+          <Parameter name="timestep controller type" type="string" value="standard"/>
+          <ParameterList name="timestep controller standard parameters">
+            <Parameter name="max iterations" type="int" value="15"/>
+            <Parameter name="min iterations" type="int" value="10"/>
+            <Parameter name="time step increase factor" type="double" value="1.0"/>
+            <Parameter name="time step reduction factor" type="double" value="0.5"/>
+            <Parameter name="max time step" type="double" value="1.0"/>
+            <Parameter name="min time step" type="double" value="1.0e-10"/>
+          </ParameterList>
+
+          <Parameter name="solver type" type="string" value="nka"/>
+          <ParameterList name="nka parameters">
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-8"/>
+            <Parameter name="max nka vectors" type="int" value="10"/>
+            <Parameter name="monitor" type="string" value="monitor l2 residual"/>
+          </ParameterList>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="low"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <!-- MPC STRONG TWO-LEVEL -->
+    <ParameterList name="mpc_strong1a">
+      <Parameter name="PKs order" type="Array(string)" value="{pk1b, mpc_strong2a}"/>
+      <Parameter name="master PK index" type="int" value="0"/>
+      <ParameterList name="time integrator">
+        <ParameterList name="BDF1">
+          <Parameter name="timestep controller type" type="string" value="standard"/>
+          <ParameterList name="timestep controller standard parameters">
+            <Parameter name="max iterations" type="int" value="15"/>
+            <Parameter name="min iterations" type="int" value="10"/>
+            <Parameter name="time step increase factor" type="double" value="1.0"/>
+            <Parameter name="time step reduction factor" type="double" value="0.5"/>
+            <Parameter name="max time step" type="double" value="1.0"/>
+            <Parameter name="min time step" type="double" value="1.0e-10"/>
+          </ParameterList>
+
+          <Parameter name="solver type" type="string" value="nka"/>
+          <ParameterList name="nka parameters">
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-8"/>
+            <Parameter name="max nka vectors" type="int" value="10"/>
+            <Parameter name="monitor" type="string" value="monitor l2 residual"/>
+          </ParameterList>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="low"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="mpc_strong2a">
+      <Parameter name="PKs order" type="Array(string)" value="{pk2b, pk3b}"/>
+      <Parameter name="master PK index" type="int" value="0"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="verbose object">
+    <Parameter name="verbosity level" type="string" value="high"/>
+  </ParameterList>
+</ParameterList>

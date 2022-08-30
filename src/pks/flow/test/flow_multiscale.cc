@@ -22,6 +22,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "IO.hh"
 #include "GMVMesh.hh"
 #include "MeshAudit.hh"
 #include "MeshFactory.hh"
@@ -68,22 +69,22 @@ TEST(FLOW_2D_MULTISCALE) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, "flow", S, soln));
 
-  RPK->Setup(S.ptr());
+  RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   // create the initial pressure function
   std::string passwd("flow");
-  Epetra_MultiVector& pf = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");
-  Epetra_MultiVector& pm = *S->GetFieldData("pressure_matrix", passwd)->ViewComponent("cell");
+  auto& pf = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
+  auto& pm = *S->GetW<CompositeVector>("pressure_msp", passwd).ViewComponent("cell");
 
   for (int c = 0; c < pf.MyLength(); c++) {
     pm[0][c] = pf[0][c];
   }
 
   // initialize the Richards process kernel
-  RPK->Initialize(S.ptr());
+  RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   // solve the problem 
@@ -94,16 +95,18 @@ TEST(FLOW_2D_MULTISCALE) {
   ti_specs.max_itrs = 1000;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0, S);  // dummy times
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(pf, 0, "pressure");
-    GMV::write_cell_data(pm, 0, "pressure_matrix");
+    GMV::write_cell_data(pm, 0, "pressure_msp");
     GMV::close_data_file();
   }
 
   // check the pressure
   for (int c = 0; c < 60; c++) CHECK_CLOSE(pm[0][c], pf[0][c], 0.2);
+
+  WriteStateStatistics(*S);
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -58,12 +58,10 @@ class VisualizationDomainSet : public Visualization {
     write_partition_ = false; // doesn't work yet
   }
 
-  void set_subdomain_mesh(const Key& subdomain, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
-    subdomains_[subdomain] = mesh;
-  }
+  void set_subdomain_mesh(const Key& subdomain, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // public interface for data clients
-  virtual void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const override;
+  virtual void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const override;
   virtual void WriteVector(const Epetra_Vector& vec, const std::string& name ) const override;
 
   virtual void FinalizeTimestep() const override;

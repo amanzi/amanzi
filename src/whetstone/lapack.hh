@@ -24,6 +24,7 @@ namespace WhetStone {
 
 #define DSYEV_F77  F77_LAPACK_MANGLE(dsyev,DSYEV)
 #define DGETRF_F77 F77_LAPACK_MANGLE(dgetrf,DGETRF)
+#define DGETRS_F77 F77_LAPACK_MANGLE(dgetrs,DGETRS)
 #define DGETRI_F77 F77_LAPACK_MANGLE(dgetri,DGETRI)
 #define DGESVD_F77 F77_LAPACK_MANGLE(dgesvd,DGESVD)
 #define DPOSV_F77  F77_LAPACK_MANGLE(dposv,DPOSV)
@@ -45,6 +46,10 @@ void PREFIX DSYEV_F77(const char* jobz, const char* uplo,
 
 void PREFIX DGETRF_F77(int* nrow, int* ncol, double* a, int* lda, 
                        int* ipiv, int* info); 
+
+void PREFIX DGETRS_F77(const char* uplo,
+                       int* n, int* nrhs, double* a, int* lda, 
+                       int* ipiv, double* b, int* ldb, int* info); 
 
 void PREFIX DGETRI_F77(int* n, double* a, int* lda, 
                        int* ipiv, double* work, int* lwork, int* info); 

@@ -620,7 +620,7 @@ MeshLogical::get_set_entities(const std::string& setname,
 
   Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(setname);
 
-  if (rgn->type() == AmanziGeometry::ALL) {
+  if (rgn->get_type() == AmanziGeometry::RegionType::ALL) {
     int nent = num_entities(kind, ptype);
     entids->resize(num_entities(kind, ptype));
     for (int i=0; i!=nent; ++i) {
@@ -628,7 +628,7 @@ MeshLogical::get_set_entities(const std::string& setname,
     }
     return;
 
-  } else if (rgn->type() == AmanziGeometry::ENUMERATED) {
+  } else if (rgn->get_type() == AmanziGeometry::RegionType::ENUMERATED) {
     Teuchos::RCP<const AmanziGeometry::RegionEnumerated> esrgn =
         Teuchos::rcp_static_cast<const AmanziGeometry::RegionEnumerated>(rgn);
 
@@ -773,10 +773,10 @@ bool viewMeshLogical(const Mesh& m, std::ostream& os) {
 
   os << "cell_sets =" << std::endl;
   for (auto& r : *m.geometric_model()) {
-    if (r->type() == AmanziGeometry::ENUMERATED) {
+    if (r->get_type() == AmanziGeometry::RegionType::ENUMERATED) {
       AmanziMesh::Entity_ID_List set;
-      m.get_set_entities(r->name(), AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &set);
-      os << r->name() << " ";
+      m.get_set_entities(r->get_name(), AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &set);
+      os << r->get_name() << " ";
       for (auto e : set) os << e << " ";
       os << std::endl;
     }

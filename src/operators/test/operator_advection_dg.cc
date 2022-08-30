@@ -248,7 +248,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   // populate the global operator
   op_flux->SetBCs(bc, bc);
   op_flux->Setup(velc, velf);
-  op_flux->UpdateMatrices(velf.ptr());
+  op_flux->UpdateMatrices(*velf);
   op_flux->ApplyBCs(true, true, true);
 
   op_adv->Setup(velc, false);

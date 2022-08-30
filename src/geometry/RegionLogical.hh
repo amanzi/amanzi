@@ -2,9 +2,9 @@
 //! RegionLogical: A region defined by a logical operation on one or two other regions
 
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella
@@ -52,22 +52,22 @@ namespace AmanziGeometry {
 class RegionLogical : public Region {
  public:
 
-  // constructor 
-  RegionLogical(const std::string& name, 
-                const int id, 
+  // constructor
+  RegionLogical(const std::string& name,
+                const int id,
                 const std::string& operation_str,
                 const std::vector<std::string>& component_regions,
-                const LifeCycleType lifecycle=PERMANENT);
-  
+                const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
+
   // Label in the file
-  BoolOpType operation() const { return operation_; }
+  BoolOpType get_operation() const { return operation_; }
 
   /// Is the the specified point inside this region
   bool inside(const Point& p) const;
 
-  std::vector<std::string> component_regions() const { return component_regions_; }
+  const std::vector<std::string>& get_component_regions() const { return component_regions_; }
 
-protected:  
+protected:
   BoolOpType operation_;  // what logical operation should be performed
   std::vector<std::string> component_regions_;  // names of regions in operation
 };

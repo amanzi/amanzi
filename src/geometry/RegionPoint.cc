@@ -23,7 +23,7 @@ RegionPoint::RegionPoint(const std::string& name,
                          const int id,
                          const Point& p,
                          const LifeCycleType lifecycle)
-  : Region(name, id, true, POINT, 1, p.dim(), lifecycle),
+  : Region(name, id, true, RegionType::POINT, 1, p.dim(), lifecycle),
     p_(p) {}
   
 // -------------------------------------------------------------
@@ -34,7 +34,7 @@ RegionPoint::inside(const Point& p) const
 {
   if (p.dim() != p_.dim()) {
     Errors::Message mesg;
-    mesg << "Mismatch in dimension of RegionPoint \"" << name()
+    mesg << "Mismatch in dimension of RegionPoint \"" << get_name()
          << "\" and query point.";
     Exceptions::amanzi_throw(mesg);
   }
