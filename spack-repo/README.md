@@ -11,6 +11,12 @@ Add spack in your environement (and maybe your bash_profile script.)
 source ${PATH_TO_SPACK}/spack/share/spack/setup-env.sh
 ```
 
+Then add the amanzi repo to the list of spack repos
+
+```
+spack repo add amanzi/spack-repo
+```
+
 If you want support for the modules installed in spack, install lmod: 
 ```
 spack install lmod
@@ -22,19 +28,21 @@ If compilers are available on your system you can load them using:
 ``` 
 spack compiler find
 ```
-This will update the file: ${HOME}/.spack/linux/compilers.yaml
+This will update the file: ${HOME}/.spack/<system>/compilers.yaml
 
-If you are on a system using modules, first load the compiler module and then the spack command. 
+The <system> could be for instance a supercomputer (NERSC), local cluster or
+your desktop/laptop.
+
+If you are on a system using modules, first load the compiler module and then the spack command, for instance 
 ```
 module load gcc/XXX
 spack compiler find
 ```
 
-Note that you might find your compilers also in ${HOME}/.spack/cray/compilers.yaml (if you are on Cori for instance).
-
 # Find external libraries
 
-If external libraries are available on your system, spack can find them for you by doing:
+If external libraries are available on your system, and if you
+don’t want spack to build them all, spack can find them for you by doing:
 ```
 spack external find
 ```
@@ -59,7 +67,7 @@ openmpi:
   externals:
     - spec: openmpi@4.1.2
       modules:
-        - openmpi/4.1.2/gcc-11.2.0
+        - openmpi/4.1.2-gcc_11.2.0
 ```
 If your packages.yaml file was blank, then the line `packages:` has to be added above `openmpi:`. If other specs are already present in the packages.yaml file,
 then you can just add more at the bottom and omit the `packages:` line before the library name.
@@ -94,15 +102,15 @@ You will then be able to add the repository in your local spack:
 spack repo add amanzi/spack-repo
 ```
 
-The command above will add repositories for the following four packages:
+The command above will add repositories for the following six packages:
 
 ```
-amanzi  ascemio  crunchtope  mstk  ccse
+alquimia amanzi  ascemio  crunchtope  mstk  ccse
 ```
 
 # Spack variants
 ```
-Variants:
+Currently, we are striving to support the following variants:
     Name [Default]                 When    Allowed values          Description
     ===========================    ====    ====================    ============================================
 
@@ -134,25 +142,24 @@ packages:
     externals:
       - spec: openmpi@4.1.2
         modules:
-          - openmpi/4.1.2/gcc-11.2.0
+          - openmpi/4.1.2-gcc_11.2.0
 ```
 To build amanzi, run from any folder:
 ```
 spack install amanzi@spack <desired_variant>  ^openmpi@4.1.2
 ```
-Currently amanzi does not have a spack testing suite.
-To run tests for amanzi after installation, cd into amanzi and replace `install` in the above command string with `dev-build --test all`. Note that the testing cannot be done from any folder but it as to be done from within the amanzi folder.
+Currently we are finalizing a spack testing suite, but it is not yet complete.
+For now, to run tests for amanzi after installation, cd into amanzi and replace `install` in the above command string with `dev-build --test all`. Note that the testing cannot be done from any folder but it as to be done from within the amanzi folder.
 
 # Cori
-Compute nodes cannot be allocated for enough time to compute the spack installation of amanzi, so it is better to proceed from a login node.
-Add the following specs to the packages.yaml file:
+From a login node, add the following specs to the packages.yaml file:
 ```
 packages:
   mpich:
     externals:
-     - spec: mpich@7.7.10
+     - spec: mpich@7.7.19
        modules:
-         - cray-mpich/7.7.10
+         - cray-mpich/7.7.19
   cray-libsci:
     externals:
     - spec: cray-libsci@20.09.1
