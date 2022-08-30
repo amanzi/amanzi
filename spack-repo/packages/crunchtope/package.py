@@ -24,11 +24,11 @@ class Crunchtope(CMakePackage):
 
     # Mandatory 
     depends_on('mpi')
-    depends_on('petsc@3.16.4:3.16.5')
+    depends_on('petsc')
     depends_on('hdf5 +mpi+fortran+hl+shared',when='+shared')
     depends_on('hdf5 +mpi+fortran+hl~shared',when='-shared')
     #depends_on('alquimia@1.0.9')
-    depends_on('pflotran@3.0.2')
+    depends_on('pflotran@0.0.1')
 
     def cmake_args(self):
         options = ['-DCMAKE_BUILD_TYPE=debug']

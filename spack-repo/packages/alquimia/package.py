@@ -16,6 +16,7 @@ class Alquimia(CMakePackage):
     maintainers = ['smolins', 'balay']
 
     version('1.0.9', commit='2ee3bcfacc63f685864bcac2b6868b48ad235225')  # tag v.1.0.9
+    version('1.0.8', commit='e1ddf8a67c7a5bc267817cf287bec3f134e6b73d')  # tag v.1.0.9
 
     variant('shared', default=True,
             description='Enables the build of shared libraries')
@@ -23,7 +24,7 @@ class Alquimia(CMakePackage):
     depends_on('crunchtope')
     depends_on('mpi')
     depends_on('hdf5')
-    depends_on('pflotran@3.0.2', when='@1.0.9')
+    depends_on('pflotran@0.0.1', when='@1.0.9')
 
     def cmake_args(self):
         spec = self.spec

@@ -79,12 +79,11 @@ class Amanzi(CMakePackage):
 
     # The following core dependencies do not support +shared/~shared
     depends_on('xerces-c')
-    #depends_on('unittest-cpp', when='+tests')
-    depends_on('unittest-cpp')
+    depends_on('unittest-cpp', when='+tests')
 
     #### Geochemistry ####
     geochemistry = {
-            'alquimia@1.0.9','petsc@3.16.4:3.16.5', 'pflotran@3.0.2', 'crunchtope'
+            'alquimia@1.0.8','petsc@3.14.0', 'pflotran@0.0.1', 'crunchtope'
     }
     for dep in geochemistry: 
         depends_on(dep, when='+geochemistry'); 
@@ -96,13 +95,13 @@ class Amanzi(CMakePackage):
 
     #### Structured ####
     structured = {
-            'alquimia@1.0.9','petsc@3.16.4:3.16.5'
+            'alquimia@1.0.8','petsc@3.13.0'
     }
     for dep in structured:
         depends_on(dep, when='mesh_type=structured');
     space_dim = 2
     depends_on('ccse dims=%d' % int(space_dim) ,when='mesh_type=structured');
-    depends_on('pflotran@3.0.2', when='mesh_type=structured')
+    depends_on('pflotran@0.0.1', when='mesh_type=structured')
 
     #### Unstructured ####
     depends_on('nanoflann', when='mesh_type=unstructured')
@@ -121,7 +120,7 @@ class Amanzi(CMakePackage):
     depends_on('silo@4.10.2', when='+silo')
 
     ##### Other #####
-    depends_on('trilinos@13.0.0 +boost +hdf5 +hypre '
+    depends_on('trilinos@13.0.0.afc4 +boost +hdf5 +hypre +mpi +amesos'
                '+anasazi +amesos2 +epetra +ml +epetraext +belos +aztec'
                '+zoltan +nox +ifpack +muelu +basker -ifpack2 cxxstd=14')
 
