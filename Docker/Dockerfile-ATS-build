@@ -64,6 +64,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --enable-geochemistry \
    --disable-amanzi_physics \
    --enable-ats_physics \
+   --ats_dev \
    --enable-reg_tests \
    && cd /home/amanzi_user/amanzi_builddir/ats 
 
