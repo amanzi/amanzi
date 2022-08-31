@@ -419,10 +419,11 @@ void LimiterCell::LimiterScalar_(
       bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
   }
   
+  double tol_base = sqrt(OPERATOR_LIMITER_TOLERANCE);
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
     u1 = (*field_)[component_][c];
-    double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * fabs(u1);
+    double tol = tol_base * std::max(OPERATOR_LIMITER_FILED_TOLERANCE, fabs(u1));
 
     // only two options for control points are supported
     int x, nents(0);

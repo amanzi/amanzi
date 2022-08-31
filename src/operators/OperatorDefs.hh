@@ -132,6 +132,7 @@ const int OPERATOR_LIMITER_KUZMIN = 6;
 const int OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL = 7;
 
 const double OPERATOR_LIMITER_TOLERANCE = 1e-14;
+const double OPERATOR_LIMITER_FIELD_TOLERANCE = 1e-200;
 const double OPERATOR_LIMITER_INFINITY = 1e+99;
 
 // stencil for calculating limiting bounds
