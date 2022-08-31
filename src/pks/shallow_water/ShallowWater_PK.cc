@@ -538,9 +538,14 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       qmax = std::max(qmax, flux);
     }
 
+    double outmin[2], inmin[2] = { hmin, qmin };
+    double outmax[2], inmax[2] = { hmax, qmax };
+    mesh_->get_comm()->MinAll(inmin, outmin, 2);
+    mesh_->get_comm()->MaxAll(inmax, outmax, 2);
+
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "min/max(h): " << hmin << "/" << hmax << ", min/max(flux): " << qmin << "/"
-               << qmax << std::endl;
+    *vo_->os() << "min/max(h): " << outmin[0] << "/" << outmax[0] 
+               << ", min/max(flux): " << outmin[1] << "/" << outmax[1] << std::endl;
   }
 
   return false;

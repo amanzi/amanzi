@@ -423,7 +423,7 @@ void LimiterCell::LimiterScalar_(
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
     u1 = (*field_)[component_][c];
-    double tol = tol_base * std::max(OPERATOR_LIMITER_FILED_TOLERANCE, fabs(u1));
+    double tol = tol_base * std::max(OPERATOR_LIMITER_FIELD_TOLERANCE, fabs(u1));
 
     // only two options for control points are supported
     int x, nents(0);

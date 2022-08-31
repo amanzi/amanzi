@@ -656,6 +656,26 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<double>("value", p);
       }
 
+      // -- linear fracture pressure
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_pressure", flag);
+      if (flag) {
+        double p = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "Pa");
+        std::vector<double> grad = GetAttributeVectorD_(node, "gradient", dim_, "Pa/m");
+        std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", dim_, "m");
+
+        grad.insert(grad.begin(), 0.0);
+        refc.insert(refc.begin(), 0.0);
+
+        Teuchos::ParameterList& pressure_ic = out_ic.sublist("fracture-pressure");
+        pressure_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "*")
+            .sublist("function").sublist("function-linear")
+            .set<double>("y0", p)
+            .set<Teuchos::Array<double> >("x0", refc)
+            .set<Teuchos::Array<double> >("gradient", grad);
+      }
+
       // -- total_component_concentration (liquid phase)
       int ncomp_l = phases_["water"].size();
 
