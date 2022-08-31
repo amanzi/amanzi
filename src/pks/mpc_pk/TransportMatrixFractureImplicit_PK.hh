@@ -70,6 +70,7 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<TreeVector> soln_;
 
   int num_aqueous_;
+  int nspace_m_, nspace_f_;
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae_;
   Teuchos::RCP<Matrix<TreeVector, TreeVectorSpace>> op_pc_solver_;
 

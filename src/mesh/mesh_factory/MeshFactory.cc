@@ -361,8 +361,8 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
   for (auto it1 = setids.begin(); it1 != setids.end(); ++it1) {
     for (auto it2 = it1 + 1; it2 != setids.end(); ++it2) {
       if (*it2 == *it1) {
-        Exceptions::amanzi_throw(Message("Extrated mesh has geometrically identical elements."));
-      }
+        Exceptions::amanzi_throw(Message("The list of input ids for a derive mesh has duplicates."));
+      } 
     }
   }
 

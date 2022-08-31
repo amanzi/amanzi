@@ -72,7 +72,7 @@
 	</ParameterList>
 	<Parameter name="initial time step" type="double" value="1.0e+4"/>
 	<Parameter name="start period time" type="double" value="0.0"/>
-	<Parameter name="end period time" type="double" value="1.0e+5"/>
+	<Parameter name="end period time" type="double" value="2.0e+5"/>
         <Parameter name="maximum time step" type="double" value="5.0e+5"/>
         <Parameter name="maximum cycle number" type="int" value="20"/>        
       </ParameterList>
@@ -188,7 +188,7 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-06"/>
+                  <Parameter name="value" type="double" value="5.0e-07"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
@@ -216,7 +216,7 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-06"/>
+                  <Parameter name="value" type="double" value="5.0e-07"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
@@ -370,7 +370,7 @@
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-8"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-12"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
@@ -401,7 +401,7 @@
 
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
-        <Parameter name="limiter" type="string" value="tensorial"/>
+        <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
         <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
         <Parameter name="limiter location" type="string" value="face"/>
@@ -464,7 +464,7 @@
 
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
-        <Parameter name="limiter" type="string" value="tensorial"/>
+        <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
         <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
         <Parameter name="limiter location" type="string" value="face"/>

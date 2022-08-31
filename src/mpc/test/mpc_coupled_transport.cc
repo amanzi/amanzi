@@ -1,11 +1,11 @@
 #include <iostream>
-#include "stdlib.h"
+#include <utility>
 #include "math.h"
+#include "stdlib.h"
 
 // TPLs
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
-#include "Epetra_SerialComm.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
@@ -23,8 +23,7 @@
 #include "pks_transport_registration.hh"
 #include "State.hh"
 
-
-void RunTest(int order, double cfl) {
+std::pair<Epetra_MultiVector, Epetra_MultiVector> RunTest(int order, double cfl) {
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -100,14 +99,24 @@ using namespace Amanzi::AmanziGeometry;
     }
   }
   CHECK_CLOSE(cmin, cmax, 1e-12);
+
+  return std::make_pair(tcc_f, tcc_m);
 }
 
 
-TEST(MPC_DRIVER_COUPLED_TRANSPORT_1ST) {
-  RunTest(1, 1.0);
-}
+TEST(MPC_DRIVER_COUPLED_TRANSPORT) {
+  auto tcc1 = RunTest(1, 1.0);
+  auto tcc2 = RunTest(2, 1.0);
 
-TEST(MPC_DRIVER_COUPLED_TRANSPORT_2ND) {
-  RunTest(2, 1.0);
+  double err, norm;
+  tcc1.first.Update(1.0, tcc2.first, -1.0);
+  tcc1.first.Norm2(&err);
+  std::cout << "Error between 1st and 2nd: " << err << std::endl; 
+
+  tcc1.second.Norm2(&norm);
+  tcc1.second.Update(1.0, tcc2.second, -1.0);
+  tcc1.second.Norm2(&err);
+  std::cout << "Error between 1st and 2nd: " << err << " norm: " << norm << std::endl; 
+  CHECK_CLOSE(err / norm, 0.15, 0.1);
 }
 

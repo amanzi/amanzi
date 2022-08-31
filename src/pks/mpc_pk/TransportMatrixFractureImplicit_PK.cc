@@ -111,6 +111,11 @@ void TransportMatrixFractureImplicit_PK::Initialize()
   pk_fracture_ = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[1]);
   AMANZI_ASSERT(pk_matrix_->domain() == "domain");
 
+  int ntime;
+  pk_matrix_->get_discretization_order(&nspace_m_, &ntime);
+  pk_fracture_->get_discretization_order(&nspace_f_, &ntime);
+  bool flag_ho = (nspace_m_ == 2 && nspace_f_ == 2);
+
   auto tvs = Teuchos::rcp(new TreeVectorSpace());
   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(pk_matrix_->op()->get_row_map())));
   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(pk_fracture_->op()->get_row_map())));
@@ -130,7 +135,8 @@ void TransportMatrixFractureImplicit_PK::Initialize()
 
   op_coupling00_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, fia_->get_cvs_matrix(), fia_->get_cvs_matrix(), 
-              fia_->get_inds_matrix(), fia_->get_inds_matrix(), op0));
+              fia_->get_inds_matrix(), fia_->get_inds_matrix(),
+      (!flag_ho) ? op0 : Teuchos::null));
   op_coupling00_->Setup(fia_->get_values(), 1.0);
   op_coupling00_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -148,7 +154,8 @@ void TransportMatrixFractureImplicit_PK::Initialize()
 
   op_coupling11_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, fia_->get_cvs_fracture(), fia_->get_cvs_fracture(),
-              fia_->get_inds_fracture(), fia_->get_inds_fracture(), op1));
+              fia_->get_inds_fracture(), fia_->get_inds_fracture(),
+      (!flag_ho) ? op1 : Teuchos::null));
   op_coupling11_->Setup(fia_->get_values(), 1.0);
   op_coupling11_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -171,25 +178,29 @@ void TransportMatrixFractureImplicit_PK::Initialize()
 
     op_coupling00d_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
         oplist, fid_->get_cvs_matrix(), fid_->get_cvs_matrix(), 
-                fid_->get_inds_matrix(), fid_->get_inds_matrix(), op0));
+                fid_->get_inds_matrix(), fid_->get_inds_matrix(),
+        (!flag_ho) ? op0 : Teuchos::null));
     op_coupling00d_->Setup(fid_->get_values(), 1.0);
     op_coupling00d_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
     op_coupling01d_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
         oplist, fid_->get_cvs_matrix(), fid_->get_cvs_fracture(),
-                fid_->get_inds_matrix(), fid_->get_inds_fracture(), op_coupling01_->global_operator()));
+                fid_->get_inds_matrix(), fid_->get_inds_fracture(),
+        (!flag_ho) ? op_coupling01_->global_operator() : Teuchos::null));
     op_coupling01d_->Setup(fid_->get_values(), -1.0);
     op_coupling01d_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
     op_coupling10d_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
         oplist, fid_->get_cvs_fracture(), fid_->get_cvs_matrix(),
-                fid_->get_inds_fracture(), fid_->get_inds_matrix(), op_coupling10_->global_operator()));
+                fid_->get_inds_fracture(), fid_->get_inds_matrix(),
+        (!flag_ho) ? op_coupling10_->global_operator() : Teuchos::null));
     op_coupling10d_->Setup(fid_->get_values(), -1.0);
     op_coupling10d_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
     op_coupling11d_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
         oplist, fid_->get_cvs_fracture(), fid_->get_cvs_fracture(),
-                fid_->get_inds_fracture(), fid_->get_inds_fracture(), op1));
+                fid_->get_inds_fracture(), fid_->get_inds_fracture(),
+        (!flag_ho) ? op1 : Teuchos::null));
     op_coupling11d_->Setup(fid_->get_values(), 1.0);
     op_coupling11d_->UpdateMatrices(Teuchos::null, Teuchos::null);
   }
@@ -211,11 +222,7 @@ void TransportMatrixFractureImplicit_PK::Initialize()
     InitializeCVField(S_, *vo_, "fracture-normal_diffusion", Tags::DEFAULT, "state", 0.0);
 
   // time integrators
-  int nspace_m, nspace_f, ntime;
-  pk_matrix_->get_discretization_order(&nspace_m, &ntime);
-  pk_fracture_->get_discretization_order(&nspace_f, &ntime);
-
-  if (nspace_m == 2 && nspace_f == 2) {
+  if (nspace_m_ == 2 && nspace_f_ == 2) {
     Teuchos::ParameterList& bdf1_list = ti_list.sublist("BDF1");
     bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
   }
@@ -251,13 +258,10 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(
   fia_->SetValues(S_->Get<CV_t>(matrix_vol_flowrate_key_));
 
   // fork between low-order and high-order
-  int nspace_m, nspace_f, ntime, tot_itrs;
-  pk_matrix_->get_discretization_order(&nspace_m, &ntime);
-  pk_fracture_->get_discretization_order(&nspace_f, &ntime);
-
-  if (nspace_m == 1 && nspace_f == 1) {
+  int tot_itrs;
+  if (nspace_m_ == 1 && nspace_f_ == 1) {
     fail = AdvanceStepLO_(t_old, t_new, &tot_itrs);
-  } else if (nspace_m == 2 && nspace_f == 2) {
+  } else if (nspace_m_ == 2 && nspace_f_ == 2) {
     fail = AdvanceStepHO_(t_old, t_new, &tot_itrs);
   } else {
     AMANZI_ASSERT(false);
@@ -407,11 +411,7 @@ void TransportMatrixFractureImplicit_PK::CommitStep(
 ******************************************************************* */
 void TransportMatrixFractureImplicit_PK::CalculateDiagnostics(const Tag& tag)
 {  
-  int nspace_m, nspace_f, ntime;
-  pk_matrix_->get_discretization_order(&nspace_m, &ntime);
-  pk_fracture_->get_discretization_order(&nspace_f, &ntime);
-
-  if (nspace_m == 2 && nspace_f == 2) {
+  if (nspace_m_ == 2 && nspace_f_ == 2) {
     PK_MPCStrong<PK_BDF>::CalculateDiagnostics(tag);
   }
 }

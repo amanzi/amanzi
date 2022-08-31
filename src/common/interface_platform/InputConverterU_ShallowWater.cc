@@ -45,7 +45,7 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string
   char *text;
 
   // set up default values for some expert parameters
-  double cfl(0.5);
+  double cfl(1.0);
 
   // process expert parameters
   bool flag;
