@@ -130,7 +130,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
 
-  int dir, c1, c2;
+  int dir, c1, c2, ierr;
   double h, qx, qy, factor;
   AmanziMesh::Entity_ID_List cells;
 
@@ -159,7 +159,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double B_rec = BathymetryEdgeValue(f, B_n);
     
     double h_rec = ht_rec - B_rec;
-    ErrorDiagnostics_(t, c1, h_rec, B_rec, ht_rec);
+    ierr = ErrorDiagnostics_(t, c1, h_rec, B_rec, ht_rec);
+    if (ierr < 0) break;
 
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
@@ -192,7 +193,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       ht_rec = TotalDepthEdgeValue(c2, f, ht_c[0][c2], B_c[0][c2], B_n);
 
       h_rec = ht_rec - B_rec;
-      ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
+      ierr = ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
+      if (ierr < 0) break;
 
       qx_rec = discharge_x_grad_->getValue(c2, xf);
       qy_rec = discharge_y_grad_->getValue(c2, xf);
@@ -235,6 +237,16 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     }
   }
 
+  // sync errors across processors, otherwise any MPI call
+  // will lead to an error.
+  int ierr_tmp(ierr);
+  mesh_->get_comm()->MinAll(&ierr_tmp, &ierr, 1);
+  if (ierr < 0) {
+    Errors::Message msg;
+    msg << "Negative ponded depth.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
   // sources (bathymetry, flux exchange, etc)
   // the code should not fail after that
   U.resize(3);
@@ -260,7 +272,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 //--------------------------------------------------------------
 // Error diagnostics
 //--------------------------------------------------------------
-void
+int
 ShallowWater_PK::ErrorDiagnostics_(double t, int c, double h, double B, double ht)
 {
   if (h < 0.0) {
@@ -271,11 +283,9 @@ ShallowWater_PK::ErrorDiagnostics_(double t, int c, double h, double B, double h
       *vo_->os() << "negative height in cell " << c << ", xc=(" << xc[0] << ", " << xc[1] << ")"
                  << ", total=" << ht << ", bathymetry=" << B << ", height=" << h << std::endl;
     }
-
-    Errors::Message msg;
-    msg << "Negative ponded depth.\n";
-    Exceptions::amanzi_throw(msg);
+    return -1;
   }
+  return 0;
 }
 
 } // namespace ShallowWater

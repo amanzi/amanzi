@@ -482,8 +482,9 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // To use evaluators, we need to overwrite state variables. Since,
-  // soln_ is a shallow copy of state variables, we cannot use.
-  // Instead, we need its deep copy. This deficiency of the DAG.
+  // soln_ is a shallow copy of state variables, we cannot use it.
+  // Instead, we need its deep copy. This is by design of the DAG.
+  int ierr(0);
   try {
     auto soln_old = Teuchos::rcp(new TreeVector(*soln_));
     auto soln_new = Teuchos::rcp(new TreeVector(*soln_));
@@ -494,6 +495,11 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *soln_ = *soln_new;
     VerifySolution_(*soln_); 
   } catch (...) {
+    ierr = -1;
+  }
+
+  // recover state in case of error
+  if (ierr < 0) {
     archive.Restore(passwd_);
     return true;
   }
@@ -780,12 +786,20 @@ void ShallowWater_PK::VerifySolution_(TreeVector& u)
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   const auto& h_c = *u.SubVector(0)->Data()->ViewComponent("cell");
 
+  int ierr(0);
   for (int c = 0; c < ncells_owned; ++c) {
     if (h_c[0][c] < 0.0) {
-      Errors::Message msg;
-      msg << "Negative ponded depth.\n";
-      Exceptions::amanzi_throw(msg);
+      ierr = -1;
+      break;
     }
+  }
+
+  int ierr_tmp(ierr);
+  mesh_->get_comm()->MinAll(&ierr_tmp, &ierr, 1);
+  if (ierr < 0) {
+    Errors::Message msg;
+    msg << "Negative ponded depth.\n";
+    Exceptions::amanzi_throw(msg);
   }
 }
 
