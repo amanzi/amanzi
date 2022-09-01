@@ -676,12 +676,13 @@ double Transport_PK::StableTimeStep(int n)
   }
 
   // loop over wet cells and calculate minimal time step
+  // -- to avoid FPEs, we skip calculation for extremely small flux
   double vol, outflux, dt_cell;
   dt_ = dt_cell = TRANSPORT_LARGE_TIME_STEP;
   int cmin_dt = -1;
   for (int c = 0; c < ncells_owned; c++) {
     outflux = total_outflux[c];
-    if (outflux) {
+    if (outflux > TRANSPORT_SMALL_CELL_OUTFLUX) {
       vol = mesh_->cell_volume(c);
       if (n == 0) 
         dt_cell = vol * wc_prev[0][c] / outflux;

@@ -34,6 +34,8 @@ const int TRANSPORT_FLOW_TRANSIENT = 2;
 const double TRANSPORT_CONCENTRATION_OVERSHOOT = 1e-6;
 const double TRANSPORT_CONCENTRATION_INFINITY = 1e+99;
 
+const double TRANSPORT_SMALL_CELL_OUTFLUX = 1e-250;
+
 const int TRANSPORT_HEX_FACES = 6;  // Hexahedron is the common element
 const int TRANSPORT_HEX_NODES = 8;
 const int TRANSPORT_HEX_EDGES = 12;
