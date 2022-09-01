@@ -1219,7 +1219,7 @@ function git_submodule_clone()
   save_dir=`pwd`
   cd ${amanzi_source_dir}
   status_message "In ${amanzi_source_dir} checking out ${submodule_name}"
-  ${git_binary} submodule update --init --remote --recursive ${submodule_name}
+  ${git_binary} submodule update --init --recursive ${submodule_name}
   if [ $? -ne 0 ]; then
     error_message "Failed to check out submodule ${submodule_name}"
     exit_now 30
