@@ -362,6 +362,10 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             obPL.set<std::string>("variable", "aqueous volumetric flow rate");
           } else if (strcmp(obs_type, "aqueous_saturation") == 0) {
             obPL.set<std::string>("variable", "aqueous saturation");
+          } else if (strcmp(obs_type, "ponded_depth") == 0) {
+            obPL.set<std::string>("variable", "ponded depth");
+          } else if (strcmp(obs_type, "velocity_x") == 0) {
+            obPL.set<std::string>("variable", "velocity x");
           } else if (strcmp(obs_type, "ph") == 0) {
             obPL.set<std::string>("variable", "pH");
           } else if (strcmp(obs_type, "aqueous_conc") == 0) {

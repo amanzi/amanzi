@@ -11,6 +11,8 @@
            Daniil Svyatsky
 */
 
+#include "Evaluator.hh"
+
 #include "ObservableSolute.hh"
 #include "RegionPlane.hh"
 #include "RegionPolygon.hh"
@@ -101,6 +103,7 @@ void ObservableSolute::ComputeObservation(
 {
   Errors::Message msg;
 
+  Key wc_key =  Keys::getKey(domain_, "water_content");
   Key ws_key =  Keys::getKey(domain_, "saturation_liquid");
   Key tcc_key = Keys::getKey(domain_, "total_component_concentration");
   Key poro_key = Keys::getKey(domain_, "porosity");
@@ -116,16 +119,18 @@ void ObservableSolute::ComputeObservation(
     return;
   }
 
-  const auto& ws = *S.Get<CompositeVector>(ws_key).ViewComponent("cell");
   const auto& tcc = *S.Get<CompositeVector>(tcc_key).ViewComponent("cell");
   const auto& porosity = *S.Get<CompositeVector>(poro_key).ViewComponent("cell");    
 
   unit = units_.system().concentration;
 
   if (variable_ == comp_names_[tcc_index_] + " aqueous concentration") { 
+    S.GetEvaluator(wc_key).Update(S, "cycle driver");
+    const auto& wc = *S.Get<CompositeVector>(wc_key).ViewComponent("cell");
+
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
-      double factor = porosity[0][c] * ws[0][c] * mesh_->cell_volume(c);
+      double factor = wc[0][c] * mesh_->cell_volume(c);
       factor *= units_.concentration_factor();
 
       *value += tcc[tcc_index_][c] * factor;
@@ -162,6 +167,8 @@ void ObservableSolute::ComputeObservation(
     }
 
   } else if (variable_ == comp_names_[tcc_index_] + " gaseous concentration") {
+    const auto& ws = *S.Get<CompositeVector>(ws_key).ViewComponent("cell");
+
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
       double factor = porosity[0][c] * (1.0 - ws[0][c]) * mesh_->cell_volume(c);

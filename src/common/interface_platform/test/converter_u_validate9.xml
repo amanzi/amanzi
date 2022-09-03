@@ -193,6 +193,7 @@
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{}"/>
+    <Parameter name="component molar masses" type="Array(double)" value="{}"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{}"/>
       <Parameter name="initial time step" type="Array(double)" value="{}"/>

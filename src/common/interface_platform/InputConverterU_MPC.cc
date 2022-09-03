@@ -354,6 +354,16 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
 
   out_list.set<Teuchos::Array<std::string> >("component names", comp_names_all_);
 
+  // available molar masses
+  std::string name;
+  std::vector<double> tmp(comp_names_all_.size(), 1.0);
+
+  for (int i = 0; i < comp_names_all_.size(); ++i) {
+    name = comp_names_all_[i];
+    if (solute_molar_mass_.find(name) != solute_molar_mass_.end()) tmp[i] = solute_molar_mass_[name];
+  }
+  out_list.set<Teuchos::Array<double> >("component molar masses", tmp);
+
   out_list.sublist("time period control") = TranslateTimePeriodControls_();
   if (filename.size() > 0) {
     out_list.sublist("restart").set<std::string>("file name", filename);
