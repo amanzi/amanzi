@@ -43,7 +43,12 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const State& S)
   // Set up the HDF5 objects
   if (single_file_) {
     // Single_File style is one checkpoint file on "domain"'s comm
-    auto comm = S.GetMesh()->get_comm();
+    Comm_ptr_type comm;
+    if (S.HasMesh("domain")) {
+      comm = S.GetMesh()->get_comm();
+    } else {
+      comm = Amanzi::getDefaultComm();
+    }
     output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm));
     output_["domain"]->setTrackXdmf(false);
 
