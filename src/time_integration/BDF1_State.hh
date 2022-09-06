@@ -102,7 +102,12 @@ void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
 
   // solution history object
   double t0 = plist.get<double>("initial time", 0.0);
-  std::string name = plist.sublist("verbose object").get<std::string>("name", "TI_BDF1");
+  std::string name;
+  if (plist.sublist("verbose object").isParameter("name")) {
+    name = plist.sublist("verbose object").get<std::string>("name");
+  } else {
+    name = "TI_BDF1";
+  }
   uhist = Teuchos::rcp(new SolutionHistory<Vector>(name, uhist_size, t0,
           *initvec, nullptr, S));
 
