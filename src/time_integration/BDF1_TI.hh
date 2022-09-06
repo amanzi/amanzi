@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
@@ -121,6 +121,11 @@ class BDF1_TI {
   // returns the most recent time
   double time();
 
+  // returns the initial step size
+  double initial_timestep() {
+    return ts_control_->get_initial_timestep();
+  }
+
   // returns current nonlinear tolerance
   double tol_solver() { return tol_solver_; }
 
@@ -140,7 +145,7 @@ class BDF1_TI {
   Teuchos::RCP<VerboseObject> vo_;
   Teuchos::RCP<AmanziSolvers::ResidualDebugger> db_;
 
-  Teuchos::RCP<Vector> udot_prev_, udot_;  // for error estimate 
+  Teuchos::RCP<Vector> udot_prev_, udot_;  // for error estimate
 
  private:
   double tol_solver_;  // reference solver's tolerance
@@ -154,8 +159,9 @@ template<class Vector,class VectorSpace>
 BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
         Teuchos::ParameterList& plist,
         const Teuchos::RCP<const Vector>& initvector,
-        const Teuchos::RCP<State>& S) :
-    plist_(plist) {
+        const Teuchos::RCP<State>& S)
+  : plist_(plist)
+{
   fn_ = Teuchos::rcpFromRef(fn);
 
   // update the verbose options
@@ -290,7 +296,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt,
 
   // Update the debugger
   db_->StartIteration<VectorSpace>(tlast, state_->seq, state_->failed_current, u->Map());
-  
+
   // Overwrite preconditioner control
   if (state_->freeze_pc) solver_->set_pc_lag(1000000000);
 
@@ -311,7 +317,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt,
 
   if (ierr == 0) {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      *vo_->os() << "success: " << itr << " nonlinear itrs" 
+      *vo_->os() << "success: " << itr << " nonlinear itrs"
                  << " error=" << solver_->residual() << std::endl;
     }
   } else {
@@ -387,7 +393,7 @@ void BDF1_TI<Vector,VectorSpace>::ReportStatistics_()
     oss << state_->hmin << " " << state_->hmax;
 
     *vo_->os() << oss.str() << std::endl;
-  }  
+  }
 }
 
 }  // namespace Amanzi

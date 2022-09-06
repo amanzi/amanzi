@@ -17,7 +17,8 @@
 
 namespace Amanzi {
 
-TimestepControllerStandard::TimestepControllerStandard(Teuchos::ParameterList& plist) :
+TimestepControllerStandard::TimestepControllerStandard(Teuchos::ParameterList& plist)
+  : TimestepController(plist),
     plist_(plist) {
   max_its_ = plist_.get<int>("max iterations");
   min_its_ = plist_.get<int>("min iterations");
@@ -31,8 +32,16 @@ TimestepControllerStandard::TimestepControllerStandard(Teuchos::ParameterList& p
   increase_factor_ = plist_.get<double>("time step increase factor");
   AMANZI_ASSERT(increase_factor_ >= 1.0);
 
-  max_dt_ = plist_.get<double>("max time step");
-  min_dt_ = plist_.get<double>("min time step");
+  if (plist_.isParameter("max time step [s]")) {
+    max_dt_ = plist_.get<double>("max time step [s]");
+  } else {
+    max_dt_ = plist_.get<double>("max time step");
+  }
+  if (plist_.isParameter("min time step [s]")) {
+    min_dt_ = plist_.get<double>("min time step [s]");
+  } else {
+    min_dt_ = plist_.get<double>("min time step");
+  }
 }
 
 
