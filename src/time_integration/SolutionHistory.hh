@@ -123,8 +123,23 @@ void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
 
   // require data in state
   if (S_ != Teuchos::null) {
-    // also need to save nvec_, as this can change dynamically
     std::string nvecs_name = name_+"_num_vectors";
+
+    // check that our name is unique
+    int counter = 0;
+    while (S_->HasRecordSet(nvecs_name)) {
+      if (counter == 0) {
+        name_ = name_+ "_000";
+      } else {
+        char i[4];
+        sprintf(i, "%03i", counter);
+        name_ = name_.substr(0, name_.size()-4) + "_" + i;
+      }
+      counter++;
+      nvecs_name = name_+"_num_vectors";
+    }
+
+    // also need to save nvec_, as this can change dynamically
     S_->Require<int>(nvecs_name, Tags::DEFAULT, name_);
     // note we have to give it data here, because Setup() has already been called
     S_->SetPtr<int>(nvecs_name, Tags::DEFAULT, name_, Teuchos::rcp(new int(0)));

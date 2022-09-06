@@ -76,7 +76,6 @@ Example:
 
 */
 
- 
 #ifndef AMANZI_VERBOSE_OBJECT_HH_
 #define AMANZI_VERBOSE_OBJECT_HH_
 

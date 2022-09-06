@@ -20,7 +20,8 @@ namespace Amanzi {
 
 TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
         Teuchos::ParameterList& plist,
-        const Teuchos::RCP<State>& S) :
+        const Teuchos::RCP<State>& S)
+  : TimestepController(plist),
     plist_(plist),
     count_increased_before_increase_(0),
     successive_increases_(0),
@@ -78,8 +79,16 @@ TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
   max_increase_factor_ = plist_.get<double>("max time step increase factor", 10.);
   AMANZI_ASSERT((*increase_factor_) >= 1.0);
 
-  max_dt_ = plist_.get<double>("max time step");
-  min_dt_ = plist_.get<double>("min time step");
+  if (plist_.isParameter("max time step [s]")) {
+    max_dt_ = plist_.get<double>("max time step [s]");
+  } else {
+    max_dt_ = plist_.get<double>("max time step");
+  }
+  if (plist_.isParameter("min time step [s]")) {
+    min_dt_ = plist_.get<double>("min time step [s]");
+  } else {
+    min_dt_ = plist_.get<double>("min time step");
+  }
 
   (*growth_wait_after_fail_) = plist_.get<int>("growth wait after fail");
   growth_wait_after_fail0_ = (*growth_wait_after_fail_);

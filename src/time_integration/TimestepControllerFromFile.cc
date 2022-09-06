@@ -17,7 +17,8 @@
 
 namespace Amanzi {
 
-TimestepControllerFromFile::TimestepControllerFromFile(Teuchos::ParameterList& plist) :
+TimestepControllerFromFile::TimestepControllerFromFile(Teuchos::ParameterList& plist)
+  : TimestepController(plist),
     current_(0)
 {
   std::string filename = plist.get<std::string>("file name");
@@ -25,8 +26,9 @@ TimestepControllerFromFile::TimestepControllerFromFile(Teuchos::ParameterList& p
 
   HDF5Reader reader(filename);
   reader.ReadData(header, dt_history_);
+  dt_init_ = dt_history_[0];
 }
-    
+
 
 // single method for timestep control
 double
