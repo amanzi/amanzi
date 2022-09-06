@@ -78,7 +78,7 @@ TEST(DIFFUSION_GAS_SMILES) {
   int iter = 0;
   double dt0(2 * 3.1558e+6), t_old(0.0), t_new(0.0), dt, T1(3.1558e+8);
   while (t_new < T1) {
-    dt = std::min(TPK.StableTimeStep(), T1 - t_old);
+    dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
     dt = std::min(dt, dt0);
     t_new = t_old + dt;
 

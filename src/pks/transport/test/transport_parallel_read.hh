@@ -91,7 +91,7 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
 
   // advance the state
   double t_old(0.0), t_new(0.0), dt;
-  dt = TPK.StableTimeStep();  
+  dt = TPK.StableTimeStep(-1);
   t_new = t_old + dt;
 
   TPK.AdvanceStep(t_old, t_new);
@@ -99,7 +99,7 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
 
   int iter(0);
   while(t_new < 1.0) {
-    dt = TPK.StableTimeStep();
+    dt = TPK.StableTimeStep(-1);
     t_new = t_old + dt;
 
     TPK.AdvanceStep(t_old, t_new);

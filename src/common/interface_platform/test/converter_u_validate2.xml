@@ -352,6 +352,7 @@
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
+    <Parameter name="component molar masses" type="Array(double)" value="{1.0}"/>
     <ParameterList name="restart">
       <Parameter name="file name" type="string" value="chk00168.h5"/>
     </ParameterList>

@@ -31,7 +31,7 @@ various fields.
 
    * `"initial conditions`" ``[list]`` A list of constant-in-time variables :
        `"initial conditions`" is a terrible name and will go away in the next
-       iteration of state.
+       iteration of state. 
 
 .. _evaluator-typedinline-spec:
 .. admonition:: evaluator-typedinline-spec
@@ -64,6 +64,7 @@ Example:
       </ParameterList>
 
       <ParameterList name="initial conditions">
+        <Parameter name="time" type="double" value="0.0">
         <ParameterList name="atmospheric pressure">
           <Parameter name="value" type="double" value="101325.0" />
         </ParameterList>

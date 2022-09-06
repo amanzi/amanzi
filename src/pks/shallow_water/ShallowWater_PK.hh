@@ -111,7 +111,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
                             const std::string& field1, bool call_evaluator);
 
   void VerifySolution_(TreeVector& A);
-  void ErrorDiagnostics_(double t, int c, double h, double B, double ht);
+  int ErrorDiagnostics_(double t, int c, double h, double B, double ht);
 
  protected:
   Teuchos::RCP<Teuchos::ParameterList> glist_;

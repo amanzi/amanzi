@@ -219,17 +219,17 @@ ShallowWater_PK::Initialize()
   }
 
   // -- ponded depth BC
-  if (bc_list->isSublist("ponded-depth")) {
+  if (bc_list->isSublist("ponded depth")) {
     PK_DomainFunctionFactory<ShallowWaterBoundaryFunction> bc_factory(mesh_, S_);
 
-    Teuchos::ParameterList& tmp_list = bc_list->sublist("ponded-depth");
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("ponded depth");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        bc = bc_factory.Create(spec, "ponded-depth", AmanziMesh::NODE, Teuchos::null);
-        bc->set_bc_name("ponded-depth");
+        bc = bc_factory.Create(spec, "ponded depth", AmanziMesh::NODE, Teuchos::null);
+        bc->set_bc_name("ponded depth");
         bc->set_type(WhetStone::DOF_Type::SCALAR);
         bcs_.push_back(bc);
       }
@@ -400,6 +400,7 @@ ShallowWater_PK::InitializeFieldFromField_(const std::string& field0,
 
         S_->GetRecordW(field0, passwd_).set_initialized();
 
+        Teuchos::OSTab tab = vo_->getOSTab();
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
       }
@@ -438,9 +439,9 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
 
   // create copies of primary fields
-  std::map<std::string, CompositeVector> copies;
-  copies.emplace(ponded_depth_key_, S_->Get<CV_t>(ponded_depth_key_, Tags::DEFAULT));
-  copies.emplace(discharge_key_, S_->Get<CV_t>(discharge_key_, Tags::DEFAULT));
+  StateArchive archive(S_, vo_);
+  archive.Add({ ponded_depth_key_ }, { discharge_key_ },
+              { ponded_depth_key_, velocity_key_ });
 
   Epetra_MultiVector& h_old = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_old = *soln_->SubVector(1)->Data()->ViewComponent("cell");
@@ -481,8 +482,9 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // To use evaluators, we need to overwrite state variables. Since,
-  // soln_ is a shallow copy of state variables, we cannot use.
-  // Instead, we need its deep copy. This deficiency of the DAG.
+  // soln_ is a shallow copy of state variables, we cannot use it.
+  // Instead, we need its deep copy. This is by design of the DAG.
+  int ierr(0);
   try {
     auto soln_old = Teuchos::rcp(new TreeVector(*soln_));
     auto soln_new = Teuchos::rcp(new TreeVector(*soln_));
@@ -493,19 +495,12 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *soln_ = *soln_new;
     VerifySolution_(*soln_); 
   } catch (...) {
-    // revover corrupted state fields
-    S_->GetW<CV_t>(ponded_depth_key_, passwd_) = copies.at(ponded_depth_key_);
-    S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_) = copies.at(discharge_key_);
+    ierr = -1;
+  }
 
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Reverted fields \"" << ponded_depth_key_ << "\" and \" " 
-               << discharge_key_ << "\"" << std::endl;
-
-    Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-      S_->GetEvaluatorPtr(ponded_depth_key_, Tags::DEFAULT))->SetChanged();
-    Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-      S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))->SetChanged();
-
+  // recover state in case of error
+  if (ierr < 0) {
+    archive.Restore(passwd_);
     return true;
   }
 
@@ -523,11 +518,15 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
 
-  S_->GetW<CV_t>(prev_ponded_depth_key_, Tags::DEFAULT, passwd_) = copies.at(ponded_depth_key_);
-  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(S_->GetEvaluatorPtr(ponded_depth_key_, Tags::DEFAULT))
-    ->SetChanged();
-  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))
-    ->SetChanged();
+  // For consistency with other flow models, we need to track previous h
+  // which was placed earlier in the archive.
+  S_->GetW<CV_t>(prev_ponded_depth_key_, Tags::DEFAULT, passwd_) = archive.get(ponded_depth_key_);
+
+  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+    S_->GetEvaluatorPtr(ponded_depth_key_, Tags::DEFAULT))->SetChanged();
+
+  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+    S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))->SetChanged();
 
   // min-max values
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -545,9 +544,14 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       qmax = std::max(qmax, flux);
     }
 
+    double outmin[2], inmin[2] = { hmin, qmin };
+    double outmax[2], inmax[2] = { hmax, qmax };
+    mesh_->get_comm()->MinAll(inmin, outmin, 2);
+    mesh_->get_comm()->MaxAll(inmax, outmax, 2);
+
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "min/max(h): " << hmin << "/" << hmax << ", min/max(flux): " << qmin << "/"
-               << qmax << std::endl;
+    *vo_->os() << "min/max(h): " << outmin[0] << "/" << outmax[0] 
+               << ", min/max(flux): " << outmin[1] << "/" << outmax[1] << std::endl;
   }
 
   return false;
@@ -782,12 +786,20 @@ void ShallowWater_PK::VerifySolution_(TreeVector& u)
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   const auto& h_c = *u.SubVector(0)->Data()->ViewComponent("cell");
 
+  int ierr(0);
   for (int c = 0; c < ncells_owned; ++c) {
     if (h_c[0][c] < 0.0) {
-      Errors::Message msg;
-      msg << "Negative ponded depth.\n";
-      Exceptions::amanzi_throw(msg);
+      ierr = -1;
+      break;
     }
+  }
+
+  int ierr_tmp(ierr);
+  mesh_->get_comm()->MinAll(&ierr_tmp, &ierr, 1);
+  if (ierr < 0) {
+    Errors::Message msg;
+    msg << "Negative ponded depth.\n";
+    Exceptions::amanzi_throw(msg);
   }
 }
 

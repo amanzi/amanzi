@@ -223,7 +223,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
         transient_model += 8;
 
       } else if (strcmp(tagname, "shallow_water") == 0) {
-        model = GetAttributeValueS_(jnode, "model");
+        model = GetAttributeValueS_(jnode, "model", "Rusanov, central upwind");
         pk_model_["shallow_water"] = model;
 
         std::string region = GetAttributeValueS_(jnode, "domain");
@@ -353,6 +353,16 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
   }
 
   out_list.set<Teuchos::Array<std::string> >("component names", comp_names_all_);
+
+  // available molar masses
+  std::string name;
+  std::vector<double> tmp(comp_names_all_.size(), 1.0);
+
+  for (int i = 0; i < comp_names_all_.size(); ++i) {
+    name = comp_names_all_[i];
+    if (solute_molar_mass_.find(name) != solute_molar_mass_.end()) tmp[i] = solute_molar_mass_[name];
+  }
+  out_list.set<Teuchos::Array<double> >("component molar masses", tmp);
 
   out_list.sublist("time period control") = TranslateTimePeriodControls_();
   if (filename.size() > 0) {

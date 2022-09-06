@@ -332,12 +332,11 @@ RunTest(int icase)
   while (t_new < 1.0) {
     double t_out = t_new;
 
-    Epetra_MultiVector ht_ex(ht);
-    Epetra_MultiVector vel_ex(vel);
-
-    lake_at_rest_exact_field(mesh, ht_ex, vel_ex, t_out);
-
     if (iter % 30 == 0) {
+      Epetra_MultiVector ht_ex(ht);
+      Epetra_MultiVector vel_ex(vel);
+      lake_at_rest_exact_field(mesh, ht_ex, vel_ex, t_out);
+
       IO_Fields(t_out, iter, MyPID, io, *S, nullptr, nullptr);
     }
 
@@ -356,13 +355,11 @@ RunTest(int icase)
 
   double t_out = t_new;
 
+  double err_max, err_L1, hmax;
   Epetra_MultiVector ht_ex(ht);
   Epetra_MultiVector vel_ex(vel);
 
   lake_at_rest_exact_field(mesh, ht_ex, vel_ex, t_out);
-
-  double err_max, err_L1, hmax;
-
   error(mesh, ht_ex, vel_ex, ht, vel, err_max, err_L1, hmax);
 
   std::cout << "hmax: " << hmax << std::endl;

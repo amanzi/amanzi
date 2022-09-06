@@ -87,8 +87,11 @@ void TransportExplicit_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
-  Epetra_Vector wc_ratio(Copy, *wc_start, 0);
-  for (int c = 0; c < ncells_owned; c++) wc_ratio[c] /= (*wc_end)[0][c];
+  std::vector<double> wc_ratio(ncells_owned, 0.0);
+  for (int c = 0; c < ncells_owned; c++) {
+    double tmp = (*wc_end)[0][c];
+    if (tmp != 0.0) wc_ratio[c] = (*wc_start)[0][c] / tmp;
+  }
 
   // We advect only aqueous components.
   int num_advect = num_aqueous;
@@ -201,7 +204,7 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     dt_global = S_->final_time() - S_->initial_time();
   }
 
-  StableTimeStep();
+  StableTimeStep(0);
   double dt_original = dt_;  // advance routines override dt_
   int interpolate_wc = (dt_ < dt_global) ? 1 : 0;
 
@@ -661,8 +664,8 @@ void TransportExplicit_PK::DudtOld_(double t,
   }
 
   for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantatity
-    double vol_phi_ws = mesh_->cell_volume(c) * (*wc_start)[0][c];
-    f_component[c] /= vol_phi_ws;
+    double vol_wc = mesh_->cell_volume(c) * (*wc_start)[0][c];
+    if (vol_wc != 0.0) f_component[c] /= vol_wc;
   }
 
   // BOUNDARY CONDITIONS for ADVECTION
@@ -682,9 +685,11 @@ void TransportExplicit_PK::DudtOld_(double t,
               c2 = downwind_cells_[f][0];
               if (c2 < 0) continue;
               u = fabs((*flowrate)[0][f]);
-              double vol_phi_ws = mesh_->cell_volume(c2) * (*wc_start)[0][c2];
-              tcc_flux = u * values[i];
-              f_component[c2] += tcc_flux / vol_phi_ws;
+              double vol_wc = mesh_->cell_volume(c2) * (*wc_start)[0][c2];
+              if (vol_wc != 0.0) {
+                tcc_flux = u * values[i];
+                f_component[c2] += tcc_flux / vol_wc;
+              }
             }
           }
         }

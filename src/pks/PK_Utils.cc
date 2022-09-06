@@ -11,13 +11,78 @@
   Miscalleneous collection of simple non-member functions.
 */
 
-#include "CompositeVector.hh"
+#include "EvaluatorPrimary.hh"
+
 #include "PK_Utils.hh"
 
 namespace Amanzi {
 
 /* ******************************************************************
-* Averages permeability tensor in horizontal direction.
+* Deep copy of state fields.
+****************************************************************** */
+void StateArchive::Add(std::vector<std::string> fields, 
+                       std::vector<std::string> evals,
+                       std::vector<std::string> primary,
+                       const Tag& tag)
+{
+  tag_ = tag;
+  primary_ = primary;
+
+  for (const auto& name : fields)
+    fields_.emplace(name, S_->Get<CompositeVector>(name, tag));
+
+  for (const auto& name : evals)
+    evals_.emplace(name, S_->Get<CompositeVector>(name, tag));
+}
+
+
+/* ******************************************************************
+* Deep copy of state fields.
+****************************************************************** */
+void StateArchive::Restore(const std::string& passwd)
+{
+  for (auto it = fields_.begin(); it != fields_.end(); ++it) {
+    S_->GetW<CompositeVector>(it->first, passwd) = it->second;
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Reverted field \"" << it->first << "\"" << std::endl;
+  }
+
+  for (auto it = evals_.begin(); it != evals_.end(); ++it) {
+    S_->GetW<CompositeVector>(it->first, tag_, it->first) = it->second;
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Reverted primary solution \"" << it->first << "\"" << std::endl;
+  }
+
+  for (auto it = primary_.begin(); it != primary_.end(); ++it) {
+    Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
+      S_->GetEvaluatorPtr(*it, tag_))->SetChanged();
+  }
+}
+
+
+/* ******************************************************************
+* Return a copy
+****************************************************************** */
+const CompositeVector StateArchive::get(const std::string& name)
+{
+  {
+    auto it = fields_.find(name);
+    if (it != fields_.end()) return it->second; 
+  }
+
+  {
+    auto it = evals_.find(name);
+    if (it != evals_.end()) return it->second; 
+  }
+
+  AMANZI_ASSERT(false);
+}
+
+
+/* ******************************************************************
+* Average permeability tensor in horizontal direction.
 ****************************************************************** */
 void PKUtils_CalculatePermeabilityFactorInWell(
     const Teuchos::Ptr<State>& S, Teuchos::RCP<Epetra_Vector>& Kxy)

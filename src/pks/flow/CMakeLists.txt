@@ -70,6 +70,7 @@ set(flow_inc_files
   Darcy_PK.hh
   FlowDefs.hh
   FlowBoundaryFunction.hh
+  FlowSourceFunction.hh
   Flow_PK.hh
   FlowTypeDefs.hh
   FracturePermModel.hh

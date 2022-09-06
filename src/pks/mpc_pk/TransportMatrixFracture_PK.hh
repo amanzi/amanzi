@@ -42,7 +42,6 @@ class TransportMatrixFracture_PK : public PK_MPCWeak {
 
   // -- miscaleneous methods
   virtual std::string name() override { return "coupled transport"; } 
-  // virtual void CalculateDiagnostics() {};
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;

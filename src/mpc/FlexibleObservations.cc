@@ -154,7 +154,7 @@ int FlexibleObservations::MakeObservations(State& S)
         data_quad.value = data_out[0];  
         unit.append("*m^3");
       } else if ((i->second)->functional_ == "observation data: point") {
-        data_quad.value = data_out[0] / data_out[1];        
+        data_quad.value = data_out[0] / std::max(1e-16, data_out[1]);        
       }
       
       data_quad.is_valid = true;

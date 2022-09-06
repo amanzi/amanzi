@@ -7,19 +7,18 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov
-           Daniil Svyatskiy
 
   Process kernel that couples Transport in matrix and fracture
   using implicit scheme.
 */
 
+#include "InverseFactory.hh"
 #include "Op_Diagonal.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "TransportImplicit_PK.hh"
 #include "TreeOperator.hh"
 #include "UniqueLocalIndex.hh"
-#include "InverseFactory.hh"
 
 #include "TransportMatrixFractureImplicit_PK.hh"
 
@@ -38,7 +37,8 @@ TransportMatrixFractureImplicit_PK::TransportMatrixFractureImplicit_PK(
     const Teuchos::RCP<TreeVector>& soln)
    : Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
      Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln),
-     glist_(glist)
+     glist_(glist),
+     soln_(soln)
 {
   std::string pk_name = pk_tree.name();
   auto found = pk_name.rfind("->");
@@ -107,50 +107,56 @@ void TransportMatrixFractureImplicit_PK::Initialize()
   ts_control_ = factory.Create(ts_list, Teuchos::null, Teuchos::null);
 
   // diagonal blocks in tree operator are the Transport Implicit PKs
-  auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
-  auto pk_fracture = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[1]);
+  pk_matrix_ = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
+  pk_fracture_ = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[1]);
+  AMANZI_ASSERT(pk_matrix_->domain() == "domain");
 
-  AMANZI_ASSERT(pk_matrix->domain() == "domain");
+  int ntime;
+  pk_matrix_->get_discretization_order(&nspace_m_, &ntime);
+  pk_fracture_->get_discretization_order(&nspace_f_, &ntime);
+  bool flag_ho = (nspace_m_ == 2 && nspace_f_ == 2);
 
   auto tvs = Teuchos::rcp(new TreeVectorSpace());
-  tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(pk_matrix->op()->get_row_map())));
-  tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(pk_fracture->op()->get_row_map())));
+  tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(pk_matrix_->op()->get_row_map())));
+  tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(pk_fracture_->op()->get_row_map())));
   op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
-  auto op0 = pk_matrix->op()->Clone();
-  auto op1 = pk_fracture->op()->Clone();
+  auto op0 = pk_matrix_->op()->Clone();
+  auto op1 = pk_fracture_->op()->Clone();
   op_tree_matrix_->set_operator_block(0, 0, op0);
   op_tree_matrix_->set_operator_block(1, 1, op1);
 
   // off-diagonal blocks represent coupling terms
-  FractureInsertion fia(mesh_domain_, mesh_fracture_);
-  fia.InitMatrixCellToFractureCell();
+  fia_ = Teuchos::rcp(new FractureInsertion(mesh_domain_, mesh_fracture_));
+  fia_->InitMatrixCellToFractureCell();
 
   // -- advection
   Teuchos::ParameterList oplist;
 
   op_coupling00_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, fia.get_cvs_matrix(), fia.get_cvs_matrix(), 
-              fia.get_inds_matrix(), fia.get_inds_matrix(), op0));
-  op_coupling00_->Setup(fia.get_values(), 1.0);
+      oplist, fia_->get_cvs_matrix(), fia_->get_cvs_matrix(), 
+              fia_->get_inds_matrix(), fia_->get_inds_matrix(),
+      (!flag_ho) ? op0 : Teuchos::null));
+  op_coupling00_->Setup(fia_->get_values(), 1.0);
   op_coupling00_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   op_coupling01_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, fia.get_cvs_matrix(), fia.get_cvs_fracture(),
-              fia.get_inds_matrix(), fia.get_inds_fracture()));
-  op_coupling01_->Setup(fia.get_values(), -1.0);
+      oplist, fia_->get_cvs_matrix(), fia_->get_cvs_fracture(),
+              fia_->get_inds_matrix(), fia_->get_inds_fracture()));
+  op_coupling01_->Setup(fia_->get_values(), -1.0);
   op_coupling01_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   op_coupling10_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, fia.get_cvs_fracture(), fia.get_cvs_matrix(),
-              fia.get_inds_fracture(), fia.get_inds_matrix()));
-  op_coupling10_->Setup(fia.get_values(), -1.0);
+      oplist, fia_->get_cvs_fracture(), fia_->get_cvs_matrix(),
+              fia_->get_inds_fracture(), fia_->get_inds_matrix()));
+  op_coupling10_->Setup(fia_->get_values(), -1.0);
   op_coupling10_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   op_coupling11_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, fia.get_cvs_fracture(), fia.get_cvs_fracture(),
-              fia.get_inds_fracture(), fia.get_inds_fracture(), op1));
-  op_coupling11_->Setup(fia.get_values(), 1.0);
+      oplist, fia_->get_cvs_fracture(), fia_->get_cvs_fracture(),
+              fia_->get_inds_fracture(), fia_->get_inds_fracture(),
+      (!flag_ho) ? op1 : Teuchos::null));
+  op_coupling11_->Setup(fia_->get_values(), 1.0);
   op_coupling11_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   op_tree_matrix_->set_operator_block(0, 1, op_coupling01_->global_operator());
@@ -163,7 +169,7 @@ void TransportMatrixFractureImplicit_PK::Initialize()
   }
 
   if (flag_dispersion_) {
-    auto& cvs0 = pk_matrix->op()->get_domain_map();
+    auto& cvs0 = pk_matrix_->op()->get_domain_map();
     auto mmap = cvs0->Map("face", false);
     auto gmap = cvs0->Map("face", true);
 
@@ -172,35 +178,40 @@ void TransportMatrixFractureImplicit_PK::Initialize()
 
     op_coupling00d_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
         oplist, fid_->get_cvs_matrix(), fid_->get_cvs_matrix(), 
-                fid_->get_inds_matrix(), fid_->get_inds_matrix(), op0));
+                fid_->get_inds_matrix(), fid_->get_inds_matrix(),
+        (!flag_ho) ? op0 : Teuchos::null));
     op_coupling00d_->Setup(fid_->get_values(), 1.0);
     op_coupling00d_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
     op_coupling01d_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
         oplist, fid_->get_cvs_matrix(), fid_->get_cvs_fracture(),
-                fid_->get_inds_matrix(), fid_->get_inds_fracture(), op_coupling01_->global_operator()));
+                fid_->get_inds_matrix(), fid_->get_inds_fracture(),
+        (!flag_ho) ? op_coupling01_->global_operator() : Teuchos::null));
     op_coupling01d_->Setup(fid_->get_values(), -1.0);
     op_coupling01d_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
     op_coupling10d_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
         oplist, fid_->get_cvs_fracture(), fid_->get_cvs_matrix(),
-                fid_->get_inds_fracture(), fid_->get_inds_matrix(), op_coupling10_->global_operator()));
+                fid_->get_inds_fracture(), fid_->get_inds_matrix(),
+        (!flag_ho) ? op_coupling10_->global_operator() : Teuchos::null));
     op_coupling10d_->Setup(fid_->get_values(), -1.0);
     op_coupling10d_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
     op_coupling11d_ = Teuchos::rcp(new Operators::PDE_CouplingFlux(
         oplist, fid_->get_cvs_fracture(), fid_->get_cvs_fracture(),
-                fid_->get_inds_fracture(), fid_->get_inds_fracture(), op1));
+                fid_->get_inds_fracture(), fid_->get_inds_fracture(),
+        (!flag_ho) ? op1 : Teuchos::null));
     op_coupling11d_->Setup(fid_->get_values(), 1.0);
     op_coupling11d_->UpdateMatrices(Teuchos::null, Teuchos::null);
   }
 
   // create a global problem
-  pk_matrix->op_adv()->ApplyBCs(true, true, true);
-  pk_fracture->op_adv()->ApplyBCs(true, true, true);
+  pk_matrix_->op_adv()->ApplyBCs(true, true, true);
+  pk_fracture_->op_adv()->ApplyBCs(true, true, true);
 
-  std::string name = tp_list_->sublist("time integrator").get<std::string>("preconditioner", "Hypre AMG");
-  std::string ls_name = tp_list_->sublist("time integrator").get<std::string>("linear solver", "GMRES with Hypre AMG");
+  Teuchos::ParameterList& ti_list = tp_list_->sublist("time integrator");
+  std::string name = ti_list.get<std::string>("preconditioner", "Hypre AMG");
+  std::string ls_name = ti_list.get<std::string>("linear solver", "GMRES with Hypre AMG");
   auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
       name, glist_->sublist("preconditioners"), ls_name, glist_->sublist("solvers"), true);
   inv_list.setName(name);
@@ -209,6 +220,12 @@ void TransportMatrixFractureImplicit_PK::Initialize()
 
   if (!flag_dispersion_)
     InitializeCVField(S_, *vo_, "fracture-normal_diffusion", Tags::DEFAULT, "state", 0.0);
+
+  // time integrators
+  if (nspace_m_ == 2 && nspace_f_ == 2) {
+    Teuchos::ParameterList& bdf1_list = ti_list.sublist("BDF1");
+    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+  }
 
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
@@ -230,20 +247,42 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(
     double t_old, double t_new, bool reinit) 
 {
   bool fail;
-  int nspace_m, nspace_f, ntime, tot_itrs;
 
-  auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
-  auto pk_fracture = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[1]);
+  // make copy of primary unknowns, i.e. solution 
+  auto& tcc_m = S_->GetW<CV_t>("total_component_concentration", Tags::DEFAULT, "state");
+  auto& tcc_f = S_->GetW<CV_t>("fracture-total_component_concentration", Tags::DEFAULT, "state");
 
-  pk_matrix->get_discretization_order(&nspace_m, &ntime);
-  pk_fracture->get_discretization_order(&nspace_f, &ntime);
+  num_aqueous_ = tcc_m.ViewComponent("cell")->NumVectors();
+  CompositeVector tcc_m_copy(tcc_m), tcc_f_copy(tcc_f);
 
-  if (nspace_m == 1 && nspace_f == 1) {
+  fia_->SetValues(S_->Get<CV_t>(matrix_vol_flowrate_key_));
+
+  // fork between low-order and high-order
+  int tot_itrs;
+  if (nspace_m_ == 1 && nspace_f_ == 1) {
     fail = AdvanceStepLO_(t_old, t_new, &tot_itrs);
-  } else if (nspace_m == 2 && nspace_f == 2) {
+  } else if (nspace_m_ == 2 && nspace_f_ == 2) {
     fail = AdvanceStepHO_(t_old, t_new, &tot_itrs);
   } else {
     AMANZI_ASSERT(false);
+  }
+
+  if (fail) {
+    tcc_m = tcc_m_copy;
+    tcc_f = tcc_f_copy;
+    // *my_solution_ = my_solution_copy;
+    ChangedSolution();
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Step failed: recover (" << my_solution_->size() << ") primary field" << std::endl;
+  }
+
+  // output
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    double dt = t_new - t_old;
+    Teuchos::OSTab tab = vo_->getOSTab();
+    pk_matrix_->VV_PrintSoluteExtrema(*tcc_m.ViewComponent("cell"), dt, " (m)");
+    pk_fracture_->VV_PrintSoluteExtrema(*tcc_f.ViewComponent("cell"), dt, " (f)");
   }
 
   return fail;
@@ -251,73 +290,28 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(
 
 
 /* *******************************************************************
-* Performs one time step.
+* One time step for aqueous components only
 ******************************************************************* */
 bool TransportMatrixFractureImplicit_PK::AdvanceStepLO_(
     double t_old, double t_new, int* tot_itrs)
 {
-  double dt = t_new - t_old;
-
-  auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
-  auto pk_fracture = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[1]);
-
-  // update coupling terms
-  int ncells_owned_f = mesh_fracture_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  auto values1 = std::make_shared<std::vector<double> >(2 * ncells_owned_f, 0.0);
-  auto values2 = std::make_shared<std::vector<double> >(2 * ncells_owned_f, 0.0);
-
-  int np(0), dir, shift;
-  AmanziMesh::Entity_ID_List cells;
-  const auto& flux = *S_->Get<CV_t>(matrix_vol_flowrate_key_).ViewComponent("face");
-  const auto& mmap = flux.Map();
-
-  for (int c = 0; c < ncells_owned_f; ++c) {
-    int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
-    int first = mmap.FirstPointInElement(f);
-
-    mesh_domain_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    int ncells = cells.size();
-    mesh_domain_->face_normal(f, false, cells[0], &dir);
-    shift = Operators::UniqueIndexFaceToCells(*mesh_domain_, f, cells[0]);
-
-    for (int k = 0; k < ncells; ++k) {
-      // since cells are ordered differenty then points, we need a map
-      double tmp = flux[0][first + shift] * dir;
-
-      if (tmp > 0)
-        (*values1)[np] = tmp;
-      else
-        (*values2)[np] = -tmp;
-
-      dir = -dir;
-      shift = 1 - shift;
-      np++;
-    }
-  }
-
-  // make copy of primary unknowns, i.e. solution 
   auto& tcc_m = S_->GetW<CV_t>("total_component_concentration", Tags::DEFAULT, "state");
   auto& tcc_f = S_->GetW<CV_t>("fracture-total_component_concentration", Tags::DEFAULT, "state");
 
-  CompositeVector tcc_m_copy(tcc_m), tcc_f_copy(tcc_f);
-
-  // we assume that all components are aquesous
-  num_aqueous_ = tcc_m.ViewComponent("cell")->NumVectors();
-
   for (int i = 0; i < num_aqueous_; i++) {
-    pk_matrix->UpdateLinearSystem(t_old, t_new, i);
-    pk_fracture->UpdateLinearSystem(t_old, t_new, i);
+    pk_matrix_->UpdateLinearSystem(t_old, t_new, i);
+    pk_fracture_->UpdateLinearSystem(t_old, t_new, i);
 
-    op_coupling00_->Setup(values1, 1.0);
+    op_coupling00_->Setup(fia_->get_values(), 1.0);
     op_coupling00_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-    op_coupling01_->Setup(values2, -1.0);
+    op_coupling01_->Setup(fia_->get_values2(), -1.0);
     op_coupling01_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-    op_coupling10_->Setup(values1, -1.0);
+    op_coupling10_->Setup(fia_->get_values(), -1.0);
     op_coupling10_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-    op_coupling11_->Setup(values2, 1.0);
+    op_coupling11_->Setup(fia_->get_values2(), 1.0);
     op_coupling11_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
     // assemble dispersion/diffusion operators
@@ -344,39 +338,22 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStepLO_(
  
     auto& tvs = op_tree_matrix_->DomainMap();
     TreeVector rhs_one(tvs), sol_one(tvs);
-    *rhs_one.SubVector(0)->Data() = *pk_matrix->op()->rhs();
-    *rhs_one.SubVector(1)->Data() = *pk_fracture->op()->rhs();
+    *rhs_one.SubVector(0)->Data() = *pk_matrix_->op()->rhs();
+    *rhs_one.SubVector(1)->Data() = *pk_fracture_->op()->rhs();
 
     int ierr = op_tree_matrix_->ApplyInverse(rhs_one, sol_one);
+
     *(*tcc_m.ViewComponent("cell"))(i) = *(*sol_one.SubVector(0)->Data()->ViewComponent("cell"))(0);
     *(*tcc_f.ViewComponent("cell"))(i) = *(*sol_one.SubVector(1)->Data()->ViewComponent("cell"))(0);
 
-    // recover the original solution 
     bool fail = (ierr != 0);
     if (fail) {
-      tcc_m = tcc_m_copy;
-      tcc_f = tcc_f_copy;
-      //*my_solution_ = my_solution_copy;
-      ChangedSolution();
-
       dt_ = ts_control_->get_timestep(dt_, -1);
-
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Step failed: recover (" << my_solution_->size() << ") primary field" << std::endl;
-
       return fail;
     }
   }
 
-  // output
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    pk_matrix->VV_PrintSoluteExtrema(*tcc_m.ViewComponent("cell"), dt, " (m)");
-    pk_fracture->VV_PrintSoluteExtrema(*tcc_f.ViewComponent("cell"), dt, " (f)");
-  }
-
   dt_ = ts_control_->get_timestep(dt_, 1);
-
   return false;
 }
 
@@ -387,29 +364,36 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStepLO_(
 bool TransportMatrixFractureImplicit_PK::AdvanceStepHO_(
     double t_old, double t_new, int* tot_itrs) 
 {
-  bool failed = false;
   double dt_next;
 
   dt_ = t_new - t_old;
   *tot_itrs = bdf1_dae_->number_nonlinear_steps();
 
-  Teuchos::RCP<TreeVector> soln_;
+  auto tcc_m = S_->GetPtrW<CV_t>("total_component_concentration", Tags::DEFAULT, "state");
+  auto tcc_f = S_->GetPtrW<CV_t>("fracture-total_component_concentration", Tags::DEFAULT, "state");
+
+  num_aqueous_ = tcc_m->ViewComponent("cell")->NumVectors();
+  AMANZI_ASSERT(num_aqueous_ == 1);
 
   for (int i = 0; i < num_aqueous_; i++) {
-    // current_component_ = i;
-    // *(*solution_->ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(i);  
+    pk_matrix_->set_current_component(i);
+    pk_fracture_->set_current_component(i);
 
-    failed = bdf1_dae_->TimeStep(dt_, dt_next, soln_);
+    *soln_->SubVector(0)->Data() = *tcc_m;
+    *soln_->SubVector(1)->Data() = *tcc_f;
+
+    bool fail = bdf1_dae_->TimeStep(dt_, dt_next, soln_);
     dt_ = dt_next;
-    if (failed) return failed;
-
-    // *(*tcc_tmp->ViewComponent("cell"))(i) = *(*solution_->ViewComponent("cell"))(0);
+    if (fail) return fail;
   }
+
+  *tcc_m = *soln_->SubVector(0)->Data();
+  *tcc_f = *soln_->SubVector(1)->Data();
 
   bdf1_dae_->CommitSolution(dt_, soln_);
   *tot_itrs = bdf1_dae_->number_nonlinear_steps() - *tot_itrs;
 
-  return failed;
+  return false;
 }
 
 
@@ -419,6 +403,87 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStepHO_(
 void TransportMatrixFractureImplicit_PK::CommitStep(
     double t_old, double t_new, const Tag& tag)
 {
+}
+
+
+/* ******************************************************************* 
+* Modify defualt behavior:
+******************************************************************* */
+void TransportMatrixFractureImplicit_PK::CalculateDiagnostics(const Tag& tag)
+{  
+  if (nspace_m_ == 2 && nspace_f_ == 2) {
+    PK_MPCStrong<PK_BDF>::CalculateDiagnostics(tag);
+  }
+}
+
+
+/* *******************************************************************
+* Residual evaluation
+******************************************************************* */
+void TransportMatrixFractureImplicit_PK::FunctionalResidual(
+     double t_old, double t_new,
+     Teuchos::RCP<TreeVector> u_old,
+     Teuchos::RCP<TreeVector> u_new,
+     Teuchos::RCP<TreeVector> f)
+{
+  PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
+
+  // contribution from coupling terms
+  auto u0 = u_new->SubVector(0)->Data();
+  auto u1 = u_new->SubVector(1)->Data();
+
+  auto f0 = f->SubVector(0)->Data();
+  auto f1 = f->SubVector(1)->Data();
+
+  op_coupling00_->Setup(fia_->get_values(), 1.0);
+  op_coupling00_->global_operator()->Apply(*u0, *f0, 1.0);
+
+  op_coupling01_->Setup(fia_->get_values2(), -1.0);
+  op_coupling01_->global_operator()->Apply(*u1, *f0, 1.0);
+
+  op_coupling10_->Setup(fia_->get_values(), -1.0);
+  op_coupling10_->global_operator()->Apply(*u0, *f1, 1.0);
+
+  op_coupling11_->Setup(fia_->get_values2(), 1.0);
+  op_coupling11_->global_operator()->Apply(*u1, *f1, 1.0);
+
+  if (flag_dispersion_) {
+    const auto& kn = *S_->Get<CV_t>("fracture-normal_diffusion").ViewComponent("cell");
+    fid_->SetValues(kn, 1.0);
+
+    op_coupling00d_->Setup(fid_->get_values(), 1.0);
+    op_coupling00d_->global_operator()->Apply(*u0, *f0, 1.0);
+
+    op_coupling01d_->Setup(fid_->get_values(), -1.0);
+    op_coupling01d_->global_operator()->Apply(*u1, *f0, 1.0);
+
+    op_coupling10d_->Setup(fid_->get_values(), -1.0);
+    op_coupling10d_->global_operator()->Apply(*u0, *f1, 1.0);
+
+    op_coupling11d_->Setup(fid_->get_values(), 1.0);
+    op_coupling11d_->global_operator()->Apply(*u1, *f1, 1.0);
+  }
+}
+
+
+/* ******************************************************************
+* Recompute preconditioner
+****************************************************************** */
+void TransportMatrixFractureImplicit_PK::UpdatePreconditioner(
+    double tp, Teuchos::RCP<const TreeVector> u, double dtp)
+{
+  PK_MPCStrong<PK_BDF>::UpdatePreconditioner(tp, u, dtp);
+}
+
+
+/* ******************************************************************
+* Apply block-diagonal preconditioner inv(B) * X.                                                 
+****************************************************************** */
+int TransportMatrixFractureImplicit_PK::ApplyPreconditioner(
+    Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
+{
+  return PK_MPCStrong<PK_BDF>::ApplyPreconditioner(X, Y);
+  // return op_pc_solver_->ApplyInverse(*X, *Y);
 }
 
 }  // namespace Amanzi
