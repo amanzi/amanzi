@@ -29,10 +29,6 @@ OutputSilo::OutputSilo(Teuchos::ParameterList& plist,
       mesh_(mesh),
       fid_(nullptr)
 {
-  // if (mesh_->vis_mesh().get_comm()->NumProc() > 1) {
-  //   Errors::Message msg("OutputSilo does not yet support parallel runs.");
-  //   Exceptions::amanzi_throw(msg);
-  // }
   if (mesh_->vis_mesh().space_dimension() != 3 || mesh_->vis_mesh().manifold_dimension() != 3) {
     Errors::Message msg("OutputSilo is untested on non-3D meshes.");
     Exceptions::amanzi_throw(msg);
@@ -43,9 +39,7 @@ OutputSilo::OutputSilo(Teuchos::ParameterList& plist,
 
 // destructor must release file resource on non-finalized
 OutputSilo::~OutputSilo() {
-  // if (fid_) {
-  //   CloseFile_();
-  // }
+  CloseFile_();
 }
 
 
@@ -54,9 +48,7 @@ void
 OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag) {
   // check not open
   AMANZI_ASSERT(fid_ == NULL);
-  if (fid_) {
-    CloseFile_();
-  }
+  CloseFile_();
   int comm_size = mesh_->get_comm()->NumProc();
   int comm_rank = mesh_->get_comm()->MyPID();
 
@@ -196,17 +188,12 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag) {
     int ierrl = DBPutMultimesh(fid_, meshname.c_str(), comm_size, (char**) meshnames.data(),
                             (int*) meshtypes.data(), nullptr);
     AMANZI_ASSERT(!ierrl);
-    // DBSetDir(fid_, "/domain_0");
     CloseFile_();
   }
 }
 
 void
 OutputSilo::FinalizeCycle() {
-  // if (fid_) {
-  //   CloseFile_();
-  //   count_++;
-  // }
   count_++;
 }
 
@@ -271,10 +258,6 @@ OutputSilo::WriteVector(const Epetra_Vector& vec, const std::string& name,
     int ierrl = DBPutMultivar(fid_, FixName_(name).c_str(), comm_size, (char**) varnames.data(),
                             (int*) vartypes.data(), nullptr);
     AMANZI_ASSERT(!ierrl);
-
-    // directory
-    // ierrl |= DBSetDir(fid_, "/domain_0");
-    // AMANZI_ASSERT(!ierrl);
     CloseFile_();
   }
 
@@ -311,8 +294,10 @@ OutputSilo::Init_(Teuchos::ParameterList& plist) {
 
 void
 OutputSilo::CloseFile_() const {
-  DBClose(fid_);
-  fid_ = nullptr;
+  if (fid_) {
+    DBClose(fid_);
+    fid_ = nullptr;
+  }
 }
 
 std::string

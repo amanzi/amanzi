@@ -198,26 +198,11 @@ void Checkpoint::CreateFinalFile(const int cycle) {
 }
 
 
-void Checkpoint::ReadAttributes(State& S) {
-  // These are just plain old data in the state now -- can we not read these
-  // here?  They will get picked up in the data loop of reads.
-
-  // double time(0.0);
-  // output_["domain"]->readAttrReal(time, "time");
-  // S.set_time(time);
-
-  // double dt(0.0);
-  // output_["domain"]->readAttrReal(dt, "dt");
-  // S.Assign("dt", Tags::DEFAULT, "dt", dt);
-
-  // int cycle(0);
-  // output_["domain"]->readAttrInt(cycle, "cycle");
-  // S.set_cycle(cycle);
-
-  // int pos(0);
-  // output_["domain"]->readAttrInt(pos, "position");
-  // S.set_position(pos);
-}
+//
+// These are just plain old data in the state now -- can we not read these
+// here?  They will get picked up in the data loop of reads.
+//
+void Checkpoint::ReadAttributes(State& S) {}
 
 
 void Checkpoint::Finalize() {

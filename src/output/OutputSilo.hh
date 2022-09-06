@@ -1,9 +1,9 @@
 /*
   Output
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
@@ -44,7 +44,7 @@ class OutputSilo : public Output {
 
   // destructor must release file resource on non-finalized
   ~OutputSilo();
-  
+
   // open and close files
   virtual void InitializeCycle(double time, int cycle, const std::string& tag);
   virtual void FinalizeCycle();
@@ -64,7 +64,7 @@ class OutputSilo : public Output {
   virtual void ReadVector(Epetra_Vector& vec, const std::string& name) const {
     ReadThrowsError_();
   }
-      
+
   virtual void ReadMultiVector(Epetra_MultiVector& vec,
           const std::vector<std::string>& name) const {
     ReadThrowsError_();
@@ -73,11 +73,11 @@ class OutputSilo : public Output {
   virtual void ReadAttribute(double& val, const std::string& name) const {
     ReadThrowsError_();
   }
-    
+
   virtual void ReadAttribute(int& val, const std::string& name) const {
     ReadThrowsError_();
   }
-    
+
   virtual void ReadAttribute(std::string& val, const std::string& name) const {
     ReadThrowsError_();
   }
@@ -85,20 +85,20 @@ class OutputSilo : public Output {
  protected:
   void Init_(Teuchos::ParameterList& plist);
   void ReadThrowsError_() const;
-  void CloseFile_()  const;
+  void CloseFile_() const;
   void WriteMesh_();
   std::string FixName_(const std::string& instring) const;
-  
+
  protected:
 
   std::string filenamebase_;
   int count_;
   int sigfigs_;
-  
+
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   mutable DBfile* fid_;
 };
-  
+
 } // namespace Amanzi
 
 #endif
