@@ -170,7 +170,7 @@ void InputAnalysis::RegionAnalysis()
   if (alist.isParameter("used observation regions")) {
     std::vector<std::string> regions = alist.get<Teuchos::Array<std::string> >("used observation regions").toVector();
 
-    int nblock(0), nblock_tmp;
+    int nblock(0), nblock_tmp, nblock_max;
     for (int i = 0; i < regions.size(); i++) {
       double volume(0.0), volume_tmp;
       std::string type;
@@ -199,10 +199,11 @@ void InputAnalysis::RegionAnalysis()
         nblock = -1;
       }
 
-      // identify if we failed on some cores
+      // identify if we failed on some cores or region is empty
       mesh_->get_comm()->MinAll(&nblock, &nblock_tmp, 1);
+      mesh_->get_comm()->MaxAll(&nblock, &nblock_max, 1);
 
-      if (nblock_tmp < 0) {
+      if (nblock_tmp < 0 || nblock_max == 0) {
         mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block, &vofs);
         nblock_tmp = nblock = block.size();
         type = "faces";
