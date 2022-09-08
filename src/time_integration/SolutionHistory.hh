@@ -102,7 +102,7 @@ SolutionHistory<Vector>::SolutionHistory(const std::string& name, int mvec, doub
         const Teuchos::RCP<State>& S)
   : S_(S),
     nvec_(0),
-    name_(name)
+    name_(Keys::cleanName(name, true))
 {
   Initialize_(mvec, x);
   RecordSolution(t, x, xdot);
