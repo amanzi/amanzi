@@ -24,7 +24,7 @@ namespace Flow {
 class FracturePermModel_Constant : public FracturePermModel {
  public:
   explicit FracturePermModel_Constant(Teuchos::ParameterList& plist) {
-    value_ = plist.get<double>("apreture");
+    value_ = plist.get<double>("value");
   }
   ~FracturePermModel_Constant() {};
   
