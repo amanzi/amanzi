@@ -30,12 +30,14 @@ class FlowSourceFunction : public PK_DomainFunction {
   FlowSourceFunction(const Teuchos::ParameterList& plist) {};
 
   void ComputeSubmodel(const Key& key, const State& S) {
+    /*
     if (S.HasRecord(key, Tags::DEFAULT)) {
       auto aperture = *S.Get<CompositeVector>(key, Tags::DEFAULT).ViewComponent("cell", true);
       for (auto it = begin(); it != end(); ++it) {
         it->second[0] *= aperture[0][it->first];
       }
     }
+    */
   }
 };
 
