@@ -261,11 +261,10 @@ void LimiterCell::LimiterTensorial_(
   AMANZI_ASSERT(data_->NumVectors() == dim);
   auto& grad = *lifting_->data()->ViewComponent("cell");
 
-  double u1, u1f, umin, umax, L22normal_new;
-  AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
-  AmanziGeometry::Point normal_new(dim), direction(dim), p(dim);
+  double u1, u1f, umin, umax, tol;
+  double tol_base = sqrt(OPERATOR_LIMITER_TOLERANCE);
 
-  std::vector<AmanziGeometry::Point> normals;
+  AmanziGeometry::Point gradient_c1(dim);
 
   // Step 1: limit gradient to a feasiable set excluding Dirichlet boundary
   if (!external_bounds_) {
@@ -284,7 +283,12 @@ void LimiterCell::LimiterTensorial_(
     for (int i = 0; i < dim; i++) gradient_c1[i] = grad[i][c];
     (*limiter_)[c] = norm(gradient_c1); 
 
-    normals.clear();  // normals to planes that define a feasiable set
+    u1 = (*field_)[component_][c];
+    tol = tol_base * std::max(OPERATOR_LIMITER_FIELD_TOLERANCE, fabs(u1));
+
+    // loop 1: project of planes
+    // loop 2: verify and compute BJ factor
+    double bj_fac(1.0);
     for (int loop = 0; loop < 2; loop++) {
       for (int i = 0; i < nfaces; ++i) {
         int f = faces[i];
@@ -292,30 +296,25 @@ void LimiterCell::LimiterTensorial_(
 
         getBounds(c, f, stencil_id_, &umin, &umax);
 
-        u1 = (*field_)[component_][c];
         u1f = getValue(gradient_c1, c, xf);
 
-        // check if umin <= u1f <= umax
-        if (u1f < umin) {
-          normal_new = xf - xc;
-          CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
-
-          // p = ((umin - u1) / sqrt(L22normal_new)) * direction;
-          p = ((umin - u1) / sqrt(L22normal_new)) * normal_new;
-          ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c1);
-
-        } else if (u1f > umax) {
-          normal_new = xf - xc;
-          CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
-
-          // p = ((umax - u1) / sqrt(L22normal_new)) * direction;
-          p = ((umax - u1) / sqrt(L22normal_new)) * normal_new;
-          ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c1);
+        if (loop == 0) {
+          if (u1f < umin) {
+            ProjectOnPlane_(umin - u1, xf, xc, gradient_c1);
+          } else if (u1f > umax) {
+            ProjectOnPlane_(umax - u1, xf, xc, gradient_c1);
+          }
+        } else {
+          if (u1f < umin - tol) {
+            bj_fac = std::min(bj_fac, (umin - u1) / (u1f - u1));
+          } else if (u1f > umax + tol) {
+            bj_fac = std::min(bj_fac, (umax - u1) / (u1f - u1));
+          }
         }
       }
-      if (normals.size() == 0) break;  // No limiters were imposed.
     }
 
+    if (bj_fac < 1.0) gradient_c1 *= bj_fac;
     double grad_norm = norm(gradient_c1);
     if (grad_norm < OPERATOR_LIMITER_TOLERANCE) gradient_c1.set(0.0);
 
@@ -484,7 +483,8 @@ void LimiterCell::LimiterExtensionTransportScalar_(
 {
   AMANZI_ASSERT(upwind_cells_.size() > 0);
 
-  double u1, u1f;
+  double u1, u1f, tol;
+  double tol_base = sqrt(OPERATOR_LIMITER_TOLERANCE);
   AmanziGeometry::Point gradient_c1(dim);
 
   auto& grad_c = *lifting_->data()->ViewComponent("cell");
@@ -508,13 +508,14 @@ void LimiterCell::LimiterExtensionTransportScalar_(
         u1f = u1 + gradient_c1 * (xcf - xc);
 
         a = u1f - u1;
-        if (fabs(a) > OPERATOR_LIMITER_TOLERANCE * (fabs(u1f) + fabs(u1))) {
+        tol = OPERATOR_LIMITER_TOLERANCE * (fabs(u1f) + fabs(u1));
+        if (fabs(a) > tol) {
           if (a > 0) b = u1 - bounds_c[0][c];
           else       b = u1 - bounds_c[1][c];
 
           flux = fabs((*flux_)[0][f]);
           outflux += flux;
-          if (b) {
+          if (fabs(b) > tol * tol_base) {
             outflux_weigted += flux * a / b;
           } else {
             (*limiter)[c] = 0.0;
@@ -611,27 +612,24 @@ void LimiterCell::LimiterKuzmin_(
 * Kuzmin's limiter use all neighbors of the given cell and limit 
 * gradient in this cell only.  
 ******************************************************************* */
-void LimiterCell::LimiterKuzminCell_(int cell,
+void LimiterCell::LimiterKuzminCell_(int c,
                                      AmanziGeometry::Point& gradient_c,
                                      const std::vector<double>& field_node_min_c,
                                      const std::vector<double>& field_node_max_c)
 {
-  double up, u1;
+  double u1p, u1, bj_fac(1.0), tol;
+  double tol_base = sqrt(OPERATOR_LIMITER_TOLERANCE);
   AmanziGeometry::Point xp(dim);
 
-  double L22normal_new;
-  AmanziGeometry::Point p(dim), normal_new(dim), direction(dim);
   AmanziMesh::Entity_ID_List nodes;
-  std::vector<AmanziGeometry::Point> normals;
-
-  mesh_->cell_get_nodes(cell, &nodes);
+  mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  u1 = (*field_)[component_][cell];
+  u1 = (*field_)[component_][c];
+  tol = tol_base * std::max(OPERATOR_LIMITER_FIELD_TOLERANCE, fabs(u1));
 
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-  normals.clear();  // normals to planes the define the feasiable set
   for (int loop = 0; loop < 2; loop++) {
     for (int i = 0; i < nnodes; i++) {
       int v = nodes[i];
@@ -639,27 +637,24 @@ void LimiterCell::LimiterKuzminCell_(int cell,
       double umax = field_node_max_c[i];
 
       mesh_->node_get_coordinates(v, &xp);
-      up = getValue(gradient_c, cell, xp);
+      u1p = getValue(gradient_c, c, xp);
 
-      // check if umin <= up <= umax
-      if (up < umin) {
-        normal_new = xp - xc;
-        CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
-
-        // p = ((umin - u1) / sqrt(L22normal_new)) * direction;
-        p = ((umin - u1) / sqrt(L22normal_new)) * normal_new;
-        ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c);
-      } else if (up > umax) {
-        normal_new = xp - xc;
-        CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
-
-        // p = ((umax - u1) / sqrt(L22normal_new)) * direction;
-        p = ((umax - u1) / sqrt(L22normal_new)) * normal_new;
-        ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c);
+      if (loop == 0) {
+        if (u1p < umin) {
+          ProjectOnPlane_(umin - u1, xp, xc, gradient_c);
+        } else if (u1p > umax) {
+          ProjectOnPlane_(umax - u1, xp, xc, gradient_c);
+        }
+      } else {
+        if (u1p < umin - tol) {
+          bj_fac = std::min(bj_fac, (umin - u1) / (u1p - u1));
+        } else if (u1p > umax + tol) {
+          bj_fac = std::min(bj_fac, (umax - u1) / (u1p - u1));
+        }
       }
     }
-    if (normals.size() == 0) break;  // No limiters were imposed.
   
+    if (bj_fac < 1.0) gradient_c *= bj_fac;
     double grad_norm = norm(gradient_c);
     if (grad_norm < OPERATOR_LIMITER_TOLERANCE) gradient_c.set(0.0);
   }
@@ -738,52 +733,18 @@ void LimiterCell::LimiterExtensionTransportKuzmin_(
 
 
 /* *******************************************************************
-* Descent direction is obtained by orthogonalizing normal direction
-* 'normal_new' to previous normals. A few exceptions are analyzed.  
+* Project gradient on a plane defined by du + grad * direction = 0.
 ******************************************************************* */
-void LimiterCell::CalculateDescentDirection_(
-    std::vector<AmanziGeometry::Point>& normals,
-    AmanziGeometry::Point& normal_new, 
-    double& L22normal_new,
-    AmanziGeometry::Point& direction)
+void LimiterCell::ProjectOnPlane_(double du,
+                                  const AmanziGeometry::Point& xf,
+                                  const AmanziGeometry::Point& xc, 
+                                  AmanziGeometry::Point& gradient)
 {
-  L22normal_new = L22(normal_new);
-  normal_new /= sqrt(L22normal_new);
-  direction = normal_new;
+  AmanziGeometry::Point direction = xf - xc;
+  double len = norm(direction);
+  direction /= len;
 
-  int nnormals = normals.size();
-  if (nnormals == dim) {
-    normals.clear();
-  } else {
-    double a;
-    for (int n = 0; n < nnormals; n++) {
-      a = normals[n] * direction;
-      for (int i = 0; i < dim; i++) direction[i] -= a * normals[n][i];
-    }
-
-    // verify new direction
-    a = L22(direction);
-    if (a < L22normal_new * OPERATOR_LIMITER_TOLERANCE) {
-      normals.clear();
-      direction = normal_new;
-    } else {
-      a = sqrt(a);
-      for (int i = 0; i < dim; i++) direction[i] /= a;
-    }
-  }
-  normals.push_back(direction);
-}
-
-
-/* *******************************************************************
-* Routine projects gradient on a plane defined by normal and point p.
-******************************************************************* */
-void LimiterCell::ApplyDirectionalLimiter_(AmanziGeometry::Point& normal,
-                                           AmanziGeometry::Point& p,
-                                           AmanziGeometry::Point& direction,
-                                           AmanziGeometry::Point& gradient)
-{
-  double a = ((p - gradient) * normal) / (direction * normal);
+  double a = du / len - gradient * direction;
   gradient += a * direction;
 }
 

@@ -119,15 +119,10 @@ class LimiterCell {
                           const std::vector<double>& field_node_min_c,
                           const std::vector<double>& field_node_max_c);
 
-  void CalculateDescentDirection_(std::vector<AmanziGeometry::Point>& normals,
-                                  AmanziGeometry::Point& normal_new,
-                                  double& L22normal_new, 
-                                  AmanziGeometry::Point& direction);
-
-  void ApplyDirectionalLimiter_(AmanziGeometry::Point& normal, 
-                                AmanziGeometry::Point& p,
-                                AmanziGeometry::Point& direction, 
-                                AmanziGeometry::Point& gradient);
+  void ProjectOnPlane_(double du,
+                       const AmanziGeometry::Point& xf,
+                       const AmanziGeometry::Point& xc, 
+                       AmanziGeometry::Point& gradient);
 
   void IdentifyUpwindCells_();
 
