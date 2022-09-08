@@ -891,8 +891,6 @@ void State::Setup() {
     }
   }
 
-  std::cout<<state_plist_<<"\n";
-  
   // Ensure compatibility of all the evaluators -- each evaluator's dependencies must
   // provide what is required of that evaluator.
   for (FieldEvaluatorMap::iterator evaluator=field_evaluators_.begin();
