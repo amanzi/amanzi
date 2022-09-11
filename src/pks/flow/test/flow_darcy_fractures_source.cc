@@ -24,7 +24,6 @@
 
 // Amanzi
 #include "IO.hh"
-#include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "State.hh"
@@ -40,15 +39,14 @@ TEST(DARCY_TWO_FRACTURES) {
   using namespace Amanzi::Flow;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "Test: Darcy PK in two fractures" << std::endl;
-  Comm_ptr_type comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  std::cout << "Test: Darcy PK in fractures: uniform water injection" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/flow_darcy_fractures.xml";
+  std::string xmlFileName = "test/flow_darcy_fractures_source.xml";
   auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
@@ -57,21 +55,10 @@ TEST(DARCY_TWO_FRACTURES) {
   RCP<const Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
   // extract fractures mesh
-  std::vector<std::string> setnames;
-  setnames.push_back("fracture 1");
-  setnames.push_back("fracture 2");
-
+  std::vector<std::string> setnames({"fracture 1" });
   RCP<Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
 
-  int ncells_owned = 0;
-  int ncells_wghost = 0;
-  if (mesh.get()) {
-    ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  }
-
-  std::cout << "pid=" << MyPID << " cells: " << ncells_owned << " " << ncells_wghost << std::endl;
-
+  // create state and initialize
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(mesh);
@@ -84,27 +71,13 @@ TEST(DARCY_TWO_FRACTURES) {
   S->InitializeFields();
   S->InitializeEvaluators();
 
-  // modify the default state
-  // -- storativity
-  S->GetW<CompositeVector>("specific_storage", Tags::DEFAULT, "flow").PutScalar(2.0);
-  S->GetRecordW("specific_storage", Tags::DEFAULT, "flow").set_initialized();
-
-  // create the initial pressure function
-  auto& p = *S->GetW<CompositeVector>("pressure", Tags::DEFAULT, "flow").ViewComponent("cell");
-
-  for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
-    p[0][c] = xc[0] * (xc[1] + 2.0);
-  }
-  S->GetRecordW("pressure", "flow").set_initialized();
-
-  // initialize the Darcy process kernel
   DPK->Initialize();
   S->CheckAllFieldsInitialized();
+  WriteStateStatistics(*S);
 
-  // transient solution
-  double t_old(0.0), t_new, dt(0.5);
-  for (int n = 0; n < 2; n++) {
+  // time stepping
+  double t_old(0.0), t_new, dt(10.0);
+  for (int n = 0; n < 10; n++) {
     t_new = t_old + dt;
 
     DPK->AdvanceStep(t_old, t_new);
@@ -112,18 +85,19 @@ TEST(DARCY_TWO_FRACTURES) {
 
     t_old = t_new;
   }
+  WriteStateStatistics(*S);
 
+  double V = 0.25;   // fracture area [m^2]
+  double Q = 8.0e-2;    // source [kg/s]
+  double Ss = 0.002; // specific storage [m^-1]
+  double g = 10.0;   // gravity [m/s^2]
+  double a = 0.01;   // aprerture [m]
+  double p_old = 200000.0;
+  double p_new = p_old + (dt * 10) * (Q / V) * g / (Ss * a); 
+
+  auto& p = *S->GetW<CompositeVector>("pressure", Tags::DEFAULT, "flow").ViewComponent("cell");
   for (int c = 0; c < p.MyLength(); c++) {
-    CHECK(p[0][c] > -1.0 && p[0][c] < 2.0);
-  }
-  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Darcy", *plist));
-  WriteStateStatistics(*S, *vo);
-
-  if (MyPID == 0) {
-    GMV::open_data_file(*mesh, (std::string)"flow.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(p, 0, "pressure");
-    GMV::close_data_file();
+    CHECK_CLOSE(p[0][c], p_new, 1.0);
   }
 }
 
