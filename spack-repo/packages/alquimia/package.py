@@ -16,7 +16,6 @@ class Alquimia(CMakePackage):
     maintainers = ['smolins', 'balay']
 
     version('1.0.9', commit='2ee3bcfacc63f685864bcac2b6868b48ad235225')  # tag v.1.0.9
-    version('1.0.8', commit='e1ddf8a67c7a5bc267817cf287bec3f134e6b73d')  # tag v.1.0.9
 
     variant('shared', default=True,
             description='Enables the build of shared libraries')
@@ -24,12 +23,17 @@ class Alquimia(CMakePackage):
     depends_on('crunchtope')
     depends_on('mpi')
     depends_on('hdf5')
-    depends_on('pflotran@0.0.1', when='@1.0.9')
+    depends_on('pflotran@3.0.2', when='@1.0.9')
+    depends_on('petsc')
+
+    patch('alquimia-cmake.patch')
+    patch('alquimia-FindPETSc.patch')
 
     def cmake_args(self):
         spec = self.spec
 
         options = ['-DCMAKE_C_COMPILER=%s' % spec['mpi'].mpicc,
+                   '-DCMAKE_BUILD_TYPE=%s' % spec.variants['build_type'].value,
                    '-DCMAKE_Fortran_COMPILER=%s' % spec['mpi'].mpifc,
                    '-DUSE_XSDK_DEFAULTS=YES',
                    self.define_from_variant('BUILD_SHARED_LIBS', 'shared'),
@@ -43,10 +47,10 @@ class Alquimia(CMakePackage):
                        spec['pflotran'].prefix.lib + "/libpflotranchem.a"),
                    '-DTPL_PFLOTRAN_INCLUDE_DIRS=%s' % (
                        spec['pflotran'].prefix.include),
-                   '-DTPL_ENABLE_PETSC:BOOL=ON',
-                   '-DPETSC_EXECUTABLE_RUNS=ON',
+                   '-DPETSC_DIR=' + spec['petsc'].prefix, 
                    '-DCMAKE_INSTALL_NAME_DIR:PATH=%s/lib' % self.prefix,
                    '-DXSDK_WITH_CRUNCHFLOW:BOOL=ON',
                    '-DTPL_CRUNCHFLOW_LIBRARIES:FILEPATH=' + spec['crunchtope'].prefix + '/lib/libcrunchchem.so',
                    '-DTPL_CRUNCHFLOW_INCLUDE_DIRS:FILEPATH=' + spec['crunchtope'].prefix + '/lib/']
         return options
+

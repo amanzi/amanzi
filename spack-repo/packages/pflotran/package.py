@@ -15,12 +15,9 @@ class Pflotran(AutotoolsPackage):
     homepage = "https://www.pflotran.org"
     git      = "https://bitbucket.org/pflotran/pflotran.git"
 
-    version('0.0.1',commit='1ba735f1a64a12315c52a64107a75571c53492b3')
+    version("3.0.2", commit="9e07f416a66b0ad304c720b61aa41cba9a0929d5")  # tag v3.0.2
 
     depends_on('mpi')
     depends_on('hdf5@1.8.12:+mpi+fortran+hl')
     depends_on('petsc')
 
-    @property
-    def parallel(self):
-        return (self.spec.satisfies('@xsdk-0.4.0:'))
