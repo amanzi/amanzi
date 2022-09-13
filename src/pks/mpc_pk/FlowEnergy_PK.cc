@@ -80,8 +80,8 @@ void FlowEnergy_PK::Setup()
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   prev_sat_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid");
 
-  wc_key_ = Keys::getKey(domain_, "water_content");
-  prev_wc_key_ = Keys::getKey(domain_, "prev_water_content");
+  wc_key_ = Keys::getKey(domain_, "water_storage");
+  prev_wc_key_ = Keys::getKey(domain_, "prev_water_storage");
 
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
 
@@ -183,8 +183,8 @@ void FlowEnergy_PK::Setup()
 
   // copies of fields (must be called after PKs)
   if (S_->HasRecord(prev_wc_key_)) {
-    S_->Require<CV_t, CVS_t>(prev_wc_key_, Tags::COPY, "state");
-    S_->GetRecordW(prev_wc_key_, Tags::COPY, prev_wc_key_).set_initialized();
+    S_->Require<CV_t, CVS_t>(prev_wc_key_, Tags::COPY, "flow");
+    S_->GetRecordW(prev_wc_key_, Tags::COPY, "flow").set_initialized();
   }
 }
 
@@ -253,7 +253,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     S_->GetEvaluator(wc_key_).Update(*S_, "flow");
     const auto& wc = S_->Get<CV_t>(wc_key_);
-    auto& wc_prev = S_->GetW<CV_t>(prev_wc_key_, Tags::DEFAULT, "state");
+    auto& wc_prev = S_->GetW<CV_t>(prev_wc_key_, Tags::DEFAULT, "flow");
     wc_prev = wc;
   }
 
