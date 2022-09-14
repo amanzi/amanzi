@@ -28,42 +28,49 @@
 namespace Amanzi {
 
 template <class FunctionBase>
-class PK_DomainFunctionField : public FunctionBase,
-                                public Functions::UniqueMeshFunction {
+class PK_DomainFunctionField : public FunctionBase{
+                             
  public:
   PK_DomainFunctionField(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                         const Teuchos::RCP<const State>& S,
+                         const Teuchos::RCP<State>& S,
                           AmanziMesh::Entity_kind kind) :
     S_(S),
-    UniqueMeshFunction(mesh),
+    mesh_(mesh),
     kind_(kind) {};
 
   PK_DomainFunctionField(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                         const Teuchos::RCP<const State>& S,
+                         const Teuchos::RCP<State>& S,
                          const Teuchos::ParameterList& plist,
                          AmanziMesh::Entity_kind kind) :
     S_(S),
-    UniqueMeshFunction(mesh),
+    mesh_(mesh),
     FunctionBase(plist),
     kind_(kind) {
   };
 
   ~PK_DomainFunctionField() {};
 
+  typedef std::vector<std::string> RegionList;
+  typedef std::pair<RegionList, AmanziMesh::Entity_kind> Domain;
+  typedef std::set<AmanziMesh::Entity_ID> MeshIDs;
+
+
   // member functions
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
   // required member functions
   virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "simple"; }
+  virtual std::string name() const { return "field"; }
 
  protected:
   using FunctionBase::value_;
   using FunctionBase::keyword_;  
-  Teuchos::RCP<const State> S_;
+  Teuchos::RCP<State> S_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
  private:
   std::string submodel_;
+  Teuchos::RCP<MeshIDs> entity_ids_;
   AmanziMesh::Entity_kind kind_;
   std::string field_key_;
   std::string copy_key_;
@@ -78,6 +85,8 @@ template <class FunctionBase>
 void PK_DomainFunctionField<FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword)
 {
+  Errors::Message msg;
+
   keyword_ = keyword;
 
   submodel_ = "rate";
@@ -100,6 +109,24 @@ void PK_DomainFunctionField<FunctionBase>::Init(
   // Add this source specification to the domain function.
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, kind_));
   //AddSpec(Teuchos::rcp(new Spec(domain, f)));
+
+  entity_ids_ = Teuchos::rcp(new MeshIDs());
+  AmanziMesh::Entity_kind kind = domain->second;
+
+  for (auto region = domain->first.begin(); region != domain->first.end(); ++region) {
+    if (mesh_->valid_set_name(*region, kind)) {
+      AmanziMesh::Entity_ID_List id_list;
+      mesh_->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, &id_list);
+      entity_ids_->insert(id_list.begin(), id_list.end());
+    } else {
+      msg << "Unknown region in processing coupling source: name=" << *region
+          << ", kind=" << kind << "\n";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+
+
+  
 }
 
 
@@ -109,27 +136,24 @@ void PK_DomainFunctionField<FunctionBase>::Init(
 template <class FunctionBase>
 void PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
 {
-  if (unique_specs_.size() == 0) return;
-
   // create the input tuple (time + space)
   int dim = mesh_->space_dimension();
-  const auto& field_vec = *S_->GetFieldCopyData(field_key_, copy_key_)->ViewComponent(component_key_, false);
-  int nvalues = field_vec.NumVectors();
+
+  if (S_->HasFieldEvaluator(field_key_)){
+    S_->GetFieldEvaluator(field_key_)->HasFieldChanged(S_.ptr(), field_key_);    
+  }
   
-  for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end(); ++uspec) {
+  //const auto& field_vec = *S_->GetFieldCopyData(field_key_, copy_key_)->ViewComponent(component_key_, false);
+  const auto& field_vec = *S_->GetFieldData(field_key_)->ViewComponent("cell", false);
+  
+  int nvalues = field_vec.NumVectors();  
+  std::vector<double> val_vec(nvalues);  
 
-    Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
-    // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-    //int nfun = (*uspec)->first->second->size();
-    std::vector<double> val_vec(nvalues);  
-
-    for (auto c = ids->begin(); c != ids->end(); ++c) {
+  for (auto c : *entity_ids_) {
       for (int i = 0; i < nvalues; ++i) {
-        //val_vec[i] = field[i][c];
+        val_vec[i] = field_vec[i][c];
       }
-      value_[*c] = val_vec;
-    }
-
+      value_[c] = val_vec;
   }
 }
 

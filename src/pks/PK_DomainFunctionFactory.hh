@@ -34,7 +34,7 @@ template <class FunctionBase>
 class PK_DomainFunctionFactory : public FunctionBase {
  public:
   PK_DomainFunctionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                           const Teuchos::RCP<const State>& S)
+                           const Teuchos::RCP<State>& S)
     : mesh_(mesh), S_(S) {};
   ~PK_DomainFunctionFactory() {};
 
@@ -49,7 +49,7 @@ class PK_DomainFunctionFactory : public FunctionBase {
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<const State> S_;
+  Teuchos::RCP<State> S_;
 };
 
 
