@@ -64,7 +64,9 @@ set(state_inc_files
   data/Data_Impl.hh
   data/DataFactory.hh
   data/DataFactory_Impl.hh
+  data/Operator_DataHelpers.hh
   data/Record.hh
+  data/RecordSet.hh
   evaluators/Evaluator.hh
   evaluators/Evaluator_Factory.hh
   evaluators/EvaluatorCellVolume.hh

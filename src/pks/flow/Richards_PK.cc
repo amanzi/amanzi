@@ -129,12 +129,7 @@ void Richards_PK::Setup()
   // generate keys here to be available for setup of the base class
   pressure_key_ = Keys::getKey(domain_, "pressure"); 
   hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head"); 
-
   darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity"); 
-  porosity_key_ = Keys::getKey(domain_, "porosity"); 
-
-  saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
-  prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
 
   water_storage_key_ = Keys::getKey(domain_, "water_storage"); 
   prev_water_storage_key_ = Keys::getKey(domain_, "prev_water_storage"); 

@@ -209,7 +209,7 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *vo_->os() << "transport solver (" << solver_name_
                << "): ||sol||=" << sol_norm 
                << "  avg itrs=" << tot_itrs / num_aqueous << std::endl;
-      VV_PrintSoluteExtrema(*tcc_tmp->ViewComponent("cell"), t_new - t_old, "");
+    VV_PrintSoluteExtrema(*tcc_tmp->ViewComponent("cell"), t_new - t_old, "");
   }
 
   return fail;

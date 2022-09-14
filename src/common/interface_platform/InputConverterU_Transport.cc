@@ -141,10 +141,11 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   // high-order transport
   // -- defaults
   Teuchos::ParameterList& trp_lift = out_list.sublist("reconstruction");
-  trp_lift.set<int>("polynomial order", poly_order);
-  trp_lift.set<std::string>("limiter", "tensorial");
-  trp_lift.set<bool>("limiter extension for transport", true);
-  trp_lift.set<std::string>("limiter stencil", "face to cells");
+  trp_lift.set<int>("polynomial order", poly_order)
+          .set<std::string>("limiter", "tensorial")
+          .set<std::string>("weight", "constant")
+          .set<bool>("limiter extension for transport", true)
+          .set<std::string>("limiter stencil", "face to cells");
 
   // -- overwrite data from expert parameters  
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, limiter", flag);
@@ -158,6 +159,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
     std::string stencil = GetTextContentS_(node, "node-to-cells, face-to-cells, cell-to-closest-cells, cell-to-all-cells");
     std::replace(stencil.begin(), stencil.end(), '-', ' ');
     trp_lift.set<std::string>("limiter stencil", stencil);
+  }
+
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, reconstruction_weight", flag);
+  if (flag) {
+    std::string weight = GetTextContentS_(node, "constant, inverse-distance");
+    std::replace(weight.begin(), weight.end(), '-', ' ');
+    trp_lift.set<std::string>("weight", weight);
   }
 
   // check if we need to write a dispersivity sublist

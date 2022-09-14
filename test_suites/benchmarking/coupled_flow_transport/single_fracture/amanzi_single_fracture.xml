@@ -188,7 +188,11 @@
         <mechanical_properties>
           <porosity value="0.4"/>
         </mechanical_properties>
-        <fracture_permeability model="constant" aperture="1e-2" parallel="KFT" normal="KFN"/>
+        <fracture_permeability model="constant">
+          <aperture value="0.01"/>
+          <parallel value="KFT"/>
+          <normal value="KFN"/>
+        </fracture_permeability>
         <assigned_regions>fracture</assigned_regions>
       </material>
     </materials>

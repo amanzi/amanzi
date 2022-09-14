@@ -573,14 +573,15 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 // Reconstruct if necessary for positivity
 //--------------------------------------------------------------
 double
-ShallowWater_PK::TotalDepthEdgeValue(int c, int e, double htc, double Bc, const Epetra_MultiVector& B_n)
+ShallowWater_PK::TotalDepthEdgeValue(
+    int c, int e, double htc, double Bc, const Epetra_MultiVector& B_n)
 {
   double ht_edge; // value to return
 
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
   // set ht_grad = 0 for first order reconstruction (for debugging purposes)
-  //  ht_grad[0][c] = 0.0;
-  //  ht_grad[1][c] = 0.0;
+  // ht_grad[0][c] = 0.0;
+  // ht_grad[1][c] = 0.0;
 
   const auto& xc = mesh_->cell_centroid(c);
   const auto& xf = mesh_->face_centroid(e);
@@ -595,13 +596,13 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e, double htc, double Bc, const 
   // calculate maximum bathymetry value on cell nodes
   double Bmax = 0.0;
   for (int i = 0; i < cnodes.size(); ++i) { 
-  	Bmax = std::max(B_n[0][cnodes[i]], Bmax); 
+    Bmax = std::max(B_n[0][cnodes[i]], Bmax); 
   }
 
   // characterize cell based on [Beljadid et al.' 16]
   if ((htc > Bmax) && (htc - Bc > 0.0)) {
     cell_is_fully_flooded = true;
-  } else if (std::abs(htc- Bc) < 1.e-15) {
+  } else if (std::abs(htc - Bc) < 1.e-15) {
     cell_is_dry = true;
   } else {
     cell_is_partially_wet = true;
@@ -611,7 +612,7 @@ ShallowWater_PK::TotalDepthEdgeValue(int c, int e, double htc, double Bc, const 
   if (cell_is_fully_flooded) {
     ht_edge = total_depth_grad_->getValue(c, xf);
     if (ht_edge - BathymetryEdgeValue(e, B_n) < 0.0) { 
-    	ht_edge = htc; 
+      ht_edge = htc; 
     }
   } else if (cell_is_dry) {
     ht_edge = BathymetryEdgeValue(e, B_n);

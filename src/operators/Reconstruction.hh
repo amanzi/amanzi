@@ -20,6 +20,7 @@
 #include "BCs.hh"
 #include "CompositeVector.hh"
 #include "Mesh.hh"
+#include "OperatorDefs.hh"
 #include "Point.hh"
 #include "Polynomial.hh"
 
@@ -30,7 +31,7 @@ class Reconstruction {
  public:
   Reconstruction() {};
   Reconstruction(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
-      mesh_(mesh), field_(Teuchos::null), component_(0) {};
+      mesh_(mesh), field_(Teuchos::null), component_(0), weight_(WeightType::WT_CONSTANT) {};
   virtual ~Reconstruction() = default;
 
   // main members
@@ -54,6 +55,7 @@ class Reconstruction {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const Epetra_MultiVector> field_;
   int component_;
+  WeightType weight_;
 };
 
 }  // namespace Operators

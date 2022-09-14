@@ -16,7 +16,6 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "EvaluatorMultiplicativeReciprocal.hh"
-#include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "Mesh_Algorithms.hh"
 #include "OperatorDefs.hh"
@@ -72,12 +71,17 @@ void Flow_PK::Setup()
   coupled_to_matrix_ = physical_models->get<std::string>("coupled matrix fracture flow", "") == "fracture";
   coupled_to_fracture_ = physical_models->get<std::string>("coupled matrix fracture flow", "") == "matrix";
 
-  // register fields
+  // register fields and evaluators
   // -- keys
   vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate"); 
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
   permeability_eff_key_ = Keys::getKey(domain_, "permeability_effective");
   aperture_key_ = Keys::getKey(domain_, "aperture"); 
+
+  porosity_key_ = Keys::getKey(domain_, "porosity"); 
+  saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
+  prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
+  wc_key_ = Keys::getKey(domain_, "water_content"); 
 
   // -- constant fields
   S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
@@ -144,6 +148,23 @@ void Flow_PK::Setup()
   if (!S_->HasEvaluator(vol_flowrate_key_, Tags::DEFAULT)) {
     AddDefaultPrimaryEvaluator_(vol_flowrate_key_);
   }
+
+  // -- water content
+  if (!S_->HasRecord(wc_key_)) {
+    S_->Require<CV_t, CVS_t>(wc_key_, Tags::DEFAULT, wc_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    std::vector<std::string> listm({ Keys::getVarName(porosity_key_), Keys::getVarName(saturation_liquid_key_) });
+    if (flow_on_manifold_) listm.push_back(Keys::getVarName(aperture_key_));
+
+    Teuchos::ParameterList elist(wc_key_);
+    elist.set<std::string>("my key", wc_key_)
+         .set<Teuchos::Array<std::string> >("multiplicative dependencies", listm)
+         .set<std::string>("tag", "");
+    auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
+    S_->SetEvaluator(wc_key_, Tags::DEFAULT, eval);
+  }
+
 
   // Wells
   if (!S_->HasRecord("well_index")) {

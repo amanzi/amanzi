@@ -973,6 +973,17 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_(const std::strin
                 .set<double>("aperture", aperture);
       }
     }
+
+    if (model == "constant") {
+      node = GetUniqueElementByTagsString_(inode, "fracture_permeability, parallel", flag);
+      double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", true);
+
+      for (auto it = regions.begin(); it != regions.end(); ++it) {
+        std::stringstream ss;
+        ss << "FPM for " << *it;
+        out_list.sublist(ss.str()).set<double>("value", val);
+      }
+    }
   }
 
   return out_list;

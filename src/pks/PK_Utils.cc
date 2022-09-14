@@ -91,10 +91,10 @@ void PKUtils_CalculatePermeabilityFactorInWell(
 
   const auto& cv = S->Get<CompositeVector>("permeability", Tags::DEFAULT);
   cv.ScatterMasterToGhosted("cell");
-  const Epetra_MultiVector& perm = *cv.ViewComponent("cell", true);
+  const auto& perm = *cv.ViewComponent("cell", true);
  
   int ncells_wghost = S->GetMesh()->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int dim = S->GetMesh()->space_dimension();
+  int dim = perm.NumVectors();
 
   Kxy = Teuchos::rcp(new Epetra_Vector(S->GetMesh()->cell_map(true)));
 

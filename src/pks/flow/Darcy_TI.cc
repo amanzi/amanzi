@@ -38,6 +38,12 @@ void Darcy_PK::FunctionalResidual(
   CompositeVector sy_g(*specific_yield_copy_); 
   sy_g.Scale(factor);
 
+  if (flow_on_manifold_) {
+    const auto& aperture = S_->Get<CompositeVector>(aperture_key_, Tags::DEFAULT);
+    ss_g.Multiply(1.0, ss_g, aperture, 0.0);
+    sy_g.Multiply(1.0, sy_g, aperture, 0.0);
+  }
+
   op_->RestoreCheckPoint();
   op_acc_->AddAccumulationDelta(*u_old->Data(), ss_g, ss_g, dt_, "cell");
   op_acc_->AddAccumulationDeltaNoVolume(*u_old->Data(), sy_g, "cell");

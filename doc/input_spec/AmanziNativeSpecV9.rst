@@ -3325,13 +3325,13 @@ Reconstruction and limiters
 The control of the second-order numerical scheme is done via `"reconstruction`"
 sublist, described in Reconstruction_. Here is the example:
 
-
 .. code-block:: xml
 
   <ParameterList name="shallow water">  <!-- parent list -->
   <ParameterList name="reconstruction">
     <Parameter name="method" type="string" value="cell-based"/>
     <Parameter name="polynomial order" type="int" value="1"/>
+    <Parameter name="weight" type="string" value="constant"/>
     <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
     <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
     <Parameter name="limiter location" type="string" value="node"/>
@@ -3996,6 +3996,9 @@ and their extensions for various PKs.
  * `"polynomial order`" [int] defines the polynomial order of the reconstructed function. 
    Default is 1.
 
+ * `"weight`" [string] defined weight fr reconstruction. Available options are
+   `"constant`" (default) and `"inverse distance`".
+
  * `"limiter`" [string] specifies limiting method. Available options are 
    `"Barth-Jespersen`" (default), `"Michalak-Gooch`", `"tensorial`", and `"Kuzmin`". 
 
@@ -4029,6 +4032,7 @@ and their extensions for various PKs.
   <ParameterList name="reconstruction">
     <Parameter name="method" type="string" value="cell-based"/>
     <Parameter name="polynomial order" type="int" value="1"/>
+    <Parameter name="weight" type="string" value="inverse distance"/>
     <Parameter name="limiter" type="string" value="tensorial"/>
     <Parameter name="limiter extension for transport" type="bool" value="false"/>
     <Parameter name="limiter stencil" type="string" value="face to cells"/>

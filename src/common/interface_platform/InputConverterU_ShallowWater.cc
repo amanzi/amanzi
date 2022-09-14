@@ -49,7 +49,7 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string
 
   // process expert parameters
   bool flag;
-  std::string flux("Rusanov");
+  std::string flux("Rusanov"), weight("constant");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_shallow_water_controls, cfl", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
@@ -61,6 +61,12 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string
     limiter_cfl = strtod(text, NULL);
   }
 
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_shallow_water_controls, reconstruction_weight", flag);
+  if (flag) {
+    weight = GetTextContentS_(node, "constant, inverse-distance");
+    std::replace(weight.begin(), weight.end(), '-', ' ');
+  }
+
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain)
       .set<std::string>("numerical flux", pk_model_["shallow_water"])
       .set<int>("number of reduced cfl cycles", 10)
@@ -68,6 +74,7 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string
 
   out_list.sublist("reconstruction")
       .set<int>("polynomial order", 1)
+      .set<std::string>("weight", weight)
       .set<std::string>("limiter", "Barth-Jespersen")
       .set<std::string>("limiter stencil", "cell to closest cells")
       .set<std::string>("limiter location", "face")

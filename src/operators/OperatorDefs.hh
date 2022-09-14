@@ -50,6 +50,10 @@ typedef enum { CONSTANT = 0,  // includes tensorial coefficients
                MATRIX_POLYNOMIAL,
                FUNCTION } CoefType;
 
+// weight type
+typedef enum { WT_CONSTANT = 0,
+               WT_INVERSE_DISTANCE } WeightType;
+
 // Constants in the next block must powers of 2.
 const int OPERATOR_SCHEMA_DOFS_FACE = 1;
 const int OPERATOR_SCHEMA_DOFS_CELL = 2;
