@@ -123,7 +123,7 @@ TEST(IMPLICIT_TRANSPORT_2D) {
   tcc1.Update(1.0, tcc2, -1.0);
   double norm;  
   tcc1.Norm2(&norm);
-  CHECK_CLOSE(norm, 0.0, 1e-12);
+  CHECK_CLOSE(norm, 0.0, 2e-12);
 }
 
 

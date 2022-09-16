@@ -965,43 +965,6 @@ void Mesh_MOAB::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
 //--------------------------------------------------------------------
 // TBW
 //--------------------------------------------------------------------
-void Mesh_MOAB::cell_get_coordinates(
-    Entity_ID cellid, std::vector<AmanziGeometry::Point> *ccoords) const
-{
-  moab::EntityHandle cell;
-  std::vector<moab::EntityHandle> cell_nodes;
-  double *coords;
-  int nn, result;
-
-  cell = cell_id_to_handle[cellid];
-
-  ccoords->clear();
-      
-  result = mbcore_->get_connectivity(&cell, 1, cell_nodes);
-  ErrorCheck_(result, "Problem getting nodes of a cell");
-
-  nn = cell_nodes.size();
-
-  coords = new double[3];
-  
-  ccoords->resize(nn);
-  std::vector<AmanziGeometry::Point>::iterator it = ccoords->begin();
-
-  for (int i = 0; i < nn; i++) {
-    result = mbcore_->get_coords(&(cell_nodes[i]), 1, coords);
-    ErrorCheck_(result, "Problem getting coordinates of a node");
-
-    it->set(space_dim_, coords);
-    ++it;
-  }
-
-  delete [] coords;
-}
-
-
-//--------------------------------------------------------------------
-// TBW
-//--------------------------------------------------------------------
 void Mesh_MOAB::face_get_coordinates(Entity_ID faceid,
                                      std::vector<AmanziGeometry::Point> *fcoords) const
 {
@@ -1128,16 +1091,18 @@ moab::Tag Mesh_MOAB::build_set(
                              MB_TAG_CREAT|MB_TAG_SPARSE);
       
       if (celldim_ == 2) {
+        Entity_ID_List nodes;
+        AmanziGeometry::Point xyz(space_dim);
+
         int ncells = num_entities(CELL, Parallel_type::ALL);              
 
         for (int ic = 0; ic < ncells; ic++) {
-          std::vector<AmanziGeometry::Point> ccoords(space_dim);
-
-          cell_get_coordinates(ic, &ccoords);
+          cell_get_nodes(ic, &nodes);
 
           bool on_plane = true;
-          for (int j = 0; j < ccoords.size(); j++) {
-            if (!region->inside(ccoords[j])) {
+          for (int j = 0; j < nodes.size(); j++) {
+            node_get_coordinates(nodes[j], &xyz);
+            if (!region->inside(xyz)) {
               on_plane = false;
               break;
             }

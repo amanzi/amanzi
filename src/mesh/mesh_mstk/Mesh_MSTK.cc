@@ -2379,60 +2379,6 @@ void Mesh_MSTK::node_get_coordinates(const Entity_ID nodeid,
 
 
 //---------------------------------------------------------
-// Coordinates of cells in standard order (Exodus II convention)
-// STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
-// For a general polyhedron this will return the node coordinates in
-// arbitrary order
-// Number of nodes is vector size divided by number of spatial dimensions
-//---------------------------------------------------------
-void Mesh_MSTK::cell_get_coordinates(const Entity_ID cellid, 
-                                     std::vector<AmanziGeometry::Point> *ccoords) const
-{    
-  MEntity_ptr cell;
-  double coords[3];
-  int nn;
-  int spdim = space_dimension(), celldim = manifold_dimension();
-
-  AMANZI_ASSERT(ccoords != NULL);
-
-  cell = cell_id_to_handle[cellid];
-      
-  if (celldim == 3) {
-    List_ptr rverts = MR_Vertices(cell);
-    
-    nn = List_Num_Entries(rverts);
-
-    ccoords->resize(nn);
-    std::vector<AmanziGeometry::Point>::iterator it = ccoords->begin();
-
-    for (int i = 0; i < nn; ++i) {
-      MV_Coords(List_Entry(rverts,i),coords);
-      it->set(spdim,coords); // same as (*it).set()
-      ++it; 
-    }    
-
-    List_Delete(rverts);
-  }
-  else if (celldim == 2) {
-    List_ptr fverts = MF_Vertices(cell,1,0);
-
-    nn = List_Num_Entries(fverts);
-
-    ccoords->resize(nn);
-    std::vector<AmanziGeometry::Point>::iterator it = ccoords->begin();
-
-    for (int i = 0; i < nn; ++i) {
-      MV_Coords(List_Entry(fverts,i),coords);
-      it->set(spdim,coords); // same as (*it).set()
-      ++it;
-    }
-
-    List_Delete(fverts);
-  }
-}
-
-
-//---------------------------------------------------------
 // Face coordinates - conventions same as face_to_nodes call 
 // Number of nodes is the vector size divided by number of spatial dimensions
 //---------------------------------------------------------
@@ -2617,17 +2563,17 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
              (region->get_type() == AmanziGeometry::RegionType::POLYGON)) {
 
       if (celldim == 2) {
+        Entity_ID_List nodes;
+        AmanziGeometry::Point xyz(space_dim);
 
         int ncells = num_entities(CELL, Parallel_type::ALL);              
         for (int ic = 0; ic < ncells; ic++) {
-
-          std::vector<AmanziGeometry::Point> ccoords(space_dim);
-
-          cell_get_coordinates(ic, &ccoords);
+          cell_get_nodes(ic, &nodes);
 
           bool on_plane = true;
-          for (int j = 0; j < ccoords.size(); ++j) {
-            if (!region->inside(ccoords[j])) {
+          for (int j = 0; j < nodes.size(); ++j) {
+            node_get_coordinates(nodes[j], &xyz);
+            if (!region->inside(xyz)) {
               on_plane = false;
               break;
             }

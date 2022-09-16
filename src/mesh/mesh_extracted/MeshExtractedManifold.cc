@@ -295,34 +295,6 @@ void MeshExtractedManifold::face_get_cells_internal_(
 
 
 /* ******************************************************************
-* The node coordinates are returned in in arbitrary order
-****************************************************************** */
-void MeshExtractedManifold::cell_get_coordinates(
-    const Entity_ID c, std::vector<AmanziGeometry::Point> *vxyz) const
-{
-  Entity_ID_List nodes; 
-
-  int fp = entid_to_parent_[CELL][c];
-  parent_mesh_->face_get_nodes(fp, &nodes);
-  int nnodes = nodes.size();
-
-  AmanziGeometry::Point p(space_dimension());
-
-  vxyz->clear();
-  for (int i = 0; i < nnodes; ++i) {
-    parent_mesh_->node_get_coordinates(nodes[i], &p);
-    vxyz->push_back(p);
-  }
-
-  if (flattened_) {
-    for (int i = 0; i < nnodes; ++i) {
-      (*vxyz)[i].set((*vxyz)[i][0], (*vxyz)[i][1]);
-    }
-  }
-}
-
-
-/* ******************************************************************
 * Face coordinates use convention same as in face_to_nodes()
 ****************************************************************** */
 void MeshExtractedManifold::face_get_coordinates(
@@ -609,13 +581,16 @@ Entity_ID_List MeshExtractedManifold::build_set_cells_(
   else if (((rgn->get_type() == AmanziGeometry::RegionType::PLANE) ||
             (rgn->get_type() == AmanziGeometry::RegionType::POLYGON)) && 
            manifold_dim == 2) {
+    Entity_ID_List nodes;
+    AmanziGeometry::Point xyz(space_dim);
+
     for (int c = 0; c < ncells_wghost; ++c) {
-      std::vector<AmanziGeometry::Point> ccoords(space_dim);
-      cell_get_coordinates(c, &ccoords);
+      cell_get_nodes(c, &nodes);
 
       bool on_plane(true);
-      for (int i = 0; i < ccoords.size(); ++i) {
-        if (!rgn->inside(ccoords[i])) {
+      for (int i = 0; i < nodes.size(); ++i) {
+        node_get_coordinates(nodes[i], &xyz);
+        if (!rgn->inside(xyz)) {
           on_plane = false;
           break;
         }

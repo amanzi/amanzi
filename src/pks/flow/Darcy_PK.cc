@@ -304,7 +304,7 @@ void Darcy_PK::Initialize()
       Epetra_MultiVector& lambda = *solution->ViewComponent("face");
 
       DeriveFaceValuesFromCellValues(p, lambda);
-      S_->GetRecordW(pressure_key_, Tags::DEFAULT, passwd_).set_initialized("face");
+      S_->GetRecordW(pressure_key_, Tags::DEFAULT, passwd_).set_initialized(true);
     }
   }
 

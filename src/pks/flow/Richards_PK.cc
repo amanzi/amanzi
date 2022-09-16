@@ -602,7 +602,7 @@ void Richards_PK::Initialize()
   if (ti_list_->isSublist("pressure-lambda constraints") && pressure.HasComponent("face")) {
     DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
                                    *pressure.ViewComponent("face"));
-    S_->GetRecordW(pressure_key_, passwd_).set_initialized("face");
+    S_->GetRecordW(pressure_key_, passwd_).set_initialized(true);
   }
 
   // error control options

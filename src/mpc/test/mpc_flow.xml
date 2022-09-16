@@ -4,8 +4,7 @@
   <ParameterList name="checkpoint data">
     <Parameter name="file name base" type="string" value="chk_flow"/>
     <Parameter name="file name digits" type="int" value="5"/>
-    <Parameter name="times" type="Array(double)" value="{71.0, 72.0, 85.0}"/>
-    <Parameter name="times start period stop" type="Array(double)" value="{60., 10., 120.}"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{10, 10, -1}"/>
   </ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot_flow"/>
@@ -37,40 +36,11 @@
         <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 8.0e+01}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Top Surface Outside Recharge_Boundary_westOfCribs">
+    <ParameterList name="Top Surface">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 1.20000e+02}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Top Surface Outside Crib_216-B-17">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Top Surface Outside Recharge_Boundary_btwnCribs">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{1.36000e+02, 1.20000e+02}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Top Surface Outside Crib_216-B-18">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{1.36000e+02, 1.20000e+02}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.48000e+02, 1.20000e+02}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Top Surface Outside Recharge_Boundary_eastOfCribs">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{1.48000e+02, 1.20000e+02}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Well">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{1.08000e+02, 4.0e+01}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.12000e+02, 6.0e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
@@ -98,8 +68,6 @@
   </ParameterList>
 
   <ParameterList name="cycle driver">
-    <Parameter name="start time" type="double" value="0"/>
-    <Parameter name="end time" type="double" value="100"/>
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
 	<ParameterList name="PK tree">
@@ -108,14 +76,15 @@
 	  </ParameterList>
 	</ParameterList>
 	<Parameter name="start period time" type="double" value="0.0"/>
-	<Parameter name="end period time" type="double" value="100.0"/>
-	<Parameter name="initial time step" type="double" value="10.0"/>
+	<Parameter name="end period time" type="double" value="15000.0"/>
+	<Parameter name="initial time step" type="double" value="15.0"/>
+	<Parameter name="maximum time step" type="double" value="2000.0"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="time period control">
-      <Parameter name="start times" type="Array(double)" value="{10.0, 20.0, 30.0}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{0.2, 0.4, 0.6}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{5.0, 25.0, 15.0}"/>		 
+      <Parameter name="start times" type="Array(double)" value="{}"/>
+      <Parameter name="initial time step" type="Array(double)" value="{}"/>
+      <Parameter name="maximum time step" type="Array(double)" value="{}"/>		 
     </ParameterList>
   </ParameterList>
 
@@ -357,52 +326,12 @@
       	</ParameterList>
       	<ParameterList name="mass flux">
       	  <ParameterList name="BC 1">
-      	    <Parameter name="regions" type="Array(string)" value="{Top Surface Outside Crib_216-B-17}"/>
+      	    <Parameter name="regions" type="Array(string)" value="{Top Surface}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
       	    <Parameter name="rainfall" type="bool" value="false"/>
       	    <ParameterList name="outward mass flux">
       	      <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="-1.1071e-07"/>
-      	      </ParameterList>
-      	    </ParameterList>
-      	  </ParameterList>
-      	  <ParameterList name="BC 2">
-      	    <Parameter name="regions" type="Array(string)" value="{Top Surface Outside Crib_216-B-18}"/>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-      	    <Parameter name="rainfall" type="bool" value="false"/>
-      	    <ParameterList name="outward mass flux">
-      	      <ParameterList name="function-constant">
-            	<Parameter name="value" type="double" value="-1.10710e-07"/>
-      	      </ParameterList>
-      	    </ParameterList>
-      	  </ParameterList>
-      	  <ParameterList name="BC 3">
-      	    <Parameter name="regions" type="Array(string)" value="{Top Surface Outside Recharge_Boundary_westOfCribs}"/>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-      	    <Parameter name="rainfall" type="bool" value="false"/>
-      	    <ParameterList name="outward mass flux">
-      	      <ParameterList name="function-constant">
-            	<Parameter name="value" type="double" value="-1.10710e-07"/>
-      	      </ParameterList>
-      	    </ParameterList>
-      	  </ParameterList>
-      	  <ParameterList name="BC 4">
-      	    <Parameter name="regions" type="Array(string)" value="{Top Surface Outside Recharge_Boundary_btwnCribs}"/>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-      	    <Parameter name="rainfall" type="bool" value="false"/>
-      	    <ParameterList name="outward mass flux">
-      	      <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="-1.10710e-07"/>
-      	      </ParameterList>
-      	    </ParameterList>
-      	  </ParameterList>
-      	  <ParameterList name="BC 5">
-      	    <Parameter name="regions" type="Array(string)" value="{Top Surface Outside Recharge_Boundary_eastOfCribs}"/>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-      	    <Parameter name="rainfall" type="bool" value="false"/>
-      	    <ParameterList name="outward mass flux">
-      	      <ParameterList name="function-constant">
-            	<Parameter name="value" type="double" value="-1.10710e-07"/>
+                <Parameter name="value" type="double" value="-1.1071e-04"/>
       	      </ParameterList>
       	    </ParameterList>
       	  </ParameterList>
