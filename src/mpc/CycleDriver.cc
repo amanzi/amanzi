@@ -806,18 +806,14 @@ Teuchos::RCP<State> CycleDriver::Go() {
       *vo_->os() << "Restarted from checkpoint file: " << restart_filename_ << std::endl;
     }
 
-    if (position == TIME_PERIOD_END) {
-      if (time_period_id_ < num_time_periods_ - 1) {
-        time_period_id_++;
-        ResetDriver(time_period_id_); 
-        restart_dT = tp_dt_[time_period_id_];
-      }
-      else {
-        pk_->Initialize();
-      }     
-    } else {
-      pk_->Initialize();
+    if (position == TIME_PERIOD_END && time_period_id_ < num_time_periods_ - 1) {
+      time_period_id_++;
+      ResetDriver(time_period_id_); 
+      restart_dT = tp_dt_[time_period_id_];
     }
+    else {
+      pk_->Initialize();
+    }     
     max_dt_ = tp_max_dt_[time_period_id_];
 
     S_->set_initial_time(S_->get_time());

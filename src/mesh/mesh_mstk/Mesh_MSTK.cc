@@ -2379,60 +2379,6 @@ void Mesh_MSTK::node_get_coordinates(const Entity_ID nodeid,
 
 
 //---------------------------------------------------------
-// Coordinates of cells in standard order (Exodus II convention)
-// STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
-// For a general polyhedron this will return the node coordinates in
-// arbitrary order
-// Number of nodes is vector size divided by number of spatial dimensions
-//---------------------------------------------------------
-void Mesh_MSTK::cell_get_coordinates(const Entity_ID cellid, 
-                                     std::vector<AmanziGeometry::Point> *ccoords) const
-{    
-  MEntity_ptr cell;
-  double coords[3];
-  int nn;
-  int spdim = space_dimension(), celldim = manifold_dimension();
-
-  AMANZI_ASSERT(ccoords != NULL);
-
-  cell = cell_id_to_handle[cellid];
-      
-  if (celldim == 3) {
-    List_ptr rverts = MR_Vertices(cell);
-    
-    nn = List_Num_Entries(rverts);
-
-    ccoords->resize(nn);
-    std::vector<AmanziGeometry::Point>::iterator it = ccoords->begin();
-
-    for (int i = 0; i < nn; ++i) {
-      MV_Coords(List_Entry(rverts,i),coords);
-      it->set(spdim,coords); // same as (*it).set()
-      ++it; 
-    }    
-
-    List_Delete(rverts);
-  }
-  else if (celldim == 2) {
-    List_ptr fverts = MF_Vertices(cell,1,0);
-
-    nn = List_Num_Entries(fverts);
-
-    ccoords->resize(nn);
-    std::vector<AmanziGeometry::Point>::iterator it = ccoords->begin();
-
-    for (int i = 0; i < nn; ++i) {
-      MV_Coords(List_Entry(fverts,i),coords);
-      it->set(spdim,coords); // same as (*it).set()
-      ++it;
-    }
-
-    List_Delete(fverts);
-  }
-}
-
-
-//---------------------------------------------------------
 // Face coordinates - conventions same as face_to_nodes call 
 // Number of nodes is the vector size divided by number of spatial dimensions
 //---------------------------------------------------------

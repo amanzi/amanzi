@@ -476,6 +476,13 @@ class Mesh : public MeshLight {
   //------------------------
   virtual void write_to_exodus_file(const std::string filename) const = 0;
 
+  // Coordinates of cells in standard order (Exodus II convention)
+  // NOTE: Standard convention works only for standard cell types in 3D!
+  // For a general polyhedron this will return the node coordinates in
+  // arbitrary order.
+  void cell_get_coordinates(const Entity_ID c,
+                            std::vector<AmanziGeometry::Point> *ccoords) const;
+
  protected:
   void get_set_entities_box_vofs_(
       Teuchos::RCP<const AmanziGeometry::Region> region,

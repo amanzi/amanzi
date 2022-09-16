@@ -178,17 +178,6 @@ class MeshSurfaceCell : public Mesh {
     (*fcoords)[1] = nodes_[(faceid + 1) % nodes_.size()];
   }
 
-  // Coordinates of cells in standard order (Exodus II convention)
-  // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
-  // For a general polyhedron this will return the node coordinates in
-  // arbitrary order
-  // Number of nodes is vector size divided by number of spatial dimensions
-  virtual
-  void cell_get_coordinates(const Entity_ID cellid,
-                            std::vector<AmanziGeometry::Point> *ccoords) const override {
-    (*ccoords) = nodes_;
-  }
-
 
   //
   // Mesh modification

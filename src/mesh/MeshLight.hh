@@ -255,14 +255,6 @@ class MeshLight {
   virtual void face_get_coordinates(
           const Entity_ID f, std::vector<AmanziGeometry::Point> *fcoords) const = 0;
 
-  // Coordinates of cells in standard order (Exodus II convention)
-  //
-  // NOTE: Standard convention works only for standard cell types in 3D!
-  // For a general polyhedron this will return the node coordinates in
-  // arbitrary order.
-  virtual void cell_get_coordinates(
-          const Entity_ID c, std::vector<AmanziGeometry::Point> *ccoords) const = 0;
-
   
   // ------
   // Counts

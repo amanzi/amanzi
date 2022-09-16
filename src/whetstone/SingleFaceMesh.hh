@@ -97,10 +97,6 @@ class SingleFaceMesh : public AmanziMesh::MeshLight {
     (*fcoords)[1] = cell_coords_[nodes[1]];
   }
 
-  virtual void cell_get_coordinates(
-          const AmanziMesh::Entity_ID c,
-          std::vector<AmanziGeometry::Point> *ccoords) const override { *ccoords = cell_coords_; }
-
   virtual unsigned int num_entities(
           const AmanziMesh::Entity_kind kind,
           const AmanziMesh::Parallel_type ptype) const override {
