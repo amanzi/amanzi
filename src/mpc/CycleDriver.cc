@@ -702,11 +702,18 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_->get_cycle(), S_->get_time())) {
     bool final = false;
 
-    if (fabs( S_->get_time() - tp_end_[num_time_periods_-1]) < 1e-6) {
+    if (fabs(S_->get_time() - tp_end_[num_time_periods_-1]) < 1e-6) {
       final = true;
     }
 
+    // checkpoint uses dt from State, but we do not want to modify state 
+    // in this place and reset dt temporarily
+    double dt_save = S_->Get<double>("dt", Tags::DEFAULT);
+    S_->GetW<double>("dt", Tags::DEFAULT, "dt") = dt;
+
     checkpoint_->Write(*S_, dt, final, &observations_data_);
+
+    S_->GetW<double>("dt", Tags::DEFAULT, "dt") = dt_save;
     
     if (vo_->os_OK(Teuchos::VERB_LOW)) {
       Teuchos::OSTab tab = vo_->getOSTab();
@@ -803,15 +810,15 @@ Teuchos::RCP<State> CycleDriver::Go() {
       if (time_period_id_ < num_time_periods_ - 1) {
         time_period_id_++;
         ResetDriver(time_period_id_); 
-        restart_dT =  tp_dt_[time_period_id_];
+        restart_dT = tp_dt_[time_period_id_];
       }
       else {
         pk_->Initialize();
       }     
     } else {
-      // Initialize the process kernels
       pk_->Initialize();
     }
+    max_dt_ = tp_max_dt_[time_period_id_];
 
     S_->set_initial_time(S_->get_time());
     dt = tsm_->TimeStep(S_->get_time(), restart_dT);
