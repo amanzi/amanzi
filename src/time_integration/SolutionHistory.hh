@@ -115,7 +115,15 @@ template<class Vector>
 void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
   d_.resize(mvec);
 
-  // require data in state
+  // allocate memory
+  nvec_ = Teuchos::rcp(new int(0));
+  times_ = Teuchos::rcp(new Teuchos::Array<double>(mvec));
+  d_.resize(mvec);
+  for (int j=0; j<mvec; ++j) {
+    d_[j] = Teuchos::rcp(new Vector(initvec));
+  }
+
+  // move into state
   if (S_ != Teuchos::null) {
     std::string nvecs_name = name_+"_num_vectors";
 
@@ -136,22 +144,18 @@ void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
     // also need to save nvec_, as this can change dynamically
     S_->Require<int>(nvecs_name, Tags::DEFAULT, name_);
     // note we have to give it data here, because Setup() has already been called
-    nvec_ = Teuchos::rcp(new int(0));
     S_->SetPtr<int>(nvecs_name, Tags::DEFAULT, name_, nvec_);
     S_->GetRecordW(nvecs_name, Tags::DEFAULT, name_).set_initialized();
     S_->GetRecordW(nvecs_name, Tags::DEFAULT, name_).set_io_checkpoint();
 
     std::string td_name = name_+"_time_deltas";
     S_->Require<Teuchos::Array<double>>(mvec, td_name, Tags::DEFAULT, name_);
-    times_ = Teuchos::rcp(new Teuchos::Array<double>(mvec));
     S_->SetPtr<Teuchos::Array<double>>(td_name, Tags::DEFAULT, name_, times_);
     S_->GetRecordW(td_name, Tags::DEFAULT, name_).set_initialized();
     S_->GetRecordW(td_name, Tags::DEFAULT, name_).set_io_checkpoint();
 
     // require time deltas
-    d_.resize(mvec);
     for (int j=0; j<mvec; j++) {
-      d_[j] = Teuchos::rcp(new Vector(initvec));
       S_->Require<Vector>(initvec.Map(), name_, Tag(std::to_string(j)), name_);
       S_->SetPtr<Vector>(name_, Tag(std::to_string(j)), name_, d_[j]);
       S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_initialized();
