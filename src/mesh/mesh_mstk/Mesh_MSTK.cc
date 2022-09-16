@@ -2563,17 +2563,17 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
              (region->get_type() == AmanziGeometry::RegionType::POLYGON)) {
 
       if (celldim == 2) {
+        Entity_ID_List nodes;
+        AmanziGeometry::Point xyz(space_dim);
 
         int ncells = num_entities(CELL, Parallel_type::ALL);              
         for (int ic = 0; ic < ncells; ic++) {
-
-          std::vector<AmanziGeometry::Point> ccoords(space_dim);
-
-          cell_get_coordinates(ic, &ccoords);
+          cell_get_nodes(ic, &nodes);
 
           bool on_plane = true;
-          for (int j = 0; j < ccoords.size(); ++j) {
-            if (!region->inside(ccoords[j])) {
+          for (int j = 0; j < nodes.size(); ++j) {
+            node_get_coordinates(nodes[j], &xyz);
+            if (!region->inside(xyz)) {
               on_plane = false;
               break;
             }

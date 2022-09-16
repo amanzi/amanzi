@@ -581,13 +581,16 @@ Entity_ID_List MeshExtractedManifold::build_set_cells_(
   else if (((rgn->get_type() == AmanziGeometry::RegionType::PLANE) ||
             (rgn->get_type() == AmanziGeometry::RegionType::POLYGON)) && 
            manifold_dim == 2) {
+    Entity_ID_List nodes;
+    AmanziGeometry::Point xyz(space_dim);
+
     for (int c = 0; c < ncells_wghost; ++c) {
-      std::vector<AmanziGeometry::Point> ccoords(space_dim);
-      cell_get_coordinates(c, &ccoords);
+      cell_get_nodes(c, &nodes);
 
       bool on_plane(true);
-      for (int i = 0; i < ccoords.size(); ++i) {
-        if (!rgn->inside(ccoords[i])) {
+      for (int i = 0; i < nodes.size(); ++i) {
+        node_get_coordinates(nodes[i], &xyz);
+        if (!rgn->inside(xyz)) {
           on_plane = false;
           break;
         }
