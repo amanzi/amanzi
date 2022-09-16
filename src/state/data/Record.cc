@@ -58,13 +58,15 @@ void Record::WriteCheckpoint(const Checkpoint& chkp, const Tag& tag, bool post_m
   }
 }
 
-void Record::ReadCheckpoint(const Checkpoint& chkp, const Tag& tag,
+bool Record::ReadCheckpoint(const Checkpoint& chkp, const Tag& tag,
                             const std::vector<std::string>* subfieldnames)
 {
   if (io_checkpoint()) {
     auto name = Keys::getKey(vis_fieldname(), tag);
     data_.ReadCheckpoint(chkp, name, subfieldnames);
+    return true;
   }
+  return false;
 }
 
 bool Record::Initialize(Teuchos::ParameterList& plist,

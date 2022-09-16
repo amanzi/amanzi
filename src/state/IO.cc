@@ -30,6 +30,7 @@
 // Amanzi::State
 #include "State.hh"
 #include "IO.hh"
+#include "EvaluatorPrimary.hh"
 
 namespace Amanzi {
 
@@ -109,7 +110,18 @@ void ReadCheckpoint(const Comm_ptr_type& comm, State& S,
 
   // load the data
   for (auto data = S.data_begin(); data != S.data_end(); ++data) {
-    data->second->ReadCheckpoint(chkp);
+    for (auto& entry : *data->second) {
+      bool read = entry.second->ReadCheckpoint(chkp, entry.first, data->second->subfieldnames());
+      if (read) {
+        entry.second->set_initialized();
+        if (S.HasEvaluator(data->first, entry.first)) {
+          // if there is an evaluator, and it is a primary eval, and we should mark it at changed
+          auto eval = S.GetEvaluatorPtr(data->first, entry.first);
+          auto eval_primary = Teuchos::rcp_dynamic_cast<EvaluatorPrimary_>(eval);
+          if (eval_primary.get()) eval_primary->SetChanged();
+        }
+      }
+    }
   }
 
   chkp.Finalize();

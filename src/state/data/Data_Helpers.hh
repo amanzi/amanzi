@@ -15,6 +15,7 @@
 #define AMANZI_STATE_DATA_HELPERS_HH_
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Array.hpp"
 
 #include "errors.hh"
 
@@ -328,6 +329,33 @@ void Assign<Functions::BoundaryFunction>(Functions::BoundaryFunction& dest,
   Errors::Message msg("Functions::BoundaryFunction: assignment operator not supported.");
   Exceptions::amanzi_throw(msg);
 }
+
+
+// ======================================================================
+// Specializations for Teuchos::Array<double>
+// ======================================================================
+template <>
+void WriteVis<Teuchos::Array<double>>(const Visualization& vis, const Key& fieldname,
+                               const std::vector<std::string>* subfieldnames,
+                               const Teuchos::Array<double>& vec);
+
+template <>
+void WriteCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
+                                      const Key& fieldname,
+                                      const std::vector<std::string>* subfieldnames,
+                                      const Teuchos::Array<double>& vec);
+
+template <>
+void ReadCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
+                                     const Key& fieldname,
+                                     const std::vector<std::string>* subfieldnames,
+                                     Teuchos::Array<double>& vec);
+
+template <>
+bool Initialize<Teuchos::Array<double>>(Teuchos::ParameterList& plist,
+                                 Teuchos::Array<double>& t, const Key& fieldname,
+                                 const std::vector<std::string>* subfieldnames);
+
 
 
 } // namespace Helpers

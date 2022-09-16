@@ -501,6 +501,83 @@ bool Initialize<TreeVector>(Teuchos::ParameterList& plist,
 }
 
 
+// ======================================================================
+// Specializations for Teuchos::Array<double>
+// ======================================================================
+template <>
+void WriteVis<Teuchos::Array<double>>(const Visualization& vis, const Key& fieldname,
+                          const std::vector<std::string>* subfieldnames,
+                          const Teuchos::Array<double>& vec)
+{
+  if (subfieldnames) {
+    AMANZI_ASSERT(vec.size() != subfieldnames->size());
+    for (int i=0; i!=vec.size(); ++i) {
+      vis.Write(fieldname+"_"+(*subfieldnames)[i], vec[i]);
+    }
+  } else {
+    for (int i=0; i!=vec.size(); ++i) {
+      vis.Write(fieldname+"_"+std::to_string(i), vec[i]);
+    }
+  }
+}
+
+template <>
+void WriteCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
+                                 const Key& fieldname,
+                                 const std::vector<std::string>* subfieldnames,
+                                 const Teuchos::Array<double>& vec)
+{
+  if (subfieldnames) {
+    AMANZI_ASSERT(vec.size() != subfieldnames->size());
+    for (int i=0; i!=vec.size(); ++i) {
+      chkp.Write(fieldname+"_"+(*subfieldnames)[i], vec[i]);
+    }
+  } else {
+    for (int i=0; i!=vec.size(); ++i) {
+      chkp.Write(fieldname+"_"+std::to_string(i), vec[i]);
+    }
+  }
+}
+
+template <>
+void ReadCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
+                                const Key& fieldname,
+                                const std::vector<std::string>* subfieldnames,
+                                Teuchos::Array<double>& vec)
+{
+  if (subfieldnames) {
+    AMANZI_ASSERT(vec.size() != subfieldnames->size());
+    for (int i=0; i!=vec.size(); ++i) {
+      chkp.Read(fieldname+"_"+(*subfieldnames)[i], vec[i]);
+    }
+  } else {
+    for (int i=0; i!=vec.size(); ++i) {
+      chkp.Read(fieldname+"_"+std::to_string(i), vec[i]);
+    }
+  }
+}
+
+
+template <>
+bool Initialize<Teuchos::Array<double>>(Teuchos::ParameterList& plist,
+                            Teuchos::Array<double>& t, const Key& fieldname,
+                            const std::vector<std::string>* subfieldnames) {
+  if (plist.isParameter("value")) {
+    auto arr = plist.get<Teuchos::Array<double>>("value");
+    if (t.size() != arr.size()) {
+      Errors::Message msg;
+      msg << "While initializing \"" << fieldname << "\" an array of lenth "
+          << (int)t.size() << " was expected, but an array of length "
+          << (int)arr.size() << " was provided.";
+      throw(msg);
+    }
+    t = arr;
+    return true;
+  }
+  return false;
+}
+
+
 }  // namespace Helpers
 }  // namespace Amanzi
 
