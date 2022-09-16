@@ -710,9 +710,9 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
     // checkpoint uses dt from State, but we do not want to modify state 
     // in this place and reset dt temporarily
     double dt_save = S_->Get<double>("dt", Tags::DEFAULT);
-    S_->GetW<double>("dt", Tags::DEFAULT, "dt") = dt;
-    checkpoint_->Write(*S_, dt, write_type, &observations_data_);
-    S_->GetW<double>("dt", Tags::DEFAULT, "dt") = dt_save;
+    S_->Assign("dt", Tags::DEFAULT, "dt", dt);
+    checkpoint_->Write(*S_, write_type, &observations_data_);
+    S_->Assign("dt", Tags::DEFAULT, "dt", dt_save);
 
     if (vo_->os_OK(Teuchos::VERB_LOW)) {
       Teuchos::OSTab tab = vo_->getOSTab();
