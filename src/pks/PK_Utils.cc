@@ -65,7 +65,7 @@ void StateArchive::Restore(const std::string& passwd)
 /* ******************************************************************
 * Return a copy
 ****************************************************************** */
-const CompositeVector StateArchive::get(const std::string& name)
+const CompositeVector& StateArchive::get(const std::string& name)
 {
   {
     auto it = fields_.find(name);

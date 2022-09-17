@@ -476,7 +476,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<Teuchos::Array<double> >("gradient", grad);
       }
 
-      // -- darcy_flux
+      // -- darcy_flux, more precisely volumetric flow rate
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, velocity", flag);
       if (flag) {
         std::vector<double> velocity;
@@ -674,6 +674,32 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<double>("y0", p)
             .set<Teuchos::Array<double> >("x0", refc)
             .set<Teuchos::Array<double> >("gradient", grad);
+      }
+
+      // -- fracture volumetric flow rate
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, velocity", flag);
+      if (flag) {
+        std::vector<double> velocity;
+        velocity.push_back(GetAttributeValueD_(node, coords_[0].c_str()));
+        velocity.push_back(GetAttributeValueD_(node, coords_[1].c_str()));
+        velocity.push_back(GetAttributeValueD_(node, coords_[2].c_str()));
+
+        Teuchos::ParameterList& flowrate_ic = out_ic.sublist("fracture-volumetric_flow_rate");
+        Teuchos::ParameterList& tmp_list =
+            flowrate_ic.set<bool>("dot with normal", true)
+            .sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "face")
+            .sublist("function")
+            .set<int>("number of dofs", dim_)
+            .set<std::string>("function type", "composite function");
+
+        for (int k = 0; k != dim_; ++k) {
+          std::stringstream dof_str;
+          dof_str << "dof " << k+1 << " function";
+          tmp_list.sublist(dof_str.str()).sublist("function-constant")
+                                         .set<double>("value", velocity[k]);
+        }
       }
 
       // -- total_component_concentration (liquid phase)

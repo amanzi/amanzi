@@ -122,6 +122,8 @@ class InputConverter {
 
  protected:
   // Useful tools wrapping low-level DOM commands
+  // -- root of domain (e.g. document)
+  DOMNode* GetRoot_(const std::string& domain, bool& flag);
 
   // -- generalization of getElementsByTagNames(): returns node
   //    where all tags (list of names in the given string) are unique 

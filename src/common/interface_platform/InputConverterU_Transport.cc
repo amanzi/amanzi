@@ -46,7 +46,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
 
   char *text, *tagname;
   DOMNodeList *node_list, *children;
-  DOMNode* node;
+  DOMNode *node, *root;
 
   // create header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
@@ -169,17 +169,17 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   }
 
   // check if we need to write a dispersivity sublist
-  node = doc_->getElementsByTagName(mm.transcode("materials"))->item(0);
   bool dispersion = (doc_->getElementsByTagName(mm.transcode("dispersion_tensor"))->getLength() > 0) ||
                     (doc_->getElementsByTagName(mm.transcode("tortuosity"))->getLength() > 0);
 
   // create dispersion list
   if (dispersion) {
-    node_list = doc_->getElementsByTagName(mm.transcode("materials"));
-
     Teuchos::ParameterList& mat_list = out_list.sublist("material properties");
 
-    children = node_list->item(0)->getChildNodes();
+    root = GetRoot_(domain, flag);
+    node = GetUniqueElementByTagsString_(root, "materials", flag);
+    children = node->getChildNodes();
+
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
@@ -249,6 +249,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
 
         std::string mat_name = GetAttributeValueS_(inode, "name");
         mat_list.sublist(mat_name) = tmp_list;
+
+        if (domain == "fracture") {
+          for (int n = 0; n < regions.size(); ++n)
+            fracture_regions_.push_back(regions[n]);
+          fracture_regions_.erase(SelectUniqueEntries(fracture_regions_.begin(), fracture_regions_.end()),
+                                  fracture_regions_.end());
+        }
       }
     }
   }
