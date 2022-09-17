@@ -99,7 +99,12 @@ void Visualization::ReadParameters_() {
   if (plist_.isParameter("aliased domains")) {
     auto aliases = plist_.get<Teuchos::Array<std::string>>("aliased domains");
     for (const auto& alias : aliases) {
-      domains_.push_back(alias);
+      KeyTriple ds;
+      if (Keys::splitDomainSet(alias, ds)) {
+        domains_.push_back(std::get<0>(ds));
+      } else {
+        domains_.push_back(alias);
+      }
     }
   }
 }

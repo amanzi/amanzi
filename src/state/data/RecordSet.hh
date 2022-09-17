@@ -31,7 +31,9 @@ class Visualization;
 
 class RecordSet {
  private:
-  using RecordMap = std::unordered_map<Tag, std::shared_ptr<Record>>;
+  // this must be std::map because we loop over these for checkpoint/restart, which
+  // requires a known (alphabetic) order across ranks.
+  using RecordMap = std::map<Tag, std::shared_ptr<Record>>;
 
  public:
   // constructors
@@ -50,7 +52,7 @@ class RecordSet {
   const Key& fieldname() const { return fieldname_; }
   const Key& vis_fieldname() const { return vis_fieldname_; }
   Utils::Units units() const { return units_; }
-  const std::vector<std::string>* subfieldnames() const {
+  std::vector<std::string> const * subfieldnames() const {
     return subfieldnames_.get(); }
 
   // mutate
@@ -67,7 +69,7 @@ class RecordSet {
 
   // pass-throughs for other functionality
   void WriteVis(const Visualization& vis, Tag const * const=nullptr) const;
-  void WriteCheckpoint(const Checkpoint& chkp) const;
+  void WriteCheckpoint(const Checkpoint& chkp, bool post_mortem=false) const;
   void ReadCheckpoint(const Checkpoint& chkp);
   bool Initialize(Teuchos::ParameterList& plist);
   void Assign(const Tag& dest, const Tag& source);

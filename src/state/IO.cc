@@ -30,6 +30,7 @@
 // Amanzi::State
 #include "State.hh"
 #include "IO.hh"
+#include "EvaluatorPrimary.hh"
 
 namespace Amanzi {
 
@@ -55,32 +56,31 @@ void WriteVis(Visualization& vis, const State& S)
           // r->WriteVis(vis, nullptr);
 
           // -- write default tag
+          // Tag tag;
+          // r->second->WriteVis(vis, &tag);
+
+          // -- write default tag if it exists, else write another tag with the
+          // -- same time
           Tag tag;
-          r->second->WriteVis(vis, &tag);
+          if (r->second->HasRecord(tag)) {
+            r->second->WriteVis(vis, &tag);
+          } else {
+            // try to find a record at the same time
+            double time = S.get_time();
+            for (const auto& time_record : S.GetRecordSet("time")) {
+              if (r->second->HasRecord(time_record.first) &&
+                  S.get_time(time_record.first) == time) {
+                r->second->WriteVis(vis, &time_record.first);
+                break;
+              }
+            }
+          }
         }
       }
     }
     vis.WriteRegions();
     vis.WritePartition();
     vis.FinalizeTimestep();
-  }
-}
-
-
-// -----------------------------------------------------------------------------
-// Non-member function for checkpointing.
-// -----------------------------------------------------------------------------
-void WriteCheckpoint(Checkpoint& chkp, const Comm_ptr_type& comm,
-                     const State& S, bool final)
-{
-  if (!chkp.is_disabled()) {
-    // chkp.SetFinal(final);
-    chkp.CreateFile(S.get_cycle());
-    for (auto r = S.data_begin(); r != S.data_end(); ++r) {
-      r->second->WriteCheckpoint(chkp);
-    }
-    chkp.Write("mpi_num_procs", comm->NumProc());
-    chkp.Finalize();
   }
 }
 
@@ -110,7 +110,18 @@ void ReadCheckpoint(const Comm_ptr_type& comm, State& S,
 
   // load the data
   for (auto data = S.data_begin(); data != S.data_end(); ++data) {
-    data->second->ReadCheckpoint(chkp);
+    for (auto& entry : *data->second) {
+      bool read = entry.second->ReadCheckpoint(chkp, entry.first, data->second->subfieldnames());
+      if (read) {
+        entry.second->set_initialized();
+        if (S.HasEvaluator(data->first, entry.first)) {
+          // if there is an evaluator, and it is a primary eval, and we should mark it at changed
+          auto eval = S.GetEvaluatorPtr(data->first, entry.first);
+          auto eval_primary = Teuchos::rcp_dynamic_cast<EvaluatorPrimary_>(eval);
+          if (eval_primary.get()) eval_primary->SetChanged();
+        }
+      }
+    }
   }
 
   chkp.Finalize();

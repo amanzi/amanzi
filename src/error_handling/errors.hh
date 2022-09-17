@@ -29,7 +29,12 @@ Message& operator<<(Message &message, double datum);
 Message& operator<<(Message &message, int datum);
 Message& operator<<(Message &message, std::size_t datum);
 
-class CutTimeStep : public Message {};
+class CutTimeStep : public Message {
+  using Message::Message;
+};
+class TimeStepCrash : public Message {
+  using Message::Message;
+};
 
 }  // namespace Errors
 #endif /* _ERRORS_H_ */

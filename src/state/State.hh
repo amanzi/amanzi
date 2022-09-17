@@ -96,7 +96,6 @@ Example:
 #include "MeshPartition.hh"
 
 // Amanzi::State
-#include "Checkpoint.hh"
 #include "ObservationData.hh"
 #include "RecordSet.hh"
 #include "StateDefs.hh"

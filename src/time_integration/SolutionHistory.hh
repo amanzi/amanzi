@@ -8,8 +8,7 @@
 #include <type_traits>
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_Vector.h"
-#include "Epetra_Map.h"
+#include "Teuchos_Array.hpp"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -75,7 +74,7 @@ class SolutionHistory {
   // Returns the number of solution vectors currently
   // maintained in the history structure THIS.  The number will be
   // between 0 and the value of MVEC used to create the structure.
-  int history_size() { return nvec_; }
+  int history_size() { return *nvec_; }
 
   // copies pointers from our d_ array to the State
   void MoveToState();
@@ -84,9 +83,10 @@ class SolutionHistory {
   void Initialize_(int mvec, const Vector& initvec);
 
  protected:
-  unsigned int nvec_;
-  std::vector<double> times_;
-  std::vector<Teuchos::RCP<Vector> > d_; // divided differences
+  Teuchos::RCP<int> nvec_;
+  Teuchos::RCP<Teuchos::Array<double>> times_;
+  std::vector<Teuchos::RCP<Vector>> d_;
+
   Teuchos::RCP<State> S_;
   std::string name_;
 };
@@ -101,8 +101,7 @@ SolutionHistory<Vector>::SolutionHistory(const std::string& name, int mvec, doub
         Vector const* xdot,
         const Teuchos::RCP<State>& S)
   : S_(S),
-    nvec_(0),
-    name_(name)
+    name_(Keys::cleanName(name, true))
 {
   Initialize_(mvec, x);
   RecordSolution(t, x, xdot);
@@ -114,14 +113,17 @@ SolutionHistory<Vector>::SolutionHistory(const std::string& name, int mvec, doub
 ****************************************************************** */
 template<class Vector>
 void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
-  nvec_ = 0;
   d_.resize(mvec);
-  times_.resize(mvec);
 
-  for (int j=0; j<mvec; j++)
+  // allocate memory
+  nvec_ = Teuchos::rcp(new int(0));
+  times_ = Teuchos::rcp(new Teuchos::Array<double>(mvec));
+  d_.resize(mvec);
+  for (int j=0; j<mvec; ++j) {
     d_[j] = Teuchos::rcp(new Vector(initvec));
+  }
 
-  // require data in state
+  // move into state
   if (S_ != Teuchos::null) {
     std::string nvecs_name = name_+"_num_vectors";
 
@@ -142,14 +144,20 @@ void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
     // also need to save nvec_, as this can change dynamically
     S_->Require<int>(nvecs_name, Tags::DEFAULT, name_);
     // note we have to give it data here, because Setup() has already been called
-    S_->SetPtr<int>(nvecs_name, Tags::DEFAULT, name_, Teuchos::rcp(new int(0)));
+    S_->SetPtr<int>(nvecs_name, Tags::DEFAULT, name_, nvec_);
     S_->GetRecordW(nvecs_name, Tags::DEFAULT, name_).set_initialized();
     S_->GetRecordW(nvecs_name, Tags::DEFAULT, name_).set_io_checkpoint();
+
+    std::string td_name = name_+"_time_deltas";
+    S_->Require<Teuchos::Array<double>>(mvec, td_name, Tags::DEFAULT, name_);
+    S_->SetPtr<Teuchos::Array<double>>(td_name, Tags::DEFAULT, name_, times_);
+    S_->GetRecordW(td_name, Tags::DEFAULT, name_).set_initialized();
+    S_->GetRecordW(td_name, Tags::DEFAULT, name_).set_io_checkpoint();
+
+    // require time deltas
     for (int j=0; j<mvec; j++) {
       S_->Require<Vector>(initvec.Map(), name_, Tag(std::to_string(j)), name_);
-    }
-    MoveToState();
-    for (int j=0; j<mvec; j++) {
+      S_->SetPtr<Vector>(name_, Tag(std::to_string(j)), name_, d_[j]);
       S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_initialized();
       S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_io_checkpoint();
     }
@@ -162,7 +170,7 @@ void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
 ****************************************************************** */
 template<class Vector>
 void SolutionHistory<Vector>::FlushHistory(double t, const Vector& x, Vector const* xdot) {
-  nvec_ = 0;
+  *nvec_ = 0;
   RecordSolution(t, x, xdot);
 }
 
@@ -174,54 +182,54 @@ template<class Vector>
 void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, Vector const* xdot)
 {
   // update the number of vectors
-  nvec_++;
-  if (nvec_ > d_.size()) nvec_ = d_.size();
+  (*nvec_)++;
+  if ((*nvec_) > d_.size()) (*nvec_) = d_.size();
 
   // shift the times and history vectors,
   // while storing the pointer to the last one
-  Teuchos::RCP<Vector> tmp = d_[nvec_-1];
-  for (int j = nvec_ - 1; j >= 1; j--) {
-    times_[j] = times_[j - 1];
+  Teuchos::RCP<Vector> tmp = d_[(*nvec_)-1];
+  for (int j = (*nvec_) - 1; j >= 1; j--) {
+    (*times_)[j] = (*times_)[j - 1];
     d_[j] = d_[j - 1];
   }
 
   // insert the new vector
-  times_[0] = t;
+  (*times_)[0] = t;
   d_[0] = tmp;
   *d_[0] = x;
 
   // update the divided differences
-  for (unsigned int j = 1; j <= nvec_ - 1; j++) {
-    if (times_[0] - times_[j] == 0.0) {
+  for (unsigned int j = 1; j <= (*nvec_) - 1; j++) {
+    if ((*times_)[0] - (*times_)[j] == 0.0) {
       Errors::Message message("SolutionHistory: Time step is too small.");
       Exceptions::amanzi_throw(message);
     }
-    double div = 1.0 / (times_[0] - times_[j]);
+    double div = 1.0 / ((*times_)[0] - (*times_)[j]);
     d_[j]->Update(div, *d_[j - 1], -div);
   }
 
   if (xdot) {
     // update the number of vectors
-    nvec_++;
-    if (nvec_ > d_.size()) nvec_ = d_.size();
+    (*nvec_)++;
+    if ((*nvec_) > d_.size()) (*nvec_) = d_.size();
 
     if (d_.size()>1) {
       // shift the divided differences, except the first; the new vector and
       // time index are the same as the most recent.
-      Teuchos::RCP<Vector> tmp = d_[nvec_-1];
-      for (unsigned int j = nvec_ - 1; j >= 2; j--) {
-        times_[j] = times_[j - 1];
+      Teuchos::RCP<Vector> tmp = d_[(*nvec_)-1];
+      for (unsigned int j = (*nvec_) - 1; j >= 2; j--) {
+        (*times_)[j] = (*times_)[j - 1];
         d_[j] = d_[j - 1];
       }
 
       // the first divided difference (same time index) is the specified derivative.
-      times_[1] = times_[0];
+      (*times_)[1] = (*times_)[0];
       d_[1] = tmp;
       *d_[1] = *xdot;
 
       // update the rest of the divided differences
-      for (unsigned int j = 2; j <= nvec_-1; j++) {
-        double div = 1.0 / (times_[0] - times_[j]);
+      for (unsigned int j = 2; j <= (*nvec_)-1; j++) {
+        double div = 1.0 / ((*times_)[0] - (*times_)[j]);
         d_[j]->Update(div, *d_[j-1], -div);
       }
     }
@@ -238,19 +246,19 @@ void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, Vector c
 template<class Vector>
 void SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x)
 {
-  InterpolateSolution(t, x, nvec_ - 1);
+  InterpolateSolution(t, x, (*nvec_) - 1);
 }
 
 
 template<class Vector>
 void SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x, unsigned int order)
 {
-  AMANZI_ASSERT(order < nvec_);
+  AMANZI_ASSERT(order < (*nvec_));
   AMANZI_ASSERT(order >= 0);
 
   x = *d_[order];
   for (int k = order - 1; k >= 0; k--) {
-    x.Update(1.0, *d_[k], t - times_[k]);
+    x.Update(1.0, *d_[k], t - (*times_)[k]);
   }
 }
 
@@ -268,17 +276,17 @@ void SolutionHistory<Vector>::MostRecentSolution(Vector& x)
 template<class Vector>
 double SolutionHistory<Vector>::MostRecentTime()
 {
-  return times_[0];
+  return (*times_)[0];
 }
 
 
 template<class Vector>
 void SolutionHistory<Vector>::TimeDeltas(std::vector<double>& h)
 {
-  h.resize(nvec_ - 1);
+  h.resize((*nvec_) - 1);
 
-  for (unsigned int j = 0; j <= nvec_ - 2; j++) {
-    h[j] = times_[0] - times_[j + 1];
+  for (unsigned int j = 0; j <= (*nvec_) - 2; j++) {
+    h[j] = (*times_)[0] - (*times_)[j + 1];
   }
 }
 
@@ -290,7 +298,6 @@ template<class Vector>
 void SolutionHistory<Vector>::MoveToState()
 {
   if (S_ != Teuchos::null) {
-    S_->Assign(name_+"_num_vectors", Tags::DEFAULT, name_, (int)nvec_);
     for (int j = 0; j != d_.size(); ++j) {
       S_->SetPtr<Vector>(name_, Tag(std::to_string(j)), name_, d_[j]);
     }

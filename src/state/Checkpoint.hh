@@ -58,6 +58,8 @@ every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be 
 #ifndef AMANZI_STATE_CHECKPOINT_HH_
 #define AMANZI_STATE_CHECKPOINT_HH_
 
+#include <fstream>
+
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
@@ -71,6 +73,13 @@ class State;
 
 class Checkpoint : public IOEvent {
  public:
+
+  enum class WriteType {
+    STANDARD = 0,
+    FINAL,
+    POST_MORTEM
+  };
+
   // constructor for do-it-yourself
   Checkpoint(bool single_file = true);
 
@@ -82,7 +91,8 @@ class Checkpoint : public IOEvent {
   Checkpoint(const std::string& file_or_dirname, const State& S);
 
   // constructor for reading a single field from a specific file
-  Checkpoint(const std::string& filename, const Comm_ptr_type& comm);
+  Checkpoint(const std::string& filename, const Comm_ptr_type& comm,
+             const std::string& domain = "domain");
 
   // public interface for coordinator clients
   template <typename T>
@@ -92,8 +102,7 @@ class Checkpoint : public IOEvent {
   bool Read(const std::string& name, T& t) const { return true; }
 
   void Write(const State& S,
-             double dt,
-             bool final = false,
+             WriteType write_type = WriteType::STANDARD,
              Amanzi::ObservationData* obs_data = nullptr);
 
   void CreateFile(int cycle);
@@ -102,7 +111,6 @@ class Checkpoint : public IOEvent {
 
   // i/o
   void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
-  void WriteAttributes(int comm_size) const;
   void WriteObservations(ObservationData* obs_data);
 
   void ReadAttributes(State& S);
@@ -129,32 +137,55 @@ void Checkpoint::Write<Epetra_Vector>(const std::string& name,
 template <>
 inline void Checkpoint::Write<double>(const std::string& name,
                                       const double& t) const {
-  output_.at("domain")->writeAttrReal(t, name);
+  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  if (!output_.count(domain)) domain = "domain";
+  output_.at(domain)->writeAttrReal(t, name);
 }
 
 template <>
 inline void Checkpoint::Write<int>(const std::string& name,
                                    const int& t) const {
-  output_.at("domain")->writeAttrInt(t, name);
+  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  if (!output_.count(domain)) domain = "domain";
+  output_.at(domain)->writeAttrInt(t, name);
 }
 
 template <>
 inline bool Checkpoint::Read<Epetra_Vector>(const std::string& name,
         Epetra_Vector& t) const {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  if (!output_.count(domain)) domain = "domain";
   return output_.at(domain)->readData(t, name);
 }
 
 template <>
 inline bool Checkpoint::Read<double>(const std::string&name, double& t) const {
-  output_.at("domain")->readAttrReal(t, name);
+  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  if (!output_.count(domain)) domain = "domain";
+  std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
+  std::fstream str(fname);
+  str << "rank (" << output_.at("domain")->Comm()->MyPID() << "/" << output_.at("domain")->Comm()->NumProc()
+      << ") on comm ("
+      << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
+      << ") reading \"" << name << "\" from domain \"" << domain << "\" in file \""
+      << output_.at(domain)->H5DataFilename() << std::endl;
+  output_.at(domain)->readAttrReal(t, name);
   return true; // FIXME
 }
 
 template <>
 inline bool Checkpoint::Read<int>(const std::string& name, int& t) const {
-  output_.at("domain")->readAttrInt(t, name);
-  return true;
+  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
+  if (!output_.count(domain)) domain = "domain";
+  std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
+  std::fstream str(fname);
+  str << "rank (" << output_.at("domain")->Comm()->MyPID() << "/" << output_.at("domain")->Comm()->NumProc()
+      << ") on comm ("
+      << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
+      << ") reading \"" << name << "\" from domain \"" << domain << "\" in file \""
+      << output_.at(domain)->H5DataFilename() << std::endl;
+  output_.at(domain)->readAttrInt(t, name);
+  return true; // FIXME
 }
 
 }  // namespace Amanzi

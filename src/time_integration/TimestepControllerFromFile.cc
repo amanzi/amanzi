@@ -52,7 +52,7 @@ TimestepControllerFromFile::get_timestep(double dt, int iterations) {
   } else {
     // iterations < 0 implies failed timestep
     if (iterations < 0) {
-      Errors::Message m("TimestepController: time step crash");
+      Errors::TimeStepCrash m("TimestepController: prescribed time step size failed.");
       Exceptions::amanzi_throw(m);
     } else if (current_ < dt_history_.size()) {
       new_dt =  dt_history_[current_];

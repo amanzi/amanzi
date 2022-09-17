@@ -144,20 +144,24 @@ void WriteVis<CompositeVector>(const Visualization& vis, const Key& fieldname,
         throw(msg);
       }
 
-      // I feel like this could be fixed with boost zip_iterator, but the
-      // Epetra vectors need iterated over and they aren't, by default,
-      // iterable.
+      std::vector<Key> full_names;
       for (int i = 0; i != vec_c.NumVectors(); ++i) {
-        Key fullname = fieldname + ".cell." + (*subfieldnames)[i];
-        vis.Write(fullname, *vec_c(i));
+        Key full_name = fieldname + "." + (*subfieldnames)[i];
+        full_names.emplace_back(full_name);
       }
+      vis.WriteVector(vec_c, full_names);
 
     } else {
-      for (int i = 0; i != vec_c.NumVectors(); ++i) {
-        std::stringstream name;
-        name << fieldname << ".cell." << i;
-        vis.Write(name.str(), *vec_c(i));
+      std::vector<Key> full_names;
+      if (vec_c.NumVectors() > 1) {
+        for (int i = 0; i != vec_c.NumVectors(); ++i) {
+          Key full_name = fieldname + "." + std::to_string(i);
+          full_names.emplace_back(full_name);
+        }
+      } else {
+        full_names.emplace_back(fieldname);
       }
+      vis.WriteVector(vec_c, full_names);
     }
   }
 }
@@ -239,7 +243,7 @@ bool Initialize<CompositeVector>(
   // ------ Try to set values from a restart file -----
   if (plist.isParameter("restart file")) {
     auto filename = plist.get<std::string>("restart file");
-    Checkpoint chkp(filename, t.Comm());
+    Checkpoint chkp(filename, t.Comm(), Keys::getDomain(fieldname));
     ReadCheckpoint(chkp, fieldname, subfieldnames, t);
     chkp.Finalize();
     initialized = true;
@@ -508,6 +512,85 @@ template <>
 bool Initialize<TreeVector>(Teuchos::ParameterList& plist,
                             TreeVector& t, const Key& fieldname,
                             const std::vector<std::string>* subfieldnames) {
+  return false;
+}
+
+
+// ======================================================================
+// Specializations for Teuchos::Array<double>
+// ======================================================================
+template <>
+void WriteVis<Teuchos::Array<double>>(const Visualization& vis, const Key& fieldname,
+                          const std::vector<std::string>* subfieldnames,
+                          const Teuchos::Array<double>& vec)
+{
+  if (subfieldnames) {
+    AMANZI_ASSERT(vec.size() != subfieldnames->size());
+    for (int i=0; i!=vec.size(); ++i) {
+      vis.Write(fieldname+"_"+(*subfieldnames)[i], vec[i]);
+    }
+  } else {
+    for (int i=0; i!=vec.size(); ++i) {
+      vis.Write(fieldname+"_"+std::to_string(i), vec[i]);
+    }
+  }
+}
+
+template <>
+void WriteCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
+                                 const Key& fieldname,
+                                 const std::vector<std::string>* subfieldnames,
+                                 const Teuchos::Array<double>& vec)
+{
+  if (subfieldnames) {
+    AMANZI_ASSERT(vec.size() != subfieldnames->size());
+    for (int i=0; i!=vec.size(); ++i) {
+      chkp.Write(fieldname+"_"+(*subfieldnames)[i], vec[i]);
+    }
+  } else {
+    for (int i=0; i!=vec.size(); ++i) {
+      chkp.Write(fieldname+"_"+std::to_string(i), vec[i]);
+    }
+  }
+}
+
+template <>
+bool ReadCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
+                                const Key& fieldname,
+                                const std::vector<std::string>* subfieldnames,
+                                Teuchos::Array<double>& vec)
+{
+  bool flag = true;
+  if (subfieldnames) {
+    AMANZI_ASSERT(vec.size() != subfieldnames->size());
+    for (int i=0; i!=vec.size(); ++i) {
+      flag &= chkp.Read(fieldname+"_"+(*subfieldnames)[i], vec[i]);
+    }
+  } else {
+    for (int i=0; i!=vec.size(); ++i) {
+      flag &= chkp.Read(fieldname+"_"+std::to_string(i), vec[i]);
+    }
+  }
+  return flag;
+}
+
+
+template <>
+bool Initialize<Teuchos::Array<double>>(Teuchos::ParameterList& plist,
+                            Teuchos::Array<double>& t, const Key& fieldname,
+                            const std::vector<std::string>* subfieldnames) {
+  if (plist.isParameter("value")) {
+    auto arr = plist.get<Teuchos::Array<double>>("value");
+    if (t.size() != arr.size()) {
+      Errors::Message msg;
+      msg << "While initializing \"" << fieldname << "\" an array of lenth "
+          << (int)t.size() << " was expected, but an array of length "
+          << (int)arr.size() << " was provided.";
+      throw(msg);
+    }
+    t = arr;
+    return true;
+  }
   return false;
 }
 

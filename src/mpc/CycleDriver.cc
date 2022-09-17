@@ -299,7 +299,7 @@ void CycleDriver::Initialize() {
 void CycleDriver::Finalize() {
   if (!checkpoint_->DumpRequested(S_->get_cycle(), S_->get_time())) {
     pk_->CalculateDiagnostics(Tags::DEFAULT);
-    checkpoint_->Write(*S_, 0.0, true, &observations_data_);
+    checkpoint_->Write(*S_, Checkpoint::WriteType::FINAL, &observations_data_);
   }
 }
 
@@ -700,21 +700,20 @@ void CycleDriver::Visualize(bool force, const Tag& tag) {
 ****************************************************************** */
 void CycleDriver::WriteCheckpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_->get_cycle(), S_->get_time())) {
-    bool final = false;
+    Checkpoint::WriteType write_type = Checkpoint::WriteType::STANDARD;
 
-    if (fabs(S_->get_time() - tp_end_[num_time_periods_-1]) < 1e-6) {
-      final = true;
+    if (fabs( S_->get_time() - tp_end_[num_time_periods_-1]) < 1e-6) {
+      write_type = Checkpoint::WriteType::FINAL;
     }
+
 
     // checkpoint uses dt from State, but we do not want to modify state 
     // in this place and reset dt temporarily
     double dt_save = S_->Get<double>("dt", Tags::DEFAULT);
-    S_->GetW<double>("dt", Tags::DEFAULT, "dt") = dt;
+    S_->Assign("dt", Tags::DEFAULT, "dt", dt);
+    checkpoint_->Write(*S_, write_type, &observations_data_);
+    S_->Assign("dt", Tags::DEFAULT, "dt", dt_save);
 
-    checkpoint_->Write(*S_, dt, final, &observations_data_);
-
-    S_->GetW<double>("dt", Tags::DEFAULT, "dt") = dt_save;
-    
     if (vo_->os_OK(Teuchos::VERB_LOW)) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "writing checkpoint file" << std::endl;
@@ -904,7 +903,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     // catch errors to dump two checkpoints -- one as a "last good" checkpoint
     // and one as a "debugging data" checkpoint.
     checkpoint_->set_filebasename("error_checkpoint");
-    checkpoint_->Write(*S_, dt);
+    checkpoint_->Write(*S_);
     throw e;
   }
 #endif

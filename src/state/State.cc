@@ -38,8 +38,9 @@
 #include "Evaluator_Factory.hh"
 #include "EvaluatorCellVolume.hh"
 #include "EvaluatorPrimary.hh"
-#include "State.hh"
 #include "StateDefs.hh"
+#include "State.hh"
+#include "Checkpoint.hh"
 
 namespace Amanzi {
 
@@ -773,7 +774,9 @@ void State::InitializeIOFlags()
       std::regex pattern(blacklist[m]);
       io_block |= std::regex_match(it->first, pattern);
     }
-    for (auto& r : *it->second) r.second->set_io_vis(!io_block);
+    if (io_block) {
+      for (auto& r : *it->second) r.second->set_io_vis(!io_block);
+    }
   }
 
   // adding fields to vis dump
