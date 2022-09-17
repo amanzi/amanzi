@@ -1013,6 +1013,13 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
         tmp.sublist("diffusion operator")
            .sublist("preconditioner").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
       }
+
+      Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
+      mesh_list.sublist("submesh").set<Teuchos::Array<std::string> >("regions", aux)
+                                  .set<std::string>("extraction method", "manifold mesh")
+                                  .set<std::string>("domain name", "fracture");
+
+      if (dim_ == 3) mesh_list.sublist("expert").set<bool>("request edges", true);
     }
 
     if (basename == "coupled flow and energy") {

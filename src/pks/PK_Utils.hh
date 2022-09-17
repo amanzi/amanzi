@@ -38,7 +38,7 @@ class StateArchive {
   void Restore(const std::string& passwd);
 
   // access
-  const CompositeVector get(const std::string& name);
+  const CompositeVector& get(const std::string& name);
 
  private:
   Teuchos::RCP<State> S_;

@@ -39,7 +39,6 @@ void RecordSet::WriteCheckpoint(const Checkpoint& chkp, bool post_mortem) const 
 void RecordSet::ReadCheckpoint(const Checkpoint& chkp) {
   for (auto& e : records_) {
     e.second->ReadCheckpoint(chkp, e.first, subfieldnames());
-    e.second->set_initialized();
   }
 }
 bool RecordSet::Initialize(Teuchos::ParameterList& plist) {

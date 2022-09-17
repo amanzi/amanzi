@@ -46,10 +46,10 @@ void WriteCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
 }
 
 template <>
-void ReadCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
+bool ReadCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
                             const std::vector<std::string>* subfieldnames,
                             double& t) {
-  chkp.Read(fieldname, t);
+  return chkp.Read(fieldname, t);
 }
 
 template <>
@@ -80,10 +80,10 @@ void WriteCheckpoint<int>(const Checkpoint& chkp, const Key& fieldname,
 }
 
 template <>
-void ReadCheckpoint<int>(const Checkpoint& chkp, const Key& fieldname,
+bool ReadCheckpoint<int>(const Checkpoint& chkp, const Key& fieldname,
                          const std::vector<std::string>* subfieldnames,
                          int& t) {
-  chkp.Read(fieldname, t);
+  return chkp.Read(fieldname, t);
 }
 
 template <>
@@ -201,10 +201,11 @@ void WriteCheckpoint<CompositeVector>(const Checkpoint& chkp,
 }
 
 template <>
-void ReadCheckpoint<CompositeVector>(const Checkpoint& chkp,
+bool ReadCheckpoint<CompositeVector>(const Checkpoint& chkp,
                                      const Key& fieldname,
                                      const std::vector<std::string>* subfieldnames,
                                      CompositeVector& vec) {
+  bool flag(true);
   for (const auto& cname : vec) {
     auto& vec_c = *vec.ViewComponent(cname, false);
 
@@ -225,10 +226,11 @@ void ReadCheckpoint<CompositeVector>(const Checkpoint& chkp,
       for (int i = 0; i != vec_c.NumVectors(); ++i) {
         std::stringstream name;
         name << fieldname << "." << cname << "." << i;
-        chkp.Read(name.str(), *vec_c(i));
+        flag &= chkp.Read(name.str(), *vec_c(i));
       }
     }
   }
+  return flag;
 }
 
 template <>
@@ -334,14 +336,25 @@ bool Initialize<CompositeVector>(
       const Epetra_MultiVector& vel_f = *vel_vec->ViewComponent("face");
 
       // Dot the velocity with the normal
+      // -- two branches: single flux per face, multiple fluxes
+      int dir;
       AmanziGeometry::Point vel(dim);
       for (int f = 0; f != nfaces_owned; ++f) {
-        const AmanziGeometry::Point& normal = t.Mesh()->face_normal(f);
         for (int i = 0; i < dim; ++i) vel[i] = vel_f[i][f]; 
 
+        int ndofs = fmap.ElementSize(f);
         int g = fmap.FirstPointInElement(f);
-        for (int i = 0; i < fmap.ElementSize(f); ++i) {
-          dat_f[0][g + i] = vel * normal; 
+        if (ndofs == 1) {
+          const AmanziGeometry::Point& normal = t.Mesh()->face_normal(f);
+          dat_f[0][g] = vel * normal; 
+        } else {
+          AmanziMesh::Entity_ID_List cells;
+          t.Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+
+          for (int i = 0; i < ndofs; ++i) {
+            const AmanziGeometry::Point& normal = t.Mesh()->face_normal(f, false, cells[i], &dir);
+            dat_f[0][g + i] = (vel * normal) * dir; 
+          }
         }
       }
       initialized = true;
@@ -385,11 +398,11 @@ void WriteCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
 }
 
 template <>
-void ReadCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
+bool ReadCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
                                    const Key& fieldname,
                                    const std::vector<std::string>* subfieldnames,
                                    Epetra_Vector& vec) {
-  chkp.Read(fieldname, vec);
+  return chkp.Read(fieldname, vec);
 }
 
 template <>
@@ -477,20 +490,22 @@ void WriteCheckpoint<TreeVector>(const Checkpoint& chkp,
 }
 
 template <>
-void ReadCheckpoint<TreeVector>(const Checkpoint& chkp,
+bool ReadCheckpoint<TreeVector>(const Checkpoint& chkp,
                                 const Key& fieldname,
                                 const std::vector<std::string>* subfieldnames,
                                 TreeVector& vec)
 {
+  bool flag(true);
   int i = 0;
   for (const auto& subvec : vec) {
     std::string subvec_name = fieldname+"_"+std::to_string(i);
-    ReadCheckpoint(chkp, subvec_name, nullptr, *subvec);
+    flag &= ReadCheckpoint(chkp, subvec_name, nullptr, *subvec);
     ++i;
   }
   if (vec.Data() != Teuchos::null) {
-    ReadCheckpoint(chkp, fieldname+"_data", nullptr, *vec.Data());
+    flag &= ReadCheckpoint(chkp, fieldname+"_data", nullptr, *vec.Data());
   }
+  return flag;
 }
 
 template <>
@@ -540,21 +555,23 @@ void WriteCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
 }
 
 template <>
-void ReadCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
+bool ReadCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
                                 const Key& fieldname,
                                 const std::vector<std::string>* subfieldnames,
                                 Teuchos::Array<double>& vec)
 {
+  bool flag = true;
   if (subfieldnames) {
     AMANZI_ASSERT(vec.size() != subfieldnames->size());
     for (int i=0; i!=vec.size(); ++i) {
-      chkp.Read(fieldname+"_"+(*subfieldnames)[i], vec[i]);
+      flag &= chkp.Read(fieldname+"_"+(*subfieldnames)[i], vec[i]);
     }
   } else {
     for (int i=0; i!=vec.size(); ++i) {
-      chkp.Read(fieldname+"_"+std::to_string(i), vec[i]);
+      flag &= chkp.Read(fieldname+"_"+std::to_string(i), vec[i]);
     }
   }
+  return flag;
 }
 
 

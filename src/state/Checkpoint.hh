@@ -99,7 +99,7 @@ class Checkpoint : public IOEvent {
   void Write(const std::string& name, const T& t) const;
 
   template <typename T>
-  void Read(const std::string& name, T& t) const {};
+  bool Read(const std::string& name, T& t) const { return true; }
 
   void Write(const State& S,
              WriteType write_type = WriteType::STANDARD,
@@ -151,15 +151,15 @@ inline void Checkpoint::Write<int>(const std::string& name,
 }
 
 template <>
-inline void Checkpoint::Read<Epetra_Vector>(const std::string& name,
+inline bool Checkpoint::Read<Epetra_Vector>(const std::string& name,
         Epetra_Vector& t) const {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
   if (!output_.count(domain)) domain = "domain";
-  output_.at(domain)->readData(t, name);
+  return output_.at(domain)->readData(t, name);
 }
 
 template <>
-inline void Checkpoint::Read<double>(const std::string&name, double& t) const {
+inline bool Checkpoint::Read<double>(const std::string&name, double& t) const {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
   if (!output_.count(domain)) domain = "domain";
   std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
@@ -170,10 +170,11 @@ inline void Checkpoint::Read<double>(const std::string&name, double& t) const {
       << ") reading \"" << name << "\" from domain \"" << domain << "\" in file \""
       << output_.at(domain)->H5DataFilename() << std::endl;
   output_.at(domain)->readAttrReal(t, name);
+  return true; // FIXME
 }
 
 template <>
-inline void Checkpoint::Read<int>(const std::string& name, int& t) const {
+inline bool Checkpoint::Read<int>(const std::string& name, int& t) const {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
   if (!output_.count(domain)) domain = "domain";
   std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
@@ -184,6 +185,7 @@ inline void Checkpoint::Read<int>(const std::string& name, int& t) const {
       << ") reading \"" << name << "\" from domain \"" << domain << "\" in file \""
       << output_.at(domain)->H5DataFilename() << std::endl;
   output_.at(domain)->readAttrInt(t, name);
+  return true; // FIXME
 }
 
 }  // namespace Amanzi

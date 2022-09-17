@@ -64,9 +64,9 @@ void WriteCheckpoint(const Checkpoint& chkp, const Key& fieldname,
 // Default simply dispatches to Checkpoint.  This fails to compile! if not
 // either specifically implemented in Checkpoint class or specialized below.
 template <typename T>
-void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+bool ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
                     const std::vector<std::string>* subfieldnames, T& t) {
-  UserReadCheckpoint(chkp, fieldname, subfieldnames, t);
+  return UserReadCheckpoint(chkp, fieldname, subfieldnames, t);
 }
 
 
@@ -136,7 +136,7 @@ void WriteCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
 
 
 template <>
-void ReadCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
+bool ReadCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
                             const std::vector<std::string>* subfieldnames,
                             double& t);
 
@@ -156,7 +156,7 @@ void WriteCheckpoint<int>(const Checkpoint& chkp, const Key& fieldname,
                           const int& t);
 
 template <>
-void ReadCheckpoint<int>(const Checkpoint &chkp, const Key &fieldname,
+bool ReadCheckpoint<int>(const Checkpoint &chkp, const Key &fieldname,
                          const std::vector<std::string>* subfieldnames,
                          int &t);
 
@@ -181,7 +181,7 @@ void WriteCheckpoint<CompositeVector>(const Checkpoint& chkp,
                                       const CompositeVector& vec);
 
 template <>
-void ReadCheckpoint<CompositeVector>(const Checkpoint& chkp,
+bool ReadCheckpoint<CompositeVector>(const Checkpoint& chkp,
                                      const Key& fieldname,
                                      const std::vector<std::string>* subfieldnames,
                                      CompositeVector& vec);
@@ -207,7 +207,7 @@ void WriteCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
         const Epetra_Vector& vec);
 
 template <>
-void ReadCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
+bool ReadCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
         const Key& fieldname,
         const std::vector<std::string>* subfieldnames,
         Epetra_Vector& vec);
@@ -231,7 +231,7 @@ void WriteCheckpoint<TreeVector>(const Checkpoint& chkp,
                                       const TreeVector& vec);
 
 template <>
-void ReadCheckpoint<TreeVector>(const Checkpoint& chkp,
+bool ReadCheckpoint<TreeVector>(const Checkpoint& chkp,
                                      const Key& fieldname,
                                      const std::vector<std::string>* subfieldnames,
                                      TreeVector& vec);
@@ -256,9 +256,9 @@ void WriteCheckpoint<AmanziGeometry::Point>(const Checkpoint& chkp, const Key& f
                                             const AmanziGeometry::Point& p) {}
 
 template <> inline
-void ReadCheckpoint<AmanziGeometry::Point>(const Checkpoint& chkp, const Key& fieldname,
+bool ReadCheckpoint<AmanziGeometry::Point>(const Checkpoint& chkp, const Key& fieldname,
                                            const std::vector<std::string>* subfieldnames,
-                                           AmanziGeometry::Point& p) {}
+                                           AmanziGeometry::Point& p) { return true; }
 
 template <>
 bool Initialize<AmanziGeometry::Point>(Teuchos::ParameterList& plist,
@@ -280,9 +280,9 @@ void WriteCheckpoint<TensorVector>(const Checkpoint& chkp, const Key& fieldname,
                                    const TensorVector& tensor) {}
 
 template <> inline
-void ReadCheckpoint<TensorVector>(const Checkpoint& chkp, const Key& fieldname,
+bool ReadCheckpoint<TensorVector>(const Checkpoint& chkp, const Key& fieldname,
                                   const std::vector<std::string>* subfieldnames,
-                                  TensorVector& tensor) {}
+                                  TensorVector& tensor) { return true; }
 
 template <> inline
 bool Initialize<TensorVector>(Teuchos::ParameterList& plist,
@@ -309,11 +309,11 @@ WriteCheckpoint<Functions::BoundaryFunction>(const Checkpoint& chkp,
         const Functions::BoundaryFunction& bc) {}
 
 template <> inline
-void
+bool
 ReadCheckpoint<Functions::BoundaryFunction>(const Checkpoint& chkp,
         const Key& fieldname,
         const std::vector<std::string>* subfieldnames,
-        Functions::BoundaryFunction& bc) {}
+        Functions::BoundaryFunction& bc) { return true; }
 
 template <> inline
 bool
@@ -346,7 +346,7 @@ void WriteCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
                                       const Teuchos::Array<double>& vec);
 
 template <>
-void ReadCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
+bool ReadCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
                                      const Key& fieldname,
                                      const std::vector<std::string>* subfieldnames,
                                      Teuchos::Array<double>& vec);
