@@ -51,10 +51,10 @@ void UserWriteCheckpoint(const Amanzi::Checkpoint& chkp,
                          const std::vector<std::string>* subfieldnames,
                          const MyPointList& vec) {
 }
-void UserReadCheckpoint(const Amanzi::Checkpoint& chkp,
+bool UserReadCheckpoint(const Amanzi::Checkpoint& chkp,
                         const Amanzi::Key& fieldname,
                         const std::vector<std::string>* subfieldnames,
-                        MyPointList& vec) {}
+                        MyPointList& vec) { return true; }
 
 
 TEST(STATE_EXTENSIBILITY_CREATION) {

@@ -64,7 +64,7 @@ class Data_Intf {
                        const std::vector<std::string>* subfieldnames) const = 0;
 
   virtual
-  void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+  bool ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
                       const std::vector<std::string>* subfieldnames) const = 0;
 
   virtual
@@ -128,10 +128,10 @@ template <typename T> class Data_Impl : public Data_Intf {
   }
 
   virtual
-  void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+  bool ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
                       const std::vector<std::string>* subfieldnames) const override {
 
-    ::Amanzi::Helpers::ReadCheckpoint(chkp, fieldname, subfieldnames, *t_);
+    return ::Amanzi::Helpers::ReadCheckpoint(chkp, fieldname, subfieldnames, *t_);
   }
 
   virtual

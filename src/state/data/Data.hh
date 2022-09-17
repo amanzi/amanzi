@@ -173,14 +173,14 @@ class Data {
     p_->WriteCheckpoint(chkp, fieldname, subfieldnames);
   }
 
-  void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+  bool ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
                       const std::vector<std::string>* subfieldnames) const {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or State::CreateData()";
       throw(msg);
     }
-    p_->ReadCheckpoint(chkp, fieldname, subfieldnames);
+    return p_->ReadCheckpoint(chkp, fieldname, subfieldnames);
   }
 
   bool Initialize(Teuchos::ParameterList& plist, const Key& fieldname,

@@ -63,7 +63,8 @@ void Record::ReadCheckpoint(const Checkpoint& chkp, const Tag& tag,
 {
   if (io_checkpoint()) {
     auto name = Keys::getKey(vis_fieldname(), tag);
-    data_.ReadCheckpoint(chkp, name, subfieldnames);
+    bool flag = data_.ReadCheckpoint(chkp, name, subfieldnames);
+    if (flag) set_initialized();
   }
 }
 

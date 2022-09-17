@@ -89,7 +89,7 @@ class Checkpoint : public IOEvent {
   void Write(const std::string& name, const T& t) const;
 
   template <typename T>
-  void Read(const std::string& name, T& t) const {};
+  bool Read(const std::string& name, T& t) const { return true; }
 
   void Write(const State& S,
              double dt,
@@ -139,20 +139,22 @@ inline void Checkpoint::Write<int>(const std::string& name,
 }
 
 template <>
-inline void Checkpoint::Read<Epetra_Vector>(const std::string& name,
+inline bool Checkpoint::Read<Epetra_Vector>(const std::string& name,
         Epetra_Vector& t) const {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
-  output_.at(domain)->readData(t, name);
+  return output_.at(domain)->readData(t, name);
 }
 
 template <>
-inline void Checkpoint::Read<double>(const std::string&name, double& t) const {
+inline bool Checkpoint::Read<double>(const std::string&name, double& t) const {
   output_.at("domain")->readAttrReal(t, name);
+  return true; // FIXME
 }
 
 template <>
-inline void Checkpoint::Read<int>(const std::string& name, int& t) const {
+inline bool Checkpoint::Read<int>(const std::string& name, int& t) const {
   output_.at("domain")->readAttrInt(t, name);
+  return true;
 }
 
 }  // namespace Amanzi

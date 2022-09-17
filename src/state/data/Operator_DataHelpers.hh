@@ -42,14 +42,14 @@ UserWriteCheckpoint(const Checkpoint& chkp, const Key& fieldname,
                     const Operators::BCs& bc) {}
 
 inline
-void UserReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
-                   const std::vector<std::string>* subfieldnames,
-                   Operators::BCs& bc) {}
+bool UserReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+                        const std::vector<std::string>* subfieldnames,
+                        Operators::BCs& bc) { return true; }
 
 inline
 bool UserInitialize(Teuchos::ParameterList& plist,
-                           Operators::BCs& bc, const Key& fieldname,
-                           const std::vector<std::string>* subfieldnames) {
+                    Operators::BCs& bc, const Key& fieldname,
+                    const std::vector<std::string>* subfieldnames) {
   return true;
 }
 
@@ -68,9 +68,9 @@ void UserWriteCheckpoint(const Checkpoint& chkp, const Key& fieldname,
                                     const Operators::Op& vec) {}
 
 inline
-void UserReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
-                                   const std::vector<std::string>* subfieldnames,
-                                   Operators::Op& vec) {}
+bool UserReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+                        const std::vector<std::string>* subfieldnames,
+                        Operators::Op& vec) { return true; }
 
 inline
 bool UserInitialize(Teuchos::ParameterList& plist,
@@ -94,9 +94,9 @@ void UserWriteCheckpoint(const Checkpoint& chkp, const Key& fieldname,
                                           const Operators::Operator& global_operator) {}
 
 inline
-void UserReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
-                                         const std::vector<std::string>* subfieldnames,
-                                         Operators::Operator& global_operator) {}
+bool UserReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+                        const std::vector<std::string>* subfieldnames,
+                        Operators::Operator& global_operator) { return true; }
 
 inline
 bool UserInitialize(Teuchos::ParameterList& plist,

@@ -688,7 +688,6 @@ void State::InitializeFields(const Tag& tag)
             tmp->SetChanged();
           }
         }
-        it->second->initializeTags();
       }
 
       if (vo.os_OK(Teuchos::VERB_HIGH)) {

@@ -43,7 +43,7 @@ void UserWriteCheckpoint(const Amanzi::Checkpoint& chkp,
                          const Amanzi::Key& fieldname,
                          const std::vector<std::string>* subfieldnames,
                          const Vec& vec) {}
-void UserReadCheckpoint(const Amanzi::Checkpoint& chkp,
+bool UserReadCheckpoint(const Amanzi::Checkpoint& chkp,
                         const Amanzi::Key& fieldname,
                         const std::vector<std::string>* subfieldnames,
-                        Vec& vec) {}
+                        Vec& vec) { return true; }
