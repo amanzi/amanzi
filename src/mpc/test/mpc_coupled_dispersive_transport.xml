@@ -29,6 +29,12 @@
         <Parameter name="high coordinate" type="Array(double)" value="{9.9e+98, 9.9e+98, 9.9e+98}"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="Well">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 3.01, 0.0, 3.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{3.12, 6.0, 3.0}"/>
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="FRACTURE_NETWORK_INTERNAL">
       <ParameterList name="region: logical">
         <Parameter name="operation" type="string" value="union"/>
@@ -70,7 +76,7 @@
             </ParameterList>
           </ParameterList>
 	</ParameterList>
-	<Parameter name="initial time step" type="double" value="3.0e+3"/>
+	<Parameter name="initial time step" type="double" value="1.0"/>
 	<Parameter name="start period time" type="double" value="0.0"/>
 	<Parameter name="end period time" type="double" value="1.0e+5"/>
         <Parameter name="maximum time step" type="double" value="3.0e+3"/>
@@ -79,11 +85,12 @@
     </ParameterList>
 
     <Parameter name="component names" type="Array(string)" value="{tracer}"/>
+    <Parameter name="component molar masses" type="Array(double)" value="{0.0}"/>
     
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{0.0}"/>
       <Parameter name="initial time step" type="Array(double)" value="{1.0}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{10.0}"/>
+      <!--Parameter name="maximum time step" type="Array(double)" value="{1000.0}"/-->
     </ParameterList>
 
     <ParameterList name="verbose object">
@@ -118,7 +125,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.1"/>
+                <Parameter name="value" type="double" value="0.02"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -191,7 +198,7 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-06"/>
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
@@ -343,7 +350,8 @@
     <ParameterList name="PCG with Hypre AMG">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="error tolerance" type="double" value="1.0e-16"/>
+        <Parameter name="error tolerance" type="double" value="1.0e-30"/>
+        <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
@@ -363,8 +371,8 @@
     <ParameterList name="transport matrix">
       <Parameter name="PK type" type="string" value="transport"/>
       <Parameter name="domain name" type="string" value="domain"/>      
-      <Parameter name="cfl" type="double" value="0.5"/>   
-      <Parameter name="spatial discretization order" type="int" value="1"/>   
+      <Parameter name="cfl" type="double" value="0.5"/>
+      <Parameter name="spatial discretization order" type="int" value="1"/>
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="transport subcycling" type="bool" value="false"/>      
       <Parameter name="solver" type="string" value="PCG with Hypre AMG"/>
@@ -388,8 +396,8 @@
           <Parameter name="regions" type="Array(string)" value="{All}"/>
           <Parameter name="model" type="string" value="Bear"/>
           <ParameterList name="parameters for Bear">
-            <Parameter name="alpha_l" type="double" value="1.0e-8"/>
-            <Parameter name="alpha_t" type="double" value="1.0e-8"/>
+            <Parameter name="alpha_l" type="double" value="0.0"/>
+            <Parameter name="alpha_t" type="double" value="0.0"/>
           </ParameterList>
           <Parameter name="aqueous tortuosity" type="double" value="1.0"/>
         </ParameterList>
@@ -418,7 +426,7 @@
       <Parameter name="PK type" type="string" value="transport"/>
       <Parameter name="domain name" type="string" value="fracture"/>      
       <Parameter name="cfl" type="double" value="0.5"/>   
-      <Parameter name="spatial discretization order" type="int" value="1"/>   
+      <Parameter name="spatial discretization order" type="int" value="1"/> 
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="transport subcycling" type="bool" value="false"/>
       <Parameter name="solver" type="string" value="PCG with Hypre AMG"/>
@@ -443,8 +451,8 @@
           <Parameter name="regions" type="Array(string)" value="{All}"/>
           <Parameter name="model" type="string" value="Bear"/>
           <ParameterList name="parameters for Bear">
-            <Parameter name="alpha_l" type="double" value="1.0e-8"/>
-            <Parameter name="alpha_t" type="double" value="1.0e-8"/>
+            <Parameter name="alpha_l" type="double" value="0.0"/>
+            <Parameter name="alpha_t" type="double" value="0.0"/>
           </ParameterList>
           <Parameter name="aqueous tortuosity" type="double" value="1.0"/>
         </ParameterList>
@@ -474,14 +482,29 @@
 	      <Parameter name="regions" type="Array(string)" value="{SurfaceLeft}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
 	      <ParameterList name="boundary concentration">
-		<ParameterList name="function-constant">
-		  <Parameter name="value" type="double" value="1.0"/>
-		</ParameterList>
+                <ParameterList name="function-exprtk">
+                  <Parameter name="number of arguments" type="int" value="1"/>
+                  <Parameter name="formula" type="string" value="1.0"/>
+                </ParameterList>
 	      </ParameterList>
 	    </ParameterList>
 	  </ParameterList>
 	</ParameterList>
       </ParameterList>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="observation data">
+    <Parameter name="observation output filename" type="string" value="observation.out"/>
+    <ParameterList name="obl 1">
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="domain name" type="string" value="fracture"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
+      <Parameter name="region" type="string" value="Well"/>
     </ParameterList>
   </ParameterList>
 

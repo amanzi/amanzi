@@ -55,6 +55,16 @@ using namespace Amanzi::AmanziGeometry;
         .sublist("fracture-normal_diffusion").sublist("function").sublist("All").sublist("function")
         .sublist("function-constant").set<double>("value", normal_diff);
 
+  if (icase == 4) {
+    plist->sublist("PKs").sublist("transport fracture")
+          .sublist("boundary conditions").sublist("concentration")
+	  .sublist("tracer").sublist("BC 0").sublist("boundary concentration")
+          .sublist("function-exprtk").set<std::string>("formula", "if(t > 1.0, 0.0, 1.0)");
+
+    plist->sublist("cycle driver").sublist("time periods").sublist("TP 0")
+          .set<double>("end period time", 2.4e+5);
+  }
+
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
@@ -63,7 +73,7 @@ using namespace Amanzi::AmanziGeometry;
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({Framework::MSTK}));
-  auto mesh = factory.create(0.0, 0.0, 0.0, 12.0, 1.0, 6.0, 96, 1, 8);
+  auto mesh = factory.create(0.0, 0.0, 1.0, 12.0, 1.0, 5.0, 96, 1, 32);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -99,8 +109,7 @@ using namespace Amanzi::AmanziGeometry;
   double b = (*S->Get<CompositeVector>("fracture-aperture").ViewComponent("cell"))[0][0];
   double kn = (*S->Get<CompositeVector>("fracture-normal_diffusion").ViewComponent("cell"))[0][0];
 
-  double t(1e+5), Df(mol_diff_f / b), Dm(mol_diff_m);
-  CHECK_CLOSE(kn, Dm / 2, 1e-12);
+  double t(1e+5), Df(mol_diff_f), Dm(mol_diff_m);
 
   for (int c = 0; c < tcc_f.MyLength(); ++c) {
     const auto& xc = mesh_fracture->cell_centroid(c);
@@ -114,7 +123,7 @@ using namespace Amanzi::AmanziGeometry;
       double Tm = u_f * t / b - xc[0];
       if (Tm > 0.0) err += fabs(tcc_f[0][c] - std::erfc(xc[0] * kn * std::sqrt(b / (u_f * Dm * Tm)) / 2));
     } else{
-      std::cout << xc[0] << " " << tcc_f[0][c] << std::endl;
+      // std::cout << xc[0] << " " << tcc_f[0][c] << std::endl;
     }
   }
   double err_tmp(err);
@@ -133,16 +142,21 @@ using namespace Amanzi::AmanziGeometry;
 
 
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_0) {
-  // no coupling, only diffusion
+  // (3) diffusion/dispersion in fracture Df
   double err = RunTest(1, 0.0, 1e-6, 0.0, 0.0);
-  CHECK(err < 3.0e-3);
+  CHECK(err < 5.0e-4);
 }
 
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_1) {
-  // d(a C)/dt + d(u C)/dx - (Dm/2) (Cm - C) = 0
-  // kn = Dm/2 for the analytic solution
-  double err = RunTest(2, 1.0e-5, 0.0, 1.0e-7, 1.0e-7/2);
-  CHECK(err < 2.0e-2);
+  // d(a C)/dt + d(u C)/dx - (phi * Dm / (a/2)) (Cm - C) = 0
+  double a = 0.02;
+  // (2) velocity * aperture = 1e-4 * a
+  double u = 1e-4 * a;
+  // (4) molecular diffusion coefficient in matrix, Dm = 1e-7
+  // (5) normal diffusion coeffcient, kn = phi * Dm / (a/2) = 0.2 * 1e-7 / (a/2)
+  double kn = 0.2 * 1e-7 / (a / 2);
+  double err = RunTest(2, u, 0.0, 1.0e-7, kn);
+  CHECK(err < 7.0e-2);
 }
 
 /*
@@ -150,6 +164,19 @@ TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_2) {
   // d(a C)/dt + d(u C)/dx - a Df d^2(C)/dx^2 - (Dm/2) (Cm - C) = 0
   double err = RunTest(3, 1.0e-5, 1.0e-5, 1.0e-6, 1.0e-6/2);
   CHECK(err < 100);
+}
+*/
+
+/*
+TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_3) { 
+  double a = 0.02;
+  // (2) velocity * aperture = 1e-4 * a
+  double u = 1e-4 * a;
+  // (4) molecular diffusion coefficient in matrix, Dm = 2e-6
+  // (5) normal diffusion coeffcient, kn = phi * Dm / (a/2) = 0.2 * 2e-6 / (a/2)
+  double kn = 0.2 * 2e-6 / (a / 2);
+  double err = RunTest(4, u, 0.0, 2.0e-6, kn);
+  // CHECK(err < 2.0e-2);
 }
 */
 

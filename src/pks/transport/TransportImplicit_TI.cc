@@ -46,7 +46,7 @@ void TransportImplicit_PK::FunctionalResidual(
     double md;
     CalculateDispersionTensor_(*transport_phi, *wc_c);
     FindDiffusionValue(component_names_[current_component_], &md, &phase);
-    if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, sat_c);
+    if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, sat_c, *wc_c);
 
     op_diff_->global_operator()->Init();
     op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);

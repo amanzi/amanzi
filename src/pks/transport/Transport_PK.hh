@@ -146,7 +146,9 @@ class Transport_PK : public PK_Physical {
 
   void CalculateDiffusionTensor_(
       double md, int phase,
-      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
+      const Epetra_MultiVector& porosity,
+      const Epetra_MultiVector& saturation,
+      const Epetra_MultiVector& water_content);
 
   int FindDiffusionValue(const std::string& tcc_name, double* md, int* phase);
 
