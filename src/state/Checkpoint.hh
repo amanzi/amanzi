@@ -1,9 +1,9 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! Manages checkpoint/restart capability.
 /*
-  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
@@ -41,11 +41,11 @@ Example:
 .. code-block:: xml
 
   <ParameterList name="checkpoint">
-    <Parameter name="cycles start period stop" type="Array(int)" value="{{0, 100, -1}}" />
-    <Parameter name="cycles" type="Array(int)" value="{{999, 1001}}" />
-    <Parameter name="times start period stop 0" type="Array(double)" value="{{0.0, 10.0, 100.0}}"/>
-    <Parameter name="times start period stop 1" type="Array(double)" value="{{100.0, 25.0, -1.0}}"/>
-    <Parameter name="times" type="Array(double)" value="{{101.0, 303.0, 422.0}}"/>
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+    <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
   </ParameterList>
 
 In this example, checkpoint files are written when the cycle number is
