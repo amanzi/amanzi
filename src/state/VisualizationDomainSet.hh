@@ -29,12 +29,12 @@ Example:
   <ParameterList name="visualization">
     <Parameter name="file name base" type="string" value="visdump_data"/>
 
-    <Parameter name="cycles start period stop" type="Array(int)" value="{{0, 100, -1}}" />
-    <Parameter name="cycles" type="Array(int)" value="{{999, 1001}}" />
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+    <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
 
-    <Parameter name="times start period stop 0" type="Array(double)" value="{{0.0, 10.0, 100.0}}"/>
-    <Parameter name="times start period stop 1" type="Array(double)" value="{{100.0, 25.0, -1.0}}"/>
-    <Parameter name="times" type="Array(double)" value="{{101.0, 303.0, 422.0}}"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
 
     <Parameter name="dynamic mesh" type="bool" value="false"/>
   </ParameterList>
