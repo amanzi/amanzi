@@ -108,7 +108,9 @@ class Mesh : public MeshLight {
   virtual Teuchos::RCP<const Mesh> parent() const { return parent_; }
 
   // Usually this is *this, but not necessarily in derived meshes
-  virtual const Mesh& vis_mesh() const { return *this; }
+  void set_vis_mesh(Teuchos::RCP<const Mesh> mesh) const { vis_mesh_ = mesh; }
+  Teuchos::RCP<const Mesh> get_vis_mesh() const { return vis_mesh_; }
+  virtual const Mesh& vis_mesh() const { return (vis_mesh_.get()) ? *vis_mesh_ : *this; }
 
   bool is_logical() const { return logical_; }
 
@@ -542,6 +544,7 @@ class Mesh : public MeshLight {
 
   bool logical_;
   Teuchos::RCP<const Mesh> parent_;
+  mutable Teuchos::RCP<const Mesh> vis_mesh_;
 
   // model
   Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model_;
