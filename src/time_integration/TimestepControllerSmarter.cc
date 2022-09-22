@@ -36,6 +36,7 @@ TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
     S_->SetPtr<double>(varname, Tags::DEFAULT, name_, Teuchos::rcp(new double(0)));
     S_->GetRecordW(varname, Tags::DEFAULT, name_).set_initialized();
     S_->GetRecordW(varname, Tags::DEFAULT, name_).set_io_checkpoint();
+    S_->GetRecordW(varname, Tags::DEFAULT, name_).set_io_vis(false);
     increase_factor_ = S_->GetPtrW<double>(varname, Tags::DEFAULT, name_);
 
     varname = name_+"_successive_increases";
@@ -43,6 +44,7 @@ TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
     S_->SetPtr<int>(varname, Tags::DEFAULT, name_, Teuchos::rcp(new int(0)));
     S_->GetRecordW(varname, Tags::DEFAULT, name_).set_initialized();
     S_->GetRecordW(varname, Tags::DEFAULT, name_).set_io_checkpoint();
+    S_->GetRecordW(varname, Tags::DEFAULT, name_).set_io_vis(false);
     successive_increases_ = S_->GetPtrW<int>(varname, Tags::DEFAULT, name_);
 
     varname = name_+"_last_fail";
@@ -50,6 +52,7 @@ TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
     S_->SetPtr<int>(varname, Tags::DEFAULT, name_, Teuchos::rcp(new int(0)));
     S_->GetRecordW(varname, Tags::DEFAULT, name_).set_initialized();
     S_->GetRecordW(varname, Tags::DEFAULT, name_).set_io_checkpoint();
+    S_->GetRecordW(varname, Tags::DEFAULT, name_).set_io_vis(false);
     last_fail_ = S_->GetPtrW<int>(varname, Tags::DEFAULT, name_);
 
     varname = name_+"_growth_wait_after_fail";
@@ -57,6 +60,7 @@ TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
     S_->SetPtr<int>(varname, Tags::DEFAULT, name_, Teuchos::rcp(new int(0)));
     S_->GetRecordW(varname, Tags::DEFAULT, name_).set_initialized();
     S_->GetRecordW(varname, Tags::DEFAULT, name_).set_io_checkpoint();
+    S_->GetRecordW(varname, Tags::DEFAULT, name_).set_io_vis(false);
     growth_wait_after_fail_ = S_->GetPtrW<int>(varname, Tags::DEFAULT, name_);
   } else {
     increase_factor_ = Teuchos::rcp(new double(0));

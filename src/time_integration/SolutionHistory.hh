@@ -147,12 +147,14 @@ void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
     S_->SetPtr<int>(nvecs_name, Tags::DEFAULT, name_, nvec_);
     S_->GetRecordW(nvecs_name, Tags::DEFAULT, name_).set_initialized();
     S_->GetRecordW(nvecs_name, Tags::DEFAULT, name_).set_io_checkpoint();
+    S_->GetRecordW(nvecs_name, Tags::DEFAULT, name_).set_io_vis(false);
 
     std::string td_name = name_+"_time_deltas";
     S_->Require<Teuchos::Array<double>>(mvec, td_name, Tags::DEFAULT, name_);
     S_->SetPtr<Teuchos::Array<double>>(td_name, Tags::DEFAULT, name_, times_);
     S_->GetRecordW(td_name, Tags::DEFAULT, name_).set_initialized();
     S_->GetRecordW(td_name, Tags::DEFAULT, name_).set_io_checkpoint();
+    S_->GetRecordW(td_name, Tags::DEFAULT, name_).set_io_vis(false);
 
     // require time deltas
     for (int j=0; j<mvec; j++) {
@@ -160,6 +162,7 @@ void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
       S_->SetPtr<Vector>(name_, Tag(std::to_string(j)), name_, d_[j]);
       S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_initialized();
       S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_io_checkpoint();
+      S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_io_vis(false);
     }
   }
 }

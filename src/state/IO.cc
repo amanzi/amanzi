@@ -50,7 +50,10 @@ void WriteVis(Visualization& vis, const State& S)
         // visualized. However, since overwriting of attributes does not work
         // properly, we skip them.  This should get fixed by writing attributes
         // as an attribute of the step or something similar. FIXME --ETC
-        if ((!r->second->ValidType<double>()) && (!r->second->ValidType<int>())) {
+        if ((!r->second->ValidType<double>()) &&
+            (!r->second->ValidType<int>()) &&
+            (!r->second->ValidType<Teuchos::Array<double>>()) &&
+            (!r->second->ValidType<Teuchos::Array<int>>())) {
           // Should we vis all tags or just the default tag?
           // -- write all tags
           // r->WriteVis(vis, nullptr);
@@ -239,12 +242,13 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
 // -----------------------------------------------------------------------------
 void DeformCheckpointMesh(State& S, Key domain)
 {
-  if (S.HasRecord("vertex coordinate", Tags::DEFAULT)) {
-    // only deform mesh if vertex coordinate field exists
-    AmanziMesh::Mesh* write_access_mesh = const_cast<AmanziMesh::Mesh*>(&*S.GetMesh());
+  Key vc_key = Keys::getKey(domain, "vertex_coordinates");
+  if (S.HasRecord(vc_key, Tags::DEFAULT)) {
+    // only deform mesh if vertex_coordinates field exists
+    auto write_access_mesh = S.GetDeformableMesh(domain);
 
     // get vertex coordinates state
-    const CompositeVector& vc = S.Get<CompositeVector>("vertex coordinate", Tags::DEFAULT);
+    const CompositeVector& vc = S.Get<CompositeVector>(vc_key, Tags::DEFAULT);
     vc.ScatterMasterToGhosted("node");
     const Epetra_MultiVector& vc_n = *vc.ViewComponent("node", true);
 
@@ -268,6 +272,11 @@ void DeformCheckpointMesh(State& S, Key domain)
       write_access_mesh->deform(nodeids, new_pos, false, &final_pos);
     else
       write_access_mesh->deform(nodeids, new_pos, true, &final_pos);
+  } else {
+    Errors::Message msg;
+    msg << "DeformCheckpointMesh: unable to deform mesh because field \"" <<
+      vc_key << "\" does not exist in state.";
+    Exceptions::amanzi_throw(msg);
   }
 }
 
