@@ -112,6 +112,31 @@ int MFD3D_Diffusion::MassMatrixInverseSurface(
 
 
 /* ******************************************************************
+* Mass matrix for a polyhedral element via simplex method.
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixInverseSurfaceMMatrix(
+    int c, const Tensor& K, DenseMatrix& W)
+{
+  DenseMatrix R;
+
+  // use boolean flag to populate the whole matrix
+  int ok = L2consistencyInverseSurface(c, K, R, W);
+  if (ok) return ok;
+
+  // scaling of matrix W for numerical stability
+  double s = W.Trace() / W.NumRows();
+  W /= s;
+
+  ok = StabilityMMatrix_(c, R, W);
+  if (ok) return ok;
+
+  W *= s;
+  simplex_functional_ *= s;
+  return 0;
+}
+
+
+/* ******************************************************************
 * Exterior normal to 2D face in 3D space.
 ****************************************************************** */
 AmanziGeometry::Point MFD3D_Diffusion::mesh_face_normal(int f, int c)
@@ -129,6 +154,36 @@ AmanziGeometry::Point MFD3D_Diffusion::mesh_face_normal(int f, int c)
   normal *= len / norm(normal);
 
   return normal;
+}
+
+
+/* ******************************************************************
+* The conventional FV scheme for a general mesh.
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixInverseSurfaceTPFA(int c, const Tensor& K, DenseMatrix& W)
+{
+  const auto& faces = mesh_->cell_get_faces(c);
+  int nfaces = faces.size();
+
+  W.Reshape(nfaces, nfaces);
+  W.PutScalar(0.0);
+
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  AmanziGeometry::Point a(d_);
+
+  for (int n = 0; n < nfaces; n++) {
+    int f = faces[n];
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c);
+
+    a = xf - xc;
+    double s = mesh_->face_area(f) / norm(a);
+    double Knn = ((K * a) * normal) * s;
+    double dxn = a * normal;
+    W(n, n) = Knn / fabs(dxn);
+  }
+
+  return 0;
 }
 
 }  // namespace WhetStone
