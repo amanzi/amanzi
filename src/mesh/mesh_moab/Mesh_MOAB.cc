@@ -965,54 +965,6 @@ void Mesh_MOAB::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
 //--------------------------------------------------------------------
 // TBW
 //--------------------------------------------------------------------
-void Mesh_MOAB::face_get_coordinates(Entity_ID faceid,
-                                     std::vector<AmanziGeometry::Point> *fcoords) const
-{
-  moab::EntityHandle face;
-  std::vector<moab::EntityHandle> face_nodes;
-  double *coords;
-  int nn, result;
-
-  face = face_id_to_handle[faceid];
-
-  fcoords->clear();
-
-  result = mbcore_->get_connectivity(&face, 1, face_nodes, true);
-  ErrorCheck_(result, "Problem getting nodes of face");
-
-  nn = face_nodes.size();
-
-  coords = new double[3];
-    
-  fcoords->resize(nn);
-  std::vector<AmanziGeometry::Point>::iterator it = fcoords->begin();
-
-  if (faceflip[faceid]) {
-    for (int i = nn-1; i >=0; i--) {
-      result = mbcore_->get_coords(&(face_nodes[i]), 1, coords);
-      ErrorCheck_(result, "Problem getting coordinates of node");
-
-      it->set(space_dim_, coords);
-      ++it;
-    }
-  }
-  else {
-    for (int i = 0; i < nn; i++) {
-      result = mbcore_->get_coords(&(face_nodes[i]), 1, coords);
-      ErrorCheck_(result, "Problem getting tag data");
-
-      it->set(space_dim_, coords);
-      ++it;
-    }
-  }
-
-  delete [] coords;
-}
-  
-
-//--------------------------------------------------------------------
-// TBW
-//--------------------------------------------------------------------
 moab::Tag Mesh_MOAB::build_set(
     const Teuchos::RCP<const AmanziGeometry::Region>& region,
     const Entity_kind kind) const

@@ -605,27 +605,6 @@ void Mesh_simple::node_get_coordinates(const AmanziMesh::Entity_ID local_node_id
 
 
 //---------------------------------------------------------
-// Cooordinates of face nodes
-//---------------------------------------------------------
-void Mesh_simple::face_get_coordinates(AmanziMesh::Entity_ID local_face_id, 
-                                       std::vector<AmanziGeometry::Point> *fcoords) const
-{
-  Entity_ID_List node_indices(4);
-
-  face_get_nodes (local_face_id, &node_indices);
-
-  fcoords->clear();
-
-  AmanziGeometry::Point xyz(3);
-  for (std::vector<Entity_ID>::iterator it = node_indices.begin(); 
-       it != node_indices.end(); ++it) {
-    node_get_coordinates ( *it, &xyz);
-    fcoords->push_back(xyz);
-  }
-}
-
-
-//---------------------------------------------------------
 // Modify cooordinates of a node: version 1
 //---------------------------------------------------------
 void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id, 

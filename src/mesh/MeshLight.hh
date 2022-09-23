@@ -252,10 +252,7 @@ class MeshLight {
   virtual void node_get_coordinates(
           const Entity_ID v, AmanziGeometry::Point *ncoord) const = 0;
 
-  virtual void face_get_coordinates(
-          const Entity_ID f, std::vector<AmanziGeometry::Point> *fcoords) const = 0;
 
-  
   // ------
   // Counts
   // ------

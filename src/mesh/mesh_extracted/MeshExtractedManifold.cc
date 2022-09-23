@@ -295,34 +295,6 @@ void MeshExtractedManifold::face_get_cells_internal_(
 
 
 /* ******************************************************************
-* Face coordinates use convention same as in face_to_nodes()
-****************************************************************** */
-void MeshExtractedManifold::face_get_coordinates(
-    const Entity_ID f, std::vector<AmanziGeometry::Point>* vxyz) const
-{
-  Entity_ID v0, v1;
-
-  int ep = entid_to_parent_[FACE][f];
-  parent_mesh_->edge_get_nodes(ep, &v0, &v1);
-
-  AmanziGeometry::Point xyz(space_dimension());
-
-  vxyz->clear();
-  parent_mesh_->node_get_coordinates(v0, &xyz);
-  vxyz->push_back(xyz);
-
-  parent_mesh_->node_get_coordinates(v1, &xyz);
-  vxyz->push_back(xyz);
-
-  if (flattened_) {
-    for (int i = 0; i < 2; ++i) {
-      (*vxyz)[i].set((*vxyz)[i][0], (*vxyz)[i][1]);
-    }
-  }
-}
-
-
-/* ******************************************************************
 * Position vector for a node
 ****************************************************************** */
 void MeshExtractedManifold::node_get_coordinates(

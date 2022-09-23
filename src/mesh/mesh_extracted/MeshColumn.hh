@@ -256,15 +256,6 @@ class MeshColumn : public Mesh {
   }
 
 
-  // Face coordinates - conventions same as face_to_nodes call
-  // Number of nodes is the vector size divided by number of spatial dimensions
-  virtual
-  void face_get_coordinates(const Entity_ID faceid,
-                            std::vector<AmanziGeometry::Point> *fcoords) const override {
-    col3D_mesh_->face_get_coordinates(column_faces_[faceid], fcoords);
-  }
-
-
   //
   // Mesh modification
   //-------------------

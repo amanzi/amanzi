@@ -485,6 +485,10 @@ class Mesh : public MeshLight {
   void cell_get_coordinates(const Entity_ID c,
                             std::vector<AmanziGeometry::Point> *ccoords) const;
 
+  // Conventions are the same as for face_to_nodes().
+  void face_get_coordinates(const Entity_ID f, 
+                            std::vector<AmanziGeometry::Point> *fcoords) const;
+  
  protected:
   void get_set_entities_box_vofs_(
       Teuchos::RCP<const AmanziGeometry::Region> region,

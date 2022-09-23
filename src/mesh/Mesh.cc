@@ -1016,6 +1016,22 @@ Mesh::cell_get_coordinates(const Entity_ID c,
 }
 
 
+void 
+Mesh::face_get_coordinates(const Entity_ID f,
+                           std::vector<AmanziGeometry::Point> *fcoords) const
+{
+  Entity_ID_List nodes;
+  face_get_nodes(f, &nodes);
+
+  int nnodes = nodes.size();
+  fcoords->resize(nnodes);
+
+  for (int n = 0; n < nnodes; ++n) {
+    node_get_coordinates(nodes[n], &(*fcoords)[n]);
+  }
+}
+
+
 std::string
 Mesh::cell_type_to_name(const Cell_type type)
 {

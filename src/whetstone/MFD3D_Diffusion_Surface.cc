@@ -141,11 +141,15 @@ int MFD3D_Diffusion::MassMatrixInverseSurfaceMMatrix(
 ****************************************************************** */
 AmanziGeometry::Point MFD3D_Diffusion::mesh_face_normal(int f, int c)
 {
-  std::vector<AmanziGeometry::Point> vs;
-  mesh_->face_get_coordinates(f, &vs);
+  AmanziGeometry::Point v0(d_), v1(d_);
+  Entity_ID_List nodes;
 
-  AmanziGeometry::Point tau(vs[1] - vs[0]);
-  AmanziGeometry::Point normal = vs[0] - mesh_->cell_centroid(c);
+  mesh_->face_get_nodes(f, &nodes);
+  mesh_->node_get_coordinates(nodes[0], &v0);
+  mesh_->node_get_coordinates(nodes[1], &v1);
+
+  AmanziGeometry::Point tau(v1 - v0);
+  AmanziGeometry::Point normal = v0 - mesh_->cell_centroid(c);
 
   // orthogonalize and rescale normal
   double len = norm(tau);

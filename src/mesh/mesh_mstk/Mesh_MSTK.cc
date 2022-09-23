@@ -2379,61 +2379,6 @@ void Mesh_MSTK::node_get_coordinates(const Entity_ID nodeid,
 
 
 //---------------------------------------------------------
-// Face coordinates - conventions same as face_to_nodes call 
-// Number of nodes is the vector size divided by number of spatial dimensions
-//---------------------------------------------------------
-void Mesh_MSTK::face_get_coordinates(const Entity_ID faceid, 
-                                     std::vector<AmanziGeometry::Point> *fcoords) const
-{
-  MEntity_ptr genface;
-  double coords[3];
-  int spdim = space_dimension(), celldim = manifold_dimension();
-
-  AMANZI_ASSERT(faces_initialized);
-  AMANZI_ASSERT(fcoords != NULL);
-
-  genface = face_id_to_handle[faceid];
-
-  if (celldim == 3) {
-    int dir = !faceflip[faceid];
-
-    List_ptr fverts = MF_Vertices((MFace_ptr) genface,dir,0);
-
-    int nn = List_Num_Entries(fverts);
-    fcoords->resize(nn);
-    std::vector<AmanziGeometry::Point>::iterator it = fcoords->begin();
-        
-    for (int i = 0; i < nn; ++i) {
-      MV_Coords(List_Entry(fverts,i),coords);
-      it->set(spdim,coords); // same as (*it).set()
-      ++it;
-    }
-
-    List_Delete(fverts);
-  }
-  else { // Planar mesh or Surface mesh embedded in 3D
-    MVertex_ptr ev[2];
-    if (!faceflip[faceid]) {
-      ev[0] = ME_Vertex((MEdge_ptr)genface,0);
-      ev[1] = ME_Vertex((MEdge_ptr)genface,1);
-    }
-    else {
-      ev[1] = ME_Vertex((MEdge_ptr)genface,0);
-      ev[0] = ME_Vertex((MEdge_ptr)genface,1);
-    }
-
-    fcoords->resize(2);
-
-    MV_Coords(ev[0],coords);
-    ((*fcoords)[0]).set(spdim,coords);
-        
-    MV_Coords(ev[1],coords);
-    ((*fcoords)[1]).set(spdim,coords);
-  }
-}
-  
-
-//---------------------------------------------------------
 // Modify a node's coordinates
 //---------------------------------------------------------
 void Mesh_MSTK::node_set_coordinates(const AmanziMesh::Entity_ID nodeid, 

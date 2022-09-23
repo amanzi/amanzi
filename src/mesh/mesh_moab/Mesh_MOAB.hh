@@ -176,11 +176,6 @@ class Mesh_MOAB : public Mesh {
                             AmanziGeometry::Point *ncoord) const;
     
     
-  // Face coordinates - conventions same as face_to_nodes call 
-  // Number of nodes is the vector size divided by number of spatial dimensions
-  void face_get_coordinates(const Entity_ID faceid, 
-                            std::vector<AmanziGeometry::Point> *fcoords) const; 
-    
   // Modify the coordinates of a node
   void node_set_coordinates(const Entity_ID nodeid, const AmanziGeometry::Point coords);
 

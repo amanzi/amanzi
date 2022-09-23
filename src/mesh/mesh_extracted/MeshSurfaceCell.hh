@@ -168,17 +168,6 @@ class MeshSurfaceCell : public Mesh {
   }
 
 
-  // Face coordinates - conventions same as face_to_nodes call
-  // Number of nodes is the vector size divided by number of spatial dimensions
-  virtual
-  void face_get_coordinates(const Entity_ID faceid,
-                            std::vector<AmanziGeometry::Point> *fcoords) const override {
-    fcoords->resize(2);
-    (*fcoords)[0] = nodes_[faceid];
-    (*fcoords)[1] = nodes_[(faceid + 1) % nodes_.size()];
-  }
-
-
   //
   // Mesh modification
   //-------------------

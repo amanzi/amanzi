@@ -140,11 +140,6 @@ class Mesh_simple : public Mesh {
   void node_get_coordinates(const Entity_ID nodeid, 
                             AmanziGeometry::Point *ncoord) const override;
     
-  // Face coordinates - conventions same as face_to_nodes call 
-  // Number of nodes is the vector size divided by number of spatial dimensions
-  void face_get_coordinates(const Entity_ID faceid, 
-                            std::vector<AmanziGeometry::Point> *fcoords) const override; 
-    
   // Modify the coordinates of a node
   void node_set_coordinates(const Entity_ID nodeid, const AmanziGeometry::Point coords) override;
   void node_set_coordinates(const Entity_ID nodeid, const double *coords) override;

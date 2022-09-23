@@ -140,12 +140,6 @@ class MeshExtractedManifold : public Mesh {
     AMANZI_ASSERT(false);
   }
 
-  // -- edges
-
-  // -- faces
-  virtual void face_get_coordinates(const Entity_ID f,
-                                    std::vector<AmanziGeometry::Point>* vxyz) const override;
-
   // -- mesh modifications are blocked for the extracted mesh
   virtual int deform(const std::vector<double>& target_cell_volumes,
                      const std::vector<double>& min_cell_volumes_in,
