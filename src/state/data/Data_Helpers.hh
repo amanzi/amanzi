@@ -25,7 +25,7 @@
 namespace Amanzi {
 
 namespace Functions { class BoundaryFunction; }
-class TensorVector;
+struct TensorVector;
 class CompositeVector;
 class TreeVector;
 class TreeVectorSpace;

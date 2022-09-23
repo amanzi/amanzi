@@ -302,13 +302,8 @@ RunTest(int icase)
   lake_at_rest_setIC(mesh, S, icase);
   S->CheckAllFieldsInitialized();
 
-  const auto& B = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
-  const auto& Bn = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("node");
-  const auto& hh = *S->Get<CompositeVector>("surface-ponded_depth").ViewComponent("cell");
   const auto& ht = *S->Get<CompositeVector>("surface-total_depth").ViewComponent("cell");
   const auto& vel = *S->Get<CompositeVector>("surface-velocity").ViewComponent("cell");
-  // const auto& q = *S->Get<CompositeVector>("surface-discharge").ViewComponent("cell");
-  const auto& p = *S->Get<CompositeVector>("surface-ponded_pressure").ViewComponent("cell");
 
   // Create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", *plist));

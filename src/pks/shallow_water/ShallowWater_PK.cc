@@ -280,7 +280,6 @@ ShallowWater_PK::Initialize()
 
   // default
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   if (!S_->GetRecord(bathymetry_key_).initialized()) {
     InitializeCVField(S_, *vo_, bathymetry_key_, Tags::DEFAULT, passwd_, 0.0);
@@ -576,7 +575,7 @@ double
 ShallowWater_PK::TotalDepthEdgeValue(
     int c, int e, double htc, double Bc, const Epetra_MultiVector& B_n)
 {
-  double ht_edge; // value to return
+  double ht_edge(0.0); // value to return
 
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
   // set ht_grad = 0 for first order reconstruction (for debugging purposes)
@@ -685,7 +684,6 @@ ShallowWater_PK::NumericalSource(int c, double htc, double Bc, const Epetra_Mult
   for (int n = 0; n < cfaces.size(); ++n) {
     int f = cfaces[n];
     const auto& normal = mesh_->face_normal(f, false, c, &orientation);
-    const auto& xcf = mesh_->face_centroid(f);
 		
     double ht_rec = TotalDepthEdgeValue(c, f, htc, Bc, B_n);
     double B_rec = BathymetryEdgeValue(f, B_n);
@@ -724,9 +722,6 @@ ShallowWater_PK::get_dt()
 
   const auto& h_c = *S_->Get<CV_t>(ponded_depth_key_).ViewComponent("cell", true);
   const auto& vel_c = *S_->Get<CV_t>(velocity_key_).ViewComponent("cell", true);
-
-  S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
-  auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List cfaces;

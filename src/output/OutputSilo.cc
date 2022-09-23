@@ -124,7 +124,7 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag) {
       std::vector<char> ext_faces(nfaces, 0x0);
       std::vector<int> face_node_list;
 
-      const auto& nmap = mesh_->vis_mesh().node_map(true);
+      // const auto& nmap = mesh_->vis_mesh().node_map(true);
       for (int f=0; f!=nfaces; ++f) {
         AmanziMesh::Entity_ID_List fnodes;
         mesh_->vis_mesh().face_get_nodes(f, &fnodes);
@@ -143,7 +143,7 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag) {
       // -- Construct the silo cell-face info
       std::vector<int> cell_face_counts(ncells);
       std::vector<int> cell_face_list;
-      const auto& fmap = mesh_->vis_mesh().face_map(true);
+      // const auto& fmap = mesh_->vis_mesh().face_map(true);
 
       for (int c=0; c!=ncells; ++c) {
         AmanziMesh::Entity_ID_List cfaces;
@@ -151,7 +151,7 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag) {
         mesh_->vis_mesh().cell_get_faces_and_dirs(c, &cfaces, &dirs, false);
         for (int i=0; i!=cfaces.size(); ++i) {
           if (dirs[i] < 0) cfaces[i] = ~cfaces[i];
-          //cfaces[i] = fmap.GID(cfaces[i]);
+          // cfaces[i] = fmap.GID(cfaces[i]);
         }
 
         cell_face_counts[c] = cfaces.size();

@@ -196,7 +196,6 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     S->CheckAllFieldsInitialized();
 
     const auto& hh = *S->Get<CompositeVector>("surface-ponded_depth").ViewComponent("cell");
-    const auto& ht = *S->Get<CompositeVector>("surface-total_depth").ViewComponent("cell");
     const auto& vel = *S->Get<CompositeVector>("surface-velocity").ViewComponent("cell");
 
     // create screen io

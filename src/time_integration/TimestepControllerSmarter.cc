@@ -25,8 +25,8 @@ TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
     plist_(plist),
     count_increased_before_increase_(0),
     successive_increases_(0),
-    last_fail_(0),
     name_(name),
+    last_fail_(0),
     S_(S)
 {
   // allocate space for state -- done manually because Setup() has already been called

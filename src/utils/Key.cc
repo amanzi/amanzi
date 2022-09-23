@@ -223,7 +223,7 @@ Key getVarName(const Key& name)
 // abbreviate
 Key abbreviate(Key name, int max_len)
 {
-  for (const auto abbvs : abbreviations) {
+  for (const auto& abbvs : abbreviations) {
     name = replace_all(name, abbvs.first, abbvs.second);
     if (max_len > 0 && name.size() < max_len) break;
   }

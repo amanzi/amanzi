@@ -92,7 +92,7 @@ TEST(DARCY_SURFACE) {
 
     DenseMatrix W(nfaces, nfaces);
     for (int method = 0; method < 2; method++) {
-      int ok;
+      int ok(0);
       if (method == 0) {
         ok = mfd.MassMatrixInverseSurface(c, T, W);
       } else if (method == 1) {

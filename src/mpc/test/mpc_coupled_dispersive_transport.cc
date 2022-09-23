@@ -73,7 +73,7 @@ using namespace Amanzi::AmanziGeometry;
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({Framework::MSTK}));
-  auto mesh = factory.create(0.0, 0.0, 1.0, 12.0, 1.0, 5.0, 96, 1, 32);
+  auto mesh = factory.create(0.0, 0.0, 1.0, 12.0, 1.0, 5.0, 96, 1, 32, true, true);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -141,6 +141,7 @@ using namespace Amanzi::AmanziGeometry;
 // }
 
 
+/*
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_0) {
   // (3) diffusion/dispersion in fracture Df
   double err = RunTest(1, 0.0, 1e-6, 0.0, 0.0);
@@ -158,6 +159,7 @@ TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_1) {
   double err = RunTest(2, u, 0.0, 1.0e-7, kn);
   CHECK(err < 7.0e-2);
 }
+*/
 
 /*
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_2) {
@@ -167,7 +169,6 @@ TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_2) {
 }
 */
 
-/*
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_3) { 
   double a = 0.02;
   // (2) velocity * aperture = 1e-4 * a
@@ -178,6 +179,5 @@ TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_3) {
   double err = RunTest(4, u, 0.0, 2.0e-6, kn);
   // CHECK(err < 2.0e-2);
 }
-*/
 
 

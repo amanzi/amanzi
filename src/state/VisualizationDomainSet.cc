@@ -22,7 +22,7 @@ VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec, const std::ve
 {
   // replace names[0] domain index with a *
   KeyTriple dset_triple;
-  bool is_ds = Keys::splitDomainSet(names[0], dset_triple);
+  Keys::splitDomainSet(names[0], dset_triple);
   Key vis_name = Keys::getKey(std::get<0>(dset_triple), std::get<2>(dset_triple));
 
   if (!lifted_vectors_.count(vis_name)) {
@@ -55,7 +55,7 @@ VisualizationDomainSet::WriteVector(const Epetra_Vector& vec, const std::string&
 {
   // replace names[0] domain index with a *
   KeyTriple dset_triple;
-  bool is_ds = Keys::splitDomainSet(name, dset_triple);
+  Keys::splitDomainSet(name, dset_triple);
   Key vis_name = Keys::getKey(std::get<0>(dset_triple), std::get<2>(dset_triple));
 
   if (!lifted_vectors_.count(vis_name)) {

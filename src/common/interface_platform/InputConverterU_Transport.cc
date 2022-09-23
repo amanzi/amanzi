@@ -45,7 +45,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   MemoryManager mm;
 
   char *text, *tagname;
-  DOMNodeList *node_list, *children;
+  DOMNodeList *children;
   DOMNode *node, *root;
 
   // create header

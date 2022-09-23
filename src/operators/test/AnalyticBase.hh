@@ -322,14 +322,14 @@ void AnalyticBase::ComputeEdgeMomentsError(
       mesh_->node_get_coordinates(n0, &x0);
       mesh_->node_get_coordinates(n1, &x1);
 
-      double s0(0.0), s1(0.0);
+      double s0(0.0);
       for (int n = 0; n <= ngauss; ++n) {
         double gp = Amanzi::WhetStone::q1d_points[ngauss - 1][n];
         double gw = Amanzi::WhetStone::q1d_weights[ngauss - 1][n];
 
         xv = x0 * gp + x1 * (1.0 - gp);
         s0 += gw * pressure_exact(xv, t);
-        s1 += gw * pressure_exact(xv, t) * (0.5 - gp);
+        // s1 += gw * pressure_exact(xv, t) * (0.5 - gp);
       } 
 
       l2_err += std::pow(s0 - p[0][e], 2.0) * volume / nedges;

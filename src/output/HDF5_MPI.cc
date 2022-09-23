@@ -28,9 +28,9 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, bool include_io_set)
       dynamic_mesh_(false),
       mesh_written_(false),
       static_mesh_cycle_(0),
-      include_io_set_(include_io_set),
       mesh_file_(-1),
-      data_file_(-1)
+      data_file_(-1),
+      include_io_set_(include_io_set)
 {
   AMANZI_ASSERT(viz_comm_.get());
   info_ = MPI_INFO_NULL;

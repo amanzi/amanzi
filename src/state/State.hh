@@ -263,7 +263,7 @@ class State {
     }
     auto& rs = GetRecordSetW(fieldname);
     rs.set_subfieldnames(subfield_names);
-    auto& r = rs.RequireRecord(tag, owner, alias_ok);
+    rs.RequireRecord(tag, owner, alias_ok);
     return rs.SetType<T, F>();
   }
 
@@ -278,7 +278,7 @@ class State {
     }
     auto& rs = GetRecordSetW(fieldname);
     rs.set_subfieldnames(subfield_names);
-    auto& r = rs.RequireRecord(tag, owner, alias_ok);
+    rs.RequireRecord(tag, owner, alias_ok);
     return rs.SetType<T, F>(f);
   }
 

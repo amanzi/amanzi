@@ -246,7 +246,7 @@ void TransportMatrixFractureImplicit_PK::Initialize()
 bool TransportMatrixFractureImplicit_PK::AdvanceStep(
     double t_old, double t_new, bool reinit) 
 {
-  bool fail;
+  bool fail(false);
 
   // make copy of primary unknowns, i.e. solution 
   auto& tcc_m = S_->GetW<CV_t>("total_component_concentration", Tags::DEFAULT, "state");

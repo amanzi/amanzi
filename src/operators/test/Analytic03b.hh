@@ -97,13 +97,11 @@ class Analytic03 : public AnalyticBase {
   double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
 
-    double plaplace, pmean, kmean;
+    double plaplace, kmean;
     Amanzi::AmanziGeometry::Point pgrad(dim), kgrad(dim);
 
     kmean = ScalarDiffusivity(p,t);
     kgrad = ScalarTensorGradient(p, t);
-
-    pmean = pressure_exact(p, t);
     pgrad = gradient_exact(p, t);
 
     if (x < 0.5) { 

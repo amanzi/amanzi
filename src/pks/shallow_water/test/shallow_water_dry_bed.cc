@@ -36,7 +36,6 @@ void
 dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
               Teuchos::RCP<Amanzi::State>& S, int icase)
 {
-  double pi = M_PI;
   const double rho = S->Get<double>("const_fluid_density");
   const double patm = S->Get<double>("atmospheric_pressure");
 
@@ -73,11 +72,8 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   for (int c = 0; c < ncells_wghost; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     
-    Amanzi::AmanziMesh::Entity_ID_List cfaces, cnodes, cedges;
+    Amanzi::AmanziMesh::Entity_ID_List cfaces;
     mesh->cell_get_faces(c, &cfaces);
-    mesh->cell_get_nodes(c, &cnodes);
-    mesh->cell_get_edges(c, &cedges);
-    
     int nfaces_cell = cfaces.size();
     
     B_c[0][c] = 0.0;
@@ -148,7 +144,6 @@ RunTest(int icase)
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   // Creat a mesh
-  bool request_faces = true, request_edges = false;
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
@@ -164,11 +159,10 @@ RunTest(int icase)
   RCP<State> S = rcp(new State(state_list));
   S->RegisterMesh("surface", mesh);
 
+  // Create a shallow water PK
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-
   Teuchos::ParameterList sw_list = plist->sublist("PKs").sublist("shallow water");
 
-  // Create a shallow water PK
   ShallowWater_PK SWPK(sw_list, plist, S, soln);
   SWPK.Setup();
   S->Setup();
@@ -180,36 +174,25 @@ RunTest(int icase)
   dry_bed_setIC(mesh, S, icase);
   S->CheckAllFieldsInitialized();
 
-  const auto& B = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
-  const auto& Bn = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("node");
   const auto& hh = *S->Get<CompositeVector>("surface-ponded_depth").ViewComponent("cell");
-  const auto& ht = *S->Get<CompositeVector>("surface-total_depth").ViewComponent("cell");
-  const auto& vel = *S->Get<CompositeVector>("surface-velocity").ViewComponent("cell");
-  const auto& p = *S->Get<CompositeVector>("surface-ponded_pressure").ViewComponent("cell");
 
   // Create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", *plist));
   WriteStateStatistics(*S, *vo);
 
-  // Advance in time
-  double t_old(0.0), t_new(0.0), dt;
-
   // Initialize io
   Teuchos::ParameterList iolist;
-  std::string fname;
-  fname = "SW_sol";
-  iolist.get<std::string>("file name base", fname);
+  iolist.get<std::string>("file name base", "SQ_sol");
   OutputXDMF io(iolist, mesh, true, false);
-
-  std::string passwd("state");
 
   int iter = 0;
   std::vector<double> dx, Linferror, L1error, L2error;
 
-  double Tend = 0.5;
+  // double t_old(0.0), t_new(0.0), dt, Tend(0.5);
+  double t_old(0.0), t_new(0.0), dt, Tend(0.25);
 
-  int ncells_wghost = mesh->num_entities(
-    Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->num_entities(
+    Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   
   while ((t_new < Tend) && (iter >= 0)) {
     double t_out = t_new;
@@ -226,20 +209,23 @@ RunTest(int icase)
     SWPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter += 1;
+    iter++;
     
     // check depth positivity
-    for (int c = 0; c < ncells_wghost; ++c) {
+    for (int c = 0; c < ncells_owned; ++c) {
       CHECK(hh[0][c] >= 0.0);
     }
   } // time loop
 
-  if (MyPID == 0) { std::cout << "Time-stepping finished. " << std::endl; }
-  std::cout<<"current time: "<<t_new<<", dt = "<<dt<<std::endl;
+  if (MyPID == 0) { 
+    std::cout << "Time-stepping finished. " << std::endl;
+    std::cout << "current time: " << t_new << ", dt = " << dt << std::endl;
+  }
   
   double t_out = t_new;
   IO_Fields(t_out, iter, MyPID, io, *S, nullptr, nullptr);
 }
+
 
 TEST(SHALLOW_WATER_DRY_BED)
 {
