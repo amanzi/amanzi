@@ -334,7 +334,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           Exceptions::amanzi_throw(msg);
         }
         TranslateFieldEvaluator_(tmp1, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "value", "fracture");
-        TranslateFieldIC_(tmp2, "fracture-normal_permeability", "m^2*s/kg", reg_str, regions, out_ic, "value");
+        TranslateFieldIC_(tmp2, "fracture-normal_permeability", "s^-1", reg_str, regions, out_ic, "value");
       } else { 
         msg << "fracture_permeability element must be specified for all materials in fracture network.";
         Exceptions::amanzi_throw(msg);

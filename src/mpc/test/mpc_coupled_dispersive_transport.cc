@@ -18,6 +18,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
+#include "NumericalIntegration.hh"
 #include "mpc_pks_registration.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
@@ -25,9 +26,14 @@
 #include "State.hh"
 
 
+double Case3(double a, double b, double c, double t) {
+  return a * pow(t, -1.5) * std::exp(-b / t + c * t);
+}
+
+
 double RunTest(int icase, double u_f,
-               double mol_diff_f, double mol_diff_m,
-               double normal_diff) {
+               double mol_diff_f, double mol_diff_m, double normal_diff,
+               double L, double tend = 1e+5) {
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
@@ -55,6 +61,16 @@ using namespace Amanzi::AmanziGeometry;
         .sublist("fracture-normal_diffusion").sublist("function").sublist("All").sublist("function")
         .sublist("function-constant").set<double>("value", normal_diff);
 
+  if (icase == 3) {
+    plist->sublist("PKs").sublist("transport fracture")
+          .sublist("boundary conditions").sublist("concentration")
+	  .sublist("tracer").sublist("BC 0").sublist("boundary concentration")
+          .sublist("function-exprtk").set<std::string>("formula", "exp(-1e-4 * t)");
+
+    plist->sublist("cycle driver").sublist("time periods").sublist("TP 0")
+          .set<double>("end period time", tend);
+  }
+
   if (icase == 4) {
     plist->sublist("PKs").sublist("transport fracture")
           .sublist("boundary conditions").sublist("concentration")
@@ -62,7 +78,7 @@ using namespace Amanzi::AmanziGeometry;
           .sublist("function-exprtk").set<std::string>("formula", "if(t > 1.0, 0.0, 1.0)");
 
     plist->sublist("cycle driver").sublist("time periods").sublist("TP 0")
-          .set<double>("end period time", 2.4e+5);
+          .set<double>("end period time", tend);
   }
 
   // For now create one geometric model from all the regions in the spec
@@ -73,7 +89,7 @@ using namespace Amanzi::AmanziGeometry;
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({Framework::MSTK}));
-  auto mesh = factory.create(0.0, 0.0, 1.0, 12.0, 1.0, 5.0, 96, 1, 32, true, true);
+  auto mesh = factory.create(0.0, 0.0, 3.0 - L, 7.0, 1.0, 3.0 + L, 56, 1, 32, true, true);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -104,12 +120,13 @@ using namespace Amanzi::AmanziGeometry;
   }
 
   const auto& tcc_f = *S->Get<CompositeVector>("fracture-total_component_concentration").ViewComponent("cell");
-  double fmin(1e+99), fmax(-1e+99), err(0.0);
+  double fmin(1e+99), fmax(-1e+99), err(0.0), norm(0.0);
 
   double b = (*S->Get<CompositeVector>("fracture-aperture").ViewComponent("cell"))[0][0];
   double kn = (*S->Get<CompositeVector>("fracture-normal_diffusion").ViewComponent("cell"))[0][0];
+  double phi = (*S->Get<CompositeVector>("porosity").ViewComponent("cell"))[0][0];
 
-  double t(1e+5), Df(mol_diff_f), Dm(mol_diff_m);
+  double t(tend), Df(mol_diff_f), Dm(mol_diff_m);
 
   for (int c = 0; c < tcc_f.MyLength(); ++c) {
     const auto& xc = mesh_fracture->cell_centroid(c);
@@ -117,67 +134,145 @@ using namespace Amanzi::AmanziGeometry;
       fmin = std::min(fmin, tcc_f[0][c]);
       fmax = std::max(fmax, tcc_f[0][c]);
     }
+
+    norm += fabs(tcc_f[0][c]);
+
     if (icase == 1) {
-      err += fabs(tcc_f[0][c] - std::erfc(xc[0] / std::sqrt(Df * t) / 2));
+      double tmp2 = std::erfc(xc[0] / std::sqrt(Df * t) / 2);
+      err += fabs(tcc_f[0][c] - tmp2);
+      // std::cout << xc[0] << " " << tcc_f[0][c] << " " << tmp2 <<std::endl;
     } else if (icase == 2) {
       double Tm = u_f * t / b - xc[0];
-      if (Tm > 0.0) err += fabs(tcc_f[0][c] - std::erfc(xc[0] * kn * std::sqrt(b / (u_f * Dm * Tm)) / 2));
-    } else{
-      // std::cout << xc[0] << " " << tcc_f[0][c] << std::endl;
+      if (Tm > 0.0) {
+        double tmp2 = std::erfc(xc[0] * kn * std::sqrt(b / (u_f * Dm * Tm)) / 2);
+        err += fabs(tcc_f[0][c] - tmp2);
+        // std::cout << xc[0] << " " << tcc_f[0][c] << " " << tmp2 <<std::endl;
+      }
+    } else if (icase == 3) {
+      double Tm = t - xc[0] * b / u_f;
+      if (Tm > 0.0) {
+        double lambda(1e-4), a1, a2;
+        a1 = xc[0] * phi * std::sqrt(Dm / M_PI) / u_f;
+        a2 = a1 * a1 * M_PI;
+
+        double c0 = std::exp(-lambda * Tm);
+        double t1, h, tmp1, tmp2(0.0);
+        for (int n = 1000; n < 1000000; n*=10) {
+          tmp1 = tmp2;
+          tmp2 = 0.0;
+          h = Tm / n;
+          for (int i = 0; i < n; ++i) {
+            t1 = i*h + h/2;
+            tmp2 += h * Case3(a1, a2, lambda, t1);
+          }
+          if (fabs(tmp1 - tmp2) < 1e-4 * (tmp1 + tmp2)) break;
+        }
+        err += fabs(tcc_f[0][c] - c0 * tmp2);
+        // std::cout << xc[0] << " " << tcc_f[0][c] << " " << c0 * tmp2 <<std::endl;
+      }
+    } else {
+      // do nothing
     }
   }
-  double err_tmp(err);
+  double err_tmp(err), norm_tmp(norm);
   mesh->get_comm()->SumAll(&err_tmp, &err, 1);
+  mesh->get_comm()->SumAll(&norm_tmp, &norm, 1);
   err /= tcc_f.GlobalLength();
-  std::cout << "Mean error in fracture: " << err << std::endl;
+  norm /= tcc_f.GlobalLength();
+  std::cout << "Mean error in fracture: " << err << " solution norm=" << norm << std::endl;
 
   if (fmin < 1.0e+98) CHECK_CLOSE(fmin, fmax, 1e-12);
+
+
+  // mass of solute in matrix
+  // err = 0.0;
+  norm = 0.0;
+  for (int c = 0; c < tcc_m.MyLength(); ++c) {
+    const auto& xc = mesh->cell_centroid(c);
+    double vol = mesh->cell_volume(c);
+
+    if (icase == 3) {
+      double Tm = t - xc[0] * b / u_f;
+      if (Tm > 0.0 && xc[2] > 3.0) {
+        double lambda(1e-4), a1, a2;
+        a1 = xc[0] * phi * std::sqrt(Dm / M_PI) / u_f + (xc[2] - 3.0 - b/2) / sqrt(Dm * M_PI) / 2;
+        a2 = a1 * a1 * M_PI;
+
+        double c0 = std::exp(-lambda * Tm);
+        double t1, h, tmp1, tmp2(0.0);
+        for (int n = 1000; n < 1000000; n*=10) {
+          tmp1 = tmp2;
+          tmp2 = 0.0;
+          h = Tm / n;
+          for (int i = 0; i < n; ++i) {
+            t1 = i*h + h/2;
+            tmp2 += h * Case3(a1, a2, lambda, t1);
+          }
+          if (fabs(tmp1 - tmp2) < 1e-4 * (tmp1 + tmp2)) break;
+        }
+        // err += fabs(tcc_m[0][c] - c0 * tmp2);
+        norm += c0 * tmp2 * vol;
+      }
+    }
+  }
+  norm_tmp = norm;
+  mesh->get_comm()->SumAll(&norm_tmp, &norm, 1);
+  std::cout << "Solute mass in matrix: " << 2 * norm << std::endl;
 
   return err;
 }
 
 
-// double Integrate(const WhetStone::Function& fun) {
-// }
-
-
-/*
-TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_0) {
+TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_1) {
   // (3) diffusion/dispersion in fracture Df
-  double err = RunTest(1, 0.0, 1e-6, 0.0, 0.0);
-  CHECK(err < 5.0e-4);
+  // (6) Matrix depth, L = 2
+  double err = RunTest(1, 0.0, 1e-6, 0.0, 0.0, 2.0);
+  CHECK(err < 1.0e-3);
 }
 
-TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_1) {
+TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_2) {
   // d(a C)/dt + d(u C)/dx - (phi * Dm / (a/2)) (Cm - C) = 0
-  double a = 0.02;
+  double a = 0.001;
   // (2) velocity * aperture = 1e-4 * a
   double u = 1e-4 * a;
-  // (4) molecular diffusion coefficient in matrix, Dm = 1e-7
-  // (5) normal diffusion coeffcient, kn = phi * Dm / (a/2) = 0.2 * 1e-7 / (a/2)
-  double kn = 0.2 * 1e-7 / (a / 2);
-  double err = RunTest(2, u, 0.0, 1.0e-7, kn);
-  CHECK(err < 7.0e-2);
+  // (4) molecular diffusion coefficient in matrix
+  double Dm = 5e-9;
+  // (5) normal diffusion coeffcient, kn = phi * Dm / (a/2)
+  double kn = 0.2 * Dm / (a / 2);
+  double err = RunTest(2, u, 0.0, Dm, kn, 1.0);
+  CHECK(err < 1.0e-1);
 }
-*/
+
+TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_3) {
+  double a = 0.001;
+  // (2) velocity * aperture = 1e-4 * a
+  double u = 1e-4 * a;
+  // (4) molecular diffusion coefficient in matrix
+  double Dm = 5e-9;
+  // (5) normal diffusion coeffcient, kn = phi * Dm / (a/2)
+  double kn = 0.2 * Dm / (a / 2);
+  double err = RunTest(3, u, 0.0, Dm, kn, 0.05, 0.5e+5);
+  CHECK(err < 0.01);
+}
 
 /*
-TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_2) {
-  // d(a C)/dt + d(u C)/dx - a Df d^2(C)/dx^2 - (Dm/2) (Cm - C) = 0
-  double err = RunTest(3, 1.0e-5, 1.0e-5, 1.0e-6, 1.0e-6/2);
-  CHECK(err < 100);
-}
-*/
-
-TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_3) { 
+TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_4) { 
   double a = 0.02;
   // (2) velocity * aperture = 1e-4 * a
   double u = 1e-4 * a;
   // (4) molecular diffusion coefficient in matrix, Dm = 2e-6
   // (5) normal diffusion coeffcient, kn = phi * Dm / (a/2) = 0.2 * 2e-6 / (a/2)
   double kn = 0.2 * 2e-6 / (a / 2);
-  double err = RunTest(4, u, 0.0, 2.0e-6, kn);
+  double err = RunTest(4, u, 0.0, 2.0e-6, kn, 2.4e+5, 2.0);
   // CHECK(err < 2.0e-2);
 }
+*/
 
+/*
+TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_5) {
+  // d(a C)/dt + d(u C)/dx - a Df d^2(C)/dx^2 - (Dm/2) (Cm - C) = 0
+  double err = RunTest(3, 1.0e-5, 1.0e-5, 1.0e-6, 1.0e-6/2);
+  CHECK(err < 100);
+}
+*/
 
