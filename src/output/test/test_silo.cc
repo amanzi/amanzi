@@ -49,7 +49,6 @@ TEST(SILO_STRUCTURED) {
   Amanzi::OutputSilo io(plist, Mesh, true, false);
 
   double time = 0.0;
-  int cycle = 0;
 
   int NITS = 15;
   for (int i = 0; i < NITS; i++) {
@@ -63,7 +62,6 @@ TEST(SILO_STRUCTURED) {
 
     // advance time and values
     time += 2.0;
-    cycle += 1;
     double scalar = ((double) i+2) / (i+1);
     node_quantity->Scale(scalar);
     cell_quantity->Scale(scalar);
@@ -113,7 +111,6 @@ TEST(SILO_POLYGONAL) {
   Amanzi::OutputSilo io(plist, Mesh, true, false);
 
   double time = 0.0;
-  int cycle = 0;
 
   for (int i = 0; i < 15; i++) {
 
@@ -131,7 +128,6 @@ TEST(SILO_POLYGONAL) {
 
     // advance time and values
     time += 2.0;
-    cycle += 1;
     for (int j = 0; j < 8; j++) {
       cell_values[j] += 10.0;
     }
@@ -145,6 +141,5 @@ TEST(SILO_POLYGONAL) {
     // close file
     io.FinalizeCycle();
   }
-
 }
 

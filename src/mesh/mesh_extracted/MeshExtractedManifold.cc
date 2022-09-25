@@ -602,12 +602,15 @@ Entity_ID_List MeshExtractedManifold::build_set_faces_(
   else if (rgn->get_type() == AmanziGeometry::RegionType::PLANE ||
            rgn->get_type() == AmanziGeometry::RegionType::POLYGON) {
     for (int f = 0; f < nfaces_wghost; ++f) {
-      std::vector<AmanziGeometry::Point> fcoords(space_dim);
-      face_get_coordinates(f, &fcoords);
+      Entity_ID_List nodes;
+      face_get_nodes(f, &nodes);
             
+      AmanziGeometry::Point xp(space_dim);
+
       bool on_plane(true);
-      for (int i = 0; i < fcoords.size(); ++i) {
-        if (!rgn->inside(fcoords[i])) {
+      for (int i = 0; i < nodes.size(); ++i) {
+        node_get_coordinates(nodes[i], &xp);        
+        if (!rgn->inside(xp)) {
           on_plane = false;
           break;
         }
