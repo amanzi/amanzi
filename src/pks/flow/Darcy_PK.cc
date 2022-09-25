@@ -476,6 +476,10 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
+  if (flow_on_manifold_) {
+    S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");
+    op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  }
   op_diff_->ApplyBCs(true, true, true);
 
   CompositeVector& rhs = *op_->rhs();

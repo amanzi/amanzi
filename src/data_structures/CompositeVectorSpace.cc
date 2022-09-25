@@ -56,6 +56,10 @@ CompositeVectorSpace::CompositeVectorSpace(const CompositeVectorSpace& other,
 // CompositeVectorSpace is a factory of CompositeVectors
 Teuchos::RCP<CompositeVector>
 CompositeVectorSpace::Create() const {
+  if (mesh_ == Teuchos::null) {
+    Errors::Message msg("CompositeVector cannot be created since mesh was not set.");
+    throw(msg);
+  }
   return Teuchos::rcp(new CompositeVector(*this));
 }
 

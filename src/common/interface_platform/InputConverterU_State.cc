@@ -805,6 +805,8 @@ void InputConverterU::TranslateFieldEvaluator_(
     Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
     std::string data_key, std::string domain)
 {
+  MemoryManager mm;
+
   std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
   if (type == "file") {  // Amanzi restart file
     std::string filename = GetAttributeValueS_(node, "filename");
@@ -827,15 +829,29 @@ void InputConverterU::TranslateFieldEvaluator_(
         .set<int>("number of dofs", 1)
         .set<bool>("constant in time", temporal);
   } else {
-    double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
-
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
-    field_ev.sublist("function").sublist(reg_str)
+
+    if (static_cast<DOMElement*>(node)->hasAttribute(mm.transcode("formula"))) {
+      std::string formula = GetAttributeValueS_(node, "formula");
+
+      field_ev.sublist("function").sublist(reg_str)
         .set<Teuchos::Array<std::string> >("regions", regions)
         .set<std::string>("component", "cell")
-        .sublist("function").sublist("function-constant")
-        .set<double>("value", val);
-    field_ev.set<std::string>("evaluator type", "independent variable");
+        .sublist("function").sublist("function-exprtk")
+          .set<int>("number of arguments", dim_ + 1)
+          .set<std::string>("formula", formula);
+      field_ev.set<std::string>("evaluator type", "independent variable");
+
+    } else {
+      double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
+
+      field_ev.sublist("function").sublist(reg_str)
+          .set<Teuchos::Array<std::string> >("regions", regions)
+          .set<std::string>("component", "cell")
+          .sublist("function").sublist("function-constant")
+          .set<double>("value", val);
+      field_ev.set<std::string>("evaluator type", "independent variable");
+    }
   }
 }
 
