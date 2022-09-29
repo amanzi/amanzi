@@ -12,6 +12,7 @@ RUN echo "${AMANZI_TPLS_DIR}"
 # Arguments
 ARG amanzi_branch=master
 ARG ats_branch=master
+ARG ats_tests_branch=master
 
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
@@ -49,6 +50,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --tpl-config-file=${AMANZI_TPLS_DIR}/share/cmake/amanzi-tpl-config.cmake \
    --branch=$amanzi_branch \
    --branch_ats=$ats_branch \
+   --branch_ats_tests=$ats_tests_branch \
    --parallel=4 \
    --opt \
    --with-mpi=/usr \
