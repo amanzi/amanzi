@@ -88,7 +88,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   S2->InitializeEvaluators();
 
   // modify the default state for the problem at hand
-  std::string passwd("flow"); 
+  std::string passwd(""); 
   auto& K1 = *S1->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");  
 
   AmanziMesh::Entity_ID_List block;

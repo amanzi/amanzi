@@ -40,7 +40,7 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<TreeVector>& soln) :
     PK_PhysicalBDF(pk_tree, glist, S, soln),
     glist_(glist),
-    passwd_("thermal"),
+    passwd_(""),
     flow_on_manifold_(false)
 {
   std::string pk_name = pk_tree.name();
@@ -108,14 +108,14 @@ void Energy_PK::Setup()
   }
 
   // require primary state variables
-  if (!S_->HasRecord(temperature_key_)) {
-    std::vector<std::string> names({"cell", "face"});
-    std::vector<int> ndofs(2, 1);
-    std::vector<AmanziMesh::Entity_kind> locations({AmanziMesh::CELL, AmanziMesh::FACE});
+  std::vector<std::string> names({"cell", "face"});
+  std::vector<int> ndofs(2, 1);
+  std::vector<AmanziMesh::Entity_kind> locations({AmanziMesh::CELL, AmanziMesh::FACE});
  
-    S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT, passwd_)
-      .SetMesh(mesh_)->SetGhosted(true)->SetComponents(names, locations, ndofs);
+  S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT)
+    .SetMesh(mesh_)->SetGhosted(true)->AddComponents(names, locations, ndofs);
 
+  if (!S_->HasEvaluator(temperature_key_, Tags::DEFAULT)) {
     Teuchos::ParameterList elist(temperature_key_);
     elist.set<std::string>("evaluator name", temperature_key_);
     temperature_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));

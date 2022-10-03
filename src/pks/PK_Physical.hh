@@ -54,9 +54,11 @@ class PK_Physical : virtual public PK {
   Teuchos::RCP<Debugger> debugger() { return db_; }
 
  protected:
-  // Helper method to add a primary variable evaluator
+  // Helper methods
   void AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag = Tags::DEFAULT);
   void AddDefaultPrimaryEvaluator_(const Tag& tag = Tags::DEFAULT) { AddDefaultPrimaryEvaluator_(key_, tag); }
+
+  void AddDefaultIndependentEvaluator_(const Key& key, const Tag& tag = Tags::DEFAULT, double val = 0.0);
 
 protected:
   // name of domain, associated mesh

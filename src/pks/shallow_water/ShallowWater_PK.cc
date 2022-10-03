@@ -37,7 +37,12 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                  const Teuchos::RCP<State>& S,
                                  const Teuchos::RCP<TreeVector>& soln)
-  : PK(pk_tree, glist, S, soln), glist_(glist), soln_(soln), S_(S), passwd_("state"), iters_(0)
+  : PK(pk_tree, glist, S, soln), 
+    glist_(glist),
+    soln_(soln),
+    S_(S),
+    passwd_(""),
+    iters_(0)
 {
   std::string pk_name = pk_tree.name();
   auto found = pk_name.rfind("->");

@@ -141,9 +141,12 @@ void Richards_PK::Setup()
 
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid"); 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid"); 
+  mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid"); 
  
   relperm_key_ = Keys::getKey(domain_, "relative_permeability"); 
   alpha_key_ = Keys::getKey(domain_, "alpha_coef"); 
+
+  temperature_key_ = Keys::getKey(domain_, "temperature"); 
 
   // set up the base class 
   key_ = pressure_key_;
@@ -327,20 +330,15 @@ void Richards_PK::Setup()
       ->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
-    double rho = glist_->sublist("state").sublist("initial conditions")
-                        .sublist("const_fluid_density").get<double>("value");
-    double n_l = rho / CommonDefs::MOLAR_MASS_H2O;
-
-    std::vector<std::string> components({ "cell", "boundary_face" });
-    Teuchos::ParameterList& eval = S_->FEList().sublist(mol_density_liquid_key_);
-    eval.sublist("function").sublist("DOMAIN")
-        .set<std::string>("region", "All")
-        .set<Teuchos::Array<std::string> >("components", components)
-        .sublist("function").sublist("function-constant")
-        .set<double>("value", n_l);
-    eval.set<std::string>("evaluator type", "independent variable");
-
     S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
+  }
+
+  if (!S_->HasRecord(mass_density_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT, mass_density_liquid_key_)
+      .SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+    S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
   }
   
   // -- saturation
@@ -436,6 +434,17 @@ void Richards_PK::Setup()
 
     auto eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S_->SetEvaluator(darcy_velocity_key_, Tags::DEFAULT, eval);
+  }
+
+  // -- temperature for EOSs
+  if (!S_->HasRecord(temperature_key_)) {
+    auto cvs = S_->GetRecordSetW(pressure_key_).GetFactory<CV_t, CVS_t>();
+    *S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true) = cvs;
+  }
+
+  if (!S_->HasEvaluator(temperature_key_, Tags::DEFAULT)) {
+    AddDefaultIndependentEvaluator_(temperature_key_, Tags::DEFAULT, 298.15);
   }
 
   // Require additional components for the existing fields
@@ -555,6 +564,8 @@ void Richards_PK::Initialize()
     oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
   }
 
+  // auto rho_cv = S_->GetPtr<CV_t>(mass_density_liquid, Tags::DEFAULT);
+
   Operators::PDE_DiffusionFactory opfactory(oplist_matrix, mesh_);
   opfactory.SetConstantGravitationalTerm(gravity_, rho_);
 
@@ -646,6 +657,12 @@ void Richards_PK::Initialize()
 
   // Initialize matrix and preconditioner operators.
   // -- molar density requires to rescale gravity later.
+  //    make an evaluator for alpha_upwind? FIXME
+  if (!flow_on_manifold_) {
+    auto& alpha = S_->GetW<CompositeVector>(alpha_key_, Tags::DEFAULT, alpha_key_);
+    *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
+  }
+
   op_matrix_->Init();
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());

@@ -43,7 +43,7 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<TreeVector>& soln) :
   PK(pk_tree, glist, S, soln),
   PK_PhysicalBDF(pk_tree, glist, S, soln),
-  passwd_("flow"),
+  passwd_(""),
   peaceman_model_(false)
 {
   vo_ = Teuchos::null;
@@ -52,7 +52,7 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
 };
 
 
-Flow_PK::Flow_PK() : passwd_("flow") { vo_ = Teuchos::null; }
+Flow_PK::Flow_PK() : passwd_("") { vo_ = Teuchos::null; }
 
 
 /* ******************************************************************

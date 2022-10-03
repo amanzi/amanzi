@@ -76,17 +76,17 @@ void FlowEnergyMatrixFracture_PK::Setup()
   fracture_vol_flowrate_key_ = "fracture-volumetric_flow_rate";
 
   // primary and secondary fields for matrix affected by non-uniform
-  // distribution of DOFs, so we need to define it here
+  // distribution of DOFs, so we need to define them here
   // -- pressure
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
   if (!S_->HasRecord("pressure")) {
-    *S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT, "flow")
+    *S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT)
       .SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
     AddDefaultPrimaryEvaluator_("pressure", Tags::DEFAULT);
   }
 
   if (!S_->HasRecord("temperature")) {
-    *S_->Require<CV_t, CVS_t>("temperature", Tags::DEFAULT, "thermal")
+    *S_->Require<CV_t, CVS_t>("temperature", Tags::DEFAULT)
       .SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
     AddDefaultPrimaryEvaluator_("temperature", Tags::DEFAULT);
   }
@@ -96,7 +96,7 @@ void FlowEnergyMatrixFracture_PK::Setup()
     std::string name("face");
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S_->Require<CV_t, CVS_t>(matrix_vol_flowrate_key_, Tags::DEFAULT, "flow")
+    S_->Require<CV_t, CVS_t>(matrix_vol_flowrate_key_, Tags::DEFAULT)
       .SetMesh(mesh_domain_)->SetGhosted(true)
       ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
     AddDefaultPrimaryEvaluator_(matrix_vol_flowrate_key_, Tags::DEFAULT);
@@ -105,13 +105,13 @@ void FlowEnergyMatrixFracture_PK::Setup()
   // -- darcy flux for fracture
   if (!S_->HasRecord(fracture_vol_flowrate_key_)) {
     auto cvs2 = Operators::CreateManifoldCVS(mesh_fracture_);
-    *S_->Require<CV_t, CVS_t>(fracture_vol_flowrate_key_, Tags::DEFAULT, "flow")
+    *S_->Require<CV_t, CVS_t>(fracture_vol_flowrate_key_, Tags::DEFAULT)
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
   }
 
   // Require additional fields and evaluators
   if (!S_->HasRecord(normal_permeability_key_)) {
-    S_->Require<CV_t, CVS_t>(normal_permeability_key_, Tags::DEFAULT, "state")
+    S_->Require<CV_t, CVS_t>(normal_permeability_key_, Tags::DEFAULT)
       .SetMesh(mesh_fracture_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -279,12 +279,11 @@ bool FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool r
 
   // make copy of evaluators
   std::vector<Key> names = { "saturation_liquid", "water_storage", "energy" };
-  std::vector<std::string> passwds = { "flow", "flow", "thermal" };
   Teuchos::RCP<CompositeVector> copies[6];
 
   int k(0), nnames(names.size());
   for (int i = 0; i < nnames; ++i) {
-    SwapEvaluatorField_(names[i], passwds[i], copies[k], copies[k + 1]);
+    SwapEvaluatorField_(names[i], copies[k], copies[k + 1]);
     k += 2;
   }
 
@@ -304,11 +303,12 @@ bool FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool r
   }
 
   if (fail) {
+    std::string passwd("");
     k = 0;
     for (int i = 0; i < nnames; ++i) {
       if (S_->HasRecord(names[i])) {
-        S_->GetW<CV_t>("prev_" + names[i], passwds[i]) = *(copies[k]);
-        S_->GetW<CV_t>("fracture-prev_" + names[i], passwds[i]) = *(copies[k + 1]);
+        S_->GetW<CV_t>("prev_" + names[i], passwd) = *(copies[k]);
+        S_->GetW<CV_t>("fracture-prev_" + names[i], passwd) = *(copies[k + 1]);
       }
       k += 2;
     }
@@ -554,7 +554,7 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
 * Copy: Evaluator (BASE) -> Field (prev_BASE)
 ******************************************************************* */
 void FlowEnergyMatrixFracture_PK::SwapEvaluatorField_(
-    const Key& key, const std::string& passwd,
+    const Key& key,
     Teuchos::RCP<CompositeVector>& fdm_copy,
     Teuchos::RCP<CompositeVector>& fdf_copy)
 {
@@ -565,6 +565,7 @@ void FlowEnergyMatrixFracture_PK::SwapEvaluatorField_(
   ev_key = key;
   fd_key = "prev_" + key;
 
+  std::string passwd("");
   S_->GetEvaluator(ev_key).Update(*S_, passwd);
   {
     const auto& ev = S_->Get<CV_t>(ev_key);
@@ -631,7 +632,8 @@ double FlowEnergyMatrixFracture_PK::ErrorNorm(
 void FlowEnergyMatrixFracture_PK::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
 {
   Teuchos::ParameterList elist(key);
-  elist.set<std::string>("tag", tag.get());
+  elist.set<std::string>("tag", tag.get())
+       .set<std::string>("evaluator name", key);
   auto eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(elist));
   S_->SetEvaluator(key, tag, eval);
 }

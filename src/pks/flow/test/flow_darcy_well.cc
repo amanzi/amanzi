@@ -85,7 +85,7 @@ void RunTestDarcyWell(std::string controller, bool fit) {
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd("flow"); 
+  std::string passwd(""); 
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   double diff_in_perm = 0.0;
 
@@ -116,7 +116,7 @@ void RunTestDarcyWell(std::string controller, bool fit) {
 
   // -- storativity
   S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.1);
-  S->GetRecordW("specific_storage", "flow").set_initialized();
+  S->GetRecordW("specific_storage", passwd).set_initialized();
 
   // initialize the Darcy process kernel
   DPK->Initialize();
@@ -217,7 +217,7 @@ void Run_3D_DarcyWell(std::string controller) {
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd("flow"); 
+  std::string passwd(""); 
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   
   for (int c = 0; c < K.MyLength(); c++) {
@@ -236,7 +236,7 @@ void Run_3D_DarcyWell(std::string controller) {
 
   // -- storativity
   S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.1);
-  S->GetRecordW("specific_storage", "flow").set_initialized();
+  S->GetRecordW("specific_storage", passwd).set_initialized();
 
   // initialize the Darcy process kernel
   DPK->Initialize();
@@ -306,6 +306,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  std::string passwd(""); 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
   DPK->Setup();
@@ -314,7 +315,6 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd("flow"); 
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   
   for (int c = 0; c < K.MyLength(); c++) {
@@ -333,7 +333,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
 
   // -- storativity
   S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.0);
-  S->GetRecordW("specific_storage", "flow").set_initialized();
+  S->GetRecordW("specific_storage", passwd).set_initialized();
 
   S->GetW<CompositeVector>("porosity", "porosity").PutScalar(1.0);
   S->GetRecordW("porosity", "porosity").set_initialized();
@@ -345,7 +345,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   std::string filename = "flow_darcy_well_peaceman_3D.gmv";
 
   // steady_state solution
-  DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", "flow"), true);
+  DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), true);
 
   const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
   Epetra_MultiVector err_p(p), p_exact(p);

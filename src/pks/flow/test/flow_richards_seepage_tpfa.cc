@@ -77,7 +77,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd("flow"); 
+  std::string passwd(""); 
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   
   for (int c = 0; c != K.MyLength(); ++c) {

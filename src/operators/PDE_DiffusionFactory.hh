@@ -35,7 +35,7 @@ and potentially not that valid, this also supports and implementation with an ad
 source, i.e.:
 
 .. math::
-  \nabla \cdot K k (\nabla u + b g z)
+  \nabla \cdot K k (\nabla (u + b g z))
 
 for gravitational terms in Richards equations.
 

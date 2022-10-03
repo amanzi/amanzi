@@ -108,7 +108,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   }
 
   //  some tests provide nullptr
-  name_ = "Alquimia_PK:"+domain_;
+  name_ = "Amanzi_PK:" + domain_;
   if (solution_.get()) vo_ = Teuchos::rcp(new VerboseObject(solution_->Comm(), name_, *vo_plist));
   else vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
 }

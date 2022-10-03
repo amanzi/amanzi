@@ -178,8 +178,9 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
   // main members
   // -- virtual methods potentially altered by the schema, Schur complements
   virtual int Apply(const CompositeVector& X, CompositeVector& Y) const override {
-    return Apply(X,Y,0.0);
+    return Apply(X, Y, 0.0);
   }
+  // -- icomputes Y = A * X + scalar * Y
   virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
   virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar=0.0) const;
   virtual int ApplyUnassembled(const CompositeVector& X, CompositeVector& Y, double scalar=0.0) const;

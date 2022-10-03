@@ -54,8 +54,9 @@ void WaterStorage::Init_()
   }
 
   if (plist_.isParameter("aperture key")) {
-    aperture_key_ = plist_.get<std::string>("aperture key");
     aperture_ = true;
+    aperture_key_ = plist_.get<std::string>("aperture key");
+    dependencies_.insert(std::make_pair(Keys::getKey(domain, "aperture"), Tags::DEFAULT));
   }
 }
 
