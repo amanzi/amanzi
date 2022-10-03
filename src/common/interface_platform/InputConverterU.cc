@@ -119,6 +119,15 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
     }
   }
 
+  if (pk_model_["flow"] == "richards") {
+    auto& out_ev = out_list.sublist("state").sublist("evaluators");
+    if (!out_ev.isSublist("temperature")) {
+      AddIndependentFieldEvaluator_(out_ev, "temperature", "All", "*", 298.15);
+      if (fractures_) 
+        AddIndependentFieldEvaluator_(out_ev, "fracture-temperature", "All", "*", 298.15);
+    }
+  }
+
   // -- additional transport diagnostics
   if (transport_diagnostics_.size() > 0) {
     out_list.sublist("PKs").sublist("transient:transport")

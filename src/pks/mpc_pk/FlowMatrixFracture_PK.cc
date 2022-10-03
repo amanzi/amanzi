@@ -22,6 +22,7 @@
 #include "FractureInsertion.hh"
 #include "FlowMatrixFracture_PK.hh"
 #include "PK_MPCStrong.hh"
+#include "PK_Utils.hh"
 
 namespace Amanzi {
 
@@ -258,11 +259,21 @@ void FlowMatrixFracture_PK::Initialize()
 ******************************************************************* */
 bool FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
+  // create copies of conservative fields
+  StateArchive archive(S_, vo_);
+  archive.Add({ "prev_water_storage", "fracture-prev_water_storage",
+                "prev_saturation_liquid", "fracture-prev_saturation_liquid" },
+              {}, {});
+
+  archive.Swap("");
+
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
 
   if (fail) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Step failed." << std::endl;
+
+    archive.Restore("");
   }
 
   return fail;

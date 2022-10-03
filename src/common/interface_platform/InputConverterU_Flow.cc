@@ -352,6 +352,12 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
 
     // get optional complessibility
     node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
+    std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
+    if (type == "h5file") {
+      compressibility_ = false;
+      break;
+    }
+
     double phi = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0);
     double compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1", false, 0.0);
 

@@ -55,7 +55,11 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   bool flag, flag1, flag2;
   DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, eos", flag);
   if (flag) {
-    eos_lookup_table_ = GetTextContentS_(node, "", false);
+    eos_model_ = GetTextContentS_(node, "", false);
+    if (eos_model_ != "FEHM" && eos_model_ != "0-30C") {
+      eos_lookup_table_ = eos_model_;
+      eos_model_ = "tabular";
+    }
   }
   
   // --- gravity
@@ -73,7 +77,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   if (flag) {
     viscosity = GetTextContentD_(node, "Pa*s");
     out_ic.sublist("const_gas_viscosity").set<double>("value", viscosity);
-    AddIndependentFieldEvaluator_(out_ev, "viscosity_gas", "All", viscosity);
+    AddIndependentFieldEvaluator_(out_ev, "viscosity_gas", "All", "cell", viscosity);
   }
 
   // --- constant density
@@ -81,7 +85,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   rho_ = GetTextContentD_(node, "kg/m^3");
   out_ic.sublist("const_fluid_density").set<double>("value", rho_);
 
-  AddIndependentFieldEvaluator_(out_ev, "mass_density_liquid", "All", rho_);
+  AddIndependentFieldEvaluator_(out_ev, "mass_density_liquid", "All", "cell", rho_);
 
   // --- region specific initial conditions from material properties
   std::map<std::string, int> reg2mat;
@@ -256,7 +260,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
               .set<std::string>("table name", eos_lookup_table_)
               .set<std::string>("field name", "internal_energy");
         }
-    } else {
       }
 
       // -- rock heat capacity
@@ -275,6 +278,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<double>("heat capacity", cv);
       }
     }
+  }
+
+  // optional eos fields 
+  if (eos_model_ != "") {
+    AddSecondaryFieldEvaluator_(out_ev, 
+        Keys::getKey("domain", "molar_density_liquid"), "molar density key",
+        "eos", "density");
   }
 
   // optional secondary continuum
@@ -302,7 +312,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   node = GetUniqueElementByTagsString_("fracture_network", flag);
   if (flag) {
     fractures_ = true;
-    AddIndependentFieldEvaluator_(out_ev, "fracture-mass_density_liquid", "FRACTURE_NETWORK_INTERNAL", rho_);
+    AddIndependentFieldEvaluator_(out_ev, "fracture-mass_density_liquid",
+                                  "FRACTURE_NETWORK_INTERNAL", "cell", rho_);
   }
 
   node = GetUniqueElementByTagsString_("fracture_network, materials", flag);
@@ -386,6 +397,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
               .set<std::string>("field name", "internal_energy");
         }
       }
+    }
+
+    // -- eos
+    if (eos_model_ != "") {
+      AddSecondaryFieldEvaluator_(out_ev, 
+          Keys::getKey("fracture", "molar_density_liquid"), "molar density key",
+          "eos", "density");
     }
   }
 
@@ -1019,11 +1037,12 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
 ****************************************************************** */
 void InputConverterU::AddIndependentFieldEvaluator_(
     Teuchos::ParameterList& out_ev,
-    const std::string& field, const std::string& region, double val)
+    const std::string& field, const std::string& region,
+    const std::string& comp, double val)
 {
   out_ev.sublist(field).sublist("function").sublist("All")
       .set<std::string>("region", region)
-      .set<std::string>("component", "cell")
+      .set<std::string>("component", comp)
       .sublist("function").sublist("function-constant")
       .set<double>("value", val);
 
@@ -1038,15 +1057,14 @@ void InputConverterU::AddIndependentFieldEvaluator_(
 void InputConverterU::AddSecondaryFieldEvaluator_(
     Teuchos::ParameterList& out_ev,
     const Key& field, const Key& key,
-    const std::string& type, const std::string& model,
-    const std::string& eos_table_name)
+    const std::string& type, const std::string& eos_table_name)
 {
   out_ev.sublist(field)
     .set<std::string>("evaluator type", type)
     .set<std::string>(key, field);
 
   out_ev.sublist(field).sublist("EOS parameters")
-    .set<std::string>("eos type", model);
+    .set<std::string>("eos type", "liquid water " + eos_model_);
 
   // modifies
   if (eos_lookup_table_ != "") {

@@ -37,6 +37,8 @@ class StateArchive {
 
   void Restore(const std::string& passwd);
 
+  void Swap(const std::string& passwd);
+
   // access
   const CompositeVector& get(const std::string& name);
 
