@@ -105,7 +105,7 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   iter = 0;
   bool flag = true;
   while (t_new < 0.3) {
-    dt = TPK.StableTimeStep();
+    dt = TPK.StableTimeStep(-1);
     t_new = t_old + dt;
 
     S->set_initial_time(t_old);

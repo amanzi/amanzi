@@ -16,6 +16,7 @@
   -- most likely this PK is an MPC of some type -- to do the actual work.
 */
 
+#include <ios>
 #include <iostream>
 #include <unistd.h>
 #include <sys/resource.h>
@@ -298,7 +299,7 @@ void CycleDriver::Initialize() {
 void CycleDriver::Finalize() {
   if (!checkpoint_->DumpRequested(S_->get_cycle(), S_->get_time())) {
     pk_->CalculateDiagnostics(Tags::DEFAULT);
-    checkpoint_->Write(*S_, 0.0, true, &observations_data_);
+    checkpoint_->Write(*S_, Checkpoint::WriteType::FINAL, &observations_data_);
   }
 }
 
@@ -337,6 +338,8 @@ void CycleDriver::ReportMemory() {
     comm_->MaxAll(&mem,&max_mem,1);
 
     Teuchos::OSTab tab = vo_->getOSTab();
+    std::ios save(NULL);
+    save.copyfmt(*vo_->os());
     *vo_->os() << "======================================================================" << std::endl;
     *vo_->os() << "Simulation made " << S_->get_cycle() << " cycles.\n";
     *vo_->os() << "All meshes combined have " << global_ncells << " cells.\n";
@@ -351,6 +354,7 @@ void CycleDriver::ReportMemory() {
     *vo_->os() << "  Total:              " << std::setw(7) << total_mem 
                << " MBytes,  total per cell:   " << std::setw(7) << total_mem/global_ncells*1024*1024 
                << " Bytes" << std::endl;
+    vo_->os()->copyfmt(save);
   }
 
   double doubles_count(0.0);
@@ -685,7 +689,7 @@ void CycleDriver::Visualize(bool force, const Tag& tag) {
       vis->set_tag(tag);
       WriteVis(*vis, *S_);
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "writing visualization file" << std::endl;
+      *vo_->os() << "writing visualization file: " << vis->get_name() << std::endl;
     }
   }
 }
@@ -696,14 +700,20 @@ void CycleDriver::Visualize(bool force, const Tag& tag) {
 ****************************************************************** */
 void CycleDriver::WriteCheckpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_->get_cycle(), S_->get_time())) {
-    bool final = false;
+    Checkpoint::WriteType write_type = Checkpoint::WriteType::STANDARD;
 
     if (fabs( S_->get_time() - tp_end_[num_time_periods_-1]) < 1e-6) {
-      final = true;
+      write_type = Checkpoint::WriteType::FINAL;
     }
 
-    checkpoint_->Write(*S_, dt, final, &observations_data_);
-    
+
+    // checkpoint uses dt from State, but we do not want to modify state 
+    // in this place and reset dt temporarily
+    double dt_save = S_->Get<double>("dt", Tags::DEFAULT);
+    S_->Assign("dt", Tags::DEFAULT, "dt", dt);
+    checkpoint_->Write(*S_, write_type, &observations_data_);
+    S_->Assign("dt", Tags::DEFAULT, "dt", dt_save);
+
     if (vo_->os_OK(Teuchos::VERB_LOW)) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "writing checkpoint file" << std::endl;
@@ -795,19 +805,15 @@ Teuchos::RCP<State> CycleDriver::Go() {
       *vo_->os() << "Restarted from checkpoint file: " << restart_filename_ << std::endl;
     }
 
-    if (position == TIME_PERIOD_END) {
-      if (time_period_id_ < num_time_periods_ - 1) {
-        time_period_id_++;
-        ResetDriver(time_period_id_); 
-        restart_dT =  tp_dt_[time_period_id_];
-      }
-      else {
-        pk_->Initialize();
-      }     
-    } else {
-      // Initialize the process kernels
-      pk_->Initialize();
+    if (position == TIME_PERIOD_END && time_period_id_ < num_time_periods_ - 1) {
+      time_period_id_++;
+      ResetDriver(time_period_id_); 
+      restart_dT = tp_dt_[time_period_id_];
     }
+    else {
+      pk_->Initialize();
+    }     
+    max_dt_ = tp_max_dt_[time_period_id_];
 
     S_->set_initial_time(S_->get_time());
     dt = tsm_->TimeStep(S_->get_time(), restart_dT);
@@ -897,7 +903,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     // catch errors to dump two checkpoints -- one as a "last good" checkpoint
     // and one as a "debugging data" checkpoint.
     checkpoint_->set_filebasename("error_checkpoint");
-    checkpoint_->Write(*S_, dt);
+    checkpoint_->Write(*S_);
     throw e;
   }
 #endif

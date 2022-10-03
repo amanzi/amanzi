@@ -15,7 +15,7 @@
 #ifndef AMANZI_ENERGY_IEM_HH_
 #define AMANZI_ENERGY_IEM_HH_
 
-#include "Teuchos_ParameterList.hpp"
+// #include "Teuchos_ParameterList.hpp"
 
 namespace Amanzi {
 namespace Energy {

@@ -38,7 +38,8 @@ add_amanzi_library(atk
                           Units.cc
                           VerboseObject.cc
                           XMLParameterListWriter.cc 
-                   HEADERS AmanziComm.hh
+                   HEADERS Abbreviations.hh
+                           AmanziComm.hh
                            AmanziTypes.hh
                            ExprTK.hh
                            Factory.hh

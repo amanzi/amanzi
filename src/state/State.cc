@@ -38,8 +38,9 @@
 #include "Evaluator_Factory.hh"
 #include "EvaluatorCellVolume.hh"
 #include "EvaluatorPrimary.hh"
-#include "State.hh"
 #include "StateDefs.hh"
+#include "State.hh"
+#include "Checkpoint.hh"
 
 namespace Amanzi {
 
@@ -688,7 +689,6 @@ void State::InitializeFields(const Tag& tag)
             tmp->SetChanged();
           }
         }
-        it->second->initializeTags();
       }
 
       if (vo.os_OK(Teuchos::VERB_HIGH)) {
@@ -707,12 +707,14 @@ void State::InitializeFields(const Tag& tag)
 
   Tag failed;
   if (state_plist_.isSublist("initial conditions")) {
+    double t_ini = state_plist_.sublist("initial conditions").get<double>("time", 0.0);
     for (auto& e : data_) {
       std::string flag("... skipped");
       if (pre_initialization || !e.second->isInitialized(failed)) {
         if (state_plist_.sublist("initial conditions").isSublist(e.first)) {
           flag = "[ok]";
           Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(e.first);
+          sublist.set<double>("time", t_ini);
           e.second->Initialize(sublist);
         } else {
           // check for domain set
@@ -772,7 +774,9 @@ void State::InitializeIOFlags()
       std::regex pattern(blacklist[m]);
       io_block |= std::regex_match(it->first, pattern);
     }
-    for (auto& r : *it->second) r.second->set_io_vis(!io_block);
+    if (io_block) {
+      for (auto& r : *it->second) r.second->set_io_vis(!io_block);
+    }
   }
 
   // adding fields to vis dump

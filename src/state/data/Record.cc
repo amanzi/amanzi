@@ -49,22 +49,25 @@ void Record::WriteVis(const Visualization& vis,
   }
 }
 
-void Record::WriteCheckpoint(const Checkpoint& chkp, const Tag& tag,
+void Record::WriteCheckpoint(const Checkpoint& chkp, const Tag& tag, bool post_mortem,
                              const std::vector<std::string>* subfieldnames) const
 {
-  if (io_checkpoint()) {
+  if (post_mortem || io_checkpoint()) {
     auto name = Keys::getKey(vis_fieldname(), tag);
     data_.WriteCheckpoint(chkp, name, subfieldnames);
   }
 }
 
-void Record::ReadCheckpoint(const Checkpoint& chkp, const Tag& tag,
+bool Record::ReadCheckpoint(const Checkpoint& chkp, const Tag& tag,
                             const std::vector<std::string>* subfieldnames)
 {
   if (io_checkpoint()) {
     auto name = Keys::getKey(vis_fieldname(), tag);
-    data_.ReadCheckpoint(chkp, name, subfieldnames);
+    bool flag = data_.ReadCheckpoint(chkp, name, subfieldnames);
+    if (flag) set_initialized();
+    return flag;
   }
+  return false;
 }
 
 bool Record::Initialize(Teuchos::ParameterList& plist,

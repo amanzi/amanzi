@@ -50,13 +50,14 @@ namespace Amanzi {
 class Visualization;
 class Checkpoint;
 
+namespace Impl {
+
 // Interface of a Data
 //
 // This interface allows Data objects to be kept in containers by
 // providing all the necessary constructors, operator=, etc.  This is really
 // a wrapper for std::unique_ptr -- equivalent code could directly store
 // pointers to Data_Intf objects.
-
 class Data {
  public:
   // This should never be used, only exists to make containers happy. This is
@@ -172,14 +173,14 @@ class Data {
     p_->WriteCheckpoint(chkp, fieldname, subfieldnames);
   }
 
-  void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+  bool ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
                       const std::vector<std::string>* subfieldnames) const {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or State::CreateData()";
       throw(msg);
     }
-    p_->ReadCheckpoint(chkp, fieldname, subfieldnames);
+    return p_->ReadCheckpoint(chkp, fieldname, subfieldnames);
   }
 
   bool Initialize(Teuchos::ParameterList& plist, const Key& fieldname,
@@ -211,6 +212,7 @@ template <typename T> Data data(const Teuchos::RCP<T>& p) {
   return Data(std::unique_ptr<Data_Intf>(new Data_Impl<T>(p)));
 }
 
+} // namespace Impl
 } // namespace Amanzi
 
 #endif

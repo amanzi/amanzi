@@ -139,13 +139,12 @@ if (BUILD_TESTS)
     if (ENABLE_Silo)
       # Test: uses the Output interface
       add_amanzi_test(output_silo output_silo
-                    SOURCE      test/Main.cc test/test_silo.cc
-                    LINK_LIBS   output mesh_factory mesh_mstk ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
-                    KIND        int)
+                      SOURCE      test/Main.cc test/test_silo.cc
+                      LINK_LIBS   output mesh_factory mesh_mstk ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                      KIND        int)
+      add_amanzi_test(output_silo_np2 output_silo NPROCS 2 KIND unit)
     endif()
-
+    
   endif()
-
- 
                   
 endif(BUILD_TESTS)

@@ -24,12 +24,16 @@ class ShallowWaterTransport_PK : public PK_MPCWeak {
       Teuchos::ParameterList& pk_tree,
       const Teuchos::RCP<Teuchos::ParameterList>& global_list,
       const Teuchos::RCP<State>& S,
-      const Teuchos::RCP<TreeVector>& soln)
-    : PK_MPCWeak(pk_tree, global_list, S, soln) {};
+      const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
-  // -- setup coupling information
+  virtual double get_dt() override;
   virtual void Setup() override;
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override;
+
+ private:
+  double cfl_;
+  int failed_steps_;
 
  private:
   // factory registration

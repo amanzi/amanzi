@@ -15,23 +15,21 @@
 #define AMANZI_STATE_DATA_HELPERS_HH_
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Array.hpp"
 
 #include "errors.hh"
 
-#include "CompositeVector.hh"
-#include "Op.hh"
-#include "TensorVector.hh"
-#include "Operator.hh"
-#include "BCs.hh"
-#include "BoundaryFunction.hh"
-
-#include "FunctionFactory.hh"
-
-#include "Checkpoint.hh"
 #include "StateDefs.hh"
-#include "Visualization.hh"
+#include "Operator_DataHelpers.hh"
 
 namespace Amanzi {
+
+namespace Functions { class BoundaryFunction; }
+struct TensorVector;
+class CompositeVector;
+class TreeVector;
+class TreeVectorSpace;
+
 namespace Helpers {
 
 // ======================================================================
@@ -66,9 +64,9 @@ void WriteCheckpoint(const Checkpoint& chkp, const Key& fieldname,
 // Default simply dispatches to Checkpoint.  This fails to compile! if not
 // either specifically implemented in Checkpoint class or specialized below.
 template <typename T>
-void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+bool ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
                     const std::vector<std::string>* subfieldnames, T& t) {
-  UserReadCheckpoint(chkp, fieldname, subfieldnames, t);
+  return UserReadCheckpoint(chkp, fieldname, subfieldnames, t);
 }
 
 
@@ -85,10 +83,42 @@ bool Initialize(Teuchos::ParameterList& plist, T& t, const Key& fieldname,
 // ======================================================================
 // Operator Assignment
 // ======================================================================
-template <typename T>
-void Assign(T& dest, const T& source) {
+template<typename T>
+typename std::enable_if<!std::is_assignable<T&, const T&>::value, void>::type
+Assign(T& dest, const T& source) {
+  // please C++17... then remove the enable_if junk above and use this instead
+  // if constexpr(std::is_assignable<T&, const T&>::value) {
+  //   dest = source;
+  // } else {
+  //   UserAssign(dest, source);
+  // }
+  UserAssign(dest, source);
+}
+
+template<typename T>
+typename std::enable_if<std::is_assignable<T&, const T&>::value, void>::type
+Assign(T& dest, const T& source) {
   dest = source;
 }
+
+
+// ======================================================================
+// Equivalency of factories
+//
+// Only needed for factories that cannot be default-constructed.
+// ======================================================================
+// another that is much easier in C++17, but until then we spell it out
+template <typename F>
+bool Equivalent(const F& one, const F& two) {
+  return one == two;
+}
+
+template <>
+bool Equivalent(const Epetra_Map& one, const Epetra_Map& two);
+template <>
+bool Equivalent(const Epetra_BlockMap& one, const Epetra_BlockMap& two);
+template <>
+bool Equivalent(const TreeVectorSpace& one, const TreeVectorSpace& two);
 
 
 // ======================================================================
@@ -106,7 +136,7 @@ void WriteCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
 
 
 template <>
-void ReadCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
+bool ReadCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
                             const std::vector<std::string>* subfieldnames,
                             double& t);
 
@@ -114,6 +144,7 @@ template <>
 bool Initialize<double>(Teuchos::ParameterList& plist,
                         double& t, const Key& fieldname,
                         const std::vector<std::string>* subfieldnames);
+
 
 template <>
 void WriteVis<int>(const Visualization& vis, const Key& fieldname,
@@ -125,7 +156,7 @@ void WriteCheckpoint<int>(const Checkpoint& chkp, const Key& fieldname,
                           const int& t);
 
 template <>
-void ReadCheckpoint<int>(const Checkpoint &chkp, const Key &fieldname,
+bool ReadCheckpoint<int>(const Checkpoint &chkp, const Key &fieldname,
                          const std::vector<std::string>* subfieldnames,
                          int &t);
 
@@ -150,7 +181,7 @@ void WriteCheckpoint<CompositeVector>(const Checkpoint& chkp,
                                       const CompositeVector& vec);
 
 template <>
-void ReadCheckpoint<CompositeVector>(const Checkpoint& chkp,
+bool ReadCheckpoint<CompositeVector>(const Checkpoint& chkp,
                                      const Key& fieldname,
                                      const std::vector<std::string>* subfieldnames,
                                      CompositeVector& vec);
@@ -158,6 +189,56 @@ void ReadCheckpoint<CompositeVector>(const Checkpoint& chkp,
 template <>
 bool Initialize<CompositeVector>(Teuchos::ParameterList& plist,
                                  CompositeVector& t, const Key& fieldname,
+                                 const std::vector<std::string>* subfieldnames);
+
+
+// ======================================================================
+// Specializations for Epetra_Vector
+// ======================================================================
+template <>
+void WriteVis<Epetra_Vector>(const Visualization& vis, const Key& fieldname,
+                             const std::vector<std::string>* subfieldnames,
+                             const Epetra_Vector& vec);
+
+template <>
+void WriteCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
+        const Key& fieldname,
+        const std::vector<std::string>* subfieldnames,
+        const Epetra_Vector& vec);
+
+template <>
+bool ReadCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
+        const Key& fieldname,
+        const std::vector<std::string>* subfieldnames,
+        Epetra_Vector& vec);
+
+template <>
+bool Initialize<Epetra_Vector>(Teuchos::ParameterList& plist,
+        Epetra_Vector& t, const Key& fieldname,
+        const std::vector<std::string>* subfieldnames);
+
+// Specializations for TreeVector
+// ======================================================================
+template <>
+void WriteVis<TreeVector>(const Visualization& vis, const Key& fieldname,
+                               const std::vector<std::string>* subfieldnames,
+                               const TreeVector& vec);
+
+template <>
+void WriteCheckpoint<TreeVector>(const Checkpoint& chkp,
+                                      const Key& fieldname,
+                                      const std::vector<std::string>* subfieldnames,
+                                      const TreeVector& vec);
+
+template <>
+bool ReadCheckpoint<TreeVector>(const Checkpoint& chkp,
+                                     const Key& fieldname,
+                                     const std::vector<std::string>* subfieldnames,
+                                     TreeVector& vec);
+
+template <>
+bool Initialize<TreeVector>(Teuchos::ParameterList& plist,
+                                 TreeVector& t, const Key& fieldname,
                                  const std::vector<std::string>* subfieldnames);
 
 
@@ -175,73 +256,14 @@ void WriteCheckpoint<AmanziGeometry::Point>(const Checkpoint& chkp, const Key& f
                                             const AmanziGeometry::Point& p) {}
 
 template <> inline
-void ReadCheckpoint<AmanziGeometry::Point>(const Checkpoint& chkp, const Key& fieldname,
+bool ReadCheckpoint<AmanziGeometry::Point>(const Checkpoint& chkp, const Key& fieldname,
                                            const std::vector<std::string>* subfieldnames,
-                                           AmanziGeometry::Point& p) {}
+                                           AmanziGeometry::Point& p) { return true; }
 
 template <>
 bool Initialize<AmanziGeometry::Point>(Teuchos::ParameterList& plist,
                                        AmanziGeometry::Point& p, const Key& fieldname,
                                        const std::vector<std::string>* subfieldnames);
-
-
-// ======================================================================
-// Specializations for Op
-// ======================================================================
-template <> inline
-void WriteVis<Operators::Op>(const Visualization& vis, const Key& fieldname,
-                             const std::vector<std::string>* subfieldnames,
-                             const Operators::Op& vec) {}
-
-template <> inline
-void WriteCheckpoint<Operators::Op>(const Checkpoint& chkp, const Key& fieldname,
-                                    const std::vector<std::string>* subfieldnames,
-                                    const Operators::Op& vec) {}
-
-template <> inline
-void ReadCheckpoint<Operators::Op>(const Checkpoint& chkp, const Key& fieldname,
-                                   const std::vector<std::string>* subfieldnames,
-                                   Operators::Op& vec) {}
-
-template <> inline
-bool Initialize<Operators::Op>(Teuchos::ParameterList& plist,
-                               Operators::Op& t, const Key& fieldname,
-                               const std::vector<std::string>* subfieldnames) {
-  return true;
-}
-
-
-// ======================================================================
-// Specializations for Operator
-// ======================================================================
-template <> inline
-void WriteVis<Operators::Operator>(const Visualization& vis, const Key& fieldname,
-                                   const std::vector<std::string>* subfieldnames,
-                                   const Operators::Operator& global_operator) {}
-
-template <> inline
-void WriteCheckpoint<Operators::Operator>(const Checkpoint& chkp, const Key& fieldname,
-                                          const std::vector<std::string>* subfieldnames,
-                                          const Operators::Operator& global_operator) {}
-
-template <> inline
-void ReadCheckpoint<Operators::Operator>(const Checkpoint& chkp, const Key& fieldname,
-                                         const std::vector<std::string>* subfieldnames,
-                                         Operators::Operator& global_operator) {}
-
-template <> inline
-bool Initialize<Operators::Operator>(Teuchos::ParameterList& plist,
-                                     Operators::Operator& t, const Key& fieldname,
-                                     const std::vector<std::string>* subfieldnames) {
-  return true;
-}
-
-template <> inline
-void Assign<Operators::Operator>(Operators::Operator& dest,
-        const Operators::Operator& source) {
-  Errors::Message msg("Operators::Operator: assignment operator not supported.");
-  Exceptions::amanzi_throw(msg);
-}
 
 
 // ======================================================================
@@ -258,42 +280,14 @@ void WriteCheckpoint<TensorVector>(const Checkpoint& chkp, const Key& fieldname,
                                    const TensorVector& tensor) {}
 
 template <> inline
-void ReadCheckpoint<TensorVector>(const Checkpoint& chkp, const Key& fieldname,
+bool ReadCheckpoint<TensorVector>(const Checkpoint& chkp, const Key& fieldname,
                                   const std::vector<std::string>* subfieldnames,
-                                  TensorVector& tensor) {}
+                                  TensorVector& tensor) { return true; }
 
 template <> inline
 bool Initialize<TensorVector>(Teuchos::ParameterList& plist,
                               TensorVector& tensor, const Key& fieldname,
                               const std::vector<std::string>* subfieldnames) {
-  return true;
-}
-
-
-// ======================================================================
-// Specializations for Operators::BCs
-// ======================================================================
-template <> inline
-void
-WriteVis<Operators::BCs>(const Visualization& vis, const Key& fieldname,
-                         const std::vector<std::string>* subfieldnames,
-                         const Operators::BCs& bc) {}
-
-template <> inline
-void WriteCheckpoint<Operators::BCs>(const Checkpoint& chkp, const Key& fieldname,
-                                     const std::vector<std::string>* subfieldnames,
-                                     const Operators::BCs& bc) {}
-
-template <> inline
-void ReadCheckpoint<Operators::BCs>(const Checkpoint& chkp, const Key& fieldname,
-                                    const std::vector<std::string>* subfieldnames,
-                                    Operators::BCs& bc) {}
-
-template <> inline
-bool
-Initialize<Operators::BCs>(Teuchos::ParameterList& plist,
-                           Operators::BCs& bc, const Key& fieldname,
-                           const std::vector<std::string>* subfieldnames) {
   return true;
 }
 
@@ -315,11 +309,11 @@ WriteCheckpoint<Functions::BoundaryFunction>(const Checkpoint& chkp,
         const Functions::BoundaryFunction& bc) {}
 
 template <> inline
-void
+bool
 ReadCheckpoint<Functions::BoundaryFunction>(const Checkpoint& chkp,
         const Key& fieldname,
         const std::vector<std::string>* subfieldnames,
-        Functions::BoundaryFunction& bc) {}
+        Functions::BoundaryFunction& bc) { return true; }
 
 template <> inline
 bool
@@ -328,6 +322,41 @@ Initialize<Functions::BoundaryFunction>(Teuchos::ParameterList& plist,
         const std::vector<std::string>* subfieldnames) {
   return true;
 }
+
+template <> inline
+void Assign<Functions::BoundaryFunction>(Functions::BoundaryFunction& dest,
+        const Functions::BoundaryFunction& source) {
+  Errors::Message msg("Functions::BoundaryFunction: assignment operator not supported.");
+  Exceptions::amanzi_throw(msg);
+}
+
+
+// ======================================================================
+// Specializations for Teuchos::Array<double>
+// ======================================================================
+template <>
+void WriteVis<Teuchos::Array<double>>(const Visualization& vis, const Key& fieldname,
+                               const std::vector<std::string>* subfieldnames,
+                               const Teuchos::Array<double>& vec);
+
+template <>
+void WriteCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
+                                      const Key& fieldname,
+                                      const std::vector<std::string>* subfieldnames,
+                                      const Teuchos::Array<double>& vec);
+
+template <>
+bool ReadCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
+                                     const Key& fieldname,
+                                     const std::vector<std::string>* subfieldnames,
+                                     Teuchos::Array<double>& vec);
+
+template <>
+bool Initialize<Teuchos::Array<double>>(Teuchos::ParameterList& plist,
+                                 Teuchos::Array<double>& t, const Key& fieldname,
+                                 const std::vector<std::string>* subfieldnames);
+
+
 
 } // namespace Helpers
 } // namespace Amanzi

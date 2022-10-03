@@ -94,6 +94,8 @@ class MFD3D_Diffusion : public DeRham_Face {
   // -- mass matrix
   int L2consistencyInverseSurface(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
   int MassMatrixInverseSurface(int c, const Tensor& K, DenseMatrix& W);
+  int MassMatrixInverseSurfaceTPFA(int c, const Tensor& K, DenseMatrix& W);
+  int MassMatrixInverseSurfaceMMatrix(int c, const Tensor& K, DenseMatrix& W);
 
   // -- other related discetization methods
   int MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W);

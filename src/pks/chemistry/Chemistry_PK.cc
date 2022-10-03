@@ -42,14 +42,14 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
   PK(pk_tree, glist, S, soln),
   PK_Physical(pk_tree, glist, S, soln),
   passwd_("state"),
+  glist_(glist),
   number_minerals_(0),
   number_aqueous_kinetics_(0),
   number_sorption_sites_(0),
   using_sorption_(false),
   using_sorption_isotherms_(false),
   number_ion_exchange_sites_(0),
-  dt_max_(9.9e9),
-  glist_(glist)
+  dt_max_(9.9e9)
 {};
 
 

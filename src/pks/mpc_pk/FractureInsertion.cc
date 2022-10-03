@@ -13,6 +13,9 @@
   shared between MPC PKs.
 */
 
+#include "CompositeVector.hh"
+#include "UniqueLocalIndex.hh"
+
 #include "FractureInsertion.hh"
 
 namespace Amanzi {
@@ -30,7 +33,7 @@ FractureInsertion::FractureInsertion(
 
 
 /* *******************************************************************
-* Inialization for matrix faces coupled to to fracture cells.
+* Inialization for matrix faces coupled to fracture cells.
 ******************************************************************* */
 void FractureInsertion::InitMatrixFaceToFractureCell(
    Teuchos::RCP<const Epetra_BlockMap> mmap,
@@ -75,7 +78,7 @@ void FractureInsertion::InitMatrixFaceToFractureCell(
 
 
 /* *******************************************************************
-* Inialization with optional block maps for new matrix mesh topology.
+* Inialization matrix cell coupled to fracture cells.
 ******************************************************************* */
 void FractureInsertion::InitMatrixCellToFractureCell()
 {
@@ -126,6 +129,48 @@ void FractureInsertion::SetValues(const Epetra_MultiVector& kn, double scale)
 
     for (int k = 0; k < ndofs; ++k) {
       (*values_)[np] = kn[0][c] * area * scale;
+      np++;
+    }
+  }
+}
+
+
+/* *******************************************************************
+* Coupling coefficients depend on flux sign
+******************************************************************* */
+void FractureInsertion::SetValues(const CompositeVector& flux)
+{
+  int np(0), dir;
+  int ncells_owned_f = mesh_fracture_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+  if (!values2_.get()) {
+    values2_ = std::make_shared<std::vector<double> >(2 * ncells_owned_f, 0.0);
+  }
+
+  AmanziMesh::Entity_ID_List cells;
+  const auto& flux_f = *flux.ViewComponent("face");
+  const auto& mmap = flux.Map().Map("face", false);
+
+  for (int c = 0; c < ncells_owned_f; ++c) {
+    int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
+    int first = mmap->FirstPointInElement(f);
+
+    mesh_matrix_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+    mesh_matrix_->face_normal(f, false, cells[0], &dir);
+    int shift = Operators::UniqueIndexFaceToCells(*mesh_matrix_, f, cells[0]);
+
+    for (int k = 0; k < ncells; ++k) {
+      // since cells are ordered differenty then points, we need a map
+      double tmp = flux_f[0][first + shift] * dir;
+
+      if (tmp > 0)
+        (*values_)[np] = tmp;
+      else
+        (*values2_)[np] = -tmp;
+
+      dir = -dir;
+      shift = 1 - shift;
       np++;
     }
   }

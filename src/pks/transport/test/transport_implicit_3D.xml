@@ -41,7 +41,7 @@
     <ParameterList name="transport implicit">
       <Parameter name="cfl" type="double" value="0.5"/>   
       <Parameter name="spatial discretization order" type="int" value="1"/>   
-      <Parameter name="temporal discretization order" type="int" value="1"/>   
+      <Parameter name="temporal discretization order" type="int" value="1"/>
       <!-- developers parameters --> 
       <Parameter name="enable internal tests" type="bool" value="true"/>   
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
@@ -69,8 +69,8 @@
 
           <Parameter name="timestep controller type" type="string" value="standard"/>
           <ParameterList name="timestep controller standard parameters">
-            <Parameter name="min iterations" type="int" value="5"/>
-            <Parameter name="max iterations" type="int" value="7"/>
+            <Parameter name="min iterations" type="int" value="10"/>
+            <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="time step increase factor" type="double" value="1.2"/>
             <Parameter name="time step reduction factor" type="double" value="0.5"/>
             <Parameter name="min time step" type="double" value="0.0"/>
@@ -121,7 +121,7 @@
           </ParameterList>
           <ParameterList name="Component 1">
             <ParameterList name="BC for front side">
-              <Parameter name="regions" type="Array(string)" value="{Front side}"/>
+              <Parameter name="regions" type="Array(string)" value="{Left side, Front side}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-tabular">
@@ -158,10 +158,10 @@
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
-        <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
-        <Parameter name="smoother sweeps" type="int" value="3"/>
-        <Parameter name="cycle applications" type="int" value="5"/>
-        <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+        <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="smoother sweeps" type="int" value="2"/>
+        <Parameter name="cycle applications" type="int" value="3"/>
+        <Parameter name="strong threshold" type="double" value="5.0"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>

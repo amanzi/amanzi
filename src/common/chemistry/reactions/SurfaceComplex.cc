@@ -28,7 +28,7 @@ SurfaceComplex::SurfaceComplex(const std::string& name, int id,
                                const std::vector<SurfaceSite>& surface_sites,
                                const Teuchos::ParameterList& plist)
   : name_(name),
-    identifier_(id),
+    id_(id),
     surface_concentration_(0.0),
     lnQK_(0.0)
 {

@@ -27,6 +27,7 @@
 #include "DataFactory_Impl.hh"
 
 namespace Amanzi {
+namespace Impl {
 
 // thing factory wrapper
 class DataFactory {
@@ -83,15 +84,26 @@ class DataFactory {
 };
 
 
-template <typename T, typename F> DataFactory dataFactory() {
-  return DataFactory(new DataFactory_Impl<T, F>(),
-                     new Data_Impl<T>());
+template <typename T, typename F>
+DataFactory dataFactory(const F& f) {
+  return DataFactory(new DataFactory_Impl<T, F>(f),
+                       new Data_Impl<T>());
 }
+
+template <typename T, typename F>
+typename std::enable_if<std::is_default_constructible<F>::value, DataFactory>::type
+dataFactory() {
+  F f;
+  return DataFactory(new DataFactory_Impl<T, F>(f),
+                       new Data_Impl<T>());
+}
+
 
 // template <typename T, typename F> DataFactory dataFactory(F f) {
 //   return DataFactory(new DataFactory_Impl<T, F>(std::move(f)));
 // }
 
+} // namespace Impl
 } // namespace Amanzi
 
 #endif

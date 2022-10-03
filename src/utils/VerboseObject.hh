@@ -76,7 +76,6 @@ Example:
 
 */
 
- 
 #ifndef AMANZI_VERBOSE_OBJECT_HH_
 #define AMANZI_VERBOSE_OBJECT_HH_
 
@@ -125,6 +124,9 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
 
   // Size of the left column of names.
   static unsigned int global_line_prefix_size;
+
+  // static rank to write on
+  static unsigned int global_writing_rank;
 
   // Color output for developers
   std::string color(const std::string& name) const;

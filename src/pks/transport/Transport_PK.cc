@@ -627,14 +627,15 @@ void Transport_PK::InitializeFieldFromField_(
 * diminishing principle. Outflux takes into account sinks and 
 * sources but preserves only positivity of an advected mass.
 * ***************************************************************** */
-double Transport_PK::StableTimeStep()
+double Transport_PK::StableTimeStep(int n)
 {
+  // this call scatters flux data to ghost values
   IdentifyUpwindCells();
 
   const auto& wc = *S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& wc_prev = *S_->Get<CompositeVector>(prev_wc_key_, Tags::DEFAULT).ViewComponent("cell");
 
-  // Accumulate upwinding fluxes.
+  // Accumulate upwind fluxes
   std::vector<double> total_outflux(ncells_wghost, 0.0);
 
   for (int f = 0; f < nfaces_wghost; f++) {
@@ -674,17 +675,23 @@ double Transport_PK::StableTimeStep()
     }
   }
 
-  // loop over cells and calculate minimal time step
+  // loop over wet cells and calculate minimal time step
+  // -- to avoid FPEs, we skip calculation for extremely small flux
   double vol, outflux, dt_cell;
   dt_ = dt_cell = TRANSPORT_LARGE_TIME_STEP;
   int cmin_dt = -1;
   for (int c = 0; c < ncells_owned; c++) {
     outflux = total_outflux[c];
-    if (outflux) {
+    if (outflux > TRANSPORT_SMALL_CELL_OUTFLUX) {
       vol = mesh_->cell_volume(c);
-      dt_cell = vol * std::min(wc_prev[0][c], wc[0][c]) / outflux;
+      if (n == 0) 
+        dt_cell = vol * wc_prev[0][c] / outflux;
+      else if (n == 1) 
+        dt_cell = vol * wc[0][c] / outflux;
+      else
+        dt_cell = vol * std::min(wc_prev[0][c], wc[0][c]) / outflux;
     }
-    if (dt_cell < dt_) {
+    if (dt_cell > 0.0 && dt_cell < dt_) {
       dt_ = dt_cell;
       cmin_dt = c;
     }
@@ -713,9 +720,9 @@ double Transport_PK::StableTimeStep()
       const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dt);
 
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "cell " << cmin_dt << " has smallest dt, (" << p[0] << ", " << p[1];
+      *vo_->os() << "cell " << cmin_dt << " centered at (" << p[0] << ", " << p[1];
       if (p.dim() == 3) *vo_->os() << ", " << p[2];
-      *vo_->os() << ")" << std::endl;
+      *vo_->os() << ") has smallest dt=" << dt_ << std::endl;
     }
   }
   return dt_;
@@ -730,7 +737,7 @@ double Transport_PK::get_dt()
   if (subcycling_) {
     return 1e+99;
   } else {
-    StableTimeStep();
+    StableTimeStep(-1);
     return dt_;
   }
 }

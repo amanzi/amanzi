@@ -1017,6 +1017,23 @@ int InputConverter::GetPosition_(const std::vector<std::string>& names, const st
 
 
 /* ******************************************************************
+* Useful function to get a root of domain subtree
+****************************************************************** */
+DOMNode* InputConverter::GetRoot_(const std::string& domain, bool& flag)
+{
+  DOMNode* root;
+  if (domain == "fracture") {
+    root = GetUniqueElementByTagsString_("fracture_network", flag);
+  } else {
+    root = doc_->getDocumentElement();
+    flag = true;
+  }
+
+  return root;
+}
+
+
+/* ******************************************************************
 * Converts string of names separated by comma to array of strings.
 ****************************************************************** */
 std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)

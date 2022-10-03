@@ -1097,7 +1097,23 @@ void PDE_DiffusionMFD::CreateMassMatrices_()
       Wff.PutScalar(0.0);
       ok = 0;
     } else if (surface_mesh) {
-      ok = mfd.MassMatrixInverseSurface(c, Kc, Wff);
+      ok = 1;
+      if (mfd_primary_ == WhetStone::DIFFUSION_TPFA) {
+        ok = mfd.MassMatrixInverseSurfaceTPFA(c, Kc, Wff);
+      } else if (mfd_primary_ == WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY) {
+        ok = mfd.MassMatrixInverseSurfaceMMatrix(c, Kc, Wff);
+      } else {
+        ok = mfd.MassMatrixInverseSurface(c, Kc, Wff);
+      }
+      
+      if (ok != 0) {
+        if (mfd_secondary_ == WhetStone::DIFFUSION_TPFA) {
+          ok = mfd.MassMatrixInverseSurfaceTPFA(c, Kc, Wff);
+        } else {
+          ok = mfd.MassMatrixInverseSurface(c, Kc, Wff);
+        }
+      }
+
     } else {
       int method = mfd_primary_;
       ok = 1;

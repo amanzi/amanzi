@@ -54,6 +54,22 @@ bool in(const Key& key, const std::string& substr)
   return key.find(substr) != std::string::npos;
 }
 
+Key replace_all(Key key, const std::string& find_s, const std::string& replace_s)
+{
+  std::size_t index = 0;
+  while (true) {
+    index = key.find(find_s, index);
+    if (index == std::string::npos) break;
+
+    key.replace(index, find_s.size(), replace_s);
+
+    // Advance index forward so the next iteration doesn't pick it up as well.
+    // This avoids problems with e.g. abc --> abcabc
+    index += replace_s.size();
+  }
+  return key;
+}
+
 Key merge(const Key& domain, const Key& name, const char& delimiter)
 {
   return domain+delimiter+name;
@@ -71,12 +87,14 @@ KeyPair split(const Key& name, const char& delimiter)
 // creates a clean name to be used as a variable name, domain name, tag name,
 // etc, that has no delimiters in it, no spaces (which make for uglier IO),
 // etc.
-Key cleanName(const std::string& name)
+Key cleanName(const std::string& name, bool delimiters_ok)
 {
   Key result(name);
-  std::replace(result.begin(), result.end(), name_delimiter, '_');
+  if (!delimiters_ok) {
+    std::replace(result.begin(), result.end(), name_delimiter, '_');
+    std::replace(result.begin(), result.end(), dset_delimiter, '_');
+  }
   std::replace(result.begin(), result.end(), deriv_delimiter, '_');
-  std::replace(result.begin(), result.end(), dset_delimiter, '_');
   std::replace(result.begin(), result.end(), tag_delimiter, '_');
   std::replace(result.begin(), result.end(), ' ', '_');
   return result;
@@ -158,12 +176,22 @@ KeyPair splitKey(const Key& name)
 // Grab the domain prefix of a DOMAIN-VARNAME key.
 Key getDomain(const Key& name)
 {
+  if (name.find(tag_delimiter) != std::string::npos) {
+    // includes tag, split the tag
+    KeyTag key_tag = splitKeyTag(name);
+    Key domain_in_tag = getDomain(key_tag.second.get());
+    if (domain_in_tag != "domain") return domain_in_tag;
+    return getDomain(key_tag.first);
+  }
+
   if (name.find(deriv_delimiter) == std::string::npos) {
     // not a derivative
     auto split = splitKey(name);
     if (split.first.empty()) return "domain";
     else return split.first;
+
   } else {
+    // is a derivative
     auto split = splitKey(name);
     if (split.first.size() == 0) {
       return "domain";
@@ -191,6 +219,18 @@ Key getVarName(const Key& name)
   else
     return splitKey(split(name, deriv_delimiter).first).second;
 }
+
+// abbreviate
+Key abbreviate(Key name, int max_len)
+{
+  for (const auto& abbvs : abbreviations) {
+    name = replace_all(name, abbvs.first, abbvs.second);
+    if (max_len > 0 && name.size() < max_len) break;
+  }
+  return name;
+}
+
+
 
 // Domain Sets are of the form NAME:ID, where ID is an integer or
 // region string indexing the domain set.

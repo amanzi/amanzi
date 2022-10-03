@@ -28,9 +28,9 @@ MeshLogicalAudit:: MeshLogicalAudit(const Teuchos::RCP<const AmanziMesh::Mesh> &
     mesh(mesh_),
     comm_(mesh_->get_comm()),
     MyPID(mesh_->get_comm()->MyPID()),
-    os(os_),
     nface(mesh_->face_map(true).NumMyElements()),
     ncell(mesh_->cell_map(true).NumMyElements()),
+    os(os_),
     MAX_OUT(5)
 { create_test_dependencies(); }
 

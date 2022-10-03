@@ -209,7 +209,7 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *vo_->os() << "transport solver (" << solver_name_
                << "): ||sol||=" << sol_norm 
                << "  avg itrs=" << tot_itrs / num_aqueous << std::endl;
-      VV_PrintSoluteExtrema(*tcc_tmp->ViewComponent("cell"), t_new - t_old, "");
+    VV_PrintSoluteExtrema(*tcc_tmp->ViewComponent("cell"), t_new - t_old, "");
   }
 
   return fail;
@@ -258,7 +258,7 @@ bool TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_i
       double md;
       CalculateDispersionTensor_(*transport_phi, wc_c);
       FindDiffusionValue(component_names_[i], &md, &phase);
-      if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, sat_c);
+      if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, sat_c, wc_c);
 
       op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
       op_diff_->ApplyBCs(true, true, true);
@@ -352,7 +352,7 @@ void TransportImplicit_PK::UpdateLinearSystem(double t_old, double t_new, int co
     double md;
     CalculateDispersionTensor_(*transport_phi, wc_c);
     FindDiffusionValue(component_names_[component], &md, &phase);
-    if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, sat_c);
+    if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, sat_c, wc_c);
 
     op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
     op_diff_->ApplyBCs(true, true, true);
@@ -378,6 +378,18 @@ void TransportImplicit_PK::UpdateBoundaryData(double t_old, double t_new, int co
   auto& models = op_bc_->bc_model();
 
   ComputeBCs_(models, values, component);
+}
+
+
+/* ******************************************************************* 
+* Diagnostics
+******************************************************************* */
+void TransportImplicit_PK::CalculateDiagnostics(const Tag& tag)
+{
+  if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "mean limiter=" << limiter_mean_ << std::endl;
+  }
 }
 
 }  // namespace Transport

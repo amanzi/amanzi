@@ -72,7 +72,9 @@ void Transport_PK::CalculateDispersionTensor_(
 ******************************************************************* */
 void Transport_PK::CalculateDiffusionTensor_(
     double md, int phase, 
-    const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
+    const Epetra_MultiVector& porosity,
+    const Epetra_MultiVector& saturation,
+    const Epetra_MultiVector& water_content)
 {
   if (D_.size() == 0) {
     D_.resize(ncells_owned);
@@ -89,7 +91,7 @@ void Transport_PK::CalculateDiffusionTensor_(
 
       if (phase == TRANSPORT_PHASE_LIQUID) {
         for (auto c = block.begin(); c != block.end(); c++) {
-          D_[*c] += md * spec->tau[phase] * porosity[0][*c] * saturation[0][*c];
+          D_[*c] += md * spec->tau[phase] * water_content[0][*c];
         }
       } else if (phase == TRANSPORT_PHASE_GAS) {
         for (auto c = block.begin(); c != block.end(); c++) {
@@ -204,7 +206,7 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     md_old = md_new;
 
     if (md_change != 0.0 || D_.size() == 0) {
-      CalculateDiffusionTensor_(md_change, phase, *transport_phi, sat_c);
+      CalculateDiffusionTensor_(md_change, phase, *transport_phi, sat_c, wc_c);
     }
 
     // set the initial guess
@@ -260,7 +262,7 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     md_old = md_new;
 
     if (md_change != 0.0 || i == num_aqueous) {
-      CalculateDiffusionTensor_(md_change, phase, *transport_phi, sat_c);
+      CalculateDiffusionTensor_(md_change, phase, *transport_phi, sat_c, wc_c);
     }
 
     // set initial guess

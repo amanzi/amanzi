@@ -83,7 +83,7 @@ TEST(ADVANCE_FCT) {
   // advance the state
   int p0(1);
   double t_old(0.0), t_new, dt, tol(1e-10);
-  dt = TPK.StableTimeStep();
+  dt = TPK.StableTimeStep(-1);
   t_new = t_old + dt;
   TPK.AdvanceStep(t_old, t_new);
 
@@ -91,7 +91,7 @@ TEST(ADVANCE_FCT) {
   auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   while(t_new < 0.2) {
-    dt = TPK.StableTimeStep();
+    dt = TPK.StableTimeStep(-1);
     t_new = t_old + dt;
 
     TPK.AdvanceStep(t_old, t_new);
@@ -114,7 +114,7 @@ TEST(ADVANCE_FCT) {
 
   // turn off boundary conditions
   while(t_new < 0.4) {
-    dt = TPK.StableTimeStep();
+    dt = TPK.StableTimeStep(-1);
     t_new = t_old + dt;
 
     TPK.AdvanceStep(t_old, t_new);

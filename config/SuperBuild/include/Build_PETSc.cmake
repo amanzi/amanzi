@@ -151,7 +151,7 @@ set(petsc_mpi_compilers ${petsc_mpi_flags} ${petsc_compilers} ${petsc_compiler_f
 message(STATUS ">>> Build_PETSc -- MPI COMPILERS: ${petsc_mpi_compilers}")
 
 # --- Set the name of the patch
-set(PETSc_patch_file petsc-cmake.patch petsc-duplicate-libmpi.patch)
+set(PETSc_patch_file petsc-cmake.patch petsc-duplicate-libmpi.patch petsc-py39-isAlive.patch)
 # --- Configure the bash patch script
 set(PETSc_sh_patch ${PETSc_prefix_dir}/petsc-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.sh.in

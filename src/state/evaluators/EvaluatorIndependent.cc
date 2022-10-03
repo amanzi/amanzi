@@ -62,15 +62,11 @@ Evaluator& EvaluatorIndependent_::operator=(const Evaluator& other) {
 // Ensures that the function can provide for the vector's requirements.
 // ---------------------------------------------------------------------------
 void EvaluatorIndependent_::EnsureCompatibility(State& S) {
-  S.GetRecordW(my_key_, my_tag_, my_key_).set_initialized();
-
   // check plist for vis or checkpointing control
-  auto vis_check = std::string{"visualize " + my_key_};
-  bool io_my_key = plist_.get<bool>(vis_check, true);
+  bool io_my_key = plist_.get<bool>("visualize", true);
   S.GetRecordW(my_key_, my_tag_, my_key_).set_io_vis(io_my_key);
 
-  auto chkp_check = std::string{"checkpoint " + my_key_};
-  bool checkpoint_my_key = plist_.get<bool>(chkp_check, false);
+  bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
   S.GetRecordW(my_key_, my_tag_, my_key_).set_io_checkpoint(checkpoint_my_key);
 }
 

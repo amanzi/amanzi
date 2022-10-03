@@ -278,8 +278,8 @@ bool FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool r
   Teuchos::TimeMonitor tm(*counter);
 
   // make copy of evaluators
-  std::vector<Key> names = { "saturation_liquid", "water_content", "energy" };
-  std::vector<std::string> passwds = { "flow", "state", "thermal" };
+  std::vector<Key> names = { "saturation_liquid", "water_storage", "energy" };
+  std::vector<std::string> passwds = { "flow", "flow", "thermal" };
   Teuchos::RCP<CompositeVector> copies[6];
 
   int k(0), nnames(names.size());

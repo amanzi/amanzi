@@ -30,6 +30,7 @@
 // Amanzi::State
 #include "State.hh"
 #include "IO.hh"
+#include "EvaluatorPrimary.hh"
 
 namespace Amanzi {
 
@@ -49,38 +50,40 @@ void WriteVis(Visualization& vis, const State& S)
         // visualized. However, since overwriting of attributes does not work
         // properly, we skip them.  This should get fixed by writing attributes
         // as an attribute of the step or something similar. FIXME --ETC
-        if ((!r->second->ValidType<double>()) && (!r->second->ValidType<int>())) {
+        if ((!r->second->ValidType<double>()) &&
+            (!r->second->ValidType<int>()) &&
+            (!r->second->ValidType<Teuchos::Array<double>>()) &&
+            (!r->second->ValidType<Teuchos::Array<int>>())) {
           // Should we vis all tags or just the default tag?
           // -- write all tags
           // r->WriteVis(vis, nullptr);
 
           // -- write default tag
+          // Tag tag;
+          // r->second->WriteVis(vis, &tag);
+
+          // -- write default tag if it exists, else write another tag with the
+          // -- same time
           Tag tag;
-          r->second->WriteVis(vis, &tag);
+          if (r->second->HasRecord(tag)) {
+            r->second->WriteVis(vis, &tag);
+          } else {
+            // try to find a record at the same time
+            double time = S.get_time();
+            for (const auto& time_record : S.GetRecordSet("time")) {
+              if (r->second->HasRecord(time_record.first) &&
+                  S.get_time(time_record.first) == time) {
+                r->second->WriteVis(vis, &time_record.first);
+                break;
+              }
+            }
+          }
         }
       }
     }
     vis.WriteRegions();
     vis.WritePartition();
     vis.FinalizeTimestep();
-  }
-}
-
-
-// -----------------------------------------------------------------------------
-// Non-member function for checkpointing.
-// -----------------------------------------------------------------------------
-void WriteCheckpoint(Checkpoint& chkp, const Comm_ptr_type& comm,
-                     const State& S, bool final)
-{
-  if (!chkp.is_disabled()) {
-    // chkp.SetFinal(final);
-    chkp.CreateFile(S.get_cycle());
-    for (auto r = S.data_begin(); r != S.data_end(); ++r) {
-      r->second->WriteCheckpoint(chkp);
-    }
-    chkp.Write("mpi_num_procs", comm->NumProc());
-    chkp.Finalize();
   }
 }
 
@@ -110,7 +113,18 @@ void ReadCheckpoint(const Comm_ptr_type& comm, State& S,
 
   // load the data
   for (auto data = S.data_begin(); data != S.data_end(); ++data) {
-    data->second->ReadCheckpoint(chkp);
+    for (auto& entry : *data->second) {
+      bool read = entry.second->ReadCheckpoint(chkp, entry.first, data->second->subfieldnames());
+      if (read) {
+        entry.second->set_initialized();
+        if (S.HasEvaluator(data->first, entry.first)) {
+          // if there is an evaluator, and it is a primary eval, and we should mark it at changed
+          auto eval = S.GetEvaluatorPtr(data->first, entry.first);
+          auto eval_primary = Teuchos::rcp_dynamic_cast<EvaluatorPrimary_>(eval);
+          if (eval_primary.get()) eval_primary->SetChanged();
+        }
+      }
+    }
   }
 
   chkp.Finalize();
@@ -228,12 +242,13 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
 // -----------------------------------------------------------------------------
 void DeformCheckpointMesh(State& S, Key domain)
 {
-  if (S.HasRecord("vertex coordinate", Tags::DEFAULT)) {
-    // only deform mesh if vertex coordinate field exists
-    AmanziMesh::Mesh* write_access_mesh = const_cast<AmanziMesh::Mesh*>(&*S.GetMesh());
+  Key vc_key = Keys::getKey(domain, "vertex_coordinates");
+  if (S.HasRecord(vc_key, Tags::DEFAULT)) {
+    // only deform mesh if vertex_coordinates field exists
+    auto write_access_mesh = S.GetDeformableMesh(domain);
 
     // get vertex coordinates state
-    const CompositeVector& vc = S.Get<CompositeVector>("vertex coordinate", Tags::DEFAULT);
+    const CompositeVector& vc = S.Get<CompositeVector>(vc_key, Tags::DEFAULT);
     vc.ScatterMasterToGhosted("node");
     const Epetra_MultiVector& vc_n = *vc.ViewComponent("node", true);
 
@@ -257,6 +272,11 @@ void DeformCheckpointMesh(State& S, Key domain)
       write_access_mesh->deform(nodeids, new_pos, false, &final_pos);
     else
       write_access_mesh->deform(nodeids, new_pos, true, &final_pos);
+  } else {
+    Errors::Message msg;
+    msg << "DeformCheckpointMesh: unable to deform mesh because field \"" <<
+      vc_key << "\" does not exist in state.";
+    Exceptions::amanzi_throw(msg);
   }
 }
 

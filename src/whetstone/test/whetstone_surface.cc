@@ -67,7 +67,7 @@ TEST(DARCY_SURFACE) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: Mass matrix for cell face" << std::endl;
+  std::cout << "\nTest: Mass matrix for cell face" << std::endl;
 #ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
 #else
@@ -91,35 +91,45 @@ TEST(DARCY_SURFACE) {
     int nfaces = faces.size();
 
     DenseMatrix W(nfaces, nfaces);
-    int ok = mfd.MassMatrixInverseSurface(c, T, W);
+    for (int method = 0; method < 2; method++) {
+      int ok(0);
+      if (method == 0) {
+        ok = mfd.MassMatrixInverseSurface(c, T, W);
+      } else if (method == 1) {
+        if (c == 2) continue;
+        ok = mfd.MassMatrixInverseSurfaceMMatrix(c, T, W);
+        std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << " code=" << ok << std::endl;
+        std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
+     }
 
-    printf("Inverse mass matrix for cell %d  err=%d\n", c, ok);
-    for (int i = 0; i < nfaces; i++) {
-      for (int j = 0; j < nfaces; j++ ) printf("%8.4f ", W(i, j)); 
-      printf("\n");
-    }
-
-    // verify SPD propery
-    for (int i = 0; i < nfaces; i++) CHECK(W(i, i) > 0.0);
-
-    // verify exact integration property
-    W.Inverse();
-
-    double xj, yi, yj;
-    double vyy = 0.0, vxy = 0.0, volume = mesh->cell_volume(c); 
-    for (int i = 0; i < nfaces; i++) {
-      int f = faces[i];
-      yi = mesh->face_normal(f)[1] * dirs[i];
-      for (int j = 0; j < nfaces; j++) {
-        f = faces[j];
-        xj = mesh->face_normal(f)[0] * dirs[j];
-        yj = mesh->face_normal(f)[1] * dirs[j];
-        vxy += W(i, j) * yi * xj;
-        vyy += W(i, j) * yi * yj;
+      printf("Inverse mass matrix for cell %d  err=%d\n", c, ok);
+      for (int i = 0; i < nfaces; i++) {
+        for (int j = 0; j < nfaces; j++ ) printf("%8.4f ", W(i, j)); 
+        printf("\n");
       }
+
+      // verify SPD propery
+      for (int i = 0; i < nfaces; i++) CHECK(W(i, i) > 0.0);
+
+      // verify exact integration property
+      W.Inverse();
+
+      double xj, yi, yj;
+      double vyy = 0.0, vxy = 0.0, volume = mesh->cell_volume(c); 
+      for (int i = 0; i < nfaces; i++) {
+        int f = faces[i];
+        yi = mesh->face_normal(f)[1] * dirs[i];
+        for (int j = 0; j < nfaces; j++) {
+          f = faces[j];
+          xj = mesh->face_normal(f)[0] * dirs[j];
+          yj = mesh->face_normal(f)[1] * dirs[j];
+          vxy += W(i, j) * yi * xj;
+          vyy += W(i, j) * yi * yj;
+        }
+      }
+      CHECK_CLOSE(vyy, volume, 1e-10);
+      CHECK_CLOSE(vxy, 0.0, 1e-10);
     }
-    CHECK_CLOSE(vyy, volume, 1e-10);
-    CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
 }
 

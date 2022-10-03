@@ -106,14 +106,10 @@ void Darcy_PK::Setup()
   // generate keys here to be available for setup of the base class
   pressure_key_ = Keys::getKey(domain_, "pressure"); 
   hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head"); 
-
   darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity"); 
-  porosity_key_ = Keys::getKey(domain_, "porosity"); 
 
   specific_yield_key_ = Keys::getKey(domain_, "specific_yield"); 
   specific_storage_key_ = Keys::getKey(domain_, "specific_storage"); 
-  saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
-  prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
 
   // optional keys
   pressure_head_key_ = Keys::getKey(domain_, "pressure_head"); 
@@ -171,8 +167,8 @@ void Darcy_PK::Setup()
   if (!S_->HasRecord(saturation_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-
-    AddDefaultPrimaryEvaluator_(saturation_liquid_key_);
+    // AddDefaultPrimaryEvaluator_(saturation_liquid_key_);
+    S_->RequireEvaluator(saturation_liquid_key_, Tags::DEFAULT);
   }
 
   if (!S_->HasRecord(prev_saturation_liquid_key_)) {
@@ -308,7 +304,7 @@ void Darcy_PK::Initialize()
       Epetra_MultiVector& lambda = *solution->ViewComponent("face");
 
       DeriveFaceValuesFromCellValues(p, lambda);
-      S_->GetRecordW(pressure_key_, Tags::DEFAULT, passwd_).set_initialized("face");
+      S_->GetRecordW(pressure_key_, Tags::DEFAULT, passwd_).set_initialized(true);
     }
   }
 
@@ -463,6 +459,12 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   factor = 1.0 / (g_ * dt_);
   CompositeVector sy_g(*specific_yield_copy_); 
   sy_g.Scale(factor);
+
+  if (flow_on_manifold_) {
+    const auto& aperture = S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
+    ss_g.Multiply(1.0, ss_g, aperture, 0.0);
+    sy_g.Multiply(1.0, sy_g, aperture, 0.0);
+  }
 
   op_->RestoreCheckPoint();
   op_acc_->AddAccumulationDelta(*solution, ss_g, ss_g, dt_, "cell");

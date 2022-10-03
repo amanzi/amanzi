@@ -63,7 +63,7 @@ template<class Vector>
 TimestepControllerAdaptive<Vector>::TimestepControllerAdaptive(
     Teuchos::ParameterList& plist,
     Teuchos::RCP<Vector> udot, Teuchos::RCP<Vector> udot_prev)
-    : plist_(plist), udot_prev_(udot_prev), udot_(udot)
+  : TimestepController(plist), plist_(plist), udot_prev_(udot_prev), udot_(udot)
 {
   max_its_ = plist_.get<int>("max iterations");
   min_its_ = plist_.get<int>("min iterations");
@@ -77,8 +77,16 @@ TimestepControllerAdaptive<Vector>::TimestepControllerAdaptive(
   increase_factor_ = plist_.get<double>("time step increase factor");
   AMANZI_ASSERT(increase_factor_ >= 1.0);
 
-  max_dt_ = plist_.get<double>("max time step");
-  min_dt_ = plist_.get<double>("min time step");
+  if (plist_.isParameter("max time step [s]")) {
+    max_dt_ = plist_.get<double>("max time step [s]");
+  } else {
+    max_dt_ = plist_.get<double>("max time step");
+  }
+  if (plist_.isParameter("min time step [s]")) {
+    min_dt_ = plist_.get<double>("min time step [s]");
+  } else {
+    min_dt_ = plist_.get<double>("min time step");
+  }
 
   // default value are fitted to atmospheric pressure.
   p_ = plist_.get<double>("reference value", 101325.0);

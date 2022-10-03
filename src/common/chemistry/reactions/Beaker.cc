@@ -221,7 +221,7 @@ int Beaker::Speciate(BeakerState* state)
 
   int max_rel_index, num_iterations(0);
   double max_rel_change, max_residual;
-  bool calculate_activity_coefs = false;
+  // bool calculate_activity_coefs = false;
 
   do {
     UpdateActivityCoefficients_();
@@ -268,7 +268,7 @@ int Beaker::Speciate(BeakerState* state)
     // if max_rel_change small enough, turn on activity coefficients
     if (max_rel_change < speciation_tolerance ||
         max_residual < residual_tolerance) {
-      calculate_activity_coefs = true;
+      // calculate_activity_coefs = true;
     }
 
     // exist if maximum relative change is below tolerance

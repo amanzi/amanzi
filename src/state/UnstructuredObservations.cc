@@ -113,7 +113,7 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
     integrated_observation_.resize(num_total_);
     observed_once_ = true;
 
-    if (write_) InitFile_();
+    if (write_) InitFile_(S);
   }
 
   bool dump_requested = DumpRequested(S->get_cycle(), S->get_time());
@@ -171,7 +171,7 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
 // Note also that this (along with Write_) may become a separate class for
 // different file types (e.g. text vs netcdf)
 //
-void UnstructuredObservations::InitFile_()
+void UnstructuredObservations::InitFile_(const Teuchos::Ptr<const State>& S)
 {
   if (boost::filesystem::portable_file_name(filename_)) {
     fid_ = std::make_unique<std::ofstream>(filename_.c_str());
@@ -194,8 +194,21 @@ void UnstructuredObservations::InitFile_()
     *fid_ << "\"time [" << time_unit_ << "]\"";
     for (const auto& obs : observables_) {
       if (obs->get_num_vectors() > 1) {
-        for (int i=0; i!=obs->get_num_vectors(); ++i)
-          *fid_ << delimiter_ << "\"" << obs->get_name() << " dof " << i << "\"";
+        auto subfield_names = S->GetRecordSet(obs->get_variable()).subfieldnames();
+        std::vector<std::string> default_subfieldnames;
+        if (!subfield_names) {
+          for (int i=0; i!=obs->get_num_vectors(); ++i)
+            default_subfieldnames.emplace_back(std::string("dof ")+std::to_string(i));
+          subfield_names = &default_subfieldnames;
+        }
+
+        if (obs->get_degree_of_freedom() >= 0) {
+          *fid_ << delimiter_ << "\"" << obs->get_name() << " " << (*subfield_names)[obs->get_degree_of_freedom()] << "\"";
+        } else {
+          for (int i=0; i!=obs->get_num_vectors(); ++i) {
+            *fid_ << delimiter_ << "\"" << obs->get_name() << " " << (*subfield_names)[i] << "\"";
+          }
+        }
       } else {
         *fid_ << delimiter_ << "\"" << obs->get_name() << "\"";
       }

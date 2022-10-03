@@ -354,8 +354,9 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
       std::vector<int> bc_model;
       std::vector<double> bc_value;
       Teuchos::ParameterList plist;
-      plist.set<int>("polynomial_order", 1);
-      plist.set<bool>("limiter extension for transport", false);
+      plist.set<int>("polynomial_order", 1)
+           .set<std::string>("weight", "inverse distance")
+           .set<bool>("limiter extension for transport", false);
 
       if (i == 0) {
         plist.set<std::string>("limiter", "Barth-Jespersen")
@@ -491,8 +492,8 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
       std::vector<int> bc_model;
       std::vector<double> bc_value;
       Teuchos::ParameterList plist;
-      plist.set<int>("polynomial_order", 1);
-      plist.set<bool>("limiter extension for transport", false);
+      plist.set<int>("polynomial_order", 1)
+           .set<bool>("limiter extension for transport", false);
 
       if (i == 0) {
         plist.set<std::string>("limiter", "Barth-Jespersen");
@@ -626,8 +627,9 @@ void SmoothField2DPoly(double extension)
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
-    plist.set<int>("polynomial_order", 1);
-    plist.set<bool>("limiter extension for transport", extension);
+    plist.set<int>("polynomial_order", 1)
+         .set<std::string>("weight", "inverse distance")
+         .set<bool>("limiter extension for transport", extension);
 
     if (i == 0) {
       plist.set<std::string>("limiter", "Barth-Jespersen")

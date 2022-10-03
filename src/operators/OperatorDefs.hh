@@ -50,6 +50,10 @@ typedef enum { CONSTANT = 0,  // includes tensorial coefficients
                MATRIX_POLYNOMIAL,
                FUNCTION } CoefType;
 
+// weight type
+typedef enum { WT_CONSTANT = 0,
+               WT_INVERSE_DISTANCE } WeightType;
+
 // Constants in the next block must powers of 2.
 const int OPERATOR_SCHEMA_DOFS_FACE = 1;
 const int OPERATOR_SCHEMA_DOFS_CELL = 2;
@@ -132,6 +136,7 @@ const int OPERATOR_LIMITER_KUZMIN = 6;
 const int OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL = 7;
 
 const double OPERATOR_LIMITER_TOLERANCE = 1e-14;
+const double OPERATOR_LIMITER_FIELD_TOLERANCE = 1e-200;
 const double OPERATOR_LIMITER_INFINITY = 1e+99;
 
 // stencil for calculating limiting bounds

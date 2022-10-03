@@ -69,6 +69,7 @@ double WRMmp_Simple::dKdS(double Sw, int phase)
   else if (phase == MULTIPHASE_PHASE_GAS) {
     return - 2.0 * (1.0 - Swe) * factor;
   }
+  return 0.0;
 }
 
 
