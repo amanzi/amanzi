@@ -87,7 +87,10 @@ if (BUILD_TESTS)
         file(COPY ${DataFiles} DESTINATION ${DATA_STRUCTURES_BINARY_DIR}/test/)
     endif()
 
-    set(amanzi_libs data_structures geometry mesh_mstk mesh_factory mesh)
+    set(amanzi_libs data_structures geometry mesh_factory mesh)
+    if(ENABLE_MESH_MSTK)
+        list(APPEND amanzi_libs mesh_mstk)
+    endif() 
 
     add_amanzi_test(data_structures_vectors data_structures_vectors
                     KIND unit

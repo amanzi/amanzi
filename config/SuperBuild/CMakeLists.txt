@@ -161,6 +161,16 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 
 
 # ############################################################################ #
+# Python options
+# ############################################################################ #
+if (NOT PYTHON_EXECUTABLE) 
+  unset(PYTHON_EXECUTABLE CACHE)
+  find_package(PythonInterp 3 REQUIRED)
+endif()
+message(STATUS "Python: ${PYTHON_EXECUTABLE}")
+
+
+# ############################################################################ #
 # Build options
 # ############################################################################ #
 set(SuperBuild_BUILD_TYPE_DFLT "Release")

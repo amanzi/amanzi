@@ -84,13 +84,14 @@ if (BUILD_TESTS)
 
   add_amanzi_test(mesh_extracted_fracture_3pe mesh_extracted_fracture NPROCS 3 KIND unit)
 
-  add_amanzi_test(mesh_surface_flattened mesh_surface_flattened
+  # note: this requires volumetric extraction, which is only supported by MSTK for now...
+  if (ENABLE_MESH_MSTK)
+
+    add_amanzi_test(mesh_surface_flattened mesh_surface_flattened
                   KIND unit
                   SOURCE test/Main.cc test/mesh_surface_flattened.cc
                   LINK_LIBS ${mesh_frameworks} mesh_extracted geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-  # note: this requires volumetric extraction, which is only supported by MSTK for now...
-  if (ENABLE_MESH_MSTK)
     # Test: column_mesh
     add_amanzi_test(mesh_extracted_column mesh_extracted_column
                   KIND unit

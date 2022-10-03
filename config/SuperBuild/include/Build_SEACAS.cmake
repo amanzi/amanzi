@@ -78,7 +78,7 @@ endif()
 # --- Define the SEACAS patch step - mainly for nem_slice to be able
 # --- to handle columns
 #
-set(ENABLE_SEACAS_Patch ON)
+set(ENABLE_SEACAS_Patch OFF)
 if (ENABLE_SEACAS_Patch)
   set(SEACAS_patch_file
     seacas-nemslice.patch
@@ -116,7 +116,7 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DSEACASProj_HIDE_DEPRECATED_CODE:STRING="NO"
                     -DTPL_ENABLE_Netcdf:BOOL=TRUE
                     -DTPL_Netcdf_LIBRARIES:STRING=${seacas_netcdf_libraries}
-                    -DNetcdf_INCLUDE_DIRS:STRING=${NetCDF_INCLUDE_DIRS}
+                    -DTPL_Netcdf_INCLUDE_DIRS:STRING=${NetCDF_INCLUDE_DIRS}
                     -DTPL_Netcdf_PARALLEL:BOOL=TRUE
                     -DTPL_ENABLE_Matio:BOOL=FALSE
                     -DTPL_ENABLE_X11:BOOL=FALSE
