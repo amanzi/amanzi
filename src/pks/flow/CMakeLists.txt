@@ -229,22 +229,24 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/flow_multiscale.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: Fractures
-    add_amanzi_test(flow_darcy_fractures flow_darcy_fractures 
-                    KIND int
-                    SOURCE test/Main.cc test/flow_darcy_fractures.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
-                    NPROCS 4)
+    if(ENABLE_MESH_MSTK)
+      # Test: Fractures
+      add_amanzi_test(flow_darcy_fractures flow_darcy_fractures 
+                      KIND int
+                      SOURCE test/Main.cc test/flow_darcy_fractures.cc
+                      LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                      NPROCS 4)
 
-    add_amanzi_test(flow_darcy_fractures_source flow_darcy_fractures_source
-                    KIND int
-                    SOURCE test/Main.cc test/flow_darcy_fractures_source.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+      add_amanzi_test(flow_darcy_fractures_source flow_darcy_fractures_source
+                      KIND int
+                      SOURCE test/Main.cc test/flow_darcy_fractures_source.cc
+                      LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(flow_richards_fractures flow_richards_fractures 
-                    KIND int
-                    SOURCE test/Main.cc test/flow_richards_fractures.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
+      add_amanzi_test(flow_richards_fractures flow_richards_fractures 
+                      KIND int
+                      SOURCE test/Main.cc test/flow_richards_fractures.cc
+                      LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    endif()
+                  
 endif()
 

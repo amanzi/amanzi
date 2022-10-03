@@ -12,6 +12,7 @@ cmake_minimum_required(VERSION 3.13.3)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_EXTENSIONS OFF)
+set(ENABLE_SPACK_BUILD OFF CACHE BOOL "Enable Spack Build")
 
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!
@@ -58,6 +59,16 @@ list(REMOVE_DUPLICATES CMAKE_Fortran_FLAGS_TMP)
 string(JOIN " " CMAKE_C_FLAGS ${CMAKE_C_FLAGS_TMP})
 string(JOIN " " CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_TMP})
 string(JOIN " " CMAKE_Fortran_FLAGS ${CMAKE_Fortran_FLAGS_TMP})
+
+if (ENABLE_SPACK_BUILD)
+  set(MSTK_VERSION ON)
+  set(MSTK_VERSION_MAJOR 3) 
+  set(MSTK_VERSION_MINOR 0)
+  # TODO generate the version file 
+  set(TPL_VERSIONS_INCLUDE_FILE ${CMAKE_BINARY_DIR}/tpl_versions.h)
+  file(WRITE ${TPL_VERSIONS_INCLUDE_FILE} "")
+  install(FILES ${CMAKE_BINARY_DIR}/tpl_versions.h DESTINATION include)
+endif()
 
 # Code version defined
 include(AmanziVersion)

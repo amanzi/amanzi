@@ -142,13 +142,16 @@ if (BUILD_TESTS)
         	    SOURCE test/Main.cc test/mesh_deform.cc
         	    LINK_LIBS ${mesh_test_link_libs})
 
-    # Test: mesh columns
-    #   Tests the buidl_columns() capability for semi-structured meshes.              
-    add_amanzi_test(mesh_build_columns mesh_build_columns
-                    KIND unit
-        	    SOURCE test/Main.cc test/mesh_build_columns.cc
-        	    LINK_LIBS ${mesh_test_link_libs})
-    add_amanzi_test(mesh_build_columns_np2 mesh_build_columns NPROCS 2 KIND unit)
+
+    if (ENABLE_MESH_MSTK)
+      # Test: mesh columns
+      #   Tests the buidl_columns() capability for semi-structured meshes.              
+      add_amanzi_test(mesh_build_columns mesh_build_columns
+                      KIND unit
+                SOURCE test/Main.cc test/mesh_build_columns.cc
+                LINK_LIBS ${mesh_test_link_libs})
+      add_amanzi_test(mesh_build_columns_np2 mesh_build_columns NPROCS 2 KIND unit)
+    endif()
 
     # Test: surface extracted mesh
     #   Tests a surface mesh generated using the mesh framework

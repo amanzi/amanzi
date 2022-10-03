@@ -158,7 +158,8 @@ if (BUILD_TESTS)
                     LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(state_restart2 state_restart2
+    if(ENABLE_MESH_MSTK)
+      add_amanzi_test(state_restart2 state_restart2
                     KIND int
                     SOURCE
 	  	          test/Main.cc
@@ -166,7 +167,8 @@ if (BUILD_TESTS)
                     NPROCS 2
                     LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
-                            
+    endif() 
+                              
     add_amanzi_test(state_copy state_copy
                     KIND int
                     SOURCE test/Main.cc test/state_copy.cc

@@ -9,14 +9,14 @@ diff -ruNbB petsc-v3.13-old/config/PETSc/Configure.py petsc-v3.13-new/config/PET
      self.externalpackagesdir = framework.require('PETSc.options.externalpackagesdir',self)
  
      for utility in sorted(os.listdir(os.path.join('config','PETSc','options'))):
-@@ -936,6 +937,7 @@
+@@ -968,6 +968,7 @@
      self.Dump()
      self.dumpConfigInfo()
      self.dumpMachineInfo()
 +    self.dumpCMakeConfig()
+     self.delGenFiles()
      # need to save the current state of BuildSystem so that postProcess() packages can read it in and perhaps run make install
      self.framework.storeSubstitutions(self.framework.argDB)
-     self.framework.argDB['configureCache'] = pickle.dumps(self.framework)
 @@ -946,3 +948,120 @@
      self.framework.log.write('================================================================================\n')
      self.logClear()

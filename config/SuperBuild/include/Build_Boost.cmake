@@ -156,7 +156,7 @@ ExternalProject_Add(${Boost_BUILD_TARGET}
                     TMP_DIR   ${Boost_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${Boost_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
+                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}               # Download directory
                     URL          ${Boost_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${Boost_MD5_SUM}                  # md5sum of the archive file
                     # -- Configure
@@ -167,7 +167,7 @@ ExternalProject_Add(${Boost_BUILD_TARGET}
                     BUILD_COMMAND     ${Boost_BUILD_COMMAND}       # $(MAKE) enables parallel builds through make
                     BUILD_IN_SOURCE   ${Boost_BUILD_IN_SOURCE}     # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
+                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}         # Install directory
                     INSTALL_COMMAND  ""
                     # -- Output control
                     ${Boost_logging_args})
