@@ -149,7 +149,7 @@ TEST(DARCY_MASS_3D) {
     std::vector<int> dirs;
     mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
     
-    double xi, yi, xj, yj;
+    double xi, xj, yj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces[i];
@@ -157,13 +157,11 @@ TEST(DARCY_MASS_3D) {
         int f2 = faces[j];
 
         xi = mesh->face_normal(f1)[0] * dirs[i];
-        yi = mesh->face_normal(f1)[1] * dirs[i];
         xj = mesh->face_normal(f2)[0] * dirs[j];
         yj = mesh->face_normal(f2)[1] * dirs[j];
 
         if (method == 1) {
           xi /= mesh->face_area(f1);
-          yi /= mesh->face_area(f1);
           xj /= mesh->face_area(f2);
           yj /= mesh->face_area(f2);
         }

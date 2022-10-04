@@ -27,9 +27,6 @@ namespace Amanzi {
 void WriteVis(Visualization& vis, const State& S);
 
 // Checkpointing
-void WriteCheckpoint(Checkpoint &chkp, const Comm_ptr_type& comm,
-                     const State &S, bool final = false);
-
 void ReadCheckpoint(const Comm_ptr_type& comm, State& S, const std::string& filename);
 
 double ReadCheckpointInitialTime(const Comm_ptr_type& comm, std::string filename);

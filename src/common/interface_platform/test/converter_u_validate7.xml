@@ -497,6 +497,7 @@
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
+    <Parameter name="component molar masses" type="Array(double)" value="{1.0}"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{6.1729344e+10, 9.4672798e+10}"/>
       <Parameter name="initial time step" type="Array(double)" value="{1.0, 1.0}"/>

@@ -391,14 +391,12 @@ int MFD3D::StabilityMMatrix_(
   }
 
   // find a feasible basic solution
-  int izrow[mx + 1], iypos[m12 + 1], itrs;
-  itrs = SimplexFindFeasibleSolution_(T, m1, m2, 0, izrow, iypos);
-  if (itrs < 0) return 1;
-
-  if (fabs(T(m12 + 1, 0)) > 1e-8) return 1;
-
+  int izrow[mx + 1], iypos[m12 + 1];
+  simplex_num_itrs_ = SimplexFindFeasibleSolution_(T, m1, m2, 0, izrow, iypos);
   simplex_functional_ = T(0,0); 
-  simplex_num_itrs_ = itrs; 
+
+  if (simplex_num_itrs_ < 0) return 1;
+  if (fabs(T(m12 + 1, 0)) > 1e-8) return 1;
 
   double u[mx];
   for (int i = 0; i < mx; i++) u[i] = 0.0;

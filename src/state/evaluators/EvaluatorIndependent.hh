@@ -101,6 +101,9 @@ public:
   virtual void EnsureCompatibility(State& S) override {
     // Require the field and claim ownership.
     S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
+
+    // set flags
+    EvaluatorIndependent_::EnsureCompatibility(S);
   }
 };
 

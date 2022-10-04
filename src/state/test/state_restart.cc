@@ -218,7 +218,7 @@ SUITE(RESTART) {
     Teuchos::ParameterList checkpoint_list = plist.get<Teuchos::ParameterList>("checkpoint");
     Amanzi::Checkpoint R(checkpoint_list, S0);
 
-    WriteCheckpoint(R, comm, S0, 0.0);
+    R.Write(S0);
 
     Amanzi::State S1(state_list);
     S1.RegisterDomainMesh(Mesh);

@@ -75,6 +75,8 @@ class TransportExplicit_PK : public Transport_PK,
   void AdvanceSecondOrderUpwindRKn(double dt_cycle);
   void AdvanceSecondOrderUpwindRK2(double dt_cycle);
   
+  void DudtOld_(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+
   // factory registration
   static RegisteredPKFactory<TransportExplicit_PK> reg_;
 };

@@ -28,6 +28,8 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, bool include_io_set)
       dynamic_mesh_(false),
       mesh_written_(false),
       static_mesh_cycle_(0),
+      mesh_file_(-1),
+      data_file_(-1),
       include_io_set_(include_io_set)
 {
   AMANZI_ASSERT(viz_comm_.get());
@@ -48,7 +50,9 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, std::string dataFilename, bool inc
       dynamic_mesh_(false),
       mesh_written_(false),
       static_mesh_cycle_(0),
-      include_io_set_(include_io_set)
+      include_io_set_(include_io_set),
+      mesh_file_(-1),
+      data_file_(-1)
 {
   AMANZI_ASSERT(viz_comm_.get());
   H5DataFilename_ = dataFilename;
@@ -65,6 +69,7 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, std::string dataFilename, bool inc
 
 HDF5_MPI::~HDF5_MPI()
 {
+  if (data_file_ >= 0) close_h5file();
   parallelIO_IOgroup_cleanup(&IOgroup_);
 }
 
@@ -670,10 +675,10 @@ void HDF5_MPI::open_h5file(bool read_only)
 {
   if (read_only) {
     data_file_ = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
-             FILE_READWRITE);
+             FILE_READONLY);
     if (data_file_ < 0) {
       Errors::Message msg;
-      msg << "HDF5_MPI: error opening file \"" << H5DataFilename_ << "\" with READ_WRITE access.";
+      msg << "HDF5_MPI: error opening file \"" << H5DataFilename_ << "\" with READ_ONLY access.";
       Exceptions::amanzi_throw(msg);
     }
   } else {
@@ -681,7 +686,7 @@ void HDF5_MPI::open_h5file(bool read_only)
              FILE_READWRITE);
     if (data_file_ < 0) {
       Errors::Message msg;
-      msg << "HDF5_MPI: error opening file \"" << H5DataFilename_ << "\" with READ_ONLY access.";
+      msg << "HDF5_MPI: error opening file \"" << H5DataFilename_ << "\" with READ_WRITE access.";
       Exceptions::amanzi_throw(msg);
     }
   }

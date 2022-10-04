@@ -321,31 +321,61 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
 ****************************************************************** */
 void Flow_PK::VV_PrintSourceExtrema() const
 {
-  int nsrc = srcs.size();
+  int nsrcs = srcs.size();
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH && nsrc > 0) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH && nsrcs > 0) {
+    Teuchos::RCP<const Epetra_MultiVector> aperture;
+    if (flow_on_manifold_)
+      aperture = S_->Get<CompositeVector>(aperture_key_, Tags::DEFAULT).ViewComponent("cell");
+
     double smin(1.0e+99), smax(-1.0e+99);
-    std::vector<double> volumes;
+    std::vector<double> rates(nsrcs, 0.0), volumes(nsrcs, 0.0), areas(nsrcs, 0.0);
 
-    for (int i = 0; i < srcs.size(); ++i) {
+    for (int i = 0; i < nsrcs; ++i) {
       for (auto it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
-        smin = std::min(smin, it->second[0]);
-        smax = std::max(smax, it->second[0]);
+        int c = it->first;
+        if (c < ncells_owned) {
+          double tmp = it->second[0];
+          smin = std::min(smin, tmp);
+          smax = std::max(smax, tmp);
+
+          double vol = mesh_->cell_volume(c);
+
+          if (flow_on_manifold_) {
+            areas[i] += vol;
+            rates[i] += tmp * vol / (*aperture)[0][c];
+            vol *= (*aperture)[0][c];
+          } else {
+            rates[i] += tmp * vol;
+          }
+          volumes[i] += vol;
+        }
       }
-      volumes.push_back(srcs[i]->domain_volume());
     }
 
-    double tmp(smin);
-    mesh_->get_comm()->MinAll(&tmp, &smin, 1);
-    tmp = smax;
-    mesh_->get_comm()->MaxAll(&tmp, &smax, 1);
+    double tmp1(smin), tmp2(smax);
+    std::vector<double> aux1(rates), aux2(volumes);
+    mesh_->get_comm()->MinAll(&tmp1, &smin, 1);
+    mesh_->get_comm()->MaxAll(&tmp2, &smax, 1);
+    mesh_->get_comm()->SumAll(aux1.data(), rates.data(), nsrcs);
+    mesh_->get_comm()->SumAll(aux2.data(), volumes.data(), nsrcs);
+    if (flow_on_manifold_) {
+      std::vector<double> aux3(areas);
+      mesh_->get_comm()->SumAll(aux3.data(), areas.data(), nsrcs);
+    }
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "sources: min=" << smin << " max=" << smax << "  volumes: ";
-    for (int i = 0; i < std::min(5, (int)srcs.size()); ++i) {
-      *vo_->os() << volumes[i] << " ";
+    *vo_->os() << "sources: total min/max: " << smin << "/" << smax << std::endl;
+    for (int i = 0; i < nsrcs; ++i) {
+      if (flow_on_manifold_) {
+        *vo_->os() << " src #" << i << ": area=" << areas[i] << " m^2" 
+                   << ", rate=" << rates[i] << " kg/s"
+                   << ", mean aperture=" << volumes[i] / areas[i] << " m" << std::endl;
+      } else {
+        *vo_->os() << " src #" << i << ": volume=" << volumes[i] << " m^3" 
+                   << ", rate=" << rates[i] << " kg/s" << std::endl;
+      }
     }
-    *vo_->os() << std::endl;
   }
 }
 

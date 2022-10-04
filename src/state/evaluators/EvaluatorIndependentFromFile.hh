@@ -22,6 +22,8 @@
 
 namespace Amanzi {
 
+class Function;
+
 class EvaluatorIndependentFromFile
     : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
 

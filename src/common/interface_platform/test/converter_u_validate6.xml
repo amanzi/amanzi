@@ -679,6 +679,7 @@
       <Parameter name="transport subcycling" type="bool" value="true"/>
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
+        <Parameter name="weight" type="string" value="constant"/>
         <Parameter name="limiter" type="string" value="tensorial"/>
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
         <Parameter name="limiter stencil" type="string" value="face to cells"/>
@@ -751,6 +752,7 @@
 
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
+        <Parameter name="weight" type="string" value="constant"/>
         <Parameter name="limiter" type="string" value="tensorial"/>
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
         <Parameter name="limiter stencil" type="string" value="face to cells"/>

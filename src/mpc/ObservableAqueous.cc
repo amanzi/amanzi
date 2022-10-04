@@ -12,11 +12,14 @@
 */
 
 #include <map>
-#include "ObservableAqueous.hh"
+
+#include "Evaluator.hh"
 #include "RegionPlane.hh"
 #include "RegionPolygon.hh"
 #include "ReconstructionCellLinear.hh"
 #include "Units.hh"
+
+#include "ObservableAqueous.hh"
 
 namespace Amanzi{
 
@@ -123,11 +126,13 @@ void ObservableAqueous::ComputeObservation(
   Key head_key = Keys::getKey(domain_, "hydraulic_head");
   Key poro_key = Keys::getKey(domain_, "porosity");
   Key sat_key = Keys::getKey(domain_, "saturation_liquid");
+  Key wc_key = Keys::getKey(domain_, "water_content");
   Key pressure_key = Keys::getKey(domain_, "pressure");
   Key perm_key =Keys::getKey(domain_, "permeability");    
   
+  S.GetEvaluator(wc_key).Update(S, "cycle driver");
+  const auto& wc = *S.Get<CompositeVector>(wc_key).ViewComponent("cell");
   const auto& porosity = *S.Get<CompositeVector>(poro_key).ViewComponent("cell");    
-  const auto& ws = *S.Get<CompositeVector>(sat_key).ViewComponent("cell");
   
   unit = "";
 
@@ -136,7 +141,7 @@ void ObservableAqueous::ComputeObservation(
       int c = entity_ids_[i];
       double vol = mesh_->cell_volume(c);
       *volume += vol;
-      *value  += porosity[0][c] * ws[0][c] * vol;
+      *value  += wc[0][c] * vol;
     }
   } else if (variable_ == "gravimetric water content") {
     Key pd_key = Keys::getKey(domain_, "particle_density");
@@ -153,7 +158,7 @@ void ObservableAqueous::ComputeObservation(
 
       double vol = mesh_->cell_volume(c);
       *volume += vol;
-      *value  += porosity[0][c] * ws[0][c] * tmp / (pd[0][c] * (1.0 - porosity[0][c])) * vol;
+      *value  += wc[0][c] * tmp / (pd[0][c] * (1.0 - porosity[0][c])) * vol;
     }    
   } else if (variable_ == "aqueous pressure") {
     const auto& pressure = *S.Get<CompositeVector>(pressure_key).ViewComponent("cell");
@@ -170,11 +175,33 @@ void ObservableAqueous::ComputeObservation(
     *volume = 1.0;
     unit = "m";
   } else if (variable_ == "aqueous saturation") {
+    const auto& ws = *S.Get<CompositeVector>(sat_key).ViewComponent("cell");
+
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
       double vol = mesh_->cell_volume(c);
       *volume += vol;
       *value  += ws[0][c] * vol;
+    }    
+  } else if (variable_ == "ponded depth") {
+    Key depth_key = Keys::getKey(domain_, "ponded_depth");
+    const auto& depth = *S.Get<CompositeVector>(depth_key).ViewComponent("cell");
+
+    for (int i = 0; i < region_size_; i++) {
+      int c = entity_ids_[i];
+      double vol = mesh_->cell_volume(c);
+      *volume += vol;
+      *value  += depth[0][c] * vol;
+    }    
+  } else if (variable_ == "velocity x") {
+    Key vel_key = Keys::getKey(domain_, "velocity");
+    const auto& vel = *S.Get<CompositeVector>(vel_key).ViewComponent("cell");
+
+    for (int i = 0; i < region_size_; i++) {
+      int c = entity_ids_[i];
+      double vol = mesh_->cell_volume(c);
+      *volume += vol;
+      *value  += vel[0][c] * vol;
     }    
   } else if (variable_ == "hydraulic head") {
     const auto& hydraulic_head = *S.Get<CompositeVector>(head_key).ViewComponent("cell");

@@ -193,6 +193,7 @@
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{}"/>
+    <Parameter name="component molar masses" type="Array(double)" value="{}"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{}"/>
       <Parameter name="initial time step" type="Array(double)" value="{}"/>
@@ -511,32 +512,41 @@
       <Parameter name="numerical flux" type="string" value="Rusanov"/>
       <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
       <Parameter name="cfl" type="double" value="0.5"/>
+      <Parameter name="spatial discretization order" type="int" value="2"/>
+      <Parameter name="temporal discretization order" type="int" value="2"/>
       <ParameterList name="reconstruction">
-        <Parameter name="polynomial order" type="int" value="0"/>
+        <Parameter name="polynomial order" type="int" value="1"/>
+        <Parameter name="weight" type="string" value="constant"/>
         <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
         <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
         <Parameter name="limiter location" type="string" value="face"/>
         <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
       <ParameterList name="boundary conditions">
+        <ParameterList name="ponded depth">
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{LeftTopEdge}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="ponded depth">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.00000000000000000e+01"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
         <ParameterList name="velocity">
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{LeftTopEdge}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="velocity">
-              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.00000000000000000e+01"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="dof 3 function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
                 </ParameterList>

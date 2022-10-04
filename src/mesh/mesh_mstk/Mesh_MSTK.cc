@@ -2379,115 +2379,6 @@ void Mesh_MSTK::node_get_coordinates(const Entity_ID nodeid,
 
 
 //---------------------------------------------------------
-// Coordinates of cells in standard order (Exodus II convention)
-// STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
-// For a general polyhedron this will return the node coordinates in
-// arbitrary order
-// Number of nodes is vector size divided by number of spatial dimensions
-//---------------------------------------------------------
-void Mesh_MSTK::cell_get_coordinates(const Entity_ID cellid, 
-                                     std::vector<AmanziGeometry::Point> *ccoords) const
-{    
-  MEntity_ptr cell;
-  double coords[3];
-  int nn;
-  int spdim = space_dimension(), celldim = manifold_dimension();
-
-  AMANZI_ASSERT(ccoords != NULL);
-
-  cell = cell_id_to_handle[cellid];
-      
-  if (celldim == 3) {
-    List_ptr rverts = MR_Vertices(cell);
-    
-    nn = List_Num_Entries(rverts);
-
-    ccoords->resize(nn);
-    std::vector<AmanziGeometry::Point>::iterator it = ccoords->begin();
-
-    for (int i = 0; i < nn; ++i) {
-      MV_Coords(List_Entry(rverts,i),coords);
-      it->set(spdim,coords); // same as (*it).set()
-      ++it; 
-    }    
-
-    List_Delete(rverts);
-  }
-  else if (celldim == 2) {
-    List_ptr fverts = MF_Vertices(cell,1,0);
-
-    nn = List_Num_Entries(fverts);
-
-    ccoords->resize(nn);
-    std::vector<AmanziGeometry::Point>::iterator it = ccoords->begin();
-
-    for (int i = 0; i < nn; ++i) {
-      MV_Coords(List_Entry(fverts,i),coords);
-      it->set(spdim,coords); // same as (*it).set()
-      ++it;
-    }
-
-    List_Delete(fverts);
-  }
-}
-
-
-//---------------------------------------------------------
-// Face coordinates - conventions same as face_to_nodes call 
-// Number of nodes is the vector size divided by number of spatial dimensions
-//---------------------------------------------------------
-void Mesh_MSTK::face_get_coordinates(const Entity_ID faceid, 
-                                     std::vector<AmanziGeometry::Point> *fcoords) const
-{
-  MEntity_ptr genface;
-  double coords[3];
-  int spdim = space_dimension(), celldim = manifold_dimension();
-
-  AMANZI_ASSERT(faces_initialized);
-  AMANZI_ASSERT(fcoords != NULL);
-
-  genface = face_id_to_handle[faceid];
-
-  if (celldim == 3) {
-    int dir = !faceflip[faceid];
-
-    List_ptr fverts = MF_Vertices((MFace_ptr) genface,dir,0);
-
-    int nn = List_Num_Entries(fverts);
-    fcoords->resize(nn);
-    std::vector<AmanziGeometry::Point>::iterator it = fcoords->begin();
-        
-    for (int i = 0; i < nn; ++i) {
-      MV_Coords(List_Entry(fverts,i),coords);
-      it->set(spdim,coords); // same as (*it).set()
-      ++it;
-    }
-
-    List_Delete(fverts);
-  }
-  else { // Planar mesh or Surface mesh embedded in 3D
-    MVertex_ptr ev[2];
-    if (!faceflip[faceid]) {
-      ev[0] = ME_Vertex((MEdge_ptr)genface,0);
-      ev[1] = ME_Vertex((MEdge_ptr)genface,1);
-    }
-    else {
-      ev[1] = ME_Vertex((MEdge_ptr)genface,0);
-      ev[0] = ME_Vertex((MEdge_ptr)genface,1);
-    }
-
-    fcoords->resize(2);
-
-    MV_Coords(ev[0],coords);
-    ((*fcoords)[0]).set(spdim,coords);
-        
-    MV_Coords(ev[1],coords);
-    ((*fcoords)[1]).set(spdim,coords);
-  }
-}
-  
-
-//---------------------------------------------------------
 // Modify a node's coordinates
 //---------------------------------------------------------
 void Mesh_MSTK::node_set_coordinates(const AmanziMesh::Entity_ID nodeid, 
@@ -2617,17 +2508,17 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
              (region->get_type() == AmanziGeometry::RegionType::POLYGON)) {
 
       if (celldim == 2) {
+        Entity_ID_List nodes;
+        AmanziGeometry::Point xyz(space_dim);
 
         int ncells = num_entities(CELL, Parallel_type::ALL);              
         for (int ic = 0; ic < ncells; ic++) {
-
-          std::vector<AmanziGeometry::Point> ccoords(space_dim);
-
-          cell_get_coordinates(ic, &ccoords);
+          cell_get_nodes(ic, &nodes);
 
           bool on_plane = true;
-          for (int j = 0; j < ccoords.size(); ++j) {
-            if (!region->inside(ccoords[j])) {
+          for (int j = 0; j < nodes.size(); ++j) {
+            node_get_coordinates(nodes[j], &xyz);
+            if (!region->inside(xyz)) {
               on_plane = false;
               break;
             }

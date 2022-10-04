@@ -223,7 +223,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
         transient_model += 8;
 
       } else if (strcmp(tagname, "shallow_water") == 0) {
-        model = GetAttributeValueS_(jnode, "model");
+        model = GetAttributeValueS_(jnode, "model", "Rusanov, central upwind");
         pk_model_["shallow_water"] = model;
 
         std::string region = GetAttributeValueS_(jnode, "domain");
@@ -353,6 +353,16 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
   }
 
   out_list.set<Teuchos::Array<std::string> >("component names", comp_names_all_);
+
+  // available molar masses
+  std::string name;
+  std::vector<double> tmp(comp_names_all_.size(), 1.0);
+
+  for (int i = 0; i < comp_names_all_.size(); ++i) {
+    name = comp_names_all_[i];
+    if (solute_molar_mass_.find(name) != solute_molar_mass_.end()) tmp[i] = solute_molar_mass_[name];
+  }
+  out_list.set<Teuchos::Array<double> >("component molar masses", tmp);
 
   out_list.sublist("time period control") = TranslateTimePeriodControls_();
   if (filename.size() > 0) {
@@ -907,7 +917,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
 
         // ... coupling information 
         out_list.sublist(pk_names[1]).sublist("physical models and assumptions")
-           .set<std::string>("darcy flux key", Keys::getKey(pk_domain_["shallow_water"], "riemann_flux"))
+           .set<std::string>("volumetric flow rate key", Keys::getKey(pk_domain_["shallow_water"], "riemann_flux"))
            .set<std::string>("saturation key", Keys::getKey(pk_domain_["shallow_water"], "ponded_depth"));
       }
 
@@ -1003,6 +1013,13 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
         tmp.sublist("diffusion operator")
            .sublist("preconditioner").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
       }
+
+      Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
+      mesh_list.sublist("submesh").set<Teuchos::Array<std::string> >("regions", aux)
+                                  .set<std::string>("extraction method", "manifold mesh")
+                                  .set<std::string>("domain name", "fracture");
+
+      if (dim_ == 3) mesh_list.sublist("expert").set<bool>("request edges", true);
     }
 
     if (basename == "coupled flow and energy") {

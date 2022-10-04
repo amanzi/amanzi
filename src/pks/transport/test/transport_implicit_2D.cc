@@ -1,7 +1,15 @@
 /*
-  The transport component of the Amanzi code, serial unit tests.
-  License: BSD
+  Transport PK
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Dynamics is due to molecular diffusion, so the second-order
+  and first-order schemes are identical.
 */
 
 #include <iostream>
@@ -24,8 +32,7 @@
 // Amanzi::Transport
 #include "TransportImplicit_PK.hh"
 
-
-void runTest(int order, const std::string& linsolver)
+Epetra_MultiVector runTest(int order, const std::string& linsolver)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -104,14 +111,19 @@ void runTest(int order, const std::string& linsolver)
   CHECK(err < 1e-3);
 
   WriteStateStatistics(*S);
+
+  return tcc;
 }
  
 
-TEST(IMPLICIT_TRANSPORT_2D_FIRST_ORDER) {
-  runTest(1, "PCG");
+TEST(IMPLICIT_TRANSPORT_2D) {
+  auto tcc1 = runTest(1, "PCG");
+  auto tcc2 = runTest(2, "");
+
+  tcc1.Update(1.0, tcc2, -1.0);
+  double norm;  
+  tcc1.Norm2(&norm);
+  CHECK_CLOSE(norm, 0.0, 2e-12);
 }
 
-TEST(IMPLICIT_TRANSPORT_2D_SECOND_ORDER) {
-  runTest(2, "");
-}
 

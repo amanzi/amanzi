@@ -11,11 +11,18 @@
   Helpers that know how to read/write/etc data.
 */
 
+#include "Data_Helpers.hh"
+
+#include "CompositeVector.hh"
+#include "TensorVector.hh"
+#include "BoundaryFunction.hh"
+#include "TreeVectorSpace.hh"
+#include "TreeVector.hh"
+#include "TensorVector.hh"
+
 #include "ColumnMeshFunction.hh"
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
-
-#include "Data_Helpers.hh"
 #include "IO.hh"
 
 namespace Amanzi {
@@ -39,10 +46,10 @@ void WriteCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
 }
 
 template <>
-void ReadCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
+bool ReadCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
                             const std::vector<std::string>* subfieldnames,
                             double& t) {
-  chkp.Read(fieldname, t);
+  return chkp.Read(fieldname, t);
 }
 
 template <>
@@ -73,10 +80,10 @@ void WriteCheckpoint<int>(const Checkpoint& chkp, const Key& fieldname,
 }
 
 template <>
-void ReadCheckpoint<int>(const Checkpoint& chkp, const Key& fieldname,
+bool ReadCheckpoint<int>(const Checkpoint& chkp, const Key& fieldname,
                          const std::vector<std::string>* subfieldnames,
                          int& t) {
-  chkp.Read(fieldname, t);
+  return chkp.Read(fieldname, t);
 }
 
 template <>
@@ -137,20 +144,24 @@ void WriteVis<CompositeVector>(const Visualization& vis, const Key& fieldname,
         throw(msg);
       }
 
-      // I feel like this could be fixed with boost zip_iterator, but the
-      // Epetra vectors need iterated over and they aren't, by default,
-      // iterable.
+      std::vector<Key> full_names;
       for (int i = 0; i != vec_c.NumVectors(); ++i) {
-        Key fullname = fieldname + ".cell." + (*subfieldnames)[i];
-        vis.Write(fullname, *vec_c(i));
+        Key full_name = fieldname + "." + (*subfieldnames)[i];
+        full_names.emplace_back(full_name);
       }
+      vis.WriteVector(vec_c, full_names);
 
     } else {
-      for (int i = 0; i != vec_c.NumVectors(); ++i) {
-        std::stringstream name;
-        name << fieldname << ".cell." << i;
-        vis.Write(name.str(), *vec_c(i));
+      std::vector<Key> full_names;
+      if (vec_c.NumVectors() > 1) {
+        for (int i = 0; i != vec_c.NumVectors(); ++i) {
+          Key full_name = fieldname + "." + std::to_string(i);
+          full_names.emplace_back(full_name);
+        }
+      } else {
+        full_names.emplace_back(fieldname);
       }
+      vis.WriteVector(vec_c, full_names);
     }
   }
 }
@@ -190,10 +201,11 @@ void WriteCheckpoint<CompositeVector>(const Checkpoint& chkp,
 }
 
 template <>
-void ReadCheckpoint<CompositeVector>(const Checkpoint& chkp,
+bool ReadCheckpoint<CompositeVector>(const Checkpoint& chkp,
                                      const Key& fieldname,
                                      const std::vector<std::string>* subfieldnames,
                                      CompositeVector& vec) {
+  bool flag(true);
   for (const auto& cname : vec) {
     auto& vec_c = *vec.ViewComponent(cname, false);
 
@@ -214,10 +226,11 @@ void ReadCheckpoint<CompositeVector>(const Checkpoint& chkp,
       for (int i = 0; i != vec_c.NumVectors(); ++i) {
         std::stringstream name;
         name << fieldname << "." << cname << "." << i;
-        chkp.Read(name.str(), *vec_c(i));
+        flag &= chkp.Read(name.str(), *vec_c(i));
       }
     }
   }
+  return flag;
 }
 
 template <>
@@ -230,7 +243,7 @@ bool Initialize<CompositeVector>(
   // ------ Try to set values from a restart file -----
   if (plist.isParameter("restart file")) {
     auto filename = plist.get<std::string>("restart file");
-    Checkpoint chkp(filename, t.Comm());
+    Checkpoint chkp(filename, t.Comm(), Keys::getDomain(fieldname));
     ReadCheckpoint(chkp, fieldname, subfieldnames, t);
     chkp.Finalize();
     initialized = true;
@@ -289,6 +302,7 @@ bool Initialize<CompositeVector>(
 
   // ------ Set values using a function -----
   if (plist.isSublist("function")) {
+    double t_ini = plist.get<double>("time", 0.0);
     Teuchos::ParameterList func_plist = plist.sublist("function");
 
     std::vector<std::string> complist;
@@ -312,7 +326,7 @@ bool Initialize<CompositeVector>(
 
       // Evaluate the velocity function
       auto func = Functions::CreateCompositeVectorFunction(func_plist, vel_vec->Map(), complist);
-      func->Compute(0.0, vel_vec.ptr());
+      func->Compute(t_ini, vel_vec.ptr());
 
       // CV's map may differ from the regular mesh map due to presense of fractures
       const auto& fmap = *t.Map().Map("face", true);
@@ -322,14 +336,25 @@ bool Initialize<CompositeVector>(
       const Epetra_MultiVector& vel_f = *vel_vec->ViewComponent("face");
 
       // Dot the velocity with the normal
+      // -- two branches: single flux per face, multiple fluxes
+      int dir;
       AmanziGeometry::Point vel(dim);
       for (int f = 0; f != nfaces_owned; ++f) {
-        const AmanziGeometry::Point& normal = t.Mesh()->face_normal(f);
         for (int i = 0; i < dim; ++i) vel[i] = vel_f[i][f]; 
 
+        int ndofs = fmap.ElementSize(f);
         int g = fmap.FirstPointInElement(f);
-        for (int i = 0; i < fmap.ElementSize(f); ++i) {
-          dat_f[0][g + i] = vel * normal; 
+        if (ndofs == 1) {
+          const AmanziGeometry::Point& normal = t.Mesh()->face_normal(f);
+          dat_f[0][g] = vel * normal; 
+        } else {
+          AmanziMesh::Entity_ID_List cells;
+          t.Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+
+          for (int i = 0; i < ndofs; ++i) {
+            const AmanziGeometry::Point& normal = t.Mesh()->face_normal(f, false, cells[i], &dir);
+            dat_f[0][g + i] = (vel * normal) * dir; 
+          }
         }
       }
       initialized = true;
@@ -339,7 +364,7 @@ bool Initialize<CompositeVector>(
 
       // no map, just evaluate the function
       auto func = Functions::CreateCompositeVectorFunction(func_plist, t.Map(), complist);
-      func->Compute(0.0, t_ptr);
+      func->Compute(t_ini, t_ptr);
       initialized = true;
     }
   }
@@ -351,6 +376,224 @@ bool Initialize<CompositeVector>(
   }
   return initialized;
 }
+
+
+// ======================================================================
+// Specializations for Epetra_Vector
+// ======================================================================
+template <>
+void WriteVis<Epetra_Vector>(const Visualization& vis, const Key& fieldname,
+                             const std::vector<std::string>* subfieldnames,
+                             const Epetra_Vector& vec)
+{
+  vis.Write(fieldname, vec);
+}
+
+template <>
+void WriteCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
+                                    const Key& fieldname,
+                                    const std::vector<std::string>* subfieldnames,
+                                    const Epetra_Vector& vec) {
+  chkp.Write(fieldname, vec);
+}
+
+template <>
+bool ReadCheckpoint<Epetra_Vector>(const Checkpoint& chkp,
+                                   const Key& fieldname,
+                                   const std::vector<std::string>* subfieldnames,
+                                   Epetra_Vector& vec) {
+  return chkp.Read(fieldname, vec);
+}
+
+template <>
+bool Initialize<Epetra_Vector>(
+    Teuchos::ParameterList& plist, Epetra_Vector& t, const Key& fieldname,
+    const std::vector<std::string>* subfieldnames) {
+  bool initialized = false;
+
+  // First try all initialization method which set the entire data structure.
+  // ------ Try to set values from a restart file -----
+  if (plist.isParameter("restart file")) {
+    auto filename = plist.get<std::string>("restart file");
+    auto comm = Teuchos::rcpFromRef(t.Comm());
+    Checkpoint chkp(filename, comm);
+    ReadCheckpoint(chkp, fieldname, subfieldnames, t);
+    chkp.Finalize();
+    initialized = true;
+  }
+
+  // ------ Set values using a constant -----
+  if (plist.isParameter("constant")) {
+    double value = plist.get<double>("constant");
+    t.PutScalar(value);
+    initialized = true;
+  }
+  if (plist.isParameter("value")) {
+    double value = plist.get<double>("value");
+    t.PutScalar(value);
+    initialized = true;
+  }
+  return initialized;
+}
+
+
+template <>
+bool Equivalent(const Epetra_Map& one, const Epetra_Map& two) {
+  return one.SameAs(two);
+}
+
+template <>
+bool Equivalent(const Epetra_BlockMap& one, const Epetra_BlockMap& two) {
+  return one.SameAs(two);
+}
+
+template <>
+bool Equivalent(const TreeVectorSpace& one, const TreeVectorSpace& two) {
+  return one.SameAs(two);
+}
+
+
+// ======================================================================
+// Specializations for TreeVector
+// ======================================================================
+template <>
+void WriteVis<TreeVector>(const Visualization& vis, const Key& fieldname,
+                          const std::vector<std::string>* subfieldnames,
+                          const TreeVector& vec)
+{
+  int i = 0;
+  for (const auto& subvec : vec) {
+    std::string subvec_name = fieldname+"_"+std::to_string(i);
+    WriteVis(vis, subvec_name, nullptr, *subvec);
+    ++i;
+  }
+  if (vec.Data() != Teuchos::null) {
+    WriteVis(vis, fieldname+"_data", nullptr, *vec.Data());
+  }
+}
+
+template <>
+void WriteCheckpoint<TreeVector>(const Checkpoint& chkp,
+                                 const Key& fieldname,
+                                 const std::vector<std::string>* subfieldnames,
+                                 const TreeVector& vec)
+{
+  int i = 0;
+  for (const auto& subvec : vec) {
+    std::string subvec_name = fieldname+"_"+std::to_string(i);
+    WriteCheckpoint(chkp, subvec_name, nullptr, *subvec);
+    ++i;
+  }
+  if (vec.Data() != Teuchos::null) {
+    WriteCheckpoint(chkp, fieldname+"_data", nullptr, *vec.Data());
+  }
+}
+
+template <>
+bool ReadCheckpoint<TreeVector>(const Checkpoint& chkp,
+                                const Key& fieldname,
+                                const std::vector<std::string>* subfieldnames,
+                                TreeVector& vec)
+{
+  bool flag(true);
+  int i = 0;
+  for (const auto& subvec : vec) {
+    std::string subvec_name = fieldname+"_"+std::to_string(i);
+    flag &= ReadCheckpoint(chkp, subvec_name, nullptr, *subvec);
+    ++i;
+  }
+  if (vec.Data() != Teuchos::null) {
+    flag &= ReadCheckpoint(chkp, fieldname+"_data", nullptr, *vec.Data());
+  }
+  return flag;
+}
+
+template <>
+bool Initialize<TreeVector>(Teuchos::ParameterList& plist,
+                            TreeVector& t, const Key& fieldname,
+                            const std::vector<std::string>* subfieldnames) {
+  return false;
+}
+
+
+// ======================================================================
+// Specializations for Teuchos::Array<double>
+// ======================================================================
+template <>
+void WriteVis<Teuchos::Array<double>>(const Visualization& vis, const Key& fieldname,
+                          const std::vector<std::string>* subfieldnames,
+                          const Teuchos::Array<double>& vec)
+{
+  if (subfieldnames) {
+    AMANZI_ASSERT(vec.size() != subfieldnames->size());
+    for (int i=0; i!=vec.size(); ++i) {
+      vis.Write(fieldname+"_"+(*subfieldnames)[i], vec[i]);
+    }
+  } else {
+    for (int i=0; i!=vec.size(); ++i) {
+      vis.Write(fieldname+"_"+std::to_string(i), vec[i]);
+    }
+  }
+}
+
+template <>
+void WriteCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
+                                 const Key& fieldname,
+                                 const std::vector<std::string>* subfieldnames,
+                                 const Teuchos::Array<double>& vec)
+{
+  if (subfieldnames) {
+    AMANZI_ASSERT(vec.size() != subfieldnames->size());
+    for (int i=0; i!=vec.size(); ++i) {
+      chkp.Write(fieldname+"_"+(*subfieldnames)[i], vec[i]);
+    }
+  } else {
+    for (int i=0; i!=vec.size(); ++i) {
+      chkp.Write(fieldname+"_"+std::to_string(i), vec[i]);
+    }
+  }
+}
+
+template <>
+bool ReadCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
+                                const Key& fieldname,
+                                const std::vector<std::string>* subfieldnames,
+                                Teuchos::Array<double>& vec)
+{
+  bool flag = true;
+  if (subfieldnames) {
+    AMANZI_ASSERT(vec.size() != subfieldnames->size());
+    for (int i=0; i!=vec.size(); ++i) {
+      flag &= chkp.Read(fieldname+"_"+(*subfieldnames)[i], vec[i]);
+    }
+  } else {
+    for (int i=0; i!=vec.size(); ++i) {
+      flag &= chkp.Read(fieldname+"_"+std::to_string(i), vec[i]);
+    }
+  }
+  return flag;
+}
+
+
+template <>
+bool Initialize<Teuchos::Array<double>>(Teuchos::ParameterList& plist,
+                            Teuchos::Array<double>& t, const Key& fieldname,
+                            const std::vector<std::string>* subfieldnames) {
+  if (plist.isParameter("value")) {
+    auto arr = plist.get<Teuchos::Array<double>>("value");
+    if (t.size() != arr.size()) {
+      Errors::Message msg;
+      msg << "While initializing \"" << fieldname << "\" an array of lenth "
+          << (int)t.size() << " was expected, but an array of length "
+          << (int)arr.size() << " was provided.";
+      throw(msg);
+    }
+    t = arr;
+    return true;
+  }
+  return false;
+}
+
 
 }  // namespace Helpers
 }  // namespace Amanzi

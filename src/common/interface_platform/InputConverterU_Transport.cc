@@ -45,8 +45,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   MemoryManager mm;
 
   char *text, *tagname;
-  DOMNodeList *node_list, *children;
-  DOMNode* node;
+  DOMNodeList *children;
+  DOMNode *node, *root;
 
   // create header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
@@ -100,7 +100,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
       ntime = 2;
       poly_order = 1;
     } else if (order == "explicit") {
-      int nspace(-1), ntime(-1);
+      nspace = -1;
+      ntime = -1;
       node = GetUniqueElementByTagsString_(tags_default + ", spatial_order", flag);
       if (flag) nspace = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);
 
@@ -140,10 +141,11 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   // high-order transport
   // -- defaults
   Teuchos::ParameterList& trp_lift = out_list.sublist("reconstruction");
-  trp_lift.set<int>("polynomial order", poly_order);
-  trp_lift.set<std::string>("limiter", "tensorial");
-  trp_lift.set<bool>("limiter extension for transport", true);
-  trp_lift.set<std::string>("limiter stencil", "face to cells");
+  trp_lift.set<int>("polynomial order", poly_order)
+          .set<std::string>("limiter", "tensorial")
+          .set<std::string>("weight", "constant")
+          .set<bool>("limiter extension for transport", true)
+          .set<std::string>("limiter stencil", "face to cells");
 
   // -- overwrite data from expert parameters  
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, limiter", flag);
@@ -159,18 +161,25 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
     trp_lift.set<std::string>("limiter stencil", stencil);
   }
 
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, reconstruction_weight", flag);
+  if (flag) {
+    std::string weight = GetTextContentS_(node, "constant, inverse-distance");
+    std::replace(weight.begin(), weight.end(), '-', ' ');
+    trp_lift.set<std::string>("weight", weight);
+  }
+
   // check if we need to write a dispersivity sublist
-  node = doc_->getElementsByTagName(mm.transcode("materials"))->item(0);
   bool dispersion = (doc_->getElementsByTagName(mm.transcode("dispersion_tensor"))->getLength() > 0) ||
                     (doc_->getElementsByTagName(mm.transcode("tortuosity"))->getLength() > 0);
 
   // create dispersion list
   if (dispersion) {
-    node_list = doc_->getElementsByTagName(mm.transcode("materials"));
-
     Teuchos::ParameterList& mat_list = out_list.sublist("material properties");
 
-    children = node_list->item(0)->getChildNodes();
+    root = GetRoot_(domain, flag);
+    node = GetUniqueElementByTagsString_(root, "materials", flag);
+    children = node->getChildNodes();
+
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
@@ -240,6 +249,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
 
         std::string mat_name = GetAttributeValueS_(inode, "name");
         mat_list.sublist(mat_name) = tmp_list;
+
+        if (domain == "fracture") {
+          for (int n = 0; n < regions.size(); ++n)
+            fracture_regions_.push_back(regions[n]);
+          fracture_regions_.erase(SelectUniqueEntries(fracture_regions_.begin(), fracture_regions_.end()),
+                                  fracture_regions_.end());
+        }
       }
     }
   }

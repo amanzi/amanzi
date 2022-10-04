@@ -115,7 +115,7 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
       std::cout << "Changing Darcy velocity direction to opposite.\n\n";
     }
 
-    dt = TPK.StableTimeStep();
+    dt = TPK.StableTimeStep(-1);
     t_new = t_old + dt;
 
     S->set_initial_time(t_old);

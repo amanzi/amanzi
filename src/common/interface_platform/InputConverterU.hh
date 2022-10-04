@@ -41,9 +41,9 @@ class InputConverterU : public InputConverter {
       compressibility_(false),
       fractures_(false),
       mesh_rectangular_(false),
-      transport_permeability_(false),
       use_transport_porosity_(false),
       use_transport_dispersion_(true),
+      transport_permeability_(false),
       transport_implicit_(false),
       restart_(false),
       ic_time_flow_(0.0),
@@ -62,9 +62,9 @@ class InputConverterU : public InputConverter {
       compressibility_(false),
       fractures_(false),
       mesh_rectangular_(false),
-      transport_permeability_(false),
       use_transport_porosity_(false),
       use_transport_dispersion_(true),
+      transport_permeability_(false),
       transport_implicit_(false),
       restart_(false),
       ic_time_flow_(0.0),
@@ -132,8 +132,8 @@ class InputConverterU : public InputConverter {
   void TranslateFieldIC_(
       DOMNode* node, std::string field, std::string unit,
       const std::string& reg_str, const std::vector<std::string>& regions,
-      Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
-      std::string data_key = "value");
+      Teuchos::ParameterList& out_ic, std::string data_key = "value",
+      const std::vector<std::string>& components = { "cell" });
 
   void AddIndependentFieldEvaluator_(
       Teuchos::ParameterList& out_ev,

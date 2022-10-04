@@ -43,7 +43,8 @@ build_whitespace_string(moab_ldflags
                         ${moab_shared_dir})
 
 # --- Patch the original code
-set(MOAB_patch_file moab-configure.patch)
+set(MOAB_patch_file moab-configure.patch
+                    moab-install.patch)
 set(MOAB_sh_patch ${MOAB_prefix_dir}/moab-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/moab-patch-step.sh.in
                ${MOAB_sh_patch}

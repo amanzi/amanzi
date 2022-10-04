@@ -61,7 +61,7 @@ class UnstructuredObservations : public IOEvent {
 
  private:
   // NOTE: this should only be called on one rank
-  void InitFile_();
+  void InitFile_(const Teuchos::Ptr<const State>& S);
   void Write_(double time, const std::vector<double>& obs);
 
  private:

@@ -362,11 +362,10 @@ std::string EvaluatorSecondary::WriteToString() const
 
 void EvaluatorSecondary::EnsureCompatibility_Flags_(State& S) {
   // check plist for vis or checkpointing control
+  bool io_my_key = plist_.get<bool>("visualize", true);
+  bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
   for (auto keytag : my_keys_) {
-    bool io_my_key = plist_.get<bool>(std::string("visualize ") + keytag.first, true);
     S.GetRecordW(keytag.first, keytag.second, keytag.first).set_io_vis(io_my_key);
-    bool checkpoint_my_key =
-        plist_.get<bool>(std::string("checkpoint ") + keytag.first, false);
     S.GetRecordW(keytag.first, keytag.second, keytag.first).set_io_checkpoint(checkpoint_my_key);
   }
 }

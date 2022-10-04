@@ -84,8 +84,28 @@ Comm_ptr_type getCommSelf() {
   return Teuchos::rcp(new Epetra_SerialComm());
 #endif
 #endif
-
 }
+
+//
+// Get a communicator, based on MPI_Comm
+// -----------------------------------------------------------------------------
+inline
+Comm_ptr_type getComm(MPI_Comm comm) {
+#ifdef TRILINOS_TPETRA_STACK
+#ifdef HAVE_MPI
+  return Teuchos::rcp(new Teuchos::MpiComm<int>(comm));
+#else
+  return Teuchos::rcp(new Teuchos::SerialComm<int>());
+#endif
+#else
+#ifdef HAVE_MPI
+  return Teuchos::rcp(new Epetra_MpiComm(comm));
+#else
+  return Teuchos::rcp(new Epetra_SerialComm());
+#endif
+#endif
+}
+
 
 
 //

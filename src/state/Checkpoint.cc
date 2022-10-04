@@ -42,8 +42,13 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const State& S)
 
   // Set up the HDF5 objects
   if (single_file_) {
-    // Single_File style is one checkpoint file on MPI_COMM_WORLD
-    auto comm = Amanzi::getDefaultComm();
+    // Single_File style is one checkpoint file on "domain"'s comm
+    Comm_ptr_type comm;
+    if (S.HasMesh("domain")) {
+      comm = S.GetMesh()->get_comm();
+    } else {
+      comm = Amanzi::getDefaultComm();
+    }
     output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm));
     output_["domain"]->setTrackXdmf(false);
 
@@ -90,8 +95,8 @@ Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S)
   }
 
   // create the readers
-  auto comm = S.GetMesh()->get_comm();
   if (single_file_) {
+    auto comm = S.GetMesh()->get_comm();
     output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, file_or_dirname));
     output_["domain"]->open_h5file(true);
 
@@ -99,7 +104,8 @@ Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S)
     for (auto domain=S.mesh_begin(); domain!=S.mesh_end(); ++domain) {
       const auto& mesh = S.GetMesh(domain->first);
 
-      boost::filesystem::path chkp_file = boost::filesystem::path(file_or_dirname) / (domain->first+".h5");
+      Key domain_name = Keys::replace_all(domain->first, ":", "-");
+      boost::filesystem::path chkp_file = boost::filesystem::path(file_or_dirname) / (domain_name+".h5");
       output_[domain->first] = Teuchos::rcp(new HDF5_MPI(mesh->get_comm(), chkp_file.string()));
       output_[domain->first]->open_h5file(true);
     }
@@ -108,25 +114,27 @@ Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S)
 
 
 // Constructor for reading
-Checkpoint::Checkpoint(const std::string& filename, const Comm_ptr_type& comm)
+Checkpoint::Checkpoint(const std::string& filename, const Comm_ptr_type& comm, const std::string& domain)
     : IOEvent()
 {
   // if provided a directory, use new style
   if (boost::filesystem::is_directory(filename)) {
-    Errors::Message message;
-    message << "Checkpoint::Read: location \"" << filename << "\" cannot be used with the \"restart file\" option -- provide a full path to the filename, not a directory.";
-    Exceptions::amanzi_throw(message);
+    Key domain_name = Keys::replace_all(domain, ":", "-");
+    boost::filesystem::path chkp_file = boost::filesystem::path(filename) / (domain_name+".h5");
+    single_file_ = false;
+    output_[domain] = Teuchos::rcp(new HDF5_MPI(comm, chkp_file.string()));
+    output_[domain]->open_h5file(true);
 
   } else if (boost::filesystem::is_regular_file(filename)) {
     single_file_ = true;
+    output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, filename));
+    output_["domain"]->open_h5file(true);
   } else {
     Errors::Message message;
     message << "Checkpoint::Read: location \"" << filename << "\" does not exist.";
     Exceptions::amanzi_throw(message);
   }
 
-  output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, filename));
-  output_["domain"]->open_h5file(true);
 }
 
 
@@ -156,7 +164,8 @@ void Checkpoint::CreateFile(const int cycle) {
   } else {
     boost::filesystem::create_directory(oss.str());
     for (const auto& file_out : output_) {
-      boost::filesystem::path chkp_file = boost::filesystem::path(oss.str()) / file_out.first;
+      Key filename = Keys::replace_all(file_out.first, ":", "-");
+      boost::filesystem::path chkp_file = boost::filesystem::path(oss.str()) / filename;
       file_out.second->createDataFile(chkp_file.string());
       file_out.second->open_h5file();
     }
@@ -189,25 +198,11 @@ void Checkpoint::CreateFinalFile(const int cycle) {
 }
 
 
-void Checkpoint::ReadAttributes(State& S) {
-  double time(0.0);
-  output_["domain"]->readAttrReal(time, "time");
-  S.set_time(time);
-  S.GetW<double>("time", Tags::DEFAULT, "time") = time;
-
-  double dt(0.0);
-  output_["domain"]->readAttrReal(dt, "dt");
-  S.GetW<double>("dt", Tags::DEFAULT, "dt") = dt;
-
-  int cycle(0);
-  output_["domain"]->readAttrInt(cycle, "cycle");
-  S.set_cycle(cycle);
-  S.GetW<int>("cycle", Tags::DEFAULT, "cycle") = cycle;
-
-  int pos(0);
-  output_["domain"]->readAttrInt(pos, "position");
-  S.set_position(pos);
-}
+//
+// These are just plain old data in the state now -- can we not read these
+// here?  They will get picked up in the data loop of reads.
+//
+void Checkpoint::ReadAttributes(State& S) {}
 
 
 void Checkpoint::Finalize() {
@@ -218,21 +213,24 @@ void Checkpoint::Finalize() {
 
 
 void Checkpoint::Write(const State& S,
-                       double dt,
-                       bool final,
+                       WriteType write_type,
                        Amanzi::ObservationData* obs_data)
 {
   if (!is_disabled()) {
     CreateFile(S.get_cycle());
 
+    // write num procs, as checkpoint files are specific to this
+    Write("mpi_num_procs", S.GetMesh()->get_comm()->NumProc());
+
     // create hard link to the final file
-    if (final && S.GetMesh()->get_comm()->MyPID() == 0)
+    if ((write_type == WriteType::FINAL) &&
+        S.GetMesh()->get_comm()->MyPID() == 0)
       CreateFinalFile(S.get_cycle());
 
     for (auto it = S.data_begin(); it != S.data_end(); ++it) {
-      it->second->WriteCheckpoint(*this);
+      it->second->WriteCheckpoint(*this, write_type == WriteType::POST_MORTEM);
     }
-    WriteAttributes(S.GetMesh("domain")->get_comm()->NumProc());
+
     WriteObservations(obs_data);
     Finalize();
   }
@@ -254,7 +252,7 @@ void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
     // double check that the comms are consistent and that the user is
     // following naming best practices
     Key domain_name = Keys::getDomain(names[0]);
-    if (domain_name.empty()) domain_name = "domain";
+    if (!output_.count(domain_name)) domain_name = "domain";
     const auto& output = output_.at(domain_name);
 
     if (!sameComm(*output->Comm(), vec.Comm())) {
@@ -280,7 +278,7 @@ void Checkpoint::Write(const std::string& name, const Epetra_Vector& vec) const
     // double check that the comms are consistent and that the user is
     // following naming best practices
     Key domain_name = Keys::getDomain(name);
-    if (domain_name.empty()) domain_name = "domain";
+    if (!output_.count(domain_name)) domain_name = "domain";
     const auto& output = output_.at(domain_name);
 
     if (!sameComm(*output->Comm(), vec.Comm())) {
@@ -291,15 +289,6 @@ void Checkpoint::Write(const std::string& name, const Epetra_Vector& vec) const
 
     output->writeCellDataReal(vec, name);
   }
-}
-
-
-// -----------------------------------------------------------------------------
-// Write simple attributes.
-// -----------------------------------------------------------------------------
-void Checkpoint::WriteAttributes(int comm_size) const {
-  const auto& output = output_.at("domain");
-  output->writeAttrInt(comm_size, "mpi_num_procs");
 }
 
 

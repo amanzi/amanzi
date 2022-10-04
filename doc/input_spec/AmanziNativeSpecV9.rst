@@ -379,13 +379,16 @@ The initialization sublist of *State* is named *initial conditions*.
   field using the provided checkpoint file. Second, regardless of the outcome of the
   previous step, we try to initialize the field using the sublist `"initial conditions`".
   By design, the second step allows us to overwrite only part for the
-  field. There are several options available to initialize field using
-  the sublist `"initial conditions`": `"restart file`" - read field
+  field. 
+
+* `"initial conditions`" [sublist] There are several options available to initialize 
+  fields using this sublist: `"restart file`" - read field
   from existing HDF55 file, `"exodus file initialization`" - read field
   from existing Exodus file, `"cells from file`" - read cell
   components from HDF5 file, `"constant`" - set field values to constant, `"initialize
   from 1D column`" - initialize 1D column from file and `"function`" -
-  field is initialized by function.
+  field is initialized by function. Initialization time is specified with `"time`"
+  that defaults to 0.
 
 
 .. code-block:: xml
@@ -397,6 +400,7 @@ The initialization sublist of *State* is named *initial conditions*.
        ... list of field evaluators
     </ParameterList>
     <ParameterList name="initial conditions">
+       <Parameter name="time" type="double" value="0.0"/>
       ... initialization of fields
     </ParameterList>
   </ParameterList>
@@ -1066,7 +1070,7 @@ The conceptual PDE model for the fully saturated flow is
 
 where 
 :math:`\phi` is porosity [-],
-:math:`s_s` and :math:`s_y` are specific storage [m] and specific yield [-], respectively,
+:math:`s_s` and :math:`s_y` are specific storage [1/m] and specific yield [-], respectively,
 :math:`L` is characteristic length [m],
 :math:`\rho_l` is fluid density [:math:`kg / m^3`],
 :math:`Q` is source or sink term [:math:`kg / m^3 / s`],
@@ -3321,13 +3325,13 @@ Reconstruction and limiters
 The control of the second-order numerical scheme is done via `"reconstruction`"
 sublist, described in Reconstruction_. Here is the example:
 
-
 .. code-block:: xml
 
   <ParameterList name="shallow water">  <!-- parent list -->
   <ParameterList name="reconstruction">
     <Parameter name="method" type="string" value="cell-based"/>
     <Parameter name="polynomial order" type="int" value="1"/>
+    <Parameter name="weight" type="string" value="constant"/>
     <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
     <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
     <Parameter name="limiter location" type="string" value="node"/>
@@ -3529,13 +3533,13 @@ The conceptual PDE model of the stationary coupled matrix-fracture flow is
 .. math::
   \begin{array}{l}
   \phi_m \frac{S_{s,m}}{g} \frac{\partial p_m}{\partial t}
-  - \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_m) = Q_m,
+  + \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_m) = Q_m,
   \quad
   \boldsymbol{q}_m = -\frac{\boldsymbol{K}_m}{\mu} 
   (\boldsymbol{\nabla} p_m - \rho_l \boldsymbol{g}) \\
   %
   \phi_f \frac{S_{s,f}}{g} \frac{\partial p_f}{\partial t}
-  -\boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_f) = 
+  + \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_f) = 
     -\rho_l [[ \tilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} ]],
   \quad
   \boldsymbol{q}_f = -\frac{\boldsymbol{K}_f}{\mu} 
@@ -3992,6 +3996,9 @@ and their extensions for various PKs.
  * `"polynomial order`" [int] defines the polynomial order of the reconstructed function. 
    Default is 1.
 
+ * `"weight`" [string] defined weight fr reconstruction. Available options are
+   `"constant`" (default) and `"inverse distance`".
+
  * `"limiter`" [string] specifies limiting method. Available options are 
    `"Barth-Jespersen`" (default), `"Michalak-Gooch`", `"tensorial`", and `"Kuzmin`". 
 
@@ -4025,6 +4032,7 @@ and their extensions for various PKs.
   <ParameterList name="reconstruction">
     <Parameter name="method" type="string" value="cell-based"/>
     <Parameter name="polynomial order" type="int" value="1"/>
+    <Parameter name="weight" type="string" value="inverse distance"/>
     <Parameter name="limiter" type="string" value="tensorial"/>
     <Parameter name="limiter extension for transport" type="bool" value="false"/>
     <Parameter name="limiter stencil" type="string" value="face to cells"/>

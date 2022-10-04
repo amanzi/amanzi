@@ -38,6 +38,7 @@ void ReconstructionCellLinear::Init(Teuchos::ParameterList& plist)
 
   gradient_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
   gradient_c_ = gradient_->ViewComponent("cell", true);
+  if (plist.get<std::string>("weight", "constant") == "inverse distance") weight_ = WeightType::WT_INVERSE_DISTANCE;
 }
 
 
@@ -111,13 +112,16 @@ void ReconstructionCellLinear::PopulateLeastSquareSystem_(
     AmanziGeometry::Point& centroid, double field_value,
     WhetStone::DenseMatrix& matrix, WhetStone::DenseVector& rhs)
 {
+  double w = (weight_ == WeightType::WT_INVERSE_DISTANCE) ? 1.0 / norm(centroid) : 1.0; 
+
   for (int i = 0; i < dim; i++) {
     double xyz = centroid[i];
+    double xyz_w = xyz * w;
 
-    matrix(i, i) += xyz * xyz;
-    for (int j = i + 1; j < dim; j++) matrix(j, i) = matrix(i, j) += xyz * centroid[j];
+    matrix(i, i) += xyz * xyz_w;
+    for (int j = i + 1; j < dim; j++) matrix(j, i) = matrix(i, j) += xyz_w * centroid[j];
 
-    rhs(i) += xyz * field_value;
+    rhs(i) += xyz_w * field_value;
   }
 }
 

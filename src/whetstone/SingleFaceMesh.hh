@@ -87,20 +87,6 @@ class SingleFaceMesh : public AmanziMesh::MeshLight {
     AMANZI_ASSERT(v < nnodes_); *xp = cell_coords_[v];
   }
 
-  virtual void face_get_coordinates(
-          const AmanziMesh::Entity_ID f,
-          std::vector<AmanziGeometry::Point> *fcoords) const override {
-    AMANZI_ASSERT(f < nnodes_);
-    fcoords->resize(2);
-    const auto& nodes = face_node_ids_[f];
-    (*fcoords)[0] = cell_coords_[nodes[0]];
-    (*fcoords)[1] = cell_coords_[nodes[1]];
-  }
-
-  virtual void cell_get_coordinates(
-          const AmanziMesh::Entity_ID c,
-          std::vector<AmanziGeometry::Point> *ccoords) const override { *ccoords = cell_coords_; }
-
   virtual unsigned int num_entities(
           const AmanziMesh::Entity_kind kind,
           const AmanziMesh::Parallel_type ptype) const override {

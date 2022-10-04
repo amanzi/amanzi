@@ -141,7 +141,7 @@ void MagneticDiffusion2D(double dt, double tend,
   // Epetra_MultiVector& B0f = *B0.ViewComponent("face");
 
   int cycle(0);
-  double energy0(1e+99), divB0(0.0);
+  double divB0(0.0);
   while (told + dt/2 < tend) {
     // set up the diffusion operator
     global_op->Init();
@@ -189,7 +189,7 @@ void MagneticDiffusion2D(double dt, double tend,
 
     CHECK(heat > 0.0);
     // CHECK(energy < energy0);
-    energy0 = energy;
+    // energy0 = energy;
 
     cycle++;
     told = tnew;

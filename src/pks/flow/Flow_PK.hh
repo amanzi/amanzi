@@ -40,6 +40,7 @@
 
 // Flow
 #include "FlowBoundaryFunction.hh"
+#include "FlowSourceFunction.hh"
 #include "FlowDefs.hh"
 #include "FlowTypeDefs.hh"
 
@@ -145,7 +146,7 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::BCs> op_bc_;
 
   // source terms and liquid balance
-  std::vector<Teuchos::RCP<PK_DomainFunction> > srcs;
+  std::vector<Teuchos::RCP<FlowSourceFunction> > srcs;
   mutable double mass_bc, seepage_mass_, mass_initial;
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
@@ -166,6 +167,7 @@ class Flow_PK : public PK_PhysicalBDF {
   Key water_storage_key_, prev_water_storage_key_;
   Key viscosity_liquid_key_, mol_density_liquid_key_;
   Key aperture_key_;
+  Key wc_key_;
 
   // io
   Utils::Units units_;

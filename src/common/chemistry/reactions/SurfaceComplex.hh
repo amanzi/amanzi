@@ -66,7 +66,7 @@ class SurfaceComplex {
 
  private:
   std::string name_;
-  int identifier_;
+  int id_;
   double charge_;
 
   double surface_concentration_;  // units? ?[mol/m^3 bulk]?

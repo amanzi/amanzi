@@ -40,11 +40,11 @@
       
 
       <ParameterList name="boundary conditions">
-        <ParameterList name="ponded-depth">
+        <ParameterList name="ponded depth">
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{Left}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
-            <ParameterList name="ponded-depth">
+            <ParameterList name="ponded depth">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
                 <Parameter name="formula" type="string" value="10.0"/>

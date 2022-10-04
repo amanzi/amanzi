@@ -108,7 +108,9 @@ class Mesh : public MeshLight {
   virtual Teuchos::RCP<const Mesh> parent() const { return parent_; }
 
   // Usually this is *this, but not necessarily in derived meshes
-  virtual const Mesh& vis_mesh() const { return *this; }
+  void set_vis_mesh(Teuchos::RCP<const Mesh> mesh) const { vis_mesh_ = mesh; }
+  Teuchos::RCP<const Mesh> get_vis_mesh() const { return vis_mesh_; }
+  virtual const Mesh& vis_mesh() const { return (vis_mesh_.get()) ? *vis_mesh_ : *this; }
 
   bool is_logical() const { return logical_; }
 
@@ -476,6 +478,17 @@ class Mesh : public MeshLight {
   //------------------------
   virtual void write_to_exodus_file(const std::string filename) const = 0;
 
+  // Coordinates of cells in standard order (Exodus II convention)
+  // NOTE: Standard convention works only for standard cell types in 3D!
+  // For a general polyhedron this will return the node coordinates in
+  // arbitrary order.
+  void cell_get_coordinates(const Entity_ID c,
+                            std::vector<AmanziGeometry::Point> *ccoords) const;
+
+  // Conventions are the same as for face_to_nodes().
+  void face_get_coordinates(const Entity_ID f, 
+                            std::vector<AmanziGeometry::Point> *fcoords) const;
+  
  protected:
   void get_set_entities_box_vofs_(
       Teuchos::RCP<const AmanziGeometry::Region> region,
@@ -535,6 +548,7 @@ class Mesh : public MeshLight {
 
   bool logical_;
   Teuchos::RCP<const Mesh> parent_;
+  mutable Teuchos::RCP<const Mesh> vis_mesh_;
 
   // model
   Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model_;

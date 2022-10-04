@@ -12,6 +12,7 @@ RUN echo "${AMANZI_TPLS_DIR}"
 # Arguments
 ARG amanzi_branch=master
 ARG ats_branch=master
+ARG ats_regression_branch=master
 ARG https_proxy=
 ARG http_proxy=
 
@@ -40,7 +41,7 @@ RUN git checkout $ats_branch
 RUN git pull
 RUN git rev-parse --short HEAD
 WORKDIR /home/amanzi_user/amanzi/src/physics/ats/testing/ats-regression-tests
-RUN git checkout master
+RUN git checkout $ats_regression_branch
 RUN git pull
 RUN git rev-parse --short HEAD
 WORKDIR /home/amanzi_user/amanzi
@@ -63,6 +64,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --enable-geochemistry \
    --disable-amanzi_physics \
    --enable-ats_physics \
+   --ats_dev \
    --enable-reg_tests \
    && cd /home/amanzi_user/amanzi_builddir/ats 
 

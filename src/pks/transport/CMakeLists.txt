@@ -215,5 +215,11 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
                     NPROCS 2
                     SOURCE test/Main.cc test/transport_fct.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # wet/dry
+    add_amanzi_test(transport_wet_dry transport_wet_dry
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_wet_dry.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
 endif()
 

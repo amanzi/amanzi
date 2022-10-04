@@ -112,7 +112,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
 
     // advance the state
     double t_old(0.0), t_new, dt;
-    dt = TPK.StableTimeStep();
+    dt = TPK.StableTimeStep(-1);
     t_new = t_old + dt;
     TPK.AdvanceStep(t_old, t_new);
 
@@ -120,7 +120,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
     while(t_new < 1.2) {
-      dt = TPK.StableTimeStep();
+      dt = TPK.StableTimeStep(-1);
       t_new = t_old + dt;
 
       TPK.AdvanceStep(t_old, t_new);

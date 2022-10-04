@@ -37,8 +37,8 @@ Example:
 
   <ParameterList name="function-linear">
     <Parameter name="y0" type="double" value="1.0"/>
-    <Parameter name="gradient" type="Array(double)" value="{{1.0, 2.0, 3.0}}"/>
-    <Parameter name="x0" type="Array(double)" value="{{2.0, 3.0, 1.0}}"/>
+    <Parameter name="gradient" type="Array(double)" value="{1.0, 2.0, 3.0}"/>
+    <Parameter name="x0" type="Array(double)" value="{2.0, 3.0, 1.0}"/>
   </ParameterList>
 
 */

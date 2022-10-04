@@ -72,7 +72,7 @@
 	</ParameterList>
 	<Parameter name="initial time step" type="double" value="1.0e+4"/>
 	<Parameter name="start period time" type="double" value="0.0"/>
-	<Parameter name="end period time" type="double" value="1.0e+5"/>
+	<Parameter name="end period time" type="double" value="2.0e+5"/>
         <Parameter name="maximum time step" type="double" value="5.0e+5"/>
         <Parameter name="maximum cycle number" type="int" value="20"/>        
       </ParameterList>
@@ -188,7 +188,7 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-06"/>
+                  <Parameter name="value" type="double" value="5.0e-07"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
@@ -216,7 +216,7 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-06"/>
+                  <Parameter name="value" type="double" value="5.0e-07"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
@@ -336,13 +336,13 @@
   </ParameterList>
 
   <ParameterList name="solvers">
-    <ParameterList name="PCG with Hypre AMG">
+    <ParameterList name="PCG">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="1.0e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="medium"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -355,7 +355,7 @@
 
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{}"/>
-        <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
+        <Parameter name="linear solver" type="string" value="PCG"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <ParameterList name="BDF1">
@@ -370,6 +370,17 @@
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-12"/>
+            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+            <Parameter name="max divergent iterations" type="int" value="3"/>
+            <Parameter name="max nka vectors" type="int" value="10"/>
+            <Parameter name="limit iterations" type="int" value="100"/>
+            <Parameter name="modify correction" type="bool" value="false"/>
+            <Parameter name="monitor" type="string" value="monitor l2 residual"/>
+            <ParameterList name="verbose object">
+              <Parameter name="verbosity level" type="string" value="high"/>
+            </ParameterList>                        
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -390,8 +401,11 @@
 
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
-        <Parameter name="limiter" type="string" value="tensorial"/>
+        <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
+        <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
+        <Parameter name="limiter location" type="string" value="face"/>
+        <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
       <ParameterList name="verbose object">
 	<Parameter name="verbosity level" type="string" value="high"/>
@@ -423,6 +437,12 @@
 	  </ParameterList>
 	</ParameterList>
       </ParameterList>
+
+      <ParameterList name="time integrator">
+	<Parameter name="time integration method" type="string" value="none"/>
+        <Parameter name="linear solver" type="string" value="PCG"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      </ParameterList>
     </ParameterList>      
       
     <ParameterList name="transport fracture">
@@ -444,8 +464,11 @@
 
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
-        <Parameter name="limiter" type="string" value="tensorial"/>
+        <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
+        <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
+        <Parameter name="limiter location" type="string" value="face"/>
+        <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
 
       <ParameterList name="verbose object">
@@ -476,6 +499,12 @@
 	    </ParameterList>
 	  </ParameterList>
 	</ParameterList>
+      </ParameterList>
+
+      <ParameterList name="time integrator">
+	<Parameter name="time integration method" type="string" value="none"/>
+        <Parameter name="linear solver" type="string" value="PCG"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

@@ -499,29 +499,6 @@ MeshEmbeddedLogical::node_get_coordinates(const Entity_ID nodeid,
 }  
 
 
-// Face coordinates - conventions same as face_to_nodes call
-// Number of nodes is the vector size divided by number of spatial dimensions
-void
-MeshEmbeddedLogical::face_get_coordinates(
-    const Entity_ID faceid,
-    std::vector<AmanziGeometry::Point> *fcoords) const {
-  Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
-  Exceptions::amanzi_throw(mesg);
-}
-
-// Coordinates of cells in standard order (Exodus II convention)
-// STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
-// For a general polyhedron this will return the node coordinates in
-// arbitrary order
-// Number of nodes is vector size divided by number of spatial dimensions
-void
-MeshEmbeddedLogical::cell_get_coordinates(
-    const Entity_ID cellid,
-    std::vector<AmanziGeometry::Point> *ccoords) const {
-  Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
-  Exceptions::amanzi_throw(mesg);
-}
-
 //
 // Mesh modification
 //-------------------

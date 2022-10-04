@@ -197,20 +197,13 @@ class Region {
          LifeCycleType lifecycle=LifeCycleType::PERMANENT)
     : name_(name),
       id_(id),
-      geometric_(geometric),
       type_(type),
       manifold_dimension_(dim),
       space_dimension_(geom_dim),
+      geometric_(geometric),
       lifecycle_(lifecycle) {};
 
  protected:
-  // Lifecycle (Temporary or Permanent)
-  LifeCycleType lifecycle_;
-
-  // Topological dimension of region (0, 1, 2, 3)
-  unsigned int manifold_dimension_;
-  unsigned int space_dimension_;
-
   // Name of identifier
   std::string name_;
 
@@ -220,8 +213,15 @@ class Region {
   // Region type
   RegionType type_;
 
+  // Topological dimension of region (0, 1, 2, 3)
+  unsigned int manifold_dimension_;
+  unsigned int space_dimension_;
+
   // Geometric or enumerated?
   bool geometric_;
+
+  // Lifecycle (Temporary or Permanent)
+  LifeCycleType lifecycle_;
 
   // Tolerance for geometric operations
   double tol_;

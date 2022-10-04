@@ -140,19 +140,6 @@ class MeshExtractedManifold : public Mesh {
     AMANZI_ASSERT(false);
   }
 
-  // -- edges
-
-  // -- faces
-  virtual void face_get_coordinates(const Entity_ID f,
-                                    std::vector<AmanziGeometry::Point>* vxyz) const override;
-
-  // -- cells
-  //    coordinates of nodes in cell in the standard order (Exodus II convention)
-  //    STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
-  //    For a general polyhedron this returns the node coordinates in arbitrary order
-  virtual void cell_get_coordinates(const Entity_ID c,
-                                    std::vector<AmanziGeometry::Point> *vxyz) const override;
-
   // -- mesh modifications are blocked for the extracted mesh
   virtual int deform(const std::vector<double>& target_cell_volumes,
                      const std::vector<double>& min_cell_volumes_in,
