@@ -11,12 +11,12 @@ git pull
 ```
 
 # Clone Spack 
-Download spack on your machine:
+Download Spack on your machine:
 ```
 git clone git@github.com:spack/spack 
 ```
 
-Add spack in your environement (and maybe your bash_profile script.):
+Add Spack in your environment (and maybe your bash_profile script.):
 ```
 source ${PATH_TO_SPACK}/spack/share/spack/setup-env.sh
 ```
@@ -33,9 +33,9 @@ The command above will add repositories for the following nine packages:
 alquimia	amanzi		ascemio		ccse		crunchtope	mstk		petsc		pflotran	trilinos
 ```
 
-Note that packages such as alquimia, petsc, pflotran and trilinos are obtained importing the original packages and then augmented with additional requirements such as patches, addiitonal dependencies or additional compiler flags, to have the Amanzi spack build proceed as needed.
+Note that packages such as alquimia, petsc, pflotran and trilinos are obtained importing the original spackages and then augmented with Amanzi-specific requirements such as patches, additional dependencies, or additional compiler flags.
 
-# Quick Start Amanzi build with Spack
+# Quick start Amanzi build with Spack
 
 Find compiler:
 
@@ -82,17 +82,17 @@ spack install amanzi %compiler@version ^openmpi@mpiVersion
 
 # Detailed instructions with system specific directions
 
-This expands on the Quick Start section of these instructions and provides additional details as well as system specific best practices to build Amanzi with Spack.
+This expands on the _quick_ _ start_ section of these instructions and provides additional details as well as system specific best practices to build Amanzi with Spack.
 
-If compilers are available on your system you can load them using: 
+If compilers are available on your system, you can load them using: 
 ``` 
 spack compiler find
 ```
-This will update the file: ${HOME}/.spack/<system>/compilers.yaml
+This will update the file: ${HOME}/.spack/_system_/compilers.yaml
 
-The <system> could be for instance a supercomputer (NERSC), local cluster or your desktop/laptop.
+The _system_ could be for instance a supercomputer (NERSC), local cluster, or your desktop/laptop.
 
-If you are on a system using modules, first load the compiler module and then the spack command, for instance:
+If you are on a system using modules, first load the compiler module and then the Spack command, for instance:
 ```
 module load gcc/XXX
 spack compiler find
@@ -101,7 +101,7 @@ spack compiler find
 # Find external libraries
 
 If external libraries are available on your system, and if you
-don’t want spack to build them all, spack can find them for you by doing:
+don’t want Spack to build them all, Spack can find them for you by doing:
 ```
 spack external find
 ```
@@ -112,7 +112,7 @@ External packages (such as openmpi or mpich) can be used to specify dependencies
 ```
 spack install amanzi ^openmpi@4.1.2
 ```
-will install amanzi with the explicit dependence on the module `openmpi/4.1.2-gcc_11.2.0` to which it is associated the spack spec `^openmpi@4.1.2`.
+will install Amanzi with the explicit dependence on the module `openmpi/4.1.2-gcc_11.2.0` to which it is associated the Spack spec `^openmpi@4.1.2`.
 Note that specifying a compiler is not necessary here since it is already taken into account in the module.
 
 The spec is in the packages.yaml file, see below.
@@ -240,7 +240,7 @@ To test amanzi, proceed as explained above using `dev-build --test all`.
 
 # MacOS (native tools with Spack) 
 
-Some Amanzi dependencies need a fortran compiler and built-in apple compilers may not offer that option. To check this, look at the ${HOME}/.spack/<system>/compilers.yaml file and see if fortran compilers are present. In a case when their are not present, the apple-clang spec might look something like this:
+Some Amanzi dependencies need a fortran compiler and built-in apple compilers may not offer that option. To check this, look at the ${HOME}/.spack/_system_/compilers.yaml file and see if fortran compilers are present. In a case when their are not present, the apple-clang spec might look something like this:
 
 ```
 compilers:
@@ -259,7 +259,7 @@ compilers:
     extra_rpaths: []
 ``
 
-If that is the case, one option is to install a different compiler such as gcc and then create a mixed toolchain:
+If that is the case, one option is to install a different compiler such as gcc and then create a [mixed toolchain] (https://spack.readthedocs.io/en/latest/getting_started.html):
 
 ```
 spack install gcc@11.2.0
@@ -277,7 +277,7 @@ And then:
 spack compiler find
 ```
 
-This will add the newly installed gcc compiler to ${HOME}/.spack/<system>/compilers.yaml. The installed spec might look like this:
+This will add the newly installed gcc compiler to ${HOME}/.spack/_system_/compilers.yaml. The installed spec might look like this:
 
 - compiler:
     spec: gcc@11.2.0
