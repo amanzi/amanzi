@@ -59,7 +59,7 @@ Install Amanzi with Spack:
 
 ```
 spack install amanzi %compiler@version
-
+```
 
 # Install with a specific version of openmpi
 
