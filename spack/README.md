@@ -82,7 +82,7 @@ spack install amanzi %compiler@version ^openmpi@mpiVersion
 
 # Detailed instructions with system specific directions
 
-This expands on the _quick_ _ start_ section of these instructions and provides additional details as well as system specific best practices to build Amanzi with Spack.
+This expands on the _quick_ _start_ section of these instructions and provides additional details as well as system specific best practices to build Amanzi with Spack.
 
 If compilers are available on your system, you can load them using: 
 ``` 
@@ -257,7 +257,7 @@ compilers:
     modules: []
     environment: {}
     extra_rpaths: []
-``
+```
 
 If that is the case, one option is to install a different compiler such as gcc and then create a [mixed toolchain] (https://spack.readthedocs.io/en/latest/getting_started.html):
 
@@ -279,6 +279,7 @@ spack compiler find
 
 This will add the newly installed gcc compiler to ${HOME}/.spack/_system_/compilers.yaml. The installed spec might look like this:
 
+```
 - compiler:
     spec: gcc@11.2.0
     paths:
@@ -292,6 +293,7 @@ This will add the newly installed gcc compiler to ${HOME}/.spack/_system_/compil
     modules: []
     environment: {}
     extra_rpaths: []
+```
 
 Then, to create the mixed toolchain, just copy the fortran lines over to the apple-clang compiler as follows:
 
