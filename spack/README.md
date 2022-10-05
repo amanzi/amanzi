@@ -104,7 +104,7 @@ This will update the file: ${HOME}/.spack/packages.yaml.
 External packages (such as openmpi or mpich) can be used to specify dependencies when installing spack packages using `^`, for instance on LANL's Darwin:
 
 ```
-spack install amanzi@spack ^openmpi@4.1.2
+spack install amanzi ^openmpi@4.1.2
 ```
 will install amanzi with the explicit dependence on the module `openmpi/4.1.2-gcc_11.2.0` to which it is associated the spack spec `^openmpi@4.1.2`.
 Note that specifying a compiler is not necessary here since it is already taken into account in the module.
@@ -167,8 +167,8 @@ Currently, we are striving to support the following variants:
 Depending on the different systems you might be using, it is recommended to use specific specs for the Amanzi build.
 Below you can find some system specific tested commands for the Amanzi installation via Spack.
 
-# LANL's Darwin
-Go on a compute node and add the following spec to the packages.yaml file:
+# Darwin (LANL)
+From either a login node or a compute node, add the following spec to the packages.yaml file:
 ```
 packages:
   openmpi:
@@ -179,11 +179,11 @@ packages:
 ```
 To build amanzi, run from any folder:
 ```
-spack install amanzi@spack <desired_variant>  ^openmpi@4.1.2
+spack install amanzi <desired_variant>  ^openmpi@4.1.2
 ```
 Note that tests are currently run as part of the Spack build by default (the `+tests` variant is on by default).
 
-# Cori
+# Cori (NERSC)
 From a login node, add the following specs to the packages.yaml file:
 ```
 packages:
@@ -201,7 +201,7 @@ packages:
 To build amanzi, run from any folder:
 
 ```
-spack install amanzi@spack <desired_variant> ^mpich@7.7.19 ^cray-libsci@20.09.1 %gcc@8.3.0
+spack install amanzi <desired_variant> ^mpich@7.7.19 ^cray-libsci@20.09.1 %gcc@8.3.0
 ```
 
 The specific dependence on the cray scientific library is to make sure that `blas` and `lapack` are taken from there.
@@ -227,12 +227,91 @@ Add the following spec to the packages.yaml file:
 ```
 To build Amanzi, run from any folder:
 ```
-spack install amanzi@spack <desired_variant> ^openmpi@4.0.4 %gcc@11.2.0
+spack install amanzi <desired_variant> ^openmpi@4.0.4 %gcc@11.2.0
 ```
 Note that you might have to first load the module `gcc/11.2.0` and then do a `spack compiler find` to be able to use `%gcc@11.2.0`.
 To test amanzi, proceed as explained above using `dev-build --test all`.
 
-# MacOS 
+# MacOS (native tools with Spack) 
+
+Some Amanzi dependencies need a fortran compiler and built-in apple compilers may not offer that option. To check this, look at the ${HOME}/.spack/<system>/compilers.yaml file and see if fortran compilers are present. In a case when their are not present, the apple-clang spec might look something like this:
+
+```
+compilers:
+- compiler:
+    spec: apple-clang@12.0.0
+    paths:
+      cc: /usr/bin/clang
+      cxx: /usr/bin/clang++
+      f77: null
+      fc: null
+    flags: {}
+    operating_system: catalina
+    target: x86_64
+    modules: []
+    environment: {}
+    extra_rpaths: []
+``
+
+If that is the case, one option is to install a different compiler such as gcc and then create a mixed toolchain:
+
+```
+spack install gcc@11.2.0
+```
+
+Once it is installed, do:
+
+```
+spack load gcc
+```
+
+And then:
+
+```
+spack compiler find
+```
+
+This will add the newly installed gcc compiler to ${HOME}/.spack/<system>/compilers.yaml. The installed spec might look like this:
+
+- compiler:
+    spec: gcc@11.2.0
+    paths:
+      cc: /Users/$USER/Repos/spack/opt/spack/darwin-catalina-skylake/apple-clang-12.0.0/gcc-11.2.0-pgkoliksg6eooixvz37lfydfvfvnr67y/bin/gcc
+      cxx: /Users/$USER/Repos/spack/opt/spack/darwin-catalina-skylake/apple-clang-12.0.0/gcc-11.2.0-pgkoliksg6eooixvz37lfydfvfvnr67y/bin/g++
+      f77: /Users/$USER/Repos/spack/opt/spack/darwin-catalina-skylake/apple-clang-12.0.0/gcc-11.2.0-pgkoliksg6eooixvz37lfydfvfvnr67y/bin/gfortran
+      fc: /Users/$USER/Repos/spack/opt/spack/darwin-catalina-skylake/apple-clang-12.0.0/gcc-11.2.0-pgkoliksg6eooixvz37lfydfvfvnr67y/bin/gfortran
+    flags: {}
+    operating_system: catalina
+    target: x86_64
+    modules: []
+    environment: {}
+    extra_rpaths: []
+
+Then, to create the mixed toolchain, just copy the fortran lines over to the apple-clang compiler as follows:
+
+```
+compilers:
+- compiler:
+    spec: apple-clang@12.0.0
+    paths:
+      cc: /usr/bin/clang
+      cxx: /usr/bin/clang++
+      f77: /Users/$USER/Repos/spack/opt/spack/darwin-catalina-skylake/apple-clang-12.0.0/gcc-11.2.0-pgkoliksg6eooixvz37lfydfvfvnr67y/bin/gfortran
+      fc: /Users/$USER/Repos/spack/opt/spack/darwin-catalina-skylake/apple-clang-12.0.0/gcc-11.2.0-pgkoliksg6eooixvz37lfydfvfvnr67y/bin/gfortran
+    flags: {}
+    operating_system: catalina
+    target: x86_64
+    modules: []
+    environment: {}
+    extra_rpaths: []
+```
+
+Amanzi can then be installed with:
+
+```
+spack install amanzi %apple-clang@12.0.0
+```
+
 
 
 
