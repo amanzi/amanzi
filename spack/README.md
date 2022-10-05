@@ -61,6 +61,12 @@ Install Amanzi with Spack:
 spack install amanzi %compiler@version
 ```
 
+If needed, load Amanzi:
+
+```
+spack load amanzi
+```
+
 # Install with a specific version of openmpi
 
 See what versions of openmpi are available on Spack and select one:
