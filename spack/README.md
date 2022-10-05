@@ -259,7 +259,7 @@ compilers:
     extra_rpaths: []
 ```
 
-If that is the case, one option is to install a different compiler such as gcc and then create a [mixed toolchain] (https://spack.readthedocs.io/en/latest/getting_started.html):
+If that is the case, one option is to install a different compiler such as gcc and then create a [mixed toolchain](https://spack.readthedocs.io/en/latest/getting_started.html):
 
 ```
 spack install gcc@11.2.0
