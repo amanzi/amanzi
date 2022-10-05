@@ -1048,6 +1048,13 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
           tmp.sublist("pressure-lambda constraints").set<std::string>("method", "projection");
         }
 
+        // cannot upwind nonlinear coefficient at the moment
+        if (pk == "flow") {
+          auto& aux = pk_list.sublist(fullname).sublist("operators").sublist("diffusion operator");
+          aux.sublist("matrix").set<std::string>("nonlinear coefficient", "standard: cell");
+          aux.sublist("preconditioner").set<std::string>("nonlinear coefficient", "standard: cell");
+        }
+
         if (pk == "energy") {
           auto& oplist = pk_list.sublist(fullname).sublist("operators").sublist("advection operator");
           oplist.set<Teuchos::Array<std::string> >("fracture", fracture_regions_);

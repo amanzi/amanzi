@@ -260,11 +260,14 @@ void FlowMatrixFracture_PK::Initialize()
 bool FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // create copies of conservative fields
-  StateArchive archive(S_, vo_);
-  archive.Add({ "prev_water_storage", "fracture-prev_water_storage",
-                "prev_saturation_liquid", "fracture-prev_saturation_liquid" },
-              {}, {});
+  std::vector<std::string> fields = { "prev_saturation_liquid", "fracture-prev_saturation_liquid" };
+  if (sub_pks_[0]->name() == "richards") {
+    fields.push_back("prev_water_storage");
+    fields.push_back("fracture-prev_water_storage");
+  }
 
+  StateArchive archive(S_, vo_);
+  archive.Add(fields, {}, {});
   archive.Swap("");
 
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);

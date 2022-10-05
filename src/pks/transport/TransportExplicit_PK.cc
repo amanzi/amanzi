@@ -296,7 +296,7 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   dt_ = dt_original;  // restore the original time step (just in case)
 
-  // Dispersio/diffusion solver
+  // Dispersion/diffusion solver
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", false);
 
   if (use_dispersion_) {
