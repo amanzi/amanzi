@@ -1,28 +1,82 @@
 Amanzi/ATS Spack package 
 
-# Spack installation 
+# Clone Amanzi
+
+Clone Amanzi on your machine:
+
+```
+git clone --recursive git@github.com:amanzi/amanzi
+cd amanzi
+git pull
+```
+
+# Clone Spack 
 Download spack on your machine:
 ```
 git clone git@github.com:spack/spack 
 ```
 
-Add spack in your environement (and maybe your bash_profile script.) 
+Add spack in your environement (and maybe your bash_profile script.):
 ```
 source ${PATH_TO_SPACK}/spack/share/spack/setup-env.sh
 ```
 
-Then add the amanzi repo to the list of spack repos
+Then add the amanzi repo to the list of spack repos:
 
 ```
-spack repo add amanzi/spack-repo
+spack repo add amanzi/spack
 ```
 
-If you want support for the modules installed in spack, install lmod: 
+The command above will add repositories for the following nine packages:
+
 ```
-spack install lmod
+alquimia	amanzi		ascemio		ccse		crunchtope	mstk		petsc		pflotran	trilinos
 ```
 
-# Find compiler 
+Note that packages such as alquimia, petsc, pflotran and trilinos are obtained importing the original packages and then augmented with additional requirements such as patches, addiitonal dependencies or additional compiler flags, to have the Amanzi spack build proceed as needed.
+
+# Quick Start Amanzi build with Spack
+
+Find compiler:
+
+```
+spack compiler find
+```
+
+Find external libraries:
+
+```
+spack external find
+```
+
+Choose the compiler and its version:
+
+```
+spack compilers
+```
+
+Install Amanzi with Spack:
+
+```
+spack install amanzi %compiler@version
+
+
+# Install with a specific version of openmpi
+
+See what versions of openmpi are available on Spack and select one:
+
+```
+spack info openmpi
+```
+Install Amanzi with custom openmpi:
+
+```
+spack install amanzi %compiler@version ^openmpi@mpiVersion
+```
+
+# Detailed instructions with system specific directions
+
+This expands on the Quick Start section of these instructions and provides additional details as well as system specific best practices to build Amanzi with Spack.
 
 If compilers are available on your system you can load them using: 
 ``` 
@@ -30,10 +84,9 @@ spack compiler find
 ```
 This will update the file: ${HOME}/.spack/<system>/compilers.yaml
 
-The <system> could be for instance a supercomputer (NERSC), local cluster or
-your desktop/laptop.
+The <system> could be for instance a supercomputer (NERSC), local cluster or your desktop/laptop.
 
-If you are on a system using modules, first load the compiler module and then the spack command, for instance 
+If you are on a system using modules, first load the compiler module and then the spack command, for instance:
 ```
 module load gcc/XXX
 spack compiler find
@@ -46,21 +99,22 @@ don’t want spack to build them all, spack can find them for you by doing:
 ```
 spack external find
 ```
-This will update the file: ${HOME}/.spack/packages.yaml
+This will update the file: ${HOME}/.spack/packages.yaml.
 
-External packages (such as openmpi or mpich) can be used to specify dependencies when installing spack packages using `^`, for instance on Darwin:
+External packages (such as openmpi or mpich) can be used to specify dependencies when installing spack packages using `^`, for instance on LANL's Darwin:
 
 ```
 spack install amanzi@spack ^openmpi@4.1.2
 ```
 will install amanzi with the explicit dependence on the module `openmpi/4.1.2-gcc_11.2.0` to which it is associated the spack spec `^openmpi@4.1.2`.
+Note that specifying a compiler is not necessary here since it is already taken into account in the module.
 
 The spec is in the packages.yaml file, see below.
 
 # Manage external packages
 
 In ${HOME}/.spack/packages.yaml you can find the external libraries detected by spack, and also add others that might be associated with existing modules
-present in your system. For instance, on Darwin, the module `openmpi/4.1.2-gcc_11.2.0` can be used to create the following spec
+present in your system. For instance, on LANL's Darwin, the module `openmpi/4.1.2-gcc_11.2.0` can be used to create the following spec:
 
 ```
 openmpi:
@@ -72,7 +126,7 @@ openmpi:
 If your packages.yaml file was blank, then the line `packages:` has to be added above `openmpi:`. If other specs are already present in the packages.yaml file,
 then you can just add more at the bottom and omit the `packages:` line before the library name.
 
-Note that if you ran `spack external find` the above spec may have been added to the packages.yaml file and look like this
+Note that if you ran `spack external find` the above spec may have been added to the packages.yaml file and look like this:
 
 ```
 packages:
@@ -84,29 +138,6 @@ packages:
 
 While the above spec might work in some cases, we have found that it is safer to just use the module syntax.
 
-# Amanzi Spack
-
-This current version of amanzi's spack package is not (yet) available on the remote spack repository. 
-You will need to download Amanzi/ATS: 
-
-```
-git clone --recursive git@github.com:amanzi/amanzi
-cd amanzi
-git checkout spack
-git pull
-```
-
-You will then be able to add the repository in your local spack: 
-
-```
-spack repo add amanzi/spack-repo
-```
-
-The command above will add repositories for the following six packages:
-
-```
-alquimia amanzi  ascemio  crunchtope  mstk  ccse
-```
 
 # Spack variants
 ```
@@ -122,19 +153,21 @@ Currently, we are striving to support the following variants:
     hypre [on]                     --      on, off                 Enable Hypre solver support
     mesh_framework [mstk]          --      mstk, moab              Unstructured mesh framework
     mesh_type [unstructured]       --      unstructured,           Select mesh type: unstructured or structured
-                                           structured              
+                                           structured              (the structured option is currently NOT supported)
     physics [amanzi]               --      amanzi, ats             Physics implementation
-    shared [on]                    --      on, off                 Build shared libraries and TPLs
+    shared [on]                    --      on, off                 Build Amanzi shared
+                                                                   (note that this variant ONLY applies to amanzi and NOT to its dependencies)
     silo [off]                     --      on, off                 Enable Silo reader for binary files
     tests [on]                     --      on, off                 Enable the unit test suite
+                                                                   (currently working on the OFF option for tests)
 ```
 
-# Building and testing Amanzi with spack
+# Building Amanzi with Spack
 
-Depending on the different systems you might be using, it is recommended to use specific specs for the amanzi build.
-Below you can find some system specific tested commands for the amanzi installation via spack
+Depending on the different systems you might be using, it is recommended to use specific specs for the Amanzi build.
+Below you can find some system specific tested commands for the Amanzi installation via Spack.
 
-# Darwin
+# LANL's Darwin
 Go on a compute node and add the following spec to the packages.yaml file:
 ```
 packages:
@@ -148,8 +181,7 @@ To build amanzi, run from any folder:
 ```
 spack install amanzi@spack <desired_variant>  ^openmpi@4.1.2
 ```
-Currently we are finalizing a spack testing suite, but it is not yet complete.
-For now, to run tests for amanzi after installation, cd into amanzi and replace `install` in the above command string with `dev-build --test all`. Note that the testing cannot be done from any folder but it as to be done from within the amanzi folder.
+Note that tests are currently run as part of the Spack build by default (the `+tests` variant is on by default).
 
 # Cori
 From a login node, add the following specs to the packages.yaml file:
@@ -174,9 +206,8 @@ spack install amanzi@spack <desired_variant> ^mpich@7.7.19 ^cray-libsci@20.09.1 
 
 The specific dependence on the cray scientific library is to make sure that `blas` and `lapack` are taken from there.
 Note that with versions of gcc higher than 8.3.0 there could be an argument mismatch error when building some libraries (such as [pflotran](https://github.com/spack/spack/issues/30498)). In that case, users should specify the following flag in the compilers.yaml file for the desired gcc version: `fflags:-fallow-argument-mismatch`. 
-To test amanzi, proceed as explained above using `dev-build --test all`.
 
-# T-5 systems
+# LANL's T-5 systems
 
 The following steps have been carried out on `piquillo`.
 
@@ -194,18 +225,16 @@ Add the following spec to the packages.yaml file:
       modules:
       - openmpi/4.0.4/gcc-11.2.0
 ```
-To build amanzi, run from any folder:
+To build Amanzi, run from any folder:
 ```
 spack install amanzi@spack <desired_variant> ^openmpi@4.0.4 %gcc@11.2.0
 ```
 Note that you might have to first load the module `gcc/11.2.0` and then do a `spack compiler find` to be able to use `%gcc@11.2.0`.
 To test amanzi, proceed as explained above using `dev-build --test all`.
 
-# Laptop
+# MacOS 
 
-# Notes
 
-Currently spack does not propagate variants to dependencies, hence the static variant (`-shared`) is currently a work in progress.
 
-The ccse spack package is currently undergoing testing so the structured variant (`mesh_type=structured`) is unavailable at the moment.
+
 

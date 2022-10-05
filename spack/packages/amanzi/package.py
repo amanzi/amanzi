@@ -38,7 +38,11 @@ class Amanzi(CMakePackage):
     # Mesh Type: unstructured|structured
     #            (could be both, but currently not support for structured) 
     variant('mesh_type', default='unstructured', values=('unstructured', 'structured'), description='Select mesh type: unstructured or structured')
+
+    # Shared Libraries
     variant('shared', default=True, description='Build Amanzi shared')
+
+    # Mesh Framework
     variant('mesh_framework', default='mstk', values=('mstk','moab'), description='Unstructured mesh framework', multi=True)
 
     # Solvers 
@@ -53,7 +57,7 @@ class Amanzi(CMakePackage):
     # Geochemistry 
     variant('geochemistry', default=False, description='Enable geochemistry support')
 
-
+    # Testing Suite
     variant('tests', default=True, description='Enable the unit and the regression test suites')
 
     patch('exprtk.patch')
@@ -113,9 +117,7 @@ class Amanzi(CMakePackage):
     # There is a newer version 5.3.0 (but we haven't tested it yet).
     depends_on('moab@5.2.0', when='mesh_framework=moab')
 
-    #### I/O ####
-
-    ##### Silo #####
+    ##### I/O (Silo) #####
     # There finally is a new version 4.11 (but we haven't tested it yet).
     depends_on('silo@4.10.2', when='+silo')
 
@@ -148,7 +150,6 @@ class Amanzi(CMakePackage):
             options.append('-DSPACK_AMANZI_VERSION_PATCH=0')
             options.append('-DSPACK_AMANZI_VERSION_HASH=0')
         
-
         # Provide information normally in the cache?
         options.append('-DZLIB_DIR=' + self.spec['zlib'].prefix)
         options.append('-DMETIS_DIR=' + self.spec['metis'].prefix)
