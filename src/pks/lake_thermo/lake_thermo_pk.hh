@@ -344,6 +344,11 @@ protected:
 
   // ice thickness
   double h_ice_;
+  double h_ice_prev;
+
+  int i_ice_max;
+  int i_ice_min;
+  int d_ice;
 
   // heat capacity
 //  double cp_;

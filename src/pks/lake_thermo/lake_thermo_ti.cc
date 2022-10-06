@@ -42,79 +42,9 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
 
   const Epetra_MultiVector& temp_v = *temp->ViewComponent("cell",false);
 
-  int i_ice_max = 0;
-  int i_ice_min = ncomp;
-
   // cell volumes
   const Epetra_MultiVector& cv =
          *S_inter_->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
-
-  /*
-  for (int i=0; i!=ncomp; ++i) {
-    if (temp_v[0][i] < 273.15) { // check if there is ice cover
-      ice_cover_ = true;
-      i_ice_max = i;
-    }
-  } // i
-
-  for (int i=ncomp-1; i!=-1; --i) {
-    if (temp_v[0][i] < 273.15) { // check if there is ice cover
-      ice_cover_ = true;
-      i_ice_min = i;
-    }
-  } // i
-
-  int d_thawed = ncomp-1-i_ice_max;  // thickness of thawed layer [cells]
-  int d_ice = i_ice_max-i_ice_min+1; // thickness of ice layer [cells]
-
-  double h_ice_prev = h_ice_;
-  if (d_ice > 0) h_ice_ = d_ice*cv[0][0]; // assume uniform mesh
-
-  std::vector<double> temp_new(ncomp); // new temperatures for swapping the cells
-
-  for (int i=0; i!=ncomp; ++i) {
-    temp_new[i] = temp_v[0][i]; //-100.; //temp_v[0][i];
-  }
-
-  if (ice_cover_ && d_thawed > 0) {
-
-    std::cout << "i_ice_min = " << i_ice_min << std::endl;
-    std::cout << "i_ice_max = " << i_ice_max << std::endl;
-    std::cout << "d_thawed = " << d_thawed << std::endl;
-    std::cout << "d_ice    = " << d_ice << std::endl;
-
-
-    std::cout << "Temperature before swap " << std::endl;
-    for (int i=ncomp-1; i!=-1; --i) {
-      std::cout << "temp_v[0][" << i << "] = " << temp_v[0][i] << std::endl;
-    }
-
-    // if thawing occured at the top, swap cells
-    for (int i=0; i < d_ice; ++i) { // push ice to the surface
-      std::cout << "copy cell " << i_ice_max-i << " to " << ncomp-1-i << std::endl;
-      temp_new[ncomp-1-i] = temp_v[0][i_ice_max-i];
-    }
-    for (int i=0; i < d_thawed; ++i) { // push water to the bottom
-      temp_new[i_ice_min+i] = temp_v[0][i_ice_max+1+i];
-      std::cout << "copy cell " << i_ice_max+1+i << " to " << i_ice_min+i << std::endl;
-    } // i
-
-    for (int i=0; i!=ncomp; ++i) {
-      temp_v[0][i] = temp_new[i];
-    }
-
-    std::cout << "Temperature after swap " << std::endl;
-    for (int i=ncomp-1; i!=-1; --i) {
-      std::cout << "temp_v[0][" << i << "] = " << temp_v[0][i] << std::endl;
-      if (temp_v[0][i] < 0.) exit(0);
-    }
-
-//    exit(0);
-
-//    if (d_ice < d_thawed) exit(0);
-
-  }
-  */
 
   // get conductivity
   S_inter_->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S_inter_.ptr(), name_);
@@ -154,42 +84,6 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   bc_diff_flux_->Compute(t_new);
   //  bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
-
-  Teuchos::ParameterList& param_list = plist_->sublist("met data");
-  FunctionFactory fac;
-  Teuchos::RCP<Function> r_func_ = Teuchos::rcp(fac.Create(param_list.sublist("precipitation")));
-  Teuchos::RCP<Function> E_func_ = Teuchos::rcp(fac.Create(param_list.sublist("evaporation")));
-
-  std::vector<double> args(1);
-  args[0] = S_inter_->time();
-  r_ = (*r_func_)(args);
-  E_ = (*E_func_)(args);
-
-  // Compute evaporartion rate
-  S_inter_->GetFieldEvaluator(evaporation_rate_key_)->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& E_v =
-      *S_inter_->GetFieldData(evaporation_rate_key_)->ViewComponent("cell",false);
-  E_ = E_v[0][0]; // same everywhere
-
-//  // update depth
-  double dt = S_next_->time() - S_inter_->time();
-//  double dhdt = r_ - E_ - R_s_ - R_b_;
-//  h_ += dhdt*dt;
-
-  std::cout << "h_    = " << h_ << std::endl;
-  std::cout << "h_ice = " << h_ice_ << std::endl;
-//  double freeze_rate = (h_ice_-h_ice_prev)/dt*86400./2.54*100.;
-//  if (freeze_rate > 0.) std::cout << "freeze rate = " << freeze_rate << " inch/day" << std::endl;
-
-
-//  // save file with freezing rates
-//  if (int(t_new) % 86400 == 0) {
-//    std::string ncells(std::to_string(ncomp));
-//    std::ofstream tempfile;
-//    tempfile.open ("freeze_rate"+ncells+".txt", std::ios::app);
-//    tempfile << int(t_new) / 86400 << " " << freeze_rate << " ";
-//    tempfile << "\n";
-//  }
 
   S_inter_->GetFieldData(depth_key_,name_)->PutScalar(h_);
 
@@ -288,17 +182,6 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
     *S_next_->GetFieldData(solnstream.str(),name_) = *u;
   }
 #endif
-
-//  // save file with temperature distribution
-//  if (int(t_new) % 86400 == 0) {
-//    std::ofstream tempfile;
-//    tempfile.open ("temperature.txt", std::ios::app);
-//    for (int i=0; i!=ncomp; ++i) {
-//      const AmanziGeometry::Point& xc = mesh_->cell_centroid(i);
-//      tempfile << temp_v[0][i] << " ";
-//    }
-//    tempfile << "\n";
-//  }
 
 };
 

@@ -161,13 +161,65 @@ void HeatFluxBCEvaluator::EvaluateField_(
 
       alpha = (T_s < 273.15) ? alpha_i : alpha_w;
 
-      double hour_sec = 60.*60;
-      double interval = 24.;
-      SS = SS/(hour_sec*interval);
+     double hour_sec = 60.*60;
+     double interval = 24.;
+
+     int n = int(S->time());
+     int day = n / (24 * 3600);
+     n = n % (24 * 3600);
+     int hour = n / 3600;
+     n %= 3600;
+     int minutes = n / 60 ;
+     n %= 60;
+     int seconds = n;
+
+    //  std::cout << day << " " << "days " << hour
+    //      << " " << "hours " << minutes << " "
+    //      << "minutes " << seconds << " "
+    //      << "seconds "  << std::endl;
+
+     double pi = 3.1415;
+     double longitude = -164.456696;
+     double latitude = 66.558765;
+     double phi   = latitude*pi/180.0;
+     double delta = longitude*pi/180.0; //23.5*pi/180.0*cos(2*pi*(double(day)-173.0)/365.0);
+     double theta = pi*(hour-12.0)/12.0;
+     double sinh0 = sin(phi)*sin(delta) + cos(phi)*cos(delta)*cos(theta);
+     sinh0 = fmax(sinh0,0.0); 
+
+    //  std::cout << "sinh0 = " << sinh0 << std::endl;
+
+    //  SS *= sqrt(1.-sinh0*sinh0);
+
+    //  SS = SS/(hour_sec*interval);
+      SS = 0.9*SS; // FoxDen
+      // SS = 0.9*SS; // Atqasuk
+      // SS = 0.9*SS; // Toolik
+
+      // SS = (T_s < 273.15) ? 0. : SS;
 
       result_v[0][i] = SS*(1.-alpha) + E_a - E_s - H - LE;
 
       result_v[0][i] *= -1.; ///cond_v[0][i];
+
+      if (isnan(result_v[0][i])) {
+          std::cout << "SS = " << SS << ", E_a = " << E_a << ", E_s = " << E_s << ", H = " << H << ", LE = " << LE << std::endl;
+          std::cout << "rho_a = " << rho_a << std::endl;
+          std::cout << "T_s = " << T_s << std::endl;
+          std::cout << "q_s = " << q_s << std::endl;
+          std::cout << "tpsf_Rd_o_Rv = " << tpsf_Rd_o_Rv << std::endl;
+          std::cout << "wvpres_s = " << wvpres_s << std::endl;
+          std::cout << "P_a = " << P_a << std::endl;
+          std::cout << "tpsf_Rd_o_Rv = " << tpsf_Rd_o_Rv << std::endl;
+          std::cout << b1_vap << " " << std::exp(b2w_vap*(T_s-b3_vap)/(T_s-b4w_vap)) << std::endl;
+          std::cout << b2w_vap << std::endl;
+          std::cout << T_s-b3_vap << std::endl;
+          std::cout << T_s-b4w_vap << std::endl;
+          std::cout << (T_s-b3_vap)/(T_s-b4w_vap) << std::endl;
+          std::cout << "b2w_vap*(T_s-b3_vap)/(T_s-b4w_vap) = " << b2w_vap*(T_s-b3_vap)/(T_s-b4w_vap) << std::endl;
+          std::cout << b1_vap << " " << std::exp(b2i_vap*(T_s-b3_vap)/(T_s-b4i_vap)) << std::endl;
+          exit(0);
+      }
 
     } // i
 

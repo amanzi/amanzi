@@ -61,7 +61,7 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 
   unsigned int ncells = g_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
-    g_c[0][c] += cp[0][c]*rho[0][c]*(T1_c[0][c]-T0_c[0][c])/dt ; //* cv[0][c] ;
+    g_c[0][c] += cp[0][c]*rho[0][c]*(T1_c[0][c]-T0_c[0][c])/dt * cv[0][c] ;
   }
 
 };
@@ -111,16 +111,26 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
       *S->GetFieldData(evaporation_rate_key_)->ViewComponent("cell",false);
   E_ = E_v[0][0]; // same everywhere
 
+  // set precipitation and evaporation to zero in the winter (for now because we don't have a snow layer anyway)
+  unsigned int ncells = g->ViewComponent("cell",false)->MyLength();
+  // get temperature
+  const Epetra_MultiVector& temp1 = *S->GetFieldData(temperature_key_)
+              ->ViewComponent("cell",false);
+
+  // set precipitation and evaporation to zero in the winter (for now because we don't have a snow layer anyway)
+  // r_ = (temp1[0][ncells-1] < 273.15) ? 0. : r_;
+  // E_ = (temp1[0][ncells-1] < 273.15) ? 0. : E_;
+
   std::ofstream outfile;
 
-  outfile.open("Precipitation.txt", std::ios_base::app); // append instead of overwrite
-  outfile.precision(5);
-  outfile.setf(std::ios::scientific,std::ios::floatfield);
-  outfile << S->time() << " " << r_ << "\n";
+  // outfile.open("Precipitation.txt", std::ios_base::app); // append instead of overwrite
+  // outfile.precision(5);
+  // outfile.setf(std::ios::scientific,std::ios::floatfield);
+  // outfile << S->time() << " " << r_ << "\n";
 
   double dhdt = r_ - E_ - R_s_ - R_b_;
   double B_w  = r_ - E_;
-
+  
   const Epetra_MultiVector& flux_f = *flux->ViewComponent("face", false);
 
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -177,7 +187,13 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
       rho = (rho_v[0][f_cells[0]] + rho_v[0][f_cells[1]]) / 2.;
     }
 
-    flux_f[0][f] = -1.*cp*rho*(dhdt*(1.-xcf[2]) - B_w)/(h_+1.e-6) / cv[0][f_cells[0]];;// * normal[2] ; // / cv[0][f_cells[0]]; //*normal[2]; // *normal or not?
+    double dhdt_c = dhdt;
+    double B_w_c = B_w;
+
+    // dhdt_c = (temp1[0][ncells-1] < 273.15) ? 0. : dhdt;
+    // B_w_c = (temp1[0][ncells-1] < 273.15) ? 0. : B_w;
+
+    flux_f[0][f] = -1.*cp*rho*(dhdt_c*(1.-xcf[2]) - B_w_c)/(h_+1.e-6) ; //* normal[2]; // / cv[0][f_cells[0]]; // * normal[2] ; // / cv[0][f_cells[0]]; //*normal[2]; // *normal or not?
 //    std::cout << "f = " << f << ", normal = " << normal << ", dir = " << dir << std::endl;
   }
 //  exit(0);
@@ -215,7 +231,7 @@ void Lake_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
   // because the lake model has 1/h^2 term
   for (int f = 0; f < nfaces_owned; f++) {
-    uw_cond_c[0][f] = uw_cond_c[0][f]/(h_*h_)/cv[0][0];
+    uw_cond_c[0][f] = uw_cond_c[0][f]; ///(h_*h_) ;///cv[0][0];
   }
 
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
@@ -298,29 +314,94 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     // ice extinction coefficient
     alpha_e_i_ = 1.0;
 
+    double albedo_w = 0.06; // water albedo
+    double albedo_i = 0.40; // ice albedo
+
     double alpha;
 
     // Add into residual
     unsigned int ncells = g_c.MyLength();
+
+    // // set precipitation and evaporation to zero in the winter (for now because we don't have a snow layer anyway)
+    // r_ = (temp[0][ncells-1] < 273.15) ? 0. : r_;
+    // E_ = (temp[0][ncells-1] < 273.15) ? 0. : E_;
+
     for (unsigned int c=0; c!=ncells; ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-
-//      if (temp[0][ncells-1] < 273.15) {
-//        S0_ = 0.;
-//      } else {
-//        S0_ = SS;
-//      }
 
       alpha = (temp[0][c] < 273.15) ? alpha_e_i_ : alpha_e_w_;
 
       double hour_sec = 60.*60;
       double interval = 24.;
-      SS = SS/(hour_sec*interval);
+    //  SS = SS/(hour_sec*interval);    
 
-      S0_ = SS;
+     int n = int(S->time());
+     int day = n / (24 * 3600);
+     n = n % (24 * 3600);
+     int hour = n / 3600;
+     n %= 3600;
+     int minutes = n / 60 ;
+     n %= 60;
+     int seconds = n;
+
+    //  std::cout << day << " " << "days " << hour
+    //      << " " << "hours " << minutes << " "
+    //      << "minutes " << seconds << " "
+    //      << "seconds "  << std::endl;
+
+     double pi = 3.1415;
+     // FoxDen, Atqasuk
+     double longitude = -164.456696;
+     double latitude = 66.558765;
+     double phi   = latitude*pi/180.0;
+    //  double delta = longitude*pi/180.0; 
+    double delta = 23.5*pi/180.0*cos(2*pi*(double(day)-173.0)/365.0);
+     double theta = pi*(hour-12.0)/12.0;
+     double sinh0 = sin(phi)*sin(delta) + cos(phi)*cos(delta)*cos(theta);
+     sinh0 = fmax(sinh0,0.0); 
+
+    //  std::cout << "sinh0 = " << sinh0 << std::endl;
+
+    //  SS *= sqrt(1.-sinh0*sinh0);
+
+    //  std::cout << "sqrt(1.-sinh0*sinh0) = " << sqrt(1.-sinh0*sinh0) << std::endl;
+
+      // S0_ = SS;
+      S0_ = 0.9*SS; // FoxDen
+      // S0_ = 0.9*SS; // Atqasuk
+      // S0_ = 0.9*SS; // Toolik
+
+      double S0_w_ice = S0_*exp(-alpha_e_i_*h_ice_);
+      double dhdt_c = dhdt;
+      double B_w_c = B_w;  
+
+      S0_ = (temp[0][ncells-1] < 273.15) ? S0_w_ice : S0_;
+      // dhdt_c = (temp[0][ncells-1] < 273.15) ? 0. : dhdt;
+      // B_w_c = (temp[0][ncells-1] < 273.15) ? 0. : B_w;
+
+      // S0_ = (temp[0][ncells-1] < 273.15) ? 0. : S0_;
+
+      // if (temp[0][c] < 273.15) {
+      //  double Lwi   = 333500.; //267900.  // latent heat of freezing, J/kg
+      // //  double Lwi   = 267900.;  // latent heat of freezing, J/kg
+      //  double rhow0 = 1000.;  // density of water
+      //  double dt = S_next_->time() - S_inter_->time();
+      //  double freeze_rate = (h_ice_-h_ice_prev)/dt;
+      // //  std::cout << "freeze_rate = " << freeze_rate << std::endl;
+      // //  freeze_rate = 1.e-8;
+      //  g_c[0][c] += -rhow0*Lwi*freeze_rate*0.005;
+      // // double Ste; // Stefan number
+      // // Ste = cp[0][c]*(temp[0][int(fmin(ncells-1,i_ice_min))]-temp[0][int(fmax(0,i_ice_min-1))])/Lwi;
+      // // g_c[0][c] += -Ste*freeze_rate;
+      // //  std::cout << "Ste*freeze_rate = " << Ste*freeze_rate << std::endl;
+      // }
+
+      double albedo = (temp[0][ncells-1] < 273.15) ? albedo_i : albedo_w;
+
+      S0_ *= (1.-albedo);
 
       // -1.* because I switched to vertical xi coordinate
-      g_c[0][c] += -1.*( (S0_*exp(-alpha*h_*(1.-xc[2]))*(alpha*h_)/(h_+1.e-6) - cp[0][c]*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) ); // * cv[0][c] ;
+      g_c[0][c] += -1.*( (S0_*exp(-alpha*h_*(1.-xc[2]))*(alpha*h_)/(h_+1.e-6) - cp[0][c]*rho[0][c]*temp[0][c]*dhdt_c/(h_+1.e-6)) ) * cv[0][c] ;
 
       /* TESTING
 //      // manufactured solution 1: linear temperature distribution

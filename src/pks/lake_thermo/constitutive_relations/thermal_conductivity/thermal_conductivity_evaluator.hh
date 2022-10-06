@@ -14,6 +14,8 @@
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
+#include "Function.hh"
+#include "FunctionFactory.hh"
 
 namespace Amanzi {
 namespace LakeThermo {
@@ -45,6 +47,7 @@ class ThermalConductivityEvaluator :
   double K_0_;
 
   Key temperature_key_;
+  Key depth_key_;
 
 
 //  Key uf_key_;

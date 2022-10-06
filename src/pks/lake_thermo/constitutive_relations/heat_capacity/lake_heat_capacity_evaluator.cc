@@ -43,9 +43,9 @@ LakeHeatCapacityEvaluator::LakeHeatCapacityEvaluator(
   double row  = 1000.; // density of water
   double roi  = 917.;  // density of ice
 
-  cw    = 3990.; ///row;    // specific heat of water
+  // cw    = 3990.; ///row;    // specific heat of water
+  cw    = 4182.; ///row; // [J/kg K]
   ci    = 2150.; ///roi;    // specific heat of ice
-
 }
 
 
@@ -95,22 +95,29 @@ void LakeHeatCapacityEvaluator::EvaluateField_(
 
     for (int i=0; i!=ncomp; ++i) {
 
-//      double W = wc_v[0][i]; // * 1.8e-5; // CONVERTED UNITS from mol/m^3 to volume ratio
-//      double I = 0.;//= ic_v[0][i] * 1.8e-5;
-
-//      result_v[0][i] = cw*W + ci*I;
-
       double T = T_v[0][i];
-//      result_v[0][i] = cw; //(T < 273.15) ? ci : cw;
-      cc[i] = cw; //(T < 273.15) ? ci : cw;
+      cc[i] = (T < 273.15) ? ci : cw;
+      // if (T < 273.15) {
+      //   cc[i] = 0.5*(ci + cc[i]);
+      // }
+      // else {
+      //   cc[i] = 0.5*(cw + cc[i]);
+      // }
 
     } // i
 
 
     result_v[0][0] = cc[0];
     for (int i=1; i!=ncomp; ++i) {
-      result_v[0][i] = 0.5*(cc[i]+cc[i-1]);
+      result_v[0][i] = cc[i]; //0.5*(cc[i]+cc[i-1]);
     }
+
+    // result_v[0][0] = cc[0];
+    // result_v[0][ncomp-1] = cc[ncomp-1];
+    // for (int i=1; i!=ncomp-1; ++i) {
+    //   result_v[0][i] = 1./3.*(cc[i-1]+cc[i]+cc[i+1]);
+    // }
+
 
   }
 

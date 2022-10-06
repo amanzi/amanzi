@@ -101,7 +101,7 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   heat_capacity_key_ = Keys::readKey(*plist_, domain_, "heat capacity", "heat_capacity");
   uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
   cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "ice", "ice");
-  depth_key_ = Keys::readKey(*plist_, domain_, "water depth", "water depth");
+  depth_key_ = Keys::readKey(*plist_, domain_, "water depth", "water_depth");
   surface_flux_key_ = Keys::readKey(*plist_, domain_, "surface flux", "surface_flux");
   evaporation_rate_key_ = Keys::readKey(*plist_, domain_, "evaporation rate", "evaporation_rate");
 
@@ -116,7 +116,7 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
           ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(cell_vol_key_);
-  //  S->RequireScalar("atmospheric_pressure");
+   S->RequireScalar("atmospheric_pressure");
 
   // Set up Operators
   // -- boundary conditions
@@ -411,6 +411,16 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   // depth
   S->RequireField(depth_key_,name_)->SetMesh(mesh_)
           ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList elist_depth;
+  elist_depth.set<std::string>("evaluator name", depth_key_);
+  auto eval_depth = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist_depth));
+  AMANZI_ASSERT(S != Teuchos::null);
+  S->SetFieldEvaluator(depth_key_, eval_depth);
+
+  S->RequireFieldEvaluator(depth_key_);
+
+  S->RequireField(depth_key_, name_)->SetMesh(mesh_)->SetGhosted()
+		      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // -- simply limit to close to 0
   modify_predictor_for_freezing_ =
@@ -601,9 +611,10 @@ void Lake_Thermo_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
 
   bool ice_cover_ = false; // first always assume that there is no ice
 
-  int i_ice_max = 0;
-  int i_ice_min = ncomp-1;
-  int d_ice = 0;
+  i_ice_max = 0;
+  i_ice_min = ncomp-1;
+  d_ice = 0;
+  h_ice_ = 0;
 
   for (int i=0; i!=ncomp; ++i) {
     if (temp_v[0][i] < 273.15) { // check if there is ice cover
@@ -624,8 +635,8 @@ void Lake_Thermo_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
   int d_thawed = ncomp-1-i_ice_max;  // thickness of thawed layer [cells]
 //  int d_ice = i_ice_max-i_ice_min+1; // thickness of ice layer [cells]
 
-  double h_ice_prev = h_ice_;
-  if (h_ice_ > 0) h_ice_ = d_ice*cv[0][0]*1.5; // in [m], assume uniform mesh
+  h_ice_prev = h_ice_;
+  if (d_ice > 0) h_ice_ = d_ice*cv[0][0]*h_; // in [m], assume uniform mesh
 
   std::vector<double> temp_new(ncomp); // new temperatures for swapping the cells
 
@@ -657,7 +668,7 @@ void Lake_Thermo_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
     } // i
 
     for (int i=0; i!=ncomp; ++i) {
-      temp_v[0][i] = temp_new[i];
+     temp_v[0][i] = temp_new[i];
     }
 
     std::cout << "Temperature after swap " << std::endl;
@@ -672,6 +683,7 @@ void Lake_Thermo_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
   i_ice_max = 0;
   i_ice_min = ncomp-1;
   d_ice = 0;
+  h_ice_ = 0;
 
   for (int i=0; i!=ncomp; ++i) {
     if (temp_v[0][i] < 273.15) { // check if there is ice cover
@@ -693,7 +705,7 @@ void Lake_Thermo_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
 //  d_ice = i_ice_max-i_ice_min+1; // thickness of ice layer [cells]
 
   h_ice_prev = h_ice_;
-  if (d_ice > 0) h_ice_ = d_ice*cv[0][0]*1.5; // in [m], assume uniform mesh
+  if (d_ice > 0) h_ice_ = d_ice*cv[0][0]*h_; // in [m], assume uniform mesh
 
   Teuchos::ParameterList& param_list = plist_->sublist("met data");
   FunctionFactory fac;
@@ -715,9 +727,34 @@ void Lake_Thermo_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
       *S->GetFieldData(evaporation_rate_key_)->ViewComponent("cell",false);
   E_ = E_v[0][0]; // same everywhere
 
+  // // set precipitation and evaporation to zero in the winter (for now because we don't have a snow layer anyway)
+  // r_ = (temp_v[0][ncomp-1] < 273.15) ? 0. : r_;
+  // E_ = (temp_v[0][ncomp-1] < 273.15) ? 0. : E_;
+
   // update depth
   double dhdt = r_ - E_ - R_s_ - R_b_;
+
+  // dhdt = (temp_v[0][ncomp-1] < 273.15) ? 0. : dhdt;
+
   h_ += dhdt*dt;
+
+  if (d_ice > 0) h_ice_ = double(d_ice)*cv[0][0]*h_; ///1.5; //*1.5; //h_; //h_/ncomp;  //*cv[0][0]/h_; // in [m], assume uniform mesh
+
+  double tpl_kappa_w  = 5.46e-1; // Molecular heat conductivity of water [J m^{-1} s^{-1} K^{-1}]
+  double tpl_rho_I    = 9.1e2;   // Density of ice [kg m^{-3}]
+  double tpl_L_f      = 3.3e5;   // Latent heat of fusion [J kg^{-1}]
+  double Phi_T_pr0_1  = 40./3.;  // Constant in the expression for the T shape-function derivative 
+  double Phi_T_pr0_2  = 20./3.;  // Constant in the expression for the T shape-function derivative 
+  double depth_w = h_;
+  double T_bot_p_flk = temp_v[0][0];
+  double T_wML_p_flk = temp_v[0][ncomp-1];
+  double Q_w_flk = -tpl_kappa_w*(T_bot_p_flk-T_wML_p_flk)/depth_w;
+  double C_T_p_flk = 0.5;
+  double Phi_T_pr0_flk = Phi_T_pr0_1*C_T_p_flk-Phi_T_pr0_2;         // d\Phi(0)/d\zeta (thermocline)
+  Q_w_flk = Q_w_flk*fmax(Phi_T_pr0_flk, 1.);           // Account for an increased d\Phi(0)/d\zeta 
+  double d_h_ice_dt = -Q_w_flk/tpl_rho_I/tpl_L_f;
+  // d_h_ice_dt = (temp_v[0][ncomp-1] > 273.15) ? 0. : d_h_ice_dt;
+  // h_ice_ += d_h_ice_dt*dt;
 
   // compute freeze rate
   double freeze_rate = (h_ice_-h_ice_prev)/dt*86400./2.54*100.;
@@ -770,6 +807,11 @@ void Lake_Thermo_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
     tempfile_surftemp.open ("surf_temp_"+ncells+".txt", std::ios::app);
     tempfile_surftemp << int(t_new) / 86400 << " " << temp_v[0][ncomp-1] << " ";
     tempfile_surftemp << "\n";
+
+    std::ofstream tempfile_ice_water_temp;
+    tempfile_ice_water_temp.open ("ice_water_interface_temp_"+ncells+".txt", std::ios::app);
+    tempfile_ice_water_temp << int(t_new) / 86400 << " " << temp_v[0][std::min(ncomp-1,i_ice_min)] << " ";
+    tempfile_ice_water_temp << "\n";
 
     std::ofstream tempfile_bottomtemp;
     tempfile_bottomtemp.open ("bottom_temp_"+ncells+".txt", std::ios::app);
@@ -973,12 +1015,15 @@ void Lake_Thermo_PK::UpdateBoundaryConditions_(
     int f = bc->first;
     AmanziMesh::Entity_ID_List fcells;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
-    std::cout << "f = " << f << ", fcells = " << fcells[0] << " " << fcells[1] << std::endl;
     markers[f] = Operators::OPERATOR_BC_NEUMANN;
     if (fcells[0] == 0) { //bottom
       values[f] = 0.;
     } else {
-      values[f] = flux[0][ncomp-1]/cond_v[0][ncomp-1]*h_/cv[0][ncomp-1]; ///cond_v[0][ncomp-1]*h_; //bc->second;
+      // values[f] = flux[0][ncomp-1]*h_; 
+      // values[f] = flux[0][ncomp-1]*h_/cv[0][ncomp-1]; 
+      values[f] = flux[0][ncomp-1]/h_; ///cond_v[0][ncomp-1];
+      // values[f] = flux[0][ncomp-1]/cond_v[0][ncomp-1]*h_;
+      // values[f] = flux[0][ncomp-1]/cond_v[0][ncomp-1]*h_/cv[0][ncomp-1];
     }
     adv_markers[f] = Operators::OPERATOR_BC_NEUMANN;
     adv_values[f] = 0.;

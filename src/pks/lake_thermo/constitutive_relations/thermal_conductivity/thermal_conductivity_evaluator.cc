@@ -29,6 +29,10 @@ ThermalConductivityEvaluator::ThermalConductivityEvaluator(
   temperature_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
   dependencies_.insert(temperature_key_);
 
+  // -- depth
+  depth_key_ = Keys::readKey(plist_, domain_name, "water depth", "water_depth");
+  dependencies_.insert(depth_key_);
+
   AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
   //  K_liq_ = sublist.get<double>("thermal conductivity of water [W/(m-K)]", 0.58);
@@ -36,10 +40,10 @@ ThermalConductivityEvaluator::ThermalConductivityEvaluator(
   //  min_K_ = sublist.get<double>("minimum thermal conductivity", 1.e-14);
 
   // later: read these parameters from xml
-  K_max_    = 150; // [W/(m * K)]
-  K_0_      = 50.;
-  V_wind_   = 10.; // [m/s]
-  V_wind_0_ = 20.;
+  K_max_    = 150.; // [W/(m * K)]
+  K_0_      = 0.561;
+  V_wind_   = 5.; // [m/s]
+  V_wind_0_ = 40.;
 }
 
 
@@ -50,7 +54,8 @@ ThermalConductivityEvaluator::ThermalConductivityEvaluator(
         K_0_(other.K_0_),
         V_wind_(other.V_wind_),
         V_wind_0_(other.V_wind_0_),
-        temperature_key_(other.temperature_key_){}
+        temperature_key_(other.temperature_key_),
+        depth_key_(other.depth_key_){}
 //    uf_key_(other.uf_key_),
 //    height_key_(other.height_key_),
 //    K_liq_(other.K_liq_),
@@ -73,11 +78,29 @@ void ThermalConductivityEvaluator::EvaluateField_(
   double z_w   = 1.0;
 
   double lambda_ice = 2.2;
-  double lambda_w   = 3.*0.561; //1.5
+  double lambda_w   = 0.561; //3.*0.561; //1.5
 //  lambda_ice = lambda_w;
+
+  // read parameters from the met data
+  Teuchos::ParameterList& param_list = plist_.sublist("parameters");
+  Amanzi::FunctionFactory fac;
+  Teuchos::RCP<Amanzi::Function> uwind_func_ = Teuchos::rcp(fac.Create(param_list.sublist("wind u-speed")));
+  Teuchos::RCP<Amanzi::Function> vwind_func_ = Teuchos::rcp(fac.Create(param_list.sublist("wind v-speed")));
+
+  std::vector<double> args(1);
+  args[0] = S->time();
+  double uwind = (*uwind_func_)(args);
+  double vwind = (*vwind_func_)(args);
+  V_wind_ = sqrt(uwind*uwind+vwind*vwind);
+
+  // std::cout << "V_wind = " << V_wind_ << std::endl;
 
   // get temperature
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
+
+  // get depth
+  Teuchos::RCP<const CompositeVector> depth = S->GetFieldData(depth_key_);
+  /// WHY ISN'T IT INITIALIZED ????
 
   // get mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();
@@ -89,6 +112,8 @@ void ThermalConductivityEvaluator::EvaluateField_(
     //      const Epetra_MultiVector& height_v = *height->ViewComponent(*comp,false);
     const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
     Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+    const Epetra_MultiVector& h = *depth->ViewComponent(*comp,false);
+
 
     int ncomp = result->size(*comp, false);
 
@@ -124,14 +149,18 @@ void ThermalConductivityEvaluator::EvaluateField_(
 
     for (int i=0; i!=ncomp; ++i) {
       if (temp_v[0][i] < 273.15) { // this cell is in ice layer
-        result_v[0][i] = lambda_ice;
+        result_v[0][i] = lambda_ice; //0.5*(lambda_ice + result_v[0][i]);
       }
-      else {
+      else { // this cell is in water layer
+        double lambda_tmp = result_v[0][i];
         if (ice_cover_) {
-          result_v[0][i] = lambda_w;
+          lambda_tmp = 3.*lambda_w; //1.5; //lambda_w; 
         } else {
-          result_v[0][i] = lambda_w; //10.*K_0_ + V_wind_/V_wind_0_*(K_max_ - K_0_);
+          lambda_tmp = lambda_w; //10.*K_0_ + V_wind_/V_wind_0_*(K_max_ - K_0_);
         }
+        // std::cout << "lambda_tmp = " << lambda_tmp << std::endl;
+        // lambda_tmp = 1.5;
+        result_v[0][i] = lambda_tmp; //0.5*(lambda_tmp + result_v[0][i]);
       }
     } // i
 
@@ -164,7 +193,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
       } // i
 
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = lambda_new[i];
+       result_v[0][i] = lambda_new[i];
       }
 
 //      std::cout << "lambda after swap " << std::endl;
@@ -231,11 +260,32 @@ void ThermalConductivityEvaluator::EvaluateField_(
 
       const AmanziGeometry::Point& zc = mesh->cell_centroid(i);
 
-      lambda[i] = 0.5*(result_v[0][i-1]+result_v[0][i]);
+      lambda[i] = result_v[0][i]; // 0.5*(result_v[0][i-1]+result_v[0][i]);
 
     } // i
 
-    for (int i=0; i!=ncomp; ++i)  result_v[0][i] = lambda[i];
+  //  lambda[0] = result_v[0][0];
+  //  lambda[ncomp-1] = result_v[0][ncomp-1];
+
+  //  for (int i=1; i!=ncomp-1; ++i) {
+
+  //    const AmanziGeometry::Point& zc = mesh->cell_centroid(i);
+
+  //    lambda[i] = 1./3.*(result_v[0][i-1]+result_v[0][i]+result_v[0][i+1]);
+
+  //  } // i
+
+    // std::cout << "depth in eval = " << h[0][0] << ", squared = " << h[0][0]*h[0][0] << std::endl;
+
+    for (int i=0; i!=ncomp; ++i)  {
+      // std::cout << "lambda[i] = " << lambda[i] << std::endl;
+      double hh = (h[0][0] == 0.) ? 1.5 : h[0][0]; // FoxDen
+      // double hh = (h[0][0] == 0.) ? 3.0 : h[0][0]; // Atqasuk
+      // double hh = (h[0][0] == 0.) ? 24.0 : h[0][0]; // Toolik
+      // std::cout << "hh = " << hh << std::endl;
+      result_v[0][i] = lambda[i]/(hh*hh);
+      // std::cout << "result = " << result_v[0][i] << std::endl;
+    }
 
   }
 
