@@ -339,6 +339,7 @@ void
 CompositeVector::ScatterMasterToGhosted(std::string name, bool force) const {
   // NOTE: allowing const is a hack to allow non-owning PKs to nonetheless
   // update ghost cells, which may be necessary for their discretization
+  AMANZI_ASSERT(ghosted_);
 #ifdef HAVE_MPI
 #if MANAGED_COMMUNICATION
   if (ghosted_ && ((!ghost_are_current_[Index_(name)]) || force)) {
