@@ -83,7 +83,7 @@ CompositeVectorSpace::SubsetOf(const CompositeVectorSpace& other) const {
   for (name_iterator name=begin(); name!=end(); ++name) {
     if (!other.HasComponent(*name)) return false;
     if (NumVectors(*name) != other.NumVectors(*name)) return false;
-    if (Location(*name) !=other.Location(*name)) return false;
+    if (Location(*name) != other.Location(*name)) return false;
   }
   return true;
 }
@@ -99,6 +99,7 @@ CompositeVectorSpace::Update(const CompositeVectorSpace& other) {
   if (this != &other) {
     if (other.mesh_ != Teuchos::null) SetMesh(other.mesh_);
     AddComponents(other.names_, other.locations_, other.mastermaps_, other.ghostmaps_, other.num_dofs_);
+    if (other.ghosted_) SetGhosted();
   }
   return this;
 };
