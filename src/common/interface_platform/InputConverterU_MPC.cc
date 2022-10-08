@@ -881,7 +881,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         pk_names.push_back(Keys::merge(prefix, "coupled chemistry", delimiter));
         pk_names.push_back(Keys::merge(prefix, "coupled transport", delimiter));
         out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(pk).set<int>("master PK index", 0);
+        out_list.sublist(pk).set<int>("master PK index", 1);
       }
       else if (basename == "coupled flow and energy") {
         Teuchos::Array<std::string> pk_names;

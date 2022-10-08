@@ -72,7 +72,8 @@ bool ShallowWaterTransport_PK::AdvanceStep(double t_old, double t_new, bool rein
   StateArchive archive(S_, vo_);
   archive.Add({ ponded_depth_key, prev_ponded_depth_key },
               { discharge_key },
-              { ponded_depth_key, velocity_key });
+              { ponded_depth_key, velocity_key },
+              Tags::DEFAULT, name());
 
   double dt0 = t_new - t_old;
   fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);

@@ -23,6 +23,7 @@
 #include "Mesh_Algorithms.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
+#include "PK_Utils.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
 
@@ -120,6 +121,7 @@ void Darcy_PK::Setup()
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
   std::string mu_model = physical_models->get<std::string>("viscosity model", "constant viscosity");
+  use_vol_strain_ = physical_models->get<bool>("use volumetric strain", false);
   if (mu_model != "constant viscosity") {
     Errors::Message msg;
     msg << "Darcy PK supports only constant viscosity model.";
@@ -175,12 +177,21 @@ void Darcy_PK::Setup()
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  // Require additional field evaluators for this PK.
+  // Require additional fields and evaluators for this PK.
   // -- porosity
   if (!S_->HasRecord(porosity_key_)) {
     S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
+  }
+
+  if (use_vol_strain_) {
+    S_->Require<CV_t, CVS_t>(vol_strain_key_, Tags::DEFAULT)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireEvaluator(vol_strain_key_, Tags::DEFAULT);
+
+    S_->Require<CV_t, CVS_t>(prev_vol_strain_key_, Tags::DEFAULT)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // -- viscosity
@@ -383,6 +394,10 @@ void Darcy_PK::InitializeFields_()
 
   InitializeCVField(S_, *vo_, saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_, 1.0);
   InitializeCVField(S_, *vo_, prev_saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
+
+  InitializeFieldFromField_(prev_aperture_key_, aperture_key_, true);
+  if (use_vol_strain_)
+    InitializeFieldFromField_(prev_vol_strain_key_, vol_strain_key_, true);
 }
 
 
@@ -446,6 +461,16 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   dt_ = t_new - t_old;
   double dt_MPC(dt_);
 
+  // save data that we can lose. Assumption is that Darcy step never fails
+  StateArchive archive(S_, vo_);
+  if (flow_on_manifold_) {
+    archive.Add({ prev_aperture_key_ }, {}, {}, Tags::DEFAULT, name());
+    archive.Swap("");
+  } else if (S_->HasRecord(prev_vol_strain_key_)) {
+    archive.Add({ prev_vol_strain_key_ }, {}, {}, Tags::DEFAULT, name());
+    archive.Swap("");
+  }
+
   // refresh data
   UpdateSourceBoundaryData(t_old, t_new, *solution);
 
@@ -475,6 +500,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
+  // Update fields due to fracture dynamics or other dynamics
   if (flow_on_manifold_) {
     S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");
     op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -482,7 +508,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   op_diff_->ApplyBCs(true, true, true);
 
   CompositeVector& rhs = *op_->rhs();
-  AddSourceTerms(rhs);
+  AddSourceTerms(rhs, dt_);
 
   op_->ComputeInverse();
 

@@ -232,6 +232,12 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         TranslateFieldIC_(node, "specific_storage", "m^-1", reg_str, regions, out_ic);
       }
 
+      // -- volumetric strain
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, volumetric_strain", flag);
+      if (flag) {
+        TranslateFieldEvaluator_(node, "volumetric_strain", "-", reg_str, regions, out_ic, out_ev);
+      }
+
       // -- particle density
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);
       if (flag) {

@@ -445,7 +445,8 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // create copies of primary fields
   StateArchive archive(S_, vo_);
   archive.Add({ ponded_depth_key_ }, { discharge_key_ },
-              { ponded_depth_key_, velocity_key_ });
+              { ponded_depth_key_, velocity_key_ }, 
+              Tags::DEFAULT, "shallow_water");
 
   Epetra_MultiVector& h_old = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_old = *soln_->SubVector(1)->Data()->ViewComponent("cell");

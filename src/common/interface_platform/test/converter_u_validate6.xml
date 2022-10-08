@@ -609,7 +609,7 @@
 
     <ParameterList name="transient:coupled reactive transport">
       <Parameter name="PKs order" type="Array(string)" value="{transient:coupled chemistry, transient:coupled transport}"/>
-      <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="master PK index" type="int" value="1"/>
     </ParameterList>
 
     <ParameterList name="transient:coupled chemistry">

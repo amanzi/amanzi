@@ -56,13 +56,14 @@ void Darcy_PK::FunctionalResidual(
 
   // optional update of diffusion operator
   if (flow_on_manifold_) {
-    S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");
-    op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+    bool updated = S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");
+    if (updated)
+      op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   }
   op_diff_->ApplyBCs(true, true, true);
 
   CompositeVector& rhs = *op_->rhs();
-  AddSourceTerms(rhs);
+  AddSourceTerms(rhs, dt_);
 
   // if the matrix was assemble, it will be used in Apply. Due to new
   // accumulation term, we either have to destroy or reassemble it 

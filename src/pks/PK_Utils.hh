@@ -33,7 +33,8 @@ class StateArchive {
   void Add(std::vector<std::string> fields,
            std::vector<std::string> evals,
            std::vector<std::string> primary,
-           const Tag& tag = Tags::DEFAULT);
+           const Tag& tag,
+           const std::string& requestor);
 
   void Restore(const std::string& passwd);
 

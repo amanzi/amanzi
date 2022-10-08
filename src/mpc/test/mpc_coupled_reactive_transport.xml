@@ -463,7 +463,7 @@
   <ParameterList name="PKs">
     <ParameterList name="coupled reactive transport">
       <Parameter name="PKs order" type="Array(string)" value="{coupled chemistry, coupled transport}"/>
-      <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="master PK index" type="int" value="1"/>
     </ParameterList>
 
     <ParameterList name="coupled chemistry">

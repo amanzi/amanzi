@@ -833,8 +833,9 @@ void Richards_PK::InitializeFields_()
 
   InitializeFieldFromField_(prev_saturation_liquid_key_, saturation_liquid_key_, true);
   InitializeFieldFromField_(prev_water_storage_key_, water_storage_key_, true);
+  InitializeFieldFromField_(prev_aperture_key_, aperture_key_, true);
 
-  // set matrix fields assuming presure equilibrium
+  // set matrix fields assuming pressure equilibrium
   // -- pressure
   if (S_->HasRecord(pressure_msp_key_)) {
     // if (!S_->GetField(pressure_msp_key_, passwd_)->initialized()) {
@@ -862,30 +863,6 @@ void Richards_PK::InitializeFields_()
   }
 
   InitializeFieldFromField_(prev_water_storage_msp_key_, water_storage_msp_key_, false);
-}
-
-
-/* ****************************************************************
-* Auxiliary initialization technique.
-**************************************************************** */
-void Richards_PK::InitializeFieldFromField_(
-    const std::string& field0, const std::string& field1, bool call_evaluator)
-{
-  if (S_->HasRecord(field0)) {
-    if (!S_->GetRecord(field0).initialized()) {
-      if (call_evaluator)
-          S_->GetEvaluator(field1).Update(*S_, passwd_);
-
-      const auto& f1 = S_->Get<CV_t>(field1);
-      auto& f0 = S_->GetW<CV_t>(field0, passwd_);
-      f0 = f1;
-
-      S_->GetRecordW(field0, passwd_).set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
-    }
-  }
 }
 
 
@@ -952,6 +929,15 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   ms_calls_ = 0;
 
   // save a copy of primary and conservative fields
+  std::vector<std::string> fields;
+  if (flow_on_manifold_) {
+    fields.push_back(prev_aperture_key_);
+  }
+
+  StateArchive archive(S_, vo_);
+  archive.Add(fields, {}, {}, Tags::DEFAULT, name());
+  archive.Swap("");
+
   std::map<std::string, CompositeVector> copies;
   copies.emplace(pressure_key_, S_->Get<CV_t>(pressure_key_, Tags::DEFAULT));
 
@@ -1015,6 +1001,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "Reverted field \"" << it->first << "\"" << std::endl;
     }
+    archive.Restore("");
     pressure_eval_->SetChanged();
 
     return failed;

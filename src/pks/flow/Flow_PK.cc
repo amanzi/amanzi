@@ -77,6 +77,9 @@ void Flow_PK::Setup()
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
   permeability_eff_key_ = Keys::getKey(domain_, "permeability_effective");
   aperture_key_ = Keys::getKey(domain_, "aperture"); 
+  prev_aperture_key_ = Keys::getKey(domain_, "prev_aperture"); 
+  vol_strain_key_ = Keys::getKey(domain_, "volumetric_strain"); 
+  prev_vol_strain_key_ = Keys::getKey(domain_, "prev_volumetric_strain"); 
 
   porosity_key_ = Keys::getKey(domain_, "porosity"); 
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
@@ -105,11 +108,12 @@ void Flow_PK::Setup()
       S_->SetEvaluator(permeability_key_, Tags::DEFAULT, eval);
     }
 
-    if (!S_->HasRecord(aperture_key_)) {
-      S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
-        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-      S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
-    }
+    S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+
+    S_->Require<CV_t, CVS_t>(prev_aperture_key_, Tags::DEFAULT)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
     {
       S_->Require<CV_t, CVS_t>(permeability_eff_key_, Tags::DEFAULT, permeability_eff_key_)
@@ -440,6 +444,30 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 }
 
 
+/* ****************************************************************
+* Auxiliary initialization technique.
+**************************************************************** */
+void Flow_PK::InitializeFieldFromField_(
+    const std::string& field0, const std::string& field1, bool call_evaluator)
+{
+  if (S_->HasRecord(field0)) {
+    if (!S_->GetRecord(field0).initialized()) {
+      if (call_evaluator)
+          S_->GetEvaluator(field1).Update(*S_, passwd_);
+
+      const auto& f1 = S_->Get<CV_t>(field1);
+      auto& f0 = S_->GetW<CV_t>(field0, passwd_);
+      f0 = f1;
+
+      S_->GetRecordW(field0, passwd_).set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
+    }
+  }
+}
+
+
 /* ******************************************************************
 * Compute well index
 ****************************************************************** */
@@ -725,7 +753,7 @@ void Flow_PK::SetAbsolutePermeabilityTensor()
 /* ******************************************************************
 * Add source and sink terms.                                   
 ****************************************************************** */
-void Flow_PK::AddSourceTerms(CompositeVector& rhs)
+void Flow_PK::AddSourceTerms(CompositeVector& rhs, double dt)
 {
   Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
 
@@ -733,6 +761,32 @@ void Flow_PK::AddSourceTerms(CompositeVector& rhs)
     for (auto it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
       int c = it->first;
       rhs_cell[0][c] += mesh_->cell_volume(c) * it->second[0];
+    }
+  }
+
+  // volumetric change due to change in the stress, -cbw da/dt
+  // Biot-Willis coefficient cbw is set to 1
+  if (flow_on_manifold_ && name() == "darcy") {
+    const auto& aperture = *S_->Get<CV_t>(aperture_key_, Tags::DEFAULT).ViewComponent("cell");
+    const auto& prev_aperture = *S_->Get<CV_t>(prev_aperture_key_, Tags::DEFAULT).ViewComponent("cell");
+
+    for (int c = 0; c < ncells_owned; ++c) {
+      double dadt = (aperture[0][c] - prev_aperture[0][c]) / dt;
+      double mass = rho_ * mesh_->cell_volume(c);
+      rhs_cell[0][c] -= dadt * mass;
+    }
+  }
+
+  if (!flow_on_manifold_ && name() == "darcy" && use_vol_strain_) {
+    S_->GetEvaluator(vol_strain_key_, Tags::DEFAULT).Update(*S_, name());
+
+    const auto& vs = *S_->Get<CV_t>(vol_strain_key_, Tags::DEFAULT).ViewComponent("cell");
+    const auto& prev_vs = *S_->Get<CV_t>(prev_vol_strain_key_, Tags::DEFAULT).ViewComponent("cell");
+
+    for (int c = 0; c < ncells_owned; ++c) {
+      double dvsdt = (vs[0][c] - prev_vs[0][c]) / dt;
+      double mass = rho_ * mesh_->cell_volume(c);
+      rhs_cell[0][c] -= dvsdt * mass;
     }
   }
 }

@@ -32,7 +32,7 @@
           <Parameter name="region" type="string" value="Computational domain"/>
           <Parameter name="model" type="string" value="constant"/>
           <Parameter name="value" type="double" value="1e-6"/>
-          <Parameter name="aperture" type="double" value="0.011"/>
+          <Parameter name="aperture" type="double" value="0.01"/>
         </ParameterList>
       </ParameterList>
 
@@ -95,7 +95,7 @@
             <ParameterList name="function">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="1"/>
-                <Parameter name="formula" type="string" value="if(t > 50, 0.06 + 0.002 * (t - 50), 0.01 + 0.001 * t)"/>
+                <Parameter name="formula" type="string" value="0.01 + 0.00001 * t"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

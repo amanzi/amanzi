@@ -23,16 +23,19 @@ namespace Amanzi {
 void StateArchive::Add(std::vector<std::string> fields, 
                        std::vector<std::string> evals,
                        std::vector<std::string> primary,
-                       const Tag& tag)
+                       const Tag& tag,
+                       const std::string& requestor)
 {
   tag_ = tag;
   primary_ = primary;
 
-  for (const auto& name : fields)
+  for (const auto& name : fields) 
     fields_.emplace(name, S_->Get<CompositeVector>(name, tag));
 
-  for (const auto& name : evals)
+  for (const auto& name : evals) {
+    S_->GetEvaluator(name).Update(*S_, requestor);
     evals_.emplace(name, S_->Get<CompositeVector>(name, tag));
+  }
 }
 
 

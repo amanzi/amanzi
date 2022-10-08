@@ -102,7 +102,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     op_preconditioner_diff_->ApplyBCs(true, true, true);
 
     Teuchos::RCP<CompositeVector> rhs = op_preconditioner_->rhs();  // export RHS from the matrix class
-    AddSourceTerms(*rhs);
+    AddSourceTerms(*rhs, 1.0);
 
     // update inverse
     solver->ComputeInverse();

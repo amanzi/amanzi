@@ -148,7 +148,6 @@ class Richards_PK : public Flow_PK {
 
  private:
   void InitializeFields_();
-  void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
   void InitializeStatistics_();
 
   void Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f);

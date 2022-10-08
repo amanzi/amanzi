@@ -109,7 +109,8 @@ void FlowMatrixFracture_PK::Setup()
   std::vector<std::string> pks = plist_->get<Teuchos::Array<std::string> >("PKs order").toVector();
   Teuchos::ParameterList& mflow = glist_->sublist("PKs").sublist(pks[0])
                                          .sublist("physical models and assumptions");
-  mflow.set<std::string>("coupled matrix fracture flow", "matrix");
+  mflow.set<std::string>("coupled matrix fracture flow", "matrix")
+       .set<bool>("use volumetric strain", true);
 
   // -- flow (fracture)
   Teuchos::ParameterList& fflow = glist_->sublist("PKs").sublist(pks[1])
@@ -264,10 +265,13 @@ bool FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (sub_pks_[0]->name() == "richards") {
     fields.push_back("prev_water_storage");
     fields.push_back("fracture-prev_water_storage");
+  } else {
+    fields.push_back("fracture-prev_aperture");
+    fields.push_back("prev_volumetric_strain");
   }
 
   StateArchive archive(S_, vo_);
-  archive.Add(fields, {}, {});
+  archive.Add(fields, {}, {}, Tags::DEFAULT, name());
   archive.Swap("");
 
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
