@@ -417,7 +417,7 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
 int Operator::ApplyUnassembled(const CompositeVector& X, CompositeVector& Y, double scalar) const
 {
   X.ScatterMasterToGhosted();
-  // initialize ghost elements
+
   if (scalar == 0.0) {
     Y.PutScalarMasterAndGhosted(0.0);
   } else if (scalar == 1.0) {

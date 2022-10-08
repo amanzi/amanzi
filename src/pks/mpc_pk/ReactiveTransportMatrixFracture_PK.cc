@@ -17,6 +17,7 @@
 #include "ReactiveTransportMatrixFracture_PK.hh"
 #include "Transport_PK.hh"
 #include "TransportMatrixFracture_PK.hh"
+#include "TransportMatrixFractureImplicit_PK.hh"
 
 namespace Amanzi {
 
@@ -152,31 +153,44 @@ bool ReactiveTransportMatrixFracture_PK::AdvanceStep(
   bool fail = sub_pks_[1]->AdvanceStep(t_old, t_new, reinit);
   if (fail) return fail;
 
-  // save copy of fields (FIXME)
-  S_->Assign(tcc_matrix_key_, Tags::COPY, Tags::DEFAULT);
-  S_->Assign(tcc_fracture_key_, Tags::COPY, Tags::DEFAULT);  
-  
   try {
-    std::vector<Teuchos::RCP<AmanziChemistry::Chemistry_PK> > subpks;
+    std::vector<Teuchos::RCP<AmanziChemistry::Chemistry_PK> > subpks_chem;
     for (auto ic = coupled_chemistry_pk_->begin(); ic != coupled_chemistry_pk_->end(); ++ic) { 
       auto ic1 = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(*ic);
-      subpks.push_back(ic1);
+      subpks_chem.push_back(ic1);
     }
-    
-    // tell chemistry PKs to work with copies
-    auto tcc_m_copy = S_->GetW<CV_t>(tcc_matrix_key_, Tags::COPY, "state").ViewComponent("cell", true);
-    auto tcc_f_copy = S_->GetW<CV_t>(tcc_fracture_key_, Tags::COPY, "state").ViewComponent("cell", true);  
 
-    subpks[0]->set_aqueous_components(tcc_m_copy);
-    subpks[1]->set_aqueous_components(tcc_f_copy);
+    std::vector<Teuchos::RCP<Transport::Transport_PK> > subpks_tran;
+    if (sub_pks_[1]->name() == "coupled transport") {
+      auto tpk = Teuchos::rcp_dynamic_cast<TransportMatrixFracture_PK>(sub_pks_[1]);
+
+      for (auto ic = tpk->begin(); ic != tpk->end(); ++ic) { 
+        auto ic1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(*ic);
+        subpks_tran.push_back(ic1);
+      }
+    } else if (sub_pks_[1]->name() == "coupled transport implicit") {
+      auto tpk = Teuchos::rcp_dynamic_cast<TransportMatrixFractureImplicit_PK>(sub_pks_[1]);
+
+      for (auto ic = tpk->begin(); ic != tpk->end(); ++ic) { 
+        auto ic1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(*ic);
+        subpks_tran.push_back(ic1);
+      }
+    }
+
+    // at this moment, we have old tcc in State and new tcc in a temporary vector
+    // tell chemistry PKs to work with the temporary vector
+    for (int i = 0; i < 2; ++i) {
+      auto tcc_copy = subpks_tran[i]->total_component_concentration()->ViewComponent("cell", true);
+      subpks_chem[i]->set_aqueous_components(tcc_copy);
+    }
 
     fail = coupled_chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
  
     *S_->GetW<CV_t>(tcc_matrix_key_, Tags::DEFAULT, "state")
-      .ViewComponent("cell", true) = *subpks[0]->aqueous_components();
+      .ViewComponent("cell", true) = *subpks_chem[0]->aqueous_components();
 
     *S_->GetW<CV_t>(tcc_fracture_key_, Tags::DEFAULT, "state")
-      .ViewComponent("cell", true) = *subpks[1]->aqueous_components();
+      .ViewComponent("cell", true) = *subpks_chem[1]->aqueous_components();
   }
   catch (const Errors::Message& chem_error) {
     fail = true;

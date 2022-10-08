@@ -62,6 +62,22 @@ void StateArchive::Restore(const std::string& passwd)
 }
 
 
+/* *******************************************************************
+* Copy: Evaluator (BASE) -> Field (prev_BASE)
+******************************************************************* */
+void StateArchive::Swap(const std::string& passwd)
+{
+  for (auto it = fields_.begin(); it != fields_.end(); ++it) {
+    std::string prev(it->first), next(it->first);
+    auto pos = next.find("prev_");
+    if (pos != std::string::npos) {
+      next.erase(pos, 5);
+      S_->GetW<CompositeVector>(prev, tag_, passwd) = S_->Get<CompositeVector>(next);
+    }
+  }
+}
+
+
 /* ******************************************************************
 * Return a copy
 ****************************************************************** */

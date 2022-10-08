@@ -167,7 +167,6 @@ void Darcy_PK::Setup()
   if (!S_->HasRecord(saturation_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    // AddDefaultPrimaryEvaluator_(saturation_liquid_key_);
     S_->RequireEvaluator(saturation_liquid_key_, Tags::DEFAULT);
   }
 
@@ -476,6 +475,10 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
+  if (flow_on_manifold_) {
+    S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");
+    op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  }
   op_diff_->ApplyBCs(true, true, true);
 
   CompositeVector& rhs = *op_->rhs();

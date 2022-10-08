@@ -10,6 +10,8 @@
 */
 
 #include "PK_Physical.hh"
+
+#include "EvaluatorIndependentFunction.hh"
 #include "State.hh"
 #include "TreeVector.hh"
 
@@ -42,6 +44,24 @@ void PK_Physical::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
   elist.set<std::string>("tag", tag.get());
   elist.setName(key);
   auto eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(elist));
+  S_->SetEvaluator(key, tag, eval);
+}
+
+
+// -----------------------------------------------------------------------------
+// Helper method to add an independent variable evaluator
+// -----------------------------------------------------------------------------
+void PK_Physical::AddDefaultIndependentEvaluator_(const Key& key, const Tag& tag, double val)
+{
+  Teuchos::ParameterList elist(key);
+  elist.set<std::string>("evaluator type", "independent variable")
+       .sublist("function").sublist("ALL")
+       .set<std::string>("region", "All")
+       .set<std::string>("component", "*")
+       .sublist("function").sublist("function-constant")
+       .set<double>("value", val);
+
+  auto eval = Teuchos::rcp(new EvaluatorIndependentFunction(elist));
   S_->SetEvaluator(key, tag, eval);
 }
 

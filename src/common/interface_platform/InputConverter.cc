@@ -11,6 +11,7 @@
 */
 
 #include <algorithm>
+#include <cfloat>
 #include <fstream>
 #include <locale>
 #include <cfloat>

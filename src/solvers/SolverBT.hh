@@ -297,7 +297,7 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 
     // minimize
     double left = min_alpha_;
-    boost::uintmax_t ls_itrs(max_ls_itrs_);
+    std::uintmax_t ls_itrs(max_ls_itrs_);
     std::pair<double,double> result = boost::math::tools::brent_find_minima(
         linesearch_func, left, endpoint, bits_, ls_itrs);
     fun_calls_ += ls_itrs;

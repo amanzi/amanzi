@@ -27,7 +27,6 @@
 
 // Amanzi::MPC
 #include "ChemistryMatrixFracture_PK.hh"
-#include "TransportMatrixFracture_PK.hh"
 
 namespace Amanzi {
 

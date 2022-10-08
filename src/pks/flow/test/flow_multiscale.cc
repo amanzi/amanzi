@@ -75,7 +75,7 @@ TEST(FLOW_2D_MULTISCALE) {
   S->InitializeEvaluators();
 
   // create the initial pressure function
-  std::string passwd("flow");
+  std::string passwd("");
   auto& pf = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
   auto& pm = *S->GetW<CompositeVector>("pressure_msp", passwd).ViewComponent("cell");
 

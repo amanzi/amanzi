@@ -56,12 +56,12 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<EvaluatorIndependentFunction> saturation_liquid_eval;
 
   // keys
+  Key pressure_key_, temperature_key_;
   Key ie_rock_key_, ie_gas_key_, ie_liquid_key_, energy_key_, prev_energy_key_;
   Key particle_density_key_;
   Key mol_density_liquid_key_, mol_density_gas_key_, mass_density_liquid_key_;
-  Key pressure_key_, sat_liquid_key_, prev_sat_liquid_key_;
+  Key sat_liquid_key_, prev_sat_liquid_key_, viscosity_liquid_key_;
   Key wc_key_, prev_wc_key_;
-  Key viscosity_liquid_key_;
 
   // eos
   std::string eos_table_;

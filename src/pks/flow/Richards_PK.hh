@@ -188,9 +188,9 @@ class Richards_PK : public Flow_PK {
   bool vapor_diffusion_;
 
   // multiscale models
-  Key pressure_msp_key_;
-  Key porosity_msp_key_;
+  Key pressure_msp_key_, porosity_msp_key_;
   Key water_storage_msp_key_, prev_water_storage_msp_key_;
+  Key mass_density_liquid_key_, temperature_key_;
 
   bool multiscale_porosity_;
   int ms_itrs_, ms_calls_;

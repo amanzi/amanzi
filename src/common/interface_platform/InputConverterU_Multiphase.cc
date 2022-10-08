@@ -100,18 +100,18 @@ Teuchos::ParameterList InputConverterU::TranslateMultiphase_(
      .set<std::string>("eos type", "ideal gas")
      .set<double>("molar mass of gas", 28.9647e-03);  // dry air (not used ?)
 
-  AddIndependentFieldEvaluator_(fev, "molar_density_liquid", "All", rho_ / MOLAR_MASS_WATER);
+  AddIndependentFieldEvaluator_(fev, "molar_density_liquid", "All", "cell", rho_ / MOLAR_MASS_WATER);
 
   // -- viscosity
   double viscosity = fic.sublist("const_fluid_viscosity").template get<double>("value");
-  AddIndependentFieldEvaluator_(fev, "viscosity_liquid", "All", viscosity);
+  AddIndependentFieldEvaluator_(fev, "viscosity_liquid", "All", "cell", viscosity);
 
   // -- diffusion
   auto diff = out_list.sublist("molecular diffusion").get<Teuchos::Array<double> >("aqueous values").toVector();
-  AddIndependentFieldEvaluator_(fev, "molecular_diff_liquid", "All", diff[0]);
+  AddIndependentFieldEvaluator_(fev, "molecular_diff_liquid", "All", "cell", diff[0]);
 
   diff = out_list.sublist("molecular diffusion").get<Teuchos::Array<double> >("gaseous values").toVector();
-  AddIndependentFieldEvaluator_(fev, "molecular_diff_gas", "All", diff[0]);
+  AddIndependentFieldEvaluator_(fev, "molecular_diff_gas", "All", "cell", diff[0]);
 
   // -- pressure
   fic.sublist("pressure_liquid") = fic.sublist("pressure");

@@ -49,7 +49,7 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
                           Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) override;
   
   // updates the preconditioner
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) override;
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt) override;
   
   // // preconditioner application
   virtual
@@ -68,6 +68,8 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
+
+  Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_;
 
   // factory registration
   static RegisteredPKFactory<FlowMatrixFracture_PK> reg_;

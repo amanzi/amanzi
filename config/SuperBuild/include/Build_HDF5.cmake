@@ -37,7 +37,10 @@ list(APPEND HDF5_CMAKE_CACHE_ARGS "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
 list(APPEND HDF5_CMAKE_CACHE_ARGS "-DHDF5_ENABLE_PARALLEL:BOOL=TRUE")
 list(APPEND HDF5_CMAKE_CACHE_ARGS "-DMPI_HOME:PATH=${MPI_PREFIX}")
 
-list(APPEND HDF5_CMAKE_CACHE_ARGS "-DHDF5_BUILD_FORTRAN:BOOL=FALSE")
+# Fortran buindings are needed for PFLoTran, although they should be 
+# optional of reaction library only
+list(APPEND HDF5_CMAKE_CACHE_ARGS "-DHDF5_BUILD_FORTRAN:BOOL=TRUE")
+
 list(APPEND HDF5_CMAKE_CACHE_ARGS "-DHDF5_BUILD_CPP_LIB:BOOL=FALSE")
 list(APPEND HDF5_CMAKE_CACHE_ARGS "-DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=TRUE")
 list(APPEND HDF5_CMAKE_CACHE_ARGS "-DHDF5_BUILD_HL_LIB:BOOL=TRUE")
@@ -58,7 +61,7 @@ ExternalProject_Add(${HDF5_BUILD_TARGET}
                     PATCH_COMMAND ${HDF5_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${HDF5_source_dir} 
-            CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}      # Ensure unifom build
+                    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}      # Ensure unifom build
                                   ${HDF5_CMAKE_CACHE_ARGS}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}

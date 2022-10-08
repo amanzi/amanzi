@@ -79,7 +79,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   // modify the default state for the problem at hand 
   // -- permeability
-  std::string passwd("flow"); 
+  std::string passwd(""); 
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   for (int c = 0; c < K.MyLength(); c++) {
     K[0][c] = 0.1;
@@ -106,7 +106,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
     const Point& xc = mesh->cell_centroid(c);
     p[0][c] = xc[1] * (xc[1] + 2.0);
   }
-  S->GetRecordW("pressure", "flow").set_initialized();
+  S->GetRecordW("pressure", passwd).set_initialized();
 
   // initialize Darcy process kernel.
   DPK->Initialize();

@@ -155,12 +155,13 @@ TEST(ENERGY_CONVERGENCE) {
     S->CheckAllFieldsInitialized();
 
     // constant time stepping 
+    std::string passwd("");
     int itrs(0);
     double t(0.0), t1(0.5), dt_next;
     while (std::fabs(t - t1) > 1e-6) {
       // swap conserved quntity (no backup, we check dt_next instead)
       const auto& e = S->Get<CompositeVector>("energy");
-      auto& e_prev = S->GetW<CompositeVector>("prev_energy", Tags::DEFAULT, "thermal");
+      auto& e_prev = S->GetW<CompositeVector>("prev_energy", Tags::DEFAULT, passwd);
       e_prev = e;
 
       if (itrs == 0) {
@@ -270,12 +271,13 @@ TEST(ENERGY_PRECONDITIONER) {
     S->CheckAllFieldsInitialized();
 
     // constant time stepping 
+    std::string passwd("");
     int itrs(0);
     double t(0.0), t1(0.5), dt(0.02), dt_next;
     while (t < t1) {
       // swap conserved quntity (no backup, we check dt_next instead)
       const auto& e = S->Get<CompositeVector>("energy");
-      auto& e_prev = S->GetW<CompositeVector>("prev_energy", Tags::DEFAULT, "thermal");
+      auto& e_prev = S->GetW<CompositeVector>("prev_energy", Tags::DEFAULT, passwd);
       e_prev = e;
 
       if (itrs == 0) {

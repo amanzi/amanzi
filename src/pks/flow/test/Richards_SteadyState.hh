@@ -33,6 +33,8 @@ int AdvanceToSteadyState(
 {
   bool last_step = false;
 
+  std::string passwd("");
+
   int max_itrs = ti_specs.max_itrs;
   double T0 = ti_specs.T0;
   double T1 = ti_specs.T1;
@@ -71,25 +73,25 @@ int AdvanceToSteadyState(
     // reset primary field
     auto pressure_eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
         S->GetEvaluatorPtr("pressure", Tags::DEFAULT));
-    S->GetW<CompositeVector>("pressure", "flow") = *soln->Data();
+    S->GetW<CompositeVector>("pressure", passwd) = *soln->Data();
     pressure_eval->SetChanged();
  
     // update and swap saturations
     S->GetEvaluator("saturation_liquid").Update(*S, "flow");
     const auto& s_l = S->Get<CompositeVector>("saturation_liquid");
-    auto& s_l_prev = S->GetW<CompositeVector>("prev_saturation_liquid", "flow");
+    auto& s_l_prev = S->GetW<CompositeVector>("prev_saturation_liquid", passwd);
     s_l_prev = s_l;
 
     // update and swap water storage
     S->GetEvaluator("water_storage").Update(*S, "flow");
     const auto& wc = S->Get<CompositeVector>("water_storage");
-    auto& wc_prev = S->GetW<CompositeVector>("prev_water_storage", "flow");
+    auto& wc_prev = S->GetW<CompositeVector>("prev_water_storage", passwd);
     wc_prev = wc;
 
     // update and swap multiscale water storage
     if (S->HasRecord("water_storage_msp")) {
       const auto& wcm = S->Get<CompositeVector>("water_storage_msp");
-      auto& wcm_prev = S->GetW<CompositeVector>("prev_water_storage_msp", "flow");
+      auto& wcm_prev = S->GetW<CompositeVector>("prev_water_storage_msp", passwd);
       wcm_prev = wcm;
     }
 

@@ -69,6 +69,7 @@ void FlowEnergy_PK::Setup()
   ie_gas_key_ = Keys::getKey(domain_, "internal_energy_gas");
   ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
 
+  temperature_key_ = Keys::getKey(domain_, "temperature");
   energy_key_ = Keys::getKey(domain_, "energy");
   prev_energy_key_ = Keys::getKey(domain_, "prev_energy");
 
@@ -86,6 +87,13 @@ void FlowEnergy_PK::Setup()
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
 
   // Require primary field for this PK, which is pressure
+  {
+    Teuchos::ParameterList tmp(temperature_key_);
+    tmp.set<std::string>("evaluator name", temperature_key_);
+    auto eval = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(tmp));
+    S_->SetEvaluator(temperature_key_, Tags::DEFAULT, eval);
+  }
+
   // Fields for solids
   // -- rock
   if (!S_->HasRecord(particle_density_key_)) {
@@ -238,11 +246,13 @@ void FlowEnergy_PK::Initialize()
 ******************************************************************* */
 bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
+  std::string passwd("");  // default treatment of ownership
+
   // flow
   // -- swap saturations (current and previous)
   S_->GetEvaluator(sat_liquid_key_).Update(*S_, "flow");
   const auto& sat = S_->Get<CV_t>(sat_liquid_key_);
-  auto& sat_prev = S_->GetW<CV_t>(prev_sat_liquid_key_, Tags::DEFAULT, "flow");
+  auto& sat_prev = S_->GetW<CV_t>(prev_sat_liquid_key_, Tags::DEFAULT, passwd);
 
   CompositeVector sat_prev_copy(sat_prev);
   sat_prev = sat;
@@ -253,7 +263,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     S_->GetEvaluator(wc_key_).Update(*S_, "flow");
     const auto& wc = S_->Get<CV_t>(wc_key_);
-    auto& wc_prev = S_->GetW<CV_t>(prev_wc_key_, Tags::DEFAULT, "flow");
+    auto& wc_prev = S_->GetW<CV_t>(prev_wc_key_, Tags::DEFAULT, passwd);
     wc_prev = wc;
   }
 
@@ -261,7 +271,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // -- swap conserved energies (current and previous)
   S_->GetEvaluator(energy_key_).Update(*S_, "thermal");
   const auto& e = S_->Get<CV_t>(energy_key_);
-  auto& e_prev = S_->GetW<CV_t>(prev_energy_key_, "thermal");
+  auto& e_prev = S_->GetW<CV_t>(prev_energy_key_, passwd);
 
   CompositeVector e_prev_copy(e_prev);
   e_prev = e;
@@ -271,7 +281,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   if (fail) {
     // recover conserved quantaties at the beginning of time step
-    S_->GetW<CV_t>(prev_sat_liquid_key_, "flow") = sat_prev_copy;
+    S_->GetW<CV_t>(prev_sat_liquid_key_, passwd) = sat_prev_copy;
     S_->GetW<CV_t>(prev_energy_key_, "thermal") = e_prev_copy;
     if (S_->HasRecord(wc_key_)) {
       S_->Assign(prev_wc_key_, Tags::DEFAULT, Tags::COPY);

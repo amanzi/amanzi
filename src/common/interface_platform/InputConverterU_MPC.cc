@@ -820,10 +820,10 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         auto& tmp = glist.sublist("state").sublist("evaluators");
         AddSecondaryFieldEvaluator_(tmp, 
             Keys::getKey("domain", "molar_density_liquid"), "molar density key",
-            "eos", "liquid water 0-30C", "density");
+            "eos", "density");
         AddSecondaryFieldEvaluator_(tmp, 
             Keys::getKey("domain", "viscosity_liquid"), "viscosity key",
-            "viscosity", "liquid water 0-30C", "viscosity");
+            "viscosity", "viscosity");
 
         std::vector<std::string> controls({ "pressure" });
         out_list.sublist(pk_names[0]).sublist("time integrator")
@@ -854,10 +854,10 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         auto& tmp = glist.sublist("state").sublist("evaluators");
         AddSecondaryFieldEvaluator_(tmp, 
             Keys::getKey("fracture", "molar_density_liquid"), "molar density key",
-            "eos", "liquid water 0-30C", "density");
+            "eos", "density");
         AddSecondaryFieldEvaluator_(tmp, 
             Keys::getKey("fracture", "viscosity_liquid"), "viscosity key",
-            "viscosity", "liquid water 0-30C", "viscosity");
+            "viscosity", "viscosity");
 
         std::vector<std::string> controls({ "pressure" });
         out_list.sublist(pk_names[0]).sublist("time integrator")
@@ -972,8 +972,10 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       tmp_m.remove("BDF1", false);
       tmp_m.remove("initialization", false);
       auto& tmp = pk_list.sublist(flow_m).sublist("operators").sublist("diffusion operator");
-      tmp.sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
-      tmp.sublist("preconditioner").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+      tmp.sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_)
+                           .set<std::string>("nonlinear coefficient", "standard: cell");
+      tmp.sublist("preconditioner").set<Teuchos::Array<std::string> >("fracture", fracture_regions_)
+                                   .set<std::string>("nonlinear coefficient", "standard: cell");
 
       auto& tmp_f = pk_list.sublist(flow_f).sublist("time integrator");
       tmp_f.set<std::string>("time integration method", "none");
@@ -1044,6 +1046,13 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
 
         if (pk == "flow" || pk == "flow fracture") {
           tmp.sublist("pressure-lambda constraints").set<std::string>("method", "projection");
+        }
+
+        // cannot upwind nonlinear coefficient at the moment
+        if (pk == "flow") {
+          auto& aux = pk_list.sublist(fullname).sublist("operators").sublist("diffusion operator");
+          aux.sublist("matrix").set<std::string>("nonlinear coefficient", "standard: cell");
+          aux.sublist("preconditioner").set<std::string>("nonlinear coefficient", "standard: cell");
         }
 
         if (pk == "energy") {

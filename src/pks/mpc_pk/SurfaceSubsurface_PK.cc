@@ -53,8 +53,9 @@ void SurfaceSubsurface_PK::Initialize()
   int nsurf_nodes = mesh_surface_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nsurf_cells = mesh_surface_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
-  auto& B_n = *S_->GetW<CompositeVector>("surface-bathymetry", "state").ViewComponent("node");
-  auto& B_c = *S_->GetW<CompositeVector>("surface-bathymetry", "state").ViewComponent("cell");
+  std::string passwd("");
+  auto& B_n = *S_->GetW<CompositeVector>("surface-bathymetry", passwd).ViewComponent("node");
+  auto& B_c = *S_->GetW<CompositeVector>("surface-bathymetry", passwd).ViewComponent("cell");
   
   // Bathymetry node values
   AmanziGeometry::Point node_crd;
@@ -76,7 +77,7 @@ void SurfaceSubsurface_PK::Initialize()
     B_c[0][c] = xf[2]; // z value of the surface
   }
   
-  S_->GetRecordW("surface-bathymetry", "state").set_initialized();
+  S_->GetRecordW("surface-bathymetry", passwd).set_initialized();
   
   PK_MPC<PK>::Initialize();
 }

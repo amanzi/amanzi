@@ -54,7 +54,7 @@ class DarcyProblem {
   std::vector<std::string> framework_name;
 
   DarcyProblem() {
-    passwd = "flow"; 
+    passwd = ""; 
     comm = Amanzi::getDefaultComm();
     MyPID = comm->MyPID();    
 

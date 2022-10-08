@@ -343,7 +343,7 @@ void Flow_PK::VV_PrintSourceExtrema() const
 
           if (flow_on_manifold_) {
             areas[i] += vol;
-            rates[i] += tmp * vol / (*aperture)[0][c];
+            rates[i] += tmp * vol;
             vol *= (*aperture)[0][c];
           } else {
             rates[i] += tmp * vol;

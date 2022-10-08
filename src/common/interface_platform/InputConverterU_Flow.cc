@@ -352,6 +352,12 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
 
     // get optional complessibility
     node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
+    std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
+    if (type == "h5file") {
+      compressibility_ = false;
+      break;
+    }
+
     double phi = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0);
     double compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1", false, 0.0);
 
@@ -960,16 +966,15 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_(const std::strin
     if (flag)  {
       double aperture(0.0);
       type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
-      if (type == "") aperture = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m^2", true);
+      if (type == "") aperture = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m^2", false, 0.0);
 
       for (auto it = regions.begin(); it != regions.end(); ++it) {
         std::stringstream ss;
         ss << "FPM for " << *it;
  
         Teuchos::ParameterList& fam_list = out_list.sublist(ss.str());
-        fam_list.set<std::string>("region", *it);
-
-        fam_list.set<std::string>("model", model)
+        fam_list.set<std::string>("region", *it)
+                .set<std::string>("model", model)
                 .set<double>("aperture", aperture);
       }
     }
