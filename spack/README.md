@@ -175,7 +175,7 @@ Below you can find some system specific tested commands for the Amanzi installat
 
 # Darwin (LANL)
 From either a login node or a compute node, load the following module `openmpi/4.1.2-gcc_11.2.0`.
-Then, run a `spack compiler find` to add `gcc_11.2.0` to the list of available compilers for Spack. Next, add the following spec to the packages.yaml file:
+Then, run a `spack compiler find` to add `gcc@11.2.0` to the list of available compilers for Spack. Next, add the following spec to the packages.yaml file:
 ```
 packages:
   openmpi:
@@ -191,7 +191,7 @@ spack install amanzi <desired_variant>  ^openmpi@4.1.2
 Note that tests are currently run as part of the Spack build by default (the `+tests` variant is on by default).
 
 # Cori (NERSC)
-From a login node, add the following specs to the packages.yaml file:
+From a login node, run a `spack compiler find` to have `gcc@8.3.0` added to the list of available compilers for Spack. Then, add the following specs to the packages.yaml file:
 ```
 packages:
   mpich:
