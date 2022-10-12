@@ -82,7 +82,7 @@ spack install amanzi %compiler@version ^openmpi@mpiVersion
 
 # Detailed instructions with system specific directions
 
-This expands on the _quick_ _ start_ section of these instructions and provides additional details as well as system specific best practices to build Amanzi with Spack.
+This expands on the _quick_ _start_ section of these instructions and provides additional details as well as system specific best practices to build Amanzi with Spack.
 
 If compilers are available on your system, you can load them using: 
 ``` 
@@ -174,7 +174,8 @@ Depending on the different systems you might be using, it is recommended to use 
 Below you can find some system specific tested commands for the Amanzi installation via Spack.
 
 # Darwin (LANL)
-From either a login node or a compute node, add the following spec to the packages.yaml file:
+From either a login node or a compute node, load the following modules: `miniconda3/py39_4.12.0` and  `openmpi/4.1.2-gcc_11.2.0`.
+Then, run a `spack compiler find` to add `gcc@11.2.0` to the list of available compilers for Spack. Next, add the following spec to the packages.yaml file:
 ```
 packages:
   openmpi:
@@ -190,7 +191,7 @@ spack install amanzi <desired_variant>  ^openmpi@4.1.2
 Note that tests are currently run as part of the Spack build by default (the `+tests` variant is on by default).
 
 # Cori (NERSC)
-From a login node, add the following specs to the packages.yaml file:
+From a login node, run a `spack compiler find` to have `gcc@8.3.0` added to the list of available compilers for Spack. Then, add the following specs to the packages.yaml file:
 ```
 packages:
   mpich:
@@ -217,13 +218,13 @@ Note that with versions of gcc higher than 8.3.0 there could be an argument mism
 
 The following steps have been carried out on `piquillo`.
 
-First, type the following command:
+First, type the following command (if you don't already have it in your environment):
 ```
 export http_proxy=proxyout:8080
 export https_proxy=$http_proxy
 ```
-
-Add the following spec to the packages.yaml file:
+Then, load the module `gcc/11.2.0` and then do a `spack compiler find` to be able to use `gcc@11.2.0`.
+Next, add the following spec to the packages.yaml file:
 ```
   openmpi:
     externals:
@@ -235,9 +236,6 @@ To build Amanzi, run from any folder:
 ```
 spack install amanzi <desired_variant> ^openmpi@4.0.4 %gcc@11.2.0
 ```
-Note that you might have to first load the module `gcc/11.2.0` and then do a `spack compiler find` to be able to use `%gcc@11.2.0`.
-To test amanzi, proceed as explained above using `dev-build --test all`.
-
 # MacOS (native tools with Spack) 
 
 Some Amanzi dependencies need a fortran compiler and built-in apple compilers may not offer that option. To check this, look at the ${HOME}/.spack/_system_/compilers.yaml file and see if fortran compilers are present. In a case when their are not present, the apple-clang spec might look something like this:
@@ -257,9 +255,9 @@ compilers:
     modules: []
     environment: {}
     extra_rpaths: []
-``
+```
 
-If that is the case, one option is to install a different compiler such as gcc and then create a [mixed toolchain] (https://spack.readthedocs.io/en/latest/getting_started.html):
+If that is the case, one option is to install a different compiler such as gcc and then create a [mixed toolchain](https://spack.readthedocs.io/en/latest/getting_started.html):
 
 ```
 spack install gcc@11.2.0
@@ -279,6 +277,7 @@ spack compiler find
 
 This will add the newly installed gcc compiler to ${HOME}/.spack/_system_/compilers.yaml. The installed spec might look like this:
 
+```
 - compiler:
     spec: gcc@11.2.0
     paths:
@@ -292,6 +291,7 @@ This will add the newly installed gcc compiler to ${HOME}/.spack/_system_/compil
     modules: []
     environment: {}
     extra_rpaths: []
+```
 
 Then, to create the mixed toolchain, just copy the fortran lines over to the apple-clang compiler as follows:
 
