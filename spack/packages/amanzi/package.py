@@ -60,8 +60,6 @@ class Amanzi(CMakePackage):
     # Testing Suite
     variant('tests', default=True, description='Enable the unit and the regression test suites')
 
-    patch('exprtk.patch')
-
     ##### Build dependencies #####
 
     depends_on('git', type='build')
@@ -126,6 +124,7 @@ class Amanzi(CMakePackage):
                '+anasazi +amesos2 +epetra +ml +epetraext +belos +aztec'
                '+zoltan +nox +ifpack +muelu +basker -ifpack2' 
                '+superlu-dist cxxstd=14')
+    depends_on('exprtk')
 
     conflicts('physics=ats', when='mesh_type=structured', msg='ERROR: ats physics is not supported in the structured mesh framework.')
     conflicts('physics=ats', when='mesh_framework=moab', msg='ERROR: ats physics needs mstk on.')
