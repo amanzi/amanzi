@@ -174,7 +174,7 @@ Depending on the different systems you might be using, it is recommended to use 
 Below you can find some system specific tested commands for the Amanzi installation via Spack.
 
 # Darwin (LANL)
-From either a login node or a compute node, load the following module `openmpi/4.1.2-gcc_11.2.0`.
+From either a login node or a compute node, load the following modules: `miniconda3/py39_4.12.0` and  `openmpi/4.1.2-gcc_11.2.0`.
 Then, run a `spack compiler find` to add `gcc@11.2.0` to the list of available compilers for Spack. Next, add the following spec to the packages.yaml file:
 ```
 packages:
