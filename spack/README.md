@@ -218,13 +218,13 @@ Note that with versions of gcc higher than 8.3.0 there could be an argument mism
 
 The following steps have been carried out on `piquillo`.
 
-First, type the following command:
+First, type the following command (if you don't already have it in your environment):
 ```
 export http_proxy=proxyout:8080
 export https_proxy=$http_proxy
 ```
-
-Add the following spec to the packages.yaml file:
+Then, load the module `gcc/11.2.0` and then do a `spack compiler find` to be able to use `%gcc@11.2.0`.
+Next, add the following spec to the packages.yaml file:
 ```
   openmpi:
     externals:
@@ -236,9 +236,6 @@ To build Amanzi, run from any folder:
 ```
 spack install amanzi <desired_variant> ^openmpi@4.0.4 %gcc@11.2.0
 ```
-Note that you might have to first load the module `gcc/11.2.0` and then do a `spack compiler find` to be able to use `%gcc@11.2.0`.
-To test amanzi, proceed as explained above using `dev-build --test all`.
-
 # MacOS (native tools with Spack) 
 
 Some Amanzi dependencies need a fortran compiler and built-in apple compilers may not offer that option. To check this, look at the ${HOME}/.spack/_system_/compilers.yaml file and see if fortran compilers are present. In a case when their are not present, the apple-clang spec might look something like this:
