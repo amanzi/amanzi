@@ -223,7 +223,7 @@ First, type the following command (if you don't already have it in your environm
 export http_proxy=proxyout:8080
 export https_proxy=$http_proxy
 ```
-Then, load the module `gcc/11.2.0` and then do a `spack compiler find` to be able to use `%gcc@11.2.0`.
+Then, load the module `gcc/11.2.0` and then do a `spack compiler find` to be able to use `gcc@11.2.0`.
 Next, add the following spec to the packages.yaml file:
 ```
   openmpi:
