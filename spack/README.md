@@ -7,6 +7,7 @@ Clone Amanzi on your machine:
 ```
 git clone --recursive git@github.com:amanzi/amanzi
 cd amanzi
+git checkout spack
 git pull
 ```
 
