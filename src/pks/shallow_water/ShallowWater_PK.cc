@@ -347,6 +347,9 @@ ShallowWater_PK::Initialize()
 
     S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
   }
+  
+  // initialize cell flag (for positivity)
+  cell_flag_.resize(ncells_owned, 0);
 
   InitializeCVField(S_, *vo_, velocity_key_, Tags::DEFAULT, passwd_, 0.0);
   InitializeCVField(S_, *vo_, discharge_key_, Tags::DEFAULT, discharge_key_, 0.0);
@@ -459,6 +462,9 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     vel_c[0][c] = factor * q_old[0][c];
     vel_c[1][c] = factor * q_old[1][c];
     ht_c[0][c] = h_c[0][c] + B_c[0][c];
+    
+    // cell flags for depth positivity
+    cell_flag_[c] = 0;
   }
 
   // update source (external) terms
@@ -615,10 +621,26 @@ ShallowWater_PK::TotalDepthEdgeValue(
 
   // depth poisitivity based on [Beljadid et al.' 2016, Computers and Fluids]
   if (cell_is_fully_flooded) {
-    ht_edge = total_depth_grad_->getValue(c, xf);
-    if (ht_edge - BathymetryEdgeValue(e, B_n) < 0.0) { 
-      ht_edge = htc; 
+    if (cell_flag_[c] == 0) {
+      Amanzi::AmanziMesh::Entity_ID_List cfaces;
+      mesh_->cell_get_faces(c, &cfaces);
+      
+      double alpha = 1.0; // gradient scaling factor
+      for (int f = 0; f < cfaces.size(); ++f) {
+        const auto& xf_tmp = mesh_->face_centroid(cfaces[f]);
+        ht_edge = total_depth_grad_->getValue(c, xf_tmp);
+        if (ht_edge - BathymetryEdgeValue(cfaces[f], B_n) < 0.0) {
+          alpha = std::min(alpha, 0.9 * (BathymetryEdgeValue(cfaces[f], B_n) - htc) / (ht_edge - htc));
+        }
+      }
+      ht_grad[0][c] = alpha * ht_grad[0][c];
+      ht_grad[1][c] = alpha * ht_grad[1][c];
+      cell_flag_[c] = 1;
     }
+    ht_edge = total_depth_grad_->getValue(c, xf);
+//    if (ht_edge - BathymetryEdgeValue(e, B_n) < 0.0) {
+//      ht_edge = htc;
+//    }
   } else if (cell_is_dry) {
     ht_edge = BathymetryEdgeValue(e, B_n);
   } else if (cell_is_partially_wet) {
