@@ -85,7 +85,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   // Recalculate total depth for positivity of ponded depth
   double TotalDepthEdgeValue(int c, int e, double htc, double Bc, const Epetra_MultiVector& B_n);
-  std::vector<int> cell_flag_;
+  std::vector<bool> cell_visited_;
 
   // due to rotational invariance of SW equations, we need flux in the
   // x-direction only.

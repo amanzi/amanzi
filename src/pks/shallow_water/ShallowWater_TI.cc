@@ -101,6 +101,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
   total_depth_grad_->data()->ScatterMasterToGhosted("cell");
   
+  // flag for depth-positivity correction
+  // if a cell is fully flooded, we scale gradient only once for efficiency 
+  cell_visited_.resize(ncells_wghost, false);
+  
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
   if (use_limiter_)
