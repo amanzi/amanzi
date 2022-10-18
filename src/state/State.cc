@@ -715,7 +715,7 @@ void State::InitializeFields(const Tag& tag)
           flag = "[ok]";
           Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(e.first);
           sublist.set<double>("time", t_ini);
-          e.second->Initialize(sublist);
+          e.second->Initialize(sublist, true);
         } else {
           // check for domain set
           KeyTriple split;
