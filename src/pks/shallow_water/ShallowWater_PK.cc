@@ -583,30 +583,20 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 //--------------------------------------------------------------
 double
 ShallowWater_PK::TotalDepthEdgeValue(
-    int c, int e, double htc, double Bc, double Bmax2, const Epetra_MultiVector& B_n)
+    int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
 {
   double ht_edge(0.0); // value to return
 
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
-  // set ht_grad = 0 for first order reconstruction (for debugging purposes)
-  // ht_grad[0][c] = 0.0;
-  // ht_grad[1][c] = 0.0;
 
   const auto& xc = mesh_->cell_centroid(c);
   const auto& xf = mesh_->face_centroid(e);
-  Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
-  mesh_->cell_get_nodes(c, &cnodes);
+  Amanzi::AmanziMesh::Entity_ID_List cfaces;
 
   bool cell_is_dry, cell_is_fully_flooded, cell_is_partially_wet;
   cell_is_partially_wet = false;
   cell_is_dry = false;
   cell_is_fully_flooded = false;
-
-  // calculate maximum bathymetry value on cell nodes
-  double Bmax = 0.0;
-  for (int i = 0; i < cnodes.size(); ++i) { 
-    Bmax = std::max(B_n[0][cnodes[i]], Bmax); 
-  }
 
   // characterize cell based on [Beljadid et al.' 16]
   if ((htc > Bmax) && (htc - Bc > 0.0)) {
