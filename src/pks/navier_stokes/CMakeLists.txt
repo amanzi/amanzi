@@ -36,21 +36,6 @@ include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 
 #
-# Navier-Stokes registrations
-#
-# -- pk registration
-register_evaluator_with_factory(
-  HEADERFILE NavierStokes_PK_reg.hh
-  LISTNAME   PKS_NAVIER_STOKES_REGISTRATIONS
-  )
-
-generate_evaluators_registration_header( 
-  HEADERFILE pks_navier_stokes_registration.hh   
-  LISTNAME   PKS_NAVIER_STOKES_REGISTRATIONS
-  INSTALL    True
-  )
-
-#
 # Library: navier_stokes
 #
 set(ns_src_files NavierStokes_PK.cc
