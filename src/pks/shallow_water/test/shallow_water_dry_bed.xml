@@ -15,18 +15,6 @@
         <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="LeftEdgeMiddle">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{0.0, 0.5}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="RightEdgeMiddle">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{2.0, 0.5}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{2.0, 1.0}"/>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="Right">
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{1.0,0.0}"/>
@@ -53,7 +41,7 @@
       <Parameter name="domain name" type="string" value="surface"/>
 
       <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="high"/>
+        <Parameter name="verbosity level" type="string" value="low"/>
       </ParameterList>
 
       <ParameterList name="reconstruction">

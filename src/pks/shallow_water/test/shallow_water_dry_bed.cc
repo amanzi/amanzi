@@ -182,7 +182,7 @@ RunTest(int icase)
 
   // Initialize io
   Teuchos::ParameterList iolist;
-  iolist.get<std::string>("file name base", "SQ_sol");
+  iolist.get<std::string>("file name base", "SW_sol");
   OutputXDMF io(iolist, mesh, true, false);
 
   int iter = 0;
