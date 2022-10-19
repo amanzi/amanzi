@@ -38,6 +38,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // get primary and conservative fields
   const auto& B_c = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("cell", true);
   const auto& B_n = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
+  const auto& B_max = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("cmax", true);
+
   auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_).ViewComponent("cell", true);
   auto& vel_c = *S_->GetW<CompositeVector>(velocity_key_, passwd_).ViewComponent("cell", true);
   auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_).ViewComponent("face", true);
@@ -125,7 +127,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         const auto& xf = mesh_->face_centroid(cfaces[f]);
         double ht_rec = total_depth_grad_->getValue(c, xf);
         if (ht_rec - BathymetryEdgeValue(cfaces[f], B_n) < 0.0) {
-          alpha = std::min(alpha, 0.95 * (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (ht_rec - ht_c[0][c]));
+          alpha = std::min(alpha, cfl_positivity_ * (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (ht_rec - ht_c[0][c]));
         }
       }
       
@@ -188,7 +190,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
     normal /= farea;
 
-    double ht_rec = TotalDepthEdgeValue(c1, f, ht_c[0][c1], B_c[0][c1], B_n);
+    double ht_rec = TotalDepthEdgeValue(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
 
     double B_rec = BathymetryEdgeValue(f, B_n);
     
@@ -224,7 +226,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         UR = UL;
       }
     } else {
-      ht_rec = TotalDepthEdgeValue(c2, f, ht_c[0][c2], B_c[0][c2], B_n);
+      ht_rec = TotalDepthEdgeValue(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
 
       h_rec = ht_rec - B_rec;
       ierr = ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
@@ -290,7 +292,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     U[1] = q_temp[0][c];
     U[2] = q_temp[1][c];
 
-    S = NumericalSource(c, U[0] + B_c[0][c], B_c[0][c], B_n);
+    S = NumericalSource(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n);
 
     h = h_c_tmp[0][c] + (S[0] + ext_S_cell[c]);
     qx = q_c_tmp[0][c] + S[1];
