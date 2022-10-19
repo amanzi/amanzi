@@ -61,7 +61,8 @@ class Record {
   bool ReadCheckpoint(const Checkpoint& chkp, const Tag& tag,
                       const std::vector<std::string>* subfieldnames=nullptr);
   bool Initialize(Teuchos::ParameterList& plist,
-                  const std::vector<std::string>* subfieldnames=nullptr);
+                  const std::vector<std::string>* subfieldnames=nullptr,
+                  bool force = false);
 
   // Data setters/getters
   template <typename T> const T& Get() const {

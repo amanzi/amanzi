@@ -41,10 +41,10 @@ void RecordSet::ReadCheckpoint(const Checkpoint& chkp) {
     e.second->ReadCheckpoint(chkp, e.first, subfieldnames());
   }
 }
-bool RecordSet::Initialize(Teuchos::ParameterList& plist) {
+bool RecordSet::Initialize(Teuchos::ParameterList& plist, bool force) {
   bool init = false;
   for (auto& e : records_) {
-    init |= e.second->Initialize(plist, subfieldnames());
+    init |= e.second->Initialize(plist, subfieldnames(), force);
   }
   return init;
 }

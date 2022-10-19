@@ -71,7 +71,8 @@ bool Record::ReadCheckpoint(const Checkpoint& chkp, const Tag& tag,
 }
 
 bool Record::Initialize(Teuchos::ParameterList& plist,
-                        const std::vector<std::string>* subfieldnames)
+                        const std::vector<std::string>* subfieldnames,
+			bool force)
 {
   // check meta-data
   if (plist.isParameter("write checkpoint")) {
@@ -85,7 +86,7 @@ bool Record::Initialize(Teuchos::ParameterList& plist,
   }
 
   bool initialized_here = false;
-  if (!initialized()) {
+  if (!initialized() || force) {
     initialized_here = data_.Initialize(plist, vis_fieldname(), subfieldnames);
     if (initialized_here) set_initialized();
   }

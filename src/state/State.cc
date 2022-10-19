@@ -713,9 +713,11 @@ void State::InitializeFields(const Tag& tag)
       if (pre_initialization || !e.second->isInitialized(failed)) {
         if (state_plist_.sublist("initial conditions").isSublist(e.first)) {
           flag = "[ok]";
-          Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(e.first);
-          sublist.set<double>("time", t_ini);
-          e.second->Initialize(sublist);
+          if (state_plist_.sublist("initial conditions").isSublist(e.first)) {
+            Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(e.first);
+            sublist.set<double>("time", t_ini);
+            e.second->Initialize(sublist, true);
+          }
         } else {
           // check for domain set
           KeyTriple split;
