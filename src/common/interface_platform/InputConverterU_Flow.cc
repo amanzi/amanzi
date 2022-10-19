@@ -162,10 +162,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
   std::string err_options, unstr_controls;
   if (mode == "steady") {
     err_options = "pressure";
-    unstr_controls = "unstructured_controls, unstr_steady-state_controls";
+    unstr_controls = "numerical_controls, unstructured_controls, unstr_steady-state_controls";
   } else {
     err_options = "pressure, residual";
-    unstr_controls = "unstructured_controls, unstr_transient_controls";
+    unstr_controls = "numerical_controls, unstructured_controls, unstr_transient_controls";
 
     // restart leads to a conflict
     node = GetUniqueElementByTagsString_(unstr_controls + ", unstr_initialization", flag); 
