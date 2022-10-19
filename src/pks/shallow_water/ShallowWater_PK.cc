@@ -616,9 +616,6 @@ ShallowWater_PK::TotalDepthEdgeValue(
   // depth poisitivity based on [Beljadid et al.' 2016, Computers and Fluids]
   if (cell_is_fully_flooded) {
     ht_edge = total_depth_grad_->getValue(c, xf);
-    if (ht_edge - BathymetryEdgeValue(e, B_n) < 0.0) { 
-      ht_edge = htc; 
-    }
   } else if (cell_is_dry) {
     ht_edge = BathymetryEdgeValue(e, B_n);
   } else if (cell_is_partially_wet) {

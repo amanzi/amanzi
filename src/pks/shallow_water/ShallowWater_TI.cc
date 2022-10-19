@@ -95,12 +95,46 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   }
 
   // limited reconstructions using boundary data
+  // total depth
   auto tmp1 = S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   total_depth_grad_->Compute(tmp1);
   if (use_limiter_)
     limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
   total_depth_grad_->data()->ScatterMasterToGhosted("cell");
   
+  // additional depth-positivity correction limiting for fully flooded cells
+  auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
+  
+  for (int c = 0; c < ncells_wghost; ++c ) {
+    Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
+    mesh_->cell_get_nodes(c, &cnodes);
+    
+    // calculate maximum bathymetry value on cell nodes
+    double Bmax = 0.0;
+    for (int i = 0; i < cnodes.size(); ++i) {
+      Bmax = std::max(B_n[0][cnodes[i]], Bmax);
+    }
+    
+    // check if cell is fully flooded and proceed with limiting
+    if ((ht_c[0][c] > Bmax) && (ht_c[0][c] - B_c[0][c] > 0.0)) {
+      Amanzi::AmanziMesh::Entity_ID_List cfaces;
+      mesh_->cell_get_faces(c, &cfaces);
+
+      double alpha = 1.0; // limiter value
+      for (int f = 0; f < cfaces.size(); ++f) {
+        const auto& xf = mesh_->face_centroid(cfaces[f]);
+        double ht_rec = total_depth_grad_->getValue(c, xf);
+        if (ht_rec - BathymetryEdgeValue(cfaces[f], B_n) < 0.0) {
+          alpha = std::min(alpha, 0.95 * (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (ht_rec - ht_c[0][c]));
+        }
+      }
+      
+      ht_grad[0][c] *= alpha;
+      ht_grad[1][c] *= alpha;
+    }
+  }
+  
+  // flux
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
   if (use_limiter_)
