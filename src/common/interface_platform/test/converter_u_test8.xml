@@ -29,7 +29,7 @@
 
   <process_kernels>
     <pk mode="transient">
-      <multiphase model="multiphase pl sl xg" state="on"/>
+      <multiphase model="multiphase" state="on"/>
     </pk>
   </process_kernels>
 

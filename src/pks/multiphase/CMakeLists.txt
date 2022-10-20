@@ -28,10 +28,12 @@ include_directories(${DBG_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${EOS_SOURCE_DIR})
+include_directories(${ENERGY_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${MESH_EXTRACTED_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${MPC_SOURCE_DIR})
 include_directories(${MULTIPHASE_SOURCE_DIR})
@@ -48,17 +50,15 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 #
 set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          MultiphaseBoundaryFunction.cc
-                         MultiphaseJaffre_PK.cc
-                         MultiphaseModel1_PK.cc MultiphaseModel2_PK.cc
-                         Multiphase_Utils.cc
+                         Multiphase_Utils.cc Multiphase_BCs.cc
                          NCP_F.cc NCP_HenryLaw.cc NCP_MoleFractions.cc NCP_MolarDensities.cc
                          SaturationGasEvaluator.cc
                          TotalWaterStorage.cc 
-                         TotalComponentStorage.cc
-                         TotalComponentStorage_MolarDensity.cc
+                         TotalComponentStorage.cc TotalComponentStorage_Tcc.cc
+                         TotalComponentStorage_Jaffre.cc
                          VaporPressureEvaluator.cc
-                         WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc
-                         MoleFractionLiquid.cc TccLiquid.cc PressureGasEvaluator.cc
+                         WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc WRMmp_Corey.cc
+                         MoleFractionLiquid.cc TccLiquid.cc TccGas.cc PressureGasEvaluator.cc
                          RelPermEvaluator.cc ProductEvaluator.cc
                          FlattenedTreeOperator.cc)
 
@@ -66,26 +66,26 @@ add_amanzi_library(multiphase
                    SOURCE ${multiphase_src_files}
                    LINK_LIBS pks operators state functions 
                              mesh_functions time_integration data_structures
-                             eos)
+                             eos energy)
 
 #
 # Install Targets
 #
 set(multiphase_inc_files 
   Multiphase_PK.hh
-  MultiphaseJaffre_PK.hh
-  MultiphaseModel1_PK.hh MultiphaseModel2_PK.hh
   Multiphase_Utils.hh
   MultiphaseBoundaryFunction.hh
   ModelMeshPartition.hh
-  MoleFractionLiquid.hh TccLiquid.hh
+  MoleFractionLiquid.hh TccLiquid.hh TccGas.hh
   NCP_F.hh NCP_HenryLaw.hh NCP_MoleFractions.hh NCP_MolarDensities.hh
   PressureGasEvaluator.hh
   RelPermEvaluator.hh ProductEvaluator.hh
   SaturationGasEvaluator.hh
-  TotalWaterStorage.hh TotalComponentStorage.hh
   VaporPressureEvaluator.hh
+  TotalWaterStorage.hh
+  TotalComponentStorage.hh TotalComponentStorage_Tcc.hh
   WRMmp.hh
+  WRMmp_Corey.hh
   WRMmp_Simple.hh
   WRMmp_vanGenuchten.hh
   WRMmp_BrooksCorey.hh)
@@ -128,10 +128,21 @@ if (BUILD_TESTS)
                   SOURCE    test/Main.cc test/multiphase_model1b.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+  add_amanzi_test(multiphase_model1c multiphase_model1c
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_model1c.cc
+                  LINK_LIBS ${amanzi_libs} energy ${UnitTest_LIBRARIES})
+
   # Unit tests: Pl-Sl-Cg
   add_amanzi_test(multiphase_model2a multiphase_model2a
                   KIND      int
                   SOURCE    test/Main.cc test/multiphase_model2a.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+  # Smiles
+  add_amanzi_test(multiphase_smiles multiphase_smiles
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_smiles.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 endif()

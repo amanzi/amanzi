@@ -34,7 +34,7 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   PDE_HelperDiscretization(const Teuchos::RCP<Operator>& global_op);
   PDE_HelperDiscretization(const Teuchos::RCP<AmanziMesh::Mesh>& mesh);
   PDE_HelperDiscretization(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-  ~PDE_HelperDiscretization() {};
+  virtual ~PDE_HelperDiscretization() {};
 
   // generate linearized operator
   // -- generate matrix. We can use parameter to define coefficeints
@@ -122,7 +122,7 @@ Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
 
-Teuchos::RCP<CompositeVectorSpace> CreateNonManifoldCVS(
+Teuchos::RCP<CompositeVectorSpace> CreateManifoldCVS(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
 void CellToBoundaryFaces(

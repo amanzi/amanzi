@@ -39,7 +39,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
   Epetra_MultiVector& pnew_cell = *solution_new.ViewComponent("cell");
 
   // update steady state boundary conditions
-  double time = S_->time();
+  double time = S_->get_time();
   for (int i = 0; i < bcs_.size(); i++) {
     bcs_[i]->Compute(time, time);
     bcs_[i]->ComputeSubmodel(mesh_);
@@ -48,9 +48,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
   // update steady state source conditions
   for (int i = 0; i < srcs.size(); ++i) {
     srcs[i]->Compute(time, time); 
+    srcs[i]->ComputeSubmodel(aperture_key_, *S_); 
   }
-
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
 
   std::string linear_solver = plist.get<std::string>("linear solver");
   Teuchos::ParameterList lin_solve_list = linear_operator_list_->sublist(linear_solver);
@@ -77,33 +76,33 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
     // update diffusion coefficients
     // -- function
-    darcy_flux_copy->ScatterMasterToGhosted("face");
+    vol_flowrate_copy->ScatterMasterToGhosted("face");
 
-    pressure_eval_->SetFieldAsChanged(S_.ptr());
-    auto alpha = S_->GetFieldData(alpha_key_, alpha_key_);
-    S_->GetFieldEvaluator(alpha_key_)->HasFieldChanged(S_.ptr(), "flow");
+    pressure_eval_->SetChanged();
+    auto& alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
+    S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
   
-    *alpha_upwind_->ViewComponent("cell") = *alpha->ViewComponent("cell");
-    Operators::BoundaryFacesToFaces(bc_model, *alpha, *alpha_upwind_);
-    upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *alpha_upwind_);
+    *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
+    Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
+    upwind_->Compute(*vol_flowrate_copy, *solution, bc_model, *alpha_upwind_);
 
     // -- derivative 
-    Key der_key = Keys::getDerivKey(alpha_key_, pressure_key_);
-    S_->GetFieldEvaluator(alpha_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, pressure_key_);
-    auto alpha_dP = S_->GetFieldData(der_key);
+    S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
+    auto& alpha_dP = S_->GetDerivativeW<CompositeVector>(
+        alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
-    *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP->ViewComponent("cell");
-    Operators::BoundaryFacesToFaces(bc_model, *alpha_dP, *alpha_upwind_dP_);
-    upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *alpha_upwind_dP_);
+    *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
+    Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
+    upwind_->Compute(*vol_flowrate_copy, *solution, bc_model, *alpha_upwind_dP_);
 
     // create algebraic problem (matrix = preconditioner)
     op_preconditioner_->Init();
-    op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
-    op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), Teuchos::null, molar_rho_);
+    op_preconditioner_diff_->UpdateMatrices(vol_flowrate_copy.ptr(), solution.ptr());
+    op_preconditioner_diff_->UpdateMatricesNewtonCorrection(vol_flowrate_copy.ptr(), Teuchos::null, molar_rho_);
     op_preconditioner_diff_->ApplyBCs(true, true, true);
 
     Teuchos::RCP<CompositeVector> rhs = op_preconditioner_->rhs();  // export RHS from the matrix class
-    AddSourceTerms(*rhs);
+    AddSourceTerms(*rhs, 1.0);
 
     // update inverse
     solver->ComputeInverse();
@@ -147,7 +146,7 @@ double Richards_PK::CalculateRelaxationFactor(const Epetra_MultiVector& uold,
                                               const Epetra_MultiVector& unew)
 { 
   double relaxation = 1.0;
-  double patm = *S_->GetScalarData("atmospheric_pressure");
+  double patm = S_->Get<double>("atmospheric_pressure");
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
     for (int c = 0; c < ncells_owned; c++) {

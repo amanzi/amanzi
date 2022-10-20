@@ -11,7 +11,6 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "CycleDriver.hh"
-#include "Domain.hh"
 #include "eos_registration.hh"
 #include "MeshFactory.hh"
 #include "Mesh.hh"
@@ -38,12 +37,11 @@ using namespace std;
   Teuchos::ParameterList reg_params = plist.sublist("regions");
 
   int spdim = 2;
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model_ptr =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, *comm));
+  auto geom_model_ptr = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, *comm));
 
-  Amanzi::AmanziGeometry::Domain *simdomain_ptr = new Amanzi::AmanziGeometry::Domain(spdim);
+  // Amanzi::AmanziGeometry::Domain *simdomain_ptr = new Amanzi::AmanziGeometry::Domain(spdim);
 
-  simdomain_ptr->Add_Geometric_Model(geom_model_ptr);
+  // simdomain_ptr->Add_Geometric_Model(geom_model_ptr);
 
   // ---------------- MESH -----------------------------------------------
   int rank(0), ierr, aerr;
@@ -103,7 +101,7 @@ using namespace std;
 
   double dt_last; 
   dt_last = cycle_driver.get_dt();
-  int cycle = S->cycle();
+  int cycle = S->get_cycle();
 
   
 

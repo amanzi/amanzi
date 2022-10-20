@@ -1,9 +1,9 @@
 /*
   Utils
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
@@ -16,8 +16,10 @@
 
 #include <ctime>
 
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "AmanziComm.hh"
+#include "Key.hh"
 #include "VerboseObject.hh"
 
 namespace Amanzi {
@@ -30,15 +32,12 @@ VerboseObject::VerboseObject(const std::string& name, const std::string& verbosi
   setDefaultVerbLevel(global_default_level);
   set_name(name);
 
-  // Override from ParameterList.
-  Teuchos::ParameterList plist;
-  plist.sublist("VerboseObject").set("Verbosity Level", verbosity);
-
-  Teuchos::readVerboseObjectSublist(&plist, this);
+  auto validator = Teuchos::verbosityLevelParameterEntryValidator("verbosity level");
+  auto ilevel = validator->getIntegralValue(verbosity);
+  setVerbLevel(ilevel);
 
   // out, tab
-  out_ = getOStream();
-  out_->setShowLinePrefix(global_hide_line_prefix);
+  getOStream()->setShowLinePrefix(global_hide_line_prefix);
 }
 
 
@@ -76,110 +75,96 @@ VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList pli
   Teuchos::readVerboseObjectSublist(&plist_out, this);
 
   // out, tab
-  out_ = getOStream();
-  out_->setShowLinePrefix(!no_pre);
+  getOStream()->setShowLinePrefix(!no_pre);
 }
 
 
 VerboseObject::VerboseObject(const Comm_ptr_type& comm, const std::string& name,
-                             Teuchos::ParameterList plist) :
+                             Teuchos::ParameterList outer_plist) :
     comm_(comm)
 {
+  Teuchos::ParameterList& plist = outer_plist.sublist("verbose object");
+
+  // Make sure we have a unique OStream to work with in this VO
+  auto ostream = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  setOverridingOStream(ostream);
+
+  // First options that act on this
   // Options from ParameterList
-  int root = -1;
-  // Check if we are in the mode of writing only a specific rank.
-  if (plist.sublist("verbose object").isParameter("write on rank")) {
-    root = plist.sublist("verbose object").get<int>("write on rank");
-  }
-
-  // Init the basics
-  // Set up the default level.
-  setDefaultVerbLevel(global_default_level);
-
-  // Options from ParameterList
-
   // -- Set up the VerboseObject header.
   std::string headername(name);
-  if (plist.sublist("verbose object").isParameter("name")) {
-    headername = plist.sublist("verbose object").get<std::string>("name");
+  if (plist.isParameter("name")) {
+    headername = plist.get<std::string>("name");
   }
-  set_name(headername);
+  int width = plist.get("header width", -1);
+  set_name(headername, width);
 
+  // -- Set the verbosity level
+  if (plist.isParameter("verbosity level")) {
+    auto level = plist.get<std::string>("verbosity level");
+    auto validator = Teuchos::verbosityLevelParameterEntryValidator("verbosity level");
+    auto ilevel = validator->getIntegralValue(level);
+    setVerbLevel(ilevel);
+  }
+
+  // Next options that act on OStream
   // -- Show the line prefix
-  bool no_pre = plist.sublist("verbose object").get<bool>("hide line prefix", global_hide_line_prefix);
+  bool no_pre = plist.get<bool>("hide line prefix", global_hide_line_prefix);
+  getOStream()->setShowLinePrefix(!no_pre);
 
-  // Override from ParameterList.
-  Teuchos::ParameterList plist_out;
-  if (plist.sublist("verbose object").isParameter("verbosity level")) {
-    plist_out.sublist("VerboseObject").set("Verbosity Level",
-        plist.sublist("verbose object").get<std::string>("verbosity level"));
-  }
+  // -- Include rank in the prefix
+  bool show_rank = plist.get<bool>("show rank", false);
+  getOStream()->setShowProcRank(show_rank);
 
-  Teuchos::readVerboseObjectSublist(&plist_out, this);
+  // -- set the comm info
+  int size = comm_->NumProc();
+  int pid = comm_->MyPID();
+  getOStream()->setProcRankAndSize(pid, size);
 
-  // out, tab
-  out_ = getOStream();
-  out_->setShowLinePrefix(!no_pre);
-
-  // Set up a local FancyOStream
-  if (root >= 0) {
-    int size = comm_->NumProc();
-    int pid = comm_->MyPID();
-    Teuchos::RCP<Teuchos::FancyOStream> newout = Teuchos::rcp(new Teuchos::FancyOStream(out_->getOStream()));
-    newout->setProcRankAndSize(pid,size);
-    newout->setOutputToRootOnly(root);
-    setOStream(newout);
-
-    std::stringstream headerstream;
-    headerstream << pid << ": " << getLinePrefix();
-    std::string header = headerstream.str();
-    if (header.size() > global_line_prefix_size) {
-      header.erase(global_line_prefix_size);
-    } else if (header.size() < global_line_prefix_size) {
-      header.append(global_line_prefix_size - header.size(), ' ');
-    }
-
-    setLinePrefix(header);
-    out_ = getOStream();
-    out_->setShowLinePrefix(!no_pre);
-  }
+  // -- write from a different rank than 0
+  int root = plist.get<int>("write on rank", (int) global_writing_rank);
+  getOStream()->setOutputToRootOnly(root);
 }
 
 
-void VerboseObject::set_name(const std::string& name)
+void VerboseObject::set_name(std::string name, int width)
 {
-  std::string header(name);
-  if (header.size() > global_line_prefix_size) {
-    header.erase(global_line_prefix_size);
-  } else if (header.size() < global_line_prefix_size) {
-    header.append(global_line_prefix_size - header.size(), ' ');
+  if (width < 0) width = global_line_prefix_size;
+
+  if (name.size() > width) name = Keys::abbreviate(name, width);
+
+  // hard cut/pad to size
+  if (name.size() > width) {
+    name.erase(width);
+  } else if (name.size() < width) {
+    name.append(width - name.size(), ' ');
   }
-  setLinePrefix(header);
+  setLinePrefix(name);
 }
 
 
 std::string VerboseObject::color(const std::string& name) const
-{ 
+{
   std::string output("");
-#ifdef __linux
   if (name == "red") {
     output = std::string("\033[1;31m");
   } else if (name == "green") {
     output = std::string("\033[1;32m");
   } else if (name == "yellow") {
     output = std::string("\033[1;33m");
+  } else if (name == "good") {
+    output = color("green");
+  } else if (name == "bad") {
+    output = color("red");
   }
-#endif
   return output;
 }
 
 
 std::string VerboseObject::reset() const
-{ 
+{
   std::string output("");
-#ifdef __linux
   output = std::string("\033[0m");
-#endif
   return output;
 }
 
@@ -196,9 +181,9 @@ std::string VerboseObject::clock() const
   int h = tmp % 100;
 
   std::stringstream ss;
-  ss << "[" << std::setfill('0') 
-     << std::setw(2) << h << ":" 
-     << std::setw(2) << m << ":" 
+  ss << "[" << std::setfill('0')
+     << std::setw(2) << h << ":"
+     << std::setw(2) << m << ":"
      << std::setw(2) << s << "]";
 
   return ss.str();

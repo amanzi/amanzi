@@ -94,16 +94,16 @@ message(STATUS "")
 # CMake 2.8.6 FindBoost stops at version 1.46
 # Add more versions to the search see cmake --help-module FindBoost for
 # more information.
-set(Boost_ADDITIONAL_VERSIONS 
-    1.47 1.47.0
-    1.48 1.48.0
-    1.49 1.49.0
-    1.50 1.50.0
-    1.51 1.51.0
-    1.52 1.52.0
-    1.53 1.53.0
-    1.54 1.55.0)
-find_package(Boost COMPONENTS system filesystem program_options regex REQUIRED)
+# set(Boost_ADDITIONAL_VERSIONS 
+#    1.47 1.47.0
+#    1.48 1.48.0
+#    1.49 1.49.0
+#    1.50 1.50.0
+#    1.51 1.51.0
+#    1.52 1.52.0
+#    1.53 1.53.0
+#    1.54 1.55.0)
+find_package(Boost COMPONENTS filesystem system program_options regex atomic REQUIRED)
 set_package_properties(Boost PROPERTIES
                  DESCRIPTION "C++ Extension library"
                  URL "http://www.boost.org"
@@ -139,7 +139,7 @@ else()
   set(HDF5_USE_STATIC_LIBRARIES ON)
 endif()
   
-find_package(HDF5 1.10.0 REQUIRED COMPONENTS C HL)
+find_package(HDF5 ${HDF5_VERSION} REQUIRED COMPONENTS C HL)
 
 if (NOT HDF5_IS_PARALLEL) 
     message(WARNING "The HDF5 installation found in ${HDF5_DIR} is not "

@@ -547,7 +547,6 @@ double Mesh_MSTK::deform_function(const int nodeid,
   double func = 0.0;
   MVertex_ptr v = vtx_id_to_handle[nodeid];
   double *xyz[MAXPV3];
-  double val=0.0;
   // double evec0[3], evec1[3];
   double nodexyz_copy[3]={0.0,0.0,0.0};
   double condfunc=0.0, volfunc=0.0, barrierfunc=0.0;
@@ -571,7 +570,6 @@ double Mesh_MSTK::deform_function(const int nodeid,
   // static int hexidx[8][3] = {{1,3,4},{2,0,5},{3,1,6},{0,2,7},{0,5,7},{6,4,1},
   //                            {7,5,2},{6,4,3}};
   // static int prsmidx[6][3] = {{1,2,3},{2,0,4},{0,1,5},{0,4,5},{1,3,5},{2,3,4}};
-  val = 0.0;
 
   std::copy(nodexyz,nodexyz+space_dimension(),nodexyz_copy);
 

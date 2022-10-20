@@ -76,7 +76,6 @@ Example:
 
 */
 
- 
 #ifndef AMANZI_VERBOSE_OBJECT_HH_
 #define AMANZI_VERBOSE_OBJECT_HH_
 
@@ -126,27 +125,30 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   // Size of the left column of names.
   static unsigned int global_line_prefix_size;
 
+  // static rank to write on
+  static unsigned int global_writing_rank;
+
   // Color output for developers
   std::string color(const std::string& name) const;
   std::string reset() const;
   std::string clock() const;
 
-  void set_name(const std::string& name);
+  // width parameter provides width of the header
+  void set_name(std::string name, int width=-1);
 
  protected:
-  Teuchos::RCP<Teuchos::FancyOStream> out_;
   Comm_ptr_type comm_;
 };
 
 
 bool VerboseObject::os_OK(Teuchos::EVerbosityLevel verbosity) const {
-  return out_.get() &&
+  return getOStream().get() &&
       includesVerbLevel(getVerbLevel(), verbosity, true);
 };
 
 
 Teuchos::RCP<Teuchos::FancyOStream> VerboseObject::os() const {
-  return out_;
+  return getOStream();
 };
 
 

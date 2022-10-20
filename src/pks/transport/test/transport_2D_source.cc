@@ -70,41 +70,39 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
-  TPK.Setup(S.ptr());
-  TPK.CreateDefaultState(mesh, 2);
+  TPK.Setup();
+  S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
-  Teuchos::RCP<Epetra_MultiVector> 
-      flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.5);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    (*flux)[0][f] = velocity * normal;
+    flux[0][f] = velocity * normal;
   }
 
   /* initialize a transport process kernel */
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
  
   /* advance the transport state */
   int iter;
   double t_old(0.0), t_new(0.0), dt;
 
-  Teuchos::RCP<Epetra_MultiVector> 
-      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+  auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   iter = 0;
   bool flag = true;
   while (t_new < 0.3) {
-    dt = TPK.StableTimeStep();
+    dt = TPK.StableTimeStep(-1);
     t_new = t_old + dt;
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new, S);
+    TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
     iter++;
@@ -114,16 +112,14 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
       if (TPK.MyPID == 0) {
         GMV::open_data_file(*mesh, (std::string)"transport.gmv");
         GMV::start_data();
-        GMV::write_cell_data(*tcc, 0, "Component_0");
+        GMV::write_cell_data(tcc, 0, "Component_0");
         GMV::close_data_file();
       }
       break;
     }
   }
 
-  TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, Transport::TRANSPORT_LIMITER_TOLERANCE);
- 
-  
+  TPK.VV_CheckTracerBounds(tcc, 0, 0.0, 1.0, Transport::TRANSPORT_LIMITER_TOLERANCE);
 }
 
 

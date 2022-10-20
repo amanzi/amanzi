@@ -64,14 +64,14 @@ TEST(FLOW_2D_RICHARDS) {
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
     Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, "flow", S, soln));
 
-    RPK->Setup(S.ptr());
+    RPK->Setup();
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
 
     // modify the default state for the problem at hand
-    std::string passwd("flow"); 
-    Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
+    std::string passwd(""); 
+    auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   
     AmanziMesh::Entity_ID_List block;
     mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
@@ -87,18 +87,14 @@ TEST(FLOW_2D_RICHARDS) {
       K[0][c] = 0.5;
       K[1][c] = 0.5;
     }
-    S->GetField("permeability", "flow")->set_initialized();
+    S->GetRecordW("permeability", "permeability").set_initialized();
 
     // -- fluid vicosity
-    S->GetFieldData("viscosity_liquid", "viscosity_liquid")->PutScalar(1.0);
-    S->GetField("viscosity_liquid", "viscosity_liquid")->set_initialized();
-
-    Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
-    gravity[1] = -9.8;
-    S->GetField("gravity", "state")->set_initialized();
+    S->GetW<CompositeVector>("viscosity_liquid", "viscosity_liquid").PutScalar(1.0);
+    S->GetRecordW("viscosity_liquid", "viscosity_liquid").set_initialized();
 
     // create the initial pressure function
-    Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");
+    auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
     for (int c = 0; c < p.MyLength(); c++) {
       const Point& xc = mesh->cell_centroid(c);
@@ -106,7 +102,7 @@ TEST(FLOW_2D_RICHARDS) {
     }
 
     // initialize the Richards process kernel
-    RPK->Initialize(S.ptr());
+    RPK->Initialize();
     S->CheckAllFieldsInitialized();
 
     // solve the problem 
@@ -117,7 +113,7 @@ TEST(FLOW_2D_RICHARDS) {
     ti_specs.max_itrs = 400;
 
     AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-    RPK->CommitStep(0.0, 1.0, S);  // dummy times
+    RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times
     itrs[loop] = ti_specs.num_itrs;
 
     if (MyPID == 0 && loop == 0) {

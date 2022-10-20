@@ -152,12 +152,15 @@ void PDE_DiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVec
 
   if (k_ != Teuchos::null) {
     AMANZI_ASSERT(k_->HasComponent("face"));
+    AMANZI_ASSERT(k_->Map().Ghosted());
+
     // NOTE: it seems that Amanzi passes in a cell based kr which is then
     // ignored, and assumed = 1.  This seems dangerous to me. --etc
     // AMANZI_ASSERT(!k_->HasComponent("cell"));
   }
   if (dkdp_ != Teuchos::null) {
     AMANZI_ASSERT(dkdp_->HasComponent("cell"));
+    AMANZI_ASSERT(dkdp_->Map().Ghosted());
   }
 }
 
@@ -218,14 +221,6 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
   // Add derivatives to the matrix (Jacobian in this case)
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
     AMANZI_ASSERT(u != Teuchos::null);
-
-    if (k_ != Teuchos::null) {
-      if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
-    }
-    if (dkdp_ != Teuchos::null) {
-      if (dkdp_->HasComponent("face")) dkdp_->ScatterMasterToGhosted("face");
-    }
-
     AnalyticJacobian_(*u);
   }
 }
@@ -238,14 +233,6 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
   // Add derivatives to the matrix (Jacobian in this case)
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
     AMANZI_ASSERT(u != Teuchos::null);
-
-    if (k_ != Teuchos::null) {
-      if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
-    }
-    if (dkdp_ != Teuchos::null) {
-      if (dkdp_->HasComponent("face")) dkdp_->ScatterMasterToGhosted("face");
-    }
-
     AnalyticJacobian_(*u);
   }
 }  
@@ -371,18 +358,6 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
 
 
 /* ******************************************************************
-* Calculate flux from cell-centered data
-****************************************************************** */
-void PDE_DiffusionFV::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                            const Teuchos::Ptr<CompositeVector>& flux)
-{
-  Errors::Message msg;
-  msg << "DiffusionFV: missing support for non-manifolds.";
-  Exceptions::amanzi_throw(msg);
-}
-
-
-/* ******************************************************************
 * Computation the part of the Jacobian which depends on derivatives 
 * of the relative permeability wrt to capillary pressure. They must
 * be added to the existing matrix structure.
@@ -398,7 +373,10 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
   AmanziMesh::Entity_ID_List cells, faces;
   double dkdp[2], pres[2];
 
-  const Epetra_MultiVector& dKdP_cell = *dkdp_->ViewComponent("cell");
+  dkdp_->ScatterMasterToGhosted("cell");
+  const Epetra_MultiVector& dKdP_cell = *dkdp_->ViewComponent("cell", true);
+  AMANZI_ASSERT(dKdP_cell.MyLength() == ncells_wghost);  
+  
   Teuchos::RCP<const Epetra_MultiVector> dKdP_face;
   if (dkdp_->HasComponent("face")) {
     dKdP_face = dkdp_->ViewComponent("face", true);
@@ -409,16 +387,13 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
     int mcells = cells.size();
 
     WhetStone::DenseMatrix Aface(mcells, mcells);
-
     for (int n = 0; n < mcells; n++) {
       int c1 = cells[n];
       pres[n] = uc[0][c1];
       dkdp[n] = dKdP_cell[0][c1];
     }
 
-    if (mcells == 1) {
-      dkdp[1] = dKdP_face.get() ? (*dKdP_face)[0][f] : 0.;
-    }
+    if (mcells == 1) dkdp[1] = dKdP_face.get() ? (*dKdP_face)[0][f] : 0.;
 
     // find the face direction from cell 0 to cell 1
     const auto& cfaces = mesh_->cell_get_faces(cells[0]);
@@ -427,7 +402,6 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
     int f_index = std::find(cfaces.begin(), cfaces.end(), f) - cfaces.begin();
     ComputeJacobianLocal_(mcells, f, fdirs[f_index], bc_model[f], bc_value[f],
                           pres, dkdp, Aface);
-
     jac_op_->matrices[f] = Aface;
   }
 }

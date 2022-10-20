@@ -57,7 +57,7 @@ using namespace Amanzi::AmanziGeometry;
   cycle_driver.Go();
   
   // verify the maximum principle for solute transport
-  const Epetra_MultiVector& tcc = *S->GetFieldData("total_component_concentration")->ViewComponent("cell");
+  const auto& tcc = *S->Get<CompositeVector>("total_component_concentration").ViewComponent("cell");
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
   for (int c = 0; c < ncells; ++c) {

@@ -70,8 +70,12 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="state">
-    <ParameterList name="field evaluators">
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+    <ParameterList name="evaluators">
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -84,7 +88,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
@@ -107,7 +111,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="saturation_liquid">
         <ParameterList name="function">
@@ -121,7 +125,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="fracture-saturation_liquid">
         <ParameterList name="function">
@@ -135,10 +139,10 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="internal_energy_liquid">
-        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
         <ParameterList name="IEM parameters">
           <ParameterList name="TopRegion">
@@ -162,7 +166,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="internal_energy_rock">
-        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
         <ParameterList name="IEM parameters">
           <ParameterList name="TopRegion">
@@ -193,7 +197,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="fracture-porosity">
         <ParameterList name="function">
@@ -207,10 +211,10 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="fracture-aperture">
-        <Parameter name="field evaluator type" type="string" value="independent variable from file"/>
+        <Parameter name="evaluator type" type="string" value="independent variable from file"/>
         <Parameter name="filename" type="string" value="aperture.h5"/>
         <Parameter name="domain name" type="string" value="fracture"/>
         <Parameter name="component name" type="string" value="cell"/>
@@ -220,7 +224,7 @@
         <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture-molar_density_liquid">
-        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="molar density key" type="string" value="fracture-molar_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water tabular"/>
@@ -231,7 +235,7 @@
         <Parameter name="mass density key" type="string" value="fracture-mass_density_liquid"/>
       </ParameterList>
       <ParameterList name="molar_density_liquid">
-        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water tabular"/>
@@ -243,7 +247,7 @@
       </ParameterList>
 
       <ParameterList name="viscosity_liquid">
-        <Parameter name="field evaluator type" type="string" value="viscosity"/>
+        <Parameter name="evaluator type" type="string" value="viscosity"/>
         <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water tabular"/>
@@ -252,7 +256,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-viscosity_liquid">
-        <Parameter name="field evaluator type" type="string" value="viscosity"/>
+        <Parameter name="evaluator type" type="string" value="viscosity"/>
         <Parameter name="viscosity key" type="string" value="fracture-viscosity_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water tabular"/>
@@ -493,6 +497,7 @@
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
+    <Parameter name="component molar masses" type="Array(double)" value="{1.0}"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{6.1729344e+10, 9.4672798e+10}"/>
       <Parameter name="initial time step" type="Array(double)" value="{1.0, 1.0}"/>
@@ -584,6 +589,7 @@
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>
             <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
           </ParameterList>
           <ParameterList name="preconditioner">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -592,6 +598,8 @@
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>
             <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
           </ParameterList>
           <ParameterList name="vapor matrix">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -672,7 +680,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="physical models and assumptions">
-        <Parameter name="flow in fractures" type="bool" value="true"/>
+        <Parameter name="flow and transport in fractures" type="bool" value="true"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
@@ -818,6 +826,7 @@
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>
             <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
           </ParameterList>
           <ParameterList name="preconditioner">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -827,6 +836,7 @@
             <Parameter name="gravity" type="bool" value="true"/>
             <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
             <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
           </ParameterList>
           <ParameterList name="vapor matrix">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -1007,11 +1017,11 @@
         <ParameterList name="FPM for fracture">
           <Parameter name="region" type="string" value="fracture"/>
           <Parameter name="model" type="string" value="cubic law"/>
-          <Parameter name="aperture" type="double" value="0.00000000000000000e+00"/>
+          <Parameter name="aperture" type="double" value="0.0"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="physical models and assumptions">
-        <Parameter name="flow in fractures" type="bool" value="true"/>
+        <Parameter name="flow and transport in fractures" type="bool" value="true"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
@@ -1141,16 +1151,6 @@
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dispersion Solver">
-      <Parameter name="iterative method" type="string" value="pcg"/>
-      <ParameterList name="pcg parameters">
-        <Parameter name="error tolerance" type="double" value="1.0e-20"/>
-        <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>

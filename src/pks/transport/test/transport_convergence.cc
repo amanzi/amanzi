@@ -81,28 +81,26 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     Teuchos::ParameterList state_list = plist->sublist("state");
     RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
-    S->set_time(0.0);
 
     TransportExplicit_PK TPK(plist, S, "transport", component_names);
-    TPK.Setup(S.ptr());
-    TPK.CreateDefaultState(mesh, 1);
+    TPK.Setup();
+    S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
+    S->set_time(0.0);
 
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
-    Teuchos::RCP<Epetra_MultiVector> 
-        flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", true);
+    auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face", true);
 
     AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
-      (*flux)[0][f] = velocity * normal;
+      flux[0][f] = velocity * normal;
     }
 
-    Teuchos::RCP<Epetra_MultiVector> 
-        tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", true);
+    auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell", true);
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     for (int c = 0; c < ncells; c++) {
@@ -110,17 +108,17 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
 
-    *(S->GetScalarData("const_fluid_density", passwd)) = 1.0;
+    S->GetW<double>("const_fluid_density", passwd) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
  
     /* advance the state */
     int ncycles = 0, iter = 0;
     double t_old(0.0), t_new, dt, T1(1.0);
     while (t_old < T1) {
-      dt = std::min(TPK.StableTimeStep(), T1 - t_old);
+      dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
       dt = dt * 7.7;
       t_new = t_old + dt;
 
@@ -129,7 +127,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
       S->set_final_time(t_new);
 
       TPK.AdvanceStep(t_old, t_new);
-      TPK.CommitStep(t_old ,t_new, S);
+      TPK.CommitStep(t_old ,t_new, Tags::DEFAULT);
 
       t_old = t_new;
       ncycles += TPK.nsubcycles;
@@ -198,30 +196,28 @@ void ConvergenceBoxMeshes(int order, double tol, std::string limiter)
     Teuchos::ParameterList state_list = plist->sublist("state");
     RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
-    S->set_time(0.0);
 
     plist->sublist("PKs").sublist("transport")
           .sublist("reconstruction").set<std::string>("limiter", limiter);
     TransportExplicit_PK TPK(plist, S, "transport", component_names);
-    TPK.Setup(S.ptr());
-    TPK.CreateDefaultState(mesh, 1);
+    TPK.Setup();
+    S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
+    S->set_time(0.0);
 
     // modify the default state for the problem at hand 
     std::string passwd("state"); 
-    Teuchos::RCP<Epetra_MultiVector> 
-        flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", true);
+    auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face", true);
 
     AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
-      (*flux)[0][f] = velocity * normal;
+      flux[0][f] = velocity * normal;
     }
 
-    Teuchos::RCP<Epetra_MultiVector> 
-        tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", true);
+    auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell", true);
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     for (int c = 0; c < ncells; c++) {
@@ -229,20 +225,20 @@ void ConvergenceBoxMeshes(int order, double tol, std::string limiter)
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
 
-    *(S->GetScalarData("const_fluid_density", passwd)) = 1.0;
+    S->GetW<double>("const_fluid_density", passwd) = 1.0;
 
     // initialize transport process kernel
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = order;
  
     // advance the state
-    if (nx == 20) dt0 = TPK.StableTimeStep();
+    if (nx == 20) dt0 = TPK.StableTimeStep(-1);
     else dt0 /= 2;
 
     int iter = 0;
     double t_old(0.0), t_new(0.0), dt, T1(2.0);
     while (t_new < T1) {
-      dt = std::min(TPK.StableTimeStep(), T1 - t_old);
+      dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
       dt = std::min(dt, dt0);
       t_new = t_old + dt;
 
@@ -251,7 +247,7 @@ void ConvergenceBoxMeshes(int order, double tol, std::string limiter)
       S->set_final_time(t_new);
 
       TPK.AdvanceStep(t_old, t_new);
-      TPK.CommitStep(t_old, t_new, S);
+      TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
       t_old = t_new;
 
@@ -340,30 +336,28 @@ void ConvergencePolyMeshes(int order, double tol, std::string limiter)
     Teuchos::ParameterList state_list = plist->sublist("state");
     RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
-    S->set_time(0.0);
 
     plist->sublist("PKs").sublist("transport")
           .sublist("reconstruction").set<std::string>("limiter", limiter);
     TransportExplicit_PK TPK(plist, S, "transport", component_names);
-    TPK.Setup(S.ptr());
-    TPK.CreateDefaultState(mesh, 1);
+    TPK.Setup();
+    S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
+    S->set_time(0.0);
 
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
-    Teuchos::RCP<Epetra_MultiVector> 
-        flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", true);
+    auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face", true);
 
     AmanziGeometry::Point velocity(1.0, 0.0);
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
-      (*flux)[0][f] = velocity * normal;
+      flux[0][f] = velocity * normal;
     }
 
-    Teuchos::RCP<Epetra_MultiVector> 
-        tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", true);
+    auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell", true);
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     for (int c = 0; c < ncells; c++) {
@@ -371,17 +365,17 @@ void ConvergencePolyMeshes(int order, double tol, std::string limiter)
       (*tcc)[0][c] = f_cubic_unit(xc, 0.0);
     }
 
-    *(S->GetScalarData("const_fluid_density", passwd)) = 1.0;
+    S->GetW<double>("const_fluid_density", passwd) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = order;
  
     /* advance the state */
     int iter = 0;
     double t_old(0.0), t_new, dt, T1(0.2);
     while (t_old < T1) {
-      dt = std::min(TPK.StableTimeStep(), T1 - t_old);
+      dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
       t_new = t_old + dt;
 
       S->set_initial_time(t_old);
@@ -389,7 +383,7 @@ void ConvergencePolyMeshes(int order, double tol, std::string limiter)
       S->set_final_time(t_new);
 
       TPK.AdvanceStep(t_old, t_new);
-      TPK.CommitStep(t_old, t_new, S);
+      TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
       t_old = t_new;
       iter++;

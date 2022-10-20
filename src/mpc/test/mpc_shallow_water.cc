@@ -59,7 +59,7 @@ using namespace Amanzi::AmanziGeometry;
     Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
     try {
       cycle_driver.Go();
-      S->GetFieldData("surface-ponded_depth")->MinValue(&vmin);
+      S->Get<CompositeVector>("surface-ponded_depth").MinValue(&vmin);
     } catch (...) {
       CHECK(false);
     }

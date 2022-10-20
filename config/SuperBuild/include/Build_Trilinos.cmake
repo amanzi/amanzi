@@ -83,6 +83,9 @@ list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_Basker:BOOL=ON")
 # have already built SEACAS
 list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_SEACAS:BOOL=FALSE")
 
+# Using CXX 14 Standard
+list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DCMAKE_CXX_STANDARD:STRING=14")
+
 # we use ints for GOs in Tpetra only
 if (ENABLE_Tpetra)
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Tpetra:BOOL=ON")
@@ -363,6 +366,7 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                                       -DCMAKE_INSTALL_RPATH:PATH=${Trilinos_install_dir}/lib
                                       -DCMAKE_INSTALL_NAME_DIR:PATH=${Trilinos_install_dir}/lib
                                       -DCMAKE_BUILD_TYPE:STRING=${Trilinos_BUILD_TYPE}
+                                      -DPYTHON_EXECUTABLE:STRING=${PYTHON_EXECUTABLE}
 
                     # -- Build
                     BINARY_DIR       ${Trilinos_build_dir}        # Build directory 

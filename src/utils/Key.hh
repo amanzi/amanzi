@@ -4,7 +4,6 @@
    Amanzi is released under the three-clause BSD License.
    The terms of use and "as is" disclaimer for this license are
    provided in the top-level COPYRIGHT file.
-   See $ATS_DIR/COPYRIGHT
 
    Author: Ethan Coon
 */
@@ -66,6 +65,9 @@
 
 #include <set>
 #include "Teuchos_ParameterList.hpp"
+#include "Tag.hh"
+#include "Abbreviations.hh"
+#include "FIFO_Set.hh"
 
 namespace Amanzi {
 
@@ -76,14 +78,26 @@ typedef std::vector<Key> KeyVector;
 
 typedef std::pair<Key,Key> KeyPair;
 typedef std::set<std::pair<Key, Key> > KeyPairSet;
+typedef std::vector<KeyPair> KeyPairVector;
 
 typedef std::tuple<Key,Key,Key> KeyTriple;
+typedef std::set<KeyTriple> KeyTripleSet;
+
+typedef std::pair<Key,Tag> KeyTag;
+typedef std::vector<KeyTag> KeyTagVector;
+using KeyTagSet = Utils::FIFO_Set<KeyTag>;
+
+typedef std::tuple<Key,Tag,Key> DerivativeTriple;
+typedef std::set<DerivativeTriple> DerivativeTripleSet;
+
 
 namespace Keys {
 
 static const char name_delimiter = '-';
 static const char deriv_delimiter = '|';
 static const char dset_delimiter = ':';
+static const char tag_delimiter = '@';
+static const char phase_delimiter = '_';
 
 //
 // Utility functions
@@ -94,19 +108,30 @@ bool ends_with(const Key& key, const char& c);
 bool ends_with(const Key& key, const std::string& substr);
 bool in(const Key& key, const char& c);
 bool in(const Key& key, const std::string& c);
+Key replace_all(Key key, const std::string& find_s, const std::string& replace_s);
 
 Key merge(const Key& domain, const Key& name, const char& delimiter);
 KeyPair split(const Key& name, const char& delimiter);
 
+template<class Container, class Key>
+bool hasKey(const Container& c, const Key& key) {
+  return (bool) c.count(key);
+}
 
 //
-// Working with Keys and Domains
+// Working with Keys
 // -----------------------------------------------------------------------------
 inline
 Key standardize(const Key& other) {
   if (other.empty()) return "domain";
+  if (other == "subsurface") return "domain";
   return other;
 }
+
+// creates a clean name to be used as a variable name, domain name, tag name,
+// etc, that has no delimiters in it, no spaces (which make for uglier IO),
+// etc.
+Key cleanName(const std::string& name, bool delimiters_ok=false);
 
 // is this valid?
 bool validKey(const Key& key);
@@ -127,6 +152,14 @@ Key getDomainPrefix(const Key& name);
 // Grab the varname suffix of a DOMAIN-VARNAME Key
 Key getVarName(const Key& name);
 
+// abbreviate.  If max_len > 0, stops once the string is shorter than this
+// value.
+Key abbreviate(Key name, int max_len = -1);
+
+
+//
+// Domain Sets
+// -----------------------------------------------------------------------------
 // Domain Sets are of the form NAME:ID, where ID is an integer or
 // region string indexing the domain set.
 Key getDomainInSet(const Key& ds_name, const Key& subdomain);
@@ -161,8 +194,24 @@ Key getKey(const Key& ds_name, const int& ds_id, const Key& varname);
 // Check if a key, interpreted as a domain set, matches the domain-set name
 bool matchesDomainSet(const Key& domain_set, const Key& name);
 
+
+//
+// Working with tags
+// -----------------------------------------------------------------------------
+// Tag'd variables are of the form VARNAME:TAG
+Key getKey(const Key& var, const Tag& tag);
+Key getKey(const KeyTag& var_tag);
+
+KeyTag splitKeyTag(const Key& name);
+
+//
+// Working with derivatives
+// -----------------------------------------------------------------------------
 // Derivatives are of the form dKey|dKey.
 Key getDerivKey(const Key& var, const Key& wrt);
+Key getDerivKey(const Key& var, const Tag& tag,
+                const Key& wrt, const Tag& wrt_tag);
+Key getDerivKey(const KeyTag& var, const KeyTag& wrt);
 
 //
 // Helper functions for reading keys and domains from parameter lists
@@ -192,12 +241,18 @@ Key readDomain(Teuchos::ParameterList& plist,
 // value.
 Key readDomainHint(Teuchos::ParameterList& plist,
                    const Key& hint,
-                   const Key& hint_dtype,
+                   Key hint_dtype,
                    Key dtype);
 
 // Most domains are of a common type, either "domain", "surface", "snow",
 // "canopy", etc.  This tries to guess the type for use in above read calls.
 Key guessDomainType(const Key& domain);
+
+
+// Read a suffix to construct domain sets.
+Key readSuffix(Teuchos::ParameterList& list,
+               const Key& basename,
+               const Key& default_name="");
 
 
 // Read a Key from a parameter list, given some default information Here
@@ -210,6 +265,16 @@ Key readKey(Teuchos::ParameterList& list,
             const Key& basename,
             const Key& default_name="");
 
+// Convenience function for requesting a list of names of Keys from an input
+// spec.
+Teuchos::Array<Key>
+readKeys(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
+         Teuchos::Array<Key> const* const default_names=nullptr);
+
+// Read a dependency tag or tag list from a parameter list, given some default
+// information.
+Tag readTag(Teuchos::ParameterList& list, const Tag& default_tag=Tag{});
+Tag readTag(Teuchos::ParameterList& list, const std::string& param, const Tag& default_tag=Tag{});
 
 } // namespace Keys
 } // namespace Amanzi

@@ -90,8 +90,6 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
   Real freundlich_n = 1;
   Real surface_site_density = 1;
 
-  int ntracers = primarySpeciesNames.size();
-  int nminerals = mineralNames.size();
   //
   // In order to thread the AMANZI chemistry, we had to give each thread 
   // its own chemSolve and components object.
@@ -431,7 +429,6 @@ AmanziChemHelper_Structured::Initialize(const FArrayBox& aqueous_saturation,    
     for (IntVect iv=thread_box.smallEnd(), End=thread_box.bigEnd(); iv<=End && chem_ok; thread_box.next(iv)) {
       Amanzi::AmanziChemistry::SimpleThermoDatabase& TheChemSolve = chemSolve[threadid];
       Amanzi::AmanziChemistry::BeakerState&      TheComponent = components[threadid];
-      Amanzi::AmanziChemistry::BeakerParameters& TheParameter = parameters[threadid];
       
       TheComponent.volume     = volume(iv,sVol);
       TheComponent.saturation = std::min(1., std::max(0., aqueous_saturation(iv,sSat)));

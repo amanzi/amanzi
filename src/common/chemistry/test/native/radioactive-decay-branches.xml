@@ -1,0 +1,89 @@
+<ParameterList>
+<ParameterList name="primary species">
+  <ParameterList name="In">
+    <Parameter name="ion size parameter" type="double" value="0.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="114.818"/>
+  </ParameterList>
+  <ParameterList name="Sn">
+    <Parameter name="ion size parameter" type="double" value="0.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="118.710"/>
+  </ParameterList>
+  <ParameterList name="Sb">
+    <Parameter name="ion size parameter" type="double" value="0.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="121.760"/>
+  </ParameterList>
+  <ParameterList name="mTe">
+    <Parameter name="ion size parameter" type="double" value="0.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="127.60"/>
+  </ParameterList>
+  <ParameterList name="Te">
+    <Parameter name="ion size parameter" type="double" value="0.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="127.60"/>
+  </ParameterList>
+  <ParameterList name="I">
+    <Parameter name="ion size parameter" type="double" value="0.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="126.90"/>
+  </ParameterList>
+  <ParameterList name="mXe">
+    <Parameter name="ion size parameter" type="double" value="0.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="131.293"/>
+  </ParameterList>
+  <ParameterList name="Xe">
+    <Parameter name="ion size parameter" type="double" value="0.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="131.293"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="radioactive decay">
+  <ParameterList name="complex_0">
+    <Parameter name="reactant" type="string" value="In"/>
+    <Parameter name="product" type="string" value="0.982 Sn"/>
+    <Parameter name="half life" type="double" value="0.282"/>
+  </ParameterList>
+  <ParameterList name="complex_1">
+    <Parameter name="reactant" type="string" value="Sn"/>
+    <Parameter name="product" type="string" value="1.0 Sb"/>
+    <Parameter name="half life" type="double" value="56.0"/>
+  </ParameterList>
+  <ParameterList name="complex_2">
+    <Parameter name="reactant" type="string" value="Sb"/>
+    <Parameter name="product" type="string" value="0.07 mTe 0.93 Te"/>
+    <Parameter name="half life" type="double" value="1381.8"/>
+  </ParameterList>
+  <ParameterList name="complex_3">
+    <Parameter name="reactant" type="string" value="mTe"/>
+    <Parameter name="product" type="string" value="0.18 Te 0.82 I"/>
+    <Parameter name="half life" type="double" value="116640.0"/>
+  </ParameterList>
+  <ParameterList name="complex_4">
+    <Parameter name="reactant" type="string" value="Te"/>
+    <Parameter name="product" type="string" value="1.0 I"/>
+    <Parameter name="half life" type="double" value="1500.0"/>
+  </ParameterList>
+  <ParameterList name="complex_5">
+    <Parameter name="reactant" type="string" value="I"/>
+    <Parameter name="product" type="string" value="0.014 mXe 0.986 Xe"/>
+    <Parameter name="half life" type="double" value="692988.48"/>
+  </ParameterList>
+  <ParameterList name="complex_6">
+    <Parameter name="reactant" type="string" value="mXe"/>
+    <Parameter name="product" type="string" value="1.0 Xe"/>
+    <Parameter name="half life" type="double" value="1022976.0"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="verbose object">
+  <Parameter name="verbosity level" type="string" value="high"/>
+  <Parameter name="hide line prefix" type="bool" value="true"/>
+  <Parameter name="output filename" type="string" value="batch_native.test"/>
+</ParameterList>
+</ParameterList>
+

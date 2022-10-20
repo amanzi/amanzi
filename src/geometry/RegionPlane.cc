@@ -30,14 +30,14 @@ RegionPlane::RegionPlane(const std::string& name,
                          const Point& p,
                          const Point& normal,
                          const LifeCycleType lifecycle)
-    : Region(name, id, true, PLANE, p.dim()-1, p.dim(), lifecycle),
+    : Region(name, id, true, RegionType::PLANE, p.dim()-1, p.dim(), lifecycle),
       p_(p),
       n_(normal/norm(normal))
 {
   if (p_.dim() != n_.dim()) {
     Errors::Message mesg;
     mesg << "Mismatch in point and normal dimensions of RegionPlane "
-         << Region::name();
+         << Region::get_name();
     Exceptions::amanzi_throw(mesg);
   }
 }
@@ -50,10 +50,10 @@ bool
 RegionPlane::inside(const Point& p) const
 {
 #ifdef ENABLE_DBC
-  if (p_.dim() != n_.dim()) {
+  if (p.dim() != n_.dim()) {
     Errors::Message mesg;
     mesg << "Mismatch in point dimension of RegionPlane \""
-         << Region::name() << "\" and query point.";
+         << Region::get_name() << "\" and query point.";
     Exceptions::amanzi_throw(mesg);
   }
 #endif

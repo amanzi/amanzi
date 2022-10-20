@@ -178,8 +178,9 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
   // main members
   // -- virtual methods potentially altered by the schema, Schur complements
   virtual int Apply(const CompositeVector& X, CompositeVector& Y) const override {
-    return Apply(X,Y,0.0);
+    return Apply(X, Y, 0.0);
   }
+  // -- icomputes Y = A * X + scalar * Y
   virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
   virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar=0.0) const;
   virtual int ApplyUnassembled(const CompositeVector& X, CompositeVector& Y, double scalar=0.0) const;
@@ -279,7 +280,7 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
   op_iterator FindMatrixOp(int schema_dofs, int matching_rule, bool action);
 
   // block mutate
-  void OpPushBack(const Teuchos::RCP<Op>& block);
+  void OpPushBack(const Teuchos::RCP<Op>& op) { ops_.push_back(op); }
   void OpExtend(op_iterator begin, op_iterator end);
   void OpReplace(const Teuchos::RCP<Op>& op, int index) { ops_[index] = op; }
 

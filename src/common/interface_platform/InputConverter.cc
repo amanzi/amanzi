@@ -11,14 +11,15 @@
 */
 
 #include <algorithm>
+#include <cfloat>
 #include <fstream>
 #include <locale>
+#include <cfloat>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
 
 // TPLs
-#include <boost/lexical_cast.hpp>
 #include <boost/filesystem/operations.hpp>
 
 #include "errors.hh"
@@ -95,10 +96,10 @@ xercesc::DOMDocument* OpenXMLInput(XercesDOMParser* parser,
 * Various constructors.
 ****************************************************************** */
 InputConverter::InputConverter(const std::string& input_filename):
+    units_("molar"),
     xmlfilename_(input_filename),
     doc_(NULL),
-    parser_(NULL),
-    units_("molar")
+    parser_(NULL)
 {
   parser_ = CreateXMLParser();
   doc_ = OpenXMLInput(parser_, input_filename);
@@ -107,10 +108,10 @@ InputConverter::InputConverter(const std::string& input_filename):
 
 InputConverter::InputConverter(const std::string& input_filename,
                                xercesc::DOMDocument* input_doc):
+    units_("molar"),
     xmlfilename_(input_filename),
     doc_(input_doc),
-    parser_(NULL),
-    units_("molar")
+    parser_(NULL)
 {
   FilterNodes("comments");
 }
@@ -162,13 +163,13 @@ void InputConverter::ParseVersion_()
     
     try {
       getline(ss, ver, '.');
-      major = boost::lexical_cast<int>(ver);
+      major = std::stoi(ver);
       
       getline(ss, ver, '.');
-      minor = boost::lexical_cast<int>(ver);
+      minor = std::stoi(ver);
       
       getline(ss,ver);
-      micro = boost::lexical_cast<int>(ver);
+      micro = std::stoi(ver);
     }
     catch (...) {
       Errors::Message msg("The version string in the input file '" + version + 
@@ -1016,6 +1017,23 @@ int InputConverter::GetPosition_(const std::vector<std::string>& names, const st
 
 
 /* ******************************************************************
+* Useful function to get a root of domain subtree
+****************************************************************** */
+DOMNode* InputConverter::GetRoot_(const std::string& domain, bool& flag)
+{
+  DOMNode* root;
+  if (domain == "fracture") {
+    root = GetUniqueElementByTagsString_("fracture_network", flag);
+  } else {
+    root = doc_->getDocumentElement();
+    flag = true;
+  }
+
+  return root;
+}
+
+
+/* ******************************************************************
 * Converts string of names separated by comma to array of strings.
 ****************************************************************** */
 std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
@@ -1055,8 +1073,8 @@ double InputConverter::ConvertUnits_(
 
   double out;
   try {
-    out = boost::lexical_cast<double>(data);
-  } catch (boost::bad_lexical_cast&) {
+    out = std::stod(std::string(data));
+  } catch (...) {
     Errors::Message msg;
     msg << "\nInput string \"" << val <<"\" cannot be converted to double + optional unit."
         << "\nThe string was parsed as \"" << data <<"\".\n";

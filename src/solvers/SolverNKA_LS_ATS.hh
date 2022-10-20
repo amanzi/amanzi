@@ -56,7 +56,7 @@ class SolverNKA_LS_ATS : public Solver<Vector, VectorSpace> {
 
   // mutators
   void set_tolerance(double tol) { tol_ = tol; }
-  void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
+  void set_pc_lag(int pc_lag) { pc_lag_ = pc_lag; }
   virtual void set_db(const Teuchos::RCP<ResidualDebugger>& db) {
     db_ = db;
   }
@@ -265,7 +265,6 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
   double l2_error(0.), previous_l2_error(0.);
   bool nka_applied(false), nka_restarted(false);
   int nka_itr = 0;
-  int prec_error;
   int db_write_iter = 0;
 
   // Evaluate the nonlinear function.
@@ -321,7 +320,7 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
     du_pic->PutScalar(0.);
-    prec_error = fn_->ApplyPreconditioner(res, du_pic);
+    fn_->ApplyPreconditioner(res, du_pic);
 
     if (nka_restarted) {
       // NKA was working, but failed.  Reset the iteration counter.
@@ -469,7 +468,7 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
           
         // minimize along the search path from min_alpha to endpoint
         double left = min_alpha_;
-        boost::uintmax_t ls_itrs(max_ls_itrs_);
+        std::uintmax_t ls_itrs(max_ls_itrs_);
         std::pair<double,double> result = boost::math::tools::brent_find_minima(
             linesearch_func, left, endpoint, bits_, ls_itrs);
         fun_calls_ += ls_itrs;

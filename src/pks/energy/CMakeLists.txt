@@ -132,6 +132,7 @@ if (BUILD_TESTS)
     # Test: 4
     add_amanzi_test(energy_one_phase energy_one_phase
                     KIND int
+                    NPROCS 2 
                     SOURCE test/Main.cc test/energy_one_phase.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 

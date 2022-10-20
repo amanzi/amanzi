@@ -29,14 +29,14 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
   // add diffusion operator
   op_->RestoreCheckPoint();
  
-  if (wells_on && S_->HasField("well_index")) {
-    const CompositeVector& wi = *S_->GetFieldData("well_index");
+  if (wells_on && S_->HasRecord("well_index")) {
+    const auto& wi = S_->Get<CompositeVector>("well_index");
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
   op_diff_->ApplyBCs(true, true, true);
   CompositeVector& rhs = *op_->rhs();
-  if (wells_on) AddSourceTerms(rhs);
+  if (wells_on) AddSourceTerms(rhs, 1.0);
 
   op_->ComputeInverse();
   int ierr = op_->ApplyInverse(rhs, *solution);

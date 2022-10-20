@@ -51,8 +51,7 @@ void RunTestDarcyWell(std::string controller, bool fit) {
 
   // create an MSTK mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   Preference pref;
   pref.clear();
@@ -78,25 +77,25 @@ void RunTestDarcyWell(std::string controller, bool fit) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
-  DPK->Setup(S.ptr());
+  auto soln = Teuchos::rcp(new TreeVector());
+  auto DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
+  DPK->Setup();
   S->Setup();
   S->InitializeFields();
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd("flow"); 
+  std::string passwd(""); 
+  auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
+  double diff_in_perm = 0.0;
 
-  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
-  double diff_in_perm = 0.;
-  if (!S->GetField("permeability")->initialized()) {
+  if (!S->GetRecord("permeability").initialized()) {
     for (int c = 0; c < K.MyLength(); c++) {
       const AmanziGeometry::Point xc = mesh->cell_centroid(c);
       K[0][c] = 0.1 + std::sin(xc[0]) * 0.02;
       K[1][c] = 2.0 + std::cos(xc[1]) * 0.4;
     }
-    S->GetField("permeability", "flow")->set_initialized();
+    S->GetRecordW("permeability", "permeability").set_initialized();
   } else{
     for (int c = 0; c < K.MyLength(); c++) {
       const AmanziGeometry::Point xc = mesh->cell_centroid(c);
@@ -109,23 +108,18 @@ void RunTestDarcyWell(std::string controller, bool fit) {
     
 
   // -- fluid density and viscosity
-  *S->GetScalarData("const_fluid_density", passwd) = 1.0;
-  S->GetField("const_fluid_density", "flow")->set_initialized();
+  S->GetW<double>("const_fluid_density", "state") = 1.0;
+  S->GetRecordW("const_fluid_density", "state").set_initialized();
 
-  *S->GetScalarData("const_fluid_viscosity", passwd) = 1.0;
-  S->GetField("const_fluid_viscosity", "flow")->set_initialized();
-
-  // -- gravity
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
-  gravity[1] = -1.0;
-  S->GetField("gravity", "state")->set_initialized();
+  S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
+  S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
 
   // -- storativity
-  S->GetFieldData("specific_storage", passwd)->PutScalar(0.1);
-  S->GetField("specific_storage", "flow")->set_initialized();
+  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.1);
+  S->GetRecordW("specific_storage", passwd).set_initialized();
 
   // initialize the Darcy process kernel
-  DPK->Initialize(S.ptr());
+  DPK->Initialize();
 
   std::string filename = controller.replace(controller.size()-4, 4, "_flow2D.gmv");
 
@@ -135,11 +129,11 @@ void RunTestDarcyWell(std::string controller, bool fit) {
     t_new = t_old + dt;
 
     DPK->AdvanceStep(t_old, t_new);
-    DPK->CommitStep(t_old, t_new, S);
+    DPK->CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
 
-    const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
+    const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
     if (MyPID == 0) {
       // filename = controller.replace(controller.size()-5, 5, "_flow2D.gmv");
       // GMV::open_data_file(*mesh, filename);
@@ -217,40 +211,35 @@ void Run_3D_DarcyWell(std::string controller) {
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
-  DPK->Setup(S.ptr());
+  DPK->Setup();
   S->Setup();
   S->InitializeFields();
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd("flow"); 
-  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
+  std::string passwd(""); 
+  auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   
   for (int c = 0; c < K.MyLength(); c++) {
     K[0][c] = 0.1;
     K[1][c] = 2.0;
     K[2][c] = 2.0;
   }
-  S->GetField("permeability", "flow")->set_initialized();
+  S->GetRecordW("permeability", "permeability").set_initialized();
 
   // -- fluid density and viscosity
-  *S->GetScalarData("const_fluid_density", passwd) = 1.0;
-  S->GetField("const_fluid_density", "flow")->set_initialized();
+  S->GetW<double>("const_fluid_density", "state") = 1.0;
+  S->GetRecordW("const_fluid_density", "state").set_initialized();
 
-  *S->GetScalarData("const_fluid_viscosity", passwd) = 1.0;
-  S->GetField("const_fluid_viscosity", "flow")->set_initialized();
-
-  // -- gravity
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
-  gravity[2] = -1.0;
-  S->GetField("gravity", "state")->set_initialized();
+  S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
+  S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
 
   // -- storativity
-  S->GetFieldData("specific_storage", passwd)->PutScalar(0.1);
-  S->GetField("specific_storage", "flow")->set_initialized();
+  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.1);
+  S->GetRecordW("specific_storage", passwd).set_initialized();
 
   // initialize the Darcy process kernel
-  DPK->Initialize(S.ptr());
+  DPK->Initialize();
 
   std::string filename = controller.replace(controller.size()-4, 4, "_flow3D.gmv");
 
@@ -260,12 +249,12 @@ void Run_3D_DarcyWell(std::string controller) {
     t_new = t_old + dt;
 
     DPK->AdvanceStep(t_old, t_new);
-    DPK->CommitStep(t_old, t_new, S);
+    DPK->CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
 
     if (MyPID == 0) {
-      const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
+      const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
       GMV::open_data_file(*mesh, filename);
       GMV::start_data();
       GMV::write_cell_data(p, 0, "pressure");
@@ -317,60 +306,57 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  std::string passwd(""); 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
-  DPK->Setup(S.ptr());
+  DPK->Setup();
   S->Setup();
   S->InitializeFields();
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd("flow"); 
-  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
+  auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   
   for (int c = 0; c < K.MyLength(); c++) {
     K[0][c] = 10.;
     K[1][c] = 10.;
     K[2][c] = 1.;
   }
-  S->GetField("permeability", "flow")->set_initialized();
+  S->GetRecordW("permeability", "permeability").set_initialized();
 
   // -- fluid density and viscosity
-  *S->GetScalarData("const_fluid_density", passwd) = 1.0;
-  S->GetField("const_fluid_density", "flow")->set_initialized();
+  S->GetW<double>("const_fluid_density", "state") = 1.0;
+  S->GetRecordW("const_fluid_density", "state").set_initialized();
 
-  *S->GetScalarData("const_fluid_viscosity", passwd) = 1.0;
-  S->GetField("const_fluid_viscosity", "flow")->set_initialized();
-
-  // -- gravity
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
-  gravity[2] = -1.0;
-  S->GetField("gravity", "state")->set_initialized();
+  S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
+  S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
 
   // -- storativity
-  S->GetFieldData("specific_storage", passwd)->PutScalar(0.);
-  S->GetField("specific_storage", "flow")->set_initialized();
+  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.0);
+  S->GetRecordW("specific_storage", passwd).set_initialized();
 
-  S->GetFieldData("porosity", "porosity")->PutScalar(1.);
-  S->GetField("porosity", "porosity")->set_initialized();
+  S->GetW<CompositeVector>("porosity", "porosity").PutScalar(1.0);
+  S->GetRecordW("porosity", "porosity").set_initialized();
 
   // initialize the Darcy process kernel
-  DPK->Initialize(S.ptr());
+  DPK->Initialize();
 
   //std::string filename = controller.replace(controller.size()-4, 4, "_flow3D.gmv");
   std::string filename = "flow_darcy_well_peaceman_3D.gmv";
 
   // steady_state solution
-  DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", "flow"), true);
+  DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), true);
 
-  const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
+  const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
   Epetra_MultiVector err_p(p), p_exact(p);
 
-  double Q = -100.;
+  auto gravity = S->Get<AmanziGeometry::Point>("gravity");
+
+  double Q = -100.0;
   double rw = 0.1;
-  double k = 10.;
-  double h = 5.;
-  double pw = 10.;
+  double k = 10.0;
+  double h = 5.0;
+  double pw = 10.0;
   double depth = 2.5;
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -380,9 +366,9 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double r = sqrt(xc[0]*xc[0] + xc[1]*xc[1]);
     double p_ex;
-    p_ex = pw + gravity[2]*(xc[2] + depth);
+    p_ex = pw + gravity[2] * (xc[2] + depth);
     if (r > 1e-3) {
-      p_ex = p_ex + Q/(2*M_PI*k*h)*(log(r) - log(rw));
+      p_ex = p_ex + Q / (2*M_PI*k*h) * (log(r) - log(rw));
     } else {
       p_ex = p[0][c];
     }
@@ -415,8 +401,8 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
     GMV::write_cell_data(p, 0, "pressure");
     GMV::write_cell_data(p_exact, 0, "exact");
     GMV::write_cell_data(err_p, 0, "error");
-    if (S->HasField("well_index")) {
-      const Epetra_MultiVector& wi = *S->GetFieldData("well_index")->ViewComponent("cell");
+    if (S->HasRecord("well_index")) {
+      const auto& wi = *S->Get<CompositeVector>("well_index").ViewComponent("cell");
       GMV::write_cell_data(wi, 0, "well_index");
     }
     GMV::close_data_file();

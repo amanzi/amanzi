@@ -10,21 +10,25 @@ Checkpointing for state.
 #include <iostream>
 #include <iomanip>
 
-#include "mpi.h"
 #include "boost/filesystem.hpp"
+#include "Epetra_MpiComm.h"
+#include "mpi.h"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 #include "Checkpoint.hh"
 #include "State.hh"
-#include "Epetra_MpiComm.h"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "primary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 
-Checkpoint::Checkpoint(Teuchos::ParameterList& plist,
-                       const State& S) :
-  IOEvent(plist),
-  old_(true)
+Checkpoint::Checkpoint(bool single_file) : single_file_(single_file)
+{
+  output_["domain"] = Teuchos::rcp(new HDF5_MPI(Amanzi::getDefaultComm()));
+  output_["domain"]->setTrackXdmf(false);
+}
+
+Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const State& S)
+  : IOEvent(plist),
+    single_file_(true)
 {
   ReadParameters_();
 
@@ -34,12 +38,17 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist,
   this->getOStream()->setShowLinePrefix(true);
 
   // Read the sublist for verbosity settings.
-  Teuchos::readVerboseObjectSublist(&plist_,this);
+  Teuchos::readVerboseObjectSublist(&plist_, this);
 
   // Set up the HDF5 objects
-  if (old_) {
-    // Old style is one checkpoint file on MPI_COMM_WORLD
-    auto comm = Amanzi::getDefaultComm();
+  if (single_file_) {
+    // Single_File style is one checkpoint file on "domain"'s comm
+    Comm_ptr_type comm;
+    if (S.HasMesh("domain")) {
+      comm = S.GetMesh()->get_comm();
+    } else {
+      comm = Amanzi::getDefaultComm();
+    }
     output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm));
     output_["domain"]->setTrackXdmf(false);
 
@@ -53,15 +62,15 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist,
         msg << "Checkpointing: cannot use single file checkpointing when not all meshes are on MPI_COMM_WORLD (mesh \""
             << domain << "\" not on MPI_COMM_WORLD).  Using multi-file checkpointing.  (Hide this warning by setting \"single file checkpoint\" to \"false\" in the \"checkpoint\" list.";
         std::cerr << "WARNING: " << msg.str() << std::endl;
-        old_ = false;
+        single_file_ = false;
         break;
       }
     }
   }
 
   // NOTE: do not make this an 'else' clause!
-  if (!old_) {
-    for (auto domain=S.mesh_begin(); domain!=S.mesh_end(); ++domain) {
+  if (!single_file_) {
+    for (auto domain = S.mesh_begin(); domain != S.mesh_end(); ++domain) {
       const auto& mesh = S.GetMesh(domain->first);
       output_[domain->first] = Teuchos::rcp(new HDF5_MPI(mesh->get_comm()));
       output_[domain->first]->setTrackXdmf(false);
@@ -70,11 +79,63 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist,
 }
 
 
-// this constructor makes an object for reading
-Checkpoint::Checkpoint(bool old) :
-  IOEvent(),
-  old_(old)
-{}
+// Constructor for reading
+Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S)
+    : IOEvent()
+{
+  // if provided a directory, use new style
+  if (boost::filesystem::is_directory(file_or_dirname)) {
+    single_file_ = false;
+  } else if (boost::filesystem::is_regular_file(file_or_dirname)) {
+    single_file_ = true;
+  } else {
+    Errors::Message message;
+    message << "Checkpoint::Read: location \"" << file_or_dirname << "\" does not exist.";
+    Exceptions::amanzi_throw(message);
+  }
+
+  // create the readers
+  if (single_file_) {
+    auto comm = S.GetMesh()->get_comm();
+    output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, file_or_dirname));
+    output_["domain"]->open_h5file(true);
+
+  } else {
+    for (auto domain=S.mesh_begin(); domain!=S.mesh_end(); ++domain) {
+      const auto& mesh = S.GetMesh(domain->first);
+
+      Key domain_name = Keys::replace_all(domain->first, ":", "-");
+      boost::filesystem::path chkp_file = boost::filesystem::path(file_or_dirname) / (domain_name+".h5");
+      output_[domain->first] = Teuchos::rcp(new HDF5_MPI(mesh->get_comm(), chkp_file.string()));
+      output_[domain->first]->open_h5file(true);
+    }
+  }
+}
+
+
+// Constructor for reading
+Checkpoint::Checkpoint(const std::string& filename, const Comm_ptr_type& comm, const std::string& domain)
+    : IOEvent()
+{
+  // if provided a directory, use new style
+  if (boost::filesystem::is_directory(filename)) {
+    Key domain_name = Keys::replace_all(domain, ":", "-");
+    boost::filesystem::path chkp_file = boost::filesystem::path(filename) / (domain_name+".h5");
+    single_file_ = false;
+    output_[domain] = Teuchos::rcp(new HDF5_MPI(comm, chkp_file.string()));
+    output_[domain]->open_h5file(true);
+
+  } else if (boost::filesystem::is_regular_file(filename)) {
+    single_file_ = true;
+    output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, filename));
+    output_["domain"]->open_h5file(true);
+  } else {
+    Errors::Message message;
+    message << "Checkpoint::Read: location \"" << filename << "\" does not exist.";
+    Exceptions::amanzi_throw(message);
+  }
+
+}
 
 
 // -----------------------------------------------------------------------------
@@ -83,7 +144,7 @@ Checkpoint::Checkpoint(bool old) :
 void Checkpoint::ReadParameters_() {
   filebasename_ = plist_.get<std::string>("file name base","checkpoint");
   filenamedigits_ = plist_.get<int>("file name digits", 5);
-  old_ = plist_.get<bool>("single file checkpoint", true);
+  single_file_ = plist_.get<bool>("single file checkpoint", true);
 };
 
 
@@ -96,14 +157,15 @@ void Checkpoint::CreateFile(const int cycle) {
   oss.width(filenamedigits_);
   oss << std::right << cycle;
 
-  if (old_) {
+  if (single_file_) {
     output_["domain"]->createDataFile(oss.str());
     output_["domain"]->open_h5file();
 
   } else {
     boost::filesystem::create_directory(oss.str());
     for (const auto& file_out : output_) {
-      boost::filesystem::path chkp_file = boost::filesystem::path(oss.str()) / file_out.first;
+      Key filename = Keys::replace_all(file_out.first, ":", "-");
+      boost::filesystem::path chkp_file = boost::filesystem::path(oss.str()) / filename;
       file_out.second->createDataFile(chkp_file.string());
       file_out.second->open_h5file();
     }
@@ -119,7 +181,7 @@ void Checkpoint::CreateFinalFile(const int cycle) {
   oss.width(filenamedigits_);
   oss << std::right << cycle;
 
-  if (old_) {
+  if (single_file_) {
     std::string ch_file = oss.str() + ".h5";
     std::string ch_final = filebasename_ + "_final.h5";
     if (boost::filesystem::is_regular_file(ch_final.data()))
@@ -136,122 +198,43 @@ void Checkpoint::CreateFinalFile(const int cycle) {
 }
 
 
+//
+// These are just plain old data in the state now -- can we not read these
+// here?  They will get picked up in the data loop of reads.
+//
+void Checkpoint::ReadAttributes(State& S) {}
+
+
 void Checkpoint::Finalize() {
   for (const auto& file_out : output_) {
     file_out.second->close_h5file();
   }
 }
 
+
 void Checkpoint::Write(const State& S,
-                       double dt,
-                       bool final,
+                       WriteType write_type,
                        Amanzi::ObservationData* obs_data)
 {
   if (!is_disabled()) {
-    CreateFile(S.cycle());
+    CreateFile(S.get_cycle());
+
+    // write num procs, as checkpoint files are specific to this
+    Write("mpi_num_procs", S.GetMesh()->get_comm()->NumProc());
 
     // create hard link to the final file
-    if (final && S.GetMesh()->get_comm()->MyPID() == 0)
-      CreateFinalFile(S.cycle());
+    if ((write_type == WriteType::FINAL) &&
+        S.GetMesh()->get_comm()->MyPID() == 0)
+      CreateFinalFile(S.get_cycle());
 
-    for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
-      field->second->WriteCheckpoint(*this);
+    for (auto it = S.data_begin(); it != S.data_end(); ++it) {
+      it->second->WriteCheckpoint(*this, write_type == WriteType::POST_MORTEM);
     }
-    WriteAttributes(S.GetMesh("domain")->get_comm()->NumProc(),
-                    S.time(), dt, S.cycle(), S.position());
+
     WriteObservations(obs_data);
     Finalize();
   }
 }
-
-double Checkpoint::Read(State& S, const std::string& file_or_dirname)
-{
-  // if provided a directory, use new style
-  if (boost::filesystem::is_directory(file_or_dirname)) {
-    old_ = false;
-  } else if (boost::filesystem::is_regular_file(file_or_dirname)) {
-    old_ = true;
-  } else {
-    Errors::Message message;
-    message << "Checkpoint::Read: location \"" << file_or_dirname << "\" does not exist.";
-    Exceptions::amanzi_throw(message);
-  }
-
-  // create the readers
-  auto comm = S.GetMesh()->get_comm();
-  if (old_) {
-    output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, file_or_dirname));
-    output_["domain"]->open_h5file(true);
-
-  } else {
-    for (auto domain=S.mesh_begin(); domain!=S.mesh_end(); ++domain) {
-      const auto& mesh = S.GetMesh(domain->first);
-
-      boost::filesystem::path chkp_file = boost::filesystem::path(file_or_dirname) / (domain->first+".h5");
-      output_[domain->first] = Teuchos::rcp(new HDF5_MPI(mesh->get_comm(), chkp_file.string()));
-      output_[domain->first]->open_h5file(true);
-    }
-  }
-
-  // load the attributes
-  double time(0.);
-  output_["domain"]->readAttrReal(time, "time");
-  S.set_time(time);
-
-  double dt(0.);
-  output_["domain"]->readAttrReal(dt, "dt");
-
-  int cycle(0);
-  output_["domain"]->readAttrInt(cycle, "cycle");
-  S.set_cycle(cycle);
-
-  int pos(0);
-  output_["domain"]->readAttrInt(pos, "position");
-  S.set_position(pos);
-
-  // load the number of processes and ensure they are the same -- otherwise
-  // the below just gives crap.
-  int rank(-1);
-  output_["domain"]->readAttrInt(rank, "mpi_comm_world_rank");
-  if (comm->NumProc() != rank) {
-    Errors::Message message;
-    message << "Requested checkpoint file " << file_or_dirname << " was created on "
-            << rank << " processes, making it incompatible with this run on "
-            << comm->NumProc() << " process.";
-    Exceptions::amanzi_throw(message);
-  }
-
-  // load the data
-  for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
-    if (field->second->type() == COMPOSITE_VECTOR_FIELD &&
-        field->second->io_checkpoint()) {
-      Key domain = old_ ? "domain" : Keys::getDomain(field->first);
-      if (domain.empty()) domain = "domain";
-
-      bool read_complete = field->second->ReadCheckpoint(*output_[domain]);
-      if (read_complete) {
-        if (S.HasFieldEvaluator(field->first)) {
-          Teuchos::RCP<FieldEvaluator> fm = S.GetFieldEvaluator(field->first);
-          Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator =
-            Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-          if (solution_evaluator != Teuchos::null){
-            Teuchos::Ptr<State> S_ptr(&S);
-            solution_evaluator->SetFieldAsChanged(S_ptr);
-          }
-        }
-        field->second->set_initialized();
-      }
-    }
-  }
-
-  // close files
-  for (auto& file_out : output_) {
-    file_out.second->close_h5file();
-  }
-  return dt;
-}
-
-
 
 void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
                              const std::vector<std::string>& names ) const {
@@ -260,7 +243,7 @@ void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
     Exceptions::amanzi_throw(msg);
   }
 
-  if (old_) {
+  if (single_file_) {
     const auto& output = output_.at("domain");
     for (int i=0; i!=vec.NumVectors(); ++i) {
       output->writeCellDataReal(*vec(i), names[i]);
@@ -269,7 +252,7 @@ void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
     // double check that the comms are consistent and that the user is
     // following naming best practices
     Key domain_name = Keys::getDomain(names[0]);
-    if (domain_name.empty()) domain_name = "domain";
+    if (!output_.count(domain_name)) domain_name = "domain";
     const auto& output = output_.at(domain_name);
 
     if (!sameComm(*output->Comm(), vec.Comm())) {
@@ -285,34 +268,28 @@ void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
 }
 
 
-// -----------------------------------------------------------------------------
-// Write simple attributes.
-// -----------------------------------------------------------------------------
-void Checkpoint::WriteAttributes(int comm_size, double time, double dt, int cycle, int position) const {
-  const auto& output = output_.at("domain");
-  output->writeAttrReal(time, "time");
-  output->writeAttrReal(dt, "dt");
-  output->writeAttrInt(cycle, "cycle");
-  output->writeAttrInt(position, "position");
-  output->writeAttrInt(comm_size, "mpi_comm_world_rank");
-};
+template <>
+void Checkpoint::Write(const std::string& name, const Epetra_Vector& vec) const
+{
+  if (single_file_) {
+    const auto& output = output_.at("domain");
+    output->writeCellDataReal(vec, name);
+  } else {
+    // double check that the comms are consistent and that the user is
+    // following naming best practices
+    Key domain_name = Keys::getDomain(name);
+    if (!output_.count(domain_name)) domain_name = "domain";
+    const auto& output = output_.at(domain_name);
 
+    if (!sameComm(*output->Comm(), vec.Comm())) {
+      Errors::Message msg;
+      msg << "Checkpoint::WriteVector : vector \"" << name << "\" communicator does not match that of domain \"" << domain_name << "\"";
+      Exceptions::amanzi_throw(msg);
+    }
 
-void Checkpoint::WriteAttributes(int comm_size, double time, double dt, int cycle) const {
-  const auto& output = output_.at("domain");
-  output->writeAttrReal(time, "time");
-  output->writeAttrReal(dt, "dt");
-  output->writeAttrInt(cycle, "cycle");
-  output->writeAttrInt(comm_size, "mpi_comm_world_rank");
-};
-
-
-void Checkpoint::WriteAttributes(int comm_size, double time, int cycle) const {
-  const auto& output = output_.at("domain");
-  output->writeAttrReal(time, "time");
-  output->writeAttrInt(cycle, "cycle");
-  output->writeAttrInt(comm_size, "mpi_comm_world_rank");
-};
+    output->writeCellDataReal(vec, name);
+  }
+}
 
 
 // -----------------------------------------------------------------------------
@@ -376,5 +353,6 @@ void Checkpoint::WriteObservations(ObservationData* obs_data)
     if (tmp_data != NULL) free(tmp_data);
   }
 }
+
 
 }  // namespace Amanzi

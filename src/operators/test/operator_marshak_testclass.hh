@@ -16,9 +16,9 @@ namespace Amanzi{
 class HeatConduction {
  public:
   HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh, double T0)
-    : mesh_(mesh),
+    : TemperatureSource(100.0),
       TemperatureFloor(T0),
-      TemperatureSource(100.0) { 
+      mesh_(mesh) {
     CompositeVectorSpace cvs;
     cvs.SetMesh(mesh_)->SetGhosted(true)
         ->AddComponent("cell", AmanziMesh::CELL, 1)
@@ -34,7 +34,7 @@ class HeatConduction {
                     const std::vector<int>& bc_model,
                     const std::vector<double>& bc_value) { 
     const Epetra_MultiVector& uc = *u.ViewComponent("cell", true); 
-    const Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true); 
+    Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true); 
 
     int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     for (int c = 0; c < ncells; c++) {
@@ -45,7 +45,6 @@ class HeatConduction {
     Epetra_MultiVector& values_f = *values_->ViewComponent("face", true);
     for (int f = 0; f != bc_model.size(); ++f) {
       if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-        int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
         values_f[0][f] = std::pow(bc_value[f], 3.0);
       }
     }

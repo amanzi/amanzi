@@ -14,6 +14,7 @@
 
 #include "dbc.hh"
 
+#include "FracturePermModel_Constant.hh"
 #include "FracturePermModel_CubicLaw.hh"
 #include "FracturePermModel_Linear.hh"
 #include "FracturePermModelPartition.hh"
@@ -42,6 +43,8 @@ Teuchos::RCP<FracturePermModelPartition> CreateFracturePermModelPartition(
         fpm_list.push_back(Teuchos::rcp(new FracturePermModel_CubicLaw(sublist)));
       } else if (model == "linear") {
         fpm_list.push_back(Teuchos::rcp(new FracturePermModel_Linear(sublist)));
+      } else if (model == "constant") {
+        fpm_list.push_back(Teuchos::rcp(new FracturePermModel_Constant(sublist)));
       } else {
         AMANZI_ASSERT(0);
       }

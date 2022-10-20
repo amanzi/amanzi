@@ -11,14 +11,14 @@
 
 #include "Darcy_PK.hh"
 #include "Richards_PK.hh"
-#include "VWContentEvaluator.hh"
+#include "WaterStorage.hh"
 
 namespace Amanzi {
 namespace Flow {
 
 RegisteredPKFactory<Darcy_PK> Darcy_PK::reg_("darcy");
 RegisteredPKFactory<Richards_PK> Richards_PK::reg_("richards");
-Utils::RegisteredFactory<FieldEvaluator, VWContentEvaluator> VWContentEvaluator::reg_("water content");
+Utils::RegisteredFactory<Evaluator, WaterStorage> WaterStorage::reg_("water storage");
 
 }  // namespace Amanzi
 }  // namespace Flow

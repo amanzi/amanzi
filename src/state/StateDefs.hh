@@ -1,12 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-   ATS
+/*
+   State
 
-   License: see $ATS_DIR/COPYRIGHT
-   Author: Ethan Coon
+  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-   Some basic typedefs for State and company.
-   ------------------------------------------------------------------------- */
+  Author: Ethan Coon
+
+  Some basic typedefs for State and company.
+*/
 
 #ifndef AMANZI_STATE_DEFS_HH_
 #define AMANZI_STATE_DEFS_HH_
@@ -18,13 +21,26 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Key.hh"
+#include "Tag.hh"
 
 namespace Amanzi {
 
-// Fields
-typedef enum { NULL_FIELD_TYPE, COMPOSITE_VECTOR_FIELD, CONSTANT_VECTOR, CONSTANT_SCALAR } FieldType;
+typedef bool NullFactory;  // placeholder object for no factory required
 
-typedef enum { UNKNOWN, PRIMARY, SECONDARY, INDEPENDENT } EvaluatorType;
+namespace Tags {
+static const Tag DEFAULT("");
+static const Tag CURRENT("current");
+static const Tag INTER("inter");
+static const Tag NEXT(""); // an alias used by ATS
+static const Tag COPY("copy");
+}
+
+enum class EvaluatorType {
+  PRIMARY,
+  SECONDARY,
+  INDEPENDENT,
+  OTHER
+};
 
 } // namespace
 

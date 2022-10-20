@@ -70,34 +70,33 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
 
-  RPK->Setup(S.ptr());
+  RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd("flow"); 
-  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
+  std::string passwd(""); 
+  auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   
   for (int c = 0; c != K.MyLength(); ++c) {
     K[0][c] = 5.0e-13;
     K[1][c] = 5.0e-14;
   }
-  S->GetField("permeability", passwd)->set_initialized();
+  S->GetRecordW("permeability", "permeability").set_initialized();
 
   // -- fluid density and viscosity
-  double rho = *S->GetScalarData("const_fluid_density");
+  double rho = S->Get<double>("const_fluid_density");
 
-  S->GetFieldData("viscosity_liquid", "viscosity_liquid")->PutScalar(0.00089);
+  S->GetW<CompositeVector>("viscosity_liquid", "viscosity_liquid").PutScalar(0.00089);
 
   // -- gravity
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
-  double g = gravity[1] = -9.81;
-  S->GetField("gravity", "state")->set_initialized();
+  auto gravity = S->Get<AmanziGeometry::Point>("gravity");
+  double g = gravity[1];
 
   // create the initial pressure function
-  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");
+  auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   double p0(101325.0), z0(30.0);
   for (int c = 0; c < p.MyLength(); c++) {
@@ -106,7 +105,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   }
 
   // create Richards process kernel
-  RPK->Initialize(S.ptr());
+  RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   // solve the steady-state problem
@@ -120,9 +119,9 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   RPK->set_dt(1.0);
   printf("time step = %12.4f\n", RPK->get_dt());
   printf("seepage face total = %12.4f\n", RPK->seepage_mass());
-  RPK->CommitStep(0.0, 1.0, S);  // dummy times for flow
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times for flow
 
-  const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
+  const auto& ws = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
     GMV::start_data();

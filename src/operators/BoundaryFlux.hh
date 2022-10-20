@@ -94,15 +94,15 @@ class BoundaryFaceSolver {
                      double bnd_flux, int dir, double patm, 
                      double min_val, double max_val, double eps,
                      Teuchos::RCP<const Model> model, NonlinFunc test_fun) :
+    lambda_(lambda), 
+    cell_val_(cell_val), 
     trans_f_(trans_f), 
     g_f_(g_f), 
-    cell_val_(cell_val), 
-    lambda_(lambda), 
     patm_(patm), 
+    bnd_flux_(bnd_flux),
     min_val_(min_val),
     max_val_(max_val),
-    eps_(eps),
-    bnd_flux_(bnd_flux)
+    eps_(eps)
   {
     func_ = Teuchos::rcp(new BoundaryFluxFn<Model>(trans_f, lambda, cell_val, bnd_flux,
                                                    g_f, dir, patm, model, test_fun));

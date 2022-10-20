@@ -69,14 +69,14 @@ TEST(FLOW_POROSITY_MODELS) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, "flow", S, soln));
 
-  RPK->Setup(S.ptr());
+  RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
-  std::string passwd("flow"); 
-  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
+  std::string passwd(""); 
+  auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   
   AmanziMesh::Entity_ID_List block;
   mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
@@ -92,17 +92,13 @@ TEST(FLOW_POROSITY_MODELS) {
     K[0][c] = 0.5;
     K[1][c] = 0.5;
   }
-  S->GetField("permeability", "flow")->set_initialized();
+  S->GetRecordW("permeability", "permeability").set_initialized();
 
   // -- fluid density and vicosity
-  S->GetFieldData("viscosity_liquid", "viscosity_liquid")->PutScalar(1.0);
-
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
-  gravity[1] = -9.8;
-  S->GetField("gravity", "state")->set_initialized();
+  S->GetW<CompositeVector>("viscosity_liquid", "viscosity_liquid").PutScalar(1.0);
 
   // create the initial pressure function
-  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");
+  auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -110,7 +106,7 @@ TEST(FLOW_POROSITY_MODELS) {
   }
 
   // initialize the Richards process kernel
-  RPK->Initialize(S.ptr());
+  RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   // solve the problem 
@@ -121,11 +117,11 @@ TEST(FLOW_POROSITY_MODELS) {
   ti_specs.max_itrs = 400;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0, S);  // dummy times
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times
 
   // output
   double pmin, pmax;
-  Epetra_MultiVector& phi = *S->GetFieldData("porosity", "porosity")->ViewComponent("cell");
+  auto& phi = *S->GetW<CompositeVector>("porosity", "porosity").ViewComponent("cell");
   phi.MinValue(&pmin);
   phi.MaxValue(&pmax);
   CHECK(pmin + 0.02 < pmax);

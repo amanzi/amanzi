@@ -13,9 +13,9 @@
 #include <vector>
 
 // Amanzi
+#include "Mesh_Algorithms.hh"
 #include "nlfv.hh"
 #include "ParallelCommunication.hh"
-#include "WhetStoneMeshUtils.hh"
 
 #include "Op_Face_Cell.hh"
 #include "OperatorDefs.hh"
@@ -257,7 +257,7 @@ void PDE_DiffusionNLFV::InitStencils_()
       for (int i = 0; i < dim_; i++) {
         weight[k + i][f] = ws[i];
         (*stencil_faces_[k + i])[f] = faces[ids[i]];
-        (*stencil_cells_[k + i])[f] = WhetStone::cell_get_face_adj_cell(*mesh_, c, faces[ids[i]]);
+        (*stencil_cells_[k + i])[f] = cell_get_face_adj_cell(*mesh_, c, faces[ids[i]]);
       }
     }
   }
@@ -559,7 +559,7 @@ void PDE_DiffusionNLFV::OneSidedFluxCorrections_(
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) k_face = k_->ViewComponent("face");
 
-  int c1, c2, c3, k1, k2, dir;
+  int c1, c2, c3, k1, k2;
   double gamma, tmp;
   AmanziMesh::Entity_ID_List cells, cells_tmp;
 
@@ -713,7 +713,7 @@ void PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                                    const Teuchos::Ptr<CompositeVector>& flux) 
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
-  const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
+  // const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
   

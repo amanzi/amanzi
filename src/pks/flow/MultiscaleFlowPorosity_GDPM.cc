@@ -42,7 +42,7 @@ MultiscaleFlowPorosity_GDPM::MultiscaleFlowPorosity_GDPM(Teuchos::ParameterList&
 
 
 /* ******************************************************************
-* Compute water content.
+* Compute water storage.
 ****************************************************************** */
 double MultiscaleFlowPorosity_GDPM::ComputeField(double phi, double n_l, double pcm)
 {
@@ -51,7 +51,7 @@ double MultiscaleFlowPorosity_GDPM::ComputeField(double phi, double n_l, double 
 
 
 /* ******************************************************************
-* Main capability: cell-based Newton solver. It returns water content
+* Main capability: cell-based Newton solver. It returns water storage 
 * and pressure in the matrix. max_itrs is input/output parameter.
 ****************************************************************** */
 double MultiscaleFlowPorosity_GDPM::WaterContentMatrix(

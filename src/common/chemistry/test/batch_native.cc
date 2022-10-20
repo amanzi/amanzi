@@ -1,9 +1,11 @@
 #include <unistd.h>
 
 //#define ABORT_ON_FLOATING_POINT_EXCEPTIONS
-#ifdef __APPLE__
-  #include <xmmintrin.h>
-#endif
+// #ifdef __APPLE__
+//   #include <xmmintrin.h>
+// #endif
+
+#include "boost/detail/fenv.hpp"
 
 #include <cstdlib>
 #include <cctype>
@@ -75,6 +77,7 @@ void RunBatchNative(const std::string& filexml,
 #endif
 
   // default i/o level
+  double dt0 = dt;
   auto plist = Teuchos::getParametersFromXmlFile(filexml);
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Beaker", *plist));
 
@@ -156,10 +159,20 @@ void RunBatchNative(const std::string& filexml,
     double time(0.0);
 
     for (int n = 0; n < max_dt_steps; ++n) {
-      chem->ReactionStep(&state, parameters, dt);
-      // chem->CopyBeakerToState(&state);
-      time += dt;
-      if ((n + 1) % frequency == 0) chem->DisplayTotalColumns(time, state, false);
+      try {
+        chem->ReactionStep(&state, parameters, dt);
+        // chem->CopyBeakerToState(&state);
+        time += dt;
+        if ((n + 1) % frequency == 0) chem->DisplayTotalColumns(time, state, false);
+        dt = std::min(dt0, dt * 1.1);
+
+        // non-conservative clipping of small values
+        // for (int i = 0; i < ncomp; ++i)
+        //   state.total[i] = std::max(1.0e-200, state.total[i]);
+      } catch (...) {
+        chem->CopyStateToBeaker(state);
+        dt /= 2;
+      }
     }
     chem->Speciate(&state);
     chem->DisplayResults();
@@ -443,6 +456,18 @@ TEST(NATIVE_RADIOACTIVE_DECAY_SORBED) {
                  864000.0, 2000, 50);
 }
 
+TEST(NATIVE_RADIOACTIVE_DECAY_BRANCHES) {
+  std::vector<double> ict = { 8.7086e-05, 3.2169e-03, 3.4698e-03, 5.1930e-04,
+                              1.7495e-04, 2.5079e-06, 5.5912e-10, 1.9627e-10 };
+
+  std::vector<double> icm, icie, icfi, icts;
+  RunBatchNative("test/native/radioactive-decay-branches.xml",
+                 "test/native/radioactive-decay-branches.test",
+                 "unit",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.25, 1.0, 1.0,  // porosity, saturation, cell volume
+                 1.0e-1, 1000, 10);
+}
 
 TEST(NATIVE_SORPTION_ISOTHERMS) {
   std::vector<double> ict = { 1.0e-4, 1.0e-4, 1.0e-4 };

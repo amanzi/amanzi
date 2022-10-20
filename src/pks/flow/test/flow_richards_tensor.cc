@@ -77,24 +77,22 @@ void TestLinearPressure(bool saturated) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
 
-  RPK->Setup(S.ptr());
+  RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   // create Richards problem
-  RPK->Initialize(S.ptr());
+  RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   /* calculate the constant Darcy mass velocity */
-  double rho = *S->GetScalarData("const_fluid_density");
-  double mu = (*S->GetFieldData("viscosity_liquid")->ViewComponent("cell"))[0][0];
-  Epetra_Vector& gvec = *S->GetConstantVectorData("gravity", "state");
-  AmanziGeometry::Point g(3);
-  g.set(3, gvec.Values());
+  double rho = S->Get<double>("const_fluid_density");
+  double mu = (*S->Get<CompositeVector>("viscosity_liquid").ViewComponent("cell"))[0][0];
+  auto g = S->Get<AmanziGeometry::Point>("gravity");
 
   std::string passwd("flow");
-  Epetra_MultiVector& perm = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
+  auto& perm = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
   Point K(perm[0][0], perm[1][0], perm[2][0]);  // model the permeability tensor
   Point u0(1.0, 1.0, 1.0);
@@ -115,11 +113,11 @@ void TestLinearPressure(bool saturated) {
   ti_specs.max_itrs = 400;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0, S);  // dummy times for flow
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times for flow
 
   /* check accuracy */
-  const Epetra_MultiVector& pressure = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");
-  const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux", passwd)->ViewComponent("face");
+  const auto& pressure = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
+  const auto& flux = *S->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face");
 
   double err_p = 0.0, err_u = 0.0;
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

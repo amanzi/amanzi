@@ -67,8 +67,8 @@ class MatrixJF {
   MatrixJF(Teuchos::ParameterList& plist,
            const Teuchos::RCP<SolverFnBase<Vector> > fn,
            const VectorSpace& map) :
-      plist_(plist),
-      fn_(fn)
+      fn_(fn),
+      plist_(plist)
   {
     map_ = Teuchos::rcp(new VectorSpace(map));
     r0_ = Teuchos::rcp(new Vector(*map_));

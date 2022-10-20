@@ -230,19 +230,6 @@ class Mesh_MSTK : public Mesh {
 			    AmanziGeometry::Point *ncoord) const;
     
     
-  // Face coordinates - conventions same as face_to_nodes call 
-  // Number of nodes is the vector size divided by number of spatial dimensions
-  void face_get_coordinates(const Entity_ID faceid, 
-			    std::vector<AmanziGeometry::Point> *fcoords) const; 
-    
-  // Coordinates of cells in standard order (Exodus  II convention)
-  // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
-  // For a general polyhedron this will return the node coordinates in
-  // arbitrary order
-  // Number of nodes is vector size divided by number of spatial dimensions
-  void cell_get_coordinates(const Entity_ID cellid, 
-			    std::vector<AmanziGeometry::Point> *ccoords) const;
-    
   // Modify the coordinates of a node
   void node_set_coordinates(const Entity_ID nodeid, 
                             const AmanziGeometry::Point coords);

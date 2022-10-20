@@ -22,13 +22,14 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "DenseVector.hh"
+#include "FCT.hh"
 #include "Key.hh"
 #include "LimiterCell.hh"
 #include "PK.hh"
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
 #include "PK_Physical.hh"
-#include "ReconstructionCell.hh"
+#include "ReconstructionCellLinear.hh"
 #include "State.hh"
 #include "Tensor.hh"
 #include "Units.hh"
@@ -68,32 +69,38 @@ class Transport_PK : public PK_Physical {
     virtual ~Transport_PK() {};
 
   // members required by PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
+  virtual void Setup() override;
+  virtual void Initialize() override;
 
   virtual double get_dt() override;
   virtual void set_dt(double dt) override {};
 
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {};
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
+  virtual void CalculateDiagnostics(const Tag& tag) override {};
 
   virtual std::string name() override { return "transport"; }
 
   // main transport members
   // -- calculation of a stable time step needs saturations and darcy flux
-  double StableTimeStep();
+  double StableTimeStep(int n);
 
   // -- coupling with chemistry
   void SetupChemistry(Teuchos::RCP<AmanziChemistry::Chemistry_PK> chem_pk) { chem_pk_ = chem_pk; }
   void SetupAlquimia();
 
   // -- access members  
-  inline double cfl() { return cfl_; }
-  Teuchos::RCP<const State> state() { return S_; }
+  double cfl() { return cfl_; }
+  bool get_flag_dispersion() { return flag_dispersion_ || flag_diffusion_; }
   Teuchos::RCP<CompositeVector> total_component_concentration() { return tcc_tmp; }
+  void get_discretization_order(int* spatial, int* temporal) {
+    *spatial = spatial_disc_order;
+    *temporal = temporal_disc_order;
+  }
+
+  // -- modifiers
+  void set_current_component(int i) { current_component_ = i; }
 
   // -- control members
-  void CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents);
   void Policy(Teuchos::Ptr<State> S);
 
   void VV_CheckGEDproperty(Epetra_MultiVector& tracer) const; 
@@ -106,14 +113,19 @@ class Transport_PK : public PK_Physical {
 
   void CalculateLpErrors(AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2);
 
-  // -- limiters 
-  void LimiterBarthJespersen(const int component,
-                             Teuchos::RCP<const Epetra_Vector> scalar_field, 
-                             Teuchos::RCP<CompositeVector>& gradient, 
-                             Teuchos::RCP<Epetra_Vector>& limiter);
+  // multi-purpose wrapper for dispersion-diffusion solvers
+  // -- solves for all components is comp0 < 0.
+  // -- otherwise, it returns global operator for component comp0.
+  Teuchos::RCP<Operators::Operator> DispersionSolver(
+      const Epetra_MultiVector& tcc_prev,
+      Epetra_MultiVector& tcc_next,
+      double t_old, double t_new, int comp0 = -1);
 
  protected:
   void InitializeFields_();
+
+  void FunctionalTimeDerivative_MUSCL_(double t, const CompositeVector& component, CompositeVector& f, bool scale);
+  void FunctionalTimeDerivative_FCT_(double t, const CompositeVector& component, CompositeVector& f);
 
   // sources and sinks for components from n0 to n1 including
   void ComputeSources_(double tp, double dtp, Epetra_MultiVector& tcc,
@@ -130,16 +142,25 @@ class Transport_PK : public PK_Physical {
   // physical models
   // -- dispersion and diffusion
   void CalculateDispersionTensor_(
-      const Epetra_MultiVector& darcy_flux, 
-      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
+      const Epetra_MultiVector& porosity, const Epetra_MultiVector& water_content);
 
   void CalculateDiffusionTensor_(
       double md, int phase,
-      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
+      const Epetra_MultiVector& porosity,
+      const Epetra_MultiVector& saturation,
+      const Epetra_MultiVector& water_content);
 
   int FindDiffusionValue(const std::string& tcc_name, double* md, int* phase);
 
   void CalculateAxiSymmetryDirection();
+
+  // -- effective diffusion
+  void CalculateDiffusionTensorEffective_(
+      double mdl, double mdg, double kH,
+      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
+
+  void DiffusionSolverEffective(Epetra_MultiVector& tcc_next,
+                                double t_old, double t_new);
 
   // -- air-water partitioning using Henry's law. This is a temporary
   //    solution to get things moving.
@@ -166,7 +187,7 @@ class Transport_PK : public PK_Physical {
   int spatial_disc_order, temporal_disc_order, limiter_model;
 
   int nsubcycles;  // output information
-  bool internal_tests_, genericRK_;
+  bool internal_tests_;
   double internal_tests_tol_;
 
  protected:
@@ -174,10 +195,13 @@ class Transport_PK : public PK_Physical {
 
   // names of state fields 
   Key tcc_key_;
-  Key darcy_flux_key_;
+  Key vol_flowrate_key_, aperture_key_;
   Key porosity_key_, transport_porosity_key_, permeability_key_;
-  Key saturation_liquid_key_, prev_saturation_liquid_key_;
-  Key water_content_key_, prev_water_content_key_;
+  Key saturation_liquid_key_;
+  Key wc_key_, prev_wc_key_;
+
+  Key porosity_msp_key_;
+  Key water_content_msp_key_, prev_water_content_msp_key_;
 
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
@@ -185,20 +209,22 @@ class Transport_PK : public PK_Physical {
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
-  Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi, transport_phi;
+  Teuchos::RCP<const Epetra_MultiVector> phi, transport_phi;
     
-  Teuchos::RCP<const Epetra_MultiVector> ws_start, ws_end;  // data for subcycling 
-  Teuchos::RCP<Epetra_MultiVector> ws_subcycle_start, ws_subcycle_end;
+  Teuchos::RCP<const Epetra_MultiVector> wc_start, wc_end;  // data for subcycling 
+  Teuchos::RCP<Epetra_MultiVector> wc_subcycle_start, wc_subcycle_end;
 
-  std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // Sources and sinks
+  std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // sources and sinks
   std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
   double cfl_, dt_, dt_debug_, t_physics_;  
 
   std::string passwd_;
+  Method_t method_;
 
-  bool subcycling_, use_transport_porosity_;
+  bool transport_on_manifold_;
+  bool subcycling_, use_transport_porosity_, use_effective_diffusion_;
   int dim;
 
   Teuchos::RCP<AmanziChemistry::Chemistry_PK> chem_pk_;
@@ -212,17 +238,20 @@ class Transport_PK : public PK_Physical {
   std::vector<std::vector<double> > upwind_flux_, downwind_flux_;
 
   int current_component_;  // data for lifting
-  Teuchos::RCP<Operators::ReconstructionCell> lifting_;
+  Teuchos::RCP<Operators::ReconstructionCellLinear> lifting_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
+  Teuchos::RCP<Operators::FCT> fct_;
+
+  double limiter_mean_;
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
-  // mechanical dispersion and molecual diffusion
+  // mechanical dispersion and molecular diffusion
   Teuchos::RCP<MDMPartition> mdm_;
   std::vector<WhetStone::Tensor> D_;
 
-  bool flag_dispersion_;
+  bool flag_dispersion_, flag_diffusion_, use_dispersion_;
   std::vector<int> axi_symmetry_;  // axi-symmetry direction of permeability tensor
   std::string dispersion_preconditioner, dispersion_solver;
 
@@ -247,10 +276,6 @@ class Transport_PK : public PK_Physical {
 
   // io
   Utils::Units units_;
-
-  // Forbidden.
-  Transport_PK(const Transport_PK&);
-  Transport_PK& operator=(const Transport_PK&);
 };
 
 }  // namespace Transport

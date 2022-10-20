@@ -28,6 +28,8 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, bool include_io_set)
       dynamic_mesh_(false),
       mesh_written_(false),
       static_mesh_cycle_(0),
+      mesh_file_(-1),
+      data_file_(-1),
       include_io_set_(include_io_set)
 {
   AMANZI_ASSERT(viz_comm_.get());
@@ -48,7 +50,9 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, std::string dataFilename, bool inc
       dynamic_mesh_(false),
       mesh_written_(false),
       static_mesh_cycle_(0),
-      include_io_set_(include_io_set)
+      include_io_set_(include_io_set),
+      mesh_file_(-1),
+      data_file_(-1)
 {
   AMANZI_ASSERT(viz_comm_.get());
   H5DataFilename_ = dataFilename;
@@ -65,6 +69,7 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, std::string dataFilename, bool inc
 
 HDF5_MPI::~HDF5_MPI()
 {
+  if (data_file_ >= 0) close_h5file();
   parallelIO_IOgroup_cleanup(&IOgroup_);
 }
 
@@ -118,16 +123,17 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   mesh_file_ = parallelIO_open_file(h5Filename_.c_str(), &IOgroup_, FILE_READWRITE);
 
   // get num_nodes, num_cells
-  const Epetra_Map &nmap = vis_mesh.node_map(false);
+  const Epetra_Map& nmap = vis_mesh.node_map(false);
   int nnodes_local = nmap.NumMyElements();
   int nnodes_global = nmap.NumGlobalElements();
-  const Epetra_Map &ngmap = vis_mesh.node_map(true);
+  const Epetra_Map& ngmap = vis_mesh.node_map(true);
 
-  const Epetra_Map &cmap = vis_mesh.cell_map(false);
+  const Epetra_Map& cmap = vis_mesh.cell_map(false);
   int ncells_local = cmap.NumMyElements();
 
   // get space dimension
   int space_dim = vis_mesh.space_dimension();
+  int topo_dim = vis_mesh.manifold_dimension();
 
   // Get and write node coordinate info
   // -- get coords
@@ -238,7 +244,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
       local_conn += nodes.size() + 1;
       local_entities++;
 
-    } else if (space_dim == 2) {
+    } else if (topo_dim == 2) {
       vis_mesh.cell_get_nodes(c,&nodes);
       local_conn += nodes.size() + 2;
       local_entities++;
@@ -315,7 +321,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
       // store entity
       entities[lcv_entity++] = cmap.GID(c);
       
-    } else if (space_dim == 2) {
+    } else if (topo_dim == 2) {
       // store cell type id
       conn[lcv++] = getCellTypeID_(ctype);
 
@@ -669,10 +675,10 @@ void HDF5_MPI::open_h5file(bool read_only)
 {
   if (read_only) {
     data_file_ = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
-             FILE_READWRITE);
+             FILE_READONLY);
     if (data_file_ < 0) {
       Errors::Message msg;
-      msg << "HDF5_MPI: error opening file \"" << H5DataFilename_ << "\" with READ_WRITE access.";
+      msg << "HDF5_MPI: error opening file \"" << H5DataFilename_ << "\" with READ_ONLY access.";
       Exceptions::amanzi_throw(msg);
     }
   } else {
@@ -680,7 +686,7 @@ void HDF5_MPI::open_h5file(bool read_only)
              FILE_READWRITE);
     if (data_file_ < 0) {
       Errors::Message msg;
-      msg << "HDF5_MPI: error opening file \"" << H5DataFilename_ << "\" with READ_ONLY access.";
+      msg << "HDF5_MPI: error opening file \"" << H5DataFilename_ << "\" with READ_WRITE access.";
       Exceptions::amanzi_throw(msg);
     }
   }

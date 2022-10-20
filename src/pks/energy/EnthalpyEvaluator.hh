@@ -16,34 +16,35 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "EvaluatorSecondaryMonotype.hh"
 #include "Factory.hh"
-#include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-class EnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
+class EnthalpyEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   explicit EnthalpyEvaluator(Teuchos::ParameterList& plist);
   EnthalpyEvaluator(const EnthalpyEvaluator& other);
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result);
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
   // Required for boundary conditions
   virtual double EvaluateFieldSingle(const Teuchos::Ptr<State>& S, int c, double T, double p);
 
  protected:
-  Key pressure_key_, mol_density_liquid_key_, ie_liquid_key_;
+  Key pressure_key_, mol_density_key_, ie_key_;
+  Tag tag_;
   bool include_work_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,EnthalpyEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, EnthalpyEvaluator> factory_;
 };
 
 }  // namespace Energy

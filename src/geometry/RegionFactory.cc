@@ -76,9 +76,9 @@ createRegion(const std::string reg_name,
 
   LifeCycleType lifecycle;
   if (lifecycle_str == "Permanent") {
-    lifecycle = PERMANENT;
+    lifecycle = LifeCycleType::PERMANENT;
   } else if (lifecycle_str == "Temporary") {
-    lifecycle = TEMPORARY;
+    lifecycle = LifeCycleType::TEMPORARY;
   } else {
     Errors::Message msg;
     msg << "Region spec \"" << reg_name

@@ -36,15 +36,13 @@ RegionFunctionColor::RegionFunctionColor(const std::string& name,
                                          const int value,
                                          const Comm_type& comm,
                                          const LifeCycleType lifecycle)
-  : Region(name, id, true, COLORFUNCTION, 0, 0, lifecycle),
+  : Region(name, id, true, RegionType::COLORFUNCTION, 0, 0, lifecycle),
     file_(file),
     value_(value)
 {
-  // Region dimension is set arbitrarily as 3 since the set of
-  // entities in the mesh will determine the dimension
-
   FunctionColorFactory colfunc_factory;
   colorfunc_ = Teuchos::rcp(colfunc_factory.Create(file_, comm));
+  set_space_dimension(colorfunc_->getDimension());
 }
 
 
@@ -57,7 +55,7 @@ RegionFunctionColor::inside(const Point& p) const
   int color = (*colorfunc_)(&(p[0]));
   return (color == value_);
 }
-  
+
 
 } // namespace AmanziGeometry
 } // namespace Amanzi

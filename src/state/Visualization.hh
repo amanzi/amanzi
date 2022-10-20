@@ -1,7 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! Manages simulation output to disk.
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -42,12 +42,12 @@ Example:
   <ParameterList name="visualization">
     <Parameter name="file name base" type="string" value="visdump_data"/>
 
-    <Parameter name="cycles start period stop" type="Array(int)" value="{{0, 100, -1}}" />
-    <Parameter name="cycles" type="Array(int)" value="{{999, 1001}}" />
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+    <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
 
-    <Parameter name="times start period stop 0" type="Array(double)" value="{{0.0, 10.0, 100.0}}"/>
-    <Parameter name="times start period stop 1" type="Array(double)" value="{{100.0, 25.0, -1.0}}"/>
-    <Parameter name="times" type="Array(double)" value="{{101.0, 303.0, 422.0}}"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
 
     <Parameter name="dynamic mesh" type="bool" value="false"/>
   </ParameterList>
@@ -67,10 +67,10 @@ Example:
 #include "Mesh.hh"
 
 #include "IOEvent.hh"
+#include "Output.hh"
+#include "Tag.hh"
 
 namespace Amanzi {
-
-class Output;
 
 class Visualization : public IOEvent {
  public:
@@ -87,8 +87,8 @@ class Visualization : public IOEvent {
   void AddDomain(const std::string& name);
   bool WritesDomain(const std::string& name) const;
 
-  std::string get_tag() const { return tag_; }
-  void set_tag(const std::string& tag) { tag_ = tag; }
+  Tag get_tag() const { return tag_; }
+  void set_tag(const Tag& tag) { tag_ = tag; }
 
   // public interface for coordinator clients
   void CreateFiles(bool include_io_set=true);
@@ -96,8 +96,11 @@ class Visualization : public IOEvent {
   virtual void FinalizeTimestep() const;
 
   // public interface for data clients
-  virtual void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const;
-  virtual void WriteVector(const Epetra_Vector& vec, const std::string& name ) const;
+  template <typename T>
+  void Write(const std::string& name, const T& t) const;
+
+  virtual void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
+  virtual void WriteVector(const Epetra_Vector& vec, const std::string& name) const;
   virtual void WriteRegions();
   virtual void WritePartition();
 
@@ -106,7 +109,8 @@ class Visualization : public IOEvent {
 
   std::vector<std::string> domains_;
   std::string my_units_;
-  std::string name_, tag_;
+  std::string name_;
+  Tag tag_;
   bool time_unit_written_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -118,6 +122,25 @@ class Visualization : public IOEvent {
   bool write_mesh_exo_;
 };
 
-} // Amanzi namespace
+
+template <>
+inline void Visualization::Write<Epetra_Vector>(const std::string& name,
+                                                const Epetra_Vector& t) const {
+  WriteVector(t, name);
+}
+
+template <>
+inline void Visualization::Write<double>(const std::string& name,
+                                         const double& t) const {
+  visualization_output_->WriteAttribute(t, name);
+}
+
+template <>
+inline void Visualization::Write<int>(const std::string& name,
+                                      const int& t) const {
+  visualization_output_->WriteAttribute(t, name);
+}
+
+} // namespace Amanzi
 
 #endif

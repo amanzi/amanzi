@@ -91,9 +91,16 @@ class DomainSet {
   void DoImport(const std::string& subdomain,
                 const Epetra_MultiVector& src, Epetra_MultiVector& target) const;
 
+  // import from subdomains to parent domain
+  void DoImport(const std::vector<const Epetra_MultiVector*>& subdomains,
+                Epetra_MultiVector& target) const;
+
   // import from parent domain to subdomain
   void DoExport(const std::string& subdomain,
                 const Epetra_MultiVector& src, Epetra_MultiVector& target) const;
+  // import from parent domain to subdomains
+  void DoExport(const Epetra_MultiVector& src,
+                const std::vector<Epetra_MultiVector*>& targets) const;
 
  protected:
   std::string name_;

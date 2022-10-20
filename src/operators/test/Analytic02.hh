@@ -34,8 +34,8 @@ class Analytic02 : public AnalyticBase {
       const Amanzi::AmanziGeometry::Point& v, double g, const Amanzi::WhetStone::Tensor& K) :
       AnalyticBase(mesh),
       g_(g),
-      v_(v),
-      K_(K) {};
+      K_(K),
+      v_(v) {};
   ~Analytic02() {};
 
   Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {

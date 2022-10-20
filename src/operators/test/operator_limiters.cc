@@ -31,9 +31,11 @@
 #include "ErrorAnalysis.hh"
 #include "LimiterCell.hh"
 #include "OperatorDefs.hh"
-#include "ReconstructionCell.hh"
+#include "ReconstructionCellLinear.hh"
 
-const std::string LIMITERS[8] = {"B-J", "Tensorial", "Tens. c2c", "Kuzmin", "B-J c2c", "B-J all", "M-G all", "B-J node"};
+const std::string LIMITERS[9] = {"B-J", "Tensorial", "Tens. c2c", "Kuzmin",
+                                 "B-J c2c", "B-J all", "M-G all", "B-J node",
+                                 "B-J ext"};
 
 /* *****************************************************************
 * Limiters must be 1 on linear functions in two dimensions
@@ -72,7 +74,7 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
     }
   }
 
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < 9; i++) {
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
@@ -102,6 +104,10 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
            .set<std::string>("limiter stencil", "cell to all cells")
            .set<std::string>("limiter location", "node");
+    } else if (i == 8) {
+      plist.set<std::string>("limiter", "Barth-Jespersen")
+           .set<std::string>("limiter stencil", "cell to all cells")
+           .set<bool>("use external controls", true);
     }
 
     if (i != 3) {
@@ -131,24 +137,34 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
       }
     }
 
+    // Set control 
+    auto controls = Teuchos::rcp(new std::vector<std::vector<AmanziGeometry::Point> >(ncells_owned));
+    if (i == 8) {
+      for (int c = 0; c < ncells_owned; ++c) {
+        const auto& xc = mesh->cell_centroid(c);
+        (*controls)[c].push_back(xc);
+      }
+    }
+
     // Compute reconstruction
-    ReconstructionCell lifting(mesh);
-    lifting.Init(plist);
-    lifting.ComputeGradient(field);
+    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh));
+    lifting->Init(plist);
+    lifting->Compute(field);
 
     // Apply limiter
     LimiterCell limiter(mesh);
     limiter.Init(plist);
-    limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
+    if (i == 8) limiter.set_controls(controls);
+    limiter.ApplyLimiter(field, 0, lifting, bc_model, bc_value);
 
     // calculate gradient error.
     double err_int, err_glb, gnorm;
-    Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+    auto& grad_computed = *lifting->data()->ViewComponent("cell");
 
-    ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
+    ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
     // Michalak-Gooch limiter is not linearity preserving near boundary
-    CHECK_CLOSE(0.0, err_int, 1.0e-12);
-    if (i < 6) CHECK_CLOSE(0.0, err_glb, 1.0e-12);
+    CHECK_CLOSE(0.0, err_int, 2.0e-9);
+    if (i < 6) CHECK_CLOSE(0.0, err_glb, 1.0e-10);
 
     if (MyPID == 0)
         printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), err_int, err_glb);
@@ -258,21 +274,21 @@ TEST(LIMITER_LINEAR_FUNCTION_3D) {
     }
 
     // Compute reconstruction
-    ReconstructionCell lifting(mesh);
-    lifting.Init(plist);
-    lifting.ComputeGradient(field); 
+    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh));
+    lifting->Init(plist);
+    lifting->Compute(field); 
 
     // Apply limiter
     LimiterCell limiter(mesh);
     limiter.Init(plist, flux);
-    limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
+    limiter.ApplyLimiter(field, 0, lifting, bc_model, bc_value);
 
     // calculate gradient error
     double err_int, err_glb, gnorm;
-    Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+    auto& grad_computed = *lifting->data()->ViewComponent("cell");
 
-    ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
-    CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
+    ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
+    CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-10);
 
     if (MyPID == 0)
         printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), err_int, err_glb);
@@ -338,8 +354,9 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
       std::vector<int> bc_model;
       std::vector<double> bc_value;
       Teuchos::ParameterList plist;
-      plist.set<int>("polynomial_order", 1);
-      plist.set<bool>("limiter extension for transport", false);
+      plist.set<int>("polynomial_order", 1)
+           .set<std::string>("weight", "inverse distance")
+           .set<bool>("limiter extension for transport", false);
 
       if (i == 0) {
         plist.set<std::string>("limiter", "Barth-Jespersen")
@@ -392,20 +409,20 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
       } 
 
       // Compute reconstruction
-      ReconstructionCell lifting(mesh);
-      lifting.Init(plist);
-      lifting.ComputeGradient(field);
+      auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh));
+      lifting->Init(plist);
+      lifting->Compute(field);
 
       // Apply limiter
       LimiterCell limiter(mesh);
       limiter.Init(plist, flux);
-      limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
+      limiter.ApplyLimiter(field, 0, lifting, bc_model, bc_value);
 
       // calculate gradient error
       double err_int, err_glb, gnorm;
-      Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+      auto& grad_computed = *lifting->data()->ViewComponent("cell");
 
-      ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
+      ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
 
       if (MyPID == 0)
           printf("%9s: rel errors: %9.5f %9.5f\n", LIMITERS[i].c_str(), err_int, err_glb);
@@ -475,8 +492,8 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
       std::vector<int> bc_model;
       std::vector<double> bc_value;
       Teuchos::ParameterList plist;
-      plist.set<int>("polynomial_order", 1);
-      plist.set<bool>("limiter extension for transport", false);
+      plist.set<int>("polynomial_order", 1)
+           .set<bool>("limiter extension for transport", false);
 
       if (i == 0) {
         plist.set<std::string>("limiter", "Barth-Jespersen");
@@ -518,26 +535,26 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
       } 
 
       // Compute reconstruction
-      ReconstructionCell lifting(mesh);
-      lifting.Init(plist);
-      lifting.ComputeGradient(field);
+      auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh));
+      lifting->Init(plist);
+      lifting->Compute(field);
 
       // Apply limiter
       LimiterCell limiter(mesh);
       limiter.Init(plist, flux);
-      limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
+      limiter.ApplyLimiter(field, 0, lifting, bc_model, bc_value);
 
       // calculate gradient error
       double err_int, err_glb, err_int_nobc, err_glb_nobc, gnorm;
-      Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+      auto& grad_computed = *lifting->data()->ViewComponent("cell");
 
-      ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
+      ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
 
       // skip boundary data
-      limiter.ApplyLimiter(field, 0, lifting.gradient());
+      limiter.ApplyLimiter(field, 0, lifting);
 
-      Epetra_MultiVector& grad_test = *lifting.gradient()->ViewComponent("cell");
-      ComputeGradError(mesh, grad_test, grad_exact, err_int_nobc, err_glb_nobc, gnorm);
+      auto& grad_test = *lifting->data()->ViewComponent("cell");
+      ComputePolyError(mesh, grad_test, grad_exact, err_int_nobc, err_glb_nobc, gnorm);
 
       if (MyPID == 0)
           printf("n=%d  %9s: rel errors: %9.5f %9.5f  no_bc: %9.5f %9.5f\n",
@@ -610,8 +627,9 @@ void SmoothField2DPoly(double extension)
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
-    plist.set<int>("polynomial_order", 1);
-    plist.set<bool>("limiter extension for transport", extension);
+    plist.set<int>("polynomial_order", 1)
+         .set<std::string>("weight", "inverse distance")
+         .set<bool>("limiter extension for transport", extension);
 
     if (i == 0) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
@@ -664,20 +682,20 @@ void SmoothField2DPoly(double extension)
     } 
 
     // Compute reconstruction
-    ReconstructionCell lifting(mesh);
-    lifting.Init(plist);
-    lifting.ComputeGradient(field);
+    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh));
+    lifting->Init(plist);
+    lifting->Compute(field);
 
     // Apply limiter
     LimiterCell limiter(mesh);
     limiter.Init(plist, flux);
-    limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
+    limiter.ApplyLimiter(field, 0, lifting, bc_model, bc_value);
 
     // calculate gradient error
     double err_int, err_glb, gnorm;
-    Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+    auto& grad_computed = *lifting->data()->ViewComponent("cell");
 
-    ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
+    ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
 
     if (MyPID == 0)
         printf("%9s: rel errors: %9.5f %9.5f\n", LIMITERS[i].c_str(), err_int, err_glb);
@@ -777,21 +795,19 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES) {
     }
 
     // Compute reconstruction
-    ReconstructionCell lifting(mesh);
+    ReconstructionCellLinear lifting(mesh);
     lifting.Init(plist);
-    lifting.ComputeGradient(field);
+    lifting.Compute(field);
 
     // calculate gradient error
     double err_int, err_glb, gnorm;
-    Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+    auto& grad_computed = *lifting.data()->ViewComponent("cell");
 
-    ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
-    CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
+    ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
+    CHECK_CLOSE(0.0, err_int + err_glb, 2.0e-10);
 
     if (MyPID == 0)
         printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), err_int, err_glb);
   }
 }
-
-
 

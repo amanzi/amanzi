@@ -70,7 +70,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
   out_list.sublist("fracture permeability models") = TranslateFlowFractures_(domain);
   if (out_list.sublist("fracture permeability models").numParams() > 0) {
     out_list.sublist("physical models and assumptions")
-        .set<bool>("flow in fractures", true);
+        .set<bool>("flow and transport in fractures", true);
   }
 
   if (pk_model_["flow"] == "darcy") {
@@ -162,10 +162,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
   std::string err_options, unstr_controls;
   if (mode == "steady") {
     err_options = "pressure";
-    unstr_controls = "unstructured_controls, unstr_steady-state_controls";
+    unstr_controls = "numerical_controls, unstructured_controls, unstr_steady-state_controls";
   } else {
     err_options = "pressure, residual";
-    unstr_controls = "unstructured_controls, unstr_transient_controls";
+    unstr_controls = "numerical_controls, unstructured_controls, unstr_transient_controls";
 
     // restart leads to a conflict
     node = GetUniqueElementByTagsString_(unstr_controls + ", unstr_initialization", flag); 
@@ -179,7 +179,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
   
   if (pk_master_.find("flow") != pk_master_.end()) {
     flow_list->sublist("time integrator") = TranslateTimeIntegrator_(
-        err_options, nonlinear_solver, modify_correction, unstr_controls,
+        err_options, nonlinear_solver, modify_correction, unstr_controls, TI_SOLVER,
         dt_cut_[mode], dt_inc_[mode]);
   }
 
@@ -352,6 +352,12 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
 
     // get optional complessibility
     node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
+    std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
+    if (type == "h5file") {
+      compressibility_ = false;
+      break;
+    }
+
     double phi = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0);
     double compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1", false, 0.0);
 
@@ -775,7 +781,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
 
   // output statistics
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    Teuchos::OSTab tab = vo_->getOSTab();
+    Teuchos::OSTab tab2 = vo_->getOSTab();
     *vo_->os() << "active BCs: ";
     for (std::set<std::string>::iterator it = active_bcs.begin(); it != active_bcs.end(); ++it) {
       *vo_->os() << *it << ", ";
@@ -952,24 +958,35 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_(const std::strin
     }
 
     // get permeability
+    std::string type, model;
     node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
+    if (flag) model = GetAttributeValueS_(node, "model", "cubic law, linear, constant");
+
+    node = GetUniqueElementByTagsString_(inode, "fracture_permeability, aperture", flag);
     if (flag)  {
       double aperture(0.0);
-      std::string type, model;
-
       type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
-      if (type == "") aperture = GetAttributeValueD_(node, "aperture", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
-      model = GetAttributeValueS_(node, "model", "cubic law, linear");
+      if (type == "") aperture = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m^2", false, 0.0);
 
       for (auto it = regions.begin(); it != regions.end(); ++it) {
         std::stringstream ss;
         ss << "FPM for " << *it;
  
         Teuchos::ParameterList& fam_list = out_list.sublist(ss.str());
-        fam_list.set<std::string>("region", *it);
+        fam_list.set<std::string>("region", *it)
+                .set<std::string>("model", model)
+                .set<double>("aperture", aperture);
+      }
+    }
 
-        fam_list.set<std::string>("model", model);
-        fam_list.set<double>("aperture", aperture);
+    if (model == "constant") {
+      node = GetUniqueElementByTagsString_(inode, "fracture_permeability, parallel", flag);
+      double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", true);
+
+      for (auto it = regions.begin(); it != regions.end(); ++it) {
+        std::stringstream ss;
+        ss << "FPM for " << *it;
+        out_list.sublist(ss.str()).set<double>("value", val);
       }
     }
   }

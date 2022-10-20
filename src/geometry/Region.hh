@@ -120,7 +120,7 @@ class Region {
   virtual ~Region() {};
 
   // Dimension of the subdomain
-  unsigned int manifold_dimension() const {
+  unsigned int get_manifold_dimension() const {
     return manifold_dimension_;
   }
   void set_manifold_dimension(unsigned int dimension) {
@@ -128,20 +128,20 @@ class Region {
   }
 
   // Dimension of points in the subdomain
-  unsigned int space_dimension() const {
+  unsigned int get_space_dimension() const {
     return space_dimension_;
   }
   void set_space_dimension(unsigned int dimension) {
     space_dimension_ = dimension;
   }
-  
+
   // Name of the region -- no setter (set by constructor)
-  std::string name() const {
+  std::string get_name() const {
     return name_;
   }
 
   // Integer identifier of the region
-  int id() const {
+  int get_id() const {
     return id_;
   }
   void set_id(int id) {
@@ -152,16 +152,16 @@ class Region {
   bool is_geometric() const {
     return geometric_;
   }
-  
+
   // Type of the region
-  RegionType type() const {
+  RegionType get_type() const {
     return type_;
   }
 
   // Get the Lifecycle of this region - Do mesh entity sets derived from
   // it have to be kept around or are they temporary and can be destroyed
   // as soon as they are used?
-  LifeCycleType lifecycle() const {
+  LifeCycleType get_lifecycle() const {
     return lifecycle_;
   }
 
@@ -175,14 +175,14 @@ class Region {
   // is defined when the object and Region have same dimensionality.
   //
   // -- counter clockwise ordered polygon does not require faces
-  double intersect(const std::vector<Point>& polytope) const {
-    std::vector<std::vector<int> > faces;
+  double intersect(const Point_View& polytope) const {
+    const std::vector<Entity_ID_View> faces;
     return intersect(polytope, faces);
   }
 
   // Polyhedron with counter clockwise ordered faces (wrt normals)
-  virtual double intersect(const std::vector<Point>& polytope, 
-                           const std::vector<std::vector<int> >& faces) const {
+  virtual double intersect(const Point_View& polytope,
+                           const std::vector<Entity_ID_View>& faces) const {
     return -1.0;
   }
 
@@ -194,23 +194,16 @@ class Region {
          RegionType type,
          unsigned int dim,
          unsigned int geom_dim,
-         LifeCycleType lifecycle=PERMANENT)
+         LifeCycleType lifecycle=LifeCycleType::PERMANENT)
     : name_(name),
       id_(id),
-      geometric_(geometric),
       type_(type),
       manifold_dimension_(dim),
       space_dimension_(geom_dim),
+      geometric_(geometric),
       lifecycle_(lifecycle) {};
 
  protected:
-  // Lifecycle (Temporary or Permanent)
-  LifeCycleType lifecycle_;
-  
-  // Topological dimension of region (0, 1, 2, 3)
-  unsigned int manifold_dimension_;
-  unsigned int space_dimension_;
-
   // Name of identifier
   std::string name_;
 
@@ -220,15 +213,22 @@ class Region {
   // Region type
   RegionType type_;
 
+  // Topological dimension of region (0, 1, 2, 3)
+  unsigned int manifold_dimension_;
+  unsigned int space_dimension_;
+
   // Geometric or enumerated?
   bool geometric_;
+
+  // Lifecycle (Temporary or Permanent)
+  LifeCycleType lifecycle_;
 
   // Tolerance for geometric operations
   double tol_;
 
  private:
-  Region(const Region& other);  // prevent copy constructor
-  Region& operator=(const Region& other);  // prevent operator=
+  Region(const Region& other) = delete;
+  Region& operator=(const Region& other) = delete;
 };
 
 

@@ -206,10 +206,10 @@
 
   <ParameterList name="state">
 
-    <ParameterList name="field evaluators" type="ParameterList">
+    <ParameterList name="evaluators" type="ParameterList">
 
       <ParameterList name="porosity">
-        <Parameter name="field evaluator type" type="string" value="independent variable" />
+        <Parameter name="evaluator type" type="string" value="independent variable" />
         <ParameterList name="function">
           <ParameterList name="Soil_1">
             <Parameter name="regions" type="Array(string)" value="{Soil_1}"/>
@@ -233,7 +233,7 @@
       </ParameterList>
       
       <ParameterList name="mass_density_liquid">
-        <Parameter name="field evaluator type" type="string" value="independent variable" />
+        <Parameter name="evaluator type" type="string" value="independent variable" />
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -248,7 +248,7 @@
       </ParameterList>
 
       <ParameterList name="saturation_liquid">
-        <Parameter name="field evaluator type" type="string" value="independent variable" />
+        <Parameter name="evaluator type" type="string" value="independent variable" />
         <ParameterList name="function">
           <ParameterList name="Entire DomainSoil_1Soil_2">
             <Parameter name="regions" type="Array(string)" value="{Entire Domain, Soil_1, Soil_2}"/>
@@ -278,7 +278,7 @@
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
 
-      <ParameterList name="darcy_flux">
+      <ParameterList name="volumetric_flow_rate">
         <Parameter name="dot with normal" type="bool" value="true"/>
         <ParameterList name="function">
           <ParameterList name="All domain">

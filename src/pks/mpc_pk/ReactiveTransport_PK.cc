@@ -22,8 +22,8 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
                                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                                            const Teuchos::RCP<State>& S,
                                            const Teuchos::RCP<TreeVector>& soln) :
-  Amanzi::PK_MPCAdditive<PK>(pk_tree, global_list, S, soln) { 
-
+  Amanzi::PK_MPCAdditive<PK>(pk_tree, global_list, S, soln)
+{
   storage_created = false;
   chem_step_succeeded = true;
 
@@ -44,13 +44,13 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
 // -----------------------------------------------------------------------------
 // 
 // -----------------------------------------------------------------------------
-void ReactiveTransport_PK::Initialize(const Teuchos::Ptr<State>& S) {
-  Amanzi::PK_MPCAdditive<PK>::Initialize(S);
+void ReactiveTransport_PK::Initialize()
+{
+  Amanzi::PK_MPCAdditive<PK>::Initialize();
 
-  if (S->HasField("total_component_concentration")) {
-    total_component_concentration_stor = 
-       Teuchos::rcp(new Epetra_MultiVector(*S->GetFieldData("total_component_concentration")
-                                             ->ViewComponent("cell", true)));
+  if (S_->HasRecord("total_component_concentration")) {
+    total_component_concentration_stor = Teuchos::rcp(new Epetra_MultiVector(
+        *S_->Get<CompositeVector>("total_component_concentration").ViewComponent("cell", true)));
     storage_created = true;
   }
 }
@@ -59,8 +59,8 @@ void ReactiveTransport_PK::Initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
-double ReactiveTransport_PK::get_dt() {
-
+double ReactiveTransport_PK::get_dt()
+{
   dTtran_ = transport_pk_->get_dt();
   dTchem_ = chemistry_pk_->get_dt();
 
@@ -77,7 +77,8 @@ double ReactiveTransport_PK::get_dt() {
 // -----------------------------------------------------------------------------
 // 
 // -----------------------------------------------------------------------------
-void ReactiveTransport_PK::set_dt(double dt) {
+void ReactiveTransport_PK::set_dt(double dt)
+{
   dTtran_ = dt;
   dTchem_ = dt;
   //dTchem_ = chemistry_pk_->get_dt();
@@ -106,15 +107,15 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
     Exceptions::amanzi_throw(message);
   }
 
-  // Second, we do a chemistry step.
+  // Second, we do a chemistry step using a copy of the tcc vector
   try {
     chemistry_pk_->set_aqueous_components(total_component_concentration_stor);
 
     pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
     chem_step_succeeded = true;
  
-    *S_->GetFieldData("total_component_concentration", "state")
-       ->ViewComponent("cell", true) = *chemistry_pk_->aqueous_components();
+    *S_->GetW<CompositeVector>("total_component_concentration", "state")
+      .ViewComponent("cell", true) = *chemistry_pk_->aqueous_components();
   }
   catch (const Errors::Message& chem_error) {
     fail = true;
@@ -127,8 +128,8 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
 // -----------------------------------------------------------------------------
 // 
 // -----------------------------------------------------------------------------
-void ReactiveTransport_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
-  chemistry_pk_->CommitStep(t_old, t_new, S);
+void ReactiveTransport_PK::CommitStep(double t_old, double t_new, const Tag& tag) {
+  chemistry_pk_->CommitStep(t_old, t_new, tag);
 }
 
 }  // namespace Amanzi

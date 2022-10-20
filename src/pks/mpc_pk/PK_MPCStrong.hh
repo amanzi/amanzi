@@ -47,8 +47,8 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
             const Teuchos::RCP<TreeVector>& soln);
 
   // PK_MPCStrong is a PK
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup();
+  virtual void Initialize();
 
   // -- dt is the minimum of the sub pks
   virtual double get_dt() { return dt_; }
@@ -95,6 +95,7 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du);
 
+  // access
   Teuchos::RCP<Operators::TreeOperator> op_tree_matrix() { return op_tree_matrix_; }
   Teuchos::RCP<Operators::TreeOperator> op_tree_pc() { return op_tree_pc_; }
   Teuchos::RCP<TreeVector> op_tree_rhs() { return op_tree_rhs_; }
@@ -118,7 +119,7 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
   
  private:
   // factory registration
-  static RegisteredPKFactory<PK_MPCStrong> reg_;
+  static RegisteredPKFactory<PK_MPCStrong<PK_Base> > reg_;
 };
 
 
@@ -137,7 +138,7 @@ PK_MPCStrong<PK_Base>::PK_MPCStrong(Teuchos::ParameterList& pk_tree,
 // Setup
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-void PK_MPCStrong<PK_Base>::Setup(const Teuchos::Ptr<State>& S)
+void PK_MPCStrong<PK_Base>::Setup()
 {
   // Tweak the sub-PK parameter lists. This allows the PK to
   // potentially not assemble things.
@@ -151,7 +152,7 @@ void PK_MPCStrong<PK_Base>::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // call each sub-PKs Setup()
-  PK_MPC<PK_Base>::Setup(S);
+  PK_MPC<PK_Base>::Setup();
 
   // Set the initial timestep as the min of the sub-pk sizes.
   dt_ = get_dt();
@@ -162,7 +163,7 @@ void PK_MPCStrong<PK_Base>::Setup(const Teuchos::Ptr<State>& S)
 // Initialize each sub-PK and the time integrator.
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-void PK_MPCStrong<PK_Base>::Initialize(const Teuchos::Ptr<State>& S)
+void PK_MPCStrong<PK_Base>::Initialize()
 {
   // Just calls both subclass's initialize.  NOTE - order is important
   // here -- MPC<PK_Base> grabs the primary variables from each sub-PK
@@ -170,13 +171,13 @@ void PK_MPCStrong<PK_Base>::Initialize(const Teuchos::Ptr<State>& S)
   // initializing the timestepper.
 
   // Initialize all sub PKs.
-  PK_MPC<PK_Base>::Initialize(S);
+  PK_MPC<PK_Base>::Initialize();
 
   // set up the timestepping algorithm if this is not strongly coupled
   if (!my_list_->template get<bool>("strongly coupled PK", false)) {
     // -- instantiate time stepper
     Teuchos::ParameterList& ts_plist = my_list_->sublist("time integrator").sublist("BDF1");
-    ts_plist.set("initial time", S_->time());
+    ts_plist.set("initial time", S_->get_time());
     time_stepper_ = Teuchos::rcp(new Amanzi::BDF1_TI<TreeVector,
         TreeVectorSpace>(*this, ts_plist, solution_));
 
@@ -185,7 +186,7 @@ void PK_MPCStrong<PK_Base>::Initialize(const Teuchos::Ptr<State>& S)
     solution_dot->PutScalar(0.0);
 
     // -- set initial state
-    time_stepper_->SetInitialState(S_->time(), solution_, solution_dot);
+    time_stepper_->SetInitialState(S_->get_time(), solution_, solution_dot);
   }
 }
 
@@ -213,15 +214,7 @@ bool PK_MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new, bool reinit)
   if (!fail) {
     // commit the step as successful
     time_stepper_->CommitSolution(dt_, solution_);
-
-    // update the timestep size
-    if (dt_solver < dt_ && dt_solver >= dt_) {
-      // We took a smaller step than we recommended, and it worked fine (not
-      // suprisingly).  Likely this was due to constraints from other PKs or
-      // vis.  Do not reduce our recommendation.
-    } else {
-      dt_ = dt_solver;
-    }
+    dt_ = dt_solver;
   } else {
     // take the decreased timestep size
     dt_ = dt_solver;

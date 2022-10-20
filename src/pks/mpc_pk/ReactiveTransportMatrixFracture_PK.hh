@@ -22,16 +22,15 @@
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
-#include "PK_MPCAdditive.hh"
+#include "PK_MPCSubcycled.hh"
 #include "PK_MPCWeak.hh"
 
 // Amanzi::MPC
 #include "ChemistryMatrixFracture_PK.hh"
-#include "TransportMatrixFracture_PK.hh"
 
 namespace Amanzi {
 
-class ReactiveTransportMatrixFracture_PK : public PK_MPCAdditive<PK> {
+class ReactiveTransportMatrixFracture_PK : public PK_MPCSubcycled {
  public:
   ReactiveTransportMatrixFracture_PK(
       Teuchos::ParameterList& pk_tree,
@@ -46,8 +45,8 @@ class ReactiveTransportMatrixFracture_PK : public PK_MPCAdditive<PK> {
   virtual double get_dt() override;
   virtual void set_dt(double dt) override;
 
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;  
+  virtual void Setup() override;
+  virtual void Initialize() override;  
 
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
@@ -61,7 +60,9 @@ class ReactiveTransportMatrixFracture_PK : public PK_MPCAdditive<PK> {
 
   Key tcc_matrix_key_, tcc_fracture_key_;
 
-  // factory registration
+ private:
+  bool subcycling_; 
+
   static RegisteredPKFactory<ReactiveTransportMatrixFracture_PK> reg_;
 };
 

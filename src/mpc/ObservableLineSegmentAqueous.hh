@@ -2,7 +2,7 @@
 #define AMANZI_OBSERVABLE_LINE_SEGMENT_AQUEOUS_HH
 
 #include "LimiterCell.hh"
-#include "ReconstructionCell.hh"
+#include "ReconstructionCellLinear.hh"
 
 #include "ObservableAmanzi.hh"
 #include "ObservableAqueous.hh"
@@ -68,8 +68,8 @@ void ObservableLineSegmentAqueous::ComputeObservation(
       *volume += lofs_[i];
     }
   } else if (weighting_ == "flux norm") {
-    if (S.HasField("darcy_velocity")) {
-      const Epetra_MultiVector& darcy_vel = *S.GetFieldData("darcy_velocity")->ViewComponent("cell");
+    if (S.HasRecord("darcy_velocity")) {
+      const auto& darcy_vel = *S.Get<CompositeVector>("darcy_velocity").ViewComponent("cell");
       for (int i = 0; i < region_size_; i++) {
         int c = entity_ids_[i];
 
@@ -95,31 +95,31 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
   Teuchos::RCP<const CompositeVector> cv;
 
   if (var == "hydraulic head") {
-    if (!S.HasField("hydraulic_head")) {
+    if (!S.HasRecord("hydraulic_head")) {
       Errors::Message msg;
       msg <<"InterpolatedValue: field hydraulic_head doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
-    cv = S.GetFieldData("hydraulic_head");
+    cv = S.GetPtr<CompositeVector>("hydraulic_head", Tags::DEFAULT);
     vector = cv->ViewComponent("cell", true);
   } else {
-    if (!S.HasField(var)) {
+    if (!S.HasRecord(var)) {
       Errors::Message msg;
       msg <<"InterpolatedValue: field "<<var<<" doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
-    cv = S.GetFieldData(var);
+    cv = S.GetPtr<CompositeVector>(var, Tags::DEFAULT);
     vector = cv->ViewComponent("cell", true);
   }
 
   if (interpolation == "linear") {
     Teuchos::ParameterList plist;
-    Operators::ReconstructionCell lifting(mesh_);
+    auto lifting = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
       
     cv->ScatterMasterToGhosted();
 
-    lifting.Init(plist);
-    lifting.ComputeGradient(ids, vector, 0);
+    lifting->Init(plist);
+    lifting->Compute(ids, vector, 0);
 
     if (limiter_) {
       plist.set<std::string>("limiter", "Kuzmin");
@@ -128,12 +128,12 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
 
       Operators::LimiterCell limiter(mesh_); 
       limiter.Init(plist);
-      limiter.ApplyLimiter(ids, vector, 0, lifting.gradient(), bc_model, bc_value);
+      limiter.ApplyLimiter(ids, vector, 0, lifting, bc_model, bc_value);
     }
 
     for (int i = 0; i < ids.size(); i++) {
       int c = ids[i];
-      values[i] = lifting.getValue(c, line_pnts[i]);
+      values[i] = lifting->getValue(c, line_pnts[i]);
     }
   } else if (interpolation == "constant") {    
     for (int i = 0; i < ids.size(); i++) {

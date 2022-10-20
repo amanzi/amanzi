@@ -27,10 +27,10 @@ namespace Flow {
 void Richards_PK::CalculateCNLSLimiter_(
     const CompositeVector& wc, const CompositeVector& dwc_dp, double tol)
 { 
-  Epetra_MultiVector& limiter = *cnls_limiter_->ViewComponent("cell");
-  const Epetra_MultiVector& wcc = *wc.ViewComponent("cell");
-  const Epetra_MultiVector& dwc_dpc = *dwc_dp.ViewComponent("cell");
-  const Epetra_MultiVector& por = *S_->GetFieldData(porosity_key_)->ViewComponent("cell");
+  auto& limiter = *cnls_limiter_->ViewComponent("cell");
+  const auto& wcc = *wc.ViewComponent("cell");
+  const auto& dwc_dpc = *dwc_dp.ViewComponent("cell");
+  const auto& por = *S_->Get<CompositeVector>(porosity_key_).ViewComponent("cell");
 
   double alpha0, alpha1, wc_max, wc_min(0.0);
   double eps = tol * atm_pressure_; 

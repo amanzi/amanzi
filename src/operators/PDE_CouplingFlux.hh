@@ -9,7 +9,7 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   A coupling operator discretizes the two-point flux between 
-  physics fields. At the moment, we tes the flux between two PKs.
+  physics fields. At the moment, we test the flux between two PKs.
 */
 
 #ifndef AMANZI_OPERATOR_PDE_COUPLING_FLUX_HH_

@@ -80,18 +80,18 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
 
-  RPK->Setup(S.ptr());
+  RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
-  std::string passwd("flow"); 
-  double rho = *S->GetScalarData("const_fluid_density");
-  double g = (*S->GetConstantVectorData("gravity", "state"))[1];
+  std::string passwd(""); 
+  double rho = S->Get<double>("const_fluid_density");
+  double g = (S->Get<AmanziGeometry::Point>("gravity"))[1];
 
   // create the initial pressure function
-  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");
+  auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   double patm(101325.0), z0(30.0);
   for (int c = 0; c < p.MyLength(); c++) {
@@ -99,11 +99,11 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
     p[0][c] = patm + rho * g * (xc[1] - z0);
   }
 
-  Epetra_MultiVector& lambda = *S->GetFieldData("pressure", passwd)->ViewComponent("face");
+  auto& lambda = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("face");
   RPK->DeriveFaceValuesFromCellValues(p, lambda); 
 
   // create Richards process kernel
-  RPK->Initialize(S.ptr());
+  RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   // solve the steady-state problem
@@ -114,11 +114,11 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
   ti_specs.max_itrs = 3000;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0, S);  // dummy times for flow
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times for flow
   printf("seepage face total = %12.4f\n", RPK->seepage_mass());
 
   // output 
-  const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
+  const auto& ws = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
 
   Teuchos::ParameterList iolist;
   iolist.get<std::string>("file name base", "plot");

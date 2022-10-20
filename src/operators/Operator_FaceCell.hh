@@ -39,6 +39,7 @@ class Operator_FaceCell : public Operator_Cell {
   virtual Teuchos::RCP<Operator> Clone() const;
 
   // visit methods for Apply
+  using Operator_Cell::ApplyMatrixFreeOp;
   virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Cell_Face& op,
@@ -49,6 +50,7 @@ class Operator_FaceCell : public Operator_Cell {
       const CompositeVector& X, CompositeVector& Y) const;
 
   // visit methods for symbolic assemble
+  using Operator_Cell::SymbolicAssembleMatrixOp;
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
@@ -63,6 +65,7 @@ class Operator_FaceCell : public Operator_Cell {
           int my_block_row, int my_block_col) const;
   
   // visit methods for actual assemble
+  using Operator_Cell::AssembleMatrixOp;
   virtual void AssembleMatrixOp(const Op_Cell_FaceCell& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;

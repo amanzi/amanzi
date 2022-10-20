@@ -34,43 +34,45 @@ class InputConverterU : public InputConverter {
  public:
   explicit InputConverterU(const std::string& input_filename) :
       InputConverter(input_filename), 
+      multiphase_(false),
       const_gravity_(GRAVITY_MAGNITUDE),
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
-      vo_(NULL),
       flow_single_phase_(false),
       compressibility_(false),
       fractures_(false),
       mesh_rectangular_(false),
-      transport_permeability_(false),
       use_transport_porosity_(false),
+      use_transport_dispersion_(true),
+      transport_permeability_(false),
       transport_implicit_(false),
-      multiphase_(false),
       restart_(false),
-      ic_time_(0.0),
       ic_time_flow_(0.0),
+      ic_time_(0.0),
       output_prefix_(""),
       io_walkabout_(false),
-      io_mesh_info_(false) {};
+      io_mesh_info_(false),
+      vo_(NULL) {};
 
   explicit InputConverterU(const std::string& input_filename, 
                            xercesc::DOMDocument* input_doc,
                            const std::string& output_prefix) :
       InputConverter(input_filename, input_doc), 
-      vo_(NULL),
+      multiphase_(false),
       flow_single_phase_(false),
       compressibility_(false),
       fractures_(false),
-      multiphase_(false),
       mesh_rectangular_(false),
-      transport_permeability_(false),
       use_transport_porosity_(false),
+      use_transport_dispersion_(true),
+      transport_permeability_(false),
       transport_implicit_(false),
       restart_(false),
-      ic_time_(0.0),
       ic_time_flow_(0.0),
+      ic_time_(0.0),
       output_prefix_(output_prefix),
       io_walkabout_(false),
-      io_mesh_info_(false) {};
+      io_mesh_info_(false),
+      vo_(NULL) {};
 
   ~InputConverterU() { if (vo_ != NULL) delete vo_; }
 
@@ -111,7 +113,8 @@ class InputConverterU : public InputConverter {
       const std::string& pk = "flow");
   Teuchos::ParameterList TranslateTimeIntegrator_(
       const std::string& err_options, const std::string& nonlinear_solver,
-      bool modify_correction, const std::string& unstr_controls,
+      bool modify_correction, const std::string& nonsolver_controls,
+      const std::string& linsolver,
       double dt_cut_default, double dt_inc_default);
   Teuchos::ParameterList TranslateInitialization_(
       const std::string& unstr_controls);
@@ -129,18 +132,18 @@ class InputConverterU : public InputConverter {
   void TranslateFieldIC_(
       DOMNode* node, std::string field, std::string unit,
       const std::string& reg_str, const std::vector<std::string>& regions,
-      Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
-      std::string data_key = "value");
+      Teuchos::ParameterList& out_ic, std::string data_key = "value",
+      const std::vector<std::string>& components = { "cell" });
 
   void AddIndependentFieldEvaluator_(
       Teuchos::ParameterList& out_ev,
-      const std::string& field, const std::string& region, double val);
+      const std::string& field, const std::string& region,
+      const std::string& comp, double val);
 
   void AddSecondaryFieldEvaluator_(
      Teuchos::ParameterList& out_ev,
      const Key& field, const Key& key,
-     const std::string& type, const std::string& model,
-     const std::string& eos_table_name);
+     const std::string& type, const std::string& eos_table_name);
 
   void AddConstantFieldInitialization_(
       Teuchos::ParameterList& out_ev,
@@ -244,7 +247,7 @@ class InputConverterU : public InputConverter {
   std::map<std::string, bool> pk_master_;
   std::map<std::string, double> dt_cut_, dt_inc_;
   
-  std::string eos_lookup_table_;
+  std::string eos_lookup_table_, eos_model_;
 
   // global physical constants prefixed with "const"
   double const_gravity_;
@@ -261,7 +264,8 @@ class InputConverterU : public InputConverter {
   std::map<std::string, int> region_type_;  // flag for vofs
 
   // global transport and chemistry constants
-  bool transport_permeability_, use_transport_porosity_, transport_implicit_;
+  bool use_transport_porosity_, use_transport_dispersion_;
+  bool transport_permeability_, transport_implicit_;
   std::vector<std::string> comp_names_all_;
   std::map<std::string, double> solute_molar_mass_;
 

@@ -15,6 +15,8 @@
 namespace Amanzi {
 namespace Transport {
 
+enum class Method_t { MUSCL = 1, FCT };
+
 const int TRANSPORT_PHASE_LIQUID = 0;  // phases from 0 to 1
 const int TRANSPORT_PHASE_GAS = 1;
 const int TRANSPORT_NUMBER_PHASES = 2;
@@ -31,6 +33,8 @@ const int TRANSPORT_FLOW_TRANSIENT = 2;
 
 const double TRANSPORT_CONCENTRATION_OVERSHOOT = 1e-6;
 const double TRANSPORT_CONCENTRATION_INFINITY = 1e+99;
+
+const double TRANSPORT_SMALL_CELL_OUTFLUX = 1e-250;
 
 const int TRANSPORT_HEX_FACES = 6;  // Hexahedron is the common element
 const int TRANSPORT_HEX_NODES = 8;

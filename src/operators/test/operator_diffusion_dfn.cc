@@ -153,10 +153,10 @@ void RunTest(int icase, double gravity) {
   global_op->ApplyInverse(rhs, *solution);
 
   // post-processing
-  auto cvs2 = Operators::CreateNonManifoldCVS(surfmesh);
+  auto cvs2 = Operators::CreateManifoldCVS(surfmesh);
   auto flux = Teuchos::rcp(new CompositeVector(*cvs2));
 
-  op->UpdateFluxNonManifold(solution.ptr(), flux.ptr());
+  op->UpdateFluxManifold(solution.ptr(), flux.ptr());
 
   // statistics
   int ndofs = global_op->A()->NumGlobalRows();

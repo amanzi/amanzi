@@ -34,18 +34,18 @@ namespace Amanzi {
 template<class Vector>
 struct BDF1_State {
   BDF1_State() :
-      maxpclag(0),
       freeze_pc(false),
+      maxpclag(0),
       extrapolate_guess(true),
+      uhist_size(2),
+      pc_calls(0),
       seq(-1),
       failed_solve(0),
       failed_current(0),
-      solve_itrs(0),
-      pc_calls(0),
       pc_updates(0),
-      uhist_size(2),
+      hmin(std::numeric_limits<double>::max()),
       hmax(std::numeric_limits<double>::min()),
-      hmin(std::numeric_limits<double>::max()) {}
+      solve_itrs(0) {}
 
   // Parameters and control
   bool freeze_pc;  // freeze initial preconditioner
@@ -77,7 +77,9 @@ struct BDF1_State {
   // restart fine constrol
   double tol_multiplier, tol_multiplier_damp;
 
-  void InitializeFromPlist(Teuchos::ParameterList&, const Teuchos::RCP<const Vector>&);
+  void InitializeFromPlist(Teuchos::ParameterList&,
+                           const Teuchos::RCP<const Vector>&,
+                           const Teuchos::RCP<State>&);
 };
 
 
@@ -86,8 +88,9 @@ struct BDF1_State {
 ****************************************************************** */
 template<class Vector>
 void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
-        const Teuchos::RCP<const Vector>& initvec) {
-  
+        const Teuchos::RCP<const Vector>& initvec,
+        const Teuchos::RCP<State>& S)
+{
   // preconditioner control
   freeze_pc = plist.get<bool>("freeze preconditioner", false);
   maxpclag = plist.get<int>("max preconditioner lag iterations", 0);
@@ -99,7 +102,14 @@ void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
 
   // solution history object
   double t0 = plist.get<double>("initial time", 0.0);
-  uhist = Teuchos::rcp(new SolutionHistory<Vector>(uhist_size, t0, *initvec));
+  std::string name;
+  if (plist.sublist("verbose object").isParameter("name")) {
+    name = plist.sublist("verbose object").get<std::string>("name");
+  } else {
+    name = "TI_BDF1";
+  }
+  uhist = Teuchos::rcp(new SolutionHistory<Vector>(name, uhist_size, t0,
+          *initvec, nullptr, S));
 
   // restart fine control
   tol_multiplier = plist.get<double>("restart tolerance relaxation factor", 1.0);

@@ -45,15 +45,26 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string
   char *text;
 
   // set up default values for some expert parameters
-  double cfl(0.5);
+  double cfl(0.5), limiter_cfl(0.5);
 
   // process expert parameters
   bool flag;
-  std::string flux("Rusanov");
+  std::string flux("Rusanov"), weight("constant");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_shallow_water_controls, cfl", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     cfl = strtod(text, NULL);
+  }
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_shallow_water_controls, limiter_cfl", flag);
+  if (flag) {
+    text = mm.transcode(node->getTextContent());
+    limiter_cfl = strtod(text, NULL);
+  }
+
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_shallow_water_controls, reconstruction_weight", flag);
+  if (flag) {
+    weight = GetTextContentS_(node, "constant, inverse-distance");
+    std::replace(weight.begin(), weight.end(), '-', ' ');
   }
 
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain)
@@ -62,11 +73,28 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string
       .set<double>("cfl", cfl);
 
   out_list.sublist("reconstruction")
-      .set<int>("polynomial order", 0)
+      .set<int>("polynomial order", 1)
+      .set<std::string>("weight", weight)
       .set<std::string>("limiter", "Barth-Jespersen")
       .set<std::string>("limiter stencil", "cell to closest cells")
       .set<std::string>("limiter location", "face")
-      .set<double>("limiter cfl", 0.5);
+      .set<double>("limiter cfl", limiter_cfl);
+
+  int nspace(1), ntime(1);
+  std::string tags_default("unstructured_controls, unstr_shallow_water_controls");
+  node = GetUniqueElementByTagsString_(tags_default + ", algorithm", flag);
+  if (flag) {
+    std::string order = GetTextContentS_(node, "explicit first-order, explicit second-order");
+    if (order == "explicit first-order") {
+      nspace = 1;
+      ntime = 1;
+    } else if (order == "explicit second-order") {
+      nspace = 2;
+      ntime = 2;
+    }
+  }
+  out_list.set<int>("spatial discretization order", nspace);
+  out_list.set<int>("temporal discretization order", ntime);
 
   // boundary conditions
   out_list.sublist("boundary conditions") = TranslateShallowWaterBCs_();
@@ -143,28 +171,39 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWaterBCs_()
     // create names, modify data
     std::string bcname;
     if (bctype == "ponded_depth") {
-      bctype = "velocity";
-      bcname = "velocity";
+      bctype = "ponded depth";
+      bcname = "ponded depth";
     }
     std::stringstream ss;
     ss << "BC " << ibc++;
 
-    // save in the XML files  
-    Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
-    Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
-    bc.set<Teuchos::Array<std::string> >("regions", regions)
-      .set<std::string>("spatial distribution method", "none");
+    // ponded depth
+    {
+      Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
+      Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
+      bc.set<Teuchos::Array<std::string> >("regions", regions)
+        .set<std::string>("spatial distribution method", "none");
 
-    Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-    bcfn.set<int>("number of dofs", 3)
-        .set<std::string>("function type", "composite function");
-    Teuchos::ParameterList& dofs = bcfn.sublist("dof 1 function");
- 
-    TranslateGenericMath_(times, values, forms, formulas, dofs);
+      Teuchos::ParameterList& bcfn = bc.sublist(bcname);
+      TranslateGenericMath_(times, values, forms, formulas, bcfn);
+    }
 
-    // work around (FIXME)
-    bcfn.sublist("dof 2 function").sublist("function-constant").set<double>("value", 0.0);
-    bcfn.sublist("dof 3 function").sublist("function-constant").set<double>("value", 0.0);
+    // velocity FIXME
+    {
+      bctype = "velocity";
+      bcname = "velocity";
+      Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
+      Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
+      bc.set<Teuchos::Array<std::string> >("regions", regions)
+        .set<std::string>("spatial distribution method", "none");
+
+      Teuchos::ParameterList& bcfn = bc.sublist(bcname);
+      bcfn.set<int>("number of dofs", 2)
+          .set<std::string>("function type", "composite function");
+
+      bcfn.sublist("dof 1 function").sublist("function-constant").set<double>("value", 0.0);
+      bcfn.sublist("dof 2 function").sublist("function-constant").set<double>("value", 0.0);
+    }
   }
 
   return out_list;

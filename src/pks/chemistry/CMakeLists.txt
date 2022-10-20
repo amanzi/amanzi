@@ -92,7 +92,7 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
     add_amanzi_test(chemistry_amanzi_pk chemistry_amanzi_pk
                     KIND int
                     SOURCE test/Main.cc test/chemistry_amanzi_pk.cc
-                    LINK_LIBS chemistry_pk state pks data_structures
+                    LINK_LIBS chemistry_pk state pks data_structures operators
                               mesh_functions mesh mesh_factory error_handling
                               ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
                               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES} ${NOX_LIBRARIES}
@@ -102,7 +102,7 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
       add_amanzi_test(chemistry_alquimia_pk chemistry_alquimia_pk
                       KIND int
                       SOURCE test/Main.cc test/chemistry_alquimia_pk.cc
-                      LINK_LIBS chemistry_pk state pks data_structures
+                      LINK_LIBS chemistry_pk state pks data_structures operators
                                 mesh_functions mesh mesh_factory error_handling
                                 ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
                                 ${HDF5_LIBRARIES} ${XERCESC_LIBRARIES} ${XERCES_ICU_LIBRARIES}
@@ -117,7 +117,7 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
       add_amanzi_test(chemistry_benchmarks_1d chemistry_benchmark_1d
                       KIND int
                       SOURCE test/chemistry_benchmarks_1d.cc
-                      LINK_LIBS chemistry_pk state pks data_structures
+                      LINK_LIBS chemistry_pk state pks data_structures operators
                               mesh_functions mesh mesh_factory error_handling
                               ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
                               ${HDF5_LIBRARIES} ${XERCESC_LIBRARIES} ${XERCES_ICU_LIBRARIES}

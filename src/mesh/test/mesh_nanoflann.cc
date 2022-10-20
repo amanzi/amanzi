@@ -26,7 +26,7 @@
 
 typedef nanoflann::KDTreeSingleIndexAdaptor<
     nanoflann::L2_Adaptor<double, Amanzi::AmanziMesh::PointCloud>,
-    Amanzi::AmanziMesh::PointCloud, -1> MyKDTree;
+    Amanzi::AmanziMesh::PointCloud, -1, size_t> MyKDTree;
 
 TEST(NANOFLANN) {
   // generate points

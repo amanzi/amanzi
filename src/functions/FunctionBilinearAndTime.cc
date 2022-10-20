@@ -2,7 +2,7 @@
 
 #include "errors.hh"
 #include "exceptions.hh"
-#include "UniqueHelpers.hh"
+#include <memory>
 #include "HDF5Reader.hh"
 #include "FunctionBilinearAndTime.hh"
 
@@ -15,10 +15,10 @@ FunctionBilinearAndTime::FunctionBilinearAndTime(const std::string& filename,
         const std::string& col_header,
         const std::string& col_coordinate,
         const std::string& val_header)
-    : filename_(filename),
-      row_header_(row_header),
+    : row_header_(row_header),
       col_header_(col_header),
       val_header_(val_header),
+      filename_(filename),
       t_before_(-1.0),
       t_after_(-1.0),
       current_interval_(-2)
@@ -39,10 +39,10 @@ FunctionBilinearAndTime::FunctionBilinearAndTime(const std::string& filename,
 
 FunctionBilinearAndTime::FunctionBilinearAndTime(const FunctionBilinearAndTime& other)
     : row_header_(other.row_header_),
-      row_index_(other.row_index_),
       col_header_(other.col_header_),
-      col_index_(other.col_index_),
       val_header_(other.val_header_),
+      row_index_(other.row_index_),
+      col_index_(other.col_index_),
       times_(other.times_),
       filename_(other.filename_),
       t_before_(other.t_before_),

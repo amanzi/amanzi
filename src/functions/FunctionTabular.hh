@@ -136,9 +136,9 @@ class FunctionTabular : public Function {
 
  private:
   std::vector<double> x_, y_;
+  int xi_;
   std::vector<Form> form_;
   std::vector<std::unique_ptr<Function>> func_;
-  int xi_;
 
  private: // helper functions
   void check_args(const std::vector<double>&, const std::vector<double>&,

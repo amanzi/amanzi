@@ -94,7 +94,7 @@ class SolverNKA_LS : public Solver<Vector, VectorSpace> {
 
   // mutators
   void set_tolerance(double tol) { tol_ = tol; }
-  void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
+  void set_pc_lag(int pc_lag) { pc_lag_ = pc_lag; }
   virtual void set_db(const Teuchos::RCP<ResidualDebugger>& db) {
     db_ = db;
   }
@@ -421,7 +421,7 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
 
       // minimize along the search path from min_alpha to endpoint
       double left = min_alpha_;
-      boost::uintmax_t ls_itrs(max_ls_itrs_);
+      std::uintmax_t ls_itrs(max_ls_itrs_);
       std::pair<double,double> result = boost::math::tools::brent_find_minima(
           linesearch_func, left, alpha, bits_, ls_itrs);
       fun_calls_ += ls_itrs;

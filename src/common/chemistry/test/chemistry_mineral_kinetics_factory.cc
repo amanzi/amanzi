@@ -100,11 +100,11 @@ SUITE(GeochemistryTestsKineticRateFactory) {
 
     // setup a list of minerals
     std::string name("Calcite");
-    double h2o_stoich(0.0);
-    double gram_molecular_weight(100.0872);
-    double logK(1.8487);
-    double molar_volume(36.9340);
-    double specific_surface_area(0.987654);
+    // double h2o_stoich(0.0);
+    // double gram_molecular_weight(100.0872);
+    // double logK(1.8487);
+    // double molar_volume(36.9340);
+    // double specific_surface_area(0.987654);
 
     std::vector<std::string> species_names({"H+", "HCO3-", "Ca++"});
     std::vector<double> stoichiometry({-1.0, 1.0, 1.0});

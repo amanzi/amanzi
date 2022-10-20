@@ -79,31 +79,29 @@ TEST(DISPERSION) {
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+  TransportExplicit_PK TPK(plist, S, "transport", component_names);
+  TPK.Setup();
+  S->Setup();
+  S->InitializeFields();
+  S->InitializeEvaluators();
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
   S->set_initial_time(0.0);
   S->set_final_time(0.0);
 
-  TransportExplicit_PK TPK(plist, S, "transport", component_names);
-  TPK.Setup(S.ptr());
-  TPK.CreateDefaultState(mesh, 1);
-  S->InitializeFields();
-  S->InitializeEvaluators();
-
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
-  Teuchos::RCP<Epetra_MultiVector> 
-      flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    (*flux)[0][f] = velocity * normal;
+    flux[0][f] = velocity * normal;
   }
 
-  Teuchos::RCP<Epetra_MultiVector> 
-      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+  auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
@@ -111,35 +109,33 @@ TEST(DISPERSION) {
     (*tcc)[0][c] = f_step(xc, 0.0);
   }
 
-  *(S->GetScalarData("const_fluid_density", passwd)) = 1.0;
+  S->GetW<double>("const_fluid_density", passwd) = 1.0;
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
 
   /* advance the state */
   double dt0;
-  dt0 = TPK.StableTimeStep();
+  dt0 = TPK.StableTimeStep(-1);
 
   int iter = 0;
   double t_old(0.0), t_new(0.0), dt, T1(1.0);
   while (t_new < T1) {
-    dt = std::min(TPK.StableTimeStep(), T1 - t_old);
+    dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
     dt = std::min(dt, dt0);
     t_new = t_old + dt;
     // for (int k = 0; k < nx; k++) printf("%10.8f\n", (*tcc)[0][k]); 
     // printf("\n");
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new, S);
+    TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
     iter++;
 
     TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
   }
- 
-  
 }
 
 
@@ -184,53 +180,51 @@ TEST(DIFFUSION) {
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+  TransportExplicit_PK TPK(plist, S, "transport", component_names);
+  TPK.Setup();
+  S->Setup();
+  S->InitializeFields();
+  S->InitializeEvaluators();
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
   S->set_initial_time(0.0);
   S->set_final_time(0.0);
 
-  TransportExplicit_PK TPK(plist, S, "transport", component_names);
-  TPK.Setup(S.ptr());
-  TPK.CreateDefaultState(mesh, 1);
-  S->InitializeFields();
-  S->InitializeEvaluators();
-
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
-  Teuchos::RCP<Epetra_MultiVector> 
-      flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(0.5, 0.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    (*flux)[0][f] = velocity * normal;
+    flux[0][f] = velocity * normal;
   }
 
-  Teuchos::RCP<Epetra_MultiVector> 
-      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+  auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
-  *(S->GetScalarData("const_fluid_density", passwd)) = 1.0;
+  S->GetW<double>("const_fluid_density", passwd) = 1.0;
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
 
   /* advance the state */
   double dt0;
-  dt0 = TPK.StableTimeStep();
+  dt0 = TPK.StableTimeStep(-1);
 
   int iter = 0;
   double t_old(0.0), t_new(0.0), dt, T1(1.0);
   while (t_new < T1) {
-    dt = std::min(TPK.StableTimeStep(), T1 - t_old);
+    dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
     dt = std::min(dt, dt0);
     t_new = t_old + dt;
     // for (int k = 0; k < nx; k++) printf("%10.8f\n", (*tcc)[0][k]); 
     // printf("\n");
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new, S);
+    TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
     iter++;
@@ -242,8 +236,6 @@ TEST(DIFFUSION) {
   GMV::start_data();
   GMV::write_cell_data(*tcc, 0, "Component_0");
   GMV::close_data_file();
-
-  
 }
 
 
@@ -289,51 +281,49 @@ TEST(GAS_DIFFUSION) {
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+  TransportExplicit_PK TPK(plist, S, "transport", component_names);
+  TPK.Setup();
+  S->Setup();
+  S->InitializeFields();
+  S->InitializeEvaluators();
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
   S->set_initial_time(0.0);
   S->set_final_time(0.0);
 
-  TransportExplicit_PK TPK(plist, S, "transport", component_names);
-  TPK.Setup(S.ptr());
-  TPK.CreateDefaultState(mesh, 1);
-  S->InitializeFields();
-  S->InitializeEvaluators();
-
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
-  S->GetFieldData("prev_saturation_liquid", passwd)->PutScalar(0.4);
-  S->GetFieldData("saturation_liquid", passwd)->PutScalar(0.4);
-  Teuchos::RCP<Epetra_MultiVector> flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(0.1, 0.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    (*flux)[0][f] = velocity * normal;
+    flux[0][f] = velocity * normal;
   }
 
-  Epetra_MultiVector& tcc = *S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+  auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
-  *(S->GetScalarData("const_fluid_density", passwd)) = 1.0;
+  S->GetW<double>("const_fluid_density", passwd) = 1.0;
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
 
   /* advance the state */
   double dt0;
-  dt0 = TPK.StableTimeStep();
+  dt0 = TPK.StableTimeStep(-1);
 
   int iter = 0;
   double t_old(0.0), t_new(0.0), dt, T1(0.99);
   while (t_new < T1) {
-    dt = std::min(TPK.StableTimeStep(), T1 - t_old);
+    dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
     dt = std::min(dt, dt0);
     t_new = t_old + dt;
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new, S);
+    TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
     iter++;
@@ -358,8 +348,6 @@ TEST(GAS_DIFFUSION) {
   GMV::write_cell_data(tcc, 0, "Component_0");
   GMV::write_cell_data(tcc, 1, "Component_1");
   GMV::close_data_file();
-
-  
 }
 
 

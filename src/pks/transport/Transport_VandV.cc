@@ -24,61 +24,7 @@
 namespace Amanzi {
 namespace Transport {
 
-/* ****************************************************************
-* Construct default state for unit tests.
-**************************************************************** */
-void Transport_PK::CreateDefaultState(
-    Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents) 
-{
-  std::string name("state"); 
-  S_->RequireScalar("const_fluid_density", name);
-
-  if (!S_->HasField(saturation_liquid_key_)) {
-    S_->RequireField(saturation_liquid_key_, name)->SetMesh(mesh)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-  
-  if (!S_->HasField(prev_saturation_liquid_key_)) {
-    S_->RequireField(prev_saturation_liquid_key_, name)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  if (!S_->HasField(darcy_flux_key_)) {
-    S_->RequireField(darcy_flux_key_, name)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("face", AmanziMesh::FACE, 1);
-  }
-  
-  if (!S_->HasField(tcc_key_)) {
-    std::vector<std::vector<std::string> > subfield_names(1);
-    for (int i = 0; i != ncomponents; ++i) {
-      subfield_names[0].push_back(component_names_[i]);
-    }
-    S_->RequireField(tcc_key_, name, subfield_names)->SetMesh(mesh_)
-        ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
-  }
-
-  // initialize fields
-  S_->Setup();
- 
-  // set popular default values
-  *(S_->GetScalarData("const_fluid_density", name)) = 1000.0;
-  S_->GetField("const_fluid_density", name)->set_initialized();
-
-  S_->GetFieldData(saturation_liquid_key_, name)->PutScalar(1.0);
-  S_->GetField(saturation_liquid_key_, name)->set_initialized();
-
-  S_->GetFieldData(prev_saturation_liquid_key_, name)->PutScalar(1.0);
-  S_->GetField(prev_saturation_liquid_key_, name)->set_initialized();
-
-  S_->GetFieldData(tcc_key_, name)->PutScalar(0.0);
-  S_->GetField(tcc_key_, name)->set_initialized();
-
-  S_->GetFieldData(darcy_flux_key_, name)->PutScalar(0.0);
-  S_->GetField(darcy_flux_key_, name)->set_initialized();
-
-  S_->InitializeFields();
-}
-
+using CV_t = CompositeVector;
 
 /* *******************************************************************
 * Routine verifies that the velocity field is divergence free                 
@@ -86,7 +32,7 @@ void Transport_PK::CreateDefaultState(
 void Transport_PK::Policy(Teuchos::Ptr<State> S)
 {
   if (mesh_->get_comm()->NumProc() > 1) {
-    if (!S->GetFieldData(tcc_key_)->Ghosted()) {
+    if (!S->Get<CV_t>(tcc_key_).Ghosted()) {
       Errors::Message msg;
       msg << "Field \"total component concentration\" has no ghost values."
           << " Transport PK is giving up.\n";
@@ -102,7 +48,8 @@ void Transport_PK::Policy(Teuchos::Ptr<State> S)
 void Transport_PK::VV_PrintSoluteExtrema(
     const Epetra_MultiVector& tcc_next, double dT_MPC, const std::string& mesh_id)
 {
-  auto darcy_flux = *S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
+  const auto& flowrate = *S_->Get<CV_t>(vol_flowrate_key_).ViewComponent("face", true);
+  const auto& wc = *S_->Get<CV_t>(wc_key_).ViewComponent("cell");
 
   int num_components = tcc_next.NumVectors();
   double tccmin_vec[num_components];
@@ -136,7 +83,7 @@ void Transport_PK::VV_PrintSoluteExtrema(
           int dir, c = cells[0];
 
           mesh_->face_normal(f, false, c, &dir);
-          double u = darcy_flux[0][f] * dir;
+          double u = flowrate[0][f] * dir;
           if (u > 0) solute_flux += u * tcc_next[i][c];
         }
       }
@@ -155,7 +102,7 @@ void Transport_PK::VV_PrintSoluteExtrema(
     double mass_solute(0.0);
     for (int c = 0; c < ncells_owned; c++) {
       double vol = mesh_->cell_volume(c);
-      mass_solute += (*ws)[0][c] * (*phi)[0][c] * tcc_next[i][c] * vol;
+      mass_solute += wc[0][c] * tcc_next[i][c] * vol;
     }
     mass_solute *= units_.concentration_factor();
 
@@ -179,15 +126,17 @@ void Transport_PK::VV_PrintLimiterStatistics()
       std::string& name = runtime_solutes_[n];
 
       if (FindComponentNumber(name) == current_component_) {
-        const Epetra_Vector& limiter = *limiter_->limiter();
-        double vmin, vavg, vmax;
+        const auto limiter = limiter_->limiter();
+        if (limiter.get()) {
+          double vmin, vavg, vmax;
 
-        limiter.MinValue(&vmin);
-        limiter.MaxValue(&vmax);
-        limiter.MeanValue(&vavg);
+          limiter->MinValue(&vmin);
+          limiter->MaxValue(&vmax);
+          limiter->MeanValue(&vavg);
 
-        *vo_->os() << name << ": limiter min/avg/max: " 
-                   << vmin << " " << vavg<< " " << vmax << std::endl;
+          *vo_->os() << name << ": limiter min/avg/max: " 
+                     << vmin << " " << vavg << " " << vmax << std::endl;
+        }
       }
     }
   }
@@ -199,7 +148,7 @@ void Transport_PK::VV_PrintLimiterStatistics()
 ****************************************************************** */
 void Transport_PK::VV_CheckInfluxBC() const
 {
-  auto darcy_flux = *S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
+  const auto& flowrate = *S_->Get<CV_t>(vol_flowrate_key_).ViewComponent("face", true);
 
   int number_components = tcc->ViewComponent("cell")->NumVectors();
   std::vector<int> influx_face(nfaces_wghost);
@@ -229,7 +178,7 @@ void Transport_PK::VV_CheckInfluxBC() const
         if (i == tcc_index[k]) {
           for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
             int f = it->first;
-            if (darcy_flux[0][f] < 0 && influx_face[f] == 0) {
+            if (flowrate[0][f] < 0 && influx_face[f] == 0) {
               Errors::Message msg;
               msg << "No influx boundary condition has been found for component " << i << ".\n";
               Exceptions::amanzi_throw(msg);
@@ -309,7 +258,7 @@ void Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
 ****************************************************************** */
 double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
 {
-  auto darcy_flux = *S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
+  const auto& flowrate = *S_->Get<CV_t>(vol_flowrate_key_).ViewComponent("face", true);
 
   double volume = 0.0;
 
@@ -328,7 +277,7 @@ double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
             int c2 = downwind_cells_[f][0];
 
             if (f < nfaces_owned && c2 >= 0) {
-              double u = fabs(darcy_flux[0][f]);
+              double u = fabs(flowrate[0][f]);
               volume += u * values[i];
             }
           }

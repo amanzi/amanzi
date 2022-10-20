@@ -29,14 +29,14 @@ RegionHalfSpace::RegionHalfSpace(const std::string& name,
                                  const Point& p,
                                  const Point& normal,
                                  const LifeCycleType lifecycle)
-    : Region(name, id, true, PLANE, p.dim()-1, p.dim(), lifecycle),
+    : Region(name, id, true, RegionType::PLANE, p.dim()-1, p.dim(), lifecycle),
       p_(p),
       n_(normal/norm(normal))
 {
   if (p_.dim() != n_.dim()) {
     Errors::Message mesg;
     mesg << "Mismatch in point and normal dimensions of RegionHalfSpace "
-         << Region::name();
+         << Region::get_name();
     Exceptions::amanzi_throw(mesg);
   }
 }

@@ -113,7 +113,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       "numerical_controls, unstructured_controls, unstr_transport_controls, algorithm", flag);
   if (flag) {
     std::string algorithm = TrimString_(mm.transcode(node->getTextContent()));
-    transport_implicit_ = (algorithm == "implicit");
+    transport_implicit_ = (algorithm == "implicit" || algorithm == "implicit second-order");
   }
 
   // parse execution_control
@@ -212,6 +212,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       } else if (strcmp(tagname, "transport") == 0) {
         GetAttributeValueS_(jnode, "state", "on");
         transient_model += 2;
+        pk_model_["transport"] = "transport";
         pk_domain_["transport"] = "domain";
 
       } else if (strcmp(tagname, "energy") == 0) {
@@ -222,7 +223,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
         transient_model += 8;
 
       } else if (strcmp(tagname, "shallow_water") == 0) {
-        model = GetAttributeValueS_(jnode, "model");
+        model = GetAttributeValueS_(jnode, "model", "Rusanov, central upwind");
         pk_model_["shallow_water"] = model;
 
         std::string region = GetAttributeValueS_(jnode, "domain");
@@ -336,7 +337,6 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       PopulatePKTree_(pk_tree_list, Keys::merge(mode, "multiphase", delimiter));
       break;
     default:
-      Errors::Message msg;
       msg << "The model with id=" << transient_model << " is not supported by the MPC.\n";
       Exceptions::amanzi_throw(msg);
     }
@@ -353,6 +353,16 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
   }
 
   out_list.set<Teuchos::Array<std::string> >("component names", comp_names_all_);
+
+  // available molar masses
+  std::string name;
+  std::vector<double> tmp(comp_names_all_.size(), 1.0);
+
+  for (int i = 0; i < comp_names_all_.size(); ++i) {
+    name = comp_names_all_[i];
+    if (solute_molar_mass_.find(name) != solute_molar_mass_.end()) tmp[i] = solute_molar_mass_[name];
+  }
+  out_list.set<Teuchos::Array<double> >("component molar masses", tmp);
 
   out_list.sublist("time period control") = TranslateTimePeriodControls_();
   if (filename.size() > 0) {
@@ -404,6 +414,7 @@ void InputConverterU::PopulatePKTree_(
        .set<std::string>("PK type", pk_model_["flow"]);
   }
   else if (basename == "coupled transport") {
+    use_transport_dispersion_ = !(implicit == "");
     tmp.set<std::string>("PK type", "transport matrix fracture" + implicit);
     tmp.sublist(Keys::merge(prefix, "transport matrix", delimiter)).set<std::string>("PK type", "transport" + implicit);
     tmp.sublist(Keys::merge(prefix, "transport fracture", delimiter)).set<std::string>("PK type", "transport" + implicit);
@@ -755,8 +766,11 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
           if (flag) nonlinear_solver = GetAttributeValueS_(node, "name", TYPE_NONE, false, "nka"); 
 
           out_list.sublist(pk).sublist("time integrator") = TranslateTimeIntegrator_(
-              err_options, nonlinear_solver, false, tags_default,
+              err_options, nonlinear_solver, false, tags_default, "Dispersion Solver",
               dt_cut_[mode], dt_inc_[mode]);
+        } else {
+          out_list.sublist(pk).set<std::string>("solver", "Dispersion Solver")
+                              .set<std::string>("preconditioner", LINEAR_SOLVER_PC);
         }
       }
       else if (basename == "coupled chemistry") {
@@ -803,13 +817,13 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "domain");
 
-        auto& tmp = glist.sublist("state").sublist("field evaluators");
+        auto& tmp = glist.sublist("state").sublist("evaluators");
         AddSecondaryFieldEvaluator_(tmp, 
             Keys::getKey("domain", "molar_density_liquid"), "molar density key",
-            "eos", "liquid water 0-30C", "density");
+            "eos", "density");
         AddSecondaryFieldEvaluator_(tmp, 
             Keys::getKey("domain", "viscosity_liquid"), "viscosity key",
-            "viscosity", "liquid water 0-30C", "viscosity");
+            "viscosity", "viscosity");
 
         std::vector<std::string> controls({ "pressure" });
         out_list.sublist(pk_names[0]).sublist("time integrator")
@@ -837,13 +851,13 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "fracture");
 
-        auto& tmp = glist.sublist("state").sublist("field evaluators");
+        auto& tmp = glist.sublist("state").sublist("evaluators");
         AddSecondaryFieldEvaluator_(tmp, 
             Keys::getKey("fracture", "molar_density_liquid"), "molar density key",
-            "eos", "liquid water 0-30C", "density");
+            "eos", "density");
         AddSecondaryFieldEvaluator_(tmp, 
             Keys::getKey("fracture", "viscosity_liquid"), "viscosity key",
-            "viscosity", "liquid water 0-30C", "viscosity");
+            "viscosity", "viscosity");
 
         std::vector<std::string> controls({ "pressure" });
         out_list.sublist(pk_names[0]).sublist("time integrator")
@@ -867,7 +881,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         pk_names.push_back(Keys::merge(prefix, "coupled chemistry", delimiter));
         pk_names.push_back(Keys::merge(prefix, "coupled transport", delimiter));
         out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(pk).set<int>("master PK index", 0);
+        out_list.sublist(pk).set<int>("master PK index", 1);
       }
       else if (basename == "coupled flow and energy") {
         Teuchos::Array<std::string> pk_names;
@@ -903,7 +917,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
 
         // ... coupling information 
         out_list.sublist(pk_names[1]).sublist("physical models and assumptions")
-           .set<std::string>("darcy flux key", Keys::getKey(pk_domain_["shallow_water"], "riemann_flux"))
+           .set<std::string>("volumetric flow rate key", Keys::getKey(pk_domain_["shallow_water"], "riemann_flux"))
            .set<std::string>("saturation key", Keys::getKey(pk_domain_["shallow_water"], "ponded_depth"));
       }
 
@@ -913,7 +927,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         if (!out_list.sublist(pk).isSublist("time integrator")) {
           out_list.sublist(pk).sublist("time integrator") = TranslateTimeIntegrator_(
               err_options, "nka", false,
-              "unstructured_controls, unstr_transient_controls",
+              "unstructured_controls, unstr_transient_controls", TI_SOLVER,
               dt_cut_[mode], dt_inc_[mode]);
           out_list.sublist(pk).sublist("verbose object") = verb_list_.sublist("verbose object");
         }
@@ -957,8 +971,11 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       tmp_m.set<std::string>("time integration method", "none");
       tmp_m.remove("BDF1", false);
       tmp_m.remove("initialization", false);
-      pk_list.sublist(flow_m).sublist("operators")
-         .sublist("diffusion operator").sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+      auto& tmp = pk_list.sublist(flow_m).sublist("operators").sublist("diffusion operator");
+      tmp.sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_)
+                           .set<std::string>("nonlinear coefficient", "standard: cell");
+      tmp.sublist("preconditioner").set<Teuchos::Array<std::string> >("fracture", fracture_regions_)
+                                   .set<std::string>("nonlinear coefficient", "standard: cell");
 
       auto& tmp_f = pk_list.sublist(flow_f).sublist("time integrator");
       tmp_f.set<std::string>("time integration method", "none");
@@ -989,6 +1006,24 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
              .sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
     }
 
+    if (basename == "coupled transport") {
+      std::string transport_m = Keys::merge(prefix, "transport matrix", delimiter);
+      auto& tmp = pk_list.sublist(transport_m).sublist("operators");
+      if (tmp.isSublist("diffusion operator")) {
+        tmp.sublist("diffusion operator")
+           .sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+        tmp.sublist("diffusion operator")
+           .sublist("preconditioner").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+      }
+
+      Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
+      mesh_list.sublist("submesh").set<Teuchos::Array<std::string> >("regions", aux)
+                                  .set<std::string>("extraction method", "manifold mesh")
+                                  .set<std::string>("domain name", "fracture");
+
+      if (dim_ == 3) mesh_list.sublist("expert").set<bool>("request edges", true);
+    }
+
     if (basename == "coupled flow and energy") {
       std::vector<std::string> name_pks = { "flow and energy", "flow and energy fracture",
                                             "flow", "energy", "flow fracture", "energy fracture"};
@@ -1011,6 +1046,13 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
 
         if (pk == "flow" || pk == "flow fracture") {
           tmp.sublist("pressure-lambda constraints").set<std::string>("method", "projection");
+        }
+
+        // cannot upwind nonlinear coefficient at the moment
+        if (pk == "flow") {
+          auto& aux = pk_list.sublist(fullname).sublist("operators").sublist("diffusion operator");
+          aux.sublist("matrix").set<std::string>("nonlinear coefficient", "standard: cell");
+          aux.sublist("preconditioner").set<std::string>("nonlinear coefficient", "standard: cell");
         }
 
         if (pk == "energy") {

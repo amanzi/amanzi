@@ -43,7 +43,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   }
 
   // first we write initial conditions for scalars and vectors, not region-specific
-  Teuchos::ParameterList& out_ev = out_list.sublist("field evaluators");
+  Teuchos::ParameterList& out_ev = out_list.sublist("evaluators");
   Teuchos::ParameterList& out_ic = out_list.sublist("initial conditions");
 
   MemoryManager mm;
@@ -52,10 +52,14 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   char* text_content;
 
   // --- eos lookup table
-  bool flag;
+  bool flag, flag1, flag2;
   DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, eos", flag);
   if (flag) {
-    eos_lookup_table_ = GetTextContentS_(node, "", false);
+    eos_model_ = GetTextContentS_(node, "", false);
+    if (eos_model_ != "FEHM" && eos_model_ != "0-30C") {
+      eos_lookup_table_ = eos_model_;
+      eos_model_ = "tabular";
+    }
   }
   
   // --- gravity
@@ -73,7 +77,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   if (flag) {
     viscosity = GetTextContentD_(node, "Pa*s");
     out_ic.sublist("const_gas_viscosity").set<double>("value", viscosity);
-    AddIndependentFieldEvaluator_(out_ev, "viscosity_gas", "All", viscosity);
+    AddIndependentFieldEvaluator_(out_ev, "viscosity_gas", "All", "cell", viscosity);
   }
 
   // --- constant density
@@ -81,7 +85,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   rho_ = GetTextContentD_(node, "kg/m^3");
   out_ic.sublist("const_fluid_density").set<double>("value", rho_);
 
-  AddIndependentFieldEvaluator_(out_ev, "mass_density_liquid", "All", rho_);
+  AddIndependentFieldEvaluator_(out_ev, "mass_density_liquid", "All", "cell", rho_);
 
   // --- region specific initial conditions from material properties
   std::map<std::string, int> reg2mat;
@@ -219,13 +223,19 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- specific_yield
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_yield", flag);
       if (flag) {
-        TranslateFieldIC_(node, "specific_yield", "-", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, "specific_yield", "-", reg_str, regions, out_ic);
       }
 
       // -- specific storage
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_storage", flag);
       if (flag) {
-        TranslateFieldIC_(node, "specific_storage", "m^-1", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, "specific_storage", "m^-1", reg_str, regions, out_ic);
+      }
+
+      // -- volumetric strain
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, volumetric_strain", flag);
+      if (flag) {
+        TranslateFieldEvaluator_(node, "volumetric_strain", "-", reg_str, regions, out_ic, out_ev);
       }
 
       // -- particle density
@@ -241,7 +251,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         std::string model = GetAttributeValueS_(node, "model", "linear");
 
         Teuchos::ParameterList& field_ev = out_ev.sublist("internal_energy_liquid");
-        field_ev.set<std::string>("field evaluator type", "iem")
+        field_ev.set<std::string>("evaluator type", "iem")
             .set<std::string>("internal energy key", "internal_energy_liquid");
 
         if (eos_lookup_table_.size() > 0) {
@@ -256,7 +266,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
               .set<std::string>("iem type", model)
               .set<double>("heat capacity", cv);
         }
-    } else {
       }
 
       // -- rock heat capacity
@@ -266,7 +275,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         std::string model = GetAttributeValueS_(node, "model", "linear");
 
         Teuchos::ParameterList& field_ev = out_ev.sublist("internal_energy_rock");
-        field_ev.set<std::string>("field evaluator type", "iem")
+        field_ev.set<std::string>("evaluator type", "iem")
             .set<std::string>("internal energy key", "internal_energy_rock");
 
         field_ev.sublist("IEM parameters").sublist(reg_str)
@@ -275,6 +284,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<double>("heat capacity", cv);
       }
     }
+  }
+
+  // optional eos fields 
+  if (eos_model_ != "") {
+    AddSecondaryFieldEvaluator_(out_ev, 
+        Keys::getKey("domain", "molar_density_liquid"), "molar density key",
+        "eos", "density");
   }
 
   // optional secondary continuum
@@ -293,7 +309,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- dual porosity: matrix porosity
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
       if (flag) {
-        TranslateFieldIC_(node, "porosity_matrix", "-", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, "porosity_msp", "-", reg_str, regions, out_ic);
       }
     }
   }
@@ -301,7 +317,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   // optional fracture network
   node = GetUniqueElementByTagsString_("fracture_network", flag);
   if (flag) {
-    AddIndependentFieldEvaluator_(out_ev, "fracture-mass_density_liquid", "FRACTURE_NETWORK_INTERNAL", rho_);
+    fractures_ = true;
+    AddIndependentFieldEvaluator_(out_ev, "fracture-mass_density_liquid",
+                                  "FRACTURE_NETWORK_INTERNAL", "cell", rho_);
   }
 
   node = GetUniqueElementByTagsString_("fracture_network, materials", flag);
@@ -326,11 +344,22 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- aperture
       node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
       if (flag) {
-        TranslateFieldEvaluator_(node, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "aperture", "fracture");
-        TranslateFieldIC_(node, "fracture-normal_permeability", "m^2*s/kg", reg_str, regions, out_ic, out_ev, "normal");
+        auto tmp1 = GetUniqueElementByTagsString_(node, "aperture", flag1);
+        auto tmp2 = GetUniqueElementByTagsString_(node, "normal", flag2);
+        if (!flag1 || !flag2) {
+          msg << "fracture_permeability must have two elements: aperture and normal.";
+          Exceptions::amanzi_throw(msg);
+        }
+        TranslateFieldEvaluator_(tmp1, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "value", "fracture");
+        TranslateFieldIC_(tmp2, "fracture-normal_permeability", "s^-1", reg_str, regions, out_ic, "value");
       } else { 
         msg << "fracture_permeability element must be specified for all materials in fracture network.";
         Exceptions::amanzi_throw(msg);
+      }
+
+      node = GetUniqueElementByTagsString_(inode, "fracture_diffusivity", flag);
+      if (flag) {
+        TranslateFieldIC_(node, "fracture-normal_diffusion", "m/s", reg_str, regions, out_ic, "normal");
       }
 
       // -- particle density
@@ -342,13 +371,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- specific storage
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_storage", flag);
       if (flag) {
-        TranslateFieldIC_(node, "fracture-specific_storage", "m^-1", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, "fracture-specific_storage", "m^-1", reg_str, regions, out_ic);
       }
 
       // -- thermal conductivity
       node = GetUniqueElementByTagsString_(inode, "fracture_conductivity", flag);
       if (flag) {
-        TranslateFieldIC_(node, "fracture-normal_conductivity", "", reg_str, regions, out_ic, out_ev, "normal");
+        TranslateFieldIC_(node, "fracture-normal_conductivity", "", reg_str, regions, out_ic, "normal");
       }
 
       // -- liquid heat capacity
@@ -358,7 +387,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         std::string model = GetAttributeValueS_(node, "model", "linear");
 
         Teuchos::ParameterList& field_ev = out_ev.sublist("fracture-internal_energy_liquid");
-        field_ev.set<std::string>("field evaluator type", "iem")
+        field_ev.set<std::string>("evaluator type", "iem")
             .set<std::string>("internal energy key", "fracture-internal_energy_liquid");
 
         field_ev.sublist("IEM parameters").sublist(reg_str)
@@ -374,6 +403,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
               .set<std::string>("field name", "internal_energy");
         }
       }
+    }
+
+    // -- eos
+    if (eos_model_ != "") {
+      AddSecondaryFieldEvaluator_(out_ev, 
+          Keys::getKey("fracture", "molar_density_liquid"), "molar density key",
+          "eos", "density");
     }
   }
 
@@ -464,7 +500,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<Teuchos::Array<double> >("gradient", grad);
       }
 
-      // -- darcy_flux
+      // -- darcy_flux, more precisely volumetric flow rate
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, velocity", flag);
       if (flag) {
         std::vector<double> velocity;
@@ -472,9 +508,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         velocity.push_back(GetAttributeValueD_(node, coords_[1].c_str()));
         if (dim_ == 3) velocity.push_back(GetAttributeValueD_(node, coords_[2].c_str()));
 
-        Teuchos::ParameterList& darcy_flux_ic = out_ic.sublist("darcy_flux");
+        Teuchos::ParameterList& flowrate_ic = out_ic.sublist("volumetric_flow_rate");
         Teuchos::ParameterList& tmp_list =
-            darcy_flux_ic.set<bool>("dot with normal", true)
+            flowrate_ic.set<bool>("dot with normal", true)
             .sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
             .set<std::string>("component", "face")
@@ -607,7 +643,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       std::string domain = (dim_ == 2) ? "domain" : "surface";
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, ponded_depth", flag);
       if (flag) {
-        TranslateFieldIC_(node, Keys::getKey(domain, "ponded_depth"), "m", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, Keys::getKey(domain, "ponded_depth"), "m", reg_str, regions, out_ic);
+      }
+
+      // -- bathymetry
+      node = GetUniqueElementByTagsString_("geometric_model, bathymetry", flag);
+      if (flag) {
+        TranslateFieldIC_(node, Keys::getKey(domain, "bathymetry"), "", reg_str, regions, out_ic, "", { "cell", "node" });
       }
     }
   }
@@ -636,6 +678,52 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<std::string>("component", "*")
             .sublist("function").sublist("function-constant")
             .set<double>("value", p);
+      }
+
+      // -- linear fracture pressure
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_pressure", flag);
+      if (flag) {
+        double p = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "Pa");
+        std::vector<double> grad = GetAttributeVectorD_(node, "gradient", dim_, "Pa/m");
+        std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", dim_, "m");
+
+        grad.insert(grad.begin(), 0.0);
+        refc.insert(refc.begin(), 0.0);
+
+        Teuchos::ParameterList& pressure_ic = out_ic.sublist("fracture-pressure");
+        pressure_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "*")
+            .sublist("function").sublist("function-linear")
+            .set<double>("y0", p)
+            .set<Teuchos::Array<double> >("x0", refc)
+            .set<Teuchos::Array<double> >("gradient", grad);
+      }
+
+      // -- fracture volumetric flow rate
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, velocity", flag);
+      if (flag) {
+        std::vector<double> velocity;
+        velocity.push_back(GetAttributeValueD_(node, coords_[0].c_str()));
+        velocity.push_back(GetAttributeValueD_(node, coords_[1].c_str()));
+        velocity.push_back(GetAttributeValueD_(node, coords_[2].c_str()));
+
+        Teuchos::ParameterList& flowrate_ic = out_ic.sublist("fracture-volumetric_flow_rate");
+        Teuchos::ParameterList& tmp_list =
+            flowrate_ic.set<bool>("dot with normal", true)
+            .sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "face")
+            .sublist("function")
+            .set<int>("number of dofs", dim_)
+            .set<std::string>("function type", "composite function");
+
+        for (int k = 0; k != dim_; ++k) {
+          std::stringstream dof_str;
+          dof_str << "dof " << k+1 << " function";
+          tmp_list.sublist(dof_str.str()).sublist("function-constant")
+                                         .set<double>("value", velocity[k]);
+        }
       }
 
       // -- total_component_concentration (liquid phase)
@@ -726,11 +814,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
     out_list.set<Teuchos::Array<std::string> >("whitelist", CharToStrings_(text_content));
   }
 
-  // temporary fix for fractures
-  if (fractures_) {
-    Teuchos::ParameterList empty;
-    out_list.sublist("initial conditions").sublist("permeability") = empty;
-  }
+  out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
 
   return out_list;
 }
@@ -745,6 +829,8 @@ void InputConverterU::TranslateFieldEvaluator_(
     Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
     std::string data_key, std::string domain)
 {
+  MemoryManager mm;
+
   std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
   if (type == "file") {  // Amanzi restart file
     std::string filename = GetAttributeValueS_(node, "filename");
@@ -752,13 +838,13 @@ void InputConverterU::TranslateFieldEvaluator_(
     field_ic.set<std::string>("restart file", filename);
 
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
-    field_ev.set<std::string>("field evaluator type", "constant variable");
+    field_ev.set<std::string>("evaluator type", "constant variable");
   } else if (type == "h5file") {  // regular h5 file
     std::string filename = GetAttributeValueS_(node, "filename");
     bool temporal = GetAttributeValueS_(node, "constant_in_time", TYPE_NUMERICAL, false, "true") == "true";
 
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
-    field_ev.set<std::string>("field evaluator type", "independent variable from file")
+    field_ev.set<std::string>("evaluator type", "independent variable from file")
         .set<std::string>("filename", filename)
         .set<std::string>("domain name", domain)
         .set<std::string>("component name", "cell")
@@ -767,15 +853,29 @@ void InputConverterU::TranslateFieldEvaluator_(
         .set<int>("number of dofs", 1)
         .set<bool>("constant in time", temporal);
   } else {
-    double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
-
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
-    field_ev.sublist("function").sublist(reg_str)
+
+    if (static_cast<DOMElement*>(node)->hasAttribute(mm.transcode("formula"))) {
+      std::string formula = GetAttributeValueS_(node, "formula");
+
+      field_ev.sublist("function").sublist(reg_str)
         .set<Teuchos::Array<std::string> >("regions", regions)
         .set<std::string>("component", "cell")
-        .sublist("function").sublist("function-constant")
-        .set<double>("value", val);
-    field_ev.set<std::string>("field evaluator type", "independent variable");
+        .sublist("function").sublist("function-exprtk")
+          .set<int>("number of arguments", dim_ + 1)
+          .set<std::string>("formula", formula);
+      field_ev.set<std::string>("evaluator type", "independent variable");
+
+    } else {
+      double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
+
+      field_ev.sublist("function").sublist(reg_str)
+          .set<Teuchos::Array<std::string> >("regions", regions)
+          .set<std::string>("component", "cell")
+          .sublist("function").sublist("function-constant")
+          .set<double>("value", val);
+      field_ev.set<std::string>("evaluator type", "independent variable");
+    }
   }
 }
 
@@ -786,8 +886,8 @@ void InputConverterU::TranslateFieldEvaluator_(
 void InputConverterU::TranslateFieldIC_(
     DOMNode* node, std::string field, std::string unit,
     const std::string& reg_str, const std::vector<std::string>& regions,
-    Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
-    std::string data_key)
+    Teuchos::ParameterList& out_ic, std::string data_key,
+    const std::vector<std::string>& components)
 {
   MemoryManager mm;
 
@@ -804,10 +904,20 @@ void InputConverterU::TranslateFieldIC_(
 
       field_ic.sublist("function").sublist(reg_str)
         .set<Teuchos::Array<std::string> >("regions", regions)
-        .set<std::string>("component", "cell")
         .sublist("function").sublist("function-exprtk")
           .set<int>("number of arguments", dim_ + 1)
           .set<std::string>("formula", formula);
+
+      if (components.size() == 1) {
+        field_ic.sublist("function").sublist(reg_str)
+          .set<Teuchos::Array<std::string> >("regions", regions)
+          .set<std::string>("component", components[0]);
+      } else {
+        field_ic.sublist("function").sublist(reg_str)
+          .set<Teuchos::Array<std::string>>("regions", regions)
+          .set<Teuchos::Array<std::string>>("components", components);
+      }
+       
     } else {
       double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
 
@@ -933,16 +1043,17 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
 ****************************************************************** */
 void InputConverterU::AddIndependentFieldEvaluator_(
     Teuchos::ParameterList& out_ev,
-    const std::string& field, const std::string& region, double val)
+    const std::string& field, const std::string& region,
+    const std::string& comp, double val)
 {
   out_ev.sublist(field).sublist("function").sublist("All")
       .set<std::string>("region", region)
-      .set<std::string>("component", "cell")
+      .set<std::string>("component", comp)
       .sublist("function").sublist("function-constant")
       .set<double>("value", val);
 
   out_ev.sublist(field)
-      .set<std::string>("field evaluator type", "independent variable");
+      .set<std::string>("evaluator type", "independent variable");
 }
 
 
@@ -952,15 +1063,14 @@ void InputConverterU::AddIndependentFieldEvaluator_(
 void InputConverterU::AddSecondaryFieldEvaluator_(
     Teuchos::ParameterList& out_ev,
     const Key& field, const Key& key,
-    const std::string& type, const std::string& model,
-    const std::string& eos_table_name)
+    const std::string& type, const std::string& eos_table_name)
 {
   out_ev.sublist(field)
-    .set<std::string>("field evaluator type", type)
+    .set<std::string>("evaluator type", type)
     .set<std::string>(key, field);
 
   out_ev.sublist(field).sublist("EOS parameters")
-    .set<std::string>("eos type", model);
+    .set<std::string>("eos type", "liquid water " + eos_model_);
 
   // modifies
   if (eos_lookup_table_ != "") {

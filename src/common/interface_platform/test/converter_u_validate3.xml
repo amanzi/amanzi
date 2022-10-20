@@ -105,9 +105,12 @@
   </ParameterList>
 
   <ParameterList name="state">
-    <ParameterList name="field evaluators">
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+    <ParameterList name="evaluators">
       <ParameterList name="saturation_liquid">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="ALL">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
@@ -121,7 +124,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="particle_density">
-        <Parameter name="field evaluator type" type="string" value="constant variable"/>
+        <Parameter name="evaluator type" type="string" value="constant variable"/>
       </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
@@ -153,7 +156,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
@@ -167,7 +170,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
     </ParameterList>
 
@@ -194,7 +197,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="porosity_matrix">
+      <ParameterList name="porosity_msp">
         <ParameterList name="function">
           <ParameterList name="RegionMiddle">
             <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
@@ -660,6 +663,7 @@
       <Parameter name="spatial discretization order" type="int" value="1"/>
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="cfl" type="double" value="1.0e+00"/>
+      <Parameter name="method" type="string" value="fct"/>
       <Parameter name="flow mode" type="string" value="transient"/>
       <Parameter name="solver" type="string" value="Dispersion Solver"/>
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
@@ -667,6 +671,7 @@
       <Parameter name="transport subcycling" type="bool" value="true"/>
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
+        <Parameter name="weight" type="string" value="constant"/>
         <Parameter name="limiter" type="string" value="tensorial"/>
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
         <Parameter name="limiter stencil" type="string" value="face to cells"/>
@@ -773,6 +778,7 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="multiscale model" type="string" value="dual continuum discontinuous matrix"/>
         <Parameter name="effective transport porosity" type="bool" value="false"/>
+        <Parameter name="use dispersion solver" type="bool" value="true"/>
         <Parameter name="permeability field is required" type="bool" value="false"/>
       </ParameterList>
       <ParameterList name="verbose object">

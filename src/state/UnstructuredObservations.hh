@@ -1,7 +1,7 @@
 /*
   State
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -23,7 +23,7 @@
     * `"delimiter`" ``[string]`` **\, ** Delimiter to split columns of the file
     *  `"write interval`" ``[int]`` **1** Interval of observations on which to flush IO files.
     * `"time units`" ``[string]`` **s** Controls the unit of the time column in the observation file.
-    * `"domain`" ``[string]`` **""** Can be used to set the communicator which writes (usually not needed).
+    * `"domain`" ``[string]`` **"domain"** Can be used to set the communicator which writes (defaults to the standard subsurface domain).
     * `"observed quantities`" ``[observable-spec-list]`` A list of Observable_
        objects that are all put in the same file.
 
@@ -61,14 +61,16 @@ class UnstructuredObservations : public IOEvent {
 
  private:
   // NOTE: this should only be called on one rank
-  void InitFile_();
+  void InitFile_(const Teuchos::Ptr<const State>& S);
   void Write_(double time, const std::vector<double>& obs);
 
  private:
+  std::string writing_domain_;
+  Comm_ptr_type comm_;
+  bool write_;
+
   std::vector<Teuchos::RCP<Observable>> observables_;
 
-  std::string writing_domain_;
-  bool write_;
   int num_total_;
   std::string filename_;
   std::string delimiter_;

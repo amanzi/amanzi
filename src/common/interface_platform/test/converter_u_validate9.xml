@@ -58,7 +58,10 @@
   </ParameterList>
 
   <ParameterList name="state">
-    <ParameterList name="field evaluators">
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+    <ParameterList name="evaluators">
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -71,7 +74,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
@@ -85,7 +88,32 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+      </ParameterList>
+      <ParameterList name="molar_density_liquid">
+        <Parameter name="evaluator type" type="string" value="eos"/>
+        <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water tabular"/>
+          <Parameter name="table name" type="string" value="false"/>
+          <Parameter name="field name" type="string" value="density"/>
+        </ParameterList>
+        <Parameter name="eos basis" type="string" value="both"/>
+        <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
+      </ParameterList>
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.98149999999999977e+02"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="initial conditions">
@@ -190,6 +218,7 @@
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{}"/>
+    <Parameter name="component molar masses" type="Array(double)" value="{}"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{}"/>
       <Parameter name="initial time step" type="Array(double)" value="{}"/>
@@ -508,32 +537,41 @@
       <Parameter name="numerical flux" type="string" value="Rusanov"/>
       <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
       <Parameter name="cfl" type="double" value="0.5"/>
+      <Parameter name="spatial discretization order" type="int" value="2"/>
+      <Parameter name="temporal discretization order" type="int" value="2"/>
       <ParameterList name="reconstruction">
-        <Parameter name="polynomial order" type="int" value="0"/>
+        <Parameter name="polynomial order" type="int" value="1"/>
+        <Parameter name="weight" type="string" value="constant"/>
         <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
         <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
         <Parameter name="limiter location" type="string" value="face"/>
         <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
       <ParameterList name="boundary conditions">
+        <ParameterList name="ponded depth">
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{LeftTopEdge}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="ponded depth">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.00000000000000000e+01"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
         <ParameterList name="velocity">
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{LeftTopEdge}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="velocity">
-              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.00000000000000000e+01"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="dof 3 function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
                 </ParameterList>
@@ -601,16 +639,6 @@
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Dispersion Solver">
-      <Parameter name="iterative method" type="string" value="pcg"/>
-      <ParameterList name="pcg parameters">
-        <Parameter name="error tolerance" type="double" value="1.0e-15"/>
-        <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>

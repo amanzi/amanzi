@@ -1,7 +1,7 @@
 /*
   Multiphase PK
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -57,6 +57,8 @@ FlattenedTreeOperator::FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace>
 
   // resize the blocks
   blocks_.resize(n_blocks, Teuchos::Array<Teuchos::RCP<TreeOperator> >(n_blocks, Teuchos::null));
+  row_size_ = n_blocks;
+  col_size_ = n_blocks;
 
   // first map supports solvers which use casual tree vectors
   // second map helps matrix assembly from smaller-size blocks
@@ -178,6 +180,28 @@ void FlattenedTreeOperator::set_operator_block(
 ****************************************************************** */
 int FlattenedTreeOperator::Apply(const TreeVector& X, TreeVector& Y) const {
   return ApplyAssembled(X, Y);
+}
+
+
+/* ******************************************************************
+* Calculate Y = A * X using matrix-free matvec on blocks of operators.
+****************************************************************** */
+void FlattenedTreeOperator::AddColoring(Teuchos::ParameterList& plist)
+{
+  if (plist.isParameter("preconditioning method") &&
+      plist.get<std::string>("preconditioning method") == "boomer amg" &&
+      plist.isSublist("boomer amg parameters") &&
+      plist.sublist("boomer amg parameters").get<bool>("use block indices", false)) {
+
+    AMANZI_ASSERT(smap_flat_.get());
+
+    if (coloring_ == Teuchos::null || num_colors_ == 0) {
+      auto block_ids = get_row_supermap()->BlockIndices();
+      set_coloring(block_ids.first, block_ids.second);
+    }
+    plist.sublist("boomer amg parameters").set("number of unique block indices", num_colors_);
+    plist.sublist("boomer amg parameters").set("block indices", coloring_);
+  }
 }
 
 }  // namespace Operators

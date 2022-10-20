@@ -55,8 +55,8 @@ curl_binary=`which curl`
 # CMake
 cmake_binary=`which cmake`
 ctest_binary=`which ctest`
-cmake_version=3.13.3
-cmake_url=https://cmake.org/files/v3.13
+cmake_version=3.17.0
+cmake_url=https://cmake.org/files/v3.17
 cmake_archive_file=cmake-${cmake_version}.tar.gz
 
 # Build configuration
@@ -150,6 +150,7 @@ mesh_moab=$FALSE
 # -- tools
 amanzi_branch=
 ats_branch=
+ats_tests_branch=
 ats_dev=${FALSE}
 ccse_tools=${FALSE}
 spacedim=2
@@ -346,13 +347,14 @@ Configuration:
   --branch=BRANCH         build TPLs and Amanzi found in BRANCH ['"${amanzi_branch}"']
 
   --branch_ats=BRANCH     build ATS found in BRANCH ['"${ats_branch}"']
+  --branch_ats_tests=BRAN build ATS found in BRANCH ['"${ats_tests_branch}"']
   --ats_dev               prevent cloning remote repository when building ATS ['"${ats_devs}"']
   
   --spacedim=DIM          dimension of structured build (DIM=2 or 3) ['"${spacedim}"']
 
   --dry_run               show the configuration commands (but do not execute them) ['"${dry_run}"']
 
-  --arch                  define the architecture for the build, only Summit, NERSC available
+  --arch                  define the architecture for the build (Summit|NERSC|Chicoma) 
 
 
 Build features:
@@ -706,6 +708,10 @@ List of INPUT parameters
 
       --branch_ats=*)
                  ats_branch=`parse_option_with_equal "${opt}" 'branch_ats'`
+                 ;;
+
+      --branch_ats_tests=*)
+                 ats_tests_branch=`parse_option_with_equal "${opt}" 'branch_ats_tests'`
                  ;;
 
       --ats_dev)
@@ -1213,6 +1219,20 @@ function git_change_branch_ats()
   cd ${save_dir}
 }
 
+function git_change_branch_ats_tests()
+{
+  atstestsbranch=$1
+  save_dir=`pwd`
+  cd ${ats_source_dir}/testing/ats-regression-tests
+  status_message "In ${ats_source_dir}/testing/ats-regression-tests checking out ats-regression-tests branch ${atstestsbranch}"
+  ${git_binary} checkout ${atstestsbranch}
+  if [ $? -ne 0 ]; then
+    error_message "Failed to update ats-regression-tests at ${ats_source_dir}/testing/ats-regression-tests to branch ${atstestsbranch}"
+    exit_now 30
+  fi
+  cd ${save_dir}
+}
+
 function git_submodule_clone()
 {
   submodule_name=$1
@@ -1624,6 +1644,49 @@ function define_nersc_options
 
 }
 
+function define_chicoma_options
+{
+
+  if [ "${shared}" -eq "${FALSE}" ]; then
+
+    prefer_static=$TRUE
+    exec_static=$TRUE
+    prg_env="gnu"
+    
+    arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
+                   -DMPI_EXEC:STRING=srun \
+                   -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
+                   -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}" 
+  
+   arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
+                     -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
+
+  elif [ "${shared}" -eq "${TRUE}" ]; then
+
+    prefer_static=$FALSE
+    exec_static=$FALSE
+    prg_env="gnu"
+    
+    arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
+                   -DMPI_EXEC:STRING=srun \
+                   -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
+                   -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}"
+  
+    arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
+                      -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
+
+  fi
+
+   echo ""
+   echo "Setting ARCH:        Chicoma"
+   echo "ARCH TPL OPTIONS     = " ${arch_tpl_opts}
+   echo "ARCH AMANZI OPTIONS  = " ${arch_amanzi_opts}
+   echo ""
+
+}
+
 function define_summit_options
 {
   if [ "${cuda}" -eq "${TRUE}" ]; then
@@ -1675,8 +1738,10 @@ if [ "${amanzi_arch}" = "Summit" ]; then
   define_summit_options
 elif [ "${amanzi_arch}" = "NERSC" ]; then
   define_nersc_options
+elif [ "${amanzi_arch}" = "Chicoma" ]; then
+  define_chicoma_options
 elif [ "${amanzi_arch}" != "" ]; then
-  error_message "ARCH ${amanzi_arch} not supported -- valid are Summit and NERSC"
+  error_message "ARCH ${amanzi_arch} not supported -- valid are Summit, NERSC, and Chicoma"
   exit_now 10
 fi
     
@@ -1827,6 +1892,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
       -DDISABLE_EXTERNAL_DOWNLOAD=${disable_external_downloads} \
+      -DPYTHON_EXECUTABLE:STRING=${python_exec} \
       ${blas_lapack_opts} \
       ${arch_tpl_opts} \
       ${tpl_build_src_dir}"
@@ -1915,6 +1981,9 @@ if [ "${ats_physics}" -eq "${TRUE}" ]; then
 
     if [ ! -z "${ats_branch}" ]; then
       git_change_branch_ats ${ats_branch}
+    fi
+    if [ ! -z "${ats_tests_branch}" ]; then
+      git_change_branch_ats_tests ${ats_tests_branch}
     fi
   fi
 fi

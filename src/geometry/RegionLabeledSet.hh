@@ -84,7 +84,7 @@ class RegionLabeledSet : public Region {
                    const std::string& file,
                    const std::string& format,
                    const std::string& label,
-                   const LifeCycleType lifecycle=PERMANENT);
+                   const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
   
   // Label in the file
   const std::string& label() const { return label_; }

@@ -54,13 +54,15 @@ class GeometricModel {
   // Get a region by its ID
   Teuchos::RCP<const Region>
   FindRegion(const int id) const {
-    return regions_id_.at(id);
+    if (regions_id_.count(id)) return regions_id_.at(id);
+    return Teuchos::null;
   }
 
   // Get a region by its name
   Teuchos::RCP<const Region>
   FindRegion(const std::string& name) const {
-    return regions_name_.at(name);
+    if (regions_name_.count(name)) return regions_name_.at(name);
+    return Teuchos::null;
   }
 
 private:

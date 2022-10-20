@@ -54,7 +54,7 @@ class RegionPlane : public Region {
               const int id,
               const Point& p, 
               const Point& normal,
-              const LifeCycleType lifecycle=PERMANENT);
+              const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
   
   // Get the point defining the plane
   const Point& point() const { return p_; }

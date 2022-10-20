@@ -56,7 +56,7 @@ class RegionBox : public Region {
             const int id,
             const Point& p0, 
             const Point& p1,
-            const LifeCycleType lifecycle=PERMANENT);
+            const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
 
   // Get the first point defining the region
   const Point& point0() const { return p0_; }

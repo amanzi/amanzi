@@ -1277,21 +1277,10 @@ static Real vgPcInv(Real pc, Real m, Real n, Real alpha) {
   return std::pow(1 + std::pow(alpha*pc,n),-m);
 }
 
-static Real bcMKr(Real seff, Real lambda, Real ell) {
-  return std::pow(seff,ell+2+2/lambda);
-}
-
-static Real bcBKr(Real seff, Real lambda, Real ell) {
-  return std::pow(seff,ell+1+2/lambda);
-}
-
 static Real bcPc(Real seff, Real lambdaI, Real alphaI) {
   return alphaI * std::pow(seff,-lambdaI);
 }
 
-static Real bcPcInv(Real pc, Real lambda, Real alpha) {
-  return std::pow(alpha*pc,-lambda);
-}
 
 // Capillary Pressure (given Saturation)
 void

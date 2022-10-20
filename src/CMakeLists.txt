@@ -41,6 +41,9 @@ if (ENABLE_Unstructured)
   # Output
   add_subdirectory(output)
 
+  # Build State
+  add_subdirectory(state)
+
   # Solvers
   add_subdirectory(solvers)
 
@@ -50,8 +53,6 @@ if (ENABLE_Unstructured)
   # Operators
   add_subdirectory(operators)
 
-  # Build State
-  add_subdirectory(state)
 endif()
 
 if (ENABLE_AmanziPhysicsModule)
@@ -80,4 +81,9 @@ endif()
 # standalone driver (produces mesh-independent executable)
 if (ENABLE_AmanziPhysicsModule)
   add_subdirectory(common/standalone_simulation_coordinator)
+endif()
+
+# integration tests
+if (ENABLE_AmanziPhysicsModule AND ENABLE_ATSPhysicsModule)
+  add_subdirectory(interoperability)
 endif()

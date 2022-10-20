@@ -19,8 +19,7 @@
       <numerical_constant name="KM1" value="1e-12"/>
       <numerical_constant name="KM2" value="1e-13"/>
       <numerical_constant name="KFN" value="20.0e-4 m^2*s/kg"/>
-      <numerical_constant name="KFT" value="3.4641e-05"/>
-      <!--numerical_constant name="KFT" value="1.095445115010332e-01"/-->
+      <numerical_constant name="KFT" value="1e-8"/>
 
       <constant name="gravity" type="none" value="10.0"/>
       <constant name="atmospheric_pressure" type="none" value="101325"/>
@@ -187,9 +186,13 @@
     <materials>
       <material name="Uniform">
         <mechanical_properties>
-          <porosity value="0.004"/>
+          <porosity value="0.4"/>
         </mechanical_properties>
-        <fracture_permeability model="cubic law" aperture="KFT" normal="KFN"/>
+        <fracture_permeability model="constant">
+          <aperture value="0.01"/>
+          <parallel value="KFT"/>
+          <normal value="KFN"/>
+        </fracture_permeability>
         <assigned_regions>fracture</assigned_regions>
       </material>
     </materials>

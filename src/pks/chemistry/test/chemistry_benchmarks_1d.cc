@@ -111,13 +111,13 @@ SUITE(ChemistryBenchmarkTests) {
 
     // Compute the L2 error norm for the Calcite concentration by reading data from 
     // the HDF5 files.
-    double conc_L2 = ComputeL2Error(output, "total_component_concentration.cell.Ca++",
+    double conc_L2 = ComputeL2Error(output, "total_component_concentration.Ca++",
                                     reference, "Total_Ca++ [M]", 27, 9.0);
     std::cout << "Ca++ concentration L2 norm: " << conc_L2 << std::endl;
     CHECK(conc_L2 < 0.025);
 
     // Compute the L2 error norm for the Calcite volume fraction.
-    double VF_L2 = ComputeL2Error(output, "mineral_volume_fractions.cell.Calcite",
+    double VF_L2 = ComputeL2Error(output, "mineral_volume_fractions.Calcite",
                                   reference, "Calcite_VF", 27, 9.0);
     std::cout << "Ca++ volume fraction L2 norm: " << VF_L2 << std::endl;
     CHECK(VF_L2 < 0.0002);
@@ -145,13 +145,13 @@ SUITE(ChemistryBenchmarkTests) {
 
     // Compute the L2 error norm for the Calcite concentration by reading data from 
     // the HDF5 files.
-    double conc_L2 = ComputeL2Error(output, "total_component_concentration.cell.Ca++",
+    double conc_L2 = ComputeL2Error(output, "total_component_concentration.Ca++",
                                     reference, "Total_Ca++ [M]", 27, 9.0);
     std::cout << "Ca++ concentration L2 norm: " << conc_L2 << std::endl;
     CHECK(conc_L2 < 0.025);
 
     // Compute the L2 error norm for the Calcite volume fraction.
-    double VF_L2 = ComputeL2Error(output, "mineral_volume_fractions.cell.Calcite",
+    double VF_L2 = ComputeL2Error(output, "mineral_volume_fractions.Calcite",
                                   reference, "Calcite_VF", 27, 9.0);
     std::cout << "Ca++ volume fraction L2 norm: " << VF_L2 << std::endl;
     CHECK(VF_L2 < 0.0002);

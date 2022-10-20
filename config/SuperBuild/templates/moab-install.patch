@@ -1,0 +1,12 @@
+diff -ruNbB moab-5.2.0/config/install-sh moab-5.2.0-source/config/install-sh
+--- moab-5.2.0/config/install-sh	2020-07-17 14:48:25.000000000 -0600
++++ moab-5.2.0-source/config/install-sh	2022-09-14 20:09:37.000000000 -0600
+@@ -117,6 +117,8 @@
+   case $1 in
+     -c) ;;
+ 
++    -p) ;;
++
+     -C) copy_on_change=true;;
+ 
+     -d) dir_arg=true;;

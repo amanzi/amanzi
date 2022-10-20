@@ -28,15 +28,15 @@ class MeshLight {
  public:
   MeshLight()
     : space_dim_(-1),
+      faces_requested_(false),
+      edges_requested_(false),
       cell2face_info_cached_(false),
       cell2edge_info_cached_(false),
-      face2cell_info_cached_(false),
       face2edge_info_cached_(false),
+      face2cell_info_cached_(false),
       cell_geometry_precomputed_(false),
       face_geometry_precomputed_(false),
-      edge_geometry_precomputed_(false),
-      faces_requested_(false),
-      edges_requested_(false) {};
+      edge_geometry_precomputed_(false) {};
 
   // initializing mesh
   void BuildCache();
@@ -252,18 +252,7 @@ class MeshLight {
   virtual void node_get_coordinates(
           const Entity_ID v, AmanziGeometry::Point *ncoord) const = 0;
 
-  virtual void face_get_coordinates(
-          const Entity_ID f, std::vector<AmanziGeometry::Point> *fcoords) const = 0;
 
-  // Coordinates of cells in standard order (Exodus II convention)
-  //
-  // NOTE: Standard convention works only for standard cell types in 3D!
-  // For a general polyhedron this will return the node coordinates in
-  // arbitrary order.
-  virtual void cell_get_coordinates(
-          const Entity_ID c, std::vector<AmanziGeometry::Point> *ccoords) const = 0;
-
-  
   // ------
   // Counts
   // ------

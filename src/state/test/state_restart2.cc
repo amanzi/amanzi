@@ -1,7 +1,7 @@
 /*
   State
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -18,6 +18,7 @@
 #include "Teuchos_Array.hpp"
 #include "UnitTest++.h"
 
+#include "IO.hh"
 #include "Checkpoint.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
@@ -25,6 +26,10 @@
 
 SUITE(RESTART2) {
 
+/* This tests the ability to read checkpoint capabilities when the underlying
+  meshes live on subcommunicators (in this case COMM_SELF and not on
+  COMM_WORLD.
+*/
 TEST(HDF5_MPI_AND_SERIAL) {
   using namespace Amanzi;
 
@@ -47,8 +52,12 @@ TEST(HDF5_MPI_AND_SERIAL) {
   Key serial_fname = Keys::getKey(serial_dname, "field");
   S->RegisterMesh(serial_dname, serial_mesh);
 
-  S->RequireField("my_field", "my_field")->SetMesh(domain_mesh)->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireField(serial_fname, serial_fname)->SetMesh(serial_mesh)->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->Require<CompositeVector, CompositeVectorSpace>("my_field", Tags::DEFAULT, "my_field")
+    .SetMesh(domain_mesh)->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->Require<CompositeVector, CompositeVectorSpace>(serial_fname, Tags::DEFAULT, serial_fname)
+    .SetMesh(serial_mesh)->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
 
   S->Setup();
   S->set_cycle(0);
@@ -60,38 +69,44 @@ TEST(HDF5_MPI_AND_SERIAL) {
   for (int i=0; i!=4; ++i) {
     cell_values[i] += rank * 40;
   }
-  Epetra_MultiVector& mf = *S->GetFieldData("my_field", "my_field")->ViewComponent("cell", false);
+  auto& mf = *S->GetW<CompositeVector>("my_field", Tags::DEFAULT, "my_field").ViewComponent("cell");
   mf(0)->ReplaceMyValues(4, cell_values, cell_index_list);
 
-  Epetra_MultiVector& sf = *S->GetFieldData(serial_fname, serial_fname)->ViewComponent("cell", false);
+  auto& sf = *S->GetW<CompositeVector>(serial_fname, Tags::DEFAULT, serial_fname).ViewComponent("cell");
   sf(0)->ReplaceMyValues(4, cell_values, cell_index_list);
 
   // make sure we can write them all... for real!
   Teuchos::ParameterList chkplist("checkpoint");
   chkplist.set("single file checkpoint", false);
   Checkpoint chkp(chkplist, *S);
-  chkp.Write(*S, 0.);
+  chkp.Write(*S);
 
   // make sure we can read them all
   State S2;
   S2.RegisterDomainMesh(domain_mesh);
   S2.RegisterMesh(serial_dname, serial_mesh);
-  S2.RequireField("my_field", "my_field")->SetMesh(domain_mesh)->SetComponent("cell", AmanziMesh::CELL, 1);
-  S2.RequireField(serial_fname, serial_fname)->SetMesh(serial_mesh)->SetComponent("cell", AmanziMesh::CELL, 1);
+
+  S2.Require<CompositeVector, CompositeVectorSpace>("my_field", Tags::DEFAULT, "my_field")
+    .SetMesh(domain_mesh)->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S2.Require<CompositeVector, CompositeVectorSpace>(serial_fname, Tags::DEFAULT, serial_fname)
+    .SetMesh(domain_mesh)->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
   S2.Setup();
 
-  ReadCheckpoint(S2, "checkpoint00000");
+  ReadCheckpoint(comm, S2, "checkpoint00000");
 
-  S2.GetFieldData("my_field", "my_field")->Update(-1., *S->GetFieldData("my_field"), 1.);
+  S2.GetW<CompositeVector>("my_field", Tags::DEFAULT, "my_field")
+    .Update(-1.0, S->Get<CompositeVector>("my_field"), 1.0);
   double diff;
-  S2.GetFieldData("my_field")->Norm2(&diff);
-  CHECK_CLOSE(0.0, diff, 1.e-10);
+  S2.Get<CompositeVector>("my_field").Norm2(&diff);
+  CHECK_CLOSE(0.0, diff, 1.0e-10);
 
-  S2.GetFieldData(serial_fname, serial_fname)->Update(-1., *S->GetFieldData(serial_fname), 1.);
-  diff = 0.;
-  S2.GetFieldData(serial_fname)->Norm2(&diff);
-  CHECK_CLOSE(0.0, diff, 1.e-10);
-
+  S2.GetW<CompositeVector>(serial_fname, Tags::DEFAULT, serial_fname)
+    .Update(-1.0, S->Get<CompositeVector>(serial_fname), 1.0);
+  diff = 0.0;
+  S2.Get<CompositeVector>(serial_fname).Norm2(&diff);
+  CHECK_CLOSE(0.0, diff, 1.0e-10);
 }
 
 }

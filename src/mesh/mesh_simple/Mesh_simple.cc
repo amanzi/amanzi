@@ -605,48 +605,6 @@ void Mesh_simple::node_get_coordinates(const AmanziMesh::Entity_ID local_node_id
 
 
 //---------------------------------------------------------
-// Cooordinates of face nodes
-//---------------------------------------------------------
-void Mesh_simple::face_get_coordinates(AmanziMesh::Entity_ID local_face_id, 
-                                       std::vector<AmanziGeometry::Point> *fcoords) const
-{
-  Entity_ID_List node_indices(4);
-
-  face_get_nodes (local_face_id, &node_indices);
-
-  fcoords->clear();
-
-  AmanziGeometry::Point xyz(3);
-  for (std::vector<Entity_ID>::iterator it = node_indices.begin(); 
-       it != node_indices.end(); ++it) {
-    node_get_coordinates ( *it, &xyz);
-    fcoords->push_back(xyz);
-  }
-}
-
-
-//---------------------------------------------------------
-// Cooordinates of cell nodes
-//---------------------------------------------------------
-void Mesh_simple::cell_get_coordinates(AmanziMesh::Entity_ID local_cell_id, 
-                                       std::vector<AmanziGeometry::Point> *ccoords) const
-{  
-  std::vector<Entity_ID> node_indices(8);
-
-  cell_get_nodes (local_cell_id, &node_indices);
-
-  ccoords->clear();
-
-  AmanziGeometry::Point xyz(3);
-  for (std::vector<Entity_ID>::iterator it = node_indices.begin(); 
-       it != node_indices.end(); ++it) {      
-    node_get_coordinates ( *it, &xyz);
-    ccoords->push_back(xyz);
-  }
-}
-
-
-//---------------------------------------------------------
 // Modify cooordinates of a node: version 1
 //---------------------------------------------------------
 void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id, 
@@ -798,6 +756,7 @@ const Epetra_Import& Mesh_simple::exterior_face_importer(void) const
 {
   Errors::Message mesg("exterior face importer is not implemented");
   amanzi_throw(mesg);
+  throw(mesg); // this silences compiler warnings but is never called
 }
 
 
@@ -836,8 +795,8 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string& setname,
   switch (kind) {
   case FACE:
   {
-    if (rgn->type() == AmanziGeometry::BOX ||
-        rgn->type() == AmanziGeometry::PLANE) {
+    if (rgn->get_type() == AmanziGeometry::RegionType::BOX ||
+        rgn->get_type() == AmanziGeometry::RegionType::PLANE) {
       // y = constant planes
       for (int iy = 0; iy <= ny_; ++iy) {
         for (int ix = 0; ix < nx_; ix++) {
@@ -848,7 +807,7 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string& setname,
             face_get_coordinates(face, &fxyz);
 
             bool inbox = true;
-            if (rgn->type() == AmanziGeometry::BOX) {
+            if (rgn->get_type() == AmanziGeometry::RegionType::BOX) {
               auto cenpnt = geometric_center_(fxyz);
               if (!rgn->inside(cenpnt)) inbox = false;
             } else {
@@ -870,7 +829,7 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string& setname,
             face_get_coordinates(face, &fxyz);
 
             bool inbox = true;
-            if (rgn->type() == AmanziGeometry::BOX) {
+            if (rgn->get_type() == AmanziGeometry::RegionType::BOX) {
               auto cenpnt = geometric_center_(fxyz);
               if (!rgn->inside(cenpnt)) inbox = false;
             } else {
@@ -892,7 +851,7 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string& setname,
             face_get_coordinates(face, &fxyz);
 
             bool inbox = true;
-            if (rgn->type() == AmanziGeometry::BOX) {
+            if (rgn->get_type() == AmanziGeometry::RegionType::BOX) {
               auto cenpnt = geometric_center_(fxyz);
               if (!rgn->inside(cenpnt)) inbox = false;
             } else {
@@ -907,8 +866,8 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string& setname,
       sets_[setname_internal] = *setents;
     }
 
-    else if (rgn->type() != AmanziGeometry::LOGICAL) {
-      std::cerr << "Region \"" << rgn->name() << "\" type not applicable/supported for sidesets";
+    else if (rgn->get_type() != AmanziGeometry::RegionType::LOGICAL) {
+      std::cerr << "Region \"" << rgn->get_name() << "\" type not applicable/supported for sidesets";
       throw std::exception();
     }
 
@@ -917,8 +876,8 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string& setname,
 
   case CELL:
   {
-    if (rgn->type() == AmanziGeometry::BOX || 
-        rgn->type() == AmanziGeometry::COLORFUNCTION) {
+    if (rgn->get_type() == AmanziGeometry::RegionType::BOX || 
+        rgn->get_type() == AmanziGeometry::RegionType::COLORFUNCTION) {
       for (int ix = 0; ix < nx_; ix++) {
         for (int iy = 0; iy < ny_; iy++) {
           for (int iz = 0; iz < nz_; iz++) {
@@ -935,7 +894,7 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string& setname,
       sets_[setname_internal] = *setents;
     }
     else {
-      std::cerr << "Region \"" << rgn->name() << "\" type not applicable/supported for cellsets";
+      std::cerr << "Region \"" << rgn->get_name() << "\" type not applicable/supported for cellsets";
       throw std::exception();
     }
 
@@ -944,7 +903,7 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string& setname,
 
   case NODE:
   {
-    if (rgn->type() != AmanziGeometry::LOGICAL) {
+    if (rgn->get_type() != AmanziGeometry::RegionType::LOGICAL) {
       bool done = false;
       for (int ix = 0; ix < nx_ + 1 && !done; ix++) {
         for (int iy = 0; iy < ny_ + 1 && !done; iy++) {
@@ -955,7 +914,7 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string& setname,
                  
             if (rgn->inside(xyz)) {
               setents->push_back(node);
-              if (rgn->type() == AmanziGeometry::POINT) done = true;
+              if (rgn->get_type() == AmanziGeometry::RegionType::POINT) done = true;
             }                   
           }
         }
@@ -970,9 +929,9 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string& setname,
     break;
   }
 
-  if (rgn->type() == AmanziGeometry::LOGICAL) {
+  if (rgn->get_type() == AmanziGeometry::RegionType::LOGICAL) {
     auto boolrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLogical>(rgn);
-    const std::vector<std::string> rgn_names = boolrgn->component_regions();
+    const std::vector<std::string> rgn_names = boolrgn->get_component_regions();
     int nregs = rgn_names.size();
     
     std::vector<std::set<Entity_ID> > msets;
@@ -988,11 +947,11 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string& setname,
         Exceptions::amanzi_throw(msg);
       }
         
-      std::string setname_internal1 = rgn1->name() + std::to_string(kind);
+      std::string setname_internal1 = rgn1->get_name() + std::to_string(kind);
 
       if (sets_.find(setname_internal) == sets_.end()) {
         Entity_ID_List setents1;
-        get_set_entities_and_vofs(rgn1->name(), kind, ptype, &setents1, vofs);
+        get_set_entities_and_vofs(rgn1->get_name(), kind, ptype, &setents1, vofs);
         sets_[setname_internal1] = setents1;
       }
      
@@ -1000,7 +959,7 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string& setname,
       msets.push_back(std::set<Entity_ID>(it->second.begin(), it->second.end())); 
     }
 
-    if (boolrgn->operation() == AmanziGeometry::UNION) {
+    if (boolrgn->get_operation() == AmanziGeometry::BoolOpType::UNION) {
       for (int n = 1; n < msets.size(); ++n) {
         for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
           msets[0].insert(*it);

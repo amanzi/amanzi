@@ -45,8 +45,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   MemoryManager mm;
 
   char *text, *tagname;
-  DOMNodeList *node_list, *children;
-  DOMNode* node;
+  DOMNodeList *children;
+  DOMNode *node, *root;
 
   // create header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
@@ -66,6 +66,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   out_list.set<int>("temporal discretization order", 1);
   out_list.set<double>("cfl", cfl);
   out_list.set<std::string>("flow mode", "transient");
+  out_list.set<std::string>("method", "muscl");
 
   out_list.set<std::string>("solver", "Dispersion Solver");
   out_list.set<std::string>("preconditioner", LINEAR_SOLVER_PC);
@@ -79,20 +80,28 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
     out_list.set<bool>("transport subcycling", (strcmp(text, "on") == 0));
   }
 
-  int poly_order(0);
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, flux_method", flag);
+  if (flag) {
+    text = mm.transcode(node->getTextContent());
+    out_list.set<std::string>("method", text);
+  }
+
+  int nspace(1), ntime(1), poly_order(0);
   std::string tags_default("unstructured_controls, unstr_transport_controls");
   node = GetUniqueElementByTagsString_(tags_default + ", algorithm", flag);
   if (flag) {
-    std::string order = GetTextContentS_(node, "explicit first-order, explicit second-order, explicit, implicit");
+    std::string order = GetTextContentS_(node, "explicit, explicit first-order, explicit second-order, "
+                                               "implicit, implicit second-order");
     if (order == "explicit first-order") {
-      out_list.set<int>("spatial discretization order", 1);
-      out_list.set<int>("temporal discretization order", 1);
+      nspace = 1;
+      ntime = 1;
     } else if (order == "explicit second-order") {
-      out_list.set<int>("spatial discretization order", 2);
-      out_list.set<int>("temporal discretization order", 2);
+      nspace = 2;
+      ntime = 2;
       poly_order = 1;
     } else if (order == "explicit") {
-      int nspace(-1), ntime(-1);
+      nspace = -1;
+      ntime = -1;
       node = GetUniqueElementByTagsString_(tags_default + ", spatial_order", flag);
       if (flag) nspace = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);
 
@@ -106,9 +115,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
         Exceptions::amanzi_throw(msg);
       }
 
-      out_list.set<int>("spatial discretization order", nspace);
-      out_list.set<int>("temporal discretization order", ntime);
-      out_list.set<bool>("generic RK implementation", true);
       poly_order = 1;
     } else if (order == "implicit") {
       std::vector<std::string> dofs({"cell"});
@@ -117,16 +123,29 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
               .set<int>("method order", 0)
               .set<std::string>("matrix type", "advection");
       poly_order = 1;
+    } else if (order == "implicit second-order") {
+      nspace = 2;
+      ntime = 1;
+      std::vector<std::string> dofs({"cell"});
+      adv_list.sublist("matrix")
+              .set<Teuchos::Array<std::string> >("schema", dofs)
+              .set<int>("method order", 0)
+              .set<std::string>("matrix type", "advection");
+      poly_order = 1;
     }
+
+    out_list.set<int>("spatial discretization order", nspace);
+    out_list.set<int>("temporal discretization order", ntime);
   }
 
   // high-order transport
   // -- defaults
   Teuchos::ParameterList& trp_lift = out_list.sublist("reconstruction");
-  trp_lift.set<int>("polynomial order", poly_order);
-  trp_lift.set<std::string>("limiter", "tensorial");
-  trp_lift.set<bool>("limiter extension for transport", true);
-  trp_lift.set<std::string>("limiter stencil", "face to cells");
+  trp_lift.set<int>("polynomial order", poly_order)
+          .set<std::string>("limiter", "tensorial")
+          .set<std::string>("weight", "constant")
+          .set<bool>("limiter extension for transport", true)
+          .set<std::string>("limiter stencil", "face to cells");
 
   // -- overwrite data from expert parameters  
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, limiter", flag);
@@ -142,18 +161,25 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
     trp_lift.set<std::string>("limiter stencil", stencil);
   }
 
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, reconstruction_weight", flag);
+  if (flag) {
+    std::string weight = GetTextContentS_(node, "constant, inverse-distance");
+    std::replace(weight.begin(), weight.end(), '-', ' ');
+    trp_lift.set<std::string>("weight", weight);
+  }
+
   // check if we need to write a dispersivity sublist
-  node = doc_->getElementsByTagName(mm.transcode("materials"))->item(0);
   bool dispersion = (doc_->getElementsByTagName(mm.transcode("dispersion_tensor"))->getLength() > 0) ||
                     (doc_->getElementsByTagName(mm.transcode("tortuosity"))->getLength() > 0);
 
   // create dispersion list
-  if (dispersion && domain != "fracture") {
-    node_list = doc_->getElementsByTagName(mm.transcode("materials"));
-
+  if (dispersion) {
     Teuchos::ParameterList& mat_list = out_list.sublist("material properties");
 
-    children = node_list->item(0)->getChildNodes();
+    root = GetRoot_(domain, flag);
+    node = GetUniqueElementByTagsString_(root, "materials", flag);
+    children = node->getChildNodes();
+
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
@@ -223,6 +249,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
 
         std::string mat_name = GetAttributeValueS_(inode, "name");
         mat_list.sublist(mat_name) = tmp_list;
+
+        if (domain == "fracture") {
+          for (int n = 0; n < regions.size(); ++n)
+            fracture_regions_.push_back(regions[n]);
+          fracture_regions_.erase(SelectUniqueEntries(fracture_regions_.begin(), fracture_regions_.end()),
+                                  fracture_regions_.end());
+        }
       }
     }
   }
@@ -262,14 +295,15 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   out_list.set<int>("number of gaseous components", phases_["air"].size());
 
   out_list.sublist("physical models and assumptions")
-      .set<bool>("effective transport porosity", use_transport_porosity_);
+      .set<bool>("effective transport porosity", use_transport_porosity_)
+      .set<bool>("use dispersion solver", use_transport_dispersion_);
 
   // cross coupling of PKs
   out_list.sublist("physical models and assumptions")
       .set<bool>("permeability field is required", transport_permeability_);
 
-  if (fractures_ && domain != "domain") {
-    out_list.sublist("physical models and assumptions").set<bool>("transport in fractures", true);
+  if (fractures_ && domain == "fracture") {
+    out_list.sublist("physical models and assumptions").set<bool>("flow and transport in fractures", true);
   }
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");

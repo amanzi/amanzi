@@ -499,29 +499,6 @@ MeshEmbeddedLogical::node_get_coordinates(const Entity_ID nodeid,
 }  
 
 
-// Face coordinates - conventions same as face_to_nodes call
-// Number of nodes is the vector size divided by number of spatial dimensions
-void
-MeshEmbeddedLogical::face_get_coordinates(
-    const Entity_ID faceid,
-    std::vector<AmanziGeometry::Point> *fcoords) const {
-  Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
-  Exceptions::amanzi_throw(mesg);
-}
-
-// Coordinates of cells in standard order (Exodus II convention)
-// STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
-// For a general polyhedron this will return the node coordinates in
-// arbitrary order
-// Number of nodes is vector size divided by number of spatial dimensions
-void
-MeshEmbeddedLogical::cell_get_coordinates(
-    const Entity_ID cellid,
-    std::vector<AmanziGeometry::Point> *ccoords) const {
-  Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
-  Exceptions::amanzi_throw(mesg);
-}
-
 //
 // Mesh modification
 //-------------------
@@ -611,7 +588,7 @@ MeshEmbeddedLogical::get_set_entities(const std::string& setname,
                                       Entity_ID_List *entids) const {
   Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(setname);
 
-  if (rgn->type() == AmanziGeometry::ALL) {
+  if (rgn->get_type() == AmanziGeometry::RegionType::ALL) {
     int nent = num_entities(kind, ptype);
     entids->resize(num_entities(kind, ptype));
     for (int i=0; i!=nent; ++i) {
@@ -622,10 +599,10 @@ MeshEmbeddedLogical::get_set_entities(const std::string& setname,
 
   // ASSUMES that logical mesh is EnumeratedSets, bg mesh is all others.
   // This is bad.  --etc
-  if (rgn->type() == AmanziGeometry::ENUMERATED) {
-    log_mesh_->get_set_entities(rgn->name(), kind, ptype, entids);
+  if (rgn->get_type() == AmanziGeometry::RegionType::ENUMERATED) {
+    log_mesh_->get_set_entities(rgn->get_name(), kind, ptype, entids);
   } else {
-    bg_mesh_->get_set_entities(rgn->name(), kind, ptype, entids);
+    bg_mesh_->get_set_entities(rgn->get_name(), kind, ptype, entids);
 
     // shift local indices
     Entity_ID shift = num_entities(kind, ptype)

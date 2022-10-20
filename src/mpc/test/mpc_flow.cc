@@ -9,6 +9,7 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "UnitTest++.h"
 
+#include "IO.hh"
 #include "CycleDriver.hh"
 #include "eos_registration.hh"
 #include "MeshFactory.hh"
@@ -61,15 +62,19 @@ using namespace Amanzi::AmanziGeometry;
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     try {
       cycle_driver.Go();
-      S->GetFieldData("saturation_liquid")->MeanValue(&avg1);
+      S->Get<CompositeVector>("saturation_liquid").MeanValue(&avg1);
+    } catch (const std::exception& e) {
+      std::cerr << e.what() << "\n\n";;
+      CHECK(false);
     } catch (...) {
       CHECK(false);
     }
   }
+  WriteStateStatistics(*S);
   S = Teuchos::null;
   
   // restart simulation and compare results
-  glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chk_flow00030.h5");
+  glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chk_flow00010.h5");
   avg2 = 0.;
   S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
@@ -78,13 +83,14 @@ using namespace Amanzi::AmanziGeometry;
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     try {
       cycle_driver.Go();
-      S->GetFieldData("saturation_liquid")->MeanValue(&avg2);
+      S->Get<CompositeVector>("saturation_liquid").MeanValue(&avg2);
     } catch (...) {
       CHECK(false);
     }
   }
+  WriteStateStatistics(*S);
 
-  CHECK_CLOSE(avg1, avg2, 1e-5 * avg1);
+  CHECK_CLOSE(avg1, avg2, 1e-6 * avg1);
 
   // checking that we created only two pks
   CHECK(PKFactory::num_pks == 2);

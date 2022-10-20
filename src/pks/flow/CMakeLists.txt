@@ -20,6 +20,7 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${EOS_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
@@ -46,7 +47,7 @@ set(flow_src_files Flow_PK.cc
                    RelPermEvaluator.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc 
                    WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
-                   VWContentEvaluator.cc
+                   WaterStorage.cc
                    DarcyVelocityEvaluator.cc
                    MultiscaleFlowPorosityFactory.cc MultiscaleFlowPorosityPartition.cc
                    MultiscaleFlowPorosity_DPM.cc
@@ -58,7 +59,7 @@ if (Ifpack_ENABLE_HYPRE)
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARY})
 endif()
 add_amanzi_library(flow SOURCE ${flow_src_files}
-                   LINK_LIBS pks operators state functions 
+                   LINK_LIBS pks eos operators state functions 
                              mesh_functions time_integration data_structures
                              ${flow_tpl_libs})
 
@@ -69,9 +70,11 @@ set(flow_inc_files
   Darcy_PK.hh
   FlowDefs.hh
   FlowBoundaryFunction.hh
+  FlowSourceFunction.hh
   Flow_PK.hh
   FlowTypeDefs.hh
   FracturePermModel.hh
+  FracturePermModel_Constant.hh
   FracturePermModel_CubicLaw.hh
   FracturePermModel_Linear.hh
   FracturePermModelPartition.hh
@@ -226,17 +229,24 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/flow_multiscale.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: Fractures
-    add_amanzi_test(flow_darcy_fractures flow_darcy_fractures 
-                    KIND int
-                    SOURCE test/Main.cc test/flow_darcy_fractures.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
-                    NPROCS 4)
+    if(ENABLE_MESH_MSTK)
+      # Test: Fractures
+      add_amanzi_test(flow_darcy_fractures flow_darcy_fractures 
+                      KIND int
+                      SOURCE test/Main.cc test/flow_darcy_fractures.cc
+                      LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                      NPROCS 4)
 
-    add_amanzi_test(flow_richards_fractures flow_richards_fractures 
-                    KIND int
-                    SOURCE test/Main.cc test/flow_richards_fractures.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+      add_amanzi_test(flow_darcy_fractures_source flow_darcy_fractures_source
+                      KIND int
+                      SOURCE test/Main.cc test/flow_darcy_fractures_source.cc
+                      LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+      add_amanzi_test(flow_richards_fractures flow_richards_fractures 
+                      KIND int
+                      SOURCE test/Main.cc test/flow_richards_fractures.cc
+                      LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    endif()
+                  
 endif()
 

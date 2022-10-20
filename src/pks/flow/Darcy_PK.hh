@@ -46,21 +46,22 @@ class Darcy_PK : public Flow_PK {
   ~Darcy_PK() {};
 
   // methods required for PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
+  virtual void Setup() final;
+  virtual void Initialize() final;
 
   virtual void set_dt(double dt) override { dt_ = dt; dt_desirable_ = dt; }
   virtual double get_dt() override { return dt_desirable_; }
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override; 
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
+  virtual void CalculateDiagnostics(const Tag& tag) override;
 
   virtual std::string name() override { return "darcy"; }
 
   // methods required for time integration interface. It is not used by simple Darcy flow,
   // however, coupled method may need the residual evaluation routine.
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
+  virtual
   void FunctionalResidual(const double t_old, double t_new, 
                   Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
                   Teuchos::RCP<TreeVector> f) override;
