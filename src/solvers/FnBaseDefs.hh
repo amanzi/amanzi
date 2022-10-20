@@ -12,8 +12,20 @@
 #ifndef AMANZI_FNBASE_DEFS_HH_
 #define AMANZI_FNBASE_DEFS_HH_
 
+#include "Teuchos_RCP.hpp"
+
 namespace Amanzi {
 namespace AmanziSolvers {
+
+template<class Vector>
+struct Data {
+ public:
+  Teuchos::RCP<const Vector> u;   // solution
+  Teuchos::RCP<const Vector> du;  // solution increment
+  Teuchos::RCP<const Vector> r;   // residual 
+  Teuchos::RCP<const Vector> hr;  // preconditioned residual 
+};
+
 // contained in its own namespace for easier using
 namespace FnBaseDefs {
 

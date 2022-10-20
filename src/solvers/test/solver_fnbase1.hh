@@ -25,15 +25,16 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
     return hu->ReciprocalMultiply(1.0, *h_, *u, 0.0);
   }
 
-  double ErrorNorm(const Teuchos::RCP<const Epetra_Vector>& u,
-                   const Teuchos::RCP<const Epetra_Vector>& du) {
-    double norm2_du;
-    double norm_du, norm_u;
-    du->NormInf(&norm_du);
+  double ErrorNorm(const Amanzi::AmanziSolvers::Data<Epetra_Vector>& data,
+                   const Amanzi::AmanziSolvers::ConvergenceMonitor& monitor) {
+    auto u = data.u;
+    auto r = data.r;
+
+    double norm_r, norm_u;
+    r->NormInf(&norm_r);
     u->NormInf(&norm_u);
-    du->Norm2(&norm2_du);
-    return norm_du;
-    //return norm_du / (atol_ + rtol_ * norm_u);
+    return norm_r;
+    // return norm_r / (atol_ + rtol_ * norm_u);
   }
 
   void UpdatePreconditioner(const Teuchos::RCP<const Epetra_Vector>& up) {

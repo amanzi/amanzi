@@ -96,9 +96,12 @@ void Darcy_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
 /* ******************************************************************
 * Check difference du between the predicted and converged solutions.
 ****************************************************************** */
-double Darcy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, 
-                           Teuchos::RCP<const TreeVector> du)
+double Darcy_PK::ErrorNorm(const AmanziSolvers::Data<TreeVector>& data,
+                           const AmanziSolvers::ConvergenceMonitor& monitor)
 {
+  auto u = data.u;
+  auto du = data.du;
+
   const Epetra_MultiVector& uc = *u->Data()->ViewComponent("cell");
   const Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell");
 

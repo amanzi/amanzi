@@ -195,6 +195,12 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
   Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(*u));
 
+  // create solver data
+  Data<Vector> data;
+  data.u = u;
+  data.du = du;
+  data.r = r;
+
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0), l2_error(0.0);
   double l2_error_initial(0.0), u_norm(0.);
@@ -223,7 +229,7 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
       if (vo_->os_OK(Teuchos::VERB_EXTREME))
         *vo_->os() << "Monitoring residual" << std::endl;
       previous_error = error;
-      error = fn_->ErrorNorm(u, r);
+      error = fn_->ErrorNorm(data, monitor_);
       residual_ = error;
 
       r->Norm2(&l2_error);
@@ -322,7 +328,7 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
       if (vo_->os_OK(Teuchos::VERB_EXTREME))
         *vo_->os() << "Monitoring Update" << std::endl;
       previous_error = error;
-      error = fn_->ErrorNorm(u, du);
+      error = fn_->ErrorNorm(data, monitor_);
       residual_ = error;
       du->Norm2(&l2_error);
 

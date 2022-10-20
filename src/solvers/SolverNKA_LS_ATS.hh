@@ -140,7 +140,11 @@ class SolverNKA_LS_ATS : public Solver<Vector, VectorSpace> {
       u->Update(-x, *du, 1.);
       fn->ChangedSolution();
       fn->Residual(u, r);
-      return fn->ErrorNorm(u, r);
+
+      Data<Vector> data;
+      data.u = u;
+      data.r = r;
+      return fn->ErrorNorm(data, SOLVER_MONITOR_RESIDUAL);
     }
 
     Teuchos::RCP<Vector> u,r,u0,du;
@@ -249,6 +253,13 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
   Teuchos::RCP<Vector> du_pic = Teuchos::rcp(new Vector(*u));
   Teuchos::RCP<Vector> u_precorr = Teuchos::rcp(new Vector(*u));
 
+  // create solver data
+  Data<Vector> data;
+  data.u = u;
+  data.du = du_nka;
+  data.r = res;
+  data.hr = du_pic;
+
   // variables to monitor the progress of the nonlinear solver
   double error(0.), previous_error(0.);
   double l2_error(0.), previous_l2_error(0.);
@@ -261,7 +272,7 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
   fn_->Residual(u, res);
 
   // Evaluate error
-  error = fn_->ErrorNorm(u, res);
+  error = fn_->ErrorNorm(data, SOLVER_MONITOR_RESIDUAL);
   db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
   
   residual_ = error;
@@ -368,7 +379,7 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
           fn_->Residual(u, res);
 
           // Evalute error
-          error = fn_->ErrorNorm(u, res);
+          error = fn_->ErrorNorm(data, SOLVER_MONITOR_RESIDUAL);
           db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
 	  
           residual_ = error;
@@ -422,7 +433,7 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
                 fn_->Residual(u, res);
 
                 // Evalute error
-                error = fn_->ErrorNorm(u, res);
+                error = fn_->ErrorNorm(data, SOLVER_MONITOR_RESIDUAL);
                 db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
 
                 residual_ = error;
@@ -529,7 +540,7 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
         fn_->Residual(u, res);
 
         // Evalute error
-        error = fn_->ErrorNorm(u, res);
+        error = fn_->ErrorNorm(data, SOLVER_MONITOR_RESIDUAL);
 
         if (nka_applied) {
           db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());

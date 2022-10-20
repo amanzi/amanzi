@@ -145,7 +145,11 @@ class SolverBT : public Solver<Vector,VectorSpace> {
       u->Update(-x, *du, 1.);
       fn->ChangedSolution();
       fn->Residual(u, r);
-      return fn->ErrorNorm(u, r);
+
+      Data<Vector> data;
+      data.u = u;
+      data.r = r;
+      return fn->ErrorNorm(data, SOLVER_MONITOR_RESIDUAL);
     }
 
     Teuchos::RCP<Vector> u,r,u0,du;
@@ -234,6 +238,12 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
   Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(*u));
   Teuchos::RCP<Vector> u0 = Teuchos::rcp(new Vector(*u));
 
+  // create solver data
+  Data<Vector> data;
+  data.u = u;
+  data.du = du;
+  data.r = r;
+
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0);
   double l2_error(0.0);
@@ -247,7 +257,7 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
   db_->WriteVector<Vector>(db_write_iter++, *r, u.ptr(), du.ptr());
 
   // If monitoring the residual, check for convergence.
-  error = fn_->ErrorNorm(u, r);
+  error = fn_->ErrorNorm(data, SOLVER_MONITOR_RESIDUAL);
   previous_error = error;
   residual_ = error;
   r->Norm2(&l2_error);

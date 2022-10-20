@@ -132,11 +132,11 @@ void MultiscaleFlowPorosity_GDPM::UpdatePreconditioner(
 * Error estimate for convergence criteria.
 ****************************************************************** */
 double MultiscaleFlowPorosity_GDPM::ErrorNorm(
-    const Teuchos::RCP<const WhetStone::DenseVector>& u,
-    const Teuchos::RCP<const WhetStone::DenseVector>& du)
+    const AmanziSolvers::Data<WhetStone::DenseVector>& data,
+    const AmanziSolvers::ConvergenceMonitor& monitor)
 {
   double tmp;
-  du->NormInf(&tmp);
+  data.du->NormInf(&tmp);
   return tmp;
 }
 

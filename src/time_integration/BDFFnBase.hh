@@ -1,6 +1,8 @@
 #ifndef AMANZI_BDFFNBASE_HH_
 #define AMANZI_BDFFNBASE_HH_
 
+#include "SolverDefs.hh"
+
 #include "FnBaseDefs.hh"
 
 namespace Amanzi {
@@ -17,13 +19,14 @@ class BDFFnBase {
   
   // computes the non-linear functional f = f(t,u,udot)
   virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Vector> u_old,
-                          Teuchos::RCP<Vector> u_new, Teuchos::RCP<Vector> f) = 0;
+                                  Teuchos::RCP<Vector> u_new, Teuchos::RCP<Vector> f) = 0;
 
   // applies preconditioner to u and returns the result in Pu
   virtual int ApplyPreconditioner(Teuchos::RCP<const Vector> u, Teuchos::RCP<Vector> Pu) = 0;
 
-  // computes a norm on u-du and returns the result
-  virtual double ErrorNorm(Teuchos::RCP<const Vector> u, Teuchos::RCP<const Vector> du) = 0;
+  // computes a norm on (u,du,res) and returns it
+  virtual double ErrorNorm(const AmanziSolvers::Data<Vector>& data,
+                           const AmanziSolvers::ConvergenceMonitor& monitor) = 0;
 
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const Vector> up, double h) = 0;

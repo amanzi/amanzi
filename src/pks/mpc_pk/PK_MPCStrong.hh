@@ -65,7 +65,9 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
 
   // -- enorm for the coupled system
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                           Teuchos::RCP<const TreeVector> du);
+                           Teuchos::RCP<const TreeVector> du,
+                           Teuchos::RCP<const TreeVector> res,
+                           const AmanziSolvers::ConvergenceMonitor& monitor);
 
   // PK_MPCStrong's preconditioner is, by default, just the block-diagonal
   // operator formed by placing the sub PK's preconditioners on the diagonal.
@@ -297,7 +299,7 @@ int PK_MPCStrong<PK_Base>::ApplyPreconditioner(
 
 
 // -----------------------------------------------------------------------------
-// Compute a norm on u-du and returns the result.
+// Compute a norm on u-du-res and returns the result.
 // For a Strong MPC, the enorm is just the max of the sub PKs enorms.
 // -----------------------------------------------------------------------------
 template<class PK_Base>
@@ -308,22 +310,49 @@ double PK_MPCStrong<PK_Base>::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
   // loop over sub-PKs
   for (unsigned int i = 0; i != sub_pks_.size(); ++i) {
-    // pull out the u sub-vector
+    // pull out sub-vectors
     Teuchos::RCP<const TreeVector> pk_u = u->SubVector(i);
-    if (pk_u == Teuchos::null) {
-      Errors::Message message("PK_MPCStrong: vector structure does not match PK structure");
-      Exceptions::amanzi_throw(message);
-    }
-
-    // pull out the du sub-vector
     Teuchos::RCP<const TreeVector> pk_du = du->SubVector(i);
-    if (pk_du == Teuchos::null) {
+
+    if (pk_u == Teuchos::null || pk_du == Teuchos::null) {
       Errors::Message message("PK_MPCStrong: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
 
     // norm is the max of the sub-PK norms
     double tmp_norm = sub_pks_[i]->ErrorNorm(pk_u, pk_du);
+    norm = std::max(norm, tmp_norm);
+  }
+  return norm;
+}
+
+
+// -----------------------------------------------------------------------------
+// Compute a norm on u-du-res and returns the result.
+// For a Strong MPC, the enorm is just the max of the sub PKs enorms.
+// -----------------------------------------------------------------------------
+template<class PK_Base>
+double PK_MPCStrong<PK_Base>::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                                        Teuchos::RCP<const TreeVector> du,
+                                        Teuchos::RCP<const TreeVector> res,
+                                        const AmanziSolvers::ConvergenceMonitor& monitor)
+{
+  double norm = 0.0;
+
+  // loop over sub-PKs
+  for (unsigned int i = 0; i != sub_pks_.size(); ++i) {
+    // pull out sub-vectors
+    Teuchos::RCP<const TreeVector> pk_u = u->SubVector(i);
+    Teuchos::RCP<const TreeVector> pk_du = du->SubVector(i);
+    Teuchos::RCP<const TreeVector> pk_res = res->SubVector(i);
+
+    if (pk_u == Teuchos::null || pk_du == Teuchos::null || pk_res == Teuchos::null) {
+      Errors::Message message("PK_MPCStrong: vector structure does not match PK structure");
+      Exceptions::amanzi_throw(message);
+    }
+
+    // norm is the max of the sub-PK norms
+    double tmp_norm = sub_pks_[i]->ErrorNorm(pk_u, pk_du, pk_res, monitor);
     norm = std::max(norm, tmp_norm);
   }
   return norm;

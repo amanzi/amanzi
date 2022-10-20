@@ -51,16 +51,15 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
       Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new,
       Teuchos::RCP<TreeVector> f) override;
   
-  // updates the preconditioner
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override;
-  
-  // preconditioner application
-  virtual
-  int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
+  // -- update and application of preconditioner
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt);
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
-  virtual
-  double ErrorNorm(Teuchos::RCP<const TreeVector> u, 
-                   Teuchos::RCP<const TreeVector> du) override;
+  // -- convergence control
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                           Teuchos::RCP<const TreeVector> du,
+                           Teuchos::RCP<const TreeVector> res,
+                           const AmanziSolvers::ConvergenceMonitor& monitor);
 
   std::string name() override { return "thermal flow matrix fracture"; } 
 

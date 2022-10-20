@@ -54,9 +54,9 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
   virtual void UpdatePreconditioner(const Teuchos::RCP<const Vector>& u0);
 
   // error norm
-  virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u,
-                           const Teuchos::RCP<const Vector>& du) {
-    return fn_->ErrorNorm(u, du);
+  virtual double ErrorNorm(const Data<Vector>& data,
+                           const AmanziSolvers::ConvergenceMonitor& monitor) {
+    return fn_->ErrorNorm(data, monitor);
   }
 
   // Check the admissibility of an inner iterate (ensures preconditions for

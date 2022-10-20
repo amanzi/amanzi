@@ -299,7 +299,7 @@ bool FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool r
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << e.what() << std::endl;
     }
-    fail = false;
+    fail = true;
   }
 
   if (fail) {

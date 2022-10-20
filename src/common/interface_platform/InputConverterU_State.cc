@@ -254,17 +254,17 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         field_ev.set<std::string>("evaluator type", "iem")
             .set<std::string>("internal energy key", "internal_energy_liquid");
 
-        field_ev.sublist("IEM parameters").sublist(reg_str)
-            .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
-            .set<std::string>("iem type", model)
-            .set<double>("heat capacity", cv);
-
         if (eos_lookup_table_.size() > 0) {
           field_ev.sublist("IEM parameters").sublist(reg_str)
               .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
               .set<std::string>("iem type", "tabular")
               .set<std::string>("table name", eos_lookup_table_)
               .set<std::string>("field name", "internal_energy");
+        } else {
+          field_ev.sublist("IEM parameters").sublist(reg_str)
+              .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
+              .set<std::string>("iem type", model)
+              .set<double>("heat capacity", cv);
         }
       }
 

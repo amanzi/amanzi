@@ -170,6 +170,13 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
   Teuchos::RCP<Vector> du_tmp = Teuchos::rcp(new Vector(*u));
   Teuchos::RCP<Vector> u_bt = Teuchos::rcp(new Vector(*u));
 
+  // create solver data
+  Data<Vector> data;
+  data.u = u;
+  data.du = du;
+  data.r = r;
+  data.hr = du_tmp;
+
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0), l2_error(0.0);
   double l2_error_initial(0.0);
@@ -201,7 +208,7 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
     // If monitoring the residual, check for convergence.
     if (monitor_ == SOLVER_MONITOR_RESIDUAL) {
       previous_error = error;
-      error = fn_->ErrorNorm(u, r);
+      error = fn_->ErrorNorm(data, monitor_);
       residual_ = error;
       r->Norm2(&l2_error);
 
@@ -314,7 +321,7 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
     // Monitor the PC'd residual.
     if (monitor_ == SOLVER_MONITOR_PCED_RESIDUAL) {
       previous_error = error;
-      error = fn_->ErrorNorm(u, du);
+      error = fn_->ErrorNorm(data, monitor_);
       residual_ = error;
       du_tmp->Norm2(&l2_error);
 
@@ -326,7 +333,7 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
     // Monitor the NKA'd PC'd residual.
     if (monitor_ == SOLVER_MONITOR_UPDATE) {
       previous_error = error;
-      error = fn_->ErrorNorm(u, du);
+      error = fn_->ErrorNorm(data, monitor_);
       residual_ = error;
       du->Norm2(&l2_error);
 

@@ -43,8 +43,11 @@ SUITE(SOLVERS) {
     virtual void UpdatePreconditioner(const Teuchos::RCP<const Epetra_Vector>& u) {}
     
     // error analysis
-    virtual double ErrorNorm(const Teuchos::RCP<const Epetra_Vector>& u,
-                             const Teuchos::RCP<const Epetra_Vector>& du) {
+    double ErrorNorm(const Amanzi::AmanziSolvers::Data<Epetra_Vector>& data,
+                     const Amanzi::AmanziSolvers::ConvergenceMonitor& monitor) {
+      auto u = data.u;
+      auto du = data.du;
+
       double res;
       du->NormInf(&res);
       return res;
