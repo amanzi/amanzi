@@ -461,16 +461,6 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   dt_ = t_new - t_old;
   double dt_MPC(dt_);
 
-  // save data that we can lose. Assumption is that Darcy step never fails
-  StateArchive archive(S_, vo_);
-  if (flow_on_manifold_) {
-    archive.Add({ prev_aperture_key_ }, {}, {}, Tags::DEFAULT, name());
-    archive.Swap("");
-  } else if (S_->HasRecord(prev_vol_strain_key_)) {
-    archive.Add({ prev_vol_strain_key_ }, {}, {}, Tags::DEFAULT, name());
-    archive.Swap("");
-  }
-
   // refresh data
   UpdateSourceBoundaryData(t_old, t_new, *solution);
 
@@ -520,6 +510,15 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   op_->ApplyInverse(rhs, *solution);
+
+  // update some fields, we cannot move this to commit step due to "initialize"
+  if (flow_on_manifold_) {
+    S_->GetW<CV_t>(prev_aperture_key_, Tags::DEFAULT, passwd_) =
+      S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
+  } else if (S_->HasRecord(prev_vol_strain_key_)) {
+    S_->GetW<CV_t>(prev_vol_strain_key_, Tags::DEFAULT, passwd_) =
+      S_->Get<CV_t>(vol_strain_key_, Tags::DEFAULT);
+  }
 
   // statistics
   num_itrs_++;

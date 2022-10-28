@@ -770,10 +770,17 @@ void Flow_PK::AddSourceTerms(CompositeVector& rhs, double dt)
     const auto& aperture = *S_->Get<CV_t>(aperture_key_, Tags::DEFAULT).ViewComponent("cell");
     const auto& prev_aperture = *S_->Get<CV_t>(prev_aperture_key_, Tags::DEFAULT).ViewComponent("cell");
 
+    double amax(0.0);
     for (int c = 0; c < ncells_owned; ++c) {
       double dadt = (aperture[0][c] - prev_aperture[0][c]) / dt;
       double mass = rho_ * mesh_->cell_volume(c);
       rhs_cell[0][c] -= dadt * mass;
+      
+      amax = std::max(amax, fabs(dadt));
+    }
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+      *vo_->os() << "source term due to aperture opening/closing: |da/dt|=" << amax << std::endl;  
     }
   }
 

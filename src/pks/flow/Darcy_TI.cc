@@ -38,15 +38,20 @@ void Darcy_PK::FunctionalResidual(
   CompositeVector sy_g(*specific_yield_copy_); 
   sy_g.Scale(factor);
 
-  if (flow_on_manifold_) {
+  op_->RestoreCheckPoint();
+  if (!flow_on_manifold_) {
+    op_acc_->AddAccumulationDelta(*u_old->Data(), ss_g, ss_g, dt_, "cell");
+    op_acc_->AddAccumulationDeltaNoVolume(*u_old->Data(), sy_g, "cell");
+  } else {
     const auto& aperture = S_->Get<CompositeVector>(aperture_key_, Tags::DEFAULT);
+    const auto& prev_aperture = S_->Get<CompositeVector>(prev_aperture_key_, Tags::DEFAULT);
+
+    CompositeVector ss0_g(ss_g);
     ss_g.Multiply(1.0, ss_g, aperture, 0.0);
-    sy_g.Multiply(1.0, sy_g, aperture, 0.0);
+    ss0_g.Multiply(1.0, ss0_g, prev_aperture, 0.0);
+    op_acc_->AddAccumulationDelta(*u_old->Data(), ss0_g, ss_g, dt_, "cell");
   }
 
-  op_->RestoreCheckPoint();
-  op_acc_->AddAccumulationDelta(*u_old->Data(), ss_g, ss_g, dt_, "cell");
-  op_acc_->AddAccumulationDeltaNoVolume(*u_old->Data(), sy_g, "cell");
 
   // Peaceman model
   if (S_->HasRecord("well_index")) {
