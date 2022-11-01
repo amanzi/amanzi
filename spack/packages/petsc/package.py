@@ -9,4 +9,4 @@ from spack.pkg.builtin.petsc import Petsc
 
 class Petsc(Petsc):
 
-    patch('petsc-cmake.patch')
+    patch('../../../config/SuperBuild/templates/petsc-cmake.patch')

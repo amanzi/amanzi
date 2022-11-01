@@ -61,9 +61,6 @@ class Mstk(CMakePackage):
 
     # MSTK turns on METIS only for parallel builds
     conflicts('partitioner=metis', when='-parallel')
-
-    # Patch for shared libraries 3.3.5
-    # patch('mstk-cmake2.patch', when='+shared')
     
     # dependencies
     depends_on('cmake@3.11:', type='build')
