@@ -162,6 +162,7 @@ class Amanzi(CMakePackage):
         options.append('-DSEACAS_DIR=' + self.spec['seacas'].prefix)
         options.append('-DSuperLU_DIR=' + self.spec['superlu'].prefix)
         options.append('-DTrilinos_INSTALL_PREFIX:PATH=' + self.spec['trilinos'].prefix)
+        options.append('-DEXPRTK_INLCUDE_DIR='+self.spec['exprtk'].prefix+'/include')
 
         # not supported or always off/on options
         options.append('-DENABLE_OpenMP=OFF')

@@ -16,4 +16,5 @@ class Exprtk(Package):
     version('master', commit='806c519c91fd08ba4fa19380dbf3f6e42de9e2d1', default=True)
 
     def install(self, prec, prefix): 
+        mkdirp(prefix.include)
         install("exprtk.hpp", prefix.include)
