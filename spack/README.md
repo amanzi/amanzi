@@ -7,6 +7,7 @@ Clone Amanzi on your machine:
 ```
 git clone --recursive git@github.com:amanzi/amanzi
 cd amanzi
+git checkout spack
 git pull
 ```
 
@@ -21,7 +22,7 @@ Add Spack in your environment (and maybe your bash_profile script.):
 source ${PATH_TO_SPACK}/spack/share/spack/setup-env.sh
 ```
 
-Then add the amanzi repo to the list of spack repos:
+Then add the Amanzi repo to the list of Spack repos:
 
 ```
 spack repo add amanzi/spack
@@ -58,7 +59,7 @@ spack compilers
 Install Amanzi with Spack:
 
 ```
-spack install amanzi %compiler@version
+spack install amanzi@spack %compiler@version
 ```
 
 If needed, load Amanzi:
@@ -77,7 +78,7 @@ spack info openmpi
 Install Amanzi with custom openmpi:
 
 ```
-spack install amanzi %compiler@version ^openmpi@mpiVersion
+spack install amanzi@spack %compiler@version ^openmpi@mpiVersion
 ```
 
 # Detailed instructions with system specific directions
@@ -110,7 +111,7 @@ This will update the file: ${HOME}/.spack/packages.yaml.
 External packages (such as openmpi or mpich) can be used to specify dependencies when installing spack packages using `^`, for instance on LANL's Darwin:
 
 ```
-spack install amanzi ^openmpi@4.1.2
+spack install amanzi@spack ^openmpi@4.1.2
 ```
 will install Amanzi with the explicit dependence on the module `openmpi/4.1.2-gcc_11.2.0` to which it is associated the Spack spec `^openmpi@4.1.2`.
 Note that specifying a compiler is not necessary here since it is already taken into account in the module.
@@ -162,7 +163,7 @@ Currently, we are striving to support the following variants:
                                            structured              (the structured option is currently NOT supported)
     physics [amanzi]               --      amanzi, ats             Physics implementation
     shared [on]                    --      on, off                 Build Amanzi shared
-                                                                   (note that this variant ONLY applies to amanzi and NOT to its dependencies)
+                                                                   (note that this variant ONLY applies to Amanzi and NOT to its dependencies)
     silo [off]                     --      on, off                 Enable Silo reader for binary files
     tests [on]                     --      on, off                 Enable the unit test suite
                                                                    (currently working on the OFF option for tests)
@@ -184,9 +185,9 @@ packages:
         modules:
           - openmpi/4.1.2-gcc_11.2.0
 ```
-To build amanzi, run from any folder:
+To build Amanzi, run from any folder:
 ```
-spack install amanzi <desired_variant>  ^openmpi@4.1.2
+spack install amanzi@spack <desired_variant>  ^openmpi@4.1.2
 ```
 Note that tests are currently run as part of the Spack build by default (the `+tests` variant is on by default).
 
@@ -205,10 +206,10 @@ packages:
       modules:
       - cray-libsci/20.09.1
 ```
-To build amanzi, run from any folder:
+To build Amanzi, run from any folder:
 
 ```
-spack install amanzi <desired_variant> ^mpich@7.7.19 ^cray-libsci@20.09.1 %gcc@8.3.0
+spack install amanzi@spack <desired_variant> ^mpich@7.7.19 ^cray-libsci@20.09.1 %gcc@8.3.0
 ```
 
 The specific dependence on the cray scientific library is to make sure that `blas` and `lapack` are taken from there.
@@ -234,7 +235,7 @@ Next, add the following spec to the packages.yaml file:
 ```
 To build Amanzi, run from any folder:
 ```
-spack install amanzi <desired_variant> ^openmpi@4.0.4 %gcc@11.2.0
+spack install amanzi@spack <desired_variant> ^openmpi@4.0.4 %gcc@11.2.0
 ```
 # MacOS (native tools with Spack) 
 
@@ -315,7 +316,7 @@ compilers:
 Amanzi can then be installed with:
 
 ```
-spack install amanzi %apple-clang@12.0.0
+spack install amanzi@spack %apple-clang@12.0.0
 ```
 
 
