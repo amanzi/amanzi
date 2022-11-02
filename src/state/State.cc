@@ -349,6 +349,7 @@ Evaluator& State::RequireEvaluator(const Key& key, const Tag& tag)
   if (Keys::getVarName(key) == "cell_volume") {
     Teuchos::ParameterList& cv_list = GetEvaluatorList(key);
     cv_list.set("evaluator type", "cell volume");
+    // recursive call will result in the above, HasEvaluatorList() branch being taken.
     return RequireEvaluator(key, tag);
   }
 
