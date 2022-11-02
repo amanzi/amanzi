@@ -265,9 +265,6 @@ bool FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (sub_pks_[0]->name() == "richards") {
     fields.push_back("prev_water_storage");
     fields.push_back("fracture-prev_water_storage");
-  } else {
-    fields.push_back("fracture-prev_aperture");
-    fields.push_back("prev_volumetric_strain");
   }
 
   StateArchive archive(S_, vo_);
@@ -281,6 +278,14 @@ bool FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *vo_->os() << "Step failed." << std::endl;
 
     archive.Restore("");
+  }
+
+  // update some fields, we cannot move this to commit step due to "initialize"
+  S_->GetW<CV_t>("fracture-prev_aperture", Tags::DEFAULT, "") =
+    S_->Get<CV_t>("fracture-aperture", Tags::DEFAULT);
+  if (S_->HasRecord("prev_volumetric_strain")) {
+    S_->GetW<CV_t>("prev_volumetric_strain", Tags::DEFAULT, "") =
+      S_->Get<CV_t>("volumetric_strain", Tags::DEFAULT);
   }
 
   return fail;

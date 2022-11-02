@@ -188,6 +188,13 @@ void Flow_PK::Setup()
       }
     }
   }    
+
+  // temporary fields
+  if (flow_on_manifold_ && name() == "darcy") {
+    S_->Require<CV_t, CVS_t>("fracture-dadt", Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->GetRecordW("fracture-dadt", Tags::DEFAULT, passwd_).set_initialized();
+  }
 }
 
 
@@ -769,11 +776,20 @@ void Flow_PK::AddSourceTerms(CompositeVector& rhs, double dt)
   if (flow_on_manifold_ && name() == "darcy") {
     const auto& aperture = *S_->Get<CV_t>(aperture_key_, Tags::DEFAULT).ViewComponent("cell");
     const auto& prev_aperture = *S_->Get<CV_t>(prev_aperture_key_, Tags::DEFAULT).ViewComponent("cell");
+    auto& tmp = *S_->GetW<CompositeVector>("fracture-dadt", Tags::DEFAULT, passwd_).ViewComponent("cell");
 
+    double amax(0.0);
     for (int c = 0; c < ncells_owned; ++c) {
       double dadt = (aperture[0][c] - prev_aperture[0][c]) / dt;
       double mass = rho_ * mesh_->cell_volume(c);
       rhs_cell[0][c] -= dadt * mass;
+      
+      amax = std::max(amax, fabs(dadt));
+      tmp[0][c] = dadt;
+    }
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+      *vo_->os() << "source term due to aperture opening/closing: |da/dt|=" << amax << std::endl;  
     }
   }
 
