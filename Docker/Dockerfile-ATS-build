@@ -12,7 +12,7 @@ RUN echo "${AMANZI_TPLS_DIR}"
 # Arguments
 ARG amanzi_branch=master
 ARG ats_branch=master
-ARG ats_regression_branch=master
+ARG ats_tests_branch=master
 ARG https_proxy=
 ARG http_proxy=
 
@@ -41,7 +41,7 @@ RUN git checkout $ats_branch
 RUN git pull
 RUN git rev-parse --short HEAD
 WORKDIR /home/amanzi_user/amanzi/src/physics/ats/testing/ats-regression-tests
-RUN git checkout $ats_regression_branch
+RUN git checkout $ats_tests_branch
 RUN git pull
 RUN git rev-parse --short HEAD
 WORKDIR /home/amanzi_user/amanzi
