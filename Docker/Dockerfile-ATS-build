@@ -41,8 +41,7 @@ RUN git checkout $ats_branch
 RUN git pull
 RUN git rev-parse --short HEAD
 WORKDIR /home/amanzi_user/amanzi/src/physics/ats/testing/ats-regression-tests
-RUN git checkout $ats_tests_branch
-RUN git pull
+RUN if [[ -n "$ats_tests_branch" ]] ; then git checkout $ats_tests_branch; git pull; fi
 RUN git rev-parse --short HEAD
 WORKDIR /home/amanzi_user/amanzi
 
