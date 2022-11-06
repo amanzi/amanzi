@@ -36,6 +36,7 @@ typedef enum { PDE_DIFFUSION,
                PDE_DIFFUSION_MFD_TRACER,
                PDE_DIFFUSION_DG,
                PDE_DIFFUSION_FRACTURED_MATRIX,
+               PDE_DIFFUSION_FD,
                PDE_ADVECTION,
                PDE_ACCUMULATION,
                PDE_ELASTICITY,
@@ -118,6 +119,7 @@ const int OPERATOR_LITTLE_K_DIVK_BASE = 2;  // base (only face component)
 const int OPERATOR_LITTLE_K_DIVK = 6;  // add cell component
 const int OPERATOR_LITTLE_K_DIVK_TWIN = 10;  // add twin component
 const int OPERATOR_LITTLE_K_STANDARD = 32;
+const int OPERATOR_LITTLE_K_ARITHMETIC_MEAN = 64;
 
 // method for gravity
 const int OPERATOR_GRAVITY_HH = 1;

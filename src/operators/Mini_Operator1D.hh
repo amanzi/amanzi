@@ -25,6 +25,7 @@ namespace Operators {
 class Mini_Operator1D {
  public:
   Mini_Operator1D() {};
+  Mini_Operator1D(const Mini_Operator1D& other);
   ~Mini_Operator1D() {};
 
   // initialize 1D mesh and geometry
@@ -40,7 +41,7 @@ class Mini_Operator1D {
   void AddAccumulationTerm(const WhetStone::DenseVector& s0,
                            const WhetStone::DenseVector& s1, double dt,
                            WhetStone::DenseVector& sol);
-  void AddAccumulationTerm(const WhetStone::DenseVector& s1);
+  void AddAccumulationTerm(const WhetStone::DenseVector& s1, bool add_volume = true);
 
   void ScaleMatrix(double scale) { diag_ *= scale; 
                                    up_ *= scale; down_ *= scale; }
@@ -56,6 +57,9 @@ class Mini_Operator1D {
   const WhetStone::DenseVector& rhs() const { return rhs_; }
   WhetStone::DenseVector& rhs() { return rhs_; }
  
+  // utils
+  void Print(int n = -1, const char* format = "%12.5f");
+
  protected:
   // mesh
   std::shared_ptr<const WhetStone::DenseVector> mesh_;
