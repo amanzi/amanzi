@@ -103,7 +103,7 @@ endif()
 if (NOT CMAKE_Fortran_COMPILER)
   message(WARNING "Fortran compiler not specified. CMake will guess!")
 else()
-  message(STATUS "CMAKE_Fortran_COMPILER) = ${CMAKE_Fortran_COMPILER}")
+  message(STATUS "CMAKE_Fortran_COMPILER = ${CMAKE_Fortran_COMPILER}")
 endif()
 
 #if (NOT SPACK_BINARY)
@@ -159,16 +159,21 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX AMANZI
   VERSION ${AMANZI_TPLS_VERSION_MAJOR} ${AMANZI_TPLS_VERSION_MINOR} ${AMANZI_TPLS_VERSION_PATCH})
 
-
 # ############################################################################ #
 # Python options
 # ############################################################################ #
 if (NOT PYTHON_EXECUTABLE) 
   unset(PYTHON_EXECUTABLE CACHE)
   find_package(PythonInterp 3 REQUIRED)
+else()
+  find_package(PythonInterp REQUIRED)
 endif()
-message(STATUS "Python: ${PYTHON_EXECUTABLE}")
+message(STATUS "Python Executable:    ${PYTHON_EXECUTABLE}")
+message(STATUS "Python Version:       ${PYTHON_VERSION_STRING}")
 
+if (PYTHON_VERSION_STRING  VERSION_LESS "3")
+  message(FATAL_ERROR "Python version 3.x is required to build Amanzi and run the tests.")
+endif()
 
 # ############################################################################ #
 # Build options
