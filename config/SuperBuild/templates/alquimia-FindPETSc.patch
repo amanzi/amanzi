@@ -26,7 +26,7 @@ diff -Naur alquimia-dev-1.0.8/cmake/Modules/FindPETSc.cmake alquimia-dev-1.0.8-n
        set (petsc_includes_needed ${petsc_includes_all})
      else (petsc_works_allincludes) # We are going to need to link the external libs explicitly
        resolve_libraries (petsc_libraries_external "${petsc_libs_external}")
-+      if (DEFINED ENV{NERSC_HOST} )
++      if ( ${AMANZI_ARCH_NERSC} )
 +        set (petsc_libraries_external ${petsc_libs_external})
 +      endif( )
        foreach (pkg SYS VEC MAT DM KSP SNES TS ALL)
