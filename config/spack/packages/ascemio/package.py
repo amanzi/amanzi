@@ -18,7 +18,7 @@ class Ascemio(CMakePackage):
 
     version('2.3', sha256='de556a774b4ef7dc223f4611a39c978c')
 
-    patch('../../../config/SuperBuild/templates/ascemio-2.2-hdf5.patch')
+    patch('../../../SuperBuild/templates/ascemio-2.2-hdf5.patch')
 
     variant("shared", default=True, description="Builds a shared version of the library")
 

@@ -26,8 +26,8 @@ class Alquimia(CMakePackage):
     depends_on('pflotran@3.0.2', when='@1.0.9')
     depends_on('petsc')
 
-    patch('../../../config/SuperBuild/templates/alquimia-cmake.patch')
-    patch('../../../config/SuperBuild/templates/alquimia-FindPETSc.patch')
+    patch('../../../SuperBuild/templates/alquimia-cmake.patch')
+    patch('../../../SuperBuild/templates/alquimia-FindPETSc.patch')
 
     def cmake_args(self):
         spec = self.spec

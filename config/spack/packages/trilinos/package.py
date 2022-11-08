@@ -11,6 +11,6 @@ from spack.pkg.builtin.trilinos import Trilinos
 class Trilinos(Trilinos):
     version('13.0.0.afc4',commit='afc4e52595ab82f449f8a4676febbcfbf8223afc')
 
-    patch('../../../config/SuperBuild/templates/trilinos-superludist.patch',when="@13.0.0.afc4")
-    patch('../../../config/SuperBuild/templates/trilinos-ifpack.patch',when="@13.0.0.afc4")
-    patch('../../../config/SuperBuild/templates/trilinos-duplicate-parameters.patch',when="@13.0.0.afc4")
+    patch('../../../SuperBuild/templates/trilinos-superludist.patch',when="@13.0.0.afc4")
+    patch('../../../SuperBuild/templates/trilinos-ifpack.patch',when="@13.0.0.afc4")
+    patch('../../../SuperBuild/templates/trilinos-duplicate-parameters.patch',when="@13.0.0.afc4")
