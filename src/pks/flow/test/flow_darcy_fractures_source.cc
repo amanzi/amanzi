@@ -90,7 +90,7 @@ TEST(DARCY_TWO_FRACTURES) {
 
   // double V = 0.25;  // fracture area [m^2]
   double a = 0.01;   // aperture [m]
-  double dadt = 1e-5;
+  double dadt = 0.0;
   double Q = 8.0e-2; // source [kg/s]
   double Ss = 0.002; // specific storage [m^-1]
   double g = 10.0;   // gravity [m/s^2]
