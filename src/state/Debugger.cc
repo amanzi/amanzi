@@ -101,7 +101,7 @@ Debugger::set_cells(const AmanziMesh::Entity_ID_List& dc) {
       vo_plist.sublist("verbose object");
       vo_plist.sublist("verbose object") = plist_.sublist("verbose object");
       vo_plist.sublist("verbose object").set("write on rank", my_pid);
-      vo_plist.sublist("verbose object").set("show rank", true);
+      vo_plist.sublist("verbose object").set("show rank", false);
       dcvo_.emplace_back(Teuchos::rcp(new VerboseObject(mesh_->get_comm(), name_, vo_plist)));
     }
   }
