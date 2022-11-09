@@ -25,7 +25,7 @@ source ${PATH_TO_SPACK}/spack/share/spack/setup-env.sh
 Then add the Amanzi repo to the list of Spack repos:
 
 ```
-spack repo add amanzi/spack
+spack repo add amanzi/config/spack
 ```
 
 The command above will add repositories for the following nine packages:
