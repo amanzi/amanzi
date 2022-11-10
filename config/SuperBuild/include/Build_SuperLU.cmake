@@ -32,6 +32,11 @@ set(SuperLU_CMAKE_ARGS
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-Denable_internal_blaslib:BOOL=FALSE")
 
+#      "-Denable_internal_blaslib:BOOL=FALSE"
+#      "-DBLA_VENDOR=Generic"
+#      "-DBLAS_ROOT=/usr/local/opt/lapack"            
+#      "-DTPL_BLAS_LIBRARIES=${BLAS_LIBRARIES_TMP}")
+
 string(REPLACE ";" "\\\;" superlu_module_opt "${CMAKE_MODULE_PATH}")
 
 # --- Add external project build and tie to the SuperLU build target

@@ -97,8 +97,10 @@ class RecordSet {
   // Data creation
   void CreateData() {
     for (auto& e : records_) {
-      if (!aliases_.count(e.first)) {
-        e.second->data_ = std::forward<Impl::Data>(factory_.Create());
+      if (!e.second->initialized()){
+	if (!aliases_.count(e.first)) {
+	  e.second->data_ = std::forward<Impl::Data>(factory_.Create());
+	}
       }
     }
     for (auto& pair : aliases_) {

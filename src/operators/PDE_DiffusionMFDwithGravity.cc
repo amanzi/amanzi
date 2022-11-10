@@ -158,7 +158,9 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
     }
 
     global_op_->rhs()->GatherGhostedToMaster("face", Epetra_CombineMode(Add));
+
   }
+
 }
 
 

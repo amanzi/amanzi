@@ -638,7 +638,7 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
       }
     }
   }
-
+  
   global_op_->rhs()->GatherGhostedToMaster("face", Add);
 }
 

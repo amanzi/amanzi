@@ -18,6 +18,7 @@
 #include "Mesh.hh"
 #include "State.hh"
 #include "PK_DomainFunctionSimple.hh"
+#include "PK_DomainFunctionField.hh"
 #include "PK_DomainFunctionVolume.hh"
 #include "PK_DomainFunctionVolumeFraction.hh"
 #include "PK_DomainFunctionWeight.hh"
@@ -33,7 +34,7 @@ template <class FunctionBase>
 class PK_DomainFunctionFactory : public FunctionBase {
  public:
   PK_DomainFunctionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                           const Teuchos::RCP<const State>& S)
+                           const Teuchos::RCP<State>& S)
     : mesh_(mesh), S_(S) {};
   ~PK_DomainFunctionFactory() {};
 
@@ -51,7 +52,7 @@ class PK_DomainFunctionFactory : public FunctionBase {
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<const State> S_;
+  Teuchos::RCP<State> S_;
 };
 
 
@@ -110,6 +111,12 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
     Teuchos::RCP<PK_DomainFunctionCoupling<FunctionBase> >
        func = Teuchos::rcp(new PK_DomainFunctionCoupling<FunctionBase>(mesh_, S_));
     func->Init(plist, keyword, kind);
+    return func;
+  }
+  else if (model == "field") {
+    Teuchos::RCP<PK_DomainFunctionField<FunctionBase> >
+      func = Teuchos::rcp(new PK_DomainFunctionField<FunctionBase>(mesh_, S_, kind));
+    func->Init(plist, keyword);
     return func;
   }
   else if (model == "first order exchange") {

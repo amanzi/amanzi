@@ -56,7 +56,6 @@ State::State(Teuchos::ParameterList& state_plist) :
   vo_ = Teuchos::rcp(new VerboseObject("State", state_plist_));
 };
 
-
 // -----------------------------------------------------------------------------
 // State handles mesh management.
 // -----------------------------------------------------------------------------
@@ -656,6 +655,7 @@ void State::InitializeFieldCopies(const Tag& reference_tag)
         }
       }
     }
+
   }
 }
 
@@ -831,12 +831,12 @@ Teuchos::RCP<Evaluator> State::GetEvaluatorPtr(const Key& key, const Tag& tag)
 }
 
 
+
 // Key defines field, Tag defines particular copy of field
 void State::SetEvaluator(const Key& key, const Tag& tag,
                          const Teuchos::RCP<Evaluator>& evaluator) {
   evaluators_[key][tag] = evaluator;
 }
-
 
 Teuchos::ParameterList&
 State::GetEvaluatorList(const Key& key)
