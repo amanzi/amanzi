@@ -762,7 +762,9 @@ void Richards_PK::Initialize()
   }
 
   // Subspace entering: re-initialize lambdas.
-  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
+  if (ti_list_->isSublist("pressure-lambda constraints") &&
+      solution->HasComponent("face") &&
+      !flow_on_manifold_) {
     solver_name_constraint_ = ti_list_->sublist("pressure-lambda constraints").get<std::string>("linear solver");
 
     if (S_->get_position() == Amanzi::TIME_PERIOD_START) {

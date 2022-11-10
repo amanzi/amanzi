@@ -62,12 +62,10 @@ void Richards_PK::FunctionalResidual(
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
     upwind_->Compute(*vol_flowrate_copy, *u_new->Data(), bc_model, *alpha_upwind_);
-  }
 
-  // modify relative permeability coefficient for influx faces
-  // UpwindInflowBoundary_New(u_new->Data());
+    // modify relative permeability coefficient for influx faces
+    // UpwindInflowBoundary_New(u_new->Data());
 
-  if (!flow_on_manifold_) {
     S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
     auto& alpha_dP = S_->GetDerivativeW<CompositeVector>(
         alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
@@ -129,7 +127,7 @@ void Richards_PK::FunctionalResidual(
       functional_max_norm = tmp;
       functional_max_cell = c;        
     }
-  } 
+  }
 }
 
 
@@ -352,12 +350,10 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
     upwind_->Compute(*vol_flowrate_copy, *u->Data(), bc_model, *alpha_upwind_);
-  }
 
-  // modify relative permeability coefficient for influx faces
-  // UpwindInflowBoundary_New(u->Data());
+    // modify relative permeability coefficient for influx faces
+    // UpwindInflowBoundary_New(u->Data());
 
-  if (!flow_on_manifold_) {
     S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
     auto& alpha_dP = S_->GetDerivativeW<CompositeVector>(
         alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
