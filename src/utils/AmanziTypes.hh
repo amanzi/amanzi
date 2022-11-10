@@ -21,6 +21,7 @@
 #ifndef AMANZI_TYPES_HH_
 #define AMANZI_TYPES_HH_
 
+#include <memory>
 #include "Teuchos_RCPDecl.hpp"
 
 
