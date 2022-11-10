@@ -18,7 +18,7 @@
 
       <numerical_constant name="KM1" value="1e-12"/>
       <numerical_constant name="KM2" value="1e-13"/>
-      <numerical_constant name="KFN" value="20.0e-4 m^2*s/kg"/>
+      <numerical_constant name="KFN" value="20.0e-4 s^-1"/>
       <numerical_constant name="KFT" value="1e-8"/>
 
       <constant name="gravity" type="none" value="10.0"/>

@@ -26,6 +26,7 @@ void Darcy_PK::FunctionalResidual(
   dt_ = t_new - t_old;
 
   // refresh data
+  pressure_eval_->SetChanged();
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 
   // calculate and assemble elemental stiffness matrices
@@ -39,6 +40,7 @@ void Darcy_PK::FunctionalResidual(
   sy_g.Scale(factor);
 
   if (flow_on_manifold_) {
+    S_->GetEvaluator(aperture_key_).Update(*S_, "flow");
     const auto& aperture = S_->Get<CompositeVector>(aperture_key_, Tags::DEFAULT);
     ss_g.Multiply(1.0, ss_g, aperture, 0.0);
     sy_g.Multiply(1.0, sy_g, aperture, 0.0);
@@ -54,8 +56,14 @@ void Darcy_PK::FunctionalResidual(
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
-  // optional update of diffusion operator
+  // compliance and optinal update of diffusion operator 
   if (flow_on_manifold_) {
+    S_->GetEvaluator(compliance_key_).Update(*S_, "flow");
+    const auto& compliance = S_->Get<CompositeVector>(compliance_key_, Tags::DEFAULT);
+
+    ss_g.Update(rho_, compliance, 0.0);
+    op_acc_->AddAccumulationDelta(*u_old->Data(), ss_g, ss_g, dt_, "cell");
+
     bool updated = S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");
     if (updated)
       op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);

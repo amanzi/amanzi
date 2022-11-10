@@ -365,13 +365,21 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- particle density
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);
       if (flag) {
-        TranslateFieldEvaluator_(node, "fracture-particle_density", "kg*m^-3", reg_str, regions, out_ic, out_ev);
+        TranslateFieldEvaluator_(node, "fracture-particle_density", "kg*m^-3", reg_str, regions,
+                                 out_ic, out_ev, "value", "fracture");
       }
  
       // -- specific storage
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_storage", flag);
       if (flag) {
         TranslateFieldIC_(node, "fracture-specific_storage", "m^-1", reg_str, regions, out_ic);
+      }
+
+      // -- fracture compliance
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, compliance", flag);
+      if (flag) {
+        TranslateFieldEvaluator_(node, "fracture-compliance", "m Pa^-1", reg_str, regions,
+                                 out_ic, out_ev, "value", "fracture");
       }
 
       // -- thermal conductivity

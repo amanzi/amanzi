@@ -37,12 +37,12 @@ using namespace Amanzi::AmanziGeometry;
 
 Utils::RegisteredFactory<Evaluator, EvaluatorAperture> EvaluatorAperture::reg_("aperture");
 
-TEST(MPC_DRIVER_COUPLED_FLOW_APERTURE) {
+void RunTest(const std::string xmlInFileName)
+{
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
   
   // setup a piecewice linear solution with a jump
-  std::string xmlInFileName = "test/mpc_coupled_flow_aperture.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
   // For now create one geometric model from all the regions in the spec
@@ -92,3 +92,11 @@ TEST(MPC_DRIVER_COUPLED_FLOW_APERTURE) {
   }
 }
 
+
+TEST(MPC_DRIVER_COUPLED_FLOW_APERTURE_DARCY) {
+  RunTest("test/mpc_coupled_flow_aperture_darcy.xml");
+}
+
+TEST(MPC_DRIVER_COUPLED_FLOW_APERTURE_RICHARDSY) {
+  RunTest("test/mpc_coupled_flow_aperture.xml");
+}
