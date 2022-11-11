@@ -24,6 +24,7 @@ Record::Record(Key fieldname, Tag tag, Key owner)
      owner_(std::move(owner)),
      vis_key_(fieldname_),
      initialized_(false),
+     allocated_(false),
      io_checkpoint_(true),
      io_vis_(true) {}
 
@@ -34,6 +35,7 @@ Record::Record(const Record& other, const Tag* tag)
      owner_(other.owner_),
      vis_key_(other.vis_key_),
      initialized_(other.initialized_),
+     allocated_(other.allocated_),
      io_checkpoint_(other.io_checkpoint_),
      io_vis_(other.io_vis_)
 {

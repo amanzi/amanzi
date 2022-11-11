@@ -39,6 +39,7 @@ class Record {
   // access
   Key fieldname() const { return fieldname_; }
   bool initialized() const { return initialized_; }
+  bool allocated() const { return allocated_; }
   Key owner() const { return owner_; }
   Key vis_fieldname() const { return vis_key_; }
   bool io_checkpoint() const { return io_checkpoint_; }
@@ -47,6 +48,7 @@ class Record {
   // mutators
   void set_fieldname(const Key& fieldname) { fieldname_ = fieldname; }
   void set_initialized(bool initialized = true) { initialized_ = initialized; }
+  void set_allocated(bool allocated = true) { allocated_ = allocated; }
   void set_owner(const Key& owner) { owner_ = owner; }
   void set_vis_fieldname(const Key& key) { vis_key_ = key; }
   void set_io_checkpoint(bool io_checkpoint = true) { io_checkpoint_ = io_checkpoint; }
@@ -146,6 +148,7 @@ class Record {
   Key vis_key_;
 
   bool initialized_;
+  bool allocated_;
   bool io_checkpoint_;
   bool io_vis_;
 

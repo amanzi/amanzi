@@ -135,4 +135,14 @@ bool RecordSet::isInitialized(Tag& failed) {
   return true;
 }
 
+bool RecordSet::isAllocated(Tag& failed) {
+  for (auto& r : records_) {
+    if (!r.second->allocated()) {;
+      failed = r.first;
+      return false;
+    }
+  }
+  return true;
+}  
+
 }  // namespace Amanzi
