@@ -330,7 +330,7 @@ if __name__ == "__main__":
         if native:
             ax[0].plot(x_amanzi_native, Ca_amanzi_native[i],'rx')
 
-        ax[0].plot(x_pflotran_OS, Ca_pflotran_OS[i],'m-',linewidth=PFLOTRAN_LINE_WIDTH,c=PFLOTRAN_LINE_COLOR)
+        ax[0].plot(x_pflotran_OS, Ca_pflotran_OS[i],'-',linewidth=PFLOTRAN_LINE_WIDTH,c=PFLOTRAN_LINE_COLOR)
         ax[0].plot(x_crunchflow, Ca_crunchOS3D[i],'m*',markersize=CRUNCH_MARKER_SIZE)
 
         if alq:
@@ -342,7 +342,7 @@ if __name__ == "__main__":
         if native:
             ax[1].plot(x_amanzi_native, pH_amanzi_native[i],'rx',label='AmanziU(2nd-O) Native Chem.')
 
-        ax[1].plot(x_pflotran_OS, pH_pflotran_OS[i],'m-',linewidth=PFLOTRAN_LINE_WIDTH,c=PFLOTRAN_LINE_COLOR)
+        ax[1].plot(x_pflotran_OS, pH_pflotran_OS[i],'-',linewidth=PFLOTRAN_LINE_WIDTH,c=PFLOTRAN_LINE_COLOR)
         ax[1].plot(x_crunchflow, pH_crunchOS3D[i],'m*',markersize=CRUNCH_MARKER_SIZE)
 
         if i==0:
@@ -355,7 +355,7 @@ if __name__ == "__main__":
             if native:
                 ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx')
 
-            ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'m-',label='PFloTran OS',linewidth=PFLOTRAN_LINE_WIDTH,c=PFLOTRAN_LINE_COLOR)
+            ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'-',label='PFloTran OS',linewidth=PFLOTRAN_LINE_WIDTH,c=PFLOTRAN_LINE_COLOR)
             ax[2].plot(x_crunchflow, VF_crunchOS3D[i],'m*',label='CrunchFlow OS3D',markersize=CRUNCH_MARKER_SIZE)
         else:
             if alq:
@@ -367,7 +367,7 @@ if __name__ == "__main__":
             if native:
                 ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx')
 
-            ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'m-',linewidth=PFLOTRAN_LINE_WIDTH,c=PFLOTRAN_LINE_COLOR)
+            ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'-',linewidth=PFLOTRAN_LINE_WIDTH,c=PFLOTRAN_LINE_COLOR)
 
     #import pdb; pdb.set_trace()
     if (struct>0):

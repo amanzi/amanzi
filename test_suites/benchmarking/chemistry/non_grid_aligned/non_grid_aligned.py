@@ -71,7 +71,7 @@ if __name__ == "__main__":
         path_to_amanzi = "output-u"
         run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
         
-        comp = 'mineral_volume_fractions.cell.Calcite'
+        comp = 'mineral_volume_fractions.Calcite'
         x_native, y_native, z_native = GetXYZ_Amanzi(path_to_amanzi,root,comp,nodesx=nodesx,nodesy=nodesy)
 
     except Exception:

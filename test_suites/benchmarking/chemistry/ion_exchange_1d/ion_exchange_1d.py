@@ -312,7 +312,7 @@ if __name__ == "__main__":
     if native:
         i = 0  # hardwired for time '71'
         for j, comp in enumerate(components):
-            ax[j].plot(x_amanzi_native, u_amanzi_native[i][j],'rx',label='AmanziU Native Chem',c=PFLOTRAN_LINE_COLOR)
+            ax[j].plot(x_amanzi_native, u_amanzi_native[i][j],'x',label='AmanziU Native Chem',c=PFLOTRAN_LINE_COLOR)
             bx[j].plot(x_amanzi_native, v_amanzi_native[i][j],'rx',label='AmanziU Native Chem')
 
     if crunch:
@@ -324,8 +324,8 @@ if __name__ == "__main__":
     if pflotran:
         i = 0  # hardwired for time 50 years
         for j, comp in enumerate(components):
-            ax[j].plot(x_pflotran, u_pflotran[i][j],'m-',label='PFloTran',c=PFLOTRAN_LINE_COLOR,linewidth=LINE_WIDTH)
-            bx[j].plot(x_pflotran, v_pflotran[i][j],'m-',label='PFloTran',c=PFLOTRAN_LINE_COLOR,linewidth=LINE_WIDTH)
+            ax[j].plot(x_pflotran, u_pflotran[i][j],'-',label='PFloTran',c=PFLOTRAN_LINE_COLOR,linewidth=LINE_WIDTH)
+            bx[j].plot(x_pflotran, v_pflotran[i][j],'-',label='PFloTran',c=PFLOTRAN_LINE_COLOR,linewidth=LINE_WIDTH)
 
             ax[j].text(
                 0.03,
@@ -349,12 +349,12 @@ if __name__ == "__main__":
 
     if (struct>0):
         for j in range(len(amanzi_compS)):
-            ax[j].plot(x_amanziS, u_amanziS[j],'g-',c=PFLOTRAN_LINE_COLOR)#,label='AmanziS+Alq(PFT)')
+            ax[j].plot(x_amanziS, u_amanziS[j],'-',c=PFLOTRAN_LINE_COLOR)#,label='AmanziS+Alq(PFT)')
             bx[j].plot(x_amanziS, v_amanziS[j],'g-',label='AmanziS+Alq(PFT)')
 
     if (struct_c > 0):
         for j in range(len(amanzi_compS)):
-            ax[j].plot(x_amanziS_c, u_amanziS_c[j],'g*',c=PFLOTRAN_LINE_COLOR)#,label='AmanziS+Alq(CF)')
+            ax[j].plot(x_amanziS_c, u_amanziS_c[j],'*',c=PFLOTRAN_LINE_COLOR)#,label='AmanziS+Alq(CF)')
             bx[j].plot(x_amanziS_c, v_amanziS_c[j],'g*',label='AmanziS+Alq(CF)')
 
     # axes
