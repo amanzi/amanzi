@@ -50,9 +50,6 @@ This evaluator is used by providing the option:
      for things like cyclic data, which can use a modulo time function to
      repeat the same data.
 
- */
-
-
   TODO: This needs a test and documentation! --etc
 */
 

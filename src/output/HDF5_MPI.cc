@@ -28,7 +28,6 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, bool include_io_set)
       dynamic_mesh_(false),
       mesh_written_(false),
       static_mesh_cycle_(0),
-      mesh_file_(-1),
       data_file_(-1),
       include_io_set_(include_io_set)
 {
@@ -51,7 +50,6 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, std::string dataFilename, bool inc
       mesh_written_(false),
       static_mesh_cycle_(0),
       include_io_set_(include_io_set),
-      mesh_file_(-1),
       data_file_(-1)
 {
   AMANZI_ASSERT(viz_comm_.get());
@@ -69,7 +67,8 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, std::string dataFilename, bool inc
 
 HDF5_MPI::~HDF5_MPI()
 {
-  if (data_file_ >= 0) close_h5file();
+  if (data_file_ >= 0)
+    parallelIO_close_file(data_file_, &IOgroup_);
   parallelIO_IOgroup_cleanup(&IOgroup_);
 }
 
@@ -86,13 +85,13 @@ void HDF5_MPI::createMeshFile(Teuchos::RCP<const AmanziMesh::Mesh> mesh, const s
   h5Filename_ = filename + ".h5";
 
   // new parallel
-  mesh_file_ = parallelIO_open_file(h5Filename_.c_str(), &IOgroup_, FILE_CREATE);
-  if (mesh_file_ < 0) {
+  int mesh_file = parallelIO_open_file(h5Filename_.c_str(), &IOgroup_, FILE_CREATE);
+  if (mesh_file < 0) {
     Errors::Message message("HDF5_MPI::createMeshFile - error creating mesh file");
     Exceptions::amanzi_throw(message);
   }
   // close file
-  parallelIO_close_file(mesh_file_, &IOgroup_);
+  parallelIO_close_file(mesh_file, &IOgroup_);
 
   // Store filenames
   if (TrackXdmf() && viz_comm_->MyPID() == 0) {
@@ -120,7 +119,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   if (!dynamic_mesh_ && mesh_written_) return;
 
   // open the mesh file
-  mesh_file_ = parallelIO_open_file(h5Filename_.c_str(), &IOgroup_, FILE_READWRITE);
+  int mesh_file = parallelIO_open_file(h5Filename_.c_str(), &IOgroup_, FILE_READWRITE);
 
   // get num_nodes, num_cells
   const Epetra_Map& nmap = vis_mesh.node_map(false);
@@ -160,7 +159,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   std::stringstream hdf5_path;
   hdf5_path << iteration << "/Mesh/Nodes";
   // TODO(barker): add error handling: can't create/write
-  parallelIO_write_dataset(xyz, PIO_DOUBLE, 2, globaldims, localdims, mesh_file_,
+  parallelIO_write_dataset(xyz, PIO_DOUBLE, 2, globaldims, localdims, mesh_file,
                            const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
 
@@ -177,7 +176,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
   hdf5_path.str("");
   hdf5_path << iteration << "/Mesh/NodeMap";
-  parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, mesh_file_,
+  parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, mesh_file,
                            const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
   delete [] ids;
@@ -370,7 +369,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   hdf5_path << iteration << "/Mesh/MixedElements";
   globaldims[0] = global_conn; globaldims[1] = 1;
   localdims[0] = local_conn; localdims[1] = 1;
-  parallelIO_write_dataset(conn, PIO_INTEGER, 2, globaldims, localdims, mesh_file_,
+  parallelIO_write_dataset(conn, PIO_INTEGER, 2, globaldims, localdims, mesh_file,
                            const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
   delete [] conn;
@@ -381,13 +380,13 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   hdf5_path << iteration << "/Mesh/ElementMap";
   globaldims[0] = global_entities; globaldims[1] = 1;
   localdims[0] = local_entities; localdims[1] = 1;
-  parallelIO_write_dataset(entities, PIO_INTEGER, 2, globaldims, localdims, mesh_file_,
+  parallelIO_write_dataset(entities, PIO_INTEGER, 2, globaldims, localdims, mesh_file,
                            const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
   delete [] entities;
 
   // close file
-  parallelIO_close_file(mesh_file_, &IOgroup_);
+  parallelIO_close_file(mesh_file, &IOgroup_);
 
   // Store information
   setH5MeshFilename(h5Filename_);
@@ -432,7 +431,7 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   if (!dynamic_mesh_ && mesh_written_) return;
 
   // open the mesh file
-  mesh_file_ = parallelIO_open_file(h5Filename_.c_str(), &IOgroup_, FILE_READWRITE);
+  int mesh_file = parallelIO_open_file(h5Filename_.c_str(), &IOgroup_, FILE_READWRITE);
 
   // get num_nodes, num_cells
   const Epetra_Map &nmap = vis_mesh.cell_map(false);
@@ -467,7 +466,7 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   std::stringstream hdf5_path;
   hdf5_path << iteration << "/Mesh/Nodes";
   // TODO(barker): add error handling: can't create/write
-  parallelIO_write_dataset(nodes, PIO_DOUBLE, 2, globaldims, localdims, mesh_file_,
+  parallelIO_write_dataset(nodes, PIO_DOUBLE, 2, globaldims, localdims, mesh_file,
                            const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
 
@@ -484,7 +483,7 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
 
   hdf5_path.str("");
   hdf5_path << iteration << "/Mesh/NodeMap";
-  parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, mesh_file_,
+  parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, mesh_file,
                            const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
   delete [] ids;
@@ -592,7 +591,7 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   hdf5_path << iteration << "/Mesh/MixedElements";
   globaldims[0] = global_conn; globaldims[1] = 1;
   localdims[0] = local_conn; localdims[1] = 1;
-  parallelIO_write_dataset(conn, PIO_INTEGER, 2, globaldims, localdims, mesh_file_,
+  parallelIO_write_dataset(conn, PIO_INTEGER, 2, globaldims, localdims, mesh_file,
                            const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
   delete [] conn;
@@ -603,13 +602,13 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   hdf5_path << iteration << "/Mesh/ElementMap";
   globaldims[0] = global_entities; globaldims[1] = 1;
   localdims[0] = local_entities; localdims[1] = 1;
-  parallelIO_write_dataset(entities, PIO_INTEGER, 2, globaldims, localdims, mesh_file_,
+  parallelIO_write_dataset(entities, PIO_INTEGER, 2, globaldims, localdims, mesh_file,
                            const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
   delete [] entities;
 
   // close file
-  parallelIO_close_file(mesh_file_, &IOgroup_);
+  parallelIO_close_file(mesh_file, &IOgroup_);
 
   // Store information
   setH5MeshFilename(h5Filename_);
@@ -659,6 +658,7 @@ void HDF5_MPI::createDataFile(const std::string& base_filename)
 
   // close file
   parallelIO_close_file(data_file_, &IOgroup_);
+  data_file_ = -1;
 
   // Store filenames
   setH5DataFilename(h5filename);
@@ -694,8 +694,10 @@ void HDF5_MPI::open_h5file(bool read_only)
 
 
 void HDF5_MPI::close_h5file() {
-  parallelIO_close_file(data_file_, &IOgroup_);
-  data_file_ = -1;
+  if (data_file_ >= 0) {
+    parallelIO_close_file(data_file_, &IOgroup_);
+    data_file_ = -1;
+  }
 }
 
 
@@ -791,7 +793,6 @@ void HDF5_MPI::writeAttrString(const std::string value, const std::string attrna
 
   char *loc_value = new char[value.size()+1];
   strcpy(loc_value, value.c_str());
-
 
   parallelIO_write_simple_attr(loc_attrname,
                                loc_value,
