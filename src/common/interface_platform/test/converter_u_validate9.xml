@@ -76,6 +76,20 @@
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
+      <ParameterList name="molar_density_liquid">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="5.54083558451234276e+04"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+      </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -89,17 +103,6 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
-      </ParameterList>
-      <ParameterList name="molar_density_liquid">
-        <Parameter name="evaluator type" type="string" value="eos"/>
-        <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
-        <ParameterList name="EOS parameters">
-          <Parameter name="eos type" type="string" value="liquid water tabular"/>
-          <Parameter name="table name" type="string" value="false"/>
-          <Parameter name="field name" type="string" value="density"/>
-        </ParameterList>
-        <Parameter name="eos basis" type="string" value="both"/>
-        <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
       </ParameterList>
       <ParameterList name="temperature">
         <ParameterList name="function">
@@ -347,9 +350,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="physical models and assumptions">
-        <Parameter name="eos lookup table" type="string" value="false"/>
-      </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
@@ -402,9 +402,6 @@
       </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
-      </ParameterList>
-      <ParameterList name="physical models and assumptions">
-        <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="transient:flow">
@@ -525,9 +522,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="physical models and assumptions">
-        <Parameter name="eos lookup table" type="string" value="false"/>
-      </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
@@ -624,9 +618,6 @@
             <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
-      </ParameterList>
-      <ParameterList name="physical models and assumptions">
-        <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

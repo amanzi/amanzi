@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
         run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
 
-        comp = 'hydraulic_head.cell.0'
+        comp = 'hydraulic_head'
         x_amanziU = GetXY_AmanziU_Nodes(path_to_amanzi, root_amanzi, 0, nx+1, 1, 0)
         c_amanziU = GetXY_AmanziU_Values(path_to_amanzi, root_amanzi, comp, 0, nx*ny, ny)
         unstruct = len(x_amanziU)

@@ -130,7 +130,8 @@
   <materials>
     <material name="Bottom">
       <mechanical_properties>
-        <porosity value="0.25" />
+        <porosity value="0.25"/>
+        <volumetric_strain formula="0.0"/>
       </mechanical_properties>
       <permeability x="KM1" y="KM1" z="KM1" />
       <assigned_regions>RegionBottom</assigned_regions>
@@ -187,6 +188,7 @@
       <material name="Uniform">
         <mechanical_properties>
           <porosity value="0.4"/>
+          <compliance formula="0.0"/>
         </mechanical_properties>
         <fracture_permeability model="constant">
           <aperture value="0.01"/>

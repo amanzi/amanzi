@@ -56,7 +56,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, eos", flag);
   if (flag) {
     eos_model_ = GetTextContentS_(node, "", false);
-    if (eos_model_ != "FEHM" && eos_model_ != "0-30C") {
+    if (eos_model_ == "false" || eos_model_ == "False") {
+      eos_model_.clear();
+    } else if (eos_model_ != "FEHM" && eos_model_ != "0-30C") {
       eos_lookup_table_ = eos_model_;
       eos_model_ = "tabular";
     }
@@ -85,7 +87,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   rho_ = GetTextContentD_(node, "kg/m^3");
   out_ic.sublist("const_fluid_density").set<double>("value", rho_);
 
-  AddIndependentFieldEvaluator_(out_ev, "mass_density_liquid", "All", "cell", rho_);
+  if (eos_model_ == "") {
+    AddIndependentFieldEvaluator_(out_ev, "mass_density_liquid", "All", "cell", rho_);
+    AddIndependentFieldEvaluator_(out_ev, "molar_density_liquid", "All", "*", rho_ / 0.0180153333333);
+  }
 
   // --- region specific initial conditions from material properties
   std::map<std::string, int> reg2mat;
@@ -316,10 +321,12 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
   // optional fracture network
   node = GetUniqueElementByTagsString_("fracture_network", flag);
-  if (flag) {
+  if (flag && eos_model_ == "") {
     fractures_ = true;
     AddIndependentFieldEvaluator_(out_ev, "fracture-mass_density_liquid",
                                   "FRACTURE_NETWORK_INTERNAL", "cell", rho_);
+    AddIndependentFieldEvaluator_(out_ev, "fracture-molar_density_liquid",
+                                  "FRACTURE_NETWORK_INTERNAL", "*", rho_ / 0.0180153333333);
   }
 
   node = GetUniqueElementByTagsString_("fracture_network, materials", flag);

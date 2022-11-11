@@ -26,7 +26,8 @@ Mini_Operator1D::Mini_Operator1D(const Mini_Operator1D& other)
   : mesh_(other.mesh_),
     diag_(other.diag_),
     up_(other.up_),
-    down_(other.down_)
+    down_(other.down_),
+    rhs_(other.rhs_)
 {}
 
 
