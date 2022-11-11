@@ -101,14 +101,14 @@ if __name__ == "__main__":
 
     # hardwired for 1d-exchange:  last time = '71'
     times = ['71']
-    amanzi_components = ['total_component_concentration.cell.Na+', \
-                         'total_component_concentration.cell.Ca++', \
-                         'total_component_concentration.cell.Mg++', \
-                         'total_component_concentration.cell.Cl-']
-    amanzi_sorbed     = ['total_sorbed.cell.0', \
-                         'total_sorbed.cell.1', \
-                         'total_sorbed.cell.2', \
-                         'total_sorbed.cell.3']
+    amanzi_components = ['total_component_concentration.Na+', \
+                         'total_component_concentration.Ca++', \
+                         'total_component_concentration.Mg++', \
+                         'total_component_concentration.Cl-']
+    amanzi_sorbed     = ['total_sorbed.0', \
+                         'total_sorbed.1', \
+                         'total_sorbed.2', \
+                         'total_sorbed.3']
 
     amanzi_compS      = ['Na+_water_Concentration', \
                          'Ca++_water_Concentration', \

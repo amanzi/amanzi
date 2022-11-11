@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     # AmanziU + Native chemistry
     try:
-        comp = 'total_component_concentration.cell.tracer'
+        comp = 'total_component_concentration.tracer'
         path_to_amanzi = "output-u"
         root_amanzi = "amanzi-u-1d-"+root+".xml"
 
@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     # AmanziU + Alquimia + PFloTran chemistry
     try:
-        comp = 'total_component_concentration.cell.tracer'
+        comp = 'total_component_concentration.tracer'
         input_file = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
         path_to_amanzi = "output-u-alq-pflo"
         run_amanzi_standard.run_amanzi(input_file, 1, ["1d-"+root+".in",root+".dat",input_file], path_to_amanzi)
@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
     # AmanziU + Alquimia + PFloTran chemistry WITH WRITER
     try:
-        comp = 'total_component_concentration.cell.tracer'
+        comp = 'total_component_concentration.tracer'
         input_file = os.path.join("amanzi-u-1d-"+root+"-alq-pflo-writer.xml")
         path_to_amanzi = "output-u-alq-pflo-writer"
         run_amanzi_standard.run_amanzi(input_file, 1, ["1d-"+root+".in",root+".dat",input_file], path_to_amanzi)
@@ -107,7 +107,7 @@ if __name__ == "__main__":
         
     # AmanziU + Alquimia + CrunchFlow chemistry
     try:
-        comp = 'total_component_concentration.cell.tracer'
+        comp = 'total_component_concentration.tracer'
         input_file = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
         path_to_amanzi = "output-u-alq-crunch"
         run_amanzi_standard.run_amanzi(input_file, 1, ["1d-"+root+"-crunch.in",root+".dbs",input_file], path_to_amanzi)
