@@ -18,7 +18,7 @@
 
       <numerical_constant name="KM1" value="1e-12"/>
       <numerical_constant name="KM2" value="1e-13"/>
-      <numerical_constant name="KFN" value="20.0e-4 m^2*s/kg"/>
+      <numerical_constant name="KFN" value="20.0e-4 s^-1"/>
       <numerical_constant name="KFT" value="1e-8"/>
 
       <constant name="gravity" type="none" value="10.0"/>
@@ -130,7 +130,8 @@
   <materials>
     <material name="Bottom">
       <mechanical_properties>
-        <porosity value="0.25" />
+        <porosity value="0.25"/>
+        <volumetric_strain formula="0.0"/>
       </mechanical_properties>
       <permeability x="KM1" y="KM1" z="KM1" />
       <assigned_regions>RegionBottom</assigned_regions>
@@ -187,6 +188,7 @@
       <material name="Uniform">
         <mechanical_properties>
           <porosity value="0.4"/>
+          <compliance formula="0.0"/>
         </mechanical_properties>
         <fracture_permeability model="constant">
           <aperture value="0.01"/>

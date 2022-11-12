@@ -235,27 +235,23 @@ void CycleDriver::Setup() {
 
   // set up the TSM
   // -- register visualization times
-  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
-       vis!=visualization_.end(); ++vis) {
+  for (auto vis=visualization_.begin(); vis!=visualization_.end(); ++vis) {
     (*vis)->RegisterWithTimeStepManager(tsm_.ptr());
   }
   // -- register checkpoint times
   if (checkpoint_ != Teuchos::null) 
-  checkpoint_->RegisterWithTimeStepManager(tsm_.ptr());
+    checkpoint_->RegisterWithTimeStepManager(tsm_.ptr());
   // -- register observation times
   if (observations_ != Teuchos::null) 
     observations_->RegisterWithTimeStepManager(tsm_.ptr());
-  // -- register the final time
-  // register reset_times
-  for(std::vector<std::pair<double,double> >::const_iterator it = reset_info_.begin();
-      it != reset_info_.end(); ++it) tsm_->RegisterTimeEvent(it->first);
-
+  // -- register reset_times
+  for (auto it = reset_info_.begin(); it != reset_info_.end(); ++it)
+    tsm_->RegisterTimeEvent(it->first);
 
   for (int i=0; i<num_time_periods_; i++) {
     tsm_->RegisterTimeEvent(tp_end_[i]);
     tsm_->RegisterTimeEvent(tp_start_[i] + tp_dt_[i]);
   } 
-
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();

@@ -19,7 +19,7 @@ if __name__ == "__main__":
     
         run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
 
-        comp = 'pressure.cell.0'
+        comp = 'pressure'
         x_amanziU, c_amanziU = GetXY_AmanziU_1D(path_to_amanzi,root_amanzi,comp,3)
         unstruct = len(x_amanziU)
     except:

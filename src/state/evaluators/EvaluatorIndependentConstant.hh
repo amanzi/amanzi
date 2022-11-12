@@ -7,9 +7,25 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
-
-  A field evaluator with no dependencies, a constant value.
 */
+
+//! A field evaluator with no dependencies, a constant value.
+/*!
+
+This evaluator is typically used for providing data that is a simple constant
+value.
+
+This evaluator is used by providing the option:
+
+`"evaluator type`" == `"independent variable constant`"
+
+.. _independent-variable-constnat-evaluator-spec:
+.. admonition:: independent-variable-constant-evaluator-spec
+
+   * `"value`" ``[double]`` The value.
+
+*/
+
 
 #pragma once
 

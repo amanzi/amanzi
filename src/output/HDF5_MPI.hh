@@ -41,7 +41,7 @@ class HDF5_MPI {
  public:
   HDF5_MPI(const Comm_ptr_type &comm, bool include_io_set=true);
   HDF5_MPI(const Comm_ptr_type &comm, std::string dataFilename, bool include_io_set=true);
-  ~HDF5_MPI(void);
+  ~HDF5_MPI();
   
   bool TrackXdmf() { return TrackXdmf_; }
   void setTrackXdmf(bool TrackXdmf) { TrackXdmf_ = TrackXdmf; }
@@ -198,8 +198,7 @@ class HDF5_MPI {
   
   static std::string xdmfHeader_;
 
-  hid_t mesh_file_;
-  hid_t data_file_;
+  int data_file_;
   std::ofstream of_timestep_;
 
   bool dynamic_mesh_, mesh_written_;

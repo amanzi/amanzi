@@ -35,6 +35,10 @@ set(TPL_CMAKE_C_FLAGS "@CMAKE_C_FLAGS@" CACHE STRING "SuperBuild C compiler flag
 set(TPL_CMAKE_CXX_FLAGS "@CMAKE_CXX_FLAGS@" CACHE STRING "SuperBuild CXX compiler flags")
 set(TPL_CMAKE_Fortran_FLAGS "@CMAKE_Fortran_FLAGS@" CACHE STRING "SuperBuild Fortran compiler flags")
 
+# Python Executable
+set(TPL_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@" CACHE STRING "Python Executable set during TPL build.")
+set(TPL_PYTHON_VERSION_STRING "@PYTHON_VERSION_STRING@" CACHE STRING "Python Version of the executable.")
+
 # Mesh type settings
 set(ENABLE_Structured @ENABLE_Structured@ CACHE BOOL "Enable structured mesh capability")
 set(ENABLE_Unstructured @ENABLE_Unstructured@ CACHE BOOL "Enable unstructured mesh capability")

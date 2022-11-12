@@ -58,7 +58,7 @@ Teuchos::RCP<CompositeVector>
 CompositeVectorSpace::Create() const {
   if (mesh_ == Teuchos::null) {
     Errors::Message msg("CompositeVector cannot be created since mesh was not set.");
-    throw(msg);
+    Exceptions::amanzi_throw(msg);
   }
   return Teuchos::rcp(new CompositeVector(*this));
 }
@@ -129,7 +129,7 @@ CompositeVectorSpace::SetMesh(
     mesh_ = mesh;
   } else if (mesh_ != mesh) {
     Errors::Message message("CompositeVectorSpace: SetMesh called on space that already has a different mesh.");
-    throw(message);
+    Exceptions::amanzi_throw(message);
   }
   return this;
 };

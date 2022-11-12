@@ -111,6 +111,7 @@ void Darcy_PK::Setup()
 
   specific_yield_key_ = Keys::getKey(domain_, "specific_yield"); 
   specific_storage_key_ = Keys::getKey(domain_, "specific_storage"); 
+  compliance_key_ = Keys::getKey(domain_, "compliance"); 
 
   // optional keys
   pressure_head_key_ = Keys::getKey(domain_, "pressure_head"); 
@@ -199,6 +200,13 @@ void Darcy_PK::Setup()
     S_->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
   }
 
+  // -- fracture compliance
+  if (flow_on_manifold_) {
+    S_->Require<CV_t, CVS_t>(compliance_key_, Tags::DEFAULT, compliance_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireEvaluator(compliance_key_, Tags::DEFAULT);
+  }
+
   // Local fields and evaluators.
   if (!S_->HasRecord(hydraulic_head_key_)) {
     S_->Require<CV_t, CVS_t>(hydraulic_head_key_, Tags::DEFAULT, passwd_)
@@ -243,7 +251,10 @@ void Darcy_PK::Setup()
   }
 
   // save frequently used evaluators 
-  vol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT));
+  pressure_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(
+      S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));
+  vol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(
+      S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT));
 }
 
 
@@ -395,6 +406,9 @@ void Darcy_PK::InitializeFields_()
   InitializeCVField(S_, *vo_, saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_, 1.0);
   InitializeCVField(S_, *vo_, prev_saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
 
+  if (flow_on_manifold_)
+    InitializeCVField(S_, *vo_, compliance_key_, Tags::DEFAULT, compliance_key_, 0.0);
+
   InitializeFieldFromField_(prev_aperture_key_, aperture_key_, true);
   if (use_vol_strain_)
     InitializeFieldFromField_(prev_vol_strain_key_, vol_strain_key_, true);
@@ -475,6 +489,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   sy_g.Scale(factor);
 
   if (flow_on_manifold_) {
+    S_->GetEvaluator(aperture_key_).Update(*S_, aperture_key_);
     const auto& aperture = S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
     ss_g.Multiply(1.0, ss_g, aperture, 0.0);
     sy_g.Multiply(1.0, sy_g, aperture, 0.0);

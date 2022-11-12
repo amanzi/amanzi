@@ -103,7 +103,7 @@ endif()
 if (NOT CMAKE_Fortran_COMPILER)
   message(WARNING "Fortran compiler not specified. CMake will guess!")
 else()
-  message(STATUS "CMAKE_Fortran_COMPILER) = ${CMAKE_Fortran_COMPILER}")
+  message(STATUS "CMAKE_Fortran_COMPILER = ${CMAKE_Fortran_COMPILER}")
 endif()
 
 #if (NOT SPACK_BINARY)
@@ -159,16 +159,21 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX AMANZI
   VERSION ${AMANZI_TPLS_VERSION_MAJOR} ${AMANZI_TPLS_VERSION_MINOR} ${AMANZI_TPLS_VERSION_PATCH})
 
-
 # ############################################################################ #
 # Python options
 # ############################################################################ #
 if (NOT PYTHON_EXECUTABLE) 
   unset(PYTHON_EXECUTABLE CACHE)
   find_package(PythonInterp 3 REQUIRED)
+else()
+  find_package(PythonInterp REQUIRED)
 endif()
-message(STATUS "Python: ${PYTHON_EXECUTABLE}")
+message(STATUS "Python Executable:    ${PYTHON_EXECUTABLE}")
+message(STATUS "Python Version:       ${PYTHON_VERSION_STRING}")
 
+if (PYTHON_VERSION_STRING  VERSION_LESS "3")
+  message(FATAL_ERROR "Python version 3.x is required to build Amanzi and run the tests.")
+endif()
 
 # ############################################################################ #
 # Build options
@@ -478,8 +483,9 @@ if ( ${AMANZI_ARCH_NERSC} )
    string(TOLOWER ${CMAKE_Fortran_COMPILER_ID} _lib_compiler_id)
    set(LIBBLAS_BASE_NAME "sci_${_lib_compiler_id}")
    set(LIBLAPACK_BASE_NAME "sci_${_lib_compiler_id}")
-   string (REPLACE "-" "_" CRAY_CPU_TEMP $ENV{CRAY_CPU_TARGET})
-   string (REPLACE "x86_64" "${CRAY_CPU_TEMP}/lib" BLA_DIR $ENV{CRAY_LIBSCI_PREFIX_DIR})
+   #string (REPLACE "-" "_" CRAY_CPU_TEMP $ENV{CRAY_CPU_TARGET})
+   #string (REPLACE "x86_64" "${CRAY_CPU_TEMP}/lib" BLA_DIR $ENV{CRAY_LIBSCI_PREFIX_DIR})
+   set(BLA_DIR $ENV{CRAY_LIBSCI_PREFIX_DIR}/lib)
    set(LAPCK_DIR ${BLA_DIR})
    
    message(STATUS ">>> Amanzi: On NERSC system BLA_DIR = ${BLA_DIR}")

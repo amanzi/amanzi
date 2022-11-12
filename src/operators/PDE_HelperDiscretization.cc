@@ -673,7 +673,7 @@ void CellToBoundaryFaces(const std::vector<int>& bc_model, CompositeVector& fiel
 
 
 /* ******************************************************************
-* Support function: copy data from boundary faces to faces
+* Support function: copy data from boundary faces to faces (if any)
 ****************************************************************** */
 void BoundaryFacesToFaces(
     const std::vector<int>& bc_model,

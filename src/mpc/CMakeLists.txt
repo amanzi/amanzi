@@ -184,6 +184,12 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_coupled_flow_source.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
     
+    add_amanzi_test(mpc_coupled_flow_aperture mpc_coupled_flow_aperture
+                    KIND      int
+                    NPROCS    2
+                    SOURCE    test/Main.cc test/mpc_coupled_flow_aperture.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     if(ENABLE_MESH_MSTK)
       add_amanzi_test(mpc_coupled_transport mpc_coupled_transport
                     KIND      int

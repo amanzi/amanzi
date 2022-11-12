@@ -25,7 +25,19 @@ namespace Operators {
 *   down_(i) x_{i-1} + diag_(i) x_i + up_(i) x_{i + 1} = b_i
 * We use end values of sub-diagonals to impose boundary conditions.
 ****************************************************************** */
-void Mini_Diffusion1D::UpdateMatrices()
+void Mini_Diffusion1D::UpdateMatrices(const PDEType method)
+{
+  if (method == PDEType::PDE_DIFFUSION_MFD)
+    UpdateMatricesMFD_(); 
+  else if (method == PDEType::PDE_DIFFUSION_FD)
+    UpdateMatricesFD_(); 
+}
+
+
+/* ******************************************************************
+* MFD scheme with harmonic mean for K, arithmetic mean for k
+****************************************************************** */
+void Mini_Diffusion1D::UpdateMatricesMFD_()
 {
   int ncells = mesh_->NumRows() - 1; 
   double al, ar, hl, hr, Kc;
@@ -62,6 +74,30 @@ void Mini_Diffusion1D::UpdateMatrices()
   diag_(ncells - 1) = al + ar;
   down_(ncells - 1) = -al;
   up_(ncells - 1) = -ar;
+}
+
+
+/* ******************************************************************
+* FV scheme with K=1 and arithmetic for k
+****************************************************************** */
+void Mini_Diffusion1D::UpdateMatricesFD_()
+{
+  int ncells = mesh_->NumRows() - 1; 
+  double al, ar;
+
+  const auto& mesh = *mesh_;
+
+  al = (*k_)(0) / (mesh(1) - mesh(0));
+
+  for (int i = 0; i < ncells; ++i) {
+    ar = (*k_)(i) / (mesh(i + 1) - mesh(i));
+
+    diag_(i) = al + ar;
+    down_(i) = -al;
+    up_(i) = -ar;
+
+    al = ar;
+  }
 }
 
 

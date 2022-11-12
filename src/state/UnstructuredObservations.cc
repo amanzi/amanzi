@@ -109,6 +109,13 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
       int num_global = -1;
       comm_->MaxAll(&num_local, &num_global, 1);
       num_total_ += num_global;
+      if (num_global <= 0) {
+        // at last we can finally catch a bad observation name here -- no one
+        // has this variable, it does not exist!
+        Errors::Message msg;
+        msg << "Invalid observation requested for variable \"" << obs->get_variable() << "\"; no such field exists.";
+        Exceptions::amanzi_throw(msg);
+      }
     }
     integrated_observation_.resize(num_total_);
     observed_once_ = true;
