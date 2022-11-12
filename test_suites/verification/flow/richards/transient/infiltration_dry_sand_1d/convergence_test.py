@@ -25,7 +25,7 @@ if __name__ == "__main__":
         struct = 0
         
     try:
-        comp = 'hydraulic_head.cell.0'
+        comp = 'hydraulic_head'
         path_to_amanziU = "."
         root_amanziU = 'plot'
         x_amanziU, c_amanziU = GetXY_AmanziU_1D(path_to_amanziU,root_amanziU,comp,3)
@@ -52,7 +52,7 @@ if __name__ == "__main__":
         tol = 1e-4
         if error < tol:
             msg = msg + "Comparison Passed"
-            msg = msg + "\n  error = " + str(error)
+            msg = msg + "\n  error=" + str(error) + "  tol=" + str(tol)
             print(msg)
         else:
             msg = msg + "Comparison Failed"
