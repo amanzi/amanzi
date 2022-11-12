@@ -19,9 +19,9 @@
 #include "Teuchos_RCP.hpp"
 
 #include "CommonDefs.hh"
-#include "DenseVector.hh"
 #include "Mesh.hh"
 #include "UniqueMeshFunction.hh"
+#include "Evaluator.hh"
 
 #include "PK_Utils.hh"
 
