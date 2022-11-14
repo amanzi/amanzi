@@ -18,7 +18,7 @@ generate_evaluators_registration_header(
   )
 
 # collect all sources
-list(APPEND subdirs density energy enthalpy internal_energy thermal_conductivity heat_capacity heat_flux_bc evaporation_rate)
+list(APPEND subdirs density energy enthalpy internal_energy thermal_conductivity heat_capacity heat_flux_bc evaporation_rate surface_temperature)
 set(ats_lake_thermo_relations_src_files "")
 set(ats_lake_thermo_relations_inc_files "")
 

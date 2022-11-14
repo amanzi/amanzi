@@ -87,7 +87,9 @@ void HeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
     // Recurse into the tree to propagate info to leaves.
     for (KeySet::const_iterator key=dependencies_.begin();
          key!=dependencies_.end(); ++key) {
+      std::cout << "key = " << *key << std::endl;
       S->RequireFieldEvaluator(*key)->EnsureCompatibility(S);
+      std::cout << "after EnsureCompatibility" << std::endl;
     }
   }
 

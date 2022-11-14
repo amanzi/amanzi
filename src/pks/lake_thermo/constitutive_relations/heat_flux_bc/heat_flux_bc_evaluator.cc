@@ -196,13 +196,14 @@ void HeatFluxBCEvaluator::EvaluateField_(
       // SS = 0.9*SS; // Atqasuk
       // SS = 0.9*SS; // Toolik
 
-      // SS = (T_s < 273.15) ? 0. : SS;
+      SS = (T_s < 273.15) ? 0. : SS;
 
       result_v[0][i] = SS*(1.-alpha) + E_a - E_s - H - LE;
 
       result_v[0][i] *= -1.; ///cond_v[0][i];
 
       if (isnan(result_v[0][i])) {
+          std::cout << "From heat flux evaluator" << std::endl;
           std::cout << "SS = " << SS << ", E_a = " << E_a << ", E_s = " << E_s << ", H = " << H << ", LE = " << LE << std::endl;
           std::cout << "rho_a = " << rho_a << std::endl;
           std::cout << "T_s = " << T_s << std::endl;

@@ -55,9 +55,6 @@ void LakeEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
 
-  std::cout << "temperature_key_ = " << temperature_key_ << std::endl;
-  std::cout << "density_key_ = " << density_key_ << std::endl;
-
   // evaluate density
   const Epetra_MultiVector& rho_v =
       *S->GetFieldData(density_key_)->ViewComponent("cell",false);

@@ -46,6 +46,7 @@ LakeHeatCapacityEvaluator::LakeHeatCapacityEvaluator(
   // cw    = 3990.; ///row;    // specific heat of water
   cw    = 4182.; ///row; // [J/kg K]
   ci    = 2150.; ///roi;    // specific heat of ice
+  // ci = cw;
 }
 
 
@@ -97,19 +98,19 @@ void LakeHeatCapacityEvaluator::EvaluateField_(
 
       double T = T_v[0][i];
       cc[i] = (T < 273.15) ? ci : cw;
-      // if (T < 273.15) {
-      //   cc[i] = 0.5*(ci + cc[i]);
-      // }
-      // else {
-      //   cc[i] = 0.5*(cw + cc[i]);
-      // }
+      if (T < 273.15) {
+        cc[i] = 0.5*(ci + cc[i]);
+      }
+      else {
+        cc[i] = 0.5*(cw + cc[i]);
+      }
 
     } // i
 
 
     result_v[0][0] = cc[0];
     for (int i=1; i!=ncomp; ++i) {
-      result_v[0][i] = cc[i]; //0.5*(cc[i]+cc[i-1]);
+      result_v[0][i] = 0.5*(cc[i]+cc[i-1]); //cc[i]; 
     }
 
     // result_v[0][0] = cc[0];

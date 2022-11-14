@@ -56,6 +56,7 @@ void CompressiblePorosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
   Teuchos::RCP<const CompositeVector> poro = S->GetFieldData(poro_key_);
+
   const double& patm = *S->GetScalarData("atmospheric_pressure");
 
   // evaluate the model

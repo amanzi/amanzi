@@ -367,9 +367,13 @@ protected:
   //  Key mass_source_key_;
   Key ss_flux_key_;
 
+  Key ss_temp_key_;
+
   Key cell_is_ice_key_;
 
   Key surface_flux_key_;
+
+  Key surface_temperature_key_;
 
   Key depth_key_;
 

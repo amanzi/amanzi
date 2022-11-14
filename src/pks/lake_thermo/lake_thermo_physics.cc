@@ -375,11 +375,11 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
       double dhdt_c = dhdt;
       double B_w_c = B_w;  
 
-      S0_ = (temp[0][ncells-1] < 273.15) ? S0_w_ice : S0_;
+      // S0_ = (temp[0][ncells-1] < 273.15) ? S0_w_ice : S0_;
       // dhdt_c = (temp[0][ncells-1] < 273.15) ? 0. : dhdt;
       // B_w_c = (temp[0][ncells-1] < 273.15) ? 0. : B_w;
 
-      // S0_ = (temp[0][ncells-1] < 273.15) ? 0. : S0_;
+      S0_ = (temp[0][ncells-1] < 273.15) ? 0. : S0_;
 
       // if (temp[0][c] < 273.15) {
       //  double Lwi   = 333500.; //267900.  // latent heat of freezing, J/kg

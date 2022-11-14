@@ -26,6 +26,8 @@
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
+#include "Function.hh"
+#include "FunctionFactory.hh"
 
 namespace Amanzi {
 namespace SurfaceBalance {

@@ -43,6 +43,7 @@ SurfaceBalanceCLM::SurfaceBalanceCLM(Teuchos::ParameterList& pk_tree,
   PK_Physical_Default(pk_tree, global_list,  S, solution),
   my_next_time_(0.)
 {
+
   domain_ss_ = Keys::readDomainHint(*plist_, domain_, "surface", "subsurface");
 
   // set up primary variables for surface/subsurface sources.  CLM keeps its

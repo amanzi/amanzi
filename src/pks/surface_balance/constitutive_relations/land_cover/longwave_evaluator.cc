@@ -53,6 +53,13 @@ LongwaveEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const auto& rel_hum = *S->GetFieldData(rel_hum_key_)->ViewComponent("cell", false);
   auto& res = *result->ViewComponent("cell", false);
 
+  Teuchos::ParameterList& param_list = plist_.sublist("parameters");
+  Amanzi::FunctionFactory fac;
+  Teuchos::RCP<Amanzi::Function> E_a_func_ = Teuchos::rcp(fac.Create(param_list.sublist("atmospheric downward radiation")));
+  std::vector<double> args(1);
+  args[0] = S->time();
+  double E_a = (*E_a_func_)(args);
+
   for (int c=0; c!=res.MyLength(); ++c) {
     res[0][c] = scale_ * Relations::IncomingLongwaveRadiation(air_temp[0][c], std::max(min_rel_hum_, rel_hum[0][c]));
   }

@@ -265,6 +265,9 @@ SEBTwoComponentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       met.relative_humidity = std::max(rel_hum[0][c], min_rel_hum_);
       met.Pr = Prain[0][c];
 
+      std::cout << "surf_temp_key_ = " << surf_temp_key_ << std::endl;
+      std::cout << "c = " << c << ", surf_temp[0][c] = " << surf_temp[0][c] << std::endl;
+
       // non-snow covered column
       if (area_fracs[0][c] > 0) {
         Relations::GroundProperties surf;
@@ -615,6 +618,9 @@ SEBTwoComponentEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 
     for (auto dep_key : dependencies_) {
       auto fac = S->RequireField(dep_key);
+      std::cout << "Keys::getDomain(dep_key) = " << Keys::getDomain(dep_key) << std::endl;
+      std::cout << "domain_ss_ = " << domain_ss_ << std::endl;
+      std::cout << "domain_snow_ = " << domain_snow_ << std::endl;
       if (Keys::getDomain(dep_key) == domain_ss_) {
         fac->Update(domain_fac_ss);
       } else if (dep_key == sg_albedo_key_ ||
@@ -624,10 +630,14 @@ SEBTwoComponentEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
       } else if (Keys::getDomain(dep_key) == domain_snow_) {
         fac->Update(domain_fac_snow);
       } else {
+        std::cout << "before Update" << std::endl;
         fac->Update(domain_fac);
+        std::cout << "after Update" << std::endl;
       }
 
+      std::cout << "dep_key = " << dep_key << std::endl;
       S->RequireFieldEvaluator(dep_key)->EnsureCompatibility(S);
+      std::cout << "compatible" << std::endl;
     }
 
     // additionally MANUALLY require the area frac, because it is not in the
@@ -637,7 +647,6 @@ SEBTwoComponentEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
     compatible_ = true;
   }
 }
-
 
 void
 SEBTwoComponentEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S, Key wrt_key)

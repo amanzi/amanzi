@@ -2,11 +2,11 @@
 
 #
 #  ATS
-#    density constitutive relations
+#    energy constitutive relations
 #
 
-add_library(lake_thermo_relations_density
-  density_evaluator.cc
+add_library(lake_thermo_relations_energy
+  lake_energy_evaluator.cc
              )
 
-install(TARGETS lake_thermo_relations_density DESTINATION lib)
+install(TARGETS lake_thermo_relations_energy DESTINATION lib)

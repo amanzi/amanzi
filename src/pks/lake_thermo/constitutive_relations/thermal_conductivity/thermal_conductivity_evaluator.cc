@@ -79,7 +79,6 @@ void ThermalConductivityEvaluator::EvaluateField_(
 
   double lambda_ice = 2.2;
   double lambda_w   = 0.561; //3.*0.561; //1.5
-//  lambda_ice = lambda_w;
 
   // read parameters from the met data
   Teuchos::ParameterList& param_list = plist_.sublist("parameters");
@@ -149,7 +148,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
 
     for (int i=0; i!=ncomp; ++i) {
       if (temp_v[0][i] < 273.15) { // this cell is in ice layer
-        result_v[0][i] = lambda_ice; //0.5*(lambda_ice + result_v[0][i]);
+        result_v[0][i] = 0.5*(lambda_ice + result_v[0][i]);
       }
       else { // this cell is in water layer
         double lambda_tmp = result_v[0][i];
@@ -160,7 +159,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
         }
         // std::cout << "lambda_tmp = " << lambda_tmp << std::endl;
         // lambda_tmp = 1.5;
-        result_v[0][i] = lambda_tmp; //0.5*(lambda_tmp + result_v[0][i]);
+        result_v[0][i] = 0.5*(lambda_tmp + result_v[0][i]);
       }
     } // i
 
@@ -193,7 +192,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
       } // i
 
       for (int i=0; i!=ncomp; ++i) {
-       result_v[0][i] = lambda_new[i];
+      //  result_v[0][i] = lambda_new[i];
       }
 
 //      std::cout << "lambda after swap " << std::endl;
@@ -260,7 +259,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
 
       const AmanziGeometry::Point& zc = mesh->cell_centroid(i);
 
-      lambda[i] = result_v[0][i]; // 0.5*(result_v[0][i-1]+result_v[0][i]);
+      lambda[i] = 0.5*(result_v[0][i-1]+result_v[0][i]); //result_v[0][i]; 
 
     } // i
 

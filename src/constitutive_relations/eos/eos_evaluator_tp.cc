@@ -20,6 +20,8 @@ EOSEvaluatorTP::EOSEvaluatorTP(Teuchos::ParameterList& plist) :
   // Set up my dependencies.
   Key domain_name = Keys::getDomain(name);
 
+  std::cout << "EOS domain_name = " << domain_name << std::endl;
+
   // -- temperature
   temp_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
   dependencies_.insert(temp_key_);

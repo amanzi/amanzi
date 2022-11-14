@@ -41,6 +41,8 @@ ImplicitSubgrid::ImplicitSubgrid(Teuchos::ParameterList& pk_tree,
   area_frac_key_ = Keys::readKey(*plist_, domain_surf, "area fractions", "area_fractions");
   snow_death_rate_key_ = Keys::readKey(*plist_, domain_, "snow death rate", "death_rate");
 
+  std::cout << "snow_dens_key_ = " << snow_dens_key_ << std::endl;
+
   // set up additional primary variables -- this is very hacky, and can become
   // an evaluator in new-state
   // -- snow density
@@ -263,6 +265,10 @@ ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
   vecs.push_back(S_next_->GetFieldData(snow_age_key_).ptr());
   vecs.push_back(S_next_->GetFieldData(snow_dens_key_).ptr());
   db_->WriteVectors(vnames, vecs, false);
+
+  Teuchos::RCP<CompositeVector> res = g->Data();
+  res->PutScalar(0.0);
+
 }
 
 void

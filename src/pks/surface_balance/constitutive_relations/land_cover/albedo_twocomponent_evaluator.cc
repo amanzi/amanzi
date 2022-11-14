@@ -146,7 +146,9 @@ AlbedoTwoComponentEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
     }
 
     // Recurse into the tree to propagate info to leaves.
+    std::cout << "albedo eval key = " << key << std::endl;
     S->RequireFieldEvaluator(key)->EnsureCompatibility(S);
+    std::cout << "compatible" << std::endl;
   }
 }
 
