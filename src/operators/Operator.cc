@@ -12,8 +12,7 @@
 
 #include <sstream>
 #include <typeinfo>
-#include <iostream>
-#include <fstream>
+
 // TPLs
 #include "EpetraExt_RowMatrixOut.h"
 #include "Epetra_CrsGraph.h"
@@ -282,16 +281,6 @@ void Operator::AssembleMatrix()
   // std::stringstream filename_s2;
   // filename_s2 << "assembled_matrix" << 0 << ".txt";
   // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
-
-
-  // ofstream myfile;
-  // myfile.open("assembled_rhs.txt");
-  // for (auto& it : *rhs_) {
-  //   myfile << *rhs_->ViewComponent(it, false);
-  // }
-  // myfile.close();
-    
-  
   // exit(0);
 }
 

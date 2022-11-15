@@ -107,7 +107,6 @@ Comm_ptr_type getComm(MPI_Comm comm) {
 }
 
 
-
 //
 // Wraps a communicator for providing MinAll and MaxAll, as needed in Amesos2
 // solvers.

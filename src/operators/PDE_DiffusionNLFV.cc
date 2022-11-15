@@ -311,9 +311,7 @@ void PDE_DiffusionNLFV::UpdateMatrices(
 
   // un-rolling little-k data
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
-  if (k_ != Teuchos::null)
-    k_face = k_->ViewComponent("face");
-    
+  if (k_ != Teuchos::null) k_face = k_->ViewComponent("face");
 
   // split each stencil between different local matrices
   int c1, c2, c3, c4, k1, k2;
