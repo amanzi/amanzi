@@ -14,7 +14,7 @@ git pull
 ```
 
 # Clone Spack 
-Download Spack on your machine. Note that we are using a specific version/commit on the master branch:
+Download Spack on your machine. Note that we are using a specific version/commit on the develop branch:
 ```
 git clone git@github.com:spack/spack
 git reset --hard 45043bcdf5b383af573375300f2ba6b28210e3c6 
