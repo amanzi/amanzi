@@ -190,6 +190,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                               --without-valgrind
                               --with-cxx-dialect=C++11
                               --with-hdf5-dir=${TPL_INSTALL_PREFIX}
+                              --with-zlib-dir=${TPL_INSTALL_PREFIX}
                               ${petsc_lapack_option}
                               ${petsc_blas_option}
                               ${petsc_package_flags}
