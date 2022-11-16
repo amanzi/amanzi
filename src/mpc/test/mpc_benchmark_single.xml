@@ -287,8 +287,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
-      <ParameterList name="volumetric_strain">
+      <ParameterList name="bulk_modulus">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="ALL">
@@ -296,7 +295,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
+                <Parameter name="value" type="double" value="2.1e+19"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

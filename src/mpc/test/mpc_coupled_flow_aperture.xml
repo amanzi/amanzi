@@ -103,21 +103,6 @@
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
-      <ParameterList name="volumetric_strain">
-        <ParameterList name="function">
-          <ParameterList name="EntireDomain">
-            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-exprtk">
-                <Parameter name="number of arguments" type="int" value="4"/>
-                <Parameter name="formula" type="string" value="1e-8 + 1e-8 * t"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-      </ParameterList>
       <ParameterList name="molar_density_liquid">
         <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="molar density key" type="string" value="molar_density_liquid"/>

@@ -122,7 +122,7 @@ void Darcy_PK::Setup()
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
   std::string mu_model = physical_models->get<std::string>("viscosity model", "constant viscosity");
-  use_vol_strain_ = physical_models->get<bool>("use volumetric strain", false);
+  use_bulk_modulus_ = physical_models->get<bool>("use bulk modulus", false);
   if (mu_model != "constant viscosity") {
     Errors::Message msg;
     msg << "Darcy PK supports only constant viscosity model.";
@@ -186,25 +186,20 @@ void Darcy_PK::Setup()
     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
-  if (use_vol_strain_) {
-    S_->Require<CV_t, CVS_t>(vol_strain_key_, Tags::DEFAULT)
-      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireEvaluator(vol_strain_key_, Tags::DEFAULT);
-
-    S_->Require<CV_t, CVS_t>(prev_vol_strain_key_, Tags::DEFAULT)
-      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-
   // -- viscosity
   if (!S_->HasRecord("const_fluid_viscosity")) {
     S_->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
   }
 
-  // -- fracture compliance
+  // -- fracture dynamics
   if (flow_on_manifold_) {
     S_->Require<CV_t, CVS_t>(compliance_key_, Tags::DEFAULT, compliance_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->RequireEvaluator(compliance_key_, Tags::DEFAULT);
+  } else if (use_bulk_modulus_) {
+    S_->Require<CV_t, CVS_t>(bulk_modulus_key_, Tags::DEFAULT)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireEvaluator(bulk_modulus_key_, Tags::DEFAULT);
   }
 
   // Local fields and evaluators.
@@ -410,8 +405,6 @@ void Darcy_PK::InitializeFields_()
     InitializeCVField(S_, *vo_, compliance_key_, Tags::DEFAULT, compliance_key_, 0.0);
 
   InitializeFieldFromField_(prev_aperture_key_, aperture_key_, true);
-  if (use_vol_strain_)
-    InitializeFieldFromField_(prev_vol_strain_key_, vol_strain_key_, true);
 }
 
 
@@ -530,9 +523,6 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (flow_on_manifold_) {
     S_->GetW<CV_t>(prev_aperture_key_, Tags::DEFAULT, passwd_) =
       S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
-  } else if (S_->HasRecord(prev_vol_strain_key_)) {
-    S_->GetW<CV_t>(prev_vol_strain_key_, Tags::DEFAULT, passwd_) =
-      S_->Get<CV_t>(vol_strain_key_, Tags::DEFAULT);
   }
 
   // statistics
