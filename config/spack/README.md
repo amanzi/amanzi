@@ -1,6 +1,4 @@
-```
 **DISCLAIMER**: The Amanzi/ATS team is striving to provide the most exaustive directions on how to build Amanzi/ATS with Spack but please be aware of the existance of some limitations due to instabilities in Spack itself, and complications with certain configurations. Generally, the Spack build of Amanzi/ATS has been successful on all platforms listed here, although there will be exceptions. Our team is continuosly working to improve the present Spack package and the installation instructuctions, particularly with machine specific information. Please check this documentation periodically on the master branch for the latest updates.
-```
 
 Amanzi/ATS Spack package 
 
