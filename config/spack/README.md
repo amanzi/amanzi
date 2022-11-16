@@ -14,9 +14,10 @@ git pull
 ```
 
 # Clone Spack 
-Download Spack on your machine:
+Download Spack on your machine. Note that we are using a specific version/commit on the master branch:
 ```
-git clone git@github.com:spack/spack 
+git clone git@github.com:spack/spack
+git reset --hard 45043bcdf5b383af573375300f2ba6b28210e3c6 
 ```
 
 Add Spack in your environment (and maybe your bash_profile script.):
