@@ -321,8 +321,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
   // optional fracture network
   node = GetUniqueElementByTagsString_("fracture_network", flag);
+  fractures_ = flag;
   if (flag && eos_model_ == "") {
-    fractures_ = true;
     AddIndependentFieldEvaluator_(out_ev, "fracture-mass_density_liquid",
                                   "FRACTURE_NETWORK_INTERNAL", "cell", rho_);
     AddIndependentFieldEvaluator_(out_ev, "fracture-molar_density_liquid",
