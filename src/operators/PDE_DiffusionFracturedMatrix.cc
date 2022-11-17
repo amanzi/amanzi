@@ -46,6 +46,13 @@ void PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
   local_op_ = Teuchos::rcp(new Op_Cell_FaceCell(name, mesh_));
   global_op_->OpPushBack(local_op_);
 
+  // this solver requires faces
+  if (!(schema_prec_dofs_ & Operators::OPERATOR_SCHEMA_DOFS_FACE)) {
+    Errors::Message msg;
+    msg << "Preconditioner schema for fractured matrix has no faces" << "\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
   // little-k options
   name = plist.get<std::string>("nonlinear coefficient", "none");
   little_k_ = OPERATOR_LITTLE_K_NONE;

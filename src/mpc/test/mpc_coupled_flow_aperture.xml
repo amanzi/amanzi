@@ -75,20 +75,6 @@
 
   <ParameterList name="state">
     <ParameterList name="evaluators">
-      <ParameterList name="mass_density_liquid">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00e+03"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-      </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -111,20 +97,6 @@
         </ParameterList>
         <Parameter name="eos basis" type="string" value="both"/>
         <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
-      </ParameterList>
-      <ParameterList name="fracture-mass_density_liquid">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="FRACTURE_NETWORK_INTERNAL"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1000.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="fracture-porosity">
         <ParameterList name="function">
@@ -162,7 +134,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.98149999999999977e+02"/>
+                <Parameter name="value" type="double" value="298.15"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -184,9 +156,10 @@
         <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.80664999999999942e+00}"/>
+        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.80665}"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.0e-03"/>
@@ -284,7 +257,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00e+00"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -318,6 +291,7 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="cycle driver">
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
@@ -383,8 +357,8 @@
           </ParameterList>
           <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
           <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-          <Parameter name="restart tolerance relaxation factor" type="double" value="1.00e+00"/>
-          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.00e+00"/>
+          <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
           <ParameterList name="verbose object">
             <Parameter name="verbosity level" type="string" value="high"/>
@@ -477,6 +451,7 @@
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="transient:flow fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="fracture permeability models">
@@ -538,10 +513,10 @@
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/>
             <ParameterList name="boundary pressure">
-              <ParameterList name="function-linear">
-                <Parameter name="y0" type="double" value="1.19e+07"/>
-                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9.80664999999999964e+03}"/>
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="3"/>
+                <!--Parameter name="formula" type="string" value="1.10e+7 + 0.045e+7 * (1 + sin(t/300.0))"/-->
+                <Parameter name="formula" type="string" value="1.19e+7"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -587,8 +562,8 @@
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.0"/>
-        <Parameter name="smoother sweeps" type="int" value="3"/>
-        <Parameter name="cycle applications" type="int" value="5"/>
+        <Parameter name="smoother sweeps" type="int" value="2"/>
+        <Parameter name="cycle applications" type="int" value="3"/>
         <Parameter name="strong threshold" type="double" value="0.5"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
