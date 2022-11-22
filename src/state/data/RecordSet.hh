@@ -98,12 +98,8 @@ class RecordSet {
   void CreateData() {
     for (auto& e : records_) {
       if (!aliases_.count(e.first)) {
-	if (!e.second->allocated()) {
-	  std::cout<<"CreateData : "<<fieldname_<<" "<<e.second->initialized()<<"\n";
-	  e.second->data_ = std::forward<Impl::Data>(factory_.Create());
-	  e.second->set_allocated(true);
-	}
-      }    
+        e.second->data_ = std::forward<Impl::Data>(factory_.Create());
+      }
     }
     for (auto& pair : aliases_) {
       records_[pair.first]->AssignPtr(*records_[pair.second]);
@@ -205,8 +201,6 @@ class RecordSet {
   void initializeTags(bool initialized = true) {
     for (auto& r : records_) r.second->set_initialized(initialized);
   }
-
-  bool isAllocated(Tag& failed);
 
  private:
   Key fieldname_;
