@@ -110,7 +110,7 @@ void FlowMatrixFracture_PK::Setup()
   Teuchos::ParameterList& mflow = glist_->sublist("PKs").sublist(pks[0])
                                          .sublist("physical models and assumptions");
   mflow.set<std::string>("coupled matrix fracture flow", "matrix")
-       .set<bool>("use volumetric strain", true);
+       .set<bool>("use bulk modulus", true);
 
   // -- flow (fracture)
   Teuchos::ParameterList& fflow = glist_->sublist("PKs").sublist(pks[1])
@@ -283,10 +283,6 @@ bool FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // update some fields, we cannot move this to commit step due to "initialize"
   S_->GetW<CV_t>("fracture-prev_aperture", Tags::DEFAULT, "") =
     S_->Get<CV_t>("fracture-aperture", Tags::DEFAULT);
-  if (S_->HasRecord("prev_volumetric_strain")) {
-    S_->GetW<CV_t>("prev_volumetric_strain", Tags::DEFAULT, "") =
-      S_->Get<CV_t>("volumetric_strain", Tags::DEFAULT);
-  }
 
   return fail;
 }

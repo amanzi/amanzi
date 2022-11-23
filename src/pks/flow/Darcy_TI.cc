@@ -67,7 +67,16 @@ void Darcy_PK::FunctionalResidual(
     bool updated = S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");
     if (updated)
       op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  } else if (use_bulk_modulus_) {
+    S_->GetEvaluator(bulk_modulus_key_).Update(*S_, "flow");
+    const auto& bulk_c = *S_->Get<CompositeVector>(bulk_modulus_key_, Tags::DEFAULT).ViewComponent("cell");
+
+    auto& ss_gc = *ss_g.ViewComponent("cell");
+    for (int c = 0; c < ncells_owned; ++c) ss_gc[0][c] = rho_ / bulk_c[0][c];
+
+    op_acc_->AddAccumulationDelta(*u_old->Data(), ss_g, ss_g, dt_, "cell");
   }
+
   op_diff_->ApplyBCs(true, true, true);
 
   CompositeVector& rhs = *op_->rhs();

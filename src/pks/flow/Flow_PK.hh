@@ -129,7 +129,7 @@ class Flow_PK : public PK_PhysicalBDF {
   int dim;
 
   std::string passwd_;
-  bool peaceman_model_, use_vol_strain_;
+  bool peaceman_model_, use_bulk_modulus_;
 
   // Stationary physical quantatities
   std::vector<WhetStone::Tensor> K; 
@@ -167,8 +167,7 @@ class Flow_PK : public PK_PhysicalBDF {
   Key darcy_velocity_key_;
   Key water_storage_key_, prev_water_storage_key_;
   Key viscosity_liquid_key_, mol_density_liquid_key_;
-  Key prev_aperture_key_, aperture_key_;
-  Key vol_strain_key_, prev_vol_strain_key_;
+  Key prev_aperture_key_, aperture_key_, bulk_modulus_key_;
   Key wc_key_;
 
   // io

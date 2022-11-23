@@ -7,7 +7,7 @@
 
 # Require cmake version same as the version used to buildg TPLs 
 #(see SuperBuild/CMakeLists.txt)
-cmake_minimum_required(VERSION 3.13.3)
+cmake_minimum_required(VERSION 3.17.0)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

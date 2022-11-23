@@ -237,10 +237,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         TranslateFieldIC_(node, "specific_storage", "m^-1", reg_str, regions, out_ic);
       }
 
-      // -- volumetric strain
-      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, volumetric_strain", flag);
+      // -- bulk modulus
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, bulk_modulus", flag);
       if (flag) {
-        TranslateFieldEvaluator_(node, "volumetric_strain", "-", reg_str, regions, out_ic, out_ev);
+        TranslateFieldEvaluator_(node, "bulk_modulus", "Pa", reg_str, regions, out_ic, out_ev);
       }
 
       // -- particle density
@@ -321,8 +321,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
   // optional fracture network
   node = GetUniqueElementByTagsString_("fracture_network", flag);
+  fractures_ = flag;
   if (flag && eos_model_ == "") {
-    fractures_ = true;
     AddIndependentFieldEvaluator_(out_ev, "fracture-mass_density_liquid",
                                   "FRACTURE_NETWORK_INTERNAL", "cell", rho_);
     AddIndependentFieldEvaluator_(out_ev, "fracture-molar_density_liquid",

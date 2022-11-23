@@ -78,8 +78,7 @@ void Flow_PK::Setup()
   permeability_eff_key_ = Keys::getKey(domain_, "permeability_effective");
   aperture_key_ = Keys::getKey(domain_, "aperture"); 
   prev_aperture_key_ = Keys::getKey(domain_, "prev_aperture"); 
-  vol_strain_key_ = Keys::getKey(domain_, "volumetric_strain"); 
-  prev_vol_strain_key_ = Keys::getKey(domain_, "prev_volumetric_strain"); 
+  bulk_modulus_key_ = Keys::getKey(domain_, "bulk_modulus"); 
 
   porosity_key_ = Keys::getKey(domain_, "porosity"); 
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
@@ -761,21 +760,6 @@ void Flow_PK::AddSourceTerms(CompositeVector& rhs, double dt)
     for (auto it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
       int c = it->first;
       rhs_cell[0][c] += mesh_->cell_volume(c) * it->second[0];
-    }
-  }
-
-  // volumetric change due to change in the stress, -cbw da/dt
-  // Biot-Willis coefficient cbw is set to 1
-  if (!flow_on_manifold_ && name() == "darcy" && use_vol_strain_) {
-    S_->GetEvaluator(vol_strain_key_, Tags::DEFAULT).Update(*S_, name());
-
-    const auto& vs = *S_->Get<CV_t>(vol_strain_key_, Tags::DEFAULT).ViewComponent("cell");
-    const auto& prev_vs = *S_->Get<CV_t>(prev_vol_strain_key_, Tags::DEFAULT).ViewComponent("cell");
-
-    for (int c = 0; c < ncells_owned; ++c) {
-      double dvsdt = (vs[0][c] - prev_vs[0][c]) / dt;
-      double mass = rho_ * mesh_->cell_volume(c);
-      rhs_cell[0][c] -= dvsdt * mass;
     }
   }
 }

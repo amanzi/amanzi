@@ -97,6 +97,6 @@ TEST(MPC_DRIVER_COUPLED_FLOW_APERTURE_DARCY) {
   RunTest("test/mpc_coupled_flow_aperture_darcy.xml");
 }
 
-TEST(MPC_DRIVER_COUPLED_FLOW_APERTURE_RICHARDSY) {
+TEST(MPC_DRIVER_COUPLED_FLOW_APERTURE_RICHARDS) {
   RunTest("test/mpc_coupled_flow_aperture.xml");
 }
