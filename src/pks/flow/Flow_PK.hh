@@ -70,7 +70,7 @@ class Flow_PK : public PK_PhysicalBDF {
   void SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* area_seepage);
   void SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* area_seepage);
 
-  void AddSourceTerms(CompositeVector& rhs);
+  void AddSourceTerms(CompositeVector& rhs, double dt);
   void ComputeWellIndex(Teuchos::ParameterList& spec);
   bool IsWellIndexRequire(Teuchos::ParameterList& spec);
 
@@ -108,6 +108,7 @@ class Flow_PK : public PK_PhysicalBDF {
 
  protected:
   void InitializeBCsSources_(Teuchos::ParameterList& list);
+  void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
 
  public:
   int ncells_owned, ncells_wghost;
@@ -128,7 +129,7 @@ class Flow_PK : public PK_PhysicalBDF {
   int dim;
 
   std::string passwd_;
-  bool peaceman_model_;
+  bool peaceman_model_, use_bulk_modulus_;
 
   // Stationary physical quantatities
   std::vector<WhetStone::Tensor> K; 
@@ -166,7 +167,7 @@ class Flow_PK : public PK_PhysicalBDF {
   Key darcy_velocity_key_;
   Key water_storage_key_, prev_water_storage_key_;
   Key viscosity_liquid_key_, mol_density_liquid_key_;
-  Key aperture_key_;
+  Key prev_aperture_key_, aperture_key_, bulk_modulus_key_;
   Key wc_key_;
 
   // io

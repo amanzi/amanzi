@@ -37,7 +37,12 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                  const Teuchos::RCP<State>& S,
                                  const Teuchos::RCP<TreeVector>& soln)
-  : PK(pk_tree, glist, S, soln), glist_(glist), soln_(soln), S_(S), passwd_("state"), iters_(0)
+  : PK(pk_tree, glist, S, soln), 
+    glist_(glist),
+    soln_(soln),
+    S_(S),
+    passwd_(""),
+    iters_(0)
 {
   std::string pk_name = pk_tree.name();
   auto found = pk_name.rfind("->");
@@ -52,6 +57,7 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
 
   cfl_ = sw_list_->get<double>("cfl", 0.1);
   max_iters_ = sw_list_->get<int>("number of reduced cfl cycles", 10);
+  cfl_positivity_ = sw_list_->get<double>("depth positivity cfl", 0.95);
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = sw_list_->sublist("verbose object");
@@ -128,9 +134,7 @@ ShallowWater_PK::Setup()
   // -- discharge
   if (!S_->HasRecord(discharge_key_)) {
     S_->Require<CV_t, CVS_t>(discharge_key_, Tags::DEFAULT, discharge_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 2);
+      .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 2);
 
     Teuchos::ParameterList elist(discharge_key_);
     elist.set<std::string>("my key", discharge_key_).set<std::string>("tag", Tags::DEFAULT.get());
@@ -140,14 +144,12 @@ ShallowWater_PK::Setup()
 
   // -- bathymetry
   if (!S_->HasRecord(bathymetry_key_)) {
-    std::vector<std::string> names({ "cell", "node" });
-    std::vector<int> ndofs(2, 1);
-    std::vector<AmanziMesh::Entity_kind> locations({ AmanziMesh::CELL, AmanziMesh::NODE });
+    std::vector<std::string> names({ "cell", "node", "cmax" });
+    std::vector<int> ndofs({ 1, 1, 1 } );
+    std::vector<AmanziMesh::Entity_kind> locations({ AmanziMesh::CELL, AmanziMesh::NODE, AmanziMesh::CELL });
 
     S_->Require<CV_t, CVS_t>(bathymetry_key_, Tags::DEFAULT, passwd_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponents(names, locations, ndofs);
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponents(names, locations, ndofs);
   }
 
   //-------------------------------
@@ -287,6 +289,7 @@ ShallowWater_PK::Initialize()
 
   const auto& B_n = *S_->Get<CV_t>(bathymetry_key_).ViewComponent("node");
   auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  auto& B_max = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cmax");
 
   // compute B_c from B_n for well balanced scheme (Beljadid et. al. 2016)
   S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("node");
@@ -309,17 +312,23 @@ ShallowWater_PK::Initialize()
       int edge = cfaces[f];
 
       mesh_->face_get_nodes(edge, &face_nodes);
+      int n0 = face_nodes[0];
+      int n1 = face_nodes[1];
 
-      mesh_->node_get_coordinates(face_nodes[0], &x0);
-      mesh_->node_get_coordinates(face_nodes[1], &x1);
+      mesh_->node_get_coordinates(n0, &x0);
+      mesh_->node_get_coordinates(n1, &x1);
 
       AmanziGeometry::Point area = (xc - x0) ^ (xc - x1);
-      tmp += norm(area) * (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 4;
+      tmp += norm(area) * (B_n[0][n0] + B_n[0][n1]) / 4;
+
+      B_max[0][c] = std::max(B_max[0][c], B_n[0][n0]); 
+      B_max[0][c] = std::max(B_max[0][c], B_n[0][n1]); 
     }
     B_c[0][c] = tmp / mesh_->cell_volume(c);
   }
   // redistribute the result
   S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("cell");
+  S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("cmax");
 
   // calculate cell area square (used as a tolerance)  
   cell_area2_max_ = cell_area_max * cell_area_max;
@@ -440,7 +449,8 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // create copies of primary fields
   StateArchive archive(S_, vo_);
   archive.Add({ ponded_depth_key_ }, { discharge_key_ },
-              { ponded_depth_key_, velocity_key_ });
+              { ponded_depth_key_, velocity_key_ }, 
+              Tags::DEFAULT, "shallow_water");
 
   Epetra_MultiVector& h_old = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_old = *soln_->SubVector(1)->Data()->ViewComponent("cell");
@@ -573,30 +583,20 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 //--------------------------------------------------------------
 double
 ShallowWater_PK::TotalDepthEdgeValue(
-    int c, int e, double htc, double Bc, const Epetra_MultiVector& B_n)
+    int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
 {
   double ht_edge(0.0); // value to return
 
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
-  // set ht_grad = 0 for first order reconstruction (for debugging purposes)
-  // ht_grad[0][c] = 0.0;
-  // ht_grad[1][c] = 0.0;
 
   const auto& xc = mesh_->cell_centroid(c);
   const auto& xf = mesh_->face_centroid(e);
-  Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
-  mesh_->cell_get_nodes(c, &cnodes);
+  Amanzi::AmanziMesh::Entity_ID_List cfaces;
 
   bool cell_is_dry, cell_is_fully_flooded, cell_is_partially_wet;
   cell_is_partially_wet = false;
   cell_is_dry = false;
   cell_is_fully_flooded = false;
-
-  // calculate maximum bathymetry value on cell nodes
-  double Bmax = 0.0;
-  for (int i = 0; i < cnodes.size(); ++i) { 
-    Bmax = std::max(B_n[0][cnodes[i]], Bmax); 
-  }
 
   // characterize cell based on [Beljadid et al.' 16]
   if ((htc > Bmax) && (htc - Bc > 0.0)) {
@@ -610,9 +610,6 @@ ShallowWater_PK::TotalDepthEdgeValue(
   // depth poisitivity based on [Beljadid et al.' 2016, Computers and Fluids]
   if (cell_is_fully_flooded) {
     ht_edge = total_depth_grad_->getValue(c, xf);
-    if (ht_edge - BathymetryEdgeValue(e, B_n) < 0.0) { 
-      ht_edge = htc; 
-    }
   } else if (cell_is_dry) {
     ht_edge = BathymetryEdgeValue(e, B_n);
   } else if (cell_is_partially_wet) {
@@ -671,7 +668,8 @@ ShallowWater_PK::TotalDepthEdgeValue(
 // Discretization of the source term (well-balanced for lake at rest)
 //--------------------------------------------------------------------
 std::vector<double>
-ShallowWater_PK::NumericalSource(int c, double htc, double Bc, const Epetra_MultiVector& B_n)
+ShallowWater_PK::NumericalSource(
+    int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
 {
   AmanziMesh::Entity_ID_List cfaces, cnodes;
   mesh_->cell_get_faces(c, &cfaces);
@@ -685,7 +683,7 @@ ShallowWater_PK::NumericalSource(int c, double htc, double Bc, const Epetra_Mult
     int f = cfaces[n];
     const auto& normal = mesh_->face_normal(f, false, c, &orientation);
 		
-    double ht_rec = TotalDepthEdgeValue(c, f, htc, Bc, B_n);
+    double ht_rec = TotalDepthEdgeValue(c, f, htc, Bc, Bmax, B_n);
     double B_rec = BathymetryEdgeValue(f, B_n);
 
     // Polygonal meshes [Beljadid et al.' 2016, Computers and Fluids]

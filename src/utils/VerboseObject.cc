@@ -37,8 +37,7 @@ VerboseObject::VerboseObject(const std::string& name, const std::string& verbosi
   setVerbLevel(ilevel);
 
   // out, tab
-  out_ = getOStream();
-  out_->setShowLinePrefix(global_hide_line_prefix);
+  getOStream()->setShowLinePrefix(global_hide_line_prefix);
 }
 
 
@@ -76,8 +75,7 @@ VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList pli
   Teuchos::readVerboseObjectSublist(&plist_out, this);
 
   // out, tab
-  out_ = getOStream();
-  out_->setShowLinePrefix(!no_pre);
+  getOStream()->setShowLinePrefix(!no_pre);
 }
 
 
@@ -87,10 +85,11 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm, const std::string& name,
 {
   Teuchos::ParameterList& plist = outer_plist.sublist("verbose object");
 
-  // Init the basics
-  // Set up the default level.
-  setDefaultVerbLevel(global_default_level);
+  // Make sure we have a unique OStream to work with in this VO
+  auto ostream = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  setOverridingOStream(ostream);
 
+  // First options that act on this
   // Options from ParameterList
   // -- Set up the VerboseObject header.
   std::string headername(name);
@@ -100,14 +99,6 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm, const std::string& name,
   int width = plist.get("header width", -1);
   set_name(headername, width);
 
-  // -- Show the line prefix
-  bool no_pre = plist.get<bool>("hide line prefix", global_hide_line_prefix);
-  getOStream()->setShowLinePrefix(!no_pre);
-
-  // -- Include rank in the prefix
-  bool show_rank = plist.get<bool>("show rank", false);
-  getOStream()->setShowProcRank(show_rank);
-
   // -- Set the verbosity level
   if (plist.isParameter("verbosity level")) {
     auto level = plist.get<std::string>("verbosity level");
@@ -115,6 +106,15 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm, const std::string& name,
     auto ilevel = validator->getIntegralValue(level);
     setVerbLevel(ilevel);
   }
+
+  // Next options that act on OStream
+  // -- Show the line prefix
+  bool no_pre = plist.get<bool>("hide line prefix", global_hide_line_prefix);
+  getOStream()->setShowLinePrefix(!no_pre);
+
+  // -- Include rank in the prefix
+  bool show_rank = plist.get<bool>("show rank", false);
+  getOStream()->setShowProcRank(show_rank);
 
   // -- set the comm info
   int size = comm_->NumProc();
@@ -124,8 +124,6 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm, const std::string& name,
   // -- write from a different rank than 0
   int root = plist.get<int>("write on rank", (int) global_writing_rank);
   getOStream()->setOutputToRootOnly(root);
-
-  out_ = getOStream();
 }
 
 

@@ -7,7 +7,7 @@
 
 # Require cmake version same as the version used to buildg TPLs 
 #(see SuperBuild/CMakeLists.txt)
-cmake_minimum_required(VERSION 3.13.3)
+cmake_minimum_required(VERSION 3.17.0)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -143,10 +143,40 @@ set_property(GLOBAL PROPERTY AMANZI_LIBRARY_TARGETS)
 set(AMANZI_LINK_LINE_FILE "${AMANZI_BINARY_DIR}/link_line")  # A filename to write link-line to.
 include(InstallManager)
 
-# find python3 for use in regression testing
-if (ENABLE_Regression_Tests)
-  find_package(PythonInterp 3 REQUIRED VERSION)
+# Python 
+message(STATUS "------------------------------------------------")
+message(STATUS "Python Executable used in TPLs build ... ")
+message(STATUS "TPL_PYTHON_EXECUTABLE     = ${TPL_PYTHON_EXECUTABLE}")
+message(STATUS "TPL_PYTHON_VERSION_STRING = ${TPL_PYTHON_VERSION_STRING}")
+message(STATUS "------------------------------------------------")
+message(STATUS "")
+message(STATUS "Python Configuration for Amanzi-ATS builds ...")
+message(STATUS "")
+
+# Set Python (required version 3.x), ideally consistent with the TPLs.
+if (NOT PYTHON_EXECUTABLE) 
+  unset(PYTHON_EXECUTABLE CACHE)
+  if (TPL_PYTHON_EXECUTABLE) 
+    set(PYTHON_EXECUTABLE "${TPL_PYTHON_EXECUTABLE}")
+    set(PYTHON_VERSION_STRING "${TPL_PYTHON_VERSION_STRING}")
+    message(STATUS "Python Executable set from TPL build cache.")
+  else()
+    find_package(PythonInterp REQUIRED)
+    message(STATUS "Using Python Executable from the user's path.")
+  endif()
+else()
+  find_package(PythonInterp REQUIRED)
+  message(STATUS "Python Executable set by the user.")
 endif()
+
+message(STATUS "Python Executable:    ${PYTHON_EXECUTABLE}")
+message(STATUS "Python Version:       ${PYTHON_VERSION_STRING}")
+
+if (PYTHON_VERSION_STRING  VERSION_LESS "3")
+  message(FATAL_ERROR "Python version 3.x is required to build Amanzi and run the tests.")
+endif()
+
+message(STATUS "")
 
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)

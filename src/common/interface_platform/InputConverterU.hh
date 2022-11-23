@@ -137,13 +137,13 @@ class InputConverterU : public InputConverter {
 
   void AddIndependentFieldEvaluator_(
       Teuchos::ParameterList& out_ev,
-      const std::string& field, const std::string& region, double val);
+      const std::string& field, const std::string& region,
+      const std::string& comp, double val);
 
   void AddSecondaryFieldEvaluator_(
      Teuchos::ParameterList& out_ev,
      const Key& field, const Key& key,
-     const std::string& type, const std::string& model,
-     const std::string& eos_table_name);
+     const std::string& type, const std::string& eos_table_name);
 
   void AddConstantFieldInitialization_(
       Teuchos::ParameterList& out_ev,
@@ -247,7 +247,7 @@ class InputConverterU : public InputConverter {
   std::map<std::string, bool> pk_master_;
   std::map<std::string, double> dt_cut_, dt_inc_;
   
-  std::string eos_lookup_table_;
+  std::string eos_lookup_table_, eos_model_;
 
   // global physical constants prefixed with "const"
   double const_gravity_;

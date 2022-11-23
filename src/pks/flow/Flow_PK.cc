@@ -43,7 +43,7 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<TreeVector>& soln) :
   PK(pk_tree, glist, S, soln),
   PK_PhysicalBDF(pk_tree, glist, S, soln),
-  passwd_("flow"),
+  passwd_(""),
   peaceman_model_(false)
 {
   vo_ = Teuchos::null;
@@ -52,7 +52,7 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
 };
 
 
-Flow_PK::Flow_PK() : passwd_("flow") { vo_ = Teuchos::null; }
+Flow_PK::Flow_PK() : passwd_("") { vo_ = Teuchos::null; }
 
 
 /* ******************************************************************
@@ -77,6 +77,8 @@ void Flow_PK::Setup()
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
   permeability_eff_key_ = Keys::getKey(domain_, "permeability_effective");
   aperture_key_ = Keys::getKey(domain_, "aperture"); 
+  prev_aperture_key_ = Keys::getKey(domain_, "prev_aperture"); 
+  bulk_modulus_key_ = Keys::getKey(domain_, "bulk_modulus"); 
 
   porosity_key_ = Keys::getKey(domain_, "porosity"); 
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
@@ -105,11 +107,12 @@ void Flow_PK::Setup()
       S_->SetEvaluator(permeability_key_, Tags::DEFAULT, eval);
     }
 
-    if (!S_->HasRecord(aperture_key_)) {
-      S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
-        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-      S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
-    }
+    S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+
+    S_->Require<CV_t, CVS_t>(prev_aperture_key_, Tags::DEFAULT)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
     {
       S_->Require<CV_t, CVS_t>(permeability_eff_key_, Tags::DEFAULT, permeability_eff_key_)
@@ -440,6 +443,30 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 }
 
 
+/* ****************************************************************
+* Auxiliary initialization technique.
+**************************************************************** */
+void Flow_PK::InitializeFieldFromField_(
+    const std::string& field0, const std::string& field1, bool call_evaluator)
+{
+  if (S_->HasRecord(field0)) {
+    if (!S_->GetRecord(field0).initialized()) {
+      if (call_evaluator)
+          S_->GetEvaluator(field1).Update(*S_, passwd_);
+
+      const auto& f1 = S_->Get<CV_t>(field1);
+      auto& f0 = S_->GetW<CV_t>(field0, passwd_);
+      f0 = f1;
+
+      S_->GetRecordW(field0, passwd_).set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
+    }
+  }
+}
+
+
 /* ******************************************************************
 * Compute well index
 ****************************************************************** */
@@ -725,7 +752,7 @@ void Flow_PK::SetAbsolutePermeabilityTensor()
 /* ******************************************************************
 * Add source and sink terms.                                   
 ****************************************************************** */
-void Flow_PK::AddSourceTerms(CompositeVector& rhs)
+void Flow_PK::AddSourceTerms(CompositeVector& rhs, double dt)
 {
   Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
 

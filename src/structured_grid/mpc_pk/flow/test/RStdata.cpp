@@ -310,11 +310,6 @@ static Real vgKr(Real seff, Real m, Real ell) {
   return std::pow(seff, ell) * std::pow(1-std::pow(1-std::pow(seff,1/m),m),2);
 }
 
-static Real vgPcInv(Real pc, Real m, Real alpha) {
-  Real n = 1/(1-m);
-  return std::pow(1 + std::pow(alpha*pc,n),-m);
-}
-
 void
 RStdata::calcLambda (MFTower&       Lambda,
                      const MFTower& N,

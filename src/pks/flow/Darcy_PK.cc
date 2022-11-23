@@ -23,6 +23,7 @@
 #include "Mesh_Algorithms.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
+#include "PK_Utils.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
 
@@ -110,6 +111,7 @@ void Darcy_PK::Setup()
 
   specific_yield_key_ = Keys::getKey(domain_, "specific_yield"); 
   specific_storage_key_ = Keys::getKey(domain_, "specific_storage"); 
+  compliance_key_ = Keys::getKey(domain_, "compliance"); 
 
   // optional keys
   pressure_head_key_ = Keys::getKey(domain_, "pressure_head"); 
@@ -120,6 +122,7 @@ void Darcy_PK::Setup()
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
   std::string mu_model = physical_models->get<std::string>("viscosity model", "constant viscosity");
+  use_bulk_modulus_ = physical_models->get<bool>("use bulk modulus", false);
   if (mu_model != "constant viscosity") {
     Errors::Message msg;
     msg << "Darcy PK supports only constant viscosity model.";
@@ -167,7 +170,6 @@ void Darcy_PK::Setup()
   if (!S_->HasRecord(saturation_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    // AddDefaultPrimaryEvaluator_(saturation_liquid_key_);
     S_->RequireEvaluator(saturation_liquid_key_, Tags::DEFAULT);
   }
 
@@ -176,7 +178,7 @@ void Darcy_PK::Setup()
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  // Require additional field evaluators for this PK.
+  // Require additional fields and evaluators for this PK.
   // -- porosity
   if (!S_->HasRecord(porosity_key_)) {
     S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
@@ -187,6 +189,17 @@ void Darcy_PK::Setup()
   // -- viscosity
   if (!S_->HasRecord("const_fluid_viscosity")) {
     S_->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
+  }
+
+  // -- fracture dynamics
+  if (flow_on_manifold_) {
+    S_->Require<CV_t, CVS_t>(compliance_key_, Tags::DEFAULT, compliance_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireEvaluator(compliance_key_, Tags::DEFAULT);
+  } else if (use_bulk_modulus_) {
+    S_->Require<CV_t, CVS_t>(bulk_modulus_key_, Tags::DEFAULT)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireEvaluator(bulk_modulus_key_, Tags::DEFAULT);
   }
 
   // Local fields and evaluators.
@@ -233,7 +246,10 @@ void Darcy_PK::Setup()
   }
 
   // save frequently used evaluators 
-  vol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT));
+  pressure_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(
+      S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));
+  vol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(
+      S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT));
 }
 
 
@@ -384,6 +400,11 @@ void Darcy_PK::InitializeFields_()
 
   InitializeCVField(S_, *vo_, saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_, 1.0);
   InitializeCVField(S_, *vo_, prev_saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
+
+  if (flow_on_manifold_)
+    InitializeCVField(S_, *vo_, compliance_key_, Tags::DEFAULT, compliance_key_, 0.0);
+
+  InitializeFieldFromField_(prev_aperture_key_, aperture_key_, true);
 }
 
 
@@ -461,6 +482,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   sy_g.Scale(factor);
 
   if (flow_on_manifold_) {
+    S_->GetEvaluator(aperture_key_).Update(*S_, aperture_key_);
     const auto& aperture = S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
     ss_g.Multiply(1.0, ss_g, aperture, 0.0);
     sy_g.Multiply(1.0, sy_g, aperture, 0.0);
@@ -476,10 +498,15 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
+  // Update fields due to fracture dynamics or other dynamics
+  if (flow_on_manifold_) {
+    S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");
+    op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  }
   op_diff_->ApplyBCs(true, true, true);
 
   CompositeVector& rhs = *op_->rhs();
-  AddSourceTerms(rhs);
+  AddSourceTerms(rhs, dt_);
 
   op_->ComputeInverse();
 
@@ -491,6 +518,12 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   op_->ApplyInverse(rhs, *solution);
+
+  // update some fields, we cannot move this to commit step due to "initialize"
+  if (flow_on_manifold_) {
+    S_->GetW<CV_t>(prev_aperture_key_, Tags::DEFAULT, passwd_) =
+      S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
+  }
 
   // statistics
   num_itrs_++;

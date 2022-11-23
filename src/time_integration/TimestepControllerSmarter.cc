@@ -23,11 +23,11 @@ TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
         const Teuchos::RCP<State>& S)
   : TimestepController(plist),
     plist_(plist),
-    count_increased_before_increase_(0),
-    successive_increases_(0),
     name_(name),
-    last_fail_(0),
-    S_(S)
+    count_increased_before_increase_(0),
+    S_(S),
+    successive_increases_(0),
+    last_fail_(0)
 {
   // allocate space for state -- done manually because Setup() has already been called
   if (S_ != Teuchos::null) {
@@ -97,7 +97,6 @@ TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
   (*growth_wait_after_fail_) = plist_.get<int>("growth wait after fail");
   growth_wait_after_fail0_ = (*growth_wait_after_fail_);
   count_increased_before_increase_ = plist_.get<int>("count before increasing increase factor");
-
 }
 
 

@@ -211,7 +211,6 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
 
   Teuchos::RCP<Operator> consistent_face_op_;
 
- private:
   int schema_prec_dofs_;
 };
 

@@ -137,19 +137,18 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   void set_name(std::string name, int width=-1);
 
  protected:
-  Teuchos::RCP<Teuchos::FancyOStream> out_;
   Comm_ptr_type comm_;
 };
 
 
 bool VerboseObject::os_OK(Teuchos::EVerbosityLevel verbosity) const {
-  return out_.get() &&
+  return getOStream().get() &&
       includesVerbLevel(getVerbLevel(), verbosity, true);
 };
 
 
 Teuchos::RCP<Teuchos::FancyOStream> VerboseObject::os() const {
-  return out_;
+  return getOStream();
 };
 
 

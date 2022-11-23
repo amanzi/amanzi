@@ -47,11 +47,11 @@ if __name__ == "__main__":
     times_CF_pH = ['pH5.out']
 
 # amanzi output (unstructured - native and alquimia)
-    amanzi_totc_templ = "total_component_concentration.cell.{0}" #Component {0} conc"
+    amanzi_totc_templ = "total_component_concentration.{0}" #Component {0} conc"
     amanzi_totc = [amanzi_totc_templ.format(x) for x in components] #range(len(components))]
     amanzi_totc_crunch = [amanzi_totc_templ.format(x) for x in compcrunch] #range(len(components))]
 
-    amanzi_sorb_templ = "total_sorbed.cell.{0}"
+    amanzi_sorb_templ = "total_sorbed.{0}"
     amanzi_sorb = [amanzi_sorb_templ.format(x+1) for x in range(len(components))]
     amanzi_sorb_crunch = [amanzi_sorb_templ.format(x+1) for x in range(len(compcrunch))]
 
@@ -134,10 +134,10 @@ if __name__ == "__main__":
                 v_amanzi_native[i][j] = c_amanzi_native
 
         pH_amanzi_native = [ [] for x in range(len(times)) ]
-        comp = 'free_ion_species.cell.H+'
+        comp = 'free_ion_species.H+'
         for i, time in enumerate(times):
             x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
-            x_tmp_native, c_tmp_native = GetXY_AmanziU_1D(path_to_amanzi,root,"primary_activity_coeff.cell.H+",1)
+            x_tmp_native, c_tmp_native = GetXY_AmanziU_1D(path_to_amanzi,root,"primary_activity_coeff.H+",1)
             pH_amanzi_native[i] = -np.log10(c_amanzi_native * c_tmp_native)
 
         native = True
@@ -167,7 +167,7 @@ if __name__ == "__main__":
                 v_amanzi_alquimia[i][j] = c_amanzi_alquimia
 
         pH_amanzi_alquimia = [ [] for x in range(len(times)) ]
-        comp = 'pH.cell.0'
+        comp = 'pH.0'
         for i, time in enumerate(times):
              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
              pH_amanzi_alquimia[i] = c_amanzi_alquimia ## -np.log10(c_amanzi_native)
@@ -198,7 +198,7 @@ if __name__ == "__main__":
                 v_amanzi_alquimia_w[i][j] = c_amanzi_alquimia_w
 
         pH_amanzi_alquimia_w = [ [] for x in range(len(times)) ]
-        comp = 'pH.cell.0'
+        comp = 'pH.0'
         for i, time in enumerate(times):
              x_amanzi_alquimia_w, c_amanzi_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
              pH_amanzi_alquimia_w[i] = c_amanzi_alquimia_w ## -np.log10(c_amanzi_native)
@@ -230,7 +230,7 @@ if __name__ == "__main__":
                 v_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
 
         pH_amanzi_alquimia_crunch = [ [] for x in range(len(times)) ]
-        comp = 'pH.cell.0'
+        comp = 'pH.0'
         for i, time in enumerate(times):
             x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
             pH_amanzi_alquimia_crunch[i] = c_amanzi_alquimia_crunch ## -np.log10(c_amanzi_native)

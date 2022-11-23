@@ -49,7 +49,7 @@ if(Unittest_Build_Config_File)
 endif()    
 
 # --- Patch the original code
-set(UnitTest_patch_file unittest-cmake.patch)
+set(UnitTest_patch_file unittest-cmake.patch unittest-testrunner.patch)
 set(UnitTest_sh_patch ${UnitTest_prefix_dir}/unittest-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/unittest-patch-step.sh.in
                ${UnitTest_sh_patch}

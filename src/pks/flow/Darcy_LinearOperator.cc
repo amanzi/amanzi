@@ -36,7 +36,7 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
 
   op_diff_->ApplyBCs(true, true, true);
   CompositeVector& rhs = *op_->rhs();
-  if (wells_on) AddSourceTerms(rhs);
+  if (wells_on) AddSourceTerms(rhs, 1.0);
 
   op_->ComputeInverse();
   int ierr = op_->ApplyInverse(rhs, *solution);

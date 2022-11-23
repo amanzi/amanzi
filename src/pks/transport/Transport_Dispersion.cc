@@ -323,7 +323,7 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "dispersion solver (" << dispersion_solver
                << ") ||r||=" << residual / num_components
-               << " itrs=" << num_itrs / num_components << std::endl;
+               << " itrs=" << num_itrs << "/" << num_itrs / num_components << std::endl;
   }
 
   return Teuchos::null;

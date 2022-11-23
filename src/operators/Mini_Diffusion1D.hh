@@ -20,6 +20,7 @@
 #include <DenseVector.hh>
 
 #include <Mini_Operator1D.hh>
+#include <OperatorDefs.hh>
 
 namespace Amanzi {
 namespace Operators {
@@ -46,7 +47,8 @@ class Mini_Diffusion1D : public Mini_Operator1D {
 
   // generate linearized operators
   // -- build phisical model
-  void UpdateMatrices();
+  void UpdateMatrices(const PDEType method = PDE_DIFFUSION_MFD);
+
   // -- build Jacobian
   void UpdateJacobian(const WhetStone::DenseVector& p,
                       double bcl, int type_l, double bcr, int type_r);
@@ -61,6 +63,10 @@ class Mini_Diffusion1D : public Mini_Operator1D {
   // access
   WhetStone::DenseVector& k() { return *k_; }
   WhetStone::DenseVector& dkdp() { return *dkdp_; }
+
+ protected:
+  void UpdateMatricesMFD_(); 
+  void UpdateMatricesFD_(); 
 
  private:
   std::shared_ptr<WhetStone::DenseVector> K_, k_, dkdp_;

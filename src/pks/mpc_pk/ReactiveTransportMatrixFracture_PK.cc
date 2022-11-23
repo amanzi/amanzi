@@ -17,6 +17,7 @@
 #include "ReactiveTransportMatrixFracture_PK.hh"
 #include "Transport_PK.hh"
 #include "TransportMatrixFracture_PK.hh"
+#include "TransportMatrixFractureImplicit_PK.hh"
 
 namespace Amanzi {
 
@@ -31,9 +32,13 @@ ReactiveTransportMatrixFracture_PK::ReactiveTransportMatrixFracture_PK(
     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
     const Teuchos::RCP<State>& S,
     const Teuchos::RCP<TreeVector>& soln) :
-    PK_MPCAdditive<PK>(pk_tree, global_list, S, soln)
+    PK_MPCSubcycled(pk_tree, global_list, S, soln)
 {
   coupled_chemistry_pk_ = Teuchos::rcp_dynamic_cast<ChemistryMatrixFracture_PK>(sub_pks_[0]);
+
+  subcycling_ = my_list_->get<bool>("subcycle chemistry", true);
+
+  AMANZI_ASSERT(master_ == 1);
 }
 
 
@@ -102,7 +107,7 @@ void ReactiveTransportMatrixFracture_PK::Setup()
     }
   }
 
-  Amanzi::PK_MPCAdditive<PK>::Setup();
+  Amanzi::PK_MPCSubcycled::Setup();
 }
 
   
@@ -111,7 +116,7 @@ void ReactiveTransportMatrixFracture_PK::Setup()
 // -----------------------------------------------------------------------------
 void ReactiveTransportMatrixFracture_PK::Initialize()
 {
-  Amanzi::PK_MPCAdditive<PK>::Initialize();
+  Amanzi::PK_MPCSubcycled::Initialize();
 }
   
 
@@ -123,10 +128,9 @@ double ReactiveTransportMatrixFracture_PK::get_dt()
   double dTchem = sub_pks_[0]->get_dt();
   double dTtran = sub_pks_[1]->get_dt();
 
-  if (dTchem / dTtran > 0.99) {
-    dTchem *= 0.5;
-  } 
+  if (subcycling_) return dTtran;
 
+  if (dTchem / dTtran > 0.99) dTchem *= 0.5;
   if (dTtran > dTchem) dTtran = dTchem; 
   
   return dTchem;
@@ -152,31 +156,77 @@ bool ReactiveTransportMatrixFracture_PK::AdvanceStep(
   bool fail = sub_pks_[1]->AdvanceStep(t_old, t_new, reinit);
   if (fail) return fail;
 
-  // save copy of fields (FIXME)
-  S_->Assign(tcc_matrix_key_, Tags::COPY, Tags::DEFAULT);
-  S_->Assign(tcc_fracture_key_, Tags::COPY, Tags::DEFAULT);  
-  
-  try {
-    std::vector<Teuchos::RCP<AmanziChemistry::Chemistry_PK> > subpks;
-    for (auto ic = coupled_chemistry_pk_->begin(); ic != coupled_chemistry_pk_->end(); ++ic) { 
-      auto ic1 = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(*ic);
-      subpks.push_back(ic1);
+  std::vector<Teuchos::RCP<AmanziChemistry::Chemistry_PK> > subpks_chem;
+  for (auto ic = coupled_chemistry_pk_->begin(); ic != coupled_chemistry_pk_->end(); ++ic) { 
+    auto ic1 = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(*ic);
+    subpks_chem.push_back(ic1);
+  }
+
+  std::vector<Teuchos::RCP<Transport::Transport_PK> > subpks_tran;
+  if (sub_pks_[1]->name() == "coupled transport") {
+    auto tpk = Teuchos::rcp_dynamic_cast<TransportMatrixFracture_PK>(sub_pks_[1]);
+
+    for (auto ic = tpk->begin(); ic != tpk->end(); ++ic) { 
+      auto ic1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(*ic);
+      subpks_tran.push_back(ic1);
     }
-    
-    // tell chemistry PKs to work with copies
-    auto tcc_m_copy = S_->GetW<CV_t>(tcc_matrix_key_, Tags::COPY, "state").ViewComponent("cell", true);
-    auto tcc_f_copy = S_->GetW<CV_t>(tcc_fracture_key_, Tags::COPY, "state").ViewComponent("cell", true);  
+  } else if (sub_pks_[1]->name() == "coupled transport implicit") {
+    auto tpk = Teuchos::rcp_dynamic_cast<TransportMatrixFractureImplicit_PK>(sub_pks_[1]);
 
-    subpks[0]->set_aqueous_components(tcc_m_copy);
-    subpks[1]->set_aqueous_components(tcc_f_copy);
+    for (auto ic = tpk->begin(); ic != tpk->end(); ++ic) { 
+      auto ic1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(*ic);
+      subpks_tran.push_back(ic1);
+    }
+  }
 
-    fail = coupled_chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
+  // at this moment, we have old tcc in State and new tcc in a temporary vector
+  // tell chemistry PKs to work with the temporary vector
+  for (int i = 0; i < 2; ++i) {
+    auto tcc_copy = subpks_tran[i]->total_component_concentration()->ViewComponent("cell", true);
+    subpks_chem[i]->set_aqueous_components(tcc_copy);
+  }
+
+  // advance the slave, subcycling if needed
+  double dTchem = sub_pks_[0]->get_dt();
+  double dt_next(dTchem), dt_done(0.0);
+
+  try {
+    S_->set_intermediate_time(t_old);
+    bool done = false;
+
+    while (!done) {
+      // do not overstep
+      if (t_old + dt_done + dt_next > t_new) {
+        dt_next = t_new - t_old - dt_done;
+      }
+      S_->set_intermediate_time(t_old + dt_done + dt_next);
+
+      fail = coupled_chemistry_pk_->AdvanceStep(t_old + dt_done, t_old + dt_done + dt_next, reinit);
+
+      if (fail) {
+        dt_next /= 2;
+        for (int i = 0; i < 2; ++i) {
+          auto tcc_copy = subpks_tran[i]->total_component_concentration()->ViewComponent("cell", true);
+          subpks_chem[i]->set_aqueous_components(tcc_copy);
+        }
+      } else { 
+        dt_done += dt_next;
+        dt_next = sub_pks_[0]->get_dt();
+      }
+
+      // no state recovery is made, so the only option is to fail
+      if (dt_next < min_dt_)
+         Exceptions::amanzi_throw("Failure in coupled reactive transport PK: small time step.");
+
+      // check for subcycling condition
+      done = std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1 * min_dt_;
+    }
  
     *S_->GetW<CV_t>(tcc_matrix_key_, Tags::DEFAULT, "state")
-      .ViewComponent("cell", true) = *subpks[0]->aqueous_components();
+      .ViewComponent("cell", true) = *subpks_chem[0]->aqueous_components();
 
     *S_->GetW<CV_t>(tcc_fracture_key_, Tags::DEFAULT, "state")
-      .ViewComponent("cell", true) = *subpks[1]->aqueous_components();
+      .ViewComponent("cell", true) = *subpks_chem[1]->aqueous_components();
   }
   catch (const Errors::Message& chem_error) {
     fail = true;

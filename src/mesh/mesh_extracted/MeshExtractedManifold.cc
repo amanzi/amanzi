@@ -547,7 +547,7 @@ Entity_ID_List MeshExtractedManifold::build_set_cells_(
     auto rp = Teuchos::rcp_static_cast<const AmanziGeometry::RegionPoint>(rgn)->point();
 
     for (int c = 0; c < ncells_wghost; ++c)
-      if (point_in_cell(rp, c)) mset.push_back(c);
+      if (PointInCell_(rp, c)) mset.push_back(c);
   }
 
   else if (((rgn->get_type() == AmanziGeometry::RegionType::PLANE) ||
@@ -1094,6 +1094,30 @@ std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
   }
 
   return std::map<Entity_ID, int>();
+}
+
+
+/* ******************************************************************
+* Check if point is in 3D polygon by Jordan's crossing algorithm
+****************************************************************** */
+bool MeshExtractedManifold::PointInCell_(const AmanziGeometry::Point& xp, int c) const
+{
+  Entity_ID_List nodes;
+  cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+
+  double vol(0.0);
+  AmanziGeometry::Point xp1(3), xp2(3);
+
+  for (int i1 = 0; i1 < nnodes; ++i1) {
+    int i2 = (i1 + 1) % nnodes;
+    node_get_coordinates(nodes[i1], &xp1);
+    node_get_coordinates(nodes[i2], &xp2);
+    vol += norm((xp1 - xp)^(xp2 - xp));
+  }
+
+  double area = cell_volume(c);
+  return (fabs(vol / 2 - area) < 1e-14 * area);
 }
 
 

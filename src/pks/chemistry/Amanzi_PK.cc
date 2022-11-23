@@ -108,7 +108,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   }
 
   //  some tests provide nullptr
-  name_ = "Alquimia_PK:"+domain_;
+  name_ = "Amanzi_PK:" + domain_;
   if (solution_.get()) vo_ = Teuchos::rcp(new VerboseObject(solution_->Comm(), name_, *vo_plist));
   else vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
 }
@@ -483,7 +483,7 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(
 
   for (int i = 0; i < number_aqueous_components_; ++i) {
     (*bf_.free_ion)[i][c] = beaker_state_.free_ion.at(i);
-    // free_ion[i][c] = std::max(beaker_state_.free_ion.at(i), 1e-200);
+    // (*bf_.free_ion)[i][c] = std::max(beaker_state_.free_ion.at(i), 1e-200);
   }
 
   // activity coefficients

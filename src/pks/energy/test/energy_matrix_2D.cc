@@ -95,7 +95,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
 
   // modify the default state for the problem at hand 
   // create the initial temperature function 
-  std::string passwd("thermal");
+  std::string passwd("");
   auto& temperature = *S->GetW<CompositeVector>("temperature", Tags::DEFAULT, passwd).ViewComponent("cell");
   temperature.PutScalar(273.0);
   Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(

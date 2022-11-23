@@ -22,16 +22,15 @@
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
-#include "PK_MPCAdditive.hh"
+#include "PK_MPCSubcycled.hh"
 #include "PK_MPCWeak.hh"
 
 // Amanzi::MPC
 #include "ChemistryMatrixFracture_PK.hh"
-#include "TransportMatrixFracture_PK.hh"
 
 namespace Amanzi {
 
-class ReactiveTransportMatrixFracture_PK : public PK_MPCAdditive<PK> {
+class ReactiveTransportMatrixFracture_PK : public PK_MPCSubcycled {
  public:
   ReactiveTransportMatrixFracture_PK(
       Teuchos::ParameterList& pk_tree,
@@ -61,7 +60,9 @@ class ReactiveTransportMatrixFracture_PK : public PK_MPCAdditive<PK> {
 
   Key tcc_matrix_key_, tcc_fracture_key_;
 
-  // factory registration
+ private:
+  bool subcycling_; 
+
   static RegisteredPKFactory<ReactiveTransportMatrixFracture_PK> reg_;
 };
 

@@ -91,9 +91,10 @@ void RunTestConvergence(std::string input_xml) {
     AdvanceToSteadyState(S, *RPK, ti_specs, soln);
     RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times
 
+    std::string passwd("");
     double pressure_err, flux_err, div_err;  // error checks
     const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
-    const auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", "flow").ViewComponent("face", true);
+    const auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face", true);
 
     pressure_err = CalculatePressureCellError(mesh, p);
     flux_err = CalculateDarcyFluxError(mesh, flux);

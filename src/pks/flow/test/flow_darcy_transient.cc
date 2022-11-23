@@ -81,7 +81,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   // modify the default state for the problem at hand
   // -- permeability
-  Key passwd("flow"); 
+  Key passwd(""); 
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
   AmanziMesh::Entity_ID_List block;
@@ -110,7 +110,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   // -- storativity
   S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(2.0);
-  S->GetRecordW("specific_storage", "flow").set_initialized();
+  S->GetRecordW("specific_storage", passwd).set_initialized();
 
   // create the initial pressure function
   auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
@@ -119,7 +119,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
     const Point& xc = mesh->cell_centroid(c);
     p[0][c] = xc[1] * (xc[1] + 2.0);
   }
-  S->GetRecordW("pressure", "flow").set_initialized();
+  S->GetRecordW("pressure", passwd).set_initialized();
 
   // initialize the Darcy process kernel
   DPK->Initialize();
@@ -190,7 +190,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
-  std::string passwd("flow"); 
+  std::string passwd(""); 
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   
   AmanziMesh::Entity_ID_List block;

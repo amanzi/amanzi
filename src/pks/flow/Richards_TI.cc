@@ -37,10 +37,10 @@ void Richards_PK::FunctionalResidual(
     Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
     Teuchos::RCP<TreeVector> f)
 { 
+  dt_ = t_new - t_old;
+
   // verify that u_new = solution@default
   Solution_to_State(*u_new, Tags::DEFAULT);
-
-  double dtp(t_new - t_old);
 
   std::vector<int>& bc_model = op_bc_->bc_model();
 
@@ -62,12 +62,10 @@ void Richards_PK::FunctionalResidual(
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
     upwind_->Compute(*vol_flowrate_copy, *u_new->Data(), bc_model, *alpha_upwind_);
-  }
 
-  // modify relative permeability coefficient for influx faces
-  // UpwindInflowBoundary_New(u_new->Data());
+    // modify relative permeability coefficient for influx faces
+    // UpwindInflowBoundary_New(u_new->Data());
 
-  if (!flow_on_manifold_) {
     S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
     auto& alpha_dP = S_->GetDerivativeW<CompositeVector>(
         alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
@@ -83,7 +81,7 @@ void Richards_PK::FunctionalResidual(
   op_matrix_diff_->ApplyBCs(true, true, true);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
-  AddSourceTerms(*rhs);
+  AddSourceTerms(*rhs, dt_);
 
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *f->Data());
 
@@ -102,7 +100,7 @@ void Richards_PK::FunctionalResidual(
     double wc1 = wc_c[0][c];
     double wc2 = wc_prev_c[0][c];
 
-    double factor = mesh_->cell_volume(c) / dtp;
+    double factor = mesh_->cell_volume(c) / dt_;
     f_cell[0][c] += (wc1 - wc2) * factor;
   }
 
@@ -114,7 +112,7 @@ void Richards_PK::FunctionalResidual(
   // add water storage in matrix
   if (multiscale_porosity_) {
     pressure_msp_eval_->SetChanged();
-    Functional_AddMassTransferMatrix_(dtp, f->Data());
+    Functional_AddMassTransferMatrix_(dt_, f->Data());
   }
 
   // calculate normalized residual
@@ -123,13 +121,13 @@ void Richards_PK::FunctionalResidual(
 
   for (int c = 0; c < ncells_owned; ++c) {
     const auto& dens_c = *S_->Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
-    double factor = mesh_->cell_volume(c) * dens_c[0][c] * phi_c[0][c] / dtp;
+    double factor = mesh_->cell_volume(c) * dens_c[0][c] * phi_c[0][c] / dt_;
     double tmp = fabs(f_cell[0][c]) / factor;
     if (tmp > functional_max_norm) {
       functional_max_norm = tmp;
       functional_max_cell = c;        
     }
-  } 
+  }
 }
 
 
@@ -352,12 +350,10 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
     upwind_->Compute(*vol_flowrate_copy, *u->Data(), bc_model, *alpha_upwind_);
-  }
 
-  // modify relative permeability coefficient for influx faces
-  // UpwindInflowBoundary_New(u->Data());
+    // modify relative permeability coefficient for influx faces
+    // UpwindInflowBoundary_New(u->Data());
 
-  if (!flow_on_manifold_) {
     S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
     auto& alpha_dP = S_->GetDerivativeW<CompositeVector>(
         alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);

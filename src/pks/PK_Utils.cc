@@ -23,16 +23,19 @@ namespace Amanzi {
 void StateArchive::Add(std::vector<std::string> fields, 
                        std::vector<std::string> evals,
                        std::vector<std::string> primary,
-                       const Tag& tag)
+                       const Tag& tag,
+                       const std::string& requestor)
 {
   tag_ = tag;
   primary_ = primary;
 
-  for (const auto& name : fields)
+  for (const auto& name : fields) 
     fields_.emplace(name, S_->Get<CompositeVector>(name, tag));
 
-  for (const auto& name : evals)
+  for (const auto& name : evals) {
+    S_->GetEvaluator(name).Update(*S_, requestor);
     evals_.emplace(name, S_->Get<CompositeVector>(name, tag));
+  }
 }
 
 
@@ -44,20 +47,45 @@ void StateArchive::Restore(const std::string& passwd)
   for (auto it = fields_.begin(); it != fields_.end(); ++it) {
     S_->GetW<CompositeVector>(it->first, passwd) = it->second;
 
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Reverted field \"" << it->first << "\"" << std::endl;
+    if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "reverted field \"" << it->first << "\"" << std::endl;
+    }
   }
 
   for (auto it = evals_.begin(); it != evals_.end(); ++it) {
     S_->GetW<CompositeVector>(it->first, tag_, it->first) = it->second;
 
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Reverted primary solution \"" << it->first << "\"" << std::endl;
+    if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "reverted evaluator \"" << it->first << "\"" << std::endl;
+    }
   }
 
   for (auto it = primary_.begin(); it != primary_.end(); ++it) {
     Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
       S_->GetEvaluatorPtr(*it, tag_))->SetChanged();
+
+    if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "set primary solution \"" << *it << "\" to changed status" << std::endl;
+    }
+  }
+}
+
+
+/* *******************************************************************
+* Copy: Evaluator (BASE) -> Field (prev_BASE)
+******************************************************************* */
+void StateArchive::Swap(const std::string& passwd)
+{
+  for (auto it = fields_.begin(); it != fields_.end(); ++it) {
+    std::string prev(it->first), next(it->first);
+    auto pos = next.find("prev_");
+    if (pos != std::string::npos) {
+      next.erase(pos, 5);
+      S_->GetW<CompositeVector>(prev, tag_, passwd) = S_->Get<CompositeVector>(next);
+    }
   }
 }
 

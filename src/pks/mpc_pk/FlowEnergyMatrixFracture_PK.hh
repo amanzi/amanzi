@@ -80,7 +80,7 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
       const std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> >& adv_coupling);
 
   void SwapEvaluatorField_(
-      const Key& key, const std::string& passwd,
+      const Key& key,
       Teuchos::RCP<CompositeVector>& fdm_copy,
       Teuchos::RCP<CompositeVector>& fdf_copy);
 

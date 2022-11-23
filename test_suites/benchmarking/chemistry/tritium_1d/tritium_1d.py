@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     # AmanziU + Native chemistry
     try:
-        comp = 'total_component_concentration.cell.Tritium'
+        comp = 'total_component_concentration.Tritium'
         input_file = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "output-u"
         run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
     # AmanziU + Alqumia + PFloTran chemistry
     try:
-        comp = 'total_component_concentration.cell.Tritium'
+        comp = 'total_component_concentration.Tritium'
         input_file = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
         path_to_amanzi = "output-u-alq-pflo"
         run_amanzi_standard.run_amanzi(input_file, 1,
@@ -118,7 +118,7 @@ if __name__ == "__main__":
 
     # AmanziU + Alqumia + PFloTran chemistry with writer
     try:
-        comp = 'total_component_concentration.cell.Tritium'
+        comp = 'total_component_concentration.Tritium'
         input_file = os.path.join("amanzi-u-1d-"+root+"-alq-pflo-writer.xml")
         path_to_amanzi = "output-u-alq-pflo-writer"
         run_amanzi_standard.run_amanzi(input_file, 1,
@@ -131,7 +131,7 @@ if __name__ == "__main__":
 
     # AmanziU + Alqumia + CrunchFlow chemistry
     try:
-        comp = 'total_component_concentration.cell.Tritium'
+        comp = 'total_component_concentration.Tritium'
         input_file = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
         path_to_amanzi = "output-u-alq-crunch"
         run_amanzi_standard.run_amanzi(input_file, 1, 

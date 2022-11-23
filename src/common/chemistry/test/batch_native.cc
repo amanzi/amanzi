@@ -1,9 +1,9 @@
 #include <unistd.h>
 
 //#define ABORT_ON_FLOATING_POINT_EXCEPTIONS
-#ifdef __APPLE__
-  #include <xmmintrin.h>
-#endif
+// #ifdef __APPLE__
+//   #include <xmmintrin.h>
+// #endif
 
 #include "boost/detail/fenv.hpp"
 

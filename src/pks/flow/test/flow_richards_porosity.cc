@@ -75,7 +75,7 @@ TEST(FLOW_POROSITY_MODELS) {
   S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
-  std::string passwd("flow"); 
+  std::string passwd(""); 
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   
   AmanziMesh::Entity_ID_List block;

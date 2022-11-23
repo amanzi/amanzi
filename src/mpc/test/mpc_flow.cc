@@ -63,6 +63,9 @@ using namespace Amanzi::AmanziGeometry;
     try {
       cycle_driver.Go();
       S->Get<CompositeVector>("saturation_liquid").MeanValue(&avg1);
+    } catch (const std::exception& e) {
+      std::cerr << e.what() << "\n\n";;
+      CHECK(false);
     } catch (...) {
       CHECK(false);
     }

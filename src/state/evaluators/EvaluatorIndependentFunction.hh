@@ -11,6 +11,28 @@
   A field evaluator with no dependencies specified by a function.
 */
 
+/*!
+
+This evaluator is typically used for providing data that are functions of space
+and time.  The evaluator consists of a list of region,function pairs, and the
+functions are evaluated across that region at each timestep.  If the problem is
+time-independent, the `"constant in time`" option results in a performance
+boost (as the functions need only be evaluated once).  This leverages the
+exaustive functional format capability provided in Amanzi's Functions_ library.
+
+This evaluator is used by providing the option:
+
+`"evaluator type`" == `"independent variable`"
+
+.. _independent-variable-function-evaluator-spec:
+.. admonition:: independent-variable-function-evaluator-spec
+
+   * `"constant in time`" ``[bool]`` **false** If true, only evaluate the
+      functions once as they are time-independent.
+   * `"function`" ``[composite-vector-function-spec-list]``
+
+*/
+
 #ifndef AMANZI_STATE_INDEPENDENT_EVALUATOR_FUNCTION_
 #define AMANZI_STATE_INDEPENDENT_EVALUATOR_FUNCTION_
 

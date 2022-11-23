@@ -86,7 +86,7 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
   S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
-  std::string passwd("flow"); 
+  std::string passwd(""); 
   double rho = S->Get<double>("const_fluid_density");
   double g = (S->Get<AmanziGeometry::Point>("gravity"))[1];
 

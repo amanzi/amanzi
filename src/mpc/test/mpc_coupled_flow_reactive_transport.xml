@@ -167,6 +167,20 @@
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
+      <ParameterList name="fracture-compliance">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="ALL">
@@ -194,6 +208,20 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+      </ParameterList>
+      <ParameterList name="bulk_modulus">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.1e+19"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
 
@@ -1187,7 +1215,7 @@
 
     <ParameterList name="coupled reactive transport">
       <Parameter name="PKs order" type="Array(string)" value="{coupled chemistry, coupled transport}"/>
-      <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="master PK index" type="int" value="1"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>

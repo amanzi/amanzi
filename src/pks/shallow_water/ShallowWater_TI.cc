@@ -38,6 +38,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // get primary and conservative fields
   const auto& B_c = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("cell", true);
   const auto& B_n = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
+  const auto& B_max = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("cmax", true);
+
   auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_).ViewComponent("cell", true);
   auto& vel_c = *S_->GetW<CompositeVector>(velocity_key_, passwd_).ViewComponent("cell", true);
   auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_).ViewComponent("face", true);
@@ -95,12 +97,46 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   }
 
   // limited reconstructions using boundary data
+  // total depth
   auto tmp1 = S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   total_depth_grad_->Compute(tmp1);
   if (use_limiter_)
     limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
   total_depth_grad_->data()->ScatterMasterToGhosted("cell");
   
+  // additional depth-positivity correction limiting for fully flooded cells
+  auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
+  
+  for (int c = 0; c < ncells_wghost; ++c ) {
+    Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
+    mesh_->cell_get_nodes(c, &cnodes);
+    
+    // calculate maximum bathymetry value on cell nodes
+    double Bmax = 0.0;
+    for (int i = 0; i < cnodes.size(); ++i) {
+      Bmax = std::max(B_n[0][cnodes[i]], Bmax);
+    }
+    
+    // check if cell is fully flooded and proceed with limiting
+    if ((ht_c[0][c] > Bmax) && (ht_c[0][c] - B_c[0][c] > 0.0)) {
+      Amanzi::AmanziMesh::Entity_ID_List cfaces;
+      mesh_->cell_get_faces(c, &cfaces);
+
+      double alpha = 1.0; // limiter value
+      for (int f = 0; f < cfaces.size(); ++f) {
+        const auto& xf = mesh_->face_centroid(cfaces[f]);
+        double ht_rec = total_depth_grad_->getValue(c, xf);
+        if (ht_rec - BathymetryEdgeValue(cfaces[f], B_n) < 0.0) {
+          alpha = std::min(alpha, cfl_positivity_ * (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (ht_rec - ht_c[0][c]));
+        }
+      }
+      
+      ht_grad[0][c] *= alpha;
+      ht_grad[1][c] *= alpha;
+    }
+  }
+  
+  // flux
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
   if (use_limiter_)
@@ -154,7 +190,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
     normal /= farea;
 
-    double ht_rec = TotalDepthEdgeValue(c1, f, ht_c[0][c1], B_c[0][c1], B_n);
+    double ht_rec = TotalDepthEdgeValue(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
 
     double B_rec = BathymetryEdgeValue(f, B_n);
     
@@ -190,7 +226,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         UR = UL;
       }
     } else {
-      ht_rec = TotalDepthEdgeValue(c2, f, ht_c[0][c2], B_c[0][c2], B_n);
+      ht_rec = TotalDepthEdgeValue(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
 
       h_rec = ht_rec - B_rec;
       ierr = ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
@@ -256,7 +292,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     U[1] = q_temp[0][c];
     U[2] = q_temp[1][c];
 
-    S = NumericalSource(c, U[0] + B_c[0][c], B_c[0][c], B_n);
+    S = NumericalSource(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n);
 
     h = h_c_tmp[0][c] + (S[0] + ext_S_cell[c]);
     qx = q_c_tmp[0][c] + S[1];

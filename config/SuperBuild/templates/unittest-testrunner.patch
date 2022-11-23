@@ -1,0 +1,13 @@
+diff -Naur unittest-cpp-2.0.0-old/tests/TestTestRunner.cpp unittest-cpp-2.0.0-new/tests/TestTestRunner.cpp
+--- unittest-cpp-2.0.0-old/tests/TestTestRunner.cpp	2017-07-08 09:06:47.000000000 -0600
++++ unittest-cpp-2.0.0-new/tests/TestTestRunner.cpp	2022-11-08 13:30:02.144061000 -0700
+@@ -60,8 +60,8 @@
+          return result;
+       }
+ 
+-      TestRunner runner;
+       RecordingReporter reporter;
++      TestRunner runner;
+    };
+ 
+    struct TestRunnerFixture : public FixtureBase

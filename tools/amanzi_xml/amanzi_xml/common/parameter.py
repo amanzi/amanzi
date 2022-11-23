@@ -10,7 +10,6 @@ def _valid_parameter_from_string(ptype, value):
         try:
             retval = float(value)
         except ValueError:
-            
             raise RuntimeError("Parameter of type double with invalid value \"%s\""%str(value))
 
     elif ptype == "int":
@@ -112,10 +111,18 @@ class Parameter(base.TeuchosBaseXML):
         self.text = ""
         self.tail = "\n" + " "*ntabs*base._tabsize
 
+    def getName(self):
+        """Get the name.  Maintained for interface consistency"""
+        return self.get('name')
+        
     def setName(self, name):
         """Set the name.  Maintained for interface consistency"""
         self.set('name', name)
         
+    def getType(self):
+        """Get the type string.  Maintained for interface consistency"""
+        return self.get('type')
+
     def setType(self, ptype):
         """Set the type.  This invalidates any current value!"""
         if ptype in _valid_parameter_types:

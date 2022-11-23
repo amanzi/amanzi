@@ -141,9 +141,12 @@ void Richards_PK::Setup()
 
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid"); 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid"); 
+  mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid"); 
  
   relperm_key_ = Keys::getKey(domain_, "relative_permeability"); 
   alpha_key_ = Keys::getKey(domain_, "alpha_coef"); 
+
+  temperature_key_ = Keys::getKey(domain_, "temperature"); 
 
   // set up the base class 
   key_ = pressure_key_;
@@ -327,20 +330,15 @@ void Richards_PK::Setup()
       ->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
-    double rho = glist_->sublist("state").sublist("initial conditions")
-                        .sublist("const_fluid_density").get<double>("value");
-    double n_l = rho / CommonDefs::MOLAR_MASS_H2O;
-
-    std::vector<std::string> components({ "cell", "boundary_face" });
-    Teuchos::ParameterList& eval = S_->FEList().sublist(mol_density_liquid_key_);
-    eval.sublist("function").sublist("DOMAIN")
-        .set<std::string>("region", "All")
-        .set<Teuchos::Array<std::string> >("components", components)
-        .sublist("function").sublist("function-constant")
-        .set<double>("value", n_l);
-    eval.set<std::string>("evaluator type", "independent variable");
-
     S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
+  }
+
+  if (!S_->HasRecord(mass_density_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT, mass_density_liquid_key_)
+      .SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+    S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
   }
   
   // -- saturation
@@ -436,6 +434,17 @@ void Richards_PK::Setup()
 
     auto eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S_->SetEvaluator(darcy_velocity_key_, Tags::DEFAULT, eval);
+  }
+
+  // -- temperature for EOSs
+  if (!S_->HasRecord(temperature_key_)) {
+    auto cvs = S_->GetRecordSetW(pressure_key_).GetFactory<CV_t, CVS_t>();
+    *S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true) = cvs;
+  }
+
+  if (!S_->HasEvaluator(temperature_key_, Tags::DEFAULT)) {
+    AddDefaultIndependentEvaluator_(temperature_key_, Tags::DEFAULT, 298.15);
   }
 
   // Require additional components for the existing fields
@@ -555,6 +564,8 @@ void Richards_PK::Initialize()
     oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
   }
 
+  // auto rho_cv = S_->GetPtr<CV_t>(mass_density_liquid, Tags::DEFAULT);
+
   Operators::PDE_DiffusionFactory opfactory(oplist_matrix, mesh_);
   opfactory.SetConstantGravitationalTerm(gravity_, rho_);
 
@@ -646,6 +657,12 @@ void Richards_PK::Initialize()
 
   // Initialize matrix and preconditioner operators.
   // -- molar density requires to rescale gravity later.
+  //    make an evaluator for alpha_upwind? FIXME
+  if (!flow_on_manifold_) {
+    auto& alpha = S_->GetW<CompositeVector>(alpha_key_, Tags::DEFAULT, alpha_key_);
+    *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
+  }
+
   op_matrix_->Init();
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
@@ -745,7 +762,9 @@ void Richards_PK::Initialize()
   }
 
   // Subspace entering: re-initialize lambdas.
-  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
+  if (ti_list_->isSublist("pressure-lambda constraints") &&
+      solution->HasComponent("face") &&
+      !flow_on_manifold_) {
     solver_name_constraint_ = ti_list_->sublist("pressure-lambda constraints").get<std::string>("linear solver");
 
     if (S_->get_position() == Amanzi::TIME_PERIOD_START) {
@@ -816,8 +835,9 @@ void Richards_PK::InitializeFields_()
 
   InitializeFieldFromField_(prev_saturation_liquid_key_, saturation_liquid_key_, true);
   InitializeFieldFromField_(prev_water_storage_key_, water_storage_key_, true);
+  InitializeFieldFromField_(prev_aperture_key_, aperture_key_, true);
 
-  // set matrix fields assuming presure equilibrium
+  // set matrix fields assuming pressure equilibrium
   // -- pressure
   if (S_->HasRecord(pressure_msp_key_)) {
     // if (!S_->GetField(pressure_msp_key_, passwd_)->initialized()) {
@@ -845,30 +865,6 @@ void Richards_PK::InitializeFields_()
   }
 
   InitializeFieldFromField_(prev_water_storage_msp_key_, water_storage_msp_key_, false);
-}
-
-
-/* ****************************************************************
-* Auxiliary initialization technique.
-**************************************************************** */
-void Richards_PK::InitializeFieldFromField_(
-    const std::string& field0, const std::string& field1, bool call_evaluator)
-{
-  if (S_->HasRecord(field0)) {
-    if (!S_->GetRecord(field0).initialized()) {
-      if (call_evaluator)
-          S_->GetEvaluator(field1).Update(*S_, passwd_);
-
-      const auto& f1 = S_->Get<CV_t>(field1);
-      auto& f0 = S_->GetW<CV_t>(field0, passwd_);
-      f0 = f1;
-
-      S_->GetRecordW(field0, passwd_).set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
-    }
-  }
 }
 
 
@@ -935,6 +931,15 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   ms_calls_ = 0;
 
   // save a copy of primary and conservative fields
+  std::vector<std::string> fields;
+  if (flow_on_manifold_) {
+    fields.push_back(prev_aperture_key_);
+  }
+
+  StateArchive archive(S_, vo_);
+  archive.Add(fields, {}, {}, Tags::DEFAULT, name());
+  archive.Swap("");
+
   std::map<std::string, CompositeVector> copies;
   copies.emplace(pressure_key_, S_->Get<CV_t>(pressure_key_, Tags::DEFAULT));
 
@@ -998,6 +1003,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "Reverted field \"" << it->first << "\"" << std::endl;
     }
+    archive.Restore("");
     pressure_eval_->SetChanged();
 
     return failed;

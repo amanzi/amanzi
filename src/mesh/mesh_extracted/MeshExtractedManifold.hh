@@ -236,6 +236,9 @@ class MeshExtractedManifold : public Mesh {
   std::map<Entity_ID, int> EnforceOneLayerOfGhosts_(const std::string& setname, Entity_kind kind,
                                                     Entity_ID_List* setents) const;
 
+  // generic algorihm does not work on manifold
+  bool PointInCell_(const AmanziGeometry::Point& xp, int c) const;
+
   void PrintSets_() const;
 
  private: 

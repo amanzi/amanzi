@@ -151,7 +151,7 @@ set(petsc_mpi_compilers ${petsc_mpi_flags} ${petsc_compilers} ${petsc_compiler_f
 message(STATUS ">>> Build_PETSc -- MPI COMPILERS: ${petsc_mpi_compilers}")
 
 # --- Set the name of the patch
-set(PETSc_patch_file petsc-cmake.patch petsc-duplicate-libmpi.patch petsc-py39-isAlive.patch)
+set(PETSc_patch_file petsc-cmake.patch petsc-duplicate-libmpi.patch)
 # --- Configure the bash patch script
 set(PETSc_sh_patch ${PETSc_prefix_dir}/petsc-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.sh.in
@@ -188,8 +188,9 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                               --with-ssl=0
                               --with-debugging=${petsc_debug_flag}
                               --without-valgrind
-                              --with-cxx-dialect=C++11
+                              --with-cxx-dialect=C++14
                               --with-hdf5-dir=${TPL_INSTALL_PREFIX}
+                              --with-zlib-dir=${TPL_INSTALL_PREFIX}
                               ${petsc_lapack_option}
                               ${petsc_blas_option}
                               ${petsc_package_flags}

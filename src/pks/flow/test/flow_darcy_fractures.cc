@@ -76,6 +76,7 @@ TEST(DARCY_TWO_FRACTURES) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(mesh);
 
+  std::string passwd("");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
   DPK->Setup();
@@ -86,17 +87,17 @@ TEST(DARCY_TWO_FRACTURES) {
 
   // modify the default state
   // -- storativity
-  S->GetW<CompositeVector>("specific_storage", Tags::DEFAULT, "flow").PutScalar(2.0);
-  S->GetRecordW("specific_storage", Tags::DEFAULT, "flow").set_initialized();
+  S->GetW<CompositeVector>("specific_storage", Tags::DEFAULT, passwd).PutScalar(2.0);
+  S->GetRecordW("specific_storage", Tags::DEFAULT, passwd).set_initialized();
 
   // create the initial pressure function
-  auto& p = *S->GetW<CompositeVector>("pressure", Tags::DEFAULT, "flow").ViewComponent("cell");
+  auto& p = *S->GetW<CompositeVector>("pressure", Tags::DEFAULT, passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
     p[0][c] = xc[0] * (xc[1] + 2.0);
   }
-  S->GetRecordW("pressure", "flow").set_initialized();
+  S->GetRecordW("pressure", passwd).set_initialized();
 
   // initialize the Darcy process kernel
   DPK->Initialize();
