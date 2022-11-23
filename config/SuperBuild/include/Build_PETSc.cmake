@@ -188,7 +188,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                               --with-ssl=0
                               --with-debugging=${petsc_debug_flag}
                               --without-valgrind
-                              --with-cxx-dialect=C++11
+                              --with-cxx-dialect=C++14
                               --with-hdf5-dir=${TPL_INSTALL_PREFIX}
                               --with-zlib-dir=${TPL_INSTALL_PREFIX}
                               ${petsc_lapack_option}
