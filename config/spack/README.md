@@ -1,31 +1,31 @@
-Amanzi/ATS Spack package 
+Amanzi-ATS Spack package 
 
 **DISCLAIMER**: The Amanzi/ATS team is striving to provide the most exaustive directions on how to build Amanzi/ATS with Spack but please be aware of the existance of some limitations due to instabilities in Spack itself, and complications with certain configurations. Generally, the Spack build of Amanzi/ATS has been successful on all platforms listed here, although there will be exceptions. Our team is continuosly working to improve the present Spack package and the installation instructuctions, particularly with machine specific information. Please check this documentation periodically on the master branch for the latest updates.
 
-# Clone Amanzi
-
-Clone Amanzi on your machine:
-
-```
-git clone --recursive git@github.com:amanzi/amanzi
-cd amanzi
-git checkout spack
-git pull
-```
-
 # Clone Spack 
-Download Spack on your machine. Note that we are using a specific version/commit on the develop branch:
+Download Spack on your machine
 ```
-git clone git@github.com:spack/spack
+git clone https://github.com/spack/spack
+```
+
+Note that Spack is improving rapidly, and with our large number of TPLs we've found using a specific version/commit on the develop branch to be more robust and consistent.  We encourage you to try this commit for your builds,   
+```
+cd spack
 git reset --hard 45043bcdf5b383af573375300f2ba6b28210e3c6 
 ```
 
-Add Spack in your environment (and maybe your bash_profile script.):
+Add Spack in your environment (and consider adding it to your shell initialization (e.g., to .bash_profile)):
 ```
 source ${PATH_TO_SPACK}/spack/share/spack/setup-env.sh
 ```
+# Clone Amanzi
 
-Then add the Amanzi repo to the list of Spack repos:
+Clone Amanzi on your machine:
+```
+git clone --recursive https://github.com/amanzi/amanzi
+```
+
+Change to the _amanzi_ subdirectory, and then add the Amanzi repo to the list of Spack repos:
 
 ```
 spack repo add amanzi/config/spack
@@ -37,7 +37,7 @@ The command above will add repositories for the following nine packages:
 alquimia	amanzi		ascemio		ccse		crunchtope	mstk		petsc		pflotran	trilinos
 ```
 
-Note that packages such as alquimia, petsc, pflotran and trilinos are obtained importing the original spackages and then augmented with Amanzi-specific requirements such as patches, additional dependencies, or additional compiler flags.
+Note that packages such as alquimia, petsc, pflotran and trilinos are maintained by importing the original spack packages and then augmenting them with Amanzi-specific requirements such as patches, additional dependencies, or additional compiler flags.
 
 # Quick start Amanzi build with Spack
 
