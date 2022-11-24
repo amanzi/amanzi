@@ -1,12 +1,25 @@
 /*
-  Process Kernels 
+  Process Kernels
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Daniil Svyatskiy
+*/
+//! A domain function based on a CompositeVector + Evaluator.
+/*!
+
+This leverages the Arcos DAG to evaluate a user-provided field and use that in
+the domain function.
+
+.. _domain-function-field-spec
+.. admonition:: domain-function-field-spec
+
+   * `"field key`" ``[string]`` Field used in the domain function.
+   * `"component`" ``[string]`` **cell** Component of the field.
+
 */
 
 #ifndef AMANZI_PK_DOMAIN_FUNCTION_FIELD_HH_
@@ -29,7 +42,7 @@ namespace Amanzi {
 
 template <class FunctionBase>
 class PK_DomainFunctionField : public FunctionBase{
-                             
+
  public:
   PK_DomainFunctionField(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                          const Teuchos::RCP<State>& S,
@@ -64,7 +77,7 @@ class PK_DomainFunctionField : public FunctionBase{
 
  protected:
   using FunctionBase::value_;
-  using FunctionBase::keyword_;  
+  using FunctionBase::keyword_;
   Teuchos::RCP<State> S_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
@@ -93,13 +106,13 @@ void PK_DomainFunctionField<FunctionBase>::Init(
   if (plist.isParameter("submodel"))
     submodel_ = plist.get<std::string>("submodel");
   std::vector<std::string> regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
-  
+
   // Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
     Teuchos::ParameterList flist = plist.sublist(keyword);
     field_key_ = flist.get<std::string>("field key");
     tag_ = Keys::readTag(flist, "tag");
-    component_key_ = flist.get<std::string>("component", "cell");;    
+    component_key_ = flist.get<std::string>("component", "cell");;
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "error in source sublist : " << msg.what();
@@ -124,35 +137,28 @@ void PK_DomainFunctionField<FunctionBase>::Init(
       Exceptions::amanzi_throw(msg);
     }
   }
-
-
-  
 }
 
 
 /* ******************************************************************
-* Compute and distribute the result by Simple.
+* Update the field and stick it in the value map.
 ****************************************************************** */
 template <class FunctionBase>
 void PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
 {
-  // create the input tuple (time + space)
-  int dim = mesh_->space_dimension();
-
   if (S_->HasEvaluator(field_key_, tag_)){
-    S_->GetEvaluator(field_key_, tag_).Update(*S_, field_key_);    
-  }  
-  
+    S_->GetEvaluator(field_key_, tag_).Update(*S_, field_key_);
+  }
+
   const auto& field_vec = *S_->Get<CompositeVector>(field_key_, tag_).ViewComponent("cell", false);
-  
-  int nvalues = field_vec.NumVectors();  
-  std::vector<double> val_vec(nvalues);  
+  int nvalues = field_vec.NumVectors();
+  std::vector<double> val_vec(nvalues);
 
   for (auto c : *entity_ids_) {
-      for (int i = 0; i < nvalues; ++i) {
-        val_vec[i] = field_vec[i][c];
-      }
-      value_[c] = val_vec;
+    for (int i = 0; i < nvalues; ++i) {
+      val_vec[i] = field_vec[i][c];
+    }
+    value_[c] = val_vec;
   }
 }
 

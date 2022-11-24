@@ -78,7 +78,6 @@ set(mpc_inc_files
   CycleDriver.hh
   FlexibleObservations.hh
   WalkaboutCheckpoint.hh
-#  MeshInfo.hh
   ObservableAmanzi.hh
   ObservableFactory.hh
   ObservableAqueous.hh 
@@ -92,7 +91,6 @@ add_amanzi_library(mpc
                    SOURCE CycleDriver.cc 
                           FlexibleObservations.cc WalkaboutCheckpoint.cc 
                           ObservableFactory.cc
-#                          MeshInfo.cc
                           ObservableAqueous.cc ObservableSolute.cc
                    HEADERS ${mpc_inc_files}
                    LINK_LIBS time_integration solvers output mpc_tree state mesh dbg
