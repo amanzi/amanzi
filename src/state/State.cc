@@ -552,7 +552,7 @@ State::Setup()
 
         if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
           Teuchos::OSTab tab1 = vo_->getOSTab();
-          *vo_->os() << "ensure evaluators: \"" << e.first << "\" @ \"" << r.first << "\""
+          *vo_->os() << "verify evaluator (DAG): \"" << e.first << "\" @ \"" << r.first << "\""
                      << std::endl;
         }
         r.second->EnsureEvaluators(*this);
@@ -563,7 +563,14 @@ State::Setup()
   // Second pass calls EnsureCompatibility, which checks data consistency.
   // This pass does not modify the graph.
   for (auto& e : evaluators_) {
-    for (auto& r : e.second) { r.second->EnsureCompatibility(*this); }
+    for (auto& r : e.second) {
+      if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+        Teuchos::OSTab tab1 = vo_->getOSTab();
+        *vo_->os() << "verify evaluator (compatibility): \"" << e.first << "\" @ \"" << r.first
+                   << "\"" << std::endl;
+      }
+      r.second->EnsureCompatibility(*this);
+    }
   }
 
   // Create the data for all fields.

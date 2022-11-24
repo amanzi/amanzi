@@ -118,6 +118,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   virtual void ModifyEvaluators(int neqn);
 
   Teuchos::RCP<TreeVector> soln() { return soln_; }
+  Teuchos::RCP<Operators::TreeOperator> op_tree_pc() { return op_preconditioner_; }
 
  protected:
   void InitializeFieldFromField_(const std::string& field0,

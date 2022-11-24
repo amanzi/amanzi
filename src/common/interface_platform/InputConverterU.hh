@@ -39,7 +39,6 @@ class InputConverterU : public InputConverter {
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
       flow_single_phase_(false),
       compressibility_(false),
-      fractures_(false),
       mesh_rectangular_(false),
       use_transport_porosity_(false),
       use_transport_dispersion_(true),
@@ -60,7 +59,6 @@ class InputConverterU : public InputConverter {
       multiphase_(false),
       flow_single_phase_(false),
       compressibility_(false),
-      fractures_(false),
       mesh_rectangular_(false),
       use_transport_porosity_(false),
       use_transport_dispersion_(true),
@@ -87,6 +85,7 @@ class InputConverterU : public InputConverter {
   void VerifyXMLStructure_();
   void ParseSolutes_();
   void ParseModelDescription_();
+  void ParseFractureNetwork_();
   void ModifyDefaultPhysicalConstants_();
 
   Teuchos::ParameterList TranslateVerbosity_();
@@ -129,6 +128,10 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateSources_(const std::string& domain, const std::string& pkname);
 
   // -- state
+  void TranslateCommonContinuumFields_(const std::string& domain,
+                                       Teuchos::ParameterList& out_ic,
+                                       Teuchos::ParameterList& out_ev);
+
   void TranslateFieldEvaluator_(DOMNode* node,
                                 const std::string& field,
                                 const std::string& unit,
@@ -215,7 +218,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateShallowWaterBCs_();
 
   // -- mpc pks
-  bool coupled_flow_, coupled_transport_, coupled_energy_;
+  bool coupled_flow_, coupled_transport_, coupled_energy_, coupled_multiphase_;
   std::vector<std::string> fracture_regions_, surface_regions_;
 
   void ProcessMacros_(const std::string& prefix,
@@ -277,7 +280,7 @@ class InputConverterU : public InputConverter {
   // global flow constants
   std::string flow_model_; // global value
   bool flow_single_phase_; // runtime value
-  bool compressibility_, fractures_;
+  bool compressibility_;
   double rho_;
 
   // global mesh data

@@ -86,6 +86,7 @@
 
   <ParameterList name="PKs"> <!-- no shift -->
   <ParameterList name="transient:multiphase">
+    <Parameter name="domain name" type="string" value="domain"/>
     <Parameter name="Jacobian type" type="string" value="analytic"/>
     <Parameter name="linear solver" type="string" value="GMRES for Newton-0"/>
     <Parameter name="preconditioner" type="string" value="Euclid"/>
@@ -545,10 +546,11 @@
 
       <ParameterList name="molar_density_liquid">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="pressure key" type="string" value="pressure_liquid"/>
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="5.54083558451234276e+04"/>

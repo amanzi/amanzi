@@ -58,12 +58,7 @@ Multiphase_PK::Multiphase_PK(Teuchos::ParameterList& pk_tree,
                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
                              const Teuchos::RCP<State>& S,
                              const Teuchos::RCP<TreeVector>& soln)
-  : passwd_("multiphase"),
-    soln_(soln),
-    num_phases_(2),
-    op_pc_assembled_(false),
-    glist_(glist),
-    num_itrs_(0)
+  : passwd_(""), soln_(soln), num_phases_(2), op_pc_assembled_(false), glist_(glist), num_itrs_(0)
 {
   S_ = S;
 
@@ -82,6 +77,11 @@ Multiphase_PK::Multiphase_PK(Teuchos::ParameterList& pk_tree,
 
   // computational domain
   domain_ = mp_list_->template get<std::string>("domain name", "domain");
+
+  Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object") = mp_list_->sublist("verbose object");
+  std::string ioname = "MultiphasePK" + ((domain_ != "domain") ? "-" + domain_ : "");
+  vo_ = Teuchos::rcp(new VerboseObject(ioname, vlist));
 }
 
 
@@ -279,6 +279,14 @@ Multiphase_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+
+  // densities
+  if (!S_->HasRecord(mass_density_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT, mass_density_liquid_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // viscosities
@@ -573,11 +581,6 @@ Multiphase_PK::Initialize()
   kH_ = aux_list.get<Teuchos::Array<double>>("Henry dimensionless constants").toVector();
 
   mol_mass_H2O_ = mp_list_->get<double>("molar mass of water");
-
-  // verbose object must go first to support initialization reports
-  Teuchos::ParameterList vlist;
-  vlist.sublist("verbose object") = mp_list_->sublist("verbose object");
-  vo_ = Teuchos::rcp(new VerboseObject("Multiphase_PK", vlist));
 
   // fundamental physical quantities
   gravity_ = S_->Get<AmanziGeometry::Point>("gravity");
@@ -983,8 +986,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
   std::string name, primary_name;
   std::vector<std::string> names;
 
-  name = slist.get<std::string>("primary unknown");
-  primary_name = Keys::getKey(domain_, name);
+  primary_name = slist.get<std::string>("primary unknown");
   soln_names_.push_back(primary_name);
 
   for (int i = 0; i < eqn_num; ++i) {
@@ -1003,8 +1005,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
 
     if (slist.isParameter("advection liquid")) {
       names = slist.get<Teuchos::Array<std::string>>("advection liquid").toVector();
-      eqns_[n].advection.push_back(
-        std::make_pair(Keys::getKey(domain_, names[0]), Keys::getKey(domain_, names[1])));
+      eqns_[n].advection.push_back(std::make_pair(names[0], names[1]));
       eval_flattened_.push_back(names[0]);
       secondary_names_.insert(names[1]);
     } else {
@@ -1013,8 +1014,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
 
     if (slist.isParameter("advection gas")) {
       names = slist.get<Teuchos::Array<std::string>>("advection gas").toVector();
-      eqns_[n].advection.push_back(
-        std::make_pair(Keys::getKey(domain_, names[0]), Keys::getKey(domain_, names[1])));
+      eqns_[n].advection.push_back(std::make_pair(names[0], names[1]));
       eval_flattened_.push_back(names[0]);
       secondary_names_.insert(names[1]);
     } else {
@@ -1027,8 +1027,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
 
     if (slist.isParameter("diffusion liquid")) {
       names = slist.get<Teuchos::Array<std::string>>("diffusion liquid").toVector();
-      eqns_[n].diffusion.push_back(
-        std::make_pair(Keys::getKey(domain_, names[0]), Keys::getKey(domain_, names[1])));
+      eqns_[n].diffusion.push_back(std::make_pair(names[0], names[1]));
       eval_flattened_.push_back(names[0]);
       secondary_names_.insert(names[1]);
     } else {
@@ -1037,8 +1036,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
 
     if (slist.isParameter("diffusion gas")) {
       names = slist.get<Teuchos::Array<std::string>>("diffusion gas").toVector();
-      eqns_[n].diffusion.push_back(
-        std::make_pair(Keys::getKey(domain_, names[0]), Keys::getKey(domain_, names[1])));
+      eqns_[n].diffusion.push_back(std::make_pair(names[0], names[1]));
       eval_flattened_.push_back(names[0]);
       secondary_names_.insert(names[1]);
     } else {
@@ -1048,15 +1046,14 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
     // storage
     if (slist.isParameter("accumulation")) {
       name = slist.get<std::string>("accumulation");
-      eqns_[n].storage = Keys::getKey(domain_, name);
+      eqns_[n].storage = name;
       eval_flattened_.push_back(name);
     }
 
     // constraint
     if (slist.isParameter("ncp evaluators")) {
       names = slist.get<Teuchos::Array<std::string>>("ncp evaluators").toVector();
-      eqns_[n].constraint =
-        std::make_pair(Keys::getKey(domain_, names[0]), Keys::getKey(domain_, names[1]));
+      eqns_[n].constraint = std::make_pair(names[0], names[1]);
       eval_flattened_.push_back(names[0]);
       eval_flattened_.push_back(names[1]);
     }

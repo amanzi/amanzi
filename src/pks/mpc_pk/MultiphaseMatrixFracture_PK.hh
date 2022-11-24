@@ -9,11 +9,12 @@
   Authors: Konstantin Lipnikov
            Daniil Svyatskiy
 
-  Process kernel that couples Darcy flow in matrix and fracture network.
+  Process kernel that couples multiphase flow and transport in matrix 
+  and fracture network.
 */
 
-#ifndef AMANZI_DARCY_MATRIX_FRACTURE_PK_HH_
-#define AMANZI_DARCY_MATRIX_FRACTURE_PK_HH_
+#ifndef AMANZI_MULTIPHASE_MATRIX_FRACTURE_PK_HH_
+#define AMANZI_MULTIPHASE_MATRIX_FRACTURE_PK_HH_
 
 #include "Teuchos_RCP.hpp"
 
@@ -26,12 +27,12 @@
 
 namespace Amanzi {
 
-class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
+class MultiphaseMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
  public:
-  FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
-                        const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                        const Teuchos::RCP<State>& S,
-                        const Teuchos::RCP<TreeVector>& soln);
+  MultiphaseMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
+                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                              const Teuchos::RCP<State>& S,
+                              const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
   virtual void Setup() override;
@@ -57,7 +58,7 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   virtual int
   ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
 
-  std::string name() override { return "flow matrix-fracture"; }
+  std::string name() override { return "multiphase matrix-fracture"; }
 
   // virtual void CalculateDiagnostics() {};
   Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
@@ -66,12 +67,10 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_matrix_, mesh_fracture_;
-
-  Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
   // factory registration
-  static RegisteredPKFactory<FlowMatrixFracture_PK> reg_;
+  static RegisteredPKFactory<MultiphaseMatrixFracture_PK> reg_;
 };
 
 } // namespace Amanzi

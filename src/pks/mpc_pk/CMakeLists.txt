@@ -31,6 +31,7 @@ include_directories(${GEOCHEM_SOURCE_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
+include_directories(${MULTIPHASE_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
@@ -65,6 +66,7 @@ if (ENABLE_AmanziPhysicsModule)
       FlowEnergy_PK.hh
       FlowEnergyMatrixFracture_PK.hh
       FlowMatrixFracture_PK.hh
+      MultiphaseMatrixFracture_PK.hh
       TransportMatrixFracture_PK.hh    
       TransportMatrixFractureImplicit_PK.hh
       FlowReactiveTransport_PK.hh
@@ -82,6 +84,7 @@ if (ENABLE_AmanziPhysicsModule)
       FlowEnergy_PK.cc
       FlowEnergyMatrixFracture_PK.cc
       FlowMatrixFracture_PK.cc
+      MultiphaseMatrixFracture_PK.cc
       TransportMatrixFracture_PK.cc        
       TransportMatrixFractureImplicit_PK.cc
       FlowReactiveTransport_PK.cc
@@ -90,7 +93,7 @@ if (ENABLE_AmanziPhysicsModule)
       ShallowWaterTransport_PK.cc
       SurfaceSubsurface_PK.cc)
 
-  set(mpc_tree_link_libs pks flow transport shallow_water time_integration data_structures state)
+  set(mpc_tree_link_libs pks flow transport multiphase shallow_water time_integration data_structures state)
 
 else()
 

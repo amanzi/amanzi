@@ -134,7 +134,7 @@ Mesh::cell_get_faces_and_bisectors(const Entity_ID cellid,
 {
   cell_get_faces(cellid, faceids, ordered);
 
-  AmanziGeometry::Point cc = cell_centroid(cellid);
+  const AmanziGeometry::Point& cc = cell_centroid(cellid);
   if (bisectors) {
     bisectors->resize(faceids->size());
     for (int i = 0; i != faceids->size(); ++i) {

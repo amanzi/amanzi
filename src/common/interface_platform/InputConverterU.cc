@@ -53,6 +53,7 @@ InputConverterU::Translate(int rank, int num_proc)
   ParseGeochemistry_();
   ModifyDefaultPhysicalConstants_();
   ParseModelDescription_();
+  ParseFractureNetwork_();
 
   out_list.set<bool>("Native Unstructured Input", "true");
 
@@ -132,7 +133,7 @@ InputConverterU::Translate(int rank, int num_proc)
     auto& out_ev = out_list.sublist("state").sublist("evaluators");
     if (!out_ev.isSublist("temperature")) {
       AddIndependentFieldEvaluator_(out_ev, "temperature", "All", "*", 298.15);
-      if (fractures_)
+      if (fracture_regions_.size() > 0)
         AddIndependentFieldEvaluator_(out_ev, "fracture-temperature", "All", "*", 298.15);
     }
   }
@@ -334,7 +335,7 @@ InputConverterU::ModifyDefaultPhysicalConstants_()
 
 
 /* ******************************************************************
-* Extract generic verbosity object for all sublists.
+* Extract model description
 ****************************************************************** */
 void
 InputConverterU::ParseModelDescription_()
@@ -358,6 +359,38 @@ InputConverterU::ParseModelDescription_()
   node = GetUniqueElementByTagsString_(node_list->item(0), "author", flag);
   if (flag && vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "AUTHOR: " << mm.transcode(node->getTextContent()) << std::endl;
+}
+
+
+/* ******************************************************************
+* Extract high-level info for fracture netwrok
+****************************************************************** */
+void
+InputConverterU::ParseFractureNetwork_()
+{
+  DOMNode* node;
+  DOMNodeList* children;
+
+  bool flag;
+  MemoryManager mm;
+
+  node = GetUniqueElementByTagsString_("fracture_network, materials", flag);
+  if (flag) {
+    children = node->getChildNodes();
+
+    for (int i = 0; i < children->getLength(); i++) {
+      DOMNode* inode = children->item(i);
+      if (DOMNode::ELEMENT_NODE != inode->getNodeType()) continue;
+
+      node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+      std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+
+      for (int n = 0; n < regions.size(); ++n) { fracture_regions_.push_back(regions[n]); }
+      fracture_regions_.erase(
+        SelectUniqueEntries(fracture_regions_.begin(), fracture_regions_.end()),
+        fracture_regions_.end());
+    }
+  }
 }
 
 
