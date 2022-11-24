@@ -68,14 +68,16 @@ MDM_Isotropic::MDM_Isotropic(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Isotropic tensor of rank 1.
 ****************************************************************** */
-WhetStone::Tensor MDM_Isotropic::mech_dispersion(
-    const AmanziGeometry::Point& u, int axi_symmetric, double s, double phi) const
+WhetStone::Tensor
+MDM_Isotropic::mech_dispersion(const AmanziGeometry::Point& u,
+                               int axi_symmetric,
+                               double s,
+                               double phi) const
 {
   WhetStone::Tensor D(dim_, 1);
   D(0, 0) = dispersivity_ ? alpha_ * s * phi * norm(u) : alpha_ * s * phi;
   return D;
 }
 
-}  // namespace Transport
-}  // namespace Amanzi
-
+} // namespace Transport
+} // namespace Amanzi

@@ -29,11 +29,14 @@
 
 class Analytic00b : public AnalyticBase {
  public:
-  Analytic00b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double gx, double gy, double gz, int order,
-              const Amanzi::AmanziGeometry::Point v = Amanzi::AmanziGeometry::Point(3)) :
-      AnalyticBase(mesh),
-      v_(v),
-      poly_(3, order) {
+  Analytic00b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+              double gx,
+              double gy,
+              double gz,
+              int order,
+              const Amanzi::AmanziGeometry::Point v = Amanzi::AmanziGeometry::Point(3))
+    : AnalyticBase(mesh), v_(v), poly_(3, order)
+  {
     poly_(0, 0) = 1.0;
 
     if (order > 0) {
@@ -43,38 +46,41 @@ class Analytic00b : public AnalyticBase {
     }
 
     grad_ = Gradient(poly_);
- 
+
     Amanzi::WhetStone::VectorPolynomial tmp(3, 3);
-    for (int i = 0; i < 3; ++i) {
-      tmp[i] = v_[i] * poly_;
-    }
+    for (int i = 0; i < 3; ++i) { tmp[i] = v_[i] * poly_; }
     rhs_ = Amanzi::WhetStone::Divergence(tmp) - poly_.Laplacian();
   }
-  ~Analytic00b() {};
+  ~Analytic00b(){};
 
-  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     Amanzi::WhetStone::Tensor K(3, 1);
     K(0, 0) = 1.0;
     return K;
   }
 
-  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
+  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const
+  {
     return poly_.Value(p);
   }
 
-  Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     Amanzi::AmanziGeometry::Point v(3);
     v[0] = -grad_[0].Value(p);
     v[1] = -grad_[1].Value(p);
     v[2] = -grad_[2].Value(p);
     return v;
   }
- 
-  Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+
+  Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     return -velocity_exact(p, t);
   }
 
-  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     return v_;
   }
 
@@ -87,4 +93,3 @@ class Analytic00b : public AnalyticBase {
 };
 
 #endif
-

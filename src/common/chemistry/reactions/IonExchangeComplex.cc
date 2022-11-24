@@ -69,14 +69,11 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-IonExchangeComplex::IonExchangeComplex(
-    const std::string& name, int id,
-    const Teuchos::ParameterList& plist,
-    const std::vector<Species>& primary_species)
-  : name_(name),
-    id_(id),
-    concentration_(0.0),
-    X_(0.0)
+IonExchangeComplex::IonExchangeComplex(const std::string& name,
+                                       int id,
+                                       const Teuchos::ParameterList& plist,
+                                       const std::vector<Species>& primary_species)
+  : name_(name), id_(id), concentration_(0.0), X_(0.0)
 {
   double coeff;
 
@@ -97,18 +94,18 @@ IonExchangeComplex::IonExchangeComplex(
 }
 
 
-void IonExchangeComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const
+void
+IonExchangeComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const
 {
   DisplayReaction(vo);
   std::stringstream message;
-  message << std::setw(40) << " "
-          << std::setw(10) << K()
-          << std::endl;
+  message << std::setw(40) << " " << std::setw(10) << K() << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void IonExchangeComplex::DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const
+void
+IonExchangeComplex::DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const
 {
   std::stringstream message;
   message << "    " << name() << " = " << primary_name() << std::endl;
@@ -116,27 +113,24 @@ void IonExchangeComplex::DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) c
 }
 
 
-void IonExchangeComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const
+void
+IonExchangeComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const
 {
   std::stringstream message;
-  message << std::setw(15) << "Name"
-          << std::setw(15) << "X"
-          << std::setw(15) << "Concentration"
+  message << std::setw(15) << "Name" << std::setw(15) << "X" << std::setw(15) << "Concentration"
           << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void IonExchangeComplex::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const
+void
+IonExchangeComplex::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const
 {
   std::stringstream message;
-  message << std::setw(15) << name()
-          << std::scientific << std::setprecision(5)
-          << std::setw(15) << X()
-          << std::setw(15) << concentration()
-          << std::endl;
+  message << std::setw(15) << name() << std::scientific << std::setprecision(5) << std::setw(15)
+          << X() << std::setw(15) << concentration() << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

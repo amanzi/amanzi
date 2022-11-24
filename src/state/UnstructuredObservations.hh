@@ -51,7 +51,6 @@ observed in this file.
 namespace Amanzi {
 
 class UnstructuredObservations : public IOEvent {
-
  public:
   UnstructuredObservations(Teuchos::ParameterList& obs_list);
 
@@ -86,7 +85,7 @@ class UnstructuredObservations : public IOEvent {
   std::unique_ptr<std::ofstream> fid_;
 };
 
-}
+} // namespace Amanzi
 
 
 #endif

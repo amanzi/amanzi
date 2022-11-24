@@ -19,25 +19,25 @@
 namespace Amanzi {
 namespace Utils {
 
-template<> 
+template <>
 Factory<Energy::TCM_TwoPhase>::map_type* Factory<Energy::TCM_TwoPhase>::map_;
 
-}  // namespace Utils
-}  // namespace Amanzi
+} // namespace Utils
+} // namespace Amanzi
 
 
 namespace Amanzi {
 namespace Energy {
 
 // linear interpolant of thermal conductivity.
-Utils::RegisteredFactory<TCM_TwoPhase,TCM_PetersLidard_TwoPhase>
-    TCM_PetersLidard_TwoPhase::factory_("two-phase Peters-Lidard");
+Utils::RegisteredFactory<TCM_TwoPhase, TCM_PetersLidard_TwoPhase>
+  TCM_PetersLidard_TwoPhase::factory_("two-phase Peters-Lidard");
 
 // simple model of two-phase thermal conductivity, based upon:
 // - Interpolation between saturated and dry conductivities via a Kersten number.
 // - Power-law Kersten number.
-Utils::RegisteredFactory<TCM_TwoPhase,TCM_WetDry_TwoPhase> TCM_WetDry_TwoPhase::factory_("two-phase wet/dry");
+Utils::RegisteredFactory<TCM_TwoPhase, TCM_WetDry_TwoPhase>
+  TCM_WetDry_TwoPhase::factory_("two-phase wet/dry");
 
-}  // namespace Energy
-}  // namespace Amanzi
-
+} // namespace Energy
+} // namespace Amanzi

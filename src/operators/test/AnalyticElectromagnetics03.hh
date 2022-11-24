@@ -18,11 +18,12 @@
 
 class AnalyticElectromagnetics03 : public AnalyticElectromagneticsBase {
  public:
-  AnalyticElectromagnetics03(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
-      AnalyticElectromagneticsBase(mesh) {};
-  ~AnalyticElectromagnetics03() {};
+  AnalyticElectromagnetics03(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : AnalyticElectromagneticsBase(mesh){};
+  ~AnalyticElectromagnetics03(){};
 
-  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     Amanzi::WhetStone::Tensor K(3, 2);
     K(0, 0) = 1.0;
     K(1, 1) = 2.0;
@@ -33,18 +34,21 @@ class AnalyticElectromagnetics03 : public AnalyticElectromagneticsBase {
     return K;
   }
 
-  Amanzi::AmanziGeometry::Point electric_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point electric_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     double x = p[0];
     double y = p[1];
     double z = p[2];
     return Amanzi::AmanziGeometry::Point(z - y + t, x - z + t, y - x + t);
   }
 
-  Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     return Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0);
   }
 
-  Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     return Amanzi::AmanziGeometry::Point(1.0, 1.0, 1.0);
   }
 };

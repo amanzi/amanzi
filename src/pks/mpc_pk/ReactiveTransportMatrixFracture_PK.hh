@@ -32,13 +32,12 @@ namespace Amanzi {
 
 class ReactiveTransportMatrixFracture_PK : public PK_MPCSubcycled {
  public:
-  ReactiveTransportMatrixFracture_PK(
-      Teuchos::ParameterList& pk_tree,
-      const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-      const Teuchos::RCP<State>& S,
-      const Teuchos::RCP<TreeVector>& soln);
+  ReactiveTransportMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
+                                     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                                     const Teuchos::RCP<State>& S,
+                                     const Teuchos::RCP<TreeVector>& soln);
 
-  ~ReactiveTransportMatrixFracture_PK() {};
+  ~ReactiveTransportMatrixFracture_PK(){};
 
   // PK methods
   // -- dt is the minimum of the sub pks
@@ -46,14 +45,14 @@ class ReactiveTransportMatrixFracture_PK : public PK_MPCSubcycled {
   virtual void set_dt(double dt) override;
 
   virtual void Setup() override;
-  virtual void Initialize() override;  
+  virtual void Initialize() override;
 
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
 
-  std::string name() override { return "reactive transport matrix fracture";}
+  std::string name() override { return "reactive transport matrix fracture"; }
 
- protected:  
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
   Teuchos::RCP<ChemistryMatrixFracture_PK> coupled_chemistry_pk_;
@@ -61,10 +60,10 @@ class ReactiveTransportMatrixFracture_PK : public PK_MPCSubcycled {
   Key tcc_matrix_key_, tcc_fracture_key_;
 
  private:
-  bool subcycling_; 
+  bool subcycling_;
 
   static RegisteredPKFactory<ReactiveTransportMatrixFracture_PK> reg_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 #endif

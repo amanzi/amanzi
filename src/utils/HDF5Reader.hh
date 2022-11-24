@@ -31,12 +31,11 @@ class HDF5Reader {
 
   void ReadData(std::string varname, std::vector<double>& vec);
   void ReadData(std::string varname, std::vector<int>& vec);
-  void ReadMatData(std::string varname, Epetra_SerialDenseMatrix &mat);
+  void ReadMatData(std::string varname, Epetra_SerialDenseMatrix& mat);
 
  protected:
   std::string filename_;
   hid_t file_;
-
 };
 
 } // namespace Amanzi

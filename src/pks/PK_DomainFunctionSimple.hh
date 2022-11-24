@@ -28,23 +28,18 @@
 namespace Amanzi {
 
 template <class FunctionBase>
-class PK_DomainFunctionSimple : public FunctionBase,
-                                public Functions::UniqueMeshFunction {
+class PK_DomainFunctionSimple : public FunctionBase, public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionSimple(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                          AmanziMesh::Entity_kind kind) :
-      UniqueMeshFunction(mesh),
-      kind_(kind) {};
+                          AmanziMesh::Entity_kind kind)
+    : UniqueMeshFunction(mesh), kind_(kind){};
 
   PK_DomainFunctionSimple(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           const Teuchos::ParameterList& plist,
-                          AmanziMesh::Entity_kind kind) :
-    FunctionBase(plist),
-    UniqueMeshFunction(mesh),
-    kind_(kind) {
-  };
+                          AmanziMesh::Entity_kind kind)
+    : FunctionBase(plist), UniqueMeshFunction(mesh), kind_(kind){};
 
-  ~PK_DomainFunctionSimple() {};
+  ~PK_DomainFunctionSimple(){};
 
   // member functions
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
@@ -67,15 +62,15 @@ class PK_DomainFunctionSimple : public FunctionBase,
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionSimple<FunctionBase>::Init(
-    const Teuchos::ParameterList& plist, const std::string& keyword)
+void
+PK_DomainFunctionSimple<FunctionBase>::Init(const Teuchos::ParameterList& plist,
+                                            const std::string& keyword)
 {
   keyword_ = keyword;
 
   submodel_ = "rate";
-  if (plist.isParameter("submodel"))
-    submodel_ = plist.get<std::string>("submodel");
-  std::vector<std::string> regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
+  if (plist.isParameter("submodel")) submodel_ = plist.get<std::string>("submodel");
+  std::vector<std::string> regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();
 
   Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
@@ -97,7 +92,8 @@ void PK_DomainFunctionSimple<FunctionBase>::Init(
 * Compute and distribute the result by Simple.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
+void
+PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
 {
   if (unique_specs_.size() == 0) return;
 
@@ -106,7 +102,8 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
   int dim = mesh_->space_dimension();
   std::vector<double> args(1 + dim);
 
-  for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end(); ++uspec) {
+  for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end();
+       ++uspec) {
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
     // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
     int nfun = (*uspec)->first->second->size();
@@ -117,7 +114,7 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
       args[0] = t1;
       auto xc = PKUtils_EntityCoordinates(*c, kind_, *mesh_);
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-      
+
       const double* val1 = (*(*uspec)->first->second)(args);
       for (int i = 0; i < nfun; ++i) value_[*c][i] = val1[i];
 
@@ -133,6 +130,6 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
   }
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

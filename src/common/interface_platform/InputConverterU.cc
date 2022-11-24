@@ -28,12 +28,13 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Main driver for the new translator.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
+Teuchos::ParameterList
+InputConverterU::Translate(int rank, int num_proc)
 {
   rank_ = rank;
   num_proc_ = num_proc;
   Teuchos::ParameterList out_list;
-  
+
   // grab verbosity early
   verb_list_ = TranslateVerbosity_();
   Teuchos::ParameterList tmp_list(verb_list_);
@@ -55,12 +56,12 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
 
   out_list.set<bool>("Native Unstructured Input", "true");
 
-  out_list.sublist("units") = TranslateUnits_();  
+  out_list.sublist("units") = TranslateUnits_();
   out_list.sublist("mesh") = TranslateMesh_();
   out_list.sublist("domain").set<int>("spatial dimension", dim_);
   out_list.sublist("regions") = TranslateRegions_();
 
-  // Parse various material data 
+  // Parse various material data
   out_list.sublist("state") = TranslateState_();
 
   const Teuchos::ParameterList& tmp = TranslateOutput_();
@@ -94,26 +95,34 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   //    various data flow scenarios require both ic and ev to be defined FIXME
   if (pk_model_["flow"] == "darcy") {
     Teuchos::Array<std::string> regions(1, "All");
-    auto& ic_m = out_list.sublist("state").sublist("initial conditions").sublist("saturation_liquid");
-    ic_m.sublist("function").sublist("ALL")
-        .set<Teuchos::Array<std::string> >("regions", regions)
-        .set<std::string>("component", "cell")
-        .sublist("function").sublist("function-constant")
-        .set<double>("value", 1.0);
+    auto& ic_m =
+      out_list.sublist("state").sublist("initial conditions").sublist("saturation_liquid");
+    ic_m.sublist("function")
+      .sublist("ALL")
+      .set<Teuchos::Array<std::string>>("regions", regions)
+      .set<std::string>("component", "cell")
+      .sublist("function")
+      .sublist("function-constant")
+      .set<double>("value", 1.0);
 
     auto& ev_m = out_list.sublist("state").sublist("evaluators").sublist("saturation_liquid");
     ev_m = ic_m;
     ev_m.set<std::string>("evaluator type", "independent variable");
 
     if (fracture_regions_.size() > 0) {
-      auto& ic_f = out_list.sublist("state").sublist("initial conditions").sublist("fracture-saturation_liquid");
-      ic_f.sublist("function").sublist("ALL")
-          .set<Teuchos::Array<std::string> >("regions", regions)
-          .set<std::string>("component", "cell")
-          .sublist("function").sublist("function-constant")
-          .set<double>("value", 1.0);
+      auto& ic_f = out_list.sublist("state")
+                     .sublist("initial conditions")
+                     .sublist("fracture-saturation_liquid");
+      ic_f.sublist("function")
+        .sublist("ALL")
+        .set<Teuchos::Array<std::string>>("regions", regions)
+        .set<std::string>("component", "cell")
+        .sublist("function")
+        .sublist("function-constant")
+        .set<double>("value", 1.0);
 
-      auto& ev_f = out_list.sublist("state").sublist("evaluators").sublist("fracture-saturation_liquid");
+      auto& ev_f =
+        out_list.sublist("state").sublist("evaluators").sublist("fracture-saturation_liquid");
       ev_f = ic_f;
       ev_f.set<std::string>("evaluator type", "independent variable");
     }
@@ -123,30 +132,35 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
     auto& out_ev = out_list.sublist("state").sublist("evaluators");
     if (!out_ev.isSublist("temperature")) {
       AddIndependentFieldEvaluator_(out_ev, "temperature", "All", "*", 298.15);
-      if (fractures_) 
+      if (fractures_)
         AddIndependentFieldEvaluator_(out_ev, "fracture-temperature", "All", "*", 298.15);
     }
   }
 
   // -- additional transport diagnostics
   if (transport_diagnostics_.size() > 0) {
-    out_list.sublist("PKs").sublist("transient:transport")
-        .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
+    out_list.sublist("PKs")
+      .sublist("transient:transport")
+      .set<Teuchos::Array<std::string>>("runtime diagnostics: regions", transport_diagnostics_);
   }
 
   // -- walkabout enforces non-contiguous maps
   if (io_walkabout_) {
-    out_list.sublist("mesh").sublist("unstructured").sublist("expert")
-        .set<bool>("contiguous global ids", false);
+    out_list.sublist("mesh")
+      .sublist("unstructured")
+      .sublist("expert")
+      .set<bool>("contiguous global ids", false);
   }
 
   // -- single region for fracture network
   if (fracture_regions_.size() > 0) {
     // std::string network = CreateUniqueName_(fracture_regions_);
     std::string network("FRACTURE_NETWORK_INTERNAL");
-    out_list.sublist("regions").sublist(network).sublist("region: logical")
-        .set<std::string>("operation", "union")
-        .set<Teuchos::Array<std::string> >("regions", fracture_regions_);
+    out_list.sublist("regions")
+      .sublist(network)
+      .sublist("region: logical")
+      .set<std::string>("operation", "union")
+      .set<Teuchos::Array<std::string>>("regions", fracture_regions_);
 
     if (out_list.isSublist("visualization data")) {
       Teuchos::ParameterList& aux = out_list.sublist("visualization data");
@@ -155,7 +169,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
       std::string name = aux.get<std::string>("file name base");
       aux.set<std::string>("file name base", name + "_matrix");
       out_list.sublist("visualization data fracture")
-          .set<std::string>("file name base", name + "_fracture");
+        .set<std::string>("file name base", name + "_fracture");
     }
 
     if (io_mesh_info_) {
@@ -173,7 +187,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
 
       std::string name = aux.get<std::string>("file name base");
       out_list.sublist("visualization data surface")
-          .set<std::string>("file name base", name + "_surface");
+        .set<std::string>("file name base", name + "_surface");
     }
   }
 
@@ -192,12 +206,13 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
 
   return out_list;
 }
-  
+
 
 /* ******************************************************************
 * Check that XML has required objects that frequnetly used.
 ****************************************************************** */
-void InputConverterU::VerifyXMLStructure_()
+void
+InputConverterU::VerifyXMLStructure_()
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
 #define XSTR(s) STR(s)
@@ -217,7 +232,7 @@ void InputConverterU::VerifyXMLStructure_()
 
   for (std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it) {
     DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode(it->c_str()));
-    IsEmpty(node_list, *it); 
+    IsEmpty(node_list, *it);
   }
 }
 
@@ -225,7 +240,8 @@ void InputConverterU::VerifyXMLStructure_()
 /* ******************************************************************
 * Extract information of solute components.
 ****************************************************************** */
-void InputConverterU::ParseSolutes_()
+void
+InputConverterU::ParseSolutes_()
 {
   bool flag;
   char* tagname;
@@ -240,7 +256,8 @@ void InputConverterU::ParseSolutes_()
   std::string species("solute");
   node = GetUniqueElementByTagsString_(knode, "liquid_phase, dissolved_components, solutes", flag);
   if (!flag) {
-    node = GetUniqueElementByTagsString_(knode, "liquid_phase, dissolved_components, primaries", flag);
+    node =
+      GetUniqueElementByTagsString_(knode, "liquid_phase, dissolved_components, primaries", flag);
     species = "primary";
   }
 
@@ -257,11 +274,12 @@ void InputConverterU::ParseSolutes_()
 
       DOMElement* element = static_cast<DOMElement*>(inode);
       // Polyethylene glycol has a molar mass of 1,000,000 g/mol
-      double mol_mass = GetAttributeValueD_(element, "molar_mass", TYPE_NUMERICAL, 0.0, 1000.0, "kg/mol", false, 1.0);
+      double mol_mass = GetAttributeValueD_(
+        element, "molar_mass", TYPE_NUMERICAL, 0.0, 1000.0, "kg/mol", false, 1.0);
       solute_molar_mass_[name] = mol_mass;
     }
   }
-  
+
   comp_names_all_ = phases_["water"];
 
   // gas phase
@@ -280,9 +298,7 @@ void InputConverterU::ParseSolutes_()
       tagname = mm.transcode(inode->getNodeName());
       text_content = mm.transcode(inode->getTextContent());
 
-      if (species == tagname) {
-        phases_["air"].push_back(TrimString_(text_content));
-      }
+      if (species == tagname) { phases_["air"].push_back(TrimString_(text_content)); }
     }
 
     comp_names_all_.insert(comp_names_all_.end(), phases_["air"].begin(), phases_["air"].end());
@@ -302,7 +318,8 @@ void InputConverterU::ParseSolutes_()
 /* ******************************************************************
 * Adjust default values for physical constants
 ****************************************************************** */
-void InputConverterU::ModifyDefaultPhysicalConstants_()
+void
+InputConverterU::ModifyDefaultPhysicalConstants_()
 {
   // gravity magnitude
   const_gravity_ = GRAVITY_MAGNITUDE;
@@ -319,7 +336,8 @@ void InputConverterU::ModifyDefaultPhysicalConstants_()
 /* ******************************************************************
 * Extract generic verbosity object for all sublists.
 ****************************************************************** */
-void InputConverterU::ParseModelDescription_()
+void
+InputConverterU::ParseModelDescription_()
 {
   MemoryManager mm;
   DOMNodeList* node_list;
@@ -331,14 +349,14 @@ void InputConverterU::ParseModelDescription_()
 
   if (flag) {
     coords_ = CharToStrings_(mm.transcode(node->getTextContent()));
-  } else { 
-    coords_.push_back("x"); 
-    coords_.push_back("y"); 
-    coords_.push_back("z"); 
+  } else {
+    coords_.push_back("x");
+    coords_.push_back("y");
+    coords_.push_back("z");
   }
 
   node = GetUniqueElementByTagsString_(node_list->item(0), "author", flag);
-  if (flag && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
+  if (flag && vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "AUTHOR: " << mm.transcode(node->getTextContent()) << std::endl;
 }
 
@@ -346,7 +364,8 @@ void InputConverterU::ParseModelDescription_()
 /* ******************************************************************
 * Extract generic verbosity object for all sublists.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
+Teuchos::ParameterList
+InputConverterU::TranslateVerbosity_()
 {
   Teuchos::ParameterList vlist;
 
@@ -356,10 +375,10 @@ Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
   DOMNode* node_attr;
   DOMNamedNodeMap* attr_map;
   char* text_content;
- 
+
   // get execution contorls node
   node_list = doc_->getElementsByTagName(mm.transcode("execution_controls"));
-  
+
   for (int i = 0; i < node_list->getLength(); i++) {
     DOMNode* inode = node_list->item(i);
 
@@ -376,7 +395,8 @@ Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
             node_attr = attr_map->getNamedItem(mm.transcode("level"));
             if (node_attr) {
               text_content = mm.transcode(node_attr->getNodeValue());
-              vlist.sublist("verbose object").set<std::string>("verbosity level", TrimString_(text_content));
+              vlist.sublist("verbose object")
+                .set<std::string>("verbosity level", TrimString_(text_content));
               break;
             } else {
               ThrowErrorIllformed_("verbosity", "value", "level");
@@ -393,11 +413,12 @@ Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
 /* ******************************************************************
 * Units
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateUnits_()
+Teuchos::ParameterList
+InputConverterU::TranslateUnits_()
 {
   Teuchos::ParameterList out_list;
 
-  MemoryManager mm;  
+  MemoryManager mm;
   DOMNode* node;
 
   bool flag;
@@ -428,14 +449,14 @@ Teuchos::ParameterList InputConverterU::TranslateUnits_()
   out_list.set<std::string>("concentration", concentration);
   out_list.set<std::string>("amount", "mol");
   out_list.set<std::string>("temperature", temperature);
-  
+
   // update default system units
   // units_.system().concentration = concentration;
   units_.Init(out_list);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "Translating units: " << length << " " << time << " " 
-               << mass << " " << concentration << " " << temperature << std::endl;
+    *vo_->os() << "Translating units: " << length << " " << time << " " << mass << " "
+               << concentration << " " << temperature << std::endl;
 
   return out_list;
 }
@@ -444,14 +465,15 @@ Teuchos::ParameterList InputConverterU::TranslateUnits_()
 /* ******************************************************************
 * Analysis list can used by special tools.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::CreateAnalysis_()
+Teuchos::ParameterList
+InputConverterU::CreateAnalysis_()
 {
   Teuchos::ParameterList out_list;
   auto& domain_list = out_list.sublist("domain");
 
-  domain_list.set<Teuchos::Array<std::string> >("used boundary condition regions", vv_bc_regions_);
-  domain_list.set<Teuchos::Array<std::string> >("used source regions", vv_src_regions_);
-  domain_list.set<Teuchos::Array<std::string> >("used observation regions", vv_obs_regions_);
+  domain_list.set<Teuchos::Array<std::string>>("used boundary condition regions", vv_bc_regions_);
+  domain_list.set<Teuchos::Array<std::string>>("used source regions", vv_src_regions_);
+  domain_list.set<Teuchos::Array<std::string>>("used observation regions", vv_obs_regions_);
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
 
@@ -462,18 +484,18 @@ Teuchos::ParameterList InputConverterU::CreateAnalysis_()
 /* ******************************************************************
 * Filters out empty sublists starting with node "parent".
 ****************************************************************** */
-void InputConverterU::MergeInitialConditionsLists_(
-   Teuchos::ParameterList& plist, const std::string& chemistry)
+void
+InputConverterU::MergeInitialConditionsLists_(Teuchos::ParameterList& plist,
+                                              const std::string& chemistry)
 {
   std::string domain, key;
 
   if (plist.sublist("PKs").isSublist(chemistry)) {
     domain = plist.sublist("PKs").sublist(chemistry).get<std::string>("domain name");
 
-    Teuchos::ParameterList& ics = plist.sublist("state")
-                                       .sublist("initial conditions");
-    Teuchos::ParameterList& icc = plist.sublist("PKs").sublist(chemistry)
-                                       .sublist("initial conditions");
+    Teuchos::ParameterList& ics = plist.sublist("state").sublist("initial conditions");
+    Teuchos::ParameterList& icc =
+      plist.sublist("PKs").sublist(chemistry).sublist("initial conditions");
 
     for (auto it = icc.begin(); it != icc.end(); ++it) {
       key = Keys::getKey(domain, it->first);
@@ -496,7 +518,8 @@ void InputConverterU::MergeInitialConditionsLists_(
 /* ******************************************************************
 * Filters out empty sublists starting with node "parent".
 ****************************************************************** */
-void InputConverterU::FilterEmptySublists_(Teuchos::ParameterList& plist)
+void
+InputConverterU::FilterEmptySublists_(Teuchos::ParameterList& plist)
 {
   for (auto it = plist.begin(); it != plist.end(); ++it) {
     if (plist.isSublist(it->first)) {
@@ -514,8 +537,8 @@ void InputConverterU::FilterEmptySublists_(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Search tools
 ****************************************************************** */
-bool InputConverterU::FindNameInVector_(
-   const std::string& name, const std::vector<std::string>& list)
+bool
+InputConverterU::FindNameInVector_(const std::string& name, const std::vector<std::string>& list)
 {
   for (int i = 0; i < list.size(); ++i) {
     if (name == list[i]) return true;
@@ -527,12 +550,11 @@ bool InputConverterU::FindNameInVector_(
 /* ******************************************************************
 * Create automatic string name.
 ****************************************************************** */
-std::string InputConverterU::CreateNameFromVector_(const std::vector<std::string>& list)
+std::string
+InputConverterU::CreateNameFromVector_(const std::vector<std::string>& list)
 {
   std::string str;
-  for (auto it = list.begin(); it != list.end(); ++it) {
-    str = str + *it;
-  }
+  for (auto it = list.begin(); it != list.end(); ++it) { str = str + *it; }
   return str;
 }
 
@@ -540,8 +562,8 @@ std::string InputConverterU::CreateNameFromVector_(const std::vector<std::string
 /* ******************************************************************
 * Output of XML
 ****************************************************************** */
-void InputConverterU::SaveXMLFile(
-    Teuchos::ParameterList& out_list, std::string& xmlfilename)
+void
+InputConverterU::SaveXMLFile(Teuchos::ParameterList& out_list, std::string& xmlfilename)
 {
   bool flag;
   int precision(0);
@@ -564,7 +586,8 @@ void InputConverterU::SaveXMLFile(
   if (filename != "skip") {
     if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Writing the translated XML to " << filename.c_str() << std::endl;;
+      *vo_->os() << "Writing the translated XML to " << filename.c_str() << std::endl;
+      ;
     }
 
     Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
@@ -581,12 +604,11 @@ void InputConverterU::SaveXMLFile(
 /* ******************************************************************
 * Create a name by concatenating names in a list
 ****************************************************************** */
-std::string InputConverterU::CreateUniqueName_(const Teuchos::Array<std::string>& list)
+std::string
+InputConverterU::CreateUniqueName_(const Teuchos::Array<std::string>& list)
 {
   std::string name;
-  for (auto it = list.begin(); it != list.end(); ++it) {
-    name.append(*it);
-  }
+  for (auto it = list.begin(); it != list.end(); ++it) { name.append(*it); }
   return name;
 }
 
@@ -594,12 +616,14 @@ std::string InputConverterU::CreateUniqueName_(const Teuchos::Array<std::string>
 /* ******************************************************************
 * Print final comments
 ****************************************************************** */
-void InputConverterU::PrintStatistics_()
+void
+InputConverterU::PrintStatistics_()
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     *vo_->os() << "Final comments:\n found units: ";
     int n(0);
-    for (std::set<std::string>::iterator it = found_units_.begin(); it != found_units_.end(); ++it) {
+    for (std::set<std::string>::iterator it = found_units_.begin(); it != found_units_.end();
+         ++it) {
       *vo_->os() << *it << " ";
       if (++n > 10) {
         n = 0;
@@ -610,5 +634,5 @@ void InputConverterU::PrintStatistics_()
   }
 }
 
-}  // namespace AmanziInput
-}  // namespace Amanzi
+} // namespace AmanziInput
+} // namespace Amanzi

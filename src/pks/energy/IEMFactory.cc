@@ -20,11 +20,12 @@ namespace Energy {
 /* ******************************************************************
 * method for instantiating IEM implementations
 ****************************************************************** */
-Teuchos::RCP<IEM> IEMFactory::CreateIEM(Teuchos::ParameterList& plist) {
+Teuchos::RCP<IEM>
+IEMFactory::CreateIEM(Teuchos::ParameterList& plist)
+{
   std::string iem_typename = plist.get<std::string>("iem type");
   return Teuchos::rcp(CreateInstance(iem_typename, plist));
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
-
+} // namespace Energy
+} // namespace Amanzi

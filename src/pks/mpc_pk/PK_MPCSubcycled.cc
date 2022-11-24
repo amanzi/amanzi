@@ -22,33 +22,36 @@ namespace Amanzi {
 // Constructor
 // -----------------------------------------------------------------------------
 PK_MPCSubcycled::PK_MPCSubcycled(Teuchos::ParameterList& pk_tree,
-                           const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-                           const Teuchos::RCP<State>& S,
-                           const Teuchos::RCP<TreeVector>& soln) :
-  PK_MPC<PK>(pk_tree, global_list, S, soln) {
-
+                                 const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                                 const Teuchos::RCP<State>& S,
+                                 const Teuchos::RCP<TreeVector>& soln)
+  : PK_MPC<PK>(pk_tree, global_list, S, soln)
+{
   // Master PK is the PK whose time step size sets the size, the slave is subcycled.
   master_ = my_list_->get<int>("master PK index", 0);
   slave_ = (master_ == 1) ? 0 : 1;
 
   if (sub_pks_.size() != 2) {
-    Errors::Message message("PK_MPCSubcycled: only MPCs with two sub-PKs can currently be subcycled.");
+    Errors::Message message(
+      "PK_MPCSubcycled: only MPCs with two sub-PKs can currently be subcycled.");
     Exceptions::amanzi_throw(message);
   }
 
   // min dt allowed in subcycling
   min_dt_ = my_list_->get<double>("minimum subcycled relative dt", 1.e-5);
 }
-  
+
 
 // -----------------------------------------------------------------------------
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
-double PK_MPCSubcycled::get_dt() {
+double
+PK_MPCSubcycled::get_dt()
+{
   master_dt_ = sub_pks_[master_]->get_dt();
   slave_dt_ = sub_pks_[slave_]->get_dt();
   if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
-  
+
   return master_dt_;
 }
 
@@ -56,7 +59,9 @@ double PK_MPCSubcycled::get_dt() {
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
-bool PK_MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit) {
+bool
+PK_MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit)
+{
   bool fail = false;
 
   // advance the master PK using the full step size
@@ -79,9 +84,7 @@ bool PK_MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit) {
   double dt_done = 0.;
   while (!done) {
     // do not overstep
-    if (t_old + dt_done + dt_next > t_new) {
-      dt_next = t_new - t_old - dt_done;
-    }
+    if (t_old + dt_done + dt_next > t_new) { dt_next = t_new - t_old - dt_done; }
 
     // set the intermediate time
     S_->set_intermediate_time(t_old + dt_done + dt_next);
@@ -102,11 +105,12 @@ bool PK_MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit) {
     dt_next = sub_pks_[slave_]->get_dt();
 
     // check for done condition
-    done = (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) || // finished the step
-        (dt_next  < min_dt_); // failed
+    done =
+      (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1 * min_dt_) || // finished the step
+      (dt_next < min_dt_);                                                     // failed
   }
 
-  if (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) {
+  if (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1 * min_dt_) {
     // done, success
     // --etc: unclear if state should be commited or not?
     CommitStep(t_old, t_new, Tags::DEFAULT);
@@ -116,5 +120,4 @@ bool PK_MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit) {
   }
 }
 
-}  // namespace Amanzi
-
+} // namespace Amanzi

@@ -21,12 +21,10 @@ namespace Flow {
 FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist)
 {
   rainfall_ = false;
-  if (plist.isParameter("rainfall")) 
-    rainfall_ = plist.get<bool>("rainfall");
+  if (plist.isParameter("rainfall")) rainfall_ = plist.get<bool>("rainfall");
 
   relative_to_top_ = false;
-  if (plist.isParameter("relative to top"))
-    relative_to_top_ = plist.get<bool>("relative to top");
+  if (plist.isParameter("relative to top")) relative_to_top_ = plist.get<bool>("relative to top");
 
   relative_to_bottom_ = false;
   if (plist.isParameter("relative to bottom"))
@@ -36,15 +34,14 @@ FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist)
   if (plist.isParameter("no flow above water table"))
     no_flow_above_water_table_ = plist.get<bool>("no flow above water table");
 
-  if (plist.isParameter("submodel"))
-    seepage_model_ = plist.get<std::string>("submodel");
+  if (plist.isParameter("submodel")) seepage_model_ = plist.get<std::string>("submodel");
 
   seepage_flux_threshold_ = 0.0;
   if (plist.isParameter("seepage flux threshold"))
     seepage_flux_threshold_ = plist.get<double>("seepage flux threshold");
 
   if (relative_to_top_ || relative_to_bottom_) {
-    regions_ = plist.get<Teuchos::Array<std::string> >("regions").toVector();
+    regions_ = plist.get<Teuchos::Array<std::string>>("regions").toVector();
     rho_ = plist.sublist("static head").sublist("function-static-head").get<double>("density");
     g_ = plist.sublist("static head").sublist("function-static-head").get<double>("gravity");
   }
@@ -61,7 +58,8 @@ FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist)
 /* ****************************************************************
 * Process additional parameters for BC submodels.
 **************************************************************** */
-void FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+void
+FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
   int dim = mesh->space_dimension();
 
@@ -76,7 +74,7 @@ void FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::
   if (relative_to_top_ || relative_to_bottom_) {
     Teuchos::ParameterList vlist;
     vlist.sublist("verbose object");
-    Teuchos::RCP<VerboseObject> vo = Teuchos::rcp(new VerboseObject("FlowBoundaryFunction", vlist)); 
+    Teuchos::RCP<VerboseObject> vo = Teuchos::rcp(new VerboseObject("FlowBoundaryFunction", vlist));
     Teuchos::OSTab tab = vo->getOSTab();
 
     // lazy allocation of memory
@@ -88,8 +86,8 @@ void FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::
         CalculateShiftWaterTable_(mesh, regions_[i]);
 
         if (vo->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-          *vo->os() << "found " << nedges_ << " top/bottom boundary edges for \"" 
-                    << regions_[i] << "\"" << std::endl;
+          *vo->os() << "found " << nedges_ << " top/bottom boundary edges for \"" << regions_[i]
+                    << "\"" << std::endl;
         }
       }
     }
@@ -109,8 +107,9 @@ void FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::
 *
 * WARNING: The implemented algorithm works only in 3D.
 **************************************************************** */
-void FlowBoundaryFunction::CalculateShiftWaterTable_(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, const std::string& region)
+void
+FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                                const std::string& region)
 {
   double tol = 1e-6;
   Errors::Message msg;
@@ -153,7 +152,7 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
           set_intersection_(nodes1, nodes2, &common_nodes);
 
           int m = common_nodes.size();
-          if (m > dim-1) {
+          if (m > dim - 1) {
             msg << "Flow PK: Unsupported configuration: two or more common edges.";
             Exceptions::amanzi_throw(msg);
           } else if (m == 1 && dim == 2) {
@@ -166,7 +165,7 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
             mesh->node_get_coordinates(v2, &p2);
 
             p3 = p1 - p2;
-            if (p3[0] * p3[0] + p3[1] * p3[1] > tol * L22(p3)) {  // filter out vertical edges
+            if (p3[0] * p3[0] + p3[1] * p3[1] > tol * L22(p3)) { // filter out vertical edges
               edges.push_back(p1);
               edges.push_back(p2);
             }
@@ -181,7 +180,7 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
   int gsize;
   Teuchos::RCP<const Comm_type> comm_p = mesh->get_comm();
   Teuchos::RCP<const MpiComm_type> mpi_comm_p =
-      Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_p);
+    Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_p);
   const MPI_Comm& comm = mpi_comm_p->Comm();
   MPI_Comm_size(comm, &gsize);
   int* edge_counts = new int[gsize];
@@ -203,10 +202,9 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
 
   int* displs = new int[gsize];
   displs[0] = 0;
-  for (int i = 1; i < gsize; i++) displs[i] = edge_counts[i-1] + displs[i-1];
+  for (int i = 1; i < gsize; i++) displs[i] = edge_counts[i - 1] + displs[i - 1];
 
-  MPI_Allgatherv(sendbuf, sendcount, MPI_DOUBLE,
-                 recvbuf, edge_counts, displs, MPI_DOUBLE, comm);
+  MPI_Allgatherv(sendbuf, sendcount, MPI_DOUBLE, recvbuf, edge_counts, displs, MPI_DOUBLE, comm);
 
   // process receive buffer
   edges.clear();
@@ -240,15 +238,14 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
       if (b < tol_edge && a > -0.01 && a < 1.01) {
         double z = edges[j][2] + a * p1[2];
         (*shift_water_table_)[f] = z * rho_g;
-        if ((z > xf[2] && relative_to_top_) || 
-            (z < xf[2] && relative_to_bottom_)) {
+        if ((z > xf[2] && relative_to_top_) || (z < xf[2] && relative_to_bottom_)) {
           flag = 1;
           break;
         }
       }
     }
 
-    // slow full search 
+    // slow full search
     if (flag == 0) {
       // msg << "Flow PK: The boundary region \"" << region.c_str() << "\" is not piecewise flat.";
       // Exceptions::amanzi_throw(msg);
@@ -257,8 +254,8 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
       for (int j = 0; j < nedges; j += 2) {
         p1 = (edges[j] + edges[j + 1]) / 2;
         d = L22(p1 - xf);
-        if (((p1[2] > xf[2] && relative_to_top_) || 
-             (p1[2] < xf[2] && relative_to_bottom_)) && d < dmin) {
+        if (((p1[2] > xf[2] && relative_to_top_) || (p1[2] < xf[2] && relative_to_bottom_)) &&
+            d < dmin) {
           dmin = d;
           z = p1[2];
         }
@@ -268,10 +265,10 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
   }
 
 #ifdef HAVE_MPI
-  delete [] edge_counts;
-  delete [] displs;
-  delete [] recvbuf;
-  if (sendbuf != NULL) delete [] sendbuf;
+  delete[] edge_counts;
+  delete[] displs;
+  delete[] recvbuf;
+  if (sendbuf != NULL) delete[] sendbuf;
 #endif
 
   nedges_ = nedges / 2;
@@ -281,9 +278,10 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
 /* ****************************************************************
 * New implementation of the STL function.
 **************************************************************** */
-void FlowBoundaryFunction::set_intersection_(const std::vector<AmanziMesh::Entity_ID>& v1,
-                                             const std::vector<AmanziMesh::Entity_ID>& v2, 
-                                             std::vector<AmanziMesh::Entity_ID>* vv)
+void
+FlowBoundaryFunction::set_intersection_(const std::vector<AmanziMesh::Entity_ID>& v1,
+                                        const std::vector<AmanziMesh::Entity_ID>& v2,
+                                        std::vector<AmanziMesh::Entity_ID>* vv)
 {
   int i(0), j(0), n1, n2;
 
@@ -304,5 +302,5 @@ void FlowBoundaryFunction::set_intersection_(const std::vector<AmanziMesh::Entit
   }
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi

@@ -8,7 +8,7 @@
 
   Factory class for building a mineral kinetic rate object
 */
- 
+
 #ifndef AMANZI_CHEMISTRY_KINETIC_RATE_FACTORY_HH_
 #define AMANZI_CHEMISTRY_KINETIC_RATE_FACTORY_HH_
 
@@ -25,15 +25,15 @@ class KineticRate;
 
 class KineticRateFactory {
  public:
-  KineticRateFactory() {};
-  ~KineticRateFactory() {};
+  KineticRateFactory(){};
+  ~KineticRateFactory(){};
 
   KineticRate* Create(const Teuchos::ParameterList& plist,
                       const Mineral& mineral,
                       const SpeciesArray& primary_species);
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif

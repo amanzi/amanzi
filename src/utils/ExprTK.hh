@@ -19,7 +19,7 @@ namespace Utils {
 
 class ExprTK {
  public:
-  ExprTK() : n_(0) {};
+  ExprTK() : n_(0){};
   bool Initialize(int n, const std::string& formula);
 
   double operator()(const std::vector<double>& txyz);
@@ -32,7 +32,7 @@ class ExprTK {
   exprtk::parser<double> parser_;
 };
 
-}  // namespace Utils
-}  // namespace Amanzi
+} // namespace Utils
+} // namespace Amanzi
 
 #endif

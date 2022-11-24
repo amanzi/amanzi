@@ -20,7 +20,8 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-class EOSViscosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class EOSViscosityEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   explicit EOSViscosityEvaluator(Teuchos::ParameterList& plist);
   EOSViscosityEvaluator(const EOSViscosityEvaluator& other);
@@ -30,7 +31,9 @@ class EOSViscosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector,
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
@@ -46,7 +49,7 @@ class EOSViscosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector,
   static Utils::RegisteredFactory<Evaluator, EOSViscosityEvaluator> factory_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

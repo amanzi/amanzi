@@ -35,14 +35,15 @@ namespace AmanziMesh {
 * Light-weigthed constructor
 ****************************************************************** */
 MeshExtractedManifold::MeshExtractedManifold(
-    const Teuchos::RCP<const Mesh>& parent_mesh,
-    const std::string& setname, 
-    const Entity_kind entity_kind,
-    const Comm_ptr_type& comm,
-    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-    const Teuchos::RCP<const Teuchos::ParameterList>& plist,
-    bool request_faces, bool request_edges,
-    bool flattened)
+  const Teuchos::RCP<const Mesh>& parent_mesh,
+  const std::string& setname,
+  const Entity_kind entity_kind,
+  const Comm_ptr_type& comm,
+  const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+  const Teuchos::RCP<const Teuchos::ParameterList>& plist,
+  bool request_faces,
+  bool request_edges,
+  bool flattened)
   : Mesh(comm, gm, plist, request_faces, request_edges),
     parent_mesh_(parent_mesh),
     flattened_(flattened)
@@ -54,11 +55,11 @@ MeshExtractedManifold::MeshExtractedManifold(
   set_manifold_dimension(d - 1);
   if (flattened_) set_space_dimension(d - 1);
 
-  InitParentMaps(setname); 
-  InitEpetraMaps(); 
+  InitParentMaps(setname);
+  InitEpetraMaps();
   try {
     InitExteriorEpetraMaps();
-  } catch(...) {
+  } catch (...) {
     if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *(vo_->os()) << "Parent framework does not support buildng of exterior maps.\n";
@@ -72,7 +73,8 @@ MeshExtractedManifold::MeshExtractedManifold(
 /* ******************************************************************
 * Get cell type
 ****************************************************************** */
-Cell_type MeshExtractedManifold::cell_get_type(const Entity_ID c) const
+Cell_type
+MeshExtractedManifold::cell_get_type(const Entity_ID c) const
 {
   int nfaces = cell_face_ids_[c].size();
   return (nfaces == 4) ? QUAD : ((nfaces == 3) ? TRI : POLYGON);
@@ -85,30 +87,32 @@ Cell_type MeshExtractedManifold::cell_get_type(const Entity_ID c) const
 * Number of entities of any kind (cell, face, edge, node) and in a
 * particular category (OWNED, GHOST, ALL)
 ****************************************************************** */
-unsigned int MeshExtractedManifold::num_entities(const Entity_kind kind, 
-                                                 const Parallel_type ptype) const
+unsigned int
+MeshExtractedManifold::num_entities(const Entity_kind kind, const Parallel_type ptype) const
 {
   if (ptype == Parallel_type::OWNED)
     return nents_owned_[kind];
   else if (ptype == Parallel_type::ALL)
     return nents_owned_[kind] + nents_ghost_[kind];
 
-  return nents_ghost_[kind]; 
+  return nents_ghost_[kind];
 }
 
 
 /* ******************************************************************
 * Connectivity list: cell -> cells
 ****************************************************************** */
-void MeshExtractedManifold::cell_get_face_adj_cells(
-    const Entity_ID c, const Parallel_type ptype, Entity_ID_List *cells) const
+void
+MeshExtractedManifold::cell_get_face_adj_cells(const Entity_ID c,
+                                               const Parallel_type ptype,
+                                               Entity_ID_List* cells) const
 {
   Entity_ID_List nodes, faces0, faces1;
 
   int fp = entid_to_parent_[CELL][c];
   parent_mesh_->face_get_nodes(fp, &nodes);
   int nnodes = nodes.size();
- 
+
   int nfaces_p = parent_mesh_->num_entities(FACE, ptype);
 
   cells->clear();
@@ -123,8 +127,7 @@ void MeshExtractedManifold::cell_get_face_adj_cells(
     for (auto it0 = faces0.begin(); it0 != faces0.end(); ++it0) {
       for (auto it1 = faces1.begin(); it1 != faces1.end(); ++it1) {
         if (*it0 == *it1 && *it0 != fp) {
-          if (*it0 < nfaces_p) 
-            cells->push_back(parent_to_entid_[CELL][*it0]);
+          if (*it0 < nfaces_p) cells->push_back(parent_to_entid_[CELL][*it0]);
         }
       }
     }
@@ -135,14 +138,16 @@ void MeshExtractedManifold::cell_get_face_adj_cells(
 /* ******************************************************************
 * Connectivity list: cell -> faces
 ****************************************************************** */
-void MeshExtractedManifold::cell_get_faces_and_dirs_internal_(
-    const Entity_ID c,
-    Entity_ID_List *faces, std::vector<int> *fdirs, const bool ordered) const
+void
+MeshExtractedManifold::cell_get_faces_and_dirs_internal_(const Entity_ID c,
+                                                         Entity_ID_List* faces,
+                                                         std::vector<int>* fdirs,
+                                                         const bool ordered) const
 {
   int fp = entid_to_parent_[CELL][c];
   parent_mesh_->face_get_edges_and_dirs(fp, faces, fdirs);
   int nfaces = faces->size();
- 
+
   for (int i = 0; i < nfaces; ++i) {
     int f = (*faces)[i];
     (*faces)[i] = parent_to_entid_[FACE][f];
@@ -153,10 +158,8 @@ void MeshExtractedManifold::cell_get_faces_and_dirs_internal_(
   // Now if the mesh is flattened, the Mesh class algorithm uses 2D edge
   // orientation. In this case, the result is correct iff the 3D face normal
   // is exterior.
-  if (! flattened_) {
-    for (int i = 0; i < nfaces; ++i) {
-      (*fdirs)[i] = 1;
-    }
+  if (!flattened_) {
+    for (int i = 0; i < nfaces; ++i) { (*fdirs)[i] = 1; }
   }
 }
 
@@ -164,8 +167,8 @@ void MeshExtractedManifold::cell_get_faces_and_dirs_internal_(
 /* ******************************************************************
 * Connectivity list: cell -> edges = cell -> faces
 ****************************************************************** */
-void MeshExtractedManifold::cell_get_edges_internal_(
-    const Entity_ID c, Entity_ID_List *edges) const
+void
+MeshExtractedManifold::cell_get_edges_internal_(const Entity_ID c, Entity_ID_List* edges) const
 {
   std::vector<int> edirs;
 
@@ -183,7 +186,8 @@ void MeshExtractedManifold::cell_get_edges_internal_(
 /* ******************************************************************
 * Connectivity list: cell -> nodes
 ****************************************************************** */
-void MeshExtractedManifold::cell_get_nodes(const Entity_ID c, Entity_ID_List* nodes) const
+void
+MeshExtractedManifold::cell_get_nodes(const Entity_ID c, Entity_ID_List* nodes) const
 {
   int fp = entid_to_parent_[CELL][c];
   parent_mesh_->face_get_nodes(fp, nodes);
@@ -199,7 +203,9 @@ void MeshExtractedManifold::cell_get_nodes(const Entity_ID c, Entity_ID_List* no
 /* ******************************************************************
 * Connectivity list: face -> nodes
 ****************************************************************** */
-void MeshExtractedManifold::face_get_nodes(const Entity_ID f, Entity_ID_List *nodes) const {
+void
+MeshExtractedManifold::face_get_nodes(const Entity_ID f, Entity_ID_List* nodes) const
+{
   Entity_ID v0, v1;
 
   int ep = entid_to_parent_[FACE][f];
@@ -214,9 +220,11 @@ void MeshExtractedManifold::face_get_nodes(const Entity_ID f, Entity_ID_List *no
 /* ******************************************************************
 * Connectivity list: face -> edges
 ****************************************************************** */
-void MeshExtractedManifold::face_get_edges_and_dirs_internal_(
-    const Entity_ID f,
-    Entity_ID_List *edges, std::vector<int> *edirs, const bool ordered) const
+void
+MeshExtractedManifold::face_get_edges_and_dirs_internal_(const Entity_ID f,
+                                                         Entity_ID_List* edges,
+                                                         std::vector<int>* edirs,
+                                                         const bool ordered) const
 {
   Entity_ID v0, v1;
 
@@ -233,9 +241,10 @@ void MeshExtractedManifold::face_get_edges_and_dirs_internal_(
 /* ******************************************************************
 * Connectivity list: node -> cells
 ****************************************************************** */
-void MeshExtractedManifold::node_get_cells(
-    const Entity_ID n,
-    const Parallel_type ptype, Entity_ID_List *cells) const 
+void
+MeshExtractedManifold::node_get_cells(const Entity_ID n,
+                                      const Parallel_type ptype,
+                                      Entity_ID_List* cells) const
 {
   Entity_ID_List faces;
 
@@ -255,8 +264,10 @@ void MeshExtractedManifold::node_get_cells(
 /* ******************************************************************
 * Connectivity list: edge -> cells
 ****************************************************************** */
-void MeshExtractedManifold::edge_get_cells(
-   const Entity_ID e, const Parallel_type ptype, Entity_ID_List *cells) const 
+void
+MeshExtractedManifold::edge_get_cells(const Entity_ID e,
+                                      const Parallel_type ptype,
+                                      Entity_ID_List* cells) const
 {
   Entity_ID_List faces;
 
@@ -276,9 +287,10 @@ void MeshExtractedManifold::edge_get_cells(
 /* ******************************************************************
 * Connectivity list: face -> cells
 ****************************************************************** */
-void MeshExtractedManifold::face_get_cells_internal_(
-    const Entity_ID f,
-    const Parallel_type ptype, Entity_ID_List *cells) const
+void
+MeshExtractedManifold::face_get_cells_internal_(const Entity_ID f,
+                                                const Parallel_type ptype,
+                                                Entity_ID_List* cells) const
 {
   Entity_ID_List faces;
 
@@ -297,8 +309,8 @@ void MeshExtractedManifold::face_get_cells_internal_(
 /* ******************************************************************
 * Position vector for a node
 ****************************************************************** */
-void MeshExtractedManifold::node_get_coordinates(
-    const Entity_ID n, AmanziGeometry::Point *xyz) const
+void
+MeshExtractedManifold::node_get_coordinates(const Entity_ID n, AmanziGeometry::Point* xyz) const
 {
   auto np = entid_to_parent_[NODE][n];
   parent_mesh_->node_get_coordinates(np, xyz);
@@ -310,10 +322,12 @@ void MeshExtractedManifold::node_get_coordinates(
 /* ******************************************************************
 * Get list of entities of type 'ptype' in set specified by setname
 ****************************************************************** */
-void MeshExtractedManifold::get_set_entities_and_vofs(
-    const std::string& setname, 
-    const Entity_kind kind, const Parallel_type ptype, 
-    std::vector<Entity_ID> *setents, std::vector<double> *vofs) const
+void
+MeshExtractedManifold::get_set_entities_and_vofs(const std::string& setname,
+                                                 const Entity_kind kind,
+                                                 const Parallel_type ptype,
+                                                 std::vector<Entity_ID>* setents,
+                                                 std::vector<double>* vofs) const
 {
   assert(setents != nullptr);
 
@@ -330,15 +344,13 @@ void MeshExtractedManifold::get_set_entities_and_vofs(
 
   if (rgn == Teuchos::null) {
     std::stringstream ss;
-    ss << "Geometric model has no region named \"" << setname <<"\", kind=" << kind << "\n";
+    ss << "Geometric model has no region named \"" << setname << "\", kind=" << kind << "\n";
     Errors::Message msg(ss.str());
     Exceptions::amanzi_throw(msg);
   }
 
   std::string setname_internal = setname + std::to_string(kind);
-  if (sets_.find(setname_internal) != sets_.end()) {
-    *setents = sets_[setname_internal];
-  }
+  if (sets_.find(setname_internal) != sets_.end()) { *setents = sets_[setname_internal]; }
 
   // set does not exist - build it
   if (sets_.find(setname_internal) == sets_.end()) {
@@ -352,27 +364,28 @@ void MeshExtractedManifold::get_set_entities_and_vofs(
   if (ptype == Parallel_type::ALL) {
     m = setents->size();
   } else if (ptype == Parallel_type::OWNED) {
-    int nents = num_entities(kind, ptype); 
+    int nents = num_entities(kind, ptype);
     for (int n = 0; n < setents->size(); ++n) {
       if ((*setents)[n] < nents) (*setents)[m++] = (*setents)[n];
     }
   } else if (ptype == Parallel_type::GHOST) {
-    int nents = num_entities(kind, Parallel_type::OWNED); 
+    int nents = num_entities(kind, Parallel_type::OWNED);
     for (int n = 0; n < setents->size(); ++n) {
       if ((*setents)[n] >= nents) (*setents)[m++] = (*setents)[n];
     }
   }
-    
+
   setents->resize(m);
-      
+
   // Check if there were no entities left on any processor after
   // extracting the appropriate category of entities
-  int mglob; 
+  int mglob;
   get_comm()->SumAll(&m, &mglob, 1);
-  
+
   if (mglob == 0) {
     std::stringstream ss;
-    ss << "Could not retrieve mesh entities of kind=" << kind << " for set \"" << setname << "\"" << std::endl;
+    ss << "Could not retrieve mesh entities of kind=" << kind << " for set \"" << setname << "\""
+       << std::endl;
     Errors::Message msg(ss.str());
     Exceptions::amanzi_throw(msg);
   }
@@ -382,13 +395,14 @@ void MeshExtractedManifold::get_set_entities_and_vofs(
 /* ******************************************************************
 * Create a set from similar set in mesh
 ****************************************************************** */
-Entity_ID_List MeshExtractedManifold::build_set_(
-    const Teuchos::RCP<const AmanziGeometry::Region>& rgn, const Entity_kind kind) const
+Entity_ID_List
+MeshExtractedManifold::build_set_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn,
+                                  const Entity_kind kind) const
 {
   // modify rgn/set name by prefixing it with the type of entity requested
   std::string internal_name = rgn->get_name() + std::to_string(kind);
 
-  // create entity set based on the region definition  
+  // create entity set based on the region definition
   Entity_ID_List mset;
 
   // special processing of regions
@@ -411,10 +425,8 @@ Entity_ID_List MeshExtractedManifold::build_set_(
 
   // generic algorithm
   int nents_wghost = num_entities(kind, Parallel_type::ALL);
-  if (rgn->get_type() == AmanziGeometry::RegionType::ALL)  {
-    for (int n = 0; n < nents_wghost; ++n) {
-      mset.push_back(n);
-    }
+  if (rgn->get_type() == AmanziGeometry::RegionType::ALL) {
+    for (int n = 0; n < nents_wghost; ++n) { mset.push_back(n); }
     return mset;
   }
 
@@ -428,9 +440,9 @@ Entity_ID_List MeshExtractedManifold::build_set_(
 
   if (kind == CELL)
     mset = build_set_cells_(rgn, &missing);
-  else if (kind == FACE) 
+  else if (kind == FACE)
     mset = build_set_faces_(rgn, &missing);
-  else if (kind == NODE) 
+  else if (kind == NODE)
     mset = build_set_nodes_(rgn, &missing);
 
   // check if this set exists in parent mesh
@@ -442,9 +454,9 @@ Entity_ID_List MeshExtractedManifold::build_set_(
   if (missing) {
     if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "Requested entities of kind=" << kind 
-        << " on region=\"" << rgn->get_name() << "\" of type " << rgn->get_type()  
-        << " and dimension " << rgn->get_manifold_dimension() << ". Result is an empty set.\n";
+      *(vo_->os()) << "Requested entities of kind=" << kind << " on region=\"" << rgn->get_name()
+                   << "\" of type " << rgn->get_type() << " and dimension "
+                   << rgn->get_manifold_dimension() << ". Result is an empty set.\n";
     }
   }
 
@@ -454,9 +466,9 @@ Entity_ID_List MeshExtractedManifold::build_set_(
     auto boolrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLogical>(rgn);
     const std::vector<std::string> rgn_names = boolrgn->get_component_regions();
     int nregs = rgn_names.size();
-    
-    std::vector<std::set<Entity_ID> > msets;
-    
+
+    std::vector<std::set<Entity_ID>> msets;
+
     for (int r = 0; r < nregs; r++) {
       auto rgn1 = gm->FindRegion(rgn_names[r]);
 
@@ -467,54 +479,49 @@ Entity_ID_List MeshExtractedManifold::build_set_(
         Errors::Message msg(ss.str());
         Exceptions::amanzi_throw(msg);
       }
-        
+
       std::string setname_internal = rgn1->get_name() + std::to_string(kind);
 
       if (sets_.find(setname_internal) == sets_.end())
-        sets_[setname_internal] = build_set_(rgn1, kind); 
-     
+        sets_[setname_internal] = build_set_(rgn1, kind);
+
       auto it = sets_.find(setname_internal);
-      msets.push_back(std::set<Entity_ID>(it->second.begin(), it->second.end())); 
+      msets.push_back(std::set<Entity_ID>(it->second.begin(), it->second.end()));
     }
 
     if (boolrgn->get_operation() == AmanziGeometry::BoolOpType::UNION) {
       for (int n = 1; n < msets.size(); ++n) {
-        for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
-          msets[0].insert(*it);
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++it) msets[0].insert(*it);
       }
     }
 
     else if (boolrgn->get_operation() == AmanziGeometry::BoolOpType::SUBTRACT) {
       for (int n = 2; n < msets.size(); ++n) {
-        for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
-          msets[0].insert(*it);
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++it) msets[0].insert(*it);
       }
 
-      for (auto it = msets[1].begin(); it != msets[1].end(); ++it)
-        msets[0].erase(*it);
+      for (auto it = msets[1].begin(); it != msets[1].end(); ++it) msets[0].erase(*it);
     }
 
     else if (boolrgn->get_operation() == AmanziGeometry::BoolOpType::COMPLEMENT) {
       for (int n = 1; n < msets.size(); ++n) {
-        for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
-          msets[0].insert(*it);
-      } 
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++it) msets[0].insert(*it);
+      }
 
       auto tmp = msets[0];
       msets[0].clear();
       for (int n = 0; n < nents_wghost; ++n)
         if (tmp.find(n) == tmp.end()) msets[0].insert(n);
-    } 
+    }
 
     else if (boolrgn->get_operation() == AmanziGeometry::BoolOpType::INTERSECT) {
       for (int n = 1; n < msets.size(); ++n) {
         for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
           if (msets[0].find(*it) == msets[0].end()) msets[0].erase(*it);
       }
-    } 
+    }
 
-    for (auto it = msets[0].begin(); it != msets[0].end(); ++it)
-      mset.push_back(*it);
+    for (auto it = msets[0].begin(); it != msets[0].end(); ++it) mset.push_back(*it);
   }
 
   return mset;
@@ -524,21 +531,21 @@ Entity_ID_List MeshExtractedManifold::build_set_(
 /* ******************************************************************
 * Create a cell-set from similar set in mesh
 ****************************************************************** */
-Entity_ID_List MeshExtractedManifold::build_set_cells_(
-    const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const
+Entity_ID_List
+MeshExtractedManifold::build_set_cells_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn,
+                                        bool* missing) const
 {
   int space_dim = space_dimension();
   int manifold_dim = manifold_dimension();
 
   Entity_ID_List mset;
 
-  int ncells_wghost = num_entities(CELL, Parallel_type::ALL);              
+  int ncells_wghost = num_entities(CELL, Parallel_type::ALL);
   *missing = false;
 
   if (rgn->get_type() == AmanziGeometry::RegionType::BOX ||
       rgn->get_type() == AmanziGeometry::RegionType::CYLINDER ||
       rgn->get_type() == AmanziGeometry::RegionType::COLORFUNCTION) {
-
     for (int c = 0; c < ncells_wghost; ++c)
       if (rgn->inside(cell_centroid(c))) mset.push_back(c);
   }
@@ -551,7 +558,7 @@ Entity_ID_List MeshExtractedManifold::build_set_cells_(
   }
 
   else if (((rgn->get_type() == AmanziGeometry::RegionType::PLANE) ||
-            (rgn->get_type() == AmanziGeometry::RegionType::POLYGON)) && 
+            (rgn->get_type() == AmanziGeometry::RegionType::POLYGON)) &&
            manifold_dim == 2) {
     Entity_ID_List nodes;
     AmanziGeometry::Point xyz(space_dim);
@@ -582,11 +589,12 @@ Entity_ID_List MeshExtractedManifold::build_set_cells_(
 /* ******************************************************************
 * Create a face-set from similar set in mesh
 ****************************************************************** */
-Entity_ID_List MeshExtractedManifold::build_set_faces_(
-    const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const
+Entity_ID_List
+MeshExtractedManifold::build_set_faces_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn,
+                                        bool* missing) const
 {
   int space_dim = space_dimension();
-  int nfaces_wghost = num_entities(FACE, Parallel_type::ALL);              
+  int nfaces_wghost = num_entities(FACE, Parallel_type::ALL);
 
   Entity_ID_List mset;
 
@@ -604,12 +612,12 @@ Entity_ID_List MeshExtractedManifold::build_set_faces_(
     for (int f = 0; f < nfaces_wghost; ++f) {
       Entity_ID_List nodes;
       face_get_nodes(f, &nodes);
-            
+
       AmanziGeometry::Point xp(space_dim);
 
       bool on_plane(true);
       for (int i = 0; i < nodes.size(); ++i) {
-        node_get_coordinates(nodes[i], &xp);        
+        node_get_coordinates(nodes[i], &xp);
         if (!rgn->inside(xp)) {
           on_plane = false;
           break;
@@ -619,11 +627,11 @@ Entity_ID_List MeshExtractedManifold::build_set_faces_(
     }
   }
 
-  else if (rgn->get_type() == AmanziGeometry::RegionType::BOUNDARY)  {
-    const Epetra_Map& fmap = face_map(true); 
-    const Epetra_Map& map = exterior_face_map(true); 
+  else if (rgn->get_type() == AmanziGeometry::RegionType::BOUNDARY) {
+    const Epetra_Map& fmap = face_map(true);
+    const Epetra_Map& map = exterior_face_map(true);
 
-    int nfaces = map.NumMyElements(); 
+    int nfaces = map.NumMyElements();
 
     for (int f = 0; f < nfaces; ++f) {
       int lid = fmap.LID(map.GID(f));
@@ -642,8 +650,9 @@ Entity_ID_List MeshExtractedManifold::build_set_faces_(
 /* ******************************************************************
 * Create a node-set from similar set in mesh
 ****************************************************************** */
-Entity_ID_List MeshExtractedManifold::build_set_nodes_(
-    const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const
+Entity_ID_List
+MeshExtractedManifold::build_set_nodes_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn,
+                                        bool* missing) const
 {
   int space_dim = space_dimension();
   int nnodes_wghost = num_entities(NODE, Parallel_type::ALL);
@@ -660,20 +669,20 @@ Entity_ID_List MeshExtractedManifold::build_set_nodes_(
     for (int v = 0; v < nnodes_wghost; ++v) {
       AmanziGeometry::Point xp(space_dim);
       node_get_coordinates(v, &xp);
-                  
+
       if (rgn->inside(xp)) {
         mset.push_back(v);
         // Only one node per point rgn
-        if (rgn->get_type() == AmanziGeometry::RegionType::POINT) break;      
+        if (rgn->get_type() == AmanziGeometry::RegionType::POINT) break;
       }
     }
   }
 
-  else if (rgn->get_type() == AmanziGeometry::RegionType::BOUNDARY)  {
-    const Epetra_Map& vmap = node_map(true); 
-    const Epetra_Map& map = exterior_node_map(true); 
+  else if (rgn->get_type() == AmanziGeometry::RegionType::BOUNDARY) {
+    const Epetra_Map& vmap = node_map(true);
+    const Epetra_Map& map = exterior_node_map(true);
 
-    int nnodes = map.NumMyElements(); 
+    int nnodes = map.NumMyElements();
 
     for (int v = 0; v < nnodes; ++v) {
       int lid = vmap.LID(map.GID(v));
@@ -692,19 +701,20 @@ Entity_ID_List MeshExtractedManifold::build_set_nodes_(
 /* ******************************************************************
 * Create from a parent mesh
 ****************************************************************** */
-Entity_ID_List MeshExtractedManifold::build_from_parent_(
-  const std::string& rgnname, const Entity_kind kind_d) const
+Entity_ID_List
+MeshExtractedManifold::build_from_parent_(const std::string& rgnname,
+                                          const Entity_kind kind_d) const
 {
   Entity_ID_List mset, mset_tmp;
   Entity_kind kind_p;
 
-  if (kind_d == CELL) 
+  if (kind_d == CELL)
     kind_p = FACE;
-  else if (kind_d == FACE) 
+  else if (kind_d == FACE)
     kind_p = EDGE;
   else if (kind_d == NODE)
     kind_p = NODE;
-  else 
+  else
     return mset;
 
   try {
@@ -726,15 +736,16 @@ Entity_ID_List MeshExtractedManifold::build_from_parent_(
 /* ******************************************************************
 * Create internal maps for child->parent
 ****************************************************************** */
-void MeshExtractedManifold::InitParentMaps(const std::string& setname)
+void
+MeshExtractedManifold::InitParentMaps(const std::string& setname)
 {
   nents_owned_.clear();
   nents_ghost_.clear();
   entid_to_parent_.clear();
   parent_to_entid_.clear();
 
-  std::vector<Entity_kind> kinds_extracted({CELL, FACE, NODE});
-  std::vector<Entity_kind> kinds_parent({FACE, EDGE, NODE});
+  std::vector<Entity_kind> kinds_extracted({ CELL, FACE, NODE });
+  std::vector<Entity_kind> kinds_parent({ FACE, EDGE, NODE });
 
   for (int i = 0; i < 3; ++i) {
     auto kind_d = kinds_extracted[i];
@@ -768,9 +779,7 @@ void MeshExtractedManifold::InitParentMaps(const std::string& setname)
     // create reverse ordered map
     auto& ids_d = parent_to_entid_[kind_d];
     ids_d.clear();
-    for (int n = 0; n < ids_p.size(); ++n) {
-      ids_d[ids_p[n]] = n;
-    }
+    for (int n = 0; n < ids_p.size(); ++n) { ids_d[ids_p[n]] = n; }
   }
 }
 
@@ -780,18 +789,21 @@ void MeshExtractedManifold::InitParentMaps(const std::string& setname)
 * owned or used by this processor. This helps Epetra understand 
 * inter-partition dependencies of the data.
 ****************************************************************** */
-void MeshExtractedManifold::InitEpetraMaps()
+void
+MeshExtractedManifold::InitEpetraMaps()
 {
-  std::vector<Entity_kind> kinds_extracted({CELL, FACE, NODE});
-  std::vector<Entity_kind> kinds_parent({FACE, EDGE, NODE});
+  std::vector<Entity_kind> kinds_extracted({ CELL, FACE, NODE });
+  std::vector<Entity_kind> kinds_parent({ FACE, EDGE, NODE });
 
   for (int i = 0; i < 3; ++i) {
     auto kind_d = kinds_extracted[i];
     auto kind_p = kinds_parent[i];
 
-    // compute (discontinuous) owned global ids using the parent map 
-    Teuchos::RCP<const Epetra_BlockMap> parent_map = Teuchos::rcpFromRef(parent_mesh_->map(kind_p, false));
-    Teuchos::RCP<const Epetra_BlockMap> parent_map_wghost = Teuchos::rcpFromRef(parent_mesh_->map(kind_p, true));
+    // compute (discontinuous) owned global ids using the parent map
+    Teuchos::RCP<const Epetra_BlockMap> parent_map =
+      Teuchos::rcpFromRef(parent_mesh_->map(kind_p, false));
+    Teuchos::RCP<const Epetra_BlockMap> parent_map_wghost =
+      Teuchos::rcpFromRef(parent_mesh_->map(kind_p, true));
 
     int nents = nents_owned_[kind_d];
     int nents_wghost = nents_owned_[kind_d] + nents_ghost_[kind_d];
@@ -811,7 +823,7 @@ void MeshExtractedManifold::InitEpetraMaps()
     }
 
     auto subset_map_wghost = Teuchos::rcp(new Epetra_Map(-1, nents_wghost, gids, 0, *comm_));
-    delete [] gids;
+    delete[] gids;
 
     // creare continuous maps
     auto mymesh = Teuchos::rcpFromRef(*this);
@@ -829,17 +841,18 @@ void MeshExtractedManifold::InitEpetraMaps()
 * Exterior Epetra maps are cannot be always extracted from a
 * parent mesh, so we build them explicitly.
 ****************************************************************** */
-void MeshExtractedManifold::InitExteriorEpetraMaps()
+void
+MeshExtractedManifold::InitExteriorEpetraMaps()
 {
   int nents = nents_owned_[FACE];
   Entity_ID_List cells, nodes;
 
   const auto& fmap_owned = face_map(false);
   const auto& fmap_wghost = face_map(true);
-  
+
   const auto& vmap_owned = node_map(false);
   const auto& vmap_wghost = node_map(true);
-  
+
   std::vector<int> gids;
   Epetra_IntVector counts(fmap_wghost), flags(vmap_wghost);
 
@@ -853,12 +866,13 @@ void MeshExtractedManifold::InitExteriorEpetraMaps()
       face_get_nodes(n, &nodes);
       for (int i = 0; i < nodes.size(); ++i) flags[nodes[i]] = 1;
     }
-    counts[n] = ncells; 
+    counts[n] = ncells;
   }
 
   // process faces
   ent_extmap_owned_[FACE] = Teuchos::rcp(new Epetra_Map(-1, gids.size(), gids.data(), 0, *comm_));
-  exterior_face_importer_ = Teuchos::rcp(new Epetra_Import(*ent_extmap_owned_[FACE], *ent_map_owned_[FACE]));
+  exterior_face_importer_ =
+    Teuchos::rcp(new Epetra_Import(*ent_extmap_owned_[FACE], *ent_map_owned_[FACE]));
 
 #ifdef HAVE_MPI
   {
@@ -909,9 +923,11 @@ void MeshExtractedManifold::InitExteriorEpetraMaps()
 /* ******************************************************************
 * Exception due to limitations of the base mesh framework.
 ****************************************************************** */
-void MeshExtractedManifold::TryExtension_(
-    const std::string& setname,
-    Entity_kind kind_p, Entity_kind kind_d, Entity_ID_List* setents) const
+void
+MeshExtractedManifold::TryExtension_(const std::string& setname,
+                                     Entity_kind kind_p,
+                                     Entity_kind kind_d,
+                                     Entity_ID_List* setents) const
 {
   // labeled set: extract edges
   setents->clear();
@@ -936,23 +952,16 @@ void MeshExtractedManifold::TryExtension_(
     int f = it->first;
     if (kind_p == FACE) {
       setents_tmp.insert(f);
-    }
-    else if (kind_p == EDGE) {
+    } else if (kind_p == EDGE) {
       parent_mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
-      for (int i = 0; i < edges.size(); ++i) {
-        setents_tmp.insert(edges[i]);
-      }
-    }
-    else if (kind_p == NODE) {
+      for (int i = 0; i < edges.size(); ++i) { setents_tmp.insert(edges[i]); }
+    } else if (kind_p == NODE) {
       parent_mesh_->face_get_nodes(f, &nodes);
-      for (int i = 0; i < nodes.size(); ++i) {
-        setents_tmp.insert(nodes[i]);
-      }
+      for (int i = 0; i < nodes.size(); ++i) { setents_tmp.insert(nodes[i]); }
     }
   }
 
-  for (auto it = setents_tmp.begin(); it != setents_tmp.end(); ++it)
-    setents->push_back(*it);
+  for (auto it = setents_tmp.begin(); it != setents_tmp.end(); ++it) setents->push_back(*it);
 
   std::string setname_internal = setname + std::to_string(kind_d);
   parent_labeledsets_[setname_internal] = *setents;
@@ -962,19 +971,21 @@ void MeshExtractedManifold::TryExtension_(
 /* ******************************************************************
 * Limits the set of parent objects to only one layer of ghosts.
 ****************************************************************** */
-std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
-    const std::string& setname, Entity_kind kind, Entity_ID_List* setents) const
+std::map<Entity_ID, int>
+MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
+                                                Entity_kind kind,
+                                                Entity_ID_List* setents) const
 {
   // base set is the set of master cells
   Entity_ID_List fullset;
   if (kind != FACE) {
     std::vector<double> vofs;
     parent_mesh_->get_set_entities_and_vofs(setname, FACE, Parallel_type::ALL, &fullset, &vofs);
-  } else { 
+  } else {
     fullset = *setents;
   }
 
-  // initial set of entities is defined by master parent faces and is marked as 
+  // initial set of entities is defined by master parent faces and is marked as
   // potential master entities
   Entity_ID_List nodes, edges, faces;
   std::vector<int> dirs;
@@ -986,14 +997,14 @@ std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
     if (f < nfaces_owned) {
       parent_mesh_->face_get_nodes(f, &nodes);
       for (int i = 0; i < nodes.size(); ++i) nodeset0[nodes[i]] = MASTER;
- 
+
       if (kind == EDGE) {
         parent_mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
         for (int i = 0; i < edges.size(); ++i) edgeset[edges[i]] = MASTER;
       }
- 
+
       faceset[f] = MASTER;
-    } 
+    }
   }
 
   // ghosts entities are defined by neighboor faces of master faces. New
@@ -1058,8 +1069,7 @@ std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
           Entity_ID f = faces[n];
           if (auxset.find(f) != auxset.end()) {
             gid_wghost_min = std::min(gid_wghost_min, fmap.GID(f));
-            if (f < nowned)
-              gid_owned_min = std::min(gid_owned_min, fmap.GID(f));
+            if (f < nowned) gid_owned_min = std::min(gid_owned_min, fmap.GID(f));
           }
         }
         it->second = (gid_wghost_min == gid_owned_min) ? MASTER : GHOST;
@@ -1083,8 +1093,7 @@ std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
           Entity_ID f = faces[n];
           if (auxset.find(f) != auxset.end()) {
             gid_wghost_min = std::min(gid_wghost_min, fmap.GID(f));
-            if (f < nowned)
-              gid_owned_min = std::min(gid_owned_min, fmap.GID(f));
+            if (f < nowned) gid_owned_min = std::min(gid_owned_min, fmap.GID(f));
           }
         }
         it->second = (gid_wghost_min == gid_owned_min) ? MASTER : GHOST;
@@ -1100,7 +1109,8 @@ std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
 /* ******************************************************************
 * Check if point is in 3D polygon by Jordan's crossing algorithm
 ****************************************************************** */
-bool MeshExtractedManifold::PointInCell_(const AmanziGeometry::Point& xp, int c) const
+bool
+MeshExtractedManifold::PointInCell_(const AmanziGeometry::Point& xp, int c) const
 {
   Entity_ID_List nodes;
   cell_get_nodes(c, &nodes);
@@ -1113,7 +1123,7 @@ bool MeshExtractedManifold::PointInCell_(const AmanziGeometry::Point& xp, int c)
     int i2 = (i1 + 1) % nnodes;
     node_get_coordinates(nodes[i1], &xp1);
     node_get_coordinates(nodes[i2], &xp2);
-    vol += norm((xp1 - xp)^(xp2 - xp));
+    vol += norm((xp1 - xp) ^ (xp2 - xp));
   }
 
   double area = cell_volume(c);
@@ -1124,7 +1134,8 @@ bool MeshExtractedManifold::PointInCell_(const AmanziGeometry::Point& xp, int c)
 /* ******************************************************************
 * Statistics
 ****************************************************************** */
-void MeshExtractedManifold::PrintSets_() const
+void
+MeshExtractedManifold::PrintSets_() const
 {
   if (vo_.get() && vo_->os_OK(Teuchos::VERB_LOW)) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -1134,7 +1145,7 @@ void MeshExtractedManifold::PrintSets_() const
       get_comm()->SumAll(&i0, &i1, 1);
       *(vo_->os()) << "\"" << it.first << "\" (" << i1 << ") ";
     }
-    *(vo_->os())  << "\n";
+    *(vo_->os()) << "\n";
 
     *(vo_->os()) << "parent labeledsets: ";
     for (auto it : parent_labeledsets_) {
@@ -1142,10 +1153,9 @@ void MeshExtractedManifold::PrintSets_() const
       get_comm()->SumAll(&i0, &i1, 1);
       *(vo_->os()) << "\"" << it.first << "\" (" << i1 << ") ";
     }
-    *(vo_->os())  << "\n";
+    *(vo_->os()) << "\n";
   }
 }
 
-}  // namespace AmanziMesh
-}  // namespace Amanzi
-
+} // namespace AmanziMesh
+} // namespace Amanzi

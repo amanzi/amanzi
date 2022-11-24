@@ -22,16 +22,18 @@ namespace Flow {
 
 class WRM_fake : public WRM {
  public:
-  explicit WRM_fake(Teuchos::ParameterList& plist) {
+  explicit WRM_fake(Teuchos::ParameterList& plist)
+  {
     alpha = 1.0;
     n = 2.0;
     m = 1.0;
   }
-  ~WRM_fake() {};
-  
+  ~WRM_fake(){};
+
   // required methods from the base class
   // -- relative permeability formula
-  double k_relative(double pc) const {
+  double k_relative(double pc) const
+  {
     if (pc < 0.0)
       return 1.0 / (1.0 + pc * pc);
     else
@@ -46,7 +48,8 @@ class WRM_fake : public WRM {
   double residualSaturation() const { return 0.0; }
 
   // -- derivative of rel_perm  w.r.t. capillary pressure.
-  double dKdPc(double pc) const {
+  double dKdPc(double pc) const
+  {
     if (pc < 0.0) {
       double tmp = 1.0 + pc * pc;
       return -2 * pc / (tmp * tmp);
@@ -61,7 +64,7 @@ class WRM_fake : public WRM {
   static Utils::RegisteredFactory<WRM, WRM_fake> factory_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
- 
+} // namespace Flow
+} // namespace Amanzi
+
 #endif

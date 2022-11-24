@@ -35,8 +35,8 @@ RegisteredFactory<MFD3D_Diffusion_Edge> MFD3D_Diffusion_Edge::factory_("diffusio
 * Only the upper triangular part of Ac is calculated.
 * The degrees of freedom are at nodes.
 ****************************************************************** */
-int MFD3D_Diffusion_Edge::H1consistency(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+int
+MFD3D_Diffusion_Edge::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   Entity_ID_List fedges;
   std::vector<int> edirs, map;
@@ -79,12 +79,10 @@ int MFD3D_Diffusion_Edge::H1consistency(
       for (int m = 0; m < nfedges; ++m) {
         int e = fedges[m];
         const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
- 
-        double tmp = ((tau^normal) * (xf - xe0)) * dirs[n] * edirs[m] / area;
 
-        for (int k = 0; k < d_; ++k) {
-          N(map[m], k) += normal[k] * tmp / area;
-        }
+        double tmp = ((tau ^ normal) * (xf - xe0)) * dirs[n] * edirs[m] / area;
+
+        for (int k = 0; k < d_; ++k) { N(map[m], k) += normal[k] * tmp / area; }
       }
     }
   }
@@ -110,7 +108,7 @@ int MFD3D_Diffusion_Edge::H1consistency(
     N(n, d_) = 1.0;
   }
 
-  // Internal verification 
+  // Internal verification
   // DenseMatrix NtR(d_ + 1, d_ + 1);
   // NtR.Multiply(N, R, true);
   // std::cout << NtR << std::endl;
@@ -122,7 +120,8 @@ int MFD3D_Diffusion_Edge::H1consistency(
 /* ******************************************************************
 * Stiffness matrix: the standard algorithm.
 ****************************************************************** */
-int MFD3D_Diffusion_Edge::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
+int
+MFD3D_Diffusion_Edge::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -133,8 +132,5 @@ int MFD3D_Diffusion_Edge::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A
   return 0;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
-
-
+} // namespace WhetStone
+} // namespace Amanzi

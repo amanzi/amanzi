@@ -26,7 +26,8 @@
 #include "Mesh_MSTK.hh"
 
 /* **************************************************************** */
-TEST(MESH_SURFACE_FLATTENED) {
+TEST(MESH_SURFACE_FLATTENED)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -41,18 +42,19 @@ TEST(MESH_SURFACE_FLATTENED) {
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   auto mesh_list = Teuchos::sublist(plist, "mesh", false);
-  auto mesh3D = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
+  auto mesh3D = Teuchos::rcp(
+    new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
 
   bool flatten = true;
-  RCP<Mesh> mesh = Teuchos::rcp(new MeshExtractedManifold(mesh3D, "Top side", AmanziMesh::FACE,
-                                                          comm, gm, plist, true, false, flatten));
+  RCP<Mesh> mesh = Teuchos::rcp(new MeshExtractedManifold(
+    mesh3D, "Top side", AmanziMesh::FACE, comm, gm, plist, true, false, flatten));
 
   int ncells = mesh->cell_map(false).NumGlobalElements();
   int nfaces = mesh->face_map(false).NumGlobalElements();
   int nnodes = mesh->node_map(false).NumGlobalElements();
   int mfaces = mesh->exterior_face_map(false).NumGlobalElements();
-  std::cout << " pid=" << comm->MyPID() << " cells: " << ncells 
-            << " faces: " << nfaces << " bnd faces: " << mfaces << std::endl;
+  std::cout << " pid=" << comm->MyPID() << " cells: " << ncells << " faces: " << nfaces
+            << " bnd faces: " << mfaces << std::endl;
 
   CHECK(ncells == 100);
   CHECK(nfaces == 220);
@@ -77,4 +79,3 @@ TEST(MESH_SURFACE_FLATTENED) {
     CHECK(p[0] > 0.0 && p[1] < 1.0);
   }
 }
-

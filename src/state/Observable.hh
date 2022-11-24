@@ -121,8 +121,8 @@ class Observable {
   static const double nan;
 
   Observable(Teuchos::ParameterList& plist);
-  Observable(const Comm_ptr_type& comm, Teuchos::ParameterList& plist)
-    : Observable(plist) {
+  Observable(const Comm_ptr_type& comm, Teuchos::ParameterList& plist) : Observable(plist)
+  {
     set_comm(comm);
   }
 
@@ -136,9 +136,7 @@ class Observable {
   void set_comm(const Comm_ptr_type& comm) { comm_ = comm; }
 
   bool is_time_integrated() { return time_integrated_; }
-  int get_num_vectors() {
-    return (dof_ >= 0) ? 1 : num_vectors_;
-  }
+  int get_num_vectors() { return (dof_ >= 0) ? 1 : num_vectors_; }
   int get_degree_of_freedom() { return dof_; }
 
   void Setup(const Teuchos::Ptr<State>& S);
@@ -170,6 +168,6 @@ class Observable {
 };
 
 
-} // namespace
+} // namespace Amanzi
 
 #endif

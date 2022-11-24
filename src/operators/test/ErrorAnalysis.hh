@@ -20,14 +20,19 @@
 
 #include "Mesh.hh"
 
-inline
-void ComputePolyError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-                      Epetra_MultiVector& poly, Epetra_MultiVector& poly_exact,
-                      double& err_int, double& err_glb, double& gnorm)
+inline void
+ComputePolyError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+                 Epetra_MultiVector& poly,
+                 Epetra_MultiVector& poly_exact,
+                 double& err_int,
+                 double& err_glb,
+                 double& gnorm)
 {
   int npoly = poly.NumVectors();
-  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
-  int nfaces_owned = mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   std::vector<int> flag(ncells_owned, 0);
 
   Amanzi::AmanziMesh::Entity_ID_List cells;
@@ -59,12 +64,12 @@ void ComputePolyError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   err_int = std::abs(err_glb - err_bnd);
 
 #ifdef HAVE_MPI
-    double tmp = err_int;
-    mesh->get_comm()->SumAll(&tmp, &err_int, 1);
-    tmp = err_glb;
-    mesh->get_comm()->SumAll(&tmp, &err_glb, 1);
-    tmp = gnorm;
-    mesh->get_comm()->SumAll(&tmp, &gnorm, 1);
+  double tmp = err_int;
+  mesh->get_comm()->SumAll(&tmp, &err_int, 1);
+  tmp = err_glb;
+  mesh->get_comm()->SumAll(&tmp, &err_glb, 1);
+  tmp = gnorm;
+  mesh->get_comm()->SumAll(&tmp, &gnorm, 1);
 #endif
 
   err_int = std::pow(err_int / gnorm, 0.5);
@@ -73,4 +78,3 @@ void ComputePolyError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 }
 
 #endif
-

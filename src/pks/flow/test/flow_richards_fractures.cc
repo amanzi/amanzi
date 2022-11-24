@@ -31,7 +31,8 @@
 #include "Richards_PK.hh"
 
 /* **************************************************************** */
-TEST(RICHARDS_TWO_FRACTURES) {
+TEST(RICHARDS_TWO_FRACTURES)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -51,7 +52,7 @@ TEST(RICHARDS_TWO_FRACTURES) {
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
   // extract fractures mesh
@@ -94,12 +95,5 @@ TEST(RICHARDS_TWO_FRACTURES) {
   }
 
   const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
-  for (int c = 0; c < p.MyLength(); c++) {
-    CHECK(p[0][c] > -1.0 && p[0][c] < 2.0);
-  }
+  for (int c = 0; c < p.MyLength(); c++) { CHECK(p[0][c] > -1.0 && p[0][c] < 2.0); }
 }
-
-
-
-
-

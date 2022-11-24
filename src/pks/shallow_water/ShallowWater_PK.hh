@@ -65,8 +65,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   virtual void set_dt(double dt) override{};
 
   // Advance PK by step size dt.
-  virtual bool
-  AdvanceStep(double t_old, double t_new, bool reinit = false) override;
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
 
   virtual void FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector& f) override;
 
@@ -84,28 +83,33 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   double BathymetryEdgeValue(int e, const Epetra_MultiVector& Bn);
 
   // Recalculate total depth for positivity of ponded depth
-  double TotalDepthEdgeValue(int c, int e, double htc,
-                             double Bc, double Bmax, const Epetra_MultiVector& B_n);
+  double TotalDepthEdgeValue(int c,
+                             int e,
+                             double htc,
+                             double Bc,
+                             double Bmax,
+                             const Epetra_MultiVector& B_n);
 
   // due to rotational invariance of SW equations, we need flux in the
   // x-direction only.
   std::vector<double> PhysicalFlux_x(const std::vector<double>&);
 
+  std::vector<double> NumericalFlux_x(std::vector<double>&, std::vector<double>&);
   std::vector<double>
-  NumericalFlux_x(std::vector<double>&, std::vector<double>&);
-  std::vector<double> NumericalFlux_x_Rusanov(const std::vector<double>&, const std::vector<double>&);
-  std::vector<double> NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
+  NumericalFlux_x_Rusanov(const std::vector<double>&, const std::vector<double>&);
+  std::vector<double>
+  NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
 
-  std::vector<double> NumericalSource(int c, double htc,
-                                      double Bc, double Bmax, const Epetra_MultiVector& B_n);
+  std::vector<double>
+  NumericalSource(int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n);
 
   // access
   double get_total_source() const { return total_source_; }
 
  private:
-  void
-  InitializeFieldFromField_(const std::string& field0,
-                            const std::string& field1, bool call_evaluator);
+  void InitializeFieldFromField_(const std::string& field0,
+                                 const std::string& field1,
+                                 bool call_evaluator);
 
   void VerifySolution_(TreeVector& A);
   int ErrorDiagnostics_(double t, int c, double h, double B, double ht);
@@ -132,7 +136,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
-  
+
   // source terms
   std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;
   double total_source_;

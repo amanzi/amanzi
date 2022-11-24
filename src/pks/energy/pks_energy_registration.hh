@@ -20,5 +20,5 @@ namespace Energy {
 RegisteredPKFactory<EnergyOnePhase_PK> EnergyOnePhase_PK::reg_("one-phase energy");
 RegisteredPKFactory<EnergyTwoPhase_PK> EnergyTwoPhase_PK::reg_("two-phase energy");
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi

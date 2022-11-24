@@ -17,8 +17,7 @@ namespace Amanzi {
 namespace ShallowWater {
 
 void
-ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
-                                          TreeVector& fun)
+ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector& fun)
 {
   const auto& h_temp = *A.SubVector(0)->Data()->ViewComponent("cell", true);
   const auto& q_temp = *A.SubVector(1)->Data()->ViewComponent("cell", true);
@@ -42,8 +41,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_).ViewComponent("cell", true);
   auto& vel_c = *S_->GetW<CompositeVector>(velocity_key_, passwd_).ViewComponent("cell", true);
-  auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_).ViewComponent("face", true);
- 
+  auto& riemann_f =
+    *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_).ViewComponent("face", true);
+
   for (int c = 0; c < ncells_wghost; ++c) {
     double factor = inverse_with_tolerance(h_temp[0][c], cell_area2_max_);
     vel_c[0][c] = factor * q_temp[0][c];
@@ -98,25 +98,23 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   // limited reconstructions using boundary data
   // total depth
-  auto tmp1 = S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto tmp1 =
+    S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   total_depth_grad_->Compute(tmp1);
-  if (use_limiter_)
-    limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
+  if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
   total_depth_grad_->data()->ScatterMasterToGhosted("cell");
-  
+
   // additional depth-positivity correction limiting for fully flooded cells
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
-  
-  for (int c = 0; c < ncells_wghost; ++c ) {
+
+  for (int c = 0; c < ncells_wghost; ++c) {
     Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
     mesh_->cell_get_nodes(c, &cnodes);
-    
+
     // calculate maximum bathymetry value on cell nodes
     double Bmax = 0.0;
-    for (int i = 0; i < cnodes.size(); ++i) {
-      Bmax = std::max(B_n[0][cnodes[i]], Bmax);
-    }
-    
+    for (int i = 0; i < cnodes.size(); ++i) { Bmax = std::max(B_n[0][cnodes[i]], Bmax); }
+
     // check if cell is fully flooded and proceed with limiting
     if ((ht_c[0][c] > Bmax) && (ht_c[0][c] - B_c[0][c] > 0.0)) {
       Amanzi::AmanziMesh::Entity_ID_List cfaces;
@@ -127,26 +125,26 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         const auto& xf = mesh_->face_centroid(cfaces[f]);
         double ht_rec = total_depth_grad_->getValue(c, xf);
         if (ht_rec - BathymetryEdgeValue(cfaces[f], B_n) < 0.0) {
-          alpha = std::min(alpha, cfl_positivity_ * (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (ht_rec - ht_c[0][c]));
+          alpha = std::min(alpha,
+                           cfl_positivity_ * (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) /
+                             (ht_rec - ht_c[0][c]));
         }
       }
-      
+
       ht_grad[0][c] *= alpha;
       ht_grad[1][c] *= alpha;
     }
   }
-  
+
   // flux
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
-  if (use_limiter_)
-    limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_, bc_model, bc_value_qx);
+  if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_, bc_model, bc_value_qx);
   discharge_x_grad_->data()->ScatterMasterToGhosted("cell");
 
   auto tmp6 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_y_grad_->Compute(tmp6, 1);
-  if (use_limiter_)
-    limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_, bc_model, bc_value_qy);
+  if (use_limiter_) limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_, bc_model, bc_value_qy);
   discharge_y_grad_->data()->ScatterMasterToGhosted("cell");
 
   // update source (external) terms
@@ -193,7 +191,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double ht_rec = TotalDepthEdgeValue(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
 
     double B_rec = BathymetryEdgeValue(f, B_n);
-    
+
     double h_rec = ht_rec - B_rec;
     ierr = ErrorDiagnostics_(t, c1, h_rec, B_rec, ht_rec);
     if (ierr < 0) break;
@@ -202,7 +200,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
 
     factor = inverse_with_tolerance(h_rec, cell_area2_max_);
-  
+
     double vx_rec = factor * qx_rec;
     double vy_rec = factor * qy_rec;
 
@@ -234,7 +232,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
       qx_rec = discharge_x_grad_->getValue(c2, xf);
       qy_rec = discharge_y_grad_->getValue(c2, xf);
-      
+
       factor = inverse_with_tolerance(h_rec, cell_area2_max_);
 
       vx_rec = factor * qx_rec;
@@ -297,7 +295,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     h = h_c_tmp[0][c] + (S[0] + ext_S_cell[c]);
     qx = q_c_tmp[0][c] + S[1];
     qy = q_c_tmp[1][c] + S[2];
-    
+
     f_temp0[0][c] = h;
     f_temp1[0][c] = qx;
     f_temp1[1][c] = qy;

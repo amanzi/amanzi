@@ -18,11 +18,13 @@ namespace Flow {
 /* ******************************************************************
 * Calculate f(u, du/dt) = A*u - rhs.
 ****************************************************************** */
-void Darcy_PK::FunctionalResidual(
-    double t_old, double t_new, 
-    Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
-    Teuchos::RCP<TreeVector> f)
-{ 
+void
+Darcy_PK::FunctionalResidual(double t_old,
+                             double t_new,
+                             Teuchos::RCP<TreeVector> u_old,
+                             Teuchos::RCP<TreeVector> u_new,
+                             Teuchos::RCP<TreeVector> f)
+{
   dt_ = t_new - t_old;
 
   // refresh data
@@ -32,11 +34,11 @@ void Darcy_PK::FunctionalResidual(
   // calculate and assemble elemental stiffness matrices
   double factor = 1.0 / g_;
   const auto& ss = S_->Get<CompositeVector>(specific_storage_key_);
-  CompositeVector ss_g(ss); 
+  CompositeVector ss_g(ss);
   ss_g.Update(0.0, ss, factor);
 
   factor = 1.0 / (g_ * dt_);
-  CompositeVector sy_g(*specific_yield_copy_); 
+  CompositeVector sy_g(*specific_yield_copy_);
   sy_g.Scale(factor);
 
   if (flow_on_manifold_) {
@@ -56,7 +58,7 @@ void Darcy_PK::FunctionalResidual(
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
-  // compliance and optinal update of diffusion operator 
+  // compliance and optinal update of diffusion operator
   if (flow_on_manifold_) {
     S_->GetEvaluator(compliance_key_).Update(*S_, "flow");
     const auto& compliance = S_->Get<CompositeVector>(compliance_key_, Tags::DEFAULT);
@@ -65,11 +67,11 @@ void Darcy_PK::FunctionalResidual(
     op_acc_->AddAccumulationDelta(*u_old->Data(), ss_g, ss_g, dt_, "cell");
 
     bool updated = S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");
-    if (updated)
-      op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+    if (updated) op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   } else if (use_bulk_modulus_) {
     S_->GetEvaluator(bulk_modulus_key_).Update(*S_, "flow");
-    const auto& bulk_c = *S_->Get<CompositeVector>(bulk_modulus_key_, Tags::DEFAULT).ViewComponent("cell");
+    const auto& bulk_c =
+      *S_->Get<CompositeVector>(bulk_modulus_key_, Tags::DEFAULT).ViewComponent("cell");
 
     auto& ss_gc = *ss_g.ViewComponent("cell");
     for (int c = 0; c < ncells_owned; ++c) ss_gc[0][c] = rho_ / bulk_c[0][c];
@@ -83,7 +85,7 @@ void Darcy_PK::FunctionalResidual(
   AddSourceTerms(rhs, dt_);
 
   // if the matrix was assemble, it will be used in Apply. Due to new
-  // accumulation term, we either have to destroy or reassemble it 
+  // accumulation term, we either have to destroy or reassemble it
   op_->ComputeNegativeResidual(*u_new->Data(), *f->Data());
 }
 
@@ -91,8 +93,8 @@ void Darcy_PK::FunctionalResidual(
 /* ******************************************************************
 * Apply preconditioner inv(B) * X.                                                 
 ****************************************************************** */
-int Darcy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, 
-                                  Teuchos::RCP<TreeVector> Y)
+int
+Darcy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
 {
   num_itrs_++;
   Y->PutScalar(0.0);
@@ -104,7 +106,8 @@ int Darcy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
 /* ******************************************************************
 * Update preconditioner for the interval (tp-dtp, tp].
 ****************************************************************** */
-void Darcy_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
+void
+Darcy_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
   op_->ComputeInverse();
 }
@@ -113,8 +116,8 @@ void Darcy_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
 /* ******************************************************************
 * Check difference du between the predicted and converged solutions.
 ****************************************************************** */
-double Darcy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, 
-                           Teuchos::RCP<const TreeVector> du)
+double
+Darcy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du)
 {
   const Epetra_MultiVector& uc = *u->Data()->ViewComponent("cell");
   const Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell");
@@ -137,8 +140,8 @@ double Darcy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   */
 
 #ifdef HAVE_MPI
-    double tmp = error;
-    u->Comm()->MaxAll(&tmp, &error, 1);
+  double tmp = error;
+  u->Comm()->MaxAll(&tmp, &error, 1);
 #endif
 
   return error;
@@ -149,7 +152,8 @@ double Darcy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 * Estimate dT increase factor by comparing the 1st and 2nd order
 * time approximations.
 ****************************************************************** */
-double Darcy_PK::ErrorEstimate_(double* dt_factor)
+double
+Darcy_PK::ErrorEstimate_(double* dt_factor)
 {
   double tol, atol(1.0), rtol(1e-5), error, error_max(0.0), p(101325.0);
   double dt_factor_cell;
@@ -171,17 +175,15 @@ double Darcy_PK::ErrorEstimate_(double* dt_factor)
   *dt_factor = std::max(*dt_factor, FLOW_DT_ADAPTIVE_REDUCTION);
 
 #ifdef HAVE_MPI
-    double dt_tmp = *dt_factor;
-    solution->Comm()->MinAll(&dt_tmp, dt_factor, 1);  // find the global minimum
- 
-    double error_tmp = error_max;
-    solution->Comm()->MaxAll(&error_tmp, &error_max, 1);  // find the global maximum
+  double dt_tmp = *dt_factor;
+  solution->Comm()->MinAll(&dt_tmp, dt_factor, 1); // find the global minimum
+
+  double error_tmp = error_max;
+  solution->Comm()->MaxAll(&error_tmp, &error_max, 1); // find the global maximum
 #endif
 
   return error_max;
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
-
-
+} // namespace Flow
+} // namespace Amanzi

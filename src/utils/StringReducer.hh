@@ -41,20 +41,24 @@ namespace Impl {
 
 #ifdef HAVE_MPI
 
-template<int MAXLEN>
-void MyMaxString(char* in, char* out, int *count, MPI_Datatype *dptr) {
+template <int MAXLEN>
+void
+MyMaxString(char* in, char* out, int* count, MPI_Datatype* dptr)
+{
   AMANZI_ASSERT(*count == 1);
-  for (int i=0; i!=*count; ++i) {
-    std::string instr(&in[MAXLEN*i], MAXLEN);
-    std::string outstr(&out[MAXLEN*i], MAXLEN);
+  for (int i = 0; i != *count; ++i) {
+    std::string instr(&in[MAXLEN * i], MAXLEN);
+    std::string outstr(&out[MAXLEN * i], MAXLEN);
     if (instr > outstr) {
-      for (int j=0; j!=MAXLEN; ++j) out[MAXLEN*i+j] = in[MAXLEN*i+j];
+      for (int j = 0; j != MAXLEN; ++j) out[MAXLEN * i + j] = in[MAXLEN * i + j];
     }
   }
 }
 
-template<int MAXLEN>
-void MyMaxStringWrapper(void* in, void *out, int *count, MPI_Datatype *dptr) {
+template <int MAXLEN>
+void
+MyMaxStringWrapper(void* in, void* out, int* count, MPI_Datatype* dptr)
+{
   MyMaxString<MAXLEN>((char*)in, (char*)out, count, dptr);
 }
 
@@ -72,9 +76,8 @@ class StringReducer {
   static const int MAXLEN = maxlen;
 
  public:
-  StringReducer(const Comm_ptr_type& comm)
-    : comm_ptr_(comm) {
-
+  StringReducer(const Comm_ptr_type& comm) : comm_ptr_(comm)
+  {
 #ifdef HAVE_MPI
     // get the raw comm
     auto comm_raw = Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm);
@@ -95,30 +98,32 @@ class StringReducer {
   }
 
   // reduceAll on strings -- returns the alphabetically last string across comm
-  std::string reduceMaxString(const std::string& str) const {
+  std::string reduceMaxString(const std::string& str) const
+  {
 #ifdef HAVE_MPI
     // buffer strings
     std::string string_g(MAXLEN, ' ');
     std::string string_l(str);
-    string_l.insert(str.size(), MAXLEN-1, ' ');
+    string_l.insert(str.size(), MAXLEN - 1, ' ');
 
     // reduce
-    int ierr = MPI_Allreduce((void*) string_l.data(), (void*) string_g.data(), 1, dtype_, op_, comm_);
+    int ierr = MPI_Allreduce((void*)string_l.data(), (void*)string_g.data(), 1, dtype_, op_, comm_);
     AMANZI_ASSERT(!ierr);
 
     // erase the trailing spaces
     int i;
-    for (i=MAXLEN-1; i!=-1; --i) {
+    for (i = MAXLEN - 1; i != -1; --i) {
       if (string_g[i] != ' ') break;
     }
-    return string_g.substr(0,i+1);
+    return string_g.substr(0, i + 1);
 #else
     return str;
 #endif
   }
 
 
-  int reduceMinInt(int size) const {
+  int reduceMinInt(int size) const
+  {
 #ifdef HAVE_MPI
     int size_g = 0;
     int ierr = MPI_Allreduce(&size, &size_g, 1, MPI_INT, MPI_MIN, comm_);
@@ -134,8 +139,8 @@ class StringReducer {
   // keys that exist on all ranks of comm.
   //
   // NOTE: if uncertain, call checkValidInput()!
-  std::vector<std::string> intersectAll(const std::vector<std::string>& in) const {
-
+  std::vector<std::string> intersectAll(const std::vector<std::string>& in) const
+  {
 #ifdef HAVE_MPI
     std::vector<std::string> out;
     int nleft = reduceMinInt(in.size());
@@ -168,13 +173,12 @@ class StringReducer {
   }
 
 
-  void checkValidInput(const std::vector<std::string>& in) const {
+  void checkValidInput(const std::vector<std::string>& in) const
+  {
     std::set<std::string> set(in.begin(), in.end());
     AMANZI_ASSERT(set.size() == in.size());
     if (in.size() > 1) {
-      for (int i=0; i!=(in.size()-1); ++i) {
-        AMANZI_ASSERT(in[i+1] > in[i]);
-      }
+      for (int i = 0; i != (in.size() - 1); ++i) { AMANZI_ASSERT(in[i + 1] > in[i]); }
     }
   }
 

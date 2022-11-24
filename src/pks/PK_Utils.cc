@@ -20,17 +20,17 @@ namespace Amanzi {
 /* ******************************************************************
 * Deep copy of state fields.
 ****************************************************************** */
-void StateArchive::Add(std::vector<std::string> fields, 
-                       std::vector<std::string> evals,
-                       std::vector<std::string> primary,
-                       const Tag& tag,
-                       const std::string& requestor)
+void
+StateArchive::Add(std::vector<std::string> fields,
+                  std::vector<std::string> evals,
+                  std::vector<std::string> primary,
+                  const Tag& tag,
+                  const std::string& requestor)
 {
   tag_ = tag;
   primary_ = primary;
 
-  for (const auto& name : fields) 
-    fields_.emplace(name, S_->Get<CompositeVector>(name, tag));
+  for (const auto& name : fields) fields_.emplace(name, S_->Get<CompositeVector>(name, tag));
 
   for (const auto& name : evals) {
     S_->GetEvaluator(name).Update(*S_, requestor);
@@ -42,7 +42,8 @@ void StateArchive::Add(std::vector<std::string> fields,
 /* ******************************************************************
 * Deep copy of state fields.
 ****************************************************************** */
-void StateArchive::Restore(const std::string& passwd)
+void
+StateArchive::Restore(const std::string& passwd)
 {
   for (auto it = fields_.begin(); it != fields_.end(); ++it) {
     S_->GetW<CompositeVector>(it->first, passwd) = it->second;
@@ -64,7 +65,8 @@ void StateArchive::Restore(const std::string& passwd)
 
   for (auto it = primary_.begin(); it != primary_.end(); ++it) {
     Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
-      S_->GetEvaluatorPtr(*it, tag_))->SetChanged();
+      S_->GetEvaluatorPtr(*it, tag_))
+      ->SetChanged();
 
     if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
       Teuchos::OSTab tab = vo_->getOSTab();
@@ -77,7 +79,8 @@ void StateArchive::Restore(const std::string& passwd)
 /* *******************************************************************
 * Copy: Evaluator (BASE) -> Field (prev_BASE)
 ******************************************************************* */
-void StateArchive::Swap(const std::string& passwd)
+void
+StateArchive::Swap(const std::string& passwd)
 {
   for (auto it = fields_.begin(); it != fields_.end(); ++it) {
     std::string prev(it->first), next(it->first);
@@ -93,16 +96,17 @@ void StateArchive::Swap(const std::string& passwd)
 /* ******************************************************************
 * Return a copy
 ****************************************************************** */
-const CompositeVector& StateArchive::get(const std::string& name)
+const CompositeVector&
+StateArchive::get(const std::string& name)
 {
   {
     auto it = fields_.find(name);
-    if (it != fields_.end()) return it->second; 
+    if (it != fields_.end()) return it->second;
   }
 
   {
     auto it = evals_.find(name);
-    if (it != evals_.end()) return it->second; 
+    if (it != evals_.end()) return it->second;
   }
 
   AMANZI_ASSERT(false);
@@ -112,15 +116,16 @@ const CompositeVector& StateArchive::get(const std::string& name)
 /* ******************************************************************
 * Average permeability tensor in horizontal direction.
 ****************************************************************** */
-void PKUtils_CalculatePermeabilityFactorInWell(
-    const Teuchos::Ptr<State>& S, Teuchos::RCP<Epetra_Vector>& Kxy)
+void
+PKUtils_CalculatePermeabilityFactorInWell(const Teuchos::Ptr<State>& S,
+                                          Teuchos::RCP<Epetra_Vector>& Kxy)
 {
   if (!S->HasRecord("permeability", Tags::DEFAULT)) return;
 
   const auto& cv = S->Get<CompositeVector>("permeability", Tags::DEFAULT);
   cv.ScatterMasterToGhosted("cell");
   const auto& perm = *cv.ViewComponent("cell", true);
- 
+
   int ncells_wghost = S->GetMesh()->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int dim = perm.NumVectors();
 
@@ -138,15 +143,15 @@ void PKUtils_CalculatePermeabilityFactorInWell(
 /* ******************************************************************
 * Return coordinate of mesh entity (
 ****************************************************************** */
-AmanziGeometry::Point PKUtils_EntityCoordinates(
-    int id, AmanziMesh::Entity_ID kind, const AmanziMesh::Mesh& mesh)
+AmanziGeometry::Point
+PKUtils_EntityCoordinates(int id, AmanziMesh::Entity_ID kind, const AmanziMesh::Mesh& mesh)
 {
   if (kind == AmanziMesh::FACE) {
     return mesh.face_centroid(id);
   } else if (kind == AmanziMesh::CELL) {
     return mesh.cell_centroid(id);
   } else if (kind == AmanziMesh::NODE) {
-    int d = mesh.space_dimension(); 
+    int d = mesh.space_dimension();
     AmanziGeometry::Point xn(d);
     mesh.node_get_coordinates(id, &xn);
     return xn;
@@ -156,5 +161,4 @@ AmanziGeometry::Point PKUtils_EntityCoordinates(
   return AmanziGeometry::Point();
 }
 
-}  // namespace Amanzi
-
+} // namespace Amanzi

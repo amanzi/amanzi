@@ -36,21 +36,20 @@ namespace Operators {
 
 class PDE_AdvectionUpwind : public PDE_Advection {
  public:
-  PDE_AdvectionUpwind(Teuchos::ParameterList& plist,
-                      const Teuchos::RCP<Operator>& global_op) :
-      PDE_Advection(plist, global_op)
+  PDE_AdvectionUpwind(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
+    : PDE_Advection(plist, global_op)
   {
     InitAdvection_(plist);
   }
 
   PDE_AdvectionUpwind(Teuchos::ParameterList& plist,
-                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_Advection(plist, mesh)
+                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : PDE_Advection(plist, mesh)
   {
     InitAdvection_(plist);
   }
 
-  // required members 
+  // required members
   // -- setup
   virtual void Setup(const CompositeVector& u) override;
   // -- generate a linearized operator
@@ -59,19 +58,19 @@ class PDE_AdvectionUpwind : public PDE_Advection {
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u) override;
 
   // -- determine advected flux of potential u
-  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h, 
+  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
                           const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::RCP<BCs>& bc,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
-  
+
   // boundary conditions
   //    primary=true indicates that the operator updates both matrix and right-hand
   //      side using BC data. If primary=false, only matrix is changed.
-  //    eliminate=true indicates that we eliminate essential BCs for a trial 
-  //      function, i.e. zeros go in the corresponding matrix columns and 
-  //      right-hand side is modified using BC values. This is the optional 
+  //    eliminate=true indicates that we eliminate essential BCs for a trial
+  //      function, i.e. zeros go in the corresponding matrix columns and
+  //      right-hand side is modified using BC values. This is the optional
   //      parameter that enforces symmetry for a symmetric tree  operators.
-  //    essential_eqn=true indicates that the operator places a positive number on 
+  //    essential_eqn=true indicates that the operator places a positive number on
   //      the main matrix diagonal for the case of essential BCs. This is the
   //      implementation trick.
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
@@ -84,8 +83,7 @@ class PDE_AdvectionUpwind : public PDE_Advection {
   void InitAdvection_(Teuchos::ParameterList& plist);
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

@@ -21,9 +21,12 @@ namespace Energy {
 /* ******************************************************************
 * Computes the non-linear functional g = g(t,u,udot)
 ****************************************************************** */
-void EnergyTwoPhase_PK::FunctionalResidual(
-    double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-    Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g)
+void
+EnergyTwoPhase_PK::FunctionalResidual(double t_old,
+                                      double t_new,
+                                      Teuchos::RCP<TreeVector> u_old,
+                                      Teuchos::RCP<TreeVector> u_new,
+                                      Teuchos::RCP<TreeVector> g)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
@@ -51,7 +54,7 @@ void EnergyTwoPhase_PK::FunctionalResidual(
   // add sources
   CompositeVector& rhs = *op_matrix_->rhs();
   AddSourceTerms(rhs);
-  
+
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *g->Data());
 
   // add accumulation term
@@ -69,7 +72,7 @@ void EnergyTwoPhase_PK::FunctionalResidual(
     g_c[0][c] += factor * (e1[0][c] - e0[0][c]);
   }
 
-  // advect tmp = molar_density_liquid * enthalpy 
+  // advect tmp = molar_density_liquid * enthalpy
   S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
   const auto& enthalpy = S_->Get<CompositeVector>(enthalpy_key_);
   const auto& n_l = S_->Get<CompositeVector>(mol_density_liquid_key_);
@@ -91,8 +94,8 @@ void EnergyTwoPhase_PK::FunctionalResidual(
 /* ******************************************************************
 * Update the preconditioner on the interval (t, t + dt] using u = up.
 ****************************************************************** */
-void EnergyTwoPhase_PK::UpdatePreconditioner(
-    double t, Teuchos::RCP<const TreeVector> up, double dt)
+void
+EnergyTwoPhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
@@ -122,11 +125,9 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
   // update the accumulation derivatives, dE/dT
   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
   auto& dEdT = S_->GetDerivativeW<CompositeVector>(
-      energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, energy_key_);
+    energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, energy_key_);
 
-  if (dt > 0.0) {
-    op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell");
-  }
+  if (dt > 0.0) { op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell"); }
 
   // add advection term dHdT
   if (prec_include_enthalpy_) {
@@ -134,7 +135,7 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
 
     S_->GetEvaluator(enthalpy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
     auto dHdT = S_->GetDerivativePtrW<CompositeVector>(
-        enthalpy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, enthalpy_key_);
+      enthalpy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, enthalpy_key_);
 
     const auto& n_l = S_->Get<CompositeVector>("molar_density_liquid");
     dHdT->Multiply(1.0, *dHdT, n_l, 0.0);
@@ -153,8 +154,8 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
 * Error is defined as the relative change of temperature. 
 * The reference temprerature value is 273 K.
 ****************************************************************** */
-double EnergyTwoPhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                                    Teuchos::RCP<const TreeVector> du)
+double
+EnergyTwoPhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
@@ -166,9 +167,7 @@ double EnergyTwoPhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   double ref_temp(273.0);
   for (int c = 0; c < ncells_owned; c++) {
     double tmp = fabs(duc[0][c]) / (fabs(uc[0][c] - ref_temp) + ref_temp);
-    if (tmp > error_t) {
-      error_t = tmp;
-    } 
+    if (tmp > error_t) { error_t = tmp; }
   }
 
   // Cell error is based upon error in energy conservation relative to
@@ -190,12 +189,11 @@ double EnergyTwoPhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
 #ifdef HAVE_MPI
   double buf = error;
-  du->Data()->Comm()->MaxAll(&buf, &error, 1);  // find the global maximum
+  du->Data()->Comm()->MaxAll(&buf, &error, 1); // find the global maximum
 #endif
 
   return error;
 }
 
-}  // namespace Energy
-}  // namespace Amanzi
-
+} // namespace Energy
+} // namespace Amanzi

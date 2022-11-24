@@ -29,18 +29,18 @@ namespace AmanziSolvers {
 /* ******************************************************************
 * Initialization from a parameter list.
 ****************************************************************** */
-void DirectMethodAmesos::set_inverse_parameters(Teuchos::ParameterList& plist)
+void
+DirectMethodAmesos::set_inverse_parameters(Teuchos::ParameterList& plist)
 {
   plist_ = plist;
 
   solver_name_ = plist.get<std::string>("solver name", "Klu");
-  std::string vo_name = this->name()+" (Amesos " + solver_name_ + ")";
+  std::string vo_name = this->name() + " (Amesos " + solver_name_ + ")";
 
   vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist));
 
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "set_inverse_parameters()" << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "set_inverse_parameters()" << std::endl;
 
   inited_ = true;
 }
@@ -49,10 +49,11 @@ void DirectMethodAmesos::set_inverse_parameters(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Update sets symbolic structure
 ****************************************************************** */
-void DirectMethodAmesos::InitializeInverse() {
+void
+DirectMethodAmesos::InitializeInverse()
+{
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "InitializeInverse()" << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "InitializeInverse()" << std::endl;
 
   AMANZI_ASSERT(inited_);
   AMANZI_ASSERT(h_.get());
@@ -63,10 +64,11 @@ void DirectMethodAmesos::InitializeInverse() {
 /* ******************************************************************
 * Compute sets symbolic structure
 ****************************************************************** */
-void DirectMethodAmesos::ComputeInverse() {
+void
+DirectMethodAmesos::ComputeInverse()
+{
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "ComputeInverse()" << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "ComputeInverse()" << std::endl;
 
   if (!updated_) {
     // NOTE, this appears to be a bug in Klu, where if it has not been actually
@@ -96,8 +98,8 @@ void DirectMethodAmesos::ComputeInverse() {
       returned_code_ = ierr;
 
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-        *vo_->os() << "DirectMethodAmesos: SymbolicFactorization() failed with error code: " <<
-            this->returned_code_string() << std::endl;
+        *vo_->os() << "DirectMethodAmesos: SymbolicFactorization() failed with error code: "
+                   << this->returned_code_string() << std::endl;
 
       // throw on this error?
       Errors::Message msg("DirectMethodAmesos: SymbolicFactorization failed");
@@ -119,8 +121,8 @@ void DirectMethodAmesos::ComputeInverse() {
       returned_code_ = ierr;
 
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-        *vo_->os() << "DirectMethodAmesos: NumericFactorization() failed with error code: " <<
-            this->returned_code_string() << std::endl;
+        *vo_->os() << "DirectMethodAmesos: NumericFactorization() failed with error code: "
+                   << this->returned_code_string() << std::endl;
 
       // throw on this error?
       // Errors::Message msg("DirectMethodAmesos: NumericFactorization failed");
@@ -132,7 +134,8 @@ void DirectMethodAmesos::ComputeInverse() {
 }
 
 
-int DirectMethodAmesos::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
+int
+DirectMethodAmesos::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 {
   AMANZI_ASSERT(computed_);
 
@@ -147,8 +150,8 @@ int DirectMethodAmesos::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) 
       returned_code_ = ierr;
 
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-        *vo_->os() << "DirectMethodAmesos::ApplyInverse() failed with error code: " <<
-            this->returned_code_string() << std::endl;
+        *vo_->os() << "DirectMethodAmesos::ApplyInverse() failed with error code: "
+                   << this->returned_code_string() << std::endl;
     } else {
       returned_code_ = ierr;
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
@@ -160,25 +163,26 @@ int DirectMethodAmesos::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) 
 }
 
 
-std::string DirectMethodAmesos::returned_code_string() const
+std::string
+DirectMethodAmesos::returned_code_string() const
 {
-  switch(returned_code_) {
-    case (0) :
-      return "success";
-    case (1) :
-      return "singular matrix";
-    case (2) :
-      return "non-symmetric matrix";
-    case (3) :
-      return "non-positive-definite matrix";
-    case (4) :
-      return "insufficient memory";
-    case (-22) :
-      return "singular matrix found on NumericFactorization";
+  switch (returned_code_) {
+  case (0):
+    return "success";
+  case (1):
+    return "singular matrix";
+  case (2):
+    return "non-symmetric matrix";
+  case (3):
+    return "non-positive-definite matrix";
+  case (4):
+    return "insufficient memory";
+  case (-22):
+    return "singular matrix found on NumericFactorization";
   }
   return "unknown error";
 }
 
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi

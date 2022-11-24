@@ -19,13 +19,13 @@ namespace ShallowWater {
 
 class NumericalFlux {
  public:
-  virtual ~NumericalFlux() {};
+  virtual ~NumericalFlux(){};
 
   std::vector<double> PhysicalFlux(const std::vector<double>& U);
   double minmod(double a, double b);
 
-  virtual std::vector<double> Compute(
-          const std::vector<double>& UL, const std::vector<double>& UR) = 0;
+  virtual std::vector<double>
+  Compute(const std::vector<double>& UL, const std::vector<double>& UR) = 0;
 
   double MaxSpeed() const { return lambda_max_; }
   double MinSpeed() const { return lambda_min_; }
@@ -36,8 +36,8 @@ class NumericalFlux {
 };
 
 
-inline
-std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
+inline std::vector<double>
+NumericalFlux::PhysicalFlux(const std::vector<double>& U)
 {
   std::vector<double> F(3);
 
@@ -61,12 +61,12 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
 //--------------------------------------------------------------
 // minmod function
 //--------------------------------------------------------------
-inline
-double NumericalFlux::minmod(double a, double b)
+inline double
+NumericalFlux::minmod(double a, double b)
 {
   double m;
 
-  if (a*b > 0) {
+  if (a * b > 0) {
     if (std::fabs(a) < std::fabs(b)) {
       m = a;
     } else {
@@ -80,8 +80,7 @@ double NumericalFlux::minmod(double a, double b)
 }
 
 
-}  // namespace ShallowWater
-}  // namespace Amanzi
-  
+} // namespace ShallowWater
+} // namespace Amanzi
+
 #endif
-  

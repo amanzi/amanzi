@@ -33,14 +33,15 @@ namespace AmanziMesh {
 *  pair of continuous master and ghosted maps that corresponds to
 *  subset maps
 ****************************************************************** */
-std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
-CreateContinuousMaps(
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-    const std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& parent_maps,
-    const std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& subset_maps)
+std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map>>
+CreateContinuousMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                     const std::pair<Teuchos::RCP<const Epetra_BlockMap>,
+                                     Teuchos::RCP<const Epetra_BlockMap>>& parent_maps,
+                     const std::pair<Teuchos::RCP<const Epetra_BlockMap>,
+                                     Teuchos::RCP<const Epetra_BlockMap>>& subset_maps)
 {
   int n_owned = subset_maps.first->NumMyElements();
-  
+
   const auto& comm = subset_maps.first->Comm();
   auto continuous_map = Teuchos::rcp(new Epetra_Map(-1, n_owned, 0, comm));
 
@@ -56,7 +57,7 @@ CreateContinuousMaps(
   tmp[my_pid] = continuous_map->GID(0);
 
   mesh->get_comm()->SumAll(tmp.data(), min_global_id.data(), total_proc);
-  
+
   for (int n = n_owned; n < subset_maps.second->NumMyElements(); n++) {
     int f = parent_maps.second->LID(subset_maps.second->GID(n));
     gl_id[n - n_owned] = parent_maps.second->GID(f);
@@ -68,12 +69,10 @@ CreateContinuousMaps(
   for (int i = 0; i < n_ghost; i++) {
     if (pr_id[i] >= 0) n_all_new++;
   }
-  
+
   int m_all_new = std::max(n_all_new, 1);
   std::vector<int> global_id_ghosted(m_all_new);
-  for (int i = 0; i < n_owned; i++) {
-    global_id_ghosted[i] = continuous_map->GID(i);  
-  }
+  for (int i = 0; i < n_owned; i++) { global_id_ghosted[i] = continuous_map->GID(i); }
 
   int k = n_owned;
   for (int i = 0; i < n_ghost; i++) {
@@ -82,12 +81,12 @@ CreateContinuousMaps(
       global_id_ghosted[k++] = min_global_id[proc_id] + lc_id[i];
     }
   }
-  
-  Teuchos::RCP<Epetra_Map> continuous_map_ghosted = 
+
+  Teuchos::RCP<Epetra_Map> continuous_map_ghosted =
     Teuchos::rcp(new Epetra_Map(-1, n_all_new, global_id_ghosted.data(), 0, comm));
 
   return std::make_pair(continuous_map, continuous_map_ghosted);
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace AmanziMesh
+} // namespace Amanzi

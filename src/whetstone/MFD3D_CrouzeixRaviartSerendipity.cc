@@ -35,7 +35,8 @@ namespace WhetStone {
 /* ******************************************************************
 * Schema.
 ****************************************************************** */
-std::vector<SchemaItem> MFD3D_CrouzeixRaviartSerendipity::schema() const
+std::vector<SchemaItem>
+MFD3D_CrouzeixRaviartSerendipity::schema() const
 {
   int nk = PolynomialSpaceDimension(d_ - 1, order_ - 1);
   std::vector<SchemaItem> items;
@@ -54,18 +55,19 @@ std::vector<SchemaItem> MFD3D_CrouzeixRaviartSerendipity::schema() const
 * High-order consistency condition for the stiffness matrix. 
 * Only the upper triangular part of Ac is calculated. 
 ****************************************************************** */
-int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+int
+MFD3D_CrouzeixRaviartSerendipity::H1consistency(int c,
+                                                const Tensor& K,
+                                                DenseMatrix& N,
+                                                DenseMatrix& Ac)
 {
   int nfaces = mesh_->cell_get_num_faces(c);
-  AMANZI_ASSERT(nfaces > 3);  // FIXME
+  AMANZI_ASSERT(nfaces > 3); // FIXME
 
-  // calculate degrees of freedom 
+  // calculate degrees of freedom
   Polynomial poly(d_, order_), pf, pc;
   pf.Reshape(d_ - 1, order_ - 1);
-  if (order_ > 3) {
-    pc.Reshape(d_, order_ - 4);
-  }
+  if (order_ > 3) { pc.Reshape(d_, order_ - 4); }
 
   int nd = poly.size();
   int ndf = pf.size();
@@ -76,7 +78,7 @@ int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
   DenseMatrix Nf, Af;
   MFD3D_CrouzeixRaviartAnyOrder::H1consistency(c, K, Nf, Af);
 
-  // pre-calculate integrals of monomials 
+  // pre-calculate integrals of monomials
   NumericalIntegration numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
@@ -106,11 +108,11 @@ int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
       int l = jt.PolynomialPosition();
       int m = jt.MonomialSetOrder();
       L(l, k) = lap(l) / basis.monomial_scales()[m];
-    }  
+    }
   }
 
   // calculate matrices N and R
-  // -- extract sub-matrices 
+  // -- extract sub-matrices
   DenseMatrix Rf(R_);
   N = Nf.SubMatrix(0, ndof_S, 0, nd);
   R_ = Rf.SubMatrix(0, ndof_S, 0, nd);
@@ -144,8 +146,8 @@ int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
 /* ******************************************************************
 * Stiffness matrix for a high-order scheme.
 ****************************************************************** */
-int MFD3D_CrouzeixRaviartSerendipity::StiffnessMatrix(
-    int c, const Tensor& K, DenseMatrix& A)
+int
+MFD3D_CrouzeixRaviartSerendipity::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -160,10 +162,12 @@ int MFD3D_CrouzeixRaviartSerendipity::StiffnessMatrix(
 /* ******************************************************************
 * L2 projector 
 ****************************************************************** */
-void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
-    int c, const std::vector<Polynomial>& vf,
-    const ProjectorType type,
-    const Polynomial* moments, Polynomial& uc)
+void
+MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(int c,
+                                                 const std::vector<Polynomial>& vf,
+                                                 const ProjectorType type,
+                                                 const Polynomial* moments,
+                                                 Polynomial& uc)
 {
   // selecting regularized basis
   Polynomial ptmp;
@@ -175,9 +179,9 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
   DenseMatrix N, A;
 
   T(0, 0) = 1.0;
-  MFD3D_CrouzeixRaviartAnyOrder::H1consistency(c, T, N, A);  
+  MFD3D_CrouzeixRaviartAnyOrder::H1consistency(c, T, N, A);
 
-  // select number of non-aligned edges: we assume cell convexity 
+  // select number of non-aligned edges: we assume cell convexity
   int nfaces = mesh_->cell_get_num_faces(c);
   int eta(3);
   if (nfaces > 3) eta = 4;
@@ -207,9 +211,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
   if (ndof_cs > 0) {
     AMANZI_ASSERT(moments != NULL);
     const DenseVector& v3 = moments->coefs();
-    for (int n = 0; n < ndof_cs; ++n) {
-      vdof(ndof_f + n) = v3(n);
-    }
+    for (int n = 0; n < ndof_cs; ++n) { vdof(ndof_f + n) = v3(n); }
   }
 
   Ns.Multiply(vdof, v1, true);
@@ -230,9 +232,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
     M.Multiply(v5, v4, false);
 
     vdof.Reshape(ndof_f + ndof_c);
-    for (int n = ndof_cs; n < ndof_c; ++n) {
-      vdof(ndof_f + n) = v4(n) / mesh_->cell_volume(c); 
-    }
+    for (int n = ndof_cs; n < ndof_c; ++n) { vdof(ndof_f + n) = v4(n) / mesh_->cell_volume(c); }
 
     R_.Multiply(vdof, v4, true);
     G_.Multiply(v4, v5, false);
@@ -255,13 +255,9 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
     M2.Multiply(v5, v6, false);
 
     const DenseVector& v3 = moments->coefs();
-    for (int n = 0; n < ndof_cs; ++n) {
-      v4(n) = v3(n) * mesh_->cell_volume(c);
-    }
+    for (int n = 0; n < ndof_cs; ++n) { v4(n) = v3(n) * mesh_->cell_volume(c); }
 
-    for (int n = 0; n < nd - ndof_cs; ++n) {
-      v4(ndof_cs + n) = v6(n);
-    }
+    for (int n = 0; n < nd - ndof_cs; ++n) { v4(ndof_cs + n) = v6(n); }
 
     M.Inverse();
     M.Multiply(v4, v5, false);
@@ -277,8 +273,10 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 /* ******************************************************************
 * Calculate degrees of freedom in 2D.
 ****************************************************************** */
-void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
-    int c, const std::vector<Polynomial>& vf, DenseVector& vdof)
+void
+MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(int c,
+                                                           const std::vector<Polynomial>& vf,
+                                                           DenseVector& vdof)
 {
   const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
@@ -295,7 +293,7 @@ void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
     double area = mesh_->face_area(f);
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
     // local coordinate system with origin at face centroid
@@ -306,7 +304,7 @@ void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
     for (auto it = pf.begin(); it < pf.end(); ++it) {
       const int* index = it.multi_index();
       Polynomial fmono(d_ - 1, index, 1.0);
-      fmono.InverseChangeCoordinates(xf, *coordsys.tau());  
+      fmono.InverseChangeCoordinates(xf, *coordsys.tau());
 
       polys[1] = &fmono;
 
@@ -316,6 +314,5 @@ void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
   }
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

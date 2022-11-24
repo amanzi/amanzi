@@ -25,7 +25,8 @@ namespace Operators {
 /* ******************************************************************
 * Initialize operator from parameter list.
 ****************************************************************** */
-void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
+void
+PDE_Abstract::Init_(Teuchos::ParameterList& plist)
 {
   Errors::Message msg;
 
@@ -41,13 +42,11 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
     symmetric = false;
     range = plist.sublist("schema range");
     domain = plist.sublist("schema domain");
-  }
-  else if (plist.isSublist("schema")) {
+  } else if (plist.isSublist("schema")) {
     range = plist.sublist("schema");
     domain = range;
-  }
-  else {
-    msg << "Schema mismatch for abstract operator.\n" 
+  } else {
+    msg << "Schema mismatch for abstract operator.\n"
         << "  Use \"schema\" for a square operator.\n"
         << "  Use \"schema range\" and \"schema domain\" for a general operator.\n";
     Exceptions::amanzi_throw(msg);
@@ -64,7 +63,7 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
   // discretization method:
   auto mfd_domain = WhetStone::BilinearFormFactory::Create(domain, mesh_);
   Teuchos::RCP<WhetStone::BilinearForm> mfd_range;
-  if (!symmetric) 
+  if (!symmetric)
     mfd_range = WhetStone::BilinearFormFactory::Create(range, mesh_);
   else
     mfd_range = mfd_domain;
@@ -79,14 +78,17 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
     // -- range schema and cvs
     local_schema_row_.Init(mfd_range, mesh_, base);
     global_schema_row_ = local_schema_row_;
-    Teuchos::RCP<CompositeVectorSpace> cvs_row = Teuchos::rcp(new CompositeVectorSpace(cvsFromSchema(global_schema_row_, mesh_, true)));
+    Teuchos::RCP<CompositeVectorSpace> cvs_row =
+      Teuchos::rcp(new CompositeVectorSpace(cvsFromSchema(global_schema_row_, mesh_, true)));
 
     // -- domain schema and cvs
     local_schema_col_.Init(mfd_domain, mesh_, base);
     global_schema_col_ = local_schema_col_;
-    Teuchos::RCP<CompositeVectorSpace> cvs_col = Teuchos::rcp(new CompositeVectorSpace(cvsFromSchema(global_schema_col_, mesh_, true)));
+    Teuchos::RCP<CompositeVectorSpace> cvs_col =
+      Teuchos::rcp(new CompositeVectorSpace(cvsFromSchema(global_schema_col_, mesh_, true)));
 
-    global_op_ = Teuchos::rcp(new Operator_Schema(cvs_row, cvs_col, plist, global_schema_row_, global_schema_col_));
+    global_op_ = Teuchos::rcp(
+      new Operator_Schema(cvs_row, cvs_col, plist, global_schema_row_, global_schema_col_));
 
   } else {
     // constructor was given an Operator
@@ -103,9 +105,10 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
   global_op_->OpPushBack(local_op_);
 
   // default values
-  const auto coef = std::make_shared<CoefficientModel<WhetStone::Tensor> >(nullptr);
-  interface_ = Teuchos::rcp(new InterfaceWhetStoneMFD<
-      WhetStone::BilinearForm, CoefficientModel<WhetStone::Tensor> >(mfd_, coef));
+  const auto coef = std::make_shared<CoefficientModel<WhetStone::Tensor>>(nullptr);
+  interface_ = Teuchos::rcp(
+    new InterfaceWhetStoneMFD<WhetStone::BilinearForm, CoefficientModel<WhetStone::Tensor>>(mfd_,
+                                                                                            coef));
 }
 
 
@@ -113,8 +116,9 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
 * Populate containers of elemental matrices using MFD factory.
 * NOTE: input parameters are not yet used.
 ****************************************************************** */
-void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                                  const Teuchos::Ptr<const CompositeVector>& p)
+void
+PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                             const Teuchos::Ptr<const CompositeVector>& p)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   int d(mesh_->space_dimension());
@@ -177,7 +181,7 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
           for (int i = 0; i < d; ++i) vn[i] = u_c[i][v];
           vec.push_back(vn);
         }
-        
+
         mfd_->AdvectionMatrix(c, vec, Acell);
         matrix[c] = Acell;
       }
@@ -200,7 +204,8 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
 /* ******************************************************************
 * Populate containers of elemental matrices using MFD factory.
 ****************************************************************** */
-void PDE_Abstract::UpdateMatrices(double t) 
+void
+PDE_Abstract::UpdateMatrices(double t)
 {
   // verify type of coefficient
   AMANZI_ASSERT(Kvec_stpoly_.get());
@@ -214,7 +219,7 @@ void PDE_Abstract::UpdateMatrices(double t)
 
       matrix[c] = static_matrices_[c][0];
       for (int i = 1; i < size; ++i) {
-        matrix[c] += tmp * static_matrices_[c][i]; 
+        matrix[c] += tmp * static_matrices_[c][i];
         tmp *= t;
       }
     }
@@ -229,7 +234,8 @@ void PDE_Abstract::UpdateMatrices(double t)
 /* *******************************************************************
 * Space-time coefficients can be pre-processed.
 ******************************************************************* */
-void PDE_Abstract::CreateStaticMatrices_()
+void
+PDE_Abstract::CreateStaticMatrices_()
 {
   AMANZI_ASSERT(matrix_ == "advection");
 
@@ -242,7 +248,7 @@ void PDE_Abstract::CreateStaticMatrices_()
   for (int c = 0; c < ncells_owned; ++c) {
     int size = (*Kvec_stpoly_)[c][0].size();
     static_matrices_[c].clear();
- 
+
     for (int i = 0; i < size; ++i) {
       for (int k = 0; k < d; ++k) poly[k] = (*Kvec_stpoly_)[c][k][i];
       mfd_->AdvectionMatrix(c, poly, Acell, grad_on_test_);
@@ -253,6 +259,5 @@ void PDE_Abstract::CreateStaticMatrices_()
   static_matrices_initialized_ = true;
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
+} // namespace Operators
+} // namespace Amanzi

@@ -68,7 +68,8 @@ class Evaluator_OperatorApply : public EvaluatorSecondary {
   explicit Evaluator_OperatorApply(Teuchos::ParameterList& plist);
   Evaluator_OperatorApply(const Evaluator_OperatorApply& other) = default;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new Evaluator_OperatorApply(*this));
   }
 
@@ -85,21 +86,22 @@ class Evaluator_OperatorApply : public EvaluatorSecondary {
   virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override;
 
  protected:
-  Key x0_key_; // x_0
-  Teuchos::Array<Key> x_keys_;  // x_i
-  Teuchos::Array<Key> op0_keys_; // A_0i
+  Key x0_key_;                       // x_0
+  Teuchos::Array<Key> x_keys_;       // x_i
+  Teuchos::Array<Key> op0_keys_;     // A_0i
   Teuchos::Array<Key> op0_rhs_keys_; // rhs_A_0i
 
-  std::vector<Teuchos::Array<Key>> op_keys_; // A_ji
+  std::vector<Teuchos::Array<Key>> op_keys_;     // A_ji
   std::vector<Teuchos::Array<Key>> op_rhs_keys_; // rhs_A_ji
-  Teuchos::Array<double> rhs_scalars_; // scale the rhs_A_ji (allows +1 for sources, -1 for accumulation terms)
+  Teuchos::Array<double>
+    rhs_scalars_; // scale the rhs_A_ji (allows +1 for sources, -1 for accumulation terms)
 
   Teuchos::Array<Key> rhs_keys_; // rhs_k
 
   std::string primary_entity_;
   AmanziMesh::Entity_kind primary_entity_kind_;
 
-private:
+ private:
   static Utils::RegisteredFactory<Evaluator, Evaluator_OperatorApply> fac_;
 };
 

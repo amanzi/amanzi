@@ -24,8 +24,8 @@ namespace WhetStone {
 * Efficient implementation is possible in 2D. Hence, we fork the code.
 * Non-symmetric tensor is not yet used.
 ****************************************************************** */
-int DeRham_Node::L2consistency(int c, const Tensor& T,
-                               DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
+int
+DeRham_Node::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
   Entity_ID_List nodes, face_nodes;
 
@@ -59,17 +59,13 @@ int DeRham_Node::L2consistency(int c, const Tensor& T,
   }
 
   // calculate upper part of R T R^T / volume
-  for (int i = 0; i < nnodes; i++) { 
+  for (int i = 0; i < nnodes; i++) {
     double a = N(i, 0) * T(0, 0) / volume;
-    for (int j = i; j < nnodes; j++) {
-      Mc(i, j) = a * N(j, 0);
-    }
+    for (int j = i; j < nnodes; j++) { Mc(i, j) = a * N(j, 0); }
   }
 
   // populate matrix N
-  for (int i = 0; i < nnodes; i++) {
-    N(i, 0) = 1.0;
-  }
+  for (int i = 0; i < nnodes; i++) { N(i, 0) = 1.0; }
 
   return 0;
 }
@@ -78,7 +74,8 @@ int DeRham_Node::L2consistency(int c, const Tensor& T,
 /* ******************************************************************
 * Mass matrix: adding stability matrix to the consistency matrix.
 ****************************************************************** */
-int DeRham_Node::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
+int
+DeRham_Node::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 {
   DenseMatrix N;
 
@@ -90,6 +87,5 @@ int DeRham_Node::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
   return 0;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

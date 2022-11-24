@@ -47,7 +47,6 @@ nonlinear iterations required to solve step :math:`k`:.
 namespace Amanzi {
 
 class TimestepControllerStandard : public TimestepController {
-
  public:
   TimestepControllerStandard(Teuchos::ParameterList& plist);
 

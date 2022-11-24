@@ -29,10 +29,11 @@ class Mesh;
 
 namespace Operators {
 
-int CellToFace_ScaleInverse(Teuchos::RCP<const CompositeVector> f1, Teuchos::RCP<CompositeVector>& f2);
+int
+CellToFace_ScaleInverse(Teuchos::RCP<const CompositeVector> f1, Teuchos::RCP<CompositeVector>& f2);
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 
 #endif

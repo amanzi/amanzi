@@ -28,22 +28,22 @@
 
 namespace Amanzi {
 
-std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
-getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
+std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map>>
+getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location)
+{
   return std::make_pair(Teuchos::rcpFromRef(mesh.map(location, false)),
                         Teuchos::rcpFromRef(mesh.map(location, true)));
 }
 
 
 // constructor
-CompositeVectorSpace::CompositeVectorSpace() :
-  ghosted_(false), owned_(false), mesh_(Teuchos::null) {};
+CompositeVectorSpace::CompositeVectorSpace()
+  : ghosted_(false), owned_(false), mesh_(Teuchos::null){};
 
 
 // copy constructor
-CompositeVectorSpace::CompositeVectorSpace(const CompositeVectorSpace& other,
-        bool ghosted) :
-    ghosted_(ghosted),
+CompositeVectorSpace::CompositeVectorSpace(const CompositeVectorSpace& other, bool ghosted)
+  : ghosted_(ghosted),
     owned_(other.owned_),
     mesh_(other.mesh_),
     names_(other.names_),
@@ -51,11 +51,12 @@ CompositeVectorSpace::CompositeVectorSpace(const CompositeVectorSpace& other,
     locations_(other.locations_),
     num_dofs_(other.num_dofs_),
     mastermaps_(other.mastermaps_),
-    ghostmaps_(other.ghostmaps_) {};
+    ghostmaps_(other.ghostmaps_){};
 
 // CompositeVectorSpace is a factory of CompositeVectors
 Teuchos::RCP<CompositeVector>
-CompositeVectorSpace::Create() const {
+CompositeVectorSpace::Create() const
+{
   if (mesh_ == Teuchos::null) {
     Errors::Message msg("CompositeVector cannot be created since mesh was not set.");
     Exceptions::amanzi_throw(msg);
@@ -65,22 +66,24 @@ CompositeVectorSpace::Create() const {
 
 // Check equivalence of spaces.
 bool
-CompositeVectorSpace::SameAs(const CompositeVectorSpace& other) const {
+CompositeVectorSpace::SameAs(const CompositeVectorSpace& other) const
+{
   if (NumComponents() != other.NumComponents()) return false;
   if (mesh_ != other.mesh_) return false;
-  for (name_iterator name=begin(); name!=end(); ++name) {
+  for (name_iterator name = begin(); name != end(); ++name) {
     if (!other.HasComponent(*name)) return false;
     if (NumVectors(*name) != other.NumVectors(*name)) return false;
-    if (Location(*name) !=other.Location(*name)) return false;
+    if (Location(*name) != other.Location(*name)) return false;
   }
   return true;
 }
 
 // Check subset of spaces.
 bool
-CompositeVectorSpace::SubsetOf(const CompositeVectorSpace& other) const {
+CompositeVectorSpace::SubsetOf(const CompositeVectorSpace& other) const
+{
   if (mesh_ != other.mesh_) return false;
-  for (name_iterator name=begin(); name!=end(); ++name) {
+  for (name_iterator name = begin(); name != end(); ++name) {
     if (!other.HasComponent(*name)) return false;
     if (NumVectors(*name) != other.NumVectors(*name)) return false;
     if (Location(*name) != other.Location(*name)) return false;
@@ -95,10 +98,12 @@ CompositeVectorSpace::SubsetOf(const CompositeVectorSpace& other) const {
 // Update all specs from another factory's specs.
 // Useful for PKs to maintain default factories that apply to multiple CVs.
 CompositeVectorSpace*
-CompositeVectorSpace::Update(const CompositeVectorSpace& other) {
+CompositeVectorSpace::Update(const CompositeVectorSpace& other)
+{
   if (this != &other) {
     if (other.mesh_ != Teuchos::null) SetMesh(other.mesh_);
-    AddComponents(other.names_, other.locations_, other.mastermaps_, other.ghostmaps_, other.num_dofs_);
+    AddComponents(
+      other.names_, other.locations_, other.mastermaps_, other.ghostmaps_, other.num_dofs_);
     if (other.ghosted_) SetGhosted();
   }
   return this;
@@ -106,9 +111,11 @@ CompositeVectorSpace::Update(const CompositeVectorSpace& other) {
 
 
 CompositeVectorSpace*
-CompositeVectorSpace::UpdateComponents(const CompositeVectorSpace& other) {
+CompositeVectorSpace::UpdateComponents(const CompositeVectorSpace& other)
+{
   if (this != &other) {
-    AddComponents(other.names_, other.locations_, other.mastermaps_, other.ghostmaps_, other.num_dofs_);
+    AddComponents(
+      other.names_, other.locations_, other.mastermaps_, other.ghostmaps_, other.num_dofs_);
   }
   return this;
 };
@@ -116,19 +123,21 @@ CompositeVectorSpace::UpdateComponents(const CompositeVectorSpace& other) {
 
 // ghosted
 CompositeVectorSpace*
-CompositeVectorSpace::SetGhosted(bool ghosted) {
+CompositeVectorSpace::SetGhosted(bool ghosted)
+{
   ghosted_ |= ghosted;
   return this;
 }
 
 // component specification
 CompositeVectorSpace*
-CompositeVectorSpace::SetMesh(
-        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
+CompositeVectorSpace::SetMesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+{
   if (mesh_ == Teuchos::null) {
     mesh_ = mesh;
   } else if (mesh_ != mesh) {
-    Errors::Message message("CompositeVectorSpace: SetMesh called on space that already has a different mesh.");
+    Errors::Message message(
+      "CompositeVectorSpace: SetMesh called on space that already has a different mesh.");
     Exceptions::amanzi_throw(message);
   }
   return this;
@@ -139,11 +148,12 @@ CompositeVectorSpace::SetMesh(
 // sure the spec is OK if the full spec has been set (by an owning PK).
 CompositeVectorSpace*
 CompositeVectorSpace::AddComponent(const std::string& name,
-        AmanziMesh::Entity_kind location,
-        int num_dof) {
-  std::vector<std::string> names(1,name);
-  std::vector<AmanziMesh::Entity_kind> locations(1,location);
-  std::vector<int> num_dofs(1,num_dof);
+                                   AmanziMesh::Entity_kind location,
+                                   int num_dof)
+{
+  std::vector<std::string> names(1, name);
+  std::vector<AmanziMesh::Entity_kind> locations(1, location);
+  std::vector<int> num_dofs(1, num_dof);
   AddComponents(names, locations, num_dofs);
   return this;
 };
@@ -151,12 +161,12 @@ CompositeVectorSpace::AddComponent(const std::string& name,
 CompositeVectorSpace*
 CompositeVectorSpace::AddComponents(const std::vector<std::string>& names,
                                     const std::vector<AmanziMesh::Entity_kind>& locations,
-                                    const std::vector<int>& num_dofs) {
+                                    const std::vector<int>& num_dofs)
+{
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> mastermaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> ghostmaps;
 
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
-
-  for (int i=0; i<locations.size(); ++i) {
+  for (int i = 0; i < locations.size(); ++i) {
     auto maps = getMaps(*mesh_, locations[i]);
     mastermaps[names[i]] = maps.first;
     ghostmaps[names[i]] = maps.second;
@@ -170,13 +180,13 @@ CompositeVectorSpace::AddComponent(const std::string& name,
                                    AmanziMesh::Entity_kind location,
                                    Teuchos::RCP<const Epetra_BlockMap> mastermap,
                                    Teuchos::RCP<const Epetra_BlockMap> ghostmap,
-                                   int num_dof) {
-
-  std::vector<std::string> names(1,name);
-  std::vector<int> num_dofs(1,num_dof);
+                                   int num_dof)
+{
+  std::vector<std::string> names(1, name);
+  std::vector<int> num_dofs(1, num_dof);
   std::vector<AmanziMesh::Entity_kind> locations(1, location);
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> mastermaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> ghostmaps;
 
   mastermaps[name] = mastermap;
   ghostmaps[name] = ghostmap;
@@ -186,12 +196,13 @@ CompositeVectorSpace::AddComponent(const std::string& name,
 
 
 CompositeVectorSpace*
-CompositeVectorSpace::AddComponents(const std::vector<std::string>& names,
-                                    const std::vector<AmanziMesh::Entity_kind>& locations,
-                                    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps,
-                                    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps,
-                                    const std::vector<int>& num_dofs) {
-
+CompositeVectorSpace::AddComponents(
+  const std::vector<std::string>& names,
+  const std::vector<AmanziMesh::Entity_kind>& locations,
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> mastermaps,
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> ghostmaps,
+  const std::vector<int>& num_dofs)
+{
   // Add a set of specifications to the factory's list.
   if (owned_) {
     // Factory's specs are fixed by an owning PK.  Check that the requested
@@ -209,8 +220,16 @@ CompositeVectorSpace::AddComponents(const std::vector<std::string>& names,
   } else {
     // Factory's specs are not yet fixed.  Form the union (checking
     // consistency) and save this as the factory's new specs.
-    if (!UnionAndConsistent_(names, locations, num_dofs, mastermaps, ghostmaps,
-                             names_, locations_, num_dofs_, mastermaps_, ghostmaps_)) {
+    if (!UnionAndConsistent_(names,
+                             locations,
+                             num_dofs,
+                             mastermaps,
+                             ghostmaps,
+                             names_,
+                             locations_,
+                             num_dofs_,
+                             mastermaps_,
+                             ghostmaps_)) {
       Errors::Message message("Requested components are not consistent with previous request.");
       Exceptions::amanzi_throw(message);
     }
@@ -227,7 +246,8 @@ CompositeVectorSpace::AddComponents(const std::vector<std::string>& names,
 CompositeVectorSpace*
 CompositeVectorSpace::SetComponent(const std::string& name,
                                    AmanziMesh::Entity_kind location,
-                                   int num_dof) {
+                                   int num_dof)
+{
   std::vector<std::string> names(1, name);
   std::vector<AmanziMesh::Entity_kind> locations(1, location);
   std::vector<int> num_dofs(1, num_dof);
@@ -239,19 +259,19 @@ CompositeVectorSpace::SetComponent(const std::string& name,
 CompositeVectorSpace*
 CompositeVectorSpace::SetComponents(const std::vector<std::string>& names,
                                     const std::vector<AmanziMesh::Entity_kind>& locations,
-                                    const std::vector<int>& num_dofs) {
+                                    const std::vector<int>& num_dofs)
+{
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> mastermaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> ghostmaps;
 
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
-
-  for (int i=0; i<locations.size(); ++i) {
+  for (int i = 0; i < locations.size(); ++i) {
     Teuchos::RCP<const Epetra_BlockMap> master_mp(&mesh_->map(locations[i], false), false);
     mastermaps[names[i]] = master_mp;
     Teuchos::RCP<const Epetra_BlockMap> ghost_mp(&mesh_->map(locations[i], true), false);
     ghostmaps[names[i]] = ghost_mp;
   }
 
-  return SetComponents(names, locations,  mastermaps, ghostmaps, num_dofs);
+  return SetComponents(names, locations, mastermaps, ghostmaps, num_dofs);
 };
 
 CompositeVectorSpace*
@@ -259,13 +279,13 @@ CompositeVectorSpace::SetComponent(const std::string& name,
                                    AmanziMesh::Entity_kind location,
                                    Teuchos::RCP<const Epetra_BlockMap> mastermap,
                                    Teuchos::RCP<const Epetra_BlockMap> ghostmap,
-                                   int num_dof) {
-
+                                   int num_dof)
+{
   std::vector<std::string> names(1, name);
   std::vector<int> num_dofs(1, num_dof);
   std::vector<AmanziMesh::Entity_kind> locations(1, location);
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> mastermaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> ghostmaps;
 
   mastermaps[name] = mastermap;
   ghostmaps[name] = ghostmap;
@@ -275,12 +295,12 @@ CompositeVectorSpace::SetComponent(const std::string& name,
 
 CompositeVectorSpace*
 CompositeVectorSpace::SetComponents(
-    const std::vector<std::string>& names,
-    std::vector<AmanziMesh::Entity_kind> locations,
-    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps,
-    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps,
-    const std::vector<int>& num_dofs) {
-
+  const std::vector<std::string>& names,
+  std::vector<AmanziMesh::Entity_kind> locations,
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> mastermaps,
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> ghostmaps,
+  const std::vector<int>& num_dofs)
+{
   if (owned_) {
     // check equal
     if (names != names_ || num_dofs != num_dofs_) {
@@ -297,10 +317,10 @@ CompositeVectorSpace::SetComponents(
   }
 
   // Make sure the specs are consistent.
-  if (!CheckConsistent_(names_, locations_, num_dofs_,
-                        names, locations, num_dofs)) {
-      Errors::Message message("CompositeVector's components are not consistent with a previous request.");
-      Exceptions::amanzi_throw(message);
+  if (!CheckConsistent_(names_, locations_, num_dofs_, names, locations, num_dofs)) {
+    Errors::Message message(
+      "CompositeVector's components are not consistent with a previous request.");
+    Exceptions::amanzi_throw(message);
   }
 
   // Re-spec to the new spec and declare ourselves owned.
@@ -324,35 +344,41 @@ CompositeVectorSpace::SetComponents(
 
 
 // Set up the map from names to index into vector.
-void CompositeVectorSpace::InitIndexMap_() {
-  for (int i=0; i!=names_.size(); ++i) {
-    indexmap_[names_[i]] = i;
-  }
+void
+CompositeVectorSpace::InitIndexMap_()
+{
+  for (int i = 0; i != names_.size(); ++i) { indexmap_[names_[i]] = i; }
 }
 
 
-Teuchos::RCP<const Epetra_BlockMap> CompositeVectorSpace::Map(const std::string& name, bool ghost) const {
+Teuchos::RCP<const Epetra_BlockMap>
+CompositeVectorSpace::Map(const std::string& name, bool ghost) const
+{
   if (std::find(names_.begin(), names_.end(), name) == names_.end()) {
-    Errors::Message message("Map: Requested component ("+name+") doesn't exist in CompositeVectorSpace.");
+    Errors::Message message("Map: Requested component (" + name +
+                            ") doesn't exist in CompositeVectorSpace.");
     Exceptions::amanzi_throw(message);
   }
 
   if (ghost) {
     return ghostmaps_.at(name);
-  }else{
+  } else {
     return mastermaps_.at(name);
   }
 }
 
 
 // Assert that one spec is contained in another.
-bool CompositeVectorSpace::CheckContained_(const std::vector<std::string>& containing,
-                                           const std::vector<std::string>& contained) {
-  for (auto name=contained.begin(); name!=contained.end(); ++name) {
+bool
+CompositeVectorSpace::CheckContained_(const std::vector<std::string>& containing,
+                                      const std::vector<std::string>& contained)
+{
+  for (auto name = contained.begin(); name != contained.end(); ++name) {
     if (std::find(containing.begin(), containing.end(), *name) == containing.end()) {
       // special case if name is "boundary_face", then check for "face" and use Vandelay
       if (*name == std::string("boundary_face")) {
-        if (std::find(containing.begin(), containing.end(), std::string("face")) == containing.end()) {
+        if (std::find(containing.begin(), containing.end(), std::string("face")) ==
+            containing.end()) {
           return false;
         }
       } else {
@@ -365,15 +391,17 @@ bool CompositeVectorSpace::CheckContained_(const std::vector<std::string>& conta
 
 
 // Assert that the two specs are consistent.
-bool CompositeVectorSpace::CheckConsistent_(const std::vector<std::string>& names1,
-                                            const std::vector<AmanziMesh::Entity_kind>& locations1,
-                                            const std::vector<int>& num_dofs1,
-                                            const std::vector<std::string>& names2,
-                                            const std::vector<AmanziMesh::Entity_kind>& locations2,
-                                            const std::vector<int>& num_dofs2) {
-  for (int i=0; i!=names1.size(); ++i) {
+bool
+CompositeVectorSpace::CheckConsistent_(const std::vector<std::string>& names1,
+                                       const std::vector<AmanziMesh::Entity_kind>& locations1,
+                                       const std::vector<int>& num_dofs1,
+                                       const std::vector<std::string>& names2,
+                                       const std::vector<AmanziMesh::Entity_kind>& locations2,
+                                       const std::vector<int>& num_dofs2)
+{
+  for (int i = 0; i != names1.size(); ++i) {
     std::vector<std::string>::const_iterator n2_it =
-        std::find(names2.begin(), names2.end(), names1[i]);
+      std::find(names2.begin(), names2.end(), names1[i]);
     // special case for Vandelay
     if (n2_it == names2.end() && names1[i] == std::string("boundary_face")) {
       n2_it = std::find(names2.begin(), names2.end(), std::string("face"));
@@ -381,12 +409,8 @@ bool CompositeVectorSpace::CheckConsistent_(const std::vector<std::string>& name
 
     if (n2_it != names2.end()) {
       int j = n2_it - names2.begin();
-      if (locations1[i] != locations2[j]) {
-        return false;
-      }
-      if (num_dofs1[i] != num_dofs2[j]) {
-        return false;
-      }
+      if (locations1[i] != locations2[j]) { return false; }
+      if (num_dofs1[i] != num_dofs2[j]) { return false; }
     }
   }
   return true;
@@ -394,13 +418,15 @@ bool CompositeVectorSpace::CheckConsistent_(const std::vector<std::string>& name
 
 
 // Form the union, returning it in the 2 vectors.
-bool CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& names1,
-                                               const std::vector<AmanziMesh::Entity_kind>& locations1,
-                                               const std::vector<int>& num_dofs1,
-                                               std::vector<std::string>& names2,
-                                               std::vector<AmanziMesh::Entity_kind>& locations2,
-                                               std::vector<int>& num_dofs2) {
-  for (int i=0; i!=names1.size(); ++i) {
+bool
+CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& names1,
+                                          const std::vector<AmanziMesh::Entity_kind>& locations1,
+                                          const std::vector<int>& num_dofs1,
+                                          std::vector<std::string>& names2,
+                                          std::vector<AmanziMesh::Entity_kind>& locations2,
+                                          std::vector<int>& num_dofs2)
+{
+  for (int i = 0; i != names1.size(); ++i) {
     auto n2_it = std::find(names2.begin(), names2.end(), names1[i]);
     if (n2_it == names2.end()) {
       // no match
@@ -410,13 +436,10 @@ bool CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& n
         n2_it = std::find(names2.begin(), names2.end(), std::string("face"));
         if (n2_it != names2.end()) {
           int j = n2_it - names2.begin();
-          if ((locations1[i] != AmanziMesh::BOUNDARY_FACE) ||
-              (locations2[j] != AmanziMesh::FACE)) {
+          if ((locations1[i] != AmanziMesh::BOUNDARY_FACE) || (locations2[j] != AmanziMesh::FACE)) {
             return false;
           }
-          if (num_dofs1[i] != num_dofs2[j]) {
-            return false;
-          }
+          if (num_dofs1[i] != num_dofs2[j]) { return false; }
         } else {
           // add this spec
           names2.push_back(names1[i]);
@@ -428,13 +451,10 @@ bool CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& n
         n2_it = std::find(names2.begin(), names2.end(), std::string("boundary_face"));
         if (n2_it != names2.end()) {
           int j = n2_it - names2.begin();
-          if ((locations1[i] != AmanziMesh::FACE) ||
-              (locations2[j] != AmanziMesh::BOUNDARY_FACE)) {
+          if ((locations1[i] != AmanziMesh::FACE) || (locations2[j] != AmanziMesh::BOUNDARY_FACE)) {
             return false;
           }
-          if (num_dofs1[i] != num_dofs2[j]) {
-            return false;
-          }
+          if (num_dofs1[i] != num_dofs2[j]) { return false; }
 
           // union of face and boundary_face is face
           names2[j] = "face";
@@ -455,12 +475,8 @@ bool CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& n
     } else {
       // just make sure they match
       int j = n2_it - names2.begin();
-      if (locations1[i] != locations2[j]) {
-        return false;
-      }
-      if (num_dofs1[i] != num_dofs2[j]) {
-        return false;
-      }
+      if (locations1[i] != locations2[j]) { return false; }
+      if (num_dofs1[i] != num_dofs2[j]) { return false; }
     }
   }
   return true;
@@ -468,19 +484,20 @@ bool CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& n
 
 
 // Form the union, returning it in the 2 vectors.
-bool CompositeVectorSpace::UnionAndConsistent_(
-    const std::vector<std::string>& names1,
-    const std::vector<AmanziMesh::Entity_kind>& locations1,
-    const std::vector<int>& num_dofs1,
-    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> >& mastermaps1,
-    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> >& ghostmaps1,
-    std::vector<std::string>& names2,
-    std::vector<AmanziMesh::Entity_kind>& locations2,
-    std::vector<int>& num_dofs2,
-    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> >& mastermaps2,
-    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> >& ghostmaps2) {
-
-  for (int i=0; i!=names1.size(); ++i) {
+bool
+CompositeVectorSpace::UnionAndConsistent_(
+  const std::vector<std::string>& names1,
+  const std::vector<AmanziMesh::Entity_kind>& locations1,
+  const std::vector<int>& num_dofs1,
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>>& mastermaps1,
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>>& ghostmaps1,
+  std::vector<std::string>& names2,
+  std::vector<AmanziMesh::Entity_kind>& locations2,
+  std::vector<int>& num_dofs2,
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>>& mastermaps2,
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>>& ghostmaps2)
+{
+  for (int i = 0; i != names1.size(); ++i) {
     auto n2_it = std::find(names2.begin(), names2.end(), names1[i]);
 
     if (n2_it == names2.end()) {
@@ -490,13 +507,10 @@ bool CompositeVectorSpace::UnionAndConsistent_(
         n2_it = std::find(names2.begin(), names2.end(), std::string("face"));
         if (n2_it != names2.end()) {
           int j = n2_it - names2.begin();
-          if ((locations1[i] != AmanziMesh::BOUNDARY_FACE) ||
-              (locations2[j] != AmanziMesh::FACE)) {
+          if ((locations1[i] != AmanziMesh::BOUNDARY_FACE) || (locations2[j] != AmanziMesh::FACE)) {
             return false;
           }
-          if (num_dofs1[i] != num_dofs2[j]) {
-            return false;
-          }
+          if (num_dofs1[i] != num_dofs2[j]) { return false; }
         } else {
           // add this spec
           names2.push_back(names1[i]);
@@ -510,13 +524,10 @@ bool CompositeVectorSpace::UnionAndConsistent_(
         n2_it = std::find(names2.begin(), names2.end(), std::string("boundary_face"));
         if (n2_it != names2.end()) {
           int j = n2_it - names2.begin();
-          if ((locations1[i] != AmanziMesh::FACE) ||
-              (locations2[j] != AmanziMesh::BOUNDARY_FACE)) {
+          if ((locations1[i] != AmanziMesh::FACE) || (locations2[j] != AmanziMesh::BOUNDARY_FACE)) {
             return false;
           }
-          if (num_dofs1[i] != num_dofs2[j]) {
-            return false;
-          }
+          if (num_dofs1[i] != num_dofs2[j]) { return false; }
 
           // union of face and boundary_face is face
           // we have to update all maps
@@ -546,12 +557,8 @@ bool CompositeVectorSpace::UnionAndConsistent_(
     } else {
       // just make sure they match
       int j = n2_it - names2.begin();
-      if (locations1[i] != locations2[j]) {
-        return false;
-      }
-      if (num_dofs1[i] != num_dofs2[j]) {
-        return false;
-      }
+      if (locations1[i] != locations2[j]) { return false; }
+      if (num_dofs1[i] != num_dofs2[j]) { return false; }
     }
   }
   return true;

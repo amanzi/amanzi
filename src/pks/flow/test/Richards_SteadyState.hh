@@ -27,9 +27,11 @@ class TI_Specs {
 };
 
 
-int AdvanceToSteadyState(
-    Teuchos::RCP<State> S, Richards_PK& RPK, 
-    TI_Specs& ti_specs, Teuchos::RCP<TreeVector> soln)
+int
+AdvanceToSteadyState(Teuchos::RCP<State> S,
+                     Richards_PK& RPK,
+                     TI_Specs& ti_specs,
+                     Teuchos::RCP<TreeVector> soln)
 {
   bool last_step = false;
 
@@ -45,7 +47,7 @@ int AdvanceToSteadyState(
 
   int itrs = 0;
   while (itrs < max_itrs && T_physics < T1) {
-    if (itrs == 0) {  // initialization of BDF1
+    if (itrs == 0) { // initialization of BDF1
       Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
       udot->PutScalar(0.0);
       RPK.get_bdf1_dae()->SetInitialState(T0, soln, udot);
@@ -53,9 +55,7 @@ int AdvanceToSteadyState(
       RPK.UpdatePreconditioner(T0, soln, dT0);
     }
 
-    while (RPK.get_bdf1_dae()->TimeStep(dT, dTnext, soln)) {
-      dT = dTnext;
-    }
+    while (RPK.get_bdf1_dae()->TimeStep(dT, dTnext, soln)) { dT = dTnext; }
     RPK.VV_ReportSeepageOutflow(S.ptr(), dT);
     RPK.get_bdf1_dae()->CommitSolution(dT, soln);
 
@@ -65,17 +65,18 @@ int AdvanceToSteadyState(
 
     double Tdiff = T1 - T_physics;
     if (dTnext > Tdiff) {
-      dT = Tdiff * 0.99999991;  // To avoid hitting the wrong BC
+      dT = Tdiff * 0.99999991; // To avoid hitting the wrong BC
       last_step = true;
     }
     if (last_step && dT < 1e-3) break;
 
     // reset primary field
-    auto pressure_eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
+    auto pressure_eval =
+      Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
         S->GetEvaluatorPtr("pressure", Tags::DEFAULT));
     S->GetW<CompositeVector>("pressure", passwd) = *soln->Data();
     pressure_eval->SetChanged();
- 
+
     // update and swap saturations
     S->GetEvaluator("saturation_liquid").Update(*S, "flow");
     const auto& s_l = S->Get<CompositeVector>("saturation_liquid");
@@ -104,6 +105,5 @@ int AdvanceToSteadyState(
   return 0;
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
-
+} // namespace Flow
+} // namespace Amanzi

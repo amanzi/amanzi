@@ -23,10 +23,11 @@ namespace AmanziChemistry {
 
 namespace acu = Amanzi::AmanziChemistry::utilities;
 
-int Beaker::EnforceConstraint(
-    BeakerState* state, const BeakerParameters& parameters,
-    const std::vector<std::string>& names,
-    const std::vector<double>& values)
+int
+Beaker::EnforceConstraint(BeakerState* state,
+                          const BeakerParameters& parameters,
+                          const std::vector<std::string>& names,
+                          const std::vector<double>& values)
 {
   Errors::Message msg;
 
@@ -56,7 +57,7 @@ int Beaker::EnforceConstraint(
       int im(0);
       bool found(false);
       for (auto it = minerals_.begin(); it != minerals_.end(); ++it, ++im) {
-        if (it->name() == pair.second) { 
+        if (it->name() == pair.second) {
           found = true;
           break;
         }
@@ -127,9 +128,7 @@ int Beaker::EnforceConstraint(
       if (name == "total") {
         residual_[i] = total_.at(i) - state->total.at(i);
 
-        for (int j = 0; j < ncomp_; ++j) {
-          jacobian_(i, j) += dtotal_(i, j);
-        }
+        for (int j = 0; j < ncomp_; ++j) { jacobian_(i, j) += dtotal_(i, j); }
 
       } else if (name == "charge") {
         residual_[i] = 0.0;
@@ -150,17 +149,18 @@ int Beaker::EnforceConstraint(
         residual_[i] = primary_species_[i].molality() * act_coef - std::pow(10.0, -values[i]);
         jacobian_(i, i) = act_coef;
 
-      // equilibrium condition is ln(Q/K) = 0
+        // equilibrium condition is ln(Q/K) = 0
       } else if (name == "mineral") {
         int im = map[i];
         residual_[i] = minerals_[im].lnQK();
 
         for (int j = 0; j < minerals_[im].ncomp(); ++j) {
           int jds = minerals_[im].species_ids().at(j);
-          jacobian_(i, jds) += minerals_[im].stoichiometry().at(j) / primary_species_.at(jds).molality();
+          jacobian_(i, jds) +=
+            minerals_[im].stoichiometry().at(j) / primary_species_.at(jds).molality();
         }
 
-      // equilibrium is the Henry law: C = p / KH, where p is in [bars]
+        // equilibrium is the Henry law: C = p / KH, where p is in [bars]
       } else if (name == "gas") {
         int ip = map[i];
         if (ip >= 0) {
@@ -170,7 +170,7 @@ int Beaker::EnforceConstraint(
         } else {
           ip = map_aqx[i];
           double lnQK = aq_complex_rxns_[ip].lnQK();
- 
+
           double KH = 29.4375;
           double conc = std::pow(10.0, values[i]) / KH;
           residual_[i] = lnQK - std::log(conc);
@@ -178,7 +178,8 @@ int Beaker::EnforceConstraint(
           const auto& pri_ids = aq_complex_rxns_[ip].species_ids();
           for (int n = 0; n < pri_ids.size(); ++n) {
             int jds = pri_ids[n];
-            jacobian_(i, jds) = aq_complex_rxns_[ip].stoichiometry().at(n) / primary_species_.at(jds).molality();
+            jacobian_(i, jds) =
+              aq_complex_rxns_[ip].stoichiometry().at(n) / primary_species_.at(jds).molality();
           }
         }
       }
@@ -204,20 +205,17 @@ int Beaker::EnforceConstraint(
       max_residual = std::max(max_residual, std::fabs(residual_.at(i)));
     }
 
-  } while (max_rel_change > tolerance &&
-           num_iterations < max_iterations_);
+  } while (max_rel_change > tolerance && num_iterations < max_iterations_);
 
   // for now, initialize total sorbed concentrations based on the current free
   // ion concentrations
   UpdateEquilibriumChemistry();
   CopyBeakerToState(state);
   status_.num_newton_iterations = num_iterations;
-  if (max_rel_change < tolerance_) {
-    status_.converged = true;
-  }
+  if (max_rel_change < tolerance_) { status_.converged = true; }
 
   return num_iterations;
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

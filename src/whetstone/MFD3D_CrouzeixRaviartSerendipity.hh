@@ -31,11 +31,11 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_CrouzeixRaviartSerendipity : public MFD3D_CrouzeixRaviartAnyOrder { 
+class MFD3D_CrouzeixRaviartSerendipity : public MFD3D_CrouzeixRaviartAnyOrder {
  public:
   MFD3D_CrouzeixRaviartSerendipity(const Teuchos::ParameterList& plist,
                                    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-    : MFD3D_CrouzeixRaviartAnyOrder(plist, mesh) {};
+    : MFD3D_CrouzeixRaviartAnyOrder(plist, mesh){};
 
   // required methods
   // -- schema
@@ -46,38 +46,47 @@ class MFD3D_CrouzeixRaviartSerendipity : public MFD3D_CrouzeixRaviartAnyOrder {
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- projectors
-  virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
+  virtual void L2Cell(int c,
+                      const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
-                      const Polynomial* moments, Polynomial& uc) override {
+                      const Polynomial* moments,
+                      Polynomial& uc) override
+  {
     ProjectorCell_(c, vf, ProjectorType::L2, moments, uc);
   }
 
-  virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
+  virtual void H1Cell(int c,
+                      const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
-                      const Polynomial* moments, Polynomial& uc) override {
+                      const Polynomial* moments,
+                      Polynomial& uc) override
+  {
     ProjectorCell_(c, vf, ProjectorType::H1, moments, uc);
   }
 
   // other methods
-  void L2Cell_LeastSquare(int c, const std::vector<Polynomial>& vf,
-                          const Polynomial* moments, Polynomial& uc) {
+  void L2Cell_LeastSquare(int c,
+                          const std::vector<Polynomial>& vf,
+                          const Polynomial* moments,
+                          Polynomial& uc)
+  {
     ProjectorCell_(c, vf, ProjectorType::LS, moments, uc);
   }
 
  private:
-  void ProjectorCell_(int c, const std::vector<Polynomial>& vf,
+  void ProjectorCell_(int c,
+                      const std::vector<Polynomial>& vf,
                       const ProjectorType type,
-                      const Polynomial* moments, Polynomial& uc);
+                      const Polynomial* moments,
+                      Polynomial& uc);
 
-  void CalculateDOFsOnBoundary_(
-      int c, const std::vector<Polynomial>& vf, DenseVector& vdof);
+  void CalculateDOFsOnBoundary_(int c, const std::vector<Polynomial>& vf, DenseVector& vdof);
 
  private:
   static RegisteredFactory<MFD3D_CrouzeixRaviartSerendipity> factory_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

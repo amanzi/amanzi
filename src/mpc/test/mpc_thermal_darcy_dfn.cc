@@ -27,23 +27,24 @@
 #include "wrm_flow_registration.hh"
 
 
-TEST(MPC_DRIVER_THERMAL_DARCY_DFN) {
+TEST(MPC_DRIVER_THERMAL_DARCY_DFN)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
   auto comm = Amanzi::getDefaultComm();
-  
+
   // read the main parameter list
   std::string xmlInFileName = "test/mpc_thermal_darcy_dfn.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
-  
+
   // create a mesh framework
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
   // extract fractures mesh
@@ -59,9 +60,7 @@ TEST(MPC_DRIVER_THERMAL_DARCY_DFN) {
   Teuchos::ParameterList state_plist = plist->sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
-  
+
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   cycle_driver.Go();
 }
-
-

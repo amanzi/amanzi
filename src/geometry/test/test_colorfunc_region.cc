@@ -32,40 +32,36 @@ TEST(COLORFUNCTION_REGION)
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
   for (auto i = reg_spec.begin(); i != reg_spec.end(); i++) {
-    const std::string reg_name = reg_spec.name(i);     
-    const unsigned int reg_id = 9959;                   // something arbitrary
+    const std::string reg_name = reg_spec.name(i);
+    const unsigned int reg_id = 9959; // something arbitrary
 
     Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
 
     // Create a Color Function Region
-    Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = 
-      Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
-					   reg_params, *ecomm);
-  
+    Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg =
+      Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id, reg_params, *ecomm);
+
     // See if we retrieved the name and id correctly
-    CHECK_EQUAL(reg->get_name(),reg_name);
-    CHECK_EQUAL(reg->get_id(),reg_id);
-  
+    CHECK_EQUAL(reg->get_name(), reg_name);
+    CHECK_EQUAL(reg->get_id(), reg_id);
+
     // Make sure that the region type is an Indicator Function
-    CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::RegionType::COLORFUNCTION);
+    CHECK_EQUAL(reg->get_type(), Amanzi::AmanziGeometry::RegionType::COLORFUNCTION);
 
     // Check if two known points are in the appropriate regions
     Amanzi::AmanziGeometry::Point p(3);
 
     if (reg_name == "Top") {
-      double xyz[3] = {0.5,0.5,0.75};
+      double xyz[3] = { 0.5, 0.5, 0.75 };
       p.set(xyz);
 
-      CHECK_EQUAL(reg->inside(p),true);
+      CHECK_EQUAL(reg->inside(p), true);
 
     } else if (reg_name == "Bottom") {
-      double xyz[3] = {0.5,0.5,0.25};
+      double xyz[3] = { 0.5, 0.5, 0.25 };
       p.set(xyz);
 
-      CHECK_EQUAL(reg->inside(p),true);
+      CHECK_EQUAL(reg->inside(p), true);
     }
   }
-}  
-
-
-
+}

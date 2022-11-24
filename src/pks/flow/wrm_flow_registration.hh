@@ -20,10 +20,11 @@ namespace Amanzi {
 namespace Utils {
 
 // explicity instantitate the static data of factory
-template<> Factory<Flow::WRM>::map_type* Factory<Flow::WRM>::map_;
+template <>
+Factory<Flow::WRM>::map_type* Factory<Flow::WRM>::map_;
 
-}  // namespace Utils
-}  // namespace Amanzi
+} // namespace Utils
+} // namespace Amanzi
 
 
 namespace Amanzi {
@@ -33,7 +34,5 @@ Utils::RegisteredFactory<WRM, WRM_BrooksCorey> WRM_BrooksCorey::factory_("Brooks
 Utils::RegisteredFactory<WRM, WRM_vanGenuchten> WRM_vanGenuchten::factory_("van Genuchten");
 Utils::RegisteredFactory<WRM, WRM_saturated> WRM_saturated::factory_("saturated");
 
-}  // namespace Flow
-}  // namespace Amanzi
-
-
+} // namespace Flow
+} // namespace Amanzi

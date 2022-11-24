@@ -26,13 +26,14 @@ namespace ShallowWater {
 
 class NumericalFluxFactory : public Utils::Factory<NumericalFlux> {
  public:
-  std::shared_ptr<NumericalFlux> Create(Teuchos::ParameterList& plist) {
+  std::shared_ptr<NumericalFlux> Create(Teuchos::ParameterList& plist)
+  {
     std::string model = plist.get<std::string>("numerical flux");
     return std::shared_ptr<NumericalFlux>(CreateInstance(model, plist));
   }
 };
 
-}  // namespace ShallowWater
-}  // namespace Amanzi
+} // namespace ShallowWater
+} // namespace Amanzi
 
 #endif

@@ -19,15 +19,14 @@ namespace NavierStokes {
 /* ****************************************************************
 * Constructor: extract attributes to setup a submodel.
 **************************************************************** */
-NavierStokesBoundaryFunction::NavierStokesBoundaryFunction(const Teuchos::ParameterList& plist)
-{
-}
+NavierStokesBoundaryFunction::NavierStokesBoundaryFunction(const Teuchos::ParameterList& plist) {}
 
 
 /* ****************************************************************
 * Process additional parameters for BC submodels.
 **************************************************************** */
-void NavierStokesBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+void
+NavierStokesBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
   int dim = mesh->space_dimension();
 
@@ -37,14 +36,12 @@ void NavierStokesBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const Aman
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
 
       double tmp(0.0);
-      for (int k = 0; k < dim; ++k) {
-        tmp += it->second[k] * normal[k];
-      }
+      for (int k = 0; k < dim; ++k) { tmp += it->second[k] * normal[k]; }
       tmp /= norm(normal);
       it->second = std::vector<double>(1, tmp);
     }
   }
 }
 
-}  // namespace NavierStokes
-}  // namespace Amanzi
+} // namespace NavierStokes
+} // namespace Amanzi

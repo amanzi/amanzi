@@ -59,19 +59,17 @@ time.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Vector,class VectorSpace>
+template <class Vector, class VectorSpace>
 class SolverFactory {
  public:
-  Teuchos::RCP<Solver<Vector,VectorSpace> >
-  Create(const std::string& name,
-         const Teuchos::ParameterList& solver_list);
+  Teuchos::RCP<Solver<Vector, VectorSpace>>
+  Create(const std::string& name, const Teuchos::ParameterList& solver_list);
 
-  Teuchos::RCP<Solver<Vector,VectorSpace> >
-  Create(Teuchos::ParameterList& solver_list);
+  Teuchos::RCP<Solver<Vector, VectorSpace>> Create(Teuchos::ParameterList& solver_list);
 };
 
-}  // namespace Amanzisolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 
 #endif

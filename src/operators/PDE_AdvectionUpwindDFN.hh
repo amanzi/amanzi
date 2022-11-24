@@ -24,41 +24,39 @@ namespace Operators {
 
 class PDE_AdvectionUpwindDFN : public PDE_AdvectionUpwind {
  public:
-  PDE_AdvectionUpwindDFN(Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<Operator>& global_op) :
-    PDE_AdvectionUpwind(plist, global_op) {
-  }
+  PDE_AdvectionUpwindDFN(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
+    : PDE_AdvectionUpwind(plist, global_op)
+  {}
 
   PDE_AdvectionUpwindDFN(Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-    PDE_AdvectionUpwind(plist, mesh) {
-  }
-  
+                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : PDE_AdvectionUpwind(plist, mesh)
+  {}
+
   // required members
   virtual void Setup(const CompositeVector& u) override;
   // -- generate a linearized operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u) override;
-  
+
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& dhdT) override;
 
-  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h, 
+  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
                           const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::RCP<BCs>& bc,
-                          const Teuchos::Ptr<CompositeVector>& flux) override {};
+                          const Teuchos::Ptr<CompositeVector>& flux) override{};
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
  private:
   void IdentifyUpwindCells_(const CompositeVector& u);
 
  protected:
-  std::vector<std::vector<int> > upwind_cells_dfn_;  // fracture friendly 
-  std::vector<std::vector<int> > downwind_cells_dfn_;
-  std::vector<std::vector<double> > upwind_flux_dfn_, downwind_flux_dfn_;  
+  std::vector<std::vector<int>> upwind_cells_dfn_; // fracture friendly
+  std::vector<std::vector<int>> downwind_cells_dfn_;
+  std::vector<std::vector<double>> upwind_flux_dfn_, downwind_flux_dfn_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

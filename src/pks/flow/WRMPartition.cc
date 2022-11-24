@@ -21,19 +21,19 @@ namespace Flow {
 /* ******************************************************************
 * Non-member factory.
 ****************************************************************** */
-Teuchos::RCP<WRMPartition> CreateWRMPartition(
-    Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    Teuchos::RCP<Teuchos::ParameterList> plist)
+Teuchos::RCP<WRMPartition>
+CreateWRMPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                   Teuchos::RCP<Teuchos::ParameterList> plist)
 {
   WRMFactory factory;
-  std::vector<Teuchos::RCP<WRM> > wrm_list;
-  std::vector<std::vector<std::string> > region_list;
+  std::vector<Teuchos::RCP<WRM>> wrm_list;
+  std::vector<std::vector<std::string>> region_list;
 
   for (auto lcv = plist->begin(); lcv != plist->end(); ++lcv) {
     std::string name = lcv->first;
     if (plist->isSublist(name)) {
       Teuchos::ParameterList sublist = plist->sublist(name);
-      region_list.push_back(sublist.get<Teuchos::Array<std::string> >("regions").toVector());
+      region_list.push_back(sublist.get<Teuchos::Array<std::string>>("regions").toVector());
       wrm_list.push_back(factory.Create(sublist));
     } else {
       AMANZI_ASSERT(0);
@@ -47,6 +47,5 @@ Teuchos::RCP<WRMPartition> CreateWRMPartition(
   return Teuchos::rcp(new WRMPartition(partition, wrm_list));
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
-
+} // namespace Flow
+} // namespace Amanzi

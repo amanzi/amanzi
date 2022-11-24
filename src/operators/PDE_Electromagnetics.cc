@@ -38,11 +38,11 @@ namespace Operators {
 /* ******************************************************************
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
-void PDE_Electromagnetics::SetTensorCoefficient(
-    const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
+void
+PDE_Electromagnetics::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K)
 {
   K_ = K;
-  if (K_ != Teuchos::null && K_.get() && mesh_->space_dimension() == 3) 
+  if (K_ != Teuchos::null && K_.get() && mesh_->space_dimension() == 3)
     AMANZI_ASSERT(K_->size() == ncells_owned);
 }
 
@@ -51,15 +51,15 @@ void PDE_Electromagnetics::SetTensorCoefficient(
 * Calculate elemental matrices.
 * NOTE: The input parameters are not yet used.
 ****************************************************************** */
-void PDE_Electromagnetics::UpdateMatrices(
-    const Teuchos::Ptr<const CompositeVector>& u,
-    const Teuchos::Ptr<const CompositeVector>& p)
+void
+PDE_Electromagnetics::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                                     const Teuchos::Ptr<const CompositeVector>& p)
 {
   WhetStone::DenseMatrix Acell;
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
-  
+
   for (int c = 0; c < ncells_owned; c++) {
     if (K_.get()) Kc = (*K_)[c];
     mfd_->StiffnessMatrix(c, Kc, Acell);
@@ -74,7 +74,8 @@ void PDE_Electromagnetics::UpdateMatrices(
 * options: (a) eliminate or not, (b) if eliminate, then put 1 on
 * the diagonal or not.
 ****************************************************************** */
-void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
+void
+PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   if (local_schema_col_.get_base() == AmanziMesh::CELL && mesh_->space_dimension() == 3) {
     Teuchos::RCP<const BCs> bc_f, bc_e;
@@ -93,10 +94,12 @@ void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate, bool essential
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void PDE_Electromagnetics::ApplyBCs_Edge_(
-    const Teuchos::Ptr<const BCs>& bc_f,
-    const Teuchos::Ptr<const BCs>& bc_e,
-    bool primary, bool eliminate, bool essential_eqn)
+void
+PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
+                                     const Teuchos::Ptr<const BCs>& bc_e,
+                                     bool primary,
+                                     bool eliminate,
+                                     bool essential_eqn)
 {
   AmanziMesh::Entity_ID_List edges, cells;
   std::vector<int> edirs;
@@ -109,16 +112,14 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Electromagnetics mfd3d(plist, mesh_);
 
-  // calculate number of cells for each edge 
+  // calculate number of cells for each edge
   // move to properties of BCs (lipnikov@lanl.gov)
   std::vector<int> edge_ncells(nedges_wghost, 0);
   for (int c = 0; c != ncells_wghost; ++c) {
     mesh_->cell_get_edges(c, &edges);
     int nedges = edges.size();
 
-    for (int n = 0; n < nedges; ++n) {
-      edge_ncells[edges[n]]++;
-    }
+    for (int n = 0; n < nedges; ++n) { edge_ncells[edges[n]]++; }
   }
 
   for (int c = 0; c != ncells_owned; ++c) {
@@ -146,12 +147,12 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
           int nedges = edges.size();
 
           // project magnetic flux on mesh edges
-          WhetStone::DenseVector b(nedges), mb(nedges); 
+          WhetStone::DenseVector b(nedges), mb(nedges);
           for (int i = 0; i != nedges; ++i) {
             int e = edges[i];
             const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
             double len = mesh_->edge_length(e);
-            b(i) = ((value^normal) * tau) / (area * len) * edirs[i];
+            b(i) = ((value ^ normal) * tau) / (area * len) * edirs[i];
           }
 
           // calculate inner product matrix
@@ -183,7 +184,7 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
       for (int n = 0; n != nedges; ++n) {
         int e = edges[n];
         if (bc_model[e] == OPERATOR_BC_DIRICHLET) {
-          if (flag) {  // make a copy of elemental matrix
+          if (flag) { // make a copy of elemental matrix
             local_op_->matrices_shadow[c] = Acell;
             flag = false;
           }
@@ -196,11 +197,11 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
         double value = bc_value[e];
 
         if (bc_model[e] == OPERATOR_BC_DIRICHLET) {
-          if (flag) {  // make a copy of cell-based matrix
+          if (flag) { // make a copy of cell-based matrix
             local_op_->matrices_shadow[c] = Acell;
             flag = false;
           }
-     
+
           if (eliminate) {
             for (int m = 0; m < nedges; m++) {
               rhs_edge[0][edges[m]] -= Acell(m, n) * value;
@@ -215,7 +216,7 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
         }
       }
     }
-  } 
+  }
 
   global_op_->rhs()->GatherGhostedToMaster("edge", Add);
 }
@@ -224,7 +225,8 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
+void
+PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
 {
   int dim = mesh_->space_dimension();
 
@@ -281,7 +283,8 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Additional data for AMS solver: coordinates of nodes
 ****************************************************************** */
-Teuchos::RCP<Epetra_MultiVector> PDE_Electromagnetics::GraphGeometry()
+Teuchos::RCP<Epetra_MultiVector>
+PDE_Electromagnetics::GraphGeometry()
 {
   int d = mesh_->space_dimension();
   auto map = mesh_->node_map(false);
@@ -300,7 +303,8 @@ Teuchos::RCP<Epetra_MultiVector> PDE_Electromagnetics::GraphGeometry()
 /* ******************************************************************
 * Additional data for AMS solver: gradient
 ****************************************************************** */
-Teuchos::RCP<Epetra_CrsMatrix> PDE_Electromagnetics::GradientOperator()
+Teuchos::RCP<Epetra_CrsMatrix>
+PDE_Electromagnetics::GradientOperator()
 {
   auto map_row = mesh_->edge_map(false);
   auto map_col = mesh_->node_map(false);
@@ -314,10 +318,10 @@ Teuchos::RCP<Epetra_CrsMatrix> PDE_Electromagnetics::GradientOperator()
     double len = mesh_->edge_length(e);
     mesh_->edge_get_nodes(e, &n1, &n2);
 
-    lid_c[0] = map_col_wghost.GID(n1); 
-    lid_c[1] = map_col_wghost.GID(n2); 
+    lid_c[0] = map_col_wghost.GID(n1);
+    lid_c[1] = map_col_wghost.GID(n2);
 
-    values[0] =-1.0 / len;
+    values[0] = -1.0 / len;
     values[1] = 1.0 / len;
 
     ierr |= G->InsertGlobalValues(map_row.GID(e), 2, values, lid_c);
@@ -328,5 +332,5 @@ Teuchos::RCP<Epetra_CrsMatrix> PDE_Electromagnetics::GradientOperator()
   return G;
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi

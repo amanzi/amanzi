@@ -24,7 +24,8 @@
 #include "TransportExplicit_PK.hh"
 
 
-TEST(ADVANCE_WITH_MULTISCALE) {
+TEST(ADVANCE_WITH_MULTISCALE)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -48,8 +49,8 @@ TEST(ADVANCE_WITH_MULTISCALE) {
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
-  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0,1.0,1.0,1.0, 20, 1, 1); 
-  
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 20, 1, 1);
+
   // create a simple state and populate it
   Amanzi::VerboseObject::global_hide_line_prefix = false;
 
@@ -70,7 +71,7 @@ TEST(ADVANCE_WITH_MULTISCALE) {
   S->set_intermediate_time(0.0);
 
   // modify the default state for the problem at hand
-  std::string passwd("state"); 
+  std::string passwd("state");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
@@ -91,9 +92,10 @@ TEST(ADVANCE_WITH_MULTISCALE) {
 
   // printing cell concentration
   auto& tcc = *S->Get<CompositeVector>("total_component_concentration").ViewComponent("cell");
-  auto& tcc_msp = *S->Get<CompositeVector>("total_component_concentration_msp").ViewComponent("cell");
+  auto& tcc_msp =
+    *S->Get<CompositeVector>("total_component_concentration_msp").ViewComponent("cell");
 
-  while(t_new < 0.2) {
+  while (t_new < 0.2) {
     dt = TPK.StableTimeStep(-1);
     t_new = t_old + dt;
 
@@ -101,27 +103,25 @@ TEST(ADVANCE_WITH_MULTISCALE) {
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
- 
+
     printf("T=%6.3f  C_0(x):", t_new);
-    for (int k = 0; k < 9; k++) printf("%9.2g", tcc[0][k]); std::cout << std::endl;
+    for (int k = 0; k < 9; k++) printf("%9.2g", tcc[0][k]);
+    std::cout << std::endl;
     printf("T=%6.3f  C_1(x):", t_new);
-    for (int k = 0; k < 9; k++) printf("%9.2g", tcc[1][k]); std::cout << std::endl;
+    for (int k = 0; k < 9; k++) printf("%9.2g", tcc[1][k]);
+    std::cout << std::endl;
     printf("T=%6.3f  c_0(x):", t_new);
-    for (int k = 0; k < 9; k++) printf("%9.2g", tcc_msp[0][k]); std::cout << std::endl;
+    for (int k = 0; k < 9; k++) printf("%9.2g", tcc_msp[0][k]);
+    std::cout << std::endl;
   }
 
   // check that the final state is constant
-  for (int k = 0; k < 6; k++) 
-    CHECK_CLOSE(tcc[0][k], 1.0, 1e-6);
+  for (int k = 0; k < 6; k++) CHECK_CLOSE(tcc[0][k], 1.0, 1e-6);
 
-  for (int k = 0; k < 20; k++) 
-    CHECK_CLOSE(tcc[0][k], tcc[1][k], 1e-12);
+  for (int k = 0; k < 20; k++) CHECK_CLOSE(tcc[0][k], tcc[1][k], 1e-12);
 
   for (int k = 0; k < 19; k++) {
-    CHECK(tcc[0][k] - tcc[0][k+1] > -1e-15);
-    CHECK(tcc_msp[0][k] - tcc_msp[0][k+1] > -1e-15);
+    CHECK(tcc[0][k] - tcc[0][k + 1] > -1e-15);
+    CHECK(tcc_msp[0][k] - tcc_msp[0][k + 1] > -1e-15);
   }
 }
- 
-
-

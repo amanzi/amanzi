@@ -25,36 +25,43 @@ namespace Keys {
 //
 // Utility functions
 // -----------------------------------------------------------------------------
-bool starts_with(const Key& key, const char& c)
+bool
+starts_with(const Key& key, const char& c)
 {
   return key.length() >= 1 && c == key.front();
 }
-bool starts_with(const Key& key, const std::string& substr)
+bool
+starts_with(const Key& key, const std::string& substr)
 {
-  return key.length() >= substr.length() && key.substr(0,substr.length()) == substr;
+  return key.length() >= substr.length() && key.substr(0, substr.length()) == substr;
 }
 
-bool ends_with(const Key& key, const char& c)
+bool
+ends_with(const Key& key, const char& c)
 {
   return key.length() >= 1 && c == key.back();
 }
-bool ends_with(const Key& key, const std::string& substr)
+bool
+ends_with(const Key& key, const std::string& substr)
 {
   return key.length() >= substr.length() &&
-      key.substr(key.length()-substr.length(), key.length()) == substr;
+         key.substr(key.length() - substr.length(), key.length()) == substr;
 }
 
-bool in(const Key& key, const char& c)
+bool
+in(const Key& key, const char& c)
 {
   return key.find(c) != std::string::npos;
 }
 
-bool in(const Key& key, const std::string& substr)
+bool
+in(const Key& key, const std::string& substr)
 {
   return key.find(substr) != std::string::npos;
 }
 
-Key replace_all(Key key, const std::string& find_s, const std::string& replace_s)
+Key
+replace_all(Key key, const std::string& find_s, const std::string& replace_s)
 {
   std::size_t index = 0;
   while (true) {
@@ -70,24 +77,27 @@ Key replace_all(Key key, const std::string& find_s, const std::string& replace_s
   return key;
 }
 
-Key merge(const Key& domain, const Key& name, const char& delimiter)
+Key
+merge(const Key& domain, const Key& name, const char& delimiter)
 {
-  return domain+delimiter+name;
+  return domain + delimiter + name;
 }
 
-KeyPair split(const Key& name, const char& delimiter)
+KeyPair
+split(const Key& name, const char& delimiter)
 {
   std::size_t pos = name.find(delimiter);
   if (pos == std::string::npos)
     return std::make_pair(Key(""), name);
   else
-    return std::make_pair(name.substr(0,pos), name.substr(pos+1,std::string::npos));
+    return std::make_pair(name.substr(0, pos), name.substr(pos + 1, std::string::npos));
 }
 
 // creates a clean name to be used as a variable name, domain name, tag name,
 // etc, that has no delimiters in it, no spaces (which make for uglier IO),
 // etc.
-Key cleanName(const std::string& name, bool delimiters_ok)
+Key
+cleanName(const std::string& name, bool delimiters_ok)
 {
   Key result(name);
   if (!delimiters_ok) {
@@ -107,7 +117,8 @@ Key cleanName(const std::string& name, bool delimiters_ok)
 // Generate a DOMAIN-VARNAME key.
 // Note, if DOMAIN == "domain" or "" this returns VARNAME
 
-bool validKey(const Key& key)
+bool
+validKey(const Key& key)
 {
   bool result = true;
   int deriv_del_count = std::count(key.begin(), key.end(), deriv_delimiter);
@@ -134,7 +145,8 @@ bool validKey(const Key& key)
   return result;
 }
 
-Key getKey(const Key& domain, const Key& variable)
+Key
+getKey(const Key& domain, const Key& variable)
 {
   if (variable.empty()) {
     Errors::Message msg("Keys::getKey() called with empty variable name.");
@@ -157,7 +169,8 @@ Key getKey(const Key& domain, const Key& variable)
 }
 
 
-KeyPair splitKey(const Key& name)
+KeyPair
+splitKey(const Key& name)
 {
   if (!validKey(name)) {
     Errors::Message msg("Keys::splitKey() called with invalid argument \"");
@@ -168,13 +181,13 @@ KeyPair splitKey(const Key& name)
 }
 
 
-
 // Split a DOMAIN-VARNAME key.
 //
 // If delimiter does not appear, the first string is empty.
 
 // Grab the domain prefix of a DOMAIN-VARNAME key.
-Key getDomain(const Key& name)
+Key
+getDomain(const Key& name)
 {
   if (name.find(tag_delimiter) != std::string::npos) {
     // includes tag, split the tag
@@ -187,8 +200,10 @@ Key getDomain(const Key& name)
   if (name.find(deriv_delimiter) == std::string::npos) {
     // not a derivative
     auto split = splitKey(name);
-    if (split.first.empty()) return "domain";
-    else return split.first;
+    if (split.first.empty())
+      return "domain";
+    else
+      return split.first;
 
   } else {
     // is a derivative
@@ -197,22 +212,26 @@ Key getDomain(const Key& name)
       return "domain";
     } else {
       // pop the initial d
-      return split.first.substr(1,std::string::npos);
+      return split.first.substr(1, std::string::npos);
     }
   }
 }
 
 // Gets a prefix that can simply be "+" with the varname.  This is deprecated.
-Key getDomainPrefix(const Key& name)
+Key
+getDomainPrefix(const Key& name)
 {
   auto domain = getDomain(name);
-  if (domain == "domain") return "";
-  else return merge(domain, "", name_delimiter);
+  if (domain == "domain")
+    return "";
+  else
+    return merge(domain, "", name_delimiter);
 }
 
 
 // Grab the varname suffix of a DOMAIN-VARNAME Key
-Key getVarName(const Key& name)
+Key
+getVarName(const Key& name)
 {
   if (name.find(deriv_delimiter) == std::string::npos)
     return splitKey(name).second;
@@ -221,7 +240,8 @@ Key getVarName(const Key& name)
 }
 
 // abbreviate
-Key abbreviate(Key name, int max_len)
+Key
+abbreviate(Key name, int max_len)
 {
   for (const auto& abbvs : abbreviations) {
     name = replace_all(name, abbvs.first, abbvs.second);
@@ -231,10 +251,10 @@ Key abbreviate(Key name, int max_len)
 }
 
 
-
 // Domain Sets are of the form NAME:ID, where ID is an integer or
 // region string indexing the domain set.
-Key getDomainInSet(const Key& ds_name, const Key& subdomain)
+Key
+getDomainInSet(const Key& ds_name, const Key& subdomain)
 {
   if (ds_name.empty()) {
     Errors::Message msg("Cannot Keys::getDomainInSet() with empty domain set name.");
@@ -247,12 +267,14 @@ Key getDomainInSet(const Key& ds_name, const Key& subdomain)
   return merge(ds_name, subdomain, dset_delimiter);
 }
 
-Key getDomainInSet(const Key& ds_name, const int& subdomain)
+Key
+getDomainInSet(const Key& ds_name, const int& subdomain)
 {
   return getDomainInSet(ds_name, std::to_string(subdomain));
 }
 
-Key getDomainSetName(const Key& name_id)
+Key
+getDomainSetName(const Key& name_id)
 {
   if (!in(name_id, dset_delimiter)) {
     Errors::Message msg("Keys::getDomainSetName() argument \"");
@@ -262,12 +284,15 @@ Key getDomainSetName(const Key& name_id)
   return split(name_id, dset_delimiter).first;
 }
 
-bool isDomainSet(const Key& name) {
+bool
+isDomainSet(const Key& name)
+{
   KeyTriple result;
   return splitDomainSet(name, result);
 }
 
-bool splitDomainSet(const Key& name, KeyTriple& result)
+bool
+splitDomainSet(const Key& name, KeyTriple& result)
 {
   if (!in(name, dset_delimiter)) return false;
   Key domain;
@@ -290,33 +315,38 @@ bool splitDomainSet(const Key& name, KeyTriple& result)
   return true;
 }
 
-bool isDomainInSet(const Key& name)
+bool
+isDomainInSet(const Key& name)
 {
   KeyTriple result;
   return splitDomainSet(name, result);
 }
 
 // reconstruct a key from components
-Key getKey(const Key& ds_name, const Key& ds_id, const Key& varname)
+Key
+getKey(const Key& ds_name, const Key& ds_id, const Key& varname)
 {
   return getKey(merge(ds_name, ds_id, dset_delimiter), varname);
 }
 
 // reconstruct a key from components
-Key getKey(const Key& ds_name, const int& ds_id, const Key& varname)
+Key
+getKey(const Key& ds_name, const int& ds_id, const Key& varname)
 {
   return getKey(ds_name, std::to_string(ds_id), varname);
 }
 
 // Check if a key, interpreted as a domain set, matches the domain-set name
-bool matchesDomainSet(const Key& domain_set, const Key& name)
+bool
+matchesDomainSet(const Key& domain_set, const Key& name)
 {
   KeyTriple result;
   return splitDomainSet(name, result) ? std::get<0>(result) == domain_set : false;
 }
 
 // tags
-Key getKey(const Key& var, const Tag& tag)
+Key
+getKey(const Key& var, const Tag& tag)
 {
   if (tag.get() == "")
     return var;
@@ -324,35 +354,38 @@ Key getKey(const Key& var, const Tag& tag)
     return merge(var, tag.get(), tag_delimiter);
 }
 
-Key getKey(const KeyTag& var_tag)
+Key
+getKey(const KeyTag& var_tag)
 {
   return getKey(var_tag.first, var_tag.second);
 }
 
-KeyTag splitKeyTag(const Key& name)
+KeyTag
+splitKeyTag(const Key& name)
 {
   std::size_t pos = name.find(tag_delimiter);
   if (pos == std::string::npos)
     return std::make_pair(name, Tag(""));
   else
-    return std::make_pair(name.substr(0,pos), Tag(name.substr(pos+1,name.size())));
+    return std::make_pair(name.substr(0, pos), Tag(name.substr(pos + 1, name.size())));
 }
 
 // Derivatives are of the form dKey|dKey.
-Key getDerivKey(const Key& var, const Key& wrt)
+Key
+getDerivKey(const Key& var, const Key& wrt)
 {
   std::string d("d");
-  return merge(d+var, d+wrt, deriv_delimiter);
+  return merge(d + var, d + wrt, deriv_delimiter);
 }
 
-Key getDerivKey(const Key& var, const Tag& tag,
-                const Key& wrt, const Tag& wrt_tag)
+Key
+getDerivKey(const Key& var, const Tag& tag, const Key& wrt, const Tag& wrt_tag)
 {
-  return getDerivKey(Keys::getKey(var, tag),
-                     Keys::getKey(wrt, wrt_tag));
+  return getDerivKey(Keys::getKey(var, tag), Keys::getKey(wrt, wrt_tag));
 }
 
-Key getDerivKey(const KeyTag& var, const KeyTag& wrt)
+Key
+getDerivKey(const KeyTag& var, const KeyTag& wrt)
 {
   return getDerivKey(Keys::getKey(var), Keys::getKey(wrt));
 }
@@ -361,7 +394,8 @@ Key getDerivKey(const KeyTag& var, const KeyTag& wrt)
 //
 // Helper functions for reading keys and domains from parameter lists
 // -----------------------------------------------------------------------------
-Key cleanPListName(const std::string& name)
+Key
+cleanPListName(const std::string& name)
 {
   auto pos = name.rfind("->");
   if (pos == name.size()) {
@@ -369,42 +403,44 @@ Key cleanPListName(const std::string& name)
   } else if (pos == std::string::npos) {
     return name;
   } else {
-    return name.substr(pos+2, std::string::npos);
+    return name.substr(pos + 2, std::string::npos);
   }
 }
 
 
 // Read a domain name in a standard way, potentially with a prefix
-Key readDomain(Teuchos::ParameterList& plist,
-               const Key& prefix)
+Key
+readDomain(Teuchos::ParameterList& plist, const Key& prefix)
 {
   if (prefix.empty() || prefix == "domain") {
     return plist.get<std::string>("domain name");
   } else {
-    return plist.get<std::string>(prefix+" domain name");
+    return plist.get<std::string>(prefix + " domain name");
   }
 }
 
 // Read a domain name in a standard way, potentially with a prefix
-Key readDomain(Teuchos::ParameterList& plist,
-               const Key& prefix,
-               const Key& default_name)
+Key
+readDomain(Teuchos::ParameterList& plist, const Key& prefix, const Key& default_name)
 {
   if (prefix.empty() || prefix == "domain") {
     return plist.get<std::string>("domain name", default_name);
   } else {
-    return plist.get<std::string>(prefix+" domain name", default_name);
+    return plist.get<std::string>(prefix + " domain name", default_name);
   }
 }
 
-Key readDomainHint(Teuchos::ParameterList& plist,
-                   const Key& hint,
-                   Key hint_domain_type,
-                   Key domain_type)
+Key
+readDomainHint(Teuchos::ParameterList& plist,
+               const Key& hint,
+               Key hint_domain_type,
+               Key domain_type)
 {
   std::string param;
-  if (domain_type.empty()) param = "domain name";
-  else param = (domain_type + " domain name");
+  if (domain_type.empty())
+    param = "domain name";
+  else
+    param = (domain_type + " domain name");
 
   domain_type = standardize(domain_type);
   hint_domain_type = standardize(hint_domain_type);
@@ -422,34 +458,32 @@ Key readDomainHint(Teuchos::ParameterList& plist,
       if (Keys::starts_with(default_domain, "_"))
         default_domain = default_domain.substr(1, std::string::npos);
       if (Keys::starts_with(default_domain, dset_delimiter))
-        default_domain = domain_type+default_domain;
+        default_domain = domain_type + default_domain;
     } else {
       default_domain = domain_type + hint.substr(hint_domain_type.size(), std::string::npos);
     }
     return standardize(plist.get<std::string>(param, default_domain));
   } else if (hint_domain_type == "domain") {
-    return standardize(plist.get<std::string>(param, domain_type+"_"+hint));
+    return standardize(plist.get<std::string>(param, domain_type + "_" + hint));
   }
   return standardize(plist.get<std::string>(param));
 }
 
 
-Key guessDomainType(const Key& domain)
+Key
+guessDomainType(const Key& domain)
 {
-  for (const auto& guess : {"snow", "canopy", "surface"}) {
-    if (in(domain, guess)) {
-      return guess;
-    }
+  for (const auto& guess : { "snow", "canopy", "surface" }) {
+    if (in(domain, guess)) { return guess; }
   }
   return "domain";
 }
 
 
-Key readSuffix(Teuchos::ParameterList& list,
-               const Key& basename,
-               const Key& default_name)
+Key
+readSuffix(Teuchos::ParameterList& list, const Key& basename, const Key& default_name)
 {
-  std::string basename_key_suffix_arg = basename+" key suffix";
+  std::string basename_key_suffix_arg = basename + " key suffix";
 
   Key default_key;
   if (default_name.empty()) {
@@ -460,13 +494,14 @@ Key readSuffix(Teuchos::ParameterList& list,
 }
 
 
-Key readKey(Teuchos::ParameterList& list,
-            const Key& domain,
-            const Key& basename,
-            const Key& default_name)
+Key
+readKey(Teuchos::ParameterList& list,
+        const Key& domain,
+        const Key& basename,
+        const Key& default_name)
 {
-  std::string basename_key_arg = basename+" key";
-  std::string basename_key_suffix_arg = basename+" key suffix";
+  std::string basename_key_arg = basename + " key";
+  std::string basename_key_suffix_arg = basename + " key suffix";
 
   Key default_key;
   if (list.isParameter(basename_key_suffix_arg)) {
@@ -481,7 +516,9 @@ Key readKey(Teuchos::ParameterList& list,
 }
 
 Teuchos::Array<Key>
-readKeys(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
+readKeys(Teuchos::ParameterList& list,
+         const Key& domain,
+         const Key& basename,
          Teuchos::Array<Key> const* const default_names)
 {
   std::string basename_key_arg = basename + " keys";
@@ -504,8 +541,7 @@ readKeys(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
       default_keys[i] = getKey(domain, def);
       ++i;
     }
-    return list.get<Teuchos::Array<std::string>>(basename_key_arg,
-                                                 default_keys);
+    return list.get<Teuchos::Array<std::string>>(basename_key_arg, default_keys);
   } else {
     return list.get<Teuchos::Array<std::string>>(basename_key_arg);
   }
@@ -523,8 +559,8 @@ Tag
 readTag(Teuchos::ParameterList& list, const std::string& param, const Tag& default_tag)
 {
   std::string tag_str = list.get<std::string>(param, default_tag.get());
-  return Tag{tag_str};
+  return Tag{ tag_str };
 }
 
-} // namespace
-} // namespace
+} // namespace Keys
+} // namespace Amanzi

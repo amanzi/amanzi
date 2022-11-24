@@ -2,7 +2,7 @@
 
 //#define ABORT_ON_FLOATING_POINT_EXCEPTIONS
 #ifdef __APPLE__
-  #include <xmmintrin.h>
+#  include <xmmintrin.h>
 #endif
 
 #include <cstdlib>
@@ -38,9 +38,11 @@ const std::string kPflotran("pflotran");
    cfg file wouldn't matter, but we need to request an name-id map
    from the beaker.  */
 
-int main(int argc, char** argv) {
+int
+main(int argc, char** argv)
+{
 #ifdef ABORT_ON_FLOATING_POINT_EXCEPTIONS
-#ifdef __APPLE__
+#  ifdef __APPLE__
   // Make floating point exceptions abort the program. runtime error
   // message isn't helpful, but running in gdb will stop at the
   // correct line. This may code may not be apple specific....
@@ -49,7 +51,7 @@ int main(int argc, char** argv) {
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_DIV_ZERO);
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_OVERFLOW);
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_UNDERFLOW);
-#endif
+#  endif
 #endif
 
   std::stringstream message;
@@ -61,18 +63,14 @@ int main(int argc, char** argv) {
   int error = EXIT_SUCCESS;
 
   // if verbosity was specified on the command line, add the level
-  Amanzi::VerboseObject::global_hide_line_prefix = false;  // two default value
+  Amanzi::VerboseObject::global_hide_line_prefix = false; // two default value
   Amanzi::VerboseObject::global_default_level = Teuchos::VERB_MEDIUM;
 
   Teuchos::ParameterList plist;
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", plist));
 
-  error = CommandLineOptions(argc, argv,
-                             &verbosity_name,
-                             &input_file_name,
-                             &template_file_name,
-                             &debug_batch_driver,
-                             vo);
+  error = CommandLineOptions(
+    argc, argv, &verbosity_name, &input_file_name, &template_file_name, &debug_batch_driver, vo);
 
   if (!template_file_name.empty()) {
     WriteTemplateFile(template_file_name, vo);
@@ -92,16 +90,14 @@ int main(int argc, char** argv) {
     abort();
   }
 
-  if (debug_batch_driver) {
-    PrintInput(simulation_params, components, vo);
-  }
+  if (debug_batch_driver) { PrintInput(simulation_params, components, vo); }
 
   double time_units_conversion = 1.0;
   char time_units = 's';
   std::fstream text_output;
   if (simulation_params.text_output.size() > 0) {
-    SetupTextOutput(simulation_params, input_file_name,
-                    &text_output, &time_units, &time_units_conversion);
+    SetupTextOutput(
+      simulation_params, input_file_name, &text_output, &time_units, &time_units_conversion);
   }
 
   ac::Beaker* chem = NULL;
@@ -115,9 +111,9 @@ int main(int argc, char** argv) {
       parameters.activity_model_name = simulation_params.activity_model;
       parameters.max_iterations = simulation_params.max_iterations;
       parameters.tolerance = simulation_params.tolerance;
-      parameters.porosity = simulation_params.porosity;  // -
-      parameters.saturation = simulation_params.saturation;  // -
-      parameters.volume = simulation_params.volume;  // m^3
+      parameters.porosity = simulation_params.porosity;     // -
+      parameters.saturation = simulation_params.saturation; // -
+      parameters.volume = simulation_params.volume;         // m^3
       ModelSpecificParameters(simulation_params.comparison_model, &parameters);
       if (components.free_ion.size() != components.total.size()) {
         components.free_ion.resize(components.total.size(), 1.0e-9);
@@ -132,35 +128,29 @@ int main(int argc, char** argv) {
       // solve for free-ion concentrations
       chem->Speciate(&components, parameters);
       chem->CopyBeakerToComponents(&components);
-      if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-        chem->DisplayResults();
-      }
+      if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) { chem->DisplayResults(); }
       bool using_sorption = false;
-      if (components.total_sorbed.size() > 0) {
-        using_sorption = true;
-      }
+      if (components.total_sorbed.size() > 0) { using_sorption = true; }
       if (simulation_params.num_time_steps != 0) {
         message.str("");
-        message << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
+        message << "-- Test Beaker Reaction Stepping -------------------------------------"
+                << std::endl;
         vo->Write(Teuchos::VERB_HIGH, message.str());
 
         // write out the headers info and initial conditions
         chem->DisplayTotalColumnHeaders(simulation_params.display_free_columns);
-        chem->DisplayTotalColumns(0.0, components,
-                                  simulation_params.display_free_columns);
+        chem->DisplayTotalColumns(0.0, components, simulation_params.display_free_columns);
         std::vector<std::string> names;
         chem->GetPrimaryNames(&names);
         WriteTextOutputHeader(&text_output, time_units, names, using_sorption);
         WriteTextOutput(&text_output, 0.0, components);
 
         // parameters.max_iterations = 2;
-        for (int time_step = 0; time_step < simulation_params.num_time_steps;
-             time_step++) {
+        for (int time_step = 0; time_step < simulation_params.num_time_steps; time_step++) {
           chem->ReactionStep(&components, parameters, simulation_params.delta_time);
           if ((time_step + 1) % simulation_params.output_interval == 0) {
             double time = (time_step + 1) * simulation_params.delta_time;
-            chem->DisplayTotalColumns(time, components, 
-                                      simulation_params.display_free_columns);
+            chem->DisplayTotalColumns(time, components, simulation_params.display_free_columns);
             WriteTextOutput(&text_output, time * time_units_conversion, components);
           }
           if (vo->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -168,17 +158,17 @@ int main(int argc, char** argv) {
             ac::Beaker::SolverStatus status = chem->status();
             message << "Timestep: " << time_step << std::endl;
             message << "    number of rhs evaluations: " << status.num_rhs_evaluations << std::endl;
-            message << "    number of jacobian evaluations: " << status.num_jacobian_evaluations << std::endl;
-            message << "    number of newton iterations: " << status.num_newton_iterations << std::endl;
+            message << "    number of jacobian evaluations: " << status.num_jacobian_evaluations
+                    << std::endl;
+            message << "    number of newton iterations: " << status.num_newton_iterations
+                    << std::endl;
             message << "    solution converged: " << status.converged << std::endl;
             vo->Write(Teuchos::VERB_HIGH, message.str());
           }
         }
         vo->Write(Teuchos::VERB_HIGH, "---- Final Speciation\n");
         chem->Speciate(&components, parameters);
-        if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-          chem->DisplayResults();
-        }
+        if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) { chem->DisplayResults(); }
       }
     } else {
       vo->Write(Teuchos::VERB_HIGH, "No database file specified in input file.\n");
@@ -205,21 +195,22 @@ int main(int argc, char** argv) {
   delete chem;
 
   return error;
-}  // end main()
+} // end main()
 
 
-void ModelSpecificParameters(const std::string model,
-                             ac::Beaker::BeakerParameters* parameters) {
+void
+ModelSpecificParameters(const std::string model, ac::Beaker::BeakerParameters* parameters)
+{
   if (model == kCrunch) {
-    parameters->water_density = 997.075;  // kg / m^3
+    parameters->water_density = 997.075; // kg / m^3
   } else if (model == kPflotran) {
-    parameters->water_density = 997.16;  // kg / m^3
+    parameters->water_density = 997.16; // kg / m^3
     // where did this number come from?
     // default parameters->water_density = 997.205133945901;  // kg / m^3
   } else {
     // bad model name, how did we get here....
   }
-}  // end ModelSpecificParameters()
+} // end ModelSpecificParameters()
 
 
 /*******************************************************************************
@@ -227,12 +218,14 @@ void ModelSpecificParameters(const std::string model,
  **  Commandline
  **
  *******************************************************************************/
-int CommandLineOptions(int argc, char** argv,
-                       std::string* verbosity_name,
-                       std::string* input_file_name,
-                       std::string* template_file_name,
-                       bool* debug_batch_driver,
-                       const Teuchos::RCP<Amanzi::VerboseObject>& vo)
+int
+CommandLineOptions(int argc,
+                   char** argv,
+                   std::string* verbosity_name,
+                   std::string* input_file_name,
+                   std::string* template_file_name,
+                   bool* debug_batch_driver,
+                   const Teuchos::RCP<Amanzi::VerboseObject>& vo)
 {
   int error = -2;
   int option;
@@ -240,77 +233,79 @@ int CommandLineOptions(int argc, char** argv,
 
   while ((option = getopt(argc, argv, "di:ht:v:?")) != -1) {
     switch (option) {
-      case 'd': {
-        *debug_batch_driver = true;
-        break;
-      }
-      case 'i': {
-        /* input file name */
-        input_file_name->assign(optarg);
-        error = EXIT_SUCCESS;
-        break;
-      }
-      case 't': {
-        /* template file name */
-        template_file_name->assign(optarg);
-        error = EXIT_SUCCESS;
-        break;
-      }
-      case 'v': {
-        verbosity_name->assign(optarg);
-        break;
-      }
-      case '?':
-      case 'h': {  /* help mode */
-        /* print some help stuff and exit without doing anything */
-        std::cout << argv[0] << " command line options:" << std::endl;
-        std::cout << "    -d" << std::endl;
-        std::cout << "         debugging flag for batch driver" << std::endl;
-        std::cout << "    -i string " << std::endl;
-        std::cout << "         input file name" << std::endl;
-        std::cout << std::endl;
-        std::cout << "    -t string" << std::endl;
-        std::cout << "         write a template input file" << std::endl;
-        std::cout << std::endl;
-        std::cout << "    -v string" << std::endl;
-        std::cout << "         additional verbosity level:" << std::endl;
-        std::cout << "            silent" << std::endl;
-        std::cout << "            terse" << std::endl;
-        std::cout << "            verbose" << std::endl;
-        std::cout << "            debug" << std::endl;
-        std::cout << "            debug_beaker" << std::endl;
-        std::cout << "            debug_database" << std::endl;
-        std::cout << "            debug_mineral_kinetics" << std::endl;
-        std::cout << "            debug_ion_exchange" << std::endl;
-        std::cout << "            debug_newton_solver" << std::endl;
-        error = -1;
-        break;
-      }
-      default: {
-        /* no options */
-        break;
-      }
+    case 'd': {
+      *debug_batch_driver = true;
+      break;
+    }
+    case 'i': {
+      /* input file name */
+      input_file_name->assign(optarg);
+      error = EXIT_SUCCESS;
+      break;
+    }
+    case 't': {
+      /* template file name */
+      template_file_name->assign(optarg);
+      error = EXIT_SUCCESS;
+      break;
+    }
+    case 'v': {
+      verbosity_name->assign(optarg);
+      break;
+    }
+    case '?':
+    case 'h': { /* help mode */
+      /* print some help stuff and exit without doing anything */
+      std::cout << argv[0] << " command line options:" << std::endl;
+      std::cout << "    -d" << std::endl;
+      std::cout << "         debugging flag for batch driver" << std::endl;
+      std::cout << "    -i string " << std::endl;
+      std::cout << "         input file name" << std::endl;
+      std::cout << std::endl;
+      std::cout << "    -t string" << std::endl;
+      std::cout << "         write a template input file" << std::endl;
+      std::cout << std::endl;
+      std::cout << "    -v string" << std::endl;
+      std::cout << "         additional verbosity level:" << std::endl;
+      std::cout << "            silent" << std::endl;
+      std::cout << "            terse" << std::endl;
+      std::cout << "            verbose" << std::endl;
+      std::cout << "            debug" << std::endl;
+      std::cout << "            debug_beaker" << std::endl;
+      std::cout << "            debug_database" << std::endl;
+      std::cout << "            debug_mineral_kinetics" << std::endl;
+      std::cout << "            debug_ion_exchange" << std::endl;
+      std::cout << "            debug_newton_solver" << std::endl;
+      error = -1;
+      break;
+    }
+    default: {
+      /* no options */
+      break;
+    }
     }
   }
 
   if (!input_file_name->c_str() && !template_file_name->c_str()) {
     std::cout << "An input or template file name must be specified." << std::endl;
-    std::cout << "Run \"" <<  argv[0] << " -h \" for help." << std::endl;
+    std::cout << "Run \"" << argv[0] << " -h \" for help." << std::endl;
   }
 
   if (*debug_batch_driver) {
     std::stringstream message;
-    message << "- Command Line Options -----------------------------------------------" << std::endl;
+    message << "- Command Line Options -----------------------------------------------"
+            << std::endl;
     message << "\tdebug batch driver: " << *debug_batch_driver << std::endl;
     message << "\tinput file name: " << *input_file_name << std::endl;
     message << "\ttemplate file name: " << *template_file_name << std::endl;
     message << "\tverbosity name: " << *verbosity_name << std::endl;
-    message << "----------------------------------------------- Command Line Options -" << std::endl;
+    message << "----------------------------------------------- Command Line Options -"
+            << std::endl;
     message << std::endl << std::endl;
     vo->Write(Teuchos::VERB_EXTREME, message.str());
   }
   return error;
-}  // end commandLineOptions()
+} // end commandLineOptions()
 
 
 /*******************************************************************************
@@ -318,27 +313,23 @@ int CommandLineOptions(int argc, char** argv,
  **  Input file parser
  **
  *******************************************************************************/
-void ReadInputFile(const std::string& file_name,
-                   SimulationParameters* simulation_params,
-                   ac::Beaker::BeakerComponents* components,
-                   const Teuchos::RCP<Amanzi::VerboseObject>& vo)
+void
+ReadInputFile(const std::string& file_name,
+              SimulationParameters* simulation_params,
+              ac::Beaker::BeakerComponents* components,
+              const Teuchos::RCP<Amanzi::VerboseObject>& vo)
 {
   std::stringstream message;
   std::ifstream input_file(file_name.c_str());
   if (!input_file) {
     message.str("");
     message << "batch_chem: \n";
-    message << "input file \'" << file_name
-              << "\' could not be opened." << std::endl;
+    message << "input file \'" << file_name << "\' could not be opened." << std::endl;
     vo->WriteWarning(Teuchos::VERB_LOW, message);
     abort();
   }
 
-  enum LineType {
-    kCommentLine,
-    kSection,
-    kParameter
-  } line_type;
+  enum LineType { kCommentLine, kSection, kParameter } line_type;
 
   enum SectionType {
     kSectionSimulation,
@@ -402,7 +393,7 @@ void ReadInputFile(const std::string& file_name,
         message.str("");
         message << "batch_chem::ReadInputFile(): ";
         message << "unknown section found on line " << count << ":";
-        message << "\'" << raw_line << "\'"<< std::endl;
+        message << "\'" << raw_line << "\'" << std::endl;
         vo->Write(Teuchos::VERB_LOW, message.str());
       }
     } else if (line_type == kParameter) {
@@ -430,11 +421,11 @@ void ReadInputFile(const std::string& file_name,
   }
 
   input_file.close();
-}  // end ReadInputFile()
+} // end ReadInputFile()
 
 
-void ParseSimulationParameter(const std::string& raw_line,
-                              SimulationParameters* params)
+void
+ParseSimulationParameter(const std::string& raw_line, SimulationParameters* params)
 {
   std::string equal("=:");
   std::string spaces(" \t");
@@ -455,9 +446,9 @@ void ParseSimulationParameter(const std::string& raw_line,
       // version in value, which has been tokenized by spaces!
       params->description.assign(param.at(1));
     } else if (param.at(0).find(kTextOutputParam) != std::string::npos) {
-      params->text_output.assign(value) ;
+      params->text_output.assign(value);
     } else if (param.at(0).find(kTextTimeUnitsParam) != std::string::npos) {
-      params->text_time_units.assign(value) ;
+      params->text_time_units.assign(value);
     } else if (param.at(0).find(kComparisonModelParam) != std::string::npos) {
       params->comparison_model.assign(value);
     } else if (param.at(0).find(kDatabaseTypeParam) != std::string::npos) {
@@ -485,11 +476,11 @@ void ParseSimulationParameter(const std::string& raw_line,
     }
   }
 
-}  // end ParseSimulationParameter()
+} // end ParseSimulationParameter()
 
 
-void ParseComponentValue(const std::string& raw_line,
-                         std::vector<double>* component)
+void
+ParseComponentValue(const std::string& raw_line, std::vector<double>* component)
 {
   // for now we assume that the order of the component is the
   // same as the order in the database file
@@ -501,16 +492,14 @@ void ParseComponentValue(const std::string& raw_line,
   if (param.size() != 0) {
     ac::StringTokenizer param_value(param.at(1), spaces);
     double value;
-    if (param_value.size() > 0) {
-      value = std::atof(param_value.at(0).c_str());
-    }
+    if (param_value.size() > 0) { value = std::atof(param_value.at(0).c_str()); }
     component->push_back(value);
   }
 
-}  // end ParseComponentValue();
+} // end ParseComponentValue();
 
-void ParseComponentValue(const std::string& raw_line,
-                         double* component)
+void
+ParseComponentValue(const std::string& raw_line, double* component)
 {
   // this is intended for a single value, not a c-style array!
   std::string equal("=:");
@@ -521,13 +510,11 @@ void ParseComponentValue(const std::string& raw_line,
   if (param.size() != 0) {
     ac::StringTokenizer param_value(param.at(1), spaces);
     double value = 0.;
-    if (param_value.size() > 0) {
-      value = std::atof(param_value.at(0).c_str());
-    }
+    if (param_value.size() > 0) { value = std::atof(param_value.at(0).c_str()); }
     *component = value;
   }
 
-}  // end ParseComponentValue();
+} // end ParseComponentValue();
 
 
 /*******************************************************************************
@@ -535,15 +522,14 @@ void ParseComponentValue(const std::string& raw_line,
  **  Output related functions
  **
  *******************************************************************************/
-void WriteTemplateFile(const std::string& file_name,
-                       const Teuchos::RCP<Amanzi::VerboseObject>& vo)
+void
+WriteTemplateFile(const std::string& file_name, const Teuchos::RCP<Amanzi::VerboseObject>& vo)
 {
   std::ofstream template_file(file_name.c_str());
   if (!template_file) {
     std::stringstream message;
     message << "batch_chem: \n";
-    message << "template file \'" << file_name
-              << "\' could not be opened." << std::endl;
+    message << "template file \'" << file_name << "\' could not be opened." << std::endl;
     vo->WriteWarning(Teuchos::VERB_LOW, message);
     abort();
   }
@@ -564,7 +550,8 @@ void WriteTemplateFile(const std::string& file_name,
   template_file << kNumTimeStepsParam << " = " << std::endl;
   template_file << kOutputIntervalParam << " = " << std::endl;
   template_file << std::endl;
-  template_file << "# all component values must be in the same order as the database file" << std::endl;
+  template_file << "# all component values must be in the same order as the database file"
+                << std::endl;
   template_file << "[" << kTotalSection << "]" << std::endl;
   template_file << std::endl;
   template_file << "[" << kMineralSection << "]" << std::endl;
@@ -578,15 +565,17 @@ void WriteTemplateFile(const std::string& file_name,
   template_file << "[" << kIsothermSection << "]" << std::endl;
   template_file << std::endl;
   template_file.close();
-}  // end WriteTemplateFile()
+} // end WriteTemplateFile()
 
-void SetupTextOutput(const SimulationParameters& simulation_params,
-                     const std::string& input_file_name,
-                     std::fstream* text_output, char* time_units,
-                     double* time_units_conversion) {
+void
+SetupTextOutput(const SimulationParameters& simulation_params,
+                const std::string& input_file_name,
+                std::fstream* text_output,
+                char* time_units,
+                double* time_units_conversion)
+{
   // are we writting to observations to a text file?
-  if (simulation_params.text_output == "true" ||
-      simulation_params.text_output == "yes" ||
+  if (simulation_params.text_output == "true" || simulation_params.text_output == "yes" ||
       simulation_params.text_output == "on") {
     // generate the output file name:
     size_t position = input_file_name.find_last_of('.');
@@ -598,22 +587,22 @@ void SetupTextOutput(const SimulationParameters& simulation_params,
     if (simulation_params.text_time_units.size() > 0) {
       *time_units = std::tolower(simulation_params.text_time_units.at(0));
       switch (*time_units) {
-        case 's':
-          break;
-        case 'm':
-          *time_units_conversion = 60.0;
-          break;
-        case 'h':
-          *time_units_conversion = 60.0 * 60.0;
-          break;
-        case 'd':
-          *time_units_conversion = 60.0 * 60.0 * 24.0;
-          break;
-        case 'y':
-          *time_units_conversion = 60.0 * 60.0 * 24.0 * 365.25;
-          break;
-        default:
-          break;
+      case 's':
+        break;
+      case 'm':
+        *time_units_conversion = 60.0;
+        break;
+      case 'h':
+        *time_units_conversion = 60.0 * 60.0;
+        break;
+      case 'd':
+        *time_units_conversion = 60.0 * 60.0 * 24.0;
+        break;
+      case 'y':
+        *time_units_conversion = 60.0 * 60.0 * 24.0 * 365.25;
+        break;
+      default:
+        break;
       }
     }
     *time_units_conversion = 1.0 / (*time_units_conversion);
@@ -621,19 +610,22 @@ void SetupTextOutput(const SimulationParameters& simulation_params,
 }
 
 
-void WriteTextOutputHeader(std::fstream* text_output, const char time_units,
-                           const std::vector<std::string>& names,
-                           const bool using_sorption) {
+void
+WriteTextOutputHeader(std::fstream* text_output,
+                      const char time_units,
+                      const std::vector<std::string>& names,
+                      const bool using_sorption)
+{
   if (text_output->is_open()) {
     *text_output << "# Time(" << time_units << ")";
-    for (std::vector<std::string>::const_iterator name = names.begin();
-         name != names.end(); ++name) {
-      *text_output <<  " , " << *name;
+    for (std::vector<std::string>::const_iterator name = names.begin(); name != names.end();
+         ++name) {
+      *text_output << " , " << *name;
     }
     if (using_sorption) {
-      for (std::vector<std::string>::const_iterator name = names.begin();
-           name != names.end(); ++name) {
-        *text_output <<  " , " << *name << "_sorbed";
+      for (std::vector<std::string>::const_iterator name = names.begin(); name != names.end();
+           ++name) {
+        *text_output << " , " << *name << "_sorbed";
       }
     }
     *text_output << std::endl;
@@ -641,8 +633,11 @@ void WriteTextOutputHeader(std::fstream* text_output, const char time_units,
 }
 
 
-void WriteTextOutput(std::fstream* text_output, const double time, 
-                     const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components) {
+void
+WriteTextOutput(std::fstream* text_output,
+                const double time,
+                const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components)
+{
   if (text_output->is_open()) {
     std::string seperator(" , ");
     *text_output << std::scientific << std::setprecision(6) << std::setw(15) << time;
@@ -657,19 +652,23 @@ void WriteTextOutput(std::fstream* text_output, const double time,
 }
 
 
-void PrintInput(const SimulationParameters& params,
-                const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components,
-                const Teuchos::RCP<Amanzi::VerboseObject>& vo)
+void
+PrintInput(const SimulationParameters& params,
+           const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components,
+           const Teuchos::RCP<Amanzi::VerboseObject>& vo)
 {
-  vo->Write(Teuchos::VERB_HIGH, "- Input File ---------------------------------------------------------\n");
+  vo->Write(Teuchos::VERB_HIGH,
+            "- Input File ---------------------------------------------------------\n");
   PrintSimulationParameters(params, vo);
   components.Display("-- Input components: \n", vo);
-  vo->Write(Teuchos::VERB_HIGH, "--------------------------------------------------------- Input File -\n");
-}  // end PrintInput()
+  vo->Write(Teuchos::VERB_HIGH,
+            "--------------------------------------------------------- Input File -\n");
+} // end PrintInput()
 
 
-void PrintSimulationParameters(const SimulationParameters& params,
-                               const Teuchos::RCP<Amanzi::VerboseObject>& vo)
+void
+PrintSimulationParameters(const SimulationParameters& params,
+                          const Teuchos::RCP<Amanzi::VerboseObject>& vo)
 {
   std::stringstream message;
   message << "-- Simulation parameters:" << std::endl;
@@ -690,6 +689,3 @@ void PrintSimulationParameters(const SimulationParameters& params,
   message << "\ttolerance: " << params.tolerance << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
-
-
-

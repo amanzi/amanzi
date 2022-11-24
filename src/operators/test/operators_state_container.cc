@@ -16,7 +16,8 @@
 #include "Op_Cell_Cell.hh"
 #include "Op_Factory.hh"
 
-TEST(STATE_VIRTUAL_DATA) {
+TEST(STATE_VIRTUAL_DATA)
+{
   using namespace Amanzi;
 
   // create a mesh
@@ -32,14 +33,13 @@ TEST(STATE_VIRTUAL_DATA) {
   auto& f = s.Require<Operators::Op, Operators::Op_Factory>("my_op", Tags::DEFAULT, "my_op_owner");
   f.set_mesh(mesh);
   f.set_name("cell");
-  f.set_schema(Operators::Schema{Operators::OPERATOR_SCHEMA_BASE_CELL |
-                                 Operators::OPERATOR_SCHEMA_DOFS_CELL});
+  f.set_schema(Operators::Schema{ Operators::OPERATOR_SCHEMA_BASE_CELL |
+                                  Operators::OPERATOR_SCHEMA_DOFS_CELL });
 
   s.Setup();
 
   // existence
   CHECK(s.HasRecord("my_op"));
-  CHECK_EQUAL(Operators::OPERATOR_SCHEMA_DOFS_CELL |
-                  Operators::OPERATOR_SCHEMA_BASE_CELL,
+  CHECK_EQUAL(Operators::OPERATOR_SCHEMA_DOFS_CELL | Operators::OPERATOR_SCHEMA_BASE_CELL,
               s.Get<Operators::Op>("my_op").schema_old());
 }

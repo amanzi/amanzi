@@ -8,10 +8,10 @@
 #include "energy_iem_registration.hh"
 #include "eos_registration.hh"
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  
+
   return UnitTest::RunAllTests();
 }
-

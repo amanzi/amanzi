@@ -21,50 +21,51 @@
 #include "wrm_flow_registration.hh"
 
 
-TEST(MPC_DRIVER_FLOW) {
-
-using namespace Amanzi;
-using namespace Amanzi::AmanziMesh;
-using namespace Amanzi::AmanziGeometry;
+TEST(MPC_DRIVER_FLOW)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
 
   auto comm = Amanzi::getDefaultComm();
-  
+
   // read the main parameter list
   std::string xmlInFileName = "test/mpc_flow.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  
+
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   // create mesh
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory.create(0.0, 0.0, 216.0, 120.0, 54, 30);
   AMANZI_ASSERT(!mesh.is_null());
 
   // create dummy observation data object
   double avg1, avg2;
-  Amanzi::ObservationData obs_data;    
+  Amanzi::ObservationData obs_data;
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(plist));
 
   Teuchos::ParameterList state_plist = glist->sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
-  
+
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     try {
       cycle_driver.Go();
       S->Get<CompositeVector>("saturation_liquid").MeanValue(&avg1);
     } catch (const std::exception& e) {
-      std::cerr << e.what() << "\n\n";;
+      std::cerr << e.what() << "\n\n";
+      ;
       CHECK(false);
     } catch (...) {
       CHECK(false);
@@ -72,13 +73,15 @@ using namespace Amanzi::AmanziGeometry;
   }
   WriteStateStatistics(*S);
   S = Teuchos::null;
-  
+
   // restart simulation and compare results
-  glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chk_flow00010.h5");
+  glist->sublist("cycle driver")
+    .sublist("restart")
+    .set<std::string>("file name", "chk_flow00010.h5");
   avg2 = 0.;
   S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
-  
+
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     try {
@@ -96,5 +99,3 @@ using namespace Amanzi::AmanziGeometry;
   CHECK(PKFactory::num_pks == 2);
   std::cout << PKFactory::list_pks << std::endl;
 }
-
-

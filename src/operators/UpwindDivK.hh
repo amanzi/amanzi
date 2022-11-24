@@ -31,13 +31,14 @@ namespace Operators {
 
 class UpwindDivK : public Upwind {
  public:
-  UpwindDivK(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : Upwind(mesh) {};
-  ~UpwindDivK() {};
+  UpwindDivK(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : Upwind(mesh){};
+  ~UpwindDivK(){};
 
   // main methods
   void Init(Teuchos::ParameterList& plist);
 
-  void Compute(const CompositeVector& flux, const CompositeVector& solution,
+  void Compute(const CompositeVector& flux,
+               const CompositeVector& solution,
                const std::vector<int>& bc_model,
                CompositeVector& field);
 
@@ -50,8 +51,8 @@ class UpwindDivK : public Upwind {
 /* ******************************************************************
 * Public init method. It is not yet used.
 ****************************************************************** */
-inline
-void UpwindDivK::Init(Teuchos::ParameterList& plist)
+inline void
+UpwindDivK::Init(Teuchos::ParameterList& plist)
 {
   method_ = Operators::OPERATOR_UPWIND_DIVK;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
@@ -62,10 +63,11 @@ void UpwindDivK::Init(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Flux-based upwind consistent with mimetic discretization.
 ****************************************************************** */
-inline
-void UpwindDivK::Compute(
-    const CompositeVector& flux, const CompositeVector& solution,
-    const std::vector<int>& bc_model, CompositeVector& field)
+inline void
+UpwindDivK::Compute(const CompositeVector& flux,
+                    const CompositeVector& solution,
+                    const std::vector<int>& bc_model,
+                    CompositeVector& field)
 {
   AMANZI_ASSERT(field.HasComponent("cell"));
   AMANZI_ASSERT(field.HasComponent(face_comp_));
@@ -99,26 +101,26 @@ void UpwindDivK::Compute(
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      bool flag = (flx_face[0][f] * dirs[n] <= -tol);  // upwind flag
-      
-      // Internal faces. We average field on almost vertical faces. 
-      if (bc_model[f] == OPERATOR_BC_NONE && fabs(flx_face[0][f]) <= tol) { 
+      bool flag = (flx_face[0][f] * dirs[n] <= -tol); // upwind flag
+
+      // Internal faces. We average field on almost vertical faces.
+      if (bc_model[f] == OPERATOR_BC_NONE && fabs(flx_face[0][f]) <= tol) {
         double tmp(0.5);
         int c2 = cell_get_face_adj_cell(*mesh_, c, f);
-        if (c2 >= 0) { 
+        if (c2 >= 0) {
           double v1 = mesh_->cell_volume(c);
           double v2 = mesh_->cell_volume(c2);
           tmp = v2 / (v1 + v2);
         }
-        upw_face[0][f] += kc * tmp; 
-      // Boundary faces. We upwind only on inflow dirichlet faces.
+        upw_face[0][f] += kc * tmp;
+        // Boundary faces. We upwind only on inflow dirichlet faces.
       } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         upw_face[0][f] = fld_boundary[0][ext_face_map.LID(face_map.GID(f))];
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN && flag) {
         upw_face[0][f] = kc;
       } else if (bc_model[f] == OPERATOR_BC_MIXED && flag) {
         upw_face[0][f] = kc;
-      // Internal and boundary faces. 
+        // Internal and boundary faces.
       } else if (!flag) {
         int c2 = cell_get_face_adj_cell(*mesh_, c, f);
         if (c2 >= 0) {
@@ -132,8 +134,7 @@ void UpwindDivK::Compute(
   }
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

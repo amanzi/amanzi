@@ -45,10 +45,10 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 class RegionAll : public Region {
-public:
+ public:
   RegionAll(const std::string& name,
             const int id,
-            const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
+            const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
 
   // Is the the specified point inside this region
   bool inside(const Point& p) const;

@@ -23,7 +23,7 @@ namespace AmanziEOS {
 class LookupTable {
  public:
   LookupTable(Teuchos::ParameterList& plist);
-  ~LookupTable() {};
+  ~LookupTable(){};
 
   // Virtual methods that form the Viscosity
   double Function(double T, double p, int* ierr);
@@ -34,11 +34,15 @@ class LookupTable {
   std::string ErrorMessage(double T, double p);
 
  private:
-  void ReadMetaData_(std::ifstream& ifs, const std::string& label,
-                     int* n, double* scale, double* shift);
+  void
+  ReadMetaData_(std::ifstream& ifs, const std::string& label, int* n, double* scale, double* shift);
 
-  void ReadBlock_(std::ifstream& ifs, const std::string& field,
-                  int nP, int nT, double scale, double shift);
+  void ReadBlock_(std::ifstream& ifs,
+                  const std::string& field,
+                  int nP,
+                  int nT,
+                  double scale,
+                  double shift);
 
   int FindBox_(double T, double p, int* ip, int* jp);
 
@@ -51,10 +55,10 @@ class LookupTable {
   double scaleF_, shiftF_;
 
   std::vector<double> axisT_, axisP_;
-  std::vector<std::vector<double> > F_; 
+  std::vector<std::vector<double>> F_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

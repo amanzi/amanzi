@@ -40,11 +40,12 @@ class MFD3D_Electromagnetics : public DeRham_Edge {
  public:
   MFD3D_Electromagnetics(const Teuchos::ParameterList& plist,
                          const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-    : DeRham_Edge(mesh) {};
+    : DeRham_Edge(mesh){};
 
   // required methods
   // -- schema
-  virtual std::vector<SchemaItem> schema() const override {
+  virtual std::vector<SchemaItem> schema() const override
+  {
     if (d_ == 2)
       return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, 1));
     else
@@ -85,8 +86,7 @@ class MFD3D_Electromagnetics : public DeRham_Edge {
   static RegisteredFactory<MFD3D_Electromagnetics> factory_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

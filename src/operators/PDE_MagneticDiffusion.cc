@@ -29,9 +29,9 @@ namespace Operators {
 * Populate contains of elemental matrices.
 * NOTE: The input parameters are not yet used.
 ****************************************************************** */
-void PDE_MagneticDiffusion::UpdateMatrices(
-    const Teuchos::Ptr<const CompositeVector>& u,
-    const Teuchos::Ptr<const CompositeVector>& p)
+void
+PDE_MagneticDiffusion::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                                      const Teuchos::Ptr<const CompositeVector>& p)
 {
   Teuchos::ParameterList plist;
   WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
@@ -39,7 +39,7 @@ void PDE_MagneticDiffusion::UpdateMatrices(
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
-  
+
   for (int c = 0; c < ncells_owned; c++) {
     mfd.StiffnessMatrix(c, Kc, Acell, Mcell, Ccell);
 
@@ -54,8 +54,8 @@ void PDE_MagneticDiffusion::UpdateMatrices(
 * System modification before solving the problem:
 * A := invK I + dt/2 A   and  f += Curl M B 
 * **************************************************************** */
-void PDE_MagneticDiffusion::ModifyMatrices(
-   CompositeVector& E, CompositeVector& B, double dt)
+void
+PDE_MagneticDiffusion::ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt)
 {
   B.ScatterMasterToGhosted("face");
   global_op_->rhs()->PutScalarGhosted(0.0);
@@ -109,14 +109,14 @@ void PDE_MagneticDiffusion::ModifyMatrices(
 /* ******************************************************************
 * Solution postprocessing
 * **************************************************************** */
-void PDE_MagneticDiffusion::ModifyFields(
-   CompositeVector& E, CompositeVector& B, double dt)
+void
+PDE_MagneticDiffusion::ModifyFields(CompositeVector& E, CompositeVector& B, double dt)
 {
   E.ScatterMasterToGhosted("edge");
 
   Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
   Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
-  
+
   AmanziMesh::Entity_ID_List edges;
 
   std::vector<bool> fflag(nedges_wghost, false);
@@ -154,7 +154,8 @@ void PDE_MagneticDiffusion::ModifyFields(
 /* ******************************************************************
 * Calculates Ohmic heating
 ****************************************************************** */
-double PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
+double
+PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
 {
   const Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
   E.ScatterMasterToGhosted("edge");
@@ -193,7 +194,8 @@ double PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
 /* ******************************************************************
 * Calculates integral of 1/2 |B|^2
 ****************************************************************** */
-double PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
+double
+PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
   B.ScatterMasterToGhosted("face");
@@ -228,11 +230,11 @@ double PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
 /* ******************************************************************
 * Useful tools
 * **************************************************************** */
-double PDE_MagneticDiffusion::CalculateDivergence(
-    int c, const CompositeVector& B)
+double
+PDE_MagneticDiffusion::CalculateDivergence(int c, const CompositeVector& B)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
-  
+
   const auto& faces = mesh_->cell_get_faces(c);
   const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
@@ -251,11 +253,12 @@ double PDE_MagneticDiffusion::CalculateDivergence(
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void PDE_MagneticDiffusion::InitMagneticDiffusion_(Teuchos::ParameterList& plist)
-{ 
+void
+PDE_MagneticDiffusion::InitMagneticDiffusion_(Teuchos::ParameterList& plist)
+{
   mass_op_.resize(ncells_owned);
   curl_op_.resize(ncells_owned);
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi

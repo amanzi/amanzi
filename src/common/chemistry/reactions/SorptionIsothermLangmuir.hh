@@ -23,7 +23,7 @@ class SorptionIsothermLangmuir : public SorptionIsotherm {
  public:
   SorptionIsothermLangmuir();
   SorptionIsothermLangmuir(double K, double b);
-  ~SorptionIsothermLangmuir() {};
+  ~SorptionIsothermLangmuir(){};
 
   void Init(double K, double b);
 
@@ -37,12 +37,12 @@ class SorptionIsothermLangmuir : public SorptionIsotherm {
 
  private:
   // equilibrium constant or Langmuir adsorption constant [L water/mol]
-  double K_; 
+  double K_;
   // number of sorption sites (max sorbed concentration) [mol/m^3 bulk]
   double b_;
   std::vector<double> params_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

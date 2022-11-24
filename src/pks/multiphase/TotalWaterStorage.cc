@@ -19,8 +19,7 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-TotalWaterStorage::TotalWaterStorage(Teuchos::ParameterList& plist) :
-    MultiphaseBaseEvaluator(plist)
+TotalWaterStorage::TotalWaterStorage(Teuchos::ParameterList& plist) : MultiphaseBaseEvaluator(plist)
 {
   Init_();
 }
@@ -29,7 +28,8 @@ TotalWaterStorage::TotalWaterStorage(Teuchos::ParameterList& plist) :
 /* ******************************************************************
 * Initialization.
 ****************************************************************** */
-void TotalWaterStorage::Init_()
+void
+TotalWaterStorage::Init_()
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -51,11 +51,13 @@ void TotalWaterStorage::Init_()
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-TotalWaterStorage::TotalWaterStorage(const TotalWaterStorage& other) :
-    MultiphaseBaseEvaluator(other) {};
+TotalWaterStorage::TotalWaterStorage(const TotalWaterStorage& other)
+  : MultiphaseBaseEvaluator(other){};
 
 
-Teuchos::RCP<Evaluator> TotalWaterStorage::Clone() const {
+Teuchos::RCP<Evaluator>
+TotalWaterStorage::Clone() const
+{
   return Teuchos::rcp(new TotalWaterStorage(*this));
 }
 
@@ -63,8 +65,8 @@ Teuchos::RCP<Evaluator> TotalWaterStorage::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalWaterStorage::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+TotalWaterStorage::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
@@ -76,18 +78,19 @@ void TotalWaterStorage::Evaluate_(
   int ncells = results[0]->size("cell", false);
 
   for (int c = 0; c != ncells; ++c) {
-    result_c[0][c] = phi[0][c] * (sl[0][c] * nl[0][c]
-                   + (1.0 - sl[0][c]) * ng[0][c] * vg[0][c]);
-  }      
+    result_c[0][c] = phi[0][c] * (sl[0][c] * nl[0][c] + (1.0 - sl[0][c]) * ng[0][c] * vg[0][c]);
+  }
 }
 
 
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalWaterStorage::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+TotalWaterStorage::EvaluatePartialDerivative_(const State& S,
+                                              const Key& wrt_key,
+                                              const Tag& wrt_tag,
+                                              const std::vector<CompositeVector*>& results)
 {
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
@@ -107,19 +110,13 @@ void TotalWaterStorage::EvaluatePartialDerivative_(
       result_c[0][c] = phi[0][c] * (nl[0][c] - ng[0][c] * vg[0][c]);
     }
   } else if (wrt_key == mol_density_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[0][c] * sl[0][c];
-    }
+    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * sl[0][c]; }
   } else if (wrt_key == mol_density_gas_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]) * vg[0][c];
-    }
+    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]) * vg[0][c]; }
   } else if (wrt_key == x_vapor_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]) * ng[0][c];
-    }
+    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]) * ng[0][c]; }
   }
 }
 
-}  // namespace Multiphase
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi

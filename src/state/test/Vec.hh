@@ -13,37 +13,49 @@ struct Vec {
 };
 
 class VecFactory {
-public:
+ public:
   VecFactory() : size_(-1) {}
 
   void set_size(int size) { size_ = size; }
 
-  Teuchos::RCP<Vec> Create() {
+  Teuchos::RCP<Vec> Create()
+  {
     assert(size_ >= 0);
     return Teuchos::rcp(new Vec(size_));
   }
 
-private:
+ private:
   int size_;
 };
 
-bool UserInitialize(Teuchos::ParameterList& plist, Vec& t,
-                    const Amanzi::Key& fieldname,
-                    const std::vector<std::string>* subfieldnames) {
+bool
+UserInitialize(Teuchos::ParameterList& plist,
+               Vec& t,
+               const Amanzi::Key& fieldname,
+               const std::vector<std::string>* subfieldnames)
+{
   std::cout << "found it!" << std::endl;
   return true;
 }
 
-void UserWriteVis(const Amanzi::Visualization& vis,
-                  const Amanzi::Key& fieldname,
-                  const std::vector<std::string>* subfieldnames,
-                  const Vec& vec) {}
+void
+UserWriteVis(const Amanzi::Visualization& vis,
+             const Amanzi::Key& fieldname,
+             const std::vector<std::string>* subfieldnames,
+             const Vec& vec)
+{}
 
-void UserWriteCheckpoint(const Amanzi::Checkpoint& chkp,
-                         const Amanzi::Key& fieldname,
-                         const std::vector<std::string>* subfieldnames,
-                         const Vec& vec) {}
-bool UserReadCheckpoint(const Amanzi::Checkpoint& chkp,
-                        const Amanzi::Key& fieldname,
-                        const std::vector<std::string>* subfieldnames,
-                        Vec& vec) { return true; }
+void
+UserWriteCheckpoint(const Amanzi::Checkpoint& chkp,
+                    const Amanzi::Key& fieldname,
+                    const std::vector<std::string>* subfieldnames,
+                    const Vec& vec)
+{}
+bool
+UserReadCheckpoint(const Amanzi::Checkpoint& chkp,
+                   const Amanzi::Key& fieldname,
+                   const std::vector<std::string>* subfieldnames,
+                   Vec& vec)
+{
+  return true;
+}

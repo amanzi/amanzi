@@ -24,18 +24,19 @@
 namespace Amanzi {
 namespace WhetStone {
 
-BilinearFormFactory::map_type* BilinearFormFactory::map_;  // initialization
+BilinearFormFactory::map_type* BilinearFormFactory::map_; // initialization
 
-Teuchos::RCP<BilinearForm> BilinearFormFactory::Create(
-    const Teuchos::ParameterList& plist,
-    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) {
+Teuchos::RCP<BilinearForm>
+BilinearFormFactory::Create(const Teuchos::ParameterList& plist,
+                            const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+{
   std::string method = plist.get<std::string>("method");
   BFKey key = method;
   map_type::iterator iter = GetMap()->find(key);
 
   if (iter == GetMap()->end()) {
     std::cout << "Factory: cannot get item of type: " << method << std::endl;
-    for (typename map_type::iterator p=GetMap()->begin(); p!=GetMap()->end(); ++p) {
+    for (typename map_type::iterator p = GetMap()->begin(); p != GetMap()->end(); ++p) {
       std::cout << "  option: " << p->first << std::endl;
     }
     return Teuchos::null;
@@ -43,6 +44,5 @@ Teuchos::RCP<BilinearForm> BilinearFormFactory::Create(
   return Teuchos::rcp(iter->second(plist, mesh));
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

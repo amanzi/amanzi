@@ -28,14 +28,11 @@ RegionBox::RegionBox(const std::string& name,
                      const Point& p0,
                      const Point& p1,
                      const LifeCycleType lifecycle)
-  : Region(name, id, true, RegionType::BOX, p0.dim(), p0.dim(), lifecycle),
-    p0_(p0),
-    p1_(p1)
+  : Region(name, id, true, RegionType::BOX, p0.dim(), p0.dim(), lifecycle), p0_(p0), p1_(p1)
 {
   if (p0_.dim() != p1_.dim()) {
     Errors::Message msg;
-    msg << "Mismatch in dimensions of corner points of RegionBox \""
-        << Region::get_name() << "\"";
+    msg << "Mismatch in dimensions of corner points of RegionBox \"" << Region::get_name() << "\"";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -58,16 +55,16 @@ RegionBox::RegionBox(const std::string& name,
 // -------------------------------------------------------------
 // RegionBox::inside
 // -------------------------------------------------------------
-bool RegionBox::inside(const Point& p) const
+bool
+RegionBox::inside(const Point& p) const
 {
-// #ifdef ENABLE_DBC
+  // #ifdef ENABLE_DBC
   if (p.dim() != p0_.dim()) {
     Errors::Message msg;
-    msg << "Mismatch in corner dimension of RegionBox \""
-        << get_name() << "\" and query point.";
+    msg << "Mismatch in corner dimension of RegionBox \"" << get_name() << "\" and query point.";
     Exceptions::amanzi_throw(msg);
   }
-// #endif
+  // #endif
 
   for (int i = 0; i != p.dim(); ++i) {
     if (p[i] < p0_[i] - TOL) return false;
@@ -80,10 +77,11 @@ bool RegionBox::inside(const Point& p) const
 // -------------------------------------------------------------
 // RegionBox::is_degenerate (also indicate in how many dimensions)
 // -------------------------------------------------------------
-bool RegionBox::is_degenerate(int *ndeg) const
+bool
+RegionBox::is_degenerate(int* ndeg) const
 {
   *ndeg = 0;
-  for (int i=0; i!=p0_.dim(); ++i) {
+  for (int i = 0; i != p0_.dim(); ++i) {
     if (p0_[i] == p1_[i]) (*ndeg)++;
   }
 

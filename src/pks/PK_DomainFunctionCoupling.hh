@@ -70,8 +70,8 @@ template <class FunctionBase>
 class PK_DomainFunctionCoupling : public FunctionBase {
  public:
   PK_DomainFunctionCoupling(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                            const Teuchos::RCP<const State>& S) :
-      mesh_(mesh), S_(S) {};
+                            const Teuchos::RCP<const State>& S)
+    : mesh_(mesh), S_(S){};
   virtual ~PK_DomainFunctionCoupling() = default;
 
   typedef std::vector<std::string> RegionList;
@@ -79,7 +79,8 @@ class PK_DomainFunctionCoupling : public FunctionBase {
   typedef std::set<AmanziMesh::Entity_ID> MeshIDs;
 
   // member functions
-  void Init(const Teuchos::ParameterList& plist, const std::string& keyword,
+  void Init(const Teuchos::ParameterList& plist,
+            const std::string& keyword,
             AmanziMesh::Entity_kind kind);
 
   // required member functions
@@ -110,9 +111,10 @@ class PK_DomainFunctionCoupling : public FunctionBase {
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionCoupling<FunctionBase>::Init(
-    const Teuchos::ParameterList& plist, const std::string& keyword,
-    AmanziMesh::Entity_kind region_kind)
+void
+PK_DomainFunctionCoupling<FunctionBase>::Init(const Teuchos::ParameterList& plist,
+                                              const std::string& keyword,
+                                              AmanziMesh::Entity_kind region_kind)
 {
   Errors::Message msg;
 
@@ -134,19 +136,23 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
   }
 
   //  deprecated
-  std::vector<std::string> deprecated = { "flux_key", "copy_flux_tag",
-                                          "field_in_key", "copy_field_in_key",
-                                          "field_out_key", "copy_field_out_tag",
-                                          "conserved_quantity_key", "copy_conserved_quantity_key" };
-  std::vector<std::string> newstyle = { "flux key", "flux copy key",
-                                        "removed1", "removed2",
-                                        "external field key", "external field copy key",
-                                        "conserved quantity key", "conserved quantity copy key" };
+  std::vector<std::string> deprecated = {
+    "flux_key",      "copy_flux_tag",      "field_in_key",           "copy_field_in_key",
+    "field_out_key", "copy_field_out_tag", "conserved_quantity_key", "copy_conserved_quantity_key"
+  };
+  std::vector<std::string> newstyle = { "flux key",
+                                        "flux copy key",
+                                        "removed1",
+                                        "removed2",
+                                        "external field key",
+                                        "external field copy key",
+                                        "conserved quantity key",
+                                        "conserved quantity copy key" };
 
   for (int i = 0; i < deprecated.size(); ++i) {
     std::string name = deprecated[i];
     if (slist.isParameter(name)) {
-      slist.set<std::string>(newstyle[i], slist.get<std::string>(name)); 
+      slist.set<std::string>(newstyle[i], slist.get<std::string>(name));
       /*
       Errors::Message msg;
       msg << "deprecated name : " << name << ", see PK_DomainFunctionCoupling.hh";
@@ -177,8 +183,8 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
   copy_field_out_tag_ = Keys::readTag(slist, "external field copy key");
 
   // create a list of domain ids
-  RegionList regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
-  Teuchos::RCP<Domain> domain= Teuchos::rcp(new Domain(regions, region_kind));
+  RegionList regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();
+  Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, region_kind));
 
   entity_ids_ = Teuchos::rcp(new MeshIDs());
   AmanziMesh::Entity_kind kind = domain->second;
@@ -189,8 +195,8 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
       mesh_->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, &id_list);
       entity_ids_->insert(id_list.begin(), id_list.end());
     } else {
-      msg << "Unknown region in processing coupling source: name=" << *region
-          << ", kind=" << kind << "\n";
+      msg << "Unknown region in processing coupling source: name=" << *region << ", kind=" << kind
+          << "\n";
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -201,17 +207,18 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
 * Compute and distribute the result by Coupling.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
+void
+PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 {
   Errors::Message msg;
 
-  // compute reverse map: should we move this to Init() ??? 
+  // compute reverse map: should we move this to Init() ???
   mesh_out_ = S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).Mesh();
 
   if (submodel_ == "field" || submodel_ == "conserved quantity") {
     if (mesh_->space_dimension() == mesh_->manifold_dimension() && reverse_map_.size() == 0) {
       const Epetra_Map& cell_map = mesh_out_->cell_map(true);
-      for (int c = 0 ; c < cell_map.NumMyElements(); ++c) {
+      for (int c = 0; c < cell_map.NumMyElements(); ++c) {
         AmanziMesh::Entity_ID f = mesh_out_->entity_get_parent(AmanziMesh::CELL, c);
         reverse_map_[f] = c;
       }
@@ -220,10 +227,13 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
   // create the input tuple (time + space)
   if (submodel_ == "rate") {
-    const auto& flux = *S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).ViewComponent("face", true);
-    const auto& flux_map = S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).Map().Map("face", true);
+    const auto& flux =
+      *S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).ViewComponent("face", true);
+    const auto& flux_map =
+      S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).Map().Map("face", true);
 
-    const auto& field_out = *S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).ViewComponent("cell", true);
+    const auto& field_out =
+      *S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).ViewComponent("cell", true);
     S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).ScatterMasterToGhosted("cell");
 
     int num_vec = field_out.NumVectors();
@@ -244,7 +254,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
       }
 
       double linear(0.0);
-      std::vector<double> val(num_vec + 1, 0.0);  // extra vector is for water exchange
+      std::vector<double> val(num_vec + 1, 0.0); // extra vector is for water exchange
       int pos = Operators::UniqueIndexFaceToCells(*mesh_out_, f, cells[0]);
 
       for (int j = 0; j != cells.size(); ++j) {
@@ -253,7 +263,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
         for (int i = 0; i < faces.size(); i++) {
           if (f == faces[i]) {
             int g = flux_map->FirstPointInElement(f);
-            double fln = flux[0][g + (pos + j)%2] * dirs[i];
+            double fln = flux[0][g + (pos + j) % 2] * dirs[i];
 
             if (fln >= 0) {
               linear += fln;
@@ -273,8 +283,10 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     }
 
   } else if (submodel_ == "flux exchange") {
-    const auto& flux = *S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).ViewComponent("face", true);
-    const auto& flux_map = S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).Map().Map("face", true);
+    const auto& flux =
+      *S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).ViewComponent("face", true);
+    const auto& flux_map =
+      S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).Map().Map("face", true);
 
     AmanziMesh::Entity_ID_List cells, faces;
     std::vector<int> dirs;
@@ -300,7 +312,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
         for (int i = 0; i < faces.size(); i++) {
           if (f == faces[i]) {
             int g = flux_map->FirstPointInElement(f);
-            double fln = flux[0][g + (pos + j)%2] * dirs[i];
+            double fln = flux[0][g + (pos + j) % 2] * dirs[i];
             val[0] += fln / mesh_->cell_volume(c);
             break;
           }
@@ -310,7 +322,8 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     }
 
   } else if (submodel_ == "field") {
-    const auto& field_out = *S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).ViewComponent("cell", true);
+    const auto& field_out =
+      *S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).ViewComponent("cell", true);
 
     int num_vec = field_out.NumVectors();
     std::vector<double> val(num_vec);
@@ -322,13 +335,15 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
       if (it == reverse_map_.end()) continue;
 
       int c = it->second;
-      for (int k = 0; k < num_vec; ++k) val[k] = field_out[k][c]; 
-      value_[*f] = val;     
+      for (int k = 0; k < num_vec; ++k) val[k] = field_out[k][c];
+      value_[*f] = val;
     }
 
   } else if (submodel_ == "conserved quantity") {
-    const auto& field_out = *S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).ViewComponent("cell", true);
-    const auto& field_cons = *S_->Get<CompositeVector>(field_cons_key_, copy_field_cons_tag_).ViewComponent("cell", true);
+    const auto& field_out =
+      *S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).ViewComponent("cell", true);
+    const auto& field_cons =
+      *S_->Get<CompositeVector>(field_cons_key_, copy_field_cons_tag_).ViewComponent("cell", true);
 
     int num_vec = field_out.NumVectors();
     std::vector<double> val(num_vec);
@@ -363,6 +378,6 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
   }
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

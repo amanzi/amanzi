@@ -31,7 +31,8 @@ struct test_cv_vandelay {
   Teuchos::RCP<CompositeVector> x;
   Teuchos::RCP<CompositeVector> x2;
 
-  test_cv_vandelay() {
+  test_cv_vandelay()
+  {
     comm = getDefaultComm();
     Preference pref;
     pref.clear();
@@ -64,31 +65,30 @@ struct test_cv_vandelay {
     num_dofs[1] = 1;
 
     x_space = Teuchos::rcp(new CompositeVectorSpace());
-    x_space->SetMesh(mesh)->SetGhosted()
-        ->SetComponents(names, locations, num_dofs);
+    x_space->SetMesh(mesh)->SetGhosted()->SetComponents(names, locations, num_dofs);
 
     x2_space = Teuchos::rcp(new CompositeVectorSpace());
-    x2_space->SetMesh(mesh)->SetGhosted()
-        ->SetComponents(names_v, locations_v, num_dofs);
+    x2_space->SetMesh(mesh)->SetGhosted()->SetComponents(names_v, locations_v, num_dofs);
 
     x = Teuchos::rcp(new CompositeVector(*x_space));
     x2 = Teuchos::rcp(new CompositeVector(*x2_space));
   }
-  ~test_cv_vandelay() {  }
+  ~test_cv_vandelay() {}
 };
 
 
-SUITE(VANDELAY_COMPOSITE_VECTOR) {
+SUITE(VANDELAY_COMPOSITE_VECTOR)
+{
   // test the vector's putscalar
-  TEST_FIXTURE(test_cv_vandelay, CVVandelay) {
+  TEST_FIXTURE(test_cv_vandelay, CVVandelay)
+  {
     std::cout << "X has " << x->NumComponents() << " components" << std::endl;
     x->PutScalar(2.0);
-    CHECK_CLOSE((*x)("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x)("cell",1,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x)("face",0,0), 2.0, 0.00001);
+    CHECK_CLOSE((*x)("cell", 0, 0), 2.0, 0.00001);
+    CHECK_CLOSE((*x)("cell", 1, 0), 2.0, 0.00001);
+    CHECK_CLOSE((*x)("face", 0, 0), 2.0, 0.00001);
 
-    *x2->ViewComponent("boundary_face",false) = *x->ViewComponent("boundary_face",false);
-    CHECK_CLOSE((*x2)("boundary_face",0,0), 2.0, 0.00001);
+    *x2->ViewComponent("boundary_face", false) = *x->ViewComponent("boundary_face", false);
+    CHECK_CLOSE((*x2)("boundary_face", 0, 0), 2.0, 0.00001);
   }
 }
-

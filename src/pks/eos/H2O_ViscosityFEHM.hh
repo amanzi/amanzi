@@ -27,8 +27,7 @@ namespace AmanziEOS {
 // Equation of state for water viscosity
 class H2O_ViscosityFEHM : public EOS_Viscosity {
  public:
-  explicit
-  H2O_ViscosityFEHM(Teuchos::ParameterList& eos_plist);
+  explicit H2O_ViscosityFEHM(Teuchos::ParameterList& eos_plist);
 
   virtual double Viscosity(double T, double p);
   virtual double DViscosityDT(double T, double p);
@@ -43,7 +42,7 @@ class H2O_ViscosityFEHM : public EOS_Viscosity {
   static Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM> factory_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

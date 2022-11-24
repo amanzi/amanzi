@@ -29,7 +29,8 @@ namespace WhetStone {
 /* ******************************************************************
 * The conventional FV scheme for a general mesh.
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W)
+int
+MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W)
 {
   const auto& faces = mesh_->cell_get_faces(c);
   const auto& dirs = mesh_->cell_get_face_dirs(c);
@@ -61,7 +62,8 @@ int MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& 
 * The one-sided transmissibility coefficient. Any change to this 
 * routine must be consistent with the above routine.
 ****************************************************************** */
-double MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor& K)
+double
+MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor& K)
 {
   int dir;
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -84,7 +86,8 @@ double MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor& K)
 * The debug version of the above FV scheme for a scalar tensor and
 * an orthogonal brick element.
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& W)
+int
+MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& W)
 {
   double volume = mesh_->cell_volume(c);
 
@@ -106,7 +109,8 @@ int MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatr
 /* ******************************************************************
 * Second-generation MFD method as inlemented in RC1.
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
+int
+MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
 {
   const auto& faces = mesh_->cell_get_faces(c);
   const auto& fdirs = mesh_->cell_get_face_dirs(c);
@@ -173,13 +177,14 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
     for (int i = 0; i < d_; i++) {
       int k = std::distance(faces.begin(), std::find(faces.begin(), faces.end(), corner_faces[i]));
       for (int j = i; j < d_; j++) {
-        int l = std::distance(faces.begin(), std::find(faces.begin(), faces.end(), corner_faces[j]));
+        int l =
+          std::distance(faces.begin(), std::find(faces.begin(), faces.end(), corner_faces[j]));
         W(k, l) += Mv_tmp(i, j) * cwgt[n] * fdirs[k] * fdirs[l];
         W(l, k) = W(k, l);
       }
     }
   }
- 
+
   // invert matrix W
   int ierr = W.Inverse();
   if (ierr != 0) {
@@ -191,8 +196,5 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   return 0;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
-
-
+} // namespace WhetStone
+} // namespace Amanzi

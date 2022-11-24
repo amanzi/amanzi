@@ -22,13 +22,12 @@
 namespace Amanzi {
 namespace Energy {
 
-class IEM_WaterVaporEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IEM_WaterVaporEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
-  explicit
-  IEM_WaterVaporEvaluator(Teuchos::ParameterList& plist);
-  IEM_WaterVaporEvaluator(Teuchos::ParameterList& plist,
-                          const Teuchos::RCP<IEM_WaterVapor>& iem);
+  explicit IEM_WaterVaporEvaluator(Teuchos::ParameterList& plist);
+  IEM_WaterVaporEvaluator(Teuchos::ParameterList& plist, const Teuchos::RCP<IEM_WaterVapor>& iem);
   IEM_WaterVaporEvaluator(const IEM_WaterVaporEvaluator& other);
 
   // required inteface functions
@@ -36,7 +35,9 @@ class IEM_WaterVaporEvaluator : public EvaluatorSecondaryMonotype<CompositeVecto
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
   Teuchos::RCP<IEM_WaterVapor> iem() { return iem_; }
@@ -52,7 +53,7 @@ class IEM_WaterVaporEvaluator : public EvaluatorSecondaryMonotype<CompositeVecto
   static Utils::RegisteredFactory<Evaluator, IEM_WaterVaporEvaluator> factory_;
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

@@ -43,7 +43,7 @@ namespace Amanzi {
 // Specializations can do useful things though.
 template <typename Data_t, typename DataFactory_t = NullFactory>
 class EvaluatorSecondaryMonotype : public EvaluatorSecondary {
-public:
+ public:
   using EvaluatorSecondary::EvaluatorSecondary;
 
   //
@@ -62,12 +62,16 @@ public:
   virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override;
 
   virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, const Tag& wrt_tag, const std::vector<Data_t*>& results) = 0;
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
+                                          const std::vector<Data_t*>& results) = 0;
 
   virtual void Evaluate_(const State& S, const std::vector<Data_t*>& results) = 0;
 
-  virtual Teuchos::Ptr<const Comm_type> get_comm_(const State& S) const override {
-    return Teuchos::null; }
+  virtual Teuchos::Ptr<const Comm_type> get_comm_(const State& S) const override
+  {
+    return Teuchos::null;
+  }
 
  protected:
   // NOTE: aspects of EnsureCompatiblity are often overridden by derived
@@ -124,10 +128,10 @@ public:
   // my_keys push requirements down to dependencies, each dependency has its
   // own mesh based on domain name but a common structure.
   virtual void EnsureCompatibility_ToDeps_(State& S,
-          const std::vector<std::string>& names,
-          const std::vector<AmanziMesh::Entity_kind>& locations,
-          const std::vector<int>& num_dofs) {}
-
+                                           const std::vector<std::string>& names,
+                                           const std::vector<AmanziMesh::Entity_kind>& locations,
+                                           const std::vector<int>& num_dofs)
+  {}
 };
 
 
@@ -140,7 +144,7 @@ public:
 //
 template <typename Data_t, typename DataFactory_t>
 inline void
-EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility(State& S)
+EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility(State& S)
 {
   // Calls Require, setting the data type
   // (e.g. CompositeVector) and claiming ownership of all of my_keys_.
@@ -184,8 +188,7 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility(State& S)
   // structure.
   EnsureCompatibility_Structure_(S);
 
-  std::string consistency_policy =
-      plist_.get<std::string>("consistency policy", "give to child");
+  std::string consistency_policy = plist_.get<std::string>("consistency policy", "give to child");
   if (consistency_policy == "none") {
     // Structure is set by PKs and parents of this evaluator.  Do not pass my
     // structure onto my children, and do not get my structure from my
@@ -254,8 +257,8 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility(State& S)
   } else {
     Errors::Message msg;
     msg << "EvaluatorSecondaryMonotype for " << my_keys_.front().first << "@"
-        << my_keys_.front().second.get() << ": invalid consistency policy \""
-        << consistency_policy << "\"";
+        << my_keys_.front().second.get() << ": invalid consistency policy \"" << consistency_policy
+        << "\"";
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -266,12 +269,11 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility(State& S)
 // ---------------------------------------------------------------------------
 template <typename Data_t, typename DataFactory_t>
 inline void
-EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility_ClaimOwnership_(
-  State& S)
+EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility_ClaimOwnership_(State& S)
 {
   // claim ownership, declare type
   for (auto keytag : my_keys_) {
-    S.Require<Data_t,DataFactory_t>(keytag.first, keytag.second, keytag.first);
+    S.Require<Data_t, DataFactory_t>(keytag.first, keytag.second, keytag.first);
   }
 }
 
@@ -284,13 +286,11 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility_ClaimOwner
 // ---------------------------------------------------------------------------
 template <typename Data_t, typename DataFactory_t>
 inline void
-EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility_ClaimDerivs_(
-  State& S)
+EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility_ClaimDerivs_(State& S)
 {
   // require existence of derivatives
   bool has_derivs = false;
-  for (auto keytag : my_keys_)
-    has_derivs |= S.HasDerivativeSet(keytag.first, keytag.second);
+  for (auto keytag : my_keys_) has_derivs |= S.HasDerivativeSet(keytag.first, keytag.second);
 
   if (has_derivs) {
     // a derivative on any of my_keys_ means we need it on all other of my_keys_
@@ -300,8 +300,7 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility_ClaimDeriv
           auto wrt = Keys::splitKeyTag(deriv.first.get());
           for (const auto& other_keytag : my_keys_) {
             S.RequireDerivative<Data_t, DataFactory_t>(
-              other_keytag.first, other_keytag.second,
-              wrt.first, wrt.second, other_keytag.first);
+              other_keytag.first, other_keytag.second, wrt.first, wrt.second, other_keytag.first);
           }
         }
       }
@@ -315,12 +314,9 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility_ClaimDeriv
 // ---------------------------------------------------------------------------
 template <typename Data_t, typename DataFactory_t>
 inline void
-EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility_Deps_(
-  State& S)
+EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility_Deps_(State& S)
 {
-  for (auto& dep : dependencies_) {
-    S.Require<Data_t,DataFactory_t>(dep.first, dep.second);
-  }
+  for (auto& dep : dependencies_) { S.Require<Data_t, DataFactory_t>(dep.first, dep.second); }
 }
 
 
@@ -333,7 +329,7 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility_Deps_(
 // ---------------------------------------------------------------------------
 template <typename Data_t, typename DataFactory_t>
 inline void
-EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility_DepDerivs_(State& S)
+EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility_DepDerivs_(State& S)
 {
   auto akeytag = my_keys_.front();
   if (S.HasDerivativeSet(akeytag.first, akeytag.second)) {
@@ -342,8 +338,7 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility_DepDerivs_
       for (const auto& deriv : S.GetDerivativeSet(akeytag.first, akeytag.second)) {
         auto wrt = Keys::splitKeyTag(deriv.first.get());
         if (wrt != dep && dep_eval.IsDifferentiableWRT(S, wrt.first, wrt.second)) {
-          S.RequireDerivative<Data_t,DataFactory_t>(dep.first, dep.second,
-                  wrt.first, wrt.second);
+          S.RequireDerivative<Data_t, DataFactory_t>(dep.first, dep.second, wrt.first, wrt.second);
         }
       }
     }
@@ -356,12 +351,10 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility_DepDerivs_
 // ---------------------------------------------------------------------------
 template <typename Data_t, typename DataFactory_t>
 inline void
-EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility_DepEnsureCompatibility_(
+EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility_DepEnsureCompatibility_(
   State& S)
 {
-  for (auto& dep : dependencies_) {
-    S.GetEvaluator(dep.first, dep.second).EnsureCompatibility(S);
-  }
+  for (auto& dep : dependencies_) { S.GetEvaluator(dep.first, dep.second).EnsureCompatibility(S); }
 }
 
 
@@ -370,7 +363,8 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility_DepEnsureC
 // ---------------------------------------------------------------------------
 template <typename Data_t, typename DataFactory_t>
 inline void
-EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::Update_(State& S) {
+EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::Update_(State& S)
+{
   // vector of pointers to results
   std::vector<Data_t*> results;
   for (const auto& keytag : my_keys_) {
@@ -388,11 +382,12 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::Update_(State& S) {
 // ---------------------------------------------------------------------------
 template <typename Data_t, typename DataFactory_t>
 inline void
-EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::UpdateDerivative_(
-    State& S, const Key& wrt_key, const Tag& wrt_tag) {
+EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::UpdateDerivative_(State& S,
+                                                                     const Key& wrt_key,
+                                                                     const Tag& wrt_tag)
+{
   Errors::Message msg;
-  msg << "EvaluatorSecondaryMonotype: "
-      << my_keys_[0].first << "," << my_keys_[0].second.get()
+  msg << "EvaluatorSecondaryMonotype: " << my_keys_[0].first << "," << my_keys_[0].second.get()
       << " has no implemented UpdateDerivative_()";
   throw(msg);
 }
@@ -407,15 +402,20 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::UpdateDerivative_(
 // Updates the derivative for doubles, doing the chain rule
 // ---------------------------------------------------------------------------
 template <>
-void EvaluatorSecondaryMonotype<double>::UpdateDerivative_(
-    State& S, const Key& wrt_key, const Tag& wrt_tag);
+void
+EvaluatorSecondaryMonotype<double>::UpdateDerivative_(State& S,
+                                                      const Key& wrt_key,
+                                                      const Tag& wrt_tag);
 
 // ---------------------------------------------------------------------------
 // Updates the derivative for CompositeVector, doing the chain rule pointwise
 // ---------------------------------------------------------------------------
 template <>
-void EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(
-    State& S, const Key& wrt_key, const Tag& wrt_tag);
+void
+EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(
+  State& S,
+  const Key& wrt_key,
+  const Tag& wrt_tag);
 
 // ---------------------------------------------------------------------------
 // The default EnsureCompatibility for CompositeVectors deals with how metadata
@@ -423,18 +423,19 @@ void EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDe
 // ---------------------------------------------------------------------------
 template <>
 void
-EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompatibility_StructureSame_(
-  State& S);
+EvaluatorSecondaryMonotype<CompositeVector,
+                           CompositeVectorSpace>::EnsureCompatibility_StructureSame_(State& S);
 
 template <>
 void
-EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompatibility_DerivStructure_(
-  State& S);
+EvaluatorSecondaryMonotype<CompositeVector,
+                           CompositeVectorSpace>::EnsureCompatibility_DerivStructure_(State& S);
 
 template <>
 void
 EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompatibility_FromDeps_(
-  State& S, const std::string& policy);
+  State& S,
+  const std::string& policy);
 
 template <>
 void
@@ -444,7 +445,8 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompati
 template <>
 void
 EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompatibility_ToDeps_(
-  State& S, const CompositeVectorSpace& fac);
+  State& S,
+  const CompositeVectorSpace& fac);
 
 template <>
 void
@@ -459,8 +461,9 @@ Teuchos::Ptr<const Comm_type>
 EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::get_comm_(const State& S) const;
 
 
-using EvaluatorSecondaryMonotypeCV = EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>;
+using EvaluatorSecondaryMonotypeCV =
+  EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>;
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

@@ -23,10 +23,11 @@ namespace Energy {
 * Constructor.
 ****************************************************************** */
 TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0) {
-    my_keys_.push_back(make_pair(plist_.get<std::string>("thermal conductivity key"), Tags::DEFAULT));
+    my_keys_.push_back(
+      make_pair(plist_.get<std::string>("thermal conductivity key"), Tags::DEFAULT));
   }
   auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
 
@@ -48,15 +49,17 @@ TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist)
 * Copy constructor.
 ****************************************************************** */
 TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(const TCMEvaluator_OnePhase& other)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      tc_(other.tc_),
-      temperature_key_(other.temperature_key_) {};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+    tc_(other.tc_),
+    temperature_key_(other.temperature_key_){};
 
 
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> TCMEvaluator_OnePhase::Clone() const {
+Teuchos::RCP<Evaluator>
+TCMEvaluator_OnePhase::Clone() const
+{
   return Teuchos::rcp(new TCMEvaluator_OnePhase(*this));
 }
 
@@ -64,8 +67,8 @@ Teuchos::RCP<Evaluator> TCMEvaluator_OnePhase::Clone() const {
 /* ******************************************************************
 * Evaluator body.
 ****************************************************************** */
-void TCMEvaluator_OnePhase::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+TCMEvaluator_OnePhase::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   // pull out the dependencies
   const auto& temp_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
@@ -88,12 +91,14 @@ void TCMEvaluator_OnePhase::Evaluate_(
 /* ******************************************************************
 * Evaluator of derivarives.
 ****************************************************************** */
-void TCMEvaluator_OnePhase::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results) 
+void
+TCMEvaluator_OnePhase::EvaluatePartialDerivative_(const State& S,
+                                                  const Key& wrt_key,
+                                                  const Tag& wrt_tag,
+                                                  const std::vector<CompositeVector*>& results)
 {
   AMANZI_ASSERT(0);
 }
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi

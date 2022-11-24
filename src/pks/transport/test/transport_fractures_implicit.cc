@@ -34,14 +34,16 @@
 #include "TransportImplicit_PK.hh"
 
 
-void runTest(int order, const std::string& linsolver) {
+void
+runTest(int order, const std::string& linsolver)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-std::cout << "\nTest: Implicit transport in fractures, order=" << order << std::endl;
+  std::cout << "\nTest: Implicit transport in fractures, order=" << order << std::endl;
 #ifdef HAVE_MPI
   Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
@@ -56,14 +58,15 @@ std::cout << "\nTest: Implicit transport in fractures, order=" << order << std::
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-  plist->sublist("PKs").sublist("transport")
-      .set<int>("spatial discretization order", order);
-  plist->sublist("PKs").sublist("transport").sublist("time integrator")
-      .set<std::string>("linear solver", linsolver);
+  plist->sublist("PKs").sublist("transport").set<int>("spatial discretization order", order);
+  plist->sublist("PKs")
+    .sublist("transport")
+    .sublist("time integrator")
+    .set<std::string>("linear solver", linsolver);
 
   // create meshes
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
   RCP<const Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
   std::vector<std::string> setnames;
@@ -76,8 +79,8 @@ std::cout << "\nTest: Implicit transport in fractures, order=" << order << std::
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  std::cout << "pid=" << comm->MyPID() << " cells: " << ncells_owned 
-                                       << " faces: " << nfaces_owned << std::endl;
+  std::cout << "pid=" << comm->MyPID() << " cells: " << ncells_owned << " faces: " << nfaces_owned
+            << std::endl;
 
   // initialize io
   Teuchos::ParameterList iolist;
@@ -94,7 +97,8 @@ std::cout << "\nTest: Implicit transport in fractures, order=" << order << std::
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Teuchos::ParameterList pk_tree = plist->sublist("cycle driver").sublist("pk_tree").sublist("transport");
+  Teuchos::ParameterList pk_tree =
+    plist->sublist("cycle driver").sublist("pk_tree").sublist("transport");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   TransportImplicit_PK TPK(pk_tree, plist, S, soln);
   TPK.Setup();
@@ -107,8 +111,10 @@ std::cout << "\nTest: Implicit transport in fractures, order=" << order << std::
   S->set_final_time(0.0);
 
   // modify the default state
-  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", "state").ViewComponent("face", true);
-  const auto flux_map = S->GetW<CompositeVector>("volumetric_flow_rate", "state").Map().Map("face", true);
+  auto& flux =
+    *S->GetW<CompositeVector>("volumetric_flow_rate", "state").ViewComponent("face", true);
+  const auto flux_map =
+    S->GetW<CompositeVector>("volumetric_flow_rate", "state").Map().Map("face", true);
 
   int dir;
   AmanziGeometry::Point velocity(1.0, 0.2, -0.2);
@@ -133,17 +139,17 @@ std::cout << "\nTest: Implicit transport in fractures, order=" << order << std::
   // initialize the transport process kernel
   TPK.Initialize();
 
-  // advance the transport state 
+  // advance the transport state
   int iter(0);
   double tol = (order == 1) ? 1e-8 : 1e-4;
   double t_old(0.0), t_new(0.0), dt(2.0e+3);
-  auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", "state").ViewComponent("cell");
+  auto& tcc =
+    *S->GetW<CompositeVector>("total_component_concentration", "state").ViewComponent("cell");
 
-  while(t_new < 1.0e+5) {
+  while (t_new < 1.0e+5) {
     t_new = t_old + dt;
 
-    if (comm->MyPID() == 0) 
-      std::cout << "\nCycle: T=" << t_old << " dT=" << dt << std::endl;
+    if (comm->MyPID() == 0) std::cout << "\nCycle: T=" << t_old << " dT=" << dt << std::endl;
 
     TPK.AdvanceStep(t_old, t_new);
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
@@ -152,8 +158,7 @@ std::cout << "\nTest: Implicit transport in fractures, order=" << order << std::
     iter++;
 
     // verify solution
-    for (int c = 0; c < ncells_owned; ++c)
-      CHECK(tcc[0][c] >= -tol && tcc[0][c] <= 1.0 + tol);
+    for (int c = 0; c < ncells_owned; ++c) CHECK(tcc[0][c] >= -tol && tcc[0][c] <= 1.0 + tol);
 
     if (iter % 2 == 0) {
       io.InitializeCycle(t_new, iter, "");
@@ -180,13 +185,13 @@ std::cout << "\nTest: Implicit transport in fractures, order=" << order << std::
 }
 
 
-TEST(IMPLICIT_TRANSPORT_TWO_FRACTURES_1ST) {
+TEST(IMPLICIT_TRANSPORT_TWO_FRACTURES_1ST)
+{
   runTest(1, "PCG");
 }
 
 
-TEST(IMPLICIT_TRANSPORT_TWO_FRACTURES_2ND) {
+TEST(IMPLICIT_TRANSPORT_TWO_FRACTURES_2ND)
+{
   runTest(2, "GMRES");
 }
-
-

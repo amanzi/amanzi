@@ -22,7 +22,7 @@ namespace Energy {
 
 class IEM {
  public:
-  IEM() : ierr_(0) {};
+  IEM() : ierr_(0){};
   virtual ~IEM() {}
 
   // IEM(Teuchos::ParameterList& plist);
@@ -39,7 +39,7 @@ class IEM {
   std::string error_msg_;
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

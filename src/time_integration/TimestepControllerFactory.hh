@@ -49,31 +49,33 @@ Available types include:
 
 namespace Amanzi {
 
-template<class Vector>
+template <class Vector>
 struct TimestepControllerFactory {
  public:
-  Teuchos::RCP<TimestepController>
-  Create(const Teuchos::ParameterList& prec_list,
-         Teuchos::RCP<Vector> udot, Teuchos::RCP<Vector> udot_prev,
-         const Teuchos::RCP<State>& S = Teuchos::null);
+  Teuchos::RCP<TimestepController> Create(const Teuchos::ParameterList& prec_list,
+                                          Teuchos::RCP<Vector> udot,
+                                          Teuchos::RCP<Vector> udot_prev,
+                                          const Teuchos::RCP<State>& S = Teuchos::null);
 };
 
 
 /* ******************************************************************
 * Factory of timestep controls.
 ****************************************************************** */
-template<class Vector>
-Teuchos::RCP<TimestepController> TimestepControllerFactory<Vector>::Create(
-    const Teuchos::ParameterList& slist,
-    Teuchos::RCP<Vector> udot, Teuchos::RCP<Vector> udot_prev,
-    const Teuchos::RCP<State>& S)
+template <class Vector>
+Teuchos::RCP<TimestepController>
+TimestepControllerFactory<Vector>::Create(const Teuchos::ParameterList& slist,
+                                          Teuchos::RCP<Vector> udot,
+                                          Teuchos::RCP<Vector> udot_prev,
+                                          const Teuchos::RCP<State>& S)
 {
   if (slist.isParameter("timestep controller type")) {
     std::string type = slist.get<std::string>("timestep controller type");
 
     if (type == "fixed") {
       if (!slist.isSublist("timestep controller fixed parameters")) {
-        Errors::Message msg("TimestepControllerFactory: missing sublist \"timestep controller fixed parameters\"");
+        Errors::Message msg(
+          "TimestepControllerFactory: missing sublist \"timestep controller fixed parameters\"");
         Exceptions::amanzi_throw(msg);
       }
       Teuchos::ParameterList tslist = slist.sublist("timestep controller fixed parameters");
@@ -81,7 +83,8 @@ Teuchos::RCP<TimestepController> TimestepControllerFactory<Vector>::Create(
 
     } else if (type == "standard") {
       if (!slist.isSublist("timestep controller standard parameters")) {
-        Errors::Message msg("TimestepControllerFactory: missing sublist \"timestep controller standard parameters\"");
+        Errors::Message msg(
+          "TimestepControllerFactory: missing sublist \"timestep controller standard parameters\"");
         Exceptions::amanzi_throw(msg);
       }
       Teuchos::ParameterList tslist = slist.sublist("timestep controller standard parameters");
@@ -89,7 +92,8 @@ Teuchos::RCP<TimestepController> TimestepControllerFactory<Vector>::Create(
 
     } else if (type == "smarter") {
       if (!slist.isSublist("timestep controller smarter parameters")) {
-        Errors::Message msg("TimestepControllerFactory: missing sublist \"timestep controller smarter parameters\"");
+        Errors::Message msg(
+          "TimestepControllerFactory: missing sublist \"timestep controller smarter parameters\"");
         Exceptions::amanzi_throw(msg);
       }
       std::string name = "TimestepControllerSmarter";
@@ -103,7 +107,8 @@ Teuchos::RCP<TimestepController> TimestepControllerFactory<Vector>::Create(
 
     } else if (type == "adaptive") {
       if (!slist.isSublist("timestep controller adaptive parameters")) {
-        Errors::Message msg("TimestepControllerFactory: missing sublist \"timestep controller adaptive parameters\"");
+        Errors::Message msg(
+          "TimestepControllerFactory: missing sublist \"timestep controller adaptive parameters\"");
         Exceptions::amanzi_throw(msg);
       }
       Teuchos::ParameterList tslist = slist.sublist("timestep controller adaptive parameters");
@@ -111,23 +116,26 @@ Teuchos::RCP<TimestepController> TimestepControllerFactory<Vector>::Create(
 
     } else if (type == "from file") {
       if (!slist.isSublist("timestep controller from file parameters")) {
-        Errors::Message msg("TimestepControllerFactory: missing sublist \"timestep controller from file parameters\"");
+        Errors::Message msg("TimestepControllerFactory: missing sublist \"timestep controller from "
+                            "file parameters\"");
         Exceptions::amanzi_throw(msg);
       }
       Teuchos::ParameterList tslist = slist.sublist("timestep controller from file parameters");
       return Teuchos::rcp(new TimestepControllerFromFile(tslist));
 
     } else {
-      Errors::Message msg("TimestepControllerFactory: invalid value of parameter `\"timestep controller type`\"");
+      Errors::Message msg(
+        "TimestepControllerFactory: invalid value of parameter `\"timestep controller type`\"");
       Exceptions::amanzi_throw(msg);
     }
   } else {
-    Errors::Message msg("TimestepControllerFactory: parameter `\"timestep controller type`\" is missing");
+    Errors::Message msg(
+      "TimestepControllerFactory: parameter `\"timestep controller type`\" is missing");
     Exceptions::amanzi_throw(msg);
   }
   return Teuchos::null;
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

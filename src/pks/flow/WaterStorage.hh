@@ -45,7 +45,9 @@ class WaterStorage : public EvaluatorSecondaryMonotype<CompositeVector, Composit
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
@@ -54,12 +56,12 @@ class WaterStorage : public EvaluatorSecondaryMonotype<CompositeVector, Composit
  protected:
   bool water_vapor_, aperture_;
   Key saturation_key_, porosity_key_, mol_density_liquid_key_, aperture_key_;
-  
+
  private:
   static Utils::RegisteredFactory<Evaluator, WaterStorage> reg_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 #endif

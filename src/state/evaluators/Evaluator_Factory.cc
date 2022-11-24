@@ -18,12 +18,14 @@
 namespace Amanzi {
 
 namespace Utils {
-template <> Factory<Evaluator>::map_type *Factory<Evaluator>::map_;
-}  // namespace Utils
+template <>
+Factory<Evaluator>::map_type* Factory<Evaluator>::map_;
+} // namespace Utils
 
 // method for instantiating Evaluator implementations
 Teuchos::RCP<Evaluator>
-Evaluator_Factory::createEvaluator(Teuchos::ParameterList& plist) {
+Evaluator_Factory::createEvaluator(Teuchos::ParameterList& plist)
+{
   std::string type = plist.get<std::string>("evaluator type");
   return Teuchos::rcp(CreateInstance(type, plist));
 };

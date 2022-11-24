@@ -89,7 +89,7 @@ class State;
 
 class PK {
  public:
-  PK() {};
+  PK(){};
   // Required constructor of the form:
   PK(Teuchos::ParameterList& pk_tree,
      const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
@@ -120,8 +120,10 @@ class PK {
     }
 
     //  some tests provide nullptr
-    if (solution.get()) vo_ = Teuchos::rcp(new VerboseObject(solution->Comm(), name_, *vo_plist));
-    else vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
+    if (solution.get())
+      vo_ = Teuchos::rcp(new VerboseObject(solution->Comm(), name_, *vo_plist));
+    else
+      vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
   };
 
   // Virtual destructor
@@ -144,8 +146,10 @@ class PK {
 
   // Set a tag interval for advancing
   // Set the tags to integrate between
-  virtual void set_tags(const Tag& current, const Tag& next) {
-    tag_current_ = current; tag_next_ = next;
+  virtual void set_tags(const Tag& current, const Tag& next)
+  {
+    tag_current_ = current;
+    tag_next_ = next;
   }
 
   // Advance PK from time t_old to time t_new. True value of the last
@@ -170,9 +174,7 @@ class PK {
   virtual void Solution_to_State(const TreeVector& soln, const Tag& tag) = 0;
 
   // Tag the primary variable as changed in the DAG
-  virtual void ChangedSolutionPK(const Tag& tag) {
-    AMANZI_ASSERT(false);
-  }
+  virtual void ChangedSolutionPK(const Tag& tag) { AMANZI_ASSERT(false); }
 
   // When including ValidStep() in Advance(), make this protected!  refs
   // amanzi/ats#110
@@ -184,12 +186,12 @@ class PK {
   std::string name_;
   Tag tag_current_, tag_next_; // tags for time integration
 
-  Teuchos::RCP<TreeVector> solution_;  // single vector for the global problem
-  Teuchos::RCP<State> S_; // global data manager
+  Teuchos::RCP<TreeVector> solution_; // single vector for the global problem
+  Teuchos::RCP<State> S_;             // global data manager
 
-  Teuchos::RCP<VerboseObject> vo_;  // fancy IO
+  Teuchos::RCP<VerboseObject> vo_; // fancy IO
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

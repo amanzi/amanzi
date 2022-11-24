@@ -23,15 +23,16 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 #define PREFIX
-#define F77_LAPACK_MANGLE(lcase,UCASE) lcase ## _
-#define DGESV_F77  F77_LAPACK_MANGLE(dgesv,DGESV)
+#define F77_LAPACK_MANGLE(lcase, UCASE) lcase##_
+#define DGESV_F77 F77_LAPACK_MANGLE(dgesv, DGESV)
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-void PREFIX DGESV_F77(int* n, int* nrhs, double* a, int* lda, int* ipiv, 
-                      double* b, int* ldb, int* info);
+  void PREFIX
+  DGESV_F77(int* n, int* nrhs, double* a, int* lda, int* ipiv, double* b, int* ldb, int* info);
 
 #ifdef __cplusplus
 }
@@ -41,9 +42,10 @@ void PREFIX DGESV_F77(int* n, int* nrhs, double* a, int* lda, int* ipiv,
 class LUSolver {
  public:
   LUSolver() : size_(0) { ipiv_.clear(); }
-  ~LUSolver() {};
+  ~LUSolver(){};
 
-  void Initialize(int size) {
+  void Initialize(int size)
+  {
     size_ = size;
     ipiv_.resize(size);
   }
@@ -54,9 +56,7 @@ class LUSolver {
     int ierr, nrhs(1), n(A->size());
     for (int i = 0; i < n; ++i) {
       double big(0.0);
-      for (int j = 0; j < n; ++j) {
-        big = std::max(big, fabs((*A)(i, j)));
-      }
+      for (int j = 0; j < n; ++j) { big = std::max(big, fabs((*A)(i, j))); }
       for (int j = 0; j < n; ++j) (*A)(i, j) /= big;
       (*b)[i] /= big;
     }
@@ -75,7 +75,7 @@ class LUSolver {
   std::vector<int> ipiv_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif

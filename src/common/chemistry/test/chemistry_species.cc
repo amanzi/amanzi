@@ -10,7 +10,8 @@
 
 #include "Species.hh"
 
-SUITE(GeochemistryTestsSpecies) {
+SUITE(GeochemistryTestsSpecies)
+{
   namespace ac = Amanzi::AmanziChemistry;
   /*
     Unit tests for the Species object public interface
@@ -35,21 +36,17 @@ SUITE(GeochemistryTestsSpecies) {
     std::string name_;
 
     Teuchos::ParameterList plist_;
-  };  // end class SpeciesTest
+  }; // end class SpeciesTest
 
   SpeciesTest::SpeciesTest()
-    : id_(3),
-      charge_(2.0),
-      gram_molecular_weight_(40.0780),
-      ion_size_parameter_(6.0),
-      name_("Ca++") {
+    : id_(3), charge_(2.0), gram_molecular_weight_(40.0780), ion_size_parameter_(6.0), name_("Ca++")
+  {
     plist_.set<int>("charge", charge_)
-          .set<double>("gram molecular weight", gram_molecular_weight_)
-          .set<double>("ion size parameter", ion_size_parameter_);
+      .set<double>("gram molecular weight", gram_molecular_weight_)
+      .set<double>("ion size parameter", ion_size_parameter_);
   }
 
-  SpeciesTest::~SpeciesTest() {
-  }
+  SpeciesTest::~SpeciesTest() {}
 
   /*****************************************************************************
    **
@@ -64,27 +61,32 @@ SUITE(GeochemistryTestsSpecies) {
   //
   // check that the parameter data is set correctly
   //
-  TEST_FIXTURE(SpeciesTest, Species_constructor_init_id) {
+  TEST_FIXTURE(SpeciesTest, Species_constructor_init_id)
+  {
     ac::Species species(id_, name_, plist_);
     CHECK_EQUAL(id_, species.identifier());
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_constructor_init_charge) {
+  TEST_FIXTURE(SpeciesTest, Species_constructor_init_charge)
+  {
     ac::Species species(id_, name_, plist_);
     CHECK_EQUAL(charge_, species.charge());
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_constructor_init_gmw) {
+  TEST_FIXTURE(SpeciesTest, Species_constructor_init_gmw)
+  {
     ac::Species species(id_, name_, plist_);
     CHECK_EQUAL(gram_molecular_weight_, species.gram_molecular_weight());
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_constructor_init_isp) {
+  TEST_FIXTURE(SpeciesTest, Species_constructor_init_isp)
+  {
     ac::Species species(id_, name_, plist_);
     CHECK_EQUAL(ion_size_parameter_, species.ion_size_parameter());
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_constructor_init_name) {
+  TEST_FIXTURE(SpeciesTest, Species_constructor_init_name)
+  {
     ac::Species species(id_, name_, plist_);
     CHECK_EQUAL(name_, species.name());
   }
@@ -92,29 +94,30 @@ SUITE(GeochemistryTestsSpecies) {
   //
   // check that exceptions are thrown for invalid data
   //
-  TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_id) {
-    CHECK_THROW(ac::Species species(-1, name_, plist_),
-                Exceptions::Amanzi_exception);
+  TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_id)
+  {
+    CHECK_THROW(ac::Species species(-1, name_, plist_), Exceptions::Amanzi_exception);
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_molecular_weight) {
+  TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_molecular_weight)
+  {
     auto plist = plist_;
     plist.set<double>("gram molecular weight", -45.678);
-    CHECK_THROW(ac::Species species(id_, name_, plist),
-                Exceptions::Amanzi_exception);
+    CHECK_THROW(ac::Species species(id_, name_, plist), Exceptions::Amanzi_exception);
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_ion_size) {
+  TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_ion_size)
+  {
     auto plist = plist_;
     plist.set<double>("ion size parameter", -9.0);
-    CHECK_THROW(ac::Species species(id_, name_, plist),
-                Exceptions::Amanzi_exception);
+    CHECK_THROW(ac::Species species(id_, name_, plist), Exceptions::Amanzi_exception);
   }
 
   //
   // check that updating the concentrations works correctly
   //
-  TEST_FIXTURE(SpeciesTest, Species_update_molality) {
+  TEST_FIXTURE(SpeciesTest, Species_update_molality)
+  {
     ac::Species species(id_, name_, plist_);
     double molality = 0.001;
 
@@ -122,7 +125,8 @@ SUITE(GeochemistryTestsSpecies) {
     CHECK_CLOSE(molality, species.molality(), 1.0e-9);
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_update_ln_molality) {
+  TEST_FIXTURE(SpeciesTest, Species_update_ln_molality)
+  {
     ac::Species species(id_, name_, plist_);
     double molality = 0.001;
     double ln_molality = std::log(molality);
@@ -131,7 +135,8 @@ SUITE(GeochemistryTestsSpecies) {
     CHECK_CLOSE(ln_molality, species.ln_molality(), 1.0e-9);
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_update_activity_coefficient) {
+  TEST_FIXTURE(SpeciesTest, Species_update_activity_coefficient)
+  {
     ac::Species species(id_, name_, plist_);
     double act_coef = 0.9;
 
@@ -139,17 +144,19 @@ SUITE(GeochemistryTestsSpecies) {
     CHECK_CLOSE(act_coef, species.act_coef(), 1.0e-9);
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_update_ln_activity_coefficient) {
+  TEST_FIXTURE(SpeciesTest, Species_update_ln_activity_coefficient)
+  {
     ac::Species species(id_, name_, plist_);
     double act_coef = 0.9;
     double ln_act_coef = std::log(act_coef);
 
-    species.set_act_coef(act_coef);  // does not update ln_act_coef!
-    species.update();  // forces the update of ln_act_coef
+    species.set_act_coef(act_coef); // does not update ln_act_coef!
+    species.update();               // forces the update of ln_act_coef
     CHECK_CLOSE(ln_act_coef, species.ln_act_coef(), 1.0e-9);
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_update_activity) {
+  TEST_FIXTURE(SpeciesTest, Species_update_activity)
+  {
     ac::Species species(id_, name_, plist_);
     double molality = 0.001;
     double act_coef = 0.9;
@@ -161,7 +168,8 @@ SUITE(GeochemistryTestsSpecies) {
   }
 
 
-  TEST_FIXTURE(SpeciesTest, Species_update_ln_activity) {
+  TEST_FIXTURE(SpeciesTest, Species_update_ln_activity)
+  {
     ac::Species species(id_, name_, plist_);
     double molality = 0.001;
     double act_coef = 0.9;
@@ -195,4 +203,4 @@ SUITE(GeochemistryTestsSpecies) {
      double ln_activity = 0.0;
      double ln_act_coef = 0.0;
   */
-}  // end SUITE(GeochemistryTestSpecies)
+} // end SUITE(GeochemistryTestSpecies)

@@ -56,19 +56,18 @@ the action of the Jacobian.  They are documented in Knoll & Keyes 2004 paper.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Vector, class VectorSpace>
+template <class Vector, class VectorSpace>
 class MatrixJF {
  public:
   using Vector_t = Vector;
   using VectorSpace_t = VectorSpace;
-  
-  MatrixJF() {};  // default constructor for LinOp usage
+
+  MatrixJF(){}; // default constructor for LinOp usage
 
   MatrixJF(Teuchos::ParameterList& plist,
-           const Teuchos::RCP<SolverFnBase<Vector> > fn,
-           const VectorSpace& map) :
-      fn_(fn),
-      plist_(plist)
+           const Teuchos::RCP<SolverFnBase<Vector>> fn,
+           const VectorSpace& map)
+    : fn_(fn), plist_(plist)
   {
     map_ = Teuchos::rcp(new VectorSpace(map));
     r0_ = Teuchos::rcp(new Vector(*map_));
@@ -98,7 +97,7 @@ class MatrixJF {
 
  protected:
   Teuchos::RCP<const VectorSpace> map_;
-  Teuchos::RCP<SolverFnBase<Vector> > fn_;
+  Teuchos::RCP<SolverFnBase<Vector>> fn_;
   Teuchos::ParameterList plist_;
   Teuchos::RCP<Vector> u0_;
   Teuchos::RCP<Vector> r0_;
@@ -109,12 +108,12 @@ class MatrixJF {
 
 
 // Forward (Apply) operator
-template<class Vector, class VectorSpace>
+template <class Vector, class VectorSpace>
 int
-MatrixJF<Vector,VectorSpace>::Apply(const Vector& x, Vector& b) const
+MatrixJF<Vector, VectorSpace>::Apply(const Vector& x, Vector& b) const
 {
   Teuchos::RCP<Vector> r1 = Teuchos::rcp(new Vector(*map_));
- 
+
   double eps = CalculateEpsilon_(*u0_, x);
 
   // evaluate r1 = f(u0 + eps*x)
@@ -124,7 +123,7 @@ MatrixJF<Vector,VectorSpace>::Apply(const Vector& x, Vector& b) const
 
   // evaluate Jx = (r1 - r0) / eps
   b = *r1;
-  b.Update(-1.0/eps, *r0_, 1.0/eps);
+  b.Update(-1.0 / eps, *r0_, 1.0 / eps);
 
   // revert to old u0
   u0_->Update(-eps, x, 1.0);
@@ -134,8 +133,9 @@ MatrixJF<Vector,VectorSpace>::Apply(const Vector& x, Vector& b) const
 
 
 // Forward (Apply) operator
-template<class Vector, class VectorSpace>
-int MatrixJF<Vector,VectorSpace>::ApplyInverse(const Vector& b, Vector& x) const
+template <class Vector, class VectorSpace>
+int
+MatrixJF<Vector, VectorSpace>::ApplyInverse(const Vector& b, Vector& x) const
 {
   Teuchos::RCP<const Vector> b_ptr = Teuchos::rcpFromRef(b);
   Teuchos::RCP<Vector> x_ptr = Teuchos::rcpFromRef(x);
@@ -144,15 +144,19 @@ int MatrixJF<Vector,VectorSpace>::ApplyInverse(const Vector& b, Vector& x) const
 }
 
 
-template<class Vector, class VectorSpace>
-void MatrixJF<Vector,VectorSpace>::set_linearization_point(const Teuchos::RCP<const Vector>& u) {
+template <class Vector, class VectorSpace>
+void
+MatrixJF<Vector, VectorSpace>::set_linearization_point(const Teuchos::RCP<const Vector>& u)
+{
   u0_ = Teuchos::rcp_const_cast<Vector>(u);
   fn_->Residual(u0_, r0_);
 }
 
 
-template<class Vector, class VectorSpace>
-double MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Vector& x) const {
+template <class Vector, class VectorSpace>
+double
+MatrixJF<Vector, VectorSpace>::CalculateEpsilon_(const Vector& u, const Vector& x) const
+{
   double eps = eps_;
   double typical_size_u = 100.;
 
@@ -160,24 +164,22 @@ double MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Ve
   if (method_name_ == "Knoll-Keyes") {
     double xinf(0.0);
     x.NormInf(&xinf);
-    
+
     if (xinf > 0) {
       double uinf(0.0);
-      u.NormInf(&uinf);      
+      u.NormInf(&uinf);
       eps = std::sqrt((1 + uinf) * 1.0e-12) / xinf;
     }
-  }
-  else if (method_name_ == "Knoll-Keyes L2") {
+  } else if (method_name_ == "Knoll-Keyes L2") {
     double x_l2(0.0);
     x.Norm2(&x_l2);
-    
+
     if (x_l2 > 0) {
       double u_l2(0.0);
-      u.Norm2(&u_l2);      
+      u.Norm2(&u_l2);
       eps = std::sqrt((1 + u_l2) * 1.0e-12) / x_l2;
     }
-  }
-  else if (method_name_ == "Brown-Saad") {
+  } else if (method_name_ == "Brown-Saad") {
     double x_l2(0.0);
     x.Norm2(&x_l2);
     double xinf(0.0);
@@ -186,19 +188,19 @@ double MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Ve
     if (x_l2 > 0) {
       double alp(0.);
       u.Dot(x, &alp);
-      // double sgn = (alp > 0) ? 1 : -1; 
-      eps = (1e-12/x_l2)*std::max(fabs(alp), typical_size_u*xinf);
+      // double sgn = (alp > 0) ? 1 : -1;
+      eps = (1e-12 / x_l2) * std::max(fabs(alp), typical_size_u * xinf);
     }
 
   } else {
-    Errors::Message msg("Invalid JFNK \"method for epsilon\".  Valid are \"Knoll-Keyes\", \"Knoll-Keyes L2\", and \"Brown-Saad\".");
+    Errors::Message msg("Invalid JFNK \"method for epsilon\".  Valid are \"Knoll-Keyes\", "
+                        "\"Knoll-Keyes L2\", and \"Brown-Saad\".");
     Exceptions::amanzi_throw(msg);
   }
   return eps;
 }
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif
-

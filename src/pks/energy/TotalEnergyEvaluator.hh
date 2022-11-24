@@ -26,7 +26,8 @@
 namespace Amanzi {
 namespace Energy {
 
-class TotalEnergyEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class TotalEnergyEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   explicit TotalEnergyEvaluator(Teuchos::ParameterList& ee_plist);
   TotalEnergyEvaluator(const TotalEnergyEvaluator& other);
@@ -36,7 +37,9 @@ class TotalEnergyEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, 
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
@@ -49,7 +52,7 @@ class TotalEnergyEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, 
   Key aperture_key_;
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

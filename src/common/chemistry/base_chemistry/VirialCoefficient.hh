@@ -23,13 +23,14 @@ namespace AmanziChemistry {
 class VirialCoefficient {
  public:
   VirialCoefficient();
-  ~VirialCoefficient() {};
+  ~VirialCoefficient(){};
 
   void UpdateVirial(const double& temp, const double& pressure);
 
   double GetVirial() const { return virial; }
 
-  void SetPol(double poli) {
+  void SetPol(double poli)
+  {
     npol++;
     pol.push_back(poli);
   }
@@ -60,7 +61,7 @@ class VirialCoefficient {
   int ifun1, ifun2, ifun3;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif

@@ -38,9 +38,7 @@ class RecordSet {
  public:
   // constructors
   RecordSet() {}
-  RecordSet(Key fieldname)
-      : fieldname_(fieldname),
-        vis_fieldname_(fieldname) {}
+  RecordSet(Key fieldname) : fieldname_(fieldname), vis_fieldname_(fieldname) {}
 
   // delete things that suggest this could be duplicated, etc
   RecordSet(const RecordSet& other) = delete;
@@ -52,26 +50,25 @@ class RecordSet {
   const Key& fieldname() const { return fieldname_; }
   const Key& vis_fieldname() const { return vis_fieldname_; }
   Utils::Units units() const { return units_; }
-  std::vector<std::string> const * subfieldnames() const {
-    return subfieldnames_.get(); }
+  std::vector<std::string> const* subfieldnames() const { return subfieldnames_.get(); }
 
   // mutate
   void set_fieldname(const Key& fieldname) { fieldname_ = fieldname; }
-  void set_vis_fieldname(const Key& vis_fieldname) {
-    vis_fieldname_ = vis_fieldname;
-  }
+  void set_vis_fieldname(const Key& vis_fieldname) { vis_fieldname_ = vis_fieldname; }
   void set_units(const Utils::Units& units) { units_ = units; }
-  void set_subfieldnames(const std::vector<std::string>& subfieldnames) {
+  void set_subfieldnames(const std::vector<std::string>& subfieldnames)
+  {
     if (!subfieldnames_)
       subfieldnames_ = std::make_unique<std::vector<std::string>>(subfieldnames);
-    else *subfieldnames_ = subfieldnames;
+    else
+      *subfieldnames_ = subfieldnames;
   }
 
   // pass-throughs for other functionality
-  void WriteVis(const Visualization& vis, Tag const * const=nullptr) const;
-  void WriteCheckpoint(const Checkpoint& chkp, bool post_mortem=false) const;
+  void WriteVis(const Visualization& vis, Tag const* const = nullptr) const;
+  void WriteCheckpoint(const Checkpoint& chkp, bool post_mortem = false) const;
   void ReadCheckpoint(const Checkpoint& chkp);
-  bool Initialize(Teuchos::ParameterList& plist, bool force=false);
+  bool Initialize(Teuchos::ParameterList& plist, bool force = false);
   void Assign(const Tag& dest, const Tag& source);
   void AssignPtr(const Tag& dest, const Tag& source);
 
@@ -80,7 +77,7 @@ class RecordSet {
   Record& GetRecord(const Tag& tag);
   void AliasRecord(const Tag& target, const Tag& alias);
 
-  Record& RequireRecord(const Tag& tag, const Key& owner, bool alias_ok=true);
+  Record& RequireRecord(const Tag& tag, const Key& owner, bool alias_ok = true);
 
   //  void SwitchCopies(const Tag& tag1, const Tag& tag2); // needs owner
   //  information?
@@ -95,72 +92,88 @@ class RecordSet {
   RecordMap::size_type size() { return records_.size(); }
 
   // Data creation
-  void CreateData() {
+  void CreateData()
+  {
     for (auto& e : records_) {
       if (!aliases_.count(e.first)) {
         e.second->data_ = std::forward<Impl::Data>(factory_.Create());
       }
     }
-    for (auto& pair : aliases_) {
-      records_[pair.first]->AssignPtr(*records_[pair.second]);
-    }
+    for (auto& pair : aliases_) { records_[pair.first]->AssignPtr(*records_[pair.second]); }
   }
 
   // Data setters/getters
-  template <typename T> const T& Get(const Tag& tag = Tags::DEFAULT) const {
+  template <typename T>
+  const T& Get(const Tag& tag = Tags::DEFAULT) const
+  {
     return GetRecord(tag).Get<T>();
   }
 
-  template <typename T> T& GetW(const Tag& tag, const Key& owner) {
+  template <typename T>
+  T& GetW(const Tag& tag, const Key& owner)
+  {
     return GetRecord(tag).GetW<T>(owner);
   }
-  template <typename T> T& GetW(const Key& owner) { return GetW<T>(Tags::DEFAULT, owner); }
+  template <typename T>
+  T& GetW(const Key& owner)
+  {
+    return GetW<T>(Tags::DEFAULT, owner);
+  }
 
   template <typename T>
-  Teuchos::RCP<const T> GetPtr(const Tag& tag = Tags::DEFAULT) const {
+  Teuchos::RCP<const T> GetPtr(const Tag& tag = Tags::DEFAULT) const
+  {
     return GetRecord(tag).GetPtr<T>();
   }
 
   template <typename T>
-  Teuchos::RCP<T> GetPtrW(const Tag& tag, const Key& owner) {
+  Teuchos::RCP<T> GetPtrW(const Tag& tag, const Key& owner)
+  {
     return GetRecord(tag).GetPtrW<T>(owner);
   }
   template <typename T>
-  Teuchos::RCP<T> GetPtrW(const Key& owner) {
+  Teuchos::RCP<T> GetPtrW(const Key& owner)
+  {
     return GetPtrW<T>(Tags::DEFAULT, owner);
   }
 
   template <typename T>
-  void SetPtr(const Tag& tag, const Key& owner, const Teuchos::RCP<T>& t) {
+  void SetPtr(const Tag& tag, const Key& owner, const Teuchos::RCP<T>& t)
+  {
     GetRecord(tag).SetPtr<T>(owner, t);
   }
   template <typename T>
-  void SetPtr(const Key& owner, const Teuchos::RCP<T>& t) {
+  void SetPtr(const Key& owner, const Teuchos::RCP<T>& t)
+  {
     SetPtr<T>(Tags::DEFAULT, owner, t);
   }
 
   template <typename T>
-  void Assign(const Tag& tag, const Key& owner, const T& t) {
+  void Assign(const Tag& tag, const Key& owner, const T& t)
+  {
     GetRecord(tag).Assign<T>(owner, t);
   }
   template <typename T>
-  void Assign(const Key& owner, const T& t) {
+  void Assign(const Key& owner, const T& t)
+  {
     Assign<T>(Tags::DEFAULT, owner, t);
   }
 
   template <typename T, typename F>
-  F& GetFactory() {
+  F& GetFactory()
+  {
     return factory_.GetW<T, F>();
   }
 
   bool HasType() { return factory_.HasType(); }
 
   template <typename T, typename F>
-  F& SetType(const F& f) {
+  F& SetType(const F& f)
+  {
     if (!factory_.HasType()) {
       factory_ = Impl::dataFactory<T, F>(f);
     } else {
-      if (!Helpers::Equivalent(f, GetFactory<T,F>())) {
+      if (!Helpers::Equivalent(f, GetFactory<T, F>())) {
         Errors::Message msg;
         msg << "Factory required for field \"" << fieldname_
             << "\" differs from previous requirement call.";
@@ -171,34 +184,35 @@ class RecordSet {
   }
 
   template <typename T, typename F>
-  F& SetType() {
-    if (!factory_.HasType()) {
-      factory_ = Impl::dataFactory<T, F>();
-    }
+  F& SetType()
+  {
+    if (!factory_.HasType()) { factory_ = Impl::dataFactory<T, F>(); }
     return GetFactory<T, F>();
   }
 
   template <typename T>
-  void SetType() {
-    if (!factory_.HasType()) {
-      factory_ = Impl::dataFactory<T, NullFactory>();
-    }
-    GetFactory<T, NullFactory>();  // checks valid type
+  void SetType()
+  {
+    if (!factory_.HasType()) { factory_ = Impl::dataFactory<T, NullFactory>(); }
+    GetFactory<T, NullFactory>(); // checks valid type
   }
 
   template <typename T, typename F>
-  bool ValidType() const {
-    return factory_.ValidType<T,F>();
+  bool ValidType() const
+  {
+    return factory_.ValidType<T, F>();
   }
 
   template <typename T>
-  bool ValidType() const {
+  bool ValidType() const
+  {
     return factory_.ValidType<T>();
   }
 
   // initialization of set is the collective (AND) operation
   bool isInitialized(Tag& failed);
-  void initializeTags(bool initialized = true) {
+  void initializeTags(bool initialized = true)
+  {
     for (auto& r : records_) r.second->set_initialized(initialized);
   }
 
@@ -206,9 +220,9 @@ class RecordSet {
   Key fieldname_;
   Key vis_fieldname_;
   Utils::Units units_;
-  std::unique_ptr<std::vector<std::string> > subfieldnames_;
+  std::unique_ptr<std::vector<std::string>> subfieldnames_;
 
-  std::map<Tag,Tag> aliases_;
+  std::map<Tag, Tag> aliases_;
   Impl::DataFactory factory_;
   RecordMap records_;
 };

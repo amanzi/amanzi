@@ -40,7 +40,7 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
                                     public AmanziSolvers::SolverFnBase<WhetStone::DenseVector> {
  public:
   MultiscaleFlowPorosity_GDPM(Teuchos::ParameterList& plist);
-  ~MultiscaleFlowPorosity_GDPM() {};
+  ~MultiscaleFlowPorosity_GDPM(){};
 
   // interface for porosity models
   // -- calculate field water storage assuming pressure equilibrium
@@ -48,9 +48,13 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
 
   // -- local (cell-based) solver returns water storage and capilalry
   //   pressure in the matrix. max_itrs is input/output parameter
-  virtual double WaterContentMatrix(
-      double pcf0, WhetStone::DenseVector& pcm,
-      double wcm0, double dt, double phi, double n_l, int& max_itrs) override;
+  virtual double WaterContentMatrix(double pcf0,
+                                    WhetStone::DenseVector& pcm,
+                                    double wcm0,
+                                    double dt,
+                                    double phi,
+                                    double n_l,
+                                    int& max_itrs) override;
 
   // -- number of matrix nodes
   virtual int NumberMatrixNodes() override { return matrix_nodes_; }
@@ -62,7 +66,8 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
 
   // -- delegeating inversion to the diffusion operator
   virtual int ApplyPreconditioner(const Teuchos::RCP<const WhetStone::DenseVector>& u,
-                                  const Teuchos::RCP<WhetStone::DenseVector>& hu) override {
+                                  const Teuchos::RCP<WhetStone::DenseVector>& hu) override
+  {
     op_->ApplyInverse(*u, *hu);
     return 0;
   }
@@ -75,7 +80,7 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
   virtual void UpdatePreconditioner(const Teuchos::RCP<const WhetStone::DenseVector>& u) override;
 
   // -- other required functions
-  virtual void ChangedSolution() override {};
+  virtual void ChangedSolution() override{};
 
   // modifiers
   void set_op(std::shared_ptr<Operators::Mini_Diffusion1D> op) { op_ = op; }
@@ -93,8 +98,7 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
   static Utils::RegisteredFactory<MultiscaleFlowPorosity, MultiscaleFlowPorosity_GDPM> factory_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
-  
+} // namespace Flow
+} // namespace Amanzi
+
 #endif
-  

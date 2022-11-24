@@ -15,7 +15,7 @@ namespace Amanzi {
 
 #ifdef HAVE_MPI
 
-#ifdef TRILINOS_TPETRA_STACK
+#  ifdef TRILINOS_TPETRA_STACK
 
 bool
 sameComm(const Comm_type& c1, const Comm_type& c2)
@@ -32,15 +32,14 @@ sameComm(const Comm_type& c1, const Comm_type& c2)
 
   auto serial_c1 = dynamic_cast<const SerialComm_type*>(&c1);
   auto serial_c2 = dynamic_cast<const SerialComm_type*>(&c2);
-  if (serial_c1 != nullptr && serial_c2 != nullptr) {
-    return true;
-  }
+  if (serial_c1 != nullptr && serial_c2 != nullptr) { return true; }
   return false;
 }
 
-#else // Epetra stack
+#  else // Epetra stack
 
-bool sameComm(const Comm_type& c1, const Comm_type& c2)
+bool
+sameComm(const Comm_type& c1, const Comm_type& c2)
 {
   auto mpi_c1 = dynamic_cast<const MpiComm_type*>(&c1);
   auto mpi_c2 = dynamic_cast<const MpiComm_type*>(&c2);
@@ -52,16 +51,15 @@ bool sameComm(const Comm_type& c1, const Comm_type& c2)
 
   auto serial_c1 = dynamic_cast<const SerialComm_type*>(&c1);
   auto serial_c2 = dynamic_cast<const SerialComm_type*>(&c2);
-  if (serial_c1 != nullptr && serial_c2 != nullptr) {
-    return true;
-  }
+  if (serial_c1 != nullptr && serial_c2 != nullptr) { return true; }
   return false;
 }
 
-#endif
+#  endif
 #else
 
-bool sameComm(const Comm_type& c1, const Comm_type& c2)
+bool
+sameComm(const Comm_type& c1, const Comm_type& c2)
 {
   return true;
 }

@@ -23,13 +23,13 @@
 
 namespace Amanzi {
 
-HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, bool include_io_set)
-    : viz_comm_(Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm)),
-      dynamic_mesh_(false),
-      mesh_written_(false),
-      static_mesh_cycle_(0),
-      data_file_(-1),
-      include_io_set_(include_io_set)
+HDF5_MPI::HDF5_MPI(const Comm_ptr_type& comm, bool include_io_set)
+  : viz_comm_(Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm)),
+    dynamic_mesh_(false),
+    mesh_written_(false),
+    static_mesh_cycle_(0),
+    data_file_(-1),
+    include_io_set_(include_io_set)
 {
   AMANZI_ASSERT(viz_comm_.get());
   info_ = MPI_INFO_NULL;
@@ -43,14 +43,14 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, bool include_io_set)
 }
 
 
-HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, std::string dataFilename, bool include_io_set)
-    : viz_comm_(Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm)),
-      H5DataFilename_(dataFilename),
-      dynamic_mesh_(false),
-      mesh_written_(false),
-      static_mesh_cycle_(0),
-      include_io_set_(include_io_set),
-      data_file_(-1)
+HDF5_MPI::HDF5_MPI(const Comm_ptr_type& comm, std::string dataFilename, bool include_io_set)
+  : viz_comm_(Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm)),
+    H5DataFilename_(dataFilename),
+    dynamic_mesh_(false),
+    mesh_written_(false),
+    static_mesh_cycle_(0),
+    include_io_set_(include_io_set),
+    data_file_(-1)
 {
   AMANZI_ASSERT(viz_comm_.get());
   H5DataFilename_ = dataFilename;
@@ -67,13 +67,13 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, std::string dataFilename, bool inc
 
 HDF5_MPI::~HDF5_MPI()
 {
-  if (data_file_ >= 0)
-    parallelIO_close_file(data_file_, &IOgroup_);
+  if (data_file_ >= 0) parallelIO_close_file(data_file_, &IOgroup_);
   parallelIO_IOgroup_cleanup(&IOgroup_);
 }
 
 
-void HDF5_MPI::createMeshFile(Teuchos::RCP<const AmanziMesh::Mesh> mesh, const std::string& filename)
+void
+HDF5_MPI::createMeshFile(Teuchos::RCP<const AmanziMesh::Mesh> mesh, const std::string& filename)
 {
   std::string xmfFilename;
 
@@ -102,7 +102,8 @@ void HDF5_MPI::createMeshFile(Teuchos::RCP<const AmanziMesh::Mesh> mesh, const s
 }
 
 
-void HDF5_MPI::writeMesh(const double time, const int iteration)
+void
+HDF5_MPI::writeMesh(const double time, const int iteration)
 {
   if (mesh_->is_logical()) {
     writeDualMesh(time, iteration);
@@ -113,7 +114,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
   std::string xmfFilename;
   int globaldims[2], localdims[2];
-  int *ids;
+  int* ids;
 
   // if this is a static mesh simulation, we only write the mesh once
   if (!dynamic_mesh_ && mesh_written_) return;
@@ -136,7 +137,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
   // Get and write node coordinate info
   // -- get coords
-  double *xyz = new double[nnodes_local*3];
+  double* xyz = new double[nnodes_local * 3];
   globaldims[0] = nnodes_global;
   globaldims[1] = 3;
   localdims[0] = nnodes_local;
@@ -146,12 +147,12 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   for (int i = 0; i < nnodes_local; i++) {
     vis_mesh.node_get_coordinates(i, &xc);
     // VisIt and ParaView require all mesh entities to be in 3D space
-    xyz[i*3+0] = xc[0];
-    xyz[i*3+1] = xc[1];
+    xyz[i * 3 + 0] = xc[0];
+    xyz[i * 3 + 1] = xc[1];
     if (space_dim == 3) {
-      xyz[i*3+2] = xc[2];
+      xyz[i * 3 + 2] = xc[2];
     } else {
-      xyz[i*3+2] = 0.0;
+      xyz[i * 3 + 2] = 0.0;
     }
   }
 
@@ -159,47 +160,53 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   std::stringstream hdf5_path;
   hdf5_path << iteration << "/Mesh/Nodes";
   // TODO(barker): add error handling: can't create/write
-  parallelIO_write_dataset(xyz, PIO_DOUBLE, 2, globaldims, localdims, mesh_file,
-                           const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
+  parallelIO_write_dataset(xyz,
+                           PIO_DOUBLE,
+                           2,
+                           globaldims,
+                           localdims,
+                           mesh_file,
+                           const_cast<char*>(hdf5_path.str().c_str()),
+                           &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
 
   // -- clean up
-  delete [] xyz;
+  delete[] xyz;
 
   // -- write out node map
   ids = new int[nmap.NumMyElements()];
-  for (int i=0; i<nnodes_local; i++) {
-    ids[i] = nmap.GID(i);
-  }
+  for (int i = 0; i < nnodes_local; i++) { ids[i] = nmap.GID(i); }
   globaldims[1] = 1;
   localdims[1] = 1;
 
   hdf5_path.str("");
   hdf5_path << iteration << "/Mesh/NodeMap";
-  parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, mesh_file,
-                           const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
+  parallelIO_write_dataset(ids,
+                           PIO_INTEGER,
+                           2,
+                           globaldims,
+                           localdims,
+                           mesh_file,
+                           const_cast<char*>(hdf5_path.str().c_str()),
+                           &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete [] ids;
+  delete[] ids;
 
   // Get and write cell-to-node connectivity information
   // -- get connectivity
   // nodes are written to h5 out of order, need info to map id to order in output
   int nnodes(nnodes_local);
-  std::vector<int> nnodesAll(viz_comm_->NumProc(),0);
+  std::vector<int> nnodesAll(viz_comm_->NumProc(), 0);
   viz_comm_->GatherAll(&nnodes, &nnodesAll[0], 1);
   int start(0);
-  std::vector<int> startAll(viz_comm_->NumProc(),0);
-  for (int i = 0; i < viz_comm_->MyPID(); i++) {
-    start += nnodesAll[i];
-  }
-  viz_comm_->GatherAll(&start, &startAll[0],1);
+  std::vector<int> startAll(viz_comm_->NumProc(), 0);
+  for (int i = 0; i < viz_comm_->MyPID(); i++) { start += nnodesAll[i]; }
+  viz_comm_->GatherAll(&start, &startAll[0], 1);
 
   std::vector<int> gid(nnodes_global);
   std::vector<int> pid(nnodes_global);
   std::vector<int> lid(nnodes_global);
-  for (int i=0; i<nnodes_global; i++) {
-    gid[i] = ngmap.GID(i);
-  }
+  for (int i = 0; i < nnodes_global; i++) { gid[i] = ngmap.GID(i); }
   nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
 
   // -- determine size of connectivity vector
@@ -223,15 +230,15 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   //               if all the same then write out as a uniform mesh of that type
 
   // -- pass 1: count total connections, total entities
-  int local_conn(0); // length of MixedElements
+  int local_conn(0);     // length of MixedElements
   int local_entities(0); // length of ElementMap (num_cells if non-POLYHEDRON mesh)
   AmanziMesh::Entity_ID_List faces, nodes;
 
-  for (int c=0; c!=ncells_local; ++c) {
+  for (int c = 0; c != ncells_local; ++c) {
     AmanziMesh::Cell_type ctype = vis_mesh.cell_get_type(c);
     if (getCellTypeID_(ctype) == getCellTypeID_(AmanziMesh::POLYHED)) {
-      vis_mesh.cell_get_faces(c,&faces);
-      for (int i=0; i!=faces.size(); ++i) {
+      vis_mesh.cell_get_faces(c, &faces);
+      for (int i = 0; i != faces.size(); ++i) {
         vis_mesh.face_get_nodes(faces[i], &nodes);
         local_conn += nodes.size() + 1;
       }
@@ -239,18 +246,18 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
       local_entities++;
 
     } else if (getCellTypeID_(ctype) != getCellTypeID_(AmanziMesh::POLYGON)) {
-      vis_mesh.cell_get_nodes(c,&nodes);
+      vis_mesh.cell_get_nodes(c, &nodes);
       local_conn += nodes.size() + 1;
       local_entities++;
 
     } else if (topo_dim == 2) {
-      vis_mesh.cell_get_nodes(c,&nodes);
+      vis_mesh.cell_get_nodes(c, &nodes);
       local_conn += nodes.size() + 2;
       local_entities++;
 
     } else {
-      vis_mesh.cell_get_faces(c,&faces);
-      for (int i=0; i!=faces.size(); ++i) {
+      vis_mesh.cell_get_faces(c, &faces);
+      for (int i = 0; i != faces.size(); ++i) {
         vis_mesh.face_get_nodes(faces[i], &nodes);
         local_conn += nodes.size() + 2;
       }
@@ -258,39 +265,41 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
     }
   }
 
-  int *local_sizes = new int[2]; // length of MixedElements,
-		      // length of ElementMap (num_cells if non-POLYHEDRON mesh)
-  local_sizes[0] = local_conn; local_sizes[1] = local_entities;
-  int *global_sizes = new int[2];
-  global_sizes[0] = 0; global_sizes[1] = 0;
+  int* local_sizes = new int[2]; // length of MixedElements,
+                                 // length of ElementMap (num_cells if non-POLYHEDRON mesh)
+  local_sizes[0] = local_conn;
+  local_sizes[1] = local_entities;
+  int* global_sizes = new int[2];
+  global_sizes[0] = 0;
+  global_sizes[1] = 0;
   viz_comm_->SumAll(local_sizes, global_sizes, 2);
   int global_conn = global_sizes[0];
   int global_entities = global_sizes[1];
-  delete [] local_sizes;
-  delete [] global_sizes;
+  delete[] local_sizes;
+  delete[] global_sizes;
 
   // allocate space, pass 2 to populate
   // nodeIDs need to be mapped to output IDs
-  int *conn = new int[local_conn];
-  int *entities = new int[local_entities];
+  int* conn = new int[local_conn];
+  int* entities = new int[local_entities];
 
   int lcv = 0;
   int lcv_entity = 0;
-  for (int c=0; c!=ncells_local; ++c) {
+  for (int c = 0; c != ncells_local; ++c) {
     AmanziMesh::Cell_type ctype = vis_mesh.cell_get_type(c);
     if (getCellTypeID_(ctype) == getCellTypeID_(AmanziMesh::POLYHED)) {
-      vis_mesh.cell_get_faces(c,&faces);
+      vis_mesh.cell_get_faces(c, &faces);
 
       // store cell type id and number of faces
       conn[lcv++] = getCellTypeID_(ctype);
       conn[lcv++] = faces.size();
 
-      for (int j=0; j!=faces.size(); ++j) {
+      for (int j = 0; j != faces.size(); ++j) {
         // store node count, then nodes in the correct order
         vis_mesh.face_get_nodes(faces[j], &nodes);
         conn[lcv++] = nodes.size();
 
-        for (int i=0; i!=nodes.size(); ++i) {
+        for (int i = 0; i != nodes.size(); ++i) {
           if (nmap.MyLID(nodes[i])) {
             conn[lcv++] = nodes[i] + startAll[viz_comm_->MyPID()];
           } else {
@@ -309,17 +318,17 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
       // store nodes in the correct order
       vis_mesh.cell_get_nodes(c, &nodes);
 
-      for (int i=0; i!=nodes.size(); ++i) {
-	if (nmap.MyLID(nodes[i])) {
-	  conn[lcv++] = nodes[i] + startAll[viz_comm_->MyPID()];
-	} else {
-	  conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
-	}
+      for (int i = 0; i != nodes.size(); ++i) {
+        if (nmap.MyLID(nodes[i])) {
+          conn[lcv++] = nodes[i] + startAll[viz_comm_->MyPID()];
+        } else {
+          conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
+        }
       }
 
       // store entity
       entities[lcv_entity++] = cmap.GID(c);
-      
+
     } else if (topo_dim == 2) {
       // store cell type id
       conn[lcv++] = getCellTypeID_(ctype);
@@ -328,62 +337,78 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
       vis_mesh.cell_get_nodes(c, &nodes);
       conn[lcv++] = nodes.size();
 
-      for (int i=0; i!=nodes.size(); ++i) {
-	if (nmap.MyLID(nodes[i])) {
-	  conn[lcv++] = nodes[i] + startAll[viz_comm_->MyPID()];
-	} else {
-	  conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
-	}
+      for (int i = 0; i != nodes.size(); ++i) {
+        if (nmap.MyLID(nodes[i])) {
+          conn[lcv++] = nodes[i] + startAll[viz_comm_->MyPID()];
+        } else {
+          conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
+        }
       }
 
       // store entity
       entities[lcv_entity++] = cmap.GID(c);
-      
+
     } else {
-      vis_mesh.cell_get_faces(c,&faces);
+      vis_mesh.cell_get_faces(c, &faces);
 
-      for (int j=0; j!=faces.size(); ++j) {
-	// store cell type id
-	conn[lcv++] = getCellTypeID_(ctype);
+      for (int j = 0; j != faces.size(); ++j) {
+        // store cell type id
+        conn[lcv++] = getCellTypeID_(ctype);
 
-	// store node count, then nodes in the correct order
-	vis_mesh.face_get_nodes(faces[j], &nodes);
-	conn[lcv++] = nodes.size();
+        // store node count, then nodes in the correct order
+        vis_mesh.face_get_nodes(faces[j], &nodes);
+        conn[lcv++] = nodes.size();
 
-	for (int i=0; i!=nodes.size(); ++i) {
-	  if (nmap.MyLID(nodes[i])) {
-	    conn[lcv++] = nodes[i] + startAll[viz_comm_->MyPID()];
-	  } else {
-	    conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
-	  }
-	}
+        for (int i = 0; i != nodes.size(); ++i) {
+          if (nmap.MyLID(nodes[i])) {
+            conn[lcv++] = nodes[i] + startAll[viz_comm_->MyPID()];
+          } else {
+            conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
+          }
+        }
 
-	// store entity
-	entities[lcv_entity++] = cmap.GID(c);
+        // store entity
+        entities[lcv_entity++] = cmap.GID(c);
       }
     }
   }
-  
+
   // write out connectivity
   hdf5_path.str("");
   hdf5_path << iteration << "/Mesh/MixedElements";
-  globaldims[0] = global_conn; globaldims[1] = 1;
-  localdims[0] = local_conn; localdims[1] = 1;
-  parallelIO_write_dataset(conn, PIO_INTEGER, 2, globaldims, localdims, mesh_file,
-                           const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
+  globaldims[0] = global_conn;
+  globaldims[1] = 1;
+  localdims[0] = local_conn;
+  localdims[1] = 1;
+  parallelIO_write_dataset(conn,
+                           PIO_INTEGER,
+                           2,
+                           globaldims,
+                           localdims,
+                           mesh_file,
+                           const_cast<char*>(hdf5_path.str().c_str()),
+                           &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete [] conn;
+  delete[] conn;
   hdf5_path.flush();
 
   // write out entity map
   hdf5_path.str("");
   hdf5_path << iteration << "/Mesh/ElementMap";
-  globaldims[0] = global_entities; globaldims[1] = 1;
-  localdims[0] = local_entities; localdims[1] = 1;
-  parallelIO_write_dataset(entities, PIO_INTEGER, 2, globaldims, localdims, mesh_file,
-                           const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
+  globaldims[0] = global_entities;
+  globaldims[1] = 1;
+  localdims[0] = local_entities;
+  localdims[1] = 1;
+  parallelIO_write_dataset(entities,
+                           PIO_INTEGER,
+                           2,
+                           globaldims,
+                           localdims,
+                           mesh_file,
+                           const_cast<char*>(hdf5_path.str().c_str()),
+                           &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete [] entities;
+  delete[] entities;
 
   // close file
   parallelIO_close_file(mesh_file, &IOgroup_);
@@ -419,11 +444,12 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 }
 
 
-void HDF5_MPI::writeDualMesh(const double time, const int iteration)
+void
+HDF5_MPI::writeDualMesh(const double time, const int iteration)
 {
   std::string xmfFilename;
   int globaldims[2], localdims[2];
-  int *ids;
+  int* ids;
 
   const AmanziMesh::Mesh& vis_mesh = mesh_->vis_mesh();
 
@@ -434,17 +460,17 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int mesh_file = parallelIO_open_file(h5Filename_.c_str(), &IOgroup_, FILE_READWRITE);
 
   // get num_nodes, num_cells
-  const Epetra_Map &nmap = vis_mesh.cell_map(false);
+  const Epetra_Map& nmap = vis_mesh.cell_map(false);
   int nnodes_local = nmap.NumMyElements();
   int nnodes_global = nmap.NumGlobalElements();
-  const Epetra_Map &ngmap = vis_mesh.cell_map(true);
+  const Epetra_Map& ngmap = vis_mesh.cell_map(true);
 
   // get space dimension
   int space_dim = vis_mesh.space_dimension();
 
   // Get and write node coordinate info
   // -- get coords
-  double *nodes = new double[nnodes_local*3];
+  double* nodes = new double[nnodes_local * 3];
   globaldims[0] = nnodes_global;
   globaldims[1] = 3;
   localdims[0] = nnodes_local;
@@ -453,12 +479,12 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   for (int i = 0; i < nnodes_local; i++) {
     const AmanziGeometry::Point& xc = vis_mesh.cell_centroid(i);
     // VisIt and ParaView require all mesh entities to be in 3D space
-    nodes[i*3+0] = xc[0];
-    nodes[i*3+1] = xc[1];
+    nodes[i * 3 + 0] = xc[0];
+    nodes[i * 3 + 1] = xc[1];
     if (space_dim == 3) {
-      nodes[i*3+2] = xc[2];
+      nodes[i * 3 + 2] = xc[2];
     } else {
-      nodes[i*3+2] = 0.0;
+      nodes[i * 3 + 2] = 0.0;
     }
   }
 
@@ -466,59 +492,65 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   std::stringstream hdf5_path;
   hdf5_path << iteration << "/Mesh/Nodes";
   // TODO(barker): add error handling: can't create/write
-  parallelIO_write_dataset(nodes, PIO_DOUBLE, 2, globaldims, localdims, mesh_file,
-                           const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
+  parallelIO_write_dataset(nodes,
+                           PIO_DOUBLE,
+                           2,
+                           globaldims,
+                           localdims,
+                           mesh_file,
+                           const_cast<char*>(hdf5_path.str().c_str()),
+                           &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
 
   // -- clean up
-  delete [] nodes;
+  delete[] nodes;
 
   // -- write out node map
   ids = new int[nmap.NumMyElements()];
-  for (int i=0; i<nnodes_local; i++) {
-    ids[i] = nmap.GID(i);
-  }
+  for (int i = 0; i < nnodes_local; i++) { ids[i] = nmap.GID(i); }
   globaldims[1] = 1;
   localdims[1] = 1;
 
   hdf5_path.str("");
   hdf5_path << iteration << "/Mesh/NodeMap";
-  parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, mesh_file,
-                           const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
+  parallelIO_write_dataset(ids,
+                           PIO_INTEGER,
+                           2,
+                           globaldims,
+                           localdims,
+                           mesh_file,
+                           const_cast<char*>(hdf5_path.str().c_str()),
+                           &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete [] ids;
+  delete[] ids;
 
   // Get and write cell-to-node connectivity information
   // -- get connectivity
   // nodes are written to h5 out of order, need info to map id to order in output
   int nnodes(nnodes_local);
-  std::vector<int> nnodesAll(viz_comm_->NumProc(),0);
+  std::vector<int> nnodesAll(viz_comm_->NumProc(), 0);
   viz_comm_->GatherAll(&nnodes, &nnodesAll[0], 1);
   int start(0);
-  std::vector<int> startAll(viz_comm_->NumProc(),0);
-  for (int i = 0; i < viz_comm_->MyPID(); i++) {
-    start += nnodesAll[i];
-  }
-  viz_comm_->GatherAll(&start, &startAll[0],1);
+  std::vector<int> startAll(viz_comm_->NumProc(), 0);
+  for (int i = 0; i < viz_comm_->MyPID(); i++) { start += nnodesAll[i]; }
+  viz_comm_->GatherAll(&start, &startAll[0], 1);
 
   std::vector<int> gid(nnodes_global);
   std::vector<int> pid(nnodes_global);
   std::vector<int> lid(nnodes_global);
-  for (int i=0; i<nnodes_global; i++) {
-    gid[i] = ngmap.GID(i);
-  }
+  for (int i = 0; i < nnodes_global; i++) { gid[i] = ngmap.GID(i); }
   nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
 
   // -- pass 1: count total connections, total entities
   // For the dual, connections are all faces with > 1 cells.
-  int local_conn(0); // length of MixedElements
+  int local_conn(0);     // length of MixedElements
   int local_entities(0); // length of ElementMap (num_cells if non-POLYHEDRON mesh)
   AmanziMesh::Entity_ID_List cells;
 
-  const Epetra_Map &fmap = vis_mesh.face_map(false);
+  const Epetra_Map& fmap = vis_mesh.face_map(false);
   int nfaces_local = fmap.NumMyElements();
 
-  for (int f=0; f!=nfaces_local; ++f) {
+  for (int f = 0; f != nfaces_local; ++f) {
     vis_mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     if (cells.size() > 1) {
       local_conn += cells.size();
@@ -526,33 +558,35 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
     }
   }
 
-  int *local_sizes = new int[2]; // length of MixedElements,
-		      // length of ElementMap (num_cells if non-POLYHEDRON mesh)
-  local_sizes[0] = local_conn; local_sizes[1] = local_entities;
-  int *global_sizes = new int[2];
-  global_sizes[0] = 0; global_sizes[1] = 0;
+  int* local_sizes = new int[2]; // length of MixedElements,
+                                 // length of ElementMap (num_cells if non-POLYHEDRON mesh)
+  local_sizes[0] = local_conn;
+  local_sizes[1] = local_entities;
+  int* global_sizes = new int[2];
+  global_sizes[0] = 0;
+  global_sizes[1] = 0;
   viz_comm_->SumAll(local_sizes, global_sizes, 2);
   int global_conn = global_sizes[0];
   int global_entities = global_sizes[1];
-  delete [] local_sizes;
-  delete [] global_sizes;
+  delete[] local_sizes;
+  delete[] global_sizes;
 
   // allocate space, pass 2 to populate
   // nodeIDs need to be mapped to output IDs
-  int *conn = new int[local_conn];
-  int *entities = new int[local_entities];
+  int* conn = new int[local_conn];
+  int* entities = new int[local_entities];
 
   int lcv = 0;
   int lcv_entity = 0;
   int internal_f = 0;
-  for (int f=0; f!=nfaces_local; ++f) {
+  for (int f = 0; f != nfaces_local; ++f) {
     vis_mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     if (cells.size() > 1) {
       // store cell type id
       // conn[lcv++] = 2;
 
       // store nodes in the correct order
-      for (int i=0; i!=cells.size(); ++i) {
+      for (int i = 0; i != cells.size(); ++i) {
         if (nmap.MyLID(cells[i])) {
           conn[lcv++] = cells[i] + startAll[viz_comm_->MyPID()];
         } else {
@@ -563,49 +597,65 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
       // store entity
       entities[lcv_entity++] = startAll[viz_comm_->MyPID()] + internal_f;
       internal_f++;
-      
-    // } else if (space_dim == 2) {
-    //   // store cell type id
-    //   conn[lcv++] = getCellTypeID_(ctype);
 
-    //   // store node count, then nodes in the correct order
-    //   AmanziMesh::Entity_ID_List nodes;
-    //   vis_mesh.cell_get_nodes(c, &nodes);
-    //   conn[lcv++] = nodes.size();
+      // } else if (space_dim == 2) {
+      //   // store cell type id
+      //   conn[lcv++] = getCellTypeID_(ctype);
 
-    //   for (int i=0; i!=nodes.size(); ++i) {
-    //     if (nmap.MyLID(nodes[i])) {
-    //       conn[lcv++] = nodes[i] + startAll[viz_comm_->MyPID()];
-    //     } else {
-    //       conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
-    //     }
-    //   }
+      //   // store node count, then nodes in the correct order
+      //   AmanziMesh::Entity_ID_List nodes;
+      //   vis_mesh.cell_get_nodes(c, &nodes);
+      //   conn[lcv++] = nodes.size();
 
-    //   // store entity
-    //   entities[lcv_entity++] = cmap.GID(c);
+      //   for (int i=0; i!=nodes.size(); ++i) {
+      //     if (nmap.MyLID(nodes[i])) {
+      //       conn[lcv++] = nodes[i] + startAll[viz_comm_->MyPID()];
+      //     } else {
+      //       conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
+      //     }
+      //   }
+
+      //   // store entity
+      //   entities[lcv_entity++] = cmap.GID(c);
     }
   }
-  
+
   // write out connectivity
   hdf5_path.str("");
   hdf5_path << iteration << "/Mesh/MixedElements";
-  globaldims[0] = global_conn; globaldims[1] = 1;
-  localdims[0] = local_conn; localdims[1] = 1;
-  parallelIO_write_dataset(conn, PIO_INTEGER, 2, globaldims, localdims, mesh_file,
-                           const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
+  globaldims[0] = global_conn;
+  globaldims[1] = 1;
+  localdims[0] = local_conn;
+  localdims[1] = 1;
+  parallelIO_write_dataset(conn,
+                           PIO_INTEGER,
+                           2,
+                           globaldims,
+                           localdims,
+                           mesh_file,
+                           const_cast<char*>(hdf5_path.str().c_str()),
+                           &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete [] conn;
+  delete[] conn;
   hdf5_path.flush();
 
   // write out entity map
   hdf5_path.str("");
   hdf5_path << iteration << "/Mesh/ElementMap";
-  globaldims[0] = global_entities; globaldims[1] = 1;
-  localdims[0] = local_entities; localdims[1] = 1;
-  parallelIO_write_dataset(entities, PIO_INTEGER, 2, globaldims, localdims, mesh_file,
-                           const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
+  globaldims[0] = global_entities;
+  globaldims[1] = 1;
+  localdims[0] = local_entities;
+  localdims[1] = 1;
+  parallelIO_write_dataset(entities,
+                           PIO_INTEGER,
+                           2,
+                           globaldims,
+                           localdims,
+                           mesh_file,
+                           const_cast<char*>(hdf5_path.str().c_str()),
+                           &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete [] entities;
+  delete[] entities;
 
   // close file
   parallelIO_close_file(mesh_file, &IOgroup_);
@@ -641,7 +691,8 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
 }
 
 
-void HDF5_MPI::createDataFile(const std::string& base_filename)
+void
+HDF5_MPI::createDataFile(const std::string& base_filename)
 {
   // ?? input mesh filename or grab global mesh filename
   // ->assumes global name exists!!
@@ -671,19 +722,18 @@ void HDF5_MPI::createDataFile(const std::string& base_filename)
 }
 
 
-void HDF5_MPI::open_h5file(bool read_only)
+void
+HDF5_MPI::open_h5file(bool read_only)
 {
   if (read_only) {
-    data_file_ = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
-             FILE_READONLY);
+    data_file_ = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_, FILE_READONLY);
     if (data_file_ < 0) {
       Errors::Message msg;
       msg << "HDF5_MPI: error opening file \"" << H5DataFilename_ << "\" with READ_ONLY access.";
       Exceptions::amanzi_throw(msg);
     }
   } else {
-    data_file_ = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
-             FILE_READWRITE);
+    data_file_ = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_, FILE_READWRITE);
     if (data_file_ < 0) {
       Errors::Message msg;
       msg << "HDF5_MPI: error opening file \"" << H5DataFilename_ << "\" with READ_WRITE access.";
@@ -693,7 +743,9 @@ void HDF5_MPI::open_h5file(bool read_only)
 }
 
 
-void HDF5_MPI::close_h5file() {
+void
+HDF5_MPI::close_h5file()
+{
   if (data_file_ >= 0) {
     parallelIO_close_file(data_file_, &IOgroup_);
     data_file_ = -1;
@@ -701,7 +753,8 @@ void HDF5_MPI::close_h5file() {
 }
 
 
-void HDF5_MPI::createTimestep(double time, int iteration, const std::string& tag)
+void
+HDF5_MPI::createTimestep(double time, int iteration, const std::string& tag)
 {
   setIteration(iteration);
   setTime(time);
@@ -710,7 +763,7 @@ void HDF5_MPI::createTimestep(double time, int iteration, const std::string& tag
   if (TrackXdmf() && viz_comm_->MyPID() == 0) {
     // create single step xdmf file
     Teuchos::XMLObject tmp("Xdmf");
-    tmp.addChild(addXdmfHeaderLocal_("Mesh",time,iteration));
+    tmp.addChild(addXdmfHeaderLocal_("Mesh", time, iteration));
     std::stringstream filename;
     filename << H5DataFilename() << "." << iteration << tag << ".xmf";
     of_timestep_.open(filename.str().c_str());
@@ -723,19 +776,18 @@ void HDF5_MPI::createTimestep(double time, int iteration, const std::string& tag
 }
 
 
-void HDF5_MPI::endTimestep()
+void
+HDF5_MPI::endTimestep()
 {
   if (TrackXdmf() && viz_comm_->MyPID() == 0) {
     of_timestep_ << xmlStep_;
     of_timestep_.close();
 
-    // compare ifields in two subsequent steps and open a new meta-data 
+    // compare ifields in two subsequent steps and open a new meta-data
     // channel if they differ
     auto fields = extractFields_(xmlStep_);
     auto fields_prev = extractFields_(xmlStep_prev_);
-    if (fields != fields_prev && !xmlStep_prev_.isEmpty()) {
-      createXdmfVisit_();
-    }
+    if (fields != fields_prev && !xmlStep_prev_.isEmpty()) { createXdmfVisit_(); }
 
     xmlStep_prev_ = xmlStep_;
 
@@ -762,7 +814,8 @@ void HDF5_MPI::endTimestep()
 }
 
 
-std::set<std::string> HDF5_MPI::extractFields_(const Teuchos::XMLObject& xml)
+std::set<std::string>
+HDF5_MPI::extractFields_(const Teuchos::XMLObject& xml)
 {
   std::set<std::string> fields;
 
@@ -771,9 +824,7 @@ std::set<std::string> HDF5_MPI::extractFields_(const Teuchos::XMLObject& xml)
     for (int i = 0; i < node.numChildren(); i++) {
       auto tmp = node.getChild(i);
       if (tmp.getTag() == "Attribute" && tmp.hasAttribute("Name") && tmp.hasAttribute("Type")) {
-        if (tmp.getAttribute("Type") == "Scalar") {
-          fields.insert(tmp.getAttribute("Name"));
-        }
+        if (tmp.getAttribute("Type") == "Scalar") { fields.insert(tmp.getAttribute("Name")); }
       }
     }
   }
@@ -781,83 +832,73 @@ std::set<std::string> HDF5_MPI::extractFields_(const Teuchos::XMLObject& xml)
 }
 
 
-void HDF5_MPI::writeAttrString(const std::string value, const std::string attrname)
+void
+HDF5_MPI::writeAttrString(const std::string value, const std::string attrname)
 {
   std::string h5path = "/";
 
-  char *loc_attrname = new char[attrname.size()+1];
-  strcpy(loc_attrname,attrname.c_str());
+  char* loc_attrname = new char[attrname.size() + 1];
+  strcpy(loc_attrname, attrname.c_str());
 
-  char *loc_h5path = new char[h5path.size()+1];
-  strcpy(loc_h5path,h5path.c_str());
+  char* loc_h5path = new char[h5path.size() + 1];
+  strcpy(loc_h5path, h5path.c_str());
 
-  char *loc_value = new char[value.size()+1];
+  char* loc_value = new char[value.size() + 1];
   strcpy(loc_value, value.c_str());
 
-  parallelIO_write_simple_attr(loc_attrname,
-                               loc_value,
-                               PIO_STRING,
-                               data_file_,
-                               loc_h5path,
-                               &IOgroup_);
-  delete [] loc_value;
-  delete [] loc_h5path;
-  delete [] loc_attrname;
+  parallelIO_write_simple_attr(
+    loc_attrname, loc_value, PIO_STRING, data_file_, loc_h5path, &IOgroup_);
+  delete[] loc_value;
+  delete[] loc_h5path;
+  delete[] loc_attrname;
 }
 
 
-void HDF5_MPI::writeAttrReal(double value, const std::string attrname)
+void
+HDF5_MPI::writeAttrReal(double value, const std::string attrname)
 {
   std::string h5path = "/";
 
-  char *loc_attrname = new char[attrname.size()+1];
-  strcpy(loc_attrname,attrname.c_str());
+  char* loc_attrname = new char[attrname.size() + 1];
+  strcpy(loc_attrname, attrname.c_str());
 
-  char *loc_h5path = new char[h5path.size()+1];
-  strcpy(loc_h5path,h5path.c_str());
+  char* loc_h5path = new char[h5path.size() + 1];
+  strcpy(loc_h5path, h5path.c_str());
 
-  parallelIO_write_simple_attr(loc_attrname,
-                               &value,
-                               PIO_DOUBLE,
-                               data_file_,
-                               loc_h5path,
-                               &IOgroup_);
-  delete [] loc_h5path;
-  delete [] loc_attrname;
+  parallelIO_write_simple_attr(loc_attrname, &value, PIO_DOUBLE, data_file_, loc_h5path, &IOgroup_);
+  delete[] loc_h5path;
+  delete[] loc_attrname;
 }
 
 
-void HDF5_MPI::writeAttrReal(double value, const std::string attrname, std::string h5path)
+void
+HDF5_MPI::writeAttrReal(double value, const std::string attrname, std::string h5path)
 {
-  char *loc_attrname = new char[attrname.size()+1];
-  strcpy(loc_attrname,attrname.c_str());
+  char* loc_attrname = new char[attrname.size() + 1];
+  strcpy(loc_attrname, attrname.c_str());
 
-  char *loc_h5path = new char[h5path.size()+1];
-  strcpy(loc_h5path,h5path.c_str());
+  char* loc_h5path = new char[h5path.size() + 1];
+  strcpy(loc_h5path, h5path.c_str());
 
-  parallelIO_write_simple_attr(loc_attrname,
-                               &value,
-                               PIO_DOUBLE,
-                               data_file_,
-                               loc_h5path,
-                               &IOgroup_);
-  delete [] loc_h5path;
-  delete [] loc_attrname;
+  parallelIO_write_simple_attr(loc_attrname, &value, PIO_DOUBLE, data_file_, loc_h5path, &IOgroup_);
+  delete[] loc_h5path;
+  delete[] loc_attrname;
 }
 
 
-void HDF5_MPI::writeAttrReal(double* value, int ndim, const std::string attrname)
+void
+HDF5_MPI::writeAttrReal(double* value, int ndim, const std::string attrname)
 {
   std::string h5path = "/";
 
-  char *loc_attrname = new char[attrname.size()+1];
-  strcpy(loc_attrname,attrname.c_str());
+  char* loc_attrname = new char[attrname.size() + 1];
+  strcpy(loc_attrname, attrname.c_str());
 
-  char *loc_h5path = new char[h5path.size()+1];
-  strcpy(loc_h5path,h5path.c_str());
+  char* loc_h5path = new char[h5path.size() + 1];
+  strcpy(loc_h5path, h5path.c_str());
 
   int ndims(1);
-  int *adims = new int[1];
+  int* adims = new int[1];
   adims[0] = ndim;
 
   parallelIO_write_attr(loc_attrname,
@@ -869,45 +910,43 @@ void HDF5_MPI::writeAttrReal(double* value, int ndim, const std::string attrname
                         loc_h5path,
                         &IOgroup_);
 
-  delete [] loc_h5path;
-  delete [] loc_attrname;
-  delete [] adims;
+  delete[] loc_h5path;
+  delete[] loc_attrname;
+  delete[] adims;
 }
 
 
-void HDF5_MPI::writeAttrInt(int value, const std::string attrname)
+void
+HDF5_MPI::writeAttrInt(int value, const std::string attrname)
 {
   std::string h5path = "/";
 
-  char *loc_attrname = new char[attrname.size()+1];
-  strcpy(loc_attrname,attrname.c_str());
+  char* loc_attrname = new char[attrname.size() + 1];
+  strcpy(loc_attrname, attrname.c_str());
 
-  char *loc_h5path = new char[h5path.size()+1];
-  strcpy(loc_h5path,h5path.c_str());
+  char* loc_h5path = new char[h5path.size() + 1];
+  strcpy(loc_h5path, h5path.c_str());
 
-  parallelIO_write_simple_attr(loc_attrname,
-                               &value,
-                               PIO_INTEGER,
-                               data_file_,
-                               loc_h5path,
-                               &IOgroup_);
-  delete [] loc_h5path;
-  delete [] loc_attrname;
+  parallelIO_write_simple_attr(
+    loc_attrname, &value, PIO_INTEGER, data_file_, loc_h5path, &IOgroup_);
+  delete[] loc_h5path;
+  delete[] loc_attrname;
 }
 
 
-void HDF5_MPI::writeAttrInt(int* value, int ndim, const std::string attrname)
+void
+HDF5_MPI::writeAttrInt(int* value, int ndim, const std::string attrname)
 {
   std::string h5path = "/";
 
-  char *loc_attrname = new char[attrname.size()+1];
-  strcpy(loc_attrname,attrname.c_str());
+  char* loc_attrname = new char[attrname.size() + 1];
+  strcpy(loc_attrname, attrname.c_str());
 
-  char *loc_h5path = new char[h5path.size()+1];
-  strcpy(loc_h5path,h5path.c_str());
+  char* loc_h5path = new char[h5path.size() + 1];
+  strcpy(loc_h5path, h5path.c_str());
 
   int ndims(1);
-  int *adims = new int[1];
+  int* adims = new int[1];
   adims[0] = ndim;
 
   parallelIO_write_attr(loc_attrname,
@@ -919,24 +958,25 @@ void HDF5_MPI::writeAttrInt(int* value, int ndim, const std::string attrname)
                         loc_h5path,
                         &IOgroup_);
 
-  delete [] loc_h5path;
-  delete [] loc_attrname;
-  delete [] adims;
+  delete[] loc_h5path;
+  delete[] loc_attrname;
+  delete[] adims;
 }
 
 
-void HDF5_MPI::readAttrString(std::string &value, const std::string attrname)
+void
+HDF5_MPI::readAttrString(std::string& value, const std::string attrname)
 {
   std::string h5path = "/";
 
-  char *loc_attrname = new char[attrname.size()+1];
-  strcpy(loc_attrname,attrname.c_str());
+  char* loc_attrname = new char[attrname.size() + 1];
+  strcpy(loc_attrname, attrname.c_str());
 
-  char *loc_h5path = new char[h5path.size()+1];
-  strcpy(loc_h5path,h5path.c_str());
+  char* loc_h5path = new char[h5path.size() + 1];
+  strcpy(loc_h5path, h5path.c_str());
 
-  char *loc_value;
-  
+  char* loc_value;
+
   parallelIO_read_simple_attr(loc_attrname,
                               reinterpret_cast<void**>(&loc_value),
                               PIO_STRING,
@@ -947,23 +987,24 @@ void HDF5_MPI::readAttrString(std::string &value, const std::string attrname)
   value = std::string(loc_value);
 
   free(loc_value);
-  delete [] loc_h5path;
-  delete [] loc_attrname;
+  delete[] loc_h5path;
+  delete[] loc_attrname;
 }
 
 
-void HDF5_MPI::readAttrReal(double &value, const std::string attrname)
+void
+HDF5_MPI::readAttrReal(double& value, const std::string attrname)
 {
   std::string h5path = "/";
 
-  char *loc_attrname = new char[attrname.size()+1];
-  strcpy(loc_attrname,attrname.c_str());
+  char* loc_attrname = new char[attrname.size() + 1];
+  strcpy(loc_attrname, attrname.c_str());
 
-  char *loc_h5path = new char[h5path.size()+1];
-  strcpy(loc_h5path,h5path.c_str());
+  char* loc_h5path = new char[h5path.size() + 1];
+  strcpy(loc_h5path, h5path.c_str());
 
-  double *loc_value;
-  
+  double* loc_value;
+
   parallelIO_read_simple_attr(loc_attrname,
                               reinterpret_cast<void**>(&loc_value),
                               PIO_DOUBLE,
@@ -974,25 +1015,26 @@ void HDF5_MPI::readAttrReal(double &value, const std::string attrname)
   value = *loc_value;
 
   free(loc_value);
-  delete [] loc_h5path;
-  delete [] loc_attrname;
+  delete[] loc_h5path;
+  delete[] loc_attrname;
 }
-  
 
-void HDF5_MPI::readAttrReal(double **value, int *ndim, const std::string attrname)
+
+void
+HDF5_MPI::readAttrReal(double** value, int* ndim, const std::string attrname)
 {
   std::string h5path = "/";
 
-  char *loc_attrname = new char[attrname.size()+1];
-  strcpy(loc_attrname,attrname.c_str());
+  char* loc_attrname = new char[attrname.size() + 1];
+  strcpy(loc_attrname, attrname.c_str());
 
-  char *loc_h5path = new char[h5path.size()+1];
-  strcpy(loc_h5path,h5path.c_str());
+  char* loc_h5path = new char[h5path.size() + 1];
+  strcpy(loc_h5path, h5path.c_str());
 
-  double *loc_value;
-  int *pdims;
+  double* loc_value;
+  int* pdims;
   int ndims;
-  
+
   parallelIO_read_attr(loc_attrname,
                        reinterpret_cast<void**>(&loc_value),
                        PIO_DOUBLE,
@@ -1003,26 +1045,27 @@ void HDF5_MPI::readAttrReal(double **value, int *ndim, const std::string attrnam
                        &IOgroup_);
 
   *value = loc_value;
-  *ndim = pdims[0];  // works only for one-dimensional vectors.
+  *ndim = pdims[0]; // works only for one-dimensional vectors.
 
   free(pdims);
-  delete [] loc_h5path;
-  delete [] loc_attrname;
+  delete[] loc_h5path;
+  delete[] loc_attrname;
 }
 
 
-void HDF5_MPI::readAttrInt(int &value, const std::string attrname)
+void
+HDF5_MPI::readAttrInt(int& value, const std::string attrname)
 {
   std::string h5path = "/";
 
-  char *loc_attrname = new char[attrname.size()+1];
-  strcpy(loc_attrname,attrname.c_str());
+  char* loc_attrname = new char[attrname.size() + 1];
+  strcpy(loc_attrname, attrname.c_str());
 
-  char *loc_h5path = new char[h5path.size()+1];
-  strcpy(loc_h5path,h5path.c_str());
+  char* loc_h5path = new char[h5path.size() + 1];
+  strcpy(loc_h5path, h5path.c_str());
 
-  int *loc_value;
-  
+  int* loc_value;
+
   parallelIO_read_simple_attr(loc_attrname,
                               reinterpret_cast<void**>(&loc_value),
                               PIO_INTEGER,
@@ -1033,24 +1076,25 @@ void HDF5_MPI::readAttrInt(int &value, const std::string attrname)
   value = *loc_value;
 
   free(loc_value);
-  delete [] loc_h5path;
-  delete [] loc_attrname;
+  delete[] loc_h5path;
+  delete[] loc_attrname;
 }
 
 
-void HDF5_MPI::readAttrInt(int **value, int *ndim, const std::string attrname)
+void
+HDF5_MPI::readAttrInt(int** value, int* ndim, const std::string attrname)
 {
   std::string h5path = "/";
 
-  char *loc_attrname = new char[attrname.size()+1];
-  strcpy(loc_attrname,attrname.c_str());
+  char* loc_attrname = new char[attrname.size() + 1];
+  strcpy(loc_attrname, attrname.c_str());
 
-  char *loc_h5path = new char[h5path.size()+1];
-  strcpy(loc_h5path,h5path.c_str());
+  char* loc_h5path = new char[h5path.size() + 1];
+  strcpy(loc_h5path, h5path.c_str());
 
   int *loc_value, *pdims;
   int ndims;
-  
+
   parallelIO_read_attr(loc_attrname,
                        reinterpret_cast<void**>(&loc_value),
                        PIO_INTEGER,
@@ -1061,28 +1105,30 @@ void HDF5_MPI::readAttrInt(int **value, int *ndim, const std::string attrname)
                        &IOgroup_);
 
   *value = loc_value;
-  *ndim = pdims[0];  // works only for one-dimensional vectors.
+  *ndim = pdims[0]; // works only for one-dimensional vectors.
 
   free(pdims);
-  delete [] loc_h5path;
-  delete [] loc_attrname;
+  delete[] loc_h5path;
+  delete[] loc_attrname;
 }
 
 
-void HDF5_MPI::writeDataString(char **x, int num_entries, const std::string& varname)
+void
+HDF5_MPI::writeDataString(char** x, int num_entries, const std::string& varname)
 {
-  char *h5path = new char[varname.size() + 1];
+  char* h5path = new char[varname.size() + 1];
   strcpy(h5path, varname.c_str());
 
   parallelIO_write_str_array(x, num_entries, data_file_, h5path, &IOgroup_);
 
-  delete [] h5path;
+  delete[] h5path;
 }
 
 
-void HDF5_MPI::readDataString(char ***x, int *num_entries, const std::string& varname)
+void
+HDF5_MPI::readDataString(char*** x, int* num_entries, const std::string& varname)
 {
-  char *h5path = new char[varname.size() + 1];
+  char* h5path = new char[varname.size() + 1];
   strcpy(h5path, varname.c_str());
   int ndims, dims[2], tmpsize;
 
@@ -1092,7 +1138,7 @@ void HDF5_MPI::readDataString(char ***x, int *num_entries, const std::string& va
     parallelIO_get_dataset_dims(dims, data_file_, h5path, &IOgroup_);
     parallelIO_get_dataset_size(&tmpsize, data_file_, h5path, &IOgroup_);
 
-    char **strData;
+    char** strData;
     parallelIO_read_str_array(&strData, &tmpsize, data_file_, h5path, &IOgroup_);
 
     *x = strData;
@@ -1101,45 +1147,60 @@ void HDF5_MPI::readDataString(char ***x, int *num_entries, const std::string& va
     *num_entries = 0;
   }
 
-  delete [] h5path;
+  delete[] h5path;
 }
 
 
-void HDF5_MPI::writeDataReal(const Epetra_Vector &x, const std::string& varname) {
+void
+HDF5_MPI::writeDataReal(const Epetra_Vector& x, const std::string& varname)
+{
   writeFieldData_(x, varname, PIO_DOUBLE, "NONE");
 }
 
 
-void HDF5_MPI::writeDataInt(const Epetra_Vector &x, const std::string& varname) {
+void
+HDF5_MPI::writeDataInt(const Epetra_Vector& x, const std::string& varname)
+{
   writeFieldData_(x, varname, PIO_INTEGER, "NONE");
 }
 
 
-void HDF5_MPI::writeCellDataReal(const Epetra_Vector &x, const std::string& varname) {
+void
+HDF5_MPI::writeCellDataReal(const Epetra_Vector& x, const std::string& varname)
+{
   writeFieldData_(x, varname, PIO_DOUBLE, "Cell");
 }
 
 
-void HDF5_MPI::writeCellDataInt(const Epetra_Vector &x, const std::string& varname) {
+void
+HDF5_MPI::writeCellDataInt(const Epetra_Vector& x, const std::string& varname)
+{
   writeFieldData_(x, varname, PIO_INTEGER, "Cell");
 }
 
 
-void HDF5_MPI::writeNodeDataReal(const Epetra_Vector &x, const std::string& varname) {
+void
+HDF5_MPI::writeNodeDataReal(const Epetra_Vector& x, const std::string& varname)
+{
   writeFieldData_(x, varname, PIO_DOUBLE, "Node");
 }
 
 
-void HDF5_MPI::writeNodeDataInt(const Epetra_Vector &x, const std::string& varname) {
+void
+HDF5_MPI::writeNodeDataInt(const Epetra_Vector& x, const std::string& varname)
+{
   writeFieldData_(x, varname, PIO_INTEGER, "Node");
 }
 
 
-void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, const std::string& varname,
-                               datatype_t type, std::string loc)
+void
+HDF5_MPI::writeFieldData_(const Epetra_Vector& x,
+                          const std::string& varname,
+                          datatype_t type,
+                          std::string loc)
 {
   // write field data
-  double *data;
+  double* data;
   x.ExtractView(&data);
 
   int globaldims[2];
@@ -1161,19 +1222,17 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, const std::string& varnam
   //MB:   Exceptions::amanzi_throw(message);
   //MB: }
 
-  if (TrackXdmf()) {
-    h5path << "/" << Iteration() << get_tag();
-  }
+  if (TrackXdmf()) { h5path << "/" << Iteration() << get_tag(); }
 
-  char *tmp;
+  char* tmp;
   tmp = new char[h5path.str().size() + 1];
-  strcpy(tmp,h5path.str().c_str());
+  strcpy(tmp, h5path.str().c_str());
 
-  parallelIO_write_dataset(data, type, 2, globaldims, localdims, data_file_, tmp,
-                           &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);
+  parallelIO_write_dataset(
+    data, type, 2, globaldims, localdims, data_file_, tmp, &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);
 
   // TODO(barker): add error handling: can't write
-  if (TrackXdmf() ) {
+  if (TrackXdmf()) {
     writeAttrReal(Time(), "Time", h5path.str());
     if (viz_comm_->MyPID() == 0) {
       // TODO(barker): get grid node, node.addChild(addXdmfAttribute)
@@ -1181,11 +1240,12 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, const std::string& varnam
       node.addChild(addXdmfAttribute_(varname, loc, globaldims[0], h5path.str()));
     }
   }
-  delete [] tmp;
+  delete[] tmp;
 }
 
 
-void HDF5_MPI::writeDatasetReal(double* data, int nloc, int nglb, const std::string& varname)
+void
+HDF5_MPI::writeDatasetReal(double* data, int nloc, int nglb, const std::string& varname)
 {
   int globaldims[2], localdims[2];
   globaldims[0] = nglb;
@@ -1193,64 +1253,72 @@ void HDF5_MPI::writeDatasetReal(double* data, int nloc, int nglb, const std::str
   localdims[0] = nloc;
   localdims[1] = 1;
 
-  char *tmp;
+  char* tmp;
   tmp = new char[varname.size() + 1];
   strcpy(tmp, varname.c_str());
 
-  parallelIO_write_dataset(data, PIO_DOUBLE, 2, globaldims, localdims, data_file_, tmp,
-                           &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);
+  parallelIO_write_dataset(data,
+                           PIO_DOUBLE,
+                           2,
+                           globaldims,
+                           localdims,
+                           data_file_,
+                           tmp,
+                           &IOgroup_,
+                           NONUNIFORM_CONTIGUOUS_WRITE);
 
-  delete [] tmp;
+  delete[] tmp;
 }
 
 
-bool HDF5_MPI::readData(Epetra_Vector &x, const std::string varname) {
+bool
+HDF5_MPI::readData(Epetra_Vector& x, const std::string varname)
+{
   return readFieldData_(x, varname, PIO_DOUBLE);
 }
 
 
-bool HDF5_MPI::checkFieldData_(const std::string& varname)
+bool
+HDF5_MPI::checkFieldData_(const std::string& varname)
 {
-  char *h5path = new char[varname.size() + 1];
+  char* h5path = new char[varname.size() + 1];
   strcpy(h5path, varname.c_str());
   bool exists = false;
 
   if (viz_comm_->MyPID() != 0) {
     MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_->Comm());
   } else {
-    iofile_t *currfile;
+    iofile_t* currfile;
     currfile = IOgroup_.file[data_file_];
     // old interface has issues with CLang 10.0.1
     // exists = H5Lexists(currfile->fid, h5path, H5P_DEFAULT);
     exists = parallelIO_name_exists(currfile->fid, h5path);
 
-    if (!exists) {
-      std::cout << "Field " << h5path << " is not found in hdf5 file.\n";
-    }
+    if (!exists) { std::cout << "Field " << h5path << " is not found in hdf5 file.\n"; }
 
-    MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_->Comm()); 
-  } 
-  
+    MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_->Comm());
+  }
+
   delete[] h5path;
 
   return exists;
 }
 
 
-bool HDF5_MPI::readFieldData_(Epetra_Vector &x, const std::string& varname,
-                              datatype_t type)
+bool
+HDF5_MPI::readFieldData_(Epetra_Vector& x, const std::string& varname, datatype_t type)
 {
   if (!checkFieldData_(varname)) return false;
 
-  char *h5path = new char[varname.size() + 1];
+  char* h5path = new char[varname.size() + 1];
   strcpy(h5path, varname.c_str());
 
   int ndims;
   parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);
-  
+
   if (ndims < 0) {
     if (viz_comm_->MyPID() == 0) {
-      std::cout<< "Dimension of the field "<<h5path<<" is negative.\n";
+      std::cout << "Dimension of the field " << h5path << " is negative.\n";
     }
     return false;
   }
@@ -1260,34 +1328,42 @@ bool HDF5_MPI::readFieldData_(Epetra_Vector &x, const std::string& varname,
   localdims[0] = x.MyLength();
   localdims[1] = globaldims[1];
 
-  double *data = new double[localdims[0]*localdims[1]];
-  parallelIO_read_dataset(data, type, ndims, globaldims, localdims,
-                          data_file_, h5path, &IOgroup_, NONUNIFORM_CONTIGUOUS_READ);
+  double* data = new double[localdims[0] * localdims[1]];
+  parallelIO_read_dataset(data,
+                          type,
+                          ndims,
+                          globaldims,
+                          localdims,
+                          data_file_,
+                          h5path,
+                          &IOgroup_,
+                          NONUNIFORM_CONTIGUOUS_READ);
 
-  // Trilinos' ReplaceMyValues() works with elements only and cannot 
+  // Trilinos' ReplaceMyValues() works with elements only and cannot
   // be used here for points
-  for (int i=0; i<localdims[0]; ++i) x[i] = data[i];
+  for (int i = 0; i < localdims[0]; ++i) x[i] = data[i];
 
-  delete [] data;
-  delete [] h5path;
+  delete[] data;
+  delete[] h5path;
 
   return true;
 }
 
 
-bool HDF5_MPI::readDatasetReal(double **data, int nloc, const std::string& varname)
+bool
+HDF5_MPI::readDatasetReal(double** data, int nloc, const std::string& varname)
 {
-  char *h5path = new char[varname.size() + 1];
+  char* h5path = new char[varname.size() + 1];
   strcpy(h5path, varname.c_str());
 
   if (!checkFieldData_(varname)) return false;
 
   int ndims;
   parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);
-  
+
   if (ndims < 0) {
     if (viz_comm_->MyPID() == 0) {
-      std::cout<< "Dimension of the dataset "<<h5path<<" is negative.\n";
+      std::cout << "Dimension of the dataset " << h5path << " is negative.\n";
     }
     return false;
   }
@@ -1300,48 +1376,55 @@ bool HDF5_MPI::readDatasetReal(double **data, int nloc, const std::string& varna
 
   int size = std::max(1, localdims[0] * localdims[1]);
   *data = new double[size];
-  parallelIO_read_dataset(*data, PIO_DOUBLE, ndims, globaldims, localdims,
-                          data_file_, h5path, &IOgroup_, NONUNIFORM_CONTIGUOUS_READ);
+  parallelIO_read_dataset(*data,
+                          PIO_DOUBLE,
+                          ndims,
+                          globaldims,
+                          localdims,
+                          data_file_,
+                          h5path,
+                          &IOgroup_,
+                          NONUNIFORM_CONTIGUOUS_READ);
 
-  delete [] h5path;
+  delete[] h5path;
 
   return true;
 }
 
 
-int HDF5_MPI::getCellTypeID_(AmanziMesh::Cell_type type)
+int
+HDF5_MPI::getCellTypeID_(AmanziMesh::Cell_type type)
 {
   //TODO(barker): how to return polyhedra?
   // cell type id's defined in Xdmf/include/XdmfTopology.h
 
-  AMANZI_ASSERT (cell_valid_type(type));
+  AMANZI_ASSERT(cell_valid_type(type));
 
-  switch (type)
-  {
-    case AmanziMesh::POLYGON:
-      return 3;
-    case AmanziMesh::TRI:
-      return 4;
-    case AmanziMesh::QUAD:
-      return 5;
-    case AmanziMesh::TET:
-      return 6;
-    case AmanziMesh::PYRAMID:
-      return 7;
-    case AmanziMesh::PRISM:
-      return 8; //wedge
-    case AmanziMesh::HEX:
-      return 9;
-    case AmanziMesh::POLYHED:
-      return 16; // see http://www.xdmf.org/index.php/XDMF_Model_and_Format
-    default:
-      return 3; // unknown, for now same as polygon
+  switch (type) {
+  case AmanziMesh::POLYGON:
+    return 3;
+  case AmanziMesh::TRI:
+    return 4;
+  case AmanziMesh::QUAD:
+    return 5;
+  case AmanziMesh::TET:
+    return 6;
+  case AmanziMesh::PYRAMID:
+    return 7;
+  case AmanziMesh::PRISM:
+    return 8; //wedge
+  case AmanziMesh::HEX:
+    return 9;
+  case AmanziMesh::POLYHED:
+    return 16; // see http://www.xdmf.org/index.php/XDMF_Model_and_Format
+  default:
+    return 3; // unknown, for now same as polygon
   }
 }
 
 
-void HDF5_MPI::createXdmfMesh_(const std::string filename,
-                               const double time, const int iteration)
+void
+HDF5_MPI::createXdmfMesh_(const std::string filename, const double time, const int iteration)
 {
   // TODO(barker): add error handling: can't open/write
   Teuchos::XMLObject mesh("Xdmf");
@@ -1352,7 +1435,7 @@ void HDF5_MPI::createXdmfMesh_(const std::string filename,
   fname << filename << ".h5." << iteration << ".xmf";
 
   // build xml object
-  mesh.addChild(addXdmfHeaderLocal_(mesh_name.str().c_str(),time,iteration));
+  mesh.addChild(addXdmfHeaderLocal_(mesh_name.str().c_str(), time, iteration));
 
   // write xmf
   std::ofstream of(fname.str().c_str());
@@ -1361,7 +1444,8 @@ void HDF5_MPI::createXdmfMesh_(const std::string filename,
 }
 
 
-void HDF5_MPI::createXdmfMeshVisit_()
+void
+HDF5_MPI::createXdmfMeshVisit_()
 {
   Teuchos::XMLObject xmf("Xdmf");
   xmf.addAttribute("xmlns:xi", "http://www.w3.org/2001/XInclude");
@@ -1380,7 +1464,8 @@ void HDF5_MPI::createXdmfMeshVisit_()
 }
 
 
-void HDF5_MPI::createXdmfVisit_()
+void
+HDF5_MPI::createXdmfVisit_()
 {
   // TODO(barker): add error handling: can't open/write
   Teuchos::XMLObject xmf("Xdmf");
@@ -1407,7 +1492,8 @@ void HDF5_MPI::createXdmfVisit_()
 }
 
 
-Teuchos::XMLObject HDF5_MPI::addXdmfHeaderGlobal_()
+Teuchos::XMLObject
+HDF5_MPI::addXdmfHeaderGlobal_()
 {
   Teuchos::XMLObject domain("Domain");
 
@@ -1420,8 +1506,8 @@ Teuchos::XMLObject HDF5_MPI::addXdmfHeaderGlobal_()
 }
 
 
-Teuchos::XMLObject HDF5_MPI::addXdmfHeaderLocal_(
-    const std::string& name, const double value, const int cycle)
+Teuchos::XMLObject
+HDF5_MPI::addXdmfHeaderLocal_(const std::string& name, const double value, const int cycle)
 {
   Teuchos::XMLObject domain("Domain");
 
@@ -1439,7 +1525,8 @@ Teuchos::XMLObject HDF5_MPI::addXdmfHeaderLocal_(
 }
 
 
-Teuchos::XMLObject HDF5_MPI::addXdmfTopo_(const int cycle)
+Teuchos::XMLObject
+HDF5_MPI::addXdmfTopo_(const int cycle)
 {
   std::stringstream tmp, tmp1;
 
@@ -1469,7 +1556,8 @@ Teuchos::XMLObject HDF5_MPI::addXdmfTopo_(const int cycle)
 }
 
 
-Teuchos::XMLObject HDF5_MPI::addXdmfGeo_(const int cycle)
+Teuchos::XMLObject
+HDF5_MPI::addXdmfGeo_(const int cycle)
 {
   std::stringstream tmp;
   std::stringstream tmp1;
@@ -1480,7 +1568,8 @@ Teuchos::XMLObject HDF5_MPI::addXdmfGeo_(const int cycle)
 
   Teuchos::XMLObject DataItem("DataItem");
   DataItem.addAttribute("DataType", "Float");
-  tmp1 << NumNodes() << " " << " 3";
+  tmp1 << NumNodes() << " "
+       << " 3";
   DataItem.addAttribute("Dimensions", tmp1.str());
   DataItem.addAttribute("Format", "HDF");
   if (dynamic_mesh_) {
@@ -1495,7 +1584,8 @@ Teuchos::XMLObject HDF5_MPI::addXdmfGeo_(const int cycle)
 }
 
 
-void HDF5_MPI::writeXdmfVisitGrid_(std::string filename)
+void
+HDF5_MPI::writeXdmfVisitGrid_(std::string filename)
 {
   // Create xmlObject grid
   Teuchos::XMLObject xi_include("xi:include");
@@ -1503,7 +1593,7 @@ void HDF5_MPI::writeXdmfVisitGrid_(std::string filename)
   xi_include.addAttribute("xpointer", "xpointer(//Xdmf/Domain/Grid)");
 
   // Step through xmlobject visit to find /domain/grid
-  for (auto& xmf : xmlVisit_) { 
+  for (auto& xmf : xmlVisit_) {
     Teuchos::XMLObject node;
     node = findGridNode_(xmf);
     node.addChild(xi_include);
@@ -1511,7 +1601,8 @@ void HDF5_MPI::writeXdmfVisitGrid_(std::string filename)
 }
 
 
-void HDF5_MPI::writeXdmfMeshVisitGrid_(std::string filename)
+void
+HDF5_MPI::writeXdmfMeshVisitGrid_(std::string filename)
 {
   // Create xmlObject grid
   Teuchos::XMLObject xi_include("xi:include");
@@ -1527,24 +1618,21 @@ void HDF5_MPI::writeXdmfMeshVisitGrid_(std::string filename)
 }
 
 
-Teuchos::XMLObject HDF5_MPI::findGridNode_(Teuchos::XMLObject xmlobject)
+Teuchos::XMLObject
+HDF5_MPI::findGridNode_(Teuchos::XMLObject xmlobject)
 {
   Teuchos::XMLObject node, tmp;
 
   // Step down to child tag==Domain
   for (int i = 0; i < xmlobject.numChildren(); i++) {
-    if (xmlobject.getChild(i).getTag() == "Domain") {
-      node = xmlobject.getChild(i);
-    }
+    if (xmlobject.getChild(i).getTag() == "Domain") { node = xmlobject.getChild(i); }
   }
 
   // Step down to child tag==Grid and Attribute(GridType==Collection)
   for (int i = 0; i < node.numChildren(); i++) {
     tmp = node.getChild(i);
     if (tmp.getTag() == "Grid" && tmp.hasAttribute("GridType")) {
-      if (tmp.getAttribute("GridType") == "Collection") {
-        return tmp;
-      }
+      if (tmp.getAttribute("GridType") == "Collection") { return tmp; }
     }
   }
 
@@ -1553,7 +1641,8 @@ Teuchos::XMLObject HDF5_MPI::findGridNode_(Teuchos::XMLObject xmlobject)
 }
 
 
-Teuchos::XMLObject HDF5_MPI::findMeshNode_(Teuchos::XMLObject xmlobject)
+Teuchos::XMLObject
+HDF5_MPI::findMeshNode_(Teuchos::XMLObject xmlobject)
 {
   Teuchos::XMLObject node, tmp;
 
@@ -1569,9 +1658,7 @@ Teuchos::XMLObject HDF5_MPI::findMeshNode_(Teuchos::XMLObject xmlobject)
   for (int i = 0; i < node.numChildren(); i++) {
     tmp = node.getChild(i);
     if (tmp.getTag() == "Grid" && tmp.hasAttribute("Name")) {
-      if (tmp.getAttribute("Name") == "Mesh") {
-        return tmp;
-      }
+      if (tmp.getAttribute("Name") == "Mesh") { return tmp; }
     }
   }
 
@@ -1580,10 +1667,11 @@ Teuchos::XMLObject HDF5_MPI::findMeshNode_(Teuchos::XMLObject xmlobject)
 }
 
 
-Teuchos::XMLObject HDF5_MPI::addXdmfAttribute_(std::string varname,
-                                               std::string location,
-                                               int length,
-                                               std::string h5path)
+Teuchos::XMLObject
+HDF5_MPI::addXdmfAttribute_(std::string varname,
+                            std::string location,
+                            int length,
+                            std::string h5path)
 {
   Teuchos::XMLObject attribute("Attribute");
   attribute.addAttribute("Name", varname);
@@ -1603,13 +1691,14 @@ Teuchos::XMLObject HDF5_MPI::addXdmfAttribute_(std::string varname,
 }
 
 
-std::string HDF5_MPI::stripFilename_(std::string filename)
+std::string
+HDF5_MPI::stripFilename_(std::string filename)
 {
   std::stringstream ss(filename);
   std::string name;
   // strip for linux/unix/mac directory names
   char delim('/');
-  while(std::getline(ss, name, delim)) {};
+  while (std::getline(ss, name, delim)) {};
   // strip for windows directory names
   // delim='\\';
   // while(std::getline(ss, name, delim)) {}
@@ -1617,6 +1706,7 @@ std::string HDF5_MPI::stripFilename_(std::string filename)
   return name;
 }
 
-std::string HDF5_MPI::xdmfHeader_ = "<?xml version=\"1.0\" ?>\n<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>\n";
+std::string HDF5_MPI::xdmfHeader_ =
+  "<?xml version=\"1.0\" ?>\n<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>\n";
 
-}  // namespace Amanzi
+} // namespace Amanzi

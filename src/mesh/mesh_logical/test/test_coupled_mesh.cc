@@ -16,8 +16,8 @@
 #include "demo_mesh.hh"
 
 void
-test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
-                     bool test_region) {
+test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m, bool test_region)
+{
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
@@ -68,7 +68,7 @@ test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_EQUAL(1, cells.size());
   CHECK_EQUAL(3, cells[0]);
 
-  
+
   if (test_region) {
     // check regions
     CHECK_EQUAL(4, m->get_set_size("myregion", CELL, Parallel_type::ALL));
@@ -79,24 +79,23 @@ test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
     CHECK_EQUAL(0, set_ents[0]);
     CHECK_EQUAL(2, set_ents[2]);
   }
-}  
+}
 
 
 void
-test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
-                     bool test_region) {
+test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m, bool test_region)
+{
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
   Teuchos::RCP<const GeometricModel> gm_c = m->geometric_model();
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp_const_cast<GeometricModel>(gm_c);
-  
+
   Entity_ID_List ents;
   ents.push_back(0);
   ents.push_back(3);
 
-  Teuchos::RCP<Region> enum_rgn =
-    Teuchos::rcp(new RegionEnumerated("myregion", 0, "CELL", ents));
+  Teuchos::RCP<Region> enum_rgn = Teuchos::rcp(new RegionEnumerated("myregion", 0, "CELL", ents));
   gm->AddRegion(enum_rgn);
 
 
@@ -113,17 +112,17 @@ test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
 
 
 void
-test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
-                     bool test_region) {
+test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m, bool test_region)
+{
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
   // surface
-  Point zero(0.,0.,0.);
-  CHECK_CLOSE(0., norm(zero-m->face_centroid(0)), 1.e-6);
+  Point zero(0., 0., 0.);
+  CHECK_CLOSE(0., norm(zero - m->face_centroid(0)), 1.e-6);
 
   // branch point
-  Point branch(0.,0.,-1.25);
+  Point branch(0., 0., -1.25);
   CHECK_CLOSE(0., norm(branch - m->cell_centroid(2)), 1.e-6);
 
   Entity_ID_List branch_faces;
@@ -132,17 +131,16 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_EQUAL(5, branch_faces.size());
 
   // fine root 1 tip
-  Point fine1_normal(1.,0.,-1.);
+  Point fine1_normal(1., 0., -1.);
   fine1_normal /= norm(fine1_normal);
-  Point tip = branch + 1.25*std::sqrt(2) * fine1_normal;
-  CHECK_CLOSE(0., norm(tip-m->face_centroid(4)), 1.e-6);
+  Point tip = branch + 1.25 * std::sqrt(2) * fine1_normal;
+  CHECK_CLOSE(0., norm(tip - m->face_centroid(4)), 1.e-6);
 
   if (test_region) {
     CHECK_EQUAL(3, m->get_set_size("coarse_root", CELL, Parallel_type::ALL));
     CHECK_EQUAL(8, m->get_set_size("fine_root", CELL, Parallel_type::ALL));
   }
 }
-
 
 
 // Tests the construction process, ensures it does not crash.
@@ -163,7 +161,8 @@ TEST(MESH_LOGICAL_SEGMENT_REGULAR_MANUAL)
 TEST(MESH_LOGICAL_SEGMENT_REGULAR_FACTORY)
 {
   test_segment_regular(Amanzi::Testing::demoMeshLogicalSegmentRegular(), true);
-  CHECK(*Amanzi::Testing::demoMeshLogicalSegmentRegular() == *Amanzi::Testing::demoMeshLogicalSegmentRegularManual());
+  CHECK(*Amanzi::Testing::demoMeshLogicalSegmentRegular() ==
+        *Amanzi::Testing::demoMeshLogicalSegmentRegularManual());
 }
 
 // Evaluates an irregularly space mesh

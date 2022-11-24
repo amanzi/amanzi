@@ -32,9 +32,9 @@ namespace AmanziMesh {
 //
 MeshLogical::MeshLogical(const Comm_ptr_type& comm,
                          const std::vector<Entity_ID_List>& face_cell_ids,
-                         const std::vector<std::vector<int> >& face_cell_dirs,
+                         const std::vector<std::vector<int>>& face_cell_dirs,
                          const Teuchos::RCP<const Teuchos::ParameterList>& plist)
-    : Mesh(comm, Teuchos::null, plist, true, false)
+  : Mesh(comm, Teuchos::null, plist, true, false)
 {
   logical_ = true;
   if (face_cell_ids.size() != face_cell_dirs.size()) {
@@ -62,12 +62,12 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
   if (num_cells != c_max + 1) {
     Errors::Message mesg("MeshLogical expects cells to be 0-indexed and contiguous.");
     Exceptions::amanzi_throw(mesg);
-  }    
+  }
 
   // geometric info that must get set later
   cell_volumes_.resize(num_cells, -1.);
   face_areas_.resize(face_cell_ids_.size(), -1.);
-  
+
   face_normals_.resize(face_cell_ids_.size());
   face_cell_ptype_.resize(face_cell_ids_.size());
 
@@ -76,8 +76,8 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
   cell_face_dirs_.resize(num_cells);
   cell_face_bisectors_.resize(num_cells);
 
-  int f_id=0;
-  for (auto & f : face_cell_ids_) {
+  int f_id = 0;
+  for (auto& f : face_cell_ids_) {
     cell_face_ids_[f[0]].push_back(f_id);
     cell_face_dirs_[f[0]].push_back(face_cell_dirs[f_id][0]);
     cell_face_bisectors_[f[0]].emplace_back(AmanziGeometry::Point());
@@ -96,13 +96,13 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
       cell_face_ids_[f[1]].push_back(f_id);
       cell_face_dirs_[f[1]].push_back(face_cell_dirs[f_id][1]);
       cell_face_bisectors_[f[1]].emplace_back(AmanziGeometry::Point());
-      
+
       face_cell_ptype_[f_id].push_back(Parallel_type::OWNED);
       if (face_cell_dirs[f_id][1] < 0) f[1] = ~f[1];
 
     } else {
       face_cell_ptype_[f_id].push_back(Parallel_type::PTYPE_UNKNOWN);
-    }      
+    }
     f_id++;
   }
 
@@ -116,7 +116,7 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
   // build epetra maps
   init_maps();
 }
-  
+
 
 //
 // MeshLogical constructor includes geometry.
@@ -137,10 +137,10 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
 //
 MeshLogical::MeshLogical(const Comm_ptr_type& comm,
                          const std::vector<Entity_ID_List>& face_cell_ids,
-                         const std::vector<std::vector<int> >& face_cell_dirs,
+                         const std::vector<std::vector<int>>& face_cell_dirs,
                          const std::vector<double>& cell_volumes,
                          const std::vector<double>& face_areas,
-                         const std::vector<std::vector<AmanziGeometry::Point> >& face_cell_bisectors,
+                         const std::vector<std::vector<AmanziGeometry::Point>>& face_cell_bisectors,
                          const std::vector<AmanziGeometry::Point>* cell_centroids,
                          const Teuchos::RCP<const Teuchos::ParameterList>& plist)
   : MeshLogical(comm, face_cell_ids, face_cell_dirs, plist)
@@ -150,30 +150,32 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
 }
 
 
-void MeshLogical::get_logical_geometry(std::vector<double>* const cell_volumes,
-        std::vector<double>* const face_areas,
-        std::vector<std::vector<AmanziGeometry::Point> >* const face_cell_bisectors,
-        std::vector<AmanziGeometry::Point>* const cell_centroids) const
+void
+MeshLogical::get_logical_geometry(
+  std::vector<double>* const cell_volumes,
+  std::vector<double>* const face_areas,
+  std::vector<std::vector<AmanziGeometry::Point>>* const face_cell_bisectors,
+  std::vector<AmanziGeometry::Point>* const cell_centroids) const
 {
   if (cell_volumes) *cell_volumes = cell_volumes_;
   if (face_areas) *face_areas = face_areas_;
   if (cell_centroids) *cell_centroids = cell_centroids_;
 
   // not sure what would be useful for user here... wait til we have a user and fix it!
-  if (face_cell_bisectors) {
-    face_cell_bisectors->resize(num_entities(FACE, Parallel_type::ALL));
-  }
+  if (face_cell_bisectors) { face_cell_bisectors->resize(num_entities(FACE, Parallel_type::ALL)); }
 }
 
 
-void MeshLogical::set_logical_geometry(std::vector<double> const* const cell_volumes,
-        std::vector<double> const* const face_areas,
-        std::vector<std::vector<AmanziGeometry::Point> > const* const face_cell_bisectors,
-        std::vector<AmanziGeometry::Point> const* const cell_centroids)
+void
+MeshLogical::set_logical_geometry(
+  std::vector<double> const* const cell_volumes,
+  std::vector<double> const* const face_areas,
+  std::vector<std::vector<AmanziGeometry::Point>> const* const face_cell_bisectors,
+  std::vector<AmanziGeometry::Point> const* const cell_centroids)
 {
   auto n_cells = num_entities(CELL, Parallel_type::OWNED);
   auto n_faces = num_entities(FACE, Parallel_type::OWNED);
-  
+
   if (cell_volumes && n_cells != cell_volumes->size()) {
     Errors::Message mesg("MeshLogical::set_logical_geometry() called with bad data");
     Exceptions::amanzi_throw(mesg);
@@ -199,17 +201,18 @@ void MeshLogical::set_logical_geometry(std::vector<double> const* const cell_vol
     cell_face_bisectors_.clear();
     cell_face_bisectors_.resize(n_cells);
 
-    for (Entity_ID f=0; f!=n_faces; ++f) {
+    for (Entity_ID f = 0; f != n_faces; ++f) {
       Entity_ID_List f_cells;
       face_get_cells(f, Parallel_type::ALL, &f_cells);
       AMANZI_ASSERT((*face_cell_bisectors)[f].size() == f_cells.size());
-      
-      for (int c_index=0; c_index!=f_cells.size(); ++c_index) {
+
+      for (int c_index = 0; c_index != f_cells.size(); ++c_index) {
         Entity_ID c = f_cells[c_index];
         cell_face_bisectors_[c].push_back((*face_cell_bisectors)[f][c_index]);
 
-        face_normals_[f][c_index] = face_areas_[f] / AmanziGeometry::norm((*face_cell_bisectors)[f][c_index])
-                                    * (*face_cell_bisectors)[f][c_index];
+        face_normals_[f][c_index] = face_areas_[f] /
+                                    AmanziGeometry::norm((*face_cell_bisectors)[f][c_index]) *
+                                    (*face_cell_bisectors)[f][c_index];
       }
     }
   }
@@ -221,7 +224,7 @@ void MeshLogical::set_logical_geometry(std::vector<double> const* const cell_vol
     // face centroids constructed from normals, lengths, cell
     // centroids using assumption of perpendicular bisector
     face_centroids_.resize(face_cell_ids_.size());
-    for (int f=0; f!=face_cell_ids_.size(); ++f) {
+    for (int f = 0; f != face_cell_ids_.size(); ++f) {
       AmanziMesh::Entity_ID_List f_cells;
       face_get_cells(f, AmanziMesh::Parallel_type::ALL, &f_cells);
 
@@ -249,40 +252,36 @@ void MeshLogical::set_logical_geometry(std::vector<double> const* const cell_vol
       }
     }
   }
-  
+
   cell_geometry_precomputed_ = true;
   face_geometry_precomputed_ = true;
 }
 
 
-
-
 // build maps
 void
-MeshLogical::init_maps() {
+MeshLogical::init_maps()
+{
   // cell map
   maps_[CELL] = Teuchos::rcp(new Epetra_Map(-1, cell_face_ids_.size(), 0, *comm_));
 
   // face map
   Teuchos::RCP<Epetra_Map> face_map =
-      Teuchos::rcp(new Epetra_Map(-1, face_cell_ids_.size(), 0, *comm_));
+    Teuchos::rcp(new Epetra_Map(-1, face_cell_ids_.size(), 0, *comm_));
   maps_[FACE] = face_map;
 
   // exterior face map
   std::vector<int> extface_ids;
   int f_id = 0;
-  for (std::vector<Entity_ID_List>::iterator f=face_cell_ids_.begin();
-       f!=face_cell_ids_.end(); ++f) {
-    if (f->size() == 1) {
-      extface_ids.push_back(face_map->GID(f_id));
-    }
+  for (std::vector<Entity_ID_List>::iterator f = face_cell_ids_.begin(); f != face_cell_ids_.end();
+       ++f) {
+    if (f->size() == 1) { extface_ids.push_back(face_map->GID(f_id)); }
     f_id++;
   }
-  maps_[BOUNDARY_FACE] = Teuchos::rcp(new Epetra_Map(-1, extface_ids.size(),
-          &extface_ids[0], 0, *comm_));
+  maps_[BOUNDARY_FACE] =
+    Teuchos::rcp(new Epetra_Map(-1, extface_ids.size(), &extface_ids[0], 0, *comm_));
 
-  exterior_face_importer_ = Teuchos::rcp(new Epetra_Import(*maps_[BOUNDARY_FACE],
-          *face_map));
+  exterior_face_importer_ = Teuchos::rcp(new Epetra_Import(*maps_[BOUNDARY_FACE], *face_map));
 
 
   num_entities_[CELL] = maps_[CELL]->NumMyElements();
@@ -294,7 +293,8 @@ MeshLogical::init_maps() {
 
 // testing purposes -- checks if the caches match
 bool
-MeshLogical::operator==(const MeshLogical& other) {
+MeshLogical::operator==(const MeshLogical& other)
+{
   double _eps = 1.e-10;
 
   if (&other == this) return true;
@@ -302,34 +302,36 @@ MeshLogical::operator==(const MeshLogical& other) {
   if (face_cell_ids_ != other.face_cell_ids_) return false;
 
   if (cell_volumes_.size() != other.cell_volumes_.size()) return false;
-  for (size_t i=0; i!=cell_volumes_.size(); ++i) {
+  for (size_t i = 0; i != cell_volumes_.size(); ++i) {
     if (std::abs(cell_volumes_[i] - other.cell_volumes_[i]) > _eps) return false;
   }
 
   if (face_normals_.size() != other.face_normals_.size()) return false;
-  for (size_t i=0; i!=face_normals_.size(); ++i) {
+  for (size_t i = 0; i != face_normals_.size(); ++i) {
     if (AmanziGeometry::norm(face_normals_[i][0] - other.face_normals_[i][0]) > _eps) return false;
   }
 
-  for (size_t i=0; i!=face_normals_.size(); ++i) {
+  for (size_t i = 0; i != face_normals_.size(); ++i) {
     if (AmanziGeometry::norm(face_normals_[i][1] - other.face_normals_[i][1]) > _eps) return false;
   }
 
   if (cell_centroids_.size() != other.cell_centroids_.size()) return false;
-  for (size_t i=0; i!=cell_centroids_.size(); ++i) {
+  for (size_t i = 0; i != cell_centroids_.size(); ++i) {
     if (AmanziGeometry::norm(cell_centroids_[i] - other.cell_centroids_[i]) > _eps) return false;
   }
 
   if (face_centroids_.size() != other.face_centroids_.size()) return false;
-  for (size_t i=0; i!=face_centroids_.size(); ++i) {
+  for (size_t i = 0; i != face_centroids_.size(); ++i) {
     if (AmanziGeometry::norm(face_centroids_[i] - other.face_centroids_[i]) > _eps) return false;
   }
 
   if (cell_face_bisectors_.size() != other.cell_face_bisectors_.size()) return false;
-  for (size_t i=0; i!=cell_face_bisectors_.size(); ++i) {
+  for (size_t i = 0; i != cell_face_bisectors_.size(); ++i) {
     if (cell_face_bisectors_[i].size() != other.cell_face_bisectors_[i].size()) return false;
-    for (size_t j=0; j!=cell_face_bisectors_[i].size(); ++j)
-      if (AmanziGeometry::norm(cell_face_bisectors_[i][j] - other.cell_face_bisectors_[i][j]) > _eps) return false;
+    for (size_t j = 0; j != cell_face_bisectors_[i].size(); ++j)
+      if (AmanziGeometry::norm(cell_face_bisectors_[i][j] - other.cell_face_bisectors_[i][j]) >
+          _eps)
+        return false;
   }
 
   return true;
@@ -338,15 +340,16 @@ MeshLogical::operator==(const MeshLogical& other) {
 
 // Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
 Parallel_type
-MeshLogical::entity_get_ptype(const Entity_kind kind,
-                              const Entity_ID entid) const {
+MeshLogical::entity_get_ptype(const Entity_kind kind, const Entity_ID entid) const
+{
   return Parallel_type::OWNED;
 }
 
 
 // Parent entity in the source mesh if mesh was derived from another mesh
 Entity_ID
-MeshLogical::entity_get_parent(const Entity_kind kind, const Entity_ID entid) const {
+MeshLogical::entity_get_parent(const Entity_kind kind, const Entity_ID entid) const
+{
   return -1;
 }
 
@@ -354,7 +357,8 @@ MeshLogical::entity_get_parent(const Entity_kind kind, const Entity_ID entid) co
 // Get cell type - UNKNOWN, TRI, QUAD, POLYGON, TET, PRISM, PYRAMID, HEX, POLYHED
 // See MeshDefs.hh
 Cell_type
-MeshLogical::cell_get_type(const Entity_ID cellid) const {
+MeshLogical::cell_get_type(const Entity_ID cellid) const
+{
   return CELLTYPE_UNKNOWN;
 }
 
@@ -366,15 +370,16 @@ MeshLogical::cell_get_type(const Entity_ID cellid) const {
 // Number of entities of any kind (cell, face, node) and in a
 // particular category (OWNED, Parallel_type::GHOST, Parallel_type::ALL)
 unsigned int
-MeshLogical::num_entities(const Entity_kind kind,
-                          const Parallel_type ptype) const {
+MeshLogical::num_entities(const Entity_kind kind, const Parallel_type ptype) const
+{
   return num_entities_.at(kind);
 }
 
 
 // Global ID of any entity
 Entity_ID
-MeshLogical::GID(const Entity_ID lid, const Entity_kind kind) const {
+MeshLogical::GID(const Entity_ID lid, const Entity_kind kind) const
+{
   return maps_.at(kind)->GID(lid);
 }
 
@@ -388,8 +393,8 @@ MeshLogical::GID(const Entity_ID lid, const Entity_kind kind) const {
 
 // Get nodes of a cell
 void
-MeshLogical::cell_get_nodes(const Entity_ID cellid,
-                            Entity_ID_List *nodeids) const {
+MeshLogical::cell_get_nodes(const Entity_ID cellid, Entity_ID_List* nodeids) const
+{
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -397,11 +402,11 @@ MeshLogical::cell_get_nodes(const Entity_ID cellid,
 
 // Get the bisectors, i.e. vectors from cell centroid to face centroids.
 void
-MeshLogical::cell_get_faces_and_bisectors(
-    const Entity_ID cellid,
-    Entity_ID_List *faceids,
-    std::vector<AmanziGeometry::Point> *bisectors,
-    const bool ordered) const {
+MeshLogical::cell_get_faces_and_bisectors(const Entity_ID cellid,
+                                          Entity_ID_List* faceids,
+                                          std::vector<AmanziGeometry::Point>* bisectors,
+                                          const bool ordered) const
+{
   if (faceids) *faceids = cell_face_ids_[cellid];
   if (bisectors) *bisectors = cell_face_bisectors_[cellid];
 }
@@ -414,8 +419,8 @@ MeshLogical::cell_get_faces_and_bisectors(
 // with the face normal
 // In 2D, nfnodes is 2
 void
-MeshLogical::face_get_nodes(const Entity_ID faceid,
-                            Entity_ID_List *nodeids) const {
+MeshLogical::face_get_nodes(const Entity_ID faceid, Entity_ID_List* nodeids) const
+{
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -423,8 +428,8 @@ MeshLogical::face_get_nodes(const Entity_ID faceid,
 
 // Get nodes of edge
 void
-MeshLogical::edge_get_nodes(const Entity_ID edgeid,
-                            Entity_ID *nodeid0, Entity_ID *nodeid1) const {
+MeshLogical::edge_get_nodes(const Entity_ID edgeid, Entity_ID* nodeid0, Entity_ID* nodeid1) const
+{
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -439,7 +444,8 @@ MeshLogical::edge_get_nodes(const Entity_ID edgeid,
 void
 MeshLogical::node_get_cells(const Entity_ID nodeid,
                             const Parallel_type ptype,
-                            Entity_ID_List *cellids) const {
+                            Entity_ID_List* cellids) const
+{
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -451,7 +457,8 @@ MeshLogical::node_get_cells(const Entity_ID nodeid,
 void
 MeshLogical::node_get_faces(const Entity_ID nodeid,
                             const Parallel_type ptype,
-                            Entity_ID_List *faceids) const {
+                            Entity_ID_List* faceids) const
+{
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -470,7 +477,8 @@ MeshLogical::node_get_faces(const Entity_ID nodeid,
 void
 MeshLogical::cell_get_face_adj_cells(const Entity_ID cellid,
                                      const Parallel_type ptype,
-                                     Entity_ID_List *fadj_cellids) const {
+                                     Entity_ID_List* fadj_cellids) const
+{
   fadj_cellids->clear();
   Entity_ID_List faces;
   cell_get_faces_and_bisectors(cellid, &faces, NULL, false);
@@ -479,9 +487,7 @@ MeshLogical::cell_get_face_adj_cells(const Entity_ID cellid,
     Entity_ID_List cells;
     face_get_cells(f, ptype, &cells);
     if (cells[0] == cellid) {
-      if (cells.size() == 2) {
-        fadj_cellids->emplace_back(cells[1]);
-      }
+      if (cells.size() == 2) { fadj_cellids->emplace_back(cells[1]); }
     } else if (cells.size() == 2 && cells[1] == cellid) {
       fadj_cellids->emplace_back(cells[0]);
     } else {
@@ -498,8 +504,8 @@ MeshLogical::cell_get_face_adj_cells(const Entity_ID cellid,
 
 // Node coordinates - 3 in 3D and 2 in 2D
 void
-MeshLogical::node_get_coordinates(const Entity_ID nodeid,
-                                  AmanziGeometry::Point *ncoord) const {
+MeshLogical::node_get_coordinates(const Entity_ID nodeid, AmanziGeometry::Point* ncoord) const
+{
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -511,16 +517,16 @@ MeshLogical::node_get_coordinates(const Entity_ID nodeid,
 
 // Set coordinates of node
 void
-MeshLogical::node_set_coordinates(const Entity_ID nodeid,
-                                  const AmanziGeometry::Point ncoord) {
+MeshLogical::node_set_coordinates(const Entity_ID nodeid, const AmanziGeometry::Point ncoord)
+{
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
 
 
 void
-MeshLogical::node_set_coordinates(const Entity_ID nodeid,
-                                  const double *ncoord) {
+MeshLogical::node_set_coordinates(const Entity_ID nodeid, const double* ncoord)
+{
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -531,7 +537,8 @@ int
 MeshLogical::deform(const std::vector<double>& target_cell_volumes_in,
                     const std::vector<double>& min_cell_volumes_in,
                     const Entity_ID_List& fixed_nodes,
-                    const bool move_vertical) {
+                    const bool move_vertical)
+{
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
   return -1;
@@ -542,17 +549,20 @@ MeshLogical::deform(const std::vector<double>& target_cell_volumes_in,
 // Epetra maps
 //------------
 const Epetra_Map&
-MeshLogical::cell_map(bool include_ghost) const {
+MeshLogical::cell_map(bool include_ghost) const
+{
   return *maps_.at(CELL);
 }
 
 const Epetra_Map&
-MeshLogical::face_map(bool include_ghost) const {
+MeshLogical::face_map(bool include_ghost) const
+{
   return *maps_.at(FACE);
 }
 
 const Epetra_Map&
-MeshLogical::node_map(bool include_ghost) const {
+MeshLogical::node_map(bool include_ghost) const
+{
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
   return *maps_.at(NODE);
@@ -560,13 +570,15 @@ MeshLogical::node_map(bool include_ghost) const {
 
 
 const Epetra_Map&
-MeshLogical::exterior_face_map(bool include_ghost) const {
+MeshLogical::exterior_face_map(bool include_ghost) const
+{
   return *maps_.at(BOUNDARY_FACE);
 }
 
 
 const Epetra_Map&
-MeshLogical::exterior_node_map(bool include_ghost) const {
+MeshLogical::exterior_node_map(bool include_ghost) const
+{
   Errors::Message mesg("No exterior node map in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
   throw(mesg);
@@ -577,7 +589,8 @@ MeshLogical::exterior_node_map(bool include_ghost) const {
 // Epetra vector defined on all owned faces into an Epetra vector
 // defined only on exterior faces
 const Epetra_Import&
-MeshLogical::exterior_face_importer(void) const {
+MeshLogical::exterior_face_importer(void) const
+{
   return *exterior_face_importer_;
 }
 
@@ -591,28 +604,27 @@ void
 MeshLogical::get_set_entities(const std::string& setname,
                               const Entity_kind kind,
                               const Parallel_type ptype,
-                              Entity_ID_List *entids) const {
-
+                              Entity_ID_List* entids) const
+{
   Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(setname);
 
   if (rgn->get_type() == AmanziGeometry::RegionType::ALL) {
     int nent = num_entities(kind, ptype);
     entids->resize(num_entities(kind, ptype));
-    for (int i=0; i!=nent; ++i) {
-      (*entids)[i] = i;
-    }
+    for (int i = 0; i != nent; ++i) { (*entids)[i] = i; }
     return;
 
   } else if (rgn->get_type() == AmanziGeometry::RegionType::ENUMERATED) {
     Teuchos::RCP<const AmanziGeometry::RegionEnumerated> esrgn =
-        Teuchos::rcp_static_cast<const AmanziGeometry::RegionEnumerated>(rgn);
+      Teuchos::rcp_static_cast<const AmanziGeometry::RegionEnumerated>(rgn);
 
     if ((esrgn->entity_str() == "CELL" && kind == CELL) ||
         (esrgn->entity_str() == "FACE" && kind == FACE)) {
       *entids = esrgn->entities();
     }
   } else {
-    Errors::Message mesg("MeshLogical currently only supports regions of type \"region: all\" or \"region: enumerated\"");
+    Errors::Message mesg("MeshLogical currently only supports regions of type \"region: all\" or "
+                         "\"region: enumerated\"");
     Exceptions::amanzi_throw(mesg);
   }
   return;
@@ -623,8 +635,9 @@ void
 MeshLogical::get_set_entities_and_vofs(const std::string& setname,
                                        const Entity_kind kind,
                                        const Parallel_type ptype,
-                                       Entity_ID_List *entids,
-                                       std::vector<double> *vofs) const {
+                                       Entity_ID_List* entids,
+                                       std::vector<double>* vofs) const
+{
   get_set_entities(setname, kind, ptype, entids);
   return;
 }
@@ -632,7 +645,8 @@ MeshLogical::get_set_entities_and_vofs(const std::string& setname,
 
 // Miscellaneous functions
 void
-MeshLogical::write_to_exodus_file(const std::string filename) const {
+MeshLogical::write_to_exodus_file(const std::string filename) const
+{
   // don't know how to do this! FIXME! --etc
 }
 
@@ -640,8 +654,9 @@ MeshLogical::write_to_exodus_file(const std::string filename) const {
 // Geometry
 int
 MeshLogical::compute_cell_geometry_(const Entity_ID cellid,
-        double *volume,
-        AmanziGeometry::Point *centroid) const {
+                                    double* volume,
+                                    AmanziGeometry::Point* centroid) const
+{
   // this is a placeholder, these cannot be recomputed
   if (volume) *volume = cell_volumes_[cellid];
 
@@ -657,11 +672,11 @@ MeshLogical::compute_cell_geometry_(const Entity_ID cellid,
 
 
 int
-MeshLogical::compute_face_geometry_(
-    const Entity_ID faceid,
-    double *area,
-    AmanziGeometry::Point *centroid,
-    std::vector<AmanziGeometry::Point> *normals) const {
+MeshLogical::compute_face_geometry_(const Entity_ID faceid,
+                                    double* area,
+                                    AmanziGeometry::Point* centroid,
+                                    std::vector<AmanziGeometry::Point>* normals) const
+{
   // this is a placeholder, these cannot be recomputed
   if (area) *area = face_areas_[faceid];
   if (centroid) *centroid = AmanziGeometry::Point();
@@ -674,11 +689,11 @@ MeshLogical::compute_face_geometry_(
 // is implemented in each mesh framework. The results are cached in
 // the base class
 void
-MeshLogical::cell_get_faces_and_dirs_internal_(
-    const Entity_ID cellid,
-    Entity_ID_List *faceids,
-    std::vector<int> *face_dirs,
-    const bool ordered) const {
+MeshLogical::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
+                                               Entity_ID_List* faceids,
+                                               std::vector<int>* face_dirs,
+                                               const bool ordered) const
+{
   Errors::Message mesg("DEVELOPER ERROR: cell_get_faces_and_dirs_internal_() should not be called");
   Exceptions::amanzi_throw(mesg);
 }
@@ -689,7 +704,8 @@ MeshLogical::cell_get_faces_and_dirs_internal_(
 void
 MeshLogical::face_get_cells_internal_(const Entity_ID faceid,
                                       const Parallel_type ptype,
-                                      Entity_ID_List *cellids) const {
+                                      Entity_ID_List* cellids) const
+{
   Errors::Message mesg("DEVELOPER ERROR: face_get_cells_internal_() should not be called");
   Exceptions::amanzi_throw(mesg);
 }
@@ -698,11 +714,11 @@ MeshLogical::face_get_cells_internal_(const Entity_ID faceid,
 // edges of a face - this function is implemented in each mesh
 // framework. The results are cached in the base class
 void
-MeshLogical::face_get_edges_and_dirs_internal_(
-    const Entity_ID faceid,
-    Entity_ID_List *edgeids,
-    std::vector<int> *edge_dirs,
-    const bool ordered) const {
+MeshLogical::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
+                                               Entity_ID_List* edgeids,
+                                               std::vector<int>* edge_dirs,
+                                               const bool ordered) const
+{
   Errors::Message mesg("No edges in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -711,15 +727,16 @@ MeshLogical::face_get_edges_and_dirs_internal_(
 // edges of a cell - this function is implemented in each mesh
 // framework. The results are cached in the base class.
 void
-MeshLogical::cell_get_edges_internal_(const Entity_ID cellid,
-                                      Entity_ID_List *edgeids) const {
+MeshLogical::cell_get_edges_internal_(const Entity_ID cellid, Entity_ID_List* edgeids) const
+{
   Errors::Message mesg("No edges in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
 
 
 int
-MeshLogical::build_columns_() const {
+MeshLogical::build_columns_() const
+{
   Errors::Message mesg("No columns are buildable in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
   return -1;
@@ -729,17 +746,17 @@ MeshLogical::build_columns_() const {
 //
 // Note this works on Mesh, but is less useful for a general mesh
 // --------------------------------------------------------------------------------
-bool viewMeshLogical(const Mesh& m, std::ostream& os) {
-  if (m.get_comm()->NumProc() != 1) {
-    return true;
-  }
+bool
+viewMeshLogical(const Mesh& m, std::ostream& os)
+{
+  if (m.get_comm()->NumProc() != 1) { return true; }
 
   os << "cell_centroids, volumes =" << std::endl;
-  for (int c=0; c!=m.num_entities(CELL, Parallel_type::OWNED); ++c) {
+  for (int c = 0; c != m.num_entities(CELL, Parallel_type::OWNED); ++c) {
     os << m.cell_centroid(c) << " " << m.cell_volume(c) << std::endl;
   }
   os << "face_connections, areas =" << std::endl;
-  for (int f=0; f!=m.num_entities(FACE, Parallel_type::OWNED); ++f) {
+  for (int f = 0; f != m.num_entities(FACE, Parallel_type::OWNED); ++f) {
     AmanziMesh::Entity_ID_List fcells;
     m.face_get_cells(f, Parallel_type::ALL, &fcells);
     for (auto c : fcells) os << c << " ";
@@ -758,10 +775,8 @@ bool viewMeshLogical(const Mesh& m, std::ostream& os) {
   }
 
   return false;
-  
 }
-  
 
 
-}  // namespace AmanziMesh
-}  // namespace Amanzi
+} // namespace AmanziMesh
+} // namespace Amanzi

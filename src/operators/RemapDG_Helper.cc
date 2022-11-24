@@ -26,14 +26,10 @@ namespace Operators {
 /* *****************************************************************
 * Initialization of remap: operarot and face velocity.
 ***************************************************************** */
-RemapDG_Helper::RemapDG_Helper(
-    const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
-    const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
-    Teuchos::ParameterList& plist) 
-  : mesh0_(mesh0),
-    mesh1_(mesh1),
-    dim_(mesh0->space_dimension()),
-    plist_(plist)
+RemapDG_Helper::RemapDG_Helper(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
+                               const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
+                               Teuchos::ParameterList& plist)
+  : mesh0_(mesh0), mesh1_(mesh1), dim_(mesh0->space_dimension()), plist_(plist)
 {
   // mesh data
   ncells_owned_ = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -47,14 +43,12 @@ RemapDG_Helper::RemapDG_Helper(
   }
 
   auto& pklist = plist_.sublist("PK operator");
-  order_ = pklist.sublist("flux operator")
-                 .sublist("schema").template get<int>("method order");
+  order_ = pklist.sublist("flux operator").sublist("schema").template get<int>("method order");
 
   // other control variable
   bc_type_ = OPERATOR_BC_NONE;
   std::string name = pklist.template get<std::string>("boundary conditions");
-  if (name == "remove")
-    bc_type_ = OPERATOR_BC_REMOVE;
+  if (name == "remove") bc_type_ = OPERATOR_BC_REMOVE;
 
   // initialize limiter
   auto limlist = plist_.sublist("limiter");
@@ -75,7 +69,8 @@ RemapDG_Helper::RemapDG_Helper(
 /* *****************************************************************
 * Initialization of operators
 ***************************************************************** */
-void RemapDG_Helper::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
+void
+RemapDG_Helper::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 {
   dg_ = dg;
 
@@ -89,7 +84,7 @@ void RemapDG_Helper::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal>
   oplist = plist_.sublist("PK operator").sublist("advection operator");
   op_adv_ = Teuchos::rcp(new PDE_Abstract(oplist, global_op));
 
-  // create left-hand side operator 
+  // create left-hand side operator
   oplist = plist_.sublist("PK operator").sublist("reaction operator");
   op_reac_ = Teuchos::rcp(new PDE_Reaction(oplist, mesh0_));
 
@@ -97,7 +92,7 @@ void RemapDG_Helper::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal>
   int nk = WhetStone::PolynomialSpaceDimension(dim_, order_);
   auto bc = Teuchos::rcp(new BCs(mesh0_, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
-  std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
+  std::vector<std::vector<double>>& bc_value = bc->bc_value_vector(nk);
 
   const auto& fmap = mesh0_->face_map(true);
   const auto& bmap = mesh0_->exterior_face_map(true);
@@ -124,22 +119,19 @@ void RemapDG_Helper::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal>
 /* *****************************************************************
 * Initialization of static edge and face velocities
 ***************************************************************** */
-void RemapDG_Helper::StaticEdgeFaceVelocities()
+void
+RemapDG_Helper::StaticEdgeFaceVelocities()
 {
   auto map_list = plist_.sublist("maps");
   WhetStone::MeshMapsFactory maps_factory;
   maps_ = maps_factory.Create(map_list, mesh0_, mesh1_);
 
   velf_vec_.resize(nfaces_wghost_);
-  for (int f = 0; f < nfaces_wghost_; ++f) {
-    maps_->VelocityFace(f, velf_vec_[f]);
-  }
+  for (int f = 0; f < nfaces_wghost_; ++f) { maps_->VelocityFace(f, velf_vec_[f]); }
 
   if (mesh0_->valid_edges()) {
     vele_vec_.resize(nedges_wghost_);
-    for (int e = 0; e < nedges_wghost_; ++e) {
-      maps_->VelocityEdge(e, vele_vec_[e]);
-    }
+    for (int e = 0; e < nedges_wghost_; ++e) { maps_->VelocityEdge(e, vele_vec_[e]); }
   }
 }
 
@@ -147,7 +139,8 @@ void RemapDG_Helper::StaticEdgeFaceVelocities()
 /* *****************************************************************
 * Initialization of the constant cell velocity
 ***************************************************************** */
-void RemapDG_Helper::StaticCellVelocity()
+void
+RemapDG_Helper::StaticCellVelocity()
 {
   WhetStone::Entity_ID_List edges;
   uc_.resize(ncells_owned_);
@@ -157,18 +150,14 @@ void RemapDG_Helper::StaticCellVelocity()
     const auto& faces = mesh0_->cell_get_faces(c);
 
     std::vector<WhetStone::VectorPolynomial> vve, vvf;
-    for (int n = 0; n < faces.size(); ++n) {
-      vvf.push_back(velf_vec_[faces[n]]);
-    }
+    for (int n = 0; n < faces.size(); ++n) { vvf.push_back(velf_vec_[faces[n]]); }
 
     // edges are included in 3D only
     if (dim_ == 3) {
       mesh0_->cell_get_edges(c, &edges);
 
-      for (int n = 0; n < edges.size(); ++n) {
-        vve.push_back(vele_vec_[edges[n]]);
-      }
-    } 
+      for (int n = 0; n < edges.size(); ++n) { vve.push_back(vele_vec_[edges[n]]); }
+    }
 
     maps_->VelocityCell(c, vve, vvf, uc_[c]);
   }
@@ -178,7 +167,8 @@ void RemapDG_Helper::StaticCellVelocity()
 /* *****************************************************************
 * Initialization of space-time co-velocity v = u * (j J^{-t} N)
 ***************************************************************** */
-void RemapDG_Helper::StaticFaceCoVelocity()
+void
+RemapDG_Helper::StaticFaceCoVelocity()
 {
   WhetStone::VectorSpaceTimePolynomial cn;
   for (int f = 0; f < nfaces_wghost_; ++f) {
@@ -187,9 +177,9 @@ void RemapDG_Helper::StaticFaceCoVelocity()
 
     for (int i = 0; i < dim_; ++i) {
       map[i][0].Reshape(dim_, std::max(1, order_), true);
-      map[i][0](1, i) = 1.0;        // map = x
+      map[i][0](1, i) = 1.0; // map = x
       map[i][0].set_origin(origin);
-      map[i][1] = velf_vec_[f][i];  // map = x + t * u
+      map[i][1] = velf_vec_[f][i]; // map = x + t * u
 
       tmp[i][0] = velf_vec_[f][i];
     }
@@ -203,7 +193,8 @@ void RemapDG_Helper::StaticFaceCoVelocity()
 /* *****************************************************************
 * Initialization of the constant cell velocity
 ***************************************************************** */
-void RemapDG_Helper::StaticCellCoVelocity()
+void
+RemapDG_Helper::StaticCellCoVelocity()
 {
   for (int c = 0; c < ncells_owned_; ++c) {
     WhetStone::MatrixPolynomial Jc;
@@ -218,7 +209,7 @@ void RemapDG_Helper::StaticCellCoVelocity()
       for (int j = 0; j < dim_; ++j) {
         Jt(i, j)[0].Reshape(dim_, 0, true);
         Jt(i, j)[0].set_origin(origin);
-        Jt(i, j)[1] = Jc(i, j);  // Jt = 1 + t * J
+        Jt(i, j)[1] = Jc(i, j); // Jt = 1 + t * J
       }
       Jt(i, i)[0](0) = 1.0;
       tmp[i][0] = uc_[c][i];
@@ -237,7 +228,8 @@ void RemapDG_Helper::StaticCellCoVelocity()
 /* *****************************************************************
 * Limit non-conservative field x
 ***************************************************************** */
-void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
+void
+RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
 {
   auto& x_c = *x.ViewComponent("cell", true);
   int nk = x_c.NumVectors();
@@ -250,15 +242,12 @@ void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
   for (int c = 0; c < ncells_owned_; ++c) {
     if (smoothness_ == "high order term" && order_ > 1) {
       double honorm(0.0);
-      for (int i = dim_ + 1; i < nk; ++i)
-        honorm += x_c[i][c] * x_c[i][c];
+      for (int i = dim_ + 1; i < nk; ++i) honorm += x_c[i][c] * x_c[i][c];
 
       double xnorm = honorm;
-      for (int i = 0; i <= dim_; ++i)
-        xnorm += x_c[i][c] * x_c[i][c];
+      for (int i = 0; i <= dim_; ++i) xnorm += x_c[i][c] * x_c[i][c];
 
-      if (xnorm > 0.0 && std::log10(honorm / xnorm) > threshold)
-        ids.push_back(c);
+      if (xnorm > 0.0 && std::log10(honorm / xnorm) > threshold) ids.push_back(c);
     } else {
       ids.push_back(c);
     }
@@ -276,7 +265,7 @@ void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
 
   if (limiter_->get_type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG ||
       limiter_->get_type() == OPERATOR_LIMITER_MICHALAK_GOOCH_DG ||
-      limiter_->get_type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL) { 
+      limiter_->get_type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL) {
     limiter_->ApplyLimiterDG(ids, x.ViewComponent("cell", true), *dg_, bc_model, bc_value);
   } else {
     // -- create gradient in the natural basis
@@ -317,6 +306,5 @@ void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
   }
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
+} // namespace Operators
+} // namespace Amanzi

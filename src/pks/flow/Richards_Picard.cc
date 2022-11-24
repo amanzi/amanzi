@@ -24,16 +24,17 @@ namespace Flow {
 * relative permeabilities do not depend explicitly on time.
 * This is the experimental method.                                                 
 ****************************************************************** */
-int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
+int
+Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 {
   std::vector<int>& bc_model = op_bc_->bc_model();
 
   // create verbosity object
-  VerboseObject* vo = new VerboseObject("Amanzi::Picard", *fp_list_); 
+  VerboseObject* vo = new VerboseObject("Amanzi::Picard", *fp_list_);
 
-  CompositeVector  solution_old(*solution);
+  CompositeVector solution_old(*solution);
   CompositeVector& solution_new = *solution;
-  CompositeVector  residual(*solution);
+  CompositeVector residual(*solution);
 
   Epetra_MultiVector& pold_cell = *solution_old.ViewComponent("cell");
   Epetra_MultiVector& pnew_cell = *solution_new.ViewComponent("cell");
@@ -47,8 +48,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
   // update steady state source conditions
   for (int i = 0; i < srcs.size(); ++i) {
-    srcs[i]->Compute(time, time); 
-    srcs[i]->ComputeSubmodel(aperture_key_, *S_); 
+    srcs[i]->Compute(time, time);
+    srcs[i]->ComputeSubmodel(aperture_key_, *S_);
   }
 
   std::string linear_solver = plist.get<std::string>("linear solver");
@@ -56,7 +57,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
   AmanziSolvers::setMakeOneIterationCriteria(lin_solve_list);
   auto solver = AmanziSolvers::createIterativeMethod(lin_solve_list, op_preconditioner_);
   solver->InitializeInverse();
-  
+
   Teuchos::ParameterList& tmp_list = plist.sublist("picard parameters");
   int max_itrs_nonlinear = tmp_list.get<int>("maximum number of iterations", 400);
   double residual_tol_nonlinear = tmp_list.get<double>("convergence tolerance", 1e-8);
@@ -81,15 +82,15 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     pressure_eval_->SetChanged();
     auto& alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
     S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
-  
+
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
     upwind_->Compute(*vol_flowrate_copy, *solution, bc_model, *alpha_upwind_);
 
-    // -- derivative 
+    // -- derivative
     S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
     auto& alpha_dP = S_->GetDerivativeW<CompositeVector>(
-        alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
+      alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
@@ -98,10 +99,12 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     // create algebraic problem (matrix = preconditioner)
     op_preconditioner_->Init();
     op_preconditioner_diff_->UpdateMatrices(vol_flowrate_copy.ptr(), solution.ptr());
-    op_preconditioner_diff_->UpdateMatricesNewtonCorrection(vol_flowrate_copy.ptr(), Teuchos::null, molar_rho_);
+    op_preconditioner_diff_->UpdateMatricesNewtonCorrection(
+      vol_flowrate_copy.ptr(), Teuchos::null, molar_rho_);
     op_preconditioner_diff_->ApplyBCs(true, true, true);
 
-    Teuchos::RCP<CompositeVector> rhs = op_preconditioner_->rhs();  // export RHS from the matrix class
+    Teuchos::RCP<CompositeVector> rhs =
+      op_preconditioner_->rhs(); // export RHS from the matrix class
     AddSourceTerms(*rhs, 1.0);
 
     // update inverse
@@ -124,8 +127,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
     if (vo->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo->getOSTab();
-      *(vo->os()) << itrs << ": ||r||=" << L2error << " relax=" << relaxation 
-                  << " lin_solver(" << linear_residual << ", " << num_itrs_linear << ")" << std::endl;
+      *(vo->os()) << itrs << ": ||r||=" << L2error << " relax=" << relaxation << " lin_solver("
+                  << linear_residual << ", " << num_itrs_linear << ")" << std::endl;
     }
 
     solution_new.Update(1.0 - relaxation, solution_old, relaxation);
@@ -142,9 +145,10 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Calculate relaxation factor.                                                       
 ****************************************************************** */
-double Richards_PK::CalculateRelaxationFactor(const Epetra_MultiVector& uold,
-                                              const Epetra_MultiVector& unew)
-{ 
+double
+Richards_PK::CalculateRelaxationFactor(const Epetra_MultiVector& uold,
+                                       const Epetra_MultiVector& unew)
+{
   double relaxation = 1.0;
   double patm = S_->Get<double>("atmospheric_pressure");
 
@@ -166,12 +170,11 @@ double Richards_PK::CalculateRelaxationFactor(const Epetra_MultiVector& uold,
 
 #ifdef HAVE_MPI
   double relaxation_tmp = relaxation;
-  mesh_->get_comm()->MinAll(&relaxation_tmp, &relaxation, 1);  // find the global minimum
+  mesh_->get_comm()->MinAll(&relaxation_tmp, &relaxation, 1); // find the global minimum
 #endif
 
   return relaxation;
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
-
+} // namespace Flow
+} // namespace Amanzi

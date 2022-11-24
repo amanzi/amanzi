@@ -13,9 +13,10 @@
 
 using namespace Amanzi;
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   return UnitTest::RunAllTests();
 }
 
@@ -51,13 +52,13 @@ TEST(Grid2D_cell)
   FunctionColorFactory factory;
   std::string infile("test/ColorFunc2Cell.txt");
   auto f = factory.Create(infile, comm);
-  double x1[2] = {2.0, 1.0};
+  double x1[2] = { 2.0, 1.0 };
   CHECK_EQUAL(30, (*f)(x1));
-  double x2[2] = {0.0, 2.0};
+  double x2[2] = { 0.0, 2.0 };
   CHECK_EQUAL(40, (*f)(x2));
-  double x3[2] = {0.0, 1.0};
+  double x3[2] = { 0.0, 1.0 };
   CHECK_EQUAL(10, (*f)(x3));
-  double x4[2] = {2.0, 2.0};
+  double x4[2] = { 2.0, 2.0 };
   CHECK_EQUAL(60, (*f)(x4));
 }
 
@@ -67,13 +68,13 @@ TEST(Grid2D_node)
   FunctionColorFactory factory;
   std::string infile("test/ColorFunc2Node.txt");
   auto f = factory.Create(infile, comm);
-  double x1[2] = {2.0, 1.0};
+  double x1[2] = { 2.0, 1.0 };
   CHECK_EQUAL(30, (*f)(x1));
-  double x2[2] = {0.0, 2.0};
+  double x2[2] = { 0.0, 2.0 };
   CHECK_EQUAL(40, (*f)(x2));
-  double x3[2] = {0.0, 1.0};
+  double x3[2] = { 0.0, 1.0 };
   CHECK_EQUAL(10, (*f)(x3));
-  double x4[2] = {2.0, 2.0};
+  double x4[2] = { 2.0, 2.0 };
   CHECK_EQUAL(60, (*f)(x4));
 }
 
@@ -84,13 +85,13 @@ TEST(Grid3D_cell)
   std::string infile("test/ColorFunc3Cell.txt");
   auto f = factory.Create(infile, comm);
   // check some random locations
-  double x1[3] = {2.0, 1.0, 3.0};
+  double x1[3] = { 2.0, 1.0, 3.0 };
   CHECK_EQUAL(213, (*f)(x1));
-  double x2[3] = {2.0, 2.0, 0.0};
+  double x2[3] = { 2.0, 2.0, 0.0 };
   CHECK_EQUAL(220, (*f)(x2));
-  double x3[3] = {3.0, 1.0, 1.0};
+  double x3[3] = { 3.0, 1.0, 1.0 };
   CHECK_EQUAL(311, (*f)(x3));
-  double x4[3] = {3.0, 3.0, 3.0};
+  double x4[3] = { 3.0, 3.0, 3.0 };
   CHECK_EQUAL(333, (*f)(x4));
 }
 
@@ -101,12 +102,12 @@ TEST(Grid3D_node)
   std::string infile("test/ColorFunc3Node.txt");
   auto f = factory.Create(infile, comm);
   // check some random locations
-  double x1[3] = {2.0, 1.0, 3.0};
+  double x1[3] = { 2.0, 1.0, 3.0 };
   CHECK_EQUAL(213, (*f)(x1));
-  double x2[3] = {2.0, 2.0, 0.0};
+  double x2[3] = { 2.0, 2.0, 0.0 };
   CHECK_EQUAL(220, (*f)(x2));
-  double x3[3] = {3.0, 1.0, 1.0};
+  double x3[3] = { 3.0, 1.0, 1.0 };
   CHECK_EQUAL(311, (*f)(x3));
-  double x4[3] = {3.0, 3.0, 3.0};
+  double x4[3] = { 3.0, 3.0, 3.0 };
   CHECK_EQUAL(333, (*f)(x4));
 }

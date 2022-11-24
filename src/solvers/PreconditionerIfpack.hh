@@ -104,20 +104,17 @@ namespace AmanziSolvers {
 
 class PreconditionerIfpack : public Preconditioner {
  public:
-  PreconditionerIfpack() :
-      Preconditioner(),
-      initialized_(false) {};
+  PreconditionerIfpack() : Preconditioner(), initialized_(false){};
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final;
   virtual void InitializeInverse() override final;
   virtual void ComputeInverse() override final;
 
-  virtual int ApplyInverse(const Epetra_Vector& v,
-                             Epetra_Vector& hv) const override final;
+  virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;
 
   virtual int returned_code() const override final { return returned_code_; }
   virtual std::string returned_code_string() const override final;
-  
+
  private:
   Teuchos::ParameterList plist_;
   Teuchos::RCP<Ifpack_Preconditioner> IfpILU_;
@@ -127,9 +124,8 @@ class PreconditionerIfpack : public Preconditioner {
   mutable int returned_code_;
 };
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
-
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 
 #endif

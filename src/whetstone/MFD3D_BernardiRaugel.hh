@@ -33,7 +33,7 @@ class MFD3D_BernardiRaugel : public MFD3D {
  public:
   MFD3D_BernardiRaugel(const Teuchos::ParameterList& plist,
                        const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-    : MFD3D(mesh) {};
+    : MFD3D(mesh){};
 
   // required methods
   // -- schemas
@@ -45,14 +45,14 @@ class MFD3D_BernardiRaugel : public MFD3D {
 
   // -- other matrices
   virtual int DivergenceMatrix(int c, DenseMatrix& A) override;
-  virtual int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A) override;
+  virtual int
+  AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A) override;
 
  private:
   static RegisteredFactory<MFD3D_BernardiRaugel> factory_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

@@ -21,30 +21,39 @@ namespace Operators {
 class LimiterCellDG : public LimiterCell {
  public:
   LimiterCellDG(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh);
-  ~LimiterCellDG() {};
+  ~LimiterCellDG(){};
 
   void ApplyLimiterDG(const AmanziMesh::Entity_ID_List& ids,
-                      Teuchos::RCP<const Epetra_MultiVector> field, const WhetStone::DG_Modal& dg,
-                      const std::vector<int>& bc_model, const std::vector<double>& bc_value);
+                      Teuchos::RCP<const Epetra_MultiVector> field,
+                      const WhetStone::DG_Modal& dg,
+                      const std::vector<int>& bc_model,
+                      const std::vector<double>& bc_value);
 
-  void ApplyLimiterDG(Teuchos::RCP<const Epetra_MultiVector> field, const WhetStone::DG_Modal& dg,
-                      const std::vector<int>& bc_model, const std::vector<double>& bc_value) {
+  void ApplyLimiterDG(Teuchos::RCP<const Epetra_MultiVector> field,
+                      const WhetStone::DG_Modal& dg,
+                      const std::vector<int>& bc_model,
+                      const std::vector<double>& bc_value)
+  {
     AmanziMesh::Entity_ID_List ids(ncells_owned_);
     for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
-    ApplyLimiterDG(ids, field, dg, bc_model, bc_value); 
+    ApplyLimiterDG(ids, field, dg, bc_model, bc_value);
   }
 
  private:
-  void LimiterScalarDG_(
-      const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value, double (*)(double));
+  void LimiterScalarDG_(const WhetStone::DG_Modal& dg,
+                        const AmanziMesh::Entity_ID_List& ids,
+                        const std::vector<int>& bc_model,
+                        const std::vector<double>& bc_value,
+                        double (*)(double));
 
-  void LimiterHierarchicalDG_(
-      const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value, double (*)(double));
+  void LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
+                              const AmanziMesh::Entity_ID_List& ids,
+                              const std::vector<int>& bc_model,
+                              const std::vector<double>& bc_value,
+                              double (*)(double));
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif

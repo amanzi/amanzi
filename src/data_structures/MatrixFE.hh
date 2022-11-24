@@ -24,14 +24,14 @@ class Epetra_SerialDenseMatrix;
 
 namespace Amanzi {
 
-namespace WhetStone { class DenseMatrix; }
+namespace WhetStone {
+class DenseMatrix;
+}
 
 namespace Operators {
 
 class MatrixFE {
-
  public:
-
   // Constructor
   MatrixFE(const Teuchos::RCP<const GraphFE>& graph);
 
@@ -58,41 +58,52 @@ class MatrixFE {
   int Zero();
 
   // fill graph
-  int SumIntoMyValues(int row, int count, const double *values, const int *indices);
+  int SumIntoMyValues(int row, int count, const double* values, const int* indices);
 
-  int SumIntoMyValues(const int *indices, const Epetra_SerialDenseMatrix& vals) {
-    return SumIntoMyValues(indices,indices,vals);
+  int SumIntoMyValues(const int* indices, const Epetra_SerialDenseMatrix& vals)
+  {
+    return SumIntoMyValues(indices, indices, vals);
   }
-  int SumIntoMyValues(const int *row_indices, const int *col_indices,
+  int SumIntoMyValues(const int* row_indices,
+                      const int* col_indices,
                       const Epetra_SerialDenseMatrix& vals);
-  int SumIntoMyValues_Transposed(const int *indices, const Epetra_SerialDenseMatrix& vals) {
-    return SumIntoMyValues_Transposed(indices,indices,vals);
-  }
-  int SumIntoMyValues_Transposed(const int *row_indices, const int *col_indices,
-          const Epetra_SerialDenseMatrix& vals);
-
-  int SumIntoMyValues(const int *indices, const Teuchos::SerialDenseMatrix<int,double>& vals) {
-    return SumIntoMyValues(indices, indices, vals);
-  }
-  int SumIntoMyValues(const int *row_inds, const int *col_inds,
-                      const Teuchos::SerialDenseMatrix<int,double>& vals);
-  int SumIntoMyValues_Transposed(const int *indices, const Teuchos::SerialDenseMatrix<int,double>& vals) {
+  int SumIntoMyValues_Transposed(const int* indices, const Epetra_SerialDenseMatrix& vals)
+  {
     return SumIntoMyValues_Transposed(indices, indices, vals);
   }
-  int SumIntoMyValues_Transposed(const int *row_inds, const int *col_inds,
-          const Teuchos::SerialDenseMatrix<int,double>& vals);
+  int SumIntoMyValues_Transposed(const int* row_indices,
+                                 const int* col_indices,
+                                 const Epetra_SerialDenseMatrix& vals);
 
-  int SumIntoMyValues(const int *indices, const WhetStone::DenseMatrix& vals) {
+  int SumIntoMyValues(const int* indices, const Teuchos::SerialDenseMatrix<int, double>& vals)
+  {
     return SumIntoMyValues(indices, indices, vals);
   }
-  int SumIntoMyValues(const int *row_inds, const int *col_inds,
-                      const WhetStone::DenseMatrix& vals);
-  int SumIntoMyValues_Transposed(const int *indices, const WhetStone::DenseMatrix& vals) {
+  int SumIntoMyValues(const int* row_inds,
+                      const int* col_inds,
+                      const Teuchos::SerialDenseMatrix<int, double>& vals);
+  int SumIntoMyValues_Transposed(const int* indices,
+                                 const Teuchos::SerialDenseMatrix<int, double>& vals)
+  {
     return SumIntoMyValues_Transposed(indices, indices, vals);
   }
-  int SumIntoMyValues_Transposed(const int *row_inds, const int *col_inds,
-          const WhetStone::DenseMatrix& vals);
-  
+  int SumIntoMyValues_Transposed(const int* row_inds,
+                                 const int* col_inds,
+                                 const Teuchos::SerialDenseMatrix<int, double>& vals);
+
+  int SumIntoMyValues(const int* indices, const WhetStone::DenseMatrix& vals)
+  {
+    return SumIntoMyValues(indices, indices, vals);
+  }
+  int SumIntoMyValues(const int* row_inds, const int* col_inds, const WhetStone::DenseMatrix& vals);
+  int SumIntoMyValues_Transposed(const int* indices, const WhetStone::DenseMatrix& vals)
+  {
+    return SumIntoMyValues_Transposed(indices, indices, vals);
+  }
+  int SumIntoMyValues_Transposed(const int* row_inds,
+                                 const int* col_inds,
+                                 const WhetStone::DenseMatrix& vals);
+
   // hack the diagonal
   int DiagonalShift(double shift);
 
@@ -104,24 +115,22 @@ class MatrixFE {
   // flag, and only having issues when you try to both Sum and Insert without
   // FillComplete called between, but I don't see a need for this
   // functionality.  If you do, ask. --etc
-  int InsertMyValues(int row, int count, const double *values, const int *indices);
-  int ExtractMyRowCopy(int row, int size, int& count, double *values, int *indices) const;
-  
+  int InsertMyValues(int row, int count, const double* values, const int* indices);
+  int ExtractMyRowCopy(int row, int size, int& count, double* values, int* indices) const;
+
   // finish fill
   int FillComplete();
 
  protected:
-
   Teuchos::RCP<const GraphFE> graph_;
   Teuchos::RCP<Epetra_CrsMatrix> matrix_;
-  Teuchos::RCP<Epetra_CrsMatrix> offproc_matrix_;  
+  Teuchos::RCP<Epetra_CrsMatrix> offproc_matrix_;
 
   int n_owned_;
   int n_used_;
-  
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif

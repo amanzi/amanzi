@@ -37,7 +37,7 @@ class Function {
  public:
   virtual ~Function() {}
   virtual std::unique_ptr<Function> Clone() const = 0;
-  virtual double operator()(const std::vector<double>& ) const = 0;
+  virtual double operator()(const std::vector<double>&) const = 0;
 };
 
 } // namespace Amanzi

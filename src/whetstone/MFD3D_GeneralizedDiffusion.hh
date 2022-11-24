@@ -27,11 +27,11 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_GeneralizedDiffusion : public MFD3D { 
+class MFD3D_GeneralizedDiffusion : public MFD3D {
  public:
   MFD3D_GeneralizedDiffusion(const Teuchos::ParameterList& plist,
                              const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-    : MFD3D(mesh) {};
+    : MFD3D(mesh){};
 
   // required member functions
   // -- schema for this element
@@ -39,11 +39,11 @@ class MFD3D_GeneralizedDiffusion : public MFD3D {
 
   // -- mass matrices
   int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override; 
-  int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& M); 
+  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override;
+  int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& M);
 
   int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) override; 
+  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) override;
 
   // -- stiffness matrices
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
@@ -52,16 +52,16 @@ class MFD3D_GeneralizedDiffusion : public MFD3D {
   virtual int DivergenceMatrix(int c, DenseMatrix& A) override;
 
  private:
-  void CurvedFaceGeometry_(int f, int dirs,
-                           std::vector<AmanziGeometry::Point>& vv, 
+  void CurvedFaceGeometry_(int f,
+                           int dirs,
+                           std::vector<AmanziGeometry::Point>& vv,
                            std::vector<AmanziGeometry::Point>& xm);
 
  private:
   static RegisteredFactory<MFD3D_GeneralizedDiffusion> factory_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

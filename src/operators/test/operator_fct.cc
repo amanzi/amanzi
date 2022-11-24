@@ -34,31 +34,37 @@
 #include "OperatorDefs.hh"
 #include "ReconstructionCellLinear.hh"
 
-double fun_field(const Amanzi::AmanziGeometry::Point& p) {
- int d = p.dim();
- double x = p[0];
- double y = p[1];
- if (d == 2) return x*x*y + 2*x*y*y*y;
+double
+fun_field(const Amanzi::AmanziGeometry::Point& p)
+{
+  int d = p.dim();
+  double x = p[0];
+  double y = p[1];
+  if (d == 2) return x * x * y + 2 * x * y * y * y;
 
- double z = p[2];
- return x*x*y + 2*x*y*y*y + 3*x*x*y*y*z*z;
+  double z = p[2];
+  return x * x * y + 2 * x * y * y * y + 3 * x * x * y * y * z * z;
 }
 
-Amanzi::AmanziGeometry::Point fun_velocity(const Amanzi::AmanziGeometry::Point& p) {
- int d = p.dim();
- double x = p[0];
- double y = p[1];
- if (d == 2) return Amanzi::AmanziGeometry::Point(2*x, -2*y);  // divergence-free
+Amanzi::AmanziGeometry::Point
+fun_velocity(const Amanzi::AmanziGeometry::Point& p)
+{
+  int d = p.dim();
+  double x = p[0];
+  double y = p[1];
+  if (d == 2) return Amanzi::AmanziGeometry::Point(2 * x, -2 * y); // divergence-free
 
- double z = p[2];
- return Amanzi::AmanziGeometry::Point(2*x, 2*y, -4*z);
+  double z = p[2];
+  return Amanzi::AmanziGeometry::Point(2 * x, 2 * y, -4 * z);
 }
 
 
 /* *****************************************************************
 * Flux corrected transport in 2D
 ***************************************************************** */
-std::pair<double, double> RunTest(int n, int d) {
+std::pair<double, double>
+RunTest(int n, int d)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -68,10 +74,10 @@ std::pair<double, double> RunTest(int n, int d) {
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
-  Teuchos::RCP<const Mesh> mesh = (d == 2) ? 
-      meshfactory.create(0.0, 0.0, 1.0, 1.0, n, n) :
-      meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  Teuchos::RCP<const Mesh> mesh = (d == 2) ?
+                                    meshfactory.create(0.0, 0.0, 1.0, 1.0, n, n) :
+                                    meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
 
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
@@ -113,14 +119,13 @@ std::pair<double, double> RunTest(int n, int d) {
     if (cells.size() == 2) {
       const auto& xf = mesh->face_centroid(f);
       const auto& normal = mesh->face_normal(f, false, cells[0], &dir);
-      const auto& xc = (dir == 1) ? mesh->cell_centroid(cells[0])
-                                  : mesh->cell_centroid(cells[1]);
+      const auto& xc = (dir == 1) ? mesh->cell_centroid(cells[0]) : mesh->cell_centroid(cells[1]);
 
       // low-order and high-order fluxes are from 1st to 2nd cell
       double tmp = (fun_velocity(xf) * normal) * dt;
       velocity_f[0][f] = tmp * dir;
- 
-      flux_lo_f[0][f] = tmp * fun_field(xc);  // default upwind
+
+      flux_lo_f[0][f] = tmp * fun_field(xc); // default upwind
       flux_ho_f[0][f] = tmp * fun_field(xf);
 
       flux_exact_f[0][f] = flux_ho_f[0][f];
@@ -134,9 +139,8 @@ std::pair<double, double> RunTest(int n, int d) {
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-    if (fabs(xf[0]) < 1e-6 || fabs(1.0 - xf[0]) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(1.0 - xf[1]) < 1e-6 ||
-        fabs(xf[d]) < 1e-6 || fabs(1.0 - xf[d]) < 1e-6) {
+    if (fabs(xf[0]) < 1e-6 || fabs(1.0 - xf[0]) < 1e-6 || fabs(xf[1]) < 1e-6 ||
+        fabs(1.0 - xf[1]) < 1e-6 || fabs(xf[d]) < 1e-6 || fabs(1.0 - xf[d]) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = fun_field(xf);
     }
@@ -145,9 +149,9 @@ std::pair<double, double> RunTest(int n, int d) {
   // compute reconstruction
   Teuchos::ParameterList plist;
   plist.set<int>("polynomial_order", 1)
-       .set<bool>("limiter extension for transport", false)
-       .set<std::string>("limiter", "Barth-Jespersen")
-       .set<std::string>("limiter stencil", "cell to all cells");
+    .set<bool>("limiter extension for transport", false)
+    .set<std::string>("limiter", "Barth-Jespersen")
+    .set<std::string>("limiter stencil", "cell to all cells");
 
   auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh));
   lifting->Init(plist);
@@ -183,35 +187,37 @@ std::pair<double, double> RunTest(int n, int d) {
 }
 
 
-TEST(FCT_2D) {
+TEST(FCT_2D)
+{
   auto a1 = RunTest(10, 2);
   auto a2 = RunTest(20, 2);
   auto a3 = RunTest(40, 2);
 
-  std::vector<double> h({ 1.0/10, 1.0/20, 1.0/40 });
+  std::vector<double> h({ 1.0 / 10, 1.0 / 20, 1.0 / 40 });
   std::vector<double> err1({ a1.first, a2.first, a3.first });
   double rate = Amanzi::Utils::bestLSfit(h, err1);
-  CHECK(rate < 1.0); 
+  CHECK(rate < 1.0);
   std::cout << "\nError convergence rate: " << rate << std::endl;
 
   double err2 = std::max({ a1.second, a2.second, a3.second });
-  CHECK(err2 < 2.0e-4); 
+  CHECK(err2 < 2.0e-4);
   std::cout << "Deviation from high-order flux: " << err2 << std::endl << std::endl;
 }
 
 
-TEST(FCT_3D) {
-  auto a1 = RunTest( 8, 3);
+TEST(FCT_3D)
+{
+  auto a1 = RunTest(8, 3);
   auto a2 = RunTest(16, 3);
   auto a3 = RunTest(32, 3);
 
-  std::vector<double> h({ 1.0/8, 1.0/16, 1.0/32 });
+  std::vector<double> h({ 1.0 / 8, 1.0 / 16, 1.0 / 32 });
   std::vector<double> err1({ a1.first, a2.first, a3.first });
   double rate = Amanzi::Utils::bestLSfit(h, err1);
-  CHECK(rate > 1.0); 
+  CHECK(rate > 1.0);
   std::cout << "\nError convergence rate: " << rate << std::endl;
 
   double err2 = std::max({ a1.second, a2.second, a3.second });
-  CHECK(err2 < 2.0e-4); 
+  CHECK(err2 < 2.0e-4);
   std::cout << "Deviation from high-order flux: " << err2 << std::endl;
 }

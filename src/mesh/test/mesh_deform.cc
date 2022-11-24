@@ -40,30 +40,28 @@ TEST(MESH_DEFORM2D)
     std::cout << "Testing deformation with " << AmanziMesh::framework_names.at(frm) << std::endl;
 
     // Create the mesh
-    Teuchos::RCP<AmanziMesh::Mesh> mesh = createFrameworkStructuredUnitQuad({frm}, 10, 10, comm,
-            Teuchos::null, Teuchos::null, false, 10.0, 10.0);
+    Teuchos::RCP<AmanziMesh::Mesh> mesh = createFrameworkStructuredUnitQuad(
+      { frm }, 10, 10, comm, Teuchos::null, Teuchos::null, false, 10.0, 10.0);
 
     // Deform the mesh
     AmanziMesh::Entity_ID_List nodeids;
     AmanziGeometry::Point_List newpos, finpos;
 
-    int nnodes = mesh->num_entities(AmanziMesh::NODE,
-                                AmanziMesh::Parallel_type::OWNED);
+    int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
     for (int j = 0; j < nnodes; j++) {
       nodeids.push_back(j);
-      AmanziGeometry::Point oldcoord(2),newcoord(2);
-      mesh->node_get_coordinates(j,&oldcoord);
-      newcoord.set(oldcoord[0],0.5*oldcoord[1]);
+      AmanziGeometry::Point oldcoord(2), newcoord(2);
+      mesh->node_get_coordinates(j, &oldcoord);
+      newcoord.set(oldcoord[0], 0.5 * oldcoord[1]);
       newpos.push_back(newcoord);
     }
 
-    int status = mesh->deform(nodeids,newpos,false,&finpos);
-    CHECK_EQUAL(status,1);
+    int status = mesh->deform(nodeids, newpos, false, &finpos);
+    CHECK_EQUAL(status, 1);
 
     // If the deformation was successful, the cell volumes should be half
     // of what they were
-    int ncells = mesh->num_entities(AmanziMesh::CELL,
-                                    AmanziMesh::Parallel_type::ALL);
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
     for (int j = 0; j < ncells; j++) {
       double volume = mesh->cell_volume(j);
@@ -98,31 +96,28 @@ TEST(MESH_GENERATED_DEFORM3D)
     std::cout << "Testing deformation with " << AmanziMesh::framework_names.at(frm) << std::endl;
 
     // start with a mesh that will be deformed into the known mesh coordinates
-    auto mesh = createFrameworkStructuredUnitHex({frm}, 3, 3, 3,
-            comm, Teuchos::null, Teuchos::null, false, 1.0, 1.0, 2.0);
+    auto mesh = createFrameworkStructuredUnitHex(
+      { frm }, 3, 3, 3, comm, Teuchos::null, Teuchos::null, false, 1.0, 1.0, 2.0);
 
     // Deform the mesh
     AmanziMesh::Entity_ID_List nodeids;
     AmanziGeometry::Point_List newpos, finpos;
 
     int status = 0;
-    int nnodes = mesh->num_entities(AmanziMesh::NODE,
-            AmanziMesh::Parallel_type::OWNED);
+    int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
     for (int j = 0; j < nnodes; j++) {
       nodeids.push_back(j);
 
-      AmanziGeometry::Point oldcoord(3),newcoord(3);
-      mesh->node_get_coordinates(j,&oldcoord);
+      AmanziGeometry::Point oldcoord(3), newcoord(3);
+      mesh->node_get_coordinates(j, &oldcoord);
 
-      newcoord.set(oldcoord[0], oldcoord[1], oldcoord[2]/2.0);
+      newcoord.set(oldcoord[0], oldcoord[1], oldcoord[2] / 2.0);
       newpos.push_back(newcoord);
     }
     status = mesh->deform(nodeids, newpos, false, &finpos);
 
     // check geometry
     testMeshAudit<MeshAudit, Mesh>(mesh);
-    testGeometryCube<Mesh>(mesh, 3,3,3);
+    testGeometryCube<Mesh>(mesh, 3, 3, 3);
   }
 }
-
-

@@ -18,8 +18,7 @@
 namespace Amanzi {
 
 TimestepControllerFromFile::TimestepControllerFromFile(Teuchos::ParameterList& plist)
-  : TimestepController(plist),
-    current_(0)
+  : TimestepController(plist), current_(0)
 {
   std::string filename = plist.get<std::string>("file name");
   std::string header = plist.get<std::string>("timestep header", "timesteps");
@@ -32,7 +31,8 @@ TimestepControllerFromFile::TimestepControllerFromFile(Teuchos::ParameterList& p
 
 // single method for timestep control
 double
-TimestepControllerFromFile::get_timestep(double dt, int iterations) {
+TimestepControllerFromFile::get_timestep(double dt, int iterations)
+{
   double new_dt = -1.0;
   if (current_ == 0) {
     // the first request for a timestep is AFTER the first step is attempted
@@ -55,16 +55,17 @@ TimestepControllerFromFile::get_timestep(double dt, int iterations) {
       Errors::TimeStepCrash m("TimestepController: prescribed time step size failed.");
       Exceptions::amanzi_throw(m);
     } else if (current_ < dt_history_.size()) {
-      new_dt =  dt_history_[current_];
+      new_dt = dt_history_[current_];
       current_++;
     } else if (current_ == dt_history_.size()) {
       // the last step of the simulation still asks for a "next" dt prior to
       // finding out that the simulation is done.  Delay for a step and hope
       // the run ends.
-      new_dt = dt_history_[current_-1];
+      new_dt = dt_history_[current_ - 1];
       current_++;
     } else {
-      Errors::Message m("TimestepController: file contains insufficient number of timestep values.");
+      Errors::Message m(
+        "TimestepController: file contains insufficient number of timestep values.");
       Exceptions::amanzi_throw(m);
     }
   }

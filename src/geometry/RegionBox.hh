@@ -54,9 +54,9 @@ class RegionBox : public Region {
   // Default constructor uses two corner points (order not important).
   RegionBox(const std::string& name,
             const int id,
-            const Point& p0, 
+            const Point& p0,
             const Point& p1,
-            const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
+            const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
 
   // Get the first point defining the region
   const Point& point0() const { return p0_; }
@@ -69,7 +69,7 @@ class RegionBox : public Region {
 
   // Is the box degenerate - zero length in one or more directions and
   // if so in how many directions?
-  bool is_degenerate(int *ndeg) const;
+  bool is_degenerate(int* ndeg) const;
 
  private:
   Point p0_; // lower corner of the box

@@ -21,21 +21,22 @@ namespace Transport {
 /* ******************************************************************
 * Non-member factory.
 ****************************************************************** */
-Teuchos::RCP<MDMPartition> CreateMDMPartition(
-    Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    Teuchos::RCP<Teuchos::ParameterList> plist, bool& flag)
+Teuchos::RCP<MDMPartition>
+CreateMDMPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                   Teuchos::RCP<Teuchos::ParameterList> plist,
+                   bool& flag)
 {
   MDMFactory factory;
   Teuchos::RCP<MDM> mdm;
-  std::vector<Teuchos::RCP<MDM> > mdm_list;
-  std::vector<std::vector<std::string> > regions;
+  std::vector<Teuchos::RCP<MDM>> mdm_list;
+  std::vector<std::vector<std::string>> regions;
 
   flag = false;
   for (auto lcv = plist->begin(); lcv != plist->end(); ++lcv) {
     std::string name = lcv->first;
     if (plist->isSublist(name)) {
       Teuchos::ParameterList sublist = plist->sublist(name);
-      regions.push_back(sublist.get<Teuchos::Array<std::string> >("regions").toVector());
+      regions.push_back(sublist.get<Teuchos::Array<std::string>>("regions").toVector());
 
       mdm = factory.Create(sublist);
       mdm->set_dim(mesh->space_dimension());
@@ -53,6 +54,5 @@ Teuchos::RCP<MDMPartition> CreateMDMPartition(
   return Teuchos::rcp(new MDMPartition(partition, mdm_list));
 }
 
-}  // namespace Transport
-}  // namespace Amanzi
-
+} // namespace Transport
+} // namespace Amanzi

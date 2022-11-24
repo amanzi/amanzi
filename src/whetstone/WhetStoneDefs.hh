@@ -28,14 +28,10 @@ namespace WhetStone {
 enum class ProjectorType {
   L2,
   H1,
-  LS   // least square
+  LS // least square
 };
 
-enum class DOF_Type { SCALAR = 1,
-                      VECTOR,
-                      POINT,
-                      NORMAL_COMPONENT,
-                      MOMENT };
+enum class DOF_Type { SCALAR = 1, VECTOR, POINT, NORMAL_COMPONENT, MOMENT };
 
 #ifdef AMANZI_CODE
 typedef AmanziGeometry::Entity_ID Entity_ID;
@@ -54,20 +50,14 @@ const int BOUNDARY_FACE = AmanziMesh::BOUNDARY_FACE;
 typedef long long int Entity_ID;
 typedef std::vector<Entity_ID> Entity_ID_List;
 
-enum Entity_kind {
-  NODE = 0,
-  EDGE,
-  FACE,
-  CELL,
-  BOUNDARY_FACE
-};
+enum Entity_kind { NODE = 0, EDGE, FACE, CELL, BOUNDARY_FACE };
 
 typedef std::tuple<Entity_kind, DOF_Type, int> SchemaItem;
 
 enum class Parallel_type {
-  OWNED = 1;  // Owned by this processor
-  GHOST = 2;  // Owned by another processor
-  ALL = 3;    // OWNED + GHOST
+  OWNED = 1; // Owned by this processor
+  GHOST = 2; // Owned by another processor
+  ALL = 3;   // OWNED + GHOST
 };
 #endif
 
@@ -81,32 +71,31 @@ const double WHETSTONE_TOLERANCE_DECOMPOSITION = 1e-12;
 
 // control of simplex method
 const double WHETSTONE_SIMPLEX_TOLERANCE = 1e-10;
-const int WHETSTONE_SIMPLEX_MAX_ITERATIONS = 100;  // factor of number of unknowns
+const int WHETSTONE_SIMPLEX_MAX_ITERATIONS = 100; // factor of number of unknowns
 const int WHETSTONE_SIMPLEX_NO_FEASIBLE_SET = -1;
 const int WHETSTONE_SIMPLEX_NO_CONVERGENCE = -2;
 const int WHETSTONE_SIMPLEX_UNBOUNDED_PROBLEM = -3;
 const int WHETSTONE_SIMPLEX_FUNCTIONAL_SUMALL = 1;
 const int WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE = 2;
 
-#undef WHETSTONE_SIMPLEX_PIVOT_BRANDT  // select pivot rule
+#undef WHETSTONE_SIMPLEX_PIVOT_BRANDT // select pivot rule
 #define WHETSTONE_SIMPLEX_PIVOT_MFD3D
 
 // various MFD schemes for diffusion
-const int DIFFUSION_OPTIMIZED_FOR_SPARSITY = 9;  // recommended
-const int DIFFUSION_POLYHEDRA_SCALED = 2; 
-const int DIFFUSION_OPTIMIZED_FOR_MONOTONICITY = 3;  
+const int DIFFUSION_OPTIMIZED_FOR_SPARSITY = 9; // recommended
+const int DIFFUSION_POLYHEDRA_SCALED = 2;
+const int DIFFUSION_OPTIMIZED_FOR_MONOTONICITY = 3;
 const int DIFFUSION_HEXAHEDRA_MONOTONE = 4;
 const int DIFFUSION_SUPPORT_OPERATOR = 7;
-const int DIFFUSION_TPFA = 5; 
+const int DIFFUSION_TPFA = 5;
 
 // various DG schemes
 const int TAYLOR_BASIS_NATURAL = 1;
 const int TAYLOR_BASIS_NORMALIZED = 2;
-const int TAYLOR_BASIS_NORMALIZED_ORTHO = 3;  // recommended
-const int TAYLOR_BASIS_REGULARIZED = 4; 
+const int TAYLOR_BASIS_NORMALIZED_ORTHO = 3; // recommended
+const int TAYLOR_BASIS_REGULARIZED = 4;
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

@@ -42,7 +42,9 @@
 /* *****************************************************************
 * TBW.
 * **************************************************************** */
-void RunTest(double gravity) {
+void
+RunTest(double gravity)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -52,7 +54,8 @@ void RunTest(double gravity) {
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Transport in fracture network, gravity=" << gravity << std::endl;
+  if (MyPID == 0)
+    std::cout << "\nTest: Transport in fracture network, gravity=" << gravity << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_dfn.xml";
@@ -64,7 +67,7 @@ void RunTest(double gravity) {
 
   auto mlist = Teuchos::sublist(plist, "mesh", true);
   MeshFactory meshfactory(comm, gm, mlist);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh = meshfactory.create("test/fractures.exo");
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -89,9 +92,9 @@ void RunTest(double gravity) {
 
     for (int i = 0; i < ndofs; ++i) {
       int c = cells[i];
-      auto normal = mesh->face_normal(f, false, c, &dir); 
-      normal *= dir;  // natural normal
-      
+      auto normal = mesh->face_normal(f, false, c, &dir);
+      normal *= dir; // natural normal
+
       int g2 = g + Operators::UniqueIndexFaceToCells(*mesh, f, c);
       flux_f[0][g2] = v * normal;
     }
@@ -110,7 +113,7 @@ void RunTest(double gravity) {
     }
   }
 
-  // create solution 
+  // create solution
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
@@ -119,12 +122,14 @@ void RunTest(double gravity) {
 
   // create advection operator
   Teuchos::ParameterList olist = plist->sublist("PK operator").sublist("advection operator");
-  Teuchos::RCP<Operators::PDE_AdvectionUpwindDFN> op_adv = Teuchos::rcp(new PDE_AdvectionUpwindDFN(olist, mesh));
+  Teuchos::RCP<Operators::PDE_AdvectionUpwindDFN> op_adv =
+    Teuchos::rcp(new PDE_AdvectionUpwindDFN(olist, mesh));
   Teuchos::RCP<Operator> global_op = op_adv->global_operator();
 
-  // add accumulation operator 
+  // add accumulation operator
   double dt(0.1);
-  Teuchos::RCP<Operators::PDE_Accumulation> op_acc = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, global_op));
+  Teuchos::RCP<Operators::PDE_Accumulation> op_acc =
+    Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, global_op));
   op_acc->AddAccumulationDelta(solution, dt, "cell");
 
   // populate advection operator
@@ -134,10 +139,10 @@ void RunTest(double gravity) {
 
   // apply BCs and assemble
   op_adv->ApplyBCs(true, true, true);
-    
+
   // create inverse
-  global_op->set_inverse_parameters("Hypre AMG", plist->sublist("preconditioners"),
-                               "GMRES", plist->sublist("solvers"));
+  global_op->set_inverse_parameters(
+    "Hypre AMG", plist->sublist("preconditioners"), "GMRES", plist->sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
 
@@ -149,7 +154,6 @@ void RunTest(double gravity) {
   // time stepping
   double t(0.0);
   for (int nstep = 0; nstep < 5; ++nstep) {
-
     CompositeVector& rhs = *global_op->rhs();
     global_op->ApplyInverse(rhs, solution_new);
 
@@ -157,7 +161,7 @@ void RunTest(double gravity) {
     const auto& old_c = *solution.ViewComponent("cell");
     const auto& new_c = *solution_new.ViewComponent("cell");
     auto& rhs_c = *rhs.ViewComponent("cell");
-    for (int c = 0; c < ncells_owned; ++c) 
+    for (int c = 0; c < ncells_owned; ++c)
       rhs_c[0][c] += (new_c[0][c] - old_c[0][c]) * mesh->cell_volume(c) / dt;
 
     solution = solution_new;
@@ -175,16 +179,15 @@ void RunTest(double gravity) {
       CHECK(new_c[0][c] <= 1.0);
       for (int c2 = 0; c2 < ncells_owned; ++c2) {
         const auto& xc2 = mesh->cell_centroid(c2);
-        if (xc2[0] - xc[0] > 1e-6 && fabs(xc2[1] - xc[1]) < 1e-6
-                                  && fabs(xc2[2] - xc[2]) < 1e-6) CHECK(new_c[0][c2] <= new_c[0][c]); 
+        if (xc2[0] - xc[0] > 1e-6 && fabs(xc2[1] - xc[1]) < 1e-6 && fabs(xc2[2] - xc[2]) < 1e-6)
+          CHECK(new_c[0][c2] <= new_c[0][c]);
       }
     }
   }
 }
 
 
-TEST(TRANSPORT_IN_FRACTURES) {
+TEST(TRANSPORT_IN_FRACTURES)
+{
   RunTest(0.0);
 }
-
-

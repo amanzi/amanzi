@@ -30,8 +30,8 @@ namespace Operators {
 /* ******************************************************************
 * Modifier for diagonal operators.  Op += du
 ****************************************************************** */
-void PDE_Accumulation::AddAccumulationTerm(
-    const CompositeVector& du, const std::string& name)
+void
+PDE_Accumulation::AddAccumulationTerm(const CompositeVector& du, const std::string& name)
 {
   Teuchos::RCP<Op> op = FindOp_(name);
   Epetra_MultiVector& diag = *op->diag;
@@ -40,9 +40,7 @@ void PDE_Accumulation::AddAccumulationTerm(
   int n = duc.MyLength();
   int m = duc.NumVectors();
   for (int k = 0; k < m; k++) {
-    for (int i = 0; i < n; i++) {
-      diag[k][i] += duc[k][i];
-    } 
+    for (int i = 0; i < n; i++) { diag[k][i] += duc[k][i]; }
   }
 }
 
@@ -50,8 +48,11 @@ void PDE_Accumulation::AddAccumulationTerm(
 /* ******************************************************************
 * Modifier for diagonal operators.  Op += du * vol / dt.
 ****************************************************************** */
-void PDE_Accumulation::AddAccumulationTerm(
-    const CompositeVector& du, double dT, const std::string& name, bool volume)
+void
+PDE_Accumulation::AddAccumulationTerm(const CompositeVector& du,
+                                      double dT,
+                                      const std::string& name,
+                                      bool volume)
 {
   Teuchos::RCP<Op> op = FindOp_(name);
   Epetra_MultiVector& diag = *op->diag;
@@ -64,19 +65,15 @@ void PDE_Accumulation::AddAccumulationTerm(
   if (volume) {
     CompositeVector vol(du);
     CalculateEntityVolume_(vol, name);
-    Epetra_MultiVector& volc = *vol.ViewComponent(name); 
+    Epetra_MultiVector& volc = *vol.ViewComponent(name);
 
     for (int k = 0; k < m; k++) {
-      for (int i = 0; i < n; i++) {
-        diag[k][i] += volc[0][i] * duc[k][i] / dT;
-      } 
+      for (int i = 0; i < n; i++) { diag[k][i] += volc[0][i] * duc[k][i] / dT; }
     }
 
   } else {
     for (int k = 0; k < m; k++) {
-      for (int i = 0; i < n; i++) {
-        diag[k][i] += duc[k][i] / dT;
-      } 
+      for (int i = 0; i < n; i++) { diag[k][i] += duc[k][i] / dT; }
     }
   }
 }
@@ -87,18 +84,18 @@ void PDE_Accumulation::AddAccumulationTerm(
 * Op  += alpha * s1 * vol
 * Rhs += alpha * s2 * vol
 ****************************************************************** */
-void PDE_Accumulation::AddAccumulationRhs(
-    const CompositeVector& s1,
-    const CompositeVector& s2,
-    double alpha,
-    const std::string& name,
-    bool volume)
+void
+PDE_Accumulation::AddAccumulationRhs(const CompositeVector& s1,
+                                     const CompositeVector& s2,
+                                     double alpha,
+                                     const std::string& name,
+                                     bool volume)
 {
   Teuchos::RCP<Op> op = FindOp_(name);
   Epetra_MultiVector& diag = *op->diag;
 
   const Epetra_MultiVector& s1c = *s1.ViewComponent(name);
-  const Epetra_MultiVector& s2c = *s2.ViewComponent(name);  
+  const Epetra_MultiVector& s2c = *s2.ViewComponent(name);
 
   int n = s1c.MyLength();
   int m = s1c.NumVectors();
@@ -106,31 +103,31 @@ void PDE_Accumulation::AddAccumulationRhs(
   Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
 
   AMANZI_ASSERT(s1c.MyLength() == s2c.MyLength());
-  AMANZI_ASSERT(s1c.MyLength() == diag.MyLength());  
+  AMANZI_ASSERT(s1c.MyLength() == diag.MyLength());
   AMANZI_ASSERT(s2c.MyLength() == rhs.MyLength());
 
   AMANZI_ASSERT(s1c.NumVectors() == s2c.NumVectors());
-  AMANZI_ASSERT(s1c.NumVectors() == diag.NumVectors());  
+  AMANZI_ASSERT(s1c.NumVectors() == diag.NumVectors());
   AMANZI_ASSERT(s2c.NumVectors() == rhs.NumVectors());
-  
+
   if (volume) {
     CompositeVector vol(s1);
     CalculateEntityVolume_(vol, name);
-    Epetra_MultiVector& volc = *vol.ViewComponent(name); 
+    Epetra_MultiVector& volc = *vol.ViewComponent(name);
 
     for (int k = 0; k < m; k++) {
       for (int i = 0; i < n; i++) {
         diag[k][i] += volc[0][i] * s1c[k][i] * alpha;
         rhs[k][i] += volc[0][i] * s2c[k][i] * alpha;
-      } 
+      }
     }
 
   } else {
     for (int k = 0; k < m; k++) {
       for (int i = 0; i < n; i++) {
         diag[k][i] += s1c[k][i] * alpha;
-        rhs[k][i] += s2c[k][i] * alpha;        
-      } 
+        rhs[k][i] += s2c[k][i] * alpha;
+      }
     }
   }
 }
@@ -141,10 +138,12 @@ void PDE_Accumulation::AddAccumulationRhs(
 * Op  += ss * vol / dt
 * RHS += s0 * vol * u0 / dt
 ****************************************************************** */
-void PDE_Accumulation::AddAccumulationDelta(
-    const CompositeVector& u0,
-    const CompositeVector& s0, const CompositeVector& ss,
-    double dT, const std::string& name)
+void
+PDE_Accumulation::AddAccumulationDelta(const CompositeVector& u0,
+                                       const CompositeVector& s0,
+                                       const CompositeVector& ss,
+                                       double dT,
+                                       const std::string& name)
 {
   Teuchos::RCP<Op> op = FindOp_(name);
   Epetra_MultiVector& diag = *op->diag;
@@ -156,7 +155,7 @@ void PDE_Accumulation::AddAccumulationDelta(
   const Epetra_MultiVector& s0c = *s0.ViewComponent(name);
   const Epetra_MultiVector& ssc = *ss.ViewComponent(name);
 
-  Epetra_MultiVector& volc = *vol.ViewComponent(name); 
+  Epetra_MultiVector& volc = *vol.ViewComponent(name);
   Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
 
   int n = u0c.MyLength();
@@ -176,9 +175,10 @@ void PDE_Accumulation::AddAccumulationDelta(
 * Op  += vol / dt
 * RHS += vol * u0 / dt
 ****************************************************************** */
-void PDE_Accumulation::AddAccumulationDelta(
-    const CompositeVector& u0,
-    double dT, const std::string& name)
+void
+PDE_Accumulation::AddAccumulationDelta(const CompositeVector& u0,
+                                       double dT,
+                                       const std::string& name)
 {
   Teuchos::RCP<Op> op = FindOp_(name);
   Epetra_MultiVector& diag = *op->diag;
@@ -187,7 +187,7 @@ void PDE_Accumulation::AddAccumulationDelta(
   CalculateEntityVolume_(vol, name);
 
   const Epetra_MultiVector& u0c = *u0.ViewComponent(name);
-  Epetra_MultiVector& volc = *vol.ViewComponent(name); 
+  Epetra_MultiVector& volc = *vol.ViewComponent(name);
   Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
 
   int n = u0c.MyLength();
@@ -207,8 +207,10 @@ void PDE_Accumulation::AddAccumulationDelta(
 * Op  += ss
 * RHS += ss * u0
 ****************************************************************** */
-void PDE_Accumulation::AddAccumulationDeltaNoVolume(
-    const CompositeVector& u0, const CompositeVector& ss, const std::string& name)
+void
+PDE_Accumulation::AddAccumulationDeltaNoVolume(const CompositeVector& u0,
+                                               const CompositeVector& ss,
+                                               const std::string& name)
 {
   if (!ss.HasComponent(name)) AMANZI_ASSERT(false);
 
@@ -234,38 +236,34 @@ void PDE_Accumulation::AddAccumulationDeltaNoVolume(
 /* ******************************************************************
 * Calculate entity volume for component "name" of vector ss.
 ****************************************************************** */
-void PDE_Accumulation::CalculateEntityVolume_(
-    CompositeVector& volume, const std::string& name)
+void
+PDE_Accumulation::CalculateEntityVolume_(CompositeVector& volume, const std::string& name)
 {
   AmanziMesh::Entity_ID_List nodes, edges;
 
   if (name == "cell" && volume.HasComponent("cell")) {
-    Epetra_MultiVector& vol = *volume.ViewComponent(name); 
+    Epetra_MultiVector& vol = *volume.ViewComponent(name);
 
-    for (int c = 0; c != ncells_owned; ++c) {
-      vol[0][c] = mesh_->cell_volume(c); 
-    }
+    for (int c = 0; c != ncells_owned; ++c) { vol[0][c] = mesh_->cell_volume(c); }
 
   } else if (name == "face" && volume.HasComponent("face")) {
     // Missing code.
     AMANZI_ASSERT(false);
 
   } else if (name == "edge" && volume.HasComponent("edge")) {
-    Epetra_MultiVector& vol = *volume.ViewComponent(name, true); 
+    Epetra_MultiVector& vol = *volume.ViewComponent(name, true);
     vol.PutScalar(0.0);
 
     for (int c = 0; c != ncells_owned; ++c) {
       mesh_->cell_get_edges(c, &edges);
       int nedges = edges.size();
 
-      for (int i = 0; i < nedges; i++) {
-        vol[0][edges[i]] += mesh_->cell_volume(c) / nedges; 
-      }
+      for (int i = 0; i < nedges; i++) { vol[0][edges[i]] += mesh_->cell_volume(c) / nedges; }
     }
     volume.GatherGhostedToMaster(name);
 
   } else if (name == "node" && volume.HasComponent("node")) {
-    Epetra_MultiVector& vol = *volume.ViewComponent(name, true); 
+    Epetra_MultiVector& vol = *volume.ViewComponent(name, true);
     vol.PutScalar(0.0);
 
     for (int c = 0; c != ncells_owned; ++c) {
@@ -279,9 +277,7 @@ void PDE_Accumulation::CalculateEntityVolume_(
         WhetStone::PolygonCentroidWeights(*mesh_, nodes, cellvolume, weights);
       }
 
-      for (int i = 0; i < nnodes; i++) {
-        vol[0][nodes[i]] += weights[i] * cellvolume; 
-      }
+      for (int i = 0; i < nnodes; i++) { vol[0][nodes[i]] += weights[i] * cellvolume; }
     }
     volume.GatherGhostedToMaster(name);
 
@@ -295,14 +291,15 @@ void PDE_Accumulation::CalculateEntityVolume_(
 * Note: When complex schema is used to create a set of local ops, the
 * the local local_op_ is not well defined.
 ****************************************************************** */
-void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
+void
+PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
 {
   int num;
   AmanziMesh::Entity_kind kind;
   Errors::Message msg;
 
   if (global_op_ == Teuchos::null) {
-    // constructor was given a mesh 
+    // constructor was given a mesh
     global_op_schema_ = schema;
     local_op_schema_ = schema;
 
@@ -361,7 +358,7 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
           op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
         }
 
-      /*
+        /*
       } else if (kind == AmanziMesh::FACE) {
         old_schema = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_FACE;
         std::string name("FACE_FACE");
@@ -400,7 +397,8 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
 /* ******************************************************************
 * Apply boundary conditions to 
 ****************************************************************** */
-void PDE_Accumulation::ApplyBCs()
+void
+PDE_Accumulation::ApplyBCs()
 {
   for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
     const std::vector<int>& bc_model = (*bc)->bc_model();
@@ -413,9 +411,7 @@ void PDE_Accumulation::ApplyBCs()
 
         for (int i = 0; i < diag.MyLength(); i++) {
           if (bc_model[i] == OPERATOR_BC_DIRICHLET) {
-            for (int k = 0; k < m; ++k) {
-              diag[k][i] = 0.0;
-            }
+            for (int k = 0; k < m; ++k) { diag[k][i] = 0.0; }
           }
         }
       }
@@ -427,18 +423,15 @@ void PDE_Accumulation::ApplyBCs()
 /* ******************************************************************
 * Return operator with the given base.
 ****************************************************************** */
-Teuchos::RCP<Op> PDE_Accumulation::FindOp_(const std::string& name) const
+Teuchos::RCP<Op>
+PDE_Accumulation::FindOp_(const std::string& name) const
 {
   for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
     const Schema& schema = (*it)->schema_row();
-    if (schema.KindToString(schema.get_base()) == name) 
-      return *it;
+    if (schema.KindToString(schema.get_base()) == name) return *it;
   }
   return Teuchos::null;
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
-
-
+} // namespace Operators
+} // namespace Amanzi

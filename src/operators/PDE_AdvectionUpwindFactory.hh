@@ -26,8 +26,7 @@ namespace Operators {
 
 struct PDE_AdvectionUpwindFactory {
   Teuchos::RCP<PDE_AdvectionUpwind>
-  Create(Teuchos::ParameterList& oplist,
-         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  Create(Teuchos::ParameterList& oplist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   {
     if (oplist.isParameter("fracture")) {
       oplist.set<std::string>("name", "AdvectionFracturedMatrix: FACE_CELL");
@@ -43,8 +42,7 @@ struct PDE_AdvectionUpwindFactory {
   }
 
   Teuchos::RCP<PDE_AdvectionUpwind>
-  Create(Teuchos::ParameterList& oplist,
-         const Teuchos::RCP<Operator>& global_op)
+  Create(Teuchos::ParameterList& oplist, const Teuchos::RCP<Operator>& global_op)
   {
     if (oplist.isParameter("fracture")) {
       oplist.set<std::string>("name", "AdvectionFracturedMatrix: FACE_CELL");
@@ -60,7 +58,7 @@ struct PDE_AdvectionUpwindFactory {
   }
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif

@@ -32,20 +32,33 @@ namespace Amanzi {
 
 namespace Impl {
 
-double ObservableExtensiveSum(double a, double b, double vol) { return a + b; }
-double ObservableIntensiveSum(double a, double b, double vol) { return a + b*vol; }
-double ObservableMin(double a, double b, double vol) { return std::min(a,b); }
-double ObservableMax(double a, double b, double vol) { return std::max(a,b); }
+double
+ObservableExtensiveSum(double a, double b, double vol)
+{
+  return a + b;
+}
+double
+ObservableIntensiveSum(double a, double b, double vol)
+{
+  return a + b * vol;
+}
+double
+ObservableMin(double a, double b, double vol)
+{
+  return std::min(a, b);
+}
+double
+ObservableMax(double a, double b, double vol)
+{
+  return std::max(a, b);
+}
 
 } // namespace Impl
 
 const double Observable::nan = std::numeric_limits<double>::quiet_NaN();
 
 Observable::Observable(Teuchos::ParameterList& plist)
-  : comm_(Teuchos::null),
-    old_time_(nan),
-    has_eval_(false),
-    has_data_(false)
+  : comm_(Teuchos::null), old_time_(nan), has_eval_(false), has_data_(false)
 {
   // process the spec
   name_ = Keys::cleanPListName(plist.name());
@@ -61,17 +74,15 @@ Observable::Observable(Teuchos::ParameterList& plist)
 
   if (num_vectors_ > 0 && num_vectors_ < dof_) {
     Errors::Message msg;
-    msg << "Observable \"" << name_ << "\": inconsistent request of degree of freedom "
-        << dof_ << " for a vector with only " << num_vectors_ << " degrees of freedom.";
+    msg << "Observable \"" << name_ << "\": inconsistent request of degree of freedom " << dof_
+        << " for a vector with only " << num_vectors_ << " degrees of freedom.";
     Exceptions::amanzi_throw(msg);
   }
 
   time_integrated_ = plist.get<bool>("time integrated", false);
 
   functional_ = plist.get<std::string>("functional");
-  if (functional_ == "point" ||
-      functional_ == "integral" ||
-      functional_ == "average") {
+  if (functional_ == "point" || functional_ == "integral" || functional_ == "average") {
     function_ = &Impl::ObservableIntensiveSum;
   } else if (functional_ == "extensive integral") {
     function_ = &Impl::ObservableExtensiveSum;
@@ -89,35 +100,40 @@ Observable::Observable(Teuchos::ParameterList& plist)
   flux_normalize_ = plist.get<bool>("direction normalized flux", false);
   if (flux_normalize_ && location_ != "face") {
     Errors::Message msg;
-    msg << "Observable \"" << name_ << "\": \"direction normalized flux direction\" may only be used with location \"face\"";
+    msg << "Observable \"" << name_
+        << "\": \"direction normalized flux direction\" may only be used with location \"face\"";
     Exceptions::amanzi_throw(msg);
   }
   if (flux_normalize_) {
     if (plist.isParameter("direction normalized flux direction")) {
       Teuchos::Array<double> direction =
-        plist.get<Teuchos::Array<double> >("direction normalized flux direction");
+        plist.get<Teuchos::Array<double>>("direction normalized flux direction");
       if (direction.size() == 2) {
-        double norm = std::sqrt(std::pow(direction[0],2) + std::pow(direction[1],2));
-        direction_ = Teuchos::rcp(new AmanziGeometry::Point(direction[0]/norm, direction[1]/norm));
+        double norm = std::sqrt(std::pow(direction[0], 2) + std::pow(direction[1], 2));
+        direction_ =
+          Teuchos::rcp(new AmanziGeometry::Point(direction[0] / norm, direction[1] / norm));
       } else if (direction.size() == 3) {
-        double norm = std::sqrt(std::pow(direction[0],2) + std::pow(direction[1],2)
-                + std::pow(direction[2],2));
-        direction_ = Teuchos::rcp(new AmanziGeometry::Point(direction[0]/norm,
-                direction[1]/norm, direction[2]/norm));
+        double norm = std::sqrt(std::pow(direction[0], 2) + std::pow(direction[1], 2) +
+                                std::pow(direction[2], 2));
+        direction_ = Teuchos::rcp(
+          new AmanziGeometry::Point(direction[0] / norm, direction[1] / norm, direction[2] / norm));
       } else {
         Errors::Message msg;
-        msg << "Observable \"" << name_ << "\": \"direction normalized flux direction\" cannot have dimension "
-            << (int) direction.size() << ", must be 2 or 3.";
+        msg << "Observable \"" << name_
+            << "\": \"direction normalized flux direction\" cannot have dimension "
+            << (int)direction.size() << ", must be 2 or 3.";
         Exceptions::amanzi_throw(msg);
       }
     } else if (plist.isParameter("direction normalized flux relative to region")) {
-      flux_normalize_region_ = plist.get<std::string>("direction normalized flux relative to region");
+      flux_normalize_region_ =
+        plist.get<std::string>("direction normalized flux relative to region");
     }
   }
 }
 
 
-void Observable::Setup(const Teuchos::Ptr<State>& S)
+void
+Observable::Setup(const Teuchos::Ptr<State>& S)
 {
   // Do we participate in this communicator?
   if (comm_ == Teuchos::null) return;
@@ -140,7 +156,7 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
       Teuchos::ParameterList& eval_list = S->GetEvaluatorList(variable_);
       eval_list.set<std::string>("evaluator type", "subgrid aggregate evaluator");
       eval_list.set<std::string>("source domain name", domain);
-      eval_list.set("visualize", false); // turn off vis -- this is unnecessary
+      eval_list.set("visualize", false);  // turn off vis -- this is unnecessary
       eval_list.set("checkpoint", false); // turn off checkpoint -- this is unnecessary
     }
   } else {
@@ -181,8 +197,8 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
     if (num_vectors_ < 0) num_vectors_ = 1;
     if (num_vectors_ < dof_) {
       Errors::Message msg;
-      msg << "Observable \"" << name_ << "\": inconsistent request of degree of freedom "
-          << dof_ << " for a vector with only " << num_vectors_ << " degrees of freedom.";
+      msg << "Observable \"" << name_ << "\": inconsistent request of degree of freedom " << dof_
+          << " for a vector with only " << num_vectors_ << " degrees of freedom.";
       Exceptions::amanzi_throw(msg);
     }
 
@@ -196,7 +212,8 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
 }
 
 
-void Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
+void
+Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
 {
   // if we don't have a communicator, we can't participate in this
   if (comm_ == Teuchos::null) return;
@@ -207,9 +224,8 @@ void Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
 
     if (!field.HasComponent(location_)) {
       Errors::Message msg;
-      msg << "Observable: \"" << name_ << "\" uses variable \""
-          << variable_ << "\" but this field does not have the observed component \""
-          << location_ << "\"";
+      msg << "Observable: \"" << name_ << "\" uses variable \"" << variable_
+          << "\" but this field does not have the observed component \"" << location_ << "\"";
       Exceptions::amanzi_throw(msg);
     } else {
       num_vectors_ = field.NumVectors(location_);
@@ -217,8 +233,8 @@ void Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
 
     if (num_vectors_ < dof_) {
       Errors::Message msg;
-      msg << "Observable \"" << name_ << "\": inconsistent request of degree of freedom "
-          << dof_ << " for a vector with only " << num_vectors_ << " degrees of freedom.";
+      msg << "Observable \"" << name_ << "\": inconsistent request of degree of freedom " << dof_
+          << " for a vector with only " << num_vectors_ << " degrees of freedom.";
       Exceptions::amanzi_throw(msg);
     }
 
@@ -234,15 +250,15 @@ void Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
 }
 
 
-void Observable::Update(const Teuchos::Ptr<State>& S,
-                        std::vector<double>& data, int start_loc)
+void
+Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int start_loc)
 {
   // if we don't have a communicator, we do not participate, so leave the value at NaN
   if (comm_ == Teuchos::null) return;
 
   // deal with the time integrated case for the first observation
   if (time_integrated_ && std::isnan(old_time_)) {
-    for (int i=0; i!=get_num_vectors(); ++i) data[start_loc+i] = 0.;
+    for (int i = 0; i != get_num_vectors(); ++i) data[start_loc + i] = 0.;
     old_time_ = S->get_time();
     return;
   }
@@ -262,8 +278,7 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
   }
 
   // update the variable
-  if (has_eval_)
-    S->GetEvaluator(variable_, tag_).Update(*S, "observation");
+  if (has_eval_) S->GetEvaluator(variable_, tag_).Update(*S, "observation");
 
   bool has_record = S->HasRecord(variable_, tag_);
   if (has_record && S->GetRecord(variable_, tag_).ValidType<double>()) {
@@ -289,7 +304,7 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
         double vol = vec.Mesh()->cell_volume(id);
 
         if (dof_ < 0) {
-          for (int i=0; i!=get_num_vectors(); ++i) {
+          for (int i = 0; i != get_num_vectors(); ++i) {
             value[i] = (*function_)(value[i], subvec[i][id], vol);
           }
         } else {
@@ -313,7 +328,9 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
             // normalize to outward normal relative to a volumetric region
             AmanziMesh::Entity_ID_List vol_cells;
             vec.Mesh()->get_set_entities(flux_normalize_region_,
-                    AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL, &vol_cells);
+                                         AmanziMesh::Entity_kind::CELL,
+                                         AmanziMesh::Parallel_type::ALL,
+                                         &vol_cells);
 
             // which cell of the face is "inside" the volume
             AmanziMesh::Entity_ID_List cells;
@@ -328,9 +345,8 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
             if (c < 0) {
               Errors::Message msg;
               msg << "Observeable on face region \"" << region_
-                  << "\" flux normalized relative to volumetric region \""
-                  << flux_normalize_region_ << "\" but face "
-                  << vec.Mesh()->face_map(true).GID(id)
+                  << "\" flux normalized relative to volumetric region \"" << flux_normalize_region_
+                  << "\" but face " << vec.Mesh()->face_map(true).GID(id)
                   << " does not border the volume region.";
               Exceptions::amanzi_throw(msg);
             }
@@ -357,11 +373,11 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
         }
 
         if (dof_ < 0) {
-          for (int i=0; i!=get_num_vectors(); ++i) {
-            value[i] = (*function_)(value[i], sign*subvec[i][id], vol);
+          for (int i = 0; i != get_num_vectors(); ++i) {
+            value[i] = (*function_)(value[i], sign * subvec[i][id], vol);
           }
         } else {
-          value[0] = (*function_)(value[0], sign*subvec[dof_][id], vol);
+          value[0] = (*function_)(value[0], sign * subvec[dof_][id], vol);
         }
         value[get_num_vectors()] += std::abs(vol);
       }
@@ -370,7 +386,7 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
         double vol = 1.0;
 
         if (dof_ < 0) {
-          for (int i=0; i!=get_num_vectors(); ++i) {
+          for (int i = 0; i != get_num_vectors(); ++i) {
             value[i] = (*function_)(value[i], subvec[i][id], vol);
           }
         } else {
@@ -382,57 +398,43 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
   }
 
   // syncronize the result across all processes on the provided comm
-  if (functional_ == "point" ||
-      functional_ == "integral" ||
-      functional_ == "average" ||
+  if (functional_ == "point" || functional_ == "integral" || functional_ == "average" ||
       functional_ == "extensive integral") {
     std::vector<double> global_value(value);
     comm_->SumAll(value.data(), global_value.data(), value.size());
 
     if (global_value[get_num_vectors()] > 0) {
-      if (functional_ == "point" ||
-          functional_ == "average") {
-        for (int i=0; i!=get_num_vectors(); ++i) {
+      if (functional_ == "point" || functional_ == "average") {
+        for (int i = 0; i != get_num_vectors(); ++i) {
           value[i] = global_value[i] / global_value[get_num_vectors()];
         }
-      } else if (functional_ == "integral" ||
-                 functional_ == "extensive integral") {
-        for (int i=0; i!=get_num_vectors(); ++i) {
-          value[i] = global_value[i];
-        }
+      } else if (functional_ == "integral" || functional_ == "extensive integral") {
+        for (int i = 0; i != get_num_vectors(); ++i) { value[i] = global_value[i]; }
       }
     } else {
-      for (int i=0; i!=get_num_vectors(); ++i) {
-        value[i] = nan;
-      }
+      for (int i = 0; i != get_num_vectors(); ++i) { value[i] = nan; }
     }
   } else if (functional_ == "minimum") {
     std::vector<double> global_value(value);
-    comm_->MinAll(value.data(), global_value.data(), value.size()-1);
+    comm_->MinAll(value.data(), global_value.data(), value.size() - 1);
     value = global_value;
   } else if (functional_ == "maximum") {
     std::vector<double> global_value(value);
-    comm_->MaxAll(value.data(), global_value.data(), value.size()-1);
+    comm_->MaxAll(value.data(), global_value.data(), value.size() - 1);
     value = global_value;
   } else {
     AMANZI_ASSERT(false);
   }
 
   // copy back from value into the data array
-  for (int i=0; i!=get_num_vectors(); ++i) {
-    data[start_loc+i] = value[i];
-  }
+  for (int i = 0; i != get_num_vectors(); ++i) { data[start_loc + i] = value[i]; }
 
   // factor of dt for time integration
   if (time_integrated_) {
     double dt = S->get_time() - old_time_;
     old_time_ = S->get_time();
-    for (int i=0; i!=get_num_vectors(); ++i) {
-      data[start_loc+i] *= dt;
-    }
+    for (int i = 0; i != get_num_vectors(); ++i) { data[start_loc + i] *= dt; }
   }
 }
 
-} // namespace
-
-
+} // namespace Amanzi

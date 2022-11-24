@@ -21,9 +21,7 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 // Constructor with no regions
-GeometricModel::GeometricModel(unsigned int dim)
-  : dim_(dim)
-{}
+GeometricModel::GeometricModel(unsigned int dim) : dim_(dim) {}
 
 GeometricModel::GeometricModel(unsigned int dim,
                                Teuchos::ParameterList& gm_params,
@@ -68,8 +66,8 @@ GeometricModel::AddRegion(const Teuchos::RCP<Region>& reg)
 
   if (dim_ < reg->get_manifold_dimension()) {
     Errors::Message mesg;
-    mesg << "Dimension of geometric model less than that of region \""
-         << reg->get_name() << "\" topological dimension";
+    mesg << "Dimension of geometric model less than that of region \"" << reg->get_name()
+         << "\" topological dimension";
     Exceptions::amanzi_throw(mesg);
   }
 
@@ -83,10 +81,8 @@ GeometricModel::AddRegion(const Teuchos::RCP<Region>& reg)
   regions_id_[reg->get_id()] = rc2;
 
   regions_.push_back(reg);
-
-
 }
 
-  
+
 } // namespace AmanziGeometry
 } // namespace Amanzi

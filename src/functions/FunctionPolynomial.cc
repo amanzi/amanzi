@@ -5,7 +5,9 @@
 
 namespace Amanzi {
 
-FunctionPolynomial::FunctionPolynomial (const std::vector<double> &c, const std::vector<int> &p, double x0)
+FunctionPolynomial::FunctionPolynomial(const std::vector<double>& c,
+                                       const std::vector<int>& p,
+                                       double x0)
 {
   if (c.size() < 1) {
     Errors::Message m;
@@ -23,24 +25,25 @@ FunctionPolynomial::FunctionPolynomial (const std::vector<double> &c, const std:
   int n = pmax_ - pmin_ + 1;
   c_.resize(n);
   c_.assign(n, 0.0);
-  for (int j = 0; j < c.size(); ++j) c_[p[j]-pmin_] += c[j];
+  for (int j = 0; j < c.size(); ++j) c_[p[j] - pmin_] += c[j];
   x0_ = x0;
 }
 
-double FunctionPolynomial::operator()(const std::vector<double>& x) const
+double
+FunctionPolynomial::operator()(const std::vector<double>& x) const
 {
   // Polynomial terms with non-negative exponents
-  double y = c_[pmax_-pmin_];
+  double y = c_[pmax_ - pmin_];
   if (pmax_ > 0) {
     double z = x[0] - x0_;
-    for (int j = pmax_; j > 0; --j) y = c_[j-1-pmin_] + z*y;
+    for (int j = pmax_; j > 0; --j) y = c_[j - 1 - pmin_] + z * y;
   }
   // Polynomial terms with negative exponents.
   if (pmin_ < 0) {
     double w = c_[0];
     double z = 1.0 / (x[0] - x0_);
-    for (int j = pmin_; j < -1; ++j) w = c_[j+1-pmin_] + z*w;
-    y += z*w;
+    for (int j = pmin_; j < -1; ++j) w = c_[j + 1 - pmin_] + z * w;
+    y += z * w;
   }
   return y;
 }

@@ -22,7 +22,7 @@ namespace AmanziEOS {
 * Initialize various PK objects
 ****************************************************************** */
 MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   // set up the actual model
   AMANZI_ASSERT(plist_.isSublist("vapor pressure model parameters"));
@@ -31,7 +31,8 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
 
   // process the list for my provided field.
   if (my_keys_.size() == 0)
-    my_keys_.push_back(std::make_pair(plist_.get<std::string>("viscosity key", "viscosity_liquid"), Tags::DEFAULT));
+    my_keys_.push_back(
+      std::make_pair(plist_.get<std::string>("viscosity key", "viscosity_liquid"), Tags::DEFAULT));
 
   // set up dependencies
   tag_ = Tags::DEFAULT;
@@ -43,18 +44,20 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
 
 
 MolarFractionGasEvaluator::MolarFractionGasEvaluator(const MolarFractionGasEvaluator& other)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      temp_key_(other.temp_key_),
-      svp_model_(other.svp_model_) {};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+    temp_key_(other.temp_key_),
+    svp_model_(other.svp_model_){};
 
 
-Teuchos::RCP<Evaluator> MolarFractionGasEvaluator::Clone() const {
+Teuchos::RCP<Evaluator>
+MolarFractionGasEvaluator::Clone() const
+{
   return Teuchos::rcp(new MolarFractionGasEvaluator(*this));
 }
 
 
-void MolarFractionGasEvaluator::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+MolarFractionGasEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   // Pull dependencies out of state.
   auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
@@ -73,9 +76,11 @@ void MolarFractionGasEvaluator::Evaluate_(
 }
 
 
-void MolarFractionGasEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+MolarFractionGasEvaluator::EvaluatePartialDerivative_(const State& S,
+                                                      const Key& wrt_key,
+                                                      const Tag& wrt_tag,
+                                                      const std::vector<CompositeVector*>& results)
 {
   AMANZI_ASSERT(wrt_key == temp_key_);
 
@@ -93,6 +98,5 @@ void MolarFractionGasEvaluator::EvaluatePartialDerivative_(
   }
 }
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
-
+} // namespace AmanziEOS
+} // namespace Amanzi

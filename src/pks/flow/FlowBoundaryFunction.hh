@@ -36,13 +36,14 @@ namespace Flow {
 class FlowBoundaryFunction : public PK_DomainFunction {
  public:
   FlowBoundaryFunction()
-      : rainfall_(false),
-        relative_to_top_(false),
-        relative_to_bottom_(false),
-        no_flow_above_water_table_(false),
-        seepage_flux_threshold_(0.0),
-        bc_name_("underfined"),
-        seepage_model_("") {}
+    : rainfall_(false),
+      relative_to_top_(false),
+      relative_to_bottom_(false),
+      no_flow_above_water_table_(false),
+      seepage_flux_threshold_(0.0),
+      bc_name_("underfined"),
+      seepage_model_("")
+  {}
 
   FlowBoundaryFunction(const Teuchos::ParameterList& plist);
   void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
@@ -61,7 +62,7 @@ class FlowBoundaryFunction : public PK_DomainFunction {
                                  const std::string& region);
 
   void set_intersection_(const std::vector<AmanziMesh::Entity_ID>& v1,
-                         const std::vector<AmanziMesh::Entity_ID>& v2, 
+                         const std::vector<AmanziMesh::Entity_ID>& v2,
                          std::vector<AmanziMesh::Entity_ID>* vv);
 
  private:
@@ -79,7 +80,7 @@ class FlowBoundaryFunction : public PK_DomainFunction {
   int nedges_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 #endif

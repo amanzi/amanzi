@@ -28,8 +28,10 @@ namespace Operators {
 * Apply the local matrices directly as schema is a subset of 
 * assembled schema.
 ****************************************************************** */
-int Operator_ConsistentFace::ApplyMatrixFreeOp(
-    const Op_Cell_FaceCell& op, const CompositeVector& X, CompositeVector& Y) const
+int
+Operator_ConsistentFace::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
+                                           const CompositeVector& X,
+                                           CompositeVector& Y) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
@@ -38,27 +40,24 @@ int Operator_ConsistentFace::ApplyMatrixFreeOp(
     Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
 
     AmanziMesh::Entity_ID_List faces;
-    for (int c=0; c!=ncells_owned; ++c) {
+    for (int c = 0; c != ncells_owned; ++c) {
       mesh_->cell_get_faces(c, &faces);
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces), av(nfaces);
       av.PutScalar(0.0);
-      for (int n=0; n!=nfaces; ++n) {
-        v(n) = Xf[0][faces[n]];
-      }
+      for (int n = 0; n != nfaces; ++n) { v(n) = Xf[0][faces[n]]; }
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
       // must do multiply manually because Acell is not nfaces x nfaces
-      for (int n=0; n!=nfaces; ++n)
-        for (int m=0; m!=nfaces; ++m)
-          av(m) += Acell(m,n) * v(n);
+      for (int n = 0; n != nfaces; ++n)
+        for (int m = 0; m != nfaces; ++m) av(m) += Acell(m, n) * v(n);
 
-      for (int n=0; n!=nfaces; ++n) {
+      for (int n = 0; n != nfaces; ++n) {
         Yf[0][faces[n]] += av(n);
         AMANZI_ASSERT(std::abs(av(n)) < 1.e20);
       }
-    } 
+    }
   }
   return 0;
 }
@@ -68,10 +67,12 @@ int Operator_ConsistentFace::ApplyMatrixFreeOp(
 * Visit methods for symbolic assemble.
 * Insert the diagonal on cells
 ****************************************************************** */
-void Operator_ConsistentFace::SymbolicAssembleMatrixOp(
-    const Op_Cell_FaceCell& op,
-    const SuperMap& map, GraphFE& graph,
-    int my_block_row, int my_block_col) const
+void
+Operator_ConsistentFace::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
+                                                  const SuperMap& map,
+                                                  GraphFE& graph,
+                                                  int my_block_row,
+                                                  int my_block_col) const
 {
   std::vector<int> lid_r(cell_max_faces_);
   std::vector<int> lid_c(cell_max_faces_);
@@ -82,11 +83,11 @@ void Operator_ConsistentFace::SymbolicAssembleMatrixOp(
 
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;
-  for (int c=0; c!=ncells_owned; ++c) {
+  for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
-    for (int n=0; n!=nfaces; ++n) {
+    for (int n = 0; n != nfaces; ++n) {
       lid_r[n] = face_row_inds[faces[n]];
       lid_c[n] = face_col_inds[faces[n]];
     }
@@ -100,10 +101,12 @@ void Operator_ConsistentFace::SymbolicAssembleMatrixOp(
 * Visit methods for assemble
 * Insert each cells neighboring cells.
 ****************************************************************** */
-void Operator_ConsistentFace::AssembleMatrixOp(
-    const Op_Cell_FaceCell& op,
-    const SuperMap& map, MatrixFE& mat,
-    int my_block_row, int my_block_col) const
+void
+Operator_ConsistentFace::AssembleMatrixOp(const Op_Cell_FaceCell& op,
+                                          const SuperMap& map,
+                                          MatrixFE& mat,
+                                          int my_block_row,
+                                          int my_block_col) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
@@ -117,17 +120,17 @@ void Operator_ConsistentFace::AssembleMatrixOp(
 
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;
-  for (int c=0; c!=ncells_owned; ++c) {
+  for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
-    
+
     int nfaces = faces.size();
-    for (int n=0; n!=nfaces; ++n) {
+    for (int n = 0; n != nfaces; ++n) {
       lid_r[n] = face_row_inds[faces[n]];
       lid_c[n] = face_col_inds[faces[n]];
     }
 
-    for (int n=0; n!=nfaces; ++n) {
-      for (int m=0; m!=nfaces; ++m) vals[m] = op.matrices[c](n,m);
+    for (int n = 0; n != nfaces; ++n) {
+      for (int m = 0; m != nfaces; ++m) vals[m] = op.matrices[c](n, m);
       ierr |= mat.SumIntoMyValues(lid_r[n], nfaces, vals.data(), lid_c.data());
     }
   }
@@ -138,10 +141,11 @@ void Operator_ConsistentFace::AssembleMatrixOp(
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Operator> Operator_ConsistentFace::Clone() const {
+Teuchos::RCP<Operator>
+Operator_ConsistentFace::Clone() const
+{
   return Teuchos::rcp(new Operator_ConsistentFace(*this));
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
+} // namespace Operators
+} // namespace Amanzi

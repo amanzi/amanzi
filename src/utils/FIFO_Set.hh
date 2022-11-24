@@ -21,16 +21,17 @@ stored as a vector under the hood.
 namespace Amanzi {
 namespace Utils {
 
-template<typename T>
+template <typename T>
 class FIFO_Set {
   using Container_type = std::vector<T>;
 
  public:
   FIFO_Set() {}
 
-  void insert(const T& entry) {
+  void insert(const T& entry)
+  {
     auto nentries = store_.size();
-    for (int i=0; i!=nentries; ++i) {
+    for (int i = 0; i != nentries; ++i) {
       if (entry == store_[i]) return;
     }
     store_.emplace_back(entry);
@@ -40,25 +41,15 @@ class FIFO_Set {
 
   using const_iterator = typename Container_type::const_iterator;
 
-  const_iterator begin() const {
-    return store_.begin();
-  }
+  const_iterator begin() const { return store_.begin(); }
 
-  const_iterator end() const {
-    return store_.end();
-  }
+  const_iterator end() const { return store_.end(); }
 
-  const T& front() const {
-    return store_.front();
-  }
+  const T& front() const { return store_.front(); }
 
-  const T& back() const {
-    return store_.back();
-  }
+  const T& back() const { return store_.back(); }
 
-  std::size_t size() const {
-    return store_.size();
-  }
+  std::size_t size() const { return store_.size(); }
 
  protected:
   Container_type store_;

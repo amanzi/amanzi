@@ -5,7 +5,8 @@
 #include "eos_registration.hh"
 #include "VerboseObject_objs.hh"
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
   int res = 0;
   {
@@ -14,4 +15,3 @@ int main(int argc, char *argv[])
   }
   return res;
 }
-

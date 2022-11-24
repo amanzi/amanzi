@@ -39,7 +39,9 @@ class MoleFractionLiquid : public MultiphaseBaseEvaluator {
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
@@ -48,8 +50,7 @@ class MoleFractionLiquid : public MultiphaseBaseEvaluator {
   static Utils::RegisteredFactory<Evaluator, MoleFractionLiquid> fac_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi
 
 #endif
-

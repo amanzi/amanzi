@@ -25,19 +25,17 @@ namespace Functions {
 
 class MeshPartition {
  public:
-  MeshPartition() : initialized_(false) {};
+  MeshPartition() : initialized_(false){};
 
-  MeshPartition(AmanziMesh::Entity_kind kind,
-                const std::vector<std::string>& regions);
+  MeshPartition(AmanziMesh::Entity_kind kind, const std::vector<std::string>& regions);
 
   // this routine could be used to optimize mesh coloring
   void Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                   AmanziMesh::Entity_kind kind,
-                  const std::vector<std::vector<std::string> >& regions,
+                  const std::vector<std::vector<std::string>>& regions,
                   const int default_value);
 
-  void Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                  const int default_value);
+  void Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, const int default_value);
 
   void Verify() const;
 
@@ -54,7 +52,7 @@ class MeshPartition {
   Teuchos::RCP<Epetra_IntVector> map_;
 };
 
-}  // namespace Functions
-}  // namespace Amanzi
+} // namespace Functions
+} // namespace Amanzi
 
 #endif

@@ -24,7 +24,7 @@ namespace Energy {
 * Constructors.
 ****************************************************************** */
 IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   /*
   AMANZI_ASSERT(plist_.isSublist("IEM parameters"));
@@ -41,16 +41,18 @@ IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist)
 * Copy constructors.
 ****************************************************************** */
 IEMEvaluator::IEMEvaluator(const IEMEvaluator& other)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      temperature_key_(other.temperature_key_),
-      pressure_key_(other.pressure_key_),
-      iem_(other.iem_) {};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+    temperature_key_(other.temperature_key_),
+    pressure_key_(other.pressure_key_),
+    iem_(other.iem_){};
 
 
 /* ******************************************************************
 * Copy assinement
 ****************************************************************** */
-Teuchos::RCP<Evaluator> IEMEvaluator::Clone() const {
+Teuchos::RCP<Evaluator>
+IEMEvaluator::Clone() const
+{
   return Teuchos::rcp(new IEMEvaluator(*this));
 }
 
@@ -58,10 +60,12 @@ Teuchos::RCP<Evaluator> IEMEvaluator::Clone() const {
 /* ******************************************************************
 * Itialization.
 ****************************************************************** */
-void IEMEvaluator::InitializeFromPlist_()
+void
+IEMEvaluator::InitializeFromPlist_()
 {
   if (my_keys_.size() == 0) {
-    my_keys_.push_back(std::make_pair(plist_.get<std::string>("internal energy key"), Tags::DEFAULT));
+    my_keys_.push_back(
+      std::make_pair(plist_.get<std::string>("internal energy key"), Tags::DEFAULT));
   }
 
   // Set up my dependencies.
@@ -79,12 +83,10 @@ void IEMEvaluator::InitializeFromPlist_()
 /* ******************************************************************
 * Evaluation body.
 ****************************************************************** */
-void IEMEvaluator::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+IEMEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
-  if (iem_ == Teuchos::null) {
-    CreateIEMPartition_(S.GetMesh(domain_), plist_);
-  }
+  if (iem_ == Teuchos::null) { CreateIEMPartition_(S.GetMesh(domain_), plist_); }
 
   auto temp = S.GetPtr<CompositeVector>(temperature_key_, tag_);
   auto pres = S.GetPtr<CompositeVector>(pressure_key_, tag_);
@@ -117,13 +119,13 @@ void IEMEvaluator::Evaluate_(
 /* ******************************************************************
 * Evaluation of field derivatives.
 ****************************************************************** */
-void IEMEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results) 
+void
+IEMEvaluator::EvaluatePartialDerivative_(const State& S,
+                                         const Key& wrt_key,
+                                         const Tag& wrt_tag,
+                                         const std::vector<CompositeVector*>& results)
 {
-  if (iem_ == Teuchos::null) {
-    CreateIEMPartition_(S.GetMesh(domain_), plist_);
-  }
+  if (iem_ == Teuchos::null) { CreateIEMPartition_(S.GetMesh(domain_), plist_); }
 
   auto temp = S.GetPtr<CompositeVector>(temperature_key_, tag_);
   auto pres = S.GetPtr<CompositeVector>(pressure_key_, tag_);
@@ -139,12 +141,14 @@ void IEMEvaluator::EvaluatePartialDerivative_(
     if (wrt_key == temperature_key_) {
       for (int i = 0; i != ncomp; ++i) {
         auto id = MyModel_(kind, i);
-        result_v[0][i] = iem_->second[(*iem_->first)[id]]->DInternalEnergyDT(temp_v[0][i], pres_v[0][i]);
+        result_v[0][i] =
+          iem_->second[(*iem_->first)[id]]->DInternalEnergyDT(temp_v[0][i], pres_v[0][i]);
       }
     } else if (wrt_key == pressure_key_) {
       for (int i = 0; i != ncomp; ++i) {
         auto id = MyModel_(kind, i);
-        result_v[0][i] = iem_->second[(*iem_->first)[id]]->DInternalEnergyDp(temp_v[0][i], pres_v[0][i]);
+        result_v[0][i] =
+          iem_->second[(*iem_->first)[id]]->DInternalEnergyDp(temp_v[0][i], pres_v[0][i]);
       }
     }
   }
@@ -154,14 +158,14 @@ void IEMEvaluator::EvaluatePartialDerivative_(
 /* ******************************************************************
 * Create partition
 ****************************************************************** */
-void IEMEvaluator::CreateIEMPartition_(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    const Teuchos::ParameterList& plist)
+void
+IEMEvaluator::CreateIEMPartition_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                  const Teuchos::ParameterList& plist)
 {
   mesh_ = mesh;
 
-  std::vector<Teuchos::RCP<IEM> > iem_list;
-  std::vector<std::vector<std::string> > region_list;
+  std::vector<Teuchos::RCP<IEM>> iem_list;
+  std::vector<std::vector<std::string>> region_list;
 
   IEMFactory fac;
   const Teuchos::ParameterList& tmp = plist.sublist("IEM parameters");
@@ -170,7 +174,7 @@ void IEMEvaluator::CreateIEMPartition_(
     std::string name = lcv->first;
     if (tmp.isSublist(name)) {
       const Teuchos::ParameterList& aux = tmp.sublist(name);
-      region_list.push_back(aux.get<Teuchos::Array<std::string> >("regions").toVector());
+      region_list.push_back(aux.get<Teuchos::Array<std::string>>("regions").toVector());
 
       Teuchos::ParameterList model_list = aux.sublist("IEM parameters");
       iem_list.push_back(fac.CreateIEM(model_list));
@@ -190,7 +194,8 @@ void IEMEvaluator::CreateIEMPartition_(
 /* ******************************************************************
 * Evaluation at a point
 ****************************************************************** */
-double IEMEvaluator::EvaluateFieldSingle(int c, double T, double p)
+double
+IEMEvaluator::EvaluateFieldSingle(int c, double T, double p)
 {
   return iem_->second[(*iem_->first)[c]]->InternalEnergy(T, p);
 }
@@ -199,8 +204,8 @@ double IEMEvaluator::EvaluateFieldSingle(int c, double T, double p)
 /* ******************************************************************
 * Return model id
 ****************************************************************** */
-AmanziMesh::Entity_ID IEMEvaluator::MyModel_(
-    AmanziMesh::Entity_kind kind, AmanziMesh::Entity_ID id)
+AmanziMesh::Entity_ID
+IEMEvaluator::MyModel_(AmanziMesh::Entity_kind kind, AmanziMesh::Entity_ID id)
 {
   if (kind == AmanziMesh::CELL) {
     return id;
@@ -212,5 +217,5 @@ AmanziMesh::Entity_ID IEMEvaluator::MyModel_(
   return -1;
 }
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi

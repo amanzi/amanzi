@@ -2,8 +2,9 @@
 
 namespace Amanzi {
 
-FunctionPointer::FunctionPointer(double (*f)(const double*, const double*), const std::vector<double> &p)
-    : f_(f), np_(0), p_(0)
+FunctionPointer::FunctionPointer(double (*f)(const double*, const double*),
+                                 const std::vector<double>& p)
+  : f_(f), np_(0), p_(0)
 {
   if (p.size() > 0) {
     np_ = p.size();
@@ -12,8 +13,7 @@ FunctionPointer::FunctionPointer(double (*f)(const double*, const double*), cons
   }
 }
 
-FunctionPointer::FunctionPointer(const FunctionPointer& source)
-    : f_(source.f_), np_(0), p_(0)
+FunctionPointer::FunctionPointer(const FunctionPointer& source) : f_(source.f_), np_(0), p_(0)
 {
   if (source.p_) {
     np_ = source.np_;
@@ -24,7 +24,7 @@ FunctionPointer::FunctionPointer(const FunctionPointer& source)
 
 FunctionPointer::~FunctionPointer()
 {
-  if (p_) delete [] p_;
+  if (p_) delete[] p_;
 }
 
 } // namespace Amanzi

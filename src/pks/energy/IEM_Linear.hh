@@ -36,15 +36,15 @@ class IEM_Linear : public IEM {
 
   Teuchos::ParameterList plist_;
 
-  double cv_;  // units: J/({mol/kg}-K)
-  double Tref_;  // units: K
+  double cv_;   // units: J/({mol/kg}-K)
+  double Tref_; // units: K
 
  private:
   // iem factor registration
-  static Utils::RegisteredFactory<IEM,IEM_Linear> factory_;
+  static Utils::RegisteredFactory<IEM, IEM_Linear> factory_;
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

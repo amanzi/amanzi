@@ -14,16 +14,17 @@
 
 namespace Amanzi {
 
-FunctionTabularString::FunctionTabularString(
-    const std::vector<double>& x, const std::vector<std::string>& y)
+FunctionTabularString::FunctionTabularString(const std::vector<double>& x,
+                                             const std::vector<std::string>& y)
   : x_(x), y_(y)
 {
   CheckArgs_(x, y);
 }
 
 
-void FunctionTabularString::CheckArgs_(
-    const std::vector<double>& x, const std::vector<std::string>& y) const
+void
+FunctionTabularString::CheckArgs_(const std::vector<double>& x,
+                                  const std::vector<std::string>& y) const
 {
   if (x.size() != y.size()) {
     Errors::Message m;
@@ -36,7 +37,7 @@ void FunctionTabularString::CheckArgs_(
     Exceptions::amanzi_throw(m);
   }
   for (int j = 1; j < x.size(); ++j) {
-    if (x[j] <= x[j-1]) {
+    if (x[j] <= x[j - 1]) {
       Errors::Message m;
       m << "x values are not strictly increasing";
       Exceptions::amanzi_throw(m);
@@ -45,7 +46,8 @@ void FunctionTabularString::CheckArgs_(
 }
 
 
-std::string FunctionTabularString::operator()(double xv) const
+std::string
+FunctionTabularString::operator()(double xv) const
 {
   int n = x_.size();
   std::string y;
@@ -76,4 +78,4 @@ std::string FunctionTabularString::operator()(double xv) const
   return y;
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

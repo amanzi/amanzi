@@ -26,8 +26,9 @@ class Operator_FaceCellScc : public Operator_Cell {
  public:
   // The input CVS is the domain and range of the operator
   Operator_FaceCellScc(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                       Teuchos::ParameterList& plist) :
-      Operator_Cell(cvs, plist, OPERATOR_SCHEMA_DOFS_CELL) {
+                       Teuchos::ParameterList& plist)
+    : Operator_Cell(cvs, plist, OPERATOR_SCHEMA_DOFS_CELL)
+  {
     set_schema_string("FACE+CELL Schur to CELL");
   }
 
@@ -35,12 +36,13 @@ class Operator_FaceCellScc : public Operator_Cell {
 
   // cannot do an assembled forward apply as the assembled thing is not the full
   // operator
-  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const override {
-    return Apply(X,Y,0.0);
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const override
+  {
+    return Apply(X, Y, 0.0);
   }
-  virtual int
-  Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const override {
-    return ApplyUnassembled(X,Y,scalar);
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const override
+  {
+    return ApplyUnassembled(X, Y, scalar);
   }
   // Special Apply Inverse required to deal with schur complement
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const override;
@@ -48,13 +50,16 @@ class Operator_FaceCellScc : public Operator_Cell {
   // Special AssembleMatrix required to deal with schur complement
   using Operator_Cell::AssembleMatrixOp;
   virtual void AssembleMatrix(const SuperMap& map,
-          MatrixFE& matrix, int my_block_row, int my_block_col) const override;
+                              MatrixFE& matrix,
+                              int my_block_row,
+                              int my_block_col) const override;
 
   // visit method for Apply -- this is identical to Operator_FaceCell's
   // version.
   using Operator_Cell::ApplyMatrixFreeOp;
   virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
-      const CompositeVector& X, CompositeVector& Y) const override;
+                                const CompositeVector& X,
+                                CompositeVector& Y) const override;
 
   // driver symbolic assemble creates the face-only supermap
   virtual void SymbolicAssembleMatrix() override;
@@ -62,19 +67,18 @@ class Operator_FaceCellScc : public Operator_Cell {
   // visit method for sparsity structure of Schur complement
   using Operator_Cell::SymbolicAssembleMatrixOp;
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
-          const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const override;
+                                        const SuperMap& map,
+                                        GraphFE& graph,
+                                        int my_block_row,
+                                        int my_block_col) const override;
 
  protected:
-  mutable std::vector<Teuchos::RCP<Op_Cell_Cell> > diag_ops_;
-  mutable std::vector<Teuchos::RCP<Op_Face_Cell> > schur_ops_;
+  mutable std::vector<Teuchos::RCP<Op_Cell_Cell>> diag_ops_;
+  mutable std::vector<Teuchos::RCP<Op_Face_Cell>> schur_ops_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 
 #endif
-
-    
-

@@ -18,8 +18,8 @@
 namespace Amanzi {
 
 TimestepControllerStandard::TimestepControllerStandard(Teuchos::ParameterList& plist)
-  : TimestepController(plist),
-    plist_(plist) {
+  : TimestepController(plist), plist_(plist)
+{
   max_its_ = plist_.get<int>("max iterations");
   min_its_ = plist_.get<int>("min iterations");
   AMANZI_ASSERT(max_its_ > min_its_);
@@ -46,7 +46,8 @@ TimestepControllerStandard::TimestepControllerStandard(Teuchos::ParameterList& p
 
 
 double
-TimestepControllerStandard::get_timestep(double dt, int iterations) {
+TimestepControllerStandard::get_timestep(double dt, int iterations)
+{
   double dt_next(dt);
   // iterations < 0 implies failed timestep
   if (iterations < 0 || iterations > max_its_) {
@@ -72,7 +73,8 @@ TimestepControllerStandard::get_timestep(double dt, int iterations) {
   // check that if we have failed, our step size has decreased.
   if (iterations < 0) {
     if (dt - dt_next < 1.0e-10) {
-      Errors::TimeStepCrash msg("Timestep failed: dT change is too small (check reduction_factor).");
+      Errors::TimeStepCrash msg(
+        "Timestep failed: dT change is too small (check reduction_factor).");
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -81,4 +83,4 @@ TimestepControllerStandard::get_timestep(double dt, int iterations) {
 }
 
 
-} // namespace
+} // namespace Amanzi

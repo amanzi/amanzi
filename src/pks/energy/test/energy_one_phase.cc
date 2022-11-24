@@ -38,7 +38,8 @@
 /* **************************************************************** 
 * Runs to a steady state
 * ************************************************************** */
-TEST(ENERGY_ONE_PHASE) {
+TEST(ENERGY_ONE_PHASE)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -50,7 +51,7 @@ TEST(ENERGY_ONE_PHASE) {
 
   if (MyPID == 0) std::cout << "Test: steady state calculation" << std::endl;
 
-  // read parameter list 
+  // read parameter list
   std::string xmlFileName = "test/energy_one_phase.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   auto plist = Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
@@ -90,12 +91,13 @@ TEST(ENERGY_ONE_PHASE) {
   S->GetEvaluator("energy").UpdateDerivative(*S, "thermal", "temperature", Tags::DEFAULT);
   int n0 = S->Get<CompositeVector>("energy").size("cell", false);
   int n1 = S->Get<CompositeVector>("energy").size("cell", true);
-  int n2 = S->GetDerivativeW<CompositeVector>("energy", Tags::DEFAULT, "temperature",
-                                              Tags::DEFAULT, "energy").size("cell", true);
+  int n2 = S->GetDerivativeW<CompositeVector>(
+              "energy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "energy")
+             .size("cell", true);
   AMANZI_ASSERT(n0 < n1);
   AMANZI_ASSERT(n1 == n2);
 
-  // constant time stepping 
+  // constant time stepping
   std::string passwd("");
   int itrs(0);
   double t(0.0), dt(0.1), t1(5.5), dt_next;
@@ -115,8 +117,9 @@ TEST(ENERGY_ONE_PHASE) {
     EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
     CHECK(dt_next >= dt);
     EPK->bdf1_dae()->CommitSolution(dt, soln);
-    Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
-        S->GetEvaluatorPtr("temperature", Tags::DEFAULT))->SetChanged();
+    Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
+      S->GetEvaluatorPtr("temperature", Tags::DEFAULT))
+      ->SetChanged();
 
     t += dt;
     itrs++;
@@ -126,7 +129,5 @@ TEST(ENERGY_ONE_PHASE) {
   WriteStateStatistics(*S, *vo);
 
   auto temp = *S->Get<CompositeVector>("temperature").ViewComponent("cell");
-  for (int c = 0; c < 10; ++c) { 
-    CHECK_CLOSE(1.5, temp[0][c], 2e-8);
-  }
+  for (int c = 0; c < 10; ++c) { CHECK_CLOSE(1.5, temp[0][c], 2e-8); }
 }

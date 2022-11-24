@@ -10,7 +10,8 @@
 
 namespace Amanzi {
 
-FunctionTabular::FunctionTabular(const std::vector<double>& x, const std::vector<double>& y,
+FunctionTabular::FunctionTabular(const std::vector<double>& x,
+                                 const std::vector<double>& y,
                                  const int xi)
   : x_(x), y_(y), xi_(xi)
 {
@@ -18,17 +19,20 @@ FunctionTabular::FunctionTabular(const std::vector<double>& x, const std::vector
   check_args(x, y, form_);
 }
 
-FunctionTabular::FunctionTabular(
-    const std::vector<double>& x, const std::vector<double>& y,
-    const int xi, const std::vector<Form>& form) : x_(x), y_(y), xi_(xi), form_(form)
+FunctionTabular::FunctionTabular(const std::vector<double>& x,
+                                 const std::vector<double>& y,
+                                 const int xi,
+                                 const std::vector<Form>& form)
+  : x_(x), y_(y), xi_(xi), form_(form)
 {
   check_args(x, y, form);
 }
 
-FunctionTabular::FunctionTabular(
-    const std::vector<double>& x, const std::vector<double>& y,
-    const int xi, const std::vector<Form>& form,
-    std::vector<std::unique_ptr<Function>> func)
+FunctionTabular::FunctionTabular(const std::vector<double>& x,
+                                 const std::vector<double>& y,
+                                 const int xi,
+                                 const std::vector<Form>& form,
+                                 std::vector<std::unique_ptr<Function>> func)
   : x_(x), y_(y), xi_(xi), form_(form), func_(std::move(func))
 {
   check_args(x, y, form);
@@ -36,20 +40,16 @@ FunctionTabular::FunctionTabular(
 
 
 FunctionTabular::FunctionTabular(const FunctionTabular& other)
-  : x_(other.x_),
-    y_(other.y_),
-    xi_(other.xi_),
-    form_(other.form_),
-    func_()
+  : x_(other.x_), y_(other.y_), xi_(other.xi_), form_(other.form_), func_()
 {
-  for (const auto& f : other.func_) {
-    func_.emplace_back(f->Clone());
-  }
+  for (const auto& f : other.func_) { func_.emplace_back(f->Clone()); }
 }
 
 
-void FunctionTabular::check_args(const std::vector<double>& x, const std::vector<double>& y,
-                                 const std::vector<Form>& form) const
+void
+FunctionTabular::check_args(const std::vector<double>& x,
+                            const std::vector<double>& y,
+                            const std::vector<Form>& form) const
 {
   if (x.size() != y.size()) {
     Errors::Message m;
@@ -62,31 +62,32 @@ void FunctionTabular::check_args(const std::vector<double>& x, const std::vector
     Exceptions::amanzi_throw(m);
   }
   for (int j = 1; j < x.size(); ++j) {
-    if (x[j] <= x[j-1]) {
+    if (x[j] <= x[j - 1]) {
       Errors::Message m;
       m << "x values are not strictly increasing";
       Exceptions::amanzi_throw(m);
     }
   }
-  if (form.size() != x.size()-1) {
+  if (form.size() != x.size() - 1) {
     Errors::Message m;
     m << "incorrect number of form values specified";
     Exceptions::amanzi_throw(m);
   }
 }
 
-double FunctionTabular::operator()(const std::vector<double>& x) const
+double
+FunctionTabular::operator()(const std::vector<double>& x) const
 {
   double y;
   double xv = x[xi_];
   int n = x_.size();
   if (xv <= x_[0]) {
     y = y_[0];
-  } else if (xv > x_[n-1]) {
-    y = y_[n-1];
+  } else if (xv > x_[n - 1]) {
+    y = y_[n - 1];
   } else {
     // binary search to find interval containing xv
-    int j1 = 0, j2 = n-1;
+    int j1 = 0, j2 = n - 1;
     while (j2 - j1 > 1) {
       int j = (j1 + j2) / 2;
       // if (xv >= x_[j]) { // right continuous
@@ -101,7 +102,7 @@ double FunctionTabular::operator()(const std::vector<double>& x) const
     switch (form_[j1]) {
     case LINEAR:
       // Linear interpolation between x[j1] and x[j2]
-      y = y_[j1] + ((y_[j2]-y_[j1])/(x_[j2]-x_[j1])) * (xv - x_[j1]);
+      y = y_[j1] + ((y_[j2] - y_[j1]) / (x_[j2] - x_[j1])) * (xv - x_[j1]);
       break;
     case CONSTANT:
       y = y_[j1];

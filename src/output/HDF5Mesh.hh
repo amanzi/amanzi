@@ -8,7 +8,8 @@
 #include "Epetra_Vector.h"
 #include "Teuchos_XMLObject.hpp"
 
-extern "C" {
+extern "C"
+{
 #define H5Gcreate_vers 2
 #define H5Dcreate_vers 2
 #define H5Gopen_vers 2
@@ -25,34 +26,35 @@ class HDF5 {
   void setTrackXdmf(bool TrackXdmf) { TrackXdmf_ = TrackXdmf; }
 
   std::string H5MeshFilename() { return H5MeshFilename_; }
-  void setH5MeshFilename(std::string H5MeshFilename) {
-                         H5MeshFilename_ = H5MeshFilename;}
+  void setH5MeshFilename(std::string H5MeshFilename) { H5MeshFilename_ = H5MeshFilename; }
   std::string H5DataFilename() { return H5DataFilename_; }
-  void setH5DataFilename(std::string H5DataFilename) {
-                         H5DataFilename_ = H5DataFilename;}
+  void setH5DataFilename(std::string H5DataFilename) { H5DataFilename_ = H5DataFilename; }
   std::string xdmfParaviewFilename() { return xdmfParaviewFilename_; }
-  void setxdmfParaviewFilename(std::string xdmfParaviewFilename) {
-                               xdmfParaviewFilename_ = xdmfParaviewFilename;}
+  void setxdmfParaviewFilename(std::string xdmfParaviewFilename)
+  {
+    xdmfParaviewFilename_ = xdmfParaviewFilename;
+  }
   std::string xdmfVisitFilename() { return xdmfVisitFilename_; }
-  void setxdmfVisitFilename(std::string xdmfVisitFilename) {
-                            xdmfVisitFilename_ = xdmfVisitFilename;}
+  void setxdmfVisitFilename(std::string xdmfVisitFilename)
+  {
+    xdmfVisitFilename_ = xdmfVisitFilename;
+  }
   std::string xdmfStepFilename() { return xdmfStepFilename_; }
-  void setxdmfStepFilename(std::string xdmfStepFilename) {
-                           xdmfStepFilename_ = xdmfStepFilename;}
+  void setxdmfStepFilename(std::string xdmfStepFilename) { xdmfStepFilename_ = xdmfStepFilename; }
 
-  int NumNodes() { return NumNodes_;}
-  void setNumNodes(int NumNodes) {NumNodes_ = NumNodes;}
-  int NumElems() { return NumElems_;}
-  void setNumElems(int NumElems) {NumElems_ = NumElems;}
-  int Iteration() { return Iteration_;}
-  void setIteration(int Iteration) {Iteration_ = Iteration;}
+  int NumNodes() { return NumNodes_; }
+  void setNumNodes(int NumNodes) { NumNodes_ = NumNodes; }
+  int NumElems() { return NumElems_; }
+  void setNumElems(int NumElems) { NumElems_ = NumElems; }
+  int Iteration() { return Iteration_; }
+  void setIteration(int Iteration) { Iteration_ = Iteration; }
 
   Teuchos::XMLObject xmlParaview() { return xmlParaview_; }
   Teuchos::XMLObject xmlVisit() { return xmlVisit_; }
   Teuchos::XMLObject xmlStep() { return xmlStep_; }
 
   // Output mesh data to filename.h5 and filename.xmf
-  void createMeshFile(AmanziMesh::Mesh &mesh_Maps, std::string filename);
+  void createMeshFile(AmanziMesh::Mesh& mesh_Maps, std::string filename);
 
   // Create h5 file for data output, create accompanying Xdmf files for
   // ParaView and Visit
@@ -65,13 +67,12 @@ class HDF5 {
   void endTimestep();
 
   // Write data to HDF5 data file.
-  void writeNodeData(const Epetra_Vector &x, const std::string varname);
-  void writeCellData(const Epetra_Vector &x, const std::string varname);
-  void writeData(const Epetra_Vector &x, const std::string varname);
-  void readData(Epetra_Vector &x, const std::string varname);
+  void writeNodeData(const Epetra_Vector& x, const std::string varname);
+  void writeCellData(const Epetra_Vector& x, const std::string varname);
+  void writeData(const Epetra_Vector& x, const std::string varname);
+  void readData(Epetra_Vector& x, const std::string varname);
 
  private:
-
   void createXdmfMesh_(const std::string filename);
   void createXdmfParaview_();
   void createXdmfVisit_();
@@ -80,20 +81,16 @@ class HDF5 {
   Teuchos::XMLObject addXdmfHeaderLocal_(const double value);
   Teuchos::XMLObject addXdmfTopo_();
   Teuchos::XMLObject addXdmfGeo_();
-  Teuchos::XMLObject addXdmfAttribute_(std::string varname,
-                                       std::string location,
-                                       int length, std::string h5path);
+  Teuchos::XMLObject
+  addXdmfAttribute_(std::string varname, std::string location, int length, std::string h5path);
 
   Teuchos::XMLObject findGridNode_(Teuchos::XMLObject xmlobject);
   Teuchos::XMLObject findMeshNode_(Teuchos::XMLObject xmlobject);
-  void writeXdmfParaviewGrid_(std::string filename,
-                                          const double time,
-                                          const int iteration);
+  void writeXdmfParaviewGrid_(std::string filename, const double time, const int iteration);
   void writeXdmfVisitGrid_(std::string filename);
-  
-  void writeFieldData_(const Epetra_Vector &x, std::string varname,
-                       std::string loc);
-  void readFieldData_(Epetra_Vector &x, std::string varname);
+
+  void writeFieldData_(const Epetra_Vector& x, std::string varname, std::string loc);
+  void readFieldData_(Epetra_Vector& x, std::string varname);
 
   // track xml for viz
   // TODO(barker): need to set default value
@@ -115,7 +112,7 @@ class HDF5 {
   int NumNodes_;
   int NumElems_;
   int Iteration_;
-  
+
   // Mesh information
   int conn_;
   AmanziMesh::Cell_type ctype_;
@@ -124,6 +121,6 @@ class HDF5 {
   static std::string xdmfHeader_;
 };
 
-} // namespace HDF5
+} // namespace Amanzi
 
 #endif

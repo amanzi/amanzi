@@ -20,15 +20,15 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Transfer operators -- copies ONLY pointers
 // -----------------------------------------------------------------------------
-void PK_Physical::State_to_Solution(const Tag& tag,
-                                    TreeVector& solution)
+void
+PK_Physical::State_to_Solution(const Tag& tag, TreeVector& solution)
 {
   solution.SetData(S_->GetPtrW<CompositeVector>(key_, tag, name()));
 }
 
 
-void PK_Physical::Solution_to_State(const TreeVector& solution,
-                                    const Tag& tag)
+void
+PK_Physical::Solution_to_State(const TreeVector& solution, const Tag& tag)
 {
   AMANZI_ASSERT(solution.Data() == S_->GetPtr<CompositeVector>(key_, tag));
 }
@@ -37,7 +37,8 @@ void PK_Physical::Solution_to_State(const TreeVector& solution,
 // -----------------------------------------------------------------------------
 // Helper method to add a primary variable evaluator
 // -----------------------------------------------------------------------------
-void PK_Physical::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
+void
+PK_Physical::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
 {
   AMANZI_ASSERT(S_ != Teuchos::null);
   Teuchos::ParameterList elist = S_->GetEvaluatorList(key);
@@ -51,15 +52,18 @@ void PK_Physical::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
 // -----------------------------------------------------------------------------
 // Helper method to add an independent variable evaluator
 // -----------------------------------------------------------------------------
-void PK_Physical::AddDefaultIndependentEvaluator_(const Key& key, const Tag& tag, double val)
+void
+PK_Physical::AddDefaultIndependentEvaluator_(const Key& key, const Tag& tag, double val)
 {
   Teuchos::ParameterList elist(key);
   elist.set<std::string>("evaluator type", "independent variable")
-       .sublist("function").sublist("ALL")
-       .set<std::string>("region", "All")
-       .set<std::string>("component", "*")
-       .sublist("function").sublist("function-constant")
-       .set<double>("value", val);
+    .sublist("function")
+    .sublist("ALL")
+    .set<std::string>("region", "All")
+    .set<std::string>("component", "*")
+    .sublist("function")
+    .sublist("function-constant")
+    .set<double>("value", val);
 
   auto eval = Teuchos::rcp(new EvaluatorIndependentFunction(elist));
   S_->SetEvaluator(key, tag, eval);
@@ -69,9 +73,13 @@ void PK_Physical::AddDefaultIndependentEvaluator_(const Key& key, const Tag& tag
 // -----------------------------------------------------------------------------
 // Helper method to initialize a CV field
 // -----------------------------------------------------------------------------
-void InitializeCVField(const Teuchos::RCP<State>& S, const VerboseObject& vo,
-                       const Key& key, const Tag& tag, const Key& passwd,
-                       double default_val)
+void
+InitializeCVField(const Teuchos::RCP<State>& S,
+                  const VerboseObject& vo,
+                  const Key& key,
+                  const Tag& tag,
+                  const Key& passwd,
+                  double default_val)
 {
   Teuchos::OSTab tab = vo.getOSTab();
 
@@ -89,4 +97,3 @@ void InitializeCVField(const Teuchos::RCP<State>& S, const VerboseObject& vo,
 }
 
 } // namespace Amanzi
-

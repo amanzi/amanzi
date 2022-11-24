@@ -27,8 +27,7 @@ namespace Amanzi {
 template <class Model>
 class BoundaryFluxFn {
  public:
-
-  typedef double(Model::*NonlinFunc)(double p) const;
+  typedef double (Model::*NonlinFunc)(double p) const;
 
   BoundaryFluxFn(const double trans_f,
                  const double lambda,
@@ -38,15 +37,21 @@ class BoundaryFluxFn {
                  int dir,
                  double patm,
                  Teuchos::RCP<const Model> model,
-                 NonlinFunc nonlinfunc):
-      trans_f_(trans_f), lambda_(lambda),
-      cell_p_(cell_p), bc_flux_(bc_flux), g_flux_(g_flux),
-      dir_(dir), patm_(patm) {
+                 NonlinFunc nonlinfunc)
+    : trans_f_(trans_f),
+      lambda_(lambda),
+      cell_p_(cell_p),
+      bc_flux_(bc_flux),
+      g_flux_(g_flux),
+      dir_(dir),
+      patm_(patm)
+  {
     model_ = model;
     nonlinfunc_ = nonlinfunc;
   }
 
-  double operator()(double face_p) {
+  double operator()(double face_p)
+  {
     lambda_ = face_p;
     double krel = ((*model_).*nonlinfunc_)(patm_ - lambda_);
     double flux = dir_ * trans_f_ * krel * (cell_p_ - lambda_);
@@ -73,10 +78,8 @@ class BoundaryFluxFn {
 * Auxiliaty class for toms748: convergence criteria.
 ****************************************************************** */
 struct Tol_ {
-  Tol_(double eps) : eps_(eps) {};
-  bool operator()(const double& a, const double& b) const {
-    return std::abs(a - b) <= eps_;
-  }
+  Tol_(double eps) : eps_(eps){};
+  bool operator()(const double& a, const double& b) const { return std::abs(a - b) <= eps_; }
   double eps_;
 };
 
@@ -87,28 +90,35 @@ struct Tol_ {
 template <class Model>
 class BoundaryFaceSolver {
  public:
-  typedef double(Model::*NonlinFunc)(double p) const;
+  typedef double (Model::*NonlinFunc)(double p) const;
 
-  BoundaryFaceSolver(double trans_f, double g_f,
-                     double cell_val, double lambda,
-                     double bnd_flux, int dir, double patm, 
-                     double min_val, double max_val, double eps,
-                     Teuchos::RCP<const Model> model, NonlinFunc test_fun) :
-    lambda_(lambda), 
-    cell_val_(cell_val), 
-    trans_f_(trans_f), 
-    g_f_(g_f), 
-    patm_(patm), 
-    bnd_flux_(bnd_flux),
-    min_val_(min_val),
-    max_val_(max_val),
-    eps_(eps)
+  BoundaryFaceSolver(double trans_f,
+                     double g_f,
+                     double cell_val,
+                     double lambda,
+                     double bnd_flux,
+                     int dir,
+                     double patm,
+                     double min_val,
+                     double max_val,
+                     double eps,
+                     Teuchos::RCP<const Model> model,
+                     NonlinFunc test_fun)
+    : lambda_(lambda),
+      cell_val_(cell_val),
+      trans_f_(trans_f),
+      g_f_(g_f),
+      patm_(patm),
+      bnd_flux_(bnd_flux),
+      min_val_(min_val),
+      max_val_(max_val),
+      eps_(eps)
   {
-    func_ = Teuchos::rcp(new BoundaryFluxFn<Model>(trans_f, lambda, cell_val, bnd_flux,
-                                                   g_f, dir, patm, model, test_fun));
+    func_ = Teuchos::rcp(new BoundaryFluxFn<Model>(
+      trans_f, lambda, cell_val, bnd_flux, g_f, dir, patm, model, test_fun));
   }
 
-  double SolveBisection(double face_val, 
+  double SolveBisection(double face_val,
                         double min_val,
                         double max_val,
                         BoundaryFluxFn<Model>& func,
@@ -116,36 +126,38 @@ class BoundaryFaceSolver {
                         boost::uintmax_t max_it,
                         boost::uintmax_t& actual_it);
 
-  double FaceValue() {
+  double FaceValue()
+  {
     Tol_ tol(eps_);
     boost::uintmax_t max_it = 100;
     boost::uintmax_t actual_it(max_it);
-    
+
     return SolveBisection(lambda_, min_val_, max_val_, *func_, tol, max_it, actual_it);
   }
 
-  double lambda_;  // initial guess
-  double cell_val_, trans_f_, g_f_, patm_, bnd_flux_;  // input data
-  double min_val_, max_val_;  // bracket values
+  double lambda_;                                     // initial guess
+  double cell_val_, trans_f_, g_f_, patm_, bnd_flux_; // input data
+  double min_val_, max_val_;                          // bracket values
   double eps_;
-  Teuchos::RCP<BoundaryFluxFn<Model> > func_;
+  Teuchos::RCP<BoundaryFluxFn<Model>> func_;
 };
 
 
 template <class Model>
-double BoundaryFaceSolver<Model>::SolveBisection(double face_val, 
-                                                 double min_val, 
-                                                 double max_val,
-                                                 BoundaryFluxFn<Model>& func,
-                                                 Tol_& tol,
-                                                 boost::uintmax_t max_it,
-                                                 boost::uintmax_t& actual_it)
+double
+BoundaryFaceSolver<Model>::SolveBisection(double face_val,
+                                          double min_val,
+                                          double max_val,
+                                          BoundaryFluxFn<Model>& func,
+                                          Tol_& tol,
+                                          boost::uintmax_t max_it,
+                                          boost::uintmax_t& actual_it)
 {
   double res = func(face_val);
   double left(0.0), right(0.0), lres(0.0), rres(0.0);
 
 #if DEBUG_FLAG
-std::cout << "STaRT interval: (" << min_val << " " << max_val << "),  fval=" << face_val << "\n";
+  std::cout << "STaRT interval: (" << min_val << " " << max_val << "),  fval=" << face_val << "\n";
 #endif
   if (res > 0.0) {
     left = face_val;
@@ -153,13 +165,14 @@ std::cout << "STaRT interval: (" << min_val << " " << max_val << "),  fval=" << 
     right = std::max(face_val, max_val);
     rres = func(right);
 #if DEBUG_FLAG
-std::cout << "---set right:      " << left << " (" << lres << "), " << right << " (" << rres << ")\n";
+    std::cout << "---set right:      " << left << " (" << lres << "), " << right << " (" << rres
+              << ")\n";
 #endif
     while (rres > 0.0) {
       right += std::max(fabs(right), 100.0);
       rres = func(right);
 #if DEBUG_FLAG
-std::cout << "   change right:   " << right << " (" << rres << ")\n";
+      std::cout << "   change right:   " << right << " (" << rres << ")\n";
 #endif
     }
   } else {
@@ -168,18 +181,20 @@ std::cout << "   change right:   " << right << " (" << rres << ")\n";
     left = std::min(min_val, face_val);
     lres = func(left);
 #if DEBUG_FLAG
-std::cout << "---set left:       " << left << " (" << lres << "), " << right << " (" << rres << ")\n";
+    std::cout << "---set left:       " << left << " (" << lres << "), " << right << " (" << rres
+              << ")\n";
 #endif
     while (lres < 0.0) {
       left -= std::max(fabs(left), 100.0);
       lres = func(left);
 #if DEBUG_FLAG
-std::cout << "   change left:    " << left << " (" << lres << ")\n";
+      std::cout << "   change left:    " << left << " (" << lres << ")\n";
 #endif
     }
   }
 #if DEBUG_FLAG
-std::cout << "+++bracket (func): " << left << " (" << lres << "), " << right << " (" << rres << ")\n";
+  std::cout << "+++bracket (func): " << left << " (" << lres << "), " << right << " (" << rres
+            << ")\n";
 #endif
 
   if (tol(left, right)) {
@@ -195,11 +210,11 @@ std::cout << "+++bracket (func): " << left << " (" << lres << "), " << right << 
   }
 
 #if DEBUG_FLAG
-std::cout << "   solution = " << face_val << " itrs = " << actual_it << "\n";
+  std::cout << "   solution = " << face_val << " itrs = " << actual_it << "\n";
 #endif
   return face_val;
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

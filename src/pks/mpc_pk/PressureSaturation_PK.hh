@@ -18,13 +18,12 @@
 
 namespace Amanzi {
 
-class PressureSaturation_PK : public MPCSubcycled{
-
-public:
+class PressureSaturation_PK : public MPCSubcycled {
+ public:
   PressureSaturation_PK(Teuchos::ParameterList& pk_tree,
-               const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-               const Teuchos::RCP<State>& S,
-               const Teuchos::RCP<TreeVector>& soln);
+                        const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                        const Teuchos::RCP<State>& S,
+                        const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
   // -- dt is the minimum of the sub pks
@@ -36,13 +35,12 @@ public:
 
   // virtual void Initialize();
 
-  std::string name() { return "pressure saturation";} 
+  std::string name() { return "pressure saturation"; }
 
-private:
-
+ private:
   // factory registration
   static RegisteredPKFactory<PressureSaturation_PK> reg_;
 };
 
-} // close namespace Amanzi
+} // namespace Amanzi
 #endif

@@ -27,7 +27,8 @@
 
 
 /* **************************************************************** */
-TEST(ELASTICITY_STIFFNESS_2D) {
+TEST(ELASTICITY_STIFFNESS_2D)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
@@ -42,10 +43,10 @@ TEST(ELASTICITY_STIFFNESS_2D) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo"); 
- 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
+  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
+
   Teuchos::ParameterList plist;
   plist.set<std::string>("base", "cell");
   MFD3D_Elasticity mfd(plist, mesh);
@@ -83,7 +84,7 @@ TEST(ELASTICITY_STIFFNESS_2D) {
     // verify exact integration property
     AmanziMesh::Entity_ID_List nodes;
     mesh->cell_get_nodes(cell, &nodes);
-    
+
     int d = mesh->space_dimension();
     Point p(d);
 
@@ -91,14 +92,14 @@ TEST(ELASTICITY_STIFFNESS_2D) {
     for (int i = 0; i < nnodes; i++) {
       int v = nodes[i];
       mesh->node_get_coordinates(v, &p);
-      xx[2 * i] = p[0];    
-      xx[2 * i + 1] = 0.0;    
+      xx[2 * i] = p[0];
+      xx[2 * i + 1] = 0.0;
 
-      yy[2 * i] = 0.0;    
+      yy[2 * i] = 0.0;
       yy[2 * i + 1] = p[1];
     }
 
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
     for (int i = 0; i < nrows; i++) {
       for (int j = 0; j < nrows; j++) {
         vxx += A(i, j) * xx[i] * xx[j];
@@ -112,7 +113,8 @@ TEST(ELASTICITY_STIFFNESS_2D) {
 
 
 /* **************************************************************** */
-TEST(ELASTICITY_STIFFNESS_3D) {
+TEST(ELASTICITY_STIFFNESS_3D)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
@@ -123,10 +125,10 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
-  RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo"); 
- 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1);
+  RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo");
+
   Teuchos::ParameterList plist;
   plist.set<std::string>("base", "cell");
   MFD3D_Elasticity mfd(plist, mesh);
@@ -147,7 +149,7 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   // verify exact integration property
   AmanziMesh::Entity_ID_List nodes;
   mesh->cell_get_nodes(cell, &nodes);
-    
+
   int d = mesh->space_dimension();
   Point p(d);
 
@@ -155,16 +157,16 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   for (int i = 0; i < nnodes; i++) {
     int v = nodes[i];
     mesh->node_get_coordinates(v, &p);
-    xx[3 * i] = p[0];    
-    xx[3 * i + 1] = 0.0;    
-    xx[3 * i + 2] = 0.0;    
+    xx[3 * i] = p[0];
+    xx[3 * i + 1] = 0.0;
+    xx[3 * i + 2] = 0.0;
 
-    yy[3 * i] = 0.0;    
+    yy[3 * i] = 0.0;
     yy[3 * i + 1] = p[1];
     yy[3 * i + 2] = 0.0;
   }
 
-  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < nrows; j++) {
       vxx += A(i, j) * xx[i] * xx[j];
@@ -174,5 +176,3 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
 }
-
-

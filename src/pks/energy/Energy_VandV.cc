@@ -14,8 +14,5 @@
 #include "Energy_PK.hh"
 
 namespace Amanzi {
-namespace Energy {
-
-}  // namespace Energy
-}  // namespace Amanzi
-
+namespace Energy {} // namespace Energy
+} // namespace Amanzi

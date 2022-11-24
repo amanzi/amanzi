@@ -4,14 +4,14 @@
 
 #include "VerboseObject_objs.hh"
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
-  MPI_Init(&argc,&argv);
+  MPI_Init(&argc, &argv);
 
-  int status = UnitTest::RunAllTests ();
-  
+  int status = UnitTest::RunAllTests();
+
   MPI_Finalize();
-  
+
   return status;
 }
-

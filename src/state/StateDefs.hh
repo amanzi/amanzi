@@ -25,7 +25,7 @@
 
 namespace Amanzi {
 
-typedef bool NullFactory;  // placeholder object for no factory required
+typedef bool NullFactory; // placeholder object for no factory required
 
 namespace Tags {
 static const Tag DEFAULT("");
@@ -33,15 +33,10 @@ static const Tag CURRENT("current");
 static const Tag INTER("inter");
 static const Tag NEXT(""); // an alias used by ATS
 static const Tag COPY("copy");
-}
+} // namespace Tags
 
-enum class EvaluatorType {
-  PRIMARY,
-  SECONDARY,
-  INDEPENDENT,
-  OTHER
-};
+enum class EvaluatorType { PRIMARY, SECONDARY, INDEPENDENT, OTHER };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

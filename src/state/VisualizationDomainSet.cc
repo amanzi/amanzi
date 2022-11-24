@@ -18,7 +18,8 @@ namespace Amanzi {
 
 
 void
-VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const
+VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec,
+                                    const std::vector<std::string>& names) const
 {
   // replace names[0] domain index with a *
   KeyTriple dset_triple;
@@ -27,8 +28,8 @@ VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec, const std::ve
 
   if (!lifted_vectors_.count(vis_name)) {
     // create a lifted vector if we don't currently have one
-    auto lifted_vec = Teuchos::rcp(new Epetra_MultiVector(mesh()->cell_map(false),
-            vec.NumVectors()));
+    auto lifted_vec =
+      Teuchos::rcp(new Epetra_MultiVector(mesh()->cell_map(false), vec.NumVectors()));
 
     // also create a lifted set of names
     std::vector<std::string> lifted_names;
@@ -45,8 +46,7 @@ VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec, const std::ve
   // Note that to get the domain, we use name_ rather than names[0]'s domain
   // name, as this could be an alias.
   Epetra_MultiVector& lifted_vec = *lifted_vectors_[vis_name].first;
-  ds_->DoImport(Keys::getDomainInSet(name_, std::get<1>(dset_triple)),
-                vec, lifted_vec);
+  ds_->DoImport(Keys::getDomainInSet(name_, std::get<1>(dset_triple)), vec, lifted_vec);
 }
 
 
@@ -73,8 +73,7 @@ VisualizationDomainSet::WriteVector(const Epetra_Vector& vec, const std::string&
 
   // copy from the domain-set vector into the lifted vector
   Epetra_MultiVector& lifted_vec = *lifted_vectors_[vis_name].first;
-  ds_->DoImport(Keys::getDomainInSet(name_, std::get<1>(dset_triple)),
-                vec, lifted_vec);
+  ds_->DoImport(Keys::getDomainInSet(name_, std::get<1>(dset_triple)), vec, lifted_vec);
 }
 
 void
@@ -84,9 +83,7 @@ VisualizationDomainSet::FinalizeTimestep() const
   if (lifted_vector_names_.size() == 0) {
     // have to get a common set of names across all ranks
     std::vector<std::string> my_names;
-    for (auto& lv : lifted_vectors_) {
-      my_names.push_back(lv.first);
-    }
+    for (auto& lv : lifted_vectors_) { my_names.push_back(lv.first); }
 
     Utils::StringReducer<100> reducer(mesh_->get_comm());
     reducer.checkValidInput(my_names);
@@ -110,4 +107,4 @@ VisualizationDomainSet::FinalizeTimestep() const
   Visualization::FinalizeTimestep();
 }
 
-} // namespace
+} // namespace Amanzi

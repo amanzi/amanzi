@@ -33,20 +33,22 @@ class Polynomial;
 
 class SpaceTimePolynomial {
  public:
-  SpaceTimePolynomial() : d_(0), order_(-1), size_(-1) {};
+  SpaceTimePolynomial() : d_(0), order_(-1), size_(-1){};
   SpaceTimePolynomial(int d, int order);
   SpaceTimePolynomial(const SpaceTimePolynomial& poly);
-  ~SpaceTimePolynomial() {};
+  ~SpaceTimePolynomial(){};
 
   // reshape polynomial and erase (optionally) memory
   void Reshape(int d, int order, bool reset = false);
 
   // modifiers
   // -- polynomial is recalculated
-  void set_origin(const AmanziGeometry::Point& origin) {
+  void set_origin(const AmanziGeometry::Point& origin)
+  {
     for (int i = 0; i < size_; ++i) coefs_[i].set_origin(origin);
   }
-  void ChangeOrigin(const AmanziGeometry::Point& origin) {
+  void ChangeOrigin(const AmanziGeometry::Point& origin)
+  {
     for (int i = 0; i < size_; ++i) coefs_[i].ChangeOrigin(origin);
   }
 
@@ -60,40 +62,50 @@ class SpaceTimePolynomial {
   SpaceTimePolynomial& operator-=(const SpaceTimePolynomial& poly);
   SpaceTimePolynomial& operator*=(const SpaceTimePolynomial& poly);
   SpaceTimePolynomial& operator*=(double val);
- 
-  friend SpaceTimePolynomial operator+(const SpaceTimePolynomial& poly1, const SpaceTimePolynomial& poly2) {
+
+  friend SpaceTimePolynomial
+  operator+(const SpaceTimePolynomial& poly1, const SpaceTimePolynomial& poly2)
+  {
     SpaceTimePolynomial tmp(poly1);
     return tmp += poly2;
   }
 
-  friend SpaceTimePolynomial operator-(const SpaceTimePolynomial& poly1, const SpaceTimePolynomial& poly2) {
+  friend SpaceTimePolynomial
+  operator-(const SpaceTimePolynomial& poly1, const SpaceTimePolynomial& poly2)
+  {
     SpaceTimePolynomial tmp(poly1);
     return tmp -= poly2;
   }
 
-  friend SpaceTimePolynomial operator*(const SpaceTimePolynomial& poly1, const SpaceTimePolynomial& poly2) {
+  friend SpaceTimePolynomial
+  operator*(const SpaceTimePolynomial& poly1, const SpaceTimePolynomial& poly2)
+  {
     SpaceTimePolynomial tmp(poly1);
     return tmp *= poly2;
   }
 
-  friend SpaceTimePolynomial operator*(double val, const SpaceTimePolynomial& poly) {
+  friend SpaceTimePolynomial operator*(double val, const SpaceTimePolynomial& poly)
+  {
     SpaceTimePolynomial tmp(poly);
     return tmp *= val;
   }
-  friend SpaceTimePolynomial operator*(const SpaceTimePolynomial& poly, double val) {
+  friend SpaceTimePolynomial operator*(const SpaceTimePolynomial& poly, double val)
+  {
     SpaceTimePolynomial tmp(poly);
     return tmp *= val;
   }
 
   // Change of coordinates:
   // --  x = xf + B * s
-  void ChangeCoordinates(const AmanziGeometry::Point& xf,
-                         const std::vector<AmanziGeometry::Point>& B) {
+  void
+  ChangeCoordinates(const AmanziGeometry::Point& xf, const std::vector<AmanziGeometry::Point>& B)
+  {
     for (int i = 1; i < size_; ++i) coefs_[i].ChangeCoordinates(xf, B);
   }
   // --  s = B^+ (x - xf)
   void InverseChangeCoordinates(const AmanziGeometry::Point& xf,
-                                const std::vector<AmanziGeometry::Point>& B) {
+                                const std::vector<AmanziGeometry::Point>& B)
+  {
     for (int i = 1; i < size_; ++i) coefs_[i].InverseChangeCoordinates(xf, B);
   }
 
@@ -107,22 +119,22 @@ class SpaceTimePolynomial {
   const Polynomial& operator[](int i) const { return coefs_[i]; }
 
   // norms
-  double NormInf() const {
+  double NormInf() const
+  {
     double val(0.0);
     for (int i = 0; i < size_; ++i) std::max(val, coefs_[i].NormInf());
     return val;
   }
 
-  // output 
-  friend std::ostream& operator << (std::ostream& os, const SpaceTimePolynomial& p);
+  // output
+  friend std::ostream& operator<<(std::ostream& os, const SpaceTimePolynomial& p);
 
  protected:
   int d_, order_, size_;
   std::vector<Polynomial> coefs_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

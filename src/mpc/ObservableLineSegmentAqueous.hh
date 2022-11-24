@@ -9,19 +9,19 @@
 #include "ObservableLineSegment.hh"
 
 
-namespace Amanzi{
+namespace Amanzi {
 
-class ObservableLineSegmentAqueous : public ObservableAqueous,
-                                     public ObservableLineSegment {
+class ObservableLineSegmentAqueous : public ObservableAqueous, public ObservableLineSegment {
  public:
-   ObservableLineSegmentAqueous(std::string variable,
-                                std::string region,
-                                std::string functional,
-                                Teuchos::ParameterList& plist,
-                                Teuchos::ParameterList& units_plist,
-                                Teuchos::RCP<const AmanziMesh::Mesh> mesh);
+  ObservableLineSegmentAqueous(std::string variable,
+                               std::string region,
+                               std::string functional,
+                               Teuchos::ParameterList& plist,
+                               Teuchos::ParameterList& units_plist,
+                               Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
+  virtual void
+  ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
   virtual int ComputeRegionSize();
   void InterpolatedValues(State& S,
                           std::string& var,
@@ -32,27 +32,35 @@ class ObservableLineSegmentAqueous : public ObservableAqueous,
 };
 
 
-ObservableLineSegmentAqueous::ObservableLineSegmentAqueous(std::string variable,
-                                                           std::string region,
-                                                           std::string functional,
-                                                           Teuchos::ParameterList& plist,
-                                                           Teuchos::ParameterList& units_plist,
-                                                           Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-    Observable(variable, region, functional, plist, units_plist, mesh),
+ObservableLineSegmentAqueous::ObservableLineSegmentAqueous(
+  std::string variable,
+  std::string region,
+  std::string functional,
+  Teuchos::ParameterList& plist,
+  Teuchos::ParameterList& units_plist,
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+  : Observable(variable, region, functional, plist, units_plist, mesh),
     ObservableAqueous(variable, region, functional, plist, units_plist, mesh),
-    ObservableLineSegment(variable, region, functional, plist, units_plist, mesh) {};
+    ObservableLineSegment(variable, region, functional, plist, units_plist, mesh){};
 
 
-int ObservableLineSegmentAqueous::ComputeRegionSize() {
+int
+ObservableLineSegmentAqueous::ComputeRegionSize()
+{
   return ObservableLineSegment::ComputeRegionSize();
 }
 
 
-void ObservableLineSegmentAqueous::ComputeObservation(
-    State& S, double* value, double* volume, std::string& unit, double dt) {
+void
+ObservableLineSegmentAqueous::ComputeObservation(State& S,
+                                                 double* value,
+                                                 double* volume,
+                                                 std::string& unit,
+                                                 double dt)
+{
   Errors::Message msg;
   int dim = mesh_->space_dimension();
-  
+
   std::vector<double> values(region_size_);
   double weight_corr = 1e-15;
 
@@ -85,19 +93,21 @@ void ObservableLineSegmentAqueous::ComputeObservation(
 }
 
 
-void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
-                                                      std::string& var,
-                                                      std::string& interpolation,
-                                                      AmanziMesh::Entity_ID_List& ids,
-                                                      std::vector<AmanziGeometry::Point>& line_pnts,
-                                                      std::vector<double>& values) {
+void
+ObservableLineSegmentAqueous::InterpolatedValues(State& S,
+                                                 std::string& var,
+                                                 std::string& interpolation,
+                                                 AmanziMesh::Entity_ID_List& ids,
+                                                 std::vector<AmanziGeometry::Point>& line_pnts,
+                                                 std::vector<double>& values)
+{
   Teuchos::RCP<const Epetra_MultiVector> vector;
   Teuchos::RCP<const CompositeVector> cv;
 
   if (var == "hydraulic head") {
     if (!S.HasRecord("hydraulic_head")) {
       Errors::Message msg;
-      msg <<"InterpolatedValue: field hydraulic_head doesn't exist in state";
+      msg << "InterpolatedValue: field hydraulic_head doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
     cv = S.GetPtr<CompositeVector>("hydraulic_head", Tags::DEFAULT);
@@ -105,7 +115,7 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
   } else {
     if (!S.HasRecord(var)) {
       Errors::Message msg;
-      msg <<"InterpolatedValue: field "<<var<<" doesn't exist in state";
+      msg << "InterpolatedValue: field " << var << " doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
     cv = S.GetPtr<CompositeVector>(var, Tags::DEFAULT);
@@ -115,7 +125,7 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
   if (interpolation == "linear") {
     Teuchos::ParameterList plist;
     auto lifting = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-      
+
     cv->ScatterMasterToGhosted();
 
     lifting->Init(plist);
@@ -126,7 +136,7 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
       std::vector<int> bc_model;
       std::vector<double> bc_value;
 
-      Operators::LimiterCell limiter(mesh_); 
+      Operators::LimiterCell limiter(mesh_);
       limiter.Init(plist);
       limiter.ApplyLimiter(ids, vector, 0, lifting, bc_model, bc_value);
     }
@@ -135,7 +145,7 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
       int c = ids[i];
       values[i] = lifting->getValue(c, line_pnts[i]);
     }
-  } else if (interpolation == "constant") {    
+  } else if (interpolation == "constant") {
     for (int i = 0; i < ids.size(); i++) {
       int c = ids[i];
       values[i] = (*vector)[0][c];
@@ -147,6 +157,6 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
   }
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

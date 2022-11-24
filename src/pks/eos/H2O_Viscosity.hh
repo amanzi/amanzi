@@ -26,15 +26,14 @@ namespace AmanziEOS {
 
 class H2O_Viscosity : public EOS_Viscosity {
  public:
-  explicit
-  H2O_Viscosity(Teuchos::ParameterList& eos_plist);
+  explicit H2O_Viscosity(Teuchos::ParameterList& eos_plist);
 
   virtual double Viscosity(double T, double p);
   virtual double DViscosityDT(double T, double p);
   virtual double DViscosityDp(double T, double p);
 
  protected:
-  // constants for water, hard-coded 
+  // constants for water, hard-coded
   const double kav1_, kbv1_, kcv1_;
   const double kbv2_, kcv2_, kT1_;
 
@@ -42,7 +41,7 @@ class H2O_Viscosity : public EOS_Viscosity {
   static Utils::RegisteredFactory<EOS_Viscosity, H2O_Viscosity> factory_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

@@ -29,7 +29,7 @@
   linear operator acting on a TreeVectorSpace (TVS). This class 
   flattens a TVS by creting as many blocks as there are copies of
   a CompositeVectorSpace in the TVS.
-****************************************************************** */ 
+****************************************************************** */
 
 namespace Amanzi {
 namespace Operators {
@@ -41,13 +41,13 @@ class FlattenedTreeOperator : public Operators::TreeOperator {
   using Vector_t = TreeVector;
   using VectorSpace_t = TreeVector::VectorSpace_t;
 
-  FlattenedTreeOperator() {};
+  FlattenedTreeOperator(){};
   FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
-  ~FlattenedTreeOperator() {};
+  ~FlattenedTreeOperator(){};
 
   // modified algorithms that use two supermaps
   virtual void SymbolicAssembleMatrix();
-  virtual void InitializeInverse() {};
+  virtual void InitializeInverse(){};
   virtual void AssembleMatrix();
 
   // only assembled matrix is allowed
@@ -63,10 +63,8 @@ class FlattenedTreeOperator : public Operators::TreeOperator {
   Teuchos::RCP<SuperMap> smap_flat_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 
 #endif
-
-

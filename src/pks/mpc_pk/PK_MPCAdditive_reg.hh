@@ -22,8 +22,7 @@
 
 namespace Amanzi {
 
-template<>
-RegisteredPKFactory<PK_MPCStrong<PK_Implicit> > PK_MPCStrong<PK_Implicit>::reg_("additive MPC");
+template <>
+RegisteredPKFactory<PK_MPCStrong<PK_Implicit>> PK_MPCStrong<PK_Implicit>::reg_("additive MPC");
 
-}  // namespace Amanzi
-
+} // namespace Amanzi

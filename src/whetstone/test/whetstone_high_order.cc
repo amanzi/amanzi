@@ -33,19 +33,21 @@
 /* ******************************************************************
 * Crouzier-Raviart 2D and 3D elements
 ****************************************************************** */
-void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
+void
+HighOrderCrouzeixRaviart(int dim, std::string file_name)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: High-order Crouzeix Raviart in " 
-            << dim << "D" << " file=" << file_name <<std::endl;
+  std::cout << "Test: High-order Crouzeix Raviart in " << dim << "D"
+            << " file=" << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, (dim == 3)); 
- 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, (dim == 3));
+
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
   MFD3D_CrouzeixRaviart mfd_lo(plist, mesh);
@@ -88,7 +90,7 @@ void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
 
     // verify exact integration property
     const DenseMatrix& G = mfd_ho.G();
-    
+
     PolynomialOnMesh integrals;
     NumericalIntegration numi(mesh);
     numi.UpdateMonomialIntegralsCell(cell, 2 * k, integrals);
@@ -108,29 +110,32 @@ void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
 }
 
 
-TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
+TEST(HIGH_ORDER_CROUZEIX_RAVIART)
+{
   HighOrderCrouzeixRaviart(2, "test/one_pentagon.exo");
   HighOrderCrouzeixRaviart(3, "test/cube_unit.exo");
-} 
+}
 
 
 /* ******************************************************************
 * Incorrect Serendipity Crouzier-Raviart 2D element (for testing)
 ****************************************************************** */
-void HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name) {
+void
+HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: High-order Crouzeix Raviart Serendipity element in " 
-            << dim << "D, file=" << file_name << std::endl;
+  std::cout << "\nTest: High-order Crouzeix Raviart Serendipity element in " << dim
+            << "D, file=" << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, (dim == 3)); 
- 
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, (dim == 3));
+
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   Teuchos::ParameterList plist;
@@ -175,24 +180,27 @@ void HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name) {
       G1.Inverse();
       G1(0, 0) = 0.0;
       G1 -= G;
-      std::cout << "Norm of dG=" << G1.NormInf() << " " << G.NormInf() << std::endl;      
+      std::cout << "Norm of dG=" << G1.NormInf() << " " << G.NormInf() << std::endl;
       CHECK(G1.NormInf() <= 1e-11 * G.NormInf());
     }
   }
 }
 
 
-TEST(HIGH_ORDER_CROUZEIX_RAVIART_SERENDIPITY) {
+TEST(HIGH_ORDER_CROUZEIX_RAVIART_SERENDIPITY)
+{
   HighOrderCrouzeixRaviartSerendipity(2, "test/two_cell2_dist.exo");
   HighOrderCrouzeixRaviartSerendipity(2, "test/one_pentagon.exo");
   // HighOrderCrouzeixRaviartSerendipity(3, "test/cube_unit.exo");
-} 
+}
 
 
 /* ******************************************************************
 * Lagrange 2D element
 ****************************************************************** */
-void HighOrderLagrange2D(std::string file_name) {
+void
+HighOrderLagrange2D(std::string file_name)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -201,10 +209,10 @@ void HighOrderLagrange2D(std::string file_name) {
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, true); 
- 
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, true);
+
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   Teuchos::ParameterList plist;
@@ -268,31 +276,33 @@ void HighOrderLagrange2D(std::string file_name) {
 }
 
 
-TEST(HIGH_ORDER_LAGRANGE_2D) {
+TEST(HIGH_ORDER_LAGRANGE_2D)
+{
   HighOrderLagrange2D("test/one_pentagon.exo");
   HighOrderLagrange2D("test/two_cell2_dist.exo");
-} 
+}
 
 
 /* ******************************************************************
 * Lagrange 3D element
 ****************************************************************** */
-void HighOrderLagrange3D(const std::string& filename1,
-                         const std::string& filename2) {
+void
+HighOrderLagrange3D(const std::string& filename1, const std::string& filename2)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: High-order 3D Lagrange element, comparing: " 
-            << filename1 << " and " << filename2 << std::endl;
+  std::cout << "\nTest: High-order 3D Lagrange element, comparing: " << filename1 << " and "
+            << filename2 << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh1 = meshfactory.create(filename1, true, true); 
-  Teuchos::RCP<Mesh> mesh2 = meshfactory.create(filename2, true, true); 
- 
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh1 = meshfactory.create(filename1, true, true);
+  Teuchos::RCP<Mesh> mesh2 = meshfactory.create(filename2, true, true);
+
   DenseMatrix G1, A1, A2;
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -360,7 +370,8 @@ void HighOrderLagrange3D(const std::string& filename1,
 }
 
 
-TEST(HIGH_ORDER_LAGRANGE_3D) {
+TEST(HIGH_ORDER_LAGRANGE_3D)
+{
   HighOrderLagrange3D("test/cube_unit.exo", "test/cube_unit_rotated.exo");
   HighOrderLagrange3D("test/cube_half.exo", "test/cube_half.exo");
   HighOrderLagrange3D("test/parallepiped.exo", "test/parallepiped_rotated.exo");
@@ -370,7 +381,9 @@ TEST(HIGH_ORDER_LAGRANGE_3D) {
 /* ******************************************************************
 * Serendipity 2D and 3D Lagrange elements
 ****************************************************************** */
-void HighOrderLagrangeSerendipity(const std::string& filename) {
+void
+HighOrderLagrangeSerendipity(const std::string& filename)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -379,14 +392,14 @@ void HighOrderLagrangeSerendipity(const std::string& filename) {
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(filename, true, true); 
- 
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(filename, true, true);
+
   int d = mesh->space_dimension();
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
-  Teuchos::ParameterList plist; 
+  Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
 
   MFD3D_Lagrange mfd_lo(plist, mesh);
@@ -395,7 +408,7 @@ void HighOrderLagrangeSerendipity(const std::string& filename) {
   for (int c = 0; c < ncells; ++c) {
     if (mesh->cell_get_num_faces(c) < 4) continue;
 
-    int rank = (d == 3) ? 1 : 2; 
+    int rank = (d == 3) ? 1 : 2;
     Tensor T(d, rank);
     T(0, 0) = 2.0;
     if (rank == 2) {
@@ -445,38 +458,40 @@ void HighOrderLagrangeSerendipity(const std::string& filename) {
       G1.Inverse();
       G1(0, 0) = 0.0;
       G1 -= G;
-      std::cout << "Norm of dG=" << G1.NormInf() << " " << G.NormInf() << std::endl;      
+      std::cout << "Norm of dG=" << G1.NormInf() << " " << G.NormInf() << std::endl;
       CHECK(G1.NormInf() <= 1e-12 * G.NormInf());
     }
   }
 }
 
 
-TEST(HIGH_ORDER_LAGRANGE_SERENDIPITY) {
+TEST(HIGH_ORDER_LAGRANGE_SERENDIPITY)
+{
   HighOrderLagrangeSerendipity("test/two_cell2_dist.exo");
   HighOrderLagrangeSerendipity("test/one_pentagon.exo");
   HighOrderLagrangeSerendipity("test/cube_unit.exo");
-} 
+}
 
 
 /* ******************************************************************
 * Surface Lagrange element
 ****************************************************************** */
-TEST(HIGH_ORDER_LAGRANGE_SURFACE) {
+TEST(HIGH_ORDER_LAGRANGE_SURFACE)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: High-order Lagrange element on surface"<< std::endl;
+  std::cout << "\nTest: High-order Lagrange element on surface" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh2d = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
-  Teuchos::RCP<Mesh> mesh3d = meshfactory.create("test/cube_unit.exo", true, true); 
- 
-  Teuchos::ParameterList plist; 
+  Teuchos::RCP<Mesh> mesh3d = meshfactory.create("test/cube_unit.exo", true, true);
+
+  Teuchos::ParameterList plist;
   plist.set<int>("method order", 2);
 
   MFD3D_LagrangeAnyOrder mfd_2d(plist, mesh2d);

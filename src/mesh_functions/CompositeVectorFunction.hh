@@ -25,24 +25,21 @@ class VerboseObject;
 namespace Functions {
 
 class CompositeVectorFunction final {
-
-public:
+ public:
   CompositeVectorFunction(const Teuchos::RCP<const MeshFunction>& func,
                           const std::vector<std::string>& names);
   ~CompositeVectorFunction() = default;
 
-  void Compute(double time, const Teuchos::Ptr<CompositeVector>& vec,
-               const VerboseObject* vo=nullptr);
+  void
+  Compute(double time, const Teuchos::Ptr<CompositeVector>& vec, const VerboseObject* vo = nullptr);
 
-protected:
-  typedef std::pair<std::string, Teuchos::RCP<MeshFunction::Spec> > CompositeVectorSpec;
-  typedef std::vector<Teuchos::RCP<CompositeVectorSpec> > CompositeVectorSpecList;
+ protected:
+  typedef std::pair<std::string, Teuchos::RCP<MeshFunction::Spec>> CompositeVectorSpec;
+  typedef std::vector<Teuchos::RCP<CompositeVectorSpec>> CompositeVectorSpecList;
 
   Teuchos::RCP<const MeshFunction> func_;
   CompositeVectorSpecList cv_spec_list_;
 };
 
-} // namespace
-} // namespace
-
-
+} // namespace Functions
+} // namespace Amanzi

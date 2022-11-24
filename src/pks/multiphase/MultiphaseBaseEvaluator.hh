@@ -20,20 +20,23 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class MultiphaseBaseEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class MultiphaseBaseEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   MultiphaseBaseEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
-      n_(0), kH_(1.0) {};
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), n_(0), kH_(1.0){};
 
   // inteface functions to FieldEvaluator
   MultiphaseBaseEvaluator(const MultiphaseBaseEvaluator& other)
-      : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other) {
-    n_ = other.n_; kH_ = other.kH_;
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other)
+  {
+    n_ = other.n_;
+    kH_ = other.kH_;
   }
 
   using EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::Update;
-  bool Update(State& S, Key request, bool force) {
+  bool Update(State& S, Key request, bool force)
+  {
     bool ok = EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::Update(S, request);
     if (force) {
       Update_(S);
@@ -45,14 +48,18 @@ class MultiphaseBaseEvaluator : public EvaluatorSecondaryMonotype<CompositeVecto
 
   // added interface (WIP)
   // -- modifier
-  virtual void set_subvector(int ifield, int n, double kH) { n_ = n; kH_ = kH; } 
+  virtual void set_subvector(int ifield, int n, double kH)
+  {
+    n_ = n;
+    kH_ = kH;
+  }
 
  protected:
   int n_;
   double kH_;
 };
 
-}  // namespace Multiphase
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi
 
 #endif

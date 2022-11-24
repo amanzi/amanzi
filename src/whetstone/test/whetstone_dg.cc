@@ -32,7 +32,8 @@
 /* ****************************************************************
 * Test of 2D DG mass matrices: K is tensor
 **************************************************************** */
-TEST(DG2D_MASS_MATRIX) {
+TEST(DG2D_MASS_MATRIX)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -41,8 +42,8 @@ TEST(DG2D_MASS_MATRIX) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 0.5, 1, 1); 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 0.5, 1, 1);
 
   DenseMatrix M;
   Tensor T(2, 1);
@@ -51,8 +52,8 @@ TEST(DG2D_MASS_MATRIX) {
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "orthonormalized")
-         .set<int>("method order", k)
-         .set<int>("quadrature order", 2);
+      .set<int>("method order", k)
+      .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
     dg.MassMatrix(0, T, M);
@@ -60,14 +61,12 @@ TEST(DG2D_MASS_MATRIX) {
 
     printf("Mass matrix for order=%d\n", k);
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%9.5f ", M(i, j)); 
+      for (int j = 0; j < nk; j++) printf("%9.5f ", M(i, j));
       printf("\n");
     }
 
     double area = mesh->cell_volume(0);
-    for (int i = 0; i < nk; ++i) {
-      CHECK_CLOSE(M(i, i), area, 1e-12);
-    }
+    for (int i = 0; i < nk; ++i) { CHECK_CLOSE(M(i, i), area, 1e-12); }
   }
 }
 
@@ -75,7 +74,8 @@ TEST(DG2D_MASS_MATRIX) {
 /* ****************************************************************
 * Test of 3D DG mass matrices: K is tensor
 **************************************************************** */
-TEST(DG3D_MASS_MATRIX) {
+TEST(DG3D_MASS_MATRIX)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -84,8 +84,8 @@ TEST(DG3D_MASS_MATRIX) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true); 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true);
 
   DenseMatrix M0, M1;
   Tensor T(3, 1);
@@ -94,8 +94,8 @@ TEST(DG3D_MASS_MATRIX) {
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "regularized")
-         .set<int>("method order", k)
-         .set<int>("quadrature order", 2);
+      .set<int>("method order", k)
+      .set<int>("quadrature order", 2);
 
     DG_Modal dg1(plist, mesh);
     dg1.MassMatrix(0, T, M0);
@@ -104,7 +104,7 @@ TEST(DG3D_MASS_MATRIX) {
     if (k > 0) {
       CHECK_CLOSE(M0(2, 2), M0(1, 1), 1e-12);
       CHECK_CLOSE(M0(3, 3), M0(1, 1), 1e-12);
-    } 
+    }
     if (k > 1) {
       CHECK_CLOSE(M0(7, 7), M0(4, 4), 1e-12);
       CHECK_CLOSE(M0(9, 9), M0(4, 4), 1e-12);
@@ -128,7 +128,7 @@ TEST(DG3D_MASS_MATRIX) {
       v1(2) = 1.0;
       v1(3) = 1.5;
       v2 = v1;
- 
+
       M0.Multiply(v1, v3, false);
       double integral(v2 * v3);
       printf("  inner product = %10.6f\n", integral);
@@ -136,21 +136,18 @@ TEST(DG3D_MASS_MATRIX) {
     }
 
     // partially orthonormalized Taylor basis
-    plist.set<std::string>("dg basis", "orthonormalized")
-         .set<int>("method order", k);
+    plist.set<std::string>("dg basis", "orthonormalized").set<int>("method order", k);
 
     DG_Modal dg2(plist, mesh);
     dg2.MassMatrix(0, T, M0);
 
     printf("Mass matrix for order=%d\n", k);
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%10.6f ", M0(i, j)); 
+      for (int j = 0; j < nk; j++) printf("%10.6f ", M0(i, j));
       printf("\n");
     }
 
-    for (int i = 1; i < nk; ++i) {
-      CHECK_CLOSE(M0(i, 0), 0.0, 1e-12);
-    }
+    for (int i = 1; i < nk; ++i) { CHECK_CLOSE(M0(i, 0), 0.0, 1e-12); }
   }
 }
 
@@ -158,7 +155,8 @@ TEST(DG3D_MASS_MATRIX) {
 /* ****************************************************************
 * Test of DG mass matrices: K is polynomial
 **************************************************************** */
-TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
+TEST(DG2D_MASS_MATRIX_POLYNOMIAL)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -167,17 +165,17 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
- 
+
   double tmp, integral[3];
   DenseMatrix M1, M2;
 
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "orthonormalized")
-         .set<int>("method order", 2)
-         .set<int>("quadrature order", 2);
+      .set<int>("method order", 2)
+      .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
     Polynomial u(2, k);
@@ -189,7 +187,7 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
 
     printf("Mass matrix for polynomial coefficient: order=2, uk=%d\n", k);
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%8.4f ", M1(i, j)); 
+      for (int j = 0; j < nk; j++) printf("%8.4f ", M1(i, j));
       printf("\n");
     }
 
@@ -201,7 +199,7 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
     v(0) = xc[0] + 2 * xc[1];
     v(1) = 1.0 / 1.6501110800;
     v(2) = 2.0 / 2.6871118178;
-    
+
     M1.Multiply(v, av, false);
     v.Dot(av, &tmp);
     integral[k] = tmp;
@@ -219,7 +217,8 @@ class MyFunction : public Amanzi::WhetStone::WhetStoneFunction {
   double Value(const Amanzi::AmanziGeometry::Point& x) const { return 1.0; }
 };
 
-TEST(DG2D_STIFFNESS_MATRIX) {
+TEST(DG2D_STIFFNESS_MATRIX)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -228,8 +227,8 @@ TEST(DG2D_STIFFNESS_MATRIX) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 0.5, 1, 1); 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 0.5, 1, 1);
 
   DenseMatrix M1, M2;
   Tensor T(2, 1);
@@ -240,8 +239,8 @@ TEST(DG2D_STIFFNESS_MATRIX) {
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "regularized")
-         .set<int>("method order", k)
-         .set<int>("quadrature order", 2);
+      .set<int>("method order", k)
+      .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
     dg.StiffnessMatrix(0, T, M1);
@@ -250,15 +249,13 @@ TEST(DG2D_STIFFNESS_MATRIX) {
 
     printf("Stiffness matrix for order=%d\n", k);
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%9.5f ", M2(i, j)); 
+      for (int j = 0; j < nk; j++) printf("%9.5f ", M2(i, j));
       printf("\n");
     }
 
     if (k > 1) {
       double area = mesh->cell_volume(0);
-      for (int i = 1; i < 2; ++i) {
-        CHECK_CLOSE(M1(i, i), area * 4, 1e-12);
-      }
+      for (int i = 1; i < 2; ++i) { CHECK_CLOSE(M1(i, i), area * 4, 1e-12); }
     }
 
     M1 -= M2;
@@ -270,7 +267,9 @@ TEST(DG2D_STIFFNESS_MATRIX) {
 /* ****************************************************************
 * Test of DG2D flux matrices on a face
 **************************************************************** */
-void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
+void
+Run2DFluxMatrix(bool upwind, bool jump_on_test)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -279,14 +278,14 @@ void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 2, 2); 
- 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 2, 2);
+
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "orthonormalized")
-         .set<int>("method order", k)
-         .set<int>("quadrature order", 2);
+      .set<int>("method order", k)
+      .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
     Polynomial un(2, 0);
@@ -300,7 +299,7 @@ void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
     printf("Flux matrix (face-based) for order=%d u.n=1, flux=%8.2f\n", k, flux);
     int nk = A0.NumRows();
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A0(i, j)); 
+      for (int j = 0; j < nk; j++) printf("%8.4f ", A0(i, j));
       printf("\n");
     }
 
@@ -318,7 +317,7 @@ void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
 
     printf("Flux matrix (face-based) for order=%d u.n=1+x, flux=%8.2f\n", k, flux);
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A1(i, j)); 
+      for (int j = 0; j < nk; j++) printf("%8.4f ", A1(i, j));
       printf("\n");
     }
 
@@ -329,7 +328,8 @@ void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
   }
 }
 
-TEST(DG2D_FLUX_MATRIX) {
+TEST(DG2D_FLUX_MATRIX)
+{
   Run2DFluxMatrix(true, false);
   Run2DFluxMatrix(false, true);
 }
@@ -338,7 +338,8 @@ TEST(DG2D_FLUX_MATRIX) {
 /* ****************************************************************
 * Test of DG2D flux matrices based on gauss points
 **************************************************************** */
-TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
+TEST(DG2D_FLUX_MATRIX_CONSERVATION)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -347,20 +348,20 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 2, 2); 
- 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 2, 2);
+
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "normalized")
-         .set<int>("method order", k)
-         .set<int>("quadrature order", 2);
+      .set<int>("method order", k)
+      .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
     Polynomial un(2, 1);
     un(0) = 1.0;
     un(1) = 1.0;
-    un(2) =-6.0;
+    un(2) = -6.0;
 
     double flux;
     DenseMatrix A0, A1;
@@ -370,7 +371,7 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
     printf("Flux matrix (face-based) for order=%d u.n=1+x\n", k);
     int nk = A1.NumRows();
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A1(i, j)); 
+      for (int j = 0; j < nk; j++) printf("%8.4f ", A1(i, j));
       printf("\n");
     }
 
@@ -379,10 +380,10 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
     one.PutScalar(1.0);
 
     A0.Multiply(one, b, false);
-    CHECK_CLOSE(0.0, b(0) + b(nk / 2), 1e-12); 
+    CHECK_CLOSE(0.0, b(0) + b(nk / 2), 1e-12);
 
     A1.Multiply(one, b, false);
-    CHECK_CLOSE(0.0, b(0) + b(nk / 2), 1e-12); 
+    CHECK_CLOSE(0.0, b(0) + b(nk / 2), 1e-12);
   }
 }
 
@@ -390,7 +391,8 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
 /* ****************************************************************
 * Test of DG3D flux matrices on a face
 **************************************************************** */
-TEST(DG3D_FLUX_MATRIX) {
+TEST(DG3D_FLUX_MATRIX)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -399,14 +401,14 @@ TEST(DG3D_FLUX_MATRIX) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true); 
- 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true);
+
   for (int k = 0; k < 2; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "orthonormalized")
-         .set<int>("method order", k)
-         .set<int>("quadrature order", 2);
+      .set<int>("method order", k)
+      .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
     int d(3), f(4);
@@ -421,7 +423,7 @@ TEST(DG3D_FLUX_MATRIX) {
     printf("Advection matrix (face-based) for order=%d  u.n=1\n", k);
     int nk = A0.NumRows();
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A0(i, j)); 
+      for (int j = 0; j < nk; j++) printf("%8.4f ", A0(i, j));
       printf("\n");
     }
 
@@ -439,7 +441,7 @@ TEST(DG3D_FLUX_MATRIX) {
 
     printf("Advection matrix (face-based) for order=%d u.n=1+x\n", k);
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A1(i, j)); 
+      for (int j = 0; j < nk; j++) printf("%8.4f ", A1(i, j));
       printf("\n");
     }
 
@@ -454,7 +456,8 @@ TEST(DG3D_FLUX_MATRIX) {
 /* ****************************************************************
 * Test of DG advection matrices in a cell
 **************************************************************** */
-TEST(DG2D_ADVECTION_MATRIX_CELL) {
+TEST(DG2D_ADVECTION_MATRIX_CELL)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -463,14 +466,14 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_quad.exo"); 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_quad.exo");
 
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "regularized")
-         .set<int>("method order", k)
-         .set<int>("quadrature order", 2);
+      .set<int>("method order", k)
+      .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
     DenseMatrix A0, A1;
@@ -485,7 +488,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
     printf("Advection matrix (cell-based) for order=%d u=(1,1)\n", k);
     int nk = A0.NumRows();
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%10.6f ", A0(i, j)); 
+      for (int j = 0; j < nk; j++) printf("%10.6f ", A0(i, j));
       printf("\n");
     }
 
@@ -497,7 +500,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
     printf("Advection matrix (cell-based) for order=%d u=(1+x+y,1), f(x,y)=2+x+3y\n", k);
     nk = A0.NumRows();
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%10.6f ", A0(i, j)); 
+      for (int j = 0; j < nk; j++) printf("%10.6f ", A0(i, j));
       printf("\n");
     }
 
@@ -512,7 +515,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
       v1(1) = 1.0 * scale;
       v1(2) = 3.0 * scale;
       v2 = v1;
- 
+
       A0.Multiply(v1, v3, false);
       double integral(v2 * v3);
       printf("  inner product = %10.6f\n", integral);
@@ -528,7 +531,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
     printf("Advection matrix (cell-based) for order=%d u=(1+x+y,1+x^2)\n", k);
     nk = A0.NumRows();
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%10.6f ", A0(i, j)); 
+      for (int j = 0; j < nk; j++) printf("%10.6f ", A0(i, j));
       printf("\n");
     }
 
@@ -540,11 +543,12 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
   }
 }
 
- 
+
 /* ****************************************************************
 * Test of DG advection matrices in a cell
 **************************************************************** */
-TEST(DG3D_ADVECTION_MATRIX_CELL) {
+TEST(DG3D_ADVECTION_MATRIX_CELL)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -553,15 +557,15 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true); 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true);
 
   int d(3);
   for (int k = 0; k < 2; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "regularized")
-         .set<int>("method order", k)
-         .set<int>("quadrature order", 2);
+      .set<int>("method order", k)
+      .set<int>("quadrature order", 2);
 
     DG_Modal dg(plist, mesh);
 
@@ -578,7 +582,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
     printf("Advection matrix (cell-based) for order=%d u=(1,1,1)\n", k);
     int nk = A0.NumRows();
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%10.6f ", A0(i, j)); 
+      for (int j = 0; j < nk; j++) printf("%10.6f ", A0(i, j));
       printf("\n");
     }
 
@@ -591,7 +595,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
     printf("Advection matrix (cell-based) for order=%d u=(1+x+y+z,1,1), f(x,y)=2+x+3y\n", k);
     nk = A0.NumRows();
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%10.6f ", A0(i, j)); 
+      for (int j = 0; j < nk; j++) printf("%10.6f ", A0(i, j));
       printf("\n");
     }
 
@@ -606,7 +610,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
       v1(1) = 1.0 * scale;
       v1(2) = 3.0 * scale;
       v2 = v1;
- 
+
       A0.Multiply(v1, v3, false);
       double integral(v2 * v3);
       printf("  inner product = %10.6f\n", integral);
@@ -617,11 +621,12 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
   }
 }
 
- 
+
 /* ****************************************************************
 * Test of polynomial least-square approximation
 **************************************************************** */
-TEST(DG_LEAST_SQUARE_MAP_CELL) {
+TEST(DG_LEAST_SQUARE_MAP_CELL)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -630,7 +635,7 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
   // extract polygon from the mesh
@@ -648,8 +653,8 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
   // test identity map
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", "unknown")
-       .set<int>("method order", 1)
-       .set<std::string>("projector", "H1");
+    .set<int>("method order", 1)
+    .set<std::string>("projector", "H1");
 
   MeshMaps_VEM maps(mesh, mesh, plist);
   VectorPolynomial u;
@@ -664,9 +669,7 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
   // test linear map
   std::vector<AmanziGeometry::Point> x2(x1);
   AmanziGeometry::Point shift(0.1, 0.2);
-  for (int i = 0; i < nodes.size(); ++i) {
-    x2[i] += shift;
-  }
+  for (int i = 0; i < nodes.size(); ++i) { x2[i] += shift; }
 
   maps.LeastSquareFit(1, x1, x2, u);
   for (int i = 0; i < 2; ++i) {
@@ -688,14 +691,14 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
     CHECK_CLOSE(u[i](1, i), c, 1e-12);
   }
   CHECK_CLOSE(u[0](1, 1), -s, 1e-12);
-  CHECK_CLOSE(u[1](1, 0),  s, 1e-12);
+  CHECK_CLOSE(u[1](1, 0), s, 1e-12);
 
   // test non-linear deformation map
   x1.clear();
   x1.push_back(AmanziGeometry::Point(-0.5, -0.5));
-  x1.push_back(AmanziGeometry::Point( 0.5, -0.5));
-  x1.push_back(AmanziGeometry::Point(-0.5,  0.5));
-  x1.push_back(AmanziGeometry::Point( 0.5,  0.5));
+  x1.push_back(AmanziGeometry::Point(0.5, -0.5));
+  x1.push_back(AmanziGeometry::Point(-0.5, 0.5));
+  x1.push_back(AmanziGeometry::Point(0.5, 0.5));
 
   x2 = x1;
   x2[3] += AmanziGeometry::Point(0.1, 0.1);
@@ -713,19 +716,17 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
 
   x2 = x1;
   x2[1] += AmanziGeometry::Point(0.1, -0.1);
-  x2[3] += AmanziGeometry::Point(0.2,  0.3);
-  x2[4] += AmanziGeometry::Point(0.05,-0.05);
+  x2[3] += AmanziGeometry::Point(0.2, 0.3);
+  x2[4] += AmanziGeometry::Point(0.05, -0.05);
   x2[6] += AmanziGeometry::Point(0.15, 0.1);
-  x2[7] += AmanziGeometry::Point(0.1,  0.15);
+  x2[7] += AmanziGeometry::Point(0.1, 0.15);
 
   maps.LeastSquareFit(2, x1, x2, u);
   std::cout << u << std::endl;
 
   // -- check vertex-to-vertex map
   for (int n = 0; n < 7; ++n) {
-    for (int i = 0; i < 2; ++i) {
-      CHECK_CLOSE(x2[n][i], u[i].Value(x1[n]), 1e-12);
-    }
+    for (int i = 0; i < 2; ++i) { CHECK_CLOSE(x2[n][i], u[i].Value(x1[n]), 1e-12); }
   }
 
   // -- check that it is bilinear map
@@ -737,7 +738,8 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
 /* ****************************************************************
 * Test of upwind function
 **************************************************************** */
-TEST(UPWIND_FUNCTION) {
+TEST(UPWIND_FUNCTION)
+{
   using namespace Amanzi;
   using namespace Amanzi::WhetStone;
 
@@ -755,7 +757,6 @@ TEST(UPWIND_FUNCTION) {
   {
     FunctionUpwindMinus f(&un);
     CHECK_CLOSE(-1.0, f.Value(x1), 1e-12);
-    CHECK_CLOSE( 0.0, f.Value(x2), 1e-12);
+    CHECK_CLOSE(0.0, f.Value(x2), 1e-12);
   }
 }
-

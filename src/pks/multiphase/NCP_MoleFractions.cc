@@ -17,8 +17,7 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-NCP_MoleFractions::NCP_MoleFractions(Teuchos::ParameterList& plist)
-  : MultiphaseBaseEvaluator(plist)
+NCP_MoleFractions::NCP_MoleFractions(Teuchos::ParameterList& plist) : MultiphaseBaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -35,10 +34,12 @@ NCP_MoleFractions::NCP_MoleFractions(Teuchos::ParameterList& plist)
 * Copy constructors.
 ****************************************************************** */
 NCP_MoleFractions::NCP_MoleFractions(const NCP_MoleFractions& other)
-  : MultiphaseBaseEvaluator(other) {};
+  : MultiphaseBaseEvaluator(other){};
 
 
-Teuchos::RCP<Evaluator> NCP_MoleFractions::Clone() const {
+Teuchos::RCP<Evaluator>
+NCP_MoleFractions::Clone() const
+{
   return Teuchos::rcp(new NCP_MoleFractions(*this));
 }
 
@@ -46,8 +47,8 @@ Teuchos::RCP<Evaluator> NCP_MoleFractions::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void NCP_MoleFractions::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+NCP_MoleFractions::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& vg = *S.Get<CompositeVector>(x_vapor_key_).ViewComponent("cell");
   const auto& xg = *S.Get<CompositeVector>(x_gas_key_).ViewComponent("cell");
@@ -59,28 +60,28 @@ void NCP_MoleFractions::Evaluate_(
     double sum(vg[0][c]);
     for (int i = 0; i < xg.NumVectors(); ++i) sum += xg[i][c];
     result_c[0][c] = 1.0 - sum;
-  }      
+  }
 }
 
 
 /* ******************************************************************
 * Required member: field derivative calculation.
 ****************************************************************** */
-void NCP_MoleFractions::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+NCP_MoleFractions::EvaluatePartialDerivative_(const State& S,
+                                              const Key& wrt_key,
+                                              const Tag& wrt_tag,
+                                              const std::vector<CompositeVector*>& results)
 {
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
 
   if (wrt_key == x_vapor_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = -1.0;
-  }
-  else if (wrt_key == x_gas_key_) {
+  } else if (wrt_key == x_gas_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = -1.0;
   }
 }
 
-}  // namespace Multiphase
-}  // namespace Amanzi
-
+} // namespace Multiphase
+} // namespace Amanzi

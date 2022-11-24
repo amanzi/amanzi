@@ -33,7 +33,8 @@
 #include "Darcy_PK.hh"
 
 /* **************************************************************** */
-TEST(DARCY_TWO_FRACTURES) {
+TEST(DARCY_TWO_FRACTURES)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -53,7 +54,7 @@ TEST(DARCY_TWO_FRACTURES) {
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
   // extract fractures mesh
@@ -114,21 +115,14 @@ TEST(DARCY_TWO_FRACTURES) {
     t_old = t_new;
   }
 
-  for (int c = 0; c < p.MyLength(); c++) {
-    CHECK(p[0][c] > -1.0 && p[0][c] < 2.0);
-  }
+  for (int c = 0; c < p.MyLength(); c++) { CHECK(p[0][c] > -1.0 && p[0][c] < 2.0); }
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Darcy", *plist));
   WriteStateStatistics(*S, *vo);
 
   if (MyPID == 0) {
-    GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+    GMV::open_data_file(*mesh, (std::string) "flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "pressure");
     GMV::close_data_file();
   }
 }
-
-
-
-
-

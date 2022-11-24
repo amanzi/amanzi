@@ -17,8 +17,7 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-NCP_HenryLaw::NCP_HenryLaw(Teuchos::ParameterList& plist)
-  : MultiphaseBaseEvaluator(plist)
+NCP_HenryLaw::NCP_HenryLaw(Teuchos::ParameterList& plist) : MultiphaseBaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -34,11 +33,12 @@ NCP_HenryLaw::NCP_HenryLaw(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-NCP_HenryLaw::NCP_HenryLaw(const NCP_HenryLaw& other)
-  : MultiphaseBaseEvaluator(other) {};
+NCP_HenryLaw::NCP_HenryLaw(const NCP_HenryLaw& other) : MultiphaseBaseEvaluator(other){};
 
 
-Teuchos::RCP<Evaluator> NCP_HenryLaw::Clone() const {
+Teuchos::RCP<Evaluator>
+NCP_HenryLaw::Clone() const
+{
   return Teuchos::rcp(new NCP_HenryLaw(*this));
 }
 
@@ -46,8 +46,8 @@ Teuchos::RCP<Evaluator> NCP_HenryLaw::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void NCP_HenryLaw::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+NCP_HenryLaw::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& pg = *S.Get<CompositeVector>(pressure_gas_key_).ViewComponent("cell");
   const auto& nl = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
@@ -55,31 +55,28 @@ void NCP_HenryLaw::Evaluate_(
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
 
-  for (int c = 0; c != ncells; ++c) {
-    result_c[0][c] = pg[0][c] * kH_ - nl[0][c];
-  }      
+  for (int c = 0; c != ncells; ++c) { result_c[0][c] = pg[0][c] * kH_ - nl[0][c]; }
 }
 
 
 /* ******************************************************************
 * Required member: field derivative calculation.
 ****************************************************************** */
-void NCP_HenryLaw::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+NCP_HenryLaw::EvaluatePartialDerivative_(const State& S,
+                                         const Key& wrt_key,
+                                         const Tag& wrt_tag,
+                                         const std::vector<CompositeVector*>& results)
 {
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
 
   if (wrt_key == pressure_gas_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = kH_;
-  }
-  else if (wrt_key == mol_density_liquid_key_) {
+  } else if (wrt_key == mol_density_liquid_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = -1.0;
   }
 }
 
-}  // namespace Multiphase
-}  // namespace Amanzi
-
-
+} // namespace Multiphase
+} // namespace Amanzi

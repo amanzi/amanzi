@@ -26,10 +26,10 @@
 
 namespace Amanzi {
 namespace ShallowWater {
-        
+
 class ShallowWaterBoundaryFunction : public PK_DomainFunction {
  public:
-  ShallowWaterBoundaryFunction() : bc_name_("undefined") {};
+  ShallowWaterBoundaryFunction() : bc_name_("undefined"){};
   ShallowWaterBoundaryFunction(const Teuchos::ParameterList& plist);
 
   // modifiers and access
@@ -44,13 +44,12 @@ class ShallowWaterBoundaryFunction : public PK_DomainFunction {
 
  private:
   std::string bc_name_;
-  WhetStone::DOF_Type type_;  // type of dofs related to this bc
+  WhetStone::DOF_Type type_; // type of dofs related to this bc
 
   std::vector<std::string> regions_;
 };
-        
-}  // namespace ShallowWater
-}  // namespace Amanzi
+
+} // namespace ShallowWater
+} // namespace Amanzi
 
 #endif
-

@@ -19,11 +19,11 @@ namespace Energy {
 
 class TCM_TwoPhase {
  public:
-  virtual ~TCM_TwoPhase() {};
+  virtual ~TCM_TwoPhase(){};
   virtual double ThermalConductivity(double porosity, double sat_liq) = 0;
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

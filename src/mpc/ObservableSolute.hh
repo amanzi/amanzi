@@ -28,9 +28,11 @@ class ObservableSolute : public virtual Observable {
                    Teuchos::ParameterList& units_plist,
                    Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
+  virtual void
+  ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
   virtual int ComputeRegionSize();
-  void RegisterComponentNames(std::vector<std::string> comp_names, int num_liquid, int tcc_index) {
+  void RegisterComponentNames(std::vector<std::string> comp_names, int num_liquid, int tcc_index)
+  {
     comp_names_ = comp_names;
     num_liquid_ = num_liquid;
     tcc_index_ = tcc_index;
@@ -44,6 +46,6 @@ class ObservableSolute : public virtual Observable {
   int num_liquid_, tcc_index_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

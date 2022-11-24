@@ -27,7 +27,8 @@
 /* **************************************************************** 
  * Test LimiterBarthJespersen()routine.
  * ************************************************************* */
-TEST(LIMITER_BARTH_JESPERSEN) {
+TEST(LIMITER_BARTH_JESPERSEN)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -44,11 +45,11 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   /* read parameter list */
   std::string xmlFileName = "test/transport_limiters.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
- 
+
   /* create an MSTK mesh framework */
   ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   Preference pref;
   pref.clear();
@@ -56,7 +57,7 @@ TEST(LIMITER_BARTH_JESPERSEN) {
 
   MeshFactory factory(comm);
   factory.set_preference(pref);
-  RCP<const Mesh> mesh = factory(0.0,0.0,0.0, 1.0,1.0,1.0, 3, 4, 7, gm); 
+  RCP<const Mesh> mesh = factory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 4, 7, gm);
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -74,7 +75,7 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   TPK.CreateDefaultState(mesh, 1);
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("state");
   auto flux = S->GetFieldData("volumetric_flow_rate", passwd)->ViewComponent("face", false);
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
@@ -86,7 +87,7 @@ TEST(LIMITER_BARTH_JESPERSEN) {
 
   /* initialize a transport process kernel */
   TPK.Initialize(S.ptr());
-  double dT = TPK.CalculateTransportDt();  // We call it to identify upwind cells.
+  double dT = TPK.CalculateTransportDt(); // We call it to identify upwind cells.
 
   /* create a linear field */
   const Epetra_Map& cmap = mesh->cell_map(false);
@@ -97,7 +98,8 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   cv_space.SetGhosted(true);
   cv_space.SetComponent("cell", AmanziMesh::CELL, 3);
 
-  RCP<CompositeVector> gradient = Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
+  RCP<CompositeVector> gradient =
+    Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
   RCP<Epetra_MultiVector> grad = gradient->ViewComponent("cell", false);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -113,9 +115,7 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   RCP<Epetra_Vector> limiter = rcp(new Epetra_Vector(cmap));
   TPK.LimiterBarthJespersen(0, scalar_field, gradient, limiter);
 
-  for (int c = 0; c < ncells - 1; c++) {  // the corner cell gives limiter=0
+  for (int c = 0; c < ncells - 1; c++) { // the corner cell gives limiter=0
     CHECK_CLOSE(1.0, (*limiter)[c], 1e-6);
   }
 }
-
-

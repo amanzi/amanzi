@@ -21,7 +21,8 @@ namespace Flow {
 /* ******************************************************************
 * Clip pressure using pressure threshold.
 ****************************************************************** */
-void Richards_PK::ClipHydrostaticPressure(double pmin, Epetra_MultiVector& p)
+void
+Richards_PK::ClipHydrostaticPressure(double pmin, Epetra_MultiVector& p)
 {
   for (int c = 0; c < ncells_owned; c++) p[0][c] = std::max(p[0][c], pmin);
 }
@@ -30,7 +31,8 @@ void Richards_PK::ClipHydrostaticPressure(double pmin, Epetra_MultiVector& p)
 /* ******************************************************************
 * Clip pressure using constant saturation.
 ****************************************************************** */
-void Richards_PK::ClipHydrostaticPressure(double pmin, double s0, Epetra_MultiVector& p)
+void
+Richards_PK::ClipHydrostaticPressure(double pmin, double s0, Epetra_MultiVector& p)
 {
   for (int c = 0; c < ncells_owned; c++) {
     if (p[0][c] < pmin) {
@@ -44,7 +46,8 @@ void Richards_PK::ClipHydrostaticPressure(double pmin, double s0, Epetra_MultiVe
 /* ****************************************************************
 * Plot water retention curves.
 **************************************************************** */
-void Richards_PK::PlotWRMcurves_()
+void
+Richards_PK::PlotWRMcurves_()
 {
   int MyPID = mesh_->cell_map(false).Comm().MyPID();
   if (MyPID != 0) return;
@@ -69,8 +72,5 @@ void Richards_PK::PlotWRMcurves_()
   }
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
-
-
-
+} // namespace Flow
+} // namespace Amanzi

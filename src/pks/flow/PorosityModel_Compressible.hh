@@ -21,31 +21,34 @@ namespace Flow {
 
 class PorosityModel_Compressible : public PorosityModel {
  public:
-  explicit PorosityModel_Compressible(Teuchos::ParameterList& plist) {
+  explicit PorosityModel_Compressible(Teuchos::ParameterList& plist)
+  {
     porosity_ = plist.get<double>("undeformed soil porosity");
     p_ref_ = plist.get<double>("reference pressure");
     c_ = plist.get<double>("pore compressibility");
 
     factor_ = porosity_ * c_;
   }
-  ~PorosityModel_Compressible() {};
-  
+  ~PorosityModel_Compressible(){};
+
   // required methods from the base class
-  inline double Porosity(double p) {
+  inline double Porosity(double p)
+  {
     double dp = p - p_ref_;
     return (dp <= 0.0) ? porosity_ : porosity_ * std::exp(c_ * dp);
   }
-  inline double dPorositydPressure(double p) { 
+  inline double dPorositydPressure(double p)
+  {
     double dp = p - p_ref_;
     return (dp <= 0.0) ? 0.0 : factor_ * std::exp(c_ * dp);
-  }  
+  }
 
  private:
   double porosity_, p_ref_, c_;
   double factor_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
- 
+} // namespace Flow
+} // namespace Amanzi
+
 #endif

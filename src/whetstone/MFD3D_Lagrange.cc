@@ -43,8 +43,8 @@ MFD3D_Lagrange::MFD3D_Lagrange(const Teuchos::ParameterList& plist,
 /* ******************************************************************
 * High-order consistency condition for the stiffness matrix. 
 ****************************************************************** */
-int MFD3D_Lagrange::H1consistency(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+int
+MFD3D_Lagrange::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   Entity_ID_List nodes;
   mesh_->cell_get_nodes(c, &nodes);
@@ -78,7 +78,7 @@ int MFD3D_Lagrange::H1consistency(
       double u(0.5);
 
       if (d_ == 2) {
-        u = 0.5 * dirs[i]; 
+        u = 0.5 * dirs[i];
       } else {
         int jnext = (j + 1) % num_face_nodes;
         int jprev = (j + num_face_nodes - 1) % num_face_nodes;
@@ -92,7 +92,7 @@ int MFD3D_Lagrange::H1consistency(
 
         v1 = pprev - pnext;
         v2 = p - fm;
-        v3 = v1^v2;
+        v3 = v1 ^ v2;
         u = dirs[i] * norm(v3) / (4 * area);
       }
 
@@ -102,7 +102,7 @@ int MFD3D_Lagrange::H1consistency(
   }
 
   // calculate upper part of R K R^T / volume
-  for (int i = 0; i < nnodes; i++) { 
+  for (int i = 0; i < nnodes; i++) {
     for (int k = 0; k < d_; k++) v1[k] = N(i, k);
     v2 = K * v1;
 
@@ -117,7 +117,7 @@ int MFD3D_Lagrange::H1consistency(
     int v = nodes[i];
     mesh_->node_get_coordinates(v, &p);
     for (int k = 0; k < d_; k++) N(i, k) = p[k] - cm[k];
-    N(i, d_) = 1.0;  // additional column is added to the consistency condition
+    N(i, d_) = 1.0; // additional column is added to the consistency condition
   }
 
   return 0;
@@ -127,8 +127,8 @@ int MFD3D_Lagrange::H1consistency(
 /* ******************************************************************
 * Stiffness matrix for a high-order scheme.
 ****************************************************************** */
-int MFD3D_Lagrange::StiffnessMatrix(
-    int c, const Tensor& K, DenseMatrix& A)
+int
+MFD3D_Lagrange::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -143,9 +143,11 @@ int MFD3D_Lagrange::StiffnessMatrix(
 /* *****************************************************************
 * N and R are used. Here we use simplified versions.
 ***************************************************************** */
-void MFD3D_Lagrange::ProjectorCell_(
-    int c, const std::vector<Polynomial>& ve,
-    const std::vector<Polynomial>& vf, Polynomial& uc)
+void
+MFD3D_Lagrange::ProjectorCell_(int c,
+                               const std::vector<Polynomial>& ve,
+                               const std::vector<Polynomial>& vf,
+                               Polynomial& uc)
 {
   Entity_ID_List nodes;
   mesh_->cell_get_nodes(c, &nodes);
@@ -175,7 +177,7 @@ void MFD3D_Lagrange::ProjectorCell_(
       double u(0.5);
 
       if (d_ == 2) {
-        u = 0.5 * dirs[i]; 
+        u = 0.5 * dirs[i];
       } else {
         int jnext = (j + 1) % num_face_nodes;
         int jprev = (j + num_face_nodes - 1) % num_face_nodes;
@@ -189,7 +191,7 @@ void MFD3D_Lagrange::ProjectorCell_(
 
         v1 = pprev - pnext;
         v2 = p - fm;
-        v3 = v1^v2;
+        v3 = v1 ^ v2;
         u = dirs[i] * norm(v3) / (4 * area);
       }
 
@@ -200,13 +202,10 @@ void MFD3D_Lagrange::ProjectorCell_(
 
   uc.Reshape(d_, 1, true);
   for (int i = 0; i < nnodes; i++) {
-    for (int k = 0; k < d_; k++) {
-      uc(k + 1) += R(i, k) * vf[i](0);
-    }
+    for (int k = 0; k < d_; k++) { uc(k + 1) += R(i, k) * vf[i](0); }
   }
   uc *= 1.0 / mesh_->cell_volume(c);
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

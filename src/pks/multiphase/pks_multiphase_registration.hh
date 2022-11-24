@@ -16,5 +16,5 @@ namespace Multiphase {
 
 RegisteredPKFactory<Multiphase_PK> Multiphase_PK::reg_("multiphase");
 
-}  // namespace Multiphase
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi

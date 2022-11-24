@@ -50,22 +50,21 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 class RegionEnumerated : public Region {
-public:
-
+ public:
   RegionEnumerated(const std::string& name,
                    const int id,
                    const std::string& entity_str,
                    const std::vector<Entity_ID>& ents,
-                   const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
+                   const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
 
   const std::vector<Entity_ID>& entities() const { return entities_; }
   const std::string& entity_str() const { return entity_str_; }
 
   // Is the the specified point inside this region
   bool inside(const Point& p) const;
-  
-protected:
-  std::string entity_str_; // what kind of entities make up this set
+
+ protected:
+  std::string entity_str_;                // what kind of entities make up this set
   const std::vector<Entity_ID> entities_; // list of those included
 };
 

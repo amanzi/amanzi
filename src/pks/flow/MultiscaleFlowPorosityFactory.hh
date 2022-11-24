@@ -27,7 +27,7 @@ class MultiscaleFlowPorosityFactory : public Utils::Factory<MultiscaleFlowPorosi
   Teuchos::RCP<MultiscaleFlowPorosity> Create(Teuchos::ParameterList& plist);
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 #endif

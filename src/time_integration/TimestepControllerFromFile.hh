@@ -42,7 +42,6 @@ cause doubt over their correctness.
 namespace Amanzi {
 
 class TimestepControllerFromFile : public TimestepController {
-
  public:
   TimestepControllerFromFile(Teuchos::ParameterList& plist);
 

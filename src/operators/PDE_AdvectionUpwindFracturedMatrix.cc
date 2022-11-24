@@ -26,19 +26,20 @@ namespace Operators {
 /* ******************************************************************
 * Advection requires a velocity field.
 ****************************************************************** */
-void PDE_AdvectionUpwindFracturedMatrix::Setup(const CompositeVector& u)
+void
+PDE_AdvectionUpwindFracturedMatrix::Setup(const CompositeVector& u)
 {
   IdentifyUpwindCells_(u);
 }
 
-  
+
 /* ******************************************************************
 * A simple first-order transport method.
 * Advection operator is of the form: div (u C), where u is the given
 * velocity field and C is the advected field.
 ****************************************************************** */
-void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
-    const Teuchos::Ptr<const CompositeVector>& u)
+void
+PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
@@ -74,12 +75,10 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
   AmanziMesh::Entity_ID_List block;
   std::vector<double> vofs;
   for (int i = 0; i < fractures_.size(); ++i) {
-    mesh_->get_set_entities_and_vofs(fractures_[i], AmanziMesh::FACE, 
-                                     AmanziMesh::Parallel_type::OWNED, &block, &vofs);
+    mesh_->get_set_entities_and_vofs(
+      fractures_[i], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block, &vofs);
 
-    for (int n = 0; n < block.size(); ++n) {
-      matrix[block[n]] *= 0.0;
-    }
+    for (int n = 0; n < block.size(); ++n) { matrix[block[n]] *= 0.0; }
   }
 }
 
@@ -91,9 +90,9 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
 *     q:    flux
 *     H(u): advected quantity (i.e. enthalpy)
 ****************************************************************** */
-void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
-    const Teuchos::Ptr<const CompositeVector>& u,
-    const Teuchos::Ptr<const CompositeVector>& dhdT)
+void
+PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                                                   const Teuchos::Ptr<const CompositeVector>& dhdT)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
@@ -132,12 +131,10 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
   AmanziMesh::Entity_ID_List block;
   std::vector<double> vofs;
   for (int i = 0; i < fractures_.size(); ++i) {
-    mesh_->get_set_entities_and_vofs(fractures_[i], AmanziMesh::FACE, 
-                                     AmanziMesh::Parallel_type::OWNED, &block, &vofs);
+    mesh_->get_set_entities_and_vofs(
+      fractures_[i], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block, &vofs);
 
-    for (int n = 0; n < block.size(); ++n) {
-      matrix[block[n]] *= 0.0;
-    }
+    for (int n = 0; n < block.size(); ++n) { matrix[block[n]] *= 0.0; }
   }
 }
 
@@ -146,7 +143,8 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
 * Identify flux direction based on orientation of the face normal 
 * and sign of the  Darcy velocity.                               
 ******************************************************************* */
-void PDE_AdvectionUpwindFracturedMatrix::IdentifyUpwindCells_(const CompositeVector& u)
+void
+PDE_AdvectionUpwindFracturedMatrix::IdentifyUpwindCells_(const CompositeVector& u)
 {
   u.ScatterMasterToGhosted("face");
   const Epetra_MultiVector& uf = *u.ViewComponent("face", true);
@@ -157,7 +155,7 @@ void PDE_AdvectionUpwindFracturedMatrix::IdentifyUpwindCells_(const CompositeVec
   downwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    (*upwind_cell_)[f] = -1;  // negative value indicates boundary
+    (*upwind_cell_)[f] = -1; // negative value indicates boundary
     (*downwind_cell_)[f] = -1;
   }
 
@@ -182,10 +180,11 @@ void PDE_AdvectionUpwindFracturedMatrix::IdentifyUpwindCells_(const CompositeVec
 /* ******************************************************************
 * Initialize additional parameters
 ****************************************************************** */
-void PDE_AdvectionUpwindFracturedMatrix::InitAdvection_(Teuchos::ParameterList& plist)
+void
+PDE_AdvectionUpwindFracturedMatrix::InitAdvection_(Teuchos::ParameterList& plist)
 {
-  fractures_ = plist.get<Teuchos::Array<std::string> >("fracture").toVector();
+  fractures_ = plist.get<Teuchos::Array<std::string>>("fracture").toVector();
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi

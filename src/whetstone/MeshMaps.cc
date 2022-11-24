@@ -28,7 +28,8 @@ namespace WhetStone {
 /* ******************************************************************
 * Calculate mesh velocity on 2D or 3D edge e.
 ****************************************************************** */
-void MeshMaps::VelocityEdge(int e, VectorPolynomial& v) const
+void
+MeshMaps::VelocityEdge(int e, VectorPolynomial& v) const
 {
   AMANZI_ASSERT(d_ == 3);
 
@@ -59,9 +60,7 @@ void MeshMaps::VelocityEdge(int e, VectorPolynomial& v) const
   y1 -= x1;
   ye -= xe;
 
-  for (int i = 0; i < points1.size(); ++i) {
-    points1[i] -= points0[i];
-  }
+  for (int i = 0; i < points1.size(); ++i) { points1[i] -= points0[i]; }
 
   // velocity is transformed from local to global coordinate systems
   int order = points1.size() + 1;
@@ -78,7 +77,7 @@ void MeshMaps::VelocityEdge(int e, VectorPolynomial& v) const
       v[i](2) = 2 * y0[i] + 2 * y1[i] - 4 * points1[0][i];
     }
 
-    v[i].InverseChangeCoordinates(xe, tau);  
+    v[i].InverseChangeCoordinates(xe, tau);
   }
 }
 
@@ -86,7 +85,8 @@ void MeshMaps::VelocityEdge(int e, VectorPolynomial& v) const
 /* ******************************************************************
 * Calculate mesh velocity on 2D face f.
 ****************************************************************** */
-void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
+void
+MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 {
   AMANZI_ASSERT(d_ == 2);
 
@@ -120,9 +120,7 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
   y1 -= x1;
   yf -= xf;
 
-  for (int i = 0; i < points1.size(); ++i) {
-    points1[i] -= points0[i];
-  }
+  for (int i = 0; i < points1.size(); ++i) { points1[i] -= points0[i]; }
 
   // velocity is transformed from local to global coordinate systems
   int order = points1.size() + 1;
@@ -139,7 +137,7 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
       v[i](2) = 2 * y0[i] + 2 * y1[i] - 4 * points1[0][i];
     }
 
-    v[i].InverseChangeCoordinates(xf, tau);  
+    v[i].InverseChangeCoordinates(xf, tau);
   }
 }
 
@@ -147,8 +145,10 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 /* ******************************************************************
 * Transformation of normal is defined completely by face data.
 ****************************************************************** */
-void MeshMaps::NansonFormula(
-    int f, const VectorSpaceTimePolynomial& map, VectorSpaceTimePolynomial& cn) const
+void
+MeshMaps::NansonFormula(int f,
+                        const VectorSpaceTimePolynomial& map,
+                        VectorSpaceTimePolynomial& cn) const
 {
   const auto& normal = mesh0_->face_normal(f);
   cn.resize(d_);
@@ -162,9 +162,9 @@ void MeshMaps::NansonFormula(
     for (int i = 0; i < d_; ++i) {
       int j = (i + 1) % d_;
       int k = (j + 1) % d_;
-      cn[i] = (grad(j, j) * grad(k, k) - grad(j, k) * grad(k, j)) * normal[i]
-            + (grad(j, k) * grad(k, i) - grad(j, i) * grad(k, k)) * normal[j]
-            + (grad(j, i) * grad(k, j) - grad(j, j) * grad(k, i)) * normal[k];
+      cn[i] = (grad(j, j) * grad(k, k) - grad(j, k) * grad(k, j)) * normal[i] +
+              (grad(j, k) * grad(k, i) - grad(j, i) * grad(k, k)) * normal[j] +
+              (grad(j, i) * grad(k, j) - grad(j, j) * grad(k, i)) * normal[k];
     }
   }
 }
@@ -174,7 +174,8 @@ void MeshMaps::NansonFormula(
 * Calculation of Jacobian.
 * Multiple velocities are packed in a rectagular matrix.
 ****************************************************************** */
-void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
+void
+MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
 {
   // allocate memory
   int nvc = vc.size();
@@ -183,9 +184,7 @@ void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
   // copy velocity gradients to Jacobian
   for (int i = 0; i < nvc; ++i) {
     auto tmp = Gradient(vc[i]);
-    for (int j = 0; j < d_; ++j) {
-      J(i, j) = tmp[j];
-    }
+    for (int j = 0; j < d_; ++j) { J(i, j) = tmp[j]; }
   }
 }
 
@@ -194,10 +193,11 @@ void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
 * Polynomial approximation v of map x2 = F(x1).
 * We assume that vectors of vertices have a proper length.
 ****************************************************************** */
-int MeshMaps::LeastSquareFit(int order,
-                             const std::vector<AmanziGeometry::Point>& x1, 
-                             const std::vector<AmanziGeometry::Point>& x2,
-                             VectorPolynomial& v) const
+int
+MeshMaps::LeastSquareFit(int order,
+                         const std::vector<AmanziGeometry::Point>& x1,
+                         const std::vector<AmanziGeometry::Point>& x2,
+                         VectorPolynomial& v) const
 {
   Polynomial poly(d_, order);
 
@@ -213,13 +213,11 @@ int MeshMaps::LeastSquareFit(int order,
 
     for (int n = 0; n < nx; ++n) {
       double val(1.0);
-      for (int k = 0; k < d_; ++k) {
-        val *= std::pow(x1[n][k], idx[k]);
-      }
+      for (int k = 0; k < d_; ++k) { val *= std::pow(x1[n][k], idx[k]); }
       psi(n, i) = val;
     }
   }
-      
+
   // form linear system
   DenseMatrix A(nk, nk);
 
@@ -230,22 +228,18 @@ int MeshMaps::LeastSquareFit(int order,
   DenseVector b(nk), u(nk);
 
   v.resize(d_);
-  for (int k = 0; k < d_; ++k) { 
+  for (int k = 0; k < d_; ++k) {
     v[k].Reshape(d_, order);
     v[k].set_origin(AmanziGeometry::Point(d_));
 
     for (int i = 0; i < nk; ++i) {
       b(i) = 0.0;
-      for (int n = 0; n < nx; ++n) {
-        b(i) += x2[n][k] * psi(n, i);
-      }
+      for (int n = 0; n < nx; ++n) { b(i) += x2[n][k] * psi(n, i); }
     }
 
     A.Multiply(b, u, false);
 
-    for (auto i = 0; i < nk; ++i) {
-      v[k](i) = u(i);
-    }
+    for (auto i = 0; i < nk; ++i) { v[k](i) = u(i); }
   }
 
   return 0;
@@ -255,14 +249,15 @@ int MeshMaps::LeastSquareFit(int order,
 /* ******************************************************************
 * Project polynomial on mesh0 to polynomial space on mesh1.
 ****************************************************************** */
-void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
+void
+MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
 {
   int order = poly.order();
 
   WhetStone::Entity_ID_List nodes;
 
   const auto& faces = mesh0_->cell_get_faces(c);
-  int nfaces = faces.size();  
+  int nfaces = faces.size();
 
   AmanziGeometry::Point v0(d_), v1(d_);
   std::vector<Polynomial> vvf;
@@ -280,8 +275,8 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
     WhetStone::Polynomial vf(d_ - 1, 1);
     vf.Reshape(d_ - 1, order);
     if (order == 1) {
-      vf(0, 0) = (f0 + f1) / 2; 
-      vf(1, 0) = f1 - f0; 
+      vf(0, 0) = (f0 + f1) / 2;
+      vf(1, 0) = f1 - f0;
     } else if (order == 2) {
       double f2 = poly.Value((v0 + v1) / 2);
       vf(0, 0) = f2;
@@ -316,6 +311,5 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
   mfd.L2Cell(c, vvf, vvf, &moments, poly);
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

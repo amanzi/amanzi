@@ -20,25 +20,31 @@
 
 class AnalyticElectromagneticsBase : public Amanzi::WhetStone::WhetStoneFunction {
  public:
-  AnalyticElectromagneticsBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
-  ~AnalyticElectromagneticsBase() {};
+  AnalyticElectromagneticsBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh){};
+  ~AnalyticElectromagneticsBase(){};
 
   // analytic solution for Maxwell's equations
   // -- resitivity tensor T
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   // -- analytic solution E
-  virtual Amanzi::AmanziGeometry::Point electric_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
-  virtual Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point
+  electric_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point
+  magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   // -- source term
-  virtual Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point
+  source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // interface to function (dummy implementation)
   virtual double Value(const Amanzi::AmanziGeometry::Point& p) const { return 0.0; }
 
   // error calculation
-  void ComputeFaceError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);
-  void ComputeEdgeError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);
-  void ComputeNodeError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);
+  void
+  ComputeFaceError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);
+  void
+  ComputeEdgeError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);
+  void
+  ComputeNodeError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);
 
   // communications
   void GlobalOp(std::string op, double* val, int n);
@@ -48,4 +54,3 @@ class AnalyticElectromagneticsBase : public Amanzi::WhetStone::WhetStoneFunction
 };
 
 #endif
-

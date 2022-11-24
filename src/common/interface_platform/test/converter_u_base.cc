@@ -27,8 +27,10 @@
 #include "InputConverterU.hh"
 
 
-bool ComparePLists(const Teuchos::ParameterList& plist1,
-                   const Teuchos::ParameterList& plist2, std::string& name) 
+bool
+ComparePLists(const Teuchos::ParameterList& plist1,
+              const Teuchos::ParameterList& plist2,
+              std::string& name)
 {
   for (auto it = plist1.begin(); it != plist1.end(); ++it) {
     name = plist1.name(it);
@@ -56,7 +58,7 @@ bool ComparePLists(const Teuchos::ParameterList& plist1,
       }
 
       if (e1.isType<std::string>()) {
-        if (!e2.isType<std::string>())  return false;
+        if (!e2.isType<std::string>()) return false;
         std::string v1 = plist1.get<std::string>(name);
         std::string v2 = plist2.get<std::string>(name);
         if (v1 != v2) return false;
@@ -69,28 +71,31 @@ bool ComparePLists(const Teuchos::ParameterList& plist1,
         if (v1 != v2) return false;
       }
 
-      if (e1.isType<Teuchos::Array<std::string> >()) {
-        if (!e2.isType<Teuchos::Array<std::string> >())  return false;
-        std::vector<std::string> v1 = plist1.get<Teuchos::Array<std::string> >(name).toVector();
-        std::vector<std::string> v2 = plist2.get<Teuchos::Array<std::string> >(name).toVector();
+      if (e1.isType<Teuchos::Array<std::string>>()) {
+        if (!e2.isType<Teuchos::Array<std::string>>()) return false;
+        std::vector<std::string> v1 = plist1.get<Teuchos::Array<std::string>>(name).toVector();
+        std::vector<std::string> v2 = plist2.get<Teuchos::Array<std::string>>(name).toVector();
         if (v1.size() != v2.size()) return false;
-        for (int i = 0; i < v1.size(); ++i) if (v1[i] != v2[i]) return false;
+        for (int i = 0; i < v1.size(); ++i)
+          if (v1[i] != v2[i]) return false;
       }
 
-      if (e1.isType<Teuchos::Array<int> >()) {
-        if (!e2.isType<Teuchos::Array<int> >())  return false;
-        std::vector<int> v1 = plist1.get<Teuchos::Array<int> >(name).toVector();
-        std::vector<int> v2 = plist2.get<Teuchos::Array<int> >(name).toVector();
+      if (e1.isType<Teuchos::Array<int>>()) {
+        if (!e2.isType<Teuchos::Array<int>>()) return false;
+        std::vector<int> v1 = plist1.get<Teuchos::Array<int>>(name).toVector();
+        std::vector<int> v2 = plist2.get<Teuchos::Array<int>>(name).toVector();
         if (v1.size() != v2.size()) return false;
-        for (int i = 0; i < v1.size(); ++i) if (v1[i] != v2[i]) return false;
+        for (int i = 0; i < v1.size(); ++i)
+          if (v1[i] != v2[i]) return false;
       }
 
-      if (e1.isType<Teuchos::Array<double> >()) {
-        if (!e2.isType<Teuchos::Array<double> >())  return false;
-        std::vector<double> v1 = plist1.get<Teuchos::Array<double> >(name).toVector();
-        std::vector<double> v2 = plist2.get<Teuchos::Array<double> >(name).toVector();
+      if (e1.isType<Teuchos::Array<double>>()) {
+        if (!e2.isType<Teuchos::Array<double>>()) return false;
+        std::vector<double> v1 = plist1.get<Teuchos::Array<double>>(name).toVector();
+        std::vector<double> v2 = plist2.get<Teuchos::Array<double>>(name).toVector();
         if (v1.size() != v2.size()) return false;
-        for (int i = 0; i < v1.size(); ++i) if (fabs(v1[i] - v2[i]) > fabs(v1[i]) * 1e-12) return false;
+        for (int i = 0; i < v1.size(); ++i)
+          if (fabs(v1[i] - v2[i]) > fabs(v1[i]) * 1e-12) return false;
       }
     }
   }
@@ -99,7 +104,8 @@ bool ComparePLists(const Teuchos::ParameterList& plist1,
 
 
 /* **************************************************************** */
-TEST(CONVERTER_BASE) {
+TEST(CONVERTER_BASE)
+{
   using namespace Teuchos;
   using namespace Amanzi;
 
@@ -153,5 +159,3 @@ TEST(CONVERTER_BASE) {
     }
   }
 }
-	
-

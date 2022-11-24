@@ -20,9 +20,8 @@
 //
 // Default is false
 //
-template<typename Operator, typename Dummy=void>
-struct is_assembled
-{
+template <typename Operator, typename Dummy = void>
+struct is_assembled {
   const static bool value = false;
 };
 
@@ -35,18 +34,19 @@ struct is_assembled
 // {
 //   const static bool value = true;
 // };
-template<typename Operator>
-struct is_assembled<Operator,
-                    typename std::enable_if<std::is_member_function_pointer<
-                      decltype(static_cast<int (Operator::*)(bool)>(&Operator::FillComplete))>::value>::type>
-{
+template <typename Operator>
+struct is_assembled<
+  Operator,
+  typename std::enable_if<std::is_member_function_pointer<
+    decltype(static_cast<int (Operator::*)(bool)>(&Operator::FillComplete))>::value>::type> {
   const static bool value = true;
 };
 
 
-
-SUITE(SOLVERS) {
-  TEST(static_asserts) {
+SUITE(SOLVERS)
+{
+  TEST(static_asserts)
+  {
     //    static_assert(!is_assembling<Epetra_CrsMatrix>::value, "Epetra_CrsMatrix is not assembling");
     static_assert(is_assembled<Epetra_CrsMatrix>::value, "Epetra_CrsMatrix is assembled");
   }

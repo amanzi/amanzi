@@ -25,14 +25,12 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Vector, class VectorSpace>
+template <class Vector, class VectorSpace>
 class Solver {
  public:
-
   virtual ~Solver() = default;
-  
-  virtual void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-                    const VectorSpace& map) = 0;
+
+  virtual void Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map) = 0;
 
   virtual int Solve(const Teuchos::RCP<Vector>& u) = 0;
 
@@ -40,8 +38,8 @@ class Solver {
   virtual void set_tolerance(double tol) = 0;
   virtual void set_pc_lag(int pc_lag) = 0;
   virtual void set_db(const Teuchos::RCP<ResidualDebugger>& db) {}
-  
-  // access 
+
+  // access
   virtual double tolerance() = 0;
   virtual double residual() = 0;
   virtual int num_itrs() = 0;
@@ -52,9 +50,10 @@ class Solver {
 
 
 // non-member functions for parsing input plist
-inline
-void ParseConvergenceCriteria(const std::string& monitor_name,
-                              ConvergenceMonitor* monitor, int* norm_type)
+inline void
+ParseConvergenceCriteria(const std::string& monitor_name,
+                         ConvergenceMonitor* monitor,
+                         int* norm_type)
 {
   *norm_type = SOLVER_NORM_LINF;
   if (monitor_name == "monitor residual") {
@@ -68,7 +67,7 @@ void ParseConvergenceCriteria(const std::string& monitor_name,
     *monitor = SOLVER_MONITOR_PCED_RESIDUAL;
     *norm_type = SOLVER_NORM_L2;
   } else if (monitor_name == "monitor update") {
-    *monitor = SOLVER_MONITOR_UPDATE;  // default value
+    *monitor = SOLVER_MONITOR_UPDATE; // default value
   } else {
     Errors::Message m;
     m << "Invalid monitor name for nonlinear solver: \"" << monitor_name << "\"";
@@ -76,7 +75,7 @@ void ParseConvergenceCriteria(const std::string& monitor_name,
   }
 }
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif

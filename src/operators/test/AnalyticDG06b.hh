@@ -29,21 +29,25 @@ class AnalyticDG06b : public AnalyticDGBase {
 
  public:
   AnalyticDG06b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
-    : AnalyticDGBase(mesh, order, advection) {};
-  ~AnalyticDG06b() {};
+    : AnalyticDGBase(mesh, order, advection){};
+  ~AnalyticDG06b(){};
 
   // analytic data in conventional Taylor basis
   // -- diffusion tensor
-  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override {
+  virtual Amanzi::WhetStone::Tensor
+  Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override
+  {
     Amanzi::WhetStone::Tensor K(2, 1);
     K(0, 0) = 1.0;
     return K;
   }
 
   // -- solution
-  virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                              Amanzi::WhetStone::Polynomial& sol) override {
-    sol.Reshape(d_, order_, true); 
+  virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p,
+                              double t,
+                              Amanzi::WhetStone::Polynomial& sol) override
+  {
+    sol.Reshape(d_, order_, true);
     sol.set_origin(p);
 
     double x0 = 0.5 + 0.25 * std::cos(t);
@@ -68,9 +72,9 @@ class AnalyticDG06b : public AnalyticDGBase {
     if (order_ > 1) {
       dx2 = dx * dx;
       dy2 = dy * dy;
-      sol(2, 0) =  u * (dx2 - 2 * a) / 2;
-      sol(2, 1) =  u * dx * dy;
-      sol(2, 2) =  u * (dy2 - 2 * a) / 2;
+      sol(2, 0) = u * (dx2 - 2 * a) / 2;
+      sol(2, 1) = u * dx * dy;
+      sol(2, 2) = u * (dy2 - 2 * a) / 2;
     }
 
     if (order_ > 2) {
@@ -84,41 +88,48 @@ class AnalyticDG06b : public AnalyticDGBase {
   }
 
   // -- accumulation
-  virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                                  Amanzi::WhetStone::Polynomial& acc) override {
-    acc.Reshape(d_, 0, true); 
+  virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p,
+                                  double t,
+                                  Amanzi::WhetStone::Polynomial& acc) override
+  {
+    acc.Reshape(d_, 0, true);
     acc.set_origin(p);
   }
 
   // -- velocity
-  virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                              Amanzi::WhetStone::VectorPolynomial& v) override {
+  virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p,
+                              double t,
+                              Amanzi::WhetStone::VectorPolynomial& v) override
+  {
     v.resize(d_);
     for (int i = 0; i < d_; ++i) {
-      v[i].Reshape(d_, 1, true); 
+      v[i].Reshape(d_, 1, true);
       v[i].set_origin(p);
     }
     v[0](0, 0) = 0.5 - p[1];
     v[1](0, 0) = p[0] - 0.5;
 
-    v[0](1, 1) =-1.0;
+    v[0](1, 1) = -1.0;
     v[1](1, 0) = 1.0;
   }
 
   // -- reaction
-  virtual void ReactionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                              Amanzi::WhetStone::Polynomial& r) override {
-    r.Reshape(d_, 0, true); 
+  virtual void ReactionTaylor(const Amanzi::AmanziGeometry::Point& p,
+                              double t,
+                              Amanzi::WhetStone::Polynomial& r) override
+  {
+    r.Reshape(d_, 0, true);
     r.set_origin(p);
   }
 
   // -- source term
-  virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                            Amanzi::WhetStone::Polynomial& src) override {
+  virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p,
+                            double t,
+                            Amanzi::WhetStone::Polynomial& src) override
+  {
     src.Reshape(d_, 0, true);
     src.set_origin(p);
   }
 };
 
 #endif
-

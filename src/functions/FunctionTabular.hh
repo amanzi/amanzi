@@ -119,19 +119,20 @@ class FunctionTabular : public Function {
   enum Form { LINEAR, CONSTANT, FUNCTION };
 
  public:
-  FunctionTabular(const std::vector<double>& x, const std::vector<double>& y,
-                  const int xi);
-  FunctionTabular(const std::vector<double>& x, const std::vector<double>& y,
-                  const int xi, const std::vector<Form>& form);
-  FunctionTabular(const std::vector<double>& x, const std::vector<double>& y,
-                  const int xi, const std::vector<Form>& form,
+  FunctionTabular(const std::vector<double>& x, const std::vector<double>& y, const int xi);
+  FunctionTabular(const std::vector<double>& x,
+                  const std::vector<double>& y,
+                  const int xi,
+                  const std::vector<Form>& form);
+  FunctionTabular(const std::vector<double>& x,
+                  const std::vector<double>& y,
+                  const int xi,
+                  const std::vector<Form>& form,
                   std::vector<std::unique_ptr<Function>> func);
   FunctionTabular(const FunctionTabular& other);
-  ~FunctionTabular() {};
+  ~FunctionTabular(){};
 
-  std::unique_ptr<Function> Clone() const {
-    return std::make_unique<FunctionTabular>(*this);
-  }
+  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionTabular>(*this); }
   double operator()(const std::vector<double>& x) const;
 
  private:
@@ -141,10 +142,11 @@ class FunctionTabular : public Function {
   std::vector<std::unique_ptr<Function>> func_;
 
  private: // helper functions
-  void check_args(const std::vector<double>&, const std::vector<double>&,
-     const std::vector<Form>&) const;
+  void check_args(const std::vector<double>&,
+                  const std::vector<double>&,
+                  const std::vector<Form>&) const;
 };
 
 } // namespace Amanzi
 
-#endif  // AMANZI_TABULAR_FUNCTION_HH_
+#endif // AMANZI_TABULAR_FUNCTION_HH_

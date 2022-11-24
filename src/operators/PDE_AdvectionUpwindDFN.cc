@@ -30,23 +30,25 @@ namespace Operators {
 /* ******************************************************************
 * Advection requires a velocity field.
 ****************************************************************** */
-void PDE_AdvectionUpwindDFN::Setup(const CompositeVector& u)
+void
+PDE_AdvectionUpwindDFN::Setup(const CompositeVector& u)
 {
   IdentifyUpwindCells_(u);
 }
 
-  
+
 /* ******************************************************************
 * A simple first-order transport method.
 * Advection operator is of the form: div (u C), where u is the given
 * velocity field and C is the advected field.
 ****************************************************************** */
-void PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux)
+void
+PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
   AmanziMesh::Entity_ID_List cells;
- 
+
   for (int f = 0; f < nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
@@ -72,19 +74,17 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVe
           Aface(j, j) = u;
           break;
         }
-      }      
+      }
     }
 
     double flux_in(0.0);
-    for (int n = 0; n < ndownwind; ++n) {
-      flux_in -= downwind_flux_dfn_[f][n];
-    }
+    for (int n = 0; n < ndownwind; ++n) { flux_in -= downwind_flux_dfn_[f][n]; }
     if (flux_in == 0.0) flux_in = 1e-12;
-    
+
     for (int n = 0; n < ndownwind; ++n) {
       int c = downwind_cells_dfn_[f][n];
       double u = downwind_flux_dfn_[f][n];
-      
+
       for (int m = 0; m < nupwind; m++) {
         double v = upwind_flux_dfn_[f][m];
         for (int j = 0; j < cells.size(); j++) {
@@ -95,7 +95,7 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVe
         }
       }
     }
-    matrix[f] = Aface;    
+    matrix[f] = Aface;
   }
 }
 
@@ -107,9 +107,9 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVe
 *     q:    flux
 *     H(u): advected quantity (i.e. enthalpy)
 ****************************************************************** */
-void PDE_AdvectionUpwindDFN::UpdateMatrices(
-    const Teuchos::Ptr<const CompositeVector>& q,
-    const Teuchos::Ptr<const CompositeVector>& dHdT)
+void
+PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& q,
+                                       const Teuchos::Ptr<const CompositeVector>& dHdT)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
@@ -117,7 +117,7 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(
   const auto& dHdT_c = *dHdT->ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List cells;
- 
+
   for (int f = 0; f < nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
@@ -143,19 +143,17 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(
           Aface(j, j) = u * dHdT_c[0][c];
           break;
         }
-      }      
+      }
     }
 
     double flux_in(0.0);
-    for (int n = 0; n < ndownwind; ++n) {
-      flux_in -= downwind_flux_dfn_[f][n];
-    }
+    for (int n = 0; n < ndownwind; ++n) { flux_in -= downwind_flux_dfn_[f][n]; }
     if (flux_in == 0.0) flux_in = 1e-12;
-    
+
     for (int n = 0; n < ndownwind; ++n) {
       int c = downwind_cells_dfn_[f][n];
       double u = downwind_flux_dfn_[f][n];
-      
+
       for (int m = 0; m < nupwind; m++) {
         double v = upwind_flux_dfn_[f][m];
         for (int j = 0; j < cells.size(); j++) {
@@ -166,7 +164,7 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(
         }
       }
     }
-    matrix[f] = Aface;    
+    matrix[f] = Aface;
   }
 }
 
@@ -196,7 +194,8 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(
 *
 * FIXME: So far we support the case bc_test = bc_trial
 ******************************************************************* */
-void PDE_AdvectionUpwindDFN::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
+void
+PDE_AdvectionUpwindDFN::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
@@ -221,7 +220,7 @@ void PDE_AdvectionUpwindDFN::ApplyBCs(bool primary, bool eliminate, bool essenti
         rhs_cell[0][c2] += matrix[f](0, 0) * bc_value[f];
         matrix[f] = 0.0;
       }
-    } 
+    }
 
     // treat as essential inflow BC for pure advection
     else if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
@@ -231,18 +230,17 @@ void PDE_AdvectionUpwindDFN::ApplyBCs(bool primary, bool eliminate, bool essenti
       }
     }
     // leave in matrix for composite operator
-    else if (bc_model[f] == OPERATOR_BC_NEUMANN && ! primary) {
-      if (c1 < 0)
-        matrix[f] *= -1.0;
+    else if (bc_model[f] == OPERATOR_BC_NEUMANN && !primary) {
+      if (c1 < 0) matrix[f] *= -1.0;
     }
     // total flux was processed by another operator -> remove here
-    else if (bc_model[f] == OPERATOR_BC_TOTAL_FLUX && ! primary) {
+    else if (bc_model[f] == OPERATOR_BC_TOTAL_FLUX && !primary) {
       matrix[f] = 0.0;
     }
     // do not know what to do
     else if (bc_model[f] != OPERATOR_BC_NONE) {
       AMANZI_ASSERT(false);
-    } 
+    }
   }
 }
 
@@ -251,7 +249,8 @@ void PDE_AdvectionUpwindDFN::ApplyBCs(bool primary, bool eliminate, bool essenti
 * Identify flux direction based on orientation of the face normal 
 * and sign of the  Darcy velocity.                               
 ******************************************************************* */
-void PDE_AdvectionUpwindDFN::IdentifyUpwindCells_(const CompositeVector& u)
+void
+PDE_AdvectionUpwindDFN::IdentifyUpwindCells_(const CompositeVector& u)
 {
   upwind_cells_dfn_.clear();
   downwind_cells_dfn_.clear();
@@ -268,28 +267,28 @@ void PDE_AdvectionUpwindDFN::IdentifyUpwindCells_(const CompositeVector& u)
   u.ScatterMasterToGhosted();
   const Epetra_MultiVector& u_f = *u.ViewComponent("face", true);
   const auto& map = u.Map().Map("face", true);
-  
+
   for (int c = 0; c < ncells_wghost; c++) {
     const auto& faces = mesh_->cell_get_faces(c);
     const auto& dirs = mesh_->cell_get_face_dirs(c);
-    
+
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
       int g = map->FirstPointInElement(f);
       int ndofs = map->ElementSize(f);
       if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
-      double flux = u_f[0][g] * dirs[i];  // exterior flux
+      double flux = u_f[0][g] * dirs[i]; // exterior flux
       if (flux >= 0.0) {
         upwind_cells_dfn_[f].push_back(c);
         upwind_flux_dfn_[f].push_back(flux);
       } else {
         downwind_cells_dfn_[f].push_back(c);
         downwind_flux_dfn_[f].push_back(flux);
-      }      
+      }
     }
   }
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi

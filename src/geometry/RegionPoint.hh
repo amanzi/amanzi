@@ -46,7 +46,7 @@ class RegionPoint : public Region {
   RegionPoint(const std::string& name,
               const int id,
               const Point& p,
-              const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
+              const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
 
   // Get the point defining the region
   const Point& point(void) const { return p_; }

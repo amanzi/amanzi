@@ -34,7 +34,9 @@
 /* *********************************************************************
 * Two tests with different time step controllers. 
 ********************************************************************* */
-void RunTestDarcyWell(std::string controller, bool fit) {
+void
+RunTestDarcyWell(std::string controller, bool fit)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -58,7 +60,7 @@ void RunTestDarcyWell(std::string controller, bool fit) {
   pref.push_back(Framework::MSTK);
   pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   RCP<const Mesh> mesh = meshfactory.create(-10.0, -5.0, 10.0, 0.0, 101, 50);
 
@@ -85,7 +87,7 @@ void RunTestDarcyWell(std::string controller, bool fit) {
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd(""); 
+  std::string passwd("");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   double diff_in_perm = 0.0;
 
@@ -96,16 +98,16 @@ void RunTestDarcyWell(std::string controller, bool fit) {
       K[1][c] = 2.0 + std::cos(xc[1]) * 0.4;
     }
     S->GetRecordW("permeability", "permeability").set_initialized();
-  } else{
+  } else {
     for (int c = 0; c < K.MyLength(); c++) {
       const AmanziGeometry::Point xc = mesh->cell_centroid(c);
-      diff_in_perm += abs(K[0][c] - (0.1 + std::sin(xc[0]) * 0.02)) + 
-        abs(K[1][c] - (2.0 + std::cos(xc[1]) * 0.4));
+      diff_in_perm += abs(K[0][c] - (0.1 + std::sin(xc[0]) * 0.02)) +
+                      abs(K[1][c] - (2.0 + std::cos(xc[1]) * 0.4));
     }
-    std::cout<<"diff_in_perm "<<diff_in_perm<<"\n";
+    std::cout << "diff_in_perm " << diff_in_perm << "\n";
     CHECK(diff_in_perm < 1.0e-12);
   }
-    
+
 
   // -- fluid density and viscosity
   S->GetW<double>("const_fluid_density", "state") = 1.0;
@@ -121,7 +123,7 @@ void RunTestDarcyWell(std::string controller, bool fit) {
   // initialize the Darcy process kernel
   DPK->Initialize();
 
-  std::string filename = controller.replace(controller.size()-4, 4, "_flow2D.gmv");
+  std::string filename = controller.replace(controller.size() - 4, 4, "_flow2D.gmv");
 
   // transient solution
   double t_old(0.0), t_new, dt(0.5);
@@ -137,7 +139,7 @@ void RunTestDarcyWell(std::string controller, bool fit) {
     if (MyPID == 0) {
       // filename = controller.replace(controller.size()-5, 5, "_flow2D.gmv");
       // GMV::open_data_file(*mesh, filename);
-      GMV::open_data_file(*mesh, (std::string)"flow2D.gmv");
+      GMV::open_data_file(*mesh, (std::string) "flow2D.gmv");
       GMV::start_data();
       GMV::write_cell_data(p, 0, "pressure");
       GMV::close_data_file();
@@ -150,7 +152,8 @@ void RunTestDarcyWell(std::string controller, bool fit) {
         const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
         if (fabs(xc[0]) < 0.05 && fabs(xc[1] + 2.475) < 0.05) {
           // use quadratic approximation in time. This may capture bugs in the well model.
-          double quad = -0.00068556 * (n - 4) * (n - 9) + 0.021082 * n * (n - 9) - 0.032341 * n * (n - 4);
+          double quad =
+            -0.00068556 * (n - 4) * (n - 9) + 0.021082 * n * (n - 9) - 0.032341 * n * (n - 4);
           CHECK_CLOSE(p[0][c], quad, fabs(quad) * 0.1);
         }
       }
@@ -159,21 +162,26 @@ void RunTestDarcyWell(std::string controller, bool fit) {
 }
 
 
-TEST(FLOW_2D_DARCY_WELL_STANDARD) {
+TEST(FLOW_2D_DARCY_WELL_STANDARD)
+{
   RunTestDarcyWell("test/flow_darcy_well.xml", true);
 }
 
-TEST(FLOW_2D_DARCY_WELL_FROMFILE) {
+TEST(FLOW_2D_DARCY_WELL_FROMFILE)
+{
   RunTestDarcyWell("test/flow_darcy_well_fromfile.xml", false);
 }
 
-TEST(FLOW_2D_DARCY_WELL_ADAPRIVE) {
+TEST(FLOW_2D_DARCY_WELL_ADAPRIVE)
+{
   RunTestDarcyWell("test/flow_darcy_well_adaptive.xml", false);
 }
 
 
 /* **************************************************************** */
-void Run_3D_DarcyWell(std::string controller) {
+void
+Run_3D_DarcyWell(std::string controller)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -191,14 +199,14 @@ void Run_3D_DarcyWell(std::string controller) {
   // create an MSTK mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
   pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   RCP<const Mesh> mesh = meshfactory.create(-10.0, -1.0, -5.0, 10.0, 1.0, 0.0, 101, 10, 25);
 
@@ -217,9 +225,9 @@ void Run_3D_DarcyWell(std::string controller) {
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd(""); 
+  std::string passwd("");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
-  
+
   for (int c = 0; c < K.MyLength(); c++) {
     K[0][c] = 0.1;
     K[1][c] = 2.0;
@@ -241,7 +249,7 @@ void Run_3D_DarcyWell(std::string controller) {
   // initialize the Darcy process kernel
   DPK->Initialize();
 
-  std::string filename = controller.replace(controller.size()-4, 4, "_flow3D.gmv");
+  std::string filename = controller.replace(controller.size() - 4, 4, "_flow3D.gmv");
 
   // transient solution
   double t_old(0.0), t_new, dt(0.5);
@@ -264,13 +272,15 @@ void Run_3D_DarcyWell(std::string controller) {
 }
 
 
-TEST(FLOW_3D_DARCY_WELL) {
+TEST(FLOW_3D_DARCY_WELL)
+{
   Run_3D_DarcyWell("test/flow_darcy_well_3D.xml");
 }
 
 
 /* **************************************************************** */
-TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
+TEST(FLOW_3D_DARCY_PEACEMAN_WELL)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -288,14 +298,14 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   // create an MSTK mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
   pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   RCP<const Mesh> mesh = meshfactory.create(-55.0, -55.0, -2., 55.0, 55.0, 0.0, 23, 23, 4);
 
@@ -306,7 +316,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  std::string passwd(""); 
+  std::string passwd("");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
   DPK->Setup();
@@ -316,7 +326,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   // modify the default state for the problem at hand
   // -- permeability
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
-  
+
   for (int c = 0; c < K.MyLength(); c++) {
     K[0][c] = 10.;
     K[1][c] = 10.;
@@ -364,11 +374,11 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   double sol = 0.;
   for (int c = 0; c < ncells; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-    double r = sqrt(xc[0]*xc[0] + xc[1]*xc[1]);
+    double r = sqrt(xc[0] * xc[0] + xc[1] * xc[1]);
     double p_ex;
     p_ex = pw + gravity[2] * (xc[2] + depth);
     if (r > 1e-3) {
-      p_ex = p_ex + Q / (2*M_PI*k*h) * (log(r) - log(rw));
+      p_ex = p_ex + Q / (2 * M_PI * k * h) * (log(r) - log(rw));
     } else {
       p_ex = p[0][c];
     }
@@ -376,8 +386,8 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
     p_exact[0][c] = p_ex;
 
     double vol = mesh->cell_volume(c);
-    err += (p_ex - p[0][c]) * (p_ex - p[0][c])*vol;
-    
+    err += (p_ex - p[0][c]) * (p_ex - p[0][c]) * vol;
+
     err_p[0][c] = abs(p_ex - p[0][c]);
 
     sol += p[0][c] * p[0][c] * vol;
@@ -408,4 +418,3 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
     GMV::close_data_file();
   }
 }
-

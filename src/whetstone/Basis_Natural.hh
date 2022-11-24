@@ -30,37 +30,46 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class Basis_Natural : public Basis { 
+class Basis_Natural : public Basis {
  public:
   Basis_Natural() { id_ = TAYLOR_BASIS_NATURAL; }
-  ~Basis_Natural() {};
+  ~Basis_Natural(){};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, 
-                    int c, int order, Polynomial& integrals) { order_ = order; }
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
+                    int c,
+                    int order,
+                    Polynomial& integrals)
+  {
+    order_ = order;
+  }
 
   // transformation of bilinear form
   virtual void BilinearFormNaturalToMy(DenseMatrix& A) const {};
   virtual void BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
-                                       std::shared_ptr<Basis> br, DenseMatrix& A) const {};
+                                       std::shared_ptr<Basis> br,
+                                       DenseMatrix& A) const {};
 
   // transformation of linear form
   virtual void LinearFormNaturalToMy(DenseVector& v) const {};
 
-  // transformation of vector 
+  // transformation of vector
   virtual void ChangeBasisMyToNatural(DenseVector& v) const {};
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const {};
 
   // recover polynomial in natural basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
-                                         int c, int order, DenseVector& coefs) const {
+                                         int c,
+                                         int order,
+                                         DenseVector& coefs) const
+  {
     int d = mesh->space_dimension();
     Polynomial poly(d, order, coefs);
     poly.set_origin(mesh->cell_centroid(c));
     return poly;
   }
 
-  // assess 
+  // assess
   int id() { return id_; };
 
  protected:
@@ -70,8 +79,7 @@ class Basis_Natural : public Basis {
   int order_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

@@ -30,12 +30,12 @@ namespace Amanzi {
 template <class FunctionBase>
 class PK_DomainFunctionSubgrid : public FunctionBase {
  public:
-  PK_DomainFunctionSubgrid(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      mesh_(mesh) {};
+  PK_DomainFunctionSubgrid(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : mesh_(mesh){};
   virtual ~PK_DomainFunctionSubgrid() = default;
 
   // member functions
-  void Init(const Teuchos::ParameterList& plist, const std::string& keyword,
+  void Init(const Teuchos::ParameterList& plist,
+            const std::string& keyword,
             AmanziMesh::Entity_kind kind);
 
   // required member functions
@@ -64,9 +64,10 @@ class PK_DomainFunctionSubgrid : public FunctionBase {
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionSubgrid<FunctionBase>::Init(
-    const Teuchos::ParameterList& plist, const std::string& keyword,
-    AmanziMesh::Entity_kind region_kind)
+void
+PK_DomainFunctionSubgrid<FunctionBase>::Init(const Teuchos::ParameterList& plist,
+                                             const std::string& keyword,
+                                             AmanziMesh::Entity_kind region_kind)
 {
   keyword_ = keyword;
 
@@ -80,7 +81,7 @@ void PK_DomainFunctionSubgrid<FunctionBase>::Init(
     Exceptions::amanzi_throw(m);
   }
 
-  auto regions = plist.get<Teuchos::Array<std::string> >("regions");
+  auto regions = plist.get<Teuchos::Array<std::string>>("regions");
   if (regions.size() != 1) {
     Errors::Message m;
     m << "Invalid \"regions\" list in processing subgrid source spec (must be of length 1).";
@@ -93,7 +94,8 @@ void PK_DomainFunctionSubgrid<FunctionBase>::Init(
 
     if (id_list.size() != 1) {
       Errors::Message m;
-      m << "Invalid region in processing subgrid source spec (must be of length 1): \"" << region << "\"";
+      m << "Invalid region in processing subgrid source spec (must be of length 1): \"" << region
+        << "\"";
       Exceptions::amanzi_throw(m);
     }
     entity_lid_ = id_list[0];
@@ -112,7 +114,8 @@ void PK_DomainFunctionSubgrid<FunctionBase>::Init(
 * Compute and distribute the result by Subgrid.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionSubgrid<FunctionBase>::Compute(double t0, double t1)
+void
+PK_DomainFunctionSubgrid<FunctionBase>::Compute(double t0, double t1)
 {
   auto& vec_out = S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_);
   const auto& field_out = *vec_out.ViewComponent("cell", true);
@@ -122,10 +125,10 @@ void PK_DomainFunctionSubgrid<FunctionBase>::Compute(double t0, double t1)
 
   AmanziMesh::Entity_ID entity_lid_out = vec_out.Mesh()->cell_map("false").LID(entity_gid_out_);
   AMANZI_ASSERT(entity_lid_out >= 0);
-  for (int k=0; k<num_vec; ++k) val[k] = field_out[k][entity_lid_out];
+  for (int k = 0; k < num_vec; ++k) val[k] = field_out[k][entity_lid_out];
   value_[entity_lid_] = val;
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

@@ -21,10 +21,11 @@
 namespace Amanzi {
 namespace Utils {
 
-template<> Factory<Transport::MDM>::map_type* Factory<Transport::MDM>::map_;
+template <>
+Factory<Transport::MDM>::map_type* Factory<Transport::MDM>::map_;
 
-}  // namespace Utils
-}  // namespace Amanzi
+} // namespace Utils
+} // namespace Amanzi
 
 
 namespace Amanzi {
@@ -33,9 +34,8 @@ namespace Transport {
 Utils::RegisteredFactory<MDM, MDM_Bear> MDM_Bear::factory_("Bear");
 Utils::RegisteredFactory<MDM, MDM_BurnettFrind> MDM_BurnettFrind::factory_("Burnett-Frind");
 Utils::RegisteredFactory<MDM, MDM_Isotropic> MDM_Isotropic::factory_("scalar");
-Utils::RegisteredFactory<MDM, MDM_LichtnerKelkarRobinson> 
-    MDM_LichtnerKelkarRobinson::factory_("Lichtner-Kelkar-Robinson");
+Utils::RegisteredFactory<MDM, MDM_LichtnerKelkarRobinson>
+  MDM_LichtnerKelkarRobinson::factory_("Lichtner-Kelkar-Robinson");
 
-}  // namespace Transport
-}  // namespace Amanzi
-
+} // namespace Transport
+} // namespace Amanzi

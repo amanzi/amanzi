@@ -40,17 +40,19 @@ namespace Operators {
 /* *******************************************************************
 * Work in progress: initialization like in Transport PK.
 ******************************************************************* */
-LimiterCellDG::LimiterCellDG(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) 
-  : LimiterCell(mesh) {};
+LimiterCellDG::LimiterCellDG(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+  : LimiterCell(mesh){};
 
 
 /* ******************************************************************
 * Apply internal limiter for DG schemes
 ****************************************************************** */
-void LimiterCellDG::ApplyLimiterDG(
-    const AmanziMesh::Entity_ID_List& ids,
-    Teuchos::RCP<const Epetra_MultiVector> field, const WhetStone::DG_Modal& dg,
-    const std::vector<int>& bc_model, const std::vector<double>& bc_value)
+void
+LimiterCellDG::ApplyLimiterDG(const AmanziMesh::Entity_ID_List& ids,
+                              Teuchos::RCP<const Epetra_MultiVector> field,
+                              const WhetStone::DG_Modal& dg,
+                              const std::vector<int>& bc_model,
+                              const std::vector<double>& bc_value)
 {
   field_ = field;
 
@@ -64,11 +66,11 @@ void LimiterCellDG::ApplyLimiterDG(
 
   if (type_ == OPERATOR_LIMITER_BARTH_JESPERSEN_DG) {
     LimiterScalarDG_(dg, ids, bc_model, bc_value, [](double x) { return std::min(1.0, x); });
-  } 
-  else if (type_ == OPERATOR_LIMITER_MICHALAK_GOOCH_DG) {
-    LimiterScalarDG_(dg, ids, bc_model, bc_value, [](double x) { return (x < 1.5) ? x - 4 * x * x * x / 27 : 1.0; });
-  } 
-  else if (type_ == OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL) {
+  } else if (type_ == OPERATOR_LIMITER_MICHALAK_GOOCH_DG) {
+    LimiterScalarDG_(dg, ids, bc_model, bc_value, [](double x) {
+      return (x < 1.5) ? x - 4 * x * x * x / 27 : 1.0;
+    });
+  } else if (type_ == OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL) {
     LimiterHierarchicalDG_(dg, ids, bc_model, bc_value, [](double x) { return x; });
   } else {
     Errors::Message msg("Unknown limiter");
@@ -80,9 +82,12 @@ void LimiterCellDG::ApplyLimiterDG(
 /* *******************************************************************
 * The scalar limiter for modal DG schemes. 
 ******************************************************************* */
-void LimiterCellDG::LimiterScalarDG_(
-    const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
-    const std::vector<int>& bc_model, const std::vector<double>& bc_value, double (*func)(double))
+void
+LimiterCellDG::LimiterScalarDG_(const WhetStone::DG_Modal& dg,
+                                const AmanziMesh::Entity_ID_List& ids,
+                                const std::vector<int>& bc_model,
+                                const std::vector<double>& bc_value,
+                                double (*func)(double))
 {
   AMANZI_ASSERT(dg.cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
@@ -94,9 +99,7 @@ void LimiterCellDG::LimiterScalarDG_(
   AmanziGeometry::Point x1(dim), x2(dim), xm(dim);
   int order = WhetStone::PolynomialSpaceOrder(dim, nk);
 
-  if (!external_bounds_) {
-    bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
-  }
+  if (!external_bounds_) { bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_); }
 
   int ilast = (dim == 2) ? 1 : 0;
 
@@ -122,7 +125,7 @@ void LimiterCellDG::LimiterScalarDG_(
       getBounds(c, f, stencil_id_, &umin, &umax);
 
       for (int i = 0; i < nnodes - ilast; ++i) {
-        int j = (i + 1) % nnodes; 
+        int j = (i + 1) % nnodes;
         mesh_->node_get_coordinates(nodes[i], &x1);
         mesh_->node_get_coordinates(nodes[j], &x2);
 
@@ -148,9 +151,12 @@ void LimiterCellDG::LimiterScalarDG_(
 /* *******************************************************************
 * The hierarchical limiter for modal DG schemes. 
 ******************************************************************* */
-void LimiterCellDG::LimiterHierarchicalDG_(
-    const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
-    const std::vector<int>& bc_model, const std::vector<double>& bc_value, double (*func)(double))
+void
+LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
+                                      const AmanziMesh::Entity_ID_List& ids,
+                                      const std::vector<int>& bc_model,
+                                      const std::vector<double>& bc_value,
+                                      double (*func)(double))
 {
   AMANZI_ASSERT(dim == 2);
   AMANZI_ASSERT(dg.cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
@@ -166,7 +172,7 @@ void LimiterCellDG::LimiterHierarchicalDG_(
   // calculate bounds
   // -- for mean values
   component_ = 0;
-  std::vector<Teuchos::RCP<CompositeVector> > bounds(1 + dim); 
+  std::vector<Teuchos::RCP<CompositeVector>> bounds(1 + dim);
   bounds[0] = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
 
   // -- for gradient
@@ -249,6 +255,5 @@ void LimiterCellDG::LimiterHierarchicalDG_(
   }
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
+} // namespace Operators
+} // namespace Amanzi

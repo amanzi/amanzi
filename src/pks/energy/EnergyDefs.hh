@@ -13,10 +13,7 @@
 #define AMANZI_ENERGY_CONSTANTS_HH_
 
 namespace Amanzi {
-namespace Energy {
-
-}  // namespace Energy
-}  // namespace Amanzi
+namespace Energy {} // namespace Energy
+} // namespace Amanzi
 
 #endif
-

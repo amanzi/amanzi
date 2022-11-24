@@ -23,13 +23,13 @@ namespace Flow {
 
 class WRM_saturated : public WRM {
  public:
-  explicit WRM_saturated(Teuchos::ParameterList& plist) {};
-  ~WRM_saturated() {};
-  
+  explicit WRM_saturated(Teuchos::ParameterList& plist){};
+  ~WRM_saturated(){};
+
   // required methods from the base class
   double k_relative(double pc) const { return 1.0; }
   double saturation(double pc) const { return 1.0; }
-  double dSdPc(double pc) const { return 0.0; }  
+  double dSdPc(double pc) const { return 0.0; }
   double capillaryPressure(double saturation) const { return 0.0; }
   double residualSaturation() const { return 0.0; }
   double dKdPc(double pc) const { return 0.0; }
@@ -38,7 +38,7 @@ class WRM_saturated : public WRM {
   static Utils::RegisteredFactory<WRM, WRM_saturated> factory_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
- 
+} // namespace Flow
+} // namespace Amanzi
+
 #endif

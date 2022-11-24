@@ -38,10 +38,10 @@ class TransportMatrixFracture_PK : public PK_MPCWeak {
   virtual void Setup() override;
   virtual void Initialize() override;
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
-  virtual double get_dt() override;  // the minimum of sub-pks's dt
+  virtual double get_dt() override; // the minimum of sub-pks's dt
 
   // -- miscaleneous methods
-  virtual std::string name() override { return "coupled transport"; } 
+  virtual std::string name() override { return "coupled transport"; }
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
@@ -60,5 +60,5 @@ class TransportMatrixFracture_PK : public PK_MPCWeak {
   static RegisteredPKFactory<TransportMatrixFracture_PK> reg_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 #endif

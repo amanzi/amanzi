@@ -23,8 +23,8 @@
 #include "TransportDomainFunction.hh"
 
 #ifdef ALQUIMIA_ENABLED
-#include "Alquimia_PK.hh"
-#include "ChemistryEngine.hh"
+#  include "Alquimia_PK.hh"
+#  include "ChemistryEngine.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -36,14 +36,14 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
                                    Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk,
                                    Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
   ~TransportSourceFunction_Alquimia();
-  
+
   void Compute(double t_old, double t_new);
 
   // require by the case class
-  virtual std::string name() const { return "alquimia source"; } 
+  virtual std::string name() const { return "alquimia source"; }
 
  private:
-  void Init_(const std::vector<std::string> &regions);
+  void Init_(const std::vector<std::string>& regions);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -62,8 +62,8 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
   AlquimiaAuxiliaryOutputData alq_aux_output_;
 };
 
-}  // namespace Transport
-}  // namespace Amanzi
+} // namespace Transport
+} // namespace Amanzi
 
 #endif
 

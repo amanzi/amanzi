@@ -32,9 +32,21 @@ class VaporInGas_Density : public EOS_Density {
  public:
   VaporInGas_Density(Teuchos::ParameterList& eos_plist);
 
-  double Density(double T, double p) { AMANZI_ASSERT(0); return 0.0; }
-  double DDensityDT(double T, double p)  { AMANZI_ASSERT(0); return 0.0; }
-  double DDensityDp(double T, double p)  { AMANZI_ASSERT(0); return 0.0; }
+  double Density(double T, double p)
+  {
+    AMANZI_ASSERT(0);
+    return 0.0;
+  }
+  double DDensityDT(double T, double p)
+  {
+    AMANZI_ASSERT(0);
+    return 0.0;
+  }
+  double DDensityDp(double T, double p)
+  {
+    AMANZI_ASSERT(0);
+    return 0.0;
+  }
 
   double MolarDensity(double T, double p) { return gas_eos_->MolarDensity(T, p); }
   double DMolarDensityDT(double T, double p) { return gas_eos_->DMolarDensityDT(T, p); }
@@ -50,7 +62,7 @@ class VaporInGas_Density : public EOS_Density {
   static Utils::RegisteredFactory<EOS_Density, VaporInGas_Density> factory_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

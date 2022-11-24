@@ -22,17 +22,15 @@ namespace ShallowWater {
 class NumericalFlux_CentralUpwind : public NumericalFlux {
  public:
   explicit NumericalFlux_CentralUpwind(Teuchos::ParameterList& plist);
-  ~NumericalFlux_CentralUpwind() {};
-  
-  virtual std::vector<double> Compute(
-          const std::vector<double>& UL, const std::vector<double>& UR);
+  ~NumericalFlux_CentralUpwind(){};
+
+  virtual std::vector<double> Compute(const std::vector<double>& UL, const std::vector<double>& UR);
 
  private:
   static Utils::RegisteredFactory<NumericalFlux, NumericalFlux_CentralUpwind> factory_;
-
 };
 
-}  // namespace ShallowWater
-}  // namespace Amanzi
- 
+} // namespace ShallowWater
+} // namespace Amanzi
+
 #endif

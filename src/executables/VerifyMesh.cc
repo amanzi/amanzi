@@ -28,9 +28,9 @@
 #include "VerboseObject_objs.hh"
 
 
-int main (int argc, char* argv[])
+int
+main(int argc, char* argv[])
 {
-
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   auto comm = Amanzi::getDefaultComm();
   const int nproc(comm->NumProc());
@@ -39,26 +39,26 @@ int main (int argc, char* argv[])
   // handle command line
 
   Teuchos::CommandLineProcessor CLP;
-  
+
   CLP.setDocString("reads mesh file or file set and does a series of checks\n");
 
   std::vector<Amanzi::AmanziMesh::Framework> frameworks_avail;
   std::vector<const char*> frameworks_avail_names;
 
-  if (Amanzi::AmanziMesh::framework_enabled(
-          Amanzi::AmanziMesh::Framework::MSTK)) {
+  if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MSTK)) {
     frameworks_avail.push_back(Amanzi::AmanziMesh::Framework::MSTK);
-    frameworks_avail_names.push_back(Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MSTK).c_str());
+    frameworks_avail_names.push_back(
+      Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MSTK).c_str());
   }
-  if (Amanzi::AmanziMesh::framework_enabled(
-          Amanzi::AmanziMesh::Framework::MOAB)) {
+  if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MOAB)) {
     frameworks_avail.push_back(Amanzi::AmanziMesh::Framework::MOAB);
-    frameworks_avail_names.push_back(Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MOAB).c_str());
+    frameworks_avail_names.push_back(
+      Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MOAB).c_str());
   }
-  if (Amanzi::AmanziMesh::framework_enabled(
-          Amanzi::AmanziMesh::Framework::STK)) {
+  if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::STK)) {
     frameworks_avail.push_back(Amanzi::AmanziMesh::Framework::STK);
-    frameworks_avail_names.push_back(Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::STK).c_str());
+    frameworks_avail_names.push_back(
+      Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::STK).c_str());
   }
   if (frameworks_avail.size() == 0) {
     std::cerr << "error: this build has no frameworks which can read mesh files." << std::endl;
@@ -66,25 +66,25 @@ int main (int argc, char* argv[])
   }
 
   Amanzi::AmanziMesh::Framework the_framework = frameworks_avail[0];
-  CLP.setOption("framework", &the_framework,
-                frameworks_avail.size(), frameworks_avail.data(),
+  CLP.setOption("framework",
+                &the_framework,
+                frameworks_avail.size(),
+                frameworks_avail.data(),
                 frameworks_avail_names.data(),
-                "mesh framework preference", false);
+                "mesh framework preference",
+                false);
 
   std::string filename;
   CLP.setOption("file", &filename, "name of file or file set", true);
 
   bool dump_face_map(false);
-  CLP.setOption("face-map", "no-face-map", &dump_face_map,
-                "print the face Epetra_Map");
+  CLP.setOption("face-map", "no-face-map", &dump_face_map, "print the face Epetra_Map");
 
   bool dump_cell_map(false);
-  CLP.setOption("cell-map", "no-cell-map", &dump_cell_map,
-                "print the cell Epetra_Map");
+  CLP.setOption("cell-map", "no-cell-map", &dump_cell_map, "print the cell Epetra_Map");
 
   bool dump_node_map(false);
-  CLP.setOption("node-map", "no-node-map", &dump_node_map,
-                "print the node Epetra_Map");
+  CLP.setOption("node-map", "no-node-map", &dump_node_map, "print the node Epetra_Map");
 
 
   CLP.throwExceptions(false);
@@ -93,24 +93,18 @@ int main (int argc, char* argv[])
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn;
   try {
     parseReturn = CLP.parse(argc, argv);
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     std::cerr << "error: " << e.what() << std::endl;
     ierr++;
   }
 
   comm->SumAll(&ierr, &aerr, 1);
 
-  if (aerr > 0) {
-    return 1;
-  }
-  
-  if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
-    return 0;
-  }
-  
-  if (parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return 1;
-  }
+  if (aerr > 0) { return 1; }
+
+  if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) { return 0; }
+
+  if (parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) { return 1; }
 
   // One command line argument is a file name. Three
   // types are supported depending on which frameworks are compiled in
@@ -126,10 +120,10 @@ int main (int argc, char* argv[])
     if (p != the_framework) frameworks.push_back(p);
   }
   Amanzi::AmanziMesh::Preference prefs(frameworks);
-    
+
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-  
+
   ierr = 0;
   aerr = 0;
   try {
@@ -152,9 +146,7 @@ int main (int argc, char* argv[])
 
   comm->SumAll(&ierr, &aerr, 1);
 
-  if (aerr > 0) {
-    return 3;
-  }
+  if (aerr > 0) { return 3; }
 
   int status;
 
@@ -165,34 +157,25 @@ int main (int argc, char* argv[])
     std::ostringstream ofile;
     ofile << "mesh_audit_" << std::setfill('0') << std::setw(4) << me << ".txt";
     std::ofstream ofs(ofile.str().c_str());
-    if (me == 0)
-      std::cout << "Writing results to " << ofile.str() << ", etc." << std::endl;
+    if (me == 0) std::cout << "Writing results to " << ofile.str() << ", etc." << std::endl;
     Amanzi::MeshAudit audit(mesh, ofs);
     status = audit.Verify();
   }
 
-  if (me == 0) {
-    std::cout << filename << ": " << (status ? "has errors" : "OK") << std::endl;
-  }
+  if (me == 0) { std::cout << filename << ": " << (status ? "has errors" : "OK") << std::endl; }
 
   if (dump_node_map) {
-    if (me == 0) {
-      std::cout << "Node Epetra Map: " << std::endl;
-    }
+    if (me == 0) { std::cout << "Node Epetra Map: " << std::endl; }
     (mesh->node_map(false)).Print(std::cout);
   }
 
   if (dump_face_map) {
-    if (me == 0) {
-      std::cout << "Face Epetra Map: " << std::endl;
-    }
+    if (me == 0) { std::cout << "Face Epetra Map: " << std::endl; }
     (mesh->face_map(false)).Print(std::cout);
   }
 
   if (dump_cell_map) {
-    if (me == 0) {
-      std::cout << "Cell Epetra Map: " << std::endl;
-    }
+    if (me == 0) { std::cout << "Cell Epetra Map: " << std::endl; }
     (mesh->cell_map(false)).Print(std::cout);
   }
 

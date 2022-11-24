@@ -78,8 +78,9 @@ class FunctionBilinearAndTime : public Function {
 
   FunctionBilinearAndTime(const FunctionBilinearAndTime& other);
 
-  ~FunctionBilinearAndTime() {};
-  std::unique_ptr<Function> Clone() const {
+  ~FunctionBilinearAndTime(){};
+  std::unique_ptr<Function> Clone() const
+  {
     return std::make_unique<FunctionBilinearAndTime>(*this);
   }
 
@@ -99,9 +100,8 @@ class FunctionBilinearAndTime : public Function {
 
   mutable std::unique_ptr<Function> val_before_;
   mutable std::unique_ptr<Function> val_after_;
-
 };
 
 } // namespace Amanzi
 
-#endif  // AMANZI_BILINEAR_FUNCTION_HH_
+#endif // AMANZI_BILINEAR_FUNCTION_HH_

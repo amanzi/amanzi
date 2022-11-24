@@ -26,35 +26,33 @@
 namespace Amanzi {
 namespace Functions {
 
-template<class Generic>
+template <class Generic>
 class GenericMeshFunction {
  public:
   typedef std::vector<std::string> RegionList;
   typedef std::pair<RegionList, AmanziMesh::Entity_kind> Domain;
 
-  typedef std::pair<Teuchos::RCP<Domain>, Teuchos::RCP<const Generic> > Spec;
-  typedef std::vector<Teuchos::RCP<Spec> > SpecList;
+  typedef std::pair<Teuchos::RCP<Domain>, Teuchos::RCP<const Generic>> Spec;
+  typedef std::vector<Teuchos::RCP<Spec>> SpecList;
 
   typedef std::set<AmanziMesh::Entity_ID> MeshIDs;
-  typedef std::pair<Techous::RCP<Spec>, Teuchos::RCP<MeshIDs> > MeshSpec;
-  typedef std::vector<Teuchos::RCP<MeshSpec> > MeshSpecList;
+  typedef std::pair<Techous::RCP<Spec>, Teuchos::RCP<MeshIDs>> MeshSpec;
+  typedef std::vector<Teuchos::RCP<MeshSpec>> MeshSpecList;
 
  public:
-  GenericMeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-      : mesh_(mesh) {};
-  ~GenericMeshFunction() {};
+  GenericMeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : mesh_(mesh){};
+  ~GenericMeshFunction(){};
 
   // method that check uniqueness
   void AddSpec(const Teuchos::RCP<Spec>& spec);
 
  protected:
-  std::map<AmanziMesh::Entity_kind, Teuchos::RCP<MeshSpecList> > mesh_specs_;
+  std::map<AmanziMesh::Entity_kind, Teuchos::RCP<MeshSpecList>> mesh_specs_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
-}  // namespace Functions
-}  // namespace Amanzi
+} // namespace Functions
+} // namespace Amanzi
 
 
 #endif
-

@@ -32,27 +32,29 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MeshMaps_FEM : public MeshMaps { 
+class MeshMaps_FEM : public MeshMaps {
  public:
-  MeshMaps_FEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MeshMaps(mesh) {};
+  MeshMaps_FEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MeshMaps(mesh){};
   MeshMaps_FEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
-               Teuchos::RCP<const AmanziMesh::Mesh> mesh1) : MeshMaps(mesh0, mesh1) {};
-  ~MeshMaps_FEM() {};
+               Teuchos::RCP<const AmanziMesh::Mesh> mesh1)
+    : MeshMaps(mesh0, mesh1){};
+  ~MeshMaps_FEM(){};
 
   // remap pseudo velocity
-  virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& ve,
-		            const std::vector<VectorPolynomial>& vf,
+  virtual void VelocityCell(int c,
+                            const std::vector<VectorPolynomial>& ve,
+                            const std::vector<VectorPolynomial>& vf,
                             VectorPolynomial& vc) const override;
 
  private:
   void JacobianCellValue_(int c, double t, const AmanziGeometry::Point& x, Tensor& J) const;
 
   Tensor JacobianValueInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                                int c, const AmanziGeometry::Point& xref) const;
+                                int c,
+                                const AmanziGeometry::Point& xref) const;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

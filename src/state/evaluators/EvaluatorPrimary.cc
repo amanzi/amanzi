@@ -22,9 +22,9 @@ namespace Amanzi {
 // Constructors
 // ---------------------------------------------------------------------------
 EvaluatorPrimary_::EvaluatorPrimary_(Teuchos::ParameterList& plist)
-    : my_key_(Keys::cleanPListName(plist.name())),
-      my_tag_(Keys::readTag(plist, "tag")),
-      vo_(Keys::cleanPListName(plist.name()), plist)
+  : my_key_(Keys::cleanPListName(plist.name())),
+    my_tag_(Keys::readTag(plist, "tag")),
+    vo_(Keys::cleanPListName(plist.name()), plist)
 {
   type_ = EvaluatorType::PRIMARY;
 }
@@ -33,7 +33,8 @@ EvaluatorPrimary_::EvaluatorPrimary_(Teuchos::ParameterList& plist)
 // ---------------------------------------------------------------------------
 // Assignment operator.
 // ---------------------------------------------------------------------------
-EvaluatorPrimary_& EvaluatorPrimary_::operator=(const EvaluatorPrimary_& other)
+EvaluatorPrimary_&
+EvaluatorPrimary_::operator=(const EvaluatorPrimary_& other)
 {
   if (this != &other) {
     AMANZI_ASSERT(my_key_ == other.my_key_);
@@ -47,10 +48,11 @@ EvaluatorPrimary_& EvaluatorPrimary_::operator=(const EvaluatorPrimary_& other)
 // ---------------------------------------------------------------------------
 // Virtual assignment operator.
 // ---------------------------------------------------------------------------
-Evaluator& EvaluatorPrimary_::operator=(const Evaluator& other)
+Evaluator&
+EvaluatorPrimary_::operator=(const Evaluator& other)
 {
   if (this != &other) {
-    const EvaluatorPrimary_ *other_p = dynamic_cast<const EvaluatorPrimary_*>(&other);
+    const EvaluatorPrimary_* other_p = dynamic_cast<const EvaluatorPrimary_*>(&other);
     AMANZI_ASSERT(other_p != NULL);
     *this = *other_p;
   }
@@ -64,7 +66,8 @@ Evaluator& EvaluatorPrimary_::operator=(const Evaluator& other)
 // Updates the data, if needed.  Returns true if the value of the data has
 // changed since the last request for an update.
 // ---------------------------------------------------------------------------
-bool EvaluatorPrimary_::Update(State& S, const Key& request)
+bool
+EvaluatorPrimary_::Update(State& S, const Key& request)
 {
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
@@ -72,16 +75,12 @@ bool EvaluatorPrimary_::Update(State& S, const Key& request)
   }
 
   if (requests_.find(request) == requests_.end()) {
-    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << "  Has changed... " << std::endl;
-    }
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  Has changed... " << std::endl; }
     requests_.insert(request);
     return true;
 
   } else {
-    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << "  Has not changed... " << std::endl;
-    }
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  Has not changed... " << std::endl; }
     return false;
   }
 }
@@ -94,9 +93,11 @@ bool EvaluatorPrimary_::Update(State& S, const Key& request)
 // derivative with respect to wrt_key has changed since the last request for
 // an update.
 // ---------------------------------------------------------------------------
-bool EvaluatorPrimary_::UpdateDerivative(State& S, const Key& request,
-                                         const Key& wrt_key,
-                                         const Tag& wrt_tag)
+bool
+EvaluatorPrimary_::UpdateDerivative(State& S,
+                                    const Key& request,
+                                    const Key& wrt_key,
+                                    const Tag& wrt_tag)
 {
   // enforce the contract: all calls to this must either have wrt_key,wrt_tag
   // as the key provided (for primary evaluators) or as a dependency (for
@@ -111,9 +112,7 @@ bool EvaluatorPrimary_::UpdateDerivative(State& S, const Key& request,
   }
 
   if (deriv_requests_.size() == 0) {
-    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << "  ... updating." << std::endl;
-    }
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  ... updating." << std::endl; }
     // derivative with respect to me, lazy calculate, answer is 1
     UpdateDerivative_(S);
   }
@@ -125,9 +124,7 @@ bool EvaluatorPrimary_::UpdateDerivative(State& S, const Key& request,
     deriv_requests_.insert(std::make_tuple(wrt_key, wrt_tag, request));
     return true;
   } else {
-    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << "  ... has not changed." << std::endl;
-    }
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  ... has not changed." << std::endl; }
     return false;
   }
 }
@@ -139,12 +136,13 @@ bool EvaluatorPrimary_::UpdateDerivative(State& S, const Key& request,
 // Effectively this simply tosses the request history, so that the next
 // requests will say this has changed.
 // ---------------------------------------------------------------------------
-void EvaluatorPrimary_::SetChanged()
+void
+EvaluatorPrimary_::SetChanged()
 {
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_.os() << "Primary field \"" << vo_.color("gree") << my_key_
-              << vo_.reset() << "\" marked as changed." << std::endl;
+    *vo_.os() << "Primary field \"" << vo_.color("gree") << my_key_ << vo_.reset()
+              << "\" marked as changed." << std::endl;
   }
 
   // clear cache
@@ -155,17 +153,23 @@ void EvaluatorPrimary_::SetChanged()
 
 
 // Nothing is a dependency of a primary variable.
-bool EvaluatorPrimary_::IsDependency(const State& S, const Key& key, const Tag& tag) const {
+bool
+EvaluatorPrimary_::IsDependency(const State& S, const Key& key, const Tag& tag) const
+{
   return false;
 }
 
 
-bool EvaluatorPrimary_::ProvidesKey(const Key& key, const Tag& tag) const {
+bool
+EvaluatorPrimary_::ProvidesKey(const Key& key, const Tag& tag) const
+{
   return (key == my_key_) && (tag == my_tag_);
 }
 
 
-std::string EvaluatorPrimary_::WriteToString() const {
+std::string
+EvaluatorPrimary_::WriteToString() const
+{
   std::stringstream result;
   result << my_key_ << std::endl << "  Type: primary" << std::endl;
   return result.str();

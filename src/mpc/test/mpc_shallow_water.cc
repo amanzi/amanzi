@@ -25,18 +25,18 @@
 #include "State.hh"
 
 
-TEST(MPC_DRIVER_SHALLOW_WATER) {
-
-using namespace Amanzi;
-using namespace Amanzi::AmanziMesh;
-using namespace Amanzi::AmanziGeometry;
+TEST(MPC_DRIVER_SHALLOW_WATER)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
-  
+
   // read the main parameter list
   std::string xmlInFileName = "test/mpc_shallow_water.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
-  
+
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
@@ -44,9 +44,9 @@ using namespace Amanzi::AmanziGeometry;
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
-  factory.set_preference(Preference({Framework::MSTK}));
+  factory.set_preference(Preference({ Framework::MSTK }));
   auto mesh = factory.create(0.0, 0.0, 10.0, 10.0, 20, 20, true, true);
-  
+
   // create dummy observation data object
   double vmin;
   Amanzi::ObservationData obs_data;
@@ -54,7 +54,7 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::ParameterList state_plist = plist->sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("surface", mesh);
-  
+
   {
     Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
     try {
@@ -66,11 +66,9 @@ using namespace Amanzi::AmanziGeometry;
   }
   S = Teuchos::null;
 
-  CHECK(vmin > 0.0);  
+  CHECK(vmin > 0.0);
 
   // checking that we created only one pk
   CHECK(PKFactory::num_pks == 1);
   std::cout << PKFactory::list_pks << std::endl;
 }
-
-

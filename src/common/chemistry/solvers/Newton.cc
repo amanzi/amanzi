@@ -12,7 +12,8 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-Newton::Newton(const int n) {
+Newton::Newton(const int n)
+{
   size(n);
   x_.resize(n);
   r_.resize(n);
@@ -20,9 +21,11 @@ Newton::Newton(const int n) {
   vv_.resize(n);
 }
 
-void Newton::solve() {
+void
+Newton::solve()
+{
   std::cout << "Solved!\n";
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

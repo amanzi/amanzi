@@ -29,44 +29,48 @@
 
 class Analytic04 : public AnalyticBase {
  public:
-  Analytic04(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh) {};
-  ~Analytic04() {};
+  Analytic04(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh){};
+  ~Analytic04(){};
 
-  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
-    Amanzi::WhetStone::Tensor K(1,1);
+  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
+    Amanzi::WhetStone::Tensor K(1, 1);
     K(0, 0) = 1.0;
     return K;
   }
 
-  double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     double x = p[0];
     double y = p[1];
     double k;
     if (x < 0.0) {
       k = 0.0;
-    } else if (x > Teuchos::Utils::pi()/2.0) {
+    } else if (x > Teuchos::Utils::pi() / 2.0) {
       k = 1.0;
     } else {
-      k = std::pow(std::sin(x),2);
+      k = std::pow(std::sin(x), 2);
     }
-    return k;      
+    return k;
   }
 
-  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
+  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const
+  {
     double x = p[0];
     double y = p[1];
     double pres;
     if (x < 0.0) {
       pres = 0.0;
-    } else if (x > Teuchos::Utils::pi()/2.0) {
+    } else if (x > Teuchos::Utils::pi() / 2.0) {
       pres = 1.0;
     } else {
-      pres = std::pow(std::sin(x),2);
+      pres = std::pow(std::sin(x), 2);
     }
-    return pres;      
+    return pres;
   }
 
-  Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     double x = p[0];
     double y = p[1];
     Amanzi::AmanziGeometry::Point v(2);
@@ -81,17 +85,19 @@ class Analytic04 : public AnalyticBase {
     return v;
   }
 
-  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     return Amanzi::AmanziGeometry::Point(2);
   }
 
-  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     double x = p[0];
     double y = p[1];
     double q;
     if (x < 0.0) {
       q = 0.0;
-    } else if (x > Teuchos::Utils::pi()/2.0) {
+    } else if (x > Teuchos::Utils::pi() / 2.0) {
       q = 0.0;
     } else {
       q = 6 * std::pow(std::sin(x), 2) * std::pow(std::cos(x), 2) - 2 * std::pow(std::sin(x), 4);
@@ -101,4 +107,3 @@ class Analytic04 : public AnalyticBase {
 };
 
 #endif
-

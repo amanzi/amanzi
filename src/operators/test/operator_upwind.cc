@@ -34,17 +34,15 @@
 #include "UpwindFlux.hh"
 #include "UpwindFluxAndGravity.hh"
 
-namespace Amanzi{
+namespace Amanzi {
 
 class Model {
  public:
-  Model(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
-  ~Model() {};
+  Model(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh){};
+  ~Model(){};
 
   // main members
-  double Value(int c, double pc) const { 
-    return analytic(pc); 
-  }
+  double Value(int c, double pc) const { return analytic(pc); }
 
   double analytic(double pc) const { return 1e-5 + pc; }
 
@@ -52,7 +50,7 @@ class Model {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 
 /* *****************************************************************
@@ -63,8 +61,10 @@ using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Operators;
 
-template<class UpwindClass>
-void RunTestUpwind(std::string method) {
+template <class UpwindClass>
+void
+RunTestUpwind(std::string method)
+{
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
@@ -80,7 +80,7 @@ void RunTestUpwind(std::string method) {
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
 
   for (int n = 4; n < 17; n *= 2) {
     Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
@@ -97,19 +97,19 @@ void RunTestUpwind(std::string method) {
     std::vector<double> bc_value(nfaces_wghost);
     for (int f = 0; f < nfaces_wghost; f++) {
       const Point& xf = mesh->face_centroid(f);
-      if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-          fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
-          fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) 
+      if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
+          fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6)
 
-      bc_model[f] = OPERATOR_BC_DIRICHLET;
+        bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = model->analytic(xf[0]);
     }
 
-    // create and initialize cell-based field 
+    // create and initialize cell-based field
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh)->SetGhosted(true)
-       ->AddComponent("cell", AmanziMesh::CELL, 1)
-       ->AddComponent("face", AmanziMesh::FACE, 1);
+    cvs->SetMesh(mesh)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("face", AmanziMesh::FACE, 1);
 
     CompositeVector field(*cvs);
     Epetra_MultiVector& fcells = *field.ViewComponent("cell", true);
@@ -117,7 +117,7 @@ void RunTestUpwind(std::string method) {
 
     for (int c = 0; c < ncells_wghost; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      fcells[0][c] = model->Value(c, xc[0]); 
+      fcells[0][c] = model->Value(c, xc[0]);
     }
 
     // add boundary face component
@@ -133,7 +133,7 @@ void RunTestUpwind(std::string method) {
 
     CompositeVector flux(*cvs), solution(*cvs);
     Epetra_MultiVector& u = *flux.ViewComponent("face", true);
-  
+
     Point vel(1.0, 2.0, 3.0);
     for (int f = 0; f < nfaces_wghost; f++) {
       const Point& normal = mesh->face_normal(f);
@@ -164,25 +164,26 @@ void RunTestUpwind(std::string method) {
     mesh->get_comm()->SumAll(&itmp, &nfaces_owned, 1);
 #endif
     error = sqrt(error / nfaces_owned);
-  
-    if (comm->MyPID() == 0)
-        printf("n=%2d %s=%8.4f\n", n, method.c_str(), error);
+
+    if (comm->MyPID() == 0) printf("n=%2d %s=%8.4f\n", n, method.c_str(), error);
   }
 }
 
-TEST(UPWIND_FLUX) {
+TEST(UPWIND_FLUX)
+{
   RunTestUpwind<UpwindFlux>("flux");
 }
 
-TEST(UPWIND_DIVK) {
+TEST(UPWIND_DIVK)
+{
   RunTestUpwind<UpwindDivK>("divk");
 }
 
-TEST(UPWIND_GRAVITY) {
+TEST(UPWIND_GRAVITY)
+{
   RunTestUpwind<UpwindGravity>("gravity");
 }
 
 // TEST(UPWIND_FLUX_GRAVITY) {
 //  RunTestUpwind<UpwindFluxAndGravity>("flux_gravity");
 // }
-

@@ -51,10 +51,14 @@
 * and       c p + v . grad(p) = f.
 * Two ways to impose Dirichlet BCs are used: primal and dual.
 * **************************************************************** */
-template<class AnalyticDG>
-void AdvectionSteady(int dim, std::string filename, int nx,
-                     std::string weak_form, bool conservative_form,
-                     std::string dg_basis = "regularized")
+template <class AnalyticDG>
+void
+AdvectionSteady(int dim,
+                std::string filename,
+                int nx,
+                std::string weak_form,
+                bool conservative_form,
+                std::string dg_basis = "regularized")
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -66,10 +70,9 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   int MyPID = comm->MyPID();
 
   std::string problem = (conservative_form) ? ", conservative formulation" : "";
-  if (MyPID == 0) std::cout << "\nTest: " << dim 
-                            << "D steady advection, dG method" << problem
-                            << ", weak formulation=" << weak_form
-                            << ", basis=" << dg_basis << std::endl;
+  if (MyPID == 0)
+    std::cout << "\nTest: " << dim << "D steady advection, dG method" << problem
+              << ", weak formulation=" << weak_form << ", basis=" << dg_basis << std::endl;
 
   // read parameter list
   std::string xmlFileName;
@@ -79,8 +82,8 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
   // create a mesh framework
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
 
   double weak_sign = 1.0;
   std::string pk_name;
@@ -94,14 +97,14 @@ void AdvectionSteady(int dim, std::string filename, int nx,
     if (weak_form == "primal") {
       weak_sign = -1.0;
       pk_name = "PK operator 2D: primal";
-    }
-    else if (weak_form == "gauss points") {
+    } else if (weak_form == "gauss points") {
       weak_sign = -1.0;
       pk_name = "PK operator 2D: gauss points";
     }
   } else {
     bool request_faces(true), request_edges(true);
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, request_faces, request_edges);
+    mesh =
+      meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, request_faces, request_edges);
     pk_name = "PK operator 3D";
   }
 
@@ -109,7 +112,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  // create global operator 
+  // create global operator
   // -- flux term
   ParameterList op_list = plist.sublist(pk_name).sublist("flux operator");
   op_list.sublist("schema").set<std::string>("dg basis", dg_basis);
@@ -130,8 +133,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
   // analytic solution
   int order = op_list.sublist("schema").get<int>("method order");
-  int nk = (dim == 2) ? (order + 1) * (order + 2) / 2 :
-                        (order + 1) * (order + 2) * (order + 3) / 6;
+  int nk = (dim == 2) ? (order + 1) * (order + 2) / 2 : (order + 1) * (order + 2) * (order + 3) / 6;
 
   AnalyticDG ana(mesh, order, true);
 
@@ -144,25 +146,21 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   auto K = Teuchos::rcp(new CompositeVector(*cvs));
   auto Kc = K->ViewComponent("cell", true);
 
-  for (int c = 0; c < ncells_wghost; c++) {
-    (*Kc)[0][c] = Kreac;
-  }
+  for (int c = 0; c < ncells_wghost; c++) { (*Kc)[0][c] = Kreac; }
 
   // -- velocity function
   auto velc = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost));
   auto velf = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost));
 
   WhetStone::VectorPolynomial v;
-  ana.VelocityTaylor(AmanziGeometry::Point(dim), 0.0, v); 
-  
+  ana.VelocityTaylor(AmanziGeometry::Point(dim), 0.0, v);
+
   for (int c = 0; c < ncells_wghost; ++c) {
     (*velc)[c] = v;
     (*velc)[c] *= -weak_sign;
   }
 
-  for (int f = 0; f < nfaces_wghost; ++f) {
-    (*velf)[f] = v * (mesh->face_normal(f) * weak_sign);
-  }
+  for (int f = 0; f < nfaces_wghost; ++f) { (*velf)[f] = v * (mesh->face_normal(f) * weak_sign); }
 
   // -- divergence of velocity
   //    non-conservative formulation leads to Kn = Kreac - div(v)
@@ -200,33 +198,30 @@ void AdvectionSteady(int dim, std::string filename, int nx,
       int n = it.PolynomialPosition();
 
       WhetStone::Polynomial cmono(dim, it.multi_index(), 1.0);
-      cmono.set_origin(xc);      
+      cmono.set_origin(xc);
 
-      WhetStone::Polynomial tmp = src * cmono;      
+      WhetStone::Polynomial tmp = src * cmono;
 
       data(n) = numi.IntegratePolynomialCell(c, tmp);
     }
 
     // -- convert moment to my basis
     dg.cell_basis(c).LinearFormNaturalToMy(data);
-    for (int n = 0; n < pc.size(); ++n) {
-      rhs_c[n][c] = data(n);
-    }
+    for (int n = 0; n < pc.size(); ++n) { rhs_c[n][c] = data(n); }
   }
 
   // -- boundary data
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
-  std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
+  std::vector<std::vector<double>>& bc_value = bc->bc_value_vector(nk);
 
   WhetStone::Polynomial coefs;
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
     const Point& normal = mesh->face_normal(f);
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
-        fabs(xf[dim - 1]) < 1e-6 || fabs(xf[dim - 1] - 1.0) < 1e-6) {
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
+        fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[dim - 1]) < 1e-6 || fabs(xf[dim - 1] - 1.0) < 1e-6) {
       Point vp(v[0].Value(xf), v[1].Value(xf));
 
       if (vp * normal < -1e-12) {
@@ -236,9 +231,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
         ana.SolutionTaylor(xf, 0.0, coefs);
         data = coefs.coefs();
 
-        for (int i = 0; i < nk; ++i) {
-          bc_value[f][i] = data(i);
-        }
+        for (int i = 0; i < nk; ++i) { bc_value[f][i] = data(i); }
       } else if (weak_sign < 0.0) {
         bc_model[f] = OPERATOR_BC_REMOVE;
       }
@@ -256,13 +249,13 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
   if (conservative_form || weak_form == "primal" || weak_form == "gauss points")
     op_reac->Setup(Kc);
-  else 
+  else
     op_reac->Setup(Kn, false);
   op_reac->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create preconditoner
-  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
-          "GMRES", plist.sublist("solvers"));
+  global_op->set_inverse_parameters(
+    "Hypre AMG", plist.sublist("preconditioners"), "GMRES", plist.sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
 
@@ -273,14 +266,13 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   global_op->ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
-    std::cout << "dG solver (gmres): ||r||=" << global_op->residual() 
-              << " itr=" << global_op->num_itrs()
-              << " code=" << global_op->returned_code() 
+    std::cout << "dG solver (gmres): ||r||=" << global_op->residual()
+              << " itr=" << global_op->num_itrs() << " code=" << global_op->returned_code()
               << " order=" << order << std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
+    GMV::open_data_file(*mesh, (std::string) "operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
     if (order > 0) {
@@ -302,15 +294,19 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   if (MyPID == 0) {
     sol.ChangeOrigin(AmanziGeometry::Point(dim));
     std::cout << "\nEXACT solution: " << sol << std::endl;
-    printf("Mean:     L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n", pl2_mean, pinf_mean, global_op->num_itrs());
+    printf("Mean:     L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n",
+           pl2_mean,
+           pinf_mean,
+           global_op->num_itrs());
     printf("Total:    L2(p)=%12.9f  Inf(p)=%12.9f\n", pl2_err, pinf_err);
     printf("Integral: L2(p)=%12.9f\n", pl2_int);
     CHECK(pl2_err < 1e-10 && pinf_err < 1e-10);
-  } 
+  }
 }
 
 
-TEST(OPERATOR_ADVECTION_STEADY_DG) {
+TEST(OPERATOR_ADVECTION_STEADY_DG)
+{
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "orthonormalized");
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "normalized");
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "regularized");
@@ -319,7 +315,6 @@ TEST(OPERATOR_ADVECTION_STEADY_DG) {
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", false);
   AdvectionSteady<AnalyticDG02>(3, "cubic", 3, "dual", true);
 
-  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "gauss points", false, "orthonormalized");
+  AdvectionSteady<AnalyticDG03>(
+    2, "test/median7x8.exo", 8, "gauss points", false, "orthonormalized");
 }
-
-

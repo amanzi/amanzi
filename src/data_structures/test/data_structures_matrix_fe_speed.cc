@@ -37,7 +37,8 @@
  * this test is a null test -- all entries are local
 * **************************************************************** */
 
-TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs) {
+TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -56,7 +57,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs) {
 
   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
-  // create a mesh 
+  // create a mesh
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
@@ -64,7 +65,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs) {
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
   //Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
@@ -78,20 +79,20 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs) {
   int ierr(0);
   Teuchos::RCP<GraphFE> graph =
     Teuchos::rcp(new GraphFE(cell_map, cell_map_ghosted, cell_map_ghosted, 5));
-  
+
   Entity_ID_List faces;
   Entity_ID_List face_cells;
   std::vector<int> neighbor_cells;
-  for (int c=0; c!=ncells; ++c) {
+  for (int c = 0; c != ncells; ++c) {
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
-    
+
     mesh->cell_get_faces(c, &faces);
-    for (int n=0; n!=faces.size(); ++n) {
+    for (int n = 0; n != faces.size(); ++n) {
       mesh->face_get_cells(faces[n], AmanziMesh::Parallel_type::ALL, &face_cells);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
-      }	
+      }
     }
 
     ierr |= graph->InsertMyIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
@@ -105,36 +106,38 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs) {
   Epetra_FECrsMatrix control(Copy, graph->Graph());
   {
     Teuchos::TimeMonitor monitor(*timer);
-  for (int c=0; c!=ncells; ++c) {
-    neighbor_cells.resize(0);
-    neighbor_cells.push_back(c);
-    
-    mesh->cell_get_faces(c, &faces);
-    for (int n=0; n!=faces.size(); ++n) {
-      mesh->face_get_cells(faces[n], AmanziMesh::Parallel_type::ALL, &face_cells);
-      if (face_cells.size() > 1) {
-        neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
+    for (int c = 0; c != ncells; ++c) {
+      neighbor_cells.resize(0);
+      neighbor_cells.push_back(c);
+
+      mesh->cell_get_faces(c, &faces);
+      for (int n = 0; n != faces.size(); ++n) {
+        mesh->face_get_cells(faces[n], AmanziMesh::Parallel_type::ALL, &face_cells);
+        if (face_cells.size() > 1) {
+          neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
+        }
       }
+
+      std::vector<double> vals(neighbor_cells.size(), 1);
+      std::vector<int> neighbor_cell_gids(neighbor_cells.size());
+      for (int n = 0; n != neighbor_cells.size(); ++n) {
+        neighbor_cell_gids[n] = cell_map_ghosted->GID(neighbor_cells[n]);
+        AMANZI_ASSERT(neighbor_cell_gids[n] >= 0);
+      }
+      AMANZI_ASSERT(cell_map_ghosted->GID(c) >= 0);
+      ierr |= control.SumIntoGlobalValues(
+        cell_map_ghosted->GID(c), neighbor_cells.size(), &vals[0], &neighbor_cell_gids[0]);
+      AMANZI_ASSERT(!ierr);
     }
 
-    std::vector<double> vals(neighbor_cells.size(), 1);
-    std::vector<int> neighbor_cell_gids(neighbor_cells.size());
-    for (int n=0; n!=neighbor_cells.size(); ++n) {
-      neighbor_cell_gids[n] = cell_map_ghosted->GID(neighbor_cells[n]);
-      AMANZI_ASSERT(neighbor_cell_gids[n] >= 0);
-    }
-    AMANZI_ASSERT(cell_map_ghosted->GID(c) >= 0);
-    ierr |= control.SumIntoGlobalValues(cell_map_ghosted->GID(c), neighbor_cells.size(), &vals[0], &neighbor_cell_gids[0]);
-    AMANZI_ASSERT(!ierr);
-  }
-
-  ierr |= control.GlobalAssemble();
+    ierr |= control.GlobalAssemble();
   }
 
   CHECK(!ierr);
 }
 
-TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal) {
+TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -153,7 +156,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal) {
 
   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
-  // create a mesh 
+  // create a mesh
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
@@ -161,7 +164,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal) {
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
@@ -174,28 +177,29 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal) {
   // create the graph
   int ierr(0);
   Teuchos::RCP<Epetra_FECrsGraph> graph =
-      Teuchos::rcp(new Epetra_FECrsGraph(Copy, *cell_map, *cell_map_ghosted, 5, false, true));
-  
+    Teuchos::rcp(new Epetra_FECrsGraph(Copy, *cell_map, *cell_map_ghosted, 5, false, true));
+
   Entity_ID_List faces;
   Entity_ID_List face_cells;
   std::vector<int> neighbor_cells;
-  for (int c=0; c!=ncells; ++c) {
+  for (int c = 0; c != ncells; ++c) {
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
-    
+
     mesh->cell_get_faces(c, &faces);
-    for (int n=0; n!=faces.size(); ++n) {
+    for (int n = 0; n != faces.size(); ++n) {
       mesh->face_get_cells(faces[n], AmanziMesh::Parallel_type::ALL, &face_cells);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
-      }	
+      }
     }
 
     std::vector<int> neighbor_cell_gids(neighbor_cells.size());
-    for (int n=0; n!=neighbor_cells.size(); ++n)
+    for (int n = 0; n != neighbor_cells.size(); ++n)
       neighbor_cell_gids[n] = cell_map_ghosted->GID(neighbor_cells[n]);
 
-    ierr |= graph->InsertGlobalIndices(cell_map_ghosted->GID(c), neighbor_cells.size(), &neighbor_cell_gids[0]);
+    ierr |= graph->InsertGlobalIndices(
+      cell_map_ghosted->GID(c), neighbor_cells.size(), &neighbor_cell_gids[0]);
     CHECK(!ierr);
   }
 
@@ -207,37 +211,39 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal) {
 
   {
     Teuchos::TimeMonitor monitor(*timer);
-  
-  for (int c=0; c!=ncells; ++c) {
-    neighbor_cells.resize(0);
-    neighbor_cells.push_back(c);
-    
-    mesh->cell_get_faces(c, &faces);
-    for (int n=0; n!=faces.size(); ++n) {
-      mesh->face_get_cells(faces[n], AmanziMesh::Parallel_type::ALL, &face_cells);
-      if (face_cells.size() > 1) {
-        neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
+
+    for (int c = 0; c != ncells; ++c) {
+      neighbor_cells.resize(0);
+      neighbor_cells.push_back(c);
+
+      mesh->cell_get_faces(c, &faces);
+      for (int n = 0; n != faces.size(); ++n) {
+        mesh->face_get_cells(faces[n], AmanziMesh::Parallel_type::ALL, &face_cells);
+        if (face_cells.size() > 1) {
+          neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
+        }
       }
+
+      std::vector<int> neighbor_cell_gids(neighbor_cells.size());
+      for (int n = 0; n != neighbor_cells.size(); ++n) {
+        neighbor_cell_gids[n] = cell_map_ghosted->GID(neighbor_cells[n]);
+        AMANZI_ASSERT(neighbor_cell_gids[n] >= 0);
+      }
+
+      std::vector<double> vals(neighbor_cells.size(), 1);
+      AMANZI_ASSERT(cell_map_ghosted->GID(c) >= 0);
+      ierr |= control.SumIntoGlobalValues(
+        cell_map_ghosted->GID(c), neighbor_cells.size(), &vals[0], &neighbor_cell_gids[0]);
+      AMANZI_ASSERT(!ierr);
     }
 
-    std::vector<int> neighbor_cell_gids(neighbor_cells.size());
-    for (int n=0; n!=neighbor_cells.size(); ++n) {
-      neighbor_cell_gids[n] = cell_map_ghosted->GID(neighbor_cells[n]);
-      AMANZI_ASSERT(neighbor_cell_gids[n] >= 0);
-    }
-
-    std::vector<double> vals(neighbor_cells.size(), 1);
-    AMANZI_ASSERT(cell_map_ghosted->GID(c) >= 0);
-    ierr |= control.SumIntoGlobalValues(cell_map_ghosted->GID(c), neighbor_cells.size(), &vals[0], &neighbor_cell_gids[0]);
-    AMANZI_ASSERT(!ierr);
-  }
-
-  ierr |= control.GlobalAssemble();
+    ierr |= control.GlobalAssemble();
   }
   CHECK(!ierr);
 }
 
-TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
+TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -256,7 +262,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 
   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
-  // create a mesh 
+  // create a mesh
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
@@ -264,7 +270,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
@@ -278,20 +284,20 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
   int ierr(0);
   Teuchos::RCP<GraphFE> graph =
     Teuchos::rcp(new GraphFE(cell_map, cell_map_ghosted, cell_map_ghosted, 5));
-  
+
   Entity_ID_List faces;
   Entity_ID_List face_cells;
   std::vector<int> neighbor_cells;
-  for (int c=0; c!=ncells; ++c) {
+  for (int c = 0; c != ncells; ++c) {
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
-    
+
     mesh->cell_get_faces(c, &faces);
-    for (int n=0; n!=faces.size(); ++n) {
+    for (int n = 0; n != faces.size(); ++n) {
       mesh->face_get_cells(faces[n], AmanziMesh::Parallel_type::ALL, &face_cells);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
-      }	
+      }
     }
 
     ierr |= graph->InsertMyIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
@@ -305,29 +311,27 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
   MatrixFE matrix(graph);
   {
     Teuchos::TimeMonitor monitor(*timer);
-  
-  for (int c=0; c!=ncells; ++c) {
-    neighbor_cells.resize(0);
-    neighbor_cells.push_back(c);
-    
-    mesh->cell_get_faces(c, &faces);
-    for (int n=0; n!=faces.size(); ++n) {
-      mesh->face_get_cells(faces[n], AmanziMesh::Parallel_type::ALL, &face_cells);
-      if (face_cells.size() > 1) {
-        neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
+
+    for (int c = 0; c != ncells; ++c) {
+      neighbor_cells.resize(0);
+      neighbor_cells.push_back(c);
+
+      mesh->cell_get_faces(c, &faces);
+      for (int n = 0; n != faces.size(); ++n) {
+        mesh->face_get_cells(faces[n], AmanziMesh::Parallel_type::ALL, &face_cells);
+        if (face_cells.size() > 1) {
+          neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
+        }
       }
+
+      std::vector<double> vals(neighbor_cells.size(), 1);
+      ierr |= matrix.SumIntoMyValues(c, neighbor_cells.size(), &vals[0], &neighbor_cells[0]);
+      AMANZI_ASSERT(!ierr);
     }
 
-    std::vector<double> vals(neighbor_cells.size(), 1);
-    ierr |= matrix.SumIntoMyValues(c, neighbor_cells.size(), &vals[0], &neighbor_cells[0]);
-    AMANZI_ASSERT(!ierr);
-  }
-
-  ierr |= matrix.FillComplete();
-
+    ierr |= matrix.FillComplete();
   }
   CHECK(!ierr);
-
 }
 
 
@@ -353,7 +357,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 
 //   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
-//   // create a mesh 
+//   // create a mesh
 //   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
 //   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
@@ -375,7 +379,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   int ierr(0);
 //   Teuchos::RCP<GraphFE> graph =
 //       Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
-  
+
 //   Entity_ID_List faces;
 //   Entity_ID_List face_cells;
 //   for (int c=0; c!=ncells; ++c) {
@@ -433,7 +437,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 
 //   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
-//   // create a mesh 
+//   // create a mesh
 //   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
 //   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
@@ -455,7 +459,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   int ierr(0);
 //   Teuchos::RCP<Epetra_FECrsGraph> graph =
 //       Teuchos::rcp(new Epetra_FECrsGraph(Copy, *face_map, *face_map_ghosted, 8, false, true));
-  
+
 //   Entity_ID_List faces;
 //   for (int c=0; c!=ncells; ++c) {
 //     mesh->cell_get_faces(c, &faces);
@@ -517,7 +521,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 
 //   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
-//   // create a mesh 
+//   // create a mesh
 //   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
 //   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
@@ -539,7 +543,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   int ierr(0);
 //   Teuchos::RCP<GraphFE> graph =
 //       Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
-  
+
 //   Entity_ID_List faces;
 //   Entity_ID_List face_cells;
 //   for (int c=0; c!=ncells; ++c) {
@@ -576,7 +580,8 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   CHECK(!ierr);
 // }
 
-TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2) {
+TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -595,7 +600,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2) {
 
   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
-  // create a mesh 
+  // create a mesh
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
@@ -603,7 +608,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2) {
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
@@ -616,14 +621,14 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2) {
   // create the graph
   int ierr(0);
   Teuchos::RCP<GraphFE> graph =
-      Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
-  
+    Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
+
   Entity_ID_List faces;
   Entity_ID_List face_cells;
-  for (int c=0; c!=ncells; ++c) {
+  for (int c = 0; c != ncells; ++c) {
     mesh->cell_get_faces(c, &faces);
 
-    for (int n=0; n!=faces.size(); ++n) {
+    for (int n = 0; n != faces.size(); ++n) {
       ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
       CHECK(!ierr);
     }
@@ -637,22 +642,21 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2) {
 
   {
     Teuchos::TimeMonitor monitor(*timer);
-  for (int c=0; c!=ncells; ++c) {
-    mesh->cell_get_faces(c, &faces);
-    Epetra_IntSerialDenseVector face_gids(faces.size());
-    for (int n=0; n!=faces.size(); ++n) {
-      face_gids[n] = face_map_ghosted->GID(faces[n]);
-    }
+    for (int c = 0; c != ncells; ++c) {
+      mesh->cell_get_faces(c, &faces);
+      Epetra_IntSerialDenseVector face_gids(faces.size());
+      for (int n = 0; n != faces.size(); ++n) { face_gids[n] = face_map_ghosted->GID(faces[n]); }
 
-    Epetra_SerialDenseMatrix vals(faces.size(), faces.size());
-    ierr |= control.SumIntoGlobalValues(face_gids, vals);
-  }
-  ierr |= control.GlobalAssemble();
+      Epetra_SerialDenseMatrix vals(faces.size(), faces.size());
+      ierr |= control.SumIntoGlobalValues(face_gids, vals);
+    }
+    ierr |= control.GlobalAssemble();
   }
   CHECK(!ierr);
 }
 
-TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2) {
+TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -667,11 +671,12 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2) {
   std::string xmlFileName = "test/operator_convergence.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("Block FECrsMatrix offproc");
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewTimer("Block FECrsMatrix offproc");
 
   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
-  // create a mesh 
+  // create a mesh
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
@@ -679,7 +684,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2) {
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
@@ -692,17 +697,17 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2) {
   // create the graph
   int ierr(0);
   Teuchos::RCP<Epetra_FECrsGraph> graph =
-      Teuchos::rcp(new Epetra_FECrsGraph(Copy, *face_map, *face_map_ghosted, 8, false, true));
-  
+    Teuchos::rcp(new Epetra_FECrsGraph(Copy, *face_map, *face_map_ghosted, 8, false, true));
+
   Entity_ID_List faces;
-  for (int c=0; c!=ncells; ++c) {
+  for (int c = 0; c != ncells; ++c) {
     mesh->cell_get_faces(c, &faces);
 
     std::vector<int> face_gids(faces.size());
-    for (int n=0; n!=faces.size(); ++n)
-      face_gids[n] = face_map_ghosted->GID(faces[n]);
+    for (int n = 0; n != faces.size(); ++n) face_gids[n] = face_map_ghosted->GID(faces[n]);
 
-    ierr |= graph->InsertGlobalIndices(face_gids.size(), &face_gids[0], face_gids.size(), &face_gids[0]);
+    ierr |=
+      graph->InsertGlobalIndices(face_gids.size(), &face_gids[0], face_gids.size(), &face_gids[0]);
     AMANZI_ASSERT(!ierr);
   }
 
@@ -714,23 +719,22 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2) {
 
   {
     Teuchos::TimeMonitor monitor(*timer);
-  for (int c=0; c!=ncells; ++c) {
-    mesh->cell_get_faces(c, &faces);
-    Epetra_IntSerialDenseVector face_gids(faces.size());
-    for (int n=0; n!=faces.size(); ++n) {
-      face_gids[n] = face_map_ghosted->GID(faces[n]);
+    for (int c = 0; c != ncells; ++c) {
+      mesh->cell_get_faces(c, &faces);
+      Epetra_IntSerialDenseVector face_gids(faces.size());
+      for (int n = 0; n != faces.size(); ++n) { face_gids[n] = face_map_ghosted->GID(faces[n]); }
+
+      Epetra_SerialDenseMatrix vals(faces.size(), faces.size());
+      ierr |= control.SumIntoGlobalValues(face_gids, vals);
     }
 
-    Epetra_SerialDenseMatrix vals(faces.size(), faces.size());
-    ierr |= control.SumIntoGlobalValues(face_gids, vals);
-  }
-
-  ierr |= control.GlobalAssemble();
+    ierr |= control.GlobalAssemble();
   }
   CHECK(!ierr);
 }
 
-TEST(FE_MATRIX_FACE_FACE_MatrixFE2) {
+TEST(FE_MATRIX_FACE_FACE_MatrixFE2)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -749,7 +753,7 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2) {
 
   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
-  // create a mesh 
+  // create a mesh
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
@@ -757,7 +761,7 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2) {
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
@@ -770,14 +774,14 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2) {
   // create the graph
   int ierr(0);
   Teuchos::RCP<GraphFE> graph =
-      Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
-  
+    Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
+
   Entity_ID_List faces;
   Entity_ID_List face_cells;
-  for (int c=0; c!=ncells; ++c) {
+  for (int c = 0; c != ncells; ++c) {
     mesh->cell_get_faces(c, &faces);
 
-    for (int n=0; n!=faces.size(); ++n) {
+    for (int n = 0; n != faces.size(); ++n) {
       ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
       CHECK(!ierr);
     }
@@ -792,15 +796,14 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2) {
   {
     Teuchos::TimeMonitor monitor(*timer);
 
-  for (int c=0; c!=ncells; ++c) {
-    mesh->cell_get_faces(c, &faces);
+    for (int c = 0; c != ncells; ++c) {
+      mesh->cell_get_faces(c, &faces);
 
-    Epetra_SerialDenseMatrix vals(faces.size(), faces.size());
-    ierr |= matrix.SumIntoMyValues(&faces[0], vals);
-  }
+      Epetra_SerialDenseMatrix vals(faces.size(), faces.size());
+      ierr |= matrix.SumIntoMyValues(&faces[0], vals);
+    }
 
-  ierr |= matrix.FillComplete();
+    ierr |= matrix.FillComplete();
   }
   CHECK(!ierr);
 }
-

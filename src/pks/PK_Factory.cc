@@ -82,13 +82,14 @@ PKFactory::CreatePK(std::string pk_name,
 
         // -- overwrite sub pks names with prepended domain
         if (pk_list_new.isParameter("PKs order")) {
-          auto subpks_names = pk_list_new.get<Teuchos::Array<std::string> >("PKs order");
+          auto subpks_names = pk_list_new.get<Teuchos::Array<std::string>>("PKs order");
           for (auto& subpk_name : subpks_names) {
             KeyTriple subpk_triple;
             bool subpk_is_ds = Keys::splitDomainSet(subpk_name, subpk_triple);
 
             if (subpk_is_ds) {
-              subpk_name = Keys::getKey(std::get<0>(subpk_triple), std::get<1>(pk_triple), std::get<2>(subpk_triple));
+              subpk_name = Keys::getKey(
+                std::get<0>(subpk_triple), std::get<1>(pk_triple), std::get<2>(subpk_triple));
             }
           }
           pk_list_new.set("PKs order", subpks_names);
@@ -100,8 +101,8 @@ PKFactory::CreatePK(std::string pk_name,
         // get the flyweight subtree
         if (!pk_tree.isSublist(pk_flyweight)) {
           std::stringstream msg;
-          msg << "PK_Factory: PK \"" << pk_name << "\" is a flyweight, but missing flyweight PK spec \""
-              << pk_flyweight << "\"\n";
+          msg << "PK_Factory: PK \"" << pk_name
+              << "\" is a flyweight, but missing flyweight PK spec \"" << pk_flyweight << "\"\n";
           Errors::Message message(msg.str());
           Exceptions::amanzi_throw(message);
         }
@@ -116,7 +117,8 @@ PKFactory::CreatePK(std::string pk_name,
   // ensure we found the pk subtree
   if (!pk_subtree_found) {
     std::stringstream msg;
-    msg << "PK_Factory: PK \"" << pk_name << "\" not a sublist of the provided PK tree:\n" << pk_tree;
+    msg << "PK_Factory: PK \"" << pk_name << "\" not a sublist of the provided PK tree:\n"
+        << pk_tree;
     Errors::Message message(msg.str());
     Exceptions::amanzi_throw(message);
   }
@@ -136,11 +138,11 @@ PKFactory::CreatePK(std::string pk_name,
   map_type::iterator iter = GetMap()->find(pk_type);
   if (iter == GetMap()->end()) {
     std::stringstream message;
-    message << "PK Factory: PK \"" << pk_name << "\" requested type \""
-            << pk_type << "\" which is not a registered PK type.\n";
+    message << "PK Factory: PK \"" << pk_name << "\" requested type \"" << pk_type
+            << "\" which is not a registered PK type.\n";
 
     for (map_type::iterator it = GetMap()->begin(); it != GetMap()->end(); ++it) {
-      message  << std::endl << "  option: " << it->first;
+      message << std::endl << "  option: " << it->first;
     }
     Errors::Message msg(message.str());
     Exceptions::amanzi_throw(msg);
@@ -158,4 +160,4 @@ int PKFactory::num_pks = 0;
 
 PKFactory::map_type* PKFactory::map_;
 
-}  // namespace Amanzi
+} // namespace Amanzi

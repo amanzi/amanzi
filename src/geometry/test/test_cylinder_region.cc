@@ -21,14 +21,14 @@ TEST(CYLINDER_REGION)
   Teuchos::ParameterXMLFileReader xmlreader(infilename);
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
-  const std::string reg_name = reg_spec.name(reg_spec.begin());     
-  const unsigned int reg_id = 9959;  // something arbitrary
+  const std::string reg_name = reg_spec.name(reg_spec.begin());
+  const unsigned int reg_id = 9959; // something arbitrary
 
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
-    
+
   // Create a rectangular region
   auto reg = Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, *ecomm);
-  
+
   // See if we retrieved the name, id, and type correctly
   CHECK_EQUAL(reg->get_name(), reg_name);
   CHECK_EQUAL(reg->get_id(), reg_id);
@@ -37,25 +37,19 @@ TEST(CYLINDER_REGION)
 
   // Make sure that the region dimension is 3
   CHECK_EQUAL(reg->get_manifold_dimension(), 3);
-  
+
   // test the functionality of the region
   std::vector<Amanzi::AmanziGeometry::Point> pin;
   pin.push_back(Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0));
   pin.push_back(Amanzi::AmanziGeometry::Point(0.0, 2.0, 1.0));
-  pin.push_back(Amanzi::AmanziGeometry::Point(0.0,-2.0, 1.0));
+  pin.push_back(Amanzi::AmanziGeometry::Point(0.0, -2.0, 1.0));
   pin.push_back(Amanzi::AmanziGeometry::Point(0.5, 0.0, 2.0));
 
-  for (auto p = pin.begin(); p != pin.end(); ++p) {
-    CHECK(reg->inside(*p));
-  }
+  for (auto p = pin.begin(); p != pin.end(); ++p) { CHECK(reg->inside(*p)); }
 
   std::vector<Amanzi::AmanziGeometry::Point> pout;
   pin.push_back(Amanzi::AmanziGeometry::Point(9.9, 8.0, 0.0));
-  pin.push_back(Amanzi::AmanziGeometry::Point(1.0, 2.0,-1.0));
+  pin.push_back(Amanzi::AmanziGeometry::Point(1.0, 2.0, -1.0));
 
-  for (auto p = pout.begin(); p != pout.end(); ++p) {
-    CHECK(!reg->inside(*p));
-  }
+  for (auto p = pout.begin(); p != pout.end(); ++p) { CHECK(!reg->inside(*p)); }
 }
-
-

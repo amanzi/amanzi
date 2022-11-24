@@ -32,7 +32,9 @@
 
 namespace Amanzi {
 
-namespace AmanziMesh { class Mesh; }
+namespace AmanziMesh {
+class Mesh;
+}
 class CompositeVector;
 
 namespace Operators {
@@ -44,33 +46,29 @@ class Operator;
 
 class Op {
  public:
-  Op(int schema, const std::string& schema_string_,
-     const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      schema_string(schema_string_),
+  Op(int schema, const std::string& schema_string_, const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : schema_string(schema_string_),
       schema_old_(schema),
       schema_row_(schema),
       schema_col_(schema),
-      mesh_(mesh)
-  {};
+      mesh_(mesh){};
 
-  Op(const Schema& schema_row, const Schema& schema_col,
-     const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      schema_row_(schema_row),
-      schema_col_(schema_col),
-      mesh_(mesh) {
+  Op(const Schema& schema_row,
+     const Schema& schema_col,
+     const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : schema_row_(schema_row), schema_col_(schema_col), mesh_(mesh)
+  {
     schema_string = schema_row.CreateUniqueName() + '+' + schema_col.CreateUniqueName();
   }
 
-  Op(int schema, const std::string& schema_string_) :
-      schema_string(schema_string_),
-      schema_old_(schema),
-      mesh_(Teuchos::null)
-  {};
+  Op(int schema, const std::string& schema_string_)
+    : schema_string(schema_string_), schema_old_(schema), mesh_(Teuchos::null){};
 
   virtual ~Op() = default;
 
   // Clean the operator without destroying memory
-  void Init() {
+  void Init()
+  {
     if (diag != Teuchos::null) {
       diag->PutScalar(0.0);
       diag_shadow->PutScalar(0.0);
@@ -84,28 +82,27 @@ class Op {
   }
 
   // Restore pristine value of the matrices, i.e. before BCs.
-  virtual int CopyShadowToMaster() {
+  virtual int CopyShadowToMaster()
+  {
     for (int i = 0; i != matrices.size(); ++i) {
-      if (matrices_shadow[i].NumRows() != 0) {
-        matrices[i] = matrices_shadow[i];
-      }
+      if (matrices_shadow[i].NumRows() != 0) { matrices[i] = matrices_shadow[i]; }
     }
     *diag = *diag_shadow;
     return 0;
   }
 
   // For backward compatibility... must go away
-  virtual void RestoreCheckPoint() {
+  virtual void RestoreCheckPoint()
+  {
     for (int i = 0; i != matrices.size(); ++i) {
-      if (matrices_shadow[i].NumRows() != 0) {
-        matrices[i] = matrices_shadow[i];
-      }
+      if (matrices_shadow[i].NumRows() != 0) { matrices[i] = matrices_shadow[i]; }
     }
     *diag = *diag_shadow;
   }
 
   // Matching rules for schemas.
-  virtual bool Matches(int match_schema, int matching_rule) {
+  virtual bool Matches(int match_schema, int matching_rule)
+  {
     if (matching_rule == OPERATOR_SCHEMA_RULE_EXACT) {
       if (match_schema == schema_old_) return true;
     } else if (matching_rule == OPERATOR_SCHEMA_RULE_SUPERSET) {
@@ -118,15 +115,20 @@ class Op {
 
   // linear operator functionality.
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
-          const CompositeVector& X, CompositeVector& Y) const = 0;
+                                 const CompositeVector& X,
+                                 CompositeVector& Y) const = 0;
 
   virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
-          const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const = 0;
+                                        const SuperMap& map,
+                                        GraphFE& graph,
+                                        int my_block_row,
+                                        int my_block_col) const = 0;
 
   virtual void AssembleMatrixOp(const Operator* assembler,
-          const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const = 0;
+                                const SuperMap& map,
+                                MatrixFE& mat,
+                                int my_block_row,
+                                int my_block_col) const = 0;
 
   // Mutators of local matrices.
   // -- rescale local matrices in the container using a CV
@@ -141,7 +143,7 @@ class Op {
 
   // quality control (more work is needed)
   // -- veify that containers are not empty
-  void Verify() const; 
+  void Verify() const;
 
  public:
   std::string schema_string;
@@ -164,13 +166,11 @@ class Op {
 /* ******************************************************************
 * Default implementation
 ****************************************************************** */
-inline
-void Op::Rescale(double scaling)
+inline void
+Op::Rescale(double scaling)
 {
   if (scaling != 1.0) {
-    for (int i = 0; i != matrices.size(); ++i) {
-      matrices[i] *= scaling;
-    }
+    for (int i = 0; i != matrices.size(); ++i) { matrices[i] *= scaling; }
     if (diag.get()) diag->Scale(scaling);
   }
 }
@@ -179,19 +179,17 @@ void Op::Rescale(double scaling)
 /* ******************************************************************
 * Rudimentary verification of container quality.
 ****************************************************************** */
-inline
-void Op::Verify() const
+inline void
+Op::Verify() const
 {
- int nmatrices = matrices.size();
- for (int i = 0; i < nmatrices; ++i) {
-   AMANZI_ASSERT(matrices[i].NumRows() > 0 && matrices[i].NumCols() > 0);
- }
+  int nmatrices = matrices.size();
+  for (int i = 0; i < nmatrices; ++i) {
+    AMANZI_ASSERT(matrices[i].NumRows() > 0 && matrices[i].NumCols() > 0);
+  }
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 
 #endif
-
-

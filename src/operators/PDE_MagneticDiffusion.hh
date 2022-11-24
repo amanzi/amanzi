@@ -36,11 +36,10 @@ namespace Operators {
 class PDE_MagneticDiffusion : public PDE_Electromagnetics {
  public:
   PDE_MagneticDiffusion(const Teuchos::RCP<Operator>& global_op)
-    : PDE_Electromagnetics(global_op)
-  {};
+    : PDE_Electromagnetics(global_op){};
 
   PDE_MagneticDiffusion(Teuchos::ParameterList& plist,
-                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_Electromagnetics(plist, mesh)
   {
     pde_type_ = PDE_MAGNETIC_DIFFUSION;
@@ -75,9 +74,7 @@ class PDE_MagneticDiffusion : public PDE_Electromagnetics {
   std::vector<WhetStone::DenseMatrix> curl_op_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-
-

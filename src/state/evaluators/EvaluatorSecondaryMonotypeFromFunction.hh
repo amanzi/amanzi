@@ -60,7 +60,7 @@ namespace Amanzi {
 class Function;
 
 class EvaluatorSecondaryMonotypeFromFunction
-    : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   explicit EvaluatorSecondaryMonotypeFromFunction(Teuchos::ParameterList& plist);
   EvaluatorSecondaryMonotypeFromFunction(const EvaluatorSecondaryMonotypeFromFunction& other);
@@ -73,10 +73,11 @@ class EvaluatorSecondaryMonotypeFromFunction
   // This should get some careful thought of the right strategy.  Punting for
   // now --etc
   virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, const Tag& wrt_tag, const std::vector<CompositeVector*>& results) override {
-    for (auto& r : results) {
-      r->PutScalar(0.0);
-    }
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override
+  {
+    for (auto& r : results) { r->PutScalar(0.0); }
   }
 
  protected:

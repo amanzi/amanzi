@@ -9,7 +9,7 @@
   Base class for chemical process kernels. It should be never
   instantiated.
 */
- 
+
 #ifndef AMANZI_CHEMISTRY_PK_HH_
 #define AMANZI_CHEMISTRY_PK_HH_
 
@@ -23,7 +23,7 @@
 
 // Amanzi
 #ifdef ALQUIMIA_ENABLED
-#include "ChemistryEngine.hh"
+#  include "ChemistryEngine.hh"
 #endif
 #include "Key.hh"
 #include "Mesh.hh"
@@ -46,7 +46,7 @@ class Chemistry_PK : public PK_Physical {
   virtual void Setup() override;
   virtual void Initialize() override;
 
-  virtual void set_dt(double dt) override {};
+  virtual void set_dt(double dt) override{};
   virtual double get_dt() override { return dt_next_; }
 
   // Required members for chemistry interface
@@ -55,7 +55,7 @@ class Chemistry_PK : public PK_Physical {
 
   // Basic capabilities
   // -- get/set auxiliary tcc vector that now contains only aqueous components.
-  Teuchos::RCP<Epetra_MultiVector> aqueous_components() { return aqueous_components_; } 
+  Teuchos::RCP<Epetra_MultiVector> aqueous_components() { return aqueous_components_; }
   void set_aqueous_components(Teuchos::RCP<Epetra_MultiVector> tcc) { aqueous_components_ = tcc; }
 
   // -- process various objects before/during setup phase
@@ -71,7 +71,7 @@ class Chemistry_PK : public PK_Physical {
 
   // -- output of error messages.
   void ErrorAnalysis(int ierr, std::string& internal_msg);
-  int num_aqueous_components() {return number_aqueous_components_;}
+  int num_aqueous_components() { return number_aqueous_components_; }
 
  protected:
   std::string passwd_;
@@ -86,7 +86,7 @@ class Chemistry_PK : public PK_Physical {
 
   int number_aqueous_kinetics_;
   std::vector<std::string> aqueous_kinetics_names_;
-  
+
   int number_sorption_sites_, number_total_sorbed_;
   std::vector<std::string> sorption_site_names_;
   bool using_sorption_, using_sorption_isotherms_;
@@ -94,7 +94,7 @@ class Chemistry_PK : public PK_Physical {
   int number_free_ion_, number_ion_exchange_sites_;
   double saturation_tolerance_;
 
-  // names of state fields 
+  // names of state fields
   Key tcc_key_;
   Key poro_key_, saturation_key_, temperature_key_;
   Key fluid_den_key_, molar_fluid_den_key_;
@@ -122,6 +122,6 @@ class Chemistry_PK : public PK_Physical {
   double initial_conditions_time_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

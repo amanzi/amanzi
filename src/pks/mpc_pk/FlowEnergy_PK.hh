@@ -34,7 +34,7 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
 
   // PK methods
   virtual void Setup() override;
-  virtual void Initialize() override;  
+  virtual void Initialize() override;
 
   // -- dt is the minimum of the sub pks
   // virtual double get_dt();
@@ -49,7 +49,7 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Key domain_;  // computational domain
+  Key domain_; // computational domain
 
   Teuchos::RCP<EvaluatorIndependentFunction> particle_density_eval;
   Teuchos::RCP<EvaluatorIndependentFunction> porosity_eval;
@@ -70,5 +70,5 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   static RegisteredPKFactory<FlowEnergy_PK> reg_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 #endif

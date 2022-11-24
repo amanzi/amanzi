@@ -30,11 +30,13 @@ class AnalyticDG08b : public AnalyticDGBase {
  public:
   // cone
   const double phi = 2 * M_PI / 3;
-  const Amanzi::AmanziGeometry::Point r0 = Amanzi::AmanziGeometry::Point(0.5 * std::cos(phi), 0.5 * std::sin(phi));
+  const Amanzi::AmanziGeometry::Point r0 =
+    Amanzi::AmanziGeometry::Point(0.5 * std::cos(phi), 0.5 * std::sin(phi));
   const double R0 = 0.35;
 
   // hump
-  const Amanzi::AmanziGeometry::Point r1 = Amanzi::AmanziGeometry::Point(0.5 * std::cos(phi), -0.5 * std::sin(phi));
+  const Amanzi::AmanziGeometry::Point r1 =
+    Amanzi::AmanziGeometry::Point(0.5 * std::cos(phi), -0.5 * std::sin(phi));
   const double R1 = 0.35;
 
   // notched cylinder
@@ -48,31 +50,34 @@ class AnalyticDG08b : public AnalyticDGBase {
       cone_(true),
       hump_(true),
       cylinder_(true),
-      hump_amp_(1.0) {};
-  ~AnalyticDG08b() {};
+      hump_amp_(1.0){};
+  ~AnalyticDG08b(){};
 
   // control of details
-  void set_shapes(bool cone, bool hump, bool cylinder) {
+  void set_shapes(bool cone, bool hump, bool cylinder)
+  {
     cone_ = cone;
     hump_ = hump;
     cylinder_ = cylinder;
   }
-  void set_amplitudes(double hump_amp) {
-    hump_amp_ = hump_amp;
-  }
+  void set_amplitudes(double hump_amp) { hump_amp_ = hump_amp; }
 
   // analytic data in conventional Taylor basis
   // -- diffusion tensor
-  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override {
+  virtual Amanzi::WhetStone::Tensor
+  Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override
+  {
     Amanzi::WhetStone::Tensor K(2, 1);
     K(0, 0) = 1.0;
     return K;
   }
 
   // -- solution
-  virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                              Amanzi::WhetStone::Polynomial& sol) override {
-    sol.Reshape(d_, order_, true); 
+  virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p,
+                              double t,
+                              Amanzi::WhetStone::Polynomial& sol) override
+  {
+    sol.Reshape(d_, order_, true);
     sol.set_origin(p);
 
     if (cone_) {
@@ -90,7 +95,7 @@ class AnalyticDG08b : public AnalyticDGBase {
         if (order_ > 1) {
           double factor = tmp * tmp * tmp * R0;
           sol(3) += -dp[1] * dp[1] / factor / 2;
-          sol(4) +=  dp[0] * dp[1] / factor;
+          sol(4) += dp[0] * dp[1] / factor;
           sol(5) += -dp[0] * dp[0] / factor / 2;
         }
 
@@ -117,7 +122,7 @@ class AnalyticDG08b : public AnalyticDGBase {
           double fac1 = M_PI / (4 * R1 * tmp * tmp * tmp);
           double fac2 = M_PI * tmp / R1;
           sol(3) += -fac1 * (dp[1] * dp[1] * sn + dp[0] * dp[0] * cs * fac2) / 2;
-          sol(4) +=  fac1 * dp[0] * dp[1] * (sn - cs * fac2);
+          sol(4) += fac1 * dp[0] * dp[1] * (sn - cs * fac2);
           sol(5) += -fac1 * (dp[0] * dp[0] * sn + dp[1] * dp[1] * cs * fac2) / 2;
         }
 
@@ -129,40 +134,46 @@ class AnalyticDG08b : public AnalyticDGBase {
     if (cylinder_) {
       auto dp = p - r2;
       double tmp = Amanzi::AmanziGeometry::norm(dp);
-      if (tmp <= R2 && !(dp[1] >= 0.0 && std::fabs(dp[0]) <= W2)) {
-        sol(0) += 1.0;
-      }
+      if (tmp <= R2 && !(dp[1] >= 0.0 && std::fabs(dp[0]) <= W2)) { sol(0) += 1.0; }
     }
   }
 
   // -- accumulation
-  virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                                  Amanzi::WhetStone::Polynomial& a) override {
-    a.Reshape(d_, 0, true); 
+  virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p,
+                                  double t,
+                                  Amanzi::WhetStone::Polynomial& a) override
+  {
+    a.Reshape(d_, 0, true);
     a(0, 0) = 1.0;
     a.set_origin(p);
   }
 
   // -- velocity is not used yet in tests
-  virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                              Amanzi::WhetStone::VectorPolynomial& v) override {
+  virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p,
+                              double t,
+                              Amanzi::WhetStone::VectorPolynomial& v) override
+  {
     v.resize(d_);
     for (int i = 0; i < d_; ++i) {
-      v[i].Reshape(d_, 0, true); 
+      v[i].Reshape(d_, 0, true);
       v[i].set_origin(p);
     }
   }
 
   // -- reaction
-  virtual void ReactionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                              Amanzi::WhetStone::Polynomial& r) override {
-    r.Reshape(d_, 0, true); 
+  virtual void ReactionTaylor(const Amanzi::AmanziGeometry::Point& p,
+                              double t,
+                              Amanzi::WhetStone::Polynomial& r) override
+  {
+    r.Reshape(d_, 0, true);
     r.set_origin(p);
   }
 
   // -- source term
-  virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                            Amanzi::WhetStone::Polynomial& src) override {
+  virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p,
+                            double t,
+                            Amanzi::WhetStone::Polynomial& src) override
+  {
     src.Reshape(d_, 0, true);
     src.set_origin(p);
   }
@@ -176,4 +187,3 @@ class AnalyticDG08b : public AnalyticDGBase {
 };
 
 #endif
-

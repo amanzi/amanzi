@@ -25,10 +25,11 @@ H2O_Viscosity::H2O_Viscosity(Teuchos::ParameterList& eos_plist)
     kcv1_(0.00585),
     kbv2_(1.3272),
     kcv2_(-0.001053),
-    kT1_(293.15) {};
+    kT1_(293.15){};
 
 
-double H2O_Viscosity::Viscosity(double T, double p)
+double
+H2O_Viscosity::Viscosity(double T, double p)
 {
   double visc(0.0);
 
@@ -37,7 +38,7 @@ double H2O_Viscosity::Viscosity(double T, double p)
 
     if (T < kT1_) {
       A = kav1_ + (kbv1_ + kcv1_ * dT) * dT;
-      xi = 1301.0 * (1.0/A - 1.0/kav1_);
+      xi = 1301.0 * (1.0 / A - 1.0 / kav1_);
     } else {
       A = (kbv2_ + kcv2_ * dT) * dT;
       xi = A / (T - 168.15);
@@ -56,20 +57,21 @@ double H2O_Viscosity::Viscosity(double T, double p)
 };
 
 
-double H2O_Viscosity::DViscosityDT(double T, double p)
+double
+H2O_Viscosity::DViscosityDT(double T, double p)
 {
   double A, xi, dXidT, dT(kT1_ - T), T0(168.15), visc;
 
   if (T < kT1_) {
     A = kav1_ + (kbv1_ + kcv1_ * dT) * dT;
-    xi = 1301.0 * (1.0/A - 1.0/kav1_);
+    xi = 1301.0 * (1.0 / A - 1.0 / kav1_);
 
     dXidT = 1301.0 / A / A * (kbv1_ + 2 * kcv1_ * dT);
   } else {
     A = (kbv2_ + kcv2_ * dT) * dT;
     xi = A / (T - T0);
 
-    dXidT = (-kbv2_ - 2 * kcv2_ * dT) / (T - T0) - A / (T - T0) / (T - T0); 
+    dXidT = (-kbv2_ - 2 * kcv2_ * dT) / (T - T0) - A / (T - T0) / (T - T0);
   }
 
   visc = 2.302585092994046e-3 * pow(10.0, xi) * dXidT;
@@ -77,11 +79,13 @@ double H2O_Viscosity::DViscosityDT(double T, double p)
 };
 
 
-double H2O_Viscosity::DViscosityDp(double T, double p) {
+double
+H2O_Viscosity::DViscosityDp(double T, double p)
+{
   Errors::Message message("EOS viscosity of water: dVis/dP is not implemented");
   Exceptions::amanzi_throw(message);
   return -1.0;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi

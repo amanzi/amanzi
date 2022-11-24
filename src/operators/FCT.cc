@@ -23,19 +23,20 @@ namespace Operators {
 /* ******************************************************************
 * Flux is from 1st to 2nd cell in the list face->cells
 ****************************************************************** */
-void FCT::Compute(const CompositeVector& flux_lo,
-                  const CompositeVector& flux_ho,
-                  const BCs& bc,
-                  CompositeVector& flux)
+void
+FCT::Compute(const CompositeVector& flux_lo,
+             const CompositeVector& flux_ho,
+             const BCs& bc,
+             CompositeVector& flux)
 {
   int nfaces_owned = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int ncells_owned = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   AmanziMesh::Entity_ID_List cells, faces;
 
-  const auto& flux_lo_f = *flux_lo.ViewComponent("face"); 
-  const auto& flux_ho_f = *flux_ho.ViewComponent("face"); 
-  auto& flux_f = *flux.ViewComponent("face"); 
+  const auto& flux_lo_f = *flux_lo.ViewComponent("face");
+  const auto& flux_ho_f = *flux_ho.ViewComponent("face");
+  auto& flux_f = *flux.ViewComponent("face");
 
   // allocate memory
   CompositeVectorSpace cvs;
@@ -79,7 +80,8 @@ void FCT::Compute(const CompositeVector& flux_lo,
   if (limiter_->get_external_bounds())
     bounds = limiter_->get_bounds();
   else
-    bounds = limiter_->BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_ALL);
+    bounds =
+      limiter_->BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_ALL);
   auto& bounds_c = *bounds->ViewComponent("cell");
 
   double Qmin, Qmax;
@@ -93,14 +95,16 @@ void FCT::Compute(const CompositeVector& flux_lo,
     if (weight0_ != Teuchos::null) vol1 *= (*weight1_)[0][c];
 
     Qmin = Qmax = 1.0;
-    if (neg_c[0][c] != 0.0) 
-      Qmin = std::min(0.0, (vol1 * bounds_c[0][c] - vol0 * (*field_)[0][c] - dlo_c[0][c])) / neg_c[0][c];
+    if (neg_c[0][c] != 0.0)
+      Qmin =
+        std::min(0.0, (vol1 * bounds_c[0][c] - vol0 * (*field_)[0][c] - dlo_c[0][c])) / neg_c[0][c];
 
-    if (pos_c[0][c] != 0.0) 
-      Qmax = std::max(0.0, (vol1 * bounds_c[1][c] - vol0 * (*field_)[0][c] - dlo_c[0][c])) / pos_c[0][c];
+    if (pos_c[0][c] != 0.0)
+      Qmax =
+        std::max(0.0, (vol1 * bounds_c[1][c] - vol0 * (*field_)[0][c] - dlo_c[0][c])) / pos_c[0][c];
 
-    neg_c[0][c] = std::fabs(Qmin);  // re-using allocated memory
-    pos_c[0][c] = std::fabs(Qmax); 
+    neg_c[0][c] = std::fabs(Qmin); // re-using allocated memory
+    pos_c[0][c] = std::fabs(Qmax);
   }
 
   pos.ScatterMasterToGhosted();
@@ -112,7 +116,7 @@ void FCT::Compute(const CompositeVector& flux_lo,
 
     if (cells.size() == 2) {
       double tmp = -flux_ho_f[0][f] + flux_lo_f[0][f];
-    
+
       if (tmp > 0.0)
         alpha[f] = std::min({ alpha[f], pos_c[0][cells[0]], neg_c[0][cells[1]] });
       else
@@ -131,6 +135,5 @@ void FCT::Compute(const CompositeVector& flux_lo,
   alpha_mean_ /= flux_f.GlobalLength();
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
+} // namespace Operators
+} // namespace Amanzi

@@ -24,7 +24,8 @@
 // State
 #include "State.hh"
 
-TEST(FIELD_INITIALIZATION) {
+TEST(FIELD_INITIALIZATION)
+{
   using namespace Amanzi;
 
   auto comm = Amanzi::getDefaultComm();
@@ -53,12 +54,14 @@ TEST(FIELD_INITIALIZATION) {
   // populate state
   S.RegisterMesh("domain", mesh);
   S.Require<CompositeVector, CompositeVectorSpace>("porosity", Tags::DEFAULT)
-    .SetMesh(mesh)->SetGhosted(false)
-                  ->SetComponent("cell", AmanziMesh::CELL, 1);
+    .SetMesh(mesh)
+    ->SetGhosted(false)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
   S.RequireEvaluator("porosity", Tags::DEFAULT);
   S.Require<CompositeVector, CompositeVectorSpace>("permeability", Tags::DEFAULT)
-    .SetMesh(mesh)->SetGhosted(false)
-                  ->SetComponent("cell", AmanziMesh::CELL, 3);
+    .SetMesh(mesh)
+    ->SetGhosted(false)
+    ->SetComponent("cell", AmanziMesh::CELL, 3);
 
   // setup creates data
   S.Setup();
@@ -70,9 +73,7 @@ TEST(FIELD_INITIALIZATION) {
   // -- porosity (simple field)
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   const auto& phi = *S.Get<CompositeVector>("porosity").ViewComponent("cell");
-  for (int c = 0; c < ncells; ++c) {
-    CHECK_EQUAL(0.25, phi[0][c]);
-  }
+  for (int c = 0; c < ncells; ++c) { CHECK_EQUAL(0.25, phi[0][c]); }
 
   // from exo currently not supported in new state
   // // -- scalar field from a file

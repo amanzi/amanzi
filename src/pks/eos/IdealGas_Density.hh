@@ -21,7 +21,7 @@
 
 namespace Amanzi {
 namespace AmanziEOS {
- 
+
 // Equation of State model
 class IdealGas_Density : public EOS_Density {
  public:
@@ -44,7 +44,7 @@ class IdealGas_Density : public EOS_Density {
   static Utils::RegisteredFactory<EOS_Density, IdealGas_Density> factory_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

@@ -27,7 +27,9 @@
 /* *****************************************************************
 * This test diffusion solver one dimension: u(x) = x^3, K = 2.
 * **************************************************************** */
-void MiniDiffusion1D_Constant(double bcl, int type_l, double bcr, int type_r) {
+void
+MiniDiffusion1D_Constant(double bcl, int type_l, double bcr, int type_r)
+{
   using namespace Amanzi;
   using namespace Amanzi::Operators;
 
@@ -60,7 +62,7 @@ void MiniDiffusion1D_Constant(double bcl, int type_l, double bcr, int type_r) {
 
     // create right-hand side
     WhetStone::DenseVector& rhs = op.rhs();
-    for (int i = 0; i < ncells; ++i) { 
+    for (int i = 0; i < ncells; ++i) {
       double xc = op.mesh_cell_centroid(i);
       double hc = op.mesh_cell_volume(i);
       rhs(i) = -12.0 * xc * hc;
@@ -71,11 +73,11 @@ void MiniDiffusion1D_Constant(double bcl, int type_l, double bcr, int type_r) {
 
     // solve the problem
     WhetStone::DenseVector sol(rhs);
-    op.ApplyInverse(rhs, sol);  
+    op.ApplyInverse(rhs, sol);
 
     // compute error
     double hc, xc, err, pnorm(1.0), hnorm(1.0);
-    pl2_err[loop] = 0.0; 
+    pl2_err[loop] = 0.0;
     ph1_err[loop] = 0.0;
 
     for (int i = 0; i < ncells; ++i) {
@@ -97,7 +99,8 @@ void MiniDiffusion1D_Constant(double bcl, int type_l, double bcr, int type_r) {
 }
 
 
-TEST(OPERATOR_MINI_DIFFUSION_CONSTANT) {
+TEST(OPERATOR_MINI_DIFFUSION_CONSTANT)
+{
   int dir = Amanzi::Operators::OPERATOR_BC_DIRICHLET;
   int neu = Amanzi::Operators::OPERATOR_BC_NEUMANN;
   MiniDiffusion1D_Constant(0.0, dir, 1.0, dir);
@@ -109,7 +112,9 @@ TEST(OPERATOR_MINI_DIFFUSION_CONSTANT) {
 /* *****************************************************************
 * This test diffusion solver one dimension: u(x) = x^2, K(x) = x+1
 * **************************************************************** */
-void MiniDiffusion1D_Variable(double bcl, int type_l, double bcr, int type_r) {
+void
+MiniDiffusion1D_Variable(double bcl, int type_l, double bcr, int type_r)
+{
   using namespace Amanzi;
   using namespace Amanzi::Operators;
 
@@ -140,7 +145,7 @@ void MiniDiffusion1D_Variable(double bcl, int type_l, double bcr, int type_r) {
 
     // create right-hand side
     WhetStone::DenseVector& rhs = op.rhs();
-    for (int i = 0; i < ncells; ++i) { 
+    for (int i = 0; i < ncells; ++i) {
       double xc = op.mesh_cell_centroid(i);
       double hc = op.mesh_cell_volume(i);
       rhs(i) = -(4 * xc + 2.0) * hc;
@@ -151,11 +156,11 @@ void MiniDiffusion1D_Variable(double bcl, int type_l, double bcr, int type_r) {
 
     // solve the problem
     WhetStone::DenseVector sol(rhs);
-    op.ApplyInverse(rhs, sol);  
+    op.ApplyInverse(rhs, sol);
 
     // compute error
     double hc, xc, err, pnorm(1.0), hnorm(1.0);
-    pl2_err[loop] = 0.0; 
+    pl2_err[loop] = 0.0;
     ph1_err[loop] = 0.0;
 
     for (int i = 0; i < ncells; ++i) {
@@ -177,11 +182,11 @@ void MiniDiffusion1D_Variable(double bcl, int type_l, double bcr, int type_r) {
 }
 
 
-TEST(OPERATOR_MINI_DIFFUSION_VARIABLE) {
+TEST(OPERATOR_MINI_DIFFUSION_VARIABLE)
+{
   int dir = Amanzi::Operators::OPERATOR_BC_DIRICHLET;
   int neu = Amanzi::Operators::OPERATOR_BC_NEUMANN;
   MiniDiffusion1D_Variable(0.0, dir, 1.0, dir);
   MiniDiffusion1D_Variable(0.0, dir, -4.0, neu);
   MiniDiffusion1D_Variable(0.0, neu, 1.0, dir);
 }
-

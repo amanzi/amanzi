@@ -31,10 +31,14 @@ namespace WhetStone {
 *        vectors Tni = Ti * normal where fixed normal is used.
 * Output: HAP p and weight w.
 ****************************************************************** */
-void NLFV::HarmonicAveragingPoint(
-    int f, int c1, int c2, 
-    const AmanziGeometry::Point& Tn1, const AmanziGeometry::Point& Tn2,
-    AmanziGeometry::Point& p, double& weight)
+void
+NLFV::HarmonicAveragingPoint(int f,
+                             int c1,
+                             int c2,
+                             const AmanziGeometry::Point& Tn1,
+                             const AmanziGeometry::Point& Tn2,
+                             AmanziGeometry::Point& p,
+                             double& weight)
 {
   int dir;
 
@@ -64,15 +68,18 @@ void NLFV::HarmonicAveragingPoint(
 * Decomposion: conormal = w1 * tau[i1] + w2 * tau[i2] + w3 * tau[i3],
 * where the weights ws = (w1, w2, w3) are non-negative.
 ****************************************************************** */
-int NLFV::PositiveDecomposition(
-    int id1, const std::vector<AmanziGeometry::Point>& tau,
-    const AmanziGeometry::Point& conormal, double* ws, int* ids)
+int
+NLFV::PositiveDecomposition(int id1,
+                            const std::vector<AmanziGeometry::Point>& tau,
+                            const AmanziGeometry::Point& conormal,
+                            double* ws,
+                            int* ids)
 {
   int ierr(1);
   int d = conormal.dim();
   int ntau = tau.size();
 
-  // default is the TPFA stencil 
+  // default is the TPFA stencil
   double c1 = norm(tau[id1]);
   double c2 = norm(conormal);
 
@@ -106,15 +113,14 @@ int NLFV::PositiveDecomposition(
       T.Inverse();
       AmanziGeometry::Point p = T * conormal;
 
-      // We look for the strongest pair of vectors and try to 
+      // We look for the strongest pair of vectors and try to
       // avoid degenerate cases to improve robustness.
-      if (p[0] >= 0.0 && 
-          p[1] >= -WHETSTONE_TOLERANCE_DECOMPOSITION) {
+      if (p[0] >= 0.0 && p[1] >= -WHETSTONE_TOLERANCE_DECOMPOSITION) {
         if (tmp > det) {
           det = tmp;
           ws[0] = p[0];
           ws[1] = fabs(p[1]);
-          ids[1] = i; 
+          ids[1] = i;
           ierr = 0;
         }
       }
@@ -139,18 +145,17 @@ int NLFV::PositiveDecomposition(
         T.Inverse();
         AmanziGeometry::Point p = T * conormal;
 
-        // We look for the strongest triple of vectors and try to 
+        // We look for the strongest triple of vectors and try to
         // avoid degenerate cases to improve robustness.
-        if (p[0] >= 0.0 && 
-            p[1] >= -WHETSTONE_TOLERANCE_DECOMPOSITION &&
+        if (p[0] >= 0.0 && p[1] >= -WHETSTONE_TOLERANCE_DECOMPOSITION &&
             p[2] >= -WHETSTONE_TOLERANCE_DECOMPOSITION) {
           if (tmp > det) {
             det = tmp;
             ws[0] = p[0];
             ws[1] = fabs(p[1]);
             ws[2] = fabs(p[2]);
-            ids[1] = i; 
-            ids[2] = j; 
+            ids[1] = i;
+            ids[2] = j;
             ierr = 0;
           }
         }
@@ -161,6 +166,5 @@ int NLFV::PositiveDecomposition(
   return ierr;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

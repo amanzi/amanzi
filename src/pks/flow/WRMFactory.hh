@@ -28,7 +28,7 @@ class WRMFactory : public Utils::Factory<WRM> {
   Teuchos::RCP<WRM> Create(Teuchos::ParameterList& plist);
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 #endif

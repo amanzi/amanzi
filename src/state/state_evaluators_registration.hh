@@ -22,15 +22,20 @@
 namespace Amanzi {
 
 Utils::RegisteredFactory<Evaluator, EvaluatorCellVolume> EvaluatorCellVolume::fac_("cell volume");
-Utils::RegisteredFactory<Evaluator, EvaluatorDeformingCellVolume> EvaluatorDeformingCellVolume::fac_("deforming cell volume");
+Utils::RegisteredFactory<Evaluator, EvaluatorDeformingCellVolume>
+  EvaluatorDeformingCellVolume::fac_("deforming cell volume");
 
-Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFunction> EvaluatorIndependentFunction::fac_("independent variable");
-Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile> EvaluatorIndependentFromFile::fac_("independent variable from file");
-Utils::RegisteredFactory<Evaluator, EvaluatorIndependentConstant> EvaluatorIndependentConstant::fac_("independent variable constant");
+Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFunction>
+  EvaluatorIndependentFunction::fac_("independent variable");
+Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile>
+  EvaluatorIndependentFromFile::fac_("independent variable from file");
+Utils::RegisteredFactory<Evaluator, EvaluatorIndependentConstant>
+  EvaluatorIndependentConstant::fac_("independent variable constant");
 
-Utils::RegisteredFactory<Evaluator, EvaluatorMultiplicativeReciprocal> EvaluatorMultiplicativeReciprocal::fac_("multiplicative reciprocal");
+Utils::RegisteredFactory<Evaluator, EvaluatorMultiplicativeReciprocal>
+  EvaluatorMultiplicativeReciprocal::fac_("multiplicative reciprocal");
 
-Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction> EvaluatorSecondaryMonotypeFromFunction::fac_("secondary variable from function");
+Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction>
+  EvaluatorSecondaryMonotypeFromFunction::fac_("secondary variable from function");
 
-} // namespace
-
+} // namespace Amanzi

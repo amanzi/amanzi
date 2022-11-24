@@ -28,14 +28,11 @@ namespace Amanzi {
 
 // Constructor
 BlockVector::BlockVector(const Comm_ptr_type& comm,
-        std::vector<std::string>& names,
-        std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
-        std::vector<int> num_dofs) :
-    comm_(comm),
-    names_(names),
-    num_dofs_(num_dofs),
-    maps_(maps) {
-
+                         std::vector<std::string>& names,
+                         std::vector<Teuchos::RCP<const Epetra_BlockMap>>& maps,
+                         std::vector<int> num_dofs)
+  : comm_(comm), names_(names), num_dofs_(num_dofs), maps_(maps)
+{
   num_components_ = maps_.size();
 
   // Check consistency of input args.
@@ -46,7 +43,7 @@ BlockVector::BlockVector(const Comm_ptr_type& comm,
 
   // Set the size of the local portion of the map.
   sizes_.resize(num_components_);
-  for (int i=0; i != num_components_; ++i) {
+  for (int i = 0; i != num_components_; ++i) {
     indexmap_[names_[i]] = i;
     sizes_[i] = maps_[i]->NumMyElements();
   }
@@ -54,26 +51,27 @@ BlockVector::BlockVector(const Comm_ptr_type& comm,
 
 
 // copy constructor
-BlockVector::BlockVector(const BlockVector& other) :
-    comm_(other.comm_),
+BlockVector::BlockVector(const BlockVector& other)
+  : comm_(other.comm_),
     indexmap_(other.indexmap_),
     num_components_(other.num_components_),
     names_(other.names_),
     num_dofs_(other.num_dofs_),
     maps_(other.maps_),
-    sizes_(other.sizes_) {
-
+    sizes_(other.sizes_)
+{
   data_.resize(num_components_);
-  for (int i=0; i != num_components_; ++i) {
+  for (int i = 0; i != num_components_; ++i) {
     data_[i] = Teuchos::rcp(new Epetra_MultiVector(*other.data_[i]));
   }
 };
 
 
 // Assigment.
-BlockVector& BlockVector::operator=(const BlockVector& other) {
+BlockVector&
+BlockVector::operator=(const BlockVector& other)
+{
   if (this != &other) {
-
 #ifdef ENABLE_DBC
     if (num_components_ != other.num_components_) {
       Errors::Message message("Attempted assignment of non-compatible BlockVectors.");
@@ -81,11 +79,9 @@ BlockVector& BlockVector::operator=(const BlockVector& other) {
     }
 
     for (int i = 0; i != num_components_; ++i) {
-      if ((names_[i] != other.names_[i]) ||
-          (num_dofs_[i] != other.num_dofs_[i]) ||
+      if ((names_[i] != other.names_[i]) || (num_dofs_[i] != other.num_dofs_[i]) ||
           (maps_[i] != other.maps_[i])) {
-        Errors::Message
-          message("Attempted assignment of non-compatible BlockVectors.");
+        Errors::Message message("Attempted assignment of non-compatible BlockVectors.");
         Exceptions::amanzi_throw(message);
       }
     }
@@ -106,16 +102,18 @@ BlockVector& BlockVector::operator=(const BlockVector& other) {
 
 
 // Returns the length of this blockvector
-int BlockVector::GlobalLength() const {
+int
+BlockVector::GlobalLength() const
+{
   int gl = 0;
-  for (int i = 0; i != num_components_; ++i) {
-    gl += data_[i]->GlobalLength();
-  }
+  for (int i = 0; i != num_components_; ++i) { gl += data_[i]->GlobalLength(); }
   return gl;
 }
 
 
-long int BlockVector::GetLocalElementCount() const {
+long int
+BlockVector::GetLocalElementCount() const
+{
   long int count(0);
   for (int i = 0; i != num_components_; ++i) {
     count += data_[i]->NumVectors() * data_[i]->MyLength();
@@ -125,10 +123,13 @@ long int BlockVector::GetLocalElementCount() const {
 
 
 // Check consistency of meta-data and allocate data.
-void BlockVector::CreateData() {
+void
+BlockVector::CreateData()
+{
 #ifdef ENABLE_DBC
   if (data_[0] != Teuchos::null) {
-    std::cout << "WARNING: CompositeVector::CreateData() called on already created vector!" << std::endl;
+    std::cout << "WARNING: CompositeVector::CreateData() called on already created vector!"
+              << std::endl;
   }
 #endif
 
@@ -142,21 +143,24 @@ void BlockVector::CreateData() {
 // View data, const version.
 // I would prefer these be private, but for now...
 Teuchos::RCP<const Epetra_MultiVector>
-BlockVector::ViewComponent(const std::string& name) const {
+BlockVector::ViewComponent(const std::string& name) const
+{
   return data_[Index_(name)];
 };
 
 
 // View data, non-const version.
 Teuchos::RCP<Epetra_MultiVector>
-BlockVector::ViewComponent(const std::string& name) {
+BlockVector::ViewComponent(const std::string& name)
+{
   return data_[Index_(name)];
 };
 
 
 // Set data
-void BlockVector::SetComponent(const std::string& name,
-        const Teuchos::RCP<Epetra_MultiVector>& data) {
+void
+BlockVector::SetComponent(const std::string& name, const Teuchos::RCP<Epetra_MultiVector>& data)
+{
   AMANZI_ASSERT(ComponentMap(name)->SameAs(data->Map()));
   AMANZI_ASSERT(NumVectors(name) == data->NumVectors());
   data_[Index_(name)] = data;
@@ -164,7 +168,9 @@ void BlockVector::SetComponent(const std::string& name,
 
 // Vector operations.
 // -- Insert value into data.
-int BlockVector::PutScalar(double scalar) {
+int
+BlockVector::PutScalar(double scalar)
+{
   int ierr = 0;
   for (int i = 0; i != num_components_; ++i) {
     ierr = data_[i]->PutScalar(scalar);
@@ -175,7 +181,9 @@ int BlockVector::PutScalar(double scalar) {
 
 
 // -- Insert values into data, by DOF, not by component!
-int BlockVector::PutScalar(std::vector<double> scalar) {
+int
+BlockVector::PutScalar(std::vector<double> scalar)
+{
   for (int i = 0; i != num_components_; ++i) {
     AMANZI_ASSERT(scalar.size() == num_dofs_[i]);
     for (int lcv_vector = 0; lcv_vector != data_[i]->NumVectors(); ++lcv_vector) {
@@ -188,13 +196,17 @@ int BlockVector::PutScalar(std::vector<double> scalar) {
 
 
 // -- Insert value into component [name].
-int BlockVector::PutScalar(std::string name, double scalar) {
+int
+BlockVector::PutScalar(std::string name, double scalar)
+{
   return data_[Index_(name)]->PutScalar(scalar);
 };
 
 
 // -- Insert values into data of component [name].
-int BlockVector::PutScalar(std::string name, std::vector<double> scalar) {
+int
+BlockVector::PutScalar(std::string name, std::vector<double> scalar)
+{
   int i = Index_(name);
   AMANZI_ASSERT(scalar.size() == num_dofs_[i]);
 
@@ -207,7 +219,9 @@ int BlockVector::PutScalar(std::string name, std::vector<double> scalar) {
 
 
 // this <- abs(this)
-int BlockVector::Abs(const BlockVector& other) {
+int
+BlockVector::Abs(const BlockVector& other)
+{
   for (int i = 0; i != num_components_; ++i) {
     int ierr = data_[i]->Abs(*other.data_[i]);
     if (ierr) return ierr;
@@ -217,7 +231,9 @@ int BlockVector::Abs(const BlockVector& other) {
 
 
 // -- this <- value*this
-int BlockVector::Scale(double value) {
+int
+BlockVector::Scale(double value)
+{
   for (int i = 0; i != num_components_; ++i) {
     int ierr = data_[i]->Scale(value);
     if (ierr) return ierr;
@@ -227,19 +243,21 @@ int BlockVector::Scale(double value) {
 
 
 // Scale() applied to component name.
-int BlockVector::Scale(std::string name, double value) {
+int
+BlockVector::Scale(std::string name, double value)
+{
   return data_[Index_(name)]->Scale(value);
 };
 
 
 // -- this <- this + scalarA
-int BlockVector::Shift(double scalarA) {
-  for (int i=0; i!=num_components_; ++i) {
+int
+BlockVector::Shift(double scalarA)
+{
+  for (int i = 0; i != num_components_; ++i) {
     Epetra_MultiVector& v = *data_[i];
-    for (int j=0; j!=num_dofs_[i]; ++j) {
-      for (int k=0; k!=sizes_[i]; ++k) {
-        v[j][k] += scalarA;
-      }
+    for (int j = 0; j != num_dofs_[i]; ++j) {
+      for (int k = 0; k != sizes_[i]; ++k) { v[j][k] += scalarA; }
     }
   }
   return 0;
@@ -247,20 +265,22 @@ int BlockVector::Shift(double scalarA) {
 
 
 // Shift() applied to component name.
-int BlockVector::Shift(std::string name, double scalarA) {
+int
+BlockVector::Shift(std::string name, double scalarA)
+{
   int i = Index_(name);
   Epetra_MultiVector& v = *data_[i];
-  for (int j=0; j!=num_dofs_[i]; ++j) {
-    for (int k=0; k!=sizes_[i]; ++k) {
-      v[j][k] += scalarA;
-    }
+  for (int j = 0; j != num_dofs_[i]; ++j) {
+    for (int k = 0; k != sizes_[i]; ++k) { v[j][k] += scalarA; }
   }
   return 0;
 };
 
 
 // this <- abs(this)
-int BlockVector::Reciprocal(const BlockVector& other) {
+int
+BlockVector::Reciprocal(const BlockVector& other)
+{
   for (int i = 0; i != num_components_; ++i) {
     int ierr = data_[i]->Reciprocal(*other.data_[i]);
     if (ierr) return ierr;
@@ -270,7 +290,9 @@ int BlockVector::Reciprocal(const BlockVector& other) {
 
 
 // -- result <- other \dot this
-int BlockVector::Dot(const BlockVector& other, double* result) const {
+int
+BlockVector::Dot(const BlockVector& other, double* result) const
+{
   *result = 0.0;
   for (int i = 0; i != num_components_; ++i) {
     double intermediate_result[data_[i]->NumVectors()];
@@ -285,17 +307,22 @@ int BlockVector::Dot(const BlockVector& other, double* result) const {
 
 
 // -- this <- scalarA*A + scalarThis*this
-BlockVector& BlockVector::Update(double scalarA, const BlockVector& A, double scalarThis) {
-  for (int i = 0; i != num_components_; ++i) {
-    data_[i]->Update(scalarA, *A.data_[i], scalarThis);
-  }
+BlockVector&
+BlockVector::Update(double scalarA, const BlockVector& A, double scalarThis)
+{
+  for (int i = 0; i != num_components_; ++i) { data_[i]->Update(scalarA, *A.data_[i], scalarThis); }
   return *this;
 };
 
 
 // -- this <- scalarA*A + scalarB*B + scalarThis*this
-BlockVector& BlockVector::Update(double scalarA, const BlockVector& A,
-                 double scalarB, const BlockVector& B, double scalarThis) {
+BlockVector&
+BlockVector::Update(double scalarA,
+                    const BlockVector& A,
+                    double scalarB,
+                    const BlockVector& B,
+                    double scalarThis)
+{
   for (int i = 0; i != num_components_; ++i) {
     data_[i]->Update(scalarA, *A.data_[i], scalarB, *B.data_[i], scalarThis);
   }
@@ -304,8 +331,12 @@ BlockVector& BlockVector::Update(double scalarA, const BlockVector& A,
 
 
 // -- this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
-int BlockVector::Multiply(double scalarAB, const BlockVector& A, const BlockVector& B,
-                  double scalarThis) {
+int
+BlockVector::Multiply(double scalarAB,
+                      const BlockVector& A,
+                      const BlockVector& B,
+                      double scalarThis)
+{
   int ierr = 0;
   for (int i = 0; i != num_components_; ++i) {
     ierr = data_[i]->Multiply(scalarAB, *A.data_[i], *B.data_[i], scalarThis);
@@ -315,8 +346,12 @@ int BlockVector::Multiply(double scalarAB, const BlockVector& A, const BlockVect
 };
 
 // -- this <- scalarAB * B / A + scalarThis*this  (/ is the elementwise division
-int BlockVector::ReciprocalMultiply(double scalarAB, const BlockVector& A, const BlockVector& B,
-                  double scalarThis) {
+int
+BlockVector::ReciprocalMultiply(double scalarAB,
+                                const BlockVector& A,
+                                const BlockVector& B,
+                                double scalarThis)
+{
   int ierr = 0;
   for (int i = 0; i != num_components_; ++i) {
     ierr = data_[i]->ReciprocalMultiply(scalarAB, *A.data_[i], *B.data_[i], scalarThis);
@@ -327,7 +362,9 @@ int BlockVector::ReciprocalMultiply(double scalarAB, const BlockVector& A, const
 
 
 // -- norms
-int BlockVector::NormInf(double* norm) const {
+int
+BlockVector::NormInf(double* norm) const
+{
   if (norm == NULL) return 1;
   if (data_.size() == 0) return 1;
 
@@ -338,16 +375,16 @@ int BlockVector::NormInf(double* norm) const {
     for (int lcv_vector = 0; lcv_vector != data_[i]->NumVectors(); ++lcv_vector) {
       ierr = (*data_[i])(lcv_vector)->NormInf(&norm_loc);
       if (ierr) return ierr;
-      if (norm_loc > *norm) {
-        *norm = norm_loc;
-      }
+      if (norm_loc > *norm) { *norm = norm_loc; }
     }
   }
   return ierr;
 };
 
 
-int BlockVector::Norm1(double* norm) const {
+int
+BlockVector::Norm1(double* norm) const
+{
   if (norm == NULL) return 1;
   if (data_.size() == 0) return 1;
 
@@ -365,7 +402,9 @@ int BlockVector::Norm1(double* norm) const {
 };
 
 
-int BlockVector::Norm2(double* norm) const {
+int
+BlockVector::Norm2(double* norm) const
+{
   if (norm == NULL) return 1;
   if (data_.size() == 0) return 1;
 
@@ -376,7 +415,7 @@ int BlockVector::Norm2(double* norm) const {
     for (int lcv_vector = 0; lcv_vector != data_[i]->NumVectors(); ++lcv_vector) {
       ierr = (*data_[i])(lcv_vector)->Norm2(&norm_loc);
       if (ierr) return ierr;
-      *norm += norm_loc*norm_loc;
+      *norm += norm_loc * norm_loc;
     }
   }
   *norm = sqrt(*norm);
@@ -384,7 +423,9 @@ int BlockVector::Norm2(double* norm) const {
 };
 
 
-int BlockVector::MinValue(double* value) const {
+int
+BlockVector::MinValue(double* value) const
+{
   if (value == NULL) return 1;
   if (data_.size() == 0) return 1;
 
@@ -403,7 +444,9 @@ int BlockVector::MinValue(double* value) const {
 };
 
 
-int BlockVector::MaxValue(double* value) const {
+int
+BlockVector::MaxValue(double* value) const
+{
   if (value == NULL) return 1;
   if (data_.size() == 0) return 1;
 
@@ -422,7 +465,9 @@ int BlockVector::MaxValue(double* value) const {
 };
 
 
-int BlockVector::MeanValue(double* value) const {
+int
+BlockVector::MeanValue(double* value) const
+{
   if (value == NULL) return 1;
   if (data_.size() == 0) return 1;
 
@@ -431,7 +476,7 @@ int BlockVector::MeanValue(double* value) const {
 
   *value = 0.0;
   for (int i = 0; i != num_components_; ++i) {
-    n_loc = data_[i]->GlobalLength(); 
+    n_loc = data_[i]->GlobalLength();
     for (int lcv_vector = 0; lcv_vector != data_[i]->NumVectors(); ++lcv_vector) {
       ierr = (*data_[i])(lcv_vector)->MeanValue(value_loc);
       if (ierr) return ierr;
@@ -445,23 +490,26 @@ int BlockVector::MeanValue(double* value) const {
 
 
 // Debugging?
-void BlockVector::Print(std::ostream& os, bool data_io) const {
+void
+BlockVector::Print(std::ostream& os, bool data_io) const
+{
   os << "Block Vector" << std::endl;
   os << "  components: ";
   for (int i = 0; i != num_components_; ++i) {
-    os << names_[i] << "(nvec=" << data_[i]->NumVectors() << ", len=" << data_[i]->GlobalLength() << ") ";
+    os << names_[i] << "(nvec=" << data_[i]->NumVectors() << ", len=" << data_[i]->GlobalLength()
+       << ") ";
   }
   os << std::endl;
   if (data_io) {
-    for (int i = 0; i != num_components_; ++i) {
-      data_[i]->Print(os);
-    }
+    for (int i = 0; i != num_components_; ++i) { data_[i]->Print(os); }
   }
 };
 
 
-// Populate by random numbers between -1 and 1. 
-int BlockVector::Random() {
+// Populate by random numbers between -1 and 1.
+int
+BlockVector::Random()
+{
   int ierr = 0;
   for (int i = 0; i != num_components_; ++i) {
     ierr = data_[i]->Random();
@@ -471,5 +519,4 @@ int BlockVector::Random() {
 };
 
 
-} // namespace
-
+} // namespace Amanzi

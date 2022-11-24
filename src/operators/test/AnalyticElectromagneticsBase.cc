@@ -18,14 +18,19 @@
 /* ******************************************************************
 * Error calculation of faces.
 ****************************************************************** */
-void AnalyticElectromagneticsBase::ComputeFaceError(
-    Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err)
+void
+AnalyticElectromagneticsBase::ComputeFaceError(Epetra_MultiVector& u,
+                                               double t,
+                                               double& unorm,
+                                               double& l2_err,
+                                               double& inf_err)
 {
   unorm = 0.0;
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int nfaces = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nfaces =
+    mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
     double area = mesh_->face_area(f);
     const Amanzi::AmanziGeometry::Point& normal = mesh_->face_normal(f);
@@ -54,14 +59,19 @@ void AnalyticElectromagneticsBase::ComputeFaceError(
 /* ******************************************************************
 * Error calculation of edges.
 ****************************************************************** */
-void AnalyticElectromagneticsBase::ComputeEdgeError(
-    Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err)
+void
+AnalyticElectromagneticsBase::ComputeEdgeError(Epetra_MultiVector& u,
+                                               double t,
+                                               double& unorm,
+                                               double& l2_err,
+                                               double& inf_err)
 {
   unorm = 0.0;
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int nedges = mesh_->num_entities(Amanzi::AmanziMesh::EDGE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nedges =
+    mesh_->num_entities(Amanzi::AmanziMesh::EDGE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int e = 0; e < nedges; e++) {
     double len = mesh_->edge_length(e);
     const Amanzi::AmanziGeometry::Point& tau = mesh_->edge_vector(e);
@@ -88,8 +98,12 @@ void AnalyticElectromagneticsBase::ComputeEdgeError(
 /* ******************************************************************
 * Error calculation of nodes.
 ****************************************************************** */
-void AnalyticElectromagneticsBase::ComputeNodeError(
-    Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err)
+void
+AnalyticElectromagneticsBase::ComputeNodeError(Epetra_MultiVector& u,
+                                               double t,
+                                               double& unorm,
+                                               double& l2_err,
+                                               double& inf_err)
 {
   unorm = 0.0;
   l2_err = 0.0;
@@ -99,7 +113,8 @@ void AnalyticElectromagneticsBase::ComputeNodeError(
   Amanzi::AmanziGeometry::Point xv(d);
 
   Amanzi::AmanziMesh::Entity_ID_List nodes;
-  int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells =
+    mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; c++) {
     double volume = mesh_->cell_volume(c);
@@ -131,14 +146,15 @@ void AnalyticElectromagneticsBase::ComputeNodeError(
 /* ******************************************************************
 * Collective communications.
 ****************************************************************** */
-void AnalyticElectromagneticsBase::GlobalOp(std::string op, double* val, int n)
+void
+AnalyticElectromagneticsBase::GlobalOp(std::string op, double* val, int n)
 {
   double* val_tmp = new double[n];
   for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
-  if (op == "sum") 
+  if (op == "sum")
     mesh_->get_comm()->SumAll(val_tmp, val, n);
-  else if (op == "max") 
+  else if (op == "max")
     mesh_->get_comm()->MaxAll(val_tmp, val, n);
 
   delete[] val_tmp;

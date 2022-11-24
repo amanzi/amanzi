@@ -28,11 +28,11 @@ namespace Amanzi {
 class ReactiveTransport_PK : public PK_MPCAdditive<PK> {
  public:
   ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
-               const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-               const Teuchos::RCP<State>& S,
-               const Teuchos::RCP<TreeVector>& soln);
+                       const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                       const Teuchos::RCP<State>& S,
+                       const Teuchos::RCP<TreeVector>& soln);
 
-  ~ReactiveTransport_PK() {};
+  ~ReactiveTransport_PK(){};
 
   // PK methods
   // -- dt is the minimum of the sub pks
@@ -61,11 +61,10 @@ class ReactiveTransport_PK : public PK_MPCAdditive<PK> {
   Teuchos::RCP<AmanziChemistry::Chemistry_PK> chemistry_pk_;
   // int master_, slave_;
 
- 
 
   // factory registration
   static RegisteredPKFactory<ReactiveTransport_PK> reg_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 #endif

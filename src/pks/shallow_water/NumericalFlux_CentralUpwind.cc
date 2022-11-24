@@ -18,7 +18,7 @@ namespace ShallowWater {
 /* ******************************************************************
 * Numerical flux
 ****************************************************************** */
-NumericalFlux_CentralUpwind::NumericalFlux_CentralUpwind(Teuchos::ParameterList& plist) 
+NumericalFlux_CentralUpwind::NumericalFlux_CentralUpwind(Teuchos::ParameterList& plist)
 {
   g_ = plist.get<double>("gravity");
 }
@@ -27,8 +27,8 @@ NumericalFlux_CentralUpwind::NumericalFlux_CentralUpwind(Teuchos::ParameterList&
 /* ******************************************************************
 * Numerical flux
 ****************************************************************** */
-std::vector<double> NumericalFlux_CentralUpwind::Compute(
-    const std::vector<double>& UL, const std::vector<double>& UR)
+std::vector<double>
+NumericalFlux_CentralUpwind::Compute(const std::vector<double>& UL, const std::vector<double>& UR)
 {
   std::vector<double> FL, FR, F(3), U_star(3), dU(3);
 
@@ -38,14 +38,14 @@ std::vector<double> NumericalFlux_CentralUpwind::Compute(
 
   // SW conservative variables: (h, hu, hv)
 
-  hL  = UL[0];
+  hL = UL[0];
   qxL = UL[1];
   qyL = UL[2];
   factor = 2 * hL / (hL * hL + std::fmax(hL * hL, eps0));
   uL = qxL * factor;
   vL = qyL * factor;
 
-  hR  = UR[0];
+  hR = UR[0];
   qxR = UR[1];
   qyR = UR[2];
   factor = 2 * hR / (hR * hR + std::fmax(hR * hR, eps0));
@@ -62,22 +62,19 @@ std::vector<double> NumericalFlux_CentralUpwind::Compute(
 
   FL = PhysicalFlux(UL);
   FR = PhysicalFlux(UR);
-  
-  for (int i = 0; i < 3; i++) {
-    U_star[i] = (apx*UR[i] - amx*UL[i] - (FR[i] - FL[i])) / (apx - amx + eps1);
-  }
 
   for (int i = 0; i < 3; i++) {
-    dU[i] = minmod(UR[i]-U_star[i], U_star[i]-UL[i]);
+    U_star[i] = (apx * UR[i] - amx * UL[i] - (FR[i] - FL[i])) / (apx - amx + eps1);
   }
 
+  for (int i = 0; i < 3; i++) { dU[i] = minmod(UR[i] - U_star[i], U_star[i] - UL[i]); }
+
   for (int i = 0; i < 3; i++) {
-    F[i] = (apx*FL[i] - amx*FR[i] + apx*amx*(UR[i] - UL[i] - dU[i])) / (apx - amx + eps1);
+    F[i] = (apx * FL[i] - amx * FR[i] + apx * amx * (UR[i] - UL[i] - dU[i])) / (apx - amx + eps1);
   }
 
   return F;
 }
 
-}  // namespace ShallowWater
-}  // namespace Amanzi
-
+} // namespace ShallowWater
+} // namespace Amanzi

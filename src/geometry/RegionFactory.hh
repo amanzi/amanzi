@@ -23,7 +23,7 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 class Region;
-  
+
 Teuchos::RCP<Region>
 createRegion(const std::string reg_name,
              int reg_id,
@@ -34,4 +34,3 @@ createRegion(const std::string reg_name,
 } // namespace Amanzi
 
 #endif
-

@@ -37,11 +37,10 @@ Species::Species()
     charge_(0),
     gram_molecular_weight_(0.0),
     ion_size_parameter_(0.0),
-    name_("") {};
+    name_(""){};
 
 
-Species::Species(int id, const std::string& name,
-                 const Teuchos::ParameterList& plist)
+Species::Species(int id, const std::string& name, const Teuchos::ParameterList& plist)
   : molality_(1.e-9),
     activity_(1.0),
     act_coef_(1.0),
@@ -57,15 +56,11 @@ Species::Species(int id, const std::string& name,
   }
 
   charge_ = 0.0;
-  if (plist.isParameter("charge")) {
-    charge_ = plist.get<int>("charge");
-  }
+  if (plist.isParameter("charge")) { charge_ = plist.get<int>("charge"); }
 
   gram_molecular_weight_ = plist.get<double>("gram molecular weight");
 
-  if (identifier() < 0 || 
-      gram_molecular_weight() < 0.0 ||
-      ion_size_parameter() < 0.0) {
+  if (identifier() < 0 || gram_molecular_weight() < 0.0 || ion_size_parameter() < 0.0) {
     std::ostringstream oss;
     oss << "Invalid species data, id = " << identifier() << std::endl
         << "   gram molecular weight = " << gram_molecular_weight() << std::endl
@@ -75,7 +70,8 @@ Species::Species(int id, const std::string& name,
 }
 
 
-void Species::update(double molality)
+void
+Species::update(double molality)
 {
   molality_ = molality;
   // note that activity coefficient not updated
@@ -86,7 +82,8 @@ void Species::update(double molality)
 }
 
 
-void Species::update()
+void
+Species::update()
 {
   activity_ = act_coef_ * molality_;
   ln_molality_ = std::log(molality_);
@@ -95,29 +92,25 @@ void Species::update()
 }
 
 
-void Species::Display(const Teuchos::Ptr<VerboseObject> vo) const
+void
+Species::Display(const Teuchos::Ptr<VerboseObject> vo) const
 {
   std::stringstream message;
-  message << std::setw(15) << name() << std::fixed
-          << std::setprecision(2) << std::setw(10) << charge()
-          << std::setprecision(5) << std::setw(10) << gram_molecular_weight()
-          << std::setprecision(2) << std::setw(10) << ion_size_parameter()
-          << std::endl;
+  message << std::setw(15) << name() << std::fixed << std::setprecision(2) << std::setw(10)
+          << charge() << std::setprecision(5) << std::setw(10) << gram_molecular_weight()
+          << std::setprecision(2) << std::setw(10) << ion_size_parameter() << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void Species::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const
+void
+Species::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const
 {
   std::stringstream message;
-  message << std::setw(15) << name()
-          << std::scientific << std::setprecision(5)
-          << std::setw(15) << molality()
-          << std::setw(15) << act_coef()
-          << std::setw(15) << activity()
-          << std::endl;
+  message << std::setw(15) << name() << std::scientific << std::setprecision(5) << std::setw(15)
+          << molality() << std::setw(15) << act_coef() << std::setw(15) << activity() << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

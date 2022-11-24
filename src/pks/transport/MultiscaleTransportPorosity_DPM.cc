@@ -24,9 +24,10 @@ namespace Transport {
 /* ******************************************************************
 * This model is minor extension of the WRM.
 ****************************************************************** */
-MultiscaleTransportPorosity_DPM::MultiscaleTransportPorosity_DPM(const Teuchos::ParameterList& plist)
+MultiscaleTransportPorosity_DPM::MultiscaleTransportPorosity_DPM(
+  const Teuchos::ParameterList& plist)
 {
-  mol_diff_ = plist.get<Teuchos::Array<double> >("molecular diffusion").toVector();
+  mol_diff_ = plist.get<Teuchos::Array<double>>("molecular diffusion").toVector();
 
   const auto& sublist = plist.sublist("dual porosity parameters");
   warren_root_ = sublist.get<double>("Warren Root parameter");
@@ -38,9 +39,17 @@ MultiscaleTransportPorosity_DPM::MultiscaleTransportPorosity_DPM(const Teuchos::
 /* ******************************************************************
 * Calculates flux from matrix to fracture and updates matrix node.
 ****************************************************************** */
-double MultiscaleTransportPorosity_DPM::ComputeSoluteFlux(
-    double flux_liquid, double& tcc_f, WhetStone::DenseVector& tcc_m, int icomp,
-    double dt, double wcf0, double wcf1, double wcm0, double wcm1, double phi)
+double
+MultiscaleTransportPorosity_DPM::ComputeSoluteFlux(double flux_liquid,
+                                                   double& tcc_f,
+                                                   WhetStone::DenseVector& tcc_m,
+                                                   int icomp,
+                                                   double dt,
+                                                   double wcf0,
+                                                   double wcf1,
+                                                   double wcm0,
+                                                   double wcm1,
+                                                   double phi)
 {
   double bf, bm, omega;
 
@@ -53,7 +62,7 @@ double MultiscaleTransportPorosity_DPM::ComputeSoluteFlux(
     bm = bf - flux_liquid;
   }
 
-  // solve 2x2 system 
+  // solve 2x2 system
   WhetStone::DenseMatrix A(2, 2);
   WhetStone::DenseVector b(2), x(2);
 
@@ -64,18 +73,16 @@ double MultiscaleTransportPorosity_DPM::ComputeSoluteFlux(
 
   b(0) = wcf0 * tcc_f;
   b(1) = wcm0 * tcc_m(0);
- 
+
   A.Inverse();
   A.Multiply(b, x, false);
- 
+
   tcc_f = x(0);
   tcc_m(0) = x(1);
 
-  double tmp = (flux_liquid > 0.0) ? tcc_f : tcc_m(0); 
+  double tmp = (flux_liquid > 0.0) ? tcc_f : tcc_m(0);
   return flux_liquid * tmp + omega * (tcc_f - tcc_m(0));
 }
 
-}  // namespace Transport
-}  // namespace Amanzi
-  
-  
+} // namespace Transport
+} // namespace Amanzi

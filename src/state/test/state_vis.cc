@@ -27,9 +27,10 @@
 #include "State.hh"
 #include "Visualization.hh"
 
-SUITE(VISUALIZATION) {
-
-  TEST(VIZ_DUMP_REQUIRED) {
+SUITE(VISUALIZATION)
+{
+  TEST(VIZ_DUMP_REQUIRED)
+  {
     Teuchos::ParameterList plist;
 
     plist.set<std::string>("file name base", "visdump");
@@ -57,12 +58,10 @@ SUITE(VISUALIZATION) {
 
     // test the cycle stuff, the expected result is in cycles_ and
     // we store the computed result in cycles
-    int cycles_[31] = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int cycles_[31] = { 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     int cycles[31];
-    for (int ic = 0; ic <= 30; ic++) {
-      cycles[ic] = V.DumpRequested(ic);
-    }
+    for (int ic = 0; ic <= 30; ic++) { cycles[ic] = V.DumpRequested(ic); }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
 
     // test the time sps stuff
@@ -79,7 +78,8 @@ SUITE(VISUALIZATION) {
     CHECK_EQUAL(false, V.DumpRequested(10.0));
   }
 
-  TEST(DUMP_MESH_AND_DATA) {
+  TEST(DUMP_MESH_AND_DATA)
+  {
     // here we just check that the code does not crash when
     // the mesh and data files are written
     Teuchos::ParameterList plist;
@@ -105,18 +105,17 @@ SUITE(VISUALIZATION) {
     Amanzi::State S0(state_list);
 
     S0.RegisterMesh("domain", Mesh);
-    S0.Require<Amanzi::CompositeVector, Amanzi::CompositeVectorSpace>(
-          "celldata", Amanzi::Tags::DEFAULT)
-        .SetMesh(Mesh)
-        ->SetGhosted(false)
-        ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
+    S0.Require<Amanzi::CompositeVector, Amanzi::CompositeVectorSpace>("celldata",
+                                                                      Amanzi::Tags::DEFAULT)
+      .SetMesh(Mesh)
+      ->SetGhosted(false)
+      ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
     S0.Setup();
     S0.InitializeFields();
 
     S0.set_time(1.02);
 
-    Teuchos::ParameterList visualization_list =
-        plist.get<Teuchos::ParameterList>("visualization");
+    Teuchos::ParameterList visualization_list = plist.get<Teuchos::ParameterList>("visualization");
     Amanzi::Visualization V(visualization_list);
     V.set_mesh(Mesh);
     V.CreateFiles();

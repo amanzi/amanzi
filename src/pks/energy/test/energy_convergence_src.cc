@@ -43,35 +43,33 @@ namespace Amanzi {
 
 class TestEnthalpyEvaluator : public EnthalpyEvaluator {
  public:
-  explicit TestEnthalpyEvaluator(Teuchos::ParameterList& plist) :
-      EnthalpyEvaluator(plist) {};
+  explicit TestEnthalpyEvaluator(Teuchos::ParameterList& plist) : EnthalpyEvaluator(plist){};
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new TestEnthalpyEvaluator(*this));
   }
 
   // Required methods from SecondaryVariableFieldEvaluator
-  virtual void Evaluate_(
-          const State& S, const std::vector<CompositeVector*>& results) override {
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override
+  {
     for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
       const auto& temp_c = *S.Get<CompositeVector>("temperature").ViewComponent(*comp);
       auto& result_c = *results[0]->ViewComponent(*comp);
       int ncomp = results[0]->size(*comp, false);
-      for (int i = 0; i != ncomp; ++i) {
-        result_c[0][i] = temp_c[0][i];
-      }
+      for (int i = 0; i != ncomp; ++i) { result_c[0][i] = temp_c[0][i]; }
     }
   }
 
-  virtual void EvaluatePartialDerivative_(
-          const State& S, const Key& wrt_key, const Tag& wrt_tag,
-          const std::vector<CompositeVector*>& results) override {
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override
+  {
     for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
       auto& result_c = *results[0]->ViewComponent(*comp);
       int ncomp = results[0]->size(*comp, false);
-      for (int i = 0; i != ncomp; ++i) {
-        result_c[0][i] = 1.0;
-      }
+      for (int i = 0; i != ncomp; ++i) { result_c[0][i] = 1.0; }
     }
   }
 
@@ -79,13 +77,14 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
   double EvaluateFieldSingle(const Teuchos::Ptr<State>& S, int c, double T) { return 0.0; }
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 
-TEST(ENERGY_CONVERGENCE_SRC) {
+TEST(ENERGY_CONVERGENCE_SRC)
+{
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout <<"Convergence analysis on three random meshes" << std::endl;
+  if (MyPID == 0) std::cout << "Convergence analysis on three random meshes" << std::endl;
 
   std::string xmlFileName = "test/energy_convergence_src.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
@@ -102,13 +101,13 @@ TEST(ENERGY_CONVERGENCE_SRC) {
 
     Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
-    
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+
     Preference pref;
     pref.clear();
     pref.push_back(Framework::MSTK);
 
-    MeshFactory meshfactory(comm,gm);
+    MeshFactory meshfactory(comm, gm);
     meshfactory.set_preference(pref);
     Teuchos::RCP<const Mesh> mesh;
     if (n == 0) {
@@ -129,22 +128,25 @@ TEST(ENERGY_CONVERGENCE_SRC) {
 
     Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("energy");
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-    Teuchos::RCP<EnergyOnePhase_PK> EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
+    Teuchos::RCP<EnergyOnePhase_PK> EPK =
+      Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
 
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;
     ev_list.set<std::string>("enthalpy key", "enthalpy")
-           .set<bool>("include work term", false)
-           .set<std::string>("tag", "");
+      .set<bool>("include work term", false)
+      .set<std::string>("tag", "");
     ev_list.setName("enthalpy");
 
     S->Require<CompositeVector, CompositeVectorSpace>("enthalpy", Tags::DEFAULT, "enthalpy")
-      .SetMesh(mesh)->SetGhosted()
+      .SetMesh(mesh)
+      ->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
     S->RequireDerivative<CompositeVector, CompositeVectorSpace>(
-        "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy").SetGhosted();
+       "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy")
+      .SetGhosted();
 
     auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
     S->SetEvaluator("enthalpy", Tags::DEFAULT, enthalpy);
@@ -156,8 +158,8 @@ TEST(ENERGY_CONVERGENCE_SRC) {
 
     EPK->Initialize();
     S->CheckAllFieldsInitialized();
-       
-    // constant time stepping 
+
+    // constant time stepping
     std::string passwd("");
     int itrs(0);
     double t(0.0), t1(100), dt_next;
@@ -177,8 +179,9 @@ TEST(ENERGY_CONVERGENCE_SRC) {
       EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
       CHECK(dt_next >= dt);
       EPK->bdf1_dae()->CommitSolution(dt, soln);
-      Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
-          S->GetEvaluatorPtr("temperature", Tags::DEFAULT))->SetChanged();
+      Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
+        S->GetEvaluatorPtr("temperature", Tags::DEFAULT))
+        ->SetChanged();
 
       t += dt;
       itrs++;
@@ -186,12 +189,12 @@ TEST(ENERGY_CONVERGENCE_SRC) {
 
     EPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
-    
+
     // calculate errors
     auto temp = S->GetPtr<CompositeVector>("temperature", Tags::DEFAULT);
     Analytic00 ana(temp, mesh);
 
-    double l2_norm, l2_err, inf_err;  // error checks
+    double l2_norm, l2_err, inf_err; // error checks
     ana.ComputeCellError(*temp->ViewComponent("cell"), t1, l2_norm, l2_err, inf_err);
 
     h.push_back(1.0 / nx);
@@ -200,19 +203,17 @@ TEST(ENERGY_CONVERGENCE_SRC) {
     printf("mesh=%d bdf1_steps=%3d  L2_temp_err=%7.3e L2_temp=%7.3e\n", n, itrs, l2_err, l2_norm);
     CHECK(l2_err < 8e-1);
     //WriteStateStatistics(*S, *vo_);
-    
+
     // save solution
-    GMV::open_data_file(*mesh, (std::string)"energy.gmv");
+    GMV::open_data_file(*mesh, (std::string) "energy.gmv");
     GMV::start_data();
     GMV::write_cell_data(*temp->ViewComponent("cell"), 0, "temperature");
     GMV::close_data_file();
   }
 
-  
+
   // check convergence rate
   double l2_rate = Amanzi::Utils::bestLSfit(h, error);
   printf("convergence rate: %10.2f\n", l2_rate);
   CHECK(l2_rate > 0.91);
 }
-
-

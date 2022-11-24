@@ -23,16 +23,18 @@ namespace AmanziGeometry {
 
 class TensorSimple {
  public:
-  TensorSimple() { 
-    d_ = 0; 
+  TensorSimple()
+  {
+    d_ = 0;
     for (int i = 0; i < 9; ++i) data_[i] = 0.0;
   }
-  ~TensorSimple() {};
+  ~TensorSimple(){};
 
   // primary members
   void set(int d) { d_ = d; }
 
-  void Inverse() {
+  void Inverse()
+  {
     if (d_ == 2) {
       double det = data_[0] * data_[3] - data_[1] * data_[2];
 
@@ -46,27 +48,25 @@ class TensorSimple {
       double det, copy[9];
       for (int i = 0; i < 9; ++i) copy[i] = data_[i];
 
-      det = data_[0] * data_[4] * data_[8] 
-          + data_[2] * data_[3] * data_[7] 
-          + data_[1] * data_[5] * data_[6] 
-          - data_[2] * data_[4] * data_[6] 
-          - data_[1] * data_[3] * data_[8] 
-          - data_[0] * data_[5] * data_[7]; 
+      det = data_[0] * data_[4] * data_[8] + data_[2] * data_[3] * data_[7] +
+            data_[1] * data_[5] * data_[6] - data_[2] * data_[4] * data_[6] -
+            data_[1] * data_[3] * data_[8] - data_[0] * data_[5] * data_[7];
 
-      data_[0] = (copy[4] * copy[8] - copy[5] * copy[7]) / det; 
-      data_[1] = (copy[2] * copy[7] - copy[1] * copy[8]) / det; 
-      data_[2] = (copy[1] * copy[5] - copy[2] * copy[4]) / det; 
-      data_[3] = (copy[5] * copy[6] - copy[3] * copy[8]) / det; 
-      data_[4] = (copy[0] * copy[8] - copy[2] * copy[6]) / det; 
-      data_[5] = (copy[2] * copy[3] - copy[0] * copy[5]) / det; 
-      data_[6] = (copy[3] * copy[7] - copy[4] * copy[6]) / det; 
-      data_[7] = (copy[1] * copy[6] - copy[0] * copy[7]) / det; 
-      data_[8] = (copy[0] * copy[4] - copy[1] * copy[4]) / det; 
+      data_[0] = (copy[4] * copy[8] - copy[5] * copy[7]) / det;
+      data_[1] = (copy[2] * copy[7] - copy[1] * copy[8]) / det;
+      data_[2] = (copy[1] * copy[5] - copy[2] * copy[4]) / det;
+      data_[3] = (copy[5] * copy[6] - copy[3] * copy[8]) / det;
+      data_[4] = (copy[0] * copy[8] - copy[2] * copy[6]) / det;
+      data_[5] = (copy[2] * copy[3] - copy[0] * copy[5]) / det;
+      data_[6] = (copy[3] * copy[7] - copy[4] * copy[6]) / det;
+      data_[7] = (copy[1] * copy[6] - copy[0] * copy[7]) / det;
+      data_[8] = (copy[0] * copy[4] - copy[1] * copy[4]) / det;
     }
   }
 
   // elementary operators
-  friend Point operator*(const TensorSimple& T, const Point& p) {
+  friend Point operator*(const TensorSimple& T, const Point& p)
+  {
     int d = p.dim();
     const double* data = &T(0, 0);
     Point p2(d);
@@ -86,7 +86,8 @@ class TensorSimple {
   const double& operator()(int i, int j) const { return data_[j * d_ + i]; }
 
   // I/O
-  friend std::ostream& operator<<(std::ostream& os, const TensorSimple& T) {
+  friend std::ostream& operator<<(std::ostream& os, const TensorSimple& T)
+  {
     int d = T.dim();
     for (int i = 0; i < d; i++) {
       for (int j = 0; j < d; j++) os << T(i, j) << " ";
@@ -94,13 +95,13 @@ class TensorSimple {
     }
     return os;
   }
- 
+
  private:
   int d_;
   double data_[9];
 };
 
-}  // namespace AmanziGeometry
-}  // namespace Amanzi
+} // namespace AmanziGeometry
+} // namespace Amanzi
 
 #endif

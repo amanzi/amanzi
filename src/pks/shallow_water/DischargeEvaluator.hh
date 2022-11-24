@@ -24,7 +24,8 @@
 namespace Amanzi {
 namespace ShallowWater {
 
-class DischargeEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class DischargeEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   DischargeEvaluator(Teuchos::ParameterList& plist);
 
@@ -33,15 +34,16 @@ class DischargeEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Co
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
   std::string velocity_key_, ponded_depth_key_;
 };
 
-}  // namespace ShallowWater
-}  // namespace Amanzi
+} // namespace ShallowWater
+} // namespace Amanzi
 
 #endif
-

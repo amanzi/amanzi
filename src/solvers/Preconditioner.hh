@@ -20,10 +20,7 @@ class Epetra_Map;
 namespace Amanzi {
 namespace AmanziSolvers {
 
-using Preconditioner = Inverse<Epetra_CrsMatrix,
-                               Epetra_CrsMatrix,
-                               Epetra_Vector,
-                               Epetra_Map>;
+using Preconditioner = Inverse<Epetra_CrsMatrix, Epetra_CrsMatrix, Epetra_Vector, Epetra_Map>;
 
 } // namespace AmanziSolvers
 } // namespace Amanzi

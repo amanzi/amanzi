@@ -25,14 +25,18 @@
 #include "Point.hh"
 
 typedef nanoflann::KDTreeSingleIndexAdaptor<
-    nanoflann::L2_Adaptor<double, Amanzi::AmanziMesh::PointCloud>,
-    Amanzi::AmanziMesh::PointCloud, -1, size_t> MyKDTree;
+  nanoflann::L2_Adaptor<double, Amanzi::AmanziMesh::PointCloud>,
+  Amanzi::AmanziMesh::PointCloud,
+  -1,
+  size_t>
+  MyKDTree;
 
-TEST(NANOFLANN) {
+TEST(NANOFLANN)
+{
   // generate points
   int d(2), n(10);
   double range(1.0);
-  double query_pt[2] = {0.5, 0.5};
+  double query_pt[2] = { 0.5, 0.5 };
   Amanzi::AmanziGeometry::Point p(0.5, 0.5);
 
   std::vector<Amanzi::AmanziGeometry::Point> points;
@@ -62,7 +66,7 @@ TEST(NANOFLANN) {
   std::vector<double> dist_sqr(nresults);
 
   nresults = tree.knnSearch(&query_pt[0], nresults, &idx[0], &dist_sqr[0]);
-		
+
   // In case of less points in the tree than requested:
   idx.resize(nresults);
   dist_sqr.resize(nresults);
@@ -75,16 +79,17 @@ TEST(NANOFLANN) {
     CHECK_CLOSE(dist, Amanzi::AmanziGeometry::norm(points[m] - p), 1e-14);
   }
 
-  // SEARCH 2: points is a ball 
+  // SEARCH 2: points is a ball
   double radius = 0.14;
-  std::vector<std::pair<size_t, double> > matches;
+  std::vector<std::pair<size_t, double>> matches;
 
   nanoflann::SearchParams params;
   // params.sorted = false;
 
   nresults = tree.radiusSearch(&query_pt[0], radius, matches, params);
 
-  std::cout << "\nSearch results: radius=" << std::pow(radius, 0.5) << " -> " << nresults << " points inside\n";
+  std::cout << "\nSearch results: radius=" << std::pow(radius, 0.5) << " -> " << nresults
+            << " points inside\n";
   for (int i = 0; i < nresults; ++i) {
     int m = matches[i].first;
     double dist = std::pow(matches[i].second, 0.5);

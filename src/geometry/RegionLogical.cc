@@ -60,7 +60,8 @@ RegionLogical::RegionLogical(const std::string& name,
 bool
 RegionLogical::inside(const Point& p) const
 {
-  Errors::Message mesg("In/out check not implemented for logical regions because the check may not be implemented for one of its component regions");
+  Errors::Message mesg("In/out check not implemented for logical regions because the check may not "
+                       "be implemented for one of its component regions");
   Exceptions::amanzi_throw(mesg);
   return false;
 }

@@ -26,10 +26,11 @@ namespace AmanziChemistry {
 * NOTE: Reactants and products have negative and positive 
 * stoichiometries, respectively.
 ******************************************************************* */
-void ParseReaction(const std::string& reactants,
-                   const std::string& products,
-                   std::vector<std::string>* species,
-                   std::vector<double>* stoichiometries)
+void
+ParseReaction(const std::string& reactants,
+              const std::string& products,
+              std::vector<std::string>* species,
+              std::vector<double>* stoichiometries)
 {
   double coeff;
   std::string name;
@@ -64,16 +65,17 @@ void ParseReaction(const std::string& reactants,
 *
 *  SpeciesName = coeff PrimaryName coeff SurfaceSite ...
 ******************************************************************* */
-void ParseReaction(const std::string& reaction,
-                   const std::vector<Species>& primary_species,
-                   const std::vector<SurfaceSite>& surface_sites,
-                   std::vector<std::string>* primary_names,
-                   std::vector<double>* primary_stoichiometries,
-                   std::vector<int>* primary_ids,
-                   std::string* surface_site_name,
-                   double* surface_site_stoichiometry,
-                   int* surface_site_id,
-                   double* h2o_stoich)
+void
+ParseReaction(const std::string& reaction,
+              const std::vector<Species>& primary_species,
+              const std::vector<SurfaceSite>& surface_sites,
+              std::vector<std::string>* primary_names,
+              std::vector<double>* primary_stoichiometries,
+              std::vector<int>* primary_ids,
+              std::string* surface_site_name,
+              double* surface_site_stoichiometry,
+              int* surface_site_id,
+              double* h2o_stoich)
 {
   double coeff;
   std::string search_name;
@@ -123,5 +125,5 @@ void ParseReaction(const std::string& reaction,
   }
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

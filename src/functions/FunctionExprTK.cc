@@ -20,9 +20,10 @@ FunctionExprTK::FunctionExprTK(int n, const std::string& formula)
 }
 
 
-double FunctionExprTK::operator()(const std::vector<double>& args) const
+double
+FunctionExprTK::operator()(const std::vector<double>& args) const
 {
   return (*exprtk_)(args);
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

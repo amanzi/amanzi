@@ -21,7 +21,8 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 
-extern "C" {
+extern "C"
+{
 #include "silo.h"
 };
 
@@ -34,9 +35,7 @@ extern "C" {
 namespace Amanzi {
 
 class OutputSilo : public Output {
-
  public:
-
   OutputSilo(Teuchos::ParameterList& plist,
              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
              bool is_vis,
@@ -50,9 +49,11 @@ class OutputSilo : public Output {
   virtual void FinalizeCycle();
 
   // write data to file
-  virtual void WriteVector(const Epetra_Vector& vec, const std::string& name,
+  virtual void WriteVector(const Epetra_Vector& vec,
+                           const std::string& name,
                            const AmanziMesh::Entity_kind& kind) const;
-  virtual void WriteMultiVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names,
+  virtual void WriteMultiVector(const Epetra_MultiVector& vec,
+                                const std::vector<std::string>& names,
                                 const AmanziMesh::Entity_kind& kind) const;
 
   // can we template this?
@@ -61,24 +62,19 @@ class OutputSilo : public Output {
   virtual void WriteAttribute(const std::string& val, const std::string& name) const;
 
   // read data from file
-  virtual void ReadVector(Epetra_Vector& vec, const std::string& name) const {
+  virtual void ReadVector(Epetra_Vector& vec, const std::string& name) const { ReadThrowsError_(); }
+
+  virtual void ReadMultiVector(Epetra_MultiVector& vec, const std::vector<std::string>& name) const
+  {
     ReadThrowsError_();
   }
 
-  virtual void ReadMultiVector(Epetra_MultiVector& vec,
-          const std::vector<std::string>& name) const {
-    ReadThrowsError_();
-  }
+  virtual void ReadAttribute(double& val, const std::string& name) const { ReadThrowsError_(); }
 
-  virtual void ReadAttribute(double& val, const std::string& name) const {
-    ReadThrowsError_();
-  }
+  virtual void ReadAttribute(int& val, const std::string& name) const { ReadThrowsError_(); }
 
-  virtual void ReadAttribute(int& val, const std::string& name) const {
-    ReadThrowsError_();
-  }
-
-  virtual void ReadAttribute(std::string& val, const std::string& name) const {
+  virtual void ReadAttribute(std::string& val, const std::string& name) const
+  {
     ReadThrowsError_();
   }
 
@@ -90,7 +86,6 @@ class OutputSilo : public Output {
   std::string FixName_(const std::string& instring) const;
 
  protected:
-
   std::string filenamebase_;
   int count_;
   int sigfigs_;

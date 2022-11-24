@@ -21,20 +21,21 @@ namespace Flow {
 
 class PorosityModel_Constant : public PorosityModel {
  public:
-  explicit PorosityModel_Constant(Teuchos::ParameterList& plist) {
+  explicit PorosityModel_Constant(Teuchos::ParameterList& plist)
+  {
     porosity_ = plist.get<double>("value");
   }
-  ~PorosityModel_Constant() {};
-  
+  ~PorosityModel_Constant(){};
+
   // required methods from the base class
   inline double Porosity(double p) { return porosity_; }
-  inline double dPorositydPressure(double p) { return 0.0; }  
+  inline double dPorositydPressure(double p) { return 0.0; }
 
  private:
   double porosity_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
- 
+} // namespace Flow
+} // namespace Amanzi
+
 #endif

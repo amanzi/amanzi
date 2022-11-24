@@ -47,8 +47,9 @@ so if it was found useful.
 namespace Amanzi {
 
 EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
-    Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist) {
+  Teuchos::ParameterList& plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+{
   FunctionFactory fac;
   if (plist.isSublist("functions")) {
     auto& flist = plist.sublist("functions");
@@ -69,8 +70,9 @@ EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
 
 
 EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
-    const EvaluatorSecondaryMonotypeFromFunction& other)
-    : EvaluatorSecondaryMonotype(other) {
+  const EvaluatorSecondaryMonotypeFromFunction& other)
+  : EvaluatorSecondaryMonotype(other)
+{
   // for (const auto& fp : other.funcs_) {
   //   funcs_.emplace_back(fp->Clone());
   // }
@@ -78,15 +80,17 @@ EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
 }
 
 
-Teuchos::RCP<Evaluator> EvaluatorSecondaryMonotypeFromFunction::Clone() const
+Teuchos::RCP<Evaluator>
+EvaluatorSecondaryMonotypeFromFunction::Clone() const
 {
   return Teuchos::rcp(new EvaluatorSecondaryMonotypeFromFunction(*this));
 }
 
 
 // These do the actual work
-void EvaluatorSecondaryMonotypeFromFunction::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+EvaluatorSecondaryMonotypeFromFunction::Evaluate_(const State& S,
+                                                  const std::vector<CompositeVector*>& results)
 {
   int ndeps = dependencies_.size();
   std::vector<Teuchos::Ptr<const CompositeVector>> deps;
@@ -96,9 +100,7 @@ void EvaluatorSecondaryMonotypeFromFunction::Evaluate_(
 
   for (auto comp : *results[0]) {
     std::vector<Teuchos::Ptr<const Epetra_MultiVector>> dep_vecs;
-    for (const auto& dep : deps) {
-      dep_vecs.emplace_back(dep->ViewComponent(comp, false).ptr());
-    }
+    for (const auto& dep : deps) { dep_vecs.emplace_back(dep->ViewComponent(comp, false).ptr()); }
 
     std::vector<Teuchos::Ptr<Epetra_MultiVector>> result_vecs;
     for (auto& result : results) {
@@ -107,11 +109,9 @@ void EvaluatorSecondaryMonotypeFromFunction::Evaluate_(
 
     for (int i = 0; i != result_vecs[0]->MyLength(); ++i) {
       std::vector<double> p(ndeps);
-      for (int j = 0; j != ndeps; ++j)
-        p[j] = (*dep_vecs[j])[0][i];
+      for (int j = 0; j != ndeps; ++j) p[j] = (*dep_vecs[j])[0][i];
 
-      for (int k = 0; k != funcs_.size(); ++k)
-        (*result_vecs[k])[0][i] = (*funcs_[k])(p);
+      for (int k = 0; k != funcs_.size(); ++k) (*result_vecs[k])[0][i] = (*funcs_[k])(p);
     }
   }
 }

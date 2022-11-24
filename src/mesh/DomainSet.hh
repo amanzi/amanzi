@@ -45,7 +45,6 @@ namespace AmanziMesh {
 //
 class DomainSet {
  public:
-
   // this constructor is for domain sets indexed by an entity + regions
   // (e.g. one for each entity in that collection of regions)
   DomainSet(const std::string& name,
@@ -69,9 +68,11 @@ class DomainSet {
   Teuchos::RCP<const Mesh> get_referencing_parent() const { return referencing_parent_; }
 
   // exporters and maps to/from the parent
-  const std::vector<int>& get_subdomain_map(const std::string& subdomain) const {
+  const std::vector<int>& get_subdomain_map(const std::string& subdomain) const
+  {
     if (maps_.size() == 0) {
-      Errors::Message msg("DomainSet: subdomain map was requested, but no reference maps were created on construction.");
+      Errors::Message msg("DomainSet: subdomain map was requested, but no reference maps were "
+                          "created on construction.");
       Exceptions::amanzi_throw(msg);
     } else if (!maps_.count(subdomain)) {
       Errors::Message msg("DomainSet: subdomain map \"");
@@ -80,16 +81,20 @@ class DomainSet {
     }
     return *maps_.at(subdomain);
   }
-  void set_subdomain_map(const std::string& subdomain,
-                         const Teuchos::RCP<const std::vector<int>>& map) {
+  void
+  set_subdomain_map(const std::string& subdomain, const Teuchos::RCP<const std::vector<int>>& map)
+  {
     maps_[subdomain] = map;
   }
-  const std::map<std::string, Teuchos::RCP<const std::vector<int>>>&
-  get_subdomain_maps() const { return maps_; }
+  const std::map<std::string, Teuchos::RCP<const std::vector<int>>>& get_subdomain_maps() const
+  {
+    return maps_;
+  }
 
   // import from subdomain to parent domain
   void DoImport(const std::string& subdomain,
-                const Epetra_MultiVector& src, Epetra_MultiVector& target) const;
+                const Epetra_MultiVector& src,
+                Epetra_MultiVector& target) const;
 
   // import from subdomains to parent domain
   void DoImport(const std::vector<const Epetra_MultiVector*>& subdomains,
@@ -97,10 +102,11 @@ class DomainSet {
 
   // import from parent domain to subdomain
   void DoExport(const std::string& subdomain,
-                const Epetra_MultiVector& src, Epetra_MultiVector& target) const;
+                const Epetra_MultiVector& src,
+                Epetra_MultiVector& target) const;
   // import from parent domain to subdomains
-  void DoExport(const Epetra_MultiVector& src,
-                const std::vector<Epetra_MultiVector*>& targets) const;
+  void
+  DoExport(const Epetra_MultiVector& src, const std::vector<Epetra_MultiVector*>& targets) const;
 
  protected:
   std::string name_;
@@ -117,7 +123,7 @@ class DomainSet {
 // Creates an importer from an extracted mesh entity to its parent entities.
 Teuchos::RCP<const std::vector<int>>
 createMapToParent(const AmanziMesh::Mesh& subdomain_mesh,
-                  const AmanziMesh::Entity_kind& src_kind=AmanziMesh::Entity_kind::CELL);
+                  const AmanziMesh::Entity_kind& src_kind = AmanziMesh::Entity_kind::CELL);
 
 //
 // Creates an importer from a surface mesh lifted from an extracted subdomain
@@ -125,7 +131,7 @@ createMapToParent(const AmanziMesh::Mesh& subdomain_mesh,
 // subdomain's parent mesh).
 Teuchos::RCP<const std::vector<int>>
 createMapSurfaceToSurface(const AmanziMesh::Mesh& subdomain_mesh,
-        const AmanziMesh::Mesh& parent_mesh);
+                          const AmanziMesh::Mesh& parent_mesh);
 
 } // namespace AmanziMesh
 } // namespace Amanzi

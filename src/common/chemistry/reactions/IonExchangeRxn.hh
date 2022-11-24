@@ -30,7 +30,7 @@ class IonExchangeRxn {
   IonExchangeRxn(IonExchangeSite* ionx_sites,
                  const std::vector<IonExchangeComplex>& ionx_complexes);
   explicit IonExchangeRxn(IonExchangeSite ionx_sites);
-  ~IonExchangeRxn() {};
+  ~IonExchangeRxn(){};
 
   // add complexes to the reaction
   void AddIonExchangeComplex(const IonExchangeComplex& complex);
@@ -40,10 +40,9 @@ class IonExchangeRxn {
   void Update(const std::vector<Species>& primary_species);
 
   // add stoichiometric contribution of complex to sorbed total
-  void AddContributionToTotal(std::vector<double> *total);
+  void AddContributionToTotal(std::vector<double>* total);
   // add derivative of total with respect to free-ion to sorbed dtotal
-  void AddContributionToDTotal(const std::vector<Species>& primary_species,
-                               MatrixBlock* dtotal);
+  void AddContributionToDTotal(const std::vector<Species>& primary_species, MatrixBlock* dtotal);
 
   void CheckUniformZ(const std::vector<Species>& primary_species);
 
@@ -68,6 +67,6 @@ class IonExchangeRxn {
   double ref_cation_sorbed_conc_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

@@ -26,7 +26,8 @@ namespace Operators {
 /* ******************************************************************
 * Public init method. It is not yet used.
 ****************************************************************** */
-void UpwindFlux::Init(Teuchos::ParameterList& plist)
+void
+UpwindFlux::Init(Teuchos::ParameterList& plist)
 {
   method_ = Operators::OPERATOR_UPWIND_FLUX;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
@@ -38,9 +39,11 @@ void UpwindFlux::Init(Teuchos::ParameterList& plist)
 * Upwind field uses flux. The result is placed in field.
 * Upwinded field must be calculated on all faces of the owned cells.
 ****************************************************************** */
-void UpwindFlux::Compute(
-    const CompositeVector& flux, const CompositeVector& solution,
-    const std::vector<int>& bc_model, CompositeVector& field)
+void
+UpwindFlux::Compute(const CompositeVector& flux,
+                    const CompositeVector& solution,
+                    const std::vector<int>& bc_model,
+                    CompositeVector& field)
 {
   AMANZI_ASSERT(field.HasComponent("cell"));
   AMANZI_ASSERT(field.HasComponent(face_comp_));
@@ -78,33 +81,33 @@ void UpwindFlux::Compute(
     kc1 = field_c[0][c1];
 
     mesh_->face_normal(f, false, c1, &dir);
-    bool flag = (flux_f[0][g] * dir <= -tol);  // upwind flag
+    bool flag = (flux_f[0][g] * dir <= -tol); // upwind flag
 
     // average field on almost vertical faces
-    if (ncells == 2 && ndofs == 1) { 
+    if (ncells == 2 && ndofs == 1) {
       c2 = cells[1];
       kc2 = field_c[0][c2];
 
-      if (fabs(flux_f[0][g]) <= tol) { 
+      if (fabs(flux_f[0][g]) <= tol) {
         double v1 = mesh_->cell_volume(c1);
         double v2 = mesh_->cell_volume(c2);
 
         double tmp = v2 / (v1 + v2);
-        field_f[0][g] = kc1 * tmp + kc2 * (1.0 - tmp); 
+        field_f[0][g] = kc1 * tmp + kc2 * (1.0 - tmp);
       } else {
-        field_f[0][g] = (flag) ? kc2 : kc1; 
+        field_f[0][g] = (flag) ? kc2 : kc1;
       }
 
-    // copy cell value on fractures
-    } else if (ncells == 2 && ndofs == 2) { 
+      // copy cell value on fractures
+    } else if (ncells == 2 && ndofs == 2) {
       c2 = cells[1];
       kc2 = field_c[0][c2];
 
-      int k = UniqueIndexFaceToCells(*mesh_, f, c1); 
-      field_f[0][g + k] = kc1; 
+      int k = UniqueIndexFaceToCells(*mesh_, f, c1);
+      field_f[0][g + k] = kc1;
       field_f[0][g + 1 - k] = kc2;
 
-    // upwind only on inflow dirichlet faces
+      // upwind only on inflow dirichlet faces
     } else {
       field_f[0][g] = kc1;
       if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
@@ -115,7 +118,5 @@ void UpwindFlux::Compute(
   }
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
-
+} // namespace Operators
+} // namespace Amanzi

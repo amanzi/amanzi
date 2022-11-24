@@ -36,7 +36,9 @@
 
 #include "operator_marshak_testclass.hh"
 
-void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
+void
+RunTestMarshak(std::string op_list_name, double TemperatureFloor)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -57,8 +59,8 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
   // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 3.0, 1.0, 200, 10);
   RCP<const Mesh> mesh = meshfactory.create("test/marshak.exo");
 
@@ -66,7 +68,8 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh, TemperatureFloor));
 
   // modify diffusion coefficient
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
@@ -99,16 +102,16 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   // Create and initialize solution (temperature) field.
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   if (op_list_name == "diffusion operator Sff") {
-    cvs->SetMesh(mesh)->SetGhosted(true)
-       ->AddComponent("cell", AmanziMesh::CELL, 1)
-       ->AddComponent("face", AmanziMesh::FACE, 1);
+    cvs->SetMesh(mesh)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("face", AmanziMesh::FACE, 1);
   } else {
-    cvs->SetMesh(mesh)->SetGhosted(true)
-       ->AddComponent("cell", AmanziMesh::CELL, 1);
+    cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(*cvs));
-  solution->PutScalar(knc->TemperatureFloor);  // solution at time T=0
+  solution->PutScalar(knc->TemperatureFloor); // solution at time T=0
 
   // Create and initialize flux field.
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(knc->values()->Map()));
@@ -132,7 +135,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   double tstop = plist.get<double>("simulation time", 0.5);
   int step(0);
   double snorm(0.0);
-  
+
   double t(0.0), dt(1e-4);
   while (t < tstop) {
     solution->ScatterMasterToGhosted();
@@ -164,7 +167,8 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
     // apply BCs and assemble
     op->ApplyBCs(true, true, true);
-    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "Amanzi GMRES", plist.sublist("solvers"));
+    global_op->set_inverse_parameters(
+      "Hypre AMG", plist.sublist("preconditioners"), "Amanzi GMRES", plist.sublist("solvers"));
     global_op->InitializeInverse();
     global_op->ComputeInverse();
 
@@ -182,11 +186,16 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
     if (MyPID == 0) {
       printf("%3d  ||r||=%11.6g  itr=%2d  ||sol||=%11.6g  t=%7.4f  dt=%7.4f\n",
-          step, global_op->residual(), global_op->num_itrs(), snorm, t, dt);
+             step,
+             global_op->residual(),
+             global_op->num_itrs(),
+             snorm,
+             t,
+             dt);
     }
 
     // Change time step based on solution change.
-    // We use empiric algorithm insired by Levenberg-Marquardt 
+    // We use empiric algorithm insired by Levenberg-Marquardt
     Epetra_MultiVector sol_diff(sol_old);
     sol_diff.Update(1.0, sol_new, -1.0);
 
@@ -227,7 +236,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   CHECK_CLOSE(0.0, pl2_err, 0.1);
 
   if (MyPID == 0) {
-    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
+    GMV::open_data_file(*mesh, (std::string) "operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
     GMV::close_data_file();
@@ -243,8 +252,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 //   RunTestMarshak("diffusion operator nlfv", 0.02);
 // }
 
-TEST(MARSHAK_NONLINEAR_WAVE_MFD) {
+TEST(MARSHAK_NONLINEAR_WAVE_MFD)
+{
   RunTestMarshak("diffusion operator Sff", 0.0);
 }
-
-

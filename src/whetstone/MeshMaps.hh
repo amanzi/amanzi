@@ -36,42 +36,39 @@ namespace WhetStone {
 
 class Polynomial;
 
-class MeshMaps { 
+class MeshMaps {
  public:
-  MeshMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh) 
-    : mesh0_(mesh),
-      mesh1_(mesh),
-      d_(mesh1_->space_dimension()) {};
+  MeshMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : mesh0_(mesh), mesh1_(mesh), d_(mesh1_->space_dimension()){};
 
-  MeshMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
-           Teuchos::RCP<const AmanziMesh::Mesh> mesh1) 
-    : mesh0_(mesh0),
-      mesh1_(mesh1),
-      d_(mesh1_->space_dimension()) {};
+  MeshMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh0, Teuchos::RCP<const AmanziMesh::Mesh> mesh1)
+    : mesh0_(mesh0), mesh1_(mesh1), d_(mesh1_->space_dimension()){};
 
-  virtual ~MeshMaps() {};
+  virtual ~MeshMaps(){};
 
   // Maps
   // -- pseudo-velocity
   virtual void VelocityEdge(int e, VectorPolynomial& ve) const;
   virtual void VelocityFace(int f, VectorPolynomial& vf) const;
-  virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& ve,
-		            const std::vector<VectorPolynomial>& vf,
+  virtual void VelocityCell(int c,
+                            const std::vector<VectorPolynomial>& ve,
+                            const std::vector<VectorPolynomial>& vf,
                             VectorPolynomial& vc) const = 0;
 
   // -- Nanson formula. Face deformation is defined completely by the
   //    deformation map in this formula: X = x + map(x)
-  void NansonFormula(int f, const VectorSpaceTimePolynomial& map, VectorSpaceTimePolynomial& cn) const;
+  void
+  NansonFormula(int f, const VectorSpaceTimePolynomial& map, VectorSpaceTimePolynomial& cn) const;
 
-  // -- Jacobian 
+  // -- Jacobian
   void Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const;
 
   // -- matrix of cofactors
-  template<typename Matrix>
+  template <typename Matrix>
   void Cofactors(const Matrix& J, Matrix& C) const;
 
   // -- determinant
-  template<typename Matrix, typename Vector>
+  template <typename Matrix, typename Vector>
   void Determinant(const Matrix& J, Vector& det) const;
 
   // Miscalleneous
@@ -80,13 +77,13 @@ class MeshMaps {
 
   // -- polynomial approximation of map x2 = F(x1)
   int LeastSquareFit(int order,
-                     const std::vector<AmanziGeometry::Point>& x1, 
+                     const std::vector<AmanziGeometry::Point>& x1,
                      const std::vector<AmanziGeometry::Point>& x2,
                      VectorPolynomial& u) const;
 
  protected:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;  // initial mesh 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh1_;  // target mesh
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh0_; // initial mesh
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh1_; // target mesh
   int d_;
 };
 
@@ -94,8 +91,9 @@ class MeshMaps {
 /* ******************************************************************
 * Calculation of matrix of cofactors.
 ****************************************************************** */
-template<typename Matrix>
-void MeshMaps::Cofactors(const Matrix& J, Matrix& C) const
+template <typename Matrix>
+void
+MeshMaps::Cofactors(const Matrix& J, Matrix& C) const
 {
   // allocate memory for matrix of cofactors
   C.Reshape(d_, d_, d_, 0, false);
@@ -109,8 +107,7 @@ void MeshMaps::Cofactors(const Matrix& J, Matrix& C) const
     C(0, 0) = J(1, 1);
     C(0, 1) = J(1, 0);
     C(0, 1) *= -1.0;
-  }
-  else if (d_ == 3) {
+  } else if (d_ == 3) {
     C(0, 0) = J(1, 1) * J(2, 2) - J(2, 1) * J(1, 2);
     C(1, 0) = J(2, 1) * J(0, 2) - J(0, 1) * J(2, 2);
     C(2, 0) = J(0, 1) * J(1, 2) - J(1, 1) * J(0, 2);
@@ -129,24 +126,19 @@ void MeshMaps::Cofactors(const Matrix& J, Matrix& C) const
 /* ******************************************************************
 * Calculate detminant of a matrix.
 ****************************************************************** */
-template<typename Matrix, typename Poly>
-void MeshMaps::Determinant(const Matrix& J, Poly& det) const
+template <typename Matrix, typename Poly>
+void
+MeshMaps::Determinant(const Matrix& J, Poly& det) const
 {
   if (d_ == 2) {
     det = J(0, 0) * J(1, 1) - J(0, 1) * J(1, 0);
-  }
-  else if (d_ == 3) {
-    det = J(0, 0) * J(1, 1) * J(2, 2) 
-        + J(2, 0) * J(0, 1) * J(1, 2) 
-        + J(1, 0) * J(2, 1) * J(0, 2) 
-        - J(2, 0) * J(1, 1) * J(0, 2) 
-        - J(1, 0) * J(0, 1) * J(2, 2) 
-        - J(0, 0) * J(2, 1) * J(1, 2); 
+  } else if (d_ == 3) {
+    det = J(0, 0) * J(1, 1) * J(2, 2) + J(2, 0) * J(0, 1) * J(1, 2) + J(1, 0) * J(2, 1) * J(0, 2) -
+          J(2, 0) * J(1, 1) * J(0, 2) - J(1, 0) * J(0, 1) * J(2, 2) - J(0, 0) * J(2, 1) * J(1, 2);
   }
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

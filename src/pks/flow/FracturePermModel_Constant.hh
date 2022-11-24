@@ -23,11 +23,12 @@ namespace Flow {
 
 class FracturePermModel_Constant : public FracturePermModel {
  public:
-  explicit FracturePermModel_Constant(Teuchos::ParameterList& plist) {
+  explicit FracturePermModel_Constant(Teuchos::ParameterList& plist)
+  {
     value_ = plist.get<double>("value");
   }
-  ~FracturePermModel_Constant() {};
-  
+  ~FracturePermModel_Constant(){};
+
   // required methods from the base class
   inline double Permeability(double aperture) { return value_; }
 
@@ -35,7 +36,7 @@ class FracturePermModel_Constant : public FracturePermModel {
   double value_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
- 
+} // namespace Flow
+} // namespace Amanzi
+
 #endif

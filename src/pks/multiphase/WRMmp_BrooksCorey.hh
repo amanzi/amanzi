@@ -27,8 +27,8 @@ namespace Multiphase {
 class WRMmp_BrooksCorey : public WRMmp {
  public:
   WRMmp_BrooksCorey(Teuchos::ParameterList& plist);
-  ~WRMmp_BrooksCorey() {};
-  
+  ~WRMmp_BrooksCorey(){};
+
   // required methods from the base class
   virtual double k_relative(double Sw, int phase);
   virtual double capillaryPressure(double saturation);
@@ -44,7 +44,7 @@ class WRMmp_BrooksCorey : public WRMmp {
   static Utils::RegisteredFactory<WRMmp, WRMmp_BrooksCorey> factory_;
 };
 
-}  // namespace Multiphase
-}  // namespace Amanzi
- 
+} // namespace Multiphase
+} // namespace Amanzi
+
 #endif

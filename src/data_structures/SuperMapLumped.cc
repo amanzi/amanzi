@@ -23,17 +23,17 @@ namespace Amanzi {
 namespace Operators {
 
 SuperMapLumped::SuperMapLumped(const Comm_ptr_type& comm,
-                   const std::vector<std::string>& compnames,
-                   const std::vector<int>& dofnums,
-                   const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
-                   const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& ghosted_maps) :
-    compnames_(compnames)
+                               const std::vector<std::string>& compnames,
+                               const std::vector<int>& dofnums,
+                               const std::vector<Teuchos::RCP<const Epetra_BlockMap>>& maps,
+                               const std::vector<Teuchos::RCP<const Epetra_BlockMap>>& ghosted_maps)
+  : compnames_(compnames)
 {
   AMANZI_ASSERT(compnames.size() == dofnums.size());
   AMANZI_ASSERT(compnames.size() == maps.size());
   AMANZI_ASSERT(compnames.size() == ghosted_maps.size());
 
-  for (int i=0; i!=compnames.size(); ++i) {
+  for (int i = 0; i != compnames.size(); ++i) {
     comp_maps_[compnames[i]] = maps[i];
     comp_ghosted_maps_[compnames[i]] = ghosted_maps[i];
     num_dofs_[compnames[i]] = dofnums[i];
@@ -54,14 +54,14 @@ SuperMapLumped::CreateIndexing_()
     counts_[compname] = comp_maps_[compname]->NumMyPoints();
     ghosted_counts_[compname] = comp_ghosted_maps_[compname]->NumMyPoints() - counts_[compname];
     offsets_[compname] = offset;
-    offset += num_dofs_[compname]*counts_[compname];
+    offset += num_dofs_[compname] * counts_[compname];
   }
   n_local_ = offset;
 
   // fill the ghosted offsets
   for (const auto& compname : compnames_) {
     ghosted_offsets_[compname] = offset;
-    offset += num_dofs_[compname]*ghosted_counts_[compname];
+    offset += num_dofs_[compname] * ghosted_counts_[compname];
   }
   n_local_ghosted_ = offset;
 }
@@ -91,7 +91,7 @@ SuperMapLumped::CreateMap_(const Comm_ptr_type& comm)
 
   // -- construct
   map_ = Teuchos::rcp(new Epetra_Map(n_global, n_local_, 0, *comm));
-  
+
   // create the ghosted map via communication using the provided BlockMaps
   //
   // We need to know the ghost GIDs of the SuperMapLumped, but the connections must
@@ -117,9 +117,9 @@ SuperMapLumped::CreateMap_(const Comm_ptr_type& comm)
     Epetra_IntVector owned_gids_c(comp_map);
     Epetra_IntVector ghosted_gids_c(comp_ghosted_map);
 
-    for (int j=0; j!=n_dofs; ++j) {
+    for (int j = 0; j != n_dofs; ++j) {
       const auto& owned_lids = CreateIndices_(compname, j, false);
-      for (int k=0; k!=owned_gids_c.MyLength(); ++k) {
+      for (int k = 0; k != owned_gids_c.MyLength(); ++k) {
         owned_gids_c[k] = map_->GID(owned_lids[k]);
       }
 
@@ -128,7 +128,7 @@ SuperMapLumped::CreateMap_(const Comm_ptr_type& comm)
 
       // gids for the ghosted supermap
       const auto& ghosted_inds = CreateIndices_(compname, j, true);
-      for (int k=0; k!=ghosted_gids_c.MyLength(); ++k) {
+      for (int k = 0; k != ghosted_gids_c.MyLength(); ++k) {
         ghosted_gids[ghosted_inds[k]] = ghosted_gids_c[k];
       }
     }
@@ -140,53 +140,53 @@ SuperMapLumped::CreateMap_(const Comm_ptr_type& comm)
   }
 
   // -- construct
-  ghosted_map_ = Teuchos::rcp(new Epetra_Map(n_global_ghosted, n_local_ghosted_, ghosted_gids.data(), 0, *comm));
+  ghosted_map_ =
+    Teuchos::rcp(new Epetra_Map(n_global_ghosted, n_local_ghosted_, ghosted_gids.data(), 0, *comm));
 }
 
 
-
-bool SuperMapLumped::HasComponent(const std::string& key) const {
-  std::map<std::string,int>::const_iterator lb = offsets_.lower_bound(key);
+bool
+SuperMapLumped::HasComponent(const std::string& key) const
+{
+  std::map<std::string, int>::const_iterator lb = offsets_.lower_bound(key);
   if (lb != offsets_.end() && !(offsets_.key_comp()(key, lb->first))) {
     return true;
   } else {
     return false;
   }
 }
-  
+
 
 const std::vector<int>&
-SuperMapLumped::Indices(const std::string& compname, int dofnum) const {
-  
+SuperMapLumped::Indices(const std::string& compname, int dofnum) const
+{
   if (indices_.count(compname)) {
-    if (indices_[compname].count(dofnum)) {
-      return indices_[compname][dofnum];
-    }
+    if (indices_[compname].count(dofnum)) { return indices_[compname][dofnum]; }
   }
   return CreateIndices_(compname, dofnum, false);
 }
 
 
 const std::vector<int>&
-SuperMapLumped::GhostIndices(const std::string& compname, int dofnum) const {
+SuperMapLumped::GhostIndices(const std::string& compname, int dofnum) const
+{
   if (ghosted_indices_.count(compname)) {
-    if (ghosted_indices_[compname].count(dofnum)) {
-      return ghosted_indices_[compname][dofnum];
-    }
+    if (ghosted_indices_[compname].count(dofnum)) { return ghosted_indices_[compname][dofnum]; }
   }
   return CreateIndices_(compname, dofnum, true);
 }
 
 
-std::pair<int, Teuchos::RCP<std::vector<int> > >
-SuperMapLumped::BlockIndices() const {
+std::pair<int, Teuchos::RCP<std::vector<int>>>
+SuperMapLumped::BlockIndices() const
+{
   auto block_indices = Teuchos::rcp(new std::vector<int>(Map()->NumMyElements()));
   int block_id = 0;
   for (const auto& comp : *this) {
     int ndofs = NumDofs(comp);
-    for (int d=0; d!=ndofs; ++d) {
+    for (int d = 0; d != ndofs; ++d) {
       const auto& inds = Indices(comp, d);
-      for (int i=0; i!=inds.size(); ++i) (*block_indices)[inds[i]] = block_id;
+      for (int i = 0; i != inds.size(); ++i) (*block_indices)[inds[i]] = block_id;
       block_id++;
     }
   }
@@ -195,11 +195,10 @@ SuperMapLumped::BlockIndices() const {
 
 
 const std::vector<int>&
-SuperMapLumped::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const {
+SuperMapLumped::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const
+{
   if (ghosted) {
-    if (ghosted_indices_.count(compname) == 0) {
-      ghosted_indices_[compname];
-    }
+    if (ghosted_indices_.count(compname) == 0) { ghosted_indices_[compname]; }
 
     // create the vector
     int nentities_owned = counts_.at(compname);
@@ -208,13 +207,11 @@ SuperMapLumped::CreateIndices_(const std::string& compname, int dofnum, bool gho
     std::vector<int> indices(nentities, -1);
     int offset = offsets_.at(compname);
     int num_dof = num_dofs_.at(compname);
-    for (int i=0; i!=nentities_owned; ++i) {
-      indices[i] = offset + dofnum + i*num_dof;
-    }
+    for (int i = 0; i != nentities_owned; ++i) { indices[i] = offset + dofnum + i * num_dof; }
 
     int ghosted_offset = ghosted_offsets_.at(compname);
-    for (int i=nentities_owned; i!=nentities; ++i) {
-      indices[i] = ghosted_offset + dofnum + (i-nentities_owned)*num_dof;
+    for (int i = nentities_owned; i != nentities; ++i) {
+      indices[i] = ghosted_offset + dofnum + (i - nentities_owned) * num_dof;
     }
 
     // move-assign, indices is no longer valid
@@ -222,9 +219,7 @@ SuperMapLumped::CreateIndices_(const std::string& compname, int dofnum, bool gho
     return ghosted_indices_[compname][dofnum];
 
   } else {
-    if (indices_.count(compname) == 0) {
-      indices_[compname];
-    }
+    if (indices_.count(compname) == 0) { indices_[compname]; }
 
     // create the vector
     int nentities = counts_.at(compname);
@@ -232,9 +227,7 @@ SuperMapLumped::CreateIndices_(const std::string& compname, int dofnum, bool gho
     std::vector<int> indices(nentities, -1);
     int offset = offsets_.at(compname);
     int num_dof = num_dofs_.at(compname);
-    for (int i=0; i!=nentities; ++i) {
-      indices[i] = offset + dofnum + i*num_dof;
-    }
+    for (int i = 0; i != nentities; ++i) { indices[i] = offset + dofnum + i * num_dof; }
 
     // move-assign, indices is no longer valid
     indices_[compname][dofnum] = std::move(indices);
@@ -246,10 +239,11 @@ SuperMapLumped::CreateIndices_(const std::string& compname, int dofnum, bool gho
 
 // nonmember function
 Teuchos::RCP<SuperMapLumped>
-createSuperMapLumped(const CompositeVectorSpace& cv) {
+createSuperMapLumped(const CompositeVectorSpace& cv)
+{
   std::vector<std::string> names;
   std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps, ghostmaps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap>> maps, ghostmaps;
 
   for (const auto& name : cv) {
     names.push_back(name);

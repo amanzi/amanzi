@@ -17,43 +17,48 @@ namespace Operators {
 
 // general information about an operator, e.g. a preconditioner may
 // be wrapped up in an iterative solver or be of a "raw" matrix type
-typedef enum { OPERATOR_MATRIX,
-               OPERATOR_PRECONDITIONER,
-               OPERATOR_PRECONDITIONER_RAW,
-               OPERATOR_TERM_DIFFUSION } OperatorType;
+typedef enum {
+  OPERATOR_MATRIX,
+  OPERATOR_PRECONDITIONER,
+  OPERATOR_PRECONDITIONER_RAW,
+  OPERATOR_TERM_DIFFUSION
+} OperatorType;
 
 // this is not used currently and my go away
-typedef enum { PDE_DIFFUSION,
-               PDE_DIFFUSION_MFD,
-               PDE_DIFFUSION_FV,
-               PDE_DIFFUSION_NLFV,
-               PDE_DIFFUSION_NLFVFACES,
-               PDE_DIFFUSION_MFD_GRAVITY,
-               PDE_DIFFUSION_FV_GRAVITY,
-               PDE_DIFFUSION_NLFV_GRAVITY,
-               PDE_DIFFUSION_NLFVFACES_GRAVITY,
-               PDE_DIFFUSION_MFD_XMOF,
-               PDE_DIFFUSION_MFD_TRACER,
-               PDE_DIFFUSION_DG,
-               PDE_DIFFUSION_FRACTURED_MATRIX,
-               PDE_DIFFUSION_FD,
-               PDE_ADVECTION,
-               PDE_ACCUMULATION,
-               PDE_ELASTICITY,
-               PDE_ELECTROMAGNETICS,
-               PDE_MAGNETIC_DIFFUSION} PDEType;
+typedef enum {
+  PDE_DIFFUSION,
+  PDE_DIFFUSION_MFD,
+  PDE_DIFFUSION_FV,
+  PDE_DIFFUSION_NLFV,
+  PDE_DIFFUSION_NLFVFACES,
+  PDE_DIFFUSION_MFD_GRAVITY,
+  PDE_DIFFUSION_FV_GRAVITY,
+  PDE_DIFFUSION_NLFV_GRAVITY,
+  PDE_DIFFUSION_NLFVFACES_GRAVITY,
+  PDE_DIFFUSION_MFD_XMOF,
+  PDE_DIFFUSION_MFD_TRACER,
+  PDE_DIFFUSION_DG,
+  PDE_DIFFUSION_FRACTURED_MATRIX,
+  PDE_DIFFUSION_FD,
+  PDE_ADVECTION,
+  PDE_ACCUMULATION,
+  PDE_ELASTICITY,
+  PDE_ELECTROMAGNETICS,
+  PDE_MAGNETIC_DIFFUSION
+} PDEType;
 
 // coefficient type
-typedef enum { CONSTANT = 0,  // includes tensorial coefficients
-               POLYNOMIAL,
-               VECTOR_POLYNOMIAL,
-               VECTOR_SPACETIME_POLYNOMIAL,
-               MATRIX_POLYNOMIAL,
-               FUNCTION } CoefType;
+typedef enum {
+  CONSTANT = 0, // includes tensorial coefficients
+  POLYNOMIAL,
+  VECTOR_POLYNOMIAL,
+  VECTOR_SPACETIME_POLYNOMIAL,
+  MATRIX_POLYNOMIAL,
+  FUNCTION
+} CoefType;
 
 // weight type
-typedef enum { WT_CONSTANT = 0,
-               WT_INVERSE_DISTANCE } WeightType;
+typedef enum { WT_CONSTANT = 0, WT_INVERSE_DISTANCE } WeightType;
 
 // Constants in the next block must powers of 2.
 const int OPERATOR_SCHEMA_DOFS_FACE = 1;
@@ -89,11 +94,11 @@ const int OPERATOR_BC_DIRICHLET_TYPE2 = 5;
 const int OPERATOR_BC_REMOVE = 6;
 
 // memory allocation
-const int OPERATOR_HEX_FACES = 6;  // Hexahedron is the common element
+const int OPERATOR_HEX_FACES = 6; // Hexahedron is the common element
 const int OPERATOR_HEX_NODES = 8;
 const int OPERATOR_HEX_EDGES = 12;
 
-const int OPERATOR_QUAD_FACES = 4;  // Quadrilateral is the common element
+const int OPERATOR_QUAD_FACES = 4; // Quadrilateral is the common element
 const int OPERATOR_QUAD_NODES = 4;
 const int OPERATOR_QUAD_EDGES = 4;
 
@@ -116,8 +121,8 @@ const double OPERATOR_UPWIND_RELATIVE_TOLERANCE = 1e-12;
 const int OPERATOR_LITTLE_K_NONE = 0;
 const int OPERATOR_LITTLE_K_UPWIND = 1;
 const int OPERATOR_LITTLE_K_DIVK_BASE = 2;  // base (only face component)
-const int OPERATOR_LITTLE_K_DIVK = 6;  // add cell component
-const int OPERATOR_LITTLE_K_DIVK_TWIN = 10;  // add twin component
+const int OPERATOR_LITTLE_K_DIVK = 6;       // add cell component
+const int OPERATOR_LITTLE_K_DIVK_TWIN = 10; // add twin component
 const int OPERATOR_LITTLE_K_STANDARD = 32;
 const int OPERATOR_LITTLE_K_ARITHMETIC_MEAN = 64;
 
@@ -150,8 +155,7 @@ const int OPERATOR_LIMITER_STENCIL_C2C_ALL = 41;
 
 const int OPERATOR_MAX_NUM_FACES = 10; // wild guess at this point...
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

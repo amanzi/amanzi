@@ -17,8 +17,8 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-Henry_Solubility::Henry_Solubility(Teuchos::ParameterList& plist) :
-    kH0_(7.698e-6),  // hydrogen
+Henry_Solubility::Henry_Solubility(Teuchos::ParameterList& plist)
+  : kH0_(7.698e-6), // hydrogen
     kH1_(0.0),
     T0_(298.15)
 {
@@ -26,12 +26,16 @@ Henry_Solubility::Henry_Solubility(Teuchos::ParameterList& plist) :
 };
 
 
-double Henry_Solubility::Solubility(double T) {
+double
+Henry_Solubility::Solubility(double T)
+{
   return (kH1_ == 0.0) ? kH0_ : kH0_ * std::exp(-kH1_ * (1.0 / T - 1.0 / T0_));
 };
 
 
-double Henry_Solubility::DSolubilityDT(double T) {
+double
+Henry_Solubility::DSolubilityDT(double T)
+{
   return (kH1_ == 0.0) ? kH0_ : Solubility(T) * kH1_ / (T * T);
 };
 
@@ -39,11 +43,12 @@ double Henry_Solubility::DSolubilityDT(double T) {
 /* *******************************************************************
 * Solute specific initilazation
 ******************************************************************* */
-void Henry_Solubility::Init_(Teuchos::ParameterList& plist)
+void
+Henry_Solubility::Init_(Teuchos::ParameterList& plist)
 {
   kH0_ = plist.get<double>("reference solubility");
   kH1_ = plist.get<double>("van't Hoff factor", 0.0);
 }
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi

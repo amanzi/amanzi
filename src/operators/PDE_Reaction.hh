@@ -31,40 +31,47 @@ namespace Operators {
 
 class PDE_Reaction : public PDE_HelperDiscretization {
  public:
-  PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
-      PDE_HelperDiscretization(global_op),
+  PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op)
+    : PDE_HelperDiscretization(global_op),
       K_(Teuchos::null),
       coef_type_(CoefType::CONSTANT),
-      static_matrices_initialized_(false) {
+      static_matrices_initialized_(false)
+  {
     InitReaction_(plist);
   }
 
-  PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh) : 
-      PDE_HelperDiscretization(mesh),
+  PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : PDE_HelperDiscretization(mesh),
       K_(Teuchos::null),
       coef_type_(CoefType::CONSTANT),
-      static_matrices_initialized_(false) {
+      static_matrices_initialized_(false)
+  {
     InitReaction_(plist);
   }
 
-  // required members 
+  // required members
   // -- setup
-  void Setup(const Teuchos::RCP<Epetra_MultiVector>& K) { K_ = K; Kpoly_ = Teuchos::null; Kpoly_st_ = Teuchos::null; }
+  void Setup(const Teuchos::RCP<Epetra_MultiVector>& K)
+  {
+    K_ = K;
+    Kpoly_ = Teuchos::null;
+    Kpoly_st_ = Teuchos::null;
+  }
 
-  template<typename T>
-  void Setup(const Teuchos::RCP<std::vector<T> >& K, bool reset);
+  template <typename T>
+  void Setup(const Teuchos::RCP<std::vector<T>>& K, bool reset);
 
-  // -- generate a linearized operator 
+  // -- generate a linearized operator
   using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) override;
-  // -- new interface for pre-computed data  
+  // -- new interface for pre-computed data
   void UpdateMatrices(double t);
 
   // -- flux calculation has yet no meaning for this operator
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override {};
-  
+                          const Teuchos::Ptr<CompositeVector>& u) override{};
+
   // boundary conditions
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
@@ -74,43 +81,46 @@ class PDE_Reaction : public PDE_HelperDiscretization {
 
  protected:
   Teuchos::RCP<const Epetra_MultiVector> K_;
-  Teuchos::RCP<std::vector<WhetStone::Polynomial> > Kpoly_;
-  Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial> > Kpoly_st_;
+  Teuchos::RCP<std::vector<WhetStone::Polynomial>> Kpoly_;
+  Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial>> Kpoly_st_;
 
   Teuchos::RCP<WhetStone::BilinearForm> mfd_;
 
  private:
   CoefType coef_type_;
   bool static_matrices_initialized_;
-  std::vector<std::vector<WhetStone::DenseMatrix> > static_matrices_;
+  std::vector<std::vector<WhetStone::DenseMatrix>> static_matrices_;
 };
 
 
 /* ******************************************************************
 * Specialization of Setup
 ****************************************************************** */
-template<>
-inline
-void PDE_Reaction::Setup<WhetStone::Polynomial>(
-    const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& K, bool reset) {
+template <>
+inline void
+PDE_Reaction::Setup<WhetStone::Polynomial>(
+  const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& K,
+  bool reset)
+{
   K_ = Teuchos::null;
   Kpoly_st_ = Teuchos::null;
   Kpoly_ = K;
   coef_type_ = CoefType::POLYNOMIAL;
 }
 
-template<>
-inline
-void PDE_Reaction::Setup<WhetStone::SpaceTimePolynomial>(
-    const Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial> >& K, bool reset) {
+template <>
+inline void
+PDE_Reaction::Setup<WhetStone::SpaceTimePolynomial>(
+  const Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial>>& K,
+  bool reset)
+{
   K_ = Teuchos::null;
   Kpoly_st_ = K;
   coef_type_ = CoefType::VECTOR_SPACETIME_POLYNOMIAL;
   if (!static_matrices_initialized_ || reset) CreateStaticMatrices_();
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

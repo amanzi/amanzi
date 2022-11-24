@@ -59,15 +59,15 @@ class EvaluatorIndependent_ : public Evaluator {
   // derivative with respect to wrt_key has changed since the last request for
   // an update.
   // ---------------------------------------------------------------------------
-  virtual bool UpdateDerivative(State& S, const Key& request,
+  virtual bool UpdateDerivative(State& S,
+                                const Key& request,
                                 const Key& wrt_key,
                                 const Tag& wrt_tag) override final;
 
-  virtual bool IsDependency(const State& S, const Key& key,
-                            const Tag& tag) const override final;
+  virtual bool IsDependency(const State& S, const Key& key, const Tag& tag) const override final;
   virtual bool ProvidesKey(const Key& key, const Tag& tag) const override final;
-  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
-                                   const Tag& wrt_tag) const override final;
+  virtual bool
+  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override final;
 
   virtual void EnsureCompatibility(State& S) override;
 
@@ -95,10 +95,11 @@ class EvaluatorIndependent_ : public Evaluator {
 
 template <class Data_t, class DataFactory_t = NullFactory>
 class EvaluatorIndependent : public EvaluatorIndependent_ {
-public:
+ public:
   using EvaluatorIndependent_::EvaluatorIndependent_;
 
-  virtual void EnsureCompatibility(State& S) override {
+  virtual void EnsureCompatibility(State& S) override
+  {
     // Require the field and claim ownership.
     S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
 
@@ -107,7 +108,7 @@ public:
   }
 };
 
-using EvaluatorIndependentCV = EvaluatorIndependent<CompositeVector,CompositeVectorSpace>;
+using EvaluatorIndependentCV = EvaluatorIndependent<CompositeVector, CompositeVectorSpace>;
 
 } // namespace Amanzi
 

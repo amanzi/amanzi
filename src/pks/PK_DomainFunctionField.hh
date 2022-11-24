@@ -41,27 +41,20 @@ the domain function.
 namespace Amanzi {
 
 template <class FunctionBase>
-class PK_DomainFunctionField : public FunctionBase{
-
+class PK_DomainFunctionField : public FunctionBase {
  public:
   PK_DomainFunctionField(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                          const Teuchos::RCP<State>& S,
-                          AmanziMesh::Entity_kind kind) :
-    S_(S),
-    mesh_(mesh),
-    kind_(kind) {};
+                         AmanziMesh::Entity_kind kind)
+    : S_(S), mesh_(mesh), kind_(kind){};
 
   PK_DomainFunctionField(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                          const Teuchos::RCP<State>& S,
                          const Teuchos::ParameterList& plist,
-                         AmanziMesh::Entity_kind kind) :
-    S_(S),
-    mesh_(mesh),
-    FunctionBase(plist),
-    kind_(kind) {
-  };
+                         AmanziMesh::Entity_kind kind)
+    : S_(S), mesh_(mesh), FunctionBase(plist), kind_(kind){};
 
-  ~PK_DomainFunctionField() {};
+  ~PK_DomainFunctionField(){};
 
   typedef std::vector<std::string> RegionList;
   typedef std::pair<RegionList, AmanziMesh::Entity_kind> Domain;
@@ -95,24 +88,25 @@ class PK_DomainFunctionField : public FunctionBase{
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionField<FunctionBase>::Init(
-    const Teuchos::ParameterList& plist, const std::string& keyword)
+void
+PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
+                                           const std::string& keyword)
 {
   Errors::Message msg;
 
   keyword_ = keyword;
 
   submodel_ = "rate";
-  if (plist.isParameter("submodel"))
-    submodel_ = plist.get<std::string>("submodel");
-  std::vector<std::string> regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
+  if (plist.isParameter("submodel")) submodel_ = plist.get<std::string>("submodel");
+  std::vector<std::string> regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();
 
   // Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
     Teuchos::ParameterList flist = plist.sublist(keyword);
     field_key_ = flist.get<std::string>("field key");
     tag_ = Keys::readTag(flist, "tag");
-    component_key_ = flist.get<std::string>("component", "cell");;
+    component_key_ = flist.get<std::string>("component", "cell");
+    ;
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "error in source sublist : " << msg.what();
@@ -132,8 +126,8 @@ void PK_DomainFunctionField<FunctionBase>::Init(
       mesh_->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, &id_list);
       entity_ids_->insert(id_list.begin(), id_list.end());
     } else {
-      msg << "Unknown region in processing coupling source: name=" << *region
-          << ", kind=" << kind << "\n";
+      msg << "Unknown region in processing coupling source: name=" << *region << ", kind=" << kind
+          << "\n";
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -144,9 +138,10 @@ void PK_DomainFunctionField<FunctionBase>::Init(
 * Update the field and stick it in the value map.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
+void
+PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
 {
-  if (S_->HasEvaluator(field_key_, tag_)){
+  if (S_->HasEvaluator(field_key_, tag_)) {
     S_->GetEvaluator(field_key_, tag_).Update(*S_, field_key_);
   }
 
@@ -155,13 +150,11 @@ void PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
   std::vector<double> val_vec(nvalues);
 
   for (auto c : *entity_ids_) {
-    for (int i = 0; i < nvalues; ++i) {
-      val_vec[i] = field_vec[i][c];
-    }
+    for (int i = 0; i < nvalues; ++i) { val_vec[i] = field_vec[i][c]; }
     value_[c] = val_vec;
   }
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

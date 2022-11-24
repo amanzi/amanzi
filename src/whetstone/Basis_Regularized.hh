@@ -27,30 +27,35 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class Basis_Regularized : public Basis { 
+class Basis_Regularized : public Basis {
  public:
   Basis_Regularized() { id_ = TAYLOR_BASIS_REGULARIZED; }
-  ~Basis_Regularized() {};
+  ~Basis_Regularized(){};
 
   // initialization
   virtual void Init(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
-                    int c, int order, Polynomial& integrals);
+                    int c,
+                    int order,
+                    Polynomial& integrals);
 
   // transformation of bilinear form
   virtual void BilinearFormNaturalToMy(DenseMatrix& A) const;
   virtual void BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
-                                       std::shared_ptr<Basis> br, DenseMatrix& A) const;
+                                       std::shared_ptr<Basis> br,
+                                       DenseMatrix& A) const;
 
   // transformation of linear form
   virtual void LinearFormNaturalToMy(DenseVector& v) const;
 
-  // transformation of vector 
+  // transformation of vector
   virtual void ChangeBasisMyToNatural(DenseVector& v) const;
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const;
 
   // Recover polynomial in the natural basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
-                                         int c, int order, DenseVector& coefs) const;
+                                         int c,
+                                         int order,
+                                         DenseVector& coefs) const;
 
   // access
   const std::vector<double>& monomial_scales() const { return monomial_scales_; }
@@ -62,7 +67,7 @@ class Basis_Regularized : public Basis {
   int d_, order_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif

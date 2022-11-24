@@ -24,13 +24,13 @@ const double vel = 0.0;
 class Analytic00 : public AnalyticBase {
  public:
   Analytic00(Teuchos::RCP<const Amanzi::CompositeVector> temp,
-             Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
-      AnalyticBase(mesh),
-      temp_(temp) {};
-  ~Analytic00() {};
+             Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : AnalyticBase(mesh), temp_(temp){};
+  ~Analytic00(){};
 
-  // Conductivity 
-  Amanzi::WhetStone::Tensor Conductivity(int c, const Amanzi::AmanziGeometry::Point& p, double t) {
+  // Conductivity
+  Amanzi::WhetStone::Tensor Conductivity(int c, const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     int d = mesh_->space_dimension();
     Amanzi::WhetStone::Tensor K(1, d);
     K(0, 0) = 4.0;
@@ -38,19 +38,20 @@ class Analytic00 : public AnalyticBase {
   }
 
   // Fluid velocity
-  Amanzi::AmanziGeometry::Point FluidVelocity(int c, const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::AmanziGeometry::Point
+  FluidVelocity(int c, const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     int d = mesh_->space_dimension();
     Amanzi::AmanziGeometry::Point v(d);
     v[0] = 1.0;
     return v;
   }
 
-  // exact temperature 
-  double temperature_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    return p[0] * p[0];
-  }
+  // exact temperature
+  double temperature_exact(const Amanzi::AmanziGeometry::Point& p, double t) { return p[0] * p[0]; }
 
-  Amanzi::AmanziGeometry::Point flux_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point flux_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     int d = mesh_->space_dimension();
     Amanzi::AmanziGeometry::Point v(d);
     return v;
@@ -59,4 +60,3 @@ class Analytic00 : public AnalyticBase {
  private:
   Teuchos::RCP<const Amanzi::CompositeVector> temp_;
 };
-

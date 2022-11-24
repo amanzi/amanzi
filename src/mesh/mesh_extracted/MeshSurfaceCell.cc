@@ -26,8 +26,9 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
-        const std::string& setname, bool flatten)
-    : Mesh(getCommSelf(), parent_mesh->geometric_model(), parent_mesh->parameter_list(), true, false)
+                                 const std::string& setname,
+                                 bool flatten)
+  : Mesh(getCommSelf(), parent_mesh->geometric_model(), parent_mesh->parameter_list(), true, false)
 {
   parent_ = parent_mesh;
 
@@ -43,13 +44,16 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
   // set my cells
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << " constructing SurfaceCell mesh with parent that has "
-               << parent_->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED)
+               << parent_->num_entities(AmanziMesh::Entity_kind::CELL,
+                                        AmanziMesh::Parallel_type::OWNED)
                << " cells and "
-               << parent_->num_entities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED)
+               << parent_->num_entities(AmanziMesh::Entity_kind::FACE,
+                                        AmanziMesh::Parallel_type::OWNED)
                << " faces." << std::endl;
 
   Entity_ID_List my_cells;
-  parent_->get_set_entities(setname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED, &my_cells);
+  parent_->get_set_entities(
+    setname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED, &my_cells);
   AMANZI_ASSERT(my_cells.size() == 1);
   parent_face_ = my_cells[0];
 
@@ -58,7 +62,7 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
   parent_->face_get_nodes(parent_face_, &my_nodes);
   nodes_.resize(my_nodes.size());
   if (flatten) {
-    for (int i=0; i!=my_nodes.size(); ++i) {
+    for (int i = 0; i != my_nodes.size(); ++i) {
       AmanziGeometry::Point parent_node;
       parent_->node_get_coordinates(my_nodes[i], &parent_node);
       AmanziGeometry::Point child_node(2);
@@ -67,7 +71,7 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
       nodes_[i] = child_node;
     }
   } else {
-    for (int i=0; i!=my_nodes.size(); ++i) {
+    for (int i = 0; i != my_nodes.size(); ++i) {
       parent_->node_get_coordinates(my_nodes[i], &nodes_[i]);
     }
   }
@@ -75,8 +79,7 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
   // set the maps
   cell_map_ = Teuchos::rcp(new Epetra_Map(1, 0, *get_comm()));
   face_map_ = Teuchos::rcp(new Epetra_Map((int)nodes_.size(), 0, *get_comm()));
-  exterior_face_importer_ =
-      Teuchos::rcp(new Epetra_Import(*face_map_,*face_map_));
+  exterior_face_importer_ = Teuchos::rcp(new Epetra_Import(*face_map_, *face_map_));
 
   // set the geometric model and sets
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = parent_->geometric_model();
@@ -92,9 +95,10 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
       // label pulled from parent
       Entity_ID_List faces_in_set;
       std::vector<double> vofs;
-      parent_->get_set_entities_and_vofs(r->get_name(), FACE, Parallel_type::OWNED, &faces_in_set, &vofs);
-      sets_[r->get_id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
-              parent_face_) != faces_in_set.end();
+      parent_->get_set_entities_and_vofs(
+        r->get_name(), FACE, Parallel_type::OWNED, &faces_in_set, &vofs);
+      sets_[r->get_id()] =
+        std::find(faces_in_set.begin(), faces_in_set.end(), parent_face_) != faces_in_set.end();
     } else if (r->get_type() == AmanziGeometry::RegionType::ALL) {
       sets_[r->get_id()] = true;
     } else if (r->is_geometric()) {
@@ -126,21 +130,21 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
 
 // Number of entities of any kind (cell, face, node) and in a
 // particular category (OWNED, GHOST, ALL)
-unsigned int MeshSurfaceCell::num_entities(const Entity_kind kind,
-        const Parallel_type ptype) const {
+unsigned int
+MeshSurfaceCell::num_entities(const Entity_kind kind, const Parallel_type ptype) const
+{
   int count;
   switch (kind) {
-    case CELL:
-      count = 1;
-      break;
+  case CELL:
+    count = 1;
+    break;
 
-    default: // num_nodes == num_faces == num_boundary_faces
-      count = nodes_.size();
-      break;
+  default: // num_nodes == num_faces == num_boundary_faces
+    count = nodes_.size();
+    break;
   }
   return count;
 }
-
 
 
 //
@@ -150,12 +154,13 @@ unsigned int MeshSurfaceCell::num_entities(const Entity_kind kind,
 // Downward Adjacencies
 //---------------------
 // Get nodes of a cell
-void MeshSurfaceCell::cell_get_nodes(const Entity_ID cellid,
-        Entity_ID_List *nodeids) const {
+void
+MeshSurfaceCell::cell_get_nodes(const Entity_ID cellid, Entity_ID_List* nodeids) const
+{
   AMANZI_ASSERT(cellid == 0);
   AMANZI_ASSERT(nodeids);
   nodeids->resize(nodes_.size());
-  for (int i=0; i!=nodes_.size(); ++i) (*nodeids)[i] = i;
+  for (int i = 0; i != nodes_.size(); ++i) (*nodeids)[i] = i;
 }
 
 
@@ -165,8 +170,9 @@ void MeshSurfaceCell::cell_get_nodes(const Entity_ID cellid,
 // In 3D, the nodes of the face are returned in ccw order consistent
 // with the face normal
 // In 2D, nfnodes is 2
-void MeshSurfaceCell::face_get_nodes(const Entity_ID faceid,
-        Entity_ID_List *nodeids) const {
+void
+MeshSurfaceCell::face_get_nodes(const Entity_ID faceid, Entity_ID_List* nodeids) const
+{
   AMANZI_ASSERT(faceid < nodes_.size());
   nodeids->resize(2);
   (*nodeids)[0] = faceid;
@@ -175,8 +181,11 @@ void MeshSurfaceCell::face_get_nodes(const Entity_ID faceid,
 
 
 // Get nodes of edge
-void MeshSurfaceCell::edge_get_nodes(const Entity_ID edgeid,
-        Entity_ID *nodeid0, Entity_ID *nodeid1) const {
+void
+MeshSurfaceCell::edge_get_nodes(const Entity_ID edgeid,
+                                Entity_ID* nodeid0,
+                                Entity_ID* nodeid1) const
+{
   Errors::Message mesg("Not implemented");
   amanzi_throw(mesg);
 }
@@ -188,9 +197,11 @@ void MeshSurfaceCell::edge_get_nodes(const Entity_ID edgeid,
 // Cells of type 'ptype' connected to a node - The order of cells is
 // not guaranteed to be the same for corresponding nodes on
 // different processors
-void MeshSurfaceCell::node_get_cells(const Entity_ID nodeid,
-        const Parallel_type ptype,
-        Entity_ID_List *cellids) const {
+void
+MeshSurfaceCell::node_get_cells(const Entity_ID nodeid,
+                                const Parallel_type ptype,
+                                Entity_ID_List* cellids) const
+{
   cellids->resize(1);
   (*cellids)[0] = 0;
 }
@@ -199,18 +210,22 @@ void MeshSurfaceCell::node_get_cells(const Entity_ID nodeid,
 // Faces of type 'ptype' connected to a node - The order of faces is
 // not guarnateed to be the same for corresponding nodes on
 // different processors
-void MeshSurfaceCell::node_get_faces(const Entity_ID nodeid,
-        const Parallel_type ptype,
-        Entity_ID_List *faceids) const {
+void
+MeshSurfaceCell::node_get_faces(const Entity_ID nodeid,
+                                const Parallel_type ptype,
+                                Entity_ID_List* faceids) const
+{
   Errors::Message mesg("Not implemented");
   amanzi_throw(mesg);
 }
 
 
 // Cells of type 'ptype' connected to an edges
-void MeshSurfaceCell::edge_get_cells(const Entity_ID edgeid,
-        const Parallel_type ptype,
-        Entity_ID_List *cellids) const {
+void
+MeshSurfaceCell::edge_get_cells(const Entity_ID edgeid,
+                                const Parallel_type ptype,
+                                Entity_ID_List* cellids) const
+{
   Errors::Message mesg("Not implemented");
   amanzi_throw(mesg);
 }
@@ -226,9 +241,11 @@ void MeshSurfaceCell::edge_get_cells(const Entity_ID edgeid,
 // guaranteed in general except when ptype = ALL, in which case
 // the cellids will correcpond to cells across the respective
 // faces given by cell_get_faces
-void MeshSurfaceCell::cell_get_face_adj_cells(const Entity_ID cellid,
-        const Parallel_type ptype,
-        Entity_ID_List *fadj_cellids) const {
+void
+MeshSurfaceCell::cell_get_face_adj_cells(const Entity_ID cellid,
+                                         const Parallel_type ptype,
+                                         Entity_ID_List* fadj_cellids) const
+{
   fadj_cellids->resize(0);
 }
 
@@ -244,23 +261,26 @@ void MeshSurfaceCell::cell_get_face_adj_cells(const Entity_ID cellid,
 // move_vertical = true, nodes will be allowed to move only in the
 // vertical direction (right now arbitrary node movement is not allowed)
 // Nodes in any set in the fixed_sets will not be permitted to move.
-int MeshSurfaceCell::deform(const std::vector<double>& target_cell_volumes_in,
-                            const std::vector<double>& min_cell_volumes_in,
-                            const Entity_ID_List& fixed_nodes,
-                            const bool move_vertical) {
+int
+MeshSurfaceCell::deform(const std::vector<double>& target_cell_volumes_in,
+                        const std::vector<double>& min_cell_volumes_in,
+                        const Entity_ID_List& fixed_nodes,
+                        const bool move_vertical)
+{
   Errors::Message mesg("Not implemented");
   Exceptions::amanzi_throw(mesg);
   return -1;
 }
 
 
-
 //
 // Mesh Sets for ICs, BCs, Material Properties and whatever else
 //--------------------------------------------------------------
 //
-bool MeshSurfaceCell::valid_set_type(const AmanziGeometry::RegionType rtype,
-        const Entity_kind kind) const {
+bool
+MeshSurfaceCell::valid_set_type(const AmanziGeometry::RegionType rtype,
+                                const Entity_kind kind) const
+{
   if (rtype == AmanziGeometry::RegionType::LABELEDSET && kind == CELL) return true;
   if (rtype == AmanziGeometry::RegionType::ENUMERATED && kind == CELL) return true;
   if (rtype == AmanziGeometry::RegionType::BOX) return true;
@@ -272,28 +292,29 @@ bool MeshSurfaceCell::valid_set_type(const AmanziGeometry::RegionType rtype,
 // Get number of entities of type 'category' in set
 unsigned int
 MeshSurfaceCell::get_set_size(const std::string& setname,
-        const Entity_kind kind,
-        const Parallel_type ptype) const {
+                              const Entity_kind kind,
+                              const Parallel_type ptype) const
+{
   auto setid = geometric_model()->FindRegion(setname)->get_id();
-  if (sets_.at(setid)) {
-    return kind == CELL ? 1 : nodes_.size();
-  }
+  if (sets_.at(setid)) { return kind == CELL ? 1 : nodes_.size(); }
   return 0;
 }
 
 // Get list of entities of type 'category' in set
-void MeshSurfaceCell::get_set_entities_and_vofs(const std::string& setname,
-        const Entity_kind kind,
-        const Parallel_type ptype,
-        Entity_ID_List *entids,
-        std::vector<double> *vofs) const {
+void
+MeshSurfaceCell::get_set_entities_and_vofs(const std::string& setname,
+                                           const Entity_kind kind,
+                                           const Parallel_type ptype,
+                                           Entity_ID_List* entids,
+                                           std::vector<double>* vofs) const
+{
   auto setid = geometric_model()->FindRegion(setname)->get_id();
   if (sets_.at(setid)) {
     if (kind == CELL) {
-      entids->resize(1,0);
+      entids->resize(1, 0);
     } else {
       entids->resize(nodes_.size());
-      for (int i=0; i!=nodes_.size(); ++i) (*entids)[i] = i;
+      for (int i = 0; i != nodes_.size(); ++i) (*entids)[i] = i;
     }
   } else {
     entids->resize(0);
@@ -302,7 +323,9 @@ void MeshSurfaceCell::get_set_entities_and_vofs(const std::string& setname,
 
 
 // Miscellaneous functions
-void MeshSurfaceCell::write_to_exodus_file(const std::string filename) const {
+void
+MeshSurfaceCell::write_to_exodus_file(const std::string filename) const
+{
   Errors::Message mesg("Not implemented");
   Exceptions::amanzi_throw(mesg);
 }
@@ -312,47 +335,50 @@ void MeshSurfaceCell::write_to_exodus_file(const std::string filename) const {
 // cell_get_faces_and_dirs method of the base class and the data
 // cached or it can be called directly by the
 // cell_get_faces_and_dirs method of this class
-void MeshSurfaceCell::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
-        Entity_ID_List *faceids,
-        std::vector<int> *face_dirs,
-        const bool ordered) const {
+void
+MeshSurfaceCell::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
+                                                   Entity_ID_List* faceids,
+                                                   std::vector<int>* face_dirs,
+                                                   const bool ordered) const
+{
   AMANZI_ASSERT(cellid == 0);
   faceids->resize(nodes_.size());
-  for (int i=0; i!=nodes_.size(); ++i) (*faceids)[i] = i;
-  face_dirs->resize(nodes_.size(),1);
+  for (int i = 0; i != nodes_.size(); ++i) (*faceids)[i] = i;
+  face_dirs->resize(nodes_.size(), 1);
 }
 
 
 // Cells connected to a face - this function is implemented in each
 // mesh framework. The results are cached in the base class
-void MeshSurfaceCell::face_get_cells_internal_(const Entity_ID faceid,
-        const Parallel_type ptype,
-        Entity_ID_List *cellids) const {
-  cellids->resize(1,0);
+void
+MeshSurfaceCell::face_get_cells_internal_(const Entity_ID faceid,
+                                          const Parallel_type ptype,
+                                          Entity_ID_List* cellids) const
+{
+  cellids->resize(1, 0);
 }
 
 
 // edges of a face - this function is implemented in each mesh
 // framework. The results are cached in the base class
-void MeshSurfaceCell::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
-        Entity_ID_List *edgeids,
-        std::vector<int> *edge_dirs,
-        const bool ordered) const {
+void
+MeshSurfaceCell::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
+                                                   Entity_ID_List* edgeids,
+                                                   std::vector<int>* edge_dirs,
+                                                   const bool ordered) const
+{
   Errors::Message mesg("Not implemented");
   Exceptions::amanzi_throw(mesg);
 }
 
 // edges of a cell - this function is implemented in each mesh
 // framework. The results are cached in the base class.
-void MeshSurfaceCell::cell_get_edges_internal_(const Entity_ID cellid,
-        Entity_ID_List *edgeids) const {
+void
+MeshSurfaceCell::cell_get_edges_internal_(const Entity_ID cellid, Entity_ID_List* edgeids) const
+{
   Errors::Message mesg("Not implemented");
   Exceptions::amanzi_throw(mesg);
 }
 
-} // close namespace AmanziMesh
-} // close namespace Amanzi
-
-
-
-
+} // namespace AmanziMesh
+} // namespace Amanzi

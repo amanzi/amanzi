@@ -31,23 +31,22 @@ namespace Functions {
 
 class MaterialMeshFunction : public MeshFunction {
  public:
-  MaterialMeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-      : MeshFunction(mesh) {};
+  MaterialMeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : MeshFunction(mesh){};
 
-  // Overload the AddSpec method to check uniqueness and sum-up 
+  // Overload the AddSpec method to check uniqueness and sum-up
   // volume fractions.
   virtual void AddSpec(const Teuchos::RCP<Spec>& spec);
 
  protected:
   typedef std::map<AmanziMesh::Entity_ID, double> MaterialMesh;
 
-  typedef std::pair<Teuchos::RCP<Spec>, Teuchos::RCP<MaterialMesh> > MaterialSpec;
-  typedef std::vector<Teuchos::RCP<MaterialSpec> > MaterialSpecList;
+  typedef std::pair<Teuchos::RCP<Spec>, Teuchos::RCP<MaterialMesh>> MaterialSpec;
+  typedef std::vector<Teuchos::RCP<MaterialSpec>> MaterialSpecList;
 
-  std::map<AmanziMesh::Entity_kind, Teuchos::RCP<MaterialSpecList> > material_specs_;
+  std::map<AmanziMesh::Entity_kind, Teuchos::RCP<MaterialSpecList>> material_specs_;
 };
 
-}  // namespace Functions
-}  // namespace Amanzi
+} // namespace Functions
+} // namespace Amanzi
 
 #endif

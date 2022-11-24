@@ -29,7 +29,8 @@ namespace Operators {
 * Initialization of basic parameters.
 * NOTE: we assume that ghost values of field were already populated.
 ****************************************************************** */
-void ReconstructionCellLinear::Init(Teuchos::ParameterList& plist)
+void
+ReconstructionCellLinear::Init(Teuchos::ParameterList& plist)
 {
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_);
@@ -38,7 +39,8 @@ void ReconstructionCellLinear::Init(Teuchos::ParameterList& plist)
 
   gradient_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
   gradient_c_ = gradient_->ViewComponent("cell", true);
-  if (plist.get<std::string>("weight", "constant") == "inverse distance") weight_ = WeightType::WT_INVERSE_DISTANCE;
+  if (plist.get<std::string>("weight", "constant") == "inverse distance")
+    weight_ = WeightType::WT_INVERSE_DISTANCE;
 }
 
 
@@ -46,10 +48,11 @@ void ReconstructionCellLinear::Init(Teuchos::ParameterList& plist)
 * Gradient of linear reconstruction is based on stabilized 
 * least-square fit.
 ****************************************************************** */
-void ReconstructionCellLinear::Compute(
-    const AmanziMesh::Entity_ID_List& ids,
-    const Teuchos::RCP<const Epetra_MultiVector>& field, int component,
-    const Teuchos::RCP<const BCs>& bc)
+void
+ReconstructionCellLinear::Compute(const AmanziMesh::Entity_ID_List& ids,
+                                  const Teuchos::RCP<const Epetra_MultiVector>& field,
+                                  int component,
+                                  const Teuchos::RCP<const BCs>& bc)
 {
   field_ = field;
   component_ = component;
@@ -85,15 +88,15 @@ void ReconstructionCellLinear::Compute(
     double det = matrix.Det();
     double norm = matrix.NormInf();
 
-    if (det < pow(norm, 1.0/dim)) {
-      norm *= OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION;  // relative 
-      norm += OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION;  // absolute
+    if (det < pow(norm, 1.0 / dim)) {
+      norm *= OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION; // relative
+      norm += OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION; // absolute
       for (int i = 0; i < dim; i++) matrix(i, i) += norm;
     }
 
     int info, nrhs = 1;
     WhetStone::DPOSV_F77("U", &dim, &nrhs, matrix.Values(), &dim, rhs.Values(), &dim, &info);
-    if (info) {  // reduce reconstruction order
+    if (info) { // reduce reconstruction order
       for (int i = 0; i < dim; i++) rhs(i) = 0.0;
     }
 
@@ -108,11 +111,13 @@ void ReconstructionCellLinear::Compute(
 /* ******************************************************************
 * Assemble a SPD least square matrix
 ****************************************************************** */
-void ReconstructionCellLinear::PopulateLeastSquareSystem_(
-    AmanziGeometry::Point& centroid, double field_value,
-    WhetStone::DenseMatrix& matrix, WhetStone::DenseVector& rhs)
+void
+ReconstructionCellLinear::PopulateLeastSquareSystem_(AmanziGeometry::Point& centroid,
+                                                     double field_value,
+                                                     WhetStone::DenseMatrix& matrix,
+                                                     WhetStone::DenseVector& rhs)
 {
-  double w = (weight_ == WeightType::WT_INVERSE_DISTANCE) ? 1.0 / norm(centroid) : 1.0; 
+  double w = (weight_ == WeightType::WT_INVERSE_DISTANCE) ? 1.0 / norm(centroid) : 1.0;
 
   for (int i = 0; i < dim; i++) {
     double xyz = centroid[i];
@@ -130,9 +135,10 @@ void ReconstructionCellLinear::PopulateLeastSquareSystem_(
 * On intersecting manifolds, we extract neighboors living in the same 
 * manifold using a smoothness criterion.
 ****************************************************************** */
-void ReconstructionCellLinear::CellFaceAdjCellsManifold_(
-    AmanziMesh::Entity_ID c, AmanziMesh::Parallel_type ptype,
-    std::vector<AmanziMesh::Entity_ID>& cells) const
+void
+ReconstructionCellLinear::CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
+                                                    AmanziMesh::Parallel_type ptype,
+                                                    std::vector<AmanziMesh::Entity_ID>& cells) const
 {
   AmanziMesh::Entity_ID_List fcells;
 
@@ -161,10 +167,10 @@ void ReconstructionCellLinear::CellFaceAdjCellsManifold_(
           double d = fabs(normal0 * normal1) / norm(normal1);
           if (d > dmax) {
             dmax = d;
-            cmax = c1; 
+            cmax = c1;
           }
         }
-      } 
+      }
 
       cells.push_back(cmax);
     }
@@ -175,8 +181,8 @@ void ReconstructionCellLinear::CellFaceAdjCellsManifold_(
 /* ******************************************************************
 * Calculates reconstructed value at point p.
 ****************************************************************** */
-double ReconstructionCellLinear::getValue(
-    int c, const AmanziGeometry::Point& p)
+double
+ReconstructionCellLinear::getValue(int c, const AmanziGeometry::Point& p)
 {
   const auto& xc = mesh_->cell_centroid(c);
 
@@ -189,8 +195,8 @@ double ReconstructionCellLinear::getValue(
 /* ******************************************************************
 * Calculates deviation from a mean value at point p.
 ****************************************************************** */
-double ReconstructionCellLinear::getValueSlope(
-    int c, const AmanziGeometry::Point& p)
+double
+ReconstructionCellLinear::getValueSlope(int c, const AmanziGeometry::Point& p)
 {
   const auto& xc = mesh_->cell_centroid(c);
 
@@ -203,7 +209,8 @@ double ReconstructionCellLinear::getValueSlope(
 /* ******************************************************************
 * Returns full polynomial
 ****************************************************************** */
-WhetStone::Polynomial ReconstructionCellLinear::getPolynomial(int c) const
+WhetStone::Polynomial
+ReconstructionCellLinear::getPolynomial(int c) const
 {
   WhetStone::Polynomial tmp(dim, 2);
   tmp(0) = (*field_)[0][c];
@@ -213,6 +220,5 @@ WhetStone::Polynomial ReconstructionCellLinear::getPolynomial(int c) const
   return tmp;
 }
 
-}  // namespace Operator
-}  // namespace Amanzi
-
+} // namespace Operators
+} // namespace Amanzi

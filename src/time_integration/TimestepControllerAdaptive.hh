@@ -27,12 +27,12 @@ This is under development and is based on a posteriori error estimates.
 
 namespace Amanzi {
 
-template<class Vector>
+template <class Vector>
 class TimestepControllerAdaptive : public TimestepController {
-
  public:
   TimestepControllerAdaptive(Teuchos::ParameterList& plist,
-                             Teuchos::RCP<Vector> udot, Teuchos::RCP<Vector> udot_prev);
+                             Teuchos::RCP<Vector> udot,
+                             Teuchos::RCP<Vector> udot_prev);
 
   // single method for timestep control
   double get_timestep(double dt, int iterations);
@@ -51,18 +51,18 @@ class TimestepControllerAdaptive : public TimestepController {
   double min_dt_;
 
  private:
-  Teuchos::RCP<Vector> udot_prev_, udot_;  // for error estimate 
-  double atol_, rtol_, p_;  // error parameters
+  Teuchos::RCP<Vector> udot_prev_, udot_; // for error estimate
+  double atol_, rtol_, p_;                // error parameters
 };
 
 
 /* ******************************************************************
 * Constructor 
 ****************************************************************** */
-template<class Vector>
-TimestepControllerAdaptive<Vector>::TimestepControllerAdaptive(
-    Teuchos::ParameterList& plist,
-    Teuchos::RCP<Vector> udot, Teuchos::RCP<Vector> udot_prev)
+template <class Vector>
+TimestepControllerAdaptive<Vector>::TimestepControllerAdaptive(Teuchos::ParameterList& plist,
+                                                               Teuchos::RCP<Vector> udot,
+                                                               Teuchos::RCP<Vector> udot_prev)
   : TimestepController(plist), plist_(plist), udot_prev_(udot_prev), udot_(udot)
 {
   max_its_ = plist_.get<int>("max iterations");
@@ -99,8 +99,9 @@ TimestepControllerAdaptive<Vector>::TimestepControllerAdaptive(
 * Estimate new time step by comparing the 1st and 2nd order time 
 * approximations. 
 ****************************************************************** */
-template<class Vector>
-double TimestepControllerAdaptive<Vector>::get_timestep(double dt, int iterations)
+template <class Vector>
+double
+TimestepControllerAdaptive<Vector>::get_timestep(double dt, int iterations)
 {
   std::string msg("TimestepControllerAdaptive is implemented for a limited set of vectors.");
   Errors::Message m(msg);
@@ -109,35 +110,35 @@ double TimestepControllerAdaptive<Vector>::get_timestep(double dt, int iteration
 }
 
 
-template<> inline
-double TimestepControllerAdaptive<Epetra_MultiVector>::get_timestep(double dt, int iterations)
+template <>
+inline double
+TimestepControllerAdaptive<Epetra_MultiVector>::get_timestep(double dt, int iterations)
 {
-  if (iterations < 0 || iterations > max_its_) {
-    return dt * reduction_factor_;
-  }
-    
+  if (iterations < 0 || iterations > max_its_) { return dt * reduction_factor_; }
+
   Epetra_MultiVector& u1 = *udot_;
   Epetra_MultiVector& u0 = *udot_prev_;
   return get_timestep_base_(dt, u0, u1);
 }
 
 
-template<> inline
-double TimestepControllerAdaptive<CompositeVector>::get_timestep(double dt, int iterations)
+template <>
+inline double
+TimestepControllerAdaptive<CompositeVector>::get_timestep(double dt, int iterations)
 {
-  if (iterations < 0 || iterations > max_its_) {
-    return dt * reduction_factor_;
-  }
-    
+  if (iterations < 0 || iterations > max_its_) { return dt * reduction_factor_; }
+
   Epetra_MultiVector& u1 = *udot_->ViewComponent("cell");
   Epetra_MultiVector& u0 = *udot_prev_->ViewComponent("cell");
   return get_timestep_base_(dt, u0, u1);
 }
 
 
-template<class Vector>
-double TimestepControllerAdaptive<Vector>::get_timestep_base_(
-    double dt, const Epetra_MultiVector& u0, const Epetra_MultiVector& u1)
+template <class Vector>
+double
+TimestepControllerAdaptive<Vector>::get_timestep_base_(double dt,
+                                                       const Epetra_MultiVector& u0,
+                                                       const Epetra_MultiVector& u1)
 {
   double tol, error, error_max = 0.0;
   double dTfactor(100.0), dTfactor_cell;
@@ -160,13 +161,13 @@ double TimestepControllerAdaptive<Vector>::get_timestep_base_(
   double dT_tmp = dTfactor;
   auto comm = getCommWrapper(udot_->Comm());
   comm->MinAll(&dT_tmp, &dTfactor, 1);
- 
+
   double error_tmp = error_max;
   comm->MaxAll(&error_tmp, &error_max, 1);
 
   return std::min(dt * dTfactor, max_dt_);
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

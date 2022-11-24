@@ -26,12 +26,12 @@
 namespace Amanzi {
 namespace Flow {
 
-class FracturePermModelEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class FracturePermModelEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
-  explicit
-  FracturePermModelEvaluator(Teuchos::ParameterList& plist,
-                             Teuchos::RCP<FracturePermModelPartition> fpm);
+  explicit FracturePermModelEvaluator(Teuchos::ParameterList& plist,
+                                      Teuchos::RCP<FracturePermModelPartition> fpm);
   FracturePermModelEvaluator(const FracturePermModelEvaluator& other);
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -39,7 +39,9 @@ class FracturePermModelEvaluator : public EvaluatorSecondaryMonotype<CompositeVe
  protected:
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
@@ -51,7 +53,7 @@ class FracturePermModelEvaluator : public EvaluatorSecondaryMonotype<CompositeVe
   static Utils::RegisteredFactory<Evaluator, FracturePermModelEvaluator> factory_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 #endif

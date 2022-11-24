@@ -17,8 +17,7 @@ namespace Flow {
 
 typedef std::pair<double, double> dt_tuple;
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 #endif
-

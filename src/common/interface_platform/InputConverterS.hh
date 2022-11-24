@@ -14,8 +14,8 @@
 
 #ifdef ENABLE_Structured
 
-#include "ParmParse.H"
-#include "InputConverter.hh"
+#  include "ParmParse.H"
+#  include "InputConverter.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
@@ -24,12 +24,11 @@ static Teuchos::RCP<Teuchos::ParameterList> tdb_list;
 
 class InputConverterS : public InputConverter {
  public:
-
   // This constructor opens up the file with the given name, sets up a parser,
   // and parses the file.
   explicit InputConverterS(const std::string& input_filename);
 
-  // This constructor uses an already-parsed XML document, and does not 
+  // This constructor uses an already-parsed XML document, and does not
   // manage the parser.
   InputConverterS(const std::string& input_filename, DOMDocument* input_doc);
 
@@ -55,8 +54,8 @@ class InputConverterS : public InputConverter {
   void ParseOutput_();
   void ParseMisc_();
 
-  bool ParseMechProperty_(xercesc::DOMElement* mech_prop_node, 
-                          const std::string& material_name, 
+  bool ParseMechProperty_(xercesc::DOMElement* mech_prop_node,
+                          const std::string& material_name,
                           const std::string& property_name,
                           std::list<ParmParse::PP_entry>& table,
                           bool required);
@@ -73,8 +72,8 @@ class InputConverterS : public InputConverter {
   std::vector<std::string> constraint_names_;
 };
 
-}  // namespace AmanziInput
-}  // namespace Amanzi
+} // namespace AmanziInput
+} // namespace Amanzi
 
 #endif
 

@@ -28,21 +28,18 @@
 namespace Amanzi {
 
 template <class FunctionBase>
-class PK_DomainFunctionVolume : public FunctionBase,
-                                public Functions::UniqueMeshFunction {
+class PK_DomainFunctionVolume : public FunctionBase, public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionVolume(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                          AmanziMesh::Entity_kind kind) :
-      UniqueMeshFunction(mesh),
-      kind_(kind) {};
+                          AmanziMesh::Entity_kind kind)
+    : UniqueMeshFunction(mesh), kind_(kind){};
 
   PK_DomainFunctionVolume(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           const Teuchos::ParameterList& plist,
-                          AmanziMesh::Entity_kind kind) :
-      UniqueMeshFunction(mesh),
-      kind_(kind) {};
+                          AmanziMesh::Entity_kind kind)
+    : UniqueMeshFunction(mesh), kind_(kind){};
 
-  ~PK_DomainFunctionVolume() {};
+  ~PK_DomainFunctionVolume(){};
 
   // member functions
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
@@ -59,7 +56,7 @@ class PK_DomainFunctionVolume : public FunctionBase,
  private:
   std::string submodel_;
   AmanziMesh::Entity_kind kind_;
-  std::map<AmanziMesh::Entity_kind, std::vector<double> > measure_;
+  std::map<AmanziMesh::Entity_kind, std::vector<double>> measure_;
 };
 
 
@@ -67,16 +64,16 @@ class PK_DomainFunctionVolume : public FunctionBase,
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionVolume<FunctionBase>::Init(
-    const Teuchos::ParameterList& plist, const std::string& keyword)
+void
+PK_DomainFunctionVolume<FunctionBase>::Init(const Teuchos::ParameterList& plist,
+                                            const std::string& keyword)
 {
   keyword_ = keyword;
 
   submodel_ = "rate";
-  if (plist.isParameter("submodel"))
-    submodel_ = plist.get<std::string>("submodel");
+  if (plist.isParameter("submodel")) submodel_ = plist.get<std::string>("submodel");
 
-  std::vector<std::string> regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
+  std::vector<std::string> regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();
 
   Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
@@ -97,27 +94,30 @@ void PK_DomainFunctionVolume<FunctionBase>::Init(
 * Compute and distribute the result by volume.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
+void
+PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
 {
-   // create the input tuple (time + space)
+  // create the input tuple (time + space)
   int dim = (*mesh_).space_dimension();
   std::vector<double> args(1 + dim);
 
   int nowned = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::OWNED);
 
-  for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end(); ++uspec) {
+  for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end();
+       ++uspec) {
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
 
-    // calculate physical volume of region defined by domain. 
+    // calculate physical volume of region defined by domain.
     domain_volume_ = 0.0;
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
-      if (*c < nowned) domain_volume_ += 
+      if (*c < nowned)
+        domain_volume_ +=
           (kind_ == AmanziMesh::CELL) ? mesh_->cell_volume(*c) : mesh_->face_area(*c);
     }
     double tmp(domain_volume_);
     mesh_->get_comm()->SumAll(&tmp, &domain_volume_, 1);
     int nfun = (*uspec)->first->second->size();
-    std::vector<double> val_vec(nfun);  
+    std::vector<double> val_vec(nfun);
 
     args[0] = t1;
     for (auto c = ids->begin(); c != ids->end(); ++c) {
@@ -150,7 +150,6 @@ void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
   }
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif
-

@@ -23,30 +23,27 @@
 
 namespace Amanzi {
 
-template<class Vector>
+template <class Vector>
 class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
  public:
-  BDF1_SolverFnBase(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<BDFFnBase<Vector> >& bdf_fn) :
-      plist_(plist),
-      bdf_fn_(bdf_fn) {};
+  BDF1_SolverFnBase(Teuchos::ParameterList& plist, const Teuchos::RCP<BDFFnBase<Vector>>& bdf_fn)
+    : plist_(plist), bdf_fn_(bdf_fn){};
 
   // SolverFnBase interface
   // ---------------------------
   // computes the non-linear functional r = F(u)
-  virtual void Residual(const Teuchos::RCP<Vector>& u,
-                        const Teuchos::RCP<Vector>& r);
+  virtual void Residual(const Teuchos::RCP<Vector>& u, const Teuchos::RCP<Vector>& r);
 
   // preconditioner application
-  virtual int ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
-                                   const Teuchos::RCP<Vector>& Pr);
+  virtual int
+  ApplyPreconditioner(const Teuchos::RCP<const Vector>& r, const Teuchos::RCP<Vector>& Pr);
 
   // preconditioner update
   virtual void UpdatePreconditioner(const Teuchos::RCP<const Vector>& u);
 
   // error norm
-  virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u,
-                           const Teuchos::RCP<const Vector>& du);
+  virtual double
+  ErrorNorm(const Teuchos::RCP<const Vector>& u, const Teuchos::RCP<const Vector>& du);
 
   // Check the admissibility of an inner iterate (ensures preconditions for
   // F(u) to be defined).
@@ -54,18 +51,19 @@ class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
 
   // Hack a correction for some reason.
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-      ModifyCorrection(const Teuchos::RCP<const Vector>& res,
-                       const Teuchos::RCP<const Vector>& u,
-                       const Teuchos::RCP<Vector>& du);
+  ModifyCorrection(const Teuchos::RCP<const Vector>& res,
+                   const Teuchos::RCP<const Vector>& u,
+                   const Teuchos::RCP<Vector>& du);
 
   // parameter for continuation method
-  virtual void UpdateContinuationParameter(double lambda);    
+  virtual void UpdateContinuationParameter(double lambda);
 
   // bookkeeping for state
   virtual void ChangedSolution();
 
   // Other methods
-  void SetTimes(double t_old, double t_new) {
+  void SetTimes(double t_old, double t_new)
+  {
     t_old_ = t_old;
     t_new_ = t_new;
     h_ = t_new - t_old;
@@ -81,65 +79,78 @@ class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
   double h_;
   Teuchos::RCP<Vector> u_old_;
 
-  Teuchos::RCP<BDFFnBase<Vector> > bdf_fn_;
+  Teuchos::RCP<BDFFnBase<Vector>> bdf_fn_;
 };
 
 
 // computes the non-linear functional r = F(u)
-template<class Vector>
-void BDF1_SolverFnBase<Vector>::Residual(const Teuchos::RCP<Vector>& u,
-                                         const Teuchos::RCP<Vector>& r) {
+template <class Vector>
+void
+BDF1_SolverFnBase<Vector>::Residual(const Teuchos::RCP<Vector>& u, const Teuchos::RCP<Vector>& r)
+{
   bdf_fn_->FunctionalResidual(t_old_, t_new_, u_old_, u, r);
 }
 
 // preconditioner application
-template<class Vector>
-int  BDF1_SolverFnBase<Vector>::ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
-                                                    const Teuchos::RCP<Vector>& Pr) {
+template <class Vector>
+int
+BDF1_SolverFnBase<Vector>::ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
+                                               const Teuchos::RCP<Vector>& Pr)
+{
   return bdf_fn_->ApplyPreconditioner(r, Pr);
 }
 
 // preconditioner update
-template<class Vector>
-void BDF1_SolverFnBase<Vector>::UpdatePreconditioner(const Teuchos::RCP<const Vector>& u) {
+template <class Vector>
+void
+BDF1_SolverFnBase<Vector>::UpdatePreconditioner(const Teuchos::RCP<const Vector>& u)
+{
   bdf_fn_->UpdatePreconditioner(t_new_, u, h_);
 }
 
 // error norm
-template<class Vector>
-double BDF1_SolverFnBase<Vector>::ErrorNorm(const Teuchos::RCP<const Vector>& u,
-                                            const Teuchos::RCP<const Vector>& du) {
+template <class Vector>
+double
+BDF1_SolverFnBase<Vector>::ErrorNorm(const Teuchos::RCP<const Vector>& u,
+                                     const Teuchos::RCP<const Vector>& du)
+{
   return bdf_fn_->ErrorNorm(u, du);
 }
 
 
 // Check the admissibility of an inner iterate (ensures preconditions for
 // F(u) to be defined).
-template<class Vector>
-bool BDF1_SolverFnBase<Vector>::IsAdmissible(const Teuchos::RCP<const Vector>& up) {
+template <class Vector>
+bool
+BDF1_SolverFnBase<Vector>::IsAdmissible(const Teuchos::RCP<const Vector>& up)
+{
   return bdf_fn_->IsAdmissible(up);
 }
 
 // Hack a correction for some reason.
-template<class Vector>
+template <class Vector>
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 BDF1_SolverFnBase<Vector>::ModifyCorrection(const Teuchos::RCP<const Vector>& res,
-        const Teuchos::RCP<const Vector>& u,
-        const Teuchos::RCP<Vector>& du) {
+                                            const Teuchos::RCP<const Vector>& u,
+                                            const Teuchos::RCP<Vector>& du)
+{
   return bdf_fn_->ModifyCorrection(h_, res, u, du);
 }
 
-template<class Vector>
-void BDF1_SolverFnBase<Vector>::UpdateContinuationParameter(double lambda) {
+template <class Vector>
+void
+BDF1_SolverFnBase<Vector>::UpdateContinuationParameter(double lambda)
+{
   bdf_fn_->UpdateContinuationParameter(lambda);
 }
 
 // bookkeeping for state
-template<class Vector>
-void BDF1_SolverFnBase<Vector>::ChangedSolution() {
+template <class Vector>
+void
+BDF1_SolverFnBase<Vector>::ChangedSolution()
+{
   bdf_fn_->ChangedSolution();
 }
 
 } // namespace Amanzi
 #endif
-

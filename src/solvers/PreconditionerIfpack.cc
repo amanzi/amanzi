@@ -21,7 +21,8 @@ namespace AmanziSolvers {
 * According to IfPack documentation, the error code is set to 0 if 
 * the inversion was successful. 
 ****************************************************************** */
-int PreconditionerIfpack::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
+int
+PreconditionerIfpack::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 {
   returned_code_ = IfpILU_->ApplyInverse(v, hv);
   return returned_code_;
@@ -31,16 +32,18 @@ int PreconditionerIfpack::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv
 /* ******************************************************************
  * Initialize the preconditioner.
  ****************************************************************** */
-void PreconditionerIfpack::set_inverse_parameters(Teuchos::ParameterList& plist)
+void
+PreconditionerIfpack::set_inverse_parameters(Teuchos::ParameterList& plist)
 {
   plist_ = plist;
-  std::string vo_name = this->name()+" ("+plist_.get<std::string>("method")+")";
+  std::string vo_name = this->name() + " (" + plist_.get<std::string>("method") + ")";
   vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist_));
   initialized_ = true;
 }
 
 
-void PreconditionerIfpack::ComputeInverse()
+void
+PreconditionerIfpack::ComputeInverse()
 {
   AMANZI_ASSERT(IfpILU_.get());
   IfpILU_->Compute();
@@ -50,7 +53,8 @@ void PreconditionerIfpack::ComputeInverse()
 /* ******************************************************************
  * Rebuild the preconditioner using the given matrix A.
  ****************************************************************** */
-void PreconditionerIfpack::InitializeInverse()
+void
+PreconditionerIfpack::InitializeInverse()
 {
   AMANZI_ASSERT(initialized_);
   AMANZI_ASSERT(h_.get());
@@ -59,9 +63,7 @@ void PreconditionerIfpack::InitializeInverse()
   std::string method = plist_.get<std::string>("method");
 
   // deprecated
-  if (method == "block ilu") {
-    method = "ILU";
-  }
+  if (method == "block ilu") { method = "ILU"; }
 
   int overlap = plist_.get<int>("overlap", 0);
   // set Amanzi defaults
@@ -76,32 +78,32 @@ void PreconditionerIfpack::InitializeInverse()
   }
   IfpILU_->SetParameters(plist_);
   IfpILU_->Initialize();
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    IfpILU_->Print(*vo_->os());
-  }
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) { IfpILU_->Print(*vo_->os()); }
 }
 
-std::string PreconditionerIfpack::returned_code_string() const
+std::string
+PreconditionerIfpack::returned_code_string() const
 {
   switch (returned_code()) {
-    case -1 :
-      return "Generic Ifpack error.";
-    case -2 :
-      return "Ifpack says input data not valid.";
-    case -3 :
-      return "Ifpack says data not correctly preprocessed.";
-    case -4 :
-      return "Ifpack says problem encountered during algorithm, e.g. divide-by-zero, out-of-bounds, etc.";
-    case -5 :
-      return "Ifpack out-of-memory";
-    case 0:
-      return "Ifpack not yet applied.";
-    case 1:
-      return "success";
+  case -1:
+    return "Generic Ifpack error.";
+  case -2:
+    return "Ifpack says input data not valid.";
+  case -3:
+    return "Ifpack says data not correctly preprocessed.";
+  case -4:
+    return "Ifpack says problem encountered during algorithm, e.g. divide-by-zero, out-of-bounds, "
+           "etc.";
+  case -5:
+    return "Ifpack out-of-memory";
+  case 0:
+    return "Ifpack not yet applied.";
+  case 1:
+    return "success";
   }
   return "unknown error";
 }
 
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi

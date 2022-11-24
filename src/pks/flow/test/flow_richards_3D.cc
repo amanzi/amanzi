@@ -32,7 +32,8 @@
 #include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
-TEST(FLOW_3D_RICHARDS) {
+TEST(FLOW_3D_RICHARDS)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -50,14 +51,14 @@ TEST(FLOW_3D_RICHARDS) {
   // create an SIMPLE mesh framework
   Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
   pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, -2.0, 1.0, 1.0, 0.0, 18, 1, 18);
 
@@ -77,7 +78,7 @@ TEST(FLOW_3D_RICHARDS) {
   S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
-  std::string passwd(""); 
+  std::string passwd("");
 
   S->GetW<double>("const_fluid_density", "state") = 1.0;
   S->GetW<CompositeVector>("viscosity_liquid", Tags::DEFAULT, "viscosity_liquid").PutScalar(1.0);
@@ -105,10 +106,10 @@ TEST(FLOW_3D_RICHARDS) {
   ti_specs.max_itrs = 400;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT); // dummy times
 
   if (MyPID == 0) {
-    GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+    GMV::open_data_file(*mesh, (std::string) "flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "pressure");
     GMV::close_data_file();

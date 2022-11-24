@@ -25,8 +25,8 @@ namespace Amanzi {
 
 class Evaluator {
  public:
-  Evaluator() : type_(EvaluatorType::OTHER) {};
-  virtual ~Evaluator() {};
+  Evaluator() : type_(EvaluatorType::OTHER){};
+  virtual ~Evaluator(){};
   virtual Teuchos::RCP<Evaluator> Clone() const = 0;
   virtual Evaluator& operator=(const Evaluator& other) = 0;
 
@@ -39,10 +39,10 @@ class Evaluator {
   // Lazy evaluation of derivatives of evaluator.
   //
   // Updates the derivative, if needed.  Returns true if the value of the
-  // derivative with respect to wrt_key:wrt_tag has changed since the last 
+  // derivative with respect to wrt_key:wrt_tag has changed since the last
   // request for an update.
-  virtual bool UpdateDerivative(State& S, const Key& requester,
-                                const Key& wrt_key, const Tag& wrt_tag) = 0;
+  virtual bool
+  UpdateDerivative(State& S, const Key& requester, const Key& wrt_key, const Tag& wrt_tag) = 0;
 
   // Does this depend upon key:tag?
   // Searches the dependency graph to see if it does.
@@ -53,8 +53,8 @@ class Evaluator {
   //
   // Searches the dependency graph to see if this evaluator depends upon the
   // evaluator named key.
-  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
-                                   const Tag& wrt_tag) const = 0;
+  virtual bool
+  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const = 0;
 
   // Does this provide key?
   // Returns true if key is a field owned by this evaluator, false otherwise.
@@ -78,6 +78,6 @@ class Evaluator {
   EvaluatorType type_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

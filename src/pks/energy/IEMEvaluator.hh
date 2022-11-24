@@ -26,14 +26,13 @@
 namespace Amanzi {
 namespace Energy {
 
-typedef std::vector<Teuchos::RCP<IEM> > IEMList;
+typedef std::vector<Teuchos::RCP<IEM>> IEMList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, IEMList> IEMPartition;
 
 class IEMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
-  explicit
-  IEMEvaluator(Teuchos::ParameterList& plist);
+  explicit IEMEvaluator(Teuchos::ParameterList& plist);
   IEMEvaluator(const IEMEvaluator& other);
 
   // required inteface functions
@@ -41,7 +40,9 @@ class IEMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Composit
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
   Teuchos::RCP<IEMPartition> iem_partition() { return iem_; }
@@ -69,7 +70,7 @@ class IEMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Composit
   static Utils::RegisteredFactory<Evaluator, IEMEvaluator> factory_;
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

@@ -16,7 +16,9 @@
 
 namespace Amanzi {
 
-FunctionMonomial::FunctionMonomial(double c, const std::vector<double>& x0, const std::vector<int>& p)
+FunctionMonomial::FunctionMonomial(double c,
+                                   const std::vector<double>& x0,
+                                   const std::vector<int>& p)
 {
   if (x0.size() != p.size()) {
     Errors::Message m;
@@ -29,16 +31,17 @@ FunctionMonomial::FunctionMonomial(double c, const std::vector<double>& x0, cons
 }
 
 
-double FunctionMonomial::operator()(const std::vector<double>& x) const
+double
+FunctionMonomial::operator()(const std::vector<double>& x) const
 {
   double y = c_;
   if (x.size() < x0_.size()) {
     Errors::Message m;
     m << "FunctionMonomial expects higher-dimensional argument.";
     Exceptions::amanzi_throw(m);
-  }    
+  }
   for (int j = 0; j < x0_.size(); ++j) y *= pow(x[j] - x0_[j], p_[j]);
   return y;
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

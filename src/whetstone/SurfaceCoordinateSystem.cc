@@ -22,11 +22,12 @@ namespace WhetStone {
 /* ******************************************************************
 * Initialization of local coordinate system
 ****************************************************************** */
-void SurfaceCoordinateSystem::Init()
+void
+SurfaceCoordinateSystem::Init()
 {
   int d = normal_.dim();
-  tau_ = std::make_shared<std::vector<AmanziGeometry::Point> >(d - 1);
-  auto& tau = *tau_; 
+  tau_ = std::make_shared<std::vector<AmanziGeometry::Point>>(d - 1);
+  auto& tau = *tau_;
 
   normal_unit_ /= AmanziGeometry::norm(normal_unit_);
 
@@ -36,7 +37,7 @@ void SurfaceCoordinateSystem::Init()
     // here we need orthogonal projector to implement hierarchical construction
     if (fabs(normal_unit_[0]) > 0.1)
       tau[0] = AmanziGeometry::Point(normal_unit_[1], -normal_unit_[0], 0.0);
-    else 
+    else
       tau[0] = AmanziGeometry::Point(0.0, -normal_unit_[2], normal_unit_[1]);
 
     tau[0] /= norm(tau[0]);
@@ -48,18 +49,16 @@ void SurfaceCoordinateSystem::Init()
 /* ******************************************************************
 * Initialization of local coordinate system
 ****************************************************************** */
-AmanziGeometry::Point SurfaceCoordinateSystem::Project(
-   const AmanziGeometry::Point& x, bool flag) const
+AmanziGeometry::Point
+SurfaceCoordinateSystem::Project(const AmanziGeometry::Point& x, bool flag) const
 {
   int d = tau_->size();
-  AmanziGeometry::Point xloc(d);    
+  AmanziGeometry::Point xloc(d);
 
-  for (int i = 0; i < d; ++i) 
-    xloc[i] = (flag) ? ((x - origin_) * (*tau_)[i]) : (x * (*tau_)[i]);
+  for (int i = 0; i < d; ++i) xloc[i] = (flag) ? ((x - origin_) * (*tau_)[i]) : (x * (*tau_)[i]);
 
   return xloc;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

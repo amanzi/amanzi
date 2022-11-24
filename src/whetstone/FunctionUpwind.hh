@@ -21,29 +21,31 @@ namespace WhetStone {
 
 class FunctionUpwindPlus : public WhetStoneFunction {
  public:
-  FunctionUpwindPlus(const WhetStoneFunction* f) : f_(f) {};
-  ~FunctionUpwindPlus() {};
+  FunctionUpwindPlus(const WhetStoneFunction* f) : f_(f){};
+  ~FunctionUpwindPlus(){};
 
-  virtual double Value(const AmanziGeometry::Point& xp) const {
+  virtual double Value(const AmanziGeometry::Point& xp) const
+  {
     return std::max(f_->Value(xp), 0.0);
   }
 
  private:
-  const WhetStoneFunction *f_;
+  const WhetStoneFunction* f_;
 };
 
 
 class FunctionUpwindMinus : public WhetStoneFunction {
  public:
-  FunctionUpwindMinus(const WhetStoneFunction* f) : f_(f) {};
-  ~FunctionUpwindMinus() {};
+  FunctionUpwindMinus(const WhetStoneFunction* f) : f_(f){};
+  ~FunctionUpwindMinus(){};
 
-  virtual double Value(const AmanziGeometry::Point& xp) const {
+  virtual double Value(const AmanziGeometry::Point& xp) const
+  {
     return std::min(f_->Value(xp), 0.0);
   }
 
  private:
-  const WhetStoneFunction *f_;
+  const WhetStoneFunction* f_;
 };
 
 } // namespace WhetStone

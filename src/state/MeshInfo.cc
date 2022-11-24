@@ -9,7 +9,8 @@
 
 namespace Amanzi {
 
-void MeshInfo::WriteMeshCentroids(std::string domain, const AmanziMesh::Mesh& mesh)
+void
+MeshInfo::WriteMeshCentroids(std::string domain, const AmanziMesh::Mesh& mesh)
 {
   std::string filename = plist_.get<std::string>("filename", "meshinfo");
 
@@ -42,9 +43,7 @@ void MeshInfo::WriteMeshCentroids(std::string domain, const AmanziMesh::Mesh& me
 
   for (int n = 0; n < ncells_owned; n++) {
     const AmanziGeometry::Point& xc = mesh.cell_centroid(n);
-    for (int i = 0; i < dim; i++) {
-      (*(*aux)(i))[n] = xc[i];
-    }
+    for (int i = 0; i < dim; i++) { (*(*aux)(i))[n] = xc[i]; }
   }
 
   WriteVector(*aux, name);

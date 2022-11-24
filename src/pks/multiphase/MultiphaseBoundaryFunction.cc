@@ -23,8 +23,7 @@ namespace Multiphase {
 MultiphaseBoundaryFunction::MultiphaseBoundaryFunction(const Teuchos::ParameterList& plist)
 {
   rainfall_ = false;
-  if (plist.isParameter("name"))
-    component_name_ = plist.get<std::string>("name");
+  if (plist.isParameter("name")) component_name_ = plist.get<std::string>("name");
 
   component_phase_ = MULTIPHASE_PHASE_LIQUID;
   if (plist.isParameter("phase")) {
@@ -33,15 +32,15 @@ MultiphaseBoundaryFunction::MultiphaseBoundaryFunction(const Teuchos::ParameterL
     if (phase == "napl") component_phase_ = MULTIPHASE_PHASE_NAPL;
   }
 
-  if (plist.isParameter("rainfall")) 
-    rainfall_ = plist.get<bool>("rainfall");
+  if (plist.isParameter("rainfall")) rainfall_ = plist.get<bool>("rainfall");
 }
 
 
 /* ****************************************************************
 * Process additional parameters for BC submodels.
 **************************************************************** */
-void MultiphaseBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+void
+MultiphaseBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
   int dim = mesh->space_dimension();
 
@@ -58,11 +57,12 @@ void MultiphaseBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const Amanzi
 /* ****************************************************************
 * Find position of component in the list of names
 **************************************************************** */
-void MultiphaseBoundaryFunction::SetComponentId(const std::vector<std::string>& names)
+void
+MultiphaseBoundaryFunction::SetComponentId(const std::vector<std::string>& names)
 {
   auto it = std::find(names.begin(), names.end(), component_name_);
   component_id_ = (it == names.end()) ? -1 : std::distance(names.begin(), it);
 }
 
-}  // namespace Multiphase
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi

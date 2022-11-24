@@ -32,11 +32,11 @@ namespace WhetStone {
 * nodes as input since it is not cached by the mesh.
 * NOTE: polygon must be star-shaped w.r.t. its geometric center.
 ****************************************************************** */
-inline
-void PolygonCentroidWeights(
-    const AmanziMesh::MeshLight& mesh, 
-    const AmanziMesh::Entity_ID_List& nodes,
-    double area, std::vector<double>& weights)
+inline void
+PolygonCentroidWeights(const AmanziMesh::MeshLight& mesh,
+                       const AmanziMesh::Entity_ID_List& nodes,
+                       double area,
+                       std::vector<double>& weights)
 {
   int d = mesh.space_dimension();
   int nnodes = nodes.size();
@@ -53,11 +53,11 @@ void PolygonCentroidWeights(
 
   // corner volume contributions
   for (int i1 = 0; i1 < nnodes; ++i1) {
-    int i2 = (i1 + 1) % nnodes;  
+    int i2 = (i1 + 1) % nnodes;
     mesh.node_get_coordinates(nodes[i1], &p1);
     mesh.node_get_coordinates(nodes[i2], &p2);
 
-    p3 = (p1 - xg)^(p2 - xg);
+    p3 = (p1 - xg) ^ (p2 - xg);
     double tmp = norm(p3) / (6 * area);
 
     weights[i1] += tmp;
@@ -69,16 +69,16 @@ void PolygonCentroidWeights(
 /* ******************************************************************
 // Faces of ptype of cell c that are connected to node v.
 ****************************************************************** */
-inline
-void node_get_cell_faces(const AmanziMesh::MeshLight& mesh,
-                         const AmanziMesh::Entity_ID v, 
-                         const AmanziMesh::Entity_ID c,
-                         const AmanziMesh::Parallel_type ptype,
-                         AmanziMesh::Entity_ID_List *faces) 
+inline void
+node_get_cell_faces(const AmanziMesh::MeshLight& mesh,
+                    const AmanziMesh::Entity_ID v,
+                    const AmanziMesh::Entity_ID c,
+                    const AmanziMesh::Parallel_type ptype,
+                    AmanziMesh::Entity_ID_List* faces)
 {
   Entity_ID_List nodes;
 
-  faces->clear();  
+  faces->clear();
   int nfaces_owned = mesh.num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   const auto& faces_tmp = mesh.cell_get_faces(c);
@@ -103,10 +103,11 @@ void node_get_cell_faces(const AmanziMesh::MeshLight& mesh,
 /* ******************************************************************
 * Extension of Mesh API: entities in cell
 ****************************************************************** */
-inline
-void cell_get_entities(const AmanziMesh::Mesh& mesh, int c, 
-                       const AmanziMesh::Entity_kind kind, 
-                       AmanziMesh::Entity_ID_List* entities)
+inline void
+cell_get_entities(const AmanziMesh::Mesh& mesh,
+                  int c,
+                  const AmanziMesh::Entity_kind kind,
+                  AmanziMesh::Entity_ID_List* entities)
 {
   if (kind == AmanziMesh::FACE) {
     mesh.cell_get_faces(c, entities);
@@ -123,8 +124,7 @@ void cell_get_entities(const AmanziMesh::Mesh& mesh, int c,
 }
 
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

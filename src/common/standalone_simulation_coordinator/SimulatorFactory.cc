@@ -17,10 +17,10 @@
 #include "SimulatorFactory.hh"
 
 #ifdef ENABLE_Unstructured
-#include "AmanziUnstructuredGridSimulationDriver.hh"
+#  include "AmanziUnstructuredGridSimulationDriver.hh"
 #endif
 #ifdef ENABLE_Structured
-#include "amanzi_structured_grid_simulation_driver.H"
+#  include "amanzi_structured_grid_simulation_driver.H"
 #endif
 
 using namespace std;
@@ -35,7 +35,7 @@ Create(const std::string& input_filename, const std::string& output_prefix)
   XercesDOMParser* parser = Amanzi::AmanziInput::CreateXMLParser();
   DOMDocument* doc = Amanzi::AmanziInput::OpenXMLInput(parser, input_filename);
 
-  // Determine whether this is a structured or unstructured input and dispatch 
+  // Determine whether this is a structured or unstructured input and dispatch
   // accordingly.
   char str[100];
   XMLCh xstr[100];
@@ -55,12 +55,13 @@ Create(const std::string& input_filename, const std::string& output_prefix)
   std::string type;
   if (version == "v2") {
     XMLString::transcode("type", xstr, 99);
-    if (not element->hasAttribute(xstr)) 
-      Exceptions::amanzi_throw(Errors::Message("Invalid input file (no 'type' attribute in amanzi_input)."));
+    if (not element->hasAttribute(xstr))
+      Exceptions::amanzi_throw(
+        Errors::Message("Invalid input file (no 'type' attribute in amanzi_input)."));
     XMLString::transcode(element->getAttribute(xstr), str, 99);
     type = str;
   } else {
-    // We check the parameter lists for the unstructured tag. If we don't 
+    // We check the parameter lists for the unstructured tag. If we don't
     // find this, we assume it to be structured.
     type = "structured";
     XMLString::transcode("name", xstr, 99);
@@ -83,17 +84,18 @@ Create(const std::string& input_filename, const std::string& output_prefix)
   if (type == "structured") {
 #ifdef ENABLE_Structured
     if (version == "v2")
-      simulator = std::make_unique<AmanziStructuredGridSimulationDriver>(input_filename, doc, output_prefix);
+      simulator =
+        std::make_unique<AmanziStructuredGridSimulationDriver>(input_filename, doc, output_prefix);
     else
       amanzi_throw(Errors::Message("Input spec v1 is no longer supported by Amanzi-S."));
 #else
     amanzi_throw(Errors::Message("Structured not supported in current build"));
 #endif
-  }
-  else if (type == "unstructured") {
+  } else if (type == "unstructured") {
 #ifdef ENABLE_Unstructured
     if (version == "v2")
-      simulator = std::make_unique<AmanziUnstructuredGridSimulationDriver>(input_filename, doc, output_prefix);
+      simulator = std::make_unique<AmanziUnstructuredGridSimulationDriver>(
+        input_filename, doc, output_prefix);
     else
       simulator = std::make_unique<AmanziUnstructuredGridSimulationDriver>(input_filename);
 #else
@@ -110,4 +112,3 @@ Create(const std::string& input_filename, const std::string& output_prefix)
 
 } // namespace SimulatorFactory
 } // namespace Amanzi
-

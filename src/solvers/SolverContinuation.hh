@@ -50,35 +50,34 @@ interface about how to update the continuation parameter.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Vector, class VectorSpace>
-class SolverContinuation : public Solver<Vector,VectorSpace> {
+template <class Vector, class VectorSpace>
+class SolverContinuation : public Solver<Vector, VectorSpace> {
  public:
-  SolverContinuation(Teuchos::ParameterList& plist) :
-      plist_(plist) {};
+  SolverContinuation(Teuchos::ParameterList& plist) : plist_(plist){};
 
   SolverContinuation(Teuchos::ParameterList& plist,
-            const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-            const VectorSpace& map) :
-      plist_(plist) {
+                     const Teuchos::RCP<SolverFnBase<Vector>>& fn,
+                     const VectorSpace& map)
+    : plist_(plist)
+  {
     Init(fn, map);
   }
 
-  void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-            const VectorSpace& map);
+  void Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map);
 
-  int Solve(const Teuchos::RCP<Vector>& u) {
+  int Solve(const Teuchos::RCP<Vector>& u)
+  {
     returned_code_ = Solve_(u);
     return (returned_code_ >= 0) ? 0 : 1;
   }
 
   // mutators
-  void set_tolerance(double tol) {
+  void set_tolerance(double tol)
+  {
     tol_ = tol;
     solver_->set_tolerance(tol);
   }
-  void set_pc_lag(int pc_lag) {
-    solver_->set_pc_lag(pc_lag);
-  }
+  void set_pc_lag(int pc_lag) { solver_->set_pc_lag(pc_lag); }
 
   // access
   double tolerance() { return tol_; }
@@ -94,8 +93,8 @@ class SolverContinuation : public Solver<Vector,VectorSpace> {
 
  protected:
   Teuchos::ParameterList plist_;
-  Teuchos::RCP<SolverFnBase<Vector> > fn_;
-  Teuchos::RCP<Solver<Vector, VectorSpace> > solver_;
+  Teuchos::RCP<SolverFnBase<Vector>> fn_;
+  Teuchos::RCP<Solver<Vector, VectorSpace>> solver_;
 
   Teuchos::RCP<VerboseObject> vo_;
 
@@ -106,8 +105,8 @@ class SolverContinuation : public Solver<Vector,VectorSpace> {
   int returned_code_;
 };
 
-} // namespace
-} // namespace
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #include "SolverFactory.hh"
 
@@ -117,10 +116,10 @@ namespace AmanziSolvers {
 /* ******************************************************************
 * Public Init method.
 ****************************************************************** */
-template<class Vector, class VectorSpace>
+template <class Vector, class VectorSpace>
 void
-SolverContinuation<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-        const VectorSpace& map)
+SolverContinuation<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
+                                              const VectorSpace& map)
 {
   fn_ = fn;
   Init_();
@@ -131,15 +130,16 @@ SolverContinuation<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vec
 /* ******************************************************************
 * Initialization of the NKA solver.
 ****************************************************************** */
-template<class Vector, class VectorSpace>
-void SolverContinuation<Vector, VectorSpace>::Init_()
+template <class Vector, class VectorSpace>
+void
+SolverContinuation<Vector, VectorSpace>::Init_()
 {
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
   n_cont_steps_ = plist_.get<int>("number of continuation steps", 5);
 
-  SolverFactory<Vector,VectorSpace> fac;
+  SolverFactory<Vector, VectorSpace> fac;
   solver_ = fac.Create(plist_.sublist("inner solver"));
-  
+
   // update the verbose options
   vo_ = Teuchos::rcp(new VerboseObject("Solver::Continuation", plist_));
 }
@@ -148,8 +148,10 @@ void SolverContinuation<Vector, VectorSpace>::Init_()
 /* ******************************************************************
 * The body of NKA solver
 ****************************************************************** */
-template<class Vector, class VectorSpace>
-int SolverContinuation<Vector, VectorSpace>::Solve_(const Teuchos::RCP<Vector>& u) {
+template <class Vector, class VectorSpace>
+int
+SolverContinuation<Vector, VectorSpace>::Solve_(const Teuchos::RCP<Vector>& u)
+{
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // initialize the iteration counter
@@ -158,8 +160,7 @@ int SolverContinuation<Vector, VectorSpace>::Solve_(const Teuchos::RCP<Vector>& 
   int itr = 0;
   do {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << "taking continuation step " << itr << " of "
-                 << n_cont_steps_ << std::endl;
+      *vo_->os() << "taking continuation step " << itr << " of " << n_cont_steps_ << std::endl;
     }
 
     // continuation parameter ranges from 1 (smooth problem) to 0 (true problem)
@@ -171,9 +172,7 @@ int SolverContinuation<Vector, VectorSpace>::Solve_(const Teuchos::RCP<Vector>& 
 
     num_itrs_ += solver_->num_itrs();
 
-    if (ierr) {
-      return solver_->returned_code();
-    }
+    if (ierr) { return solver_->returned_code(); }
 
     itr++;
   } while (itr <= n_cont_steps_);
@@ -181,7 +180,7 @@ int SolverContinuation<Vector, VectorSpace>::Solve_(const Teuchos::RCP<Vector>& 
 }
 
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif

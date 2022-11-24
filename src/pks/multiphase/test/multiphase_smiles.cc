@@ -36,7 +36,8 @@
 
 
 /* **************************************************************** */
-TEST(MULTIPHASE_SMILES) {
+TEST(MULTIPHASE_SMILES)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -57,7 +58,7 @@ TEST(MULTIPHASE_SMILES) {
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(d, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 51, 1);
 
   // create screen io
@@ -88,14 +89,16 @@ TEST(MULTIPHASE_SMILES) {
   iolist.get<std::string>("file name base", "plot");
   auto io = Teuchos::rcp(new OutputXDMF(iolist, mesh, true, false));
 
-  const auto& tccl = *S->Get<CompositeVector>("total_component_concentration_liquid", Tags::DEFAULT).ViewComponent("cell");
-  const auto& tccg = *S->Get<CompositeVector>("total_component_concentration_gas", Tags::DEFAULT).ViewComponent("cell");
+  const auto& tccl = *S->Get<CompositeVector>("total_component_concentration_liquid", Tags::DEFAULT)
+                        .ViewComponent("cell");
+  const auto& tccg = *S->Get<CompositeVector>("total_component_concentration_gas", Tags::DEFAULT)
+                        .ViewComponent("cell");
 
   // loop
   int iloop(0);
   double t(0.0), tend(3.1558e+8), dt(3.1558e+6), dt_max(2 * 3.1558e+6);
   while (t < tend) {
-    while(MPK->AdvanceStep(t, t + dt, false)) { dt /= 10; } 
+    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 10; }
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
     S->advance_cycle();
@@ -118,7 +121,12 @@ TEST(MULTIPHASE_SMILES) {
       io->WriteVector(*u3(0), "gas tritium", AmanziMesh::CELL);
       io->FinalizeCycle();
     }
-    printf("AAA: %g %16.10g %16.10g ... %16.10g   %16.10g\n", t, tccl[0][0], tccl[0][1], tccl[0][25], tccg[0][25]);
+    printf("AAA: %g %16.10g %16.10g ... %16.10g   %16.10g\n",
+           t,
+           tccl[0][0],
+           tccl[0][1],
+           tccl[0][25],
+           tccg[0][25]);
   }
 
   WriteStateStatistics(*S, *vo);
@@ -128,5 +136,3 @@ TEST(MULTIPHASE_SMILES) {
   printf("Normalized effective liquid concentration: %g \n", tccl_eff * 1e+5);
   CHECK_CLOSE(0.14, tccl_eff / 1e-5, 0.002);
 }
-
-

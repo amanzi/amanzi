@@ -18,7 +18,7 @@
 #include "ObservableAmanzi.hh"
 #include "Units.hh"
 
-namespace Amanzi{
+namespace Amanzi {
 
 class ObservableAqueous : public virtual Observable {
  public:
@@ -29,7 +29,8 @@ class ObservableAqueous : public virtual Observable {
                     Teuchos::ParameterList& units_plist,
                     Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
+  virtual void
+  ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
   virtual int ComputeRegionSize();
 
  protected:
@@ -41,6 +42,6 @@ class ObservableAqueous : public virtual Observable {
   AmanziGeometry::Point reg_normal_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

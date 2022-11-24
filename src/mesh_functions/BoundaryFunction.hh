@@ -32,36 +32,32 @@ namespace Amanzi {
 namespace Functions {
 
 class BoundaryFunction : public UniqueMeshFunction {
+ public:
+  BoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : UniqueMeshFunction(mesh), finalized_(false){};
 
-public:
-  BoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      UniqueMeshFunction(mesh),
-      finalized_(false) {};
+  void Define(const std::vector<std::string>& regions, const Teuchos::RCP<const MultiFunction>& f);
 
-  void Define(const std::vector<std::string>& regions,
-              const Teuchos::RCP<const MultiFunction>& f);
-
-  void Define(std::string& region,
-              const Teuchos::RCP<const MultiFunction>& f);
+  void Define(std::string& region, const Teuchos::RCP<const MultiFunction>& f);
 
   void Compute(double time);
 
   void Finalize();
 
   // iterator methods
-  typedef std::map<int,double>::const_iterator Iterator;
+  typedef std::map<int, double>::const_iterator Iterator;
   Iterator begin() const { return value_.begin(); }
-  Iterator end() const  { return value_.end(); }
+  Iterator end() const { return value_.end(); }
   Iterator find(const int j) const { return value_.find(j); }
-  std::map<int,double>::size_type size() { return value_.size(); }
+  std::map<int, double>::size_type size() { return value_.size(); }
 
-protected:
-  std::map<int,double> value_;
+ protected:
+  std::map<int, double> value_;
   bool finalized_;
 };
 
-} // namespace
-} // namespace
+} // namespace Functions
+} // namespace Amanzi
 
 
 #endif

@@ -26,14 +26,14 @@
 namespace Amanzi {
 class Simulator {
  public:
-  enum ReturnType {SUCCESS, FAIL, NUM_RETURN_TYPES};
+  enum ReturnType { SUCCESS, FAIL, NUM_RETURN_TYPES };
 
-  Simulator() {};
-  explicit Simulator(xercesc::DOMDocument* input) {};
-  virtual ~Simulator() {};
+  Simulator(){};
+  explicit Simulator(xercesc::DOMDocument* input){};
+  virtual ~Simulator(){};
 
-  virtual Amanzi::Simulator::ReturnType Run(const Comm_ptr_type&  mpi_comm,
-                                            Amanzi::ObservationData& output_observations) = 0;
+  virtual Amanzi::Simulator::ReturnType
+  Run(const Comm_ptr_type& mpi_comm, Amanzi::ObservationData& output_observations) = 0;
 
  private:
   // Disallowed operations.

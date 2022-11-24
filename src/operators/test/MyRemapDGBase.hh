@@ -22,17 +22,14 @@
 
 namespace Amanzi {
 
-template<class AnalyticDG>
+template <class AnalyticDG>
 class MyRemapDGBase : public Operators::RemapDG {
  public:
   MyRemapDGBase(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
                 const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
-                Teuchos::ParameterList& plist) 
-    : RemapDG(mesh0, mesh1, plist),
-      tprint_(0.0),
-      l2norm_(-1.0),
-      dt_output_(0.1) {};
-  ~MyRemapDGBase() {};
+                Teuchos::ParameterList& plist)
+    : RemapDG(mesh0, mesh1, plist), tprint_(0.0), l2norm_(-1.0), dt_output_(0.1){};
+  ~MyRemapDGBase(){};
 
   // CFL condition
   double StabilityCondition();
@@ -54,8 +51,9 @@ class MyRemapDGBase : public Operators::RemapDG {
 /* *****************************************************************
 * Initialization of the consistent jacobian determinant
 ***************************************************************** */
-template<class AnalyticDG>
-double MyRemapDGBase<AnalyticDG>::StabilityCondition()
+template <class AnalyticDG>
+double
+MyRemapDGBase<AnalyticDG>::StabilityCondition()
 {
   double dt(1e+99), alpha(0.2), tmp;
 
@@ -73,8 +71,9 @@ double MyRemapDGBase<AnalyticDG>::StabilityCondition()
 /* *****************************************************************
 * Compute initial mass
 ***************************************************************** */
-template<class AnalyticDG>
-double MyRemapDGBase<AnalyticDG>::InitialMass(const CompositeVector& p1, int order)
+template <class AnalyticDG>
+double
+MyRemapDGBase<AnalyticDG>::InitialMass(const CompositeVector& p1, int order)
 {
   const Epetra_MultiVector& p1c = *p1.ViewComponent("cell", false);
   int nk = p1c.NumVectors();
@@ -98,8 +97,9 @@ double MyRemapDGBase<AnalyticDG>::InitialMass(const CompositeVector& p1, int ord
 /* *****************************************************************
 * Print statistics using conservative field u
 ***************************************************************** */
-template<class AnalyticDG>
-void MyRemapDGBase<AnalyticDG>::CollectStatistics(double t, const CompositeVector& u)
+template <class AnalyticDG>
+void
+MyRemapDGBase<AnalyticDG>::CollectStatistics(double t, const CompositeVector& u)
 {
   double tglob = global_time(t);
   if (tglob >= tprint_) {
@@ -125,13 +125,22 @@ void MyRemapDGBase<AnalyticDG>::CollectStatistics(double t, const CompositeVecto
     }
 
     if (mesh0_->get_comm()->MyPID() == 0) {
-      printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  limiter: %6.3f %6.3f %6.3f  umax/umin: %9.5g %9.5g\n",
-             tglob, l2norm_, nfun_, sharp_, lmax, lmin, lavg, xmax[0], xmin[0]);
+      printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  limiter: %6.3f %6.3f %6.3f  umax/umin: "
+             "%9.5g %9.5g\n",
+             tglob,
+             l2norm_,
+             nfun_,
+             sharp_,
+             lmax,
+             lmin,
+             lavg,
+             xmax[0],
+             xmin[0]);
     }
 
     tprint_ += dt_output_;
     sharp_ = 0.0;
-  } 
+  }
 }
 
 } // namespace Amanzi

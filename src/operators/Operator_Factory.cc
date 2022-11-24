@@ -34,8 +34,7 @@ namespace Operators {
 Teuchos::RCP<Operator>
 Operator_Factory::Create()
 {
-  if (!plist_.get())
-    plist_ = Teuchos::rcp(new Teuchos::ParameterList("operator"));
+  if (!plist_.get()) plist_ = Teuchos::rcp(new Teuchos::ParameterList("operator"));
 
   // deduce the type
   // -- first choice: type is provided in the plist
@@ -86,19 +85,18 @@ Operator_Factory::CreateFromSchema()
   AMANZI_ASSERT(schema_row_.get_base() == schema_col_.get_base());
   AMANZI_ASSERT(schema_row_.get_base() == AmanziMesh::CELL);
 
-  if (!plist_.get())
-    plist_ = Teuchos::rcp(new Teuchos::ParameterList("operator"));
+  if (!plist_.get()) plist_ = Teuchos::rcp(new Teuchos::ParameterList("operator"));
 
   // auto base = schema_row_.get_base();
   int size = schema_row_.size();
-  int num1 = std::get<2>(schema_row_[0]);  // number of dofs
+  int num1 = std::get<2>(schema_row_[0]); // number of dofs
 
   auto cvs1 = Teuchos::rcp(new CompositeVectorSpace(cvsFromSchema(schema_row_, mesh_, true)));
 
   // named operator is the best choise for a square operator
   if (schema_row_ == schema_col_ && size == 1 && num1 == 1) {
     int old_schema = schema_row_.OldSchema();
-    auto entity = std::get<0>(schema_row_[0]);  
+    auto entity = std::get<0>(schema_row_[0]);
 
     if (entity == AmanziMesh::CELL) {
       return Teuchos::rcp(new Operator_Cell(cvs1, *plist_, old_schema));
@@ -110,41 +108,39 @@ Operator_Factory::CreateFromSchema()
     } else if (entity == AmanziMesh::NODE) {
       return Teuchos::rcp(new Operator_Node(cvs1, *plist_));
     }
-  } 
+  }
 
   // named operator is the best choise for a square operator
   if (schema_row_ == schema_col_ && size == 2) {
     int num2 = std::get<2>(schema_row_[1]);
-  
-    auto ent1 = std::get<0>(schema_row_[0]);  
+
+    auto ent1 = std::get<0>(schema_row_[0]);
     auto ent2 = std::get<0>(schema_row_[1]);
     if (num1 == num2 && num1 == 1) {
       if ((ent1 == AmanziMesh::CELL && ent2 == AmanziMesh::FACE) ||
           (ent2 == AmanziMesh::CELL && ent1 == AmanziMesh::FACE))
-      return Teuchos::rcp(new Operator_FaceCell(cvs1, *plist_));
+        return Teuchos::rcp(new Operator_FaceCell(cvs1, *plist_));
     }
   }
 
   // abstract operator is the best choice for multiple dofs, more
-  // then two items in schema 
+  // then two items in schema
   num1 = 0;
-  for (int i = 0; i < schema_row_.size(); ++i)
-    num1 = std::max(num1, std::get<2>(schema_row_[i]));
-  for (int i = 0; i < schema_col_.size(); ++i)
-    num1 = std::max(num1, std::get<2>(schema_col_[i]));
+  for (int i = 0; i < schema_row_.size(); ++i) num1 = std::max(num1, std::get<2>(schema_row_[i]));
+  for (int i = 0; i < schema_col_.size(); ++i) num1 = std::max(num1, std::get<2>(schema_col_[i]));
 
   if (num1 > 1) {
     auto cvs2 = Teuchos::rcp(new CompositeVectorSpace(cvsFromSchema(schema_col_, mesh_, true)));
     return Teuchos::rcp(new Operator_Schema(cvs1, cvs2, *plist_, schema_row_, schema_col_));
   }
-  
+
   std::stringstream ss;
-  ss << "Operator factory failed: unsupported/incorrect combination of schema parameters" 
-     << "\nrows: " << schema_row_ <<"\ncols: " << schema_col_ << std::endl;
+  ss << "Operator factory failed: unsupported/incorrect combination of schema parameters"
+     << "\nrows: " << schema_row_ << "\ncols: " << schema_col_ << std::endl;
   Errors::Message msg(ss.str());
   Exceptions::amanzi_throw(msg);
   return Teuchos::null;
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi

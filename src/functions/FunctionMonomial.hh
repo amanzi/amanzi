@@ -42,7 +42,7 @@ Here is an example of monomial of degree 6 in three variables:
   </ParameterList>
 
 */
-  
+
 #ifndef AMANZI_MONOMIAL_FUNCTION_HH_
 #define AMANZI_MONOMIAL_FUNCTION_HH_
 
@@ -56,9 +56,7 @@ class FunctionMonomial : public Function {
  public:
   FunctionMonomial(double c, const std::vector<double>& x0, const std::vector<int>& p);
   ~FunctionMonomial() {}
-  std::unique_ptr<Function> Clone() const {
-    return std::make_unique<FunctionMonomial>(*this);
-  }
+  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionMonomial>(*this); }
   double operator()(const std::vector<double>& x) const;
 
  private:

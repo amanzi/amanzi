@@ -39,7 +39,9 @@
 
 #include "operator_marshak_testclass.hh"
 
-void RunTestMarshakLogical(std::string op_list_name) {
+void
+RunTestMarshakLogical(std::string op_list_name)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -62,11 +64,17 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
   MeshLogicalFactory fac(comm, gm);
 
-  AmanziGeometry::Point begin(0.,0.5,0.5), end(1.,0.5,0.5);
-  AmanziMesh::Entity_ID_List cells,faces;
-  fac.AddSegment(100,begin,end,1.0,
-		 MeshLogicalFactory::LogicalTip_t::BOUNDARY,MeshLogicalFactory::LogicalTip_t::BOUNDARY,
-		 "myregion",&cells, &faces);
+  AmanziGeometry::Point begin(0., 0.5, 0.5), end(1., 0.5, 0.5);
+  AmanziMesh::Entity_ID_List cells, faces;
+  fac.AddSegment(100,
+                 begin,
+                 end,
+                 1.0,
+                 MeshLogicalFactory::LogicalTip_t::BOUNDARY,
+                 MeshLogicalFactory::LogicalTip_t::BOUNDARY,
+                 "myregion",
+                 &cells,
+                 &faces);
   RCP<const Mesh> mesh = fac.Create();
 
   // Create nonlinear coefficient.
@@ -74,7 +82,8 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
@@ -123,7 +132,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
   }
 
   CompositeVector solution(*cvs);
-  solution.PutScalar(knc->TemperatureFloor);  // solution at time T=0
+  solution.PutScalar(knc->TemperatureFloor); // solution at time T=0
 
   CompositeVector heat_capacity(*cvs);
   heat_capacity.PutScalar(1.0);
@@ -136,7 +145,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
   // MAIN LOOP
   int step(0);
   double snorm(0.0);
-  
+
   double T(0.0), dT(1e-4);
   while (T < 1.0) {
     solution.ScatterMasterToGhosted();
@@ -170,7 +179,8 @@ void RunTestMarshakLogical(std::string op_list_name) {
     op.ApplyBCs(true, true, true);
 
     // create preconditoner
-    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "Amanzi GMRES", plist.sublist("solvers"));
+    global_op->set_inverse_parameters(
+      "Hypre AMG", plist.sublist("preconditioners"), "Amanzi GMRES", plist.sublist("solvers"));
     global_op->InitializeInverse();
     global_op->ComputeInverse();
 
@@ -188,7 +198,12 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
     if (MyPID == 0) {
       printf("%3d  ||r||=%11.6g  itr=%2d  ||sol||=%11.6g  T=%7.4f  dT=%7.4f\n",
-          step, global_op->residual(), global_op->num_itrs(), snorm, T, dT);
+             step,
+             global_op->residual(),
+             global_op->num_itrs(),
+             snorm,
+             T,
+             dT);
     }
 
     // change time step
@@ -228,7 +243,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 }
 
 
-TEST(MARSHAK_NONLINEAR_WAVE_LOGICAL) {
+TEST(MARSHAK_NONLINEAR_WAVE_LOGICAL)
+{
   RunTestMarshakLogical("diffusion operator");
 }
-

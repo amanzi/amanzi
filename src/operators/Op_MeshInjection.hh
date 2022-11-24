@@ -23,11 +23,13 @@ namespace Amanzi {
 namespace Operators {
 
 class Op_MeshInjection : public Op {
-public:
-  Op_MeshInjection(const Schema& schema_row, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_row,
-            const Schema& schema_col, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_col,
-            const Teuchos::RCP<Epetra_Map>& injection_,
-            bool transpose_=false)
+ public:
+  Op_MeshInjection(const Schema& schema_row,
+                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_row,
+                   const Schema& schema_col,
+                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_col,
+                   const Teuchos::RCP<Epetra_Map>& injection_,
+                   bool transpose_ = false)
     : Op(schema_row, schema_col, mesh_row),
       transpose(transpose_),
       injection(injection_),
@@ -42,41 +44,44 @@ public:
 
   // linear operator functionality.
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
-                                 const CompositeVector& X, CompositeVector& Y) const override
+                                 const CompositeVector& X,
+                                 CompositeVector& Y) const override
   {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }
 
   virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
-          const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const override
+                                        const SuperMap& map,
+                                        GraphFE& graph,
+                                        int my_block_row,
+                                        int my_block_col) const override
   {
     assembler->SymbolicAssembleMatrixOp(*this, map, graph, my_block_row, my_block_col);
   }
 
   virtual void AssembleMatrixOp(const Operator* assembler,
-          const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const override
+                                const SuperMap& map,
+                                MatrixFE& mat,
+                                int my_block_row,
+                                int my_block_col) const override
   {
     assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col);
   }
 
-  virtual void Rescale(const CompositeVector& scaling) override {
-    AMANZI_ASSERT(false);
-  }
+  virtual void Rescale(const CompositeVector& scaling) override { AMANZI_ASSERT(false); }
 
 
   const AmanziMesh::Mesh& get_row_mesh() const { return *mesh_; }
   const AmanziMesh::Mesh& get_col_mesh() const { return *mesh_col_; }
 
-public:
+ public:
   bool transpose;
   Teuchos::RCP<Epetra_Map> injection;
 
-protected:
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_col_;
 };
 
 
 } // namespace Operators
-} // namespace AManzi
+} // namespace Amanzi

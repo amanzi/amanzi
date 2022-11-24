@@ -34,7 +34,7 @@ class SurfaceComplexationRxn {
   SurfaceComplexationRxn(SurfaceSite* surface_sites,
                          const std::vector<SurfaceComplex>& surface_complexes);
   explicit SurfaceComplexationRxn(SurfaceSite surface_sites);
-  ~SurfaceComplexationRxn() {};
+  ~SurfaceComplexationRxn(){};
 
   // add complexes to the reaction
   void AddSurfaceComplex(SurfaceComplex surface_complex);
@@ -45,16 +45,18 @@ class SurfaceComplexationRxn {
   // access
   SurfaceComplex get_surface_complex() { return surface_complexes_.at(0); }
   double free_site_concentration() const { return surface_site_.at(0).free_site_concentration(); }
-  void set_free_site_concentration(double value) { surface_site_.at(0).set_free_site_concentration(value); }
+  void set_free_site_concentration(double value)
+  {
+    surface_site_.at(0).set_free_site_concentration(value);
+  }
 
   // update sorbed concentrations
   void Update(const std::vector<Species>& primary_species);
 
   // add stoichiometric contribution of complex to sorbed total
-  void AddContributionToTotal(std::vector<double> *total);
+  void AddContributionToTotal(std::vector<double>* total);
   // add derivative of total with respect to free-ion to sorbed dtotal
-  void AddContributionToDTotal(const std::vector<Species>& primary_species,
-                               MatrixBlock* dtotal);
+  void AddContributionToDTotal(const std::vector<Species>& primary_species, MatrixBlock* dtotal);
 
   // If the free site stoichiometry in any of the surface complexes
   // is not equal to 1., we must use Newton's method to solve for
@@ -76,6 +78,6 @@ class SurfaceComplexationRxn {
   // std::vector<double> dSx_dmi_;  // temporary storage for derivative calculations
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

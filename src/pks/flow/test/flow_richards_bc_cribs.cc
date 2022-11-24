@@ -31,7 +31,8 @@
 #include "Richards_PK.hh"
 
 /* **************************************************************** */
-TEST(FLOW_3D_RICHARDS) {
+TEST(FLOW_3D_RICHARDS)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -49,19 +50,19 @@ TEST(FLOW_3D_RICHARDS) {
   // create a mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
   pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(pref);  
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(pref);
   // ParameterList mesh_list = plist->get<ParameterList>("mesh").get<ParameterList>("unstructured");
   // ParameterList factory_list = mesh_list.get<ParameterList>("generate mesh");
   // Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.,0.,0.,64.5,1.0,103.2,1,1,516);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0., 0., 0., 64.5, 1.0, 103.2, 1, 1, 516);
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -82,14 +83,14 @@ TEST(FLOW_3D_RICHARDS) {
   RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
-  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummay times
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT); // dummay times
 
   // derive dependent variable
   const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
   const auto& ws = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
   const auto& K = *S->Get<CompositeVector>("permeability").ViewComponent("cell");
 
-  GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+  GMV::open_data_file(*mesh, (std::string) "flow.gmv");
   GMV::start_data();
   GMV::write_cell_data(p, 0, "pressure");
   GMV::write_cell_data(ws, 0, "saturation");

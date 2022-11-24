@@ -12,34 +12,34 @@
 
 using namespace Amanzi;
 
-SUITE(SolutionHistoryTests) {
-
+SUITE(SolutionHistoryTests)
+{
   // data structures for testing
   struct test_data {
-    Epetra_MpiComm *comm;
+    Epetra_MpiComm* comm;
     Teuchos::RCP<Epetra_Vector> x;
 
-    test_data() {
+    test_data()
+    {
       comm = new Epetra_MpiComm(MPI_COMM_SELF);
-      Epetra_Map map(2,0,*comm);
+      Epetra_Map map(2, 0, *comm);
       x = Teuchos::rcp(new Epetra_Vector(map));
     }
-    ~test_data() {
-      delete comm;
-    }
+    ~test_data() { delete comm; }
   };
 
-  TEST_FIXTURE(test_data, SolutionHistory_1) {
+  TEST_FIXTURE(test_data, SolutionHistory_1)
+  {
     std::cout << "Test: SolutionHistory_1" << std::endl;
 
     // create a solution history of size three
-    Teuchos::RCP<Amanzi::SolutionHistory<Epetra_Vector> > SH =
+    Teuchos::RCP<Amanzi::SolutionHistory<Epetra_Vector>> SH =
       Teuchos::rcp(new Amanzi::SolutionHistory<Epetra_Vector>("myhist", 3, 0.0, *x));
     x->PutScalar(1.0);
     CHECK_EQUAL(SH->history_size(), 1);
     CHECK_EQUAL(SH->MostRecentTime(), 0.0);
 
-    SH->RecordSolution(1.0,* x);
+    SH->RecordSolution(1.0, *x);
 
     CHECK_EQUAL(SH->history_size(), 2);
     CHECK_EQUAL(SH->MostRecentTime(), 1.0);
@@ -61,7 +61,7 @@ SUITE(SolutionHistoryTests) {
     Teuchos::RCP<Epetra_Vector> y = Teuchos::rcp(new Epetra_Vector(*x));
     SH->MostRecentSolution(*y);
 
-    double *norminf = new double[1];
+    double* norminf = new double[1];
     y->NormInf(norminf); // compute the max norm of the computed difference
     CHECK_EQUAL(*norminf, 9.0);
 
@@ -98,14 +98,15 @@ SUITE(SolutionHistoryTests) {
     CHECK_EQUAL(norminf[0], 6.25);
   }
 
-  TEST_FIXTURE(test_data, SolutionHistory_2) {
+  TEST_FIXTURE(test_data, SolutionHistory_2)
+  {
     std::cout << "Test: SolutionHistory_2" << std::endl;
     Teuchos::RCP<Epetra_Vector> xdot = Teuchos::rcp(new Epetra_Vector(*x));
 
     x->PutScalar(0.0);
     xdot->PutScalar(0.0);
     // create a solution history of size three
-    Teuchos::RCP<Amanzi::SolutionHistory<Epetra_Vector> > SH =
+    Teuchos::RCP<Amanzi::SolutionHistory<Epetra_Vector>> SH =
       Teuchos::rcp(new Amanzi::SolutionHistory<Epetra_Vector>("myhist", 4, 0.0, *x, xdot.get()));
 
     x->PutScalar(1.0);
@@ -117,7 +118,7 @@ SUITE(SolutionHistoryTests) {
     // interpolate 1st order
     SH->InterpolateSolution(0.5, *y, 2);
 
-    double *norminf = new double[1];
+    double* norminf = new double[1];
     y->NormInf(norminf);
     CHECK_EQUAL(norminf[0], 0.25);
 

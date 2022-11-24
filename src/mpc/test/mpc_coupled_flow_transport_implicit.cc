@@ -26,25 +26,26 @@
 #include "wrm_flow_registration.hh"
 
 
-void runTest(int order) {
-
-using namespace Amanzi;
-using namespace Amanzi::AmanziMesh;
-using namespace Amanzi::AmanziGeometry;
+void
+runTest(int order)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
-  
+
   std::cout << "\nTEST: copuled flow and transport, implicit scheme order=" << order << std::endl;
 
   // read and modify input list
   std::string xmlInFileName = "test/mpc_coupled_flow_transport_implicit.xml";
   auto plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
 
-  plist->sublist("PKs").sublist("transport matrix")
-      .set<int>("spatial discretization order", order);
-  plist->sublist("PKs").sublist("transport fracture")
-      .set<int>("spatial discretization order", order);
-  
+  plist->sublist("PKs").sublist("transport matrix").set<int>("spatial discretization order", order);
+  plist->sublist("PKs")
+    .sublist("transport fracture")
+    .set<int>("spatial discretization order", order);
+
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
@@ -52,12 +53,12 @@ using namespace Amanzi::AmanziGeometry;
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
-  factory.set_preference(Preference({Framework::MSTK}));
+  factory.set_preference(Preference({ Framework::MSTK }));
   auto mesh = factory.create(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 9, 2, 20);
 
   // create dummy observation data object
-  Amanzi::ObservationData obs_data;    
-  
+  Amanzi::ObservationData obs_data;
+
   Teuchos::ParameterList state_plist = plist->sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
@@ -95,19 +96,19 @@ using namespace Amanzi::AmanziGeometry;
   std::cout << PKFactory::list_pks << std::endl;
 
   // verify total concentration
-  auto& tcc_m = *Snew->Get<CompositeVector>("total_component_concentration", Tags::DEFAULT).ViewComponent("cell");
-  auto& tcc_f = *Snew->Get<CompositeVector>("fracture-total_component_concentration", Tags::DEFAULT).ViewComponent("cell");
+  auto& tcc_m = *Snew->Get<CompositeVector>("total_component_concentration", Tags::DEFAULT)
+                   .ViewComponent("cell");
+  auto& tcc_f = *Snew->Get<CompositeVector>("fracture-total_component_concentration", Tags::DEFAULT)
+                   .ViewComponent("cell");
 
-  for (int c = 0; c < tcc_m.MyLength(); ++c)
-    CHECK(tcc_m[0][c] <= 1.0 && tcc_m[0][c] >= 0.0);
+  for (int c = 0; c < tcc_m.MyLength(); ++c) CHECK(tcc_m[0][c] <= 1.0 && tcc_m[0][c] >= 0.0);
 
-  for (int c = 0; c < tcc_f.MyLength(); ++c)
-    CHECK(tcc_f[0][c] <= 1.0 && tcc_f[0][c] >= 0.0);
+  for (int c = 0; c < tcc_f.MyLength(); ++c) CHECK(tcc_f[0][c] <= 1.0 && tcc_f[0][c] >= 0.0);
 
   // verify solute observations
   int count(0);
   double value(0.0), value_prev;
-  std::string str, name, tmp; 
+  std::string str, name, tmp;
   std::ifstream file("obs_implicit.out");
   while (std::getline(file, str)) {
     count++;
@@ -124,6 +125,7 @@ using namespace Amanzi::AmanziGeometry;
 }
 
 
-TEST(MPC_COUPLED_FLOW_TRANSPORT_IMPLICIT_1ST) {
+TEST(MPC_COUPLED_FLOW_TRANSPORT_IMPLICIT_1ST)
+{
   runTest(1);
 }

@@ -92,14 +92,13 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   // Constructors
   VerboseObject(const std::string& name, const std::string& verbosity);
   VerboseObject(const std::string& name, Teuchos::ParameterList plist);
-  VerboseObject(const Comm_ptr_type& comm, const std::string& name,
-                Teuchos::ParameterList plist);
+  VerboseObject(const Comm_ptr_type& comm, const std::string& name, Teuchos::ParameterList plist);
 
   // this constructor is fragile and should be frowned upon, but is useful for
   // maintaining backward compatibility with the Epetra stack
-  VerboseObject(const Comm_type& comm, const std::string& name,
-                Teuchos::ParameterList plist) :
-      VerboseObject(Teuchos::rcpFromRef(comm), name, plist) {}
+  VerboseObject(const Comm_type& comm, const std::string& name, Teuchos::ParameterList plist)
+    : VerboseObject(Teuchos::rcpFromRef(comm), name, plist)
+  {}
 
   // NOTE: Default destructor, copy construct should be ok.
 
@@ -110,8 +109,7 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   inline Teuchos::RCP<Teuchos::FancyOStream> os() const;
 
   // Simple one-line wrapper
-  inline
-  void Write(Teuchos::EVerbosityLevel verbosity, const std::string& data) const;
+  inline void Write(Teuchos::EVerbosityLevel verbosity, const std::string& data) const;
   void WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const;
   void WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::string& data) const;
 
@@ -134,31 +132,36 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   std::string clock() const;
 
   // width parameter provides width of the header
-  void set_name(std::string name, int width=-1);
+  void set_name(std::string name, int width = -1);
 
  protected:
   Comm_ptr_type comm_;
 };
 
 
-bool VerboseObject::os_OK(Teuchos::EVerbosityLevel verbosity) const {
-  return getOStream().get() &&
-      includesVerbLevel(getVerbLevel(), verbosity, true);
+bool
+VerboseObject::os_OK(Teuchos::EVerbosityLevel verbosity) const
+{
+  return getOStream().get() && includesVerbLevel(getVerbLevel(), verbosity, true);
 };
 
 
-Teuchos::RCP<Teuchos::FancyOStream> VerboseObject::os() const {
+Teuchos::RCP<Teuchos::FancyOStream>
+VerboseObject::os() const
+{
   return getOStream();
 };
 
 
-void VerboseObject::Write(Teuchos::EVerbosityLevel verbosity, const std::string& data) const {
+void
+VerboseObject::Write(Teuchos::EVerbosityLevel verbosity, const std::string& data) const
+{
   if (getVerbLevel() >= verbosity) {
     Teuchos::OSTab tab = getOSTab();
     *os() << data;
   }
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

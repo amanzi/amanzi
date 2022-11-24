@@ -20,7 +20,8 @@
 #include "TransportExplicit_PK.hh"
 
 /* **************************************************************** */
-TEST(DIFFUSION_GAS_SMILES) {
+TEST(DIFFUSION_GAS_SMILES)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -39,7 +40,7 @@ TEST(DIFFUSION_GAS_SMILES) {
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0, 10.0,1.0, 51, 1); 
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 51, 1);
 
   // create a simple state and populate it
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -63,11 +64,12 @@ TEST(DIFFUSION_GAS_SMILES) {
   S->set_final_time(0.0);
 
   // modify the default state for the problem at hand
-  std::string passwd("state"); 
+  std::string passwd("state");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
   flux.PutScalar(0.0);
 
-  auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
+  auto& tcc =
+    *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   // initialize a transport process kernel
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -87,7 +89,12 @@ TEST(DIFFUSION_GAS_SMILES) {
 
     t_old = t_new;
     iter++;
-    printf("AAA: %g %16.10g %16.10g ... %16.10g   %16.10g\n", t_new, tcc[0][0], tcc[0][1], tcc[0][25], tcc[1][25]);
+    printf("AAA: %g %16.10g %16.10g ... %16.10g   %16.10g\n",
+           t_new,
+           tcc[0][0],
+           tcc[0][1],
+           tcc[0][25],
+           tcc[1][25]);
   }
 
   WriteStateStatistics(*S);
@@ -105,6 +112,3 @@ TEST(DIFFUSION_GAS_SMILES) {
     CHECK(tcc[1][c] >= 0.0 && tcc[1][c] <= 1.0);
   }
 }
-
-
-

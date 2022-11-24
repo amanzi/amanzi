@@ -20,35 +20,35 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 SorptionIsothermLangmuir::SorptionIsothermLangmuir()
-  : SorptionIsotherm("langmuir", SorptionIsotherm::LANGMUIR),
-    K_(0.0),
-    b_(0.0),
-    params_(2, 0.0) 
+  : SorptionIsotherm("langmuir", SorptionIsotherm::LANGMUIR), K_(0.0), b_(0.0), params_(2, 0.0)
 {}
 
 
 SorptionIsothermLangmuir::SorptionIsothermLangmuir(double K, double b)
-  : SorptionIsotherm("langmuir", SorptionIsotherm::LANGMUIR),
-    K_(K), 
-    b_(b),
-    params_(2, 0.0)
+  : SorptionIsotherm("langmuir", SorptionIsotherm::LANGMUIR), K_(K), b_(b), params_(2, 0.0)
 {}
 
 
-void SorptionIsothermLangmuir::Init(double K, double b) {
+void
+SorptionIsothermLangmuir::Init(double K, double b)
+{
   K_ = K;
   b_ = b;
 }
 
 
-const std::vector<double>& SorptionIsothermLangmuir::GetParameters() {
+const std::vector<double>&
+SorptionIsothermLangmuir::GetParameters()
+{
   params_.at(0) = K_;
   params_.at(1) = b_;
   return params_;
 }
 
 
-void SorptionIsothermLangmuir::SetParameters(const std::vector<double>& params) {
+void
+SorptionIsothermLangmuir::SetParameters(const std::vector<double>& params)
+{
   K_ = params.at(0);
   b_ = params.at(1);
 }
@@ -65,7 +65,9 @@ void SorptionIsothermLangmuir::SetParameters(const std::vector<double>& params) 
 * here. Looking at Langmuir (1997), would lead one to expect:
 * Csorb = K * b * activity / (1 + b * activity)
 ******************************************************************* */
-double SorptionIsothermLangmuir::Evaluate(const Species& primary_species) {
+double
+SorptionIsothermLangmuir::Evaluate(const Species& primary_species)
+{
   double K_activity = K_ * primary_species.activity();
   return K_activity * b_ / (1.0 + K_activity);
 }
@@ -78,14 +80,14 @@ double SorptionIsothermLangmuir::Evaluate(const Species& primary_species) {
 * Units:
 *   KD [kg water/m^3 bulk]
 ******************************************************************* */
-double SorptionIsothermLangmuir::EvaluateDerivative(const Species& primary_species)
+double
+SorptionIsothermLangmuir::EvaluateDerivative(const Species& primary_species)
 {
   double K_activity = K_ * primary_species.activity();
   double C_sorb = K_activity * b_ / (1.0 + K_activity);
-  return C_sorb / primary_species.molality() - 
-           (C_sorb / (1.0 + K_activity) * K_activity / 
-             primary_species.molality());
+  return C_sorb / primary_species.molality() -
+         (C_sorb / (1.0 + K_activity) * K_activity / primary_species.molality());
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

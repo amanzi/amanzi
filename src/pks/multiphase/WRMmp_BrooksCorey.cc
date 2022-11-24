@@ -32,7 +32,8 @@ WRMmp_BrooksCorey::WRMmp_BrooksCorey(Teuchos::ParameterList& plist)
   Init_(S_rw, S_rn, pd, lambda);
 }
 
-void WRMmp_BrooksCorey::Init_(double S_rw, double S_rn, double pd, double lambda)
+void
+WRMmp_BrooksCorey::Init_(double S_rw, double S_rn, double pd, double lambda)
 {
   S_rw_ = S_rw;
   S_rn_ = S_rn;
@@ -41,9 +42,10 @@ void WRMmp_BrooksCorey::Init_(double S_rw, double S_rn, double pd, double lambda
 }
 
 
-double WRMmp_BrooksCorey::k_relative(double Sw, int phase)
+double
+WRMmp_BrooksCorey::k_relative(double Sw, int phase)
 {
-  double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
+  double Swe = (Sw - S_rw_) / (1.0 - S_rw_ - S_rn_);
   double Sne = 1.0 - Swe;
   if (phase == MULTIPHASE_PHASE_LIQUID) {
     if (Swe < -1e-12) {
@@ -51,50 +53,52 @@ double WRMmp_BrooksCorey::k_relative(double Sw, int phase)
     } else if (Swe > 1.0) {
       return 1.0;
     } else {
-      return pow(Swe,(2.0+3.0*lambda_)/lambda_);
+      return pow(Swe, (2.0 + 3.0 * lambda_) / lambda_);
     }
-  }
-  else if (phase == MULTIPHASE_PHASE_GAS) {
+  } else if (phase == MULTIPHASE_PHASE_GAS) {
     if (Swe < -1e-12) {
       return 1.0;
     } else if (Swe > 1.0) {
       return 0.0;
     } else {
-      return pow(Sne,2.0)*(1.0 - pow(Swe,(2+lambda_)/lambda_));
+      return pow(Sne, 2.0) * (1.0 - pow(Swe, (2 + lambda_) / lambda_));
     }
   }
 
-  return -1.0;  // should trigger errors
+  return -1.0; // should trigger errors
 }
 
 
 /* *********************************************************************
 * TBW
 ***********************************************************************/
-double WRMmp_BrooksCorey::dKdS(double Sw, int phase)
+double
+WRMmp_BrooksCorey::dKdS(double Sw, int phase)
 {
-  double factor = 1.0/(1.0 - S_rw_ - S_rn_);
-  double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
+  double factor = 1.0 / (1.0 - S_rw_ - S_rn_);
+  double Swe = (Sw - S_rw_) / (1.0 - S_rw_ - S_rn_);
   if (phase == MULTIPHASE_PHASE_LIQUID) {
-    return factor*(2.0 + 3.0*lambda_)/lambda_ * pow(Swe, (2.0 + 3.0*lambda_)/lambda_ - 1.0);
-  }
-  else if (phase == MULTIPHASE_PHASE_GAS) {
-    return -(lambda_ + 2.0)/lambda_*factor*pow(1.0-Swe,2.0)*pow(Swe,(lambda_+2.0)/lambda_-1.0) - 
-      2.0*factor*(1.0-Swe)*(1.0 - pow(Swe,(lambda_+2.0)/lambda_));
+    return factor * (2.0 + 3.0 * lambda_) / lambda_ *
+           pow(Swe, (2.0 + 3.0 * lambda_) / lambda_ - 1.0);
+  } else if (phase == MULTIPHASE_PHASE_GAS) {
+    return -(lambda_ + 2.0) / lambda_ * factor * pow(1.0 - Swe, 2.0) *
+             pow(Swe, (lambda_ + 2.0) / lambda_ - 1.0) -
+           2.0 * factor * (1.0 - Swe) * (1.0 - pow(Swe, (lambda_ + 2.0) / lambda_));
   }
 
-  return 0.0;  // to avoid compiler warnings
+  return 0.0; // to avoid compiler warnings
 }
 
 
 /* *********************************************************************
 * Capillary Pressure formula. Cut off capillary pressure for small Swe
 ***********************************************************************/
-double WRMmp_BrooksCorey::capillaryPressure(double Sw)
+double
+WRMmp_BrooksCorey::capillaryPressure(double Sw)
 {
-  double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
+  double Swe = (Sw - S_rw_) / (1.0 - S_rw_ - S_rn_);
   if (Swe > 1e-12) {
-    return pd_ * pow(Swe, -1.0/lambda_);
+    return pd_ * pow(Swe, -1.0 / lambda_);
   } else {
     return pd_ * 20.0;
   }
@@ -104,17 +108,17 @@ double WRMmp_BrooksCorey::capillaryPressure(double Sw)
 /* ******************************************************************
 * Derivative of capillary pressure formula.
 ****************************************************************** */
-double WRMmp_BrooksCorey::dPc_dS(double Sw)
+double
+WRMmp_BrooksCorey::dPc_dS(double Sw)
 {
-  double Swe = (Sw - S_rw_)/(1.0 - S_rw_ - S_rn_);
-  double factor = 1.0/(1.0 - S_rw_ - S_rn_);
+  double Swe = (Sw - S_rw_) / (1.0 - S_rw_ - S_rn_);
+  double factor = 1.0 / (1.0 - S_rw_ - S_rn_);
   if (Swe > 1e-12) {
-    return pd_ * factor * (-1.0/lambda_) * pow(Swe, -1.0/lambda_ - 1.0); 
+    return pd_ * factor * (-1.0 / lambda_) * pow(Swe, -1.0 / lambda_ - 1.0);
   } else {
     return 1e5;
   }
 }
 
-}  // namespace Multiphase
-}  // namespace Amanzi
-
+} // namespace Multiphase
+} // namespace Amanzi

@@ -27,11 +27,9 @@ namespace Amanzi {
 
 class PK_DomainFunction {
  public:
-  PK_DomainFunction()
-    : domain_volume_(-1.0) {};
+  PK_DomainFunction() : domain_volume_(-1.0){};
 
-  PK_DomainFunction(const Teuchos::ParameterList& plist)
-    : domain_volume_(-1.0) {};
+  PK_DomainFunction(const Teuchos::ParameterList& plist) : domain_volume_(-1.0){};
 
   virtual ~PK_DomainFunction() = default;
 
@@ -39,7 +37,7 @@ class PK_DomainFunction {
   virtual void Compute(double t0, double t1) { AMANZI_ASSERT(false); }
 
   // model name
-  virtual std::string name() const { return "undefined"; } 
+  virtual std::string name() const { return "undefined"; }
 
   // access
   // -- volume of the regions
@@ -48,19 +46,18 @@ class PK_DomainFunction {
   std::string keyword() { return keyword_; }
 
   // iterator methods
-  typedef std::map<int, std::vector<double> >::iterator Iterator;
-  typename std::map<int, std::vector<double> >::iterator begin() { return value_.begin(); }
-  typename std::map<int, std::vector<double> >::iterator end() { return value_.end(); }
-  typename std::map<int, std::vector<double> >::size_type size() { return value_.size(); }
+  typedef std::map<int, std::vector<double>>::iterator Iterator;
+  typename std::map<int, std::vector<double>>::iterator begin() { return value_.begin(); }
+  typename std::map<int, std::vector<double>>::iterator end() { return value_.end(); }
+  typename std::map<int, std::vector<double>>::size_type size() { return value_.size(); }
 
  protected:
-  std::map<int, std::vector<double> > value_;
+  std::map<int, std::vector<double>> value_;
   std::map<int, double> linear_term_;
   double domain_volume_;
   std::string keyword_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif
-

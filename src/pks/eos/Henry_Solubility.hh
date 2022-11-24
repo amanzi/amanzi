@@ -35,7 +35,7 @@ class Henry_Solubility {
   double kH0_, kH1_, T0_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

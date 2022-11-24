@@ -32,15 +32,15 @@ namespace Amanzi {
 // are associated with.
 // -----------------------------------------------------------------------------
 struct TensorVector {
-  TensorVector(CompositeVectorSpace map_, bool ghosted_=false) :
-      map(std::move(map_)),
-      ghosted(ghosted_) {
+  TensorVector(CompositeVectorSpace map_, bool ghosted_ = false)
+    : map(std::move(map_)), ghosted(ghosted_)
+  {
     data.resize(size_());
   }
 
-  TensorVector(CompositeVectorSpace map_, int dim_, int rank_, bool ghosted_=false) :
-      map(std::move(map_)),
-      ghosted(ghosted_) {
+  TensorVector(CompositeVectorSpace map_, int dim_, int rank_, bool ghosted_ = false)
+    : map(std::move(map_)), ghosted(ghosted_)
+  {
     data.resize(size_(), WhetStone::Tensor(dim_, rank_));
   }
 
@@ -60,11 +60,13 @@ struct TensorVector {
   bool ghosted;
 
  private:
-  int size_() {
+  int size_()
+  {
     int count = 0;
     for (auto& name : map) {
-      count += map.Mesh()->num_entities(AmanziMesh::entity_kind(name), 
-          ghosted ? AmanziMesh::Parallel_type::ALL : AmanziMesh::Parallel_type::OWNED);
+      count += map.Mesh()->num_entities(AmanziMesh::entity_kind(name),
+                                        ghosted ? AmanziMesh::Parallel_type::ALL :
+                                                  AmanziMesh::Parallel_type::OWNED);
     }
     return count;
   }
@@ -76,11 +78,7 @@ struct TensorVector {
 // -----------------------------------------------------------------------------
 class TensorVector_Factory {
  public:
-  TensorVector_Factory() :
-      d_(0),
-      rank_(0),
-      ghosted_(false)      
-  {};
+  TensorVector_Factory() : d_(0), rank_(0), ghosted_(false){};
 
   int dimension() const { return d_; }
   const CompositeVectorSpace& map() const { return map_; }
@@ -88,15 +86,15 @@ class TensorVector_Factory {
   int get_rank() const { return rank_; }
   void set_rank(int rank) { rank_ = rank; }
 
-  void set_map(CompositeVectorSpace map) {
+  void set_map(CompositeVectorSpace map)
+  {
     map_ = std::move(map);
     d_ = map_.Mesh()->space_dimension();
   }
-  void set_ghosted(bool ghosted) {
-    ghosted_ = ghosted;
-  }
-  
-  Teuchos::RCP<TensorVector> Create() const {
+  void set_ghosted(bool ghosted) { ghosted_ = ghosted; }
+
+  Teuchos::RCP<TensorVector> Create() const
+  {
     return Teuchos::rcp(new TensorVector(map_, d_, rank_, ghosted_));
   }
 
@@ -106,7 +104,6 @@ class TensorVector_Factory {
   bool ghosted_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif
-

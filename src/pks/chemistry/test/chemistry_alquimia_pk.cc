@@ -27,11 +27,13 @@
 #include "Alquimia_PK.hh"
 
 
-TEST(INTERFACE_LIBRARY_INIT) {
+TEST(INTERFACE_LIBRARY_INIT)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziChemistry;
 
-  auto engine = Teuchos::rcp(new AmanziChemistry::ChemistryEngine("PFloTran", "test/chemistry_alquimia_pk.in"));
+  auto engine =
+    Teuchos::rcp(new AmanziChemistry::ChemistryEngine("PFloTran", "test/chemistry_alquimia_pk.in"));
   CHECK(engine->Name() == "PFloTran");
 
   CHECK(engine->NumPrimarySpecies() == 14);
@@ -77,14 +79,16 @@ TEST(INTERFACE_LIBRARY_INIT) {
   std::vector<std::string> names;
   engine->GetAqueousKineticNames(names);
   CHECK(names.size() == 1);
-}  
+}
 
 
-TEST(INTERFACE_LIBRARY_ADVANCE) {
+TEST(INTERFACE_LIBRARY_ADVANCE)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziChemistry;
 
-  auto engine = Teuchos::rcp(new AmanziChemistry::ChemistryEngine("PFloTran", "test/chemistry_alquimia_pk.in"));
+  auto engine =
+    Teuchos::rcp(new AmanziChemistry::ChemistryEngine("PFloTran", "test/chemistry_alquimia_pk.in"));
 
   AlquimiaState state, state_tmp;
   AlquimiaProperties mat_props;
@@ -99,7 +103,7 @@ TEST(INTERFACE_LIBRARY_ADVANCE) {
   // mat_props.aqueous_kinetic_rate_cnst.data[0] = 1.78577e-09;
   {
     std::vector<double> data(
-      {1.3345e+05, -7.94e+04, -1.2967e+05, 2.0e+04, -1.15e+05, -8.0e+04, -8.0e+04, -1.2135e+05});
+      { 1.3345e+05, -7.94e+04, -1.2967e+05, 2.0e+04, -1.15e+05, -8.0e+04, -8.0e+04, -1.2135e+05 });
     for (int i = 0; i < 8; ++i) mat_props.mineral_rate_cnst.data[i] = data[i];
   }
 
@@ -109,22 +113,32 @@ TEST(INTERFACE_LIBRARY_ADVANCE) {
   state.surface_site_density.data[0] = 1.56199e-01;
 
   {
-    std::vector<double> data(
-      {2.95786307706898224e-06, 2.21343191783434494e-08, 1.0e-05, 9.98922451603534434e-03,
-      2.52312817040197963e-16, 1.21461876452330652e-05, 3.32e-05, 5.35e-03,
-      2.78e-04, 1.77282139025972417e-04, 2.25e-05, 1.0e-15, 1.0e-03, 1.25e-10});
+    std::vector<double> data({ 2.95786307706898224e-06,
+                               2.21343191783434494e-08,
+                               1.0e-05,
+                               9.98922451603534434e-03,
+                               2.52312817040197963e-16,
+                               1.21461876452330652e-05,
+                               3.32e-05,
+                               5.35e-03,
+                               2.78e-04,
+                               1.77282139025972417e-04,
+                               2.25e-05,
+                               1.0e-15,
+                               1.0e-03,
+                               1.25e-10 });
     for (int i = 0; i < 14; ++i) state.total_mobile.data[i] = data[i];
     for (int i = 0; i < 14; ++i) state.total_immobile.data[i] = 0.0;
   }
 
   {
-    std::vector<double> data({8.8e-01, 1.6e-02, 1.1e-01, 0.0, 0.0, 0.0, 0.0});
+    std::vector<double> data({ 8.8e-01, 1.6e-02, 1.1e-01, 0.0, 0.0, 0.0, 0.0 });
     for (int i = 0; i < 8; ++i) state.mineral_volume_fraction.data[i] = data[i];
   }
 
   {
     std::vector<double> data(
-      {3.2623e+05, 1.10763e+06, 5.90939e+06, 10.0, 10.0, 10.0, 10.0, 10.0});
+      { 3.2623e+05, 1.10763e+06, 5.90939e+06, 10.0, 10.0, 10.0, 10.0, 10.0 });
     for (int i = 0; i < 8; ++i) state.mineral_specific_surface_area.data[i] = data[i];
   }
 
@@ -138,15 +152,16 @@ TEST(INTERFACE_LIBRARY_ADVANCE) {
   for (int i = 0; i < 14; ++i) {
     double v0 = state_tmp.total_mobile.data[i];
     double v1 = state.total_mobile.data[i];
-    double diff = 200 * fabs(v0-v1) / (fabs(v0) + fabs(v1) + 1e-30);
+    double diff = 200 * fabs(v0 - v1) / (fabs(v0) + fabs(v1) + 1e-30);
 
     CHECK(diff < 0.1);
     printf("%10s  %14.6g  -> %12.6g   diff:%5.2f\n", species[i].c_str(), v0, v1, diff);
-  } 
+  }
 }
 
 
-TEST(INITIALIZE_CRUNCH) {
+TEST(INITIALIZE_CRUNCH)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziChemistry;
   using namespace Amanzi::AmanziMesh;
@@ -161,7 +176,7 @@ TEST(INITIALIZE_CRUNCH) {
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 100.0, 1.0, 1.0, 100, 1, 1);
 
   Teuchos::ParameterList state_list = plist->sublist("state");

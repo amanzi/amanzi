@@ -77,15 +77,15 @@ namespace AmanziGeometry {
 
 class RegionLabeledSet : public Region {
  public:
-  // constructor 
-  RegionLabeledSet(const std::string& name, 
-                   const int id, 
+  // constructor
+  RegionLabeledSet(const std::string& name,
+                   const int id,
                    const std::string& entity_str,
                    const std::string& file,
                    const std::string& format,
                    const std::string& label,
-                   const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
-  
+                   const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
+
   // Label in the file
   const std::string& label() const { return label_; }
 
@@ -94,10 +94,10 @@ class RegionLabeledSet : public Region {
 
   const std::string& entity_str() const { return entity_str_; }
 
-protected:  
+ protected:
   const std::string entity_str_; // what kind of entities make up this set
-  const std::string file_; // which file are we supposed to read it from
-  const std::string format_; // format of the file
+  const std::string file_;       // which file are we supposed to read it from
+  const std::string format_;     // format of the file
   const std::string label_; // Label used to identify set in the file (may be different from name)
 };
 

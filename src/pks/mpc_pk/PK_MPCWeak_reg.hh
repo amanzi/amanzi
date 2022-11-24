@@ -21,5 +21,4 @@ namespace Amanzi {
 
 RegisteredPKFactory<PK_MPCWeak> PK_MPCWeak::reg_("weak MPC");
 
-}  // namespace Amanzi
-
+} // namespace Amanzi

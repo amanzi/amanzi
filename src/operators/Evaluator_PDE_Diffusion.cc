@@ -30,7 +30,7 @@ Lots of options here, document me!
 namespace Amanzi {
 
 Evaluator_PDE_Diffusion::Evaluator_PDE_Diffusion(Teuchos::ParameterList& plist)
-    : EvaluatorSecondary(plist)
+  : EvaluatorSecondary(plist)
 {
   my_tag_ = make_tag(plist.get<std::string>("tag"));
 
@@ -63,7 +63,8 @@ Evaluator_PDE_Diffusion::Evaluator_PDE_Diffusion(Teuchos::ParameterList& plist)
 }
 
 
-void Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
+void
+Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
 {
   // require the rhs
   auto& rhs_fac = S.Require<CompositeVector, CompositeVectorSpace>(rhs_key_, my_tag_, rhs_key_);
@@ -75,7 +76,7 @@ void Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
 
     // now we can set up the local op
     auto& lop_fac =
-        S.Require<Operators::Op, Operators::Op_Factory>(local_op_key_, my_tag_, local_op_key_);
+      S.Require<Operators::Op, Operators::Op_Factory>(local_op_key_, my_tag_, local_op_key_);
     lop_fac.set_mesh(rhs_fac.Mesh());
     Operators::Schema schema(diff->schema_dofs());
     lop_fac.set_schema(schema);
@@ -87,7 +88,7 @@ void Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
     // require scalar coef on the space required by little_k option of
     // operator
     S.Require<CompositeVector, CompositeVectorSpace>(scalar_coef_key_, my_tag_)
-        .Update(diff->little_k_space());
+      .Update(diff->little_k_space());
     S.RequireEvaluator(scalar_coef_key_, my_tag_).EnsureCompatibility(S);
 
     // require bcs
@@ -109,7 +110,7 @@ void Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
     // FIX ME, make a RequireDerivative(), move to EnsureCompatibleDerivative() --etc
     if (!jac_op_key_.empty()) {
       auto& jac_op_fac =
-          S.Require<Operators::Op, Operators::Op_Factory>(jac_op_key_, my_tag_, jac_op_key_);
+        S.Require<Operators::Op, Operators::Op_Factory>(jac_op_key_, my_tag_, jac_op_key_);
       jac_op_fac.set_mesh(rhs_fac.Mesh());
       jac_op_fac.set_schema(diff->schema_jacobian());
     }
@@ -117,8 +118,11 @@ void Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
 }
 
 
-bool Evaluator_PDE_Diffusion::UpdateDerivative(
-    State& S, const Key& requestor, const Key& wrt_key, const Tag& wrt_tag)
+bool
+Evaluator_PDE_Diffusion::UpdateDerivative(State& S,
+                                          const Key& requestor,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag)
 {
   AMANZI_ASSERT(IsDependency(S, wrt_key, wrt_tag));
   AMANZI_ASSERT(!jac_op_key_.empty());
@@ -136,18 +140,18 @@ bool Evaluator_PDE_Diffusion::UpdateDerivative(
 
   // -- must update if our our dependencies have changed, as these affect the
   // partial derivatives
-  Key my_request = Keys::getDerivKey(my_keys_[0].first, my_keys_[0].second,
-        wrt_key, wrt_tag);
+  Key my_request = Keys::getDerivKey(my_keys_[0].first, my_keys_[0].second, wrt_key, wrt_tag);
   update |= Update(S, my_request);
 
   // -- must update if any of our dependencies' derivatives have changed
   // NOTE: some assumptions about what is and is not differentiable
   // -- abs perm not a function of p
-  AMANZI_ASSERT(!S.GetEvaluator(tensor_coef_key_, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag));
+  AMANZI_ASSERT(
+    !S.GetEvaluator(tensor_coef_key_, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag));
   if (!jac_op_key_.empty() &&
       S.GetEvaluator(scalar_coef_key_, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
     update |=
-        S.GetEvaluator(scalar_coef_key_, my_tag_).UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+      S.GetEvaluator(scalar_coef_key_, my_tag_).UpdateDerivative(S, my_request, wrt_key, wrt_tag);
   }
   if (!u_key_.empty() && !wrt_is_u &&
       S.GetEvaluator(u_key_, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
@@ -157,9 +161,7 @@ bool Evaluator_PDE_Diffusion::UpdateDerivative(
   // Do the update
   auto request = std::make_tuple(wrt_key, wrt_tag, requestor);
   if (update) {
-    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << "  ... updating." << std::endl;
-    }
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  ... updating." << std::endl; }
 
     // If so, update ourselves, empty our list of filled requests, and return.
     UpdateDerivative_(S, wrt_key, wrt_tag);
@@ -175,16 +177,15 @@ bool Evaluator_PDE_Diffusion::UpdateDerivative(
       deriv_requests_.insert(request);
       return true;
     } else {
-      if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_.os() << "  ... has not changed." << std::endl;
-      }
+      if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  ... has not changed." << std::endl; }
       return false;
     }
   }
 }
 
 
-void Evaluator_PDE_Diffusion::Update_(State& S)
+void
+Evaluator_PDE_Diffusion::Update_(State& S)
 {
   // get pointers to the results of this update
   auto A_rhs = S.GetPtrW<CompositeVector>(rhs_key_, my_tag_, rhs_key_);
@@ -224,8 +225,8 @@ void Evaluator_PDE_Diffusion::Update_(State& S)
 }
 
 
-void Evaluator_PDE_Diffusion::UpdateDerivative_(
-    State& S, const Key& wrt_key, const Tag& wrt_tag)
+void
+Evaluator_PDE_Diffusion::UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag)
 {
   // need the spaces
   const CompositeVector& A_rhs = S.Get<CompositeVector>(rhs_key_, my_tag_);
@@ -239,7 +240,7 @@ void Evaluator_PDE_Diffusion::UpdateDerivative_(
   // set up the global operator
   Operators::PDE_DiffusionFactory diff_fac;
   Teuchos::ParameterList tmp(plist_);
-  tmp.set("exclude primary terms", true);  // turn off the primary terms, just the Jacobian
+  tmp.set("exclude primary terms", true); // turn off the primary terms, just the Jacobian
   auto pde = diff_fac.Create(plist_, global_op);
   if (!jac_op_key_.empty()) {
     pde->set_jacobian_op(S.GetPtrW<Operators::Op>(jac_op_key_, my_tag_, jac_op_key_));
@@ -257,7 +258,7 @@ void Evaluator_PDE_Diffusion::UpdateDerivative_(
   // set the scalar coef and derivatives
   Teuchos::RCP<const CompositeVector> kr = S.GetPtr<CompositeVector>(scalar_coef_key_, my_tag_);
   Teuchos::RCP<const CompositeVector> dkr =
-      S.GetDerivativePtr<CompositeVector>(scalar_coef_key_, my_tag_, wrt_key, wrt_tag);
+    S.GetDerivativePtr<CompositeVector>(scalar_coef_key_, my_tag_, wrt_key, wrt_tag);
   pde->SetScalarCoefficient(kr, dkr);
 
   // compute local ops
@@ -267,4 +268,4 @@ void Evaluator_PDE_Diffusion::UpdateDerivative_(
   pde->ApplyBCs(true, true, true);
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

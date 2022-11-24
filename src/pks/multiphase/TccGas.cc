@@ -21,8 +21,7 @@ namespace Multiphase {
 /* ******************************************************************
 * Simple constructor
 ****************************************************************** */
-TccGas::TccGas(Teuchos::ParameterList& plist)
-  : MultiphaseBaseEvaluator(plist)
+TccGas::TccGas(Teuchos::ParameterList& plist) : MultiphaseBaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -35,7 +34,9 @@ TccGas::TccGas(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> TccGas::Clone() const {
+Teuchos::RCP<Evaluator>
+TccGas::Clone() const
+{
   return Teuchos::rcp(new TccGas(*this));
 }
 
@@ -43,36 +44,33 @@ Teuchos::RCP<Evaluator> TccGas::Clone() const {
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void TccGas::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+TccGas::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& tcc = *S.Get<CompositeVector>(tcc_liquid_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = result_c.MyLength();
 
-  for (int c = 0; c != ncells; ++c) {
-    result_c[0][c] = tcc[0][c] * kH_;
-  }
+  for (int c = 0; c != ncells; ++c) { result_c[0][c] = tcc[0][c] * kH_; }
 }
 
 
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void TccGas::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+TccGas::EvaluatePartialDerivative_(const State& S,
+                                   const Key& wrt_key,
+                                   const Tag& wrt_tag,
+                                   const std::vector<CompositeVector*>& results)
 {
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = result_c.MyLength();
 
   if (wrt_key == tcc_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = kH_;
-    }
+    for (int c = 0; c != ncells; ++c) { result_c[0][c] = kH_; }
   }
 }
 
-}  // namespace Multiphase
-}  // namespace Amanzi
-
+} // namespace Multiphase
+} // namespace Amanzi

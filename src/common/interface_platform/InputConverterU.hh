@@ -27,13 +27,13 @@
 namespace Amanzi {
 namespace AmanziInput {
 
-typedef std::map<std::string, Teuchos::RCP<Teuchos::ParameterList> > PK;
-typedef std::map<std::string, std::vector<std::string> > Tree;
+typedef std::map<std::string, Teuchos::RCP<Teuchos::ParameterList>> PK;
+typedef std::map<std::string, std::vector<std::string>> Tree;
 
 class InputConverterU : public InputConverter {
  public:
-  explicit InputConverterU(const std::string& input_filename) :
-      InputConverter(input_filename), 
+  explicit InputConverterU(const std::string& input_filename)
+    : InputConverter(input_filename),
       multiphase_(false),
       const_gravity_(GRAVITY_MAGNITUDE),
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
@@ -51,12 +51,12 @@ class InputConverterU : public InputConverter {
       output_prefix_(""),
       io_walkabout_(false),
       io_mesh_info_(false),
-      vo_(NULL) {};
+      vo_(NULL){};
 
-  explicit InputConverterU(const std::string& input_filename, 
+  explicit InputConverterU(const std::string& input_filename,
                            xercesc::DOMDocument* input_doc,
-                           const std::string& output_prefix) :
-      InputConverter(input_filename, input_doc), 
+                           const std::string& output_prefix)
+    : InputConverter(input_filename, input_doc),
       multiphase_(false),
       flow_single_phase_(false),
       compressibility_(false),
@@ -72,9 +72,12 @@ class InputConverterU : public InputConverter {
       output_prefix_(output_prefix),
       io_walkabout_(false),
       io_mesh_info_(false),
-      vo_(NULL) {};
+      vo_(NULL){};
 
-  ~InputConverterU() { if (vo_ != NULL) delete vo_; }
+  ~InputConverterU()
+  {
+    if (vo_ != NULL) delete vo_;
+  }
 
   // main members
   Teuchos::ParameterList Translate(int rank, int num_proc);
@@ -97,8 +100,8 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateHypreAMG_();
   Teuchos::ParameterList TranslateBILU_();
   Teuchos::ParameterList TranslateEuclid_();
-  Teuchos::ParameterList TranslateLinearSolvers_(
-      std::string tags, std::string method_default, std::string method_enforce);
+  Teuchos::ParameterList
+  TranslateLinearSolvers_(std::string tags, std::string method_default, std::string method_enforce);
   Teuchos::ParameterList TranslateSolvers_();
   Teuchos::ParameterList TranslateState_();
   Teuchos::ParameterList TranslateMaterialsPartition_();
@@ -106,48 +109,60 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateCycleDriverNew_();
   Teuchos::ParameterList TranslateTimePeriodControls_();
   Teuchos::ParameterList TranslatePKs_(Teuchos::ParameterList& glist);
-  Teuchos::ParameterList TranslateDiffusionOperator_(
-      const std::string& disc_methods, const std::string& pc_method,
-      const std::string& nonlinear_solver, const std::string& nonlinear_coef,
-      const std::string& extensions, bool gravity,
-      const std::string& pk = "flow");
-  Teuchos::ParameterList TranslateTimeIntegrator_(
-      const std::string& err_options, const std::string& nonlinear_solver,
-      bool modify_correction, const std::string& nonsolver_controls,
-      const std::string& linsolver,
-      double dt_cut_default, double dt_inc_default);
-  Teuchos::ParameterList TranslateInitialization_(
-      const std::string& unstr_controls);
+  Teuchos::ParameterList TranslateDiffusionOperator_(const std::string& disc_methods,
+                                                     const std::string& pc_method,
+                                                     const std::string& nonlinear_solver,
+                                                     const std::string& nonlinear_coef,
+                                                     const std::string& extensions,
+                                                     bool gravity,
+                                                     const std::string& pk = "flow");
+  Teuchos::ParameterList TranslateTimeIntegrator_(const std::string& err_options,
+                                                  const std::string& nonlinear_solver,
+                                                  bool modify_correction,
+                                                  const std::string& nonsolver_controls,
+                                                  const std::string& linsolver,
+                                                  double dt_cut_default,
+                                                  double dt_inc_default);
+  Teuchos::ParameterList TranslateInitialization_(const std::string& unstr_controls);
 
   // -- general
-  Teuchos::ParameterList TranslateSources_(
-      const std::string& domain, const std::string& pkname);
+  Teuchos::ParameterList TranslateSources_(const std::string& domain, const std::string& pkname);
 
   // -- state
-  void TranslateFieldEvaluator_(
-      DOMNode* node, const std::string& field, const std::string& unit,
-      const std::string& reg_str, const std::vector<std::string>& regions,
-      Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
-      std::string data_key = "value", std::string domain = "domain");
-  void TranslateFieldIC_(
-      DOMNode* node, std::string field, std::string unit,
-      const std::string& reg_str, const std::vector<std::string>& regions,
-      Teuchos::ParameterList& out_ic, std::string data_key = "value",
-      const std::vector<std::string>& components = { "cell" });
+  void TranslateFieldEvaluator_(DOMNode* node,
+                                const std::string& field,
+                                const std::string& unit,
+                                const std::string& reg_str,
+                                const std::vector<std::string>& regions,
+                                Teuchos::ParameterList& out_ic,
+                                Teuchos::ParameterList& out_ev,
+                                std::string data_key = "value",
+                                std::string domain = "domain");
+  void TranslateFieldIC_(DOMNode* node,
+                         std::string field,
+                         std::string unit,
+                         const std::string& reg_str,
+                         const std::vector<std::string>& regions,
+                         Teuchos::ParameterList& out_ic,
+                         std::string data_key = "value",
+                         const std::vector<std::string>& components = { "cell" });
 
-  void AddIndependentFieldEvaluator_(
-      Teuchos::ParameterList& out_ev,
-      const std::string& field, const std::string& region,
-      const std::string& comp, double val);
+  void AddIndependentFieldEvaluator_(Teuchos::ParameterList& out_ev,
+                                     const std::string& field,
+                                     const std::string& region,
+                                     const std::string& comp,
+                                     double val);
 
-  void AddSecondaryFieldEvaluator_(
-     Teuchos::ParameterList& out_ev,
-     const Key& field, const Key& key,
-     const std::string& type, const std::string& eos_table_name);
+  void AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
+                                   const Key& field,
+                                   const Key& key,
+                                   const std::string& type,
+                                   const std::string& eos_table_name);
 
-  void AddConstantFieldInitialization_(
-      Teuchos::ParameterList& out_ev,
-      const std::string& field, const std::string& region, double val);
+  void AddConstantFieldInitialization_(Teuchos::ParameterList& out_ev,
+                                       const std::string& field,
+                                       const std::string& region,
+                                       double val);
 
   // -- flow
   Teuchos::ParameterList TranslateFlow_(const std::string& mode, const std::string& domain);
@@ -162,16 +177,20 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateMolecularDiffusion_();
   Teuchos::ParameterList TranslateTransportMSM_();
   Teuchos::ParameterList TranslateTransportBCs_(const std::string& domain);
-  void TranslateTransportBCsGroup_(
-      std::string& bcname, std::vector<std::string>& regions,
-      xercesc::DOMNodeList* solutes, Teuchos::ParameterList& out_list);
+  void TranslateTransportBCsGroup_(std::string& bcname,
+                                   std::vector<std::string>& regions,
+                                   xercesc::DOMNodeList* solutes,
+                                   Teuchos::ParameterList& out_list);
   Teuchos::ParameterList TranslateTransportSources_();
-  void TranslateTransportSourcesGroup_(
-      std::string& srcname, std::vector<std::string>& regions,
-      xercesc::DOMNodeList* solutes, xercesc::DOMNode* phase_l, Teuchos::ParameterList& out_list);
-  void TranslateTransportGeochemistry_(
-      DOMNode* node, std::string& bcname, std::vector<std::string>& regions,
-      Teuchos::ParameterList& out_list);
+  void TranslateTransportSourcesGroup_(std::string& srcname,
+                                       std::vector<std::string>& regions,
+                                       xercesc::DOMNodeList* solutes,
+                                       xercesc::DOMNode* phase_l,
+                                       Teuchos::ParameterList& out_list);
+  void TranslateTransportGeochemistry_(DOMNode* node,
+                                       std::string& bcname,
+                                       std::vector<std::string>& regions,
+                                       Teuchos::ParameterList& out_list);
 
   // -- backward compatibility
   void TranslateTransportBCsAmanziGeochemistry_(Teuchos::ParameterList& out_list);
@@ -187,8 +206,8 @@ class InputConverterU : public InputConverter {
 
   // -- multiphase
   bool multiphase_;
-  Teuchos::ParameterList TranslateMultiphase_(const std::string& domain,
-                                              Teuchos::ParameterList& state_list);
+  Teuchos::ParameterList
+  TranslateMultiphase_(const std::string& domain, Teuchos::ParameterList& state_list);
   Teuchos::ParameterList TranslateMultiphaseBCs_();
 
   // -- shallow water
@@ -199,8 +218,10 @@ class InputConverterU : public InputConverter {
   bool coupled_flow_, coupled_transport_, coupled_energy_;
   std::vector<std::string> fracture_regions_, surface_regions_;
 
-  void ProcessMacros_(const std::string& prefix, char* text_content,
-                      Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL);
+  void ProcessMacros_(const std::string& prefix,
+                      char* text_content,
+                      Teuchos::ParameterList& mPL,
+                      Teuchos::ParameterList& outPL);
 
   void PopulatePKTree_(Teuchos::ParameterList& pk_tree, const std::string pk_name);
   void RegisterPKsList_(Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list);
@@ -223,13 +244,13 @@ class InputConverterU : public InputConverter {
                              Teuchos::ParameterList& bcfn);
 
   // -- sort functions
-  template<class Iterator>
+  template <class Iterator>
   Iterator SelectUniqueEntries(Iterator first, Iterator last);
 
   // -- miscalleneous
   DOMNode* GetPKChemistryPointer_(bool& flag);
-  bool FindNameInVector_(const std::string& name, const std::vector<std::string>& list); 
-  std::string CreateNameFromVector_(const std::vector<std::string>& list); 
+  bool FindNameInVector_(const std::string& name, const std::vector<std::string>& list);
+  std::string CreateNameFromVector_(const std::vector<std::string>& list);
   bool WeightVolumeSubmodel_(const std::vector<std::string>& regions);
   std::string CreateUniqueName_(const Teuchos::Array<std::string>& list);
   void PrintStatistics_();
@@ -246,7 +267,7 @@ class InputConverterU : public InputConverter {
   std::map<std::string, std::string> pk_model_, pk_domain_, pk_region_;
   std::map<std::string, bool> pk_master_;
   std::map<std::string, double> dt_cut_, dt_inc_;
-  
+
   std::string eos_lookup_table_, eos_model_;
 
   // global physical constants prefixed with "const"
@@ -254,14 +275,14 @@ class InputConverterU : public InputConverter {
   double const_atm_pressure_;
 
   // global flow constants
-  std::string flow_model_;  // global value
-  bool flow_single_phase_;  // runtime value
+  std::string flow_model_; // global value
+  bool flow_single_phase_; // runtime value
   bool compressibility_, fractures_;
   double rho_;
 
   // global mesh data
   bool mesh_rectangular_;
-  std::map<std::string, int> region_type_;  // flag for vofs
+  std::map<std::string, int> region_type_; // flag for vofs
 
   // global transport and chemistry constants
   bool use_transport_porosity_, use_transport_dispersion_;
@@ -276,7 +297,7 @@ class InputConverterU : public InputConverter {
   double ic_time_flow_, ic_time_;
 
   // global solvers parameters
-  std::vector<std::pair<std::string, double> > gmres_solvers_;
+  std::vector<std::pair<std::string, double>> gmres_solvers_;
 
   // global output parameters
   std::string output_prefix_;
@@ -303,8 +324,9 @@ class InputConverterU : public InputConverter {
 /* ******************************************************************
 * Selects unique entries and places them in [first, last)
 ****************************************************************** */
-template<class Iterator>
-Iterator InputConverterU::SelectUniqueEntries(Iterator first, Iterator last)
+template <class Iterator>
+Iterator
+InputConverterU::SelectUniqueEntries(Iterator first, Iterator last)
 {
   while (first != last) {
     Iterator next(first);
@@ -314,7 +336,7 @@ Iterator InputConverterU::SelectUniqueEntries(Iterator first, Iterator last)
   return last;
 }
 
-}  // namespace AmanziInput
-}  // namespace Amanzi
+} // namespace AmanziInput
+} // namespace Amanzi
 
 #endif

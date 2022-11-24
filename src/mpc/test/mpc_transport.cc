@@ -20,14 +20,14 @@
 #include "State.hh"
 
 
-TEST(MPC_DRIVER_TRANSPORT) {
-
-using namespace Amanzi;
-using namespace Amanzi::AmanziMesh;
-using namespace Amanzi::AmanziGeometry;
+TEST(MPC_DRIVER_TRANSPORT)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
 
   auto comm = Amanzi::getDefaultComm();
-  
+
   // read the main parameter list
   std::string xmlInFileName = "test/mpc_transport.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
@@ -43,7 +43,7 @@ using namespace Amanzi::AmanziGeometry;
   pref.push_back(Framework::MSTK);
   pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/mpc_transport_mesh_10x10.exo");
   AMANZI_ASSERT(!mesh.is_null());
@@ -60,5 +60,3 @@ using namespace Amanzi::AmanziGeometry;
   Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
   cycle_driver.Go();
 }
-
-

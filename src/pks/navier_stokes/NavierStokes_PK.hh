@@ -53,28 +53,34 @@ class NavierStokes_PK : public PK_PhysicalBDF {
                   Teuchos::RCP<State> S,
                   const Teuchos::RCP<TreeVector>& soln);
 
-  ~NavierStokes_PK() {};
+  ~NavierStokes_PK(){};
 
   // methods required for PK interface
   virtual void Setup() final;
   virtual void Initialize() final;
 
   virtual double get_dt() final { return dt_; }
-  virtual void set_dt(double dt) final { dt_ = dt; dt_desirable_ = dt_; }
+  virtual void set_dt(double dt) final
+  {
+    dt_ = dt;
+    dt_desirable_ = dt_;
+  }
 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) final;
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) final;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
-  virtual void CalculateDiagnostics(const Tag& tag) final {};
+  virtual void CalculateDiagnostics(const Tag& tag) final{};
 
   virtual std::string name() { return passwd_; }
 
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
-  void FunctionalResidual(const double t_old, double t_new, 
-                  Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
-                  Teuchos::RCP<TreeVector> f);
+  void FunctionalResidual(const double t_old,
+                          double t_new,
+                          Teuchos::RCP<TreeVector> u_old,
+                          Teuchos::RCP<TreeVector> u_new,
+                          Teuchos::RCP<TreeVector> f);
   double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
-  
+
   // -- management of the preconditioner
   int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu);
   void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt);
@@ -89,26 +95,29 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   //    using extrapolation and the time step that is used to compute
   //    this predictor this function returns true if the predictor was
   //    modified, false if not
-  bool ModifyPredictor(double dt, 
-                       Teuchos::RCP<const TreeVector> u0,
-                       Teuchos::RCP<TreeVector> u) { return false; }
+  bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u)
+  {
+    return false;
+  }
 
   // -- possibly modifies the correction, after the nonlinear solver (NKA)
   //    has computed it, will return true if it did change the correction,
   //    so that the nonlinear iteration can store the modified correction
   //    and pass it to NKA so that the NKA space can be updated
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-      ModifyCorrection(double dt,
-                       Teuchos::RCP<const TreeVector> res,
-                       Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<TreeVector> du) {
+  ModifyCorrection(double dt,
+                   Teuchos::RCP<const TreeVector> res,
+                   Teuchos::RCP<const TreeVector> u,
+                   Teuchos::RCP<TreeVector> du)
+  {
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
 
 
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
-  void ChangedSolution() {
+  void ChangedSolution()
+  {
     pressure_eval_->SetChanged();
     fluid_velocity_eval_->SetChanged();
   }
@@ -118,7 +127,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   void ComputeOperatorBCs();
 
   // -- access
-  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae() { return bdf1_dae_; }
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae() { return bdf1_dae_; }
 
  private:
   void UpdateSourceBoundaryData_(double t_old, double t_new);
@@ -141,7 +150,8 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<CompositeVector> soln_p_, soln_u_;
 
-  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > pressure_eval_, fluid_velocity_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_eval_,
+    fluid_velocity_eval_;
 
   // solvers
   Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_, op_pc_solver_;
@@ -150,7 +160,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::PDE_Abstract> op_matrix_div_, op_matrix_grad_;
   Teuchos::RCP<Operators::PDE_Abstract> op_matrix_conv_, op_preconditioner_conv_;
   std::string solver_name_;
- 
+
  private:
   std::string passwd_;
   int dim;
@@ -158,12 +168,12 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   Key pressure_key_, velocity_key_;
 
   // time integrators
-  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae_;
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae_;
   int num_itrs_;
 
   // boundary conditions
-  std::vector<Teuchos::RCP<NavierStokesBoundaryFunction> > bcs_; 
-  std::vector<Teuchos::RCP<Operators::BCs> > op_bcs_;
+  std::vector<Teuchos::RCP<NavierStokesBoundaryFunction>> bcs_;
+  std::vector<Teuchos::RCP<Operators::BCs>> op_bcs_;
 
   // io
   Utils::Units units_;
@@ -172,7 +182,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   static RegisteredPKFactory<NavierStokes_PK> reg_;
 };
 
-}  // namespace NavierStokes
-}  // namespace Amanzi
+} // namespace NavierStokes
+} // namespace Amanzi
 
 #endif

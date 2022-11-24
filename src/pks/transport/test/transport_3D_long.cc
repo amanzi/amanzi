@@ -31,14 +31,15 @@
 #include "TransportExplicit_PK.hh"
 
 /* **************************************************************** */
-TEST(ADVANCE_WITH_3D_MESH) {
+TEST(ADVANCE_WITH_3D_MESH)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
+  std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
 #ifdef HAVE_MPI
   Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
@@ -52,18 +53,18 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   /* create a mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
   pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   RCP<const Mesh> mesh = meshfactory.create("test/rect3D_50x50x1.exo");
 
   //Amanzi::MeshAudit audit(mesh);
-  //audit.Verify();   
+  //audit.Verify();
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::global_hide_line_prefix = false;
@@ -83,7 +84,7 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   S->set_time(0.0);
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("state");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
@@ -100,7 +101,8 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   int iter;
   double t_old(0.0), t_new(0.0), dt;
 
-  auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
+  auto& tcc =
+    *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   iter = 0;
   bool flag = true;
@@ -121,7 +123,7 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
     if (t_new > 0.1 && flag) {
       flag = false;
       if (TPK.MyPID == 0) {
-        GMV::open_data_file(*mesh, (std::string)"transport.gmv");
+        GMV::open_data_file(*mesh, (std::string) "transport.gmv");
         GMV::start_data();
         GMV::write_cell_data(tcc, 0, "Component_0");
         GMV::close_data_file();
@@ -129,11 +131,4 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
       break;
     }
   }
- 
-  
 }
-
-
-
-
-

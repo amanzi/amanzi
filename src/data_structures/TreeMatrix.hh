@@ -20,9 +20,7 @@ class TreeVector;
 class TreeVectorSpace;
 
 class TreeMatrix {
-
  public:
-
   // Vector space of the Matrix's domain.
   virtual const TreeVectorSpace& DomainMap() const = 0;
 
@@ -30,15 +28,12 @@ class TreeMatrix {
   virtual const TreeVectorSpace& RangeMap() const = 0;
 
   // Apply matrix, b <-- Ax, returns ierr
-  virtual int Apply(const TreeVector& x,
-                    TreeVector& b) const = 0;
+  virtual int Apply(const TreeVector& x, TreeVector& b) const = 0;
 
   // Apply the inverse, x <-- A^-1 b, returns ierr
-  virtual int ApplyInverse(const TreeVector& b,
-                           TreeVector& x) const = 0;
-
+  virtual int ApplyInverse(const TreeVector& b, TreeVector& x) const = 0;
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

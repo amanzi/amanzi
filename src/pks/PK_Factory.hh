@@ -67,12 +67,11 @@ class State;
 class PKFactory {
  public:
   // Method to create a PK
-  Teuchos::RCP<PK>
-  CreatePK(std::string pk_name,
-           Teuchos::ParameterList& pk_tree,
-           const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-           const Teuchos::RCP<State>& state,
-           const Teuchos::RCP<TreeVector>& soln);
+  Teuchos::RCP<PK> CreatePK(std::string pk_name,
+                            Teuchos::ParameterList& pk_tree,
+                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                            const Teuchos::RCP<State>& state,
+                            const Teuchos::RCP<TreeVector>& soln);
 
   // typedef describing a map with string keys and PK constructor values, this
   // stores constructors for all known PK classes
@@ -80,10 +79,12 @@ class PKFactory {
                    PK* (*)(Teuchos::ParameterList&,
                            const Teuchos::RCP<Teuchos::ParameterList>&,
                            const Teuchos::RCP<State>&,
-                           const Teuchos::RCP<TreeVector>&)> map_type;
+                           const Teuchos::RCP<TreeVector>&)>
+    map_type;
 
  protected:
-  static map_type* GetMap() {
+  static map_type* GetMap()
+  {
     if (!map_) map_ = new map_type;
     return map_;
   }
@@ -97,7 +98,7 @@ class PKFactory {
 };
 
 
-template<typename T>
+template <typename T>
 PK*
 CreateT(Teuchos::ParameterList& pk_tree,
         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
@@ -108,7 +109,7 @@ CreateT(Teuchos::ParameterList& pk_tree,
 }
 
 
-template<typename T>
+template <typename T>
 class RegisteredPKFactory : public PKFactory {
  public:
   // Constructor for the registered factory.  Needs some error checking in
@@ -116,13 +117,14 @@ class RegisteredPKFactory : public PKFactory {
   // call themselves the same thing) --etc
   RegisteredPKFactory(const std::string& s)
   {
-    GetMap()->insert(std::pair<std::string, PK* (*)(Teuchos::ParameterList&,
-            const Teuchos::RCP<Teuchos::ParameterList>&,
-            const Teuchos::RCP<State>&,
-            const Teuchos::RCP<TreeVector>&)>(s, &CreateT<T>));
+    GetMap()->insert(std::pair<std::string,
+                               PK* (*)(Teuchos::ParameterList&,
+                                       const Teuchos::RCP<Teuchos::ParameterList>&,
+                                       const Teuchos::RCP<State>&,
+                                       const Teuchos::RCP<TreeVector>&)>(s, &CreateT<T>));
   }
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

@@ -26,12 +26,12 @@
 namespace Amanzi {
 namespace Flow {
 
-class PorosityModelEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class PorosityModelEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
-  explicit
-  PorosityModelEvaluator(Teuchos::ParameterList& plist,
-                         Teuchos::RCP<PorosityModelPartition> pom);
+  explicit PorosityModelEvaluator(Teuchos::ParameterList& plist,
+                                  Teuchos::RCP<PorosityModelPartition> pom);
   PorosityModelEvaluator(const PorosityModelEvaluator& other);
 
   // required inteface functions
@@ -39,7 +39,9 @@ class PorosityModelEvaluator : public EvaluatorSecondaryMonotype<CompositeVector
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
@@ -54,7 +56,7 @@ class PorosityModelEvaluator : public EvaluatorSecondaryMonotype<CompositeVector
   static Utils::RegisteredFactory<Evaluator, PorosityModelEvaluator> factory_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 #endif

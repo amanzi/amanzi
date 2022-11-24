@@ -31,10 +31,10 @@
 
 namespace Amanzi {
 
-template<class Vector>
+template <class Vector>
 struct BDF1_State {
-  BDF1_State() :
-      freeze_pc(false),
+  BDF1_State()
+    : freeze_pc(false),
       maxpclag(0),
       extrapolate_guess(true),
       uhist_size(2),
@@ -45,30 +45,31 @@ struct BDF1_State {
       pc_updates(0),
       hmin(std::numeric_limits<double>::max()),
       hmax(std::numeric_limits<double>::min()),
-      solve_itrs(0) {}
+      solve_itrs(0)
+  {}
 
   // Parameters and control
-  bool freeze_pc;  // freeze initial preconditioner
-  int maxpclag;  // maximum iterations that the preconditioner can be lagged
-  bool extrapolate_guess;  // extrapolate forward in time or use previous
-                           // step as initial guess for nonlinear solver
+  bool freeze_pc;         // freeze initial preconditioner
+  int maxpclag;           // maximum iterations that the preconditioner can be lagged
+  bool extrapolate_guess; // extrapolate forward in time or use previous
+                          // step as initial guess for nonlinear solver
   int extrapolation_order;
 
   // Solution history
-  Teuchos::RCP<SolutionHistory<Vector> > uhist;
+  Teuchos::RCP<SolutionHistory<Vector>> uhist;
 
   // internal counters and state
-  int uhist_size;  // extrapolation order for initial guess
-  double hlast;  // last step size
-  double hpc;  // step size built into the current preconditioner
-  int pc_lag;  // counter for how many iterations the preconditioner has been lagged
-  int pc_calls;  // counter for the number of preconditioner calls
+  int uhist_size; // extrapolation order for initial guess
+  double hlast;   // last step size
+  double hpc;     // step size built into the current preconditioner
+  int pc_lag;     // counter for how many iterations the preconditioner has been lagged
+  int pc_calls;   // counter for the number of preconditioner calls
 
   // performance counters
-  int seq;  // number of steps taken
-  int failed_solve;  // number of total failed BCE steps
+  int seq;            // number of steps taken
+  int failed_solve;   // number of total failed BCE steps
   int failed_current; // number of current cycle failed steps
-  int pc_updates;  // counter for the number of preconditioner updates
+  int pc_updates;     // counter for the number of preconditioner updates
   double hmin, hmax;  // minimum and maximum dt used on a successful step
 
   // performane of nonlinear solver
@@ -86,10 +87,11 @@ struct BDF1_State {
 /* ******************************************************************
 * Initiazition of fundamental parameters
 ****************************************************************** */
-template<class Vector>
-void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
-        const Teuchos::RCP<const Vector>& initvec,
-        const Teuchos::RCP<State>& S)
+template <class Vector>
+void
+BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
+                                        const Teuchos::RCP<const Vector>& initvec,
+                                        const Teuchos::RCP<State>& S)
 {
   // preconditioner control
   freeze_pc = plist.get<bool>("freeze preconditioner", false);
@@ -108,15 +110,13 @@ void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
   } else {
     name = "TI_BDF1";
   }
-  uhist = Teuchos::rcp(new SolutionHistory<Vector>(name, uhist_size, t0,
-          *initvec, nullptr, S));
+  uhist = Teuchos::rcp(new SolutionHistory<Vector>(name, uhist_size, t0, *initvec, nullptr, S));
 
   // restart fine control
   tol_multiplier = plist.get<double>("restart tolerance relaxation factor", 1.0);
   tol_multiplier_damp = plist.get<double>("restart tolerance relaxation factor damping", 1.0);
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif
-

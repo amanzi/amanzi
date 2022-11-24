@@ -45,11 +45,9 @@ namespace Amanzi {
 
 class FunctionPolynomial : public Function {
  public:
-  FunctionPolynomial(const std::vector<double> &c, const std::vector<int> &p, double x0 = 0.0);
+  FunctionPolynomial(const std::vector<double>& c, const std::vector<int>& p, double x0 = 0.0);
   ~FunctionPolynomial() {}
-  std::unique_ptr<Function> Clone() const {
-    return std::make_unique<FunctionPolynomial>(*this);
-  }
+  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionPolynomial>(*this); }
   double operator()(const std::vector<double>& x) const;
 
  private:
@@ -61,4 +59,4 @@ class FunctionPolynomial : public Function {
 
 } // namespace Amanzi
 
-#endif  // AMANZI_POLYNOMIAL_FUNCTION_HH_
+#endif // AMANZI_POLYNOMIAL_FUNCTION_HH_

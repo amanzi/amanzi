@@ -5,7 +5,7 @@
 using namespace Amanzi;
 using namespace Amanzi::Utils;
 
-TEST(EXPRTK) 
+TEST(EXPRTK)
 {
   std::string formula;
   std::vector<double> txyz;
@@ -38,4 +38,3 @@ TEST(EXPRTK)
     CHECK_CLOSE(4.789268156208015, exprtk(txyz), 1e-8);
   }
 }
-

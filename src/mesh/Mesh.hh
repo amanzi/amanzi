@@ -115,16 +115,23 @@ class Mesh : public MeshLight {
   bool is_logical() const { return logical_; }
 
   // Geometric model
-  void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) { geometric_model_ = gm; }
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model() const { return geometric_model_; }
+  void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
+  {
+    geometric_model_ = gm;
+  }
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model() const
+  {
+    return geometric_model_;
+  }
 
-  void set_parameter_list(const Teuchos::RCP<const Teuchos::ParameterList>& plist) {
+  void set_parameter_list(const Teuchos::RCP<const Teuchos::ParameterList>& plist)
+  {
     plist_ = plist;
     if (vo_ == Teuchos::null)
-      vo_ = Teuchos::rcp(new VerboseObject(comm_,Keys::cleanPListName(plist->name()), *plist));
+      vo_ = Teuchos::rcp(new VerboseObject(comm_, Keys::cleanPListName(plist->name()), *plist));
   }
   Teuchos::RCP<const Teuchos::ParameterList> parameter_list() const { return plist_; }
-  
+
   // Set/Get mesh type - RECTANGULAR, GENERAL (See MeshDefs.hh)
   void set_mesh_type(const Mesh_type mesh_type) { mesh_type_ = mesh_type; }
   Mesh_type mesh_type() const { return mesh_type_; }
@@ -134,8 +141,7 @@ class Mesh : public MeshLight {
   // Entity meta-data
   // ----------------
   // Parent entity in the source mesh if mesh was derived from another mesh
-  virtual Entity_ID entity_get_parent(
-          const Entity_kind kind, const Entity_ID entid) const;
+  virtual Entity_ID entity_get_parent(const Entity_kind kind, const Entity_ID entid) const;
 
   // Cell types: UNKNOWN, TRI, QUAD, etc. See MeshDefs.hh
   virtual Cell_type cell_get_type(const Entity_ID cellid) const = 0;
@@ -143,15 +149,14 @@ class Mesh : public MeshLight {
   std::string cell_type_to_name(const Cell_type type);
 
   // Global ID of any entity
-  virtual Entity_ID GID(
-          const Entity_ID lid, const Entity_kind kind) const = 0;
+  virtual Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const = 0;
 
 
   //---------------------
   // Downward adjacencies
   //---------------------
   // Get faces of a cell
-  // 
+  //
   // On a distributed mesh, this will return all the faces of the
   // cell, OWNED or GHOST. If ordered = true, the faces will be
   // returned in a standard order according to Exodus II convention
@@ -159,13 +164,11 @@ class Mesh : public MeshLight {
   // non-standard cells), the list of faces will be in arbitrary order
   //
   // EXTENSIONS: MSTK FRAMEWORK: by the way the parallel partitioning,
-  // send-receive protocols and mesh query operators are designed, a side 
+  // send-receive protocols and mesh query operators are designed, a side
   // effect of this is that master and ghost entities will have the same
-  // hierarchical topology. 
-  void cell_get_faces(
-       const Entity_ID c,
-       Entity_ID_List *faces,
-       const bool ordered = false) const {
+  // hierarchical topology.
+  void cell_get_faces(const Entity_ID c, Entity_ID_List* faces, const bool ordered = false) const
+  {
     cell_get_faces_and_dirs(c, faces, NULL, ordered);
   }
 
@@ -183,21 +186,19 @@ class Mesh : public MeshLight {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-  void cell_get_faces_and_dirs(
-       const Entity_ID c,
-       Entity_ID_List *faces,
-       std::vector<int> *dirs,
-       bool ordered = false) const;
+  void cell_get_faces_and_dirs(const Entity_ID c,
+                               Entity_ID_List* faces,
+                               std::vector<int>* dirs,
+                               bool ordered = false) const;
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
-  virtual void cell_get_faces_and_bisectors(
-          const Entity_ID cellid,
-          Entity_ID_List *faceids,
-          std::vector<AmanziGeometry::Point> *bisectors,
-          const bool ordered = false) const;
+  virtual void cell_get_faces_and_bisectors(const Entity_ID cellid,
+                                            Entity_ID_List* faceids,
+                                            std::vector<AmanziGeometry::Point>* bisectors,
+                                            const bool ordered = false) const;
 
   // Get edges
-  void cell_get_edges(const Entity_ID c, Entity_ID_List *edges) const;
+  void cell_get_edges(const Entity_ID c, Entity_ID_List* edges) const;
 
   using MeshLight::cell_get_edges;
 
@@ -209,19 +210,19 @@ class Mesh : public MeshLight {
   //
   // The order of cells is not guaranteed to be the same for corresponding
   // edges on different processors
-  virtual void edge_get_cells(
-          const Entity_ID edgeid,
-          const Parallel_type ptype,
-          Entity_ID_List *cellids) const = 0;
+  virtual void edge_get_cells(const Entity_ID edgeid,
+                              const Parallel_type ptype,
+                              Entity_ID_List* cellids) const = 0;
 
   // Edges of type 'ptype' connected to a node
   //
   // The order of edges is not guaranteed to be the same for corresponding
   // node on different processors
-  virtual void node_get_edges(
-          const Entity_ID nodeid,
-          const Parallel_type ptype,
-          Entity_ID_List *edgeids) const { AMANZI_ASSERT(false); }
+  virtual void
+  node_get_edges(const Entity_ID nodeid, const Parallel_type ptype, Entity_ID_List* edgeids) const
+  {
+    AMANZI_ASSERT(false);
+  }
 
 
   //-----------------------
@@ -230,10 +231,12 @@ class Mesh : public MeshLight {
   // Node connected neighboring cells of given cell
   // (a hex in a structured mesh has 26 node connected neighbors)
   // The cells are returned in no particular order
-  virtual void cell_get_node_adj_cells(
-          const Entity_ID cellid,
-          const Parallel_type ptype,
-          Entity_ID_List *nadj_cellids) const { AMANZI_ASSERT(false); }
+  virtual void cell_get_node_adj_cells(const Entity_ID cellid,
+                                       const Parallel_type ptype,
+                                       Entity_ID_List* nadj_cellids) const
+  {
+    AMANZI_ASSERT(false);
+  }
 
 
   //-----------------------
@@ -247,17 +250,16 @@ class Mesh : public MeshLight {
   // guaranteed in general except when ptype = ALL, in which case
   // the cellids will correcpond to cells across the respective
   // faces given by cell_get_faces
-  virtual void cell_get_face_adj_cells(
-          const Entity_ID cellid,
-          const Parallel_type ptype,
-          Entity_ID_List *fadj_cellids) const = 0;
+  virtual void cell_get_face_adj_cells(const Entity_ID cellid,
+                                       const Parallel_type ptype,
+                                       Entity_ID_List* fadj_cellids) const = 0;
 
 
   // --------------------
   // Mesh entity geometry
   // --------------------
   // Is a point in a given cell?
-  bool point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid) const;
+  bool point_in_cell(const AmanziGeometry::Point& p, const Entity_ID cellid) const;
 
 
   //------------
@@ -277,17 +279,24 @@ class Mesh : public MeshLight {
     throw(mesg);
   }
 
-  const Epetra_Map& map(Entity_kind kind, bool include_ghost) const {
-    if (kind == CELL) return cell_map(include_ghost);
-    else if (kind == FACE) return face_map(include_ghost);
-    else if (kind == EDGE) return edge_map(include_ghost);
-    else if (kind == NODE) return node_map(include_ghost);
-    else if (kind == BOUNDARY_FACE) return exterior_face_map(include_ghost);
+  const Epetra_Map& map(Entity_kind kind, bool include_ghost) const
+  {
+    if (kind == CELL)
+      return cell_map(include_ghost);
+    else if (kind == FACE)
+      return face_map(include_ghost);
+    else if (kind == EDGE)
+      return edge_map(include_ghost);
+    else if (kind == NODE)
+      return node_map(include_ghost);
+    else if (kind == BOUNDARY_FACE)
+      return exterior_face_map(include_ghost);
     Errors::Message mesg("No such map type.");
     Exceptions::amanzi_throw(mesg);
     throw(mesg);
   }
-  const Epetra_Import& importer(Entity_kind kind) const {
+  const Epetra_Import& importer(Entity_kind kind) const
+  {
     if (!importers_.count(kind)) {
       importers_[kind] = Teuchos::rcp(new Epetra_Import(map(kind, true), map(kind, false)));
     }
@@ -309,31 +318,27 @@ class Mesh : public MeshLight {
   bool valid_set_name(const std::string setname, const Entity_kind kind) const;
 
   // does this mesh framework support this mesh type
-  virtual
-  bool valid_set_type(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const = 0;
+  virtual bool
+  valid_set_type(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const = 0;
 
   // Get number of entities of type 'category' in set
-  virtual unsigned int get_set_size(
-          const std::string& setname,
-          const Entity_kind kind,
-          const Parallel_type ptype) const;
+  virtual unsigned int
+  get_set_size(const std::string& setname, const Entity_kind kind, const Parallel_type ptype) const;
 
   // Get list of entities of type 'category' in set by set name.
   // -- original interface. The returned volume fractions are ignored.
-  virtual void get_set_entities(
-          const std::string& setname,
-          const Entity_kind kind,
-          const Parallel_type ptype,
-          Entity_ID_List *entids) const;
+  virtual void get_set_entities(const std::string& setname,
+                                const Entity_kind kind,
+                                const Parallel_type ptype,
+                                Entity_ID_List* entids) const;
 
-  // Since not all regions support volume fractions 
+  // Since not all regions support volume fractions
   // (vofs), this vector is optional and could be empty.
-  virtual void get_set_entities_and_vofs(
-          const std::string& setname,
-          const Entity_kind kind,
-          const Parallel_type ptype,
-          Entity_ID_List *entids,
-          std::vector<double> *vofs) const = 0;
+  virtual void get_set_entities_and_vofs(const std::string& setname,
+                                         const Entity_kind kind,
+                                         const Parallel_type ptype,
+                                         Entity_ID_List* entids,
+                                         std::vector<double>* vofs) const = 0;
 
 
   //----------------------
@@ -371,7 +376,7 @@ class Mesh : public MeshLight {
   // normal, then collecting cells and faces while traveling downward
   // through the columns.
   virtual int build_columns() const;
-  
+
   // This must call build_columns before calling
   int num_columns(bool ghosted = false) const;
 
@@ -398,24 +403,21 @@ class Mesh : public MeshLight {
   // Mesh modification
   //------------------
   // Set coordinates of node
-  virtual void node_set_coordinates(
-          const Entity_ID nodeid, const AmanziGeometry::Point ncoord) = 0;
+  virtual void node_set_coordinates(const Entity_ID nodeid, const AmanziGeometry::Point ncoord) = 0;
 
   // Set coordinates of node
-  virtual void node_set_coordinates(
-          const Entity_ID nodeid, const double *ncoord) = 0;
+  virtual void node_set_coordinates(const Entity_ID nodeid, const double* ncoord) = 0;
 
   // Just move the mesh. Returns 0 if negative cell volumes generated, 1
   // otherwise.
   //
   // This is a rudimentary capability that requires ghosts nodes
-  // also to be deformed. Amanzi does not have any built-in parallel 
+  // also to be deformed. Amanzi does not have any built-in parallel
   // communication capabilities, other than Trilinos Epetra object
-  // communication or raw MPI. 
-  virtual int deform(
-          const Entity_ID_List& nodeids,
-          const AmanziGeometry::Point_List& new_positions);
-  
+  // communication or raw MPI.
+  virtual int
+  deform(const Entity_ID_List& nodeids, const AmanziGeometry::Point_List& new_positions);
+
   // Deform the mesh by moving given nodes to given coordinates, one at a
   // time, ensuring validity at all points through the deformation, which is a
   // really bad idea for deformations that move large numbers of nodes more
@@ -428,25 +430,23 @@ class Mesh : public MeshLight {
   // returned in final_positions
   //
   // This is a rudimentary capability that requires ghosts nodes
-  // also to be deformed. Amanzi does not have any built-in parallel 
+  // also to be deformed. Amanzi does not have any built-in parallel
   // communication capabilities, other than Trilinos Epetra object
-  // communication or raw MPI. 
-  virtual int deform(
-          const Entity_ID_List& nodeids,
-          const AmanziGeometry::Point_List& new_positions,
-          const bool keep_valid,
-          AmanziGeometry::Point_List *final_positions);
+  // communication or raw MPI.
+  virtual int deform(const Entity_ID_List& nodeids,
+                     const AmanziGeometry::Point_List& new_positions,
+                     const bool keep_valid,
+                     AmanziGeometry::Point_List* final_positions);
 
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
   // move_vertical = true, nodes will be allowed to move only in the
   // vertical direction (right now arbitrary node movement is not allowed)
   // Nodes in any set in the fixed_sets will not be permitted to move.
-  virtual int deform(
-          const std::vector<double>& target_cell_volumes_in,
-          const std::vector<double>& min_cell_volumes_in,
-          const Entity_ID_List& fixed_nodes,
-          const bool move_vertical) = 0;
+  virtual int deform(const std::vector<double>& target_cell_volumes_in,
+                     const std::vector<double>& min_cell_volumes_in,
+                     const Entity_ID_List& fixed_nodes,
+                     const bool move_vertical) = 0;
 
   // Synchronize node positions across processors
   void update_ghost_node_coordinates();
@@ -461,16 +461,18 @@ class Mesh : public MeshLight {
   // ---------------
   // High-order mesh
   //----------------
-  // Geometry of a curved edge/face is defined by a derived mesh class 
+  // Geometry of a curved edge/face is defined by a derived mesh class
   // from the list of returned interior nodes. For a linear (default)
   // mesh, these functions return the empty list.
-  virtual
-  void edge_get_ho_nodes(Entity_ID edgeid,
-                         AmanziGeometry::Point_List *nodes) const { nodes->clear(); }
+  virtual void edge_get_ho_nodes(Entity_ID edgeid, AmanziGeometry::Point_List* nodes) const
+  {
+    nodes->clear();
+  }
 
-  virtual
-  void face_get_ho_nodes(Entity_ID faceid,
-                         AmanziGeometry::Point_List *nodes) const { nodes->clear(); }
+  virtual void face_get_ho_nodes(Entity_ID faceid, AmanziGeometry::Point_List* nodes) const
+  {
+    nodes->clear();
+  }
 
 
   // -----------------------
@@ -482,20 +484,17 @@ class Mesh : public MeshLight {
   // NOTE: Standard convention works only for standard cell types in 3D!
   // For a general polyhedron this will return the node coordinates in
   // arbitrary order.
-  void cell_get_coordinates(const Entity_ID c,
-                            std::vector<AmanziGeometry::Point> *ccoords) const;
+  void cell_get_coordinates(const Entity_ID c, std::vector<AmanziGeometry::Point>* ccoords) const;
 
   // Conventions are the same as for face_to_nodes().
-  void face_get_coordinates(const Entity_ID f, 
-                            std::vector<AmanziGeometry::Point> *fcoords) const;
-  
+  void face_get_coordinates(const Entity_ID f, std::vector<AmanziGeometry::Point>* fcoords) const;
+
  protected:
-  void get_set_entities_box_vofs_(
-      Teuchos::RCP<const AmanziGeometry::Region> region,
-      const Entity_kind kind, 
-      const Parallel_type ptype, 
-      std::vector<Entity_ID>* setents,
-      std::vector<double> *vofs) const;
+  void get_set_entities_box_vofs_(Teuchos::RCP<const AmanziGeometry::Region> region,
+                                  const Entity_kind kind,
+                                  const Parallel_type ptype,
+                                  std::vector<Entity_ID>* setents,
+                                  std::vector<double>* vofs) const;
 
  protected:
   // Helper function to build columns
@@ -505,7 +504,7 @@ class Mesh : public MeshLight {
   // Cache management
   //-----------------
   // NOTE: Anything here could be cached if need be. --etc
-  // 
+  //
   // TODO: Things that aren't cached should be aliased, i.e. the virtual one
   // should still be the *_internal() call and this should simply call that
   // method.  That would make the deriving mesh interfaces a bit nicer
@@ -519,21 +518,18 @@ class Mesh : public MeshLight {
   //
   // These are declared const since they do not modify the
   // mesh but just modify cached variables declared as mutable
-  virtual int compute_cell_geometry_(
-          const Entity_ID cellid,
-          double *volume,
-          AmanziGeometry::Point *centroid) const;
+  virtual int compute_cell_geometry_(const Entity_ID cellid,
+                                     double* volume,
+                                     AmanziGeometry::Point* centroid) const;
 
-  virtual int compute_face_geometry_(
-          const Entity_ID faceid,
-          double *area,
-          AmanziGeometry::Point *centroid,
-          std::vector<AmanziGeometry::Point> *normals) const;
+  virtual int compute_face_geometry_(const Entity_ID faceid,
+                                     double* area,
+                                     AmanziGeometry::Point* centroid,
+                                     std::vector<AmanziGeometry::Point>* normals) const;
 
-  virtual int compute_edge_geometry_(
-          const Entity_ID edgeid,
-          double *length,
-          AmanziGeometry::Point *edge_vector) const;
+  virtual int compute_edge_geometry_(const Entity_ID edgeid,
+                                     double* length,
+                                     AmanziGeometry::Point* edge_vector) const;
 
  public:
   void PrintMeshStatistics() const;
@@ -562,8 +558,8 @@ class Mesh : public MeshLight {
   mutable KDTree kdtree_faces_;
 
   // region data
-  mutable std::map<std::string, std::vector<int> > region_ids;
-  mutable std::map<std::string, std::vector<double> > region_vofs;
+  mutable std::map<std::string, std::vector<int>> region_ids;
+  mutable std::map<std::string, std::vector<double>> region_vofs;
 
   // column information, only created if columns are requested
   mutable bool columns_built_;
@@ -578,8 +574,7 @@ class Mesh : public MeshLight {
   mutable int num_owned_cols_;
 };
 
-}  // namespace AmanziMesh
-}  // namespace Amanzi
+} // namespace AmanziMesh
+} // namespace Amanzi
 
 #endif
-

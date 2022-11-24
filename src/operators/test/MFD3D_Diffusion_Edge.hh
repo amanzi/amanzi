@@ -55,11 +55,12 @@ class MFD3D_Diffusion_Edge : public MFD3D {
  public:
   MFD3D_Diffusion_Edge(const Teuchos::ParameterList& plist,
                        const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-    : MFD3D(mesh) {};
+    : MFD3D(mesh){};
 
-  // main methods 
+  // main methods
   // -- symmetric schema
-  virtual std::vector<SchemaItem> schema() const override {
+  virtual std::vector<SchemaItem> schema() const override
+  {
     return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::EDGE, DOF_Type::SCALAR, 1));
   }
 
@@ -71,8 +72,7 @@ class MFD3D_Diffusion_Edge : public MFD3D {
   static RegisteredFactory<MFD3D_Diffusion_Edge> factory_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

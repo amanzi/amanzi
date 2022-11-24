@@ -37,7 +37,7 @@ class MeshColumn;
 Teuchos::RCP<MeshColumn>
 createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
                  int col_id,
-                 const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null);
+                 const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
 // -------------------------------------------------------------
 //  class MeshFactory
@@ -45,8 +45,8 @@ createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
 class MeshFactory {
  public:
   explicit MeshFactory(const Comm_ptr_type& comm,
-                       const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,
-                       const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null);
+                       const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+                       const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
   // undefined copy constructor to avoid unwanted copies
   MeshFactory(MeshFactory& old) = delete;
@@ -62,7 +62,10 @@ class MeshFactory {
 
   // Get/set the geometric model
   Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model() const { return gm_; }
-  void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) { gm_ = gm; }
+  void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
+  {
+    gm_ = gm;
+  }
 
   // Get/set the parameter list
   Teuchos::RCP<const Teuchos::ParameterList> parameter_list() const { return plist_; }
@@ -71,30 +74,39 @@ class MeshFactory {
   // Creation methods
   // -- Create a mesh by reading the specified file (or set of files)
   Teuchos::RCP<Mesh> create(const std::string& filename,
-                            const bool request_faces=true,
-                            const bool request_edges=false);
+                            const bool request_faces = true,
+                            const bool request_edges = false);
 
   // -- Generate a hex mesh (3D)
   //    Generates a structured mesh covering [x0,x1] X [y0,y1] X [z0,z1] with (nx, ny, nz) cells.
-  Teuchos::RCP<Mesh> create(const double x0, const double y0, const double z0,
-                            const double x1, const double y1, const double z1,
-                            const int nx, const int ny, const int nz,
-                            const bool request_faces=true,
-                            const bool request_edges=false);
+  Teuchos::RCP<Mesh> create(const double x0,
+                            const double y0,
+                            const double z0,
+                            const double x1,
+                            const double y1,
+                            const double z1,
+                            const int nx,
+                            const int ny,
+                            const int nz,
+                            const bool request_faces = true,
+                            const bool request_edges = false);
 
 
   // -- Generate a quad mesh (2D)
   //    Generates a structured mesh covering [x0,x1] X [y0,y1] with (nx, ny) cells.
-  Teuchos::RCP<Mesh> create(const double x0, const double y0,
-                            const double x1, const double y1,
-                            const int nx, const int ny,
-                            const bool request_faces=true,
-                            const bool request_edges=false);
+  Teuchos::RCP<Mesh> create(const double x0,
+                            const double y0,
+                            const double x1,
+                            const double y1,
+                            const int nx,
+                            const int ny,
+                            const bool request_faces = true,
+                            const bool request_edges = false);
 
   // -- Generate a mesh from parameters in a list
   Teuchos::RCP<Mesh> create(const Teuchos::ParameterList& gen_plist,
-                            const bool request_faces=true,
-                            const bool request_edges=false);
+                            const bool request_faces = true,
+                            const bool request_edges = false);
 
 
   // -- Extract a mesh from another mesh and a collection of entities
@@ -114,9 +126,9 @@ class MeshFactory {
   Teuchos::RCP<Mesh> create(const Teuchos::RCP<const Mesh>& parent_mesh,
                             const Entity_ID_List& setids,
                             const Entity_kind setkind,
-                            const bool flatten=false,
-                            const bool request_faces=true,
-                            const bool request_edges=false);
+                            const bool flatten = false,
+                            const bool request_faces = true,
+                            const bool request_edges = false);
 
 
   // -- Extract a mesh from another mesh and a set in that mesh.
@@ -141,9 +153,9 @@ class MeshFactory {
   Teuchos::RCP<Mesh> create(const Teuchos::RCP<const Mesh>& parent_mesh,
                             const std::vector<std::string>& setnames,
                             const Entity_kind setkind,
-                            const bool flatten=false,
-                            const bool request_faces=true,
-                            const bool request_edges=false);
+                            const bool flatten = false,
+                            const bool request_faces = true,
+                            const bool request_edges = false);
 
  protected:
   // The parallel environment
@@ -164,6 +176,7 @@ class MeshFactory {
   bool request_edges_;
 
   Teuchos::RCP<VerboseObject> vo_;
+
  private:
   std::string extraction_method_;
 };

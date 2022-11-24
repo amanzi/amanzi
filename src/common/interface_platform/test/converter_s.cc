@@ -24,11 +24,16 @@
 #include "InputConverterS.hh"
 
 
-void* getLevelBld() { return NULL; }
+void*
+getLevelBld()
+{
+  return NULL;
+}
 
 
 /* **************************************************************** */
-TEST(CONVERTER_S) {
+TEST(CONVERTER_S)
+{
   using namespace Amanzi;
 
   int rank;
@@ -41,7 +46,7 @@ TEST(CONVERTER_S) {
 
   Amanzi::AmanziInput::InputConverterS converter(xmlFileName);
   try {
-    // Translate the input. This produces a singleton instance of ParmParse that is 
+    // Translate the input. This produces a singleton instance of ParmParse that is
     // populated with data.
     converter.Translate(rank);
 
@@ -57,4 +62,3 @@ TEST(CONVERTER_S) {
     std::cout << e.what() << std::endl;
   }
 }
-	

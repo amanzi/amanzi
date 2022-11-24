@@ -38,7 +38,9 @@ MoleFractionLiquid::MoleFractionLiquid(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> MoleFractionLiquid::Clone() const {
+Teuchos::RCP<Evaluator>
+MoleFractionLiquid::Clone() const
+{
   return Teuchos::rcp(new MoleFractionLiquid(*this));
 }
 
@@ -46,43 +48,38 @@ Teuchos::RCP<Evaluator> MoleFractionLiquid::Clone() const {
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void MoleFractionLiquid::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+MoleFractionLiquid::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& pg_c = *S.Get<CompositeVector>(pressure_gas_key_).ViewComponent("cell");
   const auto& xg_c = *S.Get<CompositeVector>(x_gas_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
-  for (int c = 0; c != ncells; ++c) {
-    result_c[0][c] = pg_c[0][c] * xg_c[n_][c] * kH_;
-  }
+  for (int c = 0; c != ncells; ++c) { result_c[0][c] = pg_c[0][c] * xg_c[n_][c] * kH_; }
 }
 
 
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void MoleFractionLiquid::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+MoleFractionLiquid::EvaluatePartialDerivative_(const State& S,
+                                               const Key& wrt_key,
+                                               const Tag& wrt_tag,
+                                               const std::vector<CompositeVector*>& results)
 {
   const auto& pg_c = *S.Get<CompositeVector>(pressure_gas_key_).ViewComponent("cell");
   const auto& xg_c = *S.Get<CompositeVector>(x_gas_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
- 
+
   int ncells = result_c.MyLength();
   if (wrt_key == pressure_gas_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = xg_c[n_][c] * kH_;
-    }
+    for (int c = 0; c != ncells; ++c) { result_c[0][c] = xg_c[n_][c] * kH_; }
   } else if (wrt_key == x_gas_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = pg_c[0][c] * kH_;
-    }
+    for (int c = 0; c != ncells; ++c) { result_c[0][c] = pg_c[0][c] * kH_; }
   }
 }
 
-}  // namespace Multiphase
-}  // namespace Amanzi
-
+} // namespace Multiphase
+} // namespace Amanzi

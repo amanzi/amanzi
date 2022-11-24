@@ -29,25 +29,24 @@ namespace Amanzi {
 namespace Functions {
 
 class DynamicBoundaryFunction : public BoundaryFunction {
-
-public:
-  DynamicBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-    BoundaryFunction(mesh) {};
+ public:
+  DynamicBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : BoundaryFunction(mesh){};
 
   void AddFunction(const Teuchos::RCP<BoundaryFunction>& f);
-  
+
   Teuchos::RCP<BoundaryFunction> GetFunction(int id) { return func_[id]; }
 
   int Func_ID(double time);
 
   void Compute(double time);
 
-protected:
-  std::vector< Teuchos::RCP<BoundaryFunction> > func_;
+ protected:
+  std::vector<Teuchos::RCP<BoundaryFunction>> func_;
 };
 
-}  // namespace Functions
-}  // namespace Amanzi
+} // namespace Functions
+} // namespace Amanzi
 
 
 #endif

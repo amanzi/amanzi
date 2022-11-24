@@ -33,7 +33,7 @@ MultiscaleFlowPorosity_GDPM::MultiscaleFlowPorosity_GDPM(Teuchos::ParameterList&
   matrix_nodes_ = sublist.get<int>("number of matrix nodes");
 
   // depth is defined for each matrix block as A_m / V_m, so in general,
-  // it depends on geometry 
+  // it depends on geometry
   depth_ = sublist.get<double>("matrix depth");
   tau_ = sublist.get<double>("matrix tortuosity");
   Ka_ = sublist.get<double>("absolute permeability");
@@ -44,7 +44,8 @@ MultiscaleFlowPorosity_GDPM::MultiscaleFlowPorosity_GDPM(Teuchos::ParameterList&
 /* ******************************************************************
 * Compute water storage.
 ****************************************************************** */
-double MultiscaleFlowPorosity_GDPM::ComputeField(double phi, double n_l, double pcm)
+double
+MultiscaleFlowPorosity_GDPM::ComputeField(double phi, double n_l, double pcm)
 {
   return wrm_->saturation(pcm) * phi * n_l;
 }
@@ -54,11 +55,15 @@ double MultiscaleFlowPorosity_GDPM::ComputeField(double phi, double n_l, double 
 * Main capability: cell-based Newton solver. It returns water storage 
 * and pressure in the matrix. max_itrs is input/output parameter.
 ****************************************************************** */
-double MultiscaleFlowPorosity_GDPM::WaterContentMatrix(
-    double pcf0, WhetStone::DenseVector& pcm,
-    double wcm0, double dt, double phi, double n_l, int& max_itrs)
+double
+MultiscaleFlowPorosity_GDPM::WaterContentMatrix(double pcf0,
+                                                WhetStone::DenseVector& pcm,
+                                                double wcm0,
+                                                double dt,
+                                                double phi,
+                                                double n_l,
+                                                int& max_itrs)
 {
-
   Operators::Mini_Diffusion1D op_diff;
 
   // make uniform mesh inside the matrix
@@ -75,7 +80,7 @@ double MultiscaleFlowPorosity_GDPM::WaterContentMatrix(
   op_diff.Setup(kr, dkdp);
 
   // create nonlinear problem
-  Teuchos::RCP<SolverFnBase<WhetStone::DenseVector> > fn = Teuchos::rcp(this);
+  Teuchos::RCP<SolverFnBase<WhetStone::DenseVector>> fn = Teuchos::rcp(this);
   auto sol = Teuchos::rcp(new WhetStone::DenseVector(matrix_nodes_));
 
   // create the solver
@@ -87,7 +92,7 @@ double MultiscaleFlowPorosity_GDPM::WaterContentMatrix(
   newton.Init(fn, 1);
 
   // solve the problem
-  newton.Solve(sol);  
+  newton.Solve(sol);
 
   return wrm_->saturation(pcm(0)) * phi * n_l;
 }
@@ -96,17 +101,14 @@ double MultiscaleFlowPorosity_GDPM::WaterContentMatrix(
 /* ******************************************************************
 * Nonlinear residual for Newton-type solvers.
 ****************************************************************** */
-void MultiscaleFlowPorosity_GDPM::Residual(
-    const Teuchos::RCP<WhetStone::DenseVector>& u,
-    const Teuchos::RCP<WhetStone::DenseVector>& f)
+void
+MultiscaleFlowPorosity_GDPM::Residual(const Teuchos::RCP<WhetStone::DenseVector>& u,
+                                      const Teuchos::RCP<WhetStone::DenseVector>& f)
 {
-  for (int i = 0; i < u->NumRows(); ++i) {
-    op_->k()(i) = 1.0 + (*u)(i) * (*u)(i);
-  }
+  for (int i = 0; i < u->NumRows(); ++i) { op_->k()(i) = 1.0 + (*u)(i) * (*u)(i); }
 
   op_->UpdateMatrices();
-  op_->ApplyBCs(bcl_, Operators::OPERATOR_BC_DIRICHLET,
-                0.0, Operators::OPERATOR_BC_NEUMANN);
+  op_->ApplyBCs(bcl_, Operators::OPERATOR_BC_DIRICHLET, 0.0, Operators::OPERATOR_BC_NEUMANN);
 
   op_->Apply(*u, *f);
   f->Update(-1.0, op_->rhs(), 1.0);
@@ -116,30 +118,30 @@ void MultiscaleFlowPorosity_GDPM::Residual(
 /* ******************************************************************
 * Populate preconditioner's data.
 ****************************************************************** */
-void MultiscaleFlowPorosity_GDPM::UpdatePreconditioner(
-    const Teuchos::RCP<const WhetStone::DenseVector>& u)
+void
+MultiscaleFlowPorosity_GDPM::UpdatePreconditioner(
+  const Teuchos::RCP<const WhetStone::DenseVector>& u)
 {
   for (int i = 0; i < u->NumRows(); ++i) {
     op_->k()(i) = 1.0 + (*u)(i) * (*u)(i);
     op_->dkdp()(i) = 2.0 * (*u)(i);
   }
-  op_->UpdateJacobian(*u, bcl_, Operators::OPERATOR_BC_DIRICHLET,
-                          0.0, Operators::OPERATOR_BC_NEUMANN);
+  op_->UpdateJacobian(
+    *u, bcl_, Operators::OPERATOR_BC_DIRICHLET, 0.0, Operators::OPERATOR_BC_NEUMANN);
 }
 
 
 /* ******************************************************************
 * Error estimate for convergence criteria.
 ****************************************************************** */
-double MultiscaleFlowPorosity_GDPM::ErrorNorm(
-    const Teuchos::RCP<const WhetStone::DenseVector>& u,
-    const Teuchos::RCP<const WhetStone::DenseVector>& du)
+double
+MultiscaleFlowPorosity_GDPM::ErrorNorm(const Teuchos::RCP<const WhetStone::DenseVector>& u,
+                                       const Teuchos::RCP<const WhetStone::DenseVector>& du)
 {
   double tmp;
   du->NormInf(&tmp);
   return tmp;
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
- 
+} // namespace Flow
+} // namespace Amanzi

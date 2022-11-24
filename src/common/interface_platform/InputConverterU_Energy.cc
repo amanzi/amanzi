@@ -32,7 +32,8 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Create energy list.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateEnergy_(const std::string& domain)
+Teuchos::ParameterList
+InputConverterU::TranslateEnergy_(const std::string& domain)
 {
   Teuchos::ParameterList out_list;
 
@@ -52,27 +53,30 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_(const std::string& doma
 
   // insert operator sublist
   std::string disc_method("mfd-optimized_for_sparsity");
-  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_energy_controls, discretization_method", flag);
+  node = GetUniqueElementByTagsString_(
+    "unstructured_controls, unstr_energy_controls, discretization_method", flag);
   if (flag) disc_method = mm.transcode(node->getNodeName());
 
   std::string pc_method("linearized_operator");
-  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_energy_controls, preconditioning_strategy", flag);
-  if (flag) pc_method = mm.transcode(node->getNodeName()); 
+  node = GetUniqueElementByTagsString_(
+    "unstructured_controls, unstr_energy_controls, preconditioning_strategy", flag);
+  if (flag) pc_method = mm.transcode(node->getNodeName());
 
   std::string nonlinear_solver("nka");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);
   element = static_cast<DOMElement*>(node);
-  if (flag) nonlinear_solver = GetAttributeValueS_(element, "name", TYPE_NONE, false, "nka"); 
+  if (flag) nonlinear_solver = GetAttributeValueS_(element, "name", TYPE_NONE, false, "nka");
 
   bool modify_correction(false);
-  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
+  node = GetUniqueElementByTagsString_(
+    "unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
 
-  out_list.sublist("operators") = TranslateDiffusionOperator_(
-      disc_method, pc_method, nonlinear_solver, "", "", false, "energy");
+  out_list.sublist("operators") =
+    TranslateDiffusionOperator_(disc_method, pc_method, nonlinear_solver, "", "", false, "energy");
 
   // insert thermal conductivity evaluator with the default values (no 2.2 support yet)
-  Teuchos::ParameterList& thermal = out_list.sublist("thermal conductivity evaluator")
-                                            .sublist("thermal conductivity parameters");
+  Teuchos::ParameterList& thermal =
+    out_list.sublist("thermal conductivity evaluator").sublist("thermal conductivity parameters");
   if (pk_model_["energy"] == "two-phase energy") {
     thermal.set<std::string>("thermal conductivity type", "two-phase Peters-Lidard");
     thermal.set<double>("thermal conductivity of gas", 0.02);
@@ -98,11 +102,15 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_(const std::string& doma
 
   // insert time integrator
   std::string err_options("energy"), unstr_controls("unstructured_controls, unstr_energy_controls");
-  
+
   if (pk_master_.find("energy") != pk_master_.end()) {
-    out_list.sublist("time integrator") = TranslateTimeIntegrator_(
-        err_options, nonlinear_solver, modify_correction, unstr_controls, TI_SOLVER,
-        TI_TS_REDUCTION_FACTOR, TI_TS_INCREASE_FACTOR);  
+    out_list.sublist("time integrator") = TranslateTimeIntegrator_(err_options,
+                                                                   nonlinear_solver,
+                                                                   modify_correction,
+                                                                   unstr_controls,
+                                                                   TI_SOLVER,
+                                                                   TI_TS_REDUCTION_FACTOR,
+                                                                   TI_TS_INCREASE_FACTOR);
   }
 
   // insert boundary conditions and source terms
@@ -110,10 +118,10 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_(const std::string& doma
   out_list.sublist("source terms") = TranslateSources_(domain, "energy");
 
   // insert internal evaluators
-  out_list.sublist("energy evaluator")
-          .sublist("verbose object") = verb_list_.sublist("verbose object");
-  out_list.sublist("enthalpy evaluator")
-          .sublist("verbose object") = verb_list_.sublist("verbose object");
+  out_list.sublist("energy evaluator").sublist("verbose object") =
+    verb_list_.sublist("verbose object");
+  out_list.sublist("enthalpy evaluator").sublist("verbose object") =
+    verb_list_.sublist("verbose object");
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
@@ -123,16 +131,17 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_(const std::string& doma
 /* ******************************************************************
 * Create list of energy BCs.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_(const std::string& domain)
+Teuchos::ParameterList
+InputConverterU::TranslateEnergyBCs_(const std::string& domain)
 {
   Teuchos::ParameterList out_list;
 
   MemoryManager mm;
 
-  char *text;
-  DOMNodeList *children;
-  DOMNode *node;
-  DOMElement *element;
+  char* text;
+  DOMNodeList* children;
+  DOMNode* node;
+  DOMElement* element;
 
   // correct list of boundary conditions for given domain
   bool flag;
@@ -173,7 +182,8 @@ Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_(const std::string& d
       double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "y");
 
       tp_forms[t0] = GetAttributeValueS_(element, "function");
-      tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, 0.0, 1000.0, "K", false, 0.0);
+      tp_values[t0] =
+        GetAttributeValueD_(element, "value", TYPE_NUMERICAL, 0.0, 1000.0, "K", false, 0.0);
       tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
     }
 
@@ -196,10 +206,10 @@ Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_(const std::string& d
     std::stringstream ss;
     ss << "BC " << ibc++;
 
-    // save in the XML files  
+    // save in the XML files
     Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
     Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
-    bc.set<Teuchos::Array<std::string> >("regions", regions)
+    bc.set<Teuchos::Array<std::string>>("regions", regions)
       .set<std::string>("spatial distribution method", "none");
 
     Teuchos::ParameterList& bcfn = bc.sublist(bcname);
@@ -209,7 +219,5 @@ Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_(const std::string& d
   return out_list;
 }
 
-}  // namespace AmanziInput
-}  // namespace Amanzi
-
-
+} // namespace AmanziInput
+} // namespace Amanzi

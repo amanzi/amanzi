@@ -45,15 +45,14 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 class RegionHalfSpace : public Region {
-
  public:
   // Default constructor uses point and normal
   RegionHalfSpace(const std::string& name,
                   const int id,
-                  const Point& p, 
+                  const Point& p,
                   const Point& normal,
-                  const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
-  
+                  const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
+
   // Get the point defining the plane
   const Point& point() const { return p_; }
 
@@ -64,9 +63,9 @@ class RegionHalfSpace : public Region {
   // means on the plane
   bool inside(const Point& p) const;
 
-protected:
-  const Point p_;  /* point on the plane */
-  const Point n_;  /* normal to the plane */
+ protected:
+  const Point p_; /* point on the plane */
+  const Point n_; /* normal to the plane */
 };
 
 } // namespace AmanziGeometry

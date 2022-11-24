@@ -31,7 +31,9 @@ SaturationGasEvaluator::SaturationGasEvaluator(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> SaturationGasEvaluator::Clone() const {
+Teuchos::RCP<Evaluator>
+SaturationGasEvaluator::Clone() const
+{
   return Teuchos::rcp(new SaturationGasEvaluator(*this));
 }
 
@@ -39,25 +41,25 @@ Teuchos::RCP<Evaluator> SaturationGasEvaluator::Clone() const {
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void SaturationGasEvaluator::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+SaturationGasEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
-  for (int c = 0; c != ncells; ++c) {
-    result_c[0][c] = 1.0 - sl[0][c];
-  }
+  for (int c = 0; c != ncells; ++c) { result_c[0][c] = 1.0 - sl[0][c]; }
 }
 
 
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void SaturationGasEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+SaturationGasEvaluator::EvaluatePartialDerivative_(const State& S,
+                                                   const Key& wrt_key,
+                                                   const Tag& wrt_tag,
+                                                   const std::vector<CompositeVector*>& results)
 {
   auto& result_c = *results[0]->ViewComponent("cell");
 
@@ -67,6 +69,5 @@ void SaturationGasEvaluator::EvaluatePartialDerivative_(
   }
 }
 
-}  // namespace Multiphase
-}  // namespace Amanzi
-
+} // namespace Multiphase
+} // namespace Amanzi

@@ -23,8 +23,8 @@ namespace Energy {
 /* ******************************************************************
 * Simple constructor
 ****************************************************************** */
-TCM_WetDry_TwoPhase::TCM_WetDry_TwoPhase(Teuchos::ParameterList& plist) :
-    plist_(plist) {
+TCM_WetDry_TwoPhase::TCM_WetDry_TwoPhase(Teuchos::ParameterList& plist) : plist_(plist)
+{
   InitializeFromPlist_();
 }
 
@@ -32,7 +32,8 @@ TCM_WetDry_TwoPhase::TCM_WetDry_TwoPhase(Teuchos::ParameterList& plist) :
 /* ******************************************************************
 * Equation of state
 ****************************************************************** */
-double TCM_WetDry_TwoPhase::ThermalConductivity(double poro, double sat_liq)
+double
+TCM_WetDry_TwoPhase::ThermalConductivity(double poro, double sat_liq)
 {
   double kersten = pow(sat_liq + eps_, alpha_);
   return k_dry_ + (k_wet_ - k_dry_) * kersten;
@@ -42,7 +43,8 @@ double TCM_WetDry_TwoPhase::ThermalConductivity(double poro, double sat_liq)
 /* ******************************************************************
 * Initialization
 ****************************************************************** */
-void TCM_WetDry_TwoPhase::InitializeFromPlist_()
+void
+TCM_WetDry_TwoPhase::InitializeFromPlist_()
 {
   eps_ = plist_.get<double>("epsilon", 1.e-10);
   alpha_ = plist_.get<double>("unsaturated alpha", 1.0);
@@ -50,5 +52,5 @@ void TCM_WetDry_TwoPhase::InitializeFromPlist_()
   k_wet_ = plist_.get<double>("thermal conductivity, wet");
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi

@@ -24,8 +24,8 @@ namespace WhetStone {
 * Efficient implementation is possible in 2D. Hence, we fork the code.
 * Non-symmetric tensor is not yet used.
 ****************************************************************** */
-int DeRham_Edge::L2consistency(int c, const Tensor& T,
-                               DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
+int
+DeRham_Edge::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
   int ok;
   if (d_ == 2) {
@@ -42,8 +42,8 @@ int DeRham_Edge::L2consistency(int c, const Tensor& T,
 * 2D consistency condition for the mass matrix. Only the upper 
 * triangular part of Mc = R (R^T N)^{-1} R^T is calculated. 
 ****************************************************************** */
-int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
-                                  DenseMatrix& N, DenseMatrix& Mc)
+int
+DeRham_Edge::L2consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc)
 {
   const auto& faces = mesh_->cell_get_faces(c);
   const auto& dirs = mesh_->cell_get_face_dirs(c);
@@ -65,7 +65,7 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
     Tinv(1, 0) = -tmp;
 
     tmp = Tinv(0, 0);
-    Tinv(0, 0) = Tinv(1, 1);  
+    Tinv(0, 0) = Tinv(1, 1);
     Tinv(1, 1) = tmp;
   }
 
@@ -85,7 +85,7 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
     }
   }
 
-  // Rows of matrix N are oriented tangent vectors. Since N goes to 
+  // Rows of matrix N are oriented tangent vectors. Since N goes to
   // the Gramm-Schmidt orthogonalizetion procedure, we can skip scaling
   // tensorial factor T.
   for (int i = 0; i < nfaces; i++) {
@@ -95,7 +95,7 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
 
     for (int k = 0; k < d_; k++) {
       a = -a;
-      N(i, k) = normal[1 - k] * dirs[i] / a; 
+      N(i, k) = normal[1 - k] * dirs[i] / a;
     }
   }
 
@@ -107,8 +107,8 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
 * 3D consistency condition for the mass matrix. Only the upper 
 * triangular part of Mc = R (R^T N)^{-1} R^T is calculated. 
 ****************************************************************** */
-int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
-                                  DenseMatrix& N, DenseMatrix& Mc)
+int
+DeRham_Edge::L2consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc)
 {
   Entity_ID_List fedges;
   std::vector<int> edirs, map;
@@ -138,8 +138,8 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     double area = mesh_->face_area(f);
 
-    v1 = xc - xf; 
- 
+    v1 = xc - xf;
+
     double a1 = normal * v1;
     for (int k = 0; k < d_; ++k) {
       vv[k].set(normal[k] * v1);
@@ -154,19 +154,17 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
     for (int m = 0; m < nfedges; ++m) {
       int e = fedges[m];
       const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
- 
+
       v3 = xe - xf;
 
       double len = mesh_->edge_length(e);
       len /= 2.0 * area * area * fdirs[i] * edirs[m];
 
-      for (int k = 0; k < d_; ++k) {
-        N(map[m], k) -= len * ((vv[k]^v3) * normal);
-      }
+      for (int k = 0; k < d_; ++k) { N(map[m], k) -= len * ((vv[k] ^ v3) * normal); }
     }
   }
 
-  // calculate Mc = R (R^T N)^{-1} R^T 
+  // calculate Mc = R (R^T N)^{-1} R^T
   Tensor Tinv(T);
   Tinv.Inverse();
 
@@ -197,7 +195,8 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
 /* ******************************************************************
 * Mass matrix for edge-based discretization.
 ****************************************************************** */
-int DeRham_Edge::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
+int
+DeRham_Edge::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 {
   DenseMatrix N;
 
@@ -212,8 +211,12 @@ int DeRham_Edge::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 /* ******************************************************************
 * Efficient implementation is possible in 2D. Hence, we fork the code.
 ****************************************************************** */
-int DeRham_Edge::L2consistencyInverse(
-    int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
+int
+DeRham_Edge::L2consistencyInverse(int c,
+                                  const Tensor& T,
+                                  DenseMatrix& R,
+                                  DenseMatrix& Wc,
+                                  bool symmetry)
 {
   int ok;
   if (d_ == 2) {
@@ -230,8 +233,8 @@ int DeRham_Edge::L2consistencyInverse(
 * 2D consistency condition for inverse of the mass matrix. Only upper 
 * triangular part of matrix Wc = N (N^T R)^{-1} N^T is calculated.
 ****************************************************************** */
-int DeRham_Edge::L2consistencyInverse2D_(
-    int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
+int
+DeRham_Edge::L2consistencyInverse2D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
   const auto& faces = mesh_->cell_get_faces(c);
   const auto& dirs = mesh_->cell_get_face_dirs(c);
@@ -252,7 +255,7 @@ int DeRham_Edge::L2consistencyInverse2D_(
     Trot(1, 0) = -Trot(1, 0);
 
     double tmp = Trot(0, 0);
-    Trot(0, 0) = Trot(1, 1);  
+    Trot(0, 0) = Trot(1, 1);
     Trot(1, 1) = tmp;
   }
 
@@ -293,8 +296,8 @@ int DeRham_Edge::L2consistencyInverse2D_(
 * triangular part of matrix Wc = N (N^T R)^{-1} N^T is calculated. 
 * Recall that N^T R = |c| T.
 ****************************************************************** */
-int DeRham_Edge::L2consistencyInverse3D_(
-    int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
+int
+DeRham_Edge::L2consistencyInverse3D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
   Entity_ID_List fedges;
   std::vector<int> edirs, map;
@@ -340,8 +343,8 @@ int DeRham_Edge::L2consistencyInverse3D_(
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     double area = mesh_->face_area(f);
 
-    v4 = xc - xf; 
- 
+    v4 = xc - xf;
+
     double a1 = normal * v4;
     for (int k = 0; k < d_; ++k) {
       vv[k].set(normal[k] * v4);
@@ -356,15 +359,13 @@ int DeRham_Edge::L2consistencyInverse3D_(
     for (int m = 0; m < nfedges; ++m) {
       int e = fedges[m];
       const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
- 
+
       v3 = xe - xf;
 
       double len = mesh_->edge_length(e);
       len /= 2.0 * area * area * fdirs[i] * edirs[m];
 
-      for (int k = 0; k < d_; ++k) {
-        R(map[m], k) -= len * ((vv[k]^v3) * normal);
-      }
+      for (int k = 0; k < d_; ++k) { R(map[m], k) -= len * ((vv[k] ^ v3) * normal); }
     }
   }
 
@@ -375,7 +376,8 @@ int DeRham_Edge::L2consistencyInverse3D_(
 /* ******************************************************************
 * Inverse of the mass matrix for edge-based discretization.
 ****************************************************************** */
-int DeRham_Edge::MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W)
+int
+DeRham_Edge::MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W)
 {
   DenseMatrix R;
 
@@ -386,6 +388,5 @@ int DeRham_Edge::MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W)
   return 0;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

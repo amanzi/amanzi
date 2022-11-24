@@ -42,14 +42,14 @@
 
 class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
  public:
-  AnalyticBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) 
-    : mesh_(mesh),
-      d_(mesh->space_dimension()) {};
-  ~AnalyticBase() {};
+  AnalyticBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : mesh_(mesh), d_(mesh->space_dimension()){};
+  ~AnalyticBase(){};
 
   // analytic solution for diffusion problem with gravity
   // -- tensorial diffusion coefficient
-  virtual Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::WhetStone::Tensor
+  TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // -- scalar diffusion coefficient
   virtual double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) { return 1.0; }
@@ -58,16 +58,20 @@ class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const = 0;
 
   // -- gradient of continuous velocity grad(h), where h = p - g z
-  virtual Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point
+  gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // -- analytic advection function
-  virtual Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point
+  advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // -- source term
   virtual double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // derived quantity: Darcy velocity -K k grad(h)
-  virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+  virtual Amanzi::AmanziGeometry::Point
+  velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     auto K = TensorDiffusivity(p, t);
     double kr = ScalarDiffusivity(p, t);
     auto grad = gradient_exact(p, t);
@@ -75,20 +79,39 @@ class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
   }
 
   // interface to function
-  virtual double Value(const Amanzi::AmanziGeometry::Point& p) const { return pressure_exact(p, 0.0); }
+  virtual double Value(const Amanzi::AmanziGeometry::Point& p) const
+  {
+    return pressure_exact(p, 0.0);
+  }
 
   // access
   int get_dimension() const { return d_; }
 
   // error calculation
-  void ComputeCellError(Epetra_MultiVector& p, double t, double& pnorm, double& l2_err, double& inf_err);
-  void ComputeFaceError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);
-  void ComputeNodeError(Epetra_MultiVector& p, double t, double& pnorm, double& l2_err, double& inf_err,
-                                                         double& hnorm, double& h1_err);
-  void ComputeEdgeError(Epetra_MultiVector& p, double t, double& pnorm, double& l2_err, double& inf_err,
-                                                                        double& hnorm, double& h1_err);
-  void ComputeEdgeMomentsError(Epetra_MultiVector& p, double t, int ngauss, 
-                               double& pnorm, double& l2_err, double& inf_err);
+  void
+  ComputeCellError(Epetra_MultiVector& p, double t, double& pnorm, double& l2_err, double& inf_err);
+  void
+  ComputeFaceError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);
+  void ComputeNodeError(Epetra_MultiVector& p,
+                        double t,
+                        double& pnorm,
+                        double& l2_err,
+                        double& inf_err,
+                        double& hnorm,
+                        double& h1_err);
+  void ComputeEdgeError(Epetra_MultiVector& p,
+                        double t,
+                        double& pnorm,
+                        double& l2_err,
+                        double& inf_err,
+                        double& hnorm,
+                        double& h1_err);
+  void ComputeEdgeMomentsError(Epetra_MultiVector& p,
+                               double t,
+                               int ngauss,
+                               double& pnorm,
+                               double& l2_err,
+                               double& inf_err);
 
   // utilities
   Amanzi::AmanziGeometry::Point face_normal_exterior(int f, bool* flag);
@@ -105,15 +128,19 @@ class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
 /* ******************************************************************
 * Error for cell-based fields
 ****************************************************************** */
-inline
-void AnalyticBase::ComputeCellError(
-    Epetra_MultiVector& p, double t, double& pnorm, double& l2_err, double& inf_err)
+inline void
+AnalyticBase::ComputeCellError(Epetra_MultiVector& p,
+                               double t,
+                               double& pnorm,
+                               double& l2_err,
+                               double& inf_err)
 {
   pnorm = 0.0;
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells =
+    mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells; c++) {
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     double tmp = pressure_exact(xc, t);
@@ -137,15 +164,19 @@ void AnalyticBase::ComputeCellError(
 /* ******************************************************************
 * Error for face-based fields
 ****************************************************************** */
-inline
-void AnalyticBase::ComputeFaceError(
-    Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err)
+inline void
+AnalyticBase::ComputeFaceError(Epetra_MultiVector& u,
+                               double t,
+                               double& unorm,
+                               double& l2_err,
+                               double& inf_err)
 {
   unorm = 0.0;
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int nfaces = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nfaces =
+    mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
     double area = mesh_->face_area(f);
     const Amanzi::AmanziGeometry::Point& normal = mesh_->face_normal(f);
@@ -171,10 +202,14 @@ void AnalyticBase::ComputeFaceError(
 /* ******************************************************************
 * Error for face-based fields
 ****************************************************************** */
-inline
-void AnalyticBase::ComputeNodeError(
-    Epetra_MultiVector& p, double t,
-    double& pnorm, double& l2_err, double& inf_err, double& hnorm, double& h1_err)
+inline void
+AnalyticBase::ComputeNodeError(Epetra_MultiVector& p,
+                               double t,
+                               double& pnorm,
+                               double& l2_err,
+                               double& inf_err,
+                               double& hnorm,
+                               double& h1_err)
 {
   pnorm = 0.0;
   l2_err = 0.0;
@@ -191,7 +226,8 @@ void AnalyticBase::ComputeNodeError(
 
   Amanzi::WhetStone::Polynomial poly(d_, 1);
   Amanzi::AmanziMesh::Entity_ID_List nodes;
-  int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells =
+    mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; c++) {
     double volume = mesh_->cell_volume(c);
@@ -244,22 +280,27 @@ void AnalyticBase::ComputeNodeError(
 /* ******************************************************************
 * Error for face-based fields
 ****************************************************************** */
-inline
-void AnalyticBase::ComputeEdgeError(
-    Epetra_MultiVector& p, double t,
-    double& pnorm, double& l2_err, double& inf_err, double& hnorm, double& h1_err)
+inline void
+AnalyticBase::ComputeEdgeError(Epetra_MultiVector& p,
+                               double t,
+                               double& pnorm,
+                               double& l2_err,
+                               double& inf_err,
+                               double& hnorm,
+                               double& h1_err)
 {
   pnorm = 0.0;
   l2_err = 0.0;
   inf_err = 0.0;
-  hnorm = 1.0;  // missing code
+  hnorm = 1.0; // missing code
   h1_err = 0.0;
 
   Amanzi::AmanziGeometry::Point grad(d_);
 
   Amanzi::AmanziMesh::Entity_ID_List edges;
   Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
-  int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells =
+    mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; c++) {
     double volume = mesh_->cell_volume(c);
@@ -293,10 +334,13 @@ void AnalyticBase::ComputeEdgeError(
 /* ******************************************************************
 * Error in edge-based fields
 ****************************************************************** */
-inline
-void AnalyticBase::ComputeEdgeMomentsError(
-    Epetra_MultiVector& p, double t, int ngauss, 
-    double& pnorm, double& l2_err, double& inf_err)
+inline void
+AnalyticBase::ComputeEdgeMomentsError(Epetra_MultiVector& p,
+                                      double t,
+                                      int ngauss,
+                                      double& pnorm,
+                                      double& l2_err,
+                                      double& inf_err)
 {
   pnorm = 0.0;
   l2_err = 0.0;
@@ -307,7 +351,8 @@ void AnalyticBase::ComputeEdgeMomentsError(
 
   Amanzi::AmanziMesh::Entity_ID_List edges;
   Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
-  int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells =
+    mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; c++) {
     double volume = mesh_->cell_volume(c);
@@ -330,7 +375,7 @@ void AnalyticBase::ComputeEdgeMomentsError(
         xv = x0 * gp + x1 * (1.0 - gp);
         s0 += gw * pressure_exact(xv, t);
         // s1 += gw * pressure_exact(xv, t) * (0.5 - gp);
-      } 
+      }
 
       l2_err += std::pow(s0 - p[0][e], 2.0) * volume / nedges;
       inf_err = std::max(inf_err, fabs(s0 - p[0][e]));
@@ -351,8 +396,8 @@ void AnalyticBase::ComputeEdgeMomentsError(
 /* ******************************************************************
 * Exterior normal
 ****************************************************************** */
-inline
-Amanzi::AmanziGeometry::Point AnalyticBase::face_normal_exterior(int f, bool* flag)
+inline Amanzi::AmanziGeometry::Point
+AnalyticBase::face_normal_exterior(int f, bool* flag)
 {
   Amanzi::AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
@@ -360,8 +405,7 @@ Amanzi::AmanziGeometry::Point AnalyticBase::face_normal_exterior(int f, bool* fl
 
   int dir;
   Amanzi::AmanziGeometry::Point normal(d_);
-  if (*flag) 
-    normal = mesh_->face_normal(f, false, cells[0], &dir);
+  if (*flag) normal = mesh_->face_normal(f, false, cells[0], &dir);
 
   return normal;
 }
@@ -370,19 +414,18 @@ Amanzi::AmanziGeometry::Point AnalyticBase::face_normal_exterior(int f, bool* fl
 /* ******************************************************************
 * Collective communications.
 ****************************************************************** */
-inline
-void AnalyticBase::GlobalOp(std::string op, double* val, int n)
+inline void
+AnalyticBase::GlobalOp(std::string op, double* val, int n)
 {
   double* val_tmp = new double[n];
   for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
-  if (op == "sum") 
+  if (op == "sum")
     mesh_->get_comm()->SumAll(val_tmp, val, n);
-  else if (op == "max") 
+  else if (op == "max")
     mesh_->get_comm()->MaxAll(val_tmp, val, n);
 
   delete[] val_tmp;
 }
 
 #endif
-

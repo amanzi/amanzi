@@ -37,7 +37,8 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Non-member function for visualization.
 // -----------------------------------------------------------------------------
-void WriteVis(Visualization& vis, const State& S)
+void
+WriteVis(Visualization& vis, const State& S)
 {
   if (!vis.is_disabled()) {
     // Create the new time step
@@ -50,8 +51,7 @@ void WriteVis(Visualization& vis, const State& S)
         // visualized. However, since overwriting of attributes does not work
         // properly, we skip them.  This should get fixed by writing attributes
         // as an attribute of the step or something similar. FIXME --ETC
-        if ((!r->second->ValidType<double>()) &&
-            (!r->second->ValidType<int>()) &&
+        if ((!r->second->ValidType<double>()) && (!r->second->ValidType<int>()) &&
             (!r->second->ValidType<Teuchos::Array<double>>()) &&
             (!r->second->ValidType<Teuchos::Array<int>>())) {
           // Should we vis all tags or just the default tag?
@@ -91,8 +91,8 @@ void WriteVis(Visualization& vis, const State& S)
 // -----------------------------------------------------------------------------
 // Non-member function for checkpointing.
 // -----------------------------------------------------------------------------
-void ReadCheckpoint(const Comm_ptr_type& comm, State& S,
-                    const std::string& filename)
+void
+ReadCheckpoint(const Comm_ptr_type& comm, State& S, const std::string& filename)
 {
   Checkpoint chkp(filename, S);
 
@@ -101,9 +101,9 @@ void ReadCheckpoint(const Comm_ptr_type& comm, State& S,
   chkp.Read("mpi_num_procs", num_procs);
   if (comm->NumProc() != num_procs) {
     std::stringstream ss;
-    ss << "Requested checkpoint file " << filename << " was created on "
-       << num_procs << " processes, making it incompatible with this run on "
-       << comm->NumProc() << " processes.";
+    ss << "Requested checkpoint file " << filename << " was created on " << num_procs
+       << " processes, making it incompatible with this run on " << comm->NumProc()
+       << " processes.";
     Errors::Message message(ss.str());
     throw(message);
   }
@@ -134,8 +134,8 @@ void ReadCheckpoint(const Comm_ptr_type& comm, State& S,
 // -----------------------------------------------------------------------------
 // Non-member function for checkpointing.
 // -----------------------------------------------------------------------------
-double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
-                                 std::string filename)
+double
+ReadCheckpointInitialTime(const Comm_ptr_type& comm, std::string filename)
 {
   if (!Keys::ends_with(filename, ".h5")) {
     // new style checkpoint
@@ -156,7 +156,8 @@ double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
 // -----------------------------------------------------------------------------
 // Non-member function for checkpointing position.
 // -----------------------------------------------------------------------------
-int ReadCheckpointPosition(const Comm_ptr_type& comm, std::string filename)
+int
+ReadCheckpointPosition(const Comm_ptr_type& comm, std::string filename)
 {
   if (!Keys::ends_with(filename, ".h5")) {
     // new style checkpoint
@@ -177,9 +178,10 @@ int ReadCheckpointPosition(const Comm_ptr_type& comm, std::string filename)
 // -----------------------------------------------------------------------------
 // Non-member function for checkpointing observations.
 // -----------------------------------------------------------------------------
-void ReadCheckpointObservations(const Comm_ptr_type& comm,
-                                std::string filename,
-                                Amanzi::ObservationData& obs_data)
+void
+ReadCheckpointObservations(const Comm_ptr_type& comm,
+                           std::string filename,
+                           Amanzi::ObservationData& obs_data)
 {
   if (!Keys::ends_with(filename, ".h5")) {
     // new style checkpoint
@@ -197,9 +199,7 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
   double* tmp_data(NULL);
 
   checkpoint.readDataString(&tmp_labels, &nlabels, "obs_names");
-  if (nlabels > 0) {
-    checkpoint.readAttrInt(&nobs, &nlabels, "obs_numbers");
-  }
+  if (nlabels > 0) { checkpoint.readAttrInt(&nobs, &nlabels, "obs_numbers"); }
   for (int i = 0; i < nlabels; ++i) ndata_glb += 2 * nobs[i];
   ndata = (comm->MyPID() == 0) ? ndata_glb : 0;
   checkpoint.readDatasetReal(&tmp_data, ndata, "obs_values");
@@ -240,7 +240,8 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
 // mesh name prefix or something, and the coordinates should be written by
 // state in WriteCheckpoint if mesh IsDeformableMesh() --ETC
 // -----------------------------------------------------------------------------
-void DeformCheckpointMesh(State& S, Key domain)
+void
+DeformCheckpointMesh(State& S, Key domain)
 {
   Key vc_key = Keys::getKey(domain, "vertex_coordinates");
   if (S.HasRecord(vc_key, Tags::DEFAULT)) {
@@ -259,8 +260,7 @@ void DeformCheckpointMesh(State& S, Key domain)
 
     int nV = vc_n.MyLength();
     for (int n = 0; n != nV; ++n) {
-      for (int k = 0; k != dim; ++k)
-        new_coords[k] = vc_n[k][n];
+      for (int k = 0; k != dim; ++k) new_coords[k] = vc_n[k][n];
 
       // push back for deform method
       nodeids.push_back(n);
@@ -274,8 +274,8 @@ void DeformCheckpointMesh(State& S, Key domain)
       write_access_mesh->deform(nodeids, new_pos, true, &final_pos);
   } else {
     Errors::Message msg;
-    msg << "DeformCheckpointMesh: unable to deform mesh because field \"" <<
-      vc_key << "\" does not exist in state.";
+    msg << "DeformCheckpointMesh: unable to deform mesh because field \"" << vc_key
+        << "\" does not exist in state.";
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -285,14 +285,15 @@ void DeformCheckpointMesh(State& S, Key domain)
 // Reads cell-based varibles as attributes.
 // It recongnizes parallel and serial inputs.
 // -----------------------------------------------------------------------------
-void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& var)
+void
+ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& var)
 {
   Epetra_MultiVector& var_c = *var.ViewComponent("cell");
   int nvectors = var_c.NumVectors();
 
   std::string file_name = plist.get<std::string>("file");
   std::vector<std::string> attributes =
-      plist.get<Teuchos::Array<std::string> >("attributes").toVector();
+    plist.get<Teuchos::Array<std::string>>("attributes").toVector();
 
   // open ExodusII file
   auto comm = var.Comm();
@@ -307,7 +308,8 @@ void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& va
   float version;
   int exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version);
   if (comm->MyPID() == 0) {
-    printf("Trying file: %s ws=%d %d  id=%d\n", file_name.c_str(), CPU_word_size, IO_word_size, exoid);
+    printf(
+      "Trying file: %s ws=%d %d  id=%d\n", file_name.c_str(), CPU_word_size, IO_word_size, exoid);
   }
 
   // check if we have to use serial file
@@ -324,7 +326,11 @@ void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& va
     distributed_data = false;
     if (comm->MyPID() == 0) {
       exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version);
-      printf("Opening file: %s ws=%d %d  id=%d\n", file_name.c_str(), CPU_word_size, IO_word_size, exoid);
+      printf("Opening file: %s ws=%d %d  id=%d\n",
+             file_name.c_str(),
+             CPU_word_size,
+             IO_word_size,
+             exoid);
     }
   } else if (fail > 0) {
     Errors::Message msg("A few parallel Exodus files are missing, but not all.");
@@ -335,10 +341,10 @@ void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& va
   if (comm->MyPID() == 0 || distributed_data) {
     int dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
     char title[MAX_LINE_LENGTH + 1];
-    ierr = ex_get_init(exoid, title, &dim, &num_nodes, &num_elem,
-                       &num_elem_blk, &num_node_sets, &num_side_sets);
+    ierr = ex_get_init(
+      exoid, title, &dim, &num_nodes, &num_elem, &num_elem_blk, &num_node_sets, &num_side_sets);
 
-    int* ids = (int*) calloc(num_elem_blk, sizeof(int));
+    int* ids = (int*)calloc(num_elem_blk, sizeof(int));
     ierr = ex_get_ids(exoid, EX_ELEM_BLOCK, ids);
 
     // read number of variables
@@ -349,7 +355,7 @@ void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& va
 
     char* var_names[num_vars];
     for (int i = 0; i < num_vars; i++) {
-      var_names[i] = (char*) calloc ((MAX_STR_LENGTH+1), sizeof(char));
+      var_names[i] = (char*)calloc((MAX_STR_LENGTH + 1), sizeof(char));
     }
 
     obj_type = ex_var_type_to_ex_entity_type('e');
@@ -370,27 +376,34 @@ void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& va
       char elem_type[MAX_LINE_LENGTH + 1];
       for (int i = 0; i < num_elem_blk; i++) {
         int num_elem_this_blk, num_attr, num_nodes_elem;
-        ierr = ex_get_block(exoid, EX_ELEM_BLOCK, ids[i], elem_type, &num_elem_this_blk,
-                            &num_nodes_elem, 0, 0, &num_attr);
+        ierr = ex_get_block(exoid,
+                            EX_ELEM_BLOCK,
+                            ids[i],
+                            elem_type,
+                            &num_elem_this_blk,
+                            &num_nodes_elem,
+                            0,
+                            0,
+                            &num_attr);
 
-        double* var_values = (double*) calloc(num_elem_this_blk, sizeof(double));
-        ierr = ex_get_var(exoid, 1, EX_ELEM_BLOCK, var_index, ids[i], num_elem_this_blk, var_values);
+        double* var_values = (double*)calloc(num_elem_this_blk, sizeof(double));
+        ierr =
+          ex_get_var(exoid, 1, EX_ELEM_BLOCK, var_index, ids[i], num_elem_this_blk, var_values);
 
         for (int n = 0; n < num_elem_this_blk; n++) {
           int c = n + offset;
           var_c[k][c] = var_values[n];
         }
         free(var_values);
-        printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm->MyPID(), ierr, ids[i], num_elem_this_blk);
+        printf(
+          "MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm->MyPID(), ierr, ids[i], num_elem_this_blk);
 
         offset += num_elem_this_blk;
       }
       ncells = offset;
     }
 
-    for (int i = 0; i < num_vars; i++) {
-      free(var_names[i]);
-    }
+    for (int i = 0; i < num_vars; i++) { free(var_names[i]); }
 
     ierr = ex_close(exoid);
     printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), ncells, ierr);
@@ -401,13 +414,12 @@ void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& va
 // -----------------------------------------------------------------------------
 // Prints state statistics
 // -----------------------------------------------------------------------------
-void WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVerbosityLevel vl)
+void
+WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVerbosityLevel vl)
 {
   // sort data in alphabetic order
   std::set<std::string> sorted;
-  for (auto it = S.data_begin(); it != S.data_end(); ++it) {
-    sorted.insert(it->first);
-  }
+  for (auto it = S.data_begin(); it != S.data_end(); ++it) { sorted.insert(it->first); }
 
   if (vo.os_OK(vl)) {
     Teuchos::OSTab tab = vo.getOSTab();
@@ -458,7 +470,8 @@ void WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos
 // -----------------------------------------------------------------------------
 // Prints state statistics
 // -----------------------------------------------------------------------------
-void WriteStateStatistics(const State& S)
+void
+WriteStateStatistics(const State& S)
 {
   Teuchos::ParameterList plist;
   plist.sublist("verbose object").set<std::string>("verbosity level", "high");
@@ -466,4 +479,4 @@ void WriteStateStatistics(const State& S)
   WriteStateStatistics(S, *vo);
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

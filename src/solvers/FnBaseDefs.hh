@@ -24,8 +24,8 @@ enum ModifyCorrectionResult {
   CORRECTION_MODIFIED_LAG_BACKTRACKING
 };
 
-}  // namespace FnBaseDefs
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace FnBaseDefs
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif

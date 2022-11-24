@@ -26,11 +26,10 @@ namespace Operators {
 class MyPDE_DiffusionMFD : public virtual PDE_DiffusionMFD {
  public:
   MyPDE_DiffusionMFD(Teuchos::ParameterList& plist,
-                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_Diffusion(mesh),
-      PDE_DiffusionMFD(plist, mesh) {};
+                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : PDE_Diffusion(mesh), PDE_DiffusionMFD(plist, mesh){};
 
-  // -- To calculate elemetal matrices, we can use input parameters flux 
+  // -- To calculate elemetal matrices, we can use input parameters flux
   //    and u from the previous nonlinear iteration. Otherwise, use null-pointers.
   using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
@@ -43,9 +42,9 @@ class MyPDE_DiffusionMFD : public virtual PDE_DiffusionMFD {
 * This member of DIVK-pamily of methods requires to recalcualte all
 * mass matrices.
 ****************************************************************** */
-void MyPDE_DiffusionMFD::UpdateMatrices(
-    const Teuchos::Ptr<const CompositeVector>& flux,
-    const Teuchos::Ptr<const CompositeVector>& u)
+void
+MyPDE_DiffusionMFD::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+                                   const Teuchos::Ptr<const CompositeVector>& u)
 {
   AMANZI_ASSERT(!scaled_constraint_);
 
@@ -70,17 +69,17 @@ void MyPDE_DiffusionMFD::UpdateMatrices(
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
-  
+
   for (int c = 0; c < ncells_owned; c++) {
     // mean value and gradient of nonlinear factor
     double kc = (*k_cell)[0][c];
     AmanziGeometry::Point kgrad(dim);
     for (int i = 0; i < dim; i++) kgrad[i] = (*k_grad)[i][c];
- 
+
     // upwinded values of nonlinear factor
     const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
-    std::vector<double> kf(nfaces, 1.0); 
+    std::vector<double> kf(nfaces, 1.0);
     if (k_twin == Teuchos::null) {
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     } else {
@@ -96,7 +95,7 @@ void MyPDE_DiffusionMFD::UpdateMatrices(
 
     WhetStone::DenseMatrix Acell(nfaces + 1, nfaces + 1);
 
-    double matsum = 0.0; 
+    double matsum = 0.0;
     for (int n = 0; n < nfaces; n++) {
       double rowsum = 0.0;
       for (int m = 0; m < nfaces; m++) {
@@ -114,9 +113,8 @@ void MyPDE_DiffusionMFD::UpdateMatrices(
   }
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 
 #endif
-

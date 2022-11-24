@@ -54,22 +54,22 @@ fall off the end of the space.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Matrix,
-         class Preconditioner=Matrix,
-         class Vector=typename Matrix::Vector_t,
-         class VectorSpace=typename Vector::VectorSpace_t>
-class IterativeMethodNKA :
-      public InverseIterativeMethod<Matrix,Preconditioner,Vector,VectorSpace> {
+template <class Matrix,
+          class Preconditioner = Matrix,
+          class Vector = typename Matrix::Vector_t,
+          class VectorSpace = typename Vector::VectorSpace_t>
+class IterativeMethodNKA
+  : public InverseIterativeMethod<Matrix, Preconditioner, Vector, VectorSpace> {
  private:
-  using InvIt = InverseIterativeMethod<Matrix,Preconditioner,Vector,VectorSpace>;
+  using InvIt = InverseIterativeMethod<Matrix, Preconditioner, Vector, VectorSpace>;
 
  public:
-  IterativeMethodNKA() :
-      InvIt() {}
+  IterativeMethodNKA() : InvIt() {}
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
 
-  virtual int ApplyInverse(const Vector& v, Vector& hv) const override final {
+  virtual int ApplyInverse(const Vector& v, Vector& hv) const override final
+  {
     returned_code_ = NKA_(v, hv, tol_, max_itrs_, criteria_);
     if (returned_code_ <= 0) return 1;
     return 0;
@@ -98,20 +98,23 @@ class IterativeMethodNKA :
   using InvIt::criteria_;
   using InvIt::rnorm0_;
 
-  Teuchos::RCP<NKA_Base<Vector,VectorSpace> > nka_;
+  Teuchos::RCP<NKA_Base<Vector, VectorSpace>> nka_;
   int nka_dim_;
   double nka_tol_;
 };
 
 
-
 // Apply the inverse, x <-- A^-1 b
-template<class Matrix,class Preconditioner,class Vector,class VectorSpace>
-int IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::NKA_(
-    const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
+template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
+int
+IterativeMethodNKA<Matrix, Preconditioner, Vector, VectorSpace>::NKA_(const Vector& f,
+                                                                      Vector& x,
+                                                                      double tol,
+                                                                      int max_itrs,
+                                                                      int criteria) const
 {
   AMANZI_ASSERT(m_.get()); // set_matrices() called
-  AMANZI_ASSERT(inited_); // init called
+  AMANZI_ASSERT(inited_);  // init called
 
   Teuchos::OSTab tab = vo_->getOSTab();
 
@@ -120,15 +123,15 @@ int IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::NKA_(
   residual_ = 0.0;
   num_itrs_ = 0;
 
-  Teuchos::RCP<Vector> dx  = Teuchos::rcp(new Vector(x));
-  Teuchos::RCP<Vector> dxp = Teuchos::rcp(new Vector(x));  // preconditioned correction
-  Teuchos::RCP<Vector> r   = Teuchos::rcp(new Vector(x));
+  Teuchos::RCP<Vector> dx = Teuchos::rcp(new Vector(x));
+  Teuchos::RCP<Vector> dxp = Teuchos::rcp(new Vector(x)); // preconditioned correction
+  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(x));
 
   double fnorm, xnorm;
   f.Norm2(&fnorm);
   x.Norm2(&xnorm);
 
-  int ierr = m_->Apply(x, *r);  // r = f - A * x
+  int ierr = m_->Apply(x, *r); // r = f - A * x
   AMANZI_ASSERT(!ierr);
   r->Update(1.0, f, -1.0);
 
@@ -139,7 +142,7 @@ int IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::NKA_(
     *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
   }
 
-  if (! (criteria & LIN_SOLVER_MAKE_ONE_ITERATION)) {
+  if (!(criteria & LIN_SOLVER_MAKE_ONE_ITERATION)) {
     ierr = this->CheckConvergence_(rnorm0_, fnorm);
     if (ierr) return ierr;
   }
@@ -152,7 +155,7 @@ int IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::NKA_(
     nka_->Correction(*dxp, *dx);
     x.Update(1.0, *dx, 1.0);
 
-    ierr = m_->Apply(x, *r);  // r = f - A * x
+    ierr = m_->Apply(x, *r); // r = f - A * x
     AMANZI_ASSERT(!ierr);
     r->Update(1.0, f, -1.0);
 
@@ -170,8 +173,7 @@ int IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::NKA_(
   }
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-    *vo_->os() << "Failed (" << num_itrs_ << " itrs) ||r|| = "
-               << residual_ << std::endl;
+    *vo_->os() << "Failed (" << num_itrs_ << " itrs) ||r|| = " << residual_ << std::endl;
   return LIN_SOLVER_MAX_ITERATIONS;
 }
 
@@ -182,9 +184,10 @@ int IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::NKA_(
  * "maximum number of iterations" [int] default = 100
  * "convergence criteria" Array(string) default = "{relative rhs}"
  ****************************************************************** */
-template<class Matrix,class Preconditioner,class Vector,class VectorSpace>
-void IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::set_inverse_parameters(
-    Teuchos::ParameterList& plist)
+template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
+void
+IterativeMethodNKA<Matrix, Preconditioner, Vector, VectorSpace>::set_inverse_parameters(
+  Teuchos::ParameterList& plist)
 {
   InvIt::set_inverse_parameters(plist);
 
@@ -194,13 +197,13 @@ void IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::set_inverse_p
   nka_tol_ = plist.get<double>("nka vector tolerance", 0.05);
 
   // NKA
-  nka_ = Teuchos::rcp(new NKA_Base<Vector,VectorSpace>(nka_dim_, nka_tol_, m_->DomainMap()));
+  nka_ = Teuchos::rcp(new NKA_Base<Vector, VectorSpace>(nka_dim_, nka_tol_, m_->DomainMap()));
   nka_->Init(plist);
 
   inited_ = true;
 }
 
-} // namespace
-} // namespace
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif

@@ -36,7 +36,8 @@
 /* *****************************************************************
 * Exactness on linear functions in two dimensions
 ***************************************************************** */
-TEST(RECONSTRUCTION_LINEAR_2D) {
+TEST(RECONSTRUCTION_LINEAR_2D)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -49,12 +50,13 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
 
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 7, 7);
 
-  // create and initialize cell-based field 
-  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
+  // create and initialize cell-based field
+  Teuchos::RCP<Epetra_MultiVector> field =
+    Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
   Epetra_MultiVector grad_exact(mesh->cell_map(false), 2);
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -77,7 +79,7 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
 
   ReconstructionCellLinear lifting(mesh);
   lifting.Init(plist);
-  lifting.Compute(field); 
+  lifting.Compute(field);
 
   // calculate gradient error
   double err_int, err_glb, gnorm;
@@ -93,7 +95,8 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
 /* *****************************************************************
 * Exactness on linear functions in three dimensions
 ***************************************************************** */
-TEST(RECONSTRUCTION_LINEAR_3D) {
+TEST(RECONSTRUCTION_LINEAR_3D)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -106,12 +109,13 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
 
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 6, 5);
 
-  // create and initialize cell-based field 
-  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
+  // create and initialize cell-based field
+  Teuchos::RCP<Epetra_MultiVector> field =
+    Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
   Epetra_MultiVector grad_exact(mesh->cell_map(false), 3);
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -151,7 +155,8 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
 /* *****************************************************************
 * Exactness on quadratic functions in two dimensions
 ***************************************************************** */
-TEST(RECONSTRUCTION_QUADRATIC_2D) {
+TEST(RECONSTRUCTION_QUADRATIC_2D)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -164,12 +169,13 @@ TEST(RECONSTRUCTION_QUADRATIC_2D) {
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 7, 7);
 
-  // create and initialize cell-based field 
-  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
+  // create and initialize cell-based field
+  Teuchos::RCP<Epetra_MultiVector> field =
+    Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
   Epetra_MultiVector poly_exact(mesh->cell_map(false), 5);
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -180,9 +186,8 @@ TEST(RECONSTRUCTION_QUADRATIC_2D) {
   double h(1.0 / 7);
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-    (*field)[0][c] = xc[0] + 2 * xc[1] 
-                   + 3 * xc[0] * xc[0] + 4 * xc[0] * xc[1] + 5 * xc[1] * xc[1]
-                   + 2.0 * h * h / 3;
+    (*field)[0][c] = xc[0] + 2 * xc[1] + 3 * xc[0] * xc[0] + 4 * xc[0] * xc[1] + 5 * xc[1] * xc[1] +
+                     2.0 * h * h / 3;
     if (c < ncells_owned) {
       poly_exact[0][c] = 1.0 + 6 * xc[0] + 4 * xc[1];
       poly_exact[1][c] = 2.0 + 10 * xc[1] + 4 * xc[0];
@@ -195,7 +200,7 @@ TEST(RECONSTRUCTION_QUADRATIC_2D) {
   // -- boundary values
   AmanziMesh::Entity_ID_List cells;
 
-  auto bcs = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR)); 
+  auto bcs = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bcs->bc_model();
   std::vector<double>& bc_value = bcs->bc_value();
 
@@ -234,8 +239,5 @@ TEST(RECONSTRUCTION_QUADRATIC_2D) {
   indicator.Compute(lifting);
   auto measure = indicator.get_measure();
 
-  for (int c = 0; c < measure.size(); ++c) {
-    CHECK_CLOSE(measure[c], 1.0, 1e-12);
-  }
+  for (int c = 0; c < measure.size(); ++c) { CHECK_CLOSE(measure[c], 1.0, 1e-12); }
 }
-

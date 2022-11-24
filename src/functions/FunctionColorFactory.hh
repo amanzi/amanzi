@@ -14,8 +14,10 @@ class FunctionColorFactory {
   FunctionColorFactory() {}
   ~FunctionColorFactory() {}
   std::unique_ptr<FunctionColor> Create(std::string&, const Comm_type&) const;
+
  private:
-  std::unique_ptr<FunctionColor> create_grid_color_function(int, std::fstream&, const Comm_type&) const;
+  std::unique_ptr<FunctionColor>
+  create_grid_color_function(int, std::fstream&, const Comm_type&) const;
 };
 
 } // namespace Amanzi

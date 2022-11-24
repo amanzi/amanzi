@@ -26,15 +26,16 @@ namespace Operators {
 
 class PDE_Advection : public PDE_HelperDiscretization {
  public:
-  PDE_Advection(Teuchos::ParameterList& plist,
-                const Teuchos::RCP<Operator>& global_op) : PDE_HelperDiscretization(global_op) {};
+  PDE_Advection(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
+    : PDE_HelperDiscretization(global_op){};
 
-  PDE_Advection(Teuchos::ParameterList& plist,
-                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : PDE_HelperDiscretization(mesh) {
+  PDE_Advection(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : PDE_HelperDiscretization(mesh)
+  {
     global_op_ = Teuchos::null;
   }
 
-  virtual ~PDE_Advection() {};
+  virtual ~PDE_Advection(){};
 
   // main members
   // -- setup
@@ -42,19 +43,19 @@ class PDE_Advection : public PDE_HelperDiscretization {
 
   // -- standard interface for flux calculation
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override {};
+                          const Teuchos::Ptr<CompositeVector>& u) override{};
 
   // -- extended interface for flux calculation
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
                           const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::RCP<BCs>& bc, 
+                          const Teuchos::RCP<BCs>& bc,
                           const Teuchos::Ptr<CompositeVector>& u) = 0;
+
  protected:
   std::string name_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

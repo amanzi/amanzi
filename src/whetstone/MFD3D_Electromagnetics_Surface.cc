@@ -31,8 +31,11 @@ namespace WhetStone {
 * Consistency condition for the mass matrix in electromagnetics for
 * face f of a 3D cell.
 ****************************************************************** */
-int MFD3D_Electromagnetics::L2consistencyBoundary(
-    int f, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc)
+int
+MFD3D_Electromagnetics::L2consistencyBoundary(int f,
+                                              const Tensor& T,
+                                              DenseMatrix& N,
+                                              DenseMatrix& Mc)
 {
   Entity_ID_List edges;
   std::vector<int> dirs;
@@ -49,13 +52,11 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
   double area = mesh_->face_area(f);
 
   // calculate rotation matrix
-  Tensor P(d_, 2); 
+  Tensor P(d_, 2);
 
   v3 = normal / area;
   for (int i = 0; i < d_; i++) {
-    for (int j = 0; j < d_; j++) { 
-      P(i, j) = v3[i] * v3[j];
-    }
+    for (int j = 0; j < d_; j++) { P(i, j) = v3[i] * v3[j]; }
   }
   P(0, 1) -= v3[2];
   P(0, 2) += v3[1];
@@ -90,13 +91,13 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
 
   // Rows of matrix N are normal vectors in the plane of face f.
   v1 = mesh_->edge_vector(edges[0]) / mesh_->edge_length(edges[0]);
-  v2 = v3^v1;
+  v2 = v3 ^ v1;
   for (int i = 0; i < nedges; i++) {
     int e = edges[i];
     const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
     double len = mesh_->edge_length(e);
-    N(i, 0) = -(tau * v2) * dirs[i] / len; 
-    N(i, 1) = (tau * v1) * dirs[i] / len; 
+    N(i, 0) = -(tau * v2) * dirs[i] / len;
+    N(i, 1) = (tau * v1) * dirs[i] / len;
   }
 
   return 0;
@@ -106,7 +107,8 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
 /* ******************************************************************
 * Matrix matrix for edge-based discretization.
 ****************************************************************** */
-int MFD3D_Electromagnetics::MassMatrixBoundary(int f, const Tensor& T, DenseMatrix& M)
+int
+MFD3D_Electromagnetics::MassMatrixBoundary(int f, const Tensor& T, DenseMatrix& M)
 {
   DenseMatrix N;
 
@@ -117,8 +119,5 @@ int MFD3D_Electromagnetics::MassMatrixBoundary(int f, const Tensor& T, DenseMatr
   return 0;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
-
-
+} // namespace WhetStone
+} // namespace Amanzi

@@ -25,13 +25,16 @@ namespace Amanzi {
 namespace Operators {
 
 
-
 /* ******************************************************************
 *                        DEPRECATED
 * Copy super vector to composite vector: complex schema version.
 ****************************************************************** */
-int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector& cv,
-        Epetra_Vector& sv, const Schema& schema, int block_num)
+int
+CopyCompositeVectorToSuperVector(const SuperMap& smap,
+                                 const CompositeVector& cv,
+                                 Epetra_Vector& sv,
+                                 const Schema& schema,
+                                 int block_num)
 {
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     int num;
@@ -55,8 +58,12 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
 *                        DEPRECATED
 * Copy super vector to composite vector: complex schema version
 ****************************************************************** */
-int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
-        CompositeVector& cv, const Schema& schema, int block_num)
+int
+CopySuperVectorToCompositeVector(const SuperMap& smap,
+                                 const Epetra_Vector& sv,
+                                 CompositeVector& cv,
+                                 const Schema& schema,
+                                 int block_num)
 {
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     int num;
@@ -79,14 +86,16 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
 /* ******************************************************************
 * Estimate size of the matrix graph.
 ****************************************************************** */
-unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs)
+unsigned int
+MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs)
 {
   unsigned int row_size(0);
   int dim = mesh.space_dimension();
   if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
     unsigned int i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
 
-    for (int c = 0; c < mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED); ++c) {
+    for (int c = 0; c < mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+         ++c) {
       i = std::max(i, mesh.cell_get_num_faces(c));
     }
     row_size += 2 * i;
@@ -102,18 +111,17 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n
     row_size += 8 * i;
   }
 
-  if (schema & OPERATOR_SCHEMA_INDICES) {
-    row_size += 1;
-  }
+  if (schema & OPERATOR_SCHEMA_INDICES) { row_size += 1; }
 
   return row_size * n_dofs;
-}    
+}
 
 
 /* ******************************************************************
 * Estimate size of the matrix graph: general version
 ****************************************************************** */
-unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, const Schema& schema)
+unsigned int
+MaxRowSize(const AmanziMesh::Mesh& mesh, const Schema& schema)
 {
   unsigned int row_size(0);
   int dim = mesh.space_dimension();
@@ -147,22 +155,23 @@ Teuchos::RCP<CompositeVectorSpace>
 CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                            const std::vector<std::string>& names,
                            const std::vector<AmanziMesh::Entity_kind>& locations,
-                           const std::vector<int>& num_dofs, bool ghosted)
+                           const std::vector<int>& num_dofs,
+                           bool ghosted)
 {
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh);
   cvs->SetGhosted(ghosted);
 
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> mastermaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> ghostmaps;
 
-  for (int i=0; i<locations.size(); ++i) {
+  for (int i = 0; i < locations.size(); ++i) {
     Teuchos::RCP<const Epetra_BlockMap> master_mp(&mesh->map(locations[i], false), false);
     mastermaps[names[i]] = master_mp;
     Teuchos::RCP<const Epetra_BlockMap> ghost_mp(&mesh->map(locations[i], true), false);
     ghostmaps[names[i]] = ghost_mp;
   }
-       
+
   cvs->SetComponents(names, locations, mastermaps, ghostmaps, num_dofs);
   return cvs;
 }
@@ -172,7 +181,8 @@ Teuchos::RCP<CompositeVectorSpace>
 CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                            std::string name,
                            AmanziMesh::Entity_kind location,
-                           int num_dof, bool ghosted)
+                           int num_dof,
+                           bool ghosted)
 {
   std::vector<std::string> names(1, name);
   std::vector<AmanziMesh::Entity_kind> locations(1, location);
@@ -181,5 +191,5 @@ CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   return CreateCompositeVectorSpace(mesh, names, locations, num_dofs, ghosted);
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi

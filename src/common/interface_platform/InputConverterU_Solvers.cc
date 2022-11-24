@@ -31,7 +31,8 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Collects default preconditioners
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslatePreconditioners_()
+Teuchos::ParameterList
+InputConverterU::TranslatePreconditioners_()
 {
   Teuchos::ParameterList out_list;
 
@@ -42,9 +43,7 @@ Teuchos::ParameterList InputConverterU::TranslatePreconditioners_()
   out_list.sublist("Trilinos ML") = TranslateTrilinosML_();
   out_list.sublist("Hypre AMG") = TranslateHypreAMG_();
   out_list.sublist("Block ILU") = TranslateBILU_();
-  if (multiphase_) {
-    out_list.sublist("Euclid") = TranslateEuclid_();
-  }
+  if (multiphase_) { out_list.sublist("Euclid") = TranslateEuclid_(); }
 
   return out_list;
 }
@@ -53,7 +52,8 @@ Teuchos::ParameterList InputConverterU::TranslatePreconditioners_()
 /* ******************************************************************
 * Collects linear solvers
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateSolvers_()
+Teuchos::ParameterList
+InputConverterU::TranslateSolvers_()
 {
   Teuchos::ParameterList out_list;
 
@@ -68,17 +68,17 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
 
   // add PCG and GMRES solvers (generic or specialized)
   if (pk_model_.find("transport") != pk_model_.end()) {
-    out_list.sublist("Dispersion Solver") = TranslateLinearSolvers_(
-        "unstr_transport_controls, dispersion_linear_solver", "pcg", "");
+    out_list.sublist("Dispersion Solver") =
+      TranslateLinearSolvers_("unstr_transport_controls, dispersion_linear_solver", "pcg", "");
   }
 
-  out_list.sublist("PCG with Hypre AMG") = TranslateLinearSolvers_(
-      "unstr_flow_controls, saturated_linear_solver", "pcg", "");
+  out_list.sublist("PCG with Hypre AMG") =
+    TranslateLinearSolvers_("unstr_flow_controls, saturated_linear_solver", "pcg", "");
 
   if (pk_model_.find("flow") != pk_model_.end()) {
     std::string enforce = (pk_model_["flow"] == "richards") ? "gmres" : "";
     out_list.sublist("GMRES with Hypre AMG") = TranslateLinearSolvers_(
-        "unstr_flow_controls, constraints_linear_solver", LINEAR_SOLVER_METHOD, enforce);
+      "unstr_flow_controls, constraints_linear_solver", LINEAR_SOLVER_METHOD, enforce);
   }
 
   // add default "GMRES for Newton" solver
@@ -92,7 +92,7 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
       std::vector<std::string> criteria;
       criteria.push_back("relative rhs");
       criteria.push_back("relative residual");
-      method_list.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
+      method_list.set<Teuchos::Array<std::string>>("convergence criteria", criteria);
       method_list.set<int>("controller training start", 0);
       method_list.set<int>("controller training end", 3);
       method_list.sublist("verbose object").set<std::string>("verbosity level", "low");
@@ -104,8 +104,8 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
   Teuchos::ParameterList& amesos_list = out_list.sublist("AMESOS");
   amesos_list.set<std::string>("direct method", "amesos");
   amesos_list.sublist("amesos parameters")
-      .template set<std::string>("solver name", "basker")
-      .template set<int>("amesos version", 2);
+    .template set<std::string>("solver name", "basker")
+    .template set<int>("amesos version", 2);
 
   return out_list;
 }
@@ -114,8 +114,10 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
 /* ******************************************************************
 * Creates linear solver list from input paramaters.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
-    std::string tags, std::string method_default, std::string method_enforce) 
+Teuchos::ParameterList
+InputConverterU::TranslateLinearSolvers_(std::string tags,
+                                         std::string method_default,
+                                         std::string method_enforce)
 {
   Errors::Message msg;
   Teuchos::ParameterList plist;
@@ -133,13 +135,12 @@ Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
   // verify that method is admissible
   bool flag;
   node = GetUniqueElementByTagsString_(tags_default + ", method", flag);
-  if (flag) method = GetTextContentS_(node, "pcg, gmres, nka"); 
+  if (flag) method = GetTextContentS_(node, "pcg, gmres, nka");
   node = GetUniqueElementByTagsString_(tags + ", method", flag);
-  if (flag) method = GetTextContentS_(node, "pcg, gmres, nka"); 
+  if (flag) method = GetTextContentS_(node, "pcg, gmres, nka");
 
   if (method_enforce != "" && method != method_enforce) {
-    msg << "Expect method=\"" << method_enforce 
-        << "\" under default node=\"" << tags_default 
+    msg << "Expect method=\"" << method_enforce << "\" under default node=\"" << tags_default
         << "\"\n or under PK node \"" << tags << "\".\n";
     Exceptions::amanzi_throw(msg);
   }
@@ -161,12 +162,10 @@ Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
 
   // populate parameter list
   plist.set<std::string>("iterative method", method);
- 
+
   Teuchos::ParameterList& slist = plist.sublist(method + " parameters");
-  slist.set<double>("error tolerance", tol)
-       .set<int>("maximum number of iterations", maxiter);
-  if (criteria.size() > 0)
-    slist.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
+  slist.set<double>("error tolerance", tol).set<int>("maximum number of iterations", maxiter);
+  if (criteria.size() > 0) slist.set<Teuchos::Array<std::string>>("convergence criteria", criteria);
 
   // parameters without 2.x support
   if (method == "gmres") {
@@ -179,8 +178,7 @@ Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
 
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << method << ": itrs=" << maxiter 
-               << ", tol=" << tol << ", pc=" << prec << std::endl;
+    *vo_->os() << method << ": itrs=" << maxiter << ", tol=" << tol << ", pc=" << prec << std::endl;
 
   return plist;
 }
@@ -189,7 +187,8 @@ Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
 /* ******************************************************************
 * ML preconditioner sublist
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateTrilinosML_()
+Teuchos::ParameterList
+InputConverterU::TranslateTrilinosML_()
 {
   Teuchos::ParameterList out_list;
   out_list.set<std::string>("preconditioning method", "ml");
@@ -227,12 +226,12 @@ Teuchos::ParameterList InputConverterU::TranslateTrilinosML_()
   Teuchos::ParameterList& ml_list = out_list.sublist("ml parameters");
   ml_list.set<int>("ML output", TRILINOS_ML_OUTPUT);
   ml_list.set<int>("max levels", TRILINOS_ML_MAXLVLS);
-  ml_list.set<std::string>("prec type",TRILINOS_ML_PRECTYPE);
+  ml_list.set<std::string>("prec type", TRILINOS_ML_PRECTYPE);
   ml_list.set<int>("cycle applications", ncycles);
   ml_list.set<std::string>("aggregation: type", TRILINOS_ML_AGGTYPE);
   ml_list.set<double>("aggregation: damping factor", TRILINOS_ML_AGGDAMP);
   ml_list.set<double>("aggregation: threshold", aggthr);
-  ml_list.set<std::string>("eigen-analysis: type",TRILINOS_ML_EIGENANAL_TYPE);
+  ml_list.set<std::string>("eigen-analysis: type", TRILINOS_ML_EIGENANAL_TYPE);
   ml_list.set<int>("eigen-analysis: iterations", TRILINOS_ML_EIGENANAL_ITERS);
   ml_list.set<int>("smoother: sweeps", nsmooth);
   ml_list.set<double>("smoother: damping factor", TRILINOS_ML_SMOOTH_DAMP);
@@ -249,7 +248,8 @@ Teuchos::ParameterList InputConverterU::TranslateTrilinosML_()
 /* ******************************************************************
 * Block ILU preconditioner sublist
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateBILU_()
+Teuchos::ParameterList
+InputConverterU::TranslateBILU_()
 {
   Teuchos::ParameterList out_list;
   out_list.set<std::string>("preconditioning method", "block ilu");
@@ -284,7 +284,7 @@ Teuchos::ParameterList InputConverterU::TranslateBILU_()
         bilu_abs_thresh = std::strtod(text_content, NULL);
       } else if (strcmp(tagname, "ilu_level_of_fill") == 0) {
         bilu_level_of_fill = std::strtol(text_content, NULL, 10);
-      } 
+      }
     }
   }
 
@@ -303,7 +303,8 @@ Teuchos::ParameterList InputConverterU::TranslateBILU_()
 /* ******************************************************************
 * HypreBoomerAMG preconditioner sublist
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
+Teuchos::ParameterList
+InputConverterU::TranslateHypreAMG_()
 {
   Teuchos::ParameterList out_list;
   out_list.set<std::string>("preconditioning method", "boomer amg");
@@ -349,8 +350,7 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
   amg_list.set<double>("strong threshold", strong_threshold);
   amg_list.set<int>("cycle type", 1);
   amg_list.set<int>("coarsen type", 0);
-  if (block_indices)
-    amg_list.set<bool>("use block indices", block_indices);
+  if (block_indices) amg_list.set<bool>("use block indices", block_indices);
   amg_list.set<int>("verbosity", 0);
   if (flow_single_phase_) {
     amg_list.set<int>("relaxation type down", 13);
@@ -366,19 +366,20 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
 /* ******************************************************************
 * Euclid sublist
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateEuclid_()
+Teuchos::ParameterList
+InputConverterU::TranslateEuclid_()
 {
   Teuchos::ParameterList out_list;
   out_list.set<std::string>("preconditioning method", "euclid");
 
   out_list.sublist("euclid parameters")
-      .set<int>("ilu(k) fill level", 5)
-      // .set<double>("ILUT drop tolerance", 0.000001)
-      .set<bool>("rescale rows", true)
-      .set<int>("verbosity", 0);
+    .set<int>("ilu(k) fill level", 5)
+    // .set<double>("ILUT drop tolerance", 0.000001)
+    .set<bool>("rescale rows", true)
+    .set<int>("verbosity", 0);
 
   return out_list;
 }
 
-}  // namespace AmanziInput
-}  // namespace Amanzi
+} // namespace AmanziInput
+} // namespace Amanzi

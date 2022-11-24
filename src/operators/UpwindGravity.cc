@@ -34,7 +34,8 @@ namespace Operators {
 /* ******************************************************************
 * Public init method. It is not yet used.
 ****************************************************************** */
-void UpwindGravity::Init(Teuchos::ParameterList& plist)
+void
+UpwindGravity::Init(Teuchos::ParameterList& plist)
 {
   method_ = Operators::OPERATOR_UPWIND_GRAVITY;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
@@ -49,9 +50,11 @@ void UpwindGravity::Init(Teuchos::ParameterList& plist)
 * Upwind field uses gravity and places the result in field.
 * Upwinded field must be calculated on all faces of the owned cells.
 ****************************************************************** */
-void UpwindGravity::Compute(
-    const CompositeVector& flux, const CompositeVector& solution,
-    const std::vector<int>& bc_model, CompositeVector& field)
+void
+UpwindGravity::Compute(const CompositeVector& flux,
+                       const CompositeVector& solution,
+                       const std::vector<int>& bc_model,
+                       CompositeVector& field)
 {
   AMANZI_ASSERT(field.HasComponent("cell"));
   AMANZI_ASSERT(field.HasComponent(face_comp_));
@@ -75,24 +78,24 @@ void UpwindGravity::Compute(
 
     const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
     double flx_face = g_ * normal;
-    bool flag = (flx_face <= -tolerance_);  // upwind flag
+    bool flag = (flx_face <= -tolerance_); // upwind flag
 
-    if (ncells == 2) { 
+    if (ncells == 2) {
       c2 = cells[1];
       kc2 = field_c[0][c2];
 
-      // We average field on almost vertical faces. 
-      if (fabs(flx_face) <= tolerance_) { 
+      // We average field on almost vertical faces.
+      if (fabs(flx_face) <= tolerance_) {
         double v1 = mesh_->cell_volume(c1);
         double v2 = mesh_->cell_volume(c2);
 
         double tmp = v2 / (v1 + v2);
-        field_f[0][f] = kc1 * tmp + kc2 * (1.0 - tmp); 
+        field_f[0][f] = kc1 * tmp + kc2 * (1.0 - tmp);
       } else {
-        field_f[0][f] = (flag) ? kc2 : kc1; 
+        field_f[0][f] = (flag) ? kc2 : kc1;
       }
 
-    // We upwind only on inflow dirichlet faces.
+      // We upwind only on inflow dirichlet faces.
     } else {
       field_f[0][f] = kc1;
       if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
@@ -103,7 +106,5 @@ void UpwindGravity::Compute(
   }
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
-
+} // namespace Operators
+} // namespace Amanzi

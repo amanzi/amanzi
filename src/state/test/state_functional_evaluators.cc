@@ -30,18 +30,20 @@ using namespace Amanzi::AmanziMesh;
   Tests independent and secondary variable evaluators based on functions.
 */
 
-SUITE(EVALS) {
-  TEST(EVALS_INDPENDENT_FROMFUNCTION) {
+SUITE(EVALS)
+{
+  TEST(EVALS_INDPENDENT_FROMFUNCTION)
+  {
     auto comm = Amanzi::getDefaultComm();
 
     // Create the geometric model
     Teuchos::ParameterList regions;
-    std::vector<double> low = {0., 0., 0.};
-    std::vector<double> high = {4., 4., 4.};
+    std::vector<double> low = { 0., 0., 0. };
+    std::vector<double> high = { 4., 4., 4. };
     regions.sublist("ALL")
-        .sublist("region: box")
-        .set<Teuchos::Array<double>>("low coordinate", low)
-        .set<Teuchos::Array<double>>("high coordinate", high);
+      .sublist("region: box")
+      .set<Teuchos::Array<double>>("low coordinate", low)
+      .set<Teuchos::Array<double>>("high coordinate", high);
     auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regions, *comm));
 
     MeshFactory meshfac(comm, gm);
@@ -62,14 +64,16 @@ SUITE(EVALS) {
     auto& A_func_flist = A_func_rlist.sublist("function");
     auto& A_func_lin_list = A_func_flist.sublist("function-linear");
 
-    std::vector<double> x0 = {1.0, 2.0, 3.0, 4.0};
-    std::vector<double> grad = {0.5, 1.0, 2.0, 2.0};
+    std::vector<double> x0 = { 1.0, 2.0, 3.0, 4.0 };
+    std::vector<double> grad = { 0.5, 1.0, 2.0, 2.0 };
     A_func_lin_list.set<double>("y0", 1.0);
     A_func_lin_list.set<Teuchos::Array<double>>("x0", x0);
     A_func_lin_list.set<Teuchos::Array<double>>("gradient", grad);
 
     S->Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
-        .SetMesh(mesh)->SetGhosted(true) ->SetComponent("cell", AmanziMesh::CELL, 1);
+      .SetMesh(mesh)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
     auto fa_eval = Teuchos::rcp(new EvaluatorIndependentFunction(A_list));
     S->SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
@@ -82,7 +86,8 @@ SUITE(EVALS) {
 
     // calculate field A
     fa_eval->Update(*S, "main");
-    const Epetra_MultiVector& fa = *S->GetW<CompositeVector>("fa", Tags::DEFAULT, "fa").ViewComponent("cell");
+    const Epetra_MultiVector& fa =
+      *S->GetW<CompositeVector>("fa", Tags::DEFAULT, "fa").ViewComponent("cell");
 
     // eval point of 0th cell is:
     // {  1.1, 1, 1, 1 }
@@ -93,18 +98,19 @@ SUITE(EVALS) {
   }
 
 
-  TEST(EVALS_SECONDARY_FROMFUNCTION) {
+  TEST(EVALS_SECONDARY_FROMFUNCTION)
+  {
     std::cout << "\n\nNEXT test\n";
     auto comm = Amanzi::getDefaultComm();
 
     // Create the geometric model
     Teuchos::ParameterList regions;
-    std::vector<double> low = {0., 0., 0.};
-    std::vector<double> high = {4., 4., 4.};
+    std::vector<double> low = { 0., 0., 0. };
+    std::vector<double> high = { 4., 4., 4. };
     regions.sublist("ALL")
-        .sublist("region: box")
-        .set<Teuchos::Array<double>>("low coordinate", low)
-        .set<Teuchos::Array<double>>("high coordinate", high);
+      .sublist("region: box")
+      .set<Teuchos::Array<double>>("low coordinate", low)
+      .set<Teuchos::Array<double>>("high coordinate", high);
     auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regions, *comm));
 
     MeshFactory meshfac(comm, gm);
@@ -125,14 +131,16 @@ SUITE(EVALS) {
     auto& A_func_flist = A_func_rlist.sublist("function");
     auto& A_func_lin_list = A_func_flist.sublist("function-linear");
 
-    std::vector<double> x0 = {1.0, 2.0, 3.0, 4.0};
-    std::vector<double> grad = {0.5, 1.0, 2.0, 2.0};
+    std::vector<double> x0 = { 1.0, 2.0, 3.0, 4.0 };
+    std::vector<double> grad = { 0.5, 1.0, 2.0, 2.0 };
     A_func_lin_list.set<double>("y0", 1.0);
     A_func_lin_list.set<Teuchos::Array<double>>("x0", x0);
     A_func_lin_list.set<Teuchos::Array<double>>("gradient", grad);
 
     S->Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
-        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+      .SetMesh(mesh)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
     auto fa_eval = Teuchos::rcp(new EvaluatorIndependentFunction(A_list));
     S->SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
@@ -142,22 +150,23 @@ SUITE(EVALS) {
     B_list.set("tag", "");
     B_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
-    auto deps = std::vector<std::string>{"fa"};
+    auto deps = std::vector<std::string>{ "fa" };
     B_list.set<Teuchos::Array<std::string>>("dependencies", deps)
-          .set<bool>("dependency tags are my tag", true);
+      .set<bool>("dependency tags are my tag", true);
     auto& B_func_list = B_list.sublist("function");
     auto& B_func_llist = B_func_list.sublist("function-linear");
 
-    auto x02 = std::vector<double>{-1};
-    auto grad2 = std::vector<double>{2.};
+    auto x02 = std::vector<double>{ -1 };
+    auto grad2 = std::vector<double>{ 2. };
     double y02 = 1.;
     B_func_llist.set<double>("y0", y02);
     B_func_llist.set<Teuchos::Array<double>>("x0", x02);
     B_func_llist.set<Teuchos::Array<double>>("gradient", grad2);
 
     S->Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
-        .SetMesh(mesh)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+      .SetMesh(mesh)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
     auto fb_eval = Teuchos::rcp(new EvaluatorSecondaryMonotypeFromFunction(B_list));
     S->SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 

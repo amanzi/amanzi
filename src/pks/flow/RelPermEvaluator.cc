@@ -23,22 +23,24 @@ namespace Flow {
 RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
                                    const Teuchos::Ptr<State>& S,
                                    const Teuchos::RCP<WRMPartition>& wrm)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
-      wrm_(wrm) {
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), wrm_(wrm)
+{
   InitializeFromPlist_(S);
 }
 
 RelPermEvaluator::RelPermEvaluator(const RelPermEvaluator& other)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      wrm_(other.wrm_),
-      pressure_key_(other.pressure_key_),
-      patm_(other.patm_) {};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+    wrm_(other.wrm_),
+    pressure_key_(other.pressure_key_),
+    patm_(other.patm_){};
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> RelPermEvaluator::Clone() const {
+Teuchos::RCP<Evaluator>
+RelPermEvaluator::Clone() const
+{
   return Teuchos::rcp(new RelPermEvaluator(*this));
 }
 
@@ -46,11 +48,13 @@ Teuchos::RCP<Evaluator> RelPermEvaluator::Clone() const {
 /* ******************************************************************
 * Initialization.
 ****************************************************************** */
-void RelPermEvaluator::InitializeFromPlist_(const Teuchos::Ptr<State>& S)
+void
+RelPermEvaluator::InitializeFromPlist_(const Teuchos::Ptr<State>& S)
 {
   // my keys is for rel perm.
   if (my_keys_.size() == 0) {
-    my_keys_.push_back(std::make_pair(plist_.get<std::string>("relative permeability key"), Tags::DEFAULT));
+    my_keys_.push_back(
+      std::make_pair(plist_.get<std::string>("relative permeability key"), Tags::DEFAULT));
   }
 
   // my dependency is pressure.
@@ -63,11 +67,11 @@ void RelPermEvaluator::InitializeFromPlist_(const Teuchos::Ptr<State>& S)
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void RelPermEvaluator::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+RelPermEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   patm_ = S.Get<double>("atmospheric_pressure");
-  const auto& pres = S.Get<CompositeVector>(pressure_key_); 
+  const auto& pres = S.Get<CompositeVector>(pressure_key_);
 
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
     const auto& pres_c = *pres.ViewComponent(*comp);
@@ -91,12 +95,14 @@ void RelPermEvaluator::Evaluate_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void RelPermEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+RelPermEvaluator::EvaluatePartialDerivative_(const State& S,
+                                             const Key& wrt_key,
+                                             const Tag& wrt_tag,
+                                             const std::vector<CompositeVector*>& results)
 {
   patm_ = S.Get<double>("atmospheric_pressure");
-  const auto& pres = S.Get<CompositeVector>(pressure_key_); 
+  const auto& pres = S.Get<CompositeVector>(pressure_key_);
 
   if (wrt_key == pressure_key_) {
     for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
@@ -121,5 +127,5 @@ void RelPermEvaluator::EvaluatePartialDerivative_(
   }
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
