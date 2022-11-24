@@ -53,17 +53,6 @@ class PK_Physical : virtual public PK {
   Teuchos::RCP<Debugger> debugger() { return db_; }
 
  protected:
-  // Helper methods
-  void AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag = Tags::DEFAULT);
-  void AddDefaultPrimaryEvaluator_(const Tag& tag = Tags::DEFAULT)
-  {
-    AddDefaultPrimaryEvaluator_(key_, tag);
-  }
-
-  void
-  AddDefaultIndependentEvaluator_(const Key& key, const Tag& tag = Tags::DEFAULT, double val = 0.0);
-
- protected:
   // name of domain, associated mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Key domain_;
@@ -84,6 +73,18 @@ InitializeCVField(const Teuchos::RCP<State>& S,
                   const Tag& tag,
                   const Key& passwd,
                   double default_val);
+
+// add default evaluators
+void
+AddDefaultPrimaryEvaluator(const Teuchos::RCP<State>& S,
+                           const Key& key,
+                           const Tag& tag = Tags::DEFAULT);
+
+void
+AddDefaultIndependentEvaluator(const Teuchos::RCP<State>& S,
+                               const Key& key,
+                               const Tag& tag = Tags::DEFAULT,
+                               double val = 0.0);
 
 } // namespace Amanzi
 

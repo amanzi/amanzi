@@ -38,14 +38,14 @@ PK_Physical::Solution_to_State(const TreeVector& solution, const Tag& tag)
 // Helper method to add a primary variable evaluator
 // -----------------------------------------------------------------------------
 void
-PK_Physical::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
+AddDefaultPrimaryEvaluator(const Teuchos::RCP<State>& S, const Key& key, const Tag& tag)
 {
-  AMANZI_ASSERT(S_ != Teuchos::null);
-  Teuchos::ParameterList elist = S_->GetEvaluatorList(key);
+  AMANZI_ASSERT(S != Teuchos::null);
+  Teuchos::ParameterList elist = S->GetEvaluatorList(key);
   elist.set<std::string>("tag", tag.get());
   elist.setName(key);
   auto eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(elist));
-  S_->SetEvaluator(key, tag, eval);
+  S->SetEvaluator(key, tag, eval);
 }
 
 
@@ -53,7 +53,10 @@ PK_Physical::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
 // Helper method to add an independent variable evaluator
 // -----------------------------------------------------------------------------
 void
-PK_Physical::AddDefaultIndependentEvaluator_(const Key& key, const Tag& tag, double val)
+AddDefaultIndependentEvaluator(const Teuchos::RCP<State>& S,
+                               const Key& key,
+                               const Tag& tag,
+                               double val)
 {
   Teuchos::ParameterList elist(key);
   elist.set<std::string>("evaluator type", "independent variable")
@@ -66,7 +69,7 @@ PK_Physical::AddDefaultIndependentEvaluator_(const Key& key, const Tag& tag, dou
     .set<double>("value", val);
 
   auto eval = Teuchos::rcp(new EvaluatorIndependentFunction(elist));
-  S_->SetEvaluator(key, tag, eval);
+  S->SetEvaluator(key, tag, eval);
 }
 
 

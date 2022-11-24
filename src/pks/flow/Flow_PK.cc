@@ -170,7 +170,7 @@ Flow_PK::Setup()
   }
 
   if (!S_->HasEvaluator(vol_flowrate_key_, Tags::DEFAULT)) {
-    AddDefaultPrimaryEvaluator_(vol_flowrate_key_);
+    AddDefaultPrimaryEvaluator(S_, vol_flowrate_key_);
   }
 
   // -- water content
