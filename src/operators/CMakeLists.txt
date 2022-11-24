@@ -107,6 +107,7 @@ set(operators_inc_files
     PDE_DiffusionMFD.hh
     PDE_DiffusionMFDwithGravity.hh
     PDE_DiffusionFV.hh
+    PDE_DiffusionFVonManifolds.hh
     PDE_DiffusionFVwithGravity.hh
     PDE_DiffusionNLFV.hh
     PDE_DiffusionNLFVwithBndFaces.hh
@@ -168,6 +169,7 @@ set(operators_src_files
   PDE_CouplingFlux.cc
   PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
   PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
+  PDE_DiffusionFVonManifolds.cc
   PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
   PDE_DiffusionNLFVwithBndFaces.cc PDE_DiffusionNLFVwithBndFacesGravity.cc
   PDE_DiffusionDG.cc
@@ -259,6 +261,12 @@ if (ENABLE_TESTS)
 
         add_amanzi_test(operators_dfn_4pe operators_dfn NPROCS 4 KIND unit)
                     
+        add_amanzi_test(operators_diffusion_dfn_fv operators_diffusion_dfn_fv
+                        KIND unit
+                        NPROCS 2
+                        SOURCE test/Main.cc test/operator_diffusion_dfn_fv.cc
+                        LINK_LIBS mesh_extracted ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
         add_amanzi_test(operators_coupled_diffusion operators_coupled_diffusion
                         KIND unit
                         SOURCE test/Main.cc test/operator_coupled_diffusion.cc

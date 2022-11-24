@@ -19,6 +19,7 @@
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_DiffusionFV.hh"
 #include "PDE_DiffusionFVwithGravity.hh"
+#include "PDE_DiffusionFVonManifolds.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "PDE_DiffusionMFD.hh"
 #include "PDE_DiffusionMFDwithGravity.hh"
@@ -455,8 +456,13 @@ PDE_DiffusionFactory::CreateWithGravity(Teuchos::ParameterList& oplist,
                                         const Teuchos::RCP<BCs>& bc)
 {
   std::string name = oplist.get<std::string>("discretization primary");
+  bool manifolds = oplist_.isParameter("manifolds");
 
-  if (name == "fv: default") {
+  if (name == "fv: default" && manifolds) {
+    auto op = Teuchos::rcp(new PDE_DiffusionFVonManifolds(oplist_, global_op));
+    return op;
+
+  } else if (name == "fv: default") {
     auto op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, global_op));
     op->SetBCs(bc, bc);
     return op;
