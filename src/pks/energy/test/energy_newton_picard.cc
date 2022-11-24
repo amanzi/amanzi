@@ -343,8 +343,8 @@ HeatConduction::UpdateValues(const CompositeVector& u)
     }
   }
 
-  upwind_->Compute(*flux_, u, bc_model, *k);
-  upwind_->Compute(*flux_, u, bc_model, *dkdT);
+  upwind_->Compute(*flux_, bc_model, *k);
+  upwind_->Compute(*flux_, bc_model, *dkdT);
 }
 
 } // namespace Amanzi

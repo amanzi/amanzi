@@ -8,8 +8,8 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Upwind a cell-centered field (e.g. rel perm) using a given 
-  face-based flux (e.g. Darcy flux).
+  Upwind a cell-centered field defined on a network of manifolds 
+  using a given face-based flux.
 */
 
 // TPLs
@@ -18,34 +18,32 @@
 
 // Operators
 #include "UniqueLocalIndex.hh"
-#include "UpwindFlux.hh"
+#include "UpwindFluxManifolds.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Public init method. It is not yet used.
+* Init method is not used.
 ****************************************************************** */
 void
-UpwindFlux::Init(Teuchos::ParameterList& plist)
+UpwindFluxManifolds::Init(Teuchos::ParameterList& plist)
 {
-  method_ = Operators::OPERATOR_UPWIND_FLUX;
+  method_ = Operators::OPERATOR_UPWIND_FLUX_MANIFOLDS;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
-  order_ = plist.get<int>("polynomial order", 1);
 }
 
 
 /* ******************************************************************
-* Upwind field uses flux. The result is placed in field.
-* Upwinded field must be calculated on all faces of the owned cells.
+* Upwind cells -> faces.
 ****************************************************************** */
 void
-UpwindFlux::Compute(const CompositeVector& flux,
-                    const std::vector<int>& bc_model,
-                    CompositeVector& field)
+UpwindFluxManifolds::Compute(const CompositeVector& flux,
+                             const std::vector<int>& bc_model,
+                             CompositeVector& field)
 {
   AMANZI_ASSERT(field.HasComponent("cell"));
-  AMANZI_ASSERT(field.HasComponent(face_comp_));
+  AMANZI_ASSERT(field.HasComponent("face"));
 
   flux.ScatterMasterToGhosted("face");
   field.ScatterMasterToGhosted("cell");

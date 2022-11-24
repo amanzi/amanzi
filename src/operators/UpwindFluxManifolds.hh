@@ -8,36 +8,37 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Upwind a cell-centered field (e.g. rel perm) using a given 
-  constant velocity (e.g. gravity).
+  Upwind a cell-centered field defined on a network of manifolds 
+  using a given face-based flux.
 */
 
-#ifndef AMANZI_GRAVITY_HH_
-#define AMANZI_GRAVITY_HH_
+#ifndef AMANZI_UPWIND_FLUX_MANIFOLDS_HH_
+#define AMANZI_UPWIND_FLUX_MANIFOLDS_HH_
 
 #include <string>
 #include <vector>
 
 // TPLs
+#include "Epetra_IntVector.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 // Amanzi
 #include "CompositeVector.hh"
 #include "Mesh.hh"
-#include "Point.hh"
+#include "Mesh_Algorithms.hh"
 
 // Operators
+#include "UniqueLocalIndex.hh"
 #include "Upwind.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class UpwindGravity : public Upwind {
+class UpwindFluxManifolds : public Upwind {
  public:
-  UpwindGravity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : Upwind(mesh), g_(mesh->space_dimension()){};
-  ~UpwindGravity(){};
+  UpwindFluxManifolds(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : Upwind(mesh){};
+  ~UpwindFluxManifolds(){};
 
   // main methods
   void Init(Teuchos::ParameterList& plist);
@@ -46,9 +47,8 @@ class UpwindGravity : public Upwind {
   Compute(const CompositeVector& flux, const std::vector<int>& bc_model, CompositeVector& field);
 
  private:
-  int method_, order_;
+  int method_;
   double tolerance_;
-  AmanziGeometry::Point g_;
 };
 
 } // namespace Operators

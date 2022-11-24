@@ -145,7 +145,7 @@ RunTestUpwind(std::string method)
     UpwindClass upwind(mesh);
     upwind.Init(ulist);
 
-    upwind.Compute(flux, solution, bc_model, field);
+    upwind.Compute(flux, bc_model, field);
 
     // calculate errors
     double error(0.0);

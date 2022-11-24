@@ -52,7 +52,6 @@ UpwindGravity::Init(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void
 UpwindGravity::Compute(const CompositeVector& flux,
-                       const CompositeVector& solution,
                        const std::vector<int>& bc_model,
                        CompositeVector& field)
 {

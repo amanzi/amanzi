@@ -112,7 +112,7 @@ RunTestGravity(std::string op_list_name)
   upwind.Init(ulist);
 
   knc->UpdateValues(*flux, bc_model, bc_value); // argument is not used
-  upwind.Compute(*flux, u, bc_model, *knc->values());
+  upwind.Compute(*flux, bc_model, *knc->values());
 
   // create first diffusion operator using constant density
   Operators::PDE_DiffusionFactory opfactory;

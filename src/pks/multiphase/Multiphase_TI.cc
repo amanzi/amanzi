@@ -103,7 +103,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
         // -- upwind cell-centered coefficient
         auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
         kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
-        upwind_->Compute(flux, *kr, bcnone, *kr);
+        upwind_->Compute(flux, bcnone, *kr);
 
         // -- form diffusion operator
         //    BCs are defined by the equation and must be imposed only once
@@ -134,7 +134,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
         S_->GetEvaluator(fname).Update(*S_, passwd_);
         auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
         kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
-        upwind_->Compute(flux, *kr, bcnone, *kr);
+        upwind_->Compute(flux, bcnone, *kr);
 
         // -- form diffusion operator
         AMANZI_ASSERT(op_bcs_.find(gname) != op_bcs_.end());
@@ -309,7 +309,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
 
             for (int c = 0; c < ncells_owned_; ++c) { kr_c[0][c] = (*der_c)[0][c] * coef_c[0][c]; }
             auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
-            upwind_->Compute(flux, *kr, bcnone, *kr);
+            upwind_->Compute(flux, bcnone, *kr);
 
             pde->Setup(Kptr, kr, Teuchos::null);
             pde->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
@@ -329,7 +329,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             S_->GetEvaluator(fname).Update(*S_, passwd_);
             kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
             auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
-            upwind_->Compute(flux, *kr, bcnone, *kr);
+            upwind_->Compute(flux, bcnone, *kr);
 
             // --- calculate advective flux 
             S_->GetEvaluator(gname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
@@ -354,7 +354,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             kr_c = *S_->GetDerivative<CompositeVector>(fname, Tags::DEFAULT, keyc, Tags::DEFAULT)
                       .ViewComponent("cell");
             const auto& flux = S_->Get<CompositeVector>(flux_names_[phase]);
-            upwind_->Compute(flux, *kr, bcnone, *kr);
+            upwind_->Compute(flux, bcnone, *kr);
 
             // --- calculate advective flux
             S_->GetEvaluator(gname).Update(*S_, passwd_);
@@ -396,7 +396,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
 
             for (int c = 0; c < ncells_owned_; ++c) { kr_c[0][c] = (*der_c)[0][c] * coef_c[0][c]; }
             auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
-            upwind_->Compute(flux, *kr, bcnone, *kr);
+            upwind_->Compute(flux, bcnone, *kr);
 
             pde->Setup(Teuchos::null, kr, Teuchos::null);
             pde->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
@@ -416,7 +416,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             S_->GetEvaluator(fname).Update(*S_, passwd_);
             kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
             auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
-            upwind_->Compute(flux, *kr, bcnone, *kr);
+            upwind_->Compute(flux, bcnone, *kr);
 
             S_->GetEvaluator(gname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
             auto tmp = S_->GetDerivativePtr<CompositeVector>(gname, Tags::DEFAULT, keyc, Tags::DEFAULT);
@@ -442,7 +442,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
 
             // --- upwind derivative
             const auto& flux = S_->Get<CompositeVector>(flux_names_[phase]);
-            upwind_->Compute(flux, *kr, bcnone, *kr);
+            upwind_->Compute(flux, bcnone, *kr);
 
             // --- calculate advective flux
             S_->GetEvaluator(gname).Update(*S_, passwd_);

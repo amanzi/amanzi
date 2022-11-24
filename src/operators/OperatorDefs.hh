@@ -116,6 +116,7 @@ const int OPERATOR_UPWIND_GRAVITY = 4;
 const int OPERATOR_UPWIND_DIVK = 8;
 const int OPERATOR_UPWIND_ARITHMETIC_AVERAGE = 16;
 const int OPERATOR_UPWIND_FLUX_SECOND_ORDER = 32;
+const int OPERATOR_UPWIND_FLUX_MANIFOLDS = 64;
 const double OPERATOR_UPWIND_RELATIVE_TOLERANCE = 1e-12;
 
 // method for nonlinear coefficient (use power of 2)

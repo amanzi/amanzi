@@ -916,7 +916,7 @@ Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
     auto flux = S_->GetPtrW<CV_t>(flux_name[phase], Tags::DEFAULT, passwd_);
 
     for (int c = 0; c < ncells_owned_; ++c) { kr_c[0][c] = relperm_c[0][c] / viscosity_c[0][c]; }
-    upwind_->Compute(*flux, *kr, bcnone, *kr);
+    upwind_->Compute(*flux, bcnone, *kr);
 
     auto& pdeK = pde_diff_K_;
     pdeK->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);

@@ -44,7 +44,6 @@ UpwindSecondOrder::Init(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void
 UpwindSecondOrder::Compute(const CompositeVector& flux,
-                           const CompositeVector& solution,
                            const std::vector<int>& bc_model,
                            CompositeVector& field)
 {
@@ -56,7 +55,6 @@ UpwindSecondOrder::Compute(const CompositeVector& flux,
   flux.ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& flx_face = *flux.ViewComponent("face", true);
-  // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
   const Epetra_MultiVector& fld_grad = *field.ViewComponent("grad", true);
