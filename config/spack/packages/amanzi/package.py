@@ -38,7 +38,11 @@ class Amanzi(CMakePackage):
     # Mesh Type: unstructured|structured
     #            (could be both, but currently not support for structured) 
     variant('mesh_type', default='unstructured', values=('unstructured', 'structured'), description='Select mesh type: unstructured or structured')
+
+    # Shared Libraries
     variant('shared', default=True, description='Build Amanzi shared')
+
+    # Mesh Framework
     variant('mesh_framework', default='mstk', values=('mstk','moab'), description='Unstructured mesh framework', multi=True)
 
     # Solvers 
@@ -53,10 +57,8 @@ class Amanzi(CMakePackage):
     # Geochemistry 
     variant('geochemistry', default=False, description='Enable geochemistry support')
 
-
+    # Testing Suite
     variant('tests', default=True, description='Enable the unit and the regression test suites')
-
-    patch('exprtk.patch')
 
     ##### Build dependencies #####
 
@@ -79,12 +81,11 @@ class Amanzi(CMakePackage):
 
     # The following core dependencies do not support +shared/~shared
     depends_on('xerces-c')
-    #depends_on('unittest-cpp', when='+tests')
-    depends_on('unittest-cpp')
+    depends_on('unittest-cpp', when='+tests')
 
     #### Geochemistry ####
     geochemistry = {
-            'alquimia@1.0.9','petsc@3.16.4:3.16.5', 'pflotran@3.0.2', 'crunchtope'
+            'alquimia@1.0.9','petsc@3.16.0', 'pflotran@3.0.2', 'crunchtope'
     }
     for dep in geochemistry: 
         depends_on(dep, when='+geochemistry'); 
@@ -96,34 +97,34 @@ class Amanzi(CMakePackage):
 
     #### Structured ####
     structured = {
-            'alquimia@1.0.9','petsc@3.16.4:3.16.5'
+            'alquimia@1.0.9','petsc@3.16.0'
     }
     for dep in structured:
         depends_on(dep, when='mesh_type=structured');
     space_dim = 2
     depends_on('ccse dims=%d' % int(space_dim) ,when='mesh_type=structured');
-    depends_on('pflotran@3.0.2', when='mesh_type=structured')
+    depends_on('pflotran@0.0.1', when='mesh_type=structured')
 
     #### Unstructured ####
     depends_on('nanoflann', when='mesh_type=unstructured')
 
     ##### MSTK #####
-    depends_on('mstk@3.3.6 partitioner=all +seacas +parallel', when='mesh_framework=mstk')
+    depends_on('mstk@3.3.6 partitioner=all +shared +seacas +parallel', when='mesh_framework=mstk')
 
     ##### Moab #####
     # There is a newer version 5.3.0 (but we haven't tested it yet).
     depends_on('moab@5.2.0', when='mesh_framework=moab')
 
-    #### I/O ####
-
-    ##### Silo #####
+    ##### I/O (Silo) #####
     # There finally is a new version 4.11 (but we haven't tested it yet).
     depends_on('silo@4.10.2', when='+silo')
 
     ##### Other #####
-    depends_on('trilinos@13.0.0 +boost +hdf5 +hypre '
+    depends_on('trilinos@13.0.0.afc4 +boost +hdf5 +hypre +mpi +amesos'
                '+anasazi +amesos2 +epetra +ml +epetraext +belos +aztec'
-               '+zoltan +nox +ifpack +muelu +basker -ifpack2 cxxstd=14')
+               '+zoltan +nox +ifpack +muelu +basker -ifpack2' 
+               '+superlu-dist cxxstd=14')
+    depends_on('exprtk')
 
     conflicts('physics=ats', when='mesh_type=structured', msg='ERROR: ats physics is not supported in the structured mesh framework.')
     conflicts('physics=ats', when='mesh_framework=moab', msg='ERROR: ats physics needs mstk on.')
@@ -133,10 +134,12 @@ class Amanzi(CMakePackage):
         options.append('-DCMAKE_CXX_COMPILER=' + self.spec['mpi'].mpicxx)
         options.append('-DCMAKE_Fortran_COMPILER=' + self.spec['mpi'].mpifc)
 
+        options.append('-DCMAKE_BUILD_TYPE=' + self.spec.variants["build_type"].value)
+
         mpiexec_bin = join_path(self.spec['mpi'].prefix.bin, 'mpiexec')
         options.append('-DMPI_EXEC:PATH='+mpiexec_bin)
         options.append('-DMPI_EXEC_NUMPROCS_FLAG:STRING=-n')
-        options.append('-DTESTS_REQUIRE_MPIEXEC:BOOL=ON')
+        #options.append('-DTESTS_REQUIRE_MPIEXEC:BOOL=ON')
 
         # Tags 
         if self.spec.satisfies('@spack'):
@@ -146,7 +149,6 @@ class Amanzi(CMakePackage):
             options.append('-DSPACK_AMANZI_VERSION_PATCH=0')
             options.append('-DSPACK_AMANZI_VERSION_HASH=0')
         
-
         # Provide information normally in the cache?
         options.append('-DZLIB_DIR=' + self.spec['zlib'].prefix)
         options.append('-DMETIS_DIR=' + self.spec['metis'].prefix)
@@ -160,6 +162,7 @@ class Amanzi(CMakePackage):
         options.append('-DSEACAS_DIR=' + self.spec['seacas'].prefix)
         options.append('-DSuperLU_DIR=' + self.spec['superlu'].prefix)
         options.append('-DTrilinos_INSTALL_PREFIX:PATH=' + self.spec['trilinos'].prefix)
+        options.append('-DEXPRTK_INLCUDE_DIR='+self.spec['exprtk'].prefix+'/include')
 
         # not supported or always off/on options
         options.append('-DENABLE_OpenMP=OFF')
@@ -170,23 +173,23 @@ class Amanzi(CMakePackage):
         options.append('-DENABLE_Regression_Tests=OFF')
 
         if '+shared' in self.spec: 
-            options.append('BUILD_SHARED_LIBS=ON')
+            options.append('-DBUILD_SHARED_LIBS=ON')
         else: 
-            options.append('BUILD_SHARED_LIBS=OFF')
+            options.append('-DBUILD_SHARED_LIBS=OFF')
 
         if 'data_model=epetra' in self.spec: 
-            options.append('-DENABLE_EPETRA=ON')
+            options.append('-DENABLE_Epetra=ON')
         else: 
-            options.append('-DENABLE_EPETRA=OFF')
+            options.append('-DENABLE_Epetra=OFF')
             options.append('-DENABLE_ALQUIMIA=OFF')
             options.append('-DENABLE_PETSC=OFF')
             options.append('-DENABLE_PFLOTRAN=OFF')
             options.append('-DENABLE_CRUNCHTOPE=OFF')
 
         if 'data_model=tpetra' in self.spec: 
-            options.append('-DENABLE_TPETRA=ON')
+            options.append('-DENABLE_Tpetra=ON')
         else: 
-            options.append('-DENABLE_TPETRA=OFF')
+            options.append('-DENABLE_Tpetra=OFF')
 
         if '+geochemistry' in self.spec:
             options.append('-DENABLE_ALQUIMIA=ON')
@@ -253,7 +256,7 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_Structured=ON')
             options.append('-DENABLE_PETSC=ON')
             options.append('-DPETSc_DIR=' + self.spec['petsc'].prefix)
-            options.append('-DENABLE_CCSE_TOOLS=ON')
+            options.append('-DENABLE_CCSE_TOOLS:BOOL=ON')
             options.append('-DENABLE_MPI:INT=1')
             options.append('-DCCSE_BL_SPACEDIM:INT=%d' % int(self.spec['ccse'].variants['dims'].value))
             options.append('-DAMANZI_SPACEDIM:INT=%d' % int(self.spec['ccse'].variants['dims'].value))
@@ -265,7 +268,7 @@ class Amanzi(CMakePackage):
             options.append('-DPFLOTRAN_LIBRARY_DIR=' + self.spec['pflotran'].prefix + '/lib')
         else:
             options.append('-DENABLE_Structured=OFF')
-            options.append('-DENABLE_CCSE_TOOLS=OFF')
+            options.append('-DENABLE_CCSE_TOOLS:BOOL=OFF')
         
         if '+hypre' in self.spec: 
             options.append('-DHYPRE_DIR=' + self.spec['hypre'].prefix)

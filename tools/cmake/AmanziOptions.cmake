@@ -57,8 +57,13 @@ endif()
 # Testing
 # We do not have a consistent way to activate the unit and other tests
 # should have a single switch for this. -- lpritch
-cmake_dependent_option(ENABLE_TESTS "Enable unit testing" ON
-                       "ENABLE_UnitTest" ON)
+#cmake_dependent_option(ENABLE_TESTS "Enable unit testing" ON
+#                       "ENABLE_UnitTest" ON)
+if(ENABLE_TESTS OR ENABLE_UnitTest) 
+  set(ENABLE_UnitTest ON)
+  set(ENABLE_TEST ON)
+endif()
+
 add_feature_info(TESTS
                  ENABLE_TESTS
                  "Toggle for unit tests")

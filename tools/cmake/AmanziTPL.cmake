@@ -131,6 +131,17 @@ endif()
 
 
 ##############################################################################
+# EXPRTK
+##############################################################################
+option(EXPRTK_INCLUDE_DIR "Path to EXPRTK include directory")
+if(ENABLE_SPACK_BUILD)
+  message(STATUS "EXPRTK Package")
+  message(STATUS "\tEXPRTK_INCLUDE_DIR = ${EXPRTK_INLCUDE_DIR}")
+  message(STATUS "")
+endif()
+
+
+##############################################################################
 # HDF5 - http://www.hdfgroup.org/HDF5/
 ##############################################################################
 if (BUILD_SHARED_LIBS)

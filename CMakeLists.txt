@@ -13,10 +13,14 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 set(ENABLE_SPACK_BUILD OFF CACHE BOOL "Enable Spack Build")
+set(ENABLE_TESTS ON CACHE BOOL "Enable Testing")
 
-# Enable testing, ctest needs this
-# all add_test commands are ignored unless this is called!
-enable_testing()
+
+if(ENABLE_TESTS)
+  # Enable testing, ctest needs this
+  # all add_test commands are ignored unless this is called!
+  enable_testing()
+endif()
 
 # Define the project name
 # This command will define
@@ -180,12 +184,14 @@ add_subdirectory(src)
 # Examples added as tests
 # add_subdirectory(examples) 
 
-# Adding verification tests
-# EIB - uncommenting this will include the verification/benchmarking tests
-include(CTest)
-if (ENABLE_Regression_Tests)
-  if (ENABLE_AmanziPhysicsModule)
-    add_subdirectory(test_suites)
+if(ENABLE_TESTS)
+  # Adding verification tests
+  # EIB - uncommenting this will include the verification/benchmarking tests
+  include(CTest)
+  if (ENABLE_Regression_Tests)
+    if (ENABLE_AmanziPhysicsModule)
+      add_subdirectory(test_suites)
+    endif()
   endif()
 endif()
 

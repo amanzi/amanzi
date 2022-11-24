@@ -47,7 +47,7 @@ class Mstk(CMakePackage):
     version('3.0.1', sha256='d44e4bf01b118b1d19710aa839b3f5f0c1a8391264a435f641ba4bd23bcf45ec')
     version('3.0.0', sha256='d993ff5fc6c431067eb97e4089835c7790397d9c1ad88a56523c0591d451df19')
 
-    variant('shared', default=False, description='Build shared libraries')
+    variant('shared', default=True, description='Build shared libraries')
     variant('seacas', default=False, description='Enable ExodusII through SEACAS')
     variant('exodusii', default=False, description='Enable ExodusII')
     variant('use_markers', default=True, description='Enable use of markers')
@@ -61,9 +61,6 @@ class Mstk(CMakePackage):
 
     # MSTK turns on METIS only for parallel builds
     conflicts('partitioner=metis', when='-parallel')
-
-    # Patch for shared libraries 3.3.5
-    # patch('mstk-cmake2.patch', when='+shared')
     
     # dependencies
     depends_on('cmake@3.11:', type='build')
@@ -93,9 +90,9 @@ class Mstk(CMakePackage):
 
         # Shared or static libraries
         if '+shared' in self.spec:
-            options.append('DBUILD_SHARED_LIBS:BOOL=ON')
+            options.append('-DBUILD_SHARED_LIBS:BOOL=ON')
         else:
-            options.append('DBUILD_SHARED_LIBS:BOOL=OFF')
+            options.append('-DBUILD_SHARED_LIBS:BOOL=OFF')
             
         # Parallel variant
         if '+parallel' in self.spec:

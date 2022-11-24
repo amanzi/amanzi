@@ -23,7 +23,7 @@ project(ATK)
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${DBC_SOURCE_DIR})
-
+include_directories(${EXPRTK_INLCUDE_DIR})
 
 add_amanzi_library(atk
                    SOURCE AmanziComm.cc

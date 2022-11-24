@@ -130,16 +130,18 @@ endif()
 #
 add_install_include_file(${state_inc_files})
 
-if (BUILD_TESTS)
-    # Add UnitTest includes
-    include_directories(${UnitTest_INCLUDE_DIRS})
-
     # Add State include directory. 
     include_directories(${STATE_SOURCE_DIR})
 
     # Mesh factory includes
     include_directories(${MESH_FACTORY_SOURCE_DIR})
     include_directories(${MESH_EXTRACTED_SOURCE_DIR})
+
+if (BUILD_TESTS)
+
+    # Add UnitTest includes
+    include_directories(${UnitTest_INCLUDE_DIRS})
+
 
     # Copy test subdirectory for out of source builds
     if (NOT ("${STATE_SOURCE_DIR}" STREQUAL "${STATE_BINARY_DIR}"))

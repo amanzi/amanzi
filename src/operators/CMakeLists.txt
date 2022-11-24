@@ -202,13 +202,14 @@ add_amanzi_library(operators
   LINK_LIBS ${operators_link_libs})
 
 
-add_amanzi_executable(verify_operators
+if (ENABLE_TESTS)
+  add_amanzi_executable(verify_operators
                       SOURCE test/verify_operators.cc
                       LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                       OUTPUT_NAME verify_operators
                       OUTPUT_DIRECTORY ${OPERATORS_BINARY_DIR}/test)
 
-if (BUILD_TESTS)
+
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_SIMPLE_SOURCE_DIR})
