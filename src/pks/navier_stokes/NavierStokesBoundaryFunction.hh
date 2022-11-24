@@ -29,9 +29,9 @@ namespace NavierStokes {
 
 class NavierStokesBoundaryFunction : public PK_DomainFunction {
  public:
-  NavierStokesBoundaryFunction() : bc_name_("undefined") {};
+  NavierStokesBoundaryFunction() : bc_name_("undefined"){};
   NavierStokesBoundaryFunction(const Teuchos::ParameterList& plist);
-  
+
   void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // modifiers and access
@@ -43,12 +43,12 @@ class NavierStokesBoundaryFunction : public PK_DomainFunction {
 
  private:
   std::string bc_name_;
-  WhetStone::DOF_Type type_;  // type of dofs related to this bc
+  WhetStone::DOF_Type type_; // type of dofs related to this bc
 
   std::vector<std::string> regions_;
 };
 
-}  // namespace NavierStokes
-}  // namespace Amanzi
+} // namespace NavierStokes
+} // namespace Amanzi
 
 #endif

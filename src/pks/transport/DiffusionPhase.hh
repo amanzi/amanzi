@@ -22,18 +22,19 @@ namespace Transport {
 
 class DiffusionPhase {
  public:
-  DiffusionPhase() {};
-  ~DiffusionPhase() {};
+  DiffusionPhase(){};
+  ~DiffusionPhase(){};
 
-  int FindDiffusionValue(const std::string& tcc_name, double* md) {
+  int FindDiffusionValue(const std::string& tcc_name, double* md)
+  {
     for (int i = 0; i < names_.size(); ++i) {
-      if (names_[i] == tcc_name) { 
+      if (names_[i] == tcc_name) {
         *md = values_[i];
         return 0;
       }
     }
 
-    *md = 0.0; 
+    *md = 0.0;
     return -1;
   }
 
@@ -46,8 +47,7 @@ class DiffusionPhase {
   std::vector<double> values_;
 };
 
-}  // namespace Transport
-}  // namespace Amanzi
+} // namespace Transport
+} // namespace Amanzi
 
 #endif
-

@@ -48,38 +48,34 @@ namespace Amanzi {
 class CompositeVector;
 
 class Debugger {
-
  public:
   // Constructor
   Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
            std::string name,
            Teuchos::ParameterList& plist,
-           Teuchos::EVerbosityLevel verb_level=Teuchos::VERB_HIGH
-           );
+           Teuchos::EVerbosityLevel verb_level = Teuchos::VERB_HIGH);
 
   const AmanziMesh::Entity_ID_List& get_cells() const;
   void set_cells(const AmanziMesh::Entity_ID_List& dc);
   void add_cells(const AmanziMesh::Entity_ID_List& dc);
 
   // Write cell + face info
-  void WriteCellInfo(bool include_faces=false);
+  void WriteCellInfo(bool include_faces = false);
 
   // Write a vector individually.
   void WriteVector(const std::string& vname,
                    const Teuchos::Ptr<const CompositeVector>& vec,
-                   bool include_faces=false);
+                   bool include_faces = false);
 
-  void WriteCellVector(const std::string& name,
-                       const Epetra_MultiVector& vec);
+  void WriteCellVector(const std::string& name, const Epetra_MultiVector& vec);
 
   // Write boundary condition data.
-  void WriteBoundaryConditions(const std::vector<int>& flag,
-			       const std::vector<double>& data);
+  void WriteBoundaryConditions(const std::vector<int>& flag, const std::vector<double>& data);
 
   // Write list of vectors.
   void WriteVectors(const std::vector<std::string>& names,
-                    const std::vector<Teuchos::Ptr<const CompositeVector> >& vecs,
-                    bool include_faces=false);
+                    const std::vector<Teuchos::Ptr<const CompositeVector>>& vecs,
+                    bool include_faces = false);
 
   // call MPI_Comm_Barrier to sync between writing steps
   void Barrier();
@@ -104,7 +100,7 @@ class Debugger {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::vector<AmanziMesh::Entity_ID> dc_;
   std::vector<AmanziMesh::Entity_ID> dc_gid_;
-  std::vector<Teuchos::RCP<VerboseObject> > dcvo_;
+  std::vector<Teuchos::RCP<VerboseObject>> dcvo_;
 
   int width_;
   int header_width_;

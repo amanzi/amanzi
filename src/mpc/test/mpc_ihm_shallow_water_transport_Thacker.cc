@@ -27,39 +27,39 @@
 #include "pks_shallow_water_registration.hh"
 #include "State.hh"
 
-std::tuple<double, double, double> RunTest(
-    int n, const std::string& meshexo, int* ncycles, int* MyPID)
+std::tuple<double, double, double>
+RunTest(int n, const std::string& meshexo, int* ncycles, int* MyPID)
 {
-using namespace Amanzi;
-using namespace Amanzi::AmanziMesh;
-using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   *MyPID = comm->MyPID();
-  
+
   std::string xmlInFileName = "test/mpc_ihm_shallow_water_transport_Thacker.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
-  
+
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
-  
+
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
-  factory.set_preference(Preference({Framework::MSTK}));
+  factory.set_preference(Preference({ Framework::MSTK }));
   auto mesh = factory.create(-3.0, -3.0, 3.0, 3.0, n, n, true, true);
   if (meshexo != "") mesh = factory.create(meshexo, true, true);
-  
+
   Amanzi::ObservationData obs_data;
-  
+
   Teuchos::ParameterList state_plist = plist->sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
-  
+
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   cycle_driver.Go();
-  
+
   // error calculations
   *ncycles = S->Get<int>("cycle", Tags::DEFAULT);
   double err_h, err_v, err_tcc;
@@ -88,7 +88,8 @@ using namespace Amanzi::AmanziGeometry;
   v_ex.Norm1(&err_v);
 
   // -- concentration
-  sublist = plist->sublist("state").sublist("initial conditions").sublist("total_component_concentration");
+  sublist =
+    plist->sublist("state").sublist("initial conditions").sublist("total_component_concentration");
   sublist.set<double>("time", 1.0);
   Helpers::Initialize(sublist, tcc_ex, "total_component_conventration", &subfieldnames);
 
@@ -100,7 +101,8 @@ using namespace Amanzi::AmanziGeometry;
 }
 
 
-TEST(MPC_DRIVER_IHM_SHALLOW_WATER_TRANSPORT_THACKER) {
+TEST(MPC_DRIVER_IHM_SHALLOW_WATER_TRANSPORT_THACKER)
+{
   int i(0), ncycles, MyPID;
   std::vector<double> h(3), err_h(3), err_v(3), err_tcc(3);
   for (int n = 16; n < 80; n *= 2, ++i) {
@@ -123,4 +125,3 @@ TEST(MPC_DRIVER_IHM_SHALLOW_WATER_TRANSPORT_THACKER) {
   }
   CHECK(rate1 > 1.9 && rate2 > 1.9 && rate3 > 1.8);
 }
-

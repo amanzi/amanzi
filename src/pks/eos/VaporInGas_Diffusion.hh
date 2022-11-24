@@ -26,21 +26,20 @@ namespace AmanziEOS {
 
 class VaporInGas_Diffusion : public EOS_Diffusion {
  public:
-  explicit
-  VaporInGas_Diffusion(Teuchos::ParameterList& plist);
+  explicit VaporInGas_Diffusion(Teuchos::ParameterList& plist);
 
   virtual double Diffusion(double T, double p);
   virtual double DDiffusionDT(double T, double p);
   virtual double DDiffusionDp(double T, double p);
 
  private:
-  double Tref_;  // [K]
-  double dref_;  // [m^2/s] 
+  double Tref_; // [K]
+  double dref_; // [m^2/s]
 
   static Utils::RegisteredFactory<EOS_Diffusion, VaporInGas_Diffusion> factory_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

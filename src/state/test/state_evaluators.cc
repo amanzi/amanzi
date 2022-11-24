@@ -32,24 +32,28 @@ using namespace Amanzi::AmanziMesh;
  * Equation A = 2*B
  ****************************************************************** */
 class AEvaluator : public EvaluatorSecondaryMonotype<double> {
-public:
-  AEvaluator(Teuchos::ParameterList& plist)
-      : EvaluatorSecondaryMonotype<double>(plist) {
-    dependencies_.insert(std::make_pair(Key{"fb"}, Tags::DEFAULT));
+ public:
+  AEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondaryMonotype<double>(plist)
+  {
+    dependencies_.insert(std::make_pair(Key{ "fb" }, Tags::DEFAULT));
   }
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new AEvaluator(*this));
   };
 
-  virtual void Evaluate_(const State& S, const std::vector<double*>& results) override {
+  virtual void Evaluate_(const State& S, const std::vector<double*>& results) override
+  {
     auto& fb = S.Get<double>("fb");
     (*results[0]) = 2 * fb;
   }
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
                                           const Tag& wrt_tag,
-                                          const std::vector<double*>& results) override {
+                                          const std::vector<double*>& results) override
+  {
     if (wrt_key == "fb" && wrt_tag == Tags::DEFAULT) {
       (*results[0]) = 2.0;
     } else {
@@ -63,14 +67,13 @@ class AIndependent : public EvaluatorIndependent<double> {
  public:
   using EvaluatorIndependent<double>::EvaluatorIndependent;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new AIndependent(*this));
   };
 
  protected:
-  virtual void Update_(State& s) override {
-    s.GetW<double>(my_key_, my_tag_, my_key_) = 3.0;
-  }
+  virtual void Update_(State& s) override { s.GetW<double>(my_key_, my_tag_, my_key_) = 3.0; }
 };
 
 
@@ -78,25 +81,28 @@ class BIndependent : public EvaluatorIndependent<double> {
  public:
   using EvaluatorIndependent<double>::EvaluatorIndependent;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new BIndependent(*this));
   };
 
  protected:
-  virtual void Update_(State& S) override {
+  virtual void Update_(State& S) override
+  {
     S.GetW<double>(my_key_, my_tag_, my_key_) = S.get_time(my_tag_);
   }
 };
 
 
-SUITE(EVALUATORS) {
-  TEST(PRIMARY) {
+SUITE(EVALUATORS)
+{
+  TEST(PRIMARY)
+  {
     std::cout << "Primary Variable Test" << std::endl;
     State S;
 
     Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     es_list.setName("fa");
 
     S.Require<double>("fa", Tags::DEFAULT, "fa");
@@ -115,12 +121,12 @@ SUITE(EVALUATORS) {
     // provides
     Tag tag1 = make_tag("old");
     CHECK(S.GetEvaluator("fa").ProvidesKey("fa", Tags::DEFAULT));     // self
-    CHECK(!S.GetEvaluator("fa").ProvidesKey("fa", tag1)); // other tag
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("fa", tag1));             // other tag
     CHECK(!S.GetEvaluator("fa").ProvidesKey("other", Tags::DEFAULT)); // other key
 
     // dependencies -- none
     CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", Tags::DEFAULT));    // not self
-    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", tag1)); // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", tag1));             // not self
     CHECK(!S.GetEvaluator("fa").IsDependency(S, "other", Tags::DEFAULT)); // not other
 
     // check first call is always "changed"
@@ -156,14 +162,14 @@ SUITE(EVALUATORS) {
     CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", Tags::DEFAULT));
   }
 
-  TEST(SECONDARY) {
+  TEST(SECONDARY)
+  {
     std::cout << "Secondary Variable Test" << std::endl;
     State S;
 
     // make the primary.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     es_list.setName("fb");
     S.Require<double>("fb", Tags::DEFAULT, "fb");
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<double>(es_list));
@@ -191,9 +197,9 @@ SUITE(EVALUATORS) {
 
     // provides
     Tag tag1 = make_tag("old");
-    CHECK(S.GetEvaluator("fa").ProvidesKey("fa", Tags::DEFAULT));   // self
-    CHECK(!S.GetEvaluator("fa").ProvidesKey("fa", tag1));           // other tag
-    CHECK(!S.GetEvaluator("fa").ProvidesKey("fb", Tags::DEFAULT));  // other key
+    CHECK(S.GetEvaluator("fa").ProvidesKey("fa", Tags::DEFAULT));  // self
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("fa", tag1));          // other tag
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("fb", Tags::DEFAULT)); // other key
 
     // dependencies -- fb
     CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", Tags::DEFAULT));    // not self
@@ -237,13 +243,13 @@ SUITE(EVALUATORS) {
     CHECK_CLOSE(2.0, S.GetDerivative<double>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT), 1.0e-10);
   }
 
-  TEST(INDEPENDENT_CONSTANT) {
+  TEST(INDEPENDENT_CONSTANT)
+  {
     std::cout << "Independent Variable Test (Temporally constant)" << std::endl;
     State S;
 
     Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     es_list.setName("fa");
     es_list.set("constant in time", true);
 
@@ -292,13 +298,13 @@ SUITE(EVALUATORS) {
     CHECK_CLOSE(3.0, S.Get<double>("fa", Tags::DEFAULT), 1.e-10);
   }
 
-  TEST(INDEPENDENT_TEMPORALLY_CHANGING) {
+  TEST(INDEPENDENT_TEMPORALLY_CHANGING)
+  {
     std::cout << "Independent Variable Test (Temporally varying)" << std::endl;
     State S;
 
     Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     es_list.setName("fa");
     es_list.set("constant in time", false);
 

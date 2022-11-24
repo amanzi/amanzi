@@ -37,23 +37,23 @@ namespace Operators {
 
 class UpwindFlux : public Upwind {
  public:
-  UpwindFlux(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : Upwind(mesh) {};
-  ~UpwindFlux() {};
+  UpwindFlux(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : Upwind(mesh){};
+  ~UpwindFlux(){};
 
   // main methods
   void Init(Teuchos::ParameterList& plist);
 
-  void Compute(const CompositeVector& flux, const CompositeVector& solution,
-               const std::vector<int>& bc_model, CompositeVector& field);
+  void Compute(const CompositeVector& flux,
+               const CompositeVector& solution,
+               const std::vector<int>& bc_model,
+               CompositeVector& field);
 
  private:
   int method_, order_;
   double tolerance_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

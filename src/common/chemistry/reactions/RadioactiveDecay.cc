@@ -9,7 +9,7 @@
   Class for radioactive decay of aqueous and sorbed components.
   Does not deal with decay of solid phase.
 */
- 
+
 #include <cmath>
 #include <cassert>
 #include <sstream>
@@ -45,8 +45,7 @@ RadioactiveDecay::RadioactiveDecay()
 
 RadioactiveDecay::RadioactiveDecay(const Teuchos::ParameterList& plist,
                                    const std::map<std::string, int>& name_to_id)
-  : rate_constant_(0.0),
-    rate_(0.0)
+  : rate_constant_(0.0), rate_(0.0)
 {
   species_names_.clear();
   species_ids_.clear();
@@ -90,7 +89,7 @@ RadioactiveDecay::RadioactiveDecay(const Teuchos::ParameterList& plist,
       species_ids_.push_back(id2);
       stoichiometry_.push_back(coeff);
     }
-    
+
     if (species_ids_.size() < 2) {
       std::stringstream ss;
       ss << "Mis-formatted product part of equation '" << progeny << "'.\n";
@@ -113,7 +112,9 @@ RadioactiveDecay::RadioactiveDecay(const Teuchos::ParameterList& plist,
 *    k = -ln(0.5) / half_life
 *  The reaction rate constant will be positive (-k is decay) !
 ****************************************************************** */
-void RadioactiveDecay::ConvertHalfLifeToRateConstant() {
+void
+RadioactiveDecay::ConvertHalfLifeToRateConstant()
+{
   rate_constant_ = -std::log(0.5) / half_life_;
 }
 
@@ -121,25 +122,26 @@ void RadioactiveDecay::ConvertHalfLifeToRateConstant() {
 /* ******************************************************************
 *
 ****************************************************************** */
-void RadioactiveDecay::UpdateRate(const std::vector<double>& total,
-                                  const std::vector<double>& total_sorbed,
-                                  const double porosity,
-                                  const double saturation,
-                                  const double bulk_volume)
+void
+RadioactiveDecay::UpdateRate(const std::vector<double>& total,
+                             const std::vector<double>& total_sorbed,
+                             const double porosity,
+                             const double saturation,
+                             const double bulk_volume)
 {
   // NOTE: we are working on the totals, not free ion!
   // need total moles of the decaying species:
   //    total * volume_h2o + total_sorbed * volume_bulk
   double volume_h2o = porosity * saturation * bulk_volume * 1000.0; // [L]
   rate_ = volume_h2o * total.at(parent_id());
-  if (total_sorbed.size() > 0) {
-    rate_ += bulk_volume * total_sorbed.at(parent_id());
-  }
+  if (total_sorbed.size() > 0) { rate_ += bulk_volume * total_sorbed.at(parent_id()); }
   rate_ *= rate_constant();
 }
- 
 
-void RadioactiveDecay::AddContributionToResidual(std::vector<double> *residual) {
+
+void
+RadioactiveDecay::AddContributionToResidual(std::vector<double>* residual)
+{
   // Note: rate is < 0, so we add to parent, subtract from
   // progeny. Stoichiometric coefficients should account for this.
   for (int i = 0; i < species_ids_.size(); ++i) {
@@ -150,10 +152,13 @@ void RadioactiveDecay::AddContributionToResidual(std::vector<double> *residual) 
 }
 
 
-void RadioactiveDecay::AddContributionToJacobian(
-    const MatrixBlock& dtotal, const MatrixBlock& dtotal_sorbed,
-    const double porosity, const double saturation, const double bulk_volume,
-    MatrixBlock* J)
+void
+RadioactiveDecay::AddContributionToJacobian(const MatrixBlock& dtotal,
+                                            const MatrixBlock& dtotal_sorbed,
+                                            const double porosity,
+                                            const double saturation,
+                                            const double bulk_volume,
+                                            MatrixBlock* J)
 {
   // NOTE: operating on total [moles/L] not free [moles/kg]
   double volume_h2o = porosity * saturation * bulk_volume * 1000.0; // [L]
@@ -167,9 +172,7 @@ void RadioactiveDecay::AddContributionToJacobian(
     // row loop
     for (int j = 0; j < J->size(); ++j) {
       double tempd = dtotal(icomp0, j) * volume_h2o;
-      if (dtotal_sorbed.size() > 0) {
-        tempd += dtotal_sorbed(icomp0, j) * bulk_volume;
-      }
+      if (dtotal_sorbed.size() > 0) { tempd += dtotal_sorbed(icomp0, j) * bulk_volume; }
       tempd *= -rate_constant() * stoichiometry_.at(i);
       J->AddValue(icomp, j, tempd);
     }
@@ -177,7 +180,8 @@ void RadioactiveDecay::AddContributionToJacobian(
 }
 
 
-void RadioactiveDecay::Display(const Teuchos::Ptr<VerboseObject> vo) const
+void
+RadioactiveDecay::Display(const Teuchos::Ptr<VerboseObject> vo) const
 {
   // convention for this reaction is that reactants have negative
   // stoichiometries, products have positive stoichiometries....
@@ -188,26 +192,23 @@ void RadioactiveDecay::Display(const Teuchos::Ptr<VerboseObject> vo) const
   // write the overall reaction
   // reactants:
   message << std::setw(6) << std::fixed << std::setprecision(2);
-  if (stoichiometry_.at(0) != -1.0) {
-    message << -stoichiometry_.at(0) << " ";
-  }
+  if (stoichiometry_.at(0) != -1.0) { message << -stoichiometry_.at(0) << " "; }
   message << parent_name() << " --> ";
 
   // products, note we start at 1 (0=parent)!
   for (unsigned int i = 1; i < species_names_.size(); i++) {
     message << stoichiometry_.at(i) << " " << species_names_.at(i);
-    if (i < species_names_.size() - 1) {
-      message << " + ";
-    }
+    if (i < species_names_.size() - 1) { message << " + "; }
   }
   message << std::endl;
   message << std::setprecision(6);
   // write the rate data
   message << std::setw(20) << "Half Life : ";
   message << std::setw(10) << half_life_ << " [s]\n";
-  message << std::setw(20) << " k : " << std::scientific << rate_constant() << std::fixed << std::endl;
+  message << std::setw(20) << " k : " << std::scientific << rate_constant() << std::fixed
+          << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

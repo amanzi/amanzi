@@ -22,7 +22,8 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-class IsobaricEOSEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class IsobaricEOSEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   enum EOSMode { EOS_MODE_MASS, EOS_MODE_MOLAR, EOS_MODE_BOTH };
 
@@ -34,7 +35,9 @@ class IsobaricEOSEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, 
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
   Teuchos::RCP<EOS_Density> get_EOS() { return eos_; }
@@ -51,7 +54,7 @@ class IsobaricEOSEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, 
   static Utils::RegisteredFactory<Evaluator, IsobaricEOSEvaluator> factory_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

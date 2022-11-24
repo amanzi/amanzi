@@ -27,9 +27,11 @@ RegionEnumerated::RegionEnumerated(const std::string& name,
                                    const LifeCycleType lifecycle)
   : Region(name, id, false, RegionType::ENUMERATED, 0, 0, lifecycle),
     entity_str_(entity_str),
-    entities_(ents) {
-  std::transform(entity_str_.begin(), entity_str_.end(), entity_str_.begin(),
-                 [](unsigned char c) { return std::toupper(c); });
+    entities_(ents)
+{
+  std::transform(entity_str_.begin(), entity_str_.end(), entity_str_.begin(), [](unsigned char c) {
+    return std::toupper(c);
+  });
   // Region dimension is set arbitrarily as 0 since the set of
   // entities in the mesh will determine the dimension
 }

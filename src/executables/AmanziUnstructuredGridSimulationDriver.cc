@@ -57,15 +57,17 @@
 #include "wrmmp_registration.hh"
 
 // v1 spec constructor -- delete when we get rid of v1.2 spec.
-AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName)
+AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(
+  const std::string& xmlInFileName)
 {
   plist_ = Teuchos::getParametersFromXmlFile(xmlInFileName);
 }
 
 
-AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName,
-                                                                               xercesc::DOMDocument* input,
-                                                                               const std::string& output_prefix)
+AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(
+  const std::string& xmlInFileName,
+  xercesc::DOMDocument* input,
+  const std::string& output_prefix)
 {
   int rank = Teuchos::GlobalMPISession::getRank();
   int num_proc = Teuchos::GlobalMPISession::getNProc();
@@ -138,12 +140,18 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
         if (framework_specified) {
           std::string framework = expert_mesh_params.get<std::string>("framework");
 
-          if (framework == Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::SIMPLE)) {
-            prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
-          } else if (framework == Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MSTK)) {
-            prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
-          } else if (framework == Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MOAB)) {
-            prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::MOAB);
+          if (framework ==
+              Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::SIMPLE)) {
+            prefs.clear();
+            prefs.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
+          } else if (framework ==
+                     Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MSTK)) {
+            prefs.clear();
+            prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+          } else if (framework ==
+                     Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MOAB)) {
+            prefs.clear();
+            prefs.push_back(Amanzi::AmanziMesh::Framework::MOAB);
             // } else if (framework == "") {
           } else {
             std::string s(framework);
@@ -167,9 +175,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
     }
 
     comm->SumAll(&ierr, &aerr, 1);
-    if (aerr > 0) {
-      return Amanzi::Simulator::FAIL;
-    }
+    if (aerr > 0) { return Amanzi::Simulator::FAIL; }
 
     // Read or generate the mesh
     std::string file(""), format("");
@@ -210,12 +216,10 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
         }
 
         comm->SumAll(&ierr, &aerr, 1);
-        if (aerr > 0) {
-          return Amanzi::Simulator::FAIL;
-        }
+        if (aerr > 0) { return Amanzi::Simulator::FAIL; }
       }
 
-    } else if (unstr_mesh_params.isSublist("generate mesh")) {  // If Read parameters are specified
+    } else if (unstr_mesh_params.isSublist("generate mesh")) { // If Read parameters are specified
       Teuchos::ParameterList gen_params = unstr_mesh_params.sublist("generate mesh");
       ierr = 0;
 
@@ -230,12 +234,11 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
       }
 
       comm->SumAll(&ierr, &aerr, 1);
-      if (aerr > 0) {
-        return Amanzi::Simulator::FAIL;
-      }
+      if (aerr > 0) { return Amanzi::Simulator::FAIL; }
 
-    } else {  // If Generate parameters are specified
-      std::cerr << rank << ": error: " << "Neither Read nor Generate options specified for mesh" << std::endl;
+    } else { // If Generate parameters are specified
+      std::cerr << rank << ": error: "
+                << "Neither Read nor Generate options specified for mesh" << std::endl;
       throw std::exception();
     }
 
@@ -255,14 +258,12 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
     if (verify_mesh_param) {
       bool verify = expert_mesh_params.get<bool>("verify mesh");
       if (verify) {
-        if (rank == 0)
-          std::cerr << "Verifying mesh with Mesh Audit..." << std::endl;
+        if (rank == 0) std::cerr << "Verifying mesh with Mesh Audit..." << std::endl;
         if (size == 1) {
           Amanzi::MeshAudit mesh_auditor(mesh);
           int status = mesh_auditor.Verify();
           if (status == 0) {
-            if (rank == 0)
-              std::cerr << "Mesh Audit confirms that mesh is ok" << std::endl;
+            if (rank == 0) std::cerr << "Mesh Audit confirms that mesh is ok" << std::endl;
           } else {
             std::cerr << "Mesh Audit could not verify correctness of mesh" << std::endl;
             return Amanzi::Simulator::FAIL;
@@ -276,7 +277,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
 
           ierr = 0;
           Amanzi::MeshAudit mesh_auditor(mesh, ofs);
-          int status = mesh_auditor.Verify();        // check the mesh
+          int status = mesh_auditor.Verify(); // check the mesh
           if (status != 0) ierr++;
 
           comm->SumAll(&ierr, &aerr, 1);
@@ -288,8 +289,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
             return Amanzi::Simulator::FAIL;
           }
         }
-      }  // if verify
-    }  // if verify_mesh_param
+      } // if verify
+    }   // if verify_mesh_param
   }
 
 
@@ -308,7 +309,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
     Teuchos::ParameterList state_plist = plist_->sublist("state");
     S = Teuchos::rcp(new Amanzi::State(state_plist));
   } else {
-    Errors::Message message("AmanziUnstructuredSimuluation: xml_file does not contain 'state' sublist\n");
+    Errors::Message message(
+      "AmanziUnstructuredSimuluation: xml_file does not contain 'state' sublist\n");
     Exceptions::amanzi_throw(message);
   }
 
@@ -324,7 +326,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
     std::string domain = extract_plist.get<std::string>("domain name");
     AMANZI_ASSERT(domain == "fracture" || domain == "surface");
 
-    std::vector<std::string> names = extract_plist.get<Teuchos::Array<std::string> >("regions").toVector();
+    std::vector<std::string> names =
+      extract_plist.get<Teuchos::Array<std::string>>("regions").toVector();
 
     auto submesh = meshfactory.create(mesh, names, Amanzi::AmanziMesh::FACE);
     submesh->PrintMeshStatistics();
@@ -346,5 +349,3 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
   mesh.reset();
   return Amanzi::Simulator::SUCCESS;
 }
-
-

@@ -62,11 +62,11 @@ class RemapDG_Helper {
   RemapDG_Helper(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
                  const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
                  Teuchos::ParameterList& plist);
-  ~RemapDG_Helper() {};
+  ~RemapDG_Helper(){};
 
   // initialization routines
   // -- static quantities
-  void InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg); 
+  void InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg);
   void StaticEdgeFaceVelocities();
   void StaticCellVelocity();
   // -- quasi-static space-time quantities
@@ -74,7 +74,7 @@ class RemapDG_Helper {
   virtual void StaticCellCoVelocity();
 
   // limiters
-  void ApplyLimiter(double t, CompositeVector& u); 
+  void ApplyLimiter(double t, CompositeVector& u);
 
   // access
   Teuchos::RCP<LimiterCellDG> limiter() { return limiter_; }
@@ -89,14 +89,14 @@ class RemapDG_Helper {
 
   Teuchos::ParameterList plist_;
   std::shared_ptr<WhetStone::MeshMaps> maps_;
-  Teuchos::RCP<WhetStone::DG_Modal> dg_; 
+  Teuchos::RCP<WhetStone::DG_Modal> dg_;
 
   // operators
   int order_;
   Teuchos::RCP<PDE_Abstract> op_adv_;
   Teuchos::RCP<PDE_AdvectionRiemann> op_flux_;
   Teuchos::RCP<PDE_Reaction> op_reac_;
-  
+
   int bc_type_;
 
   // shock inticators and limiters
@@ -111,19 +111,18 @@ class RemapDG_Helper {
   std::vector<WhetStone::VectorPolynomial> vele_vec_, velf_vec_;
 
   // -- space-time quasi-static data
-  Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial> > velf_;
-  Teuchos::RCP<std::vector<WhetStone::VectorSpaceTimePolynomial> > velc_;
-  Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial> > det_;
-  Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac_;
+  Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial>> velf_;
+  Teuchos::RCP<std::vector<WhetStone::VectorSpaceTimePolynomial>> velc_;
+  Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial>> det_;
+  Teuchos::RCP<std::vector<WhetStone::Polynomial>> jac_;
 
   // statistics
   int nfun_;
   bool is_limiter_;
   double sharp_;
-
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif

@@ -45,7 +45,6 @@ namespace Amanzi {
 class State;
 
 class TimestepControllerSmarter : public TimestepController {
-
  public:
   TimestepControllerSmarter(const std::string& name,
                             Teuchos::ParameterList& plist,
@@ -80,6 +79,6 @@ class TimestepControllerSmarter : public TimestepController {
   Teuchos::RCP<int> growth_wait_after_fail_;
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

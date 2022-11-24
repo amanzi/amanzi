@@ -25,29 +25,34 @@ H2O_Density::H2O_Density(Teuchos::ParameterList& eos_plist)
     kd_(0.000206355),
     kT0_(273.15),
     kalpha_(5.0e-10),
-    kp0_(1.0e5) {
-};
+    kp0_(1.0e5){};
 
 
-double H2O_Density::Density(double T, double p) {
+double
+H2O_Density::Density(double T, double p)
+{
   double dT = T - kT0_;
   double rho1bar = ka_ + (kb_ + (kc_ + kd_ * dT) * dT) * dT;
   return rho1bar * (1.0 + kalpha_ * (p - kp0_));
 };
 
 
-double H2O_Density::DDensityDT(double T, double p) {
+double
+H2O_Density::DDensityDT(double T, double p)
+{
   double dT = T - kT0_;
   double rho1bar = kb_ + (2 * kc_ + 3 * kd_ * dT) * dT;
   return rho1bar * (1.0 + kalpha_ * (p - kp0_));
 };
 
 
-double H2O_Density::DDensityDp(double T, double p) {
+double
+H2O_Density::DDensityDp(double T, double p)
+{
   double dT = T - kT0_;
   double rho1bar = ka_ + (kb_ + (kc_ + kd_ * dT) * dT) * dT;
   return rho1bar * kalpha_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi

@@ -21,12 +21,11 @@ namespace AmanziEOS {
 
 class EOS_Density {
  public:
-  EOS_Density(Teuchos::ParameterList& eos_plist)
-    : eos_plist_(eos_plist),
-      ierr_(0) {
+  EOS_Density(Teuchos::ParameterList& eos_plist) : eos_plist_(eos_plist), ierr_(0)
+  {
     InitializeFromPlist_();
   }
-  virtual ~EOS_Density() {};
+  virtual ~EOS_Density(){};
 
   // Virtual methods that form the EOS
   virtual double Density(double T, double p) = 0;
@@ -44,13 +43,14 @@ class EOS_Density {
   std::string error_msg() { return error_msg_; }
 
  protected:
-  virtual void InitializeFromPlist_() {
-  M_ = eos_plist_.get<double>("molar mass", 18.0153e-03);
+  virtual void InitializeFromPlist_()
+  {
+    M_ = eos_plist_.get<double>("molar mass", 18.0153e-03);
 
-  if (eos_plist_.isParameter("molar density"))
-    rho_ = eos_plist_.get<double>("molar density") * M_;
-  else 
-    rho_ = eos_plist_.get<double>("density", 997.07);
+    if (eos_plist_.isParameter("molar density"))
+      rho_ = eos_plist_.get<double>("molar density") * M_;
+    else
+      rho_ = eos_plist_.get<double>("density", 997.07);
   }
 
  protected:
@@ -61,7 +61,7 @@ class EOS_Density {
   std::string error_msg_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

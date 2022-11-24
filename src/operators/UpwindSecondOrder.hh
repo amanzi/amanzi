@@ -32,8 +32,8 @@ namespace Operators {
 
 class UpwindSecondOrder : public Upwind {
  public:
-  UpwindSecondOrder(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : Upwind(mesh) {};
-  ~UpwindSecondOrder() {};
+  UpwindSecondOrder(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : Upwind(mesh){};
+  ~UpwindSecondOrder(){};
 
   // main methods
   // -- initialization of control parameters
@@ -41,17 +41,21 @@ class UpwindSecondOrder : public Upwind {
 
   // -- upwind of a given cell-centered field on mesh faces
   // -- not all input parameters are use by some algorithms
-  void Compute(const CompositeVector& flux, const CompositeVector& solution,
-               const std::vector<int>& bc_model, CompositeVector& field);
+  void Compute(const CompositeVector& flux,
+               const CompositeVector& solution,
+               const std::vector<int>& bc_model,
+               CompositeVector& field);
 
   // -- returns combined map for the original and upwinded fields.
-  // -- Currently, composite vector cannot be extended on a fly. 
-  Teuchos::RCP<CompositeVectorSpace> Map() {
+  // -- Currently, composite vector cannot be extended on a fly.
+  Teuchos::RCP<CompositeVectorSpace> Map()
+  {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh_)->SetGhosted(true)
-       ->AddComponent("cell", AmanziMesh::CELL, 1)
-       ->AddComponent("face", AmanziMesh::FACE, 1)
-       ->AddComponent("grad", AmanziMesh::CELL, mesh_->space_dimension());
+    cvs->SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("face", AmanziMesh::FACE, 1)
+      ->AddComponent("grad", AmanziMesh::CELL, mesh_->space_dimension());
     return cvs;
   }
 
@@ -60,8 +64,7 @@ class UpwindSecondOrder : public Upwind {
   double tolerance_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

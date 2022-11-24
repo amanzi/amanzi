@@ -39,10 +39,9 @@ class PK_DomainFunctionVolumeFraction : public FunctionBase,
                                         public Functions::MaterialMeshFunction {
  public:
   PK_DomainFunctionVolumeFraction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                  AmanziMesh::Entity_kind kind) :
-      MaterialMeshFunction(mesh),
-      kind_(kind) {};
-  ~PK_DomainFunctionVolumeFraction() {};
+                                  AmanziMesh::Entity_kind kind)
+    : MaterialMeshFunction(mesh), kind_(kind){};
+  ~PK_DomainFunctionVolumeFraction(){};
 
   // member functions
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
@@ -66,18 +65,18 @@ class PK_DomainFunctionVolumeFraction : public FunctionBase,
 * Initialization adds a single function to the list of specs.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionVolumeFraction<FunctionBase>::Init(
-    const Teuchos::ParameterList& plist, const std::string& keyword)
+void
+PK_DomainFunctionVolumeFraction<FunctionBase>::Init(const Teuchos::ParameterList& plist,
+                                                    const std::string& keyword)
 {
   keyword_ = keyword;
 
   model_ = plist.get<std::string>("spatial distribution method");
 
   submodel_ = "rate";
-  if (plist.isParameter("submodel"))
-    submodel_ = plist.get<std::string>("submodel");
+  if (plist.isParameter("submodel")) submodel_ = plist.get<std::string>("submodel");
 
-  std::vector<std::string> regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
+  std::vector<std::string> regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();
 
   Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
@@ -99,7 +98,8 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Init(
 * Compute and distribute the result by volume.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1)
+void
+PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1)
 {
   // create the input tuple (time + space)
   int dim = (*mesh_).space_dimension();
@@ -108,8 +108,8 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (MaterialSpecList::const_iterator mspec = material_specs_.at(kind_)->begin();
-       mspec != material_specs_.at(kind_)->end(); ++mspec) {
-
+       mspec != material_specs_.at(kind_)->end();
+       ++mspec) {
     Teuchos::RCP<MaterialMesh> ids = (*mspec)->second;
 
     // calculate physical volume of region.
@@ -118,8 +118,9 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
       for (MaterialMesh::const_iterator it = ids->begin(); it != ids->end(); ++it) {
         int c = it->first;
         double vofs = it->second;
-        if (c < ncells_owned) domain_volume_ += 
-          ((kind_ == AmanziMesh::CELL) ? mesh_->cell_volume(c) : mesh_->face_area(c)) * vofs;
+        if (c < ncells_owned)
+          domain_volume_ +=
+            ((kind_ == AmanziMesh::CELL) ? mesh_->cell_volume(c) : mesh_->face_area(c)) * vofs;
       }
       double tmp = domain_volume_;
       mesh_->get_comm()->SumAll(&tmp, &domain_volume_, 1);
@@ -128,7 +129,7 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
     }
 
     int nfun = (*mspec)->first->second->size();
-    std::vector<double> val_vec(nfun); 
+    std::vector<double> val_vec(nfun);
 
     args[0] = t1;
     for (MaterialMesh::const_iterator it = ids->begin(); it != ids->end(); ++it) {
@@ -165,7 +166,6 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
   }
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif
-

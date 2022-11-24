@@ -32,7 +32,8 @@
 // Amanzi::Transport
 #include "TransportImplicit_PK.hh"
 
-Epetra_MultiVector runTest(int order, const std::string& linsolver)
+Epetra_MultiVector
+runTest(int order, const std::string& linsolver)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -40,7 +41,7 @@ Epetra_MultiVector runTest(int order, const std::string& linsolver)
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "\nTEST: implicit advance, spatial order="<< order << std::endl;
+  std::cout << "\nTEST: implicit advance, spatial order=" << order << std::endl;
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
 
@@ -48,10 +49,11 @@ Epetra_MultiVector runTest(int order, const std::string& linsolver)
   std::string xmlFileName("test/transport_implicit_2D.xml");
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  plist->sublist("PKs").sublist("transport")
-      .set<int>("spatial discretization order", order);
-  plist->sublist("PKs").sublist("transport").sublist("time integrator")
-      .set<std::string>("linear solver", linsolver);
+  plist->sublist("PKs").sublist("transport").set<int>("spatial discretization order", order);
+  plist->sublist("PKs")
+    .sublist("transport")
+    .sublist("time integrator")
+    .set<std::string>("linear solver", linsolver);
 
   // create a mesh
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -60,12 +62,13 @@ Epetra_MultiVector runTest(int order, const std::string& linsolver)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 6.0, 2.0, 192, 2);
-  
-  Teuchos::ParameterList state_list = plist->sublist("state");  
+
+  Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Teuchos::ParameterList pk_tree = plist->sublist("cycle driver").sublist("pk_tree").sublist("transport");
+  Teuchos::ParameterList pk_tree =
+    plist->sublist("cycle driver").sublist("pk_tree").sublist("transport");
 
   // create the global solution vector
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
@@ -83,14 +86,13 @@ Epetra_MultiVector runTest(int order, const std::string& linsolver)
 
   // advance the state
   double t_old(0.0), t_new(0.0), dt(2.0e+3);
-  while(t_new < 1.0e+5) {
+  while (t_new < 1.0e+5) {
     t_new = t_old + dt;
-    
-    if (comm->MyPID() == 0) 
-      std::cout << "\nCycle: T=" << t_old << " dT=" << dt << std::endl;
+
+    if (comm->MyPID() == 0) std::cout << "\nCycle: T=" << t_old << " dT=" << dt << std::endl;
     TPK.AdvanceStep(t_old, t_new);
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
-    
+
     t_old = t_new;
   }
 
@@ -114,16 +116,15 @@ Epetra_MultiVector runTest(int order, const std::string& linsolver)
 
   return tcc;
 }
- 
 
-TEST(IMPLICIT_TRANSPORT_2D) {
+
+TEST(IMPLICIT_TRANSPORT_2D)
+{
   auto tcc1 = runTest(1, "PCG");
   auto tcc2 = runTest(2, "");
 
   tcc1.Update(1.0, tcc2, -1.0);
-  double norm;  
+  double norm;
   tcc1.Norm2(&norm);
   CHECK_CLOSE(norm, 0.0, 2e-12);
 }
-
-

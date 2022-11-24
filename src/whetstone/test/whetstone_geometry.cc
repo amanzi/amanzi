@@ -23,13 +23,14 @@
 /* ****************************************************************
 * Test of face centroids
 **************************************************************** */
-TEST(FACE_CENTROIDS) {
+TEST(FACE_CENTROIDS)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
   std::cout << "Test: calculation of face centroids" << std::endl;
- 
+
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
@@ -37,17 +38,17 @@ TEST(FACE_CENTROIDS) {
   auto comm = Amanzi::getDefaultComm();
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(pref);
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
- 
+
   AmanziGeometry::Point p(2), xc(2);
   Entity_ID_List nodes;
   std::vector<double> weights;
 
   double area = mesh->cell_volume(0);
-  mesh->cell_get_nodes(0, &nodes); 
+  mesh->cell_get_nodes(0, &nodes);
   PolygonCentroidWeights(*mesh, nodes, area, weights);
-  
+
   // verification
   for (int n = 0; n < nodes.size(); ++n) {
     mesh->node_get_coordinates(nodes[n], &p);
@@ -57,5 +58,3 @@ TEST(FACE_CENTROIDS) {
   std::cout << xc << " = " << xm << std::endl;
   CHECK_CLOSE(0.0, norm(xc - xm), 1e-10);
 }
-
-

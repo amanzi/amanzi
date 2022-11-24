@@ -26,14 +26,15 @@
 #include "TransportExplicit_PK.hh"
 
 /* **************************************************************** */
-TEST(TRANSPORT_SOURCE_2D_MESH) {
+TEST(TRANSPORT_SOURCE_2D_MESH)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
+  std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
 #ifdef HAVE_MPI
   Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
@@ -47,17 +48,17 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
   /* create a mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
   pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   RCP<const Mesh> mesh = meshfactory.create("test/rect2D_50x50_ss.exo");
-  
+
   /* create a simple state and populate it */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
@@ -76,7 +77,7 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
   S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("state");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.5);
@@ -88,12 +89,13 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
 
   /* initialize a transport process kernel */
   TPK.Initialize();
- 
+
   /* advance the transport state */
   int iter;
   double t_old(0.0), t_new(0.0), dt;
 
-  auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
+  auto& tcc =
+    *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   iter = 0;
   bool flag = true;
@@ -110,7 +112,7 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
     if (t_new > 0.1 && flag) {
       flag = false;
       if (TPK.MyPID == 0) {
-        GMV::open_data_file(*mesh, (std::string)"transport.gmv");
+        GMV::open_data_file(*mesh, (std::string) "transport.gmv");
         GMV::start_data();
         GMV::write_cell_data(tcc, 0, "Component_0");
         GMV::close_data_file();
@@ -121,8 +123,3 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
 
   TPK.VV_CheckTracerBounds(tcc, 0, 0.0, 1.0, Transport::TRANSPORT_LIMITER_TOLERANCE);
 }
-
-
-
-
-

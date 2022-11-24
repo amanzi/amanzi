@@ -26,7 +26,8 @@ namespace AmanziSolvers {
 /* ******************************************************************
 * Apply the preconditioner.
 ****************************************************************** */
-int PreconditionerHypre::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
+int
+PreconditionerHypre::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 {
   returned_code_ = IfpHypre_->ApplyInverse(v, hv);
   AMANZI_ASSERT(returned_code_ == 0);
@@ -37,11 +38,12 @@ int PreconditionerHypre::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv)
 /* ******************************************************************
 * Initialize the preconditioner.
 ****************************************************************** */
-void PreconditionerHypre::set_inverse_parameters(Teuchos::ParameterList& list)
+void
+PreconditionerHypre::set_inverse_parameters(Teuchos::ParameterList& list)
 {
   plist_ = list;
 
-  std::string vo_name = this->name()+" ("+plist_.get<std::string>("method")+")";
+  std::string vo_name = this->name() + " (" + plist_.get<std::string>("method") + ")";
   vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist_));
 }
 
@@ -49,20 +51,24 @@ void PreconditionerHypre::set_inverse_parameters(Teuchos::ParameterList& list)
 /* ******************************************************************
 * Initialize AMG preconditioner.
 ****************************************************************** */
-void PreconditionerHypre::InitBoomer_()
+void
+PreconditionerHypre::InitBoomer_()
 {
 #ifdef HAVE_HYPRE
   method_ = BoomerAMG;
 
   // check for old input spec and error
   if (plist_.isParameter("number of cycles")) {
-    Errors::Message msg("\"boomer amg\" ParameterList uses old style, \"number of cycles\".  Please update to the new style using \"cycle applications\" and \"smoother sweeps\"");
+    Errors::Message msg(
+      "\"boomer amg\" ParameterList uses old style, \"number of cycles\".  Please update to the "
+      "new style using \"cycle applications\" and \"smoother sweeps\"");
     Exceptions::amanzi_throw(msg);
   }
 
   // verbosity
   int vlevel_int = 0;
-  std::string vlevel = plist_.sublist("verbose object").get<std::string>("verbosity level", "medium");
+  std::string vlevel =
+    plist_.sublist("verbose object").get<std::string>("verbosity level", "medium");
   if (vlevel == "high") {
     vlevel_int = 1;
   } else if (vlevel == "extreme") {
@@ -70,27 +76,43 @@ void PreconditionerHypre::InitBoomer_()
   }
 
   if (plist_.isParameter("verbosity")) vlevel_int = plist_.get<int>("verbosity");
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel,vlevel_int);
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetTol, plist_.get<double>("tolerance", 0.0));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxIter, plist_.get<int>("cycle applications", 5));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCoarsenType, plist_.get<int>("coarsen type", 0));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetStrongThreshold, plist_.get<double>("strong threshold", 0.5));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleType, plist_.get<int>("cycle type", 1));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetNumSweeps, plist_.get<int>("smoother sweeps", 3));
+  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel, vlevel_int);
+  IfpHypre_->SetParameter(
+    (Hypre_Chooser)1, &HYPRE_BoomerAMGSetTol, plist_.get<double>("tolerance", 0.0));
+  IfpHypre_->SetParameter(
+    (Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxIter, plist_.get<int>("cycle applications", 5));
+  IfpHypre_->SetParameter(
+    (Hypre_Chooser)1, &HYPRE_BoomerAMGSetCoarsenType, plist_.get<int>("coarsen type", 0));
+  IfpHypre_->SetParameter((Hypre_Chooser)1,
+                          &HYPRE_BoomerAMGSetStrongThreshold,
+                          plist_.get<double>("strong threshold", 0.5));
+  IfpHypre_->SetParameter(
+    (Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleType, plist_.get<int>("cycle type", 1));
+  IfpHypre_->SetParameter(
+    (Hypre_Chooser)1, &HYPRE_BoomerAMGSetNumSweeps, plist_.get<int>("smoother sweeps", 3));
 
   if (plist_.isParameter("relaxation type down") && plist_.isParameter("relaxation type up")) {
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleRelaxType, plist_.get<int>("relaxation type down"), 1);
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleRelaxType, plist_.get<int>("relaxation type up"), 2);
+    IfpHypre_->SetParameter((Hypre_Chooser)1,
+                            &HYPRE_BoomerAMGSetCycleRelaxType,
+                            plist_.get<int>("relaxation type down"),
+                            1);
+    IfpHypre_->SetParameter((Hypre_Chooser)1,
+                            &HYPRE_BoomerAMGSetCycleRelaxType,
+                            plist_.get<int>("relaxation type up"),
+                            2);
   } else if (plist_.isParameter("relaxation type")) {
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxType, plist_.get<int>("relaxation type"));
+    IfpHypre_->SetParameter(
+      (Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxType, plist_.get<int>("relaxation type"));
   } else {
     // use Hypre's defaults
   }
 
   if (plist_.isParameter("max multigrid levels"))
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxLevels, plist_.get<int>("max multigrid levels"));
+    IfpHypre_->SetParameter(
+      (Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxLevels, plist_.get<int>("max multigrid levels"));
   if (plist_.isParameter("max coarse size"))
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxCoarseSize, plist_.get<int>("max coarse size"));
+    IfpHypre_->SetParameter(
+      (Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxCoarseSize, plist_.get<int>("max coarse size"));
 
   if (plist_.get<bool>("use block indices", false)) {
     num_blocks_ = plist_.get<int>("number of unique block indices");
@@ -98,12 +120,14 @@ void PreconditionerHypre::InitBoomer_()
 
     // Block indices is an array of integers, indicating what unknowns are
     // coarsened as a system.
-    block_indices_ = plist_.get<Teuchos::RCP<std::vector<int> > >("block indices");
+    block_indices_ = plist_.get<Teuchos::RCP<std::vector<int>>>("block indices");
   }
 
   if (plist_.isParameter("number of functions")) {
     if (num_blocks_ > 0) {
-      Errors::Message msg("Hypre (BoomerAMG) cannot be given both \"use block indices\" and \"number of functions\" options as these are two ways of specifying the same thing.");
+      Errors::Message msg(
+        "Hypre (BoomerAMG) cannot be given both \"use block indices\" and \"number of functions\" "
+        "options as these are two ways of specifying the same thing.");
       Exceptions::amanzi_throw(msg);
     }
 
@@ -156,7 +180,9 @@ void PreconditionerHypre::InitBoomer_()
         IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDomainType, 1);
         IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetOverlap, 0);
         IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetSmoothNumLevels, num_levels);
-        IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetSchwarzUseNonSymm, 1); // should provide an option for non-sym
+        IfpHypre_->SetParameter((Hypre_Chooser)1,
+                                &HYPRE_BoomerAMGSetSchwarzUseNonSymm,
+                                1); // should provide an option for non-sym
 
         // Note that if num_levels > 1, you MUST also do nodal coarsening (to maintain the nodes on coarser grids).
         if (num_levels > 1) {
@@ -168,7 +194,8 @@ void PreconditionerHypre::InitBoomer_()
   }
 
 #else
-  Errors::Message msg("Hypre (BoomerAMG) is not available in this installation of Amanzi.  To use Hypre, please reconfigure.");
+  Errors::Message msg("Hypre (BoomerAMG) is not available in this installation of Amanzi.  To use "
+                      "Hypre, please reconfigure.");
   Exceptions::amanzi_throw(msg);
 #endif
 }
@@ -177,7 +204,8 @@ void PreconditionerHypre::InitBoomer_()
 /* ******************************************************************
 * Initialize modified ILU preconditioner.
 ****************************************************************** */
-void PreconditionerHypre::InitEuclid_()
+void
+PreconditionerHypre::InitEuclid_()
 {
 #ifdef HAVE_HYPRE
   method_ = Euclid;
@@ -186,7 +214,8 @@ void PreconditionerHypre::InitEuclid_()
     IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_EuclidSetStats, plist_.get<int>("verbosity"));
 
   if (plist_.isParameter("ilu(k) fill level"))
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_EuclidSetLevel, plist_.get<int>("ilu(k) fill level"));
+    IfpHypre_->SetParameter(
+      (Hypre_Chooser)1, &HYPRE_EuclidSetLevel, plist_.get<int>("ilu(k) fill level"));
 
   if (plist_.isParameter("rescale rows")) {
     bool rescale_rows = plist_.get<bool>("rescale rows");
@@ -194,9 +223,11 @@ void PreconditionerHypre::InitEuclid_()
   }
 
   if (plist_.isParameter("ilut drop tolerance"))
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_EuclidSetILUT, plist_.get<double>("ilut drop tolerance"));
+    IfpHypre_->SetParameter(
+      (Hypre_Chooser)1, &HYPRE_EuclidSetILUT, plist_.get<double>("ilut drop tolerance"));
 #else
-  Errors::Message msg("Hypre (Euclid) is not available in this installation of Amanzi.  To use Hypre, please reconfigure.");
+  Errors::Message msg("Hypre (Euclid) is not available in this installation of Amanzi.  To use "
+                      "Hypre, please reconfigure.");
   Exceptions::amanzi_throw(msg);
 #endif
 }
@@ -205,13 +236,15 @@ void PreconditionerHypre::InitEuclid_()
 /* ******************************************************************
 * Initialize specialized AMS preconditioner.
 ****************************************************************** */
-void PreconditionerHypre::InitAMS_()
+void
+PreconditionerHypre::InitAMS_()
 {
 #ifdef HAVE_HYPRE
   method_ = AMS;
 
   if (plist_.isParameter("verbosity"))
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetPrintLevel, plist_.get<int>("verbosity"));
+    IfpHypre_->SetParameter(
+      (Hypre_Chooser)1, &HYPRE_AMSSetPrintLevel, plist_.get<int>("verbosity"));
 
   // additional data: parallel vector with coordinates and gradient matrix
   // G_ * xyz_ should be the valid operation
@@ -219,13 +252,13 @@ void PreconditionerHypre::InitAMS_()
   Teuchos::RCP<Epetra_CrsMatrix> G;
 
   if (plist_.isParameter("graph coordinates") &&
-      plist_.isType<Teuchos::RCP<Epetra_MultiVector> >("graph coordinates")) {
-    xyz = plist_.get<Teuchos::RCP<Epetra_MultiVector> >("graph coordinates");
+      plist_.isType<Teuchos::RCP<Epetra_MultiVector>>("graph coordinates")) {
+    xyz = plist_.get<Teuchos::RCP<Epetra_MultiVector>>("graph coordinates");
   }
 
-  if (plist_.isParameter("discrete gradient operator") && 
-      plist_.isType<Teuchos::RCP<Epetra_CrsMatrix> >("discrete gradient operator")) {
-    G = plist_.get<Teuchos::RCP<Epetra_CrsMatrix> >("discrete gradient operator");
+  if (plist_.isParameter("discrete gradient operator") &&
+      plist_.isType<Teuchos::RCP<Epetra_CrsMatrix>>("discrete gradient operator")) {
+    G = plist_.get<Teuchos::RCP<Epetra_CrsMatrix>>("discrete gradient operator");
   }
 
   if (!xyz.get() || !G.get()) {
@@ -236,34 +269,42 @@ void PreconditionerHypre::InitAMS_()
   // PList must go first
   Teuchos::ParameterList tmp;
   tmp.set<std::string>("hypre: Preconditioner", "AMS")
-     .set<std::string>("hypre: SolveOrPrecondition", "Preconditioner");
-  tmp.sublist("Coordinates").set<Teuchos::RCP<Epetra_MultiVector> >("Coordinates", xyz);
-  tmp.sublist("Operators").set<Teuchos::RCP<const Epetra_CrsMatrix> >("G", G);
+    .set<std::string>("hypre: SolveOrPrecondition", "Preconditioner");
+  tmp.sublist("Coordinates").set<Teuchos::RCP<Epetra_MultiVector>>("Coordinates", xyz);
+  tmp.sublist("Operators").set<Teuchos::RCP<const Epetra_CrsMatrix>>("G", G);
   tmp.sublist("HYPRE_AMSSetAlphaAMGOptions")
-     .set<int>("arg 0", 6)  // 10
-     .set<int>("arg 1", 0)  // 1
-     .set<int>("arg 2", 6)
-     .set<double>("arg 3", 0.25)
-     .set<int>("arg 4", 0)
-     .set<int>("arg 5", 0);
+    .set<int>("arg 0", 6) // 10
+    .set<int>("arg 1", 0) // 1
+    .set<int>("arg 2", 6)
+    .set<double>("arg 3", 0.25)
+    .set<int>("arg 4", 0)
+    .set<int>("arg 5", 0);
   tmp.sublist("HYPRE_AMSSetBetaAMGOptions")
-     .set<int>("arg 0", 6)  // 10
-     .set<int>("arg 1", 0)  // 1
-     .set<int>("arg 2", 6)
-     .set<double>("arg 3", 0.25)
-     .set<int>("arg 4", 0)
-     .set<int>("arg 5", 0);
+    .set<int>("arg 0", 6) // 10
+    .set<int>("arg 1", 0) // 1
+    .set<int>("arg 2", 6)
+    .set<double>("arg 3", 0.25)
+    .set<int>("arg 4", 0)
+    .set<int>("arg 5", 0);
   IfpHypre_->SetParameters(tmp);
 
   IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetTol, plist_.get<double>("tolerance", 0.0));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetPrintLevel, plist_.get<int>("verbosity", 0));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetMaxIter, plist_.get<int>("cycle applications", 5));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetCycleType, plist_.get<int>("cycle type", 1));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetAlphaAMGCoarseRelaxType, plist_.get<int>("coarse level relaxation", 9));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetBetaAMGCoarseRelaxType, plist_.get<int>("coarse level relaxation", 9));
+  IfpHypre_->SetParameter(
+    (Hypre_Chooser)1, &HYPRE_AMSSetPrintLevel, plist_.get<int>("verbosity", 0));
+  IfpHypre_->SetParameter(
+    (Hypre_Chooser)1, &HYPRE_AMSSetMaxIter, plist_.get<int>("cycle applications", 5));
+  IfpHypre_->SetParameter(
+    (Hypre_Chooser)1, &HYPRE_AMSSetCycleType, plist_.get<int>("cycle type", 1));
+  IfpHypre_->SetParameter((Hypre_Chooser)1,
+                          &HYPRE_AMSSetAlphaAMGCoarseRelaxType,
+                          plist_.get<int>("coarse level relaxation", 9));
+  IfpHypre_->SetParameter((Hypre_Chooser)1,
+                          &HYPRE_AMSSetBetaAMGCoarseRelaxType,
+                          plist_.get<int>("coarse level relaxation", 9));
 
 #else
-  Errors::Message msg("Hypre (AMS) is not available in this installation of Amanzi. To use Hypre, please reconfigure.");
+  Errors::Message msg("Hypre (AMS) is not available in this installation of Amanzi. To use Hypre, "
+                      "please reconfigure.");
   Exceptions::amanzi_throw(msg);
 #endif
 }
@@ -272,7 +313,8 @@ void PreconditionerHypre::InitAMS_()
 /* ******************************************************************
 * Amanzi preconditioner initialization
 ****************************************************************** */
-void PreconditionerHypre::InitializeInverse()
+void
+PreconditionerHypre::InitializeInverse()
 {
   IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*h_));
 
@@ -307,9 +349,7 @@ void PreconditionerHypre::InitializeInverse()
     // IfpHypre_::Compute() gets called (for every call but the last) and when
     // IfpHypre_ gets destroyed (for the last call).
     int* indices = new int[block_indices_->size()];
-    for (int i=0; i!=block_indices_->size(); ++i) {
-      indices[i] = (*block_indices_)[i];
-    }
+    for (int i = 0; i != block_indices_->size(); ++i) { indices[i] = (*block_indices_)[i]; }
     IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDofFunc, indices);
   }
 
@@ -320,7 +360,8 @@ void PreconditionerHypre::InitializeInverse()
 /* ******************************************************************
 * Rebuild the preconditioner using the given matrix A.
 ****************************************************************** */
-void PreconditionerHypre::ComputeInverse()
+void
+PreconditionerHypre::ComputeInverse()
 {
 #ifdef HAVE_HYPRE
   AMANZI_ASSERT(IfpHypre_.get());
@@ -328,5 +369,5 @@ void PreconditionerHypre::ComputeInverse()
 #endif
 }
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi

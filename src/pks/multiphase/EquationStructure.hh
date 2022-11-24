@@ -43,8 +43,7 @@ struct EquationStructure {
   EquationTerm constraint;
 };
 
-}  // namespace Multiphase
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi
 
 #endif
-

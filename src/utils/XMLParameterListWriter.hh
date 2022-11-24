@@ -11,16 +11,16 @@
 
 #include <string>
 #ifndef XMLPARAMETERLISTWRITER_H
-#define XMLPARAMETERLISTWRITER_H
+#  define XMLPARAMETERLISTWRITER_H
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLObject.hpp"
-#include "Teuchos_Utils.hpp"
-#include "Teuchos_ArrayView.hpp"
+#  include "Teuchos_ParameterList.hpp"
+#  include "Teuchos_XMLObject.hpp"
+#  include "Teuchos_Utils.hpp"
+#  include "Teuchos_ArrayView.hpp"
 
 namespace Teuchos {
 
-#if 0
+#  if 0
 template<>
 class ToStringTraits<double> {
  public:
@@ -32,25 +32,26 @@ class ToStringTraits<double> {
     return os.str();
   }
 };
-#endif
+#  endif
 
 class Amanzi_XMLParameterListWriter {
  public:
   Amanzi_XMLParameterListWriter();
   XMLObject toXML(const ParameterList& p) const;
-    
-  inline std::string Amanzi_toString(const Teuchos::Array<double>& a) const {
+
+  inline std::string Amanzi_toString(const Teuchos::Array<double>& a) const
+  {
     std::ostringstream ss;
     ss.setf(std::ios::scientific);
     ss.precision(precision_);
 
     ss << "{";
-    for (int i=0; i < a.size(); ++i) {
+    for (int i = 0; i < a.size(); ++i) {
       ss << a[i];
-      if (i < a.size()-1) ss << ", ";
+      if (i < a.size() - 1) ss << ", ";
     }
     ss << "}";
-    
+
     return ss.str();
   }
 
@@ -63,7 +64,6 @@ class Amanzi_XMLParameterListWriter {
   int precision_;
 };
 
-}  // namespace Teuchos
- 
-#endif
+} // namespace Teuchos
 
+#endif

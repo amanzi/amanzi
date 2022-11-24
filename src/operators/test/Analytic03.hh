@@ -26,7 +26,8 @@
 
 class Analytic03 : public AnalyticBase {
  public:
-  Analytic03(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh) {
+  Analytic03(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh)
+  {
     k1 = 1.0;
     k2 = 20.0;
     a1 = 1.0 / k1;
@@ -35,13 +36,14 @@ class Analytic03 : public AnalyticBase {
 
     dim = mesh_->space_dimension();
   }
-  ~Analytic03() {};
+  ~Analytic03(){};
 
-  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     double x = p[0];
     double y = p[1];
     Amanzi::WhetStone::Tensor K(dim, 1);
-    if (x < 0.5) { 
+    if (x < 0.5) {
       K(0, 0) = k1 * (1.0 + x * sin(y));
     } else {
       K(0, 0) = k2 * (1.0 + 2 * x * x * sin(y));
@@ -50,11 +52,13 @@ class Analytic03 : public AnalyticBase {
   }
 
   // gradient of scalar factor of the tensor
-  Amanzi::AmanziGeometry::Point ScalarTensorGradient(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::AmanziGeometry::Point
+  ScalarTensorGradient(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     double x = p[0];
     double y = p[1];
     Amanzi::AmanziGeometry::Point v(dim);
-    if (x < 0.5) { 
+    if (x < 0.5) {
       v[0] = k1 * sin(y);
       v[1] = k1 * x * cos(y);
     } else {
@@ -64,21 +68,23 @@ class Analytic03 : public AnalyticBase {
     return v;
   }
 
-  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
+  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const
+  {
     double x = p[0];
     double y = p[1];
-    if (x < 0.5) { 
+    if (x < 0.5) {
       return a1 * x * x + y * y;
     } else {
       return a2 * x * x + y * y + b2;
     }
   }
 
-  Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     double x = p[0];
     double y = p[1];
     Amanzi::AmanziGeometry::Point v(dim);
-    if (x < 0.5) { 
+    if (x < 0.5) {
       v[0] = 2 * a1 * x;
       v[1] = 2 * y;
     } else {
@@ -88,11 +94,13 @@ class Analytic03 : public AnalyticBase {
     return v;
   }
 
-  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     return Amanzi::AmanziGeometry::Point(2);
   }
 
-  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     double x = p[0];
 
     double plaplace, kmean;
@@ -104,7 +112,7 @@ class Analytic03 : public AnalyticBase {
     pressure_exact(p, t);
     pgrad = gradient_exact(p, t);
 
-    if (x < 0.5) { 
+    if (x < 0.5) {
       plaplace = 2 * (1.0 + a1);
     } else {
       plaplace = 2 * (1.0 + a2);
@@ -120,4 +128,3 @@ class Analytic03 : public AnalyticBase {
 };
 
 #endif
-

@@ -21,76 +21,77 @@
 namespace Amanzi {
 namespace Functions {
 
-CompositeVectorFunction::CompositeVectorFunction(
-    const Teuchos::RCP<const MeshFunction>& func,
-    const std::vector<std::string>& names) :
-    func_(func) {
-
+CompositeVectorFunction::CompositeVectorFunction(const Teuchos::RCP<const MeshFunction>& func,
+                                                 const std::vector<std::string>& names)
+  : func_(func)
+{
   AMANZI_ASSERT(names.size() == func->size());
 
   // Zip the two iterators, adding the resulting "tuple" to the container of pairs.
   std::vector<std::string>::const_iterator name = names.begin();
-  for (MeshFunction::spec_iterator spec=func->begin();
-       spec!=func->end(); ++spec) {
-    cv_spec_list_.push_back(Teuchos::rcp(new CompositeVectorSpec(*name,*spec)));
+  for (MeshFunction::spec_iterator spec = func->begin(); spec != func->end(); ++spec) {
+    cv_spec_list_.push_back(Teuchos::rcp(new CompositeVectorSpec(*name, *spec)));
     ++name;
   }
 }
 
-void CompositeVectorFunction::Compute(double time,
-        const Teuchos::Ptr<CompositeVector>& cv,
-        const VerboseObject* vo) {
+void
+CompositeVectorFunction::Compute(double time,
+                                 const Teuchos::Ptr<CompositeVector>& cv,
+                                 const VerboseObject* vo)
+{
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = func_->mesh();
   cv->PutScalar(0.);
 
 #ifdef ENSURE_INITIALIZED_CVFUNCS
   // ensure all components are touched
-  std::map<std::string,bool> done;
-  for (auto compname : *cv) {
-    done[compname] = false;
-  }
+  std::map<std::string, bool> done;
+  for (auto compname : *cv) { done[compname] = false; }
 #endif
 
   // create the input tuple
   int dim = mesh->space_dimension();
-  std::vector<double> args(1+dim, 0.);
+  std::vector<double> args(1 + dim, 0.);
   args[0] = time;
 
   // loop over the name/spec pair
-  for (CompositeVectorSpecList::const_iterator cv_spec=cv_spec_list_.begin();
-       cv_spec!=cv_spec_list_.end(); ++cv_spec) {
+  for (CompositeVectorSpecList::const_iterator cv_spec = cv_spec_list_.begin();
+       cv_spec != cv_spec_list_.end();
+       ++cv_spec) {
     std::string compname = (*cv_spec)->first;
 #ifdef ENSURE_INITIALIZED_CVFUNCS
     done[compname] = true;
 #endif
 
-    Epetra_MultiVector& compvec = *cv->ViewComponent(compname,false);
+    Epetra_MultiVector& compvec = *cv->ViewComponent(compname, false);
     Teuchos::RCP<MeshFunction::Spec> spec = (*cv_spec)->second;
 
     AmanziMesh::Entity_kind kind = spec->first->second;
     if (vo && vo->os_OK(Teuchos::VERB_EXTREME)) {
-      *vo->os() << "Writing function on component: " << compname
-                << " and entity " << AmanziMesh::entity_kind_string(kind) << std::endl;
+      *vo->os() << "Writing function on component: " << compname << " and entity "
+                << AmanziMesh::entity_kind_string(kind) << std::endl;
     }
 
     // loop over all regions in the spec
-    for (MeshFunction::RegionList::const_iterator region=spec->first->first.begin();
-         region!=spec->first->first.end(); ++region) {
+    for (MeshFunction::RegionList::const_iterator region = spec->first->first.begin();
+         region != spec->first->first.end();
+         ++region) {
       // special case for BOUNDARY_FACE because BOUNDARY_FACE cannot currently
       // be used in sets, see #558.  Hopefully this will be fixed soon.
       if (kind == AmanziMesh::BOUNDARY_FACE) {
         if (mesh->valid_set_name(*region, AmanziMesh::FACE)) {
           // get the indices of the domain.
           AmanziMesh::Entity_ID_List id_list;
-          mesh->get_set_entities(*region, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &id_list);
+          mesh->get_set_entities(
+            *region, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &id_list);
 
           const Epetra_Map& face_map = mesh->face_map(false);
           const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
 
           // loop over indices
           AmanziMesh::Entity_ID_List cells;
-          for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();
-               id!=id_list.end(); ++id) {
+          for (AmanziMesh::Entity_ID_List::const_iterator id = id_list.begin(); id != id_list.end();
+               ++id) {
             mesh->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
             if (cells.size() == 1) {
               AmanziMesh::Entity_ID bf = vandelay_map.LID(face_map.GID(*id));
@@ -98,13 +99,11 @@ void CompositeVectorFunction::Compute(double time,
 
               // get the coordinate
               AmanziGeometry::Point xf = mesh->face_centroid(*id);
-              for (int i=0; i!=dim; ++i) args[i+1] = xf[i];
+              for (int i = 0; i != dim; ++i) args[i + 1] = xf[i];
 
               // evaluate the functions and stuff the result into the CV
-              double *value = (*spec->second)(args);
-              for (int i=0; i!=(*spec->second).size(); ++i) {
-                compvec[i][bf] = value[i];
-              }
+              double* value = (*spec->second)(args);
+              for (int i = 0; i != (*spec->second).size(); ++i) { compvec[i][bf] = value[i]; }
             }
           }
         } else {
@@ -113,7 +112,6 @@ void CompositeVectorFunction::Compute(double time,
           Exceptions::amanzi_throw(message);
         }
       } else {
-
         bool valid = mesh->valid_set_name(*region, kind);
         if (vo && vo->os_OK(Teuchos::VERB_EXTREME)) {
           if (!valid) *vo->os() << "  region: " << *region << " not valid!" << std::endl;
@@ -125,12 +123,13 @@ void CompositeVectorFunction::Compute(double time,
           auto map = cv->Map().Map(compname, false);
 
           if (vo && vo->os_OK(Teuchos::VERB_EXTREME)) {
-            *vo->os() << "  region: " << *region << " contains " << id_list.size() << " local entities" << std::endl;
+            *vo->os() << "  region: " << *region << " contains " << id_list.size()
+                      << " local entities" << std::endl;
           }
 
           // loop over indices
-          for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();
-               id!=id_list.end(); ++id) {
+          for (AmanziMesh::Entity_ID_List::const_iterator id = id_list.begin(); id != id_list.end();
+               ++id) {
             // get the coordinate
             AmanziGeometry::Point xc;
             if (kind == AmanziMesh::CELL) {
@@ -142,17 +141,15 @@ void CompositeVectorFunction::Compute(double time,
             } else {
               AMANZI_ASSERT(0);
             }
-            for (int i=0; i!=dim; ++i) args[i+1] = xc[i];
+            for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
             // evaluate the functions and stuff the result into the CV
-            double *value = (*spec->second)(args);
+            double* value = (*spec->second)(args);
 
             int g = map->FirstPointInElement(*id);
             int ndofs = map->ElementSize(*id);
             for (int n = 0; n < ndofs; ++n) {
-              for (int i=0; i!=(*spec->second).size(); ++i) {
-                compvec[i][g + n] = value[i];
-              }
+              for (int i = 0; i != (*spec->second).size(); ++i) { compvec[i][g + n] = value[i]; }
             }
           }
         } else {
@@ -176,5 +173,5 @@ void CompositeVectorFunction::Compute(double time,
 #endif
 }
 
-} // namespace
-} // namespace
+} // namespace Functions
+} // namespace Amanzi

@@ -10,7 +10,7 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Partial specialization of operations with vector of polynomials.
-*/ 
+*/
 
 #include <vector>
 
@@ -24,7 +24,8 @@ namespace WhetStone {
 /* ******************************************************************
 * Gradient for polynomials
 ****************************************************************** */
-VectorPolynomial Gradient(const Polynomial& p)
+VectorPolynomial
+Gradient(const Polynomial& p)
 {
   int d = p.dimension();
   int order = std::max(0, p.order() - 1);
@@ -59,7 +60,8 @@ VectorPolynomial Gradient(const Polynomial& p)
 /* ******************************************************************
 * Gradient for space-time polynomials
 ****************************************************************** */
-VectorSpaceTimePolynomial Gradient(const SpaceTimePolynomial& p)
+VectorSpaceTimePolynomial
+Gradient(const SpaceTimePolynomial& p)
 {
   int d = p.dimension();
   int order = p.order();
@@ -78,7 +80,8 @@ VectorSpaceTimePolynomial Gradient(const SpaceTimePolynomial& p)
 /* ******************************************************************
 * Divergence
 ****************************************************************** */
-Polynomial Divergence(const VectorPolynomial& vp) 
+Polynomial
+Divergence(const VectorPolynomial& vp)
 {
   int d = vp[0].dimension();
   AMANZI_ASSERT(d == vp.size());
@@ -116,7 +119,8 @@ Polynomial Divergence(const VectorPolynomial& vp)
 /* ******************************************************************
 * Projecton of gradient using Taylor expansion with k terms
 ****************************************************************** */
-VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)
+VectorPolynomial
+GradientOnUnitSphere(const Polynomial& poly, int k)
 {
   int d = poly.dimension();
   AMANZI_ASSERT(d == 2);
@@ -143,17 +147,17 @@ VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)
     double tmp2 = a2 * a4 - 2 * a1 * a5;
 
     len3 = len * len * len;
-    ux =-a2 * tmp1;
+    ux = -a2 * tmp1;
     uy = a2 * tmp2;
 
     vx = a1 * tmp1;
-    vy =-a1 * tmp2;
+    vy = -a1 * tmp2;
 
-    out[0](1) = ux / len3; 
-    out[0](2) = uy / len3; 
+    out[0](1) = ux / len3;
+    out[0](2) = uy / len3;
 
-    out[1](1) = vx / len3; 
-    out[1](2) = vy / len3; 
+    out[1](1) = vx / len3;
+    out[1](2) = vy / len3;
   }
 
   if (k > 1) {
@@ -171,9 +175,9 @@ VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)
     double dx = 2 * a1 * a3 + a2 * a4;
     double dy = 2 * a2 * a5 + a1 * a4;
 
-    double vxx = 2 * a1 * (a1 * a7 + a3 * a4) - a2 * (4 * a3 * a3 + 6 * a1 * a6); 
-    double vxy = 2 * a1 * (a1 * a8 + a4 * a4 - 2 * a3 * a5) - 2 * a2 * (a3 * a4 + a1 * a7); 
-    double vyy = 2 * a1 * (3 * a1 * a9 + a4 * a5) - a2 * (a4 * a4 + 2 * a1 * a8); 
+    double vxx = 2 * a1 * (a1 * a7 + a3 * a4) - a2 * (4 * a3 * a3 + 6 * a1 * a6);
+    double vxy = 2 * a1 * (a1 * a8 + a4 * a4 - 2 * a3 * a5) - 2 * a2 * (a3 * a4 + a1 * a7);
+    double vyy = 2 * a1 * (3 * a1 * a9 + a4 * a5) - a2 * (a4 * a4 + 2 * a1 * a8);
 
     out[0](3) = (uxx * len2 - 3 * ux * dx) / (2 * len5);
     out[0](4) = (uxy * len2 - 3 * ux * dy) / len5;
@@ -187,7 +191,5 @@ VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)
   return out;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
-
+} // namespace WhetStone
+} // namespace Amanzi

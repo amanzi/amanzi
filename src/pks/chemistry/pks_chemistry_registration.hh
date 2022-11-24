@@ -10,7 +10,7 @@
 */
 
 #ifdef ALQUIMIA_ENABLED
-#include "Alquimia_PK.hh"
+#  include "Alquimia_PK.hh"
 #endif
 #include "Amanzi_PK.hh"
 
@@ -22,5 +22,5 @@ RegisteredPKFactory<Alquimia_PK> Alquimia_PK::reg_("chemistry alquimia");
 #endif
 RegisteredPKFactory<Amanzi_PK> Amanzi_PK::reg_("chemistry amanzi");
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

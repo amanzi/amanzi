@@ -38,7 +38,9 @@
 /* *****************************************************************
 * TBW.
 * **************************************************************** */
-void RunTest(int icase, double gravity) {
+void
+RunTest(int icase, double gravity)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -48,7 +50,9 @@ void RunTest(int icase, double gravity) {
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Darcy flow in fractures, gravity=" << gravity << " case=" << icase << std::endl;
+  if (MyPID == 0)
+    std::cout << "\nTest: Darcy flow in fractures, gravity=" << gravity << " case=" << icase
+              << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_dfn.xml";
@@ -58,8 +62,8 @@ void RunTest(int icase, double gravity) {
   ParameterList region_list = plist->sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> surfmesh;
 
   if (icase == 0) {
@@ -76,12 +80,13 @@ void RunTest(int icase, double gravity) {
   } else if (icase == 2) {
     RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, true, true);
     std::string setname("fractures");
-    surfmesh = Teuchos::rcp(new MeshExtractedManifold(
-        mesh, setname, AmanziMesh::FACE, comm, gm, plist, true, false));
+    surfmesh = Teuchos::rcp(
+      new MeshExtractedManifold(mesh, setname, AmanziMesh::FACE, comm, gm, plist, true, false));
   }
 
   // modify diffusion coefficient
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_owned = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
@@ -94,27 +99,25 @@ void RunTest(int icase, double gravity) {
   Analytic02 ana(surfmesh, v, gravity, Kc);
 
   // create boundary data (no mixed bc)
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc =
+    Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = surfmesh->face_centroid(f);
-    if (fabs(xf[2] - 0.5) < 1e-6 && 
-        (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6)) { 
+    if (fabs(xf[2] - 0.5) < 1e-6 && (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+                                     fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6)) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
-    }
-    else if (fabs(xf[1] - 0.5) < 1e-6 && 
-        (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-         fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6)) { 
+    } else if (fabs(xf[1] - 0.5) < 1e-6 && (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+                                            fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6)) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
 
-  // create solution 
+  // create solution
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(surfmesh)->SetGhosted(true);
   cvs->SetComponent("cell", AmanziMesh::CELL, 1)->SetOwned(false);
@@ -143,9 +146,10 @@ void RunTest(int icase, double gravity) {
   // populate diffusion operator
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs(true, true, true);
-    
+
   // create preconditoner
-  global_op->set_inverse_parameters("Hypre AMG", plist->sublist("preconditioners"), "PCG", plist->sublist("solvers"));
+  global_op->set_inverse_parameters(
+    "Hypre AMG", plist->sublist("preconditioners"), "PCG", plist->sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
 
@@ -165,9 +169,8 @@ void RunTest(int icase, double gravity) {
   if (MyPID == 0) {
     std::cout << "pressure solver"
               << ": ||r||=" << global_op->residual() << " itr=" << global_op->num_itrs()
-              << "  ||f||=" << a 
-              << "  #dofs=" << ndofs
-              << " code=" << global_op->returned_code() << std::endl;
+              << "  ||f||=" << a << "  #dofs=" << ndofs << " code=" << global_op->returned_code()
+              << std::endl;
   }
 
   // calculate error in potential
@@ -192,13 +195,13 @@ void RunTest(int icase, double gravity) {
   ana.ComputeFaceError(flx_short, 0.0, unorm, ul2_err, uinf_err);
 
   if (MyPID == 0) {
-    l2_err /= pnorm; 
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f\n",
-        l2_err, inf_err, ul2_err, uinf_err);
+    l2_err /= pnorm;
+    printf(
+      "L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f\n", l2_err, inf_err, ul2_err, uinf_err);
   }
 
   // remove gravity to check symmetry
-  if (gravity > 0.0) { 
+  if (gravity > 0.0) {
     for (int c = 0; c < ncells_owned; c++) {
       const Point& xc = surfmesh->cell_centroid(c);
       p[0][c] -= rho * gvec[2] * xc[2];
@@ -206,7 +209,7 @@ void RunTest(int icase, double gravity) {
   }
 
   if (MyPID == 0) {
-    GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
+    GMV::open_data_file(*surfmesh, (std::string) "operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
     GMV::close_data_file();
@@ -214,16 +217,17 @@ void RunTest(int icase, double gravity) {
 }
 
 
-TEST(FRACTURES_EXTRACTION) {
+TEST(FRACTURES_EXTRACTION)
+{
   RunTest(0, 0.0);
 }
 
-TEST(FRACTURES_INPUT_EXODUS_FILE_GRAVITY) {
+TEST(FRACTURES_INPUT_EXODUS_FILE_GRAVITY)
+{
   RunTest(1, 2.0);
 }
 
-TEST(FRACTURES_MESH_EXTRACTION_MANIFOLD) {
+TEST(FRACTURES_MESH_EXTRACTION_MANIFOLD)
+{
   RunTest(2, 0.0);
 }
-
-

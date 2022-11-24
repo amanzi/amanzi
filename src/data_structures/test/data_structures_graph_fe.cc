@@ -30,7 +30,8 @@
 /* *****************************************************************
 * this test is a null test -- all entries are local
 ***************************************************************** */
-TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
+TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -48,7 +49,7 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
 
   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
-  // create a mesh 
+  // create a mesh
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
@@ -56,7 +57,7 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
@@ -70,25 +71,26 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
   int ierr(0);
   GraphFE graph_local(cell_map, cell_map_ghosted, cell_map_ghosted, 5);
   GraphFE graph_global(cell_map, cell_map_ghosted, cell_map_ghosted, 5);
-  
+
   Entity_ID_List faces;
   Entity_ID_List face_cells;
   std::vector<int> neighbor_cells;
-  for (int c=0; c!=ncells; ++c) {
+  for (int c = 0; c != ncells; ++c) {
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
-    
+
     mesh->cell_get_faces(c, &faces);
-    for (int n=0; n!=faces.size(); ++n) {
+    for (int n = 0; n != faces.size(); ++n) {
       mesh->face_get_cells(faces[n], AmanziMesh::Parallel_type::ALL, &face_cells);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
-      }	
+      }
     }
 
     int global_c = cell_map->GID(c);
     std::vector<int> global_neighbors(neighbor_cells.size());
-    for (int n=0; n!=neighbor_cells.size(); ++n) global_neighbors[n] = cell_map_ghosted->GID(neighbor_cells[n]);
+    for (int n = 0; n != neighbor_cells.size(); ++n)
+      global_neighbors[n] = cell_map_ghosted->GID(neighbor_cells[n]);
 
     ierr |= graph_local.InsertMyIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
     CHECK(!ierr);
@@ -106,7 +108,8 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
 /* *****************************************************************
 * this test is a null test -- all entries are local
 ***************************************************************** */
-TEST(FE_GRAPH_FACE_FACE) {
+TEST(FE_GRAPH_FACE_FACE)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -124,7 +127,7 @@ TEST(FE_GRAPH_FACE_FACE) {
 
   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
-  // create a mesh 
+  // create a mesh
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
@@ -132,7 +135,7 @@ TEST(FE_GRAPH_FACE_FACE) {
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
@@ -146,20 +149,21 @@ TEST(FE_GRAPH_FACE_FACE) {
   int ierr(0);
   GraphFE graph_local(face_map, face_map_ghosted, face_map_ghosted, 5);
   GraphFE graph_global(face_map, face_map_ghosted, face_map_ghosted, 5);
-  
+
   Entity_ID_List faces;
   Entity_ID_List face_cells;
-  for (int c=0; c!=ncells; ++c) {
+  for (int c = 0; c != ncells; ++c) {
     mesh->cell_get_faces(c, &faces);
 
     std::vector<int> global_faces(faces.size());
-    for (int n=0; n!=faces.size(); ++n) global_faces[n] = face_map_ghosted->GID(faces[n]);
-    
-    for (int n=0; n!=faces.size(); ++n) {
+    for (int n = 0; n != faces.size(); ++n) global_faces[n] = face_map_ghosted->GID(faces[n]);
+
+    for (int n = 0; n != faces.size(); ++n) {
       ierr |= graph_local.InsertMyIndices(faces[n], faces.size(), &faces[0]);
       CHECK(!ierr);
       AMANZI_ASSERT(global_faces[n] >= 0);
-      ierr |= graph_global.InsertGlobalIndices(global_faces[n], global_faces.size(), &global_faces[0]);
+      ierr |=
+        graph_global.InsertGlobalIndices(global_faces[n], global_faces.size(), &global_faces[0]);
       CHECK(!ierr);
     }
   }

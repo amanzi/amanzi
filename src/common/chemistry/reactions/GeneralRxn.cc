@@ -74,17 +74,19 @@ GeneralRxn::GeneralRxn(const Teuchos::ParameterList& plist,
   ncomp_backward_ = species_ids_b_.size();
 
   // fractional order in C
-  flag_oc_ = false; 
+  flag_oc_ = false;
   if (plist.isParameter("reaction orders (reactants/products)")) {
-    orders_oc_ = plist.get<Teuchos::Array<double>>("reaction orders (reactants/products)").toVector();
-    flag_oc_ = true; 
+    orders_oc_ =
+      plist.get<Teuchos::Array<double>>("reaction orders (reactants/products)").toVector();
+    flag_oc_ = true;
     AMANZI_ASSERT(orders_oc_.size() == ncomp_);
   }
 }
 
 
 // temporary location for member functions
-void GeneralRxn::UpdateRates(const std::vector<Species> primary_species)
+void
+GeneralRxn::UpdateRates(const std::vector<Species> primary_species)
 {
   // forward rate expression
   lnQkf_ = 0.0;
@@ -124,17 +126,13 @@ void GeneralRxn::UpdateRates(const std::vector<Species> primary_species)
 }
 
 
-void GeneralRxn::AddContributionToResidual(std::vector<double> *residual,
-                                           double por_den_sat_vol)
+void
+GeneralRxn::AddContributionToResidual(std::vector<double>* residual, double por_den_sat_vol)
 {
   // por_den_sat_vol = porosity*water_density*saturation*volume
   double effective_rate = 0.0;
-  if (kf_ > 0.0) {
-    effective_rate += kf_ * std::exp(lnOcf_ + lnOcb_);
-  }
-  if (kb_ > 0.0) {
-    effective_rate -= kf_ * std::exp(lnOcf_ + lnOcb_ + lnQkb_ - lnQkf_);
-  }
+  if (kf_ > 0.0) { effective_rate += kf_ * std::exp(lnOcf_ + lnOcb_); }
+  if (kb_ > 0.0) { effective_rate -= kf_ * std::exp(lnOcf_ + lnOcb_ + lnQkb_ - lnQkf_); }
   effective_rate *= por_den_sat_vol;
 
   for (int i = 0; i < ncomp_; i++) {
@@ -145,10 +143,10 @@ void GeneralRxn::AddContributionToResidual(std::vector<double> *residual,
 }
 
 
-void GeneralRxn::AddContributionToJacobian(
-    MatrixBlock* J,
-    const std::vector<Species> primary_species,
-    double por_den_sat_vol)
+void
+GeneralRxn::AddContributionToJacobian(MatrixBlock* J,
+                                      const std::vector<Species> primary_species,
+                                      double por_den_sat_vol)
 {
   // taking derivative of contribution to residual in row i with respect
   // to species in column j
@@ -158,8 +156,8 @@ void GeneralRxn::AddContributionToJacobian(
     // column loop
     for (int j = 0; j < ncomp_forward_; j++) {
       int jcomp = species_ids_f_[j];
-      double tempd = orders_oc_[j] *
-          std::exp(lnQkf_ - primary_species[jcomp].ln_molality()) * por_den_sat_vol;
+      double tempd =
+        orders_oc_[j] * std::exp(lnQkf_ - primary_species[jcomp].ln_molality()) * por_den_sat_vol;
       // row loop
       for (int i = 0; i < ncomp_; i++) {
         J->AddValue(species_ids_[i], jcomp, stoichiometry_[i] * tempd);
@@ -173,7 +171,7 @@ void GeneralRxn::AddContributionToJacobian(
     for (int j = 0; j < ncomp_backward_; j++) {
       int jcomp = species_ids_b_[j];
       double tempd = orders_oc_[ncomp_forward_ + j] *
-          std::exp(lnQkb_ - primary_species[jcomp].ln_molality()) * por_den_sat_vol;
+                     std::exp(lnQkb_ - primary_species[jcomp].ln_molality()) * por_den_sat_vol;
       // row loop
       for (int i = 0; i < ncomp_; i++) {
         J->AddValue(species_ids_[i], jcomp, stoichiometry_[i] * tempd);
@@ -183,7 +181,8 @@ void GeneralRxn::AddContributionToJacobian(
 }
 
 
-void GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const
+void
+GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const
 {
   // convention for this reaction is that reactants have negative
   // stoichiometries, products have positive stoichiometries....
@@ -195,52 +194,43 @@ void GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const
   // reactants:
   message << std::setw(6) << std::fixed << std::setprecision(2);
   for (unsigned int i = 0; i < species_names_.size(); i++) {
-    if (stoichiometry_.at(i) < 0) { 
+    if (stoichiometry_.at(i) < 0) {
       message << -stoichiometry_.at(i) << " " << species_names_.at(i);
-      if (i < species_ids_f_.size() - 1) {
-        message << " + ";
-      }
+      if (i < species_ids_f_.size() - 1) { message << " + "; }
     }
   }
-  
+
   message << " <---> ";
   // products
   for (int i = 0; i < species_names_.size(); i++) {
-    if (stoichiometry_.at(i) > 0) { 
+    if (stoichiometry_.at(i) > 0) {
       message << stoichiometry_.at(i) << " " << species_names_.at(i);
-      if (i < species_names_.size() - 1) {
-        message << " + ";
-      }
+      if (i < species_names_.size() - 1) { message << " + "; }
     }
   }
   message << std::endl;
   message << std::setprecision(6);
   // write the forward rate expression....
-  message << std::setw(12) << "    R_f = "
-          << std::scientific << this->kf_ << std::fixed;
+  message << std::setw(12) << "    R_f = " << std::scientific << this->kf_ << std::fixed;
   if (species_ids_f_.size() > 0 && this->kf_ > 0.0) {
     message << " * ";
-    
+
     for (int i = 0; i < species_ids_f_.size(); i++) {
       message << "a_(" << species_names_[i] << ")^(" << orders_oc_[i] << ")";
-      if (i < species_ids_f_.size() - 1) {
-        message << " * ";
-      }
+      if (i < species_ids_f_.size() - 1) { message << " * "; }
     }
   }
-  message << std::endl << std::setw(12) << "    R_b = "
-          << std::scientific << this->kb_ << std::fixed;
+  message << std::endl
+          << std::setw(12) << "    R_b = " << std::scientific << this->kb_ << std::fixed;
   if (species_ids_b_.size() > 0 && this->kb_ > 0.0) {
     message << " * ";
     for (int i = 0; i < species_ids_b_.size(); i++) {
       message << "a_(" << species_names_[i] << ")^(" << orders_oc_[ncomp_forward_ + i] << ")";
-      if (i < species_ids_b_.size() - 1) {
-        message << " * ";
-      }
+      if (i < species_ids_b_.size() - 1) { message << " * "; }
     }
   }
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

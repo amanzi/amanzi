@@ -27,11 +27,11 @@
 namespace Amanzi {
 namespace Operators {
 
-class Reconstruction {  
+class Reconstruction {
  public:
-  Reconstruction() {};
-  Reconstruction(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
-      mesh_(mesh), field_(Teuchos::null), component_(0), weight_(WeightType::WT_CONSTANT) {};
+  Reconstruction(){};
+  Reconstruction(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : mesh_(mesh), field_(Teuchos::null), component_(0), weight_(WeightType::WT_CONSTANT){};
   virtual ~Reconstruction() = default;
 
   // main members
@@ -39,7 +39,8 @@ class Reconstruction {
 
   virtual void Compute(const Teuchos::RCP<const Epetra_MultiVector>& field,
                        int component = 0,
-                       const Teuchos::RCP<const BCs>& bc = Teuchos::null) {
+                       const Teuchos::RCP<const BCs>& bc = Teuchos::null)
+  {
     field_ = field;
     component_ = component;
   }
@@ -58,7 +59,7 @@ class Reconstruction {
   WeightType weight_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif

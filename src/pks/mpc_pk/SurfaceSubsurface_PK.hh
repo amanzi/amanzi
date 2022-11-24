@@ -29,13 +29,13 @@ class SurfaceSubsurface_PK : public PK_MPCSubcycled {
                        const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& soln);
 
-  ~SurfaceSubsurface_PK() {};
+  ~SurfaceSubsurface_PK(){};
 
   // PK methods
   // -- dt is the minimum of the sub pks
   virtual double get_dt();
   virtual void set_dt(double dt);
-  
+
   // Setup and initialization
   virtual void Initialize();
 
@@ -44,8 +44,8 @@ class SurfaceSubsurface_PK : public PK_MPCSubcycled {
 
   virtual void CommitStep(double t_old, double t_new, const Tag& tag);
 
-  std::string name() { return "surface subsurface";}
-  
+  std::string name() { return "surface subsurface"; }
+
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_surface_;
@@ -55,5 +55,5 @@ class SurfaceSubsurface_PK : public PK_MPCSubcycled {
   static RegisteredPKFactory<SurfaceSubsurface_PK> reg_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 #endif

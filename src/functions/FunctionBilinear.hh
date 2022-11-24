@@ -56,23 +56,26 @@ namespace Amanzi {
 
 class FunctionBilinear : public Function {
  public:
-  FunctionBilinear(const std::vector<double> &x, const std::vector<double> &y,
-                   const Epetra_SerialDenseMatrix &v, const int xi, const int yi);
-  ~FunctionBilinear() {};
-  std::unique_ptr<Function> Clone() const {
-    return std::make_unique<FunctionBilinear>(*this);
-  }
+  FunctionBilinear(const std::vector<double>& x,
+                   const std::vector<double>& y,
+                   const Epetra_SerialDenseMatrix& v,
+                   const int xi,
+                   const int yi);
+  ~FunctionBilinear(){};
+  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionBilinear>(*this); }
   double operator()(const std::vector<double>& x) const;
 
  private:
   std::vector<double> x_, y_;
   Epetra_SerialDenseMatrix v_;
   int xi_, yi_;
-  
+
  private: // helper functions
-  void check_args(const std::vector<double>&, const std::vector<double>&, const Epetra_SerialDenseMatrix&) const;
+  void check_args(const std::vector<double>&,
+                  const std::vector<double>&,
+                  const Epetra_SerialDenseMatrix&) const;
 };
 
 } // namespace Amanzi
 
-#endif  // AMANZI_BILINEAR_FUNCTION_HH_
+#endif // AMANZI_BILINEAR_FUNCTION_HH_

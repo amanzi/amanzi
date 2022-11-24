@@ -32,8 +32,9 @@ namespace Transport {
 * Calculate dispersive tensor from given Darcy fluxes. The flux is
 * assumed to be scaled by face area.
 ******************************************************************* */
-void Transport_PK::CalculateDispersionTensor_(
-    const Epetra_MultiVector& porosity, const Epetra_MultiVector& water_content)
+void
+Transport_PK::CalculateDispersionTensor_(const Epetra_MultiVector& porosity,
+                                         const Epetra_MultiVector& water_content)
 {
   if (!flag_dispersion_) {
     D_.clear();
@@ -62,7 +63,7 @@ void Transport_PK::CalculateDispersionTensor_(
 
     for (int k = 0; k < dim; ++k) velocity[k] = poly(k + 1);
     D_[c] = mdm_->second[(*mdm_->first)[c]]->mech_dispersion(
-        velocity, axi_symmetry_[c], water_content[0][c], porosity[0][c]);
+      velocity, axi_symmetry_[c], water_content[0][c], porosity[0][c]);
   }
 }
 
@@ -70,11 +71,12 @@ void Transport_PK::CalculateDispersionTensor_(
 /* *******************************************************************
 * Calculate diffusion tensor and add it to the dispersion tensor.
 ******************************************************************* */
-void Transport_PK::CalculateDiffusionTensor_(
-    double md, int phase, 
-    const Epetra_MultiVector& porosity,
-    const Epetra_MultiVector& saturation,
-    const Epetra_MultiVector& water_content)
+void
+Transport_PK::CalculateDiffusionTensor_(double md,
+                                        int phase,
+                                        const Epetra_MultiVector& porosity,
+                                        const Epetra_MultiVector& saturation,
+                                        const Epetra_MultiVector& water_content)
 {
   if (D_.size() == 0) {
     D_.resize(ncells_owned);
@@ -82,7 +84,7 @@ void Transport_PK::CalculateDiffusionTensor_(
   }
 
   for (int mb = 0; mb < mat_properties_.size(); mb++) {
-    Teuchos::RCP<MaterialProperties> spec = mat_properties_[mb]; 
+    Teuchos::RCP<MaterialProperties> spec = mat_properties_[mb];
 
     std::vector<AmanziMesh::Entity_ID> block;
     for (int r = 0; r < (spec->regions).size(); r++) {
@@ -106,7 +108,8 @@ void Transport_PK::CalculateDiffusionTensor_(
 /* ******************************************************************
 * Check all phases for the given name.
 ****************************************************************** */
-int Transport_PK::FindDiffusionValue(const std::string& tcc_name, double* md, int* phase)
+int
+Transport_PK::FindDiffusionValue(const std::string& tcc_name, double* md, int* phase)
 {
   for (int i = 0; i < TRANSPORT_NUMBER_PHASES; i++) {
     if (diffusion_phase_[i] == Teuchos::null) continue;
@@ -126,7 +129,8 @@ int Transport_PK::FindDiffusionValue(const std::string& tcc_name, double* md, in
 /* ******************************************************************
 * Find direction of axi-symmetry for Lichtner-Kelkar-Robinson model
 ****************************************************************** */
-void Transport_PK::CalculateAxiSymmetryDirection()
+void
+Transport_PK::CalculateAxiSymmetryDirection()
 {
   axi_symmetry_.resize(ncells_owned, -1);
   if (S_->HasRecord(permeability_key_) && dim == 3) {
@@ -140,7 +144,7 @@ void Transport_PK::CalculateAxiSymmetryDirection()
         k = 1;
       } else if (perm[2][c] != perm[0][c] && perm[0][c] == perm[1][c]) {
         k = 2;
-      } 
+      }
       axi_symmetry_[c] = k;
     }
   }
@@ -150,15 +154,19 @@ void Transport_PK::CalculateAxiSymmetryDirection()
 /* ******************************************************************
 * Two-phase solver
 ****************************************************************** */
-Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
-    const Epetra_MultiVector& tcc_prev,
-    Epetra_MultiVector& tcc_next,
-    double t_old, double t_new, int comp0)
+Teuchos::RCP<Operators::Operator>
+Transport_PK::DispersionSolver(const Epetra_MultiVector& tcc_prev,
+                               Epetra_MultiVector& tcc_next,
+                               double t_old,
+                               double t_new,
+                               int comp0)
 {
   const auto& wc = S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT);
   const auto& wc_c = *wc.ViewComponent("cell");
-  const auto& wc_prev_c = *S_->Get<CompositeVector>(prev_wc_key_, Tags::DEFAULT).ViewComponent("cell");
-  const auto& sat_c = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& wc_prev_c =
+    *S_->Get<CompositeVector>(prev_wc_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& sat_c =
+    *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
   CalculateDispersionTensor_(*transport_phi, wc_c);
 
@@ -167,10 +175,12 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
   int num_components = tcc_prev.NumVectors();
   double dt_MPC = t_new - t_old;
 
-  auto bc_dummy = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc_dummy =
+    Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
   // create the Dispersion and Accumulation operators
-  Teuchos::ParameterList& op_list = tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
+  Teuchos::ParameterList& op_list =
+    tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
   Operators::PDE_DiffusionFactory opfactory;
   Teuchos::RCP<Operators::PDE_Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);
 
@@ -183,9 +193,11 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
   // This implementation re-create the Ops each timestep.  This could be
   // updated to re-use them, but would require mass matrices to be
   // recalculated. --etc
-  auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
-      dispersion_preconditioner, *preconditioner_list_,
-      dispersion_solver, *linear_solver_list_, true);
+  auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(dispersion_preconditioner,
+                                                                *preconditioner_list_,
+                                                                dispersion_solver,
+                                                                *linear_solver_list_,
+                                                                true);
   inv_list.setName(dispersion_preconditioner);
   op->set_inverse_parameters(inv_list);
   op->InitializeInverse();
@@ -197,8 +209,8 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
   double md_change, md_old(0.0), md_new, residual(0.0);
 
   // Disperse and diffuse aqueous components
-  // -- if we reach this point, we instantiate diffusion operator 
-  //    regadless of flags, since MPC may need a properly formed operator 
+  // -- if we reach this point, we instantiate diffusion operator
+  //    regadless of flags, since MPC may need a properly formed operator
   //    (e.g. with face DOFs)
   for (int i = i0; i < num_aqueous; i++) {
     FindDiffusionValue(component_names_[i], &md_new, &phase);
@@ -211,15 +223,11 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
 
     // set the initial guess
     Epetra_MultiVector& sol_cell = *sol.ViewComponent("cell");
-    for (int c = 0; c < ncells_owned; c++) {
-      sol_cell[0][c] = tcc_next[i][c];
-    }
-    if (sol.HasComponent("face")) {
-      sol.ViewComponent("face")->PutScalar(0.0);
-    }
+    for (int c = 0; c < ncells_owned; c++) { sol_cell[0][c] = tcc_next[i][c]; }
+    if (sol.HasComponent("face")) { sol.ViewComponent("face")->PutScalar(0.0); }
 
     op->Init();
-    Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D_);
+    Teuchos::RCP<std::vector<WhetStone::Tensor>> Dptr = Teuchos::rcpFromRef(D_);
     op1->Setup(Dptr, Teuchos::null, Teuchos::null);
     op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -246,13 +254,11 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     residual += op->residual();
     num_itrs += op->num_itrs();
 
-    for (int c = 0; c < ncells_owned; c++) {
-      tcc_next[i][c] = sol_cell[0][c];
-    }
+    for (int c = 0; c < ncells_owned; c++) { tcc_next[i][c] = sol_cell[0][c]; }
   }
 
-  // Diffuse gaseous components. We ignore dispersion 
-  // tensor (D is reset). Inactive cells (sat_l[c] = 1 and D_[c] = 0) 
+  // Diffuse gaseous components. We ignore dispersion
+  // tensor (D is reset). Inactive cells (sat_l[c] = 1 and D_[c] = 0)
   // are treated with a hack of the accumulation term.
   D_.clear();
   md_old = 0.0;
@@ -267,15 +273,11 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
 
     // set initial guess
     Epetra_MultiVector& sol_cell = *sol.ViewComponent("cell");
-    for (int c = 0; c < ncells_owned; c++) {
-      sol_cell[0][c] = tcc_next[i][c];
-    }
-    if (sol.HasComponent("face")) {
-      sol.ViewComponent("face")->PutScalar(0.0);
-    }
+    for (int c = 0; c < ncells_owned; c++) { sol_cell[0][c] = tcc_next[i][c]; }
+    if (sol.HasComponent("face")) { sol.ViewComponent("face")->PutScalar(0.0); }
 
     op->Init();
-    Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D_);
+    Teuchos::RCP<std::vector<WhetStone::Tensor>> Dptr = Teuchos::rcpFromRef(D_);
     op1->Setup(Dptr, Teuchos::null, Teuchos::null);
     op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -296,7 +298,7 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     for (int c = 0; c < ncells_owned; c++) {
       fac1[0][c] = (*phi)[0][c] * (1.0 - wc_c[0][c]);
       fac0[0][c] = (*phi)[0][c] * (1.0 - wc_prev_c[0][c]);
-      if (sat_c[0][c] == 1.0) fac1[0][c] = 1.0;  // FIXME
+      if (sat_c[0][c] == 1.0) fac1[0][c] = 1.0; // FIXME
     }
     op2->AddAccumulationDelta(sol, factor0, factor, dt_MPC, "cell");
     if (comp0 >= 0) return op;
@@ -314,23 +316,18 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     residual += op->residual();
     num_itrs += op->num_itrs();
 
-    for (int c = 0; c < ncells_owned; c++) {
-      tcc_next[i][c] = sol_cell[0][c];
-    }
+    for (int c = 0; c < ncells_owned; c++) { tcc_next[i][c] = sol_cell[0][c]; }
   }
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "dispersion solver (" << dispersion_solver
-               << ") ||r||=" << residual / num_components
-               << " itrs=" << num_itrs << "/" << num_itrs / num_components << std::endl;
+               << ") ||r||=" << residual / num_components << " itrs=" << num_itrs << "/"
+               << num_itrs / num_components << std::endl;
   }
 
   return Teuchos::null;
 }
 
-}  // namespace Transport
-}  // namespace Amanzi
-
-
-
+} // namespace Transport
+} // namespace Amanzi

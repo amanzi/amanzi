@@ -36,7 +36,8 @@
 
 
 /* **************************************************************** */
-void run_test(const std::string& domain, const std::string& filename)
+void
+run_test(const std::string& domain, const std::string& filename)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -58,7 +59,7 @@ void run_test(const std::string& domain, const std::string& filename)
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(d, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh;
   if (d == 2) {
     // mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 10);
@@ -139,7 +140,7 @@ void run_test(const std::string& domain, const std::string& filename)
   sl.MinValue(&dmin);
   sl.MaxValue(&dmax);
   CHECK(dmin >= 0.0 && dmax <= 1.0 && dmin < 0.999);
-  
+
   S->Get<CompositeVector>("ncp_fg").NormInf(&dmax);
   CHECK(dmax <= 1.0e-9);
 
@@ -149,7 +150,8 @@ void run_test(const std::string& domain, const std::string& filename)
 }
 
 
-TEST(MULTIPHASE_2P2C) {
+TEST(MULTIPHASE_2P2C)
+{
   run_test("2D", "test/multiphase_jaffre.xml");
   run_test("fractures", "test/multiphase_jaffre_fractures.xml");
 }

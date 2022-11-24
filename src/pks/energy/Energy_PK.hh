@@ -44,7 +44,7 @@ class Energy_PK : public PK_PhysicalBDF {
             const Teuchos::RCP<Teuchos::ParameterList>& glist,
             const Teuchos::RCP<State>& S,
             const Teuchos::RCP<TreeVector>& soln);
-  virtual ~Energy_PK() {};
+  virtual ~Energy_PK(){};
 
   // methods required by PK interface
   virtual void Setup() override;
@@ -53,16 +53,15 @@ class Energy_PK : public PK_PhysicalBDF {
 
   // methods required for time integration
   // -- management of the preconditioner
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
-                                  Teuchos::RCP<TreeVector> hu) override {
+  virtual int
+  ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> hu) override
+  {
     return op_preconditioner_->ApplyInverse(*u->Data(), *hu->Data());
   }
 
   // -- check the admissibility of a solution
   //    override with the actual admissibility check
-  bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override {
-    return true;
-  }
+  bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override { return true; }
 
   // -- possibly modifies the predictor that is going to be used as a
   //    starting value for the nonlinear solve in the time integrator,
@@ -70,8 +69,9 @@ class Energy_PK : public PK_PhysicalBDF {
   //    using extrapolation and the time step that is used to compute
   //    this predictor this function returns true if the predictor was
   //    modified, false if not
-  bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0,
-                       Teuchos::RCP<TreeVector> u) override {
+  bool
+  ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) override
+  {
     return false;
   }
 
@@ -80,15 +80,14 @@ class Energy_PK : public PK_PhysicalBDF {
   //    so that the nonlinear iteration can store the modified correction
   //    and pass it to NKA so that the NKA space can be updated
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-      ModifyCorrection(double dt, Teuchos::RCP<const TreeVector> res,
-                       Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<TreeVector> du) override;
+  ModifyCorrection(double dt,
+                   Teuchos::RCP<const TreeVector> res,
+                   Teuchos::RCP<const TreeVector> u,
+                   Teuchos::RCP<TreeVector> du) override;
 
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
-  void ChangedSolution() override {
-    temperature_eval_->SetChanged();
-  }
+  void ChangedSolution() override { temperature_eval_->SetChanged(); }
 
   // other methods
   bool UpdateConductivityData(const Teuchos::Ptr<State>& S);
@@ -96,15 +95,18 @@ class Energy_PK : public PK_PhysicalBDF {
   void ComputeBCs(const CompositeVector& u);
   void AddSourceTerms(CompositeVector& rhs);
 
-  // access 
+  // access
   virtual Teuchos::RCP<Operators::Operator>
-      my_operator(const Operators::OperatorType& type) override; 
+  my_operator(const Operators::OperatorType& type) override;
 
   virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
-      my_pde(const Operators::PDEType& type) override { return op_matrix_diff_; } 
+  my_pde(const Operators::PDEType& type) override
+  {
+    return op_matrix_diff_;
+  }
 
   // -- for unit tests
-  std::vector<WhetStone::Tensor>& get_K() { return K; } 
+  std::vector<WhetStone::Tensor>& get_K() { return K; }
 
  private:
   void InitializeFields_();
@@ -123,9 +125,9 @@ class Energy_PK : public PK_PhysicalBDF {
 
   // primary field
   std::string passwd_;
-  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > temperature_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> temperature_eval_;
 
-  // names of state fields 
+  // names of state fields
   Key temperature_key_;
   Key energy_key_, prev_energy_key_;
   Key enthalpy_key_, aperture_key_;
@@ -136,15 +138,15 @@ class Energy_PK : public PK_PhysicalBDF {
   Key conductivity_gen_key_, conductivity_key_, conductivity_eff_key_;
 
   // conductivity tensor
-  std::vector<WhetStone::Tensor> K; 
+  std::vector<WhetStone::Tensor> K;
 
   // boundary conditons
-  std::vector<Teuchos::RCP<PK_DomainFunction> > bc_temperature_; 
-  std::vector<Teuchos::RCP<PK_DomainFunction> > bc_flux_; 
+  std::vector<Teuchos::RCP<PK_DomainFunction>> bc_temperature_;
+  std::vector<Teuchos::RCP<PK_DomainFunction>> bc_flux_;
   int dirichlet_bc_faces_;
 
   // source terms
-  std::vector<Teuchos::RCP<PK_DomainFunction> > srcs_;
+  std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;
 
   // operators and solvers
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_, op_preconditioner_diff_;
@@ -155,15 +157,15 @@ class Energy_PK : public PK_PhysicalBDF {
 
   bool prec_include_enthalpy_;
 
-  // upwinding 
+  // upwinding
   Teuchos::RCP<CompositeVector> upw_conductivity_;
-  Teuchos::RCP<Operators::Upwind> upwind_;  // int implies fake model
+  Teuchos::RCP<Operators::Upwind> upwind_; // int implies fake model
 
   // fracture network
   bool flow_on_manifold_;
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

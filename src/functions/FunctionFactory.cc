@@ -35,7 +35,7 @@ FunctionFactory::Create(Teuchos::ParameterList& list) const
   for (auto it = list.begin(); it != list.end(); ++it) {
     std::string function_type = list.name(it);
     if (list.isSublist(function_type)) { // process the function sublist
-      if (f.get()) { // error: already processed a function sublist
+      if (f.get()) {                     // error: already processed a function sublist
         Errors::Message m;
         m << "FunctionFactory: extraneous function sublist: " << function_type.c_str();
         Exceptions::amanzi_throw(m);
@@ -75,7 +75,7 @@ FunctionFactory::Create(Teuchos::ParameterList& list) const
         f = create_squaredistance(function_params);
       else if (function_type == "function-exprtk")
         f = create_exprtk(function_params);
-      else {  // I don't recognize this function type
+      else { // I don't recognize this function type
         Errors::Message m;
         m << "FunctionFactory: unknown function type: " << function_type.c_str();
         Exceptions::amanzi_throw(m);
@@ -123,10 +123,14 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
     int xi = 0;
     std::string x = params.get<std::string>("x header");
     std::string xc = params.get<std::string>("x coordinate", "t");
-    if (xc.compare(0,1,"t") == 0) xi = 0;
-    else if (xc.compare(0,1,"x") == 0) xi = 1;
-    else if (xc.compare(0,1,"y") == 0) xi = 2;
-    else if (xc.compare(0,1,"z") == 0) xi = 3;
+    if (xc.compare(0, 1, "t") == 0)
+      xi = 0;
+    else if (xc.compare(0, 1, "x") == 0)
+      xi = 1;
+    else if (xc.compare(0, 1, "y") == 0)
+      xi = 2;
+    else if (xc.compare(0, 1, "z") == 0)
+      xi = 3;
     std::string y = params.get<std::string>("y header");
 
     std::vector<double> vec_x;
@@ -136,7 +140,7 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
     if (params.isParameter("forms")) {
       std::vector<FunctionTabular::Form> form;
       if (params.isType<Teuchos::Array<std::string>>("forms")) {
-        Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string> >("forms"));
+        Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string>>("forms"));
         form.resize(form_strings.size());
         for (int i = 0; i < form_strings.size(); ++i) {
           if (form_strings[i] == "linear")
@@ -153,9 +157,9 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
         std::string form_string = params.get<std::string>("forms");
 
         if (form_string == "linear") {
-          form.resize(vec_x.size()-1, FunctionTabular::LINEAR);
+          form.resize(vec_x.size() - 1, FunctionTabular::LINEAR);
         } else if (form_string == "constant") {
-          form.resize(vec_x.size()-1, FunctionTabular::CONSTANT);
+          form.resize(vec_x.size() - 1, FunctionTabular::CONSTANT);
         } else {
           Errors::Message m;
           m << "unknown form \"" << form_string << "\"";
@@ -183,18 +187,21 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
     // }
   } else {
     try {
-      std::vector<double> x(params.get<Teuchos::Array<double> >("x values").toVector());
+      std::vector<double> x(params.get<Teuchos::Array<double>>("x values").toVector());
       std::string xc = params.get<std::string>("x coordinate", "t");
       int xi = 0;
-      if (xc.compare(0,1,"t") == 0) xi = 0;
-      else if (xc.compare(0,1,"x") == 0) xi = 1;
-      else if (xc.compare(0,1,"y") == 0) xi = 2;
-      else if (xc.compare(0,1,"z") == 0) xi = 3;
+      if (xc.compare(0, 1, "t") == 0)
+        xi = 0;
+      else if (xc.compare(0, 1, "x") == 0)
+        xi = 1;
+      else if (xc.compare(0, 1, "y") == 0)
+        xi = 2;
+      else if (xc.compare(0, 1, "z") == 0)
+        xi = 3;
 
-      std::vector<double> y(params.get<Teuchos::Array<double> >("y values").toVector());
+      std::vector<double> y(params.get<Teuchos::Array<double>>("y values").toVector());
       if (params.isParameter("forms")) {
-
-        Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string> >("forms"));
+        Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string>>("forms"));
         int nforms = form_strings.size();
         std::vector<FunctionTabular::Form> form(nforms);
 
@@ -232,13 +239,11 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
       } else {
         f = std::make_unique<FunctionTabular>(x, y, xi);
       }
-    }
-    catch (Teuchos::Exceptions::InvalidParameter& msg) {
+    } catch (Teuchos::Exceptions::InvalidParameter& msg) {
       Errors::Message m;
       m << "FunctionFactory: function-tabular parameter error: " << msg.what();
       Exceptions::amanzi_throw(m);
-    }
-    catch (Errors::Message& msg) {
+    } catch (Errors::Message& msg) {
       Errors::Message m;
       m << "FunctionFactory: function-tabular parameter error: " << msg.what();
       Exceptions::amanzi_throw(m);
@@ -274,16 +279,15 @@ FunctionFactory::create_polynomial(Teuchos::ParameterList& params) const
 {
   std::unique_ptr<Function> f;
   try {
-    std::vector<double> c(params.get<Teuchos::Array<double> >("coefficients").toVector());
-    std::vector<int> p(params.get<Teuchos::Array<int> >("exponents").toVector());
+    std::vector<double> c(params.get<Teuchos::Array<double>>("coefficients").toVector());
+    std::vector<int> p(params.get<Teuchos::Array<int>>("exponents").toVector());
     double x0 = params.get<double>("reference point", 0.0);
     f = std::make_unique<FunctionPolynomial>(c, p, x0);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-polynomial parameter error: " << msg.what();
     Exceptions::amanzi_throw(m);
-  }
-  catch (Errors::Message& msg) {
+  } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-polynomial parameter error: " << msg.what();
     Exceptions::amanzi_throw(m);
@@ -297,15 +301,14 @@ FunctionFactory::create_monomial(Teuchos::ParameterList& params) const
   std::unique_ptr<Function> f;
   try {
     double c = params.get<double>("c");
-    std::vector<double> x0(params.get<Teuchos::Array<double> >("x0").toVector());
-    std::vector<int> p(params.get<Teuchos::Array<int> >("exponents").toVector());
+    std::vector<double> x0(params.get<Teuchos::Array<double>>("x0").toVector());
+    std::vector<int> p(params.get<Teuchos::Array<int>>("exponents").toVector());
     f = std::make_unique<FunctionMonomial>(c, x0, p);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-monomial parameter error: " << msg.what();
     Exceptions::amanzi_throw(m);
-  }
-  catch (Errors::Message& msg) {
+  } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-monomial parameter error: " << msg.what();
     Exceptions::amanzi_throw(m);
@@ -319,16 +322,15 @@ FunctionFactory::create_linear(Teuchos::ParameterList& params) const
   std::unique_ptr<Function> f;
   try {
     double y0 = params.get<double>("y0");
-    std::vector<double> grad(params.get<Teuchos::Array<double> >("gradient").toVector());
-    Teuchos::Array<double> zero(grad.size(),0.0);
-    std::vector<double> x0(params.get<Teuchos::Array<double> >("x0", zero).toVector());
+    std::vector<double> grad(params.get<Teuchos::Array<double>>("gradient").toVector());
+    Teuchos::Array<double> zero(grad.size(), 0.0);
+    std::vector<double> x0(params.get<Teuchos::Array<double>>("x0", zero).toVector());
     f = std::make_unique<FunctionLinear>(y0, grad, x0);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-linear parameter error: " << msg.what();
     Exceptions::amanzi_throw(m);
-  }
-  catch (Errors::Message& msg) {
+  } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-linear parameter error: " << msg.what();
     Exceptions::amanzi_throw(m);
@@ -528,13 +530,17 @@ FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
       std::string filename = params.get<std::string>("file");
       HDF5Reader reader(filename);
 
-      int xi, yi(0);  // input indices
+      int xi, yi(0); // input indices
       std::string x = params.get<std::string>("row header");
       std::string xdim = params.get<std::string>("row coordinate");
-      if (xdim.compare(0, 1, "t") == 0) xi = 0;
-      else if (xdim.compare(0, 1, "x") == 0) xi = 1;
-      else if (xdim.compare(0, 1, "y") == 0) xi = 2;
-      else if (xdim.compare(0, 1, "z") == 0) xi = 3;
+      if (xdim.compare(0, 1, "t") == 0)
+        xi = 0;
+      else if (xdim.compare(0, 1, "x") == 0)
+        xi = 1;
+      else if (xdim.compare(0, 1, "y") == 0)
+        xi = 2;
+      else if (xdim.compare(0, 1, "z") == 0)
+        xi = 3;
       else {
         Errors::Message m;
         m << "FunctionFactory: function-bilinear parameter error: invalid \"row coordinate\" \""
@@ -545,10 +551,14 @@ FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
 
       std::string y = params.get<std::string>("column header");
       std::string ydim = params.get<std::string>("column coordinate");
-      if (ydim.compare(0, 1, "t") == 0) yi = 0;
-      else if (ydim.compare(0, 1, "x") == 0) yi = 1;
-      else if (ydim.compare(0, 1, "y") == 0) yi = 2;
-      else if (ydim.compare(0, 1, "z") == 0) yi = 3;
+      if (ydim.compare(0, 1, "t") == 0)
+        yi = 0;
+      else if (ydim.compare(0, 1, "x") == 0)
+        yi = 1;
+      else if (ydim.compare(0, 1, "y") == 0)
+        yi = 2;
+      else if (ydim.compare(0, 1, "z") == 0)
+        yi = 3;
       else {
         Errors::Message m;
         m << "FunctionFactory: function-bilinear parameter error: invalid \"column coordinate\" \""
@@ -587,15 +597,14 @@ FunctionFactory::create_distance(Teuchos::ParameterList& params) const
 {
   std::unique_ptr<Function> f;
   try {
-    std::vector<double> x0(params.get<Teuchos::Array<double> >("x0").toVector());
-    std::vector<double> metric(params.get<Teuchos::Array<double> >("metric").toVector());
+    std::vector<double> x0(params.get<Teuchos::Array<double>>("x0").toVector());
+    std::vector<double> metric(params.get<Teuchos::Array<double>>("metric").toVector());
     f = std::make_unique<FunctionDistance>(x0, metric);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-distance parameter error: " << msg.what();
     Exceptions::amanzi_throw(m);
-  }
-  catch (Errors::Message& msg) {
+  } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-distance parameter error: " << msg.what();
     Exceptions::amanzi_throw(m);
@@ -608,15 +617,14 @@ FunctionFactory::create_squaredistance(Teuchos::ParameterList& params) const
 {
   std::unique_ptr<Function> f;
   try {
-    std::vector<double> x0(params.get<Teuchos::Array<double> >("x0").toVector());
-    std::vector<double> metric(params.get<Teuchos::Array<double> >("metric").toVector());
+    std::vector<double> x0(params.get<Teuchos::Array<double>>("x0").toVector());
+    std::vector<double> metric(params.get<Teuchos::Array<double>>("metric").toVector());
     f = std::make_unique<FunctionSquareDistance>(x0, metric);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-squaredistance parameter error: " << msg.what();
     Exceptions::amanzi_throw(m);
-  }
-  catch (Errors::Message& msg) {
+  } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-squaredistance parameter error: " << msg.what();
     Exceptions::amanzi_throw(m);
@@ -643,8 +651,8 @@ FunctionFactory::create_bilinear_and_time(Teuchos::ParameterList& params) const
   }
   std::string time_header = params.get<std::string>("time header");
   std::string value_header = params.get<std::string>("value header");
-  return std::make_unique<FunctionBilinearAndTime>(filename, time_header, row_header, row_coordinate,
-          col_header, col_coordinate, value_header);
+  return std::make_unique<FunctionBilinearAndTime>(
+    filename, time_header, row_header, row_coordinate, col_header, col_coordinate, value_header);
 }
 
 
@@ -664,4 +672,4 @@ FunctionFactory::create_exprtk(Teuchos::ParameterList& params) const
   return f;
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

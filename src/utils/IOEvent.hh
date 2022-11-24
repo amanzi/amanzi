@@ -89,7 +89,7 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
   IOEvent(Teuchos::ParameterList& plist);
   IOEvent(); // created with this constructor this object will not create any output
 
-  void disable(bool disabled=true);
+  void disable(bool disabled = true);
   bool is_disabled() const;
 
   // public interface for coordinator clients
@@ -108,9 +108,9 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
 
   // Time step control -- when to do this i/o?
   Teuchos::Array<int> cycles_;
-  Teuchos::Array<Teuchos::Array<int> > cycles_sps_;
+  Teuchos::Array<Teuchos::Array<int>> cycles_sps_;
   Teuchos::Array<double> times_;
-  Teuchos::Array<Teuchos::Array<double> > times_sps_;
+  Teuchos::Array<Teuchos::Array<double>> times_sps_;
 
   // disable visualization dumps alltogether
   bool disabled_;

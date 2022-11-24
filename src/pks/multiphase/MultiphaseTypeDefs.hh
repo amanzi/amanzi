@@ -19,11 +19,10 @@
 namespace Amanzi {
 namespace Multiphase {
 
-typedef std::vector<Teuchos::RCP<WRMmp> > WRMmpList;
+typedef std::vector<Teuchos::RCP<WRMmp>> WRMmpList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, WRMmpList> WRMmpPartition;
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi
 
 #endif
-

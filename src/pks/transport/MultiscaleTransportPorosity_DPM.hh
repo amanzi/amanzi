@@ -31,15 +31,22 @@ namespace Transport {
 class MultiscaleTransportPorosity_DPM : public MultiscaleTransportPorosity {
  public:
   MultiscaleTransportPorosity_DPM(const Teuchos::ParameterList& plist);
-  ~MultiscaleTransportPorosity_DPM() {};
+  ~MultiscaleTransportPorosity_DPM(){};
 
   // Compute solute flux: icomp - component id, phi - matrix porosity,
   // tcc_m_aux - vector of concentration values in secondary nodes,
   // wfm[0|1] - fracture water content at initial and final time moments,
   // wcm[0|1] - water content at initial and final time moments
-  virtual double ComputeSoluteFlux(
-      double flux_liquid, double& tcc_f, WhetStone::DenseVector& tcc_m, int icomp,
-      double dt, double wcf0, double wcf1, double wcm0, double wcm1, double phi) override;
+  virtual double ComputeSoluteFlux(double flux_liquid,
+                                   double& tcc_f,
+                                   WhetStone::DenseVector& tcc_m,
+                                   int icomp,
+                                   double dt,
+                                   double wcf0,
+                                   double wcf1,
+                                   double wcm0,
+                                   double wcm1,
+                                   double phi) override;
 
   // Number of matrix nodes
   virtual int NumberMatrixNodes() override { return 1; }
@@ -48,11 +55,11 @@ class MultiscaleTransportPorosity_DPM : public MultiscaleTransportPorosity {
   std::vector<double> mol_diff_;
   double warren_root_, tau_, depth_;
 
-  static Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_DPM> factory_;
+  static Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_DPM>
+    factory_;
 };
 
-}  // namespace Transport
-}  // namespace Amanzi
-  
+} // namespace Transport
+} // namespace Amanzi
+
 #endif
-  

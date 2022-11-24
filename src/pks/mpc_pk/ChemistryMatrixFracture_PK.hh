@@ -34,7 +34,7 @@ class ChemistryMatrixFracture_PK : public PK_MPCWeak {
   virtual void Setup() override;
 
   // -- miscaleneous methods
-  virtual std::string name() override { return "coupled chemistry"; } 
+  virtual std::string name() override { return "coupled chemistry"; }
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
@@ -43,5 +43,5 @@ class ChemistryMatrixFracture_PK : public PK_MPCWeak {
   static RegisteredPKFactory<ChemistryMatrixFracture_PK> reg_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 #endif

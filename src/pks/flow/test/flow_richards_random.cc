@@ -38,10 +38,13 @@ using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Flow;
 
-void RunTestConvergence(std::string input_xml) {
+void
+RunTestConvergence(std::string input_xml)
+{
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout <<"\nConvergence analysis on random meshes: " << input_xml << std::endl;
+  if (MyPID == 0)
+    std::cout << "\nConvergence analysis on random meshes: " << input_xml << std::endl;
 
   std::string xmlFileName = input_xml;
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
@@ -50,17 +53,17 @@ void RunTestConvergence(std::string input_xml) {
   int nmeshes = plist->get<int>("number of meshes", 1);
   std::vector<double> h, p_error, v_error;
 
-  for (int n = 0; n < nmeshes; n++) {  // Use "n < 3" for the full test
+  for (int n = 0; n < nmeshes; n++) { // Use "n < 3" for the full test
     Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
-    
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
+
     Preference pref;
     pref.clear();
     pref.push_back(Framework::MSTK);
     pref.push_back(Framework::STK);
 
-    MeshFactory meshfactory(comm,gm);
+    MeshFactory meshfactory(comm, gm);
     meshfactory.set_preference(pref);
     Teuchos::RCP<const Mesh> mesh;
     if (n == 0) {
@@ -105,41 +108,45 @@ void RunTestConvergence(std::string input_xml) {
     const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
     const auto& flux = *S->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face", true);
 
-    double pressure_err, flux_err, div_err;  // error checks
+    double pressure_err, flux_err, div_err; // error checks
     pressure_err = CalculatePressureCellError(mesh, p);
     flux_err = CalculateDarcyFluxError(mesh, flux);
     div_err = CalculateDarcyDivergenceError(mesh, flux);
 
     int num_bdf1_steps = ti_specs.num_itrs;
     printf("mesh=%d bdf1_steps=%d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n",
-        n, num_bdf1_steps, pressure_err, flux_err, div_err);
+           n,
+           num_bdf1_steps,
+           pressure_err,
+           flux_err,
+           div_err);
 
     CHECK(pressure_err < 2.2e-1 && flux_err < 2e-1 && div_err < 2e-1);
 
-    GMV::open_data_file(*mesh, (std::string)"flow_richards.gmv");
+    GMV::open_data_file(*mesh, (std::string) "flow_richards.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "pressure");
     GMV::close_data_file();
 
     delete RPK;
   }
-
-  
 }
 
 
 /* *****************************************************************
 * Run with various discretization methods
 * **************************************************************** */
-TEST(FLOW_RICHARDS_CONVERGENCE_NLFV) {
+TEST(FLOW_RICHARDS_CONVERGENCE_NLFV)
+{
   RunTestConvergence("test/flow_richards_random_nlfv.xml");
 }
 
-TEST(FLOW_RICHARDS_CONVERGENCE_FV) {
+TEST(FLOW_RICHARDS_CONVERGENCE_FV)
+{
   RunTestConvergence("test/flow_richards_random_fv.xml");
 }
 
-TEST(FLOW_RICHARDS_CONVERGENCE_MFD) {
+TEST(FLOW_RICHARDS_CONVERGENCE_MFD)
+{
   RunTestConvergence("test/flow_richards_random.xml");
 }
-

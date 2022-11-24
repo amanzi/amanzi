@@ -17,9 +17,9 @@
 #include "Teuchos_ParameterList.hpp"
 
 #if defined(HAVE_MUELU_EPETRA)
-#include "MueLu.hpp"
-#include "MueLu_EpetraOperator.hpp"
-#include "MueLu_CreateEpetraPreconditioner.hpp"
+#  include "MueLu.hpp"
+#  include "MueLu_EpetraOperator.hpp"
+#  include "MueLu_CreateEpetraPreconditioner.hpp"
 #endif
 
 #include "exceptions.hh"
@@ -30,12 +30,13 @@ namespace AmanziSolvers {
 
 class PreconditionerMueLu : public Preconditioner {
  public:
-  PreconditionerMueLu() : Preconditioner() {};
+  PreconditionerMueLu() : Preconditioner(){};
 
   virtual void set_matrices(const Teuchos::RCP<Epetra_CrsMatrix>& m,
-			    const Teuchos::RCP<Epetra_CrsMatrix>& h) override final;
+                            const Teuchos::RCP<Epetra_CrsMatrix>& h) override final;
 
-  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final {
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final
+  {
     plist_ = plist;
     // std::string vo_name = this->name()+" ("+plist_.get<std::string>("method")+")";
   }
@@ -46,7 +47,8 @@ class PreconditionerMueLu : public Preconditioner {
 
   virtual int returned_code() const override final { return returned_code_; }
 
-  virtual std::string returned_code_string() const override final {
+  virtual std::string returned_code_string() const override final
+  {
     if (returned_code_ == 0) return "success";
     return "PreconditionerMueLu: unknown error";
   }
@@ -60,7 +62,7 @@ class PreconditionerMueLu : public Preconditioner {
   mutable int returned_code_;
 };
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif

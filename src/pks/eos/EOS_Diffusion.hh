@@ -19,9 +19,8 @@ namespace AmanziEOS {
 
 class EOS_Diffusion {
  public:
-  EOS_Diffusion(Teuchos::ParameterList& plist)
-    : plist_(plist), ierr_(0) {};
-  virtual ~EOS_Diffusion() {};
+  EOS_Diffusion(Teuchos::ParameterList& plist) : plist_(plist), ierr_(0){};
+  virtual ~EOS_Diffusion(){};
 
   virtual double Diffusion(double T, double p) = 0;
   virtual double DDiffusionDT(double T, double p) = 0;
@@ -38,7 +37,7 @@ class EOS_Diffusion {
   std::string error_msg_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

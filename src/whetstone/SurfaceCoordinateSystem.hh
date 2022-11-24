@@ -25,17 +25,17 @@ namespace WhetStone {
 // -- comparison operators
 class SurfaceCoordinateSystem {
  public:
-  SurfaceCoordinateSystem(const AmanziGeometry::Point& origin,
-                          const AmanziGeometry::Point& normal)
-    : origin_(origin),
-      normal_(normal),
-      normal_unit_(normal) { Init(); }
-  ~SurfaceCoordinateSystem() {};
+  SurfaceCoordinateSystem(const AmanziGeometry::Point& origin, const AmanziGeometry::Point& normal)
+    : origin_(origin), normal_(normal), normal_unit_(normal)
+  {
+    Init();
+  }
+  ~SurfaceCoordinateSystem(){};
 
   // calculate orthogonal vectors of the surface coordinate system
   void Init();
 
-  // project vector on the surface. 
+  // project vector on the surface.
   // -- flag = true, calculate coordinates of new points relative to origin
   // -- flag = false, project vectors
   AmanziGeometry::Point Project(const AmanziGeometry::Point& x, bool flag) const;
@@ -44,14 +44,14 @@ class SurfaceCoordinateSystem {
   const AmanziGeometry::Point& get_origin() const { return origin_; }
   const AmanziGeometry::Point& normal() const { return normal_; }
   const AmanziGeometry::Point& normal_unit() const { return normal_unit_; }
-  const std::shared_ptr<std::vector<AmanziGeometry::Point> > tau() const { return tau_; }
+  const std::shared_ptr<std::vector<AmanziGeometry::Point>> tau() const { return tau_; }
 
  private:
   AmanziGeometry::Point origin_, normal_, normal_unit_;
-  std::shared_ptr<std::vector<AmanziGeometry::Point> > tau_;
+  std::shared_ptr<std::vector<AmanziGeometry::Point>> tau_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif

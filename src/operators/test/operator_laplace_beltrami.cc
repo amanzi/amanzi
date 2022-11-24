@@ -33,7 +33,8 @@
 #include "Verification.hh"
 
 
-void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
+void
+LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -46,8 +47,7 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
 
   if (MyPID == 0) {
     std::cout << "\nTest: Laplace Beltrami solver: ";
-    for (int i = 0; i < surfaces.size(); ++i)
-      std::cout << "\"" << surfaces[i] << "\", ";
+    for (int i = 0; i < surfaces.size(); ++i) std::cout << "\"" << surfaces[i] << "\", ";
     std::cout << diff_op << std::endl;
   }
 
@@ -60,8 +60,8 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   ParameterList region_list = plist.sublist("Regions Flat");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
   // extract a manifold mesh
@@ -77,11 +77,12 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   for (int c = 0; c < ncells_wghost; ++c) {
     int g = surfmesh->entity_get_parent(AmanziMesh::CELL, c);
     double diff = AmanziGeometry::norm(surfmesh->cell_centroid(c) - mesh->face_centroid(g));
-    CHECK_CLOSE(0.0, diff, 1e-14); 
+    CHECK_CLOSE(0.0, diff, 1e-14);
   }
 
   // modify diffusion coefficient
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
     const Point& xc = mesh->cell_centroid(c);
@@ -91,7 +92,8 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
 
   // create boundary data (no mixed bc)
   Entity_ID_List cells;
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc =
+    Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -100,15 +102,14 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
     if (cells.size() == 2) continue;
 
     const Point& xf = surfmesh->face_centroid(f);
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
-        fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
+        fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = AmanziGeometry::L22(xf);
     }
   }
 
-  // create diffusion operator 
+  // create diffusion operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(diff_op);
   auto op = Teuchos::rcp(new PDE_DiffusionMFD(olist, surfmesh));
   op->Init(olist);
@@ -133,37 +134,35 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
-                                    "PCG", plist.sublist("solvers"));
+  global_op->set_inverse_parameters(
+    "Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
   global_op->ApplyInverse(rhs, solution);
 
-  if (diff_op == "diffusion operator") 
-      ver.CheckResidual(solution, 1.0e-12);
+  if (diff_op == "diffusion operator") ver.CheckResidual(solution, 1.0e-12);
 
   int num_itrs = global_op->num_itrs();
   CHECK(num_itrs < 10);
- 
+
   // check bounds of cell-based solution
   const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-  for (int c = 0; c < p.MyLength(); ++c) {
-    CHECK(p[0][c] > 0.0 && p[0][c] < 3.0);
-  } 
+  for (int c = 0; c < p.MyLength(); ++c) { CHECK(p[0][c] > 0.0 && p[0][c] < 3.0); }
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() << " itr=" << num_itrs
               << " code=" << global_op->returned_code() << std::endl;
 
     // visualization
-    GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
+    GMV::open_data_file(*surfmesh, (std::string) "operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
     GMV::close_data_file();
   }
 }
 
-TEST(LAPLACE_BELTRAMI_FLAT) {
+TEST(LAPLACE_BELTRAMI_FLAT)
+{
   // boundary surface
   std::vector<std::string> surfaces(1);
   surfaces[0] = "Top surface";
@@ -184,5 +183,3 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   surfaces[0] = "Half z-surface";
   LaplaceBeltramiFlat(surfaces, "diffusion operator");
 }
-
-

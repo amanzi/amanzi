@@ -39,11 +39,16 @@
 /* *****************************************************************
 * TBW 
 * **************************************************************** */
-template<class Analytic>
-void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
-              const std::string& disc_method = "electromagnetics",
-              const std::string& pc_method = "Hypre AMG",
-              const std::string& iter_solver = "GMRES") {
+template <class Analytic>
+void
+CurlCurl(double c_t,
+         int nx,
+         double tolerance,
+         bool initial_guess,
+         const std::string& disc_method = "electromagnetics",
+         const std::string& pc_method = "Hypre AMG",
+         const std::string& iter_solver = "GMRES")
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -53,8 +58,9 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Curl-curl operator, tol=" << tolerance 
-                            << "  method=" << disc_method << std::endl;
+  if (MyPID == 0)
+    std::cout << "\nTest: Curl-curl operator, tol=" << tolerance << "  method=" << disc_method
+              << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_electromagnetics.xml";
@@ -65,23 +71,25 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   ParameterList region_list = plist.sublist("regions");
   auto gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   bool request_faces(true), request_edges(true);
   RCP<const Mesh> mesh;
-  if (nx > 0) 
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, request_faces, request_edges);
+  if (nx > 0)
+    mesh =
+      meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, request_faces, request_edges);
   else
     mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
-    // mesh = meshfactory.create("test/hexes.exo", request_faces, request_edges);
+  // mesh = meshfactory.create("test/hexes.exo", request_faces, request_edges);
 
   // create resistivity coefficient
   double time = 1.0;
   Analytic ana(mesh);
   WhetStone::Tensor Kc(3, 2);
 
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -104,10 +112,8 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   for (int f = 0; f < nfaces_wghost; ++f) {
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
 
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
-        fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
-
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
+        fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
       mesh->face_get_edges_and_dirs(f, &edges, &edirs);
       int nedges = edges.size();
       for (int i = 0; i < nedges; ++i) {
@@ -125,14 +131,16 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
   olist.sublist("schema electric").set<std::string>("method", disc_method);
-  Teuchos::RCP<PDE_Electromagnetics> op_curlcurl = Teuchos::rcp(new PDE_Electromagnetics(olist, mesh));
+  Teuchos::RCP<PDE_Electromagnetics> op_curlcurl =
+    Teuchos::rcp(new PDE_Electromagnetics(olist, mesh));
   op_curlcurl->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
 
   // extension for AMS solver
   auto& tmp = plist.sublist("preconditioners").sublist("Hypre AMS").sublist("ams parameters");
-  tmp.set<Teuchos::RCP<Epetra_MultiVector> >("graph coordinates", op_curlcurl->GraphGeometry());
-  tmp.set<Teuchos::RCP<Epetra_CrsMatrix> >("discrete gradient operator", op_curlcurl->GradientOperator());
+  tmp.set<Teuchos::RCP<Epetra_MultiVector>>("graph coordinates", op_curlcurl->GraphGeometry());
+  tmp.set<Teuchos::RCP<Epetra_CrsMatrix>>("discrete gradient operator",
+                                          op_curlcurl->GradientOperator());
 
   // create source for a manufactured solution.
   CompositeVector source(cvs);
@@ -168,7 +176,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
 
       sol[0][e] = (ana.electric_exact(xe, time) * tau) / len;
     }
-  } 
+  }
 
   // set up the diffusion operator
   op_curlcurl->SetTensorCoefficient(K);
@@ -179,7 +187,8 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   phi.PutScalar(c_t);
 
   Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
-  Teuchos::RCP<PDE_Accumulation> op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::EDGE, global_op));
+  Teuchos::RCP<PDE_Accumulation> op_acc =
+    Teuchos::rcp(new PDE_Accumulation(AmanziMesh::EDGE, global_op));
 
   double dT = 1.0;
   op_acc->AddAccumulationDelta(solution, phi, phi, dT, "edge");
@@ -198,11 +207,11 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   if (iter_solver != "GMRES") ver.CheckPreconditionerSPD(1e-12, true, true);
 
   // re init with a solver...
-  global_op->set_inverse_parameters(pc_method, plist.sublist("preconditioners"),
-                                    iter_solver, plist.sublist("solvers"));
+  global_op->set_inverse_parameters(
+    pc_method, plist.sublist("preconditioners"), iter_solver, plist.sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
-  
+
   CompositeVector& rhs = *global_op->rhs();
   global_op->ApplyInverse(rhs, solution);
 
@@ -212,9 +221,9 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   CHECK(num_itrs < 100);
 
   if (MyPID == 0) {
-    std::cout << "electric solver (" << iter_solver << "): ||r||=" << global_op->residual() 
-              << " itr=" << global_op->num_itrs()
-              << " code=" << global_op->returned_code() << std::endl;
+    std::cout << "electric solver (" << iter_solver << "): ||r||=" << global_op->residual()
+              << " itr=" << global_op->num_itrs() << " code=" << global_op->returned_code()
+              << std::endl;
   }
 
   // compute electric error
@@ -224,24 +233,30 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
 
   if (MyPID == 0) {
     el2_err /= enorm;
-    printf("L2(e)=%12.9f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
-            global_op->num_itrs(), rhs.GlobalLength());
+    printf("L2(e)=%12.9f  Inf(e)=%9.6f  itr=%3d  size=%d\n",
+           el2_err,
+           einf_err,
+           global_op->num_itrs(),
+           rhs.GlobalLength());
 
     CHECK(el2_err < tolerance);
   }
 }
 
 
-TEST(CURL_CURL_LINEAR) {
+TEST(CURL_CURL_LINEAR)
+{
   CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false, "electromagnetics", "Hypre AMS");
 }
 
-TEST(CURL_CURL_NONLINEAR) {
+TEST(CURL_CURL_NONLINEAR)
+{
   CurlCurl<AnalyticElectromagnetics02>(1.0e-1, 0, 2e-1, false, "electromagnetics", "Hypre AMS");
   // CurlCurl<AnalyticElectromagnetics02>(1.0e-1, 0, 2e-1, false, "electromagnetics", "Hypre AMG", "silent");
 }
 
-TEST(CURL_CURL_TIME_DEPENDENT) {
+TEST(CURL_CURL_TIME_DEPENDENT)
+{
   CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true, "electromagnetics", "Hypre AMS");
   // CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true, "mfd: generalized");
 }

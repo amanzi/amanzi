@@ -85,14 +85,14 @@ KineticRateTST::KineticRateTST()
     rate_constant_(0.0),
     log10_rate_constant_(0.0),
     Q_over_Keq_(1.0),
-    modifying_term_(1.0) 
-{};
+    modifying_term_(1.0){};
 
 
-void KineticRateTST::Setup(const Mineral& reaction,
-                           double rate,
-                           const std::string& modifiers,
-                           const SpeciesArray& primary_species)
+void
+KineticRateTST::Setup(const Mineral& reaction,
+                      double rate,
+                      const std::string& modifiers,
+                      const SpeciesArray& primary_species)
 {
   // break the reaction string into reactants and products
   set_name(reaction.name());
@@ -104,13 +104,16 @@ void KineticRateTST::Setup(const Mineral& reaction,
   reactant_ids = reaction.species_ids();
 
   std::string species_type("primary");
-  SetSpeciesIds(primary_species, species_type,
-                reactant_names, reactant_stoichiometry,
-                &reactant_ids, &primary_stoichiometry);
+  SetSpeciesIds(primary_species,
+                species_type,
+                reactant_names,
+                reactant_stoichiometry,
+                &reactant_ids,
+                &primary_stoichiometry);
 
   // extract the rate parameters from the data string, including the
   // modifying species data. adds data to the mineral species!
-  log10_rate_constant_ = rate;  // SI units!
+  log10_rate_constant_ = rate; // SI units!
   rate_constant_ = std::pow(10.0, log10_rate_constant_);
 
   double coeff;
@@ -123,17 +126,20 @@ void KineticRateTST::Setup(const Mineral& reaction,
   }
 
   // determine the species ids for the modifying species
-  SetSpeciesIds(primary_species, species_type,
-                modifying_species_names, modifying_exponents,
-                &modifying_primary_ids, &modifying_primary_exponents);
+  SetSpeciesIds(primary_species,
+                species_type,
+                modifying_species_names,
+                modifying_exponents,
+                &modifying_primary_ids,
+                &modifying_primary_exponents);
 }
 
 
 /* ******************************************************************
 * TBW
 ****************************************************************** */
-void KineticRateTST::Update(const SpeciesArray& primary_species,
-                            const std::vector<Mineral>& minerals)
+void
+KineticRateTST::Update(const SpeciesArray& primary_species, const std::vector<Mineral>& minerals)
 {
   // update surace area from the minerals
   area_ = minerals.at(identifier()).specific_surface_area();
@@ -160,9 +166,10 @@ void KineticRateTST::Update(const SpeciesArray& primary_species,
 /* ******************************************************************
 * NOTE: residual has units of moles/sec
 ****************************************************************** */
-void KineticRateTST::AddContributionToResidual(const std::vector<Mineral>& minerals,
-                                               double bulk_volume,
-                                               std::vector<double> *residual)
+void
+KineticRateTST::AddContributionToResidual(const std::vector<Mineral>& minerals,
+                                          double bulk_volume,
+                                          std::vector<double>* residual)
 {
   // Calculate saturation state term: 1-Q/K
   double sat_state = 1.0 - Q_over_Keq_;
@@ -191,10 +198,11 @@ void KineticRateTST::AddContributionToResidual(const std::vector<Mineral>& miner
 /* ******************************************************************
 * TBW
 ****************************************************************** */
-void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_species,
-                                               const std::vector<Mineral>& minerals,
-                                               double bulk_volume,
-                                               MatrixBlock* J)
+void
+KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_species,
+                                          const std::vector<Mineral>& minerals,
+                                          double bulk_volume,
+                                          MatrixBlock* J)
 {
   /*
   ** Evaluate the dR/dC terms for this rate and add to the appropriate
@@ -206,25 +214,26 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_speci
   // double dadC = 1.0;  // da_i/dC_j = nu_ij * m_i/m_j ; da_j/dC_j = m_j/m_j = 1
 
   double Keq = std::pow(10.0, log_Keq_);
-  double one_minus_QK = 1.0 - Q_over_Keq_;  // (1-Q/Keq)
-  double area_rate_constant = area_ * bulk_volume * rate_constant_;  // k*A
+  double one_minus_QK = 1.0 - Q_over_Keq_;                          // (1-Q/Keq)
+  double area_rate_constant = area_ * bulk_volume * rate_constant_; // k*A
 
   // only add contribution if precipitating or mineral exists
   if (minerals.at(identifier()).volume_fraction() > 0.0 || one_minus_QK < 0.0) {
     // the contribution to every row of the jacobian has the same dR/dci
     // term. Each colum scaled by the stoichiometric coefficient.
-    std::vector<double> dRdC_row(primary_species.size());  // primary_species.size() == J.getSize()!
+    std::vector<double> dRdC_row(primary_species.size()); // primary_species.size() == J.getSize()!
 
     for (int p = 0; p < primary_species.size(); p++) {
       // temp_modifying_term = Prod_{m!=j}(a_m^{mu_m})
       double temp_modifying_term = modifying_term_;
-      double remove_modifying = modifying_primary_exponents.at(p) * primary_species.at(p).ln_activity();
+      double remove_modifying =
+        modifying_primary_exponents.at(p) * primary_species.at(p).ln_activity();
       remove_modifying = std::exp(remove_modifying);
       temp_modifying_term /= remove_modifying;
 
       // modifying_deriv = (mu_j * a_j^{mu_j - 1})
-      double modifying_deriv = (modifying_primary_exponents.at(p) - 1.0) *
-          primary_species.at(p).ln_activity();
+      double modifying_deriv =
+        (modifying_primary_exponents.at(p) - 1.0) * primary_species.at(p).ln_activity();
       modifying_deriv = std::exp(modifying_deriv) * modifying_primary_exponents.at(p);
 
       // temp_Q = Prod_{p!=j}(a_p^{nu_p}
@@ -233,16 +242,15 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_speci
       temp_Q = Q_over_Keq_ * Keq / temp_Q;
 
       // primary_deriv = (nu_j * a_j^{nu_j - 1})
-      double primary_deriv = (primary_stoichiometry.at(p) - 1.0) *
-          primary_species.at(p).ln_activity();
+      double primary_deriv =
+        (primary_stoichiometry.at(p) - 1.0) * primary_species.at(p).ln_activity();
       primary_deriv = std::exp(primary_deriv) * primary_stoichiometry.at(p);
 
       // modifying_term_ / Keq = Prod_{m}(a_m^{mu_m})/Keq *
 
-      double dRdC = area_rate_constant *
-          (one_minus_QK * modifying_deriv * temp_modifying_term -
-           (modifying_term_ / Keq) * primary_deriv * temp_Q);
-      dRdC_row[p] = -dRdC;  // where does the neg sign come from...?
+      double dRdC = area_rate_constant * (one_minus_QK * modifying_deriv * temp_modifying_term -
+                                          (modifying_term_ / Keq) * primary_deriv * temp_Q);
+      dRdC_row[p] = -dRdC; // where does the neg sign come from...?
     }
 
     // J_ij = nu_i * dR/dCj
@@ -258,7 +266,9 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_speci
 /* ******************************************************************
 * TBW
 ****************************************************************** */
-void KineticRateTST::Display(const Teuchos::Ptr<VerboseObject> vo) const {
+void
+KineticRateTST::Display(const Teuchos::Ptr<VerboseObject> vo) const
+{
   vo->Write(Teuchos::VERB_HIGH, "    Rate law: TST\n");
   DisplayReaction(vo);
 
@@ -267,7 +277,7 @@ void KineticRateTST::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   message << "      mineral = " << name() << std::endl;
   message << "      mineral id = " << identifier() << std::endl;
   message << "      log10_rate constant = " << log10_rate_constant_ << std::endl;
-  message << "      rate constant = " << std::scientific << rate_constant_<< std::endl;
+  message << "      rate constant = " << std::scientific << rate_constant_ << std::endl;
   message << "      rate modifiers: " << std::endl;
   for (int mod = 0; mod < modifying_species_names.size(); mod++) {
     message << "        ";
@@ -278,5 +288,5 @@ void KineticRateTST::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

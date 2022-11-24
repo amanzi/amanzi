@@ -32,7 +32,8 @@
 #include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
-TEST(FLOW_2D_RICHARDS) {
+TEST(FLOW_2D_RICHARDS)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -50,8 +51,8 @@ TEST(FLOW_2D_RICHARDS) {
   Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, -2.0, 1.0, 0.0, 18, 18);
 
   int itrs[2];
@@ -70,18 +71,20 @@ TEST(FLOW_2D_RICHARDS) {
     S->InitializeEvaluators();
 
     // modify the default state for the problem at hand
-    std::string passwd(""); 
+    std::string passwd("");
     auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
-  
+
     AmanziMesh::Entity_ID_List block;
-    mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
+    mesh->get_set_entities(
+      "Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
     for (int i = 0; i != block.size(); ++i) {
       int c = block[i];
       K[0][c] = 0.1;
       K[1][c] = 2.0;
     }
 
-    mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
+    mesh->get_set_entities(
+      "Material 2", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
     for (int i = 0; i != block.size(); ++i) {
       int c = block[i];
       K[0][c] = 0.5;
@@ -105,7 +108,7 @@ TEST(FLOW_2D_RICHARDS) {
     RPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    // solve the problem 
+    // solve the problem
     TI_Specs ti_specs;
     ti_specs.T0 = 0.0;
     ti_specs.dT0 = 1.0;
@@ -113,11 +116,11 @@ TEST(FLOW_2D_RICHARDS) {
     ti_specs.max_itrs = 400;
 
     AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-    RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times
+    RPK->CommitStep(0.0, 1.0, Tags::DEFAULT); // dummy times
     itrs[loop] = ti_specs.num_itrs;
 
     if (MyPID == 0 && loop == 0) {
-      GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+      GMV::open_data_file(*mesh, (std::string) "flow.gmv");
       GMV::start_data();
       GMV::write_cell_data(p, 0, "pressure");
       GMV::close_data_file();
@@ -128,9 +131,12 @@ TEST(FLOW_2D_RICHARDS) {
     for (int c = 0; c < ncells; c++) CHECK(p[0][c] > -4.0 && p[0][c] < 0.01);
 
     // modify the preconditioner
-    plist->sublist("PKs").sublist("flow")
-          .sublist("operators").sublist("diffusion operator").sublist("preconditioner")
-          .set<std::string>("Newton correction", "approximate Jacobian");
+    plist->sublist("PKs")
+      .sublist("flow")
+      .sublist("operators")
+      .sublist("diffusion operator")
+      .sublist("preconditioner")
+      .set<std::string>("Newton correction", "approximate Jacobian");
   }
 
   // verify positive impact of Newton correction in the preconditioner.

@@ -23,7 +23,7 @@ namespace Flow {
 * A simple constructor: create dependencies.
 ****************************************************************** */
 DarcyVelocityEvaluator::DarcyVelocityEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   AMANZI_ASSERT(my_keys_.size() > 0);
   vol_flowrate_key_ = plist.get<std::string>("volumetric flow rate key");
@@ -35,14 +35,17 @@ DarcyVelocityEvaluator::DarcyVelocityEvaluator(Teuchos::ParameterList& plist)
 * A copy constructor.
 ****************************************************************** */
 DarcyVelocityEvaluator::DarcyVelocityEvaluator(const DarcyVelocityEvaluator& other)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      vol_flowrate_key_(other.vol_flowrate_key_) {}
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+    vol_flowrate_key_(other.vol_flowrate_key_)
+{}
 
 
 /* ******************************************************************
 * Clone with unclear yet purpose.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> DarcyVelocityEvaluator::Clone() const {
+Teuchos::RCP<Evaluator>
+DarcyVelocityEvaluator::Clone() const
+{
   return Teuchos::rcp(new DarcyVelocityEvaluator(*this));
 }
 
@@ -50,8 +53,8 @@ Teuchos::RCP<Evaluator> DarcyVelocityEvaluator::Clone() const {
 /* ******************************************************************
 * Required member function: basic algorithm.
 ****************************************************************** */
-void DarcyVelocityEvaluator::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+DarcyVelocityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   Key domain = plist_.get<std::string>("domain name");
   S.Get<CompositeVector>(vol_flowrate_key_).ScatterMasterToGhosted("face");
@@ -82,18 +85,16 @@ void DarcyVelocityEvaluator::Evaluate_(
       // the case of two DOFs on the face:
       if (fmap.ElementSize(f) == 2) {
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-        if (cells.size() == 2) {
-          g += Operators::UniqueIndexFaceToCells(*mesh, f, c);
-        }
+        if (cells.size() == 2) { g += Operators::UniqueIndexFaceToCells(*mesh, f, c); }
       }
       solution[n].Reshape(dim, 0);
       solution[n](0) = flux[0][g];
     }
-  
+
     mfd.L2Cell(c, solution, solution, NULL, gradient);
     for (int i = 0; i < dim; i++) result_c[i][c] = -gradient(i + 1);
   }
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi

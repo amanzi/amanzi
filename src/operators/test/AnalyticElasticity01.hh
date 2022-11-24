@@ -18,27 +18,28 @@
 
 class AnalyticElasticity01 : public AnalyticElasticityBase {
  public:
-  AnalyticElasticity01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
-      AnalyticElasticityBase(mesh) {};
-  ~AnalyticElasticity01() {};
+  AnalyticElasticity01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : AnalyticElasticityBase(mesh){};
+  ~AnalyticElasticity01(){};
 
-  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     Amanzi::WhetStone::Tensor K(2, 1);
     K(0, 0) = 2.0;
     return K;
   }
 
-  Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     double x = p[0];
     double y = p[1];
     return Amanzi::AmanziGeometry::Point(x + y, x - y);
   }
 
-  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    return 0.0;
-  }
+  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { return 0.0; }
 
-  Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     return Amanzi::AmanziGeometry::Point(0.0, 0.0);
   }
 };

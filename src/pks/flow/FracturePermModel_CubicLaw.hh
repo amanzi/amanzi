@@ -23,14 +23,14 @@ namespace Flow {
 
 class FracturePermModel_CubicLaw : public FracturePermModel {
  public:
-  explicit FracturePermModel_CubicLaw(Teuchos::ParameterList& plist) {};
-  ~FracturePermModel_CubicLaw() {};
-  
+  explicit FracturePermModel_CubicLaw(Teuchos::ParameterList& plist){};
+  ~FracturePermModel_CubicLaw(){};
+
   // required methods from the base class
   inline double Permeability(double aperture) { return aperture * aperture / 12; }
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
- 
+} // namespace Flow
+} // namespace Amanzi
+
 #endif

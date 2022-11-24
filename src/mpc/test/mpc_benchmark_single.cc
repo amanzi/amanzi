@@ -29,14 +29,15 @@
 #include "wrm_flow_registration.hh"
 
 
-void MPC_CoupledFlowTransport(const std::string& xmlfile, const std::string& exofile)
+void
+MPC_CoupledFlowTransport(const std::string& xmlfile, const std::string& exofile)
 {
-using namespace Amanzi;
-using namespace Amanzi::AmanziMesh;
-using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
-  
+
   // setup a piecewice linear solution with a jump
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlfile);
 
@@ -48,12 +49,12 @@ using namespace Amanzi::AmanziGeometry;
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
 
-  factory.set_preference(Preference({Framework::MSTK}));
-  auto mesh = factory.create(exofile, true, true); 
+  factory.set_preference(Preference({ Framework::MSTK }));
+  auto mesh = factory.create(exofile, true, true);
 
   // create dummy observation data object
-  Amanzi::ObservationData obs_data;    
-  
+  Amanzi::ObservationData obs_data;
+
   Teuchos::ParameterList state_plist = plist->sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
 
@@ -67,14 +68,14 @@ using namespace Amanzi::AmanziGeometry;
     Exceptions::amanzi_throw(msg);
   }
   */
-  
+
   //create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
 
   // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
   auto mesh_fracture = Teuchos::rcp(new MeshExtractedManifold(
-      mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list, true, false));
+    mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list, true, false));
   S->RegisterMesh("fracture", mesh_fracture);
 
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
@@ -82,7 +83,8 @@ using namespace Amanzi::AmanziGeometry;
 }
 
 
-TEST(MPC_COUPLED_FLOW_TRANSPORT) {
-  MPC_CoupledFlowTransport("test/mpc_benchmark_single.xml", "test/single_fracture_tet.exo"); 
-  // MPC_CoupledFlowTransport("test/mpc_benchmark_regular_1.xml", "test/regular_fracture_ref0.exo"); 
+TEST(MPC_COUPLED_FLOW_TRANSPORT)
+{
+  MPC_CoupledFlowTransport("test/mpc_benchmark_single.xml", "test/single_fracture_tet.exo");
+  // MPC_CoupledFlowTransport("test/mpc_benchmark_regular_1.xml", "test/regular_fracture_ref0.exo");
 }

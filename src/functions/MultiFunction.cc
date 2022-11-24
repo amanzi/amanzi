@@ -45,19 +45,20 @@
 
 namespace Amanzi {
 
-MultiFunction::MultiFunction(
-        const std::vector<Teuchos::RCP<const Function> >& functions) :
-    functions_(functions) {
+MultiFunction::MultiFunction(const std::vector<Teuchos::RCP<const Function>>& functions)
+  : functions_(functions)
+{
   values_ = new double[functions_.size()];
 };
 
-MultiFunction::MultiFunction(const Teuchos::RCP<const Function>& function) :
-    functions_(1, function)  {
+MultiFunction::MultiFunction(const Teuchos::RCP<const Function>& function) : functions_(1, function)
+{
   values_ = new double[1];
 };
 
 
-MultiFunction::MultiFunction(Teuchos::ParameterList& plist) {
+MultiFunction::MultiFunction(Teuchos::ParameterList& plist)
+{
   FunctionFactory factory;
 
   if (plist.isParameter("number of dofs")) {
@@ -69,7 +70,7 @@ MultiFunction::MultiFunction(Teuchos::ParameterList& plist) {
         AMANZI_ASSERT(0);
       }
 
-      for (int lcv = 1; lcv != (ndofs+1); ++lcv) {
+      for (int lcv = 1; lcv != (ndofs + 1); ++lcv) {
         std::stringstream sublist_name;
         sublist_name << "dof " << lcv << " function";
         functions_.push_back(Teuchos::rcp(factory.Create(plist.sublist(sublist_name.str()))));
@@ -80,7 +81,7 @@ MultiFunction::MultiFunction(Teuchos::ParameterList& plist) {
     }
 
   } else if (plist.isParameter("constant values")) {
-    auto values = plist.get<Teuchos::Array<double> >("constant values").toVector();
+    auto values = plist.get<Teuchos::Array<double>>("constant values").toVector();
     int ndofs = values.size();
 
     for (int i = 0; i < ndofs; ++i) {
@@ -98,24 +99,25 @@ MultiFunction::MultiFunction(Teuchos::ParameterList& plist) {
 }
 
 
-MultiFunction::~MultiFunction() {
-  delete [] values_;
+MultiFunction::~MultiFunction()
+{
+  delete[] values_;
 };
 
 
-int MultiFunction::size() const {
+int
+MultiFunction::size() const
+{
   return functions_.size();
 };
 
 
-double* MultiFunction::operator()(const std::vector<double>& xt) const {
-  for (int i=0; i!=size(); ++i) {
-    values_[i] = (*functions_[i])(xt);
-  }
+double*
+MultiFunction::operator()(const std::vector<double>& xt) const
+{
+  for (int i = 0; i != size(); ++i) { values_[i] = (*functions_[i])(xt); }
   return values_;
 };
 
 
-
-} // namespace
-
+} // namespace Amanzi

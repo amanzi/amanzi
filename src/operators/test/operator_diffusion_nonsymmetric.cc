@@ -37,7 +37,8 @@
 /* *****************************************************************
 * Non-symmetric diffusion tensor.
 ***************************************************************** */
-TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
+TEST(OPERATOR_DIFFUSION_NONSYMMETRIC)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -51,17 +52,18 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   std::string xmlFileName = "test/operator_diffusion.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  Teuchos::ParameterList op_list = plist.sublist("PK operator")
-                                        .sublist("diffusion operator nonsymmetric");
+  Teuchos::ParameterList op_list =
+    plist.sublist("PK operator").sublist("diffusion operator nonsymmetric");
 
   // create a mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 20);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion tensor
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
@@ -91,7 +93,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
     }
   }
 
-  // create diffusion operator 
+  // create diffusion operator
   auto op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
   op->Init(op_list);
   op->SetBCs(bc, bc);
@@ -101,7 +103,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs));
   solution->PutScalar(0.0);
 
-  // create source 
+  // create source
   CompositeVector source(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("cell");
 
@@ -120,8 +122,8 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   op->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class
-  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
-          "Belos GMRES", plist.sublist("solvers"));
+  global_op->set_inverse_parameters(
+    "Hypre AMG", plist.sublist("preconditioners"), "Belos GMRES", plist.sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
 
@@ -130,8 +132,8 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
 
   if (MyPID == 0) {
     std::cout << "pressure solver (belos gmres): ||r||=" << global_op->residual()
-              << " itr=" << global_op->num_itrs()
-              << " code=" << global_op->returned_code() << std::endl;
+              << " itr=" << global_op->num_itrs() << " code=" << global_op->returned_code()
+              << std::endl;
   }
 
   // compute pressure error
@@ -148,14 +150,16 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
   if (MyPID == 0) {
-    pl2_err /= pnorm; 
+    pl2_err /= pnorm;
     ul2_err /= unorm;
     printf("L2(p)=%12.8g  Inf(p)=%12.8g  L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n",
-        pl2_err, pinf_err, ul2_err, uinf_err, global_op->num_itrs());
+           pl2_err,
+           pinf_err,
+           ul2_err,
+           uinf_err,
+           global_op->num_itrs());
 
     CHECK(pl2_err < 0.03 && ul2_err < 0.1);
     CHECK(global_op->num_itrs() < 15);
   }
 }
-
-

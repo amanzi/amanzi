@@ -17,9 +17,8 @@
 
 
 struct AmanziUnstructuredGridSimulationDriver
-    : Amanzi::Simulator,
-      public Teuchos::VerboseObject<AmanziUnstructuredGridSimulationDriver>
-{
+  : Amanzi::Simulator,
+    public Teuchos::VerboseObject<AmanziUnstructuredGridSimulationDriver> {
  public:
   // constructor for native XML
   explicit AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName);
@@ -29,8 +28,8 @@ struct AmanziUnstructuredGridSimulationDriver
                                          xercesc::DOMDocument* input,
                                          const std::string& output_prefix);
 
-  Amanzi::Simulator::ReturnType Run(const Amanzi::Comm_ptr_type& comm,
-                 Amanzi::ObservationData& observations_data) override;
+  Amanzi::Simulator::ReturnType
+  Run(const Amanzi::Comm_ptr_type& comm, Amanzi::ObservationData& observations_data) override;
 
  private:
   // Read our parameter list.

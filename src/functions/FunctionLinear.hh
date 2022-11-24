@@ -54,12 +54,10 @@ namespace Amanzi {
 
 class FunctionLinear : public Function {
  public:
-  FunctionLinear(double y0, const std::vector<double> &grad);
-  FunctionLinear(double y0, const std::vector<double> &grad, const std::vector<double> &x0);
+  FunctionLinear(double y0, const std::vector<double>& grad);
+  FunctionLinear(double y0, const std::vector<double>& grad, const std::vector<double>& x0);
   ~FunctionLinear() {}
-  std::unique_ptr<Function> Clone() const {
-    return std::make_unique<FunctionLinear>(*this);
-  }
+  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionLinear>(*this); }
   double operator()(const std::vector<double>& x) const;
 
  private:

@@ -19,13 +19,12 @@ namespace Flow {
 
 class PorosityModel {
  public:
-  virtual ~PorosityModel() {};
+  virtual ~PorosityModel(){};
   virtual double Porosity(double p) = 0;
-  virtual double dPorositydPressure(double p) = 0;  // derivative wrt to pressure
+  virtual double dPorositydPressure(double p) = 0; // derivative wrt to pressure
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
-  
+} // namespace Flow
+} // namespace Amanzi
+
 #endif
-  

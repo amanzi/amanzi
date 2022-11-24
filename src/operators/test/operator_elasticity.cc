@@ -36,7 +36,8 @@
 /* *****************************************************************
 * Elasticity model: exactness test.
 ***************************************************************** */
-TEST(OPERATOR_ELASTICITY_EXACTNESS) {
+TEST(OPERATOR_ELASTICITY_EXACTNESS)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -51,14 +52,13 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   std::string xmlFileName = "test/operator_elasticity.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  Teuchos::ParameterList op_list = plist.sublist("PK operator")
-                                        .sublist("elasticity operator");
+  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("elasticity operator");
 
-  // create the MSTK mesh framework 
+  // create the MSTK mesh framework
   // -- geometric model is not created. Instead, we specify boundary conditions
   // -- using centroids of mesh faces.
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 5);
 
   // -- general information about mesh
@@ -71,7 +71,8 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   // boundary conditions
   AnalyticElasticity01 ana(mesh);
 
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
@@ -80,7 +81,8 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   // populate boundary conditions: type (called model) and value
   // -- normal component of velocity on boundary faces (a scalar)
-  Teuchos::RCP<BCs> bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bcf =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bcf_model = bcf->bc_model();
   std::vector<double>& bcf_value = bcf->bc_value();
 
@@ -89,8 +91,8 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
     const Point& normal = mesh->face_normal(f);
     double area = mesh->face_area(f);
 
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
+        fabs(xf[1] - 1.0) < 1e-6) {
       bcf_model[f] = OPERATOR_BC_DIRICHLET;
       bcf_value[f] = (ana.velocity_exact(xf, 0.0) * normal) / area;
     }
@@ -105,8 +107,8 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   for (int v = 0; v < nnodes_wghost; ++v) {
     mesh->node_get_coordinates(v, &xv);
 
-    if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
-        fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
+    if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1]) < 1e-6 ||
+        fabs(xv[1] - 1.0) < 1e-6) {
       bcv_model[v] = OPERATOR_BC_DIRICHLET;
       bcv_value[v] = ana.velocity_exact(xv, 0.0);
     }
@@ -124,7 +126,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   CompositeVector solution(cvs);
   solution.PutScalar(0.0);
 
-  // create source 
+  // create source
   CompositeVector source(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("node");
 
@@ -140,11 +142,12 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   // get and assemble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  global_op->UpdateRHS(source, true);  // FIXME
+  global_op->UpdateRHS(source, true); // FIXME
   op->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class
-  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
+  global_op->set_inverse_parameters(
+    "Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
 
@@ -159,9 +162,9 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   ver.CheckResidual(solution, 1.0e-14);
 
   if (MyPID == 0) {
-    std::cout << "elasticity solver (pcg): ||r||=" << global_op->residual() 
-              << " itr=" << global_op->num_itrs()
-              << " code=" << global_op->returned_code() << std::endl;
+    std::cout << "elasticity solver (pcg): ||r||=" << global_op->residual()
+              << " itr=" << global_op->num_itrs() << " code=" << global_op->returned_code()
+              << std::endl;
   }
 
   // compute velocity error
@@ -170,11 +173,9 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   if (MyPID == 0) {
     ul2_err /= unorm;
-    printf("L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n",
-        ul2_err, uinf_err, global_op->num_itrs());
+    printf("L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n", ul2_err, uinf_err, global_op->num_itrs());
 
     CHECK(ul2_err < 0.1);
     CHECK(global_op->num_itrs() < 15);
   }
 }
-

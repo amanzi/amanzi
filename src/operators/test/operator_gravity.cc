@@ -38,7 +38,9 @@
 /* *****************************************************************
 * Comparison of gravity models with constant and vector density.
 ***************************************************************** */
-void RunTestGravity(std::string op_list_name) {
+void
+RunTestGravity(std::string op_list_name)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -56,7 +58,7 @@ void RunTestGravity(std::string op_list_name) {
 
   // create a mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 3, 3);
 
   // create diffusion coefficient
@@ -64,7 +66,8 @@ void RunTestGravity(std::string op_list_name) {
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   const WhetStone::Tensor Kc(2, 1);
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
 
   for (int c = 0; c < ncells; c++) {
     Kc(0, 0) = 1.0 + fabs((mesh->cell_centroid(c))[0]);
@@ -99,7 +102,7 @@ void RunTestGravity(std::string op_list_name) {
     flx[0][f] = velocity * normal;
   }
   CompositeVector u(cvs);
-  
+
   // create nonlinear coefficient.
   Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh));
 
@@ -108,7 +111,7 @@ void RunTestGravity(std::string op_list_name) {
   UpwindFlux upwind(mesh);
   upwind.Init(ulist);
 
-  knc->UpdateValues(*flux, bc_model, bc_value);  // argument is not used
+  knc->UpdateValues(*flux, bc_model, bc_value); // argument is not used
   upwind.Compute(*flux, u, bc_model, *knc->values());
 
   // create first diffusion operator using constant density
@@ -125,7 +128,7 @@ void RunTestGravity(std::string op_list_name) {
   op2->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // check norm of the right-hand sides
-  double a1, a2; 
+  double a1, a2;
   CompositeVector& rhs1 = *op1->global_operator()->rhs();
   CompositeVector& rhs2 = *op2->global_operator()->rhs();
 
@@ -143,10 +146,12 @@ void RunTestGravity(std::string op_list_name) {
 /* *****************************************************************
 * Two tests for MFD and FV methods.
 * **************************************************************** */
-TEST(OPERATOR_DIFFUSION_GRAVITY_MFD) {
+TEST(OPERATOR_DIFFUSION_GRAVITY_MFD)
+{
   RunTestGravity("diffusion operator gravity mfd");
 }
 
-TEST(OPERATOR_DIFFUSION_GRAVITY_FV) {
+TEST(OPERATOR_DIFFUSION_GRAVITY_FV)
+{
   RunTestGravity("diffusion operator gravity fv");
 }

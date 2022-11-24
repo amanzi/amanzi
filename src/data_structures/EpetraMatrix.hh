@@ -29,12 +29,10 @@ class EpetraMatrix {
   virtual const Epetra_BlockMap& RangeMap() const = 0;
 
   // Apply matrix, b <-- Ax, returns ierr
-  virtual int Apply(const Epetra_Vector& x,
-                     Epetra_Vector& b) const = 0;
+  virtual int Apply(const Epetra_Vector& x, Epetra_Vector& b) const = 0;
 
   // Apply the inverse, x <-- A^-1 b, returns ierr
-  virtual int ApplyInverse(const Epetra_Vector& b,
-                            Epetra_Vector& x) const = 0;
+  virtual int ApplyInverse(const Epetra_Vector& b, Epetra_Vector& x) const = 0;
 };
 
 } // namespace Amanzi

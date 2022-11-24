@@ -23,31 +23,46 @@
 namespace Amanzi {
 namespace Operators {
 
-void ExtractVectorFaceOp(
-    int f, const AmanziMesh::Mesh& mesh, const Schema& schema,
-    WhetStone::DenseVector& v, const CompositeVector& X);
-void AssembleVectorFaceOp(
-    int f, const AmanziMesh::Mesh& mesh, const Schema& schema,
-    const WhetStone::DenseVector& v, CompositeVector& X);
+void
+ExtractVectorFaceOp(int f,
+                    const AmanziMesh::Mesh& mesh,
+                    const Schema& schema,
+                    WhetStone::DenseVector& v,
+                    const CompositeVector& X);
+void
+AssembleVectorFaceOp(int f,
+                     const AmanziMesh::Mesh& mesh,
+                     const Schema& schema,
+                     const WhetStone::DenseVector& v,
+                     CompositeVector& X);
 
-void ExtractVectorNodeOp(
-    int n, const AmanziMesh::Mesh& mesh, const Schema& schema,
-    WhetStone::DenseVector& v, const CompositeVector& X);
-void AssembleVectorNodeOp(
-    int n, const AmanziMesh::Mesh& mesh, const Schema& schema,
-    const WhetStone::DenseVector& v, CompositeVector& X);
+void
+ExtractVectorNodeOp(int n,
+                    const AmanziMesh::Mesh& mesh,
+                    const Schema& schema,
+                    WhetStone::DenseVector& v,
+                    const CompositeVector& X);
+void
+AssembleVectorNodeOp(int n,
+                     const AmanziMesh::Mesh& mesh,
+                     const Schema& schema,
+                     const WhetStone::DenseVector& v,
+                     CompositeVector& X);
 
-void ExtractVectorCellOp(
-    int c, const AmanziMesh::Mesh& mesh, const Schema& schema,
-    WhetStone::DenseVector& v, const CompositeVector& X);
-void AssembleVectorCellOp(
-    int c, const AmanziMesh::Mesh& mesh, const Schema& schema,
-    const WhetStone::DenseVector& v, CompositeVector& X);
+void
+ExtractVectorCellOp(int c,
+                    const AmanziMesh::Mesh& mesh,
+                    const Schema& schema,
+                    WhetStone::DenseVector& v,
+                    const CompositeVector& X);
+void
+AssembleVectorCellOp(int c,
+                     const AmanziMesh::Mesh& mesh,
+                     const Schema& schema,
+                     const WhetStone::DenseVector& v,
+                     CompositeVector& X);
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-
-    
-

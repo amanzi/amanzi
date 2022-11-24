@@ -17,9 +17,10 @@
 namespace Amanzi {
 namespace Utils {
 
-double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
+double
+bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
 
-}  // namespace Utils
-}  // namespace Amanzi
+} // namespace Utils
+} // namespace Amanzi
 
 #endif

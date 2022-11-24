@@ -14,8 +14,10 @@
 #include "Evaluator.hh"
 
 namespace Amanzi {
-std::ostream &operator<<(std::ostream &os, const Evaluator& self) {
+std::ostream&
+operator<<(std::ostream& os, const Evaluator& self)
+{
   return os << self.WriteToString();
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

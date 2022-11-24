@@ -50,16 +50,20 @@ class Richards_PK : public Flow_PK {
               Teuchos::RCP<State> S,
               const Teuchos::RCP<TreeVector>& soln);
 
-  ~Richards_PK() {};
+  ~Richards_PK(){};
 
   // methods required for PK interface
   virtual void Setup() final;
   virtual void Initialize() final;
 
   virtual double get_dt() override { return dt_; }
-  virtual void set_dt(double dt) override { dt_ = dt; dt_desirable_ = dt_; }
+  virtual void set_dt(double dt) override
+  {
+    dt_ = dt;
+    dt_desirable_ = dt_;
+  }
 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
   virtual void CalculateDiagnostics(const Tag& tag) override;
 
@@ -67,14 +71,17 @@ class Richards_PK : public Flow_PK {
 
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
-  virtual
-  void FunctionalResidual(const double t_old, double t_new, 
-                          Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
-                          Teuchos::RCP<TreeVector> f) override;
-  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
+  virtual void FunctionalResidual(const double t_old,
+                                  double t_new,
+                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<TreeVector> u_new,
+                                  Teuchos::RCP<TreeVector> f) override;
+  virtual double
+  ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
 
   // -- management of the preconditioner
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;
+  virtual int
+  ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt) override;
 
   // -- check the admissibility of a solution
@@ -87,7 +94,8 @@ class Richards_PK : public Flow_PK {
   //    using extrapolation and the time step that is used to compute
   //    this predictor this function returns true if the predictor was
   //    modified, false if not
-  virtual bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0,
+  virtual bool ModifyPredictor(double dt,
+                               Teuchos::RCP<const TreeVector> u0,
                                Teuchos::RCP<TreeVector> u) override;
 
   // -- possibly modifies the correction, after the nonlinear solver (NKA)
@@ -95,20 +103,17 @@ class Richards_PK : public Flow_PK {
   //    so that the nonlinear iteration can store the modified correction
   //    and pass it to NKA so that the NKA space can be updated
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-      ModifyCorrection(double dt, Teuchos::RCP<const TreeVector> res,
-                       Teuchos::RCP<const TreeVector> u, 
-                       Teuchos::RCP<TreeVector> du) override;
+  ModifyCorrection(double dt,
+                   Teuchos::RCP<const TreeVector> res,
+                   Teuchos::RCP<const TreeVector> u,
+                   Teuchos::RCP<TreeVector> du) override;
 
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
-  virtual void ChangedSolution() override {
-    pressure_eval_->SetChanged();
-  }
+  virtual void ChangedSolution() override { pressure_eval_->SetChanged(); }
 
   // -- returns the number of linear iterations.
-  virtual int ReportStatistics() override { 
-    return op_preconditioner_->apply_calls();
-  }
+  virtual int ReportStatistics() override { return op_preconditioner_->apply_calls(); }
 
   // other flow methods
   // -- initialization members
@@ -132,12 +137,15 @@ class Richards_PK : public Flow_PK {
 
   // -- access methods
   virtual Teuchos::RCP<Operators::Operator>
-      my_operator(const Operators::OperatorType& type) override;
+  my_operator(const Operators::OperatorType& type) override;
 
   virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
-      my_pde(const Operators::PDEType& type) override { return op_matrix_diff_; } 
+  my_pde(const Operators::PDEType& type) override
+  {
+    return op_matrix_diff_;
+  }
 
-  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > get_bdf1_dae() { return bdf1_dae_; }
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> get_bdf1_dae() { return bdf1_dae_; }
 
   // -- verbose output and visualization methods
   void PlotWRMcurves(Teuchos::ParameterList& plist);
@@ -160,7 +168,7 @@ class Richards_PK : public Flow_PK {
   // This balance leads to a monotone translport.
   void CalculateCNLSLimiter_(const CompositeVector& wc, const CompositeVector& dwc_dp, double tol);
   void ApplyCNLSLimiter_();
- 
+
   void PlotWRMcurves_();
 
  private:
@@ -175,7 +183,7 @@ class Richards_PK : public Flow_PK {
 
   // solvers
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_;
-  Teuchos::RCP<Matrix<CompositeVector,CompositeVectorSpace>> op_pc_solver_;
+  Teuchos::RCP<Matrix<CompositeVector, CompositeVectorSpace>> op_pc_solver_;
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
   Teuchos::RCP<Operators::Upwind> upwind_;
@@ -196,13 +204,13 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<MultiscaleFlowPorosityPartition> msp_;
 
   // time integrators
-  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae_;
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae_;
   int error_control_, num_itrs_;
   double dt_desirable_;
-  std::vector<std::pair<double, double> > dT_history_;
-  bool initialize_with_darcy_;  // global state of initialization.
+  std::vector<std::pair<double, double>> dT_history_;
+  bool initialize_with_darcy_; // global state of initialization.
 
-  Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
+  Teuchos::RCP<Epetra_Vector> pdot_cells_prev; // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
 
   double functional_max_norm;
@@ -232,9 +240,7 @@ class Richards_PK : public Flow_PK {
 };
 
 
-
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 #endif
-

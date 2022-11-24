@@ -29,7 +29,8 @@ namespace Operators {
 /* ******************************************************************
 * Apply a source which may or may not have edge volume included already. 
 ****************************************************************** */
-void Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_included)
+void
+Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_included)
 {
   if (volume_included) {
     Operator::UpdateRHS(source);
@@ -56,8 +57,10 @@ void Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_include
 /* ******************************************************************
 * Apply the local matrices directly as schemas match.
 ****************************************************************** */
-int Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
-                                     const CompositeVector& X, CompositeVector& Y) const
+int
+Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
+                                 const CompositeVector& X,
+                                 CompositeVector& Y) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
   const Epetra_MultiVector& Xe = *X.ViewComponent("edge", true);
@@ -70,16 +73,12 @@ int Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
       int nedges = edges.size();
 
       WhetStone::DenseVector v(nedges), av(nedges);
-      for (int n = 0; n != nedges; ++n) {
-        v(n) = Xe[0][edges[n]];
-      }
+      for (int n = 0; n != nedges; ++n) { v(n) = Xe[0][edges[n]]; }
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
       Acell.Multiply(v, av, false);
 
-      for (int n = 0; n != nedges; ++n) {
-        Ye[0][edges[n]] += av(n);
-      }
+      for (int n = 0; n != nedges; ++n) { Ye[0][edges[n]] += av(n); }
     }
   }
   return 0;
@@ -91,16 +90,16 @@ int Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
 * Apply the local matrices directly as schema is a subset of 
 * assembled schema.
 ****************************************************************** */
-int Operator_Edge::ApplyMatrixFreeOp(const Op_Edge_Edge& op,
-                                     const CompositeVector& X, CompositeVector& Y) const
+int
+Operator_Edge::ApplyMatrixFreeOp(const Op_Edge_Edge& op,
+                                 const CompositeVector& X,
+                                 CompositeVector& Y) const
 {
   const Epetra_MultiVector& Xc = *X.ViewComponent("edge");
   Epetra_MultiVector& Yc = *Y.ViewComponent("edge");
 
   for (int k = 0; k != Xc.NumVectors(); ++k) {
-    for (int e = 0; e != nedges_owned; ++e) {
-      Yc[k][e] += Xc[k][e] * (*op.diag)[k][e];
-    }
+    for (int e = 0; e != nedges_owned; ++e) { Yc[k][e] += Xc[k][e] * (*op.diag)[k][e]; }
   }
   return 0;
 }
@@ -110,10 +109,12 @@ int Operator_Edge::ApplyMatrixFreeOp(const Op_Edge_Edge& op,
 * Visit methods for symbolic assemble.
 * Apply the local matrices directly as schemas match.
 ****************************************************************** */
-void Operator_Edge::SymbolicAssembleMatrixOp(
-    const Op_Cell_Edge& op,
-    const SuperMap& map, GraphFE& graph,
-    int my_block_row, int my_block_col) const
+void
+Operator_Edge::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
+                                        const SuperMap& map,
+                                        GraphFE& graph,
+                                        int my_block_row,
+                                        int my_block_col) const
 {
   std::vector<int> lid_r(cell_max_edges);
   std::vector<int> lid_c(cell_max_edges);
@@ -142,10 +143,12 @@ void Operator_Edge::SymbolicAssembleMatrixOp(
 * Visit methods for symbolic assemble.
 * Insert the diagonal on edges
 ****************************************************************** */
-void Operator_Edge::SymbolicAssembleMatrixOp(
-    const Op_Edge_Edge& op,
-    const SuperMap& map, GraphFE& graph,
-   int my_block_row, int my_block_col) const
+void
+Operator_Edge::SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
+                                        const SuperMap& map,
+                                        GraphFE& graph,
+                                        int my_block_row,
+                                        int my_block_col) const
 {
   const std::vector<int>& edge_row_inds = map.GhostIndices(my_block_row, "edge", 0);
   const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
@@ -165,10 +168,12 @@ void Operator_Edge::SymbolicAssembleMatrixOp(
 * Visit methods for assemble
 * Apply the local matrices directly as schemas match.
 ****************************************************************** */
-void Operator_Edge::AssembleMatrixOp(
-    const Op_Cell_Edge& op,
-    const SuperMap& map, MatrixFE& mat,
-    int my_block_row, int my_block_col) const
+void
+Operator_Edge::AssembleMatrixOp(const Op_Cell_Edge& op,
+                                const SuperMap& map,
+                                MatrixFE& mat,
+                                int my_block_row,
+                                int my_block_col) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
@@ -200,10 +205,12 @@ void Operator_Edge::AssembleMatrixOp(
 * Visit methods for assemble
 * Insert each diagonal values for edges.
 ****************************************************************** */
-void Operator_Edge::AssembleMatrixOp(
-    const Op_Edge_Edge& op,
-    const SuperMap& map, MatrixFE& mat,
-    int my_block_row, int my_block_col) const
+void
+Operator_Edge::AssembleMatrixOp(const Op_Edge_Edge& op,
+                                const SuperMap& map,
+                                MatrixFE& mat,
+                                int my_block_row,
+                                int my_block_col) const
 {
   AMANZI_ASSERT(op.diag->NumVectors() == 1);
 
@@ -224,12 +231,11 @@ void Operator_Edge::AssembleMatrixOp(
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Operator> Operator_Edge::Clone() const {
+Teuchos::RCP<Operator>
+Operator_Edge::Clone() const
+{
   return Teuchos::rcp(new Operator_Edge(*this));
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
-
-
+} // namespace Operators
+} // namespace Amanzi

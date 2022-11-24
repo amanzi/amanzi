@@ -20,12 +20,12 @@ namespace Energy {
 /* ******************************************************************
 * method for instantiating implementations
 ****************************************************************** */
-Teuchos::RCP<TCM_TwoPhase> TCMFactory_TwoPhase::CreateTCM(Teuchos::ParameterList& plist)
+Teuchos::RCP<TCM_TwoPhase>
+TCMFactory_TwoPhase::CreateTCM(Teuchos::ParameterList& plist)
 {
   std::string tc_typename = plist.get<std::string>("thermal conductivity type");
   return Teuchos::rcp(CreateInstance(tc_typename, plist));
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
-
+} // namespace Energy
+} // namespace Amanzi

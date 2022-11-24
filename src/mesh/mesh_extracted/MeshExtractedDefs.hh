@@ -18,8 +18,7 @@ namespace AmanziMesh {
 const int MASTER = 1;
 const int GHOST = 2;
 
-}  // namespace AmanziMesh
-}  // namespace Amanzi
+} // namespace AmanziMesh
+} // namespace Amanzi
 
 #endif
-

@@ -39,7 +39,8 @@
 
 
 /* **************************************************************** */
-TEST(MULTIPHASE_MODEL_I) {
+TEST(MULTIPHASE_MODEL_I)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -60,7 +61,7 @@ TEST(MULTIPHASE_MODEL_I) {
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 5);
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 50, 3);
 
@@ -130,7 +131,7 @@ TEST(MULTIPHASE_MODEL_I) {
   sl.MinValue(&dmin);
   sl.MaxValue(&dmax);
   CHECK(dmin >= 0.0 && dmax <= 1.0);
-  
+
   S->Get<CompositeVector>("ncp_fg").NormInf(&dmax);
   CHECK(dmax <= 1.0e-14);
 

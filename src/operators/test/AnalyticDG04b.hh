@@ -26,21 +26,25 @@
 class AnalyticDG04b : public AnalyticDGBase {
  public:
   AnalyticDG04b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
-    : AnalyticDGBase(mesh, order, advection) {};
-  ~AnalyticDG04b() {};
+    : AnalyticDGBase(mesh, order, advection){};
+  ~AnalyticDG04b(){};
 
   // analytic data in conventional Taylor basis
   // -- diffusion tensor
-  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override {
+  virtual Amanzi::WhetStone::Tensor
+  Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override
+  {
     Amanzi::WhetStone::Tensor K(3, 1);
     K(0, 0) = 1.0;
     return K;
   }
 
   // -- solution
-  virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                              Amanzi::WhetStone::Polynomial& sol) override {
-    sol.Reshape(d_, order_, true); 
+  virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p,
+                              double t,
+                              Amanzi::WhetStone::Polynomial& sol) override
+  {
+    sol.Reshape(d_, order_, true);
     double snx(std::sin(3 * p[0])), csx(std::cos(3 * p[0]));
     double sny(std::sin(6 * p[1])), csy(std::cos(6 * p[1]));
     double snz(std::sin(4 * p[2])), csz(std::cos(4 * p[2]));
@@ -54,12 +58,12 @@ class AnalyticDG04b : public AnalyticDGBase {
     }
 
     if (order_ > 1) {
-      sol(2, 0) =  -4.5 * snx * sny * snz;
-      sol(2, 1) =  18.0 * csx * csy * snz;
-      sol(2, 2) =  12.0 * csx * sny * csz;
+      sol(2, 0) = -4.5 * snx * sny * snz;
+      sol(2, 1) = 18.0 * csx * csy * snz;
+      sol(2, 2) = 12.0 * csx * sny * csz;
       sol(2, 3) = -18.0 * snx * sny * snz;
-      sol(2, 4) =  24.0 * snx * csy * csz;
-      sol(2, 5) =  -8.0 * snx * sny * csz;
+      sol(2, 4) = 24.0 * snx * csy * csz;
+      sol(2, 5) = -8.0 * snx * sny * csz;
     }
 
     sol.set_origin(p);
@@ -67,36 +71,42 @@ class AnalyticDG04b : public AnalyticDGBase {
   }
 
   // -- accumulation
-  virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                                  Amanzi::WhetStone::Polynomial& a) override {
-    a.Reshape(d_, 0, true); 
+  virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p,
+                                  double t,
+                                  Amanzi::WhetStone::Polynomial& a) override
+  {
+    a.Reshape(d_, 0, true);
   }
 
   // -- velocity
-  virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                              Amanzi::WhetStone::VectorPolynomial& v) override {
+  virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p,
+                              double t,
+                              Amanzi::WhetStone::VectorPolynomial& v) override
+  {
     v.resize(d_);
     v.set_origin(p);
 
-    for (int i = 0; i < d_; ++i) {
-      v[i].Reshape(d_, 0, true); 
-    }
+    for (int i = 0; i < d_; ++i) { v[i].Reshape(d_, 0, true); }
   }
 
   // -- reaction
-  virtual void ReactionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                              Amanzi::WhetStone::Polynomial& r) override {
-    r.Reshape(d_, 0, true); 
+  virtual void ReactionTaylor(const Amanzi::AmanziGeometry::Point& p,
+                              double t,
+                              Amanzi::WhetStone::Polynomial& r) override
+  {
+    r.Reshape(d_, 0, true);
   }
 
   // -- source term
-  virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                            Amanzi::WhetStone::Polynomial& src) override {
+  virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p,
+                            double t,
+                            Amanzi::WhetStone::Polynomial& src) override
+  {
     Amanzi::WhetStone::Polynomial sol;
     Amanzi::WhetStone::VectorPolynomial v;
 
     SolutionTaylor(p, 1.0, sol);
-    VelocityTaylor(p, t, v); 
+    VelocityTaylor(p, t, v);
 
     v[0].ChangeOrigin(p);
     v[1].ChangeOrigin(p);
@@ -106,4 +116,3 @@ class AnalyticDG04b : public AnalyticDGBase {
 };
 
 #endif
-

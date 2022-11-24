@@ -26,13 +26,13 @@ namespace Multiphase {
 class WRMmp_Corey : public WRMmp {
  public:
   WRMmp_Corey(Teuchos::ParameterList& plist);
-  ~WRMmp_Corey() {};
-  
+  ~WRMmp_Corey(){};
+
   // required methods from the base class
   virtual double k_relative(double sl, int phase);
   virtual double capillaryPressure(double saturation);
   virtual double dPc_dS(double sl);
-  virtual double dKdS(double sl, int phase) ;
+  virtual double dKdS(double sl, int phase);
 
  private:
   double srl_, srg_, pcap_;
@@ -40,7 +40,7 @@ class WRMmp_Corey : public WRMmp {
   static Utils::RegisteredFactory<WRMmp, WRMmp_Corey> factory_;
 };
 
-}  // namespace Multiphase
-}  // namespace Amanzi
- 
+} // namespace Multiphase
+} // namespace Amanzi
+
 #endif

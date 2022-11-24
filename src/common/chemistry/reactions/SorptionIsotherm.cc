@@ -16,11 +16,9 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-SorptionIsotherm::SorptionIsotherm(const std::string& name,
-                                   const SorptionIsothermType type)
-  : name_(name),
-    isotherm_type_(type) {
-}
+SorptionIsotherm::SorptionIsotherm(const std::string& name, const SorptionIsothermType type)
+  : name_(name), isotherm_type_(type)
+{}
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

@@ -23,16 +23,15 @@ class Species;
 
 class ActivityModelDebyeHuckel : public ActivityModel {
  public:
-  ActivityModelDebyeHuckel() : ActivityModel(), max_log_gamma_(7.0) {};
-  ~ActivityModelDebyeHuckel() {};
+  ActivityModelDebyeHuckel() : ActivityModel(), max_log_gamma_(7.0){};
+  ~ActivityModelDebyeHuckel(){};
 
   virtual double Evaluate(const Species& species) final;
 
-  virtual void EvaluateVector(
-      const std::vector<Species>& primary_species, 
-      const std::vector<AqueousEquilibriumComplex>& secondary_species,
-      std::vector<double>* gamma,
-      double* actw) final;
+  virtual void EvaluateVector(const std::vector<Species>& primary_species,
+                              const std::vector<AqueousEquilibriumComplex>& secondary_species,
+                              std::vector<double>* gamma,
+                              double* actw) final;
 
   virtual void Display() const override;
 
@@ -44,7 +43,7 @@ class ActivityModelDebyeHuckel : public ActivityModel {
   double max_log_gamma_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif

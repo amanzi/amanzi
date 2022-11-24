@@ -36,7 +36,7 @@ namespace AmanziGeometry {
 // -------------------------------------------------------------
 // RegionLabeledSet:: constructor
 // -------------------------------------------------------------
-RegionLabeledSet::RegionLabeledSet(const std::string& name, 
+RegionLabeledSet::RegionLabeledSet(const std::string& name,
                                    const int id,
                                    const std::string& entity_str,
                                    const std::string& file,

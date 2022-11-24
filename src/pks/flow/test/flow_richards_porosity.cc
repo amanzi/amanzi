@@ -32,7 +32,8 @@
 #include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
-TEST(FLOW_POROSITY_MODELS) {
+TEST(FLOW_POROSITY_MODELS)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -49,7 +50,7 @@ TEST(FLOW_POROSITY_MODELS) {
   // create a mesh framework
   Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
 
   Preference pref;
@@ -57,7 +58,7 @@ TEST(FLOW_POROSITY_MODELS) {
   pref.push_back(Framework::MSTK);
   pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, -2.0, 1.0, 0.0, 18, 18);
 
@@ -75,9 +76,9 @@ TEST(FLOW_POROSITY_MODELS) {
   S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
-  std::string passwd(""); 
+  std::string passwd("");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
-  
+
   AmanziMesh::Entity_ID_List block;
   mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
   for (int i = 0; i != block.size(); ++i) {
@@ -109,7 +110,7 @@ TEST(FLOW_POROSITY_MODELS) {
   RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
-  // solve the problem 
+  // solve the problem
   TI_Specs ti_specs;
   ti_specs.T0 = 0.0;
   ti_specs.dT0 = 1.0;
@@ -117,7 +118,7 @@ TEST(FLOW_POROSITY_MODELS) {
   ti_specs.max_itrs = 400;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT); // dummy times
 
   // output
   double pmin, pmax;
@@ -126,16 +127,15 @@ TEST(FLOW_POROSITY_MODELS) {
   phi.MaxValue(&pmax);
   CHECK(pmin + 0.02 < pmax);
 
-  Teuchos::ParameterList& tmp = plist->sublist("PKs").sublist("flow")
-                                      .sublist("porosity models")
-                                      .sublist("POM for Material 2");
+  Teuchos::ParameterList& tmp =
+    plist->sublist("PKs").sublist("flow").sublist("porosity models").sublist("POM for Material 2");
   std::cout << "Mat2: ref pressure:" << tmp.get<double>("reference pressure") << std::endl;
   std::cout << "      compressibility:" << tmp.get<double>("pore compressibility") << std::endl;
   std::cout << "Porosity min = " << pmin << std::endl;
   std::cout << "Porosity max = " << pmax << std::endl;
 
   if (MyPID == 0) {
-    GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+    GMV::open_data_file(*mesh, (std::string) "flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "pressure");
     GMV::close_data_file();
@@ -145,4 +145,3 @@ TEST(FLOW_POROSITY_MODELS) {
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells; c++) CHECK(p[0][c] > -4.0 && p[0][c] < 0.01);
 }
-

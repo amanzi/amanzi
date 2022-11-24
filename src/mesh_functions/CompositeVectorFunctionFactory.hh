@@ -59,11 +59,11 @@ namespace Functions {
 
 Teuchos::RCP<CompositeVectorFunction>
 CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
-        const CompositeVectorSpace& factory,
-        std::vector<std::string>& componentname_list);
+                              const CompositeVectorSpace& factory,
+                              std::vector<std::string>& componentname_list);
 
-} // namespace
-} // namespace
+} // namespace Functions
+} // namespace Amanzi
 
 
 #endif

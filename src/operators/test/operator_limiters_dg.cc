@@ -36,12 +36,13 @@
 #include "OperatorDefs.hh"
 #include "ReconstructionCellLinear.hh"
 
-const std::string LIMITERS[3] = {"B-J", "B-J c2c", "B-J all"};
+const std::string LIMITERS[3] = { "B-J", "B-J c2c", "B-J all" };
 
 /* *****************************************************************
 * Limiters must be localized based on a smoothness indicator.
 ***************************************************************** */
-void RunTest(std::string filename, std::string basis, double& l2norm)
+void
+RunTest(std::string filename, std::string basis, double& l2norm)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -50,14 +51,15 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: Smoothness indicator and limiters for DG, basis=" << basis << std::endl;
+  if (MyPID == 0)
+    std::cout << "\nTest: Smoothness indicator and limiters for DG, basis=" << basis << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(filename);
 
-  // create and initialize cell-based field 
+  // create and initialize cell-based field
   int nk(6), dim(2);
   CompositeVectorSpace cvs1;
   cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
@@ -66,8 +68,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
 
   int order = 2;
   Teuchos::ParameterList dglist;
-  dglist.set<int>("method order", order)
-        .set<std::string>("dg basis", basis);
+  dglist.set<int>("method order", order).set<std::string>("dg basis", basis);
 
   WhetStone::DG_Modal dg(dglist, mesh);
   AnalyticDG08b ana(mesh, order, true);
@@ -76,7 +77,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
   ana.InitialGuess(dg, *field_c, 0.0);
   field->ScatterMasterToGhosted("cell");
 
-  int ncells_owned  = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // memory for gradient
@@ -92,13 +93,13 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
 
     if (tst == 0) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
-           .set<std::string>("limiter stencil", "face to cells");
+        .set<std::string>("limiter stencil", "face to cells");
     } else if (tst == 1) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
-           .set<std::string>("limiter stencil", "cell to closest cells");
+        .set<std::string>("limiter stencil", "cell to closest cells");
     } else if (tst == 2) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
-           .set<std::string>("limiter stencil", "cell to all cells");
+        .set<std::string>("limiter stencil", "cell to all cells");
     }
 
     std::vector<int> bc_model(nfaces_wghost, 0);
@@ -127,21 +128,17 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
 
     // create list of cells where to apply limiter
     double L(0.0);
-    double threshold = -4 * std::log10((double) order) - L;
+    double threshold = -4 * std::log10((double)order) - L;
     AmanziMesh::Entity_ID_List ids;
 
     for (int c = 0; c < ncells_owned; ++c) {
       double honorm(0.0);
-      for (int i = dim + 1; i < nk; ++i)
-        honorm += (*field_c)[i][c] * (*field_c)[i][c];
+      for (int i = dim + 1; i < nk; ++i) honorm += (*field_c)[i][c] * (*field_c)[i][c];
 
       double unorm = honorm;
-      for (int i = 0; i <= dim; ++i)
-        unorm += (*field_c)[i][c] * (*field_c)[i][c];
+      for (int i = 0; i <= dim; ++i) unorm += (*field_c)[i][c] * (*field_c)[i][c];
 
-      if (unorm > 0.0 && std::log10(honorm / unorm) > threshold) {
-        ids.push_back(c);
-      }
+      if (unorm > 0.0 && std::log10(honorm / unorm) > threshold) { ids.push_back(c); }
     }
 
     // Apply limiter
@@ -158,9 +155,13 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     int nids, itmp = ids.size();
     mesh->get_comm()->SumAll(&itmp, &nids, 1);
     double fraction = 100.0 * nids / grad_c.GlobalLength();
-    if (MyPID == 0) 
+    if (MyPID == 0)
       printf("%9s: errors: %10.6f %10.6f  ||grad||=%8.4f  indicator=%5.1f%%\n",
-          LIMITERS[tst].c_str(), err_int, err_glb, gnorm, fraction);
+             LIMITERS[tst].c_str(),
+             err_int,
+             err_glb,
+             gnorm,
+             fraction);
     CHECK(fraction < 15.0);
 
     // calculate true L2 error of limited gradient
@@ -194,14 +195,16 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     mesh->get_comm()->SumAll(&tmp, &err, 1);
     tmp = l2norm;
     mesh->get_comm()->SumAll(&tmp, &l2norm, 1);
-    if (MyPID == 0) 
-      printf("       sol errors: %10.6f   ||u||=%8.4f\n", std::pow(err, 0.5), std::pow(l2norm, 0.5));
+    if (MyPID == 0)
+      printf(
+        "       sol errors: %10.6f   ||u||=%8.4f\n", std::pow(err, 0.5), std::pow(l2norm, 0.5));
     CHECK(err < 0.02);
   }
 }
 
 
-TEST(LIMITER_SMOOTHNESS_INDICATOR_2D) {
+TEST(LIMITER_SMOOTHNESS_INDICATOR_2D)
+{
   double l2norm1;
   RunTest("test/circle_quad10.exo", "orthonormalized", l2norm1);
   // RunTest("test/circle_quad20.exo");
@@ -214,7 +217,8 @@ TEST(LIMITER_SMOOTHNESS_INDICATOR_2D) {
 /* *****************************************************************
 * New limiters
 ***************************************************************** */
-void RunTestGaussPoints(const std::string& limiter_name)
+void
+RunTestGaussPoints(const std::string& limiter_name)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -223,14 +227,15 @@ void RunTestGaussPoints(const std::string& limiter_name)
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: Limiters at Gauss points, method=" << limiter_name << std::endl;
+  if (MyPID == 0)
+    std::cout << "\nTest: Limiters at Gauss points, method=" << limiter_name << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/circle_quad10.exo");
 
-  // create and initialize cell-based field 
+  // create and initialize cell-based field
   int nk(6), dim(2);
   CompositeVectorSpace cvs1;
   cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
@@ -239,17 +244,16 @@ void RunTestGaussPoints(const std::string& limiter_name)
 
   int order = 2;
   Teuchos::ParameterList dglist;
-  dglist.set<int>("method order", order)
-        .set<std::string>("dg basis", "orthonormalized");
+  dglist.set<int>("method order", order).set<std::string>("dg basis", "orthonormalized");
 
   WhetStone::DG_Modal dg(dglist, mesh);
   AnalyticDG08b ana(mesh, order, true);
-  ana.set_shapes(true, false, false);  // cone, hump, cylinder
+  ana.set_shapes(true, false, false); // cone, hump, cylinder
 
   ana.InitialGuess(dg, *field_c, 0.0);
   field->ScatterMasterToGhosted("cell");
 
-  int ncells_owned  = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // memory for gradient
@@ -258,10 +262,10 @@ void RunTestGaussPoints(const std::string& limiter_name)
 
   Teuchos::ParameterList plist;
   plist.set<int>("polynomial_order", 2)
-       .set<bool>("limiter extension for transport", false)
-       .set<std::string>("limiter", limiter_name)
-       .set<std::string>("limiter stencil", "cell to all cells")
-       .set<int>("limiter points", 3);
+    .set<bool>("limiter extension for transport", false)
+    .set<std::string>("limiter", limiter_name)
+    .set<std::string>("limiter stencil", "cell to all cells")
+    .set<int>("limiter points", 3);
 
   // boundary data
   std::vector<int> bc_model(nfaces_wghost, 0);
@@ -281,7 +285,7 @@ void RunTestGaussPoints(const std::string& limiter_name)
   limiter.Init(plist);
   limiter.ApplyLimiterDG(field_c, dg, bc_model, bc_value);
   const auto& factor = *limiter.limiter();
-  for (int c = 0; c < ncells_owned; ++c) 
+  for (int c = 0; c < ncells_owned; ++c)
     for (int i = 1; i < nk; ++i) (*field_c)[i][c] *= factor[c];
 
   double minlim, avglim, maxlim;
@@ -312,7 +316,8 @@ void RunTestGaussPoints(const std::string& limiter_name)
 }
 
 
-TEST(LIMITER_GAUSS_POINTS) {
+TEST(LIMITER_GAUSS_POINTS)
+{
   RunTestGaussPoints("Barth-Jespersen dg");
   RunTestGaussPoints("Barth-Jespersen dg hierarchical");
 }

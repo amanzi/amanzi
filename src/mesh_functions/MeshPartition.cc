@@ -21,20 +21,16 @@ namespace Functions {
 /* ******************************************************************
 * Simple constructor.
 ****************************************************************** */
-MeshPartition::MeshPartition(AmanziMesh::Entity_kind kind,
-                             const std::vector<std::string>& regions) :
-    kind_(kind),
-    regions_(regions),
-    initialized_(false) 
-{
-}
+MeshPartition::MeshPartition(AmanziMesh::Entity_kind kind, const std::vector<std::string>& regions)
+  : kind_(kind), regions_(regions), initialized_(false)
+{}
 
 
 /* ******************************************************************
 * Populate the map entity -> number in the list of names.
 ****************************************************************** */
-void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                               const int default_value) 
+void
+MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, const int default_value)
 {
   default_value_ = default_value;
 
@@ -77,10 +73,11 @@ void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 /* ******************************************************************
 * Populate the map entity -> number in the list of names.
 ****************************************************************** */
-void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                               AmanziMesh::Entity_kind kind,
-                               const std::vector<std::vector<std::string> >& regions,
-                               const int default_value) 
+void
+MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                          AmanziMesh::Entity_kind kind,
+                          const std::vector<std::vector<std::string>>& regions,
+                          const int default_value)
 {
   kind_ = kind;
   default_value_ = default_value;
@@ -93,7 +90,7 @@ void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   map_->PutValue(default_value);
 
   for (int lcv = 0; lcv != regions.size(); ++lcv) {
-    const std::vector<std::string>& regs = regions[lcv]; 
+    const std::vector<std::string>& regs = regions[lcv];
     for (int r = 0; r < regs.size(); ++r) {
       AmanziMesh::Entity_ID_List block;
       mesh->get_set_entities(regs[r], kind_, AmanziMesh::Parallel_type::OWNED, &block);
@@ -128,7 +125,8 @@ void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 * In general, we allow incomplete coverage of the mesh. This 
 * routine verifies that ther are no wholes in the map.
 ****************************************************************** */
-void MeshPartition::Verify() const
+void
+MeshPartition::Verify() const
 {
   if (!initialized_) {
     Errors::Message msg("MeshPartition was not initialzied.");
@@ -144,5 +142,5 @@ void MeshPartition::Verify() const
   }
 }
 
-}  // namespace Functions
-}  // namespace Amanzi
+} // namespace Functions
+} // namespace Amanzi

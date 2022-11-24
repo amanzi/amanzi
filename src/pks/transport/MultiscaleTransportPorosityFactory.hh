@@ -28,7 +28,7 @@ class MultiscaleTransportPorosityFactory : public Utils::Factory<MultiscaleTrans
   Teuchos::RCP<MultiscaleTransportPorosity> Create(Teuchos::ParameterList& plist);
 };
 
-}  // namespace Transport
-}  // namespace Amanzi
+} // namespace Transport
+} // namespace Amanzi
 
 #endif

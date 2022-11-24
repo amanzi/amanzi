@@ -25,10 +25,9 @@ namespace Multiphase {
 /* ******************************************************************
 * Simple constructor
 ****************************************************************** */
-VaporPressureEvaluator::VaporPressureEvaluator(
-    Teuchos::ParameterList& plist, Teuchos::RCP<WRMmpPartition> wrm)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
-      wrm_(wrm)
+VaporPressureEvaluator::VaporPressureEvaluator(Teuchos::ParameterList& plist,
+                                               Teuchos::RCP<WRMmpPartition> wrm)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), wrm_(wrm)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -49,7 +48,9 @@ VaporPressureEvaluator::VaporPressureEvaluator(
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> VaporPressureEvaluator::Clone() const {
+Teuchos::RCP<Evaluator>
+VaporPressureEvaluator::Clone() const
+{
   return Teuchos::rcp(new VaporPressureEvaluator(*this));
 }
 
@@ -57,8 +58,8 @@ Teuchos::RCP<Evaluator> VaporPressureEvaluator::Clone() const {
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void VaporPressureEvaluator::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+VaporPressureEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& temp = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
   const auto& sat = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
@@ -78,9 +79,11 @@ void VaporPressureEvaluator::Evaluate_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void VaporPressureEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results) 
+void
+VaporPressureEvaluator::EvaluatePartialDerivative_(const State& S,
+                                                   const Key& wrt_key,
+                                                   const Tag& wrt_tag,
+                                                   const std::vector<CompositeVector*>& results)
 {
   const auto& temp = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
   const auto& sat = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
@@ -95,8 +98,8 @@ void VaporPressureEvaluator::EvaluatePartialDerivative_(
       double pc = wrm_->second[(*wrm_->first)[c]]->capillaryPressure(sat[0][c]);
       double a = nl[0][c] * R * temp[0][c];
       double tmp = std::exp(-pc / a);
-      result_c[0][c] = tmp * (svp_->DPressureDT(temp[0][c])
-                            + svp_->Pressure(temp[0][c]) * pc / (a * temp[0][c]));
+      result_c[0][c] =
+        tmp * (svp_->DPressureDT(temp[0][c]) + svp_->Pressure(temp[0][c]) * pc / (a * temp[0][c]));
     }
   } else if (wrt_key == mol_density_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
@@ -116,6 +119,5 @@ void VaporPressureEvaluator::EvaluatePartialDerivative_(
   }
 }
 
-}  // namespace Multiphase
-}  // namespace Amanzi
-
+} // namespace Multiphase
+} // namespace Amanzi

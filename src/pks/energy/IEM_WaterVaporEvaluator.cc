@@ -18,7 +18,7 @@ namespace Amanzi {
 namespace Energy {
 
 IEM_WaterVaporEvaluator::IEM_WaterVaporEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   // defaults work fine, this sublist need not exist
   Teuchos::ParameterList sublist = plist.sublist("IEM parameters");
@@ -28,28 +28,30 @@ IEM_WaterVaporEvaluator::IEM_WaterVaporEvaluator(Teuchos::ParameterList& plist)
 }
 
 
-IEM_WaterVaporEvaluator::IEM_WaterVaporEvaluator(
-    Teuchos::ParameterList& plist, const Teuchos::RCP<IEM_WaterVapor>& iem)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
-      iem_(iem) {
+IEM_WaterVaporEvaluator::IEM_WaterVaporEvaluator(Teuchos::ParameterList& plist,
+                                                 const Teuchos::RCP<IEM_WaterVapor>& iem)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), iem_(iem)
+{
   InitializeFromPlist_();
 }
 
 
 IEM_WaterVaporEvaluator::IEM_WaterVaporEvaluator(const IEM_WaterVaporEvaluator& other)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      temp_key_(other.temp_key_),
-      mol_frac_key_(other.mol_frac_key_),
-      iem_(other.iem_) {};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+    temp_key_(other.temp_key_),
+    mol_frac_key_(other.mol_frac_key_),
+    iem_(other.iem_){};
 
 
 Teuchos::RCP<Evaluator>
-IEM_WaterVaporEvaluator::Clone() const {
+IEM_WaterVaporEvaluator::Clone() const
+{
   return Teuchos::rcp(new IEM_WaterVaporEvaluator(*this));
 }
 
 
-void IEM_WaterVaporEvaluator::InitializeFromPlist_()
+void
+IEM_WaterVaporEvaluator::InitializeFromPlist_()
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(make_pair(plist_.get<std::string>("internal energy key"), Tags::DEFAULT));
@@ -61,13 +63,14 @@ void IEM_WaterVaporEvaluator::InitializeFromPlist_()
   dependencies_.insert(std::make_pair(temp_key_, Tags::DEFAULT));
 
   // -- molar fraction of water vapor in the gaseous phase
-  mol_frac_key_ = plist_.get<std::string>("vapor molar fraction key", Keys::getKey(domain, "molar_fraction_gas"));
+  mol_frac_key_ =
+    plist_.get<std::string>("vapor molar fraction key", Keys::getKey(domain, "molar_fraction_gas"));
   dependencies_.insert(std::make_pair(mol_frac_key_, Tags::DEFAULT));
 }
 
 
-void IEM_WaterVaporEvaluator::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+IEM_WaterVaporEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   auto temp = S.GetPtr<CompositeVector>(temp_key_, Tags::DEFAULT);
   auto mol_frac = S.GetPtr<CompositeVector>(mol_frac_key_, Tags::DEFAULT);
@@ -85,9 +88,11 @@ void IEM_WaterVaporEvaluator::Evaluate_(
 }
 
 
-void IEM_WaterVaporEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+IEM_WaterVaporEvaluator::EvaluatePartialDerivative_(const State& S,
+                                                    const Key& wrt_key,
+                                                    const Tag& wrt_tag,
+                                                    const std::vector<CompositeVector*>& results)
 {
   auto temp = S.GetPtr<CompositeVector>(temp_key_, Tags::DEFAULT);
   auto mol_frac = S.GetPtr<CompositeVector>(mol_frac_key_, Tags::DEFAULT);
@@ -119,5 +124,5 @@ void IEM_WaterVaporEvaluator::EvaluatePartialDerivative_(
   }
 }
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi

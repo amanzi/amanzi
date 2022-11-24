@@ -35,18 +35,20 @@ namespace WhetStone {
 // formard declarations
 class Monomial;
 
-int PolynomialSpaceDimension(int d, int order);
+int
+PolynomialSpaceDimension(int d, int order);
 
 class Polynomial : public PolynomialBase {
  public:
-  Polynomial() {};
+  Polynomial(){};
   Polynomial(int d, int order);
   Polynomial(int d, int order, const DenseVector& coefs);
   Polynomial(int d, const int* multi_index, double factor);
   Polynomial(const Polynomial& poly);
   Polynomial(const Monomial& mono);
-  Polynomial(int d, int order,
-             const std::vector<AmanziGeometry::Point>& xyz, 
+  Polynomial(int d,
+             int order,
+             const std::vector<AmanziGeometry::Point>& xyz,
              const DenseVector& values);
 
   // reshape polynomial and erase (optionally) memory
@@ -68,10 +70,11 @@ class Polynomial : public PolynomialBase {
   // -- get all polynomial coefficients
   virtual DenseVector ExpandCoefficients() const override { return coefs_; }
   // -- polynomial norms (we use 'inf' instead of 'max' for uniformity)
-  double NormInf() const {
-    double tmp; 
-    coefs_.NormInf(&tmp); 
-    return tmp; 
+  double NormInf() const
+  {
+    double tmp;
+    coefs_.NormInf(&tmp);
+    return tmp;
   }
 
   // -- operators (ring algebra)
@@ -79,39 +82,51 @@ class Polynomial : public PolynomialBase {
   Polynomial& operator-=(const Polynomial& poly);
   Polynomial& operator*=(const Polynomial& poly);
   Polynomial& operator*=(double val);
- 
-  friend Polynomial operator+(const Polynomial& poly1, const Polynomial& poly2) {
+
+  friend Polynomial operator+(const Polynomial& poly1, const Polynomial& poly2)
+  {
     Polynomial tmp(poly1);
     return tmp += poly2;
   }
 
-  friend Polynomial operator-(const Polynomial& poly1, const Polynomial& poly2) {
+  friend Polynomial operator-(const Polynomial& poly1, const Polynomial& poly2)
+  {
     Polynomial tmp(poly1);
     return tmp -= poly2;
   }
 
   friend Polynomial operator*(const Polynomial& poly1, const Polynomial& poly2);
 
-  friend Polynomial operator*(double val, const Polynomial& poly) {
+  friend Polynomial operator*(double val, const Polynomial& poly)
+  {
     Polynomial tmp(poly);
     for (int n = 0; n < tmp.size(); ++n) tmp(n) *= val;
     return tmp;
   }
-  friend Polynomial operator*(const Polynomial& poly, double val) {
+  friend Polynomial operator*(const Polynomial& poly, double val)
+  {
     Polynomial tmp(poly);
     for (int n = 0; n < tmp.size(); ++n) tmp(n) *= val;
     return tmp;
   }
 
   // iterator starts with constant term
-  PolynomialIterator begin(int k0 = 0) const { PolynomialIterator it(d_); return it.begin(k0); }
+  PolynomialIterator begin(int k0 = 0) const
+  {
+    PolynomialIterator it(d_);
+    return it.begin(k0);
+  }
   // returns an iterator referring to the past-the-end term in the polynomial
-  PolynomialIterator end() const { PolynomialIterator it(d_); return it.begin(order_ + 1); }
+  PolynomialIterator end() const
+  {
+    PolynomialIterator it(d_);
+    return it.begin(order_ + 1);
+  }
 
   // Change of coordinates:
   // --  x = xf + B * s
-  void ChangeCoordinates(const AmanziGeometry::Point& xf,
-                         const std::vector<AmanziGeometry::Point>& B);
+  void
+  ChangeCoordinates(const AmanziGeometry::Point& xf, const std::vector<AmanziGeometry::Point>& B);
   // --  s = B^+ (x - xf)
   void InverseChangeCoordinates(const AmanziGeometry::Point& xf,
                                 const std::vector<AmanziGeometry::Point>& B);
@@ -122,18 +137,20 @@ class Polynomial : public PolynomialBase {
 
   // -- two-index access
   double& operator()(int i, int j) { return coefs_(PolynomialSpaceDimension(d_, i - 1) + j); }
-  const double& operator()(int i, int j) const { return coefs_(PolynomialSpaceDimension(d_, i - 1) + j); }
+  const double& operator()(int i, int j) const
+  {
+    return coefs_(PolynomialSpaceDimension(d_, i - 1) + j);
+  }
 
-  // output 
-  friend std::ostream& operator << (std::ostream& os, const Polynomial& p);
+  // output
+  friend std::ostream& operator<<(std::ostream& os, const Polynomial& p);
 
   // specialized member functions
   // -- Laplacian
   Polynomial Laplacian();
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

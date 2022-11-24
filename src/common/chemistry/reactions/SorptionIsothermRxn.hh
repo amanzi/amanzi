@@ -28,11 +28,11 @@ class MatrixBlock;
 
 class SorptionIsothermRxn {
  public:
-  SorptionIsothermRxn() {};
-  SorptionIsothermRxn(const std::string& species_name, 
+  SorptionIsothermRxn(){};
+  SorptionIsothermRxn(const std::string& species_name,
                       const int species_id,
                       std::shared_ptr<SorptionIsotherm> isotherm);
-  ~SorptionIsothermRxn() {};
+  ~SorptionIsothermRxn(){};
 
   const std::vector<double>& GetIsothermParameters() const;
 
@@ -40,29 +40,26 @@ class SorptionIsothermRxn {
 
   std::string IsothermName() const { return isotherm_->name(); }
 
-  SorptionIsotherm::SorptionIsothermType IsothermType() const {
-    return isotherm_->isotherm_type();
-  }
+  SorptionIsotherm::SorptionIsothermType IsothermType() const { return isotherm_->isotherm_type(); }
 
   int species_id() const { return species_id_; }
 
   void Update(const std::vector<Species>& primary_species);
 
   // add sorbed concentration to sorbed total
-  void AddContributionToTotal(std::vector<double> *total);
-  void AddContributionToDTotal(const std::vector<Species>& primary_species,
-                               MatrixBlock* dtotal);
+  void AddContributionToTotal(std::vector<double>* total);
+  void AddContributionToDTotal(const std::vector<Species>& primary_species, MatrixBlock* dtotal);
 
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
 
  private:
-  int species_id_;  // ID of primary species
-  std::string species_name_;  // name of primary species
+  int species_id_;           // ID of primary species
+  std::string species_name_; // name of primary species
   double sorbed_concentration_;
   std::shared_ptr<SorptionIsotherm> isotherm_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif

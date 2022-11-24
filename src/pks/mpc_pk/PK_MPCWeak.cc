@@ -24,10 +24,11 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
-double PK_MPCWeak::get_dt() {
+double
+PK_MPCWeak::get_dt()
+{
   double dt = 1.0e99;
-  for (PK_MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
-       pk != sub_pks_.end(); ++pk) {
+  for (PK_MPC<PK>::SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     dt = std::min<double>(dt, (*pk)->get_dt());
   }
   return dt;
@@ -37,16 +38,15 @@ double PK_MPCWeak::get_dt() {
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
-bool PK_MPCWeak::AdvanceStep(double t_old, double t_new, bool reinit) {
+bool
+PK_MPCWeak::AdvanceStep(double t_old, double t_new, bool reinit)
+{
   bool fail = false;
-  for (PK_MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
-       pk != sub_pks_.end(); ++pk) {
+  for (PK_MPC<PK>::SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
-    if (fail) {
-      return fail;
-    }
+    if (fail) { return fail; }
   }
   return fail;
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

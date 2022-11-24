@@ -17,7 +17,7 @@ namespace Amanzi {
 namespace Transport {
 
 RegisteredPKFactory<TransportExplicit_PK> TransportExplicit_PK::reg_("transport");
-RegisteredPKFactory<TransportImplicit_PK> TransportImplicit_PK::reg_("transport implicit");  
+RegisteredPKFactory<TransportImplicit_PK> TransportImplicit_PK::reg_("transport implicit");
 
-}  // namespace Transport
-}  // namespace Amanzi
+} // namespace Transport
+} // namespace Amanzi

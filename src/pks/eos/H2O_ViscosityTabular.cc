@@ -23,5 +23,5 @@ H2O_ViscosityTabular::H2O_ViscosityTabular(Teuchos::ParameterList& eos_plist)
   table_ = Teuchos::rcp(new LookupTable(eos_plist_));
 }
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi

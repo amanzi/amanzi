@@ -25,12 +25,11 @@ namespace Amanzi {
 namespace Operators {
 
 // unique index for array returned by face_get_cells
-int UniqueIndexFaceToCells(const AmanziMesh::Mesh& mesh, int f, int c);
+int
+UniqueIndexFaceToCells(const AmanziMesh::Mesh& mesh, int f, int c);
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 
 #endif
-
-

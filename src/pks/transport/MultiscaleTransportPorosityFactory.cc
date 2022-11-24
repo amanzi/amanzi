@@ -18,11 +18,12 @@ namespace Amanzi {
 namespace Transport {
 
 // method for instantiating a multiscale porosity model
-Teuchos::RCP<MultiscaleTransportPorosity> MultiscaleTransportPorosityFactory::Create(Teuchos::ParameterList& plist) {
+Teuchos::RCP<MultiscaleTransportPorosity>
+MultiscaleTransportPorosityFactory::Create(Teuchos::ParameterList& plist)
+{
   std::string msp_typename = plist.get<std::string>("multiscale model");
   return Teuchos::rcp(CreateInstance(msp_typename, plist));
 };
 
-}  // namespace Transport
-}  // namespace Amanzi
-
+} // namespace Transport
+} // namespace Amanzi

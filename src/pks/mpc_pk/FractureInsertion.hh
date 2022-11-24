@@ -47,11 +47,14 @@ class FractureInsertion {
   const Teuchos::RCP<CompositeVectorSpace>& get_cvs_matrix() { return cvs_matrix_; }
   const Teuchos::RCP<CompositeVectorSpace>& get_cvs_fracture() { return cvs_fracture_; }
 
-  const std::shared_ptr<std::vector<std::vector<int> > >& get_inds_matrix() { return inds_matrix_; }
-  const std::shared_ptr<std::vector<std::vector<int> > >& get_inds_fracture() { return inds_fracture_; }
+  const std::shared_ptr<std::vector<std::vector<int>>>& get_inds_matrix() { return inds_matrix_; }
+  const std::shared_ptr<std::vector<std::vector<int>>>& get_inds_fracture()
+  {
+    return inds_fracture_;
+  }
 
-  const std::shared_ptr<std::vector<double> >& get_values() { return values_; }
-  const std::shared_ptr<std::vector<double> >& get_values2() { return values2_; }
+  const std::shared_ptr<std::vector<double>>& get_values() { return values_; }
+  const std::shared_ptr<std::vector<double>>& get_values2() { return values2_; }
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_matrix_, mesh_fracture_;
@@ -59,9 +62,9 @@ class FractureInsertion {
   Teuchos::RCP<CompositeVectorSpace> cvs_matrix_, cvs_fracture_;
   Teuchos::RCP<const Epetra_BlockMap> mmap_;
 
-  std::shared_ptr<std::vector<std::vector<int> > > inds_matrix_, inds_fracture_;
-  std::shared_ptr<std::vector<double> > values_, values2_;
+  std::shared_ptr<std::vector<std::vector<int>>> inds_matrix_, inds_fracture_;
+  std::shared_ptr<std::vector<double>> values_, values2_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 #endif

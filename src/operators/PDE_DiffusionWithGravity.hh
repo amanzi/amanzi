@@ -20,35 +20,33 @@ namespace Operators {
 
 class PDE_DiffusionWithGravity : public virtual PDE_Diffusion {
  public:
-  PDE_DiffusionWithGravity(const Teuchos::RCP<Operator>& global_op) :
-      PDE_Diffusion(global_op),
-      is_scalar_(false) {};
+  PDE_DiffusionWithGravity(const Teuchos::RCP<Operator>& global_op)
+    : PDE_Diffusion(global_op), is_scalar_(false){};
 
-  PDE_DiffusionWithGravity(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_Diffusion(mesh),
-      is_scalar_(false) {};
+  PDE_DiffusionWithGravity(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : PDE_Diffusion(mesh), is_scalar_(false){};
 
-  PDE_DiffusionWithGravity(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      PDE_Diffusion(mesh),
-      is_scalar_(false) {};
+  PDE_DiffusionWithGravity(const Teuchos::RCP<AmanziMesh::Mesh>& mesh)
+    : PDE_Diffusion(mesh), is_scalar_(false){};
 
   virtual ~PDE_DiffusionWithGravity() = default;
-  
+
   virtual void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
-  
-  virtual void SetDensity(double rho) {
+
+  virtual void SetDensity(double rho)
+  {
     is_scalar_ = true;
     rho_ = rho;
   }
 
-  virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
+  virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho)
+  {
     is_scalar_ = false;
-    if (rho->HasComponent("cell")) {
-      rho_cv_ = rho;
-    }
+    if (rho->HasComponent("cell")) { rho_cv_ = rho; }
   }
 
-  double GetDensity(int c) {
+  double GetDensity(int c)
+  {
     if (is_scalar_) return rho_;
     return (*rho_cv_->ViewComponent("cell", true))[0][c];
   }
@@ -60,7 +58,7 @@ class PDE_DiffusionWithGravity : public virtual PDE_Diffusion {
   AmanziGeometry::Point g_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
-  
-#endif 
+} // namespace Operators
+} // namespace Amanzi
+
+#endif

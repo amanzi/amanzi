@@ -64,10 +64,10 @@ class RegionBoxVolumeFractions : public Region {
   // and vector of normals (order is important).
   RegionBoxVolumeFractions(const std::string& name,
                            const int id,
-                           const Point& p0, 
+                           const Point& p0,
                            const Point& p1,
                            const std::vector<Point>& normals,
-                           const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
+                           const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
 
   // Is the specified point inside this region?
   bool inside(const Point& p) const;
@@ -76,8 +76,8 @@ class RegionBoxVolumeFractions : public Region {
   // is well defined when the polytope and box have same dimensionality.
   //
   // Polyhedron with counter clockwise ordered faces (wrt normals)
-  double intersect(const std::vector<Point>& polytope, 
-                   const std::vector<std::vector<int> >& faces) const;
+  double
+  intersect(const std::vector<Point>& polytope, const std::vector<std::vector<int>>& faces) const;
 
  protected:
   const Point p0_, p1_; // two corners of the box
@@ -85,15 +85,16 @@ class RegionBoxVolumeFractions : public Region {
 
  private:
   TensorSimple N_;
-  double jacobian_;  // change of area/volume during transformation
+  double jacobian_; // change of area/volume during transformation
   int degeneracy_;  // degenerate box direction, only is allowed.
 };
 
 
 struct ClippedFace {
-  ClippedFace() { 
+  ClippedFace()
+  {
     new_edge = std::make_pair(-1, -1);
-    edge_flag = 0; 
+    edge_flag = 0;
   }
 
   std::list<int> nodes;
@@ -104,18 +105,20 @@ struct ClippedFace {
 
 // non-member functions
 // -- intersection of counter clockwise oriented convex polygons
-void IntersectConvexPolygons(const std::vector<Point>& xy1,
-                             const std::vector<Point>& xy2,
-                             std::vector<Point>& xy3);
+void
+IntersectConvexPolygons(const std::vector<Point>& xy1,
+                        const std::vector<Point>& xy2,
+                        std::vector<Point>& xy3);
 
 // -- intersection of a convex polyhedra, one is defined by a set of half-spaces
-void IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
-                              const std::vector<std::vector<int> >& faces1,
-                              const std::vector<std::pair<Point, Point> >& xyz2,
-                              std::vector<Point>& xyz3,
-                              std::vector<std::vector<int> >& faces3);
+void
+IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
+                         const std::vector<std::vector<int>>& faces1,
+                         const std::vector<std::pair<Point, Point>>& xyz2,
+                         std::vector<Point>& xyz3,
+                         std::vector<std::vector<int>>& faces3);
 
-}  // namespace AmanziGeometry
-}  // namespace Amanzi
+} // namespace AmanziGeometry
+} // namespace Amanzi
 
 #endif

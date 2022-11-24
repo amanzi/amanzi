@@ -31,11 +31,11 @@ namespace Multiphase {
 class MultiphaseBoundaryFunction : public PK_DomainFunction {
  public:
   MultiphaseBoundaryFunction()
-      : rainfall_(false),
-        bc_name_("underfined"),
-        component_id_(-1),
-        component_name_("water"),
-        component_phase_(-1) {};
+    : rainfall_(false),
+      bc_name_("underfined"),
+      component_id_(-1),
+      component_name_("water"),
+      component_phase_(-1){};
 
   MultiphaseBoundaryFunction(const Teuchos::ParameterList& plist);
   void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
@@ -58,7 +58,7 @@ class MultiphaseBoundaryFunction : public PK_DomainFunction {
   int component_phase_;
 };
 
-}  // namespace Multiphase
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi
 
 #endif

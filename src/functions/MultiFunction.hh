@@ -18,9 +18,8 @@ Function from R^d to R^n.
 namespace Amanzi {
 
 class MultiFunction {
-
-public:
-  MultiFunction(const std::vector<Teuchos::RCP<const Function> >& functions);
+ public:
+  MultiFunction(const std::vector<Teuchos::RCP<const Function>>& functions);
   MultiFunction(const Teuchos::RCP<const Function>& function);
   MultiFunction(Teuchos::ParameterList& plist);
 
@@ -30,10 +29,10 @@ public:
   double* operator()(const std::vector<double>& xt) const;
 
  private:
-  std::vector<Teuchos::RCP<const Function> > functions_;
+  std::vector<Teuchos::RCP<const Function>> functions_;
   double* values_;
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

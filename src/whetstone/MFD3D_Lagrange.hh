@@ -32,14 +32,15 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Lagrange : public MFD3D { 
+class MFD3D_Lagrange : public MFD3D {
  public:
   MFD3D_Lagrange(const Teuchos::ParameterList& plist,
                  const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
 
   // required methods
   // -- schema
-  virtual std::vector<SchemaItem> schema() const override {
+  virtual std::vector<SchemaItem> schema() const override
+  {
     return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, 1));
   }
 
@@ -48,28 +49,35 @@ class MFD3D_Lagrange : public MFD3D {
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- projectors
-  virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
+  virtual void L2Cell(int c,
+                      const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
-                      const Polynomial* moments, Polynomial& uc) override {
+                      const Polynomial* moments,
+                      Polynomial& uc) override
+  {
     ProjectorCell_(c, ve, vf, uc);
   }
 
-  virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
+  virtual void H1Cell(int c,
+                      const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
-                      const Polynomial* moments, Polynomial& uc) override {
+                      const Polynomial* moments,
+                      Polynomial& uc) override
+  {
     ProjectorCell_(c, ve, vf, uc);
   }
 
  private:
-  void ProjectorCell_(int c, const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf, Polynomial& uc);
+  void ProjectorCell_(int c,
+                      const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
+                      Polynomial& uc);
 
  private:
   static RegisteredFactory<MFD3D_Lagrange> factory_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

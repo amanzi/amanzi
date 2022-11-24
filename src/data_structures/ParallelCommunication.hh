@@ -25,13 +25,13 @@
 namespace Amanzi {
 
 class ParallelCommunication {
-
-public:
-  ParallelCommunication(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) {
-    importer_cell_initialized_ = false; 
-    importer_face_initialized_ = false; 
+ public:
+  ParallelCommunication(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh)
+  {
+    importer_cell_initialized_ = false;
+    importer_face_initialized_ = false;
   }
-  ~ParallelCommunication() {};
+  ~ParallelCommunication(){};
 
   // data management
   void CopyMasterCell2GhostCell(Epetra_IntVector& vhost);
@@ -51,6 +51,6 @@ public:
   bool importer_face_initialized_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

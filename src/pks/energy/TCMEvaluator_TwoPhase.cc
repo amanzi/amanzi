@@ -22,7 +22,7 @@ namespace Energy {
 * Constructor.
 ****************************************************************** */
 TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   tag_ = Tags::DEFAULT;
   if (my_keys_.size() == 0) {
@@ -47,16 +47,19 @@ TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(Teuchos::ParameterList& plist)
 * Copy constructor.
 ****************************************************************** */
 TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(const TCMEvaluator_TwoPhase& other)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      tc_(other.tc_),
-      porosity_key_(other.porosity_key_),
-      saturation_key_(other.saturation_key_) {}
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+    tc_(other.tc_),
+    porosity_key_(other.porosity_key_),
+    saturation_key_(other.saturation_key_)
+{}
 
 
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> TCMEvaluator_TwoPhase::Clone() const {
+Teuchos::RCP<Evaluator>
+TCMEvaluator_TwoPhase::Clone() const
+{
   return Teuchos::rcp(new TCMEvaluator_TwoPhase(*this));
 }
 
@@ -64,8 +67,8 @@ Teuchos::RCP<Evaluator> TCMEvaluator_TwoPhase::Clone() const {
 /* ******************************************************************
 * Evaluator body.
 ****************************************************************** */
-void TCMEvaluator_TwoPhase::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+TCMEvaluator_TwoPhase::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   // pull out the dependencies
   auto poro = S.GetPtr<CompositeVector>(porosity_key_, tag_);
@@ -88,13 +91,15 @@ void TCMEvaluator_TwoPhase::Evaluate_(
 /* ******************************************************************
 * Evaluator of derivarives. Mot yet implemented due to TCM
 ****************************************************************** */
-void TCMEvaluator_TwoPhase::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+TCMEvaluator_TwoPhase::EvaluatePartialDerivative_(const State& S,
+                                                  const Key& wrt_key,
+                                                  const Tag& wrt_tag,
+                                                  const std::vector<CompositeVector*>& results)
 {
   results[0]->PutScalar(0.0);
   // AMANZI_ASSERT(0);
 }
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi

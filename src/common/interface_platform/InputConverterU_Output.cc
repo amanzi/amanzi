@@ -15,7 +15,7 @@
 #include <string>
 #include <algorithm>
 
-#define  BOOST_FILESYTEM_NO_DEPRECATED
+#define BOOST_FILESYTEM_NO_DEPRECATED
 
 // TPLs
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -38,12 +38,12 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Empty
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateOutput_()
+Teuchos::ParameterList
+InputConverterU::TranslateOutput_()
 {
   Teuchos::ParameterList out_list;
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "Translating output" << std::endl;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) *vo_->os() << "Translating output" << std::endl;
   Teuchos::OSTab tab = vo_->getOSTab();
 
   MemoryManager mm;
@@ -51,7 +51,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
   char *tagname, *text;
   std::string unit;
 
-  DOMNodeList *node_list;
+  DOMNodeList* node_list;
   DOMNode* node;
 
   // get definitions node - this node MAY exist ONCE
@@ -83,7 +83,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
               times.push_back(ConvertUnits_(TrimString_(text), unit));
             }
           }
-          tm_parameter.set<Teuchos::Array<double> >("values", times);
+          tm_parameter.set<Teuchos::Array<double>>("values", times);
         } else {
           DOMElement* element = static_cast<DOMElement*>(inode);
           DOMNodeList* list = element->getElementsByTagName(mm.transcode("start"));
@@ -105,18 +105,18 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             } else {
               sps.append(-1.0);
             }
-            tm_parameter.set<Teuchos::Array<double> >("sps", sps);
+            tm_parameter.set<Teuchos::Array<double>>("sps", sps);
           } else {
-            tm_parameter.set<Teuchos::Array<double> >("values", sps);
+            tm_parameter.set<Teuchos::Array<double>>("values", sps);
           }
         }
         tmPL.sublist(name) = tm_parameter;
       }
 
       // process cycle macros
-      else if (strcmp(tagname,"cycle_macro") == 0) {
+      else if (strcmp(tagname, "cycle_macro") == 0) {
         Teuchos::ParameterList cm_parameter;
-        std::string name = GetAttributeValueS_(inode, "name");      
+        std::string name = GetAttributeValueS_(inode, "name");
 
         DOMElement* element = static_cast<DOMElement*>(inode);
         DOMNodeList* list = element->getElementsByTagName(mm.transcode("start"));
@@ -138,9 +138,9 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           } else {
             sps.append(-1);
           }
-          cm_parameter.set<Teuchos::Array<int> >("sps", sps);
+          cm_parameter.set<Teuchos::Array<int>>("sps", sps);
         } else {
-          cm_parameter.set<Teuchos::Array<int> >("values", sps);
+          cm_parameter.set<Teuchos::Array<int>>("values", sps);
         }
         cmPL.sublist(name) = cm_parameter;
       }
@@ -148,8 +148,8 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
     inode = inode->getNextSibling();
   }
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "Found " << cmPL.numParams() << " cycle macros and "
-               << tmPL.numParams() << " time macros." << std::endl;
+    *vo_->os() << "Found " << cmPL.numParams() << " cycle macros and " << tmPL.numParams()
+               << " time macros." << std::endl;
 
   // get output->vis node - this node must exist ONCE
   bool flag;
@@ -174,29 +174,26 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       } else if (strcmp(tagname, "file_format") == 0) {
         text = mm.transcode(jnode->getTextContent());
         visPL.set<std::string>("file format", TrimString_(text));
-      } else if (strcmp(tagname, "cycle_macros") == 0 ||
-                 strcmp(tagname, "cycle_macro") == 0) {
+      } else if (strcmp(tagname, "cycle_macros") == 0 || strcmp(tagname, "cycle_macro") == 0) {
         text = mm.transcode(jnode->getTextContent());
         ProcessMacros_("cycles", text, cmPL, visPL);
-      } else if (strcmp(tagname, "time_macros") == 0 ||
-                 strcmp(tagname, "time_macro") == 0) {
+      } else if (strcmp(tagname, "time_macros") == 0 || strcmp(tagname, "time_macro") == 0) {
         text = mm.transcode(jnode->getTextContent());
         ProcessMacros_("times", text, tmPL, visPL);
       } else if (strcmp(tagname, "write_regions") == 0) {
         DOMNodeList* kids = jnode->getChildNodes();
-        for (int k = 0; k < kids->getLength(); ++k) { 
+        for (int k = 0; k < kids->getLength(); ++k) {
           DOMNode* knode = kids->item(k);
           if (knode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
           std::string name = GetAttributeValueS_(knode, "name");
           std::string regs = GetAttributeValueS_(knode, "regions");
           std::vector<std::string> regions = CharToStrings_(regs.c_str());
-          visPL.sublist("write regions").set<Teuchos::Array<std::string> >(name, regions);
+          visPL.sublist("write regions").set<Teuchos::Array<std::string>>(name, regions);
         }
       } else if (strcmp(tagname, "write_partition") == 0) {
         text = mm.transcode(jnode->getTextContent());
-        if (strcmp(text, "true") == 0)
-          visPL.set<bool>("write partitions", true);
+        if (strcmp(text, "true") == 0) visPL.set<bool>("write partitions", true);
       }
     }
     out_list.sublist("visualization data") = visPL;
@@ -212,20 +209,17 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
     Teuchos::ParameterList chkPL;
     DOMNodeList* children = node->getChildNodes();
     for (int j = 0; j < children->getLength(); j++) {
-      DOMNode* jnode = children->item(j) ;
+      DOMNode* jnode = children->item(j);
       tagname = mm.transcode(jnode->getNodeName());
       text = mm.transcode(jnode->getTextContent());
 
       if (strcmp(tagname, "base_filename") == 0) {
         chkPL.set<std::string>("file name base", output_prefix_ + TrimString_(text));
-      }
-      else if (strcmp(tagname, "num_digits") == 0) {
+      } else if (strcmp(tagname, "num_digits") == 0) {
         chkPL.set<int>("file name digits", std::strtol(text, NULL, 10));
-      } else if (strcmp(tagname, "cycle_macros") == 0 ||
-                 strcmp(tagname, "cycle_macro") == 0) {
+      } else if (strcmp(tagname, "cycle_macros") == 0 || strcmp(tagname, "cycle_macro") == 0) {
         ProcessMacros_("cycles", text, cmPL, chkPL);
-      } else if (strcmp(tagname, "time_macros") == 0 ||
-                 strcmp(tagname, "time_macro") == 0) {
+      } else if (strcmp(tagname, "time_macros") == 0 || strcmp(tagname, "time_macro") == 0) {
         ProcessMacros_("times", text, tmPL, chkPL);
       }
     }
@@ -243,7 +237,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
     Teuchos::ParameterList chkPL;
     DOMNodeList* children = node->getChildNodes();
     for (int j = 0; j < children->getLength(); j++) {
-      DOMNode* jnode = children->item(j) ;
+      DOMNode* jnode = children->item(j);
       tagname = mm.transcode(jnode->getNodeName());
       text = mm.transcode(jnode->getTextContent());
 
@@ -273,19 +267,17 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         chkPL.set<std::string>("file name base", output_prefix_ + TrimString_(text));
       } else if (strcmp(tagname, "num_digits") == 0) {
         chkPL.set<int>("file name digits", std::strtol(text, NULL, 10));
-      } else if (strcmp(tagname, "cycle_macros") == 0 ||
-                 strcmp(tagname, "cycle_macro") == 0) {
+      } else if (strcmp(tagname, "cycle_macros") == 0 || strcmp(tagname, "cycle_macro") == 0) {
         ProcessMacros_("cycles", text, cmPL, chkPL);
-      } else if (strcmp(tagname, "time_macros") == 0 ||
-                 strcmp(tagname, "time_macro") == 0) {
+      } else if (strcmp(tagname, "time_macros") == 0 || strcmp(tagname, "time_macro") == 0) {
         ProcessMacros_("times", text, tmPL, chkPL);
       }
     }
 
     chkPL.sublist("write regions")
-        .set<Teuchos::Array<std::string> >("region names", material_regions_)
-        .set<Teuchos::Array<std::string> >("material names", material_names_)
-        .set<Teuchos::Array<int> >("material ids", material_ids_);
+      .set<Teuchos::Array<std::string>>("region names", material_regions_)
+      .set<Teuchos::Array<std::string>>("material names", material_names_)
+      .set<Teuchos::Array<int>>("material ids", material_ids_);
 
     out_list.sublist("walkabout data") = chkPL;
   }
@@ -301,7 +293,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
     Teuchos::ParameterList obsPL;
     inode = node->getFirstChild();
     while (inode != NULL) {
-      if (inode->getNodeType() != DOMNode::ELEMENT_NODE) { 
+      if (inode->getNodeType() != DOMNode::ELEMENT_NODE) {
         inode = inode->getNextSibling();
         continue;
       }
@@ -321,13 +313,13 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         unit = GetAttributeValueS_(inode, "length", TYPE_NONE, false, units_.system().length);
         obsPL.set<std::string>("length unit", unit);
 
-        unit = GetAttributeValueS_(inode, "concentration", TYPE_NONE, false, units_.system().concentration);
+        unit = GetAttributeValueS_(
+          inode, "concentration", TYPE_NONE, false, units_.system().concentration);
         obsPL.set<std::string>("concentration unit", unit);
 
       } else if (strcmp(tagname, "liquid_phase") == 0) {
         node = inode->getAttributes()->getNamedItem(mm.transcode("name"));
-        if (!node)
-            ThrowErrorMissing_("observations", "attribute", "name", "liquid_phase");
+        if (!node) ThrowErrorMissing_("observations", "attribute", "name", "liquid_phase");
 
         nobs_liquid = 0;
         DOMNodeList* children = inode->getChildNodes();
@@ -418,25 +410,24 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
                   obPL.set<std::string>("functional", "observation data: mean");
                 }
               } else if (strcmp(elem, "domain_name") == 0) {
-                obPL.set<std::string>("domain name", (strcmp(value, "fracture") == 0) ? "fracture" : "domain");
+                obPL.set<std::string>("domain name",
+                                      (strcmp(value, "fracture") == 0) ? "fracture" : "domain");
               } else if (strcmp(elem, "interpolation") == 0) {
                 if (strcmp(value, "constant") == 0) {
                   obPL.set<std::string>("interpolation", "constant");
-                } else if (strcmp(value, "linear")==0) {
+                } else if (strcmp(value, "linear") == 0) {
                   obPL.set<std::string>("interpolation", "linear");
                 }
               } else if (strcmp(elem, "weighting") == 0) {
                 if (strcmp(value, "none") == 0) {
                   obPL.set<std::string>("weighting", "none");
-                } else if (strcmp(value, "flux_norm")==0) {
+                } else if (strcmp(value, "flux_norm") == 0) {
                   obPL.set<std::string>("weighting", "flux norm");
                 }
-              // Keeping singular macro around to help users. This will go away
-              } else if (strcmp(elem, "time_macros") == 0 ||
-                         strcmp(elem, "time_macro") == 0) {
+                // Keeping singular macro around to help users. This will go away
+              } else if (strcmp(elem, "time_macros") == 0 || strcmp(elem, "time_macro") == 0) {
                 ProcessMacros_("times", value, tmPL, obPL);
-              } else if (strcmp(elem, "cycle_macros") == 0 ||
-                         strcmp(elem, "cycle_macro") == 0) {
+              } else if (strcmp(elem, "cycle_macros") == 0 || strcmp(elem, "cycle_macro") == 0) {
                 ProcessMacros_("cycles", value, cmPL, obPL);
               }
             }
@@ -455,8 +446,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
 
       } else if (strcmp(tagname, "gas_phase") == 0) {
         node = inode->getAttributes()->getNamedItem(mm.transcode("name"));
-        if (!node)
-            ThrowErrorMissing_("observations", "attribute", "name", "gas_phase");
+        if (!node) ThrowErrorMissing_("observations", "attribute", "name", "gas_phase");
 
         nobs_gas = 0;
         DOMNodeList* children = inode->getChildNodes();
@@ -491,12 +481,10 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
                 } else if (strcmp(value, "mean") == 0) {
                   obPL.set<std::string>("functional", "observation data: mean");
                 }
-              // Keeping singular macro around to help users. This will go away
-              } else if (strcmp(elem, "time_macros") == 0 ||
-                         strcmp(elem, "time_macro") == 0) {
+                // Keeping singular macro around to help users. This will go away
+              } else if (strcmp(elem, "time_macros") == 0 || strcmp(elem, "time_macro") == 0) {
                 ProcessMacros_("times", value, tmPL, obPL);
-              } else if (strcmp(elem, "cycle_macros") == 0 ||
-                         strcmp(elem, "cycle_macro") == 0) {
+              } else if (strcmp(elem, "cycle_macros") == 0 || strcmp(elem, "cycle_macro") == 0) {
                 ProcessMacros_("cycles", value, cmPL, obPL);
               }
             }
@@ -525,9 +513,11 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
 * Converts macros and macro to multiple SPS parameters or the single
 * value parameter.
 ****************************************************************** */
-void InputConverterU::ProcessMacros_(
-    const std::string& prefix, char* text_content,
-    Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL)
+void
+InputConverterU::ProcessMacros_(const std::string& prefix,
+                                char* text_content,
+                                Teuchos::ParameterList& mPL,
+                                Teuchos::ParameterList& outPL)
 {
   std::vector<std::string> macro = CharToStrings_(text_content);
   Teuchos::Array<int> cycles;
@@ -552,17 +542,17 @@ void InputConverterU::ProcessMacros_(
       ss << prefix << " start period stop " << k;
       k++;
       if (prefix == "cycles") {
-        outPL.set<Teuchos::Array<int> >(ss.str(), mlist.get<Teuchos::Array<int> >("sps"));
+        outPL.set<Teuchos::Array<int>>(ss.str(), mlist.get<Teuchos::Array<int>>("sps"));
       } else {
-        outPL.set<Teuchos::Array<double> >(ss.str(), mlist.get<Teuchos::Array<double> >("sps"));
+        outPL.set<Teuchos::Array<double>>(ss.str(), mlist.get<Teuchos::Array<double>>("sps"));
       }
     } else if (mlist.isParameter("values")) {
       flag = true;
       if (prefix == "cycles") {
-        cycles = mlist.get<Teuchos::Array<int> >("values");
+        cycles = mlist.get<Teuchos::Array<int>>("values");
         for (int n = 0; n < cycles.size(); n++) cm_list.push_back(cycles[n]);
       } else {
-        times = mlist.get<Teuchos::Array<double> >("values");
+        times = mlist.get<Teuchos::Array<double>>("values");
         for (int n = 0; n < times.size(); n++) tm_list.push_back(times[n]);
       }
     }
@@ -574,22 +564,22 @@ void InputConverterU::ProcessMacros_(
       cm_list.unique();
 
       cycles.clear();
-      for (std::list<int>::iterator it = cm_list.begin(); it != cm_list.end(); ++it) 
-          cycles.push_back(*it);
+      for (std::list<int>::iterator it = cm_list.begin(); it != cm_list.end(); ++it)
+        cycles.push_back(*it);
 
-      outPL.set<Teuchos::Array<int> >("values", cycles);
+      outPL.set<Teuchos::Array<int>>("values", cycles);
     } else {
       tm_list.sort();
       tm_list.unique();
 
       times.clear();
-      for (std::list<double>::iterator it = tm_list.begin(); it != tm_list.end(); ++it) 
-          times.push_back(*it);
+      for (std::list<double>::iterator it = tm_list.begin(); it != tm_list.end(); ++it)
+        times.push_back(*it);
 
-      outPL.set<Teuchos::Array<double> >("times", times);
+      outPL.set<Teuchos::Array<double>>("times", times);
     }
   }
 }
 
-}  // namespace AmanziInput
-}  // namespace Amanzi
+} // namespace AmanziInput
+} // namespace Amanzi

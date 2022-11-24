@@ -26,27 +26,31 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class NLFV { 
+class NLFV {
  public:
-  NLFV() : mesh_(Teuchos::null) {};
-  NLFV(Teuchos::RCP<const AmanziMesh::MeshLight> mesh) : mesh_(mesh) {};
-  ~NLFV() {};
+  NLFV() : mesh_(Teuchos::null){};
+  NLFV(Teuchos::RCP<const AmanziMesh::MeshLight> mesh) : mesh_(mesh){};
+  ~NLFV(){};
 
-  void HarmonicAveragingPoint(
-      int f, int c1, int c2, 
-      const AmanziGeometry::Point& Tn1, const AmanziGeometry::Point& Tn2,
-      AmanziGeometry::Point& p, double& weight);
+  void HarmonicAveragingPoint(int f,
+                              int c1,
+                              int c2,
+                              const AmanziGeometry::Point& Tn1,
+                              const AmanziGeometry::Point& Tn2,
+                              AmanziGeometry::Point& p,
+                              double& weight);
 
-  int PositiveDecomposition(
-      int id1, const std::vector<AmanziGeometry::Point>& tau,
-      const AmanziGeometry::Point& conormal, double* ws, int* ids);
+  int PositiveDecomposition(int id1,
+                            const std::vector<AmanziGeometry::Point>& tau,
+                            const AmanziGeometry::Point& conormal,
+                            double* ws,
+                            int* ids);
 
  private:
   Teuchos::RCP<const AmanziMesh::MeshLight> mesh_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

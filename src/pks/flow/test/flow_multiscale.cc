@@ -34,7 +34,8 @@
 #include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
-TEST(FLOW_2D_MULTISCALE) {
+TEST(FLOW_2D_MULTISCALE)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -51,13 +52,13 @@ TEST(FLOW_2D_MULTISCALE) {
   // create a mesh framework
   Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 6.0, 120.0, 3, 60);
 
@@ -79,15 +80,13 @@ TEST(FLOW_2D_MULTISCALE) {
   auto& pf = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
   auto& pm = *S->GetW<CompositeVector>("pressure_msp", passwd).ViewComponent("cell");
 
-  for (int c = 0; c < pf.MyLength(); c++) {
-    pm[0][c] = pf[0][c];
-  }
+  for (int c = 0; c < pf.MyLength(); c++) { pm[0][c] = pf[0][c]; }
 
   // initialize the Richards process kernel
   RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
-  // solve the problem 
+  // solve the problem
   TI_Specs ti_specs;
   ti_specs.T0 = 0.0;
   ti_specs.dT0 = 2000.0;
@@ -95,10 +94,10 @@ TEST(FLOW_2D_MULTISCALE) {
   ti_specs.max_itrs = 1000;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT); // dummy times
 
   if (MyPID == 0) {
-    GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+    GMV::open_data_file(*mesh, (std::string) "flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(pf, 0, "pressure");
     GMV::write_cell_data(pm, 0, "pressure_msp");

@@ -35,40 +35,44 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class Basis { 
+class Basis {
  public:
-  Basis() {};
-  virtual ~Basis() {};
+  Basis(){};
+  virtual ~Basis(){};
 
   // initialization
   virtual void Init(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
-                    int c, int order, Polynomial& integrals) = 0;
+                    int c,
+                    int order,
+                    Polynomial& integrals) = 0;
 
   // transformation of bilinear form
   virtual void BilinearFormNaturalToMy(DenseMatrix& A) const = 0;
   virtual void BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
-                                       std::shared_ptr<Basis> br, DenseMatrix& A) const = 0;
+                                       std::shared_ptr<Basis> br,
+                                       DenseMatrix& A) const = 0;
 
   // transformation of a linear form
   virtual void LinearFormNaturalToMy(DenseVector& v) const = 0;
 
-  // transformation of vector 
+  // transformation of vector
   virtual void ChangeBasisMyToNatural(DenseVector& v) const = 0;
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const = 0;
 
   // recover polynomial in the natural basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
-                                         int c, int order, DenseVector& coefs) const = 0;
+                                         int c,
+                                         int order,
+                                         DenseVector& coefs) const = 0;
 
-  // assess 
+  // assess
   int id() const { return id_; };
 
  protected:
   int id_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

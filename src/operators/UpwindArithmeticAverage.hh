@@ -34,15 +34,16 @@ namespace Operators {
 
 class UpwindArithmeticAverage : public Upwind {
  public:
-  UpwindArithmeticAverage(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : Upwind(mesh) {};
-  ~UpwindArithmeticAverage() {};
+  UpwindArithmeticAverage(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : Upwind(mesh){};
+  ~UpwindArithmeticAverage(){};
 
   // main methods
   void Init(Teuchos::ParameterList& plist);
 
-  void Compute(const CompositeVector& flux, const CompositeVector& solution,
-               const std::vector<int>& bc_model, CompositeVector& field);
+  void Compute(const CompositeVector& flux,
+               const CompositeVector& solution,
+               const std::vector<int>& bc_model,
+               CompositeVector& field);
 
  private:
   int method_, order_;
@@ -53,8 +54,8 @@ class UpwindArithmeticAverage : public Upwind {
 /* ******************************************************************
 * Public init method. It is not yet used.
 ****************************************************************** */
-inline
-void UpwindArithmeticAverage::Init(Teuchos::ParameterList& plist)
+inline void
+UpwindArithmeticAverage::Init(Teuchos::ParameterList& plist)
 {
   method_ = OPERATOR_UPWIND_ARITHMETIC_AVERAGE;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
@@ -66,10 +67,11 @@ void UpwindArithmeticAverage::Init(Teuchos::ParameterList& plist)
 * Upwind field is placed in component "face".
 * Upwinded field must be calculated on all faces of the owned cells.
 ****************************************************************** */
-inline
-void UpwindArithmeticAverage::Compute(
-    const CompositeVector& flux, const CompositeVector& solution,
-    const std::vector<int>& bc_model, CompositeVector& field)
+inline void
+UpwindArithmeticAverage::Compute(const CompositeVector& flux,
+                                 const CompositeVector& solution,
+                                 const std::vector<int>& bc_model,
+                                 CompositeVector& field)
 {
   AMANZI_ASSERT(field.HasComponent("cell"));
   AMANZI_ASSERT(field.HasComponent(face_comp_));
@@ -91,7 +93,7 @@ void UpwindArithmeticAverage::Compute(
     c1 = cells[0];
     kc1 = fld_cell[0][c1];
 
-    if (ncells == 2) { 
+    if (ncells == 2) {
       c2 = cells[1];
       kc2 = fld_cell[0][c2];
 
@@ -99,7 +101,7 @@ void UpwindArithmeticAverage::Compute(
       double v2 = mesh_->cell_volume(c2);
 
       double tmp = v2 / (v1 + v2);
-      upw_face[0][f] = kc1 * tmp + kc2 * (1.0 - tmp); 
+      upw_face[0][f] = kc1 * tmp + kc2 * (1.0 - tmp);
 
     } else {
       upw_face[0][f] = kc1;
@@ -107,8 +109,7 @@ void UpwindArithmeticAverage::Compute(
   }
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

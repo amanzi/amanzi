@@ -22,18 +22,15 @@ namespace Transport {
 
 class MaterialProperties {
  public:
-  MaterialProperties() {
-    tau.resize(TRANSPORT_NUMBER_PHASES, 0.0);
-  }
-  ~MaterialProperties() {};
+  MaterialProperties() { tau.resize(TRANSPORT_NUMBER_PHASES, 0.0); }
+  ~MaterialProperties(){};
 
  public:
   std::vector<double> tau;
   std::vector<std::string> regions;
 };
 
-}  // namespace Transport
-}  // namespace Amanzi
+} // namespace Transport
+} // namespace Amanzi
 
 #endif
-

@@ -32,7 +32,9 @@ class EnthalpyEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Com
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
   // Required for boundary conditions
@@ -47,7 +49,7 @@ class EnthalpyEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Com
   static Utils::RegisteredFactory<Evaluator, EnthalpyEvaluator> factory_;
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

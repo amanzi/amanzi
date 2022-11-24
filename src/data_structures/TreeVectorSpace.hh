@@ -23,11 +23,11 @@ class CompositeVectorSpace;
 class TreeVectorSpace {
  public:
   // Constructor
-  TreeVectorSpace() : comm_(Amanzi::getDefaultComm()) {};
-  TreeVectorSpace(const Comm_ptr_type& comm) : comm_(comm) {};
-  TreeVectorSpace(const Teuchos::RCP<const CompositeVectorSpace>& cvfac) :
-      data_(cvfac),
-      comm_(cvfac->Comm()) {}
+  TreeVectorSpace() : comm_(Amanzi::getDefaultComm()){};
+  TreeVectorSpace(const Comm_ptr_type& comm) : comm_(comm){};
+  TreeVectorSpace(const Teuchos::RCP<const CompositeVectorSpace>& cvfac)
+    : data_(cvfac), comm_(cvfac->Comm())
+  {}
   TreeVectorSpace(const TreeVectorSpace& other);
 
   // Comparators
@@ -42,7 +42,7 @@ class TreeVectorSpace {
   Comm_ptr_type Comm() const { return comm_; }
 
   // Access to SubVectors
-  typedef std::vector<Teuchos::RCP<TreeVectorSpace> > SubVectorsContainer;
+  typedef std::vector<Teuchos::RCP<TreeVectorSpace>> SubVectorsContainer;
   typedef Utils::iterator<SubVectorsContainer, TreeVectorSpace> iterator;
   typedef Utils::const_iterator<SubVectorsContainer, const TreeVectorSpace> const_iterator;
 
@@ -68,14 +68,15 @@ class TreeVectorSpace {
 
  private:
   Teuchos::RCP<const CompositeVectorSpace> data_;
-  std::vector<Teuchos::RCP<TreeVectorSpace> > subvecs_;
+  std::vector<Teuchos::RCP<TreeVectorSpace>> subvecs_;
   Comm_ptr_type comm_;
 };
 
 
 // non-member functions
-inline
-Teuchos::RCP<TreeVectorSpace> CreateTVSwithOneLeaf(const CompositeVectorSpace& cvs) {
+inline Teuchos::RCP<TreeVectorSpace>
+CreateTVSwithOneLeaf(const CompositeVectorSpace& cvs)
+{
   auto tvs = Teuchos::rcp(new TreeVectorSpace());
   tvs->SetData(Teuchos::rcpFromRef(cvs));
   return tvs;

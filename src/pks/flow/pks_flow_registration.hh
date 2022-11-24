@@ -20,6 +20,5 @@ RegisteredPKFactory<Darcy_PK> Darcy_PK::reg_("darcy");
 RegisteredPKFactory<Richards_PK> Richards_PK::reg_("richards");
 Utils::RegisteredFactory<Evaluator, WaterStorage> WaterStorage::reg_("water storage");
 
-}  // namespace Amanzi
-}  // namespace Flow
-
+} // namespace Flow
+} // namespace Amanzi

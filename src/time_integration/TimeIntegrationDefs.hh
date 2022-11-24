@@ -20,7 +20,6 @@ const double DT_CONTROLLER_ADAPTIVE_REDUCTION = 0.1;
 const double DT_CONTROLLER_ADAPTIVE_SAFETY_FACTOR = 0.9;
 const double DT_CONTROLLER_ADAPTIVE_ERROR_TOLERANCE = 1e-10;
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif
-

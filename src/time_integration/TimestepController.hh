@@ -19,27 +19,24 @@
 namespace Amanzi {
 
 class TimestepController {
-
  public:
-  TimestepController(Teuchos::ParameterList& plist) :
-    dt_init_(plist.get<double>("initial time step [s]", 1.0)) {}
+  TimestepController(Teuchos::ParameterList& plist)
+    : dt_init_(plist.get<double>("initial time step [s]", 1.0))
+  {}
 
   // virtual destructor
-  virtual ~TimestepController() {};
+  virtual ~TimestepController(){};
 
   // single method for timestep control
   virtual double get_timestep(double dt, int iterations) = 0;
 
   // default method for initial timestep size
-  virtual double get_initial_timestep() {
-    return dt_init_;
-  }
+  virtual double get_initial_timestep() { return dt_init_; }
 
  protected:
   double dt_init_;
-
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

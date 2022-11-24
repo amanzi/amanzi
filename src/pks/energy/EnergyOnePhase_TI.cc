@@ -23,9 +23,12 @@ namespace Energy {
 /* ******************************************************************
 * Computes the non-linear functional g = g(t,u,udot)
 ****************************************************************** */
-void EnergyOnePhase_PK::FunctionalResidual(
-    double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-    Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g)
+void
+EnergyOnePhase_PK::FunctionalResidual(double t_old,
+                                      double t_new,
+                                      Teuchos::RCP<TreeVector> u_old,
+                                      Teuchos::RCP<TreeVector> u_new,
+                                      Teuchos::RCP<TreeVector> g)
 {
   double dt = t_new - t_old;
 
@@ -37,7 +40,7 @@ void EnergyOnePhase_PK::FunctionalResidual(
 
   S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd_);
   if (upwind_.get()) {
-     const auto& conductivity = S_->Get<CompositeVector>(conductivity_gen_key_);
+    const auto& conductivity = S_->Get<CompositeVector>(conductivity_gen_key_);
     *upw_conductivity_->ViewComponent("cell") = *conductivity.ViewComponent("cell");
 
     const auto& bc_model = op_bc_->bc_model();
@@ -53,7 +56,7 @@ void EnergyOnePhase_PK::FunctionalResidual(
   // add sources
   CompositeVector& rhs = *op_matrix_->rhs();
   AddSourceTerms(rhs);
- 
+
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *g->Data());
 
   // add accumulation term
@@ -69,7 +72,7 @@ void EnergyOnePhase_PK::FunctionalResidual(
     g_c[0][c] += factor * (e1[0][c] - e0[0][c]);
   }
 
-  // advect tmp = molar_density_liquid * enthalpy 
+  // advect tmp = molar_density_liquid * enthalpy
   S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
   const auto& enthalpy = S_->Get<CompositeVector>(enthalpy_key_);
   const auto& n_l = S_->Get<CompositeVector>(mol_density_liquid_key_);
@@ -91,8 +94,8 @@ void EnergyOnePhase_PK::FunctionalResidual(
 /* ******************************************************************
 * Update the preconditioner at time t and u = up
 ****************************************************************** */
-void EnergyOnePhase_PK::UpdatePreconditioner(
-    double t, Teuchos::RCP<const TreeVector> up, double dt)
+void
+EnergyOnePhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
@@ -122,11 +125,10 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
   // update with accumulation terms
   // update the accumulation derivatives, dE/dT
   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
-  auto& dEdT = S_->GetDerivativeW<CompositeVector>(energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, energy_key_);
+  auto& dEdT = S_->GetDerivativeW<CompositeVector>(
+    energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, energy_key_);
 
-  if (dt > 0.0) {
-    op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell");
-  }
+  if (dt > 0.0) { op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell"); }
 
   // add advection term dHdT
   if (prec_include_enthalpy_) {
@@ -134,7 +136,7 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
 
     S_->GetEvaluator(enthalpy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
     auto dHdT = Teuchos::rcp(new CompositeVector(S_->GetDerivative<CompositeVector>(
-        enthalpy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT)));
+      enthalpy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT)));
 
     const auto& n_l = S_->Get<CompositeVector>(mol_density_liquid_key_);
     dHdT->Multiply(1.0, *dHdT, n_l, 0.0);
@@ -144,7 +146,7 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
       if (eval.get_type() == EvaluatorType::SECONDARY) {
         eval.UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
         auto dRdT = Teuchos::rcp(new CompositeVector(S_->GetDerivative<CompositeVector>(
-            mol_density_liquid_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT)));
+          mol_density_liquid_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT)));
 
         const auto& H_l = S_->Get<CompositeVector>(mol_density_liquid_key_);
         dRdT->Multiply(1.0, *dRdT, H_l, 0.0);
@@ -166,8 +168,8 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
 /* ******************************************************************
 * TBW
 ****************************************************************** */
-double EnergyOnePhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                                    Teuchos::RCP<const TreeVector> du)
+double
+EnergyOnePhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
@@ -179,9 +181,7 @@ double EnergyOnePhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   double ref_temp(273.0);
   for (int c = 0; c < ncells_owned; c++) {
     double tmp = fabs(duc[0][c]) / (fabs(uc[0][c] - ref_temp) + ref_temp);
-    if (tmp > error_t) {
-      error_t = tmp;
-    } 
+    if (tmp > error_t) { error_t = tmp; }
   }
 
   // Cell error is based upon error in energy conservation relative to
@@ -191,12 +191,11 @@ double EnergyOnePhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
 #ifdef HAVE_MPI
   double buf = error;
-  du->Data()->Comm()->MaxAll(&buf, &error, 1);  // find the global maximum
+  du->Data()->Comm()->MaxAll(&buf, &error, 1); // find the global maximum
 #endif
 
   return error;
 }
 
-}  // namespace Energy
-}  // namespace Amanzi
-
+} // namespace Energy
+} // namespace Amanzi

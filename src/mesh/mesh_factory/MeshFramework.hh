@@ -18,20 +18,24 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-enum struct Framework { SIMPLE=0, MSTK, MOAB, STK };
+enum struct Framework { SIMPLE = 0, MSTK, MOAB, STK };
 
 using Preference = std::vector<Framework>;
 
-static const std::map<Framework,std::string> framework_names = {
-  {Framework::MSTK, std::string("MSTK")},
-  {Framework::MOAB, std::string("MOAB")},
-  {Framework::STK, std::string("stk:mesh")},
-  {Framework::SIMPLE, std::string("Simple")} };
+static const std::map<Framework, std::string> framework_names = {
+  { Framework::MSTK, std::string("MSTK") },
+  { Framework::MOAB, std::string("MOAB") },
+  { Framework::STK, std::string("stk:mesh") },
+  { Framework::SIMPLE, std::string("Simple") }
+};
 
 
-Preference default_preference();
-bool framework_enabled(Framework f);
-Preference filter_preference(const Preference& pref);
+Preference
+default_preference();
+bool
+framework_enabled(Framework f);
+Preference
+filter_preference(const Preference& pref);
 
 
 } // namespace AmanziMesh

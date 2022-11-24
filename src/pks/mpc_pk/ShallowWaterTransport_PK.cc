@@ -24,13 +24,11 @@ namespace Amanzi {
 * Constructor
 ****************************************************************** */
 ShallowWaterTransport_PK::ShallowWaterTransport_PK(
-    Teuchos::ParameterList& pk_tree,
-    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-    const Teuchos::RCP<State>& S,
-    const Teuchos::RCP<TreeVector>& soln)
-  : PK_MPCWeak(pk_tree, global_list, S, soln),
-    cfl_(1.0),
-    failed_steps_(0)
+  Teuchos::ParameterList& pk_tree,
+  const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+  const Teuchos::RCP<State>& S,
+  const Teuchos::RCP<TreeVector>& soln)
+  : PK_MPCWeak(pk_tree, global_list, S, soln), cfl_(1.0), failed_steps_(0)
 {
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = my_list_->sublist("verbose object");
@@ -41,7 +39,8 @@ ShallowWaterTransport_PK::ShallowWaterTransport_PK(
 /* ******************************************************************
 * Calculate the min of sub-PKs timesteps and limit it.
 ****************************************************************** */
-double ShallowWaterTransport_PK::get_dt()
+double
+ShallowWaterTransport_PK::get_dt()
 {
   return cfl_ * PK_MPCWeak::get_dt();
 }
@@ -50,7 +49,8 @@ double ShallowWaterTransport_PK::get_dt()
 /* ******************************************************************
 * Setup of PK
 ****************************************************************** */
-void ShallowWaterTransport_PK::Setup()
+void
+ShallowWaterTransport_PK::Setup()
 {
   PK_MPCWeak::Setup();
 }
@@ -59,7 +59,8 @@ void ShallowWaterTransport_PK::Setup()
 /* ******************************************************************
 * Extended treatment of time step in transport PK. 
 ****************************************************************** */
-bool ShallowWaterTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+bool
+ShallowWaterTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   bool fail(false);
   std::string domain = my_list_->get<std::string>("domain name");
@@ -73,7 +74,8 @@ bool ShallowWaterTransport_PK::AdvanceStep(double t_old, double t_new, bool rein
   archive.Add({ ponded_depth_key, prev_ponded_depth_key },
               { discharge_key },
               { ponded_depth_key, velocity_key },
-              Tags::DEFAULT, name());
+              Tags::DEFAULT,
+              name());
 
   double dt0 = t_new - t_old;
   fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);
@@ -103,5 +105,4 @@ bool ShallowWaterTransport_PK::AdvanceStep(double t_old, double t_new, bool rein
   return fail;
 }
 
-}  // namespace Amanzi
-
+} // namespace Amanzi

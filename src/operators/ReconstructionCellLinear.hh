@@ -36,22 +36,21 @@
 namespace Amanzi {
 namespace Operators {
 
-class ReconstructionCellLinear : public Reconstruction {  
+class ReconstructionCellLinear : public Reconstruction {
  public:
-  ReconstructionCellLinear() {};
+  ReconstructionCellLinear(){};
 
   ReconstructionCellLinear(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : Reconstruction(mesh),
-      dim(mesh->space_dimension()) {};
+    : Reconstruction(mesh), dim(mesh->space_dimension()){};
 
   ReconstructionCellLinear(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-                         Teuchos::RCP<CompositeVector>& gradient)
+                           Teuchos::RCP<CompositeVector>& gradient)
     : Reconstruction(mesh),
       dim(mesh->space_dimension()),
       gradient_(gradient),
-      gradient_c_(gradient->ViewComponent("cell")) {};
+      gradient_c_(gradient->ViewComponent("cell")){};
 
-  ~ReconstructionCellLinear() {};
+  ~ReconstructionCellLinear(){};
 
   // save pointer to the already distributed field.
   virtual void Init(Teuchos::ParameterList& plist) override;
@@ -60,7 +59,8 @@ class ReconstructionCellLinear : public Reconstruction {
   // -- compute gradient and keep it internally
   virtual void Compute(const Teuchos::RCP<const Epetra_MultiVector>& field,
                        int component = 0,
-                       const Teuchos::RCP<const BCs>& bc = Teuchos::null) override {
+                       const Teuchos::RCP<const BCs>& bc = Teuchos::null) override
+  {
     int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     AmanziMesh::Entity_ID_List ids(ncells_wghost);
     for (int c = 0; c < ncells_wghost; ++c) ids[c] = c;
@@ -74,10 +74,11 @@ class ReconstructionCellLinear : public Reconstruction {
 
   // -- access returns gradient, i.e. no mean value
   virtual Teuchos::RCP<CompositeVector> data() override { return gradient_; }
-  
+
   // compute gradient only in specified cells
   void Compute(const AmanziMesh::Entity_ID_List& ids,
-               const Teuchos::RCP<const Epetra_MultiVector>& field, int component,
+               const Teuchos::RCP<const Epetra_MultiVector>& field,
+               int component,
                const Teuchos::RCP<const BCs>& bc = Teuchos::null);
 
  private:
@@ -91,13 +92,14 @@ class ReconstructionCellLinear : public Reconstruction {
   void CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
                                  AmanziMesh::Parallel_type ptype,
                                  std::vector<AmanziMesh::Entity_ID>& cells) const;
+
  private:
   int dim;
   Teuchos::RCP<CompositeVector> gradient_;
   Teuchos::RCP<Epetra_MultiVector> gradient_c_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif

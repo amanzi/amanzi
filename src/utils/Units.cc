@@ -19,7 +19,8 @@ namespace Utils {
 /* ******************************************************************
 * Constructor creates known units.
 ****************************************************************** */
-void Units::Init()
+void
+Units::Init()
 {
   // supported units of time (extendable list)
   time_["y"] = 365.25 * 24.0 * 3600.0;
@@ -74,14 +75,11 @@ void Units::Init()
 /* ******************************************************************
 * Convert any input time to any output time.
 ****************************************************************** */
-double Units::ConvertTime(double val,
-                          const std::string& in_unit,
-                          const std::string& out_unit,
-                          bool& flag)
-{ 
+double
+Units::ConvertTime(double val, const std::string& in_unit, const std::string& out_unit, bool& flag)
+{
   flag = true;
-  if (time_.find(in_unit) == time_.end() ||
-      time_.find(out_unit) == time_.end()) {
+  if (time_.find(in_unit) == time_.end() || time_.find(out_unit) == time_.end()) {
     flag = false;
     return val;
   }
@@ -95,14 +93,11 @@ double Units::ConvertTime(double val,
 /* ******************************************************************
 * Convert any input mass to any output mass.
 ****************************************************************** */
-double Units::ConvertMass(double val,
-                          const std::string& in_unit,
-                          const std::string& out_unit,
-                          bool& flag)
-{ 
+double
+Units::ConvertMass(double val, const std::string& in_unit, const std::string& out_unit, bool& flag)
+{
   flag = true;
-  if (mass_.find(in_unit) == mass_.end() ||
-      mass_.find(out_unit) == mass_.end()) {
+  if (mass_.find(in_unit) == mass_.end() || mass_.find(out_unit) == mass_.end()) {
     flag = false;
     return val;
   }
@@ -116,14 +111,14 @@ double Units::ConvertMass(double val,
 /* ******************************************************************
 * Convert any input length to any output length.
 ****************************************************************** */
-double Units::ConvertLength(double val,
-                            const std::string& in_unit,
-                            const std::string& out_unit,
-                            bool& flag)
-{ 
+double
+Units::ConvertLength(double val,
+                     const std::string& in_unit,
+                     const std::string& out_unit,
+                     bool& flag)
+{
   flag = true;
-  if (length_.find(in_unit) == length_.end() ||
-      length_.find(out_unit) == length_.end()) {
+  if (length_.find(in_unit) == length_.end() || length_.find(out_unit) == length_.end()) {
     flag = false;
     return val;
   }
@@ -137,12 +132,13 @@ double Units::ConvertLength(double val,
 /* ******************************************************************
 * Convert any input concentration to any output concentration.
 ****************************************************************** */
-double Units::ConvertConcentration(double val,
-                                   const std::string& in_unit,
-                                   const std::string& out_unit,
-                                   double mol_mass,
-                                   bool& flag)
-{ 
+double
+Units::ConvertConcentration(double val,
+                            const std::string& in_unit,
+                            const std::string& out_unit,
+                            double mol_mass,
+                            bool& flag)
+{
   flag = true;
   if (concentration_.find(in_unit) == concentration_.end() ||
       concentration_.find(out_unit) == concentration_.end()) {
@@ -170,17 +166,19 @@ double Units::ConvertConcentration(double val,
 * Convert any derived input unit to compatible output unit.
 * Special case, out_unit="SI", leads to conversion to SI units.
 ****************************************************************** */
-double Units::ConvertUnitD(double val,
-                           const std::string& in_unit,
-                           const std::string& out_unit,
-                           double mol_mass,
-                           bool& flag)
+double
+Units::ConvertUnitD(double val,
+                    const std::string& in_unit,
+                    const std::string& out_unit,
+                    double mol_mass,
+                    bool& flag)
 {
   // replace known complex/derived units
   AtomicUnitForm auf = ComputeAtomicUnitForm_(in_unit, &flag);
- 
-  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end(); ++it) {
-    auf.replace(it->first, it->second); 
+
+  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end();
+       ++it) {
+    auf.replace(it->first, it->second);
   }
 
   // replace known atomic units
@@ -199,29 +197,23 @@ double Units::ConvertUnitD(double val,
     if (time_.find(it->first) != time_.end()) {
       tmp *= std::pow(time_[it->first], it->second);
       ntime += it->second;
-    }
-    else if (mass_.find(it->first) != mass_.end()) {
+    } else if (mass_.find(it->first) != mass_.end()) {
       tmp *= std::pow(mass_[it->first], it->second);
       nmass += it->second;
-    }
-    else if (length_.find(it->first) != length_.end()) {
+    } else if (length_.find(it->first) != length_.end()) {
       tmp *= std::pow(length_[it->first], it->second);
       nlength += it->second;
-    } 
-    else if (volume_.find(it->first) != volume_.end()) {
+    } else if (volume_.find(it->first) != volume_.end()) {
       tmp *= std::pow(volume_[it->first], it->second);
       nlength += 3 * it->second;
-    }
-    else if (concentration_.find(it->first) != concentration_.end()) {
+    } else if (concentration_.find(it->first) != concentration_.end()) {
       tmp *= std::pow(concentration_[it->first], it->second);
       if (it->first == "ppm" || it->first == "ppb") tmp /= mol_mass;
-      tmp /= concentration_factor_;  // for non-SI unit "molar"
+      tmp /= concentration_factor_; // for non-SI unit "molar"
       nconcentration += it->second;
-    } 
-    else if (amount_.find(it->first) != amount_.end()) {
+    } else if (amount_.find(it->first) != amount_.end()) {
       namount += it->second;
-    } 
-    else if (temperature_.find(it->first) != temperature_.end()) {
+    } else if (temperature_.find(it->first) != temperature_.end()) {
       if (it->first == "C") tmp += 273.15;
       if (it->first == "F") tmp = (tmp + 459.67) * 5.0 / 9;
       ntemperature += it->second;
@@ -242,29 +234,23 @@ double Units::ConvertUnitD(double val,
     if (time_.find(it->first) != time_.end()) {
       tmp /= std::pow(time_[it->first], it->second);
       ntime -= it->second;
-    }
-    else if (mass_.find(it->first) != mass_.end()) {
+    } else if (mass_.find(it->first) != mass_.end()) {
       tmp /= std::pow(mass_[it->first], it->second);
       nmass -= it->second;
-    } 
-    else if (length_.find(it->first) != length_.end()) {
+    } else if (length_.find(it->first) != length_.end()) {
       tmp /= std::pow(length_[it->first], it->second);
       nlength -= it->second;
-    } 
-    else if (volume_.find(it->first) != volume_.end()) {
+    } else if (volume_.find(it->first) != volume_.end()) {
       tmp /= std::pow(volume_[it->first], it->second);
       nlength -= 3 * it->second;
-    }
-    else if (concentration_.find(it->first) != concentration_.end()) {
+    } else if (concentration_.find(it->first) != concentration_.end()) {
       tmp /= std::pow(concentration_[it->first], it->second);
       if (it->first == "ppm" || it->first == "ppb") tmp *= mol_mass;
       tmp *= concentration_factor_;
       nconcentration -= it->second;
-    } 
-    else if (amount_.find(it->first) != amount_.end()) {
+    } else if (amount_.find(it->first) != amount_.end()) {
       namount -= it->second;
-    } 
-    else if (temperature_.find(it->first) != temperature_.end()) {
+    } else if (temperature_.find(it->first) != temperature_.end()) {
       if (it->first == "C") tmp -= 273.15;
       if (it->first == "F") tmp = tmp * 1.8 - 459.67;
       ntemperature -= it->second;
@@ -287,15 +273,16 @@ double Units::ConvertUnitD(double val,
 /* ******************************************************************
 * Convert unit string
 ****************************************************************** */
-std::string Units::ConvertUnitS(const std::string& in_unit,
-                                const UnitsSystem& system)
+std::string
+Units::ConvertUnitS(const std::string& in_unit, const UnitsSystem& system)
 {
   // parse the input string
   bool flag;
   AtomicUnitForm auf = ComputeAtomicUnitForm_(in_unit, &flag);
 
-  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end(); ++it) {
-    auf.replace(it->first, it->second); 
+  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end();
+       ++it) {
+    auf.replace(it->first, it->second);
   }
   UnitData in_data = auf.data();
 
@@ -304,20 +291,15 @@ std::string Units::ConvertUnitS(const std::string& in_unit,
   for (UnitData::iterator it = in_data.begin(); it != in_data.end(); ++it) {
     if (time_.find(it->first) != time_.end()) {
       out_data[system.time] = it->second;
-    }
-    else if (mass_.find(it->first) != mass_.end()) {
+    } else if (mass_.find(it->first) != mass_.end()) {
       out_data[system.mass] = it->second;
-    }
-    else if (length_.find(it->first) != length_.end()) {
+    } else if (length_.find(it->first) != length_.end()) {
       out_data[system.length] = it->second;
-    }
-    else if (concentration_.find(it->first) != concentration_.end()) {
+    } else if (concentration_.find(it->first) != concentration_.end()) {
       out_data[system.concentration] = it->second;
-    }
-    else if (amount_.find(it->first) != amount_.end()) {
+    } else if (amount_.find(it->first) != amount_.end()) {
       out_data[system.amount] = it->second;
-    }
-    else if (temperature_.find(it->first) != temperature_.end()) {
+    } else if (temperature_.find(it->first) != temperature_.end()) {
       out_data[system.temperature] = it->second;
     }
   }
@@ -329,9 +311,7 @@ std::string Units::ConvertUnitS(const std::string& in_unit,
     ss << separator << it->first;
 
     int i = it->second;
-    if (i != 1) {
-      ss << "^" << i;
-    }
+    if (i != 1) { ss << "^" << i; }
     separator = "*";
   }
 
@@ -342,7 +322,8 @@ std::string Units::ConvertUnitS(const std::string& in_unit,
 /* ******************************************************************
 * Parse unit
 ****************************************************************** */
-AtomicUnitForm Units::ComputeAtomicUnitForm_(const std::string& unit, bool* flag)
+AtomicUnitForm
+Units::ComputeAtomicUnitForm_(const std::string& unit, bool* flag)
 {
   *flag = true;
 
@@ -352,16 +333,16 @@ AtomicUnitForm Units::ComputeAtomicUnitForm_(const std::string& unit, bool* flag
   char separator_pref, separator_suff;
 
   AtomicUnitForm form;
-  UnitData& data = form.data(); 
+  UnitData& data = form.data();
   std::pair<UnitData::iterator, bool> status;
 
   separator_pref = ' ';
   while (tmp2 != NULL) {
     std::string atomic_unit(tmp2);
 
-    status = data.insert(std::pair<std::string, int>(atomic_unit, 0)); 
+    status = data.insert(std::pair<std::string, int>(atomic_unit, 0));
     UnitData::iterator it = status.first;
-      
+
     if (separator_pref == ' ') {
       (it->second)++;
     } else if (separator_pref == '*') {
@@ -399,7 +380,8 @@ AtomicUnitForm Units::ComputeAtomicUnitForm_(const std::string& unit, bool* flag
 /* ******************************************************************
 * Do two atomic units desribe the same physical quantity?
 ****************************************************************** */
-bool Units::CompareAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnitForm& auf2)
+bool
+Units::CompareAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnitForm& auf2)
 {
   const UnitData& data1 = auf1.data();
   const UnitData& data2 = auf2.data();
@@ -434,15 +416,17 @@ bool Units::CompareAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnit
 /* ******************************************************************
 * Do two unit strings desribe the same physical quantity?
 ****************************************************************** */
-bool Units::CompareUnits(const std::string& unit1, const std::string& unit2)
+bool
+Units::CompareUnits(const std::string& unit1, const std::string& unit2)
 {
   bool flag1, flag2;
   AtomicUnitForm auf1 = ComputeAtomicUnitForm_(unit1, &flag1);
   AtomicUnitForm auf2 = ComputeAtomicUnitForm_(unit2, &flag2);
 
-  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end(); ++it) {
-    auf1.replace(it->first, it->second); 
-    auf2.replace(it->first, it->second); 
+  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end();
+       ++it) {
+    auf1.replace(it->first, it->second);
+    auf2.replace(it->first, it->second);
   }
 
   if (!flag1 || !flag2) return false;
@@ -453,7 +437,8 @@ bool Units::CompareUnits(const std::string& unit1, const std::string& unit2)
 /* ******************************************************************
 * Fancy output of time given in second
 ****************************************************************** */
-std::string Units::OutputTime(double val)
+std::string
+Units::OutputTime(double val)
 {
   double out, dmin, dtry, tmp;
   std::string unit("s");
@@ -463,8 +448,8 @@ std::string Units::OutputTime(double val)
 
   if (val > 0.0) {
     dmin = fabs(log10(val));
- 
-    for (auto it = time_.begin(); it != time_.end(); ++it) { 
+
+    for (auto it = time_.begin(); it != time_.end(); ++it) {
       tmp = val / it->second;
       dtry = fabs(log10(tmp));
       if (dtry < dmin) {
@@ -484,7 +469,8 @@ std::string Units::OutputTime(double val)
 /* ******************************************************************
 * Fancy output of mass given in kilograms
 ****************************************************************** */
-std::string Units::OutputMass(double val) const
+std::string
+Units::OutputMass(double val) const
 {
   double out, dmin, dtry, tmp;
   std::string unit("kg");
@@ -494,7 +480,7 @@ std::string Units::OutputMass(double val) const
 
   if (val > 0.0) {
     dmin = fabs(log10(val));
- 
+
     for (auto it = mass_.begin(); it != mass_.end(); ++it) {
       tmp = val / it->second;
       dtry = fabs(log10(tmp));
@@ -515,7 +501,8 @@ std::string Units::OutputMass(double val) const
 /* ******************************************************************
 * Fancy output of length given in meters
 ****************************************************************** */
-std::string Units::OutputLength(double val) const
+std::string
+Units::OutputLength(double val) const
 {
   double out, dmin, dtry, tmp;
   std::string unit("m");
@@ -525,7 +512,7 @@ std::string Units::OutputLength(double val) const
 
   if (val > 0.0) {
     dmin = fabs(log10(val));
- 
+
     for (auto it = length_.begin(); it != length_.end(); ++it) {
       tmp = val / it->second;
       dtry = fabs(log10(tmp));
@@ -546,7 +533,8 @@ std::string Units::OutputLength(double val) const
 /* ******************************************************************
 * Fancy output of concentration
 ****************************************************************** */
-std::string Units::OutputConcentration(double val)
+std::string
+Units::OutputConcentration(double val)
 {
   std::string unit;
   unit = (system_.concentration == "molar") ? "mol/L" : "mol/m^3";
@@ -556,6 +544,5 @@ std::string Units::OutputConcentration(double val)
   return ss.str();
 }
 
-}  // namespace Utils
-}  // namespace Amanzi
-
+} // namespace Utils
+} // namespace Amanzi

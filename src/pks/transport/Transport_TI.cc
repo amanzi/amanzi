@@ -22,9 +22,11 @@ namespace Transport {
 /* ******************************************************************* 
 * Monotonic Upstream-centered Scheme for Conservation Laws
 ****************************************************************** */
-void Transport_PK::FunctionalTimeDerivative_MUSCL_(
-    double t, const CompositeVector& component, CompositeVector& func,
-    bool scale)
+void
+Transport_PK::FunctionalTimeDerivative_MUSCL_(double t,
+                                              const CompositeVector& component,
+                                              CompositeVector& func,
+                                              bool scale)
 {
   auto flowrate = S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
 
@@ -126,9 +128,7 @@ void Transport_PK::FunctionalTimeDerivative_MUSCL_(
         tcc_out += u * component_c[0][c];
       }
 
-      for (int n = 0; n < downwind_cells_[f].size(); ++n) {
-        flux_in -= downwind_flux_[f][n];
-      }
+      for (int n = 0; n < downwind_cells_[f].size(); ++n) { flux_in -= downwind_flux_[f][n]; }
       if (flux_in == 0.0) flux_in = 1e-12;
 
       // update solutes
@@ -136,9 +136,7 @@ void Transport_PK::FunctionalTimeDerivative_MUSCL_(
         int c = upwind_cells_[f][n];
         u = upwind_flux_[f][n];
 
-        if (c < ncells_owned) {
-          f_c[0][c] -= u * component_c[0][c];
-        }
+        if (c < ncells_owned) { f_c[0][c] -= u * component_c[0][c]; }
       }
 
       for (int n = 0; n < downwind_cells_[f].size(); ++n) {
@@ -176,7 +174,7 @@ void Transport_PK::FunctionalTimeDerivative_MUSCL_(
               int g = flux_map->FirstPointInElement(f);
               g += Operators::UniqueIndexFaceToCells(*mesh_, f, c2);
 
-              if (c2 >=0) {
+              if (c2 >= 0) {
                 u = fabs((*flowrate)[0][g]);
                 tcc_flux = u * values[i];
                 f_c[0][c2] += tcc_flux;
@@ -194,15 +192,14 @@ void Transport_PK::FunctionalTimeDerivative_MUSCL_(
 
   // process external sources
   if (srcs_.size() != 0) {
-    ComputeSources_(t, 1.0, f_c, *component_rcp,
-                    current_component_, current_component_);
+    ComputeSources_(t, 1.0, f_c, *component_rcp, current_component_, current_component_);
   }
 
   // optional convertion to the primary variable: dC/dt = F / wc
   if (scale) {
     for (int c = 0; c < ncells_owned; c++) {
       double a = t / dt_;
-      double wc = a * (*wc_end)[0][c] + (1.0 - a) * (*wc_start)[0][c]; 
+      double wc = a * (*wc_end)[0][c] + (1.0 - a) * (*wc_start)[0][c];
       double vol_wc = mesh_->cell_volume(c) * wc;
       f_c[0][c] /= vol_wc;
     }
@@ -211,14 +208,16 @@ void Transport_PK::FunctionalTimeDerivative_MUSCL_(
   if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
     limiter_->limiter()->MeanValue(&limiter_mean_);
   }
-}  
+}
 
 
 /* ******************************************************************* 
 * Flux corrected transport
 ****************************************************************** */
-void Transport_PK::FunctionalTimeDerivative_FCT_(
-    double t, const CompositeVector& component, CompositeVector& func)
+void
+Transport_PK::FunctionalTimeDerivative_FCT_(double t,
+                                            const CompositeVector& component,
+                                            CompositeVector& func)
 {
   auto flowrate = S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
 
@@ -233,7 +232,7 @@ void Transport_PK::FunctionalTimeDerivative_FCT_(
   auto& f_c = *func.ViewComponent("cell", true);
 
   // extract boundary conditions for the current component
-  auto bcs = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR)); 
+  auto bcs = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bcs->bc_model();
   std::vector<double>& bc_value = bcs->bc_value();
 
@@ -316,7 +315,7 @@ void Transport_PK::FunctionalTimeDerivative_FCT_(
               int g = flux_map->FirstPointInElement(f);
               g += Operators::UniqueIndexFaceToCells(*mesh_, f, c2);
 
-              if (c2 >=0) {
+              if (c2 >= 0) {
                 u = dt_ * fabs((*flowrate)[0][g]);
                 tcc_flux = u * it->second[i];
                 flux_lo_f[0][f] = -tcc_flux;
@@ -354,25 +353,20 @@ void Transport_PK::FunctionalTimeDerivative_FCT_(
   }
   residual.GatherGhostedToMaster();
 
-  for (int c = 0; c < ncells_owned; ++c) {
-    f_c[0][c] = residual_c[0][c];
-  }
+  for (int c = 0; c < ncells_owned; ++c) { f_c[0][c] = residual_c[0][c]; }
 
   // process external sources
   if (srcs_.size() != 0) {
-    ComputeSources_(t, 1.0, f_c, *component_rcp,
-                    current_component_, current_component_);
+    ComputeSources_(t, 1.0, f_c, *component_rcp, current_component_, current_component_);
   }
 
-  for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantity
+  for (int c = 0; c < ncells_owned; c++) { // calculate conservative quantity
     double a = t / dt_;
-    double wc = a * (*wc_end)[0][c] + (1.0 - a) * (*wc_start)[0][c]; 
+    double wc = a * (*wc_end)[0][c] + (1.0 - a) * (*wc_start)[0][c];
     double vol_wc = mesh_->cell_volume(c) * wc;
     f_c[0][c] /= vol_wc;
   }
 }
 
-}  // namespace Transport
-}  // namespace Amanzi
-
-
+} // namespace Transport
+} // namespace Amanzi

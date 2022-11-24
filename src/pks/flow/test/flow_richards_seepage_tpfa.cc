@@ -31,7 +31,8 @@
 #include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
-TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
+TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -49,16 +50,16 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   // create a mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
   pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 100.0, 50.0, 100, 50); 
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 100.0, 50.0, 100, 50);
 
   // create a simple state and populate it
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -77,9 +78,9 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd(""); 
+  std::string passwd("");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
-  
+
   for (int c = 0; c != K.MyLength(); ++c) {
     K[0][c] = 5.0e-13;
     K[1][c] = 5.0e-14;
@@ -119,11 +120,11 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   RPK->set_dt(1.0);
   printf("time step = %12.4f\n", RPK->get_dt());
   printf("seepage face total = %12.4f\n", RPK->seepage_mass());
-  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times for flow
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT); // dummy times for flow
 
   const auto& ws = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
   if (MyPID == 0) {
-    GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+    GMV::open_data_file(*mesh, (std::string) "flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "pressure");
     GMV::write_cell_data(ws, 0, "saturation");

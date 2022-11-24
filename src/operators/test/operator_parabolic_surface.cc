@@ -40,7 +40,9 @@
 * This test replaces tensor and boundary conditions by continuous
 * functions. This is a prototype for future solvers.
 * **************************************************************** */
-void RunTest(std::string op_list_name) {
+void
+RunTest(std::string op_list_name)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -61,8 +63,8 @@ void RunTest(std::string op_list_name) {
   ParameterList region_list = plist.sublist("Regions Closed");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh = meshfactory.create("test/sphere.exo");
 
   // extract surface mesh
@@ -72,7 +74,8 @@ void RunTest(std::string op_list_name) {
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffsuion coefficient.
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -82,11 +85,12 @@ void RunTest(std::string op_list_name) {
   }
 
   // create boundary data (no mixed bc)
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
-  bc->bc_model();  // allocate internal
-  bc->bc_value();  // memory
+  Teuchos::RCP<BCs> bc =
+    Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  bc->bc_model(); // allocate internal
+  bc->bc_value(); // memory
 
-  // create diffusion operator 
+  // create diffusion operator
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(surfmesh);
   cvs->SetGhosted(true);
@@ -97,7 +101,7 @@ void RunTest(std::string op_list_name) {
   // create source and add it to the operator
   CompositeVector source(*cvs);
   source.PutScalarMasterAndGhosted(0.0);
-  
+
   Epetra_MultiVector& src = *source.ViewComponent("cell");
   for (int c = 0; c < 20; c++) {
     if (MyPID == 0) src[0][c] = 1.0;
@@ -105,7 +109,7 @@ void RunTest(std::string op_list_name) {
 
   // add accumulation terms
   CompositeVector solution(*cvs);
-  solution.PutScalar(0.0);  // solution at time T=0
+  solution.PutScalar(0.0); // solution at time T=0
 
   CompositeVector phi(*cvs);
   phi.PutScalar(0.2);
@@ -132,7 +136,8 @@ void RunTest(std::string op_list_name) {
   op.ApplyBCs(true, true, true);
 
   // create preconditoner
-  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
+  global_op->set_inverse_parameters(
+    "Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
 
@@ -148,9 +153,9 @@ void RunTest(std::string op_list_name) {
   // ver.CheckResidual(solution, 1.0e-12);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() 
-              << " itr=" << global_op->num_itrs()
-              << " code=" << global_op->returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual()
+              << " itr=" << global_op->num_itrs() << " code=" << global_op->returned_code()
+              << std::endl;
   }
 
   // repeat the above without destroying the operators.
@@ -170,13 +175,12 @@ void RunTest(std::string op_list_name) {
   CHECK(num_itrs < 10);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() 
-              << " itr=" << num_itrs
+    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() << " itr=" << num_itrs
               << " code=" << global_op->returned_code() << std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-    GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
+    GMV::open_data_file(*surfmesh, (std::string) "operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
     GMV::close_data_file();
@@ -184,11 +188,13 @@ void RunTest(std::string op_list_name) {
 }
 
 
-TEST(LAPLACE_BELTRAMI_CLOSED) {
+TEST(LAPLACE_BELTRAMI_CLOSED)
+{
   RunTest("diffusion operator");
 }
 
 
-TEST(LAPLACE_BELTRAMI_CLOSED_SFF) {
+TEST(LAPLACE_BELTRAMI_CLOSED_SFF)
+{
   RunTest("diffusion operator Sff");
 }

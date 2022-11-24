@@ -27,7 +27,8 @@ namespace WhetStone {
 /* ******************************************************************
 * Schema.
 ****************************************************************** */
-std::vector<SchemaItem> MFD3D_BernardiRaugel::schema() const
+std::vector<SchemaItem>
+MFD3D_BernardiRaugel::schema() const
 {
   std::vector<SchemaItem> items;
   items.push_back(std::make_tuple(AmanziMesh::NODE, DOF_Type::POINT, d_));
@@ -40,8 +41,8 @@ std::vector<SchemaItem> MFD3D_BernardiRaugel::schema() const
 * The stable discretization for Stokes: vectors at nodes plus normal
 * components at faces. Fixed normal is used for the latter.
 ****************************************************************** */
-int MFD3D_BernardiRaugel::H1consistency(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+int
+MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   Entity_ID_List nodes;
   AmanziGeometry::Point xv(d_), tau(d_), v1(d_);
@@ -86,11 +87,11 @@ int MFD3D_BernardiRaugel::H1consistency(
     }
   }
 
-  // to calculate matrix R, we use temporary matrix N 
+  // to calculate matrix R, we use temporary matrix N
   // 2D algorithm is separated out since it is fast
   N.PutScalar(0.0);
 
-  if (d_ == 2) { 
+  if (d_ == 2) {
     for (int n = 0; n < nnodes; n++) {
       int m = (n + 1) % nnodes;
 
@@ -103,17 +104,17 @@ int MFD3D_BernardiRaugel::H1consistency(
 
       AmanziGeometry::Point normal(d_);
       normal[0] = tau[1];
-      normal[1] =-tau[0];
+      normal[1] = -tau[0];
 
       for (int i = 0; i < modes; i++) {
         v1 = vKT[i] * normal;
         double t = (tau * v1) * length / 2;
 
-        N(2*n, i) += tau[0] * t;  
-        N(2*n + 1, i) += tau[1] * t;
+        N(2 * n, i) += tau[0] * t;
+        N(2 * n + 1, i) += tau[1] * t;
 
-        N(2*m, i) += tau[0] * t;
-        N(2*m + 1, i) += tau[1] * t;
+        N(2 * m, i) += tau[0] * t;
+        N(2 * m + 1, i) += tau[1] * t;
       }
     }
   }
@@ -130,20 +131,20 @@ int MFD3D_BernardiRaugel::H1consistency(
     }
   }
 
-  // calculate R coefM^{-1} R^T 
+  // calculate R coefM^{-1} R^T
   DenseVector a1(modes), a2(modes), a3(modes);
   coefM.Inverse();
 
-  for (int i = 0; i < nrows; i++) { 
-    a1(0) = N(i, 0);  
-    a1(1) = N(i, 1);  
-    a1(2) = N(i, 2); 
+  for (int i = 0; i < nrows; i++) {
+    a1(0) = N(i, 0);
+    a1(1) = N(i, 1);
+    a1(2) = N(i, 2);
     coefM.Multiply(a1, a3, false);
 
     for (int j = i; j < nrows; j++) {
-      a2(0) = N(j, 0);  
-      a2(1) = N(j, 1);  
-      a2(2) = N(j, 2); 
+      a2(0) = N(j, 0);
+      a2(1) = N(j, 1);
+      a2(2) = N(j, 2);
 
       Ac(i, j) = a2 * a3;
     }
@@ -164,15 +165,15 @@ int MFD3D_BernardiRaugel::H1consistency(
       col++;
 
       for (int l = k + 1; l < d_; ++l) {
-        N(d_ * n + k, col) = xv[l];  
-        N(d_ * n + l, col) =-xv[k];
+        N(d_ * n + k, col) = xv[l];
+        N(d_ * n + l, col) = -xv[k];
         col++;
       }
     }
 
-    // non-null modes  
+    // non-null modes
     for (int k = 0; k < d_; ++k) {
-      N(d_ * n + k, col) = xv[k];  
+      N(d_ * n + k, col) = xv[k];
       col++;
 
       for (int l = k + 1; l < d_; ++l) {
@@ -225,8 +226,8 @@ int MFD3D_BernardiRaugel::H1consistency(
 /* ******************************************************************
 * Stiffness matrix: the standard algorithm.
 ****************************************************************** */
-int MFD3D_BernardiRaugel::StiffnessMatrix(
-    int c, const Tensor& K, DenseMatrix& A)
+int
+MFD3D_BernardiRaugel::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -241,8 +242,10 @@ int MFD3D_BernardiRaugel::StiffnessMatrix(
 /* ******************************************************************
 * Advection matrix depends on velocity u.
 ****************************************************************** */
-int MFD3D_BernardiRaugel::AdvectionMatrix(
-    int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A)
+int
+MFD3D_BernardiRaugel::AdvectionMatrix(int c,
+                                      const std::vector<AmanziGeometry::Point>& u,
+                                      DenseMatrix& A)
 {
   AMANZI_ASSERT(d_ == 2);
 
@@ -264,7 +267,7 @@ int MFD3D_BernardiRaugel::AdvectionMatrix(
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-   
+
     int j = (i + nfaces + 1) % nfaces;
     N[i] += normal * dirs[i] / 2.0;
     N[j] += normal * dirs[i] / 2.0;
@@ -280,7 +283,7 @@ int MFD3D_BernardiRaugel::AdvectionMatrix(
   int ndofs = d_ * nnodes + nfaces;
   A.Reshape(ndofs, ndofs);
   A.PutScalar(0.0);
- 
+
   for (int i = 0; i < nnodes; ++i) {
     int i1 = 2 * i;
     for (int j = 0; j < nnodes; ++j) {
@@ -289,8 +292,8 @@ int MFD3D_BernardiRaugel::AdvectionMatrix(
       A(i1, j1 + 1) = w[i] * u[i][1] * N[j][0];
       A(i1 + 1, j1) = w[i] * u[i][0] * N[j][1];
       A(i1 + 1, j1 + 1) = w[i] * u[i][1] * N[j][1];
-    }    
-  } 
+    }
+  }
 
   return 0;
 }
@@ -300,7 +303,8 @@ int MFD3D_BernardiRaugel::AdvectionMatrix(
 * Divergence matrix: vectors at nodes, normal components on faces.
 * Fixed normal vector is used for the latter.
 ****************************************************************** */
-int MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
+int
+MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
 {
   Entity_ID_List nodes;
   mesh_->cell_get_nodes(c, &nodes);
@@ -316,14 +320,11 @@ int MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
 
   for (int n = 0; n < nfaces; ++n) {
     double area = mesh_->face_area(faces[n]);
-    A(0, n1 + n) = area * dirs[n]; 
-  } 
+    A(0, n1 + n) = area * dirs[n];
+  }
 
   return 0;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
-
-
+} // namespace WhetStone
+} // namespace Amanzi

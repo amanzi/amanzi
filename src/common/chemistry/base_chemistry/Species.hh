@@ -28,7 +28,7 @@ class Species {
  public:
   Species();
   Species(int id, const std::string& name, const Teuchos::ParameterList& plist);
-  virtual ~Species() {};
+  virtual ~Species(){};
 
   // update(): calculate the new activity coefficient, set the molarity,
   // activity and associated log values. Need to look at different
@@ -73,15 +73,15 @@ class Species {
 
  private:
   int identifier_;
-  double charge_;  // why is this a double rather than int...?
+  double charge_; // why is this a double rather than int...?
   double gram_molecular_weight_;
-  double ion_size_parameter_;  // angstroms
+  double ion_size_parameter_; // angstroms
   std::string name_;
 };
 
 typedef std::vector<Species> SpeciesArray;
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif

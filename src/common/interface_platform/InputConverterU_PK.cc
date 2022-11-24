@@ -33,11 +33,14 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Create operators sublist
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
-    const std::string& err_options, const std::string& nonlinear_solver,
-    bool modify_correction, const std::string& nonsolver_controls,
-    const std::string& linsolver,
-    double dt_cut_default, double dt_inc_default)
+Teuchos::ParameterList
+InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
+                                          const std::string& nonlinear_solver,
+                                          bool modify_correction,
+                                          const std::string& nonsolver_controls,
+                                          const std::string& linsolver,
+                                          double dt_cut_default,
+                                          double dt_inc_default)
 {
   Teuchos::ParameterList out_list;
 
@@ -50,7 +53,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
 
   // error control options
   std::vector<std::string> tmp = CharToStrings_(err_options.c_str());
-  out_list.set<Teuchos::Array<std::string> >("error control options", tmp);
+  out_list.set<Teuchos::Array<std::string>>("error control options", tmp);
 
   // linear solver
   bool flag;
@@ -80,14 +83,13 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
   bdf1.set<std::string>("timestep controller type", name);
   Teuchos::ParameterList& controller = bdf1.sublist("timestep controller " + name + " parameters");
   controller.set<int>("max iterations", TI_MAX_ITERATIONS)
-      .set<int>("min iterations", TI_MIN_ITERATIONS)
-      .set<double>("time step increase factor", dt_inc_default)
-      .set<double>("time step reduction factor", dt_cut_default)
-      .set<double>("max time step", MAXIMUM_TIMESTEP)
-      .set<double>("min time step", MINIMUM_TIMESTEP);
-   if (name == "adaptive") 
-     controller.set<double>("relative tolerance", 1e-4)
-               .set<double>("absolute tolerance", 10.0);
+    .set<int>("min iterations", TI_MIN_ITERATIONS)
+    .set<double>("time step increase factor", dt_inc_default)
+    .set<double>("time step reduction factor", dt_cut_default)
+    .set<double>("max time step", MAXIMUM_TIMESTEP)
+    .set<double>("min time step", MINIMUM_TIMESTEP);
+  if (name == "adaptive")
+    controller.set<double>("relative tolerance", 1e-4).set<double>("absolute tolerance", 10.0);
 
   // nonlinear solver
   Teuchos::ParameterList* solver;
@@ -104,8 +106,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
     solver->set<int>("limit iterations", NKA_LIMIT_ITERATIONS);
     solver->set<bool>("modify correction", modify_correction);
     solver->set<std::string>("monitor", "monitor update");
-  }
-  else if (nonlinear_solver == "nka") {
+  } else if (nonlinear_solver == "nka") {
     bdf1.set<std::string>("solver type", "nka");
     Teuchos::ParameterList& test = bdf1.sublist("nka parameters");
     solver = &test;
@@ -117,16 +118,15 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
     solver->set<int>("max nka vectors", NKA_NUM_VECTORS);
     solver->set<int>("limit iterations", NKA_LIMIT_ITERATIONS);
     solver->set<bool>("modify correction", modify_correction);
-  }
-  else if (nonlinear_solver == std::string("jfnk")) {
+  } else if (nonlinear_solver == std::string("jfnk")) {
     bdf1.set<std::string>("solver type", "JFNK");
     Teuchos::ParameterList& test = bdf1.sublist("JFNK parameters");
     solver = &test;
     solver->set<double>("typical solution value", 1.0);
 
-    Teuchos::ParameterList& list_tmp = solver->sublist("nonlinear solver");     
+    Teuchos::ParameterList& list_tmp = solver->sublist("nonlinear solver");
     list_tmp.set<std::string>("solver type", "Newton");
-    Teuchos::ParameterList& newton = list_tmp.sublist("Newton parameters");     
+    Teuchos::ParameterList& newton = list_tmp.sublist("Newton parameters");
     newton.set<double>("diverged tolerance", NKA_DIVERG_TOL);
     newton.set<double>("max du growth factor", INC_DIVERG_FACTOR);
     newton.set<int>("max divergent iterations", MAX_DIVERG_ITERATIONS);
@@ -145,9 +145,8 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
     std::vector<std::string> criteria;
     criteria.push_back("relative rhs");
     criteria.push_back("relative residual");
-    gmres.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
-  } 
-  else {
+    gmres.set<Teuchos::Array<std::string>>("convergence criteria", criteria);
+  } else {
     Errors::Message msg;
     msg << "In the definition of \"unstr_nonlinear_solver\" you must specify either"
         << " 'nka', 'newton', 'jfnk', or 'newton-picard'.\n";
@@ -162,68 +161,80 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
   bdf1.set<int>("nonlinear iteration initial guess extrapolation order", 1);
 
   node = GetUniqueElementByTagsString_(nonsolver_controls + ", max_iterations", flag);
-  if (flag) controller.set<int>("max iterations",
-      strtol(mm.transcode(node->getTextContent()), NULL, 10));
+  if (flag)
+    controller.set<int>("max iterations", strtol(mm.transcode(node->getTextContent()), NULL, 10));
 
   node = GetUniqueElementByTagsString_(nonsolver_controls + ", min_iterations", flag);
-  if (flag) controller.set<int>("min iterations",
-      strtol(mm.transcode(node->getTextContent()), NULL, 10));
+  if (flag)
+    controller.set<int>("min iterations", strtol(mm.transcode(node->getTextContent()), NULL, 10));
 
   node = GetUniqueElementByTagsString_(nonsolver_controls + ", limit_iterations", flag);
-  if (flag) solver->set<int>("limit iterations",
-      strtol(mm.transcode(node->getTextContent()), NULL, 10));
+  if (flag)
+    solver->set<int>("limit iterations", strtol(mm.transcode(node->getTextContent()), NULL, 10));
 
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", nonlinear_tolerance", flag); 
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", nonlinear_tolerance", flag);
   double nonlinear_tol(NONLINEAR_TOLERANCE);
   if (flag) {
     nonlinear_tol = strtod(mm.transcode(node->getTextContent()), NULL);
     solver->set<double>("nonlinear tolerance", nonlinear_tol);
   }
 
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", time_step_reduction_factor", flag); 
-  if (flag) controller.set<double>("time step reduction factor",
-      strtod(mm.transcode(node->getTextContent()), NULL));
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", time_step_reduction_factor", flag);
+  if (flag)
+    controller.set<double>("time step reduction factor",
+                           strtod(mm.transcode(node->getTextContent()), NULL));
 
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", time_step_increase_factor", flag); 
-  if (flag) controller.set<double>("time step increase factor",
-      strtod(mm.transcode(node->getTextContent()), NULL));
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", time_step_increase_factor", flag);
+  if (flag)
+    controller.set<double>("time step increase factor",
+                           strtod(mm.transcode(node->getTextContent()), NULL));
 
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", max_preconditioner_lag_iterations", flag); 
-  if (flag) bdf1.set<int>("max preconditioner lag iterations",
-      strtol(mm.transcode(node->getTextContent()), NULL, 10));
+  node =
+    GetUniqueElementByTagsString_(nonsolver_controls + ", max_preconditioner_lag_iterations", flag);
+  if (flag)
+    bdf1.set<int>("max preconditioner lag iterations",
+                  strtol(mm.transcode(node->getTextContent()), NULL, 10));
 
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", max_divergent_iterations", flag); 
-  if (flag) solver->set<int>("max divergent iterations",
-      strtol(mm.transcode(node->getTextContent()), NULL, 10));
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", max_divergent_iterations", flag);
+  if (flag)
+    solver->set<int>("max divergent iterations",
+                     strtol(mm.transcode(node->getTextContent()), NULL, 10));
 
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", nonlinear_iteration_damping_factor", flag); 
-  if (flag) bdf1.set<double>("nonlinear iteration damping factor",
-      strtod(mm.transcode(node->getTextContent()), NULL));
-
-  node = GetUniqueElementByTagsString_(
-      nonsolver_controls + ", nonlinear_iteration_initial_guess_extrapolation_order", flag); 
-  if (flag) bdf1.set<int>("nonlinear iteration initial guess extrapolation order",
-      strtol(mm.transcode(node->getTextContent()), NULL, 10));
-
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", restart_tolerance_relaxation_factor", flag); 
-  if (flag) bdf1.set<double>("restart tolerance relaxation factor",
-      strtod(mm.transcode(node->getTextContent()), NULL));
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", nonlinear_iteration_damping_factor",
+                                       flag);
+  if (flag)
+    bdf1.set<double>("nonlinear iteration damping factor",
+                     strtod(mm.transcode(node->getTextContent()), NULL));
 
   node = GetUniqueElementByTagsString_(
-      nonsolver_controls + ", restart_tolerance_relaxation_factor_damping", flag); 
-  if (flag) bdf1.set<double>("restart tolerance relaxation factor damping",
-      strtod(mm.transcode(node->getTextContent()), NULL));
+    nonsolver_controls + ", nonlinear_iteration_initial_guess_extrapolation_order", flag);
+  if (flag)
+    bdf1.set<int>("nonlinear iteration initial guess extrapolation order",
+                  strtol(mm.transcode(node->getTextContent()), NULL, 10));
+
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", restart_tolerance_relaxation_factor",
+                                       flag);
+  if (flag)
+    bdf1.set<double>("restart tolerance relaxation factor",
+                     strtod(mm.transcode(node->getTextContent()), NULL));
 
   node = GetUniqueElementByTagsString_(
-      nonsolver_controls + ", nonlinear_iteration_divergence_factor", flag); 
-  if (flag) solver->set<double>("max du growth factor",
-       strtod(mm.transcode(node->getTextContent()), NULL));
+    nonsolver_controls + ", restart_tolerance_relaxation_factor_damping", flag);
+  if (flag)
+    bdf1.set<double>("restart tolerance relaxation factor damping",
+                     strtod(mm.transcode(node->getTextContent()), NULL));
 
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", error_control_options", flag); 
-  if (flag) out_list.set<Teuchos::Array<std::string> >("error control options",
-      CharToStrings_(mm.transcode(node->getTextContent())));
+  node = GetUniqueElementByTagsString_(
+    nonsolver_controls + ", nonlinear_iteration_divergence_factor", flag);
+  if (flag)
+    solver->set<double>("max du growth factor", strtod(mm.transcode(node->getTextContent()), NULL));
 
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", preconditioner", flag); 
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", error_control_options", flag);
+  if (flag)
+    out_list.set<Teuchos::Array<std::string>>("error control options",
+                                              CharToStrings_(mm.transcode(node->getTextContent())));
+
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", preconditioner", flag);
   if (flag) {
     std::string text = GetTextContentS_(node, "hypre_amg, trilinos_ml, block_ilu");
     if (text == "hypre_amg") text = "Hypre AMG";
@@ -234,26 +245,26 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
 
   // special cases
   if (flow_single_phase_) {
-    node = GetUniqueElementByTagsString_(nonsolver_controls + ", time_step_increase_factor", flag); 
-    if (flag) controller.set<double>("time step increase factor",
-        strtol(mm.transcode(node->getTextContent()), NULL, 10));
+    node = GetUniqueElementByTagsString_(nonsolver_controls + ", time_step_increase_factor", flag);
+    if (flag)
+      controller.set<double>("time step increase factor",
+                             strtol(mm.transcode(node->getTextContent()), NULL, 10));
   }
 
   // initialization
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", unstr_initialization", flag); 
+  node = GetUniqueElementByTagsString_(nonsolver_controls + ", unstr_initialization", flag);
   if (flag) {
     Teuchos::ParameterList& init = out_list.sublist("initialization");
     init = TranslateInitialization_(nonsolver_controls);
   }
 
   // overwrite parameters for special solvers
-  if (nonlinear_solver == "newton" || 
-      nonlinear_solver == "newton-picard") {
+  if (nonlinear_solver == "newton" || nonlinear_solver == "newton-picard") {
     std::stringstream ss;
     ss << "GMRES for Newton-" << gmres_solvers_.size();
 
     bdf1.set<int>("max preconditioner lag iterations", 0);
-    bdf1.set<bool>("extrapolate initial guess", false);	    
+    bdf1.set<bool>("extrapolate initial guess", false);
     out_list.set<std::string>("linear solver", ss.str());
     out_list.set<std::string>("preconditioner enhancement", ss.str());
 
@@ -268,8 +279,8 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
 /* ******************************************************************
 * Translate initialization sublist for time integrator
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateInitialization_(
-    const std::string& unstr_controls)
+Teuchos::ParameterList
+InputConverterU::TranslateInitialization_(const std::string& unstr_controls)
 {
   Teuchos::ParameterList out_list;
 
@@ -285,29 +296,31 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
   std::string method;
   std::string controls(unstr_controls + ", unstr_initialization");
 
-  node = GetUniqueElementByTagsString_(controls + ", method", flag); 
+  node = GetUniqueElementByTagsString_(controls + ", method", flag);
   if (flag) {
     method = GetTextContentS_(node, "picard, darcy_solver");
     if (method == "darcy_solver") method = "saturated solver";
     out_list.set<std::string>("method", method);
   }
 
-  node = GetUniqueElementByTagsString_(controls + ", wells_status", flag); 
+  node = GetUniqueElementByTagsString_(controls + ", wells_status", flag);
   if (flag) {
     std::string text = mm.transcode(node->getTextContent());
     flag = (text == "on");
   }
   out_list.set<bool>("active wells", flag);
 
-  node = GetUniqueElementByTagsString_(controls + ", clipping_saturation", flag); 
-  if (flag) out_list.set<double>("clipping saturation value",
-      strtod(mm.transcode(node->getTextContent()), NULL));
+  node = GetUniqueElementByTagsString_(controls + ", clipping_saturation", flag);
+  if (flag)
+    out_list.set<double>("clipping saturation value",
+                         strtod(mm.transcode(node->getTextContent()), NULL));
 
-  node = GetUniqueElementByTagsString_(controls + ", clipping_pressure", flag); 
-  if (flag) out_list.set<double>("clipping pressure value",
-      strtod(mm.transcode(node->getTextContent()), NULL));
+  node = GetUniqueElementByTagsString_(controls + ", clipping_pressure", flag);
+  if (flag)
+    out_list.set<double>("clipping pressure value",
+                         strtod(mm.transcode(node->getTextContent()), NULL));
 
-  node = GetUniqueElementByTagsString_(controls + ", linear_solver", flag); 
+  node = GetUniqueElementByTagsString_(controls + ", linear_solver", flag);
   if (flag) {
     std::string text = mm.transcode(node->getTextContent());
     if (text == "aztec00" || text == "aztecoo") text = "AztecOO";
@@ -320,13 +333,15 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
     pic_list.set<double>("convergence tolerance", PICARD_TOLERANCE);
     pic_list.set<int>("maximum number of iterations", PICARD_MAX_ITERATIONS);
 
-    node = GetUniqueElementByTagsString_(controls + ", convergence_tolerance", flag); 
-    if (flag) pic_list.set<double>("convergence tolerance", 
-        strtod(mm.transcode(node->getTextContent()), NULL));
+    node = GetUniqueElementByTagsString_(controls + ", convergence_tolerance", flag);
+    if (flag)
+      pic_list.set<double>("convergence tolerance",
+                           strtod(mm.transcode(node->getTextContent()), NULL));
 
-    node = GetUniqueElementByTagsString_(controls + ", max_iterations", flag); 
-    if (flag) pic_list.set<int>("maximum number of iterations", 
-        strtol(mm.transcode(node->getTextContent()), NULL, 10));
+    node = GetUniqueElementByTagsString_(controls + ", max_iterations", flag);
+    if (flag)
+      pic_list.set<int>("maximum number of iterations",
+                        strtol(mm.transcode(node->getTextContent()), NULL, 10));
   }
 
   return out_list;
@@ -341,11 +356,14 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
 *   nonlinear_coef   = "upwind-amanzi_new" | any_other
 *   extentions       = "" | "vapor matrix" 
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
-    const std::string& disc_methods, const std::string& pc_method,
-    const std::string& nonlinear_solver, const std::string& nonlinear_coef,
-    const std::string& extensions, bool gravity,
-    const std::string& pk)
+Teuchos::ParameterList
+InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
+                                             const std::string& pc_method,
+                                             const std::string& nonlinear_solver,
+                                             const std::string& nonlinear_coef,
+                                             const std::string& extensions,
+                                             bool gravity,
+                                             const std::string& pk)
 {
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList tmp_list;
@@ -368,20 +386,20 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
     Teuchos::Array<std::string> stensil(2);
     stensil[0] = "face";
     stensil[1] = "cell";
-    tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
+    tmp_list.set<Teuchos::Array<std::string>>("schema", stensil);
 
     if (pc_method != "linearized_operator" && !fractures_) stensil.remove(1);
-    tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
+    tmp_list.set<Teuchos::Array<std::string>>("preconditioner schema", stensil);
     tmp_list.set<bool>("gravity", gravity);
     if (gravity && nonlinear_coef == "upwind-amanzi_new")
-        tmp_list.set<std::string>("gravity term discretization", "finite volume");
+      tmp_list.set<std::string>("gravity term discretization", "finite volume");
   } else {
     Teuchos::Array<std::string> stensil(1);
     stensil[0] = "cell";
-    tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
+    tmp_list.set<Teuchos::Array<std::string>>("schema", stensil);
 
     if (nonlinear_coef != "") tmp_list.set("nonlinear coefficient", nonlinear_coef);
-    tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
+    tmp_list.set<Teuchos::Array<std::string>>("preconditioner schema", stensil);
     tmp_list.set<bool>("gravity", gravity);
   }
 
@@ -403,24 +421,23 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
 
   // fixing miscalleneous scenarious
   if (pc_method == "linearized_operator" && pk == "flow") {
-    out_list.sublist("diffusion operator").sublist("preconditioner")
-        .set<std::string>("Newton correction", "approximate Jacobian");
+    out_list.sublist("diffusion operator")
+      .sublist("preconditioner")
+      .set<std::string>("Newton correction", "approximate Jacobian");
   }
 
   if (nonlinear_solver == "newton") {
-    Teuchos::ParameterList& pc_list = 
-        out_list.sublist("diffusion operator").sublist("preconditioner");
+    Teuchos::ParameterList& pc_list =
+      out_list.sublist("diffusion operator").sublist("preconditioner");
     pc_list.set<std::string>("Newton correction", "true Jacobian");
-  }
-  else if (nonlinear_solver == "newton-picard") {
-    Teuchos::ParameterList& pc_list = 
-        out_list.sublist("diffusion operator").sublist("preconditioner");
+  } else if (nonlinear_solver == "newton-picard") {
+    Teuchos::ParameterList& pc_list =
+      out_list.sublist("diffusion operator").sublist("preconditioner");
     pc_list.set<std::string>("Newton correction", "approximate Jacobian");
   }
 
   return out_list;
 }
 
-}  // namespace AmanziInput
-}  // namespace Amanzi
-
+} // namespace AmanziInput
+} // namespace Amanzi

@@ -22,8 +22,8 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-TotalComponentStorage_Jaffre::TotalComponentStorage_Jaffre(Teuchos::ParameterList& plist) :
-    MultiphaseBaseEvaluator(plist)
+TotalComponentStorage_Jaffre::TotalComponentStorage_Jaffre(Teuchos::ParameterList& plist)
+  : MultiphaseBaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -45,10 +45,13 @@ TotalComponentStorage_Jaffre::TotalComponentStorage_Jaffre(Teuchos::ParameterLis
 * Copy constructors.
 ****************************************************************** */
 TotalComponentStorage_Jaffre::TotalComponentStorage_Jaffre(
-    const TotalComponentStorage_Jaffre& other) : MultiphaseBaseEvaluator(other) {};
+  const TotalComponentStorage_Jaffre& other)
+  : MultiphaseBaseEvaluator(other){};
 
 
-Teuchos::RCP<Evaluator> TotalComponentStorage_Jaffre::Clone() const {
+Teuchos::RCP<Evaluator>
+TotalComponentStorage_Jaffre::Clone() const
+{
   return Teuchos::rcp(new TotalComponentStorage_Jaffre(*this));
 }
 
@@ -56,8 +59,9 @@ Teuchos::RCP<Evaluator> TotalComponentStorage_Jaffre::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalComponentStorage_Jaffre::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+TotalComponentStorage_Jaffre::Evaluate_(const State& S,
+                                        const std::vector<CompositeVector*>& results)
 {
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
@@ -78,9 +82,12 @@ void TotalComponentStorage_Jaffre::Evaluate_(
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalComponentStorage_Jaffre::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+TotalComponentStorage_Jaffre::EvaluatePartialDerivative_(
+  const State& S,
+  const Key& wrt_key,
+  const Tag& wrt_tag,
+  const std::vector<CompositeVector*>& results)
 {
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
@@ -94,23 +101,16 @@ void TotalComponentStorage_Jaffre::EvaluatePartialDerivative_(
     for (int c = 0; c != ncells; ++c) {
       result_c[0][c] = sl[0][c] * nl[0][c] + (1.0 - sl[0][c]) * ng[0][c];
     }
-  }
-  else if (wrt_key == saturation_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[0][c] * (nl[0][c] - ng[0][c]);
-    }
+  } else if (wrt_key == saturation_liquid_key_) {
+    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * (nl[0][c] - ng[0][c]); }
   }
 
   else if (wrt_key == mol_density_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[0][c] * sl[0][c];
-    }
+    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * sl[0][c]; }
   } else if (wrt_key == mol_density_gas_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]);
-    }
+    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]); }
   }
 }
 
-}  // namespace Multiphase
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi

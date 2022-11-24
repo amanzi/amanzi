@@ -34,11 +34,9 @@ namespace Amanzi {
 class FunctionConstant : public Function {
  public:
   FunctionConstant(double c) : c_(c) {}
-  std::unique_ptr<Function> Clone() const {
-    return std::make_unique<FunctionConstant>(*this);
-  }
+  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionConstant>(*this); }
   double operator()(const std::vector<double>& x) const { return c_; }
-  
+
  private:
   double c_;
 };

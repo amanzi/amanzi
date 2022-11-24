@@ -42,10 +42,10 @@ class TCM_WetDry_TwoPhase : public TCM_TwoPhase {
   double k_dry_;
 
  private:
-  static Utils::RegisteredFactory<TCM_TwoPhase,TCM_WetDry_TwoPhase> factory_;
+  static Utils::RegisteredFactory<TCM_TwoPhase, TCM_WetDry_TwoPhase> factory_;
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

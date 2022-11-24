@@ -14,8 +14,8 @@
 
 */
 
-#ifndef  AMANZI_AMESOS2_OPERATOR_HH_
-#define  AMANZI_AMESOS2_OPERATOR_HH_
+#ifndef AMANZI_AMESOS2_OPERATOR_HH_
+#define AMANZI_AMESOS2_OPERATOR_HH_
 
 #include <cmath>
 
@@ -39,19 +39,13 @@ namespace AmanziSolvers {
 /* ******************************************************************
 * Auxiliary base class.
 ****************************************************************** */
-class DirectMethodAmesos2 :
-      public Inverse<Epetra_CrsMatrix,Epetra_CrsMatrix,Epetra_Vector,Epetra_Map>
-{
+class DirectMethodAmesos2
+  : public Inverse<Epetra_CrsMatrix, Epetra_CrsMatrix, Epetra_Vector, Epetra_Map> {
  private:
-  using Inv = Inverse<Epetra_CrsMatrix,Epetra_CrsMatrix,Epetra_Vector,Epetra_Map>;
-  
+  using Inv = Inverse<Epetra_CrsMatrix, Epetra_CrsMatrix, Epetra_Vector, Epetra_Map>;
+
  public:
-  DirectMethodAmesos2() :
-      Inv(),
-      inited_(false),
-      updated_(false),
-      computed_(false)
-  {};
+  DirectMethodAmesos2() : Inv(), inited_(false), updated_(false), computed_(false){};
 
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override;
@@ -64,13 +58,13 @@ class DirectMethodAmesos2 :
 
  protected:
   using Inv::m_;
-  using Inv::h_;  
+  using Inv::h_;
 
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
 
-  Teuchos::RCP<Amesos2::Solver<Epetra_CrsMatrix,Epetra_MultiVector> > solver_;
-  
+  Teuchos::RCP<Amesos2::Solver<Epetra_CrsMatrix, Epetra_MultiVector>> solver_;
+
   std::string solver_name_;
   mutable int returned_code_;
 
@@ -80,7 +74,7 @@ class DirectMethodAmesos2 :
 };
 
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif

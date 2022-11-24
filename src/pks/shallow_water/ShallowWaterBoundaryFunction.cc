@@ -15,7 +15,7 @@
 
 namespace Amanzi {
 namespace ShallowWater {
-        
+
 /* ****************************************************************
 * Constructor: extract attributes to setup a submodel.
 **************************************************************** */
@@ -24,6 +24,5 @@ ShallowWaterBoundaryFunction::ShallowWaterBoundaryFunction(const Teuchos::Parame
   // place holder
 }
 
-}  // namespace ShallowWater
-}  // namespace Amanzi
-
+} // namespace ShallowWater
+} // namespace Amanzi

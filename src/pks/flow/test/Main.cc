@@ -14,10 +14,11 @@ namespace Flow {
 
 Utils::RegisteredFactory<WRM, WRM_fake> WRM_fake::factory_("fake");
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
   int res = 0;
   {
@@ -26,4 +27,3 @@ int main(int argc, char *argv[])
   }
   return res;
 }
-

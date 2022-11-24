@@ -59,7 +59,7 @@ getFaceOnBoundaryInternalCell(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_I
     AmanziGeometry::Point fc = mesh.face_centroid(f);
     std::stringstream msgs;
     msgs << "getFaceOnBoundaryInternalCell called with non-internal face GID "
-        << mesh.face_map(true).GID(f) << " at " << fc;
+         << mesh.face_map(true).GID(f) << " at " << fc;
     Errors::Message msg(msgs.str());
     Exceptions::amanzi_throw(msg);
   }
@@ -99,11 +99,9 @@ copyCellsToBoundaryFaces(const AmanziMesh::Mesh& mesh,
                          Epetra_MultiVector& boundary_faces)
 {
   AMANZI_ASSERT(cells.NumVectors() == boundary_faces.NumVectors());
-  for (AmanziMesh::Entity_ID bf=0; bf!=boundary_faces.MyLength(); ++bf) {
+  for (AmanziMesh::Entity_ID bf = 0; bf != boundary_faces.MyLength(); ++bf) {
     AmanziMesh::Entity_ID c = getBoundaryFaceInternalCell(mesh, bf);
-    for (int i=0; i!=boundary_faces.NumVectors(); ++i) {
-      boundary_faces[i][bf] = cells[i][c];
-    }
+    for (int i = 0; i != boundary_faces.NumVectors(); ++i) { boundary_faces[i][bf] = cells[i][c]; }
   }
 }
 
@@ -133,8 +131,7 @@ cell_get_face_adj_cell(const AmanziMesh::Mesh& mesh, int c, int f)
   Entity_ID_List cells;
   mesh.face_get_cells(f, Parallel_type::ALL, &cells);
 
-  if (cells.size() == 2)
-    return cells[0] + cells[1] - c;
+  if (cells.size() == 2) return cells[0] + cells[1] - c;
 
   return -1;
 }

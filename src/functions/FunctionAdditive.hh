@@ -36,7 +36,7 @@ Example:
     </ParameterList>
   </ParameterList>
 */
-  
+
 #ifndef AMANZI_ADDITIVE_FUNCTION_HH_
 #define AMANZI_ADDITIVE_FUNCTION_HH_
 
@@ -49,15 +49,13 @@ namespace Amanzi {
 class FunctionAdditive : public Function {
  public:
   FunctionAdditive(std::unique_ptr<Function> f1, std::unique_ptr<Function> f2)
-     : f1_(std::move(f1)), f2_(std::move(f2)) {};
-  FunctionAdditive(const Function& f1, const Function& f2)
-     : f1_(f1.Clone()), f2_(f2.Clone()) {}
+    : f1_(std::move(f1)), f2_(std::move(f2)){};
+  FunctionAdditive(const Function& f1, const Function& f2) : f1_(f1.Clone()), f2_(f2.Clone()) {}
   FunctionAdditive(const FunctionAdditive& source)
-     : f1_(source.f1_->Clone()), f2_(source.f2_->Clone()) {}
-  ~FunctionAdditive() {};
-  std::unique_ptr<Function> Clone() const {
-    return std::make_unique<FunctionAdditive>(*this);
-  }
+    : f1_(source.f1_->Clone()), f2_(source.f2_->Clone())
+  {}
+  ~FunctionAdditive(){};
+  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionAdditive>(*this); }
   double operator()(const std::vector<double>& x) const { return (*f1_)(x) + (*f2_)(x); }
 
  private:
@@ -66,4 +64,4 @@ class FunctionAdditive : public Function {
 
 } // namespace Amanzi
 
-#endif 
+#endif

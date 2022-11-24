@@ -27,8 +27,7 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructors
 ****************************************************************** */
-MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-  : BilinearForm(mesh)
+MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) : BilinearForm(mesh)
 {
   stability_method_ = WHETSTONE_STABILITY_GENERIC;
   scaling_factor_ = 1.0;
@@ -41,7 +40,8 @@ MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
 /* ******************************************************************
 * Simplest stability term is added to the consistency term. 
 ****************************************************************** */
-void MFD3D::StabilityScalar_(DenseMatrix& N, DenseMatrix& M)
+void
+MFD3D::StabilityScalar_(DenseMatrix& N, DenseMatrix& M)
 {
   GrammSchmidt_(N);
   CalculateStabilityScalar_(M);
@@ -49,18 +49,18 @@ void MFD3D::StabilityScalar_(DenseMatrix& N, DenseMatrix& M)
   int nrows = M.NumRows();
   int ncols = N.NumCols();
 
-  for (int i = 0; i < nrows; i++) {  // add projector ss * (I - N^T N) to matrix M
+  for (int i = 0; i < nrows; i++) { // add projector ss * (I - N^T N) to matrix M
     M(i, i) += scalar_stability_;
 
     for (int j = i; j < nrows; j++) {
       double s = 0.0;
-      for (int k = 0; k < ncols; k++)  s += N(i, k) * N(j, k);
+      for (int k = 0; k < ncols; k++) s += N(i, k) * N(j, k);
       M(i, j) -= s * scalar_stability_;
     }
   }
 
-  for (int i = 0; i < nrows; i++) {  // symmetrization
-    for (int j = i+1; j < nrows; j++) M(j, i) = M(i, j);
+  for (int i = 0; i < nrows; i++) { // symmetrization
+    for (int j = i + 1; j < nrows; j++) M(j, i) = M(i, j);
   }
 }
 
@@ -70,7 +70,8 @@ void MFD3D::StabilityScalar_(DenseMatrix& N, DenseMatrix& M)
 * matrix for a 2D and 3D orthogonal cells and diagonal tensors. 
 * The algorithm minimizes off-diagonal entries in the mass matrix.
 ****************************************************************** */
-int MFD3D::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
+int
+MFD3D::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
 {
   int nrows = N.NumRows();
   int ncols = N.NumCols();
@@ -86,8 +87,20 @@ int MFD3D::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
   int info, ldv = 1, size = 5 * ncols + 3 * nrows;
   double V, S[nrows], work[size];
 
-  DGESVD_F77("A", "N", &nrows, &ncols, N.Values(), &nrows,  // N = u s v
-             S, U.Values(), &nrows, &V, &ldv, work, &size, &info);
+  DGESVD_F77("A",
+             "N",
+             &nrows,
+             &ncols,
+             N.Values(),
+             &nrows, // N = u s v
+             S,
+             U.Values(),
+             &nrows,
+             &V,
+             &ldv,
+             work,
+             &size,
+             &info);
 
   if (info != 0) return 1;
 
@@ -100,18 +113,18 @@ int MFD3D::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
 
   int m, n = 0;
   for (int k = ncols; k < nrows; k++) {
-    m = 0;  // calculate diagonal entries of M_kk = U_k * U_k^T
-    for (int i = 0; i < nrows; i++) 
-      for (int j = i+1; j < nrows; j++) C(m++, n) = U(i, k) * U(j, k);
-    n++; 
+    m = 0; // calculate diagonal entries of M_kk = U_k * U_k^T
+    for (int i = 0; i < nrows; i++)
+      for (int j = i + 1; j < nrows; j++) C(m++, n) = U(i, k) * U(j, k);
+    n++;
   }
 
   for (int k = ncols; k < nrows; k++) {
-    for (int l = k+1; l < nrows; l++) {
-      m = 0;  // calculate off-diagonal entries of M_kk + M_ll - M_kl - M_lk 
-      for (int i = 0; i < nrows; i++) { 
-        for (int j = i+1; j < nrows; j++) {
-          C(m, n) = C(m, k-ncols) + C(m, l-ncols) - U(i, k) * U(j, l) - U(i, l) * U(j, k);
+    for (int l = k + 1; l < nrows; l++) {
+      m = 0; // calculate off-diagonal entries of M_kk + M_ll - M_kl - M_lk
+      for (int i = 0; i < nrows; i++) {
+        for (int j = i + 1; j < nrows; j++) {
+          C(m, n) = C(m, k - ncols) + C(m, l - ncols) - U(i, k) * U(j, l) - U(i, l) * U(j, k);
           m++;
         }
       }
@@ -120,15 +133,15 @@ int MFD3D::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
   }
 
   m = 0;
-  for (int i = 0; i < nrows; i++) { 
-    for (int j = i+1; j < nrows; j++) F(m++) = -M(i, j);
+  for (int i = 0; i < nrows; i++) {
+    for (int j = i + 1; j < nrows; j++) F(m++) = -M(i, j);
   }
 
   // Form a linear system for parameters
   DenseMatrix A(nparam, nparam);
   DenseVector G(nparam);
 
-  A.Multiply(C, C, true);  // A = C^T C
+  A.Multiply(C, C, true); // A = C^T C
   C.Multiply(F, G, true);
 
   // Find parameters
@@ -141,7 +154,7 @@ int MFD3D::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
   P.PutScalar(0.0);
 
   for (int loop = 0; loop < 3; loop++) {
-    if (loop == 1) {   
+    if (loop == 1) {
       for (int i = 0; i < mcols; i++) G(i) = std::max(G(i), 0.0);
     } else if (loop == 2) {
       for (int i = mcols; i < nparam; i++) G(i) = std::max(G(i), 0.0);
@@ -151,23 +164,24 @@ int MFD3D::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
 
     n = mcols;
     for (int k = 0; k < mcols; k++) {
-      for (int l = k+1; l < mcols; l++) {
+      for (int l = k + 1; l < mcols; l++) {
         P(k, k) += G(n);
         P(l, l) += G(n);
         P(l, k) = P(k, l) = -G(n);
-        n++;  
+        n++;
       }
     }
 
     // check SPD property (we use allocated memory)
     DenseMatrix Ptmp(P);
-    DSYEV_F77("N", "U", &mcols, Ptmp.Values(), &mcols, S, work, &size, &info); 
+    DSYEV_F77("N", "U", &mcols, Ptmp.Values(), &mcols, S, work, &size, &info);
     if (info != 0) return 1;
 
     if (S[0] > eigmin) {
       break;
     } else if (loop == 2) {
-      for (int k = 0; k < mcols; k++) if (P(k, k) < eigtol) P(k, k) = eigmin;
+      for (int k = 0; k < mcols; k++)
+        if (P(k, k) < eigtol) P(k, k) = eigmin;
     }
   }
 
@@ -177,15 +191,15 @@ int MFD3D::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < mcols; j++) {
       double& entry = UP(i, j);
-      for (int k = 0; k < mcols; k++) entry += U(i, k+ncols) * P(k, j);
+      for (int k = 0; k < mcols; k++) entry += U(i, k + ncols) * P(k, j);
     }
   }
 
   for (int i = 0; i < nrows; i++) {
     for (int j = i; j < nrows; j++) {
       double& entry = M(i, j);
-      for (int k = 0; k < mcols; k++) entry += UP(i, k) * U(j, k+ncols);
-      M(j, i) = M(i, j); 
+      for (int k = 0; k < mcols; k++) entry += UP(i, k) * U(j, k + ncols);
+      M(j, i) = M(i, j);
     }
   }
 
@@ -196,7 +210,8 @@ int MFD3D::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
 /* ******************************************************************
 * Simple stability term for nonsymmetric tensors.
 ****************************************************************** */
-void MFD3D::StabilityScalarNonSymmetric_(DenseMatrix& N, DenseMatrix& M)
+void
+MFD3D::StabilityScalarNonSymmetric_(DenseMatrix& N, DenseMatrix& M)
 {
   GrammSchmidt_(N);
   CalculateStabilityScalar_(M);
@@ -205,12 +220,12 @@ void MFD3D::StabilityScalarNonSymmetric_(DenseMatrix& N, DenseMatrix& M)
   int ncols = N.NumCols();
 
   // add projector ss * (I - N^T N) to matrix M
-  for (int i = 0; i < nrows; i++) {  
+  for (int i = 0; i < nrows; i++) {
     M(i, i) += scalar_stability_;
 
     for (int j = i; j < nrows; j++) {
       double s = 0.0;
-      for (int k = 0; k < ncols; k++)  s += N(i, k) * N(j, k);
+      for (int k = 0; k < ncols; k++) s += N(i, k) * N(j, k);
 
       s *= scalar_stability_;
       M(i, j) -= s;
@@ -223,7 +238,8 @@ void MFD3D::StabilityScalarNonSymmetric_(DenseMatrix& N, DenseMatrix& M)
 /* ******************************************************************
 * Calculate stability factor using matrix and optional scaling.
 ****************************************************************** */
-double MFD3D::CalculateStabilityScalar_(DenseMatrix& Mc)
+double
+MFD3D::CalculateStabilityScalar_(DenseMatrix& Mc)
 {
   int nrows = Mc.NumRows();
 
@@ -242,7 +258,8 @@ double MFD3D::CalculateStabilityScalar_(DenseMatrix& Mc)
 /* ******************************************************************
 * Conventional Gramm-Schmidt orthogonalization of colums of matrix N. 
 ****************************************************************** */
-void MFD3D::GrammSchmidt_(DenseMatrix& N)
+void
+MFD3D::GrammSchmidt_(DenseMatrix& N)
 {
   int nrows = N.NumRows();
   int ncols = N.NumCols();
@@ -255,21 +272,21 @@ void MFD3D::GrammSchmidt_(DenseMatrix& N)
     l22 = 1.0 / sqrt(l22);
     for (k = 0; k < nrows; k++) N(k, i) *= l22;
 
-    for (j = i+1; j < ncols; j++) {
+    for (j = i + 1; j < ncols; j++) {
       double s = 0.0;
       for (k = 0; k < nrows; k++) s += N(k, i) * N(k, j);
-      for (k = 0; k < nrows; k++) N(k, j) -= s * N(k, i);  // orthogonolize i and j
+      for (k = 0; k < nrows; k++) N(k, j) -= s * N(k, i); // orthogonolize i and j
     }
   }
 }
-
 
 
 /* ******************************************************************
 * Set up positive scaling factor for a scalar stability term.
 * Warning: Ignores silently negative factors.
 ****************************************************************** */
-void MFD3D::ModifyStabilityScalingFactor(double factor)
+void
+MFD3D::ModifyStabilityScalingFactor(double factor)
 {
   if (factor > 0.0) {
     stability_method_ = WHETSTONE_STABILITY_GENERIC_SCALED;
@@ -282,8 +299,8 @@ void MFD3D::ModifyStabilityScalingFactor(double factor)
 * A wrapper for the simplex method that finds monotone parameters. 
 * Content of N is destroyed.
 ****************************************************************** */
-int MFD3D::StabilityMMatrix_(
-    int c, DenseMatrix& N, DenseMatrix& M, int objective)
+int
+MFD3D::StabilityMMatrix_(int c, DenseMatrix& N, DenseMatrix& M, int objective)
 {
   int nrows = N.NumRows();
 
@@ -319,7 +336,7 @@ int MFD3D::StabilityMMatrix_(
         m2++;
       }
       T(ir, 0) = b;
-      
+
       nx = 0;
       for (int k = 0; k < mcols; k++) {
         tmp = D(i, k) * D(j, k);
@@ -393,7 +410,7 @@ int MFD3D::StabilityMMatrix_(
   // find a feasible basic solution
   int izrow[mx + 1], iypos[m12 + 1];
   simplex_num_itrs_ = SimplexFindFeasibleSolution_(T, m1, m2, 0, izrow, iypos);
-  simplex_functional_ = T(0,0); 
+  simplex_functional_ = T(0, 0);
 
   if (simplex_num_itrs_ < 0) return 1;
   if (fabs(T(m12 + 1, 0)) > 1e-8) return 1;
@@ -402,17 +419,17 @@ int MFD3D::StabilityMMatrix_(
   for (int i = 0; i < mx; i++) u[i] = 0.0;
   for (int i = 1; i < m12 + 1; i++) {
     int k = iypos[i] - 1;
-    if (k < mx) u[k] = T(i,0);
+    if (k < mx) u[k] = T(i, 0);
   }
 
-  // verify solution feasibility 
+  // verify solution feasibility
   double unorm(0.0);
   for (int i = 0; i < mx; i++) unorm = std::max(unorm, std::fabs(u[i]));
   if (unorm < 1e-8) return 1;
 
   // add matrix D' U D
   for (int i = 0; i < nrows; i++) {
-    for (int j = i; j < nrows; j++) { 
+    for (int j = i; j < nrows; j++) {
       nx = 0;
       for (int k = 0; k < mcols; k++) {
         M(i, j) += D(i, k) * D(j, k) * u[nx];
@@ -436,12 +453,12 @@ int MFD3D::StabilityMMatrix_(
 * We assume that m3 = 0; otherwise, routine MaxRowValue() has 
 * to be modified by looping over columns in array l1.
 ****************************************************************** */
-int MFD3D::SimplexFindFeasibleSolution_(
-    DenseMatrix& T, int m1, int m2, int m3, int* izrow, int* iypos)
+int
+MFD3D::SimplexFindFeasibleSolution_(DenseMatrix& T, int m1, int m2, int m3, int* izrow, int* iypos)
 {
-  int m = m1 + m2 + m3;     // Number of constraints.
-  int n = T.NumCols() - 1;  // Number of unknowns.
-  
+  int m = m1 + m2 + m3;    // Number of constraints.
+  int n = T.NumCols() - 1; // Number of unknowns.
+
   for (int k = 0; k < n + 1; k++) {
     double q1 = 0.0;
     for (int i = m1 + 1; i < m + 1; i++) q1 += T(i, k);
@@ -466,11 +483,10 @@ int MFD3D::SimplexFindFeasibleSolution_(
     for (int itr = 0; itr < itr_max; itr++) {
       // find maximum coeffient of the auxiliary functional
       double vmax;
-      T.MaxRowValue(m + 1, 1, n, &kp, &vmax); 
+      T.MaxRowValue(m + 1, 1, n, &kp, &vmax);
 
-      // feasible solution does not exist 
-      if (vmax < tol && T(m + 1, 0) < -tol) 
-          return WHETSTONE_SIMPLEX_NO_FEASIBLE_SET;
+      // feasible solution does not exist
+      if (vmax < tol && T(m + 1, 0) < -tol) return WHETSTONE_SIMPLEX_NO_FEASIBLE_SET;
 
       // feasible solution has been found
       if (vmax < tol && fabs(T(m + 1, 0)) < tol) {
@@ -486,7 +502,7 @@ int MFD3D::SimplexFindFeasibleSolution_(
 
         for (int i = m1 + 1; i < m + 1; i++) {
           if (l3[i - m1 - 1] == 1) {
-            for (int k = 0; k < n + 1; k++) T(i, k) *= -1; 
+            for (int k = 0; k < n + 1; k++) T(i, k) *= -1;
           }
         }
         itr1 = itr;
@@ -505,15 +521,15 @@ int MFD3D::SimplexFindFeasibleSolution_(
       // Make sure it stays out by removing it from the l1 list.
       if (iypos[ip] >= n + m1 + m2 + 1) {
         for (int k = 1; k <= nl1; k++) {
-          if (l1[k] == kp) { 
+          if (l1[k] == kp) {
             --nl1;
             for (int i = k; i <= nl1; i++) l1[i] = l1[i + 1];
             break;
           }
         }
       } else {
-      // Exchanged out an m2 type constraint for the first time. 
-      // Correct sign of the pivot column and the implicit artificial variable.
+        // Exchanged out an m2 type constraint for the first time.
+        // Correct sign of the pivot column and the implicit artificial variable.
         int kh = iypos[ip] - m1 - n - 1;
         if (kh >= 0 && l3[kh] == 1) {
           l3[kh] = 0;
@@ -562,7 +578,8 @@ int MFD3D::SimplexFindFeasibleSolution_(
 /* ******************************************************************
 * Locates a pivot elements taking degeneracy into account.
 ***************************************************************** */
-void MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
+void
+MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
 {
   int m = T.NumRows() - 2;
   int n = T.NumCols() - 1;
@@ -573,7 +590,7 @@ void MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
   for (int i = 1; i < m + 1; i++) {
     tmp = T(i, kp);
     if (tmp < -tol) {
-      // Round-off errors may generate small but negative RHS, so that 
+      // Round-off errors may generate small but negative RHS, so that
       // we take its absolute value
       q = -fabs(T(i, 0)) / tmp;
 
@@ -585,7 +602,7 @@ void MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
         *ip = i;
         qmin = q;
         tmin = tmp;
-      } else if (q == qmin) {  // we have a degeneracy.
+      } else if (q == qmin) { // we have a degeneracy.
 #ifdef WHETSTONE_SIMPLEX_PIVOT_BRANDT
         double tmp0 = T(*ip, kp);
         for (int k = 1; k <= n; k++) {
@@ -611,7 +628,8 @@ void MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
 /* ******************************************************************
 * Exchanges left-hand and right-hand variables.
 ****************************************************************** */
-void MFD3D::SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip)
+void
+MFD3D::SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip)
 {
   int m = T.NumRows() - 2;
   int n = T.NumCols() - 1;
@@ -635,7 +653,8 @@ void MFD3D::SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip)
 /* ******************************************************************
 * Modify the stability space by extending matrix N.
 ****************************************************************** */
-void AddGradient(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, int c, DenseMatrix& N)
+void
+AddGradient(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, int c, DenseMatrix& N)
 {
   const auto& edges = mesh->cell_get_edges(c);
   int nedges = edges.size();
@@ -660,7 +679,7 @@ void AddGradient(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, int c, D
 
     G(m, lid[v1]) += 1.0 / length;
     G(m, lid[v2]) -= 1.0 / length;
-  } 
+  }
 
   // create matrix [N G] with possibly linearly dependent vectors
   int ncols = N.NumCols();
@@ -671,7 +690,7 @@ void AddGradient(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, int c, D
   for (int n = 0; n < nnodes - 1; ++n) {
     for (int m = 0; m < nedges; ++m) NG(m, ncols + n) = G(m, n);
   }
-  
+
   // identify linearly independent vectors by using the
   // Gramm-Schmidt orthogonalization process
   int ngcols = ncols + nnodes - 1;
@@ -705,7 +724,5 @@ void AddGradient(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, int c, D
   }
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
-
+} // namespace WhetStone
+} // namespace Amanzi

@@ -21,25 +21,25 @@ namespace Transport {
 /* ******************************************************************
 * Non-member factory.
 ****************************************************************** */
-Teuchos::RCP<MultiscaleTransportPorosityPartition> CreateMultiscaleTransportPorosityPartition(
-    Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    Teuchos::RCP<Teuchos::ParameterList> tplist)
+Teuchos::RCP<MultiscaleTransportPorosityPartition>
+CreateMultiscaleTransportPorosityPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                           Teuchos::RCP<Teuchos::ParameterList> tplist)
 {
   auto msp_list = Teuchos::sublist(tplist, "multiscale models", true);
   auto diff_list = Teuchos::sublist(tplist, "molecular diffusion", true);
 
-  auto mol_diff = diff_list->get<Teuchos::Array<double> >("aqueous values");
+  auto mol_diff = diff_list->get<Teuchos::Array<double>>("aqueous values");
 
   MultiscaleTransportPorosityFactory factory;
-  std::vector<Teuchos::RCP<MultiscaleTransportPorosity> > msp;
-  std::vector<std::vector<std::string> > regions;
+  std::vector<Teuchos::RCP<MultiscaleTransportPorosity>> msp;
+  std::vector<std::vector<std::string>> regions;
 
   for (auto it = msp_list->begin(); it != msp_list->end(); ++it) {
     if (msp_list->isSublist(it->first)) {
       Teuchos::ParameterList plist = msp_list->sublist(it->first);
-      plist.set<Teuchos::Array<double> >("molecular diffusion", mol_diff);
+      plist.set<Teuchos::Array<double>>("molecular diffusion", mol_diff);
 
-      regions.push_back(plist.get<Teuchos::Array<std::string> >("regions").toVector());
+      regions.push_back(plist.get<Teuchos::Array<std::string>>("regions").toVector());
       msp.push_back(factory.Create(plist));
     } else {
       AMANZI_ASSERT(0);
@@ -57,18 +57,16 @@ Teuchos::RCP<MultiscaleTransportPorosityPartition> CreateMultiscaleTransportPoro
 /* ******************************************************************
 * Non-member function quering partition.
 ****************************************************************** */
-int NumberMatrixNodes(Teuchos::RCP<MultiscaleTransportPorosityPartition>& msp)
+int
+NumberMatrixNodes(Teuchos::RCP<MultiscaleTransportPorosityPartition>& msp)
 {
   int nnodes(0);
   const auto& list = msp->second;
 
-  for (int i = 0; i < list.size(); ++i) {
-    nnodes = std::max(nnodes, list[i]->NumberMatrixNodes());
-  }
+  for (int i = 0; i < list.size(); ++i) { nnodes = std::max(nnodes, list[i]->NumberMatrixNodes()); }
 
   return nnodes;
 }
 
-}  // namespace Transport
-}  // namespace Amanzi
-
+} // namespace Transport
+} // namespace Amanzi

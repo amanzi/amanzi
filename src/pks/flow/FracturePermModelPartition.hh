@@ -21,15 +21,16 @@
 namespace Amanzi {
 namespace Flow {
 
-typedef std::vector<Teuchos::RCP<FracturePermModel> > FracturePermModelList;
-typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, FracturePermModelList> FracturePermModelPartition;
+typedef std::vector<Teuchos::RCP<FracturePermModel>> FracturePermModelList;
+typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, FracturePermModelList>
+  FracturePermModelPartition;
 
 // Non-member factory
-Teuchos::RCP<FracturePermModelPartition> CreateFracturePermModelPartition(
-    Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    Teuchos::RCP<Teuchos::ParameterList> plist);
+Teuchos::RCP<FracturePermModelPartition>
+CreateFracturePermModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                 Teuchos::RCP<Teuchos::ParameterList> plist);
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 #endif

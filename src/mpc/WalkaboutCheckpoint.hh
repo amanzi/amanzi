@@ -29,30 +29,31 @@ namespace Amanzi {
 
 class WalkaboutCheckpoint : public Checkpoint {
  public:
-  WalkaboutCheckpoint(Teuchos::ParameterList& plist,
-                      const State& S) : Checkpoint (plist, S) {};
-  WalkaboutCheckpoint() : Checkpoint(true) {};
+  WalkaboutCheckpoint(Teuchos::ParameterList& plist, const State& S) : Checkpoint(plist, S){};
+  WalkaboutCheckpoint() : Checkpoint(true){};
 
   // output of fields
   void WriteDataFile(Teuchos::RCP<State>& S, Teuchos::RCP<PK> pk);
 
   // recontruct vector velocity at mesh nodes
   void CalculateDarcyVelocity(Teuchos::RCP<State>& S,
-                              std::vector<AmanziGeometry::Point>& xyz, 
+                              std::vector<AmanziGeometry::Point>& xyz,
                               std::vector<AmanziGeometry::Point>& velocity) const;
 
   // interpolate various fileds to mesh nodes
   void CalculateData(Teuchos::RCP<State>& S,
-                     std::vector<AmanziGeometry::Point>& xyz, 
+                     std::vector<AmanziGeometry::Point>& xyz,
                      std::vector<AmanziGeometry::Point>& velocity,
-                     std::vector<double>& porosity, std::vector<double>& saturation,
-                     std::vector<double>& pressure, std::vector<double>& isotherm_kd,
+                     std::vector<double>& porosity,
+                     std::vector<double>& saturation,
+                     std::vector<double>& pressure,
+                     std::vector<double>& isotherm_kd,
                      std::vector<int>& material_ids);
 
  private:
-  Teuchos::RCP<PK> pk_; 
+  Teuchos::RCP<PK> pk_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

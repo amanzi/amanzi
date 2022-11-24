@@ -34,4 +34,3 @@ class VectorBase {
   // dot product: a = (*this) * u, returns error code 0 if success, !0 otherwise
   int Dot(const VectorBase& u, double* a);
 };
-

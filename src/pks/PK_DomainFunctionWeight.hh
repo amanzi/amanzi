@@ -31,15 +31,15 @@
 namespace Amanzi {
 
 template <class FunctionBase>
-class PK_DomainFunctionWeight : public FunctionBase,
-                                public Functions::UniqueMeshFunction {
+class PK_DomainFunctionWeight : public FunctionBase, public Functions::UniqueMeshFunction {
  public:
-  PK_DomainFunctionWeight(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      UniqueMeshFunction(mesh) {};
-  ~PK_DomainFunctionWeight() {};
+  PK_DomainFunctionWeight(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : UniqueMeshFunction(mesh){};
+  ~PK_DomainFunctionWeight(){};
 
   // member functions
-  void Init(const Teuchos::ParameterList& plist, const std::string& keyword,
+  void Init(const Teuchos::ParameterList& plist,
+            const std::string& keyword,
             Teuchos::RCP<const Epetra_Vector> weight);
 
   // required member functions
@@ -56,20 +56,21 @@ class PK_DomainFunctionWeight : public FunctionBase,
   Teuchos::RCP<const Epetra_Vector> weight_;
 };
 
- 
+
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionWeight<FunctionBase>::Init(
-    const Teuchos::ParameterList& plist, const std::string& keyword,
-    Teuchos::RCP<const Epetra_Vector> weight)
+void
+PK_DomainFunctionWeight<FunctionBase>::Init(const Teuchos::ParameterList& plist,
+                                            const std::string& keyword,
+                                            Teuchos::RCP<const Epetra_Vector> weight)
 {
   AMANZI_ASSERT(weight != Teuchos::null);
 
   keyword_ = keyword;
 
-  std::vector<std::string> regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
+  std::vector<std::string> regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();
 
   Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
@@ -93,11 +94,12 @@ void PK_DomainFunctionWeight<FunctionBase>::Init(
 * Compute and distribute the result by volume.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
+void
+PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
 {
   double dt = t1 - t0;
   if (dt > 0.0) dt = 1.0 / dt;
- 
+
   // create the input tuple (time + space)
   int dim = mesh_->space_dimension();
   std::vector<double> args(1 + dim);
@@ -105,8 +107,8 @@ void PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::CELL]->begin();
-       uspec != unique_specs_[AmanziMesh::CELL]->end(); ++uspec) {
-
+       uspec != unique_specs_[AmanziMesh::CELL]->end();
+       ++uspec) {
     domain_volume_ = 0.0;
     double vol, weight_volume = 0.0;
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
@@ -118,12 +120,12 @@ void PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
         weight_volume += vol * (*weight_)[*c];
       }
     }
-    double result[2], tmp[2] = {domain_volume_, weight_volume};
+    double result[2], tmp[2] = { domain_volume_, weight_volume };
     mesh_->get_comm()->SumAll(tmp, result, 2);
     domain_volume_ = result[0];
     weight_volume = result[1];
     int nfun = (*uspec)->first->second->size();
-    std::vector<double> val_vec(nfun); 
+    std::vector<double> val_vec(nfun);
 
     args[0] = t1;
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
@@ -133,7 +135,7 @@ void PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
         val_vec[i] = (*(*uspec)->first->second)(args)[i] * (*weight_)[*c] / weight_volume;
       }
       value_[*c] = val_vec;
-    }      
+    }
 
     if (submodel_ == "integrated source") {
       args[0] = t0;
@@ -149,7 +151,6 @@ void PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
   }
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif
-

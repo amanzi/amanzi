@@ -16,7 +16,8 @@
 #include "MeshFactory.hh"
 #include "State.hh"
 
-TEST(STATE_CREATION) {
+TEST(STATE_CREATION)
+{
   using namespace Amanzi;
 
   auto comm = Amanzi::getDefaultComm();

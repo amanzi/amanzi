@@ -20,7 +20,7 @@ namespace AmanziChemistry {
 class Newton {
  public:
   explicit Newton(const int n);
-  virtual ~Newton() {};
+  virtual ~Newton(){};
 
   void size(int i) { size_ = i; }
   int size() const { return size_; }
@@ -36,6 +36,6 @@ class Newton {
   std::vector<double> vv_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

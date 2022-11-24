@@ -23,8 +23,8 @@ namespace WhetStone {
 /* ******************************************************************
 * Setup cubic polynomial
 ****************************************************************** */
-void SplineCubic::Setup(double x0, double f0, double df0,
-                        double x1, double f1, double df1)
+void
+SplineCubic::Setup(double x0, double f0, double df0, double x1, double f1, double df1)
 {
   double dx = x1 - x0;
   double df = f1 - f0;
@@ -47,7 +47,8 @@ void SplineCubic::Setup(double x0, double f0, double df0,
 /* ******************************************************************
 * Calculate value
 ****************************************************************** */
-double SplineCubic::Value(double x) const
+double
+SplineCubic::Value(double x) const
 {
   AmanziGeometry::Point xp(1);
   xp[0] = x;
@@ -58,7 +59,8 @@ double SplineCubic::Value(double x) const
 /* ******************************************************************
 * Calculate value of the gradient
 ****************************************************************** */
-double SplineCubic::GradientValue(double x) const
+double
+SplineCubic::GradientValue(double x) const
 {
   AmanziGeometry::Point xp(1);
   xp[0] = x;
@@ -69,8 +71,8 @@ double SplineCubic::GradientValue(double x) const
 /* ******************************************************************
 * Setup of linear exterior interpolants
 ****************************************************************** */
-void SplineExteriorLinear::Setup(double x0, double f0, double df0,
-                                 double x1, double f1, double df1)
+void
+SplineExteriorLinear::Setup(double x0, double f0, double df0, double x1, double f1, double df1)
 {
   x0_ = x0;
   f0_ = f0;
@@ -85,7 +87,8 @@ void SplineExteriorLinear::Setup(double x0, double f0, double df0,
 /* ******************************************************************
 * Calculate value
 ****************************************************************** */
-double SplineExteriorLinear::Value(double x) const
+double
+SplineExteriorLinear::Value(double x) const
 {
   if (x <= x0_) return f0_ + df0_ * (x - x0_);
   if (x >= x1_) return f1_ + df1_ * (x - x1_);
@@ -99,7 +102,8 @@ double SplineExteriorLinear::Value(double x) const
 /* ******************************************************************
 * Calculate gradient value
 ****************************************************************** */
-double SplineExteriorLinear::GradientValue(double x) const
+double
+SplineExteriorLinear::GradientValue(double x) const
 {
   if (x <= x0_) return df0_;
   if (x >= x1_) return df1_;
@@ -109,6 +113,5 @@ double SplineExteriorLinear::GradientValue(double x) const
   return 0.0;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

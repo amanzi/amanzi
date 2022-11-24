@@ -21,7 +21,8 @@ namespace Amanzi {
 namespace Energy {
 
 // Equation of State model
-class TCMEvaluator_OnePhase : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class TCMEvaluator_OnePhase
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
   TCMEvaluator_OnePhase(Teuchos::ParameterList& plist);
@@ -32,7 +33,9 @@ class TCMEvaluator_OnePhase : public EvaluatorSecondaryMonotype<CompositeVector,
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
@@ -44,7 +47,7 @@ class TCMEvaluator_OnePhase : public EvaluatorSecondaryMonotype<CompositeVector,
   Key temperature_key_, porosity_key_;
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

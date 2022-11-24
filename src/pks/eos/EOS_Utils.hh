@@ -23,8 +23,8 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-inline
-void ErrorAnalysis(const Comm_ptr_type& comm, int ierr, const std::string& msg)
+inline void
+ErrorAnalysis(const Comm_ptr_type& comm, int ierr, const std::string& msg)
 {
   int ierr_glb;
   comm->MaxAll(&ierr, &ierr_glb, 1);
@@ -36,7 +36,7 @@ void ErrorAnalysis(const Comm_ptr_type& comm, int ierr, const std::string& msg)
   }
 }
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

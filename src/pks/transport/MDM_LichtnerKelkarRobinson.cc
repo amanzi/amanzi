@@ -37,8 +37,11 @@ MDM_LichtnerKelkarRobinson::MDM_LichtnerKelkarRobinson(Teuchos::ParameterList& p
 /* ******************************************************************
 * Anisotropic tensor defined by four parameters.
 ****************************************************************** */
-WhetStone::Tensor MDM_LichtnerKelkarRobinson::mech_dispersion(
-    const AmanziGeometry::Point& u, int axi_symmetry, double wc, double phi) const
+WhetStone::Tensor
+MDM_LichtnerKelkarRobinson::mech_dispersion(const AmanziGeometry::Point& u,
+                                            int axi_symmetry,
+                                            double wc,
+                                            double phi) const
 {
   AMANZI_ASSERT(axi_symmetry >= 0 && axi_symmetry < 3);
   WhetStone::Tensor D(dim_, 2);
@@ -51,15 +54,15 @@ WhetStone::Tensor MDM_LichtnerKelkarRobinson::mech_dispersion(
 
   if (vnorm != 0.0) {
     double a1, a2, a3;
-    double theta = v[axi_symmetry] / vnorm;  // cosine of angle theta
-    double theta2 = theta * theta; 
+    double theta = v[axi_symmetry] / vnorm; // cosine of angle theta
+    double theta2 = theta * theta;
 
     // define direction orthogonal to symmetry axis
     omega = v * (-theta / vnorm);
     omega[axi_symmetry] += 1.0;
 
     // we use formula (46) of Lichtner, Water Res. Research, 38 (2002)
-    double alphaL = alphaLH_ + theta2 * (alphaLV_ - alphaLH_);  
+    double alphaL = alphaLH_ + theta2 * (alphaLV_ - alphaLH_);
     a1 = alphaTH_ * vnorm;
     a2 = (alphaL - alphaTH_) / vnorm;
     a3 = (alphaTV_ - alphaTH_) * vnorm;
@@ -77,6 +80,5 @@ WhetStone::Tensor MDM_LichtnerKelkarRobinson::mech_dispersion(
   return D;
 }
 
-}  // namespace Transport
-}  // namespace Amanzi
-
+} // namespace Transport
+} // namespace Amanzi

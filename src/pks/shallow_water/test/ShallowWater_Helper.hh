@@ -2,10 +2,14 @@
 #include "OutputXDMF.hh"
 #include "State.hh"
 
-void IO_Fields(double t_out, int iter, int MyPID,
-               Amanzi::OutputXDMF& io, const Amanzi::State& S,
-               Epetra_MultiVector* hh_ex,
-               Epetra_MultiVector* vel_ex)
+void
+IO_Fields(double t_out,
+          int iter,
+          int MyPID,
+          Amanzi::OutputXDMF& io,
+          const Amanzi::State& S,
+          Epetra_MultiVector* hh_ex,
+          Epetra_MultiVector* vel_ex)
 {
   const auto& hh = *S.Get<Amanzi::CompositeVector>("surface-ponded_depth").ViewComponent("cell");
   const auto& ht = *S.Get<Amanzi::CompositeVector>("surface-total_depth").ViewComponent("cell");

@@ -76,18 +76,18 @@ typedef std::string Key;
 typedef std::set<Key> KeySet;
 typedef std::vector<Key> KeyVector;
 
-typedef std::pair<Key,Key> KeyPair;
-typedef std::set<std::pair<Key, Key> > KeyPairSet;
+typedef std::pair<Key, Key> KeyPair;
+typedef std::set<std::pair<Key, Key>> KeyPairSet;
 typedef std::vector<KeyPair> KeyPairVector;
 
-typedef std::tuple<Key,Key,Key> KeyTriple;
+typedef std::tuple<Key, Key, Key> KeyTriple;
 typedef std::set<KeyTriple> KeyTripleSet;
 
-typedef std::pair<Key,Tag> KeyTag;
+typedef std::pair<Key, Tag> KeyTag;
 typedef std::vector<KeyTag> KeyTagVector;
 using KeyTagSet = Utils::FIFO_Set<KeyTag>;
 
-typedef std::tuple<Key,Tag,Key> DerivativeTriple;
+typedef std::tuple<Key, Tag, Key> DerivativeTriple;
 typedef std::set<DerivativeTriple> DerivativeTripleSet;
 
 
@@ -102,27 +102,39 @@ static const char phase_delimiter = '_';
 //
 // Utility functions
 // -----------------------------------------------------------------------------
-bool starts_with(const Key& key, const char& c);
-bool starts_with(const Key& key, const std::string& substr);
-bool ends_with(const Key& key, const char& c);
-bool ends_with(const Key& key, const std::string& substr);
-bool in(const Key& key, const char& c);
-bool in(const Key& key, const std::string& c);
-Key replace_all(Key key, const std::string& find_s, const std::string& replace_s);
+bool
+starts_with(const Key& key, const char& c);
+bool
+starts_with(const Key& key, const std::string& substr);
+bool
+ends_with(const Key& key, const char& c);
+bool
+ends_with(const Key& key, const std::string& substr);
+bool
+in(const Key& key, const char& c);
+bool
+in(const Key& key, const std::string& c);
+Key
+replace_all(Key key, const std::string& find_s, const std::string& replace_s);
 
-Key merge(const Key& domain, const Key& name, const char& delimiter);
-KeyPair split(const Key& name, const char& delimiter);
+Key
+merge(const Key& domain, const Key& name, const char& delimiter);
+KeyPair
+split(const Key& name, const char& delimiter);
 
-template<class Container, class Key>
-bool hasKey(const Container& c, const Key& key) {
-  return (bool) c.count(key);
+template <class Container, class Key>
+bool
+hasKey(const Container& c, const Key& key)
+{
+  return (bool)c.count(key);
 }
 
 //
 // Working with Keys
 // -----------------------------------------------------------------------------
-inline
-Key standardize(const Key& other) {
+inline Key
+standardize(const Key& other)
+{
   if (other.empty()) return "domain";
   if (other == "subsurface") return "domain";
   return other;
@@ -131,30 +143,38 @@ Key standardize(const Key& other) {
 // creates a clean name to be used as a variable name, domain name, tag name,
 // etc, that has no delimiters in it, no spaces (which make for uglier IO),
 // etc.
-Key cleanName(const std::string& name, bool delimiters_ok=false);
+Key
+cleanName(const std::string& name, bool delimiters_ok = false);
 
 // is this valid?
-bool validKey(const Key& key);
+bool
+validKey(const Key& key);
 
 // Generate a DOMAIN-VARNAME key.
 // Note, if DOMAIN == "domain" or "" this returns VARNAME
-Key getKey(const Key& domain, const Key& name);
+Key
+getKey(const Key& domain, const Key& name);
 
 // Split a DOMAIN-VARNAME key.
 //
 // May return an empty domain string
-KeyPair splitKey(const Key& name);
+KeyPair
+splitKey(const Key& name);
 
 // Get the domain prefix of a DOMAIN-VARNAME key.  Does not return empty string.
-Key getDomain(const Key& name);
-Key getDomainPrefix(const Key& name);
+Key
+getDomain(const Key& name);
+Key
+getDomainPrefix(const Key& name);
 
 // Grab the varname suffix of a DOMAIN-VARNAME Key
-Key getVarName(const Key& name);
+Key
+getVarName(const Key& name);
 
 // abbreviate.  If max_len > 0, stops once the string is shorter than this
 // value.
-Key abbreviate(Key name, int max_len = -1);
+Key
+abbreviate(Key name, int max_len = -1);
 
 
 //
@@ -162,56 +182,71 @@ Key abbreviate(Key name, int max_len = -1);
 // -----------------------------------------------------------------------------
 // Domain Sets are of the form NAME:ID, where ID is an integer or
 // region string indexing the domain set.
-Key getDomainInSet(const Key& ds_name, const Key& subdomain);
+Key
+getDomainInSet(const Key& ds_name, const Key& subdomain);
 
-Key getDomainInSet(const Key& ds_name, const int& subdomain);
+Key
+getDomainInSet(const Key& ds_name, const int& subdomain);
 
-Key getDomainSetName(const Key& name_id);
+Key
+getDomainSetName(const Key& name_id);
 
-template<typename Index=std::string>
-Index getDomainSetIndex(const Key& name_id)
+template <typename Index = std::string>
+Index
+getDomainSetIndex(const Key& name_id)
 {
   return split(name_id, dset_delimiter).second;
 }
 
-template<>
-inline int getDomainSetIndex(const Key& name_id)
+template <>
+inline int
+getDomainSetIndex(const Key& name_id)
 {
   return std::atoi(getDomainSetIndex<std::string>(name_id).c_str());
 }
 
 // Split a domain set into DOMAIN, *, VARNAME
-bool splitDomainSet(const Key& name, KeyTriple& result);
+bool
+splitDomainSet(const Key& name, KeyTriple& result);
 
-bool isDomainSet(const Key& name);
+bool
+isDomainSet(const Key& name);
 
 // reconstruct a key from components
-Key getKey(const Key& ds_name, const Key& ds_id, const Key& varname);
+Key
+getKey(const Key& ds_name, const Key& ds_id, const Key& varname);
 
 // reconstruct a key from components
-Key getKey(const Key& ds_name, const int& ds_id, const Key& varname);
+Key
+getKey(const Key& ds_name, const int& ds_id, const Key& varname);
 
 // Check if a key, interpreted as a domain set, matches the domain-set name
-bool matchesDomainSet(const Key& domain_set, const Key& name);
+bool
+matchesDomainSet(const Key& domain_set, const Key& name);
 
 
 //
 // Working with tags
 // -----------------------------------------------------------------------------
 // Tag'd variables are of the form VARNAME:TAG
-Key getKey(const Key& var, const Tag& tag);
-Key getKey(const KeyTag& var_tag);
+Key
+getKey(const Key& var, const Tag& tag);
+Key
+getKey(const KeyTag& var_tag);
 
-KeyTag splitKeyTag(const Key& name);
+KeyTag
+splitKeyTag(const Key& name);
 
 //
 // Working with derivatives
 // -----------------------------------------------------------------------------
 // Derivatives are of the form dKey|dKey.
-Key getDerivKey(const Key& var, const Key& wrt);
-Key getDerivKey(const Key& var, const Tag& tag,
-                const Key& wrt, const Tag& wrt_tag);
-Key getDerivKey(const KeyTag& var, const KeyTag& wrt);
+Key
+getDerivKey(const Key& var, const Key& wrt);
+Key
+getDerivKey(const Key& var, const Tag& tag, const Key& wrt, const Tag& wrt_tag);
+Key
+getDerivKey(const KeyTag& var, const KeyTag& wrt);
 
 //
 // Helper functions for reading keys and domains from parameter lists
@@ -219,40 +254,40 @@ Key getDerivKey(const KeyTag& var, const KeyTag& wrt);
 
 // Trilinos ParameterList includes the full tree of the name
 // (main->sublist->name), clean this and just return the final name.
-Key cleanPListName(const std::string& name);
+Key
+cleanPListName(const std::string& name);
 
-inline
-Key cleanPListName(const Teuchos::ParameterList& plist) {
+inline Key
+cleanPListName(const Teuchos::ParameterList& plist)
+{
   return cleanPListName(plist.name());
 }
 
 // Read a domain name in a standard way, potentially with a dtype
-Key readDomain(Teuchos::ParameterList& plist, const Key& dtype="");
+Key
+readDomain(Teuchos::ParameterList& plist, const Key& dtype = "");
 
 // Read a domain name in a standard way, potentially with a dtype
-Key readDomain(Teuchos::ParameterList& plist,
-               const Key& dtype,
-               const Key& default_name);
+Key
+readDomain(Teuchos::ParameterList& plist, const Key& dtype, const Key& default_name);
 
 // Read a domain name, guessing default values given a related domain as a hint.
 //
 // For instance, given a hint of "surface_column:0", hint_dtype="surface" and
 // dtype="snow", this will correctly guess "snow_column:0" as the default
 // value.
-Key readDomainHint(Teuchos::ParameterList& plist,
-                   const Key& hint,
-                   Key hint_dtype,
-                   Key dtype);
+Key
+readDomainHint(Teuchos::ParameterList& plist, const Key& hint, Key hint_dtype, Key dtype);
 
 // Most domains are of a common type, either "domain", "surface", "snow",
 // "canopy", etc.  This tries to guess the type for use in above read calls.
-Key guessDomainType(const Key& domain);
+Key
+guessDomainType(const Key& domain);
 
 
 // Read a suffix to construct domain sets.
-Key readSuffix(Teuchos::ParameterList& list,
-               const Key& basename,
-               const Key& default_name="");
+Key
+readSuffix(Teuchos::ParameterList& list, const Key& basename, const Key& default_name = "");
 
 
 // Read a Key from a parameter list, given some default information Here
@@ -260,21 +295,26 @@ Key readSuffix(Teuchos::ParameterList& list,
 // "user-friendly, readable" version of the name that will be searched for in
 // the parameter list (e.g. "molar density", "canopy water content", etc, and
 // "default_name" is the default value of the VARIABLE name (not the full Key!)
-Key readKey(Teuchos::ParameterList& list,
-            const Key& domain,
-            const Key& basename,
-            const Key& default_name="");
+Key
+readKey(Teuchos::ParameterList& list,
+        const Key& domain,
+        const Key& basename,
+        const Key& default_name = "");
 
 // Convenience function for requesting a list of names of Keys from an input
 // spec.
 Teuchos::Array<Key>
-readKeys(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
-         Teuchos::Array<Key> const* const default_names=nullptr);
+readKeys(Teuchos::ParameterList& list,
+         const Key& domain,
+         const Key& basename,
+         Teuchos::Array<Key> const* const default_names = nullptr);
 
 // Read a dependency tag or tag list from a parameter list, given some default
 // information.
-Tag readTag(Teuchos::ParameterList& list, const Tag& default_tag=Tag{});
-Tag readTag(Teuchos::ParameterList& list, const std::string& param, const Tag& default_tag=Tag{});
+Tag
+readTag(Teuchos::ParameterList& list, const Tag& default_tag = Tag{});
+Tag
+readTag(Teuchos::ParameterList& list, const std::string& param, const Tag& default_tag = Tag{});
 
 } // namespace Keys
 } // namespace Amanzi

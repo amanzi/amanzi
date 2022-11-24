@@ -88,6 +88,7 @@ set(state_inc_files
   Visualization.hh
   VisualizationDomainSet.hh
   UnstructuredObservations.hh
+  MeshInfo.hh
   Debugger.hh)
 
 add_amanzi_library(state 
@@ -115,6 +116,7 @@ add_amanzi_library(state
                           data/Record.cc
                           data/RecordSet.cc
                           data/Data_Helpers.cc
+                          MeshInfo.cc
                           Debugger.cc
                    HEADERS ${state_inc_files}
 		   LINK_LIBS data_structures functions mesh_functions output mesh atk

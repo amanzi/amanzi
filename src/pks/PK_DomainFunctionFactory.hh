@@ -18,6 +18,7 @@
 #include "Mesh.hh"
 #include "State.hh"
 #include "PK_DomainFunctionSimple.hh"
+#include "PK_DomainFunctionField.hh"
 #include "PK_DomainFunctionVolume.hh"
 #include "PK_DomainFunctionVolumeFraction.hh"
 #include "PK_DomainFunctionWeight.hh"
@@ -33,35 +34,35 @@ template <class FunctionBase>
 class PK_DomainFunctionFactory : public FunctionBase {
  public:
   PK_DomainFunctionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                           const Teuchos::RCP<const State>& S)
-    : mesh_(mesh), S_(S) {};
-  ~PK_DomainFunctionFactory() {};
+                           const Teuchos::RCP<State>& S)
+    : mesh_(mesh), S_(S){};
+  ~PK_DomainFunctionFactory(){};
 
   Teuchos::RCP<FunctionBase> Create(Teuchos::ParameterList& plist,
                                     AmanziMesh::Entity_kind kind,
                                     Teuchos::RCP<const Epetra_Vector> weight,
-                                    const Tag& tag=Tags::DEFAULT);
+                                    const Tag& tag = Tags::DEFAULT);
 
   Teuchos::RCP<FunctionBase> Create(Teuchos::ParameterList& plist,
                                     const std::string& keyword,
                                     AmanziMesh::Entity_kind kind,
                                     Teuchos::RCP<const Epetra_Vector> weight,
-                                    const Tag& tag=Tags::DEFAULT);
+                                    const Tag& tag = Tags::DEFAULT);
 
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<const State> S_;
+  Teuchos::RCP<State> S_;
 };
 
 
 template <class FunctionBase>
-Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
-    Teuchos::ParameterList& plist,
-    const std::string& keyword,
-    AmanziMesh::Entity_kind kind,
-    Teuchos::RCP<const Epetra_Vector> weight,
-    const Tag& tag)
+Teuchos::RCP<FunctionBase>
+PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
+                                               const std::string& keyword,
+                                               AmanziMesh::Entity_kind kind,
+                                               Teuchos::RCP<const Epetra_Vector> weight,
+                                               const Tag& tag)
 {
   // verify completeness of the list
   Errors::Message msg;
@@ -88,65 +89,63 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
   std::string model = plist.get<std::string>("spatial distribution method");
 
   if (use_vofs) {
-    Teuchos::RCP<PK_DomainFunctionVolumeFraction<FunctionBase> >
-      func = Teuchos::rcp(new PK_DomainFunctionVolumeFraction<FunctionBase>(mesh_, kind));
+    Teuchos::RCP<PK_DomainFunctionVolumeFraction<FunctionBase>> func =
+      Teuchos::rcp(new PK_DomainFunctionVolumeFraction<FunctionBase>(mesh_, kind));
     func->Init(plist, keyword);
-    return func; 
-  }
-  else if (model == "volume") {
-    Teuchos::RCP<PK_DomainFunctionVolume<FunctionBase> >
-        func = Teuchos::rcp(new PK_DomainFunctionVolume<FunctionBase>(mesh_, plist, kind));
+    return func;
+  } else if (model == "volume") {
+    Teuchos::RCP<PK_DomainFunctionVolume<FunctionBase>> func =
+      Teuchos::rcp(new PK_DomainFunctionVolume<FunctionBase>(mesh_, plist, kind));
     func->Init(plist, keyword);
-    return func; 
-  }
-  else if (model == "permeability") {
-    Teuchos::RCP<PK_DomainFunctionWeight<FunctionBase> >
-        func = Teuchos::rcp(new PK_DomainFunctionWeight<FunctionBase>(mesh_));
+    return func;
+  } else if (model == "permeability") {
+    Teuchos::RCP<PK_DomainFunctionWeight<FunctionBase>> func =
+      Teuchos::rcp(new PK_DomainFunctionWeight<FunctionBase>(mesh_));
     func->Init(plist, keyword, weight);
-    return func; 
-  }
-  else if (model == "domain coupling") {
+    return func;
+  } else if (model == "domain coupling") {
     plist.set<std::string>("external field copy key", tag.get());
-    Teuchos::RCP<PK_DomainFunctionCoupling<FunctionBase> >
-       func = Teuchos::rcp(new PK_DomainFunctionCoupling<FunctionBase>(mesh_, S_));
+    Teuchos::RCP<PK_DomainFunctionCoupling<FunctionBase>> func =
+      Teuchos::rcp(new PK_DomainFunctionCoupling<FunctionBase>(mesh_, S_));
     func->Init(plist, keyword, kind);
     return func;
-  }
-  else if (model == "first order exchange") {
-    AMANZI_ASSERT(kind == AmanziMesh::CELL);
-    plist.sublist("source function").set<std::string>("total component concentration copy", tag.get());
-    Teuchos::RCP<PK_DomainFunctionFirstOrderExchange<FunctionBase> >
-        func = Teuchos::rcp(new PK_DomainFunctionFirstOrderExchange<FunctionBase>(mesh_, plist, kind));
+  } else if (model == "field") {
+    Teuchos::RCP<PK_DomainFunctionField<FunctionBase>> func =
+      Teuchos::rcp(new PK_DomainFunctionField<FunctionBase>(mesh_, S_, kind));
     func->Init(plist, keyword);
     return func;
-  }
-  else if (model == "subgrid") {
+  } else if (model == "first order exchange") {
+    AMANZI_ASSERT(kind == AmanziMesh::CELL);
+    plist.sublist("source function")
+      .set<std::string>("total component concentration copy", tag.get());
+    Teuchos::RCP<PK_DomainFunctionFirstOrderExchange<FunctionBase>> func =
+      Teuchos::rcp(new PK_DomainFunctionFirstOrderExchange<FunctionBase>(mesh_, plist, kind));
+    func->Init(plist, keyword);
+    return func;
+  } else if (model == "subgrid") {
     AMANZI_ASSERT(kind == AmanziMesh::FACE);
     plist.sublist(keyword).set<std::string>("copy_field_out_tag", tag.get());
-    Teuchos::RCP<PK_DomainFunctionSubgrid<FunctionBase> >
-       func = Teuchos::rcp(new PK_DomainFunctionSubgrid<FunctionBase>(mesh_));
+    Teuchos::RCP<PK_DomainFunctionSubgrid<FunctionBase>> func =
+      Teuchos::rcp(new PK_DomainFunctionSubgrid<FunctionBase>(mesh_));
     func->Init(plist, keyword, kind);
     return func;
-  }
-  else if (model == "subgrid return") {
+  } else if (model == "subgrid return") {
     AMANZI_ASSERT(kind == AmanziMesh::CELL);
     plist.sublist("source function").set<std::string>("copy subgrid field", tag.get());
-    Teuchos::RCP<PK_DomainFunctionSubgridReturn<FunctionBase> >
-        func = Teuchos::rcp(new PK_DomainFunctionSubgridReturn<FunctionBase>(mesh_, plist));
+    Teuchos::RCP<PK_DomainFunctionSubgridReturn<FunctionBase>> func =
+      Teuchos::rcp(new PK_DomainFunctionSubgridReturn<FunctionBase>(mesh_, plist));
     func->Init(plist, keyword);
     return func;
-  }
-  else if (model == "simple well") {
-    Teuchos::RCP<PK_DomainFunctionSimpleWell<FunctionBase> >
-       func = Teuchos::rcp(new PK_DomainFunctionSimpleWell<FunctionBase>(mesh_));
+  } else if (model == "simple well") {
+    Teuchos::RCP<PK_DomainFunctionSimpleWell<FunctionBase>> func =
+      Teuchos::rcp(new PK_DomainFunctionSimpleWell<FunctionBase>(mesh_));
     func->Init(plist, keyword, S_);
     return func;
-  }
-  else {
-    Teuchos::RCP<PK_DomainFunctionSimple<FunctionBase> >
-        func = Teuchos::rcp(new PK_DomainFunctionSimple<FunctionBase>(mesh_, plist, kind));
+  } else {
+    Teuchos::RCP<PK_DomainFunctionSimple<FunctionBase>> func =
+      Teuchos::rcp(new PK_DomainFunctionSimple<FunctionBase>(mesh_, plist, kind));
     func->Init(plist, keyword);
-    return func; 
+    return func;
   }
 
   return Teuchos::null;
@@ -154,11 +153,11 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
 
 
 template <class FunctionBase>
-Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
-    Teuchos::ParameterList& plist,
-    AmanziMesh::Entity_kind kind,
-    Teuchos::RCP<const Epetra_Vector> weight,
-    const Tag& tag)
+Teuchos::RCP<FunctionBase>
+PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
+                                               AmanziMesh::Entity_kind kind,
+                                               Teuchos::RCP<const Epetra_Vector> weight,
+                                               const Tag& tag)
 {
   int n(0);
   std::string keyword;
@@ -177,7 +176,6 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
   return Create(plist, keyword, kind, weight, tag);
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif
-

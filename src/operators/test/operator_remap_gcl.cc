@@ -49,8 +49,8 @@ class MyRemapDG : public Operators::RemapDG<TreeVector> {
       dt_output_(0.1),
       l2norm_(-1.0),
       T1_(1.0),
-      tini_(0.0) {};
-  ~MyRemapDG() {};
+      tini_(0.0){};
+  ~MyRemapDG(){};
 
   // time control
   double global_time(double t) { return tini_ + t * T1_; }
@@ -61,7 +61,7 @@ class MyRemapDG : public Operators::RemapDG<TreeVector> {
   // -- statistics
   void CollectStatistics(double t, const TreeVector& u);
 
-  // access 
+  // access
   const std::vector<WhetStone::Polynomial> jac() const { return *jac_; }
 
  public:
@@ -75,7 +75,8 @@ class MyRemapDG : public Operators::RemapDG<TreeVector> {
 /* *****************************************************************
 * Compute initial mass: partial specialization
 ***************************************************************** */
-double MyRemapDG::InitialMass(const TreeVector& p1, int order)
+double
+MyRemapDG::InitialMass(const TreeVector& p1, int order)
 {
   const Epetra_MultiVector& p1c = *p1.SubVector(0)->Data()->ViewComponent("cell", false);
   int nk = p1c.NumVectors();
@@ -99,7 +100,8 @@ double MyRemapDG::InitialMass(const TreeVector& p1, int order)
 /* *****************************************************************
 * Print statistics using conservative field u
 ***************************************************************** */
-void MyRemapDG::CollectStatistics(double t, const TreeVector& u)
+void
+MyRemapDG::CollectStatistics(double t, const TreeVector& u)
 {
   double tglob = global_time(t);
   if (tglob >= tprint_) {
@@ -120,24 +122,35 @@ void MyRemapDG::CollectStatistics(double t, const TreeVector& u)
 
     if (mesh0_->get_comm()->MyPID() == 0) {
       printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  umax/umin: %9.5g %9.5g\n",
-             tglob, l2norm_, nfun_, sharp_, xmax[0], xmin[0]);
+             tglob,
+             l2norm_,
+             nfun_,
+             sharp_,
+             xmax[0],
+             xmin[0]);
     }
 
     tprint_ += dt_output_;
     sharp_ = 0.0;
-  } 
+  }
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 
 /* *****************************************************************
 * Remap of polynomilas in two dimensions. Explicit time scheme.
 * Dual formulation places gradient and jumps on a test function.
 ***************************************************************** */
-void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
-              std::string file_name,
-              int nx, int ny, int nz, double dt, int deform = 1) {
+void
+RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
+         std::string file_name,
+         int nx,
+         int ny,
+         int nz,
+         double dt,
+         int deform = 1)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -154,8 +167,9 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
   int order = plist.sublist("PK operator")
-                   .sublist("flux operator")
-                   .sublist("schema").get<int>("method order");
+                .sublist("flux operator")
+                .sublist("schema")
+                .get<int>("method order");
 
   int nk = WhetStone::PolynomialSpaceDimension(dim, order);
 
@@ -169,15 +183,14 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   if (MyPID == 0) {
     std::string vel_method = map_list.get<std::string>("method");
     std::string vel_projector = map_list.get<std::string>("projector");
-      
+
     std::cout << "\nTest: " << dim << "D remap:"
-              << " mesh=" << ((file_name == "") ? "structured" : file_name)
-              << " deform=" << deform << std::endl;
+              << " mesh=" << ((file_name == "") ? "structured" : file_name) << " deform=" << deform
+              << std::endl;
 
     std::cout << "      discretization: order=" << order << std::endl;
 
-    std::cout << "      map details: order=" << vel_order 
-              << ", projector=" << vel_projector 
+    std::cout << "      map details: order=" << vel_order << ", projector=" << vel_projector
               << ", method=\"" << vel_method << "\"" << std::endl;
 
     std::cout << "      RK method: " << (int)rk_method << std::endl;
@@ -197,7 +210,7 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   } else if (dim == 2) {
     mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
     mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
-  } else { 
+  } else {
     mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
     mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
   }
@@ -232,8 +245,8 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   Epetra_MultiVector& p2c = *p2->SubVector(0)->Data()->ViewComponent("cell");
 
   // we need dg to use correct scaling of basis functions
-  Teuchos::ParameterList dglist = plist.sublist("PK operator")
-                                       .sublist("flux operator").sublist("schema");
+  Teuchos::ParameterList dglist =
+    plist.sublist("PK operator").sublist("flux operator").sublist("schema");
   auto dg = Teuchos::rcp(new WhetStone::DG_Modal(dglist, mesh0));
 
   AnalyticDG04 ana(mesh0, order, true);
@@ -264,7 +277,7 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   remap.NonConservativeToConservative(0.0, *p1, p3);
 
   double t(0.0), tend(1.0);
-  while(t < tend - dt/2) {
+  while (t < tend - dt / 2) {
     // remap.ApplyLimiter(t, p3);
     rk.TimeStep(t, dt, p3, *p1);
     p3 = *p1;
@@ -280,14 +293,19 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   AmanziGeometry::Point v0(dim), v1(dim), tau(dim);
 
   double pnorm, l2_err, inf_err, l20_err, l10_err, inf0_err;
-  ana.ComputeCellErrorRemap(*dg, p2c, tend, 0, mesh1,
-                            pnorm, l2_err, inf_err, l20_err, l10_err, inf0_err, &p3c);
+  ana.ComputeCellErrorRemap(
+    *dg, p2c, tend, 0, mesh1, pnorm, l2_err, inf_err, l20_err, l10_err, inf0_err, &p3c);
 
   CHECK(((dim == 2) ? l2_err : l20_err) < 0.12 / (order + 1));
 
   if (MyPID == 0) {
-    printf("nx=%3d (orig) L1=%12.8g(mean) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
-        nx, l10_err, l20_err, l2_err, inf0_err, inf_err);
+    printf("nx=%3d (orig) L1=%12.8g(mean) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n",
+           nx,
+           l10_err,
+           l20_err,
+           l2_err,
+           inf0_err,
+           inf_err);
   }
 
   // concervation errors: mass and volume (CGL)
@@ -325,7 +343,9 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
 
   if (MyPID == 0) {
     printf("Conservation: dMass=%10.4g  dVol=%10.6g  dVolLinear=%10.6g\n",
-           mass1 - mass0, 1.0 - area, 1.0 - area1);
+           mass1 - mass0,
+           1.0 - area,
+           1.0 - area1);
     printf("GCL: L1=%12.8g  Inf=%12.8g\n", gcl_err, gcl_inf);
   }
   CHECK_CLOSE(mass0, mass1, 1e-12);
@@ -340,12 +360,13 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   io.FinalizeCycle();
 }
 
-TEST(REMAP_GEOMETRIC_CONSERVATION_LAW) {
+TEST(REMAP_GEOMETRIC_CONSERVATION_LAW)
+{
   int deform = 5;
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
 
   double dT(0.1);
-  RemapGCL(rk_method, "test/median15x16.exo",   16,1,0, dT/2, deform);
+  RemapGCL(rk_method, "test/median15x16.exo", 16, 1, 0, dT / 2, deform);
   /*
   RemapGCL(rk_method, "test/median32x33.exo",   32,1,0, dT/4, deform);
   RemapGCL(rk_method, "test/median63x64.exo",   64,1,0, dT/8, deform);
@@ -357,4 +378,3 @@ TEST(REMAP_GEOMETRIC_CONSERVATION_LAW) {
   RemapGCL(rk_method, "test/prism40.exo", 40,1,1, dT/4, deform);
   */
 }
-

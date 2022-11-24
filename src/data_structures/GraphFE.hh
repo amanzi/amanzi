@@ -26,24 +26,22 @@ namespace Amanzi {
 namespace Operators {
 
 class GraphFE {
-
  public:
-
   // Constructor
   GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
-	  const Teuchos::RCP<const Epetra_Map>& ghosted_row_map,
-	  const Teuchos::RCP<const Epetra_Map>& col_map,
-	  int max_nnz_per_row);
+          const Teuchos::RCP<const Epetra_Map>& ghosted_row_map,
+          const Teuchos::RCP<const Epetra_Map>& col_map,
+          int max_nnz_per_row);
 
   // Constructor with nnz -- note this should include ghosted rows.
   GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
-	  const Teuchos::RCP<const Epetra_Map>& ghosted_row_map,
-	  const Teuchos::RCP<const Epetra_Map>& col_map,
-	  const int* max_nnz_per_row);
+          const Teuchos::RCP<const Epetra_Map>& ghosted_row_map,
+          const Teuchos::RCP<const Epetra_Map>& col_map,
+          const int* max_nnz_per_row);
 
   // does this graph include off-process entries?
   bool includes_offproc() const { return includes_ghosted_; }
-  
+
   // accessors to maps
   const Epetra_Map& DomainMap() const { return *domain_map_; }
   const Epetra_Map& RangeMap() const { return *range_map_; }
@@ -61,10 +59,10 @@ class GraphFE {
   const Epetra_CrsGraph& OffProcGraph() const { return *offproc_graph_; }
 
   // fill graph
-  int InsertMyIndices(int row, int count, int *indices);
-  int InsertGlobalIndices(int row, int count, int *indices);
-  int InsertMyIndices(int row_count, int *row_indices, int col_count, int *col_indices);
-  int InsertGlobalIndices(int row_count, int *row_indices, int col_count, int *col_indices);
+  int InsertMyIndices(int row, int count, int* indices);
+  int InsertGlobalIndices(int row, int count, int* indices);
+  int InsertMyIndices(int row_count, int* row_indices, int col_count, int* col_indices);
+  int InsertGlobalIndices(int row_count, int* row_indices, int col_count, int* col_indices);
 
   // finish fill
   int FillComplete(const Teuchos::RCP<const Epetra_Map>& domain_map,
@@ -79,7 +77,7 @@ class GraphFE {
 
   Teuchos::RCP<Epetra_Map> offproc_row_map_;
   Teuchos::RCP<Epetra_CrsGraph> graph_;
-  Teuchos::RCP<Epetra_CrsGraph> offproc_graph_;  
+  Teuchos::RCP<Epetra_CrsGraph> offproc_graph_;
 
   Teuchos::RCP<Epetra_Export> exporter_;
 
@@ -89,7 +87,7 @@ class GraphFE {
 };
 
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif

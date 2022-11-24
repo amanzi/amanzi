@@ -32,18 +32,21 @@ namespace Amanzi {
 
 class FlexibleObservations {
  public:
-  FlexibleObservations( Teuchos::RCP<Teuchos::ParameterList> coordinator_list,
-		       Teuchos::RCP<Teuchos::ParameterList> obs_list,
+  FlexibleObservations(Teuchos::RCP<Teuchos::ParameterList> coordinator_list,
+                       Teuchos::RCP<Teuchos::ParameterList> obs_list,
                        Teuchos::RCP<Teuchos::ParameterList> units_list,
                        Amanzi::ObservationData& observation_data,
                        Teuchos::RCP<const State> S);
 
-  ~FlexibleObservations() {
+  ~FlexibleObservations()
+  {
     if (vo_ != NULL) delete vo_;
   }
-  
+
   void RegisterComponentNames(std::vector<std::string>& comp_names,
-                              std::vector<double>& comp_mol_masses, int num_liquid) {
+                              std::vector<double>& comp_mol_masses,
+                              int num_liquid)
+  {
     comp_names_ = comp_names;
     comp_mol_masses_ = comp_mol_masses;
     num_liquid_ = num_liquid;
@@ -55,7 +58,7 @@ class FlexibleObservations {
   bool DumpRequested(const int);
   bool DumpRequested(const double);
   bool DumpRequested(const int, const double);
-     
+
   void RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm);
 
   void FlushObservations();
@@ -65,13 +68,13 @@ class FlexibleObservations {
 
  protected:
   VerboseObject* vo_;
-  
+
  private:
   int rank_;
   Teuchos::RCP<Teuchos::ParameterList> obs_list_;
   Teuchos::RCP<Teuchos::ParameterList> coordinator_list_;
   Amanzi::ObservationData& observation_data_;
-  std::map<std::string, Teuchos::RCP<Observable> > observations;
+  std::map<std::string, Teuchos::RCP<Observable>> observations;
 
   std::vector<std::string> comp_names_;
   std::vector<double> comp_mol_masses_;
@@ -80,6 +83,6 @@ class FlexibleObservations {
   Utils::Units units_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

@@ -23,7 +23,8 @@
 #include "TransportExplicit_PK.hh"
 
 
-TEST(ADVANCE_FCT) {
+TEST(ADVANCE_FCT)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -43,11 +44,11 @@ TEST(ADVANCE_FCT) {
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0, 1.0,1.0, 20, 1); 
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 1);
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  
+
   // create a simple state and populate it
   Amanzi::VerboseObject::global_hide_line_prefix = false;
 
@@ -68,8 +69,9 @@ TEST(ADVANCE_FCT) {
   S->set_intermediate_time(0.0);
 
   // modify the default state for the problem at hand
-  std::string passwd("state"); 
-  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face", true);
+  std::string passwd("state");
+  auto& flux =
+    *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face", true);
 
   AmanziGeometry::Point velocity(1.0, 0.0);
   for (int f = 0; f < nfaces_wghost; ++f) {
@@ -88,9 +90,10 @@ TEST(ADVANCE_FCT) {
   TPK.AdvanceStep(t_old, t_new);
 
   // printing cell concentration
-  auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
+  auto tcc =
+    S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
-  while(t_new < 0.2) {
+  while (t_new < 0.2) {
     dt = TPK.StableTimeStep(-1);
     t_new = t_old + dt;
 
@@ -99,12 +102,12 @@ TEST(ADVANCE_FCT) {
 
     t_old = t_new;
     S->set_intermediate_time(t_old);
- 
+
     if (comm->MyPID() == p0) {
       printf("T=%7.3f  C_0(x):", t_new);
-      for (int k = 0; k < 9; k++) printf("%11.4g", (*tcc)[0][k]); std::cout << std::endl;
-      for (int k = 0; k < ncells_owned; k++)
-        CHECK((*tcc)[0][k] < 1.0 + tol && (*tcc)[0][k] > - tol);
+      for (int k = 0; k < 9; k++) printf("%11.4g", (*tcc)[0][k]);
+      std::cout << std::endl;
+      for (int k = 0; k < ncells_owned; k++) CHECK((*tcc)[0][k] < 1.0 + tol && (*tcc)[0][k] > -tol);
     }
   }
 
@@ -113,7 +116,7 @@ TEST(ADVANCE_FCT) {
   }
 
   // turn off boundary conditions
-  while(t_new < 0.4) {
+  while (t_new < 0.4) {
     dt = TPK.StableTimeStep(-1);
     t_new = t_old + dt;
 
@@ -122,17 +125,16 @@ TEST(ADVANCE_FCT) {
 
     t_old = t_new;
     S->set_intermediate_time(t_old);
- 
+
     if (comm->MyPID() == p0) {
       printf("T=%7.3f  C_0(x):", t_new);
-      for (int k = 0; k < 9; k++) printf("%11.4g", (*tcc)[0][k]); std::cout << std::endl;
-      for (int k = 0; k < ncells_owned; k++)
-        CHECK((*tcc)[0][k] < 1.0 + tol && (*tcc)[0][k] > - tol);
-    }    
+      for (int k = 0; k < 9; k++) printf("%11.4g", (*tcc)[0][k]);
+      std::cout << std::endl;
+      for (int k = 0; k < ncells_owned; k++) CHECK((*tcc)[0][k] < 1.0 + tol && (*tcc)[0][k] > -tol);
+    }
   }
 
   if (comm->MyPID() == p0) {
     for (int k = 0; k < 4; k++) CHECK_CLOSE((*tcc)[0][k], 0.0, 1e-6);
   }
 }
- 

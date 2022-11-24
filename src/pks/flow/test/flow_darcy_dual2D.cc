@@ -34,7 +34,8 @@
 /* *********************************************************************
 * Test of Darcy flow on polygonal mesh
 ********************************************************************* */
-TEST(FLOW_2D_TRANSIENT_DARCY) {
+TEST(FLOW_2D_TRANSIENT_DARCY)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -53,14 +54,14 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   // create a MSTK mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
   pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   RCP<const Mesh> mesh = meshfactory.create("test/dual2D.exo");
 
@@ -77,9 +78,9 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   S->InitializeFields();
   S->InitializeEvaluators();
 
-  // modify the default state for the problem at hand 
+  // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd(""); 
+  std::string passwd("");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   for (int c = 0; c < K.MyLength(); c++) {
     K[0][c] = 0.1;
@@ -125,7 +126,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
     t_old = t_new;
 
     if (MyPID == 0) {
-      GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+      GMV::open_data_file(*mesh, (std::string) "flow.gmv");
       GMV::start_data();
       GMV::write_cell_data(p, 0, "pressure");
       GMV::close_data_file();

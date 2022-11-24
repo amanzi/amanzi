@@ -47,23 +47,22 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 class RegionCylinder : public Region {
-
  public:
   // Default constructor uses point and normal
   RegionCylinder(const std::string& name,
                  const int id,
                  const Point& axis,
-                 const Point& p, 
+                 const Point& p,
                  double radius,
-                 const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
-  
+                 const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
+
   // Is the specified point inside this region - in this case it
   // means on the plane
   bool inside(const Point& p) const;
 
-protected:
-  const Point p_;  // point on the plane
-  const Point axis_;  // axis of symmetry
+ protected:
+  const Point p_;    // point on the plane
+  const Point axis_; // axis of symmetry
   double rad2_;
 };
 

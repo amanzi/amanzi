@@ -26,7 +26,9 @@
 
 
 /* **************************************************************** */
-Epetra_MultiVector RunTest(int ntest) {
+Epetra_MultiVector
+RunTest(int ntest)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -35,7 +37,8 @@ Epetra_MultiVector RunTest(int ntest) {
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: 2D shallow water: equilibrium solution with a hump" << std::endl;
+  if (MyPID == 0)
+    std::cout << "Test: 2D shallow water: equilibrium solution with a hump" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/shallow_water_bathymetry.xml";
@@ -46,7 +49,7 @@ Epetra_MultiVector RunTest(int ntest) {
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh;
   if (ntest == 1) {
     mesh = meshfactory.create(0.0, 0.0, 100.0, 100.0, 20, 20, true, true);
@@ -64,7 +67,7 @@ Epetra_MultiVector RunTest(int ntest) {
   Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("shallow water");
 
   // create a shallow water PK
-  ShallowWater_PK SWPK(pk_tree,plist,S,soln);
+  ShallowWater_PK SWPK(pk_tree, plist, S, soln);
   SWPK.Setup();
   S->Setup();
   S->InitializeFields();
@@ -120,16 +123,17 @@ Epetra_MultiVector RunTest(int ntest) {
   }
 
   WriteStateStatistics(*S);
-  
+
   return hh;
 }
 
-TEST(SHALLOW_WATER_BATHYMETRY) {
+TEST(SHALLOW_WATER_BATHYMETRY)
+{
   auto fa = RunTest(1);
   auto fb = RunTest(2);
 
   double vala[1], valb[1];
   fa.MeanValue(vala);
   fb.MeanValue(valb);
-  CHECK_CLOSE(vala[0], valb[0], 1e-10); 
+  CHECK_CLOSE(vala[0], valb[0], 1e-10);
 }

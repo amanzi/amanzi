@@ -34,7 +34,9 @@ class TotalWaterStorage : public MultiphaseBaseEvaluator {
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
   virtual void Init_();
@@ -42,12 +44,12 @@ class TotalWaterStorage : public MultiphaseBaseEvaluator {
  protected:
   Key saturation_liquid_key_, porosity_key_, x_vapor_key_;
   Key mol_density_liquid_key_, mol_density_gas_key_;
-  
+
  private:
   static Utils::RegisteredFactory<Evaluator, TotalWaterStorage> fac_;
 };
 
-}  // namespace Multiphase
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi
 
 #endif

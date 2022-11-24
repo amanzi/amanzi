@@ -46,24 +46,24 @@
 namespace Amanzi {
 namespace Transport {
 
-class TransportExplicit_PK : public Transport_PK,
-                             public PK_Explicit<CompositeVector> {
+class TransportExplicit_PK : public Transport_PK, public PK_Explicit<CompositeVector> {
  public:
   TransportExplicit_PK(Teuchos::ParameterList& pk_tree,
-                        const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                        const Teuchos::RCP<State>& S,
-                        const Teuchos::RCP<TreeVector>& soln);
+                       const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                       const Teuchos::RCP<State>& S,
+                       const Teuchos::RCP<TreeVector>& soln);
 
   TransportExplicit_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                       Teuchos::RCP<State> S, 
+                       Teuchos::RCP<State> S,
                        const std::string& pk_list_name,
                        std::vector<std::string>& component_names);
-  
-  ~TransportExplicit_PK() {};
-  
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
 
-  virtual void FunctionalTimeDerivative(double t, const CompositeVector& component, CompositeVector& f) override;
+  ~TransportExplicit_PK(){};
+
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
+
+  virtual void
+  FunctionalTimeDerivative(double t, const CompositeVector& component, CompositeVector& f) override;
 
   // advection members
   // -- advection in matrix
@@ -74,15 +74,15 @@ class TransportExplicit_PK : public Transport_PK,
  private:
   void AdvanceSecondOrderUpwindRKn(double dt_cycle);
   void AdvanceSecondOrderUpwindRK2(double dt_cycle);
-  
+
   void DudtOld_(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
   // factory registration
   static RegisteredPKFactory<TransportExplicit_PK> reg_;
 };
 
-}  // namespace Transport
-}  // namespace Amanzi
+} // namespace Transport
+} // namespace Amanzi
 
 
 #endif

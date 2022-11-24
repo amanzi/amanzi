@@ -15,13 +15,17 @@
 #include "TransportExplicit_PK.hh"
 
 
-double f_step(const Amanzi::AmanziGeometry::Point& x, double t) { 
+double
+f_step(const Amanzi::AmanziGeometry::Point& x, double t)
+{
   if (x[0] <= t) return 1;
   return 0;
 }
 
 
-void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
+void
+runTest(const Amanzi::AmanziMesh::Framework& mypref)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -29,25 +33,28 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
   using namespace Amanzi::AmanziGeometry;
 
   if (mypref == Framework::MSTK)
-    std::cout << "Test: advance using parallel mesh with parallel file read and format MSTK" << std::endl;
+    std::cout << "Test: advance using parallel mesh with parallel file read and format MSTK"
+              << std::endl;
   else if (mypref == Framework::MOAB)
-    std::cout << "Test: advance using parallel mesh with parallel file read and format MOAB" << std::endl;
+    std::cout << "Test: advance using parallel mesh with parallel file read and format MOAB"
+              << std::endl;
   else if (mypref == Framework::SIMPLE)
-    std::cout << "Test: advance using parallel mesh with parallel file read and format Simple" << std::endl;
-    
+    std::cout << "Test: advance using parallel mesh with parallel file read and format Simple"
+              << std::endl;
+
   auto comm = Amanzi::getDefaultComm();
 
-  // read parameter list 
+  // read parameter list
   std::string xmlFileName = "test/transport_parallel_read_mstk.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create an MSTK mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({mypref}));
+  meshfactory.set_preference(Preference({ mypref }));
   RCP<const Mesh> mesh = meshfactory.create("test/cube_4x4x4.par");
 
   // create a simple state and populate it
@@ -68,7 +75,7 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
   S->set_intermediate_time(0.0);
 
   // modify the default state for the problem at hand
-  std::string passwd("state"); 
+  std::string passwd("state");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
@@ -77,8 +84,9 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     flux[0][f] = velocity * normal;
   }
- 
-  auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
+
+  auto& tcc =
+    *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
@@ -98,7 +106,7 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
   t_old = t_new;
 
   int iter(0);
-  while(t_new < 1.0) {
+  while (t_new < 1.0) {
     dt = TPK.StableTimeStep(-1);
     t_new = t_old + dt;
 
@@ -110,10 +118,10 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
 
     if (iter < 10 && TPK.MyPID == 2) {
       printf("T=%7.2f  C_0(x):", t_new);
-      for (int k = 0; k < 2; k++) printf("%7.4f", tcc[0][k]); std::cout << std::endl;
+      for (int k = 0; k < 2; k++) printf("%7.4f", tcc[0][k]);
+      std::cout << std::endl;
     }
   }
 
-  for (int k = 0; k < 12; k++) 
-    CHECK_CLOSE(tcc[0][k], 1.0, 1e-6);
+  for (int k = 0; k < 12; k++) CHECK_CLOSE(tcc[0][k], 1.0, 1e-6);
 }

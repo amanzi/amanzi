@@ -16,9 +16,9 @@ namespace AmanziMesh {
 //              fixes faces, and makes maps.
 // -----------------------------------------------------------------------------
 MeshColumn::MeshColumn(const Teuchos::RCP<Mesh>& col3D_mesh,
-                       const Teuchos::RCP<const Teuchos::ParameterList>& plist) :
-  Mesh(col3D_mesh->get_comm(), col3D_mesh->geometric_model(), plist, true, false),
-  col3D_mesh_(col3D_mesh)
+                       const Teuchos::RCP<const Teuchos::ParameterList>& plist)
+  : Mesh(col3D_mesh->get_comm(), col3D_mesh->geometric_model(), plist, true, false),
+    col3D_mesh_(col3D_mesh)
 {
   AMANZI_ASSERT(col3D_mesh_->space_dimension() == 3);
   AMANZI_ASSERT(col3D_mesh_->manifold_dimension() == 3);
@@ -26,9 +26,11 @@ MeshColumn::MeshColumn(const Teuchos::RCP<Mesh>& col3D_mesh,
   // set my cells
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << " constructing MeshColumn mesh with col3D_mesh parent that has "
-               << col3D_mesh_->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED)
+               << col3D_mesh_->num_entities(AmanziMesh::Entity_kind::CELL,
+                                            AmanziMesh::Parallel_type::OWNED)
                << " cells and "
-               << col3D_mesh_->num_entities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED)
+               << col3D_mesh_->num_entities(AmanziMesh::Entity_kind::FACE,
+                                            AmanziMesh::Parallel_type::OWNED)
                << " faces." << std::endl;
 
   // set supporting subclasses
@@ -45,12 +47,12 @@ MeshColumn::MeshColumn(const Teuchos::RCP<Mesh>& col3D_mesh,
 }
 
 
-MeshColumn::~MeshColumn() {
+MeshColumn::~MeshColumn()
+{
   if (face_map_) delete face_map_;
   if (exterior_face_map_) delete exterior_face_map_;
   if (exterior_face_importer_) delete exterior_face_importer_;
 }
-
 
 
 // Deform the mesh by moving given nodes to given coordinates
@@ -64,7 +66,8 @@ int
 MeshColumn::deform(const Entity_ID_List& nodeids,
                    const AmanziGeometry::Point_List& new_positions,
                    const bool keep_valid,
-                   AmanziGeometry::Point_List *final_positions) {
+                   AmanziGeometry::Point_List* final_positions)
+{
   int ierr = col3D_mesh_->deform(nodeids, new_positions, keep_valid, final_positions);
 
   // recompute all geometric quantities
@@ -80,11 +83,12 @@ MeshColumn::deform(const Entity_ID_List& nodeids,
 // Nodes in any set in the fixed_sets will not be permitted to move.
 int
 MeshColumn::deform(const std::vector<double>& target_cell_volumes_in,
-       const std::vector<double>& min_cell_volumes_in,
-       const Entity_ID_List& fixed_nodes,
-       const bool move_vertical) {
-  int ierr = col3D_mesh_->deform(target_cell_volumes_in, min_cell_volumes_in,
-          fixed_nodes, move_vertical);
+                   const std::vector<double>& min_cell_volumes_in,
+                   const Entity_ID_List& fixed_nodes,
+                   const bool move_vertical)
+{
+  int ierr =
+    col3D_mesh_->deform(target_cell_volumes_in, min_cell_volumes_in, fixed_nodes, move_vertical);
   // recompute all geometric quantities
   compute_cell_geometric_quantities_();
   compute_face_geometric_quantities_();
@@ -96,7 +100,9 @@ MeshColumn::deform(const std::vector<double>& target_cell_volumes_in,
 // Compute special coordinates for the nodes - all the other
 // quantities will follow suit
 // -----------------------------------------------------------------------------
-void MeshColumn::compute_special_node_coordinates_() {
+void
+MeshColumn::compute_special_node_coordinates_()
+{
   // Assume that the column is vertical - nodes are stacked vertically
   // above each other. Assume that the base face is perfectly horizontal
   //
@@ -122,7 +128,7 @@ void MeshColumn::compute_special_node_coordinates_() {
 
   // How many nodes each "horizontal" face has in the column
   Entity_ID_List face_nodes;
-  col3D_mesh_->face_get_nodes(column_faces_[0],&face_nodes);
+  col3D_mesh_->face_get_nodes(column_faces_[0], &face_nodes);
   nfnodes_ = face_nodes.size();
 
   // Set up the new node coordinates This is done in two passes, which may be
@@ -130,11 +136,11 @@ void MeshColumn::compute_special_node_coordinates_() {
   // one.
   int space_dim = space_dimension(); // from parent mesh
   int nfaces = column_faces_.size();
-  int nnodes = nfaces*nfnodes_;
+  int nnodes = nfaces * nfnodes_;
   AmanziGeometry::Point p(space_dim);
   std::vector<AmanziGeometry::Point> node_coordinates(nnodes, p);
 
-  for (int j=0; j!=nfaces; ++j) {
+  for (int j = 0; j != nfaces; ++j) {
     // set the mask
     face_in_column_[column_faces_[j]] = j;
 
@@ -145,23 +151,22 @@ void MeshColumn::compute_special_node_coordinates_() {
 
     AmanziGeometry::Point fcen = col3D_mesh_->face_centroid(column_faces_[j]);
 
-    for (int i=0; i!=nfnodes_; ++i) {
+    for (int i = 0; i != nfnodes_; ++i) {
       AmanziGeometry::Point coords(space_dim);
 
       // last coordinate is z-coordinate of face centroid
-      coords[space_dim-1] = fcen[space_dim-1];
+      coords[space_dim - 1] = fcen[space_dim - 1];
 
       // remain coordinates are coordinates of the corresponding node on
       // the bottom face
-      for (int d=0; d!=space_dim-1; ++d) coords[d] = face_coordinates[i][d];
+      for (int d = 0; d != space_dim - 1; ++d) coords[d] = face_coordinates[i][d];
 
       node_coordinates[face_nodes[i]] = coords;
     }
   }
 
   // Set the mesh coordinates
-  for (int n=0; n!=nnodes; ++n)
-    node_set_coordinates(n, node_coordinates[n]);
+  for (int n = 0; n != nnodes; ++n) node_set_coordinates(n, node_coordinates[n]);
 }
 
 
@@ -173,19 +178,21 @@ void MeshColumn::compute_special_node_coordinates_() {
 // just a contiguous sequence of numbers and the communicator is a serial
 // communicator
 // -----------------------------------------------------------------------------
-void MeshColumn::build_epetra_maps_() {
+void
+MeshColumn::build_epetra_maps_()
+{
   int indexBase = 0;
 
   int nfaces = column_faces_.size();
-  face_map_ = new Epetra_Map(nfaces,indexBase,*get_comm());
+  face_map_ = new Epetra_Map(nfaces, indexBase, *get_comm());
 
-  std::vector<int> ext_gids(2,-1);
+  std::vector<int> ext_gids(2, -1);
   ext_gids[0] = 0;
-  ext_gids[1] = nfaces-1;
+  ext_gids[1] = nfaces - 1;
 
   exterior_face_map_ = new Epetra_Map(-1, 2, &ext_gids[0], 0, *get_comm());
   exterior_face_importer_ = new Epetra_Import(*exterior_face_map_, *face_map_);
 }
 
-}  // namespace AmanziMesh
-}  // namespace Amanzi
+} // namespace AmanziMesh
+} // namespace Amanzi

@@ -30,15 +30,13 @@ namespace AmanziGeometry {
 //
 // RegionFunctionColor:: constructor
 // -------------------------------------------------------------
-RegionFunctionColor::RegionFunctionColor(const std::string& name, 
+RegionFunctionColor::RegionFunctionColor(const std::string& name,
                                          const int id,
                                          const std::string& file,
                                          const int value,
                                          const Comm_type& comm,
                                          const LifeCycleType lifecycle)
-  : Region(name, id, true, RegionType::COLORFUNCTION, 0, 0, lifecycle),
-    file_(file),
-    value_(value)
+  : Region(name, id, true, RegionType::COLORFUNCTION, 0, 0, lifecycle), file_(file), value_(value)
 {
   FunctionColorFactory colfunc_factory;
   colorfunc_ = Teuchos::rcp(colfunc_factory.Create(file_, comm));

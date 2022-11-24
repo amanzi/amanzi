@@ -49,15 +49,13 @@ namespace Operators {
 *           discontinuous, e.g. different permeability curves.
 *
 * Amanzi combines the input and output field in one variable.
-****************************************************************** */ 
+****************************************************************** */
 
 class Upwind {
  public:
-  Upwind() {};
-  Upwind(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      mesh_(mesh),
-      face_comp_("face") {};
-  virtual ~Upwind() {};
+  Upwind(){};
+  Upwind(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh), face_comp_("face"){};
+  virtual ~Upwind(){};
 
   // main methods
   // -- initialization of control parameters
@@ -65,16 +63,20 @@ class Upwind {
 
   // -- upwind of a given cell-centered field on mesh faces
   // -- not all input parameters are use by some algorithms
-  virtual void Compute(const CompositeVector& flux, const CompositeVector& solution,
-                       const std::vector<int>& bc_model, CompositeVector& field) = 0;
+  virtual void Compute(const CompositeVector& flux,
+                       const CompositeVector& solution,
+                       const std::vector<int>& bc_model,
+                       CompositeVector& field) = 0;
 
   // -- returns combined map for the original and upwinded fields.
-  // -- Currently, composite vector cannot be extended on a fly. 
-  virtual Teuchos::RCP<CompositeVectorSpace> Map() {
+  // -- Currently, composite vector cannot be extended on a fly.
+  virtual Teuchos::RCP<CompositeVectorSpace> Map()
+  {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh_)->SetGhosted(true)
-        ->AddComponent("cell", AmanziMesh::CELL, 1)
-        ->AddComponent("face", AmanziMesh::FACE, 1);
+    cvs->SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("face", AmanziMesh::FACE, 1);
     return cvs;
   }
 
@@ -83,11 +85,10 @@ class Upwind {
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  std::string face_comp_;  // component where to write the upwinded field.
+  std::string face_comp_; // component where to write the upwinded field.
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

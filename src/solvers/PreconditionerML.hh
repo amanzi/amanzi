@@ -62,18 +62,17 @@ namespace AmanziSolvers {
 
 class PreconditionerML : public Preconditioner {
  public:
-  PreconditionerML() :
-      Preconditioner(),
-      initialized_(false) {};
+  PreconditionerML() : Preconditioner(), initialized_(false){};
 
-  virtual ~PreconditionerML() {
+  virtual ~PreconditionerML()
+  {
     // unclear whether this is needed or not...  It seems that it
     // ought to be, but destructors crash occassionally if it is used.
     //    if (ML_.get()) ML_->DestroyPreconditioner();
   }
 
   virtual void set_matrices(const Teuchos::RCP<Epetra_CrsMatrix>& m,
-			    const Teuchos::RCP<Epetra_CrsMatrix>& h) override final;
+                            const Teuchos::RCP<Epetra_CrsMatrix>& h) override final;
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final;
   virtual void InitializeInverse() override final;
@@ -81,7 +80,8 @@ class PreconditionerML : public Preconditioner {
   virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;
 
   virtual int returned_code() const override final { return returned_code_; }
-  virtual std::string returned_code_string() const override final {
+  virtual std::string returned_code_string() const override final
+  {
     if (returned_code_ == 0) return "success";
     return "PreconditionerML: unknown error";
   }
@@ -94,9 +94,8 @@ class PreconditionerML : public Preconditioner {
   bool initialized_;
 };
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
-
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 
 #endif

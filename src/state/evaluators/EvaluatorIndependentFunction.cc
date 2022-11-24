@@ -21,15 +21,16 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
-EvaluatorIndependentFunction::EvaluatorIndependentFunction(
-    Teuchos::ParameterList& plist)
-    : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist) {};
+EvaluatorIndependentFunction::EvaluatorIndependentFunction(Teuchos::ParameterList& plist)
+  : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist){};
 
 
 // ---------------------------------------------------------------------------
 // Virtual Copy constructor
 // ---------------------------------------------------------------------------
-Teuchos::RCP<Evaluator> EvaluatorIndependentFunction::Clone() const {
+Teuchos::RCP<Evaluator>
+EvaluatorIndependentFunction::Clone() const
+{
   return Teuchos::rcp(new EvaluatorIndependentFunction(*this));
 }
 
@@ -37,9 +38,12 @@ Teuchos::RCP<Evaluator> EvaluatorIndependentFunction::Clone() const {
 // ---------------------------------------------------------------------------
 // Operator=
 // ---------------------------------------------------------------------------
-Evaluator& EvaluatorIndependentFunction::operator=(const Evaluator& other) {
+Evaluator&
+EvaluatorIndependentFunction::operator=(const Evaluator& other)
+{
   if (this != &other) {
-    const EvaluatorIndependentFunction* other_p = dynamic_cast<const EvaluatorIndependentFunction*>(&other);
+    const EvaluatorIndependentFunction* other_p =
+      dynamic_cast<const EvaluatorIndependentFunction*>(&other);
     AMANZI_ASSERT(other_p != NULL);
     *this = *other_p;
   }
@@ -48,7 +52,8 @@ Evaluator& EvaluatorIndependentFunction::operator=(const Evaluator& other) {
 
 
 EvaluatorIndependentFunction&
-EvaluatorIndependentFunction::operator=(const EvaluatorIndependentFunction& other) {
+EvaluatorIndependentFunction::operator=(const EvaluatorIndependentFunction& other)
+{
   if (this != &other) {
     AMANZI_ASSERT(my_key_ == other.my_key_);
     requests_ = other.requests_;
@@ -60,15 +65,17 @@ EvaluatorIndependentFunction::operator=(const EvaluatorIndependentFunction& othe
 // ---------------------------------------------------------------------------
 // Update the value in the state.
 // ---------------------------------------------------------------------------
-void EvaluatorIndependentFunction::Update_(State& S) {
+void
+EvaluatorIndependentFunction::Update_(State& S)
+{
   if (!computed_once_) {
     // Create the function.
-    auto &cv = S.Get<CompositeVector>(my_key_, my_tag_);
+    auto& cv = S.Get<CompositeVector>(my_key_, my_tag_);
     AMANZI_ASSERT(plist_.isSublist("function"));
 
     std::vector<std::string> complist;
-    func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"),
-                                                     cv.Map(), complist);
+    func_ =
+      Functions::CreateCompositeVectorFunction(plist_.sublist("function"), cv.Map(), complist);
   }
 
   // NOTE: EvaluatorIndependentFunctions own their own data.

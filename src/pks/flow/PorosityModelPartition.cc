@@ -24,18 +24,18 @@ namespace Flow {
 /* ******************************************************************
 * Non-member factory.
 ****************************************************************** */
-Teuchos::RCP<PorosityModelPartition> CreatePorosityModelPartition(
-    Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    Teuchos::RCP<Teuchos::ParameterList> plist)
+Teuchos::RCP<PorosityModelPartition>
+CreatePorosityModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                             Teuchos::RCP<Teuchos::ParameterList> plist)
 {
-  std::vector<Teuchos::RCP<PorosityModel> > pom_list;
-  std::vector<std::vector<std::string> > region_list;
+  std::vector<Teuchos::RCP<PorosityModel>> pom_list;
+  std::vector<std::vector<std::string>> region_list;
 
   for (auto lcv = plist->begin(); lcv != plist->end(); ++lcv) {
     std::string name = lcv->first;
     if (plist->isSublist(name)) {
       Teuchos::ParameterList sublist = plist->sublist(name);
-      region_list.push_back(sublist.get<Teuchos::Array<std::string> >("regions").toVector());
+      region_list.push_back(sublist.get<Teuchos::Array<std::string>>("regions").toVector());
 
       std::string model = sublist.get<std::string>("porosity model");
       if (model == "constant") {
@@ -57,6 +57,5 @@ Teuchos::RCP<PorosityModelPartition> CreatePorosityModelPartition(
   return Teuchos::rcp(new PorosityModelPartition(partition, pom_list));
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
-
+} // namespace Flow
+} // namespace Amanzi

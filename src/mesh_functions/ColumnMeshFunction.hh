@@ -37,14 +37,15 @@ class Function;
 
 namespace Functions {
 
-void ReadColumnMeshFunction(Teuchos::ParameterList& plist,
-                            CompositeVector& v);
+void
+ReadColumnMeshFunction(Teuchos::ParameterList& plist, CompositeVector& v);
 
-void ReadColumnMeshFunction_ByDepth(const Function& func,
-                                    const Teuchos::Array<std::string> sidesets,
-                                    CompositeVector& v);
+void
+ReadColumnMeshFunction_ByDepth(const Function& func,
+                               const Teuchos::Array<std::string> sidesets,
+                               CompositeVector& v);
 
-}  // namespace Functions
-}  // namespace Amanzi
-                        
+} // namespace Functions
+} // namespace Amanzi
+
 #endif

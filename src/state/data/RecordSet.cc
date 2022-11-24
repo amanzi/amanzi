@@ -20,50 +20,58 @@
 namespace Amanzi {
 
 // pass-throughs for other functionality
-void RecordSet::WriteVis(const Visualization& vis, Tag const * const tag) const {
+void
+RecordSet::WriteVis(const Visualization& vis, Tag const* const tag) const
+{
   if (tag) {
-    if (HasRecord(*tag)) {
-      GetRecord(*tag).WriteVis(vis, subfieldnames());
-    }
+    if (HasRecord(*tag)) { GetRecord(*tag).WriteVis(vis, subfieldnames()); }
   } else {
-    for (auto& e : records_) {
-      e.second->WriteVis(vis, subfieldnames());
-    }
+    for (auto& e : records_) { e.second->WriteVis(vis, subfieldnames()); }
   }
 }
-void RecordSet::WriteCheckpoint(const Checkpoint& chkp, bool post_mortem) const {
+void
+RecordSet::WriteCheckpoint(const Checkpoint& chkp, bool post_mortem) const
+{
   for (auto& e : records_) {
     e.second->WriteCheckpoint(chkp, e.first, post_mortem, subfieldnames());
   }
 }
-void RecordSet::ReadCheckpoint(const Checkpoint& chkp) {
-  for (auto& e : records_) {
-    e.second->ReadCheckpoint(chkp, e.first, subfieldnames());
-  }
+void
+RecordSet::ReadCheckpoint(const Checkpoint& chkp)
+{
+  for (auto& e : records_) { e.second->ReadCheckpoint(chkp, e.first, subfieldnames()); }
 }
-bool RecordSet::Initialize(Teuchos::ParameterList& plist, bool force) {
+bool
+RecordSet::Initialize(Teuchos::ParameterList& plist, bool force)
+{
   bool init = false;
-  for (auto& e : records_) {
-    init |= e.second->Initialize(plist, subfieldnames(), force);
-  }
+  for (auto& e : records_) { init |= e.second->Initialize(plist, subfieldnames(), force); }
   return init;
 }
 
-void RecordSet::Assign(const Tag& dest, const Tag& source) {
+void
+RecordSet::Assign(const Tag& dest, const Tag& source)
+{
   GetRecord(dest).Assign(GetRecord(source));
 }
 
-void RecordSet::AssignPtr(const Tag& alias, const Tag& target) {
+void
+RecordSet::AssignPtr(const Tag& alias, const Tag& target)
+{
   GetRecord(alias).AssignPtr(GetRecord(target));
 }
 
 
 // Copy management
-bool RecordSet::HasRecord(const Tag& tag) const {
+bool
+RecordSet::HasRecord(const Tag& tag) const
+{
   return records_.count(tag) > 0;
 }
 
-Record& RecordSet::GetRecord(const Tag& tag) {
+Record&
+RecordSet::GetRecord(const Tag& tag)
+{
   try {
     return *records_.at(tag);
   } catch (const std::out_of_range& e) {
@@ -73,7 +81,9 @@ Record& RecordSet::GetRecord(const Tag& tag) {
   }
 }
 
-const Record& RecordSet::GetRecord(const Tag& tag) const {
+const Record&
+RecordSet::GetRecord(const Tag& tag) const
+{
   try {
     return *records_.at(tag);
   } catch (const std::out_of_range& e) {
@@ -84,18 +94,21 @@ const Record& RecordSet::GetRecord(const Tag& tag) const {
 }
 
 
-void RecordSet::AliasRecord(const Tag& target, const Tag& alias) {
+void
+RecordSet::AliasRecord(const Tag& target, const Tag& alias)
+{
   records_[alias] = std::make_shared<Record>(*records_[target], &alias);
   aliases_[alias] = target;
 }
 
 
-Record& RecordSet::RequireRecord(const Tag& tag, const Key& owner, bool alias_ok) {
+Record&
+RecordSet::RequireRecord(const Tag& tag, const Key& owner, bool alias_ok)
+{
   // Check if this should be an aliased record
   if (!HasRecord(tag) && alias_ok && tag == Tags::NEXT) {
     for (const auto& other_tag : records_) {
-      if (other_tag.first != Tags::NEXT &&
-          Keys::in(other_tag.first.get(), "next")) {
+      if (other_tag.first != Tags::NEXT && Keys::in(other_tag.first.get(), "next")) {
         // alias!
         AliasRecord(other_tag.first, Tags::NEXT);
         return *other_tag.second;
@@ -125,9 +138,12 @@ Record& RecordSet::RequireRecord(const Tag& tag, const Key& owner, bool alias_ok
 }
 
 
-bool RecordSet::isInitialized(Tag& failed) {
+bool
+RecordSet::isInitialized(Tag& failed)
+{
   for (auto& r : records_) {
-    if (!r.second->initialized()) {;
+    if (!r.second->initialized()) {
+      ;
       failed = r.first;
       return false;
     }
@@ -135,4 +151,4 @@ bool RecordSet::isInitialized(Tag& failed) {
   return true;
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

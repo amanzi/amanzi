@@ -36,8 +36,7 @@ This evaluator is used by providing the option:
 namespace Amanzi {
 
 class EvaluatorIndependentConstant
-    : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
-
+  : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
  public:
   explicit EvaluatorIndependentConstant(Teuchos::ParameterList& plist);
   EvaluatorIndependentConstant(const EvaluatorIndependentConstant& other) = default;
@@ -51,5 +50,3 @@ class EvaluatorIndependentConstant
 };
 
 } // namespace Amanzi
-
-

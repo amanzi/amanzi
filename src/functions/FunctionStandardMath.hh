@@ -66,19 +66,16 @@ This example defines function `1e-7 sqrt(t-0.1)`.
 namespace Amanzi {
 
 class FunctionStandardMath : public Function {
-
-public:
+ public:
   FunctionStandardMath(std::string op, double amplitude, double parameter, double shift);
   ~FunctionStandardMath() {}
-  std::unique_ptr<Function> Clone() const {
-    return std::make_unique<FunctionStandardMath>(*this);
-  }
+  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionStandardMath>(*this); }
   double operator()(const std::vector<double>& x) const;
 
-private:
+ private:
   void InvalidDomainError_(double x) const;
 
-private:
+ private:
   double parameter_;
   double amplitude_;
   double shift_;
@@ -87,4 +84,4 @@ private:
 
 } // namespace Amanzi
 
-#endif  // AMANZI_STANDARD_MATH_FUNCTION_HH_
+#endif // AMANZI_STANDARD_MATH_FUNCTION_HH_

@@ -14,7 +14,7 @@
 
 #ifndef AMANZI_MESH_MAPS_FACTORY_HH_
 #define AMANZI_MESH_MAPS_FACTORY_HH_
- 
+
 #include "Mesh.hh"
 
 #include "MeshMaps_FEM.hh"
@@ -25,13 +25,14 @@ namespace WhetStone {
 
 class MeshMapsFactory {
  public:
-  explicit MeshMapsFactory() {};
-  ~MeshMapsFactory() {};
+  explicit MeshMapsFactory(){};
+  ~MeshMapsFactory(){};
 
-  // select numerical scheme using its name and order 
+  // select numerical scheme using its name and order
   std::shared_ptr<MeshMaps> Create(const Teuchos::ParameterList& plist,
                                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0,
-                                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh1) {
+                                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh1)
+  {
     std::string name = plist.get<std::string>("map name");
     std::shared_ptr<MeshMaps> maps(NULL);
 
@@ -45,8 +46,7 @@ class MeshMapsFactory {
   }
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

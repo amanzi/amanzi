@@ -114,8 +114,8 @@ namespace AmanziSolvers {
 
 class PreconditionerHypre : public AmanziSolvers::Preconditioner {
  public:
-  PreconditionerHypre() :
-      AmanziSolvers::Preconditioner(),
+  PreconditionerHypre()
+    : AmanziSolvers::Preconditioner(),
       block_indices_(Teuchos::null),
       num_blocks_(0),
       returned_code_(0),
@@ -128,9 +128,7 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
   virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;
 
   virtual int returned_code() const override final { return returned_code_; }
-  virtual std::string returned_code_string() const override final {
-    return "success";
-  }
+  virtual std::string returned_code_string() const override final { return "success"; }
 
  private:
   void InitBoomer_();
@@ -141,7 +139,7 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
   Teuchos::RCP<VerboseObject> vo_;
 
   Hypre_Solver method_;
-  Teuchos::RCP<std::vector<int> > block_indices_;
+  Teuchos::RCP<std::vector<int>> block_indices_;
   int num_blocks_;
 
   mutable int returned_code_;
@@ -149,9 +147,8 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
   Teuchos::RCP<Epetra_RowMatrix> A_;
 };
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
-
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 
 #endif

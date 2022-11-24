@@ -8,7 +8,7 @@
 
   Trilinos based chemistry process kernel for the unstructured mesh.
 */
- 
+
 #ifndef AMANZI_CHEMISTRY_ALQUIMIA_PK_HH_
 #define AMANZI_CHEMISTRY_ALQUIMIA_PK_HH_
 
@@ -33,7 +33,7 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 #ifdef ALQUIMIA_ENABLED
-class Alquimia_PK: public Chemistry_PK {
+class Alquimia_PK : public Chemistry_PK {
  public:
   Alquimia_PK(Teuchos::ParameterList& pk_tree,
               const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -59,17 +59,17 @@ class Alquimia_PK: public Chemistry_PK {
                       AlquimiaProperties& mat_props,
                       AlquimiaState& state,
                       AlquimiaAuxiliaryData& aux_data,
-                      const Tag& water_tag=Tags::DEFAULT);
-  
+                      const Tag& water_tag = Tags::DEFAULT);
+
  private:
-  // Copy cell state to the given Alquimia containers taking 
+  // Copy cell state to the given Alquimia containers taking
   // the aqueous components from the given multivector.
   void CopyToAlquimia(int cell_id,
                       Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
                       AlquimiaProperties& mat_props,
                       AlquimiaState& state,
                       AlquimiaAuxiliaryData& aux_data,
-                      const Tag& water_tag=Tags::DEFAULT);
+                      const Tag& water_tag = Tags::DEFAULT);
 
   // Copy the data in the given Alquimia containers to the given cell state.
   // The aqueous components are placed into the given multivector.
@@ -81,8 +81,7 @@ class Alquimia_PK: public Chemistry_PK {
                         Teuchos::RCP<Epetra_MultiVector> aqueous_components);
 
   int InitializeSingleCell(int cell, const std::string& condition);
-  int AdvanceSingleCell(double dt, Teuchos::RCP<Epetra_MultiVector>& aquesous_components,
-                        int cell);
+  int AdvanceSingleCell(double dt, Teuchos::RCP<Epetra_MultiVector>& aquesous_components, int cell);
 
   void ParseChemicalConditionRegions(const Teuchos::ParameterList& param_list,
                                      std::map<std::string, std::string>& conditions);
@@ -112,11 +111,11 @@ class Alquimia_PK: public Chemistry_PK {
   AlquimiaAuxiliaryData alq_aux_data_;
   AlquimiaAuxiliaryOutputData alq_aux_output_;
 
-  // Mapping of region names to geochemical condition names. A region is identified 
-  // by a string, and all cells within a region will have all geochemical 
-  // conditions in the corresponding condition vector applied to them. 
+  // Mapping of region names to geochemical condition names. A region is identified
+  // by a string, and all cells within a region will have all geochemical
+  // conditions in the corresponding condition vector applied to them.
   std::map<std::string, std::string> chem_initial_conditions_;
-  
+
   double current_time_;
   double saved_time_;
 
@@ -126,7 +125,7 @@ class Alquimia_PK: public Chemistry_PK {
   Teuchos::RCP<Epetra_MultiVector> aux_output_;
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
 
-  std::vector<std::vector<int> > map_;
+  std::vector<std::vector<int>> map_;
   std::vector<std::string> mineral_names_, primary_names_;
 
  private:
@@ -135,7 +134,6 @@ class Alquimia_PK: public Chemistry_PK {
 };
 #endif
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif
-

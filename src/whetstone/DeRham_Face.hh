@@ -29,22 +29,21 @@ namespace WhetStone {
 
 class DeRham_Face : public MFD3D {
  public:
-  DeRham_Face(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) 
-    : MFD3D(mesh) {};
+  DeRham_Face(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) : MFD3D(mesh){};
 
-  virtual std::vector<SchemaItem> schema() const override {
+  virtual std::vector<SchemaItem> schema() const override
+  {
     return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, 1));
   }
 
   int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override; 
+  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override;
 
   int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) override; 
+  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) override;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

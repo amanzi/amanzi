@@ -20,34 +20,22 @@
 #include "State.hh"
 
 static int NEQN = 12;
-static double AEQN[12][12] = {
-  { 1.0, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0 },
-  { 0.4, 1.0, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1, 0.0, 0.0, 0.0 },
-  { 0.3, 0.4, 1.0, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1, 0.0, 0.0 },
-  { 0.2, 0.3, 0.4, 1.0, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1, 0.0 },
-  { 0.1, 0.2, 0.3, 0.4, 1.0, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1 },
-  { 0.1, 0.1, 0.2, 0.3, 0.4, 1.0, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1 },
-  { 0.1, 0.1, 0.1, 0.2, 0.3, 0.4, 1.0, 0.4, 0.3, 0.2, 0.1, 0.1 },
-  { 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.4, 1.0, 0.4, 0.3, 0.2, 0.1 },
-  { 0.0, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.4, 1.0, 0.4, 0.3, 0.2 },
-  { 0.0, 0.0, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.4, 1.0, 0.4, 0.3 },
-  { 0.0, 0.0, 0.0, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.4, 1.0, 0.4 },
-  { 0.0, 0.0, 0.0, 0.0, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.4, 1.0 }
-};
-static double SOL[12] = {
-  14.23243562366807,
-  17.49990474999346,
-  20.22979170544159,
-  22.23675460623164,
-  23.37850928985512,
-  23.65632688437041,
-  23.65632688437041,
-  23.37850928985512,
-  22.23675460623161,
-  20.22979170544158,
-  17.49990474999348,
-  14.23243562366806
-};
+static double AEQN[12][12] = { { 1.0, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0 },
+                               { 0.4, 1.0, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1, 0.0, 0.0, 0.0 },
+                               { 0.3, 0.4, 1.0, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1, 0.0, 0.0 },
+                               { 0.2, 0.3, 0.4, 1.0, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1, 0.0 },
+                               { 0.1, 0.2, 0.3, 0.4, 1.0, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1 },
+                               { 0.1, 0.1, 0.2, 0.3, 0.4, 1.0, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1 },
+                               { 0.1, 0.1, 0.1, 0.2, 0.3, 0.4, 1.0, 0.4, 0.3, 0.2, 0.1, 0.1 },
+                               { 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.4, 1.0, 0.4, 0.3, 0.2, 0.1 },
+                               { 0.0, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.4, 1.0, 0.4, 0.3, 0.2 },
+                               { 0.0, 0.0, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.4, 1.0, 0.4, 0.3 },
+                               { 0.0, 0.0, 0.0, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.4, 1.0, 0.4 },
+                               { 0.0, 0.0, 0.0, 0.0, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.4, 1.0 } };
+static double SOL[12] = { 14.23243562366807, 17.49990474999346, 20.22979170544159,
+                          22.23675460623164, 23.37850928985512, 23.65632688437041,
+                          23.65632688437041, 23.37850928985512, 22.23675460623161,
+                          20.22979170544158, 17.49990474999348, 14.23243562366806 };
 
 /*
 static int NEQN = 4;
@@ -66,14 +54,16 @@ using CVS_t = CompositeVectorSpace;
 
 
 // get/set functionality
-double& FieldTimeStamp(const std::string& field, const Tag& tag, State& S) {
+double&
+FieldTimeStamp(const std::string& field, const Tag& tag, State& S)
+{
   return S.GetW<double>("time", Tag(field + "@" + tag.get()), "time");
 }
 
 
 // interpolation functionality
-void InterpolateField(const std::string& field, State& S,
-                      double tint, CompositeVector& result)
+void
+InterpolateField(const std::string& field, State& S, double tint, CompositeVector& result)
 {
   std::vector<double> times;
   std::vector<Tag> tags;
@@ -86,7 +76,7 @@ void InterpolateField(const std::string& field, State& S,
     for (auto t : times) {
       if (fabs(tnew - t) < 1e-6) flag = false;
     }
- 
+
     if (flag) {
       times.push_back(tnew);
       tags.push_back(tag);
@@ -104,7 +94,7 @@ void InterpolateField(const std::string& field, State& S,
     result.Update(1.0 - a, v0, a, v1, 0.0);
   } else {
     AMANZI_ASSERT(false);
-  } 
+  }
 }
 
 
@@ -118,8 +108,8 @@ class ImplicitPK : public Amanzi::PK_PhysicalBDF {
       PK_PhysicalBDF(pk_tree, glist, S, soln),
       dt_(0.0),
       cfl_(1.0),
-      soln_(soln) {};
-    
+      soln_(soln){};
+
   virtual void Setup() override;
   virtual void Initialize() override;
 
@@ -129,29 +119,38 @@ class ImplicitPK : public Amanzi::PK_PhysicalBDF {
   virtual double get_dt() override { return dt_ * cfl_; }
   virtual void set_dt(double dt) override { dt_ = dt; }
 
-  virtual void FunctionalResidual(double t_old, double t_new, 
-                                  Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
+  virtual void FunctionalResidual(double t_old,
+                                  double t_new,
+                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
 
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt) override {};
+  virtual int
+  ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;
+  virtual void
+  UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt) override{};
 
-  virtual bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0,
-                               Teuchos::RCP<TreeVector> u) override { return false; }
+  virtual bool
+  ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) override
+  {
+    return false;
+  }
 
-  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                           Teuchos::RCP<const TreeVector> du) override;
+  virtual double
+  ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
 
   virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override { return true; }
 
-  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult ModifyCorrection(
-      double dt, Teuchos::RCP<const TreeVector> res,
-      Teuchos::RCP<const TreeVector> u, 
-      Teuchos::RCP<TreeVector> du) override {
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+  ModifyCorrection(double dt,
+                   Teuchos::RCP<const TreeVector> res,
+                   Teuchos::RCP<const TreeVector> u,
+                   Teuchos::RCP<TreeVector> du) override
+  {
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
 
-  virtual void ChangedSolution() override {};
+  virtual void ChangedSolution() override{};
 
  private:
   double dt_, cfl_;
@@ -170,14 +169,15 @@ RegisteredPKFactory<ImplicitPK> ImplicitPK::reg_("implicit pk");
 /* ****************************************************************
 * Require fields for all groups.
 **************************************************************** */
-void ImplicitPK::Setup()
+void
+ImplicitPK::Setup()
 {
   id0_ = plist_->get<int>("start id");
   id1_ = plist_->get<int>("end id");
   cfl_ = plist_->get<double>("cfl", 1.0);
 
   int n = id1_ - id0_ + 1;
-  my_group_ = (int) id0_ / n;
+  my_group_ = (int)id0_ / n;
   my_field_ = "field_group_" + std::to_string(my_group_);
 
   tag_current_ = Tags::CURRENT;
@@ -188,10 +188,14 @@ void ImplicitPK::Setup()
     std::string field = "field_group_" + std::to_string(i);
 
     S_->Require<CV_t, CVS_t>(field, tag_next_, "state")
-      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, n);
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, n);
 
     S_->Require<CV_t, CVS_t>(field, tag_current_, "state")
-      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, n);
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, n);
 
     S_->Require<double>("time", Tag(field + "@" + tag_current_.get()), "time");
     S_->Require<double>("time", Tag(field + "@" + tag_next_.get()), "time");
@@ -202,12 +206,13 @@ void ImplicitPK::Setup()
 /* ****************************************************************
 * Initialize owened field
 **************************************************************** */
-void ImplicitPK::Initialize()
+void
+ImplicitPK::Initialize()
 {
   dt_ = S_->Get<double>("dt", tag_next_);
 
   auto solution = S_->GetPtrW<CV_t>(my_field_, tag_next_, "state");
-  soln_->SetData(solution); 
+  soln_->SetData(solution);
 
   int n = id1_ - id0_ + 1;
   auto& uc0 = *S_->GetW<CV_t>(my_field_, tag_current_, "state").ViewComponent("cell");
@@ -219,7 +224,7 @@ void ImplicitPK::Initialize()
       uc1[i][c] = 1.0;
     }
   }
- 
+
   S_->GetRecordW(my_field_, tag_next_, "state").set_initialized();
 
   S_->GetW<CV_t>(my_field_, tag_current_, "state") = S_->Get<CV_t>(my_field_, tag_next_);
@@ -230,7 +235,8 @@ void ImplicitPK::Initialize()
 /* ****************************************************************
 * Advance my field using exact linear solver.
 **************************************************************** */
-bool ImplicitPK::AdvanceStep(double t_old, double t_new, bool reinit)
+bool
+ImplicitPK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   S_->GetW<double>("time", Tag(my_field_ + "@" + tag_current_.get()), "time") = t_old;
   S_->GetW<double>("time", Tag(my_field_ + "@" + tag_next_.get()), "time") = t_new;
@@ -251,18 +257,16 @@ bool ImplicitPK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   for (int i = 0; i < ngroups; ++i) {
     std::string field = "field_group_" + std::to_string(i);
-    if (field != my_field_) {
-      InterpolateField(field, *S_, t_new, result[i]);
-    }
+    if (field != my_field_) { InterpolateField(field, *S_, t_new, result[i]); }
   }
 
-  // implicit solver (1/dt - A0) u0^{n+1} = u0^n/dt - A1 u1^{n + a} 
+  // implicit solver (1/dt - A0) u0^{n+1} = u0^n/dt - A1 u1^{n + a}
   for (int c = 0; c < 4; ++c) {
     for (int i = 0; i < n; ++i) {
       rhs(i) = uc[i][c] / my_dt;
 
       for (int j = 0; j < NEQN; ++j) {
-        int ngroup = (int) j / n; 
+        int ngroup = (int)j / n;
         int jloc = j - ngroup * n;
 
         if (ngroup == my_group_) {
@@ -277,9 +281,7 @@ bool ImplicitPK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     WhetStone::DGESV_F77(&n, &nrhs, A.Values(), &n, &(ipiv[0]), rhs.Values(), &n, &ierr);
 
-    for (int i = 0; i < n; ++i) {
-      uc[i][c] = rhs(i);
-    }
+    for (int i = 0; i < n; ++i) { uc[i][c] = rhs(i); }
   }
 
   return false;
@@ -289,10 +291,12 @@ bool ImplicitPK::AdvanceStep(double t_old, double t_new, bool reinit)
 /* ****************************************************************
 * All fields are used to calculate residual.
 **************************************************************** */
-void ImplicitPK::FunctionalResidual(
-    double t_old, double t_new, 
-    Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
-    Teuchos::RCP<TreeVector> f)
+void
+ImplicitPK::FunctionalResidual(double t_old,
+                               double t_new,
+                               Teuchos::RCP<TreeVector> u_old,
+                               Teuchos::RCP<TreeVector> u_new,
+                               Teuchos::RCP<TreeVector> f)
 {
   S_->GetW<double>("time", Tag(my_field_ + "@" + tag_current_.get()), "time") = t_old;
   S_->GetW<double>("time", Tag(my_field_ + "@" + tag_next_.get()), "time") = t_new;
@@ -310,9 +314,7 @@ void ImplicitPK::FunctionalResidual(
 
   for (int i = 0; i < ngroups; ++i) {
     std::string field = "field_group_" + std::to_string(i);
-    if (field != my_field_) {
-      InterpolateField(field, *S_, t_new, result[i]);
-    }
+    if (field != my_field_) { InterpolateField(field, *S_, t_new, result[i]); }
   }
 
   for (int c = 0; c < 4; ++c) {
@@ -320,7 +322,7 @@ void ImplicitPK::FunctionalResidual(
       fc[i][c] = (u1c[i][c] - u0c[i][c]) / my_dt;
 
       for (int j = 0; j < NEQN; ++j) {
-        int ngroup = (int) j / n; 
+        int ngroup = (int)j / n;
         int jloc = j - ngroup * n;
 
         if (ngroup == my_group_) {
@@ -338,7 +340,8 @@ void ImplicitPK::FunctionalResidual(
 /* ****************************************************************
 * Identity preconsitioner since the system is not stiff.
 **************************************************************** */
-void ImplicitPK::CommitStep(double t_old, double t_new, const Tag& tag)
+void
+ImplicitPK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   S_->GetW<CV_t>(my_field_, tag_current_, "state") = S_->Get<CV_t>(my_field_, tag_next_);
   S_->GetW<double>("time", Tag(my_field_ + "@" + tag_current_.get()), "time") = t_new;
@@ -348,15 +351,18 @@ void ImplicitPK::CommitStep(double t_old, double t_new, const Tag& tag)
 /* ****************************************************************
 * Identity preconsitioner since the system is not stiff.
 **************************************************************** */
-int ImplicitPK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) {
+int
+ImplicitPK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu)
+{
   *pu = *u;
   pu->Scale(dt_);
   return 0;
 }
 
 
-double ImplicitPK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                             Teuchos::RCP<const TreeVector> du) {
+double
+ImplicitPK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du)
+{
   return 0.0;
 }
 
@@ -364,13 +370,15 @@ double ImplicitPK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 /* ****************************************************************
 * The test.
 **************************************************************** */
-double RunTest(int test, double dt) {
+double
+RunTest(int test, double dt)
+{
   auto comm = Amanzi::getDefaultComm();
 
   // create mesh
   std::string xmlname = "test/mpc_default.xml";
   auto plist = Teuchos::getParametersFromXmlFile(xmlname);
-  
+
   Teuchos::ParameterList rlist = plist->sublist("regions");
   auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, rlist, *comm));
 
@@ -387,15 +395,17 @@ double RunTest(int test, double dt) {
 
   // allow CD to drive initialization
   plist->sublist("cycle driver").sublist("time periods").sublist("TP 0").sublist("PK tree") =
-     plist->sublist("PK tree " + std::to_string(test));
+    plist->sublist("PK tree " + std::to_string(test));
 
-  plist->sublist("cycle driver").sublist("time periods").sublist("TP 0")
-     .set<double>("initial time step", dt);
+  plist->sublist("cycle driver")
+    .sublist("time periods")
+    .sublist("TP 0")
+    .set<double>("initial time step", dt);
 
-  Amanzi::ObservationData obs_data;    
+  Amanzi::ObservationData obs_data;
   CycleDriver cd(plist, S, comm, obs_data);
   cd.Go();
-  
+
   // checking that we created only two pks
   auto vo = Teuchos::rcp(new VerboseObject("MPC_DEFAULT", *plist));
   WriteStateStatistics(*S, *vo);
@@ -406,7 +416,7 @@ double RunTest(int test, double dt) {
   for (int i = 0; i < field.NumVectors(); ++i) {
     err += std::pow(field[i][0] - SOL[i], 2.0);
     ref += std::pow(SOL[i], 2.0);
-  } 
+  }
   err = std::pow(err / ref, 0.5);
   std::cout << "ERR=" << err << std::endl;
   CHECK_CLOSE(0.0, err, 0.01);
@@ -415,47 +425,54 @@ double RunTest(int test, double dt) {
 }
 
 
-TEST(MPC_DEFAULT_PK) {
+TEST(MPC_DEFAULT_PK)
+{
   double e0 = RunTest(1, 0.002);
   double e1 = RunTest(1, 0.001);
   CHECK_CLOSE(2.0, e0 / e1, 0.01);
 }
 
-TEST(MPC_DEFAULT_MPC_WEAK_2) {
+TEST(MPC_DEFAULT_MPC_WEAK_2)
+{
   double e0 = RunTest(2, 0.002);
   double e1 = RunTest(2, 0.001);
   CHECK_CLOSE(2.0, e0 / e1, 0.01);
 }
 
-TEST(MPC_DEFAULT_MPC_WEAK_2_FLIPPED) {
+TEST(MPC_DEFAULT_MPC_WEAK_2_FLIPPED)
+{
   RunTest(3, 0.002);
 }
 
-TEST(MPC_DEFAULT_MPC_WEAK_3) {
+TEST(MPC_DEFAULT_MPC_WEAK_3)
+{
   double e0 = RunTest(4, 0.002);
   double e1 = RunTest(4, 0.001);
   CHECK_CLOSE(2.0, e0 / e1, 0.01);
 }
 
-TEST(MPC_DEFAULT_MPC_SUBCYCLED) {
+TEST(MPC_DEFAULT_MPC_SUBCYCLED)
+{
   double e0 = RunTest(5, 0.002);
   double e1 = RunTest(5, 0.001);
   CHECK_CLOSE(2.0, e0 / e1, 0.01);
 }
 
-TEST(MPC_DEFAULT_MPC_STRONG) {
+TEST(MPC_DEFAULT_MPC_STRONG)
+{
   RunTest(6, 0.002);
 }
 
-TEST(MPC_DEFAULT_MPC_TWO_LEVEL_STRONG) {
+TEST(MPC_DEFAULT_MPC_TWO_LEVEL_STRONG)
+{
   double e0 = RunTest(7, 0.002);
   double e1 = RunTest(7, 0.001);
   CHECK_CLOSE(2.0, e0 / e1, 0.01);
 }
 
-TEST(MPC_DEFAULT_MPC_TWO_LEVEL_SUBCYCLED) {
+TEST(MPC_DEFAULT_MPC_TWO_LEVEL_SUBCYCLED)
+{
   double e0 = RunTest(8, 0.002);
   double e1 = RunTest(8, 0.001);
   CHECK_CLOSE(2.0, e0 / e1, 0.01);
 }
-

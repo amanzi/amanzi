@@ -37,14 +37,15 @@ using namespace Amanzi::AmanziGeometry;
 
 Utils::RegisteredFactory<Evaluator, EvaluatorAperture> EvaluatorAperture::reg_("aperture");
 
-void RunTest(const std::string xmlInFileName)
+void
+RunTest(const std::string xmlInFileName)
 {
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  
+
   // setup a piecewice linear solution with a jump
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
-  
+
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
@@ -52,12 +53,12 @@ void RunTest(const std::string xmlInFileName)
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
-  factory.set_preference(Preference({Framework::MSTK}));
+  factory.set_preference(Preference({ Framework::MSTK }));
   auto mesh = factory.create(-12.5, -0.5, -0.5, 12.5, 0.5, 0.5, 125, 1, 4, true, true);
 
   // create dummy observation data object
-  Amanzi::ObservationData obs_data;    
-  
+  Amanzi::ObservationData obs_data;
+
   Teuchos::ParameterList state_plist = plist->sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
@@ -67,7 +68,7 @@ void RunTest(const std::string xmlInFileName)
   names.push_back("fracture");
   // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
   auto mesh_fracture = Teuchos::rcp(new MeshExtractedManifold(
-      mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list, true, false));
+    mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list, true, false));
 
   S->RegisterMesh("fracture", mesh_fracture);
 
@@ -82,21 +83,23 @@ void RunTest(const std::string xmlInFileName)
   for (int c = 0; c < a_c.MyLength(); ++c) {
     const auto& xc = mesh_fracture->cell_centroid(c);
     double w = (xc[0] + 12.5) * std::sqrt(2000.0 / (t + 1e-10)) - 12.5;
-    double tmp = (w > 7.4) ? 1.0e-5 : 1.257136447580295e-05 
-                                    - 5.307442110525289e-07 * w 
-                                    + 1.809065105747629e-08 * w * w 
-                                    + 1.184392778715966e-09 * w * w * w 
-                                    - 3.620526561612838e-11 * w * w * w * w;
-    if (c < 10 && MyPID == 0) std::cout << "aperture: " << a_c[0][c] << ",  exact: " << tmp << std::endl;
+    double tmp = (w > 7.4) ? 1.0e-5 :
+                             1.257136447580295e-05 - 5.307442110525289e-07 * w +
+                               1.809065105747629e-08 * w * w + 1.184392778715966e-09 * w * w * w -
+                               3.620526561612838e-11 * w * w * w * w;
+    if (c < 10 && MyPID == 0)
+      std::cout << "aperture: " << a_c[0][c] << ",  exact: " << tmp << std::endl;
     CHECK(std::fabs(a_c[0][c] - tmp) < 2e-2 * tmp);
   }
 }
 
 
-TEST(MPC_DRIVER_COUPLED_FLOW_APERTURE_DARCY) {
+TEST(MPC_DRIVER_COUPLED_FLOW_APERTURE_DARCY)
+{
   RunTest("test/mpc_coupled_flow_aperture_darcy.xml");
 }
 
-TEST(MPC_DRIVER_COUPLED_FLOW_APERTURE_RICHARDS) {
+TEST(MPC_DRIVER_COUPLED_FLOW_APERTURE_RICHARDS)
+{
   RunTest("test/mpc_coupled_flow_aperture.xml");
 }

@@ -31,7 +31,8 @@ namespace Operators {
 /* ******************************************************************
 * Local index of cells for common internal face
 ****************************************************************** */
-int UniqueIndexFaceToCells(const AmanziMesh::Mesh& mesh, int f, int c)
+int
+UniqueIndexFaceToCells(const AmanziMesh::Mesh& mesh, int f, int c)
 {
   int pos = 0;
   AmanziMesh::Entity_ID_List cells;
@@ -52,10 +53,8 @@ int UniqueIndexFaceToCells(const AmanziMesh::Mesh& mesh, int f, int c)
 }
 
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 
 #endif
-
-

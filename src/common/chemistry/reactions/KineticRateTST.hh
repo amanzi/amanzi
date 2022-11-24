@@ -41,19 +41,19 @@ class MatrixBlock;
 class KineticRateTST : public KineticRate {
  public:
   KineticRateTST();
-  virtual ~KineticRateTST() {};
+  virtual ~KineticRateTST(){};
 
   void Setup(const Mineral& reaction,
              double rate,
              const std::string& modifiers,
              const SpeciesArray& primary_species);
 
-  virtual void Update(const SpeciesArray& primary_species,
-                      const std::vector<Mineral>& minerals) override;
+  virtual void
+  Update(const SpeciesArray& primary_species, const std::vector<Mineral>& minerals) override;
 
   virtual void AddContributionToResidual(const std::vector<Mineral>& minerals,
                                          double bulk_volume,
-                                         std::vector<double> *residual) override;
+                                         std::vector<double>* residual) override;
 
   virtual void AddContributionToJacobian(const SpeciesArray& primary_species,
                                          const std::vector<Mineral>& minerals,
@@ -63,10 +63,10 @@ class KineticRateTST : public KineticRate {
   virtual void Display(const Teuchos::Ptr<VerboseObject> vo) const override;
 
  private:
-  double area_;  // surface area [m^2]
-  double log_Keq_;  // log_Keq [-]
-  double rate_constant_;  // k, rate constant, [moles/m^2/sec]
-  double log10_rate_constant_;  // log10(k),
+  double area_;                // surface area [m^2]
+  double log_Keq_;             // log_Keq [-]
+  double rate_constant_;       // k, rate constant, [moles/m^2/sec]
+  double log10_rate_constant_; // log10(k),
 
   double Q_over_Keq_;
   double modifying_term_;
@@ -75,8 +75,8 @@ class KineticRateTST : public KineticRate {
   // in the same list!)
   std::vector<std::string> modifying_species_names;
   std::vector<double> modifying_exponents;
-  std::vector<int> modifying_primary_ids;  // not needed?
-  std::vector<int> modifying_secondary_ids;  // not needed?
+  std::vector<int> modifying_primary_ids;   // not needed?
+  std::vector<int> modifying_secondary_ids; // not needed?
 
   // these vectors have length primary_species.size() so that dot
   // products are easier. any unneeded values are set to zero.
@@ -86,6 +86,6 @@ class KineticRateTST : public KineticRate {
   std::vector<double> modifying_secondary_exponents;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

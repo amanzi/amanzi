@@ -29,8 +29,11 @@ namespace WhetStone {
 * Wc is calculated. Darcy flux is scaled by the area!
 * WARNING: routine works for scalar T only. 
 ****************************************************************** */
-int MFD3D_Diffusion::L2consistencyInverseSurface(
-    int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
+int
+MFD3D_Diffusion::L2consistencyInverseSurface(int c,
+                                             const Tensor& T,
+                                             DenseMatrix& R,
+                                             DenseMatrix& Wc)
 {
   const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
@@ -46,22 +49,20 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
   const AmanziGeometry::Point& xf2 = mesh_->face_centroid(faces[1]);
   AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
 
-  v1 = (xf1 - xc)^(xf2 - xc);
+  v1 = (xf1 - xc) ^ (xf2 - xc);
   v1 /= norm(v1);
 
   // calculate projector
-  Tensor P(d_, 2); 
+  Tensor P(d_, 2);
   for (int i = 0; i < d_; i++) {
     P(i, i) = 1.0;
-    for (int j = 0; j < d_; j++) { 
-      P(i, j) -= v1[i] * v1[j];
-    }
+    for (int j = 0; j < d_; j++) { P(i, j) -= v1[i] * v1[j]; }
   }
 
   // cell-based coordinate system
   v2 = xf1 - xc;
   v2 /= norm(v2);
-  v3 = v1^v2; 
+  v3 = v1 ^ v2;
 
   // define new tensor
   Tensor PTP(d_, 2);
@@ -98,8 +99,8 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
 /* ******************************************************************
 * Darcy inverse mass matrix for surface: the standard algorithm
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseSurface(
-    int c, const Tensor& K, DenseMatrix& W)
+int
+MFD3D_Diffusion::MassMatrixInverseSurface(int c, const Tensor& K, DenseMatrix& W)
 {
   DenseMatrix R;
 
@@ -114,8 +115,8 @@ int MFD3D_Diffusion::MassMatrixInverseSurface(
 /* ******************************************************************
 * Mass matrix for a polyhedral element via simplex method.
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseSurfaceMMatrix(
-    int c, const Tensor& K, DenseMatrix& W)
+int
+MFD3D_Diffusion::MassMatrixInverseSurfaceMMatrix(int c, const Tensor& K, DenseMatrix& W)
 {
   DenseMatrix R;
 
@@ -139,7 +140,8 @@ int MFD3D_Diffusion::MassMatrixInverseSurfaceMMatrix(
 /* ******************************************************************
 * Exterior normal to 2D face in 3D space.
 ****************************************************************** */
-AmanziGeometry::Point MFD3D_Diffusion::mesh_face_normal(int f, int c)
+AmanziGeometry::Point
+MFD3D_Diffusion::mesh_face_normal(int f, int c)
 {
   AmanziGeometry::Point v0(d_), v1(d_);
   Entity_ID_List nodes;
@@ -164,7 +166,8 @@ AmanziGeometry::Point MFD3D_Diffusion::mesh_face_normal(int f, int c)
 /* ******************************************************************
 * The conventional FV scheme for a general mesh.
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseSurfaceTPFA(int c, const Tensor& K, DenseMatrix& W)
+int
+MFD3D_Diffusion::MassMatrixInverseSurfaceTPFA(int c, const Tensor& K, DenseMatrix& W)
 {
   const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
@@ -190,8 +193,5 @@ int MFD3D_Diffusion::MassMatrixInverseSurfaceTPFA(int c, const Tensor& K, DenseM
   return 0;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
-
-
+} // namespace WhetStone
+} // namespace Amanzi

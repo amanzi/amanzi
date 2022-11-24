@@ -9,7 +9,7 @@
   Class for radioactive decay of aqueous and sorbed components.
   Does not deal with decay of solid phase.
 */
- 
+
 #ifndef AMANZI_CHEMISTRY_RADIOACTIVE_DECAY_HH_
 #define AMANZI_CHEMISTRY_RADIOACTIVE_DECAY_HH_
 
@@ -29,7 +29,7 @@ class RadioactiveDecay {
   RadioactiveDecay();
   RadioactiveDecay(const Teuchos::ParameterList& plist,
                    const std::map<std::string, int>& name_to_id);
-  ~RadioactiveDecay() {};
+  ~RadioactiveDecay(){};
 
   // update forward and reverse effective reaction rates
   void UpdateRate(const std::vector<double>& total,
@@ -37,7 +37,7 @@ class RadioactiveDecay {
                   const double porosity,
                   const double saturation,
                   const double bulk_volume);
-  void AddContributionToResidual(std::vector<double> *residual);
+  void AddContributionToResidual(std::vector<double>* residual);
   void AddContributionToJacobian(const MatrixBlock& dtotal,
                                  const MatrixBlock& dtotal_sorbed,
                                  const double porosity,
@@ -47,22 +47,22 @@ class RadioactiveDecay {
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
 
   int parent_id() const { return species_ids_.at(0); }
-  std::string parent_name() const {return species_names_.at(0); }
+  std::string parent_name() const { return species_names_.at(0); }
   double rate() const { return rate_; }
   double rate_constant() const { return rate_constant_; }
 
  private:
   void ConvertHalfLifeToRateConstant();
   std::vector<std::string> species_names_;
-  std::vector<int> species_ids_;  // ids of primary species in rxn
-  std::vector<double> stoichiometry_;  // stoich of primary species in rxn
+  std::vector<int> species_ids_;      // ids of primary species in rxn
+  std::vector<double> stoichiometry_; // stoich of primary species in rxn
 
-  double rate_constant_;  // rate constant [1/sec]
+  double rate_constant_; // rate constant [1/sec]
   double half_life_;
   double rate_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif

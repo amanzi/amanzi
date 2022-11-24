@@ -5,4 +5,4 @@ namespace Amanzi {
 
 RegisteredPKFactory<Dummy_PK> Dummy_PK::reg_("dummy");
 
-} // namespace
+} // namespace Amanzi

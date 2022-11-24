@@ -21,18 +21,19 @@
 namespace Amanzi {
 namespace Flow {
 
-typedef std::vector<Teuchos::RCP<MultiscaleFlowPorosity> > MsFList;
+typedef std::vector<Teuchos::RCP<MultiscaleFlowPorosity>> MsFList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, MsFList> MultiscaleFlowPorosityPartition;
 
 // Non-member factory
-Teuchos::RCP<MultiscaleFlowPorosityPartition> CreateMultiscaleFlowPorosityPartition(
-    Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    Teuchos::RCP<Teuchos::ParameterList> plist);
+Teuchos::RCP<MultiscaleFlowPorosityPartition>
+CreateMultiscaleFlowPorosityPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                      Teuchos::RCP<Teuchos::ParameterList> plist);
 
 // Non-member function quering partition
-int NumberMatrixNodes(Teuchos::RCP<MultiscaleFlowPorosityPartition>& msp);
+int
+NumberMatrixNodes(Teuchos::RCP<MultiscaleFlowPorosityPartition>& msp);
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 #endif

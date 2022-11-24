@@ -26,15 +26,14 @@ namespace AmanziSolvers {
 //
 // Class for assembled inverse methods.
 //
-template<class Operator,
-         class Assembler=Operator,
-         class Vector=typename Operator::Vector_t,
-         class VectorSpace=typename Vector::VectorSpace_t>
-class InverseAssembled :
-      public Inverse<Operator,Assembler,Vector,VectorSpace> {
+template <class Operator,
+          class Assembler = Operator,
+          class Vector = typename Operator::Vector_t,
+          class VectorSpace = typename Vector::VectorSpace_t>
+class InverseAssembled : public Inverse<Operator, Assembler, Vector, VectorSpace> {
  public:
-  InverseAssembled(const std::string& method_name) :
-      Inverse<Operator,Assembler,Vector,VectorSpace>(),
+  InverseAssembled(const std::string& method_name)
+    : Inverse<Operator, Assembler, Vector, VectorSpace>(),
       updated_(false),
       computed_once_(false),
       method_name_(method_name)
@@ -46,23 +45,16 @@ class InverseAssembled :
   virtual void ComputeInverse() override final;
   virtual int ApplyInverse(const Vector& X, Vector& Y) const override final;
 
-  virtual double residual() const override final {
-    return solver_->residual();
-  }
+  virtual double residual() const override final { return solver_->residual(); }
 
-  virtual int num_itrs() const override final {
-    return solver_->num_itrs();
-  }
+  virtual int num_itrs() const override final { return solver_->num_itrs(); }
 
-  virtual void add_criteria(int criteria) override final {
-    return solver_->add_criteria(criteria);
-  }
+  virtual void add_criteria(int criteria) override final { return solver_->add_criteria(criteria); }
 
-  virtual int returned_code() const override final {
-    return solver_->returned_code();
-  }
+  virtual int returned_code() const override final { return solver_->returned_code(); }
 
-  virtual std::string returned_code_string() const override final {
+  virtual std::string returned_code_string() const override final
+  {
     return solver_->returned_code_string();
   }
 
@@ -70,10 +62,10 @@ class InverseAssembled :
   bool updated_, computed_once_;
   std::string method_name_;
 
-  using Inverse<Operator,Assembler,Vector,VectorSpace>::m_;
-  using Inverse<Operator,Assembler,Vector,VectorSpace>::h_;
+  using Inverse<Operator, Assembler, Vector, VectorSpace>::m_;
+  using Inverse<Operator, Assembler, Vector, VectorSpace>::h_;
 
-  Teuchos::RCP<Inverse<Epetra_CrsMatrix,Epetra_CrsMatrix,Epetra_Vector,Epetra_Map>> solver_;
+  Teuchos::RCP<Inverse<Epetra_CrsMatrix, Epetra_CrsMatrix, Epetra_Vector, Epetra_Map>> solver_;
   Teuchos::RCP<const Operators::SuperMap> smap_;
   mutable Teuchos::RCP<Epetra_Vector> X_, Y_;
 };

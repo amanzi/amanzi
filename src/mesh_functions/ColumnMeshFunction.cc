@@ -35,8 +35,8 @@
 namespace Amanzi {
 namespace Functions {
 
-void ReadColumnMeshFunction(Teuchos::ParameterList& plist,
-                            CompositeVector& v)
+void
+ReadColumnMeshFunction(Teuchos::ParameterList& plist, CompositeVector& v)
 {
   // get filename, data names
   if (!plist.isParameter("file")) {
@@ -61,34 +61,36 @@ void ReadColumnMeshFunction(Teuchos::ParameterList& plist,
   if (plist.isParameter("surface sideset")) {
     sidesets.push_back(plist.get<std::string>("surface sideset"));
   } else if (plist.isParameter("surface sidesets")) {
-    sidesets = plist.get<Teuchos::Array<std::string> >("surface sidesets");
+    sidesets = plist.get<Teuchos::Array<std::string>>("surface sidesets");
   } else {
-    Errors::Message message("Missing InitializeFromColumn parameter \"surface sideset\" or \"surface sidesets\"");
+    Errors::Message message(
+      "Missing InitializeFromColumn parameter \"surface sideset\" or \"surface sidesets\"");
     Exceptions::amanzi_throw(message);
   }
-  
+
   ReadColumnMeshFunction_ByDepth(*func, sidesets, v);
 }
 
 
-void ReadColumnMeshFunction_ByDepth(const Function& func,
-                                    const Teuchos::Array<std::string> sidesets,
-                                    CompositeVector& v)
+void
+ReadColumnMeshFunction_ByDepth(const Function& func,
+                               const Teuchos::Array<std::string> sidesets,
+                               CompositeVector& v)
 {
   Epetra_MultiVector& vec = *v.ViewComponent("cell");
 
   double z0;
   std::vector<double> z(1);
 
-  AmanziMesh::Entity_ID_List surf_faces; 
+  AmanziMesh::Entity_ID_List surf_faces;
   for (auto setname : sidesets) {
-    v.Mesh()->get_set_entities(setname, AmanziMesh::FACE,
-              AmanziMesh::Parallel_type::OWNED, &surf_faces);
+    v.Mesh()->get_set_entities(
+      setname, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &surf_faces);
 
     for (auto f : surf_faces) {
       // Collect the reference coordinate z0
       AmanziGeometry::Point x0 = v.Mesh()->face_centroid(f);
-      z0 = x0[x0.dim()-1];
+      z0 = x0[x0.dim() - 1];
 
       // Iterate down the column
       AmanziMesh::Entity_ID_List cells;
@@ -98,7 +100,7 @@ void ReadColumnMeshFunction_ByDepth(const Function& func,
 
       while (c >= 0) {
         AmanziGeometry::Point x1 = v.Mesh()->cell_centroid(c);
-        z[0] = z0 - x1[x1.dim()-1];
+        z[0] = z0 - x1[x1.dim() - 1];
         vec[0][c] = func(z);
         c = v.Mesh()->cell_get_cell_below(c);
       }
@@ -106,6 +108,5 @@ void ReadColumnMeshFunction_ByDepth(const Function& func,
   }
 }
 
-}  // namespace Functions
-}  // namespace Amanzi
-
+} // namespace Functions
+} // namespace Amanzi

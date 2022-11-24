@@ -35,8 +35,7 @@ double H_inf = 0.5; // Lake at rest total height
 // Exact Solution
 // ---- ---- ---- ---- ---- ---- ---- ----
 void
-lake_at_rest_exact(double t, double x, double y, double& ht, double& u,
-                   double& v)
+lake_at_rest_exact(double t, double x, double y, double& ht, double& u, double& v)
 {
   ht = H_inf;
   u = 0;
@@ -45,12 +44,14 @@ lake_at_rest_exact(double t, double x, double y, double& ht, double& u,
 
 void
 lake_at_rest_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-                         Epetra_MultiVector& ht_ex, Epetra_MultiVector& vel_ex,
+                         Epetra_MultiVector& ht_ex,
+                         Epetra_MultiVector& vel_ex,
                          double t)
 {
   double x, y, ht, u, v;
 
-  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
@@ -71,7 +72,8 @@ lake_at_rest_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 // ---- ---- ---- ---- ---- ---- ---- ----
 void
 lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-                   Teuchos::RCP<Amanzi::State>& S, int icase)
+                   Teuchos::RCP<Amanzi::State>& S,
+                   int icase)
 {
   double pi = M_PI;
   const double rho = S->Get<double>("const_fluid_density");
@@ -79,17 +81,27 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
   double g = norm(S->Get<AmanziGeometry::Point>("gravity"));
 
-  int ncells_wghost = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost =
+    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost =
+    mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
   std::string passwd("");
 
-  auto& B_c = *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("cell");
-  auto& B_n = *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("node");
-  auto& h_c = *S->GetW<CompositeVector>("surface-ponded_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
-  auto& ht_c = *S->GetW<CompositeVector>("surface-total_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
-  auto& vel_c = *S->GetW<CompositeVector>("surface-velocity", Tags::DEFAULT, passwd).ViewComponent("cell");
-  auto& q_c = *S->GetW<CompositeVector>("surface-discharge", Tags::DEFAULT, "surface-discharge").ViewComponent("cell");
-  auto& p_c = *S->GetW<CompositeVector>("surface-ponded_pressure", Tags::DEFAULT, "surface-ponded_pressure").ViewComponent("cell");
+  auto& B_c =
+    *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& B_n =
+    *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("node");
+  auto& h_c =
+    *S->GetW<CompositeVector>("surface-ponded_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& ht_c =
+    *S->GetW<CompositeVector>("surface-total_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& vel_c =
+    *S->GetW<CompositeVector>("surface-velocity", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& q_c = *S->GetW<CompositeVector>("surface-discharge", Tags::DEFAULT, "surface-discharge")
+                 .ViewComponent("cell");
+  auto& p_c =
+    *S->GetW<CompositeVector>("surface-ponded_pressure", Tags::DEFAULT, "surface-ponded_pressure")
+       .ViewComponent("cell");
 
   // Define bathymetry at the cell vertices (Bn)
   for (int n = 0; n < nnodes_wghost; ++n) {
@@ -100,10 +112,10 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     double x = node_crd[0], y = node_crd[1];
 
     if (icase == 1) {
-      B_n[0][n] =std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
+      B_n[0][n] = std::max(
+        0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
     } else if (icase == 2) {
-      B_n[0][n] =
-        0.25 - 0.25 * x * std::sin(pi * y); // non-zero bathymetry at boundary
+      B_n[0][n] = 0.25 - 0.25 * x * std::sin(pi * y); // non-zero bathymetry at boundary
     }
   }
 
@@ -139,11 +151,11 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     }
 
     // Perturb the solution; change time period t_new to at least 10.0
-//    if ((xc[0] - 0.3)*(xc[0] - 0.3) + (xc[1] - 0.3)*(xc[1] - 0.3) < 0.1 * 0.1) {
-//      ht_c[0][c] = H_inf + 0.01;
-//     } else {
-//      ht_c[0][c] = H_inf;
-//    }
+    //    if ((xc[0] - 0.3)*(xc[0] - 0.3) + (xc[1] - 0.3)*(xc[1] - 0.3) < 0.1 * 0.1) {
+    //      ht_c[0][c] = H_inf + 0.01;
+    //     } else {
+    //      ht_c[0][c] = H_inf;
+    //    }
 
     ht_c[0][c] = H_inf;
     h_c[0][c] = ht_c[0][c] - B_c[0][c];
@@ -167,11 +179,16 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 // ---- ---- ---- ---- ---- ---- ---- ----
 void
 error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-      Epetra_MultiVector& ht_ex, Epetra_MultiVector& vel_ex,
-      const Epetra_MultiVector& ht, const Epetra_MultiVector& vel,
-      double& err_max, double& err_L1, double& hmax)
+      Epetra_MultiVector& ht_ex,
+      Epetra_MultiVector& vel_ex,
+      const Epetra_MultiVector& ht,
+      const Epetra_MultiVector& vel,
+      double& err_max,
+      double& err_L1,
+      double& hmax)
 {
-  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   err_max = 0.0;
   err_L1 = 0.0;
@@ -243,9 +260,7 @@ RunTest(int icase)
 
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) {
-    std::cout << "Test: 2D Shallow water: Lake at rest" << std::endl;
-  }
+  if (MyPID == 0) { std::cout << "Test: 2D Shallow water: Lake at rest" << std::endl; }
 
   // Read parameter list
   std::string xmlFilename;
@@ -254,13 +269,11 @@ RunTest(int icase)
   } else if (icase == 2) {
     xmlFilename = "test/shallow_water_lake_at_rest_case2.xml";
   }
-  Teuchos::RCP<Teuchos::ParameterList> plist =
-    Teuchos::getParametersFromXmlFile(xmlFilename);
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFilename);
 
   // Create a mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(
-    new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   // Creat a mesh
   bool request_faces = true, request_edges = false;
@@ -270,8 +283,7 @@ RunTest(int icase)
   RCP<Mesh> mesh;
   if (icase == 1) {
     // Rectangular mesh
-    mesh = meshfactory.create(
-      0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
   } else if (icase == 2) {
     // Triangular mesh
     mesh = meshfactory.create("test/triangular16.exo");

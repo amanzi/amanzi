@@ -16,58 +16,61 @@
 
 using namespace Amanzi;
 
-int main (int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
-  return UnitTest::RunAllTests ();
+  return UnitTest::RunAllTests();
 }
-SUITE(malformed_parameter_list) {
+SUITE(malformed_parameter_list)
+{
   TEST(no_function_sublist)
   {
     Teuchos::ParameterList list;
     FunctionFactory fact;
     //auto f = std::unique_ptr<Function>(fact.Create(list));
     CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
-  }  
+  }
   TEST(unknown_function_sublist)
   {
     Teuchos::ParameterList list;
     FunctionFactory fact;
     //auto f = std::unique_ptr<Function>(fact.Create(list));
     CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
-  }  
+  }
   TEST(spurious_parameter)
   {
     Teuchos::ParameterList list;
     list.set("fubar", 0);
-    Teuchos::ParameterList &sublist = list.sublist("function-constant");
+    Teuchos::ParameterList& sublist = list.sublist("function-constant");
     sublist.set("value", 1.0);
     FunctionFactory fact;
     //auto f = std::unique_ptr<Function>(fact.Create(list));
     CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
-  }  
+  }
   TEST(extraneous_function_sublist)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist1 = list.sublist("function-constant");
+    Teuchos::ParameterList& sublist1 = list.sublist("function-constant");
     sublist1.set("value", 1.0);
     // Another sublist.  Note that sublists are processed in alphabetic order.
-    Teuchos::ParameterList &sublist2 = list.sublist("zzz-other-function");
+    Teuchos::ParameterList& sublist2 = list.sublist("zzz-other-function");
     sublist2.set("fubar", 1.0);
     FunctionFactory fact;
     //auto f = std::unique_ptr<Function>(fact.Create(list));
     CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
-  }  
+  }
 }
 
-SUITE(constant_factory) {
+SUITE(constant_factory)
+{
   TEST(create)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist = list.sublist("function-constant");
+    Teuchos::ParameterList& sublist = list.sublist("function-constant");
     sublist.set("value", 2.0);
     FunctionFactory fact;
     auto f = std::unique_ptr<Function>(fact.Create(list));
-    std::vector<double> x(1,9.0);
+    std::vector<double> x(1, 9.0);
     CHECK_EQUAL((*f)(x), 2.0);
   }
   TEST(missing_parameter)
@@ -217,102 +220,104 @@ SUITE(constant_factory) {
 //     CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
 //   }
 // }
-SUITE(bilinear_factory) {
- TEST(create)
- {
-   Teuchos::ParameterList list;
-   Teuchos::ParameterList &sublist = list.sublist("function-bilinear");
-   sublist.set("file", "test/bilinear.h5");
-   sublist.set("row header", "/times");
-   sublist.set("row coordinate", "time");
-   sublist.set("column header", "/x");
-   sublist.set("column coordinate", "x");
-   sublist.set("value header", "/values");
-   FunctionFactory fact;
-   auto f = std::unique_ptr<Function>(fact.Create(list));
-   std::vector<double> t(2,2.);
-   CHECK_EQUAL((*f)(t), 14.);
- }
- TEST(missing_rows)
- {
-   Teuchos::ParameterList list;
-   Teuchos::ParameterList &sublist = list.sublist("function-bilinear");
-   sublist.set("file", "test/bilinear.h5");
-   sublist.set("column header", "/x");
-   sublist.set("column coordinate", "x");
-   sublist.set("value header", "/values");
-   FunctionFactory fact;
-   CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
- }
- TEST(missing_columns)
- {
-   Teuchos::ParameterList list;
-   Teuchos::ParameterList &sublist = list.sublist("function-bilinear");
-   sublist.set("file", "test/bilinear.h5");
-   sublist.set("row header", "/times");
-   sublist.set("row coordinate", "time");
-   sublist.set("value header", "/values");
-   FunctionFactory fact;
-   CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
- }
- TEST(missing_values)
- {
-   Teuchos::ParameterList list;
-   Teuchos::ParameterList &sublist = list.sublist("function-bilinear");
-   sublist.set("file", "test/bilinear.h5");
-   sublist.set("row header", "/times");
-   sublist.set("row coordinate", "time");
-   sublist.set("column header", "/x");
-   sublist.set("column coordinate", "x");
-   FunctionFactory fact;
-   CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
- }
- TEST(not_enough_points)
- {
-   Teuchos::ParameterList list;
-   Teuchos::ParameterList &sublist = list.sublist("function-bilinear");
-   sublist.set("file", "test/bilinear_missing.h5");  // missing file
-   sublist.set("row header", "/times");
-   sublist.set("row coordinate", "time");
-   sublist.set("column header", "/x");
-   sublist.set("column coordinate", "x");
-   sublist.set("value header", "/values");
-   FunctionFactory fact;
-   CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
- }
- TEST(not_ordered)
- {
-   Teuchos::ParameterList list;
-   Teuchos::ParameterList &sublist = list.sublist("function-bilinear");
-   sublist.set("file", "test/bilinear_unsort.h5");  // missing file
-   sublist.set("row header", "/times");
-   sublist.set("row coordinate", "time");
-   sublist.set("column header", "/x");
-   sublist.set("column coordinate", "x");
-   sublist.set("value header", "/values");
-   FunctionFactory fact;
-   CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
- }
-}
-
-SUITE(smooth_step_factory) {
+SUITE(bilinear_factory)
+{
   TEST(create)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist = list.sublist("function-smooth-step");
+    Teuchos::ParameterList& sublist = list.sublist("function-bilinear");
+    sublist.set("file", "test/bilinear.h5");
+    sublist.set("row header", "/times");
+    sublist.set("row coordinate", "time");
+    sublist.set("column header", "/x");
+    sublist.set("column coordinate", "x");
+    sublist.set("value header", "/values");
+    FunctionFactory fact;
+    auto f = std::unique_ptr<Function>(fact.Create(list));
+    std::vector<double> t(2, 2.);
+    CHECK_EQUAL((*f)(t), 14.);
+  }
+  TEST(missing_rows)
+  {
+    Teuchos::ParameterList list;
+    Teuchos::ParameterList& sublist = list.sublist("function-bilinear");
+    sublist.set("file", "test/bilinear.h5");
+    sublist.set("column header", "/x");
+    sublist.set("column coordinate", "x");
+    sublist.set("value header", "/values");
+    FunctionFactory fact;
+    CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
+  }
+  TEST(missing_columns)
+  {
+    Teuchos::ParameterList list;
+    Teuchos::ParameterList& sublist = list.sublist("function-bilinear");
+    sublist.set("file", "test/bilinear.h5");
+    sublist.set("row header", "/times");
+    sublist.set("row coordinate", "time");
+    sublist.set("value header", "/values");
+    FunctionFactory fact;
+    CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
+  }
+  TEST(missing_values)
+  {
+    Teuchos::ParameterList list;
+    Teuchos::ParameterList& sublist = list.sublist("function-bilinear");
+    sublist.set("file", "test/bilinear.h5");
+    sublist.set("row header", "/times");
+    sublist.set("row coordinate", "time");
+    sublist.set("column header", "/x");
+    sublist.set("column coordinate", "x");
+    FunctionFactory fact;
+    CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
+  }
+  TEST(not_enough_points)
+  {
+    Teuchos::ParameterList list;
+    Teuchos::ParameterList& sublist = list.sublist("function-bilinear");
+    sublist.set("file", "test/bilinear_missing.h5"); // missing file
+    sublist.set("row header", "/times");
+    sublist.set("row coordinate", "time");
+    sublist.set("column header", "/x");
+    sublist.set("column coordinate", "x");
+    sublist.set("value header", "/values");
+    FunctionFactory fact;
+    CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
+  }
+  TEST(not_ordered)
+  {
+    Teuchos::ParameterList list;
+    Teuchos::ParameterList& sublist = list.sublist("function-bilinear");
+    sublist.set("file", "test/bilinear_unsort.h5"); // missing file
+    sublist.set("row header", "/times");
+    sublist.set("row coordinate", "time");
+    sublist.set("column header", "/x");
+    sublist.set("column coordinate", "x");
+    sublist.set("value header", "/values");
+    FunctionFactory fact;
+    CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
+  }
+}
+
+SUITE(smooth_step_factory)
+{
+  TEST(create)
+  {
+    Teuchos::ParameterList list;
+    Teuchos::ParameterList& sublist = list.sublist("function-smooth-step");
     sublist.set("x0", 1.0);
     sublist.set("y0", 2.0);
     sublist.set("x1", 3.0);
     sublist.set("y1", 4.0);
     FunctionFactory fact;
     auto f = std::unique_ptr<Function>(fact.Create(list));
-    std::vector<double> x(1,2.);
+    std::vector<double> x(1, 2.);
     CHECK_EQUAL((*f)(x), 3.0);
   }
   TEST(missing_parameter)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist = list.sublist("function-smooth-step");
+    Teuchos::ParameterList& sublist = list.sublist("function-smooth-step");
     sublist.set("x0", 1.0);
     sublist.set("y0", 2.0);
     sublist.set("x1", 3.0);
@@ -322,7 +327,7 @@ SUITE(smooth_step_factory) {
   TEST(bad_parameter)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist = list.sublist("function-smooth-step");
+    Teuchos::ParameterList& sublist = list.sublist("function-smooth-step");
     sublist.set("x0", 3.0);
     sublist.set("y0", 2.0);
     sublist.set("x1", 3.0);
@@ -332,11 +337,12 @@ SUITE(smooth_step_factory) {
   }
 }
 
-SUITE(polynomial_factory) {
+SUITE(polynomial_factory)
+{
   TEST(create)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist = list.sublist("function-polynomial");
+    Teuchos::ParameterList& sublist = list.sublist("function-polynomial");
     Teuchos::Array<double> c(2);
     Teuchos::Array<int> p(2);
     c[0] = 1.0;
@@ -347,20 +353,19 @@ SUITE(polynomial_factory) {
     sublist.set("exponents", p);
     FunctionFactory fact;
     auto f = std::unique_ptr<Function>(fact.Create(list));
-    std::vector<double> t(1,0.5);
+    std::vector<double> t(1, 0.5);
     CHECK_EQUAL((*f)(t), 2.5);
-    
+
     // Now add the optional reference point argument
     sublist.set("reference point", -1.0);
     auto f2 = std::unique_ptr<Function>(fact.Create(list));
     t[0] = -0.5;
     CHECK_EQUAL((*f2)(t), 2.5);
-    
   }
   TEST(missing_parameter)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist = list.sublist("function-polynomial");
+    Teuchos::ParameterList& sublist = list.sublist("function-polynomial");
     Teuchos::Array<double> c(2);
     c[0] = 0.0;
     c[1] = 1.0;
@@ -372,7 +377,7 @@ SUITE(polynomial_factory) {
   TEST(zero_sized_vectors)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist = list.sublist("function-polynomial");
+    Teuchos::ParameterList& sublist = list.sublist("function-polynomial");
     Teuchos::Array<double> c(0);
     Teuchos::Array<int> p(0);
     sublist.set("coefficients", c);
@@ -384,7 +389,7 @@ SUITE(polynomial_factory) {
   TEST(bad_values)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist = list.sublist("function-polynomial");
+    Teuchos::ParameterList& sublist = list.sublist("function-polynomial");
     Teuchos::Array<double> c(2);
     Teuchos::Array<int> p(3);
     c[0] = 1.0;
@@ -400,11 +405,12 @@ SUITE(polynomial_factory) {
   }
 }
 
-SUITE(linear_factory) {
+SUITE(linear_factory)
+{
   TEST(create)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist = list.sublist("function-linear");
+    Teuchos::ParameterList& sublist = list.sublist("function-linear");
     Teuchos::Array<double> grad(2);
     grad[0] = 1.0;
     grad[1] = 2.0;
@@ -412,9 +418,10 @@ SUITE(linear_factory) {
     sublist.set("gradient", grad);
     FunctionFactory fact;
     auto f = std::unique_ptr<Function>(fact.Create(list));
-    std::vector<double> x(2,1.); x[1] = 2.;
+    std::vector<double> x(2, 1.);
+    x[1] = 2.;
     CHECK_EQUAL(6.0, (*f)(x));
-    
+
     // Now add the optional x0 parameter
     Teuchos::Array<double> x0(2);
     x0[0] = -1.0;
@@ -422,12 +429,11 @@ SUITE(linear_factory) {
     sublist.set("x0", x0);
     auto f2 = std::unique_ptr<Function>(fact.Create(list));
     CHECK_EQUAL(5.0, (*f2)(x));
-    
   }
   TEST(missing_parameter)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist = list.sublist("function-linear");
+    Teuchos::ParameterList& sublist = list.sublist("function-linear");
     sublist.set("y0", 1.0);
     FunctionFactory fact;
     //auto f = std::unique_ptr<Function>(fact.Create(list));
@@ -439,7 +445,7 @@ SUITE(linear_factory) {
   TEST(bad_values)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist = list.sublist("function-linear");
+    Teuchos::ParameterList& sublist = list.sublist("function-linear");
     Teuchos::Array<double> grad(2);
     grad[0] = 1.0;
     grad[1] = 2.0;
@@ -452,31 +458,32 @@ SUITE(linear_factory) {
   }
 }
 
-SUITE(separable_factory) {
+SUITE(separable_factory)
+{
   TEST(create)
   {
     // The parameter list we are creating:
-    // <ParameterList name="">                                      
-    //   <ParameterList name="function-separable">                  
-    //     <ParameterList name="function1">                         
-    //       <ParameterList name="function-constant">               
-    //         <Parameter name="value" type="double" value="2.0" /> 
-    //       </ParameterList>                                       
-    //     </ParameterList>                                         
-    //     <ParameterList name="function2">                         
-    //       <ParameterList name="function-constant">               
-    //         <Parameter name="value" type="double" value="3.0" /> 
-    //       </ParameterList>                                       
-    //     </ParameterList>                                         
-    //   </ParameterList>                                           
-    // </ParameterList>                                             
+    // <ParameterList name="">
+    //   <ParameterList name="function-separable">
+    //     <ParameterList name="function1">
+    //       <ParameterList name="function-constant">
+    //         <Parameter name="value" type="double" value="2.0" />
+    //       </ParameterList>
+    //     </ParameterList>
+    //     <ParameterList name="function2">
+    //       <ParameterList name="function-constant">
+    //         <Parameter name="value" type="double" value="3.0" />
+    //       </ParameterList>
+    //     </ParameterList>
+    //   </ParameterList>
+    // </ParameterList>
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &flist = list.sublist("function-separable");
-    Teuchos::ParameterList &list1 = flist.sublist("function1");
-    Teuchos::ParameterList &flist1 = list1.sublist("function-constant");
+    Teuchos::ParameterList& flist = list.sublist("function-separable");
+    Teuchos::ParameterList& list1 = flist.sublist("function1");
+    Teuchos::ParameterList& flist1 = list1.sublist("function-constant");
     flist1.set("value", 2.0);
-    Teuchos::ParameterList &list2 = flist.sublist("function2");
-    Teuchos::ParameterList &flist2 = list2.sublist("function-linear");
+    Teuchos::ParameterList& list2 = flist.sublist("function2");
+    Teuchos::ParameterList& flist2 = list2.sublist("function-linear");
     Teuchos::Array<double> grad(2);
     grad[0] = 1.0;
     grad[1] = 2.0;
@@ -485,86 +492,89 @@ SUITE(separable_factory) {
     FunctionFactory fact;
 
     auto f = std::unique_ptr<Function>(fact.Create(list));
-    std::vector<double> x(3,0.); x[1] = 1.; x[2] = -1.;
+    std::vector<double> x(3, 0.);
+    x[1] = 1.;
+    x[2] = -1.;
     CHECK_EQUAL(-2.0, (*f)(x));
-    
   }
   TEST(create_nested)
   {
     // The parameter list we are creating:
-    // <ParameterList name="">                                      
-    //   <ParameterList name="function-separable">                  
-    //     <ParameterList name="function1">                         
-    //       <ParameterList name="function-constant">               
-    //         <Parameter name="value" type="double" value="2.0" /> 
-    //       </ParameterList>                                       
-    //     </ParameterList>                                         
+    // <ParameterList name="">
+    //   <ParameterList name="function-separable">
+    //     <ParameterList name="function1">
+    //       <ParameterList name="function-constant">
+    //         <Parameter name="value" type="double" value="2.0" />
+    //       </ParameterList>
+    //     </ParameterList>
     //     <ParameterList name="function2">
-    //       <ParameterList name="function-separable">                       
-    //         <ParameterList name="function1">                        
-    //           <ParameterList name="function-constant">              
+    //       <ParameterList name="function-separable">
+    //         <ParameterList name="function1">
+    //           <ParameterList name="function-constant">
     //             <Parameter name="value" type="double" value="3.0" />
-    //           </ParameterList>                                      
-    //         </ParameterList>                                        
-    //         <ParameterList name="function2">                        
-    //           <ParameterList name="function-constant">              
+    //           </ParameterList>
+    //         </ParameterList>
+    //         <ParameterList name="function2">
+    //           <ParameterList name="function-constant">
     //             <Parameter name="value" type="double" value="4.0" />
-    //           </ParameterList>                                      
-    //         </ParameterList>                                        
-    //       </ParameterList>                                        
-    //     </ParameterList>                                         
-    //   </ParameterList>                                           
-    // </ParameterList>                                             
+    //           </ParameterList>
+    //         </ParameterList>
+    //       </ParameterList>
+    //     </ParameterList>
+    //   </ParameterList>
+    // </ParameterList>
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &flist = list.sublist("function-separable");
-    Teuchos::ParameterList &listx = flist.sublist("function1");
-    Teuchos::ParameterList &flistx = listx.sublist("function-constant");
+    Teuchos::ParameterList& flist = list.sublist("function-separable");
+    Teuchos::ParameterList& listx = flist.sublist("function1");
+    Teuchos::ParameterList& flistx = listx.sublist("function-constant");
     flistx.set("value", 2.0);
-    Teuchos::ParameterList &listyz = flist.sublist("function2");
-    Teuchos::ParameterList &flistyz = listyz.sublist("function-separable");
-    Teuchos::ParameterList &listy = flistyz.sublist("function1");
-    Teuchos::ParameterList &flisty = listy.sublist("function-constant");
+    Teuchos::ParameterList& listyz = flist.sublist("function2");
+    Teuchos::ParameterList& flistyz = listyz.sublist("function-separable");
+    Teuchos::ParameterList& listy = flistyz.sublist("function1");
+    Teuchos::ParameterList& flisty = listy.sublist("function-constant");
     flisty.set("value", 3.0);
-    Teuchos::ParameterList &listz = flistyz.sublist("function2");
-    Teuchos::ParameterList &flistz = listz.sublist("function-constant");
+    Teuchos::ParameterList& listz = flistyz.sublist("function2");
+    Teuchos::ParameterList& flistz = listz.sublist("function-constant");
     flistz.set("value", 4.0);
     FunctionFactory fact;
     auto f = std::unique_ptr<Function>(fact.Create(list));
-    std::vector<double> x(3,0.);
+    std::vector<double> x(3, 0.);
     CHECK_EQUAL(24.0, (*f)(x));
-    
   }
   TEST(missing_sublist)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &flist = list.sublist("function-separable");
+    Teuchos::ParameterList& flist = list.sublist("function-separable");
     FunctionFactory fact;
     //auto f = std::unique_ptr<Function>(fact.Create(list));
     CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
     // Now define the function1 sublist.
-    Teuchos::ParameterList &list1 = flist.sublist("function1");
-    Teuchos::ParameterList &flist1 = list1.sublist("function-constant");
+    Teuchos::ParameterList& list1 = flist.sublist("function1");
+    Teuchos::ParameterList& flist1 = list1.sublist("function-constant");
     flist1.set("value", 2.0);
     //auto f = std::unique_ptr<Function>(fact.Create(list));
     CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
   }
 }
- 
-SUITE(static_head_factory) {
+
+SUITE(static_head_factory)
+{
   TEST(create)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist = list.sublist("function-static-head");
+    Teuchos::ParameterList& sublist = list.sublist("function-static-head");
     sublist.set("p0", 1.0);
     sublist.set("density", 4.0);
     sublist.set("gravity", 0.5);
     sublist.set("space dimension", 3);
-    sublist.sublist("water table elevation").sublist("function-constant").set("value",3.0);
+    sublist.sublist("water table elevation").sublist("function-constant").set("value", 3.0);
     FunctionFactory fact;
     auto f = std::unique_ptr<Function>(fact.Create(list));
-    std::vector<double> x(4,0.); x[3] = 1.;
+    std::vector<double> x(4, 0.);
+    x[3] = 1.;
     CHECK_EQUAL(5.0, (*f)(x));
-    std::vector<double> y(4,1.); y[3] = 4.;
+    std::vector<double> y(4, 1.);
+    y[3] = 4.;
     CHECK_EQUAL(-1.0, (*f)(y));
   }
   TEST(missing_parameter)
@@ -573,11 +583,10 @@ SUITE(static_head_factory) {
     FunctionFactory fact;
     //auto f = std::unique_ptr<Function>(fact.Create(list));
     CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
-    Teuchos::ParameterList &sublist = list.sublist("function-static-head");
+    Teuchos::ParameterList& sublist = list.sublist("function-static-head");
     //sublist.set("p0", 1.0);
-    sublist.set("density", 4.0)
-           .set("gravity", 0.5);
-    sublist.sublist("water table elevation").sublist("function-constant").set("value",3.0);
+    sublist.set("density", 4.0).set("gravity", 0.5);
+    sublist.sublist("water table elevation").sublist("function-constant").set("value", 3.0);
     //auto f = std::unique_ptr<Function>(fact.Create(list));
     CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
     sublist.set("p0", 1.0);
@@ -598,7 +607,8 @@ SUITE(static_head_factory) {
   }
 }
 
-SUITE(distance_factory) {
+SUITE(distance_factory)
+{
   TEST(create)
   {
     Teuchos::ParameterList list;
@@ -608,8 +618,7 @@ SUITE(distance_factory) {
     x0[1] = 0.0;
     metric[0] = 1.0;
     metric[1] = 1.0;
-    sublist.set<Teuchos::Array<double> >("x0", x0)
-           .set<Teuchos::Array<double> >("metric", metric);
+    sublist.set<Teuchos::Array<double>>("x0", x0).set<Teuchos::Array<double>>("metric", metric);
     FunctionFactory fact;
     auto f = std::unique_ptr<Function>(fact.Create(list));
     std::vector<double> x(2, 2.0);
@@ -624,7 +633,8 @@ SUITE(distance_factory) {
   }
 }
 
-SUITE(exprtk_factory) {
+SUITE(exprtk_factory)
+{
   TEST(create)
   {
     Teuchos::ParameterList list;
@@ -643,4 +653,3 @@ SUITE(exprtk_factory) {
     CHECK_THROW(auto f = std::unique_ptr<Function>(fact.Create(list)), Errors::Message);
   }
 }
-

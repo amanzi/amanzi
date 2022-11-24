@@ -20,35 +20,33 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-ActivityModel::ActivityModel()
-  : I_(0.0),
-    Z_(0.0),
-    M_(0.0),
-    name_(""),
-    num_species_(0) {
-}
+ActivityModel::ActivityModel() : I_(0.0), Z_(0.0), M_(0.0), name_(""), num_species_(0) {}
 
 
-void ActivityModel::Setup(
-    const ActivityModelParameters& parameters,
-    const std::vector<Species>& primary_species,
-    const std::vector<AqueousEquilibriumComplex>& secondary_species) {
+void
+ActivityModel::Setup(const ActivityModelParameters& parameters,
+                     const std::vector<Species>& primary_species,
+                     const std::vector<AqueousEquilibriumComplex>& secondary_species)
+{
   ResizeGamma(primary_species.size() + secondary_species.size());
 }
 
 
-void ActivityModel::ResizeGamma(int size) {
+void
+ActivityModel::ResizeGamma(int size)
+{
   num_species_ = size;
-  gamma_.resize(num_species_, 1.0);  
+  gamma_.resize(num_species_, 1.0);
 }
 
 
 /* ******************************************************************
 * I = 0.5 * sum_i [ m_i * z_i^2 ]
 ****************************************************************** */
-void ActivityModel::CalculateIonicStrength(
-    const std::vector<Species>& primary_species,
-    const std::vector<AqueousEquilibriumComplex>& secondary_species)
+void
+ActivityModel::CalculateIonicStrength(
+  const std::vector<Species>& primary_species,
+  const std::vector<AqueousEquilibriumComplex>& secondary_species)
 {
   I_ = 0.0;
 
@@ -69,9 +67,9 @@ void ActivityModel::CalculateIonicStrength(
 /* ******************************************************************
 * Z = sum_i [ m_i * |z_i| ]
 ****************************************************************** */
-void ActivityModel::CalculateSumAbsZ(
-    const std::vector<Species>& primary_species,
-    const std::vector<AqueousEquilibriumComplex>& secondary_species)
+void
+ActivityModel::CalculateSumAbsZ(const std::vector<Species>& primary_species,
+                                const std::vector<AqueousEquilibriumComplex>& secondary_species)
 {
   Z_ = 0.0;
 
@@ -94,24 +92,20 @@ void ActivityModel::CalculateSumAbsZ(
 /* ******************************************************************
 * TBW
 ****************************************************************** */
-void ActivityModel::CalculateSumC(
-    const std::vector<Species>& primary_species,
-    const std::vector<AqueousEquilibriumComplex>& secondary_species)
+void
+ActivityModel::CalculateSumC(const std::vector<Species>& primary_species,
+                             const std::vector<AqueousEquilibriumComplex>& secondary_species)
 {
   M_ = 0.0;
 
   // primary species
   for (auto it = primary_species.begin(); it != primary_species.end(); ++it) {
-    if (it->name() != "h2o" && it->name() != "H2O") {
-      M_ += it->molality();
-    }
+    if (it->name() != "h2o" && it->name() != "H2O") { M_ += it->molality(); }
   }
 
   // secondary aqueous complexes
   for (auto it = secondary_species.begin(); it != secondary_species.end(); ++it) {
-    if (it->name() != "h2o" && it->name() != "H2O") {
-      M_ += it->molality();
-    }
+    if (it->name() != "h2o" && it->name() != "H2O") { M_ += it->molality(); }
   }
 }
 
@@ -119,10 +113,11 @@ void ActivityModel::CalculateSumC(
 /* ******************************************************************
 * TBW
 ****************************************************************** */
-void ActivityModel::CalculateActivityCoefficients(
-    std::vector<Species>* primary_species,
-    std::vector<AqueousEquilibriumComplex>* secondary_species,
-    Species* water)
+void
+ActivityModel::CalculateActivityCoefficients(
+  std::vector<Species>* primary_species,
+  std::vector<AqueousEquilibriumComplex>* secondary_species,
+  Species* water)
 {
   double actw(1.0);
 
@@ -146,5 +141,5 @@ void ActivityModel::CalculateActivityCoefficients(
   water->set_act_coef(actw);
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

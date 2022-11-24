@@ -36,13 +36,16 @@ namespace Operators {
 /* ******************************************************************
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
-void PDE_Elasticity::SetTensorCoefficient(
-    const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) {
+void
+PDE_Elasticity::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K)
+{
   K_ = K;
   K_default_ = 1.0;
 }
 
-void PDE_Elasticity::SetTensorCoefficient(double K) {
+void
+PDE_Elasticity::SetTensorCoefficient(double K)
+{
   K_ = Teuchos::null;
   K_default_ = K;
 }
@@ -52,14 +55,15 @@ void PDE_Elasticity::SetTensorCoefficient(double K) {
 * Calculate elemental matrices.
 * NOTE: The input parameters are not yet used.
 ****************************************************************** */
-void PDE_Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                                    const Teuchos::Ptr<const CompositeVector>& p)
+void
+PDE_Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                               const Teuchos::Ptr<const CompositeVector>& p)
 {
   WhetStone::DenseMatrix Acell;
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = K_default_;
-  
+
   for (int c = 0; c < ncells_owned; c++) {
     if (K_.get()) Kc = (*K_)[c];
     mfd_->StiffnessMatrix(c, Kc, Acell);
@@ -71,7 +75,8 @@ void PDE_Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
+void
+PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
 {
   // generate schema for the mimetic discretization method
   Teuchos::ParameterList& schema_list = plist.sublist("schema");
@@ -113,9 +118,9 @@ void PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
   // create the local Op and register it with the global Operator
   local_op_ = Teuchos::rcp(new Op_Cell_Schema(my_schema, my_schema, mesh_));
   global_op_->OpPushBack(local_op_);
-  
+
   K_ = Teuchos::null;
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi

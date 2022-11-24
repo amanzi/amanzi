@@ -21,10 +21,10 @@ namespace Amanzi {
 // Constructor
 // -----------------------------------------------------------------------------
 EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
-    : nonlocal_dependencies_(false),
-      updated_once_(false),
-      plist_(plist),
-      vo_(Keys::cleanPListName(plist.name()), plist)
+  : nonlocal_dependencies_(false),
+    updated_once_(false),
+    plist_(plist),
+    vo_(Keys::cleanPListName(plist.name()), plist)
 {
   type_ = EvaluatorType::SECONDARY;
 
@@ -35,33 +35,28 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
       auto tags = plist_.get<Teuchos::Array<std::string>>("tags");
       if (names.size() != tags.size()) {
         Errors::Message message;
-        message << "EvaluatorSecondary: "
-                << Keys::cleanPListName(plist.name())
+        message << "EvaluatorSecondary: " << Keys::cleanPListName(plist.name())
                 << " has names and tags lists of different sizes!";
         throw(message);
       }
 
       int i = 0;
       for (auto name : names) {
-        my_keys_.emplace_back(KeyTag{name, Tag{tags[i]}});
+        my_keys_.emplace_back(KeyTag{ name, Tag{ tags[i] } });
         ++i;
       }
     } else {
       auto tag = make_tag(plist_.get<std::string>("tag"));
-      for (auto name : names) {
-        my_keys_.emplace_back(KeyTag{name, Tag{tag}});
-      }
+      for (auto name : names) { my_keys_.emplace_back(KeyTag{ name, Tag{ tag } }); }
     }
   } else {
     auto name = Keys::cleanPListName(plist.name());
     if (plist_.isParameter("tags")) {
       auto tags = plist_.get<Teuchos::Array<std::string>>("tags");
-      for (auto tag : tags) {
-        my_keys_.emplace_back(KeyTag{name, Tag{tag}});
-      }
+      for (auto tag : tags) { my_keys_.emplace_back(KeyTag{ name, Tag{ tag } }); }
     } else {
       auto tag = make_tag(plist_.get<std::string>("tag"));
-      my_keys_.emplace_back(KeyTag{name, Tag{tag}});
+      my_keys_.emplace_back(KeyTag{ name, Tag{ tag } });
     }
   }
   if (my_keys_.size() == 0) {
@@ -91,9 +86,7 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
     } else {
       auto my_tag = my_keys_.front().second;
       auto dep_tag = Keys::readTag(plist_, my_tag);
-      for (const auto& dep : deps) {
-        dependencies_.insert(KeyTag(dep, dep_tag));
-      }
+      for (const auto& dep : deps) { dependencies_.insert(KeyTag(dep, dep_tag)); }
     }
 
   } else if (plist_.isParameter("dependency suffixes")) {
@@ -111,8 +104,7 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
 
       int i = 0;
       for (const auto& suffix : dep_suff) {
-        dependencies_.insert(KeyTag(Keys::getKey(domain, suffix),
-                make_tag(tags[i])));
+        dependencies_.insert(KeyTag(Keys::getKey(domain, suffix), make_tag(tags[i])));
         ++i;
       }
     } else {
@@ -128,11 +120,11 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
 }
 
 
-Evaluator& EvaluatorSecondary::operator=(const Evaluator& other)
+Evaluator&
+EvaluatorSecondary::operator=(const Evaluator& other)
 {
   if (this != &other) {
-    const EvaluatorSecondary *other_p =
-        dynamic_cast<const EvaluatorSecondary *>(&other);
+    const EvaluatorSecondary* other_p = dynamic_cast<const EvaluatorSecondary*>(&other);
     AMANZI_ASSERT(other_p != NULL);
     *this = *other_p;
   }
@@ -140,7 +132,8 @@ Evaluator& EvaluatorSecondary::operator=(const Evaluator& other)
 }
 
 
-EvaluatorSecondary& EvaluatorSecondary::operator=(const EvaluatorSecondary& other)
+EvaluatorSecondary&
+EvaluatorSecondary::operator=(const EvaluatorSecondary& other)
 {
   if (this != &other) {
     AMANZI_ASSERT(my_keys_ == other.my_keys_);
@@ -155,7 +148,8 @@ EvaluatorSecondary& EvaluatorSecondary::operator=(const EvaluatorSecondary& othe
 // Step 1 of graph checking -- Requires evaluators for the full dependency
 // graph.
 // ---------------------------------------------------------------------------
-void EvaluatorSecondary::EnsureEvaluators(State& S)
+void
+EvaluatorSecondary::EnsureEvaluators(State& S)
 {
   // first make sure that we have evaluators for all of _our_ keys.  Note that
   // we may not, as not all of my_keys_ may be required.
@@ -176,13 +170,14 @@ void EvaluatorSecondary::EnsureEvaluators(State& S)
 // Answers the question, has this Field changed since it was last requested
 // for Field Key reqest.  Updates the field if needed.
 // -----------------------------------------------------------------------------
-bool EvaluatorSecondary::Update(State& S, const Key& request)
+bool
+EvaluatorSecondary::Update(State& S, const Key& request)
 {
   Teuchos::OSTab tab = vo_.getOSTab();
 
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_.os() << "SecondaryVariable " << my_keys_[0].first << " requested by "
-              << request << std::endl;
+    *vo_.os() << "SecondaryVariable " << my_keys_[0].first << " requested by " << request
+              << std::endl;
   }
 
   // Check if we need to update ourselves, and potentially update our
@@ -190,7 +185,7 @@ bool EvaluatorSecondary::Update(State& S, const Key& request)
   bool update = false;
   for (auto& dep : dependencies_) {
     update |= S.GetEvaluator(dep.first, dep.second)
-        .Update(S, Keys::getKey(my_keys_[0].first, my_keys_[0].second));
+                .Update(S, Keys::getKey(my_keys_[0].first, my_keys_[0].second));
   }
 
   if (!updated_once_) {
@@ -225,8 +220,7 @@ bool EvaluatorSecondary::Update(State& S, const Key& request)
     if (requests_.find(request) == requests_.end()) {
       requests_.insert(request);
       if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_.os() << my_keys_[0].first
-                  << " has changed, but no need to update... " << std::endl;
+        *vo_.os() << my_keys_[0].first << " has changed, but no need to update... " << std::endl;
       }
       return true;
     } else {
@@ -244,16 +238,18 @@ bool EvaluatorSecondary::Update(State& S, const Key& request)
 // wrt_key changed since it was last requested for Field Key reqest.
 // Updates the derivative if needed.
 // ---------------------------------------------------------------------------
-bool EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
-                                          const Key& wrt_key,
-                                          const Tag& wrt_tag)
+bool
+EvaluatorSecondary::UpdateDerivative(State& S,
+                                     const Key& requestor,
+                                     const Key& wrt_key,
+                                     const Tag& wrt_tag)
 {
   AMANZI_ASSERT(IsDependency(S, wrt_key, wrt_tag));
 
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_.os() << "Algebraic Variable d" << my_keys_[0].first << "_d" << wrt_key
-              << " requested by " << requestor << std::endl;
+    *vo_.os() << "Algebraic Variable d" << my_keys_[0].first << "_d" << wrt_key << " requested by "
+              << requestor << std::endl;
   }
 
   // If wrt_key is not a dependency, no need to differentiate.
@@ -274,11 +270,10 @@ bool EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
   update |= Update(S, my_request);
 
   // -- must update if any of our dependencies' derivatives have changed
-  for (auto &dep : dependencies_) {
-    if (S.GetEvaluator(dep.first, dep.second)
-            .IsDependency(S, wrt_key, wrt_tag)) {
-      update |= S.GetEvaluator(dep.first, dep.second)
-                    .UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+  for (auto& dep : dependencies_) {
+    if (S.GetEvaluator(dep.first, dep.second).IsDependency(S, wrt_key, wrt_tag)) {
+      update |=
+        S.GetEvaluator(dep.first, dep.second).UpdateDerivative(S, my_request, wrt_key, wrt_tag);
     }
   }
 
@@ -296,9 +291,7 @@ bool EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
   // Do the update
   DerivativeTriple request = std::make_tuple(wrt_key, wrt_tag, requestor);
   if (update) {
-    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << "  ... updating." << std::endl;
-    }
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  ... updating." << std::endl; }
 
     // If so, update ourselves, empty our list of filled requests, and return.
     UpdateDerivative_(S, wrt_key, wrt_tag);
@@ -315,43 +308,41 @@ bool EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
       deriv_requests_.insert(request);
       return true;
     } else {
-      if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_.os() << "  ... has not changed." << std::endl;
-      }
+      if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  ... has not changed." << std::endl; }
       return false;
     }
   }
 }
 
 
-bool EvaluatorSecondary::IsDependency(const State& S, const Key& key, const Tag& tag) const
+bool
+EvaluatorSecondary::IsDependency(const State& S, const Key& key, const Tag& tag) const
 {
-  if (std::find(dependencies_.begin(), dependencies_.end(),
-                std::make_pair(key, tag)) != dependencies_.end()) {
+  if (std::find(dependencies_.begin(), dependencies_.end(), std::make_pair(key, tag)) !=
+      dependencies_.end()) {
     return true;
   } else {
     for (auto& dep : dependencies_) {
-      if (S.GetEvaluator(dep.first, dep.second).IsDependency(S, key, tag)) {
-        return true;
-      }
+      if (S.GetEvaluator(dep.first, dep.second).IsDependency(S, key, tag)) { return true; }
     }
   }
   return false;
 }
 
 
-bool EvaluatorSecondary::ProvidesKey(const Key& key, const Tag& tag) const {
+bool
+EvaluatorSecondary::ProvidesKey(const Key& key, const Tag& tag) const
+{
   std::pair<Key, Tag> my_key = std::make_pair(key, tag);
   return std::find(my_keys_.begin(), my_keys_.end(), my_key) != my_keys_.end();
 }
 
 
-std::string EvaluatorSecondary::WriteToString() const
+std::string
+EvaluatorSecondary::WriteToString() const
 {
   std::stringstream result;
-  for (const auto& key : my_keys_) {
-    result << Keys::getKey(key.first, key.second);
-  }
+  for (const auto& key : my_keys_) { result << Keys::getKey(key.first, key.second); }
   result << std::endl << "  type: secondary" << std::endl;
   for (const auto& dep : dependencies_) {
     result << "  dep: " << dep.first << ", tag=\"" << dep.second.get() << "\"" << std::endl;
@@ -360,7 +351,9 @@ std::string EvaluatorSecondary::WriteToString() const
 }
 
 
-void EvaluatorSecondary::EnsureCompatibility_Flags_(State& S) {
+void
+EvaluatorSecondary::EnsureCompatibility_Flags_(State& S)
+{
   // check plist for vis or checkpointing control
   bool io_my_key = plist_.get<bool>("visualize", true);
   bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);

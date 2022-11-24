@@ -30,11 +30,13 @@ class EvaluatorAperture : public EvaluatorSecondaryMonotype<CompositeVector, Com
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
-   std::string pressure_key_;
+  std::string pressure_key_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorAperture> reg_;
@@ -60,10 +62,12 @@ EvaluatorAperture::EvaluatorAperture(Teuchos::ParameterList& plist)
 ****************************************************************** */
 EvaluatorAperture::EvaluatorAperture(const EvaluatorAperture& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-    pressure_key_(other.pressure_key_) {};
+    pressure_key_(other.pressure_key_){};
 
 
-Teuchos::RCP<Evaluator> EvaluatorAperture::Clone() const {
+Teuchos::RCP<Evaluator>
+EvaluatorAperture::Clone() const
+{
   return Teuchos::rcp(new EvaluatorAperture(*this));
 }
 
@@ -71,37 +75,35 @@ Teuchos::RCP<Evaluator> EvaluatorAperture::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void EvaluatorAperture::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+EvaluatorAperture::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& p_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
 
   auto& result_v = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
 
-  for (int c = 0; c != ncells; ++c) {
-    result_v[0][c] = 1e-5 + (p_c[0][c] - 11e+6) / 1e+11;
-  } 
+  for (int c = 0; c != ncells; ++c) { result_v[0][c] = 1e-5 + (p_c[0][c] - 11e+6) / 1e+11; }
 }
 
 
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void EvaluatorAperture::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+EvaluatorAperture::EvaluatePartialDerivative_(const State& S,
+                                              const Key& wrt_key,
+                                              const Tag& wrt_tag,
+                                              const std::vector<CompositeVector*>& results)
 {
   auto& result_v = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
 
   if (wrt_key == pressure_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] = 1e-11;
-    }
+    for (int c = 0; c != ncells; ++c) { result_v[0][c] = 1e-11; }
   }
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

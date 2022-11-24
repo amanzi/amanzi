@@ -49,17 +49,17 @@ class RegionBoundary : public Region {
  public:
   RegionBoundary(const std::string& name,
                  const int id,
-                 const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
+                 const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
 
   // Is the the specified point inside this region
   bool inside(const Point& p) const;
-  
+
  protected:
-  const std::string entity_str_; // what kind of entities make up this set
+  const std::string entity_str_;    // what kind of entities make up this set
   const std::vector<int> entities_; // list of those included
 };
 
-}  // namespace AmanziGeometry
-}  // namespace Amanzi
+} // namespace AmanziGeometry
+} // namespace Amanzi
 
 #endif

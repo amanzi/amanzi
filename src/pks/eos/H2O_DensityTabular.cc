@@ -17,11 +17,10 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-H2O_DensityTabular::H2O_DensityTabular(Teuchos::ParameterList& eos_plist)
-  : EOS_Density(eos_plist)
+H2O_DensityTabular::H2O_DensityTabular(Teuchos::ParameterList& eos_plist) : EOS_Density(eos_plist)
 {
   table_ = Teuchos::rcp(new LookupTable(eos_plist_));
 }
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi

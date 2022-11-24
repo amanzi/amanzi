@@ -51,10 +51,10 @@ class Flow_PK : public PK_PhysicalBDF {
  public:
   Flow_PK();
   Flow_PK(Teuchos::ParameterList& pk_tree,
-                 const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                 const Teuchos::RCP<State>& S,
-                 const Teuchos::RCP<TreeVector>& soln);
-  virtual ~Flow_PK() {};
+          const Teuchos::RCP<Teuchos::ParameterList>& glist,
+          const Teuchos::RCP<State>& S,
+          const Teuchos::RCP<TreeVector>& soln);
+  virtual ~Flow_PK(){};
 
   // members required by PK interface
   virtual void Setup() override;
@@ -95,7 +95,7 @@ class Flow_PK : public PK_PhysicalBDF {
   void VV_PrintSourceExtrema() const;
   void VV_FractureConservationLaw() const;
 
-  // -- extensions 
+  // -- extensions
   void VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2);
   virtual double BoundaryFaceValue(int f, const CompositeVector& u);
 
@@ -108,7 +108,9 @@ class Flow_PK : public PK_PhysicalBDF {
 
  protected:
   void InitializeBCsSources_(Teuchos::ParameterList& list);
-  void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
+  void InitializeFieldFromField_(const std::string& field0,
+                                 const std::string& field1,
+                                 bool call_evaluator);
 
  public:
   int ncells_owned, ncells_wghost;
@@ -116,7 +118,7 @@ class Flow_PK : public PK_PhysicalBDF {
 
   double dt_, dt_next_;
 
-  int MyPID;  // parallel information: will be moved to private
+  int MyPID; // parallel information: will be moved to private
   int missed_bc_faces_, dirichlet_bc_faces_;
   int ti_phase_counter;
 
@@ -132,33 +134,34 @@ class Flow_PK : public PK_PhysicalBDF {
   bool peaceman_model_, use_bulk_modulus_;
 
   // Stationary physical quantatities
-  std::vector<WhetStone::Tensor> K; 
+  std::vector<WhetStone::Tensor> K;
   AmanziGeometry::Point gravity_;
   double g_, rho_, molar_rho_, atm_pressure_;
-  double flux_units_;  // scaling for flux units from kg to moles.
+  double flux_units_; // scaling for flux units from kg to moles.
 
   Teuchos::RCP<Epetra_Vector> Kxy;
   std::string coordinate_system_;
 
   // boundary conditions
-  std::vector<Teuchos::RCP<FlowBoundaryFunction> > bcs_; 
+  std::vector<Teuchos::RCP<FlowBoundaryFunction>> bcs_;
   int nseepage_prev;
 
   Teuchos::RCP<Operators::BCs> op_bc_;
 
   // source terms and liquid balance
-  std::vector<Teuchos::RCP<FlowSourceFunction> > srcs;
+  std::vector<Teuchos::RCP<FlowSourceFunction>> srcs;
   mutable double mass_bc, seepage_mass_, mass_initial;
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
-  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > vol_flowrate_eval_;
-  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > pressure_eval_, pressure_msp_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> vol_flowrate_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_eval_,
+    pressure_msp_eval_;
 
   // DFN model
-  bool flow_on_manifold_;  // true for the DFN model
+  bool flow_on_manifold_; // true for the DFN model
   bool coupled_to_matrix_, coupled_to_fracture_;
 
-  // names of state fields 
+  // names of state fields
   Key pressure_key_;
   Key vol_flowrate_key_, specific_storage_key_, specific_yield_key_;
   Key saturation_liquid_key_, prev_saturation_liquid_key_;
@@ -175,7 +178,7 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Teuchos::ParameterList> fp_list_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 #endif

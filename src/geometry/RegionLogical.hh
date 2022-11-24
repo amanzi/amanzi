@@ -51,13 +51,12 @@ namespace AmanziGeometry {
 
 class RegionLogical : public Region {
  public:
-
   // constructor
   RegionLogical(const std::string& name,
                 const int id,
                 const std::string& operation_str,
                 const std::vector<std::string>& component_regions,
-                const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
+                const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
 
   // Label in the file
   BoolOpType get_operation() const { return operation_; }
@@ -67,9 +66,9 @@ class RegionLogical : public Region {
 
   const std::vector<std::string>& get_component_regions() const { return component_regions_; }
 
-protected:
-  BoolOpType operation_;  // what logical operation should be performed
-  std::vector<std::string> component_regions_;  // names of regions in operation
+ protected:
+  BoolOpType operation_;                       // what logical operation should be performed
+  std::vector<std::string> component_regions_; // names of regions in operation
 };
 
 } // namespace AmanziGeometry

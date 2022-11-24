@@ -24,11 +24,12 @@ namespace Flow {
 * does not depend on time. The boundary conditions are calculated
 * only once, during the initialization step.                                                
 ****************************************************************** */
-void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
+void
+Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
 {
   // add diffusion operator
   op_->RestoreCheckPoint();
- 
+
   if (wells_on && S_->HasRecord("well_index")) {
     const auto& wi = S_->Get<CompositeVector>("well_index");
     op_acc_->AddAccumulationTerm(wi, "cell");
@@ -45,9 +46,8 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
     int num_itrs = op_->num_itrs();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "pressure solver (" << solver_name_
-               << "): ||r||_H=" << op_->residual() << " itr=" << num_itrs
-               << " code=" << op_->returned_code() << std::endl;
+    *vo_->os() << "pressure solver (" << solver_name_ << "): ||r||_H=" << op_->residual()
+               << " itr=" << num_itrs << " code=" << op_->returned_code() << std::endl;
 
     // verify true resdual if the convergence was too slow
     if (num_itrs > 10) {
@@ -68,7 +68,5 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
   }
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
-
-
+} // namespace Flow
+} // namespace Amanzi

@@ -31,7 +31,8 @@
 #include "Richards_PK.hh"
 #include "Richards_SteadyState.hh"
 
-void Flow2D_SeepageTest(std::string filename, bool deform)
+void
+Flow2D_SeepageTest(std::string filename, bool deform)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -50,9 +51,9 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
-  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 100.0, 50.0, 50, 25); 
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 100.0, 50.0, 50, 25);
 
   // create an optional slop
   if (deform) {
@@ -64,7 +65,7 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
     for (int v = 0; v < nnodes; ++v) {
       mesh->node_get_coordinates(v, &xv);
       nodeids.push_back(v);
-      xv[1] *= (xv[0] * 0.4 + (100.0 - xv[0])) / 100.0; 
+      xv[1] *= (xv[0] * 0.4 + (100.0 - xv[0])) / 100.0;
       new_positions.push_back(xv);
     }
     mesh->deform(nodeids, new_positions, false, &final_positions);
@@ -76,7 +77,7 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
   Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
- 
+
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
 
@@ -86,7 +87,7 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
   S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
-  std::string passwd(""); 
+  std::string passwd("");
   double rho = S->Get<double>("const_fluid_density");
   double g = (S->Get<AmanziGeometry::Point>("gravity"))[1];
 
@@ -100,7 +101,7 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
   }
 
   auto& lambda = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("face");
-  RPK->DeriveFaceValuesFromCellValues(p, lambda); 
+  RPK->DeriveFaceValuesFromCellValues(p, lambda);
 
   // create Richards process kernel
   RPK->Initialize();
@@ -114,10 +115,10 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
   ti_specs.max_itrs = 3000;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times for flow
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT); // dummy times for flow
   printf("seepage face total = %12.4f\n", RPK->seepage_mass());
 
-  // output 
+  // output
   const auto& ws = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
 
   Teuchos::ParameterList iolist;
@@ -141,7 +142,8 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
   delete RPK;
 }
 
-TEST(FLOW_2D_RICHARDS_SEEPAGE) {
+TEST(FLOW_2D_RICHARDS_SEEPAGE)
+{
   // Flow2D_SeepageTest("test/flow_richards_seepage_vertical.xml", false);
   Flow2D_SeepageTest("test/flow_richards_seepage.xml", true);
 }

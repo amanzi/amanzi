@@ -3,69 +3,53 @@
 
 #include "../errors.hh"
 
-SUITE (Messages)
+SUITE(Messages)
 {
+  TEST(Add_data)
+  {
+    Errors::Message m("a");
+    m.add_data("b");
+    m << "c";
 
-    TEST (Add_data)
-    {
-        Errors::Message m ("a");
-        m.add_data ("b");
-        m << "c";
+    CHECK_EQUAL("abc", m.what());
+  }
 
-        CHECK_EQUAL ("abc", m.what ());
+  TEST(Copy)
+  {
+    const char* test_string = "abcdefghijklmnopqrstuxwxyz";
+
+    Errors::Message m(test_string);
+    Errors::Message m2(m);
+
+    CHECK_EQUAL(test_string, m2.what());
+  }
+
+
+  TEST(Throw)
+  {
+    try {
+      Errors::Message message("Something went wrong: ");
+      message << "FOO!=BAR";
+      Exceptions::amanzi_throw(message);
+    } catch (const Errors::Message& m) {
+      CHECK_EQUAL("Something went wrong: FOO!=BAR", m.what());
     }
+  }
 
-    TEST (Copy)
-    {
-        const char* test_string = "abcdefghijklmnopqrstuxwxyz";
-        
-        Errors::Message m (test_string);
-        Errors::Message m2 (m);
-
-        CHECK_EQUAL (test_string, m2.what ());
+  TEST(Multilevel)
+  {
+    try {
+      try {
+        Errors::Message message("FAILED.");
+        CHECK_EQUAL("FAILED.", message.what());
+        Exceptions::amanzi_throw(message);
+      } catch (Errors::Message& m) {
+        m << "CAUGHT.";
+        CHECK_EQUAL("FAILED.CAUGHT.", m.what());
+        throw m;
+      }
+    } catch (Exceptions::Amanzi_exception& e) {
+      CHECK_EQUAL("FAILED.CAUGHT.", e.what());
     }
-
-
-    TEST (Throw)
-    {
-        try
-        {
-            Errors::Message message("Something went wrong: ");
-            message << "FOO!=BAR";
-            Exceptions::amanzi_throw (message);
-        }
-        catch (const Errors::Message& m)
-        {
-            CHECK_EQUAL ("Something went wrong: FOO!=BAR", m.what ());
-        }
-
-    }
-
-    TEST (Multilevel)
-    {
-
-        try
-        {
-
-            try
-            {
-                Errors::Message message ("FAILED.");
-                CHECK_EQUAL ("FAILED.", message.what ());
-                Exceptions::amanzi_throw (message);
-            }
-            catch (Errors::Message& m)
-            {
-                m << "CAUGHT.";
-                CHECK_EQUAL ("FAILED.CAUGHT.", m.what ());
-                throw m;
-            }
-        }
-        catch (Exceptions::Amanzi_exception &e)
-        {
-            CHECK_EQUAL ("FAILED.CAUGHT.", e.what ());
-        }
-
-    }
-
-
+  }
 }

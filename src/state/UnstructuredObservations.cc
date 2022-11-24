@@ -25,8 +25,7 @@
 
 namespace Amanzi {
 
-UnstructuredObservations::UnstructuredObservations(
-      Teuchos::ParameterList& plist)
+UnstructuredObservations::UnstructuredObservations(Teuchos::ParameterList& plist)
   : IOEvent(plist),
     write_(false),
     num_total_(0),
@@ -76,12 +75,12 @@ UnstructuredObservations::UnstructuredObservations(
   }
 }
 
-void UnstructuredObservations::Setup(const Teuchos::Ptr<State>& S)
+void
+UnstructuredObservations::Setup(const Teuchos::Ptr<State>& S)
 {
   // set the communicator
   comm_ = Teuchos::null;
-  if (S->HasMesh(writing_domain_))
-    comm_ = S->GetMesh(writing_domain_)->get_comm();
+  if (S->HasMesh(writing_domain_)) comm_ = S->GetMesh(writing_domain_)->get_comm();
 
   // require fields, evaluators
   for (auto& obs : observables_) {
@@ -91,11 +90,11 @@ void UnstructuredObservations::Setup(const Teuchos::Ptr<State>& S)
 
   // what rank writes the file?
   write_ = false;
-  if (comm_ != Teuchos::null && comm_->MyPID() == 0)
-    write_ = true;
+  if (comm_ != Teuchos::null && comm_->MyPID() == 0) write_ = true;
 }
 
-void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
+void
+UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
 {
   if (comm_ == Teuchos::null) return;
 
@@ -113,7 +112,8 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
         // at last we can finally catch a bad observation name here -- no one
         // has this variable, it does not exist!
         Errors::Message msg;
-        msg << "Invalid observation requested for variable \"" << obs->get_variable() << "\"; no such field exists.";
+        msg << "Invalid observation requested for variable \"" << obs->get_variable()
+            << "\"; no such field exists.";
         Exceptions::amanzi_throw(msg);
       }
     }
@@ -131,9 +131,9 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
       for (auto& obs : observables_) {
         obs->Update(S, observation, loc_start);
         if (obs->is_time_integrated()) {
-          for (int i=0; i!=obs->get_num_vectors(); ++i) {
-            observation[loc_start + i] += integrated_observation_[loc_start+i];
-            integrated_observation_[loc_start+i] = 0.;
+          for (int i = 0; i != obs->get_num_vectors(); ++i) {
+            observation[loc_start + i] += integrated_observation_[loc_start + i];
+            integrated_observation_[loc_start + i] = 0.;
           }
         }
         loc_start += obs->get_num_vectors();
@@ -149,8 +149,8 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
       for (auto& obs : observables_) {
         if (obs->is_time_integrated()) {
           obs->Update(S, observation, loc_start);
-          for (int i=0; i!=obs->get_num_vectors(); ++i) {
-            integrated_observation_[loc_start+i] += observation[loc_start + i];
+          for (int i = 0; i != obs->get_num_vectors(); ++i) {
+            integrated_observation_[loc_start + i] += observation[loc_start + i];
           }
         }
         loc_start += obs->get_num_vectors();
@@ -178,17 +178,20 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
 // Note also that this (along with Write_) may become a separate class for
 // different file types (e.g. text vs netcdf)
 //
-void UnstructuredObservations::InitFile_(const Teuchos::Ptr<const State>& S)
+void
+UnstructuredObservations::InitFile_(const Teuchos::Ptr<const State>& S)
 {
   if (boost::filesystem::portable_file_name(filename_)) {
     fid_ = std::make_unique<std::ofstream>(filename_.c_str());
 
     *fid_ << "# Observation File: " << filename_ << " column names:" << std::endl
-          << "# -----------------------------------------------------------------------------" << std::endl
+          << "# -----------------------------------------------------------------------------"
+          << std::endl
           << "# Observation Name: time [" << time_unit_ << "]" << std::endl;
 
     for (const auto& obs : observables_) {
-      *fid_ << "# -----------------------------------------------------------------------------" << std::endl
+      *fid_ << "# -----------------------------------------------------------------------------"
+            << std::endl
             << "# Observation Name: " << obs->get_name() << std::endl
             << "# Region: " << obs->get_region() << std::endl
             << "# Functional: " << obs->get_functional() << std::endl
@@ -197,22 +200,24 @@ void UnstructuredObservations::InitFile_(const Teuchos::Ptr<const State>& S)
       if (obs->get_degree_of_freedom() >= 0)
         *fid_ << "# DoF: " << obs->get_degree_of_freedom() << std::endl;
     }
-    *fid_ << "# =============================================================================" << std::endl;
+    *fid_ << "# ============================================================================="
+          << std::endl;
     *fid_ << "\"time [" << time_unit_ << "]\"";
     for (const auto& obs : observables_) {
       if (obs->get_num_vectors() > 1) {
         auto subfield_names = S->GetRecordSet(obs->get_variable()).subfieldnames();
         std::vector<std::string> default_subfieldnames;
         if (!subfield_names) {
-          for (int i=0; i!=obs->get_num_vectors(); ++i)
-            default_subfieldnames.emplace_back(std::string("dof ")+std::to_string(i));
+          for (int i = 0; i != obs->get_num_vectors(); ++i)
+            default_subfieldnames.emplace_back(std::string("dof ") + std::to_string(i));
           subfield_names = &default_subfieldnames;
         }
 
         if (obs->get_degree_of_freedom() >= 0) {
-          *fid_ << delimiter_ << "\"" << obs->get_name() << " " << (*subfield_names)[obs->get_degree_of_freedom()] << "\"";
+          *fid_ << delimiter_ << "\"" << obs->get_name() << " "
+                << (*subfield_names)[obs->get_degree_of_freedom()] << "\"";
         } else {
-          for (int i=0; i!=obs->get_num_vectors(); ++i) {
+          for (int i = 0; i != obs->get_num_vectors(); ++i) {
             *fid_ << delimiter_ << "\"" << obs->get_name() << " " << (*subfield_names)[i] << "\"";
           }
         }
@@ -220,8 +225,7 @@ void UnstructuredObservations::InitFile_(const Teuchos::Ptr<const State>& S)
         *fid_ << delimiter_ << "\"" << obs->get_name() << "\"";
       }
     }
-    *fid_ << std::endl
-          << std::scientific;
+    *fid_ << std::endl << std::scientific;
     fid_->precision(12);
   } else {
     Errors::Message msg;
@@ -231,7 +235,8 @@ void UnstructuredObservations::InitFile_(const Teuchos::Ptr<const State>& S)
 }
 
 
-void UnstructuredObservations::Write_(double time, const std::vector<double>& obs)
+void
+UnstructuredObservations::Write_(double time, const std::vector<double>& obs)
 {
   if (fid_.get()) {
     *fid_ << time;
@@ -246,8 +251,10 @@ void UnstructuredObservations::Write_(double time, const std::vector<double>& ob
 // It's not clear to me that this is necessary -- it seems that ofstream's
 // destructor SHOULD flush (as in fclose), but maybe it doesn't?  Better safe
 // than sorry...
-void UnstructuredObservations::Flush() {
+void
+UnstructuredObservations::Flush()
+{
   if (fid_.get()) fid_->flush();
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

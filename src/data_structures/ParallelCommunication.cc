@@ -21,7 +21,8 @@ namespace Amanzi {
 * Copy cell-based data from master to ghost positions.
 * WARNING: vector vghost must contain ghost cells.
 ******************************************************************* */
-void ParallelCommunication::CopyMasterCell2GhostCell(Epetra_IntVector& vghost)
+void
+ParallelCommunication::CopyMasterCell2GhostCell(Epetra_IntVector& vghost)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
@@ -45,7 +46,8 @@ void ParallelCommunication::CopyMasterCell2GhostCell(Epetra_IntVector& vghost)
 * Copy face-based data from master to ghost positions.              
 * WARNING: vector vghost must contain ghost cells.              
 ******************************************************************* */
-void ParallelCommunication::CopyMasterCell2GhostCell(const Epetra_IntVector& v, Epetra_IntVector& vghost)
+void
+ParallelCommunication::CopyMasterCell2GhostCell(const Epetra_IntVector& v, Epetra_IntVector& vghost)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
@@ -67,7 +69,8 @@ void ParallelCommunication::CopyMasterCell2GhostCell(const Epetra_IntVector& v, 
 * Copy face-based data from master to ghost positions.              
 * WARNING: vector vghost must contain ghost cells.              
 ******************************************************************* */
-void ParallelCommunication::CopyMasterFace2GhostFace(Epetra_IntVector& vghost)
+void
+ParallelCommunication::CopyMasterFace2GhostFace(Epetra_IntVector& vghost)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
@@ -91,7 +94,8 @@ void ParallelCommunication::CopyMasterFace2GhostFace(Epetra_IntVector& vghost)
 * Copy face-based data from master to ghost positions.              
 * WARNING: vector vghost must contain ghost cells.              
 ******************************************************************* */
-void ParallelCommunication::CopyMasterFace2GhostFace(const Epetra_IntVector& v, Epetra_IntVector& vghost)
+void
+ParallelCommunication::CopyMasterFace2GhostFace(const Epetra_IntVector& v, Epetra_IntVector& vghost)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
@@ -114,7 +118,9 @@ void ParallelCommunication::CopyMasterFace2GhostFace(const Epetra_IntVector& v, 
 * performs the operation 'mode' there. 
 * WARNING: Vector vghost must contain ghost faces.              
 ******************************************************************* */
-void ParallelCommunication::CombineGhostFace2MasterFace(Epetra_IntVector& vghost, Epetra_CombineMode mode)
+void
+ParallelCommunication::CombineGhostFace2MasterFace(Epetra_IntVector& vghost,
+                                                   Epetra_CombineMode mode)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
@@ -139,7 +145,9 @@ void ParallelCommunication::CombineGhostFace2MasterFace(Epetra_IntVector& vghost
 * performs the operation 'mode' there. 
 * WARNING: Vector vghost must contain ghost cells.              
 ******************************************************************* */
-void ParallelCommunication::CombineGhostCell2MasterCell(Epetra_IntVector& vghost, Epetra_CombineMode mode)
+void
+ParallelCommunication::CombineGhostCell2MasterCell(Epetra_IntVector& vghost,
+                                                   Epetra_CombineMode mode)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
@@ -158,4 +166,4 @@ void ParallelCommunication::CombineGhostCell2MasterCell(Epetra_IntVector& vghost
 #endif
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

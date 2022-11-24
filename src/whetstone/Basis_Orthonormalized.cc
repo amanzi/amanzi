@@ -31,9 +31,11 @@ namespace WhetStone {
 /* ******************************************************************
 * Prepare scaling data for the orthonormalized basis.
 ****************************************************************** */
-void Basis_Orthonormalized::Init(
-    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
-    int c, int order, Polynomial& integrals)
+void
+Basis_Orthonormalized::Init(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
+                            int c,
+                            int order,
+                            Polynomial& integrals)
 {
   int d = mesh->space_dimension();
   monomial_scales_.Reshape(d, order);
@@ -41,8 +43,8 @@ void Basis_Orthonormalized::Init(
 
   NumericalIntegration numi(mesh);
   numi.UpdateMonomialIntegralsCell(c, 2 * order, integrals);
-  
-  double volume = integrals(0); 
+
+  double volume = integrals(0);
 
   monomial_scales_(0) = 1.0;
   monomial_ortho_(0) = 0.0;
@@ -50,7 +52,7 @@ void Basis_Orthonormalized::Init(
   for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int k = it.MonomialSetPosition();
     const int* multi_index = it.multi_index();
-    int index[d]; 
+    int index[d];
 
     int m(0);
     for (int i = 0; i < d; ++i) {
@@ -73,7 +75,8 @@ void Basis_Orthonormalized::Init(
 /* ******************************************************************
 * Transformation from natural basis to my basis: A_new = R^T A_old R.
 ****************************************************************** */
-void Basis_Orthonormalized::BilinearFormNaturalToMy(DenseMatrix& A) const
+void
+Basis_Orthonormalized::BilinearFormNaturalToMy(DenseMatrix& A) const
 {
   AMANZI_ASSERT(A.NumRows() == monomial_scales_.size());
 
@@ -90,16 +93,12 @@ void Basis_Orthonormalized::BilinearFormNaturalToMy(DenseMatrix& A) const
 
   // calculate A * R
   for (int k = 1; k < nrows; ++k) {
-    for (int i = 0; i < nrows; ++i) {
-      A(i, k) = A(i, k) * a[k] + A(i, 0) * b[k];
-    }
+    for (int i = 0; i < nrows; ++i) { A(i, k) = A(i, k) * a[k] + A(i, 0) * b[k]; }
   }
 
   // calculate R^T * A * R
   for (int k = 1; k < nrows; ++k) {
-    for (int i = 0; i < nrows; ++i) {
-      A(k, i) = A(k, i) * a[k] + A(0, i) * b[k];
-    }
+    for (int i = 0; i < nrows; ++i) { A(k, i) = A(k, i) * a[k] + A(0, i) * b[k]; }
   }
 }
 
@@ -107,9 +106,10 @@ void Basis_Orthonormalized::BilinearFormNaturalToMy(DenseMatrix& A) const
 /* ******************************************************************
 * Transformation of interface matrix from natural to my bases.
 ****************************************************************** */
-void Basis_Orthonormalized::BilinearFormNaturalToMy(
-    std::shared_ptr<Basis> bl,
-    std::shared_ptr<Basis> br, DenseMatrix& A) const
+void
+Basis_Orthonormalized::BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
+                                               std::shared_ptr<Basis> br,
+                                               DenseMatrix& A) const
 {
   int nrows = A.NumRows();
   int m(nrows / 2);
@@ -162,7 +162,8 @@ void Basis_Orthonormalized::BilinearFormNaturalToMy(
 /* ******************************************************************
 * Transformation from natural basis to my basis: f_new = R^T f_old.
 ****************************************************************** */
-void Basis_Orthonormalized::LinearFormNaturalToMy(DenseVector& f) const
+void
+Basis_Orthonormalized::LinearFormNaturalToMy(DenseVector& f) const
 {
   int nrows = f.NumRows();
   std::vector<double> a(nrows), b(nrows);
@@ -180,19 +181,18 @@ void Basis_Orthonormalized::LinearFormNaturalToMy(DenseVector& f) const
   }
 
   // calculate R^T * f
-  for (int k = 1; k < nrows; ++k) {
-    f(k) = f(k) * a[k] + f(0) * b[k];
-  }
+  for (int k = 1; k < nrows; ++k) { f(k) = f(k) * a[k] + f(0) * b[k]; }
 }
 
 
 /* ******************************************************************
 * Transformation from my to natural bases: v_old = R * v_new.
 ****************************************************************** */
-void Basis_Orthonormalized::ChangeBasisMyToNatural(DenseVector& v) const
+void
+Basis_Orthonormalized::ChangeBasisMyToNatural(DenseVector& v) const
 {
   AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
- 
+
   for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
@@ -209,10 +209,11 @@ void Basis_Orthonormalized::ChangeBasisMyToNatural(DenseVector& v) const
 /* ******************************************************************
 * Transformation from natural to my bases: v_new = inv(R) * v_old.
 ****************************************************************** */
-void Basis_Orthonormalized::ChangeBasisNaturalToMy(DenseVector& v) const
+void
+Basis_Orthonormalized::ChangeBasisNaturalToMy(DenseVector& v) const
 {
   AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
- 
+
   for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
@@ -230,9 +231,11 @@ void Basis_Orthonormalized::ChangeBasisNaturalToMy(DenseVector& v) const
 * Recover polynomial in the natural basis from vector coefs of 
 * coefficients in the orthonormalized basis. 
 ****************************************************************** */
-Polynomial Basis_Orthonormalized::CalculatePolynomial(
-    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
-    int c, int order, DenseVector& coefs) const
+Polynomial
+Basis_Orthonormalized::CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
+                                           int c,
+                                           int order,
+                                           DenseVector& coefs) const
 {
   Polynomial poly(monomial_scales_);
   poly.set_origin(mesh->cell_centroid(c));
@@ -242,14 +245,12 @@ Polynomial Basis_Orthonormalized::CalculatePolynomial(
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
 
-    poly(m, k) *= coefs(n++); 
+    poly(m, k) *= coefs(n++);
     poly(0, 0) -= poly(m, k) * monomial_ortho_(m, k);
   }
 
   return poly;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
-
+} // namespace WhetStone
+} // namespace Amanzi

@@ -24,7 +24,7 @@ class SorptionIsotherm {
   enum SorptionIsothermType { FREUNDLICH, LANGMUIR, LINEAR };
 
   SorptionIsotherm(const std::string& name, const SorptionIsothermType type);
-  virtual ~SorptionIsotherm() {};
+  virtual ~SorptionIsotherm(){};
 
   virtual double Evaluate(const Species& primary_species) = 0;
   virtual double EvaluateDerivative(const Species& primary_species) = 0;
@@ -42,6 +42,6 @@ class SorptionIsotherm {
   SorptionIsothermType isotherm_type_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

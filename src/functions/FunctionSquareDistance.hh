@@ -30,7 +30,7 @@ Example:
   </ParameterList>
 
 */
-  
+
 #ifndef AMANZI_SQUAREDISTANCE_FUNCTION_HH_
 #define AMANZI_SQUAREDISTANCE_FUNCTION_HH_
 
@@ -44,7 +44,8 @@ class FunctionSquareDistance : public Function {
  public:
   FunctionSquareDistance(const std::vector<double>& x0, const std::vector<double>& metric);
   ~FunctionSquareDistance() {}
-  std::unique_ptr<Function> Clone() const {
+  std::unique_ptr<Function> Clone() const
+  {
     return std::make_unique<FunctionSquareDistance>(*this);
   }
   double operator()(const std::vector<double>& x) const;

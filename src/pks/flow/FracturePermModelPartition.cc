@@ -25,11 +25,11 @@ namespace Flow {
 /* ******************************************************************
 * Non-member factory.
 ****************************************************************** */
-Teuchos::RCP<FracturePermModelPartition> CreateFracturePermModelPartition(
-    Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    Teuchos::RCP<Teuchos::ParameterList> plist)
+Teuchos::RCP<FracturePermModelPartition>
+CreateFracturePermModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                 Teuchos::RCP<Teuchos::ParameterList> plist)
 {
-  std::vector<Teuchos::RCP<FracturePermModel> > fpm_list;
+  std::vector<Teuchos::RCP<FracturePermModel>> fpm_list;
   std::vector<std::string> region_list;
 
   for (auto lcv = plist->begin(); lcv != plist->end(); ++lcv) {
@@ -60,6 +60,5 @@ Teuchos::RCP<FracturePermModelPartition> CreateFracturePermModelPartition(
   return Teuchos::rcp(new FracturePermModelPartition(partition, fpm_list));
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
-
+} // namespace Flow
+} // namespace Amanzi

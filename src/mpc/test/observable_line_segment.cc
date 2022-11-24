@@ -20,8 +20,8 @@
 #include "ObservableLineSegmentAqueous.hh"
 
 
-TEST(OBSERVABLE_LINE_SEGMENT) {
-
+TEST(OBSERVABLE_LINE_SEGMENT)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -39,18 +39,21 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   // create an SIMPLE mesh framework
   Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
 
-  Teuchos::ParameterList well_list = regions_list.get<Teuchos::ParameterList>("Well3012").get<Teuchos::ParameterList>("region: line segment");
+  Teuchos::ParameterList well_list = regions_list.get<Teuchos::ParameterList>("Well3012")
+                                       .get<Teuchos::ParameterList>("region: line segment");
 
-  Teuchos::Array<double> xyz0 = well_list.get<Teuchos::Array<double> >("end coordinate"); 
-  Teuchos::Array<double> xyz1 = well_list.get<Teuchos::Array<double> >("opposite end coordinate"); 
+  Teuchos::Array<double> xyz0 = well_list.get<Teuchos::Array<double>>("end coordinate");
+  Teuchos::Array<double> xyz1 = well_list.get<Teuchos::Array<double>>("opposite end coordinate");
 
-  Teuchos::ParameterList well_list_2 = regions_list.get<Teuchos::ParameterList>("Well3013").get<Teuchos::ParameterList>("region: line segment");
+  Teuchos::ParameterList well_list_2 = regions_list.get<Teuchos::ParameterList>("Well3013")
+                                         .get<Teuchos::ParameterList>("region: line segment");
 
-  Teuchos::Array<double> xyz0_2 = well_list_2.get<Teuchos::Array<double> >("end coordinate"); 
-  Teuchos::Array<double> xyz1_2 = well_list_2.get<Teuchos::Array<double> >("opposite end coordinate"); 
+  Teuchos::Array<double> xyz0_2 = well_list_2.get<Teuchos::Array<double>>("end coordinate");
+  Teuchos::Array<double> xyz1_2 =
+    well_list_2.get<Teuchos::Array<double>>("opposite end coordinate");
 
 
   Preference pref;
@@ -58,7 +61,7 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   pref.push_back(Framework::MSTK);
   pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 5, 5, 5);
 
@@ -70,28 +73,31 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
   S->Require<CompositeVector, CompositeVectorSpace>("test_field", Tags::DEFAULT, "test_field")
-    .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    .SetMesh(mesh)
+    ->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
 
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
-  auto& test = *S->GetW<CompositeVector>("test_field", Tags::DEFAULT, "test_field").ViewComponent("cell");
+  auto& test =
+    *S->GetW<CompositeVector>("test_field", Tags::DEFAULT, "test_field").ViewComponent("cell");
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  double A=3., B=1., C=5., D=0.2;
+  double A = 3., B = 1., C = 5., D = 0.2;
 
-  for (int c=0; c<ncells_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-    test[0][c] = A*xc[0] + B*xc[1] + C*xc[2] + D;
+    test[0][c] = A * xc[0] + B * xc[1] + C * xc[2] + D;
   }
 
   Teuchos::ParameterList obs_plist, units_plist;
 
-  std::string var="test_field";
-  std::string func="observation data: point";
-  std::string region="Well3012";
+  std::string var = "test_field";
+  std::string func = "observation data: point";
+  std::string region = "Well3012";
   obs_plist.set<std::string>("interpolation", "linear");
   obs_plist.set<std::string>("weighting", "none");
   obs_plist.set<std::string>("region", region);
@@ -99,46 +105,47 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   obs_plist.set<std::string>("functional", func);
   obs_plist.set<bool>("limiter", false);
 
-  /******************************* Region  Well3012 *************/   
-  Teuchos::RCP<ObservableLineSegment> observe = 
+  /******************************* Region  Well3012 *************/
+  Teuchos::RCP<ObservableLineSegment> observe =
     Teuchos::rcp(new ObservableLineSegmentAqueous(var, region, func, obs_plist, units_plist, mesh));
 
   double value, volume;
-  std::string unit; 
+  std::string unit;
   observe->ComputeRegionSize();
   observe->ComputeObservation(*S, &value, &volume, unit, 0.0);
 
   Teuchos::Array<double> xyzc(3);
   double len = 0.;
 
-  for (int i=0;i<3;i++) {
-    xyzc[i] = 0.5*(xyz0[i] + xyz1[i]);
-    len += (xyz0[i] - xyz1[i])*(xyz0[i] - xyz1[i]);
+  for (int i = 0; i < 3; i++) {
+    xyzc[i] = 0.5 * (xyz0[i] + xyz1[i]);
+    len += (xyz0[i] - xyz1[i]) * (xyz0[i] - xyz1[i]);
   }
   len = sqrt(len);
-  double exact_val = A*xyzc[0] + B*xyzc[1] + C*xyzc[2] + D;
+  double exact_val = A * xyzc[0] + B * xyzc[1] + C * xyzc[2] + D;
 
-  /******************************* Region  Well3013 *************/   
+  /******************************* Region  Well3013 *************/
   /*** One cell region ****/
 
-  region="Well3013";
+  region = "Well3013";
   obs_plist.set<std::string>("region", region);
 
-  auto observe2 = Teuchos::rcp(new ObservableLineSegmentAqueous(var, region, func, obs_plist, units_plist, mesh));
+  auto observe2 =
+    Teuchos::rcp(new ObservableLineSegmentAqueous(var, region, func, obs_plist, units_plist, mesh));
 
   double value2, volume2;
   std::string unit2;
   observe2->ComputeRegionSize();
   observe2->ComputeObservation(*S, &value2, &volume2, unit2, 0.0);
   double len2 = 0.;
-  for (int i=0;i<3;i++) {
-    xyzc[i] = 0.5*(xyz0_2[i] + xyz1_2[i]);
-    len2 += (xyz0_2[i] - xyz1_2[i])*(xyz0_2[i] - xyz1_2[i]);
+  for (int i = 0; i < 3; i++) {
+    xyzc[i] = 0.5 * (xyz0_2[i] + xyz1_2[i]);
+    len2 += (xyz0_2[i] - xyz1_2[i]) * (xyz0_2[i] - xyz1_2[i]);
     //std::cout<<xyzc[i]<<" "<<xyz0_2[i]<<" "<<xyz1_2[i]<<"\n";
   }
   len2 = sqrt(len2);
-  double exact_val2 = A*xyzc[0] + B*xyzc[1] + C*xyzc[2] + D;
+  double exact_val2 = A * xyzc[0] + B * xyzc[1] + C * xyzc[2] + D;
 
-  CHECK_CLOSE(exact_val*len, value, 1e-10);
-  CHECK_CLOSE(exact_val2*len2, value2, 1e-10);
+  CHECK_CLOSE(exact_val * len, value, 1e-10);
+  CHECK_CLOSE(exact_val2 * len2, value2, 1e-10);
 }

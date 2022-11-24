@@ -51,13 +51,14 @@ namespace po = boost::program_options;
   * Return string that defines the filename
   */
 std::string
-grab_filename(const bf::path& some_path) {
+grab_filename(const bf::path& some_path)
+{
 #if BOOST_FILESYSTEM_VERSION == 2
   return some_path.leaf();
 #elif BOOST_FILESYSTEM_VERSION == 3
   return some_path.filename().generic_string();
 #else
-#error Invalid Boost Filesystem library version
+#  error Invalid Boost Filesystem library version
 #endif
 }
 
@@ -73,9 +74,9 @@ grab_filename(const bf::path& some_path) {
  * @param filenameout HDF5/XDMF format file to produce
  */
 void
-dump_output(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& filenameout)
+dump_output(const int& me, Amanzi::AmanziMesh::Mesh& mesh, const std::string& filenameout)
 {
-  Amanzi::HDF5_MPI *viz_output = new Amanzi::HDF5_MPI(mesh.get_comm());
+  Amanzi::HDF5_MPI* viz_output = new Amanzi::HDF5_MPI(mesh.get_comm());
   viz_output->setTrackXdmf(true);
   viz_output->createMeshFile(Teuchos::rcp(&mesh), filenameout);
   viz_output->createDataFile(filenameout);
@@ -87,20 +88,20 @@ dump_output(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& fi
 
   viz_output->createTimestep(0.0, 0, "");
 
-  std::vector<double> mypart(nmycell, static_cast<double>(me+1.0));
+  std::vector<double> mypart(nmycell, static_cast<double>(me + 1.0));
   for (unsigned int i = 0; i < nmycell; i++) myidx[i] = i;
   part.ReplaceMyValues(nmycell, &mypart[0], &myidx[0]);
-  
+
   viz_output->writeCellDataReal(part, "Partition");
 
   std::fill(mypart.begin(), mypart.end(), -1);
 
   // Amanzi::AmanziMesh::Set_ID_List setids;
   // mesh.get_set_ids(Amanzi::AmanziMesh::CELL, &setids);
-  // for (Amanzi::AmanziMesh::Set_ID_List::const_iterator i = setids.begin(); 
+  // for (Amanzi::AmanziMesh::Set_ID_List::const_iterator i = setids.begin();
   //      i != setids.end(); ++i) {
   //   Amanzi::AmanziMesh::Entity_ID_List gids;
-  //   mesh.get_set_entities(*i, Amanzi::AmanziMesh::CELL, 
+  //   mesh.get_set_entities(*i, Amanzi::AmanziMesh::CELL,
   //                          Amanzi::AmanziMesh::Parallel_type::OWNED, &gids);
   //   for (Amanzi::AmanziMesh::Entity_ID_List::const_iterator g = gids.begin();
   //        g != gids.end(); ++g) {
@@ -124,18 +125,14 @@ dump_output(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& fi
 // do_the_audit
 // -------------------------------------------------------------
 int
-do_the_audit(const int& me, 
-             Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh, 
-             const std::string& name)
+do_the_audit(const int& me, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh, const std::string& name)
 {
   int lresult(0);
 
-  std::string ofile =
-    boost::str(boost::format("%s%04d.txt") % name % me);
+  std::string ofile = boost::str(boost::format("%s%04d.txt") % name % me);
 
   std::ofstream ofs(ofile.c_str());
-  if (me == 0)
-    std::cout << "Writing results to " << ofile.c_str() << ", etc." << std::endl;
+  if (me == 0) std::cout << "Writing results to " << ofile.c_str() << ", etc." << std::endl;
   Amanzi::MeshAudit audit(mesh, ofs);
   lresult = audit.Verify();
 
@@ -144,14 +141,13 @@ do_the_audit(const int& me,
   mesh->get_comm()->MaxAll(&lresult, &gresult, 1);
 
   return gresult;
-
 }
 
 // -------------------------------------------------------------
 //  Main Program
 // -------------------------------------------------------------
 int
-main(int argc, char **argv)
+main(int argc, char** argv)
 {
   bf::path progpath(argv[0]);
   std::string progname = grab_filename(progpath);
@@ -174,38 +170,59 @@ main(int argc, char **argv)
   po::options_description desc("Available options");
 
   try {
-
-    desc.add_options()
-      ("help", "produce this help message")
+    desc.add_options()("help", "produce this help message")
 
       ("noaudit", "do not audit the generated mesh")
 
-      ("simple", "use the Mesh_Simple framework instead of stk::mesh")
+        ("simple", "use the Mesh_Simple framework instead of stk::mesh")
 
-      ("xcells", po::value<unsigned int>()->default_value(xcells), "number of cells in the x-direction")
-      ("ycells", po::value<unsigned int>()->default_value(ycells), "number of cells in the y-direction")
-      ("zcells", po::value<unsigned int>()->default_value(zcells), "number of cells in the z-direction")
+          ("xcells",
+           po::value<unsigned int>()->default_value(xcells),
+           "number of cells in the x-direction")("ycells",
+                                                 po::value<unsigned int>()->default_value(ycells),
+                                                 "number of cells in the y-direction")("zcells",
+                                                                                       po::value<
+                                                                                         unsigned int>()
+                                                                                         ->default_value(
+                                                                                           zcells),
+                                                                                       "number of "
+                                                                                       "cells in "
+                                                                                       "the "
+                                                                                       "z-"
+                                                                                       "direction")
 
-      ("xdelta", po::value<double>()->default_value(xdelta), "cell size in the x-direction")
-      ("ydelta", po::value<double>()->default_value(ydelta), "cell size in the y-direction")
-      ("zdelta", po::value<double>()->default_value(zdelta), "cell size in the z-direction")
+            ("xdelta",
+             po::value<double>()->default_value(xdelta),
+             "cell size in the x-direction")("ydelta",
+                                             po::value<double>()->default_value(ydelta),
+                                             "cell size in the y-direction")("zdelta",
+                                                                             po::value<double>()
+                                                                               ->default_value(
+                                                                                 zdelta),
+                                                                             "cell size in the "
+                                                                             "z-direction")
 
-      ("xorigin", po::value<double>()->default_value(xorigin), "x origin")
-      ("yorigin", po::value<double>()->default_value(yorigin), "y origin")
-      ("zorigin", po::value<double>()->default_value(zorigin), "z origin")
+              ("xorigin",
+               po::value<double>()->default_value(xorigin),
+               "x origin")("yorigin",
+                           po::value<double>()->default_value(yorigin),
+                           "y origin")("zorigin",
+                                       po::value<double>()->default_value(zorigin),
+                                       "z origin")
 
-      ("xml-file", po::value<std::string>(), "XML file from which to parameters")
+                ("xml-file", po::value<std::string>(), "XML file from which to parameters")
 
-      ("output", po::value<std::string>()->default_value(outname), "output file base name")
-      ;
+                  ("output",
+                   po::value<std::string>()->default_value(outname),
+                   "output file base name");
 
     po::positional_options_description p;
     p.add("output", 1);
 
     po::variables_map vm;
     po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
-    po::notify(vm);    
-  
+    po::notify(vm);
+
     if (vm.count("help")) {
       std::cerr << "Usage: " << progname << " [options]" << std::endl;
       std::cerr << desc << std::endl;
@@ -222,11 +239,11 @@ main(int argc, char **argv)
       xcells = vm["xcells"].as<unsigned int>();
       ycells = vm["ycells"].as<unsigned int>();
       zcells = vm["zcells"].as<unsigned int>();
-      
+
       xdelta = vm["xdelta"].as<double>();
       ydelta = vm["ydelta"].as<double>();
       zdelta = vm["zdelta"].as<double>();
-      
+
       xorigin = vm["xorigin"].as<double>();
       yorigin = vm["yorigin"].as<double>();
       zorigin = vm["zorigin"].as<double>();
@@ -239,8 +256,7 @@ main(int argc, char **argv)
 
   } catch (po::error& e) {
     if (me == 0) {
-      std::cerr << boost::str(boost::format("%s: command line error: %s") %
-                              progname % e.what()) 
+      std::cerr << boost::str(boost::format("%s: command line error: %s") % progname % e.what())
                 << std::endl;
       std::cerr << boost::str(boost::format("Usage: %s [options]") % progname) << std::endl;
       std::cerr << desc << std::endl;
@@ -248,8 +264,7 @@ main(int argc, char **argv)
     return 3;
   } catch (boost::bad_any_cast& e) {
     if (me == 0) {
-      std::cerr << boost::str(boost::format("%s: command line error: %s") %
-                              progname % e.what()) 
+      std::cerr << boost::str(boost::format("%s: command line error: %s") % progname % e.what())
                 << std::endl;
       std::cerr << boost::str(boost::format("Usage: %s [options]") % progname) << std::endl;
       std::cerr << desc << std::endl;
@@ -276,37 +291,41 @@ main(int argc, char **argv)
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
   if (inname.empty()) {
-    mesh = meshfactory.create(xorigin, yorigin, zorigin,
-            xorigin+xdelta*xcells,
-            yorigin+ydelta*ycells,
-            zorigin+zdelta*zcells,
-            xcells, ycells, zcells);
-  // } else {
-  //   Teuchos::ParameterList parameter_list;
-    
-  //   int ierr(0), aerr(0);
+    mesh = meshfactory.create(xorigin,
+                              yorigin,
+                              zorigin,
+                              xorigin + xdelta * xcells,
+                              yorigin + ydelta * ycells,
+                              zorigin + zdelta * zcells,
+                              xcells,
+                              ycells,
+                              zcells);
+    // } else {
+    //   Teuchos::ParameterList parameter_list;
 
-  //   try {
-  //     Teuchos::ParameterXMLFileReader xmlreader(inname);
-  //     Teuchos::ParameterList all_parameter_list(xmlreader.getParameters());      
-  //     Teuchos::ParameterList mesh_parameter_list = all_parameter_list.sublist("mesh");
-  //     parameter_list = mesh_parameter_list.sublist("Generate");
-  //   } catch (const std::runtime_error& e) {
-  //     std::cerr << me << ": error parsing xml-file: " << e.what() << std::endl;
-  //     ierr++;
-  //   }
+    //   int ierr(0), aerr(0);
 
-  //   comm->SumAll(&ierr, &aerr, 1);
-  //   if (aerr > 0) {
-  //     return 1;
-  //   }
-   
-  //   mesh = meshfactory(parameter_list);
+    //   try {
+    //     Teuchos::ParameterXMLFileReader xmlreader(inname);
+    //     Teuchos::ParameterList all_parameter_list(xmlreader.getParameters());
+    //     Teuchos::ParameterList mesh_parameter_list = all_parameter_list.sublist("mesh");
+    //     parameter_list = mesh_parameter_list.sublist("Generate");
+    //   } catch (const std::runtime_error& e) {
+    //     std::cerr << me << ": error parsing xml-file: " << e.what() << std::endl;
+    //     ierr++;
+    //   }
+
+    //   comm->SumAll(&ierr, &aerr, 1);
+    //   if (aerr > 0) {
+    //     return 1;
+    //   }
+
+    //   mesh = meshfactory(parameter_list);
   }
 
-  //  std::cout << "Generated mesh has " 
+  //  std::cout << "Generated mesh has "
   //            << mesh->num_sets(Amanzi::AmanziMesh::CELL)
-  //            << " cell sets" 
+  //            << " cell sets"
   //            << std::endl;
 
   // make sure it's OK
@@ -314,8 +333,7 @@ main(int argc, char **argv)
   if (doaudit) {
     int notok(do_the_audit(me, mesh, outname));
     if (me == 0) {
-      std::cout << "Mesh \"" << outname << "\" " 
-                << (notok ? "has errors" : "OK") << std::endl;
+      std::cout << "Mesh \"" << outname << "\" " << (notok ? "has errors" : "OK") << std::endl;
     }
   }
 
@@ -325,4 +343,3 @@ main(int argc, char **argv)
 
   return 0;
 }
-

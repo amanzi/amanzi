@@ -35,11 +35,17 @@ class ProductEvaluator : public MultiphaseBaseEvaluator {
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
   // extended interface
-  virtual void set_subvector(int ifield, int n, double kH) override { field_n_[ifield] = n; kH_ = kH; } 
+  virtual void set_subvector(int ifield, int n, double kH) override
+  {
+    field_n_[ifield] = n;
+    kH_ = kH;
+  }
 
  private:
   std::vector<int> powers_;
@@ -48,7 +54,7 @@ class ProductEvaluator : public MultiphaseBaseEvaluator {
   static Utils::RegisteredFactory<Evaluator, ProductEvaluator> fac_;
 };
 
-}  // namespace Multiphase
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi
 
 #endif

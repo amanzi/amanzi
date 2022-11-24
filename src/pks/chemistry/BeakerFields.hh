@@ -8,7 +8,7 @@
 
   A list of beaker fields to avoid search 
 */
- 
+
 #ifndef CHEMISTRY_BEAKER_FIELDS_HH_
 #define CHEMISTRY_BEAKER_FIELDS_HH_
 
@@ -34,7 +34,7 @@ struct BeakerFields {
   Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites, ion_exchange_ref_cation_conc;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif

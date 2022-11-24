@@ -21,8 +21,8 @@ namespace WhetStone {
 
 class WhetStoneFunction {
  public:
-  WhetStoneFunction() {};
-  virtual ~WhetStoneFunction() {};
+  WhetStoneFunction(){};
+  virtual ~WhetStoneFunction(){};
 
   virtual double Value(const AmanziGeometry::Point& xp) const = 0;
 };

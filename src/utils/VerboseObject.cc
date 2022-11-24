@@ -58,18 +58,19 @@ VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList pli
   set_name(headername);
 
   // -- Show the line prefix
-  bool no_pre = plist.sublist("verbose object").get<bool>("hide line prefix", global_hide_line_prefix);
+  bool no_pre =
+    plist.sublist("verbose object").get<bool>("hide line prefix", global_hide_line_prefix);
 
   // Override from ParameterList.
   Teuchos::ParameterList plist_out;
   if (plist.sublist("verbose object").isParameter("verbosity level")) {
-    plist_out.sublist("VerboseObject").set("Verbosity Level",
-        plist.sublist("verbose object").get<std::string>("verbosity level"));
+    plist_out.sublist("VerboseObject")
+      .set("Verbosity Level", plist.sublist("verbose object").get<std::string>("verbosity level"));
   }
 
   if (plist.sublist("verbose object").isParameter("output filename")) {
-    plist_out.sublist("VerboseObject").set("Output File",
-        plist.sublist("verbose object").get<std::string>("output filename"));
+    plist_out.sublist("VerboseObject")
+      .set("Output File", plist.sublist("verbose object").get<std::string>("output filename"));
   }
 
   Teuchos::readVerboseObjectSublist(&plist_out, this);
@@ -79,9 +80,10 @@ VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList pli
 }
 
 
-VerboseObject::VerboseObject(const Comm_ptr_type& comm, const std::string& name,
-                             Teuchos::ParameterList outer_plist) :
-    comm_(comm)
+VerboseObject::VerboseObject(const Comm_ptr_type& comm,
+                             const std::string& name,
+                             Teuchos::ParameterList outer_plist)
+  : comm_(comm)
 {
   Teuchos::ParameterList& plist = outer_plist.sublist("verbose object");
 
@@ -93,9 +95,7 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm, const std::string& name,
   // Options from ParameterList
   // -- Set up the VerboseObject header.
   std::string headername(name);
-  if (plist.isParameter("name")) {
-    headername = plist.get<std::string>("name");
-  }
+  if (plist.isParameter("name")) { headername = plist.get<std::string>("name"); }
   int width = plist.get("header width", -1);
   set_name(headername, width);
 
@@ -122,12 +122,13 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm, const std::string& name,
   getOStream()->setProcRankAndSize(pid, size);
 
   // -- write from a different rank than 0
-  int root = plist.get<int>("write on rank", (int) global_writing_rank);
+  int root = plist.get<int>("write on rank", (int)global_writing_rank);
   getOStream()->setOutputToRootOnly(root);
 }
 
 
-void VerboseObject::set_name(std::string name, int width)
+void
+VerboseObject::set_name(std::string name, int width)
 {
   if (width < 0) width = global_line_prefix_size;
 
@@ -143,7 +144,8 @@ void VerboseObject::set_name(std::string name, int width)
 }
 
 
-std::string VerboseObject::color(const std::string& name) const
+std::string
+VerboseObject::color(const std::string& name) const
 {
   std::string output("");
   if (name == "red") {
@@ -161,7 +163,8 @@ std::string VerboseObject::color(const std::string& name) const
 }
 
 
-std::string VerboseObject::reset() const
+std::string
+VerboseObject::reset() const
 {
   std::string output("");
   output = std::string("\033[0m");
@@ -169,7 +172,8 @@ std::string VerboseObject::reset() const
 }
 
 
-std::string VerboseObject::clock() const
+std::string
+VerboseObject::clock() const
 {
   int tmp = std::clock() / CLOCKS_PER_SEC;
   int s = tmp % 60;
@@ -181,15 +185,14 @@ std::string VerboseObject::clock() const
   int h = tmp % 100;
 
   std::stringstream ss;
-  ss << "[" << std::setfill('0')
-     << std::setw(2) << h << ":"
-     << std::setw(2) << m << ":"
+  ss << "[" << std::setfill('0') << std::setw(2) << h << ":" << std::setw(2) << m << ":"
      << std::setw(2) << s << "]";
 
   return ss.str();
 }
 
-void VerboseObject::WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const
+void
+VerboseObject::WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const
 {
   if (getVerbLevel() >= verbosity) {
     Teuchos::OSTab tab = getOSTab();
@@ -202,7 +205,8 @@ void VerboseObject::WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::
 }
 
 
-void VerboseObject::WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::string& data) const
+void
+VerboseObject::WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::string& data) const
 {
   if (getVerbLevel() >= verbosity) {
     Teuchos::OSTab tab = getOSTab();
@@ -210,4 +214,4 @@ void VerboseObject::WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::
   }
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

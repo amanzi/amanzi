@@ -15,19 +15,19 @@
 #include "VerboseObject.hh"
 
 #define PREFIX
-#define F77_LAPACK_MANGLE(lcase,UCASE) lcase ## _
-#define DGETRF_F77 F77_LAPACK_MANGLE(dgetrf,DGETRF)
-#define DGETRI_F77 F77_LAPACK_MANGLE(dgetri,DGETRI)
+#define F77_LAPACK_MANGLE(lcase, UCASE) lcase##_
+#define DGETRF_F77 F77_LAPACK_MANGLE(dgetrf, DGETRF)
+#define DGETRI_F77 F77_LAPACK_MANGLE(dgetri, DGETRI)
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-void PREFIX DGETRF_F77(int* nrow, int* ncol, double* a, int* lda, 
-                       int* ipiv, int* info); 
+  void PREFIX DGETRF_F77(int* nrow, int* ncol, double* a, int* lda, int* ipiv, int* info);
 
-void PREFIX DGETRI_F77(int* n, double* a, int* lda, 
-                       int* ipiv, double* work, int* lwork, int* info); 
+  void PREFIX
+  DGETRI_F77(int* n, double* a, int* lda, int* ipiv, double* work, int* lwork, int* info);
 
 #ifdef __cplusplus
 }
@@ -69,8 +69,9 @@ class MatrixBlock {
   // non trivilar routines
   int Inverse();
 
-  // output 
-  friend std::ostream& operator << (std::ostream& os, const MatrixBlock& A) {
+  // output
+  friend std::ostream& operator<<(std::ostream& os, const MatrixBlock& A)
+  {
     for (int i = 0; i < A.size(); i++) {
       for (int j = 0; j < A.cols(); j++) {
         os << std::setw(12) << std::setprecision(12) << A(i, j) << " ";
@@ -86,9 +87,10 @@ class MatrixBlock {
 };
 
 // non-member functions
-void Multiply(const MatrixBlock& A, const MatrixBlock& B, MatrixBlock& AB);
+void
+Multiply(const MatrixBlock& A, const MatrixBlock& B, MatrixBlock& AB);
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif

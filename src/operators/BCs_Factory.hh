@@ -19,29 +19,30 @@ namespace Operators {
 
 class BCs_Factory {
  public:
-  BCs_Factory() {};
-  
+  BCs_Factory(){};
+
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
   void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }
   void set_kind(AmanziMesh::Entity_kind kind) { kind_ = kind; }
   void set_type(WhetStone::DOF_Type type) { type_ = type; }
 
-  Teuchos::RCP<BCs> Create() const {
+  Teuchos::RCP<BCs> Create() const
+  {
     auto bc = Teuchos::rcp(new BCs(mesh_, kind_, type_));
     // these are called to force instantiation
     bc->bc_model();
     bc->bc_value();
     return bc;
   }
-  
+
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   AmanziMesh::Entity_kind kind_;
   WhetStone::DOF_Type type_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 
 #endif

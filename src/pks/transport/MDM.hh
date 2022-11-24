@@ -23,16 +23,18 @@ namespace Transport {
 
 class MDM {
  public:
-  virtual ~MDM() {};
+  virtual ~MDM(){};
 
   // returns dispersion tensor.
-  virtual WhetStone::Tensor mech_dispersion(
-      const AmanziGeometry::Point& u, int axi_symmetry, double wc, double phi) const = 0;
+  virtual WhetStone::Tensor mech_dispersion(const AmanziGeometry::Point& u,
+                                            int axi_symmetry,
+                                            double wc,
+                                            double phi) const = 0;
 
   // The model is valid if at least one parameter is not zero.
   virtual bool is_valid() const = 0;
 
-  // This allows us to set space dimension which could be used for estimating 
+  // This allows us to set space dimension which could be used for estimating
   // model applicability.
   virtual void set_dim(int dim) { dim_ = dim; }
 
@@ -40,8 +42,7 @@ class MDM {
   int dim_;
 };
 
-}  // namespace Transport
-}  // namespace Amanzi
-  
+} // namespace Transport
+} // namespace Amanzi
+
 #endif
-  

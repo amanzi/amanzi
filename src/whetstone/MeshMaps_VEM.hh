@@ -30,29 +30,33 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MeshMaps_VEM : public MeshMaps { 
+class MeshMaps_VEM : public MeshMaps {
  public:
-  MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-               const Teuchos::ParameterList& plist) :
-      MeshMaps(mesh) {
+  MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh, const Teuchos::ParameterList& plist)
+    : MeshMaps(mesh)
+  {
     ParseInputParameters_(plist);
   }
   MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
                Teuchos::RCP<const AmanziMesh::Mesh> mesh1,
-               const Teuchos::ParameterList& plist) :
-      MeshMaps(mesh0, mesh1) {
+               const Teuchos::ParameterList& plist)
+    : MeshMaps(mesh0, mesh1)
+  {
     ParseInputParameters_(plist);
   }
-  ~MeshMaps_VEM() {};
+  ~MeshMaps_VEM(){};
 
   // remap pseudo velocity
   virtual void VelocityFace(int f, VectorPolynomial& vf) const override;
-  virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& ve,
-		            const std::vector<VectorPolynomial>& vf,
+  virtual void VelocityCell(int c,
+                            const std::vector<VectorPolynomial>& ve,
+                            const std::vector<VectorPolynomial>& vf,
                             VectorPolynomial& vc) const override;
 
  private:
-  void LeastSquareProjector_Cell_(int order, int c, const std::vector<VectorPolynomial>& vf,
+  void LeastSquareProjector_Cell_(int order,
+                                  int c,
+                                  const std::vector<VectorPolynomial>& vf,
                                   VectorPolynomial& vc) const;
 
   // io
@@ -63,8 +67,7 @@ class MeshMaps_VEM : public MeshMaps {
   int order_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

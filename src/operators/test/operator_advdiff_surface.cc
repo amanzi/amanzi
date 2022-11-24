@@ -41,7 +41,8 @@
 * This test replaces tensor and boundary conditions by continuous
 * functions. This is a prototype for future solvers.
 * **************************************************************** */
-TEST(ADVECTION_DIFFUSION_SURFACE) {
+TEST(ADVECTION_DIFFUSION_SURFACE)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -62,8 +63,8 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 40, 40, 5);
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 
@@ -74,7 +75,8 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   RCP<Mesh> surfmesh = meshfactory.create(mesh_mstk, setnames, AmanziMesh::FACE);
 
   /* modify diffusion coefficient */
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
@@ -85,15 +87,16 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc =
+    Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = surfmesh->face_centroid(f);
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
+        fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = xf[1] * xf[1];
     }
@@ -101,7 +104,8 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
 
   // create diffusion operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator");
-  auto op_diff = Teuchos::rcp(new PDE_DiffusionMFD(olist, (Teuchos::RCP<const AmanziMesh::Mesh>) surfmesh));
+  auto op_diff =
+    Teuchos::rcp(new PDE_DiffusionMFD(olist, (Teuchos::RCP<const AmanziMesh::Mesh>)surfmesh));
   op_diff->Init(olist);
   op_diff->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_diff->global_operator()->DomainMap();
@@ -113,9 +117,10 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   // get the global operator
   Teuchos::RCP<Operator> global_op = op_diff->global_operator();
 
-  // create an advection operator  
+  // create an advection operator
   Teuchos::ParameterList alist;
-  Teuchos::RCP<PDE_AdvectionUpwind> op_adv = Teuchos::rcp(new PDE_AdvectionUpwind(alist, global_op));
+  Teuchos::RCP<PDE_AdvectionUpwind> op_adv =
+    Teuchos::rcp(new PDE_AdvectionUpwind(alist, global_op));
   op_adv->SetBCs(bc, bc);
 
   // get a flux field
@@ -123,22 +128,21 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   Epetra_MultiVector& uf = *u->ViewComponent("face");
   int nfaces = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   Point vel(4.0, 4.0, 0.0);
-  for (int f = 0; f < nfaces; f++) {
-    uf[0][f] = vel * surfmesh->face_normal(f);
-  }
+  for (int f = 0; f < nfaces; f++) { uf[0][f] = vel * surfmesh->face_normal(f); }
 
   op_adv->Setup(*u);
   op_adv->UpdateMatrices(u.ptr());
 
   // Add an accumulation term.
   CompositeVector solution(cvs);
-  solution.PutScalar(0.0);  // solution at time T=0
+  solution.PutScalar(0.0); // solution at time T=0
 
   CompositeVector phi(cvs);
   phi.PutScalar(0.2);
 
   double dT = 0.02;
-  Teuchos::RCP<PDE_Accumulation> op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::CELL, global_op));
+  Teuchos::RCP<PDE_Accumulation> op_acc =
+    Teuchos::rcp(new PDE_Accumulation(AmanziMesh::CELL, global_op));
   op_acc->AddAccumulationDelta(solution, phi, phi, dT, "cell");
 
   // BCs and assemble
@@ -159,7 +163,8 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   // Create a solver and solve the problem
   CompositeVector& rhs = *global_op->rhs();
 
-  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->set_inverse_parameters(
+    "Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
   global_op->ApplyInverse(rhs, solution);
@@ -170,13 +175,13 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   ver.CheckResidual(solution, 1.0e-12);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (gmres): ||r||=" << global_op->residual() 
-              << " itr=" << global_op->num_itrs()
-              << " code=" << global_op->returned_code() << std::endl;
+    std::cout << "pressure solver (gmres): ||r||=" << global_op->residual()
+              << " itr=" << global_op->num_itrs() << " code=" << global_op->returned_code()
+              << std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-    GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
+    GMV::open_data_file(*surfmesh, (std::string) "operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
     GMV::close_data_file();

@@ -29,24 +29,22 @@ namespace WhetStone {
 
 class BasisFactory {
  public:
-  explicit BasisFactory() {};
-  ~BasisFactory() {};
+  explicit BasisFactory(){};
+  ~BasisFactory(){};
 
-  // select numerical scheme using its name and order 
-  std::shared_ptr<Basis> Create(const std::string& name) {
+  // select numerical scheme using its name and order
+  std::shared_ptr<Basis> Create(const std::string& name)
+  {
     if (name == "regularized") {
       auto basis = std::make_shared<Basis_Regularized>();
       return basis;
-    }
-    else if (name == "normalized") {
+    } else if (name == "normalized") {
       auto basis = std::make_shared<Basis_Normalized>();
       return basis;
-    }
-    else if (name == "orthonormalized") {
+    } else if (name == "orthonormalized") {
       auto basis = std::make_shared<Basis_Orthonormalized>();
       return basis;
-    }
-    else if (name == "natural") {
+    } else if (name == "natural") {
       auto basis = std::make_shared<Basis_Natural>();
       return basis;
     }
@@ -54,8 +52,7 @@ class BasisFactory {
   }
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

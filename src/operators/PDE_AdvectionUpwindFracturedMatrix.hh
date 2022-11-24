@@ -25,15 +25,15 @@ namespace Operators {
 class PDE_AdvectionUpwindFracturedMatrix : public PDE_AdvectionUpwind {
  public:
   PDE_AdvectionUpwindFracturedMatrix(Teuchos::ParameterList& plist,
-                                     Teuchos::RCP<Operator> global_op) :
-      PDE_AdvectionUpwind(plist, global_op)
+                                     Teuchos::RCP<Operator> global_op)
+    : PDE_AdvectionUpwind(plist, global_op)
   {
     InitAdvection_(plist);
   }
 
   PDE_AdvectionUpwindFracturedMatrix(Teuchos::ParameterList& plist,
-                                     Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      PDE_AdvectionUpwind(plist, mesh)
+                                     Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : PDE_AdvectionUpwind(plist, mesh)
   {
     InitAdvection_(plist);
   }
@@ -55,8 +55,7 @@ class PDE_AdvectionUpwindFracturedMatrix : public PDE_AdvectionUpwind {
   std::vector<std::string> fractures_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

@@ -36,7 +36,7 @@ class MeshLight {
       face2cell_info_cached_(false),
       cell_geometry_precomputed_(false),
       face_geometry_precomputed_(false),
-      edge_geometry_precomputed_(false) {};
+      edge_geometry_precomputed_(false){};
 
   // initializing mesh
   void BuildCache();
@@ -55,7 +55,7 @@ class MeshLight {
   // ---------------------
 
   // Get faces of a cell
-  // 
+  //
   // On a distributed mesh, this will return all the faces of the
   // cell, OWNED or GHOST. If ordered = true, the faces will be
   // returned in a standard order according to Exodus II convention
@@ -63,15 +63,13 @@ class MeshLight {
   // non-standard cells), the list of faces will be in arbitrary order
   //
   // EXTENSIONS: MSTK FRAMEWORK: by the way the parallel partitioning,
-  // send-receive protocols and mesh query operators are designed, a side 
+  // send-receive protocols and mesh query operators are designed, a side
   // effect of this is that master and ghost entities will have the same
-  // hierarchical topology. 
+  // hierarchical topology.
   //
   // new API: cache should be pre-build, e.g. in mesh constructor
   // so no additional checks is needed
-  const Entity_ID_List& cell_get_faces(const Entity_ID c) const {
-    return cell_face_ids_[c];
-  }
+  const Entity_ID_List& cell_get_faces(const Entity_ID c) const { return cell_face_ids_[c]; }
 
   // Get directions in which the cell uses the face
   //
@@ -85,16 +83,12 @@ class MeshLight {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-  const std::vector<int>& cell_get_face_dirs(const Entity_ID c) const {
-    return cell_face_dirs_[c];
-  }
+  const std::vector<int>& cell_get_face_dirs(const Entity_ID c) const { return cell_face_dirs_[c]; }
 
   // Get edges of a cell
-  const Entity_ID_List& cell_get_edges(const Entity_ID c) const {
-    return cell_edge_ids_[c];
-  }
+  const Entity_ID_List& cell_get_edges(const Entity_ID c) const { return cell_edge_ids_[c]; }
 
-  virtual void cell_get_nodes(const Entity_ID c, Entity_ID_List *nodes) const = 0;
+  virtual void cell_get_nodes(const Entity_ID c, Entity_ID_List* nodes) const = 0;
 
   // Get edges of a face and directions in which the face uses the edges.
   //
@@ -110,22 +104,21 @@ class MeshLight {
   // operator will return a single edge and a direction of 1. However,
   // this direction cannot be relied upon to compute, say, a contour
   // integral around the 2D cell.
-  void face_get_edges_and_dirs(
-       const Entity_ID f,
-       Entity_ID_List *edges,
-       std::vector<int> *dirs,
-       const bool ordered = false) const;
+  void face_get_edges_and_dirs(const Entity_ID f,
+                               Entity_ID_List* edges,
+                               std::vector<int>* dirs,
+                               const bool ordered = false) const;
 
   // Get nodes of face
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face
   // are returned
   // In 3D, the nodes of the face are returned in ccw order consistent
-  // with the face normal. 
+  // with the face normal.
   // In 2D, nfnodes is 2.
-  // IMPORTANT NOTE FOR MSTK FRAMEWORK: The first node in 3D is the 
+  // IMPORTANT NOTE FOR MSTK FRAMEWORK: The first node in 3D is the
   // starting node of the first edge oriented ccw. Thus, the ccw order
   // of vertices and edges is as follows: v0, e0, v1, e1, v2, ..., eN.
-  virtual void face_get_nodes(const Entity_ID f, Entity_ID_List *nodes) const = 0;
+  virtual void face_get_nodes(const Entity_ID f, Entity_ID_List* nodes) const = 0;
 
   virtual void edge_get_nodes(const Entity_ID e, Entity_ID* n0, Entity_ID* n1) const = 0;
 
@@ -135,44 +128,39 @@ class MeshLight {
   // face_get_edges(face=5) --> {20, 21, 35, 9, 10}
   // cell_get_edges(cell=18) --> {1, 2, 3, 5, 8, 9, 10, 13, 21, 35, 20, 37, 40}
   // face_to_cell_edge_map(face=5,cell=18) --> {10, 8, 9, 5, 6}
-  void face_to_cell_edge_map(
-       const Entity_ID f, const Entity_ID c, std::vector<int> *map) const;
+  void face_to_cell_edge_map(const Entity_ID f, const Entity_ID c, std::vector<int>* map) const;
 
 
   //--------------------
-  // Upward connectivity 
+  // Upward connectivity
   //--------------------
   // Cells of type 'ptype' connected to a node
   // NOTE: The order of cells is not guaranteed to be the same for
   // corresponding nodes on different processors
-  virtual void node_get_cells(
-          const Entity_ID nodeid,
-          const Parallel_type ptype,
-          Entity_ID_List *cellids) const = 0;
+  virtual void node_get_cells(const Entity_ID nodeid,
+                              const Parallel_type ptype,
+                              Entity_ID_List* cellids) const = 0;
 
   // Faces of type parallel 'ptype' connected to a node
   // NOTE: The order of faces is not guarnateed to be the same for
   // corresponding nodes on different processors
-  virtual void node_get_faces(
-          const Entity_ID nodeid,
-          const Parallel_type ptype,
-          Entity_ID_List *faceids) const = 0;
+  virtual void node_get_faces(const Entity_ID nodeid,
+                              const Parallel_type ptype,
+                              Entity_ID_List* faceids) const = 0;
 
   // Faces of type 'ptype' connected to an edge
   // NOTE: The order of faces is not guaranteed to be the same for
   // corresponding edges on different processors
-  virtual void edge_get_faces(
-          const Entity_ID edgeid,
-          const Parallel_type ptype,
-          Entity_ID_List *faceids) const { AMANZI_ASSERT(false); }
+  virtual void
+  edge_get_faces(const Entity_ID edgeid, const Parallel_type ptype, Entity_ID_List* faceids) const
+  {
+    AMANZI_ASSERT(false);
+  }
 
   // The cells are returned in no particular order. Also, the order of cells
   // is not guaranteed to be the same for corresponding faces on different
   // processors
-  void face_get_cells(
-       const Entity_ID f,
-       const Parallel_type ptype,
-       Entity_ID_List *cells) const;
+  void face_get_cells(const Entity_ID f, const Parallel_type ptype, Entity_ID_List* cells) const;
 
 
   // --------
@@ -186,14 +174,11 @@ class MeshLight {
   // formed by connecting the cell center (average of cell nodes), a
   // face center (average of face nodes) and the two nodes of an edge
   // of the face
-  AmanziGeometry::Point cell_centroid(
-      const Entity_ID c, bool recompute = false) const;
+  AmanziGeometry::Point cell_centroid(const Entity_ID c, bool recompute = false) const;
 
-  double cell_volume(
-      const Entity_ID c, const bool recompute = false) const;
+  double cell_volume(const Entity_ID c, const bool recompute = false) const;
 
-  AmanziGeometry::Point face_centroid(
-      const Entity_ID f, const bool recompute = false) const;
+  AmanziGeometry::Point face_centroid(const Entity_ID f, const bool recompute = false) const;
 
   // The vector is normalized and then weighted by the area of the face
   //
@@ -214,14 +199,12 @@ class MeshLight {
   // if cellid is specified, then orientation returns the direction of
   // the natural normal of the face with respect to the cell (1 is
   // pointing out of the cell and -1 pointing in)
-  AmanziGeometry::Point face_normal(
-      const Entity_ID f,
-      const bool recompute = false,
-      const Entity_ID cellid = -1,
-      int *orientation = NULL) const;
+  AmanziGeometry::Point face_normal(const Entity_ID f,
+                                    const bool recompute = false,
+                                    const Entity_ID cellid = -1,
+                                    int* orientation = NULL) const;
 
-  double face_area(
-      const Entity_ID f, const bool recompute = false) const;
+  double face_area(const Entity_ID f, const bool recompute = false) const;
 
   AmanziGeometry::Point edge_centroid(const Entity_ID e) const;
 
@@ -239,33 +222,28 @@ class MeshLight {
   // if pointid is specified, then orientation returns the direction of
   // the natural direction of the edge with respect to the point (1 is
   // away from the point and -1 is towards)
-  AmanziGeometry::Point edge_vector(
-      const Entity_ID e,
-      const bool recompute = false,
-      const Entity_ID pointid = -1,
-      int *orientation = NULL) const;
+  AmanziGeometry::Point edge_vector(const Entity_ID e,
+                                    const bool recompute = false,
+                                    const Entity_ID pointid = -1,
+                                    int* orientation = NULL) const;
 
-  double edge_length(
-      const Entity_ID e, const bool recompute = false) const;
+  double edge_length(const Entity_ID e, const bool recompute = false) const;
 
   // coordinates
-  virtual void node_get_coordinates(
-          const Entity_ID v, AmanziGeometry::Point *ncoord) const = 0;
+  virtual void node_get_coordinates(const Entity_ID v, AmanziGeometry::Point* ncoord) const = 0;
 
 
   // ------
   // Counts
   // ------
   // Entities of kind (cell, face, node) in a particular category (OWNED, GHOST, ALL)
-  virtual unsigned int num_entities(
-          const Entity_kind kind, const Parallel_type ptype) const = 0;
+  virtual unsigned int num_entities(const Entity_kind kind, const Parallel_type ptype) const = 0;
 
 
   // ----------------
   // Entity meta-data
   // ----------------
-  virtual Parallel_type entity_get_ptype(
-          const Entity_kind kind, const Entity_ID entid) const = 0;
+  virtual Parallel_type entity_get_ptype(const Entity_kind kind, const Entity_ID entid) const = 0;
 
   unsigned int cell_get_num_faces(const Entity_ID c) const;
   unsigned int cell_get_max_faces() const;
@@ -290,46 +268,38 @@ class MeshLight {
   // implementation.
 
   // faces of a cell and directions in which it is used
-  virtual void cell_get_faces_and_dirs_internal_(
-          const Entity_ID c,
-          Entity_ID_List *faces,
-          std::vector<int> *fdirs,
-          const bool ordered = false) const = 0;
+  virtual void cell_get_faces_and_dirs_internal_(const Entity_ID c,
+                                                 Entity_ID_List* faces,
+                                                 std::vector<int>* fdirs,
+                                                 const bool ordered = false) const = 0;
 
   // edges of a cell
-  virtual void cell_get_edges_internal_(
-          const Entity_ID cellid,
-          Entity_ID_List *edgeids) const = 0;
+  virtual void cell_get_edges_internal_(const Entity_ID cellid, Entity_ID_List* edgeids) const = 0;
 
   // edges of a face
-  virtual void face_get_edges_and_dirs_internal_(
-          const Entity_ID faceid,
-          Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs,
-          const bool ordered = true) const = 0;
+  virtual void face_get_edges_and_dirs_internal_(const Entity_ID faceid,
+                                                 Entity_ID_List* edgeids,
+                                                 std::vector<int>* edge_dirs,
+                                                 const bool ordered = true) const = 0;
 
   // cells of a face
-  virtual void face_get_cells_internal_(
-          const Entity_ID faceid,
-          const Parallel_type ptype,
-          Entity_ID_List *cellids) const = 0;
+  virtual void face_get_cells_internal_(const Entity_ID faceid,
+                                        const Parallel_type ptype,
+                                        Entity_ID_List* cellids) const = 0;
 
   // geometries
-  virtual int compute_cell_geometry_(
-          const Entity_ID cellid,
-          double *volume,
-          AmanziGeometry::Point *centroid) const = 0;
+  virtual int compute_cell_geometry_(const Entity_ID cellid,
+                                     double* volume,
+                                     AmanziGeometry::Point* centroid) const = 0;
 
-  virtual int compute_face_geometry_(
-          const Entity_ID faceid,
-          double *area,
-          AmanziGeometry::Point *centroid,
-          std::vector<AmanziGeometry::Point> *normals) const = 0;
+  virtual int compute_face_geometry_(const Entity_ID faceid,
+                                     double* area,
+                                     AmanziGeometry::Point* centroid,
+                                     std::vector<AmanziGeometry::Point>* normals) const = 0;
 
-  virtual int compute_edge_geometry_(
-          const Entity_ID e,
-          double *length,
-          AmanziGeometry::Point *edge_vector) const = 0;
+  virtual int compute_edge_geometry_(const Entity_ID e,
+                                     double* length,
+                                     AmanziGeometry::Point* edge_vector) const = 0;
 
  protected:
   unsigned int space_dim_;
@@ -341,7 +311,7 @@ class MeshLight {
   // cache: c -> f
   mutable bool cell2face_info_cached_;
   mutable std::vector<Entity_ID_List> cell_face_ids_;
-  mutable std::vector<std::vector<int> > cell_face_dirs_;  // 1 or -1
+  mutable std::vector<std::vector<int>> cell_face_dirs_; // 1 or -1
 
   // cache: c -> e
   mutable bool cell2edge_info_cached_;
@@ -350,13 +320,13 @@ class MeshLight {
   // cache: f -> e
   mutable bool face2edge_info_cached_;
   mutable std::vector<Entity_ID_List> face_edge_ids_;
-  mutable std::vector<std::vector<int> > face_edge_dirs_;
+  mutable std::vector<std::vector<int>> face_edge_dirs_;
 
   // cache: f -> c
   mutable bool face2cell_info_cached_;
   // 1s complement if face is pointing out of cell; cannot use 0 as cellid can be 0
   mutable std::vector<Entity_ID_List> face_cell_ids_;
-  mutable std::vector<std::vector<Parallel_type> > face_cell_ptype_;
+  mutable std::vector<std::vector<Parallel_type>> face_cell_ptype_;
 
   // cache: cells
   mutable bool cell_geometry_precomputed_;
@@ -380,7 +350,7 @@ class MeshLight {
   mutable std::vector<AmanziGeometry::Point> edge_vectors_;
 };
 
-}  // namespace AmanziMesh
-}  // namespace Amanzi
+} // namespace AmanziMesh
+} // namespace Amanzi
 
 #endif

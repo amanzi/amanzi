@@ -25,9 +25,10 @@
 #include "State.hh"
 #include "Tag.hh"
 
-SUITE(RESTART) {
-
-  TEST(RESTART_DUMP_REQUIRED_INTERVAL) {
+SUITE(RESTART)
+{
+  TEST(RESTART_DUMP_REQUIRED_INTERVAL)
+  {
     Teuchos::ParameterList plist;
 
     plist.set<std::string>("file name base", "restartdump");
@@ -44,17 +45,16 @@ SUITE(RESTART) {
 
     // test the cycle stuff, the expected result is in cycles_ and
     // we store the computed result in cycles
-    int cycles_[31] = {1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0,
-                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int cycles_[31] = { 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     int cycles[31];
-    for (int ic = 0; ic <= 30; ic++) {
-      cycles[ic] = R.DumpRequested(ic);
-    }
+    for (int ic = 0; ic <= 30; ic++) { cycles[ic] = R.DumpRequested(ic); }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
   }
 
 
-  TEST(RESTART_DUMP_REQUIRED_INTERVAL_OPENENDED1) {
+  TEST(RESTART_DUMP_REQUIRED_INTERVAL_OPENENDED1)
+  {
     Teuchos::ParameterList plist;
 
     plist.set<std::string>("file name base", "restartdump");
@@ -71,17 +71,16 @@ SUITE(RESTART) {
 
     // test the cycle stuff, the expected result is in cycles_ and
     // we store the computed result in cycles
-    int cycles_[31] = {1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
-                       0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1};
+    int cycles_[31] = { 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+                        0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1 };
     int cycles[31];
-    for (int ic = 0; ic <= 30; ic++) {
-      cycles[ic] = R.DumpRequested(ic);
-    }
+    for (int ic = 0; ic <= 30; ic++) { cycles[ic] = R.DumpRequested(ic); }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
   }
 
 
-  TEST(RESTART_DUMP_REQUIRED_INTERVAL_OPENENDED2) {
+  TEST(RESTART_DUMP_REQUIRED_INTERVAL_OPENENDED2)
+  {
     Teuchos::ParameterList plist;
 
     plist.set<std::string>("file name base", "restartdump");
@@ -98,17 +97,16 @@ SUITE(RESTART) {
 
     // test the cycle stuff, the expected result is in cycles_ and
     // we store the computed result in cycles
-    int cycles_[31] = {0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
-                       0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0};
+    int cycles_[31] = { 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+                        0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0 };
     int cycles[31];
-    for (int ic = 0; ic <= 30; ic++) {
-      cycles[ic] = R.DumpRequested(ic);
-    }
+    for (int ic = 0; ic <= 30; ic++) { cycles[ic] = R.DumpRequested(ic); }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
   }
 
 
-  TEST(RESTART_DUMP_REQUIRED_CYCLES) {
+  TEST(RESTART_DUMP_REQUIRED_CYCLES)
+  {
     Teuchos::ParameterList plist;
 
     plist.set<std::string>("file name base", "restartdump");
@@ -131,17 +129,16 @@ SUITE(RESTART) {
 
     // test the cycle stuff, the expected result is in cycles_ and
     // we store the computed result in cycles
-    int cycles_[31] = {1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0,
-                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int cycles_[31] = { 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     int cycles[31];
-    for (int ic = 0; ic <= 30; ic++) {
-      cycles[ic] = R.DumpRequested(ic);
-    }
+    for (int ic = 0; ic <= 30; ic++) { cycles[ic] = R.DumpRequested(ic); }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
   }
 
 
-  TEST(RESTART_DUMP_REQUIRED_TIMES) {
+  TEST(RESTART_DUMP_REQUIRED_TIMES)
+  {
     Teuchos::ParameterList plist;
 
     plist.set<std::string>("file name base", "restartdump");
@@ -164,17 +161,16 @@ SUITE(RESTART) {
 
     // test the cycle stuff, the expected result is in cycles_ and
     // we store the computed result in cycles
-    int times_[31] = {1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0,
-                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int times_[31] = { 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     int times[31];
-    for (int ic = 0; ic <= 30; ic += 1) {
-      times[ic] = R.DumpRequested((double)ic);
-    }
+    for (int ic = 0; ic <= 30; ic += 1) { times[ic] = R.DumpRequested((double)ic); }
     CHECK_ARRAY_EQUAL(times_, times, 31);
   }
 
 
-  TEST(DUMP_DATA) {
+  TEST(DUMP_DATA)
+  {
     Teuchos::ParameterList plist;
     // plist.set<std::string>("File Name Base","restart_dump");
     // plist.set<int>("File Name Digits",4);
@@ -209,8 +205,9 @@ SUITE(RESTART) {
 
     S0.Require<Amanzi::CompositeVector, Amanzi::CompositeVectorSpace>(
         "celldata", Amanzi::Tags::DEFAULT, "state_restart")
-        .SetMesh(Mesh)->SetGhosted(false)
-                      ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
+      .SetMesh(Mesh)
+      ->SetGhosted(false)
+      ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
 
     S0.Setup();
     S0.set_time(1.02);
@@ -225,27 +222,26 @@ SUITE(RESTART) {
 
     S1.Require<Amanzi::CompositeVector, Amanzi::CompositeVectorSpace>(
         "celldata", Amanzi::Tags::DEFAULT, "state_restart")
-        .SetMesh(Mesh)->SetGhosted(false)
-                      ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
+      .SetMesh(Mesh)
+      ->SetGhosted(false)
+      ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
 
     S1.Setup();
 
     // fill with random data before reading checkpoint
-    Epetra_MultiVector& s1p = *S1.GetW<Amanzi::CompositeVector>("celldata", "state_restart")
-        .ViewComponent("cell", false);
+    Epetra_MultiVector& s1p =
+      *S1.GetW<Amanzi::CompositeVector>("celldata", "state_restart").ViewComponent("cell", false);
     s1p.Random();
 
     ReadCheckpoint(comm, S1, "restartdump00000.h5");
 
-    Epetra_MultiVector& s0p = *S0.GetW<Amanzi::CompositeVector>("celldata", "state_restart")
-        .ViewComponent("cell", false);
+    Epetra_MultiVector& s0p =
+      *S0.GetW<Amanzi::CompositeVector>("celldata", "state_restart").ViewComponent("cell", false);
 
     // and compare with the original
     CHECK_EQUAL(S0.get_time(), S1.get_time());
     CHECK_EQUAL(s0p.MyLength(), s1p.MyLength());
 
-    for (int i = 0; i < s1p.MyLength(); ++i) {
-      CHECK_EQUAL(s1p[0][i], s0p[0][i]);
-    }
+    for (int i = 0; i < s1p.MyLength(); ++i) { CHECK_EQUAL(s1p[0][i], s0p[0][i]); }
   }
 }

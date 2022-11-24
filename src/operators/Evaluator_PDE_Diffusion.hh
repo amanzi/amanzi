@@ -33,20 +33,22 @@ class Evaluator_PDE_Diffusion : public EvaluatorSecondary {
   Evaluator_PDE_Diffusion(Teuchos::ParameterList& plist);
 
   Evaluator_PDE_Diffusion(const Evaluator_PDE_Diffusion& other) = default;
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new Evaluator_PDE_Diffusion(*this));
   };
 
-  virtual void EnsureCompatibility(State &S) override;
+  virtual void EnsureCompatibility(State& S) override;
 
   // jac-op handled in EnsureCompatibility()
   // virtual void EnsureCompatibleDerivative(State &S, const Key& wrt_key, const Tag& wrt_tag) override {};
-  
-  virtual bool UpdateDerivative(State& S, const Key& requestor, const Key& wrt_key,
-          const Tag& wrt_tag) override;
-  
-  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
-          const Tag& wrt_tag) const override {
+
+  virtual bool
+  UpdateDerivative(State& S, const Key& requestor, const Key& wrt_key, const Tag& wrt_tag) override;
+
+  virtual bool
+  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override
+  {
     return IsDependency(S, wrt_key, wrt_tag) && !jac_op_key_.empty();
   }
 
@@ -65,6 +67,6 @@ class Evaluator_PDE_Diffusion : public EvaluatorSecondary {
   static Utils::RegisteredFactory<Evaluator, Evaluator_PDE_Diffusion> fac_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

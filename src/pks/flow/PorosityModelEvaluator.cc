@@ -25,25 +25,26 @@ namespace Flow {
 /* ******************************************************************
 * Two constructors.
 ****************************************************************** */
-PorosityModelEvaluator::PorosityModelEvaluator(
-    Teuchos::ParameterList& plist, Teuchos::RCP<PorosityModelPartition> pom)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
-      pom_(pom)
+PorosityModelEvaluator::PorosityModelEvaluator(Teuchos::ParameterList& plist,
+                                               Teuchos::RCP<PorosityModelPartition> pom)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), pom_(pom)
 {
   InitializeFromPlist_();
 }
 
 
 PorosityModelEvaluator::PorosityModelEvaluator(const PorosityModelEvaluator& other)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      pom_(other.pom_),
-      pressure_key_(other.pressure_key_) {};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+    pom_(other.pom_),
+    pressure_key_(other.pressure_key_){};
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> PorosityModelEvaluator::Clone() const {
+Teuchos::RCP<Evaluator>
+PorosityModelEvaluator::Clone() const
+{
   return Teuchos::rcp(new PorosityModelEvaluator(*this));
 }
 
@@ -51,7 +52,8 @@ Teuchos::RCP<Evaluator> PorosityModelEvaluator::Clone() const {
 /* ******************************************************************
 * Initialization.
 ****************************************************************** */
-void PorosityModelEvaluator::InitializeFromPlist_()
+void
+PorosityModelEvaluator::InitializeFromPlist_()
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("porosity key"), Tags::DEFAULT));
@@ -66,8 +68,8 @@ void PorosityModelEvaluator::InitializeFromPlist_()
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void PorosityModelEvaluator::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+PorosityModelEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   auto& phi_c = *results[0]->ViewComponent("cell", false);
   const auto& pres_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
@@ -82,9 +84,11 @@ void PorosityModelEvaluator::Evaluate_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void PorosityModelEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+PorosityModelEvaluator::EvaluatePartialDerivative_(const State& S,
+                                                   const Key& wrt_key,
+                                                   const Tag& wrt_tag,
+                                                   const std::vector<CompositeVector*>& results)
 {
   auto& phi_c = *results[0]->ViewComponent("cell");
   const auto& pres_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
@@ -95,5 +99,5 @@ void PorosityModelEvaluator::EvaluatePartialDerivative_(
   }
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi

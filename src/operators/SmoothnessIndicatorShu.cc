@@ -27,16 +27,16 @@ namespace Operators {
 /* ******************************************************************
 *
 ****************************************************************** */
-void SmoothnessIndicatorShu::Init(Teuchos::ParameterList& plist)
-{
-}
+void
+SmoothnessIndicatorShu::Init(Teuchos::ParameterList& plist)
+{}
 
 
 /* ******************************************************************
 *
 ****************************************************************** */
-void SmoothnessIndicatorShu::Compute(
-    const Teuchos::RCP<Reconstruction>& lifting)
+void
+SmoothnessIndicatorShu::Compute(const Teuchos::RCP<Reconstruction>& lifting)
 {
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   measure_.resize(ncells_owned);
@@ -46,7 +46,7 @@ void SmoothnessIndicatorShu::Compute(
   AmanziMesh::Entity_ID_List cells;
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double value(1.0); 
+    double value(1.0);
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     auto poly = lifting->getPolynomial(c);
 
@@ -60,10 +60,9 @@ void SmoothnessIndicatorShu::Compute(
       value = std::min(value, 1.0 - tmp);
     }
 
-    measure_[c] = value; 
+    measure_[c] = value;
   }
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
+} // namespace Operators
+} // namespace Amanzi

@@ -25,14 +25,14 @@ namespace Amanzi {
 class PK_MPCSubcycled : public PK_MPC<PK> {
  public:
   PK_MPCSubcycled(Teuchos::ParameterList& pk_tree,
-               const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-               const Teuchos::RCP<State>& S,
-               const Teuchos::RCP<TreeVector>& soln);
+                  const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                  const Teuchos::RCP<State>& S,
+                  const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
   // -- dt is the minimum of the sub pks
   virtual double get_dt();
-  virtual void set_dt(double dt) {};
+  virtual void set_dt(double dt){};
 
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
@@ -49,6 +49,6 @@ class PK_MPCSubcycled : public PK_MPC<PK> {
   static RegisteredPKFactory<PK_MPCSubcycled> reg_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

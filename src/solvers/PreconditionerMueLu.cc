@@ -18,8 +18,9 @@ namespace AmanziSolvers {
 /* ******************************************************************
 * TBW
 ****************************************************************** */
-void PreconditionerMueLu::set_matrices(const Teuchos::RCP<Epetra_CrsMatrix>& m,
-			               const Teuchos::RCP<Epetra_CrsMatrix>& h)
+void
+PreconditionerMueLu::set_matrices(const Teuchos::RCP<Epetra_CrsMatrix>& m,
+                                  const Teuchos::RCP<Epetra_CrsMatrix>& h)
 {
   Preconditioner::set_matrices(m, h);
 }
@@ -28,14 +29,16 @@ void PreconditionerMueLu::set_matrices(const Teuchos::RCP<Epetra_CrsMatrix>& m,
 /* ******************************************************************
 * TBW
 ****************************************************************** */
-void PreconditionerMueLu::InitializeInverse()
+void
+PreconditionerMueLu::InitializeInverse()
 {
   plist_.remove("method");
   plist_.remove("verbose object");
 }
 
 
-void PreconditionerMueLu::ComputeInverse()
+void
+PreconditionerMueLu::ComputeInverse()
 {
 #if defined(HAVE_MUELU_EPETRA)
   MueLu_ = MueLu::CreateEpetraPreconditioner(h_, plist_);
@@ -46,7 +49,8 @@ void PreconditionerMueLu::ComputeInverse()
 /* ******************************************************************
 * TBW
 ****************************************************************** */
-int PreconditionerMueLu::ApplyInverse(const Vector_t& v, Vector_t& hv) const
+int
+PreconditionerMueLu::ApplyInverse(const Vector_t& v, Vector_t& hv) const
 {
 #if defined(HAVE_MUELU_EPETRA)
   AMANZI_ASSERT(MueLu_.get());
@@ -56,6 +60,5 @@ int PreconditionerMueLu::ApplyInverse(const Vector_t& v, Vector_t& hv) const
   return returned_code_;
 }
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
-
+} // namespace AmanziSolvers
+} // namespace Amanzi

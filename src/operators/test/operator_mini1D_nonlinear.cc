@@ -38,7 +38,12 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<DenseVector> {
  public:
   // constructor keeps static data
   NonlinearProblem(Teuchos::RCP<Operators::Mini_Diffusion1D> op,
-                   double dt, double bcl, int type_l, double bcr, int type_r) {
+                   double dt,
+                   double bcl,
+                   int type_l,
+                   double bcr,
+                   int type_r)
+  {
     op_ = op;
     dt_ = dt;
     bcl_ = bcl;
@@ -47,21 +52,19 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<DenseVector> {
     type_r_ = type_r;
   }
 
-  void Residual(const Teuchos::RCP<DenseVector>& u,
-                const Teuchos::RCP<DenseVector>& f) {
+  void Residual(const Teuchos::RCP<DenseVector>& u, const Teuchos::RCP<DenseVector>& f)
+  {
     op_->rhs() = *rhs0_;
 
     int ncells = u->NumRows();
-    for (int i = 0; i < ncells; ++i) {
-      op_->k()(i) = 1.0 + (*u)(i) * (*u)(i);
-    }
+    for (int i = 0; i < ncells; ++i) { op_->k()(i) = 1.0 + (*u)(i) * (*u)(i); }
 
     op_->UpdateMatrices();
     op_->ApplyBCs(bcl_, type_l_, bcr_, type_r_);
 
     op_->Apply(*u, *f);
     f->Update(-1.0, op_->rhs(), 1.0);
- 
+
     // accumulation term to residual
     if (dt_ > 0.0) {
       for (int i = 0; i < ncells; ++i) {
@@ -72,20 +75,23 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<DenseVector> {
     }
   }
 
-  int ApplyPreconditioner(const Teuchos::RCP<const DenseVector>& u,
-                          const Teuchos::RCP<DenseVector>& hu) {
+  int
+  ApplyPreconditioner(const Teuchos::RCP<const DenseVector>& u, const Teuchos::RCP<DenseVector>& hu)
+  {
     op_->ApplyInverse(*u, *hu);
     return 0;
   }
 
-  double ErrorNorm(const Teuchos::RCP<const DenseVector>& u,
-                   const Teuchos::RCP<const DenseVector>& du) {
+  double
+  ErrorNorm(const Teuchos::RCP<const DenseVector>& u, const Teuchos::RCP<const DenseVector>& du)
+  {
     double tmp;
     du->NormInf(&tmp);
     return tmp;
   }
 
-  void UpdatePreconditioner(const Teuchos::RCP<const DenseVector>& u) {
+  void UpdatePreconditioner(const Teuchos::RCP<const DenseVector>& u)
+  {
     int ncells = u->NumRows();
     for (int i = 0; i < ncells; ++i) {
       op_->k()(i) = 1.0 + (*u)(i) * (*u)(i);
@@ -96,18 +102,20 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<DenseVector> {
     // accumulation term to the main diagonal
     if (dt_ > 0.0) {
       DenseVector s1(ncells);
-      for (int i = 0; i < ncells; ++i) {
-        s1(i) = 2.0 * (*u)(i) / dt_;
-      }
+      for (int i = 0; i < ncells; ++i) { s1(i) = 2.0 * (*u)(i) / dt_; }
       op_->AddAccumulationTerm(s1);
     }
   }
-  void ChangedSolution() {};
+  void ChangedSolution(){};
 
-  void SetICs(std::shared_ptr<DenseVector>& rhs,
-              Teuchos::RCP<DenseVector>& u0) { rhs0_ = rhs; u0_ = u0; }
+  void SetICs(std::shared_ptr<DenseVector>& rhs, Teuchos::RCP<DenseVector>& u0)
+  {
+    rhs0_ = rhs;
+    u0_ = u0;
+  }
 
-  void SetBCs(double bcl, int type_l, double bcr, int type_r) {
+  void SetBCs(double bcl, int type_l, double bcr, int type_r)
+  {
     bcl_ = bcl;
     bcr_ = bcr;
     type_l_ = type_l;
@@ -126,7 +134,9 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<DenseVector> {
 /* *****************************************************************
 * This test nonlinear diffusion solver in 1D: u(x) = x^2, k(u) = 1 + u^2.
 * **************************************************************** */
-void MiniDiffusion1D_Nonlinear(double bcl, int type_l, double bcr, int type_r) {
+void
+MiniDiffusion1D_Nonlinear(double bcl, int type_l, double bcr, int type_r)
+{
   std::cout << "\nTest: 1D nonlinear elliptic problem: constant absolute K" << std::endl;
 
   double pl2_err[2], ph1_err[2];
@@ -157,7 +167,7 @@ void MiniDiffusion1D_Nonlinear(double bcl, int type_l, double bcr, int type_r) {
     op->Setup(Ka, kr, dkdu);
 
     // create right-hand side
-    for (int i = 0; i < ncells; ++i) { 
+    for (int i = 0; i < ncells; ++i) {
       double xc = op->mesh_cell_centroid(i);
       double hc = op->mesh_cell_volume(i);
       (*rhs)(i) = -(10 * std::pow(xc, 4) + 2) * hc;
@@ -176,11 +186,11 @@ void MiniDiffusion1D_Nonlinear(double bcl, int type_l, double bcr, int type_r) {
     newton.Init(fn, 1);
 
     // solve the problem
-    newton.Solve(sol);  
+    newton.Solve(sol);
 
     // compute error
     double hc, xc, err, pnorm(1.0), hnorm(1.0);
-    pl2_err[loop] = 0.0; 
+    pl2_err[loop] = 0.0;
     ph1_err[loop] = 0.0;
 
     for (int i = 0; i < ncells; ++i) {
@@ -202,7 +212,8 @@ void MiniDiffusion1D_Nonlinear(double bcl, int type_l, double bcr, int type_r) {
 }
 
 
-TEST(OPERATOR_MINI_DIFFUSION_NONLINEAR) {
+TEST(OPERATOR_MINI_DIFFUSION_NONLINEAR)
+{
   int dir = Amanzi::Operators::OPERATOR_BC_DIRICHLET;
   int neu = Amanzi::Operators::OPERATOR_BC_NEUMANN;
   MiniDiffusion1D_Nonlinear(0.0, dir, 1.0, dir);
@@ -214,7 +225,9 @@ TEST(OPERATOR_MINI_DIFFUSION_NONLINEAR) {
 * This test nonlinear transient diffusion solver in 1D:
 * u(t, x) = t x^2, k(u) = 1 + u^2, c(u) = 1 + u^2. 
 * **************************************************************** */
-void MiniDiffusion1D_Transient(int type_l, int type_r) {
+void
+MiniDiffusion1D_Transient(int type_l, int type_r)
+{
   std::cout << "\nTest: 1D nonlinear transient problem" << std::endl;
 
   int ncells = 20;
@@ -256,7 +269,7 @@ void MiniDiffusion1D_Transient(int type_l, int type_r) {
     *u0 = *u1;
 
     // update right-hand side and boundary conditions
-    for (int i = 0; i < ncells; ++i) { 
+    for (int i = 0; i < ncells; ++i) {
       double xc = op->mesh_cell_centroid(i);
       double hc = op->mesh_cell_volume(i);
       (*rhs)(i) = 2 * t * (std::pow(xc, 4) * (1.0 - 5 * t * t) - 1.0) * hc;
@@ -265,7 +278,7 @@ void MiniDiffusion1D_Transient(int type_l, int type_r) {
 
     fn->SetICs(rhs, u0);
     fn->SetBCs(bcl, type_l, bcr, type_r);
-    newton.Solve(u1);  
+    newton.Solve(u1);
   }
 
   // compute error
@@ -289,9 +302,9 @@ void MiniDiffusion1D_Transient(int type_l, int type_r) {
 }
 
 
-TEST(OPERATOR_MINI_DIFFUSION_NONLINEAR_TRANSINET) {
+TEST(OPERATOR_MINI_DIFFUSION_NONLINEAR_TRANSINET)
+{
   int dir = Amanzi::Operators::OPERATOR_BC_DIRICHLET;
   // int neu = Amanzi::Operators::OPERATOR_BC_NEUMANN;
   MiniDiffusion1D_Transient(dir, dir);
 }
-

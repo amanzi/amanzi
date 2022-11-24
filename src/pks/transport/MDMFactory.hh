@@ -28,7 +28,7 @@ class MDMFactory : public Utils::Factory<MDM> {
   Teuchos::RCP<MDM> Create(Teuchos::ParameterList& plist);
 };
 
-}  // namespace Transport
-}  // namespace Amanzi
+} // namespace Transport
+} // namespace Amanzi
 
 #endif

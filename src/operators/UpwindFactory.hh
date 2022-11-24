@@ -33,18 +33,16 @@ namespace Operators {
 
 class UpwindFactory {
  public:
-  Teuchos::RCP<Upwind> Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                              Teuchos::ParameterList& plist);
+  Teuchos::RCP<Upwind>
+  Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::ParameterList& plist);
 };
 
 
 /* ******************************************************************
 * The base class for all upwind methods. 
-****************************************************************** */ 
-inline
-Teuchos::RCP<Upwind> UpwindFactory::Create(
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-    Teuchos::ParameterList& plist)
+****************************************************************** */
+inline Teuchos::RCP<Upwind>
+UpwindFactory::Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::ParameterList& plist)
 {
   if (!plist.isParameter("upwind method")) {
     Errors::Message msg("UpwindFactory: parameter \"upwind method\" is missing");
@@ -87,7 +85,7 @@ Teuchos::RCP<Upwind> UpwindFactory::Create(
   return Teuchos::null;
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif

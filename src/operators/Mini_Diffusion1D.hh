@@ -27,19 +27,21 @@ namespace Operators {
 
 class Mini_Diffusion1D : public Mini_Operator1D {
  public:
-  Mini_Diffusion1D() : Kconst_(1.0) {};
-  ~Mini_Diffusion1D() {};
+  Mini_Diffusion1D() : Kconst_(1.0){};
+  ~Mini_Diffusion1D(){};
 
   // set up operator
   void Setup(double K) { Kconst_ = K; }
   void Setup(const std::shared_ptr<WhetStone::DenseVector> k,
-             const std::shared_ptr<WhetStone::DenseVector> dkdp) {
+             const std::shared_ptr<WhetStone::DenseVector> dkdp)
+  {
     k_ = k;
     dkdp_ = dkdp;
   }
   void Setup(const std::shared_ptr<WhetStone::DenseVector> K,
              const std::shared_ptr<WhetStone::DenseVector> k,
-             const std::shared_ptr<WhetStone::DenseVector> dkdp) {
+             const std::shared_ptr<WhetStone::DenseVector> dkdp)
+  {
     K_ = K;
     k_ = k;
     dkdp_ = dkdp;
@@ -50,8 +52,8 @@ class Mini_Diffusion1D : public Mini_Operator1D {
   void UpdateMatrices(const PDEType method = PDE_DIFFUSION_MFD);
 
   // -- build Jacobian
-  void UpdateJacobian(const WhetStone::DenseVector& p,
-                      double bcl, int type_l, double bcr, int type_r);
+  void
+  UpdateJacobian(const WhetStone::DenseVector& p, double bcl, int type_l, double bcr, int type_r);
 
   // modify matrix due to boundary conditions
   void ApplyBCs(double bcl, int type_l, double bcr, int type_r);
@@ -65,17 +67,15 @@ class Mini_Diffusion1D : public Mini_Operator1D {
   WhetStone::DenseVector& dkdp() { return *dkdp_; }
 
  protected:
-  void UpdateMatricesMFD_(); 
-  void UpdateMatricesFD_(); 
+  void UpdateMatricesMFD_();
+  void UpdateMatricesFD_();
 
  private:
   std::shared_ptr<WhetStone::DenseVector> K_, k_, dkdp_;
   double Kconst_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-
-

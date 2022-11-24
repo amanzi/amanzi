@@ -42,7 +42,8 @@ namespace Multiphase {
 /* ******************************************************************* 
 * Populate boundary conditions for various bc types
 ******************************************************************* */
-void Multiphase_PK::PopulateBCs(int icomp, bool flag)
+void
+Multiphase_PK::PopulateBCs(int icomp, bool flag)
 {
   int n0 = (system_["energy eqn"]) ? 2 : 1;
 
@@ -79,7 +80,7 @@ void Multiphase_PK::PopulateBCs(int icomp, bool flag)
     }
 
     if (bcs_[i]->get_bc_name() == "flux") {
-      if (bcs_[i]->component_name() == "water") { 
+      if (bcs_[i]->component_name() == "water") {
         auto& bc_model = op_bcs_[pressure_liquid_key_]->bc_model();
         auto& bc_value = op_bcs_[pressure_liquid_key_]->bc_value();
 
@@ -103,8 +104,7 @@ void Multiphase_PK::PopulateBCs(int icomp, bool flag)
       }
     }
 
-    if (bcs_[i]->get_bc_name() == "concentration" &&
-        bcs_[i]->component_id() == icomp) {
+    if (bcs_[i]->get_bc_name() == "concentration" && bcs_[i]->component_id() == icomp) {
       Key x_key_base = splitPhase(soln_names_[n0]).first;
       Key x_key = mergePhase(x_key_base, bcs_[i]->component_phase());
 
@@ -132,13 +132,13 @@ void Multiphase_PK::PopulateBCs(int icomp, bool flag)
         bc_model_s[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value_s[f] = it->second[0];
 
-        bc_model_x[f] = Operators::OPERATOR_BC_DIRICHLET;  // a huck
+        bc_model_x[f] = Operators::OPERATOR_BC_DIRICHLET; // a huck
         bc_value_x[f] = 0.0;
       }
     }
   }
 
-  // mark missing boundary conditions as zero flux conditions 
+  // mark missing boundary conditions as zero flux conditions
   AmanziMesh::Entity_ID_List cells;
   missed_bc_faces_ = 0;
 
@@ -161,18 +161,19 @@ void Multiphase_PK::PopulateBCs(int icomp, bool flag)
 }
 
 
-
 /* ******************************************************************* 
 * Populate boundary conditions for derived fields
 ******************************************************************* */
-void Multiphase_PK::CheckCompatibilityBCs(const Key& keyr, const Key& gname)
+void
+Multiphase_PK::CheckCompatibilityBCs(const Key& keyr, const Key& gname)
 {
   auto& bc_model_r = op_bcs_[keyr]->bc_model();
   auto& bc_model_g = op_bcs_[gname]->bc_model();
 
   for (int f = 0; f != nfaces_owned_; ++f) {
     if (bc_model_r[f] == Operators::OPERATOR_BC_DIRICHLET &&
-        bc_model_g[f] == Operators::OPERATOR_BC_NEUMANN) AMANZI_ASSERT(false);
+        bc_model_g[f] == Operators::OPERATOR_BC_NEUMANN)
+      AMANZI_ASSERT(false);
   }
 }
 
@@ -180,7 +181,8 @@ void Multiphase_PK::CheckCompatibilityBCs(const Key& keyr, const Key& gname)
 /* ******************************************************************* 
 * Populate boundary conditions for derived fields
 ******************************************************************* */
-void Multiphase_PK::PopulateSecondaryBCs_()
+void
+Multiphase_PK::PopulateSecondaryBCs_()
 {
   auto& bc_model_pg = op_bcs_[pressure_gas_key_]->bc_model();
   auto& bc_value_pg = op_bcs_[pressure_gas_key_]->bc_value();
@@ -190,19 +192,20 @@ void Multiphase_PK::PopulateSecondaryBCs_()
 
   bc_model_pg = bc_model_pl;
 
-  const auto& sl_c = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& sl_c =
+    *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
   for (int f = 0; f != nfaces_wghost_; ++f) {
     if (bc_model_pl[f] == Operators::OPERATOR_BC_DIRICHLET) {
       int c = getFaceOnBoundaryInternalCell(*mesh_, f);
 
-      bc_value_pg[f] = bc_value_pl[f] + wrm_->second[(*wrm_->first)[c]]->capillaryPressure(sl_c[0][c]);
-    }
-    else if (bc_model_pl[f] == Operators::OPERATOR_BC_NEUMANN) {
+      bc_value_pg[f] =
+        bc_value_pl[f] + wrm_->second[(*wrm_->first)[c]]->capillaryPressure(sl_c[0][c]);
+    } else if (bc_model_pl[f] == Operators::OPERATOR_BC_NEUMANN) {
       bc_value_pg[f] = 0.0;
     }
   }
 }
 
-}  // namespace Multiphase
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi

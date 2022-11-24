@@ -19,27 +19,28 @@
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 
-bool POINT_CLOSE(const Point& p1, const Point& p2) {
+bool
+POINT_CLOSE(const Point& p1, const Point& p2)
+{
   CHECK_EQUAL(p1.dim(), p2.dim());
   CHECK_CLOSE(p1[0], p2[0], 1.e-8);
   CHECK_CLOSE(p1[1], p2[1], 1.e-8);
-  if (p1.dim() > 2)  CHECK_CLOSE(p1[2], p2[2], 1.e-8);
+  if (p1.dim() > 2) CHECK_CLOSE(p1[2], p2[2], 1.e-8);
   return norm(p1 - p2) < 1.e-8;
 }
 
-#define CHECK_POINT_CLOSE(p1, p2) CHECK(POINT_CLOSE(p1,p2))
+#define CHECK_POINT_CLOSE(p1, p2) CHECK(POINT_CLOSE(p1, p2))
 
 void
-test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m,
-                     bool test_region) {
-
+test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m, bool test_region)
+{
   MeshLogicalAudit audit(m, std::cout);
   CHECK(!audit.Verify());
-  
+
   CHECK_EQUAL(4, m->num_entities(CELL, Parallel_type::ALL));
   CHECK_EQUAL(5, m->num_entities(FACE, Parallel_type::ALL));
 
-  for (int i=0; i!=4; ++i) {
+  for (int i = 0; i != 4; ++i) {
     CHECK_EQUAL(0.25, m->cell_volume(i));
 
     Entity_ID_List faces;
@@ -48,7 +49,7 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m,
     m->cell_get_faces_and_dirs(i, &faces, &dirs);
     CHECK_EQUAL(2, faces.size());
     CHECK_EQUAL(i, faces[0]);
-    CHECK_EQUAL(i+1, faces[1]);
+    CHECK_EQUAL(i + 1, faces[1]);
     CHECK_EQUAL(2, dirs.size());
     CHECK_EQUAL(1, dirs[0]);
     CHECK_EQUAL(-1, dirs[1]);
@@ -57,16 +58,16 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m,
     m->cell_get_faces_and_bisectors(i, &faces, &bisectors);
     CHECK_EQUAL(2, faces.size());
     CHECK_EQUAL(i, faces[0]);
-    CHECK_EQUAL(i+1, faces[1]);
+    CHECK_EQUAL(i + 1, faces[1]);
     CHECK_EQUAL(2, bisectors.size());
     CHECK_POINT_CLOSE(Point(0.125, 0., 0.), bisectors[0]);
     CHECK_POINT_CLOSE(Point(-0.125, 0., 0.), bisectors[1]);
   }
 
-  for (int i=0; i!=5; ++i) {
+  for (int i = 0; i != 5; ++i) {
     CHECK_EQUAL(1.0, m->face_area(0));
     auto normal = m->face_normal(i);
-    CHECK_POINT_CLOSE(Point(1.,0.,0.), normal);
+    CHECK_POINT_CLOSE(Point(1., 0., 0.), normal);
 
     Entity_ID_List cells;
     m->face_get_cells(i, Parallel_type::ALL, &cells);
@@ -78,12 +79,12 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m,
       CHECK_EQUAL(3, cells[0]);
     } else {
       CHECK_EQUAL(2, cells.size());
-      CHECK_EQUAL(i-1, cells[0]);
+      CHECK_EQUAL(i - 1, cells[0]);
       CHECK_EQUAL(i, cells[1]);
     }
   }
 
-  
+
   if (test_region) {
     // check regions
     CHECK_EQUAL(4, m->get_set_size("myregion", CELL, Parallel_type::ALL));
@@ -94,27 +95,26 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m,
     CHECK_EQUAL(0, set_ents[0]);
     CHECK_EQUAL(2, set_ents[2]);
   }
-}  
+}
 
 
 void
-test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
-                     bool test_region) {
+test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m, bool test_region)
+{
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  
+
   MeshLogicalAudit audit(m, std::cout);
   CHECK(!audit.Verify());
 
   Teuchos::RCP<const GeometricModel> gm_c = m->geometric_model();
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp_const_cast<GeometricModel>(gm_c);
-  
+
   Entity_ID_List ents;
   ents.push_back(0);
   ents.push_back(3);
 
-  Teuchos::RCP<Region> enum_rgn =
-    Teuchos::rcp(new RegionEnumerated("myregion", 0, "CELL", ents));
+  Teuchos::RCP<Region> enum_rgn = Teuchos::rcp(new RegionEnumerated("myregion", 0, "CELL", ents));
   gm->AddRegion(enum_rgn);
 
 
@@ -131,23 +131,23 @@ test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
 
 
 void
-test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
-                     bool test_region) {
+test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m, bool test_region)
+{
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
   MeshLogicalAudit audit(m, std::cout);
   CHECK(!audit.Verify());
-  
+
   CHECK_EQUAL(11, m->num_entities(CELL, Parallel_type::ALL));
   CHECK_EQUAL(15, m->num_entities(FACE, Parallel_type::ALL));
-  
+
   // surface
-  Point zero(0.,0.,0.);
-  CHECK_CLOSE(0., norm(zero-m->face_centroid(0)), 1.e-6);
+  Point zero(0., 0., 0.);
+  CHECK_CLOSE(0., norm(zero - m->face_centroid(0)), 1.e-6);
 
   // branch point
-  Point branch(0.,0.,-2.5);
+  Point branch(0., 0., -2.5);
   std::cout << "branch = " << branch << std::endl;
   std::cout << "centroid = " << m->cell_centroid(2) << std::endl;
   CHECK_CLOSE(0., norm(branch - m->cell_centroid(2)), 1.e-6);
@@ -158,16 +158,12 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   m->cell_get_faces_and_dirs(2, &branch_faces, &dirs);
   CHECK_EQUAL(5, branch_faces.size());
 
-  for (int i=0; i!=3; ++i)
-    CHECK_CLOSE(1.e-4, m->cell_volume(i), 1.e-8);
-  for (int i=3; i!=11; ++i)
-    CHECK_CLOSE(.75*0.25e-4, m->cell_volume(i), 1.e-8);
+  for (int i = 0; i != 3; ++i) CHECK_CLOSE(1.e-4, m->cell_volume(i), 1.e-8);
+  for (int i = 3; i != 11; ++i) CHECK_CLOSE(.75 * 0.25e-4, m->cell_volume(i), 1.e-8);
 
-  for (int i=0; i!=3; ++i) 
-    CHECK_CLOSE(1.e-4, m->face_area(i), 1.e-8);
-  for (int i=3; i!=15; ++i)
-    CHECK_CLOSE(.25e-4, m->face_area(i), 1.e-8);
-  
+  for (int i = 0; i != 3; ++i) CHECK_CLOSE(1.e-4, m->face_area(i), 1.e-8);
+  for (int i = 3; i != 15; ++i) CHECK_CLOSE(.25e-4, m->face_area(i), 1.e-8);
+
   if (test_region) {
     CHECK_EQUAL(3, m->get_set_size("coarse_root", CELL, Parallel_type::ALL));
     CHECK_EQUAL(8, m->get_set_size("fine_root", CELL, Parallel_type::ALL));
@@ -176,17 +172,17 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
 
 
 void
-test_2Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
-                     bool test_region) {
+test_2Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m, bool test_region)
+{
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  
+
   MeshLogicalAudit audit(m, std::cout);
   CHECK(!audit.Verify());
-  
+
   CHECK_EQUAL(3, m->num_entities(CELL, Parallel_type::ALL));
   CHECK_EQUAL(5, m->num_entities(FACE, Parallel_type::ALL));
-  
+
   Entity_ID_List branch_faces;
   std::vector<int> dirs;
   std::vector<Point> bisectors;
@@ -201,7 +197,7 @@ test_2Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_EQUAL(1, branch_faces[1]);
   CHECK_EQUAL(3, branch_faces[2]);
 
-  CHECK_EQUAL(3, dirs.size());  
+  CHECK_EQUAL(3, dirs.size());
   CHECK_CLOSE(1, dirs[0], 1.e-8);
   CHECK_CLOSE(-1, dirs[1], 1.e-8);
   CHECK_CLOSE(-1, dirs[2], 1.e-8);
@@ -225,7 +221,7 @@ test_2Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_EQUAL(1, branch_faces[0]);
   CHECK_EQUAL(2, branch_faces[1]);
 
-  CHECK_EQUAL(2, dirs.size());  
+  CHECK_EQUAL(2, dirs.size());
   CHECK_CLOSE(1, dirs[0], 1.e-8);
   CHECK_CLOSE(-1, dirs[1], 1.e-8);
 
@@ -235,18 +231,18 @@ test_2Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_EQUAL(2, branch_faces.size());
   CHECK_EQUAL(1, branch_faces[0]);
   CHECK_EQUAL(2, branch_faces[1]);
-  
+
   CHECK_EQUAL(2, bisectors.size());
-  CHECK_POINT_CLOSE(Point(r22/2., r22/2, 0.), bisectors[0]);
-  CHECK_POINT_CLOSE(Point(-r22/2., -r22/2, 0.), bisectors[1]);
-  
+  CHECK_POINT_CLOSE(Point(r22 / 2., r22 / 2, 0.), bisectors[0]);
+  CHECK_POINT_CLOSE(Point(-r22 / 2., -r22 / 2, 0.), bisectors[1]);
+
   // cell 2
   m->cell_get_faces_and_dirs(2, &branch_faces, &dirs);
   CHECK_EQUAL(2, branch_faces.size());
   CHECK_EQUAL(3, branch_faces[0]);
   CHECK_EQUAL(4, branch_faces[1]);
 
-  CHECK_EQUAL(2, dirs.size());  
+  CHECK_EQUAL(2, dirs.size());
   CHECK_CLOSE(1, dirs[0], 1.e-8);
   CHECK_CLOSE(-1, dirs[1], 1.e-8);
 
@@ -256,44 +252,44 @@ test_2Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_EQUAL(2, branch_faces.size());
   CHECK_EQUAL(3, branch_faces[0]);
   CHECK_EQUAL(4, branch_faces[1]);
-  
+
   CHECK_EQUAL(2, bisectors.size());
-  CHECK_POINT_CLOSE(Point(r22/2., -r22/2, 0.), bisectors[0]);
-  CHECK_POINT_CLOSE(Point(-r22/2., r22/2, 0.), bisectors[1]);
+  CHECK_POINT_CLOSE(Point(r22 / 2., -r22 / 2, 0.), bisectors[0]);
+  CHECK_POINT_CLOSE(Point(-r22 / 2., r22 / 2, 0.), bisectors[1]);
 
 
   // faces
   Amanzi::AmanziGeometry::Point f0_normal = m->face_normal(0);
-  CHECK_POINT_CLOSE(Point(2,0,0), f0_normal);
+  CHECK_POINT_CLOSE(Point(2, 0, 0), f0_normal);
   CHECK_CLOSE(2.0, m->face_area(0), 1.e-8);
 
   Amanzi::AmanziGeometry::Point f1_normal = m->face_normal(1);
-  CHECK_POINT_CLOSE(Point(1,0,0), f1_normal);
+  CHECK_POINT_CLOSE(Point(1, 0, 0), f1_normal);
   CHECK_CLOSE(1.0, m->face_area(1), 1.e-8);
 
   Amanzi::AmanziGeometry::Point f2_normal = m->face_normal(2);
-  CHECK_POINT_CLOSE(Point(sqrt(2)/2,sqrt(2)/2,0), f2_normal);
+  CHECK_POINT_CLOSE(Point(sqrt(2) / 2, sqrt(2) / 2, 0), f2_normal);
   CHECK_CLOSE(1.0, m->face_area(2), 1.e-8);
 
   Amanzi::AmanziGeometry::Point f3_normal = m->face_normal(3);
-  CHECK_POINT_CLOSE(Point(1,0,0), f3_normal);
+  CHECK_POINT_CLOSE(Point(1, 0, 0), f3_normal);
   CHECK_CLOSE(1.0, m->face_area(3), 1.e-8);
 
   Amanzi::AmanziGeometry::Point f4_normal = m->face_normal(4);
-  CHECK_POINT_CLOSE(Point(sqrt(2)/2, -sqrt(2)/2,0), f4_normal);
+  CHECK_POINT_CLOSE(Point(sqrt(2) / 2, -sqrt(2) / 2, 0), f4_normal);
   CHECK_CLOSE(1.0, m->face_area(4), 1.e-8);
 
   // check centroids
   std::cout << "  Checking centroids" << std::endl;
-  CHECK_POINT_CLOSE(Point(2.,0.,0.), m->face_centroid(0));
-  CHECK_POINT_CLOSE(Point(1.,0.,0.), m->cell_centroid(0));
-  CHECK_POINT_CLOSE(Point(0.,0.,0.), m->face_centroid(1));
-  CHECK_POINT_CLOSE(Point(-r22/2.,-r22/2.,0.), m->cell_centroid(1));
-  CHECK_POINT_CLOSE(Point(-r22,-r22,0.), m->face_centroid(2));
-  CHECK_POINT_CLOSE(Point(0.,0.,0.), m->face_centroid(3));
-  CHECK_POINT_CLOSE(Point(-r22/2.,r22/2.,0.), m->cell_centroid(2));
-  CHECK_POINT_CLOSE(Point(-r22,r22,0.), m->face_centroid(4));
-  
+  CHECK_POINT_CLOSE(Point(2., 0., 0.), m->face_centroid(0));
+  CHECK_POINT_CLOSE(Point(1., 0., 0.), m->cell_centroid(0));
+  CHECK_POINT_CLOSE(Point(0., 0., 0.), m->face_centroid(1));
+  CHECK_POINT_CLOSE(Point(-r22 / 2., -r22 / 2., 0.), m->cell_centroid(1));
+  CHECK_POINT_CLOSE(Point(-r22, -r22, 0.), m->face_centroid(2));
+  CHECK_POINT_CLOSE(Point(0., 0., 0.), m->face_centroid(3));
+  CHECK_POINT_CLOSE(Point(-r22 / 2., r22 / 2., 0.), m->cell_centroid(2));
+  CHECK_POINT_CLOSE(Point(-r22, r22, 0.), m->face_centroid(4));
+
   if (test_region) {
     CHECK_EQUAL(1, m->get_set_size("coarse_root", CELL, Parallel_type::ALL));
     CHECK_EQUAL(2, m->get_set_size("fine_root", CELL, Parallel_type::ALL));
@@ -349,7 +345,6 @@ TEST(MESH_LOGICAL_2Y_XML_WITH_SETS)
 }
 
 
-
 // Evaluates a Y-mesh
 TEST(MESH_LOGICAL_Y)
 {
@@ -390,5 +385,3 @@ TEST(MESH_SUBGRID_VARIABLE_TAU)
   Amanzi::AmanziMesh::MeshLogicalAudit audit(m, std::cout);
   CHECK(!audit.Verify());
 }
-
-

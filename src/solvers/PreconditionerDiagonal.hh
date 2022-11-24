@@ -37,22 +37,25 @@ namespace AmanziSolvers {
 
 class PreconditionerDiagonal : public Preconditioner {
  public:
-  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final {};
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final{};
   virtual void InitializeInverse() override final {}
-  virtual void ComputeInverse() override final {
+  virtual void ComputeInverse() override final
+  {
     AMANZI_ASSERT(h_.get());
     diagonal_ = Teuchos::rcp(new Epetra_Vector(h_->DomainMap()));
     h_->ExtractDiagonalCopy(*diagonal_);
   };
 
-  virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final {
+  virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final
+  {
     AMANZI_ASSERT(diagonal_.get()); // Compute called
     returned_code_ = hv.ReciprocalMultiply(1.0, *diagonal_, v, 0.0);
     return returned_code_;
   }
 
-  virtual int returned_code() const override final  { return returned_code_; }
-  virtual std::string returned_code_string() const override final {
+  virtual int returned_code() const override final { return returned_code_; }
+  virtual std::string returned_code_string() const override final
+  {
     if (returned_code_ == 0) return "success";
     return "failed ReciprocalMultiply()";
   }
@@ -62,9 +65,8 @@ class PreconditionerDiagonal : public Preconditioner {
   mutable int returned_code_;
 };
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
-
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 
 #endif

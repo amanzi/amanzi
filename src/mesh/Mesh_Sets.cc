@@ -34,7 +34,8 @@ namespace AmanziMesh {
 //---------------------------------------------------------
 // Is there a set with this id and entity type
 //---------------------------------------------------------
-bool Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
+bool
+Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
 {
   if (!geometric_model_.get()) return false;
   Teuchos::RCP<const AmanziGeometry::Region> rgn;
@@ -51,10 +52,12 @@ bool Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
 //---------------------------------------------------------
 // Is there a set with this name and entity type
 //---------------------------------------------------------
-bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
+bool
+Mesh::valid_set_name(std::string name, Entity_kind kind) const
 {
   if (!geometric_model_.get()) {
-    Errors::Message mesg("Mesh sets not enabled because mesh was created without reference to a geometric model");
+    Errors::Message mesg(
+      "Mesh sets not enabled because mesh was created without reference to a geometric model");
     Exceptions::amanzi_throw(mesg);
   }
 
@@ -79,20 +82,16 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
     std::string entity_type = lsrgn->entity_str();
 
     if (parent() == Teuchos::null) {
-      if ((kind == CELL && entity_type == "CELL") ||
-          (kind == FACE && entity_type == "FACE") ||
-          (kind == EDGE && entity_type == "EDGE") ||
-          (kind == NODE && entity_type == "NODE"))
+      if ((kind == CELL && entity_type == "CELL") || (kind == FACE && entity_type == "FACE") ||
+          (kind == EDGE && entity_type == "EDGE") || (kind == NODE && entity_type == "NODE"))
         return true;
     } else {
-      if ((kind == CELL && entity_type == "FACE") ||
-          (kind == CELL && entity_type == "CELL") ||
-          (kind == FACE && entity_type == "FACE") ||
-          (kind == NODE && entity_type == "NODE")) {
+      if ((kind == CELL && entity_type == "FACE") || (kind == CELL && entity_type == "CELL") ||
+          (kind == FACE && entity_type == "FACE") || (kind == NODE && entity_type == "NODE")) {
         // guaranteed we can call, though it may be empty.
         return true;
       }
-    } 
+    }
     return false;
   }
 
@@ -102,7 +101,7 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
   if (kind == CELL && (rdim >= manifold_dim_ || rdim == 1 || rdim == 0)) return true;
   // If we are looking for a side set, the region has to be
   // one topological dimension less than the cells
-  if (kind == FACE && (rdim >= manifold_dim_-1 || rdim == 0)) return true;
+  if (kind == FACE && (rdim >= manifold_dim_ - 1 || rdim == 0)) return true;
 
   // If we are looking for a node set, the region can be of any
   // dimension upto the spatial dimension of the domain
@@ -115,10 +114,11 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
 //---------------------------------------------------------
 // TBW
 //---------------------------------------------------------
-void Mesh::get_set_entities(const std::string& setname,
-                            const Entity_kind kind,
-                            const Parallel_type ptype,
-                            Entity_ID_List *entids) const
+void
+Mesh::get_set_entities(const std::string& setname,
+                       const Entity_kind kind,
+                       const Parallel_type ptype,
+                       Entity_ID_List* entids) const
 {
   std::vector<double> vofs;
   get_set_entities_and_vofs(setname, kind, ptype, entids, &vofs);
@@ -128,39 +128,38 @@ void Mesh::get_set_entities(const std::string& setname,
 //---------------------------------------------------------
 // TBW
 //---------------------------------------------------------
-void Mesh::get_set_entities_box_vofs_(
-    Teuchos::RCP<const AmanziGeometry::Region> region,
-    const Entity_kind kind, 
-    const Parallel_type ptype, 
-    std::vector<Entity_ID>* setents,
-    std::vector<double>* volume_fractions) const
+void
+Mesh::get_set_entities_box_vofs_(Teuchos::RCP<const AmanziGeometry::Region> region,
+                                 const Entity_kind kind,
+                                 const Parallel_type ptype,
+                                 std::vector<Entity_ID>* setents,
+                                 std::vector<double>* volume_fractions) const
 {
   AMANZI_ASSERT(volume_fractions != NULL);
 
   setents->clear();
   volume_fractions->clear();
 
-  switch (kind) {      
-  case CELL:
-  {
+  switch (kind) {
+  case CELL: {
     std::string name = region->get_name() + "_cell";
 
     if (region_ids.find(name) != region_ids.end()) {
       *setents = region_ids[name];
       *volume_fractions = region_vofs[name];
     } else {
-      int ncells = num_entities(CELL, ptype);  
+      int ncells = num_entities(CELL, ptype);
       double volume;
 
       Entity_ID_List faces, cnodes, fnodes;
       std::vector<int> dirs;
       std::vector<AmanziGeometry::Point> polytope_nodes;
-      std::vector<std::vector<int> > polytope_faces;
+      std::vector<std::vector<int>> polytope_faces;
 
       for (int c = 0; c < ncells; ++c) {
         cell_get_coordinates(c, &polytope_nodes);
 
-        if (space_dimension() == 3) { 
+        if (space_dimension() == 3) {
           cell_get_nodes(c, &cnodes);
           cell_get_faces_and_dirs(c, &faces, &dirs);
           int nfaces = faces.size();
@@ -172,8 +171,9 @@ void Mesh::get_set_entities_box_vofs_(
             int nnodes = fnodes.size();
 
             for (int i = 0; i < nnodes; ++i) {
-              int j = (dirs[n] > 0) ? i : nnodes - i - 1; 
-              int pos = std::distance(cnodes.begin(), std::find(cnodes.begin(), cnodes.end(), fnodes[j]));
+              int j = (dirs[n] > 0) ? i : nnodes - i - 1;
+              int pos =
+                std::distance(cnodes.begin(), std::find(cnodes.begin(), cnodes.end(), fnodes[j]));
               polytope_faces[n].push_back(pos);
             }
           }
@@ -181,8 +181,10 @@ void Mesh::get_set_entities_box_vofs_(
 
         if ((volume = region->intersect(polytope_nodes, polytope_faces)) > 0.0) {
           setents->push_back(c);
-          if (region->get_type()==AmanziGeometry::RegionType::LINE_SEGMENT) volume_fractions->push_back(volume);
-          else volume_fractions->push_back(volume /cell_volume(c));
+          if (region->get_type() == AmanziGeometry::RegionType::LINE_SEGMENT)
+            volume_fractions->push_back(volume);
+          else
+            volume_fractions->push_back(volume / cell_volume(c));
         }
       }
 
@@ -192,8 +194,7 @@ void Mesh::get_set_entities_box_vofs_(
     break;
   }
 
-  case FACE:
-  {
+  case FACE: {
     std::string name = region->get_name() + "_face";
 
     if (region_ids.find(name) != region_ids.end()) {
@@ -202,7 +203,7 @@ void Mesh::get_set_entities_box_vofs_(
     } else {
       int nfaces = num_entities(FACE, ptype);
       double area;
-        
+
       std::vector<AmanziGeometry::Point> polygon;
 
       for (int f = 0; f < nfaces; ++f) {
@@ -219,29 +220,23 @@ void Mesh::get_set_entities_box_vofs_(
     break;
   }
 
-  case EDGE:
-  {
+  case EDGE: {
     int nedges = num_entities(EDGE, ptype);
-        
+
     for (int e = 0; e < nedges; ++e) {
-      if (region->inside(edge_centroid(e))) {
-        setents->push_back(e);
-      }
+      if (region->inside(edge_centroid(e))) { setents->push_back(e); }
     }
     break;
   }
 
-  case NODE:
-  {
+  case NODE: {
     int nnodes = num_entities(NODE, ptype);
-        
+
     AmanziGeometry::Point xv(space_dimension());
 
     for (int v = 0; v < nnodes; ++v) {
       node_get_coordinates(v, &xv);
-      if (region->inside(xv)) {
-        setents->push_back(v);
-      }
+      if (region->inside(xv)) { setents->push_back(v); }
     }
     break;
   }
@@ -264,17 +259,18 @@ void Mesh::get_set_entities_box_vofs_(
 //---------------------------------------------------------
 // Generic implemnetation of set routines.
 //---------------------------------------------------------
-unsigned int Mesh::get_set_size(const std::string& setname, 
-                                const Entity_kind kind, 
-                                const Parallel_type ptype) const 
+unsigned int
+Mesh::get_set_size(const std::string& setname,
+                   const Entity_kind kind,
+                   const Parallel_type ptype) const
 {
   Entity_ID_List setents;
   std::vector<double> vofs;
 
   get_set_entities_and_vofs(setname, kind, ptype, &setents, &vofs);
-  
+
   return setents.size();
 }
 
-}  // namespace AmanziMesh
-}  // namespace Amanzi
+} // namespace AmanziMesh
+} // namespace Amanzi

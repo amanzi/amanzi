@@ -19,10 +19,9 @@
 namespace Amanzi {
 namespace AmanziGeometry {
 
-RegionAll::RegionAll(const std::string& name,
-                     const int id,
-                     const LifeCycleType lifecycle)
-  : Region(name, id, false, RegionType::ALL, 0, 0, lifecycle) {
+RegionAll::RegionAll(const std::string& name, const int id, const LifeCycleType lifecycle)
+  : Region(name, id, false, RegionType::ALL, 0, 0, lifecycle)
+{
   // Region dimension is set arbitrarily as 0 since the set of
   // entities in the mesh will determine the dimension
 }
@@ -41,4 +40,3 @@ RegionAll::inside(const Point& p) const
 
 } // namespace AmanziGeometry
 } // namespace Amanzi
-

@@ -41,14 +41,14 @@
 namespace Amanzi {
 
 template <class PK_Base>
-class PK_MPCAdditive :  public PK_MPC<PK> {
+class PK_MPCAdditive : public PK_MPC<PK> {
  public:
   PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
-         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-         const Teuchos::RCP<State>& S,
-         const Teuchos::RCP<TreeVector>& soln);
+                 const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                 const Teuchos::RCP<State>& S,
+                 const Teuchos::RCP<TreeVector>& soln);
 
-  ~PK_MPCAdditive() {};
+  ~PK_MPCAdditive(){};
 
   // PK methods
   // -- sets up sub-PKs
@@ -70,11 +70,10 @@ class PK_MPCAdditive :  public PK_MPC<PK> {
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-PK_MPCAdditive<PK_Base>::PK_MPCAdditive(
-    Teuchos::ParameterList& pk_tree,
-    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-    const Teuchos::RCP<State>& S,
-    const Teuchos::RCP<TreeVector>& soln)
+PK_MPCAdditive<PK_Base>::PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
+                                        const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                                        const Teuchos::RCP<State>& S,
+                                        const Teuchos::RCP<TreeVector>& soln)
 {
   pk_tree_ = pk_tree;
   global_list_ = global_list;
@@ -89,18 +88,17 @@ PK_MPCAdditive<PK_Base>::PK_MPCAdditive(
   // const char* result = name_.data();
   // while ((result = std::strstr(result, "->")) != NULL) {
   //   result += 2;
-  //   name_ = result;   
+  //   name_ = result;
   // }
 
   // get my ParameterList
   my_list_ = Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), name_);
 
   Teuchos::RCP<Teuchos::ParameterList> plist;
-  if (global_list_->isSublist("PKs")) {
-    plist = Teuchos::sublist(global_list, "PKs");
-  }
+  if (global_list_->isSublist("PKs")) { plist = Teuchos::sublist(global_list, "PKs"); }
 
-  std::vector<std::string> pk_name = my_list_->get<Teuchos::Array<std::string> >("PKs order").toVector();
+  std::vector<std::string> pk_name =
+    my_list_->get<Teuchos::Array<std::string>>("PKs order").toVector();
 
   // loop over sub-PKs in the PK sublist, constructing the hierarchy recursively
   PKFactory pk_factory;
@@ -123,7 +121,9 @@ PK_MPCAdditive<PK_Base>::PK_MPCAdditive(
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void PK_MPCAdditive<PK_Base>::Setup() {
+void
+PK_MPCAdditive<PK_Base>::Setup()
+{
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->Setup();
   }
@@ -134,7 +134,9 @@ void PK_MPCAdditive<PK_Base>::Setup() {
 // Loop over sub-PKs, calling their initialization methods
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void PK_MPCAdditive<PK_Base>::Initialize() {
+void
+PK_MPCAdditive<PK_Base>::Initialize()
+{
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->Initialize();
   }
@@ -145,7 +147,9 @@ void PK_MPCAdditive<PK_Base>::Initialize() {
 // loop over sub-PKs, calling their commit state method
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void PK_MPCAdditive<PK_Base>::CommitStep(double t_old, double t_new, const Tag& tag) {
+void
+PK_MPCAdditive<PK_Base>::CommitStep(double t_old, double t_new, const Tag& tag)
+{
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->CommitStep(t_old, t_new, tag);
   }
@@ -156,7 +160,9 @@ void PK_MPCAdditive<PK_Base>::CommitStep(double t_old, double t_new, const Tag& 
 // loop over sub-PKs, calling their CalculateDiagnostics method
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void PK_MPCAdditive<PK_Base>::CalculateDiagnostics(const Tag& tag) {
+void
+PK_MPCAdditive<PK_Base>::CalculateDiagnostics(const Tag& tag)
+{
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->CalculateDiagnostics(tag);
   }
@@ -167,10 +173,11 @@ void PK_MPCAdditive<PK_Base>::CalculateDiagnostics(const Tag& tag) {
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-double PK_MPCAdditive<PK_Base>::get_dt() {
+double
+PK_MPCAdditive<PK_Base>::get_dt()
+{
   double dt = 1.0e99;
-  for (PK_MPCAdditive<PK>::SubPKList::iterator pk = sub_pks_.begin();
-       pk != sub_pks_.end(); ++pk) {
+  for (PK_MPCAdditive<PK>::SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     dt = std::min<double>(dt, (*pk)->get_dt());
   }
   return dt;
@@ -180,10 +187,11 @@ double PK_MPCAdditive<PK_Base>::get_dt() {
 // Set sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void PK_MPCAdditive<PK_Base>::set_dt(double dt_) {
+void
+PK_MPCAdditive<PK_Base>::set_dt(double dt_)
+{
   // double dt = 1.0e99;
-  for (PK_MPCAdditive<PK>::SubPKList::iterator pk = sub_pks_.begin();
-       pk != sub_pks_.end(); ++pk) {
+  for (PK_MPCAdditive<PK>::SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->set_dt(dt_);
   }
 }
@@ -193,21 +201,18 @@ void PK_MPCAdditive<PK_Base>::set_dt(double dt_) {
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-bool PK_MPCAdditive<PK_Base>::AdvanceStep(double t_old, double t_new, bool reinit) {
-
+bool
+PK_MPCAdditive<PK_Base>::AdvanceStep(double t_old, double t_new, bool reinit)
+{
   bool fail = false;
-  for (PK_MPCAdditive<PK>::SubPKList::iterator pk = sub_pks_.begin();
-       pk != sub_pks_.end(); ++pk) {
+  for (PK_MPCAdditive<PK>::SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
-    if (fail) {
-      return fail;
-    }
+    if (fail) { return fail; }
   }
   return fail;
-
 }
 
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

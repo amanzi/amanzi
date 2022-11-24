@@ -20,15 +20,15 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
-EvaluatorIndependentFromFile::EvaluatorIndependentFromFile(
-    Teuchos::ParameterList& plist)
-    : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist),
-      filename_(plist.get<std::string>("filename")),
-      meshname_(plist.get<std::string>("domain name", "domain")),
-      compname_(plist.get<std::string>("component name", "cell")),
-      varname_(plist.get<std::string>("variable name")),
-      locname_(plist.get<std::string>("mesh entity", "cell")),
-      ndofs_(plist.get<int>("number of dofs", 1)) {
+EvaluatorIndependentFromFile::EvaluatorIndependentFromFile(Teuchos::ParameterList& plist)
+  : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist),
+    filename_(plist.get<std::string>("filename")),
+    meshname_(plist.get<std::string>("domain name", "domain")),
+    compname_(plist.get<std::string>("component name", "cell")),
+    varname_(plist.get<std::string>("variable name")),
+    locname_(plist.get<std::string>("mesh entity", "cell")),
+    ndofs_(plist.get<int>("number of dofs", 1))
+{
   if (plist.isSublist("time function")) {
     FunctionFactory fac;
     time_func_ = Teuchos::rcp(fac.Create(plist.sublist("time function")));
@@ -39,7 +39,9 @@ EvaluatorIndependentFromFile::EvaluatorIndependentFromFile(
 // ---------------------------------------------------------------------------
 // Virtual Copy constructor
 // ---------------------------------------------------------------------------
-Teuchos::RCP<Evaluator> EvaluatorIndependentFromFile::Clone() const {
+Teuchos::RCP<Evaluator>
+EvaluatorIndependentFromFile::Clone() const
+{
   return Teuchos::rcp(new EvaluatorIndependentFromFile(*this));
 }
 
@@ -47,10 +49,12 @@ Teuchos::RCP<Evaluator> EvaluatorIndependentFromFile::Clone() const {
 // ---------------------------------------------------------------------------
 // Operator=
 // ---------------------------------------------------------------------------
-Evaluator& EvaluatorIndependentFromFile::operator=(const Evaluator& other) {
-  if (this !=& other) {
-    const EvaluatorIndependentFromFile *other_p =
-        dynamic_cast<const EvaluatorIndependentFromFile *>(&other);
+Evaluator&
+EvaluatorIndependentFromFile::operator=(const Evaluator& other)
+{
+  if (this != &other) {
+    const EvaluatorIndependentFromFile* other_p =
+      dynamic_cast<const EvaluatorIndependentFromFile*>(&other);
     AMANZI_ASSERT(other_p != NULL);
     *this = *other_p;
   }
@@ -58,9 +62,10 @@ Evaluator& EvaluatorIndependentFromFile::operator=(const Evaluator& other) {
 }
 
 
-EvaluatorIndependentFromFile& EvaluatorIndependentFromFile::
-operator=(const EvaluatorIndependentFromFile& other) {
-  if (this !=& other) {
+EvaluatorIndependentFromFile&
+EvaluatorIndependentFromFile::operator=(const EvaluatorIndependentFromFile& other)
+{
+  if (this != &other) {
     AMANZI_ASSERT(my_key_ == other.my_key_);
     requests_ = other.requests_;
   }
@@ -71,26 +76,27 @@ operator=(const EvaluatorIndependentFromFile& other) {
 // ---------------------------------------------------------------------------
 // Ensures that the function can provide for the vector's requirements.
 // ---------------------------------------------------------------------------
-void EvaluatorIndependentFromFile::EnsureCompatibility(State& S) {
+void
+EvaluatorIndependentFromFile::EnsureCompatibility(State& S)
+{
   EvaluatorIndependent::EnsureCompatibility(S);
 
   // requirements on vector data
   if (locname_ == "cell") {
     S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
-        .SetMesh(S.GetMesh(meshname_))
-        ->AddComponent(compname_, AmanziMesh::CELL, ndofs_);
+      .SetMesh(S.GetMesh(meshname_))
+      ->AddComponent(compname_, AmanziMesh::CELL, ndofs_);
   } else if (locname_ == "face") {
     S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
-        .SetMesh(S.GetMesh(meshname_))
-        ->AddComponent(compname_, AmanziMesh::FACE, ndofs_);
+      .SetMesh(S.GetMesh(meshname_))
+      ->AddComponent(compname_, AmanziMesh::FACE, ndofs_);
   } else if (locname_ == "boundary_face") {
     S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
-        .SetMesh(S.GetMesh(meshname_))
-        ->AddComponent(compname_, AmanziMesh::BOUNDARY_FACE, ndofs_);
+      .SetMesh(S.GetMesh(meshname_))
+      ->AddComponent(compname_, AmanziMesh::BOUNDARY_FACE, ndofs_);
   } else {
     Errors::Message m;
-    m << "IndependentVariableFromFile: invalid location name: \"" << locname_
-      << "\"";
+    m << "IndependentVariableFromFile: invalid location name: \"" << locname_ << "\"";
     throw(m);
   }
 
@@ -103,12 +109,12 @@ void EvaluatorIndependentFromFile::EnsureCompatibility(State& S) {
       reader.ReadData("/time", times_);
     } catch (...) {
       std::stringstream messagestream;
-      messagestream << "Variable "<< my_key_ << " is defined as a field changing in time.\n"
-                    << " Dataset /time is not provided in file " << filename_<<"\n";
+      messagestream << "Variable " << my_key_ << " is defined as a field changing in time.\n"
+                    << " Dataset /time is not provided in file " << filename_ << "\n";
       Errors::Message message(messagestream.str());
       Exceptions::amanzi_throw(message);
     }
-  } else{
+  } else {
     times_.push_back(1e+99);
   }
 
@@ -131,7 +137,8 @@ void EvaluatorIndependentFromFile::EnsureCompatibility(State& S) {
 // ---------------------------------------------------------------------------
 // Update the value in the state.
 // ---------------------------------------------------------------------------
-void EvaluatorIndependentFromFile::Update_(State& S)
+void
+EvaluatorIndependentFromFile::Update_(State& S)
 {
   CompositeVector& cv = S.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
 
@@ -218,8 +225,7 @@ void EvaluatorIndependentFromFile::Update_(State& S)
     }
   }
 
-  if (locname_ == "cell" &&
-      (cv.HasComponent("boundary_face") || cv.HasComponent("face")))
+  if (locname_ == "cell" && (cv.HasComponent("boundary_face") || cv.HasComponent("face")))
     DeriveFaceValuesFromCellValues(cv);
 }
 
@@ -227,7 +233,8 @@ void EvaluatorIndependentFromFile::Update_(State& S)
 // ---------------------------------------------------------------------------
 //
 // ---------------------------------------------------------------------------
-void EvaluatorIndependentFromFile::LoadFile_(int i)
+void
+EvaluatorIndependentFromFile::LoadFile_(int i)
 {
   // allocate data
   if (val_after_ == Teuchos::null) {
@@ -237,7 +244,7 @@ void EvaluatorIndependentFromFile::LoadFile_(int i)
 
   // open the file
   Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
-      Teuchos::rcp(new Amanzi::HDF5_MPI(val_after_->Comm(), filename_));
+    Teuchos::rcp(new Amanzi::HDF5_MPI(val_after_->Comm(), filename_));
   file_input->open_h5file();
 
   // load the data
@@ -248,9 +255,8 @@ void EvaluatorIndependentFromFile::LoadFile_(int i)
     bool successful = file_input->readData(*vec(j), varname.str());
     if (!successful) {
       Errors::Message msg;
-      msg << "EvaluatorIndependentFromFile for \"" << my_key_
-          << "\" cannot read variable \"" << varname.str() << "\" from file \""
-          << filename_ << "\"";
+      msg << "EvaluatorIndependentFromFile for \"" << my_key_ << "\" cannot read variable \""
+          << varname.str() << "\" from file \"" << filename_ << "\"";
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -263,7 +269,8 @@ void EvaluatorIndependentFromFile::LoadFile_(int i)
 // ---------------------------------------------------------------------------
 //
 // ---------------------------------------------------------------------------
-void EvaluatorIndependentFromFile::Interpolate_(double time, CompositeVector& v)
+void
+EvaluatorIndependentFromFile::Interpolate_(double time, CompositeVector& v)
 {
   AMANZI_ASSERT(t_before_ >= 0.0);
   AMANZI_ASSERT(t_after_ >= 0.0);

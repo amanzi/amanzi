@@ -9,11 +9,12 @@
 // ODE: f(u) = u (u^2 + 1) = 0.
 class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vector> {
  public:
-  NonlinearProblem(double atol, double rtol, bool exact_jacobian) :
-    atol_(atol), rtol_(rtol), exact_jacobian_(exact_jacobian) {}
+  NonlinearProblem(double atol, double rtol, bool exact_jacobian)
+    : atol_(atol), rtol_(rtol), exact_jacobian_(exact_jacobian)
+  {}
 
-  void Residual(const Teuchos::RCP<Epetra_Vector>& u,
-                const Teuchos::RCP<Epetra_Vector>& f) {
+  void Residual(const Teuchos::RCP<Epetra_Vector>& u, const Teuchos::RCP<Epetra_Vector>& f)
+  {
     for (int c = 0; c != u->MyLength(); ++c) {
       double x = (*u)[c];
       (*f)[c] = x * (x * x + 1.0);
@@ -21,12 +22,14 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
   }
 
   int ApplyPreconditioner(const Teuchos::RCP<const Epetra_Vector>& u,
-                           const Teuchos::RCP<Epetra_Vector>& hu) {
+                          const Teuchos::RCP<Epetra_Vector>& hu)
+  {
     return hu->ReciprocalMultiply(1.0, *h_, *u, 0.0);
   }
 
-  double ErrorNorm(const Teuchos::RCP<const Epetra_Vector>& u,
-                   const Teuchos::RCP<const Epetra_Vector>& du) {
+  double
+  ErrorNorm(const Teuchos::RCP<const Epetra_Vector>& u, const Teuchos::RCP<const Epetra_Vector>& du)
+  {
     double norm2_du;
     double norm_du, norm_u;
     du->NormInf(&norm_du);
@@ -36,7 +39,8 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
     //return norm_du / (atol_ + rtol_ * norm_u);
   }
 
-  void UpdatePreconditioner(const Teuchos::RCP<const Epetra_Vector>& up) {
+  void UpdatePreconditioner(const Teuchos::RCP<const Epetra_Vector>& up)
+  {
     h_ = Teuchos::rcp(new Epetra_Vector(*up));
 
     if (exact_jacobian_) {
@@ -52,13 +56,12 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
     }
   }
 
-  void ChangedSolution() {};
+  void ChangedSolution(){};
 
  protected:
   double atol_, rtol_;
   bool exact_jacobian_;
-  Teuchos::RCP<Epetra_Vector> h_;  // preconditioner
+  Teuchos::RCP<Epetra_Vector> h_; // preconditioner
 };
 
 #endif
-

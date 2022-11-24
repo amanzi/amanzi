@@ -64,20 +64,33 @@ class DG_Modal : public BilinearForm {
   virtual int StiffnessMatrix(int c, const MatrixPolynomial& K, DenseMatrix& A) override;
 
   // -- advection matrices
-  virtual int AdvectionMatrix(int c, const VectorPolynomial& uc,
-                              DenseMatrix& A, bool grad_on_test) override;
+  virtual int
+  AdvectionMatrix(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test) override;
 
   // -- flux matrices
   //    returns point flux value (u.n) in the last parameter
-  int FluxMatrix(int f, const Polynomial& uf, DenseMatrix& A, bool upwind, bool jump_on_test, double* flux);
-  int FluxMatrixRusanov(int f, const VectorPolynomial& uc1, const VectorPolynomial& uc2,
-                        const Polynomial& uf, DenseMatrix& A);
-  int FluxMatrixGaussPoints(int f, const Polynomial& uf, DenseMatrix& A, bool upwind, bool jump_on_test);
+  int FluxMatrix(int f,
+                 const Polynomial& uf,
+                 DenseMatrix& A,
+                 bool upwind,
+                 bool jump_on_test,
+                 double* flux);
+  int FluxMatrixRusanov(int f,
+                        const VectorPolynomial& uc1,
+                        const VectorPolynomial& uc2,
+                        const Polynomial& uf,
+                        DenseMatrix& A);
+  int FluxMatrixGaussPoints(int f,
+                            const Polynomial& uf,
+                            DenseMatrix& A,
+                            bool upwind,
+                            bool jump_on_test);
 
   // -- interface matrices: jumps and penalty
-  template<typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>::type* = nullptr>
+  template <typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>::type* = nullptr>
   int FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A);
-  int FaceMatrixJump(int f, const WhetStoneFunction* K1, const WhetStoneFunction* K2, DenseMatrix& A);
+  int
+  FaceMatrixJump(int f, const WhetStoneFunction* K1, const WhetStoneFunction* K2, DenseMatrix& A);
 
   int FaceMatrixPenalty(int f, double Kf, DenseMatrix& A);
 
@@ -94,8 +107,8 @@ class DG_Modal : public BilinearForm {
   int numi_order_;
   NumericalIntegration numi_;
 
-  std::vector<Polynomial> monomial_integrals_;  // integrals of non-normalized monomials
-  std::vector<std::shared_ptr<Basis> > basis_;
+  std::vector<Polynomial> monomial_integrals_; // integrals of non-normalized monomials
+  std::vector<std::shared_ptr<Basis>> basis_;
 
   static RegisteredFactory<DG_Modal> factory_;
 };
@@ -105,8 +118,9 @@ class DG_Modal : public BilinearForm {
 * Jump matrix for Taylor basis using tensors:
 *   \Int_f ( {K \grad \rho} [\psi] ) dS
 ****************************************************************** */
-template<typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>::type*>
-int DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A)
+template <typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>::type*>
+int
+DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A)
 {
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
@@ -193,8 +207,7 @@ int DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix&
   return 0;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

@@ -28,14 +28,14 @@ class MatrixBlock;
 
 class KineticRate {
  public:
-  virtual ~KineticRate() {};
+  virtual ~KineticRate(){};
 
-  virtual void Update(const SpeciesArray& primary_species,
-                      const std::vector<Mineral>& minerals) = 0;
+  virtual void
+  Update(const SpeciesArray& primary_species, const std::vector<Mineral>& minerals) = 0;
 
   virtual void AddContributionToResidual(const std::vector<Mineral>& minerals,
                                          const double bulk_volume,
-                                         std::vector<double> *residual) = 0;
+                                         std::vector<double>* residual) = 0;
 
   virtual void AddContributionToJacobian(const SpeciesArray& primary_species,
                                          const std::vector<Mineral>& minerals,
@@ -70,12 +70,11 @@ class KineticRate {
 
  private:
   std::string name_;
-  int identifier_;  // the index identifier of the associated mineral!
-  double reaction_rate_;  // volumetric rate: [moles/sec/m^3 bulk]
+  int identifier_;       // the index identifier of the associated mineral!
+  double reaction_rate_; // volumetric rate: [moles/sec/m^3 bulk]
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif
-

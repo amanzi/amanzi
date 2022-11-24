@@ -21,13 +21,14 @@ namespace Operators {
 
 class PDE_HelperBCsList {
  public:
-  PDE_HelperBCsList() {};
-  virtual ~PDE_HelperBCsList() {};
-  
+  PDE_HelperBCsList(){};
+  virtual ~PDE_HelperBCsList(){};
+
   // boundary conditions (BC) require information on test and
   // trial spaces. For a single PDE, these BCs could be the same.
-  virtual void SetBCs(const Teuchos::RCP<const BCs>& bc_trial,
-                      const Teuchos::RCP<const BCs>& bc_test) {
+  virtual void
+  SetBCs(const Teuchos::RCP<const BCs>& bc_trial, const Teuchos::RCP<const BCs>& bc_test)
+  {
     bcs_trial_.clear();
     bcs_test_.clear();
 
@@ -35,19 +36,18 @@ class PDE_HelperBCsList {
     bcs_test_.push_back(bc_test);
   }
 
-  virtual void AddBCs(const Teuchos::RCP<const BCs>& bc_trial,
-                      const Teuchos::RCP<const BCs>& bc_test) {
+  virtual void
+  AddBCs(const Teuchos::RCP<const BCs>& bc_trial, const Teuchos::RCP<const BCs>& bc_test)
+  {
     bcs_trial_.push_back(bc_trial);
     bcs_test_.push_back(bc_test);
   }
 
  protected:
-  std::vector<Teuchos::RCP<const BCs> > bcs_trial_, bcs_test_;
+  std::vector<Teuchos::RCP<const BCs>> bcs_trial_, bcs_test_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-
-

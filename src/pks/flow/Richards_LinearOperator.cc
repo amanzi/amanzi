@@ -28,8 +28,10 @@ namespace Flow {
 * Moving flux calculation here impose restrictions on multiple 
 * possible scenarios of data flow.
 ****************************************************************** */
-void Richards_PK::SolveFullySaturatedProblem(
-    double t_old, CompositeVector& u, const std::string& solver_name)
+void
+Richards_PK::SolveFullySaturatedProblem(double t_old,
+                                        CompositeVector& u,
+                                        const std::string& solver_name)
 {
   UpdateSourceBoundaryData(t_old, t_old, u);
 
@@ -65,9 +67,8 @@ void Richards_PK::SolveFullySaturatedProblem(
     u.Norm2(&pnorm);
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "saturated solver (" << solver->name() 
-               << "): ||p,lambda||=" << pnorm << " itr=" << num_itrs 
-               << " code=" << code << std::endl;
+    *vo_->os() << "saturated solver (" << solver->name() << "): ||p,lambda||=" << pnorm
+               << " itr=" << num_itrs << " code=" << code << std::endl;
 
     CompositeVector r(rhs);
     op_matrix_->ComputeResidual(*solution, r);
@@ -90,7 +91,8 @@ void Richards_PK::SolveFullySaturatedProblem(
 * block-diagonalized problem. Algorithm is based on de-coupling 
 * pressure-lambda system via zeroing-out off-diagonal blocks.
 ****************************************************************** */
-void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u)
+void
+Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u)
 {
   std::vector<int>& bc_model = op_bc_->bc_model();
 
@@ -103,11 +105,11 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   // update diffusion coefficient
   // -- function
   vol_flowrate_copy->ScatterMasterToGhosted("face");
- 
+
   pressure_eval_->SetChanged();
   auto& alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
-  
+
   *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
   Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
   upwind_->Compute(*vol_flowrate_copy, *u, bc_model, *alpha_upwind_);
@@ -115,7 +117,7 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   // -- derivative
   S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
   auto& alpha_dP = S_->GetDerivativeW<CompositeVector>(
-      alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
+    alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
   *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
   Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
@@ -155,9 +157,8 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
     u->Norm2(&pnorm);
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "constraints solver (" << solver->name() 
-               << "): ||p,lambda||=" << pnorm << " itr=" << num_itrs 
-               << " code=" << code << std::endl;
+    *vo_->os() << "constraints solver (" << solver->name() << "): ||p,lambda||=" << pnorm
+               << " itr=" << num_itrs << " code=" << code << std::endl;
   }
 
   // catastrophic failure
@@ -172,7 +173,8 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
 /* ******************************************************************
 * Calculates rel perm on the upwind boundary using a FV model.
 ****************************************************************** */
-void Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
+void
+Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
 {
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
@@ -182,8 +184,9 @@ void Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
   auto& k_face = *alpha_upwind_->ViewComponent("face", true);
 
   for (int f = 0; f < nfaces_owned; f++) {
-    if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
-         bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
+    if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN ||
+         bc_model[f] == Operators::OPERATOR_BC_MIXED) &&
+        bc_value[f] < 0.0) {
       int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
 
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
@@ -197,7 +200,7 @@ void Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
       double kr1 = wrm_->second[(*wrm_->first)[c]]->k_relative(atm_pressure_ - u_cell[0][c]);
       double kr2 = std::min(1.0, -value * mu_c[0][c] / (Knn * rho_ * rho_ * g_));
       k_face[0][f] = (molar_rho_ / mu_c[0][c]) * (kr1 + kr2) / 2;
-    } 
+    }
   }
 
   alpha_upwind_->ScatterMasterToGhosted("face");
@@ -207,7 +210,8 @@ void Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
 /* ******************************************************************
 * Calculates rel perm on the upwind boundary using a FV model.
 ****************************************************************** */
-void Richards_PK::UpwindInflowBoundary_New(Teuchos::RCP<const CompositeVector> u)
+void
+Richards_PK::UpwindInflowBoundary_New(Teuchos::RCP<const CompositeVector> u)
 {
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
@@ -216,20 +220,20 @@ void Richards_PK::UpwindInflowBoundary_New(Teuchos::RCP<const CompositeVector> u
   auto& k_face = *alpha_upwind_->ViewComponent("face", true);
 
   for (int f = 0; f < nfaces_owned; f++) {
-    if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
-         bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
+    if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN ||
+         bc_model[f] == Operators::OPERATOR_BC_MIXED) &&
+        bc_value[f] < 0.0) {
       int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
 
       double value = DeriveBoundaryFaceValue(f, *u, wrm_->second[(*wrm_->first)[c]]);
       double kr = wrm_->second[(*wrm_->first)[c]]->k_relative(atm_pressure_ - value);
       k_face[0][f] = kr * (molar_rho_ / mu_c[0][c]);
       // (*u->ViewComponent("face"))[0][f] = value;
-    } 
+    }
   }
 
   alpha_upwind_->ScatterMasterToGhosted("face");
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
-
+} // namespace Flow
+} // namespace Amanzi

@@ -38,7 +38,8 @@
 
 namespace Amanzi {
 
-class EvaluatorMultiplicativeReciprocal : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class EvaluatorMultiplicativeReciprocal
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   EvaluatorMultiplicativeReciprocal(Teuchos::ParameterList& plist);
   EvaluatorMultiplicativeReciprocal(const EvaluatorMultiplicativeReciprocal& other);
@@ -48,7 +49,9 @@ class EvaluatorMultiplicativeReciprocal : public EvaluatorSecondaryMonotype<Comp
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
@@ -59,6 +62,6 @@ class EvaluatorMultiplicativeReciprocal : public EvaluatorSecondaryMonotype<Comp
   static Utils::RegisteredFactory<Evaluator, EvaluatorMultiplicativeReciprocal> fac_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

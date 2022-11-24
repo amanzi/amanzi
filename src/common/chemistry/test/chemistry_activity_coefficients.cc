@@ -24,18 +24,10 @@ class ActivityModelTest {
 
   void RunTest(const std::string& name, double* gamma);
 
-  void set_activity_model_name(const std::string& name) {
-    activity_model_name_ = name;
-  };
-  std::string activity_model_name() const {
-    return activity_model_name_;
-  };
-  double ionic_strength() {
-    return activity_model_->ionic_strength();
-  };
-  double tolerance() {
-    return tolerance_;
-  };
+  void set_activity_model_name(const std::string& name) { activity_model_name_ = name; };
+  std::string activity_model_name() const { return activity_model_name_; };
+  double ionic_strength() { return activity_model_->ionic_strength(); };
+  double tolerance() { return tolerance_; };
 
  protected:
   ac::ActivityModelFactory amf_;
@@ -57,40 +49,37 @@ class ActivityModelTest {
 };
 
 
-ActivityModelTest::ActivityModelTest()
-  : amf_(),
-    tolerance_(1.0e-5),
-    activity_model_name_("")
+ActivityModelTest::ActivityModelTest() : amf_(), tolerance_(1.0e-5), activity_model_name_("")
 {
   Teuchos::ParameterList plist;
   plist.set<int>("charge", 1)
-       .set<double>("ion size parameter", 9.0)
-       .set<double>("gram molecular weight", 1.0079);
+    .set<double>("ion size parameter", 9.0)
+    .set<double>("gram molecular weight", 1.0079);
   H_p = ac::Species(0, "H+", plist);
 
   plist.set<int>("charge", -1)
-       .set<double>("ion size parameter", 3.5)
-       .set<double>("gram molecular weight", 17.0073);
+    .set<double>("ion size parameter", 3.5)
+    .set<double>("gram molecular weight", 17.0073);
   OH_m = ac::Species(1, "OH-", plist);
 
   plist.set<int>("charge", 2)
-       .set<double>("ion size parameter", 6.0)
-       .set<double>("gram molecular weight", 40.0780);
+    .set<double>("ion size parameter", 6.0)
+    .set<double>("gram molecular weight", 40.0780);
   Ca_pp = ac::Species(2, "Ca++", plist);
 
   plist.set<int>("charge", -2)
-       .set<double>("ion size parameter", 4.0)
-       .set<double>("gram molecular weight", 96.0636);
+    .set<double>("ion size parameter", 4.0)
+    .set<double>("gram molecular weight", 96.0636);
   SO4_mm = ac::Species(3, "SO4--", plist);
 
   plist.set<int>("charge", 3)
-       .set<double>("ion size parameter", 9.0)
-       .set<double>("gram molecular weight", 26.9815);
+    .set<double>("ion size parameter", 9.0)
+    .set<double>("gram molecular weight", 26.9815);
   Al_ppp = ac::Species(4, "Al+++", plist);
 
   plist.set<int>("charge", -3)
-       .set<double>("ion size parameter", 4.0)
-       .set<double>("gram molecular weight", 94.9714);
+    .set<double>("ion size parameter", 4.0)
+    .set<double>("gram molecular weight", 94.9714);
   PO4_mmm = ac::Species(5, "PO4---", plist);
 
   // set concentrations to get ionic strength of 0.025
@@ -112,22 +101,21 @@ ActivityModelTest::ActivityModelTest()
   vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry", plist));
 }
 
-void ActivityModelTest::RunTest(const std::string& name, double* gamma) {
+void
+ActivityModelTest::RunTest(const std::string& name, double* gamma)
+{
   int index = -1;
   for (auto it = species_.begin(); it != species_.end(); ++it) {
-    if (it->name() == name) {
-      index = it->identifier();
-    }
+    if (it->name() == name) { index = it->identifier(); }
   }
-  *gamma = -1.0;  // final value should always be > 0
+  *gamma = -1.0; // final value should always be > 0
 
   ac::ActivityModel::ActivityModelParameters parameters;
   parameters.database_filename = "";
   parameters.pitzer_jfunction = "";
 
-  activity_model_ = amf_.Create(activity_model_name(), parameters, 
-                                species_, aqueous_complexes_,
-                                vo_.ptr());
+  activity_model_ =
+    amf_.Create(activity_model_name(), parameters, species_, aqueous_complexes_, vo_.ptr());
 
   activity_model_->CalculateIonicStrength(species_, aqueous_complexes_);
   *gamma = activity_model_->Evaluate(species_.at(index));
@@ -142,7 +130,8 @@ void ActivityModelTest::RunTest(const std::string& name, double* gamma) {
   @test ActivityModel
 */
 
-SUITE(amanzi_chemistry_unit_tests_ActivityModel) {
+SUITE(amanzi_chemistry_unit_tests_ActivityModel)
+{
   /*!
     @class Amanzi::AmanziChemistry::unit_tests::ActivityModel::ActivityModel_IonicStrength
 
@@ -155,14 +144,15 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModel) {
 
     @test ActivityModel::CalculateIonicStrength()
   */
-  TEST_FIXTURE(ActivityModelTest, ActivityModel_IonicStrength) {
+  TEST_FIXTURE(ActivityModelTest, ActivityModel_IonicStrength)
+  {
     set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("H+", &gamma);
     // std::cout << "ionic strength: " << ionic_strength() << std::endl;
     CHECK_CLOSE(0.025, ionic_strength(), tolerance());
   }
-}  // end SUITE(amanzi_chemistry_unit_tests_ActivityModel)
+} // end SUITE(amanzi_chemistry_unit_tests_ActivityModel)
 
 
 /*!
@@ -176,7 +166,8 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModel) {
   @test ActivityModelUnit
 */
 
-SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
+SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit)
+{
   /*!
     @brief ActivityModelUnit_H
 
@@ -186,7 +177,8 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
 
     @test ActivityModelUnit::Evaluate()
   */
-  TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_H) {
+  TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_H)
+  {
     set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("H+", &gamma);
@@ -202,7 +194,8 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
 
     @test ActivityModelUnit::Evaluate()
   */
-  TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_OH) {
+  TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_OH)
+  {
     set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("OH-", &gamma);
@@ -218,7 +211,8 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
 
     @test ActivityModelUnit::Evaluate()
   */
-  TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_Ca) {
+  TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_Ca)
+  {
     set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("Ca++", &gamma);
@@ -234,7 +228,8 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
 
     @test ActivityModelUnit::Evaluate()
   */
-  TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_SO4) {
+  TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_SO4)
+  {
     set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("SO4--", &gamma);
@@ -250,7 +245,8 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
 
     @test ActivityModelUnit::Evaluate()
   */
-  TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_Al) {
+  TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_Al)
+  {
     set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("Al+++", &gamma);
@@ -266,13 +262,14 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
 
     @test ActivityModelUnit::Evaluate()
   */
-  TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_PO4) {
+  TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_PO4)
+  {
     set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("PO4---", &gamma);
     CHECK_EQUAL(1.0, gamma);
   }
-}  // end SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit)
+} // end SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit)
 
 
 /*!
@@ -302,7 +299,8 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
   @test ActivityModelDebyHuckel
 */
 
-SUITE(amanzi_chemistry_unit_tests_ActivityModelDebyeHuckel) {
+SUITE(amanzi_chemistry_unit_tests_ActivityModelDebyeHuckel)
+{
   /*!
     @brief ActivityModelDebyeHuckel_H
 
@@ -312,7 +310,8 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelDebyeHuckel) {
 
     @test ActivityModelDebyeHuckel::Evaluate()
   */
-  TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_H) {
+  TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_H)
+  {
     set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("H+", &gamma);
@@ -328,38 +327,43 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelDebyeHuckel) {
 
     @test ActivityModelDebyeHuckel::Evaluate()
   */
-  TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_OH) {
+  TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_OH)
+  {
     set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("OH-", &gamma);
     CHECK_CLOSE(0.855, gamma, 1.0e-2);
   }
 
-  TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_Ca) {
+  TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_Ca)
+  {
     set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("Ca++", &gamma);
     CHECK_CLOSE(0.57, gamma, 1.0e-2);
   }
 
-  TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_SO4) {
+  TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_SO4)
+  {
     set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("SO4--", &gamma);
     CHECK_CLOSE(0.545, gamma, 1.0e-2);
   }
 
-  TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_Al) {
+  TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_Al)
+  {
     set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("Al+++", &gamma);
     CHECK_CLOSE(0.325, gamma, 1.0e-2);
   }
 
-  TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_PO4) {
+  TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_PO4)
+  {
     set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("PO4---", &gamma);
     CHECK_CLOSE(0.25, gamma, 1.0e-2);
   }
-}  // end SUITE(amanzi_chemistry_unit_tests_ActivityModelDebyeHuckel)
+} // end SUITE(amanzi_chemistry_unit_tests_ActivityModelDebyeHuckel)

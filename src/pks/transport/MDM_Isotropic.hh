@@ -31,12 +31,12 @@ namespace Transport {
 class MDM_Isotropic : public MDM {
  public:
   explicit MDM_Isotropic(Teuchos::ParameterList& plist);
-  ~MDM_Isotropic() {};
-  
+  ~MDM_Isotropic(){};
+
   // Required methods from the base class
   // -- scalar dispersion tensor.
-  WhetStone::Tensor mech_dispersion(
-      const AmanziGeometry::Point& u, int axi_symmetric, double s, double phi) const;
+  WhetStone::Tensor
+  mech_dispersion(const AmanziGeometry::Point& u, int axi_symmetric, double s, double phi) const;
 
   // -- the model is valid if at least one parameter is not zero.
   bool is_valid() const { return (alpha_ != 0.0); }
@@ -48,7 +48,7 @@ class MDM_Isotropic : public MDM {
   static Utils::RegisteredFactory<MDM, MDM_Isotropic> factory_;
 };
 
-}  // namespace Transport
-}  // namespace Amanzi
- 
+} // namespace Transport
+} // namespace Amanzi
+
 #endif

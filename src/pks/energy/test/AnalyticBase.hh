@@ -17,24 +17,33 @@
 
 class AnalyticBase {
  public:
-  AnalyticBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
-  ~AnalyticBase() {};
+  AnalyticBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh){};
+  ~AnalyticBase(){};
 
   // problem coefficients: conductivity and fluid velocity
-  virtual Amanzi::WhetStone::Tensor Conductivity(int c, const Amanzi::AmanziGeometry::Point& p, double t) = 0;
-  virtual Amanzi::AmanziGeometry::Point FluidVelocity(int c, const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::WhetStone::Tensor
+  Conductivity(int c, const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point
+  FluidVelocity(int c, const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // primary variable is temperature: provide its derivatives
   virtual double temperature_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
-  virtual Amanzi::AmanziGeometry::Point flux_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point
+  flux_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // error calculation: L2 and maximum norms
-  void ComputeCellError(const Epetra_MultiVector& temp, double t, double& l2_norm, double& l2_err, double& inf_err) {
+  void ComputeCellError(const Epetra_MultiVector& temp,
+                        double t,
+                        double& l2_norm,
+                        double& l2_err,
+                        double& inf_err)
+  {
     l2_norm = 0.0;
     l2_err = 0.0;
     inf_err = 0.0;
 
-    int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    int ncells =
+      mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
     for (int c = 0; c < ncells; c++) {
       const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
       double tmp = temperature_exact(xc, t);
@@ -63,4 +72,3 @@ class AnalyticBase {
 };
 
 #endif
-

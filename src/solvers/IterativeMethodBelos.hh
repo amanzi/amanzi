@@ -33,18 +33,16 @@ Includes GMRES
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Matrix,
-         class Preconditioner=Matrix,
-         class Vector=typename Matrix::Vector_t,
-         class VectorSpace=typename Vector::Space_t>
-class IterativeMethodBelos :
-      public InverseIterativeMethod<Matrix,Preconditioner,Vector,VectorSpace>
-{
-  using InvIt = InverseIterativeMethod<Matrix,Preconditioner,Vector,VectorSpace>;
+template <class Matrix,
+          class Preconditioner = Matrix,
+          class Vector = typename Matrix::Vector_t,
+          class VectorSpace = typename Vector::Space_t>
+class IterativeMethodBelos
+  : public InverseIterativeMethod<Matrix, Preconditioner, Vector, VectorSpace> {
+  using InvIt = InverseIterativeMethod<Matrix, Preconditioner, Vector, VectorSpace>;
 
  public:
-  IterativeMethodBelos() :
-      InvIt() {}
+  IterativeMethodBelos() : InvIt() {}
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
   virtual int ApplyInverse(const Vector& v, Vector& hv) const override final;
@@ -53,7 +51,6 @@ class IterativeMethodBelos :
   virtual std::string MethodName_() const override { return "Belos: GMRES"; }
 
  private:
-
   using InvIt::m_;
   using InvIt::h_;
   using InvIt::vo_;
@@ -76,33 +73,33 @@ class IterativeMethodBelos :
  * "maximum number of iterations" [int] default = 100
  * "convergence criteria" Array(string) default = "{relative rhs}"
  ****************************************************************** */
-template<class Matrix,
-         class Preconditioner,
-         class Vector,
-         class VectorSpace>
-void IterativeMethodBelos<Matrix,Preconditioner,Vector,VectorSpace>::set_inverse_parameters(
-    Teuchos::ParameterList& plist)
+template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
+void
+IterativeMethodBelos<Matrix, Preconditioner, Vector, VectorSpace>::set_inverse_parameters(
+  Teuchos::ParameterList& plist)
 {
   InvIt::set_inverse_parameters(plist);
 
   belos_list_ = Teuchos::rcp(new Teuchos::ParameterList());
   belos_list_->set("Num Blocks", krylov_dim_);
   belos_list_->set("Maximum Iterations", max_itrs_);
-  belos_list_->set("Maximum Restarts", 2*krylov_dim_*max_itrs_);
+  belos_list_->set("Maximum Restarts", 2 * krylov_dim_ * max_itrs_);
   belos_list_->set("Convergence Tolerance", tol_);
   belos_list_->set("Output Frequency", 1);
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-    belos_list_->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::IterationDetails
-            + Belos::StatusTestDetails + Belos::Debug + Belos::TimingDetails);
+    belos_list_->set("Verbosity",
+                     Belos::Errors + Belos::Warnings + Belos::IterationDetails +
+                       Belos::StatusTestDetails + Belos::Debug + Belos::TimingDetails);
   } else if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    belos_list_->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::IterationDetails
-            + Belos::StatusTestDetails);
+    belos_list_->set("Verbosity",
+                     Belos::Errors + Belos::Warnings + Belos::IterationDetails +
+                       Belos::StatusTestDetails);
   } else if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     belos_list_->set("Verbosity", Belos::Errors + Belos::Warnings);
   } else if (vo_->os_OK(Teuchos::VERB_LOW)) {
     belos_list_->set("Verbosity", Belos::Errors + Belos::Warnings);
- }
+  }
 
   if (criteria_ & LIN_SOLVER_RELATIVE_RHS) {
     belos_list_->set("Implicit Residual Scaling", "Norm of RHS");
@@ -114,37 +111,36 @@ void IterativeMethodBelos<Matrix,Preconditioner,Vector,VectorSpace>::set_inverse
     belos_list_->set("Implicit Residual Scaling", "None");
     belos_list_->set("Explicit Residual Scaling", "None");
   }
-
 }
 
-template<class Matrix,
-         class Preconditioner,
-         class Vector,
-         class VectorSpace>
+template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
 int
-IterativeMethodBelos<Matrix,Preconditioner,Vector,VectorSpace>::ApplyInverse(
-    const Vector& v, Vector& hv) const
+IterativeMethodBelos<Matrix, Preconditioner, Vector, VectorSpace>::ApplyInverse(const Vector& v,
+                                                                                Vector& hv) const
 {
-  typedef Belos::LinearProblem<double,Belos::MultiVec<double>,Belos::Operator<double> > LinearProblem;
-  typedef Belos::PseudoBlockGmresSolMgr<double,Belos::MultiVec<double>,Belos::Operator<double> > GmresSolver;
+  typedef Belos::LinearProblem<double, Belos::MultiVec<double>, Belos::Operator<double>>
+    LinearProblem;
+  typedef Belos::PseudoBlockGmresSolMgr<double, Belos::MultiVec<double>, Belos::Operator<double>>
+    GmresSolver;
 
   AMANZI_ASSERT(belos_list_.get()); // set_inverse_parameters() called
-  AMANZI_ASSERT(m_.get()); // set_matrices() called
+  AMANZI_ASSERT(m_.get());          // set_matrices() called
 
   // NOTE: this is not efficiently implemented and should get fixed.  The
   // problem can get created and reused, but not in the current pattern. It may
   // be as simple as keeping the LinearProblem from call to call.
 
-  auto mat = Teuchos::rcp(new AmanziBelosOp<Matrix,Vector>(this->m_));
-  auto prec = Teuchos::rcp(new AmanziBelosOp<Preconditioner,Vector>(this->h_,true));
-  auto lhs = Teuchos::rcp(new CompositeMultiVector<Vector>(Teuchos::rcp(&hv,false)));
-  auto rhs = Teuchos::rcp(new CompositeMultiVector<Vector>(Teuchos::rcp(const_cast<Vector*>(&v),false)));
+  auto mat = Teuchos::rcp(new AmanziBelosOp<Matrix, Vector>(this->m_));
+  auto prec = Teuchos::rcp(new AmanziBelosOp<Preconditioner, Vector>(this->h_, true));
+  auto lhs = Teuchos::rcp(new CompositeMultiVector<Vector>(Teuchos::rcp(&hv, false)));
+  auto rhs =
+    Teuchos::rcp(new CompositeMultiVector<Vector>(Teuchos::rcp(const_cast<Vector*>(&v), false)));
   auto problem = Teuchos::rcp(new LinearProblem(mat, lhs, rhs));
 
   problem->setLeftPrec(prec);
   problem->setProblem();
 
-  GmresSolver solver(problem,belos_list_);
+  GmresSolver solver(problem, belos_list_);
   Belos::ReturnType success = solver.solve();
   num_itrs_ = solver.getNumIters();
   residual_ = solver.achievedTol();
@@ -158,7 +154,5 @@ IterativeMethodBelos<Matrix,Preconditioner,Vector,VectorSpace>::ApplyInverse(
   }
 }
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
-
-
+} // namespace AmanziSolvers
+} // namespace Amanzi

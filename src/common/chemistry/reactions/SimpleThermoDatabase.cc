@@ -8,7 +8,7 @@
 
   Authors: Glenn Hammond
 */
- 
+
 #include <cassert>
 #include <cstdlib>
 #include <fstream>
@@ -49,19 +49,18 @@ namespace AmanziChemistry {
 ******************************************************************* */
 SimpleThermoDatabase::SimpleThermoDatabase(Teuchos::RCP<Teuchos::ParameterList> plist,
                                            Teuchos::RCP<VerboseObject> vo)
-  : Beaker(vo.ptr()),
-    plist_(plist) {};
+  : Beaker(vo.ptr()), plist_(plist){};
 
 
 /* *******************************************************************
 * Setup
 ******************************************************************* */
-void SimpleThermoDatabase::Initialize(BeakerState& state,
-                                      const BeakerParameters& parameters)
+void
+SimpleThermoDatabase::Initialize(BeakerState& state, const BeakerParameters& parameters)
 {
   // primary species
   const auto& pslist = plist_->sublist("primary species");
-  
+
   int id(0);
   primary_species_.clear();
   std::map<std::string, int> name_to_id;
@@ -176,7 +175,7 @@ void SimpleThermoDatabase::Initialize(BeakerState& state,
       const auto& tmp = sslist.sublist(name);
 
       SurfaceSite site(name, id, tmp);
-      surface_sites.push_back(site);  // local storage to make parsing reactions easier
+      surface_sites.push_back(site); // local storage to make parsing reactions easier
 
       SurfaceComplexationRxn rxn(site);
       surface_complexation_reactions.push_back(rxn);
@@ -229,7 +228,9 @@ void SimpleThermoDatabase::Initialize(BeakerState& state,
   }
 
   // cleaning
-  for (auto rxn = surface_complexation_reactions.begin(); rxn != surface_complexation_reactions.end(); rxn++) {
+  for (auto rxn = surface_complexation_reactions.begin();
+       rxn != surface_complexation_reactions.end();
+       rxn++) {
     this->AddSurfaceComplexationRxn(*rxn);
   }
 
@@ -241,8 +242,8 @@ void SimpleThermoDatabase::Initialize(BeakerState& state,
 /* *******************************************************************
 * Setup
 ******************************************************************* */
-Teuchos::ParameterList SimpleThermoDatabase::RebuildAqueousComplexes_(
-    const Teuchos::ParameterList& plist)
+Teuchos::ParameterList
+SimpleThermoDatabase::RebuildAqueousComplexes_(const Teuchos::ParameterList& plist)
 {
   Teuchos::ParameterList aqlist = plist;
   if (plist.numParams() == 0) return aqlist;
@@ -273,7 +274,8 @@ Teuchos::ParameterList SimpleThermoDatabase::RebuildAqueousComplexes_(
   for (int i = 0; i < secondaries.size(); ++i) {
     auto& tmp = plist.sublist(secondaries[i]);
     if (tmp.isSublist("equilibrium constant")) {
-      int n = tmp.sublist("equilibrium constant").get<Teuchos::Array<double> >("Keq").toVector().size();
+      int n =
+        tmp.sublist("equilibrium constant").get<Teuchos::Array<double>>("Keq").toVector().size();
       nT = std::max(nT, n);
     }
   }
@@ -293,10 +295,8 @@ Teuchos::ParameterList SimpleThermoDatabase::RebuildAqueousComplexes_(
       double Keq = tmp.get<double>("equilibrium constant");
       for (int k = 0; k < nT; ++k) logK(i, k) = Keq;
     } else {
-      auto Keq = tmp.sublist("equilibrium constant").get<Teuchos::Array<double> >("Keq").toVector();
-      if (Keq.size() != nT) {
-        AMANZI_ASSERT(false);
-      }
+      auto Keq = tmp.sublist("equilibrium constant").get<Teuchos::Array<double>>("Keq").toVector();
+      if (Keq.size() != nT) { AMANZI_ASSERT(false); }
       for (int k = 0; k < nT; ++k) logK(i, k) = Keq[k];
     }
 
@@ -328,9 +328,7 @@ Teuchos::ParameterList SimpleThermoDatabase::RebuildAqueousComplexes_(
 
     std::stringstream ss;
     for (int k = 0; k < npri; ++k) {
-      if (Bnew(i, k) != 0.0) {
-        ss << Bnew(i, k) << " " << primaries[k] << " ";
-      }
+      if (Bnew(i, k) != 0.0) { ss << Bnew(i, k) << " " << primaries[k] << " "; }
     }
     tmp.set<std::string>("reaction", ss.str());
 
@@ -338,7 +336,7 @@ Teuchos::ParameterList SimpleThermoDatabase::RebuildAqueousComplexes_(
     if (tmp.isSublist("equilibrium constant")) {
       Teuchos::Array<double> Keq(nT);
       for (int k = 0; k < nT; ++k) Keq[k] = logKnew(i, k);
-      tmp.sublist("equilibrium constant").set<Teuchos::Array<double> >("Keq", Keq);
+      tmp.sublist("equilibrium constant").set<Teuchos::Array<double>>("Keq", Keq);
     } else {
       tmp.set<double>("equilibrium constant", logKnew(i, 0));
     }
@@ -347,5 +345,5 @@ Teuchos::ParameterList SimpleThermoDatabase::RebuildAqueousComplexes_(
   return aqlist;
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

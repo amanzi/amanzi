@@ -27,30 +27,30 @@ ObservableSolute::ObservableSolute(std::string variable,
                                    std::string functional,
                                    Teuchos::ParameterList& plist,
                                    Teuchos::ParameterList& units_plist,
-                                   Teuchos::RCP<const AmanziMesh::Mesh> mesh):
-    Observable(variable, region, functional, plist, units_plist, mesh) 
-{};
+                                   Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+  : Observable(variable, region, functional, plist, units_plist, mesh){};
 
 
 /* ******************************************************************
 * TBW
 ****************************************************************** */
-int ObservableSolute::ComputeRegionSize()
+int
+ObservableSolute::ComputeRegionSize()
 {
   // check if observation is planar
   obs_planar_ = false;
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_->geometric_model();
   Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion(region_);
-    
+
   if (reg_ptr->get_type() == AmanziGeometry::RegionType::POLYGON) {
     Teuchos::RCP<const AmanziGeometry::RegionPolygon> poly_reg =
-        Teuchos::rcp_static_cast<const AmanziGeometry::RegionPolygon>(reg_ptr);
+      Teuchos::rcp_static_cast<const AmanziGeometry::RegionPolygon>(reg_ptr);
     reg_normal_ = poly_reg->normal();
     obs_planar_ = true;
   } else if (reg_ptr->get_type() == AmanziGeometry::RegionType::PLANE) {
     Teuchos::RCP<const AmanziGeometry::RegionPlane> plane_reg =
-        Teuchos::rcp_static_cast<const AmanziGeometry::RegionPlane>(reg_ptr);
+      Teuchos::rcp_static_cast<const AmanziGeometry::RegionPlane>(reg_ptr);
     reg_normal_ = plane_reg->normal();
     obs_planar_ = true;
   }
@@ -58,15 +58,12 @@ int ObservableSolute::ComputeRegionSize()
   if (variable_ == comp_names_[tcc_index_] + " volumetric flow rate" ||
       variable_ == comp_names_[tcc_index_] + " breakthrough curve" ||
       variable_ == "aqueous mass flow rate" ||
-      variable_ == "aqueous volumetric flow rate") {  // flux needs faces
-    region_size_ = mesh_->get_set_size(region_,
-                                       Amanzi::AmanziMesh::FACE,
-                                       Amanzi::AmanziMesh::Parallel_type::OWNED);
+      variable_ == "aqueous volumetric flow rate") { // flux needs faces
+    region_size_ = mesh_->get_set_size(
+      region_, Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
     entity_ids_.resize(region_size_);
-    mesh_->get_set_entities_and_vofs(region_,
-                                     AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED,
-                                     &entity_ids_, 
-                                     &vofs_);
+    mesh_->get_set_entities_and_vofs(
+      region_, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &entity_ids_, &vofs_);
     obs_boundary_ = true;
     for (int i = 0; i != region_size_; ++i) {
       int f = entity_ids_[i];
@@ -78,19 +75,17 @@ int ObservableSolute::ComputeRegionSize()
       }
     }
   } else { // all others need cells
-    region_size_ = mesh_->get_set_size(region_,
-                                       AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);    
+    region_size_ = mesh_->get_set_size(region_, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     entity_ids_.resize(region_size_);
-    mesh_->get_set_entities_and_vofs(region_,
-                                     AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED,
-                                     &entity_ids_, &vofs_);
+    mesh_->get_set_entities_and_vofs(
+      region_, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &entity_ids_, &vofs_);
   }
-      
+
   // find global meshblocksize
-  int dummy = region_size_; 
+  int dummy = region_size_;
   int global_mesh_block_size(0);
   mesh_->get_comm()->SumAll(&dummy, &global_mesh_block_size, 1);
-      
+
   return global_mesh_block_size;
 }
 
@@ -98,17 +93,21 @@ int ObservableSolute::ComputeRegionSize()
 /* ******************************************************************
 * Data calculation
 ****************************************************************** */
-void ObservableSolute::ComputeObservation(
-    State& S, double* value, double* volume, std::string& unit, double dt)
+void
+ObservableSolute::ComputeObservation(State& S,
+                                     double* value,
+                                     double* volume,
+                                     std::string& unit,
+                                     double dt)
 {
   Errors::Message msg;
 
-  Key wc_key =  Keys::getKey(domain_, "water_content");
-  Key ws_key =  Keys::getKey(domain_, "saturation_liquid");
+  Key wc_key = Keys::getKey(domain_, "water_content");
+  Key ws_key = Keys::getKey(domain_, "saturation_liquid");
   Key tcc_key = Keys::getKey(domain_, "total_component_concentration");
   Key poro_key = Keys::getKey(domain_, "porosity");
   Key darcy_key = Keys::getKey(domain_, "volumetric_flow_rate");
-  
+
   // fields below are subject to various input conditions
   Key total_sorbed_key = Keys::getKey(domain_, "total_sorbed");
 
@@ -120,11 +119,11 @@ void ObservableSolute::ComputeObservation(
   }
 
   const auto& tcc = *S.Get<CompositeVector>(tcc_key).ViewComponent("cell");
-  const auto& porosity = *S.Get<CompositeVector>(poro_key).ViewComponent("cell");    
+  const auto& porosity = *S.Get<CompositeVector>(poro_key).ViewComponent("cell");
 
   unit = units_.system().concentration;
 
-  if (variable_ == comp_names_[tcc_index_] + " aqueous concentration") { 
+  if (variable_ == comp_names_[tcc_index_] + " aqueous concentration") {
     S.GetEvaluator(wc_key).Update(S, "cycle driver");
     const auto& wc = *S.Get<CompositeVector>(wc_key).ViewComponent("cell");
 
@@ -151,7 +150,8 @@ void ObservableSolute::ComputeObservation(
     }
 
   } else if (variable_ == comp_names_[tcc_index_] + " free ion concentration") {
-    Key free_ion_key = Keys::getKey(domain_, "primary_free_ion_concentration_" + comp_names_[tcc_index_]);
+    Key free_ion_key =
+      Keys::getKey(domain_, "primary_free_ion_concentration_" + comp_names_[tcc_index_]);
     if (!S.HasRecord(free_ion_key)) {
       msg << "Observation: state does not have field \"" << variable_ << "\"";
       Exceptions::amanzi_throw(msg);
@@ -199,7 +199,7 @@ void ObservableSolute::ComputeObservation(
         *volume += area * factor;
       }
 
-    } else if (obs_planar_) {  // observation is on an interior planar set
+    } else if (obs_planar_) { // observation is on an interior planar set
       for (int i = 0; i != region_size_; ++i) {
         int f = entity_ids_[i];
         mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
@@ -212,7 +212,7 @@ void ObservableSolute::ComputeObservation(
         double sign = (reg_normal_ * face_normal) * csign / area;
         double factor = units_.concentration_factor();
         int g = fmap.FirstPointInElement(f);
-        
+
         *value += sign * flowrate[0][g] * tcc[tcc_index_][c] * factor;
         *volume += area * factor;
       }
@@ -230,8 +230,7 @@ void ObservableSolute::ComputeObservation(
   } else {
     msg << "Cannot make an observation for solute variable \"" << variable_ << "\"";
     Exceptions::amanzi_throw(msg);
-  }    
+  }
 }
- 
-}  // namespace Amanzi
 
+} // namespace Amanzi

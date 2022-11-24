@@ -23,11 +23,10 @@ namespace WhetStone {
 // base class for splines
 class SplinePolynomial {
  public:
-  SplinePolynomial() {};
-  ~SplinePolynomial() {};
+  SplinePolynomial(){};
+  ~SplinePolynomial(){};
 
-  virtual void Setup(double x0, double f0, double df0,
-                     double x1, double f1, double df1) = 0;
+  virtual void Setup(double x0, double f0, double df0, double x1, double f1, double df1) = 0;
 
   virtual double Value(double x) const = 0;
   virtual double GradientValue(double x) const = 0;
@@ -37,18 +36,17 @@ class SplinePolynomial {
 // cubic interpolant between two points
 class SplineCubic : public SplinePolynomial {
  public:
-  SplineCubic() {};
-  ~SplineCubic() {};
+  SplineCubic(){};
+  ~SplineCubic(){};
 
-  virtual void Setup(double x0, double f0, double df0,
-                     double x1, double f1, double df1);
+  virtual void Setup(double x0, double f0, double df0, double x1, double f1, double df1);
 
   virtual double Value(double x) const;
   virtual double GradientValue(double x) const;
 
   // access
-  const Polynomial poly() const { return poly_; } 
-  const Polynomial grad() const { return grad_; } 
+  const Polynomial poly() const { return poly_; }
+  const Polynomial grad() const { return grad_; }
 
  private:
   Polynomial poly_;
@@ -59,11 +57,10 @@ class SplineCubic : public SplinePolynomial {
 // linear interpolant exterior to the interval defined by two points
 class SplineExteriorLinear : public SplinePolynomial {
  public:
-  SplineExteriorLinear() {};
-  ~SplineExteriorLinear() {};
+  SplineExteriorLinear(){};
+  ~SplineExteriorLinear(){};
 
-  virtual void Setup(double x0, double f0, double df0,
-                     double x1, double f1, double df1);
+  virtual void Setup(double x0, double f0, double df0, double x1, double f1, double df1);
 
   virtual double Value(double x) const;
   virtual double GradientValue(double x) const;
@@ -72,7 +69,7 @@ class SplineExteriorLinear : public SplinePolynomial {
   double x0_, f0_, df0_, x1_, f1_, df1_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif

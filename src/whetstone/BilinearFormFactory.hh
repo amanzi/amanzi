@@ -33,14 +33,16 @@ typedef std::string BFKey;
 class BilinearFormFactory {
   typedef std::map<BFKey,
                    BilinearForm* (*)(const Teuchos::ParameterList&,
-                                     const Teuchos::RCP<const AmanziMesh::MeshLight>&)> map_type;
+                                     const Teuchos::RCP<const AmanziMesh::MeshLight>&)>
+    map_type;
 
  public:
   static Teuchos::RCP<BilinearForm> Create(const Teuchos::ParameterList& plist,
                                            const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
 
  protected:
-  static map_type* GetMap() {
+  static map_type* GetMap()
+  {
     if (!map_) map_ = new map_type;
     return map_;
   }
@@ -50,24 +52,33 @@ class BilinearFormFactory {
 };
 
 
-template<typename TDerived> BilinearForm* CreateT(
-    const Teuchos::ParameterList& plist,
-    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) { return new TDerived(plist, mesh); }
+template <typename TDerived>
+BilinearForm*
+CreateT(const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+{
+  return new TDerived(plist, mesh);
+}
 
-template<typename TDerived>
+template <typename TDerived>
 class RegisteredFactory : public BilinearFormFactory {
-public:
-  RegisteredFactory(const std::string& s) {
-    for (auto it = BilinearFormFactory::GetMap()->begin(); it != BilinearFormFactory::GetMap()->end(); ++it) {}
-    BilinearFormFactory::GetMap()->insert(std::pair<BFKey,
-                                          BilinearForm* (*)(const Teuchos::ParameterList&,
-                                                            const Teuchos::RCP<const AmanziMesh::MeshLight>&)>(s, &CreateT<TDerived>));
-    for (auto it = BilinearFormFactory::GetMap()->begin(); it != BilinearFormFactory::GetMap()->end(); ++it) {}
+ public:
+  RegisteredFactory(const std::string& s)
+  {
+    for (auto it = BilinearFormFactory::GetMap()->begin();
+         it != BilinearFormFactory::GetMap()->end();
+         ++it) {}
+    BilinearFormFactory::GetMap()->insert(
+      std::pair<BFKey,
+                BilinearForm* (*)(const Teuchos::ParameterList&,
+                                  const Teuchos::RCP<const AmanziMesh::MeshLight>&)>(
+        s, &CreateT<TDerived>));
+    for (auto it = BilinearFormFactory::GetMap()->begin();
+         it != BilinearFormFactory::GetMap()->end();
+         ++it) {}
   }
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

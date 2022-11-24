@@ -34,7 +34,8 @@
 /* *******************************************************************
 * A
 ******************************************************************* */
-TEST(FLOW_BOUNDARY_SOLVER) {
+TEST(FLOW_BOUNDARY_SOLVER)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -51,7 +52,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   // create a mesh framework
   Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
 
   Preference pref;
@@ -59,7 +60,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   pref.push_back(Framework::MSTK);
 
   double bottom = -0.5;
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   // Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, bottom, 1.0, 0.0, 1, 10);
   Teuchos::RCP<const Mesh> mesh1 = meshfactory.create("test/hex_2x2x1-1.exo");
@@ -88,8 +89,8 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   S2->InitializeEvaluators();
 
   // modify the default state for the problem at hand
-  std::string passwd(""); 
-  auto& K1 = *S1->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");  
+  std::string passwd("");
+  auto& K1 = *S1->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
   AmanziMesh::Entity_ID_List block;
   mesh1->get_set_entities("All", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
@@ -101,7 +102,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   }
   S1->GetRecordW("permeability", "permeability").set_initialized();
 
-  auto& K2 = *S2->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");  
+  auto& K2 = *S2->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   mesh2->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
@@ -162,10 +163,9 @@ TEST(FLOW_BOUNDARY_SOLVER) {
     mesh2->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int dir;
     const Point& norm = mesh2->face_normal(f, false, cells[0], &dir);
-    if ((cells.size() == 1) && (norm[2]*dir > 0)) {
+    if ((cells.size() == 1) && (norm[2] * dir > 0)) {
       bnd_val2 = RPK2->BoundaryFaceValue(f, S2->GetW<CompositeVector>("pressure", passwd));
       std::cout << ": " << f << " " << bnd_val2 << "\n";
     }
   }
 }
-

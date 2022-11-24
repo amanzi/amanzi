@@ -28,7 +28,7 @@ class TCMFactory_TwoPhase : public Utils::Factory<TCM_TwoPhase> {
   Teuchos::RCP<TCM_TwoPhase> CreateTCM(Teuchos::ParameterList& plist);
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

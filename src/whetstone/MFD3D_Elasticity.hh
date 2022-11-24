@@ -31,15 +31,16 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Elasticity : public MFD3D { 
+class MFD3D_Elasticity : public MFD3D {
  public:
   MFD3D_Elasticity(const Teuchos::ParameterList& plist,
                    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-    : MFD3D(mesh) {};
+    : MFD3D(mesh){};
 
   // required methods
   // -- schema
-  virtual std::vector<SchemaItem> schema() const override {
+  virtual std::vector<SchemaItem> schema() const override
+  {
     return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, d_));
   }
 
@@ -55,15 +56,16 @@ class MFD3D_Elasticity : public MFD3D {
   int StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A);
 
  private:
-  void MatrixMatrixProduct_(
-      const DenseMatrix& A, const DenseMatrix& B, bool transposeB, DenseMatrix& AB);
+  void MatrixMatrixProduct_(const DenseMatrix& A,
+                            const DenseMatrix& B,
+                            bool transposeB,
+                            DenseMatrix& AB);
 
  private:
   static RegisteredFactory<MFD3D_Elasticity> factory_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

@@ -27,8 +27,8 @@ namespace Multiphase {
 class WRMmp_Simple : public WRMmp {
  public:
   WRMmp_Simple(Teuchos::ParameterList& plist);
-  ~WRMmp_Simple() {};
-  
+  ~WRMmp_Simple(){};
+
   // required methods from the base class
   virtual double k_relative(double Sw, int phase);
   virtual double capillaryPressure(double saturation);
@@ -44,7 +44,7 @@ class WRMmp_Simple : public WRMmp {
   static Utils::RegisteredFactory<WRMmp, WRMmp_Simple> factory_;
 };
 
-}  // namespace Multiphase
-}  // namespace Amanzi
- 
+} // namespace Multiphase
+} // namespace Amanzi
+
 #endif

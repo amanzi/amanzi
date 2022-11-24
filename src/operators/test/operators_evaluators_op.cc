@@ -42,35 +42,35 @@
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 
-class BIndependent
-    : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
-public:
-  using EvaluatorIndependent<CompositeVector,
-                             CompositeVectorSpace>::EvaluatorIndependent;
+class BIndependent : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
+ public:
+  using EvaluatorIndependent<CompositeVector, CompositeVectorSpace>::EvaluatorIndependent;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new BIndependent(*this));
   };
 
-protected:
-  virtual void Update_(State& s) override {
+ protected:
+  virtual void Update_(State& s) override
+  {
     double cv = s.GetMesh()->cell_volume(0);
     s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).PutScalar(-4. * cv);
   }
 };
 
-class XIndependent
-    : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
-public:
-  using EvaluatorIndependent<CompositeVector,
-                             CompositeVectorSpace>::EvaluatorIndependent;
+class XIndependent : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
+ public:
+  using EvaluatorIndependent<CompositeVector, CompositeVectorSpace>::EvaluatorIndependent;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new XIndependent(*this));
   };
 
-protected:
-  virtual void Update_(State& s) override {
+ protected:
+  virtual void Update_(State& s) override
+  {
     auto& x = s.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
     auto& x_c = *x.ViewComponent("cell", false);
     for (int c = 0; c != x_c.MyLength(); ++c) {
@@ -80,34 +80,34 @@ protected:
   }
 };
 
-class DiagIndependent
-    : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
-public:
-  using EvaluatorIndependent<CompositeVector,
-                             CompositeVectorSpace>::EvaluatorIndependent;
+class DiagIndependent : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
+ public:
+  using EvaluatorIndependent<CompositeVector, CompositeVectorSpace>::EvaluatorIndependent;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new DiagIndependent(*this));
   };
 
-protected:
-  virtual void Update_(State& s) override {
+ protected:
+  virtual void Update_(State& s) override
+  {
     s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).PutScalar(1.);
   }
 };
 
-class KIndependent
-    : public EvaluatorIndependent<TensorVector, TensorVector_Factory> {
-public:
-  using EvaluatorIndependent<TensorVector,
-                             TensorVector_Factory>::EvaluatorIndependent;
+class KIndependent : public EvaluatorIndependent<TensorVector, TensorVector_Factory> {
+ public:
+  using EvaluatorIndependent<TensorVector, TensorVector_Factory>::EvaluatorIndependent;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new KIndependent(*this));
   };
 
-protected:
-  virtual void Update_(State& s) override {
+ protected:
+  virtual void Update_(State& s) override
+  {
     auto& K = s.GetW<TensorVector>(my_key_, my_tag_, my_key_);
     for (auto& k : K) {
       k.Init(2, 0);
@@ -116,18 +116,18 @@ protected:
   }
 };
 
-class BCsIndependent
-    : public EvaluatorIndependent<Operators::BCs, Operators::BCs_Factory> {
-public:
-  using EvaluatorIndependent<Operators::BCs,
-                             Operators::BCs_Factory>::EvaluatorIndependent;
+class BCsIndependent : public EvaluatorIndependent<Operators::BCs, Operators::BCs_Factory> {
+ public:
+  using EvaluatorIndependent<Operators::BCs, Operators::BCs_Factory>::EvaluatorIndependent;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new BCsIndependent(*this));
   };
 
-protected:
-  virtual void Update_(State& s) override {
+ protected:
+  virtual void Update_(State& s) override
+  {
     auto& bcs = s.GetW<Operators::BCs>(my_key_, my_tag_, my_key_);
 
     auto mesh = bcs.mesh();
@@ -135,16 +135,14 @@ protected:
     auto& model = bcs.bc_model();
     auto& value = bcs.bc_value();
 
-    for (auto& bc : model)
-      bc = Operators::OPERATOR_BC_NONE;
-    for (auto& val : value)
-      val = 0.;
+    for (auto& bc : model) bc = Operators::OPERATOR_BC_NONE;
+    for (auto& val : value) val = 0.;
 
     // set all exterior faces to dirichlet 0
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     AmanziMesh::Entity_ID_List cells;
     for (int f = 0; f != nfaces_owned; ++f) {
-      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL,& cells);
+      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       if (cells.size() == 1) {
         model[f] = Operators::OPERATOR_BC_DIRICHLET;
         auto fc = mesh->face_centroid(f);
@@ -154,41 +152,41 @@ protected:
   }
 };
 
-class Evaluator_PDE_Diagonal
-    : public EvaluatorSecondary {
-public:
+class Evaluator_PDE_Diagonal : public EvaluatorSecondary {
+ public:
   using EvaluatorSecondary::EvaluatorSecondary;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new Evaluator_PDE_Diagonal(*this));
   };
 
-protected:
-  virtual void Update_(State& S) override {
+ protected:
+  virtual void Update_(State& S) override
+  {
     AMANZI_ASSERT(my_keys_.size() == 1);
     auto& op = S.GetW<Operators::Op>(my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
-    *op.diag = *S.Get<CompositeVector>(dependencies_.begin()->first,
-                                       dependencies_.begin()->second)
-                    .ViewComponent("cell", false);
+    *op.diag = *S.Get<CompositeVector>(dependencies_.begin()->first, dependencies_.begin()->second)
+                  .ViewComponent("cell", false);
   }
 
-  virtual void EnsureCompatibility(State& S) override {
-    S.Require<Operators::Op,Operators::Op_Factory>(my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
-    for (auto& dep : dependencies_)
-      S.RequireEvaluator(dep.first, dep.second);
+  virtual void EnsureCompatibility(State& S) override
+  {
+    S.Require<Operators::Op, Operators::Op_Factory>(
+      my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
+    for (auto& dep : dependencies_) S.RequireEvaluator(dep.first, dep.second);
   }
 
-  virtual void UpdateDerivative_(State& S, const Key& wrt_key,
-          const Tag& wrt_tag) override {
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override
+  {
     AMANZI_ASSERT(false);
   }
-  
 };
 
 class Evaluator_PDE_DiffusionFV : public EvaluatorSecondary {
-public:
-  Evaluator_PDE_DiffusionFV(Teuchos::ParameterList& plist)
-      : EvaluatorSecondary(plist) {
+ public:
+  Evaluator_PDE_DiffusionFV(Teuchos::ParameterList& plist) : EvaluatorSecondary(plist)
+  {
     tag_ = make_tag(plist.get<std::string>("tag"));
 
     // my keys
@@ -206,16 +204,19 @@ public:
     dependencies_.insert(std::make_pair(bcs_key_, tag_));
   }
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new Evaluator_PDE_DiffusionFV(*this));
   };
 
-  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
-                                   const Tag& wrt_tag) const override {
+  virtual bool
+  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override
+  {
     return false;
   }
 
-  virtual void EnsureCompatibility(State& S) override {
+  virtual void EnsureCompatibility(State& S) override
+  {
     S.Require<Operators::Op, Operators::Op_Factory>(local_op_key_, tag_, local_op_key_);
     S.Require<CompositeVector, CompositeVectorSpace>(rhs_key_, tag_, rhs_key_);
 
@@ -225,7 +226,8 @@ public:
     // could do lots of stuff here -- eg. check meshes, check spaces, etc
   }
 
-  virtual void Update_(State& S) override {
+  virtual void Update_(State& S) override
+  {
     auto A_rhs = S.GetPtrW<CompositeVector>(rhs_key_, tag_, rhs_key_);
     auto A_lop = S.GetPtrW<Operators::Op>(local_op_key_, tag_, local_op_key_);
 
@@ -261,12 +263,12 @@ public:
     pde.ApplyBCs(true, true, true);
   }
 
-  virtual void UpdateDerivative_(State& S, const Key& wrt_key,
-                                 const Tag& wrt_tag) override {
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override
+  {
     AMANZI_ASSERT(0);
   }
 
-protected:
+ protected:
   Tag tag_;
   Key rhs_key_, local_op_key_;
   Key tensor_coef_key_, scalar_coef_key_;
@@ -274,9 +276,11 @@ protected:
 };
 
 
-SUITE(EVALUATOR_ON_OP) {
+SUITE(EVALUATOR_ON_OP)
+{
   // A test that simply tests the ability to put a Local Op into the DAG
-  TEST(PRIMARY) {
+  TEST(PRIMARY)
+  {
     std::cout << "Local Op as a primary variable." << std::endl;
     auto comm = Amanzi::getDefaultComm();
     MeshFactory meshfac(comm);
@@ -289,16 +293,16 @@ SUITE(EVALUATOR_ON_OP) {
     auto& f = S.Require<Operators::Op, Operators::Op_Factory>("my_op", Tags::DEFAULT, "my_op");
     f.set_mesh(mesh);
     f.set_name("cell");
-    f.set_schema(Operators::Schema{Operators::OPERATOR_SCHEMA_BASE_CELL |
-                                   Operators::OPERATOR_SCHEMA_DOFS_CELL});
+    f.set_schema(Operators::Schema{ Operators::OPERATOR_SCHEMA_BASE_CELL |
+                                    Operators::OPERATOR_SCHEMA_DOFS_CELL });
 
     // make a primary evaluator for it
     Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object")
-           .set<std::string>("verbosity level", "extreme");
+    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     es_list.setName("my_op");
 
-    auto op_eval = Teuchos::rcp(new EvaluatorPrimary<Operators::Op, Operators::Op_Factory>(es_list));
+    auto op_eval =
+      Teuchos::rcp(new EvaluatorPrimary<Operators::Op, Operators::Op_Factory>(es_list));
     S.SetEvaluator("my_op", Tags::DEFAULT, op_eval);
 
     // Setup fields and marked as initialized.
@@ -310,7 +314,8 @@ SUITE(EVALUATOR_ON_OP) {
   }
 
 
-  TEST(OP_APPLY_DIAG) {
+  TEST(OP_APPLY_DIAG)
+  {
     // Apply a diagonal global operator through the DAG
     auto comm = Amanzi::getDefaultComm();
     MeshFactory meshfac(comm);
@@ -321,32 +326,35 @@ SUITE(EVALUATOR_ON_OP) {
 
     // require vector and primary evaluator for x
     S.Require<CompositeVector, CompositeVectorSpace>("x", Tags::DEFAULT, "x")
-        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+      .SetMesh(mesh)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
     Teuchos::ParameterList xe_list;
-    xe_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+    xe_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     xe_list.setName("x");
-    auto x_eval = Teuchos::rcp(
-        new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(xe_list));
+    auto x_eval =
+      Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(xe_list));
     S.SetEvaluator("x", Tags::DEFAULT, x_eval);
 
     // require vector and independent evaluator for source term b
     S.Require<CompositeVector, CompositeVectorSpace>("b", Tags::DEFAULT)
-        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+      .SetMesh(mesh)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList be_list;
-    be_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+    be_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     be_list.setName("b");
     auto b_eval = Teuchos::rcp(new BIndependent(be_list));
     S.SetEvaluator("b", Tags::DEFAULT, b_eval);
 
     // require vector and independent evaluator for Diag(A)
     S.Require<CompositeVector, CompositeVectorSpace>("Diag", Tags::DEFAULT)
-        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+      .SetMesh(mesh)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
     Teuchos::ParameterList de_list;
-    de_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+    de_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     de_list.setName("Diag");
     auto D_eval = Teuchos::rcp(new DiagIndependent(de_list));
     S.SetEvaluator("Diag", Tags::DEFAULT, D_eval);
@@ -354,12 +362,11 @@ SUITE(EVALUATOR_ON_OP) {
     // require the local operator and evaluator
     auto& fac = S.Require<Operators::Op, Operators::Op_Factory>("A_local", Tags::DEFAULT);
     fac.set_mesh(mesh);
-    fac.set_schema(Operators::Schema{Operators::OPERATOR_SCHEMA_BASE_CELL |
-                                     Operators::OPERATOR_SCHEMA_DOFS_CELL});
+    fac.set_schema(Operators::Schema{ Operators::OPERATOR_SCHEMA_BASE_CELL |
+                                      Operators::OPERATOR_SCHEMA_DOFS_CELL });
 
     Teuchos::ParameterList Ae_list;
-    Ae_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+    Ae_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     Ae_list.setName("A_local");
     Ae_list.set("dependencies", Teuchos::Array<std::string>(1, "Diag"));
     Ae_list.set("dependency tags are my tag", true);
@@ -369,12 +376,13 @@ SUITE(EVALUATOR_ON_OP) {
 
     // require vector and secondary evaluator for r = Ax - b
     S.Require<CompositeVector, CompositeVectorSpace>("residual", Tags::DEFAULT)
-        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+      .SetMesh(mesh)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
     Teuchos::ParameterList re_list;
-    re_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
-    re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1,"A_local"));
-    re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1,"b"));
+    re_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1, "A_local"));
+    re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1, "b"));
     re_list.set("diagonal primary x key", "x");
     re_list.set("tag", "");
     re_list.setName("residual");
@@ -392,14 +400,15 @@ SUITE(EVALUATOR_ON_OP) {
     CHECK(S.GetEvaluator("residual").Update(S, "pk"));
 
     // Ax - b
-    CHECK_CLOSE(33.0,
-                (*S.Get<CompositeVector>("residual", Tags::DEFAULT)
-                      .ViewComponent("cell", false))[0][0],
-                1.e-10);
+    CHECK_CLOSE(
+      33.0,
+      (*S.Get<CompositeVector>("residual", Tags::DEFAULT).ViewComponent("cell", false))[0][0],
+      1.e-10);
   }
 
 
-  TEST(OP_APPLY_DIFFUSION) {
+  TEST(OP_APPLY_DIFFUSION)
+  {
     // Apply a non-diagonal operator, including boundary conditions
     auto comm = Amanzi::getDefaultComm();
     MeshFactory meshfac(comm);
@@ -410,22 +419,22 @@ SUITE(EVALUATOR_ON_OP) {
 
     // require vector and primary evaluator for x
     S.Require<CompositeVector, CompositeVectorSpace>("x", Tags::DEFAULT)
-        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+      .SetMesh(mesh)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
     Teuchos::ParameterList xe_list;
-    xe_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+    xe_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     xe_list.setName("x");
     auto x_eval = Teuchos::rcp(new XIndependent(xe_list));
     S.SetEvaluator("x", Tags::DEFAULT, x_eval);
 
     // require vector and independent evaluator for source term b
     auto& b_space = *S.Require<CompositeVector, CompositeVectorSpace>("b", Tags::DEFAULT)
-                         .SetMesh(mesh)
-                         ->SetGhosted(true)
-                         ->SetComponent("cell", AmanziMesh::CELL, 1);
+                       .SetMesh(mesh)
+                       ->SetGhosted(true)
+                       ->SetComponent("cell", AmanziMesh::CELL, 1);
     Teuchos::ParameterList be_list;
-    be_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+    be_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     be_list.setName("b");
     auto b_eval = Teuchos::rcp(new BIndependent(be_list));
     S.SetEvaluator("b", Tags::DEFAULT, b_eval);
@@ -435,18 +444,18 @@ SUITE(EVALUATOR_ON_OP) {
     f.set_map(b_space); // cells
     f.set_rank(0);
     Teuchos::ParameterList Ke_list;
-    Ke_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+    Ke_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     Ke_list.setName("K");
     auto K_eval = Teuchos::rcp(new KIndependent(Ke_list));
     S.SetEvaluator("K", Tags::DEFAULT, K_eval);
 
     // require vector and independent evaluator for kr (on faces!)
     S.Require<CompositeVector, CompositeVectorSpace>("k_relative", Tags::DEFAULT)
-        .SetMesh(mesh)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
+      .SetMesh(mesh)
+      ->SetGhosted(true)
+      ->SetComponent("face", AmanziMesh::FACE, 1);
     Teuchos::ParameterList kre_list;
-    kre_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+    kre_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     kre_list.setName("k_relative");
     auto kr_eval = Teuchos::rcp(new DiagIndependent(kre_list));
     S.SetEvaluator("k_relative", Tags::DEFAULT, kr_eval);
@@ -457,8 +466,7 @@ SUITE(EVALUATOR_ON_OP) {
     bc_fac.set_kind(AmanziMesh::FACE);
     bc_fac.set_type(WhetStone::DOF_Type::SCALAR);
     Teuchos::ParameterList bce_list;
-    bce_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+    bce_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     bce_list.setName("bcs");
     auto bc_eval = Teuchos::rcp(new BCsIndependent(bce_list));
     S.SetEvaluator("bcs", Tags::DEFAULT, bc_eval);
@@ -467,15 +475,16 @@ SUITE(EVALUATOR_ON_OP) {
     auto& Afac = S.Require<Operators::Op, Operators::Op_Factory>("A_local", Tags::DEFAULT);
     Afac.set_mesh(mesh);
     Afac.set_name("A_local");
-    Afac.set_schema(Operators::Schema{Operators::OPERATOR_SCHEMA_BASE_FACE |
-                                      Operators::OPERATOR_SCHEMA_DOFS_CELL});
+    Afac.set_schema(Operators::Schema{ Operators::OPERATOR_SCHEMA_BASE_FACE |
+                                       Operators::OPERATOR_SCHEMA_DOFS_CELL });
 
     S.Require<CompositeVector, CompositeVectorSpace>("A_rhs", Tags::DEFAULT)
-        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+      .SetMesh(mesh)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList Ae_list;
-    Ae_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+    Ae_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     Ae_list.setName("A_local");
     Ae_list.set("tag", "");
     Ae_list.set("local operator key", "A_local");
@@ -490,16 +499,17 @@ SUITE(EVALUATOR_ON_OP) {
 
     // require vector and secondary evaluator for r = Ax - b
     S.Require<CompositeVector, CompositeVectorSpace>("residual", Tags::DEFAULT)
-        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+      .SetMesh(mesh)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
     Teuchos::ParameterList re_list;
-    re_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+    re_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     //    re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"b"));
     re_list.set("diagonal primary x key", "x");
-    re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1,"A_local"));
-    re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1,"A_rhs"));
-    re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"b"));
-    re_list.set("rhs coefficients", Teuchos::Array<double>(1,-1.0));
+    re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1, "A_local"));
+    re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1, "A_rhs"));
+    re_list.set("additional rhss keys", Teuchos::Array<std::string>(1, "b"));
+    re_list.set("rhs coefficients", Teuchos::Array<double>(1, -1.0));
     re_list.set("tag", "");
     re_list.setName("residual");
     auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));

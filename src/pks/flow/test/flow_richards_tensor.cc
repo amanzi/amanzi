@@ -31,7 +31,9 @@
 #include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
-void TestLinearPressure(bool saturated) {
+void
+TestLinearPressure(bool saturated)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -50,20 +52,22 @@ void TestLinearPressure(bool saturated) {
   std::string xmlFileName = "test/flow_richards_tensor.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  if (saturated) 
-    plist->sublist("PKs").sublist("flow")
-        .sublist("water retention models").sublist("WRM for All")
-        .set<std::string>("water retention model", "saturated");
+  if (saturated)
+    plist->sublist("PKs")
+      .sublist("flow")
+      .sublist("water retention models")
+      .sublist("WRM for All")
+      .set<std::string>("water retention model", "saturated");
 
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   RCP<const AmanziMesh::Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
 
@@ -94,7 +98,7 @@ void TestLinearPressure(bool saturated) {
   std::string passwd("flow");
   auto& perm = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
-  Point K(perm[0][0], perm[1][0], perm[2][0]);  // model the permeability tensor
+  Point K(perm[0][0], perm[1][0], perm[2][0]); // model the permeability tensor
   Point u0(1.0, 1.0, 1.0);
   Point v0(3);
 
@@ -113,7 +117,7 @@ void TestLinearPressure(bool saturated) {
   ti_specs.max_itrs = 400;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times for flow
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT); // dummy times for flow
 
   /* check accuracy */
   const auto& pressure = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
@@ -145,7 +149,8 @@ void TestLinearPressure(bool saturated) {
   delete RPK;
 }
 
-TEST(FLOW_RICHARDS_ACCURACY) {
+TEST(FLOW_RICHARDS_ACCURACY)
+{
   TestLinearPressure(false);
   TestLinearPressure(true);
 }

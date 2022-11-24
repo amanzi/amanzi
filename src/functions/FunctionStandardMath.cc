@@ -6,25 +6,15 @@
 namespace Amanzi {
 
 FunctionStandardMath::FunctionStandardMath(std::string op,
-        double amplitude, double parameter, double shift) :
-    parameter_(parameter), amplitude_(amplitude), shift_(shift), op_(op) {
-  if (!((op_ == "cos") ||
-        (op_ == "sin") ||
-        (op_ == "tan") ||
-        (op_ == "acos") ||
-        (op_ == "asin") ||
-        (op_ == "atan") ||
-        (op_ == "cosh") ||
-        (op_ == "sinh") ||
-        (op_ == "tanh") ||
-        (op_ == "exp") ||
-        (op_ == "log") ||
-        (op_ == "log10") ||
-        (op_ == "sqrt") ||
-        (op_ == "ceil") ||
-        (op_ == "fabs") ||
-        (op_ == "floor") ||
-        (op_ == "mod") ||
+                                           double amplitude,
+                                           double parameter,
+                                           double shift)
+  : parameter_(parameter), amplitude_(amplitude), shift_(shift), op_(op)
+{
+  if (!((op_ == "cos") || (op_ == "sin") || (op_ == "tan") || (op_ == "acos") || (op_ == "asin") ||
+        (op_ == "atan") || (op_ == "cosh") || (op_ == "sinh") || (op_ == "tanh") ||
+        (op_ == "exp") || (op_ == "log") || (op_ == "log10") || (op_ == "sqrt") ||
+        (op_ == "ceil") || (op_ == "fabs") || (op_ == "floor") || (op_ == "mod") ||
         (op_ == "pow"))) {
     std::stringstream m;
     m << "Invalid or unknown standard math function " << op_;
@@ -33,7 +23,8 @@ FunctionStandardMath::FunctionStandardMath(std::string op,
   }
 }
 
-double FunctionStandardMath::operator()(const std::vector<double>& x) const
+double
+FunctionStandardMath::operator()(const std::vector<double>& x) const
 {
   double x0 = x[0] - shift_;
   if (op_ == "cos") {
@@ -84,7 +75,9 @@ double FunctionStandardMath::operator()(const std::vector<double>& x) const
   return 0.0;
 }
 
-void FunctionStandardMath::InvalidDomainError_(double x) const {
+void
+FunctionStandardMath::InvalidDomainError_(double x) const
+{
   std::stringstream m;
   m << "Value " << x << " is not in the domain of operator " << op_ << ".";
   Errors::Message message(m.str());

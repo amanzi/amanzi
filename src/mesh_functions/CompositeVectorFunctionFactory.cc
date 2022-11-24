@@ -23,16 +23,14 @@ namespace Functions {
 
 Teuchos::RCP<CompositeVectorFunction>
 CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
-        const CompositeVectorSpace& sample,
-        std::vector<std::string>& componentname_list) {
-
-  Teuchos::RCP<MeshFunction> mesh_func =
-    Teuchos::rcp(new MeshFunction(sample.Mesh()));
+                              const CompositeVectorSpace& sample,
+                              std::vector<std::string>& componentname_list)
+{
+  Teuchos::RCP<MeshFunction> mesh_func = Teuchos::rcp(new MeshFunction(sample.Mesh()));
   componentname_list.clear();
 
   // top level plist contains sublists containing the entry
-  for (Teuchos::ParameterList::ConstIterator lcv=plist.begin();
-       lcv!=plist.end(); ++lcv) {
+  for (Teuchos::ParameterList::ConstIterator lcv = plist.begin(); lcv != plist.end(); ++lcv) {
     std::string name = lcv->first;
 
     if (plist.isSublist(name)) {
@@ -50,8 +48,8 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
           Exceptions::amanzi_throw(msg);
         }
       } else if (sublist.isParameter("regions")) {
-        if (sublist.isType<Teuchos::Array<std::string> >("regions")) {
-          regions = sublist.get<Teuchos::Array<std::string> >("regions").toVector();
+        if (sublist.isType<Teuchos::Array<std::string>>("regions")) {
+          regions = sublist.get<Teuchos::Array<std::string>>("regions").toVector();
         } else {
           Errors::Message msg;
           msg << "CompositeVectorFunctionFactory \"" << plist.name() << "(" << name << ")"
@@ -77,8 +75,8 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
           Exceptions::amanzi_throw(msg);
         }
       } else if (sublist.isParameter("components")) {
-        if (sublist.isType<Teuchos::Array<std::string> >("components")) {
-          components = sublist.get<Teuchos::Array<std::string> >("components").toVector();
+        if (sublist.isType<Teuchos::Array<std::string>>("components")) {
+          components = sublist.get<Teuchos::Array<std::string>>("components").toVector();
         } else {
           Errors::Message msg;
           msg << "CompositeVectorFunctionFactory \"" << plist.name() << "(" << name << ")"
@@ -95,8 +93,7 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
       // parse special case: initialize all existing components
       if (components.size() == 1 && components[0] == "*") {
         components.clear();
-        for (auto it = sample.begin(); it != sample.end(); ++it)
-          components.push_back(*it);
+        for (auto it = sample.begin(); it != sample.end(); ++it) components.push_back(*it);
       }
 
       // get the function
@@ -113,9 +110,9 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
 
       // From the above data, add to the cv function.
       // Loop through components, adding a spec/component name for each.
-      for (std::vector<std::string>::const_iterator component=components.begin();
-           component!=components.end(); ++component) {
-
+      for (std::vector<std::string>::const_iterator component = components.begin();
+           component != components.end();
+           ++component) {
         // get the entity kind based upon the sample vector
         if (!sample.HasComponent(*component)) {
           Errors::Message msg;
@@ -147,7 +144,5 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
   return Teuchos::rcp(new CompositeVectorFunction(mesh_func, componentname_list));
 };
 
-} // namespace
-} // namespace
-
-
+} // namespace Functions
+} // namespace Amanzi

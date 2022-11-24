@@ -21,7 +21,7 @@ class SorptionIsothermLinear : public SorptionIsotherm {
  public:
   SorptionIsothermLinear();
   SorptionIsothermLinear(double KD);
-  ~SorptionIsothermLinear() {};
+  ~SorptionIsothermLinear(){};
 
   void Init(double KD);
 
@@ -41,10 +41,10 @@ class SorptionIsothermLinear : public SorptionIsotherm {
  private:
   // distribution coefficient
   // (currently) units = kg water/m^3 bulk
-  double KD_; 
+  double KD_;
   std::vector<double> params_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

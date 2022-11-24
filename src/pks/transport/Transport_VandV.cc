@@ -29,7 +29,8 @@ using CV_t = CompositeVector;
 /* *******************************************************************
 * Routine verifies that the velocity field is divergence free                 
 ******************************************************************* */
-void Transport_PK::Policy(Teuchos::Ptr<State> S)
+void
+Transport_PK::Policy(Teuchos::Ptr<State> S)
 {
   if (mesh_->get_comm()->NumProc() > 1) {
     if (!S->Get<CV_t>(tcc_key_).Ghosted()) {
@@ -45,8 +46,10 @@ void Transport_PK::Policy(Teuchos::Ptr<State> S)
 /* *******************************************************************
 * Calculates extrema of specified solutes and print them.
 ******************************************************************* */
-void Transport_PK::VV_PrintSoluteExtrema(
-    const Epetra_MultiVector& tcc_next, double dT_MPC, const std::string& mesh_id)
+void
+Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
+                                    double dT_MPC,
+                                    const std::string& mesh_id)
 {
   const auto& flowrate = *S_->Get<CV_t>(vol_flowrate_key_).ViewComponent("face", true);
   const auto& wc = *S_->Get<CV_t>(wc_key_).ViewComponent("cell");
@@ -61,8 +64,8 @@ void Transport_PK::VV_PrintSoluteExtrema(
   for (int n = 0; n < runtime_solutes_.size(); n++) {
     int i = FindComponentNumber(runtime_solutes_[n]);
     double tccmin, tccmax;
-    tcc_next.Comm().MinAll(&(tccmin_vec[i]), &tccmin, 1);  // find the global extrema
-    tcc_next.Comm().MaxAll(&(tccmax_vec[i]), &tccmax, 1); 
+    tcc_next.Comm().MinAll(&(tccmin_vec[i]), &tccmin, 1); // find the global extrema
+    tcc_next.Comm().MaxAll(&(tccmax_vec[i]), &tccmax, 1);
 
     int nregions = runtime_regions_.size();
     double solute_flux(0.0);
@@ -72,7 +75,8 @@ void Transport_PK::VV_PrintSoluteExtrema(
       if (mesh_->valid_set_name(runtime_regions_[k], AmanziMesh::FACE)) {
         flag = true;
         AmanziMesh::Entity_ID_List block;
-        mesh_->get_set_entities(runtime_regions_[k], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block);
+        mesh_->get_set_entities(
+          runtime_regions_[k], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block);
         int nblock = block.size();
 
         for (int m = 0; m < nblock; m++) {
@@ -93,7 +97,7 @@ void Transport_PK::VV_PrintSoluteExtrema(
     double tmp = solute_flux;
     mesh_->get_comm()->SumAll(&tmp, &solute_flux, 1);
 
-    *vo_->os() << runtime_solutes_[n] << mesh_id << ": min=" << units_.OutputConcentration(tccmin) 
+    *vo_->os() << runtime_solutes_[n] << mesh_id << ": min=" << units_.OutputConcentration(tccmin)
                << " max=" << units_.OutputConcentration(tccmax);
     if (flag) *vo_->os() << ", flux=" << solute_flux << " mol/s";
 
@@ -118,7 +122,8 @@ void Transport_PK::VV_PrintSoluteExtrema(
 /* *******************************************************************
 * Fancy output of limiter statistics
 ******************************************************************* */
-void Transport_PK::VV_PrintLimiterStatistics()
+void
+Transport_PK::VV_PrintLimiterStatistics()
 {
   if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -134,8 +139,8 @@ void Transport_PK::VV_PrintLimiterStatistics()
           limiter->MaxValue(&vmax);
           limiter->MeanValue(&vavg);
 
-          *vo_->os() << name << ": limiter min/avg/max: " 
-                     << vmin << " " << vavg << " " << vmax << std::endl;
+          *vo_->os() << name << ": limiter min/avg/max: " << vmin << " " << vavg << " " << vmax
+                     << std::endl;
         }
       }
     }
@@ -146,7 +151,8 @@ void Transport_PK::VV_PrintLimiterStatistics()
 /********************************************************************
 * Check completeness of influx boundary conditions.                        
 ****************************************************************** */
-void Transport_PK::VV_CheckInfluxBC() const
+void
+Transport_PK::VV_CheckInfluxBC() const
 {
   const auto& flowrate = *S_->Get<CV_t>(vol_flowrate_key_).ViewComponent("face", true);
 
@@ -194,7 +200,8 @@ void Transport_PK::VV_CheckInfluxBC() const
 /* *******************************************************************
  * Check that global extrema diminished                          
  ****************************************************************** */
-void Transport_PK::VV_CheckGEDproperty(Epetra_MultiVector& tracer) const
+void
+Transport_PK::VV_CheckGEDproperty(Epetra_MultiVector& tracer) const
 {
   int i, num_components = tracer.NumVectors();
   double tr_min[num_components];
@@ -213,7 +220,8 @@ void Transport_PK::VV_CheckGEDproperty(Epetra_MultiVector& tracer) const
       std::cout << "    min/max values = " << tr_min[i] << " " << tr_max[i] << std::endl;
 
       Errors::Message msg;
-      msg << "Concentration violates GED property." << "\n";
+      msg << "Concentration violates GED property."
+          << "\n";
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -223,11 +231,12 @@ void Transport_PK::VV_CheckGEDproperty(Epetra_MultiVector& tracer) const
 /* ******************************************************************
 * Check that the tracer is between 0 and 1.                        
 ****************************************************************** */
-void Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
-                                        int component,
-                                        double lower_bound,
-                                        double upper_bound,
-                                        double tol) const
+void
+Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
+                                   int component,
+                                   double lower_bound,
+                                   double upper_bound,
+                                   double tol) const
 {
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
@@ -245,7 +254,8 @@ void Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
       std::cout << "      value (new) = " << value << std::endl;
 
       Errors::Message msg;
-      msg << "Tracer violates bounds." << "\n";
+      msg << "Tracer violates bounds."
+          << "\n";
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -256,7 +266,8 @@ void Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
 * Calculate change of tracer volume per second due to boundary flux.
 * This is the simplified version (lipnikov@lanl.gov).
 ****************************************************************** */
-double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
+double
+Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
 {
   const auto& flowrate = *S_->Get<CV_t>(vol_flowrate_key_).ViewComponent("face", true);
 
@@ -271,7 +282,7 @@ double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
         for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
           int f = it->first;
 
-          std::vector<double>& values = it->second; 
+          std::vector<double>& values = it->second;
 
           if (downwind_cells_[f].size() > 0) {
             int c2 = downwind_cells_[f][0];
@@ -292,8 +303,12 @@ double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
 /* *******************************************************************
 * Error estimate uses analytic function and solution.
 * ***************************************************************** */
-void Transport_PK::CalculateLpErrors(
-    AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2)
+void
+Transport_PK::CalculateLpErrors(AnalyticFunction f,
+                                double t,
+                                Epetra_Vector* sol,
+                                double* L1,
+                                double* L2)
 {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
@@ -307,12 +322,11 @@ void Transport_PK::CalculateLpErrors(
     *L2 += d * d * volume;
   }
 
-  double tmp_out[2], tmp_in[2] = {*L1, *L2};
+  double tmp_out[2], tmp_in[2] = { *L1, *L2 };
   mesh_->get_comm()->SumAll(tmp_in, tmp_out, 2);
   *L1 = tmp_out[0];
   *L2 = sqrt(tmp_out[1]);
 }
 
-}  // namespace Transport
-}  // namespace Amanzi
-
+} // namespace Transport
+} // namespace Amanzi

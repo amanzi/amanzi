@@ -41,34 +41,35 @@ namespace Operators {
 /* ******************************************************************
 * Special assemble algorithm is required to deal with Schur complement.
 ****************************************************************** */
-void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
-                                          int my_block_row, int my_block_col) const
+void
+Operator_FaceCellSff::AssembleMatrix(const SuperMap& map,
+                                     MatrixFE& matrix,
+                                     int my_block_row,
+                                     int my_block_col) const
 {
   // Check preconditions -- Scc must have exactly one CELL+FACE schema,
   // and no other CELL schemas that are not simply diagonal CELL_CELL.
   // Additionally, collect the diagonal for inversion.
   Epetra_MultiVector D_c(mesh_->cell_map(false), 1);
-  
+
   int num_with_cells = 0;
   for (const_op_iterator it = begin(); it != end(); ++it) {
     if ((*it)->schema_old() & OPERATOR_SCHEMA_DOFS_CELL) {
-      if (((*it)->schema_old() == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
-          && ((*it)->diag->MyLength() == ncells_owned)) {
+      if (((*it)->schema_old() == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL)) &&
+          ((*it)->diag->MyLength() == ncells_owned)) {
         // diagonal schema
-        for (int c = 0; c != ncells_owned; ++c) {
-          D_c[0][c] += (*(*it)->diag)[0][c];
-        }
+        for (int c = 0; c != ncells_owned; ++c) { D_c[0][c] += (*(*it)->diag)[0][c]; }
       } else {
         num_with_cells++;
       }
     }
   }
-  
+
   // schur complement
   int i_schur = 0;
   for (const_op_iterator it = begin(); it != end(); ++it) {
-    if ((*it)->schema_old() == (OPERATOR_SCHEMA_BASE_CELL |
-                               OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+    if ((*it)->schema_old() ==
+        (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       AMANZI_ASSERT((*it)->matrices.size() == ncells_owned);
 
       // create or get extra ops, and keep them for future use
@@ -108,9 +109,8 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 
       // Assemble this Schur Op into matrix
       schur_op->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
-    } else if (((*it)->schema_old() ==
-                (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
-               && ((*it)->diag->MyLength() == ncells_owned)) {
+    } else if (((*it)->schema_old() == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL)) &&
+               ((*it)->diag->MyLength() == ncells_owned)) {
       // pass, already part of cell inverse
     } else {
       (*it)->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
@@ -123,8 +123,10 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 * Visit method for Apply -- this is identical to Operator_FaceCell's
 * version.
 ****************************************************************** */
-int Operator_FaceCellSff::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
-                                            const CompositeVector& X, CompositeVector& Y) const
+int
+Operator_FaceCellSff::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
+                                        const CompositeVector& X,
+                                        CompositeVector& Y) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
@@ -133,22 +135,18 @@ int Operator_FaceCellSff::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
     Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
     Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
 
-    for (int c=0; c!=ncells_owned; ++c) {
+    for (int c = 0; c != ncells_owned; ++c) {
       const auto& faces = mesh_->cell_get_faces(c);
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-      for (int n=0; n!=nfaces; ++n) {
-        v(n) = Xf[0][faces[n]];
-      }
+      for (int n = 0; n != nfaces; ++n) { v(n) = Xf[0][faces[n]]; }
       v(nfaces) = Xc[0][c];
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
       Acell.Multiply(v, av, false);
 
-      for (int n=0; n!=nfaces; ++n) {
-        Yf[0][faces[n]] += av(n);
-      }
+      for (int n = 0; n != nfaces; ++n) { Yf[0][faces[n]] += av(n); }
       Yc[0][c] += av(nfaces);
     }
   }
@@ -159,7 +157,8 @@ int Operator_FaceCellSff::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
 /* ******************************************************************
 * Create a global matrix.
 ****************************************************************** */
-void Operator_FaceCellSff::SymbolicAssembleMatrix()
+void
+Operator_FaceCellSff::SymbolicAssembleMatrix()
 {
   // SuperMap for Sff is face only
   CompositeVectorSpace smap_space;
@@ -168,8 +167,8 @@ void Operator_FaceCellSff::SymbolicAssembleMatrix()
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);
-  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
-          smap_->GhostedMap(), smap_->GhostedMap(), row_size));
+  Teuchos::RCP<GraphFE> graph =
+    Teuchos::rcp(new GraphFE(smap_->Map(), smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
   Operator::SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
 
@@ -187,19 +186,24 @@ void Operator_FaceCellSff::SymbolicAssembleMatrix()
 /* ******************************************************************
 * visit method for sparsity structure of Schur complement
 ****************************************************************** */
-void Operator_FaceCellSff::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
-                                                    const SuperMap& map, GraphFE& graph,
-                                                    int my_block_row, int my_block_col) const
+void
+Operator_FaceCellSff::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
+                                               const SuperMap& map,
+                                               GraphFE& graph,
+                                               int my_block_row,
+                                               int my_block_col) const
 {
   std::string name = "Sff alt CELL_FACE";
   Op_Cell_Face schur_op(name, mesh_);
   Operator_FaceCell::SymbolicAssembleMatrixOp(schur_op, map, graph, my_block_row, my_block_col);
 }
 
-void Operator_FaceCellSff::InitializeInverse()
+void
+Operator_FaceCellSff::InitializeInverse()
 {
   if (!inverse_pars_set_) {
-    Errors::Message msg("No inverse parameter list.  Provide a sublist \"inverse\" or ensure set_inverse_parameters() is called.");
+    Errors::Message msg("No inverse parameter list.  Provide a sublist \"inverse\" or ensure "
+                        "set_inverse_parameters() is called.");
     msg << " In: " << typeid(*this).name() << "\n";
     Exceptions::amanzi_throw(msg);
   }
@@ -207,9 +211,10 @@ void Operator_FaceCellSff::InitializeInverse()
   schur_inv_ = Teuchos::rcp(new AmanziSolvers::InverseSchurComplement());
   schur_inv_->set_inverse_parameters(inv_plist_);
   schur_inv_->set_matrix(Teuchos::rcpFromRef(*this));
-  
+
   if (inv_plist_.isParameter("iterative method")) {
-    preconditioner_ = AmanziSolvers::createIterativeMethod(inv_plist_, Teuchos::rcpFromRef(*this), schur_inv_);
+    preconditioner_ =
+      AmanziSolvers::createIterativeMethod(inv_plist_, Teuchos::rcpFromRef(*this), schur_inv_);
   } else {
     preconditioner_ = schur_inv_;
   }
@@ -221,10 +226,11 @@ void Operator_FaceCellSff::InitializeInverse()
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Operator> Operator_FaceCellSff::Clone() const {
+Teuchos::RCP<Operator>
+Operator_FaceCellSff::Clone() const
+{
   return Teuchos::rcp(new Operator_FaceCellSff(*this));
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
+} // namespace Operators
+} // namespace Amanzi

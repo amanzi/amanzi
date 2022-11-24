@@ -32,7 +32,9 @@
 #include "TransportExplicit_PK.hh"
 
 /* **************************************************************** */
-void runTest(std::string xmlfile) {
+void
+runTest(std::string xmlfile)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -52,7 +54,7 @@ void runTest(std::string xmlfile) {
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
 
   // create a state and PK
@@ -72,10 +74,11 @@ void runTest(std::string xmlfile) {
   TPK.Initialize();
   WriteStateStatistics(*S);
 
-  // advance the transport state 
+  // advance the transport state
   int iter(0);
   double t_old(0.0), t_new(0.0), dt;
-  auto tcc = S->GetW<CompositeVector>("total_component_concentration", "state").ViewComponent("cell");
+  auto tcc =
+    S->GetW<CompositeVector>("total_component_concentration", "state").ViewComponent("cell");
 
   while (t_new < 0.5) {
     dt = TPK.StableTimeStep(-1);
@@ -92,22 +95,17 @@ void runTest(std::string xmlfile) {
     iter++;
 
     printf("T=%8.4f  C_0(x):", t_new);
-    for (int k = 3; k < 100; k+=10) {
-      printf("%8.5f", (*tcc)[0][k]); 
-    }
+    for (int k = 3; k < 100; k += 10) { printf("%8.5f", (*tcc)[0][k]); }
     printf("\n");
 
-    for (int c = 0; c < 10; ++c) {
-      CHECK((*tcc)[0][c] <= 1.0 && (*tcc)[0][c] >= 0.0);
-    }
+    for (int c = 0; c < 10; ++c) { CHECK((*tcc)[0][c] <= 1.0 && (*tcc)[0][c] >= 0.0); }
   }
 
   WriteStateStatistics(*S);
 }
 
 
-TEST(ADVANCE_2D_MESH) {
+TEST(ADVANCE_2D_MESH)
+{
   runTest("test/transport_wet_dry.xml");
 }
-
-

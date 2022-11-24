@@ -64,10 +64,13 @@ namespace Amanzi {
 template <class Analytic>
 class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
  public:
-  AdvectionFn(Teuchos::ParameterList& plist, int nx, double dt0,
+  AdvectionFn(Teuchos::ParameterList& plist,
+              int nx,
+              double dt0,
               const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-              Teuchos::RCP<WhetStone::DG_Modal> dg,  
-              bool conservative_form, std::string weak_form);
+              Teuchos::RCP<WhetStone::DG_Modal> dg,
+              bool conservative_form,
+              std::string weak_form);
 
   // functional in dy/dt = F(y)
   void FunctionalTimeDerivative(double t, const CompositeVector& u, CompositeVector& f) override;
@@ -76,11 +79,12 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
   void set_dt(double dt) { dt_ = dt; }
 
   // calculate cell-center and face-centered velocities using analytic formulas
-  virtual void ComputeVelocities(
-      double t, double dt, const CompositeVector& u,
-      const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
-      const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
-      const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc);
+  virtual void ComputeVelocities(double t,
+                                 double dt,
+                                 const CompositeVector& u,
+                                 const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>>& velc,
+                                 const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& velf,
+                                 const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& divc);
 
   // limit solution
   void ApplyLimiter(std::string& limiter, CompositeVector& u);
@@ -108,7 +112,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
   int ncells_wghost_, nfaces_wghost_;
 
   int order_;
-  Teuchos::RCP<WhetStone::DG_Modal> dg_;  
+  Teuchos::RCP<WhetStone::DG_Modal> dg_;
 
   double weak_sign_;
   bool conservative_form_, divergence_term_, setup_;
@@ -122,18 +126,23 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 template <class Analytic>
 class AdvectionFn_Projection : public AdvectionFn<Analytic> {
  public:
-  AdvectionFn_Projection(Teuchos::ParameterList& plist, int nx, double dt0,
+  AdvectionFn_Projection(Teuchos::ParameterList& plist,
+                         int nx,
+                         double dt0,
                          const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                         Teuchos::RCP<WhetStone::DG_Modal> dg,  
-                         bool conservative_form, std::string weak_form)
-    : AdvectionFn<Analytic>(plist, nx, dt0, mesh, dg,  conservative_form, weak_form) {};
+                         Teuchos::RCP<WhetStone::DG_Modal> dg,
+                         bool conservative_form,
+                         std::string weak_form)
+    : AdvectionFn<Analytic>(plist, nx, dt0, mesh, dg, conservative_form, weak_form){};
 
   // calculate cell-center and face-centered velocities using L2 or H1 projection
-  virtual void ComputeVelocities(
-      double t, double dt, const CompositeVector& u,
-      const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
-      const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
-      const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc) override;
+  virtual void
+  ComputeVelocities(double t,
+                    double dt,
+                    const CompositeVector& u,
+                    const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>>& velc,
+                    const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& velf,
+                    const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& divc) override;
 
   // name
   virtual std::string name() override { return "high order"; }
@@ -159,18 +168,23 @@ class AdvectionFn_Projection : public AdvectionFn<Analytic> {
 template <class Analytic>
 class AdvectionFn_LevelSet : public AdvectionFn<Analytic> {
  public:
-  AdvectionFn_LevelSet(Teuchos::ParameterList& plist, int nx, double dt0,
+  AdvectionFn_LevelSet(Teuchos::ParameterList& plist,
+                       int nx,
+                       double dt0,
                        const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                       Teuchos::RCP<WhetStone::DG_Modal> dg,  
-                       bool conservative_form, std::string weak_form)
-    : AdvectionFn<Analytic>(plist, nx, dt0, mesh, dg,  conservative_form, weak_form) {};
+                       Teuchos::RCP<WhetStone::DG_Modal> dg,
+                       bool conservative_form,
+                       std::string weak_form)
+    : AdvectionFn<Analytic>(plist, nx, dt0, mesh, dg, conservative_form, weak_form){};
 
   // calculate cell-center and face-centered velocities using L2 or H1 projection
-  virtual void ComputeVelocities(
-      double t, double dt, const CompositeVector& u,
-      const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
-      const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
-      const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc) override;
+  virtual void
+  ComputeVelocities(double t,
+                    double dt,
+                    const CompositeVector& u,
+                    const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>>& velc,
+                    const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& velf,
+                    const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& divc) override;
 
   // name
   virtual std::string name() override { return "level set"; }
@@ -196,21 +210,23 @@ class AdvectionFn_LevelSet : public AdvectionFn<Analytic> {
 * Constructor
 ***************************************************************** */
 template <class Analytic>
-AdvectionFn<Analytic>::AdvectionFn(
-    Teuchos::ParameterList& plist, int nx, double dt, 
-    const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-    Teuchos::RCP<WhetStone::DG_Modal> dg,  
-    bool conservative_form, std::string weak_form)
-    : dt_stable_min(1e+99),
-      limiter_min(-1.0),
-      limiter_mean(-1.0),
-      ana_(mesh, dg->get_order(), true),
-      plist_(plist),
-      nx_(nx),
-      dt_(dt), 
-      mesh_(mesh),
-      dg_(dg), 
-      conservative_form_(conservative_form)
+AdvectionFn<Analytic>::AdvectionFn(Teuchos::ParameterList& plist,
+                                   int nx,
+                                   double dt,
+                                   const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                                   Teuchos::RCP<WhetStone::DG_Modal> dg,
+                                   bool conservative_form,
+                                   std::string weak_form)
+  : dt_stable_min(1e+99),
+    limiter_min(-1.0),
+    limiter_mean(-1.0),
+    ana_(mesh, dg->get_order(), true),
+    plist_(plist),
+    nx_(nx),
+    dt_(dt),
+    mesh_(mesh),
+    dg_(dg),
+    conservative_form_(conservative_form)
 {
   divergence_term_ = !conservative_form_;
   if (weak_form == "dual") {
@@ -226,7 +242,7 @@ AdvectionFn<Analytic>::AdvectionFn(
     divergence_term_ = false;
   }
 
-  // create global operator 
+  // create global operator
   // -- upwind flux term
   Teuchos::ParameterList op_list = plist.sublist(pk_name_).sublist("flux operator");
   op_flux = Teuchos::rcp(new Operators::PDE_AdvectionRiemann(op_list, mesh));
@@ -261,8 +277,10 @@ AdvectionFn<Analytic>::AdvectionFn(
 * Functional F in dy/dt - F(y) = 0.
 ***************************************************************** */
 template <class Analytic>
-void AdvectionFn<Analytic>::FunctionalTimeDerivative(
-    double t, const CompositeVector& u, CompositeVector& func)
+void
+AdvectionFn<Analytic>::FunctionalTimeDerivative(double t,
+                                                const CompositeVector& u,
+                                                CompositeVector& func)
 {
   int d = mesh_->space_dimension();
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -282,9 +300,7 @@ void AdvectionFn<Analytic>::FunctionalTimeDerivative(
   auto K = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_wghost));
   WhetStone::Polynomial Kc(d, 0);
   Kc(0, 0) = 1.0;
-  for (int c = 0; c < ncells_wghost; c++) {
-    (*K)[c] = Kc;
-  }
+  for (int c = 0; c < ncells_wghost; c++) { (*K)[c] = Kc; }
 
   // -- source term
   int nk = WhetStone::PolynomialSpaceDimension(d, order_);
@@ -306,34 +322,31 @@ void AdvectionFn<Analytic>::FunctionalTimeDerivative(
       int n = it.PolynomialPosition();
 
       WhetStone::Polynomial cmono(d, it.multi_index(), 1.0);
-      cmono.set_origin(xc);      
+      cmono.set_origin(xc);
 
-      WhetStone::Polynomial tmp = src * cmono;      
+      WhetStone::Polynomial tmp = src * cmono;
 
       data(n) = numi.IntegratePolynomialCell(c, tmp);
     }
 
     // -- convert moment to my basis
     dg_->cell_basis(c).LinearFormNaturalToMy(data);
-    for (int n = 0; n < pc.size(); ++n) {
-      rhs_c[n][c] = data(n);
-    }
+    for (int n = 0; n < pc.size(); ++n) { rhs_c[n][c] = data(n); }
   }
 
   // -- boundary data
   auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
-  std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
+  std::vector<std::vector<double>>& bc_value = bc->bc_value_vector(nk);
 
   bool flag;
   WhetStone::Polynomial coefs;
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
-        fabs(xf[d - 1]) < 1e-6 || fabs(xf[d - 1] - 1.0) < 1e-6) {
-      AmanziGeometry::Point vp = ana_.VelocityExact(xf, t); 
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
+        fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[d - 1]) < 1e-6 || fabs(xf[d - 1] - 1.0) < 1e-6) {
+      AmanziGeometry::Point vp = ana_.VelocityExact(xf, t);
 
       // const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       const AmanziGeometry::Point& normal = ana_.face_normal_exterior(f, &flag);
@@ -345,9 +358,7 @@ void AdvectionFn<Analytic>::FunctionalTimeDerivative(
         ana_.SolutionTaylor(xf, t, coefs);
         data = coefs.coefs();
 
-        for (int i = 0; i < nk; ++i) {
-          bc_value[f][i] = data(i);
-        }
+        for (int i = 0; i < nk; ++i) { bc_value[f][i] = data(i); }
       } else if (weak_sign_ < 0.0) {
         bc_model[f] = Operators::OPERATOR_BC_REMOVE;
       }
@@ -393,17 +404,20 @@ void AdvectionFn<Analytic>::FunctionalTimeDerivative(
 * Definition of velocities: analytic velocities
 ***************************************************************** */
 template <class Analytic>
-void AdvectionFn<Analytic>::ComputeVelocities(
-    double t, double dt, const CompositeVector& u,
-    const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
-    const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
-    const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc)
+void
+AdvectionFn<Analytic>::ComputeVelocities(
+  double t,
+  double dt,
+  const CompositeVector& u,
+  const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>>& velc,
+  const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& velf,
+  const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& divc)
 {
   double dt_stable(1e+99), alpha(1.0), vmag;
   WhetStone::VectorPolynomial v;
 
   for (int c = 0; c < ncells_wghost_; ++c) {
-    ana_.VelocityTaylor(mesh_->cell_centroid(c), t, v); 
+    ana_.VelocityTaylor(mesh_->cell_centroid(c), t, v);
     (*velc)[c] = v;
   }
 
@@ -411,7 +425,7 @@ void AdvectionFn<Analytic>::ComputeVelocities(
     double area = mesh_->face_area(f);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
-    ana_.VelocityTaylor(xf, t, v); 
+    ana_.VelocityTaylor(xf, t, v);
     (*velf)[f] = v * mesh_->face_normal(f);
 
     v.Value(xf).Norm2(&vmag);
@@ -421,9 +435,7 @@ void AdvectionFn<Analytic>::ComputeVelocities(
   dt_stable_min = std::min(dt_stable_min, dt_stable);
 
   if (divergence_term_) {
-    for (int c = 0; c < ncells_wghost_; ++c) {
-      (*divc)[c] = Divergence((*velc)[c]);
-    }
+    for (int c = 0; c < ncells_wghost_; ++c) { (*divc)[c] = Divergence((*velc)[c]); }
   }
 }
 
@@ -432,11 +444,14 @@ void AdvectionFn<Analytic>::ComputeVelocities(
 * Change original definitions of velocities: projection algorithm
 ***************************************************************** */
 template <class Analytic>
-void AdvectionFn_Projection<Analytic>::ComputeVelocities(
-    double t, double dt, const CompositeVector& u,
-    const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
-    const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
-    const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc)
+void
+AdvectionFn_Projection<Analytic>::ComputeVelocities(
+  double t,
+  double dt,
+  const CompositeVector& u,
+  const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>>& velc,
+  const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& velf,
+  const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& divc)
 {
   int d = mesh_->space_dimension();
   double dt_stable(1e+99), alpha(1.0), vmag;
@@ -497,11 +512,14 @@ void AdvectionFn_Projection<Analytic>::ComputeVelocities(
 * Change original definitions of velocities: level set algorithm
 ***************************************************************** */
 template <class Analytic>
-void AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
-    double t, double dt, const CompositeVector& u,
-    const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
-    const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
-    const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc)
+void
+AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
+  double t,
+  double dt,
+  const CompositeVector& u,
+  const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>>& velc,
+  const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& velf,
+  const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& divc)
 {
   u.ScatterMasterToGhosted();
   const Epetra_MultiVector& u_c = *u.ViewComponent("cell", true);
@@ -514,7 +532,7 @@ void AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nfaces_owned  = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   // cell-based velocity is constant for dGP1
   // we approximate it with a linear function for dGP2
@@ -527,7 +545,7 @@ void AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
 
     for (int i = 0; i < nk; ++i) data(i) = u_c[i][c];
     dg_->cell_basis(c).ChangeBasisMyToNatural(data);
-    WhetStone::Polynomial poly(dim, order_, data); 
+    WhetStone::Polynomial poly(dim, order_, data);
     poly.set_origin(xc);
 
     (*velc)[c] = GradientOnUnitSphere(poly, order_ - 1);
@@ -558,7 +576,7 @@ void AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
       int c = cells[n];
       for (int i = 0; i < nk; ++i) data(i) = u_c[i][c];
       dg_->cell_basis(c).ChangeBasisMyToNatural(data);
-      WhetStone::Polynomial tmp(dim, order_, data); 
+      WhetStone::Polynomial tmp(dim, order_, data);
       tmp.set_origin(mesh_->cell_centroid(c));
 
       tmp.ChangeOrigin(xf);
@@ -568,12 +586,10 @@ void AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
     vvf = GradientOnUnitSphere(poly, order_ - 1);
 
     for (int i = 0; i < 2; ++i) {
-      for (int m = 0; m < mk; ++m) {
-        vecf_f[i * mk + m][f] = vvf[i](m);
-      }
+      for (int m = 0; m < mk; ++m) { vecf_f[i * mk + m][f] = vvf[i](m); }
     }
-  } 
-    
+  }
+
   vecf.ScatterMasterToGhosted();
 
   // face-based fluxes scaled by area
@@ -582,9 +598,7 @@ void AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
     for (int i = 0; i < 2; ++i) {
-      for (int m = 0; m < mk; ++m) {
-        vvf[i](m) = vecf_f[i * mk + m][f];
-      }
+      for (int m = 0; m < mk; ++m) { vvf[i](m) = vecf_f[i * mk + m][f]; }
     }
 
     (*velf)[f] = vvf * normal;
@@ -593,9 +607,7 @@ void AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
 
   // update CFL condition
   double dt_stable(1.0e+99);
-  for (int f = 0; f < nfaces_wghost; ++f) {
-    dt_stable = std::min(dt_stable, mesh_->face_area(f));
-  }
+  for (int f = 0; f < nfaces_wghost; ++f) { dt_stable = std::min(dt_stable, mesh_->face_area(f)); }
   dt_stable_min = std::min(dt_stable_min, dt_stable / (2 * order_ + 1));
 }
 
@@ -604,7 +616,8 @@ void AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
 * Limit gradient
 ***************************************************************** */
 template <class Analytic>
-void AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
+void
+AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
 {
   if (name == "none") return;
 
@@ -660,7 +673,7 @@ void AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
     auto lifting = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_, grad));
     limiter.ApplyLimiter(u.ViewComponent("cell", true), 0, lifting, bc_model, bc_value);
     const auto& factor = *limiter.limiter();
-    for (int c = 0; c < ncells_owned; ++c) 
+    for (int c = 0; c < ncells_owned; ++c)
       for (int i = 1; i < nk; ++i) u_c[i][c] *= factor[c];
 
     for (int c = 0; c < ncells_owned; ++c) {
@@ -685,34 +698,39 @@ void AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
   limiter_mean /= lim.Map().MaxAllGID() + 1;
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 
 /* *****************************************************************
 * This tests the transient advection scheme.
 ***************************************************************** */
 // support functions for the level set algorithm
-bool inside1(const Amanzi::AmanziGeometry::Point& p) {
+bool
+inside1(const Amanzi::AmanziGeometry::Point& p)
+{
   Amanzi::AmanziGeometry::Point c(0.5, 0.5);
-  return (norm(p - c) < 0.06); 
+  return (norm(p - c) < 0.06);
 }
-bool inside2(const Amanzi::AmanziGeometry::Point& p) {
+bool
+inside2(const Amanzi::AmanziGeometry::Point& p)
+{
   Amanzi::AmanziGeometry::Point c(1.0, 0.0);
-  return (norm(p) < 0.06 || norm(p - c) < 0.06); 
+  return (norm(p) < 0.06 || norm(p - c) < 0.06);
 }
 
 // support function for visualization: extrapolation to mesh nodes
-Teuchos::RCP<Epetra_MultiVector> InterpolateCellToNode(
-    Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-    const Amanzi::WhetStone::DG_Modal& dg,
-    const Epetra_MultiVector& uc)
+Teuchos::RCP<Epetra_MultiVector>
+InterpolateCellToNode(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+                      const Amanzi::WhetStone::DG_Modal& dg,
+                      const Epetra_MultiVector& uc)
 {
   int order = dg.get_order();
   int nk = uc.NumVectors();
   Amanzi::AmanziGeometry::Point xv(mesh->space_dimension());
   Amanzi::AmanziMesh::Entity_ID_List cells;
 
-  int nnodes_owned = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nnodes_owned =
+    mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   auto un = Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), 1));
 
   for (int v = 0; v < nnodes_owned; ++v) {
@@ -730,17 +748,22 @@ Teuchos::RCP<Epetra_MultiVector> InterpolateCellToNode(
       value += poly.Value(xv);
     }
     (*un)[0][v] = value / ncells;
-  } 
+  }
 
   return un;
 }
 
 template <class Analytic, class Advection>
-void Transient(std::string filename, int nx, int ny, int nz,
-               double dt0, double tend,
-               bool conservative_form = true, 
-               std::string weak_form = "dual",
-               std::string limiter = "none")
+void
+Transient(std::string filename,
+          int nx,
+          int ny,
+          int nz,
+          double dt0,
+          double tend,
+          bool conservative_form = true,
+          std::string weak_form = "dual",
+          std::string limiter = "none")
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -760,19 +783,17 @@ void Transient(std::string filename, int nx, int ny, int nz,
   if (weak_form == "primal") pk_name = "PK operator: primal";
   if (weak_form == "gauss points") pk_name = "PK operator: gauss points";
 
-  int order = plist.sublist(pk_name)
-                   .sublist("flux operator")
-                   .sublist("schema").get<int>("method order");
-  Teuchos::ParameterList dg_list = plist.sublist(pk_name)
-                                        .sublist("flux operator").sublist("schema");
+  int order =
+    plist.sublist(pk_name).sublist("flux operator").sublist("schema").get<int>("method order");
+  Teuchos::ParameterList dg_list =
+    plist.sublist(pk_name).sublist("flux operator").sublist("schema");
   std::string basis = dg_list.get<std::string>("dg basis");
 
-  { 
+  {
     std::string problem = (conservative_form) ? "conservative" : "non-conservative";
     if (MyPID == 0) {
-      std::cout << "\nTest: dG transient advection: " << filename 
-                << ", order=" << order << ", dt=" << dt0
-                << "\n      PDE=" << problem << ", basis=" << basis 
+      std::cout << "\nTest: dG transient advection: " << filename << ", order=" << order
+                << ", dt=" << dt0 << "\n      PDE=" << problem << ", basis=" << basis
                 << "\n      weak formulation=\"" << weak_form << "\""
                 << ", limiter=\"" << limiter << "\"" << std::endl;
     }
@@ -781,13 +802,13 @@ void Transient(std::string filename, int nx, int ny, int nz,
   // create a mesh framework
   MeshFactory meshfactory(comm, Teuchos::null);
   // meshfactory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
   RCP<Mesh> mesh;
   if (nx == 0 || ny == 0)
     mesh = meshfactory.create(filename, true, true);
-  else if (nz == 0) 
+  else if (nz == 0)
     mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
-  else 
+  else
     mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
 
   // DeformMesh(mesh, deform, 0.0);
@@ -806,9 +827,8 @@ void Transient(std::string filename, int nx, int ny, int nz,
     int vel_order = map_list.get<int>("method order");
     std::string vel_method = map_list.get<std::string>("method");
     std::string vel_projector = map_list.get<std::string>("projector");
-      
-    std::cout << "      face velocity: order=" << vel_order 
-              << ", projector=" << vel_projector 
+
+    std::cout << "      face velocity: order=" << vel_order << ", projector=" << vel_projector
               << ", method=\"" << vel_method << "\"" << std::endl;
   }
 
@@ -826,7 +846,7 @@ void Transient(std::string filename, int nx, int ny, int nz,
   double dt(dt0), t(0.0), tio(dt0);
   Explicit_TI::RK<CompositeVector> rk(fn, Explicit_TI::tvd_3rd_order, sol);
 
-  while(std::fabs(t < tend) < dt/4 || dt > 1e-12) {
+  while (std::fabs(t < tend) < dt / 4 || dt > 1e-12) {
     fn.set_dt(dt);
     fn.ApplyLimiter(limiter, sol);
     rk.TimeStep(t, dt, sol, sol_next);
@@ -836,16 +856,20 @@ void Transient(std::string filename, int nx, int ny, int nz,
     nstep++;
 
     // visualization
-    if (std::fabs(t - tio) < dt/4) {
-      tio = std::min(tio + 0.1, tend); 
+    if (std::fabs(t - tio) < dt / 4) {
+      tio = std::min(tio + 0.1, tend);
       ana.GlobalOp("min", &fn.dt_stable_min, 1);
       if (MyPID == 0)
         printf("t=%9.6f |p|=%12.8g  CFL=%8.6f  limiter min/mean: %8.4g %8.4g\n",
-            t, fn.l2norm, fn.dt_stable_min, fn.limiter_min, fn.limiter_mean);
+               t,
+               fn.l2norm,
+               fn.dt_stable_min,
+               fn.limiter_min,
+               fn.limiter_mean);
 
       const Epetra_MultiVector& pc = *sol.ViewComponent("cell");
       auto pn = InterpolateCellToNode(mesh, *dg, pc);
-  
+
       io.InitializeCycle(t, nstep, "");
       io.WriteVector(*pc(0), "solution", AmanziMesh::CELL);
       io.WriteVector(*(*pn)(0), "interpolation", AmanziMesh::NODE);
@@ -855,9 +879,7 @@ void Transient(std::string filename, int nx, int ny, int nz,
     dt = std::min(dt0, tend - t);
 
     // overwrite solution at the origin
-    if (fn.name() == "level set") {
-      ana.InitialGuess(*dg, sol_c, t, inside1);
-    }
+    if (fn.name() == "level set") { ana.InitialGuess(*dg, sol_c, t, inside1); }
   }
 
   // compute solution error
@@ -875,11 +897,11 @@ void Transient(std::string filename, int nx, int ny, int nz,
     printf("            (total) L2(p)=%9.6g  Inf(p)=%9.6g\n", pl2_err, pinf_err);
     printf("         (integral) L2(p)=%9.6g\n", pl2_int);
     printf("       FACE:        Inf(p)=%9.6g  Inf(grad p)=%9.6g\n", pface_inf, grad_pface_inf);
-    if (exact_solution_expected) 
+    if (exact_solution_expected)
       CHECK(pl2_mean < 1e-10);
-    else if (fn.name() == "level set") 
+    else if (fn.name() == "level set")
       CHECK(pl2_mean < 0.3 / nx);
-    else if (limiter == "none") 
+    else if (limiter == "none")
       CHECK(pl2_mean < 0.12 / nx);
     else
       CHECK(pl2_mean < 0.3 / nx);
@@ -887,21 +909,29 @@ void Transient(std::string filename, int nx, int ny, int nz,
 }
 
 
-TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
+TEST(OPERATOR_ADVECTION_TRANSIENT_DG)
+{
   double dT(0.1), T1(1.0);
   exact_solution_expected = true;
-  Transient<AnalyticDG02b, Amanzi::AdvectionFn_Projection<AnalyticDG02b> >("square", 4,4,0, dT,T1, false);
-  Transient<AnalyticDG02b, Amanzi::AdvectionFn_Projection<AnalyticDG02b> >("square", 4,4,0, dT,T1, false, "gauss points");
+  Transient<AnalyticDG02b, Amanzi::AdvectionFn_Projection<AnalyticDG02b>>(
+    "square", 4, 4, 0, dT, T1, false);
+  Transient<AnalyticDG02b, Amanzi::AdvectionFn_Projection<AnalyticDG02b>>(
+    "square", 4, 4, 0, dT, T1, false, "gauss points");
 
   exact_solution_expected = false;
-  Transient<AnalyticDG06b, Amanzi::AdvectionFn_Projection<AnalyticDG06b> >("square", 4,4,0, dT,T1);
-  Transient<AnalyticDG06,  Amanzi::AdvectionFn_Projection<AnalyticDG06> > ("square", 4,4,0, dT,T1, false, "primal");
-  Transient<AnalyticDG06,  Amanzi::AdvectionFn_Projection<AnalyticDG06> > ("square", 4,4,0, dT,T1, false, "dual");
-  Transient<AnalyticDG06,  Amanzi::AdvectionFn_Projection<AnalyticDG06> > ("square", 4,4,0, dT,T1, false, "gauss points", "Barth-Jespersen dg");
-  Transient<AnalyticDG06c, Amanzi::AdvectionFn_Projection<AnalyticDG06c> >("cube",   2,2,1, dT,T1);
+  Transient<AnalyticDG06b, Amanzi::AdvectionFn_Projection<AnalyticDG06b>>(
+    "square", 4, 4, 0, dT, T1);
+  Transient<AnalyticDG06, Amanzi::AdvectionFn_Projection<AnalyticDG06>>(
+    "square", 4, 4, 0, dT, T1, false, "primal");
+  Transient<AnalyticDG06, Amanzi::AdvectionFn_Projection<AnalyticDG06>>(
+    "square", 4, 4, 0, dT, T1, false, "dual");
+  Transient<AnalyticDG06, Amanzi::AdvectionFn_Projection<AnalyticDG06>>(
+    "square", 4, 4, 0, dT, T1, false, "gauss points", "Barth-Jespersen dg");
+  Transient<AnalyticDG06c, Amanzi::AdvectionFn_Projection<AnalyticDG06c>>("cube", 2, 2, 1, dT, T1);
 
   dT = 0.01;
-  Transient<AnalyticDG07, Amanzi::AdvectionFn_LevelSet<AnalyticDG07> >("square", 6, 6, 0, dT,  T1, false, "primal");
+  Transient<AnalyticDG07, Amanzi::AdvectionFn_LevelSet<AnalyticDG07>>(
+    "square", 6, 6, 0, dT, T1, false, "primal");
 
   /*
   double dT(0.05), T1(1.0);
@@ -970,5 +1000,3 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   Transient<AnalyticDG08, Amanzi::AdvectionFn_Projection<AnalyticDG08> >("test/median127x128.exo", 128,0,0, dT/8,T1, true, "dual", "none");
   */
 }
-
-

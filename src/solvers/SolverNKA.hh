@@ -105,23 +105,23 @@ especially with an approximate Jacobian.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Vector, class VectorSpace>
-class SolverNKA : public Solver<Vector,VectorSpace> {
+template <class Vector, class VectorSpace>
+class SolverNKA : public Solver<Vector, VectorSpace> {
  public:
-  SolverNKA(Teuchos::ParameterList& plist) :
-      plist_(plist) {};
+  SolverNKA(Teuchos::ParameterList& plist) : plist_(plist){};
 
   SolverNKA(Teuchos::ParameterList& plist,
-            const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-            const VectorSpace& map) :
-      plist_(plist) {
+            const Teuchos::RCP<SolverFnBase<Vector>>& fn,
+            const VectorSpace& map)
+    : plist_(plist)
+  {
     Init(fn, map);
   }
 
-  void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-            const VectorSpace& map);
+  void Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map);
 
-  int Solve(const Teuchos::RCP<Vector>& u) {
+  int Solve(const Teuchos::RCP<Vector>& u)
+  {
     returned_code_ = NKA_(u);
     return (returned_code_ >= 0) ? 0 : 1;
   }
@@ -129,9 +129,7 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
   // mutators
   void set_tolerance(double tol) { tol_ = tol; }
   void set_pc_lag(int pc_lag) { pc_lag_ = pc_lag; }
-  virtual void set_db(const Teuchos::RCP<ResidualDebugger>& db) {
-    db_ = db;
-  }
+  virtual void set_db(const Teuchos::RCP<ResidualDebugger>& db) { db_ = db; }
 
   // access
   double tolerance() { return tol_; }
@@ -148,8 +146,8 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
 
  protected:
   Teuchos::ParameterList plist_;
-  Teuchos::RCP<SolverFnBase<Vector> > fn_;
-  Teuchos::RCP<NKA_Base<Vector, VectorSpace> > nka_;
+  Teuchos::RCP<SolverFnBase<Vector>> fn_;
+  Teuchos::RCP<NKA_Base<Vector, VectorSpace>> nka_;
 
   Teuchos::RCP<VerboseObject> vo_;
   Teuchos::RCP<ResidualDebugger> db_;
@@ -168,20 +166,19 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
   int max_divergence_count_;
 
   bool modify_correction_;
-  double residual_;  // defined by convergence criterion
+  double residual_; // defined by convergence criterion
   ConvergenceMonitor monitor_;
   int norm_type_;
 };
 
 
-
 /* ******************************************************************
 * Public Init method.
 ****************************************************************** */
-template<class Vector, class VectorSpace>
+template <class Vector, class VectorSpace>
 void
-SolverNKA<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-        const VectorSpace& map)
+SolverNKA<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
+                                     const VectorSpace& map)
 {
   fn_ = fn;
   Init_();
@@ -195,8 +192,9 @@ SolverNKA<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& f
 /* ******************************************************************
 * Initialization of the NKA solver.
 ****************************************************************** */
-template<class Vector, class VectorSpace>
-void SolverNKA<Vector, VectorSpace>::Init_()
+template <class Vector, class VectorSpace>
+void
+SolverNKA<Vector, VectorSpace>::Init_()
 {
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
@@ -233,8 +231,10 @@ void SolverNKA<Vector, VectorSpace>::Init_()
 /* ******************************************************************
 * The body of NKA solver
 ****************************************************************** */
-template<class Vector, class VectorSpace>
-int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
+template <class Vector, class VectorSpace>
+int
+SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u)
+{
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // restart the nonlinear solver (flush its history)
@@ -261,8 +261,8 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     // Check for too many nonlinear iterations.
     if (num_itrs_ >= max_itrs_) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-        *vo_->os() << "Solve reached maximum of iterations (" << num_itrs_ 
-                   << ")  error=" << error << " terminating..." << std::endl;
+        *vo_->os() << "Solve reached maximum of iterations (" << num_itrs_ << ")  error=" << error
+                   << " terminating..." << std::endl;
       return SOLVER_MAX_ITERATIONS;
     }
 
@@ -280,7 +280,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     } else {
       if (overflow_r_tol_ > 0 && r_norm > overflow_r_tol_ * r_norm_initial) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "teminating due to l2-norm overflow: ||r||=" << r_norm 
+          *vo_->os() << "teminating due to l2-norm overflow: ||r||=" << r_norm
                      << " ||r0||=" << r_norm_initial << std::endl;
         return SOLVER_OVERFLOW;
       }
@@ -302,9 +302,9 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
         l2_error_initial = l2_error;
       } else if (num_itrs_ > 8) {
         if (l2_error > l2_error_initial) {
-          if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
-            *vo_->os() << "Solver stagnating, l2-error=" << l2_error
-                       << " > " << l2_error_initial << " (initial l2-error)" << std::endl;
+          if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+            *vo_->os() << "Solver stagnating, l2-error=" << l2_error << " > " << l2_error_initial
+                       << " (initial l2-error)" << std::endl;
           return SOLVER_STAGNATING;
         }
       }
@@ -375,15 +375,16 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
       du->Norm2(&du_norm2);
       if (overflow_l2_tol_ > 0 && u_norm2 > 0 && du_norm2 > overflow_l2_tol_ * u_norm2) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-           *vo_->os() << "terminating due to l2-norm overflow ||du||=" << du_norm2
-                      << ", ||u||=" << u_norm2 << std::endl;
+          *vo_->os() << "terminating due to l2-norm overflow ||du||=" << du_norm2
+                     << ", ||u||=" << u_norm2 << std::endl;
         return SOLVER_OVERFLOW;
       }
     }
 
     if ((num_itrs_ > 0) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
-        *vo_->os() << "overflow: ||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm << std::endl
+      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+        *vo_->os() << "overflow: ||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm
+                   << std::endl
                    << "trying to restart NKA..." << std::endl;
 
       // Try to recover by restarting NKA.
@@ -398,8 +399,8 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
 
       if (max_du_growth_factor_ > 0 && du_norm > max_du_growth_factor_ * previous_du_norm) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-           *vo_->os() << "terminating due to overflow ||du||=" << du_norm
-                      << ", ||du_prev||=" << previous_du_norm << std::endl;
+          *vo_->os() << "terminating due to overflow ||du||=" << du_norm
+                     << ", ||du_prev||=" << previous_du_norm << std::endl;
         return SOLVER_OVERFLOW;
       }
     }
@@ -424,7 +425,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
 
     // Increment iteration counter.
     num_itrs_++;
-    
+
     // Monitor the PC'd residual.
     if (monitor_ == SOLVER_MONITOR_PCED_RESIDUAL) {
       previous_error = error;
@@ -460,9 +461,11 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
 /* ******************************************************************
 * Internal convergence control.
 ****************************************************************** */
-template<class Vector, class VectorSpace>
-int SolverNKA<Vector, VectorSpace>::NKA_ErrorControl_(
-   double error, double previous_error, double l2_error)
+template <class Vector, class VectorSpace>
+int
+SolverNKA<Vector, VectorSpace>::NKA_ErrorControl_(double error,
+                                                  double previous_error,
+                                                  double l2_error)
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << num_itrs_ << ": error=" << error << "  l2-error=" << l2_error << std::endl;
@@ -473,19 +476,19 @@ int SolverNKA<Vector, VectorSpace>::NKA_ErrorControl_(
     return SOLVER_CONVERGED;
   } else if (overflow_tol_ > 0 && error > overflow_tol_) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-      *vo_->os() << "Solve failed, error " << error << " > "
-                 << overflow_tol_ << " (overflow)" << std::endl;
+      *vo_->os() << "Solve failed, error " << error << " > " << overflow_tol_ << " (overflow)"
+                 << std::endl;
     return SOLVER_OVERFLOW;
   } else if ((num_itrs_ > 1) && (error > max_error_growth_factor_ * previous_error)) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-      *vo_->os() << "Solver threatens to overflow, error " << error << " > "
-                 << previous_error << " (previous error)" << std::endl;
+      *vo_->os() << "Solver threatens to overflow, error " << error << " > " << previous_error
+                 << " (previous error)" << std::endl;
     return SOLVER_OVERFLOW;
   }
   return SOLVER_CONTINUE;
 }
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif

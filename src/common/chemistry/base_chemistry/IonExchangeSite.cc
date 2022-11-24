@@ -25,53 +25,45 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 IonExchangeSite::IonExchangeSite()
-  : name_(),
-    mineral_name_("bulk"),
-    cation_exchange_capacity_(0.0),
-    charge_(0.0) {
-}
+  : name_(), mineral_name_("bulk"), cation_exchange_capacity_(0.0), charge_(0.0)
+{}
 
 
-IonExchangeSite::IonExchangeSite(const std::string& name,
-                                 const Teuchos::ParameterList& plist)
-  : name_(name),
-    cation_exchange_capacity_(0.0)
+IonExchangeSite::IonExchangeSite(const std::string& name, const Teuchos::ParameterList& plist)
+  : name_(name), cation_exchange_capacity_(0.0)
 {
   charge_ = plist.get<int>("charge");
   mineral_name_ = plist.get<std::string>("location");
 }
 
 
-void IonExchangeSite::Display(const Teuchos::Ptr<VerboseObject> vo) const
+void
+IonExchangeSite::Display(const Teuchos::Ptr<VerboseObject> vo) const
 {
   std::stringstream message;
-  message << std::setw(15) << name_
-          << std::setw(20) << get_mineral_name()
-          << std::setw(10) << std::fixed << charge_
-          << std::setw(10) << std::scientific << cation_exchange_capacity_
+  message << std::setw(15) << name_ << std::setw(20) << get_mineral_name() << std::setw(10)
+          << std::fixed << charge_ << std::setw(10) << std::scientific << cation_exchange_capacity_
           << std::fixed << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void IonExchangeSite::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const
+void
+IonExchangeSite::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const
 {
   std::stringstream message;
-  message << std::setw(15) << "Name"
-          << std::setw(15) << "CEC"
-          << std::endl;
+  message << std::setw(15) << "Name" << std::setw(15) << "CEC" << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void IonExchangeSite::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const
+void
+IonExchangeSite::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const
 {
   std::stringstream message;
-  message << std::setw(15) << name_
-          << std::setw(15) << cation_exchange_capacity_
-          << std::endl;
+  message << std::setw(15) << name_ << std::setw(15) << cation_exchange_capacity_ << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

@@ -30,22 +30,22 @@ class MatrixBlock;
 
 class SurfaceComplex {
  public:
-  SurfaceComplex() {};
-  SurfaceComplex(const std::string& name, int id,
+  SurfaceComplex(){};
+  SurfaceComplex(const std::string& name,
+                 int id,
                  const std::vector<Species>& primary_species,
                  const std::vector<SurfaceSite>& surface_sites,
                  const Teuchos::ParameterList& plist);
-  ~SurfaceComplex() {};
+  ~SurfaceComplex(){};
 
   // update molalities
-  void Update(const std::vector<Species>& primary_species,
-              const SurfaceSite& surface_site);
+  void Update(const std::vector<Species>& primary_species, const SurfaceSite& surface_site);
 
   // update temperature dependent quantities
   void UpdateTemperatureDependentCoefs(double T);
 
   // add stoichiometric contribution of complex to total
-  void AddContributionToTotal(std::vector<double> *total);
+  void AddContributionToTotal(std::vector<double>* total);
 
   // add derivative of total with respect to free-ion to dtotal
   void AddContributionToDTotal(const std::vector<Species>& primary_species, MatrixBlock* dtotal);
@@ -69,25 +69,25 @@ class SurfaceComplex {
   int id_;
   double charge_;
 
-  double surface_concentration_;  // units? ?[mol/m^3 bulk]?
+  double surface_concentration_; // units? ?[mol/m^3 bulk]?
 
-  int ncomp_;  // numebr components in reaction
+  int ncomp_; // numebr components in reaction
   std::vector<std::string> species_names_;
-  std::vector<int> species_ids_;  // ids of primary species in rxn
-  std::vector<double> stoichiometry_;  // stoich of primary species in rxn
+  std::vector<int> species_ids_;      // ids of primary species in rxn
+  std::vector<double> stoichiometry_; // stoich of primary species in rxn
 
   std::string free_site_name_;
-  double free_site_stoichiometry_;  // stoichiometry of free site in rxn
+  double free_site_stoichiometry_; // stoichiometry of free site in rxn
   int free_site_id_;
 
   double h2o_stoichiometry_;
 
   double lnK_;  // log value of equlibrium constant
-  double lnQK_;  // store lnQK for derivatives later
+  double lnQK_; // store lnQK for derivatives later
   double logK_;
   Teuchos::RCP<FunctionTabular> func_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

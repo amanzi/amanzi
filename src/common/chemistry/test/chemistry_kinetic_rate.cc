@@ -10,7 +10,8 @@
 
 #include "KineticRate.hh"
 
-SUITE(GeochemistryTestsKineticRate) {
+SUITE(GeochemistryTestsKineticRate)
+{
   namespace ac = Amanzi::AmanziChemistry;
 
   /*****************************************************************************
@@ -25,42 +26,43 @@ SUITE(GeochemistryTestsKineticRate) {
     ac::SpeciesArray species_;
   };
 
-  KineticRateTest::KineticRateTest() {
+  KineticRateTest::KineticRateTest()
+  {
     // set primary species
     Teuchos::ParameterList plist;
     plist.set<int>("charge", 1)
-         .set<double>("gram molecular weight", 1.0079)
-         .set<double>("ion size parameter", 9.0);
+      .set<double>("gram molecular weight", 1.0079)
+      .set<double>("ion size parameter", 9.0);
     ac::Species H_p(0, "H+", plist);
     H_p.update(0.0005);
 
     plist.set<int>("charge", -1)
-         .set<double>("gram molecular weight", 17.0073)
-         .set<double>("ion size parameter", 3.5);
+      .set<double>("gram molecular weight", 17.0073)
+      .set<double>("ion size parameter", 3.5);
     ac::Species OH_m(1, "OH-", plist);
     OH_m.update(0.0015);
 
     plist.set<int>("charge", 2)
-         .set<double>("gram molecular weight", 40.0780)
-         .set<double>("ion size parameter", 6.0);
+      .set<double>("gram molecular weight", 40.0780)
+      .set<double>("ion size parameter", 6.0);
     ac::Species Ca_pp(2, "Ca++", plist);
     Ca_pp.update(0.001);
 
     plist.set<int>("charge", -2)
-         .set<double>("gram molecular weight", 96.0636)
-         .set<double>("ion size parameter", 4.0);
+      .set<double>("gram molecular weight", 96.0636)
+      .set<double>("ion size parameter", 4.0);
     ac::Species CO3_mm(3, "CO3--", plist);
     CO3_mm.update(0.002);
 
     plist.set<int>("charge", 3)
-         .set<double>("gram molecular weight", 26.9815)
-         .set<double>("ion size parameter", 9.0);
+      .set<double>("gram molecular weight", 26.9815)
+      .set<double>("ion size parameter", 9.0);
     ac::Species Al_ppp(4, "Al+++", plist);
     Al_ppp.update(0.003);
 
     plist.set<int>("charge", -3)
-         .set<double>("gram molecular weight", 94.9714)
-         .set<double>("ion size parameter", 4.0);
+      .set<double>("gram molecular weight", 94.9714)
+      .set<double>("ion size parameter", 4.0);
     ac::Species PO4_mmm(5, "PO4---", plist);
     PO4_mmm.update(0.001);
 
@@ -73,8 +75,7 @@ SUITE(GeochemistryTestsKineticRate) {
   }
 
 
-  KineticRateTest::~KineticRateTest() {
-  }
+  KineticRateTest::~KineticRateTest() {}
 
   //
   // KineticRate has a pure virtual functions, need a dummy object to
@@ -83,68 +84,74 @@ SUITE(GeochemistryTestsKineticRate) {
   //
   class MockKineticRate : public ac::KineticRate {
    public:
-    MockKineticRate() : ac::KineticRate() {
+    MockKineticRate() : ac::KineticRate()
+    {
       set_name("abc123");
       set_identifier(456);
     };
-    virtual ~MockKineticRate() {};
+    virtual ~MockKineticRate(){};
 
-    void Update(const ac::SpeciesArray& primary_species,
-                const std::vector<ac::Mineral>& minerals) {
+    void Update(const ac::SpeciesArray& primary_species, const std::vector<ac::Mineral>& minerals)
+    {
       static_cast<void>(primary_species);
       static_cast<void>(minerals);
-    }  // end Update()
+    } // end Update()
 
     void AddContributionToResidual(const std::vector<ac::Mineral>& minerals,
                                    const double por_den_sat_vol,
-                                   std::vector<double> *residual) {
+                                   std::vector<double>* residual)
+    {
       static_cast<void>(minerals);
       static_cast<void>(por_den_sat_vol);
       static_cast<void>(residual);
-    };  // end addContributionToResidual()
+    }; // end addContributionToResidual()
 
     void AddContributionToJacobian(const ac::SpeciesArray& primary_species,
                                    const std::vector<ac::Mineral>& minerals,
                                    const double por_den_sat_vol,
-                                   ac::MatrixBlock* J) {
+                                   ac::MatrixBlock* J)
+    {
       static_cast<void>(primary_species);
       static_cast<void>(minerals);
       static_cast<void>(por_den_sat_vol);
       static_cast<void>(J);
-    };  // end addContributionToJacobian()
+    }; // end addContributionToJacobian()
 
-    void Display(const Teuchos::Ptr<Amanzi::VerboseObject> vo) const {
+    void Display(const Teuchos::Ptr<Amanzi::VerboseObject> vo) const
+    {
       std::cout << this->name() << std::endl;
-    };  // end Display()
-  };  // end MockKineticRate
+    }; // end Display()
+  };   // end MockKineticRate
 
   // make sure we can create an object with the constructor
   // can we set the identifier?
-  TEST_FIXTURE(KineticRateTest, MockKineticRate_constructor) {
+  TEST_FIXTURE(KineticRateTest, MockKineticRate_constructor)
+  {
     MockKineticRate rate;
     CHECK_EQUAL(rate.identifier(), 456);
   }
 
   // can we set the name?
-  TEST_FIXTURE(KineticRateTest, MockKineticRate_set_name) {
+  TEST_FIXTURE(KineticRateTest, MockKineticRate_set_name)
+  {
     MockKineticRate rate;
     CHECK_EQUAL(rate.name(), "abc123");
   }
 
   // does SetSpeciesIds function work?
-  TEST_FIXTURE(KineticRateTest, MockKineticRate_SetSpeciesIds_test_id) {
+  TEST_FIXTURE(KineticRateTest, MockKineticRate_SetSpeciesIds_test_id)
+  {
     MockKineticRate rate;
 
     std::string species_type("primary");
-    std::vector<std::string> in_names({"Ca++", "OH-", "Al+++"});
-    std::vector<double> in_stoichiometry({3.45, 0.12, 6.78});
+    std::vector<std::string> in_names({ "Ca++", "OH-", "Al+++" });
+    std::vector<double> in_stoichiometry({ 3.45, 0.12, 6.78 });
 
     std::vector<int> out_ids;
     std::vector<double>* out_stoichiometry = NULL;
 
-    rate.SetSpeciesIds(species_, species_type,
-                       in_names, in_stoichiometry,
-                       &out_ids, out_stoichiometry);
+    rate.SetSpeciesIds(
+      species_, species_type, in_names, in_stoichiometry, &out_ids, out_stoichiometry);
     // check that the output id's agree with the input
     std::vector<int> expeced_ids;
     expeced_ids.push_back(2);
@@ -152,19 +159,19 @@ SUITE(GeochemistryTestsKineticRate) {
     CHECK_ARRAY_EQUAL(expeced_ids, out_ids, 2);
   }
 
-  TEST_FIXTURE(KineticRateTest, MockKineticRate_SetSpeciesIds_test_stoich) {
+  TEST_FIXTURE(KineticRateTest, MockKineticRate_SetSpeciesIds_test_stoich)
+  {
     MockKineticRate rate;
 
     std::string species_type("primary");
-    std::vector<std::string> in_names({"Ca++", "OH-", "Al+++"});
-    std::vector<double> in_stoichiometry({3.45, 0.12, 6.78});
+    std::vector<std::string> in_names({ "Ca++", "OH-", "Al+++" });
+    std::vector<double> in_stoichiometry({ 3.45, 0.12, 6.78 });
 
     std::vector<int> out_ids;
     std::vector<double> out_stoichiometry;
 
-    rate.SetSpeciesIds(species_, species_type,
-                       in_names, in_stoichiometry,
-                       &out_ids, &out_stoichiometry);
+    rate.SetSpeciesIds(
+      species_, species_type, in_names, in_stoichiometry, &out_ids, &out_stoichiometry);
 
     // check that the output stoichimometry agrees
     std::vector<double> expected_stoich(species_.size());
@@ -174,4 +181,3 @@ SUITE(GeochemistryTestsKineticRate) {
     CHECK_ARRAY_EQUAL(expected_stoich, out_stoichiometry, species_.size());
   }
 }
-

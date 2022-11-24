@@ -28,18 +28,18 @@
 namespace Amanzi {
 namespace Operators {
 
-class SmoothnessIndicatorShu : public SmoothnessIndicator {  
+class SmoothnessIndicatorShu : public SmoothnessIndicator {
  public:
   SmoothnessIndicatorShu(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : SmoothnessIndicator(mesh) {};
-  ~SmoothnessIndicatorShu() {};
+    : SmoothnessIndicator(mesh){};
+  ~SmoothnessIndicatorShu(){};
 
   virtual void Init(Teuchos::ParameterList& plist);
 
   virtual void Compute(const Teuchos::RCP<Reconstruction>& lifting);
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif

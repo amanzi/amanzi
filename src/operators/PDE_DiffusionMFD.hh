@@ -73,31 +73,22 @@ namespace Operators {
 
 class PDE_DiffusionMFD : public virtual PDE_Diffusion {
  public:
-  PDE_DiffusionMFD(Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<Operator>& global_op) :
-      PDE_Diffusion(global_op),
-      plist_(plist),
-      factor_(1.0)
+  PDE_DiffusionMFD(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
+    : PDE_Diffusion(global_op), plist_(plist), factor_(1.0)
   {
     pde_type_ = PDE_DIFFUSION_MFD;
     ParsePList_(plist);
   }
 
-  PDE_DiffusionMFD(Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_Diffusion(mesh),
-      plist_(plist),
-      factor_(1.0)
+  PDE_DiffusionMFD(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : PDE_Diffusion(mesh), plist_(plist), factor_(1.0)
   {
     pde_type_ = PDE_DIFFUSION_MFD;
     ParsePList_(plist);
   }
 
-  PDE_DiffusionMFD(Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      PDE_Diffusion(mesh),
-      plist_(plist),
-      factor_(1.0)
+  PDE_DiffusionMFD(Teuchos::ParameterList& plist, const Teuchos::RCP<AmanziMesh::Mesh>& mesh)
+    : PDE_Diffusion(mesh), plist_(plist), factor_(1.0)
   {
     pde_type_ = PDE_DIFFUSION_MFD;
     ParsePList_(plist);
@@ -106,35 +97,37 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   // main virtual members for populating an operator
   virtual void Init(Teuchos::ParameterList& plist);
 
-  virtual void SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) override;
+  virtual void
+  SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;
 
-  // -- To calculate elemetal matrices, we can use input parameters flux 
+  // -- To calculate elemetal matrices, we can use input parameters flux
   //    and u from the previous nonlinear iteration. Otherwise, use null-pointers.
   using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                               const Teuchos::Ptr<const CompositeVector>& u) override;
 
-  // -- Approximation of the Jacobian requires non-null flux from the 
+  // -- Approximation of the Jacobian requires non-null flux from the
   //    previous nonlinear iteration. The second parameter, u, so far is a
   //    placeholder for new approximation methods.
   virtual void UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               double scalar_factor = 1) override;
 
-  virtual void UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                              const Teuchos::Ptr<const CompositeVector>& u,
-                                              const Teuchos::Ptr<const CompositeVector>& factor) override;
+  virtual void
+  UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
+                                 const Teuchos::Ptr<const CompositeVector>& u,
+                                 const Teuchos::Ptr<const CompositeVector>& factor) override;
 
-  // modify matrix due to boundary conditions 
+  // modify matrix due to boundary conditions
   //    primary=true indicates that the operator updates both matrix and right-hand
   //      side using BC data. If primary=false, only matrix is changed.
-  //    eliminate=true indicates that we eliminate essential BCs for a trial 
-  //      function, i.e. zeros go in the corresponding matrix columns and 
-  //      right-hand side is modified using BC values. This is the optional 
+  //    eliminate=true indicates that we eliminate essential BCs for a trial
+  //      function, i.e. zeros go in the corresponding matrix columns and
+  //      right-hand side is modified using BC values. This is the optional
   //      parameter that enforces symmetry for a symmetric tree operators.
-  //    essential_eqn=true indicates that the operator places a positive number on 
+  //    essential_eqn=true indicates that the operator places a positive number on
   //      the main matrix diagonal for the case of essential BCs. This is the
   //      implementation trick.
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
@@ -157,11 +150,11 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   virtual int UpdateConsistentFaces(CompositeVector& u) override;
   Teuchos::RCP<const Operator> consistent_face_operator() const { return consistent_face_op_; }
   Teuchos::RCP<Operator> consistent_face_operator() { return consistent_face_op_; }
-  
+
   // -- interface to solvers for treating nonlinear BCs.
   virtual double ComputeTransmissibility(int f) const override;
   virtual double ComputeGravityFlux(int f) const override { return 0.0; }
- 
+
   // developer checks
   int nfailed_primary() { return nfailed_primary_; }
   void set_factor(double factor) { factor_ = factor; }
@@ -178,20 +171,26 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
                                 const Teuchos::Ptr<const CompositeVector>& u,
                                 double scalar_factor);
-  
+
   void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
                                 const Teuchos::Ptr<const CompositeVector>& u,
                                 const Teuchos::Ptr<const CompositeVector>& factor);
 
   void ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
                        const Teuchos::Ptr<const BCs>& bc_test,
-                       bool primary, bool eliminate, bool essential_eqn);
+                       bool primary,
+                       bool eliminate,
+                       bool essential_eqn);
   void ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
                       const Teuchos::Ptr<const BCs>& bc_test,
-                      bool primary, bool eliminate, bool essential_eqn);
+                      bool primary,
+                      bool eliminate,
+                      bool essential_eqn);
   void ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,
                        const Teuchos::Ptr<const BCs>& bc_n,
-                       bool primary, bool eliminate, bool essential_eqn);
+                       bool primary,
+                       bool eliminate,
+                       bool essential_eqn);
 
  protected:
   Teuchos::ParameterList plist_;
@@ -214,9 +213,8 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   int schema_prec_dofs_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 
 #endif
-

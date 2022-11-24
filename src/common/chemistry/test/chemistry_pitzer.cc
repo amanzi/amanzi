@@ -14,13 +14,14 @@
 #include "AqueousEquilibriumComplex.hh"
 #include "Species.hh"
 
-SUITE(TestPitzer) {
+SUITE(TestPitzer)
+{
   namespace ac = Amanzi::AmanziChemistry;
 
   class PitzerTest {
    public:
     PitzerTest();
-    ~PitzerTest() {};
+    ~PitzerTest(){};
 
     void StorePrimaries();
 
@@ -51,12 +52,12 @@ SUITE(TestPitzer) {
     Teuchos::RCP<Amanzi::VerboseObject> vo_;
   };
 
-  PitzerTest::PitzerTest() 
+  PitzerTest::PitzerTest()
   {
     Teuchos::ParameterList plist;
     plist.set<int>("charge", 1)
-         .set<double>("ion size parameters", 9.0)
-         .set<double>("gram molecular weight", 1.0079);
+      .set<double>("ion size parameters", 9.0)
+      .set<double>("gram molecular weight", 1.0079);
     H = ac::Species(0, "H+", plist);
 
     plist.set<int>("charge", -1);
@@ -84,8 +85,7 @@ SUITE(TestPitzer) {
     MgOH = ac::Species(10, "MgOH+", plist);
 
     plist.set<int>("charge", 0);
-    MgCO3 = ac::Species(11, "MgCO3", plist),
-    CaCO3 = ac::Species(12, "CaCO3", plist),
+    MgCO3 = ac::Species(11, "MgCO3", plist), CaCO3 = ac::Species(12, "CaCO3", plist),
     H2O = ac::Species(13, "H2O", plist);
 
     plist.set<int>("charge", -1);
@@ -104,7 +104,8 @@ SUITE(TestPitzer) {
     vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry", plist));
   }
 
-  void PitzerTest::StorePrimaries() {
+  void PitzerTest::StorePrimaries()
+  {
     sp_.clear();
     sp_.push_back(Cl);
     sp_.push_back(Na);
@@ -132,7 +133,8 @@ SUITE(TestPitzer) {
 
     @test ActivityModelPitzer::EvaluateVector()
   */
-  TEST_FIXTURE(PitzerTest, TestComputeActivityCoeff_System_I) {
+  TEST_FIXTURE(PitzerTest, TestComputeActivityCoeff_System_I)
+  {
     H.update(4.776e-08);
     OH.update(2.570e-07);
     Cl.update(3.0e0);
@@ -153,29 +155,25 @@ SUITE(TestPitzer) {
 
     am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr());
 
-    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-      am_->Display();
-    }
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) { am_->Display(); }
     am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O);
     double actw = log10(H2O.act_coef());
-    for (int i = 0; i < sp_.size(); i++) {
-      gamma[i] = log10(sp_[i].act_coef());
-    }
+    for (int i = 0; i < sp_.size(); i++) { gamma[i] = log10(sp_[i].act_coef()); }
     // std::cout << "Testing coeff. 1" << std::endl;
     // Results are compared with PHREEQC
     CHECK_CLOSE(-0.243, gamma[0], 1.0e-2);  // Cl-
     CHECK_CLOSE(-0.027, gamma[1], 1.0e-2);  // Na+
-    CHECK_CLOSE(0.321, gamma[2], 1.0e-2);  // H+
+    CHECK_CLOSE(0.321, gamma[2], 1.0e-2);   // H+
     CHECK_CLOSE(-0.177, gamma[3], 1.0e-2);  // K+
     CHECK_CLOSE(-0.055, gamma[4], 1.0e-2);  // H2O
     CHECK_CLOSE(-0.109, gamma[5], 1.0e-2);  // Ca
     CHECK_CLOSE(-0.119, gamma[6], 1.0e-2);  // Mg
     CHECK_CLOSE(-1.859, gamma[7], 1.0e-2);  // CO3
     CHECK_CLOSE(-0.05, gamma[12], 1.0e-2);  // MgOH
-    CHECK_CLOSE(0.283, gamma[9], 1.0e-2);  // CO2
-    CHECK_CLOSE(-0.463, gamma[13], 1.0e-2);  // OH
+    CHECK_CLOSE(0.283, gamma[9], 1.0e-2);   // CO2
+    CHECK_CLOSE(-0.463, gamma[13], 1.0e-2); // OH
     CHECK_CLOSE(-0.437, gamma[8], 1.0e-2);  // HCO3
-    CHECK_CLOSE(-0.055, actw, 1.0e-2);  // H2O
+    CHECK_CLOSE(-0.055, actw, 1.0e-2);      // H2O
   }
 
   /*!
@@ -188,7 +186,8 @@ SUITE(TestPitzer) {
 
     @test ActivityModelPitzer::EvaluateVector()
   */
-  TEST_FIXTURE(PitzerTest, TestComputeActivityCoeff_System_II) {
+  TEST_FIXTURE(PitzerTest, TestComputeActivityCoeff_System_II)
+  {
     H.update(4.98e-08);
     OH.update(2.574e-07);
     Cl.update(3.0e0);
@@ -223,19 +222,19 @@ SUITE(TestPitzer) {
     // Results are compared with PHREEQC
     CHECK_CLOSE(-0.241, gamma[0], 1.0e-2);  // Cl-
     CHECK_CLOSE(-0.039, gamma[1], 1.0e-2);  // Na+
-    CHECK_CLOSE(0.303, gamma[2], 1.0e-2);  // H+
+    CHECK_CLOSE(0.303, gamma[2], 1.0e-2);   // H+
     CHECK_CLOSE(-0.192, gamma[3], 1.0e-2);  // K+
     CHECK_CLOSE(-0.055, gamma[4], 1.0e-2);  // H2O
-    CHECK_CLOSE(-0.14, gamma[5], 1.0e-2);  // Ca
+    CHECK_CLOSE(-0.14, gamma[5], 1.0e-2);   // Ca
     CHECK_CLOSE(-0.131, gamma[6], 1.0e-2);  // Mg
     CHECK_CLOSE(-1.862, gamma[7], 1.0e-2);  // CO3
-    CHECK_CLOSE(-0.096, gamma[12], 1.0e-2);  // MgOH
-    CHECK_CLOSE(0.291, gamma[9], 1.0e-2);  // CO2
-    CHECK_CLOSE(-0.464, gamma[13], 1.0e-2);  // OH
+    CHECK_CLOSE(-0.096, gamma[12], 1.0e-2); // MgOH
+    CHECK_CLOSE(0.291, gamma[9], 1.0e-2);   // CO2
+    CHECK_CLOSE(-0.464, gamma[13], 1.0e-2); // OH
     CHECK_CLOSE(-0.435, gamma[8], 1.0e-2);  // HCO3
-    CHECK_CLOSE(-0.321, gamma[14], 1.0e-2);  // HSO4
-    CHECK_CLOSE(-1.823, gamma[15], 1.0e-2);  // SO4
-    CHECK_CLOSE(-0.055, actw, 1.0e-2);  // H2O
+    CHECK_CLOSE(-0.321, gamma[14], 1.0e-2); // HSO4
+    CHECK_CLOSE(-1.823, gamma[15], 1.0e-2); // SO4
+    CHECK_CLOSE(-0.055, actw, 1.0e-2);      // H2O
   }
 
   /*!
@@ -249,7 +248,8 @@ SUITE(TestPitzer) {
 
     @test ActivityModelPitzer::EvaluateVector()
   */
-  TEST_FIXTURE(PitzerTest, TestComputeActivityCoeff_System_III) {
+  TEST_FIXTURE(PitzerTest, TestComputeActivityCoeff_System_III)
+  {
     H.update(9.326e-010);
     OH.update(4.644e-006);
     Cl.update(5.948e+000);
@@ -284,21 +284,21 @@ SUITE(TestPitzer) {
       // std::cout << sp_[i].name() << "  " << gamma[i] << std::endl;
     }
     CHECK_CLOSE(-0.192, gamma[0], 1.0e-2);  // Cl-
-    CHECK_CLOSE(0.274, gamma[1], 1.0e-2);  // Na+
-    CHECK_CLOSE(0.931, gamma[2], 1.0e-2);  // H+
+    CHECK_CLOSE(0.274, gamma[1], 1.0e-2);   // Na+
+    CHECK_CLOSE(0.931, gamma[2], 1.0e-2);   // H+
     CHECK_CLOSE(-0.065, gamma[3], 1.0e-2);  // K+
-    CHECK_CLOSE(-0.13, gamma[4], 1.0e-2);  // H2O
-    CHECK_CLOSE(0.563, gamma[5], 1.0e-2);  // Ca
-    CHECK_CLOSE(0.834, gamma[6], 1.0e-2);  // Mg
+    CHECK_CLOSE(-0.13, gamma[4], 1.0e-2);   // H2O
+    CHECK_CLOSE(0.563, gamma[5], 1.0e-2);   // Ca
+    CHECK_CLOSE(0.834, gamma[6], 1.0e-2);   // Mg
     CHECK_CLOSE(-2.507, gamma[7], 1.0e-2);  // CO3
-    CHECK_CLOSE(-0.176, gamma[12], 1.0e-2);  // MgOH
-    CHECK_CLOSE(0.55, gamma[9], 1.0e-2);  // CO2
-    CHECK_CLOSE(-0.695, gamma[13], 1.0e-2);  // OH
+    CHECK_CLOSE(-0.176, gamma[12], 1.0e-2); // MgOH
+    CHECK_CLOSE(0.55, gamma[9], 1.0e-2);    // CO2
+    CHECK_CLOSE(-0.695, gamma[13], 1.0e-2); // OH
     CHECK_CLOSE(-0.758, gamma[8], 1.0e-2);  // HCO3
-    CHECK_CLOSE(-0.361, gamma[14], 1.0e-2);  // HSO4
+    CHECK_CLOSE(-0.361, gamma[14], 1.0e-2); // HSO4
     CHECK_CLOSE(-2.28, gamma[15], 1.0e-2);  // SO4
-    CHECK_CLOSE(-0.038, gamma[16], 1.0e-2);  // Br
-    CHECK_CLOSE(-0.13, actw, 1.0e-2);  // H2O
+    CHECK_CLOSE(-0.038, gamma[16], 1.0e-2); // Br
+    CHECK_CLOSE(-0.13, actw, 1.0e-2);       // H2O
   }
 
   /*!
@@ -311,10 +311,10 @@ SUITE(TestPitzer) {
 
     @test ActivityModelPitzer::Create()
   */
-  TEST_FIXTURE(PitzerTest, TestInvalidActivityModel) {
+  TEST_FIXTURE(PitzerTest, TestInvalidActivityModel)
+  {
     Teuchos::ParameterList plist;
-    plist.set<int>("charge", -1)
-         .set<double>("gram molecular weight", 0.0);
+    plist.set<int>("charge", -1).set<double>("gram molecular weight", 0.0);
     ac::Species Cl(0, "Cl-", plist);
 
     plist.set<int>("charge", 1);
@@ -326,7 +326,8 @@ SUITE(TestPitzer) {
     sp_.clear();
     sp_.push_back(Cl);
     sp_.push_back(Na);
-    CHECK_THROW(am_ = amfac_.Create("invalid activity model", parameters, sp_, aqx_, vo_.ptr()), Exceptions::Amanzi_exception);
+    CHECK_THROW(am_ = amfac_.Create("invalid activity model", parameters, sp_, aqx_, vo_.ptr()),
+                Exceptions::Amanzi_exception);
   }
 
   /*!
@@ -338,10 +339,10 @@ SUITE(TestPitzer) {
 
     @test ActivityModelPitzer::EvaluateVector()
   */
-  TEST_FIXTURE(PitzerTest, TestZeroConcentrations) {
+  TEST_FIXTURE(PitzerTest, TestZeroConcentrations)
+  {
     Teuchos::ParameterList plist;
-    plist.set<int>("charge", -1)
-         .set<double>("gram molecular weight", 0.0);
+    plist.set<int>("charge", -1).set<double>("gram molecular weight", 0.0);
     ac::Species Cl(0, "Cl-", plist);
 
     plist.set<int>("charge", 1);
@@ -361,7 +362,8 @@ SUITE(TestPitzer) {
 
     am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr());
     am_->Display();
-    CHECK_THROW(am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O), Exceptions::Amanzi_exception);
+    CHECK_THROW(am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O),
+                Exceptions::Amanzi_exception);
   }
 
   /*!
@@ -373,10 +375,10 @@ SUITE(TestPitzer) {
 
     @test ActivityModelPitzer::EvaluateVector()
   */
-  TEST_FIXTURE(PitzerTest, TestNumberSpecies) {
+  TEST_FIXTURE(PitzerTest, TestNumberSpecies)
+  {
     Teuchos::ParameterList plist;
-    plist.set<int>("charge", -1)
-         .set<double>("gram molecular weight", 0.0);
+    plist.set<int>("charge", -1).set<double>("gram molecular weight", 0.0);
     ac::Species Cl(0, "Cl-", plist);
 
     plist.set<int>("charge", 1);
@@ -402,7 +404,7 @@ SUITE(TestPitzer) {
     am_->Display();
 
     sp_.pop_back();
-    CHECK_THROW(am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O), Exceptions::Amanzi_exception);
+    CHECK_THROW(am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O),
+                Exceptions::Amanzi_exception);
   }
-}  // end SUITE(TestPitzer)
-
+} // end SUITE(TestPitzer)

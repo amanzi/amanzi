@@ -64,37 +64,34 @@ namespace Amanzi {
 class Function;
 
 class EvaluatorIndependentFromFile
-    : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
-
-public:
+  : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
+ public:
   // ---------------------------------------------------------------------------
   // Constructors
   // ---------------------------------------------------------------------------
-  explicit EvaluatorIndependentFromFile(Teuchos::ParameterList &plist);
+  explicit EvaluatorIndependentFromFile(Teuchos::ParameterList& plist);
 
-  EvaluatorIndependentFromFile(const EvaluatorIndependentFromFile &other) =
-      default;
+  EvaluatorIndependentFromFile(const EvaluatorIndependentFromFile& other) = default;
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  virtual Evaluator &operator=(const Evaluator &other) override;
+  virtual Evaluator& operator=(const Evaluator& other) override;
 
-  EvaluatorIndependentFromFile &
-  operator=(const EvaluatorIndependentFromFile &other);
+  EvaluatorIndependentFromFile& operator=(const EvaluatorIndependentFromFile& other);
 
-  virtual void EnsureCompatibility(State &S) override;
+  virtual void EnsureCompatibility(State& S) override;
 
-protected:
+ protected:
   // ---------------------------------------------------------------------------
   // Update the value in the state.
   // ---------------------------------------------------------------------------
-  virtual void Update_(State &S) override;
+  virtual void Update_(State& S) override;
 
   // implementation
   void LoadFile_(int i);
-  void Interpolate_(double time, CompositeVector &v);
+  void Interpolate_(double time, CompositeVector& v);
 
-protected:
+ protected:
   double t_before_, t_after_;
   Teuchos::RCP<CompositeVector> val_before_, val_after_;
   std::string filename_;
@@ -109,7 +106,7 @@ protected:
 
   Teuchos::RCP<Function> time_func_;
 
-private:
+ private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile> fac_;
 };
 

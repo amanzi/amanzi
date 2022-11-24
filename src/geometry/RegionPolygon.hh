@@ -64,9 +64,9 @@ class RegionPolygon : public Region {
  public:
   // Default constructor uses two corner points (order not important).
   RegionPolygon(const std::string& name,
-                const int id, 
-                const std::vector<Point>& polypoints, 
-                const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
+                const int id,
+                const std::vector<Point>& polypoints,
+                const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
 
   typedef std::vector<AmanziGeometry::Point>::const_iterator PointIterator;
   std::size_t size() const { return points_.size(); }
@@ -78,17 +78,16 @@ class RegionPolygon : public Region {
   // Is the the specified point inside this region
   bool inside(const Point& p) const;
 
-protected:
-  
-  std::vector<Point> points_;  /* Points of the polygon */
-  Point normal_;                     /* Normal to the polygon */
-  unsigned int elim_dir_;            /* Coord dir to eliminate while projecting
+ protected:
+  std::vector<Point> points_; /* Points of the polygon */
+  Point normal_;              /* Normal to the polygon */
+  unsigned int elim_dir_;     /* Coord dir to eliminate while projecting
                                         polygon for in/out tests 
                                         0 - yz, eliminate x coord        
                                         1 - xz, eliminate y coord        
                                         2 - xy, eliminate z coord        */
 
-private:
+ private:
   void Init_();
 };
 

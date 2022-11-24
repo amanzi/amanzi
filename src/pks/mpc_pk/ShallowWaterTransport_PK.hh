@@ -20,11 +20,10 @@ namespace Amanzi {
 
 class ShallowWaterTransport_PK : public PK_MPCWeak {
  public:
-  ShallowWaterTransport_PK(
-      Teuchos::ParameterList& pk_tree,
-      const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-      const Teuchos::RCP<State>& S,
-      const Teuchos::RCP<TreeVector>& soln);
+  ShallowWaterTransport_PK(Teuchos::ParameterList& pk_tree,
+                           const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                           const Teuchos::RCP<State>& S,
+                           const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
   virtual double get_dt() override;
@@ -40,6 +39,6 @@ class ShallowWaterTransport_PK : public PK_MPCWeak {
   static RegisteredPKFactory<ShallowWaterTransport_PK> reg_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

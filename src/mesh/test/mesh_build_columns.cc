@@ -51,24 +51,24 @@ TEST(MESH_COLUMNS)
   if (AmanziMesh::framework_enabled(AmanziMesh::Framework::MSTK)) {
     frameworks.push_back(AmanziMesh::Framework::MSTK);
   }
-  if (nprocs == 1) {
-    frameworks.push_back(AmanziMesh::Framework::SIMPLE);
-  }
+  if (nprocs == 1) { frameworks.push_back(AmanziMesh::Framework::SIMPLE); }
 
   auto mesh_pars = Teuchos::rcp(new Teuchos::ParameterList());
-  mesh_pars->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
+  mesh_pars->sublist("unstructured")
+    .sublist("expert")
+    .set<std::string>("partitioner", "zoltan_rcb");
 
   for (const auto& frm : frameworks) {
     std::cerr << "Testing columns with " << AmanziMesh::framework_names.at(frm) << std::endl;
 
     // Create the mesh
-    auto mesh = createFrameworkStructuredUnitHex({frm}, 3,3,10, comm, Teuchos::null, mesh_pars, false, 2,3,2);
+    auto mesh = createFrameworkStructuredUnitHex(
+      { frm }, 3, 3, 10, comm, Teuchos::null, mesh_pars, false, 2, 3, 2);
 
     // Explicitly call build columns method
     mesh->build_columns();
 
     // call test function
-    testColumnsUniformDz(mesh, 2.0/10);
+    testColumnsUniformDz(mesh, 2.0 / 10);
   }
 }
-

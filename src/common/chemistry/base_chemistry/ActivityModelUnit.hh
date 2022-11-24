@@ -21,21 +21,20 @@ class Species;
 
 class ActivityModelUnit : public ActivityModel {
  public:
-  ActivityModelUnit() : ActivityModel() {};
-  ~ActivityModelUnit() {};
+  ActivityModelUnit() : ActivityModel(){};
+  ~ActivityModelUnit(){};
 
   virtual double Evaluate(const Species& species) final;
 
-  virtual void EvaluateVector(
-      const std::vector<Species>& primary_species, 
-      const std::vector<AqueousEquilibriumComplex>& secondary_species,
-      std::vector<double>* gamma,
-      double* actw) final;
+  virtual void EvaluateVector(const std::vector<Species>& primary_species,
+                              const std::vector<AqueousEquilibriumComplex>& secondary_species,
+                              std::vector<double>* gamma,
+                              double* actw) final;
 
   virtual void Display() const override;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif

@@ -25,9 +25,8 @@ class Mineral;
 class SurfaceSite {
  public:
   SurfaceSite();
-  SurfaceSite(const std::string& name, int id,
-              const Teuchos::ParameterList& plist);
-  ~SurfaceSite() {};
+  SurfaceSite(const std::string& name, int id, const Teuchos::ParameterList& plist);
+  ~SurfaceSite(){};
 
   // adds a pointer to mineral list
   void AddMineral(Mineral* mineral);
@@ -39,11 +38,13 @@ class SurfaceSite {
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
   // These are changing two variables.
-  void set_free_site_concentration(double d) {
+  void set_free_site_concentration(double d)
+  {
     free_site_concentration_ = d;
     ln_free_site_concentration_ = std::log(d);
   }
-  void set_ln_free_site_concentration(double d) {
+  void set_ln_free_site_concentration(double d)
+  {
     free_site_concentration_ = std::exp(d);
     ln_free_site_concentration_ = d;
   }
@@ -65,16 +66,16 @@ class SurfaceSite {
   int identifier_;
   double charge_;
 
-  double molar_density_;  // [moles sites / m^3 mineral]
-  double molar_surface_density_;  // [moles sites / m^2 mineral]
-  double free_site_concentration_;  // [moles sites / m^3 bulk]
-  double ln_free_site_concentration_;  // [-]
+  double molar_density_;              // [moles sites / m^3 mineral]
+  double molar_surface_density_;      // [moles sites / m^2 mineral]
+  double free_site_concentration_;    // [moles sites / m^3 bulk]
+  double ln_free_site_concentration_; // [-]
 
   // for future use
   // a list of pointers to minerals assocaited with the site
   // std::vector<Mineral*> minerals_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

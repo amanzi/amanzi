@@ -17,21 +17,25 @@
 namespace Amanzi {
 namespace Energy {
 
-TCM_PetersLidard_TwoPhase::TCM_PetersLidard_TwoPhase(Teuchos::ParameterList& plist) :
-    plist_(plist) {
+TCM_PetersLidard_TwoPhase::TCM_PetersLidard_TwoPhase(Teuchos::ParameterList& plist) : plist_(plist)
+{
   InitializeFromPlist_();
 }
 
 
-double TCM_PetersLidard_TwoPhase::ThermalConductivity(double poro, double sat_liq) {
-  double k_dry = (d_ * (1.0-poro) * k_rock_ + k_gas_ * poro) / (d_ * (1.0-poro) + poro);
-  double k_sat = pow(k_rock_, (1.0-poro)) * pow(k_liquid_, poro);
+double
+TCM_PetersLidard_TwoPhase::ThermalConductivity(double poro, double sat_liq)
+{
+  double k_dry = (d_ * (1.0 - poro) * k_rock_ + k_gas_ * poro) / (d_ * (1.0 - poro) + poro);
+  double k_sat = pow(k_rock_, (1.0 - poro)) * pow(k_liquid_, poro);
   double kersten = pow(sat_liq + eps_, alpha_);
   return k_dry + (k_sat - k_dry) * kersten;
 }
 
 
-void TCM_PetersLidard_TwoPhase::InitializeFromPlist_() {
+void
+TCM_PetersLidard_TwoPhase::InitializeFromPlist_()
+{
   d_ = 0.053; // unitless empericial parameter
 
   eps_ = plist_.get<double>("epsilon", 1.0e-10);
@@ -41,5 +45,5 @@ void TCM_PetersLidard_TwoPhase::InitializeFromPlist_() {
   k_gas_ = plist_.get<double>("thermal conductivity of gas");
 }
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi

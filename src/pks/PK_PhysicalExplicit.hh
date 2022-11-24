@@ -23,23 +23,19 @@ namespace Amanzi {
 
 template <class Vector>
 class PK_PhysicalExplicit : public PK_Physical, public PK_Explicit<Vector> {
-
-public:
-  PK_PhysicalExplicit()
-    : PK(),
-      PK_Physical(),
-      PK_Explicit<Vector>() {};
+ public:
+  PK_PhysicalExplicit() : PK(), PK_Physical(), PK_Explicit<Vector>(){};
 
   PK_PhysicalExplicit(Teuchos::ParameterList& pk_tree,
                       const Teuchos::RCP<Teuchos::ParameterList>& glist,
                       const Teuchos::RCP<State>& S,
-                      const Teuchos::RCP<TreeVector>& soln) :
-    PK(pk_tree, glist, S, soln),
-    PK_Physical(pk_tree, glist, S, soln),
-    PK_Explicit<Vector>(pk_tree, glist, S, soln) {};
+                      const Teuchos::RCP<TreeVector>& soln)
+    : PK(pk_tree, glist, S, soln),
+      PK_Physical(pk_tree, glist, S, soln),
+      PK_Explicit<Vector>(pk_tree, glist, S, soln){};
 
   // Virtual destructor
-  virtual ~PK_PhysicalExplicit() {};
+  virtual ~PK_PhysicalExplicit(){};
 };
 
 } // namespace Amanzi

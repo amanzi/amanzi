@@ -18,11 +18,12 @@ namespace Amanzi {
 namespace Flow {
 
 // method for instantiating WRM implementations
-Teuchos::RCP<WRM> WRMFactory::Create(Teuchos::ParameterList& plist) {
+Teuchos::RCP<WRM>
+WRMFactory::Create(Teuchos::ParameterList& plist)
+{
   std::string wrm_typename = plist.get<std::string>("water retention model");
   return Teuchos::rcp(CreateInstance(wrm_typename, plist));
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
-
+} // namespace Flow
+} // namespace Amanzi

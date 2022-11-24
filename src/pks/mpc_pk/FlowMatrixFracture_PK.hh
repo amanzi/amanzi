@@ -44,24 +44,26 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
 
-  virtual
-  void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                          Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) override;
-  
+  virtual void FunctionalResidual(double t_old,
+                                  double t_new,
+                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<TreeVector> u_new,
+                                  Teuchos::RCP<TreeVector> f) override;
+
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt) override;
-  
-  // // preconditioner application
-  virtual
-  int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
 
-  std::string name() override { return "flow matrix-fracture"; } 
+  // // preconditioner application
+  virtual int
+  ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
+
+  std::string name() override { return "flow matrix-fracture"; }
 
   // virtual void CalculateDiagnostics() {};
   Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
-  
+
  private:
   void AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag);
 
@@ -75,5 +77,5 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   static RegisteredPKFactory<FlowMatrixFracture_PK> reg_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 #endif

@@ -42,7 +42,7 @@ Example:
    </ParameterList>
 
 */
-  
+
 #ifndef AMANZI_REGION_COLOR_FUNCTION_HH_
 #define AMANZI_REGION_COLOR_FUNCTION_HH_
 
@@ -52,25 +52,24 @@ Example:
 
 namespace Amanzi {
 
-class FunctionColor;  
-  
+class FunctionColor;
+
 namespace AmanziGeometry {
 
 class RegionFunctionColor : public Region {
  public:
-
-  // Constructor 
-  RegionFunctionColor(const std::string& name, 
-                      const int id, 
+  // Constructor
+  RegionFunctionColor(const std::string& name,
+                      const int id,
                       const std::string& file,
                       const int value,
                       const Comm_type& comm,
-                      const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
+                      const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
 
   // Is the the specified point inside this region
   bool inside(const Point& p) const;
 
-protected:  
+ protected:
   std::string file_; // which file are we supposed to read it from
   const int value_;
   Teuchos::RCP<FunctionColor> colorfunc_; // indicator func created from file

@@ -13,10 +13,10 @@
 namespace Amanzi {
 
 Dummy_PK::Dummy_PK(Teuchos::ParameterList& pk_tree,
-        const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-        const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<TreeVector>& soln) :
-    soln_(soln)
+                   const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                   const Teuchos::RCP<State>& S,
+                   const Teuchos::RCP<TreeVector>& soln)
+  : soln_(soln)
 {
   S_ = S;
   glist_ = Teuchos::rcp(new Teuchos::ParameterList(*global_list));
@@ -24,24 +24,24 @@ Dummy_PK::Dummy_PK(Teuchos::ParameterList& pk_tree,
 }
 
 
-bool Dummy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+bool
+Dummy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   bool failed = false;
 
-  if ((step_count + 2)%3 == 0) {
+  if ((step_count + 2) % 3 == 0) {
     failed = true;
-    dummy_dt = 0.8*dummy_dt;
-    std::cout<<"Step failed\n";
-  }
-  else {
+    dummy_dt = 0.8 * dummy_dt;
+    std::cout << "Step failed\n";
+  } else {
     failed = false;
-    dummy_dt = 1.2*dummy_dt;
-    std::cout<<"Step succeed. New time "<<t_new<<"\n";
+    dummy_dt = 1.2 * dummy_dt;
+    std::cout << "Step succeed. New time " << t_new << "\n";
   }
-  
+
   step_count++;
 
   return failed;
 }
 
-}
+} // namespace Amanzi

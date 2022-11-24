@@ -16,6 +16,5 @@ namespace NavierStokes {
 
 RegisteredPKFactory<NavierStokes_PK> NavierStokes_PK::reg_("navier stokes");
 
-}  // namespace NavierStokes
-}  // namespace Amanzi
-
+} // namespace NavierStokes
+} // namespace Amanzi

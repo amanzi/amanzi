@@ -9,7 +9,7 @@
   Base class for secondary species (aqueous equilibrium complexes,
   minerals.
 */
- 
+
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -31,7 +31,7 @@ namespace acu = Amanzi::AmanziChemistry::utilities;
 ******************************************************************* */
 SecondarySpecies::SecondarySpecies()
   : Species(),
-    ncomp_(0),  // # components in reaction
+    ncomp_(0), // # components in reaction
     h2o_stoich_(0.0),
     lnK_(0.0),
     lnQK_(0.0),
@@ -46,35 +46,34 @@ SecondarySpecies::SecondarySpecies()
 /* *******************************************************************
 * Actual contructor
 ******************************************************************* */
-SecondarySpecies::SecondarySpecies(int id, const std::string& name,
+SecondarySpecies::SecondarySpecies(int id,
+                                   const std::string& name,
                                    const Teuchos::ParameterList& plist,
                                    const std::vector<Species>& primary_species)
-  : Species(id, name, plist),
-    lnK_(0.0),
-    lnQK_(0.0)
+  : Species(id, name, plist), lnK_(0.0), lnQK_(0.0)
 {
   // two ways to initialize the reaction equilibrium constant
   if (plist.isSublist("equilibrium constant")) {
-    auto x = plist.sublist("equilibrium constant").get<Teuchos::Array<double> >("T").toVector();
-    auto y = plist.sublist("equilibrium constant").get<Teuchos::Array<double> >("Keq").toVector();
+    auto x = plist.sublist("equilibrium constant").get<Teuchos::Array<double>>("T").toVector();
+    auto y = plist.sublist("equilibrium constant").get<Teuchos::Array<double>>("Keq").toVector();
     func_ = Teuchos::rcp(new FunctionTabular(x, y, 0));
 
     double T = plist.get<double>("temperature");
-    logK_ = (*func_)({T});
+    logK_ = (*func_)({ T });
   } else {
     logK_ = plist.get<double>("equilibrium constant");
   }
   std::string reaction = plist.get<std::string>("reaction");
 
-  ParseReaction_(reaction, &species_names_, &species_ids_, &stoichiometry_, &h2o_stoich_, primary_species);
+  ParseReaction_(
+    reaction, &species_names_, &species_ids_, &stoichiometry_, &h2o_stoich_, primary_species);
 
   ncomp_ = species_names_.size();
   lnK_ = acu::log_to_ln(logK());
 
   // verify the setup
   // must have ncomp > 0, or ncomp > 1?
-  if (ncomp() < 1 || 
-      species_names_.size() != stoichiometry_.size() || 
+  if (ncomp() < 1 || species_names_.size() != stoichiometry_.size() ||
       species_names_.size() != species_ids_.size()) {
     std::ostringstream oss;
     oss << "Invalid data for secondary species: ncomp = " << ncomp() << std::endl
@@ -87,23 +86,23 @@ SecondarySpecies::SecondarySpecies(int id, const std::string& name,
 /* *******************************************************************
 * Recalculates equilibrium constant
 ******************************************************************* */
-void SecondarySpecies::UpdateTemperatureDependentCoefs(double T)
+void
+SecondarySpecies::UpdateTemperatureDependentCoefs(double T)
 {
-  if (func_.get() != nullptr) {
-    logK_ = (*func_)({T});
-  }
+  if (func_.get() != nullptr) { logK_ = (*func_)({ T }); }
 }
 
 
 /* *******************************************************************
 * Parses a reaction whose products are all primary species
 ******************************************************************* */
-void SecondarySpecies::ParseReaction_(const std::string& reaction,
-                                      std::vector<std::string>* species,
-                                      std::vector<int>* species_ids,
-                                      std::vector<double>* stoichiometries,
-                                      double* h2o_stoich,
-                                      const std::vector<Species>& primary_species)
+void
+SecondarySpecies::ParseReaction_(const std::string& reaction,
+                                 std::vector<std::string>* species,
+                                 std::vector<int>* species_ids,
+                                 std::vector<double>* stoichiometries,
+                                 double* h2o_stoich,
+                                 const std::vector<Species>& primary_species)
 {
   double coeff;
   std::string primary_name;
@@ -130,7 +129,7 @@ void SecondarySpecies::ParseReaction_(const std::string& reaction,
 
       if (id < 0) {
         std::stringstream msg;
-        msg << "Reaction primary species \'" << primary_name 
+        msg << "Reaction primary species \'" << primary_name
             << "\' was not found in the primary species list\n";
         Exceptions::amanzi_throw(Errors::Message(msg.str()));
       }
@@ -142,5 +141,5 @@ void SecondarySpecies::ParseReaction_(const std::string& reaction,
   }
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

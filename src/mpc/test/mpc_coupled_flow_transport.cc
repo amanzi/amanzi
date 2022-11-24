@@ -29,18 +29,18 @@
 #include "wrm_flow_registration.hh"
 
 
-TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE) {
-
-using namespace Amanzi;
-using namespace Amanzi::AmanziMesh;
-using namespace Amanzi::AmanziGeometry;
+TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
-  
+
   // setup a piecewice linear solution with a jump
   std::string xmlInFileName = "test/mpc_coupled_flow_transport.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
-  
+
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
@@ -48,12 +48,12 @@ using namespace Amanzi::AmanziGeometry;
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
-  factory.set_preference(Preference({Framework::MSTK}));
+  factory.set_preference(Preference({ Framework::MSTK }));
   auto mesh = factory.create(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 9, 2, 20, true, true);
 
   // create dummy observation data object
-  Amanzi::ObservationData obs_data;    
-  
+  Amanzi::ObservationData obs_data;
+
   Teuchos::ParameterList state_plist = plist->sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
@@ -68,7 +68,7 @@ using namespace Amanzi::AmanziGeometry;
     Exceptions::amanzi_throw(msg);
   }
   */
-  
+
   //create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
@@ -98,4 +98,3 @@ using namespace Amanzi::AmanziGeometry;
   std::cout << "Fracture pressure: " << pf << ",  exact: " << pf_exact << std::endl;
   CHECK(std::fabs(pf - pf_exact) < 0.05 * std::fabs(pf_exact));
 }
-

@@ -24,7 +24,8 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class SaturationGasEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class SaturationGasEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   SaturationGasEvaluator(Teuchos::ParameterList& plist);
 
@@ -33,7 +34,9 @@ class SaturationGasEvaluator : public EvaluatorSecondaryMonotype<CompositeVector
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
@@ -42,8 +45,7 @@ class SaturationGasEvaluator : public EvaluatorSecondaryMonotype<CompositeVector
   static Utils::RegisteredFactory<Evaluator, SaturationGasEvaluator> fac_;
 };
 
-}  // namespace Multiphase
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi
 
 #endif
-

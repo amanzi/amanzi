@@ -34,14 +34,15 @@
 #include "TransportExplicit_PK.hh"
 
 /* **************************************************************** */
-TEST(ADVANCE_TWO_FRACTURES) {
+TEST(ADVANCE_TWO_FRACTURES)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-std::cout << "Test: Advance on a 2D square mesh" << std::endl;
+  std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 #ifdef HAVE_MPI
   Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
@@ -56,8 +57,8 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
   RCP<const Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
   // extract fractures mesh
@@ -71,8 +72,8 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  std::cout << "pid=" << comm->MyPID() << " cells: " << ncells_owned 
-                                       << " faces: " << nfaces_owned << std::endl;
+  std::cout << "pid=" << comm->MyPID() << " cells: " << ncells_owned << " faces: " << nfaces_owned
+            << std::endl;
 
   // create a simple state and populate it
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -95,8 +96,10 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   S->set_final_time(0.0);
 
   // modify the default state
-  auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", "state").ViewComponent("face", true);
-  const auto flux_map = S->GetW<CompositeVector>("volumetric_flow_rate", "state").Map().Map("face", true);
+  auto& flux =
+    *S->GetW<CompositeVector>("volumetric_flow_rate", "state").ViewComponent("face", true);
+  const auto flux_map =
+    S->GetW<CompositeVector>("volumetric_flow_rate", "state").Map().Map("face", true);
 
   int dir;
   AmanziGeometry::Point velocity(1.0, 0.2, -0.1);
@@ -120,10 +123,11 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   // initialize the transport process kernel
   TPK.Initialize();
 
-  // advance the transport state 
+  // advance the transport state
   int iter;
   double t_old(0.0), t_new(0.0), dt;
-  auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", "state").ViewComponent("cell");
+  auto& tcc =
+    *S->GetW<CompositeVector>("total_component_concentration", "state").ViewComponent("cell");
 
   iter = 0;
   while (t_new < 0.2) {
@@ -137,8 +141,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
     iter++;
 
     // verify solution
-    for (int c = 0; c < ncells_owned; ++c) 
-        CHECK(tcc[0][c] >= 0.0 && tcc[0][c] <= 1.0);
+    for (int c = 0; c < ncells_owned; ++c) CHECK(tcc[0][c] >= 0.0 && tcc[0][c] <= 1.0);
   }
 
   // test the maximum principle
@@ -147,22 +150,15 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 
   // test that solute enter the second fracture
   double tcc_max(0.0);
-  for (int n = 0; n < block.size(); ++n) {
-    tcc_max = std::max(tcc_max, tcc[0][block[n]]);
-  }
+  for (int n = 0; n < block.size(); ++n) { tcc_max = std::max(tcc_max, tcc[0][block[n]]); }
   double tmp = tcc_max;
   mesh->get_comm()->MaxAll(&tmp, &tcc_max, 1);
   CHECK(tcc_max > 0.25);
 
   WriteStateStatistics(*S);
 
-  GMV::open_data_file(*mesh, (std::string)"transport.gmv");
+  GMV::open_data_file(*mesh, (std::string) "transport.gmv");
   GMV::start_data();
   GMV::write_cell_data(tcc, 0, "Component_0");
   GMV::close_data_file();
 }
-
-
-
-
-

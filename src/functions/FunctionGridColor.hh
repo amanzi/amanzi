@@ -9,18 +9,23 @@ namespace Amanzi {
 
 class FunctionGridColor : public FunctionColor {
  public:
-  FunctionGridColor(int dim, std::vector<int> &count, std::vector<double> &x0,
-                std::vector<double> &dx, std::vector<int> &array)
-      : dim_(dim), count_(count), x0_(x0), dx_(dx), array_(array) {}
+  FunctionGridColor(int dim,
+                    std::vector<int>& count,
+                    std::vector<double>& x0,
+                    std::vector<double>& dx,
+                    std::vector<int>& array)
+    : dim_(dim), count_(count), x0_(x0), dx_(dx), array_(array)
+  {}
   ~FunctionGridColor() {}
-  std::unique_ptr<FunctionColor> Clone() const {
+  std::unique_ptr<FunctionColor> Clone() const
+  {
     return std::make_unique<FunctionGridColor>(*this);
   }
-  int operator()(const double* ) const;
+  int operator()(const double*) const;
 
   int getDimension() const { return dim_; }
 
-private:
+ private:
   int dim_;
   std::vector<int> count_;
   std::vector<double> x0_;

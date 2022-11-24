@@ -32,43 +32,53 @@ namespace Impl {
 // thing factory wrapper
 class DataFactory {
  public:
-  DataFactory() : p_(std::unique_ptr<DataFactory_Intf>()) {};
+  DataFactory() : p_(std::unique_ptr<DataFactory_Intf>()){};
 
-  DataFactory(DataFactory_Intf *t, Data_Intf *d)
-    : p_(t), data_p_(d) {}
+  DataFactory(DataFactory_Intf* t, Data_Intf* d) : p_(t), data_p_(d) {}
 
   DataFactory(const DataFactory& other)
-    : p_(other.p_->Clone()),
-      data_p_(other.data_p_->CloneEmpty()) {}
+    : p_(other.p_->Clone()), data_p_(other.data_p_->CloneEmpty())
+  {}
 
   DataFactory(DataFactory&& other) noexcept : p_(std::move(other.p_)) {}
 
-  void swap(DataFactory& other) noexcept {
+  void swap(DataFactory& other) noexcept
+  {
     p_.swap(other.p_);
     data_p_.swap(other.data_p_);
   }
 
-  DataFactory& operator=(DataFactory other) {
-    if (&other != this)
-      swap(other);
+  DataFactory& operator=(DataFactory other)
+  {
+    if (&other != this) swap(other);
     return *this;
   }
 
   bool HasType() const { return p_.get(); }
 
-  template <typename T> bool ValidType() const {
+  template <typename T>
+  bool ValidType() const
+  {
     return data_p_->ValidType<T>();
   }
 
-  template <typename T, typename F> bool ValidType() const {
-    return p_->ValidType<T,F>();
+  template <typename T, typename F>
+  bool ValidType() const
+  {
+    return p_->ValidType<T, F>();
   }
 
-  template <typename T, typename F> const F& Get() const {
+  template <typename T, typename F>
+  const F& Get() const
+  {
     return p_->Get<T, F>();
   }
 
-  template <typename T, typename F> F& GetW() { return p_->GetW<T, F>(); }
+  template <typename T, typename F>
+  F& GetW()
+  {
+    return p_->GetW<T, F>();
+  }
 
   void Create(Data& t) { return p_->Create(t); }
 
@@ -85,17 +95,18 @@ class DataFactory {
 
 
 template <typename T, typename F>
-DataFactory dataFactory(const F& f) {
-  return DataFactory(new DataFactory_Impl<T, F>(f),
-                       new Data_Impl<T>());
+DataFactory
+dataFactory(const F& f)
+{
+  return DataFactory(new DataFactory_Impl<T, F>(f), new Data_Impl<T>());
 }
 
 template <typename T, typename F>
 typename std::enable_if<std::is_default_constructible<F>::value, DataFactory>::type
-dataFactory() {
+dataFactory()
+{
   F f;
-  return DataFactory(new DataFactory_Impl<T, F>(f),
-                       new Data_Impl<T>());
+  return DataFactory(new DataFactory_Impl<T, F>(f), new Data_Impl<T>());
 }
 
 

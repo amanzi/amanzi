@@ -20,10 +20,11 @@ namespace Amanzi {
 namespace Utils {
 
 // explicity instantitate the static data of factory
-template<> Factory<Multiphase::WRMmp>::map_type* Factory<Multiphase::WRMmp>::map_;
+template <>
+Factory<Multiphase::WRMmp>::map_type* Factory<Multiphase::WRMmp>::map_;
 
-}  // namespace Utils
-}  // namespace Amanzi
+} // namespace Utils
+} // namespace Amanzi
 
 
 namespace Amanzi {
@@ -34,7 +35,5 @@ Utils::RegisteredFactory<WRMmp, WRMmp_Corey> WRMmp_Corey::factory_("Corey");
 Utils::RegisteredFactory<WRMmp, WRMmp_vanGenuchten> WRMmp_vanGenuchten::factory_("van Genuchten");
 Utils::RegisteredFactory<WRMmp, WRMmp_Simple> WRMmp_Simple::factory_("Simple");
 
-}  // namespace Multiphase
-}  // namespace Amanzi
-
-
+} // namespace Multiphase
+} // namespace Amanzi

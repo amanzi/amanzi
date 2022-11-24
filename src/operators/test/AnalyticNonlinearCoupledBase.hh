@@ -21,29 +21,33 @@
 
 class AnalyticNonlinearCoupledBase {
  public:
-  AnalyticNonlinearCoupledBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
+  AnalyticNonlinearCoupledBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh){};
   virtual ~AnalyticNonlinearCoupledBase() = default;
-  
+
   // analytic solution for diffusion problem with gravity
   virtual bool isBlock(int i, int j) = 0;
-  
+
   // -- diffusion tensor T
-  virtual Amanzi::WhetStone::Tensor Tensor00(const Amanzi::AmanziGeometry::Point& p, double t) {
+  virtual Amanzi::WhetStone::Tensor Tensor00(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     Amanzi::WhetStone::Tensor K(2, 1);
     K(0, 0) = 1.0;
     return K;
   }
-  virtual Amanzi::WhetStone::Tensor Tensor01(const Amanzi::AmanziGeometry::Point& p, double t) {
+  virtual Amanzi::WhetStone::Tensor Tensor01(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     Amanzi::WhetStone::Tensor K(2, 1);
     K(0, 0) = 1.0;
     return K;
   }
-  virtual Amanzi::WhetStone::Tensor Tensor10(const Amanzi::AmanziGeometry::Point& p, double t) {
+  virtual Amanzi::WhetStone::Tensor Tensor10(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     Amanzi::WhetStone::Tensor K(2, 1);
     K(0, 0) = 1.0;
     return K;
   }
-  virtual Amanzi::WhetStone::Tensor Tensor11(const Amanzi::AmanziGeometry::Point& p, double t) {
+  virtual Amanzi::WhetStone::Tensor Tensor11(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     Amanzi::WhetStone::Tensor K(2, 1);
     K(0, 0) = 1.0;
     return K;
@@ -58,51 +62,64 @@ class AnalyticNonlinearCoupledBase {
   // -- deriviative of the coefficient
   virtual double DScalarCoefficient00D0(double u, double v) { return 0.; }
   virtual double DScalarCoefficient00D1(double u, double v) { return 0.; }
-  virtual double DScalarCoefficient01D0(double u, double v) { return 0.; } 
-  virtual double DScalarCoefficient01D1(double u, double v) { return 0.; } 
+  virtual double DScalarCoefficient01D0(double u, double v) { return 0.; }
+  virtual double DScalarCoefficient01D1(double u, double v) { return 0.; }
   virtual double DScalarCoefficient10D0(double u, double v) { return 0.; }
   virtual double DScalarCoefficient10D1(double u, double v) { return 0.; }
   virtual double DScalarCoefficient11D0(double u, double v) { return 0.; }
   virtual double DScalarCoefficient11D1(double u, double v) { return 0.; }
-  
+
   // -- analytic solution p
   virtual double exact0(const Amanzi::AmanziGeometry::Point& p, double t) const = 0;
   virtual double exact1(const Amanzi::AmanziGeometry::Point& p, double t) const = 0;
 
   // -- gradient of continuous velocity grad(h), where h = p + g z
-  virtual Amanzi::AmanziGeometry::Point gradient_exact0(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
-  virtual Amanzi::AmanziGeometry::Point gradient_exact1(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point
+  gradient_exact0(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point
+  gradient_exact1(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // -- source term
   virtual double source_exact0(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   virtual double source_exact1(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // derived quantity: Darcy velocity -K * grad(h)
-  virtual Amanzi::AmanziGeometry::Point velocity_exact0(const Amanzi::AmanziGeometry::Point& p, double t) {
+  virtual Amanzi::AmanziGeometry::Point
+  velocity_exact0(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     Amanzi::WhetStone::Tensor K = Tensor00(p, t);
     Amanzi::AmanziGeometry::Point g = gradient_exact0(p, t);
-    double u = exact0(p,t);
-    double v = exact1(p,t);
+    double u = exact0(p, t);
+    double v = exact1(p, t);
     double kr = ScalarCoefficient00(u, v);
     return -(K * g) * kr;
   }
-  virtual Amanzi::AmanziGeometry::Point velocity_exact1(const Amanzi::AmanziGeometry::Point& p, double t) {
+  virtual Amanzi::AmanziGeometry::Point
+  velocity_exact1(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     Amanzi::WhetStone::Tensor K = Tensor11(p, t);
     Amanzi::AmanziGeometry::Point g = gradient_exact1(p, t);
-    double u = exact0(p,t);
-    double v = exact1(p,t);
+    double u = exact0(p, t);
+    double v = exact1(p, t);
     double kr = ScalarCoefficient11(u, v);
     Amanzi::AmanziGeometry::Point q = -(K * g) * kr;
     return q;
   }
 
   // error calculation
-  void ComputeCellError(Epetra_MultiVector& u, Epetra_MultiVector& v, double t, double& pnorm, double& l2_err, double& inf_err) {
+  void ComputeCellError(Epetra_MultiVector& u,
+                        Epetra_MultiVector& v,
+                        double t,
+                        double& pnorm,
+                        double& l2_err,
+                        double& inf_err)
+  {
     pnorm = 0.0;
     l2_err = 0.0;
     inf_err = 0.0;
 
-    int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    int ncells =
+      mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
     for (int c = 0; c < ncells; c++) {
       const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
       double u_tmp = exact0(xc, t);
@@ -129,12 +146,19 @@ class AnalyticNonlinearCoupledBase {
     l2_err = sqrt(l2_err);
   }
 
-  void ComputeFaceError(Epetra_MultiVector& qu, Epetra_MultiVector& qv, double t, double& qnorm, double& l2_err, double& inf_err) {
+  void ComputeFaceError(Epetra_MultiVector& qu,
+                        Epetra_MultiVector& qv,
+                        double t,
+                        double& qnorm,
+                        double& l2_err,
+                        double& inf_err)
+  {
     qnorm = 0.0;
     l2_err = 0.0;
     inf_err = 0.0;
 
-    int nfaces = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    int nfaces =
+      mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
     for (int f = 0; f < nfaces; f++) {
       double area = mesh_->face_area(f);
       const Amanzi::AmanziGeometry::Point& normal = mesh_->face_normal(f);
@@ -169,4 +193,3 @@ class AnalyticNonlinearCoupledBase {
 };
 
 #endif
-

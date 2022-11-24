@@ -23,7 +23,7 @@ class SorptionIsothermFreundlich : public SorptionIsotherm {
  public:
   SorptionIsothermFreundlich();
   SorptionIsothermFreundlich(double KD, double n);
-  ~SorptionIsothermFreundlich() {};
+  ~SorptionIsothermFreundlich(){};
 
   // returns sorbed concentration
   double Evaluate(const Species& primary_species);
@@ -34,11 +34,11 @@ class SorptionIsothermFreundlich : public SorptionIsotherm {
   void SetParameters(const std::vector<double>& params);
 
  private:
-  double KD_;  // distribution coefficient
+  double KD_; // distribution coefficient
   double n_;  // chemical-specific constant
   std::vector<double> params_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

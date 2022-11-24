@@ -40,17 +40,18 @@ namespace AmanziMesh {
 class MeshExtractedManifold : public Mesh {
  public:
   // Construct a mesh by extracting a subset of entities from another
-  // mesh. The subset may be specified by a list of entities. 
-  MeshExtractedManifold(const Teuchos::RCP<const Mesh>& parent_mesh,
-                        const std::string& setname, 
-                        const Entity_kind entity_kind,
-                        const Comm_ptr_type& comm = Teuchos::null,
-                        const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-                        const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
-                        bool request_faces = true,
-                        bool request_edges = false,
-                        bool flattened = false);
-  ~MeshExtractedManifold() {};
+  // mesh. The subset may be specified by a list of entities.
+  MeshExtractedManifold(
+    const Teuchos::RCP<const Mesh>& parent_mesh,
+    const std::string& setname,
+    const Entity_kind entity_kind,
+    const Comm_ptr_type& comm = Teuchos::null,
+    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+    const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
+    bool request_faces = true,
+    bool request_edges = false,
+    bool flattened = false);
+  ~MeshExtractedManifold(){};
 
   // initialization
   void InitParentMaps(const std::string& setname);
@@ -60,14 +61,14 @@ class MeshExtractedManifold : public Mesh {
   virtual Teuchos::RCP<const Mesh> parent() const override { return parent_mesh_; }
 
   // parallel type of entity - OWNED or GHOST
-  virtual
-  Parallel_type entity_get_ptype(const Entity_kind kind, const Entity_ID id) const override {
+  virtual Parallel_type entity_get_ptype(const Entity_kind kind, const Entity_ID id) const override
+  {
     return (id < nents_owned_[kind]) ? Parallel_type::OWNED : Parallel_type::GHOST;
   }
 
   // parent entity if this mesh was extracted from another mesh
-  virtual
-  Entity_ID entity_get_parent(const Entity_kind kind, const Entity_ID id) const override {
+  virtual Entity_ID entity_get_parent(const Entity_kind kind, const Entity_ID id) const override
+  {
     return entid_to_parent_[kind][id];
   }
 
@@ -77,11 +78,12 @@ class MeshExtractedManifold : public Mesh {
   // general mesh information
   // -- number of entities of any kind (cell, face, node) and in a
   //    particular category (OWNED, GHOST, ALL)
-  virtual unsigned int num_entities(const Entity_kind kind,
-                                    const Parallel_type ptype) const override;
+  virtual unsigned int
+  num_entities(const Entity_kind kind, const Parallel_type ptype) const override;
 
   // -- global ID of any entity
-  virtual Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const override {
+  virtual Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const override
+  {
     return ent_map_wghost_[kind]->GID(lid);
   }
 
@@ -92,51 +94,58 @@ class MeshExtractedManifold : public Mesh {
   // -- faces
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face are returned
   // In 3D, the nodes are returned in ccw order consistent with the face normal
-  virtual void face_get_nodes(const Entity_ID f, Entity_ID_List *nodes) const override;
+  virtual void face_get_nodes(const Entity_ID f, Entity_ID_List* nodes) const override;
 
   // -- edges
-  virtual void edge_get_nodes(const Entity_ID e, Entity_ID *n0, Entity_ID *n1) const override {
+  virtual void edge_get_nodes(const Entity_ID e, Entity_ID* n0, Entity_ID* n1) const override
+  {
     *n1 = *n0 = e;
   }
 
   // upward adjacencies
   // -- cells of type 'ptype' connected to a node - The order of cells is not guaranteed
   //    to be the same for corresponding nodes on different processors
-  virtual void node_get_cells(const Entity_ID n, const Parallel_type ptype,
-                              Entity_ID_List *cells) const override;
+  virtual void node_get_cells(const Entity_ID n,
+                              const Parallel_type ptype,
+                              Entity_ID_List* cells) const override;
 
-  // -- faces of type 'ptype' connected to a node - The order of faces is not guaranteed 
+  // -- faces of type 'ptype' connected to a node - The order of faces is not guaranteed
   //    to be the same for corresponding nodes on different processors
-  virtual void node_get_faces(const Entity_ID n, const Parallel_type ptype,
-                              Entity_ID_List *faces) const override {
+  virtual void
+  node_get_faces(const Entity_ID n, const Parallel_type ptype, Entity_ID_List* faces) const override
+  {
     // parent_mesh_->node_get_edges() is not implemented, another algorithm is needed
     AMANZI_ASSERT(false);
   }
 
   // -- cells of type 'ptype' connected to an edge - The order of cells is not guaranteed
   //    to be the same for corresponding edges on different processors
-  virtual void edge_get_cells(const Entity_ID e, const Parallel_type ptype,
-                              Entity_ID_List *cells) const override;
+  virtual void edge_get_cells(const Entity_ID e,
+                              const Parallel_type ptype,
+                              Entity_ID_List* cells) const override;
 
   // same level adjacencies
   // -- face connected neighboring cells of given cell of a particular ptype
   //    (e.g. a hex has 6 face neighbors)
-  // 
+  //
   // The order in which the cellids are returned cannot be guaranteed in general
   // except when ptype = ALL, in which case the cell ids will correspond to cells
   // across the respective faces given by cell_get_faces().
-  virtual void cell_get_face_adj_cells(const Entity_ID c, const Parallel_type ptype,
-                                       Entity_ID_List *cells) const override;
+  virtual void cell_get_face_adj_cells(const Entity_ID c,
+                                       const Parallel_type ptype,
+                                       Entity_ID_List* cells) const override;
 
   // Mesh entity geometry
   // -- nodes
-  virtual void node_get_coordinates(const Entity_ID n, AmanziGeometry::Point *xyz) const override;
+  virtual void node_get_coordinates(const Entity_ID n, AmanziGeometry::Point* xyz) const override;
 
   // -- node modifications are blocked for the extracted mesh
-  virtual void node_set_coordinates(const Entity_ID n, const AmanziGeometry::Point xyz) override {
+  virtual void node_set_coordinates(const Entity_ID n, const AmanziGeometry::Point xyz) override
+  {
     AMANZI_ASSERT(false);
   }
-  virtual void node_set_coordinates(const Entity_ID n, const double *xyz) override {
+  virtual void node_set_coordinates(const Entity_ID n, const double* xyz) override
+  {
     AMANZI_ASSERT(false);
   }
 
@@ -144,41 +153,49 @@ class MeshExtractedManifold : public Mesh {
   virtual int deform(const std::vector<double>& target_cell_volumes,
                      const std::vector<double>& min_cell_volumes_in,
                      const Entity_ID_List& fixed_nodes,
-                     const bool move_vertical) override {
+                     const bool move_vertical) override
+  {
     AMANZI_ASSERT(false);
     return 0;
   }
 
   // Mesh maps
-  virtual const Epetra_Map& cell_map(bool include_ghost) const override {
+  virtual const Epetra_Map& cell_map(bool include_ghost) const override
+  {
     return (include_ghost) ? *ent_map_wghost_[CELL] : *ent_map_owned_[CELL];
   }
 
-  virtual const Epetra_Map& face_map(bool include_ghost) const override {
+  virtual const Epetra_Map& face_map(bool include_ghost) const override
+  {
     return (include_ghost) ? *ent_map_wghost_[FACE] : *ent_map_owned_[FACE];
   }
 
-  virtual const Epetra_Map& node_map(bool include_ghost) const override {
+  virtual const Epetra_Map& node_map(bool include_ghost) const override
+  {
     return (include_ghost) ? *ent_map_wghost_[NODE] : *ent_map_owned_[NODE];
   }
 
-  virtual const Epetra_Map& exterior_face_map(bool include_ghost) const override {
+  virtual const Epetra_Map& exterior_face_map(bool include_ghost) const override
+  {
     return (include_ghost) ? *ent_extmap_wghost_[FACE] : *ent_extmap_owned_[FACE];
   }
 
-  virtual const Epetra_Map& exterior_node_map(bool include_ghost) const override {
+  virtual const Epetra_Map& exterior_node_map(bool include_ghost) const override
+  {
     return (include_ghost) ? *ent_extmap_wghost_[NODE] : *ent_extmap_owned_[NODE];
   }
 
-  // -- Epetra importer that will allow apps to import values from a Epetra vector defined 
+  // -- Epetra importer that will allow apps to import values from a Epetra vector defined
   //    on all owned faces into an Epetra vector defined only on exterior faces
-  virtual const Epetra_Import& exterior_face_importer(void) const override {
+  virtual const Epetra_Import& exterior_face_importer(void) const override
+  {
     return *exterior_face_importer_;
   }
 
   // Mesh Sets for ICs, BCs, Material Properties
-  virtual
-  bool valid_set_type(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override {
+  virtual bool
+  valid_set_type(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override
+  {
     return parent_mesh_->valid_set_type(rtype, kind);
   }
 
@@ -188,11 +205,12 @@ class MeshExtractedManifold : public Mesh {
   virtual void get_set_entities_and_vofs(const std::string& setname,
                                          const Entity_kind kind,
                                          const Parallel_type ptype,
-                                         Entity_ID_List *entids,
-                                         std::vector<double> *vofs) const override;
+                                         Entity_ID_List* entids,
+                                         std::vector<double>* vofs) const override;
 
   // miscellaneous functions
-  virtual void write_to_exodus_file(const std::string filename) const override {
+  virtual void write_to_exodus_file(const std::string filename) const override
+  {
     AMANZI_ASSERT(false);
   }
 
@@ -200,40 +218,46 @@ class MeshExtractedManifold : public Mesh {
   // -- get faces of a cell and directions in which it is used - this function is
   //    implemented in each mesh framework. The results are cached in the base class
   virtual void cell_get_faces_and_dirs_internal_(const Entity_ID c,
-                                                 Entity_ID_List *faces,
-                                                 std::vector<int> *fdirs,
+                                                 Entity_ID_List* faces,
+                                                 std::vector<int>* fdirs,
                                                  const bool ordered = false) const override;
 
   // -- cells connected to a face - this function is implemented in each mesh
   //    framework. The results are cached in the base class
   virtual void face_get_cells_internal_(const Entity_ID f,
                                         const Parallel_type ptype,
-                                        Entity_ID_List *cells) const override;
+                                        Entity_ID_List* cells) const override;
 
   // -- edges of a face - this function is implemented in each mesh
   //    framework. The results are cached in the base class
   virtual void face_get_edges_and_dirs_internal_(const Entity_ID f,
-                                                 Entity_ID_List *edges,
-                                                 std::vector<int> *edirs,
+                                                 Entity_ID_List* edges,
+                                                 std::vector<int>* edirs,
                                                  const bool ordered = true) const override;
 
   // -- edges of a cell - this function is implemented in each mesh
   //    framework. The results are cached in the base class.
-  virtual void cell_get_edges_internal_(const Entity_ID c, Entity_ID_List *edges) const override;
+  virtual void cell_get_edges_internal_(const Entity_ID c, Entity_ID_List* edges) const override;
 
  private:
-  Entity_ID_List build_set_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn,
-                            const Entity_kind kind) const;
+  Entity_ID_List
+  build_set_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, const Entity_kind kind) const;
 
-  Entity_ID_List build_set_cells_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const;
-  Entity_ID_List build_set_faces_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const;
-  Entity_ID_List build_set_nodes_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const;
+  Entity_ID_List
+  build_set_cells_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const;
+  Entity_ID_List
+  build_set_faces_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const;
+  Entity_ID_List
+  build_set_nodes_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const;
 
   Entity_ID_List build_from_parent_(const std::string& rgnname, const Entity_kind kind_d) const;
 
   void TryExtension_(const std::string& setname,
-                     Entity_kind kind_p, Entity_kind kind_d, Entity_ID_List* setents) const;
-  std::map<Entity_ID, int> EnforceOneLayerOfGhosts_(const std::string& setname, Entity_kind kind,
+                     Entity_kind kind_p,
+                     Entity_kind kind_d,
+                     Entity_ID_List* setents) const;
+  std::map<Entity_ID, int> EnforceOneLayerOfGhosts_(const std::string& setname,
+                                                    Entity_kind kind,
                                                     Entity_ID_List* setents) const;
 
   // generic algorihm does not work on manifold
@@ -241,17 +265,19 @@ class MeshExtractedManifold : public Mesh {
 
   void PrintSets_() const;
 
- private: 
+ private:
   Teuchos::RCP<const Mesh> parent_mesh_;
 
   // owned ids are enforced to be first in the child -> parent map
   mutable std::map<Entity_kind, Entity_ID> nents_owned_, nents_ghost_;
   mutable std::map<Entity_kind, Entity_ID_List> entid_to_parent_;
-  mutable std::map<Entity_kind, std::map<Entity_ID, Entity_ID> > parent_to_entid_;  // reverse to previous map
-  mutable std::map<Entity_kind, Teuchos::RCP<const Epetra_Map> > ent_map_owned_, ent_map_wghost_;
-  mutable std::map<Entity_kind, Teuchos::RCP<const Epetra_Map> > ent_extmap_owned_, ent_extmap_wghost_;
+  mutable std::map<Entity_kind, std::map<Entity_ID, Entity_ID>>
+    parent_to_entid_; // reverse to previous map
+  mutable std::map<Entity_kind, Teuchos::RCP<const Epetra_Map>> ent_map_owned_, ent_map_wghost_;
+  mutable std::map<Entity_kind, Teuchos::RCP<const Epetra_Map>> ent_extmap_owned_,
+    ent_extmap_wghost_;
 
-  std::map<Set_ID, std::vector<int> > regions_;
+  std::map<Set_ID, std::vector<int>> regions_;
   Teuchos::RCP<Epetra_Import> exterior_face_importer_;
 
   // sets
@@ -262,8 +288,7 @@ class MeshExtractedManifold : public Mesh {
   mutable bool flattened_;
 };
 
-}  // namespace AmanziMesh
-}  // namespace Amanzi
+} // namespace AmanziMesh
+} // namespace Amanzi
 
 #endif
-

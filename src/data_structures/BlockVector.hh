@@ -29,12 +29,11 @@
 namespace Amanzi {
 
 class BlockVector {
-
-public:
+ public:
   // Constructor
   BlockVector(const Comm_ptr_type& comm,
               std::vector<std::string>& names,
-              std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
+              std::vector<Teuchos::RCP<const Epetra_BlockMap>>& maps,
               std::vector<int> num_dofs);
 
   // copy constructor
@@ -61,28 +60,22 @@ public:
   int NumVectors(std::string name) const { return num_dofs_[Index_(name)]; }
   unsigned int size(std::string name) const { return sizes_[Index_(name)]; }
 
-  Teuchos::RCP<const Epetra_BlockMap> ComponentMap(const std::string& name) const {
-    return maps_[Index_(name)]; }
+  Teuchos::RCP<const Epetra_BlockMap> ComponentMap(const std::string& name) const
+  {
+    return maps_[Index_(name)];
+  }
 
   // Accessors to data.
-  bool HasComponent(std::string name) const {
-    return indexmap_.find(name) != indexmap_.end();
-  }
+  bool HasComponent(std::string name) const { return indexmap_.find(name) != indexmap_.end(); }
 
   // -- Access a view of a single component's data.
-  Teuchos::RCP<const Epetra_MultiVector>
-  ViewComponent(const std::string& name) const;
+  Teuchos::RCP<const Epetra_MultiVector> ViewComponent(const std::string& name) const;
 
-  Teuchos::RCP<Epetra_MultiVector>
-  ViewComponent(const std::string& name);
+  Teuchos::RCP<Epetra_MultiVector> ViewComponent(const std::string& name);
 
   // -- View entries in the vectors.
-  double operator()(std::string name, int i, int j) const {
-    return (*data_[Index_(name)])[i][j];
-  }
-  double operator()(std::string name, int j) const {
-    return (*data_[Index_(name)])[0][j];
-  }
+  double operator()(std::string name, int i, int j) const { return (*data_[Index_(name)])[i][j]; }
+  double operator()(std::string name, int j) const { return (*data_[Index_(name)])[0][j]; }
 
   // Mutators of data
   // -- Set entries in the vectors.
@@ -125,7 +118,7 @@ public:
 
   // this <- element wise reciprocal(this)
   int Reciprocal(const BlockVector& other);
-  
+
   // result <- other \dot this
   int Dot(const BlockVector& other, double* result) const;
 
@@ -133,15 +126,19 @@ public:
   BlockVector& Update(double scalarA, const BlockVector& A, double scalarThis);
 
   // this <- scalarA*A + scalarB*B + scalarThis*this
-  BlockVector& Update(double scalarA, const BlockVector& A,
-                          double scalarB, const BlockVector& B, double scalarThis);
+  BlockVector& Update(double scalarA,
+                      const BlockVector& A,
+                      double scalarB,
+                      const BlockVector& B,
+                      double scalarThis);
 
   // this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
-  int Multiply(double scalarAB, const BlockVector& A, const BlockVector& B,
-               double scalarThis);
+  int Multiply(double scalarAB, const BlockVector& A, const BlockVector& B, double scalarThis);
 
   // this <- scalarAB * B/A + scalarThis*this  (/ is the elementwise division
-  int ReciprocalMultiply(double scalarAB, const BlockVector& A, const BlockVector& B,
+  int ReciprocalMultiply(double scalarAB,
+                         const BlockVector& A,
+                         const BlockVector& B,
                          double scalarThis);
 
   // Norms.
@@ -154,31 +151,32 @@ public:
   int MeanValue(double* value) const;
 
   // Extras
-  void Print(std::ostream &os, bool data_io = true) const;
+  void Print(std::ostream& os, bool data_io = true) const;
 
   int Random();
 
   Comm_ptr_type Comm() const { return comm_; }
 
-private:
-  int Index_(const std::string& name) const {
+ private:
+  int Index_(const std::string& name) const
+  {
     std::map<std::string, int>::const_iterator item = indexmap_.find(name);
     AMANZI_ASSERT(item != indexmap_.end());
     return item->second;
   }
 
-private:
+ private:
   Comm_ptr_type comm_;
-  std::map< std::string, int > indexmap_;
+  std::map<std::string, int> indexmap_;
   int num_components_;
 
   std::vector<std::string> names_;
   std::vector<int> num_dofs_;
-  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps_;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap>> maps_;
   std::vector<unsigned int> sizes_;
-  std::vector<Teuchos::RCP<Epetra_MultiVector> > data_;
+  std::vector<Teuchos::RCP<Epetra_MultiVector>> data_;
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

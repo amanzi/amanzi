@@ -29,7 +29,8 @@
   @test Unit tests for: ActivityModelFactory
 */
 
-SUITE(amanzi_chemistry_unit_tests_ActivityModelFactory) {
+SUITE(amanzi_chemistry_unit_tests_ActivityModelFactory)
+{
   namespace ac = Amanzi::AmanziChemistry;
 
   class ActivityModelFactoryTest {
@@ -45,14 +46,14 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelFactory) {
     Teuchos::RCP<Amanzi::VerboseObject> vo_;
   };
 
-  ActivityModelFactoryTest::ActivityModelFactoryTest()
-    : amf_(),
-      activity_model_(NULL) {
+  ActivityModelFactoryTest::ActivityModelFactoryTest() : amf_(), activity_model_(NULL)
+  {
     Teuchos::ParameterList plist;
     vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry", plist));
   }
 
-  void ActivityModelFactoryTest::RunTest(const std::string name) {
+  void ActivityModelFactoryTest::RunTest(const std::string name)
+  {
     ac::ActivityModel::ActivityModelParameters parameters;
     parameters.database_filename = "";
     parameters.pitzer_jfunction = "";
@@ -72,10 +73,10 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelFactory) {
 
     @test ActivityModelFactory::Create()
   */
-  TEST_FIXTURE(ActivityModelFactoryTest, ActivityModelFactory_invalid) {
+  TEST_FIXTURE(ActivityModelFactoryTest, ActivityModelFactory_invalid)
+  {
     std::string name("invalid-name");
     CHECK_THROW(RunTest(name), Exceptions::Amanzi_exception);
     CHECK(!activity_model_);
   }
 }
-

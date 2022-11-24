@@ -41,7 +41,7 @@ class H2O_ViscosityConstant : public EOS_Viscosity {
   static Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityConstant> factory_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

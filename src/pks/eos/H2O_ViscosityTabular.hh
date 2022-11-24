@@ -29,19 +29,22 @@ class H2O_ViscosityTabular : public EOS_Viscosity {
  public:
   explicit H2O_ViscosityTabular(Teuchos::ParameterList& eos_plist);
 
-  virtual double Viscosity(double T, double p) override {
+  virtual double Viscosity(double T, double p) override
+  {
     double val = table_->Function(T, p, &ierr_);
     if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
     return val;
   }
 
-  virtual double DViscosityDT(double T, double p) override {
+  virtual double DViscosityDT(double T, double p) override
+  {
     double val = table_->DFunctionDT(T, p, &ierr_);
     if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
     return val;
   }
 
-  virtual double DViscosityDp(double T, double p) override {
+  virtual double DViscosityDp(double T, double p) override
+  {
     double val = table_->DFunctionDp(T, p, &ierr_);
     if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
     return val;
@@ -53,7 +56,7 @@ class H2O_ViscosityTabular : public EOS_Viscosity {
   Teuchos::RCP<LookupTable> table_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

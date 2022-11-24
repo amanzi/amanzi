@@ -21,10 +21,12 @@ namespace Amanzi {
 namespace Functions {
 
 // Overload the AddSpec method to check uniqueness.
-void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
-  // Ensure uniqueness of the spec and create the set of IDs contained in 
+void
+UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
+{
+  // Ensure uniqueness of the spec and create the set of IDs contained in
   // the domain of the spec.
-  
+
   Teuchos::RCP<Domain>& domain = spec->first;
   AmanziMesh::Entity_kind kind = domain->second;
 
@@ -56,8 +58,10 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
       MeshIDs::iterator overlap_end;
       const MeshIDs& prev_spec_ids = *(*uspec)->second;
 
-      std::set_intersection(prev_spec_ids.begin(), prev_spec_ids.end(),
-                            this_spec_ids->begin(), this_spec_ids->end(),
+      std::set_intersection(prev_spec_ids.begin(),
+                            prev_spec_ids.end(),
+                            this_spec_ids->begin(),
+                            this_spec_ids->end(),
                             std::inserter(overlap, overlap.end()));
       if (overlap.size() != 0) {
         Errors::Message m;
@@ -74,4 +78,3 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
 
 } // namespace Functions
 } // namespace Amanzi
-

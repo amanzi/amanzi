@@ -6,7 +6,7 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 */
- 
+
 #ifndef CHEMISTRY_AMANZI_PK_HH_
 #define CHEMISTRY_AMANZI_PK_HH_
 
@@ -54,8 +54,7 @@ class Amanzi_PK : public Chemistry_PK {
   void set_chemistry_output_names(std::vector<std::string>* names);
 
   // functions used in Rransport PK
-  void CopyCellStateToBeakerState(
-      int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
+  void CopyCellStateToBeakerState(int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
 
   // access
   std::shared_ptr<Beaker> get_engine() { return chem_; }
@@ -70,8 +69,7 @@ class Amanzi_PK : public Chemistry_PK {
 
   void InitializeBeakerFields_();
 
-  void CopyBeakerStructuresToCellState(
-      int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
+  void CopyBeakerStructuresToCellState(int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
 
  protected:
   Teuchos::RCP<TreeVector> soln_;
@@ -96,6 +94,6 @@ class Amanzi_PK : public Chemistry_PK {
   static RegisteredPKFactory<Amanzi_PK> reg_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

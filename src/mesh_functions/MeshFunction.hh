@@ -34,17 +34,15 @@ class MeshFunction {
   typedef std::pair<RegionList, AmanziMesh::Entity_kind> Domain;
 
   // A specification for domain and function.
-  typedef std::pair<Teuchos::RCP<Domain>, Teuchos::RCP<const MultiFunction> > Spec;
-  typedef std::vector<Teuchos::RCP<Spec> > SpecList;
+  typedef std::pair<Teuchos::RCP<Domain>, Teuchos::RCP<const MultiFunction>> Spec;
+  typedef std::vector<Teuchos::RCP<Spec>> SpecList;
 
   // constructor
-  MeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : mesh_(mesh) {};
+  MeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : mesh_(mesh){};
   virtual ~MeshFunction() = default;
-  
+
   // add a spec -- others may inherit this and overload to do some checking?
-  virtual void AddSpec(const Teuchos::RCP<Spec>& spec) {
-    spec_list_.push_back(spec);
-  }
+  virtual void AddSpec(const Teuchos::RCP<Spec>& spec) { spec_list_.push_back(spec); }
 
   // access specs
   typedef SpecList::const_iterator spec_iterator;
@@ -60,9 +58,8 @@ class MeshFunction {
   SpecList spec_list_;
 };
 
-} // namespace
-} // namespace
+} // namespace Functions
+} // namespace Amanzi
 
 
 #endif
-

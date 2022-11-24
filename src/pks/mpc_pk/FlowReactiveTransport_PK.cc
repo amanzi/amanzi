@@ -19,18 +19,20 @@ namespace Amanzi {
 // Constructor
 // -----------------------------------------------------------------------------
 FlowReactiveTransport_PK::FlowReactiveTransport_PK(
-    Teuchos::ParameterList& pk_tree,
-    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-    const Teuchos::RCP<State>& S,
-    const Teuchos::RCP<TreeVector>& soln) :
-    Amanzi::PK_MPCSubcycled(pk_tree, global_list, S, soln) { 
-}
+  Teuchos::ParameterList& pk_tree,
+  const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+  const Teuchos::RCP<State>& S,
+  const Teuchos::RCP<TreeVector>& soln)
+  : Amanzi::PK_MPCSubcycled(pk_tree, global_list, S, soln)
+{}
 
 
 // -----------------------------------------------------------------------------
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
-double FlowReactiveTransport_PK::get_dt() {
+double
+FlowReactiveTransport_PK::get_dt()
+{
   //double dt = Amanzi::PK_MPCSubcycled::get_dt();
   double dt = sub_pks_[master_]->get_dt();
   return dt;
@@ -40,7 +42,9 @@ double FlowReactiveTransport_PK::get_dt() {
 // -----------------------------------------------------------------------------
 // Set master dt
 // -----------------------------------------------------------------------------
-void FlowReactiveTransport_PK::set_dt(double dt) {
+void
+FlowReactiveTransport_PK::set_dt(double dt)
+{
   master_dt_ = dt;
   sub_pks_[master_]->set_dt(dt);
 }
@@ -49,7 +53,9 @@ void FlowReactiveTransport_PK::set_dt(double dt) {
 // -----------------------------------------------------------------------------
 // Make necessary operatios by the end of the time steps.
 // -----------------------------------------------------------------------------
-void FlowReactiveTransport_PK::CommitStep(double t_old, double t_new, const Tag& tag) {
+void
+FlowReactiveTransport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
+{
   sub_pks_[slave_]->CommitStep(t_old, t_new, tag);
 }
 
@@ -57,7 +63,9 @@ void FlowReactiveTransport_PK::CommitStep(double t_old, double t_new, const Tag&
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
-bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
+bool
+FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+{
   bool fail = false;
 
   // advance the master PK using the full step size
@@ -80,9 +88,7 @@ bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool rein
   double dt_done = 0.;
   while (!done) {
     // do not overstep
-    if (t_old + dt_done + dt_next > t_new) {
-      dt_next = t_new - t_old - dt_done;
-    }
+    if (t_old + dt_done + dt_next > t_new) { dt_next = t_new - t_old - dt_done; }
 
     // take the step
     fail = sub_pks_[slave_]->AdvanceStep(t_old + dt_done, t_old + dt_done + dt_next, reinit);
@@ -104,15 +110,14 @@ bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool rein
     // dt_next = sub_pks_[slave_]->get_dt();
     // no state recovery (e.g. pressure) is made, so the only option is to fail.
     if (dt_next < min_dt_)
-       Exceptions::amanzi_throw("Failure in ReactiveTransport_PK: small time step.");
+      Exceptions::amanzi_throw("Failure in ReactiveTransport_PK: small time step.");
 
     // check for subcycling condition
-    done = std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_;
+    done = std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1 * min_dt_;
   }
 
-  // we reach this point when subcycling has been completed 
+  // we reach this point when subcycling has been completed
   return false;
 }
 
-}  // namespace Amanzi
-
+} // namespace Amanzi

@@ -28,23 +28,27 @@ namespace Energy {
 // Equation of State model
 class IEM_Tabular : public IEM {
  public:
-  IEM_Tabular(Teuchos::ParameterList& plist) {
+  IEM_Tabular(Teuchos::ParameterList& plist)
+  {
     table_ = Teuchos::rcp(new AmanziEOS::LookupTable(plist));
   }
 
-  virtual double InternalEnergy(double T, double p) override {
+  virtual double InternalEnergy(double T, double p) override
+  {
     double val = table_->Function(T, p, &ierr_);
     if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
     return val;
   }
 
-  virtual double DInternalEnergyDT(double T, double p) override {
+  virtual double DInternalEnergyDT(double T, double p) override
+  {
     double val = table_->DFunctionDT(T, p, &ierr_);
     if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
     return val;
   }
 
-  virtual double DInternalEnergyDp(double T, double p) override {
+  virtual double DInternalEnergyDp(double T, double p) override
+  {
     double val = table_->DFunctionDp(T, p, &ierr_);
     if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
     return val;
@@ -56,7 +60,7 @@ class IEM_Tabular : public IEM {
   Teuchos::RCP<AmanziEOS::LookupTable> table_;
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

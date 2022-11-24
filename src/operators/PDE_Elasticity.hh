@@ -36,11 +36,8 @@ namespace Operators {
 
 class PDE_Elasticity : public PDE_HelperDiscretization {
  public:
-  PDE_Elasticity(Teuchos::ParameterList& plist,
-                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_HelperDiscretization(mesh),
-      K_(Teuchos::null),
-      K_default_(1.0)
+  PDE_Elasticity(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : PDE_HelperDiscretization(mesh), K_(Teuchos::null), K_default_(1.0)
   {
     global_op_ = Teuchos::null;
     pde_type_ = PDE_ELASTICITY;
@@ -48,8 +45,8 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   }
 
   // main virtual members
-  // -- setup 
-  void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
+  // -- setup
+  void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K);
   void SetTensorCoefficient(double K);
 
   // -- creation of an operator
@@ -59,22 +56,20 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
 
   // -- postprocessing: calculated stress u from displacement p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override {};
+                          const Teuchos::Ptr<CompositeVector>& u) override{};
 
  protected:
   void Init_(Teuchos::ParameterList& plist);
 
  protected:
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K_;
   double K_default_;
 
   Teuchos::RCP<WhetStone::BilinearForm> mfd_;
   AmanziMesh::Entity_kind base_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-
-

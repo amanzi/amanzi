@@ -18,11 +18,12 @@ namespace Amanzi {
 namespace Flow {
 
 // method for instantiating a multiscale porosity model
-Teuchos::RCP<MultiscaleFlowPorosity> MultiscaleFlowPorosityFactory::Create(Teuchos::ParameterList& plist) {
+Teuchos::RCP<MultiscaleFlowPorosity>
+MultiscaleFlowPorosityFactory::Create(Teuchos::ParameterList& plist)
+{
   std::string msp_typename = plist.get<std::string>("multiscale model");
   return Teuchos::rcp(CreateInstance(msp_typename, plist));
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
-
+} // namespace Flow
+} // namespace Amanzi

@@ -29,18 +29,20 @@ namespace Transport {
 
 class TransportBoundaryFunction_Chemistry : public TransportDomainFunction {
  public:
-  TransportBoundaryFunction_Chemistry() {};
+  TransportBoundaryFunction_Chemistry(){};
   TransportBoundaryFunction_Chemistry(const Teuchos::ParameterList& plist)
-    : TransportDomainFunction(plist) {
+    : TransportDomainFunction(plist)
+  {
     amanzi_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Amanzi_PK>(
-        plist.get<Teuchos::RCP<AmanziChemistry::Chemistry_PK> >("chemical pk"));
+      plist.get<Teuchos::RCP<AmanziChemistry::Chemistry_PK>>("chemical pk"));
     chem_engine_ = amanzi_pk_->get_engine();
 
-    constraints_ = plist.get<Teuchos::Array<std::string> >("names").toVector();
+    constraints_ = plist.get<Teuchos::Array<std::string>>("names").toVector();
   }
 
   virtual void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                               Teuchos::RCP<CompositeVector> tcc) {
+                               Teuchos::RCP<CompositeVector> tcc)
+  {
     AmanziMesh::Entity_ID_List cells;
     auto beaker_state = amanzi_pk_->beaker_state();
     const auto& beaker_parameters = amanzi_pk_->beaker_parameters();
@@ -55,19 +57,17 @@ class TransportBoundaryFunction_Chemistry : public TransportDomainFunction {
       auto& values = it->second;
       chem_engine_->EnforceConstraint(&beaker_state, beaker_parameters, constraints_, values);
 
-      for (int i = 0; i < values.size(); i++) {
-        values[i] = beaker_state.total.at(i);
-      }
+      for (int i = 0; i < values.size(); i++) { values[i] = beaker_state.total.at(i); }
     }
   }
-  
+
  private:
   Teuchos::RCP<AmanziChemistry::Amanzi_PK> amanzi_pk_;
   std::shared_ptr<AmanziChemistry::Beaker> chem_engine_;
   std::vector<std::string> constraints_;
 };
 
-}  // namespace Transport
-}  // namespace Amanzi
+} // namespace Transport
+} // namespace Amanzi
 
 #endif

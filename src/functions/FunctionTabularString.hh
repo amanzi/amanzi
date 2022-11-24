@@ -22,18 +22,18 @@ namespace Amanzi {
 class FunctionTabularString {
  public:
   FunctionTabularString(const std::vector<double>& x, const std::vector<std::string>& y);
-  ~FunctionTabularString() {};
+  ~FunctionTabularString(){};
 
   std::string operator()(double xv) const;
 
  private:
   std::vector<double> x_;
   std::vector<std::string> y_;
-  
- private: 
+
+ private:
   void CheckArgs_(const std::vector<double>& x, const std::vector<std::string>& y) const;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

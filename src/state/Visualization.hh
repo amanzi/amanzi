@@ -78,9 +78,7 @@ class Visualization : public IOEvent {
   Visualization();
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
-  void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh> mesh) {
-    mesh_ = mesh;
-  }
+  void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh> mesh) { mesh_ = mesh; }
 
   std::string get_name() const { return name_; }
   void set_name(const std::string& name);
@@ -91,7 +89,7 @@ class Visualization : public IOEvent {
   void set_tag(const Tag& tag) { tag_ = tag; }
 
   // public interface for coordinator clients
-  void CreateFiles(bool include_io_set=true);
+  void CreateFiles(bool include_io_set = true);
   void CreateTimestep(double time, int cycle, const std::string& tag);
   virtual void FinalizeTimestep() const;
 
@@ -99,7 +97,8 @@ class Visualization : public IOEvent {
   template <typename T>
   void Write(const std::string& name, const T& t) const;
 
-  virtual void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
+  virtual void
+  WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
   virtual void WriteVector(const Epetra_Vector& vec, const std::string& name) const;
   virtual void WriteRegions();
   virtual void WritePartition();
@@ -116,7 +115,7 @@ class Visualization : public IOEvent {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<Output> visualization_output_;
 
-  std::map<std::string, Teuchos::Array<std::string> > regions_;
+  std::map<std::string, Teuchos::Array<std::string>> regions_;
   bool write_partition_;
   bool dynamic_mesh_;
   bool write_mesh_exo_;
@@ -124,20 +123,23 @@ class Visualization : public IOEvent {
 
 
 template <>
-inline void Visualization::Write<Epetra_Vector>(const std::string& name,
-                                                const Epetra_Vector& t) const {
+inline void
+Visualization::Write<Epetra_Vector>(const std::string& name, const Epetra_Vector& t) const
+{
   WriteVector(t, name);
 }
 
 template <>
-inline void Visualization::Write<double>(const std::string& name,
-                                         const double& t) const {
+inline void
+Visualization::Write<double>(const std::string& name, const double& t) const
+{
   visualization_output_->WriteAttribute(t, name);
 }
 
 template <>
-inline void Visualization::Write<int>(const std::string& name,
-                                      const int& t) const {
+inline void
+Visualization::Write<int>(const std::string& name, const int& t) const
+{
   visualization_output_->WriteAttribute(t, name);
 }
 

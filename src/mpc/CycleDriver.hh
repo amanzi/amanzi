@@ -86,7 +86,7 @@ class CycleDriver {
   Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> coordinator_list_;
 
-  std::vector<double> t_, tp_start_, tp_end_, tp_dt_, tp_max_cycle_, tp_max_dt_;  
+  std::vector<double> t_, tp_start_, tp_end_, tp_dt_, tp_max_cycle_, tp_max_dt_;
   double max_dt_, min_dt_;
   int cycle0_, cycle1_;
   int num_time_periods_;
@@ -100,22 +100,22 @@ class CycleDriver {
   Teuchos::RCP<FlexibleObservations> observations_;
 
   // vis and checkpointing
-  std::vector<Teuchos::RCP<Visualization> > visualization_;
-  std::vector<Teuchos::RCP<Visualization> > failed_visualization_;
+  std::vector<Teuchos::RCP<Visualization>> visualization_;
+  std::vector<Teuchos::RCP<Visualization>> failed_visualization_;
   Teuchos::RCP<Checkpoint> checkpoint_;
   bool restart_requested_;
   //  bool output_registered_;
   std::string restart_filename_;
 
   // time period control
-  std::vector<std::pair<double,double> > reset_info_;
-  std::vector<std::pair<double,double> > reset_max_;
+  std::vector<std::pair<double, double>> reset_info_;
+  std::vector<std::pair<double, double>> reset_max_;
 
-  // //  checkpoint/restart 
+  // //  checkpoint/restart
   // Teuchos::RCP<Amanzi::Checkpoint> restart_;
- 
+
   // walkabout
-  Teuchos::RCP<Amanzi::WalkaboutCheckpoint> walkabout_;  
+  Teuchos::RCP<Amanzi::WalkaboutCheckpoint> walkabout_;
 
   // fancy OS
   Teuchos::RCP<VerboseObject> vo_;
@@ -124,8 +124,8 @@ class CycleDriver {
 
 // non-meber function
 // names of all fields that go into a vis file
-inline
-std::set<std::string> StateVisFields(const State& S)
+inline std::set<std::string>
+StateVisFields(const State& S)
 {
   std::set<std::string> fields;
   for (auto it = S.data_begin(); it != S.data_end(); ++it) {
@@ -136,6 +136,6 @@ std::set<std::string> StateVisFields(const State& S)
   return fields;
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

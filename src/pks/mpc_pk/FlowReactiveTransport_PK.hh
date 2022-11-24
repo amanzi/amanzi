@@ -29,7 +29,7 @@ class FlowReactiveTransport_PK : public PK_MPCSubcycled {
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln);
 
-  ~FlowReactiveTransport_PK() {};
+  ~FlowReactiveTransport_PK(){};
 
   // PK methods
   // -- dt is the minimum of the sub pks
@@ -41,12 +41,12 @@ class FlowReactiveTransport_PK : public PK_MPCSubcycled {
 
   virtual void CommitStep(double t_old, double t_new, const Tag& tag);
 
-  std::string name() { return "flow reactive transport";} 
+  std::string name() { return "flow reactive transport"; }
 
  private:
   // factory registration
   static RegisteredPKFactory<FlowReactiveTransport_PK> reg_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 #endif

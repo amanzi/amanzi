@@ -15,7 +15,8 @@
 
 namespace Amanzi {
 
-FunctionSquareDistance::FunctionSquareDistance(const std::vector<double>& x0, const std::vector<double>& metric)
+FunctionSquareDistance::FunctionSquareDistance(const std::vector<double>& x0,
+                                               const std::vector<double>& metric)
 {
   if (x0.size() != metric.size()) {
     Errors::Message m;
@@ -27,14 +28,15 @@ FunctionSquareDistance::FunctionSquareDistance(const std::vector<double>& x0, co
 }
 
 
-double FunctionSquareDistance::operator()(const std::vector<double>& x) const
+double
+FunctionSquareDistance::operator()(const std::vector<double>& x) const
 {
   double tmp(0.), y(0.0);
   if (x.size() < x0_.size()) {
     Errors::Message m;
     m << "FunctionSquareDistance expects higher-dimensional argument.";
     Exceptions::amanzi_throw(m);
-  }    
+  }
   for (int j = 0; j < x0_.size(); ++j) {
     tmp = x[j] - x0_[j];
     y += metric_[j] * tmp * tmp;
@@ -43,4 +45,4 @@ double FunctionSquareDistance::operator()(const std::vector<double>& x) const
   return y;
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

@@ -21,15 +21,15 @@
 namespace Amanzi {
 namespace Flow {
 
-typedef std::vector<Teuchos::RCP<PorosityModel> > PorosityModelList;
+typedef std::vector<Teuchos::RCP<PorosityModel>> PorosityModelList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, PorosityModelList> PorosityModelPartition;
 
 // Non-member factory
-Teuchos::RCP<PorosityModelPartition> CreatePorosityModelPartition(
-    Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    Teuchos::RCP<Teuchos::ParameterList> plist);
+Teuchos::RCP<PorosityModelPartition>
+CreatePorosityModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                             Teuchos::RCP<Teuchos::ParameterList> plist);
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 #endif

@@ -8,7 +8,7 @@
 
   Factory class for building a mineral kinetic rate object
 */
- 
+
 #include <cstdlib>
 #include <string>
 #include <sstream>
@@ -24,9 +24,10 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-KineticRate* KineticRateFactory::Create(const Teuchos::ParameterList& plist,
-                                        const Mineral& mineral,
-                                        const SpeciesArray& primary_species)
+KineticRate*
+KineticRateFactory::Create(const Teuchos::ParameterList& plist,
+                           const Mineral& mineral,
+                           const SpeciesArray& primary_species)
 {
   std::string model = plist.get<std::string>("rate model");
   double rate = plist.get<double>("rate constant");
@@ -45,5 +46,5 @@ KineticRate* KineticRateFactory::Create(const Teuchos::ParameterList& plist,
   return NULL;
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

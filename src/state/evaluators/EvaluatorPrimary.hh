@@ -58,14 +58,16 @@ class EvaluatorPrimary_ : public Evaluator {
   // derivative with respect to wrt_key has changed since the last request for
   // an update.
   // ---------------------------------------------------------------------------
-  virtual bool UpdateDerivative(State& S, const Key& request,
+  virtual bool UpdateDerivative(State& S,
+                                const Key& request,
                                 const Key& wrt_key,
                                 const Tag& wrt_tag) override final;
 
   virtual bool IsDependency(const State& S, const Key& key, const Tag& tag) const override final;
   virtual bool ProvidesKey(const Key& key, const Tag& tag) const override final;
-  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
-                                   const Tag& wrt_tag) const override final {
+  virtual bool
+  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override final
+  {
     return ProvidesKey(wrt_key, wrt_tag);
   }
 
@@ -100,45 +102,50 @@ class EvaluatorPrimary_ : public Evaluator {
 //
 template <typename Data_t, typename DataFactory_t = NullFactory>
 class EvaluatorPrimary : public EvaluatorPrimary_ {
-public:
+ public:
   using EvaluatorPrimary_::EvaluatorPrimary_;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override final {
+  virtual Teuchos::RCP<Evaluator> Clone() const override final
+  {
     return Teuchos::rcp(new EvaluatorPrimary<Data_t, DataFactory_t>(*this));
   }
 
-  virtual void EnsureCompatibility(State& S) override final {
+  virtual void EnsureCompatibility(State& S) override final
+  {
     S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
     if (S.HasDerivativeSet(my_key_, my_tag_)) {
       for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
         auto wrt = Keys::splitKeyTag(deriv.first.get());
-        S.RequireDerivative<Data_t,DataFactory_t>(my_key_, my_tag_, wrt.first, wrt.second, my_key_);
+        S.RequireDerivative<Data_t, DataFactory_t>(
+          my_key_, my_tag_, wrt.first, wrt.second, my_key_);
       }
     }
   }
 
  protected:
-  virtual
-  void UpdateDerivative_(State& S) override final {
+  virtual void UpdateDerivative_(State& S) override final
+  {
     Errors::Message message("EvaluatorPrimary::UpdateDerivative_ not "
                             "implemented for arbitrary types");
     throw(message);
   }
 
  private:
-  static Utils::RegisteredFactory<Evaluator,
-                                  EvaluatorPrimary<Data_t, DataFactory_t>> fac_;
+  static Utils::RegisteredFactory<Evaluator, EvaluatorPrimary<Data_t, DataFactory_t>> fac_;
 };
 
 
 template <>
-inline void EvaluatorPrimary<double>::UpdateDerivative_(State& S) {
+inline void
+EvaluatorPrimary<double>::UpdateDerivative_(State& S)
+{
   S.GetDerivativeW<double>(my_key_, my_tag_, my_key_, my_tag_, my_key_) = 1.0;
 }
 
 template <>
 inline void
-EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(State& S) {
+EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(State& S)
+{
   S.GetDerivativeW<CompositeVector>(my_key_, my_tag_, my_key_, my_tag_, my_key_).PutScalar(1.0);
 }
 
@@ -154,7 +161,8 @@ EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::EnsureCompatibility(Sta
     for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
       auto wrt = Keys::splitKeyTag(deriv.first.get());
       S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
-          my_key_, my_tag_, wrt.first, wrt.second, my_key_).Update(my_fac);
+         my_key_, my_tag_, wrt.first, wrt.second, my_key_)
+        .Update(my_fac);
     }
   }
 }

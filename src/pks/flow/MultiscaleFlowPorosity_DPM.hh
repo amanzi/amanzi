@@ -31,16 +31,20 @@ namespace Flow {
 class MultiscaleFlowPorosity_DPM : public MultiscaleFlowPorosity {
  public:
   MultiscaleFlowPorosity_DPM(Teuchos::ParameterList& plist);
-  ~MultiscaleFlowPorosity_DPM() {};
+  ~MultiscaleFlowPorosity_DPM(){};
 
   // Calculate field water storage assuming pressure equilibrium
   virtual double ComputeField(double phi, double n_l, double pcm) override;
 
   // local (cell-based) solver returns water storage and capilalry
   // pressure in the matrix. max_itrs is input/output parameter
-  virtual double WaterContentMatrix(
-      double pcf0, WhetStone::DenseVector& pcm,
-      double wcm0, double dt, double phi, double n_l, int& max_itrs) override;
+  virtual double WaterContentMatrix(double pcf0,
+                                    WhetStone::DenseVector& pcm,
+                                    double wcm0,
+                                    double dt,
+                                    double phi,
+                                    double n_l,
+                                    int& max_itrs) override;
 
   // Number of matrix nodes
   virtual int NumberMatrixNodes() override { return 1; }
@@ -53,8 +57,7 @@ class MultiscaleFlowPorosity_DPM : public MultiscaleFlowPorosity {
   static Utils::RegisteredFactory<MultiscaleFlowPorosity, MultiscaleFlowPorosity_DPM> factory_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
-  
+} // namespace Flow
+} // namespace Amanzi
+
 #endif
-  

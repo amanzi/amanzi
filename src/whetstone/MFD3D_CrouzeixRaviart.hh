@@ -30,14 +30,15 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_CrouzeixRaviart : public MFD3D { 
+class MFD3D_CrouzeixRaviart : public MFD3D {
  public:
   MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist,
                         const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
 
   // required methods
   // -- schema
-  virtual std::vector<SchemaItem> schema() const override {
+  virtual std::vector<SchemaItem> schema() const override
+  {
     return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, 1));
   }
 
@@ -46,21 +47,29 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- l2 projectors
-  virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
+  virtual void L2Cell(int c,
+                      const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
-                      const Polynomial* moments, Polynomial& uc) override {
+                      const Polynomial* moments,
+                      Polynomial& uc) override
+  {
     ProjectorCell_(mesh_, c, ve, vf, uc);
   }
 
   // -- h1 projectors
-  virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
+  virtual void H1Cell(int c,
+                      const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
-                      const Polynomial* moments, Polynomial& uc) override {
+                      const Polynomial* moments,
+                      Polynomial& uc) override
+  {
     ProjectorCell_(mesh_, c, ve, vf, uc);
   }
 
-  virtual void H1Face(int f, const std::vector<Polynomial>& ve,
-                      const Polynomial* moments, Polynomial& vf) override;
+  virtual void H1Face(int f,
+                      const std::vector<Polynomial>& ve,
+                      const Polynomial* moments,
+                      Polynomial& vf) override;
 
   // access / setup
   // -- integrals of monomials in high-order schemes could be reused
@@ -69,9 +78,11 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
 
  private:
   // efficient implementation of low-order elliptic projectors
-  void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh, 
-                      int c, const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf, Polynomial& uc);
+  void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
+                      int c,
+                      const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
+                      Polynomial& uc);
 
  protected:
   DenseMatrix R_, G_;
@@ -80,8 +91,7 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   static RegisteredFactory<MFD3D_CrouzeixRaviart> factory_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

@@ -19,22 +19,22 @@
 namespace Amanzi {
 namespace Utils {
 
-template<>
+template <>
 Factory<Transport::MultiscaleTransportPorosity>::map_type*
-    Factory<Transport::MultiscaleTransportPorosity>::map_;
+  Factory<Transport::MultiscaleTransportPorosity>::map_;
 
-}  // namespace Utils
-}  // namespace Amanzi
+} // namespace Utils
+} // namespace Amanzi
 
 
 namespace Amanzi {
 namespace Transport {
 
 Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_DPM>
-    MultiscaleTransportPorosity_DPM::factory_("dual porosity");
+  MultiscaleTransportPorosity_DPM::factory_("dual porosity");
 
 Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_GDPM>
-    MultiscaleTransportPorosity_GDPM::factory_("generalized dual porosity");
+  MultiscaleTransportPorosity_GDPM::factory_("generalized dual porosity");
 
-}  // namespace Transport
-}  // namespace Amanzi
+} // namespace Transport
+} // namespace Amanzi

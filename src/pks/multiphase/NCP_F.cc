@@ -30,10 +30,12 @@ NCP_F::NCP_F(Teuchos::ParameterList& plist) : MultiphaseBaseEvaluator(plist)
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-NCP_F::NCP_F(const NCP_F& other) : MultiphaseBaseEvaluator(other) {};
+NCP_F::NCP_F(const NCP_F& other) : MultiphaseBaseEvaluator(other){};
 
 
-Teuchos::RCP<Evaluator> NCP_F::Clone() const {
+Teuchos::RCP<Evaluator>
+NCP_F::Clone() const
+{
   return Teuchos::rcp(new NCP_F(*this));
 }
 
@@ -41,26 +43,26 @@ Teuchos::RCP<Evaluator> NCP_F::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void NCP_F::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+NCP_F::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
 
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
 
-  for (int c = 0; c != ncells; ++c) {
-    result_c[0][c] = 1.0 - sl[0][c];
-  }      
+  for (int c = 0; c != ncells; ++c) { result_c[0][c] = 1.0 - sl[0][c]; }
 }
 
 
 /* ******************************************************************
 * Required member: field derivative calculation.
 ****************************************************************** */
-void NCP_F::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+NCP_F::EvaluatePartialDerivative_(const State& S,
+                                  const Key& wrt_key,
+                                  const Tag& wrt_tag,
+                                  const std::vector<CompositeVector*>& results)
 {
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
@@ -70,8 +72,8 @@ void NCP_F::EvaluatePartialDerivative_(
   }
 }
 
-}  // namespace Multiphase
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi
 
 
 /*

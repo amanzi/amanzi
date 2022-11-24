@@ -30,7 +30,8 @@ struct test_cv {
   Teuchos::RCP<CompositeVector> x;
   Teuchos::RCP<CompositeVector> x2;
 
-  test_cv() {
+  test_cv()
+  {
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
     MeshFactory mesh_fact(comm);
     mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
@@ -50,40 +51,37 @@ struct test_cv {
     x = Teuchos::rcp(new CompositeVector(mesh, names, locations, num_dofs, true));
     //    x2 = Teuchos::rcp(new CompositeVector(mesh, CELL, 1, true));
   }
-  ~test_cv() {  }
+  ~test_cv() {}
 };
 
-SUITE(COMPOSITE_VECTOR) {
-  TEST_FIXTURE(test_cv, CVAccessTiming) {
+SUITE(COMPOSITE_VECTOR)
+{
+  TEST_FIXTURE(test_cv, CVAccessTiming)
+  {
     x->CreateData();
     x->PutScalar(2.0);
 
     Teuchos::RCP<Teuchos::Time> cvtime =
-        Teuchos::TimeMonitor::getNewCounter("composite vector access");
-    Teuchos::RCP<Teuchos::Time> mvtime =
-        Teuchos::TimeMonitor::getNewCounter("multivector access");
+      Teuchos::TimeMonitor::getNewCounter("composite vector access");
+    Teuchos::RCP<Teuchos::Time> mvtime = Teuchos::TimeMonitor::getNewCounter("multivector access");
 
-    int ncells = x->size("cell",false);
+    int ncells = x->size("cell", false);
     double val(0.0);
 
     if (true) {
       Teuchos::TimeMonitor timer(*cvtime);
-      for (int i=0; i!=10000000; ++i) {
-        for (int j=0; j!=ncells; ++j) {
-          val = (*x)("cell",j);
-        }
+      for (int i = 0; i != 10000000; ++i) {
+        for (int j = 0; j != ncells; ++j) { val = (*x)("cell", j); }
       }
     }
     std::cout << val;
 
-    Teuchos::RCP<Epetra_MultiVector> mv = x->ViewComponent("cell",false);
+    Teuchos::RCP<Epetra_MultiVector> mv = x->ViewComponent("cell", false);
     if (true) {
       Teuchos::TimeMonitor timer(*mvtime);
-      for (int i=0; i!=10000000; ++i) {
+      for (int i = 0; i != 10000000; ++i) {
         val = 0.0;
-        for (int j=0; j!=ncells; ++j) {
-          val = (*mv)[0][j];
-        }
+        for (int j = 0; j != ncells; ++j) { val = (*mv)[0][j]; }
       }
     }
     std::cout << val;
@@ -91,4 +89,3 @@ SUITE(COMPOSITE_VECTOR) {
     Teuchos::TimeMonitor::summarize();
   }
 }
-

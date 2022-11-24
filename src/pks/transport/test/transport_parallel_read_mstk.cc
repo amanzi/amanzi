@@ -13,8 +13,7 @@
 
 #include "transport_parallel_read.hh"
 
-TEST(ADVANCE_WITH_MSTK_PARALLEL_READ) {
+TEST(ADVANCE_WITH_MSTK_PARALLEL_READ)
+{
   runTest(Amanzi::AmanziMesh::Framework::MSTK);
 }
-
-

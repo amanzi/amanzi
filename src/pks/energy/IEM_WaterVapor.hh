@@ -33,11 +33,11 @@ class IEM_WaterVapor {
 
   Teuchos::ParameterList plist_;
 
-  double Cv_air_; // units: J/(mol-K)
+  double Cv_air_;            // units: J/(mol-K)
   double heat_vaporization_; // units: J/mol
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

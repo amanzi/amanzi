@@ -46,10 +46,10 @@ class TCM_PetersLidard_TwoPhase : public TCM_TwoPhase {
   double d_;
 
  private:
-  static Utils::RegisteredFactory<TCM_TwoPhase,TCM_PetersLidard_TwoPhase> factory_;
+  static Utils::RegisteredFactory<TCM_TwoPhase, TCM_PetersLidard_TwoPhase> factory_;
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif
