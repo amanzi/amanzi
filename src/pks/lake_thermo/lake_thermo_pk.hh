@@ -315,6 +315,8 @@ protected:
 
   bool coupled_to_soil_via_temp_;
 
+  bool coupled_to_snow_;
+
   // Keys
   Key temperature_key_;
   Key density_key_;

@@ -82,7 +82,7 @@ void DensityEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
           result_v[0][i] = rho0 * (5.88*1.e-5 - 2.*8.11*1.e-6*T + 3.*4.77*1.e-8*T*T);
         }
         else { // ice 
-          result_v[0][i] = 917;
+          result_v[0][i] = 917.;
         }
       }
     }

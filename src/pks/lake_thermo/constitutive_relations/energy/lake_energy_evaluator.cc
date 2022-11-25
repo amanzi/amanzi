@@ -73,7 +73,13 @@ void LakeEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       double T = temp_v[0][i];
       double rho = rho_v[0][i];
       double cp = cp_v[0][i];
-      result_v[0][i] = rho*cp*T;
+      if (T < 273.15) {
+        double L_f = 333500.;
+        result_v[0][i] = rho*(cp*T + L_f);
+      } else {
+        result_v[0][i] = rho*cp*T;
+      }
+
     }
   }
 };

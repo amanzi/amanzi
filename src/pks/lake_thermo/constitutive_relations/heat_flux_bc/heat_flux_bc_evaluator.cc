@@ -203,7 +203,6 @@ void HeatFluxBCEvaluator::EvaluateField_(
       result_v[0][i] *= -1.; ///cond_v[0][i];
 
       if (isnan(result_v[0][i])) {
-          std::cout << "From heat flux evaluator" << std::endl;
           std::cout << "SS = " << SS << ", E_a = " << E_a << ", E_s = " << E_s << ", H = " << H << ", LE = " << LE << std::endl;
           std::cout << "rho_a = " << rho_a << std::endl;
           std::cout << "T_s = " << T_s << std::endl;

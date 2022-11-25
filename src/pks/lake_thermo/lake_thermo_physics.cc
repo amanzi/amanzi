@@ -30,7 +30,7 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 //  S_next_->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S_next_.ptr(), name_);
 //  S_inter_->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S_inter_.ptr(), name_);
 
-  // get the energy at each time
+  // get the temperature at each time
   Teuchos::RCP<const CompositeVector> T1 = S_next_->GetFieldData(temperature_key_);
   Teuchos::RCP<const CompositeVector> T0 = S_inter_->GetFieldData(temperature_key_);
 
@@ -45,11 +45,6 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
       *S_inter_->GetFieldData(heat_capacity_key_)->ViewComponent("cell",false);
 
   // Update the residual with the accumulation of energy over the
-  // timestep, on cells.
-//  g->ViewComponent("cell", false)
-//        ->Update(cp_*rho0/dt, *T1->ViewComponent("cell", false),
-//            -cp_*rho0/dt, *T0->ViewComponent("cell", false), 1.0);
-
 
   const Epetra_MultiVector& T1_c = *S_next_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& T0_c = *S_inter_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
@@ -59,10 +54,26 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   const Epetra_MultiVector& cv =
         *S_inter_->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
 
+  // get the energy at each time
+
+  S_next_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_inter_.ptr(), name_);  
+
+  Teuchos::RCP<const CompositeVector> e1 = S_next_->GetFieldData(energy_key_);
+  Teuchos::RCP<const CompositeVector> e0 = S_inter_->GetFieldData(energy_key_);   
+
+  const Epetra_MultiVector& e1_c = *S_next_->GetFieldData(energy_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& e0_c = *S_inter_->GetFieldData(energy_key_)->ViewComponent("cell", false); 
+
   unsigned int ncells = g_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
-    g_c[0][c] += cp[0][c]*rho[0][c]*(T1_c[0][c]-T0_c[0][c])/dt * cv[0][c] ;
-  }
+    g_c[0][c] += (e1_c[0][c]-e0_c[0][c])/dt * cv[0][c];
+  }    
+
+  // unsigned int ncells = g_c.MyLength();
+  // for (unsigned int c=0; c!=ncells; ++c) {
+  //   g_c[0][c] += cp[0][c]*rho[0][c]*(T1_c[0][c]-T0_c[0][c])/dt * cv[0][c] ;
+  // }
 
 };
 
@@ -190,8 +201,8 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
     double dhdt_c = dhdt;
     double B_w_c = B_w;
 
-    // dhdt_c = (temp1[0][ncells-1] < 273.15) ? 0. : dhdt;
-    // B_w_c = (temp1[0][ncells-1] < 273.15) ? 0. : B_w;
+    dhdt_c = (temp1[0][ncells-1] < 273.15) ? 0. : dhdt;
+    B_w_c = (temp1[0][ncells-1] < 273.15) ? 0. : B_w;
 
     flux_f[0][f] = -1.*cp*rho*(dhdt_c*(1.-xcf[2]) - B_w_c)/(h_+1.e-6) ; //* normal[2]; // / cv[0][f_cells[0]]; // * normal[2] ; // / cv[0][f_cells[0]]; //*normal[2]; // *normal or not?
 //    std::cout << "f = " << f << ", normal = " << normal << ", dir = " << dir << std::endl;
@@ -229,9 +240,17 @@ void Lake_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& cv =
       *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
 
+  // get temperature
+  const Epetra_MultiVector& temp_v = *S->GetFieldData(temperature_key_)
+            ->ViewComponent("cell",false);
+
+  Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);    
+
   // because the lake model has 1/h^2 term
   for (int f = 0; f < nfaces_owned; f++) {
+
     uw_cond_c[0][f] = uw_cond_c[0][f]; ///(h_*h_) ;///cv[0][0];
+
   }
 
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
@@ -244,6 +263,7 @@ void Lake_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
   // calculate the residual
   matrix_diff_->global_operator()->ComputeNegativeResidual(*temp, *g);
+
 };
 
 
@@ -344,11 +364,6 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
      n %= 60;
      int seconds = n;
 
-    //  std::cout << day << " " << "days " << hour
-    //      << " " << "hours " << minutes << " "
-    //      << "minutes " << seconds << " "
-    //      << "seconds "  << std::endl;
-
      double pi = 3.1415;
      // FoxDen, Atqasuk
      double longitude = -164.456696;
@@ -360,11 +375,7 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
      double sinh0 = sin(phi)*sin(delta) + cos(phi)*cos(delta)*cos(theta);
      sinh0 = fmax(sinh0,0.0); 
 
-    //  std::cout << "sinh0 = " << sinh0 << std::endl;
-
     //  SS *= sqrt(1.-sinh0*sinh0);
-
-    //  std::cout << "sqrt(1.-sinh0*sinh0) = " << sqrt(1.-sinh0*sinh0) << std::endl;
 
       // S0_ = SS;
       S0_ = 0.9*SS; // FoxDen
@@ -376,25 +387,10 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
       double B_w_c = B_w;  
 
       // S0_ = (temp[0][ncells-1] < 273.15) ? S0_w_ice : S0_;
-      // dhdt_c = (temp[0][ncells-1] < 273.15) ? 0. : dhdt;
-      // B_w_c = (temp[0][ncells-1] < 273.15) ? 0. : B_w;
+      dhdt_c = (temp[0][ncells-1] < 273.15) ? 0. : dhdt;
+      B_w_c = (temp[0][ncells-1] < 273.15) ? 0. : B_w;
 
       S0_ = (temp[0][ncells-1] < 273.15) ? 0. : S0_;
-
-      // if (temp[0][c] < 273.15) {
-      //  double Lwi   = 333500.; //267900.  // latent heat of freezing, J/kg
-      // //  double Lwi   = 267900.;  // latent heat of freezing, J/kg
-      //  double rhow0 = 1000.;  // density of water
-      //  double dt = S_next_->time() - S_inter_->time();
-      //  double freeze_rate = (h_ice_-h_ice_prev)/dt;
-      // //  std::cout << "freeze_rate = " << freeze_rate << std::endl;
-      // //  freeze_rate = 1.e-8;
-      //  g_c[0][c] += -rhow0*Lwi*freeze_rate*0.005;
-      // // double Ste; // Stefan number
-      // // Ste = cp[0][c]*(temp[0][int(fmin(ncells-1,i_ice_min))]-temp[0][int(fmax(0,i_ice_min-1))])/Lwi;
-      // // g_c[0][c] += -Ste*freeze_rate;
-      // //  std::cout << "Ste*freeze_rate = " << Ste*freeze_rate << std::endl;
-      // }
 
       double albedo = (temp[0][ncells-1] < 273.15) ? albedo_i : albedo_w;
 
