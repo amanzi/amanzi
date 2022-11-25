@@ -120,7 +120,10 @@ SUITE(GeochemistryTestsMineral)
     mineral_ = new ac::Mineral(id_, name_, plist_, primary_species_);
   }
 
-  MineralTest::~MineralTest() { delete mineral_; }
+  MineralTest::~MineralTest()
+  {
+    delete mineral_;
+  }
 
 
   class MineralTestHydrated {
@@ -216,7 +219,10 @@ SUITE(GeochemistryTestsMineral)
     mineral_ = new ac::Mineral(id_, name_, plist_, primary_species_);
   }
 
-  MineralTestHydrated::~MineralTestHydrated() { delete mineral_; }
+  MineralTestHydrated::~MineralTestHydrated()
+  {
+    delete mineral_;
+  }
 
   //
   // most of the basic functionality comes from the parent SecondarySpecies class.
@@ -224,7 +230,10 @@ SUITE(GeochemistryTestsMineral)
   //
 
   // make sure we can create an object with the constructor
-  TEST_FIXTURE(MineralTest, Mineral_constructor) { CHECK_EQUAL(id_, mineral_->identifier()); }
+  TEST_FIXTURE(MineralTest, Mineral_constructor)
+  {
+    CHECK_EQUAL(id_, mineral_->identifier());
+  }
 
   //
   // virtual public methods from parent class

@@ -88,7 +88,10 @@ SUITE(ChemistryBenchmarkTests)
       std::string(CMAKE_SOURCE_DIR) + std::string("/test_suites/benchmarking/chemistry");
   }
 
-  Chemistry1DBenchmarkTest::~Chemistry1DBenchmarkTest() { H5close(); }
+  Chemistry1DBenchmarkTest::~Chemistry1DBenchmarkTest()
+  {
+    H5close();
+  }
 
   // Amanzi U Calcite benchmarks
   TEST_FIXTURE(Chemistry1DBenchmarkTest, AmanziUCalciteA)

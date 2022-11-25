@@ -31,5 +31,8 @@ SUITE(Exceptions)
     CHECK_EQUAL(exception_behavior(), RAISE);
   }
 
-  TEST(Catch) { CHECK_THROW(raise_amanzi_exception(), Amanzi_exception); }
+  TEST(Catch)
+  {
+    CHECK_THROW(raise_amanzi_exception(), Amanzi_exception);
+  }
 }
