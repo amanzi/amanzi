@@ -440,13 +440,30 @@ CompositeVector::CreateVandelayVector_() const
 {
   vandelay_vector_ = Teuchos::rcp(new Epetra_MultiVector(
     Mesh()->exterior_face_map(false), mastervec_->NumVectors("face"), false));
+
+  // create new importer from face-component if it has more than one DOF per face
+  const auto& map = *ComponentMap("face", false);
+  int nfaces = Mesh()->face_map(false).NumMyElements();
+  if (nfaces != map.NumMyPoints()) {
+    vandelay_import_ = Teuchos::rcp(new Epetra_Import(Mesh()->exterior_face_importer()));
+
+    auto data = vandelay_import_->PermuteFromLIDs();
+    int n = vandelay_import_->NumPermuteIDs();
+
+    for (int i = 0; i < n; ++i) { data[i] = map.FirstPointInElement(data[i]); }
+  }
 }
 
 void
 CompositeVector::ApplyVandelay_() const
 {
   if (vandelay_vector_ == Teuchos::null) { CreateVandelayVector_(); }
-  vandelay_vector_->Import(*ViewComponent("face", false), Mesh()->exterior_face_importer(), Insert);
+  const auto& map = *ComponentMap("face", false);
+  if (vandelay_import_ == Teuchos::null)
+    vandelay_vector_->Import(
+      *ViewComponent("face", false), Mesh()->exterior_face_importer(), Insert);
+  else
+    vandelay_vector_->Import(*ViewComponent("face", false), *vandelay_import_, Insert);
 }
 
 
