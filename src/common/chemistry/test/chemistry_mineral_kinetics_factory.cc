@@ -131,7 +131,10 @@ SUITE(GeochemistryTestsKineticRateFactory)
     minerals_.push_back(ac::Mineral(2, "Bar", plist, primary_species));
   }
 
-  KineticRateFactoryTest::~KineticRateFactoryTest() { delete kinetic_rate_; }
+  KineticRateFactoryTest::~KineticRateFactoryTest()
+  {
+    delete kinetic_rate_;
+  }
 
   void KineticRateFactoryTest::RunTest(const std::string& name)
   {

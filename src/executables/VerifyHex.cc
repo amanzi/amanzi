@@ -180,35 +180,25 @@ main(int argc, char** argv)
            po::value<unsigned int>()->default_value(xcells),
            "number of cells in the x-direction")("ycells",
                                                  po::value<unsigned int>()->default_value(ycells),
-                                                 "number of cells in the y-direction")("zcells",
-                                                                                       po::value<
-                                                                                         unsigned int>()
-                                                                                         ->default_value(
-                                                                                           zcells),
-                                                                                       "number of "
-                                                                                       "cells in "
-                                                                                       "the "
-                                                                                       "z-"
-                                                                                       "direction")
+                                                 "number of cells in the y-direction")(
+            "zcells",
+            po::value<unsigned int>()->default_value(zcells),
+            "number of "
+            "cells in "
+            "the "
+            "z-"
+            "direction")
 
-            ("xdelta",
-             po::value<double>()->default_value(xdelta),
-             "cell size in the x-direction")("ydelta",
-                                             po::value<double>()->default_value(ydelta),
-                                             "cell size in the y-direction")("zdelta",
-                                                                             po::value<double>()
-                                                                               ->default_value(
-                                                                                 zdelta),
-                                                                             "cell size in the "
-                                                                             "z-direction")
+            ("xdelta", po::value<double>()->default_value(xdelta), "cell size in the x-direction")(
+              "ydelta", po::value<double>()->default_value(ydelta), "cell size in the y-direction")(
+              "zdelta",
+              po::value<double>()->default_value(zdelta),
+              "cell size in the "
+              "z-direction")
 
-              ("xorigin",
-               po::value<double>()->default_value(xorigin),
-               "x origin")("yorigin",
-                           po::value<double>()->default_value(yorigin),
-                           "y origin")("zorigin",
-                                       po::value<double>()->default_value(zorigin),
-                                       "z origin")
+              ("xorigin", po::value<double>()->default_value(xorigin), "x origin")(
+                "yorigin", po::value<double>()->default_value(yorigin), "y origin")(
+                "zorigin", po::value<double>()->default_value(zorigin), "z origin")
 
                 ("xml-file", po::value<std::string>(), "XML file from which to parameters")
 
