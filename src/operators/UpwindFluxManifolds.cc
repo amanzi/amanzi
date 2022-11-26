@@ -48,11 +48,9 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
   flux.ScatterMasterToGhosted("face");
   field.ScatterMasterToGhosted("cell");
 
-  const Epetra_MultiVector& flux_f = *flux.ViewComponent("face", true);
-
-  const Epetra_MultiVector& field_c = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& field_bf = *field.ViewComponent("boundary_face", true);
-  Epetra_MultiVector& field_f = *field.ViewComponent(face_comp_, true);
+  const auto& flux_f = *flux.ViewComponent("face", true);
+  const auto& field_c = *field.ViewComponent("cell", true);
+  auto& field_f = *field.ViewComponent("face", true);
 
   double flxmin, flxmax, tol;
   flux_f.MinValue(&flxmin);
@@ -65,52 +63,39 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
   // multiple DOFs on faces require usage of block map
   const auto& fmap = *flux.ComponentMap("face", true);
 
-  int c1, c2, dir;
-  double kc1, kc2;
   for (int f = 0; f < nfaces_wghost; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     int g = fmap.FirstPointInElement(f);
-    int ndofs = fmap.ElementSize(f);
 
-    c1 = cells[0];
-    kc1 = field_c[0][c1];
+    // harmonic average over upwind cells
+    if (ncells > 1) {
+      double kupw(0.0);
+      for (int i = 0; i < ncells; ++i) {
+        int c = cells[i];
+        if (flux_f[0][g + i] > 0.0) kupw += 1.0 / field_c[0][c];
+      }
+      kupw = 1.0 / kupw;
 
-    mesh_->face_normal(f, false, c1, &dir);
-    bool flag = (flux_f[0][g] * dir <= -tol); // upwind flag
-
-    // average field on almost vertical faces
-    if (ncells == 2 && ndofs == 1) {
-      c2 = cells[1];
-      kc2 = field_c[0][c2];
-
-      if (fabs(flux_f[0][g]) <= tol) {
-        double v1 = mesh_->cell_volume(c1);
-        double v2 = mesh_->cell_volume(c2);
-
-        double tmp = v2 / (v1 + v2);
-        field_f[0][g] = kc1 * tmp + kc2 * (1.0 - tmp);
-      } else {
-        field_f[0][g] = (flag) ? kc2 : kc1;
+      for (int i = 0; i < ncells; ++i) {
+        if (flux_f[0][g + i] > 0.0) {
+          int c = cells[i];
+          field_f[0][g + i] = field_c[0][c];
+        } else {
+          field_f[0][g + i] = kupw;
+        }
       }
 
-      // copy cell value on fractures
-    } else if (ncells == 2 && ndofs == 2) {
-      c2 = cells[1];
-      kc2 = field_c[0][c2];
-
-      int k = UniqueIndexFaceToCells(*mesh_, f, c1);
-      field_f[0][g + k] = kc1;
-      field_f[0][g + 1 - k] = kc2;
-
-      // upwind only on inflow dirichlet faces
+      // upwind only on inflow Dirichlet faces
     } else {
-      field_f[0][g] = kc1;
-      if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
+      /*
+      field_f[0][g] = field_c[0][cells[0]];
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         int bf = getFaceOnBoundaryBoundaryFace(*mesh_, f);
         field_f[0][g] = field_bf[0][bf];
       }
+      */
     }
   }
 }

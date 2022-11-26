@@ -427,6 +427,7 @@ class CompositeVector {
 
   // vector for boundary data
   mutable Teuchos::RCP<Epetra_MultiVector> vandelay_vector_;
+  mutable Teuchos::RCP<Epetra_Import> vandelay_import_;
 };
 
 

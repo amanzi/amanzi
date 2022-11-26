@@ -138,6 +138,7 @@ set(operators_inc_files
     UpwindDivK.hh
     UpwindFactory.hh
     UpwindFlux.hh
+    UpwindFluxManifolds.hh
     UpwindGravity.hh
     UpwindSecondOrder.hh
     #Operator_DataHelpers.hh
@@ -188,7 +189,7 @@ set(operators_src_files
   RemapDG.cc RemapUtils.cc
   UniqueLocalIndex.cc
   RemapDG_Helper.cc RemapUtils.cc
-  UpwindFlux.cc
+  UpwindFlux.cc UpwindFluxManifolds.cc
   UpwindGravity.cc
   UpwindSecondOrder.cc
   Evaluator_OperatorApply.cc
@@ -387,6 +388,11 @@ if (ENABLE_TESTS)
                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_upwind_2pe operators_upwind NPROCS 2 KIND unit)
+
+    add_amanzi_test(operators_upwind_manifolds operators_upwind_manifolds
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_upwind_manifolds.cc
+                    LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # stability analysis
     add_amanzi_test(operators_stability operators_stability

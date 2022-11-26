@@ -30,46 +30,32 @@
 // Operators
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
-#include "UpwindDivK.hh"
-#include "UpwindGravity.hh"
-#include "UpwindFlux.hh"
-#include "UpwindFluxAndGravity.hh"
+#include "PDE_HelperDiscretization.hh"
+#include "UpwindFluxManifolds.hh"
 
-namespace Amanzi {
-
-class Model {
- public:
-  Model(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh){};
-  ~Model(){};
-
-  // main members
-  double Value(int c, double pc) const { return analytic(pc); }
-
-  double analytic(double pc) const { return 1e-5 + pc; }
-
- private:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-};
-
-} // namespace Amanzi
+double
+Value(double x)
+{
+  return 1e-5 + x;
+}
 
 
 /* *****************************************************************
-* Test one upwind model.
+* Test upwind method on manifolds
 * **************************************************************** */
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Operators;
 
-template <class UpwindClass>
-void
-RunTestUpwind(const std::string& method)
+TEST(UPWIND_FLUX_MANIFOLDS)
 {
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: 1st-order convergence for upwind \"" << method << "\"\n";
+  if (MyPID == 0)
+    std::cout << "\nTest: 1st-order convergence for upwind \""
+              << "\"\n";
 
   // read parameter list
   std::string xmlFileName = "test/operator_upwind.xml";
@@ -83,14 +69,14 @@ RunTestUpwind(const std::string& method)
   meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
 
   for (int n = 4; n < 17; n *= 2) {
-    Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
+    std::string setname("fractures");
+    auto mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n, true, true);
+    Teuchos::RCP<const Mesh> mesh = Teuchos::rcp(
+      new MeshExtractedManifold(mesh3D, setname, AmanziMesh::FACE, comm, gm, plist, true, false));
 
     int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-
-    // create model of nonlinearity
-    Teuchos::RCP<Model> model = Teuchos::rcp(new Model(mesh));
 
     // create boundary data
     std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
@@ -99,50 +85,59 @@ RunTestUpwind(const std::string& method)
       const Point& xf = mesh->face_centroid(f);
       if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
           fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6)
-
         bc_model[f] = OPERATOR_BC_DIRICHLET;
-      bc_value[f] = model->analytic(xf[0]);
+      bc_value[f] = Value(xf[0]);
     }
 
     // create and initialize cell-based field
-    Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh)
-      ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1);
+    auto cvs = Operators::CreateManifoldCVS(mesh);
+    cvs->AddComponent("cell", AmanziMesh::CELL, 1);
 
     CompositeVector field(*cvs);
-    Epetra_MultiVector& fcells = *field.ViewComponent("cell", true);
-    Epetra_MultiVector& ffaces = *field.ViewComponent("face", true);
+    auto& field_c = *field.ViewComponent("cell", true);
+    auto& field_f = *field.ViewComponent("face", true);
 
     for (int c = 0; c < ncells_wghost; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      fcells[0][c] = model->Value(c, xc[0]);
+      field_c[0][c] = Value(xc[0]);
     }
 
     // add boundary face component
+    int ndir(0);
+    const auto& fmap = *field.ComponentMap("face", true);
     for (int f = 0; f != bc_model.size(); ++f) {
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+        int g = fmap.FirstPointInElement(f);
         int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
-        ffaces[0][f] = model->Value(c, bc_value[f]);
+        field_f[0][g] = bc_value[f];
+        ndir++;
       }
     }
 
     // create and initialize face-based flux field
-    cvs = CreateCompositeVectorSpace(mesh, "face", AmanziMesh::FACE, 1, true);
+    AmanziMesh::Entity_ID_List cells;
 
     CompositeVector flux(*cvs), solution(*cvs);
-    Epetra_MultiVector& u = *flux.ViewComponent("face", true);
+    auto& flux_f = *flux.ViewComponent("face", true);
 
+    int dir;
     Point vel(1.0, 2.0, 3.0);
     for (int f = 0; f < nfaces_wghost; f++) {
-      const Point& normal = mesh->face_normal(f);
-      u[0][f] = vel * normal;
+      int g = fmap.FirstPointInElement(f);
+      int ndofs = fmap.ElementSize(f);
+
+      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      AMANZI_ASSERT(cells.size() == ndofs);
+
+      for (int i = 0; i < ndofs; ++i) {
+        const Point& normal = mesh->face_normal(f, false, cells[i], &dir);
+        flux_f[0][g + i] = vel * normal;
+      }
     }
 
     // Create two upwind models
     Teuchos::ParameterList& ulist = plist->sublist("upwind");
-    UpwindClass upwind(mesh);
+    UpwindFluxManifolds upwind(mesh);
     upwind.Init(ulist);
 
     upwind.Compute(flux, bc_model, field);
@@ -151,11 +146,12 @@ RunTestUpwind(const std::string& method)
     double error(0.0);
     for (int f = 0; f < nfaces_owned; f++) {
       const Point& xf = mesh->face_centroid(f);
-      double exact = model->analytic(xf[0]);
+      double exact = Value(xf[0]);
 
-      error += pow(exact - ffaces[0][f], 2.0);
+      int g = fmap.FirstPointInElement(f);
+      error += pow(exact - field_f[0][g], 2.0);
 
-      CHECK(ffaces[0][f] >= 0.0);
+      CHECK(field_f[0][g] >= 0.0);
     }
 #ifdef HAVE_MPI
     double tmp = error;
@@ -165,25 +161,6 @@ RunTestUpwind(const std::string& method)
 #endif
     error = sqrt(error / nfaces_owned);
 
-    if (comm->MyPID() == 0) printf("n=%2d %s=%8.4f\n", n, method.c_str(), error);
+    if (comm->MyPID() == 0) printf("n=%2d  dirichlet faces=%5d  error=%7.4f\n", n, ndir, error);
   }
 }
-
-TEST(UPWIND_FLUX)
-{
-  RunTestUpwind<UpwindFlux>("flux");
-}
-
-TEST(UPWIND_DIVK)
-{
-  RunTestUpwind<UpwindDivK>("divk");
-}
-
-TEST(UPWIND_GRAVITY)
-{
-  RunTestUpwind<UpwindGravity>("gravity");
-}
-
-// TEST(UPWIND_FLUX_GRAVITY) {
-//  RunTestUpwind<UpwindFluxAndGravity>("flux_gravity");
-// }
