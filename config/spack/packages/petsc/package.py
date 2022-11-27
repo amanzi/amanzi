@@ -10,3 +10,8 @@ from spack.pkg.builtin.petsc import Petsc
 class Petsc(Petsc):
 
     patch('../../../SuperBuild/templates/petsc-cmake.patch')
+
+    # modified hack from https://github.com/spack/spack/issues/27508
+    @run_before('configure')
+    def fixup_bug(self):
+        spack.pkg.builtin.petsc.python = python
