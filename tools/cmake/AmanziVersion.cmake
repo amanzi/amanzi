@@ -64,16 +64,21 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
   message(STATUS ">>>> JDM: AMANZI_GIT_BRANCH = ${AMANZI_GIT_BRANCH}")
 
   # Extract the lastest tag of the form amanzi-*
-  if(ENABLE_SPACK_BUILD)
+  # if(ENABLE_SPACK_BUILD)
+  if(FALSE)
     set(AMANZI_VERSION_MAJOR ${SPACK_AMANZI_VERSION_MAJOR})
     set(AMANZI_VERSION_MINOR ${SPACK_AMANZI_VERSION_MINOR})
     set(AMANZI_VERSION ${SPACK_AMANZI_VERSION})
     set(AMANZI_VERSION_PATCH ${SPACK_AMANZI_VERSION_PATCH})
     set(AMANZI_VERSION_HASH ${SPACK_AMANZI_VERSION_HASH})
+    
   else()
 
     # Get the hash of the current version
     set(GIT_ARGS rev-parse --short HEAD)
+    message(STATUS ">>>> JDM: git command: ${GIT_EXECUTABLE} ${GIT_ARGS}")
+    message(STATUS ">>>> JDM: working director: ${CMAKE_CURRENT_SOURCE_DIR}")
+    
     execute_process(COMMAND  ${GIT_EXECUTABLE} ${GIT_ARGS}
               WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                     RESULT_VARIABLE err_occurred 
@@ -87,9 +92,26 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
       exit()
     endif()
 
-    # message(STATUS ">>>> JDM: AMANZI_GIT_GLOBAL_HASH: ${AMANZI_GIT_GLOBAL_HASH}")
-
-    # Get the latest amanzi-* version number tag
+    message(STATUS ">>>> JDM: AMANZI_GIT_GLOBAL_HASH: ${AMANZI_GIT_GLOBAL_HASH}")
+    
+    # Ensure repository has the latest tags
+    set(GIT_ARGS fetch --all --tags)
+    message(STATUS ">>>> JDM: Updating tags")
+    message(STATUS ">>>> JDM: git command: ${GIT_EXECUTABLE} ${GIT_ARGS}")
+    execute_process(COMMAND  ${GIT_EXECUTABLE} ${GIT_ARGS}
+              WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    RESULT_VARIABLE err_occurred
+                    OUTPUT_VARIABLE cmd_output
+                    ERROR_VARIABLE err
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+                    ERROR_STRIP_TRAILING_WHITESPACE)
+    if(err_occurred)
+      message(WARNING "Error executing git:\n ${cmd}\n${cmd_output}\n${err}")
+      set(cmd_output cmd_output-NOTFOUND)
+      exit()
+    endif()
+    
+    # Get the latest amanzi-* version number tag    
     set(GIT_ARGS tag -l amanzi-*)
     execute_process(COMMAND  ${GIT_EXECUTABLE} ${GIT_ARGS}
               WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -116,10 +138,10 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
       ENDFOREACH()
     ENDIF()
 
-    # message(STATUS ">>>> JDM: GIT_EXEC        = ${GIT_EXECUTABLE}")
-    # message(STATUS ">>>> JDM: GIT_ARGS        = ${GIT_ARGS}")
-    # message(STATUS ">>>> JDM: RESULT_VARIABLE = ${err_occurred}")
-    # message(STATUS ">>>> JDM: AMANZI_GIT_LATEST_TAG = ${AMANZI_GIT_LATEST_TAG}")
+    message(STATUS ">>>> JDM: GIT_EXEC        = ${GIT_EXECUTABLE}")
+    message(STATUS ">>>> JDM: GIT_ARGS        = ${GIT_ARGS}")
+    message(STATUS ">>>> JDM: RESULT_VARIABLE = ${err_occurred}")
+    message(STATUS ">>>> JDM: AMANZI_GIT_LATEST_TAG = ${AMANZI_GIT_LATEST_TAG}")
 
     STRING(REGEX REPLACE "amanzi-" "" AMANZI_GIT_LATEST_TAG_VER ${AMANZI_GIT_LATEST_TAG})	
     STRING(REGEX REPLACE "\\..*" "" AMANZI_GIT_LATEST_TAG_MAJOR ${AMANZI_GIT_LATEST_TAG_VER})	
