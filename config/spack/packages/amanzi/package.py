@@ -27,10 +27,10 @@ class Amanzi(CMakePackage):
     maintainers = ['julienloiseau','jd-moulton','gcapodag']
 
     # Submodule is ON for ATS 
-    version('spack', branch='spack', default=True, submodules=True)
-    version('master', branch='master', default=False, submodules=True)
-    version('1.1-dev', tag='amanzi-1.1-dev', default=False, submodules=True)
-    version('1.0.0', tag='amanzi-1.0.0', default=False, submodules=True)
+    version('master', branch='master', preferred=True, submodules=True)
+    version('1.4.0', tag='amanzi-1.4.0', submodules=True)
+    version('1.4', branch='amanzi-1.4', submodules=True)
+    version('spack', branch='spack', submodules=True)
 
     # Trilinos data model: epetra|tpetra
     variant('data_model', default='epetra', values=('epetra','tpetra'), description='Trilinos data model', multi=False)
@@ -63,11 +63,12 @@ class Amanzi(CMakePackage):
     ##### Build dependencies #####
 
     depends_on('git', type='build')
-    depends_on('cmake@3.15:',  type='build')
+    depends_on('cmake@3.17:',  type='build')
 
     ##### CORE DEPENDENCIES ##### 
 
     depends_on('mpi')
+    depends_on('python@3.4:')
 
     core_dependencies = {
         'zlib','metis', 'parmetis', 'seacas -x11',
@@ -140,14 +141,6 @@ class Amanzi(CMakePackage):
         options.append('-DMPI_EXEC:PATH='+mpiexec_bin)
         options.append('-DMPI_EXEC_NUMPROCS_FLAG:STRING=-n')
         #options.append('-DTESTS_REQUIRE_MPIEXEC:BOOL=ON')
-
-        # Tags 
-        if self.spec.satisfies('@spack'):
-            options.append('-DSPACK_AMANZI_VERSION_MAJOR=1')
-            options.append('-DSPACK_AMANZI_VERSION_MINOR=0')
-            options.append('-DSPACK_AMANZI_VERSION=1.0')
-            options.append('-DSPACK_AMANZI_VERSION_PATCH=0')
-            options.append('-DSPACK_AMANZI_VERSION_HASH=0')
         
         # Provide information normally in the cache?
         options.append('-DZLIB_DIR=' + self.spec['zlib'].prefix)
