@@ -25,6 +25,7 @@
 #include "UpwindDivK.hh"
 #include "UpwindFlux.hh"
 #include "UpwindFluxAndGravity.hh"
+#include "UpwindFluxManifolds.hh"
 #include "UpwindGravity.hh"
 #include "UpwindSecondOrder.hh"
 
@@ -49,10 +50,15 @@ UpwindFactory::Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::Parame
     Exceptions::amanzi_throw(msg);
   }
   std::string name = plist.get<std::string>("upwind method");
+  bool manifolds = mesh->space_dimension() != mesh->manifold_dimension();
 
   Teuchos::ParameterList sublist = plist.sublist("upwind parameters");
-  if (name == "upwind: darcy velocity") {
+  if (name == "upwind: darcy velocity" && !manifolds) {
     Teuchos::RCP<UpwindFlux> upwind = Teuchos::rcp(new UpwindFlux(mesh));
+    upwind->Init(sublist);
+    return upwind;
+  } else if (name == "upwind: darcy velocity" && manifolds) {
+    Teuchos::RCP<UpwindFluxManifolds> upwind = Teuchos::rcp(new UpwindFluxManifolds(mesh));
     upwind->Init(sublist);
     return upwind;
   } else if (name == "upwind: gravity") {

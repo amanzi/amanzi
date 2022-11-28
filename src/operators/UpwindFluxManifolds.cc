@@ -50,6 +50,7 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
 
   const auto& flux_f = *flux.ViewComponent("face", true);
   const auto& field_c = *field.ViewComponent("cell", true);
+  const auto& field_bf = *field.ViewComponent("boundary_face", true);
   auto& field_f = *field.ViewComponent("face", true);
 
   double flxmin, flxmax, tol;
@@ -89,13 +90,11 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
 
       // upwind only on inflow Dirichlet faces
     } else {
-      /*
       field_f[0][g] = field_c[0][cells[0]];
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         int bf = getFaceOnBoundaryBoundaryFace(*mesh_, f);
         field_f[0][g] = field_bf[0][bf];
       }
-      */
     }
   }
 }

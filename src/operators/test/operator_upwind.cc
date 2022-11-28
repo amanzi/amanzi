@@ -37,19 +37,8 @@
 
 namespace Amanzi {
 
-class Model {
- public:
-  Model(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh){};
-  ~Model(){};
-
-  // main members
-  double Value(int c, double pc) const { return analytic(pc); }
-
-  double analytic(double pc) const { return 1e-5 + pc; }
-
- private:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-};
+double
+Value(const AmanziGeometry::Point& xyz) { return 1e-5 + xyz[0]; }
 
 } // namespace Amanzi
 
@@ -89,9 +78,6 @@ RunTestUpwind(const std::string& method)
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-    // create model of nonlinearity
-    Teuchos::RCP<Model> model = Teuchos::rcp(new Model(mesh));
-
     // create boundary data
     std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
     std::vector<double> bc_value(nfaces_wghost);
@@ -101,7 +87,7 @@ RunTestUpwind(const std::string& method)
           fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6)
 
         bc_model[f] = OPERATOR_BC_DIRICHLET;
-      bc_value[f] = model->analytic(xf[0]);
+      bc_value[f] = Value(xf);
     }
 
     // create and initialize cell-based field
@@ -117,14 +103,14 @@ RunTestUpwind(const std::string& method)
 
     for (int c = 0; c < ncells_wghost; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      fcells[0][c] = model->Value(c, xc[0]);
+      fcells[0][c] = Value(xc);
     }
 
     // add boundary face component
     for (int f = 0; f != bc_model.size(); ++f) {
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
-        ffaces[0][f] = model->Value(c, bc_value[f]);
+        ffaces[0][f] = bc_value[f];
       }
     }
 
@@ -151,7 +137,7 @@ RunTestUpwind(const std::string& method)
     double error(0.0);
     for (int f = 0; f < nfaces_owned; f++) {
       const Point& xf = mesh->face_centroid(f);
-      double exact = model->analytic(xf[0]);
+      double exact = Value(xf);
 
       error += pow(exact - ffaces[0][f], 2.0);
 

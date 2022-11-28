@@ -34,10 +34,7 @@
 #include "UpwindFluxManifolds.hh"
 
 double
-Value(double x)
-{
-  return 1e-5 + x;
-}
+Value(const Amanzi::AmanziGeometry::Point& xyz) { return 1e-5 + xyz[0] + 0 * xyz[1] + 0 * xyz[2]; }
 
 
 /* *****************************************************************
@@ -74,6 +71,7 @@ TEST(UPWIND_FLUX_MANIFOLDS)
     Teuchos::RCP<const Mesh> mesh = Teuchos::rcp(
       new MeshExtractedManifold(mesh3D, setname, AmanziMesh::FACE, comm, gm, plist, true, false));
 
+    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
@@ -86,7 +84,7 @@ TEST(UPWIND_FLUX_MANIFOLDS)
       if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
           fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6)
         bc_model[f] = OPERATOR_BC_DIRICHLET;
-      bc_value[f] = Value(xf[0]);
+      bc_value[f] = Value(xf);
     }
 
     // create and initialize cell-based field
@@ -99,13 +97,13 @@ TEST(UPWIND_FLUX_MANIFOLDS)
 
     for (int c = 0; c < ncells_wghost; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      field_c[0][c] = Value(xc[0]);
+      field_c[0][c] = Value(xc);
     }
 
     // add boundary face component
     int ndir(0);
     const auto& fmap = *field.ComponentMap("face", true);
-    for (int f = 0; f != bc_model.size(); ++f) {
+    for (int f = 0; f != nfaces_owned; ++f) {
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         int g = fmap.FirstPointInElement(f);
         int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
@@ -122,7 +120,7 @@ TEST(UPWIND_FLUX_MANIFOLDS)
 
     int dir;
     Point vel(1.0, 2.0, 3.0);
-    for (int f = 0; f < nfaces_wghost; f++) {
+    for (int f = 0; f < nfaces_owned; f++) {
       int g = fmap.FirstPointInElement(f);
       int ndofs = fmap.ElementSize(f);
 
@@ -145,21 +143,28 @@ TEST(UPWIND_FLUX_MANIFOLDS)
     // calculate errors
     double error(0.0);
     for (int f = 0; f < nfaces_owned; f++) {
+      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+
       const Point& xf = mesh->face_centroid(f);
-      double exact = Value(xf[0]);
+      double exact = Value(xf);
 
       int g = fmap.FirstPointInElement(f);
-      error += pow(exact - field_f[0][g], 2.0);
+      int ndofs = fmap.ElementSize(f);
+      for (int i = 0; i < ndofs; ++i) {
+        error += fabs(exact - field_f[0][g + i]);
+      }
 
       CHECK(field_f[0][g] >= 0.0);
     }
 #ifdef HAVE_MPI
     double tmp = error;
     mesh->get_comm()->SumAll(&tmp, &error, 1);
-    int itmp = nfaces_owned;
+    int itmp = ndir;
+    mesh->get_comm()->SumAll(&itmp, &ndir, 1);
+    itmp = nfaces_owned;
     mesh->get_comm()->SumAll(&itmp, &nfaces_owned, 1);
 #endif
-    error = sqrt(error / nfaces_owned);
+    error /= nfaces_owned;
 
     if (comm->MyPID() == 0) printf("n=%2d  dirichlet faces=%5d  error=%7.4f\n", n, ndir, error);
   }
