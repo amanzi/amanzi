@@ -1,0 +1,9 @@
+build* 
+**/__pycache__
+*.in
+src/state/state_evaluators_registration.hh
+src/pks/navier_stokes/pks_navier_stokes_registration.hh
+src/utils/exprtk.hpp
+spack-build*
+.spack*
+spack-config*
