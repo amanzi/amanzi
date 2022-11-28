@@ -246,6 +246,7 @@ void Field_CompositeVector::WriteVis(Visualization& vis) {
             + std::string(".") + subfield_names_[i][j];
         }
         vis.WriteVector(*v, vis_names);
+        v->Comm().Barrier();
       }
       i++;
     }
