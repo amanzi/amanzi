@@ -83,8 +83,9 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
   if(ENABLE_SPACK_BUILD) 
     # Ensure repository has the latest tags
     set(GIT_ARGS fetch --tags --depth=1)
-  else 
+  else() 
     set(GIT_ARGS fetch --all --tags)
+  endif()
 
   execute_process(COMMAND  ${GIT_EXECUTABLE} ${GIT_ARGS}
                   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
