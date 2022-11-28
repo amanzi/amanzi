@@ -37,11 +37,14 @@ But how do we see what Spack was really doing, can we keep the build around even
 ```
 spack install --keep-stage amanzi +geochemistry -tests ^openmpi@4.0.4 %gcc@10.2.0
 then look in /tmp/<user_name>/spack-stage/spack-stage-amanzi-<version>-<spack\_hash>.
+```
 
-To build in the current source as a developer or for other debugging reasons use
+To build in the current source directory (i.e., top level of the repository clone) as a developer or for other debugging reasons use
 
-spack dev-build
-
+```
+spack dev-build amanzi <variant_options>
+```
+This command will create the build directory within the current working directory, and use the current respository as the source.  Log files will be stored in the current working directory. 
 
 ## Evaluating the Amanzi build
 

@@ -136,13 +136,13 @@ spack find --loaded
 
 So to see the list of available builds that are installed
 ```
-spack find -v -l <package_name>
+spack find -lv <package_name>
 ```
 will show both the variant info as well as the hash you can use to reference it. 
 
 ### Loading a package for easier use
 
-Much like loading a module, loading a package in spack puts the binaries in your PATH and takes care of dependencies.  So for most packages you would load it with the *spack load* command,
+Much like loading a module, loading a package in spack puts the binaries in your PATH and takes care of dependencies.  So for most packages you would load it with the `spack load` command,
 ```
 spack load <package_name> <variants>
 ```
@@ -150,7 +150,7 @@ For example, to load the ats you could provide the variant information as you di
 ```
 spack load amanzi@master physics=ats
 ```
-Or the hash you found before with the *spack find -v*, 
+Or the hash you found before with the `spack find -v`, 
 ```
 spack load /<sha1_hash>
 ```
