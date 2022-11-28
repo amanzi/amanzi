@@ -81,7 +81,7 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
   message(STATUS ">>>> JDM: AMANZI_GIT_GLOBAL_HASH: ${AMANZI_GIT_GLOBAL_HASH}")
     
   # Ensure repository has the latest tags
-  set(GIT_ARGS fetch --tags)
+  set(GIT_ARGS pull --tags)
   execute_process(COMMAND  ${GIT_EXECUTABLE} ${GIT_ARGS}
                   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                   RESULT_VARIABLE err_occurred
