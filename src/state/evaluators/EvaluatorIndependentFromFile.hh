@@ -17,9 +17,7 @@ and time.  Data is provided, discretely (e.g. with one data point per
 cell/face/node), at a series of time slices.  The time slices are interpolated
 linearly in time to provide the value.
 
-Within the file, data is expected to meet the following (HDF5) layout:
-
-..code::
+Within the file, data is expected to meet the following (HDF5) layout::
 
    /time : a 1D array of length NTIMES, providing the time in seconds.
    /variable_name.ENTITY.DOF  (group)
@@ -50,8 +48,9 @@ This evaluator is used by providing the option:
      for things like cyclic data, which can use a modulo time function to
      repeat the same data.
 
-  TODO: This needs a test and documentation! --etc
 */
+
+//   TODO: This needs a test! --etc
 
 #ifndef AMANZI_STATE_INDEPENDENT_FIELD_EVALUATOR_FROMFILE_
 #define AMANZI_STATE_INDEPENDENT_FIELD_EVALUATOR_FROMFILE_

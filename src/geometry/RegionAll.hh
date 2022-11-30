@@ -16,8 +16,7 @@ No parameters required.
 ``[region-all-spec]``
 
    * `"empty`" ``[bool]`` **True** This is simply here to avoid issues with
-       empty lists.  The better solution is to rewrite the Region spec
-       completely to make it consistent with all other typed specs in Amanzi.
+     empty lists.
 
 Example:
 

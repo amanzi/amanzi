@@ -28,7 +28,7 @@ This evaluator is used by providing the option:
 .. admonition:: independent-variable-function-evaluator-spec
 
    * `"constant in time`" ``[bool]`` **false** If true, only evaluate the
-      functions once as they are time-independent.
+     functions once as they are time-independent.
    * `"function`" ``[composite-vector-function-spec-list]``
 
 */

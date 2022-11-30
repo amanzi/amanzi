@@ -26,21 +26,19 @@ various fields.
 .. admonition:: state-spec
 
    * `"evaluators`" ``[evaluator-typedinline-spec-list]`` A list of evaluators.
-      Note this will eventually be an [evaluator-typedinline-spec-list] but the
-      evaluators themselves do not include the type info.
 
-   * `"initial conditions`" ``[list]`` A list of constant-in-time variables :
-       `"initial conditions`" is a terrible name and will go away in the next
-       iteration of state. 
+   * `"initial conditions`" ``[list]`` A list of constant-in-time data.  Note
+     that `"initial conditions`" is not a particularly descriptive name here --
+     PDE initial conditions are generally not here.
 
 .. _evaluator-typedinline-spec:
 .. admonition:: evaluator-typedinline-spec
 
    * `"evaluator type`" ``[string]`` Type of the evaluator Included for
-      convenience in defining data that is not in the dependency graph,
-      constants are things (like gravity, or atmospheric pressure) which are
-      stored in state but never change.  Typically they're limited to scalars
-      and dense, local vectors.
+     convenience in defining data that is not in the dependency graph,
+     constants are things (like gravity, or atmospheric pressure) which are
+     stored in state but never change.  Typically they're limited to scalars
+     and dense, local vectors.
 
 .. _constants-scalar-spec:
 .. admonition:: constants-scalar-spec

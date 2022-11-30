@@ -20,8 +20,11 @@ A multiplicative function simply multiplies two other function results together.
 where :math:`f_1` is defined by the `"function1`" sublist, and 
 :math:`f_2` by the `"function2`" sublist.
 
-* `"function1`" ``[function-spec]`` f_1 in f(x) = f_1(x) + f_2(x)
-* `"function2`" ``[function-spec]`` f_2 in f(x) = f_1(x) + f_2(x)
+.. _function-multiplicative-spec:
+.. admonition:: function-multiplicative-spec
+
+   * `"function1`" ``[function-spec]`` :math:`f_1` in :math:`f(x) = f_1(x) * f_2(x)`
+   * `"function2`" ``[function-spec]`` :math:`f_2` in :math:`f(x) = f_1(x) * f_2(x)`
 
 Example:
 

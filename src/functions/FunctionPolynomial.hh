@@ -18,9 +18,12 @@ A generic polynomial function is given by the following expression:
 where :math:`c_j` are coefficients of monomials,
 :math:`p_j` are integer exponents, and :math:`x_0` is the reference point.
 
-* `"coefficients`" ``[Array(double)]`` c_j polynomial coefficients
-* `"exponents`" ``[Array(int)]`` p_j polynomail exponents
-* `"reference point`" ``[double]`` x0 to which polynomial argument is normalized.
+.. _function-polynomial-spec:
+.. admonition:: function-polynomial-spec
+
+   * `"coefficients`" ``[Array(double)]`` c_j polynomial coefficients
+   * `"exponents`" ``[Array(int)]`` p_j polynomail exponents
+   * `"reference point`" ``[double]`` x0 to which polynomial argument is normalized.
 
 Example:
 

@@ -20,17 +20,36 @@ other PKs and represent the system of equations, or a Physical PK,
 which represents a single equation.
 
 Note there are two PK specs -- the first is the "typed" spec, which appears in
-the "cycle driver" list in the PK tree.  The second is the spec for the base
-class PK, which is inherited and included by each actual PK, and lives in the
-"PKs" sublist of "main".
+the "cycle driver" list in the PK tree and has no other parameters other than
+its type and its children.  The second is the spec for the base class PK, which
+is inherited and included by each actual PK, lives in the "PKs" sublist of
+"main", and has all needed parameters.
 
 .. _pk-typed-spec:
 .. admonition:: pk-typed-spec
 
     * `"PK type`" ``[string]`` One of the registered PK types
-    * `"verbose object`" ``[verbose-object-spec]`` **optional** See `Verbose Object`_
 
-.. _pk-spec:
+Example:      
+
+.. code-block:: xml
+
+  <ParameterList name="PK tree">
+    <ParameterList name="Top level MPC">
+      <Parameter name="PK type" type="string" value="strong MPC"/>
+      <ParameterList name="sub PK 1">
+        ...
+      </ParameterList>
+      <ParameterList name="sub PK 2">
+        ...
+      </ParameterList>
+      ...
+    </ParameterList>
+  </ParameterList>
+
+
+
+      .. _pk-spec:
 .. admonition:: pk-spec
 
     * `"PK type`" ``[string]`` One of the registered PK types.  Note this must
@@ -48,16 +67,6 @@ Example:
     </ParameterList>
   </ParameterList>
 
-.. code-block:: xml
-
-  <ParameterList name="PKs">
-    <ParameterList name="Top level MPC">
-      <Parameter name="PK type" type="string" value="strong MPC"/>
-      <ParameterList name="sub PKs">
-        ...
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
 
 */
 

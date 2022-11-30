@@ -41,7 +41,7 @@ to disk by the UnstructuredObservation_ object.
     * `"number of vectors`" ``[int]`` **1** Number of vector components to write.
 
     * `"degree of freedom`" ``[int]`` **-1** Degree of freedom to write.  Default
-        of -1 implies writing all degrees of freedom.
+      of -1 implies writing all degrees of freedom.
 
     * `"functional`" ``[string]`` the type of function to apply to the variable
       on the region.  One of:
@@ -89,6 +89,9 @@ to disk by the UnstructuredObservation_ object.
       time-integral, observing on all cycles and accumulating the
       backwards-Euler product of dt times the observable at the new time.
 
+*/
+
+/*
 
 Developer note: the communicator pass into this class is likely MPI_COMM_WORLD,
 and must be a (non-proper) superset of the communicator on which the variable
