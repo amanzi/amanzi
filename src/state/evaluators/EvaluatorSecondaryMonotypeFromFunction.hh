@@ -22,11 +22,13 @@ For example, one might write a dependency:
 
    ONE OF:
                 
-   * `"functions`" ``[composite-vector-function-spec-list]``  Note this is used for multiple Degress of Freedom.
+   * `"functions`" ``[composite-vector-function-spec-list]`` Note this is used
+     for multiple Degress of Freedom.
 
    OR:
 
-   * `"function`" ``[composite-vector-function-spec]`` Used for a single degree of freedom.
+   * `"function`" ``[composite-vector-function-spec]`` Used for a single degree
+     of freedom.
 
 Example:
 

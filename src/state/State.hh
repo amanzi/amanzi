@@ -29,7 +29,7 @@ various fields.
 
    * `"initial conditions`" ``[list]`` A list of constant-in-time data.  Note
      that `"initial conditions`" is not a particularly descriptive name here --
-     PDE initial conditions are generally not here.
+     PDE initial conditions are generally not here.  This list consists of 
 
 .. _evaluator-typedinline-spec:
 .. admonition:: evaluator-typedinline-spec
@@ -40,16 +40,7 @@ various fields.
      stored in state but never change.  Typically they're limited to scalars
      and dense, local vectors.
 
-.. _constants-scalar-spec:
-.. admonition:: constants-scalar-spec
-
-   * `"value`" ``[double]`` Value of a scalar constant
-
-.. _constants-vector-spec:
-.. admonition:: constants-vector-spec
-
-   * `"value`" ``[Array(double)]`` Value of a dense, local vector.
-
+     
 Example:
 
 .. code-block:: xml
