@@ -55,7 +55,7 @@ git clone --recursive https://github.com/amanzi/amanzi
 
 ### Add the Amanzi spack repositories
 
-Change to the _amanzi_ subdirectory, and then add the Amanzi repo to the list of Spack repos:
+Add the Amanzi related spack packages to those available to Spack by entering,
 
 ```
 spack repo add amanzi/config/spack
