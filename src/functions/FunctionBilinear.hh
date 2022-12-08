@@ -23,12 +23,15 @@ u_{{i(x),j(y)+1}}, u_{{i(x)+1,j(y)+1}}, if :math:`(x,y)` is in
 are out of those bounds, and constant at the corner value if both are out of
 bounds.
  
-* `"file`" ``[string]`` HDF5 filename of the data
-* `"row header`" ``[string]`` name of the row dataset, the :math:`x_i`
-* `"row coordinate`" ``[string]`` one of `"t`",`"x`",`"y`",`"z`"
-* `"column header`" ``[string]`` name of the column dataset, the :math:`y_i`
-* `"column coordinate`" ``[string]`` one of `"t`",`"x`",`"y`",`"z`"
-* `"value header`" ``[string]`` name of the values dataset, the :math:`u_{{i,j}}`
+.. _function-bilinear-spec:
+.. admonition:: function-bilinear-spec
+
+   * `"file`" ``[string]`` HDF5 filename of the data
+   * `"row header`" ``[string]`` name of the row dataset, the :math:`x_i`
+   * `"row coordinate`" ``[string]`` one of `"t`",`"x`",`"y`",`"z`"
+   * `"column header`" ``[string]`` name of the column dataset, the :math:`y_i`
+   * `"column coordinate`" ``[string]`` one of `"t`",`"x`",`"y`",`"z`"
+   * `"value header`" ``[string]`` name of the values dataset, the :math:`u_{{i,j}}`
 
 Example:
 

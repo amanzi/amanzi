@@ -17,9 +17,9 @@ value.
 
 This evaluator is used by providing the option:
 
-`"evaluator type`" == `"independent variable constant`"
+`"evaluator type`" = `"independent variable constant`"
 
-.. _independent-variable-constnat-evaluator-spec:
+.. _independent-variable-constant-evaluator-spec:
 .. admonition:: independent-variable-constant-evaluator-spec
 
    * `"value`" ``[double]`` The value.

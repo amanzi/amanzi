@@ -73,8 +73,6 @@ spack compiler find
 spack compilers
 ```
 
-
-
 ### Configure Spack to use locally installed software
 
 Here we'd be looking at first make sure that cmake, gcc, openmpi are in your path and then running the compiler and externals setup
@@ -105,6 +103,8 @@ But then we would update by hand the entries associated with the modules we want
 
 ## Working with Spack
 
+### Find available and loaded packages
+
 Here we look at the commands used most often. The `spack find` command can be used with different options. For instance:
 
 ```
@@ -128,17 +128,53 @@ spack find -v
 
 ```
 
+To see what has been loaded using `spack load` type:
+
+```
+spack find --loaded
+```
+
+So to see the list of available builds that are installed
+```
+spack find -lv <package_name>
+```
+will show both the variant info as well as the hash you can use to reference it. 
+
+### Loading a package for easier use
+
+Much like loading a module, loading a package in spack puts the binaries in your PATH and takes care of dependencies.  So for most packages you would load it with the `spack load` command,
+```
+spack load <package_name> <variants>
+```
+For example, to load the ats you could provide the variant information as you did for the install,
+```
+spack load amanzi@master physics=ats
+```
+Or the hash you found before with the `spack find -v`, 
+```
+spack load /<sha1_hash>
+```
+Either way you can see if you packages is loaded as you expected, 
+```
+spack find --loaded -v amanzi
+```
+which on the T-5 compute server generates the following output,
+```
+piquillo4(296)$ spack find --loaded -v amanzi
+==> 1 loaded package
+-- linux-ubuntu18.04-skylake_avx512 / gcc@10.2.0 ----------------
+amanzi@master~geochemistry+hypre~ipo+shared~silo+tests build_type=RelWithDebInfo data_model=epetra mesh_framework=mstk mesh_type=unstructured physics=ats
+```
+
+### The spec shows the dependencies
+
 To see the full spec of a package with dependencies use:
 
 ```
 spack spec <package>
 ```
 
-To see what has been loaded using `spack load` type:
-
-```
-spack find --loaded
-```
+### Compilers
 
 To see the list of available compilers, use:
 
@@ -152,10 +188,14 @@ To add a compiler to the list of available compilers (without knowing its path) 
 spack compiler add $(spack location -i gcc@8.4.0)
 ```
 
+### Repositories for spack packages
+
 To see the list of available repos, use:
 ```
 spack repo list
 ```
+
+### zlib: A simple example
 
 The following is an example of a spack installation of zlib
 

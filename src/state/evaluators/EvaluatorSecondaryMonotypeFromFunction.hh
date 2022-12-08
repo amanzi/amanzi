@@ -8,10 +8,6 @@
 
   Author: Ethan Coon
 */
-
-//! A secondary variable evaluator which evaluates functions on its
-//! dependenecies.
-
 /*!
 Uses functions to evaluate arbitrary algebraic functions of its dependencies.
 
@@ -19,25 +15,36 @@ For example, one might write a dependency:
 
   VARNAME = 0.2 * DEP1 - DEP2 + 3
 
-as:
+`"evaluator type`" = `"secondary variable from function`"
+
+.. _secondary-variable-from-function-evaluator-spec:
+.. admonition:: secondary-variable-from-function-evaluator-spec
+
+   ONE OF:
+                
+   * `"functions`" ``[composite-vector-function-spec-list]``  Note this is used for multiple Degress of Freedom.
+
+   OR:
+
+   * `"function`" ``[composite-vector-function-spec]`` Used for a single degree of freedom.
 
 Example:
-..xml:
-    <ParameterList name="VARNAME">
-      <Parameter name="field evaluator type" type="string" value="algebraic
-variable from function"/> <Parameter name="evaluator dependencies"
-type="Array{string}" value="{DEP1, DEP2}"/> <ParameterList name="function">
-        <ParameterList name="function-linear">
-          <Parameter name="x0" type="Array(double)" value="{0.0,0.0}" />
-          <Parameter name="y0" type="double" value="3." />
-          <Parameter name="gradient" type="Array(double)" value="{0.2, -1}" />
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
+
+.. code:: xml
+
+   <ParameterList name="VARNAME">
+     <Parameter name="field evaluator type" type="string" value="algebraic variable from function"/>
+     <Parameter name="evaluator dependencies" type="Array{string}" value="{DEP1, DEP2}"/>
+     <ParameterList name="function">
+       <ParameterList name="function-linear">
+         <Parameter name="x0" type="Array(double)" value="{0.0,0.0}" />
+         <Parameter name="y0" type="double" value="3." />
+         <Parameter name="gradient" type="Array(double)" value="{0.2, -1}" />
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
 
 
-Note this is not done by region currently, but could easily be extended to do
-so if it was found useful.
 */
 
 #ifndef STATE_EVALUATOR_ALGEBRAIC_FROMFUNCTION_HH_

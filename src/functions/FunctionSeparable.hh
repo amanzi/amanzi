@@ -20,8 +20,11 @@ A separable function is defined as the product of other functions such as
 where :math:`f_1` is defined by the `"function1`" sublist, and 
 :math:`f_2` by the `"function2`" sublist.
 
-* `"function1`" ``[function-spec]`` f_1 in f(x) = f_1(x0) * f_2(x1...)
-* `"function2`" ``[function-spec]`` f_2 in f(x) = f_1(x0) * f_2(x1...)
+.. _function-separable-spec:
+.. admonition:: function-separable-spec
+
+   * `"function1`" ``[function-spec]`` :math:`f_1` in :math:`f(x) = f_1(x0) * f_2(x1...)`
+   * `"function2`" ``[function-spec]`` :math:`f_2` in :math:`f(x) = f_1(x0) * f_2(x1...)`
 
 
 .. code-block:: xml

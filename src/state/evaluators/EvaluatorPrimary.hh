@@ -7,8 +7,20 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
+*/
 
-  An evaluator with no dependencies solved for by a PK.
+/*!
+
+An evaluator with no dependencies that serves as the primary variable to be
+solved for by a PK.  Note that users almost never are required to write an
+input spec for these -- they are controlled by the PK and therefore the input
+spec for this evaluator is written by that PK.
+
+.. _evaluator-primary-spec:
+.. admonition:: evaluator-primary-spec
+
+   * `"tag`" ``[string]`` **""** Time tag at which this primary variable is used.
+
 */
 
 #ifndef AMANZI_STATE_EVALUATOR_PRIMARY_

@@ -27,20 +27,25 @@ Note that these operate only on the first coordinate, which is often time.
 Function composition can be used to apply these to other coordinates (or
 better yet a dimension could/should be added upon request).
 
-* `"operator`" ``[string]`` specifies the name of a standard mathematical function.
-  Available options are `"cos`", `"sin`", `"tan`", `"acos`", `"asin`", `"atan`", 
-  `"cosh`", `"sinh`", `"tanh`", `"exp`", `"log`", `"log10`", `"sqrt`", `"ceil`",
-  `"fabs`", `"floor`", `"mod`", and `"pow`".
+.. _function-standard-math-spec:
+.. admonition:: function-standard-math-spec
+                
+   * `"operator`" ``[string]`` specifies the name of a standard mathematical
+     function.  Available options are `"cos`", `"sin`", `"tan`", `"acos`",
+     `"asin`", `"atan`", `"cosh`", `"sinh`", `"tanh`", `"exp`", `"log`",
+     `"log10`", `"sqrt`", `"ceil`", `"fabs`", `"floor`", `"mod`", and `"pow`".
 
-* `"amplitude`" ``[double]`` specifies a multiplication factor `a` in formula `a f(x)`. 
-  The multiplication factor is ignored by function `mod`. Default value is 1.
+   * `"amplitude`" ``[double]`` specifies a multiplication factor `a` in
+     formula `a f(x)`.  The multiplication factor is ignored by function
+     `mod`. Default value is 1.
 
-* `"parameter`" ``[double]`` **1.0** specifies additional parameter `p` for
-  math functions with two arguments. These functions are `"a pow(x[0], p)`"
-  and `"a mod(x[0], p)`".  Alternative, scales the argument before
-  application, for use in changing the period of trig functions.
+   * `"parameter`" ``[double]`` **1.0** specifies additional parameter `p` for
+     math functions with two arguments. These functions are `"a pow(x[0], p)`"
+     and `"a mod(x[0], p)`".  Alternative, scales the argument before
+     application, for use in changing the period of trig functions.
 
-* `"shift`" ``[double]`` specifies a shift of the function argument. Default is 0.
+   * `"shift`" ``[double]`` specifies a shift of the function argument. Default
+     is 0.
 
 Example:
 

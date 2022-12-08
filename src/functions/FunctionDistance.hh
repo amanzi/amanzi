@@ -20,8 +20,11 @@ using by the following expression:
 
 Note that the first parameter in :math:`x` can be time.
 
-* `"x0`" ``[Array(double)]`` Point from which distance is measured.
-* `"metric`" ``[Array(double)]`` Linear scaling metric, typically all 1s.
+.. _function-distance-spec:
+.. admonition:: function-distance-spec
+
+   * `"x0`" ``[Array(double)]`` Point from which distance is measured.
+   * `"metric`" ``[Array(double)]`` Linear scaling metric, typically all 1s.
 
 Here is an example of a distance function using isotropic metric:
 

@@ -27,8 +27,24 @@ Dependencies can be found with spack spec, or looking at the CMake files for eac
 
 ## Building Amanzi with Spack
 
+Ideally the simplest command just works.  In other words ideally, 
+```
+spack install amanzi
+```
+would just work.  In our other notes we have some stuff on selecting variants, mpi, etc. 
 
+But how do we see what Spack was really doing, can we keep the build around even when it succeeds.  Yes, just use the *--keep\_stage* option, for example, 
+```
+spack install --keep-stage amanzi +geochemistry -tests ^openmpi@4.0.4 %gcc@10.2.0
+then look in /tmp/<user_name>/spack-stage/spack-stage-amanzi-<version>-<spack\_hash>.
+```
 
+To build in the current source directory (i.e., top level of the repository clone) as a developer or for other debugging reasons use
+
+```
+spack dev-build amanzi <variant_options>
+```
+This command will create the build directory within the current working directory, and use the current respository as the source.  Log files will be stored in the current working directory. 
 
 ## Evaluating the Amanzi build
 
