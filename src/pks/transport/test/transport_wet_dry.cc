@@ -10,7 +10,6 @@
 /*
   Transport PK
 
-  License: BSD
 */
 
 #include <cstdlib>

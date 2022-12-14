@@ -136,11 +136,51 @@ and other stuff
     print('\n'.join(other_lines))
     assert(len(other_lines) == 6)
     assert(other_lines[-4] == "and other stuff")
+
+
+
+def test_paragraph1():
+    d1a = """
+//
+//
+// Authors: 
+//          John Doe
+//          Someone Else someon@else.com    
+//
+//
+
+and other stuff
+
+//
+""".split('\n')
+    comment = clean.find_block_comment_bounds(d1a,4)
+    assert(comment == (1,8))
+    para = clean.find_paragraph_bounds(d1a, 4, (1,8))
+    assert(para == (3,6))
+
+
+def test_paragraph2():
+    d2a = """
+
+/*
+ another 
+  without slashes
+
+Author: John Doe
+
+
+*/
+
+and other stuff
+
+//
+""".split('\n')
+    comment = clean.find_block_comment_bounds(d2a,3)
+    assert(comment == (2,10))
+    para = clean.find_paragraph_bounds(d2a, 3, (2,10))
+    assert(para == (3,5))
+
     
-
-
-
-
 def test_copyright1():
     d1a = """
 //
@@ -167,8 +207,9 @@ and other stuff
     assert(a_lines[-4].strip() == 'Authors: John Doe')
     assert(a_lines[-3].strip() == 'Someone Else someon@else.com')
     assert(a_lines[1].strip().startswith('Copyright 2010-202x held jointly'))
-    assert(len(other_lines) == 11)
+
     print('\n'.join(other_lines))
+    assert(len(other_lines) == 11)
     assert(other_lines[-4] == "and other stuff")
     
 
@@ -241,4 +282,28 @@ code
     a_lines, other_lines = clean.find_remove_copyright(d)
     assert(len(a_lines) == 1 + 8)
 
+    
+def test_realworld():
+    d = """/*
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon (ecoon@ornl.gov)
+*/
+
+//! A set of helper functions for doing common things in PKs.
+
+#pragma once
+""".split('\n')
+
+    correct = """
+//! A set of helper functions for doing common things in PKs.
+
+#pragma once
+"""
+    
+    new_copyright, new_lines = clean.find_remove_copyright(d)
+    assert(correct == '\n'.join(new_lines))
+    
     

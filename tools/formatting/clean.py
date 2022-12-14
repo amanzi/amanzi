@@ -186,6 +186,20 @@ def find_remove_authors(lines):
     return ret_lines, lines
 
 
+def find_paragraph_bounds(lines, paragraph_line, block_extent):
+    begin_paragraph = paragraph_line
+    while begin_paragraph >= block_extent[0] and \
+          strip_comments_line(lines[begin_paragraph-1]) != '':
+        begin_paragraph = begin_paragraph - 1
+
+    end_paragraph = paragraph_line + 1
+    while end_paragraph < block_extent[1] and \
+          strip_comments_line(lines[end_paragraph]) != '':
+        end_paragraph = end_paragraph + 1
+    return begin_paragraph, end_paragraph
+
+
+    
 copyright = """/*
   Copyright 2010-202x held jointly by participating institutions.
   {} is released under the three-clause BSD License.
@@ -195,6 +209,9 @@ copyright = """/*
   Authors:{}
 */
 """
+
+TPL_COPYRIGHTS = ['Copyright (c) 2009',]
+
 def find_remove_copyright(lines, ats=False):
     """Searches for block comments containing COPYRIGHT info, returning
     the modified lines with the copyright info removed."""
@@ -210,45 +227,73 @@ def find_remove_copyright(lines, ats=False):
         author_block = ' '+author_block
     new_copyright = copyright.format(code, author_block).split('\n')
 
-    # find the old copyright comment block
+    # find all old copyright comment block(s)
     copyright_lines = [j for j,l in enumerate(lines) if \
-                       any(c in l.lower() for c in ['copyright', 'license: bsd', 'bsd license'])]
-    if len(copyright_lines) == 0:
-        print('  no old Copyright, adding')
+                       any(c in l.lower() for c in ['copyright', 'license: bsd', 'bsd license', 'licencse: bsd'])]
 
-    else:
+    # Note that these may overlap.
+    copyright_blocks = []
+    for copyright_line in copyright_lines:
+        # check if this is a THIRD PARTY COPYRIGHT!
+        if any(tpl_language in lines[copyright_line] for tpl_language in TPL_COPYRIGHTS):
+            # stop now!  more will be found, and these should stay!
+            break
+        
         # search for the block of comments containing this copyright
         # line.  note that this ASSUMES the copyright is an a comment
         # block
-        copyright_line = copyright_lines[0]
-        copyright_block_extent = find_block_comment_bounds(lines, copyright_line)
+        comment_block_extent = find_block_comment_bounds(lines, copyright_line)
 
-        # make sure that we don't have duplicate copyrights
-        if len(copyright_lines) > 1:
-            for cl in copyright_lines:
-                if cl < copyright_block_extent[0] or cl >= copyright_block_extent[1]:
-                    warnings.warn('Too many copyrights in the file -- this file may break')
+        # find the bounds of the paragraph in the comment block
+        copyright_block_extent = find_paragraph_bounds(lines, copyright_line, comment_block_extent)
+                    
+        copyright_blocks.append((comment_block_extent, copyright_block_extent))
 
-        begin_copyright = copyright_line
-        while begin_copyright >= copyright_block_extent[0] and \
-              strip_comments_line(lines[begin_copyright]) != '':
-            begin_copyright = begin_copyright - 1
+    # make unique, and sort by block
+    blocks = dict()
+    for cb in copyright_blocks:
+        if cb[0] not in blocks:
+            blocks[cb[0]] = set()
+        blocks[cb[0]].add(cb[1])
 
-        end_copyright = copyright_line + 1
-        while end_copyright < copyright_block_extent[1] and \
-              strip_comments_line(lines[end_copyright]) != '':
-            end_copyright = end_copyright + 1
+    lines_to_remove = []
+        
+    for comment_block in blocks.keys():
+        print('FOUND COMMENT BLOCK:')
+        comment_lines = list(range(comment_block[0], comment_block[1]))
+        
+        if len(blocks[comment_block]) > 1:
+            print('DOUBLE:', comment_block, blocks[comment_block])
+        for paragraph in blocks[comment_block]:
+            assert(paragraph[0] >= comment_block[0])
+            assert(paragraph[1] <= comment_block[1])
 
-        remaining_comment_block = lines[copyright_block_extent[0]:begin_copyright] + lines[end_copyright:copyright_block_extent[1]]
+            print('PARAGRAPH:')
+            print('\n'.join(lines[i] for i in range(paragraph[0], paragraph[1])))
+            
+            for i in range(paragraph[0], paragraph[1]):
+                comment_lines.remove(i)
+            if paragraph[1] in comment_lines and (lines[paragraph[1]].strip() == '' or lines[paragraph[1]].strip() == '//'):
+                comment_lines.remove(paragraph[1])
 
+        remaining_comment_block = [lines[l] for l in comment_lines]
+        print('REMAINING:')
+        print('\n'.join(remaining_comment_block))
         if is_empty_block(remaining_comment_block):
-            lines = lines[0:copyright_block_extent[0]] + lines[copyright_block_extent[1]:]
-        else:
-            if lines[end_copyright].strip() == '' or lines[end_copyright].strip() == "//":
-                end_copyright = end_copyright+1
-            lines = lines[0:copyright_lines[0]] + lines[end_copyright:]
+            print(' IS EMPTY')
+            # kill the whole block
+            comment_lines = []
 
-    return new_copyright, lines
+        # need to get the ones removed
+        for line in range(comment_block[0], comment_block[1]):
+            if line not in comment_lines:
+                lines_to_remove.append(line)
+                
+    # now remove the lines, in reverse order so the numbers stay right
+    new_lines = lines[:]
+    for line in reversed(sorted(lines_to_remove)):
+        new_lines.pop(line)
+    return new_copyright, new_lines
 
 
 def find_oneline_doc(lines, token='//!'):
