@@ -7,6 +7,11 @@
   Authors: Ethan Coon
 */
 
+/* -------------------------------------------------------------------------
+
+   Debugging object for writing debug cells using VerboseObject.
+
+   ------------------------------------------------------------------------- */
 #include <boost/format.hpp>
 
 #include "errors.hh"

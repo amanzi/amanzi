@@ -11,6 +11,8 @@
 
 ATS
 
+Interface for a Matrix that acts on Epetra_Vector.
+
 This is the local Amanzi version, not a true Epetra product.  This
 takes an Epetra_RowMatrix and wraps it with the needed methods to be
 used with solvers.

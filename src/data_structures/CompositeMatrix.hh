@@ -7,6 +7,13 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+/* -------------------------------------------------------------------------
+
+ATS
+
+Interface for a Matrix that acts on CompositeVector.
+------------------------------------------------------------------------- */
+
 #ifndef AMANZI_COMPOSITEMATRIX_HH_
 #define AMANZI_COMPOSITEMATRIX_HH_
 

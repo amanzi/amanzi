@@ -10,6 +10,11 @@
 /* -------------------------------------------------------------------------
 ATS / Amanzi
 
+Interface for TreeVector, a nested, hierarchical data structure for PK
+hiearchies.  This vector allows each physical PK to use CompositeVectors to
+store their solution, and allows MPCs to push back TreeVectors in a tree
+format.
+
 This vector provides the duck-type interface Vec and may be used with time
 integrators/nonlinear solvers.
 

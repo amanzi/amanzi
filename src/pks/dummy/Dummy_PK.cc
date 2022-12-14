@@ -7,6 +7,12 @@
   Authors: Daniil Svyatskiy
 */
 
+/*
+  Dummy PK which demonstrates the require interface for PK
+  BDFFnBase<CompositeVector>, to use TreeVectors.
+*/
+
+
 #include "Dummy_PK.hh"
 #include <iostream>
 

@@ -7,6 +7,12 @@
   Authors: Ethan Coon
 */
 
+/* -------------------------------------------------------------------------
+   ATS
+
+   Space for a TreeVector on an Amanzi mesh.
+   ------------------------------------------------------------------------- */
+
 #ifndef AMANZI_TREEVECTOR_SPACE_HH_
 #define AMANZI_TREEVECTOR_SPACE_HH_
 

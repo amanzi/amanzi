@@ -10,6 +10,8 @@
 /* -------------------------------------------------------------------------
    ATS
 
+   Adding an ATS to Thyra converter.
+
    Non-member functions for conversion between Tree/CompositeVectors and Thyra
    data structures.
 

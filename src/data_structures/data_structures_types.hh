@@ -7,6 +7,12 @@
   Authors: Ethan Coon
 */
 
+/* -------------------------------------------------------------------------
+  ATS
+
+  Just a few handy typedefs.
+------------------------------------------------------------------------- */
+
 #ifndef DATA_STRUCTURE_TYPES_HH_
 #define DATA_STRUCTURE_TYPES_HH_
 

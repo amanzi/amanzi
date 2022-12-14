@@ -11,6 +11,10 @@
 
 ATS and Amanzi
 
+Interface for CompositeVector, an implementation of a slightly improved
+Epetra_MultiVector which spans multiple simplices and knows how to
+communicate itself.
+
 CompositeVectors are a collection of vectors defined on a common mesh and
 communicator.  Each vector, or component, has a name (used as a key), a mesh
 Entity_kind (CELL, FACE, NODE, or BOUNDARY_FACE), and a number of degrees of

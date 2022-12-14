@@ -9,6 +9,7 @@
 
 //
 // Unit test to check if a enumerated set region can be constructed correctly
+//
 
 #include <iostream>
 

@@ -7,6 +7,12 @@
   Authors: Daniil Svyatskiy
 */
 
+/*
+  PK for coupling of Flow_PK with Transport_PK and Chemestry_PK
+
+*/
+
+
 #include "PressureSaturation_PK.hh"
 
 namespace Amanzi {

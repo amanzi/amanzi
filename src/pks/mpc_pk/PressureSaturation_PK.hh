@@ -7,6 +7,12 @@
   Authors: Daniil Svyatskiy
 */
 
+/*
+  PK for coupling of Flow PK with Transport_PK and Chemestry_PK
+
+*/
+
+
 #ifndef AMANZI_PRESSURESATURATION_PK_HH_
 #define AMANZI_PRESSURESATURATION_PK_HH_
 

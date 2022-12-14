@@ -7,6 +7,12 @@
   Authors: Ethan Coon
 */
 
+/* -------------------------------------------------------------------------
+   ATS
+
+   Implementation of TreeVectorSpace, a factory for TreeVectors.
+   ------------------------------------------------------------------------- */
+
 #include "errors.hh"
 #include "CompositeVectorSpace.hh"
 #include "TreeVectorSpace.hh"

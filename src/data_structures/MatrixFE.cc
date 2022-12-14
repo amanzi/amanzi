@@ -8,6 +8,7 @@
 */
 
 /*
+
 A plausibly scalable matrix for use in FE-like systems, where assembly
 must be done into rows of ghost entities as well as owned entities.
 

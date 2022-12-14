@@ -7,6 +7,13 @@
   Authors: Ethan Coon
 */
 
+/* -------------------------------------------------------------------------
+   ATS
+
+   Adding an ATS to Thyra converter.
+
+*/
+
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"

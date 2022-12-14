@@ -8,6 +8,7 @@
 */
 
 /*
+
 A plausibly scalable graph for use in FE-like systems, where assembly
 must be done into rows of ghost entities as well as owned entities.
 This graph is taken in the construction of Amanzi's MatrixFE.

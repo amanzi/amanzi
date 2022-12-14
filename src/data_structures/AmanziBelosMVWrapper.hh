@@ -7,6 +7,11 @@
   Authors: Alicia Klinvex (amklinv@sandia.gov)
 */
 
+/*
+  Amanzi Belos multivector wrapper
+  Usage:
+*/
+
 #ifndef AMANZI_BELOS_MV_WRAPPER_HH_
 #define AMANZI_BELOS_MV_WRAPPER_HH_
 

@@ -7,6 +7,13 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+/* -------------------------------------------------------------------------
+
+ATS
+
+Wraps a CompositeMatrix as a TreeMatrix.
+------------------------------------------------------------------------- */
+
 #ifndef AMANZI_COMPOSITEMATRIX_AS_TREEMATRIX_HH_
 #  define AMANZI_COMPOSITEMATRIX_AS_TREEMATRIX_HH_
 

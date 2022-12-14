@@ -179,7 +179,9 @@ def find_remove_authors(lines):
         if is_empty_block(remaining_comment_block):
             lines = lines[0:author_block_extent[0]] + lines[author_block_extent[1]:]
         else:
-            if lines[end_authors].strip() == '' or lines[end_authors].strip() == "//":
+            # also eat a blank line after the Authors list if the line ABOVE the list is also empty
+            if (lines[end_authors].strip() == '' or lines[end_authors].strip() == "//") and \
+               (lines[author_lines[0]-1].strip() == '' or lines[author_lines[0]-1].strip() == "//"):
                 end_authors = end_authors+1
             lines = lines[0:author_lines[0]] + lines[end_authors:]
         

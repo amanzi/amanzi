@@ -7,6 +7,12 @@
   Authors: Ethan Coon
 */
 
+/* -------------------------------------------------------------------------
+   ATS
+
+   Utility functions on a TreeVector
+   ------------------------------------------------------------------------- */
+
 #ifndef AMANZI_DATA_STRUCTURES_TREEVECTOR_UTILS_HH_
 #define AMANZI_DATA_STRUCTURES_TREEVECTOR_UTILS_HH_
 

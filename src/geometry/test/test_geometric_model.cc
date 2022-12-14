@@ -9,6 +9,7 @@
 
 //
 // Unit test to check if a labeled set region can be constructed correctly
+//
 
 #include <UnitTest++.h>
 

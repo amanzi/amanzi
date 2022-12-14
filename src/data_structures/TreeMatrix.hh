@@ -7,6 +7,13 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+/* -------------------------------------------------------------------------
+
+ATS
+
+Interface for a Matrix that acts on TreeVector.
+------------------------------------------------------------------------- */
+
 #ifndef AMANZI_TREEMATRIX_HH_
 #define AMANZI_TREEMATRIX_HH_
 
