@@ -7,10 +7,6 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  The transport component of the Amanzi code, serial unit tests.
-*/
-
 #include <cstdlib>
 #include <cmath>
 #include <iostream>

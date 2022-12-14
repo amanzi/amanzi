@@ -7,10 +7,6 @@
   Authors: Alicia Klinvex (amklinv@sandia.gov)
 */
 
-/*
-  This tells Belos how to work with the Amanzi vectors.
-*/
-
 #ifndef AMANZI_BELOS_MV_WRAPPER_HH_
 #define AMANZI_BELOS_MV_WRAPPER_HH_
 

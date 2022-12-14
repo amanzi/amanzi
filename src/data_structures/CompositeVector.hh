@@ -7,11 +7,6 @@
   Authors: Ethan Coon (ecoon@ornl.gov)
 */
 
-/*
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
-*/
-
 /*!
 
 Interface for CompositeVector, an implementation of a slightly improved

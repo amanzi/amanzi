@@ -7,10 +7,6 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  The discretiation component of the Amanzi code.
-*/
-
 #include <cstdlib>
 #include <cmath>
 #include <iostream>

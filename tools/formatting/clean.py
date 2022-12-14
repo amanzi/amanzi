@@ -211,7 +211,8 @@ def find_remove_copyright(lines, ats=False):
     new_copyright = copyright.format(code, author_block).split('\n')
 
     # find the old copyright comment block
-    copyright_lines = [j for j,l in enumerate(lines) if 'copyright' in l.lower() or 'license: bsd' in l.lower()]
+    copyright_lines = [j for j,l in enumerate(lines) if \
+                       any(c in l.lower() for c in ['copyright', 'license: bsd', 'bsd license'])]
     if len(copyright_lines) == 0:
         print('  no old Copyright, adding')
 
@@ -228,12 +229,17 @@ def find_remove_copyright(lines, ats=False):
                 if cl < copyright_block_extent[0] or cl >= copyright_block_extent[1]:
                     warnings.warn('Too many copyrights in the file -- this file may break')
 
+        begin_copyright = copyright_line
+        while begin_copyright >= copyright_block_extent[0] and \
+              strip_comments_line(lines[begin_copyright]) != '':
+            begin_copyright = begin_copyright - 1
+
         end_copyright = copyright_line + 1
         while end_copyright < copyright_block_extent[1] and \
               strip_comments_line(lines[end_copyright]) != '':
             end_copyright = end_copyright + 1
 
-        remaining_comment_block = lines[copyright_block_extent[0]:copyright_line] + lines[end_copyright:copyright_block_extent[1]]
+        remaining_comment_block = lines[copyright_block_extent[0]:begin_copyright] + lines[end_copyright:copyright_block_extent[1]]
 
         if is_empty_block(remaining_comment_block):
             lines = lines[0:copyright_block_extent[0]] + lines[copyright_block_extent[1]:]

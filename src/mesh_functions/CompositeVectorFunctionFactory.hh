@@ -8,11 +8,6 @@
 */
 
 //! Mesh Functions, evaluate a function on a mesh and stick the result in a vector.
-/*
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
-*/
-
 /*!
 
 CompositeVectorFunctions are ways of evaluating a piecewise function on a

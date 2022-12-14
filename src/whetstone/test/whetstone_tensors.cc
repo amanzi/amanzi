@@ -7,10 +7,6 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  The idcsretization component of Amanzi.
-*/
-
 #include <cstdlib>
 #include <cmath>
 #include <iostream>

@@ -8,11 +8,6 @@
 */
 
 //! The interface for a Process Kernel, an equation or system of equations.
-/*
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
-*/
-
 /*!
 
 A process kernel represents a single or system of partial/ordinary

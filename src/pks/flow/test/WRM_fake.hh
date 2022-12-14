@@ -10,10 +10,6 @@
            k_rel = 1 / (1 + pc^2).
 */
 
-/*
-  Flow PK
-*/
-
 #ifndef AMANZI_FAKE_MODEL_HH_
 #define AMANZI_FAKE_MODEL_HH_
 
