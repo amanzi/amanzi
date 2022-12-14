@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Daniil Svyatsky (dasvyat@lanl.gov)
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 /*

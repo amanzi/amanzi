@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella
-      Ethan Coon (ecoon@lanl.gov)
+           Ethan Coon (ecoon@lanl.gov)
 */
 
 //! RegionLabeledSet: A region defined by a set of mesh entities in a mesh file

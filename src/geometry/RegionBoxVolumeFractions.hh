@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Lipnikov Konstantin (lipnikov@lanl.gov)
-      Rao Garimella (rao@lanl.gov)
+           Rao Garimella (rao@lanl.gov)
 */
 
 //! RegionBoxVolumeFractions: A rectangular region in space, defined by two corner points and normals to sides.

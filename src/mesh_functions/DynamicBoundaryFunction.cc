@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: (v1) Neil Carlson
-      (v2) Ethan Coon
+           (v2) Ethan Coon
 */
 
 /*

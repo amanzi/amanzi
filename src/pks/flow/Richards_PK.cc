@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Neil Carlson (nnc@lanl.gov),
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 /*

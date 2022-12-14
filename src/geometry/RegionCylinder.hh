@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 //! RegionHalfSpace: A planar (infinite) region in space, defined by a point and a normal.

@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
-      Ethan Coon (ecoon@lanl.gov)
+           Ethan Coon (ecoon@lanl.gov)
 */
 
 //! Storage and parameters for BDF1 problems.

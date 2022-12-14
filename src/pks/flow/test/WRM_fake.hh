@@ -5,9 +5,9 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-      We use this class to test convergence of discretization
-      schemes. It employs a simple model for relative permeability,
-      k_rel = 1 / (1 + pc^2).
+           We use this class to test convergence of discretization
+           schemes. It employs a simple model for relative permeability,
+           k_rel = 1 / (1 + pc^2).
 */
 
 /*

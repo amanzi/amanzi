@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Quan Bui (mquanbui@math.umd.edu)
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 /*

@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Ben Andre
-      Sergio A Bea
+           Sergio A Bea
 */
 
 /*

@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: William A. Perkins
-      Rao Garimella
+           Rao Garimella
 */
 
 /*

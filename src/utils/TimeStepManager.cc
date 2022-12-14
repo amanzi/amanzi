@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
-      Daniil Svyatskiy
+           Daniil Svyatskiy
 */
 
 /*

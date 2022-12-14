@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (coonet@ornl.gov)
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 //! A generic evaluator for multiplying and dividing a collection of fields.

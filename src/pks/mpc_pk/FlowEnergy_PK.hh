@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Daniil Svyatskiy
-      Konstantin Lipnikov
+           Konstantin Lipnikov
 */
 
 /*

@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Daniil Svyatskiy(dasvyat@lanl.gov)
-      Ethan Coon (ecoon@lanl.gov)
+           Ethan Coon (ecoon@lanl.gov)
 */
 
 /*

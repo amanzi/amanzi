@@ -205,7 +205,7 @@ def find_remove_copyright(lines, ats=False):
     # construct a new copyright comment block with authors
     if ats: code = 'ATS'
     else: code = 'Amanzi'
-    author_block = '\n      '.join(authors)
+    author_block = '\n           '.join(authors)
     if len(author_block) > 0:
         author_block = ' '+author_block
     new_copyright = copyright.format(code, author_block).split('\n')

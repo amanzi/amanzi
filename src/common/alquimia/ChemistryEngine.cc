@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Jeffrey Johnson
-      Sergi Molins <smolins@lbl.gov>
+           Sergi Molins <smolins@lbl.gov>
 */
 
 /*

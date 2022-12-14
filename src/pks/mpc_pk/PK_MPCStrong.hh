@@ -5,8 +5,8 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon
-      Daniil Svyatskiy
-      Konstantin Lipnikov
+           Daniil Svyatskiy
+           Konstantin Lipnikov
 */
 
 /*

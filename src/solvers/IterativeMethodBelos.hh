@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Alicia Klinvex (amklinv@sandia.gov)
-      Ethan Coon (coonet@ornl.gov)
+           Ethan Coon (coonet@ornl.gov)
 */
 
 //! Trilinos/Belos implementations of iterative methods.

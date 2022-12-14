@@ -5,9 +5,9 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
-      Ethan Coon
-      Konstantin Lipnikov
-      Daniil Svyatsky
+           Ethan Coon
+           Konstantin Lipnikov
+           Daniil Svyatsky
 */
 
 /*

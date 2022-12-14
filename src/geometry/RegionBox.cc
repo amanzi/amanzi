@@ -5,8 +5,8 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: William Perkins
-      Rao Garimella
-      Ethan Coon (ecoon@lanl.gov)
+           Rao Garimella
+           Ethan Coon (ecoon@lanl.gov)
 */
 
 /*

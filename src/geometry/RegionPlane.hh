@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella
-      Ethan Coon (ecoon@lanl.gov)
+           Ethan Coon (ecoon@lanl.gov)
 */
 
 //! RegionPlane: A planar (infinite) region in space, defined by a point and a normal.

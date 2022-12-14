@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: oftware Author:  Kevin L. Bolling
-      Updated by Jeff Hinrichs
+           Updated by Jeff Hinrichs
 */
 
 #include <stdlib.h>

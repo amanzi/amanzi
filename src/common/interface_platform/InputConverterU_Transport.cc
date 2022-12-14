@@ -5,9 +5,9 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
-      Erin Barker
-      Jeffrey Johnson
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+           Erin Barker
+           Jeffrey Johnson
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 /*

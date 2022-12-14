@@ -5,8 +5,8 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
-      Konstantin Lipnikov
-      Daniil Svyatsky
+           Konstantin Lipnikov
+           Daniil Svyatsky
 */
 
 /*

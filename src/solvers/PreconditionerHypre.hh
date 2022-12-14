@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-      Ethan Coon (coonet@ornl.gov)
+           Ethan Coon (coonet@ornl.gov)
 */
 
 //! Hypre based preconditioners include Algebraic MultiGrid and global ILU

@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (amklinv@sandia.gov)
-      Ethan Coon (coonet@ornl.gov)
+           Ethan Coon (coonet@ornl.gov)
 */
 
 //! Direct solvers via Trilinos.

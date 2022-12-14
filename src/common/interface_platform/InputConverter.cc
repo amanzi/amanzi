@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-      Erin Barker (Erin.Barker@pnnl.gov)
+           Erin Barker (Erin.Barker@pnnl.gov)
 */
 
 /*

@@ -5,8 +5,8 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Neil Carlson
-      Ethan Coon
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+           Ethan Coon
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 /*

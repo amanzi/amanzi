@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: William Perkins
-      Ethan Coon (ecoon@lanl.gov)
+           Ethan Coon (ecoon@lanl.gov)
 */
 
 //! A geometric or discrete subdomain of the full domain.

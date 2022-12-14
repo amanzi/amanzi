@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Jeffrey Johnson (jnjohnson@lbl.gov)
-      Markus Berndt (berndt@lanl.gov)
+           Markus Berndt (berndt@lanl.gov)
 */
 
 /*
