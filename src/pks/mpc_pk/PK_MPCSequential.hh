@@ -1,17 +1,19 @@
 /*
-  This is the mpc_pk component of the Amanzi code. 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon
-           Konstantin Lipnikov
+      Konstantin Lipnikov
+*/
 
-  Implementation for the derived PK_MPCSequential class. Provides only the 
-  AdvanceStep() method missing from MPC.hh. In sequential coupling, we 
-  iteratively loop over the sub-PKs, calling their AdvanceStep() methods 
+/*
+  This is the mpc_pk component of the Amanzi code.
+
+  Implementation for the derived PK_MPCSequential class. Provides only the
+  AdvanceStep() method missing from MPC.hh. In sequential coupling, we
+  iteratively loop over the sub-PKs, calling their AdvanceStep() methods
   until a strong convergence achieved and returning failure if any fail.
 
   See additional documentation in the base class src/pks/mpc_pk/PK_MPC.hh

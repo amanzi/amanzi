@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   The mimetic finite difference method on 2D surfaces in 3D.
 */
@@ -25,9 +27,9 @@ namespace WhetStone {
 
 /* ******************************************************************
 * Consistency condition for inverse of mass matrix in space of
-* fluxes for a non-flat surface. Only the upper triangular part of 
+* fluxes for a non-flat surface. Only the upper triangular part of
 * Wc is calculated. Darcy flux is scaled by the area!
-* WARNING: routine works for scalar T only. 
+* WARNING: routine works for scalar T only.
 ****************************************************************** */
 int
 MFD3D_Diffusion::L2consistencyInverseSurface(int c,

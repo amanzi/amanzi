@@ -1,12 +1,15 @@
 /*
-  Flow PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #include <cmath>
@@ -26,7 +29,7 @@ using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Flow;
 
 /* ******************************************************************
-* Calculate L2 error in pressure.                                                    
+* Calculate L2 error in pressure.
 ****************************************************************** */
 double
 CalculatePressureCellError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVector& p)
@@ -55,7 +58,7 @@ CalculatePressureCellError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVect
 
 
 /* ******************************************************************
-* Calculate l2 error (small l) in darcy flux.                                                    
+* Calculate l2 error (small l) in darcy flux.
 ****************************************************************** */
 double
 CalculateDarcyFluxError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVector& flux)
@@ -80,7 +83,7 @@ CalculateDarcyFluxError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVector&
 
 
 /* ******************************************************************
-* Calculate L2 divergence error in darcy flux.                                                    
+* Calculate L2 divergence error in darcy flux.
 ****************************************************************** */
 double
 CalculateDarcyDivergenceError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVector& flux)

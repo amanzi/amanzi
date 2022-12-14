@@ -1,15 +1,17 @@
 /*
-  Energy
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  Energy
 
   FieldEvaluator for the total internal energy. Wrapping this conserved
-  quantity as a field evaluator makes it easier to take derivatives, 
+  quantity as a field evaluator makes it easier to take derivatives,
   keep updated, and the like. The equation for this is simply:
 
     IE = phi * (s_liquid * n_liquid * u_liquid + s_gas * n_gas * u_gas)

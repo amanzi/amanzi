@@ -1,15 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! FunctionMonomial: a multivariate monomial function.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+//! FunctionMonomial: a multivariate monomial function.
 /*!
 
 A multi-variable monomial function is given by the following expression:
@@ -18,7 +16,7 @@ A multi-variable monomial function is given by the following expression:
   f(x) = c \prod_{j=0}^{n} (x_j - x_{0,j})^{p_j}
 
 with the constant factor :math:`c`, the reference point :math:`x_0`, and
-integer exponents :math:`p_j`. 
+integer exponents :math:`p_j`.
 Note that the first parameter in :math:`x` can be time.
 
 .. _function-monomial-spec:

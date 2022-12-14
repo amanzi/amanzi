@@ -1,10 +1,14 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
+  Chemistry
 
   Class for Langmuir isotherm
 */
@@ -57,7 +61,7 @@ SorptionIsothermLangmuir::SetParameters(const std::vector<double>& params)
 /* *******************************************************************
 * Csorb = K * activity * b / (1 + K * activity)
 * Units:
-* sorbed_concentration [mol/m^3 bulk] = 
+* sorbed_concentration [mol/m^3 bulk] =
 *   K [kg water/mol] * activity [mol/kg water] * b [mol/m^3 bulk] /
 *     (1. + K [kg water/mol] * activity [mol/kg water])
 *
@@ -75,7 +79,7 @@ SorptionIsothermLangmuir::Evaluate(const Species& primary_species)
 
 /* *******************************************************************
 * Csorb = K * activity * b / (1 + K * activity)
-* dCsorb/dCaq = (K * activity_coef * b / (1 + K * activity)) - 
+* dCsorb/dCaq = (K * activity_coef * b / (1 + K * activity)) -
 *               (K * activity * b / (1 + K * activity)^2 * K * activity_coef)
 * Units:
 *   KD [kg water/m^3 bulk]

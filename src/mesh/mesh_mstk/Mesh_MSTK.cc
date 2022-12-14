@@ -1,14 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella, others
 */
 
 //! Implementation of the Mesh interface leveraging MSTK.
-
 #include "dbc.hh"
 #include "errors.hh"
 
@@ -1366,13 +1365,13 @@ Mesh_MSTK::cell_get_faces_and_dirs_unordered(const Entity_ID cellid,
 
     List_Delete(rfaces);
 
-    /* Reserved for next major MSTK release 
+    /* Reserved for next major MSTK release
     int rfaceids[MAXPF3];
 
     MR_FaceIDs((MRegion_ptr)cell,&nrf,rfaceids);
     faceids->resize(nrf);
     Entity_ID_List::iterator it = faceids->begin();
-    for (int i = 0; i < nrf; ++i) { 
+    for (int i = 0; i < nrf; ++i) {
       *it = rfaceids[i]-1;
       ++it;
     }
@@ -1410,11 +1409,11 @@ Mesh_MSTK::cell_get_faces_and_dirs_unordered(const Entity_ID cellid,
 
     List_Delete(fedges);
 
-    /* Reserved for next major MSTK release 
+    /* Reserved for next major MSTK release
 
     int fedgeids[MAXPV2];
     MF_EdgeIDs((MFace_ptr)cell,1,0,&nfe,fedgeids);
-    
+
     faceids->resize(nfe);
     Entity_ID_List::iterator itf = faceids->begin();
     for (int i = 0; i < nfe; ++i) {
@@ -1482,13 +1481,13 @@ Mesh_MSTK::cell_get_edges_internal_(const Entity_ID cellid, Entity_ID_List* edge
 
     List_Delete(redges);
 
-    /* Reserved for next major MSTK release 
+    /* Reserved for next major MSTK release
     int redgeids[MAXPF3];
 
     MR_EdgeIDs((MRegion_ptr)cell,&nre,redgeids);
     edgeids->resize(nre);
     Entity_ID_List::iterator it = edgeids->begin();
-    for (int i = 0; i < nre; ++i) { 
+    for (int i = 0; i < nre; ++i) {
       *it = redgeids[i]-1;
       ++it;
     }
@@ -1513,11 +1512,11 @@ Mesh_MSTK::cell_get_edges_internal_(const Entity_ID cellid, Entity_ID_List* edge
 
     List_Delete(fedges);
 
-    /* Reserved for next major MSTK release 
+    /* Reserved for next major MSTK release
 
     int fedgeids[MAXPV2];
     MF_EdgeIDs((MFace_ptr)cell,1,0,&nfe,fedgeids);
-    
+
     edgeids->resize(nfe);
     Entity_ID_List::iterator ite = edgeids->begin();
     for (int i = 0; i < nfe; ++i) {
@@ -1629,13 +1628,13 @@ Mesh_MSTK::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
 
     List_Delete(fedges);
 
-    /* Reserved for next major MSTK release 
+    /* Reserved for next major MSTK release
     int fedgeids[MAXPF3];
 
     MF_EdgeIDs((MFace_ptr)face,&nfe,fedgeids);
     fedgeids->resize(nfe);
     Entity_ID_List::iterator it = fedgeids->begin();
-    for (int i = 0; i < nfe; ++i) { 
+    for (int i = 0; i < nfe; ++i) {
       *it = fedgeids[i]-1;
       ++it;
     }
@@ -1701,7 +1700,7 @@ Mesh_MSTK::face_get_nodes(const Entity_ID faceid, std::vector<Entity_ID>* nodeid
     MF_VertexIDs((MFace_ptr) genface,dir,0,&nn,vertids);
 
     nodeids->resize(nn);
-    for (int i = 0; i < nn; ++i) 
+    for (int i = 0; i < nn; ++i)
       (*nodeids)[i] = vertids[i]-1;
     */
 
@@ -1773,7 +1772,7 @@ Mesh_MSTK::node_get_cells(const Entity_ID nodeid,
   MVertex_ptr mv = (MVertex_ptr)vtx_id_to_handle[nodeid];
 
   /* Reserved for next major release of MSTK
-  if (MV_PType(mv) == PINTERIOR && ptype != Parallel_type::GHOST) { 
+  if (MV_PType(mv) == PINTERIOR && ptype != Parallel_type::GHOST) {
 
     if (manifold_dimension() == 3) {
       int nvr, regionids[200];
@@ -1786,8 +1785,8 @@ Mesh_MSTK::node_get_cells(const Entity_ID nodeid,
         ++it;
       }
     }
-    else {      
-      int nvf, faceids[200];      
+    else {
+      int nvf, faceids[200];
       MV_FaceIDs(mv,&nvf,faceids);
       AMANZI_ASSERT(nvf < 200);
       cellids->resize(nvf);
@@ -1797,7 +1796,7 @@ Mesh_MSTK::node_get_cells(const Entity_ID nodeid,
         ++it;
       }
     }
-    
+
   }
   else {
   */
@@ -1862,7 +1861,7 @@ Mesh_MSTK::node_get_faces(const Entity_ID nodeid,
 
   MVertex_ptr mv = (MVertex_ptr)vtx_id_to_handle[nodeid];
 
-  /* Reserved for next major release of MSTK 
+  /* Reserved for next major release of MSTK
   if (MV_PType(mv) == PINTERIOR && ptype != Parallel_type::GHOST) {
     if (manifold_dimension() == 3) {
       int nvf, vfaceids[200];
@@ -1885,7 +1884,7 @@ Mesh_MSTK::node_get_faces(const Entity_ID nodeid,
 
       faceids->resize(nve);
       Entity_ID_List::iterator it = faceids->begin();
-      for (int i = 0; i < nve; ++i) {      
+      for (int i = 0; i < nve; ++i) {
         *it = vedgeids[i]-1;  // assign to next spot by dereferencing iterator
         ++it;
       }
@@ -2867,7 +2866,7 @@ Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
 
       for (int ms = 1; ms < msets.size(); ms++) MSet_Mark(msets[ms], mkid);
 
-      /* Look for entities in the first set but not in 
+      /* Look for entities in the first set but not in
          any of the other sets */
       MEntity_ptr ment;
       int idx = 0;
@@ -4296,7 +4295,7 @@ Mesh_MSTK::init_set_info()
         }
       }
     } else { /* General region - we have to account for all kinds of
-              entities being queried in a set defined by this 
+              entities being queried in a set defined by this
               region */
       Entity_kind int_to_kind[4] = { NODE, EDGE, FACE, CELL };
 
@@ -4690,23 +4689,23 @@ Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh,
   |/__ i
 
 
-  Model vertex, edge and face enumeration for classification templates 
+  Model vertex, edge and face enumeration for classification templates
 
 
          MODEL                   MODEL                  MODEL
          VERTICES                EDGES                  FACES
 
-     7 ______ 8          ___7___           ______  
-      /|          /|          /|          /|         /|      2   /| 
-     / |         / |       12/ |8      11/ |             / |  4      / | 
-   5/______/6 |        /___3___/  |6           /______/  | 
-    |  |        |  |        |  |        |  |            |  |        | 5| 
-    |  |____|_|        |  |___5_|_|            |6 |_1___|_| 
-    |  /3       |  /4      4|  /        |  /            |  /        |  / 
-    | /         | /         | /9       2| /10           | /      3  | /  
-    |/_____|/          |/_____|/              |/_____|/   
+     7 ______ 8          ___7___           ______
+      /|          /|          /|          /|         /|      2   /|
+     / |         / |       12/ |8      11/ |             / |  4      / |
+   5/______/6 |        /___3___/  |6           /______/  |
+    |  |        |  |        |  |        |  |            |  |        | 5|
+    |  |____|_|        |  |___5_|_|            |6 |_1___|_|
+    |  /3       |  /4      4|  /        |  /            |  /        |  /
+    | /         | /         | /9       2| /10           | /      3  | /
+    |/_____|/          |/_____|/              |/_____|/
    1             2                1
-                                                   
+
                                                     Front  - Face1
                                                     Back   - Face2
                                                     Bottom - Face3

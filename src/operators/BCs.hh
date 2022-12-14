@@ -1,12 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #ifndef AMANZI_OPERATORS_BC_HH_
@@ -32,12 +35,12 @@ namespace Operators {
 /* *******************************************************************
 * Elliptic equation E(u) = f. Three types of boundary conditions are
 * supported by this class:
-*   [Dirichlet]                  u = u0 
+*   [Dirichlet]                  u = u0
 *   [Neumann]     -K(u) grad u . n = g0
 *   [Mixed] -K(u) grad u . n - c u = g1
 *
-* The right-hand side data (u0, g0, g1) must be placed in array 
-* bc_value that has a proper size (see below). The type of BC 
+* The right-hand side data (u0, g0, g1) must be placed in array
+* bc_value that has a proper size (see below). The type of BC
 * must be indicated in integer array bc_model using constants
 * defined in file OperatorDefs.hh. Arrays bc_value and bc_model
 * must have the same size and contain ghost degrees of freedom.
@@ -45,16 +48,16 @@ namespace Operators {
 * The coefficent c must be placed in array bc_mixed. This array
 * can be empty; otherwise, its size must match that of bc_value.
 *
-* All three arrays are associated with degrees of freedom selected 
+* All three arrays are associated with degrees of freedom selected
 * for a problem discretization, see class Operators for more detail.
 * For example, for the nodal discretization of elliptic equation,
-* the dimension of the arrays equals to the total number of nodes 
+* the dimension of the arrays equals to the total number of nodes
 * on a processor, including the ghost nodes.
 *
 * NOTE. Arrays bc_value and bc_model may be empty when homogeneous
 *   Neumann boundary conditions are imposed on the domain boundary.
 *
-* NOTE. Suffient conditions for solution non-negativity are 
+* NOTE. Suffient conditions for solution non-negativity are
 *   g0 <= 0, g1 <= 0 and c >=0.
 *
 * NOTE. All data in input arrays are given with respect to exterior
@@ -63,27 +66,27 @@ namespace Operators {
 *
 * **********************
 *
-* Diffusion-advection equation E(u) + A(u) = f. Four types of boundary 
+* Diffusion-advection equation E(u) + A(u) = f. Four types of boundary
 * conditions are supported:
-*   [Dirichlet]                         u = u0 
+*   [Dirichlet]                         u = u0
 *   [Neumann]            -K(u) grad u . n = g0
 *   [Mixed]        -K(u) grad u . n - c u = g1
 *   [Total flux] -(K(u) grad u - v c) . n = g2
 *
 * Here v is the advective velocity. For the diffusion-advection
-* operator, we may impose boundary conditions that make sence for 
+* operator, we may impose boundary conditions that make sence for
 * diffusion but not appropriate for advection. To void creation of two
 * sets of boundary conditions, the total flux condition can be used.
 * Only the leading operator, typically diffusion, can set up this BC.
-* The other operators will remove all boundary contributions to the 
+* The other operators will remove all boundary contributions to the
 * matrix and right-hand side when the total flux condition is specified.
-* 
+*
 * **********************
 *
-* Advection equation A(u) = f. One type of boundary condition is 
+* Advection equation A(u) = f. One type of boundary condition is
 * supported by this class:
-*   [Dirichlet]          u = u0 
-* 
+*   [Dirichlet]          u = u0
+*
 * The data u0 can be included in a weak formulation in two different
 * ways. In the integration by parts formulations, boundary integrals
 * are elliminated from the left-hand side and the right-hand side is
@@ -92,7 +95,7 @@ namespace Operators {
 * boundary condition is added to the system:
 *
 *   (A(u) - f, w) + (u - u0, w) = 0.
-* 
+*
 * In the second approach, array bc_model should use TYPE2 boundary
 * condition, see OperatorDefs.hh for the full name.
 *

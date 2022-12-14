@@ -1,13 +1,16 @@
 /*
-  Flow PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Neil Carlson (version 1) 
-           Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Authors: Neil Carlson (version 1)
+      Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #include <string>
@@ -254,7 +257,7 @@ Flow_PK::Initialize()
 
 
 /* ****************************************************************
-* This completes initialization of common fields that were not 
+* This completes initialization of common fields that were not
 * initialized by the state.
 **************************************************************** */
 void
@@ -355,7 +358,7 @@ Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
 
 /* ******************************************************************
 * Routine processes parameter list. It needs to be called only once
-* on each processor.                                                     
+* on each processor.
 ****************************************************************** */
 void
 Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
@@ -600,8 +603,8 @@ Flow_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVec
 
 /* ******************************************************************
 * Add a boundary marker to used faces.
-* WARNING: we can skip update of ghost boundary faces, b/c they 
-* should be always owned. 
+* WARNING: we can skip update of ghost boundary faces, b/c they
+* should be always owned.
 ****************************************************************** */
 void
 Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
@@ -701,7 +704,7 @@ Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
 
 
 /* ******************************************************************
-*  Temporary convertion from double to tensor.                                               
+*  Temporary convertion from double to tensor.
 ****************************************************************** */
 void
 Flow_PK::SetAbsolutePermeabilityTensor()
@@ -784,7 +787,7 @@ Flow_PK::SetAbsolutePermeabilityTensor()
 
 
 /* ******************************************************************
-* Add source and sink terms.                                   
+* Add source and sink terms.
 ****************************************************************** */
 void
 Flow_PK::AddSourceTerms(CompositeVector& rhs, double dt)
@@ -802,8 +805,8 @@ Flow_PK::AddSourceTerms(CompositeVector& rhs, double dt)
 
 /* ******************************************************************
 * BDF methods need a good initial guess.
-* WARNING: Each owned face must have at least one owned cell. 
-* Probability that this assumption is violated is close to zero. 
+* WARNING: Each owned face must have at least one owned cell.
+* Probability that this assumption is violated is close to zero.
 * Even when it happens, the code will not crash.
 ****************************************************************** */
 void
@@ -831,7 +834,7 @@ Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells,
 
 
 /* ******************************************************************
-* Calculate change of water volume per second due to boundary flux.                                          
+* Calculate change of water volume per second due to boundary flux.
 ****************************************************************** */
 double
 Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
@@ -862,7 +865,7 @@ Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
 
 
 /* ******************************************************************
-* Returns approximation of a solution on a boundary face   
+* Returns approximation of a solution on a boundary face
 ****************************************************************** */
 double
 Flow_PK::BoundaryFaceValue(int f, const CompositeVector& u)

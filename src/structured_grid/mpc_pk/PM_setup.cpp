@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <winstd.H>
 #include <ParmParse.H>
 #include <Interpolater.H>
@@ -30,7 +39,7 @@
         std::cout << val[i] << " " ;           \
     }                                          \
     std::cout << std::endl;                    \
-}                                             
+}
 #define SHOWVALARRA(val) { SHOWVALARR(val); BoxLib::Abort();}
 #define SHOWVAL(val) { std::cout << #val << " = " << val << std::endl;}
 #define SHOWVALA(val) { SHOWVAL(val); BoxLib::Abort();}
@@ -119,7 +128,7 @@ int                 PorousMedia::ndiff;
 Array<std::string>  PorousMedia::qNames;
 Array<std::string>  PorousMedia::tNames;
 int                 PorousMedia::ntracers;
-Array<int>          PorousMedia::tType; 
+Array<int>          PorousMedia::tType;
 Array<Real>         PorousMedia::tDen;
 Array<PArray<IdxRegionData> > PorousMedia::tic_array;
 Array<PArray<IdxRegionData> > PorousMedia::tbc_array;
@@ -328,7 +337,7 @@ PorousMedia::ExecutionMode PorousMedia::execution_mode;
 
 namespace
 {
-    static void PM_Setup_CleanUpStatics() 
+    static void PM_Setup_CleanUpStatics()
     {
       ChemistryHelper_Structured *chemistry_helper = PorousMedia::GetChemistryHelper();
       delete chemistry_helper; chemistry_helper = 0;
@@ -503,19 +512,19 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::flow_eval      = PorousMedia::PM_FLOW_EVAL_INVALID;
   PorousMedia::flow_is_static = true;
   PorousMedia::nphases        = 0;
-  PorousMedia::ncomps         = 0; 
+  PorousMedia::ncomps         = 0;
   PorousMedia::ndiff          = 0;
 
-  PorousMedia::ntracers = 0; 
+  PorousMedia::ntracers = 0;
   PorousMedia::uninitialized_data = 1.0e30;
-  PorousMedia::nminerals = 0; 
+  PorousMedia::nminerals = 0;
   PorousMedia::minerals.clear();
-  PorousMedia::nsorption_sites = 0; 
+  PorousMedia::nsorption_sites = 0;
   PorousMedia::sorption_sites.clear();
   PorousMedia::ncation_exchange = 0;
   PorousMedia::nsorption_isotherms = 0;
   PorousMedia::using_sorption = false;
-  
+
   PorousMedia::wt_lo = 0;
   PorousMedia::wt_hi = 0;
 
@@ -544,13 +553,13 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::NUM_STATE    = 0;
 
   PorousMedia::be_cn_theta           = 0.5;
-  PorousMedia::visc_tol              = 1.0e-10;  
-  PorousMedia::visc_abs_tol          = 1.0e-10;  
+  PorousMedia::visc_tol              = 1.0e-10;
+  PorousMedia::visc_abs_tol          = 1.0e-10;
   PorousMedia::def_harm_avg_cen2edge = true;
 
   PorousMedia::atmospheric_pressure_atm = 1;
 
-  PorousMedia::variable_scal_diff = true; 
+  PorousMedia::variable_scal_diff = true;
 
   PorousMedia::do_tracer_chemistry = false;
   PorousMedia::do_tracer_advection = false;
@@ -681,7 +690,7 @@ PorousMedia::variableSetUp ()
     phys_bc.setHi(dir,SlipWall);
   }
 
-  std::string pp_dump_file = ""; 
+  std::string pp_dump_file = "";
   if (pproot.countval("dump_parmparse_table")) {
       pproot.get("dump_parmparse_table",pp_dump_file);
       std::ofstream ofs;
@@ -714,7 +723,7 @@ PorousMedia::variableSetUp ()
 
           if (!ofs.good())
               BoxLib::Error("Write of pp dump file failed");
-          
+
 
           if (verbose>1)
           {
@@ -725,7 +734,7 @@ PorousMedia::variableSetUp ()
       ParallelDescriptor::Barrier();
   }
 
-  read_params(); 
+  read_params();
   BCRec bc;
 
   //
@@ -758,7 +767,7 @@ PorousMedia::variableSetUp ()
 			 &cell_cons_interp);
 
   set_scalar_bc(bc,phys_bc);
-  for (int i = 0; i < ncomps; i++) 
+  for (int i = 0; i < ncomps; i++)
   {
     bcs[i] = bc;
     names[i] = cNames[i];
@@ -775,7 +784,7 @@ PorousMedia::variableSetUp ()
     Array<BCRec>       tbcs(ntracers);
     Array<std::string> tnames(ntracers);
 
-    for (int i = 0; i < ntracers; i++) 
+    for (int i = 0; i < ntracers; i++)
     {
       tbcs[i]   = trac_bc;
       tnames[i] = tNames[i];
@@ -812,12 +821,12 @@ PorousMedia::variableSetUp ()
       Array<BCRec> cbcs(num_aux_chem_variables);
       set_aux_bc(bc,phys_bc);
       Array<std::string> tmp_aux(num_aux_chem_variables);
-      for (std::map<std::string,int>::const_iterator it=aux_chem_variables_map.begin(); 
+      for (std::map<std::string,int>::const_iterator it=aux_chem_variables_map.begin();
 	   it!=aux_chem_variables_map.end(); ++it)
       {
 	int i = it->second;
 	tmp_aux[i] = it->first;
-	cbcs[i] = bc;	  
+	cbcs[i] = bc;
       }
 
       FORT_AUXPARAMS(&num_aux_chem_variables);
@@ -867,7 +876,7 @@ PorousMedia::variableSetUp ()
       if (do_full_strang) nfunccountghost=1;
       desc_lst.addDescriptor(FuncCount_Type, IndexType::TheCellType(),
 			     StateDescriptor::Point,nfunccountghost,1, &cell_cons_interp);
-      desc_lst.setComponent(FuncCount_Type, 0, "FuncCount", 
+      desc_lst.setComponent(FuncCount_Type, 0, "FuncCount",
 			    bc, BndryFunc(FORT_ONE_A_FILL));
     }
 #endif
@@ -918,7 +927,7 @@ PorousMedia::variableSetUp ()
       intern_reqd_der.push_back("Tortuosity_"+dirStr[d]);
     }
   }
-  
+
   if (flow_model==PM_FLOW_MODEL_SATURATED) {
     intern_reqd_der.push_back("Specific_Storage");
     intern_reqd_der.push_back("Specific_Yield");
@@ -942,7 +951,7 @@ PorousMedia::variableSetUp ()
     //     advantage that chemistry does not need to be in native parmparse
 
     // sorption
-    //  if (rock_manager->UsingSorption()) 
+    //  if (rock_manager->UsingSorption())
     if (using_sorption)
     {
       for (int i=0; i<tNames.size(); ++i) {
@@ -964,7 +973,7 @@ PorousMedia::variableSetUp ()
 	}
       }
     } //sorption
-    
+
     // minerals
     //const Array<std::string>& mineralNames = rock_manager->MineralNames();
     const Array<std::string>& mineralNames = minerals;
@@ -973,7 +982,7 @@ PorousMedia::variableSetUp ()
     }
     for (int i=0; i<mineralNames.size(); ++i) {
       intern_reqd_der.push_back(mineralNames[i]+"_Specific_Surface_Area");
-    }  
+    }
   }
 
   intern_reqd_der.push_back("Material_ID");
@@ -1006,7 +1015,7 @@ PorousMedia::variableSetUp ()
     pp.getarr("write_regions",wrNames,0,nwr);
     std::string prefix("amr.write_region");
     ParmParse ppwr(prefix.c_str());
-    
+
     for (int i = 0; i<nwr; i++) {
       const std::string& wrname = wrNames[i];
       int nwrst = ppwr.countval(wrname.c_str());
@@ -1036,7 +1045,7 @@ PorousMedia::variableSetUp ()
       Real min_time = 0; ppr.query("start_time",min_time);
       Real max_time = -1; ppr.query("end_time",max_time);
       int max_level = -1;  ppr.query("max_level",max_level);
-      Array<std::string> region_names(1,"All"); 
+      Array<std::string> region_names(1,"All");
       int nreg = ppr.countval("regions");
       if (nreg) {
           ppr.getarr("regions",region_names,0,nreg);
@@ -1127,7 +1136,7 @@ void PorousMedia::read_prob()
       setup_tracer_transport = true; // NOTE: May want these data structures regardless...
   }
 
-  if (setup_tracer_transport && 
+  if (setup_tracer_transport &&
       ( flow_model==PM_FLOW_MODEL_SATURATED
 	|| flow_model == PM_FLOW_MODEL_RICHARDS) )
   {
@@ -1135,7 +1144,7 @@ void PorousMedia::read_prob()
       diffuse_tracers = do_tracer_diffusion;
       react_tracers = do_tracer_chemistry;
   }
-    
+
   // Verbosity
   pb.query("v",verbose);
 
@@ -1236,10 +1245,10 @@ void PorousMedia::read_prob()
   pb.query("visc_abs_tol",visc_abs_tol);
   pb.query("be_cn_theta",be_cn_theta);
   if (be_cn_theta > 1.0 || be_cn_theta < .5)
-    BoxLib::Abort("PorousMedia::Must have be_cn_theta <= 1.0 && >= .5");   
+    BoxLib::Abort("PorousMedia::Must have be_cn_theta <= 1.0 && >= .5");
   pb.query("be_cn_theta_trac",be_cn_theta_trac);
   if (be_cn_theta > 1.0 || be_cn_theta < 0)
-    BoxLib::Abort("PorousMedia::Must have be_cn_theta_trac <= 1.0 && >= 0");   
+    BoxLib::Abort("PorousMedia::Must have be_cn_theta_trac <= 1.0 && >= 0");
   pb.query("harm_avg_cen2edge", def_harm_avg_cen2edge);
 
   pb.query("verbose_observation_processing",verbose_observation_processing);
@@ -1343,7 +1352,7 @@ void  PorousMedia::read_comp()
       const std::string& icname = ic_names[i];
       const std::string prefix("comp.ics." + icname);
       ParmParse ppr(prefix.c_str());
-          
+
       int n_ic_regions = ppr.countval("regions");
       Array<std::string> region_names;
       ppr.getarr("regions",region_names,0,n_ic_regions);
@@ -1355,7 +1364,7 @@ void  PorousMedia::read_comp()
       {
 	int nPhase = pNames.size();
 	Array<Real> vals(nPhase);
-              
+
 	int num_phases_reqd = nPhase;
 	std::map<std::string,bool> phases_set;
 	for (int j = 0; j<pNames.size(); j++)
@@ -1490,10 +1499,10 @@ void  PorousMedia::read_comp()
     phys_bc.setHi(j,Symmetry);
     pres_bc.setHi(j,Symmetry);
   }
-  rinflow_bc_lo.resize(BL_SPACEDIM,0); 
-  rinflow_bc_hi.resize(BL_SPACEDIM,0); 
-  inflow_bc_lo.resize(BL_SPACEDIM,0); 
-  inflow_bc_hi.resize(BL_SPACEDIM,0); 
+  rinflow_bc_lo.resize(BL_SPACEDIM,0);
+  rinflow_bc_hi.resize(BL_SPACEDIM,0);
+  inflow_bc_lo.resize(BL_SPACEDIM,0);
+  inflow_bc_hi.resize(BL_SPACEDIM,0);
 
   int n_bcs = cp.countval("bc_labels");
   if (n_bcs > 0)
@@ -1511,7 +1520,7 @@ void  PorousMedia::read_comp()
       const std::string& bcname = bc_names[i];
       const std::string prefix("comp.bcs." + bcname);
       ParmParse ppr(prefix.c_str());
-          
+
       int n_bc_regions = ppr.countval("regions");
       Array<std::string> region_names;
       ppr.getarr("regions",region_names,0,n_bc_regions);
@@ -1543,7 +1552,7 @@ void  PorousMedia::read_comp()
 	BL_ASSERT(nPhase==1); // FIXME
 	Array<Real> vals, times;
 	Array<std::string> forms;
-              
+
 	std::string val_name = "vals";
 	int nv = ppr.countval(val_name.c_str());
 	if (nv) {
@@ -1554,12 +1563,12 @@ void  PorousMedia::read_comp()
 	    ppr.getarr("forms",forms,0,nv-1);
 	  }
 	}
-              
+
 	// convert to atm
 	for (int j=0; j<vals.size(); ++j) {
 	  vals[j] = vals[j] / BL_ONEATM;
 	}
-              
+
 	is_inflow = false;
 	if (flow_model == PM_FLOW_MODEL_SATURATED) {
 	  component_bc = Outflow;
@@ -1574,7 +1583,7 @@ void  PorousMedia::read_comp()
       }
       else if (bc_type == "hydraulic_head"
 	       || bc_type == "hydrostatic")
-      {              
+      {
 	Array<Real> vals, times;
 	Array<std::string> forms;
 	std::string val_name = "vals";
@@ -1623,7 +1632,7 @@ void  PorousMedia::read_comp()
 	int nl = ppr.countval("loc");
 	BL_ASSERT(nl>=BL_SPACEDIM);
 	Array<Real> loc(BL_SPACEDIM); ppr.getarr("loc",loc,0,BL_SPACEDIM);
-	    
+
 	Array<Real> vals(2*BL_SPACEDIM+1);
 	vals[0] = val / BL_ONEATM;
 	for (int d=0; d<BL_SPACEDIM; ++d) {
@@ -1650,7 +1659,7 @@ void  PorousMedia::read_comp()
 	if (flow_is_static && (flow_eval!=PM_FLOW_EVAL_CONSTANT))
 	  flow_eval  = PM_FLOW_EVAL_SOLVE_GIVEN_PBC;
       }
-      else if (bc_type == "inward_volumetric_flux" 
+      else if (bc_type == "inward_volumetric_flux"
 	       || bc_type == "outward_volumetric_flux"
 	       || bc_type == "inward_mass_flux"
 	       || bc_type == "outward_mass_flux" )
@@ -1742,7 +1751,7 @@ void  PorousMedia::read_comp()
 	BoxLib::Abort(std::string(bc_type+" not a valid bc type").c_str());
       }
 
-      // Some clean up 
+      // Some clean up
       std::set<std::string> o_set;
 
       for (int j=0; j<bc_regions.size(); ++j)
@@ -1858,7 +1867,7 @@ void  PorousMedia::read_tracer()
     const std::string chemistry_str = "Chemistry";
 
     ParmParse ppc(chemistry_str.c_str());
-    
+
     if (chemistry_model_name != "Off") {
 
       const std::string Chemistry_Max_Time_Step_str = "Max_Time_Step";
@@ -1873,14 +1882,14 @@ void  PorousMedia::read_tracer()
         if (ppr.countval("firstOrderDecayConstant") > 0) {
           BoxLib::Abort("Radioactive decay constants cannot yet be specified in Amanzi input");
         }
-        ppr.query("firstOrderDecayConstant",first_order_decay_constant[i]); 
+        ppr.query("firstOrderDecayConstant",first_order_decay_constant[i]);
       }
 
       if (chemistry_model_name == "Amanzi") {
 
         Teuchos::ParameterList plist;
         ParmParse pb("prob.amanzi");
-        std::string verbose_chemistry_init = "silent"; ppc.query("verbose_chemistry_init",verbose_chemistry_init);      
+        std::string verbose_chemistry_init = "silent"; ppc.query("verbose_chemistry_init",verbose_chemistry_init);
 
         const std::string thermo_str = "Thermodynamic_Database";
         const std::string thermo_fmt_str = thermo_str + "_Format";
@@ -1893,7 +1902,7 @@ void  PorousMedia::read_tracer()
         const std::string& activity_model_u  = Amanzi::AmanziChemistry::ActivityModelFactory::unit;
         std::string activity_model = activity_model_u;
         ppc.query("Activity_Model",activity_model);
-        
+
         Real tolerance=1.5e-12; ppc.query("Tolerance",tolerance);
         int max_num_Newton_iters = 150; ppc.query("Maximum_Newton_Iterations",max_num_Newton_iters);
         std::string outfile=""; ppc.query("Output_File_Name",outfile);
@@ -1958,7 +1967,7 @@ void  PorousMedia::read_tracer()
 	//    does have any effect on output unless in PorousMedia::variableSetUp
 	//    PM_setup static variables set here are used there
         chemistry_helper = new AlquimiaHelper_Structured(chemistry_engine);
-        
+
         //
         // FIXME: THIS WILL OVERWRITE THE LIST OF AMANZI TRACERS
 	// SM: FIX not needed for now: overwriting is good - see above and PorousMedia::variableSetUp
@@ -1971,7 +1980,7 @@ void  PorousMedia::read_tracer()
         for (int i=0; i<ntracers; ++i) {
           tNames[i] = primarySpeciesNames[i];
         }
-        
+
         std::vector<std::string> mineralNames;
         chemistry_engine->GetMineralNames(mineralNames);
         nminerals = mineralNames.size();
@@ -2036,13 +2045,13 @@ void  PorousMedia::read_tracer()
     else {
       setup_tracer_transport = false;
     }
-    
+
     for (int i = 0; i<ntracers; i++)
     {
       const std::string prefix("tracer." + tNames[i]);
       ParmParse ppr(prefix.c_str());
 
-      // Initial condition and boundary condition  
+      // Initial condition and boundary condition
       Array<std::string> tic_names;
       int n_ic = ppr.countval("tinits");
       if (n_ic <= 0)
@@ -2051,7 +2060,7 @@ void  PorousMedia::read_tracer()
       }
       ppr.getarr("tinits",tic_names,0,n_ic);
       tic_array[i].resize(n_ic,PArrayManage);
-          
+
       for (int n = 0; n<n_ic; n++)
       {
         const std::string prefixIC(prefix + ".ic." + tic_names[n]);
@@ -2076,7 +2085,7 @@ void  PorousMedia::read_tracer()
           else {
             int nv = ppri.countval("val");
             if (nv != 1) {
-              std::string m = "Solute IC: \"" + tic_names[n] 
+              std::string m = "Solute IC: \"" + tic_names[n]
                 + "\" for \"" + tNames[i] + "\" requires a single value";
               BoxLib::Abort(m.c_str());
             }
@@ -2093,7 +2102,7 @@ void  PorousMedia::read_tracer()
               ppri.get(FIG_str.c_str(), val);
             }
             else if (nfig > 1) {
-              std::string m = "Solute IC: \"" + tic_names[n] 
+              std::string m = "Solute IC: \"" + tic_names[n]
                 + "\": Free Ion Guess parameter for \"" + tNames[i] + "\" requires a single value";
               BoxLib::Abort(m.c_str());
             }
@@ -2109,7 +2118,7 @@ void  PorousMedia::read_tracer()
               ppri.get(AC_str.c_str(), valac);
             }
             else if (nac > 1) {
-              std::string m = "Solute IC: \"" + tic_names[n] 
+              std::string m = "Solute IC: \"" + tic_names[n]
                 + "\": Activity Coefficient parameter for \"" + tNames[i] + "\" requires a single value";
               BoxLib::Abort(m.c_str());
             }
@@ -2117,7 +2126,7 @@ void  PorousMedia::read_tracer()
           }
         }
         else {
-          std::string m = "Solute IC: \"" + tic_names[n] 
+          std::string m = "Solute IC: \"" + tic_names[n]
             + "\": Unsupported Solute IC type: \"" + tic_type + "\"";
           BoxLib::Abort(m.c_str());
         }
@@ -2135,10 +2144,10 @@ void  PorousMedia::read_tracer()
         int tbc_cnt = 0;
 
         // FIXME:
-        // When these are used, we pick up a cross derivative term that can be seen when a front that is 
-        // perpendicular to the boundary moves tangential to that boundary, even when the normal velocity 
+        // When these are used, we pick up a cross derivative term that can be seen when a front that is
+        // perpendicular to the boundary moves tangential to that boundary, even when the normal velocity
         // across that boundary is identically zero.  This is an error and should be fixed since information
-        // should not propagate through a zero velocity wall.  For the time being, we have set it up so that 
+        // should not propagate through a zero velocity wall.  For the time being, we have set it up so that
         // the default BC is instead FOEXTRAP, minimizing this effect.  However we should go more carefully
         // through the advection code to find why the cross terms are not correctly dealt with.
         //
@@ -2158,7 +2167,7 @@ void  PorousMedia::read_tracer()
         {
           const std::string prefixTBC(prefix + ".bc." + tbc_names[n]);
           ParmParse ppri(prefixTBC.c_str());
-                  
+
           int n_tbc_region = ppri.countval("regions");
           Array<std::string> tbc_region_names;
           ppri.getarr("regions",tbc_region_names,0,n_tbc_region);
@@ -2224,7 +2233,7 @@ void  PorousMedia::read_tracer()
             AMR_BC_tID = 3; // Outflow
           }
           else {
-            std::string m = "Tracer BC: \"" + tbc_names[n] 
+            std::string m = "Tracer BC: \"" + tbc_names[n]
               + "\": Unsupported tracer BC type: \"" + tbc_type + "\"";
             BoxLib::Abort(m.c_str());
           }
@@ -2269,7 +2278,7 @@ void  PorousMedia::read_tracer()
         set_tracer_bc(trac_bc,phys_bc_trac);
       }
 
-      ppr.query("molecularDiffusivity",molecular_diffusivity[i]); 
+      ppr.query("molecularDiffusivity",molecular_diffusivity[i]);
     }
     ndiff += ntracers;
   }
@@ -2310,7 +2319,7 @@ void  PorousMedia::read_source()
       ParmParse pps(prefix.c_str());
 
       int n_src_regions = pps.countval("regions");
-      Array<std::string> src_region_names; 
+      Array<std::string> src_region_names;
       pps.getarr("regions",src_region_names,0,n_src_regions);
       const Array<const Region*> source_regions = region_manager->RegionPtrArray(src_region_names);
 
@@ -2333,13 +2342,13 @@ void  PorousMedia::read_source()
 	    source_array.set(i, new RegionData(source_name,source_regions,source_type,vals));
 	  }
 	else {
-	  std::string m = "Source: \"" + source_names[i] 
+	  std::string m = "Source: \"" + source_names[i]
 	    + "\": Unsupported source type: \"" + source_type + "\"";
 	  BoxLib::Abort(m.c_str());
 	}
       }
       else {
-	std::string m = "Source: \"" + source_names[i] 
+	std::string m = "Source: \"" + source_names[i]
 	  + "\": Requires \"type\" specifier";
 	BoxLib::Abort(m.c_str());
       }
@@ -2348,7 +2357,7 @@ void  PorousMedia::read_source()
 	const std::string& pName = pNames[ip];
 	const std::string p_prefix(prefix+"."+pName);
 	ParmParse pps_p(p_prefix.c_str());
-	
+
 	for (int ic=0; ic<cNames.size(); ++ic) {
 	  const std::string& cName = cNames[ic];
 	  const std::string c_prefix(p_prefix+"."+cName);
@@ -2359,16 +2368,16 @@ void  PorousMedia::read_source()
 	    Array<std::string> tracers_with_sources;
 	    pps_c.getarr("tracers_with_sources",tracers_with_sources,0,ntracers_with_sources);
 	    tsource_array[i].resize(ntracers, PArrayManage);
-	    
+
 	    for (int it=0; it<tracers_with_sources.size(); ++it) {
 	      const std::string& tName = tracers_with_sources[it];
 	      int t_pos = loc_in_array(tName,tNames);
 	      if (t_pos>=0) {
 		const std::string c_t_prefix(c_prefix+"."+tName);
 		ParmParse pps_c_t(c_t_prefix.c_str());
-	      
+
 		if (pps_c_t.countval("type")) {
-		  std::string tsource_type; pps_c_t.get("type",tsource_type);              
+		  std::string tsource_type; pps_c_t.get("type",tsource_type);
 		  if (tsource_type == "uniform"
 		      || tsource_type == "flow_weighted"
 		      || tsource_type == "point")
@@ -2388,12 +2397,12 @@ void  PorousMedia::read_source()
                     tsource_array[i].set(t_pos, new DiffDomRelSrc(source_name,source_regions,tsource_type,mixing_length,D_eff,total_inventory,start_time,end_time,time_scale));
                   }
 		  else {
-		    BoxLib::Abort(std::string("Source: \"" + source_names[i] + 
+		    BoxLib::Abort(std::string("Source: \"" + source_names[i] +
 					      "\", Comp: \"" + cName + "\", Solute SOURCE: \"" + tName
 					      + "\": Unsupported source type: \"" + tsource_type + "\"").c_str());
 		  }
 		} else {
-		  BoxLib::Abort(std::string("Source: \"" + source_names[i] 
+		  BoxLib::Abort(std::string("Source: \"" + source_names[i]
 					    + "\": Requires \"type\" specifier for solute \""+tName+"\"").c_str());
 		}
 		if (pps_c_t.countval("Concentration_Units")) {
@@ -2427,7 +2436,7 @@ void PorousMedia::read_params()
   read_prob();
 
   // Require regions prior to setting up phases/comps
-  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
     std::cout << "Reading geometry" << std::endl;
   region_manager = new RegionManager();
   if (echo_inputs && ParallelDescriptor::IOProcessor()) {
@@ -2439,26 +2448,25 @@ void PorousMedia::read_params()
   }
 
   // components and phases
-  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
     std::cout << "Reading phases/components."<< std::endl;
   read_comp();
-  
+
   // tracers and chemistry
-  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
     std::cout << "Read tracers/chemistry"<< std::endl;
   read_tracer();
 
   // source
-  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
     std::cout << "Reading sources."<< std::endl;
   read_source();
-  
+
   int model_int = FlowModel();
   FORT_INITPARAMS(&ncomps,&nphases,&model_int,density.dataPtr(),
 		  muval.dataPtr(),pType.dataPtr(),
 		  &gravity,&gravity_dir);
-    
+
   if (ntracers > 0)
     FORT_TCRPARAMS(&ntracers);
 }
-

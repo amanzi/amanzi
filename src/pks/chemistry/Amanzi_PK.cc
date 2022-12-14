@@ -1,18 +1,20 @@
 /*
-  Chemistry PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors:
+*/
+
+/*
+  Chemistry PK
 
   Trilinos based process kernel for chemistry. Geochemistry
-  calculations live in the chemistry library. The PK stores the 
-  instance of the chemistry object and drives the chemistry 
+  calculations live in the chemistry library. The PK stores the
+  instance of the chemistry object and drives the chemistry
   calculations on a cell by cell basis. It handles the movement of
-  data back and forth between the State and the chemistry library 
+  data back and forth between the State and the chemistry library
   data structures.
 */
 
@@ -561,9 +563,9 @@ Amanzi_PK::CopyBeakerStructuresToCellState(int c,
 
 
 /* ******************************************************************
-* This function advances concentrations in the auxialiry vector 
-* aqueous_components_ (defined in the base class). This vector must 
-* be set up using routine set_aqueous_components(). Tipically, it 
+* This function advances concentrations in the auxialiry vector
+* aqueous_components_ (defined in the base class). This vector must
+* be set up using routine set_aqueous_components(). Tipically, it
 * contains values advected by the transport PK.
 ******************************************************************* */
 bool
@@ -634,7 +636,7 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 
 /* ******************************************************************
-* The MPC will call this function to signal to the process kernel 
+* The MPC will call this function to signal to the process kernel
 * that it has accepted the state update, thus, the PK should update
 * possible auxilary state variables here
 ******************************************************************* */

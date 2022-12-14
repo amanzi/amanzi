@@ -1,13 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Markus Berndt (berndt@lanl.gov)
+  Authors: Markus Berndt (berndt@lanl.gov)
 */
-//! Explicit time integration methods in a generalized form.
 
+//! Explicit time integration methods in a generalized form.
 /*!
 
 This class implements several explicit Runge Kutta methods:
@@ -28,31 +28,31 @@ are arranged as follows:
 
 .. code-block:
 
-    c[0]   | 
+    c[0]   |
     c[1]   | a(1,0)
      .     | a(2,0)    a(2,1)
-     .     |   .         .        
-     .     |   .         . 
-    c[s-1 ]| a(s-1,0)  a(s-1,1)  . . .  a(s-1,s-2) 
+     .     |   .         .
+     .     |   .         .
+    c[s-1 ]| a(s-1,0)  a(s-1,1)  . . .  a(s-1,s-2)
     ---------------------------------------------------------
-           |   b[0]      b[1]    . . .    b[s-2]      b[s-1] 
-  
+           |   b[0]      b[1]    . . .    b[s-2]      b[s-1]
+
 Note that c[0] should always equal zero, and that the entries in the matrix a
 that are not listed in this tableau are not used
-  
+
 The implemented general Runge Kutta scheme of order s based on this tableau arrangement is
 
 .. math::
     y_{n+1} = y_n + \sum{i=0}^{s-1} b[i]*k_i
-  
-    with 
-  
+
+    with
+
       k_0 = h * f(t_n, y_n) \\
       k_1 = h * f(t_n + c[1]*h, y_n + a(1,0)*k_0) \\
       k_2 = h * f(t_n + c[2]*h, y_n + a(2,0)*k_0 + a(2,1)*k_1) \\
        . \\
        . \\
-       . \\ 
+       . \\
       k_{s-1} = h * f(t_n + c[s-1]*h, y_n + a(s-1,0)*k_0 + ... + a(s-1,s-2)*k_{s-2})
 
 
@@ -62,7 +62,7 @@ The implemented general Runge Kutta scheme of order s based on this tableau arra
     * `"verbose object`" ``[verbose-object-spec]`` A `Verbose Object`_
 
     * `"RK method`" ``[string]`` **forward euler**  One of: `"forward Euler`", `"heun euler`", `"midpoint`", `"ralston`", `"tvd 3rd order`", `"kutta 3rd order`", `"runge kutta 4th order`"
-      
+
 */
 
 

@@ -1,12 +1,15 @@
 /*
-  Navier Stokes PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Navier Stokes PK
+
 */
 
 #include <vector>
@@ -131,7 +134,7 @@ NavierStokes_PK::Setup()
 
 /* ******************************************************************
 * This is a long but simple routine. It goes through flow parameter
-* list and initializes various objects including those created during 
+* list and initializes various objects including those created during
 * the setup step.
 ****************************************************************** */
 void
@@ -339,7 +342,7 @@ NavierStokes_PK::Initialize()
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Performs one time step from time t_old to time t_new either for
 * steady-state or transient simulation.
 ******************************************************************* */
@@ -393,7 +396,7 @@ NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Performs one time step from time t_old to time t_new either for
 * steady-state or transient simulation.
 ******************************************************************* */

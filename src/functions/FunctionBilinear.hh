@@ -1,15 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! FunctionBilinear: a piecewise bilinear function.
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Dylan Harp (dharp@lanl.gov)
+  Authors: Dylan Harp (dharp@lanl.gov)
 */
 
+//! FunctionBilinear: a piecewise bilinear function.
 /*!
 
 A piecewise bilinear function extends the linear form of the tabular function to two variables.
@@ -22,7 +20,7 @@ u_{{i(x),j(y)+1}}, u_{{i(x)+1,j(y)+1}}, if :math:`(x,y)` is in
 :math:`[x_0,x_n] \times [y_0,y_m]`, linear interpolation if one of :math:`x,y`
 are out of those bounds, and constant at the corner value if both are out of
 bounds.
- 
+
 .. _function-bilinear-spec:
 .. admonition:: function-bilinear-spec
 

@@ -1,19 +1,20 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Ethan Coon
+*/
+
 /* -------------------------------------------------------------------------
 
 ATS and Amanzi
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
-
-Interface for CompositeVector, an implementation of a slightly improved
-Epetra_MultiVector which spans multiple simplices and knows how to
-communicate itself.
-
 CompositeVectors are a collection of vectors defined on a common mesh and
 communicator.  Each vector, or component, has a name (used as a key), a mesh
 Entity_kind (CELL, FACE, NODE, or BOUNDARY_FACE), and a number of degrees of
-freedom (dofs).  This, along with the Epetra_BlockMap provided by the mesh 
+freedom (dofs).  This, along with the Epetra_BlockMap provided by the mesh
 on a given Entity_kind, is enough to create an Epetra_MultiVector.
 
 Note that construction of the CompositeVector does not allocate the

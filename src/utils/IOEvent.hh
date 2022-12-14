@@ -1,17 +1,14 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! IOEvent: base time/timestep control determing when in time to do something.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
-           Ethan Coon (ecoon@lanl.gov)
-
+      Ethan Coon (ecoon@lanl.gov)
 */
 
+//! IOEvent: base time/timestep control determing when in time to do something.
 /*!
 
 The IOEvent is used for multiple objects that need to indicate simulation times or cycles on which to do something.

@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Operations with polynomials.
 */
@@ -303,7 +305,7 @@ Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
 
 
 /* ******************************************************************
-* Rebase monomial to different origin. 
+* Rebase monomial to different origin.
 ****************************************************************** */
 Polynomial
 Polynomial::ChangeOrigin(const Monomial& mono, const AmanziGeometry::Point& origin)
@@ -368,7 +370,7 @@ Polynomial::ChangeOrigin(const Monomial& mono, const AmanziGeometry::Point& orig
 
 
 /* ******************************************************************
-* Calculate polynomial value at a given point. 
+* Calculate polynomial value at a given point.
 ****************************************************************** */
 double
 Polynomial::Value(const AmanziGeometry::Point& xp) const
@@ -396,7 +398,7 @@ Polynomial::Value(const AmanziGeometry::Point& xp) const
 
 
 /* ******************************************************************
-* Change of coordinates: x = x0 + B * s 
+* Change of coordinates: x = x0 + B * s
 * Note: the resulting polynomial is centered at the new local origin.
 ****************************************************************** */
 void

@@ -1,15 +1,13 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon
 */
 
 //! A factory for creating control-volume logical meshes from segments.
-
 /*!
 
 Builds up a logical mesh from a series of segments.  Note that logical meshes
@@ -95,7 +93,7 @@ last tip is the upstream inlet, and orientation is aligned with the flow directi
 Finally, often tips of segments may be boundaries (faces with boundary
 conditions), no type (i.e. there is no face), junction (at least one, likely
 more, faces will be connected to the end cell eventually), or branch (the tip
-cell will add a face to a junction tip of another segment).  
+cell will add a face to a junction tip of another segment).
 
 * `"first tip type`" ``[string]`` Type of the first tip.  One of `"none`",
    `"boundary`", `"junction`", or `"branch`".
@@ -144,7 +142,7 @@ coordinate.  In this case, specify:
 
 This option is provided in the `"logical from segments parameters`"
 list.
-    
+
 As an example, consider the confluence of the Allegheny and the Monongahela,
 which come together in Pittsburgh to form the Ohio.  This could be simply
 modeled by three segments:
@@ -190,7 +188,7 @@ modeled by three segments:
       </ParameterList>
     </ParameterList>
   </ParameterList>
-    
+
  */
 #include <numeric>
 

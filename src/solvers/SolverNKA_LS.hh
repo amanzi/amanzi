@@ -1,14 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
 //! NKA nonlinear solver with a line-search based on a Brendt minimization algorithm.
-
 /*!
 
 Does NKA, then checks if that correction has reduced the residual by at least a
@@ -49,7 +48,7 @@ Note, this always monitors the residual.
       allowed orthogonality between vectors in the local space. If a new vector
       does not satisfy this requirement, the space is modified.
 
-  
+
 */
 
 #ifndef AMANZI_NKA_LINESEARCH_SOLVER_

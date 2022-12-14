@@ -1,13 +1,16 @@
 /*
-  Multi-Process Coordinator
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt (berndt@lanl.gov)
-           Daniil Svyatskiy
+      Daniil Svyatskiy
+*/
+
+/*
+  Multi-Process Coordinator
+
 */
 
 #include <map>
@@ -234,7 +237,7 @@ FlexibleObservations::DumpRequested(const int cycle, const double time)
 
 
 /******************************************************************
-* Loop over all observations and register each of them with the time 
+* Loop over all observations and register each of them with the time
 * step manager.
 ******************************************************************/
 void

@@ -1,12 +1,15 @@
 /*
-  Transport PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Transport PK
+
 */
 
 #include <algorithm>
@@ -27,7 +30,7 @@ namespace Transport {
 using CV_t = CompositeVector;
 
 /* *******************************************************************
-* Routine verifies that the velocity field is divergence free                 
+* Routine verifies that the velocity field is divergence free
 ******************************************************************* */
 void
 Transport_PK::Policy(Teuchos::Ptr<State> S)
@@ -149,7 +152,7 @@ Transport_PK::VV_PrintLimiterStatistics()
 
 
 /********************************************************************
-* Check completeness of influx boundary conditions.                        
+* Check completeness of influx boundary conditions.
 ****************************************************************** */
 void
 Transport_PK::VV_CheckInfluxBC() const
@@ -198,7 +201,7 @@ Transport_PK::VV_CheckInfluxBC() const
 
 
 /* *******************************************************************
- * Check that global extrema diminished                          
+ * Check that global extrema diminished
  ****************************************************************** */
 void
 Transport_PK::VV_CheckGEDproperty(Epetra_MultiVector& tracer) const
@@ -229,7 +232,7 @@ Transport_PK::VV_CheckGEDproperty(Epetra_MultiVector& tracer) const
 
 
 /* ******************************************************************
-* Check that the tracer is between 0 and 1.                        
+* Check that the tracer is between 0 and 1.
 ****************************************************************** */
 void
 Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,

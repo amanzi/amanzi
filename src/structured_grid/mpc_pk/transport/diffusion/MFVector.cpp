@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <MFVector.H>
 
 namespace Amanzi {
@@ -13,7 +22,7 @@ namespace Amanzi {
     define(mf.boxArray(),numcomp,numgrow,mf.DistributionMap(),Fab_allocate);
     MultiFab::Copy(this->multiFab(),mf,srccomp,0,numcomp,numgrow);
   }
-  
+
   MFVector::MFVector(const MFVector& vec, int scomp, int ncomp, int ngrow)
     : MultiFab(), srccomp(scomp) {
     numcomp = (ncomp < 0 ? vec.nComp() : std::min(ncomp,vec.nComp()));
@@ -22,7 +31,7 @@ namespace Amanzi {
     define(vec.boxArray(),numcomp,numgrow,vec.DistributionMap(),Fab_allocate);
     MultiFab::Copy(this->multiFab(),vec.multiFab(),srccomp,0,numcomp,numgrow);
   }
-  
+
   void
   MFVector::AXPBY(const MFVector& Y, Real a, Real b) {// this = a * X  +  b * Y compoenentwise
     BL_ASSERT(nComp()==Y.nComp());

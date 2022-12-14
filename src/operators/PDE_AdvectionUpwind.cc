@@ -1,13 +1,16 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-          Ethan Coon (ecoon@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+      Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #include <vector>
@@ -164,8 +167,8 @@ PDE_AdvectionUpwind::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u
 * Recommended options: primary=true, eliminate=false, essential_eqn=true
 *  - must deal with Dirichlet BC on inflow boundary
 *  - Dirichlet on outflow boundary is ill-posed
-*  - Neumann on inflow boundary is typically not used, since it is 
-*    equivalent to Dirichlet BC. We perform implicit conversion to 
+*  - Neumann on inflow boundary is typically not used, since it is
+*    equivalent to Dirichlet BC. We perform implicit conversion to
 *    Dirichlet BC.
 *
 * Advection-diffusion problem.
@@ -173,9 +176,9 @@ PDE_AdvectionUpwind::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u
 *  - Dirichlet BC is treated as usual
 *  - Neuman on inflow boundary: If diffusion takes care of the total
 *    flux, then TOTAL_FLUX model must be used. If diffusion deals
-*    with the diffusive flux only (NEUMANN model), value of the 
+*    with the diffusive flux only (NEUMANN model), value of the
 *    advective flux is in general not available and negative value
-*    is added to matrix diagonal. The discrete system may lose SPD 
+*    is added to matrix diagonal. The discrete system may lose SPD
 *    property.
 *  - Neuman on outflow boundary: If diffusion takes care of the total
 *    flux, then TOTAL_FLUX model must be used. Otherwise, do nothing.
@@ -260,8 +263,8 @@ PDE_AdvectionUpwind::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
 
 
 /* *******************************************************************
-* Identify flux direction based on orientation of the face normal 
-* and sign of the  Darcy velocity.                               
+* Identify flux direction based on orientation of the face normal
+* and sign of the  Darcy velocity.
 ******************************************************************* */
 void
 PDE_AdvectionUpwind::IdentifyUpwindCells_(const CompositeVector& u)

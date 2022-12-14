@@ -1,13 +1,11 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-ATS
-
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon (ecoon@lanl.gov)
-
-Interface for a Matrix that acts on TreeVector.
-------------------------------------------------------------------------- */
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
 
 #ifndef AMANZI_TREEMATRIX_HH_
 #define AMANZI_TREEMATRIX_HH_

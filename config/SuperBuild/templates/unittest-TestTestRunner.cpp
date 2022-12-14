@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include "../UnitTest++.h"
 #include "RecordingReporter.h"
 #include "../ReportAssert.h"
@@ -40,7 +49,7 @@ struct MockTest : public Test
 struct FixtureBase {
 	explicit FixtureBase() : runner(reporter) { }
 	template <class Predicate>
-	int RunTestsIf(TestList const& list, char const* suiteName, 
+	int RunTestsIf(TestList const& list, char const* suiteName,
 				   const Predicate& predicate, int maxTestTimeInMs)
 	{
 		TestResults* oldResults = CurrentTest::Results();
@@ -256,27 +265,27 @@ struct RunTestIfNameIs
 {
 	RunTestIfNameIs(char const* name_)
 	: name(name_)
-	{		
+	{
 	}
-	
+
 	bool operator()(const Test* const test) const
 	{
 		using namespace std;
 		return (0 == strcmp(test->m_details.testName, name));
 	}
-	
+
 	char const* name;
 };
 
 TEST(TestMockPredicateBehavesCorrectly)
 {
 	RunTestIfNameIs predicate("pass");
-	
+
 	Test pass("pass");
 	Test fail("fail");
-	
+
 	CHECK(predicate(&pass));
-	CHECK(!predicate(&fail));	
+	CHECK(!predicate(&fail));
 }
 
 TEST_FIXTURE(TestRunnerFixture, TestRunnerRunsTestsThatPassPredicate)
@@ -286,7 +295,7 @@ TEST_FIXTURE(TestRunnerFixture, TestRunnerRunsTestsThatPassPredicate)
 
     Test should_not_run("badtest");
 	list.Add(&should_not_run);
- 
+
 	RunTestsIf(list, NULL, RunTestIfNameIs("goodtest"), 0);
 	CHECK_EQUAL(1, reporter.testRunCount);
     CHECK_EQUAL("goodtest", reporter.lastStartedTest);
@@ -298,17 +307,17 @@ TEST_FIXTURE(TestRunnerFixture, TestRunnerOnlyRunsTestsInSpecifiedSuiteAndThatPa
     Test skippedTest2("goodtest");
     Test skippedTest3("badtest", "suite");
     Test skippedTest4("badtest");
-    
+
     list.Add(&runningTest1);
     list.Add(&skippedTest2);
     list.Add(&skippedTest3);
-    list.Add(&skippedTest4);   
+    list.Add(&skippedTest4);
 
 	RunTestsIf(list, "suite", RunTestIfNameIs("goodtest"), 0);
 
 	CHECK_EQUAL(1, reporter.testRunCount);
-    CHECK_EQUAL("goodtest", reporter.lastStartedTest); 
-    CHECK_EQUAL("suite", reporter.lastStartedSuite);    
+    CHECK_EQUAL("goodtest", reporter.lastStartedTest);
+    CHECK_EQUAL("suite", reporter.lastStartedSuite);
 }
 
 }

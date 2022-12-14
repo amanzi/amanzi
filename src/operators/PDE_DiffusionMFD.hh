@@ -1,14 +1,15 @@
-// PDE_DiffusionMFD: elliptic operators using the MFD family of discretizations.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-          Ethan Coon (ecoon@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+      Ethan Coon (ecoon@lanl.gov)
 */
+
+// PDE_DiffusionMFD: elliptic operators using the MFD family of discretizations.
+
 
 #ifndef AMANZI_OPERATOR_PDE_DIFFUSION_MFD_HH_
 #define AMANZI_OPERATOR_PDE_DIFFUSION_MFD_HH_
@@ -29,7 +30,7 @@
 
 /*!
 Additional options available only for the MFD family of discretizations include:
-  
+
 * `"nonlinear coefficient`" ``[string]`` specifies a method for treating nonlinear
   diffusion coefficient, if any. Available options are `"none`", `"upwind:
   face`", `"divk: cell-face`" (default), `"divk: face`", `"standard: cell`",
@@ -45,7 +46,7 @@ Additional options available only for the MFD family of discretizations include:
   satisfy all a priori conditions.  This is typically `"mfd: default`", and is
   used only when an MFD `"discretization primary`" is used.
 
-* `"schema`" ``[Array(string)]`` defines the operator stencil. It is a collection of 
+* `"schema`" ``[Array(string)]`` defines the operator stencil. It is a collection of
   geometric objects.  Typically this is set by the implementation and is not provided.
 
 * `"preconditioner schema`" ``[Array(string)]`` **{face,cell}** Defines the
@@ -53,7 +54,7 @@ Additional options available only for the MFD family of discretizations include:
   procedure is not desirable. If skipped, the `"schema`" is used instead.
   In addition to the default, **{face}** may be used, which forms the Schur
   complement.
-   
+
 * `"consistent faces`" ``[list]`` may contain a `"preconditioner`" and
   `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
   respectively).  If these lists are provided, and the `"discretization
@@ -63,8 +64,8 @@ Additional options available only for the MFD family of discretizations include:
   equation in MFD by assembling and inverting the face-only system.  This is
   not currently used by any Amanzi PKs.
 
-* `"diffusion tensor`" ``[string]`` allows us to solve problems with symmetric and 
-  non-symmetric (but positive definite) tensors. Available options are *symmetric* 
+* `"diffusion tensor`" ``[string]`` allows us to solve problems with symmetric and
+  non-symmetric (but positive definite) tensors. Available options are *symmetric*
   (default) and *nonsymmetric*.
 */
 

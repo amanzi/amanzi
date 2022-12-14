@@ -1,13 +1,16 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Daniil Svyatskiy (dasvyat@lanl.gov)
-           Konstantin Lipnikov (lipnikov@lanl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #include <vector>
@@ -361,7 +364,7 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
 
 
 /* ******************************************************************
-* Computation the part of the Jacobian which depends on derivatives 
+* Computation the part of the Jacobian which depends on derivatives
 * of the relative permeability wrt to capillary pressure. They must
 * be added to the existing matrix structure.
 ****************************************************************** */
@@ -409,7 +412,7 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 
 
 /* ******************************************************************
-* Computation of a local submatrix of the analytical Jacobian 
+* Computation of a local submatrix of the analytical Jacobian
 * (its nonlinear part) on face f.
 ****************************************************************** */
 void
@@ -467,7 +470,7 @@ PDE_DiffusionFV::ComputeJacobianLocal_(int mcells,
 
 
 /* ******************************************************************
-* Compute transmissibilities on faces 
+* Compute transmissibilities on faces
 ****************************************************************** */
 void
 PDE_DiffusionFV::ComputeTransmissibility_()

@@ -1,13 +1,15 @@
 /*
-  Transport PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Daniil Svyatsiyy
-          Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Daniil Svyatsiyy
+      Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Transport PK
 
   Major transport algorithms.
 */
@@ -186,7 +188,7 @@ TransportImplicit_PK::Initialize()
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Maybe we need a separate PK instead of the if-clause
 ******************************************************************* */
 bool
@@ -215,8 +217,8 @@ TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 }
 
 
-/* ******************************************************************* 
-* BCs are calculated only once, during the initialization step.  
+/* *******************************************************************
+* BCs are calculated only once, during the initialization step.
 ******************************************************************* */
 bool
 TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs)
@@ -284,7 +286,7 @@ TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs)
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 *
 ******************************************************************* */
 bool
@@ -324,7 +326,7 @@ TransportImplicit_PK::AdvanceStepHO_(double t_old, double t_new, int* tot_itrs)
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Recompute linear system for the given component.
 ******************************************************************* */
 void
@@ -368,7 +370,7 @@ TransportImplicit_PK::UpdateLinearSystem(double t_old, double t_new, int compone
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Boundary data
 ******************************************************************* */
 void
@@ -386,7 +388,7 @@ TransportImplicit_PK::UpdateBoundaryData(double t_old, double t_new, int compone
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Diagnostics
 ******************************************************************* */
 void

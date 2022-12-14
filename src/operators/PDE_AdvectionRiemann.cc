@@ -1,12 +1,15 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #include <vector>
@@ -107,7 +110,7 @@ PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* A simple first-order transport method of the form div (u C), where 
+* A simple first-order transport method of the form div (u C), where
 * u is the given velocity field and C is the advected field.
 ****************************************************************** */
 void

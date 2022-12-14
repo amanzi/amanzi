@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _Advection_H_
 #define _Advection_H_
 
@@ -25,7 +34,7 @@ public:
                         const FArrayBox& SoCC, const FArrayBox& SnCC, int Scomp,    int Sng,
                         FArrayBox& FDivCC,                            int FDivcomp, int FDivng,
                         PArray<FArrayBox>& FluxEC,                    int Flcomp,   int Flng,
-                        const FArrayBox& PhiCC,                                     int Phing, 
+                        const FArrayBox& PhiCC,                                     int Phing,
                         const Box& vbox, Real dt, int nc);
 
   static void EstimateMaxEigenvalues(const FArrayBox&        SatCC, int Scomp, int Satng,

@@ -1,12 +1,14 @@
 /*
-  MPC PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov
+  Authors: Konstantin Lipnikov
+*/
+
+/*
+  MPC PK
 
   Sequential coupling of shallow water and solute transport.
 */
@@ -57,7 +59,7 @@ ShallowWaterTransport_PK::Setup()
 
 
 /* ******************************************************************
-* Extended treatment of time step in transport PK. 
+* Extended treatment of time step in transport PK.
 ****************************************************************** */
 bool
 ShallowWaterTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)

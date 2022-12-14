@@ -1,21 +1,19 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionBoxVolumeFractions: A rectangular region in space, defined by two corner points and normals to sides.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Lipnikov Konstantin (lipnikov@lanl.gov)
-           Rao Garimella (rao@lanl.gov)
+      Rao Garimella (rao@lanl.gov)
 */
 
+//! RegionBoxVolumeFractions: A rectangular region in space, defined by two corner points and normals to sides.
 /*!
 
-List *region: box volume fraction* defines a region bounded by a box *not* 
-aligned with coordinate axes. 
-Boxes are allowed to be of zero thickness in only one direction in which case 
+List *region: box volume fraction* defines a region bounded by a box *not*
+aligned with coordinate axes.
+Boxes are allowed to be of zero thickness in only one direction in which case
 they are equivalent to rectangles on a plane or segments on a line.
 
 .. _region-box-volume-fractions-spec:

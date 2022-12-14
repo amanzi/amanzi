@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <Utility.H>
 #include <ccse-mpi.H>
 #include <EventCoord.H>
@@ -79,7 +88,7 @@ int main(int argc, char* argv[])
 
         std::pair<Real,Array<std::string> > nextEvent = event_coord.NextEvent(time_old,dt_def,iter,diter);
 
-        if (nextEvent.second.size()) 
+        if (nextEvent.second.size())
         {
             Real dt_new = (nextEvent.first > 0 ? nextEvent.first : dt_def);
             time_new = time_old + dt_new;
@@ -94,7 +103,7 @@ int main(int argc, char* argv[])
         // If time_old+dt_def would step over an event, we will reduce the interval, and set
         // time_new to when that event(s) would occur.  At this new cycle and time, we would
         // typically then process the list of events that have occurred:
-        // 
+        //
         if (verbose) {
           std::cout << "told = " << time_old << " tnew = " << time_new << " dt = " << time_new - time_old << " iter=" << iter+diter ;
           for (int j=0; j<eventList.size(); ++j) {
@@ -113,7 +122,7 @@ int main(int argc, char* argv[])
     }
 
     BoxLib::Finalize();
-    
+
     return 0;
 
 }

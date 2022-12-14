@@ -1,13 +1,16 @@
 /*
-  Flow PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Neil Carlson
-           Konstantin Lipnikov (lipnikov@lanl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #include <vector>
@@ -414,7 +417,7 @@ Darcy_PK::Initialize()
 
 
 /* ****************************************************************
-* This completes initialization of common fields that were not 
+* This completes initialization of common fields that were not
 * initialized by the state.
 **************************************************************** */
 void
@@ -486,9 +489,9 @@ Darcy_PK::InitializeStatistics_(bool init_darcy)
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Performs one time step from t_old to t_new. The boundary conditions
-* are calculated only once, during the initialization step.  
+* are calculated only once, during the initialization step.
 ******************************************************************* */
 bool
 Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
@@ -589,7 +592,7 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 /* ******************************************************************
 * Transfer data from the external flow state FS_MPC. MPC may request
-* to populate the original state FS. 
+* to populate the original state FS.
 ****************************************************************** */
 void
 Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
@@ -612,7 +615,7 @@ Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 
 
 /* ******************************************************************
-* Add area/length factor to specific yield. 
+* Add area/length factor to specific yield.
 ****************************************************************** */
 void
 Darcy_PK::UpdateSpecificYield_()

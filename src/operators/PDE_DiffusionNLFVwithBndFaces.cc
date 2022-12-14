@@ -1,13 +1,16 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Daniil Svyatskiy (dasvyat@lanl.gov)
-           Konstantin Lipnikov (lipnikov@lanl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #include <vector>
@@ -327,7 +330,7 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
 
 /* ******************************************************************
 * Populate face-based 2x2 matrices on interior faces and 1x1 matrices
-* on boundary faces. We avoid round-off operations since the stencils 
+* on boundary faces. We avoid round-off operations since the stencils
 * already incorporate them.
 ****************************************************************** */
 void
@@ -492,7 +495,7 @@ PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(const Teuchos::Ptr<const Composite
 
 
 /* ******************************************************************
-* Modify operator by adding an upwind approximation of the Newton 
+* Modify operator by adding an upwind approximation of the Newton
 * correction term.
 ****************************************************************** */
 void
@@ -556,7 +559,7 @@ PDE_DiffusionNLFVwithBndFaces::UpdateMatricesNewtonCorrection(
 
 
 /* ******************************************************************
-* Modify operator by adding an upwind approximation of the Newton 
+* Modify operator by adding an upwind approximation of the Newton
 * correction term.
 ****************************************************************** */
 void

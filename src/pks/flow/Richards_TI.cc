@@ -1,16 +1,18 @@
 /*
-  Flow PK 
- 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Neil Carlson (nnc@lanl.gov), 
-           Konstantin Lipnikov (lipnikov@lanl.gov)
-           Daniil Svyatskiy (dasvyat@lanl.gov)
+  Authors: Neil Carlson (nnc@lanl.gov),
+      Konstantin Lipnikov (lipnikov@lanl.gov)
+      Daniil Svyatskiy (dasvyat@lanl.gov)
+*/
 
-  Interface to the BDF1 time integrator.  
+/*
+  Flow PK
+
+  Interface to the BDF1 time integrator.
 */
 
 #include <algorithm>
@@ -314,7 +316,7 @@ Richards_PK::CalculateWaterStorageMultiscale_()
 
 
 /* ******************************************************************
-* Apply preconditioner inv(B) * X.                                                 
+* Apply preconditioner inv(B) * X.
 ****************************************************************** */
 int
 Richards_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
@@ -433,7 +435,7 @@ Richards_PK::ModifyPredictor(double dt,
 
 /* ******************************************************************
 * Check difference du between the predicted and converged solutions.
-* This is a wrapper for various error control methods. 
+* This is a wrapper for various error control methods.
 ****************************************************************** */
 double
 Richards_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du)

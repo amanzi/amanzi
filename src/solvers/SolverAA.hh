@@ -1,13 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Daniil Svyatskiy
+  Authors: Daniil Svyatskiy
 */
-//! Anderson acceleration as a nonlinear solver.
 
+//! Anderson acceleration as a nonlinear solver.
 /*!
 
 This is a variation of the GMRES solver for nonlinear problems.
@@ -39,7 +39,7 @@ This is a variation of the GMRES solver for nonlinear problems.
       identify divergence pattern on earlier iterations. If the maximum norm of
       the solution increment grows on too many consecutive iterations, the
       solver is terminated.
-      
+
     * `"max aa vectors`" ``[int]`` **10** Defines the maximum number of
       consecutive vectors used for a local space.
 

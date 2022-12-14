@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <RStdata.H>
 
 Real RStdata::Pa_per_ATM = 101325;
@@ -56,7 +65,7 @@ RStdata::~RStdata()
 
   delete Rhs;
   delete Alpha;
-  
+
   RichardCoefs.clear();
   DarcyVelocity.clear();
   KappaEC.clear();
@@ -170,7 +179,7 @@ RStdata::SetUpMemory(NLScontrol& nlsc)
 
   Rhs = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
   Alpha = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
-  
+
   RichardCoefs.resize(BL_SPACEDIM,PArrayManage);
   DarcyVelocity.resize(BL_SPACEDIM,PArrayManage);
   KappaEC.resize(BL_SPACEDIM,PArrayManage);
@@ -232,10 +241,10 @@ RStdata::IsNewTime(Real time) const
 extern "C" {
     void FORT_FILCC (const Real * q, ARLIM_P(q_lo), ARLIM_P(q_hi),
                      const int * domlo, const int * domhi,
-                     const Real * dx_crse, const Real * xlo, 
+                     const Real * dx_crse, const Real * xlo,
                      const int * bc);
 }
-    
+
 void
 RStdata::FillStateBndry (MFTower& press,
                          Real time)
@@ -298,7 +307,7 @@ RStdata::calcInvPressure (MFTower&       N,
     MultiFab pc(P[lev].boxArray(),1,nGrow);
     pc.setVal(inputs.Pwt,0,1,nGrow);
     MultiFab::Subtract(pc,P[lev],0,0,1,nGrow);
-    rock_manager->InverseCapillaryPressure(pc,materialID[lev],time,N[lev],0,dComp,nGrow);    
+    rock_manager->InverseCapillaryPressure(pc,materialID[lev],time,N[lev],0,dComp,nGrow);
     N[lev].mult(rho_loc,dComp,1,nGrow);
     if (nGrow > 0) {
       N[lev].FillBoundary(dComp,1);
@@ -406,4 +415,3 @@ RStdata::GetKappaEC(Real t)
   }
   return KappaEC;
 }
-

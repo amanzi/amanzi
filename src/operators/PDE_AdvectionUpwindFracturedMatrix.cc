@@ -1,13 +1,16 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-          Ethan Coon (ecoon@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+      Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #include <vector>
@@ -140,8 +143,8 @@ PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Comp
 
 
 /* *******************************************************************
-* Identify flux direction based on orientation of the face normal 
-* and sign of the  Darcy velocity.                               
+* Identify flux direction based on orientation of the face normal
+* and sign of the  Darcy velocity.
 ******************************************************************* */
 void
 PDE_AdvectionUpwindFracturedMatrix::IdentifyUpwindCells_(const CompositeVector& u)

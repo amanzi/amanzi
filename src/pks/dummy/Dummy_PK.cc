@@ -1,11 +1,11 @@
 /*
-  License: see $AMANZI_DIR/COPYRIGHT
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
   Authors: Daniil Svyatskiy
-
-  Dummy PK which demonstrates the require interface for PK
-  BDFFnBase<CompositeVector>, to use TreeVectors.
 */
-
 
 #include "Dummy_PK.hh"
 #include <iostream>

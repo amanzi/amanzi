@@ -1,16 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! Base factory for self-registering classes of a given base type.
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
 */
 
+//! Base factory for self-registering classes of a given base type.
 /*!
-  
+
   In many cases in Amanzi/ATS, we may have multiple options that inherit a
   common (likely purely) virtual class.  For instance, many implementations
   of the equations of state class will provide a basic method for rho(T,p),

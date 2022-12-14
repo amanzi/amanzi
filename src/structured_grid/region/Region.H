@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _REGION_H_
 #define _REGION_H_
 
@@ -13,14 +22,14 @@
 #include <RealBox.H>
 using std::map;
 
-//enum PurposeT {any, rock, source, output, boundary}; 
+//enum PurposeT {any, rock, source, output, boundary};
 
 //
 // Base abstract class
 //
 class Region
 {
-public: 
+public:
 
   static std::map<std::string,int> create_region_map()
   {
@@ -39,38 +48,38 @@ public:
   virtual ~Region() {}
 
   // Note: No virtual templates, must manually create
-  virtual void setVal(BaseFab<Real>&     fab, 
-                      const Array<Real>& val, 
-                      const Real*        dx, 
+  virtual void setVal(BaseFab<Real>&     fab,
+                      const Array<Real>& val,
+                      const Real*        dx,
                       int                ng,
                       int                scomp,
                       int                ncomp) const;
 
   virtual void setVal(BaseFab<Real>& fab,
-                      const Real&    val, 
+                      const Real&    val,
                       const int      idx,
-                      const Real*    dx, 
+                      const Real*    dx,
                       int            ng) const;
-  
-  virtual void setVal(BaseFab<int>&     fab, 
-                      const Array<int>& val, 
-                      const Real*       dx, 
+
+  virtual void setVal(BaseFab<int>&     fab,
+                      const Array<int>& val,
+                      const Real*       dx,
                       int               ng,
                       int               scomp,
                       int               ncomp) const;
 
   virtual void setVal(BaseFab<int>& fab,
-                      const int&    val, 
+                      const int&    val,
                       const int     idx,
-                      const Real*   dx, 
+                      const Real*   dx,
                       int           ng) const;
-  
+
   virtual bool inRegion (const Array<Real>& x) const = 0;
   virtual std::ostream& print (std::ostream& os) const;
   virtual BoxArray approximate_bounds(const Array<Real>& plo,
                                       const Array<Real>& dx) const = 0;
 
-  // Identifier for the region 
+  // Identifier for the region
   std::string name;
   std::string purpose;
   std::string type;
@@ -81,9 +90,9 @@ public:
 protected:
 
   template<class T>
-  void setVal_DoIt(BaseFab<T>&     fab, 
-                   const Array<T>& val, 
-                   const Real*     dx, 
+  void setVal_DoIt(BaseFab<T>&     fab,
+                   const Array<T>& val,
+                   const Real*     dx,
                    int             ng,
                    int             scomp,
                    int             ncomp) const;
@@ -93,40 +102,40 @@ std::ostream& operator<< (std::ostream& os, const Region& rhs);
 
 class PointRegion : public Region
 {
-public: 
-  
+public:
+
   PointRegion (const std::string& r_name,
                const std::string& r_purpose,
                const Array<Real>& coor)
       : Region(r_name,r_purpose,"point"), coor(coor) {}
 
   // Note: No virtual templates, must manually create
-  virtual void setVal(BaseFab<Real>&     fab, 
-                      const Array<Real>& val, 
-                      const Real*        dx, 
+  virtual void setVal(BaseFab<Real>&     fab,
+                      const Array<Real>& val,
+                      const Real*        dx,
                       int                ng,
                       int                scomp,
                       int                ncomp) const;
 
   virtual void setVal(BaseFab<Real>& fab,
-                      const Real&    val, 
+                      const Real&    val,
                       const int      idx,
-                      const Real*    dx, 
+                      const Real*    dx,
                       int            ng) const;
-  
-  virtual void setVal(BaseFab<int>&     fab, 
-                      const Array<int>& val, 
-                      const Real*       dx, 
+
+  virtual void setVal(BaseFab<int>&     fab,
+                      const Array<int>& val,
+                      const Real*       dx,
                       int               ng,
                       int               scomp,
                       int               ncomp) const;
 
   virtual void setVal(BaseFab<int>& fab,
-                      const int&    val, 
+                      const int&    val,
                       const int     idx,
-                      const Real*   dx, 
+                      const Real*   dx,
                       int           ng) const;
-  
+
   virtual ~PointRegion() {}
 
   virtual bool inRegion (const Array<Real>& x) const;
@@ -139,9 +148,9 @@ public:
 protected:
 
   template<class T>
-  void setVal_DoIt(BaseFab<T>&     fab, 
-                   const Array<T>& val, 
-                   const Real*     dx, 
+  void setVal_DoIt(BaseFab<T>&     fab,
+                   const Array<T>& val,
+                   const Real*     dx,
                    int             ng,
                    int             scomp,
                    int             ncomp) const;
@@ -151,8 +160,8 @@ std::ostream& operator<< (std::ostream& os, const PointRegion& rhs);
 
 class BoxRegion : public Region
 {
-public: 
-  
+public:
+
   BoxRegion (const std::string& r_name,
              const std::string& r_purpose,
              const Array<Real>& lo,
@@ -175,7 +184,7 @@ std::ostream& operator<< (std::ostream& os, const BoxRegion& rhs);
 #if BL_SPACEDIM == 2
 class PolygonRegion : public Region
 {
-public: 
+public:
   enum PLANE {XYPLANE, YZPLANE, XZPLANE};
 
   PolygonRegion (const std::string&   r_name,
@@ -196,7 +205,7 @@ public:
 
 class EllipseRegion : public Region
 {
-public: 
+public:
   EllipseRegion (const std::string&   r_name,
                  const std::string&   r_purpose,
                  const Array<Real>&   r_center,
@@ -216,7 +225,7 @@ public:
 
 class SweptPolygonRegion : public Region
 {
-public: 
+public:
   enum PLANE {XYPLANE, YZPLANE, XZPLANE};
 
   SweptPolygonRegion (const std::string&   r_name,
@@ -240,7 +249,7 @@ public:
 
 class RotatedPolygonRegion : public Region
 {
-public: 
+public:
   enum PLANE {XYPLANE, YZPLANE, XZPLANE};
 
   RotatedPolygonRegion(const std::string& r_name,
@@ -274,8 +283,8 @@ std::ostream& operator<< (std::ostream& os, const SweptPolygonRegion& rhs);
 
 class ColorFunctionRegion : public BoxRegion
 {
-public: 
-  
+public:
+
   ColorFunctionRegion (const std::string& r_name,
                        const std::string& r_purpose,
 		       const std::string& file_name,
@@ -360,8 +369,8 @@ public:
 class AllBCRegion : public BoxRegion
 {
 
-public: 
-  
+public:
+
   AllBCRegion (int dir, int lo_or_hi);
   virtual ~AllBCRegion() {}
 

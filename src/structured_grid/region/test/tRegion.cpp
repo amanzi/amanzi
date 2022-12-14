@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <Utility.H>
 #include <ccse-mpi.H>
 #include <Region.H>
@@ -16,7 +25,7 @@ static double sum_eps = 1.e-20;
 int main(int argc, char* argv[])
 {
   BoxLib::Initialize(argc,argv);
-  
+
   Array<Real> problo(BL_SPACEDIM,0), probhi(BL_SPACEDIM,30);
 
   Region::geometry_eps = geom_eps;
@@ -134,6 +143,6 @@ int main(int argc, char* argv[])
     std::cout << "Test 8 fail" << std::endl;
   }
 
-  BoxLib::Finalize();  
+  BoxLib::Finalize();
   return 0;
 }

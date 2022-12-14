@@ -1,13 +1,15 @@
 /*
-  Multi-Process Coordinator
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon
-           Daniil Svyatskiy
+      Daniil Svyatskiy
+*/
+
+/*
+  Multi-Process Coordinator
 
   Interface for the Coordinator.  Coordinator is basically just a class to hold
   the cycle driver, which runs the overall, top level timestep loop.  It

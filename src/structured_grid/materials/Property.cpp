@@ -1,3 +1,11 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
 
 #include <Property.H>
 #include <GSLibInt.H>
@@ -58,7 +66,7 @@ EnsureFolderExists(const std::string& full_path)
     dir += tokens[i];
     if (i<tokens.size()-2) dir += "/";
   }
-  
+
   if(!BoxLib::FileExists(dir)) {
     if ( ! BoxLib::UtilCreateDirectory(dir, 0755)) {
       BoxLib::CreateDirectoryFailed(dir);
@@ -105,7 +113,7 @@ GSLibProperty::BuildGSLibFile(Real                   avg,
     Build a property database able to support copy-on-intersect operations to fill 1 grow
     cell on the coarsest level using coarsenend fine generated data.
 
-    A multi-level multifab tower is created, and at the finest level filled by calls to 
+    A multi-level multifab tower is created, and at the finest level filled by calls to
     gslib routines.  The resulting data is coarsened to all AMR levels, and then written as
     a plotfile.
    */
@@ -154,7 +162,7 @@ GSLibProperty::BuildGSLibFile(Real                   avg,
 
     int ltwoexp = 1;
     for (int i = 1; i<=lev; i++) {
-      ltwoexp *= ref_ratio[i-1][0];  
+      ltwoexp *= ref_ratio[i-1][0];
     }
     Box domain(geom_array[lev].Domain()); domain.grow(num_grow_coarsest * ltwoexp);
     BoxArray ba(domain);
@@ -173,7 +181,7 @@ GSLibProperty::BuildGSLibFile(Real                   avg,
   }
 
   EnsureFolderExists(gslib_data_file);
-  
+
   Array<MultiFab*> data(nLev);
   Array<Box> prob_domain(nLev);
   Array<Array<Real> > dx_level(nLev,Array<Real>(BL_SPACEDIM));
@@ -225,7 +233,7 @@ GSLibProperty::BuildDataFile(const Array<Geometry>& geom_array,
     for (int n=0; n<num_comps; ++n) {
       varnames[n] = BoxLib::Concatenate(varname+"_",n,1);
     }
-    
+
     BuildGSLibFile(avg, param_file, data_file,
 		   geom_array, ref_ratio, num_grow,
 		   max_grid_size_fine_gen, crule);

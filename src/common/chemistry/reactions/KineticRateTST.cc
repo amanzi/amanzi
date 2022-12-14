@@ -1,17 +1,21 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
+  Authors:
+*/
+
+/*
+  Chemistry
+
   Implementation of the TST rate law for mineral kinetics
- 
+
     R = k * A * Prod (a_i^m_i) * (1 - Q/Keq)
- 
+
     Q = Prod_p (a_p^{nu_p})
- 
+
   where:
     R : reaction rate, [moles/sec]
     Keq : equilibrium constant, [-]
@@ -25,38 +29,38 @@
 
   Residual:
     r_i = nu_i R
- 
+
   Jacobian contributions:
     dR/dC_j = k * A * (da_j/dC_j) *
            ( (1-Q/Keq) * (mu_j * a_j^{mu_j - 1}) * Prod_{m!=j}(a_m^{mu_m}) -
            Prod_{m}(a_m^{mu_m})/Keq * (nu_j * a_j^{nu_j - 1}) * Prod_{p!=j}(a_p^{nu_p}) )
 
     J_ij = nu_i * dR/dCj
- 
+
   Notes:
    - R is the dissolution rate for the mineral, so positive when
      dissolution, negative when precipitation. dCalcite/dt = -R, dCa/dt = R
- 
+
    - assume that the "reactants" list as defined in KineticRate
      consists solely of the mineral and the coefficient is always
      one, so they are ignored in the ion activity product. The
      mineral is only accounted for in the accumulation / consumption
      of solid mass.
- 
+
    - assume that the stoichiometry, nu, and exponents, mu, are zero
      for any species that does not take part in the reaction!
- 
+
    - assume that the mineral reactions are always written so the
      products consist of only primary species.
- 
+
    - assume that the modifying species are only primary species
- 
+
    - ignoring the (1-(Q/Keq)^n) and (1-(Q/Keq)^n)^p forms for now.
 
    - TODO(bandre): need to calculate the area (DONE) or read from the file.
 
    - TODO(bandre): DONE: need to obtain log_Keq from the mineral object rather than read from a file.
- 
+
    - TODO(bandre): DONE: units of A and k are not consistent with the input
      file. need to pick a set!
 

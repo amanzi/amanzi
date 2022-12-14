@@ -1,10 +1,14 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
+  Chemistry
 
   Driver class for evaluating geochemical related processes at a
   single computational node
@@ -1001,8 +1005,8 @@ Beaker::UpdateTemperatureDependentCoefs_()
 
 
 /* ******************************************************************
-* Need to move this into the N-R loop and cut the reaction rate or 
-* time step if volume fractions go negative. Right now we are just 
+* Need to move this into the N-R loop and cut the reaction rate or
+* time step if volume fractions go negative. Right now we are just
 * setting volume fraction to zero and introducing mass balance errors!
 ****************************************************************** */
 void

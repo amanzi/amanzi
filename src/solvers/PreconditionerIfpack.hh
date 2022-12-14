@@ -1,13 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-//! Ifpack suite of preconditioners, including block ILU.
 
+//! Ifpack suite of preconditioners, including block ILU.
 /*!
 
 The Ifpack (Incomplete Factorization Package) from Trilinos provides
@@ -69,7 +69,7 @@ users should read the Ifpack User Guide above to see all options.
       perform better for nonsymmetric cases.
     * `"overlap`" ``[int]`` **0** overlap of the Additive Schwarz
     * `"amesos: solver type`" ``[string]`` **Amesos_Klu**
-    
+
 Example:
 
 .. code-block:: xml
