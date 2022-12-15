@@ -37,17 +37,16 @@ ${AMANZI_SRC_DIR}/bootstrap.sh \
    --disable-petsc \
    --disable-amanzi_physics \
    --enable-ats_physics \
-   --disable-ats_dev \
+   --enable-ats_dev \
    --disable-geochemistry \
    --amanzi-install-prefix=${AMANZI_DIR} \
    --amanzi-build-dir=${AMANZI_BUILD_DIR} \
-   --tpl-install-prefix=${AMANZI_TPLS_DIR} \
-   --tpl-build-dir=${AMANZI_TPLS_BUILD_DIR} \
-   --tpl-download-dir=${ATS_BASE}/amanzi-tpls/Downloads \
+   --tpl-config-file=${AMANZI_TPLS_DIR}/share/cmake/amanzi-tpl-config.cmake \
    --tools-download-dir=${ATS_BASE}/amanzi-tpls/Downloads \
    --tools-build-dir=${ATS_BASE}/build \
    --tools-install-prefix=${ATS_BASE}/install \
    --with-cmake=`which cmake` \
+   --with-python=`which python` \
    --with-ctest=`which ctest` \
    --branch_ats=${ATS_VERSION} \
    --parallel=6

@@ -1,4 +1,4 @@
 [submodule "src/physics/ats"]
 	path = src/physics/ats
-	url = https://github.com/amanzi/ats
+	url = git@github.com:amanzi/ats
     branch = master
