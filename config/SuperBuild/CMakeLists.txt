@@ -816,6 +816,11 @@ if (ENABLE_CLM)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_CLM.cmake)
 endif()
 
+# ELMKERNELS
+if (ENABLE_ELMKERNELS)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_ELMKernels.cmake)
+endif()
+
 # Alquimia and chemical engines (PFloTran and CrunchTope)
 if (NOT ENABLE_XSDK)
   
