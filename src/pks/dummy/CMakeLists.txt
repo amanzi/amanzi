@@ -39,18 +39,6 @@ include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 #
-# Dummy registrations
-#
-register_evaluator_with_factory(HEADERFILE Dummy_PK_reg.hh
-  LISTNAME   PKS_DUMMY_REGISTRATIONS)
-
-generate_evaluators_registration_header( 
-  HEADERFILE pks_dummy_registration.hh   
-  LISTNAME   PKS_DUMMY_REGISTRATIONS
-  INSTALL    True )
-
-
-#
 # Library: dummy
 #
 set(dummy_src_files Dummy_PK.cc)

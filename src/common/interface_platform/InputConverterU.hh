@@ -35,6 +35,7 @@ class InputConverterU : public InputConverter {
   explicit InputConverterU(const std::string& input_filename)
     : InputConverter(input_filename),
       multiphase_(false),
+      gravity_on_(true),
       const_gravity_(GRAVITY_MAGNITUDE),
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
       flow_single_phase_(false),
@@ -58,6 +59,9 @@ class InputConverterU : public InputConverter {
                            const std::string& output_prefix)
     : InputConverter(input_filename, input_doc),
       multiphase_(false),
+      gravity_on_(true),
+      const_gravity_(GRAVITY_MAGNITUDE),
+      const_atm_pressure_(ATMOSPHERIC_PRESSURE),
       flow_single_phase_(false),
       compressibility_(false),
       fractures_(false),
@@ -88,6 +92,7 @@ class InputConverterU : public InputConverter {
   void ParseSolutes_();
   void ParseModelDescription_();
   void ModifyDefaultPhysicalConstants_();
+  void ParseGlobalNumericalControls_();
 
   Teuchos::ParameterList TranslateVerbosity_();
   Teuchos::ParameterList TranslateUnits_();
@@ -271,6 +276,7 @@ class InputConverterU : public InputConverter {
   std::string eos_lookup_table_, eos_model_;
 
   // global physical constants prefixed with "const"
+  bool gravity_on_;
   double const_gravity_;
   double const_atm_pressure_;
 
