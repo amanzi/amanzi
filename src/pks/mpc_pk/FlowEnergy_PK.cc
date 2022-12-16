@@ -1,12 +1,14 @@
 /*
-  This is the mpc_pk component of the Amanzi code. 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov
+*/
+
+/*
+  This is the mpc_pk component of the Amanzi code.
 
   Process kernel for coupling Flow PK with Energy PK.
 */
@@ -21,7 +23,7 @@ namespace Amanzi {
 using CV_t = CompositeVector;
 using CVS_t = CompositeVectorSpace;
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Constructor
 ******************************************************************* */
 FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
@@ -46,7 +48,7 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Physics-based setup of PK.
 ******************************************************************* */
 void
@@ -215,7 +217,7 @@ FlowEnergy_PK::Setup()
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Initialization of copies requires fileds to exists
 ******************************************************************* */
 void
@@ -263,7 +265,7 @@ FlowEnergy_PK::Initialize()
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Performs one time step.
 ******************************************************************* */
 bool

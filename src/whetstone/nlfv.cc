@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Nonlinear finite volume method.
 */
@@ -19,15 +21,15 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* A harmonic averaging point (HAP) is a unique point on a plane 
-* (line in 2D) * seprating two materials where (a) continuity 
+* A harmonic averaging point (HAP) is a unique point on a plane
+* (line in 2D) * seprating two materials where (a) continuity
 * conditions are satisfied for continuous piecewise linear pressure
-* functions and (b) pressure value is a convex combination of two 
+* functions and (b) pressure value is a convex combination of two
 * neighboring cell-based pressures p_c1 and p_c2:
 *
-*   p = w p_c1 + (1-w) p_c2. 
+*   p = w p_c1 + (1-w) p_c2.
 *
-* Input: face f, two cells sharing this face, and two co-normal 
+* Input: face f, two cells sharing this face, and two co-normal
 *        vectors Tni = Ti * normal where fixed normal is used.
 * Output: HAP p and weight w.
 ****************************************************************** */

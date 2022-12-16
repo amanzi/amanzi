@@ -1,13 +1,14 @@
-// PDE_DiffusionMFDwithGravity prescribes an elliptic operator with gravity using MFD family of discretizations.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+// PDE_DiffusionMFDwithGravity prescribes an elliptic operator with gravity using MFD family of discretizations.
+
 
 #include <vector>
 
@@ -163,7 +164,7 @@ PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
 
 
 /* ******************************************************************
-* WARNING: Since gravity flux is not continuous, we derive it in 
+* WARNING: Since gravity flux is not continuous, we derive it in
 * exactly the same manner as in other routines.
 * **************************************************************** */
 void
@@ -278,7 +279,7 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
 
 
 /* ******************************************************************
-* Add "gravity flux" to the Darcy flux. 
+* Add "gravity flux" to the Darcy flux.
 * **************************************************************** */
 void
 PDE_DiffusionMFDwithGravity::UpdateFluxManifold(const Teuchos::Ptr<const CompositeVector>& u,

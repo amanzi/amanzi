@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _EventCoord_H_
 #define _EventCoord_H_
 
@@ -76,7 +85,7 @@ struct EventCoord
     const Event& operator[] (const std::string& label) const;
     const std::map<std::string,Event*>& CycleEvents() const;
     const std::map<std::string,Event*>& TimeEvents() const;
-    
+
 protected:
     std::map<std::string,Event*> cycleEvents;
     std::map<std::string,Event*> timeEvents;
@@ -87,4 +96,3 @@ std::ostream& operator<< (std::ostream& os, const EventCoord::TimeEvent& rhs);
 std::ostream& operator<< (std::ostream& os, const EventCoord& rhs);
 
 #endif
-

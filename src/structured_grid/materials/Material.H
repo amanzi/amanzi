@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _Material_H_
 #define _Material_H_
 
@@ -8,13 +17,13 @@
 class Material
 {
 public:
-  Material(const std::string&    name, 
+  Material(const std::string&    name,
 	   const Array<const Region*>& regions,
 	   const std::vector<Property*>& properties = std::vector<Property*>());
-  
+
   Material(const Material& rhs);
   ~Material();
-  
+
   template <typename T>
   void setVal(BaseFab<T>& fab,T val,int comp, const Real* dx) const
     {
@@ -24,7 +33,7 @@ public:
       }
     }
 
-   
+
   const Array<const Region*>& Regions() const {return regions;}
   const std::string& Name() const {return name;}
   const Property* Prop(const std::string& pname) const;
@@ -38,4 +47,3 @@ protected:
   std::vector<Property*> properties;
 };
 #endif
-

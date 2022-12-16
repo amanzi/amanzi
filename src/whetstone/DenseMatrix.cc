@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Dense matrices and operations with them.
 */
@@ -87,7 +89,7 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B)
 
 
 /* ******************************************************************
-* Copy constructor creates a new matrix from the submatrix of B in 
+* Copy constructor creates a new matrix from the submatrix of B in
 * rows m1 to m2-1 and columns n1 to n2-1.
 ****************************************************************** */
 DenseMatrix::DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2)

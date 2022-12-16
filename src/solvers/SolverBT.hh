@@ -1,14 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
 //! Backtracking line search on the provided correction as a solver.
-
 /*
   From PETSc SNES type BT, which in turn is from Numerical Methods for
   Unconstrained Optimization and Nonlinear Equations by Dennis & Schnabel, pg
@@ -35,7 +34,7 @@ Note, this always monitors the residual.
 
     * `"nonlinear tolerance`" ``[double]`` **1.e-6** defines the required error
       tolerance. The error is calculated by a PK.
-    
+
     * `"limit iterations`" ``[int]`` **50** defines the maximum allowed number
       of iterations.
 
@@ -54,13 +53,13 @@ Note, this always monitors the residual.
 
     * `"accuracy of line search minimum [bits]`" ``[int]`` **10**
 
-    * `"min valid alpha`" ``[double]`` **0** 
+    * `"min valid alpha`" ``[double]`` **0**
 
     * `"max valid alpha`" ``[double]`` **10.**
 
-    * `"max line search iterations`" ``[int]`` **10** 
+    * `"max line search iterations`" ``[int]`` **10**
 
-  
+
  */
 
 

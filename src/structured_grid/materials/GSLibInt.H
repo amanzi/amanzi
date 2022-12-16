@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _GSLibInt_H_
 #define _GSLibInt_H_
 
@@ -6,13 +15,13 @@
 
 namespace GSLibInt
 {
-  void parRand(Array <Real> kappaval, 
-	       Real         dkappa, 
-	       Array<int>   n_cell, 
-	       int          twoexp, 
+  void parRand(Array <Real> kappaval,
+	       Real         dkappa,
+	       Array<int>   n_cell,
+	       int          twoexp,
 	       MultiFab&     mfdata);
 
-  void rdpGaussianSim(const Array<Real>& kappaval, 
+  void rdpGaussianSim(const Array<Real>& kappaval,
                       const Box&         domain,
                       const Array<Real>& problo,
                       const Array<Real>& probhi,
@@ -21,7 +30,7 @@ namespace GSLibInt
                       int                ngrow_fine_gen,
                       const std::string& gsfile);
 
-  void seqGaussianSim(const Array <Real>& kappaval, 
+  void seqGaussianSim(const Array <Real>& kappaval,
                       const Box&          domain,
 		      const Array<Real>&  problo,
 		      const Array<Real>&  probhi,
@@ -29,7 +38,7 @@ namespace GSLibInt
 		      MultiFab&           mfdata,
 		      const std::string&  gsfile);
 
-  void cndGaussianSim(const Array<Real>& kappaval, 
+  void cndGaussianSim(const Array<Real>& kappaval,
                       const Box&         domain,
                       const Array<Real>& problo,
                       const Array<Real>& probhi,

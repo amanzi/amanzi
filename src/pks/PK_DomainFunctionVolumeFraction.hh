@@ -1,20 +1,22 @@
 /*
-  Process Kernels 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Process Kernels
 
   Scenario 1 (data distribution model is "volume")
-  The total source Q is given on input. The uniform source 
+  The total source Q is given on input. The uniform source
   distribution is employed. The source density in cell c
-  calculated as (Q / V_D) * vol_fraction(c) 
+  calculated as (Q / V_D) * vol_fraction(c)
 
   Scenario 2 (data distribution model is "none" or "simple")
-  The local source function Q(x) is given on input. The source 
+  The local source function Q(x) is given on input. The source
   source density in cell c is calculate as Q(x_c) * vol_fraction(c)
   where x_c is the centroid of volume_fraction.
 */

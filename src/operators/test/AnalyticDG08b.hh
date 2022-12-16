@@ -1,16 +1,18 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
 
   Analytic solution is the step function consisting of three
-  geometric shapes: cone centered at x0 of radius r0, hump 
-  centered at x1 of radius r1, and notched cylinder centered 
+  geometric shapes: cone centered at x0 of radius r0, hump
+  centered at x1 of radius r1, and notched cylinder centered
   at x2 of radius r2. The width of the notch is w = r / 4.
 
   Solution: u = step function(x0, x1, x2, r, w)

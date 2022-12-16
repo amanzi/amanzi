@@ -1,15 +1,14 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: William Perkins
            Ethan Coon (ecoon@lanl.gov)
 */
-//!  A geometric or discrete subdomain of the full domain.
 
+//! A geometric or discrete subdomain of the full domain.
 /*!
 
 Regions are geometrical constructs used to define subsets of
@@ -84,7 +83,7 @@ Example:
        <ParameterList name="FLUX PLANE">
          <ParameterList name="region: polygon">
            <Parameter name="number of points" type="int" value="5"/>
-           <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
+           <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5,
                                                                   0.5, -0.5, -0.5,
                                                                   0.8, 0.0, 0.0,
                                                                   0.5,  0.5, 0.5,

@@ -1,14 +1,17 @@
 /*
-  Multi-Process Coordinator
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Markus Berndt  
+  Authors: Markus Berndt
            Konstantin Lipnikov
            Daniil Svyatsky
+*/
+
+/*
+  Multi-Process Coordinator
+
 */
 
 #include <map>
@@ -36,7 +39,7 @@ ObservableAqueous::ObservableAqueous(std::string variable,
 
 
 /* ******************************************************************
-* Defines  
+* Defines
 ****************************************************************** */
 int
 ObservableAqueous::ComputeRegionSize()
@@ -99,7 +102,7 @@ ObservableAqueous::ComputeRegionSize()
 
 
 /* ******************************************************************
-* Computes aqueous observations. Units should be taken from fields 
+* Computes aqueous observations. Units should be taken from fields
 * but fields do not populate them yet (FIXME).
 ****************************************************************** */
 void

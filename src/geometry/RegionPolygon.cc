@@ -1,13 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
-  A closed polygonal segment of a plane.
-
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella
+*/
+
+/*
+  A closed polygonal segment of a plane.
+
 */
 
 #include "dbc.hh"
@@ -158,9 +160,9 @@ RegionPolygon::inside(const Point& p) const
   } else {
     /* Now check if the point is in the polygon */
 
-    /* 
+    /*
        Find the indices of coordinates on the projection plane
-       
+
        if elim_dir_ is 0, then d0 = 1, d1 = 2 (YZ plane)
        if elim_dir_ is 1, then d0 = 2, d1 = 0 (XZ plane)
        if elim_dir_ is 2, then d0 = 0, d1 = 1 (XY plane)

@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <RSAMRdata.H>
 #include <PorousMedia_F.H> // For FORT_RICHARD_ALPHA
 
@@ -177,7 +186,7 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
   ctmp.resize(BL_SPACEDIM);
   Rhs = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
   Alpha = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
-  
+
   RichardCoefs.resize(BL_SPACEDIM,PArrayManage);
   DarcyVelocity.resize(BL_SPACEDIM,PArrayManage);
   for (int d=0; d<BL_SPACEDIM; ++d) {
@@ -234,7 +243,7 @@ RSAMRdata::ResetRhoSat()
   PArray<MultiFab> S_old(nLevs,PArrayNoManage);
   PArray<MultiFab> P_new(nLevs,PArrayNoManage);
   PArray<MultiFab> P_old(nLevs,PArrayNoManage);
-  
+
   for (int lev=0; lev<nLevs; ++lev) {
     S_new.set(lev,&(pm[lev].get_new_data(State_Type)));
     S_old.set(lev,&(pm[lev].get_old_data(State_Type)));
@@ -248,11 +257,11 @@ RSAMRdata::ResetRhoSat()
   delete Pold; Pold = new MFTower(layout,P_old,nLevs);
 }
 
-void 
+void
 RSAMRdata::SetInflowVelocity(PArray<MFTower>& velocity,
 			     Real             t)
 {
-  for (int d=0; d<BL_SPACEDIM; ++d) {            
+  for (int d=0; d<BL_SPACEDIM; ++d) {
     BL_ASSERT(layout.IsCompatible(velocity[d]));
   }
 
@@ -394,4 +403,3 @@ RSAMRdata::GetSource(Real t)
   }
   return Source;
 }
-

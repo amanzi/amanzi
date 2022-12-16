@@ -1,12 +1,16 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 //
 // Mesh
 //
-// Copyright 2010-201x held jointly by LANL, ORNL, LBNL, and PNNL.
-// Amanzi is released under the three-clause BSD License.
-// The terms of use and "as is" disclaimer for this license are
-// provided in the top-level COPYRIGHT file.
-//
-// Algorithms for commonly used Mesh operations -- for the Mesh user.
+// Helper functions for Mesh operations and algorithms
 //
 
 #include "Mesh_Algorithms.hh"

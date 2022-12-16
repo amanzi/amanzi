@@ -1,13 +1,16 @@
 /*
-  Input Converter
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Erin Barker (Erin.Barker@pnnl.gov)
+*/
+
+/*
+  Input Converter
+
 */
 
 #include <algorithm>
@@ -275,7 +278,7 @@ InputConverter::ParseGeochemistry_()
 
 
 /* ******************************************************************
-* Returns node specified by the list of consequitive namestags 
+* Returns node specified by the list of consequitive namestags
 * separated by commas. Only the first tag may be not unique.
 ****************************************************************** */
 DOMNode*
@@ -346,7 +349,7 @@ InputConverter::GetUniqueElementByTagsString_(const std::string& tags, bool& fla
 
 
 /* ******************************************************************
-* Returns node specified by the list of consequtive names tags 
+* Returns node specified by the list of consequtive names tags
 * separated by commas. Only the first tag may be not unique.
 ****************************************************************** */
 xercesc::DOMNode*
@@ -365,7 +368,7 @@ InputConverter::GetUniqueElementByTagsString_(const std::string& tags, bool& fla
 
 
 /* ******************************************************************
-* Return node described by the list of consequtive names tags 
+* Return node described by the list of consequtive names tags
 * separated by commas.
 ****************************************************************** */
 DOMNode*
@@ -746,8 +749,8 @@ InputConverter::GetAttributeValueS_(DOMElement* elem,
 
 
 /* ******************************************************************
-* Extract attribute of type vector<double>. Unit of each component 
-* must match the expected unit. 
+* Extract attribute of type vector<double>. Unit of each component
+* must match the expected unit.
 ****************************************************************** */
 std::vector<double>
 InputConverter::GetAttributeVectorD_(DOMElement* elem,
@@ -1315,7 +1318,7 @@ InputConverter::ThrowErrorMisschild_(const std::string& section,
 
 /* ***************************************************************************
 * Extracts information for and write the Pflotran Chemistry Engine input file
-* Returns the name of this file.  
+* Returns the name of this file.
 *************************************************************************** */
 std::string
 InputConverter::CreateINFile_(std::string& filename, int rank)

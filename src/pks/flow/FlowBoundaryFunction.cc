@@ -1,13 +1,16 @@
 /*
-  Flow PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Neil Carlson (version 1) 
+  Authors: Neil Carlson (version 1)
            Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #include "FlowBoundaryFunction.hh"
@@ -101,8 +104,8 @@ FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>
 
 
 /* ****************************************************************
-* Calculate distance to the top of a given surface where the water 
-* table is set up. We do not distribute computed data. It seems not 
+* Calculate distance to the top of a given surface where the water
+* table is set up. We do not distribute computed data. It seems not
 * necessary.
 *
 * WARNING: The implemented algorithm works only in 3D.

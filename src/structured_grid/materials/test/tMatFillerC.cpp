@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -258,7 +267,7 @@ main (int   argc,
   ParmParse pp;
   std::string case_size="medium"; pp.query("case_size",case_size);
 
-  Array<int> n_cells(BL_SPACEDIM); 
+  Array<int> n_cells(BL_SPACEDIM);
   int nLevs;
   int coord = 0;
   Array<int> is_per(BL_SPACEDIM,0);
@@ -319,7 +328,7 @@ main (int   argc,
       for (std::map<std::string,Region*>::const_iterator it=regions.begin(); it!=regions.end(); ++it) {
         std::cout << *(it->second) << std::endl;
       }
-      
+
       for (int i=0; i<materials.size(); ++i) {
         std::cout << materials[i] << std::endl;
       }
@@ -354,7 +363,7 @@ main (int   argc,
   Array<int> bins(materials.size(),0);
   for (int lev=0; lev<nLevs; ++lev) {
     int fac = 1;
-    for (int k=lev; k<nLevs-1; ++k) {    
+    for (int k=lev; k<nLevs-1; ++k) {
       for (int d=0; d<BL_SPACEDIM; ++d) {
         fac *= refRatio[k][d];
       }
@@ -412,7 +421,7 @@ main (int   argc,
 
   for (int lev=0; lev<nLevs; ++lev) {
     int fac = 1;
-    for (int k=lev; k<nLevs-1; ++k) {    
+    for (int k=lev; k<nLevs-1; ++k) {
       for (int d=0; d<BL_SPACEDIM; ++d) {
         fac *= refRatio[k][d];
       }
@@ -474,7 +483,7 @@ main (int   argc,
     bool isCartGrid = false;
     Array<Real> vfeps(nLevs,1.e-10);
     Array<int> levelSteps(nLevs,0);
-    
+
     WritePlotfile(pfversion,data,t,Geometry::ProbLo(),Geometry::ProbHi(),
                   rRatio,pDomain,dxLevel,coordSys,outFileName,propNames,
                   pl_verbose,isCartGrid,vfeps.dataPtr(),levelSteps.dataPtr());
@@ -515,22 +524,22 @@ void WritePlotfile(const std::string         &pfversion,
     // Force other processors to wait till directory is built.
     //
     ParallelDescriptor::Barrier();
-    
+
     std::string oFileHeader(oFile);
     oFileHeader += "/Header";
-    
+
     VisMF::IO_Buffer io_buffer(VisMF::IO_Buffer_Size);
-    
+
     std::ofstream os;
-    
+
     //os.rdbuf()->pubsetbuf(io_buffer.dataPtr(), io_buffer.size());
-    
+
     if(verbose && ParallelDescriptor::IOProcessor()) {
       std::cout << "Opening file = " << oFileHeader << '\n';
     }
-    
+
     os.open(oFileHeader.c_str(), std::ios::out|std::ios::binary);
-    
+
     if(os.fail()) {
       BoxLib::FileOpenFailed(oFileHeader);
     }
@@ -584,7 +593,7 @@ void WritePlotfile(const std::string         &pfversion,
         int nGrids = ba.size();
         char buf[64];
         sprintf(buf, "Level_%d", iLevel);
-        
+
         if(ParallelDescriptor::IOProcessor()) {
             os << iLevel << ' ' << nGrids << ' ' << time << '\n';
             if(levelSteps != 0) {
@@ -592,7 +601,7 @@ void WritePlotfile(const std::string         &pfversion,
 	    } else {
               os << 0 << '\n';
 	    }
-            
+
             for(int i(0); i < nGrids; ++i) {
               const Box &b = ba[i];
               for(int n(0); n < BL_SPACEDIM; ++n) {
@@ -607,7 +616,7 @@ void WritePlotfile(const std::string         &pfversion,
             std::string Level(oFile);
             Level += '/';
             Level += buf;
-            
+
             if( ! BoxLib::UtilCreateDirectory(Level, 0755)) {
               BoxLib::CreateDirectoryFailed(Level);
 	    }
@@ -620,13 +629,13 @@ void WritePlotfile(const std::string         &pfversion,
         // Now build the full relative pathname of the MultiFab.
         //
         static const std::string MultiFabBaseName("MultiFab");
-        
+
         std::string PathName(oFile);
         PathName += '/';
         PathName += buf;
         PathName += '/';
         PathName += MultiFabBaseName;
-        
+
         if(ParallelDescriptor::IOProcessor()) {
             //
             // The full name relative to the Header file.
@@ -638,6 +647,6 @@ void WritePlotfile(const std::string         &pfversion,
         }
         VisMF::Write(data[iLevel], PathName);
     }
-    
+
     os.close();
 }

@@ -1,12 +1,15 @@
 /*
-  Input Converter
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Input Converter
+
 */
 
 #ifndef AMANZI_INPUT_CONVERTER_HH_
@@ -47,7 +50,7 @@ const double DVAL_MAX = 1.0e+99;
 
 XERCES_CPP_NAMESPACE_USE
 
-/* 
+/*
 * A simple wrapper for XMLString class. It collects memory pointers
 * and destroys them later. The focus is on simplicity of its using,
 * so that release is never called.

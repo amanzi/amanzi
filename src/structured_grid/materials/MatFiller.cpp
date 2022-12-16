@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <MatFiller.H>
 #include <TagBox.H>
 #include <Cluster.H>
@@ -36,7 +45,7 @@ MatFiller::define(const Array<Geometry>& _geomArray,
   refRatio = _refRatio;
   nLevs = geomArray.size();
   BL_ASSERT(nLevs == refRatio.size()+1);
-  
+
   int cnt = 0;
   materials.resize(_materials.size(),PArrayManage);
   matNames.resize(materials.size());
@@ -127,7 +136,7 @@ MatFiller::VerifyProperties()
   }
 }
 
-void 
+void
 MatFiller::SetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed) const
 {
   BoxArray unfilled(mf.boxArray());
@@ -168,8 +177,8 @@ MatFiller::SetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed)
   }
 }
 
-const BoxArray& 
-MatFiller::Mixed(int level) const 
+const BoxArray&
+MatFiller::Mixed(int level) const
 {
   static BoxArray DUMMY;
   return (level >= ba_mixed.size() ? DUMMY : ba_mixed[level]);
@@ -184,13 +193,13 @@ MatFiller::Initialize()
   materialID.resize(finestLevel+1,PArrayManage);
   int nGrow = 0;
   BoxArray cba = BoxArray(geomArray[0].Domain());
-  materialID.set(0,new iMultiFab(cba, 1, nGrow));  
+  materialID.set(0,new iMultiFab(cba, 1, nGrow));
   for (int lev=0; lev<ba_mixed.size(); ++lev) {
     BoxList fbl(ba_mixed[lev]); fbl.refine(RefRatio(lev));
     fbl.simplify(); fbl.maxSize(max_grid_size);
     BoxArray fba(fbl);
     BL_ASSERT(fba.isDisjoint());
-    if (fba.size()!=0) { 
+    if (fba.size()!=0) {
       materialID.set(lev+1,new iMultiFab(fba, 1, nGrow));
     }
     else {
@@ -243,7 +252,7 @@ MatFiller::FindMixedCells()
   }
 
   // Find all boxes in cba that possibly contain more than 1 material
-  // If only 1 material, store material idx 
+  // If only 1 material, store material idx
   std::vector< std::pair<int,Box> > isects;
   bool first_only = true;
   Array<int> grid_to_mat(cba_size,-1); // A convenient way to share results over procs later
@@ -292,7 +301,7 @@ MatFiller::FindMixedCells()
       tbar.resize(nLevs-1, PArrayManage);
       for (int lev=nLevs-2; lev>=0; --lev) {
 	BoxArray gba = BoxArray(cba_red).refine(cr[0]).coarsen(cr[lev]);
-	tbar.set(lev, new TagBoxArray(gba,tags_buffer)); 
+	tbar.set(lev, new TagBoxArray(gba,tags_buffer));
       }
     }
 
@@ -309,15 +318,15 @@ MatFiller::FindMixedCells()
 	    int matID = matIdx[materials[j].Name()];
 	    materials[j].setVal(finestFab,matID,0,dxFinest);
 	  }
-        
+
 	  for (int lev=nLevs-2; lev>=0; --lev) {
 	    Box thisBox = Box(finestBox).coarsen(cr[lev]);
 	    IntVect rm1 = cr[lev] - IntVect::TheUnitVector();
 	    TagBox& tb = tbar[lev][i];
-          
-	    for (IntVect thisIv=thisBox.smallEnd(), TEnd=thisBox.bigEnd(); thisIv<=TEnd; thisBox.next(thisIv)) {      
+
+	    for (IntVect thisIv=thisBox.smallEnd(), TEnd=thisBox.bigEnd(); thisIv<=TEnd; thisBox.next(thisIv)) {
 	      IntVect thisFineIv = thisIv * cr[lev];
-	      Box thisFineBox(thisFineIv,thisFineIv+rm1);      
+	      Box thisFineBox(thisFineIv,thisFineIv+rm1);
 	      if (finestFab.min(thisFineBox,0) != finestFab.max(thisFineBox,0)) {
 		tb.setVal(TagBox::SET,Box(thisIv,thisIv),0,1);
 	      }
@@ -369,7 +378,7 @@ MatFiller::NComp(const std::string& property_name) const
   return (it==property_nComps.end() ? 0 : it->second);
 }
 
-bool 
+bool
 MatFiller::SetProperty(Real               t,
                        int                level,
                        MultiFab&          mf,
@@ -383,7 +392,7 @@ MatFiller::SetProperty(Real               t,
     BoxLib::Abort("Periodic not yet supported");
   }
 
-  BoxArray unfilled(mf.boxArray()); 
+  BoxArray unfilled(mf.boxArray());
   if (unfilled.size()==0) {
     return true;
   }
@@ -415,7 +424,7 @@ MatFiller::SetProperty(Real               t,
 
   BoxArray baM;
   if (level<ba_mixed.size() && ba_mixed[level].size()>0) {
-    baM = BoxLib::intersect(ba_mixed[level],unfilled); 
+    baM = BoxLib::intersect(ba_mixed[level],unfilled);
     if (baM.size()>0) {
       baM.removeOverlap();
       MultiFab mixed(baM,nComp,0);
@@ -447,7 +456,7 @@ MatFiller::SetProperty(Real               t,
     }
   }
 
-  // Here, unfilled split into baM(mixed)[treated above] and unfilled(nonmixed) 
+  // Here, unfilled split into baM(mixed)[treated above] and unfilled(nonmixed)
   // Of the unfilled ones, first fill the ones we can at this level, then go to coarser
   if (unfilled.ok() && level<materialID.size()) {
     BL_ASSERT(materialID[level].boxArray().isDisjoint());
@@ -493,7 +502,7 @@ MatFiller::SetProperty(Real               t,
           BoxArray bac_remaining = BoxArray(BoxList(remaining).coarsen(cumRatio));
           IntVect refm = IntVect(cumRatio)-IntVect(D_DECL(1,1,1));
           Box rbox(IntVect(D_DECL(0,0,0)),refm);
-          
+
           // Get ovlp, including mixed and nonmixed cells, then remove mixed ones
           const BoxArray& ba_mat = materialID[lev].boxArray();
           BoxArray bac_interp = BoxLib::intersect(bac_remaining,ba_mat);
@@ -512,7 +521,7 @@ MatFiller::SetProperty(Real               t,
             MultiFab mfc_interp(bac_interp,nComp,0);
             bool ret = SetProperty(t,lev,mfc_interp,pname,0,0,ctx);
             if (!ret) return false;
-            
+
             BoxArray baf_interp(bac_interp); baf_interp.refine(cumRatio);
             MultiFab mff_interp(baf_interp,nComp,0);
             for (MFIter mfi(mfc_interp); mfi.isValid(); ++mfi) {
@@ -525,8 +534,8 @@ MatFiller::SetProperty(Real               t,
             BoxArray baf_interp_valid = BoxLib::intersect(baf_interp,BoxArray(remaining));
             MultiFab mff_interpt(baf_interp_valid,nComp,0);
             mff_interpt.copy(mff_interp); // Get only the part we want here
-            tmf.copy(mff_interpt,0,0,nComp); // Then get the part we want 
-            
+            tmf.copy(mff_interpt,0,0,nComp); // Then get the part we want
+
             BoxList not_just_filled;
             BoxList blf_interp_valid(baf_interp_valid);
             for (int i=0; i<remaining.size(); ++i) {

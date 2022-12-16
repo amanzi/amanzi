@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _MFTower_
 #define _MFTower_
 
@@ -46,7 +55,7 @@ struct MFTower
 			 const Array<MFTower*> mfta,
 			 const Array<std::string>&   names,
 			 Real                        time);
- 
+
     static void CCtoECgrad(PArray<MFTower>& mft_ec,
                            const MFTower&   mft_cc,
                            Real             mult,
@@ -54,7 +63,7 @@ struct MFTower
                            int              dComp,
                            int              nComp,
 			   int              numLevs=-1);
-    
+
     static void CCtoECavg(PArray<MFTower>& mft_ec,
                           const MFTower&   mft_cc,
                           Real             mult,
@@ -63,7 +72,7 @@ struct MFTower
                           int              nComp,
                           int              do_harmonic=1,
                           int              numLevs=-1);
-    
+
     static void ECtoCCdiv(MFTower&               mft_cc,
                           const PArray<MFTower>& mft_ec,
                           const Array<Real>&     mult,
@@ -71,17 +80,17 @@ struct MFTower
                           int                    dComp,
                           int                    nComp,
 			  int                    numLevs=-1);
-    
+
     static void AverageDown(MFTower& mft,
                             int      sComp,
                             int      nComp,
 			    int      numLevs=-1);
-    
+
     void SetVal(Real     val,
 		int      sComp=0,
 		int      nComp=1,
 		int      numLevs=-1);
-  
+
     static IndexType EC[BL_SPACEDIM], CC, NC;
 
 protected:

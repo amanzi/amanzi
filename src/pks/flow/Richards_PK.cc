@@ -1,13 +1,16 @@
 /*
-  Flow PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Neil Carlson (nnc@lanl.gov), 
+  Authors: Neil Carlson (nnc@lanl.gov),
            Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #include <vector>
@@ -515,7 +518,7 @@ Richards_PK::Setup()
 
 /* ******************************************************************
 * This is a long but simple routine. It goes through flow parameter
-* list and initializes various objects including those created during 
+* list and initializes various objects including those created during
 * the setup step.
 ****************************************************************** */
 void
@@ -864,7 +867,7 @@ Richards_PK::Initialize()
 
 
 /* ****************************************************************
-* This completes initialization of common fields that were not 
+* This completes initialization of common fields that were not
 * initialized by the state.
 **************************************************************** */
 void
@@ -969,9 +972,9 @@ Richards_PK::InitializeStatistics_()
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Performs one time step from time t_old to time t_new either for
-* steady-state or transient simulation. If reinit=true, enforce 
+* steady-state or transient simulation. If reinit=true, enforce
 * p-lambda constraints.
 ******************************************************************* */
 bool
@@ -1129,7 +1132,7 @@ Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u)
 
 
 /* ******************************************************************
-* Calculates pressure value on the boundary using the two-point flux 
+* Calculates pressure value on the boundary using the two-point flux
 * approximation (FV) scheme.
 ****************************************************************** */
 double

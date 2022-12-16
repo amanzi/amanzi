@@ -1,13 +1,22 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 // Emacs Mode Line: -*- Mode:c++; c-default-style: "google"; indent-tabs-mode: nil -*-
 // -------------------------------------------------------------
 /**
  * @file   verify_hex.cc
  * @author William A. Perkins
  * @date Tue Aug  2 13:27:55 2011
- * 
+ *
  * @brief  A simple test of hex-mesh generation -- serial or parallel
- * 
- * 
+ *
+ *
  */
 
 // -------------------------------------------------------------
@@ -42,12 +51,12 @@ namespace po = boost::program_options;
 // grab_filename
 // -------------------------------------------------------------
 /**
-  * Simple routine to parse the filename from a path 
+  * Simple routine to parse the filename from a path
   * boost::filesystem object that handles the differences between
   * version 2 (path.leaf()) and 3 (path.filename())
   *
-  * @param some_path a boost::filesystem path 
-  * 
+  * @param some_path a boost::filesystem path
+  *
   * Return string that defines the filename
   */
 std::string
@@ -65,10 +74,10 @@ grab_filename(const bf::path& some_path)
 // -------------------------------------------------------------
 // dump_output
 // -------------------------------------------------------------
-/** 
+/**
  * Dump a viz file using the mesh specified by @c maps. Include a
  * solution field for cells that identifies which process owns them.
- * 
+ *
  * @param me this process' id
  * @param maps mesh to output
  * @param filenameout HDF5/XDMF format file to produce

@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _RockManager_F_H_
 #define _RockManager_F_H_
 
@@ -42,6 +51,6 @@ extern "C" {
                       const int* myid, const int* lo, const int* hi,
                       const int* nc);
 }
-  
+
 #endif
 #endif /*_RockManager_F_H_*/

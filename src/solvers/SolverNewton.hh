@@ -1,13 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
-//! Straightforward Newton/Inexact Newton solver.
 
+//! Straightforward Newton/Inexact Newton solver.
 /*!
 
 The classical Newton method works well for cases where Jacobian is available
@@ -24,7 +24,7 @@ method is Newton.  If it applies an appoximation, it is inexact Newton.
 
     * `"nonlinear tolerance`" ``[double]`` **1.e-6** defines the required error
       tolerance. The error is calculated by a PK.
-    
+
     * `"monitor`" ``[string]`` **monitor update** specifies control of the
       nonlinear residual. The available options are `"monitor update`" and
       `"monitor residual`".

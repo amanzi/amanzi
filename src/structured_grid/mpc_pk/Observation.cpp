@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <winstd.H>
 
 #include <PMAmr.H>
@@ -26,7 +35,7 @@ Observation::Initialize()
 {
     BoxLib::ExecOnFinalize(Observation::Cleanup);
     initialized = true;
-    
+
     obs_type_list["average"]          = 0;
     obs_type_list["integral"]         = 1;
     obs_type_list["time_integral"]    = 2;
@@ -42,7 +51,7 @@ Observation::Observation(const std::string& name,
                          const std::string& region_name,
                          const std::string& obs_type,
                          const std::string& event_label)
-    : name(name), field(field), region_name(region_name), obs_type(obs_type), 
+    : name(name), field(field), region_name(region_name), obs_type(obs_type),
       event_label(event_label), obs_data_initialized(false)
 {
     if (!initialized) {
@@ -129,7 +138,7 @@ process_events(Real time, Real dt, int iter, int diter, const std::string& event
     }
     EventCoord& event_coord = Observation::PMAmrPtr()->eventCoord();
     std::pair<Real,Array<std::string> > nextEvent = event_coord.NextEvent(time,dt,iter, diter);
-    if (nextEvent.second.size()) 
+    if (nextEvent.second.size())
     {
         // Process event
         const Array<std::string>& eventList = nextEvent.second;
@@ -144,14 +153,14 @@ process_events(Real time, Real dt, int iter, int diter, const std::string& event
 }
 
 
-void 
-Observation::process(Real t_old, 
+void
+Observation::process(Real t_old,
 		     Real t_new,
                      int  iter,
 		     int  verbose)
 {
   // Must set the amr pointer prior to use via Observation::setAmrPtr
-  BL_ASSERT(amrp); 
+  BL_ASSERT(amrp);
 
   // determine observation at time t_new
   switch (obs_type_list[obs_type] )
@@ -160,11 +169,11 @@ Observation::process(Real t_old,
       val_new  = average(t_new);
 
       break;
-      
+
     case 1:
       val_new = volume_integral(t_new);
       break;
-      
+
     case 2:
       // times[nObs] = 0.5*(t_old+t_new);
       val_new = volume_time_integral(t_old,t_new);
@@ -191,18 +200,18 @@ Observation::process(Real t_old,
   switch (obs_type_list[obs_type] )
     {
     case 2:
-      if (vals.size() < 1) 
+      if (vals.size() < 1)
 	{
 	  vals[0] = 0.;
 	}
       if (times[0] <= t_old && times[1] >= t_new)
-	vals[0] = vals[0] + val_new;   
+	vals[0] = vals[0] + val_new;
       break;
 
     default:
 
         std::pair<bool,Real> ret = process_events(t_old,t_new-t_old,iter,1,event_label);
-        
+
         if (ret.first) {
             Real dt_red = ret.second < 0 ? t_new - t_old : ret.second;
             times.push_back(t_old + dt_red);
@@ -252,7 +261,7 @@ Observation::point_sample (Real time)
 
   const Region& region = GetRegion(region_name);
   const PointRegion* ptreg = dynamic_cast<const PointRegion*>(&region);
-  if (ptreg == 0) 
+  if (ptreg == 0)
   {
       BoxLib::Abort("Point Sample observation requires a point region");
   }
@@ -312,8 +321,8 @@ Observation::integral_and_volume (Real time)
   const Array<IntVect>& refRatio = amrp->refRatio();
 
   Real int_inside = 0.0;
-  Real vol_inside = 0;  
-  
+  Real vol_inside = 0;
+
   const Region& region = GetRegion(region_name);
 
   for (int lev = 0; lev <= finest_level; lev++)
@@ -345,7 +354,7 @@ Observation::integral_and_volume (Real time)
           if (lev < finest_level)
             {
               std::vector< std::pair<int,Box> > isects = baf.intersections(cbox);
-              
+
               for (int ii = 0, N = isects.size(); ii < N; ii++)
                 {
                   fabVOL.setVal(0,isects[ii].second,0,fabVOL.nComp());
@@ -354,7 +363,7 @@ Observation::integral_and_volume (Real time)
 
           // Now increment volume and integral inside
           vol_inside += fabVOL.sum(0);
-          
+
           fabINT.resize(cbox,1);
           fabINT.copy((*S)[mfi],0,0,1);
           fabINT.mult(fabVOL);

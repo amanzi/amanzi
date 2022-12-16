@@ -1,13 +1,13 @@
 /*
-  Flow PK
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-  We use this class to test convergence of discretization
-  schemes. It employs a simple model for relative permeability,
-  k_rel = 1 / (1 + pc^2).
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+           We use this class to test convergence of discretization
+           schemes. It employs a simple model for relative permeability,
+           k_rel = 1 / (1 + pc^2).
 */
 
 #ifndef AMANZI_FAKE_MODEL_HH_

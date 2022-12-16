@@ -1,12 +1,15 @@
 /*
-  State
-
-  Copyright 2010-202x held jointly, see COPYRIGHT.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
+
+/*
+  State
+
 */
 /*!
 Uses functions to evaluate arbitrary algebraic functions of its dependencies.
@@ -21,7 +24,7 @@ For example, one might write a dependency:
 .. admonition:: secondary-variable-from-function-evaluator-spec
 
    ONE OF:
-                
+
    * `"functions`" ``[composite-vector-function-spec-list]`` Note this is used
      for multiple Degress of Freedom.
 

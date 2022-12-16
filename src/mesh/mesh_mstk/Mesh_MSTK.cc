@@ -1,5 +1,5 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -8,7 +8,6 @@
 */
 
 //! Implementation of the Mesh interface leveraging MSTK.
-
 #include "dbc.hh"
 #include "errors.hh"
 
@@ -1905,6 +1904,10 @@ Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
         Errors::Message mesg("Mismatch of entity type in labeled set region and mesh set");
         Exceptions::amanzi_throw(mesg);
       }
+    } else { /* General region - we have to account for all kinds of
+              entities being queried in a set defined by this
+              region */
+      Entity_kind int_to_kind[4] = { NODE, EDGE, FACE, CELL };
 
     } else if (getManifoldDimension() == 2) {
       if ((region.entity_str() == "CELL" && entdim != MFACE) ||

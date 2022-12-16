@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #define MSTK_HAVE_MPI 1
 
 #include "UnitTest++.h"
@@ -102,7 +111,7 @@ TEST(HDF5_MPI)
   sprintf(strArray[2], "Uranium");
   sprintf(strArray[3], "Unobtainium");
   sprintf(strArray[4], "My Favorite Mineral in the Whole World");
-    
+
   restart_output->writeDataString(strArray,num_wstrs,"string_dataset");
   */
 

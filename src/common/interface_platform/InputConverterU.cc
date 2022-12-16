@@ -1,13 +1,16 @@
 /*
-  Input Converter
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Erin Barker (original version)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Input Converter
+
 */
 
 #include <string>
@@ -53,6 +56,7 @@ InputConverterU::Translate(int rank, int num_proc)
   ParseGeochemistry_();
   ModifyDefaultPhysicalConstants_();
   ParseModelDescription_();
+  ParseGlobalNumericalControls_();
 
   out_list.set<bool>("Native Unstructured Input", "true");
 
@@ -358,6 +362,24 @@ InputConverterU::ParseModelDescription_()
   node = GetUniqueElementByTagsString_(node_list->item(0), "author", flag);
   if (flag && vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "AUTHOR: " << mm.transcode(node->getTextContent()) << std::endl;
+}
+
+
+/* ******************************************************************
+* Simulation-wide control parameters
+****************************************************************** */
+void
+InputConverterU::ParseGlobalNumericalControls_()
+{
+  bool flag;
+  DOMNode* node;
+
+  gravity_on_ = true;
+  node = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, gravity", flag);
+  if (flag) {
+    std::string text = GetTextContentS_(node, "on, off");
+    gravity_on_ = (text == "on");
+  }
 }
 
 

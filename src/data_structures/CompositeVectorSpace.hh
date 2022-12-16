@@ -1,13 +1,15 @@
 /*
-  Data Structures
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon
            Daniil Svyatsky (dasvyat@lanl.gov)
+*/
+
+/*
+  Data Structures
 
   Factory for a CompositeVector on an Amanzi mesh.
 

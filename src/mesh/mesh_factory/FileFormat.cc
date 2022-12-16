@@ -1,14 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: William Perkins, others
 */
 
 //! Utility functions for working with various file formats and names.
-
 #include <regex>
 #include <fstream>
 
@@ -62,15 +61,15 @@ std::string fileFormatName(const FileFormat f)
 /*
  Collective
 
- This routine identifies the format of the mesh file specified by @c name.  
+ This routine identifies the format of the mesh file specified by @c name.
 
  Currently, this is very stupid.  Format is basically only
- determined by file name extension, as follows: 
+ determined by file name extension, as follows:
 
    - .exo is ::ExodusII
    - .par.N.i is ::Nemesis, where N is # cpu and i is this process id
    - .h5m is ::MOAB_HDF5
- 
+
  This routine also makes sure the specified file is there and is readable.
 
  In parallel, all processes should perform this check, even if

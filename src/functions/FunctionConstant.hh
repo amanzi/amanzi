@@ -1,16 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! FunctionConstant: Implements the Function interface using a constant value.
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
 */
 
+//! FunctionConstant: Implements the Function interface using a constant value.
 /*!
 
-Constant function is defined as :math:`f(x) = a`, for all :math:`x`. 
+Constant function is defined as :math:`f(x) = a`, for all :math:`x`.
 
 * `"value`" ``[double]`` The constant to be applied.
 

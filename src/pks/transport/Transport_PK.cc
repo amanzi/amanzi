@@ -1,12 +1,14 @@
 /*
-  Transport PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Transport PK
 
   Major transport algorithms.
 */
@@ -360,7 +362,7 @@ Transport_PK::Setup()
 
 /* ******************************************************************
 * Routine processes parameter list. It needs to be called only once
-* on each processor.                                                     
+* on each processor.
 ****************************************************************** */
 void
 Transport_PK::Initialize()
@@ -660,13 +662,13 @@ Transport_PK::InitializeFieldFromField_(const std::string& field0,
 
 
 /* *******************************************************************
-* Estimation of the time step based on T.Barth (Lecture Notes   
-* presented at VKI Lecture Series 1994-05, Theorem 4.2.2.       
+* Estimation of the time step based on T.Barth (Lecture Notes
+* presented at VKI Lecture Series 1994-05, Theorem 4.2.2.
 * Routine must be called every time we update a flow field.
 *
 * Warning: Barth calculates influx, we calculate outflux. The methods
 * are equivalent for divergence-free flows and guarantee the extrema
-* diminishing principle. Outflux takes into account sinks and 
+* diminishing principle. Outflux takes into account sinks and
 * sources but preserves only positivity of an advected mass.
 * ***************************************************************** */
 double
@@ -770,8 +772,8 @@ Transport_PK::StableTimeStep(int n)
 }
 
 
-/* ******************************************************************* 
-* Estimate returns last time step unless it is zero.     
+/* *******************************************************************
+* Estimate returns last time step unless it is zero.
 ******************************************************************* */
 double
 Transport_PK::get_dt()
@@ -785,10 +787,10 @@ Transport_PK::get_dt()
 }
 
 
-/* ******************************************************************* 
-* Add implict time discretization of the multiscale porosity model on 
+/* *******************************************************************
+* Add implict time discretization of the multiscale porosity model on
 * time sub-interval [t_int1, t_int2]:
-*   d(VWC_f)/dt -= G_s, d(VWC_m) = G_s 
+*   d(VWC_f)/dt -= G_s, d(VWC_m) = G_s
 *   G_s = G_w C^* + omega_s (C_f - C_m).
 ******************************************************************* */
 void
@@ -862,7 +864,7 @@ Transport_PK::AddMultiscalePorosity_(double t_old, double t_new, double t_int1, 
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Copy the advected tcc field to the state.
 ******************************************************************* */
 void
@@ -874,7 +876,7 @@ Transport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 
 /* ******************************************************************
 * Adds source terms to conservative quantity tcc [mol]. Producers
-* use the initial concentration vector tcc_prev. 
+* use the initial concentration vector tcc_prev.
 * The routine treats two cases of tcc with one and all components.
 ****************************************************************** */
 void
@@ -971,8 +973,8 @@ Transport_PK::ComputeBCs_(std::vector<int>& bc_model, std::vector<double>& bc_va
 
 
 /* *******************************************************************
-* Identify flux direction based on orientation of the face normal 
-* and sign of the Darcy velocity.                               
+* Identify flux direction based on orientation of the face normal
+* and sign of the Darcy velocity.
 ******************************************************************* */
 void
 Transport_PK::IdentifyUpwindCells()
@@ -1080,9 +1082,9 @@ Transport_PK::IdentifyUpwindCells()
 
 
 /* *******************************************************************
-* Interpolate linearly in time between two values v0 and v1. The time 
+* Interpolate linearly in time between two values v0 and v1. The time
 * is measuared relative to value v0; so that v1 is at time dt. The
-* interpolated data are at time dt_int.            
+* interpolated data are at time dt_int.
 ******************************************************************* */
 void
 Transport_PK::InterpolateCellVector(const Epetra_MultiVector& v0,

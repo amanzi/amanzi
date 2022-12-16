@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _PorousMedia_H_
 #define _PorousMedia_H_
 
@@ -80,15 +89,15 @@ public:
     PM_Error_Value()
 	:
         pmef(0), value(), min_time(), max_time(), max_level() {}
-    
-    PM_Error_Value (Real min_time, Real max_time, int max_level, 
+
+    PM_Error_Value (Real min_time, Real max_time, int max_level,
                     const Array<const Region*>& regions);
 
     PM_Error_Value (PMEF pmef, Real value, Real min_time,
                     Real max_time, int max_level, const Array<const Region*>& regions);
 
     virtual ~PM_Error_Value () {}
-    
+
     virtual ErrorRec::ErrorFunc* clone () const {
       return new PM_Error_Value(pmef,value,min_time,max_time,max_level,regions);
     }
@@ -119,7 +128,7 @@ protected:
 
 class PorousMedia
   :
-  public AmrLevel 
+  public AmrLevel
 {
 public:
   friend class Observation;
@@ -311,7 +320,7 @@ public:
   bool advance_richards_transport_chemistry(Real  t,
 					    Real  dt,
 					    int   iteration,
-					    Real& dt_new, 
+					    Real& dt_new,
 					    bool  do_subcycle,
 					    bool  do_recursive,
                                             bool  use_cached_sat);
@@ -353,7 +362,7 @@ public:
 
   static bool grids_on_side_of_domain (const BoxArray&    _grids,
 				       const Box&         _domain,
-				       const Orientation& _Face); 
+				       const Orientation& _Face);
 
   static const Array<std::string>& UserDerives() {return user_derive_list;}
 
@@ -382,10 +391,10 @@ public:
   static void read_params ();   // Read input file
   static void read_geometry ();
   static void read_prob ();
-  static void read_comp (); 
-  static void read_tracer (); 
-  static void read_source (); 
-  static void read_observation (); 
+  static void read_comp ();
+  static void read_tracer ();
+  static void read_source ();
+  static void read_observation ();
 
   virtual void sum_integrated_quantities ();
 
@@ -466,7 +475,7 @@ public:
   //
   void avgDown (MultiFab* s_crse,
 		int c_lev,
-		MultiFab* s_fine, 
+		MultiFab* s_fine,
 		int f_lev);
 
   void avgDown (const BoxArray& grids,
@@ -484,7 +493,7 @@ public:
   // Average fine down to coarse in the ovlp intersection.
   //
   void avgDown (const FArrayBox& fine_fab,
-		const FArrayBox& crse_fab, 
+		const FArrayBox& crse_fab,
 		const FArrayBox& fine_vol,
 		const FArrayBox& crse_vol,
 		int              f_level,
@@ -497,7 +506,7 @@ public:
   // Average fine down to coarse in the ovlp intersection.
   //
   static void avgDown_doit (const FArrayBox& fine_fab,
-			    const FArrayBox& crse_fab, 
+			    const FArrayBox& crse_fab,
 			    const FArrayBox& fine_vol,
 			    const FArrayBox& crse_vol,
 			    int              f_level,
@@ -538,7 +547,7 @@ public:
   // Compute viscous terms.
   //
   virtual void getViscTerms (MultiFab& visc_terms,
-			     int       src_comp, 
+			     int       src_comp,
 			     int       num_comp,
 			     Real      time) {}
   //
@@ -556,8 +565,8 @@ public:
   //
   void FillStateBndry (Real time,
 		       int  state_indx,
-		       int  src_comp, 
-		       int  num_comp); 
+		       int  src_comp,
+		       int  num_comp);
   //
   // Calculate nonuniform diffusivity
   //
@@ -576,7 +585,7 @@ public:
                            int             dComp,
                            int             nGrow) const;
   //
-  // Calculate divergence of velocity boundary condition 
+  // Calculate divergence of velocity boundary condition
   //
   void calc_richard_velbc(MultiFab& res,
 			  MultiFab* uphase,
@@ -623,7 +632,7 @@ public:
   // Calculate first derivative of lambda
   //
   void calcDLambda (const Real time,MultiFab* dlbd_cc = 0);
-  
+
   void getDiffusivity (MultiFab*  diffusivity[BL_SPACEDIM],
                        const Real time,
                        const int  state_comp,
@@ -640,16 +649,16 @@ public:
 			     int              dComp,
 			     int              nComp);
 
-  void umac_edge_to_cen(MultiFab* u_mac, 
+  void umac_edge_to_cen(MultiFab* u_mac,
 			MultiFab& U_cc,
                         bool      do_upwind = false);
 
-  void umac_cpy_edge_to_cen(MultiFab* u_mac, 
+  void umac_cpy_edge_to_cen(MultiFab* u_mac,
 			    int       idx_type,
 			    int       ishift);
   //
   // Boundary conditions
-  //  
+  //
   void setPhysBoundaryValues (FArrayBox& dest,
                               int        state_indx,
                               Real       time,
@@ -681,7 +690,7 @@ public:
   // Called in grid_places after other tagging routines to modify
   //   the list of tagged points
   //
-  virtual void manual_tags_placement (TagBoxArray&    tags, 
+  virtual void manual_tags_placement (TagBoxArray&    tags,
 				      Array<IntVect>& bf_lev);
   PorousMedia& getLevel (int lev)
   {
@@ -897,7 +906,7 @@ protected:
 
   // Phases and components
   static int nphases;
-  static int ncomps; 
+  static int ncomps;
   static int ndiff;
   static Array<int> pType;
   static Array<std::string> pNames;
@@ -909,12 +918,12 @@ protected:
   static Array<Real> muval;
   static Array<std::string> user_derive_list;
   static Array<Real> source_volume;
-  
+
   // Tracers
   static Array<std::string> qNames;
   static Array<std::string> tNames;
-  static int  ntracers; 
-  static Array<int> tType; 
+  static int  ntracers;
+  static Array<int> tType;
   static Array<Real> tDen;
   static Array<PArray<IdxRegionData> > tic_array;
   static Array<PArray<IdxRegionData> > tbc_array;
@@ -923,11 +932,11 @@ protected:
 
   // Minerals, Sorption sites
   static double uninitialized_data;
-  static int nminerals; 
+  static int nminerals;
   static Array<std::string> minerals;
-  static int nsorption_sites; 
+  static int nsorption_sites;
   static Array<std::string> sorption_sites;
-  static int ncation_exchange; 
+  static int ncation_exchange;
   static int nsorption_isotherms;
   static bool using_sorption;
 
@@ -944,7 +953,7 @@ protected:
   static Array<int>  inflow_bc_lo;
   static Array<int>  inflow_bc_hi;
 
-  // Richard boundary conditions		
+  // Richard boundary conditions
   static Array<int>  rinflow_bc_lo;
   static Array<int>  rinflow_bc_hi;
 
@@ -973,14 +982,14 @@ protected:
   static std::string chemistry_engine_name;
   static ChemistryHelper_Structured* chemistry_helper;
   static std::string amanzi_database_file;
-  static std::string amanzi_activity_model; 
+  static std::string amanzi_activity_model;
 
 #endif
   static int  max_grid_size_chem;
   static bool no_initial_values;
   static bool use_funccount;
 
-  // 
+  //
   // MAC edge velocities.
   //
   MultiFab* u_mac_prev;
@@ -1008,8 +1017,8 @@ protected:
   //
   // lambda values and its derivative
   //
-  MultiFab* lambda;       
-  MultiFab* lambda_cc;    
+  MultiFab* lambda;
+  MultiFab* lambda_cc;
   MultiFab* lambdap1_cc;
   MultiFab* dlambda_cc;
   //
@@ -1029,9 +1038,9 @@ protected:
   //
   // Scalar sync update storage
   //
-  MultiFab* Ssync;    
+  MultiFab* Ssync;
   //
-  // Data structures to store advective and viscous refluxing quantities 
+  // Data structures to store advective and viscous refluxing quantities
   // on coarse-fine grid interfaces.
   //
   FluxRegister* advflux_reg;
@@ -1096,7 +1105,7 @@ protected:
   static Real        z_location;
   static Real        domain_thickness;
   //
-  // Chemistry/solute/tracer parameters 
+  // Chemistry/solute/tracer parameters
   //
   static bool do_tracer_chemistry; // Does the user want to react tracers
   static bool do_tracer_advection; // Does the user want to advect tracers
@@ -1226,7 +1235,7 @@ public:
   void Initialize (int             boxGrow,
                    const BoxArray& grids,
                    AmrLevel&       amrlevel);
-  
+
   ~PMFillPatchIterator ();
 
   FArrayBox& operator() ();

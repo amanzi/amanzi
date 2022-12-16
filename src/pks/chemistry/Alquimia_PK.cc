@@ -1,16 +1,20 @@
 /*
-  Chemistry PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Trilinos based process kernel for chemistry. All geochemistry 
-  calculations live in the chemistry library. The PK stores the 
-  instance of the chemistry object and drives the chemistry 
-  calculations on a cell by cell basis. It handles the movement of 
-  data back and forth between the amanzi memory and the chemistry 
+  Authors:
+*/
+
+/*
+  Chemistry PK
+
+  Trilinos based process kernel for chemistry. All geochemistry
+  calculations live in the chemistry library. The PK stores the
+  instance of the chemistry object and drives the chemistry
+  calculations on a cell by cell basis. It handles the movement of
+  data back and forth between the amanzi memory and the chemistry
   library data structures.
 */
 
@@ -37,7 +41,7 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 /* *******************************************************************
-* Constructor 
+* Constructor
 ******************************************************************* */
 Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -704,7 +708,7 @@ Alquimia_PK::CopyAlquimiaStateToAmanzi(const int cell,
 
 
 /* *******************************************************************
-* 
+*
 ******************************************************************* */
 void
 Alquimia_PK::CopyFromAlquimia(const int cell,
@@ -808,7 +812,7 @@ Alquimia_PK::CopyFromAlquimia(const int cell,
 
 /* *******************************************************************
 * This helper advances the solution on a single cell within Amanzi's state.
-* It returns the number of iterations taken to obtain the advanced solution, 
+* It returns the number of iterations taken to obtain the advanced solution,
 * or -1 if an error occurred.
 ******************************************************************* */
 int
@@ -846,7 +850,7 @@ Alquimia_PK::AdvanceSingleCell(double dt,
 
 
 /* *******************************************************************
-* This function advances concentrations in the auxialiry vector 
+* This function advances concentrations in the auxialiry vector
 * aqueous_components_ (defined in the base class). This vector must be
 * set up using routine set_aqueous_components(). Tipically, it
 * contains values advected by the transport PK.
@@ -985,7 +989,7 @@ Alquimia_PK::ComputeNextTimeStep()
 
 
 /* *******************************************************************
-* The MPC will call this function to signal to the process kernel that 
+* The MPC will call this function to signal to the process kernel that
 * it has accepted the state update, thus, the PK should update
 * possible auxilary state variables here
 ******************************************************************* */
