@@ -44,14 +44,12 @@ demoMeshLogicalFromXML(const std::string& meshname);
 
 Teuchos::RCP<Amanzi::AmanziMesh::MeshEmbeddedLogical>
 demoMeshLogicalYEmbedded();
-
+  
 class RegularMeshCellFromCoordFunctor {
  public:
   RegularMeshCellFromCoordFunctor(const Amanzi::AmanziGeometry::Point& X0,
-                                  const Amanzi::AmanziGeometry::Point& X1,
-                                  int nx,
-                                  int ny,
-                                  int nz);
+				  const Amanzi::AmanziGeometry::Point& X1,
+				  int nx, int ny, int nz);
 
   Amanzi::AmanziMesh::Entity_ID operator()(const Amanzi::AmanziGeometry::Point& p);
 
@@ -59,7 +57,7 @@ class RegularMeshCellFromCoordFunctor {
   Amanzi::AmanziGeometry::Point X0_;
   Amanzi::AmanziGeometry::Point X1_;
   Amanzi::AmanziGeometry::Point dX_;
-  int nx_, ny_, nz_;
+  int nx_,ny_,nz_;
 };
 
 } // namespace Testing

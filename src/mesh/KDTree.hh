@@ -23,12 +23,12 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-// Interface class for nanoflann.
+// Interface class for nanoflann. 
 // Note that it does not own any data.
 class PointCloud {
  public:
-  PointCloud(){};
-  ~PointCloud(){};
+  PointCloud() {};
+  ~PointCloud() {};
 
   // Interface for nanoflann
   // -- must return the number of points in the cloud
@@ -42,10 +42,7 @@ class PointCloud {
   //    true if the box was already computed and returned in bb.
   //    Look at bb.size() to find out the expected dimensionality (e.g. 2 or 3 for point clouds)
   template <class BoundingBox>
-  bool kdtree_get_bbox(BoundingBox& bb) const
-  {
-    return false;
-  }
+  bool kdtree_get_bbox(BoundingBox& bb) const { return false; }
 
   void Init(const std::vector<AmanziGeometry::Point>* points) { points_ = points; }
 
@@ -55,35 +52,31 @@ class PointCloud {
 
 
 // At the moment, only one KDTree is used
-typedef nanoflann::
-  KDTreeSingleIndexAdaptor<nanoflann::L2_Adaptor<double, PointCloud>, PointCloud, -1, size_t>
-    KDTree_L2Adaptor;
+typedef nanoflann::KDTreeSingleIndexAdaptor<
+    nanoflann::L2_Adaptor<double, PointCloud>, PointCloud, -1> KDTree_L2Adaptor;
 
 class KDTree {
  public:
-  KDTree(){};
-  ~KDTree(){};
+  KDTree() {};
+  ~KDTree() {};
 
   // main member function
-  void Init(const std::vector<AmanziGeometry::Point>* points)
-  {
+  void Init(const std::vector<AmanziGeometry::Point>* points) {
     int d = (*points)[0].dim();
     cloud_.Init(points);
-    tree_ =
-      std::make_shared<KDTree_L2Adaptor>(d, cloud_, nanoflann::KDTreeSingleIndexAdaptorParams(10));
+    tree_ = std::make_shared<KDTree_L2Adaptor>(d, cloud_, nanoflann::KDTreeSingleIndexAdaptorParams(10));
     tree_->buildIndex();
   }
 
-  // find the first n points closest to the given point p
-  std::vector<size_t>
-  SearchNearest(const AmanziGeometry::Point& p, std::vector<double>& dist_sqr, int n = 1)
-  {
+  // find the first n points closest to the given point p 
+  std::vector<unsigned int> SearchNearest(const AmanziGeometry::Point& p,
+                                    std::vector<double>& dist_sqr, int n = 1) {
     AMANZI_ASSERT(tree_ != NULL);
 
     double query[3];
     for (int i = 0; i < p.dim(); ++i) query[i] = p[i];
 
-    std::vector<size_t> idx(n);
+    std::vector<unsigned int> idx(n);
     dist_sqr.resize(n);
 
     int m = tree_->knnSearch(&query[0], n, &idx[0], &dist_sqr[0]);
@@ -95,16 +88,15 @@ class KDTree {
     return idx;
   }
 
-  // find all points in the sphere of centered to the given point p
-  std::vector<size_t>
-  SearchInSphere(const AmanziGeometry::Point& p, std::vector<double>& dist_sqr, double radius_sqr)
-  {
+  // find all points in the sphere of centered to the given point p 
+  std::vector<size_t> SearchInSphere(const AmanziGeometry::Point& p,
+                                     std::vector<double>& dist_sqr, double radius_sqr) {
     AMANZI_ASSERT(tree_ != NULL);
 
     double query[3];
     for (int i = 0; i < p.dim(); ++i) query[i] = p[i];
 
-    std::vector<std::pair<size_t, double>> matches;
+    std::vector<std::pair<unsigned int, double>> matches;
     nanoflann::SearchParams params;
 
     // params.sorted = false;
@@ -120,7 +112,7 @@ class KDTree {
 
     return idx;
   }
-
+  
  private:
   PointCloud cloud_;
   std::shared_ptr<KDTree_L2Adaptor> tree_;
@@ -130,3 +122,4 @@ class KDTree {
 } // namespace Amanzi
 
 #endif
+

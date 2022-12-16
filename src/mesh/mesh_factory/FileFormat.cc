@@ -34,8 +34,7 @@ static const std::regex NemesisExt(".*\\.par$");
 // -------------------------------------------------------------
 // file_format_name
 // -------------------------------------------------------------
-std::string
-fileFormatName(const FileFormat f)
+std::string fileFormatName(const FileFormat f)
 {
   std::string result;
   switch (f) {
@@ -79,8 +78,7 @@ fileFormatName(const FileFormat f)
  If the file exists and can be opened, this routine returns a
  Format. If anything goes wrong, an exception is thrown.
  */
-FileFormat
-fileFormatFromFilename(const Comm_type& comm, std::string fname)
+FileFormat fileFormatFromFilename(const Comm_type& comm, std::string fname) 
 {
   const int np(comm.NumProc());
   const int me(comm.MyPID());
@@ -96,7 +94,8 @@ fileFormatFromFilename(const Comm_type& comm, std::string fname)
     result = FileFormat::NEMESIS;
     int ndigits = (int)floor(log10(np)) + 1;
     std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
-    fname = boost::str(boost::format(fmt) % fname % np % me);
+    fname = boost::str(boost::format(fmt) % 
+                       fname % np % me);
   }
 
   // check to see if there is actually a file first
@@ -106,14 +105,14 @@ fileFormatFromFilename(const Comm_type& comm, std::string fname)
     e.add_data(": path not found");
     amanzi_throw(e);
   }
-
+    
   // check the file's magic number
   std::ifstream s(fname.c_str(), std::ios::binary);
   if (s.fail()) {
     e.add_data(": cannot open");
     amanzi_throw(e);
   }
-
+    
   char buffer[magiclen];
   s.read(buffer, magiclen);
   s.close();
@@ -122,14 +121,18 @@ fileFormatFromFilename(const Comm_type& comm, std::string fname)
   bool ok(false);
   switch (result) {
   case (FileFormat::UNKNOWN):
-    Exceptions::amanzi_throw(e);
-    break;
+      Exceptions::amanzi_throw(e);
+      break;
   case (FileFormat::EXODUS_II):
   case (FileFormat::NEMESIS):
     fmagic.assign(buffer, NetCDFmagic1.size());
-    if (fmagic == NetCDFmagic1) { ok = true; }
+    if (fmagic == NetCDFmagic1) { 
+      ok = true;
+    } 
     fmagic.assign(buffer, NetCDFmagic2.size());
-    if (fmagic == NetCDFmagic2) { ok = true; }
+    if (fmagic == NetCDFmagic2) { 
+      ok = true;
+    } 
     if (!ok) {
       e.add_data(": bad magic number, expected NetCDF");
       fmagic.assign(buffer, HDF5magic.size());
@@ -138,7 +141,7 @@ fileFormatFromFilename(const Comm_type& comm, std::string fname)
       } else {
         e.add_data(", expected HDF5");
       }
-    }
+    } 
     break;
   case (FileFormat::MOAB_HDF5):
     fmagic.assign(buffer, HDF5magic.size());
@@ -149,7 +152,9 @@ fileFormatFromFilename(const Comm_type& comm, std::string fname)
     }
     break;
   }
-  if (!ok) { Exceptions::amanzi_throw(e); }
+  if (!ok) {
+    Exceptions::amanzi_throw(e);
+  }
 
   return result;
 }
