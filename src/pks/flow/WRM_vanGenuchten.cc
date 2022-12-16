@@ -1,13 +1,16 @@
 /*
-  Flow PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Neil Carlson (version 1)
            Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #include <cmath>
@@ -26,7 +29,7 @@ const double FLOW_WRM_TOLERANCE = 1e-10;
 
 /* ******************************************************************
 * Setup fundamental parameters for this model.
-* Default value of the regularization interval is pc0 = 0.                                           
+* Default value of the regularization interval is pc0 = 0.
 ****************************************************************** */
 WRM_vanGenuchten::WRM_vanGenuchten(Teuchos::ParameterList& plist)
 {
@@ -54,7 +57,7 @@ WRM_vanGenuchten::WRM_vanGenuchten(double m,
 
 /* ******************************************************************
 * Setup fundamental parameters for this model.
-* Default value of the regularization interval is pc0 = 0.                                           
+* Default value of the regularization interval is pc0 = 0.
 ****************************************************************** */
 void
 WRM_vanGenuchten::Init_(double m,
@@ -105,8 +108,8 @@ WRM_vanGenuchten::Init_(double m,
 
 /* ******************************************************************
 * Relative permeability formula: input is capillary pressure pc.
-* The original curve is regulized on interval (0, pc0) using the 
-* Hermite interpolant of order 3. Formulas (3.11)-(3.12).     
+* The original curve is regulized on interval (0, pc0) using the
+* Hermite interpolant of order 3. Formulas (3.11)-(3.12).
 ****************************************************************** */
 double
 WRM_vanGenuchten::k_relative(double pc) const
@@ -130,7 +133,7 @@ WRM_vanGenuchten::k_relative(double pc) const
 
 
 /* ******************************************************************
-* Saturation formula (3.5)-(3.6).                                         
+* Saturation formula (3.5)-(3.6).
 ****************************************************************** */
 double
 WRM_vanGenuchten::saturation(double pc) const
@@ -145,7 +148,7 @@ WRM_vanGenuchten::saturation(double pc) const
 
 /* ******************************************************************
 * Derivative of the saturation formula w.r.t. capillary pressure.
-* Warning: remember that dSdP = -dSdPc.                                        
+* Warning: remember that dSdP = -dSdPc.
 ****************************************************************** */
 double
 WRM_vanGenuchten::dSdPc(double pc) const
@@ -162,7 +165,7 @@ WRM_vanGenuchten::dSdPc(double pc) const
 
 
 /* ******************************************************************
-* Pressure as a function of saturation.                                       
+* Pressure as a function of saturation.
 ****************************************************************** */
 double
 WRM_vanGenuchten::capillaryPressure(double s) const
@@ -173,7 +176,7 @@ WRM_vanGenuchten::capillaryPressure(double s) const
 
 
 /* ******************************************************************
-* Derivative of the original relative permeability w.r.t. capillary pressure.                                     
+* Derivative of the original relative permeability w.r.t. capillary pressure.
 ****************************************************************** */
 double
 WRM_vanGenuchten::dKdPc(double pc) const

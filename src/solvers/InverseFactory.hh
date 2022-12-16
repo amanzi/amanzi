@@ -1,10 +1,10 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (coonet@ornl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
 /*
@@ -43,7 +43,7 @@ name.  As these may be used multiple times, the global list is copied, then
 passed in to allow multiple uses each getting their own copy of the list.  ATS
 prefers that this copy is already in the input spec -- there is no global list
 of methods.
-  
+
 */
 
 #ifndef AMANZI_LINEAR_OPERATOR_FACTORY_HH_

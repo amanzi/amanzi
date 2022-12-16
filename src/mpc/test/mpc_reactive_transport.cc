@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <iostream>
 #include "stdlib.h"
 #include "math.h"
@@ -76,7 +85,7 @@ RunTestReactiveTransport(const std::string& xmlInFileName, int npks)
   state_plist = glist->sublist("state");
   S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
-  
+
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     cycle_driver.Go();

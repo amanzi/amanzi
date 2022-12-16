@@ -1,15 +1,17 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
-  provided in the top-level COPYRIGHT file.
-
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Maps between mesh objects located on different meshes, e.g. two states 
+  Maps between mesh objects located on different meshes, e.g. two states
   of a deformable mesh: finite element implementation.
 */
 
@@ -24,7 +26,7 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculate mesh velocity in cell c. 
+* Calculate mesh velocity in cell c.
 ****************************************************************** */
 void
 MeshMaps_FEM::VelocityCell(int c,

@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   The mimetic finite difference method for diffusion.
 */
@@ -27,7 +29,7 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Consistency condition for inner product in space of fluxes. 
+* Consistency condition for inner product in space of fluxes.
 * Only upper triangular part of Mc = R (R^T N)^{-1} R^T is calculated.
 * Here R^T N = |c| K.
 * Fluxes include face areas!
@@ -81,7 +83,7 @@ MFD3D_Diffusion::L2consistencyScaledArea(int c,
 
 /* ******************************************************************
 * Consistency condition for inverse of the mass matrix in the space
-* of Darcy fluxes. Only the upper triangular part of matrix 
+* of Darcy fluxes. Only the upper triangular part of matrix
 * Wc = N (N^T R)^{-1} N^T is calculated. Here N^T R = |c| K.
 * Flux is scaled by face area!
 ****************************************************************** */
@@ -134,7 +136,7 @@ MFD3D_Diffusion::L2consistencyInverseScaledArea(int c,
 
 
 /* ******************************************************************
-* Consistency condition for stiffness matrix in heat conduction. 
+* Consistency condition for stiffness matrix in heat conduction.
 * Only the upper triangular part of Ac is calculated.
 * The degrees of freedom are at nodes.
 ****************************************************************** */
@@ -331,7 +333,7 @@ MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix& A)
 
 
 /* *****************************************************************
-* Low-order L2 projector. 
+* Low-order L2 projector.
 * NOTE: we abuse the interface and return a linear polynomial.
 ***************************************************************** */
 void
@@ -384,7 +386,7 @@ MFD3D_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
 ***************************************************************** */
 
 /* ******************************************************************
-* Consistency condition for inverse of mass matrix in space of 
+* Consistency condition for inverse of mass matrix in space of
 * fluxes. Only the upper triangular part of Wc is calculated.
 ****************************************************************** */
 int
@@ -584,7 +586,7 @@ MFD3D_Diffusion::RescaleMassMatrixInverse_(int c, DenseMatrix& W)
 
 
 /* ******************************************************************
-* A simple monotone stability term for a 2D or 3D brick element. 
+* A simple monotone stability term for a 2D or 3D brick element.
 ****************************************************************** */
 int
 MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M)

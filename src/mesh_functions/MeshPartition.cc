@@ -1,14 +1,16 @@
 /*
-  Mesh Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
 
-  A MeshPartition is a collection of non-overlapping regions which cover 
+/*
+  Mesh Functions
+
+  A MeshPartition is a collection of non-overlapping regions which cover
   (optionally) a mesh.
 */
 
@@ -122,7 +124,7 @@ MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 
 
 /* ******************************************************************
-* In general, we allow incomplete coverage of the mesh. This 
+* In general, we allow incomplete coverage of the mesh. This
 * routine verifies that ther are no wholes in the map.
 ****************************************************************** */
 void

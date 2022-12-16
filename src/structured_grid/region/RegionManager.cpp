@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <RegionManager.H>
 
 #include <ParmParse.H>
@@ -27,7 +36,7 @@ RegionManager::Init(const Array<Real>& plo,
 {
   Region::domlo = plo;
   Region::domhi = phi;
-  
+
   ParmParse pp("geometry");
 
   Real geometry_eps = GEOMETRY_EPS_DEF; pp.query("geometry_eps",geometry_eps);
@@ -57,7 +66,7 @@ RegionManager::Init(const Array<Real>& plo,
     name_to_region_idx[name] = region_ctr++;
   }
 
-  // Get parameters for each user defined region 
+  // Get parameters for each user defined region
   int nregion = nregion_DEF;
 
   int nregion_user = pp.countval("regions");
@@ -81,7 +90,7 @@ RegionManager::Init(const Array<Real>& plo,
       const std::string prefix("geometry." + r_name[j]);
       ParmParse ppr(prefix.c_str());
       ppr.get("purpose",r_purpose);
-      ppr.get("type",r_type);      
+      ppr.get("type",r_type);
 
       if (r_type == "point") {
 	Array<Real> coor;
@@ -150,7 +159,7 @@ RegionManager::Init(const Array<Real>& plo,
       else if (r_type == "swept_polygon") {
         std::string plStr; ppr.get("plane",plStr);
         BL_ASSERT(plStr == "XY" || plStr == "YZ" || plStr == "XZ");
-        SweptPolygonRegion::PLANE plane = (plStr == "XY" ? 
+        SweptPolygonRegion::PLANE plane = (plStr == "XY" ?
                                            SweptPolygonRegion::XYPLANE :
                                            (plStr == "YZ" ?
                                             SweptPolygonRegion::YZPLANE :
@@ -167,7 +176,7 @@ RegionManager::Init(const Array<Real>& plo,
       else if (r_type == "rotated_polygon") {
         std::string plStr; ppr.get("plane",plStr);
         BL_ASSERT(plStr == "XY" || plStr == "YZ" || plStr == "XZ");
-        RotatedPolygonRegion::PLANE plane = (plStr == "XY" ? 
+        RotatedPolygonRegion::PLANE plane = (plStr == "XY" ?
                                              RotatedPolygonRegion::XYPLANE :
                                              (plStr == "YZ" ?
                                               RotatedPolygonRegion::YZPLANE :
@@ -209,7 +218,7 @@ RegionManager::Init(const Array<Real>& plo,
     }
     region->SetExcludeRegion(regions[name_to_region_idx[excl_region_name]]);
   }
-  
+
   for (std::map<std::string,Array<std::string> >::const_iterator it = union_regions.begin();
        it != union_regions.end(); ++it) {
     const std::string& region_name = it->first;

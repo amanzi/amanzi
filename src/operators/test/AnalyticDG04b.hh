@@ -1,12 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
 
   3D version of test AnalyticDG04.
 
@@ -15,7 +17,7 @@
   Accumulation: a = 0
   Reaction: r = 0
   Velocity: v = 0
-  Source: f = u / t + v . \grad u  
+  Source: f = u / t + v . \grad u
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_04B_BASE_HH_

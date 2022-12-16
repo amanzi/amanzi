@@ -1,12 +1,15 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #include <vector>
@@ -118,7 +121,7 @@ PDE_DiffusionMFD::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux
 
 
 /* ******************************************************************
-* Add stable approximation of Jacobian. It is done typically for 
+* Add stable approximation of Jacobian. It is done typically for
 * the preconditioner.
 ****************************************************************** */
 void
@@ -815,8 +818,8 @@ PDE_DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,
 
 /* ******************************************************************
 * Modify operator by adding upwind approximation of Newton corection.
-* A special care should be taken later to deal with the case 
-* where kf < 0, i.e. for energy when: div (qh) = div (h k grad p), 
+* A special care should be taken later to deal with the case
+* where kf < 0, i.e. for energy when: div (qh) = div (h k grad p),
 * where h is enthalpy and can be negative. I think that the current
 * treatment is inadequate.
 ****************************************************************** */
@@ -968,7 +971,7 @@ PDE_DiffusionMFD::ModifyMatrices(const CompositeVector& u)
 
 /* ******************************************************************
 * WARNING: Since diffusive flux may be discontinuous (e.g. for
-* Richards equation), we derive it in exactly the same manner as 
+* Richards equation), we derive it in exactly the same manner as
 * in gravity routines.
 * **************************************************************** */
 void
@@ -1018,7 +1021,7 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
 
 
 /* ******************************************************************
-* Calculates one-sided (cell-based) fluxes that satisfy proper 
+* Calculates one-sided (cell-based) fluxes that satisfy proper
 * continuity conditions. This differs from other subroutines
 * calculing fluxes due to presence of multiple normals on some
 * non-manifold faces.
@@ -1385,7 +1388,7 @@ PDE_DiffusionMFD::Init(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* Given a set of cell values, update faces using the consistency 
+* Given a set of cell values, update faces using the consistency
 * equations:
 *   x_f = Aff^-1 * (y_f - Afc * x_c)
 ****************************************************************** */

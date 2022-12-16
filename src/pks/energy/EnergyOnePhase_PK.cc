@@ -1,13 +1,15 @@
 /*
-  This is the Energy component of the Amanzi code.
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon
            Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  This is the Energy component of the Amanzi code.
 
   Process kernel for the single-phase energy equation.
 */
@@ -254,8 +256,8 @@ EnergyOnePhase_PK::InitializeFields_()
 }
 
 
-/* ******************************************************************* 
-* Performs one time step of size dt_ either for steady-state or 
+/* *******************************************************************
+* Performs one time step of size dt_ either for steady-state or
 * transient sumulation.
 ******************************************************************* */
 bool
@@ -315,7 +317,7 @@ EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 
 /* ******************************************************************
-* TBW 
+* TBW
 ****************************************************************** */
 void
 EnergyOnePhase_PK::CommitStep(double t_old, double t_new, const Tag& tag)

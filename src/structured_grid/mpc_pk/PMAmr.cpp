@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <ios>
 #include <iomanip>
 #include <algorithm>
@@ -54,7 +63,7 @@ std::ostream& operator<<(std::ostream& os, const ExecControl& ec)
   if (ec.max_dt <= 0) {
     os << "<not used>\n";
   }
-  else {    
+  else {
     os << ec.max_dt << "s (=" << ec.max_dt/(seconds_per_year) << "y)\n";
   }
   os << " reduction_factor: " << ec.reduction_factor << '\n';
@@ -86,11 +95,11 @@ PMAmr::Initialize ()
   chk_file_digits          = 5;
   do_output_time_in_years  = true;
   attempt_to_recover_failed_step = true;
-  
+
   BoxLib::ExecOnFinalize(PMAmr::Finalize);
-  
+
   VisMF::Initialize();
-  
+
   initialized = true;
 }
 
@@ -170,7 +179,7 @@ PMAmr::UpdateVisitPlotfileList() const
   }
 }
 
-void 
+void
 PMAmr::writePlotFile ()
 {
   int file_name_digits_tmp = file_name_digits;
@@ -257,7 +266,7 @@ PMAmr::restartObservations (const std::string& chkname)
   }
 }
 
-void 
+void
 PMAmr::checkPoint ()
 {
   int file_name_digits_tmp = file_name_digits;
@@ -283,7 +292,7 @@ PMAmr::LinkFinalCheckpoint (int step)
       std::cout << "Unlinking \"" << linkName << "\""<< std::endl;
       int ret = unlink(linkName.c_str()); BL_ASSERT(ret == 0);
     }
-    
+
     std::cout << "Symbolic link, \"" << linkName
 	      << "\" created to final checkpoint, \"" << finalCheckpointName
 	      << "\""<< std::endl;
@@ -379,16 +388,16 @@ PMAmr::initial_events(bool& write_plotfile_now,
     Array<std::string> eventList = event_coord.InitEvent(time,iter);
 
     for (int j=0; j<eventList.size(); ++j) {
-      
+
       for (int i=0; i<observations.size(); ++i) {
         Observation& observation = observations[i];
         const std::string& event_label = observation.event_label;
-        
+
         if (eventList[j] == event_label) {
           observations_now.push_back(i);
         }
       }
-      
+
       for (int k=0; k<vis_cycle_macros.size(); ++k) {
         if (eventList[j] == vis_cycle_macros[k]) {
           write_plotfile_now = true;
@@ -406,7 +415,7 @@ PMAmr::initial_events(bool& write_plotfile_now,
           write_checkpoint_now = true;
         }
       }
-      
+
       for (int k=0; k<ecs.size(); ++k) {
 	if (eventList[j] == ecs[k].label + "_start") {
 	  begin_ecp_now = true;
@@ -479,10 +488,10 @@ PMAmr::pm_timeStep (int  level,
         lev0.refine(2);
 
         //
-        // If use_efficient_regrid flag is set, then test to see whether we in fact 
+        // If use_efficient_regrid flag is set, then test to see whether we in fact
         //    have just changed the level 0 grids. If not, then don't do anything more here.
         //
-        if ( !( (use_efficient_regrid == 1) && (lev0 == amr_level[0].boxArray()) ) ) 
+        if ( !( (use_efficient_regrid == 1) && (lev0 == amr_level[0].boxArray()) ) )
         {
             //
             // Construct skeleton of new level.
@@ -545,7 +554,7 @@ PMAmr::pm_timeStep (int  level,
                                               ref_ratio,
                                               dt_min,
                                               dt_level,
-                                              stop_time, 
+                                              stop_time,
                                               post_regrid_flag);
                 }
 
@@ -656,7 +665,7 @@ PMAmr::coarseTimeStep (Real _stop_time)
       }
       defined_events[event_name] = new EventCoord::TimeEvent(Array<Real>(1,stop_time));
     }
-    
+
     int post_regrid_flag = 0;
     amr_level[0].computeNewDt(finest_level,
                               sub_cycle,
@@ -689,14 +698,14 @@ PMAmr::coarseTimeStep (Real _stop_time)
 
     Real dt_red = process_events(write_plot,write_check,observations_to_process,begin_ecp,event_coord,
                                  cumtime, dt_level[0], level_steps[0], 1);
-    
+
     // Note: if dt_red > 0, then dt_red == dt2_red
     if (dt2_red > 0  &&  dt_red < 0) {
             dt_red = dt2_red / 2; // Nothing in 1 step, but something in 2
     }
 
     if (dt_red > 0  &&  dt_red < dt_level[0]) {
-        
+
         if (begin_ecp) {
             dt0_before_event_cut = -1; // "forget" current time step, we're headed into a Time Period Control interval
         }
@@ -729,7 +738,7 @@ PMAmr::coarseTimeStep (Real _stop_time)
     cumtime += dt_level[0];
 
     amr_level[0].postCoarseTimeStep(cumtime);
-    
+
     static int cnt = 0;
     if (cumtime == ec->end) {
       if (ParallelDescriptor::IOProcessor()) {
@@ -791,8 +800,8 @@ PMAmr::coarseTimeStep (Real _stop_time)
         runlog_terse << level_steps[0] << " " << cumtime << " " << dt_level[0] << '\n';
     std::cout.flags(oldflags);
 
-    int to_checkpoint = 0;    
-    int to_stop       = 0;    
+    int to_checkpoint = 0;
+    int to_stop       = 0;
     if (ParallelDescriptor::IOProcessor())
     {
         FILE *fp;
@@ -932,7 +941,7 @@ PMAmr::FinalizeInit (Real              strt_time,
     //
     bool write_plot, write_check, begin_ecp;
     Array<int> observations_to_process;
-    
+
     Real dt_red = process_events(write_plot,write_check,observations_to_process,begin_ecp,event_coord,
                                  cumtime, dt_level[0], level_steps[0], 1);
     if (dt_red > 0  &&  dt_red < dt0) {
@@ -975,7 +984,7 @@ PMAmr::FinalizeInit (Real              strt_time,
            printGridInfo(std::cout,0,finest_level);
        }
        else if (verbose > 0)
-       { 
+       {
            std::cout << "INITIAL GRIDS \n";
            printGridSummary(std::cout,0,finest_level);
        }
@@ -1130,16 +1139,16 @@ PMAmr::restart (const std::string& filename)
        }
 
        Array<int>  n_cycle_in;
-       n_cycle_in.resize(mx_lev+1);  
+       n_cycle_in.resize(mx_lev+1);
        for (i = 0; i <= mx_lev; i++) is >> n_cycle_in[i];
        bool any_changed = false;
 
-       for (i = 0; i <= mx_lev; i++) 
+       for (i = 0; i <= mx_lev; i++)
            if (n_cycle[i] != n_cycle_in[i])
            {
                any_changed = true;
                if (verbose > 0 && ParallelDescriptor::IOProcessor())
-                   std::cout << "Warning: n_cycle has changed at level " << i << 
+                   std::cout << "Warning: n_cycle has changed at level " << i <<
                                 " from " << n_cycle_in[i] << " to " << n_cycle[i] << std::endl;;
            }
 
@@ -1180,7 +1189,7 @@ PMAmr::restart (const std::string& filename)
 
        if (regrid_on_restart && max_level > 0)
        {
-           if (regrid_int[0] > 0) 
+           if (regrid_int[0] > 0)
                level_count[0] = regrid_int[0];
            else
                BoxLib::Error("restart: can't have regrid_on_restart and regrid_int <= 0");
@@ -1215,7 +1224,7 @@ PMAmr::restart (const std::string& filename)
        int new_finest_level = std::min(max_level,finest_level);
 
        finest_level = new_finest_level;
- 
+
        // These are just used to hold the extra stuff we have to read in.
        Geometry   geom_dummy;
        Real       real_dummy;
@@ -1252,7 +1261,7 @@ PMAmr::restart (const std::string& filename)
 
        if (regrid_on_restart && max_level > 0)
        {
-           if (regrid_int[0] > 0) 
+           if (regrid_int[0] > 0)
                level_count[0] = regrid_int[0];
            else
                BoxLib::Error("restart: can't have regrid_on_restart and regrid_int <= 0");
@@ -1602,4 +1611,3 @@ void PMAmr::FlushObservations(std::ostream& out)
     out.precision(old_prec);
   }
 }
-

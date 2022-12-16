@@ -1,13 +1,13 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
 */
-//! The interface for a Process Kernel, an equation or system of equations.
 
+//! The interface for a Process Kernel, an equation or system of equations.
 /*!
 
 A process kernel represents a single or system of partial/ordinary
@@ -30,7 +30,7 @@ is inherited and included by each actual PK, lives in the "PKs" sublist of
 
     * `"PK type`" ``[string]`` One of the registered PK types
 
-Example:      
+Example:
 
 .. code-block:: xml
 

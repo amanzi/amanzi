@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   The mimetic finite difference method.
 */
@@ -38,7 +40,7 @@ MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) : BilinearFo
 
 
 /* ******************************************************************
-* Simplest stability term is added to the consistency term. 
+* Simplest stability term is added to the consistency term.
 ****************************************************************** */
 void
 MFD3D::StabilityScalar_(DenseMatrix& N, DenseMatrix& M)
@@ -67,7 +69,7 @@ MFD3D::StabilityScalar_(DenseMatrix& N, DenseMatrix& M)
 
 /* ******************************************************************
 * A simple optimization procedure that returns a diagonal mass
-* matrix for a 2D and 3D orthogonal cells and diagonal tensors. 
+* matrix for a 2D and 3D orthogonal cells and diagonal tensors.
 * The algorithm minimizes off-diagonal entries in the mass matrix.
 ****************************************************************** */
 int
@@ -256,7 +258,7 @@ MFD3D::CalculateStabilityScalar_(DenseMatrix& Mc)
 
 
 /* ******************************************************************
-* Conventional Gramm-Schmidt orthogonalization of colums of matrix N. 
+* Conventional Gramm-Schmidt orthogonalization of colums of matrix N.
 ****************************************************************** */
 void
 MFD3D::GrammSchmidt_(DenseMatrix& N)
@@ -296,7 +298,7 @@ MFD3D::ModifyStabilityScalingFactor(double factor)
 
 
 /* ******************************************************************
-* A wrapper for the simplex method that finds monotone parameters. 
+* A wrapper for the simplex method that finds monotone parameters.
 * Content of N is destroyed.
 ****************************************************************** */
 int
@@ -449,8 +451,8 @@ MFD3D::StabilityMMatrix_(int c, DenseMatrix& N, DenseMatrix& M, int objective)
 
 
 /* ******************************************************************
-* A simplex method for fining monotone parameters. 
-* We assume that m3 = 0; otherwise, routine MaxRowValue() has 
+* A simplex method for fining monotone parameters.
+* We assume that m3 = 0; otherwise, routine MaxRowValue() has
 * to be modified by looping over columns in array l1.
 ****************************************************************** */
 int

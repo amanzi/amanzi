@@ -1,19 +1,21 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
-  provided in the top-level COPYRIGHT file.
-
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Base class for maps between mesh objects located on different 
-  meshes, e.g. two states (mesh0 and mesh1) of a deformable mesh. 
-  For calculating time dependent maps, we connect the two states 
-  using the linearized map: x + t (F(x) - x) where F(x) is a 
-  steady-state map from mesh0 to mesh1 and time t is between 0 
+  Base class for maps between mesh objects located on different
+  meshes, e.g. two states (mesh0 and mesh1) of a deformable mesh.
+  For calculating time dependent maps, we connect the two states
+  using the linearized map: x + t (F(x) - x) where F(x) is a
+  steady-state map from mesh0 to mesh1 and time t is between 0
   and 1. Thus, the linearized velocity is v = F(x) - x.
 */
 

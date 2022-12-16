@@ -1,13 +1,15 @@
 /*
-  This is the mpc_pk component of the Amanzi code. 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov
            Daniil Svyatskiy
+*/
+
+/*
+  This is the mpc_pk component of the Amanzi code.
 
   Process kernel that couples Transport in matrix and fracture.
 
@@ -31,7 +33,7 @@ namespace Amanzi {
 using CV_t = CompositeVector;
 using CVS_t = CompositeVectorSpace;
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Constructor
 ******************************************************************* */
 TransportMatrixFracture_PK::TransportMatrixFracture_PK(
@@ -50,7 +52,7 @@ TransportMatrixFracture_PK::TransportMatrixFracture_PK(
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Physics-based setup of PK.
 ******************************************************************* */
 void
@@ -133,7 +135,7 @@ TransportMatrixFracture_PK::Setup()
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Reduce stable dt to avoid the 2-cycle behavior of the transport PK
 ******************************************************************* */
 double
@@ -163,7 +165,7 @@ TransportMatrixFracture_PK::Initialize()
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Performs one time step.
 ******************************************************************* */
 bool

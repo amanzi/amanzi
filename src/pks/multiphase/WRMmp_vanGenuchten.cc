@@ -1,12 +1,15 @@
 /*
-  This is the multiphase component of the Amanzi code. 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Quan Bui (mquanbui@math.umd.edu)
+*/
+
+/*
+  This is the multiphase component of the Amanzi code.
+
 */
 
 #include <cmath>
@@ -24,7 +27,7 @@ namespace Amanzi {
 namespace Multiphase {
 
 /* ******************************************************************
-* Setup fundamental parameters for this model.                                            
+* Setup fundamental parameters for this model.
 ****************************************************************** */
 WRMmp_vanGenuchten::WRMmp_vanGenuchten(Teuchos::ParameterList& plist)
 {
@@ -76,7 +79,7 @@ WRMmp_vanGenuchten::Init_(double srl, double srg, double n, double Pr, double re
 
 
 /* ******************************************************************
-* Relative permeability formula.                                          
+* Relative permeability formula.
 ****************************************************************** */
 double
 WRMmp_vanGenuchten::k_relative(double sl, int phase)
@@ -179,7 +182,7 @@ WRMmp_vanGenuchten::dKdSe_gas_(double sle)
 
 
 /* ******************************************************************
-* Capillary Pressure formula. 
+* Capillary Pressure formula.
 ****************************************************************** */
 double
 WRMmp_vanGenuchten::capillaryPressure(double sl)
@@ -196,7 +199,7 @@ WRMmp_vanGenuchten::capillaryPressure(double sl)
 
 
 /* ******************************************************************
-* Derivative of capillary pressure formula. 
+* Derivative of capillary pressure formula.
 ****************************************************************** */
 double
 WRMmp_vanGenuchten::dPc_dS(double sl)
@@ -214,7 +217,7 @@ WRMmp_vanGenuchten::dPc_dS(double sl)
 
 
 /* ******************************************************************
-* Return irreducible residual saturation of the phase.                                          
+* Return irreducible residual saturation of the phase.
 ****************************************************************** */
 double
 WRMmp_vanGenuchten::capillaryPressure_(double sle)

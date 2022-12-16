@@ -1,19 +1,21 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   The base class for dG basis.
 
   Let each column of R represent new basis vector in the old basis.
   Then, transformation of the bilinear form matrix A from old to new
-  basis is calculated as follows: R^T A R. Also, to change vector v 
+  basis is calculated as follows: R^T A R. Also, to change vector v
   from the new to old basis, we compute v_old = R v_new. Inverse of
   R defines the backward transformation. Finally, transformation of
   the linear form, represented by vector f, is given by R^T f.

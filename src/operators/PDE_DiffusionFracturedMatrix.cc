@@ -1,12 +1,15 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #include <vector>
@@ -168,7 +171,7 @@ PDE_DiffusionFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const CompositeV
 * the the system of equations as the trivial equations.
 *
 * Supported BCs on faces with many DOFs:
-*   [Dirichlet]                         u = u0 
+*   [Dirichlet]                         u = u0
 *   [Neumann]            -K(u) grad u . n = g0
 *   [Mixed]        -K(u) grad u . n - c u = g1
 ****************************************************************** */
@@ -282,7 +285,7 @@ PDE_DiffusionFracturedMatrix::ApplyBCs(bool primary, bool eliminate, bool essent
 
 /* ******************************************************************
 * WARNING: Since diffusive flux may be discontinuous (e.g. for
-* Richards equation), we derive it only once (using flag) and in 
+* Richards equation), we derive it only once (using flag) and in
 * exactly the same manner as other routines.
 * **************************************************************** */
 void

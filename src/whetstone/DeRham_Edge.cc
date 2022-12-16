@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Derham complex: mimetic inner products on edges.
 */
@@ -39,8 +41,8 @@ DeRham_Edge::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& 
 
 
 /* ******************************************************************
-* 2D consistency condition for the mass matrix. Only the upper 
-* triangular part of Mc = R (R^T N)^{-1} R^T is calculated. 
+* 2D consistency condition for the mass matrix. Only the upper
+* triangular part of Mc = R (R^T N)^{-1} R^T is calculated.
 ****************************************************************** */
 int
 DeRham_Edge::L2consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc)
@@ -104,8 +106,8 @@ DeRham_Edge::L2consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatri
 
 
 /* ******************************************************************
-* 3D consistency condition for the mass matrix. Only the upper 
-* triangular part of Mc = R (R^T N)^{-1} R^T is calculated. 
+* 3D consistency condition for the mass matrix. Only the upper
+* triangular part of Mc = R (R^T N)^{-1} R^T is calculated.
 ****************************************************************** */
 int
 DeRham_Edge::L2consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc)
@@ -230,7 +232,7 @@ DeRham_Edge::L2consistencyInverse(int c,
 
 
 /* ******************************************************************
-* 2D consistency condition for inverse of the mass matrix. Only upper 
+* 2D consistency condition for inverse of the mass matrix. Only upper
 * triangular part of matrix Wc = N (N^T R)^{-1} N^T is calculated.
 ****************************************************************** */
 int
@@ -293,7 +295,7 @@ DeRham_Edge::L2consistencyInverse2D_(int c, const Tensor& T, DenseMatrix& R, Den
 
 /* ******************************************************************
 * 3D consistency condition for inverse of the mass matrix. Only upper
-* triangular part of matrix Wc = N (N^T R)^{-1} N^T is calculated. 
+* triangular part of matrix Wc = N (N^T R)^{-1} N^T is calculated.
 * Recall that N^T R = |c| T.
 ****************************************************************** */
 int

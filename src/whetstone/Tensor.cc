@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Tensors of rank 1 are numbers in all dimensions.
   Tensors of rank 2 are square matrices in all dimensions.
@@ -46,7 +48,7 @@ Tensor::Tensor(const Tensor& T)
 
 /* ******************************************************************
 * Constructor.
-* Warining: no check of data validity is performed. 
+* Warining: no check of data validity is performed.
 ****************************************************************** */
 Tensor::Tensor(int d, int rank, const double* data)
 {
@@ -62,7 +64,7 @@ Tensor::Tensor(int d, int rank, const double* data)
 
 
 /* ******************************************************************
-* Initialization of a tensor of rank 1, 2 or 4. 
+* Initialization of a tensor of rank 1, 2 or 4.
 ****************************************************************** */
 int
 Tensor::Init(int d, int rank)
@@ -82,7 +84,7 @@ Tensor::Init(int d, int rank)
 
 
 /* ******************************************************************
-* Assign constant value to the tensor entries 
+* Assign constant value to the tensor entries
 ****************************************************************** */
 void
 Tensor::PutScalar(double val)
@@ -265,7 +267,7 @@ Tensor::Det() const
 
 
 /* ******************************************************************
-* Symmetrizing the tensors of rank 2. 
+* Symmetrizing the tensors of rank 2.
 ****************************************************************** */
 void
 Tensor::SymmetricPart()
@@ -333,7 +335,7 @@ Tensor::SpectralBounds(double* lower, double* upper) const
 
 
 /* ******************************************************************
-* Elementary operations with a constant. Since we use Voigt notation, 
+* Elementary operations with a constant. Since we use Voigt notation,
 * the identity tensor equals the identity matrix.
 ****************************************************************** */
 Tensor&
@@ -389,7 +391,7 @@ Tensor::operator=(const Tensor& T)
 
 
 /* ******************************************************************
-* First convolution operation for tensors of rank 1 and 2. 
+* First convolution operation for tensors of rank 1 and 2.
 ****************************************************************** */
 AmanziGeometry::Point
 operator*(const Tensor& T, const AmanziGeometry::Point& p)
@@ -576,8 +578,8 @@ operator<<(std::ostream& os, const Tensor& T)
 
 
 /* ******************************************************************
-* Convert tensor to a vector and reverse. Used for parallel 
-* distribution of tensors. We assume that size of v sufficient to 
+* Convert tensor to a vector and reverse. Used for parallel
+* distribution of tensors. We assume that size of v sufficient to
 * contain tensor of rank 2.
 ****************************************************************** */
 void

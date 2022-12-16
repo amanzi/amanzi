@@ -1,17 +1,20 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors: Kontantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
 
   Helper functions for unique numbering of entries in mesh lists.
 
   Some mesh funtions return list of entities that are have no specific order.
   Helper function calculate unique position of entities using their global IDs.
 
-  Author: Kontantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef UNIQUE_LOCAL_INDEX_HH_

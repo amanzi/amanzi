@@ -1,12 +1,15 @@
 /*
-  Input Converter
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Input Converter
+
 */
 
 #include <algorithm>
@@ -354,7 +357,7 @@ InputConverterU::TranslateInitialization_(const std::string& unstr_controls)
 *   pc_method        = "linerized_operator" | "diffusion_operator"
 *   nonlinear_solver = "" | "Newton"
 *   nonlinear_coef   = "upwind-amanzi_new" | any_other
-*   extentions       = "" | "vapor matrix" 
+*   extentions       = "" | "vapor matrix"
 ****************************************************************** */
 Teuchos::ParameterList
 InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,

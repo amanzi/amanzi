@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Discontinuous Galerkin methods.
 */
@@ -74,7 +76,7 @@ DG_Modal::schema() const
 
 
 /* ******************************************************************
-* Mass matrix for Taylor basis functions. 
+* Mass matrix for Taylor basis functions.
 ****************************************************************** */
 int
 DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
@@ -112,7 +114,7 @@ DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 
 
 /* ******************************************************************
-* Mass matrix for Taylor basis functions. 
+* Mass matrix for Taylor basis functions.
 ****************************************************************** */
 int
 DG_Modal::MassMatrix(int c, const Tensor& K, PolynomialOnMesh& integrals, DenseMatrix& M)
@@ -435,14 +437,14 @@ DG_Modal::AdvectionMatrix(int c, const VectorPolynomial& u, DenseMatrix& A, bool
 
 
 /* ******************************************************************
-* Upwind/downwind matrix for Taylor basis and normal velocity u.n. 
+* Upwind/downwind matrix for Taylor basis and normal velocity u.n.
 * The normal in u.n is scaled by the face area. If jump_on_test=true,
 * we calculate
-* 
+*
 *   \Int { (u.n) \rho^* [\psi] } dS
-* 
-* where star means upwind/downwind, \psi is a test function, \rho is 
-* a solution. Otherwise, we calculate 
+*
+* where star means upwind/downwind, \psi is a test function, \rho is
+* a solution. Otherwise, we calculate
 *
 *   \Int { (u.n) \psi^* [\rho] } dS
 ****************************************************************** */
@@ -599,13 +601,13 @@ DG_Modal::FluxMatrix(int f,
 
 /* ******************************************************************
 * Upwind/downwind at Gauss points to calculate matrix for the Taylor
-* basis and normal velocity u.n. The normal in u.n is scaled by the 
+* basis and normal velocity u.n. The normal in u.n is scaled by the
 * face area. If jump_on_test=true, we calculate
-* 
+*
 *   \Int { (u.n) \rho^* [\psi] } dS
-* 
-* where star means upwind/downwind, \psi is a test function, \rho is 
-* a solution. Otherwise, we calculate 
+*
+* where star means upwind/downwind, \psi is a test function, \rho is
+* a solution. Otherwise, we calculate
 *
 *   \Int { (u.n) \psi^* [\rho] } dS
 ****************************************************************** */
@@ -724,9 +726,9 @@ DG_Modal::FluxMatrixGaussPoints(int f,
 
 
 /* ******************************************************************
-* Rusanov flux matrix for Taylor basis and normal velocity u.n. 
+* Rusanov flux matrix for Taylor basis and normal velocity u.n.
 * Velocities are given in the face-based Taylor basis. We calculate
-* 
+*
 *   \Int { (u.n \rho)^* [\psi] } dS
 *
 * where (u.n \rho)^* is the Rusanov flux.
