@@ -25,7 +25,7 @@ namespace AmanziMesh {
 // GenerationSpec:: constructors / destructor
 // -------------------------------------------------------------
 GenerationSpec::GenerationSpec(const Teuchos::ParameterList& parameter_list)
-  : domain_(Teuchos::null), nx_(0), ny_(0), nz_(0), blocks_()
+    : domain_(Teuchos::null), nx_(0), ny_(0), nz_(0), blocks_()
 {
   parse_(parameter_list);
 }
@@ -42,11 +42,9 @@ void
 GenerationSpec::parse_(const Teuchos::ParameterList& parameter_list)
 {
   // read the parameters from the parameter list
-  Teuchos::Array<int> ncells = parameter_list.get<Teuchos::Array<int>>("number of cells");
-  Teuchos::Array<double> low_corner =
-    parameter_list.get<Teuchos::Array<double>>("domain low coordinate");
-  Teuchos::Array<double> high_corner =
-    parameter_list.get<Teuchos::Array<double>>("domain high coordinate");
+  Teuchos::Array<int> ncells = parameter_list.get< Teuchos::Array<int> >("number of cells");
+  Teuchos::Array<double> low_corner = parameter_list.get< Teuchos::Array<double> >("domain low coordinate");
+  Teuchos::Array<double> high_corner = parameter_list.get< Teuchos::Array<double> >("domain high coordinate");
 
   unsigned int dimension = ncells.size();
 
@@ -68,7 +66,7 @@ GenerationSpec::parse_(const Teuchos::ParameterList& parameter_list)
     else if (partitioner_str == "ZOLTAN_RCB" || partitioner_str == "zoltan_rcb")
       partitioner_ = Partitioner_type::ZOLTAN_RCB;
   }
-
+  
   domain_ = Teuchos::rcp(new AmanziGeometry::RegionBox("GenDomain", 0, p0, p1));
 }
 

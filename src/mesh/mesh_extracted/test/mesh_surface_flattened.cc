@@ -26,8 +26,7 @@
 #include "Mesh_MSTK.hh"
 
 /* **************************************************************** */
-TEST(MESH_SURFACE_FLATTENED)
-{
+TEST(MESH_SURFACE_FLATTENED) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -42,19 +41,25 @@ TEST(MESH_SURFACE_FLATTENED)
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   auto mesh_list = Teuchos::sublist(plist, "mesh", false);
-  auto mesh3D = Teuchos::rcp(
-    new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
+  RCP<MeshFramework> mesh3D = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list));
 
   bool flatten = true;
-  RCP<Mesh> mesh = Teuchos::rcp(new MeshExtractedManifold(
-    mesh3D, "Top side", AmanziMesh::FACE, comm, gm, plist, true, false, flatten));
+  auto mesh3D_cache = Teuchos::rcp(new Mesh(mesh3D)); 
+  RCP<MeshFramework> mesh = Teuchos::rcp(new MeshExtractedManifold(mesh3D_cache, "Top side", AmanziMesh::Entity_kind::FACE,
+                                                          comm, gm, plist, true, false, flatten));
+  
+  RCP<Mesh> mesh_cached = Teuchos::rcp(new Mesh(mesh)); 
 
-  int ncells = mesh->cell_map(false).NumGlobalElements();
-  int nfaces = mesh->face_map(false).NumGlobalElements();
-  int nnodes = mesh->node_map(false).NumGlobalElements();
-  int mfaces = mesh->exterior_face_map(false).NumGlobalElements();
-  std::cout << " pid=" << comm->MyPID() << " cells: " << ncells << " faces: " << nfaces
-            << " bnd faces: " << mfaces << std::endl;
+  int ncells = mesh_cached->getNumEntities(AmanziMesh::Entity_kind::CELL,
+            AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh_cached->getNumEntities(AmanziMesh::Entity_kind::FACE,
+            AmanziMesh::Parallel_type::OWNED);
+  int nnodes = mesh_cached->getNumEntities(AmanziMesh::Entity_kind::NODE,
+            AmanziMesh::Parallel_type::OWNED);
+  int mfaces = mesh_cached->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE,
+            AmanziMesh::Parallel_type::OWNED);
+  std::cout << " pid=" << comm->MyPID() << " cells: " << ncells 
+            << " faces: " << nfaces << " bnd faces: " << mfaces << std::endl;
 
   CHECK(ncells == 100);
   CHECK(nfaces == 220);
@@ -62,19 +67,19 @@ TEST(MESH_SURFACE_FLATTENED)
 
   AmanziGeometry::Point p;
   for (int n = 0; n < nnodes; ++n) {
-    mesh->node_get_coordinates(n, &p);
+    p = mesh_cached->getNodeCoordinate(n);
     CHECK(p.dim() == 2);
     CHECK(p[0] >= 0.0 && p[1] <= 1.0);
   }
 
   for (int n = 0; n < nfaces; ++n) {
-    p = mesh->face_centroid(n);
+    p = mesh_cached->getFaceCentroid(n);
     CHECK(p.dim() == 2);
     CHECK(p[0] >= 0.0 && p[1] <= 1.0);
   }
 
   for (int n = 0; n < ncells; ++n) {
-    p = mesh->cell_centroid(n);
+    p = mesh_cached->getCellCentroid(n);
     CHECK(p.dim() == 2);
     CHECK(p[0] > 0.0 && p[1] < 1.0);
   }

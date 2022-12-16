@@ -4,14 +4,18 @@
 
 #include "VerboseObject_objs.hh"
 
-int
-main(int argc, char* argv[])
+#include "Kokkos_Core.hpp"
+
+int main(int argc, char *argv[])
 {
-  MPI_Init(&argc, &argv);
+  MPI_Init(&argc,&argv);
+  Kokkos::initialize(); 
 
-  int status = UnitTest::RunAllTests();
+  int status = UnitTest::RunAllTests ();
 
+  Kokkos::finalize(); 
   MPI_Finalize();
 
   return status;
 }
+
