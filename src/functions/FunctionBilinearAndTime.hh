@@ -1,15 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! FunctionNDLinear: a piecewise ND-linear function.
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (coonet@ornl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
+//! FunctionNDLinear: a piecewise ND-linear function.
 /*!
 
 A piecewise bilinear function that is additionally linear interpolated in time.
@@ -22,7 +20,7 @@ u_{{i(x),j(y)+1}}, u_{{i(x)+1,j(y)+1}}, if :math:`(x,y)` is in
 :math:`[x_0,x_n] \times [y_0,y_m]`, linear interpolation if one of :math:`x,y`
 are out of those bounds, and constant at the corner value if both are out of
 bounds.
- 
+
 * `"file`" ``[string]`` HDF5 filename of the data
 * `"time header`" ``[string]`` **time** Name of the temporal dimension indices, the :math:`t_i`.
 * `"row header`" ``[string]`` **x** name of the row dataset, the :math:`x_i`

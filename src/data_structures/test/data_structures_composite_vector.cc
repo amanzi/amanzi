@@ -1,9 +1,14 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Ethan Coon
+*/
+
 /* -------------------------------------------------------------------------
    Amanzi
-
-   License: see $AMANZI_DIR/COPYRIGHT
-   Author: Ethan Coon
 
    Unit tests for the composite vector.
 ------------------------------------------------------------------------- */

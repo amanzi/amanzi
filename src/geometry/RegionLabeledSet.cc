@@ -1,13 +1,21 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Rao Garimella
+*/
+
 /*
   A region defined by a set of mesh entities in a mesh file
 
   Strictly speaking, we should tie this region class to a particular
   mesh or mesh file but that cause a circular dependency of meshes
-  on regions and of labeled set regions on meshes. We will rely on the 
+  on regions and of labeled set regions on meshes. We will rely on the
   fact that when a mesh is created specifying a geometric model, it
-  will create mesh entity sets based on the labeled sets in that 
-  geometric model. 
+  will create mesh entity sets based on the labeled sets in that
+  geometric model.
 
   If we need to change this behavior, then we can make a forward
   declaration of AmanziMesh::Mesh, make the Mesh class a friend, add
@@ -17,12 +25,6 @@
   The region will consist of all mesh elements for which the indicator
   function is a particular value at their centroids
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
-  provided in the top-level COPYRIGHT file.
-
-  Authors: Rao Garimella
 */
 
 #include "dbc.hh"

@@ -1,14 +1,52 @@
 /*
-  State
-
-  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
+
+/*
+  State
 
   Helpers that know how to read/write/etc data.
+*/
+
+/*!
+
+.. _constants-scalar-spec:
+.. admonition:: constants-scalar-spec
+
+   * `"value`" ``[double]`` Value of a scalar constant
+
+.. _constants-dense-vector-spec:
+.. admonition:: constants-dense-vector-spec
+
+   * `"value`" ``[Array(double)]`` Value of a dense, local vector.
+
+.. _constants-point-spec:
+.. admonition:: constants-point-spec
+
+   * `"value`" ``[Array(double)]`` Array containing the values of the point.
+
+
+.. _constants-composite-vector-spec:
+.. admonition:: constants-composite-vector-spec
+
+   * `"constant`" ``[double]`` **optional** Constant value.
+   * `"value`" ``[double]`` **optional** Constant value, same as `"constant`" above.
+   * `"function`" ``[composite-vector-function-spec-list]`` **optional**
+     Initialize from a function, see CompositeVectorFunction_
+   * `"restart file`" ``[string]`` **optional** Path to a checkpoint file from
+     which to read the values.
+   * `"cells from file`" ``[string]`` **optional** Same as `"restart file`",
+     but only reads the cell component.
+   * `"exodus file initialization`" ``[exodus-file-initialization-spec]``
+     **optional** See `Exodus File Initialization`_.
+   * `"initialize from 1D column`" ``[column-file-initialization-spec]``
+     **optional** See `Column File Initialization`_.
+
 */
 
 #ifndef AMANZI_STATE_DATA_HELPERS_HH_

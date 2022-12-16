@@ -1,6 +1,15 @@
-// This is needed to define some external symbols for linking. 
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+// This is needed to define some external symbols for linking.
 // It's kind of silly to do things this way. -JNJ
-#include <VerboseObject_objs.hh> 
+#include <VerboseObject_objs.hh>
 
 #include <RichardSolver.H>
 #include <RStdata.H>
@@ -208,7 +217,7 @@ main (int   argc,
       phi[i] = (Geometry::ProbLo())[i];
     }
     RegionManager rm(plo,phi);
-  
+
     Layout layout(refRatio_array,grid_array,geom_array,nLevs);
 
     int nGrow = 0;
@@ -270,7 +279,7 @@ main (int   argc,
 	if (verbose && ParallelDescriptor::IOProcessor()) {
 	  std::cout << "................ attempting dt = " << dt << " step " << step << std::endl;
 	}
-	  
+
 	retCode = rs->Solve(rs_data.old_time,rs_data.new_time,step,nlsc);
 
 	if (retCode > 0) {
@@ -278,7 +287,7 @@ main (int   argc,
 	    std::cout << "................ SUCCEEDED dt = " << dt << std::endl;
 	  }
 	  ret = NLSstatus::NLS_SUCCESS;
-	} 
+	}
 	else {
 	  if (verbose && ParallelDescriptor::IOProcessor()) {
 	    std::cout << "................ FAILED dt = " << dt
@@ -329,7 +338,7 @@ main (int   argc,
 
     delete rs;
 
-    // Must clear prior to PetscFinalize to explicitly delete petsc data structures, or 
+    // Must clear prior to PetscFinalize to explicitly delete petsc data structures, or
     // the PetscFinalize will do it, and the Layout destructor will then generate a seg fault.
     layout.Clear();
   }
@@ -356,7 +365,7 @@ main (int   argc,
     err.copy(cf);
     err.minus(cfab);
     norms[lev][0] = err.norm(0); // infinity norm (max norm).
-    norms[lev][1] = err.norm(1) / err.box().numPts(); // 1-norm 
+    norms[lev][1] = err.norm(1) / err.box().numPts(); // 1-norm
     // norms[lev][2] = err.norm(2) / err.box().numPts(); // 2-norm
     norms[lev][2] = norms[lev][1]; // missing implementation of 2-norm (use dot ???)
   }

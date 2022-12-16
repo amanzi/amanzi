@@ -1,15 +1,17 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
-  provided in the top-level COPYRIGHT file.
-
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Numerical and exact integration over polytopal cells. 
+  Numerical and exact integration over polytopal cells.
 */
 
 #include <memory>
@@ -237,7 +239,7 @@ NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& poly)
 
 
 /* ******************************************************************
-* Integrate product of polynomials and monomials over cells c. They 
+* Integrate product of polynomials and monomials over cells c. They
 * may have different origins.
 ****************************************************************** */
 double
@@ -271,7 +273,7 @@ NumericalIntegration::IntegratePolynomialsCell(int c,
 
 
 /* ******************************************************************
-* Integrate product of polynomials and monomials over cells c. They 
+* Integrate product of polynomials and monomials over cells c. They
 * may have different origins. Database of monomial is extended
 ****************************************************************** */
 double
@@ -307,7 +309,7 @@ NumericalIntegration::IntegratePolynomialsCell(int c,
 
 /* ******************************************************************
 * Integrate over face f the product of polynomials and monomials that
-* may have different origins. 
+* may have different origins.
 ****************************************************************** */
 double
 NumericalIntegration::IntegratePolynomialsFace(
@@ -578,7 +580,7 @@ NumericalIntegration::IntegrateMonomialsFace_(int c,
       // integrate along edge (based on change of variables)
       /*
       std::vector<AmanziGeometry::Point> tau_edge(1, tau);
-      q.ChangeCoordinates(xe, tau_edge);  
+      q.ChangeCoordinates(xe, tau_edge);
 
       int m(1);
       double sum(0.0);
@@ -595,7 +597,7 @@ NumericalIntegration::IntegrateMonomialsFace_(int c,
 
 /* ******************************************************************
 * Integrate over edge (x1,x2) a group of non-normalized monomials of
-* the same order k centered at zero. 
+* the same order k centered at zero.
 ****************************************************************** */
 void
 NumericalIntegration::IntegrateMonomialsEdge_(const AmanziGeometry::Point& x1,

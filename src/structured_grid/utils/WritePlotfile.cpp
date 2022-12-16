@@ -1,3 +1,11 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
 
 #include <WritePlotfile.H>
 
@@ -45,24 +53,24 @@ void WritePlotfile(const std::string         &pfversion,
   // Force other processors to wait till directory is built.
   //
   ParallelDescriptor::Barrier();
-    
+
   std::string oFileHeader(oFile);
   oFileHeader += "/Header";
-    
+
   VisMF::IO_Buffer io_buffer(VisMF::IO_Buffer_Size);
-    
+
   std::ofstream os;
   const int finestLevel = nLevs - 1;
-    
+
   //os.rdbuf()->pubsetbuf(io_buffer.dataPtr(), io_buffer.size());
-    
+
   if(ParallelDescriptor::IOProcessor()) {
     if(verbose) {
       std::cout << "Opening file = " << oFileHeader << '\n';
     }
-    
+
     os.open(oFileHeader.c_str(), std::ios::out|std::ios::binary);
-    
+
     if(os.fail()) {
       BoxLib::FileOpenFailed(oFileHeader);
     }
@@ -117,7 +125,7 @@ void WritePlotfile(const std::string         &pfversion,
     int nGrids = ba.size();
     char buf[64];
     sprintf(buf, "Level_%d", iLevel);
-        
+
     if(ParallelDescriptor::IOProcessor()) {
       os << iLevel << ' ' << nGrids << ' ' << time << '\n';
       if(levelSteps != 0) {
@@ -125,7 +133,7 @@ void WritePlotfile(const std::string         &pfversion,
       } else {
 	os << 0 << '\n';
       }
-            
+
       for(int i(0); i < nGrids; ++i) {
 	const Box &b = ba[i];
 	for(int n(0); n < BL_SPACEDIM; ++n) {
@@ -140,7 +148,7 @@ void WritePlotfile(const std::string         &pfversion,
       std::string Level(oFile);
       Level += '/';
       Level += buf;
-            
+
       if( ! BoxLib::UtilCreateDirectory(Level, 0755)) {
 	BoxLib::CreateDirectoryFailed(Level);
       }
@@ -153,13 +161,13 @@ void WritePlotfile(const std::string         &pfversion,
     // Now build the full relative pathname of the MultiFab.
     //
     static const std::string MultiFabBaseName("MultiFab");
-        
+
     std::string PathName(oFile);
     PathName += '/';
     PathName += buf;
     PathName += '/';
     PathName += MultiFabBaseName;
-        
+
     if(ParallelDescriptor::IOProcessor()) {
       //
       // The full name relative to the Header file.
@@ -177,7 +185,7 @@ void WritePlotfile(const std::string         &pfversion,
     }
     VisMF::Write(tot, PathName);
   }
-    
+
   os.close();
 }
 

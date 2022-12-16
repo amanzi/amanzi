@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <winstd.H>
 #include "iostream"
 
@@ -26,9 +35,9 @@ Region::Region (const std::string& r_name,
 }
 
 void
-Region::setVal(BaseFab<Real>&     fab, 
-               const Array<Real>& val, 
-               const Real*        dx, 
+Region::setVal(BaseFab<Real>&     fab,
+               const Array<Real>& val,
+               const Real*        dx,
                int                ng,
                int                scomp,
                int                ncomp) const
@@ -37,9 +46,9 @@ Region::setVal(BaseFab<Real>&     fab,
 }
 
 void
-Region::setVal(BaseFab<int>&     fab, 
-               const Array<int>& val, 
-               const Real*       dx, 
+Region::setVal(BaseFab<int>&     fab,
+               const Array<int>& val,
+               const Real*       dx,
                int               ng,
                int               scomp,
                int               ncomp) const
@@ -49,9 +58,9 @@ Region::setVal(BaseFab<int>&     fab,
 
 template <class T>
 void
-Region::setVal_DoIt(BaseFab<T>&     fab, 
-                    const Array<T>& val, 
-                    const Real*     dx, 
+Region::setVal_DoIt(BaseFab<T>&     fab,
+                    const Array<T>& val,
+                    const Real*     dx,
                     int             ng,
                     int             scomp,
                     int             ncomp) const
@@ -78,9 +87,9 @@ Region::setVal_DoIt(BaseFab<T>&     fab,
 
 void
 Region::setVal(BaseFab<Real>& fab,
-               const Real&    val, 
+               const Real&    val,
                const int      idx,
-               const Real*    dx, 
+               const Real*    dx,
                int            ng) const
 {
     setVal(fab,Array<Real>(1,val),dx,ng,idx,1);
@@ -88,9 +97,9 @@ Region::setVal(BaseFab<Real>& fab,
 
 void
 Region::setVal(BaseFab<int>& fab,
-               const int&    val, 
+               const int&    val,
                const int     idx,
-               const Real*   dx, 
+               const Real*   dx,
                int           ng) const
 {
     setVal(fab,Array<int>(1,val),dx,ng,idx,1);
@@ -106,16 +115,16 @@ PointRegion::approximate_bounds(const Array<Real>& plo, const Array<Real>& dx) c
   return BoxArray(Box(iv,iv));
 }
 
-bool 
+bool
 PointRegion::inRegion (const Array<Real>& x) const
 {
   return false; // This test is simply not appropriate for pt regions
 }
 
 void
-PointRegion::setVal(BaseFab<Real>&     fab, 
-                    const Array<Real>& val, 
-                    const Real*        dx, 
+PointRegion::setVal(BaseFab<Real>&     fab,
+                    const Array<Real>& val,
+                    const Real*        dx,
                     int                ng,
                     int                scomp,
                     int                ncomp) const
@@ -124,9 +133,9 @@ PointRegion::setVal(BaseFab<Real>&     fab,
 }
 
 void
-PointRegion::setVal(BaseFab<int>&     fab, 
-                    const Array<int>& val, 
-                    const Real*       dx, 
+PointRegion::setVal(BaseFab<int>&     fab,
+                    const Array<int>& val,
+                    const Real*       dx,
                     int               ng,
                     int               scomp,
                     int               ncomp) const
@@ -136,9 +145,9 @@ PointRegion::setVal(BaseFab<int>&     fab,
 
 template<class T>
 void
-PointRegion::setVal_DoIt(BaseFab<T>&     fab, 
-                         const Array<T>& val, 
-                         const Real*     dx, 
+PointRegion::setVal_DoIt(BaseFab<T>&     fab,
+                         const Array<T>& val,
+                         const Real*     dx,
                          int             ng,
                          int             scomp,
                          int             ncomp) const
@@ -169,9 +178,9 @@ PointRegion::setVal_DoIt(BaseFab<T>&     fab,
 
 void
 PointRegion::setVal(BaseFab<Real>& fab,
-                    const Real&    val, 
+                    const Real&    val,
                     const int      idx,
-                    const Real*    dx, 
+                    const Real*    dx,
                     int            ng) const
 {
   setVal(fab,Array<Real>(1,val),dx,ng,idx,1);
@@ -179,9 +188,9 @@ PointRegion::setVal(BaseFab<Real>& fab,
 
 void
 PointRegion::setVal(BaseFab<int>& fab,
-                    const int&    val, 
+                    const int&    val,
                     const int     idx,
-                    const Real*   dx, 
+                    const Real*   dx,
                     int           ng) const
 {
   setVal(fab,Array<int>(1,val),dx,ng,idx,1);
@@ -198,7 +207,7 @@ BoxRegion::approximate_bounds(const Array<Real>& plo, const Array<Real>& dx) con
   return BoxArray(Box(ivlo,ivhi));
 }
 
-bool 
+bool
 BoxRegion::inRegion(const Array<Real>& x) const
 {
     bool inflag = true;
@@ -515,7 +524,7 @@ ColorFunctionRegion::set_color_map()
   ParallelDescriptor::ReadAndBcastFile(m_file, fileCharPtr);
   std::string fileCharPtrString(fileCharPtr.dataPtr());
   std::istringstream is(fileCharPtrString, std::istringstream::in);
-  
+
   int datatype;
   is >> datatype;
   if (datatype != 0) {
@@ -592,7 +601,7 @@ ColorFunctionRegion::set_color_map()
   }
 
   IntVect be = IntVect(length.dataPtr()) - IntVect::TheUnitVector();
-  Box map_box(IntVect::TheZeroVector(),be,iType);  
+  Box map_box(IntVect::TheZeroVector(),be,iType);
   m_color_map = new BaseFab<int>(map_box,ncomp);
 
   if (!map_box.numPtsOK()) {
@@ -710,7 +719,7 @@ ColorFunctionRegion::print (std::ostream& os) const
 }
 
 #if 1
-bool 
+bool
 AllRegion::inRegion(const Array<Real>& x) const
 {
   return true;
@@ -741,7 +750,7 @@ pick_name(int dir, int lo_or_hi)
         name = "ZLOBC";
     else if (dir == 2 && lo_or_hi == 1)
         name = "ZHIBC";
-#endif  
+#endif
     return name;
 }
 
@@ -763,7 +772,7 @@ pick_purpose(int dir, int lo_or_hi)
         purpose = "zlobc";
     else if (dir == 2 && lo_or_hi == 1)
         purpose = "zhibc";
-#endif  
+#endif
     return purpose;
 }
 
@@ -776,11 +785,11 @@ AllBCRegion::AllBCRegion (int dir, int lo_or_hi)
 
   if (p_lohi == 0)
       hi[p_dir] = lo[p_dir];
-  else 
+  else
       lo[p_dir] = hi[p_dir];
 }
 
-bool 
+bool
 AllBCRegion::inRegion(const Array<Real>& x) const
 {
     return true;
@@ -935,5 +944,3 @@ SubtractionRegion::print (std::ostream& os) const
   }
   return os;
 }
-
-

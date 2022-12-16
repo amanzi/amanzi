@@ -1,12 +1,14 @@
 /*
-  This is the mpc_pk component of the Amanzi code.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov
+*/
+
+/*
+  This is the mpc_pk component of the Amanzi code.
 
   Process kernel that couples Transport in matrix and fracture
   using implicit scheme.
@@ -268,7 +270,7 @@ TransportMatrixFractureImplicit_PK::Initialize()
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Maybe we need a separate PK instead of the if-clause
 ******************************************************************* */
 bool
@@ -387,7 +389,7 @@ TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, i
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 *
 ******************************************************************* */
 bool
@@ -434,7 +436,7 @@ TransportMatrixFractureImplicit_PK::CommitStep(double t_old, double t_new, const
 {}
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Modify defualt behavior:
 ******************************************************************* */
 void
@@ -507,7 +509,7 @@ TransportMatrixFractureImplicit_PK::UpdatePreconditioner(double tp,
 
 
 /* ******************************************************************
-* Apply block-diagonal preconditioner inv(B) * X.                                                 
+* Apply block-diagonal preconditioner inv(B) * X.
 ****************************************************************** */
 int
 TransportMatrixFractureImplicit_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,

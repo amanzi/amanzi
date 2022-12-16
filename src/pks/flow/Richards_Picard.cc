@@ -1,12 +1,15 @@
 /*
-  Flow PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #include <algorithm>
@@ -22,7 +25,7 @@ namespace Flow {
 /* ******************************************************************
 * Calculates steady-state solution assuming that absolute and
 * relative permeabilities do not depend explicitly on time.
-* This is the experimental method.                                                 
+* This is the experimental method.
 ****************************************************************** */
 int
 Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
@@ -143,7 +146,7 @@ Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* Calculate relaxation factor.                                                       
+* Calculate relaxation factor.
 ****************************************************************** */
 double
 Richards_PK::CalculateRelaxationFactor(const Epetra_MultiVector& uold,

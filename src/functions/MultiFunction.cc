@@ -1,12 +1,14 @@
 /*
-  Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
+
+/*
+  Functions
 
   Factory for vector functions which are composed of multiple scalar functions.
   The expected plist is of the form:
@@ -31,7 +33,7 @@
   Where each of the "function-xxx" lists are valid input to the
   function-factory Create() method (see ./function-factory.hh).
 
-  To simplify input for the case where all scalar functions are 
+  To simplify input for the case where all scalar functions are
   constant, parameter "values" is supported
 
   <ParameterList name="constuctor plist">

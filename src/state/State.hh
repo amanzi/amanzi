@@ -1,14 +1,18 @@
 /*
-  State
-
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
 //! State, a container for data.
+/*
+  State
+
+*/
+
 /*!
 
 State  is a  simple data-manager,  allowing PKs  to require,  read, and  write
@@ -29,7 +33,7 @@ various fields.
 
    * `"initial conditions`" ``[list]`` A list of constant-in-time data.  Note
      that `"initial conditions`" is not a particularly descriptive name here --
-     PDE initial conditions are generally not here.
+     PDE initial conditions are generally not here.  This list consists of
 
 .. _evaluator-typedinline-spec:
 .. admonition:: evaluator-typedinline-spec
@@ -40,15 +44,6 @@ various fields.
      stored in state but never change.  Typically they're limited to scalars
      and dense, local vectors.
 
-.. _constants-scalar-spec:
-.. admonition:: constants-scalar-spec
-
-   * `"value`" ``[double]`` Value of a scalar constant
-
-.. _constants-vector-spec:
-.. admonition:: constants-vector-spec
-
-   * `"value`" ``[Array(double)]`` Value of a dense, local vector.
 
 Example:
 

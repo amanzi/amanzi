@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <MFTower.H>
 #include <Layout.H>
 #include <Utility.H>
@@ -21,7 +30,7 @@ MFTower::MFTower(const Layout&    _layout,
 MFTower::MFTower(Layout&           _layout,
                  PArray<MultiFab>& pamf,
 		 int               _nLevs)
-    : layout(_layout), nComp(pamf[0].nComp()), nGrow(pamf[0].nGrow()), nLevs(_nLevs)  
+    : layout(_layout), nComp(pamf[0].nComp()), nGrow(pamf[0].nGrow()), nLevs(_nLevs)
 {
   BL_PROFILE("MFTower::MFTower1()");
   if (nLevs<0) nLevs = layout.NumLevels();
@@ -38,7 +47,7 @@ MFTower::GetLayout() const
     return layout;
 }
 
-int 
+int
 MFTower::NComp() const
 {
     return nComp;
@@ -50,8 +59,8 @@ MFTower::NGrow() const
     return nGrow;
 }
 
-int 
-MFTower::NumLevels() const 
+int
+MFTower::NumLevels() const
 {
    return nLevs;
 }
@@ -88,7 +97,7 @@ MFTower::define_alloc()
             ba.surroundingNodes(d);
           }
         }
-      }            
+      }
     }
     mft.set(lev,new MultiFab(ba,nComp,nGrow));
   }
@@ -202,10 +211,10 @@ MFTower::CCtoECgrad(PArray<MFTower>& mfte,
     //    f-f: COI
     //    c-f: Parallel interp of coarse data to plane parallel to c-f, then perp interp to fine cc in grow
     //   phys: Dirichlet data at wall extrapolated to fine cc in grow
-    // 
+    //
     int numLevs_tmp = mftc.NumLevels();
     const Layout& theLayout = mftc.GetLayout();
-    for (int d=0; d<BL_SPACEDIM; ++d) {            
+    for (int d=0; d<BL_SPACEDIM; ++d) {
         if (numLevs<0) numLevs_tmp = std::min(numLevs_tmp,mfte[d].NumLevels());
         BL_ASSERT(theLayout.IsCompatible(mfte[d]));
     }
@@ -221,8 +230,8 @@ MFTower::CCtoECgrad(PArray<MFTower>& mfte,
         for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
             const FArrayBox& cfab = mfc[mfi];
             const Box& vcbox = mfi.validbox();
-            
-            for (int d=0; d<BL_SPACEDIM; ++d) {            
+
+            for (int d=0; d<BL_SPACEDIM; ++d) {
                 FArrayBox& efab = mfte[d][lev][mfi];
                 BL_ASSERT(dComp+nComp<=efab.nComp());
                 efab.setVal(0);
@@ -251,10 +260,10 @@ MFTower::CCtoECavg(PArray<MFTower>& mfte,
     //    f-f: COI
     //    c-f: Parallel interp of coarse data to plane parallel to c-f, then perp interp to fine cc in grow
     //   phys: Dirichlet data at wall extrapolated to fine cc in grow
-    // 
+    //
     int numLevs_tmp = mftc.NumLevels();
     const Layout& theLayout = mftc.GetLayout();
-    for (int d=0; d<BL_SPACEDIM; ++d) {            
+    for (int d=0; d<BL_SPACEDIM; ++d) {
         if (numLevs<0) numLevs_tmp = std::min(numLevs_tmp,mfte[d].NumLevels());
         BL_ASSERT(theLayout.IsCompatible(mfte[d]));
     }
@@ -268,8 +277,8 @@ MFTower::CCtoECavg(PArray<MFTower>& mfte,
         for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
             const FArrayBox& cfab = mfc[mfi];
             const Box& vcbox = mfi.validbox();
-            
-            for (int d=0; d<BL_SPACEDIM; ++d) {            
+
+            for (int d=0; d<BL_SPACEDIM; ++d) {
                 FArrayBox& efab = mfte[d][lev][mfi];
                 BL_ASSERT(dComp<efab.nComp());
                 efab.setVal(0);
@@ -300,7 +309,7 @@ MFTower::ECtoCCdiv(MFTower&               mftc,
     const Layout& theLayout = mftc.GetLayout();
     BL_ASSERT(theLayout.NumLevels()>=numLevs);
     BL_ASSERT(mftc.NumLevels()>=numLevs);
-    for (int d=0; d<BL_SPACEDIM; ++d) {            
+    for (int d=0; d<BL_SPACEDIM; ++d) {
         BL_ASSERT(theLayout.IsCompatible(mfte[d]));
         BL_ASSERT(mfte[d].NumLevels()>=numLevs);
     }
@@ -318,8 +327,8 @@ MFTower::ECtoCCdiv(MFTower&               mftc,
             const Box& vcbox = mfi.validbox();
 
             cfab.setVal(0);
-            
-            for (int d=0; d<BL_SPACEDIM; ++d) {            
+
+            for (int d=0; d<BL_SPACEDIM; ++d) {
                 const FArrayBox& efab = mfte[d][lev][mfi];
                 const FArrayBox& area = theLayout.Area(lev,d)[mfi];
                 BL_ASSERT(sComp+nComp<=efab.nComp());
@@ -346,7 +355,7 @@ MFTower::AverageDown(MFTower& mft,
     BL_ASSERT(mft.NumLevels()>=numLevs);
 
     int dir = -1;
-    for (int d=0; d<BL_SPACEDIM; ++d) {            
+    for (int d=0; d<BL_SPACEDIM; ++d) {
         if (mft.ixType() == EC[d]) {
             dir = d;
         }
@@ -393,11 +402,11 @@ MFTFillPatch::MFTFillPatch(Layout& _layout)
 
 /*
      BuildInterpCoefs:
-     
+
      This routine returns the Lagrange interpolating coefficients for a
      polynomial through N points, evaluated at xInt=-1 (see Numerical Recipes,
      v2, p102, e.g.):
-     
+
              (x-x2)(x-x3)...(x-xN)              (x-x1)(x-x2)...(x-x(N-1))
      P(x) = ----------------------- y1  + ... + ------------------------  yN
             (x1-x2)(x1-x3)...(x1-xN)            (x1-x2)(x1-x3)...(x1-xN)
@@ -451,7 +460,7 @@ MFTFillPatch::BuildCFParallelInterpStencil()
     for (int lev=1; lev<nLevs; ++lev)
     {
         const Geometry& gl = layout.GeomArray()[lev];
-        const IntVect& refRatio = layout.RefRatio()[lev-1]; 
+        const IntVect& refRatio = layout.RefRatio()[lev-1];
         Array<IVSMap>& parInterpLev = parallelInterpStencil[lev];
         parInterpLev.resize(BL_SPACEDIM);
         for (MFIter mfi(nodes[lev]); mfi.isValid(); ++mfi)
@@ -466,20 +475,20 @@ MFTFillPatch::BuildCFParallelInterpStencil()
                         dtan.push_back(d0);
                     }
                 }
-                
+
                 Box gdbox = Box(mfi.validbox()).grow(d,1) & gl.Domain();
                 std::vector< std::pair<int,Box> > isects = bndryCells[lev].intersections(gdbox);
                 for (int i=0; i<isects.size(); ++i) {
                     const Box& bndrySect = isects[i].second;
                     for (IntVect iv=bndrySect.smallEnd(), End=bndrySect.bigEnd(); iv<=End; bndrySect.next(iv)) {
-                        
+
                         Node nC = nodeFab(iv,0);
                         BL_ASSERT(cgbox.contains(nC.iv) && nC.type==Node::VALID);
                         std::map<int,Real> x;
-                        
+
                         Stencil& stencil = parInterpLevDir[iv];
                         stencil[nC] = 1;
-                        
+
                         for (int d0=0; d0<dtan.size(); ++d0) {
                             int itan = dtan[d0];
                             Stencil der, der2;
@@ -491,10 +500,10 @@ MFTFillPatch::BuildCFParallelInterpStencil()
                             BL_ASSERT(crseNodes[lev][mfi].box().contains(nC.iv+ivm[itan]));
                             const Node& nR = crseNodes[lev][mfi](nC.iv+ivp[itan],0);
                             const Node& nL = crseNodes[lev][mfi](nC.iv+ivm[itan],0);
-                            
+
                             bool Rvalid = nR.type==Node::VALID;
                             bool Lvalid = nL.type==Node::VALID;
-                            
+
                             if (Rvalid && Lvalid) {
                                 // Centered full
                                 der[nL]  = -0.5;  der[nR] = +0.5;
@@ -533,12 +542,12 @@ MFTFillPatch::BuildCFParallelInterpStencil()
                             const Node& nmm = crseNodes[lev][mfi](nC.iv+ivm[dtan[0]]+ivm[dtan[1]],0);
                             const Node& npm = crseNodes[lev][mfi](nC.iv+ivp[dtan[0]]+ivm[dtan[1]],0);
                             const Node& nmp = crseNodes[lev][mfi](nC.iv+ivm[dtan[0]]+ivp[dtan[1]],0);
-                        
+
                             bool PPvalid = npp.type==Node::VALID;
                             bool MMvalid = nmm.type==Node::VALID;
                             bool PMvalid = npm.type==Node::VALID;
                             bool MPvalid = nmp.type==Node::VALID;
-                        
+
                             if (PPvalid && MMvalid && PMvalid && MPvalid) {
                                 Stencil crossterm;
                                 crossterm[npp] = +0.25;
@@ -579,7 +588,7 @@ operator==(const MFTFillPatch::MyHash& lhs, const MFTFillPatch::MyHash& rhs)
     return true;
 }
 
-bool 
+bool
 operator!=(const MFTFillPatch::MyHash& lhs, const MFTFillPatch::MyHash& rhs)
 {
     return !operator==(lhs,rhs);
@@ -641,7 +650,7 @@ MFTFillPatch::BuildStencil(const BCRec& bc,
                 Array<Box> myBndry(2);
                 myBndry[0] = BoxLib::adjCellLo(vbox,d);
                 myBndry[1] = BoxLib::adjCellHi(vbox,d);
-                
+
                 for (int hilo=0; hilo<2; ++hilo)
                 {
                     Box povlp = myBndry[hilo] & bndry[hilo][d];
@@ -671,7 +680,7 @@ MFTFillPatch::BuildStencil(const BCRec& bc,
                         int sgn = (hilo==0 ? +1  : -1); // Direction of interp stencil (inward)
                         for (IntVect iv=povlp.smallEnd(), End=povlp.bigEnd(); iv<=End; povlp.next(iv)) {
                             Stencil& stencil = perpInterpLevDir[iv];
-                            
+
                             int icnt = 0;
                             if (bc_flag == EXT_DIR) {
                                 Node n = fn(iv,0); // This will have been an invalid node until now
@@ -699,7 +708,7 @@ MFTFillPatch::BuildStencil(const BCRec& bc,
                         } else {
                             sba = BoxLib::intersect(sba,dbox);
                         }
-                        
+
                         // Now, with coefs create stencil entries
                         const IVSMap& parStencil = parallelInterpStencil[lev][d];
                         for (int j=0; j<sba.size(); ++j) {
@@ -773,8 +782,8 @@ MFTFillPatch::DoCoarseFineParallelInterp(MFTower& mft,
                 for (int i=0; i<isects.size(); ++i) {
                     const Box& bndrySect = isects[i].second;
                     for (IntVect iv=bndrySect.smallEnd(), End=bndrySect.bigEnd(); iv<=End; bndrySect.next(iv)) {
-                        
-                        
+
+
                         IVScit it=parInterp.find(iv);
                         if (it!=parInterp.end()) {
                             const Stencil& s = it->second;
@@ -839,7 +848,7 @@ MFTFillPatch::FillGrowCells(MFTower& mft,
         BoxArray bnd = Layout::GetBndryCells(gridArray[lev],IntVect::TheUnitVector(),gl); // Note: layout Bndrycells excluded phys
 
         for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
-            
+
             FArrayBox* crseFab;
             if (lev>0) {
                 crseFab = &(crseMF[mfi]);
@@ -847,7 +856,7 @@ MFTFillPatch::FillGrowCells(MFTower& mft,
             FArrayBox& fineFab = mf[mfi];
 
             // Fill grow cells, but only the ones for which we have a stencil
-            for (int d=0; d<BL_SPACEDIM; ++d) {                
+            for (int d=0; d<BL_SPACEDIM; ++d) {
                 const IVSMap& perpInterpLevDir = perpInterpLev[d];
                 Box boxdg = Box(mfi.validbox()).grow(d,1);
 
@@ -894,7 +903,7 @@ MFTFillPatch::FillGrowCellsSimple(MFTower& mft,
     // physical boundaries (and that these values are to be applied at the cell walls).
     //
     // The simple version effectively does the full stuff, but with a first order interpolant
-    // both parallel and perpendicular....ie, piecewise constant.  Since this is trivial to 
+    // both parallel and perpendicular....ie, piecewise constant.  Since this is trivial to
     // construct, we do not bother with the heavy guns
     if (numLevs<0) numLevs=nLevs;
     BL_ASSERT(layout.IsCompatible(mft));
@@ -922,15 +931,15 @@ MFTFillPatch::FillGrowCellsSimple(MFTower& mft,
         BoxArray bnd = Layout::GetBndryCells(gridArray[lev],IntVect::TheUnitVector(),gl); // Note: layout Bndrycells excluded phys
         const Layout::MultiNodeFab& nodesLev = nodes[lev];
 
-        
+
         if (lev>0) {
-            for (MFIter mfi(mf); mfi.isValid(); ++mfi) {            
+            for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
                 FArrayBox& crseFab = crseMF[mfi];
                 FArrayBox& fineFab = mf[mfi];
                 const Layout::NodeFab& nodesFab = nodesLev[mfi];
-                
+
                 // fill c-f grow cells (physbc values already assumed to be in place
-                for (int d=0; d<BL_SPACEDIM; ++d) {                
+                for (int d=0; d<BL_SPACEDIM; ++d) {
                     Box boxdg = Box(mfi.validbox()).grow(d,1)  &  gl.Domain();
                     std::vector< std::pair<int,Box> > isects = bnd.intersections(boxdg);
                     for (int i=0; i<isects.size(); ++i) {
@@ -954,7 +963,7 @@ MFTFillPatch::FillGrowCellsSimple(MFTower& mft,
     }
 }
 
-void 
+void
 MFTower::SetVal(Real     val,
 		int      sComp,
 		int      nComp,
@@ -1005,7 +1014,7 @@ MFTower::WriteSet(const std::string&          fileName,
   for (int i=1; i<mfta.size(); ++i) {
     BL_ASSERT(mfta[i]->IsCompatible(mft));
   }
-  
+
   const Layout& layout = mft.GetLayout();
   const Array<Geometry>& geomArray = layout.GeomArray();
   const Array<IntVect>& refRatio = layout.RefRatio();
@@ -1029,13 +1038,13 @@ MFTower::WriteSet(const std::string&          fileName,
     }
     probDomain[i] = geomArray[i].Domain();
   }
-  
+
   int coordSys = geomArray[0].IsCartesian();
   bool plt_verbose = false;
   bool isCartGrid = false;
   Real vfeps = 1.e-12;
   Array<int> levelSteps(num_levels,0);
-  
+
   Array<Array<MultiFab*> > data(mfta.size(),Array<MultiFab*>(num_levels));
   for (int i=0; i<mfta.size(); ++i) {
     for (int lev=0; lev<num_levels; ++lev) {
@@ -1046,4 +1055,3 @@ MFTower::WriteSet(const std::string&          fileName,
 		dxLevel,coordSys,fileName,varnames,plt_verbose,isCartGrid,&vfeps,levelSteps.dataPtr());
 
 }
-

@@ -1,12 +1,14 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
 
   Implementation of different limiters uses a few common rules:
   1. Dirichlet boundary data are used to update limiter bounds.
@@ -14,7 +16,7 @@
      of first-order scheme is reduce not more than twice. This
      step requires to specify a face-based flux field.
   3. At the moment, we require the input field and boundary data
-     to have valid values in ghost positions. Exception, is the 
+     to have valid values in ghost positions. Exception, is the
      limiter for DG fields.
 */
 
@@ -80,7 +82,7 @@ LimiterCellDG::ApplyLimiterDG(const AmanziMesh::Entity_ID_List& ids,
 
 
 /* *******************************************************************
-* The scalar limiter for modal DG schemes. 
+* The scalar limiter for modal DG schemes.
 ******************************************************************* */
 void
 LimiterCellDG::LimiterScalarDG_(const WhetStone::DG_Modal& dg,
@@ -149,7 +151,7 @@ LimiterCellDG::LimiterScalarDG_(const WhetStone::DG_Modal& dg,
 
 
 /* *******************************************************************
-* The hierarchical limiter for modal DG schemes. 
+* The hierarchical limiter for modal DG schemes.
 ******************************************************************* */
 void
 LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,

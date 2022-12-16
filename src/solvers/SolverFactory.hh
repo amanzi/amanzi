@@ -1,14 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
 //! A factory for creating nonlinear solvers.
-
 /*!
 
 Nonlinear solvers are used within implicit time integration schemes to drive
@@ -30,7 +29,7 @@ time.
       - `"nka_ls_ats`" See `Solver: NKA with Line Search, ATS`_
       - `"nka_bt_ats`" See `Solver: NKA with backtracking, ATS`_
       - `"nox`" See `Solver: NOX`_
-    
+
     * `"_solver_type_ parameters`" ``[_solver_type_-spec]`` A sublist containing
       parameters specific to the type.
 
@@ -44,7 +43,7 @@ time.
     `"nox`" hasn't been used extensively, it may be quite useful.
 
 
-      
+
 */
 
 #ifndef AMANZI_SOLVER_FACTORY_HH_

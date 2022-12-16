@@ -1,14 +1,16 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 // PDE_DiffusionFactory constructs objects which implement the interface for a PDE_Diffusion.
 
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
-  provided in the top-level COPYRIGHT file.
-
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  This documentation is for the entire Diffusion concept, which is maintained 
+  This documentation is for the entire Diffusion concept, which is maintained
   here because the input spec for Diffusion objects is defined/used here.
 */
 
@@ -30,8 +32,8 @@
 .. math::
   \nabla \cdot k \nabla u
 
-with a variety of discretizations. Note also, for reasons that are one part historical 
-and potentially not that valid, this also supports and implementation with an advective 
+with a variety of discretizations. Note also, for reasons that are one part historical
+and potentially not that valid, this also supports and implementation with an advective
 source, i.e.:
 
 .. math::
@@ -62,8 +64,8 @@ The input spec for a diffusion operator consists of:
 
 * `"gravity`" ``[bool]`` **false** specifies if the gravitational flow term is included
 
-* `"Newton correction`" ``[string]`` specifies a model for non-physical terms 
-  that must be added to the matrix. These terms represent Jacobian and are needed 
+* `"Newton correction`" ``[string]`` specifies a model for non-physical terms
+  that must be added to the matrix. These terms represent Jacobian and are needed
   for the preconditioner. Available options are `"true Jacobian`" and `"approximate Jacobian`".
   The FV scheme accepts only the first options. The other schemes accept only the second option.
 

@@ -1,18 +1,20 @@
 /*
-  Mesh Extracted
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov
+  Authors: Konstantin Lipnikov
+*/
 
-  We assume that the parent mesh is a 3D mesh and the extracted mesh 
+/*
+  Mesh Extracted
+
+  We assume that the parent mesh is a 3D mesh and the extracted mesh
   lives on a 2D non-manifold. The extracted mesh has 3D geometry.
 
   Faces and edges are geometrycally identical in the extracted mesh
-  and have same ids, but they parent ids are different. 
+  and have same ids, but they parent ids are different.
 */
 
 #ifndef AMANZI_MESH_EXTRACTED_MANIFOLD_HH_

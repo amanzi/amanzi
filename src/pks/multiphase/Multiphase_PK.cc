@@ -1,13 +1,15 @@
 /*
-  MultiPhase PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Quan Bui (mquanbui@math.umd.edu)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  MultiPhase PK
 
   Multiphase multi-component flow. We assume that one component (water)
   is always in liquid form, i,e does not evaporate. This allows us to
@@ -850,9 +852,9 @@ Multiphase_PK::InitializeFieldFromField_(const std::string& field0,
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Performs one time step from time t_old to time t_new either for
-* steady-state or transient simulation. If reinit=true, enforce 
+* steady-state or transient simulation. If reinit=true, enforce
 * p-lambda constraints.
 ******************************************************************* */
 bool
@@ -1002,7 +1004,7 @@ Multiphase_PK::ModifyCorrection(double h,
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Parse system structure
 ******************************************************************* */
 int
@@ -1098,7 +1100,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Populate boundary conditions for various bc types
 ******************************************************************* */
 Teuchos::ParameterList
@@ -1116,7 +1118,7 @@ Multiphase_PK::MyRequire_(const Key& key, const std::string& owner)
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Tweak evaluators.
 ******************************************************************* */
 void

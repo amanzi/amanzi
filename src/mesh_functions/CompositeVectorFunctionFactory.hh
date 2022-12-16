@@ -1,13 +1,13 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
 */
-//! Mesh Functions, evaluate a function on a mesh and stick the result in a vector.
 
+//! Mesh Functions, evaluate a function on a mesh and stick the result in a vector.
 /*!
 
 CompositeVectorFunctions are ways of evaluating a piecewise function on a
@@ -22,25 +22,37 @@ domain (or boundary of the domain in the case of BCs).
 
 Each entry in that list is a:
 
-``[composite-vector-function-spec]``
+.. _composite-vector-function-spec:
+.. admonition:: composite-vector-function-spec
 
-ONE OF:
-* `"region`" ``[string]`` Region on which this function is evaluated.
-OR:
-* `"regions`" ``[Array(string)]`` List of regions on which this function is evaluated.
-END
+   ONE OF
 
-ONE OF:
-* `"component`" ``[string]`` Mesh component to evaluate this on.  This is one of "cell", "face", "node", "edge",
-  or "boundary_face". The last two may require additional conditions, such as a proper mesh initialization.
-  The mask "*" could be used in place of the component name.
-OR:
-* `"components`" ``[Array(string)]`` Mesh components to evaluate this on.  This is some collection of "cell", "face", 
-  "node", "edge", and/or "boundary_face". The last two may require additional conditions, such as a proper mesh 
-  initialization.  The array with the single entry "*" could be used to initialize all existing components.
-END
+   * `"region`" ``[string]`` Region on which this function is evaluated.
 
-* `"function`" ``[function-typedsublistdash-spec]`` The spec to provide the actual algebraic function.
+   OR
+
+   * `"regions`" ``[Array(string)]`` List of regions on which this function is evaluated.
+
+   END
+
+   ONE OF
+
+   * `"component`" ``[string]`` Mesh component to evaluate this on.  This is
+     one of "cell", "face", "node", "edge", or "boundary_face". The last two
+     may require additional conditions, such as a proper mesh initialization.
+     The mask "*" could be used in place of the component name.
+
+   OR
+
+   * `"components`" ``[Array(string)]`` Mesh components to evaluate this on.
+     This is some collection of "cell", "face", "node", "edge", and/or
+     "boundary_face". The last two may require additional conditions, such as a
+     proper mesh initialization.  The array with the single entry "*" could be
+     used to initialize all existing components.
+
+   END
+
+   * `"function`" ``[function-typedsublist-spec]`` The spec to provide the actual algebraic function.
 
  */
 

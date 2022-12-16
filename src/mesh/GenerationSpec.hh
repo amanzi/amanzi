@@ -1,12 +1,20 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 /**
  * @file   GenerationSpec.hh
  * @author William A. Perkins
  * @date Wed Sep 28 08:25:52 2011
- * 
+ *
  * @brief  Declaration of the GenerationSpec class
- * 
- * 
+ *
+ *
  */
 
 #ifndef __H_GenerationSpec
@@ -31,8 +39,8 @@ namespace AmanziMesh {
  * The sole purpose of this class is to encapsulate the input
  * specifications for a generated unstructured mesh.  This should be
  * the only place in Amanzi where the parameter list for the
- * generation of an unstructured mesh is parsed.  
- * 
+ * generation of an unstructured mesh is parsed.
+ *
  */
 class GenerationSpec {
  public:

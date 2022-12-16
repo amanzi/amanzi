@@ -1,29 +1,31 @@
 /*
-  MultiPhase PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  MultiPhase PK
 
   Support of boundary conditions. We may have multiple cases and the list
   below will grow in time. Let EQN(u, v) = 0 be an equation for u involving
   another primary unknown v and secondary fields w:
-  
+
         \Sum_i div[ fi(u,v) \grad gi(u,v) ] = 0
 
   1. Total flux. Only one operator in this equation may impose this condition.
   The other operators must use zero flux boundary conditions.
- 
-  2. Dirichlet for u and v. We have to compute essential BCs for gi(u, v) using 
+
+  2. Dirichlet for u and v. We have to compute essential BCs for gi(u, v) using
   the dependency tree and copy data to corresponding boundary operators.
   Currently this generality is not supported, since it is not clear how to handle
   provided BCs for secondary fields. Hence, we assume that either gi(u,v) = u or
   gi(u,v) = v.
 
-  3. Dirichlet for u and flux for v. We assume that fi \grad gi = flux u. 
+  3. Dirichlet for u and flux for v. We assume that fi \grad gi = flux u.
 */
 
 // TPLs
@@ -39,7 +41,7 @@
 namespace Amanzi {
 namespace Multiphase {
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Populate boundary conditions for various bc types
 ******************************************************************* */
 void
@@ -161,7 +163,7 @@ Multiphase_PK::PopulateBCs(int icomp, bool flag)
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Populate boundary conditions for derived fields
 ******************************************************************* */
 void
@@ -178,7 +180,7 @@ Multiphase_PK::CheckCompatibilityBCs(const Key& keyr, const Key& gname)
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Populate boundary conditions for derived fields
 ******************************************************************* */
 void

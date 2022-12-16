@@ -1,14 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella, others
 */
 
 //! Interface for a Mesh object.
-
 /*!
 
 Use the associated mesh factory to create an instance of a derived
@@ -17,7 +16,7 @@ class based on a particular mesh framework (like MSTK, MOAB, etc.)
 Assumptions:
 
 Cells in a 2D mesh must be oriented counter clockwise. This is not
-applied to meshes on manifolds.   
+applied to meshes on manifolds.
 
 Design documentation:
 

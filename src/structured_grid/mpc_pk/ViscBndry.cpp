@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <winstd.H>
 
 #include <LO_BCTYPES.H>
@@ -42,7 +51,7 @@ ViscBndry::setBndryConds (const BCRec&   bc,
                     bloc[face]        = 0;
                 }
                 else if (p_bc == FOEXTRAP      ||
-                         p_bc == HOEXTRAP      || 
+                         p_bc == HOEXTRAP      ||
                          p_bc == REFLECT_EVEN  ||
 			 p_bc == SEEPAGE)
                 {
@@ -98,14 +107,14 @@ ViscBndry::setScalarValues (const BCRec&    bc,
     setBndryConds (bc, ratio, n);
   }
 
-    for (OrientationIter fi; fi; ++fi) 
-    {      
+    for (OrientationIter fi; fi; ++fi)
+    {
       int face = fi();
       for (FabSetIter fsi(bndry[face]); fsi.isValid(); ++fsi)
-      {	      
+      {
 	const Box& bx = fsi.validbox();
 	int idx = fsi.index();
-	bndry[face][fsi].copy((*mf)[idx],bx,0,bx,0,1);	    
+	bndry[face][fsi].copy((*mf)[idx],bx,0,bx,0,1);
       }
     }
 }
@@ -118,12 +127,12 @@ ViscBndry::setdeltaSValues (const BCRec& bc,
     setBndryConds (bc, ratio, n);
   }
 
-    for (OrientationIter fi; fi; ++fi) 
+    for (OrientationIter fi; fi; ++fi)
     {
       int face = fi();
       for (FabSetIter fsi(bndry[face]); fsi.isValid(); ++fsi)
-      {	      
+      {
 	bndry[face][fsi].setVal(0.);
-      }      
+      }
     }
 }

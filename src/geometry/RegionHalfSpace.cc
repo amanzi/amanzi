@@ -1,13 +1,16 @@
 /*
-  A halfspace (infinite) region in space, defined by a plane.
-
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella
-  Ethan Coon (ecoon@lanl.gov)
+           Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  A halfspace (infinite) region in space, defined by a plane.
+
 */
 
 #include <cmath>

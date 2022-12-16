@@ -1,12 +1,15 @@
 /*
-  Input Converter
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Input Converter
+
 */
 
 #ifndef AMANZI_INPUT_CONVERTER_UNSTRUCTURED_HH_
@@ -35,6 +38,7 @@ class InputConverterU : public InputConverter {
   explicit InputConverterU(const std::string& input_filename)
     : InputConverter(input_filename),
       multiphase_(false),
+      gravity_on_(true),
       const_gravity_(GRAVITY_MAGNITUDE),
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
       flow_single_phase_(false),
@@ -57,6 +61,9 @@ class InputConverterU : public InputConverter {
                            const std::string& output_prefix)
     : InputConverter(input_filename, input_doc),
       multiphase_(false),
+      gravity_on_(true),
+      const_gravity_(GRAVITY_MAGNITUDE),
+      const_atm_pressure_(ATMOSPHERIC_PRESSURE),
       flow_single_phase_(false),
       compressibility_(false),
       mesh_rectangular_(false),
@@ -87,6 +94,7 @@ class InputConverterU : public InputConverter {
   void ParseModelDescription_();
   void ParseFractureNetwork_();
   void ModifyDefaultPhysicalConstants_();
+  void ParseGlobalNumericalControls_();
 
   Teuchos::ParameterList TranslateVerbosity_();
   Teuchos::ParameterList TranslateUnits_();
@@ -274,6 +282,7 @@ class InputConverterU : public InputConverter {
   std::string eos_lookup_table_, eos_model_;
 
   // global physical constants prefixed with "const"
+  bool gravity_on_;
   double const_gravity_;
   double const_atm_pressure_;
 

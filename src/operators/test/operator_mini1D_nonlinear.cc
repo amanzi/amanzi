@@ -1,12 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
 
   Nonlinear diffusion equation.
 */
@@ -223,7 +225,7 @@ TEST(OPERATOR_MINI_DIFFUSION_NONLINEAR)
 
 /* *****************************************************************
 * This test nonlinear transient diffusion solver in 1D:
-* u(t, x) = t x^2, k(u) = 1 + u^2, c(u) = 1 + u^2. 
+* u(t, x) = t x^2, k(u) = 1 + u^2, c(u) = 1 + u^2.
 * **************************************************************** */
 void
 MiniDiffusion1D_Transient(int type_l, int type_r)

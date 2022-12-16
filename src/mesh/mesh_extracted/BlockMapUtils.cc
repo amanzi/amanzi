@@ -1,12 +1,15 @@
 /*
-  Mesh
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  Mesh
+
 */
 
 // TPLs
@@ -24,7 +27,7 @@ namespace AmanziMesh {
 *  Convert discontinuous map to continuous map
 *
 *  Input:
-*  mesh - pointer to Amanzi mesh 
+*  mesh - pointer to Amanzi mesh
 *  parent_maps - pair of continuous master and ghosted maps
 *  subset_maps - pair of discontinuous master and ghosted maps
 *                this must be a subset of parent_maps

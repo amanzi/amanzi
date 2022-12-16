@@ -1,13 +1,15 @@
 /*
-  Alquimia
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Jeffrey Johnson
            Sergi Molins <smolins@lbl.gov>
+*/
+
+/*
+  Alquimia
 
   This implements the Alquimia chemistry engine.
 */
@@ -395,7 +397,7 @@ void ChemistryEngine::AddMineralConstraint(const std::string& condition_name,
   {
     Errors::Message msg;
     msg << "ChemistryEngine::AddMineralConstraint: no condition named '" << condition_name << "'.";
-    Exceptions::amanzi_throw(msg); 
+    Exceptions::amanzi_throw(msg);
   }
 }
 Mineral constraints will be discontinued in Alquimia -- see Sergi */
@@ -432,7 +434,7 @@ ChemistryEngine::AddAqueousConstraint(const std::string& condition_name,
       {
         Errors::Message msg;
         msg << "ChemistryEngine::AddAqueousConstraint: the condition '" << condition_name << "' does not have a mineral constraint for '" << associated_species << "'.";
-        Exceptions::amanzi_throw(msg); 
+        Exceptions::amanzi_throw(msg);
       }
     }
 
@@ -542,10 +544,10 @@ ChemistryEngine::EnforceCondition(const std::string& condition_name,
   // figure out if any of the processes threw an error, if so all processes will re-throw
   int recv = 0;
   mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
-  if (recv != 0) 
+  if (recv != 0)
   {
     msg << "Error in enforcement of chemical condition '" << condition_name << "'";
-    Exceptions::amanzi_throw(msg); 
+    Exceptions::amanzi_throw(msg);
   }
 #endif
 }

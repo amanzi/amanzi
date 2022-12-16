@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -91,7 +100,7 @@ main (int   argc,
   BoxArray ba(geomArray[level].Domain());
   int maxSize=ba[0].length(0);  pp.query("maxSize",maxSize);
   ba.maxSize(maxSize);
-  
+
   iMultiFab matID(ba,1,0);
   rockManager.GetMaterialID(level,matID,nGrow,ignore_mixed);
 

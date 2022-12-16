@@ -1,12 +1,15 @@
 /*
-  This is the multiphase component of the Amanzi code. 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  This is the multiphase component of the Amanzi code.
+
 */
 
 #include <cmath>
@@ -19,7 +22,7 @@ namespace Amanzi {
 namespace Multiphase {
 
 /* ******************************************************************
-* Setup fundamental parameters for this model.                                            
+* Setup fundamental parameters for this model.
 ****************************************************************** */
 WRMmp_Corey::WRMmp_Corey(Teuchos::ParameterList& plist)
 {
@@ -30,7 +33,7 @@ WRMmp_Corey::WRMmp_Corey(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* Relative permeability formula.                                          
+* Relative permeability formula.
 ****************************************************************** */
 double
 WRMmp_Corey::k_relative(double sl, int phase)
@@ -47,7 +50,7 @@ WRMmp_Corey::k_relative(double sl, int phase)
 
 
 /* ******************************************************************
-* Derivative of relative permeability wrt liquid saturation. 
+* Derivative of relative permeability wrt liquid saturation.
 ****************************************************************** */
 double
 WRMmp_Corey::dKdS(double sl, int phase)

@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella, others
@@ -490,14 +490,14 @@ Poly_Area(int n, double (*xyz)[3])
   if (n < 3) return 0;
 
   /* This is based on Green's Theorem in the Plane - Works for all
-     3D polygons 
-       
+     3D polygons
+
      Area = 0.5*Sum_over_i(a_i);
      a_i = x(i)*y(i+1)-x(i+1)*y(i);
-       
+
      However, if the coordinates are very large, then a*b-c*d can
      result in roundoff error. To improve accuracy, we will make
-     all coordinates relative to x0,y0. But what if xi is very close 
+     all coordinates relative to x0,y0. But what if xi is very close
      to x0? Then xi-x0 will also generate high error. Which is better?
   */
 
@@ -1067,7 +1067,7 @@ Mesh_MSTK::deform_hessian(const int nodeid, double const* const nodexyz, double 
      average of all the coordinates w.r.t. which we will take
      derivatives */
   /* Also, if we are dealing with very small numbers, eps2_sqr
-     can be below machine precision. To guard against this 
+     can be below machine precision. To guard against this
      lets multiply the initial estimate of eps2 by 100 and if
      it is still less than 100*sqrt_macheps, reject the estimate
      and just use 10*sqrt_macheps */
@@ -1129,7 +1129,7 @@ Mesh_MSTK::deform_hessian(const int nodeid, double const* const nodexyz, double 
        average of all the coordinates w.r.t. which we will take
        derivatives */
     /* Also, if we are dealing with very small numbers, eps2_sqr
-       can be below machine precision. To guard against this 
+       can be below machine precision. To guard against this
        lets multiply the initial estimate of eps2 by 100 and if
        it is still less than 100*sqrt_macheps, reject the estimate
        and just use 10*sqrt_macheps */

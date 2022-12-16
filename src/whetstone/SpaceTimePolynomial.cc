@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Operations with space-time polynomials of special structure.
 */
@@ -140,7 +142,7 @@ SpaceTimePolynomial::operator*=(double val)
 
 
 /* ******************************************************************
-* Calculate polynomial value at a given point. 
+* Calculate polynomial value at a given point.
 ****************************************************************** */
 double
 SpaceTimePolynomial::Value(const AmanziGeometry::Point& xp, double t) const

@@ -1,17 +1,19 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
-  provided in the top-level COPYRIGHT file.
-
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Serendipity CrouzeixRaviart-type element: degrees of freedom are 
-  moments on faces and inside cell. The number of later is 
-  reduced significantly for polytopal cells. 
+  Serendipity CrouzeixRaviart-type element: degrees of freedom are
+  moments on faces and inside cell. The number of later is
+  reduced significantly for polytopal cells.
 */
 
 #include <cmath>
@@ -52,8 +54,8 @@ MFD3D_CrouzeixRaviartSerendipity::schema() const
 
 
 /* ******************************************************************
-* High-order consistency condition for the stiffness matrix. 
-* Only the upper triangular part of Ac is calculated. 
+* High-order consistency condition for the stiffness matrix.
+* Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
 int
 MFD3D_CrouzeixRaviartSerendipity::H1consistency(int c,
@@ -160,7 +162,7 @@ MFD3D_CrouzeixRaviartSerendipity::StiffnessMatrix(int c, const Tensor& K, DenseM
 
 
 /* ******************************************************************
-* L2 projector 
+* L2 projector
 ****************************************************************** */
 void
 MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(int c,

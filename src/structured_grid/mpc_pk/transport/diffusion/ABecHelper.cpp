@@ -1,16 +1,25 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <ABecHelper.H>
 #include <LO_F.H>
 #include <ABec_F.H>
 
-void 
+void
 ABecHelper::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
                       MultiFab& in, const BC_Mode& bc_mode,
-                      int src_comp, int dst_comp, int num_comp, int bnd_comp) 
+                      int src_comp, int dst_comp, int num_comp, int bnd_comp)
 {
   compFlux(D_DECL(xflux, yflux, zflux), in, true, bc_mode, src_comp, dst_comp, num_comp, bnd_comp);
 }
-  
-void 
+
+void
 ABecHelper::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
                     MultiFab& in, bool do_ApplyBC, const BC_Mode& bc_mode,
                     int src_comp, int dst_comp, int num_comp, int bnd_comp)
@@ -21,16 +30,16 @@ ABecHelper::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
 
   const int level = 0;
   BL_ASSERT(num_comp==1);
-  
+
   if (do_ApplyBC)
       applyBC(in,src_comp,num_comp,level,bc_mode,bnd_comp);
-  
+
   const MultiFab& a = aCoefficients(level);
-  
+
   D_TERM(const MultiFab& bX = bCoefficients(0,level);,
          const MultiFab& bY = bCoefficients(1,level);,
          const MultiFab& bZ = bCoefficients(2,level););
-  
+
   Real _alpha = get_alpha();
   Real _beta = get_beta();
 
@@ -46,34 +55,34 @@ ABecHelper::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
 	   const Box& zbx   = inmfi.nodaltilebox(2););
 
     FArrayBox& infab = in[inmfi];
-    
+
     D_TERM(const FArrayBox& bxfab = bX[inmfi];,
            const FArrayBox& byfab = bY[inmfi];,
            const FArrayBox& bzfab = bZ[inmfi];);
-    
+
     D_TERM(FArrayBox& xfluxfab = xflux[inmfi];,
            FArrayBox& yfluxfab = yflux[inmfi];,
            FArrayBox& zfluxfab = zflux[inmfi];);
-    
+
     FORT_FLUX(infab.dataPtr(src_comp),
               ARLIM(infab.loVect()), ARLIM(infab.hiVect()),
               &_alpha, &_beta, a[inmfi].dataPtr(alphaComp),
               ARLIM(a[inmfi].loVect()), ARLIM(a[inmfi].hiVect()),
-              bxfab.dataPtr(betaComp), 
+              bxfab.dataPtr(betaComp),
               ARLIM(bxfab.loVect()), ARLIM(bxfab.hiVect()),
 #if (BL_SPACEDIM >= 2)
-              byfab.dataPtr(betaComp), 
+              byfab.dataPtr(betaComp),
               ARLIM(byfab.loVect()), ARLIM(byfab.hiVect()),
 #if (BL_SPACEDIM == 3)
-              bzfab.dataPtr(betaComp), 
+              bzfab.dataPtr(betaComp),
               ARLIM(bzfab.loVect()), ARLIM(bzfab.hiVect()),
 #endif
 #endif
-	      xbx.loVect(), xbx.hiVect(), 
+	      xbx.loVect(), xbx.hiVect(),
 #if (BL_SPACEDIM >= 2)
-	      ybx.loVect(), ybx.hiVect(), 
+	      ybx.loVect(), ybx.hiVect(),
 #if (BL_SPACEDIM == 3)
-	      zbx.loVect(), zbx.hiVect(), 
+	      zbx.loVect(), zbx.hiVect(),
 #endif
 #endif
               &num_comp,
@@ -135,7 +144,7 @@ ABecHelper::residual (MultiFab&       residL,
   int rhsComp = 0;
   int bndryComp = default_bndryComp;
   apply(residL, solnL, level, bc_mode, local, srcComp, destComp, numComp, bndryComp);
-  
+
   const bool tiling = true;
 
 #ifdef _OPENMP
@@ -149,20 +158,20 @@ ABecHelper::residual (MultiFab&       residL,
     // Only single-component solves supported (verified) by this class.
     //
     BL_ASSERT(nc == 1);
-    
+
     const Box& tbx = solnLmfi.tilebox();
-    
+
     BL_ASSERT(gbox[level][solnLmfi.index()] == solnLmfi.validbox());
-    
+
     FArrayBox& residfab = residL[solnLmfi];
     const FArrayBox& rhsfab = rhsL[solnLmfi];
-    
+
     FORT_RESIDL(
-      residfab.dataPtr(destComp), 
+      residfab.dataPtr(destComp),
       ARLIM(residfab.loVect()), ARLIM(residfab.hiVect()),
-      rhsfab.dataPtr(rhsComp), 
+      rhsfab.dataPtr(rhsComp),
       ARLIM(rhsfab.loVect()), ARLIM(rhsfab.hiVect()),
-      residfab.dataPtr(), 
+      residfab.dataPtr(),
       ARLIM(residfab.loVect()), ARLIM(residfab.hiVect()),
       tbx.loVect(), tbx.hiVect(), &nc);
   }
@@ -170,7 +179,7 @@ ABecHelper::residual (MultiFab&       residL,
   MultiFab::Xpay(residL, -1.0, rhsL, 0, 0, residL.nComp(), 0);
 }
 
-void 
+void
 ABecHelper::smooth (MultiFab&       solnL,
                     const MultiFab& rhsL,
                     int             level,
@@ -230,7 +239,7 @@ ABecHelper::norm (int nm, int level, const bool local)
       D_TERM(const FArrayBox& bxfab = bX[amfi];,
 	     const FArrayBox& byfab = bY[amfi];,
 	     const FArrayBox& bzfab = bZ[amfi];);
- 
+
 #if (BL_SPACEDIM==2)
       FORT_NORMA(&tres,
 		 &_alpha, &_beta,
@@ -252,7 +261,7 @@ ABecHelper::norm (int nm, int level, const bool local)
 #endif
       pres = std::max(pres, tres);
     }
-    
+
 #ifdef _OPENMP
 #pragma omp critical(ABec_norm)
 #endif
@@ -266,7 +275,7 @@ ABecHelper::norm (int nm, int level, const bool local)
   return res;
 }
 
-void 
+void
 ABecHelper::Fapply (MultiFab&       out,
                     const MultiFab& in,
                     int             level)
@@ -322,11 +331,11 @@ ABecHelper::Fapply (MultiFab&       out,
                ARLIM(outfab.loVect()),ARLIM(outfab.hiVect()),
                infab.dataPtr(src_comp),
                ARLIM(infab.loVect()), ARLIM(infab.hiVect()),
-               &_alpha, &_beta, afab.dataPtr(alphaComp), 
+               &_alpha, &_beta, afab.dataPtr(alphaComp),
                ARLIM(afab.loVect()), ARLIM(afab.hiVect()),
-               bxfab.dataPtr(betaComp), 
+               bxfab.dataPtr(betaComp),
                ARLIM(bxfab.loVect()), ARLIM(bxfab.hiVect()),
-               byfab.dataPtr(betaComp), 
+               byfab.dataPtr(betaComp),
                ARLIM(byfab.loVect()), ARLIM(byfab.hiVect()),
                tbx.loVect(), tbx.hiVect(), &num_comp,
                h[level]);
@@ -336,13 +345,13 @@ ABecHelper::Fapply (MultiFab&       out,
                ARLIM(outfab.loVect()),ARLIM(outfab.hiVect()),
                infab.dataPtr(src_comp),
                ARLIM(infab.loVect()), ARLIM(infab.hiVect()),
-               &_alpha, &_beta, afab.dataPtr(alphaComp), 
+               &_alpha, &_beta, afab.dataPtr(alphaComp),
                ARLIM(afab.loVect()), ARLIM(afab.hiVect()),
-               bxfab.dataPtr(betaComp), 
+               bxfab.dataPtr(betaComp),
                ARLIM(bxfab.loVect()), ARLIM(bxfab.hiVect()),
-               byfab.dataPtr(betaComp), 
+               byfab.dataPtr(betaComp),
                ARLIM(byfab.loVect()), ARLIM(byfab.hiVect()),
-               bzfab.dataPtr(betaComp), 
+               bzfab.dataPtr(betaComp),
                ARLIM(bzfab.loVect()), ARLIM(bzfab.hiVect()),
                tbx.loVect(), tbx.hiVect(), &num_comp,
                h[level]);
@@ -371,7 +380,7 @@ ABecHelper::Fsmooth (MultiFab&       solnL,
 #if (BL_SPACEDIM > 2)
   const FabSet& f4 = (*undrrelxr[level])[oitr()]; oitr++;
   const FabSet& f5 = (*undrrelxr[level])[oitr()]; oitr++;
-#endif    
+#endif
   const MultiFab& a = aCoefficients(level);
 
   D_TERM(const MultiFab& bX = bCoefficients(0,level);,
@@ -487,7 +496,7 @@ ABecHelper::Fsmooth_jacobi (MultiFab&       solnL,
 #if (BL_SPACEDIM > 2)
   const FabSet& f4 = (*undrrelxr[level])[oitr()]; oitr++;
   const FabSet& f5 = (*undrrelxr[level])[oitr()]; oitr++;
-#endif    
+#endif
   const MultiFab& a = aCoefficients(level);
 
   D_TERM(const MultiFab& bX = bCoefficients(0,level);,
@@ -576,4 +585,3 @@ ABecHelper::Fsmooth_jacobi (MultiFab&       solnL,
 #endif
   }
 }
-

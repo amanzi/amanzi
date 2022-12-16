@@ -1,3 +1,11 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
 
 #include <EventCoord.H>
 #include <iostream>
@@ -12,7 +20,7 @@ CycleEvent::CycleEvent(const Array<int>& _cycles)
     for (int i=0; i<cycles.size(); ++i) {
         cycles[i] = _cycles[i];
     }
-}        
+}
 
 CycleEvent::CycleEvent(const CycleEvent& rhs)
     : start(rhs.start), period(rhs.period), stop(rhs.stop), cycles(rhs.cycles.size()), type(rhs.type)
@@ -29,7 +37,7 @@ TimeEvent::TimeEvent(const Array<Real>& _times)
     for (int i=0; i<times.size(); ++i) {
         times[i] = _times[i];
     }
-}        
+}
 
 TimeEvent::TimeEvent(const TimeEvent& rhs)
     : start(rhs.start), period(rhs.period), stop(rhs.stop), times(rhs.times.size()), type(rhs.type)
@@ -114,7 +122,7 @@ EventCoord::CycleEvent::ThisEventDue(int cycle, int dCycle) const
         {
             return false;
         }
-        
+
         if ( ( ( stop < 0 ) || ( cycle <= stop ) )
              && ( cycle + dCycle >= start) )
         {
@@ -156,7 +164,7 @@ EventCoord::CycleEvent::ThisEventInit(int cycle) const
     if ( (stop > 0  &&  cycle > stop)  ||  (cycle < start) ) {
       return false;
     }
-    
+
     if ( ( ( stop < 0 ) || ( cycle <= stop ) ) && ( cycle >= start) ) {
       return true;
     }
@@ -182,7 +190,7 @@ EventCoord::TimeEvent::ThisEventInit(Real t) const
         {
             return false;
         }
-        
+
         if ( ( ( stop < 0 ) || ( t - teps <= stop ) )
              &&  t + teps >= start )
         {
@@ -224,7 +232,7 @@ EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
         {
             return false;
         }
-        
+
         if ( ( ( stop < 0 ) || ( t + teps <= stop ) )
              &&  t + dt>= start - teps )
         {
@@ -234,7 +242,7 @@ EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
             Real told_overage = t - told_boundary;
 
             // told is near boundary
-            if ( (std::abs(told_overage - period) < teps) 
+            if ( (std::abs(told_overage - period) < teps)
                  || (std::abs(told_overage) < teps) ) {
 
                 if (dt > period) { // this would step over period, cut back
@@ -249,7 +257,7 @@ EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
 
 
             // tnew is near boundary
-            if ( (std::abs(tnew_overage - period) < teps) 
+            if ( (std::abs(tnew_overage - period) < teps)
                  || (std::abs(tnew_overage) < teps) ) {
                 return true;
             }
@@ -373,7 +381,7 @@ EventCoord::InitEvent(Real t, int cycle) const
       events.push_back(name);
     }
   }
-  
+
   for (std::map<std::string,Event*>::const_iterator it=timeEvents.begin(); it!=timeEvents.end(); ++it) {
     const std::string& name = it->first;
     const TimeEvent* event = dynamic_cast<const TimeEvent*>(it->second);
@@ -382,7 +390,7 @@ EventCoord::InitEvent(Real t, int cycle) const
       events.push_back(name);
     }
   }
-  
+
   return events;
 }
 
@@ -429,11 +437,11 @@ std::ostream& operator<< (std::ostream& os, const TimeEvent& rhs)
 std::ostream& operator<< (std::ostream& os, const EventCoord& rhs)
 {
     os << "EventCoord registered events:" << '\n';
-    const std::map<std::string,Event*>& cycleEvents = rhs.CycleEvents();    
+    const std::map<std::string,Event*>& cycleEvents = rhs.CycleEvents();
     for (std::map<std::string,Event*>::const_iterator it=cycleEvents.begin(); it!=cycleEvents.end(); ++it) {
         os << "  " << it->first << " "<< dynamic_cast<const CycleEvent&>(*it->second) << std::endl;
     }
-    const std::map<std::string,Event*>& timeEvents = rhs.TimeEvents();    
+    const std::map<std::string,Event*>& timeEvents = rhs.TimeEvents();
     for (std::map<std::string,Event*>::const_iterator it=timeEvents.begin(); it!=timeEvents.end(); ++it) {
         os << "  " << it->first << " "<< dynamic_cast<const TimeEvent&>(*it->second) << std::endl;
     }

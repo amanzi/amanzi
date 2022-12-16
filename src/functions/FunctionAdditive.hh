@@ -1,15 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! FunctionAdditive: f(x,y) = f1(x,y) + f2(x,y)
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon _at_ lanl.gov)
+  Authors: Ethan Coon (ecoon _at_ lanl.gov)
 */
 
+//! FunctionAdditive: f(x,y) = f1(x,y) + f2(x,y)
 /*!
 
 An additive function simply adds two other function results together.
@@ -17,7 +15,7 @@ An additive function simply adds two other function results together.
 .. math::
   f(x) = f_1(x) + f_2(x)
 
-where :math:`f_1` is defined by the `"function1`" sublist, and 
+where :math:`f_1` is defined by the `"function1`" sublist, and
 :math:`f_2` by the `"function2`" sublist.
 
 .. _function-additive-spec:
