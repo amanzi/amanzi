@@ -19,7 +19,7 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-# include_directories(${MESH_SIMPLE_SOURCE_DIR})
+include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
 # if (ENABLE_MESH_MOAB)
 #   include_directories(${MESH_MSTK_SOURCE_DIR})
@@ -38,13 +38,19 @@ include_directories(${Epetra_INCLUDE_DIRS})
 set(mesh_extracted_inc_files
     BlockMapUtils.hh
     MeshExtractedManifold.hh
-)
+    MeshFrameworkColumn.hh
+    MeshSurfaceCell.hh
+    )
+
+set(mesh_extracted_src_files
+  BlockMapUtils.cc
+  MeshExtractedManifold.cc
+  MeshFrameworkColumn.cc
+  MeshSurfaceCell.cc
+  )
 
 add_amanzi_library(mesh_extracted
-                   SOURCE BlockMapUtils.cc
-                          MeshExtractedManifold.cc
-                          MeshColumn.cc
-                          MeshSurfaceCell.cc
+                   SOURCE ${mesh_extracted_src_files}
                    HEADERS ${mesh_extracted_inc_files}
                    LINK_LIBS mesh geometry ${Epetra_LIBRARIES})
 
@@ -80,18 +86,16 @@ if (BUILD_TESTS)
   add_amanzi_test(mesh_extracted_fracture mesh_extracted_fracture
                   KIND unit
                   SOURCE test/Main.cc test/mesh_extracted_fracture.cc
-                  LINK_LIBS ${mesh_frameworks} mesh_extracted mesh_audit geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
+                  LINK_LIBS ${mesh_frameworks} mesh_extracted geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
   add_amanzi_test(mesh_extracted_fracture_3pe mesh_extracted_fracture NPROCS 3 KIND unit)
 
-  # note: this requires volumetric extraction, which is only supported by MSTK for now...
-  if (ENABLE_MESH_MSTK)
-
-    add_amanzi_test(mesh_surface_flattened mesh_surface_flattened
+  add_amanzi_test(mesh_surface_flattened mesh_surface_flattened
                   KIND unit
                   SOURCE test/Main.cc test/mesh_surface_flattened.cc
                   LINK_LIBS ${mesh_frameworks} mesh_extracted geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+  # note: this requires volumetric extraction, which is only supported by MSTK for now...
+  if (ENABLE_MESH_MSTK)
     # Test: column_mesh
     add_amanzi_test(mesh_extracted_column mesh_extracted_column
                   KIND unit

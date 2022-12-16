@@ -212,6 +212,7 @@ namespace AmanziMesh {
 
 class MeshLogicalFactory {
  public:
+
   enum class LogicalTip_t {
     NONE,     // do nothing
     BOUNDARY, // tip is a boundary, include the face
@@ -219,32 +220,39 @@ class MeshLogicalFactory {
     BRANCH    // tip branches from a junction.  Add the face.
   };
 
-
+  
   MeshLogicalFactory(const Comm_ptr_type& comm,
                      const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm,
-                     bool calculated_volume = true)
-    : comm_(comm), gm_(gm), calculated_volume_(calculated_volume), tracking_centroids_(false)
+                     bool calculated_volume = true) :
+    comm_(comm),
+    gm_(gm),
+    calculated_volume_(calculated_volume),
+    tracking_centroids_(false)    
   {}
 
   // Create, assuming AddSegment, etc have all been called previously.
-  Teuchos::RCP<MeshLogical> Create() const;
+  Teuchos::RCP<MeshLogical>
+  Create() const;
 
   // Create from parameterlist
-  Teuchos::RCP<MeshLogical> Create(Teuchos::ParameterList& plist);
+  Teuchos::RCP<MeshLogical>
+  Create(Teuchos::ParameterList& plist);
 
   //
   // Convenience function to add a segment, mostly for testing
   //
-  void AddSegment(int n_cells,
-                  const AmanziGeometry::Point& begin,
-                  const AmanziGeometry::Point& end,
-                  double face_area,
-                  MeshLogicalFactory::LogicalTip_t first_tip_type,
-                  MeshLogicalFactory::LogicalTip_t last_tip_type,
-                  std::string const& name,
-                  std::vector<Entity_ID>* const cells,
-                  std::vector<Entity_ID>* const faces);
-
+  void
+  AddSegment(
+      int n_cells,
+      const AmanziGeometry::Point& begin,
+      const AmanziGeometry::Point& end,
+      double face_area,
+      MeshLogicalFactory::LogicalTip_t first_tip_type,
+      MeshLogicalFactory::LogicalTip_t last_tip_type,
+      std::string const& name,
+      std::vector<Entity_ID> *const cells,
+      std::vector<Entity_ID> *const faces);
+  
 
   // Add a segment
   //
@@ -252,47 +260,56 @@ class MeshLogicalFactory {
   //
   // Cells and faces are optional return values containing the list of
   // entities in the new segment.
-  void AddSegment(std::vector<AmanziGeometry::Point> const* const cell_centroids,
-                  std::vector<double> const* const cell_volumes,
-                  std::vector<double> const& cell_lengths,
-                  std::vector<double> const& face_areas,
-                  AmanziGeometry::Point const& orientation,
-                  MeshLogicalFactory::LogicalTip_t first_tip_type,
-                  MeshLogicalFactory::LogicalTip_t last_tip_type,
-                  std::string const& name,
-                  std::vector<Entity_ID>* const cells,
-                  std::vector<Entity_ID>* const faces);
+  void
+  AddSegment(
+      std::vector<AmanziGeometry::Point> const * const cell_centroids,
+      std::vector<double> const *const cell_volumes,
+      std::vector<double> const& cell_lengths,
+      std::vector<double> const& face_areas,
+      AmanziGeometry::Point const& orientation,
+      MeshLogicalFactory::LogicalTip_t first_tip_type,
+      MeshLogicalFactory::LogicalTip_t last_tip_type,
+      std::string const& name,
+      std::vector<Entity_ID> *const cells,
+      std::vector<Entity_ID> *const faces);
 
   // Add segment from sublist
-  void AddSegment(Teuchos::ParameterList& sublist);
-
+  void
+  AddSegment(Teuchos::ParameterList& sublist);
+  
   // Reserve a slot for a face (likely to be added via AddFace!)
-  int ReserveFace();
+  int
+  ReserveFace();
   // Manually add a connection, returning the face id.
-  int AddFace(int f,
-              const Entity_ID_List& cells,
-              const std::vector<AmanziGeometry::Point>& bisectors,
-              const std::vector<int>& dirs,
-              double area);
+  int
+  AddFace(int f,
+          const Entity_ID_List& cells,
+          const std::vector<AmanziGeometry::Point>& bisectors,
+          const std::vector<int>& dirs,
+          double area);
 
   // Add a set from a list of entities
-  int AddSet(const std::string& set_name, const std::string& ent, const Entity_ID_List& ents);
-
+  int
+  AddSet(const std::string& set_name,
+         const std::string& ent,
+         const Entity_ID_List& ents);
+  
  protected:
   // Reads a tip type from plist
   MeshLogicalFactory::LogicalTip_t
   GetTipType_(Teuchos::ParameterList& plist, const std::string& pname);
 
   // Reads a point from plist
-  AmanziGeometry::Point GetPoint_(Teuchos::ParameterList& plist, const std::string& pname);
-
+  AmanziGeometry::Point
+  GetPoint_(Teuchos::ParameterList& plist, const std::string& pname);
+  
  protected:
   std::vector<double> cell_volumes_;
   std::vector<double> cell_lengths_;
   std::vector<double> face_areas_;
   std::vector<Entity_ID_List> face_cell_list_;
-  std::vector<std::vector<AmanziGeometry::Point>> face_cell_bisectors_;
-  std::vector<std::vector<int>> face_cell_dirs_;
+  std::vector<std::vector<AmanziGeometry::Point> > face_cell_bisectors_;
+  std::vector<std::vector<int> > face_cell_dirs_;
 
   std::vector<AmanziGeometry::Point> cell_centroids_;
 
@@ -308,7 +325,7 @@ class MeshLogicalFactory {
   bool tracking_centroids_;
   std::map<std::string, AmanziGeometry::Point> tracking_end_points_;
 };
-
+  
 
 } // namespace AmanziMesh
 } // namespace Amanzi
