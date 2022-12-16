@@ -22,14 +22,14 @@
 #define MOAB_TEST_FILE "test/hex_3x3x3_ss_4P.h5m"
 
 
-SUITE(MeshFileType)
+SUITE (MeshFileType)
 {
-  TEST(ExodusII)
+  TEST (ExodusII)
   {
     auto comm = Amanzi::getDefaultComm();
 
     // EXODUS_TEST_FILE is macro defined by cmake
-    std::string fname(EXODUS_TEST_FILE);
+    std::string fname(EXODUS_TEST_FILE); 
 
     Amanzi::AmanziMesh::FileFormat f;
     try {
@@ -41,13 +41,13 @@ SUITE(MeshFileType)
     CHECK(f == Amanzi::AmanziMesh::FileFormat::EXODUS_II);
   }
 
-  TEST(Nemesis)
+  TEST (Nemesis) 
   {
     auto comm = Amanzi::getDefaultComm();
 
     // NEMESIS_TEST_FILE is macro defined by cmake
-    std::string fname(NEMESIS_TEST_FILE);
-
+    std::string fname(NEMESIS_TEST_FILE); 
+    
     Amanzi::AmanziMesh::FileFormat f;
     if (comm->NumProc() > 1 && comm->NumProc() <= 4) {
       try {
@@ -58,17 +58,17 @@ SUITE(MeshFileType)
 
       CHECK(f == Amanzi::AmanziMesh::FileFormat::NEMESIS);
     } else {
-      CHECK_THROW(f = Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname),
+      CHECK_THROW(f = Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname), 
                   Amanzi::AmanziMesh::FileMessage);
-    }
+    }  
   }
-
-  TEST(MOABHD5)
+   
+  TEST (MOABHD5) 
   {
     auto comm = Amanzi::getDefaultComm();
 
     // MOAB_TEST_FILE is macro defined by cmake
-    std::string fname(MOAB_TEST_FILE);
+    std::string fname(MOAB_TEST_FILE); 
 
     Amanzi::AmanziMesh::FileFormat f;
     try {
@@ -80,23 +80,24 @@ SUITE(MeshFileType)
     CHECK(f == Amanzi::AmanziMesh::FileFormat::MOAB_HDF5);
   }
 
-  TEST(PathFailure)
+  TEST (PathFailure) 
   {
     auto comm = Amanzi::getDefaultComm();
 
-    std::string fname("/some/bogus/path.exo");
+    std::string fname("/some/bogus/path.exo"); 
 
-    CHECK_THROW(Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname),
+    CHECK_THROW(Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname), 
                 Amanzi::AmanziMesh::FileMessage);
-  }
+  }    
 
-  TEST(MagicNumberFailure)
+  TEST (MagicNumberFailure)
   {
     auto comm = Amanzi::getDefaultComm();
 
-    std::string fname(BOGUS_TEST_FILE);
+    std::string fname(BOGUS_TEST_FILE); 
 
-    CHECK_THROW(Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname),
+    CHECK_THROW(Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname), 
                 Amanzi::AmanziMesh::FileMessage);
   }
 }
+    

@@ -83,6 +83,24 @@
     </ParameterList>
   </ParameterList>
 
+  <!-- empty sets -->
+  <ParameterList name="Empty Geometric">
+    <ParameterList name="region: box">
+      <Parameter name="low coordinate" type="Array(double)" value="{-2.0,-2.0}"/>
+      <Parameter name="high coordinate" type="Array(double)" value="{-1.0,-1.0}"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Empty Labeled Set">
+    <ParameterList name="region: labeled set">
+      <Parameter name="label" type="string" value="99999"/>
+      <Parameter name="file" type="string" value="mesh.exo"/>
+      <Parameter name="format" type="string" value="Exodus II"/>
+      <Parameter name="entity" type="string" value="cell"/>
+    </ParameterList>
+  </ParameterList>
+
+  
   <!-- sidesets -->
   <ParameterList name="Face 103">
     <ParameterList name="region: labeled set">

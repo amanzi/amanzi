@@ -17,15 +17,14 @@
  *
  */
 
-#ifndef __H_GenerationSpec
-#define __H_GenerationSpec
+#pragma once
 
 #include "Region.hh"
 #include "RegionBox.hh"
 #include "MeshDefs.hh"
 
 namespace Teuchos {
-class ParameterList;
+  class ParameterList;
 }
 
 namespace Amanzi {
@@ -44,6 +43,7 @@ namespace AmanziMesh {
  */
 class GenerationSpec {
  public:
+
   /// Constructor that uses a parameter list
   GenerationSpec(const Teuchos::ParameterList& parameter_list);
 
@@ -51,7 +51,8 @@ class GenerationSpec {
   ~GenerationSpec(void);
 
   /// Get the overall spatial domain
-  const AmanziGeometry::RegionBox& domain(void) const { return *domain_; }
+  const AmanziGeometry::RegionBox& domain(void) const
+  { return *domain_; }
 
   /// Get the mesh dimensions in the x-direction
   const unsigned int& xcells(void) const { return nx_; }
@@ -63,37 +64,42 @@ class GenerationSpec {
   const unsigned int& zcells(void) const { return nz_; }
 
   /// Get access to the list of blocks or zones
-  AmanziGeometry::RegionVector::const_iterator block_begin(void) const { return blocks_.begin(); }
+  AmanziGeometry::RegionVector::const_iterator block_begin(void) const
+  { return blocks_.begin(); }
 
   /// Get access to the list of blocks or zones
-  AmanziGeometry::RegionVector::const_iterator block_end(void) const { return blocks_.end(); }
+  AmanziGeometry::RegionVector::const_iterator block_end(void) const
+  { return blocks_.end(); }
 
   Partitioner_type partitioner() const { return partitioner_; }
 
  protected:
+
   /// overall mesh domain  FIXME: We already have a domain
 
   Teuchos::RCP<AmanziGeometry::RegionBox> domain_;
 
-  unsigned int nx_; /**< number of cells in the x-direction */
-  unsigned int ny_; /**< number of cells in the y-direction */
-  unsigned int nz_; /**< number of cells in the y-direction */
+  unsigned int nx_;                     /**< number of cells in the x-direction */
+  unsigned int ny_;                     /**< number of cells in the y-direction */
+  unsigned int nz_;                     /**< number of cells in the y-direction */
 
   AmanziGeometry::RegionVector blocks_; /**< list of mesh subdomains */
 
-  Partitioner_type partitioner_ = PARTITIONER_DEFAULT; /**< partitioner type */
+  Partitioner_type partitioner_;
 
   /// fill attributes from specified list
-  void parse_(const Teuchos::ParameterList& parameter_list);
+  void parse_(const Teuchos::ParameterList &parameter_list);
 
  private:
+
   /// private, undefined copy constructor to avoid unwanted copies
 
   GenerationSpec(const GenerationSpec& old);
+
 };
 
 
 } // end namespace AmanziMesh
 } // end namespace Amanzi
 
-#endif
+
