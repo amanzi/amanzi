@@ -82,7 +82,6 @@ PDE_DiffusionFVonManifolds::SetTensorCoefficient(
 {
   beta_initialized_ = false;
   K_ = K;
-  AMANZI_ASSERT(false);
 }
 
 
@@ -155,14 +154,16 @@ PDE_DiffusionFVonManifolds::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
     if (ndofs == 1) {
       Aface(0, 0) = sum;
     } else {
+      if (sum > 0.0) sum = 1.0 / sum;
+
       for (int i = 0; i != ndofs; ++i) {
         ti = beta_f[0][g + i] * (k_f.get() ? (*k_f)[0][g + i] : 1.0);
         for (int j = i + 1; j != ndofs; ++j) {
           tj = beta_f[0][g + j] * (k_f.get() ? (*k_f)[0][g + j] : 1.0);
-          Aface(i, i) += ti * ti / sum;
-          Aface(j, j) += tj * tj / sum;
-          Aface(i, j) = -ti * tj / sum;
-          Aface(j, i) = -ti * tj / sum;
+          Aface(i, i) += ti * ti * sum;
+          Aface(j, j) += tj * tj * sum;
+          Aface(i, j) = -ti * tj * sum;
+          Aface(j, i) = -ti * tj * sum;
         }
       }
     }
@@ -311,7 +312,7 @@ PDE_DiffusionFVonManifolds::UpdateFlux(const Teuchos::Ptr<const CompositeVector>
         pi(i) = p[0][cells[i]] - factor * zc;
         pf += ti(i) * pi(i);
       }
-      pf /= sum;
+      if (sum > 0.0) pf /= sum;
 
       for (int i = 0; i < ndofs; ++i) { flux[0][g + i] = -ti(i) * (pf - pi(i)); }
     }
@@ -332,6 +333,9 @@ PDE_DiffusionFVonManifolds::ComputeBeta_()
   AmanziGeometry::Point a(d);
   AmanziMesh::Entity_ID_List cells;
 
+  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+  Kc(0, 0) = 1.0;
+
   for (int f = 0; f < nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
@@ -340,8 +344,15 @@ PDE_DiffusionFVonManifolds::ComputeBeta_()
     for (int i = 0; i < ncells; i++) {
       int c = cells[i];
       a = mesh_->face_centroid(f) - mesh_->cell_centroid(c);
-      double area = mesh_->face_area(f);
-      beta_f[0][g + i] = area / norm(a);
+      beta_f[0][g + i] = mesh_->face_area(f) / norm(a);
+
+      if (K_.get()) {
+        const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c);
+        double perm = (((*K_)[c] * a) * normal);
+        double dxn = a * normal;
+        beta_f[0][g + i] *= perm / dxn;
+AMANZI_ASSERT(perm / dxn > 0.0);
+      }
     }
   }
 }

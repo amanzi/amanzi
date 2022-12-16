@@ -35,12 +35,12 @@ namespace Operators {
 * Constructors
 ****************************************************************** */
 PDE_DiffusionFactory::PDE_DiffusionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : mesh_(mesh), const_k_(1.0), gravity_(false), const_b_(0.0){};
+  : mesh_(mesh), const_k_(1.0), gravity_(false), manifolds_(false), const_b_(0.0){};
 
 
 PDE_DiffusionFactory::PDE_DiffusionFactory(Teuchos::ParameterList& oplist,
                                            const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : oplist_(oplist), mesh_(mesh), const_k_(1.0), gravity_(false), const_b_(0.0)
+  : oplist_(oplist), mesh_(mesh), const_k_(1.0), gravity_(false), manifolds_(false), const_b_(0.0)
 {
   if (oplist.isParameter("diffusion coefficient")) {
     const_k_ = oplist.get<double>("diffusion coefficient");
@@ -88,7 +88,10 @@ PDE_DiffusionFactory::Create()
   std::string name = oplist_.get<std::string>("discretization primary");
   bool fractured_matrix = oplist_.isParameter("fracture");
 
-  if (oplist_.isSublist("gravity")) gravity_ = oplist_.get<bool>("gravity");
+  gravity_ = false;
+  manifolds_ = false;
+  if (oplist_.isParameter("gravity")) gravity_ = oplist_.get<bool>("gravity");
+  if (oplist_.isParameter("manifolds")) manifolds_ = oplist_.get<bool>("manifolds");
 
   if (gravity_ && norm(g_) == 0.0) {
     double tmp = oplist_.get<double>("gravity magnitude");
@@ -98,7 +101,9 @@ PDE_DiffusionFactory::Create()
   Teuchos::RCP<PDE_Diffusion> op;
 
   // FV methods
-  if (name == "fv: default" && !gravity_) {
+  if (name == "fv: default" && gravity_ && manifolds_) {
+    op = Teuchos::rcp(new PDE_DiffusionFVonManifolds(oplist_, mesh_));
+  } else if (name == "fv: default" && !gravity_) {
     op = Teuchos::rcp(new PDE_DiffusionFV(oplist_, mesh_));
   } else if (name == "fv: default" && gravity_) {
     op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist_, mesh_, g_));
@@ -456,13 +461,8 @@ PDE_DiffusionFactory::CreateWithGravity(Teuchos::ParameterList& oplist,
                                         const Teuchos::RCP<BCs>& bc)
 {
   std::string name = oplist.get<std::string>("discretization primary");
-  bool manifolds = oplist_.isParameter("manifolds");
 
-  if (name == "fv: default" && manifolds) {
-    auto op = Teuchos::rcp(new PDE_DiffusionFVonManifolds(oplist_, global_op));
-    return op;
-
-  } else if (name == "fv: default") {
+  if (name == "fv: default") {
     auto op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, global_op));
     op->SetBCs(bc, bc);
     return op;

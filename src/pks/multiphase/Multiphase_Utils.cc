@@ -37,11 +37,17 @@ ConvertFieldToTensor(const Teuchos::RCP<State>& S,
   const Epetra_MultiVector& perm = *cv.ViewComponent("cell", true);
 
   int ncells = perm.MyLength();
+  int ndofs = perm.NumVectors();
   K.resize(ncells);
   bool off_diag = cv.HasComponent("offd");
 
   // most common cases of diagonal permeability
-  if (dim == 2) {
+  if (ndofs == 1) {
+    for (int c = 0; c < ncells; c++) {
+      K[c].Init(dim, 1);
+      K[c](0, 0) = perm[0][c];
+    }
+  } else if (dim == 2) {
     for (int c = 0; c < ncells; c++) {
       if (!off_diag && perm[0][c] == perm[1][c]) {
         K[c].Init(dim, 1);

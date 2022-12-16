@@ -7,6 +7,8 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Tests for the diffusion solver on a fracture network.
 */
 
 #include <cstdlib>
@@ -108,7 +110,6 @@ RunTest(int icase, double gravity)
   AmanziGeometry::Point gvec(0.0, 0.0, -gravity);
   Teuchos::ParameterList olist = plist->sublist("PK operator").sublist("diffusion operator");
   olist.set<bool>("gravity", (gravity > 0.0));
-  olist.set<double>("gravity magnitude", gravity);
 
   auto op = Teuchos::rcp(new Operators::PDE_DiffusionFVonManifolds(olist, surfmesh));
   op->SetBCs(bc, bc);

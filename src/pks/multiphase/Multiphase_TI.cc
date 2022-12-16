@@ -67,7 +67,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
   Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(K_);
 
   // work memory for miscalleneous operator
-  auto kr = CreateCVforUpwind(mesh_);
+  auto kr = CreateCVforUpwind_();
   auto& kr_c = *kr->ViewComponent("cell");
 
   std::vector<int> bcnone(nfaces_wghost_, Operators::OPERATOR_BC_NONE);
@@ -104,12 +104,13 @@ Multiphase_PK::FunctionalResidual(double t_old,
         auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
         kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
         upwind_->Compute(flux, bcnone, *kr);
+// { double aaa; kr->ViewComponent("face")->Norm2(&aaa); std::cout << "AAA=" << aaa << std::endl; } exit(0); 
 
         // -- form diffusion operator
         //    BCs are defined by the equation and must be imposed only once
         //    using either the total flux or Dirichlet
-        auto& pde = pde_diff_K_;
-        pde->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_); // FIXME (gravity for gas phase)
+        auto pde = pde_diff_K_[phase];
+        pde->Setup(Kptr, kr, Teuchos::null); // FIXME (gravity for gas phase)
         pde->SetBCs(op_bcs_[gname], op_bcs_[gname]);
         pde->global_operator()->Init();
         pde->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -139,7 +140,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
         // -- form diffusion operator
         AMANZI_ASSERT(op_bcs_.find(gname) != op_bcs_.end());
 
-        auto& pde = pde_diff_D_;
+        auto pde = pde_diff_D_;
         pde->Setup(Teuchos::null, kr, Teuchos::null);
         pde->SetBCs(op_bcs_[gname], op_bcs_[gname]);
         pde->global_operator()->Init();
@@ -243,7 +244,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
     Teuchos::rcp(new CompositeVector(S_->Get<CompositeVector>(vol_flowrate_liquid_key_)));
   auto flux_acc = Teuchos::rcp(new CompositeVector(*flux_tmp));
 
-  auto kr = CreateCVforUpwind(mesh_);
+  auto kr = CreateCVforUpwind_();
   auto& kr_c = *kr->ViewComponent("cell");
 
   std::vector<int> bcnone(nfaces_wghost_, Operators::OPERATOR_BC_NONE);
@@ -359,10 +360,12 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             // --- calculate advective flux
             S_->GetEvaluator(gname).Update(*S_, passwd_);
             auto var = S_->GetPtr<CompositeVector>(gname, Tags::DEFAULT);
-            pde_diff_K_->Setup(Kptr, kr, Teuchos::null, rho_g, gravity_);
-            pde_diff_K_->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
-            pde_diff_K_->UpdateMatrices(Teuchos::null, Teuchos::null);
-            pde_diff_K_->UpdateFlux(var.ptr(), flux_tmp.ptr());
+
+            auto pde = pde_diff_K_[phase];
+            pde->Setup(Kptr, kr, Teuchos::null);
+            pde->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
+            pde->UpdateMatrices(Teuchos::null, Teuchos::null);
+            pde->UpdateFlux(var.ptr(), flux_tmp.ptr());
 
             double factor = eqns_[row].adv_factors[phase];
             flux_acc->Update(factor, *flux_tmp, 1.0);

@@ -233,7 +233,7 @@
       </ParameterList>
       <ParameterList name="diffusion operator">
         <ParameterList name="upwind">
-          <Parameter name="upwind method" type="string" value="standard"/>
+          <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
           <ParameterList name="upwind standard parameters">
              <Parameter name="tolerance" type="double" value="1e-12"/>
           </ParameterList>

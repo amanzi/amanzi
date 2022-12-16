@@ -77,17 +77,16 @@ StateArchive::Restore(const std::string& passwd)
 
 
 /* *******************************************************************
-* Copy: Evaluator (BASE) -> Field (prev_BASE)
+* Copy: Field (BASE) -> Field (prev_BASE)
 ******************************************************************* */
 void
-StateArchive::Swap(const std::string& passwd)
+StateArchive::CopyFieldsToPrevFields(const std::string& passwd)
 {
   for (auto it = fields_.begin(); it != fields_.end(); ++it) {
-    std::string prev(it->first), next(it->first);
-    auto pos = next.find("prev_");
-    if (pos != std::string::npos) {
-      next.erase(pos, 5);
-      S_->GetW<CompositeVector>(prev, tag_, passwd) = S_->Get<CompositeVector>(next);
+    auto name = Keys::splitKey(it->first);
+    std::string prev = Keys::getKey(name.first, "prev_" + name.second);
+    if (S_->HasRecord(prev, tag_)) {
+      S_->GetW<CompositeVector>(prev, tag_, passwd) = S_->Get<CompositeVector>(it->first);
     }
   }
 }

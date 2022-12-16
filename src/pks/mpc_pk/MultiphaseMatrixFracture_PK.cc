@@ -216,15 +216,15 @@ bool
 MultiphaseMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // create copies of conservative fields
-  std::vector<std::string> fields = { "prev_saturation_liquid", "fracture-prev_saturation_liquid" };
+  std::vector<std::string> fields = { "saturation_liquid", "fracture-saturation_liquid" };
   if (sub_pks_[0]->name() == "richards") {
-    fields.push_back("prev_water_storage");
-    fields.push_back("fracture-prev_water_storage");
+    fields.push_back("water_storage");
+    fields.push_back("fracture-water_storage");
   }
 
   StateArchive archive(S_, vo_);
   archive.Add(fields, {}, {}, Tags::DEFAULT, name());
-  archive.Swap("");
+  archive.CopyFieldsToPrevFields("");
 
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
 

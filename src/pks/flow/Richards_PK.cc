@@ -987,11 +987,11 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // save a copy of primary and conservative fields
   std::vector<std::string> fields;
-  if (flow_on_manifold_) { fields.push_back(prev_aperture_key_); }
+  if (flow_on_manifold_) { fields.push_back(aperture_key_); }
 
   StateArchive archive(S_, vo_);
   archive.Add(fields, {}, {}, Tags::DEFAULT, name());
-  archive.Swap("");
+  archive.CopyFieldsToPrevFields("");
 
   std::map<std::string, CompositeVector> copies;
   copies.emplace(pressure_key_, S_->Get<CV_t>(pressure_key_, Tags::DEFAULT));

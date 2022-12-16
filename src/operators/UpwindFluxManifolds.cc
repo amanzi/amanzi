@@ -75,9 +75,10 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
       double kupw(0.0);
       for (int i = 0; i < ncells; ++i) {
         int c = cells[i];
-        if (flux_f[0][g + i] > 0.0) kupw += 1.0 / field_c[0][c];
+        if (flux_f[0][g + i] >= 0.0 && field_c[0][c] > 0.0) kupw += 1.0 / field_c[0][c];
       }
-      kupw = 1.0 / kupw;
+      if (kupw > 0.0) kupw = 1.0 / kupw;
+AMANZI_ASSERT(kupw > 0.0);
 
       for (int i = 0; i < ncells; ++i) {
         if (flux_f[0][g + i] > 0.0) {

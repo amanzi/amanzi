@@ -174,7 +174,7 @@ class PDE_DiffusionFactory {
   Teuchos::RCP<const CompositeVector> k_, dkdu_;
 
   // gravity
-  bool gravity_;
+  bool gravity_, manifolds_;
   AmanziGeometry::Point g_;
   double const_b_;
   Teuchos::RCP<const CompositeVector> b_, dbdu_;
