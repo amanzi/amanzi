@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   The partially orthonormalized basis for dG methods: |\psi| = 1 and
   (\psi, 1) = 0 for \psi != 1. Transformation matrix has the form
@@ -228,8 +230,8 @@ Basis_Orthonormalized::ChangeBasisNaturalToMy(DenseVector& v) const
 
 
 /* ******************************************************************
-* Recover polynomial in the natural basis from vector coefs of 
-* coefficients in the orthonormalized basis. 
+* Recover polynomial in the natural basis from vector coefs of
+* coefficients in the orthonormalized basis.
 ****************************************************************** */
 Polynomial
 Basis_Orthonormalized::CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,

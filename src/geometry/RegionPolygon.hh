@@ -1,15 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionPolygon: A closed polygonal segment of a plane.
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella
 */
 
+//! RegionPolygon: A closed polygonal segment of a plane.
 /*!
 
 The list *region: polygon* defines a polygonal region on which mesh faces and
@@ -23,14 +21,14 @@ This provides a set of faces with a normal for computing flux.
 
 The polygonal surface region can be queried for a normal. In 2D, the normal is
 defined as [Vy,-Vx] where [Vx,Vy] is the vector from point 1 to point 2.
-In 3D, the normal of the polygon is defined by the order in which points 
+In 3D, the normal of the polygon is defined by the order in which points
 are specified.
 
 ``[region-polygon-spec]``
 
 * `"number of points`" ``[int]`` Number of polygon points.
 
-* `"points`" ``[Array(double)]`` Point coordinates in a linear array. 
+* `"points`" ``[Array(double)]`` Point coordinates in a linear array.
 
 Example:
 
@@ -39,7 +37,7 @@ Example:
    <ParameterList name="XY_PENTAGON">
      <ParameterList name="region: polygon">
        <Parameter name="number of points" type="int" value="5"/>
-       <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
+       <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5,
                                                               0.5, -0.5, -0.5,
                                                               0.8, 0.0, 0.0,
                                                               0.5,  0.5, 0.5,
@@ -82,9 +80,9 @@ class RegionPolygon : public Region {
   std::vector<Point> points_; /* Points of the polygon */
   Point normal_;              /* Normal to the polygon */
   unsigned int elim_dir_;     /* Coord dir to eliminate while projecting
-                                        polygon for in/out tests 
-                                        0 - yz, eliminate x coord        
-                                        1 - xz, eliminate y coord        
+                                        polygon for in/out tests
+                                        0 - yz, eliminate x coord
+                                        1 - xz, eliminate y coord
                                         2 - xy, eliminate z coord        */
 
  private:

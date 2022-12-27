@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <iostream>
 #include "stdlib.h"
 #include "math.h"
@@ -297,7 +306,7 @@ TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_3)
 }
 
 /*
-TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_4) { 
+TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_4) {
   double a = 0.02;
   // (2) velocity * aperture = 1e-4 * a
   double u = 1e-4 * a;

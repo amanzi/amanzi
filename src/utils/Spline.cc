@@ -1,7 +1,14 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Ethan Coon ecoon@lanl.gov
+*/
+
 /* -------------------------------------------------------------------------
   Spline
-
-  Author: Ethan Coon ecoon@lanl.gov
 
  Cubic Hermite spline functor which is used for smoothing.  NOTE: this is NOT
  guaranteed to be monotonic!  In practice I hope it is usually!

@@ -1,16 +1,16 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (coonet@ornl.gov)
 */
 
 //! A collection of meshes, indexed from a parent entity set.
-
 #include "Epetra_MultiVector.h"
 
+#include "Key.hh"
 #include "Mesh.hh"
 #include "DomainSet.hh"
 
@@ -21,10 +21,13 @@ namespace AmanziMesh {
 DomainSet::DomainSet(const std::string& name,
                      const Teuchos::RCP<const Mesh>& indexing_parent,
                      const std::vector<std::string>& indices)
-  : name_(name), indexing_parent_(indexing_parent)
+  : name_(name),
+    indexing_parent_(indexing_parent)
 {
   // construct the collection of mesh names
-  for (const auto& index : indices) { meshes_.emplace_back(Keys::getDomainInSet(name, index)); }
+  for (const auto& index : indices) {
+    meshes_.emplace_back(Keys::getDomainInSet(name, index));
+  }
 }
 
 
@@ -41,56 +44,31 @@ DomainSet::DomainSet(const std::string& name,
 
 
 void
-DomainSet::DoImport(const std::string& subdomain,
-                    const Epetra_MultiVector& src,
-                    Epetra_MultiVector& target) const
+DomainSet::doImport(const std::string& subdomain,
+                    const Epetra_MultiVector& src, Epetra_MultiVector& target) const
 {
-  const auto& map = get_subdomain_map(subdomain);
+  const auto& map = getSubdomainMap(subdomain);
 
-  for (int j = 0; j != src.NumVectors(); ++j) {
-    for (int c = 0; c != src.MyLength(); ++c) { target[j][map[c]] = src[j][c]; }
+  for (int j=0; j!=src.NumVectors(); ++j) {
+    for (int c=0; c!=src.MyLength(); ++c) {
+      target[j][map[c]] = src[j][c];
+    }
   }
 }
-
-// import from subdomains to parent domain
-void
-DomainSet::DoImport(const std::vector<const Epetra_MultiVector*>& sources,
-                    Epetra_MultiVector& target) const
-{
-  AMANZI_ASSERT(sources.size() == size());
-  auto source = sources.begin();
-  for (const auto& subdomain : *this) {
-    DoImport(subdomain, **source, target);
-    ++source;
-  }
-}
-
 
 void
-DomainSet::DoExport(const std::string& subdomain,
-                    const Epetra_MultiVector& src,
-                    Epetra_MultiVector& target) const
+DomainSet::doExport(const std::string& subdomain,
+                    const Epetra_MultiVector& src, Epetra_MultiVector& target) const
 {
-  const auto& map = get_subdomain_map(subdomain);
+  const auto& map = getSubdomainMap(subdomain);
 
-  for (int j = 0; j != src.NumVectors(); ++j) {
-    for (int c = 0; c != target.MyLength(); ++c) { target[j][c] = src[j][map[c]]; }
+  for (int j=0; j!=src.NumVectors(); ++j) {
+    for (int c=0; c!=target.MyLength(); ++c) {
+      target[j][c] = src[j][map[c]];
+    }
   }
 }
 
-
-// import from parent domain to subdomains
-void
-DomainSet::DoExport(const Epetra_MultiVector& source,
-                    const std::vector<Epetra_MultiVector*>& targets) const
-{
-  AMANZI_ASSERT(targets.size() == size());
-  auto target = targets.begin();
-  for (const auto& subdomain : *this) {
-    DoExport(subdomain, source, **target);
-    ++target;
-  }
-}
 
 
 //
@@ -98,14 +76,15 @@ DomainSet::DoExport(const Epetra_MultiVector& source,
 //
 // Creates an importer from an extracted mesh entity to its parent entities.
 Teuchos::RCP<const std::vector<int>>
-createMapToParent(const AmanziMesh::Mesh& subdomain_mesh, const AmanziMesh::Entity_kind& src_kind)
+createMapToParent(const AmanziMesh::Mesh& subdomain_mesh,
+                  const AmanziMesh::Entity_kind& src_kind)
 {
-  const Epetra_Map& src_map = subdomain_mesh.cell_map(false);
+  const Epetra_Map& src_map = subdomain_mesh.getMap(AmanziMesh::Entity_kind::CELL, false);
 
   // create the target map
   auto map = Teuchos::rcp(new std::vector<int>(src_map.NumMyElements(), -1));
-  for (int c = 0; c != src_map.NumMyElements(); ++c) {
-    (*map)[c] = subdomain_mesh.entity_get_parent(src_kind, c);
+  for (int c=0; c!=src_map.NumMyElements(); ++c) {
+    (*map)[c] = subdomain_mesh.getEntityParent(src_kind, c);
   }
   return map;
 }
@@ -116,22 +95,21 @@ createMapToParent(const AmanziMesh::Mesh& subdomain_mesh, const AmanziMesh::Enti
 // subdomain's parent mesh).
 Teuchos::RCP<const std::vector<int>>
 createMapSurfaceToSurface(const AmanziMesh::Mesh& subdomain_mesh,
-                          const AmanziMesh::Mesh& parent_mesh)
+        const AmanziMesh::Mesh& parent_mesh)
 {
-  const Epetra_Map& src_map = subdomain_mesh.cell_map(false);
+  const Epetra_Map& src_map = subdomain_mesh.getMap(AmanziMesh::Entity_kind::CELL, false);
 
-  int parent_ncells =
-    parent_mesh.num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int parent_ncells = parent_mesh.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // create the target map
   auto map = Teuchos::rcp(new std::vector<int>(src_map.NumMyElements(), -1));
-  for (int c = 0; c != src_map.NumMyElements(); ++c) {
-    Entity_ID f = subdomain_mesh.entity_get_parent(AmanziMesh::Entity_kind::CELL, c);
-    Entity_ID parent_f =
-      subdomain_mesh.parent()->entity_get_parent(AmanziMesh::Entity_kind::FACE, f);
+  for (int c=0; c!=src_map.NumMyElements(); ++c) {
+    Entity_ID f = subdomain_mesh.getEntityParent(AmanziMesh::Entity_kind::CELL, c);
+    Entity_ID parent_f = subdomain_mesh.getParentMesh()
+      ->getEntityParent(AmanziMesh::Entity_kind::FACE, f);
 
-    for (int parent_c = 0; parent_c != parent_ncells; ++parent_c) {
-      if (parent_mesh.entity_get_parent(AmanziMesh::Entity_kind::CELL, parent_c) == parent_f) {
+    for (int parent_c=0; parent_c!=parent_ncells; ++parent_c) {
+      if (parent_mesh.getEntityParent(AmanziMesh::Entity_kind::CELL, parent_c) == parent_f) {
         (*map)[c] = parent_c;
         break;
       }

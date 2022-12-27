@@ -1,12 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #ifndef AMANZI_OP_FACE_CELL_HH_
@@ -22,7 +25,7 @@
 
   1. They provide a class name to the schema, enabling visitor patterns.
   2. They are a container for local matrices.
-  
+
   This Op class is for storing local matrices of length nfaces and with dofs
   on cells, i.e. for Advection or for TPFA.
 */

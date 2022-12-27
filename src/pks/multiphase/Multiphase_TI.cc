@@ -1,13 +1,15 @@
 /*
-  MultiPhase PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Quan Bui (mquanbui@math.umd.edu)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  MultiPhase PK
 
   Multiphase multi-component flow, see Multiphase_PK.cc for more detail.
 */
@@ -325,13 +327,13 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
         /*
         if (fname != "") {
           if (gname != keyc && S_->HasDerivative(gname, keyc)) {
-            // --- upwind gas molar mobility times molar fraction 
+            // --- upwind gas molar mobility times molar fraction
             S_->GetEvaluator(fname).Update(*S_, passwd_);
             kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
             auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
             upwind_->Compute(flux, *kr, bcnone, *kr);
 
-            // --- calculate advective flux 
+            // --- calculate advective flux
             S_->GetEvaluator(gname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
             auto tmp = S_->GetDerivativePtr<CompositeVector>(gname, Tags::DEFAULT, keyc, Tags::DEFAULT);
 
@@ -421,7 +423,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             S_->GetEvaluator(gname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
             auto tmp = S_->GetDerivativePtr<CompositeVector>(gname, Tags::DEFAULT, keyc, Tags::DEFAULT);
 
-            // --- calculate advective flux 
+            // --- calculate advective flux
             pde_diff_D_->Setup(Teuchos::null, kr, Teuchos::null);
             pde_diff_D_->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
             pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -545,7 +547,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
 
 
 /* ******************************************************************
-* Apply preconditioner inv(B) * X.                                                 
+* Apply preconditioner inv(B) * X.
 ****************************************************************** */
 int
 Multiphase_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)

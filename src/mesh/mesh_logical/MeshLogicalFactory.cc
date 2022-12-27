@@ -1,15 +1,13 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon
 */
 
 //! A factory for creating control-volume logical meshes from segments.
-
 /*!
 
 Builds up a logical mesh from a series of segments.  Note that logical meshes
@@ -95,7 +93,7 @@ last tip is the upstream inlet, and orientation is aligned with the flow directi
 Finally, often tips of segments may be boundaries (faces with boundary
 conditions), no type (i.e. there is no face), junction (at least one, likely
 more, faces will be connected to the end cell eventually), or branch (the tip
-cell will add a face to a junction tip of another segment).  
+cell will add a face to a junction tip of another segment).
 
 * `"first tip type`" ``[string]`` Type of the first tip.  One of `"none`",
    `"boundary`", `"junction`", or `"branch`".
@@ -144,7 +142,7 @@ coordinate.  In this case, specify:
 
 This option is provided in the `"logical from segments parameters`"
 list.
-    
+
 As an example, consider the confluence of the Allegheny and the Monongahela,
 which come together in Pittsburgh to form the Ohio.  This could be simply
 modeled by three segments:
@@ -190,7 +188,7 @@ modeled by three segments:
       </ParameterList>
     </ParameterList>
   </ParameterList>
-    
+
  */
 #include <numeric>
 
@@ -205,44 +203,41 @@ namespace AmanziMesh {
 
 // Create the mesh
 Teuchos::RCP<MeshLogical>
-MeshLogicalFactory::Create() const
-{
+MeshLogicalFactory::Create() const {
   Teuchos::RCP<AmanziMesh::MeshLogical> mesh;
   if (cell_centroids_.size() > 0) {
     AMANZI_ASSERT(cell_centroids_.size() == cell_volumes_.size());
     mesh = Teuchos::rcp(new MeshLogical(comm_,
-                                        face_cell_list_,
-                                        face_cell_dirs_,
-                                        cell_volumes_,
-                                        face_areas_,
-                                        face_cell_bisectors_,
-                                        &cell_centroids_));
+            face_cell_list_,
+            face_cell_dirs_,
+            cell_volumes_,
+            face_areas_,
+            face_cell_bisectors_,
+            &cell_centroids_));
 
   } else {
     mesh = Teuchos::rcp(new MeshLogical(comm_,
-                                        face_cell_list_,
-                                        face_cell_dirs_,
-                                        cell_volumes_,
-                                        face_areas_,
-                                        face_cell_bisectors_,
-                                        nullptr));
+            face_cell_list_,
+            face_cell_dirs_,
+            cell_volumes_,
+            face_areas_,
+            face_cell_bisectors_,
+            nullptr));
   }
-  mesh->set_geometric_model(gm_);
+  mesh->setGeometricModel(gm_);
   return mesh;
 }
 
 
 // One-stop shop -- create the whole thing from PList
 Teuchos::RCP<MeshLogical>
-MeshLogicalFactory::Create(Teuchos::ParameterList& plist)
-{
+MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
   // set global options
   tracking_centroids_ = plist.get<bool>("infer cell centroids", false);
   if (plist.isParameter("calculate cell volumes from lengths and areas"))
     calculated_volume_ = plist.get<bool>("calculate cell volumes from lengths and areas");
   if (plist.isParameter("cell volumes provided")) {
-    Errors::Message msg("MeshLogicalFactory: deprecated parameter \"cell volumes provided\", "
-                        "please use \"calculate cell volumes from lengths and areas\".");
+    Errors::Message msg("MeshLogicalFactory: deprecated parameter \"cell volumes provided\", please use \"calculate cell volumes from lengths and areas\".");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -264,7 +259,7 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist)
 
   for (auto& set_it : sets) {
     std::string set_name = set_it.first;
-    auto set_list = sets.get<Teuchos::Array<std::string>>(set_name);
+    auto set_list = sets.get<Teuchos::Array<std::string> >(set_name);
 
     Entity_ID_List set_ents;
     for (auto& seg_name : set_list) {
@@ -283,16 +278,16 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist)
 
 
 void
-MeshLogicalFactory::AddSegment(int n_cells,
-                               const AmanziGeometry::Point& begin,
-                               const AmanziGeometry::Point& end,
-                               double face_area,
-                               MeshLogicalFactory::LogicalTip_t first_tip_type,
-                               MeshLogicalFactory::LogicalTip_t last_tip_type,
-                               std::string const& name,
-                               std::vector<Entity_ID>* const cells,
-                               std::vector<Entity_ID>* const faces)
-{
+MeshLogicalFactory::AddSegment(
+    int n_cells,
+    const AmanziGeometry::Point& begin,
+    const AmanziGeometry::Point& end,
+    double face_area,
+    MeshLogicalFactory::LogicalTip_t first_tip_type,
+    MeshLogicalFactory::LogicalTip_t last_tip_type,
+    std::string const& name,
+    std::vector<Entity_ID> *const cells,
+    std::vector<Entity_ID> *const faces) {
   AMANZI_ASSERT(calculated_volume_);
 
   // orientation
@@ -312,24 +307,17 @@ MeshLogicalFactory::AddSegment(int n_cells,
 
   // centroids
   std::vector<AmanziGeometry::Point> centroids(n_cells);
-  auto my_centroid = begin - orientation * cell_length / 2.;
+  auto my_centroid = begin - orientation * cell_length/2.;
   centroids[0] = my_centroid;
-  for (int c = 0; c != n_cells - 1; ++c) {
+  for (int c=0; c!=n_cells-1; ++c) {
     my_centroid -= orientation * cell_length;
-    centroids[c + 1] = my_centroid;
+    centroids[c+1] = my_centroid;
   }
 
-  AddSegment(&centroids,
-             nullptr,
-             lengths,
-             face_areas,
-             orientation,
-             first_tip_type,
-             last_tip_type,
-             name,
-             cells,
-             faces);
+  AddSegment(&centroids, nullptr, lengths, face_areas, orientation,
+             first_tip_type, last_tip_type, name, cells, faces);
 }
+
 
 
 // Add a segment
@@ -341,17 +329,18 @@ MeshLogicalFactory::AddSegment(int n_cells,
 //
 // Master add a segment -- all the others call this one!
 void
-MeshLogicalFactory::AddSegment(std::vector<AmanziGeometry::Point> const* const cell_centroids,
-                               std::vector<double> const* const cell_volumes,
-                               std::vector<double> const& cell_lengths,
-                               std::vector<double> const& face_areas,
-                               AmanziGeometry::Point const& orientation,
-                               MeshLogicalFactory::LogicalTip_t first_tip_type,
-                               MeshLogicalFactory::LogicalTip_t last_tip_type,
-                               std::string const& seg_name,
-                               std::vector<Entity_ID>* const cells,
-                               std::vector<Entity_ID>* const faces)
-{
+MeshLogicalFactory::AddSegment(
+      std::vector<AmanziGeometry::Point> const * const cell_centroids,
+      std::vector<double> const *const cell_volumes,
+      std::vector<double> const& cell_lengths,
+      std::vector<double> const& face_areas,
+      AmanziGeometry::Point const& orientation,
+      MeshLogicalFactory::LogicalTip_t first_tip_type,
+      MeshLogicalFactory::LogicalTip_t last_tip_type,
+      std::string const& seg_name,
+      std::vector<Entity_ID> *const cells,
+      std::vector<Entity_ID> *const faces) {
+
   // manage output
   if (faces) faces->clear();
   if (cells) cells->clear();
@@ -383,13 +372,17 @@ MeshLogicalFactory::AddSegment(std::vector<AmanziGeometry::Point> const* const c
   // set the new cell lids
   int cell_first = cell_volumes_.size();
   std::vector<Entity_ID> new_cells(n_cells);
-  for (int i = 0; i != n_cells; ++i) { new_cells[i] = cell_first + i; }
+  for (int i=0; i!=n_cells; ++i) {
+    new_cells[i] = cell_first + i;
+  }
   if (cells) *cells = new_cells;
 
   // set face ids
   int face_first = face_cell_list_.size();
   std::vector<Entity_ID> new_faces(n_faces);
-  for (int i = 0; i != n_faces; ++i) { new_faces[i] = face_first + i; }
+  for (int i=0; i!=n_faces; ++i) {
+    new_faces[i] = face_first + i;
+  }
   if (faces) *faces = new_faces;
 
   // insert or make space for cell volumes
@@ -411,39 +404,37 @@ MeshLogicalFactory::AddSegment(std::vector<AmanziGeometry::Point> const* const c
   // add the first face
   int i_face = 0;
   if (first_tip_type == LogicalTip_t::BOUNDARY) {
-    face_cell_list_.emplace_back(std::vector<int>{ new_cells[0] });
-    face_cell_bisectors_.emplace_back(
-      std::vector<AmanziGeometry::Point>{ cell_lengths.front() / 2. * orientation });
-    face_cell_dirs_.emplace_back(std::vector<int>{ 1 });
+    face_cell_list_.emplace_back(std::vector<int>{new_cells[0]});
+    face_cell_bisectors_.emplace_back(std::vector<AmanziGeometry::Point>{ cell_lengths.front()/2. * orientation });
+    face_cell_dirs_.emplace_back(std::vector<int>{1});
 
-    if (calculated_volume_) cell_volumes_[new_cells[0]] += face_areas[i_face] * cell_lengths[0] / 2;
+    if (calculated_volume_) cell_volumes_[new_cells[0]] += face_areas[i_face] * cell_lengths[0]/2;
 
     i_face++;
   }
 
   // add the interior faces
-  for (int j = 1; j != n_cells; ++j) {
-    face_cell_list_.emplace_back(std::vector<int>{ new_cells[j - 1], new_cells[j] });
-    face_cell_bisectors_.emplace_back(std::vector<AmanziGeometry::Point>{
-      -cell_lengths[j - 1] / 2 * orientation, cell_lengths[j] / 2 * orientation });
-    face_cell_dirs_.emplace_back(std::vector<int>{ -1, 1 });
+  for (int j=1; j!=n_cells; ++j) {
+    face_cell_list_.emplace_back(std::vector<int>{new_cells[j-1], new_cells[j]});
+    face_cell_bisectors_.emplace_back(std::vector<AmanziGeometry::Point>{ -cell_lengths[j-1]/2 * orientation,
+                                                                           cell_lengths[j]/2 * orientation });
+    face_cell_dirs_.emplace_back(std::vector<int>{-1,1});
 
     if (calculated_volume_) {
-      cell_volumes_[new_cells[j - 1]] += face_areas[i_face] * cell_lengths[j - 1] / 2;
-      cell_volumes_[new_cells[j]] += face_areas[i_face] * cell_lengths[j] / 2;
+      cell_volumes_[new_cells[j-1]] += face_areas[i_face] * cell_lengths[j-1]/2;
+      cell_volumes_[new_cells[j]] += face_areas[i_face] * cell_lengths[j]/2;
     }
     i_face++;
   }
 
   // potentially add the last face
   if (last_tip_type == LogicalTip_t::BOUNDARY) {
-    face_cell_list_.emplace_back(std::vector<int>{ new_cells.back() });
-    face_cell_bisectors_.emplace_back(
-      std::vector<AmanziGeometry::Point>{ -cell_lengths.back() / 2 * orientation });
-    face_cell_dirs_.emplace_back(std::vector<int>{ -1 });
+    face_cell_list_.emplace_back(std::vector<int>{new_cells.back()});
+    face_cell_bisectors_.emplace_back(std::vector<AmanziGeometry::Point>{ -cell_lengths.back()/2 * orientation});
+    face_cell_dirs_.emplace_back(std::vector<int>{-1});
 
     if (calculated_volume_) {
-      cell_volumes_[new_cells.back()] += face_areas[i_face] * cell_lengths.back() / 2;
+      cell_volumes_[new_cells.back()] += face_areas[i_face] * cell_lengths.back()/2;
     }
     i_face++;
   }
@@ -455,17 +446,16 @@ MeshLogicalFactory::AddSegment(std::vector<AmanziGeometry::Point> const* const c
 
   // add sets
   AddSet(seg_name, "CELL", new_cells);
-  if (first_tip_type == LogicalTip_t::BOUNDARY)
-    AddSet(seg_name + "_first_tip", "FACE", Entity_ID_List(1, new_faces[0]));
-  if (last_tip_type == LogicalTip_t::BOUNDARY)
-    AddSet(seg_name + "_last_tip", "FACE", Entity_ID_List(1, new_faces.back()));
+  if (first_tip_type == LogicalTip_t::BOUNDARY) AddSet(seg_name+"_first_tip", "FACE", Entity_ID_List(1,new_faces[0]));
+  if (last_tip_type == LogicalTip_t::BOUNDARY) AddSet(seg_name+"_last_tip", "FACE", Entity_ID_List(1,new_faces.back()));
+
 }
 
 
 // Add segment from sublist
 void
-MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
-{
+MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
+
   // need the following info to call AddSegment
   std::vector<AmanziGeometry::Point> cell_centroids;
   std::vector<double> cell_volumes;
@@ -484,13 +474,15 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
     seg_length = std::accumulate(cell_lengths.begin(), cell_lengths.end(), 0.);
     n_cells = cell_lengths.size();
 
-  } else if (plist.isParameter("segment length [m]") && plist.isParameter("number of cells")) {
+  } else if (plist.isParameter("segment length [m]")
+             && plist.isParameter("number of cells")) {
     seg_length = plist.get<double>("segment length [m]");
     n_cells = plist.get<int>("number of cells");
     cell_lengths.resize(n_cells, seg_length / n_cells);
 
-  } else if (plist.isParameter("first tip") && plist.isParameter("last tip") &&
-             plist.isParameter("number of cells")) {
+  } else if (plist.isParameter("first tip")
+             && plist.isParameter("last tip")
+             && plist.isParameter("number of cells")) {
     auto begin = GetPoint_(plist, "first tip");
     auto end = GetPoint_(plist, "last tip");
     seg_length = AmanziGeometry::norm(end - begin);
@@ -498,9 +490,9 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
     cell_lengths.resize(n_cells, seg_length / n_cells);
   } else {
     Errors::Message msg;
-    msg << "MeshLogicalFactory (segment \"" << seg_name
-        << "\"): unable to get number of cells and segment length.  See documentation.";
+    msg << "MeshLogicalFactory (segment \"" << seg_name << "\"): unable to get number of cells and segment length.  See documentation.";
     Exceptions::amanzi_throw(msg);
+
   }
 
   // potentially get cell volumes
@@ -512,14 +504,12 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
       cell_volumes = plist.get<Teuchos::Array<double>>("cell volumes [m^3]").toVector();
       if (cell_volumes.size() != n_cells) {
         Errors::Message msg;
-        msg << "MeshLogicalFactory (segment \"" << seg_name
-            << "\"): number of cells inconsistent with number of cell volumes provided.";
+        msg << "MeshLogicalFactory (segment \"" << seg_name << "\"): number of cells inconsistent with number of cell volumes provided.";
         Exceptions::amanzi_throw(msg);
       }
     } else {
       Errors::Message msg;
-      msg << "MeshLogicalFactory (segment \"" << seg_name
-          << "\"): unable to get cell volumes for mesh with non-calculated volumes.  "
+      msg << "MeshLogicalFactory (segment \"" << seg_name << "\"): unable to get cell volumes for mesh with non-calculated volumes.  "
           << "See documentation";
       Exceptions::amanzi_throw(msg);
     }
@@ -554,14 +544,12 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
     face_areas_mine = plist.get<Teuchos::Array<double>>("cross sectional areas [m^2]").toVector();
     if (face_areas_mine.size() != n_faces_mine) {
       Errors::Message msg;
-      msg << "MeshLogicalFactory (segment \"" << seg_name
-          << "\"): Incorrect number of cross sectional areas provided.";
+      msg << "MeshLogicalFactory (segment \"" << seg_name << "\"): Incorrect number of cross sectional areas provided.";
       Exceptions::amanzi_throw(msg);
     }
   } else {
     Errors::Message msg;
-    msg << "MeshLogicalFactory (segment \"" << seg_name
-        << "\"): cross sectional areas not specified.";
+    msg << "MeshLogicalFactory (segment \"" << seg_name << "\"): cross sectional areas not specified.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -576,7 +564,8 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
   if (plist.isParameter("orientation")) {
     orientation = GetPoint_(plist, "orientation");
     orientation /= AmanziGeometry::norm(orientation);
-  } else if (plist.isParameter("first tip") && plist.isParameter("last tip")) {
+  } else if (plist.isParameter("first tip")
+             && plist.isParameter("last tip")) {
     auto begin = GetPoint_(plist, "first tip");
     auto end = GetPoint_(plist, "last tip");
     orientation = begin - end;
@@ -592,27 +581,26 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
     auto centroids_raw = plist.get<Teuchos::Array<double>>("cell centroids").toVector();
     if (centroids_raw.size() != n_cells * 3) {
       Errors::Message msg;
-      msg << "MeshLogicalFactory (segment \"" << seg_name
-          << "\"): Specified cell centroid vector must be of size 3 * n_cells.";
+      msg << "MeshLogicalFactory (segment \"" << seg_name << "\"): Specified cell centroid vector must be of size 3 * n_cells.";
       Exceptions::amanzi_throw(msg);
     }
-    for (int i = 0; i != n_cells; ++i) {
-      cell_centroids.emplace_back(AmanziGeometry::Point(
-        centroids_raw[3 * i], centroids_raw[3 * i + 1], centroids_raw[3 * i + 2]));
+    for (int i=0; i!=n_cells; ++i) {
+      cell_centroids.emplace_back(AmanziGeometry::Point(centroids_raw[3*i], centroids_raw[3*i+1], centroids_raw[3*i+2]));
     }
 
 
-  } else if (plist.isParameter("first tip") && plist.isParameter("last tip")) {
+  } else if (plist.isParameter("first tip")
+             && plist.isParameter("last tip")) {
     auto begin = GetPoint_(plist, "first tip");
     auto end = GetPoint_(plist, "last tip");
     auto ds = (end - begin) / seg_length;
 
     cell_centroids.resize(n_cells);
-    auto my_centroid = begin + ds * cell_lengths[0] / 2;
+    auto my_centroid = begin + ds * cell_lengths[0]/2;
     cell_centroids[0] = my_centroid;
-    for (int c = 0; c != n_cells - 1; ++c) {
-      my_centroid += ds * (cell_lengths[c] / 2 + cell_lengths[c + 1] / 2);
-      cell_centroids[c + 1] = my_centroid;
+    for (int c=0; c!=n_cells-1; ++c) {
+      my_centroid += ds * (cell_lengths[c]/2 + cell_lengths[c+1]/2);
+      cell_centroids[c+1] = my_centroid;
     }
   } else if (tracking_centroids_) {
     AmanziGeometry::Point begin;
@@ -621,9 +609,7 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
     } else {
       if (first_tip_type != LogicalTip_t::BRANCH) {
         Errors::Message msg;
-        msg << "MeshLogicalFactory (segment \"" << seg_name
-            << "\"): In tracking centroids mode, all \"first tip type\" values must be BOUNDARY or "
-               "BRANCH";
+        msg << "MeshLogicalFactory (segment \"" << seg_name << "\"): In tracking centroids mode, all \"first tip type\" values must be BOUNDARY or BRANCH";
         Exceptions::amanzi_throw(msg);
       }
       std::string branch_from = plist.get<std::string>("first tip branch segment");
@@ -634,11 +620,11 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
     auto ds = -orientation;
 
     cell_centroids.resize(n_cells);
-    auto my_centroid = begin + ds * cell_lengths[0] / 2;
+    auto my_centroid = begin + ds * cell_lengths[0]/2;
     cell_centroids[0] = my_centroid;
-    for (int c = 0; c != n_cells - 1; ++c) {
-      my_centroid += ds * (cell_lengths[c] / 2 + cell_lengths[c + 1] / 2);
-      cell_centroids[c + 1] = my_centroid;
+    for (int c=0; c!=n_cells-1; ++c) {
+      my_centroid += ds * (cell_lengths[c]/2 + cell_lengths[c+1]/2);
+      cell_centroids[c+1] = my_centroid;
     }
     tracking_end_points_[seg_name] = end;
   }
@@ -655,31 +641,26 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
     auto branch_from_seg = seg_cells_.find(branch_from);
     if (branch_from_seg == seg_cells_.end()) {
       Errors::Message msg;
-      msg
-        << "MeshLogicalFactory (segment \"" << seg_name << "\"): branches from segment \""
-        << branch_from
-        << "\" but this segment has not yet been specified.  Junctions must come before Branches!";
+      msg << "MeshLogicalFactory (segment \"" << seg_name << "\"): branches from segment \"" << branch_from << "\" but this segment has not yet been specified.  Junctions must come before Branches!";
       Exceptions::amanzi_throw(msg);
     }
 
     // note cell_volumes_.size() will be the LID of the first cell of this segment!
-    std::vector<int> cells = { -1, (int)cell_volumes_.size() };
-    std::vector<AmanziGeometry::Point> bisectors = { AmanziGeometry::Point(),
-                                                     orientation * cell_lengths[0] / 2. };
+    std::vector<int> cells = {-1, (int) cell_volumes_.size() };
+    std::vector<AmanziGeometry::Point> bisectors = { AmanziGeometry::Point(), orientation * cell_lengths[0]/2. };
     std::vector<int> dirs = { 0, 1 };
 
     if (branch_from_tip == "first") {
       cells[0] = seg_cells_[branch_from].front();
-      bisectors[0] = seg_orientations_[branch_from] * cell_lengths_[cells[0]] / 2.;
+      bisectors[0] = seg_orientations_[branch_from] * cell_lengths_[cells[0]]/2.;
       dirs[0] = 1;
     } else if (branch_from_tip == "last") {
       cells[0] = seg_cells_[branch_from].back();
-      bisectors[0] = -seg_orientations_[branch_from] * cell_lengths_[cells[0]] / 2.;
+      bisectors[0] = -seg_orientations_[branch_from] * cell_lengths_[cells[0]]/2.;
       dirs[0] = -1;
     } else {
       Errors::Message msg;
-      msg << "MeshLogicalFactory (segment \"" << seg_name
-          << "\"): \"first tip branch segment tip\" must be \"first\" or \"last\"";
+      msg << "MeshLogicalFactory (segment \"" << seg_name << "\"): \"first tip branch segment tip\" must be \"first\" or \"last\"";
       Exceptions::amanzi_throw(msg);
     }
 
@@ -690,16 +671,8 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
     auto centroids_p = cell_centroids.size() > 0 ? &cell_centroids : nullptr;
     auto volumes_p = cell_volumes.size() > 0 ? &cell_volumes : nullptr;
 
-    AddSegment(centroids_p,
-               volumes_p,
-               cell_lengths,
-               face_areas,
-               orientation,
-               first_tip_type,
-               last_tip_type,
-               seg_name,
-               &new_cells,
-               &new_faces);
+    AddSegment(centroids_p, volumes_p, cell_lengths, face_areas, orientation,
+               first_tip_type, last_tip_type, seg_name, &new_cells, &new_faces);
 
     AddFace(f, cells, bisectors, dirs, face_areas_mine[0]);
 
@@ -709,28 +682,20 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
     auto centroids_p = cell_centroids.size() > 0 ? &cell_centroids : nullptr;
     auto volumes_p = cell_volumes.size() > 0 ? &cell_volumes : nullptr;
 
-    AddSegment(centroids_p,
-               volumes_p,
-               cell_lengths,
-               face_areas,
-               orientation,
-               first_tip_type,
-               last_tip_type,
-               seg_name,
-               &new_cells,
-               &new_faces);
+    AddSegment(centroids_p, volumes_p, cell_lengths, face_areas, orientation,
+               first_tip_type, last_tip_type, seg_name, &new_cells, &new_faces);
   }
 
   seg_cells_[seg_name] = new_cells;
   seg_faces_[seg_name] = new_faces;
   seg_orientations_[seg_name] = orientation;
+
 }
 
 
 // Reserve a slot for a face (likely to be added via AddFace!)
 int
-MeshLogicalFactory::ReserveFace()
-{
+MeshLogicalFactory::ReserveFace() {
   int f = face_cell_list_.size();
   face_cell_list_.emplace_back(Entity_ID_List());
   face_cell_bisectors_.emplace_back(std::vector<AmanziGeometry::Point>());
@@ -746,13 +711,11 @@ MeshLogicalFactory::AddFace(int f,
                             const Entity_ID_List& cells,
                             const std::vector<AmanziGeometry::Point>& bisectors,
                             const std::vector<int>& dirs,
-                            double area)
-{
+                            double area) {
   if (f < 0) f = ReserveFace();
 
   if (cells.size() != 2) {
-    Errors::Message msg("MeshLogicalFactory: connection added is improperly formed -- all "
-                        "connections need two cells.");
+    Errors::Message msg("MeshLogicalFactory: connection added is improperly formed -- all connections need two cells.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -773,12 +736,13 @@ MeshLogicalFactory::AddFace(int f,
 int
 MeshLogicalFactory::AddSet(const std::string& set_name,
                            const std::string& ent,
-                           const Entity_ID_List& ents)
-{
+                           const Entity_ID_List& ents) {
+
   // create the region
   // - these are destroyed when the gm is destroyed
   Teuchos::RCP<AmanziGeometry::RegionEnumerated> enum_rgn =
-    Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name, gm_->size(), ent, ents));
+      Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name, gm_->size(),
+              ent, ents));
   gm_->AddRegion(enum_rgn);
   return gm_->size() - 1;
 }
@@ -806,13 +770,12 @@ MeshLogicalFactory::GetTipType_(Teuchos::ParameterList& plist, const std::string
 AmanziGeometry::Point
 MeshLogicalFactory::GetPoint_(Teuchos::ParameterList& plist, const std::string& pname)
 {
-  auto point_a = plist.get<Teuchos::Array<double>>(pname);
+  auto point_a = plist.get<Teuchos::Array<double> >(pname);
   if (point_a.size() != 3) {
-    Errors::Message msg(
-      "MeshLogicalFactory: logical meshes must be in 3D, so points must be of length 3.");
+    Errors::Message msg("MeshLogicalFactory: logical meshes must be in 3D, so points must be of length 3.");
     Exceptions::amanzi_throw(msg);
   }
-  return AmanziGeometry::Point{ point_a[0], point_a[1], point_a[2] };
+  return AmanziGeometry::Point{point_a[0], point_a[1], point_a[2]};
 }
 
 } // namespace AmanziMesh

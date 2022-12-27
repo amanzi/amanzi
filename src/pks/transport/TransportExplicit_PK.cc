@@ -1,13 +1,15 @@
 /*
-  Transport PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Daniil Svyatsky (dasvyat@lanl.gov)
+*/
+
+/*
+  Transport PK
 
   Implementation of explicit time integration algorithms.
 */
@@ -66,10 +68,10 @@ TransportExplicit_PK::TransportExplicit_PK(const Teuchos::RCP<Teuchos::Parameter
 {}
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Advance each component independently due to different field
-* reconstructions. This routine uses custom implementation of the 
-* second-order predictor-corrector time integration scheme. 
+* reconstructions. This routine uses custom implementation of the
+* second-order predictor-corrector time integration scheme.
 ******************************************************************* */
 void
 TransportExplicit_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
@@ -133,9 +135,9 @@ TransportExplicit_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Advance each component independently due to different field
-* reconstructions. This routine uses generic explicit time integrator. 
+* reconstructions. This routine uses generic explicit time integrator.
 ******************************************************************* */
 void
 TransportExplicit_PK::AdvanceSecondOrderUpwindRKn(double dt_cycle)
@@ -173,7 +175,7 @@ TransportExplicit_PK::AdvanceSecondOrderUpwindRKn(double dt_cycle)
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * MPC will call this function to advance the transport state.
 * Efficient subcycling requires to calculate an intermediate state of
 * saturation only once, which leads to a leap-frog-type algorithm.
@@ -325,7 +327,7 @@ TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * A simple first-order "donor" upwind method.
 ******************************************************************* */
 void
@@ -446,7 +448,7 @@ TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * A simple first-order upwind method on non-manifolds.
 ******************************************************************* */
 void
@@ -552,7 +554,7 @@ TransportExplicit_PK::AdvanceDonorUpwindManifold(double dt_cycle)
 }
 
 
-/* ******************************************************************* 
+/* *******************************************************************
 * Routine takes a parallel overlapping vector C and returns parallel
 * overlapping vector F(C). Old version.
 ****************************************************************** */

@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <TensorDiffusion_PK.H>
 #include <tTensorDiffusion_PK_F.H>
 
@@ -15,7 +24,7 @@
 #include <MCMultiGrid.H>
 
 enum bc_t {Periodic = 0,
-	   Dirichlet = LO_DIRICHLET, 
+	   Dirichlet = LO_DIRICHLET,
 	   Neumann = LO_NEUMANN};
 
 BCRec defaultBC()
@@ -114,14 +123,14 @@ diffuse_tracer(Real                   t_old,
     TensorOp* op_old = getOp(a,b,bd_old,sComp_bd_old,1,W_old,sComp_W_old,1,W_half,sComp_W_half,W_flag,
 			     betan,sComp_betan,1,beta1n,sComp_beta1n,1,volume,area,alpha_in,sComp_alpha_in);
     op_old->maxOrder(max_order);
-    
+
     MultiFab::Copy(Soln,S_old,sComp_S_old,0,nComp,0);
 
     op_old->apply(Rhs,Soln);
     op_old->compFlux(D_DECL(*fluxn[0],*fluxn[1],*fluxn[2]),Soln,MCInhomogeneous_BC,
 		     0,dComp_flux,nComp,sComp_bd_old);
     delete op_old;
-    
+
     for (int d = 0; d < BL_SPACEDIM; ++d) {
       for (int n=0; n<nComp; ++n) {
 	(*fluxn[d]).mult(-b/(dt*dx[d]),dComp_flux+n,1,0);
@@ -277,22 +286,22 @@ void WritePlotfile(const std::string         &pfversion,
     // Force other processors to wait till directory is built.
     //
     ParallelDescriptor::Barrier();
-    
+
     std::string oFileHeader(oFile);
     oFileHeader += "/Header";
-    
+
     VisMF::IO_Buffer io_buffer(VisMF::IO_Buffer_Size);
-    
+
     std::ofstream os;
-    
+
     //os.rdbuf()->pubsetbuf(io_buffer.dataPtr(), io_buffer.size());
-    
+
     if(verbose && ParallelDescriptor::IOProcessor()) {
       std::cout << "Opening file = " << oFileHeader << '\n';
     }
-    
+
     os.open(oFileHeader.c_str(), std::ios::out|std::ios::binary);
-    
+
     if(os.fail()) {
       BoxLib::FileOpenFailed(oFileHeader);
     }
@@ -346,7 +355,7 @@ void WritePlotfile(const std::string         &pfversion,
         int nGrids = ba.size();
         char buf[64];
         sprintf(buf, "Level_%d", iLevel);
-        
+
         if(ParallelDescriptor::IOProcessor()) {
             os << iLevel << ' ' << nGrids << ' ' << time << '\n';
             if(levelSteps != 0) {
@@ -354,7 +363,7 @@ void WritePlotfile(const std::string         &pfversion,
 	    } else {
               os << 0 << '\n';
 	    }
-            
+
             for(int i(0); i < nGrids; ++i) {
               const Box &b = ba[i];
               for(int n(0); n < BL_SPACEDIM; ++n) {
@@ -369,7 +378,7 @@ void WritePlotfile(const std::string         &pfversion,
             std::string Level(oFile);
             Level += '/';
             Level += buf;
-            
+
             if( ! BoxLib::UtilCreateDirectory(Level, 0755)) {
               BoxLib::CreateDirectoryFailed(Level);
 	    }
@@ -382,13 +391,13 @@ void WritePlotfile(const std::string         &pfversion,
         // Now build the full relative pathname of the MultiFab.
         //
         static const std::string MultiFabBaseName("MultiFab");
-        
+
         std::string PathName(oFile);
         PathName += '/';
         PathName += buf;
         PathName += '/';
         PathName += MultiFabBaseName;
-        
+
         if(ParallelDescriptor::IOProcessor()) {
             //
             // The full name relative to the Header file.
@@ -400,7 +409,7 @@ void WritePlotfile(const std::string         &pfversion,
         }
         VisMF::Write(data[iLevel], PathName);
     }
-    
+
     os.close();
 }
 
@@ -426,14 +435,14 @@ main (int   argc,
   int Ncomp=1;
   int Nghost=1;
   MultiFab soln(bs, Ncomp, Nghost, Fab_allocate); soln.setVal(0.0);
-  MultiFab out(bs, Ncomp, Nghost, Fab_allocate); 
+  MultiFab out(bs, Ncomp, Nghost, Fab_allocate);
 
   if (ParallelDescriptor::IOProcessor())
     std::cout << "grids:\n" << bs << std::endl;
 
   // This says we are using Cartesian coordinates
   int coord = 0;
-    
+
   // This defines the physical size of the box.  Right now the box is [0,1] in each direction.
   RealBox real_box;
   for (int n = 0; n < BL_SPACEDIM; n++) {
@@ -444,7 +453,7 @@ main (int   argc,
   // This sets the boundary conditions to be periodic or not
   int* is_per = new int[BL_SPACEDIM];
   bc_t bc_type = Dirichlet;
-    
+
   std::string bc_type_s = "Dirichlet";
   pp.query("bc_type",bc_type_s);
   if (bc_type_s == "Dirichlet") {
@@ -465,11 +474,11 @@ main (int   argc,
 
   if (bc_type == Dirichlet || bc_type == Neumann) {
     for (int n = 0; n < BL_SPACEDIM; n++) is_per[n] = 0;
-  } 
+  }
   else {
     for (int n = 0; n < BL_SPACEDIM; n++) is_per[n] = 1;
   }
-    
+
   // This defines a Geometry object which is useful for writing the plotfiles
   Geometry geom(domains[0],&real_box,coord,is_per);
   Array<Array<Real> > dx(2,Array<Real>(BL_SPACEDIM));
@@ -531,7 +540,7 @@ main (int   argc,
   loadBndryData(bd,fine,0,&crse,0,pbcarray,geom,ratio,Ncomp);
 
   Real t_start = 0; pp.query("t_start",t_start);
-  Real delta_t_init = .01; pp.query("delta_t_init",delta_t_init);  
+  Real delta_t_init = .01; pp.query("delta_t_init",delta_t_init);
   Real t_end = 1.e15; pp.query("t_end",t_end);
   Real theta = 0.5; pp.query("theta",theta);
   int max_order = 3; pp.query("max_order",max_order);
@@ -574,7 +583,7 @@ main (int   argc,
 		   &aT, &aL, &u, &v);
     }
   }
-  
+
   MultiFab::Copy(soln_new,soln,0,0,Ncomp,soln.nGrow());
 
   Real old_time = t_start;
@@ -610,8 +619,8 @@ main (int   argc,
     bool add_old_time_divFlux = true;
     data[1].setVal(0);
     diffuse_tracer(old_time, new_time, theta, soln, 0, soln_new, 0, &W_old, 0, &W_new, 0,
-                   W_half, 0, W_flag, bd, 0, bd, 0, fluxn, fluxnp1, 0, &dRhs, 0, 
-                   alpha, 0, beta, 0, beta, 0, beta1, 0, beta1, 0, Ncomp, 
+                   W_half, 0, W_flag, bd, 0, bd, 0, fluxn, fluxnp1, 0, &dRhs, 0,
+                   alpha, 0, beta, 0, beta, 0, beta1, 0, beta1, 0, Ncomp,
                    ONEPASS, max_order, add_old_time_divFlux,mg_verbose,mg_usecg);
 
     if (do_output) {
@@ -649,19 +658,19 @@ main (int   argc,
     BL_ASSERT(aL == 1);
     BL_ASSERT(u == -1);
     BL_ASSERT(v == 1);
-    
+
     MultiFab mf;
     VisMF::Read(mf,"tTensorDiffusion_TestRes");
     MultiFab::Subtract(mf,soln_new,0,0,1,0);
     Real normDiff = mf.max(0);
     std::cout << "Max of difference: " << normDiff << std::endl;
-    
+
     if (normDiff > 1.e-2) {// How close is close?
       std::cerr << "TensorDiffusion hosed!" << std::endl;
       throw std::exception();
     }
   }
-  
+
   for (int d=0; d<BL_SPACEDIM; d++) {
     delete fluxn[d];
     delete fluxnp1[d];

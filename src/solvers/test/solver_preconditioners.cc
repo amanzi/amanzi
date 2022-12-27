@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <iostream>
 #include <string>
 
@@ -141,7 +150,7 @@ TEST(PRECONDITIONERS_OMP) {
 
     Epetra_Vector u(*map), v(*map);
     for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
-  
+
     auto solver = get_solver(prec_name, m);
     v.PutScalar(0.0);
 
@@ -162,7 +171,7 @@ TEST(PRECONDITIONERS_OMP) {
 
     Epetra_Vector u(*map), v(*map);
     for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
-  
+
     auto solver = get_solver(prec_name, m);
     v.PutScalar(0.0);
 
@@ -175,7 +184,7 @@ TEST(PRECONDITIONERS_OMP) {
   nthreads = omp_get_max_threads();
   cpu1 = omp_get_wtime();
   std::cout << "CPU (serial): " << cpu1 - cpu0 << " [sec]  threads=" << nthreads << std::endl;
-  
+
 };
 #  endif
 #endif

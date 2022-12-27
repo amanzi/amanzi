@@ -1,12 +1,14 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
 
   Implementation of different limiters uses a few common rules:
   1. Dirichlet boundary data are used to update limiter bounds.
@@ -14,7 +16,7 @@
      of first-order scheme is reduce not more than twice. This
      step requires to specify a face-based flux field.
   3. At the moment, we require the input field and boundary data
-     to have valid values in ghost positions. Exception, is the 
+     to have valid values in ghost positions. Exception, is the
      limiter for DG fields.
 */
 
@@ -256,7 +258,7 @@ LimiterCell::ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter)
 
 
 /* *******************************************************************
-* Tensorial limiter limits the gradient directly, to avoid 
+* Tensorial limiter limits the gradient directly, to avoid
 * calculation of a 3x3 matrix.
 ******************************************************************* */
 void
@@ -347,7 +349,7 @@ LimiterCell::LimiterTensorial_(const AmanziMesh::Entity_ID_List& ids,
 
 
 /* *******************************************************************
-* Extension of the tensorial limiter. Routine changes gradient to 
+* Extension of the tensorial limiter. Routine changes gradient to
 * satisfy an a prioty estimate of the stable time step. That estimate
 * assumes that the weigthed flux is smaller than the first-order flux.
 ******************************************************************* */
@@ -403,7 +405,7 @@ LimiterCell::LimiterExtensionTransportTensorial_()
 
 /* *******************************************************************
 * Routine calculates a scalar limiter using the cell-based algorithm.
-* First, it limits face-centered value of a reconstracted function 
+* First, it limits face-centered value of a reconstracted function
 * by min-max of two or more cell-centered values.
 * Second, it limits outflux values which gives factor 0.5 in the
 * time step estimate.
@@ -485,7 +487,7 @@ LimiterCell::LimiterScalar_(const AmanziMesh::Entity_ID_List& ids,
 
 
 /* *******************************************************************
-* Extension of the scalarlimiter. Routine changes gradient to 
+* Extension of the scalarlimiter. Routine changes gradient to
 * satisfy an a prioty estimate of the stable time step. That estimate
 * assumes that the weigthed flux is smaller that the first-order flux.
 ******************************************************************* */
@@ -547,7 +549,7 @@ LimiterCell::LimiterExtensionTransportScalar_(Teuchos::RCP<Epetra_Vector> limite
 
 
 /* *******************************************************************
-* Kuzmin's limiter use all neighbors of a computational cell.  
+* Kuzmin's limiter use all neighbors of a computational cell.
 ******************************************************************* */
 void
 LimiterCell::LimiterKuzmin_(const AmanziMesh::Entity_ID_List& ids,
@@ -622,8 +624,8 @@ LimiterCell::LimiterKuzmin_(const AmanziMesh::Entity_ID_List& ids,
 
 
 /* *******************************************************************
-* Kuzmin's limiter use all neighbors of the given cell and limit 
-* gradient in this cell only.  
+* Kuzmin's limiter use all neighbors of the given cell and limit
+* gradient in this cell only.
 ******************************************************************* */
 void
 LimiterCell::LimiterKuzminCell_(int c,
@@ -676,7 +678,7 @@ LimiterCell::LimiterKuzminCell_(int c,
 
 
 /* *******************************************************************
-* Extension of Kuzmin's limiter. Routine changes gradient to 
+* Extension of Kuzmin's limiter. Routine changes gradient to
 * satisfy an a prioty estimate of the stable time step. That estimate
 * assumes that the weigthed flux is smaller that the first-order flux.
 ******************************************************************* */
@@ -766,8 +768,8 @@ LimiterCell::ProjectOnPlane_(double du,
 
 
 /* *******************************************************************
-* Identify flux direction based on orientation of the face normal 
-* and sign of the Darcy velocity.                               
+* Identify flux direction based on orientation of the face normal
+* and sign of the Darcy velocity.
 ******************************************************************* */
 void
 LimiterCell::IdentifyUpwindCells_()

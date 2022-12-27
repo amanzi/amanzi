@@ -1,8 +1,17 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <Layout.H>
 
 std::ostream& operator<< (std::ostream&  os, const Node& node)
 {
-    os << "iv:" << node.iv << ",l:" << node.level << ",t:"; 
+    os << "iv:" << node.iv << ",l:" << node.level << ",t:";
     if (node.type==Node::INIT)
         os << "I";
     else if (node.type==Node::COVERED)
@@ -247,11 +256,11 @@ Layout::Clear()
 }
 
 #include <VisMF.H>
-void 
+void
 Write(const Layout::MultiIntFab& imf,
       const std::string& filename,
       int comp,
-      int nGrow) 
+      int nGrow)
 {
     BL_ASSERT(comp<=imf.nComp() && comp>=0);
     BL_ASSERT(nGrow<=imf.nGrow());
@@ -327,7 +336,7 @@ Layout::SetGridsFromParent()
   }
 }
 
-void 
+void
 Layout::Build()
 {
     if (initialized) {
@@ -405,7 +414,7 @@ Layout::Build()
                 NodeFab& nodeFab = nodesLev[mfi];
                 const Box& box = nodeFab.box();
                 Box gbox = Box(mfi.validbox()).grow(refRatio[lev-1]);
-                std::vector< std::pair<int,Box> > isects = bndryCells[lev].intersections(gbox);                
+                std::vector< std::pair<int,Box> > isects = bndryCells[lev].intersections(gbox);
                 for (int i=0; i<isects.size(); ++i) {
                     const Box& fbox = isects[i].second;
                     Box ovlp = fbox & box;
@@ -429,7 +438,7 @@ Layout::Build()
         {
             const BoxArray coarsenedFineBoxes =
                 BoxArray(gridArray[lev+1]).coarsen(refRatio[lev]);
-                
+
             for (MFIter fai(nodesLev); fai.isValid(); ++fai)
             {
                 NodeFab& ifab = nodesLev[fai];
@@ -458,7 +467,7 @@ Layout::Build()
             {
                 if (ifab(iv,0).type == Node::VALID)
                 {
-                    if (ifab(iv,0).level != lev) 
+                    if (ifab(iv,0).level != lev)
                         std::cout << "bad level: " << ifab(iv,0) << std::endl;
                     nfab(iv,0) = cnt++;
                 }
@@ -473,8 +482,8 @@ Layout::Build()
     // Note: This is an attemp to make the node number independent of the cpu partitioning.
     //       It is not yet functional because it needs an accompanying local-to-global mapping
     //       so that global numbers get mapped correctly to local numbers under the PETSc
-    //       covers.  I havet done that yet, partly because I havet yet figured out how to 
-    //       make sure the matrix is mapped the same way.  We punt for now, but leave the 
+    //       covers.  I havet done that yet, partly because I havet yet figured out how to
+    //       make sure the matrix is mapped the same way.  We punt for now, but leave the
     //       code here for future finishing....grep for VecSetValuesLocal elsewhere
 
     // Compute total number of nodes
@@ -528,7 +537,7 @@ Layout::Build()
     // Adjust node numbers to be globally unique
     int num_size = ParallelDescriptor::NProcs();
     Array<int> num_nodes_p(num_size);
-    BL_MPI_REQUIRE(MPI_Allgather(&nNodes_local, 1, MPI_INT, num_nodes_p.dataPtr(), 1, MPI_INT, 
+    BL_MPI_REQUIRE(MPI_Allgather(&nNodes_local, 1, MPI_INT, num_nodes_p.dataPtr(), 1, MPI_INT,
                                  ParallelDescriptor::Communicator()));
 
     int offset = 0;
@@ -536,7 +545,7 @@ Layout::Build()
         offset += num_nodes_p[i];
     }
 
-    // Adjust node numbers 
+    // Adjust node numbers
     for (int lev=0; lev<nLevs; ++lev)
     {
         for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
@@ -566,12 +575,12 @@ Layout::Build()
     crseIds.resize(nLevs-1,PArrayManage);
     for (int lev=0; lev<nLevs; ++lev)
     {
-        if (lev>0) 
+        if (lev>0)
         {
             const IntVect& ref = refRatio[lev-1];
             const IntVect refm = ref - IntVect::TheUnitVector();
             BoxArray bndC = BoxArray(bndryCells[lev]).coarsen(ref);
-        
+
             crseIds.set(lev-1,new MultiIntFab(bndC,1,0,Fab_allocate)); crseIds[lev-1].setVal(-1);
             crseIds[lev-1].copy(nodeIds[lev-1]); // parallel copy
 
@@ -590,7 +599,7 @@ Layout::Build()
                 }
             }
 
-            nodeIds[lev].FillBoundary(0,1); 
+            nodeIds[lev].FillBoundary(0,1);
 
             MultiIntFab ng(BoxArray(nodeIds[lev].boxArray()).grow(nodeIds[lev].nGrow()),1,0);
             for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi) {
@@ -611,8 +620,8 @@ Layout::Build()
 #ifdef BL_USE_PETSC
     int n = nNodes_local; // Number of local columns of J
     int m = nNodes_local; // Number of local rows of J
-    int N = nNodes_global; // Number of global columns of J 
-    int M = nNodes_global; // Number of global rows of J 
+    int N = nNodes_global; // Number of global columns of J
+    int M = nNodes_global; // Number of global rows of J
     int d_nz = 1 + 2*BL_SPACEDIM; // Number of nonzero local columns of J
     int o_nz = 0; // Number of nonzero nonlocal (off-diagonal) columns of J
 
@@ -629,7 +638,7 @@ Layout::Build()
     ierr = MatMPIAIJSetPreallocation(J_mat, d_nz, PETSC_NULL, o_nz, PETSC_NULL); CHKPETSC(ierr);
 #endif
     mats_I_created.push_back(&J_mat);
-    ierr = VecCreateMPI(comm,nNodes_local,nNodes_global,&JRowScale_vec); CHKPETSC(ierr);        
+    ierr = VecCreateMPI(comm,nNodes_local,nNodes_global,&JRowScale_vec); CHKPETSC(ierr);
     vecs_I_created.push_back(&JRowScale_vec);
 #endif
     initialized = true;
@@ -762,13 +771,13 @@ Layout::MFTowerToVec(Vec&           V,
 		//    idx = ifab(IntVect(ii,jj),0)
 
                 const int* ix = ifab.dataPtr();
-                
+
                 fab.resize(box,1);
                 fab.copy(mft[lev][mfi],comp,0,1);
                 const Real* y = fab.dataPtr();
-                
-                ierr = VecSetValues(V,ni,ix,y,INSERT_VALUES); CHKPETSC(ierr);                
-                //ierr = VecSetValuesLocal(V,ni,ix,y,INSERT_VALUES); CHKPETSC(ierr);                
+
+                ierr = VecSetValues(V,ni,ix,y,INSERT_VALUES); CHKPETSC(ierr);
+                //ierr = VecSetValuesLocal(V,ni,ix,y,INSERT_VALUES); CHKPETSC(ierr);
             }
         }
     }
@@ -820,7 +829,7 @@ Layout::VecToMFTower(MFTower&   mft,
                 ifab.resize(box,1);
                 ifab.copy(nodeIds[lev][mfi]);
                 const int* ix = ifab.dataPtr();
-                
+
                 fab.resize(box,1);
                 Real* y = fab.dataPtr();
 
@@ -845,7 +854,7 @@ std::ostream& operator<< (std::ostream&  os, const Layout::IntFab& ifab)
             os << ifab(iv,n) << " ";
         }
         os << '\n';
-    } 
+    }
     return os;
 }
 
@@ -861,7 +870,7 @@ std::ostream& operator<< (std::ostream&  os, const Layout::NodeFab& nfab)
             os << nfab(iv,n) << " ";
         }
         os << '\n';
-    } 
+    }
     return os;
 }
 
@@ -879,5 +888,3 @@ std::ostream& operator<< (std::ostream&  os, const Layout::MultiNodeFab& mnf)
     }
     return os;
 }
-
-

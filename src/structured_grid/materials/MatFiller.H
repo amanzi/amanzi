@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _MatFiller_H_
 #define _MatFiller_H_
 
@@ -23,11 +32,11 @@
   The primary members of this class are "SetProperty" (and "SetMaterialID", if that information
   will be used by other procedures to set material-based information).  The SetProperty
   function simply evaluates a property over the cells requested.  However, if material boundaries
-  do not coincide with the interfaces of the discrete cells at the coarsest level, there is 
+  do not coincide with the interfaces of the discrete cells at the coarsest level, there is
   some ambiguity for how to do this.  This class implements the rule that a the material is
-  defined by the material ID determined at the finest grid resolution desired.  If, when a 
-  cell on a coarser level is refined to that level, its constituent cells share the same 
-  material ID, we store that ID in a data structure at the coarse level. The SetMaterialID 
+  defined by the material ID determined at the finest grid resolution desired.  If, when a
+  cell on a coarser level is refined to that level, its constituent cells share the same
+  material ID, we store that ID in a data structure at the coarse level. The SetMaterialID
   function is designed to return data according to this rule, with the understanding that
   a value of -1 indicates that the cell is "mixed" at that level.  Any of the properties
   can be evaluated directly in non-mixed cells.  For mixed cells, the properties are evaluated
@@ -41,7 +50,7 @@
 
   Finally, a few of the members of this class are virtual so that alternative rules may
   be implemented for the various key pieces of the algorithm (evualate-then-avaerage, etc),
-  although default behavior is provided, as discussed in the function descriptions below).  
+  although default behavior is provided, as discussed in the function descriptions below).
   Also, the Property class provides for the passing of a "user-defined" context in order to
   generalize the notion of a "Property".  This class respects that generality, but defaults
   the context to a null object pointer by default.
@@ -66,7 +75,7 @@ public:
   int NComp(const std::string& property_name) const;
 
 
-  /* Fill a MultiFab with the value of a property, given a time, 
+  /* Fill a MultiFab with the value of a property, given a time,
      and refinement level (as defined in the ctr), including
      nGrow cells.  ctx is a user-defined context which is passed
      through to the Property "eval" function. Return is false if
@@ -101,7 +110,7 @@ public:
   /* The Geometry object at this level  */
   const Geometry& Geom(int level) const;
 
-  /* The refinement ratio between this level and the next finer. 
+  /* The refinement ratio between this level and the next finer.
      Note, level<NumLevels()-1 */
   const IntVect& RefRatio(int crse_level) const;
 
@@ -110,7 +119,7 @@ public:
      all share the same material ID */
   const BoxArray& Mixed(int level) const;
 
-  /* The internally cached (minimal) data structure at this level containing the 
+  /* The internally cached (minimal) data structure at this level containing the
      ID of the material at this location.  The ID is consistent with MatIdx(). */
   iMultiFab& MaterialID(int level);
 
@@ -134,7 +143,7 @@ public:
                           const IntVect&     ref,
                           const Property::CoarsenRule& rule);
 
-  /* Given crse property values, generate fine property values 
+  /* Given crse property values, generate fine property values
      per the given refine rule */
   static void RefineData(const FArrayBox&   crseFab,
                          int                sComp,
@@ -147,7 +156,7 @@ public:
 
   /* Fill all cells that are outside the "domain" as defined by
      the Geometry objects passed into the ctr.  By default, this
-     is done by piecewise-constant extrapolation normal to the 
+     is done by piecewise-constant extrapolation normal to the
      boundary interface. */
   static void FillCellsOutsideDomain(Real               t,
 				     int                level,
@@ -169,7 +178,7 @@ protected:
   /* Manage the generation of property value based on evaluations
      at finer levels.  This is factored out to allow permuting the
      order of evaluation and averaging.  The default implementation
-     evaluates the property at the finer level, then calls 
+     evaluates the property at the finer level, then calls
      CoarsenData to generate coarsened values. */
   virtual bool FillCoarseCells(Real               t,
 			       int                level,
@@ -180,12 +189,12 @@ protected:
 			       void*              ctx = 0) const;
 
   /* Ensure that the properties passed in for all materials are consistent,
-     e.g. that they return a consistent number of components, and have 
+     e.g. that they return a consistent number of components, and have
      consistent inter-level transfer instructions. */
   void VerifyProperties();
 
   /* For all levels necessary, find the set of cells that are "mixed",
-     in that if refined to the finest level, the material ID of 
+     in that if refined to the finest level, the material ID of
      the consituent cells will not all be the same */
   Array<BoxArray> FindMixedCells();
 
@@ -193,7 +202,7 @@ protected:
   Array<BoxArray> ba_mixed;
 
   /* The material ID of cells at each level.  This is the minimal set
-     necessary to represent each level.  The ID is consistent with 
+     necessary to represent each level.  The ID is consistent with
      MatIdx(), except that mixed cells at this level will have the value
      of -1.
   */
@@ -227,4 +236,3 @@ protected:
 };
 
 #endif
-

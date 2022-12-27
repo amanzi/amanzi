@@ -1,17 +1,19 @@
 /*
-  Flow PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
+*/
 
-  Field evaluator for water storage which is the conserved quantity 
+/*
+  Flow PK
+
+  Field evaluator for water storage which is the conserved quantity
   in the Richards equation.
 
-  Wrapping this conserved quantity water storage (WS) as a field evaluator 
+  Wrapping this conserved quantity water storage (WS) as a field evaluator
   makes it easier to take derivatives, keep updated, and the like.
   The equation for this is simply:
 

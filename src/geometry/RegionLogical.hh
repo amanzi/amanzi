@@ -1,8 +1,5 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionLogical: A region defined by a logical operation on one or two other regions
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -10,6 +7,7 @@
   Authors: Rao Garimella
 */
 
+//! RegionLogical: A region defined by a logical operation on one or two other regions
 /*!
 
 The list *region: logical* defines logical operations on regions allow for

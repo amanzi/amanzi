@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _Property_H_
 #define _Property_H_
 
@@ -129,7 +138,7 @@ public:
                         Property::RefineRule   _refine_rule = Property::PiecewiseConstant)
     : Property(_name,_coarsen_rule,_refine_rule), funcs(Array<TabularFunction>(1,_func)) {}
 
-  TabularInTimeProperty(const std::string&            _name, 
+  TabularInTimeProperty(const std::string&            _name,
                         const Array<TabularFunction>& _funcs,
                         Property::CoarsenRule         _coarsen_rule = Property::Arithmetic,
                         Property::RefineRule          _refine_rule = Property::PiecewiseConstant)
@@ -142,11 +151,10 @@ public:
   virtual Property* clone() const;
   virtual int nComp() const {return funcs.size();}
   const Array<TabularFunction>& Functions() const {return funcs;}
-  
+
 protected:
   Array<TabularFunction> funcs;
 };
 
 
 #endif
-

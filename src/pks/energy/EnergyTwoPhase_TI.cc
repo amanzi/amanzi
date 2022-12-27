@@ -1,12 +1,15 @@
 /*
-  Energy PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
+
+/*
+  Energy PK
+
 */
 
 #include "Key.hh"
@@ -151,7 +154,7 @@ EnergyTwoPhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
 
 
 /* ******************************************************************
-* Error is defined as the relative change of temperature. 
+* Error is defined as the relative change of temperature.
 * The reference temprerature value is 273 K.
 ****************************************************************** */
 double

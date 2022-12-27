@@ -1,14 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
 */
 
 //! Simple timestep control based upon previous iteration count.
-
 /*!
 
 This is a simple timestep control mechanism
@@ -21,7 +20,7 @@ The timestep for step :math:`k+1`, :math:`\Delta t_{k+1}`, is given by:
 - if :math:`N_k < N^{min}` then :math:`\Delta t_{k+1} = f_{increase} * \Delta t_{k}`
 - otherwise :math:`\Delta t_{k+1} = \Delta t_{k}`
 
-where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of 
+where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of
 nonlinear iterations required to solve step :math:`k`:.
 
 .. _timestep-controller-standard-spec:

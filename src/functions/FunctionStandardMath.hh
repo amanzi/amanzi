@@ -1,18 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! FunctionStandardMath: provides access to many common mathematical functions.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+//! FunctionStandardMath: provides access to many common mathematical functions.
 /*!
-These functions allow to set up non-trivial time-dependent boundary conditions 
-which increases a set of analytic solutions that can be used in convergence 
+These functions allow to set up non-trivial time-dependent boundary conditions
+which increases a set of analytic solutions that can be used in convergence
 analysis tests.
 
 .. math::
@@ -29,7 +27,7 @@ better yet a dimension could/should be added upon request).
 
 .. _function-standard-math-spec:
 .. admonition:: function-standard-math-spec
-                
+
    * `"operator`" ``[string]`` specifies the name of a standard mathematical
      function.  Available options are `"cos`", `"sin`", `"tan`", `"acos`",
      `"asin`", `"atan`", `"cosh`", `"sinh`", `"tanh`", `"exp`", `"log`",

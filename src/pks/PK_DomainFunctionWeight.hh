@@ -1,17 +1,19 @@
 /*
-  Process Kernels 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
 
-  The total source Q is given for each domain. A weighted source 
-  distribution model is employed. The cell-based source density is 
-  calculated as (Q / W_D) * weight, where W_D is the weighted 
-  domain volume. The weight is defined globally, for the whole 
+/*
+  Process Kernels
+
+  The total source Q is given for each domain. A weighted source
+  distribution model is employed. The cell-based source density is
+  calculated as (Q / W_D) * weight, where W_D is the weighted
+  domain volume. The weight is defined globally, for the whole
   computational domain.
 */
 

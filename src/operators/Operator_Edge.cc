@@ -1,13 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  Operators
 
   Operator whose unknowns are Edge.
 */
@@ -27,7 +29,7 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Apply a source which may or may not have edge volume included already. 
+* Apply a source which may or may not have edge volume included already.
 ****************************************************************** */
 void
 Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_included)
@@ -87,7 +89,7 @@ Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
 
 /* ******************************************************************
 * Visit methods for Apply.
-* Apply the local matrices directly as schema is a subset of 
+* Apply the local matrices directly as schema is a subset of
 * assembled schema.
 ****************************************************************** */
 int

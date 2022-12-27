@@ -1,12 +1,14 @@
 /*
-  Process Kernels
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Daniil Svyatsky (dasvyat@lanl.gov)
+  Authors: Daniil Svyatsky (dasvyat@lanl.gov)
+*/
+
+/*
+  Process Kernels
 
   This provide coupling of fields located on matching manifold and
   space meshes. For the space, the coupling creates a list of boundary
@@ -29,18 +31,18 @@
     "copy_conserved_quantity_key" -> "conserved quantity copy key"
 
   There are three submodels.
-  (A) submodel="rate". The computed data are given by formulas: 
+  (A) submodel="rate". The computed data are given by formulas:
 
       value[i][c] += flux[f] * external_field[i][cc] / |c|
-      value[N][c] -= dt * flux[f] 
+      value[N][c] -= dt * flux[f]
 
-  where cc is the space cell attached to face f, and N is the auxiliary 
-  value added to the result. Note that internal face f (resp., boundary 
+  where cc is the space cell attached to face f, and N is the auxiliary
+  value added to the result. Note that internal face f (resp., boundary
   face f) is shared by two (resp. one) space cells.
 
   (B) submodel="field". The computed data are given by the formula:
 
-      value[i][f] = external_field[i][c]; 
+      value[i][f] = external_field[i][c];
 
   (C) submodel="conserved quantity". Not used in Amanzi.
 

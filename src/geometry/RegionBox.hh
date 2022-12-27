@@ -1,18 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionBox: a rectangular region in space, defined by two corners
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: William Perkins
            Rao Garimella
            Ethan Coon (ecoon@lanl.gov)
-
 */
 
+//! RegionBox: a rectangular region in space, defined by two corners
 /*!
 
 List *region: box* defines a region bounded by coordinate-aligned
@@ -35,7 +32,7 @@ Example:
        <Parameter name="high coordinate" type="Array(double)" value="{5.0, 5.0,  5.0}"/>
      </ParameterList>
    </ParameterList>
-  
+
 */
 
 

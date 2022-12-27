@@ -1,12 +1,15 @@
 /*
-  This is the energy component of the Amanzi code. 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  This is the energy component of the Amanzi code.
+
 */
 
 #include <string>
@@ -360,7 +363,7 @@ Energy_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeV
 
 
 /* ******************************************************************
-* Add source and sink terms.                                   
+* Add source and sink terms.
 ****************************************************************** */
 void
 Energy_PK::AddSourceTerms(CompositeVector& rhs)
@@ -378,8 +381,8 @@ Energy_PK::AddSourceTerms(CompositeVector& rhs)
 
 /* ******************************************************************
 * Add a boundary marker to used faces.
-* WARNING: we can skip update of ghost boundary faces, b/c they 
-* should be always owned. 
+* WARNING: we can skip update of ghost boundary faces, b/c they
+* should be always owned.
 ****************************************************************** */
 void
 Energy_PK::ComputeBCs(const CompositeVector& u)

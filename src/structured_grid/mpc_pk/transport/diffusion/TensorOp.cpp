@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <winstd.H>
 #include <TensorOp.H>
 #include <TensorOp_F.H>
@@ -147,7 +156,7 @@ TensorOp::prepareForLevel (int level)
     a_valid.resize(level+1);
     a_valid[level] = true;
   }
-    
+
   if (level >= b_valid.size() || b_valid[level] == false)
   {
     if (bcoefs.size() > level) {
@@ -158,7 +167,7 @@ TensorOp::prepareForLevel (int level)
       }
     }
     bcoefs.resize(level+1);
-    
+
     for (int i = 0; i < BL_SPACEDIM; ++i) {
       bcoefs[level][i] = new MultiFab;
     }
@@ -180,7 +189,7 @@ TensorOp::prepareForLevel (int level)
       }
     }
     b1coefs.resize(level+1);
-    
+
     for (int i = 0; i < BL_SPACEDIM; ++i) {
       b1coefs[level][i] = new MultiFab;
     }
@@ -400,7 +409,7 @@ TensorOp::applyBC (MultiFab&      inout,
   // No coarsened boundary values, cannot apply inhomog at lev>0.
   //
   BL_ASSERT(!(level>0 && bc_mode == MCInhomogeneous_BC));
-    
+
   int flagden = 1;	// fill in the bndry data and undrrelxr
   int flagbc  = 1;	// with values
   if (bc_mode == MCHomogeneous_BC)
@@ -449,7 +458,7 @@ TensorOp::applyBC (MultiFab&      inout,
       //
       // Way external derivs stored.
       //
-      const Real* exttdptr = fsfab.dataPtr(numcomp); 
+      const Real* exttdptr = fsfab.dataPtr(numcomp);
       const int* fslo      = fsfab.loVect();
       const int* fshi      = fsfab.hiVect();
       FArrayBox& inoutfab  = inout[gn];
@@ -632,31 +641,31 @@ TensorOp::Fsmooth (MultiFab&       solnL,
 
   OrientationIter oitr;
 
-  const FabSet& fw  = (*undrrelxr[level])[oitr()]; 
-  const FabSet& ftw = (*undrrelxrt[level])[oitr()]; 
+  const FabSet& fw  = (*undrrelxr[level])[oitr()];
+  const FabSet& ftw = (*undrrelxrt[level])[oitr()];
   const FabSet& tdw = (*tangderiv[level])[oitr()];
   oitr++;
-  const FabSet& fs  = (*undrrelxr[level])[oitr()]; 
-  const FabSet& fts = (*undrrelxrt[level])[oitr()]; 
+  const FabSet& fs  = (*undrrelxr[level])[oitr()];
+  const FabSet& fts = (*undrrelxrt[level])[oitr()];
   const FabSet& tds = (*tangderiv[level])[oitr()];
   oitr++;
 #if BL_SPACEDIM>2
-  const FabSet& fb  = (*undrrelxr[level])[oitr()]; 
-  const FabSet& ftb = (*undrrelxrt[level])[oitr()]; 
+  const FabSet& fb  = (*undrrelxr[level])[oitr()];
+  const FabSet& ftb = (*undrrelxrt[level])[oitr()];
   const FabSet& tdb = (*tangderiv[level])[oitr()];
   oitr++;
 #endif
-  const FabSet& fe  = (*undrrelxr[level])[oitr()]; 
-  const FabSet& fte = (*undrrelxrt[level])[oitr()]; 
+  const FabSet& fe  = (*undrrelxr[level])[oitr()];
+  const FabSet& fte = (*undrrelxrt[level])[oitr()];
   const FabSet& tde = (*tangderiv[level])[oitr()];
   oitr++;
-  const FabSet& fn  = (*undrrelxr[level])[oitr()]; 
-  const FabSet& ftn = (*undrrelxrt[level])[oitr()]; 
+  const FabSet& fn  = (*undrrelxr[level])[oitr()];
+  const FabSet& ftn = (*undrrelxrt[level])[oitr()];
   const FabSet& tdn = (*tangderiv[level])[oitr()];
   oitr++;
 #if BL_SPACEDIM>2
-  const FabSet& ft  = (*undrrelxr[level])[oitr()]; 
-  const FabSet& ftt = (*undrrelxrt[level])[oitr()]; 
+  const FabSet& ft  = (*undrrelxr[level])[oitr()];
+  const FabSet& ftt = (*undrrelxrt[level])[oitr()];
   const FabSet& tdt = (*tangderiv[level])[oitr()];
   oitr++;
 #endif
@@ -812,7 +821,7 @@ TensorOp::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
   BL_ASSERT(zflux.nComp()>=dComp+nComp);
 #endif
   BL_ASSERT(nComp==1);
-    
+
   D_TERM(const MultiFab& bX = bCoefficients(0,level);,
          const MultiFab& bY = bCoefficients(1,level);,
          const MultiFab& bZ = bCoefficients(2,level););

@@ -1,5 +1,5 @@
 /*
-  Copyright 2010-201x held jointly by LANL, ORNL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -12,8 +12,7 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "AmanziComm.hh"
-#include "Mesh.hh"
-#include "MeshFactory.hh"
+#include "MeshFramework.hh"
 #include "MeshAudit.hh"
 
 #include "framework_meshes.hh"
@@ -31,14 +30,17 @@ TEST(MESH_SETS_3CUBE)
   // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=3
   // works in MSTK & SIMPLE (in serial)
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
-  if (getDefaultComm()->NumProc() == 1) frameworks.push_back(Framework::SIMPLE);
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+  if (getDefaultComm()->NumProc() == 1)
+    frameworks.push_back(Framework::SIMPLE);
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing 3D Box 3x3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing 3D Box 3x3x3 with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkStructuredUnitHex(Preference{ frm }, 3, 3, 3, comm, gm);
+    auto mesh = createStructuredUnitHex(Preference{frm}, 3,3,3, comm, gm);
     testHexMeshSets3x3x3(mesh, false, frm);
   }
 }
@@ -56,18 +58,20 @@ TEST(MESH_SETS_3CUBE_EXO)
   // a 3D exodus file, structured hex on the unit cube, NX=NY=NZ=3
   // works in MSTK or MOAB
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
-  if (framework_enabled(Framework::MOAB) && getDefaultComm()->NumProc() == 1) {
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+  if (framework_enabled(Framework::MOAB) &&
+      getDefaultComm()->NumProc() == 1) {
     // moab only reads exo in serial, otherwise must read par
     frameworks.push_back(Framework::MOAB);
   }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::framework_names.at(frm)
-              << std::endl
+              << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkUnstructured(Preference{ frm }, "test/hex_3x3x3_sets.exo", comm, gm);
+    auto mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo", comm, gm);
     testHexMeshSets3x3x3(mesh, true, frm);
   }
 }
@@ -98,9 +102,9 @@ TEST(MESH_SETS_3CUBE_EXO)
 
 //   for (const auto& frm : frameworks) {
 //     std::cout << std::endl
-//               << "Testing 3D Box 3x3x3 Par with " << AmanziMesh::framework_names.at(frm) << std::endl
+//               << "Testing 3D Box 3x3x3 Par with " << AmanziMesh::to_string(frm) << std::endl
 //               << "------------------------------------------------" << std::endl;
-//     auto mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_3x3x3_sets.par", comm, gm);
+//     auto mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3_sets.par", comm, gm);
 //     testHexMeshSets3x3x3(mesh, true, frm);
 //   }
 // }
@@ -118,13 +122,16 @@ TEST(MESH_SETS_3QUAD)
   // a 2D, generated, structured hex on the unit cube, NX=NY=3
   // works in MSTK
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing 2D Box 3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing 2D Box 3x3 with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkStructuredUnitQuad(Preference{ frm }, 3, 3, comm, gm);
+    auto mesh = createStructuredUnitQuad(Preference{frm}, 3,3, comm, gm);
     testQuadMeshSets3x3(mesh, false, frm, false);
   }
 }
+

@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   The normalized basis for dG methods with monomials of the form
   |a (x-x0)^m| = 1. The transformation matrix R is diagonal with
@@ -144,8 +146,8 @@ Basis_Normalized::ChangeBasisNaturalToMy(DenseVector& v) const
 
 
 /* ******************************************************************
-* Recover polynomial in the natural basis from vector coefs of 
-* coefficients in the normalized basis. 
+* Recover polynomial in the natural basis from vector coefs of
+* coefficients in the normalized basis.
 ****************************************************************** */
 Polynomial
 Basis_Normalized::CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,

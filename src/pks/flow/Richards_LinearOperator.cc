@@ -1,12 +1,15 @@
 /*
-  Flow PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #include "InverseFactory.hh"
@@ -24,8 +27,8 @@ namespace Flow {
 /* ******************************************************************
 * Solve single phase problem using boundary conditions at time t_old.
 * We populate both matrix and preconditoner here but use only the
-* preconditioner. Matrix may be used in external flux calculation. 
-* Moving flux calculation here impose restrictions on multiple 
+* preconditioner. Matrix may be used in external flux calculation.
+* Moving flux calculation here impose restrictions on multiple
 * possible scenarios of data flow.
 ****************************************************************** */
 void
@@ -87,8 +90,8 @@ Richards_PK::SolveFullySaturatedProblem(double t_old,
 
 
 /* ******************************************************************
-* Enforce constraints, using new BCs at time t_new, by solving the 
-* block-diagonalized problem. Algorithm is based on de-coupling 
+* Enforce constraints, using new BCs at time t_new, by solving the
+* block-diagonalized problem. Algorithm is based on de-coupling
 * pressure-lambda system via zeroing-out off-diagonal blocks.
 ****************************************************************** */
 void

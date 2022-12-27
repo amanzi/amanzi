@@ -1,15 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! FunctionSeparable: f(x,y) = f1(x)*f2(y)
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon _at_ lanl.gov)
+  Authors: Ethan Coon (ecoon _at_ lanl.gov)
 */
 
+//! FunctionSeparable: f(x,y) = f1(x)*f2(y)
 /*!
 
 A separable function is defined as the product of other functions such as
@@ -17,7 +15,7 @@ A separable function is defined as the product of other functions such as
 .. math::
   f(x_0, x_1,...,x_{{n-1}}) = f_1(x_0)\, f_2(x_1,...,x_{{n-1}})
 
-where :math:`f_1` is defined by the `"function1`" sublist, and 
+where :math:`f_1` is defined by the `"function1`" sublist, and
 :math:`f_2` by the `"function2`" sublist.
 
 .. _function-separable-spec:

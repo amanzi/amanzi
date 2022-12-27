@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <stdio.h>
 
 #include "errors.hh"
@@ -20,7 +29,7 @@ class AmanziErrorHandler : public xercesc::ErrorHandler
             (unsigned long)ex.getLineNumber(), (unsigned long)ex.getColumnNumber(), msg);
     xercesc::XMLString::release(&msg);
   }
- 
+
  public:
   void warning(const xercesc::SAXParseException& ex) {
     //reportParseException(ex);
@@ -29,7 +38,7 @@ class AmanziErrorHandler : public xercesc::ErrorHandler
             (unsigned long)ex.getLineNumber(), (unsigned long)ex.getColumnNumber(), msg);
     xercesc::XMLString::release(&msg);
   }
- 
+
   void error(const xercesc::SAXParseException& ex) {
     //reportParseException(ex);
     char* msg = xercesc::XMLString::transcode(ex.getMessage());
@@ -38,7 +47,7 @@ class AmanziErrorHandler : public xercesc::ErrorHandler
     xercesc::XMLString::release(&msg);
     Exceptions::amanzi_throw(Errors::Message("Errors occured while parsing the input file. Aborting."));
   }
- 
+
   void fatalError(const xercesc::SAXParseException& ex) {
     //reportParseException(ex);
     char* msg = xercesc::XMLString::transcode(ex.getMessage());
@@ -47,6 +56,6 @@ class AmanziErrorHandler : public xercesc::ErrorHandler
     xercesc::XMLString::release(&msg);
     Exceptions::amanzi_throw(Errors::Message("Errors occured while parsing the input file. Aborting."));
   }
- 
+
   void resetErrors() {};
 };

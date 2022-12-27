@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <RichardSolver.H>
 #include <RichardSolver_F.H>
 #include <PorousMedia_F.H>
@@ -70,7 +79,7 @@ CheckForSmallDt(PetscReal dt,bool* dt_is_small,void *ctx)
 }
 
 // We need this to get at the guts of the MatFDColoring type.
-#include <petsc/private/matimpl.h> 
+#include <petsc/private/matimpl.h>
 
 #undef __FUNCT__
 #define __FUNCT__ "RichardSolverCtr"
@@ -135,7 +144,7 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
 
     // NOTE: The finite difference coloring code here is rather brittle, because
     // NOTE: it uses unpublished fields in the MatFDColoring data structure.
-    // NOTE: In order to bring it in line with PETSc 3.5.2, it was necessary 
+    // NOTE: In order to bring it in line with PETSc 3.5.2, it was necessary
     // NOTE: to use the 'ds' method and set the block size to 1. It is possible
     // NOTE: that a future version of PETSc will break this again. :-/ JNJ
     ierr = MatFDColoringCreate(Jac,iscoloring,&matfdcoloring); CHKPETSC(ierr);
@@ -276,7 +285,7 @@ RichardSolver::ReusePreviousJacobian()
   return (num_remaining_Jacobian_reuses > 0);
 }
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "RecordSolve"
 void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* check_ctx)
 {
@@ -329,7 +338,7 @@ void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* c
     rs_data.calcInvPressure(SnewMFT,PnewMFT,cur_time,0,0,0);
     rs_data.calcInvPressure(SoldMFT,PoldMFT,cur_time-dt,0,0,0);
   }
-  
+
   for (int lev=0; lev<nLevs; ++lev) {
     SnewMFT[lev].mult(1/rho,0,1);
     SoldMFT[lev].mult(1/rho,0,1);
@@ -373,7 +382,7 @@ void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* c
   dump_cnt++;
 }
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "PostCheck"
 /*
   PostCheck - User-defined routine that checks the validity of
@@ -384,12 +393,12 @@ void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* c
   x     	- previous iterate
   y 	        - new search direction and length
   w 	        - current candidate iterate
-   
+
   Out:
   y            - search direction (possibly changed)
   w            - current iterate (possibly modified)
   changed_y 	- indicates search direction was changed by this routine
-  changed_w 	- indicates current iterate was changed by this routine 
+  changed_w 	- indicates current iterate was changed by this routine
 
 */
 PetscErrorCode
@@ -422,7 +431,7 @@ PetscErrorCode
 
   Vec& F = rs->GetResidualV();
   Vec& G = rs->GetTrialResV();
-    
+
   ierr = (*func)(snes,x,F,fctx); CHKPETSC(ierr);
   ierr = VecNorm(F,NORM_2,&fnorm); CHKPETSC(ierr);
 
@@ -450,12 +459,12 @@ PetscErrorCode
   bool norm_acceptable = gnorm < fnorm * nlsc->ls_acceptance_factor;
   int ls_iterations = 0;
   Real ls_factor = 1;
-  bool finished = norm_acceptable 
+  bool finished = norm_acceptable
     || ls_iterations > nlsc->max_ls_iterations
     || ls_factor <= nlsc->min_ls_factor;
 
   Real gnorm_0 = gnorm;
-  while (!finished) 
+  while (!finished)
   {
     ls_factor *= nlsc->ls_reduction_factor;
     if (ls_factor < nlsc->min_ls_factor) {
@@ -465,13 +474,13 @@ PetscErrorCode
     PetscReal mone = -1;
     ierr=VecWAXPY(w,mone*ls_factor,y,x); CHKPETSC(ierr); /* w = -y + x */
     *changed_w = PETSC_TRUE;
-        
+
     ierr = (*func)(snes,w,G,fctx); CHKPETSC(ierr);
     ierr=VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr); CHKPETSC(ierr);
     norm_acceptable = gnorm < fnorm * nlsc->ls_acceptance_factor;
-        
-    if (ls_factor < 1 
-        && nlsc->monitor_line_search 
+
+    if (ls_factor < 1
+        && nlsc->monitor_line_search
         && ParallelDescriptor::IOProcessor())
     {
       std::cout << tag << tag_ls
@@ -480,14 +489,14 @@ PetscErrorCode
                 << ", Newton norm=" << gnorm_0
                 << ", damped norm=" << gnorm << '\n';
     }
-        
-    finished = norm_acceptable 
+
+    finished = norm_acceptable
       || ls_iterations > nlsc->max_ls_iterations
-      || ls_factor <= nlsc->min_ls_factor;      
+      || ls_factor <= nlsc->min_ls_factor;
     ls_iterations++;
   }
-    
-  if (ls_iterations > nlsc->max_ls_iterations) 
+
+  if (ls_iterations > nlsc->max_ls_iterations)
   {
     std::string reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
     if (ParallelDescriptor::IOProcessor() && nlsc->monitor_line_search) {
@@ -526,13 +535,13 @@ PetscErrorCode
     RecordSolve(x,y,y_orig,w,F,G,check_ctx);
     ierr = VecDestroy(&y_orig); CHKPETSC(ierr);
   }
-    
+
   PetscFunctionReturn(0);
 }
 
-#include <petsc/private/snesimpl.h> 
+#include <petsc/private/snesimpl.h>
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "AltUpdate"
 PetscErrorCode
 AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *changed_dp,PetscBool *changed_pkp1)
@@ -625,9 +634,9 @@ AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *c
   PetscFunctionReturn(0);
 }
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "PostCheckAlt"
-PetscErrorCode 
+PetscErrorCode
   PostCheckAlt(SNESLineSearch ls,Vec p,Vec dp,Vec pnew,PetscBool  *changed_dp,PetscBool  *changed_pnew,void *ctx)
 {
   BL_PROFILE("RichardSolver::PostCheckAlt()");
@@ -657,7 +666,7 @@ PetscErrorCode
 
   Vec& F = rs->GetResidualV();
   Vec& G = rs->GetTrialResV();
-    
+
   ierr = (*func)(snes,p,F,fctx);CHKPETSC(ierr);
   ierr = VecNorm(F,NORM_2,&fnorm);CHKPETSC(ierr);
 
@@ -681,15 +690,15 @@ PetscErrorCode
     ierr = VecDuplicate(dp,&dp_orig);
     ierr = VecCopy(dp,dp_orig);
   }
-    
+
   bool norm_acceptable = gnorm < fnorm * nlsc->ls_acceptance_factor;
   int ls_iterations = 0;
-  bool finished = norm_acceptable 
+  bool finished = norm_acceptable
     || ls_iterations > nlsc->max_ls_iterations
     || ls_factor <= nlsc->min_ls_factor;
 
   Real gnorm_0 = gnorm;
-  while (!finished) 
+  while (!finished)
   {
     ls_factor *= nlsc->ls_reduction_factor;
     if (ls_factor < nlsc->min_ls_factor) {
@@ -700,9 +709,9 @@ PetscErrorCode
     ierr = (*func)(snes,pnew,G,fctx);CHKPETSC(ierr);
     ierr = VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
     norm_acceptable = gnorm < fnorm * nlsc->ls_acceptance_factor;
-        
-    if (ls_factor < 1 
-        && nlsc->monitor_line_search 
+
+    if (ls_factor < 1
+        && nlsc->monitor_line_search
         && ParallelDescriptor::IOProcessor())
     {
       std::cout << tag << tag_ls
@@ -711,14 +720,14 @@ PetscErrorCode
                 << ", Newton norm=" << gnorm_0
                 << ", damped norm=" << gnorm << '\n';
     }
-        
-    finished = norm_acceptable 
+
+    finished = norm_acceptable
       || ls_iterations > nlsc->max_ls_iterations
-      || ls_factor <= nlsc->min_ls_factor;      
+      || ls_factor <= nlsc->min_ls_factor;
     ls_iterations++;
   }
-    
-  if (ls_iterations > nlsc->max_ls_iterations) 
+
+  if (ls_iterations > nlsc->max_ls_iterations)
   {
     std::string reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
     if (ParallelDescriptor::IOProcessor()) {
@@ -767,7 +776,7 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
 {
   BL_PROFILE("RichardSolver::Solve()");
 
-  BL_PROFILE_VAR("RichardSolver::Solve::prep", p_prep); 
+  BL_PROFILE_VAR("RichardSolver::Solve::prep", p_prep);
   CheckCtx check_ctx;
   check_ctx.rs = this;
   check_ctx.nlsc = &nlsc;
@@ -855,7 +864,7 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
   nlsc.ls_success = true;
   BL_PROFILE_VAR_STOP(p_prep);
 
-  BL_PROFILE_VAR("RichardSolver::Solve::SNESSolve", p_solve); 
+  BL_PROFILE_VAR("RichardSolver::Solve::SNESSolve", p_solve);
   ierr = SNESSolve(snes,PETSC_NULL,SolnV);// CHKPETSC(ierr);
   BL_PROFILE_VAR_STOP(p_solve);
   RichardSolver::SetTheRichardSolver(0);
@@ -881,7 +890,7 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
   return reason;
 }
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "BuildOpSkel"
 void
 RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
@@ -892,7 +901,7 @@ RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
   int rows[1]; // At the moment, only set one row at a time
   Array<Real> vals;
   Array<int> cols;
-  
+
   Layout& layout = GetLayout();
   const Array<Geometry>& geomArray = layout.GeomArray();
   const Array<BoxArray>& gridArray = layout.GridArray();
@@ -902,7 +911,7 @@ RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
   const Array<BoxArray>& bndryCells = layout.BndryCells();
   const Array<Array<IVSMap> >& growCellStencil = mftfp->GrowCellStencil();
   int nLevs = layout.NumLevels();
-  
+
   PetscErrorCode ierr;
   int num_nbrs_reg = 2*BL_SPACEDIM+1;
   Layout::IntFab reg_neighbors;
@@ -910,7 +919,7 @@ RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
   typedef BaseFab<std::set<int> > ISetFab;
   typedef FabArray<ISetFab> MultiSetFab;
   PArray<MultiSetFab> crseContribs(nLevs,PArrayManage);
-  
+
   int myproc = ParallelDescriptor::MyProc();
   int numprocs = ParallelDescriptor::NProcs();
 
@@ -918,7 +927,7 @@ RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
     MAX_NUM_COLS = 0;
   }
 
-  for (int lev=nLevs-1; lev>=0; --lev) 
+  for (int lev=nLevs-1; lev>=0; --lev)
   {
     const Array<IVSMap>& growCellStencilLev = growCellStencil[lev];
     const Layout::MultiNodeFab& nodeLev = nodes[lev];
@@ -929,7 +938,7 @@ RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
     if (lev>0) {
       BoxArray bacg = BoxArray(gridArray[lev]).coarsen(refRatio[lev-1]).grow(1);
       crseIds.define(bacg,1,0,Fab_allocate);
-            
+
       const Layout::MultiIntFab& crseIds_orig = nodeIds[lev-1]; // crse cells through periodic boundary
       BoxArray gcba = BoxArray(crseIds_orig.boxArray()).grow(crseIds_orig.nGrow());
       Layout::MultiIntFab tmp(gcba,1,0);
@@ -955,8 +964,8 @@ RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
         for (int i=0; i<isects.size(); ++i) {
           int dst_proc = dm[isects[i].first];
 
-          // HACK  This was originally written for parallel, but when I tried it in serial, the entire 
-          // crseContribs structure was ignored!!  For now, set this up as a communication, even if 
+          // HACK  This was originally written for parallel, but when I tried it in serial, the entire
+          // crseContribs structure was ignored!!  For now, set this up as a communication, even if
           // serial...probably an easy logic issue to clear up....famous last words...
           if (1 || dst_proc != myproc) {
             for (IntVect iv(vbox.smallEnd()), iEnd=vbox.bigEnd(); iv<=iEnd; vbox.next(iv))
@@ -1009,7 +1018,7 @@ RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
                                    1,
                                    ParallelDescriptor::Mpi_typemap<int>::type(),
                                    ParallelDescriptor::Communicator()) );
-            
+
       int total_num_to_recv = 0;
       Array<int> roffsets(numprocs,0);
       for (int i=0; i<numprocs; ++i) {
@@ -1028,7 +1037,7 @@ RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
                                     roffsets.dataPtr(),
                                     ParallelDescriptor::Mpi_typemap<int>::type(),
                                     ParallelDescriptor::Communicator()) );
-            
+
       for (int i=0; i<numprocs; ++i) {
         int jcnt = roffsets[i];
         while (jcnt < roffsets[i] + recvs[i]) {
@@ -1114,7 +1123,7 @@ RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
           }
 
           int num_cols = -1;
-          if (nlsc.use_dense_Jacobian) 
+          if (nlsc.use_dense_Jacobian)
           {
             num_cols = layout.NumberOfGlobalNodeIds();
             cols.resize(num_cols);
@@ -1167,14 +1176,14 @@ RichardSolver::CenterToEdgeUpwind(PArray<MFTower>&       mfte,
     for (MFIter mfi(clev); mfi.isValid(); ++mfi) {
       FArrayBox& cfab = clev[mfi];
       const Box& vccbox = mfi.validbox();
-      for (int d=0; d<BL_SPACEDIM; ++d) {            
+      for (int d=0; d<BL_SPACEDIM; ++d) {
 	FArrayBox& efab = mfte[d][lev][mfi];
 	const FArrayBox& sgnfab = sgn[d][lev][mfi];
 	BL_ASSERT(nComp<=efab.nComp());
 	BL_ASSERT(nComp<=sgnfab.nComp());
 	BL_ASSERT(Box(vccbox).surroundingNodes(d).contains(efab.box()));
 	BL_ASSERT(Box(vccbox).surroundingNodes(d).contains(sgnfab.box()));
-                
+
 	int dir_bc_lo = bc.lo()[d]==EXT_DIR && vccbox.smallEnd()[d]==domain.smallEnd()[d];
 	int dir_bc_hi = bc.hi()[d]==EXT_DIR && vccbox.bigEnd()[d]==domain.bigEnd()[d];
 
@@ -1189,7 +1198,7 @@ RichardSolver::CenterToEdgeUpwind(PArray<MFTower>&       mfte,
   }
 }
 
-void 
+void
 RichardSolver::XmultYZ(MFTower&       X,
 		       const MFTower& Y,
 		       const MFTower& Z,
@@ -1274,7 +1283,7 @@ RichardSolver::CCtoECgradAdd(PArray<MFTower>&            mfte,
   BL_PROFILE("RichardSolver::CCtoECgradAdd()");
 
   const Layout& layout = GetLayout();
-  for (int d=0; d<BL_SPACEDIM; ++d) {            
+  for (int d=0; d<BL_SPACEDIM; ++d) {
     BL_ASSERT(layout.IsCompatible(mfte[d]));
   }
   BL_ASSERT(layout.IsCompatible(mftc));
@@ -1290,8 +1299,8 @@ RichardSolver::CCtoECgradAdd(PArray<MFTower>&            mfte,
     for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
       const FArrayBox& cfab = mfc[mfi];
       const Box& vcbox = mfi.validbox();
-            
-      for (int d=0; d<BL_SPACEDIM; ++d) {            
+
+      for (int d=0; d<BL_SPACEDIM; ++d) {
 	FArrayBox& efab = mfte[d][lev][mfi];
 	BL_ASSERT(dComp+nComp<=efab.nComp());
 	BL_ASSERT(Box(vcbox).surroundingNodes(d).contains(efab.box()));
@@ -1316,7 +1325,7 @@ RichardSolver::FillPatch(MFTower& mft,
   mftfp->FillGrowCells(mft,sComp,nComp,do_piecewise_constant,nLevs);
 }
 
-void 
+void
 RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
                                     Real     t)
 {
@@ -1325,12 +1334,12 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
   // On Dirichlet boundaries, the grow cells of pressure will hold the value to apply at
   // the cell wall.  Note that since we use "calcInvPressure" to fill rho.sat, these
   // are then values on the wall as well.  As a result, the lambda values computed
-  // with rho.sat are evaluated at the wall as well.  
-  
-  // We use the FillPatch operation to set pressure values in the grow cells using 
+  // with rho.sat are evaluated at the wall as well.
+
+  // We use the FillPatch operation to set pressure values in the grow cells using
   // polynomial extrapolation, and will then use these p values only for the puposes
   // of evaluating the pressure gradient on cell faces via a simple centered difference.
-  
+
   // Assumes lev=0 here corresponds to Amr.level=0, sets dirichlet values of rho.sat and
   // lambda on dirichlet pressure faces
 
@@ -1403,7 +1412,7 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
 	  MultiFab::Copy(CoeffCC[lev],CoeffCC[lev],0,d,1,1);
 	}
       }
-      
+
       // Make sure grow cells are consistent
       for (int lev=0; lev<nLevs; ++lev) {
 	CoeffCC[lev].FillBoundary(0,BL_SPACEDIM);
@@ -1419,7 +1428,7 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
     int do_harmonic = (rs_data.rel_perm_method == "other-harmonic_average"); // If not harmonic, then arithmetic
     int nComp = -1; // Note signal to take multiple components of cc to single comp of ec
     MFTower::CCtoECavg(GetRichardCoefs(),CoeffCC,1.0,0,0,nComp,do_harmonic);
-    
+
     for (int lev=0; lev<nLevs; ++lev) {
       for (int d=0; d<BL_SPACEDIM; ++d) {
 	MultiFab::Multiply(darcy_vel[d][lev],GetRichardCoefs()[d][lev],0,0,1,0);
@@ -1459,7 +1468,7 @@ RichardSolver::DivRhoU(MFTower& DivRhoU,
   // Get the Darcy flux
   ComputeDarcyVelocity(pressure,t);
 
-  // Get the divergence of the Darcy velocity flux = darcy vel . rho 
+  // Get the divergence of the Darcy velocity flux = darcy vel . rho
   //   leave velocity unscaled
   int sComp=0;
   int dComp=0;
@@ -1539,9 +1548,9 @@ RichardSolver::CalcResidual(MFTower& residual,
   }
 }
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "CreatJac"
-void RichardSolver::CreateJac(Mat& J, 
+void RichardSolver::CreateJac(Mat& J,
 			      MFTower& pressure,
                               Real t,
 			      Real dt)
@@ -1556,7 +1565,7 @@ void RichardSolver::CreateJac(Mat& J,
   const BCRec& theBC = rs_data.pressure_bc;
   int nLevs = rs_data.nLevs;
   PArray<MultiFab> kr_rs_data(nLevs,PArrayNoManage);
-  
+
   for (int lev=0; lev<nLevs; ++lev) {
     kr_rs_data.set(lev, &(GetKrParams()[lev]));
   }
@@ -1568,7 +1577,7 @@ void RichardSolver::CreateJac(Mat& J,
 
   // may not necessary since this should be same as the residual
   rs_data.calcInvPressure (GetRhoSatNp1(),pressure,t,0,0,1);
-  rs_data.calcLambda(GetLambda(),GetRhoSatNp1(),t,0,0,1); 
+  rs_data.calcLambda(GetLambda(),GetRhoSatNp1(),t,0,0,1);
 
   int do_upwind = rs_data.rel_perm_method == "upwind-darcy_velocity";
 
@@ -1600,7 +1609,7 @@ void RichardSolver::CreateJac(Mat& J,
       FArrayBox& vfaby = GetDarcyVelocity()[1][lev][mfi];
       const FArrayBox& kfabx = GetKappaEC(t)[0][lev][mfi];
       const FArrayBox& kfaby = GetKappaEC(t)[1][lev][mfi];
-      
+
 #if (BL_SPACEDIM==3)
       FArrayBox& jfabz = jacflux[2][mfi];
       FArrayBox& vfabz = GetDarcyVelocity()[2][lev][mfi];
@@ -1621,7 +1630,7 @@ void RichardSolver::CreateJac(Mat& J,
 
 #if(BL_SPACEDIM==3)
 			 jfabz.dataPtr(), ARLIM(jfabz.loVect()),ARLIM(jfabz.hiVect()),
-#endif	
+#endif
 			 vfabx.dataPtr(), ARLIM(vfabx.loVect()),ARLIM(vfabx.hiVect()),
 			 vfaby.dataPtr(), ARLIM(vfaby.loVect()),ARLIM(vfaby.hiVect()),
 #if(BL_SPACEDIM==3)
@@ -1630,31 +1639,31 @@ void RichardSolver::CreateJac(Mat& J,
 			 kfabx.dataPtr(), ARLIM(kfabx.loVect()),ARLIM(kfabx.hiVect()),
 			 kfaby.dataPtr(), ARLIM(kfaby.loVect()),ARLIM(kfaby.hiVect()),
 #if(BL_SPACEDIM==3)
-			 kfabz.dataPtr(), ARLIM(kfabz.loVect()),ARLIM(kfabz.hiVect()),  
+			 kfabz.dataPtr(), ARLIM(kfabz.loVect()),ARLIM(kfabz.hiVect()),
 #endif
 			 ldfab.dataPtr(), ARLIM(ldfab.loVect()),ARLIM(ldfab.hiVect()),
-			 
+
 			 prfab.dataPtr(), ARLIM(prfab.loVect()),ARLIM(prfab.hiVect()),
 			 pofab.dataPtr(), ARLIM(pofab.loVect()),ARLIM(pofab.hiVect()),
 			 kcfab.dataPtr(), ARLIM(kcfab.loVect()),ARLIM(kcfab.hiVect()),
 			 krfab.dataPtr(), ARLIM(krfab.loVect()),ARLIM(krfab.hiVect()), &n_kr_coef,
 			 cpfab.dataPtr(), ARLIM(cpfab.loVect()),ARLIM(cpfab.hiVect()), &n_cp_coef,
-			 vbox.loVect(), vbox.hiVect(), domain.loVect(), domain.hiVect(), 
-			 dx, bc, 
-			 rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(), 
+			 vbox.loVect(), vbox.hiVect(), domain.loVect(), domain.hiVect(),
+			 dx, bc,
+			 rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(),
 			 &deps, &do_upwind);
 
 
       FArrayBox dalpha(gbox,1);
       FArrayBox& nfab = GetRhoSatNp1()[lev][mfi];
-      
+
       FORT_RICHARD_ALPHA(dalpha.dataPtr(), ARLIM(dalpha.loVect()), ARLIM(dalpha.hiVect()),
 			 nfab.dataPtr(), ARLIM(nfab.loVect()),ARLIM(nfab.hiVect()),
 			 pofab.dataPtr(), ARLIM(pofab.loVect()),ARLIM(pofab.hiVect()),
 			 kcfab.dataPtr(), ARLIM(kcfab.loVect()), ARLIM(kcfab.hiVect()),
 			 cpfab.dataPtr(), ARLIM(cpfab.loVect()), ARLIM(cpfab.hiVect()), &n_cp_coef,
 			 vbox.loVect(), vbox.hiVect());
-      
+
       Array<int> cols(1+2*BL_SPACEDIM);
       Array<int> rows(1);
       Array<Real> vals(cols.size(),0);
@@ -1675,7 +1684,7 @@ void RichardSolver::CreateJac(Mat& J,
             IntVect ivp = iv + BoxLib::BASISV(d);
             int np = nodeNums(ivp,0);
             if (np>=0) {
-              cols[cnt]  = np; 
+              cols[cnt]  = np;
               vals[cnt]  = -rdt * jacflux[d][mfi](iv,0);
               cnt++;
             }
@@ -1684,11 +1693,11 @@ void RichardSolver::CreateJac(Mat& J,
                 vals[0] -= rdt * jacflux[d][mfi](iv,0);
               }
             }
-                  
+
             IntVect ivn = iv - BoxLib::BASISV(d);
             int nn = nodeNums(ivn,0);
             if (nn>=0) {
-              cols[cnt]  = nn; 
+              cols[cnt]  = nn;
               vals[cnt]  = -rdt * jacflux[d][mfi](iv,1);
               cnt++;
             }
@@ -1707,14 +1716,14 @@ void RichardSolver::CreateJac(Mat& J,
   ierr = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
 }
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "RichardRes_DpDt"
-PetscErrorCode 
+PetscErrorCode
 RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
 {
   BL_PROFILE("RichardSolver::RichardRes_DpDt()");
 
-  PetscErrorCode ierr; 
+  PetscErrorCode ierr;
   RichardSolver* rs = static_cast<RichardSolver*>(dummy);
   if (!rs) {
     BoxLib::Abort("Bad cast in RichardRes_DpDt");
@@ -1755,14 +1764,14 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
   PetscFunctionReturn(0);
 }
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "RichardR2"
-PetscErrorCode 
+PetscErrorCode
 RichardR2(SNES snes,Vec x,Vec f,void *dummy)
 {
   BL_PROFILE("RichardSolver::RichardR2()");
 
-  PetscErrorCode ierr; 
+  PetscErrorCode ierr;
   RichardSolver* rs = static_cast<RichardSolver*>(dummy);
   if (!rs) {
     BoxLib::Abort("Bad cast in RichardR2");
@@ -1790,9 +1799,9 @@ RichardR2(SNES snes,Vec x,Vec f,void *dummy)
   PetscFunctionReturn(0);
 }
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "RichardJacFromPM"
-PetscErrorCode 
+PetscErrorCode
 RichardJacFromPM(SNES snes, Vec x, Mat jac, Mat jacpre, void *dummy)
 {
   BL_PROFILE("RichardSolver::RichardJacFromPM()");
@@ -1803,7 +1812,7 @@ RichardJacFromPM(SNES snes, Vec x, Mat jac, Mat jacpre, void *dummy)
     BoxLib::Abort("Bad cast in RichardJacFromPM");
   }
   MFTower& xMFT = rs->GetPressureNp1();
-  
+
   Layout& layout = rs->GetLayout();
   ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
   Real dt = rs->GetDt();
@@ -1814,11 +1823,11 @@ RichardJacFromPM(SNES snes, Vec x, Mat jac, Mat jacpre, void *dummy)
     ierr = MatAssemblyEnd(jac,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
   }
   PetscFunctionReturn(0);
-} 
+}
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "RichardMatFDColoringApply"
-PetscErrorCode  
+PetscErrorCode
 RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
 {
   BL_PROFILE("RichardSolver::RichardMatFDColoringApply()");
@@ -1827,14 +1836,14 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   PetscInt       k,start,end,l,row,col,srow,m1,m2;
   PetscScalar    dx,*y,*w3_array;
   PetscScalar    *vscale_array, *solnTyp_array;
-  PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm; 
+  PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm;
   Vec            w1=coloring->w1,w2=coloring->w2,w3;
   PetscBool      flg = PETSC_FALSE;
   PetscInt       ctype=coloring->ctype,N,col_start=0,col_end=0;
   MatEntry       *Jentry=coloring->matentry;
   Vec            x1_tmp;
 
-  PetscFunctionBegin;    
+  PetscFunctionBegin;
   PetscValidHeaderSpecific(J,MAT_CLASSID,1);
   PetscValidHeaderSpecific(coloring,MAT_FDCOLORING_CLASSID,2);
   PetscValidHeaderSpecific(x1,VEC_CLASSID,3);
@@ -1858,7 +1867,7 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
     }
   }
 
-  x1_tmp = x1; 
+  x1_tmp = x1;
   if (!coloring->vscale) {
     ierr = VecDuplicate(x1_tmp,&coloring->vscale);CHKPETSC(ierr);
   }
@@ -1877,7 +1886,7 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   RichardSolver* rs = static_rs_ptr;
   BL_ASSERT(rs);
   ierr = VecGetOwnershipRange(w1,&start,&end);CHKPETSC(ierr); /* OwnershipRange is used by ghosted x! */
-      
+
   if (!coloring->w3) {
     ierr = VecDuplicate(x1_tmp,&coloring->w3);CHKPETSC(ierr);
     ierr = PetscLogObjectParent((PetscObject)coloring,(PetscObject)coloring->w3);CHKPETSC(ierr);
@@ -1902,12 +1911,12 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
       vscale_array = vscale_array - start;
       col_start = start; col_end = N + start;
     }
-    for (col=col_start; col<col_end; col++) { 
+    for (col=col_start; col<col_end; col++) {
       vscale_array[col] = (PetscScalar)(1.0 / (solnTyp_array[col] * epsilon));
-    } 
+    }
     if (ctype == IS_COLORING_GLOBAL)  {
-      vscale_array = vscale_array + start;      
-      solnTyp_array = solnTyp_array + start;      
+      vscale_array = vscale_array + start;
+      solnTyp_array = solnTyp_array + start;
     }
     ierr = VecRestoreArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
     ierr = VecRestoreArray(SolnTypV,&solnTyp_array);CHKPETSC(ierr);
@@ -1917,7 +1926,7 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
     ierr = VecGhostUpdateBegin(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
     ierr = VecGhostUpdateEnd(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
   }
-  
+
   /*
     Loop over each color
   */
@@ -1928,28 +1937,28 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
     // Compared to the case where dx=dx_i, the logic cleans up quite a bit here.
     //
     PetscInt nz = 0;
-    for (k=0; k<coloring->ncolors; k++) { 
+    for (k=0; k<coloring->ncolors; k++) {
       coloring->currentcolor = k;
 
       ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
       ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
-      if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array - start;          
+      if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array - start;
       for (l=0; l<coloring->ncolumns[k]; l++) {
         col = coloring->columns[k][l];    /* local column of the matrix we are probing for */
         w3_array[col] += epsilon;
-      } 
+      }
       if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array + start;
       ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
-          
+
       // w2 = F(w3) - F(x1) = F(x1 + dx) - F(x1)
       ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
+      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);
       ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
-          
+      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr);
+
       // Insert (w2_j / dx) into J_ij
       PetscReal epsilon_inv = 1/epsilon;
-      ierr = VecGetArray(w2,&y);CHKPETSC(ierr);          
+      ierr = VecGetArray(w2,&y);CHKPETSC(ierr);
       for (l=0; l<coloring->nrows[k]; l++) {
         row    = Jentry[nz].row;                   /* local row index */
         y[row] *= epsilon_inv;                     /* dx = epsilon */
@@ -1957,41 +1966,41 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
         ++nz;
       }
       ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
-          
+
     } /* endof for each color */
 
   }
   else {
     ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
     if (ctype == IS_COLORING_GLOBAL) {vscale_array = vscale_array - start;}
-      
+
     PetscInt nz = 0;
-    for (k=0; k<coloring->ncolors; k++) { 
+    for (k=0; k<coloring->ncolors; k++) {
       coloring->currentcolor = k;
       ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
       ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
       if (ctype == IS_COLORING_GLOBAL) {w3_array = w3_array - start;}
-          
+
       /*
-        Loop over each column associated with color 
+        Loop over each column associated with color
         adding the perturbation to the vector w3.
       */
       int sgn_diff = -1;
       for (l=0; l<coloring->ncolumns[k]; l++) {
         col = coloring->columns[k][l]; // Global column number
         w3_array[col] += sgn_diff/vscale_array[col];
-      } 
+      }
       if (ctype == IS_COLORING_GLOBAL) {w3_array = w3_array + start;}
       ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
-          
+
       /*
         Evaluate function at w3 = x1 + dx (here dx is a vector of perturbations)
         w2 = F(x1 + dx) - F(x1)
       */
       ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
+      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);
       ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr);
 
       /*
         Loop over rows of vector, putting results into Jacobian matrix
@@ -2005,12 +2014,12 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
         ++nz;
       }
       ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
-                    
+
     } /* endof for each color */
     if (ctype == IS_COLORING_GLOBAL) {vscale_array = vscale_array + start;}
     ierr = VecRestoreArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
   }
-   
+
   coloring->currentcolor = -1;
   ierr  = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
   ierr  = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
@@ -2052,7 +2061,7 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
 
 #include <VisMF.H>
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "ComputeRichardAlpha"
 void
 RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure,Real t)
@@ -2072,9 +2081,9 @@ RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure,Real t)
 }
 
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "SemiAnalyticMatFDColoringApply"
-PetscErrorCode  
+PetscErrorCode
 SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
 {
   BL_PROFILE("RichardSolver::SemiAnalyticMatFDColoringApply()");
@@ -2084,7 +2093,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   PetscInt       k,start,end,l,row,col,srow,m1,m2;
   PetscScalar    dx,*y,*w3_array;
   PetscScalar    *solnTyp_array, *a_array;
-  PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm; 
+  PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm;
   Vec            w1=coloring->w1,w2=coloring->w2,w3;
   void           *fctx = coloring->fctx;
   PetscBool      flg = PETSC_FALSE;
@@ -2092,7 +2101,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   MatEntry       *Jentry=coloring->matentry;
   Vec            x1_tmp;
 
-  PetscFunctionBegin;    
+  PetscFunctionBegin;
   PetscValidHeaderSpecific(J,MAT_CLASSID,1);
   PetscValidHeaderSpecific(coloring,MAT_FDCOLORING_CLASSID,2);
   PetscValidHeaderSpecific(x1,VEC_CLASSID,3);
@@ -2111,7 +2120,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
     }
   }
 
-  x1_tmp = x1; 
+  x1_tmp = x1;
   if (!coloring->vscale) {
     ierr = VecDuplicate(x1_tmp,&coloring->vscale);CHKPETSC(ierr);
   }
@@ -2122,7 +2131,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   RichardSolver* rs = static_rs_ptr;
   BL_ASSERT(rs);
   Vec& AlphaV = rs->GetAlphaV();
-  
+
   Vec& press = rs->GetTrialResV(); // A handy Vec to use
   ierr = VecCopy(x1_tmp,press); CHKPETSC(ierr);
   if (rs->GetNLScontrol().scale_soln_before_solve) {
@@ -2144,10 +2153,10 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
       ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
       ierr = (*f)(sctx,x1_tmp,w1,fctx);CHKPETSC(ierr);
       ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-    }    
+    }
     coloring->fset = PETSC_FALSE;
   }
-      
+
   if (!coloring->w3) {
     ierr = VecDuplicate(x1_tmp,&coloring->w3);CHKPETSC(ierr);
     ierr = PetscLogObjectParent((PetscObject)coloring,(PetscObject)coloring->w3);CHKPETSC(ierr);
@@ -2164,7 +2173,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
     ierr = VecGhostUpdateBegin(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
     ierr = VecGhostUpdateEnd(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
   }
-  
+
   /*
     Loop over each color
   */
@@ -2176,26 +2185,26 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   Vec& w4 = rs->GetTrialResV(); // A handy Vec to use if centered diff for J
 
   PetscInt nz = 0;
-  for (k=0; k<coloring->ncolors; k++) { 
+  for (k=0; k<coloring->ncolors; k++) {
     coloring->currentcolor = k;
-      
+
     ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
     ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
-    if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array - start;          
+    if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array - start;
 
     ierr = VecCopy(x1_tmp,w4);CHKPETSC(ierr);
     PetscReal *w4_array;
     ierr = VecGetArray(w4,&w4_array);CHKPETSC(ierr);
-    if (ctype == IS_COLORING_GLOBAL) w4_array = w4_array - start;          
+    if (ctype == IS_COLORING_GLOBAL) w4_array = w4_array - start;
 
     for (l=0; l<coloring->ncolumns[k]; l++) {
       col = coloring->columns[k][l];    /* global column of the matrix we are probing for */
       w3_array[col] += epsilon;
       w4_array[col] -= epsilon;
-    } 
+    }
     if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array + start;
     ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
-      
+
     if (ctype == IS_COLORING_GLOBAL) w4_array = w4_array + start;
     ierr = VecRestoreArray(w4,&w4_array);CHKPETSC(ierr);
 
@@ -2206,30 +2215,30 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
       ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);
       ierr = (*f)(sctx,w4,w1,fctx);CHKPETSC(ierr);
       ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr);
       epsilon_inv = 0.5/epsilon;
     }
     else {
 #if 1 // Forward
       // w2 = F(w3) - F(x1) = F(x1 + dx) - F(x1) = (1/eps)*(w2 - w1)
       ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
+      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);
       ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr);
       epsilon_inv = 1/epsilon;
 #else // backward
       // w2 = F(w1) - F(w4) = F(x1) - F(x1 - dx) = -(1/eps)*(w2 - w1)
       ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-      ierr = (*f)(sctx,w4,w2,fctx);CHKPETSC(ierr);        
+      ierr = (*f)(sctx,w4,w2,fctx);CHKPETSC(ierr);
       ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr);
       epsilon_inv = -1/epsilon;
 #endif
     }
-      
+
     // Insert (w2_j / dx) into J_ij [include diagonal term, dR1_i/dpbar_i = alphabar
-    ierr = VecGetArray(w2,&y);CHKPETSC(ierr);          
-    ierr = VecGetArray(AlphaV,&a_array);CHKPETSC(ierr);          
+    ierr = VecGetArray(w2,&y);CHKPETSC(ierr);
+    ierr = VecGetArray(AlphaV,&a_array);CHKPETSC(ierr);
 
     for (l=0; l<coloring->nrows[k]; l++) {
       row    = Jentry[nz].row;                   /* local row index */
@@ -2244,9 +2253,9 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
     }
     ierr = VecRestoreArray(AlphaV,&a_array);CHKPETSC(ierr);
     ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
-      
+
   } /* end of for each color */
-   
+
   coloring->currentcolor = -1;
   ierr  = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
   ierr  = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
@@ -2287,9 +2296,9 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   PetscFunctionReturn(0);
 }
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "RichardComputeJacobianColor"
-PetscErrorCode 
+PetscErrorCode
 RichardComputeJacobianColor(SNES snes,Vec x1,Mat J,Mat B,void *ctx)
 {
   BL_PROFILE("RichardSolver::RichardComputeJacobianColor()");
@@ -2317,7 +2326,7 @@ RichardComputeJacobianColor(SNES snes,Vec x1,Mat J,Mat B,void *ctx)
   }
   if (rs->GetRSdata().semi_analytic_J) {
     ierr = SemiAnalyticMatFDColoringApply(B,color,x1,snes);CHKPETSC(ierr);
-  } 
+  }
   else {
     ierr = RichardMatFDColoringApply(B,color,x1,snes);CHKPETSC(ierr);
   }
@@ -2331,11 +2340,11 @@ RichardComputeJacobianColor(SNES snes,Vec x1,Mat J,Mat B,void *ctx)
   PetscFunctionReturn(0);
 }
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "MatSqueeze"
 static void
 MatSqueeze(Mat& J,
-	   Layout& layout) 
+	   Layout& layout)
 {
   BL_PROFILE("RichardSolver::MatSqueeze()");
 
@@ -2347,7 +2356,7 @@ MatSqueeze(Mat& J,
   int N = layout.NumberOfGlobalNodeIds();
 
   ierr = MatSetSizes(A,n,n,N,N);  CHKPETSC(ierr);
-  
+
   int rstart, rend;
   ierr = MatGetOwnershipRange(J,&rstart,&rend);CHKPETSC(ierr);
   int nrows = 0;
@@ -2376,4 +2385,3 @@ MatSqueeze(Mat& J,
 
   MatView(A,PETSC_VIEWER_STDOUT_SELF);
 }
-

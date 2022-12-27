@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <winstd.H>
 #include <iostream>
 #include <fstream>
@@ -11,18 +20,18 @@
 static bool TRANSFORM_GSLIB_FIELD = true; // after sgsim generates field, f, return 10**(f+lm), lm = log10(mean_val)
 static int verbose = 1;
 
-void  
-GSLibInt::parRand(Array <Real> kappaval, 
+void
+GSLibInt::parRand(Array <Real> kappaval,
                   Real         dkappa,
-                  Array<int>   n_cell, 
-                  int          twoexp, 
+                  Array<int>   n_cell,
+                  int          twoexp,
                   MultiFab&    mfdata)
 {
   int nkpval = kappaval.size();
   int domlo[BL_SPACEDIM];
   int domhi[BL_SPACEDIM];
-  
-  for (int dir = 0; dir < BL_SPACEDIM; dir++) { 
+
+  for (int dir = 0; dir < BL_SPACEDIM; dir++) {
     domlo[dir] = -3*twoexp;
     domhi[dir] = (n_cell[dir]+3)*twoexp;
   }
@@ -36,14 +45,14 @@ GSLibInt::parRand(Array <Real> kappaval,
     int iuc = rand()%1000000 + i;
 
     FORT_PHIRAND(kp_dat,ARLIM(kp_lo),ARLIM(kp_hi),
-		 kappaval.dataPtr(),&nkpval,&dkappa, 
+		 kappaval.dataPtr(),&nkpval,&dkappa,
 		 domlo,domhi,&iuc);
   }
 }
 
 
 void
-GSLibInt::seqGaussianSim(const Array <Real>& kappaval, 
+GSLibInt::seqGaussianSim(const Array <Real>& kappaval,
                          const Box&          domain,
                          const Array<Real>&  problo,
                          const Array<Real>&  probhi,
@@ -90,7 +99,7 @@ GSLibInt::seqGaussianSim(const Array <Real>& kappaval,
 }
 
 void
-GSLibInt::rdpGaussianSim(const Array<Real>& kappaval, 
+GSLibInt::rdpGaussianSim(const Array<Real>& kappaval,
                          const Box&         domain,
                          const Array<Real>& problo,
                          const Array<Real>& probhi,
@@ -139,7 +148,7 @@ memUsage(const std::string& note)
 }
 
 void
-GSLibInt::cndGaussianSim(const Array<Real>& kappaval, 
+GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
                          const Box&         domain,
                          const Array<Real>& problo,
                          const Array<Real>& probhi,
@@ -174,7 +183,7 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
 		   &cond_option, &rand_seed);
 
   BoxLib::InitRandom(rand_seed);
- 
+
   if (cond_option == 1 && c_sz == 0) {
     std::cout << "GSLIB data is missing.  Doing unconditioned simulation.\n";
     cond_option = 0;
@@ -213,14 +222,14 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
 
   Box gdomain = Box(domain).grow(ngrow_fine_gen);
   int max_fab_size = 0;
-  for (MFIter mfi(mfg); mfi.isValid(); ++mfi) {    
+  for (MFIter mfi(mfg); mfi.isValid(); ++mfi) {
     const int  i     = mfi.index();
     const Box& box   = mfi.validbox();
     const int* lo    = box.loVect();
     const int* hi    = box.hiVect();
     const int* dlo   = gdomain.loVect();
     const int* dhi   = gdomain.hiVect();
-	  
+
     const int* k_lo  = mfg[mfi].loVect();
     const int* k_hi  = mfg[mfi].hiVect();
     const Real* kdat = mfg[mfi].dataPtr();
@@ -251,13 +260,13 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
   int it = 0;
   while (it < max_fab_size) {
 
-    for (MFIter mfi(mfg); mfi.isValid(); ++mfi) {    
+    for (MFIter mfi(mfg); mfi.isValid(); ++mfi) {
       const int  i     = mfi.index();
-	  
+
       const int* k_lo  = mfg[mfi].loVect();
       const int* k_hi  = mfg[mfi].hiVect();
       const Real* kdat = mfg[mfi].dataPtr();
-      if (it < order[i].size()) 
+      if (it < order[i].size())
       {
 	int idx_chosen = order[i][it];
 

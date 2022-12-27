@@ -1,18 +1,20 @@
 /*
-  MultiPhase PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  MultiPhase PK
 
   Collection of evaluator names f1_ik, f2_ik, field or evaluator
   names g1_ik, g2_ik, and evaluators h_k for the k-th equation in
   a multiphase system:
 
-    d h_k / dt - Sum_i { a_ik div [K f1_ik grad g1_ik] } 
+    d h_k / dt - Sum_i { a_ik div [K f1_ik grad g1_ik] }
                - Sum_i { b_ik div [D f2_ik grad g2_ik] } = Q_k
 
   subject to the constraint min(F, G) = 0. Here index i corresponds to

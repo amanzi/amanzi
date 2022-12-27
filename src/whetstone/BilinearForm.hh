@@ -1,17 +1,19 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer by this license are 
-  provided in the top-level COPYRIGHT file.
-
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  The base virtual class for of bilinear forms of type 
+  The base virtual class for of bilinear forms of type
      <coef Op1(u), Op2(v)>
-  where Op1 and Op2 are differential operators. The tuple 
+  where Op1 and Op2 are differential operators. The tuple
   (u, v, coef) may support a few bilinear forms appearing in
   applications. Most times u = v.
 */

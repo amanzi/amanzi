@@ -1,18 +1,20 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
-  provided in the top-level COPYRIGHT file.
-
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
-  consistency condition (Mc N = R) and matrix Ms is build from a stability 
+  The package uses the formula M = Mc + Ms, where matrix Mc is build from a
+  consistency condition (Mc N = R) and matrix Ms is build from a stability
   condition  and Ms N = 0, to generate mass and stiffness matrices.
-  The material properties are imbedded into the the matrix Mc. 
+  The material properties are imbedded into the the matrix Mc.
 */
 
 #ifndef AMANZI_MFD3D_ELASTICITY_HH_

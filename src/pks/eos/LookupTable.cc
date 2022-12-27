@@ -1,12 +1,14 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  EOS
 
   Tabulated equations of state: rows/columns are p/T
 */
@@ -139,7 +141,7 @@ LookupTable::DFunctionDT(double T, double p, int* ierr)
 
 
 /* ******************************************************************
-* Read a meta data block 
+* Read a meta data block
 ****************************************************************** */
 void
 LookupTable::ReadMetaData_(std::ifstream& ifs,

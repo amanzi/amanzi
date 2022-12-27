@@ -1,12 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #include <cstdlib>
@@ -40,7 +43,7 @@
 #include "MeshDeformation.hh"
 
 /* *****************************************************************
-* Testing operators for Maxwell-type problems: 2D 
+* Testing operators for Maxwell-type problems: 2D
 * Magnetic flux B = (Bx, By, 0), electric field E = (0, 0, Ez)
 ***************************************************************** */
 template <class Analytic>

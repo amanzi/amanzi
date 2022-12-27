@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <IdxRegionData.H>
 
 IdxRegionData::IdxRegionData(const std::string&          label,
@@ -56,7 +65,7 @@ IdxRegionData::apply(FArrayBox&       fab,
 {
   const Box& box = fab.box();
   FArrayBox mask(box,1); mask.setVal(-1);
-  for (int j=0; j<mRegions.size(); ++j) { 
+  for (int j=0; j<mRegions.size(); ++j) {
     mRegions[j]->setVal(mask,1,0,dx,0);
   }
 
