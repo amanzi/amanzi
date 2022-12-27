@@ -356,7 +356,7 @@ Configuration:
 
   --dry_run               show the configuration commands (but do not execute them) ['"${dry_run}"']
 
-  --arch                  define the architecture for the build, only Summit, NERSC available
+  --arch                  define the architecture for the build (Summit|NERSC|Chicoma) 
 
 
 Build features:
@@ -1203,10 +1203,10 @@ function git_change_branch_ats_tests()
   atstestsbranch=$1
   save_dir=`pwd`
   cd ${ats_source_dir}/testing/ats-regression-tests
-  status_message "In ${PWD} checking out ATS regression branch ${atsbranch}"
+  status_message "In ${ats_source_dir}/testing/ats-regression-tests checking out ats-regression-tests branch ${atstestsbranch}"
   ${git_binary} checkout ${atstestsbranch}
   if [ $? -ne 0 ]; then
-    error_message "Failed to update ATS at ${ats_source_dir}/testing/ats-regression-tests to branch ${atstestsbranch}"
+    error_message "Failed to update ats-regression-tests at ${ats_source_dir}/testing/ats-regression-tests to branch ${atstestsbranch}"
     exit_now 30
   fi
   # ${git_binary} branch --list
@@ -1625,6 +1625,49 @@ function define_nersc_options
 
 }
 
+function define_chicoma_options
+{
+
+  if [ "${shared}" -eq "${FALSE}" ]; then
+
+    prefer_static=$TRUE
+    exec_static=$TRUE
+    prg_env="gnu"
+    
+    arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
+                   -DMPI_EXEC:STRING=srun \
+                   -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
+                   -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}" 
+  
+   arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
+                     -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
+
+  elif [ "${shared}" -eq "${TRUE}" ]; then
+
+    prefer_static=$FALSE
+    exec_static=$FALSE
+    prg_env="gnu"
+    
+    arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
+                   -DMPI_EXEC:STRING=srun \
+                   -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
+                   -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}"
+  
+    arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
+                      -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
+
+  fi
+
+   echo ""
+   echo "Setting ARCH:        Chicoma"
+   echo "ARCH TPL OPTIONS     = " ${arch_tpl_opts}
+   echo "ARCH AMANZI OPTIONS  = " ${arch_amanzi_opts}
+   echo ""
+
+}
+
 function define_summit_options
 {
   if [ "${kokkos_cuda}" -eq "${TRUE}" ]; then
@@ -1676,8 +1719,10 @@ if [ "${amanzi_arch}" = "Summit" ]; then
   define_summit_options
 elif [ "${amanzi_arch}" = "NERSC" ]; then
   define_nersc_options
+elif [ "${amanzi_arch}" = "Chicoma" ]; then
+  define_chicoma_options
 elif [ "${amanzi_arch}" != "" ]; then
-  error_message "ARCH ${amanzi_arch} not supported -- valid are Summit and NERSC"
+  error_message "ARCH ${amanzi_arch} not supported -- valid are Summit, NERSC, and Chicoma"
   exit_now 10
 fi
     
@@ -1828,6 +1873,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
       -DDISABLE_EXTERNAL_DOWNLOAD=${disable_external_downloads} \
+      -DPYTHON_EXECUTABLE:STRING=${python_exec} \
       ${blas_lapack_opts} \
       ${arch_tpl_opts} \
       ${tpl_build_src_dir}"
