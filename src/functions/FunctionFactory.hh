@@ -7,6 +7,7 @@
 
 #pragma once
 #include "Teuchos_ParameterList.hpp"
+#include <memory>
 
 namespace Amanzi {
 
