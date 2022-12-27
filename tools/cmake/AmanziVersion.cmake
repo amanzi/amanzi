@@ -44,10 +44,8 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
     exit()
   endif()
 
-
   # too noisy command...
   # message(STATUS ">>>> JDM: AMANZI_GIT_STATUS:      ${AMANZI_GIT_STATUS}")
-
 
   # Put the status in a list
   STRING(REPLACE "\n" ";" AMANZI_GIT_STATUS_LIST ${AMANZI_GIT_STATUS})
@@ -68,7 +66,7 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
   # Get the hash of the current version
   set(GIT_ARGS rev-parse --short HEAD)
   execute_process(COMMAND  ${GIT_EXECUTABLE} ${GIT_ARGS}
-	          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                   RESULT_VARIABLE err_occurred 
                   OUTPUT_VARIABLE AMANZI_GIT_GLOBAL_HASH
                   ERROR_VARIABLE err
@@ -80,56 +78,71 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
     exit()
   endif()
 
-  # message(STATUS ">>>> JDM: AMANZI_GIT_GLOBAL_HASH: ${AMANZI_GIT_GLOBAL_HASH}")
-
-  # Get the latest amanzi-* version number tag
+  message(STATUS ">>>> JDM: AMANZI_GIT_GLOBAL_HASH: ${AMANZI_GIT_GLOBAL_HASH}")
+    
+  # Ensure repository has the latest tags
+  set(GIT_ARGS fetch --no-recurse-submodules --tags)
+  execute_process(COMMAND  ${GIT_EXECUTABLE} ${GIT_ARGS}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                  RESULT_VARIABLE err_occurred
+                  OUTPUT_VARIABLE cmd_output
+                  ERROR_VARIABLE err
+                  OUTPUT_STRIP_TRAILING_WHITESPACE
+                  ERROR_STRIP_TRAILING_WHITESPACE)
+  if(err_occurred)
+    message(WARNING "Error executing git:\n ${cmd}\n${cmd_output}\n${err}")
+    set(cmd_output cmd_output-NOTFOUND)
+    exit()
+  endif()
+    
+  # Get the latest amanzi-* version number tag    
   set(GIT_ARGS tag -l amanzi-*)
   execute_process(COMMAND  ${GIT_EXECUTABLE} ${GIT_ARGS}
-	          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                   RESULT_VARIABLE err_occurred 
                   OUTPUT_VARIABLE AMANZI_GIT_LATEST_TAG
                   ERROR_VARIABLE err
                   OUTPUT_STRIP_TRAILING_WHITESPACE
                   ERROR_STRIP_TRAILING_WHITESPACE)
 
-   # Put the tags in a list
-   STRING(REPLACE "\n" ";" AMANZI_GIT_LATEST_TAG_LIST ${AMANZI_GIT_LATEST_TAG})
-   # Extract the lastest tag of the form amanzi-*
-   IF ( ${AMANZI_GIT_BRANCH} MATCHES "master" ) 
-     FOREACH(atag ${AMANZI_GIT_LATEST_TAG_LIST})
-       IF ( ${atag} MATCHES "^amanzi-.*-dev" )
-         set ( AMANZI_GIT_LATEST_TAG ${atag} )
-       ENDIF()
-     ENDFOREACH()
-   ELSE()
-     FOREACH(atag ${AMANZI_GIT_LATEST_TAG_LIST})
-       IF ( ${atag} MATCHES "^amanzi-[0-9]\\.[0-9][0-9]?\\.[0-9]" )
-         set ( AMANZI_GIT_LATEST_TAG ${atag} )
-       ENDIF()
-     ENDFOREACH()
-   ENDIF()
+  # Put the tags in a list
+  STRING(REPLACE "\n" ";" AMANZI_GIT_LATEST_TAG_LIST ${AMANZI_GIT_LATEST_TAG})
+  # Extract the lastest tag of the form amanzi-*
+  IF ( ${AMANZI_GIT_BRANCH} MATCHES "master" ) 
+    FOREACH(atag ${AMANZI_GIT_LATEST_TAG_LIST})
+      IF ( ${atag} MATCHES "^amanzi-.*-dev" )
+        set ( AMANZI_GIT_LATEST_TAG ${atag} )
+      ENDIF()
+    ENDFOREACH()
+  ELSE()
+    FOREACH(atag ${AMANZI_GIT_LATEST_TAG_LIST})
+      IF ( ${atag} MATCHES "^amanzi-[0-9]\\.[0-9][0-9]?\\.[0-9]" )
+        set ( AMANZI_GIT_LATEST_TAG ${atag} )
+      ENDIF()
+    ENDFOREACH()
+  ENDIF()
 
-   # message(STATUS ">>>> JDM: GIT_EXEC        = ${GIT_EXECUTABLE}")
-   # message(STATUS ">>>> JDM: GIT_ARGS        = ${GIT_ARGS}")
-   # message(STATUS ">>>> JDM: RESULT_VARIABLE = ${err_occurred}")
-   # message(STATUS ">>>> JDM: AMANZI_GIT_LATEST_TAG = ${AMANZI_GIT_LATEST_TAG}")
+  # message(STATUS ">>>> JDM: GIT_EXEC        = ${GIT_EXECUTABLE}")
+  # message(STATUS ">>>> JDM: GIT_ARGS        = ${GIT_ARGS}")
+  # message(STATUS ">>>> JDM: RESULT_VARIABLE = ${err_occurred}")
+  # message(STATUS ">>>> JDM: AMANZI_GIT_LATEST_TAG = ${AMANZI_GIT_LATEST_TAG}")
 
-   STRING(REGEX REPLACE "amanzi-" "" AMANZI_GIT_LATEST_TAG_VER ${AMANZI_GIT_LATEST_TAG})	
-   STRING(REGEX REPLACE "\\..*" "" AMANZI_GIT_LATEST_TAG_MAJOR ${AMANZI_GIT_LATEST_TAG_VER})	
-   STRING(REGEX MATCH "\\.[0-9][0-9]?[\\.,-]" AMANZI_GIT_LATEST_TAG_MINOR ${AMANZI_GIT_LATEST_TAG_VER})  	
-   STRING(REGEX REPLACE "[\\.,-]" "" AMANZI_GIT_LATEST_TAG_MINOR ${AMANZI_GIT_LATEST_TAG_MINOR} )	
+  STRING(REGEX REPLACE "amanzi-" "" AMANZI_GIT_LATEST_TAG_VER ${AMANZI_GIT_LATEST_TAG})	
+  STRING(REGEX REPLACE "\\..*" "" AMANZI_GIT_LATEST_TAG_MAJOR ${AMANZI_GIT_LATEST_TAG_VER})	
+  STRING(REGEX MATCH "\\.[0-9][0-9]?[\\.,-]" AMANZI_GIT_LATEST_TAG_MINOR ${AMANZI_GIT_LATEST_TAG_VER})  	
+  STRING(REGEX REPLACE "[\\.,-]" "" AMANZI_GIT_LATEST_TAG_MINOR ${AMANZI_GIT_LATEST_TAG_MINOR} )	
 
-   set(AMANZI_VERSION_MAJOR ${AMANZI_GIT_LATEST_TAG_MAJOR})
-   set(AMANZI_VERSION_MINOR ${AMANZI_GIT_LATEST_TAG_MINOR})
+  set(AMANZI_VERSION_MAJOR ${AMANZI_GIT_LATEST_TAG_MAJOR})
+  set(AMANZI_VERSION_MINOR ${AMANZI_GIT_LATEST_TAG_MINOR})
 
-   #
-   # Amanzi version
-   #
-   set(AMANZI_VERSION ${AMANZI_GIT_LATEST_TAG_VER}_${AMANZI_GIT_GLOBAL_HASH})
-
-   STRING(REGEX REPLACE ".*\\.[0-9][0-9]?[\\.,-]" "" AMANZI_VERSION_PATCH ${AMANZI_VERSION})
-   STRING(REGEX REPLACE ".*_" "" AMANZI_VERSION_HASH ${AMANZI_VERSION_PATCH})
-   STRING(REGEX REPLACE "_.*" "" AMANZI_VERSION_PATCH ${AMANZI_VERSION_PATCH})
+  #
+  # Amanzi version
+  #
+  set(AMANZI_VERSION ${AMANZI_GIT_LATEST_TAG_VER}_${AMANZI_GIT_GLOBAL_HASH})
+  
+  STRING(REGEX REPLACE ".*\\.[0-9][0-9]?[\\.,-]" "" AMANZI_VERSION_PATCH ${AMANZI_VERSION})
+  STRING(REGEX REPLACE ".*_" "" AMANZI_VERSION_HASH ${AMANZI_VERSION_PATCH})
+  STRING(REGEX REPLACE "_.*" "" AMANZI_VERSION_PATCH ${AMANZI_VERSION_PATCH})
 
 else()
 
@@ -148,7 +161,7 @@ else()
   set(AMANZI_GIT_GLOBAL_HASH )
 
   set(AMANZI_VERSION_MAJOR 1)
-  set(AMANZI_VERSION_MINOR 2)
+  set(AMANZI_VERSION_MINOR 0)
   set(AMANZI_VERSION_PATCH 0)
   set(AMANZI_VERSION_HASH ${AMANZI_GIT_GLOBAL_HASH})
 
