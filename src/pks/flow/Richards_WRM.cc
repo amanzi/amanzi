@@ -52,7 +52,7 @@ Richards_PK::ClipHydrostaticPressure(double pmin, double s0, Epetra_MultiVector&
 void
 Richards_PK::PlotWRMcurves_()
 {
-  int MyPID = mesh_->cell_map(false).Comm().MyPID();
+  int MyPID = mesh_->getMap(AmanziMesh::Entity_kind::CELL,false).Comm().MyPID();
   if (MyPID != 0) return;
 
   int ndata(1000);

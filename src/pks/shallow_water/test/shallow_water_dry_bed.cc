@@ -48,9 +48,9 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   double g = norm(S->Get<AmanziGeometry::Point>("gravity"));
 
   int ncells_wghost =
-    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
   int nnodes_wghost =
-    mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
   std::string passwd("");
 
   auto& B_c =
@@ -73,7 +73,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   for (int n = 0; n < nnodes_wghost; ++n) {
     Amanzi::AmanziGeometry::Point node_crd;
 
-    mesh->node_get_coordinates(n, &node_crd); // Coordinate of current node
+    node_crd = mesh->getNodeCoordinate(n); // Coordinate of current node
 
     double x = node_crd[0], y = node_crd[1];
 
@@ -84,10 +84,10 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   S->Get<CompositeVector>("surface-bathymetry").ScatterMasterToGhosted("node");
 
   for (int c = 0; c < ncells_wghost; ++c) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
 
     Amanzi::AmanziMesh::Entity_ID_List cfaces;
-    mesh->cell_get_faces(c, &cfaces);
+    cfaces = mesh->getCellFaces(c);
     int nfaces_cell = cfaces.size();
 
     B_c[0][c] = 0.0;
@@ -98,15 +98,15 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       int edge = cfaces[f];
 
       Amanzi::AmanziMesh::Entity_ID_List face_nodes;
-      mesh->face_get_nodes(edge, &face_nodes);
+      face_nodes = mesh->getFaceNodes(edge);
       int n0 = face_nodes[0], n1 = face_nodes[1];
 
-      mesh->node_get_coordinates(n0, &x0);
-      mesh->node_get_coordinates(n1, &x1);
+      x0 = mesh->getNodeCoordinate(n0);
+      x1 = mesh->getNodeCoordinate(n1);
 
       double area = norm((xc - x0) ^ (xc - x1)) / 2.0;
 
-      B_c[0][c] += (area / mesh->cell_volume(c)) * (B_n[0][n0] + B_n[0][n1]) / 2.0;
+      B_c[0][c] += (area / mesh->getCellVolume(c)) * (B_n[0][n0] + B_n[0][n1]) / 2.0;
     }
 
     // start with dry bed
@@ -202,7 +202,7 @@ RunTest(int icase)
   double t_old(0.0), t_new(0.0), dt, Tend(0.25);
 
   int ncells_owned =
-    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   while ((t_new < Tend) && (iter >= 0)) {
     double t_out = t_new;

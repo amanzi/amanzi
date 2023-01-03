@@ -25,10 +25,6 @@ namespace Amanzi {
 
 class CompositeVector;
 
-namespace AmanziMesh {
-class Mesh;
-}
-
 namespace Operators {
 
 int

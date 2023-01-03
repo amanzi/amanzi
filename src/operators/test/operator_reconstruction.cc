@@ -59,14 +59,14 @@ TEST(RECONSTRUCTION_LINEAR_2D)
 
   // create and initialize cell-based field
   Teuchos::RCP<Epetra_MultiVector> field =
-    Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
-  Epetra_MultiVector grad_exact(mesh->cell_map(false), 2);
+    Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL,true), 1));
+  Epetra_MultiVector grad_exact(mesh->getMap(AmanziMesh::Entity_kind::CELL,false), 2);
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     (*field)[0][c] = xc[0] + 2 * xc[1];
     if (c < ncells_owned) {
       grad_exact[0][c] = 1.0;
@@ -118,14 +118,14 @@ TEST(RECONSTRUCTION_LINEAR_3D)
 
   // create and initialize cell-based field
   Teuchos::RCP<Epetra_MultiVector> field =
-    Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
-  Epetra_MultiVector grad_exact(mesh->cell_map(false), 3);
+    Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL,true), 1));
+  Epetra_MultiVector grad_exact(mesh->getMap(AmanziMesh::Entity_kind::CELL,false), 3);
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     (*field)[0][c] = xc[0] + 2 * xc[1] + 3 * xc[2];
     if (c < ncells_owned) {
       grad_exact[0][c] = 1.0;
@@ -178,17 +178,17 @@ TEST(RECONSTRUCTION_QUADRATIC_2D)
 
   // create and initialize cell-based field
   Teuchos::RCP<Epetra_MultiVector> field =
-    Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
-  Epetra_MultiVector poly_exact(mesh->cell_map(false), 5);
+    Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL,true), 1));
+  Epetra_MultiVector poly_exact(mesh->getMap(AmanziMesh::Entity_kind::CELL,false), 5);
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
 
   // -- cell values
   double h(1.0 / 7);
   for (int c = 0; c < ncells_wghost; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     (*field)[0][c] = xc[0] + 2 * xc[1] + 3 * xc[0] * xc[0] + 4 * xc[0] * xc[1] + 5 * xc[1] * xc[1] +
                      2.0 * h * h / 3;
     if (c < ncells_owned) {
@@ -203,14 +203,14 @@ TEST(RECONSTRUCTION_QUADRATIC_2D)
   // -- boundary values
   AmanziMesh::Entity_ID_List cells;
 
-  auto bcs = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bcs = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bcs->bc_model();
   std::vector<double>& bc_value = bcs->bc_value();
 
   for (int f = 0; f < nfaces_wghost; ++f) {
-    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
     if (cells.size() == 1) {
-      const auto& xf = mesh->face_centroid(f);
+      const auto& xf = mesh->getFaceCentroid(f);
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = xf[0] + 2 * xf[1] + 3 * xf[0] * xf[0] + 4 * xf[0] * xf[1] + 5 * xf[1] * xf[1];
     }

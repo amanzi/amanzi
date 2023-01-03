@@ -64,12 +64,12 @@ FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist)
 void
 FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
-  int dim = mesh->space_dimension();
+  int dim = mesh->getSpaceDimension();
 
   if (rainfall_) {
     for (auto it = begin(); it != end(); ++it) {
       int f = it->first;
-      const AmanziGeometry::Point& normal = mesh->face_normal(f);
+      const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
       it->second[0] *= fabs(normal[dim - 1]) / norm(normal);
     }
   }
@@ -82,7 +82,7 @@ FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>
 
     // lazy allocation of memory
     if (shift_water_table_ == Teuchos::null) {
-      const Epetra_BlockMap& fmap = mesh->face_map(true);
+      const Epetra_BlockMap& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE,true);
       shift_water_table_ = Teuchos::rcp(new Epetra_Vector(fmap));
 
       for (int i = 0; i < regions_.size(); ++i) {
@@ -117,7 +117,7 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
   double tol = 1e-6;
   Errors::Message msg;
 
-  int dim = mesh->space_dimension();
+  int dim = mesh->getSpaceDimension();
   if (dim == 2) {
     msg << "Flow PK: \"relative/absolute\" action on static head BC is not supported in 2D.\n";
     Exceptions::amanzi_throw(msg);
@@ -129,28 +129,28 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
   AmanziGeometry::Point p1(dim), p2(dim), p3(dim);
   std::vector<AmanziGeometry::Point> edges;
 
-  mesh->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &ss_faces);
+  mesh->getSetEntities(region, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED, &ss_faces);
   int n = ss_faces.size();
 
   for (int i = 0; i < n; i++) {
     int f1 = ss_faces[i];
-    mesh->face_get_cells(f1, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh->getFaceCells(f1, AmanziMesh::Parallel_type::ALL);
 
-    mesh->face_get_nodes(f1, &nodes1);
+    nodes1 = mesh->getFaceNodes(f1);
     std::sort(nodes1.begin(), nodes1.end());
 
     int c = cells[0];
-    const auto& faces = mesh->cell_get_faces(c);
+    const auto& faces = mesh->getCellFaces(c);
     int nfaces = faces.size();
 
     // find all edges that intersection of boundary faces f1 and f2
     for (int j = 0; j < nfaces; j++) {
       int f2 = faces[j];
       if (f2 != f1) {
-        mesh->face_get_cells(f2, AmanziMesh::Parallel_type::ALL, &cells);
+        cells = mesh->getFaceCells(f2, AmanziMesh::Parallel_type::ALL);
         int ncells = cells.size();
         if (ncells == 1) {
-          mesh->face_get_nodes(f2, &nodes2);
+          nodes2 = mesh->getFaceNodes(f2);
           std::sort(nodes2.begin(), nodes2.end());
           set_intersection_(nodes1, nodes2, &common_nodes);
 
@@ -160,12 +160,12 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
             Exceptions::amanzi_throw(msg);
           } else if (m == 1 && dim == 2) {
             int v1 = common_nodes[0];
-            mesh->node_get_coordinates(v1, &p1);
+            p1 = mesh->getNodeCoordinate(v1);
             edges.push_back(p1);
           } else if (m == 2 && dim == 3) {
             int v1 = common_nodes[0], v2 = common_nodes[1];
-            mesh->node_get_coordinates(v1, &p1);
-            mesh->node_get_coordinates(v2, &p2);
+            p1 = mesh->getNodeCoordinate(v1);
+            p2 = mesh->getNodeCoordinate(v2);
 
             p3 = p1 - p2;
             if (p3[0] * p3[0] + p3[1] * p3[1] > tol * L22(p3)) { // filter out vertical edges
@@ -181,7 +181,7 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
 
 #ifdef HAVE_MPI
   int gsize;
-  Teuchos::RCP<const Comm_type> comm_p = mesh->get_comm();
+  Teuchos::RCP<const Comm_type> comm_p = mesh->getComm();
   Teuchos::RCP<const MpiComm_type> mpi_comm_p =
     Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_p);
   const MPI_Comm& comm = mpi_comm_p->Comm();
@@ -224,7 +224,7 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
 
   for (int i = 0; i < n; i++) {
     int f = ss_faces[i];
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
 
     // fast algorithm for flat faces
     int flag = 0;

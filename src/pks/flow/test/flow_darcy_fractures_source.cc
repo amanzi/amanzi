@@ -59,7 +59,7 @@ TEST(DARCY_TWO_FRACTURES)
 
   // extract fractures mesh
   std::vector<std::string> setnames({ "fracture 1" });
-  RCP<Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
+  RCP<Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::Entity_kind::FACE);
 
   // create state and initialize
   Teuchos::ParameterList state_list = plist->sublist("state");

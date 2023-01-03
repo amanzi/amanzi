@@ -43,10 +43,10 @@ Operator_Node::UpdateRHS(const CompositeVector& source, bool volume_included)
     AmanziMesh::Entity_ID_List nodes;
 
     for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_nodes(c, &nodes);
+      nodes = mesh_->getCellNodes(c);
       int nnodes = nodes.size();
 
-      double volume = mesh_->cell_volume(c);
+      double volume = mesh_->getCellVolume(c);
       for (int n = 0; n < nnodes; ++n) {
         int v = nodes[n];
         rhs_v[0][v] += source_v[0][v] * volume / nnodes;
@@ -72,7 +72,7 @@ Operator_Node::ApplyMatrixFreeOp(const Op_Cell_Node& op,
 
     AmanziMesh::Entity_ID_List nodes;
     for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_nodes(c, &nodes);
+      nodes = mesh_->getCellNodes(c);
       int nnodes = nodes.size();
 
       WhetStone::DenseVector v(nnodes), av(nnodes);
@@ -127,7 +127,7 @@ Operator_Node::SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
   int ierr(0);
   AmanziMesh::Entity_ID_List nodes;
   for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_nodes(c, &nodes);
+    nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
 
     for (int n = 0; n != nnodes; ++n) {
@@ -188,7 +188,7 @@ Operator_Node::AssembleMatrixOp(const Op_Cell_Node& op,
   int ierr(0);
   AmanziMesh::Entity_ID_List nodes;
   for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_nodes(c, &nodes);
+    nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
 
     for (int n = 0; n != nnodes; ++n) {

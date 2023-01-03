@@ -152,7 +152,7 @@ Amanzi_PK::AllocateAdditionalChemistryStorage_()
     S_->Require<CV_t, CVS_t>(secondary_activity_coeff_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, n_secondary_comps);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, n_secondary_comps);
 
     S_->GetRecordSetW(secondary_activity_coeff_key_).CreateData();
 
@@ -168,7 +168,7 @@ Amanzi_PK::AllocateAdditionalChemistryStorage_()
 void
 Amanzi_PK::Initialize()
 {
-  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_owned_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // initialization using base class
   Chemistry_PK::Initialize();
@@ -255,7 +255,7 @@ Amanzi_PK::Initialize()
   ErrorAnalysis(ierr, internal_msg);
 
   // compute the equilibrium state
-  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int num_cells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
   ierr = 0;
   if (fabs(initial_conditions_time_ - S_->get_time()) <= 1e-8 * fabs(S_->get_time())) {
     for (int c = 0; c < num_cells; ++c) {
@@ -410,7 +410,7 @@ Amanzi_PK::SetupAuxiliaryOutput()
 
   // create the Epetra_MultiVector that will hold the data
   if (nvars > 0) {
-    aux_data_ = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(false), nvars));
+    aux_data_ = Teuchos::rcp(new Epetra_MultiVector(mesh_->getMap(AmanziMesh::Entity_kind::CELL,false), nvars));
   } else {
     aux_data_ = Teuchos::null;
   }
@@ -496,7 +496,7 @@ Amanzi_PK::CopyCellStateToBeakerState(int c, Teuchos::RCP<Epetra_MultiVector> aq
   beaker_state_.water_density = (*bf_.density)[0][c];
   beaker_state_.porosity = (*bf_.porosity)[0][c];
   beaker_state_.saturation = (1.0 - a) * (*bf_.prev_saturation)[0][c] + a * (*bf_.saturation)[0][c];
-  beaker_state_.volume = mesh_->cell_volume(c);
+  beaker_state_.volume = mesh_->getCellVolume(c);
 
   if (S_->HasRecord(temperature_key_)) { beaker_state_.temperature = (*bf_.temperature)[0][c]; }
 }

@@ -36,12 +36,12 @@ PDE_AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
 
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh
-    global_schema_row_.set_base(AmanziMesh::FACE);
-    global_schema_row_.AddItem(AmanziMesh::CELL, WhetStone::DOF_Type::SCALAR, 1);
+    global_schema_row_.set_base(AmanziMesh::Entity_kind::FACE);
+    global_schema_row_.AddItem(AmanziMesh::Entity_kind::CELL, WhetStone::DOF_Type::SCALAR, 1);
     global_schema_col_ = global_schema_row_;
 
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+    cvs->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, global_schema_row_.OldSchema()));
 
   } else {
@@ -94,7 +94,7 @@ PDE_AdvectionUpwind::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
@@ -139,7 +139,7 @@ PDE_AdvectionUpwind::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
@@ -210,7 +210,7 @@ PDE_AdvectionUpwind::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
     // treat as essential inflow BC for pure advection
     else if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
       if (c1 < 0) {
-        rhs_cell[0][c2] += mesh_->face_area(f) * bc_value[f];
+        rhs_cell[0][c2] += mesh_->getFaceArea(f) * bc_value[f];
         matrix[f] = 0.0;
       }
     }
@@ -272,7 +272,7 @@ PDE_AdvectionUpwind::IdentifyUpwindCells_(const CompositeVector& u)
   u.ScatterMasterToGhosted("face");
   const Epetra_MultiVector& uf = *u.ViewComponent("face", true);
 
-  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
+  const Epetra_Map& fmap_wghost = mesh_->getMap(AmanziMesh::Entity_kind::FACE,true);
   upwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));
   downwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));
 
@@ -282,8 +282,7 @@ PDE_AdvectionUpwind::IdentifyUpwindCells_(const CompositeVector& u)
   }
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const auto& faces = mesh_->cell_get_faces(c);
-    const auto& fdirs = mesh_->cell_get_face_dirs(c);
+    const auto& [faces,fdirs] = mesh_->getCellFacesAndDirections(c);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];

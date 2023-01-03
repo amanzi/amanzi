@@ -110,9 +110,9 @@ AdvectionSteady(int dim,
     pk_name = "PK operator 3D";
   }
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
 
   // create global operator
   // -- flux term
@@ -143,7 +143,7 @@ AdvectionSteady(int dim,
   // -- reaction function
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh)->SetGhosted(true);
-  cvs->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
   auto K = Teuchos::rcp(new CompositeVector(*cvs));
   auto Kc = K->ViewComponent("cell", true);
@@ -162,7 +162,7 @@ AdvectionSteady(int dim,
     (*velc)[c] *= -weak_sign;
   }
 
-  for (int f = 0; f < nfaces_wghost; ++f) { (*velf)[f] = v * (mesh->face_normal(f) * weak_sign); }
+  for (int f = 0; f < nfaces_wghost; ++f) { (*velf)[f] = v * (mesh->getFaceNormal(f) * weak_sign); }
 
   // -- divergence of velocity
   //    non-conservative formulation leads to Kn = Kreac - div(v)
@@ -186,7 +186,7 @@ AdvectionSteady(int dim,
 
   Epetra_MultiVector& rhs_c = *global_op->rhs()->ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
 
     v.ChangeOrigin(xc);
     divv.ChangeOrigin(xc);
@@ -213,15 +213,15 @@ AdvectionSteady(int dim,
   }
 
   // -- boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<std::vector<double>>& bc_value = bc->bc_value_vector(nk);
 
   WhetStone::Polynomial coefs;
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = mesh->face_centroid(f);
-    const Point& normal = mesh->face_normal(f);
+    const Point& xf = mesh->getFaceCentroid(f);
+    const Point& normal = mesh->getFaceNormal(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
         fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[dim - 1]) < 1e-6 || fabs(xf[dim - 1] - 1.0) < 1e-6) {
       Point vp(v[0].Value(xf), v[1].Value(xf));

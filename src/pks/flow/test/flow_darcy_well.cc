@@ -97,14 +97,14 @@ RunTestDarcyWell(std::string controller, bool fit)
 
   if (!S->GetRecord("permeability").initialized()) {
     for (int c = 0; c < K.MyLength(); c++) {
-      const AmanziGeometry::Point xc = mesh->cell_centroid(c);
+      const AmanziGeometry::Point xc = mesh->getCellCentroid(c);
       K[0][c] = 0.1 + std::sin(xc[0]) * 0.02;
       K[1][c] = 2.0 + std::cos(xc[1]) * 0.4;
     }
     S->GetRecordW("permeability", "permeability").set_initialized();
   } else {
     for (int c = 0; c < K.MyLength(); c++) {
-      const AmanziGeometry::Point xc = mesh->cell_centroid(c);
+      const AmanziGeometry::Point xc = mesh->getCellCentroid(c);
       diff_in_perm += abs(K[0][c] - (0.1 + std::sin(xc[0]) * 0.02)) +
                       abs(K[1][c] - (2.0 + std::cos(xc[1]) * 0.4));
     }
@@ -149,7 +149,7 @@ RunTestDarcyWell(std::string controller, bool fit)
 
     for (int c = 0; c < K.MyLength(); c++) {
       if (fit) {
-        const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+        const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
         if (fabs(xc[0]) < 0.05 && fabs(xc[1] + 2.475) < 0.05) {
           // use quadratic approximation in time. This may capture bugs in the well model.
           double quad =
@@ -364,11 +364,11 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL)
   double pw = 10.0;
   double depth = 2.5;
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
   double err = 0.;
   double sol = 0.;
   for (int c = 0; c < ncells; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     double r = sqrt(xc[0] * xc[0] + xc[1] * xc[1]);
     double p_ex;
     p_ex = pw + gravity[2] * (xc[2] + depth);
@@ -380,7 +380,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL)
 
     p_exact[0][c] = p_ex;
 
-    double vol = mesh->cell_volume(c);
+    double vol = mesh->getCellVolume(c);
     err += (p_ex - p[0][c]) * (p_ex - p[0][c]) * vol;
 
     err_p[0][c] = abs(p_ex - p[0][c]);

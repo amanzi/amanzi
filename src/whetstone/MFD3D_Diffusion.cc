@@ -18,7 +18,7 @@
 #include <iterator>
 #include <vector>
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -41,17 +41,16 @@ MFD3D_Diffusion::L2consistencyScaledArea(int c,
                                          DenseMatrix& Mc,
                                          bool symmetry)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   N.Reshape(nfaces, d_);
   Mc.Reshape(nfaces, nfaces);
 
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->getCellVolume(c);
 
   AmanziGeometry::Point v1(d_), v2(d_);
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
 
   Tensor Kinv(K);
   Kinv.Inverse();
@@ -59,13 +58,13 @@ MFD3D_Diffusion::L2consistencyScaledArea(int c,
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
     v2 = Kinv * (fm - cm);
 
     int i0 = (symmetry ? i : 0);
     for (int j = i0; j < nfaces; j++) {
       f = faces[j];
-      const AmanziGeometry::Point& fm2 = mesh_->face_centroid(f);
+      const AmanziGeometry::Point& fm2 = mesh_->getFaceCentroid(f);
       v1 = fm2 - cm;
       Mc(i, j) = (v1 * v2) / volume;
     }
@@ -73,7 +72,7 @@ MFD3D_Diffusion::L2consistencyScaledArea(int c,
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
     for (int k = 0; k < d_; k++) N(i, k) = normal[k] * dirs[i];
   }
 
@@ -94,15 +93,14 @@ MFD3D_Diffusion::L2consistencyInverseScaledArea(int c,
                                                 DenseMatrix& Wc,
                                                 bool symmetry)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   R.Reshape(nfaces, d_);
   Wc.Reshape(nfaces, nfaces);
 
   AmanziGeometry::Point v1(d_);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->getCellVolume(c);
 
   Tensor Kt(K);
   Kt.Transpose();
@@ -111,23 +109,23 @@ MFD3D_Diffusion::L2consistencyInverseScaledArea(int c,
   // inverse L2 consistency term.
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
     v1 = Kt * normal;
 
     int i0 = (symmetry ? i : 0);
     for (int j = i0; j < nfaces; j++) {
       f = faces[j];
-      const AmanziGeometry::Point& v2 = mesh_->face_normal(f);
+      const AmanziGeometry::Point& v2 = mesh_->getFaceNormal(f);
       Wc(i, j) = (v1 * v2) / (dirs[i] * dirs[j] * volume);
     }
   }
 
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
     for (int k = 0; k < d_; k++) R(i, k) = fm[k] - cm[k];
   }
 
@@ -144,16 +142,15 @@ int
 MFD3D_Diffusion::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   Entity_ID_List nodes;
-  mesh_->cell_get_nodes(c, &nodes);
+  nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   N.Reshape(nnodes, d_ + 1);
   Ac.Reshape(nnodes, nnodes);
 
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
 
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->getCellVolume(c);
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
   // to calculate matrix R, we use temporary matrix N
@@ -162,12 +159,12 @@ MFD3D_Diffusion::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatr
   int num_faces = faces.size();
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    double area = mesh_->face_area(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
+    double area = mesh_->getFaceArea(f);
 
     Entity_ID_List face_nodes;
-    mesh_->face_get_nodes(f, &face_nodes);
+    face_nodes = mesh_->getFaceNodes(f);
     int num_face_nodes = face_nodes.size();
 
     for (int j = 0; j < num_face_nodes; j++) {
@@ -183,9 +180,9 @@ MFD3D_Diffusion::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatr
         int vnext = face_nodes[jnext];
         int vprev = face_nodes[jprev];
 
-        mesh_->node_get_coordinates(v, &p);
-        mesh_->node_get_coordinates(vnext, &pnext);
-        mesh_->node_get_coordinates(vprev, &pprev);
+        p = mesh_->getNodeCoordinate(v);
+        pnext = mesh_->getNodeCoordinate(vnext);
+        pprev = mesh_->getNodeCoordinate(vprev);
 
         v1 = pprev - pnext;
         v2 = p - fm;
@@ -209,10 +206,10 @@ MFD3D_Diffusion::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatr
     }
   }
 
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
   for (int i = 0; i < nnodes; i++) {
     int v = nodes[i];
-    mesh_->node_get_coordinates(v, &p);
+    p = mesh_->getNodeCoordinate(v);
     for (int k = 0; k < d_; k++) N(i, k) = p[k] - cm[k];
     N(i, d_) = 1.0; // additional column is added to the consistency condition
   }
@@ -343,16 +340,15 @@ MFD3D_Diffusion::L2Cell(int c,
                         const Polynomial* moments,
                         Polynomial& vc)
 {
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
 
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   vc.Reshape(d_, 1, true);
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
 
     for (int k = 0; k < d_; k++) {
       double Rik = fm[k] - cm[k];
@@ -360,7 +356,7 @@ MFD3D_Diffusion::L2Cell(int c,
     }
   }
 
-  vc *= -1.0 / mesh_->cell_volume(c);
+  vc *= -1.0 / mesh_->getCellVolume(c);
 }
 
 
@@ -370,13 +366,12 @@ MFD3D_Diffusion::L2Cell(int c,
 int
 MFD3D_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   A.Reshape(1, nfaces);
 
-  for (int n = 0; n < nfaces; ++n) { A(0, n) = mesh_->face_area(faces[n]) * dirs[n]; }
+  for (int n = 0; n < nfaces; ++n) { A(0, n) = mesh_->getFaceArea(faces[n]) * dirs[n]; }
   return 0;
 }
 
@@ -399,8 +394,7 @@ MFD3D_Diffusion::L2consistencyInverseDivKScaled(int c,
 {
   Entity_ID_List nodes;
 
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   R.Reshape(nfaces, d_);
@@ -410,36 +404,36 @@ MFD3D_Diffusion::L2consistencyInverseDivKScaled(int c,
   std::vector<double> areas(nfaces, 0.0);
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    areas[i] = norm(mesh_->face_normal(f));
+    areas[i] = norm(mesh_->getFaceNormal(f));
   }
 
   // populate matrix W_0
   AmanziGeometry::Point v1(d_), v2(d_);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->getCellVolume(c);
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
     v1 = (K * normal) / kmean;
 
     for (int j = i; j < nfaces; j++) {
       f = faces[j];
-      const AmanziGeometry::Point& v3 = mesh_->face_normal(f);
+      const AmanziGeometry::Point& v3 = mesh_->getFaceNormal(f);
       Wc(i, j) = (v1 * v3) / (dirs[i] * dirs[j] * volume * areas[i] * areas[j]);
     }
   }
 
   // populate matrix R
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     if (d_ == 2) {
-      mesh_->face_get_nodes(f, &nodes);
+      nodes = mesh_->getFaceNodes(f);
 
-      mesh_->node_get_coordinates(nodes[0], &v1);
-      mesh_->node_get_coordinates(nodes[1], &v2);
+      v1 = mesh_->getNodeCoordinate(nodes[0]);
+      v2 = mesh_->getNodeCoordinate(nodes[1]);
 
       v1 -= cm;
       v2 -= cm;
@@ -568,14 +562,14 @@ MFD3D_Diffusion::MassMatrixInverseDivKScaled(int c,
 void
 MFD3D_Diffusion::RescaleMassMatrixInverse_(int c, DenseMatrix& W)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
   // calculate areas of possibly curved faces
   std::vector<double> areas(nfaces, 0.0);
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    areas[i] = norm(mesh_->face_normal(f));
+    areas[i] = norm(mesh_->getFaceNormal(f));
   }
 
   // back to area-weighted fluxes
@@ -602,8 +596,7 @@ MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M)
   int map[nrows];
   for (int i = 0; i < nrows; i++) map[i] = i;
 
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
 
   int i1, i2, k, l;
   double s1, s2, area1, area2;
@@ -612,14 +605,14 @@ MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M)
     i2 = i1 + 1;
 
     int f = faces[i1];
-    const AmanziGeometry::Point& normal1 = mesh_->face_normal(f);
-    area1 = mesh_->face_area(f);
+    const AmanziGeometry::Point& normal1 = mesh_->getFaceNormal(f);
+    area1 = mesh_->getFaceArea(f);
 
     s1 = 1.0;
     for (int j = i2; j < nrows; j++) {
       f = faces[j];
-      const AmanziGeometry::Point& normal2 = mesh_->face_normal(f);
-      area2 = mesh_->face_area(f);
+      const AmanziGeometry::Point& normal2 = mesh_->getFaceNormal(f);
+      area2 = mesh_->getFaceArea(f);
 
       s2 = (normal1 * normal2) * (dirs[i] * dirs[j]) / (area1 * area2);
       if (s2 < s1) { // swap map values in positions i2 and j
@@ -638,15 +631,15 @@ MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M)
   for (int i = 0; i < d_; i++) {
     k = map[2 * i];
     int f = faces[k];
-    const AmanziGeometry::Point& normal1 = mesh_->face_normal(f);
-    area1 = mesh_->face_area(f);
+    const AmanziGeometry::Point& normal1 = mesh_->getFaceNormal(f);
+    area1 = mesh_->getFaceArea(f);
     areas[i] = area1;
 
     for (int j = i; j < d_; j++) {
       l = map[2 * j];
       f = faces[l];
-      const AmanziGeometry::Point& normal2 = mesh_->face_normal(f);
-      area2 = mesh_->face_area(f);
+      const AmanziGeometry::Point& normal2 = mesh_->getFaceNormal(f);
+      area2 = mesh_->getFaceArea(f);
 
       s1 = (K * normal1) * normal2 * (dirs[k] * dirs[l]) / (area1 * area2);
       if (i - j) {
@@ -672,16 +665,16 @@ MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M)
   }
 
   // add stability term D_ik T1_kl D_il
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->getCellVolume(c);
   for (int i = 0; i < nrows; i++) {
     i1 = i / 2;
     k = map[i];
-    area1 = mesh_->face_area(faces[k]);
+    area1 = mesh_->getFaceArea(faces[k]);
 
     for (int j = i; j < nrows; j++) {
       i2 = j / 2;
       l = map[j];
-      area2 = mesh_->face_area(faces[l]);
+      area2 = mesh_->getFaceArea(faces[l]);
       M(l, k) = M(k, l) += T1(i1, i2) * area1 * area2 / volume; // Fix (lipnikov@lanl.gov)
     }
   }

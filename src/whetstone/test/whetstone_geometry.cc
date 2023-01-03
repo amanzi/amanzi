@@ -48,16 +48,16 @@ TEST(FACE_CENTROIDS)
   Entity_ID_List nodes;
   std::vector<double> weights;
 
-  double area = mesh->cell_volume(0);
-  mesh->cell_get_nodes(0, &nodes);
+  double area = mesh->getCellVolume(0);
+  nodes = mesh->getCellNodes(0);
   PolygonCentroidWeights(*mesh, nodes, area, weights);
 
   // verification
   for (int n = 0; n < nodes.size(); ++n) {
-    mesh->node_get_coordinates(nodes[n], &p);
+    p = mesh->getNodeCoordinate(nodes[n]);
     xc += weights[n] * p;
   }
-  const AmanziGeometry::Point& xm = mesh->cell_centroid(0);
+  const AmanziGeometry::Point& xm = mesh->getCellCentroid(0);
   std::cout << xc << " = " << xm << std::endl;
   CHECK_CLOSE(0.0, norm(xc - xm), 1e-10);
 }

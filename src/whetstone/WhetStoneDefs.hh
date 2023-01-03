@@ -43,11 +43,11 @@ typedef AmanziMesh::Parallel_type Parallel_type;
 typedef AmanziMesh::Entity_kind Entity_kind;
 typedef std::tuple<AmanziMesh::Entity_kind, DOF_Type, int> SchemaItem;
 
-const int NODE = AmanziMesh::NODE;
-const int EDGE = AmanziMesh::EDGE;
-const int FACE = AmanziMesh::FACE;
-const int CELL = AmanziMesh::CELL;
-const int BOUNDARY_FACE = AmanziMesh::BOUNDARY_FACE;
+const int NODE = AmanziMesh::Entity_kind::NODE;
+const int EDGE = AmanziMesh::Entity_kind::EDGE;
+const int FACE = AmanziMesh::Entity_kind::FACE;
+const int CELL = AmanziMesh::Entity_kind::CELL;
+const int BOUNDARY_FACE = AmanziMesh::Entity_kind::BOUNDARY_FACE;
 
 #else
 typedef long long int Entity_ID;

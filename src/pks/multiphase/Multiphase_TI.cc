@@ -167,7 +167,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
       const auto& total_prev_c = *S_->Get<CompositeVector>(prev_key).ViewComponent("cell");
 
       for (int c = 0; c < ncells_owned_; ++c) {
-        double factor = mesh_->cell_volume(c) / dtp;
+        double factor = mesh_->getCellVolume(c) / dtp;
         fone_c[0][c] += (total_c[0][c] - total_prev_c[0][c]) * factor;
       }
     }
@@ -255,7 +255,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
       if (eqns_flattened_[col][2] >= 0 && row != eqns_flattened_[col][2]) continue;
 
       // add empty operator to have a well-defined global operator pointer
-      auto pde0 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
+      auto pde0 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
       auto global_op = pde0->global_operator();
       op_preconditioner_->set_operator_block(row, col, global_op);
       kr_c.PutScalar(0.0);
@@ -402,7 +402,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
       // storage term
       if ((key = eqns_[row].storage) != "") {
         if (S_->HasDerivative(key, keyc)) {
-          auto pde = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, global_op));
+          auto pde = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, global_op));
           S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
           auto der = S_->GetDerivativePtr<CompositeVector>(key, Tags::DEFAULT, keyc, Tags::DEFAULT);
           pde->AddAccumulationTerm(*der, dtp, "cell");
@@ -416,7 +416,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
     int n = neqns - 1;
 
     for (int i = 0; i < neqns; ++i) {
-      auto pde = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
+      auto pde = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
       op_preconditioner_->set_operator_block(n, i, pde->global_operator());
 
       // -- derivatives

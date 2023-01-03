@@ -355,6 +355,7 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
   for (auto p : preference_) {
 #ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
+      std::cout<<"Pref = MSTK"<<std::endl;
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
         *vo_->os() << "Creating extracted mesh using format \"MSTK\" with " << setids.size() << " local entities." << std::endl;
       }
@@ -381,7 +382,7 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
 // future) extruding it when it makes sense
 // -------------------------------------------------------------
 Teuchos::RCP<MeshFramework>
-MeshFrameworkFactory::create(const Teuchos::RCP<Mesh>& inmesh,
+MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
                     const std::vector<std::string>& setnames,
                     const Entity_kind setkind,
                     const bool flatten)

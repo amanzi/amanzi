@@ -52,7 +52,7 @@ Operator_FaceCellSff::AssembleMatrix(const SuperMap& map,
   // Check preconditions -- Scc must have exactly one CELL+FACE schema,
   // and no other CELL schemas that are not simply diagonal CELL_CELL.
   // Additionally, collect the diagonal for inversion.
-  Epetra_MultiVector D_c(mesh_->cell_map(false), 1);
+  Epetra_MultiVector D_c(mesh_->getMap(AmanziMesh::Entity_kind::CELL,false), 1);
 
   for (const_op_iterator it = begin(); it != end(); ++it) {
     if ((*it)->schema_old() & OPERATOR_SCHEMA_DOFS_CELL) {
@@ -84,14 +84,14 @@ Operator_FaceCellSff::AssembleMatrix(const SuperMap& map,
         schur_op = Teuchos::rcp(new Op_Cell_Face(name, mesh_));
         schur_ops_.push_back(schur_op);
         for (int c = 0; c != ncells_owned; ++c) {
-          int nfaces = mesh_->cell_get_num_faces(c);
+          int nfaces = mesh_->getCellNumFaces(c);
           schur_op->matrices[c] = WhetStone::DenseMatrix(nfaces, nfaces);
         }
       }
 
       // populate the schur component
       for (int c = 0; c != ncells_owned; ++c) {
-        const auto& faces = mesh_->cell_get_faces(c);
+        const auto& faces = mesh_->getCellFaces(c);
         int nfaces = faces.size();
 
         WhetStone::DenseMatrix& Scell = schur_op->matrices[c];
@@ -135,7 +135,7 @@ Operator_FaceCellSff::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
     Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
 
     for (int c = 0; c != ncells_owned; ++c) {
-      const auto& faces = mesh_->cell_get_faces(c);
+      const auto& faces = mesh_->getCellFaces(c);
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
@@ -161,7 +161,7 @@ Operator_FaceCellSff::SymbolicAssembleMatrix()
 {
   // SuperMap for Sff is face only
   CompositeVectorSpace smap_space;
-  smap_space.SetMesh(mesh_)->SetComponent("face", AmanziMesh::FACE, 1);
+  smap_space.SetMesh(mesh_)->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
   smap_ = createSuperMap(smap_space);
 
   // create the graph

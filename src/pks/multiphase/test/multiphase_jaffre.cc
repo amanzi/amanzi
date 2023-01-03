@@ -71,7 +71,7 @@ run_test(const std::string& domain, const std::string& filename)
     auto mesh3D = meshfactory.create(0.0, 0.0, 0.0, 200.0, 12.0, 12.0, 50, 3, 6, true, true);
     std::vector<std::string> names;
     names.push_back("fracture");
-    mesh = meshfactory.create(mesh3D, names, AmanziMesh::FACE);
+    mesh = meshfactory.create(mesh3D, names, AmanziMesh::Entity_kind::FACE);
   }
 
   // create screen io
@@ -132,10 +132,10 @@ run_test(const std::string& domain, const std::string& filename)
       const auto& u2 = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
       const auto& u3 = *S->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
 
-      io->WriteVector(*u0(0), "pressure", AmanziMesh::CELL);
-      io->WriteVector(*u1(0), "saturation_liquid", AmanziMesh::CELL);
-      io->WriteVector(*u2(0), "liquid hydrogen", AmanziMesh::CELL);
-      io->WriteVector(*u3(0), "gas hydrogen", AmanziMesh::CELL);
+      io->WriteVector(*u0(0), "pressure", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u1(0), "saturation_liquid", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u2(0), "liquid hydrogen", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u3(0), "gas hydrogen", AmanziMesh::Entity_kind::CELL);
       io->FinalizeCycle();
 
       WriteStateStatistics(*S, *vo);

@@ -42,10 +42,10 @@ Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_included)
     const Epetra_MultiVector& source_e = *source.ViewComponent("edge", true);
 
     for (int c = 0; c != ncells_owned; ++c) {
-      const auto& edges = mesh_->cell_get_edges(c);
+      const auto& edges = mesh_->getCellEdges(c);
       int nedges = edges.size();
 
-      double volume = mesh_->cell_volume(c);
+      double volume = mesh_->getCellVolume(c);
       for (int n = 0; n < nedges; ++n) {
         int e = edges[n];
         rhs_e[0][e] += source_e[0][e] * volume / nedges;
@@ -71,7 +71,7 @@ Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
 
     AmanziMesh::Entity_ID_List edges;
     for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_edges(c, &edges);
+      edges = mesh_->getCellEdges(c);
       int nedges = edges.size();
 
       WhetStone::DenseVector v(nedges), av(nedges);
@@ -128,7 +128,7 @@ Operator_Edge::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
   int ierr(0);
   AmanziMesh::Entity_ID_List edges;
   for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_edges(c, &edges);
+    edges = mesh_->getCellEdges(c);
     int nedges = edges.size();
 
     for (int n = 0; n != nedges; ++n) {
@@ -189,7 +189,7 @@ Operator_Edge::AssembleMatrixOp(const Op_Cell_Edge& op,
   int ierr(0);
   AmanziMesh::Entity_ID_List edges;
   for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_edges(c, &edges);
+    edges = mesh_->getCellEdges(c);
     int nedges = edges.size();
 
     for (int n = 0; n != nedges; ++n) {

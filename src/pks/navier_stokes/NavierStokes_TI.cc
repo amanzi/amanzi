@@ -161,7 +161,7 @@ NavierStokes_PK::UpdateSourceBoundaryData_(double t_old, double t_new)
 void
 NavierStokes_PK::ComputeOperatorBCs()
 {
-  int mf, mv(0), d(mesh_->space_dimension());
+  int mf, mv(0), d(mesh_->getSpaceDimension());
 
   for (int i = 0; i < op_bcs_.size(); ++i) {
     std::vector<int>& bc_model = op_bcs_[i]->bc_model();

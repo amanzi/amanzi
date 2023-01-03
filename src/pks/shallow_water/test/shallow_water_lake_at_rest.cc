@@ -56,10 +56,10 @@ lake_at_rest_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   double x, y, ht, u, v;
 
   int ncells_owned =
-    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
 
     x = xc[0];
     y = xc[1];
@@ -87,9 +87,9 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   double g = norm(S->Get<AmanziGeometry::Point>("gravity"));
 
   int ncells_wghost =
-    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
   int nnodes_wghost =
-    mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
   std::string passwd("");
 
   auto& B_c =
@@ -112,7 +112,7 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   for (int n = 0; n < nnodes_wghost; ++n) {
     Amanzi::AmanziGeometry::Point node_crd;
 
-    mesh->node_get_coordinates(n, &node_crd); // Coordinate of current node
+    node_crd = mesh->getNodeCoordinate(n); // Coordinate of current node
 
     double x = node_crd[0], y = node_crd[1];
 
@@ -127,12 +127,12 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   S->Get<CompositeVector>("surface-bathymetry").ScatterMasterToGhosted("node");
 
   for (int c = 0; c < ncells_wghost; ++c) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
 
     Amanzi::AmanziMesh::Entity_ID_List cfaces, cnodes, cedges;
-    mesh->cell_get_faces(c, &cfaces);
-    mesh->cell_get_nodes(c, &cnodes);
-    mesh->cell_get_edges(c, &cedges);
+    cfaces = mesh->getCellFaces(c);
+    cnodes = mesh->getCellNodes(c);
+    cedges = mesh->getCellEdges(c);
 
     int nfaces_cell = cfaces.size();
 
@@ -144,15 +144,15 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       int edge = cfaces[f];
 
       Amanzi::AmanziMesh::Entity_ID_List face_nodes;
-      mesh->face_get_nodes(edge, &face_nodes);
+      face_nodes = mesh->getFaceNodes(edge);
       int n0 = face_nodes[0], n1 = face_nodes[1];
 
-      mesh->node_get_coordinates(n0, &x0);
-      mesh->node_get_coordinates(n1, &x1);
+      x0 = mesh->getNodeCoordinate(n0);
+      x1 = mesh->getNodeCoordinate(n1);
 
       double area = norm((xc - x0) ^ (xc - x1)) / 2.0;
 
-      B_c[0][c] += (area / mesh->cell_volume(c)) * (B_n[0][n0] + B_n[0][n1]) / 2.0;
+      B_c[0][c] += (area / mesh->getCellVolume(c)) * (B_n[0][n0] + B_n[0][n1]) / 2.0;
     }
 
     // Perturb the solution; change time period t_new to at least 10.0
@@ -193,7 +193,7 @@ error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       double& hmax)
 {
   int ncells_owned =
-    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   err_max = 0.0;
   err_L1 = 0.0;
@@ -204,36 +204,36 @@ error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   for (int c = 0; c < ncells_owned; ++c) {
     double tmp = std::abs(ht_ex[0][c] - ht[0][c]);
     err_max = std::max(err_max, tmp);
-    err_L1 += tmp * mesh->cell_volume(c);
-    tmp_hmax = std::sqrt(mesh->cell_volume(c));
+    err_L1 += tmp * mesh->getCellVolume(c);
+    tmp_hmax = std::sqrt(mesh->getCellVolume(c));
 
     tmp = std::abs(vel_ex[0][c] - vel[0][c]);
     err_max_u = std::max(err_max_u, tmp);
-    err_L1_u += tmp * mesh->cell_volume(c);
+    err_L1_u += tmp * mesh->getCellVolume(c);
 
     tmp = std::abs(vel_ex[1][c] - vel[1][c]);
     err_max_v = std::max(err_max_v, tmp);
-    err_L1_v += tmp * mesh->cell_volume(c);
+    err_L1_v += tmp * mesh->getCellVolume(c);
 
     hmax = std::max(tmp_hmax, hmax);
   }
 
   double err_max_tmp, err_L1_tmp;
 
-  mesh->get_comm()->MaxAll(&err_max, &err_max_tmp, 1);
-  mesh->get_comm()->SumAll(&err_L1, &err_L1_tmp, 1);
+  mesh->getComm()->MaxAll(&err_max, &err_max_tmp, 1);
+  mesh->getComm()->SumAll(&err_L1, &err_L1_tmp, 1);
 
   err_max = err_max_tmp;
   err_L1 = err_L1_tmp;
 
-  mesh->get_comm()->MaxAll(&err_max_u, &err_max_tmp, 1);
-  mesh->get_comm()->SumAll(&err_L1_u, &err_L1_tmp, 1);
+  mesh->getComm()->MaxAll(&err_max_u, &err_max_tmp, 1);
+  mesh->getComm()->SumAll(&err_L1_u, &err_L1_tmp, 1);
 
   err_max_u = err_max_tmp;
   err_L1_u = err_L1_tmp;
 
-  mesh->get_comm()->MaxAll(&err_max_v, &err_max_tmp, 1);
-  mesh->get_comm()->SumAll(&err_L1_v, &err_L1_tmp, 1);
+  mesh->getComm()->MaxAll(&err_max_v, &err_max_tmp, 1);
+  mesh->getComm()->SumAll(&err_L1_v, &err_L1_tmp, 1);
 
   err_max_v = err_max_tmp;
   err_L1_v = err_L1_tmp;
@@ -281,14 +281,13 @@ RunTest(int icase)
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   // Creat a mesh
-  bool request_faces = true, request_edges = false;
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   RCP<Mesh> mesh;
   if (icase == 1) {
     // Rectangular mesh
-    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25);
   } else if (icase == 2) {
     // Triangular mesh
     mesh = meshfactory.create("test/triangular16.exo");

@@ -60,7 +60,7 @@ TEST(DG_MAP_DETERMINANT_CELL)
   AmanziGeometry::Point_List new_positions, final_positions;
 
   for (int v = 0; v < nnodes; ++v) {
-    mesh1->node_get_coordinates(v, &xv);
+    xv = mesh1->getNodeCoordinate(v);
 
     xv[0] = (xv[0] + xv[0] * xv[0] + xv[0] * xv[0] * xv[0]) / 3;
     xv[1] = (xv[1] + xv[1] * xv[1]) / 2;
@@ -68,7 +68,7 @@ TEST(DG_MAP_DETERMINANT_CELL)
     nodeids.push_back(v);
     new_positions.push_back(xv);
   }
-  mesh1->deform(nodeids, new_positions, false, &final_positions);
+  Amanzi::AmanziMesh::MeshAlgorithms::deform(*mesh1, nodeids, new_positions);
 
   // cell-baced velocities and Jacobian matrices
   // test piecewise linear deformation (part II)
@@ -81,7 +81,7 @@ TEST(DG_MAP_DETERMINANT_CELL)
   std::vector<const char*> list = { "SerendipityPk" };
 
   for (auto name : list) {
-    double fac(0.5), volume = mesh1->cell_volume(cell);
+    double fac(0.5), volume = mesh1->getCellVolume(cell);
     for (int k = 1; k < 4; ++k) {
       // collect geometric data
       Teuchos::ParameterList plist;
@@ -105,7 +105,7 @@ TEST(DG_MAP_DETERMINANT_CELL)
       fac /= (k + 1);
       CHECK(fabs(err) < fac);
 
-      uc.ChangeOrigin(mesh0->cell_centroid(cell));
+      uc.ChangeOrigin(mesh0->getCellCentroid(cell));
       printf("k=%d  %14s  vol=%8.6g  err=%12.8f  |poly|=%9.6g %9.6g\n",
              k,
              name,
@@ -168,7 +168,7 @@ TEST(DG_MAP_LEAST_SQUARE_CELL)
 
   // -- mesh deformation
   for (int v = 0; v < nnodes; ++v) {
-    mesh1->node_get_coordinates(v, &xv);
+    xv = mesh1->getNodeCoordinate(v);
 
     yv[0] = xv[0] + u[0].Value(xv);
     yv[1] = xv[1] + u[1].Value(xv);
@@ -176,7 +176,7 @@ TEST(DG_MAP_LEAST_SQUARE_CELL)
     nodeids.push_back(v);
     new_positions.push_back(yv);
   }
-  mesh1->deform(nodeids, new_positions, false, &final_positions);
+  Amanzi::AmanziMesh::MeshAlgorithms::deform(*mesh1, nodeids, new_positions);
 
   // least-square calculation
   Teuchos::ParameterList plist;
@@ -186,7 +186,7 @@ TEST(DG_MAP_LEAST_SQUARE_CELL)
   auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
 
   maps->VelocityCell(0, vf, vf, vc1);
-  vc1.ChangeOrigin(mesh0->cell_centroid(cell));
+  vc1.ChangeOrigin(mesh0->getCellCentroid(cell));
 
   // Serendipity calculation
   plist.set<std::string>("method", "Lagrange serendipity")
@@ -293,8 +293,8 @@ TEST(DG_MAP_VELOCITY_CELL)
   // create two meshes
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh0 = meshfactory.create("test/cube_unit.exo", true, true);
-  Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/cube_unit.exo", true, true);
+  Teuchos::RCP<Mesh> mesh0 = meshfactory.create("test/cube_unit.exo");
+  Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/cube_unit.exo");
 
   // deform the second mesh
   int d(3), nnodes(8), nfaces(6), nedges(12);
@@ -316,14 +316,14 @@ TEST(DG_MAP_VELOCITY_CELL)
   u *= 0.05;
 
   for (int v = 0; v < nnodes; ++v) {
-    mesh1->node_get_coordinates(v, &xv);
+    xv = mesh1->getNodeCoordinate(v);
 
     for (int i = 0; i < d; ++i) yv[i] = xv[i] + u[i].Value(xv);
 
     nodeids.push_back(v);
     new_positions.push_back(yv);
   }
-  mesh1->deform(nodeids, new_positions, false, &final_positions);
+  Amanzi::AmanziMesh::MeshAlgorithms::deform(*mesh1, nodeids, new_positions);
 
   // velocity calculation
   // -- on edges
@@ -334,12 +334,12 @@ TEST(DG_MAP_VELOCITY_CELL)
   auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
 
   std::vector<VectorPolynomial> ve(nedges);
-  mesh0->cell_get_edges(0, &edges);
+  edges = mesh0->getCellEdges(0);
   for (int n = 0; n < nedges; ++n) { maps->VelocityEdge(edges[n], ve[n]); }
 
   // -- on faces
   std::vector<VectorPolynomial> vf(nfaces);
-  mesh0->cell_get_faces(0, &faces);
+  faces = mesh0->getCellFaces(0);
   for (int n = 0; n < nfaces; ++n) { maps->VelocityFace(faces[n], vf[n]); }
 
   // -- in cell

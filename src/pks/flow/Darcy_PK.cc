@@ -106,7 +106,7 @@ Darcy_PK::Setup()
 {
   dt_ = -1.0;
   mesh_ = S_->GetMesh(domain_);
-  dim = mesh_->space_dimension();
+  dim = mesh_->getSpaceDimension();
 
   // generate keys here to be available for setup of the base class
   pressure_key_ = Keys::getKey(domain_, "pressure");
@@ -145,12 +145,12 @@ Darcy_PK::Setup()
     std::vector<int> ndofs;
 
     names.push_back("cell");
-    locations.push_back(AmanziMesh::CELL);
+    locations.push_back(AmanziMesh::Entity_kind::CELL);
     ndofs.push_back(1);
 
     if (name != "fv: default" && name != "nlfv: default") {
       names.push_back("face");
-      locations.push_back(AmanziMesh::FACE);
+      locations.push_back(AmanziMesh::Entity_kind::FACE);
       ndofs.push_back(1);
     }
 
@@ -175,14 +175,14 @@ Darcy_PK::Setup()
     S_->Require<CV_t, CVS_t>(specific_yield_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
   if (!S_->HasRecord(saturation_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(saturation_liquid_key_, Tags::DEFAULT);
   }
 
@@ -190,7 +190,7 @@ Darcy_PK::Setup()
     S_->Require<CV_t, CVS_t>(prev_saturation_liquid_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
   // Require additional fields and evaluators for this PK.
@@ -199,7 +199,7 @@ Darcy_PK::Setup()
     S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
@@ -213,13 +213,13 @@ Darcy_PK::Setup()
     S_->Require<CV_t, CVS_t>(compliance_key_, Tags::DEFAULT, compliance_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(compliance_key_, Tags::DEFAULT);
   } else if (use_bulk_modulus_) {
     S_->Require<CV_t, CVS_t>(bulk_modulus_key_, Tags::DEFAULT)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(bulk_modulus_key_, Tags::DEFAULT);
   }
 
@@ -228,7 +228,7 @@ Darcy_PK::Setup()
     S_->Require<CV_t, CVS_t>(hydraulic_head_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
   // full velocity vector
@@ -236,7 +236,7 @@ Darcy_PK::Setup()
     S_->Require<CV_t, CVS_t>(darcy_velocity_key_, Tags::DEFAULT, darcy_velocity_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, dim);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, dim);
 
     Teuchos::ParameterList elist(darcy_velocity_key_);
     elist.set<std::string>("domain name", domain_)
@@ -256,7 +256,7 @@ Darcy_PK::Setup()
     CompositeVectorSpace& cvs =
       S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_);
     cvs.SetOwned(false);
-    cvs.AddComponent("offd", AmanziMesh::CELL, noff)->SetOwned(true);
+    cvs.AddComponent("offd", AmanziMesh::Entity_kind::CELL, noff)->SetOwned(true);
   }
 
   // require optional fields
@@ -269,7 +269,7 @@ Darcy_PK::Setup()
         S_->Require<CV_t, CVS_t>(optional_key, Tags::DEFAULT, passwd_)
           .SetMesh(mesh_)
           ->SetGhosted(true)
-          ->SetComponent("cell", AmanziMesh::CELL, 1);
+          ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       }
     }
   }
@@ -318,7 +318,7 @@ Darcy_PK::Initialize()
   solution = S_->GetPtrW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_);
   soln_->SetData(solution);
 
-  const Epetra_BlockMap& cmap = mesh_->cell_map(false);
+  const Epetra_BlockMap& cmap = mesh_->getMap(AmanziMesh::Entity_kind::CELL,false);
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
 
@@ -394,7 +394,7 @@ Darcy_PK::Initialize()
   op_ = op_diff_->global_operator();
 
   // -- accumulation operator.
-  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_));
+  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op_));
   op_->CreateCheckPoint();
 
   // -- generic linear solver.
@@ -473,8 +473,8 @@ Darcy_PK::InitializeStatistics_(bool init_darcy)
     int missed_tmp = missed_bc_faces_;
     int dirichlet_tmp = dirichlet_bc_faces_;
 #ifdef HAVE_MPI
-    mesh_->get_comm()->SumAll(&missed_tmp, &missed_bc_faces_, 1);
-    mesh_->get_comm()->SumAll(&dirichlet_tmp, &dirichlet_bc_faces_, 1);
+    mesh_->getComm()->SumAll(&missed_tmp, &missed_bc_faces_, 1);
+    mesh_->getComm()->SumAll(&dirichlet_tmp, &dirichlet_bc_faces_, 1);
 #endif
 
     *vo_->os() << "pressure BC assigned to " << dirichlet_bc_faces_ << " faces" << std::endl;
@@ -646,7 +646,7 @@ Darcy_PK::UpdateSpecificYield_()
   int negative_yield = 0;
   for (int c = 0; c < ncells_owned; c++) {
     if (specific_yield[0][c] > 0.0) {
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->getCellFacesAndDirections(c, &faces, &dirs);
 
       double area = 0.0;
       int nfaces = faces.size();
@@ -656,7 +656,7 @@ Darcy_PK::UpdateSpecificYield_()
 
         if (c2 >= 0) {
           if (specific_yield[0][c2] <= 0.0) // cell in the fully saturated layer
-            area -= (mesh_->face_normal(f))[dim - 1] * dirs[n];
+            area -= (mesh_->getFaceNormal(f))[dim - 1] * dirs[n];
         }
       }
       specific_yield[0][c] *= area;
@@ -666,7 +666,7 @@ Darcy_PK::UpdateSpecificYield_()
 
 #ifdef HAVE_MPI
   int negative_yield_tmp = negative_yield;
-  mesh_->get_comm()->MaxAll(&negative_yield_tmp, &negative_yield, 1);
+  mesh_->getComm()->MaxAll(&negative_yield_tmp, &negative_yield, 1);
 #endif
   if (negative_yield > 0) {
     Errors::Message msg;

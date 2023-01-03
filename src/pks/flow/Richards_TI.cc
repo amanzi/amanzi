@@ -106,7 +106,7 @@ Richards_PK::FunctionalResidual(double t_old,
     double wc1 = wc_c[0][c];
     double wc2 = wc_prev_c[0][c];
 
-    double factor = mesh_->cell_volume(c) / dt_;
+    double factor = mesh_->getCellVolume(c) / dt_;
     f_cell[0][c] += (wc1 - wc2) * factor;
   }
 
@@ -125,7 +125,7 @@ Richards_PK::FunctionalResidual(double t_old,
 
   for (int c = 0; c < ncells_owned; ++c) {
     const auto& dens_c = *S_->Get<CV_t>(mol_density_liquid_key_).ViewComponent("cell");
-    double factor = mesh_->cell_volume(c) * dens_c[0][c] * phi_c[0][c] / dt_;
+    double factor = mesh_->getCellVolume(c) * dens_c[0][c] * phi_c[0][c] / dt_;
     double tmp = fabs(f_cell[0][c]) / factor;
     if (tmp > functional_max_norm) {
       functional_max_norm = tmp;
@@ -512,7 +512,7 @@ Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du)
   if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     if (error == buf) {
       int c = functional_max_cell;
-      const AmanziGeometry::Point& xp = mesh_->cell_centroid(c);
+      const AmanziGeometry::Point& xp = mesh_->getCellCentroid(c);
 
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "residual=" << functional_max_norm << " at point";
@@ -520,7 +520,7 @@ Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du)
       *vo_->os() << std::endl;
 
       c = cell_p;
-      const AmanziGeometry::Point& yp = mesh_->cell_centroid(c);
+      const AmanziGeometry::Point& yp = mesh_->getCellCentroid(c);
 
       *vo_->os() << "pressure err=" << error_p << " at point";
       for (int i = 0; i < dim; i++) *vo_->os() << " " << yp[i];
@@ -599,8 +599,8 @@ Richards_PK::ModifyCorrection(double dt,
   // output statistics
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int nsat_tmp = nsat_clipped, npre_tmp = npre_clipped;
-    mesh_->get_comm()->SumAll(&nsat_tmp, &nsat_clipped, 1);
-    mesh_->get_comm()->SumAll(&npre_tmp, &npre_clipped, 1);
+    mesh_->getComm()->SumAll(&nsat_tmp, &nsat_clipped, 1);
+    mesh_->getComm()->SumAll(&npre_tmp, &npre_clipped, 1);
 
     if (nsat_clipped > 0 || npre_clipped > 0) {
       Teuchos::OSTab tab = vo_->getOSTab();

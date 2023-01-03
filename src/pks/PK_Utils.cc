@@ -112,10 +112,10 @@ PKUtils_CalculatePermeabilityFactorInWell(const Teuchos::Ptr<State>& S,
   cv.ScatterMasterToGhosted("cell");
   const auto& perm = *cv.ViewComponent("cell", true);
 
-  int ncells_wghost = S->GetMesh()->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost = S->GetMesh()->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
   int dim = perm.NumVectors();
 
-  Kxy = Teuchos::rcp(new Epetra_Vector(S->GetMesh()->cell_map(true)));
+  Kxy = Teuchos::rcp(new Epetra_Vector(S->GetMesh()->getMap(AmanziMesh::Entity_kind::CELL,true)));
 
   for (int c = 0; c < ncells_wghost; c++) {
     (*Kxy)[c] = 0.0;
@@ -132,17 +132,17 @@ PKUtils_CalculatePermeabilityFactorInWell(const Teuchos::Ptr<State>& S,
 AmanziGeometry::Point
 PKUtils_EntityCoordinates(int id, AmanziMesh::Entity_ID kind, const AmanziMesh::Mesh& mesh)
 {
-  if (kind == AmanziMesh::FACE) {
-    return mesh.face_centroid(id);
-  } else if (kind == AmanziMesh::CELL) {
-    return mesh.cell_centroid(id);
-  } else if (kind == AmanziMesh::NODE) {
-    int d = mesh.space_dimension();
+  if (kind == AmanziMesh::Entity_kind::FACE) {
+    return mesh.getFaceCentroid(id);
+  } else if (kind == AmanziMesh::Entity_kind::CELL) {
+    return mesh.getCellCentroid(id);
+  } else if (kind == AmanziMesh::Entity_kind::NODE) {
+    int d = mesh.getSpaceDimension();
     AmanziGeometry::Point xn(d);
-    mesh.node_get_coordinates(id, &xn);
+    xn = mesh.getNodeCoordinate(id);
     return xn;
-  } else if (kind == AmanziMesh::EDGE) {
-    return mesh.edge_centroid(id);
+  } else if (kind == AmanziMesh::Entity_kind::EDGE) {
+    return mesh.getEdgeCentroid(id);
   }
   return AmanziGeometry::Point();
 }

@@ -27,8 +27,8 @@ void
 ParallelCommunication::CopyMasterCell2GhostCell(Epetra_IntVector& vghost)
 {
 #ifdef HAVE_MPI
-  const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
-  const Epetra_BlockMap& target_cmap = mesh_->cell_map(true);
+  const Epetra_BlockMap& source_cmap = mesh_->getMap(AmanziMesh::Entity_kind::CELL,false);
+  const Epetra_BlockMap& target_cmap = mesh_->getMap(AmanziMesh::Entity_kind::CELL,true);
 
   if (!importer_cell_initialized_) {
     importer_cell_ = Teuchos::rcp(new Epetra_Import(target_cmap, source_cmap));
@@ -52,8 +52,8 @@ void
 ParallelCommunication::CopyMasterCell2GhostCell(const Epetra_IntVector& v, Epetra_IntVector& vghost)
 {
 #ifdef HAVE_MPI
-  const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
-  const Epetra_BlockMap& target_cmap = mesh_->cell_map(true);
+  const Epetra_BlockMap& source_cmap = mesh_->getMap(AmanziMesh::Entity_kind::CELL,false);
+  const Epetra_BlockMap& target_cmap = mesh_->getMap(AmanziMesh::Entity_kind::CELL,true);
 
   if (!importer_cell_initialized_) {
     importer_cell_ = Teuchos::rcp(new Epetra_Import(target_cmap, source_cmap));
@@ -75,8 +75,8 @@ void
 ParallelCommunication::CopyMasterFace2GhostFace(Epetra_IntVector& vghost)
 {
 #ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
-  const Epetra_BlockMap& target_fmap = mesh_->face_map(true);
+  const Epetra_BlockMap& source_fmap = mesh_->getMap(AmanziMesh::Entity_kind::FACE,false);
+  const Epetra_BlockMap& target_fmap = mesh_->getMap(AmanziMesh::Entity_kind::FACE,true);
 
   if (!importer_face_initialized_) {
     importer_face_ = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
@@ -100,8 +100,8 @@ void
 ParallelCommunication::CopyMasterFace2GhostFace(const Epetra_IntVector& v, Epetra_IntVector& vghost)
 {
 #ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
-  const Epetra_BlockMap& target_fmap = mesh_->face_map(true);
+  const Epetra_BlockMap& source_fmap = mesh_->getMap(AmanziMesh::Entity_kind::FACE,false);
+  const Epetra_BlockMap& target_fmap = mesh_->getMap(AmanziMesh::Entity_kind::FACE,true);
 
   if (!importer_face_initialized_) {
     importer_face_ = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
@@ -125,8 +125,8 @@ ParallelCommunication::CombineGhostFace2MasterFace(Epetra_IntVector& vghost,
                                                    Epetra_CombineMode mode)
 {
 #ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
-  const Epetra_BlockMap& target_fmap = mesh_->face_map(true);
+  const Epetra_BlockMap& source_fmap = mesh_->getMap(AmanziMesh::Entity_kind::FACE,false);
+  const Epetra_BlockMap& target_fmap = mesh_->getMap(AmanziMesh::Entity_kind::FACE,true);
 
   if (!importer_face_initialized_) {
     importer_face_ = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
@@ -152,8 +152,8 @@ ParallelCommunication::CombineGhostCell2MasterCell(Epetra_IntVector& vghost,
                                                    Epetra_CombineMode mode)
 {
 #ifdef HAVE_MPI
-  const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
-  const Epetra_BlockMap& target_cmap = mesh_->cell_map(true);
+  const Epetra_BlockMap& source_cmap = mesh_->getMap(AmanziMesh::Entity_kind::CELL,false);
+  const Epetra_BlockMap& target_cmap = mesh_->getMap(AmanziMesh::Entity_kind::CELL,true);
 
   if (!importer_face_initialized_) {
     importer_cell_ = Teuchos::rcp(new Epetra_Import(target_cmap, source_cmap));

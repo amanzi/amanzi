@@ -21,7 +21,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "Monomial.hh"
@@ -61,7 +61,7 @@ IntegratePolynomialsEdge(const AmanziGeometry::Point& x1,
 
 class NumericalIntegration {
  public:
-  NumericalIntegration(Teuchos::RCP<const AmanziMesh::MeshLight> mesh);
+  NumericalIntegration(Teuchos::RCP<const AmanziMesh::Mesh> mesh);
   ~NumericalIntegration(){};
 
   // main methods
@@ -84,9 +84,9 @@ class NumericalIntegration {
   {
     int v1, v2;
     AmanziGeometry::Point x1(d_), x2(d_);
-    mesh_->edge_get_nodes(e, &v1, &v2);
-    mesh_->node_get_coordinates(v1, &x1);
-    mesh_->node_get_coordinates(v2, &x2);
+    mesh_->getEdgeNodes(e, &v1, &v2);
+    x1 = mesh_->getNodeCoordinate(v1);
+    x2 = mesh_->getNodeCoordinate(v2);
     return WhetStone::IntegrateFunctionsEdge(x1, x2, funcs, order);
   }
 
@@ -103,9 +103,9 @@ class NumericalIntegration {
   {
     int v1, v2;
     AmanziGeometry::Point x1(d_), x2(d_);
-    mesh_->edge_get_nodes(e, &v1, &v2);
-    mesh_->node_get_coordinates(v1, &x1);
-    mesh_->node_get_coordinates(v2, &x2);
+    mesh_->getEdgeNodes(e, &v1, &v2);
+    x1 = mesh_->getNodeCoordinate(v1);
+    x2 = mesh_->getNodeCoordinate(v2);
     return WhetStone::IntegratePolynomialsEdge(x1, x2, polys);
   }
 
@@ -169,7 +169,7 @@ class NumericalIntegration {
                                Polynomial& integrals) const;
 
  private:
-  Teuchos::RCP<const AmanziMesh::MeshLight> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int d_;
 
   // often, we need to perform multiple integrations on the same object.

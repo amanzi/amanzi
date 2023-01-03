@@ -256,7 +256,7 @@ PDE_Accumulation::CalculateEntityVolume_(CompositeVector& volume, const std::str
   if (name == "cell" && volume.HasComponent("cell")) {
     Epetra_MultiVector& vol = *volume.ViewComponent(name);
 
-    for (int c = 0; c != ncells_owned; ++c) { vol[0][c] = mesh_->cell_volume(c); }
+    for (int c = 0; c != ncells_owned; ++c) { vol[0][c] = mesh_->getCellVolume(c); }
 
   } else if (name == "face" && volume.HasComponent("face")) {
     // Missing code.
@@ -267,10 +267,10 @@ PDE_Accumulation::CalculateEntityVolume_(CompositeVector& volume, const std::str
     vol.PutScalar(0.0);
 
     for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_edges(c, &edges);
+      edges = mesh_->getCellEdges(c);
       int nedges = edges.size();
 
-      for (int i = 0; i < nedges; i++) { vol[0][edges[i]] += mesh_->cell_volume(c) / nedges; }
+      for (int i = 0; i < nedges; i++) { vol[0][edges[i]] += mesh_->getCellVolume(c) / nedges; }
     }
     volume.GatherGhostedToMaster(name);
 
@@ -279,13 +279,13 @@ PDE_Accumulation::CalculateEntityVolume_(CompositeVector& volume, const std::str
     vol.PutScalar(0.0);
 
     for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_nodes(c, &nodes);
+      nodes = mesh_->getCellNodes(c);
       int nnodes = nodes.size();
 
-      double cellvolume = mesh_->cell_volume(c);
+      double cellvolume = mesh_->getCellVolume(c);
       std::vector<double> weights(nnodes, 1.0 / nnodes);
 
-      if (mesh_->space_dimension() == 2) {
+      if (mesh_->getSpaceDimension() == 2) {
         WhetStone::PolygonCentroidWeights(*mesh_, nodes, cellvolume, weights);
       }
 
@@ -321,7 +321,7 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
       Teuchos::RCP<Op> op;
       auto cvs = CreateCompositeVectorSpace(mesh_, schema.KindToString(kind), kind, num);
 
-      if (kind == AmanziMesh::CELL) {
+      if (kind == AmanziMesh::Entity_kind::CELL) {
         int old_schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;
         global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist_, old_schema));
         std::string name("CELL_CELL");
@@ -331,12 +331,12 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
           op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
         }
 
-      } else if (kind == AmanziMesh::EDGE) {
+      } else if (kind == AmanziMesh::Entity_kind::EDGE) {
         global_op_ = Teuchos::rcp(new Operator_Edge(cvs, plist_));
         std::string name("EDGE_EDGE");
         op = Teuchos::rcp(new Op_Edge_Edge(name, mesh_));
 
-      } else if (kind == AmanziMesh::NODE) {
+      } else if (kind == AmanziMesh::Entity_kind::NODE) {
         global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist_));
         std::string name("NODE_NODE");
         op = Teuchos::rcp(new Op_Node_Node(name, mesh_, num));
@@ -361,7 +361,7 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
       int old_schema(0);
       Teuchos::RCP<Op> op;
 
-      if (kind == AmanziMesh::CELL) {
+      if (kind == AmanziMesh::Entity_kind::CELL) {
         old_schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;
         std::string name("CELL_CELL");
         if (surf) {
@@ -371,18 +371,18 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
         }
 
         /*
-      } else if (kind == AmanziMesh::FACE) {
+      } else if (kind == AmanziMesh::Entity_kind::FACE) {
         old_schema = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_FACE;
         std::string name("FACE_FACE");
         op = Teuchos::rcp(new Op_Face_Face(name, mesh_));
       */
 
-      } else if (kind == AmanziMesh::EDGE) {
+      } else if (kind == AmanziMesh::Entity_kind::EDGE) {
         old_schema = OPERATOR_SCHEMA_BASE_EDGE | OPERATOR_SCHEMA_DOFS_EDGE;
         std::string name("EDGE_EDGE");
         op = Teuchos::rcp(new Op_Edge_Edge(name, mesh_));
 
-      } else if (kind == AmanziMesh::NODE) {
+      } else if (kind == AmanziMesh::Entity_kind::NODE) {
         old_schema = OPERATOR_SCHEMA_BASE_NODE | OPERATOR_SCHEMA_DOFS_NODE;
         std::string name("NODE_NODE");
         op = Teuchos::rcp(new Op_Node_Node(name, mesh_, num));
@@ -400,9 +400,9 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
   }
 
   // mesh info
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  nfaces_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  nnodes_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
 }
 
 
