@@ -44,13 +44,13 @@ NLFV::HarmonicAveragingPoint(int f,
 {
   int dir;
 
-  const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-  const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+  const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
+  const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f, c1, &dir);
 
-  const AmanziGeometry::Point& cm1 = mesh_->cell_centroid(c1);
-  const AmanziGeometry::Point& cm2 = mesh_->cell_centroid(c2);
+  const AmanziGeometry::Point& cm1 = mesh_->getCellCentroid(c1);
+  const AmanziGeometry::Point& cm2 = mesh_->getCellCentroid(c2);
 
-  double area = mesh_->face_area(f);
+  double area = mesh_->getFaceArea(f);
   double d1 = fabs(normal * (fm - cm1)) / area;
   double d2 = fabs(normal * (fm - cm2)) / area;
 

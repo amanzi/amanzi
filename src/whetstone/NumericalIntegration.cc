@@ -27,8 +27,8 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-NumericalIntegration::NumericalIntegration(Teuchos::RCP<const AmanziMesh::MeshLight> mesh)
-  : mesh_(mesh), d_(mesh->space_dimension()){};
+NumericalIntegration::NumericalIntegration(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+  : mesh_(mesh), d_(mesh->getSpaceDimension()){};
 
 
 /* ******************************************************************
@@ -144,29 +144,29 @@ NumericalIntegration::IntegrateFunctionsTriangulatedCell(
   AmanziMesh::Entity_ID_List nodes;
   std::vector<AmanziGeometry::Point> xy(d_ + 1);
 
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
-  xy[0] = mesh_->cell_centroid(c);
+  xy[0] = mesh_->getCellCentroid(c);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    mesh_->face_get_nodes(f, &nodes);
+    nodes = mesh_->getFaceNodes(f);
     int nnodes = nodes.size();
 
     if (d_ == 3) {
-      xy[1] = mesh_->face_centroid(f);
+      xy[1] = mesh_->getFaceCentroid(f);
 
       for (int k = 0; k < nnodes; ++k) {
         int l = (k + 1) % nnodes;
-        mesh_->node_get_coordinates(nodes[k], &(xy[2]));
-        mesh_->node_get_coordinates(nodes[l], &(xy[3]));
+        (xy[2] = mesh_->getNodeCoordinate(nodes[k]));
+        (xy[3] = mesh_->getNodeCoordinate(nodes[l]));
 
         integral += IntegrateFunctionsTetrahedron(xy, funcs, order);
       }
     } else if (d_ == 2) {
-      mesh_->node_get_coordinates(nodes[0], &(xy[1]));
-      mesh_->node_get_coordinates(nodes[1], &(xy[2]));
+      (xy[1] = mesh_->getNodeCoordinate(nodes[0]));
+      (xy[2] = mesh_->getNodeCoordinate(nodes[1]));
 
       integral += IntegrateFunctionsTriangle(xy, funcs, order);
     }
@@ -192,23 +192,23 @@ NumericalIntegration::IntegrateFunctionsTriangulatedFace(
   if (d_ == 3) {
     std::vector<AmanziGeometry::Point> xy(d_ + 1);
 
-    mesh_->face_get_nodes(f, &nodes);
+    nodes = mesh_->getFaceNodes(f);
     int nnodes = nodes.size();
 
-    xy[0] = mesh_->face_centroid(f);
+    xy[0] = mesh_->getFaceCentroid(f);
 
     for (int k = 0; k < nnodes; ++k) {
       int l = (k + 1) % nnodes;
-      mesh_->node_get_coordinates(nodes[k], &(xy[1]));
-      mesh_->node_get_coordinates(nodes[l], &(xy[2]));
+      (xy[1] = mesh_->getNodeCoordinate(nodes[k]));
+      (xy[2] = mesh_->getNodeCoordinate(nodes[l]));
 
       integral += IntegrateFunctionsTriangle(xy, funcs, order);
     }
   } else if (d_ == 2) {
-    mesh_->face_get_nodes(f, &nodes);
+    nodes = mesh_->getFaceNodes(f);
 
-    mesh_->node_get_coordinates(nodes[0], &x1);
-    mesh_->node_get_coordinates(nodes[1], &x2);
+    x1 = mesh_->getNodeCoordinate(nodes[0]);
+    x2 = mesh_->getNodeCoordinate(nodes[1]);
 
     integral += WhetStone::IntegrateFunctionsEdge(x1, x2, funcs, order);
   }
@@ -229,7 +229,7 @@ NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& poly)
 
   // dot product of coefficients of two polynomials.
   Polynomial tmp = poly;
-  tmp.ChangeOrigin(mesh_->cell_centroid(c));
+  tmp.ChangeOrigin(mesh_->getCellCentroid(c));
 
   double value(0.0);
   for (int n = 0; n < tmp.size(); ++n) { value += integrals_.poly()(n) * tmp(n); }
@@ -247,7 +247,7 @@ NumericalIntegration::IntegratePolynomialsCell(int c,
                                                const std::vector<const PolynomialBase*>& polys)
 {
   // create a single polynomial centered at cell centroid
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
   Polynomial product(d_, 0);
   product(0) = 1.0;
@@ -282,7 +282,7 @@ NumericalIntegration::IntegratePolynomialsCell(int c,
                                                PolynomialOnMesh& integrals) const
 {
   // create a single polynomial centered at cell centroid
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
   Polynomial product(d_, 0);
   product(0) = 1.0;
@@ -320,17 +320,17 @@ NumericalIntegration::IntegratePolynomialsFace(
 
   if (d_ == 2) {
     Entity_ID_List nodes;
-    mesh_->face_get_nodes(f, &nodes);
+    nodes = mesh_->getFaceNodes(f);
 
-    mesh_->node_get_coordinates(nodes[0], &x1);
-    mesh_->node_get_coordinates(nodes[1], &x2);
+    x1 = mesh_->getNodeCoordinate(nodes[0]);
+    x2 = mesh_->getNodeCoordinate(nodes[1]);
     return WhetStone::IntegratePolynomialsEdge(x1, x2, polys);
   }
 
-  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+  const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
-  AmanziGeometry::Point fnormal = mesh_->face_normal(f);
-  double area = mesh_->face_area(f);
+  AmanziGeometry::Point fnormal = mesh_->getFaceNormal(f);
+  double area = mesh_->getFaceArea(f);
   fnormal /= area;
 
   // create a single polynomial centered at face centroid
@@ -347,17 +347,15 @@ NumericalIntegration::IntegratePolynomialsFace(
 
   // Apply Euler theorem to each monomial
   double sum(0.0);
-  Entity_ID_List edges;
-  std::vector<int> dirs;
 
-  mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
+  auto [edges, dirs] = mesh_->getFaceEdgesAndDirections(f);
   int nedges = edges.size();
 
   for (int n = 0; n < nedges; ++n) {
     int e = edges[n];
-    const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
-    const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
-    double length = mesh_->edge_length(e);
+    const AmanziGeometry::Point& xe = mesh_->getEdgeCentroid(e);
+    const AmanziGeometry::Point& tau = mesh_->getEdgeVector(e);
+    double length = mesh_->getEdgeLength(e);
 
     enormal = tau ^ fnormal;
 
@@ -373,9 +371,9 @@ NumericalIntegration::IntegratePolynomialsFace(
 
     // integrate along edge
     int n0, n1;
-    mesh_->edge_get_nodes(e, &n0, &n1);
-    mesh_->node_get_coordinates(n0, &x1);
-    mesh_->node_get_coordinates(n1, &x2);
+    mesh_->getEdgeNodes(e, &n0, &n1);
+    x1 = mesh_->getNodeCoordinate(n0);
+    x2 = mesh_->getNodeCoordinate(n1);
 
     std::vector<const PolynomialBase*> q_ptr(1, &q);
     sum += WhetStone::IntegratePolynomialsEdge(x1, x2, q_ptr);
@@ -464,7 +462,7 @@ void
 NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& integrals) const
 {
   if (k == 0) {
-    integrals(0) = mesh_->cell_volume(c);
+    integrals(0) = mesh_->getCellVolume(c);
     return;
   }
 
@@ -479,28 +477,26 @@ NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& integrals
 
   Entity_ID_List nodes;
 
-  // mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
     double tmp = dirs[n] * ((xf - xc) * normal) / (k + d_);
 
     if (d_ == 3) {
-      tmp /= mesh_->face_area(f);
+      tmp /= mesh_->getFaceArea(f);
       IntegrateMonomialsFaceReduction_(c, f, tmp, k, integrals);
     } else if (d_ == 2) {
-      mesh_->face_get_nodes(f, &nodes);
+      nodes = mesh_->getFaceNodes(f);
 
       AmanziGeometry::Point x1(d_), x2(d_);
-      mesh_->node_get_coordinates(nodes[0], &x1);
-      mesh_->node_get_coordinates(nodes[1], &x2);
+      x1 = mesh_->getNodeCoordinate(nodes[0]);
+      x2 = mesh_->getNodeCoordinate(nodes[1]);
 
       x1 -= xc; // simple change of origin
       x2 -= xc;
@@ -523,11 +519,11 @@ NumericalIntegration::IntegrateMonomialsFace_(int c,
 {
   int nk = PolynomialSpaceDimension(d_, k - 1);
 
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+  const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
-  AmanziGeometry::Point normal = mesh_->face_normal(f);
-  double area = mesh_->face_area(f);
+  AmanziGeometry::Point normal = mesh_->getFaceNormal(f);
+  double area = mesh_->getFaceArea(f);
   normal /= area;
 
   AmanziGeometry::Point fnormal(d_), x1(d_), x2(d_);
@@ -544,17 +540,14 @@ NumericalIntegration::IntegrateMonomialsFace_(int c,
     mono.set_origin(xc);
     Polynomial poly = integrals.ChangeOrigin(mono, xf);
 
-    Entity_ID_List edges;
-    std::vector<int> dirs;
-
-    mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
+    auto [edges, dirs] = mesh_->getFaceEdgesAndDirections(f);
     int nedges = edges.size();
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
-      const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
-      const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
-      double length = mesh_->edge_length(e);
+      const AmanziGeometry::Point& xe = mesh_->getEdgeCentroid(e);
+      const AmanziGeometry::Point& tau = mesh_->getEdgeVector(e);
+      double length = mesh_->getEdgeLength(e);
 
       fnormal = tau ^ normal;
 
@@ -570,9 +563,9 @@ NumericalIntegration::IntegrateMonomialsFace_(int c,
 
       // integrate along edge (based on Euler theorem)
       int n0, n1;
-      mesh_->edge_get_nodes(e, &n0, &n1);
-      mesh_->node_get_coordinates(n0, &x1);
-      mesh_->node_get_coordinates(n1, &x2);
+      mesh_->getEdgeNodes(e, &n0, &n1);
+      x1 = mesh_->getNodeCoordinate(n0);
+      x2 = mesh_->getNodeCoordinate(n1);
 
       polys[0] = &q;
       integrals(nk + l) += WhetStone::IntegratePolynomialsEdge(x1, x2, polys);
@@ -642,11 +635,11 @@ NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
   AmanziGeometry::Point x1(d_), x2(d_), xm(d_);
 
   Entity_ID_List nodes;
-  mesh_->face_get_nodes(f, &nodes);
+  nodes = mesh_->getFaceNodes(f);
 
   if (d_ == 2) {
-    mesh_->node_get_coordinates(nodes[0], &x1);
-    mesh_->node_get_coordinates(nodes[1], &x2);
+    x1 = mesh_->getNodeCoordinate(nodes[0]);
+    x2 = mesh_->getNodeCoordinate(nodes[1]);
 
     pmax = std::max(fabs(poly.Value(x1)), fabs(poly.Value(x2)));
     for (int n = 0; n <= m; ++n) {
@@ -656,7 +649,7 @@ NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
   } else {
     pmax = -1.0e+99;
     for (int i = 0; i < nodes.size(); ++i) {
-      mesh_->node_get_coordinates(nodes[i], &xm);
+      xm = mesh_->getNodeCoordinate(nodes[i]);
       pmax = std::max(pmax, fabs(poly.Value(xm)));
     }
   }
@@ -701,15 +694,17 @@ NumericalIntegration::IntegrateMonomialsFaceReduction_(int c,
 {
   int nk = PolynomialSpaceDimension(d_, k - 1);
 
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+  const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+  const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
   // create a surface mesh
   SurfaceCoordinateSystem coordsys(xf, normal);
-  Teuchos::RCP<const SingleFaceMesh> surf_mesh =
+  Teuchos::RCP<SingleFaceMesh> surf_mesh =
     Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
-  NumericalIntegration numi_f(surf_mesh);
+  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_cache =
+    Teuchos::rcp(new AmanziMesh::Mesh(surf_mesh, Teuchos::null));
+  NumericalIntegration numi_f(surf_mesh_cache);
 
   PolynomialIterator it(d_);
   for (it.begin(k); it.MonomialSetOrder() <= k; ++it) {

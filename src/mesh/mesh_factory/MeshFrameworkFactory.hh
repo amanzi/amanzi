@@ -115,7 +115,7 @@ class MeshFrameworkFactory {
   //
   //    If expert paraeter "extraction method" is present, then the specified
   //    value is use to build a new mesh.
-  Teuchos::RCP<MeshFramework> create(const Teuchos::RCP<Mesh>& parent_mesh,
+  Teuchos::RCP<MeshFramework> create(const Teuchos::RCP<const Mesh>& parent_mesh,
           const std::vector<std::string>& setnames,
           const Entity_kind setkind,
           const bool flatten=false);

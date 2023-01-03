@@ -120,7 +120,7 @@ void
 Visualization::WriteVector(const Epetra_MultiVector& vec,
                            const std::vector<std::string>& names) const
 {
-  visualization_output_->WriteMultiVector(vec, names, AmanziMesh::CELL);
+  visualization_output_->WriteMultiVector(vec, names, AmanziMesh::Entity_kind::CELL);
 }
 
 
@@ -130,7 +130,7 @@ Visualization::WriteVector(const Epetra_MultiVector& vec,
 void
 Visualization::WriteVector(const Epetra_Vector& vec, const std::string& name) const
 {
-  visualization_output_->WriteVector(vec, name, AmanziMesh::CELL);
+  visualization_output_->WriteVector(vec, name, AmanziMesh::Entity_kind::CELL);
 }
 
 
@@ -145,7 +145,7 @@ Visualization::WriteRegions()
          it != regions_.end();
          ++it) {
       // first make an Epetra_Vector to hold the region information
-      Epetra_MultiVector reg(mesh_->cell_map(false), 1, true);
+      Epetra_MultiVector reg(mesh_->getMap(AmanziMesh::Entity_kind::CELL,false), 1, true);
 
       // loop over the regions and initialize the reg array
       double reg_index = 1.0;
@@ -154,10 +154,9 @@ Visualization::WriteRegions()
            ++reg_it, reg_index += 1.0) {
         // only do something if the user provided a valid region name
         // for a region that consists of cells
-        if (mesh_->valid_set_name(*reg_it, AmanziMesh::CELL)) {
-          AmanziMesh::Entity_ID_List ids;
-          mesh_->get_set_entities(
-            *reg_it, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &ids);
+        if (mesh_->isValidSetName(*reg_it, AmanziMesh::Entity_kind::CELL)) {
+          auto ids = mesh_->getSetEntities(
+            *reg_it, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
           for (auto jt = ids.begin(); jt != ids.end(); ++jt) { reg[0][*jt] = reg_index; }
         }
@@ -178,9 +177,9 @@ Visualization::WritePartition()
 {
   if (write_partition_) {
     // first make an Epetra_Vector to hold the partitions information
-    Epetra_MultiVector reg(mesh_->cell_map(false), 1, false);
+    Epetra_MultiVector reg(mesh_->getMap(AmanziMesh::Entity_kind::CELL,false), 1, false);
     // loop over the regions and initialize the reg array
-    double part_index = static_cast<double>(mesh_->get_comm()->MyPID());
+    double part_index = static_cast<double>(mesh_->getComm()->MyPID());
     reg.PutScalar(part_index);
 
     std::vector<std::string> name;
@@ -215,7 +214,7 @@ Visualization::CreateFiles(bool include_io_set)
   if (write_mesh_exo_ && !dynamic_mesh_) {
     std::stringstream mesh_fname;
     mesh_fname << plist_.get<std::string>("file name base") << "_mesh.exo";
-    mesh_->write_to_exodus_file(mesh_fname.str());
+    mesh_->getMeshFramework()->writeToExodusFile(mesh_fname.str());
   }
 }
 
@@ -236,7 +235,7 @@ Visualization::CreateTimestep(double time, int cycle, const std::string& tag)
   if (write_mesh_exo_ && dynamic_mesh_) {
     std::stringstream mesh_fname;
     mesh_fname << plist_.get<std::string>("file name base") << "_mesh_" << cycle << ".exo";
-    mesh_->write_to_exodus_file(mesh_fname.str());
+    mesh_->getMeshFramework()->writeToExodusFile(mesh_fname.str());
   }
 }
 

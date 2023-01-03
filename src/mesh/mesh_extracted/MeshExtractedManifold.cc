@@ -38,7 +38,7 @@ namespace AmanziMesh {
 * Light-weigthed constructor
 ****************************************************************** */
 MeshExtractedManifold::MeshExtractedManifold(
-    const Teuchos::RCP<Mesh>& parent_mesh,
+    const Teuchos::RCP<const Mesh>& parent_mesh,
     const std::string& setname, 
     const Entity_kind entity_kind,
     const Comm_ptr_type& comm,

@@ -77,7 +77,7 @@ TransportMatrixFractureImplicit_PK::Setup()
     S_->Require<CV_t, CVS_t>(matrix_vol_flowrate_key_, Tags::DEFAULT, "state")
       .SetMesh(mesh_domain_)
       ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
+      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, mmap, gmap, 1);
   }
 
   // -- darcy flux in fracture
@@ -91,7 +91,7 @@ TransportMatrixFractureImplicit_PK::Setup()
   S_->Require<CV_t, CVS_t>("fracture-solute_diffusion_to_matrix", Tags::DEFAULT, "state")
     .SetMesh(mesh_fracture_)
     ->SetGhosted(true)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
+    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
   // process other PKs
   PK_MPCStrong<PK_BDF>::Setup();

@@ -63,13 +63,13 @@ MyPDE_DiffusionMFD::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& fl
   }
 
   // update matrix blocks
-  int dim = mesh_->space_dimension();
+  int dim = mesh_->getSpaceDimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   WhetStone::DenseMatrix Wff;
 
   AmanziMesh::Entity_ID_List cells;
 
-  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
   Kc(0, 0) = 1.0;
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -79,7 +79,7 @@ MyPDE_DiffusionMFD::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& fl
     for (int i = 0; i < dim; i++) kgrad[i] = (*k_grad)[i][c];
 
     // upwinded values of nonlinear factor
-    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
     std::vector<double> kf(nfaces, 1.0);
     if (k_twin == Teuchos::null) {
@@ -87,7 +87,7 @@ MyPDE_DiffusionMFD::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& fl
     } else {
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
         kf[n] = (c == cells[0]) ? (*k_face)[0][f] : (*k_twin)[0][f];
       }
     }

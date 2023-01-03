@@ -19,7 +19,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -35,13 +35,13 @@ namespace WhetStone {
 class MFD3D_CrouzeixRaviart : public MFD3D {
  public:
   MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist,
-                        const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
+                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // required methods
   // -- schema
   virtual std::vector<SchemaItem> schema() const override
   {
-    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, 1));
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::Entity_kind::FACE, DOF_Type::SCALAR, 1));
   }
 
   // -- stiffness matrix
@@ -80,7 +80,7 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
 
  private:
   // efficient implementation of low-order elliptic projectors
-  void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
+  void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
                       int c,
                       const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,

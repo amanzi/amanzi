@@ -64,19 +64,19 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
            double t,
            const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0)
 {
-  if (mesh1->get_comm()->MyPID() == 0) std::cout << "Deforming mesh...\n";
+  if (mesh1->getComm()->MyPID() == 0) std::cout << "Deforming mesh...\n";
 
   // create distributed random vector
-  int d = mesh1->space_dimension();
+  int d = mesh1->getSpaceDimension();
 
   // consistent parallel data are needed for the random mesh deformation
   AmanziMesh::Entity_ID_List bnd_ids;
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh1)->SetGhosted(true)->AddComponent("node", AmanziMesh::NODE, d);
+  cvs.SetMesh(mesh1)->SetGhosted(true)->AddComponent("node", AmanziMesh::Entity_kind::NODE, d);
   CompositeVector random(cvs);
   Epetra_MultiVector& random_n = *random.ViewComponent("node", true);
 
-  int gid = mesh1->node_map(false).MaxAllGID();
+  int gid = mesh1->getMap(AmanziMesh::Entity_kind::NODE,false).MaxAllGID();
   double scale = 0.2 * std::pow(gid, -2.0 / d);
 
   if (deform == 7) {
@@ -85,8 +85,8 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
     random.ScatterMasterToGhosted();
 
     std::vector<double> vofs;
-    mesh1->get_set_entities_and_vofs(
-      "Boundary", AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL, &bnd_ids, &vofs);
+    mesh1->getSetEntitiesAndVolumeFractions(
+      "Boundary", AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL, &bnd_ids, &vofs);
   }
 
   // relocate mesh nodes
@@ -94,13 +94,13 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
   AmanziMesh::Entity_ID_List nodeids;
   AmanziGeometry::Point_List new_positions, final_positions;
 
-  int nnodes = mesh1->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int nnodes = mesh1->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
 
   for (int v = 0; v < nnodes; ++v) {
     if (mesh0.get())
-      mesh0->node_get_coordinates(v, &xv);
+      xv = mesh0->getNodeCoordinate(v);
     else
-      mesh1->node_get_coordinates(v, &xv);
+      xv = mesh1->getNodeCoordinate(v);
 
     nodeids.push_back(v);
 
@@ -131,14 +131,14 @@ DeformMeshCurved(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
 {
   DeformMesh(mesh1, deform, t, mesh0);
 
-  int dim = mesh1->space_dimension();
+  int dim = mesh1->getSpaceDimension();
   if (order > 1) {
-    int nfaces = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+    int nfaces = mesh0->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
     auto ho_nodes0f = std::make_shared<std::vector<AmanziGeometry::Point_List>>(nfaces);
     auto ho_nodes1f = std::make_shared<std::vector<AmanziGeometry::Point_List>>(nfaces);
 
     for (int f = 0; f < nfaces; ++f) {
-      const AmanziGeometry::Point& xf = mesh0->face_centroid(f);
+      const AmanziGeometry::Point& xf = mesh0->getFaceCentroid(f);
       (*ho_nodes0f)[f].push_back(xf);
 
       auto yv = MovePoint(t, xf, deform);
@@ -149,12 +149,12 @@ DeformMeshCurved(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
     Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1)->set_face_ho_nodes(ho_nodes1f);
 
     if (dim == 3) {
-      int nedges = mesh0->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
+      int nedges = mesh0->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_type::ALL);
       auto ho_nodes0e = std::make_shared<std::vector<AmanziGeometry::Point_List>>(nedges);
       auto ho_nodes1e = std::make_shared<std::vector<AmanziGeometry::Point_List>>(nedges);
 
       for (int e = 0; e < nedges; ++e) {
-        const AmanziGeometry::Point& xe = mesh0->edge_centroid(e);
+        const AmanziGeometry::Point& xe = mesh0->getEdgeCentroid(e);
         (*ho_nodes0e)[e].push_back(xe);
 
         auto yv = MovePoint(t, xe, deform);

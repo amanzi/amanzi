@@ -36,7 +36,7 @@ class Analytic01 : public AnalyticBase {
   // Conductivity is m T^{m-1}
   Amanzi::WhetStone::Tensor Conductivity(int c, const Amanzi::AmanziGeometry::Point& p, double t)
   {
-    int d = mesh_->space_dimension();
+    int d = mesh_->getSpaceDimension();
     Amanzi::WhetStone::Tensor K(1, d);
 
     const Epetra_MultiVector& temp_c = *temp_->ViewComponent("cell");
@@ -48,7 +48,7 @@ class Analytic01 : public AnalyticBase {
   Amanzi::AmanziGeometry::Point
   FluidVelocity(int c, const Amanzi::AmanziGeometry::Point& p, double t)
   {
-    int d = mesh_->space_dimension();
+    int d = mesh_->getSpaceDimension();
     Amanzi::AmanziGeometry::Point v(d);
 
     const Epetra_MultiVector& temp_c = *temp_->ViewComponent("cell");
@@ -66,7 +66,7 @@ class Analytic01 : public AnalyticBase {
 
   Amanzi::AmanziGeometry::Point flux_exact(const Amanzi::AmanziGeometry::Point& p, double t)
   {
-    int d = mesh_->space_dimension();
+    int d = mesh_->getSpaceDimension();
     Amanzi::AmanziGeometry::Point v(d);
     return v;
   }

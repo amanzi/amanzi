@@ -22,12 +22,12 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
                     const Entity_kind setkind,
                     const bool flatten)
 {
-  //if (parent_mesh->getMeshFramework() == Teuchos::null) {
-  //  Errors::Message msg("Cannot create an extracted mesh from a parent whose framework has been deleted.");
-  //}
+  if (parent_mesh->getMeshFramework() == Teuchos::null) {
+    Errors::Message msg("Cannot create an extracted mesh from a parent whose framework has been deleted.");
+  }
   Teuchos::RCP<MeshFramework> mesh_fw =
     MeshFrameworkFactory::create(parent_mesh, setids, setkind, flatten);
-  auto mesh = Teuchos::rcp(new MeshCache<MemSpace_type::HOST>(mesh_fw));
+  auto mesh = Teuchos::rcp(new Mesh(mesh_fw));
   mesh->setParentMesh(parent_mesh);
   MeshAlgorithms::cacheDefault(*mesh);
   return mesh;
@@ -40,12 +40,15 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
        const Entity_kind setkind,
        const bool flatten)
 {
-  Entity_ID_List entities;
-  for (const auto& setname : setnames) {
-    auto l_entities = parent_mesh->getSetEntities(setname, setkind, Parallel_type::OWNED);
-    for (int i=0; i!=l_entities.size(); ++i) entities.emplace_back(l_entities[i]);
+  if (parent_mesh->getMeshFramework() == Teuchos::null) {
+    Errors::Message msg("Cannot create an extracted mesh from a parent whose framework has been deleted.");
   }
-  return create(parent_mesh, entities, setkind, flatten);
+  Teuchos::RCP<MeshFramework> mesh_fw =
+    MeshFrameworkFactory::create(parent_mesh, setnames, setkind, flatten);
+  auto mesh = Teuchos::rcp(new Mesh(mesh_fw));
+  mesh->setParentMesh(parent_mesh);
+  MeshAlgorithms::cacheDefault(*mesh);
+  return mesh;
 }
 
 // Create a 1D Column Mesh from a columnar structured volume mesh.

@@ -110,13 +110,13 @@ view(DualView& dv)
 // Conversion from view on host to vector
 //
 template<typename T, typename ...Args>
-std::vector<T>
+std::vector<std::remove_cv_t<T>>
 asVector(const Kokkos::View<T*, Args...> view)
 {
   static_assert(Kokkos::SpaceAccessibility<typename Kokkos::View<T*, Args...>::execution_space,
                 typename Kokkos::HostSpace>::accessible);
   // currently no fix for this -- C++20 will use span
-  std::vector<T> vec;
+  std::vector<std::remove_cv_t<T>> vec;
   vec.reserve(view.size());
   for (int i=0; i!=view.size(); ++i) vec.emplace_back(view[i]);
   return vec;

@@ -348,15 +348,15 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist,
       // map_normal take a vector and dots it with face normals
       AMANZI_ASSERT(t.NumComponents() == 1);                 // one comp
       AMANZI_ASSERT(t.HasComponent("face"));                 // is named face
-      AMANZI_ASSERT(t.Location("face") == AmanziMesh::FACE); // is on face
+      AMANZI_ASSERT(t.Location("face") == AmanziMesh::Entity_kind::FACE); // is on face
       AMANZI_ASSERT(t.NumVectors("face") == 1);              // and is scalar
 
       // create a vector on faces of the appropriate dimension
-      int dim = t.Mesh()->space_dimension();
+      int dim = t.Mesh()->getSpaceDimension();
 
       CompositeVectorSpace cvs;
       cvs.SetMesh(t.Mesh());
-      cvs.SetComponent("face", AmanziMesh::FACE, dim);
+      cvs.SetComponent("face", AmanziMesh::Entity_kind::FACE, dim);
       Teuchos::RCP<CompositeVector> vel_vec = Teuchos::rcp(new CompositeVector(cvs));
 
       // Evaluate the velocity function
@@ -365,7 +365,7 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist,
 
       // CV's map may differ from the regular mesh map due to presense of fractures
       const auto& fmap = *t.Map().Map("face", true);
-      int nfaces_owned = t.Mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+      int nfaces_owned = t.Mesh()->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
 
       Epetra_MultiVector& dat_f = *t.ViewComponent("face");
       const Epetra_MultiVector& vel_f = *vel_vec->ViewComponent("face");
@@ -380,14 +380,14 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist,
         int ndofs = fmap.ElementSize(f);
         int g = fmap.FirstPointInElement(f);
         if (ndofs == 1) {
-          const AmanziGeometry::Point& normal = t.Mesh()->face_normal(f);
+          const AmanziGeometry::Point& normal = t.Mesh()->getFaceNormal(f);
           dat_f[0][g] = vel * normal;
         } else {
           AmanziMesh::Entity_ID_List cells;
-          t.Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+          cells = t.Mesh()->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
 
           for (int i = 0; i < ndofs; ++i) {
-            const AmanziGeometry::Point& normal = t.Mesh()->face_normal(f, false, cells[i], &dir);
+            const AmanziGeometry::Point& normal = t.Mesh()->getFaceNormal(f, cells[i], &dir);
             dat_f[0][g + i] = (vel * normal) * dir;
           }
         }

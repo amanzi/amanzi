@@ -173,7 +173,7 @@ Richards_PK::CalculateRelaxationFactor(const Epetra_MultiVector& uold,
 
 #ifdef HAVE_MPI
   double relaxation_tmp = relaxation;
-  mesh_->get_comm()->MinAll(&relaxation_tmp, &relaxation, 1); // find the global minimum
+  mesh_->getComm()->MinAll(&relaxation_tmp, &relaxation, 1); // find the global minimum
 #endif
 
   return relaxation;

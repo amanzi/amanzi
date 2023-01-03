@@ -107,7 +107,7 @@ FlowMatrixFracture_PK::Setup()
     S_->Require<CV_t, CVS_t>(diffusion_to_matrix_key_, Tags::DEFAULT)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
   // inform dependent PKs about coupling

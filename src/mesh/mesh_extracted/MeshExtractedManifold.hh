@@ -42,7 +42,7 @@ class MeshExtractedManifold : public MeshFramework {
  public:
   // Construct a mesh by extracting a subset of entities from another
   // mesh. The subset may be specified by a list of entities. 
-  MeshExtractedManifold(const Teuchos::RCP<Mesh>& parent_mesh,
+  MeshExtractedManifold(const Teuchos::RCP<const Mesh>& parent_mesh,
                         const std::string& setname, 
                         const Entity_kind entity_kind,
                         const Comm_ptr_type& comm = Teuchos::null,

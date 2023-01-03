@@ -25,7 +25,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "Basis_Regularized.hh"
@@ -44,9 +44,9 @@ namespace WhetStone {
 
 class MFD3D_LagrangeAnyOrder : public MFD3D {
  public:
-  MFD3D_LagrangeAnyOrder(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) : MFD3D(mesh){};
+  MFD3D_LagrangeAnyOrder(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : MFD3D(mesh){};
   MFD3D_LagrangeAnyOrder(const Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
+                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // required methods
   // -- schema
@@ -98,7 +98,7 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
   const DenseMatrix& R() const { return R_; }
 
  protected:
-  int H1consistency2D_(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
+  int H1consistency2D_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
                        int c,
                        const Tensor& T,
                        DenseMatrix& N,

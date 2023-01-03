@@ -20,7 +20,7 @@
 #include <vector>
 
 // Amanzi
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -40,7 +40,7 @@ namespace WhetStone {
 * Constructor parses the parameter list
 ****************************************************************** */
 MFD3D_CrouzeixRaviart::MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist,
-                                             const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+                                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   : MFD3D(mesh)
 {
   order_ = plist.get<int>("method order");
@@ -54,8 +54,7 @@ MFD3D_CrouzeixRaviart::MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist
 int
 MFD3D_CrouzeixRaviart::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   N.Reshape(nfaces, d_ + 1);
@@ -65,7 +64,7 @@ MFD3D_CrouzeixRaviart::H1consistency(int c, const Tensor& K, DenseMatrix& N, Den
   // calculate matrix R
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
     for (int k = 0; k < d_; k++) R_(n, k) = normal[k] * dirs[n];
     R_(n, d_) = 0.0;
@@ -73,7 +72,7 @@ MFD3D_CrouzeixRaviart::H1consistency(int c, const Tensor& K, DenseMatrix& N, Den
 
   // calculate R K R^T / volume
   AmanziGeometry::Point v1(d_), v2(d_);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->getCellVolume(c);
   for (int n = 0; n < nfaces; ++n) {
     for (int k = 0; k < d_; k++) v1[k] = R_(n, k);
     v2 = K * v1;
@@ -85,10 +84,10 @@ MFD3D_CrouzeixRaviart::H1consistency(int c, const Tensor& K, DenseMatrix& N, Den
   }
 
   // calculate N
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
     for (int k = 0; k < d_; k++) N(n, k) = xf[k] - xc[k];
     N(n, d_) = 1.0; // additional column is added to the consistency condition
   }
@@ -122,13 +121,14 @@ MFD3D_CrouzeixRaviart::H1Face(int f,
                               const Polynomial* moments,
                               Polynomial& vf)
 {
-  const auto& origin = mesh_->face_centroid(f);
-  const auto& normal = mesh_->face_normal(f);
+  const auto& origin = mesh_->getFaceCentroid(f);
+  const auto& normal = mesh_->getFaceNormal(f);
   SurfaceCoordinateSystem coordsys(origin, normal);
 
-  Teuchos::RCP<const SingleFaceMesh> surf_mesh =
+  Teuchos::RCP<SingleFaceMesh> surf_mesh =
     Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
-  ProjectorCell_(surf_mesh, f, ve, ve, vf);
+  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_cache = Teuchos::rcp(new AmanziMesh::Mesh(surf_mesh, Teuchos::null)); 
+  ProjectorCell_(surf_mesh_cache, f, ve, ve, vf);
 }
 
 
@@ -136,26 +136,25 @@ MFD3D_CrouzeixRaviart::H1Face(int f,
 * Energy projector on the space of linear polynomials in cell c.
 ****************************************************************** */
 void
-MFD3D_CrouzeixRaviart::ProjectorCell_(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
+MFD3D_CrouzeixRaviart::ProjectorCell_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
                                       int c,
                                       const std::vector<Polynomial>& ve,
                                       const std::vector<Polynomial>& vf,
                                       Polynomial& uc)
 {
-  const auto& faces = mymesh->cell_get_faces(c);
-  const auto& dirs = mymesh->cell_get_face_dirs(c);
+  const auto& [faces,dirs] = mymesh->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
-  const AmanziGeometry::Point& xc = mymesh->cell_centroid(c);
-  double vol = mymesh->cell_volume(c);
+  const AmanziGeometry::Point& xc = mymesh->getCellCentroid(c);
+  double vol = mymesh->getCellVolume(c);
 
   // create zero vector polynomial
   uc.Reshape(d_, 1, true);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    const AmanziGeometry::Point& xf = mymesh->face_centroid(f);
-    const AmanziGeometry::Point& normal = mymesh->face_normal(f);
+    const AmanziGeometry::Point& xf = mymesh->getFaceCentroid(f);
+    const AmanziGeometry::Point& normal = mymesh->getFaceNormal(f);
 
     double tmp = vf[n].Value(xf) * dirs[n] / vol;
 
@@ -169,8 +168,8 @@ MFD3D_CrouzeixRaviart::ProjectorCell_(const Teuchos::RCP<const AmanziMesh::MeshL
   double a1(0.0), a2(0.0), tmp;
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    const AmanziGeometry::Point& xf = mymesh->face_centroid(f);
-    double area = mymesh->face_area(f);
+    const AmanziGeometry::Point& xf = mymesh->getFaceCentroid(f);
+    double area = mymesh->getFaceArea(f);
 
     tmp = vf[n].Value(xf) - grad * (xf - xc);
     a1 += tmp * area;

@@ -116,9 +116,9 @@ RunTest(const std::string& filename)
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
       const auto& u2 = *S->Get<CompositeVector>("mole_fraction_gas").ViewComponent("cell");
 
-      io->WriteVector(*u0(0), "pressure", AmanziMesh::CELL);
-      io->WriteVector(*u1(0), "saturation", AmanziMesh::CELL);
-      io->WriteVector(*u2(0), "mole fraction gas", AmanziMesh::CELL);
+      io->WriteVector(*u0(0), "pressure", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u1(0), "saturation", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u2(0), "mole fraction gas", AmanziMesh::Entity_kind::CELL);
       io->FinalizeCycle();
 
       WriteStateStatistics(*S, *vo);
