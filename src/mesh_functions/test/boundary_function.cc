@@ -134,16 +134,15 @@ TEST_FIXTURE(reference_mesh, values1)
   CHECK_EQUAL(12, bf.size());
   bf.Compute(0.0);
 
-  Entity_ID_List face_list;
-  mesh->get_set_entities(RIGHT, FACE, Parallel_type::ALL, &face_list);
+  auto face_list = mesh->getSetEntities(RIGHT, FACE, Parallel_type::ALL);
   for (Entity_ID_List::iterator f = face_list.begin(); f != face_list.end(); ++f)
     CHECK_EQUAL(1.0, bf.find(*f)->second);
 
-  mesh->get_set_entities(FRONT, FACE, Parallel_type::ALL, &face_list);
+  face_list = mesh->getSetEntities(FRONT, FACE, Parallel_type::ALL);
   for (Entity_ID_List::iterator f = face_list.begin(); f != face_list.end(); ++f)
     CHECK_EQUAL(2.0, bf.find(*f)->second);
 
-  mesh->get_set_entities(BACK, FACE, Parallel_type::ALL, &face_list);
+  face_list = mesh->getSetEntities(BACK, FACE, Parallel_type::ALL);
   for (Entity_ID_List::iterator f = face_list.begin(); f != face_list.end(); ++f)
     CHECK_EQUAL(3.0, bf.find(*f)->second);
 }
@@ -171,14 +170,14 @@ TEST_FIXTURE(reference_mesh, values2)
   // Check values at t=1
   bf.Compute(1.0);
   for (BoundaryFunction::Iterator i = bf.begin(); i != bf.end(); ++i) {
-    AmanziGeometry::Point p = mesh->face_centroid(i->first);
+    AmanziGeometry::Point p = mesh->getFaceCentroid(i->first);
     CHECK_EQUAL(p.x() + 2 * p.y() + 3 * p.z(), i->second);
   }
 
   // Check values at t=2
   bf.Compute(2.0);
   for (BoundaryFunction::Iterator i = bf.begin(); i != bf.end(); ++i) {
-    AmanziGeometry::Point p = mesh->face_centroid(i->first);
+    AmanziGeometry::Point p = mesh->getFaceCentroid(i->first);
     CHECK_EQUAL(2 * (p.x() + 2 * p.y() + 3 * p.z()), i->second);
   }
 }

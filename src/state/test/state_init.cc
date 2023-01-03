@@ -59,12 +59,12 @@ TEST(FIELD_INITIALIZATION)
   S.Require<CompositeVector, CompositeVectorSpace>("porosity", Tags::DEFAULT)
     .SetMesh(mesh)
     ->SetGhosted(false)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
+    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   S.RequireEvaluator("porosity", Tags::DEFAULT);
   S.Require<CompositeVector, CompositeVectorSpace>("permeability", Tags::DEFAULT)
     .SetMesh(mesh)
     ->SetGhosted(false)
-    ->SetComponent("cell", AmanziMesh::CELL, 3);
+    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 3);
 
   // setup creates data
   S.Setup();
@@ -74,7 +74,7 @@ TEST(FIELD_INITIALIZATION)
 
   // check state's fields
   // -- porosity (simple field)
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
   const auto& phi = *S.Get<CompositeVector>("porosity").ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) { CHECK_EQUAL(0.25, phi[0][c]); }
 

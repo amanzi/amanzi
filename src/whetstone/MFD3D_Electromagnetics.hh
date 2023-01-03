@@ -26,7 +26,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -41,7 +41,7 @@ namespace WhetStone {
 class MFD3D_Electromagnetics : public DeRham_Edge {
  public:
   MFD3D_Electromagnetics(const Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : DeRham_Edge(mesh){};
 
   // required methods
@@ -49,9 +49,9 @@ class MFD3D_Electromagnetics : public DeRham_Edge {
   virtual std::vector<SchemaItem> schema() const override
   {
     if (d_ == 2)
-      return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, 1));
+      return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::Entity_kind::NODE, DOF_Type::SCALAR, 1));
     else
-      return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::EDGE, DOF_Type::SCALAR, 1));
+      return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::Entity_kind::EDGE, DOF_Type::SCALAR, 1));
   }
 
   // -- mass matrices

@@ -326,20 +326,20 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
   // create a SuperMapLumped from this space
   Teuchos::RCP<Operators::SuperMap> map = createSuperMap(cv);
 
-  int ncells_owned = mesh->num_entities(CELL, Parallel_type::OWNED);
-  int nfaces_owned = mesh->num_entities(FACE, Parallel_type::OWNED);
-  int ncells_used = mesh->num_entities(CELL, Parallel_type::ALL);
-  int nfaces_used = mesh->num_entities(FACE, Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(CELL, Parallel_type::OWNED);
+  int nfaces_owned = mesh->getNumEntities(FACE, Parallel_type::OWNED);
+  int ncells_used = mesh->getNumEntities(CELL, Parallel_type::ALL);
+  int nfaces_used = mesh->getNumEntities(FACE, Parallel_type::ALL);
 
   // check basic sizes
   CHECK_EQUAL(2 * ncells_owned + 2 * nfaces_owned, map->Map()->NumMyElements());
   CHECK_EQUAL(2 * ncells_used + 2 * nfaces_used, map->GhostedMap()->NumMyElements());
 
   // check CompMaps
-  CHECK(mesh->cell_map(false).SameAs(*map->ComponentMap(0, "cell")));
-  CHECK(mesh->cell_map(true).SameAs(*map->ComponentGhostedMap(0, "cell")));
-  CHECK(mesh->face_map(false).SameAs(*map->ComponentMap(0, "face")));
-  CHECK(mesh->face_map(true).SameAs(*map->ComponentGhostedMap(0, "face")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL,false).SameAs(*map->ComponentMap(0, "cell")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL,true).SameAs(*map->ComponentGhostedMap(0, "cell")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::FACE,false).SameAs(*map->ComponentMap(0, "face")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::FACE,true).SameAs(*map->ComponentGhostedMap(0, "face")));
 
   // check ordering is as expected
   const auto& inds_c0 = map->GhostIndices(0, "cell", 0);
@@ -424,18 +424,18 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS)
   // create a SuperMapLumped from this space
   Teuchos::RCP<Operators::SuperMap> map = createSuperMap(cv);
 
-  int ncells_owned = mesh->num_entities(CELL, Parallel_type::OWNED);
-  int ncells_used = mesh->num_entities(CELL, Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(CELL, Parallel_type::OWNED);
+  int ncells_used = mesh->getNumEntities(CELL, Parallel_type::ALL);
 
   // check basic sizes
   CHECK_EQUAL(2 * ncells_owned, map->Map()->NumMyElements());
   CHECK_EQUAL(2 * ncells_used, map->GhostedMap()->NumMyElements());
 
   // check CompMaps
-  CHECK(mesh->cell_map(false).SameAs(*map->ComponentMap(0, "cellA")));
-  CHECK(mesh->cell_map(true).SameAs(*map->ComponentGhostedMap(0, "cellA")));
-  CHECK(mesh->cell_map(false).SameAs(*map->ComponentMap(0, "cellB")));
-  CHECK(mesh->cell_map(true).SameAs(*map->ComponentGhostedMap(0, "cellB")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL,false).SameAs(*map->ComponentMap(0, "cellA")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL,true).SameAs(*map->ComponentGhostedMap(0, "cellA")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL,false).SameAs(*map->ComponentMap(0, "cellB")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL,true).SameAs(*map->ComponentGhostedMap(0, "cellB")));
 
   // check ordering is as expected
   const auto& inds_c0 = map->GhostIndices(0, "cellA", 0);
@@ -630,10 +630,10 @@ TEST(SUPERMAP_FROM_SAME_NAME_SAME_MAP_DIFFERENT_ELEMENTSIZE)
               << std::endl;
 
   auto mesh = getMesh(comm);
-  int ncells = mesh->num_entities(CELL, Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(CELL, Parallel_type::OWNED);
 
   // create a CVSpace
-  const auto& cell_map = mesh->cell_map(false);
+  const auto& cell_map = mesh->getMap(AmanziMesh::Entity_kind::CELL,false);
   const int* gids = nullptr;
   const long long* llgids = nullptr;
   cell_map.MyGlobalElements(gids, llgids);
@@ -644,7 +644,7 @@ TEST(SUPERMAP_FROM_SAME_NAME_SAME_MAP_DIFFERENT_ELEMENTSIZE)
   Teuchos::RCP<const Epetra_BlockMap> block_cell_map = Teuchos::rcp(new Epetra_BlockMap(
     cell_map.NumGlobalElements(), cell_map.NumMyElements(), gids, &element_size[0], 0, *comm));
 
-  const auto& cell_mapg = mesh->cell_map(true);
+  const auto& cell_mapg = mesh->getMap(AmanziMesh::Entity_kind::CELL,true);
   Epetra_Import importer(cell_mapg, cell_map);
   Epetra_IntVector element_sizeg(cell_mapg);
   element_sizeg.Import(element_size, importer, Insert);

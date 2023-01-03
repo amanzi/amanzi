@@ -21,7 +21,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -37,13 +37,13 @@ namespace WhetStone {
 class MFD3D_Lagrange : public MFD3D {
  public:
   MFD3D_Lagrange(const Teuchos::ParameterList& plist,
-                 const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
+                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // required methods
   // -- schema
   virtual std::vector<SchemaItem> schema() const override
   {
-    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, 1));
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::Entity_kind::NODE, DOF_Type::SCALAR, 1));
   }
 
   // -- stiffness matrix

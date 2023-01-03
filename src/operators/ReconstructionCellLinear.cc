@@ -38,7 +38,7 @@ ReconstructionCellLinear::Init(Teuchos::ParameterList& plist)
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_);
   cvs.SetGhosted(true);
-  cvs.SetComponent("cell", AmanziMesh::CELL, dim);
+  cvs.SetComponent("cell", AmanziMesh::Entity_kind::CELL, dim);
 
   gradient_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
   gradient_c_ = gradient_->ViewComponent("cell", true);
@@ -67,10 +67,10 @@ ReconstructionCellLinear::Compute(const AmanziMesh::Entity_ID_List& ids,
   WhetStone::DenseMatrix matrix(dim, dim);
   WhetStone::DenseVector rhs(dim);
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
     // mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
     CellFaceAdjCellsManifold_(c, AmanziMesh::Parallel_type::ALL, cells);
@@ -80,7 +80,7 @@ ReconstructionCellLinear::Compute(const AmanziMesh::Entity_ID_List& ids,
     rhs.PutScalar(0.0);
 
     for (int n = 0; n < ncells; n++) {
-      const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(cells[n]);
+      const AmanziGeometry::Point& xc2 = mesh_->getCellCentroid(cells[n]);
       xcc = xc2 - xc;
 
       double value = (*field_)[component_][cells[n]] - (*field_)[component_][c];
@@ -145,14 +145,14 @@ ReconstructionCellLinear::CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
 {
   AmanziMesh::Entity_ID_List fcells;
 
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
   cells.clear();
 
   for (int n = 0; n < nfaces; ++n) {
     AmanziMesh::Entity_ID f = faces[n];
-    mesh_->face_get_cells(f, ptype, &fcells);
+    fcells = mesh_->getFaceCells(f, ptype);
     int ncells = fcells.size();
 
     if (ncells == 2) {
@@ -161,12 +161,12 @@ ReconstructionCellLinear::CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
       int dir;
       double dmax(0.0);
       AmanziMesh::Entity_ID cmax;
-      const AmanziGeometry::Point& normal0 = mesh_->face_normal(f, false, c, &dir);
+      const AmanziGeometry::Point& normal0 = mesh_->getFaceNormal(f, c, &dir);
 
       for (int i = 0; i < ncells; ++i) {
         AmanziMesh::Entity_ID c1 = fcells[i];
         if (c1 != c) {
-          const AmanziGeometry::Point& normal1 = mesh_->face_normal(f, false, c1, &dir);
+          const AmanziGeometry::Point& normal1 = mesh_->getFaceNormal(f, c1, &dir);
           double d = fabs(normal0 * normal1) / norm(normal1);
           if (d > dmax) {
             dmax = d;
@@ -187,7 +187,7 @@ ReconstructionCellLinear::CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
 double
 ReconstructionCellLinear::getValue(int c, const AmanziGeometry::Point& p)
 {
-  const auto& xc = mesh_->cell_centroid(c);
+  const auto& xc = mesh_->getCellCentroid(c);
 
   double value = (*field_)[component_][c];
   for (int i = 0; i < dim; i++) value += (*gradient_c_)[i][c] * (p[i] - xc[i]);
@@ -201,7 +201,7 @@ ReconstructionCellLinear::getValue(int c, const AmanziGeometry::Point& p)
 double
 ReconstructionCellLinear::getValueSlope(int c, const AmanziGeometry::Point& p)
 {
-  const auto& xc = mesh_->cell_centroid(c);
+  const auto& xc = mesh_->getCellCentroid(c);
 
   double value(0.0);
   for (int i = 0; i < dim; i++) value += (*gradient_c_)[i][c] * (p[i] - xc[i]);
@@ -219,7 +219,7 @@ ReconstructionCellLinear::getPolynomial(int c) const
   tmp(0) = (*field_)[0][c];
   for (int i = 0; i < dim; i++) tmp(i + 1) = (*gradient_c_)[i][c];
 
-  tmp.set_origin(mesh_->cell_centroid(c));
+  tmp.set_origin(mesh_->getCellCentroid(c));
   return tmp;
 }
 

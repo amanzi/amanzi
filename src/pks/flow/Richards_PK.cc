@@ -123,7 +123,7 @@ Richards_PK::Setup()
 {
   dt_ = 0.0;
   mesh_ = S_->GetMesh(domain_);
-  dim = mesh_->space_dimension();
+  dim = mesh_->getSpaceDimension();
 
   // generate keys here to be available for setup of the base class
   pressure_key_ = Keys::getKey(domain_, "pressure");
@@ -159,7 +159,7 @@ Richards_PK::Setup()
 
   // Require primary field for this PK, which is pressure
   std::vector<std::string> names({ "cell" });
-  std::vector<AmanziMesh::Entity_kind> locations({ AmanziMesh::CELL });
+  std::vector<AmanziMesh::Entity_kind> locations({ AmanziMesh::Entity_kind::CELL });
   std::vector<int> ndofs(1, 1);
 
   Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(fp_list_, "operators", true);
@@ -169,11 +169,11 @@ Richards_PK::Setup()
 
   if (name != "fv: default" && name != "nlfv: default") {
     names.push_back("face");
-    locations.push_back(AmanziMesh::FACE);
+    locations.push_back(AmanziMesh::Entity_kind::FACE);
     ndofs.push_back(1);
   } else {
     names.push_back("boundary_face");
-    locations.push_back(AmanziMesh::BOUNDARY_FACE);
+    locations.push_back(AmanziMesh::Entity_kind::BOUNDARY_FACE);
     ndofs.push_back(1);
   }
 
@@ -191,7 +191,7 @@ Richards_PK::Setup()
     S_->Require<CV_t, CVS_t>(water_storage_key_, Tags::DEFAULT, water_storage_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     Teuchos::ParameterList elist(water_storage_key_);
     elist.set<std::string>("water storage key", water_storage_key_)
@@ -215,7 +215,7 @@ Richards_PK::Setup()
     S_->Require<CV_t, CVS_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->GetRecordW(prev_water_storage_key_, passwd_).set_io_vis(false);
   }
 
@@ -225,7 +225,7 @@ Richards_PK::Setup()
       S_->Require<CV_t, CVS_t>(pressure_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
       Teuchos::ParameterList elist(pressure_msp_key_);
       elist.set<std::string>("evaluator name", pressure_msp_key_);
@@ -241,20 +241,20 @@ Richards_PK::Setup()
       S_->Require<CV_t, CVS_t>(water_storage_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     }
     if (!S_->HasRecord(prev_water_storage_msp_key_)) {
       S_->Require<CV_t, CVS_t>(prev_water_storage_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       S_->GetRecordW(prev_water_storage_msp_key_, passwd_).set_io_vis(false);
     }
 
     S_->Require<CV_t, CVS_t>(porosity_msp_key_, Tags::DEFAULT, porosity_msp_key_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     Teuchos::ParameterList elist(porosity_msp_key_);
     elist.set<std::string>("porosity key", porosity_msp_key_)
@@ -267,24 +267,24 @@ Richards_PK::Setup()
 
     // Secondary matrix nodes are collected here.
     int nnodes, nnodes_tmp = NumberMatrixNodes(msp_);
-    mesh_->get_comm()->MaxAll(&nnodes_tmp, &nnodes, 1);
+    mesh_->getComm()->MaxAll(&nnodes_tmp, &nnodes, 1);
     if (nnodes > 1) {
       S_->Require<CV_t, CVS_t>("water_storage_ms_aux", Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, nnodes - 1);
       S_->GetRecordW("water_storage_ms_aux", passwd_).set_io_vis(false);
 
       S_->Require<CV_t, CVS_t>("pressure_msp_aux", Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, nnodes - 1);
       S_->GetRecordW("pressure_msp_aux", passwd_).set_io_vis(false);
 
       S_->Require<CV_t, CVS_t>("porosity_msp_aux", Tags::DEFAULT, "porosity_msp_aux")
         .SetMesh(mesh_)
         ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, nnodes - 1);
       S_->SetEvaluator("porosity_msp_aux", Tags::DEFAULT, eval);
       S_->GetRecordW("porosity_msp_aux", passwd_).set_io_vis(false);
     }
@@ -296,7 +296,7 @@ Richards_PK::Setup()
     S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     std::string pom_name = physical_models->get<std::string>("porosity model", "constant porosity");
 
@@ -330,8 +330,8 @@ Richards_PK::Setup()
     S_->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
     double mu = glist_->sublist("state")
                   .sublist("initial conditions")
@@ -358,8 +358,8 @@ Richards_PK::Setup()
     S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
     S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
   }
@@ -368,8 +368,8 @@ Richards_PK::Setup()
     S_->Require<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT, mass_density_liquid_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
     S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
   }
 
@@ -381,7 +381,7 @@ Richards_PK::Setup()
     S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     Teuchos::ParameterList elist(saturation_liquid_key_);
     elist.set<std::string>("saturation key", saturation_liquid_key_)
@@ -397,7 +397,7 @@ Richards_PK::Setup()
     S_->Require<CV_t, CVS_t>(prev_saturation_liquid_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->GetRecordW(prev_saturation_liquid_key_, passwd_).set_io_vis(false);
   }
 
@@ -406,8 +406,8 @@ Richards_PK::Setup()
     S_->Require<CV_t, CVS_t>(relperm_key_, Tags::DEFAULT, relperm_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
     Teuchos::ParameterList elist(relperm_key_);
     elist.set<std::string>("relative permeability key", relperm_key_).set<std::string>("tag", "");
@@ -427,14 +427,14 @@ Richards_PK::Setup()
       S_->Require<CV_t, CVS_t>(alpha_key_, Tags::DEFAULT, alpha_key_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
+        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       kkey = permeability_key_;
     } else {
       S_->Require<CV_t, CVS_t>(alpha_key_, Tags::DEFAULT, alpha_key_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->AddComponent("cell", AmanziMesh::CELL, 1)
-        ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+        ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
       kkey = relperm_key_;
     }
 
@@ -463,7 +463,7 @@ Richards_PK::Setup()
     S_->Require<CV_t, CVS_t>(hydraulic_head_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
   // -- Darcy velocity vector
@@ -471,7 +471,7 @@ Richards_PK::Setup()
     S_->Require<CV_t, CVS_t>(darcy_velocity_key_, Tags::DEFAULT, darcy_velocity_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, dim);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, dim);
 
     Teuchos::ParameterList elist(darcy_velocity_key_);
     elist.set<std::string>("domain name", domain_);
@@ -504,7 +504,7 @@ Richards_PK::Setup()
     CompositeVectorSpace& cvs =
       S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_);
     cvs.SetOwned(false);
-    cvs.AddComponent("offd", AmanziMesh::CELL, noff)->SetOwned(true);
+    cvs.AddComponent("offd", AmanziMesh::Entity_kind::CELL, noff)->SetOwned(true);
   }
 
   // Since high-level PK may own some fields, we have to populate
@@ -579,7 +579,7 @@ Richards_PK::Initialize()
   // face component of upwind field matches that of the flow field
   auto cvs = S_->Get<CV_t>(vol_flowrate_key_).Map();
   cvs.SetOwned(false);
-  cvs.AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   alpha_upwind_ = Teuchos::rcp(new CompositeVector(cvs));
   alpha_upwind_dP_ = Teuchos::rcp(new CompositeVector(cvs));
 
@@ -639,7 +639,7 @@ Richards_PK::Initialize()
   op_preconditioner_diff_ = opfactory.Create();
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
 
-  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));
+  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op_preconditioner_));
 
   if (vapor_diffusion_) {
     Teuchos::ParameterList oplist_vapor = tmp_list.sublist("vapor matrix");
@@ -653,7 +653,7 @@ Richards_PK::Initialize()
   soln_->SetData(solution);
 
   // Create auxiliary vectors for time history and error estimates.
-  const Epetra_BlockMap& cmap_owned = mesh_->cell_map(false);
+  const Epetra_BlockMap& cmap_owned = mesh_->getMap(AmanziMesh::Entity_kind::CELL,false);
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap_owned));
 
@@ -838,8 +838,8 @@ Richards_PK::Initialize()
     CompositeVectorSpace cvs1;
     cvs1.SetMesh(mesh_)
       ->SetGhosted(false)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("dpre", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("dpre", AmanziMesh::Entity_kind::CELL, 1);
     cnls_limiter_ = Teuchos::rcp(new CompositeVector(cvs1));
   }
 
@@ -943,8 +943,8 @@ Richards_PK::InitializeStatistics_()
     int missed_tmp = missed_bc_faces_;
     int dirichlet_tmp = dirichlet_bc_faces_;
 #ifdef HAVE_MPI
-    mesh_->get_comm()->SumAll(&missed_tmp, &missed_bc_faces_, 1);
-    mesh_->get_comm()->SumAll(&dirichlet_tmp, &dirichlet_bc_faces_, 1);
+    mesh_->getComm()->SumAll(&missed_tmp, &missed_bc_faces_, 1);
+    mesh_->getComm()->SumAll(&dirichlet_tmp, &dirichlet_bc_faces_, 1);
 #endif
 
     *vo_->os() << "pressure BC assigned to " << dirichlet_bc_faces_ << " faces" << std::endl;
@@ -1149,7 +1149,7 @@ Richards_PK::DeriveBoundaryFaceValue(int f,
     const auto& mu_cell = *S_->Get<CV_t>(viscosity_liquid_key_).ViewComponent("cell");
     const auto& u_cell = *u.ViewComponent("cell");
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
     int c = cells[0];
 
     double pc_shift(atm_pressure_);
@@ -1157,7 +1157,7 @@ Richards_PK::DeriveBoundaryFaceValue(int f,
     double g_f = op_matrix_diff_->ComputeGravityFlux(f);
     double lmd = u_cell[0][c];
     int dir;
-    mesh_->face_normal(f, false, c, &dir);
+    mesh_->getFaceNormal(f, c, &dir);
     double bnd_flux = dir * bc_value[f] / (molar_rho_ / mu_cell[0][c]);
 
     double max_val(atm_pressure_), min_val;

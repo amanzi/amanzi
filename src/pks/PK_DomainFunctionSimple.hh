@@ -102,7 +102,7 @@ PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
 
   // create the input tuple (time + space)
   double dt = t1 - t0;
-  int dim = mesh_->space_dimension();
+  int dim = mesh_->getSpaceDimension();
   std::vector<double> args(1 + dim);
 
   for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end();

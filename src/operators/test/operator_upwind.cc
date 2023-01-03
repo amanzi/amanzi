@@ -88,9 +88,9 @@ RunTestUpwind(std::string method)
   for (int n = 4; n < 17; n *= 2) {
     Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
 
-    int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+    int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+    int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
 
     // create model of nonlinearity
     Teuchos::RCP<Model> model = Teuchos::rcp(new Model(mesh));
@@ -99,7 +99,7 @@ RunTestUpwind(std::string method)
     std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
     std::vector<double> bc_value(nfaces_wghost);
     for (int f = 0; f < nfaces_wghost; f++) {
-      const Point& xf = mesh->face_centroid(f);
+      const Point& xf = mesh->getFaceCentroid(f);
       if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
           fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6)
 
@@ -111,15 +111,15 @@ RunTestUpwind(std::string method)
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
     CompositeVector field(*cvs);
     Epetra_MultiVector& fcells = *field.ViewComponent("cell", true);
     Epetra_MultiVector& ffaces = *field.ViewComponent("face", true);
 
     for (int c = 0; c < ncells_wghost; c++) {
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+      const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
       fcells[0][c] = model->Value(c, xc[0]);
     }
 
@@ -132,14 +132,14 @@ RunTestUpwind(std::string method)
     }
 
     // create and initialize face-based flux field
-    cvs = CreateCompositeVectorSpace(mesh, "face", AmanziMesh::FACE, 1, true);
+    cvs = CreateCompositeVectorSpace(mesh, "face", AmanziMesh::Entity_kind::FACE, 1, true);
 
     CompositeVector flux(*cvs), solution(*cvs);
     Epetra_MultiVector& u = *flux.ViewComponent("face", true);
 
     Point vel(1.0, 2.0, 3.0);
     for (int f = 0; f < nfaces_wghost; f++) {
-      const Point& normal = mesh->face_normal(f);
+      const Point& normal = mesh->getFaceNormal(f);
       u[0][f] = vel * normal;
     }
 
@@ -153,7 +153,7 @@ RunTestUpwind(std::string method)
     // calculate errors
     double error(0.0);
     for (int f = 0; f < nfaces_owned; f++) {
-      const Point& xf = mesh->face_centroid(f);
+      const Point& xf = mesh->getFaceCentroid(f);
       double exact = model->analytic(xf[0]);
 
       error += pow(exact - ffaces[0][f], 2.0);
@@ -162,9 +162,9 @@ RunTestUpwind(std::string method)
     }
 #ifdef HAVE_MPI
     double tmp = error;
-    mesh->get_comm()->SumAll(&tmp, &error, 1);
+    mesh->getComm()->SumAll(&tmp, &error, 1);
     int itmp = nfaces_owned;
-    mesh->get_comm()->SumAll(&itmp, &nfaces_owned, 1);
+    mesh->getComm()->SumAll(&itmp, &nfaces_owned, 1);
 #endif
     error = sqrt(error / nfaces_owned);
 

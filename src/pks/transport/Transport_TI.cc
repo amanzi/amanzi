@@ -77,7 +77,7 @@ Transport_PK::FunctionalTimeDerivative_MUSCL_(double t,
   const auto& flux_map = S_->Get<CompositeVector>(vol_flowrate_key_).Map().Map("face", true);
 
   func.PutScalar(0.0);
-  if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
+  if (mesh_->getSpaceDimension() == mesh_->getManifoldDimension()) {
     for (int f = 0; f < nfaces_wghost; f++) {
       c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
       c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
@@ -95,7 +95,7 @@ Transport_PK::FunctionalTimeDerivative_MUSCL_(double t,
 
       int g = flux_map->FirstPointInElement(f);
       u = fabs((*flowrate)[0][g]);
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
       if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
         upwind_tcc = limiter_->getValue(c1, xf);
@@ -190,7 +190,7 @@ Transport_PK::FunctionalTimeDerivative_MUSCL_(double t,
   }
 
   int flag_tmp(flag);
-  mesh_->get_comm()->MaxAll(&flag_tmp, &flag, 1);
+  mesh_->getComm()->MaxAll(&flag_tmp, &flag, 1);
   if (flag == 1) func.GatherGhostedToMaster("cell");
 
   // process external sources
@@ -203,7 +203,7 @@ Transport_PK::FunctionalTimeDerivative_MUSCL_(double t,
     for (int c = 0; c < ncells_owned; c++) {
       double a = t / dt_;
       double wc = a * (*wc_end)[0][c] + (1.0 - a) * (*wc_start)[0][c];
-      double vol_wc = mesh_->cell_volume(c) * wc;
+      double vol_wc = mesh_->getCellVolume(c) * wc;
       f_c[0][c] /= vol_wc;
     }
   }
@@ -235,7 +235,7 @@ Transport_PK::FunctionalTimeDerivative_FCT_(double t,
   auto& f_c = *func.ViewComponent("cell", true);
 
   // extract boundary conditions for the current component
-  auto bcs = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bcs = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bcs->bc_model();
   std::vector<double>& bc_value = bcs->bc_value();
 
@@ -268,7 +268,7 @@ Transport_PK::FunctionalTimeDerivative_FCT_(double t,
 
   // low-order and high-order fluxes
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh_)->SetGhosted(false)->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs.SetMesh(mesh_)->SetGhosted(false)->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
   CompositeVector flux_lo(cvs), flux_ho(cvs), flux_numer(cvs);
 
   auto& flux_lo_f = *flux_lo.ViewComponent("face");
@@ -276,14 +276,14 @@ Transport_PK::FunctionalTimeDerivative_FCT_(double t,
   auto& flux_numer_f = *flux_numer.ViewComponent("face");
 
   for (int f = 0; f < nfaces_owned; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
     int ncells = cells.size();
 
     c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
     c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
 
     u = dt_ * fabs((*flowrate)[0][f]);
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
     if (c1 == cells[0]) {
       flux_lo_f[0][f] = u * component_c[0][c1];
@@ -337,14 +337,14 @@ Transport_PK::FunctionalTimeDerivative_FCT_(double t,
 
   // update functional for time integrator
   CompositeVectorSpace cvs2;
-  cvs2.SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs2.SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   CompositeVector residual(cvs2);
   auto& residual_c = *residual.ViewComponent("cell", true);
 
   for (int f = 0; f < nfaces_owned; ++f) {
     tcc_flux = flux_numer_f[0][f] / dt_;
 
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
     int ncells = cells.size();
 
     if (ncells == 2) {
@@ -366,7 +366,7 @@ Transport_PK::FunctionalTimeDerivative_FCT_(double t,
   for (int c = 0; c < ncells_owned; c++) { // calculate conservative quantity
     double a = t / dt_;
     double wc = a * (*wc_end)[0][c] + (1.0 - a) * (*wc_start)[0][c];
-    double vol_wc = mesh_->cell_volume(c) * wc;
+    double vol_wc = mesh_->getCellVolume(c) * wc;
     f_c[0][c] /= vol_wc;
   }
 }

@@ -243,8 +243,8 @@ CreateCVforUpwind(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1)
-    ->AddComponent("face", AmanziMesh::FACE, 1);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+    ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
   cvs.SetOwned(false);
 
   return Teuchos::rcp(new CompositeVector(cvs));

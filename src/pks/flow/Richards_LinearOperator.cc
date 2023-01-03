@@ -192,8 +192,8 @@ Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
         bc_value[f] < 0.0) {
       int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
 
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      double area = mesh_->face_area(f);
+      const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+      double area = mesh_->getFaceArea(f);
       double Knn = ((K[c] * normal) * normal) / (area * area);
       // old version
       // double save = 3.0;

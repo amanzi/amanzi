@@ -62,7 +62,7 @@ ReactiveTransportMatrixFracture_PK::Setup()
     S_->Require<CV_t, CVS_t>("volumetric_flow_rate", Tags::DEFAULT, "transport")
       .SetMesh(mesh_domain_)
       ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
+      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, mmap, gmap, 1);
   }
 
   // -- darcy flux for fracture

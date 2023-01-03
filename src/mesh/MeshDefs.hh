@@ -92,7 +92,7 @@ using Import_ptr_type = Teuchos::RCP<Import_type>;
 // Entity_kind::BOUNDARY_FACE is a special type of entity that is need so that process
 // kernels can define composite vectors (see src/data_structures) on
 // exterior boundary faces of the mesh only
-enum class Entity_kind
+enum Entity_kind : int
 {
   UNKNOWN = 0,
   NODE = 1,

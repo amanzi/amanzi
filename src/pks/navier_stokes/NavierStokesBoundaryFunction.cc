@@ -31,12 +31,12 @@ NavierStokesBoundaryFunction::NavierStokesBoundaryFunction(const Teuchos::Parame
 void
 NavierStokesBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
-  int dim = mesh->space_dimension();
+  int dim = mesh->getSpaceDimension();
 
   if (type_ == WhetStone::DOF_Type::NORMAL_COMPONENT) {
     for (auto it = begin(); it != end(); ++it) {
       int f = it->first;
-      const AmanziGeometry::Point& normal = mesh->face_normal(f);
+      const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
 
       double tmp(0.0);
       for (int k = 0; k < dim; ++k) { tmp += it->second[k] * normal[k]; }

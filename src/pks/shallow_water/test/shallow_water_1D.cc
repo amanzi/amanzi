@@ -39,7 +39,7 @@ dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                    Teuchos::RCP<Amanzi::State>& S)
 {
   int ncells_owned =
-    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   std::string passwd("");
 
@@ -51,7 +51,7 @@ dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     *S->GetW<CompositeVector>("surface-total_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; c++) {
-    Amanzi::AmanziGeometry::Point xc = mesh->cell_centroid(c);
+    Amanzi::AmanziGeometry::Point xc = mesh->getCellCentroid(c);
     if (xc[0] < 1000.) {
       h_vec_c[0][c] = 10.;
     } else {
@@ -100,10 +100,10 @@ dam_break_1D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   x0 = 1000.;
 
   int ncells_owned =
-    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-    Amanzi::AmanziGeometry::Point xc = mesh->cell_centroid(c);
+    Amanzi::AmanziGeometry::Point xc = mesh->getCellCentroid(c);
 
     x = xc[0];
 
@@ -125,14 +125,14 @@ error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       double& hmax)
 {
   int ncells_owned =
-    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   err_max = 0.;
   err_L1 = 0.;
   hmax = 0.;
 
   for (int c = 0; c < ncells_owned; c++) {
-    double vol = mesh->cell_volume(c);
+    double vol = mesh->getCellVolume(c);
     double tmp = std::abs(hh_ex[0][c] - hh[0][c]);
     err_max = std::max(err_max, tmp);
     err_L1 += tmp * vol;
@@ -142,10 +142,10 @@ error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   double err_max_tmp(err_max);
   double err_L1_tmp(err_L1);
 
-  mesh->get_comm()->MaxAll(&err_max_tmp, &err_max, 1);
-  mesh->get_comm()->SumAll(&err_L1_tmp, &err_L1, 1);
+  mesh->getComm()->MaxAll(&err_max_tmp, &err_max, 1);
+  mesh->getComm()->SumAll(&err_L1_tmp, &err_L1, 1);
 
-  if (mesh->get_comm()->MyPID() == 0) {
+  if (mesh->getComm()->MyPID() == 0) {
     std::cout << "err_max = " << err_max << std::endl;
     std::cout << "err_L1  = " << err_L1 << std::endl;
   }
@@ -161,19 +161,19 @@ ConservationCheck(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                   double& TE)
 {
   int ncells_owned =
-    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   double g = 9.81;
   double KE = 0., IE = 0.;
 
   for (int c = 0; c < ncells_owned; c++) {
-    double volume = mesh->cell_volume(c);
+    double volume = mesh->getCellVolume(c);
     KE += hh[0][c] * (vel[0][c] * vel[0][c] + vel[1][c] * vel[1][c]) * volume;
     IE += g * hh[0][c] * hh[0][c] * volume;
   }
 
   double TE_tmp = (KE + IE) / 2;
-  mesh->get_comm()->SumAll(&TE_tmp, &TE, 1);
+  mesh->getComm()->SumAll(&TE_tmp, &TE, 1);
 }
 
 
@@ -199,12 +199,11 @@ TEST(SHALLOW_WATER_1D)
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   // create a mesh
-  bool request_faces = true, request_edges = false;
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   RCP<Mesh> mesh =
-    meshfactory.create(0.0, 0.0, 2000.0, 50.0, 1000, 1, request_faces, request_edges);
+    meshfactory.create(0.0, 0.0, 2000.0, 50.0, 1000, 1);
   // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges); // works only with first order, no reconstruction
 
   // create a state
@@ -302,9 +301,9 @@ TEST(SHALLOW_WATER_1D)
   /*
   std::ofstream myfile;
   myfile.open("solution_" + std::to_string(MyPID) + ".txt");
-  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
-      AmanziGeometry::Point xc = mesh->cell_centroid(c);
+      AmanziGeometry::Point xc = mesh->getCellCentroid(c);
       myfile << xc[0] << " " << hh[0][c] << "\n";
   }
   myfile.close();

@@ -74,7 +74,7 @@ TransportMatrixFracture_PK::Setup()
     S_->Require<CV_t, CVS_t>("volumetric_flow_rate", Tags::DEFAULT, "transport")
       .SetMesh(mesh_domain_)
       ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
+      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, mmap, gmap, 1);
   }
 
   // -- darcy flux for fracture
@@ -90,7 +90,7 @@ TransportMatrixFracture_PK::Setup()
     S_->Require<CV_t, CVS_t>(normal_diffusion_key_, Tags::DEFAULT, "state")
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
   // add boundary condition to transport in matrix list

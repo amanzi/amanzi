@@ -20,6 +20,8 @@ int
 main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  return UnitTest::RunAllTests();
+  Kokkos::initialize(); 
+  auto res = UnitTest::RunAllTests();
+  Kokkos::finalize(); 
+  return res; 
 }

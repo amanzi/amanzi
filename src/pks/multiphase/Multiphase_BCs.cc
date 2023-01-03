@@ -145,7 +145,7 @@ Multiphase_PK::PopulateBCs(int icomp, bool flag)
   missed_bc_faces_ = 0;
 
   for (int f = 0; f < nfaces_owned_; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
 
     if (cells.size() == 1) {
       for (auto it = op_bcs_.begin(); it != op_bcs_.end(); ++it) {

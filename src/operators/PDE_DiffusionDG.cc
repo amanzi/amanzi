@@ -65,7 +65,7 @@ PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
 
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
-    cvs->AddComponent("cell", AmanziMesh::CELL, nk);
+    cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
 
     global_op_ = Teuchos::rcp(new Operator_Schema(cvs, plist, my_schema));
 
@@ -84,7 +84,7 @@ PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
   // -- continuity terms
   Schema tmp_schema;
   Teuchos::ParameterList schema_copy = schema_list;
-  tmp_schema.Init(dg_, mesh_, AmanziMesh::FACE);
+  tmp_schema.Init(dg_, mesh_, AmanziMesh::Entity_kind::FACE);
 
   jump_up_op_ = Teuchos::rcp(new Op_Face_Schema(tmp_schema, tmp_schema, mesh_));
   global_op_->OpPushBack(jump_up_op_);
@@ -126,7 +126,7 @@ PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
 
   // stability terms
   for (int f = 0; f != nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
     int c1 = cells[0];
     int c2 = (cells.size() > 1) ? cells[1] : c1;
 
@@ -157,7 +157,7 @@ PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
   AmanziMesh::Entity_ID_List cells;
 
-  int d = mesh_->space_dimension();
+  int d = mesh_->getSpaceDimension();
   std::vector<AmanziGeometry::Point> tau(d - 1);
 
   // create integration object for all mesh cells
@@ -165,10 +165,10 @@ PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET || bc_model[f] == OPERATOR_BC_NEUMANN) {
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
       int c = cells[0];
 
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
       // set polynomial with Dirichlet data
       WhetStone::DenseVector coef(nk);
@@ -178,7 +178,7 @@ PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
       pf.set_origin(xf);
 
       // convert boundary polynomial to space polynomial
-      pf.ChangeOrigin(mesh_->cell_centroid(c));
+      pf.ChangeOrigin(mesh_->getCellCentroid(c));
 
       // extract coefficients and update right-hand side
       WhetStone::DenseMatrix& Pcell = penalty_op_->matrices[f];

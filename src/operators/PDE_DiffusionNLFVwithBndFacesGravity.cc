@@ -42,14 +42,14 @@ PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
 
   for (int c = 0; c < ncells_owned; ++c) {
     double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
-    double zc = (mesh_->cell_centroid(c))[dim_ - 1];
+    double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
     AmanziMesh::Entity_ID_List faces;
-    mesh_->cell_get_faces(c, &faces);
+    faces = mesh_->getCellFaces(c);
     for (auto f : faces) {
-      int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+      int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE,false).LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE,false).GID(f));
       if (bf >= 0) {
-        double zf = (mesh_->face_centroid(f))[dim_ - 1];
+        double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];
         hh_bnd[0][bf] = u_bnd[0][bf] + rho_g * zf;
       }
     }
@@ -71,7 +71,7 @@ PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
   for (int f = 0; f < nfaces_owned; ++f) {
     WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
 
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
     int ncells = cells.size();
 
     if (ncells == 2) {
@@ -79,7 +79,7 @@ PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
       for (int n = 0; n < ncells; n++) {
         int c = cells[n];
         double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
-        double zc = (mesh_->cell_centroid(c))[dim_ - 1];
+        double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
         v(n) = zc * rho_g;
       }
 
@@ -89,13 +89,13 @@ PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
     } else if ((bc_model[f] == OPERATOR_BC_DIRICHLET) || (bc_model[f] == OPERATOR_BC_NEUMANN)) {
       int c = cells[0];
       double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
-      double zf = (mesh_->face_centroid(f))[dim_ - 1];
-      double zc = (mesh_->cell_centroid(c))[dim_ - 1];
+      double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];
+      double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
 
       //rhs_cell[0][c] -= Aface(0, 0) * (zc - zf) * rho_g;
       rhs_cell[0][c] -= (Aface(0, 0) * zc + Aface(0, 1) * zf) * rho_g;
 
-      int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+      int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE,false).LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE,false).GID(f));
       rhs_bnd[0][bf] -= (Aface(1, 0) * zc + Aface(1, 1) * zf) * rho_g;
     }
   }
@@ -121,14 +121,14 @@ PDE_DiffusionNLFVwithBndFacesGravity::UpdateFlux(const Teuchos::Ptr<const Compos
 
   for (int c = 0; c < ncells_owned; ++c) {
     double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
-    double zc = (mesh_->cell_centroid(c))[dim_ - 1];
+    double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
     AmanziMesh::Entity_ID_List faces;
-    mesh_->cell_get_faces(c, &faces);
+    faces = mesh_->getCellFaces(c);
     for (auto f : faces) {
-      int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+      int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE,false).LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE,false).GID(f));
       if (bf >= 0) {
-        double zf = (mesh_->face_centroid(f))[dim_ - 1];
+        double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];
         hh_bnd[0][bf] = u_bnd[0][bf] + rho_g * zf;
       }
     }

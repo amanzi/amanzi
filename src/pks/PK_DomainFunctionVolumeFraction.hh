@@ -104,10 +104,10 @@ void
 PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1)
 {
   // create the input tuple (time + space)
-  int dim = (*mesh_).space_dimension();
+  int dim = (*mesh_).getSpaceDimension();
   std::vector<double> args(1 + dim);
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (MaterialSpecList::const_iterator mspec = material_specs_.at(kind_)->begin();
        mspec != material_specs_.at(kind_)->end();
@@ -122,10 +122,10 @@ PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1)
         double vofs = it->second;
         if (c < ncells_owned)
           domain_volume_ +=
-            ((kind_ == AmanziMesh::CELL) ? mesh_->cell_volume(c) : mesh_->face_area(c)) * vofs;
+            ((kind_ == AmanziMesh::Entity_kind::CELL) ? mesh_->getCellVolume(c) : mesh_->getFaceArea(c)) * vofs;
       }
       double tmp = domain_volume_;
-      mesh_->get_comm()->SumAll(&tmp, &domain_volume_, 1);
+      mesh_->getComm()->SumAll(&tmp, &domain_volume_, 1);
     } else {
       domain_volume_ = 1.0;
     }

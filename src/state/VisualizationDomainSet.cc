@@ -29,7 +29,7 @@ VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec,
   if (!lifted_vectors_.count(vis_name)) {
     // create a lifted vector if we don't currently have one
     auto lifted_vec =
-      Teuchos::rcp(new Epetra_MultiVector(mesh()->cell_map(false), vec.NumVectors()));
+      Teuchos::rcp(new Epetra_MultiVector(mesh()->getMap(AmanziMesh::Entity_kind::CELL,false), vec.NumVectors()));
 
     // also create a lifted set of names
     std::vector<std::string> lifted_names;
@@ -46,7 +46,7 @@ VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec,
   // Note that to get the domain, we use name_ rather than names[0]'s domain
   // name, as this could be an alias.
   Epetra_MultiVector& lifted_vec = *lifted_vectors_[vis_name].first;
-  ds_->DoImport(Keys::getDomainInSet(name_, std::get<1>(dset_triple)), vec, lifted_vec);
+  ds_->doImport(Keys::getDomainInSet(name_, std::get<1>(dset_triple)), vec, lifted_vec);
 }
 
 
@@ -60,7 +60,7 @@ VisualizationDomainSet::WriteVector(const Epetra_Vector& vec, const std::string&
 
   if (!lifted_vectors_.count(vis_name)) {
     // create a lifted vector if we don't currently have one
-    auto lifted_vec = Teuchos::rcp(new Epetra_MultiVector(mesh()->cell_map(false), 1));
+    auto lifted_vec = Teuchos::rcp(new Epetra_MultiVector(mesh()->getMap(AmanziMesh::Entity_kind::CELL,false), 1));
 
     std::vector<std::string> lifted_names;
 
@@ -73,7 +73,7 @@ VisualizationDomainSet::WriteVector(const Epetra_Vector& vec, const std::string&
 
   // copy from the domain-set vector into the lifted vector
   Epetra_MultiVector& lifted_vec = *lifted_vectors_[vis_name].first;
-  ds_->DoImport(Keys::getDomainInSet(name_, std::get<1>(dset_triple)), vec, lifted_vec);
+  ds_->doImport(Keys::getDomainInSet(name_, std::get<1>(dset_triple)), vec, lifted_vec);
 }
 
 void
@@ -85,7 +85,7 @@ VisualizationDomainSet::FinalizeTimestep() const
     std::vector<std::string> my_names;
     for (auto& lv : lifted_vectors_) { my_names.push_back(lv.first); }
 
-    Utils::StringReducer<100> reducer(mesh_->get_comm());
+    Utils::StringReducer<100> reducer(mesh_->getComm());
     reducer.checkValidInput(my_names);
     lifted_vector_names_ = reducer.intersectAll(my_names);
   }

@@ -89,7 +89,7 @@ FlowMatrixFracture_PK::Setup()
     S_->Require<CV_t, CVS_t>("volumetric_flow_rate", Tags::DEFAULT)
       .SetMesh(mesh_domain_)
       ->SetGhosted(true)
-      ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
+      ->SetComponent(name, AmanziMesh::Entity_kind::FACE, mmap, gmap, 1);
     AddDefaultPrimaryEvaluator_("volumetric_flow_rate", Tags::DEFAULT);
   }
 
@@ -108,7 +108,7 @@ FlowMatrixFracture_PK::Setup()
     S_->Require<CV_t, CVS_t>(normal_permeability_key_, Tags::DEFAULT)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
   // inform dependent PKs about coupling

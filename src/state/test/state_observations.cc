@@ -12,7 +12,7 @@
 #include "AmanziComm.hh"
 #include "CompositeVector.hh"
 #include "IO.hh"
-#include "MeshColumn.hh"
+#include "MeshFrameworkColumn.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
 #include "Observable.hh"
@@ -100,23 +100,23 @@ struct obs_test {
     S->Require<CompositeVector, CompositeVectorSpace>("constant", Tags::DEFAULT, "my_password")
       .SetMesh(mesh)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S->Require<CompositeVector, CompositeVectorSpace>("linear", Tags::DEFAULT, "my_password")
       .SetMesh(mesh)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S->Require<CompositeVector, CompositeVectorSpace>("id", Tags::DEFAULT, "my_password")
       .SetMesh(mesh)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S->Require<CompositeVector, CompositeVectorSpace>("flux", Tags::DEFAULT, "my_password")
       .SetMesh(mesh)
       ->SetGhosted(false)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
+      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     S->Require<CompositeVector, CompositeVectorSpace>("multi_dof", Tags::DEFAULT, "my_password")
       .SetMesh(mesh)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 3);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 3);
     S->Setup();
 
     S->set_time(0.0);
@@ -141,11 +141,11 @@ struct obs_test {
       *S->GetW<CV>("flux", Tags::DEFAULT, "my_password").ViewComponent("face");
     AmanziGeometry::Point plus_xz(1.0, 0.0, 1.0);
 
-    for (int f = 0; f != flux_f.MyLength(); ++f) { flux_f[0][f] = mesh->face_normal(f) * plus_xz; }
+    for (int f = 0; f != flux_f.MyLength(); ++f) { flux_f[0][f] = mesh->getFaceNormal(f) * plus_xz; }
 
     Epetra_MultiVector& id_c =
       *S->GetW<CV>("id", Tags::DEFAULT, "my_password").ViewComponent("cell");
-    auto& cell_map = S->GetMesh("domain")->map(AmanziMesh::CELL, false);
+    auto& cell_map = S->GetMesh("domain")->getMap(AmanziMesh::Entity_kind::CELL, false);
 
     for (int c = 0; c != id_c.MyLength(); ++c) { id_c[0][c] = cell_map.GID(c); }
   }
@@ -170,16 +170,20 @@ struct obs_domain_set_test : public obs_test {
 
     auto plist = Teuchos::rcp(new Teuchos::ParameterList("mesh factory"));
     plist->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
-    AmanziMesh::MeshFactory fac(parent->get_comm(), parent->geometric_model(), plist);
-    auto surface_mesh = fac.create(parent, { "top face" }, AmanziMesh::FACE, true, true, false);
+    plist->set<bool>("request faces",true); 
+    plist->set<bool>("request edges",false); 
+    AmanziMesh::MeshFactory fac(parent->getComm(), parent->getGeometricModel(), plist);
+    auto surface_mesh = fac.create(parent, { "top face" }, AmanziMesh::Entity_kind::FACE, true);
     S->RegisterMesh("surface", surface_mesh);
 
     // create domain set
-    parent->build_columns();
+    assert(false); 
+    //parent->buildColumns();
     std::vector<std::string> cols;
-    for (int i = 0; i != parent->num_columns(); ++i) {
-      cols.emplace_back(std::to_string(surface_mesh->cell_map(false).GID(i)));
-    }
+    assert(false); 
+    //for (int i = 0; i != parent->columns(); ++i) {
+    //  cols.emplace_back(std::to_string(surface_mesh->getMap(AmanziMesh::Entity_kind::CELL,false).GID(i)));
+    //}
     auto domain_set =
       Teuchos::rcp(new AmanziMesh::DomainSet("column", S->GetMesh("surface"), cols));
     S->RegisterDomainSet("column", domain_set);
@@ -187,10 +191,11 @@ struct obs_domain_set_test : public obs_test {
     // create subdomain meshes
     int i = 0;
     for (auto& ds : *domain_set) {
-      auto parent_list = Teuchos::rcp(new Teuchos::ParameterList(*parent->parameter_list()));
-      Teuchos::RCP<AmanziMesh::Mesh> col_mesh =
-        AmanziMesh::createColumnMesh(parent, i, parent_list);
-      S->RegisterMesh(ds, col_mesh);
+      auto parent_list = Teuchos::rcp(new Teuchos::ParameterList(*parent->getParameterList()));
+      assert(false); 
+      //Teuchos::RCP<AmanziMesh::Mesh> col_mesh =
+      //  AmanziMesh::createColumnMesh(parent, i, parent_list);
+      //S->RegisterMesh(ds, col_mesh);
       i++;
     }
 
@@ -198,7 +203,7 @@ struct obs_domain_set_test : public obs_test {
       S->Require<CompositeVector, CompositeVectorSpace>(
          Keys::getKey(ds, "variable"), Tags::DEFAULT, "my_password")
         .SetMesh(S->GetMesh(ds))
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     }
   }
 
@@ -221,19 +226,19 @@ SUITE(STATE_OBSERVATIONS)
   {
     setup();
     int num_cells =
-      S->GetMesh("domain")->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+      S->GetMesh("domain")->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
     int num_cells_total = 0;
-    S->GetMesh("domain")->get_comm()->SumAll(&num_cells, &num_cells_total, 1);
+    S->GetMesh("domain")->getComm()->SumAll(&num_cells, &num_cells_total, 1);
     CHECK_EQUAL(27, num_cells_total);
 
-    int faces_middle = S->GetMesh("domain")->get_set_size(
-      "middle", AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    int faces_middle = S->GetMesh("domain")->getSetSize(
+      "middle", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
     CHECK_EQUAL(0, faces_middle);
 
     int cells_all =
-      S->GetMesh("domain")->get_set_size("all", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+      S->GetMesh("domain")->getSetSize("all", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
     int cells_all_total = 0;
-    S->GetMesh("domain")->get_comm()->SumAll(&cells_all, &cells_all_total, 1);
+    S->GetMesh("domain")->getComm()->SumAll(&cells_all, &cells_all_total, 1);
     CHECK_EQUAL(27, cells_all_total);
   }
 
@@ -253,7 +258,7 @@ SUITE(STATE_OBSERVATIONS)
     auto vo = Teuchos::rcp(new VerboseObject("Test", vlist));
 
     Observable obs(obs_list);
-    obs.set_comm(S->GetMesh("domain")->get_comm());
+    obs.set_comm(S->GetMesh("domain")->getComm());
     obs.Setup(S.ptr());
     obs.FinalizeStructure(S.ptr());
     CHECK_EQUAL(1, obs.get_num_vectors());
@@ -276,7 +281,7 @@ SUITE(STATE_OBSERVATIONS)
     obs_list.set<std::string>("functional", "integral");
 
     Observable obs(obs_list);
-    obs.set_comm(S->GetMesh("domain")->get_comm());
+    obs.set_comm(S->GetMesh("domain")->getComm());
     obs.Setup(S.ptr());
     obs.FinalizeStructure(S.ptr());
     CHECK_EQUAL(1, obs.get_num_vectors());
@@ -298,7 +303,7 @@ SUITE(STATE_OBSERVATIONS)
     obs_list.set<std::string>("functional", "extensive integral");
 
     Observable obs(obs_list);
-    obs.set_comm(S->GetMesh("domain")->get_comm());
+    obs.set_comm(S->GetMesh("domain")->getComm());
     obs.Setup(S.ptr());
     obs.FinalizeStructure(S.ptr());
     CHECK_EQUAL(1, obs.get_num_vectors());
@@ -320,7 +325,7 @@ SUITE(STATE_OBSERVATIONS)
     obs_list.set<std::string>("functional", "average");
 
     Observable obs(obs_list);
-    obs.set_comm(S->GetMesh("domain")->get_comm());
+    obs.set_comm(S->GetMesh("domain")->getComm());
     obs.Setup(S.ptr());
     obs.FinalizeStructure(S.ptr());
     CHECK_EQUAL(1, obs.get_num_vectors());
@@ -341,7 +346,7 @@ SUITE(STATE_OBSERVATIONS)
     obs_list.set<std::string>("functional", "minimum");
 
     Observable obs(obs_list);
-    obs.set_comm(S->GetMesh("domain")->get_comm());
+    obs.set_comm(S->GetMesh("domain")->getComm());
     obs.Setup(S.ptr());
     obs.FinalizeStructure(S.ptr());
     CHECK_EQUAL(1, obs.get_num_vectors());
@@ -362,7 +367,7 @@ SUITE(STATE_OBSERVATIONS)
     obs_list.set<std::string>("functional", "maximum");
 
     Observable obs(obs_list);
-    obs.set_comm(S->GetMesh("domain")->get_comm());
+    obs.set_comm(S->GetMesh("domain")->getComm());
     obs.Setup(S.ptr());
     obs.FinalizeStructure(S.ptr());
     CHECK_EQUAL(1, obs.get_num_vectors());
@@ -386,7 +391,7 @@ SUITE(STATE_OBSERVATIONS)
     obs_list.set("direction normalized flux", true);
 
     Observable obs(obs_list);
-    obs.set_comm(S->GetMesh("domain")->get_comm());
+    obs.set_comm(S->GetMesh("domain")->getComm());
     obs.Setup(S.ptr());
     obs.FinalizeStructure(S.ptr());
     CHECK_EQUAL(1, obs.get_num_vectors());
@@ -411,7 +416,7 @@ SUITE(STATE_OBSERVATIONS)
     obs_list.set("direction normalized flux relative to region", "one side volume");
 
     Observable obs(obs_list);
-    obs.set_comm(S->GetMesh("domain")->get_comm());
+    obs.set_comm(S->GetMesh("domain")->getComm());
     obs.Setup(S.ptr());
     obs.FinalizeStructure(S.ptr());
     CHECK_EQUAL(1, obs.get_num_vectors());
@@ -434,7 +439,7 @@ SUITE(STATE_OBSERVATIONS)
     obs_list.set<std::string>("functional", "average");
 
     Observable obs(obs_list);
-    obs.set_comm(S->GetMesh("domain")->get_comm());
+    obs.set_comm(S->GetMesh("domain")->getComm());
     obs.Setup(S.ptr());
     obs.FinalizeStructure(S.ptr());
     CHECK_EQUAL(3, obs.get_num_vectors());
@@ -460,7 +465,7 @@ SUITE(STATE_OBSERVATIONS)
     obs_list.set<int>("degree of freedom", 2);
 
     Observable obs(obs_list);
-    obs.set_comm(S->GetMesh("domain")->get_comm());
+    obs.set_comm(S->GetMesh("domain")->getComm());
     obs.Setup(S.ptr());
     obs.FinalizeStructure(S.ptr());
     CHECK_EQUAL(1, obs.get_num_vectors());

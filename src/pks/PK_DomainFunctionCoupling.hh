@@ -192,9 +192,8 @@ PK_DomainFunctionCoupling<FunctionBase>::Init(const Teuchos::ParameterList& plis
   AmanziMesh::Entity_kind kind = domain->second;
 
   for (auto region = domain->first.begin(); region != domain->first.end(); ++region) {
-    if (mesh_->valid_set_name(*region, kind)) {
-      AmanziMesh::Entity_ID_List id_list;
-      mesh_->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, &id_list);
+    if (mesh_->isValidSetName(*region, kind)) {
+      auto id_list = mesh_->getSetEntities(*region, kind, AmanziMesh::Parallel_type::OWNED);
       entity_ids_->insert(id_list.begin(), id_list.end());
     } else {
       msg << "Unknown region in processing coupling source: name=" << *region << ", kind=" << kind
@@ -218,10 +217,10 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
   mesh_out_ = S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).Mesh();
 
   if (submodel_ == "field" || submodel_ == "conserved quantity") {
-    if (mesh_->space_dimension() == mesh_->manifold_dimension() && reverse_map_.size() == 0) {
-      const Epetra_Map& cell_map = mesh_out_->cell_map(true);
+    if (mesh_->getSpaceDimension() == mesh_->getManifoldDimension() && reverse_map_.size() == 0) {
+      const Epetra_Map& cell_map = mesh_out_->getMap(AmanziMesh::Entity_kind::CELL,true);
       for (int c = 0; c < cell_map.NumMyElements(); ++c) {
-        AmanziMesh::Entity_ID f = mesh_out_->entity_get_parent(AmanziMesh::CELL, c);
+        AmanziMesh::Entity_ID f = mesh_out_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
         reverse_map_[f] = c;
       }
     }
@@ -240,14 +239,13 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
     int num_vec = field_out.NumVectors();
 
-    AmanziMesh::Entity_ID_List cells, faces;
-    std::vector<int> dirs;
+    AmanziMesh::Entity_ID_List cells;
 
     // loop over cells on the manifold
     for (auto c : *entity_ids_) {
-      AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+      AmanziMesh::Entity_ID f = mesh_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
 
-      mesh_out_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      cells = mesh_out_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
 
       if (cells.size() != flux_map->ElementSize(f)) {
         msg << "Number of flux DOFs doesn't equal to the number of cells sharing a face: "
@@ -260,7 +258,7 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
       int pos = Operators::UniqueIndexFaceToCells(*mesh_out_, f, cells[0]);
 
       for (int j = 0; j != cells.size(); ++j) {
-        mesh_out_->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
+        auto [faces,dirs] = mesh_out_->getCellFacesAndDirections(cells[j]);
 
         for (int i = 0; i < faces.size(); i++) {
           if (f == faces[i]) {
@@ -271,7 +269,7 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
               linear += fln;
               for (int k = 0; k < num_vec; ++k) {
                 // solute flux is water flux * concentration
-                val[k] += field_out[k][cells[j]] * fln / mesh_->cell_volume(c);
+                val[k] += field_out[k][cells[j]] * fln / mesh_->getCellVolume(c);
               }
             } else {
               val[num_vec] -= fln * (t1 - t0);
@@ -290,14 +288,13 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     const auto& flux_map =
       S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).Map().Map("face", true);
 
-    AmanziMesh::Entity_ID_List cells, faces;
-    std::vector<int> dirs;
+    AmanziMesh::Entity_ID_List cells;
 
     // loop over cells on the manifold
     for (auto c : *entity_ids_) {
-      AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+      AmanziMesh::Entity_ID f = mesh_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
 
-      mesh_out_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      cells = mesh_out_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
 
       if (cells.size() != flux_map->ElementSize(f)) {
         msg << "Number of flux DOFs doesn't equal to the number of cells sharing a face: "
@@ -309,13 +306,13 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
       int pos = Operators::UniqueIndexFaceToCells(*mesh_out_, f, cells[0]);
 
       for (int j = 0; j != cells.size(); ++j) {
-        mesh_out_->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
+        auto [faces, dirs] = mesh_out_->getCellFacesAndDirections(cells[j]);
 
         for (int i = 0; i < faces.size(); i++) {
           if (f == faces[i]) {
             int g = flux_map->FirstPointInElement(f);
             double fln = flux[0][g + (pos + j) % 2] * dirs[i];
-            val[0] += fln / mesh_->cell_volume(c);
+            val[0] += fln / mesh_->getCellVolume(c);
             break;
           }
         }
@@ -359,12 +356,11 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
       int sc = it->second;
 
       // accept it all
-      AmanziMesh::Entity_ID_List cells, faces;
-      std::vector<int> dirs;
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
+      AmanziMesh::Entity_ID_List cells;
+      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::OWNED);
       AMANZI_ASSERT(cells.size() == 1);
 
-      mesh_->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
+      auto [faces, dirs] = mesh_->getCellFacesAndDirections(cells[0]);
       auto i = std::find(faces.begin(), faces.end(), f) - faces.begin();
       AMANZI_ASSERT(i < dirs.size());
 

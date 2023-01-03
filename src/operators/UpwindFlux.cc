@@ -64,7 +64,7 @@ UpwindFlux::Compute(const CompositeVector& flux,
   flux_f.MaxValue(&flxmax);
   tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
   AmanziMesh::Entity_ID_List cells;
 
   // multiple DOFs on faces require usage of block map
@@ -73,7 +73,7 @@ UpwindFlux::Compute(const CompositeVector& flux,
   int c1, c2, dir;
   double kc1, kc2;
   for (int f = 0; f < nfaces_wghost; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
     int ncells = cells.size();
 
     int g = fmap.FirstPointInElement(f);
@@ -82,7 +82,7 @@ UpwindFlux::Compute(const CompositeVector& flux,
     c1 = cells[0];
     kc1 = field_c[0][c1];
 
-    mesh_->face_normal(f, false, c1, &dir);
+    mesh_->getFaceNormal(f, c1, &dir);
     bool flag = (flux_f[0][g] * dir <= -tol); // upwind flag
 
     // average field on almost vertical faces
@@ -91,8 +91,8 @@ UpwindFlux::Compute(const CompositeVector& flux,
       kc2 = field_c[0][c2];
 
       if (fabs(flux_f[0][g]) <= tol) {
-        double v1 = mesh_->cell_volume(c1);
-        double v2 = mesh_->cell_volume(c2);
+        double v1 = mesh_->getCellVolume(c1);
+        double v2 = mesh_->getCellVolume(c2);
 
         double tmp = v2 / (v1 + v2);
         field_f[0][g] = kc1 * tmp + kc2 * (1.0 - tmp);

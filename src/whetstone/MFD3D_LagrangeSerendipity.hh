@@ -21,7 +21,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -36,7 +36,7 @@ namespace WhetStone {
 class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
  public:
   MFD3D_LagrangeSerendipity(const Teuchos::ParameterList& plist,
-                            const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
+                            const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // required methods
   // -- schema
@@ -92,7 +92,7 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
   }
 
  private:
-  void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
+  void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
                       int c,
                       const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
@@ -106,7 +106,7 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
                       const Polynomial* moments,
                       Polynomial& uf);
 
-  void CalculateDOFsOnBoundary_(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
+  void CalculateDOFsOnBoundary_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
                                 int c,
                                 const std::vector<Polynomial>& ve,
                                 const std::vector<Polynomial>& vf,

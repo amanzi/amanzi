@@ -48,7 +48,7 @@ ResidualDebugger::StartIteration<TreeVectorSpace>(double time,
       if (leaves[i]->Data()->HasComponent("cell")) {
         std::stringstream filename;
         filename << filebasename_ << cycle << "_a" << attempt << "_v" << i;
-        vis_[i] = Teuchos::rcp(new HDF5_MPI(leaves[i]->Data()->Mesh()->get_comm()));
+        vis_[i] = Teuchos::rcp(new HDF5_MPI(leaves[i]->Data()->Mesh()->getComm()));
         vis_[i]->setTrackXdmf(true);
         vis_[i]->createMeshFile(leaves[i]->Data()->Mesh(), filename.str() + "_mesh");
         vis_[i]->createDataFile(filename.str());

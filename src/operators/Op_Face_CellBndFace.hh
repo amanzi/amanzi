@@ -42,7 +42,7 @@ class Op_Face_CellBndFace : public Op {
          mesh)
   {
     WhetStone::DenseMatrix null_matrix;
-    nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
     matrices.resize(nfaces_owned, null_matrix);
     matrices_shadow = matrices;
   }
@@ -78,14 +78,14 @@ class Op_Face_CellBndFace : public Op {
       const Epetra_MultiVector& s_bnd = *scaling.ViewComponent("boundary_face", true);
       AmanziMesh::Entity_ID_List cells;
       for (int f = 0; f != matrices.size(); ++f) {
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
         if (cells.size() > 1) {
           matrices[f](0, 0) *= s_c[0][cells[0]];
           matrices[f](0, 1) *= s_c[0][cells[1]];
           matrices[f](1, 0) *= s_c[0][cells[0]];
           matrices[f](1, 1) *= s_c[0][cells[1]];
         } else if (cells.size() == 1) {
-          int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+          int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE,false).LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE,false).GID(f));
           matrices[f](0, 0) *= s_c[0][cells[0]];
           matrices[f](1, 0) *= s_c[0][cells[0]];
           matrices[f](0, 1) *= s_bnd[0][bf];
