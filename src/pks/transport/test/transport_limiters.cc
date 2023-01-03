@@ -86,9 +86,9 @@ TEST(LIMITER_BARTH_JESPERSEN)
   auto flux = S->GetFieldData("volumetric_flow_rate", passwd)->ViewComponent("face", false);
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     (*flux)[0][f] = velocity * normal;
   }
 
@@ -97,21 +97,21 @@ TEST(LIMITER_BARTH_JESPERSEN)
   double dT = TPK.CalculateTransportDt(); // We call it to identify upwind cells.
 
   /* create a linear field */
-  const Epetra_Map& cmap = mesh->cell_map(false);
+  const Epetra_Map& cmap = mesh->getMap(AmanziMesh::Entity_kind::CELL,false);
   RCP<Epetra_Vector> scalar_field = rcp(new Epetra_Vector(cmap));
 
   CompositeVectorSpace cv_space;
   cv_space.SetMesh(mesh);
   cv_space.SetGhosted(true);
-  cv_space.SetComponent("cell", AmanziMesh::CELL, 3);
+  cv_space.SetComponent("cell", AmanziMesh::Entity_kind::CELL, 3);
 
   RCP<CompositeVector> gradient =
     Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
   RCP<Epetra_MultiVector> grad = gradient->ViewComponent("cell", false);
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     (*scalar_field)[c] = 5.0 - xc[0] - 0.5 * xc[1] - 0.2 * xc[2];
     (*grad)[0][c] = -1.0;
     (*grad)[1][c] = -0.5;

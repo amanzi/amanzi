@@ -95,7 +95,7 @@ class MyRemapDGc : public Operators::RemapDG<CompositeVector> {
 void
 MyRemapDGc::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 {
-  if (mesh0_->get_comm()->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
+  if (mesh0_->getComm()->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
   InitializeOperators(dg);
   StaticEdgeFaceVelocities();
   StaticCellVelocity();
@@ -103,24 +103,24 @@ MyRemapDGc::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
   velf_vec0_.resize(nfaces_wghost_);
   for (int f = 0; f < nfaces_wghost_; ++f) {
     velf_vec0_[f].Reshape(dim_, dim_, 1, true);
-    velf_vec0_[f].set_origin(mesh0_->face_centroid(f));
+    velf_vec0_[f].set_origin(mesh0_->getFaceCentroid(f));
   }
 
-  if (mesh0_->valid_edges()) {
+  if (mesh0_->hasEdges()) {
     vele_vec0_.resize(nedges_wghost_);
     for (int e = 0; e < nedges_wghost_; ++e) {
       vele_vec0_[e].Reshape(dim_, dim_, 1, true);
-      vele_vec0_[e].set_origin(mesh0_->edge_centroid(e));
+      vele_vec0_[e].set_origin(mesh0_->getEdgeCentroid(e));
     }
   }
 
   J0_.resize(ncells_owned_);
   for (int c = 0; c < ncells_owned_; ++c) {
     J0_[c].Reshape(dim_, dim_, dim_, 0, true);
-    J0_[c].set_origin(mesh0_->cell_centroid(c));
+    J0_[c].set_origin(mesh0_->getCellCentroid(c));
   }
 
-  if (mesh0_->get_comm()->MyPID() == 0) std::cout << "Computing static data in mesh cells...\n";
+  if (mesh0_->getComm()->MyPID() == 0) std::cout << "Computing static data in mesh cells...\n";
   StaticFaceCoVelocity();
   StaticCellCoVelocity();
 }
@@ -132,10 +132,10 @@ MyRemapDGc::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 void
 MyRemapDGc::ReInit(double tini)
 {
-  if (mesh0_->get_comm()->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
+  if (mesh0_->getComm()->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
   for (int f = 0; f < nfaces_wghost_; ++f) velf_vec0_[f] += velf_vec_[f];
 
-  if (mesh0_->valid_edges()) {
+  if (mesh0_->hasEdges()) {
     for (int e = 0; e < nedges_wghost_; ++e) vele_vec0_[e] += vele_vec_[e];
   }
 
@@ -147,18 +147,18 @@ MyRemapDGc::ReInit(double tini)
   // adjust new velocities for interval [tini, tend]
   for (int f = 0; f < nfaces_wghost_; ++f) velf_vec_[f] -= velf_vec0_[f];
 
-  if (mesh0_->valid_edges()) {
+  if (mesh0_->hasEdges()) {
     for (int e = 0; e < nedges_wghost_; ++e) vele_vec_[e] -= vele_vec0_[e];
   }
 
   StaticCellVelocity();
 
-  if (mesh0_->get_comm()->MyPID() == 0) std::cout << "Computing static data in mesh cells...\n";
+  if (mesh0_->getComm()->MyPID() == 0) std::cout << "Computing static data in mesh cells...\n";
   StaticFaceCoVelocity();
   StaticCellCoVelocity();
 
   // re-calculate static matrices
-  if (mesh0_->get_comm()->MyPID() == 0) std::cout << "Computing static matrices for operators...\n";
+  if (mesh0_->getComm()->MyPID() == 0) std::cout << "Computing static matrices for operators...\n";
   op_adv_->Setup(velc_, true);
   op_reac_->Setup(det_, true);
   op_flux_->Setup(velf_.ptr(), true);
@@ -244,7 +244,7 @@ MyRemapDGc::InitialMass(const CompositeVector& p1, int order)
     mass += numi.IntegratePolynomialCell(c, poly);
   }
 
-  mesh0_->get_comm()->SumAll(&mass, &mass0, 1);
+  mesh0_->getComm()->SumAll(&mass, &mass0, 1);
   return mass0;
 }
 
@@ -278,7 +278,7 @@ MyRemapDGc::CollectStatistics(double t, const CompositeVector& u)
       lim.MeanValue(&lavg);
     }
 
-    if (mesh0_->get_comm()->MyPID() == 0) {
+    if (mesh0_->getComm()->MyPID() == 0) {
       printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  limiter: %6.3f %6.3f %6.3f  umax/umin: "
              "%9.5g %9.5g\n",
              tglob,
@@ -388,16 +388,16 @@ RemapTestsCurved(std::string file_name,
   mesh0->BuildCache();
   mesh1->BuildCache();
 
-  int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh0->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh0->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
 
   // create and initialize cell-based field
   CompositeVectorSpace cvs1, cvs2;
-  cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
   auto p1 = Teuchos::rcp(new CompositeVector(cvs1));
   Epetra_MultiVector& p1c = *p1->ViewComponent("cell", true);
 
-  cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
   CompositeVector p2(cvs2);
   Epetra_MultiVector& p2c = *p2.ViewComponent("cell");
 
@@ -418,7 +418,7 @@ RemapTestsCurved(std::string file_name,
   p2c = *p1->ViewComponent("cell");
 
   io->InitializeCycle(0.0, 0, "");
-  io->WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
+  io->WriteVector(*p2c(0), "solution", AmanziMesh::Entity_kind::CELL);
   io->FinalizeCycle();
 
   // create remap object
@@ -465,15 +465,15 @@ RemapTestsCurved(std::string file_name,
     // visualize solution on mesh1
     // io = Teuchos::rcp(new OutputXDMF(iolist, mesh1, true, false));
     io->InitializeCycle(t, iloop + 1, "");
-    io->WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
+    io->WriteVector(*p2c(0), "solution", AmanziMesh::Entity_kind::CELL);
     if (order > 0) {
-      io->WriteVector(*p2c(1), "gradx", AmanziMesh::CELL);
-      io->WriteVector(*p2c(2), "grady", AmanziMesh::CELL);
+      io->WriteVector(*p2c(1), "gradx", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*p2c(2), "grady", AmanziMesh::Entity_kind::CELL);
     }
     if (order > 1) {
-      io->WriteVector(*p2c(3), "hesxx", AmanziMesh::CELL);
-      io->WriteVector(*p2c(4), "hesxy", AmanziMesh::CELL);
-      io->WriteVector(*p2c(5), "hesyy", AmanziMesh::CELL);
+      io->WriteVector(*p2c(3), "hesxx", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*p2c(4), "hesxy", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*p2c(5), "hesyy", AmanziMesh::Entity_kind::CELL);
     }
     io->FinalizeCycle();
   }
@@ -509,7 +509,7 @@ RemapTestsCurved(std::string file_name,
     if (order > 0 && order < 3 && dim == 2) {
       auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
       remap.maps()->ProjectPolynomial(c, poly);
-      poly.ChangeOrigin(mesh1->cell_centroid(c));
+      poly.ChangeOrigin(mesh1->getCellCentroid(c));
       for (int i = 0; i < nk; ++i) q2c[i][c] = poly(i);
     }
   }
@@ -522,11 +522,11 @@ RemapTestsCurved(std::string file_name,
 
   for (int c = 0; c < ncells_owned; ++c) {
     double vol1 = numi.IntegratePolynomialCell(c, det[c].Value(1.0));
-    double vol2 = mesh1->cell_volume(c);
+    double vol2 = mesh1->getCellVolume(c);
 
     area += vol1;
-    area0 += mesh0->cell_volume_linear(c);
-    area1 += mesh1->cell_volume_linear(c);
+    area0 += mesh0->getCellVolume_linear(c);
+    area1 += mesh1->getCellVolume_linear(c);
 
     double err = std::fabs(vol1 - vol2);
     gcl_inf = std::max(gcl_inf, err / vol1);
@@ -537,7 +537,7 @@ RemapTestsCurved(std::string file_name,
     auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
 
     WhetStone::Polynomial tmp(det[c].Value(1.0));
-    tmp.ChangeOrigin(mesh0->cell_centroid(c));
+    tmp.ChangeOrigin(mesh0->getCellCentroid(c));
     poly *= tmp;
     mass1 += numi.IntegratePolynomialCell(c, poly);
   }

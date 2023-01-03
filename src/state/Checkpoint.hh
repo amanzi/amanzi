@@ -66,6 +66,7 @@ every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be 
 #include "HDF5_MPI.hh"
 #include "IOEvent.hh"
 #include "ObservationData.hh"
+#include "Key.hh"
 
 namespace Amanzi {
 class State;

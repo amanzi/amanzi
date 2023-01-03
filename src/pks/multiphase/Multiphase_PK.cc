@@ -97,7 +97,7 @@ void
 Multiphase_PK::Setup()
 {
   mesh_ = S_->GetMesh(domain_);
-  dim_ = mesh_->space_dimension();
+  dim_ = mesh_->getSpaceDimension();
 
   // keys
   // -- fields
@@ -228,7 +228,7 @@ Multiphase_PK::Setup()
     S_->Require<CV_t, CVS_t>(primary_key, Tags::DEFAULT, passwd_, component_names_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, component_names_.size());
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, component_names_.size());
 
     Teuchos::ParameterList elist(primary_key);
     elist.set<std::string>("name", primary_key).set<std::string>("tag", "");
@@ -395,7 +395,7 @@ Multiphase_PK::Setup()
     S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, dim_);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, dim_);
   }
 
   if (!S_->HasRecord(porosity_key_)) {
@@ -409,7 +409,7 @@ Multiphase_PK::Setup()
       S_->Require<CV_t, CVS_t>(energy_key_, Tags::DEFAULT, energy_key_)
         .SetMesh(mesh_)
         ->SetGhosted()
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
+        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
       Teuchos::ParameterList elist = mp_list_->sublist("energy evaluator");
       elist.set<std::string>("energy key", energy_key_)
@@ -432,7 +432,7 @@ Multiphase_PK::Setup()
       S_->Require<CV_t, CVS_t>(prev_energy_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       S_->GetRecordW(prev_energy_key_, passwd_).set_io_vis(false);
     }
 
@@ -463,7 +463,7 @@ Multiphase_PK::Setup()
       S_->Require<CV_t, CVS_t>(conductivity_key_, Tags::DEFAULT, conductivity_key_)
         .SetMesh(mesh_)
         ->SetGhosted()
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
+        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
       Teuchos::ParameterList elist = mp_list_->sublist("thermal conductivity evaluator");
       elist.set("thermal conductivity key", conductivity_key_).set<std::string>("tag", "");
@@ -478,7 +478,7 @@ Multiphase_PK::Setup()
       S_->Require<CV_t, CVS_t>(enthalpy_liquid_key_, Tags::DEFAULT, enthalpy_liquid_key_)
         .SetMesh(mesh_)
         ->SetGhosted()
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
+        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
       Teuchos::ParameterList elist = mp_list_->sublist("enthalpy evaluator");
       elist.set("enthalpy key", enthalpy_liquid_key_)
@@ -527,14 +527,14 @@ Multiphase_PK::Setup()
     S_->Require<CV_t, CVS_t>(prev_tws_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->GetRecordW(prev_tws_key_, passwd_).set_io_vis(false);
   }
   if (!S_->HasRecord(prev_tcs_key_)) {
     S_->Require<CV_t, CVS_t>(prev_tcs_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->GetRecordW(prev_tcs_key_, passwd_).set_io_vis(false);
   }
 
@@ -544,7 +544,7 @@ Multiphase_PK::Setup()
       S_->Require<CV_t, CVS_t>(ncp_f_key_, Tags::DEFAULT, ncp_f_key_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
       Teuchos::ParameterList elist(ncp_f_key_);
       elist.set<std::string>("my key", ncp_f_key_)
@@ -587,7 +587,7 @@ Multiphase_PK::Setup()
       S_->Require<CV_t, CVS_t>(e, Tags::DEFAULT, e)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       S_->RequireEvaluator(e, Tags::DEFAULT);
     }
   }
@@ -613,11 +613,11 @@ Multiphase_PK::Setup()
 void
 Multiphase_PK::Initialize()
 {
-  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  ncells_owned_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_wghost_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
 
-  nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  nfaces_owned_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces_wghost_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
 
   ncp_ = mp_list_->get<std::string>("NCP function", "min");
   smooth_mu_ = mp_list_->get<double>("smoothing parameter mu", 0.0);
@@ -676,7 +676,7 @@ Multiphase_PK::Initialize()
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc = bc_factory.Create(spec, "boundary pressure", AmanziMesh::FACE, Teuchos::null);
+        bc = bc_factory.Create(spec, "boundary pressure", AmanziMesh::Entity_kind::FACE, Teuchos::null);
         bc->set_bc_name("pressure");
         bcs_.push_back(bc);
       }
@@ -691,7 +691,7 @@ Multiphase_PK::Initialize()
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       if (it->second.isList()) {
         Teuchos::ParameterList spec = Teuchos::getValue<Teuchos::ParameterList>(it->second);
-        bc = bc_factory.Create(spec, "outward mass flux", AmanziMesh::FACE, Teuchos::null);
+        bc = bc_factory.Create(spec, "outward mass flux", AmanziMesh::Entity_kind::FACE, Teuchos::null);
         bc->set_bc_name("flux");
         bc->SetComponentId(component_names_);
         bcs_.push_back(bc);
@@ -708,7 +708,7 @@ Multiphase_PK::Initialize()
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc = bc_factory.Create(spec, "boundary saturation", AmanziMesh::FACE, Teuchos::null);
+        bc = bc_factory.Create(spec, "boundary saturation", AmanziMesh::Entity_kind::FACE, Teuchos::null);
         bc->set_bc_name("saturation");
         bcs_.push_back(bc);
       }
@@ -724,7 +724,7 @@ Multiphase_PK::Initialize()
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc = bc_factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Teuchos::null);
+        bc = bc_factory.Create(spec, "boundary concentration", AmanziMesh::Entity_kind::FACE, Teuchos::null);
         bc->set_bc_name("concentration");
         bc->SetComponentId(component_names_);
         bcs_.push_back(bc);
@@ -739,12 +739,12 @@ Multiphase_PK::Initialize()
 
   for (const auto& name : soln_names_) {
     auto op_bc =
-      Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+      Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
     op_bcs_[name] = op_bc;
   }
   for (const auto& name : secondary_names_) {
     auto op_bc =
-      Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+      Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
     op_bcs_[name] = op_bc;
   }
 
@@ -758,7 +758,7 @@ Multiphase_PK::Initialize()
 
   // matrix is used to simplify calculation of residual
   // -- absolute permeability
-  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  ncells_wghost_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
   K_.resize(ncells_wghost_);
   ConvertFieldToTensor(S_, dim_, permeability_key_, K_);
 
@@ -1120,7 +1120,7 @@ Multiphase_PK::MyRequire_(const Key& key, const std::string& owner)
   S_->Require<CV_t, CVS_t>(key, Tags::DEFAULT, owner)
     .SetMesh(mesh_)
     ->SetGhosted(true)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
+    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
   Teuchos::ParameterList elist(key);
   elist.set<std::string>("my key", key).set<std::string>("tag", Tags::DEFAULT.get());

@@ -49,20 +49,20 @@ SUITE(SURFACE_SUBSURFACE)
     AmanziMesh::MeshFactory meshfactory(comm, gm);
     auto mesh_subsurf = meshfactory.create(-10, -10, -10, 10, 10, 0, 4, 4, 2);
     int ncells_subsurf =
-      mesh_subsurf->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh_subsurf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
     auto mesh_surf =
-      meshfactory.create(mesh_subsurf, { "surface" }, AmanziMesh::FACE, true, true, false);
+      meshfactory.create(mesh_subsurf, { "surface" }, AmanziMesh::Entity_kind::FACE, true, true, false);
     int ncells_surf =
-      mesh_surf->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
     // cvs
     auto cvs_surf = Teuchos::rcp(new CompositeVectorSpace());
-    cvs_surf->SetMesh(mesh_surf)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    cvs_surf->SetMesh(mesh_surf)->SetGhosted(true)->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     auto tvs_surf =
       Teuchos::rcp(new TreeVectorSpace((Teuchos::RCP<const CompositeVectorSpace>)cvs_surf));
 
     auto cvs_subsurf = Teuchos::rcp(new CompositeVectorSpace());
-    cvs_subsurf->SetMesh(mesh_subsurf)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    cvs_subsurf->SetMesh(mesh_subsurf)->SetGhosted(true)->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     auto tvs_subsurf =
       Teuchos::rcp(new TreeVectorSpace((Teuchos::RCP<const CompositeVectorSpace>)cvs_subsurf));
 
@@ -114,22 +114,22 @@ SUITE(SURFACE_SUBSURFACE)
     AmanziMesh::MeshFactory meshfactory(comm, gm);
     auto mesh_subsurf = meshfactory.create(-10, -10, -10, 10, 10, 0, 3, 3, 3);
     auto mesh_surf =
-      meshfactory.create(mesh_subsurf, { "surface" }, Amanzi::AmanziMesh::FACE, true, true, false);
+      meshfactory.create(mesh_subsurf, { "surface" }, Amanzi::AmanziMesh::Entity_kind::FACE, true, true, false);
     int ncells_surf =
-      mesh_surf->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
     // create diffusion operators
     Teuchos::ParameterList diff_list_subsurf;
     Operators::PDE_DiffusionFV diff_subsurf(diff_list_subsurf, mesh_subsurf);
     Teuchos::RCP<Operators::BCs> bc_subsurf =
-      Teuchos::rcp(new Operators::BCs(mesh_subsurf, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+      Teuchos::rcp(new Operators::BCs(mesh_subsurf, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
     diff_subsurf.SetBCs(bc_subsurf, bc_subsurf);
     diff_subsurf.Setup(Teuchos::null, Teuchos::null, Teuchos::null);
 
     Teuchos::ParameterList diff_list_surf;
     Operators::PDE_DiffusionFV diff_surf(diff_list_surf, mesh_surf);
     Teuchos::RCP<Operators::BCs> bc_surf =
-      Teuchos::rcp(new Operators::BCs(mesh_surf, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+      Teuchos::rcp(new Operators::BCs(mesh_surf, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
     diff_surf.SetBCs(bc_surf, bc_surf);
     diff_surf.Setup(Teuchos::null, Teuchos::null, Teuchos::null);
 
@@ -161,12 +161,12 @@ SUITE(SURFACE_SUBSURFACE)
     // assume this is a coupling block for q_exchange_surf_to_subsurf = alpha * (p_surf - p_subsurf)
     // Create an injection map
     std::vector<int> parents(
-      mesh_surf->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED));
-    const Epetra_Map& cell_map = mesh_subsurf->map(AmanziMesh::Entity_kind::CELL, false);
+      mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED));
+    const Epetra_Map& cell_map = mesh_subsurf->getMap(AmanziMesh::Entity_kind::CELL, false);
     for (int sc = 0; sc != ncells_surf; ++sc) {
-      int f = mesh_surf->entity_get_parent(AmanziMesh::Entity_kind::CELL, sc);
+      int f = mesh_surf->getEntityParent(AmanziMesh::Entity_kind::CELL, sc);
       AmanziMesh::Entity_ID_List cells;
-      mesh_subsurf->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
+      cells = mesh_subsurf->getFaceCells(f, AmanziMesh::Parallel_type::OWNED);
       AMANZI_ASSERT(cells.size() == 1);
       parents[sc] = cell_map.GID(cells[0]);
     }
@@ -247,9 +247,9 @@ SUITE(SURFACE_SUBSURFACE)
     AmanziMesh::MeshFactory meshfactory(comm, gm);
     auto mesh_subsurf = meshfactory.create(-10, -10, -10, 10, 10, 0, 1, 1, 2);
     auto mesh_surf =
-      meshfactory.create(mesh_subsurf, { "surface" }, Amanzi::AmanziMesh::FACE, true, true, false);
+      meshfactory.create(mesh_subsurf, { "surface" }, Amanzi::AmanziMesh::Entity_kind::FACE, true, true, false);
     int ncells_surf =
-      mesh_surf->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
     // create primary (diagonal) entries
     Operators::PDE_Accumulation diff1_subsurf(AmanziMesh::Entity_kind::CELL, mesh_subsurf);
@@ -314,12 +314,12 @@ SUITE(SURFACE_SUBSURFACE)
     // assume this is a coupling block for q_exchange_surf_to_subsurf = alpha * (p_surf - p_subsurf)
     // Create an injection map
     std::vector<int> parents(
-      mesh_surf->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED));
-    const Epetra_Map& cell_map = mesh_subsurf->map(AmanziMesh::Entity_kind::CELL, false);
+      mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED));
+    const Epetra_Map& cell_map = mesh_subsurf->getMap(AmanziMesh::Entity_kind::CELL, false);
     for (int sc = 0; sc != ncells_surf; ++sc) {
-      int f = mesh_surf->entity_get_parent(AmanziMesh::Entity_kind::CELL, sc);
+      int f = mesh_surf->getEntityParent(AmanziMesh::Entity_kind::CELL, sc);
       AmanziMesh::Entity_ID_List cells;
-      mesh_subsurf->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
+      cells = mesh_subsurf->getFaceCells(f, AmanziMesh::Parallel_type::OWNED);
       AMANZI_ASSERT(cells.size() == 1);
       parents[sc] = cell_map.GID(cells[0]);
     }

@@ -60,13 +60,13 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
   // create verbosity object
   S_ = S;
   mesh_ = S->GetMesh(domain_);
-  dim = mesh_->space_dimension();
+  dim = mesh_->getSpaceDimension();
 
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
 
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  nfaces_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
 
   // workflow can be affected by the list of models
   auto physical_models = Teuchos::sublist(ep_list_, "physical models and assumptions");
@@ -116,7 +116,7 @@ Energy_PK::Setup()
   // require primary state variables
   std::vector<std::string> names({ "cell", "face" });
   std::vector<int> ndofs(2, 1);
-  std::vector<AmanziMesh::Entity_kind> locations({ AmanziMesh::CELL, AmanziMesh::FACE });
+  std::vector<AmanziMesh::Entity_kind> locations({ AmanziMesh::Entity_kind::CELL, AmanziMesh::Entity_kind::FACE });
 
   S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT)
     .SetMesh(mesh_)
@@ -138,7 +138,7 @@ Energy_PK::Setup()
     S_->Require<CV_t, CVS_t>(prev_energy_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->GetRecordW(prev_energy_key_, passwd_).set_io_vis(false);
   }
 
@@ -147,8 +147,8 @@ Energy_PK::Setup()
   S_->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
   S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(
@@ -158,8 +158,8 @@ Energy_PK::Setup()
   S_->Require<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT, ie_rock_key_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
   S_->RequireEvaluator(ie_rock_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(
@@ -170,8 +170,8 @@ Energy_PK::Setup()
   S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
   S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
 
   if (S_->GetEvaluator(mol_density_liquid_key_)
@@ -187,8 +187,8 @@ Energy_PK::Setup()
   S_->Require<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT, mass_density_liquid_key_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
   S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
 
   if (S_->GetEvaluator(mass_density_liquid_key_)
@@ -206,7 +206,7 @@ Energy_PK::Setup()
     S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
+      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
   }
   if (!S_->HasRecord(mol_flowrate_key_)) {
     auto cvs = S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
@@ -220,12 +220,12 @@ Energy_PK::Setup()
     S_->Require<CV_t, CVS_t>(conductivity_eff_key_, Tags::DEFAULT, conductivity_eff_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
 
     Teuchos::ParameterList elist(conductivity_eff_key_);
@@ -281,9 +281,9 @@ Energy_PK::Initialize()
 {
   // Create BCs objects
   // -- memory
-  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   op_bc_enth_ =
-    Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+    Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
 
   auto bc_list =
     Teuchos::rcp(new Teuchos::ParameterList(ep_list_->sublist("boundary conditions", false)));
@@ -298,7 +298,7 @@ Energy_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
         bc_temperature_.push_back(
-          bc_factory.Create(spec, "boundary temperature", AmanziMesh::FACE, Teuchos::null));
+          bc_factory.Create(spec, "boundary temperature", AmanziMesh::Entity_kind::FACE, Teuchos::null));
       }
     }
   }
@@ -313,7 +313,7 @@ Energy_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
         bc_flux_.push_back(
-          bc_factory.Create(spec, "outward energy flux", AmanziMesh::FACE, Teuchos::null));
+          bc_factory.Create(spec, "outward energy flux", AmanziMesh::Entity_kind::FACE, Teuchos::null));
       }
     }
   }
@@ -326,7 +326,7 @@ Energy_PK::Initialize()
       std::string name = it->first;
       if (src_list.isSublist(name)) {
         Teuchos::ParameterList& spec = src_list.sublist(name);
-        srcs_.push_back(factory.Create(spec, "source", AmanziMesh::CELL, Teuchos::null));
+        srcs_.push_back(factory.Create(spec, "source", AmanziMesh::Entity_kind::CELL, Teuchos::null));
       }
     }
   }
@@ -401,7 +401,7 @@ Energy_PK::AddSourceTerms(CompositeVector& rhs)
   for (int i = 0; i < srcs_.size(); ++i) {
     for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
       int c = it->first;
-      rhs_cell[0][c] += mesh_->cell_volume(c) * it->second[0];
+      rhs_cell[0][c] += mesh_->getCellVolume(c) * it->second[0];
     }
   }
 }
@@ -447,7 +447,7 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
   }
 #ifdef HAVE_MPI
   int tmp = dirichlet_bc_faces_;
-  mesh_->get_comm()->SumAll(&tmp, &dirichlet_bc_faces_, 1);
+  mesh_->getComm()->SumAll(&tmp, &dirichlet_bc_faces_, 1);
 #endif
 
   // additional boundary conditions

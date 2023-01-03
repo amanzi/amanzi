@@ -63,7 +63,7 @@ LimiterCellDG::ApplyLimiterDG(const AmanziMesh::Entity_ID_List& ids,
     Exceptions::amanzi_throw(msg);
   }
 
-  limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+  limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->getMap(AmanziMesh::Entity_kind::CELL,false)));
   limiter_->PutScalar(1.0);
 
   if (type_ == OPERATOR_LIMITER_BARTH_JESPERSEN_DG) {
@@ -107,7 +107,7 @@ LimiterCellDG::LimiterScalarDG_(const WhetStone::DG_Modal& dg,
 
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
-    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
 
     for (int i = 0; i < nk; ++i) data(i) = (*field_)[i][c];
@@ -121,15 +121,15 @@ LimiterCellDG::LimiterScalarDG_(const WhetStone::DG_Modal& dg,
 
     for (int m = 0; m < nfaces; ++m) {
       int f = faces[m];
-      mesh_->face_get_nodes(f, &nodes);
+      nodes = mesh_->getFaceNodes(f);
       int nnodes = nodes.size();
 
       getBounds(c, f, stencil_id_, &umin, &umax);
 
       for (int i = 0; i < nnodes - ilast; ++i) {
         int j = (i + 1) % nnodes;
-        mesh_->node_get_coordinates(nodes[i], &x1);
-        mesh_->node_get_coordinates(nodes[j], &x2);
+        x1 = mesh_->getNodeCoordinate(nodes[i]);
+        x2 = mesh_->getNodeCoordinate(nodes[j]);
 
         for (int k = 0; k < limiter_points_; ++k) {
           xm = x1 * WhetStone::q1d_points[mq][k] + x2 * (1.0 - WhetStone::q1d_points[mq][k]);
@@ -180,7 +180,7 @@ LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
   // -- for gradient
   {
     std::vector<int> bc_model_none(nfaces_wghost_, OPERATOR_BC_NONE);
-    Epetra_MultiVector field_tmp(mesh_->cell_map(true), dim);
+    Epetra_MultiVector field_tmp(mesh_->getMap(AmanziMesh::Entity_kind::CELL,true), dim);
 
     for (int c = 0; c < ncells_owned_; ++c) {
       for (int i = 0; i < nk; ++i) data(i) = (*field_)[i][c];
@@ -196,7 +196,7 @@ LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
 
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
-    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
 
     for (int i = 0; i < nk; ++i) data(i) = (*field_)[i][c];
@@ -212,10 +212,10 @@ LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      mesh_->face_get_nodes(f, &nodes);
+      nodes = mesh_->getFaceNodes(f);
 
-      mesh_->node_get_coordinates(nodes[0], &x1);
-      mesh_->node_get_coordinates(nodes[1], &x2);
+      x1 = mesh_->getNodeCoordinate(nodes[0]);
+      x2 = mesh_->getNodeCoordinate(nodes[1]);
 
       // limit mean values
       bounds_ = bounds[0];

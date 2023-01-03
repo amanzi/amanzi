@@ -55,7 +55,7 @@ CreateFracturePermModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     }
   }
 
-  auto partition = Teuchos::rcp(new Functions::MeshPartition(AmanziMesh::CELL, region_list));
+  auto partition = Teuchos::rcp(new Functions::MeshPartition(AmanziMesh::Entity_kind::CELL, region_list));
   partition->Initialize(mesh, -1);
   partition->Verify();
 

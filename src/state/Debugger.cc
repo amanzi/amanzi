@@ -50,15 +50,15 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   // faces to debug
   if (plist_.isParameter("debug faces")) {
     auto dfs = plist_.get<Teuchos::Array<int>>("debug faces");
-    const auto& face_map = mesh->face_map(true);
-    const auto& cell_map = mesh->cell_map(false);
+    const auto& face_map = mesh->getMap(AmanziMesh::Entity_kind::FACE,true);
+    const auto& cell_map = mesh->getMap(AmanziMesh::Entity_kind::CELL,false);
 
     for (const auto& f : dfs) {
       AmanziMesh::Entity_ID lf = face_map.LID(f);
       if (lf >= 0) {
         // debug the neighboring cells
         AmanziMesh::Entity_ID_List fcells;
-        mesh->face_get_cells(lf, AmanziMesh::Parallel_type::OWNED, &fcells);
+        fcells = mesh->getFaceCells(lf, AmanziMesh::Parallel_type::OWNED);
         for (const auto& c : fcells) cells.emplace_back(cell_map.GID(c));
       }
     }
@@ -93,8 +93,8 @@ Debugger::set_cells(const AmanziMesh::Entity_ID_List& dc)
   // implementation decisions!
   std::set<AmanziMesh::Entity_ID> dc_set(dc.begin(), dc.end());
 
-  const auto& cell_map = mesh_->cell_map(false);
-  int my_pid = mesh_->get_comm()->MyPID();
+  const auto& cell_map = mesh_->getMap(AmanziMesh::Entity_kind::CELL,false);
+  int my_pid = mesh_->getComm()->MyPID();
   for (const auto& c : dc_set) {
     AmanziMesh::Entity_ID lc = cell_map.LID(c);
     if (lc >= 0) {
@@ -108,7 +108,7 @@ Debugger::set_cells(const AmanziMesh::Entity_ID_List& dc)
       vo_plist.sublist("verbose object") = plist_.sublist("verbose object");
       vo_plist.sublist("verbose object").set("write on rank", my_pid);
       vo_plist.sublist("verbose object").set("show rank", false);
-      dcvo_.emplace_back(Teuchos::rcp(new VerboseObject(mesh_->get_comm(), name_, vo_plist)));
+      dcvo_.emplace_back(Teuchos::rcp(new VerboseObject(mesh_->getComm(), name_, vo_plist)));
     }
   }
 }
@@ -197,19 +197,17 @@ Debugger::WriteCellInfo(bool include_faces)
     AmanziMesh::Entity_ID c0_gid = dc_gid_[i];
     Teuchos::OSTab tab = dcvo_[i]->getOSTab();
 
-    AmanziGeometry::Point c0_centroid = mesh_->cell_centroid(c0);
+    AmanziGeometry::Point c0_centroid = mesh_->getCellCentroid(c0);
     if (dcvo_[i]->os_OK(verb_level_)) {
       *dcvo_[i]->os() << "Cell c(" << c0_gid << ") centroid = " << c0_centroid << std::endl;
 
       if (include_faces) {
-        AmanziMesh::Entity_ID_List fnums0;
-        std::vector<int> dirs;
-        mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+        auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
         if (dcvo_[i]->os_OK(verb_level_)) {
           for (unsigned int n = 0; n != fnums0.size(); ++n) {
-            AmanziMesh::Entity_ID f_gid = mesh_->face_map(true).GID(fnums0[n]);
-            AmanziGeometry::Point f_centroid = mesh_->face_centroid(fnums0[n]);
+            AmanziMesh::Entity_ID f_gid = mesh_->getMap(AmanziMesh::Entity_kind::FACE,true).GID(fnums0[n]);
+            AmanziGeometry::Point f_centroid = mesh_->getFaceCentroid(fnums0[n]);
             *dcvo_[i]->os() << "  neighbor face(" << f_gid << ") [dir=" << dirs[n]
                             << "] centroid = " << f_centroid << std::endl;
           }
@@ -261,23 +259,19 @@ Debugger::WriteVector(const std::string& vname,
         if (vec_c != Teuchos::null) *dcvo_[i]->os() << Format_((*vec_c)[j][c0]);
 
         if (include_faces && vec_f != Teuchos::null) {
-          AmanziMesh::Entity_ID_List fnums0;
-          std::vector<int> dirs;
-          mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+          auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
           for (unsigned int n = 0; n != fnums0.size(); ++n)
             if (fnums0[n] < nfaces_valid) *dcvo_[i]->os() << " " << Format_((*vec_f)[j][fnums0[n]]);
         }
 
         if (include_faces && vec_bf != Teuchos::null) {
-          AmanziMesh::Entity_ID_List fnums0;
-          std::vector<int> dirs;
-          mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+          auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
           for (unsigned int n = 0; n != fnums0.size(); ++n) {
             AmanziMesh::Entity_ID f = fnums0[n];
             AmanziMesh::Entity_ID bf =
-              mesh_->exterior_face_map(true).LID(mesh_->face_map(true).GID(f));
+              mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE,true).LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE,true).GID(f));
             if (bf >= 0 && bf < nbfaces_valid) *dcvo_[i]->os() << " " << Format_((*vec_bf)[j][bf]);
           }
         }
@@ -353,23 +347,19 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
           if (vec_c != Teuchos::null) *dcvo_[i]->os() << Format_((*vec_c)[j][c0]);
 
           if (include_faces && vec_f != Teuchos::null) {
-            AmanziMesh::Entity_ID_List fnums0;
-            std::vector<int> dirs;
-            mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+            auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
             for (unsigned int n = 0; n != fnums0.size(); ++n)
               *dcvo_[i]->os() << " " << Format_((*vec_f)[j][fnums0[n]]);
           }
 
           if (include_faces && vec_bf != Teuchos::null) {
-            AmanziMesh::Entity_ID_List fnums0;
-            std::vector<int> dirs;
-            mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+            auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
             for (unsigned int n = 0; n != fnums0.size(); ++n) {
               AmanziMesh::Entity_ID f = fnums0[n];
               AmanziMesh::Entity_ID bf =
-                mesh_->exterior_face_map(true).LID(mesh_->face_map(true).GID(f));
+                mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE,true).LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE,true).GID(f));
               if (bf >= 0) *dcvo_[i]->os() << " " << Format_((*vec_bf)[j][bf]);
             }
           }
@@ -397,9 +387,7 @@ Debugger::WriteBoundaryConditions(const std::vector<int>& flag, const std::vecto
 
     if (dcvo_[i]->os_OK(verb_level_)) {
       *dcvo_[i]->os() << FormatHeader_("BCs", c0_gid);
-      AmanziMesh::Entity_ID_List fnums0;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+      auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
       for (unsigned int n = 0; n != fnums0.size(); ++n)
         *dcvo_[i]->os() << " " << flag[fnums0[n]] << "(" << Format_(data[fnums0[n]]) << ")";
@@ -413,7 +401,7 @@ Debugger::WriteBoundaryConditions(const std::vector<int>& flag, const std::vecto
 void
 Debugger::Barrier()
 {
-  mesh_->get_comm()->Barrier();
+  mesh_->getComm()->Barrier();
 }
 
 

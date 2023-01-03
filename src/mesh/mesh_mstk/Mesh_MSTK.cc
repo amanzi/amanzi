@@ -314,11 +314,13 @@ Mesh_MSTK::~Mesh_MSTK() {
 //
 void Mesh_MSTK::read_plist_()
 {
+  std::cout<<"Read Plist"<<std::endl;
   // extract optional control parameters, but first specify defaults
   partitioner_ = createPartitionerType(plist_->get<std::string>("partitioner", "metis"));
   contiguous_gids_ = plist_->get<bool>("contiguous global ids", true);
   edges_requested_ = plist_->get<bool>("request edges", false);
   faces_requested_ = plist_->get<bool>("request faces", true);
+  std::cout<<"edges_requested_ = "<<edges_requested_<<std::endl;
 }
 
 
@@ -1178,7 +1180,7 @@ void Mesh_MSTK::getEdgeFaces(const Entity_ID edgeid,
   List_ptr face_list;
   MEntity_ptr ment;
 
-  AMANZI_ASSERT(getManifoldDimension() == 3);
+  //AMANZI_ASSERT(getManifoldDimension() == 3);
 
   MEdge_ptr me = (MEdge_ptr) edge_id_to_handle_[edgeid];
   face_list = ME_Faces(me);
@@ -2034,7 +2036,6 @@ Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
         Errors::Message mesg("Mismatch of entity type in labeled set region and mesh set");
         Exceptions::amanzi_throw(mesg);
       }
-
     } else if (getManifoldDimension() == 2) {
       if ((region.entity_str() == "CELL" && entdim != MFACE) ||
           (region.entity_str() == "FACE" && entdim != MEDGE) ||
@@ -2042,7 +2043,7 @@ Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
         Errors::Message msg("Mismatch of entity type in labeled set region and mesh set");
         Exceptions::amanzi_throw(msg);
       }
-    }
+    } 
 
     if (entities_deleted_) {
       int idx = 0;

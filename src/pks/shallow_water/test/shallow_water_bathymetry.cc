@@ -51,14 +51,17 @@ RunTest(int ntest)
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
-  MeshFactory meshfactory(comm, gm);
+  auto plist_edges = Teuchos::rcp(new Teuchos::ParameterList()); 
+  plist_edges->set<bool>("request faces", true);
+  plist_edges->set<bool>("request edges",true);  
+  MeshFactory meshfactory(comm, gm,plist_edges);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh;
   if (ntest == 1) {
-    mesh = meshfactory.create(0.0, 0.0, 100.0, 100.0, 20, 20, true, true);
+    mesh = meshfactory.create(0.0, 0.0, 100.0, 100.0, 20, 20);
   } else {
-    RCP<Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 100.0, 100.0, 10.0, 20, 20, 4, true, true);
-    mesh = meshfactory.create(mesh3D, { "TopSurface" }, AmanziMesh::FACE, true, true, true);
+    RCP<Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 100.0, 100.0, 10.0, 20, 20, 4);
+    mesh = meshfactory.create(mesh3D, { "TopSurface" }, AmanziMesh::Entity_kind::FACE);
   }
 
   // create a state
@@ -105,11 +108,11 @@ RunTest(int ntest)
 
     if (iter % 5 == 0) {
       io.InitializeCycle(t_out, iter, "");
-      io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
-      io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
-      io.WriteVector(*vel(0), "vx", AmanziMesh::CELL);
-      io.WriteVector(*vel(1), "vy", AmanziMesh::CELL);
-      io.WriteVector(*B(0), "B", AmanziMesh::CELL);
+      io.WriteVector(*hh(0), "depth", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*ht(0), "total_depth", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*vel(0), "vx", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*vel(1), "vy", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*B(0), "B", AmanziMesh::Entity_kind::CELL);
       io.FinalizeCycle();
     }
 

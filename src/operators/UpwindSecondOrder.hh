@@ -54,9 +54,9 @@ class UpwindSecondOrder : public Upwind {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1)
-      ->AddComponent("grad", AmanziMesh::CELL, mesh_->space_dimension());
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1)
+      ->AddComponent("grad", AmanziMesh::Entity_kind::CELL, mesh_->getSpaceDimension());
     return cvs;
   }
 

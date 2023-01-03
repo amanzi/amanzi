@@ -19,12 +19,12 @@ DataDebug::write_region_data(std::string& region_name,
                              const Epetra_Vector& data,
                              std::string& description)
 {
-  if (!mesh_->valid_set_name(region_name, AmanziMesh::CELL)) { throw std::exception(); }
+  if (!mesh_->isValidSetName(region_name, AmanziMesh::Entity_kind::CELL)) { throw std::exception(); }
   unsigned int mesh_block_size =
-    mesh_->get_set_size(region_name, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh_->getSetSize(region_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
-  mesh_->get_set_entities(
-    region_name, AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED, &cell_ids);
+  cell_ids = mesh_->getSetEntities(
+    region_name, AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   std::cerr << "Printing " << description << " on region " << region_name << std::endl;
   for (AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end(); ++c) {
@@ -39,12 +39,12 @@ DataDebug::write_region_statistics(std::string& region_name,
                                    const Epetra_Vector& data,
                                    std::string& description)
 {
-  if (!mesh_->valid_set_name(region_name, AmanziMesh::CELL)) { throw std::exception(); }
+  if (!mesh_->isValidSetName(region_name, AmanziMesh::Entity_kind::CELL)) { throw std::exception(); }
   unsigned int mesh_block_size =
-    mesh_->get_set_size(region_name, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh_->getSetSize(region_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
-  mesh_->get_set_entities(
-    region_name, AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED, &cell_ids);
+  cell_ids = mesh_->getSetEntities(
+    region_name, AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   // find min and max and their indices
   int max_index(0), min_index(0);
@@ -60,13 +60,13 @@ DataDebug::write_region_statistics(std::string& region_name,
     }
   }
 
-  int num_procs(mesh_->get_comm()->NumProc());
-  int my_proc(mesh_->get_comm()->MyPID());
+  int num_procs(mesh_->getComm()->NumProc());
+  int my_proc(mesh_->getComm()->MyPID());
 
   double* all_values = new double[num_procs];
   int* all_indices = new int[num_procs];
-  mesh_->get_comm()->GatherAll(&max_value, all_values, 1);
-  mesh_->get_comm()->GatherAll(&max_index, all_indices, 1);
+  mesh_->getComm()->GatherAll(&max_value, all_values, 1);
+  mesh_->getComm()->GatherAll(&max_index, all_indices, 1);
 
 
   // find global max value and index
@@ -78,8 +78,8 @@ DataDebug::write_region_statistics(std::string& region_name,
     }
   }
 
-  mesh_->get_comm()->GatherAll(&min_value, all_values, 1);
-  mesh_->get_comm()->GatherAll(&min_index, all_indices, 1);
+  mesh_->getComm()->GatherAll(&min_value, all_values, 1);
+  mesh_->getComm()->GatherAll(&min_index, all_indices, 1);
   // find global min value and index
   min_value = all_values[0];
   for (int i = 1; i < num_procs; ++i) {

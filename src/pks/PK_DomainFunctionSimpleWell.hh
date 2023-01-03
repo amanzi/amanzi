@@ -77,7 +77,7 @@ PK_DomainFunctionSimpleWell<FunctionBase>::Init(const Teuchos::ParameterList& pl
 {
   keyword_ = keyword;
   S_ = S;
-  kind_ = AmanziMesh::CELL;
+  kind_ = AmanziMesh::Entity_kind::CELL;
   Teuchos::ParameterList well_list = plist.sublist(keyword);
   submodel_ = "rate";
   if (well_list.isParameter("submodel")) submodel_ = well_list.get<std::string>("submodel");
@@ -118,10 +118,10 @@ void
 PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
 {
   // create the input tuple (time + space)
-  int dim = mesh_->space_dimension();
+  int dim = mesh_->getSpaceDimension();
   std::vector<double> args(1 + dim);
 
-  int nowned = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::OWNED);
+  int nowned = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_type::OWNED);
 
   if (submodel_ == "rate") {
     for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end();
@@ -133,10 +133,10 @@ PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
       for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
         if (*c < nowned)
           domain_volume_ +=
-            (kind_ == AmanziMesh::CELL) ? mesh_->cell_volume(*c) : mesh_->face_area(*c);
+            (kind_ == AmanziMesh::Entity_kind::CELL) ? mesh_->getCellVolume(*c) : mesh_->getFaceArea(*c);
       }
       double tmp(domain_volume_);
-      mesh_->get_comm()->SumAll(&tmp, &domain_volume_, 1);
+      mesh_->getComm()->SumAll(&tmp, &domain_volume_, 1);
       int nfun = (*uspec)->first->second->size();
       std::vector<double> val_vec(nfun);
 
@@ -171,7 +171,7 @@ PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
         double bhp;
         for (int i = 0; i < nfun; ++i) {
           bhp = (*(*uspec)->first->second)(args)[i] + rho_ * g * (depth_ - xc[dim - 1]);
-          val_vec[i] = bhp * wi[0][*c] / mesh_->cell_volume(*c);
+          val_vec[i] = bhp * wi[0][*c] / mesh_->getCellVolume(*c);
         }
         value_[*c] = val_vec;
       }

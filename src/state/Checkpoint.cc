@@ -52,7 +52,7 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const State& S)
     // Single_File style is one checkpoint file on "domain"'s comm
     Comm_ptr_type comm;
     if (S.HasMesh("domain")) {
-      comm = S.GetMesh()->get_comm();
+      comm = S.GetMesh()->getComm();
     } else {
       comm = Amanzi::getDefaultComm();
     }
@@ -64,7 +64,7 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const State& S)
     for (auto entry = S.mesh_begin(); entry != S.mesh_end(); ++entry) {
       const std::string& domain = entry->first;
       const auto& mesh = S.GetMesh(domain);
-      if (!sameComm(*comm, *mesh->get_comm())) {
+      if (!sameComm(*comm, *mesh->getComm())) {
         std::stringstream msg;
         msg << "Checkpointing: cannot use single file checkpointing when not all meshes are on "
                "MPI_COMM_WORLD (mesh \""
@@ -82,7 +82,7 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const State& S)
   if (!single_file_) {
     for (auto domain = S.mesh_begin(); domain != S.mesh_end(); ++domain) {
       const auto& mesh = S.GetMesh(domain->first);
-      output_[domain->first] = Teuchos::rcp(new HDF5_MPI(mesh->get_comm()));
+      output_[domain->first] = Teuchos::rcp(new HDF5_MPI(mesh->getComm()));
       output_[domain->first]->setTrackXdmf(false);
     }
   }
@@ -105,7 +105,7 @@ Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S) : IOE
 
   // create the readers
   if (single_file_) {
-    auto comm = S.GetMesh()->get_comm();
+    auto comm = S.GetMesh()->getComm();
     output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, file_or_dirname));
     output_["domain"]->open_h5file(true);
 
@@ -116,7 +116,7 @@ Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S) : IOE
       Key domain_name = Keys::replace_all(domain->first, ":", "-");
       boost::filesystem::path chkp_file =
         boost::filesystem::path(file_or_dirname) / (domain_name + ".h5");
-      output_[domain->first] = Teuchos::rcp(new HDF5_MPI(mesh->get_comm(), chkp_file.string()));
+      output_[domain->first] = Teuchos::rcp(new HDF5_MPI(mesh->getComm(), chkp_file.string()));
       output_[domain->first]->open_h5file(true);
     }
   }
@@ -237,10 +237,10 @@ Checkpoint::Write(const State& S, WriteType write_type, Amanzi::ObservationData*
     CreateFile(S.get_cycle());
 
     // write num procs, as checkpoint files are specific to this
-    Write("mpi_num_procs", S.GetMesh()->get_comm()->NumProc());
+    Write("mpi_num_procs", S.GetMesh()->getComm()->NumProc());
 
     // create hard link to the final file
-    if ((write_type == WriteType::FINAL) && S.GetMesh()->get_comm()->MyPID() == 0)
+    if ((write_type == WriteType::FINAL) && S.GetMesh()->getComm()->MyPID() == 0)
       CreateFinalFile(S.get_cycle());
 
     for (auto it = S.data_begin(); it != S.data_end(); ++it) {

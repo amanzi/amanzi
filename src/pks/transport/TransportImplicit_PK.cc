@@ -97,7 +97,7 @@ TransportImplicit_PK::Initialize()
   vo_ = Teuchos::rcp(new VerboseObject("TransportImpl-" + domain, *tp_list_));
 
   // boundary conditions
-  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   op_bc_->bc_value(); // allocate internal
   op_bc_->bc_model(); // memory
 
@@ -118,7 +118,7 @@ TransportImplicit_PK::Initialize()
 
   // Solution vector does not match tcc in general, even for one species.
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1)->SetGhosted(true);
+  cvs.SetMesh(mesh_)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)->SetGhosted(true);
   if (use_dispersion_) cvs = op_diff_->global_operator()->DomainMap();
 
   solution_ = Teuchos::rcp(new CompositeVector(cvs));
@@ -144,7 +144,7 @@ TransportImplicit_PK::Initialize()
   op_adv_->Setup(*flux);
   op_adv_->UpdateMatrices(flux.ptr());
 
-  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_));
+  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op_));
 
   // initialize time integrator
   if (spatial_disc_order > 1) {

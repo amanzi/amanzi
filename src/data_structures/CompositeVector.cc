@@ -444,13 +444,13 @@ void
 CompositeVector::CreateVandelayVector_() const
 {
   vandelay_vector_ = Teuchos::rcp(new Epetra_MultiVector(
-    Mesh()->exterior_face_map(false), mastervec_->NumVectors("face"), false));
+    Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE,false), mastervec_->NumVectors("face"), false));
 
   // create new importer from face-component if it has more than one DOF per face
   const auto& map = *ComponentMap("face", false);
-  int nfaces = Mesh()->face_map(false).NumMyElements();
+  int nfaces = Mesh()->getMap(AmanziMesh::Entity_kind::FACE,false).NumMyElements();
   if (nfaces != map.NumMyPoints()) {
-    vandelay_import_ = Teuchos::rcp(new Epetra_Import(Mesh()->exterior_face_importer()));
+    vandelay_import_ = Teuchos::rcp(new Epetra_Import(Mesh()->getBoundaryFaceImporter()));
 
     auto data = vandelay_import_->PermuteFromLIDs();
     int n = vandelay_import_->NumPermuteIDs();
@@ -466,7 +466,7 @@ CompositeVector::ApplyVandelay_() const
   const auto& map = *ComponentMap("face", false);
   if (vandelay_import_ == Teuchos::null)
     vandelay_vector_->Import(
-      *ViewComponent("face", false), Mesh()->exterior_face_importer(), Insert);
+      *ViewComponent("face", false), Mesh()->getBoundaryFaceImporter(), Insert);
   else
     vandelay_vector_->Import(*ViewComponent("face", false), *vandelay_import_, Insert);
 }
@@ -476,7 +476,7 @@ CompositeVector::ApplyVandelay_() const
 const Epetra_Import&
 CompositeVector::importer(std::string name) const
 {
-  return Mesh()->importer(Location(name));
+  return Mesh()->getImporter(Location(name));
 }
 
 
@@ -660,7 +660,7 @@ DeriveFaceValuesFromCellValues(CompositeVector& cv)
     int f_owned = cv_f.MyLength();
     for (int f = 0; f != f_owned; ++f) {
       AmanziMesh::Entity_ID_List cells;
-      cv.Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      cells = cv.Mesh()->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
       int ncells = cells.size();
 
       double face_value = 0.0;
@@ -671,8 +671,8 @@ DeriveFaceValuesFromCellValues(CompositeVector& cv)
     const Epetra_MultiVector& cv_c = *cv.ViewComponent("cell", true);
     Epetra_MultiVector& cv_f = *cv.ViewComponent("boundary_face", false);
 
-    const Epetra_BlockMap& fb_map = cv.Mesh()->exterior_face_map(false);
-    const Epetra_BlockMap& f_map = cv.Mesh()->face_map(false);
+    const Epetra_BlockMap& fb_map = cv.Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE,false);
+    const Epetra_BlockMap& f_map = cv.Mesh()->getMap(AmanziMesh::Entity_kind::FACE,false);
 
     int fb_owned = cv_f.MyLength();
     for (int fb = 0; fb != fb_owned; ++fb) {
@@ -681,7 +681,7 @@ DeriveFaceValuesFromCellValues(CompositeVector& cv)
       int f_gid = fb_map.GID(fb);
       int f_lid = f_map.LID(f_gid);
 
-      cv.Mesh()->face_get_cells(f_lid, AmanziMesh::Parallel_type::ALL, &cells);
+      cells = cv.Mesh()->getFaceCells(f_lid, AmanziMesh::Parallel_type::ALL);
       int ncells = cells.size();
 
       AMANZI_ASSERT((ncells == 1));

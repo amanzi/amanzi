@@ -142,8 +142,8 @@ TEST(ENERGY_CONVERGENCE)
     S->Require<CompositeVector, CompositeVectorSpace>("enthalpy", Tags::DEFAULT, "enthalpy")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
     S->RequireDerivative<CompositeVector, CompositeVectorSpace>(
        "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy")
@@ -264,8 +264,8 @@ TEST(ENERGY_PRECONDITIONER)
     S->Require<CompositeVector, CompositeVectorSpace>("enthalpy", Tags::DEFAULT, "enthalpy")
       .SetMesh(mesh)
       ->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
     S->RequireDerivative<CompositeVector, CompositeVectorSpace>(
        "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy")

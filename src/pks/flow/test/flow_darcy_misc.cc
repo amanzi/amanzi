@@ -155,9 +155,9 @@ class DarcyProblem {
     const auto& pressure = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
 
     double error_L2 = 0.0;
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
     for (int c = 0; c < ncells; c++) {
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+      const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
       double pressure_exact = p0 + pressure_gradient * xc;
       // if (MyPID==0) std::cout << c << " " << pressure[0][c] << " exact=" <<  pressure_exact << std::endl;
       error_L2 += std::pow(pressure[0][c] - pressure_exact, 2.0);
@@ -170,9 +170,9 @@ class DarcyProblem {
     const auto& lambda = *S->Get<CompositeVector>("pressure").ViewComponent("face");
 
     double error_L2 = 0.0;
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
     for (int f = 0; f < nfaces; f++) {
-      const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+      const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
       double pressure_exact = p0 + pressure_gradient * xf;
       // std::cout << f << " " << lambda[0][f] << " exact=" << pressure_exact << std::endl;
       error_L2 += std::pow(lambda[0][f] - pressure_exact, 2.0);
@@ -185,9 +185,9 @@ class DarcyProblem {
     auto& flowrate = *S->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face");
 
     double error_L2 = 0.0;
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
     for (int f = 0; f < nfaces; f++) {
-      const AmanziGeometry::Point& normal = mesh->face_normal(f);
+      const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
       error_L2 += std::pow(flowrate[0][f] - velocity_exact * normal, 2.0);
       // if (MyPID == 0) std::cout << f << " " << flowrate[0][f] << " exact=" << velocity_exact * normal << std::endl;
     }
@@ -201,13 +201,13 @@ class DarcyProblem {
     Epetra_MultiVector& flux = *cv.ViewComponent("face", true);
 
     double error_L2 = 0.0;
-    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
     for (int c = 0; c < ncells_owned; c++) {
       AmanziMesh::Entity_ID_List faces;
       std::vector<int> dirs;
 
-      mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh->getCellFacesAndDirections(c, &faces, &dirs);
       int nfaces = faces.size();
 
       double div = 0.0;
@@ -215,7 +215,7 @@ class DarcyProblem {
         int f = faces[i];
         div += flux[0][f] * dirs[i];
       }
-      error_L2 += div * div / mesh->cell_volume(c);
+      error_L2 += div * div / mesh->getCellVolume(c);
     }
     return sqrt(error_L2);
   }

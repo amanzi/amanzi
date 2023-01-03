@@ -70,7 +70,7 @@ TransportSourceFunction_Alquimia::Init_(const std::vector<std::string>& regions)
 {
   for (int i = 0; i < regions.size(); ++i) {
     AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(regions[i], AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL, &block);
+    mesh_->getSetEntities(regions[i], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL, &block);
     int nblock = block.size();
 
     // Now get the cells that are attached to these faces.

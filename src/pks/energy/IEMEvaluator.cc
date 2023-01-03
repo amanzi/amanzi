@@ -94,7 +94,7 @@ IEMEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& res
   auto pres = S.GetPtr<CompositeVector>(pressure_key_, tag_);
 
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
-    auto kind = AmanziMesh::entity_kind(*comp);
+    auto kind = AmanziMesh::createEntityKind(*comp);
     const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
     const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
     Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
@@ -133,7 +133,7 @@ IEMEvaluator::EvaluatePartialDerivative_(const State& S,
   auto pres = S.GetPtr<CompositeVector>(pressure_key_, tag_);
 
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
-    auto kind = AmanziMesh::entity_kind(*comp);
+    auto kind = AmanziMesh::createEntityKind(*comp);
     const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
     const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
     Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
@@ -186,7 +186,7 @@ IEMEvaluator::CreateIEMPartition_(const Teuchos::RCP<const AmanziMesh::Mesh>& me
   }
 
   auto partition = Teuchos::rcp(new Functions::MeshPartition());
-  partition->Initialize(mesh, AmanziMesh::CELL, region_list, -1);
+  partition->Initialize(mesh, AmanziMesh::Entity_kind::CELL, region_list, -1);
   partition->Verify();
 
   iem_ = Teuchos::rcp(new IEMPartition(partition, iem_list));
@@ -209,11 +209,11 @@ IEMEvaluator::EvaluateFieldSingle(int c, double T, double p)
 AmanziMesh::Entity_ID
 IEMEvaluator::MyModel_(AmanziMesh::Entity_kind kind, AmanziMesh::Entity_ID id)
 {
-  if (kind == AmanziMesh::CELL) {
+  if (kind == AmanziMesh::Entity_kind::CELL) {
     return id;
-  } else if (kind == AmanziMesh::BOUNDARY_FACE) {
+  } else if (kind == AmanziMesh::Entity_kind::BOUNDARY_FACE) {
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(id, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh_->getFaceCells(id, AmanziMesh::Parallel_type::ALL);
     return cells[0];
   }
   return -1;

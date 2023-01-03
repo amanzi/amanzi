@@ -49,14 +49,15 @@ struct Maps {
     comm = Amanzi::getDefaultComm();
 
     // create a mesh
-    mesh = Teuchos::rcp(new Mesh_MSTK(0., 0., 1., 1., 10, 10, comm));
+    auto mesh_mstk = Teuchos::rcp(new Mesh_MSTK(0., 0., 1., 1., 10, 10, comm));
+    mesh = Teuchos::rcp(new Mesh(mesh_mstk,Teuchos::null)); 
 
     // create a vector
     cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
     Teuchos::RCP<TreeVectorSpace> tvs0 = Teuchos::rcp(new TreeVectorSpace());
     tvs0->SetData(cvs);
@@ -121,8 +122,8 @@ TEST(SUPERMAP_COPY_INTS)
   CHECK(!ierr);
 
   // check values
-  int ncells = maps.mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = maps.mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells = maps.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = maps.mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
 
   // check sizes
   CHECK_EQUAL(2 * ncells + 2 * nfaces, vec.MyLength());

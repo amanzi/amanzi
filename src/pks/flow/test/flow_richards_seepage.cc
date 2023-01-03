@@ -64,9 +64,9 @@ Flow2D_SeepageTest(std::string filename, bool deform)
     AmanziMesh::Entity_ID_List nodeids;
     AmanziGeometry::Point_List new_positions, final_positions;
 
-    int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+    int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
     for (int v = 0; v < nnodes; ++v) {
-      mesh->node_get_coordinates(v, &xv);
+      xv = mesh->getNodeCoordinate(v);
       nodeids.push_back(v);
       xv[1] *= (xv[0] * 0.4 + (100.0 - xv[0])) / 100.0;
       new_positions.push_back(xv);
@@ -99,7 +99,7 @@ Flow2D_SeepageTest(std::string filename, bool deform)
 
   double patm(101325.0), z0(30.0);
   for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     p[0][c] = patm + rho * g * (xc[1] - z0);
   }
 
@@ -128,8 +128,8 @@ Flow2D_SeepageTest(std::string filename, bool deform)
   iolist.get<std::string>("file name base", "plot");
   OutputXDMF io(iolist, mesh, true, false);
   io.InitializeCycle(ti_specs.T1, 1, "");
-  io.WriteVector(*p(0), "pressure", AmanziMesh::CELL);
-  io.WriteVector(*ws(0), "saturation", AmanziMesh::CELL);
+  io.WriteVector(*p(0), "pressure", AmanziMesh::Entity_kind::CELL);
+  io.WriteVector(*ws(0), "saturation", AmanziMesh::Entity_kind::CELL);
   io.FinalizeCycle();
 
   /*
