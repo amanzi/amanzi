@@ -853,7 +853,9 @@ Projector3DLagrangeSerendipity(const std::string& filename)
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
+  auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_plist->set("request edges", true);  
+  MeshFactory meshfactory(comm, gm, fac_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(filename);
 
@@ -984,7 +986,9 @@ Projector3DLagrangeSerendipitySurface(const std::string& filename)
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
+  auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_plist->set("request edges", true);  
+  MeshFactory meshfactory(comm, gm, fac_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(filename);
 
@@ -1009,8 +1013,9 @@ Projector3DLagrangeSerendipitySurface(const std::string& filename)
   }
 
   // add constant to thrid edge (y=1)
-  int n0, n1;
-  mesh->getEdgeNodes(2, &n0, &n1);
+  auto nodes = mesh->getEdgeNodes(2);
+  Entity_ID n0 = nodes[0]; 
+  Entity_ID n1 = nodes[1]; 
   xyz0 = mesh->getNodeCoordinate(n0);
   xyz1 = mesh->getNodeCoordinate(n1);
   if (fabs(xyz0[0] - xyz1[0]) < 1e-6) {

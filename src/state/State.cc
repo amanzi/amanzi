@@ -99,10 +99,10 @@ State::IsAliasedMesh(const Key& key) const
 }
 
 
-Teuchos::RCP<const AmanziMesh::Mesh>
+Teuchos::RCP<AmanziMesh::Mesh>
 State::GetMesh(const Key& key) const
 {
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh;
   if (key.empty()) {
     mesh = GetMesh_("domain");
   } else {

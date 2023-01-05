@@ -676,7 +676,9 @@ AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix
   for (int m = 0; m < nedges; ++m) {
     int e = edges[m];
     double length = mesh->getEdgeLength(e);
-    mesh->getEdgeNodes(e, &v1, &v2);
+    auto nodes = mesh->getEdgeNodes(e);
+    v1 = nodes[0]; 
+    v2 = nodes[1]; 
 
     G(m, lid[v1]) += 1.0 / length;
     G(m, lid[v2]) -= 1.0 / length;

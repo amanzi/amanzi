@@ -443,7 +443,9 @@ MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
       int e = edges[n];
 
       // nodal DOFs
-      mymesh->getEdgeNodes(e, &i0, &i1);
+      auto nodes = mymesh->getEdgeNodes(e);
+      i0 = nodes[0]; 
+      i1 = nodes[1]; 
 
       xv = mymesh->getNodeCoordinate(i0);
       pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), i0));

@@ -170,20 +170,16 @@ struct obs_domain_set_test : public obs_test {
 
     auto plist = Teuchos::rcp(new Teuchos::ParameterList("mesh factory"));
     plist->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
-    plist->set<bool>("request faces",true); 
-    plist->set<bool>("request edges",false); 
     AmanziMesh::MeshFactory fac(parent->getComm(), parent->getGeometricModel(), plist);
     auto surface_mesh = fac.create(parent, { "top face" }, AmanziMesh::Entity_kind::FACE, true);
     S->RegisterMesh("surface", surface_mesh);
 
     // create domain set
-    assert(false); 
-    //parent->buildColumns();
+    parent->buildColumns();
     std::vector<std::string> cols;
-    assert(false); 
-    //for (int i = 0; i != parent->columns(); ++i) {
-    //  cols.emplace_back(std::to_string(surface_mesh->getMap(AmanziMesh::Entity_kind::CELL,false).GID(i)));
-    //}
+    for (int i = 0; i != parent->columns.num_columns_all; ++i) {
+      cols.emplace_back(std::to_string(surface_mesh->getMap(AmanziMesh::Entity_kind::CELL,false).GID(i)));
+    }
     auto domain_set =
       Teuchos::rcp(new AmanziMesh::DomainSet("column", S->GetMesh("surface"), cols));
     S->RegisterDomainSet("column", domain_set);
@@ -192,10 +188,9 @@ struct obs_domain_set_test : public obs_test {
     int i = 0;
     for (auto& ds : *domain_set) {
       auto parent_list = Teuchos::rcp(new Teuchos::ParameterList(*parent->getParameterList()));
-      assert(false); 
-      //Teuchos::RCP<AmanziMesh::Mesh> col_mesh =
-      //  AmanziMesh::createColumnMesh(parent, i, parent_list);
-      //S->RegisterMesh(ds, col_mesh);
+      Teuchos::RCP<AmanziMesh::Mesh> col_mesh =
+        AmanziMesh::createColumnMesh(parent, i, parent_list);
+      S->RegisterMesh(ds, col_mesh);
       i++;
     }
 

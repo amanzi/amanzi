@@ -49,7 +49,9 @@ MeshMaps::VelocityEdge(int e, VectorPolynomial& v) const
   const AmanziGeometry::Point& xe = mesh0_->getEdgeCentroid(e);
   ye = mesh1_->getEdgeCentroid(e);
 
-  mesh0_->getEdgeNodes(e, &n0, &n1);
+  auto nodes = mesh0_->getEdgeNodes(e);
+  n0 = nodes[0]; 
+  n1 = nodes[1]; 
   x0 = mesh0_->getNodeCoordinate(n0);
   x1 = mesh0_->getNodeCoordinate(n1);
 
