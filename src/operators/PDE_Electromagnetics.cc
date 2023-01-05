@@ -318,7 +318,9 @@ PDE_Electromagnetics::GradientOperator()
 
   for (int e = 0; e != nedges_owned; ++e) {
     double len = mesh_->getEdgeLength(e);
-    mesh_->getEdgeNodes(e, &n1, &n2);
+    auto nodes = mesh_->getEdgeNodes(e);
+    n1 = nodes[0]; 
+    n2 = nodes[1]; 
 
     lid_c[0] = map_col_wghost.GID(n1);
     lid_c[1] = map_col_wghost.GID(n2);

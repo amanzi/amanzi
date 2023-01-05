@@ -314,13 +314,11 @@ Mesh_MSTK::~Mesh_MSTK() {
 //
 void Mesh_MSTK::read_plist_()
 {
-  std::cout<<"Read Plist"<<std::endl;
   // extract optional control parameters, but first specify defaults
   partitioner_ = createPartitionerType(plist_->get<std::string>("partitioner", "metis"));
   contiguous_gids_ = plist_->get<bool>("contiguous global ids", true);
   edges_requested_ = plist_->get<bool>("request edges", false);
   faces_requested_ = plist_->get<bool>("request faces", true);
-  std::cout<<"edges_requested_ = "<<edges_requested_<<std::endl;
 }
 
 

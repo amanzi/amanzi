@@ -365,7 +365,9 @@ AnalyticBase::ComputeEdgeMomentsError(Epetra_MultiVector& p,
     for (int k = 0; k < nedges; k++) {
       int e = edges[k];
 
-      mesh_->getEdgeNodes(e, &n0, &n1);
+      auto nodes = mesh_->getEdgeNodes(e);
+      n0 = nodes[0]; 
+      n1 = nodes[1]; 
       x0 = mesh_->getNodeCoordinate(n0);
       x1 = mesh_->getNodeCoordinate(n1);
 

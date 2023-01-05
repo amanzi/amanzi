@@ -77,7 +77,7 @@ void RunTest(const std::string regname, int* cells, int* edges) {
     try {
       auto mesh3D_cache = Teuchos::rcp(new Mesh(mesh3D)); 
       RCP<MeshFramework> mesh = Teuchos::rcp(new MeshExtractedManifold(mesh3D_cache, setname, AmanziMesh::Entity_kind::FACE,
-                                                              comm, gm, plist, true, false));
+                                                              comm, gm, plist));
 
 
       int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,
