@@ -32,25 +32,26 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 
-// // -------------------------------------------------------------
-// // Factory for creating a MeshColumn object from a parent and a column ID
-// // -------------------------------------------------------------
-// Teuchos::RCP<MeshColumn>
-// createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
-//                  int col_id,
-//                  const Teuchos::RCP<Teuchos::ParameterList>& plist)
-// {
-//   AMANZI_ASSERT(col_id >= 0);
-//   AMANZI_ASSERT(col_id < parent_mesh->num_columns());
+// -------------------------------------------------------------
+// Factory for creating a MeshColumn object from a parent and a column ID
+// -------------------------------------------------------------
+Teuchos::RCP<Mesh>
+createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
+                 int col_id,
+                 const Teuchos::RCP<Teuchos::ParameterList>& plist)
+{
+  AMANZI_ASSERT(col_id >= 0);
+  AMANZI_ASSERT(col_id < parent_mesh->columns.num_columns_all);
 
-//   // create the extracted mesh of the column of cells
-//   MeshFactory fac(getCommSelf(), parent_mesh->geometric_model(), plist);
-//   Teuchos::RCP<Mesh> extracted_mesh = fac.create(parent_mesh,
-//           parent_mesh->cells_of_column(col_id), CELL, false, true, false);
+  // create the extracted mesh of the column of cells
+  MeshFrameworkFactory fac(getCommSelf(), parent_mesh->getGeometricModel(), plist);
+  Entity_ID_List col_list = asVector(parent_mesh->columns.getCells<MemSpace_type::HOST>(col_id)); 
+  auto extracted_mesh = fac.create(parent_mesh,
+          col_list, CELL, false);
 
-//   // create the MeshColumn object
-//   return Teuchos::rcp(new MeshColumn(extracted_mesh, plist));
-// }
+  // create the MeshColumn object
+  return Teuchos::rcp(new Mesh(extracted_mesh, plist));
+}
 
 
 

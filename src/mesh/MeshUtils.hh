@@ -287,7 +287,7 @@ asRaggedArray_DualView(Func mesh_func, int count) {
   int total = 0;
   for (int i=0; i!=count; ++i) {
     view<MemSpace_type::HOST>(adj.rows)[i] = total;
-
+    
     mesh_func(i, ents);
     total += ents.size();
   }

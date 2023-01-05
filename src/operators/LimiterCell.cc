@@ -819,7 +819,7 @@ LimiterCell::BoundsForCells(const Epetra_MultiVector& field,
     bounds_c[1][c] = -OPERATOR_LIMITER_INFINITY;
   }
 
-  AmanziMesh::Entity_ID_List nodes, cells;
+  AmanziMesh::Entity_ID_List nodes;
 
   if (stencil == OPERATOR_LIMITER_STENCIL_C2C_CLOSEST) {
     for (int c = 0; c < ncells_owned_; c++) {
@@ -827,8 +827,7 @@ LimiterCell::BoundsForCells(const Epetra_MultiVector& field,
       bounds_c[0][c] = std::min(bounds_c[0][c], value);
       bounds_c[1][c] = std::max(bounds_c[1][c], value);
 
-      assert(false); 
-      //mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
+      auto cells = AmanziMesh::MeshAlgorithms::getCellFaceAdjacentCells(*mesh_, c, AmanziMesh::Parallel_type::ALL);
       for (int i = 0; i < cells.size(); i++) {
         value = field[component_][cells[i]];
         bounds_c[0][c] = std::min(bounds_c[0][c], value);
@@ -844,7 +843,7 @@ LimiterCell::BoundsForCells(const Epetra_MultiVector& field,
       nodes = mesh_->getCellNodes(c);
       for (int i = 0; i < nodes.size(); i++) {
         int v = nodes[i];
-        cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_type::ALL);
+        auto cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_type::ALL);
 
         for (int k = 0; k < cells.size(); ++k) {
           value = field[component_][cells[k]];
@@ -859,7 +858,7 @@ LimiterCell::BoundsForCells(const Epetra_MultiVector& field,
   if (bc_model.size() > 0) {
     for (int f = 0; f < nfaces_wghost_; ++f) {
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-        cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
 
         for (int n = 0; n < cells.size(); ++n) {
           int c = cells[n];

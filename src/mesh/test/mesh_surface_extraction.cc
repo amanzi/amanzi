@@ -27,7 +27,6 @@
 #include "geometry_harnesses.hh"
 #include "set_harnesses.hh"
 
-#if 0 
 TEST(MESH_SURFACE_EXTRACTION_GENERATED)
 {
   // create the comm and gm
@@ -148,8 +147,8 @@ TEST(MESH_SURFACE_EXTRACTION_EXO)
     testQuadMeshSets3x3(mesh, true, frm, true);
   }
 }
-#endif 
 
+#if 0 
 TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 {
   // Unlike the above tests, which call the framework's extraction constructor,
@@ -176,7 +175,7 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
   //
   // extract & flatten the top surface to form a 2D mesh, NX=NY=3
   std::vector<Framework> frameworks;
-  if (comm->NumProc() == 1) frameworks.push_back(Framework::SIMPLE);
+  //if (comm->NumProc() == 1) frameworks.push_back(Framework::SIMPLE);
   if (framework_enabled(Framework::MSTK)) {
     frameworks.push_back(Framework::MSTK);
   }
@@ -187,9 +186,8 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
               << "------------------------------------------------" << std::endl;
     auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
     fac_list->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
-    std::cout<<"Parent mesh creation"<<std::endl;
-    auto parent_mesh = createFrameworkStructuredUnitHex(Preference{frm}, 3,3,3, comm, gm, fac_list, true);
-    std::cout<<"Parent mesh creation DONE"<<std::endl;
+    fac_list->set("request edges", true); 
+    auto parent_mesh = createFrameworkStructuredUnitHex(Preference{frm}, 3,3,3, comm, gm, fac_list);
 
     // extract the surface
     auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
@@ -198,9 +196,7 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
     fac.set_preference({frm});
 
     auto parent_mesh_cache = Teuchos::rcp(new Mesh(parent_mesh)); 
-    std::cout<<"Create mesh extracted"<<std::endl;
     auto mesh = fac.create(parent_mesh_cache, {"Top Face Plane"}, AmanziMesh::Entity_kind::FACE, true);
-    std::cout<<"Create mesh extracted DONE"<<std::endl;
 
     // test the surface mesh as a 3x3 quad mesh
     // -- mesh audit
@@ -216,7 +212,6 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
   }
 }
 
-#if 0
 
 TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
 {
@@ -256,6 +251,7 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
               << "------------------------------------------------" << std::endl;
     auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
     fac_list->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
+    fac_list->set("request edges", true); 
     auto parent_mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo", comm, gm, fac_list);
 
     // extract the surface

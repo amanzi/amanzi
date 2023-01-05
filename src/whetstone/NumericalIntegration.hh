@@ -82,9 +82,10 @@ class NumericalIntegration {
   double
   IntegrateFunctionsEdge(int e, const std::vector<const WhetStoneFunction*>& funcs, int order) const
   {
-    int v1, v2;
     AmanziGeometry::Point x1(d_), x2(d_);
-    mesh_->getEdgeNodes(e, &v1, &v2);
+    auto nodes = mesh_->getEdgeNodes(e);
+    Entity_ID v1 = nodes[0]; 
+    Entity_ID v2 = nodes[1]; 
     x1 = mesh_->getNodeCoordinate(v1);
     x2 = mesh_->getNodeCoordinate(v2);
     return WhetStone::IntegrateFunctionsEdge(x1, x2, funcs, order);
@@ -101,9 +102,10 @@ class NumericalIntegration {
 
   double IntegratePolynomialsEdge(int e, const std::vector<const PolynomialBase*>& polys) const
   {
-    int v1, v2;
     AmanziGeometry::Point x1(d_), x2(d_);
-    mesh_->getEdgeNodes(e, &v1, &v2);
+    auto nodes = mesh_->getEdgeNodes(e);
+    Entity_ID v1 = nodes[0]; 
+    Entity_ID v2 = nodes[1]; 
     x1 = mesh_->getNodeCoordinate(v1);
     x2 = mesh_->getNodeCoordinate(v2);
     return WhetStone::IntegratePolynomialsEdge(x1, x2, polys);

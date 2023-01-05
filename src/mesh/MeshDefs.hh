@@ -152,6 +152,18 @@ enum class Parallel_type {
   ALL = 3     // OWNED + GHOST
 };
 
+inline
+std::string to_string(const Parallel_type ptype)
+{
+  switch(ptype) {
+    case(Parallel_type::UNKNOWN): return "UNKNOWN";
+    case(Parallel_type::OWNED): return "OWNED";
+    case(Parallel_type::GHOST): return "GHOST";
+    case(Parallel_type::ALL): return "ALL";
+    default: return "unknown";
+  }
+}
+
 // Standard element types and catchall (POLYGON/POLYHED)
 enum class Cell_type {
   UNKNOWN = 0,

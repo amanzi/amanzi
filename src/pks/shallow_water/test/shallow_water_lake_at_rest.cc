@@ -281,7 +281,9 @@ RunTest(int icase)
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   // Creat a mesh
-  MeshFactory meshfactory(comm, gm);
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList()); 
+  fac_list->set<bool>("request edges", true); 
+  MeshFactory meshfactory(comm, gm, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   RCP<Mesh> mesh;
