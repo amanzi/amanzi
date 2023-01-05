@@ -478,7 +478,7 @@ resolveMeshSetGeometric(const AmanziGeometry::Region& region,
     begin = 0;
     end = mesh.getNumEntities(kind, ptype);
   }
-
+  
   // check whether centroid is inside region
   Entity_ID_List entities(end - begin, -1);
   int lcv = 0;

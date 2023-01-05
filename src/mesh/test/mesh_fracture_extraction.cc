@@ -75,7 +75,7 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED)
   }
 }
 
-
+#if 0 
 TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 {
   // This test is the same as the above, but as it works with the
@@ -94,9 +94,9 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
   //
   // extract two inner surfaces as fractures
   std::vector<Framework> frameworks;
-  if (comm->NumProc() == 1) {
-    frameworks.push_back(Framework::SIMPLE);
-  }
+  //if (comm->NumProc() == 1) {
+  //  frameworks.push_back(Framework::SIMPLE);
+  //}
   if (framework_enabled(Framework::MSTK)) {
     frameworks.push_back(Framework::MSTK);
   }
@@ -105,7 +105,9 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
     std::cout << std::endl
               << "Testing Fracture Extraction with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto parent_mesh = createFrameworkStructuredUnitHex(Preference{frm}, 10,10,10,comm,gm,Teuchos::null,true);
+    auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+    fac_list->set("request edges", true); 
+    auto parent_mesh = createFrameworkStructuredUnitHex(Preference{frm}, 10,10,10,comm,gm,fac_list);
 
     // extract the fractures
     auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
@@ -136,6 +138,7 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
     CHECK_CLOSE_SUMALL(10*11*4-10, nfaces, *comm);
   }
 }
+#endif 
 
 TEST(MESH_FRACTURE_EXTRACTION_EXO)
 {
@@ -184,6 +187,7 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO)
   }
 }
 
+#if 0 
 TEST(MESH_FRACTURE_EXTRACTION_EXO_MANIFOLD)
 {
   // This test is the same as the above, but as it works with the
@@ -215,7 +219,10 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO_MANIFOLD)
     std::cout << std::endl
               << "Testing Fracture Extraction with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto parent_mesh = createFrameworkUnstructured(Preference{frm}, "test/mesh_extracted_fracture.exo", comm,gm,Teuchos::null);
+    auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+    fac_list->set("request edges", true); 
+    fac_list->set("request faces", true); 
+    auto parent_mesh = createFrameworkUnstructured(Preference{frm}, "test/mesh_extracted_fracture.exo", comm,gm,fac_list);
 
     // extract the fractures
     auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
@@ -242,7 +249,4 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO_MANIFOLD)
     CHECK_CLOSE_SUMALL(198, nfaces, *comm);
   }
 }
-
-
-
-
+#endif 

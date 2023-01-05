@@ -370,8 +370,9 @@ NumericalIntegration::IntegratePolynomialsFace(
     }
 
     // integrate along edge
-    int n0, n1;
-    mesh_->getEdgeNodes(e, &n0, &n1);
+    auto nodes = mesh_->getEdgeNodes(e);
+    Entity_ID n0 = nodes[0]; 
+    Entity_ID n1 = nodes[1]; 
     x1 = mesh_->getNodeCoordinate(n0);
     x2 = mesh_->getNodeCoordinate(n1);
 
@@ -562,8 +563,9 @@ NumericalIntegration::IntegrateMonomialsFace_(int c,
       }
 
       // integrate along edge (based on Euler theorem)
-      int n0, n1;
-      mesh_->getEdgeNodes(e, &n0, &n1);
+      auto nodes = mesh_->getEdgeNodes(e);
+      Entity_ID n0 = nodes[0]; 
+      Entity_ID n1 = nodes[1]; 
       x1 = mesh_->getNodeCoordinate(n0);
       x2 = mesh_->getNodeCoordinate(n1);
 

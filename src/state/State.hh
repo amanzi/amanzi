@@ -161,7 +161,7 @@ class State {
   bool IsDeformableMesh(const Key& key) const;
 
   // Mesh accessor.
-  Teuchos::RCP<const AmanziMesh::Mesh> GetMesh(const Key& key = Key("domain")) const;
+  Teuchos::RCP<AmanziMesh::Mesh> GetMesh(const Key& key = Key("domain")) const;
   Teuchos::RCP<AmanziMesh::Mesh> GetDeformableMesh(Key key = Key("domain"));
 
   // Iterate over meshes.

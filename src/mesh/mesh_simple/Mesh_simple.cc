@@ -364,6 +364,9 @@ std::size_t Mesh_simple::getNumEntities(AmanziMesh::Entity_kind kind,
     case Entity_kind::CELL:
       return (ptype != AmanziMesh::Parallel_type::GHOST) ? num_cells_ : 0;
       break;
+    case Entity_kind::EDGE: 
+      return (ptype != AmanziMesh::Parallel_type::GHOST) ? num_edges_ : 0;
+      break;
     default:
       throw std::exception();
       break;

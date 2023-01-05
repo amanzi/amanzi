@@ -292,10 +292,6 @@ class Mesh_MSTK : public MeshFramework {
   std::string other_internal_name_of_set_(const AmanziGeometry::RegionLabeledSet& r,
           const Entity_kind entity_kind) const;
 
-
-  // MSet_ptr build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
-  //                    const Entity_kind kind) const;
-
   // bool is_boundary_node_(const MEntity_ptr ment) const;
 
 
