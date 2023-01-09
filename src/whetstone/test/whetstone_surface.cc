@@ -94,7 +94,7 @@ TEST(DARCY_SURFACE)
   T(0, 0) = 1;
 
   for (int c = 0; c < 3; c++) {
-    auto [faces, dirs] = mesh->getCellFacesAndDirections(c);
+    auto faces = mesh->getCellFaces(c);
     int nfaces = faces.size();
 
     DenseMatrix W(nfaces, nfaces);
@@ -122,24 +122,21 @@ TEST(DARCY_SURFACE)
       // verify exact integration property
       W.Inverse();
 
-      // This part of the tests doenst make sense regarding the orientation of the normals
-#if 0 
       double xj, yi, yj;
       double vyy = 0.0, vxy = 0.0, volume = mesh->getCellVolume(c);
       for (int i = 0; i < nfaces; i++) {
         int f = faces[i];
-        yi = mesh->getFaceNormal(f)[1] * dirs[i];
+        yi = mesh->getFaceNormal(f, c)[1];
         for (int j = 0; j < nfaces; j++) {
           f = faces[j];
-          xj = mesh->getFaceNormal(f)[0] * dirs[j];
-          yj = mesh->getFaceNormal(f)[1] * dirs[j];
+          xj = mesh->getFaceNormal(f, c)[0];
+          yj = mesh->getFaceNormal(f, c)[1];
           vxy += W(i, j) * yi * xj;
           vyy += W(i, j) * yi * yj;
         }
       }
       CHECK_CLOSE(vyy, volume, 1e-10);
       CHECK_CLOSE(vxy, 0.0, 1e-10);
-#endif
     }
   }
 }
