@@ -125,14 +125,37 @@ computeCellNodes(const Mesh_type& mesh, const Entity_ID c)
   Entity_ID_List nodes;
   Entity_ID_List faces, fnodes;
   mesh.getCellFaces(c, faces);
-  for (const auto& f : faces) {
-    mesh.getFaceNodes(f, fnodes);
-    for (const auto& n : fnodes) {
-      if (std::find(nodes.begin(), nodes.end(), n) == nodes.end()) {
-        nodes.emplace_back(n);
+
+  if (mesh.getManifoldDimension() == 3) {
+    for (const auto& f : faces) {
+      mesh.getFaceNodes(f, fnodes);
+      for (const auto& n : fnodes) {
+        if (std::find(nodes.begin(), nodes.end(), n) == nodes.end()) {
+          nodes.emplace_back(n);
+        }
       }
     }
+  } else {
+    Entity_ID_List fnodes_prev, result;
+    int nfaces = faces.size();
+
+    mesh.getFaceNodes(faces[nfaces - 1], fnodes_prev);
+    std::sort(fnodes_prev.begin(), fnodes_prev.end());
+
+    result.resize(2);
+    for (int i1 = 0; i1 < nfaces; ++i1) {
+      mesh.getFaceNodes(faces[i1], fnodes);
+      std::sort(fnodes.begin(), fnodes.end());
+
+      std::set_intersection(fnodes.begin(), fnodes.end(),
+                            fnodes_prev.begin(), fnodes_prev.end(),
+                            result.begin());
+      nodes.emplace_back(*result.begin());
+
+      fnodes_prev = fnodes;
+    }
   }
+  
   return nodes;
 }
 
@@ -142,8 +165,7 @@ computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 {
   if (mesh.getManifoldDimension() == 2) {
     auto ccoords = mesh.getCellCoordinates(c);
-    auto vol_cent = std::make_pair((double)0,
-            AmanziGeometry::Point(mesh.getSpaceDimension()));
+    auto vol_cent = std::make_pair((double)0, AmanziGeometry::Point(mesh.getSpaceDimension()));
     AmanziGeometry::Point normal(mesh.getSpaceDimension());
     AmanziGeometry::polygon_get_area_centroid_normal(ccoords,
             &vol_cent.first, &vol_cent.second, &normal);
