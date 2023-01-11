@@ -282,7 +282,7 @@ polygon_get_area_centroid_normal(const std::vector<Point> coords,
                 // invalid element
     if (*area > 0.0) (*area) = -(*area);
   }
-} // polygon_get_area_centroid
+}
 
 
 // Check if point is in polygon by Jordan's crossing algorithm
