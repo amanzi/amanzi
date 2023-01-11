@@ -148,7 +148,6 @@ TEST(MESH_SURFACE_EXTRACTION_EXO)
   }
 }
 
-#if 0 
 TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 {
   // Unlike the above tests, which call the framework's extraction constructor,
@@ -275,4 +274,3 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
     testQuadMeshSets3x3(mesh, true, frm, true);
   }
 }
-#endif 
