@@ -54,6 +54,7 @@ RunTest(const std::string regname, int* cells, int* edges)
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   auto mesh_list = Teuchos::sublist(plist, "mesh", false);
+  mesh_list->set<bool>("request edges", true);
 
   for (int i = 0; i < 3; ++i) {
     RCP<MeshFramework> mesh3D;
@@ -83,14 +84,14 @@ RunTest(const std::string regname, int* cells, int* edges)
       RCP<MeshFramework> mesh = Teuchos::rcp(new MeshExtractedManifold(
         mesh3D_cache, setname, AmanziMesh::Entity_kind::FACE, comm, gm, plist));
 
+      MeshMaps maps;
+      maps.initialize(*mesh);
 
       int ncells =
         mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
       int nfaces =
         mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
-      int mfaces = (i == 0) ? mesh->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE,
-                                                   AmanziMesh::Parallel_type::OWNED) :
-                              0;
+      int mfaces = (i == 0) ? maps.getNBoundaryFaces(AmanziMesh::Parallel_type::OWNED) : 0;
       std::cout << i << " pid=" << comm->MyPID() << " cells: " << ncells << " faces: " << nfaces
                 << " bnd faces: " << mfaces << std::endl;
       CHECK(cells[i] == ncells);
