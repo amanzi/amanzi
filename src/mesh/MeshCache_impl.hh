@@ -975,6 +975,36 @@ void MeshCache<MEM>::getNodeCells(const Entity_ID n,
 }
 
 template<MemSpace_type MEM>
+template<AccessPattern AP>
+KOKKOS_INLINE_FUNCTION
+decltype(auto) MeshCache<MEM>::getNodeFaces(const Entity_ID n, const Parallel_type ptype) const
+{
+  List<Entity_ID> faces; 
+  getNodeFaces<AP>(n,ptype,faces); 
+  return faces; 
+}
+
+template<MemSpace_type MEM>
+template<AccessPattern AP>
+KOKKOS_INLINE_FUNCTION
+void MeshCache<MEM>::getNodeFaces(const Entity_ID n,
+                  const Parallel_type ptype,
+                  List<Entity_ID>& faces) const
+{
+  faces = RaggedGetter<MEM,AP>::get(data_.node_faces_cached,
+    data_.node_faces,
+    framework_mesh_, 
+    [&](const int i) { 
+      std::vector<Entity_ID> faces; 
+      framework_mesh_->getNodeFaces(i,ptype,faces);
+      return faces; 
+    }, 
+    nullptr, 
+    nullptr,
+    n);
+}
+
+template<MemSpace_type MEM>
 KOKKOS_INLINE_FUNCTION
 Cell_type MeshCache<MEM>::getCellType(const Entity_ID c) const
 {
