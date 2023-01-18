@@ -152,9 +152,8 @@ TEST(UPWIND_FLUX_MANIFOLDS)
       int ndofs = fmap.ElementSize(f);
       for (int i = 0; i < ndofs; ++i) {
         error += fabs(exact - field_f[0][g + i]);
+        CHECK(field_f[0][g + i] > 0.0);
       }
-
-      CHECK(field_f[0][g] >= 0.0);
     }
 #ifdef HAVE_MPI
     double tmp = error;

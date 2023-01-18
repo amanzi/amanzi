@@ -34,6 +34,7 @@
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFVonManifolds.hh"
+#include "Verification.hh"
 
 
 /* *****************************************************************
@@ -137,6 +138,10 @@ RunTest(int icase, double gravity)
     "Hypre AMG", plist->sublist("preconditioners"), "PCG", plist->sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
+
+  VerificationCV ver(global_op);
+  ver.CheckMatrixSPD(true, true, 5);
+  ver.CheckPreconditionerSPD(1e-12, true, true);
 
   CompositeVector rhs = *global_op->rhs();
   global_op->ApplyInverse(rhs, *solution);

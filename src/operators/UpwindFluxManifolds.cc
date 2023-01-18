@@ -72,21 +72,15 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
 
     // harmonic average over upwind cells
     if (ncells > 1) {
-      double kupw(0.0);
+      double mean(0.0);
       for (int i = 0; i < ncells; ++i) {
         int c = cells[i];
-        if (flux_f[0][g + i] >= 0.0 && field_c[0][c] > 0.0) kupw += 1.0 / field_c[0][c];
+        mean += field_c[0][c];
       }
-      if (kupw > 0.0) kupw = 1.0 / kupw;
-AMANZI_ASSERT(kupw > 0.0);
+      mean /= ncells;
 
       for (int i = 0; i < ncells; ++i) {
-        if (flux_f[0][g + i] > 0.0) {
-          int c = cells[i];
-          field_f[0][g + i] = field_c[0][c];
-        } else {
-          field_f[0][g + i] = kupw;
-        }
+        field_f[0][g + i] = mean;
       }
 
       // upwind only on inflow Dirichlet faces
