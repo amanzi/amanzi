@@ -55,7 +55,14 @@ class MeshExtractedManifold : public MeshFramework {
   // initialization
   void InitParentMaps(const std::string& setname);
 
-  //virtual Teuchos::RCP<const MeshFramework> getParentMesh() const override { return parent_mesh_; }
+  virtual Teuchos::RCP<const MeshFramework> getParentMesh() const override
+  {
+    AMANZI_ASSERT(false);
+    return Teuchos::null;
+  }
+
+  // Entity meta-data
+  virtual Entity_GID getEntityGID(const Entity_kind kind, const Entity_ID lid) const override;
 
   // parent entity if this mesh was extracted from another mesh
   virtual Entity_ID getEntityParent(const Entity_kind kind, const Entity_ID id) const override
@@ -153,6 +160,7 @@ class MeshExtractedManifold : public MeshFramework {
   mutable std::map<Entity_kind, Entity_ID_List> entid_to_parent_;
   mutable std::map<Entity_kind, std::map<Entity_ID, Entity_ID>>
     parent_to_entid_; // reverse to previous map
+
   mutable bool flattened_;
 };
 

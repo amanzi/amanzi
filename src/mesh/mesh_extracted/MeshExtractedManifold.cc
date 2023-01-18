@@ -397,10 +397,10 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
   if (kind == Entity_kind::FACE) {
     return faceset;
   } else if (kind == Entity_kind::EDGE) {
-    const auto& fmap = parent_to_entid_[Entity_kind::FACE];
+    const auto& fmap = parent_mesh_->getMap(Entity_kind::FACE, true);
 
     int nowned = parent_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-    int gidmax = std::max_element(fmap.begin(), fmap.end())->second;
+    int gidmax = fmap.MaxAllGID();
 
     for (auto it = edgeset.begin(); it != edgeset.end(); ++it) {
       if (it->second == MASTER + GHOST) {
@@ -412,8 +412,8 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
         for (int n = 0; n < nfaces; ++n) {
           Entity_ID f = faces[n];
           if (auxset.find(f) != auxset.end()) {
-            gid_wghost_min = std::min(gid_wghost_min, fmap.at(f));
-            if (f < nowned) gid_owned_min = std::min(gid_owned_min, fmap.at(f));
+            gid_wghost_min = std::min(gid_wghost_min, fmap.GID(f));
+            if (f < nowned) gid_owned_min = std::min(gid_owned_min, fmap.GID(f));
           }
         }
         it->second = (gid_wghost_min == gid_owned_min) ? MASTER : GHOST;
@@ -421,10 +421,10 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
     }
     return edgeset;
   } else if (kind == Entity_kind::NODE) {
-    const auto& fmap = parent_to_entid_[Entity_kind::FACE];
+    const auto& fmap = parent_mesh_->getMap(Entity_kind::FACE, true);
 
     int nowned = parent_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-    int gidmax = std::max_element(fmap.begin(), fmap.end())->second;
+    int gidmax = fmap.MaxAllGID();
 
     for (auto it = nodeset.begin(); it != nodeset.end(); ++it) {
       if (it->second == MASTER + GHOST) {
@@ -436,8 +436,8 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
         for (int n = 0; n < nfaces; ++n) {
           Entity_ID f = faces[n];
           if (auxset.find(f) != auxset.end()) {
-            gid_wghost_min = std::min(gid_wghost_min, fmap.at(f));
-            if (f < nowned) gid_owned_min = std::min(gid_owned_min, fmap.at(f));
+            gid_wghost_min = std::min(gid_wghost_min, fmap.GID(f));
+            if (f < nowned) gid_owned_min = std::min(gid_owned_min, fmap.GID(f));
           }
         }
         it->second = (gid_wghost_min == gid_owned_min) ? MASTER : GHOST;
@@ -447,6 +447,40 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
   }
   return std::map<Entity_ID, int>();
 }
+
+
+/* ******************************************************************
+* Global ID of any entity
+****************************************************************** */
+Entity_GID
+MeshExtractedManifold::getEntityGID(const Entity_kind kind, const Entity_ID lid) const
+{
+  Entity_ID gid;
+
+  switch (kind) {
+  case NODE:
+    gid = parent_mesh_->getMap(Entity_kind::NODE, true).GID(lid);
+    break;
+
+  case EDGE:
+    gid = parent_mesh_->getMap(Entity_kind::EDGE, true).GID(lid);
+    break;
+
+  case FACE:
+    gid = parent_mesh_->getMap(Entity_kind::EDGE, true).GID(lid);
+    break;
+
+  case CELL:
+    gid = parent_mesh_->getMap(Entity_kind::FACE, true).GID(lid);
+    break;
+
+  default:
+    std::cerr << "Global ID requested for unknown entity type" << std::endl;
+  }
+
+  return gid;
+}
+
 
 } // namespace AmanziMesh
 } // namespace Amanzi
