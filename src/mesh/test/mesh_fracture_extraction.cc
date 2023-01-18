@@ -75,7 +75,6 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED)
   }
 }
 
-#if 0 
 TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 {
   // This test is the same as the above, but as it works with the
@@ -138,7 +137,6 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
     CHECK_CLOSE_SUMALL(10*11*4-10, nfaces, *comm);
   }
 }
-#endif 
 
 TEST(MESH_FRACTURE_EXTRACTION_EXO)
 {
@@ -187,7 +185,6 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO)
   }
 }
 
-#if 0 
 TEST(MESH_FRACTURE_EXTRACTION_EXO_MANIFOLD)
 {
   // This test is the same as the above, but as it works with the
@@ -249,4 +246,3 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO_MANIFOLD)
     CHECK_CLOSE_SUMALL(198, nfaces, *comm);
   }
 }
-#endif 

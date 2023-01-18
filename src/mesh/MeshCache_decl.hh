@@ -844,21 +844,16 @@ struct MeshCache {
   // // Faces of type parallel 'ptype' connected to a node
   // // NOTE: The order of faces is not guarnateed to be the same for
   // // corresponding nodes on different processors
+  template<AccessPattern AP = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION
-  List<Entity_ID> getNodeFaces(const Entity_ID n,
-          const Parallel_type ptype) const {
-    Errors::Message msg("MeshCache::getNodeFaces not implemented");
-    Exceptions::amanzi_throw(msg);
-  }
+  decltype(auto) getNodeFaces(const Entity_ID n, const Parallel_type ptype) const; 
 
   // //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-  // KOKKOS_INLINE_FUNCTION
+  template<AccessPattern AP = AccessPattern::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   void getNodeFaces(const Entity_ID n,
                     const Parallel_type ptype,
-                    List<Entity_ID>& faces) const {
-    Errors::Message msg("MeshCache::getNodeFaces not implemented");
-    Exceptions::amanzi_throw(msg);
-  }
+                    List<Entity_ID>& faces) const; 
 
   // // Edges of type 'ptype' connected to a node
   // //
