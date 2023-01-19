@@ -182,9 +182,7 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
               << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
-    fac_list->sublist("unstructured")
-      .sublist("expert")
-      .set<std::string>("partitioner", "zoltan_rcb");
+    fac_list->set<std::string>("partitioner", "zoltan_rcb");
     fac_list->set("request edges", true);
     auto parent_mesh =
       createFrameworkStructuredUnitHex(Preference{ frm }, 3, 3, 3, comm, gm, fac_list);
@@ -252,9 +250,7 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
               << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
-    fac_list->sublist("unstructured")
-      .sublist("expert")
-      .set<std::string>("partitioner", "zoltan_rcb");
+    fac_list->set<std::string>("partitioner", "zoltan_rcb");
     fac_list->set("request edges", true);
     auto parent_mesh =
       createFrameworkUnstructured(Preference{ frm }, "test/hex_3x3x3_sets.exo", comm, gm, fac_list);

@@ -50,8 +50,8 @@ SUITE(MeshFramework)
     Amanzi::AmanziMesh::Preference pref;
 
     auto plist = Teuchos::rcp(new Teuchos::ParameterList());
-    plist->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "metis");
-    plist->sublist("unstructured").sublist("expert").set<bool>("create subcommunicator", true);
+    plist->set<std::string>("partitioner", "metis");
+    plist->set<bool>("create subcommunicator", true);
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm, plist);
 
     bool flatten = true;

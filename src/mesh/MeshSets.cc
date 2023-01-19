@@ -176,17 +176,6 @@ resolveMeshSet_(const AmanziGeometry::Region& region,
     // geometric
     result = resolveMeshSetGeometric(region, kind, ptype, mesh);
   }
-
-  int g_count = 0;
-  int l_count = result.size();
-  mesh.getComm()->SumAll(&l_count, &g_count, 1);
-  if (g_count == 0) {
-    // warn?  error?
-    Errors::Message msg;
-    msg << "AmanziMesh::resolveMeshSet: Region \"" << region.get_name() << "\" of type \""
-        << to_string(region.get_type()) << "\" is empty.";
-    Exceptions::amanzi_throw(msg);
-  }
   return result;
 }
 

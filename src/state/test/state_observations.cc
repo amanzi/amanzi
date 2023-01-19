@@ -87,7 +87,7 @@ struct obs_test {
     auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
     auto plist = Teuchos::rcp(new Teuchos::ParameterList("mesh factory"));
-    plist->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
+    plist->set<std::string>("partitioner", "zoltan_rcb");
     AmanziMesh::MeshFactory meshfactory(comm, gm, plist);
     Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory.create(-1, -1, -1, 1, 1, 1, 3, 3, 3);
 
@@ -171,7 +171,7 @@ struct obs_domain_set_test : public obs_test {
     auto parent = S->GetMesh("domain");
 
     auto plist = Teuchos::rcp(new Teuchos::ParameterList("mesh factory"));
-    plist->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
+    plist->set<std::string>("partitioner", "zoltan_rcb");
     AmanziMesh::MeshFactory fac(parent->getComm(), parent->getGeometricModel(), plist);
     auto surface_mesh = fac.create(parent, { "top face" }, AmanziMesh::Entity_kind::FACE, true);
     S->RegisterMesh("surface", surface_mesh);
@@ -179,7 +179,7 @@ struct obs_domain_set_test : public obs_test {
     // create domain set
     parent->buildColumns();
     std::vector<std::string> cols;
-    for (int i = 0; i != parent->columns.num_columns_all; ++i) {
+    for (int i = 0; i != parent->columns.num_columns_owned; ++i) {
       cols.emplace_back(
         std::to_string(surface_mesh->getMap(AmanziMesh::Entity_kind::CELL, false).GID(i)));
     }
