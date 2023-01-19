@@ -41,7 +41,7 @@ createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
                  const Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   AMANZI_ASSERT(col_id >= 0);
-  AMANZI_ASSERT(col_id < parent_mesh->columns.num_columns_all);
+  AMANZI_ASSERT(col_id < parent_mesh->columns.num_columns_owned);
 
   // create the extracted mesh of the column of cells
   MeshFrameworkFactory fac(getCommSelf(), parent_mesh->getGeometricModel(), plist);
@@ -324,9 +324,8 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
   // create the comm via split
   Comm_ptr_type comm = Teuchos::null;
   auto parent_comm = Teuchos::rcp_dynamic_cast<const MpiComm_type>(inmesh->getComm());
-  auto& expert = plist_->sublist("unstructured").sublist("expert");
   if (parent_comm != Teuchos::null &&
-      expert.get<bool>("create subcommunicator", false)) {
+      plist_->get<bool>("create subcommunicator", false)) {
 
     // mpi comm split
     MPI_Comm child_comm;
@@ -340,7 +339,9 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
     }
     if (!empty) comm = Teuchos::rcp(new Epetra_MpiComm(child_comm));
   } else {
-    comm = inmesh->getComm();
+    // note, this could be parent_comm or it could be COMM_SELF or any other
+    // comm that the factory was made with.
+    comm = comm_;
   }
 
   // check that ids are unique
