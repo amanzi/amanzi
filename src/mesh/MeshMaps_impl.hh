@@ -12,6 +12,7 @@
 #pragma once
 
 #include <set>
+#include "Epetra_Vector.h"
 #include "MeshDefs.hh"
 
 namespace Amanzi {
@@ -35,10 +36,20 @@ std::pair<Map_ptr_type, Map_ptr_type>
 createMapsFromContiguousGIDs(const Mesh_type& mesh, const Entity_kind kind)
 {
   Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_type::OWNED);
-  Entity_ID num_all = mesh.getNumEntities(kind, Parallel_type::ALL);
-  return std::make_pair(
-    Teuchos::rcp(new Epetra_Map(-1, num_all, 0, *mesh.getComm())),
-    Teuchos::rcp(new Epetra_Map(-1, num_owned, 0, *mesh.getComm())));
+  auto owned_map = Teuchos::rcp(new Epetra_Map(-1, num_owned, 0, *mesh.getComm()));;
+
+  // communicated owned to ghosted using the mesh's maps
+  auto [ghosted_mesh_map, owned_mesh_map] = createMapsFromMeshGIDs(mesh, kind);
+  Epetra_Vector owned_ids(*owned_mesh_map);
+  for (int i=0; i!=num_owned; ++i) owned_ids[i] = i;
+  Epetra_Import importer(*ghosted_mesh_map, *owned_mesh_map);
+  Epetra_Vector all_ids(*ghosted_mesh_map);
+  all_ids.Import(owned_ids, importer, Insert);
+
+  std::vector<int> all_ids_vec(all_ids.MyLength());
+  for (int i=0; i!=all_ids.MyLength(); ++i) all_ids_vec[i] = (int)all_ids[i];
+  auto ghosted_map = Teuchos::rcp(new Epetra_Map(-1, all_ids_vec.size(), all_ids_vec.data(), 0, *mesh.getComm()));
+  return std::make_pair(ghosted_map, owned_map);
 }
 
 
