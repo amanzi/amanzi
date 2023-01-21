@@ -127,10 +127,10 @@ MeshCache<MEM>::getSetEntities(const std::string& region_name,
     int gsize = 0;
     getComm()->SumAll(&lsize, &gsize, 1);
     if (gsize == 0 && getComm()->MyPID() == 0) {
-      // warn?  error?
-      std::cerr << "WARNING: AmanziMesh::getSetEntities: Region \"" << region->get_name()
-                << "\" of type \"" << to_string(region->get_type()) << "\" is empty (globally)."
-                << std::endl;
+      Errors::Message msg;
+      msg << "AmanziMesh::getSetEntities: Region \"" << region->get_name() << "\" of type \""
+          << to_string(region->get_type()) << "\" is empty (globally).";
+      Exceptions::amanzi_throw(msg);
     }
   }
   if constexpr (MEM == MemSpace_type::DEVICE)
