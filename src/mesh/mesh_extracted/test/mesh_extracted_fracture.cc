@@ -87,11 +87,17 @@ RunTest(const std::string regname, int* cells, int* edges)
       MeshMaps maps;
       maps.initialize(*mesh);
 
-      int ncells =
+      int ncells_tmp =
         mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-      int nfaces =
+      int nfaces_tmp =
         mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
-      int mfaces = (i == 0) ? maps.getNBoundaryFaces(AmanziMesh::Parallel_type::OWNED) : 0;
+      int mfaces_tmp = maps.getNBoundaryFaces(AmanziMesh::Parallel_type::OWNED);
+
+      int ncells(ncells_tmp), nfaces(nfaces_tmp), mfaces(mfaces_tmp);
+      comm->SumAll(&ncells_tmp, &ncells, 1);
+      comm->SumAll(&nfaces_tmp, &nfaces, 1);
+      comm->SumAll(&mfaces_tmp, &mfaces, 1);
+
       std::cout << i << " pid=" << comm->MyPID() << " cells: " << ncells << " faces: " << nfaces
                 << " bnd faces: " << mfaces << std::endl;
       CHECK(cells[i] == ncells);
