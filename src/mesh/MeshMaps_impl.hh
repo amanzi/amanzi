@@ -42,7 +42,7 @@ createMapsFromContiguousGIDs(const Mesh_type& mesh, const Entity_kind kind)
   // communicated owned to ghosted using the mesh's maps
   auto [ghosted_mesh_map, owned_mesh_map] = createMapsFromMeshGIDs(mesh, kind);
   Epetra_Vector owned_ids(*owned_mesh_map);
-  for (int i = 0; i != num_owned; ++i) owned_ids[i] = i;
+  for (int i = 0; i != num_owned; ++i) owned_ids[i] = owned_map->GID(i);
   Epetra_Import importer(*ghosted_mesh_map, *owned_mesh_map);
   Epetra_Vector all_ids(*ghosted_mesh_map);
   all_ids.Import(owned_ids, importer, Insert);

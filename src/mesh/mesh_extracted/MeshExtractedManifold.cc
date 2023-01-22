@@ -455,30 +455,27 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
 Entity_GID
 MeshExtractedManifold::getEntityGID(const Entity_kind kind, const Entity_ID lid) const
 {
-  Entity_ID gid;
+  Entity_kind kind_p;
 
   switch (kind) {
   case NODE:
-    gid = parent_mesh_->getMap(Entity_kind::NODE, true).GID(lid);
+    kind_p = Entity_kind::NODE;
     break;
-
   case EDGE:
-    gid = parent_mesh_->getMap(Entity_kind::EDGE, true).GID(lid);
+    kind_p = Entity_kind::EDGE;
     break;
-
   case FACE:
-    gid = parent_mesh_->getMap(Entity_kind::EDGE, true).GID(lid);
+    kind_p = Entity_kind::EDGE;
     break;
-
   case CELL:
-    gid = parent_mesh_->getMap(Entity_kind::FACE, true).GID(lid);
+    kind_p = Entity_kind::FACE;
     break;
-
   default:
     std::cerr << "Global ID requested for unknown entity type" << std::endl;
   }
 
-  return gid;
+  int id = entid_to_parent_[kind][lid];
+  return parent_mesh_->getMap(kind_p, true).GID(id);
 }
 
 
