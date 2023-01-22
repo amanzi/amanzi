@@ -99,7 +99,9 @@ void RunTest(const std::string regname, int* cells, int* edges) {
       CHECK(cells[i] == ncells);
       CHECK(edges[i] == mfaces);
 
-      RCP<Mesh> mesh_cache = Teuchos::rcp(new Mesh(mesh)); 
+      auto plist_tmp = Teuchos::rcp(new Teuchos::ParameterList);
+      plist_tmp->set<bool>("natural map ordering", true);
+      RCP<Mesh> mesh_cache = Teuchos::rcp(new Mesh(mesh, plist_tmp)); 
 
       // verify mesh 
       MeshAudit audit(mesh_cache);
