@@ -233,6 +233,7 @@ protected:
   //    will get replaced by a better system when we get maps on the boundary
   //    faces.
   virtual void ApplyDirichletBCsToTemperature_(const Teuchos::Ptr<State>& S);
+  virtual void ApplyDirichletBCsToEnergy_(const Teuchos::Ptr<State>& S);
   virtual void ApplyDirichletBCsToBoundaryFace_(const Teuchos::Ptr<CompositeVector>& temp);
 
   // -- Add any source terms into the residual.

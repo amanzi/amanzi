@@ -79,7 +79,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
 
   double lambda_ice = 2.2;
   double lambda_w   = 0.561; //3.*0.561; //1.5
-//  lambda_ice = lambda_w;
+  // lambda_ice = lambda_w;
 
   // read parameters from the met data
   Teuchos::ParameterList& param_list = plist_.sublist("parameters");
@@ -254,25 +254,21 @@ void ThermalConductivityEvaluator::EvaluateField_(
     // simple interpolation between neighboring cells
     std::vector<double> lambda(ncomp);
 
-    lambda[0] = result_v[0][0];
-
-    for (int i=1; i!=ncomp; ++i) {
-
-      const AmanziGeometry::Point& zc = mesh->cell_centroid(i);
-
-      lambda[i] = result_v[0][i]; // 0.5*(result_v[0][i-1]+result_v[0][i]);
-
+    for (int i=0; i!=ncomp; ++i) {
+      lambda[i] = result_v[0][i];
     } // i
+
+    // lambda[0] = result_v[0][0];
+    // for (int i=1; i!=ncomp; ++i) {
+    //   const AmanziGeometry::Point& zc = mesh->cell_centroid(i);
+    //   lambda[i] = 0.5*(result_v[0][i-1]+result_v[0][i]);
+    // } // i
 
   //  lambda[0] = result_v[0][0];
   //  lambda[ncomp-1] = result_v[0][ncomp-1];
-
   //  for (int i=1; i!=ncomp-1; ++i) {
-
   //    const AmanziGeometry::Point& zc = mesh->cell_centroid(i);
-
   //    lambda[i] = 1./3.*(result_v[0][i-1]+result_v[0][i]+result_v[0][i+1]);
-
   //  } // i
 
     // std::cout << "depth in eval = " << h[0][0] << ", squared = " << h[0][0]*h[0][0] << std::endl;

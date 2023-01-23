@@ -157,9 +157,8 @@ void HeatFluxBCEvaluator::EvaluateField_(
       if (h_ice >= h_Ice_min_flk) LE = LE + tpl_L_f;   // Add latent heat of fusion over ice
       LE = Q_watvap*LE;
 
-      double alpha;
-
-      alpha = (T_s < 273.15) ? alpha_i : alpha_w;
+     double alpha;
+     alpha = (T_s < 273.15) ? alpha_i : alpha_w;
 
      double hour_sec = 60.*60;
      double interval = 24.;
@@ -196,9 +195,11 @@ void HeatFluxBCEvaluator::EvaluateField_(
       // SS = 0.9*SS; // Atqasuk
       // SS = 0.9*SS; // Toolik
 
-      SS = (T_s < 273.15) ? 0. : SS;
+      // SS = (T_s < 273.15) ? 0. : SS;
 
-      result_v[0][i] = SS*(1.-alpha) + E_a - E_s - H - LE;
+      // std::cout << "SS = " << SS << ", E_a = " << E_a << ", E_s = " << E_s << ", H = " << H << ", LE = " << LE << std::endl;
+      
+      result_v[0][i] = SS*(1.-alpha) + E_a - E_s - H - LE; 
 
       result_v[0][i] *= -1.; ///cond_v[0][i];
 

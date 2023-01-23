@@ -44,7 +44,7 @@ LakeHeatCapacityEvaluator::LakeHeatCapacityEvaluator(
   double roi  = 917.;  // density of ice
 
   // cw    = 3990.; ///row;    // specific heat of water
-  cw    = 4182.; ///row; // [J/kg K]
+  cw    = 4182.; // /row; // [J/kg K]
   ci    = 2150.; ///roi;    // specific heat of ice
   // ci = cw;
 }
@@ -107,11 +107,14 @@ void LakeHeatCapacityEvaluator::EvaluateField_(
 
     } // i
 
-
-    result_v[0][0] = cc[0];
-    for (int i=1; i!=ncomp; ++i) {
-      result_v[0][i] = cc[i]; //0.5*(cc[i]+cc[i-1]);
+    for (int i=0; i!=ncomp; ++i) {
+      result_v[0][i] = cc[i];
     }
+
+    // result_v[0][0] = cc[0];
+    // for (int i=1; i!=ncomp; ++i) {
+    //   result_v[0][i] = 0.5*(cc[i]+cc[i-1]);
+    // }
 
     // result_v[0][0] = cc[0];
     // result_v[0][ncomp-1] = cc[ncomp-1];

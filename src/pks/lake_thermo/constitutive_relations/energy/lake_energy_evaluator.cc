@@ -73,11 +73,11 @@ void LakeEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       double T = temp_v[0][i];
       double rho = rho_v[0][i];
       double cp = cp_v[0][i];
+      double L_f = -333500.; // plus or minus??? // !!!!!add this is cp*rho*T terms in advection fluxzes and sources!!!!
       if (T < 273.15) {
-        double L_f = 333500.;
-        result_v[0][i] = rho*(cp*T + L_f);
+        result_v[0][i] = rho*(cp*T + 1.*L_f);
       } else {
-        result_v[0][i] = rho*cp*T;
+        result_v[0][i] = rho*(cp*T - 0.*L_f);
       }
 
     }

@@ -56,7 +56,12 @@ void DensityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     int ncomp = result->size(*comp, false);
     for (int i=0; i!=ncomp; ++i) {
       double T = temp_v[0][i]-273.15;
-      result_v[0][i] = rho0 * (1.+8.0*1.e-5 + 5.88*1.e-5*T - 8.11*1.e-6*T*T + 4.77*1.e-8*T*T*T);
+      if (T > 0.) { //water
+        result_v[0][i] = rho0 * (1.+8.0*1.e-5 + 5.88*1.e-5*T - 8.11*1.e-6*T*T + 4.77*1.e-8*T*T*T);
+      }
+      else { // ice 
+        result_v[0][i] = 917.;
+      }
     }
   }
 };
@@ -64,7 +69,9 @@ void DensityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 void DensityEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  // not implemented
+  
+  result->PutScalar(0.);
+
   if (wrt_key == temperature_key_) {
     Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
 
@@ -78,11 +85,11 @@ void DensityEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
         double T = temp_v[0][i]-273.15;
-        if (T > 0.) { //water}
+        if (T > 0.) { //water
           result_v[0][i] = rho0 * (5.88*1.e-5 - 2.*8.11*1.e-6*T + 3.*4.77*1.e-8*T*T);
         }
         else { // ice 
-          result_v[0][i] = 917.;
+          result_v[0][i] = 0.; //917.;
         }
       }
     }

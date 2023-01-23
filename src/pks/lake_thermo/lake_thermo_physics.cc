@@ -166,26 +166,26 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
     int orientation;
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, f_cells[0], &orientation);
 
-//    double *area;
-//    AmanziGeometry::Point centroid;
-//    std::vector<AmanziGeometry::Point> normals;
-//    mesh_->compute_face_geometry_(f,area,centroid,normals);
+  //  double *area;
+  //  AmanziGeometry::Point centroid;
+  //  std::vector<AmanziGeometry::Point> normals;
+  //  mesh_->compute_face_geometry_(f,area,centroid,normals);
 
-//    AmanziMesh::Entity_ID_List cellfaceids;
-//    std::vector<int> cellfacedirs;
-//    int dir = 1;
-//
-//    if (f_cells.size() == 1) mesh_->cell_get_faces_and_dirs(f_cells[0], &cellfaceids, &cellfacedirs);
-//    if (f_cells.size() == 2) mesh_->cell_get_faces_and_dirs(f_cells[1], &cellfaceids, &cellfacedirs);
-//
-//    for (int j = 0; j < cellfaceids.size(); j++) {
-//      if (cellfaceids[j] == f) {
-//        dir = cellfacedirs[j];
-//        break;
-//      }
-//    }
+   AmanziMesh::Entity_ID_List cellfaceids;
+   std::vector<int> cellfacedirs;
+   int dir = 1;
 
-//    normal = normal*dir;
+   if (f_cells.size() == 1) mesh_->cell_get_faces_and_dirs(f_cells[0], &cellfaceids, &cellfacedirs);
+   if (f_cells.size() == 2) mesh_->cell_get_faces_and_dirs(f_cells[1], &cellfaceids, &cellfacedirs);
+
+   for (int j = 0; j < cellfaceids.size(); j++) {
+     if (cellfaceids[j] == f) {
+       dir = cellfacedirs[j];
+       break;
+     }
+   }
+
+  //  normal = normal*dir;
 
     if (f_cells.size() == 1) {
       // boundary face, use the cell value
@@ -204,8 +204,10 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
     dhdt_c = (temp1[0][ncells-1] < 273.15) ? 0. : dhdt;
     B_w_c = (temp1[0][ncells-1] < 273.15) ? 0. : B_w;
 
-    flux_f[0][f] = -1.*cp*rho*(dhdt_c*(1.-xcf[2]) - B_w_c)/(h_+1.e-6) ; //* normal[2]; // / cv[0][f_cells[0]]; // * normal[2] ; // / cv[0][f_cells[0]]; //*normal[2]; // *normal or not?
-//    std::cout << "f = " << f << ", normal = " << normal << ", dir = " << dir << std::endl;
+    flux_f[0][f] = -1.*cp*rho*(dhdt_c*(1.-xcf[2]) - B_w_c)/(h_+1.e-12); // / cv[0][f_cells[0]]; //* normal[2]; // / cv[0][f_cells[0]]; // * normal[2] ; // / cv[0][f_cells[0]]; //*normal[2]; // *normal or not?
+    // flux_f[0][f] = -1.*(dhdt_c*(1.-xcf[2]) - B_w_c)/(h_+1.e-12); // / cv[0][f_cells[0]];
+  //  std::cout << "f = " << f << ", normal = " << normal << ", dir = " << dir << std::endl;
+  //  for (int j = 0; j < f_cells.size(); j++) std::cout << "f_cells[" << j <<"] = " << f_cells[j] << std::endl;
   }
 //  exit(0);
 
@@ -218,10 +220,15 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
   // apply to temperature
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
   ApplyDirichletBCsToTemperature_(S.ptr());
+  // ApplyDirichletBCsToEnergy_(S.ptr());
   matrix_adv_->ApplyBCs(false, true, false);
 
   // apply
   matrix_adv_->global_operator()->ComputeNegativeResidual(*temp, *g, false);
+
+  // S->GetFieldEvaluator(energy_key_)->HasFieldChanged(S.ptr(), name_);
+  // Teuchos::RCP<const CompositeVector> enrg = S->GetFieldData(energy_key_);
+  // matrix_adv_->global_operator()->ComputeNegativeResidual(*enrg, *g, false); 
 }
 
 // -------------------------------------------------------------
@@ -246,10 +253,9 @@ void Lake_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
   Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);    
 
-  // because the lake model has 1/h^2 term
   for (int f = 0; f < nfaces_owned; f++) {
 
-    uw_cond_c[0][f] = uw_cond_c[0][f]; ///(h_*h_) ;///cv[0][0];
+    uw_cond_c[0][f] = uw_cond_c[0][f]; ///cv[0][0]; ///cv[0][0]; // ///(h_*h_) ;///cv[0][0];
 
   }
 
@@ -319,6 +325,11 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& temp = *S->GetFieldData(temperature_key_)
               ->ViewComponent("cell",false);
 
+    // get energy
+    S->GetFieldEvaluator(energy_key_)->HasFieldChanged(S.ptr(), name_);
+    const Epetra_MultiVector& enrg = *S->GetFieldData(energy_key_)
+              ->ViewComponent("cell",false);          
+
     // get conductivity
     S->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S.ptr(), name_);
     const Epetra_MultiVector& lambda_c =
@@ -380,24 +391,28 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
       // S0_ = SS;
       S0_ = 0.9*SS; // FoxDen
       // S0_ = 0.9*SS; // Atqasuk
-      // S0_ = 0.9*SS; // Toolik
-
-      double S0_w_ice = S0_*exp(-alpha_e_i_*h_ice_);
-      double dhdt_c = dhdt;
-      double B_w_c = B_w;  
-
-      // S0_ = (temp[0][ncells-1] < 273.15) ? S0_w_ice : S0_;
-      dhdt_c = (temp[0][ncells-1] < 273.15) ? 0. : dhdt;
-      B_w_c = (temp[0][ncells-1] < 273.15) ? 0. : B_w;
-
-      S0_ = (temp[0][ncells-1] < 273.15) ? 0. : S0_;
 
       double albedo = (temp[0][ncells-1] < 273.15) ? albedo_i : albedo_w;
 
       S0_ *= (1.-albedo);
 
+      double S0_w_ice = S0_*exp(-alpha_e_i_*h_ice_);
+      double dhdt_c = dhdt;
+      double B_w_c = B_w;  
+
+      S0_ = (temp[0][ncells-1] < 273.15) ? S0_w_ice : S0_;
+      dhdt_c = (temp[0][ncells-1] < 273.15) ? 0. : dhdt;
+      B_w_c = (temp[0][ncells-1] < 273.15) ? 0. : B_w;
+
+      // S0_ = (temp[0][ncells-1] < 273.15) ? 0. : S0_;
+
       // -1.* because I switched to vertical xi coordinate
-      g_c[0][c] += -1.*( (S0_*exp(-alpha*h_*(1.-xc[2]))*(alpha*h_)/(h_+1.e-6) - cp[0][c]*rho[0][c]*temp[0][c]*dhdt_c/(h_+1.e-6)) ) * cv[0][c] ;
+      g_c[0][c] += -1.*( (S0_*exp(-alpha*h_*(1.-xc[2]))*(alpha*h_)/(h_+1.e-12) - cp[0][c]*rho[0][c]*temp[0][c]*dhdt_c/(h_+1.e-12)) ) * cv[0][c] ; // * cv[0][c] ;
+      // g_c[0][c] += -1.*( (S0_*exp(-alpha*h_*(1.-xc[2]))*(alpha*h_)/(h_+1.e-12) - enrg[0][c]*dhdt_c/(h_+1.e-12)) ) * cv[0][c] ;
+      // g_c[0][c] += -1.*( (S0_*exp(-alpha*h_*(1.-xc[2]))*(alpha*h_)/(h_+1.e-12)) ) * cv[0][c] ;
+
+
+      // g_c[0][c] += -1.*( (S0_*exp(-alpha*h_*(1.-xc[2]))*(alpha*h_)/(h_+1.e-6) - enrg[0][c]*dhdt_c/(h_+1.e-6)) ) * cv[0][c] ;
 
       /* TESTING
 //      // manufactured solution 1: linear temperature distribution
@@ -493,6 +508,26 @@ void Lake_Thermo_PK::ApplyDirichletBCsToTemperature_(const Teuchos::Ptr<State>& 
 
     if (bc_adv_->bc_model()[f] == Operators::OPERATOR_BC_DIRICHLET) {
       bc_adv_->bc_value()[f] = temp_bf[0][bf];
+    }
+  }
+}
+
+void Lake_Thermo_PK::ApplyDirichletBCsToEnergy_(const Teuchos::Ptr<State>& S) {
+  // put the boundary fluxes in faces for Dirichlet BCs.
+  //  S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S, name_);
+
+  S->GetFieldEvaluator(energy_key_)->HasFieldChanged(S, name_);
+  const Epetra_MultiVector& enrg_bf =
+      *S->GetFieldData(energy_key_)->ViewComponent("boundary_face",false);
+  const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
+  const Epetra_Map& face_map = mesh_->face_map(false);
+
+  int nbfaces = enrg_bf.MyLength();
+  for (int bf=0; bf!=nbfaces; ++bf) {
+    AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
+
+    if (bc_adv_->bc_model()[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      bc_adv_->bc_value()[f] = enrg_bf[0][bf];
     }
   }
 }
