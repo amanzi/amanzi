@@ -292,7 +292,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     U[1] = q_temp[0][c];
     U[2] = q_temp[1][c];
 
-    S = NumericalSource(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n);
+    S = NumericalSourceBedSlope(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n);
 
     h = h_c_tmp[0][c] + (S[0] + ext_S_cell[c]);
     qx = q_c_tmp[0][c] + S[1];

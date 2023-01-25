@@ -96,7 +96,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   std::vector<double> NumericalFlux_x_Rusanov(const std::vector<double>&, const std::vector<double>&);
   std::vector<double> NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
 
-  std::vector<double> NumericalSource(int c, double htc,
+  std::vector<double> NumericalSourceBedSlope(int c, double htc,
                                       double Bc, double Bmax, const Epetra_MultiVector& B_n);
 
   // access
@@ -144,6 +144,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   // gravity magnitude
   double g_;
+
+  std::string hydrostatic_pressure_force_type_;
 
   // limited reconstruction
   bool use_limiter_;

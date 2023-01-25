@@ -58,6 +58,7 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
   cfl_ = sw_list_->get<double>("cfl", 0.1);
   max_iters_ = sw_list_->get<int>("number of reduced cfl cycles", 10);
   cfl_positivity_ = sw_list_->get<double>("depth positivity cfl", 0.95);
+  hydrostatic_pressure_force_type_ = sw_list_->get<std::string>("hydrostatic pressure force type", "shallow water");
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = sw_list_->sublist("verbose object");
@@ -668,7 +669,7 @@ ShallowWater_PK::TotalDepthEdgeValue(
 // Discretization of the source term (well-balanced for lake at rest)
 //--------------------------------------------------------------------
 std::vector<double>
-ShallowWater_PK::NumericalSource(
+ShallowWater_PK::NumericalSourceBedSlope(
     int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
 {
   AmanziMesh::Entity_ID_List cfaces, cnodes;
@@ -708,7 +709,6 @@ ShallowWater_PK::NumericalSource(
 
   return S;
 }
-
 
 //--------------------------------------------------------------
 // Calculation of time step limited by the CFL condition

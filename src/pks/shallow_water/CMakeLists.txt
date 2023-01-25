@@ -40,6 +40,7 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 # Library: shallow_water
 #
 set(sw_src_files ShallowWater_PK.cc
+                 PipeFlow_PK.cc
                  ShallowWater_TI.cc
                  ShallowWaterBoundaryFunction.cc
                  DischargeEvaluator.cc
@@ -67,6 +68,7 @@ set(sw_inc_files
   NumericalFlux_CentralUpwind.hh
   NumericalFluxFactory.hh
   ShallowWater_PK.hh
+  PipeFlow_PK.hh
   ShallowWaterBoundaryFunction.hh)
 
 add_install_include_file(${sw_inc_files})

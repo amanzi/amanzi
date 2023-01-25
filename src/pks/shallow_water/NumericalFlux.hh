@@ -33,6 +33,9 @@ class NumericalFlux {
  protected:
   double g_;
   double lambda_max_, lambda_min_;
+  std::string hydrostatic_pressure_force_type_;
+  double pipe_diameter_;
+
 };
 
 
@@ -50,8 +53,40 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
   u = 2.0 * h * U[1] / (h2 + std::fmax(h2, eps2));
   v = 2.0 * h * U[2] / (h2 + std::fmax(h2, eps2));
 
+  double HydrostaticPressureForce = 0.0;
+
+  if (hydrostatic_pressure_force_type_.compare("shallow water") == 0){
+
+     HydrostaticPressureForce = 0.5 * g_ * h2;
+
+  }
+
+  else if (hydrostatic_pressure_force_type_.compare("pipe flow") == 0){
+
+     if (h < pipe_diameter_){ //flow is ventilated (free-surface)
+
+        double WettedAngle = 2.0 * acos(1.0 - 2.0 * h / pipe_diameter_);
+
+        // Eq. (3) in "A novel 1D-2D coupled model for hydrodynamic simulation of flows in drainage networks"
+        HydrostaticPressureForce = 3.0 * sin(WettedAngle * 0.5) - pow(sin(WettedAngle * 0.5),3) - 3 * (WettedAngle * 0.5) * cos(WettedAngle * 0.5);
+        HydrostaticPressureForce = HydrostaticPressureForce * g_ * pow(pipe_diameter_,3) / 24.0;
+
+      }
+
+      else { //flow is pressurized
+
+         double pi = 3.14159265359; 
+         double PipeCrossSection = pi * 0.25 * pipe_diameter_ * pipe_diameter_;
+
+         //Eq. (19) in "A novel 1D-2D coupled model for hydrodynamic simulation of flows in drainage networks"
+         HydrostaticPressureForce = g_ * (h - 0.5 * pipe_diameter_) * PipeCrossSection;
+
+      }
+
+  }
+
   F[0] = h * u;
-  F[1] = h * u * u + 0.5 * g_ * h2;
+  F[1] = h * u * u + HydrostaticPressureForce;
   F[2] = h * u * v;
 
   return F;
