@@ -10,6 +10,11 @@
 # KL: Version used to build Amanzi must be the same!
 cmake_minimum_required(VERSION 3.17.0)
 
+# Download timestamp policy
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
+
 #
 # Language standard
 # NB: Seems like a good idea to have this before project() call.
