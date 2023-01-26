@@ -67,13 +67,15 @@
       </ParameterList>
 
       <ParameterList name="source terms">
-        <ParameterList name="ALL">
-          <Parameter name="regions" type="Array(string)" value="{fracture 1}"/>
-          <Parameter name="spatial distribution method" type="string" value="none"/>
-          <Parameter name="use volume fractions" type="bool" value="false"/>
-          <ParameterList name="well">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="8.0e-2"/>
+        <ParameterList name="wells">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{fracture 1}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <Parameter name="use volume fractions" type="bool" value="false"/>
+            <ParameterList name="well">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="8.0e-2"/>
+              </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>

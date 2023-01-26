@@ -15,7 +15,7 @@
 	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-	    <Parameter name="gravity" type="bool" value="true"/>
+	    <Parameter name="gravity" type="bool" value="false"/>
 	  </ParameterList>
 	</ParameterList>
       </ParameterList>
@@ -39,56 +39,26 @@
       </ParameterList>
 
       <ParameterList name="source terms">
-        <ParameterList name="wells">
-          <ParameterList name="SRC 0">
-            <Parameter name="regions" type="Array(string)" value="{WellLeft}"/>
-            <Parameter name="spatial distribution method" type="string" value="volume"/>
-            <ParameterList name="well">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="-2.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="SRC 1">
-            <Parameter name="regions" type="Array(string)" value="{WellRightRotated}"/>
-            <Parameter name="spatial distribution method" type="string" value="volume"/>
-            <Parameter name="use volume fractions" type="bool" value="true"/>
-            <ParameterList name="well">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="-2.0"/>
-              </ParameterList>
+        <ParameterList name="fields">
+	  <ParameterList name="SRC 0">
+            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+            <Parameter name="spatial distribution method" type="string" value="field"/>
+            <ParameterList name="field">
+              <Parameter name="field key" type="string" value="source_constant"/>
+              <Parameter name="component" type="string" value="cell"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
-	<ParameterList name="mass flux">
+	<ParameterList name="pressure">
 	  <ParameterList name="BC 0">
 	    <Parameter name="regions" type="Array(string)" value="{Top side, Bottom side}"/>
 	    <Parameter name="spatial distribution method" type="string" value="none"/>
-	    <ParameterList name="outward mass flux">
+	    <ParameterList name="boundary pressure">
 	      <ParameterList name="function-constant">
 		<Parameter name="value" type="double" value="0.0"/>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
-	<ParameterList name="static head">
-	  <ParameterList name="BC 1">
-	    <Parameter name="regions" type="Array(string)" value="{Left side, Right side}"/>
-	    <Parameter name="spatial distribution method" type="string" value="none"/>
-	    <ParameterList name="static head">
-	      <ParameterList name="function-static-head">
-		<Parameter name="p0" type="double" value="0.0"/>
-		<Parameter name="density" type="double" value="1.0"/>
-		<Parameter name="gravity" type="double" value="1.0"/>
-		<Parameter name="space dimension" type="int" value="2"/>
-		<ParameterList name="water table elevation">
-		  <ParameterList name="function-constant">
-		    <Parameter name="value" type="double" value="1.0"/>
-		  </ParameterList>
-		</ParameterList>
 	      </ParameterList>
 	    </ParameterList>
 	  </ParameterList>
@@ -128,6 +98,23 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="source_constant">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
+        </ParameterList>
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="-2.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -135,12 +122,11 @@
         <Parameter name="value" type="double" value="0.0"/>
       </ParameterList>
       <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, -1.0}"/>
+        <Parameter name="value" type="Array(double)" value="{0.0, -1.0e-20}"/>
       </ParameterList>
-      <ParameterList name="permeability">
-        <Parameter name="write checkpoint" type="bool" value="false"/>
-        <Parameter name="restart file" type="string" value="test/perm.h5"/>
-      </ParameterList>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="extreme"/>
     </ParameterList>
   </ParameterList>
 
@@ -179,31 +165,6 @@
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-10,-5.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{10,5.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="WellLeft">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{ -3.8,-5.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{-3.6, 0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="WellRight">
-      <ParameterList name="region: box volume fractions">
-        <Parameter name="corner coordinate" type="Array(double)" value="{3.7, -5.0}"/>
-        <Parameter name="opposite corner coordinate" type="Array(double)" value="{3.75, 0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="WellRightRotated">
-      <ParameterList name="region: box volume fractions">
-        <Parameter name="corner coordinate" type="Array(double)" value="{3.7, -5.0}"/>
-        <Parameter name="opposite corner coordinate" type="Array(double)" value="{5.7, 0.0}"/>
-        <Parameter name="normals" type="Array(double)" value="{2.0, 4.95, -4.95, 2.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="WellRightEmpty">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{3.7, -5.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{3.75, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">

@@ -271,6 +271,9 @@ class InputConverterU : public InputConverter {
   Tree tree_;
   Tree phases_;
 
+  // global list
+  Teuchos::RCP<Teuchos::ParameterList> glist_;
+
   // global data
   std::map<std::string, std::string> pk_model_, pk_domain_, pk_region_;
   std::map<std::string, bool> pk_master_;

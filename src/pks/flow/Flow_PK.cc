@@ -195,11 +195,10 @@ Flow_PK::Setup()
     S_->SetEvaluator(wc_key_, Tags::DEFAULT, eval);
   }
 
-
   // Wells
   if (!S_->HasRecord("well_index")) {
     if (fp_list_->isSublist("source terms")) {
-      Teuchos::ParameterList& src_list = fp_list_->sublist("source terms");
+      Teuchos::ParameterList& src_list = fp_list_->sublist("source terms").sublist("wells");
       for (auto it = src_list.begin(); it != src_list.end(); ++it) {
         std::string name = it->first;
         if (src_list.isSublist(name)) {
@@ -213,6 +212,24 @@ Flow_PK::Setup()
             break;
           }
         }
+      }
+    }
+  }
+
+  // sources
+  if (fp_list_->isSublist("source terms")) {
+    const Teuchos::ParameterList& src_list = fp_list_->sublist("source terms");
+    if (src_list.isSublist("fields")) {
+      const Teuchos::ParameterList& tmp_list = src_list.sublist("fields");
+      for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+        const Teuchos::ParameterList& spec = tmp_list.sublist(it->first).sublist("field");
+        auto name = spec.get<std::string>("field key");
+          
+        S_->Require<CV_t, CVS_t>(name, Tags::DEFAULT, passwd_)
+          .SetMesh(mesh_)
+          ->SetGhosted(true)
+          ->SetComponent("cell", AmanziMesh::CELL, 1);
+        S_->RequireEvaluator(name, Tags::DEFAULT);
       }
     }
   }
@@ -441,16 +458,19 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   VV_ValidateBCs();
 
   // Create source objects
+  srcs.clear();
+  auto& src_list = plist.sublist("source terms");
+
   // -- evaluate the well index
   if (S_->HasRecord("well_index")) {
     if (!S_->GetRecord("well_index", Tags::DEFAULT).initialized()) {
       S_->GetW<CompositeVector>("well_index", Tags::DEFAULT, passwd_).PutScalar(0.0);
 
-      Teuchos::ParameterList& src_list = plist.sublist("source terms");
-      for (auto it = src_list.begin(); it != src_list.end(); ++it) {
+      Teuchos::ParameterList& tmp_list = src_list.sublist("wells");
+      for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
         std::string name = it->first;
-        if (src_list.isSublist(name)) {
-          Teuchos::ParameterList& spec = src_list.sublist(name);
+        if (tmp_list.isSublist(name)) {
+          Teuchos::ParameterList& spec = tmp_list.sublist(name);
           if (IsWellIndexRequire(spec)) { ComputeWellIndex(spec); }
         }
       }
@@ -459,17 +479,30 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   }
 
   // -- wells
-  srcs.clear();
-  if (plist.isSublist("source terms")) {
+  if (src_list.isSublist("wells")) {
     PK_DomainFunctionFactory<FlowSourceFunction> factory(mesh_, S_);
     PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
 
-    Teuchos::ParameterList& src_list = plist.sublist("source terms");
-    for (auto it = src_list.begin(); it != src_list.end(); ++it) {
+    Teuchos::ParameterList& tmp_list = src_list.sublist("wells");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
-      if (src_list.isSublist(name)) {
-        Teuchos::ParameterList& spec = src_list.sublist(name);
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
         srcs.push_back(factory.Create(spec, "well", AmanziMesh::CELL, Kxy));
+      }
+    }
+  }
+
+  // -- fields (evaluators now)
+  if (src_list.isSublist("fields")) {
+    PK_DomainFunctionFactory<FlowSourceFunction> factory(mesh_, S_);
+    Teuchos::ParameterList& tmp_list = src_list.sublist("fields");
+
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+        srcs.push_back(factory.Create(spec, "field", AmanziMesh::CELL, Teuchos::null));
       }
     }
   }

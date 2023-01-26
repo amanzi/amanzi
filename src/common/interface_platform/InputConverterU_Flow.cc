@@ -891,53 +891,80 @@ InputConverterU::TranslateSources_(const std::string& domain, const std::string&
       ThrowErrorIllformed_("sources", "element", srctype);
     }
 
-    std::map<double, double> tp_values;
-    std::map<double, std::string> tp_forms, tp_formulas;
+    std::string type, filename, variable;
+    element = static_cast<DOMElement*>(same_list[0]);
+    type = GetAttributeValueS_(element, "type", TYPE_NONE, false, "");  // only one now
+    if (type == "h5file") {
+      filename = GetAttributeValueS_(element, "filename", TYPE_NONE);
+      variable = GetAttributeValueS_(element, "variable", TYPE_NONE);
 
-    for (int j = 0; j < same_list.size(); ++j) {
-      element = static_cast<DOMElement*>(same_list[j]);
-      double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
-      tp_forms[t0] = GetAttributeValueS_(element, "function");
-      tp_values[t0] =
-        GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
-      tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
+      Teuchos::ParameterList& src = out_list.sublist("fields").sublist("SRC 0");
+      src.set<Teuchos::Array<std::string>>("regions", regions)
+         .set<std::string>("spatial distribution method", weight)
+         .set<bool>("use volume fractions", false);
+      src.sublist("field").set<std::string>("field key", variable)
+                          .set<std::string>("component", "cell");
+
+      auto& field_ev = glist_->sublist("state").sublist("evaluators").sublist(variable);
+      field_ev.set<std::string>("evaluator type", "independent variable from file")
+        .set<std::string>("filename", filename)
+        .set<std::string>("domain name", (domain == "matrix") ? "domain" : domain)
+        .set<std::string>("component name", "cell")
+        .set<std::string>("mesh entity", "cell")
+        .set<std::string>("variable name", variable)
+        .set<int>("number of dofs", 1)
+        .set<bool>("constant in time", true);
+
+    } else {
+      std::map<double, double> tp_values;
+      std::map<double, std::string> tp_forms, tp_formulas;
+
+      for (int j = 0; j < same_list.size(); ++j) {
+        element = static_cast<DOMElement*>(same_list[j]);
+        double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
+        tp_forms[t0] = GetAttributeValueS_(element, "function");
+        tp_values[t0] =
+          GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
+        tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
+      }
+
+      // additional options for submodels
+      double peaceman_r, peaceman_d;
+      if (srctype == "peaceman_well") {
+        element = static_cast<DOMElement*>(same_list[0]);
+        peaceman_r = GetAttributeValueD_(element, "radius", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+        peaceman_d = GetAttributeValueD_(element, "depth", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "m");
+      }
+
+      // create vectors of values and forms
+      std::vector<double> times, values;
+      std::vector<std::string> forms, formulas;
+      for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
+        times.push_back(it->first);
+        values.push_back(it->second);
+        forms.push_back(tp_forms[it->first]);
+        formulas.push_back(tp_formulas[it->first]);
+      }
+
+      // save in the XML files
+      Teuchos::ParameterList& src = (pkname == "flow") ? out_list.sublist("wells").sublist(srcname)
+                                                        : out_list.sublist(srcname);
+      src.set<Teuchos::Array<std::string>>("regions", regions);
+      src.set<std::string>("spatial distribution method", weight);
+      src.set<bool>("use volume fractions", WeightVolumeSubmodel_(regions));
+
+      Teuchos::ParameterList* srcfn = &src.sublist("well");
+
+      // additional output for submodels
+      if (srctype == "peaceman_well") {
+        srcfn->set<std::string>("submodel", "bhp");
+        srcfn->set<double>("well radius", peaceman_r);
+        srcfn->set<double>("depth", peaceman_d);
+        srcfn = &srcfn->sublist("bhp");
+      }
+
+      TranslateGenericMath_(times, values, forms, formulas, *srcfn);
     }
-
-    // additional options for submodels
-    double peaceman_r, peaceman_d;
-    if (srctype == "peaceman_well") {
-      element = static_cast<DOMElement*>(same_list[0]);
-      peaceman_r = GetAttributeValueD_(element, "radius", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
-      peaceman_d = GetAttributeValueD_(element, "depth", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "m");
-    }
-
-    // create vectors of values and forms
-    std::vector<double> times, values;
-    std::vector<std::string> forms, formulas;
-    for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
-      times.push_back(it->first);
-      values.push_back(it->second);
-      forms.push_back(tp_forms[it->first]);
-      formulas.push_back(tp_formulas[it->first]);
-    }
-
-    // save in the XML files
-    Teuchos::ParameterList& src = out_list.sublist(srcname);
-    src.set<Teuchos::Array<std::string>>("regions", regions);
-    src.set<std::string>("spatial distribution method", weight);
-    src.set<bool>("use volume fractions", WeightVolumeSubmodel_(regions));
-
-    Teuchos::ParameterList* srcfn = &src.sublist("well");
-
-    // additional output for submodels
-    if (srctype == "peaceman_well") {
-      srcfn->set<std::string>("submodel", "bhp");
-      srcfn->set<double>("well radius", peaceman_r);
-      srcfn->set<double>("depth", peaceman_d);
-      srcfn = &srcfn->sublist("bhp");
-    }
-
-    TranslateGenericMath_(times, values, forms, formulas, *srcfn);
   }
 
   return out_list;

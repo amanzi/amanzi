@@ -489,20 +489,22 @@
 	</ParameterList>
       </ParameterList>
       <ParameterList name="source terms">
-	<ParameterList name="Pumping Well">
-	  <Parameter name="regions" type="Array(string)" value="{Well}"/>
-	  <Parameter name="spatial distribution method" type="string" value="simple well"/>
-	  <Parameter name="use volume fractions" type="bool" value="false"/>
-	  <ParameterList name="well">
-	    <Parameter name="submodel" type="string" value="bhp"/>
-	    <Parameter name="well radius" type="double" value="0.1"/>
-	    <Parameter name="depth" type="double" value="25.0"/>
-	    <ParameterList name="bhp">
-	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="1.1e+05"/>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
+        <ParameterList name="wells">
+          <ParameterList name="Pumping Well">
+            <Parameter name="regions" type="Array(string)" value="{Well}"/>
+            <Parameter name="spatial distribution method" type="string" value="simple well"/>
+            <Parameter name="use volume fractions" type="bool" value="false"/>
+            <ParameterList name="well">
+              <Parameter name="submodel" type="string" value="bhp"/>
+              <Parameter name="well radius" type="double" value="0.1"/>
+              <Parameter name="depth" type="double" value="25.0"/>
+              <ParameterList name="bhp">
+                <ParameterList name="function-constant">
+                    <Parameter name="value" type="double" value="1.1e+05"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
 	</ParameterList>
       </ParameterList>
       <ParameterList name="physical models and assumptions">
@@ -647,21 +649,23 @@
 	</ParameterList>
       </ParameterList>
       <ParameterList name="source terms">
-	<ParameterList name="Pumping Well">
-	  <Parameter name="regions" type="Array(string)" value="{Well}"/>
-	  <Parameter name="spatial distribution method" type="string" value="simple well"/>
-	  <Parameter name="use volume fractions" type="bool" value="false"/>
-	  <ParameterList name="well">
-	    <Parameter name="submodel" type="string" value="bhp"/>
-	    <Parameter name="well radius" type="double" value="0.1"/>
-	    <Parameter name="depth" type="double" value="25.0"/>
-	    <ParameterList name="bhp">
-	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="1.1e+05"/>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+        <ParameterList name="wells">
+          <ParameterList name="Pumping Well">
+            <Parameter name="regions" type="Array(string)" value="{Well}"/>
+            <Parameter name="spatial distribution method" type="string" value="simple well"/>
+            <Parameter name="use volume fractions" type="bool" value="false"/>
+            <ParameterList name="well">
+              <Parameter name="submodel" type="string" value="bhp"/>
+              <Parameter name="well radius" type="double" value="0.1"/>
+              <Parameter name="depth" type="double" value="25.0"/>
+              <ParameterList name="bhp">
+                <ParameterList name="function-constant">
+                    <Parameter name="value" type="double" value="1.1e+05"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
       <ParameterList name="physical models and assumptions">
 	<Parameter name="multiscale model" type="string" value="dual continuum discontinuous matrix"/>

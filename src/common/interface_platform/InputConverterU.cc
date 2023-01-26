@@ -37,6 +37,7 @@ InputConverterU::Translate(int rank, int num_proc)
   rank_ = rank;
   num_proc_ = num_proc;
   Teuchos::ParameterList out_list;
+  glist_ = Teuchos::rcpFromRef(out_list);
 
   // grab verbosity early
   verb_list_ = TranslateVerbosity_();

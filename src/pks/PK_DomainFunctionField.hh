@@ -103,13 +103,11 @@ PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
   if (plist.isParameter("submodel")) submodel_ = plist.get<std::string>("submodel");
   std::vector<std::string> regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();
 
-  // Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
     Teuchos::ParameterList flist = plist.sublist(keyword);
     field_key_ = flist.get<std::string>("field key");
     tag_ = Keys::readTag(flist, "tag");
     component_key_ = flist.get<std::string>("component", "cell");
-    ;
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "error in source sublist : " << msg.what();
@@ -118,7 +116,6 @@ PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
 
   // Add this source specification to the domain function.
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, kind_));
-  //AddSpec(Teuchos::rcp(new Spec(domain, f)));
 
   entity_ids_ = Teuchos::rcp(new MeshIDs());
   AmanziMesh::Entity_kind kind = domain->second;
