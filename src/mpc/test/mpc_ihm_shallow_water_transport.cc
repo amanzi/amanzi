@@ -50,9 +50,11 @@ TEST(MPC_DRIVER_IHM_SHALLOW_WATER_TRANSPORT)
 
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
+  mesh_list->set<bool>("request edges", true); 
+  mesh_list->set<bool>("request faces", true); 
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(0.0, 0.0, 1000.0, 50.0, 100, 40, true, true);
+  auto mesh = factory.create(0.0, 0.0, 1000.0, 50.0, 100, 40);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
@@ -66,7 +68,7 @@ TEST(MPC_DRIVER_IHM_SHALLOW_WATER_TRANSPORT)
 
   // verify the maximum principle for solute transport
   const auto& tcc = *S->Get<CompositeVector>("total_component_concentration").ViewComponent("cell");
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; ++c) { CHECK(tcc[0][c] >= 0.0 && tcc[0][c] <= 1.0); }
 }

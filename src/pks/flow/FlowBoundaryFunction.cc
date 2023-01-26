@@ -123,18 +123,18 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
     Exceptions::amanzi_throw(msg);
   }
 
-  AmanziMesh::Entity_ID_List cells, ss_faces;
-  AmanziMesh::Entity_ID_List nodes1, nodes2, common_nodes;
+  AmanziMesh::Entity_ID_List nodes1, nodes2; 
+  std::vector<AmanziMesh::Entity_ID> common_nodes;
 
   AmanziGeometry::Point p1(dim), p2(dim), p3(dim);
   std::vector<AmanziGeometry::Point> edges;
 
-  mesh->getSetEntities(region, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED, &ss_faces);
+  auto ss_faces = mesh->getSetEntities(region, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
   int n = ss_faces.size();
 
   for (int i = 0; i < n; i++) {
     int f1 = ss_faces[i];
-    cells = mesh->getFaceCells(f1, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh->getFaceCells(f1, AmanziMesh::Parallel_type::ALL);
 
     nodes1 = mesh->getFaceNodes(f1);
     std::sort(nodes1.begin(), nodes1.end());
@@ -152,7 +152,7 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
         if (ncells == 1) {
           nodes2 = mesh->getFaceNodes(f2);
           std::sort(nodes2.begin(), nodes2.end());
-          set_intersection_(nodes1, nodes2, &common_nodes);
+          set_intersection_(nodes1, nodes2, common_nodes);
 
           int m = common_nodes.size();
           if (m > dim - 1) {
@@ -282,15 +282,15 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
 * New implementation of the STL function.
 **************************************************************** */
 void
-FlowBoundaryFunction::set_intersection_(const std::vector<AmanziMesh::Entity_ID>& v1,
-                                        const std::vector<AmanziMesh::Entity_ID>& v2,
-                                        std::vector<AmanziMesh::Entity_ID>* vv)
+FlowBoundaryFunction::set_intersection_(const AmanziMesh::Entity_ID_List& v1,
+                                        const AmanziMesh::Entity_ID_List& v2,
+                                        std::vector<AmanziMesh::Entity_ID>& vv)
 {
   int i(0), j(0), n1, n2;
 
   n1 = v1.size();
   n2 = v2.size();
-  vv->clear();
+  vv.clear();
 
   while (i < n1 && j < n2) {
     if (v1[i] < v2[j]) {
@@ -298,7 +298,7 @@ FlowBoundaryFunction::set_intersection_(const std::vector<AmanziMesh::Entity_ID>
     } else if (v2[j] < v1[i]) {
       j++;
     } else {
-      vv->push_back(v1[i]);
+      vv.push_back(v1[i]);
       i++;
       j++;
     }

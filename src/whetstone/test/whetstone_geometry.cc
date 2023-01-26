@@ -45,11 +45,10 @@ TEST(FACE_CENTROIDS)
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
   AmanziGeometry::Point p(2), xc(2);
-  Entity_ID_List nodes;
   std::vector<double> weights;
 
   double area = mesh->getCellVolume(0);
-  nodes = mesh->getCellNodes(0);
+  auto nodes = mesh->getCellNodes(0);
   PolygonCentroidWeights(*mesh, nodes, area, weights);
 
   // verification

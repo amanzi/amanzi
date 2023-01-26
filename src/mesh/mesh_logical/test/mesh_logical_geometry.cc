@@ -43,8 +43,8 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m,
     CHECK_EQUAL(0.25, m->getCellVolume(i));
 
     Entity_ID_List faces;
-    std::vector<int> dirs;
-    std::vector<Point> bisectors;
+    Entity_Direction_List dirs;
+    Amanzi::AmanziMesh::Point_List bisectors;
     m->getCellFacesAndDirs(i, faces, &dirs);
     CHECK_EQUAL(2, faces.size());
     CHECK_EQUAL(i, faces[0]);
@@ -53,7 +53,6 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m,
     CHECK_EQUAL(1, dirs[0]);
     CHECK_EQUAL(-1, dirs[1]);
 
-    faces.clear();
     m->getCellFacesAndBisectors(i, faces, &bisectors);
     CHECK_EQUAL(2, faces.size());
     CHECK_EQUAL(i, faces[0]);
@@ -113,7 +112,7 @@ test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   Teuchos::RCP<const GeometricModel> gm_c = m->getGeometricModel();
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp_const_cast<GeometricModel>(gm_c);
 
-  Entity_ID_List ents;
+  std::vector<Entity_ID> ents;
   ents.push_back(0);
   ents.push_back(2);
 
@@ -158,7 +157,7 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   branch[2] = -3.0;
 
   Entity_ID_List branch_faces;
-  std::vector<int> dirs;
+  Entity_Direction_List dirs;
   m->getCellFacesAndDirs(2, branch_faces, &dirs);
   CHECK_EQUAL(5, branch_faces.size());
 
@@ -192,8 +191,8 @@ test_2Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_EQUAL(5, m->getNumEntities(Entity_kind::FACE, Parallel_type::ALL));
 
   Entity_ID_List branch_faces;
-  std::vector<int> dirs;
-  std::vector<Point> bisectors;
+  Entity_Direction_List dirs;
+  Amanzi::AmanziMesh::Point_List bisectors;
   double r22 = sqrt(2.0) / 2.0;
 
   // check topology/geometry

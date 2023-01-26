@@ -41,7 +41,7 @@ class ObservableAqueous : public virtual Observable {
 
   int obs_boundary_;
   bool obs_planar_;
-  std::vector<double> vofs_;
+  AmanziMesh::Double_View vofs_;
   AmanziGeometry::Point reg_normal_;
 };
 

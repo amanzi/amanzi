@@ -524,7 +524,6 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 void
 Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
 {
-  AmanziMesh::Entity_ID_List cells;
   auto& wi = *S_->GetW<CompositeVector>("well_index", Tags::DEFAULT, passwd_).ViewComponent("cell");
   const auto& perm = *S_->Get<CompositeVector>(permeability_key_).ViewComponent("cell");
 
@@ -537,7 +536,7 @@ Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
   rw = well_list.get<double>("well radius");
 
   for (auto it = regions.begin(); it != regions.end(); ++it) {
-    mesh_->getSetEntities(*it, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED, &cells);
+    auto cells = mesh_->getSetEntities(*it, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
     for (int k = 0; k < cells.size(); k++) {
       int c = cells[k];
@@ -686,8 +685,7 @@ Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
   missed_bc_faces_ = 0;
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] == Operators::OPERATOR_BC_NONE) {
-      cells.clear();
-      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
       int ncells = cells.size();
 
       if (ncells == 1) {
@@ -861,8 +859,7 @@ Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
 
   double volume = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
-    const auto& faces = mesh_->getCellFaces(c);
-    const auto& fdirs = mesh_->getCellFacesAndDirections(c);
+    const auto& [faces,fdirs] = mesh_->getCellFacesAndDirections(c);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
@@ -907,8 +904,7 @@ Flow_PK::BoundaryFaceValue(int f, const CompositeVector& u)
 void
 Flow_PK::VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2)
 {
-  const auto& faces = mesh_->getCellFaces(c);
-  const auto& dirs = mesh_->getCellFacesAndDirections(c);
+  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   int i1, i2;

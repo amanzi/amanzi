@@ -58,7 +58,6 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);

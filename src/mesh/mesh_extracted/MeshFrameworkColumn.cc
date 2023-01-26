@@ -76,7 +76,7 @@ void MeshFrameworkColumn::computeSpecialNodeCoordinates_()
   column_faces_ = colfaces;
 
   // mask for face index in the column of faces
-  face_in_column_.resize(col3D_mesh.getNumEntities(Entity_kind::FACE,
+  Kokkos::resize(face_in_column_,col3D_mesh.getNumEntities(Entity_kind::FACE,
           Parallel_type::ALL), -1);
 
   // How many nodes each "horizontal" face has in the column
@@ -91,7 +91,8 @@ void MeshFrameworkColumn::computeSpecialNodeCoordinates_()
   int nfaces = column_faces_.size();
   int nnodes = nfaces*nfnodes_;
   AmanziGeometry::Point p(space_dim);
-  Point_List node_coordinates(nnodes, p);
+  Point_List node_coordinates("node_coordinates", nnodes);
+  Kokkos::deep_copy(node_coordinates, p); 
 
   for (int j=0; j!=nfaces; ++j) {
     // set the mask

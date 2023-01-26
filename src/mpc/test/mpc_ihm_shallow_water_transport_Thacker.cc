@@ -54,10 +54,12 @@ RunTest(int n, const std::string& meshexo, int* ncycles, int* MyPID)
 
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
+  mesh_list->set<bool>("request edges", true); 
+  mesh_list->set<bool>("request faces", true); 
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(-3.0, -3.0, 3.0, 3.0, n, n, true, true);
-  if (meshexo != "") mesh = factory.create(meshexo, true, true);
+  auto mesh = factory.create(-3.0, -3.0, 3.0, 3.0, n, n);
+  if (meshexo != "") mesh = factory.create(meshexo);
 
   Amanzi::ObservationData obs_data;
 

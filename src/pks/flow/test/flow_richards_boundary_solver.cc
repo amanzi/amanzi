@@ -95,23 +95,26 @@ TEST(FLOW_BOUNDARY_SOLVER)
   std::string passwd("");
   auto& K1 = *S1->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
-  AmanziMesh::Entity_ID_List block;
-  mesh1->getSetEntities("All", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K1[0][c] = 1e-9;
-    K1[1][c] = 1e-9;
-    K1[2][c] = 1e-9;
+  {
+    auto block = mesh1->getSetEntities("All", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K1[0][c] = 1e-9;
+      K1[1][c] = 1e-9;
+      K1[2][c] = 1e-9;
+    }
   }
   S1->GetRecordW("permeability", "permeability").set_initialized();
 
   auto& K2 = *S2->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
-  mesh2->getSetEntities("Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K2[0][c] = 1e-9;
-    K2[1][c] = 1e-9;
-    K2[2][c] = 1e-9;
+  {
+    auto block = mesh2->getSetEntities("Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K2[0][c] = 1e-9;
+      K2[1][c] = 1e-9;
+      K2[2][c] = 1e-9;
+    }
   }
   S2->GetRecordW("permeability", "permeability").set_initialized();
 

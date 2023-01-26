@@ -64,7 +64,7 @@ runTest(double switch_time,
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   RCP<const Mesh> mesh;
   if (exofile != "")

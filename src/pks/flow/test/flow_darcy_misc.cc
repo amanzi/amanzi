@@ -53,7 +53,7 @@ class DarcyProblem {
   Comm_ptr_type comm;
   int MyPID;
 
-  Framework frameworks[2];
+  Framework frameworks[1];
   std::vector<std::string> framework_name;
 
   DarcyProblem()
@@ -63,7 +63,6 @@ class DarcyProblem {
     MyPID = comm->MyPID();
 
     frameworks[0] = Framework::MSTK;
-    frameworks[1] = Framework::STK;
     framework_name.push_back("MSTK");
     framework_name.push_back("stk:mesh");
   };
@@ -72,7 +71,6 @@ class DarcyProblem {
 
   int Init(const std::string xmlFileName, const char* meshExodus, const Framework& framework)
   {
-    if (framework == Framework::STK && comm->NumProc() > 1) return 1;
 
     // create a MSTK mesh framework
     plist = Teuchos::getParametersFromXmlFile(xmlFileName);
@@ -204,10 +202,8 @@ class DarcyProblem {
     int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
     for (int c = 0; c < ncells_owned; c++) {
-      AmanziMesh::Entity_ID_List faces;
-      std::vector<int> dirs;
 
-      mesh->getCellFacesAndDirections(c, &faces, &dirs);
+      auto [faces, dirs] = mesh->getCellFacesAndDirections(c);
       int nfaces = faces.size();
 
       double div = 0.0;

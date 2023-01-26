@@ -39,12 +39,12 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 {
   vo_ = Teuchos::rcp(new VerboseObject(name, plist));
 
-  AmanziMesh::Entity_ID_List cells;
+  std::vector<AmanziMesh::Entity_ID> vcells;
 
   // cells to debug
   if (plist_.isParameter("debug cells")) {
     auto dcs = plist_.get<Teuchos::Array<int>>("debug cells");
-    cells.insert(cells.end(), dcs.begin(), dcs.end());
+    vcells.insert(vcells.end(), dcs.begin(), dcs.end()); 
   }
 
   // faces to debug
@@ -59,11 +59,12 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
         // debug the neighboring cells
         AmanziMesh::Entity_ID_List fcells;
         fcells = mesh->getFaceCells(lf, AmanziMesh::Parallel_type::OWNED);
-        for (const auto& c : fcells) cells.emplace_back(cell_map.GID(c));
+        for (const auto& c : fcells) vcells.emplace_back(cell_map.GID(c));
       }
     }
   }
-
+  AmanziMesh::Entity_ID_List cells; 
+  vectorToView(cells, vcells); 
   set_cells(cells);
 
   // formatting
@@ -86,21 +87,22 @@ void
 Debugger::set_cells(const AmanziMesh::Entity_ID_List& dc)
 {
   dc_.clear();
-  dc_gid_.clear();
   dcvo_.clear();
 
   // make sure they are unique (they may not be because of add_cells()
   // implementation decisions!
   std::set<AmanziMesh::Entity_ID> dc_set(dc.begin(), dc.end());
+  Kokkos::resize(dc_gid_, dc_set.size()); 
 
   const auto& cell_map = mesh_->getMap(AmanziMesh::Entity_kind::CELL,false);
   int my_pid = mesh_->getComm()->MyPID();
+  int size = 0; 
   for (const auto& c : dc_set) {
     AmanziMesh::Entity_ID lc = cell_map.LID(c);
     if (lc >= 0) {
       // include the LID
       dc_.emplace_back(lc);
-      dc_gid_.emplace_back(c);
+      dc_gid_[size++] = c;
 
       // make a verbose object for each case
       Teuchos::ParameterList vo_plist;
@@ -118,7 +120,7 @@ void
 Debugger::add_cells(const AmanziMesh::Entity_ID_List& dc)
 {
   AmanziMesh::Entity_ID_List dc_new = get_cells();
-  dc_new.insert(dc_new.end(), dc.begin(), dc.end());
+  dc_new.insert(dc_new.end(), dc.begin(), dc.end()); 
   set_cells(dc_new);
 }
 

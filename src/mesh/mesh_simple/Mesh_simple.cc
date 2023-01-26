@@ -53,12 +53,6 @@ Mesh_simple::Mesh_simple(double x0, double y0, double z0,
 //---------------------------------------------------------
 void Mesh_simple::CreateCache_()
 {
-  // clear old cache
-  coordinates_.clear();
-
-  cell_to_face_.clear();
-  face_to_node_.clear();
-  edge_to_node_.clear();
 
   // build new cache
   num_cells_ = nx_ * ny_ * nz_;
@@ -67,7 +61,7 @@ void Mesh_simple::CreateCache_()
   num_edges_ = nx_ * (ny_ + 1) * (nz_ + 1) + (nx_ + 1) * ny_ * (nz_ + 1) + (nx_ + 1) * (ny_ + 1) * nz_;
 
   // -- node coordinates
-  coordinates_.resize(3 * num_nodes_);
+  Kokkos::resize(coordinates_, 3 * num_nodes_);
 
   double hx = (x1_ - x0_) / nx_;
   double hy = (y1_ - y0_) / ny_;
@@ -85,17 +79,18 @@ void Mesh_simple::CreateCache_()
   }
 
   // -- connectivity arrays
-  cell_to_face_.resize(6 * num_cells_);
-  cell_to_face_dirs_.resize(6 * num_cells_);
-  face_to_cell_.assign(2 * num_faces_, -1); 
+  Kokkos::resize(cell_to_face_,6 * num_cells_);
+  Kokkos::resize(cell_to_face_dirs_, 6 * num_cells_);
+  Kokkos::resize(face_to_cell_, 2 * num_faces_);
+  initView(face_to_cell_, -1);  
 
-  face_to_node_.resize(4 * num_faces_);
-  node_to_face_.resize(13 * num_nodes_);  // 1 extra for num faces
+  Kokkos::resize(face_to_node_,4 * num_faces_);
+  Kokkos::resize(node_to_face_,13 * num_nodes_);  // 1 extra for num faces
 
   if (edges_requested_) {
-    face_to_edge_.resize(4 * num_faces_);
-    face_to_edge_dirs_.resize(4 * num_faces_);
-    edge_to_node_.resize(2 * num_edges_);
+    Kokkos::resize(face_to_edge_, 4 * num_faces_);
+    Kokkos::resize(face_to_edge_dirs_, 4 * num_faces_);
+    Kokkos::resize(edge_to_node_, 2 * num_edges_);
   }
 
   // loop over cells and initialize cell <-> face
@@ -383,14 +378,12 @@ void Mesh_simple::getCellFacesAndDirs(const AmanziMesh::Entity_ID cellid,
 {
   unsigned int offset = (unsigned int) 6*cellid;
 
-  faceids.clear();
-  auto it = cell_to_face_.begin() + offset;
-  faceids.insert(faceids.begin(), it, it + 6);
+  Kokkos::resize(faceids, 6);
+  for(int i = 0 ; i < 6 ; ++i) faceids[i] = cell_to_face_[offset+i];  
 
   if (cfacedirs) {
-    cfacedirs->clear();
-    auto jt = cell_to_face_dirs_.begin() + offset;
-    cfacedirs->insert(cfacedirs->begin(), jt, jt + 6);
+    Kokkos::resize(*cfacedirs, 6);
+    for(int i = 0 ; i < 6 ; ++i) (*cfacedirs)[i] = cell_to_face_dirs_[offset+i];  
   }
 }
 
@@ -402,10 +395,9 @@ void Mesh_simple::getFaceNodes(AmanziMesh::Entity_ID face,
         AmanziMesh::Entity_ID_List& nodeids) const
 {
   unsigned int offset = (unsigned int) 4*face;
-  nodeids.clear();
+  Kokkos::resize(nodeids, 4); 
   for (int i = 0; i < 4; i++) {
-    nodeids.push_back(*(face_to_node_.begin()+offset));
-    offset++;
+    nodeids[i] = face_to_node_[offset+i];
   }
 }
 
@@ -419,14 +411,12 @@ void Mesh_simple::getFaceEdgesAndDirs(const Entity_ID faceid,
 {
   unsigned int offset = (unsigned int) 4*faceid;
 
-  edgeids.clear();
-  auto it = face_to_edge_.begin() + offset;
-  edgeids.insert(edgeids.begin(), it, it + 4);
+  Kokkos::resize(edgeids, 3); 
+  for(int i = 0 ; i < 3 ; ++i) edgeids[i] = face_to_edge_[offset+i];  
 
   if (fedgedirs) {
-    fedgedirs->clear();
-    auto jt = face_to_edge_dirs_.begin();
-    fedgedirs->insert(fedgedirs->begin(), jt, jt + 4);
+    Kokkos::resize(*fedgedirs, 3); 
+    for(int i = 0 ; i < 3 ; ++i) (*fedgedirs)[i] = face_to_edge_dirs_[offset+i];  
   }
 }
 
@@ -438,7 +428,7 @@ void Mesh_simple::getEdgeNodes(
   const Entity_ID edgeid, Entity_ID_List& nodes) const
 {
   unsigned int offset = (unsigned int) 2*edgeid;
-  nodes.resize(2);
+  Kokkos::resize(nodes, 2);
   nodes[0] = edge_to_node_[offset];
   nodes[1] = edge_to_node_[offset + 1];
 }
@@ -465,11 +455,9 @@ void Mesh_simple::setNodeCoordinate(const AmanziMesh::Entity_ID local_node_id,
 {
   unsigned int offset = (unsigned int) 3*local_node_id;
 
-  std::vector<double>::iterator destination_begin = coordinates_.begin() + offset;
   int spdim = getSpaceDimension();
   for (int i = 0; i < spdim; i++) {
-    *destination_begin = ncoord[i];
-    destination_begin++;
+    coordinates_[offset+i] = ncoord[i]; 
   }
 }
 
@@ -484,10 +472,10 @@ void Mesh_simple::getNodeFaces(const AmanziMesh::Entity_ID nodeid,
   unsigned int offset = (unsigned int) 13*nodeid;
   unsigned int nfaces = node_to_face_[offset];
 
-  faceids.clear();
+  Kokkos::resize(faceids, nfaces); 
 
   for (int i = 0; i < nfaces; i++) 
-    faceids.push_back(node_to_face_[offset+i+1]);
+    faceids[i] = node_to_face_[offset+i+1];
 }
 
 
@@ -500,12 +488,13 @@ void Mesh_simple::getFaceCells(const AmanziMesh::Entity_ID faceid,
 {
   unsigned int offset = (unsigned int) 2*faceid;
 
-  cellids.clear();
-
+  Kokkos::resize(cellids, 2); 
+  int cellids_ct = 0;
   if (face_to_cell_[offset] != -1)
-    cellids.push_back(face_to_cell_[offset]);
+    cellids[cellids_ct++] = face_to_cell_[offset];
   if (face_to_cell_[offset+1] != -1)
-    cellids.push_back(face_to_cell_[offset+1]);
+    cellids[cellids_ct++] = face_to_cell_[offset+1];
+  Kokkos::resize(cellids, cellids_ct); 
 }
 
 
