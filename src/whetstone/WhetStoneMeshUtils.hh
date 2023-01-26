@@ -78,9 +78,7 @@ node_get_cell_faces(const AmanziMesh::Mesh& mesh,
                     const AmanziMesh::Parallel_type ptype,
                     AmanziMesh::Entity_ID_List* faces)
 {
-  Entity_ID_List nodes;
-
-  faces->clear();
+  std::vector<AmanziMesh::Entity_ID> vfaces; 
   int nfaces_owned = mesh.getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
 
   const auto& faces_tmp = mesh.getCellFaces(c);
@@ -90,15 +88,16 @@ node_get_cell_faces(const AmanziMesh::Mesh& mesh,
     int f = faces_tmp[i];
     if (ptype == AmanziMesh::Parallel_type::OWNED && f >= nfaces_owned) continue;
 
-    nodes = mesh.getFaceNodes(f);
+    auto nodes = mesh.getFaceNodes(f);
     int nnodes = nodes.size();
     for (int k = 0; k < nnodes; ++k) {
       if (nodes[k] == v) {
-        faces->push_back(f);
+        vfaces.push_back(f);
         break;
       }
     }
   }
+  vectorToView(*faces,vfaces); 
 }
 
 
@@ -118,10 +117,10 @@ cell_get_entities(const AmanziMesh::Mesh& mesh,
   } else if (kind == AmanziMesh::Entity_kind::NODE) {
     *entities = mesh.getCellNodes(c);
   } else if (kind == AmanziMesh::Entity_kind::CELL) {
-    entities->clear();
-    entities->push_back(c);
+    Kokkos::resize(*entities, 1); 
+    (*entities)[0] = c; 
   } else {
-    entities->clear();
+    Kokkos::resize(*entities,0); 
   }
 }
 

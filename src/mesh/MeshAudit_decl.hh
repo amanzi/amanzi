@@ -28,7 +28,7 @@ public:
  protected:
   // helpers for doing the testing
   bool areDistinctValues_(const AmanziMesh::Entity_ID_List& list) const;
-  void writeList_(const AmanziMesh::Entity_ID_List&) const;
+  void writeList_(const std::vector<Entity_ID>&) const;
   bool globalAny_(bool) const;
   int isSameFace_(const AmanziMesh::Entity_ID_List, const AmanziMesh::Entity_ID_List) const;
 

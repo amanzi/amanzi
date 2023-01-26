@@ -94,7 +94,7 @@ if (BUILD_TESTS)
     endif()
 
     set(amanzi_libs mpc pks mpc_tree transport  
-                    pks eos state operators mesh_extracted mesh_factory mesh_audit 
+                    pks eos state operators mesh_extracted mesh_factory 
                     geometry whetstone mesh_functions functions)
 
     set(ats_libs ats_flow ats_eos ats_column_integrator ats_generic_evals ats_surf_subsurf)

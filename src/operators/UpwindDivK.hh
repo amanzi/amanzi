@@ -79,8 +79,8 @@ UpwindDivK::Compute(const CompositeVector& flux,
 
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
   const Epetra_MultiVector& fld_boundary = *field.ViewComponent("boundary_face", true);
-  const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
-  const Epetra_Map& face_map = mesh_->face_map(true);
+  const Epetra_Map& ext_face_map = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE,true);
+  const Epetra_Map& face_map = mesh_->getMap(AmanziMesh::Entity_kind::FACE,true);
   Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
   upw_face.PutScalar(0.0);
 
@@ -89,12 +89,10 @@ UpwindDivK::Compute(const CompositeVector& flux,
   flx_face.MaxValue(&flxmax);
   double tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
-  std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List faces;
-
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    auto [faces, dirs] = mesh_->getCellFacesAndDirections(c);
+    auto adjcells = AmanziMesh::MeshAlgorithms::getCellFaceAdjacentCells(*mesh_,c,AmanziMesh::Parallel_type::OWNED);
     int nfaces = faces.size();
     double kc(fld_cell[0][c]);
 
@@ -105,10 +103,10 @@ UpwindDivK::Compute(const CompositeVector& flux,
       // Internal faces. We average field on almost vertical faces.
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(flx_face[0][f]) <= tol) {
         double tmp(0.5);
-        int c2 = cell_get_face_adj_cell(*mesh_, c, f);
+        int c2 = adjcells(f);
         if (c2 >= 0) {
-          double v1 = mesh_->cell_volume(c);
-          double v2 = mesh_->cell_volume(c2);
+          double v1 = mesh_->getCellVolume(c);
+          double v2 = mesh_->getCellVolume(c2);
           tmp = v2 / (v1 + v2);
         }
         upw_face[0][f] += kc * tmp;
@@ -121,7 +119,7 @@ UpwindDivK::Compute(const CompositeVector& flux,
         upw_face[0][f] = kc;
         // Internal and boundary faces.
       } else if (!flag) {
-        int c2 = cell_get_face_adj_cell(*mesh_, c, f);
+        int c2 = adjcells(f);
         if (c2 >= 0) {
           double kc2(fld_cell[0][c2]);
           upw_face[0][f] = std::pow(kc * (kc + kc2) / 2, 0.5);

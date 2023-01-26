@@ -75,7 +75,7 @@ TEST(COLUMN_MESH_3D)
 
   // Create a column mesh from one of the columns
   auto colmesh_ext = Teuchos::rcp(new AmanziMesh::Mesh_MSTK(mesh->getMeshFramework(),
-          asVector(mesh->columns.cells_.getRow<MemSpace_type::HOST>(10)), AmanziMesh::Entity_kind::CELL,
+          mesh->columns.cells_.getRow<MemSpace_type::HOST>(10), AmanziMesh::Entity_kind::CELL,
           false, getCommSelf(), gm, Teuchos::null));
 
   // Create the MeshColumn object
@@ -98,7 +98,7 @@ TEST(COLUMN_MESH_3D)
 
   for (int j = 0; j < ncells; j++) {
     AmanziMesh::Entity_ID_List cfaces;
-    std::vector<int> cfdirs;
+    AmanziMesh::Entity_Direction_View cfdirs;
     colmesh.getCellFacesAndDirs(j,cfaces,&cfdirs);
     CHECK_EQUAL(2,cfaces.size());
   }
@@ -224,7 +224,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   // Create a column mesh from one of the columns
   // Create a column mesh from one of the columns
   auto colmesh_ext = Teuchos::rcp(new AmanziMesh::Mesh_MSTK(mesh->getMeshFramework(),
-          asVector(mesh->columns.cells_.getRow<MemSpace_type::HOST>(10)), AmanziMesh::Entity_kind::CELL,
+          mesh->columns.cells_.getRow<MemSpace_type::HOST>(10), AmanziMesh::Entity_kind::CELL,
           false, getCommSelf(), gm, Teuchos::null));
   // Create the MeshColumn object
   Teuchos::RCP<AmanziMesh::MeshFramework> colmesh_fw =
@@ -246,7 +246,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
 
   for (int j = 0; j < ncells; j++) {
     AmanziMesh::Entity_ID_List cfaces;
-    std::vector<int> cfdirs;
+    AmanziMesh::Entity_Direction_View cfdirs;
     colmesh.getCellFacesAndDirs(j,cfaces,&cfdirs);
 
     CHECK_EQUAL(2,cfaces.size());

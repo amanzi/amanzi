@@ -90,7 +90,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 if(ENABLE_MESH_MSTK)
   add_amanzi_library(udriv
                    SOURCE AmanziUnstructuredGridSimulationDriver.cc
-                   LINK_LIBS mesh mesh_audit mesh_factory state mpc eos 
+                   LINK_LIBS mesh mesh_factory state mpc eos 
                              flow transport energy shallow_water multiphase
                              interface error_handling
                              ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES}
@@ -101,7 +101,7 @@ endif()
 # Binary: verify_mesh
 add_amanzi_executable(verify_mesh
                       SOURCE VerifyMesh.cc
-                      LINK_LIBS mesh_factory mesh mesh_audit 
+                      LINK_LIBS mesh_factory mesh 
                                 ${Boost_LIBRARIES} ${Epetra_LIBRARIES} ${HDF5_LIBRARIES})
 
 #
@@ -112,7 +112,7 @@ add_amanzi_executable(verify_mesh
 add_amanzi_executable(verify_hex
                       SOURCE VerifyHex.cc
                       LINK_LIBS mesh_factory
-                                mesh mesh_audit
+                                mesh
                                 output ${Boost_LIBRARIES} ${HDF5_LIBRARIES})
 set_target_properties(verify_hex PROPERTIES
                       COMPILE_DEFINES "${Boost_FILESYSTEM_DEFINES}")

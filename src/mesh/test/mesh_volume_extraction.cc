@@ -159,10 +159,10 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
     parent_mesh->buildColumns();
 
     int ncells = 3;
-    AmanziMesh::Entity_ID_List const& cell_list = asVector(parent_mesh->columns.cells_.getRow<MemSpace_type::HOST>(0));
+    AmanziMesh::Entity_ID_List const& cell_list = parent_mesh->columns.cells_.getRow<MemSpace_type::HOST>(0);
     CHECK_EQUAL(ncells,cell_list.size());
 
-    AmanziMesh::Entity_ID_List const& face_list = asVector(parent_mesh->columns.faces_.getRow<MemSpace_type::HOST>(0));
+    AmanziMesh::Entity_ID_List const& face_list = parent_mesh->columns.faces_.getRow<MemSpace_type::HOST>(0);
     CHECK_EQUAL(ncells+1,face_list.size());
 
     // construct a column mesh by extracting from mesh
@@ -195,13 +195,11 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
     set_ids2 = column_mesh->getSetEntities("Region 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
     CHECK_EQUAL(1, set_ids2.size());
 
-    set_ids2.clear();
     is_valid = column_mesh->isValidSetName("Top Surface", AmanziMesh::Entity_kind::FACE);
     CHECK(is_valid);
     set_ids2 = column_mesh->getSetEntities("Top Surface", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
     CHECK_EQUAL(1, set_ids2.size());
 
-    set_ids2.clear();
     is_valid = column_mesh->isValidSetName("Side Surface", AmanziMesh::Entity_kind::FACE);
     CHECK(is_valid);
     set_ids2 = column_mesh->getSetEntities("Side Surface", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);

@@ -88,15 +88,13 @@ MFD3D_LagrangeSerendipity::schema() const
 int
 MFD3D_LagrangeSerendipity::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes, edges;
-  nodes = mesh_->getCellNodes(c);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   int nfaces = mesh_->getCellNumFaces(c);
   int nedges(0);
   if (d_ == 3) {
-    edges = mesh_->getCellEdges(c);
-    nedges = edges.size();
+    nedges =  mesh_->getCellEdges(c).size();
   }
 
   // select number of non-aligned edges: we assume cell convexity
@@ -373,8 +371,7 @@ MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   // input mesh may have a different dimension than base mesh
   int d = mymesh->getSpaceDimension();
 
-  Entity_ID_List nodes;
-  nodes = mymesh->getCellNodes(c);
+  auto nodes = mymesh->getCellNodes(c);
   int nnodes = nodes.size();
 
   const auto& faces = mymesh->getCellFaces(c);
@@ -394,8 +391,7 @@ MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
 
-    Entity_ID_List face_nodes;
-    face_nodes = mymesh->getFaceNodes(f);
+    auto face_nodes = mymesh->getFaceNodes(f);
     int nfnodes = face_nodes.size();
 
     if (d == 2) {

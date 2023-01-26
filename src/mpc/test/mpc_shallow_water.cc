@@ -52,9 +52,11 @@ TEST(MPC_DRIVER_SHALLOW_WATER)
 
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
+  mesh_list->set<bool>("request edges", true); 
+  mesh_list->set<bool>("request faces", true); 
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(0.0, 0.0, 10.0, 10.0, 20, 20, true, true);
+  auto mesh = factory.create(0.0, 0.0, 10.0, 10.0, 20, 20);
 
   // create dummy observation data object
   double vmin;

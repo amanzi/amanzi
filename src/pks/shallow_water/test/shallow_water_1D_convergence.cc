@@ -125,7 +125,7 @@ TEST(SHALLOW_WATER_1D_CONVERGENCE)
   // create a mesh
   bool request_faces = true, request_edges = true;
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   if (MyPID == 0) std::cout << "Mesh factory created." << std::endl;
 
   RCP<const Mesh> mesh;

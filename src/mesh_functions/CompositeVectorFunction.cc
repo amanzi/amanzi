@@ -88,7 +88,7 @@ CompositeVectorFunction::Compute(double time,
 
           // loop over indices
           AmanziMesh::Entity_ID_List cells;
-          for (AmanziMesh::Entity_ID_List::const_iterator id = id_list.begin(); id != id_list.end();
+          for (auto id = id_list.begin(); id != id_list.end();
                ++id) {
             cells = mesh->getFaceCells(*id, AmanziMesh::Parallel_type::ALL);
             if (cells.size() == 1) {
@@ -125,7 +125,7 @@ CompositeVectorFunction::Compute(double time,
           }
 
           // loop over indices
-          for (AmanziMesh::Entity_ID_List::const_iterator id = id_list.begin(); id != id_list.end();
+          for (auto id = id_list.begin(); id != id_list.end();
                ++id) {
             // get the coordinate
             AmanziGeometry::Point xc;

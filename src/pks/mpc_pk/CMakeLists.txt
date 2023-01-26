@@ -144,7 +144,7 @@ if (BUILD_TESTS)
     # Add the flow directory to the include paths
     include_directories(${MPC_TREE_SOURCE_DIR})
 
-    set(amanzi_libs geometry mesh mesh_audit mesh_factory state energy operators whetstone data_structures)
+    set(amanzi_libs geometry mesh mesh_factory state energy operators whetstone data_structures)
 
     # Test: 1
     #if (ENABLE_AmanziPhysicsModule) 

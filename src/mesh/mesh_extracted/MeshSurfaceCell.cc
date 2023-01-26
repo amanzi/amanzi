@@ -53,7 +53,7 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const MeshFramework>& parent
 
   // set my nodes
   parent_->getFaceNodes(parent_face_, node_parents_);
-  nodes_.resize(node_parents_.size());
+  Kokkos::resize(nodes_, node_parents_.size());
   if (flatten) {
     for (int i=0; i!=node_parents_.size(); ++i) {
       auto parent_node = parent_->getNodeCoordinate(node_parents_[i]);
@@ -104,7 +104,7 @@ void MeshSurfaceCell::getCellNodes(const Entity_ID cellid,
         Entity_ID_List& nodeids) const
 {
   AMANZI_ASSERT(cellid == 0);
-  nodeids.resize(nodes_.size());
+  Kokkos::resize(nodeids, nodes_.size());
   for (int i=0; i!=nodes_.size(); ++i) nodeids[i] = i;
 }
 
@@ -119,7 +119,9 @@ void MeshSurfaceCell::getFaceNodes(const Entity_ID faceid,
         Entity_ID_List& nodeids) const
 {
   AMANZI_ASSERT(faceid < nodes_.size());
-  nodeids = { faceid, (faceid + 1) % (int) nodes_.size() };
+  Kokkos::resize(nodeids, 2); 
+  nodeids[0] = faceid; 
+  nodeids[1] = (faceid + 1) % (int) nodes_.size();
 }
 
 
@@ -131,7 +133,8 @@ void MeshSurfaceCell::getNodeCells(const Entity_ID nodeid,
         Entity_ID_List& cellids) const
 {
   AMANZI_ASSERT(nodeid < nodes_.size());
-  cellids = {0};
+  Kokkos::resize(cellids, 1);
+  cellids[0] = 0;
 }
 
 
@@ -141,7 +144,9 @@ void MeshSurfaceCell::getNodeCells(const Entity_ID nodeid,
 void MeshSurfaceCell::getNodeFaces(const Entity_ID nodeid,
         const Parallel_type ptype,
         Entity_ID_List& faceids) const {
-  faceids = { (nodeid - 1) % (int) nodes_.size(), nodeid };
+  Kokkos::resize(faceids, 2); 
+  faceids[0] = (nodeid - 1) % (int) nodes_.size(); 
+  faceids[1] = nodeid;
 }
 
 
@@ -154,9 +159,9 @@ void MeshSurfaceCell::getCellFacesAndDirs(const Entity_ID cellid,
         Entity_Direction_List * const face_dirs) const
 {
   AMANZI_ASSERT(cellid == 0);
-  faceids.resize(nodes_.size());
+  Kokkos::resize(faceids,nodes_.size());
   for (int i=0; i!=nodes_.size(); ++i) faceids[i] = i;
-  if (face_dirs) face_dirs->resize(nodes_.size(),1);
+  if (face_dirs) Kokkos::resize(*face_dirs,nodes_.size(),1);
 }
 
 
@@ -165,7 +170,8 @@ void MeshSurfaceCell::getCellFacesAndDirs(const Entity_ID cellid,
 void MeshSurfaceCell::getFaceCells(const Entity_ID faceid,
         const Parallel_type ptype,
         Entity_ID_List& cellids) const {
-  cellids.resize(1,0);
+  Kokkos::resize(cellids,1);
+  cellids[0] = 0; 
 }
 
 
