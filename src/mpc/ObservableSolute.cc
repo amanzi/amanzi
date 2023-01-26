@@ -43,7 +43,7 @@ ObservableSolute::ComputeRegionSize()
   // check if observation is planar
   obs_planar_ = false;
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_->geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_->getGeometricModel();
   Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion(region_);
 
   if (reg_ptr->get_type() == AmanziGeometry::RegionType::POLYGON) {
@@ -62,32 +62,32 @@ ObservableSolute::ComputeRegionSize()
       variable_ == comp_names_[tcc_index_] + " breakthrough curve" ||
       variable_ == "aqueous mass flow rate" ||
       variable_ == "aqueous volumetric flow rate") { // flux needs faces
-    region_size_ = mesh_->get_set_size(
-      region_, Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
-    entity_ids_.resize(region_size_);
-    mesh_->get_set_entities_and_vofs(
-      region_, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &entity_ids_, &vofs_);
+    region_size_ = mesh_->getSetSize(
+      region_, Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    Kokkos::resize(entity_ids_, region_size_);
+    std::tie(entity_ids_, vofs_) = mesh_->getSetEntitiesAndVolumeFractions(
+      region_, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
     obs_boundary_ = true;
     for (int i = 0; i != region_size_; ++i) {
       int f = entity_ids_[i];
       Amanzi::AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
       if (cells.size() == 2) {
         obs_boundary_ = false;
         break;
       }
     }
   } else { // all others need cells
-    region_size_ = mesh_->get_set_size(region_, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    entity_ids_.resize(region_size_);
-    mesh_->get_set_entities_and_vofs(
-      region_, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &entity_ids_, &vofs_);
+    region_size_ = mesh_->getSetSize(region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    Kokkos::resize(entity_ids_, region_size_);
+    std::tie(entity_ids_, vofs_) = mesh_->getSetEntitiesAndVolumeFractions(
+      region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
   }
 
   // find global meshblocksize
   int dummy = region_size_;
   int global_mesh_block_size(0);
-  mesh_->get_comm()->SumAll(&dummy, &global_mesh_block_size, 1);
+  mesh_->getComm()->SumAll(&dummy, &global_mesh_block_size, 1);
 
   return global_mesh_block_size;
 }
@@ -132,7 +132,7 @@ ObservableSolute::ComputeObservation(State& S,
 
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
-      double factor = wc[0][c] * mesh_->cell_volume(c);
+      double factor = wc[0][c] * mesh_->getCellVolume(c);
       factor *= units_.concentration_factor();
 
       *value += tcc[tcc_index_][c] * factor;
@@ -146,7 +146,7 @@ ObservableSolute::ComputeObservation(State& S,
     // we assume constant particle density
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
-      double factor = (1.0 - porosity[0][c]) * mesh_->cell_volume(c);
+      double factor = (1.0 - porosity[0][c]) * mesh_->getCellVolume(c);
 
       *value += sorbed[tcc_index_][c] * factor;
       *volume += factor;
@@ -163,7 +163,7 @@ ObservableSolute::ComputeObservation(State& S,
 
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
-      double factor = mesh_->cell_volume(c);
+      double factor = mesh_->getCellVolume(c);
 
       *value += free_ion[0][c] * factor;
       *volume += factor;
@@ -174,7 +174,7 @@ ObservableSolute::ComputeObservation(State& S,
 
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
-      double factor = porosity[0][c] * (1.0 - ws[0][c]) * mesh_->cell_volume(c);
+      double factor = porosity[0][c] * (1.0 - ws[0][c]) * mesh_->getCellVolume(c);
       factor *= units_.concentration_factor();
 
       *value += tcc[tcc_index_][c] * factor;
@@ -190,11 +190,11 @@ ObservableSolute::ComputeObservation(State& S,
     if (obs_boundary_) { // observation is on a boundary set
       for (int i = 0; i != region_size_; ++i) {
         int f = entity_ids_[i];
-        mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
+        cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_type::ALL);
 
         int sign, c = cells[0];
-        mesh_->face_normal(f, false, c, &sign);
-        double area = mesh_->face_area(f);
+        mesh_->getFaceNormal(f, c, &sign);
+        double area = mesh_->getFaceArea(f);
         double factor = units_.concentration_factor();
         int g = fmap.FirstPointInElement(f);
 
@@ -205,13 +205,13 @@ ObservableSolute::ComputeObservation(State& S,
     } else if (obs_planar_) { // observation is on an interior planar set
       for (int i = 0; i != region_size_; ++i) {
         int f = entity_ids_[i];
-        mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
+        cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_type::ALL);
 
         int csign, c = cells[0];
-        const AmanziGeometry::Point& face_normal = mesh_->face_normal(f, false, c, &csign);
+        const AmanziGeometry::Point& face_normal = mesh_->getFaceNormal(f, c, &csign);
         if (flowrate[0][f] * csign < 0) c = cells[1];
 
-        double area = mesh_->face_area(f);
+        double area = mesh_->getFaceArea(f);
         double sign = (reg_normal_ * face_normal) * csign / area;
         double factor = units_.concentration_factor();
         int g = fmap.FirstPointInElement(f);

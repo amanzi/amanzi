@@ -92,8 +92,7 @@ MFD3D_LagrangeAnyOrder::H1consistency2D_(const Teuchos::RCP<const AmanziMesh::Me
   // input mesh may have a different dimension than base mesh
   int d = mymesh->getSpaceDimension();
 
-  Entity_ID_List nodes;
-  nodes = mymesh->getCellNodes(c);
+  auto nodes = mymesh->getCellNodes(c);
   int nnodes = nodes.size();
 
   const auto& [faces,dirs] = mymesh->getCellFacesAndDirections(c);
@@ -167,8 +166,7 @@ MFD3D_LagrangeAnyOrder::H1consistency2D_(const Teuchos::RCP<const AmanziMesh::Me
       normal *= dirs[i];
       AmanziGeometry::Point conormal = K * normal;
 
-      Entity_ID_List face_nodes;
-      face_nodes = mymesh->getFaceNodes(f);
+      auto face_nodes = mymesh->getFaceNodes(f);
       int nfnodes = face_nodes.size();
 
       if (order_ == 1 && col > 0) {
@@ -300,10 +298,10 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
                                          DenseMatrix& Ac,
                                          bool doAc)
 {
-  Entity_ID_List nodes, fedges, fnodes, ids;
+  Entity_ID_List  fedges, fnodes;
   std::vector<int> fdirs;
 
-  nodes = mesh_->getCellNodes(c);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   const auto& edges = mesh_->getCellEdges(c);
@@ -383,7 +381,7 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
     RGM.Multiply(RG, Mf, false);
 
     // -- constant in projector generates additional matrix
-    ids = mesh_->getFaceNodes(f);
+    auto ids = mesh_->getFaceNodes(f);
 
     int m = RGM.NumRows();
     int n = RGM.NumCols();
@@ -420,6 +418,7 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
     }
 
     // -- map : edge moments
+    {
     const auto [ids, dirs_aux] = mesh_->getFaceEdgesAndDirections(f);
     for (int i = 0; i < ids.size(); ++i) {
       int e = ids[i];
@@ -427,6 +426,7 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
       pos = rowe + pos * nde;
 
       for (int k = 0; k < pe.size(); ++k) map.push_back(pos + k);
+      }
     }
 
     // -- map : interior face moments
@@ -656,9 +656,7 @@ MFD3D_LagrangeAnyOrder::ProjectorCell_(int c,
 {
   AMANZI_ASSERT(d_ == 2);
 
-  Entity_ID_List nodes;
-
-  nodes = mesh_->getCellNodes(c);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   const auto& faces = mesh_->getCellFaces(c);
@@ -701,8 +699,7 @@ MFD3D_LagrangeAnyOrder::ProjectorCell_(int c,
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
 
-    Entity_ID_List face_nodes;
-    face_nodes = mesh_->getFaceNodes(f);
+    auto face_nodes = mesh_->getFaceNodes(f);
     int nfnodes = face_nodes.size();
 
     for (int j = 0; j < nfnodes; j++) {

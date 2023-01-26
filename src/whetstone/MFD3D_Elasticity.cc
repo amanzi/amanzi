@@ -74,8 +74,7 @@ MFD3D_Elasticity::L2consistency(int c,
 int
 MFD3D_Elasticity::H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes;
-  nodes = mesh_->getCellNodes(c);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
@@ -128,8 +127,7 @@ MFD3D_Elasticity::H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMat
     const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
     double area = mesh_->getFaceArea(f);
 
-    Entity_ID_List face_nodes;
-    face_nodes = mesh_->getFaceNodes(f);
+    auto face_nodes = mesh_->getFaceNodes(f);
     int num_face_nodes = face_nodes.size();
 
     for (int j = 0; j < num_face_nodes; j++) {

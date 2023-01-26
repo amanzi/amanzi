@@ -41,7 +41,7 @@ FlexibleObservations::FlexibleObservations(Teuchos::RCP<Teuchos::ParameterList> 
                                            Teuchos::RCP<const State> S)
   : obs_list_(obs_list), coordinator_list_(coordinator_list), observation_data_(observation_data)
 {
-  rank_ = S->GetMesh("domain")->get_comm()->MyPID();
+  rank_ = S->GetMesh("domain")->getComm()->MyPID();
 
   // initialize units
   units_.Init(*units_list);
@@ -149,7 +149,7 @@ FlexibleObservations::MakeObservations(State& S)
 
       // syncronize the result across processors
       double data_out[2], data_in[2] = { value, volume };
-      S.GetMesh()->get_comm()->SumAll(data_in, data_out, 2);
+      S.GetMesh()->getComm()->SumAll(data_in, data_out, 2);
 
       if ((i->second)->functional_ == "observation data: integral") {
         data_quad.value = data_out[0];

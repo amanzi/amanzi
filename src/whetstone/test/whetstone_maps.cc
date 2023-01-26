@@ -56,8 +56,8 @@ TEST(DG_MAP_DETERMINANT_CELL)
   // deform the second mesh
   int dim(2), cell(0), nnodes(5), nfaces(5);
   AmanziGeometry::Point xv(dim);
-  Entity_ID_List nodeids, faces;
-  AmanziGeometry::Point_List new_positions, final_positions;
+  AmanziMesh::Entity_ID_List nodeids("nodeids", nnodes), faces;
+  AmanziMesh::Point_List new_positions("new_positions", nnodes), final_positions;
 
   for (int v = 0; v < nnodes; ++v) {
     xv = mesh1->getNodeCoordinate(v);
@@ -65,8 +65,8 @@ TEST(DG_MAP_DETERMINANT_CELL)
     xv[0] = (xv[0] + xv[0] * xv[0] + xv[0] * xv[0] * xv[0]) / 3;
     xv[1] = (xv[1] + xv[1] * xv[1]) / 2;
 
-    nodeids.push_back(v);
-    new_positions.push_back(xv);
+    nodeids[v] = v;
+    new_positions[v] = xv;
   }
   Amanzi::AmanziMesh::MeshAlgorithms::deform(*mesh1, nodeids, new_positions);
 
@@ -139,8 +139,8 @@ TEST(DG_MAP_LEAST_SQUARE_CELL)
   // deform the second mesh
   int d(2), cell(0), nnodes(5), nfaces(5);
   AmanziGeometry::Point xv(d), yv(d);
-  Entity_ID_List nodeids, faces;
-  AmanziGeometry::Point_List new_positions, final_positions;
+  AmanziMesh::Entity_ID_List nodeids("nodeids", nnodes), faces;
+  AmanziMesh::Point_List new_positions("new_positions", nnodes), final_positions;
 
   // -- deformation function
   double dt(0.05);
@@ -173,8 +173,8 @@ TEST(DG_MAP_LEAST_SQUARE_CELL)
     yv[0] = xv[0] + u[0].Value(xv);
     yv[1] = xv[1] + u[1].Value(xv);
 
-    nodeids.push_back(v);
-    new_positions.push_back(yv);
+    nodeids[v] = v;
+    new_positions[v] = yv;
   }
   Amanzi::AmanziMesh::MeshAlgorithms::deform(*mesh1, nodeids, new_positions);
 
@@ -299,8 +299,8 @@ TEST(DG_MAP_VELOCITY_CELL)
   // deform the second mesh
   int d(3), nnodes(8), nfaces(6), nedges(12);
   AmanziGeometry::Point xv(d), yv(d);
-  Entity_ID_List nodeids, edges, faces;
-  AmanziGeometry::Point_List new_positions, final_positions;
+  AmanziMesh::Entity_ID_List nodeids("nodeids", nnodes), edges, faces;
+  AmanziMesh::Point_List new_positions("new_positions", nnodes), final_positions;
 
   // -- deformation function
   int order(1);
@@ -320,8 +320,8 @@ TEST(DG_MAP_VELOCITY_CELL)
 
     for (int i = 0; i < d; ++i) yv[i] = xv[i] + u[i].Value(xv);
 
-    nodeids.push_back(v);
-    new_positions.push_back(yv);
+    nodeids[v] = v;
+    new_positions[v] = yv;
   }
   Amanzi::AmanziMesh::MeshAlgorithms::deform(*mesh1, nodeids, new_positions);
 

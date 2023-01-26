@@ -311,8 +311,7 @@ MFD3D_GeneralizedDiffusion::CurvedFaceGeometry_(int f,
   vv[0] *= dirs; // exterior average normal
 
   // geometric center. We cannot use face_centroid
-  Entity_ID_List nodes;
-  nodes = mesh_->getFaceNodes(f);
+  auto nodes = mesh_->getFaceNodes(f);
   int nnodes = nodes.size();
 
   xf.set(0.0);

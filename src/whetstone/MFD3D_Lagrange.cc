@@ -48,8 +48,7 @@ MFD3D_Lagrange::MFD3D_Lagrange(const Teuchos::ParameterList& plist,
 int
 MFD3D_Lagrange::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes;
-  nodes = mesh_->getCellNodes(c);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   N.Reshape(nnodes, d_ + 1);
@@ -70,8 +69,7 @@ MFD3D_Lagrange::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatri
     const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
     double area = mesh_->getFaceArea(f);
 
-    Entity_ID_List face_nodes;
-    face_nodes = mesh_->getFaceNodes(f);
+    auto face_nodes = mesh_->getFaceNodes(f);
     int num_face_nodes = face_nodes.size();
 
     for (int j = 0; j < num_face_nodes; j++) {
@@ -150,8 +148,7 @@ MFD3D_Lagrange::ProjectorCell_(int c,
                                const std::vector<Polynomial>& vf,
                                Polynomial& uc)
 {
-  Entity_ID_List nodes;
-  nodes = mesh_->getCellNodes(c);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
@@ -168,8 +165,7 @@ MFD3D_Lagrange::ProjectorCell_(int c,
     const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
     double area = mesh_->getFaceArea(f);
 
-    Entity_ID_List face_nodes;
-    face_nodes = mesh_->getFaceNodes(f);
+    auto face_nodes = mesh_->getFaceNodes(f);
     int num_face_nodes = face_nodes.size();
 
     for (int j = 0; j < num_face_nodes; j++) {

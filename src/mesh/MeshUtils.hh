@@ -13,6 +13,7 @@
 
 #pragma once
 
+#include <set>
 #include "Kokkos_Core.hpp"
 #include "Kokkos_DualView.hpp"
 
@@ -21,8 +22,6 @@ enum class MemSpace_type {
   DEVICE
 };
 
-using size_type = Kokkos::View<int*, Kokkos::DefaultHostExecutionSpace>::size_type;
-
 //
 // NOTE: begin/end must live in Kokkos namespace to work!
 //
@@ -30,19 +29,21 @@ using size_type = Kokkos::View<int*, Kokkos::DefaultHostExecutionSpace>::size_ty
 // We use this a lot...
 //
 namespace Kokkos {
+
+template<class DataType, class... Properties>
+struct MeshView; 
+
 namespace Impl {
 
 template<typename T, typename ...Args>
-class View_iter {
+struct View_iter: public std::iterator<std::forward_iterator_tag, T, int, T*, T&> {
   using iterator_category = std::forward_iterator_tag;
-  using difference_type = int;
   using value_type = T;
+  using difference_type = int;
   using pointer = value_type*;
   using reference = value_type&;
+  using View_type = MeshView<T*, Args...>;
 
-  using View_type = Kokkos::View<T*, Args...>;
-
-public:
   KOKKOS_INLINE_FUNCTION View_iter(const View_type& v) : View_iter(v,0) {}
   KOKKOS_INLINE_FUNCTION View_iter(const View_type& v, int i) : v_(v), i_(i) {}
 
@@ -51,37 +52,174 @@ public:
 
   // prefix
   KOKKOS_INLINE_FUNCTION View_iter& operator++() { i_++; return *this; }
+  KOKKOS_INLINE_FUNCTION View_iter& operator--() { i_--; return *this; }
   // postfix
   KOKKOS_INLINE_FUNCTION View_iter operator++(int) { View_iter tmp(*this); ++(*this); return tmp; }
 
+  KOKKOS_INLINE_FUNCTION friend int operator-(const View_iter& l, const View_iter& r){
+    return l.i_-r.i_; 
+  }
   KOKKOS_INLINE_FUNCTION friend bool operator==(const View_iter& a, const View_iter& b) {
     return a.v_ == b.v_ && a.i_ == b.i_;
   }
   KOKKOS_INLINE_FUNCTION friend bool operator!=(const View_iter& a, const View_iter& b) {
     return !(a == b);
   }
+  KOKKOS_INLINE_FUNCTION friend bool operator<(const View_iter& l, const View_iter& r) {
+    return l.i_<r.i_;
+  }
+  KOKKOS_INLINE_FUNCTION View_iter& operator+(const int& incr){
+    this->i_ += incr; 
+    return *this; 
+  }
+  KOKKOS_INLINE_FUNCTION View_iter& operator-(const int& decr){
+    this->i_ -= decr; 
+    return *this; 
+  }
 
 private:
   int i_;
-  const View_type& v_;
+  View_type v_;
 };
 
-} // namespace Impl
+} // namespace Impl 
 
-template<typename T, typename ...Args>
-Impl::View_iter<T, Args...>
-KOKKOS_INLINE_FUNCTION begin(const View<T*, Args...>& view) {
-  return Impl::View_iter<T, Args...>(view);
+template<class DataType, class... Properties>
+struct MeshView: public Kokkos::View<DataType, Properties...>{
+
+  using baseView = Kokkos::View<DataType, Properties...>; 
+  using baseView::baseView; 
+  using iterator = Impl::View_iter<std::remove_pointer_t<DataType>, Properties...>; 
+  using const_iterator = Impl::View_iter<const std::remove_pointer_t<DataType>, Properties...>; 
+  using traits = ViewTraits<DataType, Properties...>;
+
+  MeshView(const baseView& bv): baseView(bv) {}
+  MeshView(const MeshView& bv): baseView(bv) {}
+  
+  KOKKOS_FUNCTION MeshView& operator=(const MeshView& other){
+    baseView::operator=(other);
+    return *this; 
+  }
+
+  KOKKOS_FUNCTION MeshView& operator=(const MeshView&& other){
+    baseView::operator=(other);
+    return *this; 
+  }
+ 
+  using HostMirror =
+    MeshView<typename traits::non_const_data_type, typename traits::array_layout,
+              Device<DefaultHostExecutionSpace,
+              typename traits::host_mirror_space::memory_space>>;
+
+  KOKKOS_INLINE_FUNCTION iterator begin() const {
+    return iterator(*this);
+  }
+
+  KOKKOS_INLINE_FUNCTION iterator end() const {
+    return iterator(*this, this->size());
+  }
+
+  KOKKOS_INLINE_FUNCTION const_iterator cbegin() const {
+    return const_iterator(*this);
+  }
+
+  KOKKOS_INLINE_FUNCTION const_iterator cend() const {
+    return const_iterator(*this, this->size());
+  }
+
+  void insert(iterator v0_e, iterator v1_b, iterator v1_e) { 
+    //assert(v0_e - *this->end() != 0 && "Only insert at end supported for MeshViews"); 
+    std::size_t size = v1_e-v1_b; 
+    std::size_t csize = this->size(); 
+    Kokkos::resize(*this, size+csize); 
+    for(int i = csize; i < this->size(); ++i, ++v1_b) this->operator[](i) = *(v1_b); 
+  }
+
+}; 
+
+template<class SubDataType, class... SubProperties, class... Args>
+MeshView<SubDataType, SubProperties...> subview(Kokkos::MeshView<SubDataType, SubProperties...> v, Args... args){
+  MeshView ret = Kokkos::subview(v, std::forward<Args>(args)...); 
+  return ret; 
 }
 
-template<typename T, typename ...Args>
-Impl::View_iter<T, Args...>
-KOKKOS_INLINE_FUNCTION end(const View<T*, Args...>& view) {
-  return Impl::View_iter<T, Args...>(view, view.size());
-}
+template<class DataType, class Arg1Type = void, class Arg2Type = void, class Arg3Type = void>
+struct MeshDualView: public Kokkos::ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type>{
+
+  using traits = Kokkos::ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type>; 
+  using host_mirror_space = typename traits::host_mirror_space; 
+  using t_dev = MeshView<typename traits::data_type, Arg2Type, Arg2Type, Arg3Type>; 
+  using t_host = typename t_dev::HostMirror; 
+  using t_modified_flags = MeshView<unsigned int[2], LayoutLeft, Kokkos::HostSpace>;
+  t_modified_flags modified_flags;
+
+  KOKKOS_INLINE_FUNCTION t_host view_host() const {return h_view;}
+  KOKKOS_INLINE_FUNCTION t_dev view_device() const {return d_view;}
+
+  t_dev d_view; 
+  t_host h_view;
+
+  MeshDualView() = default;
+  MeshDualView(const std::string& label,
+           const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG)
+      : modified_flags(t_modified_flags("DualView::modified_flags")),
+        d_view(label, n0),
+        h_view(create_mirror_view(d_view))  // without UVM, host View mirrors
+  {}
+  MeshDualView(const MeshDualView& src): d_view(src.d_view), h_view(src.h_view), modified_flags(src.modified_flags){}
+  template <class SS, class LS, class DS, class MS>
+  MeshDualView(const MeshDualView<SS, LS, DS, MS>& src)
+      : modified_flags(src.modified_flags),
+        d_view(src.d_view),
+        h_view(src.h_view) {}
+
+  void resize(const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
+    if (modified_flags.data() == nullptr) {
+      modified_flags = t_modified_flags("DualView::modified_flags");
+    }
+    if (modified_flags(1) >= modified_flags(0)) {
+      /* Resize on Device */
+      ::Kokkos::resize(d_view, n0);
+      h_view = create_mirror_view(d_view);
+
+      /* Mark Device copy as modified */
+      modified_flags(1) = modified_flags(1) + 1;
+
+    } else {
+      /* Realloc on Device */
+
+      ::Kokkos::realloc(d_view, n0);
+
+      const bool sizeMismatch = (h_view.extent(0) != n0) ;
+      if (sizeMismatch)
+        ::Kokkos::resize(h_view, n0);
+
+      t_host temp_view = create_mirror_view(d_view);
+
+      /* Remap on Host */
+      Kokkos::deep_copy(temp_view, h_view);
+
+      h_view = temp_view;
+
+      d_view = create_mirror_view(typename t_dev::execution_space(), h_view);
+
+      /* Mark Host copy as modified */
+      modified_flags(0) = modified_flags(0) + 1;
+    }
+  }
+
+}; 
+
 
 } // namespace Kokkos
 
+using size_type = Kokkos::MeshView<int*, Kokkos::DefaultHostExecutionSpace>::size_type;
+
+
+// MeshView 
+// AmanziView 
+// MeshDualView 
+// AmanziDualView 
 
 
 namespace Amanzi {
@@ -95,7 +233,7 @@ namespace Amanzi {
 //
 template<MemSpace_type M, typename DualView>
 KOKKOS_INLINE_FUNCTION
-auto& // Kokkos::View of the same type as DV, on M
+auto& // Kokkos::MeshView of the same type as DV, on M
 view(DualView& dv)
 {
   if constexpr(M == MemSpace_type::HOST) {
@@ -105,15 +243,20 @@ view(DualView& dv)
   }
 }
 
+template<typename View, typename T>
+KOKKOS_INLINE_FUNCTION
+void initView(View& v,const T& t){ 
+  for(auto& vv: v) vv = t; 
+}
 
 //
 // Conversion from view on host to vector
 //
 template<typename T, typename ...Args>
 std::vector<std::remove_cv_t<T>>
-asVector(const Kokkos::View<T*, Args...> view)
+asVector(const Kokkos::MeshView<T*, Args...> view)
 {
-  static_assert(Kokkos::SpaceAccessibility<typename Kokkos::View<T*, Args...>::execution_space,
+  static_assert(Kokkos::SpaceAccessibility<typename Kokkos::MeshView<T*, Args...>::execution_space,
                 typename Kokkos::HostSpace>::accessible);
   // currently no fix for this -- C++20 will use span
   std::vector<std::remove_cv_t<T>> vec;
@@ -127,64 +270,79 @@ asVector(const Kokkos::View<T*, Args...> view)
 // Conversion from vector to non-owning view on host.
 //
 template<typename T>
-Kokkos::View<const T*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+Kokkos::MeshView<const T*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
 asView(const std::vector<T>& vec)
 {
-  using View_type = Kokkos::View<const T*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using View_type = Kokkos::MeshView<const T*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   View_type my_view(vec.data(), vec.size());
   return my_view;
 }
 
-
-//
-// Conversion between list and view through deep_copy.
-//
-template<typename T, typename ...Args>
-void my_deep_copy(Kokkos::View<T*, Args...>& out,
-                  const std::vector<T>& in)
-{
-  auto in_view = asView(in);
-  Kokkos::deep_copy(out, in_view);
+template<typename V, typename T>
+void vectorToView(V& view, const std::vector<T> vec){
+  Kokkos::resize(view,vec.size());
+  for(int i = 0; i < view.size(); ++i)
+    view[i] = vec[i]; 
 }
 
-
+template<typename V, typename T>
+void setToView(V& view, const std::set<T> vec){
+  Kokkos::resize(view,vec.size());
+  int i = 0; 
+  for(const auto& v: vec)
+    view[i++] = v; 
+}
 
 //
 // Conversion between list and dual view through deep copy and sync.
 //
 // NOTE: change this to DefaultDevice!
 template<typename T, typename MemSpace = Kokkos::HostSpace>
-Kokkos::DualView<typename std::remove_const<T>::type*, MemSpace>
+Kokkos::MeshDualView<typename std::remove_const<T>::type*, MemSpace>
 asDualView(const std::vector<T>& in)
 {
-  using DV_type = Kokkos::DualView<typename std::remove_const<T>::type*, MemSpace>;
+  using DV_type = Kokkos::MeshDualView<typename std::remove_const<T>::type*, MemSpace>;
   DV_type dv;
   dv.resize(in.size()); 
-  my_deep_copy(dv.h_view, in);
+  Kokkos::deep_copy(dv.h_view, asView(in));
   Kokkos::deep_copy(dv.d_view,dv.h_view); 
   return dv;
 }
 
+template<typename T, typename MemSpace = Kokkos::HostSpace, typename ...Args>
+Kokkos::MeshDualView<typename std::remove_const<T>::type*, MemSpace>
+asDualView(const Kokkos::MeshView<T*, Args...>& in)
+{
+  Kokkos::MeshDualView<typename std::remove_const<T>::type*, MemSpace> dv;
+  dv.resize(in.size()); 
+  Kokkos::deep_copy(dv.h_view,in); 
+  Kokkos::deep_copy(dv.d_view,dv.h_view); 
+  return dv;
+}
 
 // note, this template is left here despite not being used in case of future
 // refactoring for a more general struct.
 template<typename T>
 struct RaggedArray_DualView {
+
+  using View_type = Kokkos::MeshView<T*, Kokkos::DefaultHostExecutionSpace>;
+  using Entity_ID_View = View_type;
+
   using type_t = T; 
 
   template<MemSpace_type MEM>
   using constview = 
-    Kokkos::View<const T*,
+    Kokkos::MeshView<const T*,
     std::conditional<
       MEM==MemSpace_type::DEVICE,
       Kokkos::DefaultExecutionSpace,
       Kokkos::HostSpace>>; 
 
-  Kokkos::DualView<int*> rows;
-  Kokkos::DualView<T*> entries;
+  Kokkos::MeshDualView<int*> rows;
+  Kokkos::MeshDualView<T*> entries;
 
-  using host_mirror_space = typename Kokkos::DualView<T*>::host_mirror_space;
-  using execution_space = typename Kokkos::DualView<T*>::execution_space;
+  using host_mirror_space = typename Kokkos::MeshDualView<T*>::host_mirror_space;
+  using execution_space = typename Kokkos::MeshDualView<T*>::execution_space;
 
   RaggedArray_DualView() {}
 
@@ -283,11 +441,11 @@ asRaggedArray_DualView(Func mesh_func, int count) {
   adj.rows.resize(count+1);
 
   // do a count first, setting rows
-  std::vector<T> ents;
+  Kokkos::MeshView<T*, Kokkos::DefaultHostExecutionSpace> ents;
   int total = 0;
   for (int i=0; i!=count; ++i) {
     view<MemSpace_type::HOST>(adj.rows)[i] = total;
-    
+
     mesh_func(i, ents);
     total += ents.size();
   }
@@ -296,8 +454,9 @@ asRaggedArray_DualView(Func mesh_func, int count) {
 
   for (int i=0; i!=count; ++i) {
     mesh_func(i, ents);
-    Kokkos::View<T*, Kokkos::DefaultHostExecutionSpace> row_view = adj.template getRow<MemSpace_type::HOST>(i);
-    my_deep_copy(row_view, ents);
+    Kokkos::MeshView<T*, Kokkos::DefaultHostExecutionSpace> row_view = adj.template getRow<MemSpace_type::HOST>(i);
+    Kokkos::resize(row_view, ents.size()); 
+    Kokkos::deep_copy(row_view, ents); 
   }
   Kokkos::deep_copy(adj.rows.view_device(), adj.rows.view_host()); 
   Kokkos::deep_copy(adj.entries.view_device(),adj.entries.view_host()); 

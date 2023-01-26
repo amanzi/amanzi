@@ -115,8 +115,7 @@ MeshMaps_VEM::LeastSquareProjector_Cell_(int order,
   AmanziGeometry::Point px1, px2;
   std::vector<AmanziGeometry::Point> x1, x2;
 
-  Entity_ID_List nodes;
-  nodes = mesh0_->getCellNodes(c);
+  auto nodes = mesh0_->getCellNodes(c);
   int nnodes = nodes.size();
 
   for (int n = 0; n < nnodes; ++n) {

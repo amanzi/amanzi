@@ -146,9 +146,8 @@ AmanziGeometry::Point
 MFD3D_Diffusion::mesh_getFaceNormal(int f, int c)
 {
   AmanziGeometry::Point v0(d_), v1(d_);
-  Entity_ID_List nodes;
 
-  nodes = mesh_->getFaceNodes(f);
+  auto nodes = mesh_->getFaceNodes(f);
   v0 = mesh_->getNodeCoordinate(nodes[0]);
   v1 = mesh_->getNodeCoordinate(nodes[1]);
 

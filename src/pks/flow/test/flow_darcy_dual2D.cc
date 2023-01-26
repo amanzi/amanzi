@@ -62,7 +62,6 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
@@ -107,7 +106,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
   auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     p[0][c] = xc[1] * (xc[1] + 2.0);
   }
   S->GetRecordW("pressure", passwd).set_initialized();

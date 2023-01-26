@@ -35,22 +35,12 @@ namespace AmanziMesh {
 using Entity_ID = int;
 using Entity_GID = int;
 using Set_ID = int;
-using size_type = Kokkos::View<int*, Kokkos::DefaultHostExecutionSpace>::size_type;
-
-//
-// Lists are on host only
-//
-using Entity_ID_List = std::vector<Entity_ID>;
-using Entity_GID_List = std::vector<Entity_GID>;
-using Entity_Direction_List = std::vector<int>;
-using Point_List = std::vector<AmanziGeometry::Point>;
-using Double_List = std::vector<double>;
-template<typename T> using RaggedArray_List = std::vector<std::vector<T>>;
+using size_type = Kokkos::MeshView<int*, Kokkos::DefaultHostExecutionSpace>::size_type;
 
 //
 // Views are on host or device
 //
-template<typename T> using View_type = Kokkos::View<T*, Kokkos::DefaultHostExecutionSpace>;
+template<typename T> using View_type = Kokkos::MeshView<T*, Kokkos::DefaultHostExecutionSpace>;
 using Entity_ID_View = View_type<Entity_ID>;
 using cEntity_ID_View = View_type<const Entity_ID>;
 using Entity_GID_View = View_type<Entity_GID>;
@@ -62,8 +52,18 @@ using cPoint_View = View_type<const AmanziGeometry::Point>;
 using Double_View = View_type<double>;
 using cDouble_View = View_type<const double>;
 
+//
+// View for host only
+//
+using Entity_ID_List = Entity_ID_View;
+using Entity_GID_List = Entity_GID_View;
+using Entity_Direction_List = Entity_Direction_View;
+using Point_List = Point_View;
+using Double_List = Double_View;
+template<typename T> using RaggedArray_List = std::vector<std::vector<T>>;
 
-template<typename T> using DualView_type = Kokkos::DualView<T*, Kokkos::DefaultHostExecutionSpace>;
+
+template<typename T> using DualView_type = Kokkos::MeshDualView<T*, Kokkos::DefaultHostExecutionSpace>;
 using Entity_ID_DualView = DualView_type<Entity_ID>;
 using Entity_GID_DualView = DualView_type<Entity_GID>;
 using Entity_Direction_DualView = DualView_type<int>;
@@ -300,24 +300,24 @@ struct RaggedGetter{
   template<typename DATA, typename MF, typename FF, typename CFD, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
   get (bool cached, DATA& d, MF& mf, FF&& f, CFD&& cd, CF&& c, const Entity_ID n) {
-    using view_t = typename DATA::template constview<MEM>; 
+    using view_t = decltype(d.template getRow<MEM>(n));
+    if (cached) {
+      return d.template getRow<MEM>(n);  
+    }
     if constexpr(MEM == MemSpace_type::HOST){
-      if (cached) {
-        auto v = d.template getRow<MEM>(n);
-        return asVector(v); 
+
+      if constexpr (!std::is_same<FF,decltype(nullptr)>::value){
+        if(mf.get()){
+          view_t v = f(n); 
+          return v; 
+        }
       }
-      if constexpr (!std::is_same<FF,decltype(nullptr)>::value)
-        if(mf.get())
-        return f(n); 
-      if constexpr (!std::is_same<CF,decltype(nullptr)>::value) 
-        return c(c);
+      if constexpr (!std::is_same<CF,decltype(nullptr)>::value){
+        view_t v = c(c);
+        return v; 
+      }
       assert(false); 
-      std::vector<typename DATA::type_t> t; 
-      return t; 
     } else {
-      if (cached) {
-        return d.template getRow<MEM>(n);
-      }
       if constexpr (!std::is_same<CF,decltype(nullptr)>::value) 
         return cd(c);
     }
@@ -364,6 +364,7 @@ struct RaggedGetter<MEM,AccessPattern::COMPUTE>{
 
 using MeshSets = std::map<std::tuple<std::string,Entity_kind,Parallel_type>, Entity_ID_DualView>;
 using MeshSetVolumeFractions = std::map<std::tuple<std::string,Entity_kind,Parallel_type>, Double_DualView>;
+
 
 }  // namespace AmanziMesh
 }  // namespace Amanzi

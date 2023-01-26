@@ -27,17 +27,17 @@ template<class MeshAudit_type, class Mesh_type>
 void test2D(const Teuchos::RCP<Mesh_type>& mesh)
 {
   // Deform the mesh
-  AmanziMesh::Entity_ID_List nodeids;
-  AmanziGeometry::Point_List newpos, finpos;
-
   int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE,
           AmanziMesh::Parallel_type::OWNED);
+  AmanziMesh::Entity_ID_List nodeids("nodeids", nnodes);
+  AmanziMesh::Point_List newpos("newpos", nnodes);
+
   for (int j = 0; j < nnodes; j++) {
-    nodeids.push_back(j);
+    nodeids[j] = j;
     AmanziGeometry::Point oldcoord(2),newcoord(2);
     oldcoord = mesh->getNodeCoordinate(j);
     newcoord.set(oldcoord[0],0.5*oldcoord[1]);
-    newpos.push_back(newcoord);
+    newpos[j] = newcoord;
   }
 
   int ierr = MeshAlgorithms::deform(*mesh, nodeids, newpos);
@@ -60,19 +60,17 @@ template<class MeshAudit_type, class Mesh_type>
 void test3D(const Teuchos::RCP<Mesh_type>& mesh)
 {
   // Deform the mesh
-  AmanziMesh::Entity_ID_List nodeids;
-  AmanziGeometry::Point_List newpos, finpos;
-
   int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE,
           AmanziMesh::Parallel_type::OWNED);
-  for (int j = 0; j < nnodes; j++) {
-    nodeids.push_back(j);
+  AmanziMesh::Entity_ID_List nodeids("nodesids", nnodes);
+  AmanziMesh::Point_List newpos("newpos", nnodes);
 
+  for (int j = 0; j < nnodes; j++) {
+    nodeids[j] = j;
     AmanziGeometry::Point oldcoord(3),newcoord(3);
     oldcoord = mesh->getNodeCoordinate(j);
-
     newcoord.set(oldcoord[0], oldcoord[1], oldcoord[2]/2.0);
-    newpos.push_back(newcoord);
+    newpos[j] = newcoord;
   }
   int ierr = MeshAlgorithms::deform(*mesh, nodeids, newpos);
   CHECK_EQUAL(ierr, 0);

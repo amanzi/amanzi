@@ -37,7 +37,7 @@ class LimiterCellDG : public LimiterCell {
                       const std::vector<int>& bc_model,
                       const std::vector<double>& bc_value)
   {
-    AmanziMesh::Entity_ID_List ids(ncells_owned_);
+    AmanziMesh::Entity_ID_List ids("ids", ncells_owned_);
     for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
     ApplyLimiterDG(ids, field, dg, bc_model, bc_value);
   }
