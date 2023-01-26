@@ -61,7 +61,7 @@ ReconstructionCellLinear::Compute(const AmanziMesh::Entity_ID_List& ids,
   component_ = component;
 
   Epetra_MultiVector& grad = *gradient_->ViewComponent("cell");
-  AmanziMesh::Entity_ID_List cells;
+  std::vector<AmanziMesh::Entity_ID> cells;
   AmanziGeometry::Point xcc(dim);
 
   WhetStone::DenseMatrix matrix(dim, dim);

@@ -85,12 +85,12 @@ grab_filename(const bf::path& some_path)
 void
 dump_output(const int& me, Amanzi::AmanziMesh::Mesh& mesh, const std::string& filenameout)
 {
-  Amanzi::HDF5_MPI* viz_output = new Amanzi::HDF5_MPI(mesh.get_comm());
+  Amanzi::HDF5_MPI* viz_output = new Amanzi::HDF5_MPI(mesh.getComm());
   viz_output->setTrackXdmf(true);
   viz_output->createMeshFile(Teuchos::rcp(&mesh), filenameout);
   viz_output->createDataFile(filenameout);
 
-  const Epetra_Map& cmap(mesh.cell_map(false));
+  const Epetra_Map& cmap(mesh.getMap(Amanzi::AmanziMesh::Entity_kind::CELL, false));
   Epetra_Vector part(cmap);
   int nmycell(cmap.NumMyElements());
   std::vector<int> myidx(nmycell, 0);
@@ -106,11 +106,11 @@ dump_output(const int& me, Amanzi::AmanziMesh::Mesh& mesh, const std::string& fi
   std::fill(mypart.begin(), mypart.end(), -1);
 
   // Amanzi::AmanziMesh::Set_ID_List setids;
-  // mesh.get_set_ids(Amanzi::AmanziMesh::CELL, &setids);
+  // mesh.get_set_ids(Amanzi::AmanziMesh::Entity_kind::CELL, &setids);
   // for (Amanzi::AmanziMesh::Set_ID_List::const_iterator i = setids.begin();
   //      i != setids.end(); ++i) {
   //   Amanzi::AmanziMesh::Entity_ID_List gids;
-  //   mesh.get_set_entities(*i, Amanzi::AmanziMesh::CELL,
+  //   mesh.getSetEntities(*i, Amanzi::AmanziMesh::Entity_kind::CELL,
   //                          Amanzi::AmanziMesh::Parallel_type::OWNED, &gids);
   //   for (Amanzi::AmanziMesh::Entity_ID_List::const_iterator g = gids.begin();
   //        g != gids.end(); ++g) {
@@ -142,12 +142,12 @@ do_the_audit(const int& me, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh, const s
 
   std::ofstream ofs(ofile.c_str());
   if (me == 0) std::cout << "Writing results to " << ofile.c_str() << ", etc." << std::endl;
-  Amanzi::MeshAudit audit(mesh, ofs);
+  Amanzi::AmanziMesh::MeshAudit audit(mesh, ofs);
   lresult = audit.Verify();
 
   int gresult;
 
-  mesh->get_comm()->MaxAll(&lresult, &gresult, 1);
+  mesh->getComm()->MaxAll(&lresult, &gresult, 1);
 
   return gresult;
 }
@@ -281,11 +281,7 @@ main(int argc, char** argv)
 
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
   Amanzi::AmanziMesh::Preference pref;
-  if (dosimple) {
-    pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
-  } else {
-    pref.push_back(Amanzi::AmanziMesh::Framework::STK);
-  }
+  if (dosimple) { pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE); }
   meshfactory.set_preference(pref);
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -306,7 +302,7 @@ main(int argc, char** argv)
 
     //   try {
     //     Teuchos::ParameterXMLFileReader xmlreader(inname);
-    //     Teuchos::ParameterList all_parameter_list(xmlreader.getParameters());
+    //     Teuchos::ParameterList all_getParameterList(xmlreader.getParameters());
     //     Teuchos::ParameterList mesh_parameter_list = all_parameter_list.sublist("mesh");
     //     parameter_list = mesh_parameter_list.sublist("Generate");
     //   } catch (const std::runtime_error& e) {
@@ -323,7 +319,7 @@ main(int argc, char** argv)
   }
 
   //  std::cout << "Generated mesh has "
-  //            << mesh->num_sets(Amanzi::AmanziMesh::CELL)
+  //            << mesh->num_sets(Amanzi::AmanziMesh::Entity_kind::CELL)
   //            << " cell sets"
   //            << std::endl;
 

@@ -124,7 +124,7 @@ RunTest(int n, int d)
 
     if (cells.size() == 2) {
       const auto& xf = mesh->getFaceCentroid(f);
-      const auto& normal = mesh->getFaceNormal(f, cells[0], &dir);
+      const auto& normal = mesh->getFaceNormal(f, &dir);
       const auto& xc =
         (dir == 1) ? mesh->getCellCentroid(cells[0]) : mesh->getCellCentroid(cells[1]);
 

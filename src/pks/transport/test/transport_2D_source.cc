@@ -56,7 +56,6 @@ TEST(TRANSPORT_SOURCE_2D_MESH)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);

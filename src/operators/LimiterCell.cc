@@ -163,7 +163,7 @@ LimiterCell::ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field,
   const auto& bc_model = bc->bc_model();
   const auto& bc_value = bc->bc_value();
 
-  AmanziMesh::Entity_ID_List ids(ncells_owned_);
+  AmanziMesh::Entity_ID_List ids("ids", ncells_owned_);
   for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
 
   ApplyLimiter(ids, field, component, lifting, bc_model, bc_value);
@@ -177,7 +177,7 @@ LimiterCell::ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field,
                           const std::vector<int>& bc_model,
                           const std::vector<double>& bc_value)
 {
-  AmanziMesh::Entity_ID_List ids(ncells_owned_);
+  AmanziMesh::Entity_ID_List ids("ids", ncells_owned_);
   for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
   ApplyLimiter(ids, field, component, lifting, bc_model, bc_value);
 }
@@ -190,7 +190,7 @@ LimiterCell::ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field,
 {
   std::vector<int> bc_model;
   std::vector<double> bc_value;
-  AmanziMesh::Entity_ID_List ids(ncells_owned_);
+  AmanziMesh::Entity_ID_List ids("ids", ncells_owned_);
   for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
   ApplyLimiter(ids, field, component, lifting, bc_model, bc_value);
 }

@@ -47,10 +47,9 @@ MFD3D_BernardiRaugel::schema() const
 int
 MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes;
   AmanziGeometry::Point xv(d_), tau(d_), v1(d_);
 
-  nodes = mesh_->getCellNodes(c);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
@@ -254,8 +253,7 @@ MFD3D_BernardiRaugel::AdvectionMatrix(int c,
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
-  Entity_ID_List nodes;
-  nodes = mesh_->getCellNodes(c);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   // calculate corner normals and weigths
@@ -307,8 +305,7 @@ MFD3D_BernardiRaugel::AdvectionMatrix(int c,
 int
 MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
 {
-  Entity_ID_List nodes;
-  nodes = mesh_->getCellNodes(c);
+  auto nodes = mesh_->getCellNodes(c);
 
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();

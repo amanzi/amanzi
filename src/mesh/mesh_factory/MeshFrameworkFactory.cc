@@ -45,7 +45,7 @@ createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
 
   // create the extracted mesh of the column of cells
   MeshFrameworkFactory fac(getCommSelf(), parent_mesh->getGeometricModel(), plist);
-  Entity_ID_List col_list = asVector(parent_mesh->columns.getCells<MemSpace_type::HOST>(col_id));
+  Entity_ID_List col_list = parent_mesh->columns.getCells<MemSpace_type::HOST>(col_id);
   auto extracted_mesh = fac.create(parent_mesh, col_list, CELL, false);
 
   // create the MeshColumn object

@@ -89,8 +89,7 @@ CompositeVectorFunction::Compute(double time,
 
           // loop over indices
           AmanziMesh::Entity_ID_List cells;
-          for (AmanziMesh::Entity_ID_List::const_iterator id = id_list.begin(); id != id_list.end();
-               ++id) {
+          for (auto id = id_list.begin(); id != id_list.end(); ++id) {
             cells = mesh->getFaceCells(*id, AmanziMesh::Parallel_type::ALL);
             if (cells.size() == 1) {
               AmanziMesh::Entity_ID bf = vandelay_map.LID(face_map.GID(*id));
@@ -126,8 +125,7 @@ CompositeVectorFunction::Compute(double time,
           }
 
           // loop over indices
-          for (AmanziMesh::Entity_ID_List::const_iterator id = id_list.begin(); id != id_list.end();
-               ++id) {
+          for (auto id = id_list.begin(); id != id_list.end(); ++id) {
             // get the coordinate
             AmanziGeometry::Point xc;
             if (kind == AmanziMesh::Entity_kind::CELL) {

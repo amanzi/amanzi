@@ -260,16 +260,9 @@ struct MeshCacheData {
 
 template <MemSpace_type MEM>
 struct MeshCache {
-  template <typename T>
-  struct List_impl {
-    using type = std::conditional_t<MEM == MemSpace_type::HOST,
-                                    std::vector<std::remove_const_t<T>>,
-                                    Kokkos::View<T*>>;
-  };
-
   // Get view type based on mem
   template <typename T>
-  using List = typename List_impl<T>::type;
+  using List = Kokkos::MeshView<T*>;
 
   MeshCache();
 
@@ -402,20 +395,14 @@ struct MeshCache {
   decltype(auto) // View<const Entity_ID*, MEM>
   getBoundaryFaces() const
   {
-    if constexpr (MEM == MemSpace_type::HOST)
-      return asVector(maps_.getBoundaryFaces<MEM>());
-    else
-      return maps_.getBoundaryFaces<MEM>();
+    return maps_.getBoundaryFaces<MEM>();
   }
 
   // a list of ALL node LIDs that are on the boundary
   decltype(auto) // View<const Entity_ID*, MEM>
   getBoundaryNodes() const
   {
-    if constexpr (MEM == MemSpace_type::HOST)
-      return asVector(maps_.getBoundaryNodes<MEM>());
-    else
-      return maps_.getBoundaryNodes<MEM>();
+    return maps_.getBoundaryNodes<MEM>();
   }
 
   // maps define GIDs of each Entity_kind
@@ -452,7 +439,7 @@ struct MeshCache {
                  const Entity_kind kind,
                  const Parallel_type ptype) const;
 
-  decltype(auto) // pair<cEntity_ID_View, cDouble_Vies>
+  decltype(auto) // pair<cEntity_ID_View, cDouble_View>
   getSetEntitiesAndVolumeFractions(const std::string& region_name,
                                    const Entity_kind kind,
                                    const Parallel_type ptype) const;
@@ -590,18 +577,18 @@ struct MeshCache {
   getCellFacesAndBisectors(const Entity_ID c) const;
 
   template <AccessPattern AP = AccessPattern::DEFAULT>
-  KOKKOS_INLINE_FUNCTION void getCellFaces(const Entity_ID c, List<const Entity_ID>& faces) const;
+  KOKKOS_INLINE_FUNCTION void getCellFaces(const Entity_ID c, Entity_ID_List& faces) const;
 
   KOKKOS_INLINE_FUNCTION
   void getCellFacesAndDirs(const Entity_ID c,
-                           List<const Entity_ID>& faces,
-                           List<const int>* const dirs) const;
+                           Entity_ID_List& faces,
+                           Entity_Direction_View* const dirs) const;
 
 
   KOKKOS_INLINE_FUNCTION
   void getCellFacesAndBisectors(const Entity_ID c,
-                                List<const Entity_ID>& faces,
-                                List<const AmanziGeometry::Point>* const bisectors) const;
+                                Entity_ID_List& faces,
+                                Point_List* const bisectors) const;
 
   // //
   // // Downward adjacency -- edges of a cell
@@ -618,7 +605,7 @@ struct MeshCache {
 
   //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   template <AccessPattern AP = AccessPattern::DEFAULT>
-  KOKKOS_INLINE_FUNCTION void getCellEdges(const Entity_ID c, List<const Entity_ID>& edges) const;
+  KOKKOS_INLINE_FUNCTION void getCellEdges(const Entity_ID c, Entity_ID_List& edges) const;
 
   // // Get nodes of a cell.
   // template<AccessPattern = AccessPattern::DEFAULT>
@@ -669,13 +656,13 @@ struct MeshCache {
 
   //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   KOKKOS_INLINE_FUNCTION
-  void getFaceEdges(const Entity_ID f, List<const Entity_ID>& fedges) const;
+  void getFaceEdges(const Entity_ID f, Entity_ID_List& fedges) const;
 
   //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   KOKKOS_INLINE_FUNCTION
   void getFaceEdgesAndDirs(const Entity_ID f,
-                           List<const Entity_ID>& edges,
-                           List<const int>* const dirs = nullptr) const;
+                           Entity_ID_List& edges,
+                           Entity_Direction_View* const dirs = nullptr) const;
 
   KOKKOS_INLINE_FUNCTION
   std::vector<int> getFaceCellEdgeMap(const Entity_ID faceid, const Entity_ID cellid) const;
@@ -695,7 +682,7 @@ struct MeshCache {
   const Entity_ID& getFaceNode(const Entity_ID f, const size_type i) const;
   // //[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
   KOKKOS_INLINE_FUNCTION
-  void getFaceNodes(const Entity_ID f, List<const Entity_ID>& nodes) const;
+  void getFaceNodes(const Entity_ID f, Entity_ID_List& nodes) const;
 
   // //
   // // NOT CURRENTLY IMPLEMENTED, here to satisfy the interface
@@ -746,8 +733,7 @@ struct MeshCache {
   const Entity_ID& getFaceCell(const Entity_ID f, const size_type i) const;
 
   KOKKOS_INLINE_FUNCTION
-  void
-  getFaceCells(const Entity_ID f, const Parallel_type ptype, List<const Entity_ID>& cells) const;
+  void getFaceCells(const Entity_ID f, const Parallel_type ptype, Entity_ID_List& cells) const;
 
   KOKKOS_INLINE_FUNCTION
   std::size_t getCellMaxFaces() const;
@@ -767,7 +753,7 @@ struct MeshCache {
   // //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   template <AccessPattern AP = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION void
-  getEdgeCells(const Entity_ID e, const Parallel_type ptype, List<Entity_ID>& cells) const;
+  getEdgeCells(const Entity_ID e, const Parallel_type ptype, Entity_ID_List& cells) const;
 
   // // Faces of type 'ptype' connected to an edge
   // // NOTE: The order of faces is not guaranteed to be the same for
@@ -779,7 +765,7 @@ struct MeshCache {
   // //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   template <AccessPattern AP = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION void
-  getEdgeFaces(const Entity_ID edgeid, const Parallel_type ptype, List<Entity_ID>& faces) const;
+  getEdgeFaces(const Entity_ID edgeid, const Parallel_type ptype, Entity_ID_List& faces) const;
 
   // // Cells of type 'ptype' connected to a node
   // // NOTE: The order of cells is not guaranteed to be the same for
@@ -791,7 +777,7 @@ struct MeshCache {
   //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   template <AccessPattern AP = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION void
-  getNodeCells(const Entity_ID n, const Parallel_type ptype, List<Entity_ID>& cells) const;
+  getNodeCells(const Entity_ID n, const Parallel_type ptype, Entity_ID_List& cells) const;
 
   // // Faces of type parallel 'ptype' connected to a node
   // // NOTE: The order of faces is not guarnateed to be the same for
@@ -803,7 +789,10 @@ struct MeshCache {
   // //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   template <AccessPattern AP = AccessPattern::DEFAULT>
   KOKKOS_INLINE_FUNCTION void
-  getNodeFaces(const Entity_ID n, const Parallel_type ptype, List<Entity_ID>& faces) const;
+  getNodeFaces(const Entity_ID n, const Parallel_type ptype, Entity_ID_List& faces) const;
+
+  void PrintMeshStatistics() const;
+
 
   // // Edges of type 'ptype' connected to a node
   // //

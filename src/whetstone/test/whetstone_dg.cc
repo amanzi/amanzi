@@ -651,11 +651,10 @@ TEST(DG_LEAST_SQUARE_MAP_CELL)
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
   // extract polygon from the mesh
-  Entity_ID_List nodes;
   AmanziGeometry::Point xv;
   std::vector<AmanziGeometry::Point> x1;
 
-  nodes = mesh->getCellNodes(0);
+  auto nodes = mesh->getCellNodes(0);
 
   for (int i = 0; i < nodes.size(); ++i) {
     xv = mesh->getNodeCoordinate(nodes[i]);

@@ -191,8 +191,8 @@ class MeshFrameworkColumn : public MeshFramework {
                                    Entity_ID_List& faceids,
                                    Entity_Direction_List* const face_dirs) const override
   {
-    faceids.resize(2);
-    if (face_dirs) face_dirs->resize(2);
+    Kokkos::resize(faceids, 2);
+    if (face_dirs) Kokkos::resize(*face_dirs, 2);
 
     // NOTE: the face directions with respect to the cell may be at
     // odds with how it is in the parent mesh but within this mesh its
@@ -227,7 +227,7 @@ class MeshFrameworkColumn : public MeshFramework {
   Teuchos::RCP<MeshFramework> col3D_mesh_;
   int nfnodes_;
   int column_id_;
-  Kokkos::View<Entity_ID*, Kokkos::DefaultHostExecutionSpace> column_faces_;
+  Kokkos::MeshView<Entity_ID*, Kokkos::DefaultHostExecutionSpace> column_faces_;
   Entity_ID_List face_in_column_;
 };
 

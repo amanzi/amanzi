@@ -70,7 +70,7 @@ CreateObservable(Teuchos::ParameterList& coord_plist,
 
   bool obs_solute = obs_solute_liquid || obs_solute_gas;
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh->geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh->getGeometricModel();
   Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion(region);
 
   if (obs_solute) {

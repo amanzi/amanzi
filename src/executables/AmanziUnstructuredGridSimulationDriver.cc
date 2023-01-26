@@ -142,16 +142,15 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
         if (framework_specified) {
           std::string framework = expert_mesh_params.get<std::string>("framework");
 
-          if (framework ==
-              Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::SIMPLE)) {
+          if (framework == Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::SIMPLE)) {
             prefs.clear();
             prefs.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
           } else if (framework ==
-                     Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MSTK)) {
+                     Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::MSTK)) {
             prefs.clear();
             prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
           } else if (framework ==
-                     Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MOAB)) {
+                     Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::MOAB)) {
             prefs.clear();
             prefs.push_back(Amanzi::AmanziMesh::Framework::MOAB);
             // } else if (framework == "") {
@@ -250,7 +249,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
   AMANZI_ASSERT(!mesh.is_null());
 
   // Verify mesh and geometric model compatibility
-  if (geom_model->dimension() != mesh->space_dimension()) {
+  if (geom_model->dimension() != mesh->getSpaceDimension()) {
     amanzi_throw(Errors::Message("Geometric model and mesh have different dimensions."));
   }
 
@@ -262,7 +261,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
       if (verify) {
         if (rank == 0) std::cerr << "Verifying mesh with Mesh Audit..." << std::endl;
         if (size == 1) {
-          Amanzi::MeshAudit mesh_auditor(mesh);
+          Amanzi::AmanziMesh::MeshAudit mesh_auditor(mesh);
           int status = mesh_auditor.Verify();
           if (status == 0) {
             if (rank == 0) std::cerr << "Mesh Audit confirms that mesh is ok" << std::endl;
@@ -278,7 +277,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
             std::cerr << "Writing Mesh Audit output to " << ofile.str() << ", etc." << std::endl;
 
           ierr = 0;
-          Amanzi::MeshAudit mesh_auditor(mesh, ofs);
+          Amanzi::AmanziMesh::MeshAudit mesh_auditor(mesh, ofs);
           int status = mesh_auditor.Verify(); // check the mesh
           if (status != 0) ierr++;
 
@@ -331,7 +330,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
     std::vector<std::string> names =
       extract_plist.get<Teuchos::Array<std::string>>("regions").toVector();
 
-    auto submesh = meshfactory.create(mesh, names, Amanzi::AmanziMesh::FACE);
+    auto submesh = meshfactory.create(mesh, names, Amanzi::AmanziMesh::Entity_kind::FACE);
     submesh->PrintMeshStatistics();
     S->RegisterMesh(domain, submesh);
 

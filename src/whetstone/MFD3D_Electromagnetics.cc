@@ -288,7 +288,6 @@ MFD3D_Electromagnetics::StiffnessMatrix_GradCorrection(int c, const Tensor& T, D
 void
 MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
 {
-  Entity_ID_List nodes;
   std::vector<int> map;
 
   const auto& edges = mesh_->getCellEdges(c);
@@ -301,7 +300,7 @@ MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
   C.PutScalar(0.0);
 
   if (d_ == 2) {
-    nodes = mesh_->getCellNodes(c);
+    auto nodes = mesh_->getCellNodes(c);
 
     for (int i = 0; i < nfaces; ++i) {
       int j = (i + 1) % nfaces;

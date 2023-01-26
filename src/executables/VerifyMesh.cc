@@ -56,17 +56,12 @@ main(int argc, char* argv[])
   if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MSTK)) {
     frameworks_avail.push_back(Amanzi::AmanziMesh::Framework::MSTK);
     frameworks_avail_names.push_back(
-      Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MSTK).c_str());
+      Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::MSTK).c_str());
   }
   if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MOAB)) {
     frameworks_avail.push_back(Amanzi::AmanziMesh::Framework::MOAB);
     frameworks_avail_names.push_back(
-      Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MOAB).c_str());
-  }
-  if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::STK)) {
-    frameworks_avail.push_back(Amanzi::AmanziMesh::Framework::STK);
-    frameworks_avail_names.push_back(
-      Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::STK).c_str());
+      Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::MOAB).c_str());
   }
   if (frameworks_avail.size() == 0) {
     std::cerr << "error: this build has no frameworks which can read mesh files." << std::endl;
@@ -137,9 +132,7 @@ main(int argc, char* argv[])
   try {
     if (me == 0) {
       std::cerr << "Attempting to read \"" << filename << "\" with ";
-      for (auto p : frameworks) {
-        std::cerr << "\"" << Amanzi::AmanziMesh::framework_names.at(p) << "\",";
-      }
+      for (auto p : frameworks) { std::cerr << "\"" << Amanzi::AmanziMesh::to_string(p) << "\","; }
       std::cerr << std::endl;
     }
     meshfactory.set_preference(prefs);
@@ -159,14 +152,14 @@ main(int argc, char* argv[])
   int status;
 
   if (nproc == 1) {
-    Amanzi::MeshAudit audit(mesh);
+    Amanzi::AmanziMesh::MeshAudit audit(mesh);
     status = audit.Verify();
   } else {
     std::ostringstream ofile;
     ofile << "mesh_audit_" << std::setfill('0') << std::setw(4) << me << ".txt";
     std::ofstream ofs(ofile.str().c_str());
     if (me == 0) std::cout << "Writing results to " << ofile.str() << ", etc." << std::endl;
-    Amanzi::MeshAudit audit(mesh, ofs);
+    Amanzi::AmanziMesh::MeshAudit audit(mesh, ofs);
     status = audit.Verify();
   }
 
@@ -174,17 +167,17 @@ main(int argc, char* argv[])
 
   if (dump_node_map) {
     if (me == 0) { std::cout << "Node Epetra Map: " << std::endl; }
-    (mesh->node_map(false)).Print(std::cout);
+    (mesh->getMap(Amanzi::AmanziMesh::Entity_kind::NODE, false)).Print(std::cout);
   }
 
   if (dump_face_map) {
     if (me == 0) { std::cout << "Face Epetra Map: " << std::endl; }
-    (mesh->face_map(false)).Print(std::cout);
+    (mesh->getMap(Amanzi::AmanziMesh::Entity_kind::FACE, false)).Print(std::cout);
   }
 
   if (dump_cell_map) {
     if (me == 0) { std::cout << "Cell Epetra Map: " << std::endl; }
-    (mesh->cell_map(false)).Print(std::cout);
+    (mesh->getMap(Amanzi::AmanziMesh::Entity_kind::CELL, false)).Print(std::cout);
   }
 
   return status;

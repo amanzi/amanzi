@@ -98,7 +98,7 @@ RunTest(double gravity)
 
     for (int i = 0; i < ndofs; ++i) {
       int c = cells[i];
-      auto normal = mesh->getFaceNormal(f, c, &dir);
+      auto normal = mesh->getFaceNormal(f, &dir);
       normal *= dir; // natural normal
 
       int g2 = g + Operators::UniqueIndexFaceToCells(*mesh, f, c);

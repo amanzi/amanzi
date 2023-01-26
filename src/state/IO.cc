@@ -259,19 +259,20 @@ DeformCheckpointMesh(State& S, Key domain)
     const CompositeVector& vc = S.Get<CompositeVector>(vc_key, Tags::DEFAULT);
     vc.ScatterMasterToGhosted("node");
     const Epetra_MultiVector& vc_n = *vc.ViewComponent("node", true);
+    int nV = vc_n.MyLength();
 
     int dim = write_access_mesh->getSpaceDimension();
-    Amanzi::AmanziMesh::Entity_ID_List nodeids;
+    Amanzi::AmanziMesh::Entity_ID_List nodeids("nodeids", nV);
     Amanzi::AmanziGeometry::Point new_coords(dim);
-    AmanziGeometry::Point_List new_pos, final_pos;
+    Amanzi::AmanziMesh::Point_List new_pos("new_pos", nV), final_pos;
 
-    int nV = vc_n.MyLength();
+
     for (int n = 0; n != nV; ++n) {
       for (int k = 0; k != dim; ++k) new_coords[k] = vc_n[k][n];
 
       // push back for deform method
-      nodeids.push_back(n);
-      new_pos.push_back(new_coords);
+      nodeids[n] = n;
+      new_pos[n] = new_coords;
     }
 
     // deform the mesh

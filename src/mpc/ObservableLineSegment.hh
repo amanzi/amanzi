@@ -33,7 +33,7 @@ class ObservableLineSegment : public virtual Observable {
   void ComputeInterpolationPoints(Teuchos::RCP<const AmanziGeometry::Region> reg_ptr);
 
  protected:
-  std::vector<double> lofs_;
+  AmanziMesh::Double_View lofs_;
   std::string interpolation_;
   std::string weighting_;
   std::vector<AmanziGeometry::Point> line_points_;
@@ -61,7 +61,7 @@ ObservableLineSegment::ComputeRegionSize()
   //int mesh_block_size;
   Errors::Message msg;
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_->geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_->getGeometricModel();
   Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion(region_);
 
   if (reg_ptr->get_type() != AmanziGeometry::RegionType::LINE_SEGMENT) {
@@ -70,17 +70,18 @@ ObservableLineSegment::ComputeRegionSize()
   }
 
   // all others need cells
-  region_size_ = mesh_->get_set_size(region_, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  entity_ids_.resize(region_size_);
-  mesh_->get_set_entities_and_vofs(
-    region_, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &entity_ids_, &lofs_);
+  region_size_ =
+    mesh_->getSetSize(region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  Kokkos::resize(entity_ids_, region_size_);
+  std::tie(entity_ids_, lofs_) = mesh_->getSetEntitiesAndVolumeFractions(
+    region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   ComputeInterpolationPoints(reg_ptr);
 
   // find global meshblocksize
   int dummy = region_size_;
   int global_mesh_block_size(0);
-  mesh_->get_comm()->SumAll(&dummy, &global_mesh_block_size, 1);
+  mesh_->getComm()->SumAll(&dummy, &global_mesh_block_size, 1);
 
   return global_mesh_block_size;
 }
@@ -105,7 +106,7 @@ ObservableLineSegment::ComputeInterpolationPoints(
 {
   AmanziMesh::Entity_ID_List faces, cnodes, fnodes;
   std::vector<int> dirs;
-  std::vector<AmanziGeometry::Point> polytope_nodes;
+  AmanziMesh::Point_List polytope_nodes;
   std::vector<std::vector<int>> polytope_faces;
 
   line_points_.resize(entity_ids_.size());
@@ -117,17 +118,17 @@ ObservableLineSegment::ComputeInterpolationPoints(
 
   for (int k = 0; k < entity_ids_.size(); k++) {
     int c = entity_ids_[k];
-    mesh_->cell_get_coordinates(c, &polytope_nodes);
+    polytope_nodes = mesh_->getCellCoordinates(c);
 
-    if (mesh_->space_dimension() == 3) {
-      mesh_->cell_get_nodes(c, &cnodes);
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    if (mesh_->getSpaceDimension() == 3) {
+      cnodes = mesh_->getCellNodes(c);
+      auto [faces, dirs] = mesh_->getCellFacesAndDirections(c);
       int nfaces = faces.size();
 
       polytope_faces.clear();
       polytope_faces.resize(nfaces);
       for (int n = 0; n < nfaces; ++n) {
-        mesh_->face_get_nodes(faces[n], &fnodes);
+        fnodes = mesh_->getFaceNodes(faces[n]);
         int nnodes = fnodes.size();
 
         for (int i = 0; i < nnodes; ++i) {
@@ -144,7 +145,8 @@ ObservableLineSegment::ComputeInterpolationPoints(
         }
       }
 
-      line_segment_ptr->ComputeInterLinePoints(polytope_nodes, polytope_faces, line_points_[k]);
+      line_segment_ptr->ComputeInterLinePoints(
+        asVector(polytope_nodes), polytope_faces, line_points_[k]);
       // sum += lofs_[k];
     }
   }

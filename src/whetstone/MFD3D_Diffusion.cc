@@ -141,8 +141,7 @@ MFD3D_Diffusion::L2consistencyInverseScaledArea(int c,
 int
 MFD3D_Diffusion::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes;
-  nodes = mesh_->getCellNodes(c);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   N.Reshape(nnodes, d_ + 1);
@@ -163,8 +162,7 @@ MFD3D_Diffusion::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatr
     const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
     double area = mesh_->getFaceArea(f);
 
-    Entity_ID_List face_nodes;
-    face_nodes = mesh_->getFaceNodes(f);
+    auto face_nodes = mesh_->getFaceNodes(f);
     int num_face_nodes = face_nodes.size();
 
     for (int j = 0; j < num_face_nodes; j++) {
@@ -392,8 +390,6 @@ MFD3D_Diffusion::L2consistencyInverseDivKScaled(int c,
                                                 DenseMatrix& R,
                                                 DenseMatrix& Wc)
 {
-  Entity_ID_List nodes;
-
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
@@ -430,7 +426,7 @@ MFD3D_Diffusion::L2consistencyInverseDivKScaled(int c,
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     if (d_ == 2) {
-      nodes = mesh_->getFaceNodes(f);
+      auto nodes = mesh_->getFaceNodes(f);
 
       v1 = mesh_->getNodeCoordinate(nodes[0]);
       v2 = mesh_->getNodeCoordinate(nodes[1]);

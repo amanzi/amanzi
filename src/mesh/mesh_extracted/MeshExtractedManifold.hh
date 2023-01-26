@@ -84,7 +84,7 @@ class MeshExtractedManifold : public MeshFramework {
   // -- edges
   virtual void getEdgeNodes(const Entity_ID e, Entity_ID_List& nodes) const override
   {
-    nodes.resize(2);
+    Kokkos::resize(nodes, 2);
     nodes[0] = e;
     nodes[1] = e;
   }
@@ -131,13 +131,13 @@ class MeshExtractedManifold : public MeshFramework {
   //    implemented in each mesh framework. The results are cached in the base class
   virtual void getCellFacesAndDirs(const Entity_ID c,
                                    Entity_ID_List& faces,
-                                   std::vector<int>* fdirs) const override;
+                                   Entity_Direction_View* fdirs) const override;
 
   // -- edges of a face - this function is implemented in each mesh
   //    framework. The results are cached in the base class
   virtual void getFaceEdgesAndDirs(const Entity_ID f,
                                    Entity_ID_List& edges,
-                                   std::vector<int>* edirs) const override;
+                                   Entity_Direction_View* edirs) const override;
 
   // -- edges of a cell - this function is implemented in each mesh
   //    framework. The results are cached in the base class.

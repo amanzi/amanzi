@@ -95,7 +95,7 @@ class Mesh_simple : public MeshFramework {
 
  private:
   bool edges_requested_;
-  std::vector<double> coordinates_;
+  Double_List coordinates_;
 
   unsigned int node_index_(int i, int j, int k) const;
   unsigned int cell_index_(int i, int j, int k) const;
@@ -115,19 +115,19 @@ class Mesh_simple : public MeshFramework {
   int num_cells_, num_faces_, num_edges_, num_nodes_;
 
   // mesh connectivity arrays
-  std::vector<Entity_ID> cell_to_face_;
-  std::vector<Entity_ID> face_to_edge_;
-  std::vector<Entity_ID> face_to_node_;
-  std::vector<Entity_ID> edge_to_node_;
+  Entity_ID_List cell_to_face_;
+  Entity_ID_List face_to_edge_;
+  Entity_ID_List face_to_node_;
+  Entity_ID_List edge_to_node_;
 
-  std::vector<Entity_ID> node_to_face_;
-  std::vector<Entity_ID> node_to_edge_;
-  std::vector<Entity_ID> edge_to_face_;
-  std::vector<Entity_ID> face_to_cell_;
+  Entity_ID_List node_to_face_;
+  Entity_ID_List node_to_edge_;
+  Entity_ID_List edge_to_face_;
+  Entity_ID_List face_to_cell_;
 
   // orientation arrays
-  std::vector<int> cell_to_face_dirs_;
-  std::vector<int> face_to_edge_dirs_;
+  Entity_Direction_View cell_to_face_dirs_;
+  Entity_Direction_View face_to_edge_dirs_;
 };
 
 

@@ -65,7 +65,7 @@ class ReconstructionCellLinear : public Reconstruction {
   {
     int ncells_wghost =
       mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
-    AmanziMesh::Entity_ID_List ids(ncells_wghost);
+    AmanziMesh::Entity_ID_List ids("ids", ncells_wghost);
     for (int c = 0; c < ncells_wghost; ++c) ids[c] = c;
     Compute(ids, field, component, bc);
   }

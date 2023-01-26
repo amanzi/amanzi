@@ -27,14 +27,14 @@ MeshColumns::initialize(const MeshCache<MemSpace_type::HOST>& mesh)
 
   // loop over all boundary faces and look for those whose normal z component
   // is not zero and whose opposing face is below them.
-  int col_id = 0;
-  Entity_ID_List surface_faces;
+  Entity_ID_List surface_faces("surface_faces", mesh.getBoundaryFaces().size());
+  int sf = 0;
   for (const Entity_ID f : mesh.getBoundaryFaces()) {
     auto f_normal = mesh.getFaceNormal(f);
     Entity_ID c = mesh.getFaceCells(f, Parallel_type::ALL)[0];
-    if (Impl::orientFace(mesh, f, c) == 1) surface_faces.emplace_back(f);
+    if (Impl::orientFace(mesh, f, c) == 1) surface_faces[sf++] = f;
   }
-
+  Kokkos::resize(surface_faces, sf);
   initialize(mesh, surface_faces);
 }
 
@@ -55,12 +55,14 @@ MeshColumns::initialize(const MeshCache<MemSpace_type::HOST>& mesh,
   }
 
   // collect faces in all regions, keeping the collection sorted
-  Entity_ID_List surface_faces;
+  std::vector<Entity_ID> vsurface_faces;
   for (const auto& r : regions) {
     auto r_faces = mesh.getSetEntities(r, Entity_kind::FACE, Parallel_type::ALL);
     for (Entity_ID f : r_faces)
-      surface_faces.insert(std::upper_bound(surface_faces.begin(), surface_faces.end(), f), f);
+      vsurface_faces.insert(std::upper_bound(vsurface_faces.begin(), vsurface_faces.end(), f), f);
   }
+  Entity_ID_List surface_faces;
+  vectorToView(surface_faces, vsurface_faces);
 
   // build columns for each face
   initialize(mesh, surface_faces);

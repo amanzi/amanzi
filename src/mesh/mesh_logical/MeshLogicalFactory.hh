@@ -270,13 +270,14 @@ class MeshLogicalFactory {
   int ReserveFace();
   // Manually add a connection, returning the face id.
   int AddFace(int f,
-              const Entity_ID_List& cells,
+              const std::vector<Entity_ID>& cells,
               const std::vector<AmanziGeometry::Point>& bisectors,
               const std::vector<int>& dirs,
               double area);
 
   // Add a set from a list of entities
-  int AddSet(const std::string& set_name, const std::string& ent, const Entity_ID_List& ents);
+  int
+  AddSet(const std::string& set_name, const std::string& ent, const std::vector<Entity_ID>& ents);
 
  protected:
   // Reads a tip type from plist
@@ -290,7 +291,7 @@ class MeshLogicalFactory {
   std::vector<double> cell_volumes_;
   std::vector<double> cell_lengths_;
   std::vector<double> face_areas_;
-  std::vector<Entity_ID_List> face_cell_list_;
+  std::vector<std::vector<Entity_ID>> face_cell_list_;
   std::vector<std::vector<AmanziGeometry::Point>> face_cell_bisectors_;
   std::vector<std::vector<int>> face_cell_dirs_;
 

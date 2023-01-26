@@ -94,10 +94,7 @@ CalculateDarcyDivergenceError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiV
     mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-    AmanziMesh::Entity_ID_List faces;
-    std::vector<int> dirs;
-
-    mesh->getCellFacesAndDirections(c, &faces, &dirs);
+    auto [faces, dirs] = mesh->getCellFacesAndDirections(c);
     int nfaces = faces.size();
 
     double div = 0.0;

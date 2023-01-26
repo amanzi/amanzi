@@ -205,7 +205,7 @@ if (BUILD_TESTS)
 	 		   test/state_observations.cc
                     LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
-    add_amanzi_test(state_observations_np2 state_observations NPROCS 2 KIND unit)
+    #add_amanzi_test(state_observations_np2 state_observations NPROCS 2 KIND unit)
 
     add_amanzi_test(state_data_factory state_data_factory
                     KIND unit

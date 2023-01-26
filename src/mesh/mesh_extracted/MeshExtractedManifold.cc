@@ -80,7 +80,7 @@ MeshExtractedManifold::getNumEntities(const Entity_kind kind, const Parallel_typ
 void
 MeshExtractedManifold::getCellFacesAndDirs(const Entity_ID c,
                                            Entity_ID_List& faces,
-                                           std::vector<int>* fdirs) const
+                                           Entity_Direction_View* fdirs) const
 {
   int fp = entid_to_parent_[Entity_kind::CELL][c];
   parent_mesh_->getFaceEdgesAndDirs(fp, faces, fdirs);
@@ -108,7 +108,7 @@ MeshExtractedManifold::getCellFacesAndDirs(const Entity_ID c,
 void
 MeshExtractedManifold::getCellEdges(const Entity_ID c, Entity_ID_List& edges) const
 {
-  std::vector<int> edirs;
+  Entity_Direction_View edirs;
 
   int fp = entid_to_parent_[Entity_kind::CELL][c];
   parent_mesh_->getFaceEdgesAndDirs(fp, edges, &edirs);
@@ -131,9 +131,9 @@ MeshExtractedManifold::getFaceNodes(const Entity_ID f, Entity_ID_List& nodes) co
   int ep = entid_to_parent_[Entity_kind::FACE][f];
   v0 = parent_mesh_->getEdgeNodes(ep);
 
-  nodes.clear();
-  nodes.push_back(parent_to_entid_[Entity_kind::NODE][v0[0]]);
-  nodes.push_back(parent_to_entid_[Entity_kind::NODE][v0[1]]);
+  Kokkos::resize(nodes, 2);
+  nodes[0] = parent_to_entid_[Entity_kind::NODE][v0[0]];
+  nodes[1] = parent_to_entid_[Entity_kind::NODE][v0[1]];
 }
 
 
@@ -143,17 +143,19 @@ MeshExtractedManifold::getFaceNodes(const Entity_ID f, Entity_ID_List& nodes) co
 void
 MeshExtractedManifold::getFaceEdgesAndDirs(const Entity_ID f,
                                            Entity_ID_List& edges,
-                                           std::vector<int>* edirs) const
+                                           Entity_Direction_View* edirs) const
 {
   Entity_ID_List v0;
 
   int ep = entid_to_parent_[Entity_kind::FACE][f];
   v0 = parent_mesh_->getEdgeNodes(ep);
 
-  edges.clear();
-  edges.push_back(parent_to_entid_[Entity_kind::NODE][v0[0]]);
-  edges.push_back(parent_to_entid_[Entity_kind::NODE][v0[1]]);
-  edirs->resize(2, 1);
+  Kokkos::resize(edges, 2);
+  edges[0] = parent_to_entid_[Entity_kind::NODE][v0[0]];
+  edges[1] = parent_to_entid_[Entity_kind::NODE][v0[1]];
+  Kokkos::resize(*edirs, 2);
+  (*edirs)[0] = 1;
+  (*edirs)[1] = 1;
 }
 
 /* ******************************************************************
@@ -170,12 +172,14 @@ MeshExtractedManifold::getEdgeCells(const Entity_ID e,
   parent_mesh_->getEdgeFaces(ep, ptype, faces);
   int nfaces = faces.size();
 
-  cells.clear();
+  Kokkos::resize(cells, nfaces);
+  int cells_ct = 0;
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
     auto it = parent_to_entid_[Entity_kind::CELL].find(f);
-    if (it != parent_to_entid_[Entity_kind::CELL].end()) cells.push_back(it->second);
+    if (it != parent_to_entid_[Entity_kind::CELL].end()) cells[cells_ct++] = it->second;
   }
+  Kokkos::resize(cells, cells_ct);
 }
 
 
@@ -193,11 +197,13 @@ MeshExtractedManifold::getFaceCells(const Entity_ID f,
   parent_mesh_->getEdgeFaces(ep, ptype, faces);
   int nfaces = faces.size();
 
-  cells.clear();
+  Kokkos::resize(cells, nfaces);
+  int cells_ct = 0;
   for (int i = 0; i < nfaces; ++i) {
     auto it = parent_to_entid_[Entity_kind::CELL].find(faces[i]);
-    if (it != parent_to_entid_[Entity_kind::CELL].end()) cells.push_back(it->second);
+    if (it != parent_to_entid_[Entity_kind::CELL].end()) cells[cells_ct++] = it->second;
   }
+  Kokkos::resize(cells, cells_ct);
 }
 
 /* ******************************************************************
@@ -236,7 +242,7 @@ MeshExtractedManifold::InitParentMaps(const std::string& setname)
 
     // build edge set from Exodus labeled face set
     Entity_ID_List setents;
-    std::vector<double> vofs;
+    Double_View vofs;
 
     TryExtension_(setname, kind_p, kind_d, &setents);
     if (setents.size() == 0)
@@ -247,19 +253,22 @@ MeshExtractedManifold::InitParentMaps(const std::string& setname)
 
     // extract owned ids
     auto& ids_p = entid_to_parent_[kind_d];
-    ids_p.clear();
+    int ids_p_s = std::distance(marked_ents.begin(), marked_ents.end());
+    Kokkos::resize(ids_p, ids_p_s);
+    ids_p_s = 0;
     for (auto it = marked_ents.begin(); it != marked_ents.end(); ++it) {
-      if (it->second == MASTER) ids_p.push_back(it->first);
+      if (it->second == MASTER) ids_p[ids_p_s++] = it->first;
     }
 
-    nents_owned_[kind_d] = ids_p.size();
-    nents_ghost_[kind_d] = marked_ents.size() - ids_p.size();
+    nents_owned_[kind_d] = ids_p_s;
+    nents_ghost_[kind_d] = marked_ents.size() - ids_p_s;
 
     // extract ghost ids
     for (auto it = marked_ents.begin(); it != marked_ents.end(); ++it) {
-      if (it->second == GHOST) ids_p.push_back(it->first);
+      if (it->second == GHOST) ids_p[ids_p_s++] = it->first;
     }
 
+    Kokkos::resize(ids_p, ids_p_s);
     // create reverse ordered map
     auto& ids_d = parent_to_entid_[kind_d];
     ids_d.clear();
@@ -277,7 +286,6 @@ MeshExtractedManifold::TryExtension_(const std::string& setname,
                                      Entity_ID_List* setents) const
 {
   // labeled set: extract edges
-  setents->clear();
 
   const auto& gm = getGeometricModel();
   if (gm == Teuchos::null) return;
@@ -291,7 +299,7 @@ MeshExtractedManifold::TryExtension_(const std::string& setname,
   auto marked_ents = EnforceOneLayerOfGhosts_(setname, Entity_kind::FACE, &faceents);
 
   Entity_ID_List edges, nodes;
-  std::vector<int> dirs;
+  Entity_Direction_View dirs;
   std::set<Entity_ID> setents_tmp;
 
   for (auto it = marked_ents.begin(); it != marked_ents.end(); ++it) {
@@ -307,7 +315,7 @@ MeshExtractedManifold::TryExtension_(const std::string& setname,
     }
   }
 
-  for (auto it = setents_tmp.begin(); it != setents_tmp.end(); ++it) setents->push_back(*it);
+  setToView(*setents, setents_tmp);
 }
 
 
@@ -322,7 +330,7 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
   // base set is the set of master cells
   Entity_ID_List fullset;
   if (kind != Entity_kind::FACE) {
-    std::vector<double> vofs;
+    Double_View vofs;
     std::tie(fullset, vofs) = parent_mesh_->getSetEntitiesAndVolumeFractions(
       setname, Entity_kind::FACE, Parallel_type::ALL);
   } else {
@@ -332,7 +340,7 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
   // initial set of entities is defined by master parent faces and is marked as
   // potential master entities
   Entity_ID_List nodes, edges, faces;
-  std::vector<int> dirs;
+  Entity_Direction_View dirs;
   int nfaces_owned = parent_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
   std::map<Entity_ID, int> nodeset0, nodeset, edgeset, faceset;
 

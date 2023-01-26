@@ -55,7 +55,7 @@ TEST(FLOW_2D_RICHARDS)
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, -2.0, 1.0, 0.0, 18, 18);
 
   int itrs[2];
@@ -77,21 +77,24 @@ TEST(FLOW_2D_RICHARDS)
     std::string passwd("");
     auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
-    AmanziMesh::Entity_ID_List block;
-    mesh->getSetEntities(
-      "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-    for (int i = 0; i != block.size(); ++i) {
-      int c = block[i];
-      K[0][c] = 0.1;
-      K[1][c] = 2.0;
+    {
+      auto block = mesh->getSetEntities(
+        "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      for (int i = 0; i != block.size(); ++i) {
+        int c = block[i];
+        K[0][c] = 0.1;
+        K[1][c] = 2.0;
+      }
     }
 
-    mesh->getSetEntities(
-      "Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-    for (int i = 0; i != block.size(); ++i) {
-      int c = block[i];
-      K[0][c] = 0.5;
-      K[1][c] = 0.5;
+    {
+      auto block = mesh->getSetEntities(
+        "Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      for (int i = 0; i != block.size(); ++i) {
+        int c = block[i];
+        K[0][c] = 0.5;
+        K[1][c] = 0.5;
+      }
     }
     S->GetRecordW("permeability", "permeability").set_initialized();
 

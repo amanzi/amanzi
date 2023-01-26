@@ -68,7 +68,6 @@ TEST(OBSERVABLE_LINE_SEGMENT)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
@@ -84,7 +83,7 @@ TEST(OBSERVABLE_LINE_SEGMENT)
   S->Require<CompositeVector, CompositeVectorSpace>("test_field", Tags::DEFAULT, "test_field")
     .SetMesh(mesh)
     ->SetGhosted(true)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
+    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
   S->Setup();
   S->InitializeFields();
@@ -93,12 +92,13 @@ TEST(OBSERVABLE_LINE_SEGMENT)
   auto& test =
     *S->GetW<CompositeVector>("test_field", Tags::DEFAULT, "test_field").ViewComponent("cell");
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   double A = 3., B = 1., C = 5., D = 0.2;
 
   for (int c = 0; c < ncells_owned; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     test[0][c] = A * xc[0] + B * xc[1] + C * xc[2] + D;
   }
 

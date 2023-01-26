@@ -219,7 +219,7 @@ struct Problem {
         double area = mesh->getFaceArea(f);
         int dir = 0;
         int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
-        const AmanziGeometry::Point& normal = mesh->getFaceNormal(f, c, &dir);
+        const AmanziGeometry::Point& normal = mesh->getFaceNormal(f, &dir);
 
         bc_model0[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value0[f] = ana->velocity_exact0(xf, 0.0) * normal / area;
@@ -230,7 +230,7 @@ struct Problem {
         double area = mesh->getFaceArea(f);
         int dir = 0;
         int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
-        const AmanziGeometry::Point& normal = mesh->getFaceNormal(f, c, &dir);
+        const AmanziGeometry::Point& normal = mesh->getFaceNormal(f, &dir);
 
         // y = 0 boundary
         bc_model0[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -242,7 +242,7 @@ struct Problem {
         double area = mesh->getFaceArea(f);
         int dir = 0;
         int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
-        const AmanziGeometry::Point& normal = mesh->getFaceNormal(f, c, &dir);
+        const AmanziGeometry::Point& normal = mesh->getFaceNormal(f, &dir);
 
         // x = 1 boundary
         bc_model0[f] = Operators::OPERATOR_BC_NEUMANN;

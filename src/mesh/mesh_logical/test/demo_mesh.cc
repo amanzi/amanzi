@@ -287,13 +287,13 @@ demoMeshLogicalYManual()
 
   // make sets
   // -- coarse roots
-  Entity_ID_List coarse_cells;
+  std::vector<Entity_ID> coarse_cells;
   for (int lcv = 0; lcv != 3; ++lcv) coarse_cells.push_back(lcv);
   Teuchos::RCP<AmanziGeometry::RegionEnumerated> coarse_rgn = Teuchos::rcp(
     new AmanziGeometry::RegionEnumerated("coarse_root", gm->size(), "CELL", coarse_cells));
   gm->AddRegion(coarse_rgn);
 
-  Entity_ID_List fine_cells;
+  std::vector<Entity_ID> fine_cells;
   for (int lcv = 3; lcv != 11; ++lcv) fine_cells.push_back(lcv);
   Teuchos::RCP<AmanziGeometry::RegionEnumerated> fine_rgn =
     Teuchos::rcp(new AmanziGeometry::RegionEnumerated("fine_root", gm->size(), "CELL", fine_cells));
@@ -380,7 +380,7 @@ demoMeshLogicalYEmbedded()
 
   // make the new connections, 1 per logical cell
   int ncells_log = m_log->getNumEntities(Entity_kind::CELL, Parallel_type::ALL);
-  std::vector<Entity_ID_List> face_cell_ids_(ncells_log);
+  std::vector<std::vector<Entity_ID>> face_cell_ids_(ncells_log);
 
   RegularMeshCellFromCoordFunctor cellID(X0, X1, nx, ny, nz);
   for (int c = 0; c != ncells_log; ++c) {

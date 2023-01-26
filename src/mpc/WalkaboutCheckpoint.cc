@@ -52,13 +52,14 @@ WalkaboutCheckpoint::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
   velocity.clear();
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh();
 
-  int nnodes_owned = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
 
   double rho = S->Get<double>("const_fluid_density");
   S->Get<CompositeVector>("volumetric_flow_rate").ScatterMasterToGhosted();
   const auto& flux = *S->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face", true);
 
-  int d = mesh->space_dimension();
+  int d = mesh->getSpaceDimension();
   AmanziGeometry::Point node_velocity(d);
 
   // optional flux constraint at nodes
@@ -74,7 +75,7 @@ WalkaboutCheckpoint::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
   WhetStone::DenseMatrix matrix(d, d);
 
   for (int v = 0; v < nnodes_owned; ++v) {
-    mesh->node_get_faces(v, AmanziMesh::Parallel_type::ALL, &faces);
+    auto faces = mesh->getNodeFaces(v, AmanziMesh::Parallel_type::ALL);
     int nfaces = faces.size();
 
     rhs.PutScalar(0.0);
@@ -82,7 +83,7 @@ WalkaboutCheckpoint::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
 
     for (int n = 0; n < nfaces; n++) { // populate least-square matrix
       int f = faces[n];
-      const AmanziGeometry::Point& normal = mesh->face_normal(f);
+      const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
 
       for (int i = 0; i < d; i++) {
         rhs(i) += normal[i] * flux[0][f];
@@ -109,8 +110,8 @@ WalkaboutCheckpoint::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
       for (int n = 0; n < nfaces; ++n) {
         int f = faces[n];
         if (bc_model[f] == Operators::OPERATOR_BC_NEUMANN) {
-          double area = mesh->face_area(f);
-          AmanziGeometry::Point normal = getFaceNormalExterior(*mesh, f, &dir);
+          double area = mesh->getFaceArea(f);
+          AmanziGeometry::Point normal = AmanziMesh::getFaceNormalExterior(*mesh, f, &dir);
 
           bool flag(false);
           for (int m = 0; m < node_basis.size(); ++m) {
@@ -161,7 +162,7 @@ WalkaboutCheckpoint::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
     for (int i = 0; i < d; i++) node_velocity[i] = sol(i);
     velocity.push_back(node_velocity);
 
-    mesh->node_get_coordinates(v, &xv);
+    xv = mesh->getNodeCoordinate(v);
     xyz.push_back(xv);
   }
 }
@@ -190,7 +191,8 @@ WalkaboutCheckpoint::CalculateData(Teuchos::RCP<State>& S,
   const auto& ws = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell", true);
   auto p = S->Get<CompositeVector>("pressure").ViewComponent("cell", true);
 
-  int nnodes_owned = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
 
   // process non-flow state variables
   bool flag(false);
@@ -204,8 +206,7 @@ WalkaboutCheckpoint::CalculateData(Teuchos::RCP<State>& S,
   CalculateDarcyVelocity(S, xyz, velocity);
 
   // collect material information
-  AmanziMesh::Entity_ID_List cells;
-  Epetra_IntVector cell_ids(mesh->cell_map(true));
+  Epetra_IntVector cell_ids(mesh->getMap(AmanziMesh::Entity_kind::CELL, true));
 
   cell_ids.PutValue(-1);
 
@@ -215,7 +216,8 @@ WalkaboutCheckpoint::CalculateData(Teuchos::RCP<State>& S,
     std::vector<int> ids = tmp.get<Teuchos::Array<int>>("material ids").toVector();
 
     for (int n = 0; n < regs.size(); ++n) {
-      mesh->get_set_entities(regs[n], AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &cells);
+      auto cells = mesh->getSetEntities(
+        regs[n], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
       for (auto it = cells.begin(); it != cells.end(); ++it) { cell_ids[*it] = ids[n]; }
     }
@@ -245,14 +247,14 @@ WalkaboutCheckpoint::CalculateData(Teuchos::RCP<State>& S,
   isotherm_kd.clear();
   material_ids.clear();
 
-  int dim = mesh->space_dimension();
+  int dim = mesh->getSpaceDimension();
   AmanziGeometry::Point xv(dim);
 
   double local_phi, local_ws, local_p, local_kd;
   int local_id;
   for (int v = 0; v < nnodes_owned; v++) {
-    mesh->node_get_coordinates(v, &xv);
-    mesh->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
+    xv = mesh->getNodeCoordinate(v);
+    auto cells = mesh->getNodeCells(v, AmanziMesh::Parallel_type::ALL);
     int ncells = cells.size();
 
     local_id = -1;
@@ -310,14 +312,14 @@ WalkaboutCheckpoint::WriteDataFile(Teuchos::RCP<State>& S, Teuchos::RCP<PK> pk)
 
     // create a block map that we can use to create a new Epetra_MultiVector
     const AmanziMesh::Mesh& mesh = *S->GetMesh();
-    const auto& map = mesh.node_map(false);
+    const auto& map = mesh.getMap(AmanziMesh::Entity_kind::NODE, false);
 
-    const auto& source_map = mesh.node_map(true);
+    const auto& source_map = mesh.getMap(AmanziMesh::Entity_kind::NODE, true);
     Epetra_Map target_map(-1, map.NumMyElements(), 0, map.Comm());
     Epetra_Export exporter(source_map, target_map);
 
     // create an auxiliary vector that will hold the centroid and velocity
-    int dim = mesh.space_dimension();
+    int dim = mesh.getSpaceDimension();
     Teuchos::RCP<Epetra_MultiVector> vs = Teuchos::rcp(new Epetra_MultiVector(source_map, dim));
     Teuchos::RCP<Epetra_MultiVector> vt = Teuchos::rcp(new Epetra_MultiVector(target_map, dim));
 
@@ -430,7 +432,7 @@ WalkaboutCheckpoint::WriteDataFile(Teuchos::RCP<State>& S, Teuchos::RCP<PK> pk)
 
     // timestamp and cycle number
     const auto& output = output_.at("domain");
-    output->writeAttrInt(mesh.get_comm()->NumProc(), "mpi_num_procs");
+    output->writeAttrInt(mesh.getComm()->NumProc(), "mpi_num_procs");
     output->writeAttrReal(S->get_time(), "time");
     output->writeAttrReal(S->Get<double>("dt", Tags::DEFAULT), "dt");
     output->writeAttrInt(S->get_cycle(), "cycle");

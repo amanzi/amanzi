@@ -319,8 +319,7 @@ NumericalIntegration::IntegratePolynomialsFace(
   AmanziGeometry::Point enormal(d_), x1(d_), x2(d_);
 
   if (d_ == 2) {
-    Entity_ID_List nodes;
-    nodes = mesh_->getFaceNodes(f);
+    auto nodes = mesh_->getFaceNodes(f);
 
     x1 = mesh_->getNodeCoordinate(nodes[0]);
     x2 = mesh_->getNodeCoordinate(nodes[1]);
@@ -476,8 +475,6 @@ NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& integrals
   int mk = MonomialSpaceDimension(d_, k);
   for (int i = 0; i < mk; ++i) { integrals(nk + i) = 0.0; }
 
-  Entity_ID_List nodes;
-
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
@@ -493,7 +490,7 @@ NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& integrals
       tmp /= mesh_->getFaceArea(f);
       IntegrateMonomialsFaceReduction_(c, f, tmp, k, integrals);
     } else if (d_ == 2) {
-      nodes = mesh_->getFaceNodes(f);
+      auto nodes = mesh_->getFaceNodes(f);
 
       AmanziGeometry::Point x1(d_), x2(d_);
       x1 = mesh_->getNodeCoordinate(nodes[0]);
@@ -636,8 +633,7 @@ NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
   double pmax;
   AmanziGeometry::Point x1(d_), x2(d_), xm(d_);
 
-  Entity_ID_List nodes;
-  nodes = mesh_->getFaceNodes(f);
+  auto nodes = mesh_->getFaceNodes(f);
 
   if (d_ == 2) {
     x1 = mesh_->getNodeCoordinate(nodes[0]);

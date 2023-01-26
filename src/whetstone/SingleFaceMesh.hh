@@ -78,7 +78,7 @@ class SingleFaceMesh : public AmanziMesh::MeshFramework {
                     AmanziMesh::Entity_ID_List& cells) const override
   {
     AMANZI_ASSERT(v < nnodes_);
-    cells.resize(1, 0);
+    Kokkos::resize(cells, 1);
   }
 
   void getNodeFaces(const AmanziMesh::Entity_ID v,
@@ -86,7 +86,7 @@ class SingleFaceMesh : public AmanziMesh::MeshFramework {
                     AmanziMesh::Entity_ID_List& faces) const override
   {
     AMANZI_ASSERT(v < nnodes_);
-    faces.resize(2);
+    Kokkos::resize(faces, 2);
     faces[0] = v;
     faces[1] = (v + 1) % nnodes_;
   }
@@ -152,17 +152,17 @@ SingleFaceMesh::BuildCache_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   fnodes = mesh->getFaceNodes(f);
   nnodes_ = fnodes.size();
 
-  std::vector<int> fdirs(nnodes_, 1);
+  AmanziMesh::Entity_Direction_List fdirs("fdirs", nnodes_);
   if (mesh->hasEdges()) { mesh->getFaceEdgesAndDirs(f, fedges, &fdirs); }
 
   // single surface cell
-  fedges.resize(nnodes_);
+  Kokkos::resize(fedges, nnodes_);
   for (int i = 0; i < nnodes_; ++i) fedges[i] = i;
 
   AmanziGeometry::Point xyz(d);
 
   // cell nodes
-  cell_node_ids_.resize(nnodes_);
+  Kokkos::resize(cell_node_ids_, nnodes_);
   cell_coords_.resize(nnodes_);
 
   for (int i = 0; i < nnodes_; ++i) {
@@ -172,7 +172,7 @@ SingleFaceMesh::BuildCache_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   }
 
   // cell faces
-  enodes.resize(2);
+  Kokkos::resize(enodes, 2);
   face_node_ids_.resize(nnodes_);
 
   for (int i = 0; i < nnodes_; ++i) {

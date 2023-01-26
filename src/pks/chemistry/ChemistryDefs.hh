@@ -13,14 +13,12 @@
 */
 
 #ifndef AMANZI_CHEMISTRY_CONSTANTS_HH_
-#define AMANZI_CHEMISTRY_CONSTANTS_HH_
+#  define AMANZI_CHEMISTRY_CONSTANTS_HH_
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-const double TCC_MIN_VALUE = 1e-50; // [mol]
-
-} // namespace AmanziChemistry
-} // namespace Amanzi
-
-#endif
+TEST(ADVANCE_WITH_STK_PARALLEL_READ)
+{
+  //runTest(Amanzi::AmanziMesh::Framework::STK);
+}

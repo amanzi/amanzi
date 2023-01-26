@@ -68,15 +68,18 @@ TEST(MPC_WALKABOUT_2D)
   if (comm->NumProc() == 1) {
     std::vector<int> list = { 1, 2, 3, 16, 17, 18 };
     for (int v : list) {
-      mesh->node_get_coordinates(v, &xv);
+      xv = mesh->getNodeCoordinate(v);
       CHECK_CLOSE(0.0, xv * velocity[v], 1e-14);
     }
   }
 
   // verify velocity at all points
-  int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nnodes =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   std::string passwd("");
   auto& flow = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
@@ -84,11 +87,11 @@ TEST(MPC_WALKABOUT_2D)
 
   // -- overwite with constant velocity
   AmanziGeometry::Point vel(1.0, 2.0);
-  for (int f = 0; f < nfaces; ++f) { flow[0][f] = vel * mesh->face_normal(f); }
+  for (int f = 0; f < nfaces; ++f) { flow[0][f] = vel * mesh->getFaceNormal(f); }
 
   // -- overwite with linear pressure
   for (int c = 0; c < ncells; ++c) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     pres[0][c] = 1.0 + xc[0] + 2 * xc[1];
   }
 
@@ -108,7 +111,7 @@ TEST(MPC_WALKABOUT_2D)
     S, xyz, velocity, porosity, saturation, pressure, isotherm_kd, material_ids);
 
   for (int v = 0; v < nnodes; ++v) {
-    mesh->node_get_coordinates(v, &xv);
+    xv = mesh->getNodeCoordinate(v);
     CHECK_CLOSE(1.0 + xv[0] + 2 * xv[1], pressure[v], 0.15); // some tets have 1 neighboor
     CHECK_CLOSE(1.0, saturation[v], 1e-10);
   }
@@ -154,14 +157,16 @@ TEST(MPC_WALKABOUT_3D)
   // -- overwrite flow & pressure
   std::cout << "Start test of 3D Walkabout\n";
   AmanziGeometry::Point vel(1.0, 2.0, 3.0);
-  int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
 
   std::string passwd("");
   auto& flow = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
   auto& pres = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
-  for (int f = 0; f < nfaces; ++f) { flow[0][f] = vel * mesh->face_normal(f); }
+  for (int f = 0; f < nfaces; ++f) { flow[0][f] = vel * mesh->getFaceNormal(f); }
 
   pres.PutScalar(1.0);
 
@@ -193,7 +198,7 @@ TEST(MPC_WALKABOUT_3D)
   AmanziGeometry::Point x3(3.0, 3.0, 3.0);
 
   for (int v = 0; v < nnodes; ++v) {
-    mesh->node_get_coordinates(v, &xv);
+    xv = mesh->getNodeCoordinate(v);
     if (norm(xv - x0) < 1e-10) {
       CHECK_CLOSE(0.2, porosity[v], 1e-10);
       CHECK_EQUAL(1000, material_ids[v]);

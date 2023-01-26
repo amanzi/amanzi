@@ -64,11 +64,8 @@ MeshFactory::createColumn(const Teuchos::RCP<Mesh>& parent, int col_id)
 
   // create a framework of the extracted 3D column
   parent->buildColumns();
-  Teuchos::RCP<MeshFramework> column_extracted_3D =
-    MeshFrameworkFactory::create(parent,
-                                 asVector(parent->columns.getCells<MemSpace_type::HOST>(col_id)),
-                                 Entity_kind::CELL,
-                                 false);
+  Teuchos::RCP<MeshFramework> column_extracted_3D = MeshFrameworkFactory::create(
+    parent, parent->columns.getCells<MemSpace_type::HOST>(col_id), Entity_kind::CELL, false);
 
   // create the MeshFrameworkColumn
   Teuchos::RCP<MeshFramework> column_1D =

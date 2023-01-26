@@ -81,7 +81,7 @@ class MeshLogical : public MeshFramework {
   // Topology only constructor
   // -----------------------------------------------------------------------------
   MeshLogical(const Comm_ptr_type& comm,
-              const std::vector<Entity_ID_List>& face_cell_ids,
+              const std::vector<std::vector<Entity_ID>>& face_cell_ids,
               const std::vector<std::vector<int>>& face_cell_dirs,
               const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
@@ -89,7 +89,7 @@ class MeshLogical : public MeshFramework {
   // Topology and geometry constructor
   // -----------------------------------------------------------------------------
   MeshLogical(const Comm_ptr_type& comm,
-              const std::vector<Entity_ID_List>& face_cell_ids,
+              const std::vector<std::vector<Entity_ID>>& face_cell_ids,
               const std::vector<std::vector<int>>& face_cell_dirs,
               const std::vector<double>& cell_volumes,
               const std::vector<double>& face_areas,

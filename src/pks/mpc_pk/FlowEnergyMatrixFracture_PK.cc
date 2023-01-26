@@ -231,8 +231,8 @@ FlowEnergyMatrixFracture_PK::Initialize()
 
   // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
-  auto mesh_matrix = S_->GetMesh("domain");
-  auto mesh_fracture = S_->GetMesh("fracture");
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_matrix = S_->GetMesh("domain");
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_fracture = S_->GetMesh("fracture");
 
   auto& mmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", false)->Map();
   auto& gmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", true)->Map();

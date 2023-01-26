@@ -151,7 +151,6 @@ RemapDG_Helper::StaticEdgeFaceVelocities()
 void
 RemapDG_Helper::StaticCellVelocity()
 {
-  WhetStone::Entity_ID_List edges;
   uc_.resize(ncells_owned_);
 
   for (int c = 0; c < ncells_owned_; ++c) {
@@ -163,7 +162,7 @@ RemapDG_Helper::StaticCellVelocity()
 
     // edges are included in 3D only
     if (dim_ == 3) {
-      edges = mesh0_->getCellEdges(c);
+      auto edges = mesh0_->getCellEdges(c);
 
       for (int n = 0; n < edges.size(); ++n) { vve.push_back(vele_vec_[edges[n]]); }
     }
@@ -246,7 +245,8 @@ RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
   // create list of cells where to apply limiter
   double L(-1.0);
   double threshold = -4.0 * std::log10((double)order_) - L;
-  AmanziMesh::Entity_ID_List ids;
+  AmanziMesh::Entity_ID_List ids("ids", ncells_owned_);
+  int ids_ct = 0;
 
   for (int c = 0; c < ncells_owned_; ++c) {
     if (smoothness_ == "high order term" && order_ > 1) {
@@ -256,12 +256,12 @@ RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
       double xnorm = honorm;
       for (int i = 0; i <= dim_; ++i) xnorm += x_c[i][c] * x_c[i][c];
 
-      if (xnorm > 0.0 && std::log10(honorm / xnorm) > threshold) ids.push_back(c);
+      if (xnorm > 0.0 && std::log10(honorm / xnorm) > threshold) ids[ids_ct++] = c;
     } else {
-      ids.push_back(c);
+      ids[ids_ct++] = c;
     }
   }
-
+  Kokkos::resize(ids, ids_ct);
   int nids, itmp = ids.size();
   mesh0_->getComm()->SumAll(&itmp, &nids, 1);
   sharp_ = std::max(sharp_, 100.0 * nids / x.ViewComponent("cell")->GlobalLength());
