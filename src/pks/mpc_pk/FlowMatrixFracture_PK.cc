@@ -156,8 +156,8 @@ FlowMatrixFracture_PK::Initialize()
   auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX)->Clone();
 
   // off-diagonal blocks are coupled PDEs
-  auto mesh_matrix = S_->GetMesh("domain");
-  auto mesh_fracture = S_->GetMesh("fracture");
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_matrix = S_->GetMesh("domain");
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_fracture = S_->GetMesh("fracture");
 
   // -- minimum composite vector spaces containing the coupling term
   auto& mmap = solution_->SubVector(0)->Data()->ViewComponent("face", false)->Map();

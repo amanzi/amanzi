@@ -63,7 +63,6 @@ RunTestConvergence(std::string input_xml)
     Preference pref;
     pref.clear();
     pref.push_back(Framework::MSTK);
-    pref.push_back(Framework::STK);
 
     MeshFactory meshfactory(comm, gm);
     meshfactory.set_preference(pref);

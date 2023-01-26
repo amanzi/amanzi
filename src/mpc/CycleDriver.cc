@@ -323,7 +323,7 @@ CycleDriver::ReportMemory()
     double global_ncells(0.0);
     double local_ncells(0.0);
     for (State::mesh_iterator mesh = S_->mesh_begin(); mesh != S_->mesh_end(); ++mesh) {
-      Epetra_Map cell_map = (mesh->second.first)->cell_map(false);
+      Epetra_Map cell_map = (mesh->second.first)->getMap(AmanziMesh::Entity_kind::CELL,false);
       global_ncells += cell_map.NumGlobalElements();
       local_ncells += cell_map.NumMyElements();
     }

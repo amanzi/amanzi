@@ -42,7 +42,8 @@ MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
 
       // populating default volume fractions (move this to mesh framework?)
       if (vofs.size() == 0) {
-        vofs.resize(ids.size(), 1.0);
+        Kokkos::resize(vofs, ids.size()); 
+        Kokkos::deep_copy(vofs, 1.0); 
       }
 
       for (int i = 0; i < ids.size(); ++i) {

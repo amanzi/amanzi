@@ -53,8 +53,7 @@ Transport_PK::CalculateDiffusionTensorEffective_(double mdl,
       std::string region = (spec->regions)[r];
       auto block = mesh_->getSetEntities(region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
-      AmanziMesh::Entity_ID_List::iterator c;
-      for (c = block.begin(); c != block.end(); c++) {
+      for (auto c = block.begin(); c != block.end(); c++) {
         double sl = saturation[0][*c];
         D_[*c](0, 0) =
           (mdl * sl * spec->tau[0] + kH * mdg * (1.0 - sl) * spec->tau[1]) * porosity[0][*c];

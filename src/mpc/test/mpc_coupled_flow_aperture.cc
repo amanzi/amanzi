@@ -61,9 +61,11 @@ RunTest(const std::string xmlInFileName)
 
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
+  mesh_list->set<bool>("request edges",true); 
+  mesh_list->set<bool>("request faces",true); 
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(-12.5, -0.5, -0.5, 12.5, 0.5, 0.5, 125, 1, 4, true, true);
+  auto mesh = factory.create(-12.5, -0.5, -0.5, 12.5, 0.5, 0.5, 125, 1, 4);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
@@ -75,9 +77,10 @@ RunTest(const std::string xmlInFileName)
   //create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
-  // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
-  auto mesh_fracture = Teuchos::rcp(new MeshExtractedManifold(
-    mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list, true, false));
+  // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::Entity_kind::FACE);
+  auto mesh_fracture_framework = Teuchos::rcp(new MeshExtractedManifold(
+    mesh, "fracture", AmanziMesh::Entity_kind::FACE, comm, gm, mesh_list));
+  auto mesh_fracture = Teuchos::rcp(new Mesh(mesh_fracture_framework, mesh_list)); 
 
   S->RegisterMesh("fracture", mesh_fracture);
 
@@ -90,7 +93,7 @@ RunTest(const std::string xmlInFileName)
   const auto& a_c = *S->Get<CompositeVector>("fracture-aperture").ViewComponent("cell");
 
   for (int c = 0; c < a_c.MyLength(); ++c) {
-    const auto& xc = mesh_fracture->cell_centroid(c);
+    const auto& xc = mesh_fracture->getCellCentroid(c);
     double w = (xc[0] + 12.5) * std::sqrt(2000.0 / (t + 1e-10)) - 12.5;
     double tmp = (w > 7.4) ? 1.0e-5 :
                              1.257136447580295e-05 - 5.307442110525289e-07 * w +

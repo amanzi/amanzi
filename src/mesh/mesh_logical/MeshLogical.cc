@@ -44,7 +44,7 @@ MeshLogicalAlgorithms::computeFaceGeometry(const MeshFramework& mesh, const Enti
 
   Entity_ID_List fcells;
   mesh.getFaceCells(f, Parallel_type::ALL, fcells);
-  Point_List normals(fcells.size());
+  Point_List normals("normals", fcells.size());
   for (int i=0; i!=fcells.size(); ++i) {
     normals[i] = mesh.getFaceNormal(f, fcells[i], nullptr);
   }
@@ -63,7 +63,7 @@ MeshLogicalAlgorithms::computeEdgeGeometry(const MeshFramework& mesh, const Enti
 // Topological constructor of a MeshLogical splits topology from geometry.
 //
 MeshLogical::MeshLogical(const Comm_ptr_type& comm,
-                         const std::vector<Entity_ID_List>& face_cell_ids,
+                         const std::vector<std::vector<Entity_ID>>& face_cell_ids,
                          const std::vector<std::vector<int> >& face_cell_dirs,
                          const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : MeshFramework(comm, Teuchos::null, plist), 
@@ -89,8 +89,10 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
   }
 
   // geometric info that must get set later
-  cell_volumes_.resize(num_cells, -1.);
-  face_areas_.resize(face_cell_ids_.size<MemSpace_type::HOST>(), -1.);
+  Kokkos::resize(cell_volumes_, num_cells); 
+  initView(cell_volumes_, -1.);
+  Kokkos::resize(face_areas_, face_cell_ids_.size<MemSpace_type::HOST>()); 
+  initView(face_areas_, -1.);
 
   std::vector<std::vector<Entity_ID>> cell_face_ids_v(num_cells);
   std::vector<std::vector<int>> cell_face_dirs_v(num_cells);
@@ -134,7 +136,7 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
 // Breaks standards following the rest of the mesh infrastructure.
 //
 MeshLogical::MeshLogical(const Comm_ptr_type& comm,
-                         const std::vector<Entity_ID_List>& face_cell_ids,
+                         const std::vector<std::vector<Entity_ID>>& face_cell_ids,
                          const std::vector<std::vector<int> >& face_cell_dirs,
                          const std::vector<double>& cell_volumes,
                          const std::vector<double>& face_areas,
@@ -153,9 +155,9 @@ void MeshLogical::getLogicalGeometry(std::vector<double>* const cell_volumes,
         std::vector<std::vector<AmanziGeometry::Point> >* const face_cell_bisectors,
         std::vector<AmanziGeometry::Point>* const cell_centroids) const
 {
-  if (cell_volumes) *cell_volumes = cell_volumes_;
-  if (face_areas) *face_areas = face_areas_;
-  if (cell_centroids) *cell_centroids = cell_centroids_;
+  if (cell_volumes) *cell_volumes = asVector(cell_volumes_);
+  if (face_areas) *face_areas = asVector(face_areas_);
+  if (cell_centroids) *cell_centroids = asVector(cell_centroids_);
 
   // not sure what would be useful for user here... wait til we have a user and fix it!
   if (face_cell_bisectors) {
@@ -190,9 +192,9 @@ void MeshLogical::setLogicalGeometry(std::vector<double> const* const cell_volum
   }
 
 
-  if (cell_volumes) cell_volumes_ = *cell_volumes;
-  if (face_areas) face_areas_ = *face_areas;
-  if (cell_centroids) cell_centroids_ = *cell_centroids;
+  if (cell_volumes) vectorToView(cell_volumes_, *cell_volumes);
+  if (face_areas) vectorToView(face_areas_,*face_areas);
+  if (cell_centroids) vectorToView(cell_centroids_, *cell_centroids);
 
   if (face_cell_bisectors) {
     std::vector<std::vector<AmanziGeometry::Point>> cell_face_bisectors_v(n_cells); 
@@ -291,8 +293,8 @@ MeshLogical::getCellFacesAndBisectors(const Entity_ID cellid,
         Entity_ID_List& faceids,
         Point_List * const bisectors) const
 {
-  faceids = asVector(cell_face_ids_.getRow<MemSpace_type::HOST>(cellid));
-  if (bisectors) *bisectors = asVector(cell_face_bisectors_.getRow<MemSpace_type::HOST>(cellid));
+  faceids = cell_face_ids_.getRow<MemSpace_type::HOST>(cellid);
+  if (bisectors) *bisectors = cell_face_bisectors_.getRow<MemSpace_type::HOST>(cellid);
 }
 
 void
@@ -300,8 +302,8 @@ MeshLogical::getCellFacesAndDirs(const Entity_ID c,
         Entity_ID_List& faces,
         Entity_Direction_List * const dirs) const
 {
-  faces = asVector(cell_face_ids_.getRow<MemSpace_type::HOST>(c));
-  if (dirs) (*dirs) = asVector(cell_face_dirs_.getRow<MemSpace_type::HOST>(c));
+  faces = cell_face_ids_.getRow<MemSpace_type::HOST>(c);
+  if (dirs) (*dirs) = cell_face_dirs_.getRow<MemSpace_type::HOST>(c);
 }
 
 double
@@ -328,7 +330,7 @@ MeshLogical::getFaceCells(const Entity_ID f,
                           const Parallel_type ptype,
                           Entity_ID_List& cells) const
 {
-  cells = asVector(face_cell_ids_.getRow<MemSpace_type::HOST>(f));
+  cells = face_cell_ids_.getRow<MemSpace_type::HOST>(f);
 }
 
 double

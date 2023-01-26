@@ -22,7 +22,7 @@ DataDebug::write_region_data(std::string& region_name,
   if (!mesh_->isValidSetName(region_name, AmanziMesh::Entity_kind::CELL)) { throw std::exception(); }
   unsigned int mesh_block_size =
     mesh_->getSetSize(region_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
+  AmanziMesh::Entity_ID_List cell_ids("cell_ids", mesh_block_size);
   cell_ids = mesh_->getSetEntities(
     region_name, AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
@@ -42,7 +42,7 @@ DataDebug::write_region_statistics(std::string& region_name,
   if (!mesh_->isValidSetName(region_name, AmanziMesh::Entity_kind::CELL)) { throw std::exception(); }
   unsigned int mesh_block_size =
     mesh_->getSetSize(region_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
+  AmanziMesh::Entity_ID_List cell_ids("cell_ids", mesh_block_size);
   cell_ids = mesh_->getSetEntities(
     region_name, AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 

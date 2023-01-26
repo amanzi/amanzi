@@ -59,7 +59,6 @@ TEST(FLOW_POROSITY_MODELS)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
@@ -82,19 +81,22 @@ TEST(FLOW_POROSITY_MODELS)
   std::string passwd("");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
-  AmanziMesh::Entity_ID_List block;
-  mesh->getSetEntities("Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.1;
-    K[1][c] = 2.0;
+  {
+    auto block = mesh->getSetEntities("Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K[0][c] = 0.1;
+      K[1][c] = 2.0;
+    }
   }
 
-  mesh->getSetEntities("Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.5;
-    K[1][c] = 0.5;
+  {
+    auto block = mesh->getSetEntities("Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K[0][c] = 0.5;
+      K[1][c] = 0.5;
+    }
   }
   S->GetRecordW("permeability", "permeability").set_initialized();
 

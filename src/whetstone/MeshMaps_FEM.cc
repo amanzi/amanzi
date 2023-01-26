@@ -34,9 +34,7 @@ MeshMaps_FEM::VelocityCell(int c,
                            const std::vector<VectorPolynomial>& vf,
                            VectorPolynomial& vc) const
 {
-  Entity_ID_List nodes;
-
-  nodes = mesh1_->getCellNodes(c);
+  auto nodes = mesh1_->getCellNodes(c);
   int nnodes = nodes.size();
   AMANZI_ASSERT(nnodes == 4);
 
@@ -85,9 +83,7 @@ MeshMaps_FEM::JacobianValueInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                                      int c,
                                      const AmanziGeometry::Point& xref) const
 {
-  Entity_ID_List nodes;
-
-  nodes = mesh->getCellNodes(c);
+  auto nodes = mesh->getCellNodes(c);
   int nnodes = nodes.size();
   AMANZI_ASSERT(nnodes == 4);
 

@@ -632,20 +632,18 @@ Darcy_PK::UpdateSpecificYield_()
   specific_yield_copy_->ScatterMasterToGhosted();
   Epetra_MultiVector& specific_yield = *specific_yield_copy_->ViewComponent("cell", true);
 
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
   int negative_yield = 0;
+
   for (int c = 0; c < ncells_owned; c++) {
     if (specific_yield[0][c] > 0.0) {
-      mesh_->getCellFacesAndDirections(c, &faces, &dirs);
+      auto [faces, dirs] = mesh_->getCellFacesAndDirections(c);
+      auto adjcells = AmanziMesh::MeshAlgorithms::getCellFaceAdjacentCells(*mesh_,c,AmanziMesh::Parallel_type::OWNED);
 
       double area = 0.0;
       int nfaces = faces.size();
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        int c2 = cell_get_face_adj_cell(*mesh_, c, f);
-
+        int c2 = adjcells[f]; 
         if (c2 >= 0) {
           if (specific_yield[0][c2] <= 0.0) // cell in the fully saturated layer
             area -= (mesh_->getFaceNormal(f))[dim - 1] * dirs[n];

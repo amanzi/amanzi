@@ -199,12 +199,12 @@ ImplicitPK::Setup()
     S_->Require<CV_t, CVS_t>(field, tag_next_, "state")
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, n);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, n);
 
     S_->Require<CV_t, CVS_t>(field, tag_current_, "state")
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, n);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, n);
 
     S_->Require<double>("time", Tag(field + "@" + tag_current_.get()), "time");
     S_->Require<double>("time", Tag(field + "@" + tag_next_.get()), "time");

@@ -61,7 +61,7 @@ TEST(MPC_DRIVER_THERMAL_DARCY_DFN)
   setnames.push_back("fracture 1");
   setnames.push_back("fracture 2");
 
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::Entity_kind::FACE);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;

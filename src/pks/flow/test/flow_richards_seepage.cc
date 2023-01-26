@@ -55,23 +55,24 @@ Flow2D_SeepageTest(std::string filename, bool deform)
   auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 100.0, 50.0, 50, 25);
 
   // create an optional slop
   if (deform) {
     AmanziGeometry::Point xv(2);
-    AmanziMesh::Entity_ID_List nodeids;
-    AmanziGeometry::Point_List new_positions, final_positions;
 
     int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+    AmanziMesh::Entity_ID_List nodeids("nodeids", nnodes);
+    AmanziMesh::Point_List new_positions("new_positions", nnodes);
+
     for (int v = 0; v < nnodes; ++v) {
       xv = mesh->getNodeCoordinate(v);
-      nodeids.push_back(v);
+      nodeids[v] = v;
       xv[1] *= (xv[0] * 0.4 + (100.0 - xv[0])) / 100.0;
-      new_positions.push_back(xv);
+      new_positions[v] = xv;
     }
-    mesh->deform(nodeids, new_positions, false, &final_positions);
+    AmanziMesh::MeshAlgorithms::deform(*mesh, nodeids, new_positions);
   }
 
   // create a simple state and populate it

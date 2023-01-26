@@ -132,9 +132,11 @@ RunTest(int icase,
 
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
+  mesh_list->set<bool>("request edges",true); 
+  mesh_list->set<bool>("request faces",true); 
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(0.0, 0.0, 3.0 - L, 7.0, 1.0, 3.0 + L, 56, 1, 32, true, true);
+  auto mesh = factory.create(0.0, 0.0, 3.0 - L, 7.0, 1.0, 3.0 + L, 56, 1, 32);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
@@ -146,7 +148,7 @@ RunTest(int icase,
   //create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
-  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
+  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::Entity_kind::FACE);
 
   S->RegisterMesh("fracture", mesh_fracture);
 
@@ -157,7 +159,7 @@ RunTest(int icase,
     *S->Get<CompositeVector>("total_component_concentration").ViewComponent("cell");
   double cmin(1e+99), cmax(-1e+99);
   for (int c = 0; c < tcc_m.MyLength(); ++c) {
-    const auto& xc = mesh->cell_centroid(c);
+    const auto& xc = mesh->getCellCentroid(c);
     if (std::fabs(xc[0] - 4.0625) < 1e-3) {
       cmin = std::min(cmin, tcc_m[0][c]);
       cmax = std::max(cmax, tcc_m[0][c]);
@@ -176,7 +178,7 @@ RunTest(int icase,
   double t(tend), Df(mol_diff_f), Dm(mol_diff_m);
 
   for (int c = 0; c < tcc_f.MyLength(); ++c) {
-    const auto& xc = mesh_fracture->cell_centroid(c);
+    const auto& xc = mesh_fracture->getCellCentroid(c);
     if (std::fabs(xc[0] - 4.0625) < 1e-3) {
       fmin = std::min(fmin, tcc_f[0][c]);
       fmax = std::max(fmax, tcc_f[0][c]);
@@ -222,8 +224,8 @@ RunTest(int icase,
     }
   }
   double err_tmp(err), norm_tmp(norm);
-  mesh->get_comm()->SumAll(&err_tmp, &err, 1);
-  mesh->get_comm()->SumAll(&norm_tmp, &norm, 1);
+  mesh->getComm()->SumAll(&err_tmp, &err, 1);
+  mesh->getComm()->SumAll(&norm_tmp, &norm, 1);
   err /= tcc_f.GlobalLength();
   norm /= tcc_f.GlobalLength();
   std::cout << "Mean error in fracture: " << err << " solution norm=" << norm << std::endl;
@@ -235,8 +237,8 @@ RunTest(int icase,
   // err = 0.0;
   norm = 0.0;
   for (int c = 0; c < tcc_m.MyLength(); ++c) {
-    const auto& xc = mesh->cell_centroid(c);
-    double vol = mesh->cell_volume(c);
+    const auto& xc = mesh->getCellCentroid(c);
+    double vol = mesh->getCellVolume(c);
 
     if (icase == 3) {
       double Tm = t - xc[0] * b / u_f;
@@ -263,7 +265,7 @@ RunTest(int icase,
     }
   }
   norm_tmp = norm;
-  mesh->get_comm()->SumAll(&norm_tmp, &norm, 1);
+  mesh->getComm()->SumAll(&norm_tmp, &norm, 1);
   std::cout << "Solute mass in matrix: " << 2 * norm << std::endl;
 
   return err;

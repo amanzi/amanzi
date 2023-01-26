@@ -50,7 +50,7 @@ MeshFramework::getEntityGID(const Entity_kind kind, const Entity_ID lid) const
 Entity_GID_List
 MeshFramework::getEntityGIDs(const Entity_kind kind, const Parallel_type ptype) const
 {
-  Entity_GID_List gids(getNumEntities(kind, ptype));
+  Entity_GID_List gids("gids",getNumEntities(kind, ptype));
   for (int lid=0; lid!=gids.size(); ++lid)
     gids[lid] = getEntityGID(kind, lid);
   return gids;
@@ -303,17 +303,18 @@ MeshFramework::getEdgeFaces(const Entity_ID e, const Parallel_type ptype, Entity
 void
 MeshFramework::getNodeCells(const Entity_ID n, const Parallel_type ptype, Entity_ID_List& cells) const
 {
-  cells.resize(0);
   Entity_ID_List faces, fcells;
+  std::vector<Entity_ID> vcells; 
   getNodeFaces(n, Parallel_type::ALL, faces);
   for (const auto& f : faces) {
     getFaceCells(f, ptype, fcells);
     for (const auto& c : fcells) {
-      if (std::find(cells.begin(), cells.end(), c) == cells.end()) {
-        cells.emplace_back(c);
+      if (std::find(vcells.begin(), vcells.end(), c) == vcells.end()) {
+        vcells.emplace_back(c);
       }
     }
   }
+  vectorToView(cells,vcells); 
 }
 
 void
