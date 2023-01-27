@@ -893,17 +893,18 @@ InputConverterU::TranslateSources_(const std::string& domain, const std::string&
 
     std::string type, filename, variable;
     element = static_cast<DOMElement*>(same_list[0]);
-    type = GetAttributeValueS_(element, "type", TYPE_NONE, false, "");  // only one now
+    type = GetAttributeValueS_(element, "type", TYPE_NONE, false, ""); // only one now
     if (type == "h5file") {
       filename = GetAttributeValueS_(element, "filename", TYPE_NONE);
       variable = GetAttributeValueS_(element, "variable", TYPE_NONE);
 
       Teuchos::ParameterList& src = out_list.sublist("fields").sublist("SRC 0");
       src.set<Teuchos::Array<std::string>>("regions", regions)
-         .set<std::string>("spatial distribution method", weight)
-         .set<bool>("use volume fractions", false);
-      src.sublist("field").set<std::string>("field key", variable)
-                          .set<std::string>("component", "cell");
+        .set<std::string>("spatial distribution method", weight)
+        .set<bool>("use volume fractions", false);
+      src.sublist("field")
+        .set<std::string>("field key", variable)
+        .set<std::string>("component", "cell");
 
       auto& field_ev = glist_->sublist("state").sublist("evaluators").sublist(variable);
       field_ev.set<std::string>("evaluator type", "independent variable from file")
@@ -947,8 +948,8 @@ InputConverterU::TranslateSources_(const std::string& domain, const std::string&
       }
 
       // save in the XML files
-      Teuchos::ParameterList& src = (pkname == "flow") ? out_list.sublist("wells").sublist(srcname)
-                                                        : out_list.sublist(srcname);
+      Teuchos::ParameterList& src =
+        (pkname == "flow") ? out_list.sublist("wells").sublist(srcname) : out_list.sublist(srcname);
       src.set<Teuchos::Array<std::string>>("regions", regions);
       src.set<std::string>("spatial distribution method", weight);
       src.set<bool>("use volume fractions", WeightVolumeSubmodel_(regions));

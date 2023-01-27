@@ -50,8 +50,7 @@ TransportMatrixFractureImplicit_PK::TransportMatrixFractureImplicit_PK(
   auto pk_list = Teuchos::sublist(glist, "PKs", true);
   tp_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
-  Teuchos::ParameterList vlist;
-  vo_ = Teuchos::rcp(new VerboseObject("TranCoupledImplicit_PK", vlist));
+  vo_ = Teuchos::rcp(new VerboseObject("TranCoupledImplicit_PK", *tp_list_));
 }
 
 
@@ -278,12 +277,7 @@ TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new, bool
 {
   bool fail(false);
 
-  // make copy of primary unknowns, i.e. solution
-  auto& tcc_m = S_->GetW<CV_t>("total_component_concentration", Tags::DEFAULT, "state");
-  auto& tcc_f = S_->GetW<CV_t>("fracture-total_component_concentration", Tags::DEFAULT, "state");
-
-  num_aqueous_ = tcc_m.ViewComponent("cell")->NumVectors();
-  CompositeVector tcc_m_copy(tcc_m), tcc_f_copy(tcc_f);
+  num_aqueous_ = pk_matrix_->total_component_concentration()->ViewComponent("cell")->NumVectors();
 
   fia_->SetValues(S_->Get<CV_t>(matrix_vol_flowrate_key_));
 
@@ -298,22 +292,28 @@ TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new, bool
   }
 
   if (fail) {
-    tcc_m = tcc_m_copy;
-    tcc_f = tcc_f_copy;
-    // *my_solution_ = my_solution_copy;
-    ChangedSolution();
-
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed: recover (" << my_solution_->size() << ") primary field"
-               << std::endl;
+    *vo_->os() << "Step failed, but no need to recover primary fields" << std::endl;
   }
 
   // output
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    double sol_norm;
+    pk_fracture_->total_component_concentration()->Norm2(&sol_norm);
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "coupled solver: ||sol_f||=" << sol_norm
+               << "  avg itrs=" << tot_itrs / num_aqueous_ << std::endl;
+  }
+
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     double dt = t_new - t_old;
+    auto tcc_m = pk_matrix_->total_component_concentration();
+    auto tcc_f = pk_fracture_->total_component_concentration();
+
     Teuchos::OSTab tab = vo_->getOSTab();
-    pk_matrix_->VV_PrintSoluteExtrema(*tcc_m.ViewComponent("cell"), dt, " (m)");
-    pk_fracture_->VV_PrintSoluteExtrema(*tcc_f.ViewComponent("cell"), dt, " (f)");
+    pk_matrix_->VV_PrintSoluteExtrema(*tcc_m->ViewComponent("cell"), dt, " (m)");
+    pk_fracture_->VV_PrintSoluteExtrema(*tcc_f->ViewComponent("cell"), dt, " (f)");
   }
 
   return fail;
@@ -326,8 +326,8 @@ TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new, bool
 bool
 TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs)
 {
-  auto& tcc_m = S_->GetW<CV_t>("total_component_concentration", Tags::DEFAULT, "state");
-  auto& tcc_f = S_->GetW<CV_t>("fracture-total_component_concentration", Tags::DEFAULT, "state");
+  auto& tcc_m = *pk_matrix_->total_component_concentration();
+  auto& tcc_f = *pk_fracture_->total_component_concentration();
 
   for (int i = 0; i < num_aqueous_; i++) {
     pk_matrix_->UpdateLinearSystem(t_old, t_new, i);
@@ -372,7 +372,9 @@ TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, i
     *rhs_one.SubVector(0)->Data() = *pk_matrix_->op()->rhs();
     *rhs_one.SubVector(1)->Data() = *pk_fracture_->op()->rhs();
 
-    int ierr = op_tree_matrix_->ApplyInverse(rhs_one, sol_one);
+    // solver for component i
+    int ierr = op_tree_matrix_->ApplyInverse(rhs_one, sol_one); 
+    *tot_itrs += op_tree_matrix_->num_itrs();
 
     *(*tcc_m.ViewComponent("cell"))(i) = *(*sol_one.SubVector(0)->Data()->ViewComponent("cell"))(0);
     *(*tcc_f.ViewComponent("cell"))(i) = *(*sol_one.SubVector(1)->Data()->ViewComponent("cell"))(0);
@@ -400,8 +402,8 @@ TransportMatrixFractureImplicit_PK::AdvanceStepHO_(double t_old, double t_new, i
   dt_ = t_new - t_old;
   *tot_itrs = bdf1_dae_->number_nonlinear_steps();
 
-  auto tcc_m = S_->GetPtrW<CV_t>("total_component_concentration", Tags::DEFAULT, "state");
-  auto tcc_f = S_->GetPtrW<CV_t>("fracture-total_component_concentration", Tags::DEFAULT, "state");
+  auto tcc_m = pk_matrix_->total_component_concentration();
+  auto tcc_f = pk_fracture_->total_component_concentration();
 
   num_aqueous_ = tcc_m->ViewComponent("cell")->NumVectors();
   AMANZI_ASSERT(num_aqueous_ == 1);
@@ -426,14 +428,6 @@ TransportMatrixFractureImplicit_PK::AdvanceStepHO_(double t_old, double t_new, i
 
   return false;
 }
-
-
-/* ******************************************************************
-* Data were copied in the advance step
-****************************************************************** */
-void
-TransportMatrixFractureImplicit_PK::CommitStep(double t_old, double t_new, const Tag& tag)
-{}
 
 
 /* *******************************************************************

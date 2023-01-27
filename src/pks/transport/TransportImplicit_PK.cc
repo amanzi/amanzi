@@ -94,7 +94,6 @@ TransportImplicit_PK::Initialize()
 
   // domain name
   Key domain = tp_list_->template get<std::string>("domain name", "domain");
-  auto vo_list = tp_list_->sublist("verbose object");
   vo_ = Teuchos::rcp(new VerboseObject("TransportImpl-" + domain, *tp_list_));
 
   // boundary conditions

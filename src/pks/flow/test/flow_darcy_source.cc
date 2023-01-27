@@ -114,7 +114,8 @@ RunTestDarcySource(const std::string& xmlFileName)
 
     // verification
     double vmin, vmax;
-    auto rhs = *DPK->my_operator(Operators::OperatorType::OPERATOR_MATRIX)->rhs()->ViewComponent("cell");
+    auto rhs =
+      *DPK->my_operator(Operators::OperatorType::OPERATOR_MATRIX)->rhs()->ViewComponent("cell");
     rhs.MinValue(&vmin);
     rhs.MaxValue(&vmax);
     CHECK_CLOSE(vmin, vmax, 1e-12);
@@ -127,4 +128,3 @@ TEST(FLOW_2D_DARCY_SOURCE)
 {
   RunTestDarcySource("test/flow_darcy_source.xml");
 }
-
