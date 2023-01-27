@@ -260,6 +260,8 @@ ShallowWater_PK::Initialize()
   Teuchos::ParameterList model_list;
   model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
     .set<double>("gravity", g_);
+  model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
+    .set<std::string>("hydrostatic pressure force type", hydrostatic_pressure_force_type_);
   NumericalFluxFactory nf_factory;
   numerical_flux_ = nf_factory.Create(model_list);
 

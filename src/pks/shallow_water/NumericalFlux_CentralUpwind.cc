@@ -21,8 +21,8 @@ namespace ShallowWater {
 NumericalFlux_CentralUpwind::NumericalFlux_CentralUpwind(Teuchos::ParameterList& plist) 
 {
   g_ = plist.get<double>("gravity");
-  hydrostatic_pressure_force_type_ = plist.get<std::string>("hydrostatic pressure force type");
-  pipe_diameter_ = plist.get<double>("pipe diameter");
+  hydrostatic_pressure_force_type_ = plist.get<std::string>("hydrostatic pressure force type", "shallow water");
+  pipe_diameter_ = plist.get<double>("pipe diameter", 1.0);
 }
 
 

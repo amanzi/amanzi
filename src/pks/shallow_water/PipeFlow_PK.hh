@@ -30,9 +30,7 @@ class PipeFlow_PK : public ShallowWater_PK {
   virtual void Initialize() override;
 
  private:
-  //TODO fix the registration
-//  static RegisteredPKFactory<ShallowWater_PK, PipeFlow_PK> reg_;
-  static Utils::RegisteredFactory<ShallowWater_PK, PipeFlow_PK> factory_;
+  static RegisteredPKFactory<PipeFlow_PK> reg_;
 
   //TODO: why is gravity private in the shallow water PK?
   double g_;
