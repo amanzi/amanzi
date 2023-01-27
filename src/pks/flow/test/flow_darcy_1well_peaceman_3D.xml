@@ -39,41 +39,43 @@
       </ParameterList>
 
       <ParameterList name="source terms">
-	<ParameterList name="SRC 0">
-	  <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
-	  <Parameter name="spatial distribution method" type="string" value="simple well"/>
-	  <ParameterList name="well">
-	    <Parameter name="submodel" type="string" value="bhp"/>
-	    <Parameter name="depth" type="double" value="-1.75"/>
-	    <Parameter name="well radius" type="double" value="0.1"/>
-	    <ParameterList name="bhp">
-	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="10.0"/>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
-	<!--ParameterList name="SRC 1">
-	  <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
-	  <Parameter name="spatial distribution method" type="string" value="simple well"/> 
-	  <ParameterList name="well">
-	    <Parameter name="submodel" type="string" value="rate"/>
-	    <ParameterList name="rate">
-	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="100.0"/>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList-->
-	<!--ParameterList name="SRC 2">
-	  <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
-	  <Parameter name="spatial distribution method" type="string" value="volume"/>
-	  <ParameterList name="well">
-	    <ParameterList name="function-constant">
-	      <Parameter name="value" type="double" value="100"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList-->
+        <ParameterList name="wells">
+          <ParameterList name="SRC 0">
+            <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
+            <Parameter name="spatial distribution method" type="string" value="simple well"/>
+            <ParameterList name="well">
+              <Parameter name="submodel" type="string" value="bhp"/>
+              <Parameter name="depth" type="double" value="-1.75"/>
+              <Parameter name="well radius" type="double" value="0.1"/>
+              <ParameterList name="bhp">
+                <ParameterList name="function-constant">
+                    <Parameter name="value" type="double" value="10.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <!--ParameterList name="SRC 1">
+            <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
+            <Parameter name="spatial distribution method" type="string" value="simple well"/> 
+            <ParameterList name="well">
+              <Parameter name="submodel" type="string" value="rate"/>
+              <ParameterList name="rate">
+                <ParameterList name="function-constant">
+                    <Parameter name="value" type="double" value="100.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList-->
+          <!--ParameterList name="SRC 2">
+            <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
+            <Parameter name="spatial distribution method" type="string" value="volume"/>
+            <ParameterList name="well">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="100"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList-->
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="boundary conditions">

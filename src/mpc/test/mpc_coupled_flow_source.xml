@@ -494,13 +494,15 @@
       <ParameterList name="boundary conditions"/>
 
       <ParameterList name="source terms">
-        <ParameterList name="SRC 0">
-          <Parameter name="regions" type="Array(string)" value="{WELL}"/>
-	  <Parameter name="spatial distribution method" type="string" value="volume"/>
-          <Parameter name="submodel" type="string" value="rate"/>
-          <ParameterList name="well">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="2.0"/>
+        <ParameterList name="wells">
+          <ParameterList name="SRC 0">
+            <Parameter name="regions" type="Array(string)" value="{WELL}"/>
+            <Parameter name="spatial distribution method" type="string" value="volume"/>
+            <Parameter name="submodel" type="string" value="rate"/>
+            <ParameterList name="well">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.0"/>
+              </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>

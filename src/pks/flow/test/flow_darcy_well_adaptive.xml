@@ -42,25 +42,27 @@
       </ParameterList>
 
       <ParameterList name="source terms">
-	<ParameterList name="SRC 0">
-	  <Parameter name="regions" type="Array(string)" value="{WellLeft}"/>
-	  <Parameter name="spatial distribution method" type="string" value="volume"/>
-	  <ParameterList name="well">
-	    <ParameterList name="function-constant">
-	      <Parameter name="value" type="double" value="-2.0"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
-	<ParameterList name="SRC 1">
-	  <Parameter name="regions" type="Array(string)" value="{WellRightRotated}"/>
-	  <Parameter name="spatial distribution method" type="string" value="volume"/>
-	  <Parameter name="use volume fractions" type="bool" value="true"/>
-	  <ParameterList name="well">
-	    <ParameterList name="function-constant">
-	      <Parameter name="value" type="double" value="-2.0"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+        <ParameterList name="wells">
+          <ParameterList name="SRC 0">
+            <Parameter name="regions" type="Array(string)" value="{WellLeft}"/>
+            <Parameter name="spatial distribution method" type="string" value="volume"/>
+            <ParameterList name="well">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="-2.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="SRC 1">
+            <Parameter name="regions" type="Array(string)" value="{WellRightRotated}"/>
+            <Parameter name="spatial distribution method" type="string" value="volume"/>
+            <Parameter name="use volume fractions" type="bool" value="true"/>
+            <ParameterList name="well">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="-2.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
