@@ -50,10 +50,12 @@ TEST(MPC_DRIVER_COUPLED_REACTIVE_TRANSPORT)
 
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
+  mesh_list->set<bool>("request edges",true); 
+  mesh_list->set<bool>("request faces",true); 
   MeshFactory factory(comm, gm, mesh_list);
 
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create("test/single_fracture_tet.exo", true, true);
+  auto mesh = factory.create("test/single_fracture_tet.exo");
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
@@ -65,7 +67,7 @@ TEST(MPC_DRIVER_COUPLED_REACTIVE_TRANSPORT)
   //create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
-  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
+  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::Entity_kind::FACE);
 
   S->RegisterMesh("fracture", mesh_fracture);
 

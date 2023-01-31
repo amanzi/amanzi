@@ -32,7 +32,9 @@ main(int argc, char* argv[])
   int res = 0;
   {
     Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+    Kokkos::initialize(); 
     res = UnitTest::RunAllTests();
+    Kokkos::finalize(); 
   }
   return res;
 }

@@ -43,7 +43,7 @@ class ObservableSolute : public virtual Observable {
 
  protected:
   bool obs_boundary_, obs_planar_;
-  std::vector<double> vofs_;
+  AmanziMesh::Double_View vofs_;
   AmanziGeometry::Point reg_normal_;
   Teuchos::Array<std::string> comp_names_;
   int num_liquid_, tcc_index_;

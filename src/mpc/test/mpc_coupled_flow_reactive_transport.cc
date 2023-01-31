@@ -71,7 +71,7 @@ TEST(MPC_DRIVER_FLOW_RACTIVE_TRANSPORT_MATRIX_FRACTURE)
   // create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
-  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
+  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::Entity_kind::FACE);
 
   S->RegisterMesh("fracture", mesh_fracture);
 

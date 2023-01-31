@@ -57,9 +57,10 @@ MPC_CoupledFlowTransport(const std::string& xmlfile, const std::string& exofile)
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
-
+  mesh_list->set<bool>("request edges", true); 
+  mesh_list->set<bool>("request faces", true); 
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(exofile, true, true);
+  auto mesh = factory.create(exofile);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
@@ -82,9 +83,11 @@ MPC_CoupledFlowTransport(const std::string& xmlfile, const std::string& exofile)
   std::vector<std::string> names;
   names.push_back("fracture");
 
-  // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
-  auto mesh_fracture = Teuchos::rcp(new MeshExtractedManifold(
-    mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list, true, false));
+  // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::Entity_kind::FACE);
+  auto mesh_fracture_framework = Teuchos::rcp(new MeshExtractedManifold(
+    mesh, "fracture", AmanziMesh::Entity_kind::FACE, comm, gm, mesh_list));
+  auto mesh_fracture = Teuchos::rcp(new Mesh(mesh_fracture_framework, mesh_list)); 
+
   S->RegisterMesh("fracture", mesh_fracture);
 
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);

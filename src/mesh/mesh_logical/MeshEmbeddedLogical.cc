@@ -42,7 +42,7 @@ Note that entities are ordered in the following way:
 MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
         Teuchos::RCP<MeshFramework> bg_mesh,
         Teuchos::RCP<MeshFramework> log_mesh,
-        const std::vector<Entity_ID_List>& face_cell_ids,
+        const std::vector<std::vector<Entity_ID>>& face_cell_ids,
         const std::vector<std::vector<double> >& face_cell_lengths,
         const std::vector<AmanziGeometry::Point>& face_area_normals,
         const Teuchos::RCP<Teuchos::ParameterList>& plist)
@@ -50,9 +50,9 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
       bg_mesh_(bg_mesh),
       log_mesh_(log_mesh),
       extra_face_cell_ids_(face_cell_ids),
-      extra_face_cell_lengths_(face_cell_lengths),
-      extra_face_area_normals_(face_area_normals)
+      extra_face_cell_lengths_(face_cell_lengths)
 {
+  vectorToView(extra_face_area_normals_, face_area_normals); 
   setSpaceDimension(3);
   setManifoldDimension(3);
   setAlgorithms(Teuchos::rcp(new MeshLogicalAlgorithms()));
@@ -101,7 +101,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   bg_cell_all_vec.Import(bg_cell_owned_vec, cell_import, Insert);
 
   // -- copy ghost GIDs into the renumbered vector
-  Entity_GID_List cell_gids(ncells_bg_all + ncells_log);
+  Entity_GID_List cell_gids("cell_gids", ncells_bg_all + ncells_log);
   for (int c=0; c!=ncells_total_owned; ++c) cell_gids[c] = cell_owned_map.GID(c);
   for (int c=ncells_total_owned; c!=ncells_total_all; ++c) cell_gids[c] = bg_cell_all_vec[c-ncells_log+ncells_bg_owned];
 
@@ -127,7 +127,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   bg_face_all_vec.Import(bg_face_owned_vec, face_import, Insert);
 
   // -- copy ghost GIDs into the renumbered vector
-  Entity_GID_List face_gids(nfaces_total_owned + nfaces_total_all);
+  Entity_GID_List face_gids("face_gids", nfaces_total_owned + nfaces_total_all);
   for (int f=0; f!=nfaces_total_owned; ++f) face_gids[f] = face_owned_map.GID(f);
   for (int f=nfaces_total_owned; f!=nfaces_total_all; ++f)
     face_gids[f] = bg_face_all_vec[f-nfaces_log-nfaces_extra+nfaces_bg_owned];
@@ -229,6 +229,8 @@ MeshEmbeddedLogical::getCellFacesAndDirs(
   Entity_ID_List& faces,
   Entity_Direction_List * const dirs) const
 {
+  std::vector<Entity_ID> vfaces; 
+  std::vector<int> vdirs; 
   auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
   if (c < ncells_log) {
     log_mesh_->getCellFacesAndDirs(c, faces, dirs);
@@ -237,9 +239,19 @@ MeshEmbeddedLogical::getCellFacesAndDirs(
     auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
     for (int f=0; f!=extra_face_cell_ids_.size<MemSpace_type::HOST>(); ++f) {
       if (c == extra_face_cell_ids_.get<MemSpace_type::HOST>(f,0)) {
-        faces.push_back(f + nfaces_log);
-        if (dirs) dirs->push_back(1); // direction always from log to bg
+        vfaces.push_back(f + nfaces_log);
+        if (dirs) vdirs.push_back(1); // direction always from log to bg
       }
+    }
+    int size = faces.size(); 
+    Kokkos::resize(faces, size + vfaces.size()); 
+    for(int i = size, j = 0; i < faces.size(); ++i, ++j)
+      faces[i] = vfaces[j]; 
+    if (dirs){
+      int size = dirs->size(); 
+      Kokkos::resize(*dirs, size + vdirs.size()); 
+      for(int i = size, j = 0; i < dirs->size(); ++i, ++j)
+        (*dirs)[i] = vdirs[j]; 
     }
 
   } else {
@@ -252,9 +264,19 @@ MeshEmbeddedLogical::getCellFacesAndDirs(
     auto nfaces_bg = bg_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
     for (int f=0; f!=extra_face_cell_ids_.size<MemSpace_type::HOST>(); ++f) {
       if (c == (extra_face_cell_ids_.get<MemSpace_type::HOST>(f,1)+ncells_log)) {
-        faces.push_back(f + nfaces_log);
-        if (dirs) dirs->push_back(-1); // direction always from log to bg
+        vfaces.push_back(f + nfaces_log);
+        if (dirs) vdirs.push_back(-1); // direction always from log to bg
       }
+    }
+    int size = faces.size(); 
+    Kokkos::resize(faces, size + vfaces.size()); 
+    for(int i = size, j = 0; i < faces.size(); ++i, ++j)
+      faces[i] = vfaces[j]; 
+    if (dirs){
+      int size = dirs->size(); 
+      Kokkos::resize(*dirs, size + vdirs.size()); 
+      for(int i = size, j = 0; i < dirs->size(); ++i, ++j)
+        (*dirs)[i] = vdirs[j]; 
     }
   }
 }
@@ -266,6 +288,8 @@ MeshEmbeddedLogical::getCellFacesAndBisectors(
   Entity_ID_List& faces,
   Point_List * const bisectors) const
 {
+  std::vector<Entity_ID> vfaces; 
+  std::vector<AmanziGeometry::Point> vbisectors; 
   auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
   if (c < ncells_log) {
     log_mesh_->getCellFacesAndBisectors(c, faces, bisectors);
@@ -274,11 +298,20 @@ MeshEmbeddedLogical::getCellFacesAndBisectors(
     auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
     for (int f=0; f!=extra_face_cell_ids_.size<MemSpace_type::HOST>(); ++f) {
       if (c == extra_face_cell_ids_.get<MemSpace_type::HOST>(f,0)) {
-        faces.push_back(f + nfaces_log);
-        if (bisectors) bisectors->push_back(extra_face_cell_bisectors_.get<MemSpace_type::HOST>(f,0));
+        vfaces.push_back(f + nfaces_log);
+        if (bisectors) vbisectors.push_back(extra_face_cell_bisectors_.get<MemSpace_type::HOST>(f,0));
       }
     }
-
+    int size = faces.size(); 
+    Kokkos::resize(faces, size + vfaces.size()); 
+    for(int i = size, j = 0; i < faces.size(); ++i, ++j)
+      faces[i] = vfaces[j]; 
+    if (bisectors){
+      int size = bisectors->size(); 
+      Kokkos::resize(*bisectors, size + vbisectors.size()); 
+      for(int i = size, j = 0; i < bisectors->size(); ++i, ++j)
+        (*bisectors)[i] = vbisectors[j]; 
+    }
   } else {
     auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
     auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_type::HOST>();
@@ -289,9 +322,19 @@ MeshEmbeddedLogical::getCellFacesAndBisectors(
     auto nfaces_bg = bg_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
     for (int f=0; f!=extra_face_cell_ids_.size<MemSpace_type::HOST>(); ++f) {
       if (c == (extra_face_cell_ids_.get<MemSpace_type::HOST>(f,1)+ncells_log)) {
-        faces.push_back(f + nfaces_log);
-        if (bisectors) bisectors->push_back(extra_face_cell_bisectors_.get<MemSpace_type::HOST>(f,1));
+        vfaces.push_back(f + nfaces_log);
+        if (bisectors) vbisectors.push_back(extra_face_cell_bisectors_.get<MemSpace_type::HOST>(f,1));
       }
+    }
+    int size = faces.size(); 
+    Kokkos::resize(faces, size + vfaces.size()); 
+    for(int i = size, j = 0; i < faces.size(); ++i, ++j)
+      faces[i] = vfaces[j]; 
+    if (bisectors){
+      int size = bisectors->size(); 
+      Kokkos::resize(*bisectors, size + vbisectors.size()); 
+      for(int i = size, j = 0; i < bisectors->size(); ++i, ++j)
+        (*bisectors)[i] = vbisectors[j]; 
     }
   }
 }
@@ -327,7 +370,7 @@ MeshEmbeddedLogical::getFaceCells(const Entity_ID f,
     bg_mesh_->getFaceCells(f - nfaces_log - nfaces_extra, ptype, cells);
     for (auto& c : cells) c += ncells_log;
   } else {
-    cells = asVector(extra_face_cell_ids_.getRow<MemSpace_type::HOST>(f - nfaces_log));
+    cells = extra_face_cell_ids_.getRow<MemSpace_type::HOST>(f - nfaces_log);
     cells[1] += ncells_log;
   }
 }

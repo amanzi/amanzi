@@ -261,7 +261,7 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
     std::string set_name = set_it.first;
     auto set_list = sets.get<Teuchos::Array<std::string> >(set_name);
 
-    Entity_ID_List set_ents;
+    std::vector<Entity_ID> set_ents;
     for (auto& seg_name : set_list) {
       auto seg_cell = seg_cells_.find(seg_name);
       if (seg_cell == seg_cells_.end()) {
@@ -446,8 +446,8 @@ MeshLogicalFactory::AddSegment(
 
   // add sets
   AddSet(seg_name, "CELL", new_cells);
-  if (first_tip_type == LogicalTip_t::BOUNDARY) AddSet(seg_name+"_first_tip", "FACE", Entity_ID_List(1,new_faces[0]));
-  if (last_tip_type == LogicalTip_t::BOUNDARY) AddSet(seg_name+"_last_tip", "FACE", Entity_ID_List(1,new_faces.back()));
+  if (first_tip_type == LogicalTip_t::BOUNDARY) AddSet(seg_name+"_first_tip", "FACE", std::vector<Entity_ID>(1,new_faces[0]));
+  if (last_tip_type == LogicalTip_t::BOUNDARY) AddSet(seg_name+"_last_tip", "FACE", std::vector<Entity_ID>(1,new_faces.back()));
 
 }
 
@@ -651,11 +651,11 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
     std::vector<int> dirs = { 0, 1 };
 
     if (branch_from_tip == "first") {
-      cells[0] = seg_cells_[branch_from].front();
+      cells[0] = seg_cells_[branch_from][0];
       bisectors[0] = seg_orientations_[branch_from] * cell_lengths_[cells[0]]/2.;
       dirs[0] = 1;
     } else if (branch_from_tip == "last") {
-      cells[0] = seg_cells_[branch_from].back();
+      cells[0] = seg_cells_[branch_from][seg_cells_.size()-1];
       bisectors[0] = -seg_orientations_[branch_from] * cell_lengths_[cells[0]]/2.;
       dirs[0] = -1;
     } else {
@@ -686,8 +686,8 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
                first_tip_type, last_tip_type, seg_name, &new_cells, &new_faces);
   }
 
-  seg_cells_[seg_name] = new_cells;
-  seg_faces_[seg_name] = new_faces;
+  vectorToView(seg_cells_[seg_name], new_cells);
+  vectorToView(seg_faces_[seg_name], new_faces);
   seg_orientations_[seg_name] = orientation;
 
 }
@@ -697,7 +697,7 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
 int
 MeshLogicalFactory::ReserveFace() {
   int f = face_cell_list_.size();
-  face_cell_list_.emplace_back(Entity_ID_List());
+  face_cell_list_.emplace_back(std::vector<Entity_ID>());
   face_cell_bisectors_.emplace_back(std::vector<AmanziGeometry::Point>());
   face_cell_dirs_.emplace_back(std::vector<int>());
   face_areas_.push_back(-1.0);
@@ -708,7 +708,7 @@ MeshLogicalFactory::ReserveFace() {
 // Manually add a connection, returning the face id.
 int
 MeshLogicalFactory::AddFace(int f,
-                            const Entity_ID_List& cells,
+                            const std::vector<Entity_ID>& cells,
                             const std::vector<AmanziGeometry::Point>& bisectors,
                             const std::vector<int>& dirs,
                             double area) {
@@ -736,7 +736,7 @@ MeshLogicalFactory::AddFace(int f,
 int
 MeshLogicalFactory::AddSet(const std::string& set_name,
                            const std::string& ent,
-                           const Entity_ID_List& ents) {
+                           const std::vector<Entity_ID>& ents) {
 
   // create the region
   // - these are destroyed when the gm is destroyed

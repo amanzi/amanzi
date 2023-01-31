@@ -358,7 +358,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_entity_counts() const
 template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_cell_to_nodes() const
 {
-  Entity_ID_List bad_cells, bad_cells1;
+  std::vector<Entity_ID> bad_cells, bad_cells1;
   Entity_ID_List free_nodes;
   Entity_ID_List cnode;
 
@@ -405,7 +405,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_node_refs_by_cells() const
     for (int k = 0; k < cnode.size(); ++k) ref[cnode[k]] = true;
   }
 
-  Entity_ID_List free_nodes;
+  std::vector<Entity_ID> free_nodes;
   for (int j = 0; j < nnodes_all_; ++j) {
     if (!ref[j]) free_nodes.push_back(j);
   }
@@ -428,9 +428,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_node_refs_by_cells() const
 template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_cell_to_faces() const
 {
-  Entity_ID_List bad_cells, bad_cells1;
-  Entity_ID_List bad_faces;
-  Entity_ID_List free_faces;
+  std::vector<Entity_ID> bad_cells, bad_cells1;
   Entity_ID_List cface;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
@@ -478,8 +476,8 @@ bool MeshAudit_Geometry<Mesh_type>::check_face_refs_by_cells() const
     for (int k = 0; k < cface.size(); ++k) (refs[cface[k]])++;
   }
 
-  Entity_ID_List free_faces;
-  Entity_ID_List bad_faces;
+  std::vector<Entity_ID> free_faces;
+  std::vector<Entity_ID> bad_faces;
 
   for (int j = 0; j < nfaces_all_; ++j) {
     if (refs[j] == 0)
@@ -513,7 +511,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_face_refs_by_cells() const
 template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_face_to_nodes() const
 {
-  Entity_ID_List bad_faces, bad_faces1;
+  std::vector<Entity_ID> bad_faces, bad_faces1;
   Entity_ID_List fnode;
 
   for (Entity_ID j = 0; j < nfaces_all_; ++j) {
@@ -559,7 +557,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_node_refs_by_faces() const
     for (int k = 0; k < fnode.size(); ++k) ref[fnode[k]] = true;
   }
 
-  Entity_ID_List free_nodes;
+  std::vector<Entity_ID> free_nodes;
   for (int j = 0; j < nnodes_all_; ++j) {
     if (!ref[j]) free_nodes.push_back(j);
   }
@@ -584,10 +582,11 @@ bool MeshAudit_Geometry<Mesh_type>::check_cell_to_face_dirs() const
 {
   Entity_ID_List faces;
   Entity_Direction_List fdirs;
-  Entity_ID_List bad_cells, bad_cells_exc;
+  std::vector<Entity_ID> bad_cells, bad_cells_exc;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
-    fdirs.assign(6, std::numeric_limits<int>::max());
+    //Kokkos::resize(fdirs, 6); 
+    //initView(fdirs, std::numeric_limits<int>::max());
     try {
       mesh_->getCellFacesAndDirs(j, faces, &fdirs);  // this may fail
       bool bad_data = false;
@@ -627,7 +626,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_cell_degeneracy() const
   os_ << "Checking cells for topological degeneracy ..." << std::endl;
 
   Entity_ID_List cnode;
-  Entity_ID_List bad_cells;
+  std::vector<Entity_ID> bad_cells;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
     mesh_->getCellNodes(j, cnode); // should not fail
@@ -661,8 +660,8 @@ bool MeshAudit_Geometry<Mesh_type>::check_cell_to_faces_to_nodes() const
   Entity_ID_List fnode_ref;
   Entity_ID_List fnode;
   Entity_Direction_List fdirs;
-  Entity_ID_List bad_cells0;
-  Entity_ID_List bad_cells1;
+  std::vector<Entity_ID> bad_cells0;
+  std::vector<Entity_ID> bad_cells1;
 
   // unordered meshes cannot pass this test.
   if (!mesh_->isOrdered()) {
@@ -702,10 +701,10 @@ bool MeshAudit_Geometry<Mesh_type>::check_cell_to_faces_to_nodes() const
           break;
         }
 
-        fnode_ref.clear();
+        Kokkos::resize(fnode_ref, nfn); 
         for (int i = 0; i < nfn; ++i) {
           int nodenum = Topology::fnodes_std[ctype][k][i];
-          fnode_ref.push_back(cnode[nodenum]);
+          fnode_ref[i] = cnode[nodenum];
         }
 
         int dir = this->isSameFace_(fnode, fnode_ref); // should be the same face
@@ -750,9 +749,9 @@ template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_node_to_coordinates() const
 {
   std::vector<double> x(3);
-  Entity_ID_List bad_nodes, bad_nodes_exc;
+  std::vector<Entity_ID> bad_nodes, bad_nodes_exc;
   int spdim = mesh_->getSpaceDimension();
-  Entity_ID_List bad_nodes0;
+  std::vector<Entity_ID> bad_nodes0;
 
   for (Entity_ID j = 0; j < nnodes_all_; ++j) {
     AmanziGeometry::Point x0(spdim);
@@ -796,12 +795,11 @@ bool MeshAudit_Geometry<Mesh_type>::check_cell_to_coordinates() const
 {
   int spdim = mesh_->getSpaceDimension();
   Entity_ID_List cnode;
-  Entity_ID_List bad_cells, bad_cells_exc;
+  std::vector<Entity_ID> bad_cells, bad_cells_exc;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
-    std::vector<AmanziGeometry::Point> x0;
     try {
-      x0 = mesh_->getCellCoordinates(j); // this may fail
+      auto x0 = mesh_->getCellCoordinates(j); // this may fail
       mesh_->getCellNodes(j, cnode); // this should not fail
       for (int k = 0; k < cnode.size(); ++k){
         bool bad_data = false;
@@ -850,13 +848,12 @@ bool MeshAudit_Geometry<Mesh_type>::check_face_to_coordinates() const
 {
   int spdim = mesh_->getSpaceDimension();
   Entity_ID_List fnode;
-  Entity_ID_List bad_faces, bad_faces_exc;
+  std::vector<Entity_ID> bad_faces, bad_faces_exc;
 
   for (Entity_ID j = 0; j < nfaces_all_; ++j) {
     try {
-      std::vector<AmanziGeometry::Point> x0;
       bool bad_data = false;
-      x0 = mesh_->getFaceCoordinates(j); // this may fail
+      auto x0 = mesh_->getFaceCoordinates(j); // this may fail
       mesh_->getFaceNodes(j, fnode); // this should not fail
       for (int k = 0; k < fnode.size(); ++k) {
         AmanziGeometry::Point xref(spdim);
@@ -899,7 +896,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_face_to_coordinates() const
 template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_face_cell_adjacency_consistency() const
 {
-  Entity_ID_List bad_faces1, bad_faces2, bad_faces_exc;
+  std::vector<Entity_ID> bad_faces1, bad_faces2, bad_faces_exc;
 
   for (Entity_ID f=0; f!=nfaces_all_; ++f) {
     try {
@@ -974,7 +971,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_face_cell_adjacency_consistency() cons
 template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_face_normal_relto_cell() const
 {
-  Entity_ID_List bad_faces, bad_faces_exc;
+  std::vector<Entity_ID> bad_faces, bad_faces_exc;
 
   for (Entity_ID j = 0; j < nfaces_all_; ++j) {
     try {
@@ -1018,7 +1015,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_face_normal_orientation() const
 {
   // this test is only for meshes which have a natural normal
   if (mesh_->getSpaceDimension() != mesh_->getManifoldDimension()) return false;
-  Entity_ID_List bad_faces, bad_faces_exc;
+  std::vector<Entity_ID> bad_faces, bad_faces_exc;
 
   for (Entity_ID j = 0; j < nfaces_all_; ++j) {
     try {
@@ -1064,7 +1061,7 @@ template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_cell_geometry() const
 {
   os_ << "Checking cell geometry ..." << std::endl;
-  Entity_ID_List bad_cells;
+  std::vector<Entity_ID> bad_cells;
 
   for (Entity_ID c=0; c!=ncells_all_; ++c) {
     double hvol = mesh_->getCellVolume(c);
@@ -1230,7 +1227,7 @@ bool MeshAudit_Maps<Mesh_type>::check_node_to_coordinates_ghost_data() const
   int nnode_use = node_map_use.NumMyElements();
 
   AmanziGeometry::Point coord(spdim);
-  Entity_ID_List bad_nodes;
+  std::vector<Entity_ID> bad_nodes;
 
   Epetra_MultiVector coord_use(node_map_use,spdim);
   double **data;
@@ -1279,7 +1276,7 @@ bool MeshAudit_Maps<Mesh_type>::check_face_to_nodes_ghost_data() const
   int nface_use = face_map_use.NumMyElements();
 
   Entity_ID_List fnode;
-  Entity_ID_List bad_faces, bad_faces1, bad_faces2;
+  std::vector<Entity_ID> bad_faces, bad_faces1, bad_faces2;
 
   // Create a matrix of the GIDs for all owned faces.
 
@@ -1320,7 +1317,7 @@ bool MeshAudit_Maps<Mesh_type>::check_face_to_nodes_ghost_data() const
       }
     if (bad_data) {
       // Determine just how bad the data is.
-      Entity_ID_List fnode_ref(maxnodes);
+      Entity_ID_List fnode_ref("fnode_ref", maxnodes);
       for (int k = 0; k < maxnodes; ++k) {
         fnode[k] = node_map.GID(fnode[k]);
         fnode_ref[k] = gids(j,k);
@@ -1400,7 +1397,7 @@ bool MeshAudit_Maps<Mesh_type>::check_cell_to_nodes_ghost_data() const
   int ncell_use = cell_map_use.NumMyElements();
 
   Entity_ID_List cnode;
-  Entity_ID_List bad_cells;
+  std::vector<Entity_ID> bad_cells;
 
   int maxnodes = 0;
   for (Entity_ID j = 0; j < ncell_own; ++j) {
@@ -1485,7 +1482,7 @@ bool MeshAudit_Maps<Mesh_type>::check_cell_to_faces_ghost_data() const
   int ncell_use = cell_map_use.NumMyElements();
 
   Entity_ID_List cface;
-  Entity_ID_List bad_cells;
+  std::vector<Entity_ID> bad_cells;
 
   // Create a matrix of the GIDs for all owned cells.
   int maxfaces = 0;
@@ -1817,7 +1814,7 @@ bool MeshAudit_Sets<Mesh_type>::check_get_set(Set_ID sid,
   }
 
   // Check that the LIDs in the set belong to the map.
-  Entity_ID_List bad_LIDs;
+  std::vector<Entity_ID> bad_LIDs;
   for (int j = 0; j < set.size(); ++j)
     if (!map.MyLID(set[j])) bad_LIDs.push_back(set[j]);
   if (!bad_LIDs.empty()) {
@@ -1909,7 +1906,7 @@ bool MeshAudit_Sets<Mesh_type>::check_used_set(Set_ID sid,
 
     // Check for negative tag values;
     // these mark used LIDs that shouldn't be in the set but are.
-    Entity_ID_List bad_LIDs;
+    std::vector<Entity_ID> bad_LIDs;
     for (int j = 0; j < set_use.size(); ++j)
       if (tag_use[j] < 0) bad_LIDs.push_back(j);
     if (!bad_LIDs.empty()) {
@@ -1956,7 +1953,7 @@ bool MeshAudit_Maps<Mesh_type>::check_face_partition() const
   }
 
   // Verify that every owned face has been marked as belonging to an owned cell.
-  Entity_ID_List bad_faces;
+  std::vector<Entity_ID> bad_faces;
   for (Entity_ID j = 0; j < mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).NumMyElements(); ++j)
     if (!owned[j]) bad_faces.push_back(j);
 
@@ -1984,7 +1981,7 @@ bool MeshAudit_Maps<Mesh_type>::check_node_partition() const
   }
 
   // Verify that every owned node has been marked as belonging to an owned cell.
-  Entity_ID_List bad_nodes;
+  std::vector<Entity_ID> bad_nodes;
   for (Entity_ID j = 0; j < mesh_->getMap(AmanziMesh::Entity_kind::NODE, false).NumMyElements(); ++j)
     if (!owned[j]) bad_nodes.push_back(j);
 
@@ -2003,7 +2000,7 @@ bool MeshAudit_Maps<Mesh_type>::check_node_partition() const
 template<class Mesh_type>
 bool MeshAudit_Base<Mesh_type>::areDistinctValues_(const Entity_ID_List &list) const
 {
-  Entity_ID_List copy(list);
+  std::vector<Entity_ID> copy(list.data(), list.data()+list.size());
   sort(copy.begin(), copy.end());
   return (adjacent_find(copy.begin(),copy.end()) == copy.end());
 }
@@ -2053,7 +2050,7 @@ int MeshAudit_Base<Mesh_type>::isSameFace_(const Entity_ID_List fnode1, const En
 }
 
 template<class Mesh_type>
-void MeshAudit_Base<Mesh_type>::writeList_(const Entity_ID_List& list) const
+void MeshAudit_Base<Mesh_type>::writeList_(const std::vector<Entity_ID>& list) const
 {
   int num_out = std::min((unsigned int) list.size(), this->MAX_OUT);
   for (int i = 0; i < num_out; ++i) os_ << " " << list[i];

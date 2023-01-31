@@ -115,7 +115,7 @@ if (BUILD_TESTS)
     endif()
 
     set(amanzi_libs mpc pks mpc_tree flow transport chemistry_pk energy shallow_water 
-                    dummy pks eos state operators mesh_extracted mesh_factory mesh_audit 
+                    dummy pks eos state operators mesh_extracted mesh_factory 
                     geometry whetstone mesh_functions functions)
 
     # Test: mpc driver for flow

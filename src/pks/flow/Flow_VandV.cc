@@ -45,11 +45,10 @@ Flow_PK::VV_FractureConservationLaw() const
 
   std::vector<int> dirs;
   double err(0.0), flux_max(0.0);
-  AmanziMesh::Entity_ID_List faces, cells;
 
   for (int c = 0; c < ncells_owned; c++) {
     double flux_sum(0.0);
-    mesh_->getCellFacesAndDirections(c, &faces, &dirs);
+    auto [faces, fdirs] = mesh_->getCellFacesAndDirections(c);
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
       int g = fracture_map->FirstPointInElement(f);
@@ -62,11 +61,11 @@ Flow_PK::VV_FractureConservationLaw() const
 
     // sum into fluxes from matrix
     auto f = mesh_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
-    cells = mesh_matrix->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh_matrix->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
     int pos = Operators::UniqueIndexFaceToCells(*mesh_matrix, f, cells[0]);
 
     for (int j = 0; j != cells.size(); ++j) {
-      mesh_matrix->getCellFacesAndDirections(cells[j], &faces, &dirs);
+      auto [faces, dirs] = mesh_matrix->getCellFacesAndDirections(cells[j]);
 
       for (int i = 0; i < faces.size(); i++) {
         if (f == faces[i]) {

@@ -63,7 +63,7 @@ ObservableLineSegmentSolute::ComputeObservation(State& S,
                                                 double dt)
 {
   Errors::Message msg;
-  int dim = mesh_->space_dimension();
+  int dim = mesh_->getSpaceDimension();
 
   std::vector<double> values(region_size_);
   double weight_corr = 1e-15;

@@ -29,9 +29,8 @@ namespace WhetStone {
 int
 DeRham_Node::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  Entity_ID_List nodes, face_nodes;
 
-  nodes = mesh_->getCellNodes(c);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   N.Reshape(nnodes, 1);
