@@ -274,9 +274,8 @@ Alquimia_PK::Initialize()
       // Get the cells that belong to this region.
       int num_cells =
         mesh_->getSetSize(region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-      AmanziMesh::Entity_ID_List cell_indices;
-      mesh_->getSetEntities(
-        region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED, &cell_indices);
+      auto cell_indices = mesh_->getSetEntities(
+        region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
       // Loop over the cells.
       for (int i = 0; i < num_cells; ++i) {
@@ -581,7 +580,7 @@ Alquimia_PK::CopyToAlquimia(int cell,
 
   // minerals
   assert(state.mineral_volume_fraction.size == number_minerals_);
-  assert(state.mineral_specific_surgetFaceArea.size == number_minerals_);
+  assert(state.mineral_specific_surface_area.size == number_minerals_);
   assert(mat_props.mineral_rate_cnst.size == number_minerals_);
 
   if (number_minerals_ > 0) {
@@ -594,7 +593,7 @@ Alquimia_PK::CopyToAlquimia(int cell,
     for (unsigned int i = 0; i < number_minerals_; ++i) {
       state.mineral_volume_fraction.data[i] = mineral_vf[i][cell];
       mat_props.mineral_rate_cnst.data[i] = mineral_rate[i][cell];
-      state.mineral_specific_surgetFaceArea.data[i] = mineral_ssa[i][cell];
+      state.mineral_specific_surface_area.data[i] = mineral_ssa[i][cell];
     }
   }
 
@@ -751,7 +750,7 @@ Alquimia_PK::CopyFromAlquimia(const int cell,
 
     for (int i = 0; i < number_minerals_; ++i) {
       mineral_vf[i][cell] = state.mineral_volume_fraction.data[i];
-      mineral_ssa[i][cell] = state.mineral_specific_surgetFaceArea.data[i];
+      mineral_ssa[i][cell] = state.mineral_specific_surface_area.data[i];
       mineral_rate[i][cell] = mat_props.mineral_rate_cnst.data[i];
     }
   }
