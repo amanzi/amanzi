@@ -73,8 +73,7 @@ TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& region
     // are applied on faces).
     assert(mesh_->isValidSetName(regions[i], AmanziMesh::Entity_kind::FACE));
 
-    AmanziMesh::Entity_ID_List block;
-    mesh_->getSetEntities(regions[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED, &block);
+    auto block = mesh_->getSetEntities(regions[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
     int nblock = block.size();
 
     // Now get the cells that are attached to these faces.
