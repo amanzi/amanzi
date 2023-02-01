@@ -56,8 +56,14 @@ struct View_iter: public std::iterator<std::forward_iterator_tag, T, int, T*, T&
   // postfix
   KOKKOS_INLINE_FUNCTION View_iter operator++(int) { View_iter tmp(*this); ++(*this); return tmp; }
 
+  KOKKOS_INLINE_FUNCTION friend View_iter operator+(const View_iter& v, const int& d) {
+    View_iter tmp(v); tmp+=d; return tmp;
+  }
+  KOKKOS_INLINE_FUNCTION friend View_iter operator+(const int& d, const View_iter& v) {
+    return v + d;
+  }
   KOKKOS_INLINE_FUNCTION friend int operator-(const View_iter& l, const View_iter& r){
-    return l.i_-r.i_; 
+    return l.i_-r.i_;
   }
   KOKKOS_INLINE_FUNCTION friend bool operator==(const View_iter& a, const View_iter& b) {
     return a.v_ == b.v_ && a.i_ == b.i_;
@@ -66,15 +72,24 @@ struct View_iter: public std::iterator<std::forward_iterator_tag, T, int, T*, T&
     return !(a == b);
   }
   KOKKOS_INLINE_FUNCTION friend bool operator<(const View_iter& l, const View_iter& r) {
-    return l.i_<r.i_;
+    return l.v_ == r.v_ && l.i_ < r.i_;
   }
-  KOKKOS_INLINE_FUNCTION View_iter& operator+(const int& incr){
-    this->i_ += incr; 
-    return *this; 
+  KOKKOS_INLINE_FUNCTION friend bool operator<=(const View_iter& l, const View_iter& r) {
+    return l.v_ == r.v_ && l.i_ <= r.i_;
   }
-  KOKKOS_INLINE_FUNCTION View_iter& operator-(const int& decr){
-    this->i_ -= decr; 
-    return *this; 
+  KOKKOS_INLINE_FUNCTION friend bool operator>(const View_iter& l, const View_iter& r) {
+    return l.v_ == r.v_ && l.i_ > r.i_;
+  }
+  KOKKOS_INLINE_FUNCTION friend bool operator>=(const View_iter& l, const View_iter& r) {
+    return l.v_ == r.v_ && l.i_ >= r.i_;
+  }
+  KOKKOS_INLINE_FUNCTION View_iter& operator+=(const int& incr){
+    this->i_ += incr;
+    return *this;
+  }
+  KOKKOS_INLINE_FUNCTION View_iter& operator-=(const int& decr){
+    this->i_ -= decr;
+    return *this;
   }
 
 private:
@@ -139,8 +154,8 @@ struct MeshView: public Kokkos::View<DataType, Properties...>{
 
 template<class SubDataType, class... SubProperties, class... Args>
 MeshView<SubDataType, SubProperties...> subview(Kokkos::MeshView<SubDataType, SubProperties...> v, Args... args){
-  MeshView ret = Kokkos::subview(v, std::forward<Args>(args)...); 
-  return ret; 
+  MeshView ret(Kokkos::subview((typename Kokkos::MeshView<SubDataType, SubProperties...>::baseView)v, std::forward<Args>(args)...));
+  return ret;
 }
 
 template<class DataType, class Arg1Type = void, class Arg2Type = void, class Arg3Type = void>
