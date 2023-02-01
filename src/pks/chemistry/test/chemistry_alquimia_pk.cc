@@ -144,7 +144,7 @@ TEST(INTERFACE_LIBRARY_ADVANCE)
   {
     std::vector<double> data(
       { 3.2623e+05, 1.10763e+06, 5.90939e+06, 10.0, 10.0, 10.0, 10.0, 10.0 });
-    for (int i = 0; i < 8; ++i) state.mineral_specific_surgetFaceArea.data[i] = data[i];
+    for (int i = 0; i < 8; ++i) state.mineral_specific_surface_area.data[i] = data[i];
   }
 
   CopyAlquimiaState(&state, &state_tmp);
