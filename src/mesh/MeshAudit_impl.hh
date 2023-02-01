@@ -1812,9 +1812,9 @@ MeshAudit_Sets<Mesh_type>::check_get_set(Set_ID sid,
   // Get the size of the set.
   try {
     std::string set_name = mesh_->geometric_model()->FindRegion(sid)->name();
-    mesh_->get_set_size(set_name, kind, ptype); // this may fail
+    mesh_->getSetSize(set_name, kind, ptype); // this may fail
   } catch (...) {
-    os_ << "  ERROR: caught exception from get_set_size()" << std::endl;
+    os_ << "  ERROR: caught exception from getSetSize()" << std::endl;
     return true;
   }
 
@@ -1881,19 +1881,18 @@ MeshAudit_Sets<Mesh_type>::check_used_set(Set_ID sid,
   if (this->comm_->NumProc() == 1) {
     // In serial, the owned and used sets should be identical.
 
-    int n = mesh_->get_set_size(set_name, kind, Parallel_type::OWNED);
+    int n = mesh_->getSetSize(set_name, kind, Parallel_type::OWNED);
     Entity_ID_List set_own;
     mesh_->getSetEntities(set_name, kind, Parallel_type::OWNED, &set_own);
 
     // Set sizes had better be the same.
-    if (mesh_->get_set_size(set_name, kind, Parallel_type::ALL) != set_own.size()) {
+    if (mesh_->getSetSize(set_name, kind, Parallel_type::ALL) != set_own.size()) {
       os_ << "  ERROR: owned and used set sizes differ" << std::endl;
       return true;
     }
 
     // Verify that the two sets are identical.
-    Entity_ID_List set_use;
-    mesh_->getSetEntities(set_name, kind, Parallel_type::ALL, &set_use);
+    auto set_use = mesh_->getSetEntities(set_name, kind, Parallel_type::ALL);
     bool bad_data = false;
     for (int j = 0; j < n; ++j)
       if (set_use[j] != set_own[j]) bad_data = true;
@@ -1905,13 +1904,8 @@ MeshAudit_Sets<Mesh_type>::check_used_set(Set_ID sid,
     return false;
 
   } else {
-    int n = mesh_->get_set_size(set_name, kind, Parallel_type::OWNED);
-    Entity_ID_List set_own;
-    mesh_->getSetEntities(set_name, kind, Parallel_type::OWNED, &set_own);
-
-    n = mesh_->get_set_size(set_name, kind, Parallel_type::ALL);
-    Entity_ID_List set_use(n);
-    mesh_->getSetEntities(set_name, kind, Parallel_type::ALL, &set_use);
+    auto set_own = mesh_->getSetEntities(set_name, kind, Parallel_type::OWNED);
+    auto set_use = mesh_->getSetEntities(set_name, kind, Parallel_type::ALL);
 
     // Tag all LIDs in the used map that should belong to the used set;
     // the owned set LIDs are taken as definitive.

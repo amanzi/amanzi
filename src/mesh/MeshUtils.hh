@@ -66,6 +66,16 @@ struct View_iter : public std::iterator<std::forward_iterator_tag, T, int, T*, T
     return tmp;
   }
 
+  KOKKOS_INLINE_FUNCTION friend View_iter operator+(const View_iter& v, const int& d)
+  {
+    View_iter tmp(v);
+    tmp += d;
+    return tmp;
+  }
+  KOKKOS_INLINE_FUNCTION friend View_iter operator+(const int& d, const View_iter& v)
+  {
+    return v + d;
+  }
   KOKKOS_INLINE_FUNCTION friend int operator-(const View_iter& l, const View_iter& r)
   {
     return l.i_ - r.i_;
@@ -80,14 +90,26 @@ struct View_iter : public std::iterator<std::forward_iterator_tag, T, int, T*, T
   }
   KOKKOS_INLINE_FUNCTION friend bool operator<(const View_iter& l, const View_iter& r)
   {
-    return l.i_ < r.i_;
+    return l.v_ == r.v_ && l.i_ < r.i_;
   }
-  KOKKOS_INLINE_FUNCTION View_iter& operator+(const int& incr)
+  KOKKOS_INLINE_FUNCTION friend bool operator<=(const View_iter& l, const View_iter& r)
+  {
+    return l.v_ == r.v_ && l.i_ <= r.i_;
+  }
+  KOKKOS_INLINE_FUNCTION friend bool operator>(const View_iter& l, const View_iter& r)
+  {
+    return l.v_ == r.v_ && l.i_ > r.i_;
+  }
+  KOKKOS_INLINE_FUNCTION friend bool operator>=(const View_iter& l, const View_iter& r)
+  {
+    return l.v_ == r.v_ && l.i_ >= r.i_;
+  }
+  KOKKOS_INLINE_FUNCTION View_iter& operator+=(const int& incr)
   {
     this->i_ += incr;
     return *this;
   }
-  KOKKOS_INLINE_FUNCTION View_iter& operator-(const int& decr)
+  KOKKOS_INLINE_FUNCTION View_iter& operator-=(const int& decr)
   {
     this->i_ -= decr;
     return *this;
@@ -150,7 +172,9 @@ template <class SubDataType, class... SubProperties, class... Args>
 MeshView<SubDataType, SubProperties...>
 subview(Kokkos::MeshView<SubDataType, SubProperties...> v, Args... args)
 {
-  MeshView ret = Kokkos::subview(v, std::forward<Args>(args)...);
+  MeshView ret(
+    Kokkos::subview((typename Kokkos::MeshView<SubDataType, SubProperties...>::baseView)v,
+                    std::forward<Args>(args)...));
   return ret;
 }
 
