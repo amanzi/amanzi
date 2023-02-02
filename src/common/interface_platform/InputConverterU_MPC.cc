@@ -1066,6 +1066,8 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
         .sublist("advection operator")
         .sublist("matrix")
         .set<Teuchos::Array<std::string>>("fracture", fracture_regions_);
+
+      pk_list.sublist(name).sublist("verbose object") = verb_list_.sublist("verbose object");
     }
 
     if (basename == "coupled transport") {

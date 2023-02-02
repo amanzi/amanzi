@@ -39,6 +39,7 @@
 
 // Chemistry
 #include "Amanzi_PK.hh"
+#include "ChemistryDefs.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -490,13 +491,11 @@ Amanzi_PK::CopyBeakerStructuresToCellState(int c,
                                            Teuchos::RCP<Epetra_MultiVector> aqueous_components)
 {
   for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
-    (*aqueous_components)[i][c] = beaker_state_.total.at(i);
-    // (*aqueous_components)[i][c] = std::max(beaker_state_.total.at(i), 1e-200);
+    (*aqueous_components)[i][c] = std::max(beaker_state_.total.at(i), TCC_MIN_VALUE);
   }
 
   for (int i = 0; i < number_aqueous_components_; ++i) {
-    (*bf_.free_ion)[i][c] = beaker_state_.free_ion.at(i);
-    // (*bf_.free_ion)[i][c] = std::max(beaker_state_.free_ion.at(i), 1e-200);
+    (*bf_.free_ion)[i][c] = std::max(beaker_state_.free_ion.at(i), TCC_MIN_VALUE);
   }
 
   // activity coefficients

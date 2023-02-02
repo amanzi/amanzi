@@ -117,7 +117,7 @@ FlowMatrixFracture_PK::Setup()
   Teuchos::ParameterList& mflow =
     glist_->sublist("PKs").sublist(pks[0]).sublist("physical models and assumptions");
   mflow.set<std::string>("coupled matrix fracture flow", "matrix")
-    .set<bool>("use bulk modulus", true);
+    .set<bool>("use bulk modulus", false);
 
   // -- flow (fracture)
   Teuchos::ParameterList& fflow =
