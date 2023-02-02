@@ -256,3 +256,36 @@ TEST(MESH_GEOMETRY_PINCHOUTS)
   }
 }
 
+
+TEST(MESH_CONST_DANGER)
+{
+  // only MSTK can handle this mesh -- it has degeneracies
+  std::vector<Framework> frameworks;
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+
+  for (const auto& frm : frameworks) {
+    std::cout << std::endl
+              << "Testing const correctness of mesh views" << std::endl
+              << "------------------------------------------------" << std::endl;
+    auto mesh = createStructuredUnitQuad(Preference{frm}, 2,2);
+    Entity_ID_List cfaces2;
+    {
+      auto cfaces = mesh->getCellFaces<AccessPattern::CACHE>(0);
+      Kokkos::resize(cfaces2, cfaces.size());
+      Kokkos::deep_copy(cfaces2, cfaces);
+      CHECK(cfaces2(0) != -1);
+      cfaces(0) = -1; // ideally this should fail to compile?
+      CHECK(cfaces2(0) != -1);
+    }
+    {
+      // but if it does compile, this had better pass -- no modifying the mesh
+      // please!
+      auto cfaces = mesh->getCellFaces(0);
+      CHECK(cfaces(0) != -1);
+      CHECK(cfaces(0) == cfaces2(0));
+    }
+  }
+}
+
