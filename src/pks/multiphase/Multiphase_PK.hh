@@ -29,8 +29,10 @@
 #include "FlattenedTreeOperator.hh"
 #include "Key.hh"
 #include "PDE_Accumulation.hh"
-#include "PDE_AdvectionUpwind.hh"
+#include "PDE_AdvectionUpwindFactory.hh"
+#include "PDE_DiffusionFactory.hh"
 #include "PDE_DiffusionFVwithGravity.hh"
+#include "PDE_DiffusionFVonManifolds.hh"
 #include "PK_Factory.hh"
 #include "PK_PhysicalBDF.hh"
 #include "State.hh"
@@ -184,8 +186,10 @@ class Multiphase_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Matrix<TreeVector, TreeVectorSpace>> op_pc_solver_;
   bool op_pc_assembled_;
 
+  Teuchos::RCP<Operators::PDE_DiffusionFactory> fac_diffK_, fac_diffD_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwindFactory> fac_adv_;
   std::vector<Teuchos::RCP<Operators::PDE_Diffusion>> pde_diff_K_;
-  Teuchos::RCP<Operators::PDE_DiffusionFV> pde_diff_D_;
+  Teuchos::RCP<Operators::PDE_Diffusion> pde_diff_D_;
 
   std::map<std::string, bool> system_;
   std::vector<EquationStructure> eqns_;
@@ -205,7 +209,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   Teuchos::RCP<WRMmpPartition> wrm_;
 
   // upwind
-  Teuchos::RCP<Operators::Upwind> upwind_;
+  Teuchos::RCP<Operators::Upwind> upwind_, upwind_new_;
 
   // time integration
   std::vector<std::string> flux_names_;

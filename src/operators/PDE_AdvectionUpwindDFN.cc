@@ -11,8 +11,7 @@
 /*
   Operators
 
-  Upwind operator on a network of fractures
-
+  Advection operator on a fracture network.
 */
 
 #include <vector>

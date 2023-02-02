@@ -98,6 +98,7 @@ set(operators_inc_files
     PDE_Advection.hh
     PDE_AdvectionUpwind.hh
     PDE_AdvectionUpwindDFN.hh    
+    PDE_AdvectionUpwindFactory.hh
     PDE_AdvectionUpwindFracturedMatrix.hh
     PDE_AdvectionRiemann.hh
     PDE_CouplingFlux.hh
@@ -165,6 +166,7 @@ set(operators_src_files
   Operator_Schema.cc
   PDE_Accumulation.cc
   PDE_Abstract.cc
+  PDE_AdvectionUpwindFactory.cc
   PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
   PDE_AdvectionUpwindFracturedMatrix.cc PDE_AdvectionUpwindDFN.cc                              
   PDE_CouplingFlux.cc

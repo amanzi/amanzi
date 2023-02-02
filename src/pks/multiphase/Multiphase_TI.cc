@@ -20,9 +20,6 @@
 
 // Amanzi
 #include "PDE_Accumulation.hh"
-#include "PDE_AdvectionUpwind.hh"
-#include "PDE_DiffusionFV.hh"
-#include "PDE_DiffusionFVwithGravity.hh"
 #include "Tensor.hh"
 
 // Multiphase
@@ -106,7 +103,6 @@ Multiphase_PK::FunctionalResidual(double t_old,
         auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
         kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
         upwind_->Compute(flux, bcnone, *kr);
-// { double aaa; kr->ViewComponent("face")->Norm2(&aaa); std::cout << "AAA=" << aaa << std::endl; } exit(0); 
 
         // -- form diffusion operator
         //    BCs are defined by the equation and must be imposed only once
@@ -232,15 +228,6 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
   // -- wrapper for absolute permeability
   Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(K_);
 
-  // parameter lists
-  auto& adv_list =
-    mp_list_->sublist("operators").sublist("advection operator").sublist("preconditioner");
-  auto& ddf_list =
-    mp_list_->sublist("operators").sublist("diffusion operator").sublist("preconditioner");
-  auto& mdf_list = mp_list_->sublist("operators")
-                     .sublist("molecular diffusion operator")
-                     .sublist("preconditioner");
-
   // work memory for miscalleneous operator
   auto flux_tmp =
     Teuchos::rcp(new CompositeVector(S_->Get<CompositeVector>(vol_flowrate_liquid_key_)));
@@ -296,7 +283,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
         //    using either the total flux or Dirichlet
         if (fname != "") {
           if (S_->HasDerivative(gname, keyc) || gname == keyc) {
-            auto pde = Teuchos::rcp(new Operators::PDE_DiffusionFV(ddf_list, global_op));
+            auto pde = fac_diffK_->Create(global_op);
 
             S_->GetEvaluator(fname).Update(*S_, passwd_);
             const auto& coef_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
@@ -385,7 +372,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
         // -- diffusion operator div [ (f dg/dv) grad dv ]
         if (fname != "") {
           if (S_->HasDerivative(gname, keyc) || gname == keyc) {
-            auto pde = Teuchos::rcp(new Operators::PDE_DiffusionFV(mdf_list, global_op));
+            auto pde = fac_diffD_->Create(global_op);
 
             if (gname == keyc) {
               der_c = &*fone_c;
@@ -464,7 +451,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
       }
 
       // populate advection operator
-      auto pde1 = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op));
+      auto pde1 = fac_adv_->Create(global_op);
       pde1->Setup(*flux_acc);
       pde1->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
       pde1->UpdateMatrices(flux_acc.ptr());

@@ -99,7 +99,7 @@ UpwindFlux::Compute(const CompositeVector& flux,
         field_f[0][g] = (flag) ? kc2 : kc1;
       }
 
-      // copy cell value on fractures
+      // copy cell value on fractures (matrix only)
     } else if (ncells == 2 && ndofs == 2) {
       c2 = cells[1];
       kc2 = field_c[0][c2];

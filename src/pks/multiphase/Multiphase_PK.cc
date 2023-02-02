@@ -27,8 +27,9 @@
 #include "InverseFactory.hh"
 #include "IO.hh"
 #include "PDE_Accumulation.hh"
-#include "PDE_AdvectionUpwind.hh"
+#include "PDE_AdvectionUpwindFactory.hh"
 #include "PDE_DiffusionFactory.hh"
+#include "PDE_DiffusionFVonManifolds.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "RelPermEvaluator.hh"
 #include "TCMEvaluator_TwoPhase.hh"
@@ -736,26 +737,29 @@ Multiphase_PK::Initialize()
   auto& ddf_list = mp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
   Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(K_);
 
-  Operators::PDE_DiffusionFactory opfactory(ddf_list, mesh_);
-  opfactory.SetVariableTensorCoefficient(Kptr);
-  opfactory.SetConstantGravitationalTerm(gravity_, rho_l_);
+  fac_diffK_ = Teuchos::rcp(new Operators::PDE_DiffusionFactory(ddf_list, mesh_));
+  fac_diffK_->SetVariableTensorCoefficient(Kptr);
+  fac_diffK_->SetConstantGravitationalTerm(gravity_, rho_l_);
 
   pde_diff_K_.resize(2);
-  pde_diff_K_[0] = opfactory.Create();
+  pde_diff_K_[0] = fac_diffK_->Create();
   pde_diff_K_[0]->SetBCs(op_bcs_[pressure_liquid_key_], op_bcs_[pressure_liquid_key_]);
   pde_diff_K_[0]->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   auto eta_g = S_->GetPtr<CV_t>(mol_density_gas_key_, Tags::DEFAULT);
-  opfactory.SetVariableGravitationalTerm(gravity_, eta_g);
+  fac_diffK_->SetVariableGravitationalTerm(gravity_, eta_g);
 
-  pde_diff_K_[1] = opfactory.Create();
+  pde_diff_K_[1] = fac_diffK_->Create();
   pde_diff_K_[1]->SetBCs(op_bcs_[pressure_gas_key_], op_bcs_[pressure_gas_key_]);
   pde_diff_K_[1]->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   auto& mdf_list =
     mp_list_->sublist("operators").sublist("molecular diffusion operator").sublist("matrix");
-  pde_diff_D_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(mdf_list, mesh_));
-  pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  fac_diffD_ = Teuchos::rcp(new Operators::PDE_DiffusionFactory(mdf_list, mesh_));
+  pde_diff_D_ = fac_diffD_->Create();
+
+  auto& adv_list = mp_list_->sublist("operators").sublist("advection operator");
+  fac_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwindFactory(adv_list, mesh_));
 
   // preconditioner is model-specific. It is created in the scope of global assembly to
   // reduce memory footprint for large number of components.
@@ -784,6 +788,7 @@ Multiphase_PK::Initialize()
   Operators::UpwindFactory upwfact;
   auto upw_list = mp_list_->sublist("operators").sublist("diffusion operator").sublist("upwind");
   upwind_ = upwfact.Create(mesh_, upw_list);
+  // upwind_ = Teuchos::rcp(new Operators::UpwindFlux(mesh_));
 
   // initialize other fields and evaluators
   S_->GetEvaluator(relperm_liquid_key_).Update(*S_, passwd_);
@@ -794,7 +799,7 @@ Multiphase_PK::Initialize()
   // io
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    for (const auto& name : soln_names_) { *vo_->os() << "unknown: \"" << name << "\"\n\n"; }
+    for (const auto& name : soln_names_) { *vo_->os() << "unknown: \"" << name << "\"\n"; }
     for (int i = 0; i < bcs_.size(); i++) {
       *vo_->os() << "bc \"" << bcs_[i]->keyword() << "\" has " << bcs_[i]->size() << " entities"
                  << std::endl;

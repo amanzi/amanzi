@@ -119,7 +119,8 @@ class PDE_DiffusionFactory {
     dbdu_ = dbdu;
   }
 
-  Teuchos::RCP<PDE_Diffusion> Create();
+  // This does all work as a single call
+  Teuchos::RCP<PDE_Diffusion> Create(const Teuchos::RCP<Operator>& global_op = Teuchos::null);
 
   // Backward compatibility
   // -- Diffusion-type PDEs with optional gravity.
