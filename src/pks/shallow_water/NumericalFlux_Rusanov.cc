@@ -23,6 +23,7 @@ NumericalFlux_Rusanov::NumericalFlux_Rusanov(Teuchos::ParameterList& plist)
   g_ = plist.get<double>("gravity");
   hydrostatic_pressure_force_type_ = plist.get<std::string>("hydrostatic pressure force type", "shallow water");
   pipe_diameter_ = plist.get<double>("pipe diameter", 1.0);
+  celerity_ = plist.get<double>("celerity", 100);
 }
 
 

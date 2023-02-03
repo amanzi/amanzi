@@ -35,6 +35,7 @@ class NumericalFlux {
   double lambda_max_, lambda_min_;
   std::string hydrostatic_pressure_force_type_;
   double pipe_diameter_;
+  double celerity_;
 
 };
 
@@ -78,8 +79,10 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
          double pi = 3.14159265359; 
          double PipeCrossSection = pi * 0.25 * pipe_diameter_ * pipe_diameter_;
 
-         //Eq. (19) in "A novel 1D-2D coupled model for hydrodynamic simulation of flows in drainage networks"
-         HydrostaticPressureForce = g_ * (h - 0.5 * pipe_diameter_) * PipeCrossSection;
+         //Eq. (8) in "A novel 1D-2D coupled model for hydrodynamic simulation of flows in drainage networks"
+         double PipeArea = pi * pipe_diameter_ * pipe_diameter_ * 0.25;
+         double PressurizedHead = (celerity_ * celerity_ * (h - PipeArea)) / (g_ * PipeArea);
+         HydrostaticPressureForce = g_ * h * (PressurizedHead + sqrt(h/pi)); 
 
       }
 

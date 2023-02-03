@@ -668,7 +668,7 @@ ShallowWater_PK::TotalDepthEdgeValue(
 
 
 //--------------------------------------------------------------------
-// Discretization of the source term (well-balanced for lake at rest)
+// Discretization of the bed slope source term (well-balanced for lake at rest)
 //--------------------------------------------------------------------
 std::vector<double>
 ShallowWater_PK::NumericalSourceBedSlope(
@@ -711,6 +711,7 @@ ShallowWater_PK::NumericalSourceBedSlope(
 
   return S;
 }
+
 
 //--------------------------------------------------------------
 // Calculation of time step limited by the CFL condition

@@ -171,7 +171,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   AmanziMesh::Entity_ID_List cells;
 
   std::vector<double> FNum_rot;        // fluxes
-  std::vector<double> S;               // source term
+  std::vector<double> BedSlopeSource;  // bed slope source
+  double FrictionSource = 0.0;         // friction source
   std::vector<double> UL(3), UR(3), U; // local state vectors
 
   // Simplest flux form
@@ -292,11 +293,12 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     U[1] = q_temp[0][c];
     U[2] = q_temp[1][c];
 
-    S = NumericalSourceBedSlope(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n);
+    BedSlopeSource = NumericalSourceBedSlope(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n);
+    FrictionSource = NumericalSourceFriction(U[0] + B_c[0][c], B_c[0][c], U[1]);
 
-    h = h_c_tmp[0][c] + (S[0] + ext_S_cell[c]);
-    qx = q_c_tmp[0][c] + S[1];
-    qy = q_c_tmp[1][c] + S[2];
+    h = h_c_tmp[0][c] + (BedSlopeSource[0] + ext_S_cell[c]);
+    qx = q_c_tmp[0][c] + BedSlopeSource[1] + FrictionSource;
+    qy = q_c_tmp[1][c] + BedSlopeSource[2];
     
     f_temp0[0][c] = h;
     f_temp1[0][c] = qx;

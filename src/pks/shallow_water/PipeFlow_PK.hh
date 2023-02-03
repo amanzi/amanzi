@@ -27,17 +27,20 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   ~PipeFlow_PK() {};
 
+  virtual double NumericalSourceFriction(double htc, double Bc, double qx) override;
+
   virtual void Initialize() override;
 
  private:
   static RegisteredPKFactory<PipeFlow_PK> reg_;
 
-  //TODO: why is gravity private in the shallow water PK?
-  double g_;
-
   std::string hydrostatic_pressure_force_type_;
 
   double pipe_diameter_;
+
+  double Manning_coeff_;
+
+  double celerity_;
 
 };
 

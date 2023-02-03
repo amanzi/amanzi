@@ -10,22 +10,12 @@
 */
 
 
-#include "ShallowWater_PK.hh"
-
-namespace Amanzi {
-namespace ShallowWater {
-
-RegisteredPKFactory<ShallowWater_PK> ShallowWater_PK::reg_("shallow water");
-    
-}  // namespace ShallowWater
-}  // namespace Amanzi
-
 #include "PipeFlow_PK.hh"
 
 namespace Amanzi {
 namespace ShallowWater {
 
 RegisteredPKFactory<PipeFlow_PK> PipeFlow_PK::reg_("pipe flow");
-
+    
 }  // namespace ShallowWater
 }  // namespace Amanzi

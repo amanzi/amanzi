@@ -99,6 +99,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   std::vector<double> NumericalSourceBedSlope(int c, double htc,
                                       double Bc, double Bmax, const Epetra_MultiVector& B_n);
 
+  virtual double NumericalSourceFriction(double htc, double Bc, double qx){return 0.0;};
+
   // access
   double get_total_source() const { return total_source_; }
 
@@ -137,13 +139,13 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;
   double total_source_;
 
+  // gravity magnitude
+  double g_;
+
  private:
   // boundary conditions
   std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction>> bcs_;
   std::vector<Teuchos::RCP<Operators::BCs>> op_bcs_;
-
-  // gravity magnitude
-  double g_;
 
   std::string hydrostatic_pressure_force_type_;
 
