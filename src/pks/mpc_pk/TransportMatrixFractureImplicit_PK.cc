@@ -329,6 +329,7 @@ TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, i
   auto& tcc_m = *pk_matrix_->total_component_concentration();
   auto& tcc_f = *pk_fracture_->total_component_concentration();
 
+  *tot_itrs = 0;
   for (int i = 0; i < num_aqueous_; i++) {
     pk_matrix_->UpdateLinearSystem(t_old, t_new, i);
     pk_fracture_->UpdateLinearSystem(t_old, t_new, i);

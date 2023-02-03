@@ -573,8 +573,8 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   bool failed(false);
   std::string internal_msg;
 
-  double dt = t_new - t_old;
-  current_time_ = saved_time_ + dt;
+  dt_ = t_new - t_old;
+  current_time_ = saved_time_ + dt_;
 
   int num_itrs, max_itrs(0), min_itrs(10000000), avg_itrs(0);
   int cmax(-1), ierr(0);
@@ -594,7 +594,7 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         chem_->CopyState(beaker_state_, &beaker_state_copy_);
 
         // chemistry computations for this cell
-        num_itrs = chem_->ReactionStep(&beaker_state_, beaker_parameters_, dt);
+        num_itrs = chem_->ReactionStep(&beaker_state_, beaker_parameters_, dt_);
 
         if (max_itrs < num_itrs) {
           max_itrs = num_itrs;
@@ -646,11 +646,15 @@ Amanzi_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 
   // we keep own estimate of stable time step and report it to CD via get_dt()
   if (dt_control_method_ == "simple") {
+    bool changed(false);
+
     if ((num_successful_steps_ == 0) || (num_iterations_ >= dt_cut_threshold_)) {
       dt_next_ /= dt_cut_factor_;
+      changed = true;
     } else if (num_successful_steps_ >= dt_increase_threshold_) {
       dt_next_ *= dt_increase_factor_;
       num_successful_steps_ = 0;
+      changed = true;
     }
 
     dt_next_ = std::min(dt_next_, dt_max_);
@@ -659,6 +663,15 @@ Amanzi_PK::CommitStep(double t_old, double t_new, const Tag& tag)
     // made in many places.
     double tmp(dt_next_);
     mesh_->get_comm()->MinAll(&tmp, &dt_next_, 1);
+
+    if (changed && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "controller changed dt_next to " << dt_next_ << " sec" << std::endl;
+    }
+  } else if (dt_control_method_ == "fixed") {
+    // dt_next could be reduced by the base PK. To avoid small time step, we reset it here.
+    dt_next_ = std::max(dt_, t_new - t_old); // due to subcycling
+    dt_next_ = std::min(dt_next_, dt_max_);
   }
 }
 
