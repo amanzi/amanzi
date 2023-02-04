@@ -765,4 +765,9 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
+  <ParameterList name="verbose object">
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
 </ParameterList>

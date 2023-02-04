@@ -297,17 +297,17 @@ TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new, bool
   }
 
   // output
+  double dt = t_new - t_old;
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     double sol_norm;
     pk_fracture_->total_component_concentration()->Norm2(&sol_norm);
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "coupled solver: ||sol_f||=" << sol_norm
-               << "  avg itrs=" << tot_itrs / num_aqueous_ << std::endl;
+               << "  avg itrs=" << tot_itrs / num_aqueous_ << " dt=" << dt << std::endl;
   }
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    double dt = t_new - t_old;
     auto tcc_m = pk_matrix_->total_component_concentration();
     auto tcc_f = pk_fracture_->total_component_concentration();
 

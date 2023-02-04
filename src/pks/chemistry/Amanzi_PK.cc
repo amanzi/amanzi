@@ -607,6 +607,10 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         internal_msg = geochem_err.what();
         // chem_->DisplayComponents(beaker_state_);
         break;
+      } catch (...) {
+        ierr = 1;
+        internal_msg = "unknown error";
+        break;
       }
 
       if (ierr == 0) CopyBeakerStructuresToCellState(c, aqueous_components_);
@@ -619,17 +623,17 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int tmp(max_itrs);
   mesh_->get_comm()->MaxAll(&tmp, &max_itrs, 1);
 
-  if (ncells_owned_ > 0) {
-    std::stringstream ss;
-    ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/" << avg_itrs / ncells_owned_
-       << ", maximum in gid=" << mesh_->GID(cmax, AmanziMesh::CELL) << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, ss.str());
-  }
+  std::stringstream ss;
+  ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/" 
+     << avg_itrs / std::max(ncells_owned_, 1)
+     << ", maximum in gid=" << mesh_->GID(cmax, AmanziMesh::CELL) << std::endl;
+  vo_->Write(Teuchos::VERB_HIGH, ss.str());
 
   // update time control parameters
   num_successful_steps_++;
   num_iterations_ = max_itrs;
 
+  if (!failed) EstimateNextTimeStep_(t_old, t_new);
   return failed;
 }
 
@@ -643,36 +647,7 @@ void
 Amanzi_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   saved_time_ = t_new;
-
-  // we keep own estimate of stable time step and report it to CD via get_dt()
-  if (dt_control_method_ == "simple") {
-    bool changed(false);
-
-    if ((num_successful_steps_ == 0) || (num_iterations_ >= dt_cut_threshold_)) {
-      dt_next_ /= dt_cut_factor_;
-      changed = true;
-    } else if (num_successful_steps_ >= dt_increase_threshold_) {
-      dt_next_ *= dt_increase_factor_;
-      num_successful_steps_ = 0;
-      changed = true;
-    }
-
-    dt_next_ = std::min(dt_next_, dt_max_);
-
-    // synchronize processors since update of control parameters was
-    // made in many places.
-    double tmp(dt_next_);
-    mesh_->get_comm()->MinAll(&tmp, &dt_next_, 1);
-
-    if (changed && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "controller changed dt_next to " << dt_next_ << " sec" << std::endl;
-    }
-  } else if (dt_control_method_ == "fixed") {
-    // dt_next could be reduced by the base PK. To avoid small time step, we reset it here.
-    dt_next_ = std::max(dt_, t_new - t_old); // due to subcycling
-    dt_next_ = std::min(dt_next_, dt_max_);
-  }
+  EstimateNextTimeStep_(t_old, t_new);
 }
 
 
@@ -736,6 +711,42 @@ Amanzi_PK::InitializeBeakerFields_()
   if (beaker_state_.surface_complex_free_site_conc.size() > 0) {
     bf_.surface_complex =
       S_->GetW<CompositeVector>(surf_cfsc_key_, tag, passwd_).ViewComponent("cell");
+  }
+}
+
+
+/* ******************************************************************
+* Estimate next time step, including for subcycling
+******************************************************************* */
+void
+Amanzi_PK::EstimateNextTimeStep_(double t_old, double t_new)
+{
+  // we keep own estimate of stable time step and report it to CD via get_dt()
+  if (dt_control_method_ == "simple") {
+    double dt_next_tmp(dt_next_);
+
+    if ((num_successful_steps_ == 0) || (num_iterations_ >= dt_cut_threshold_)) {
+      dt_next_ /= dt_cut_factor_;
+    } else if (num_successful_steps_ >= dt_increase_threshold_) {
+      dt_next_ *= dt_increase_factor_;
+      num_successful_steps_ = 0;
+    }
+
+    dt_next_ = std::min(dt_next_, dt_max_);
+
+    // synchronize processors since update of control parameters was
+    // made in many places.
+    double tmp(dt_next_);
+    mesh_->get_comm()->MinAll(&tmp, &dt_next_, 1);
+
+    if (dt_next_tmp != dt_next_ && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "controller changed dt_next from " << dt_next_tmp << " to " << dt_next_ << std::endl;
+    }
+  } else if (dt_control_method_ == "fixed") {
+    // dt_next could be reduced by the base PK. To avoid small time step, we reset it here.
+    dt_next_ = std::max(dt_, t_new - t_old); // due to subcycling
+    dt_next_ = std::min(dt_next_, dt_max_);
   }
 }
 
