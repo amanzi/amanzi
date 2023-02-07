@@ -900,7 +900,7 @@ InputConverterU::TranslateSources_(const std::string& domain, const std::string&
 
       Teuchos::ParameterList& src = out_list.sublist("fields").sublist("SRC 0");
       src.set<Teuchos::Array<std::string>>("regions", regions)
-        .set<std::string>("spatial distribution method", weight)
+        .set<std::string>("spatial distribution method", "field")
         .set<bool>("use volume fractions", false);
       src.sublist("field")
         .set<std::string>("field key", variable)
