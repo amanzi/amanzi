@@ -804,7 +804,7 @@ Transient(std::string filename,
   // create a mesh framework
   MeshFactory meshfactory(comm, Teuchos::null);
   // meshfactory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh;
   if (nx == 0 || ny == 0)
     mesh = meshfactory.create(filename, true, true);

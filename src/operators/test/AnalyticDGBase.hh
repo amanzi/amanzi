@@ -408,7 +408,7 @@ AnalyticDGBase::face_normal_exterior(int f, bool* flag)
 
   int dir;
   Amanzi::AmanziGeometry::Point normal(d_);
-  if (*flag) normal = mesh_->getFaceNormal(f, &dir);
+  if (*flag) normal = mesh_->getFaceNormal(f, cells[0], &dir);
 
   return normal;
 }

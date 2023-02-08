@@ -36,7 +36,7 @@ struct MeshView;
 namespace Impl {
 
 template<typename T, typename ...Args>
-struct View_iter: public std::iterator<std::forward_iterator_tag, T, int, T*, T&> {
+struct View_iter {
   using iterator_category = std::forward_iterator_tag;
   using value_type = T;
   using difference_type = int;
@@ -91,6 +91,10 @@ struct View_iter: public std::iterator<std::forward_iterator_tag, T, int, T*, T&
     this->i_ -= decr;
     return *this;
   }
+  KOKKOS_INLINE_FUNCTION View_iter operator-(const int& decr){
+    this->i_ -= decr;
+    return *this;
+  }
 
 private:
   int i_;
@@ -142,7 +146,7 @@ struct MeshView: public Kokkos::View<DataType, Properties...>{
     return const_iterator(*this, this->size());
   }
 
-  void insert(iterator v0_e, iterator v1_b, iterator v1_e) { 
+  void insert(iterator v0_e, iterator v1_b, iterator v1_e) {
     //assert(v0_e - *this->end() != 0 && "Only insert at end supported for MeshViews"); 
     std::size_t size = v1_e-v1_b; 
     std::size_t csize = this->size(); 
@@ -229,13 +233,6 @@ struct MeshDualView: public Kokkos::ViewTraits<DataType, Arg1Type, Arg2Type, Arg
 } // namespace Kokkos
 
 using size_type = Kokkos::MeshView<int*, Kokkos::DefaultHostExecutionSpace>::size_type;
-
-
-// MeshView 
-// AmanziView 
-// MeshDualView 
-// AmanziDualView 
-
 
 namespace Amanzi {
 

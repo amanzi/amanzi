@@ -76,7 +76,7 @@ RunTest(int n, int d)
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh = (d == 2) ?
                                     meshfactory.create(0.0, 0.0, 1.0, 1.0, n, n) :
                                     meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
@@ -120,7 +120,7 @@ RunTest(int n, int d)
 
     if (cells.size() == 2) {
       const auto& xf = mesh->getFaceCentroid(f);
-      const auto& normal = mesh->getFaceNormal(f, &dir);
+      const auto& normal = mesh->getFaceNormal(f, cells[0], &dir);
       const auto& xc = (dir == 1) ? mesh->getCellCentroid(cells[0]) : mesh->getCellCentroid(cells[1]);
 
       // low-order and high-order fluxes are from 1st to 2nd cell
