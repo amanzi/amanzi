@@ -232,7 +232,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 // Extract MSTK entities from an ID list and make a new MSTK mesh
 //---------------------------------------------------------
 Mesh_MSTK::Mesh_MSTK(const Teuchos::RCP<const MeshFramework>& parent_mesh,
-                     const Entity_ID_List& entity_ids,
+                     const Entity_ID_View& entity_ids,
                      const Entity_kind entity_kind,
                      const bool flatten,
                      const Comm_ptr_type& comm,
@@ -367,18 +367,18 @@ Mesh_MSTK::other_internal_name_of_set_(
 // particular category (OWNED, GHOST, ALL)
 //---------------------------------------------------------
 std::size_t
-Mesh_MSTK::getNumEntities(const Entity_kind kind, const Parallel_type ptype) const
+Mesh_MSTK::getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const
 {
   switch (kind) {
   case Entity_kind::NODE:
     switch (ptype) {
-    case Parallel_type::OWNED:
+    case Parallel_kind::OWNED:
       return MSet_Num_Entries(owned_verts_);
       break;
-    case Parallel_type::GHOST:
+    case Parallel_kind::GHOST:
       return !serial_run ? MSet_Num_Entries(ghost_verts_) : 0;
       break;
-    case Parallel_type::ALL:
+    case Parallel_kind::ALL:
       return MESH_Num_Vertices(mesh_);
       break;
     default:
@@ -389,13 +389,13 @@ Mesh_MSTK::getNumEntities(const Entity_kind kind, const Parallel_type ptype) con
   case Entity_kind::EDGE:
     AMANZI_ASSERT(edges_initialized_);
     switch (ptype) {
-    case Parallel_type::OWNED:
+    case Parallel_kind::OWNED:
       return MSet_Num_Entries(owned_edges_);
       break;
-    case Parallel_type::GHOST:
+    case Parallel_kind::GHOST:
       return !serial_run ? MSet_Num_Entries(ghost_edges_) : 0;
       break;
-    case Parallel_type::ALL:
+    case Parallel_kind::ALL:
       return MESH_Num_Edges(mesh_);
       break;
     default:
@@ -406,13 +406,13 @@ Mesh_MSTK::getNumEntities(const Entity_kind kind, const Parallel_type ptype) con
   case Entity_kind::FACE:
     AMANZI_ASSERT(faces_initialized_);
     switch (ptype) {
-    case Parallel_type::OWNED:
+    case Parallel_kind::OWNED:
       return MSet_Num_Entries(owned_faces_);
       break;
-    case Parallel_type::GHOST:
+    case Parallel_kind::GHOST:
       return !serial_run ? MSet_Num_Entries(ghost_faces_) : 0;
       break;
-    case Parallel_type::ALL:
+    case Parallel_kind::ALL:
       return (getManifoldDimension() == 2 ? MESH_Num_Edges(mesh_) : MESH_Num_Faces(mesh_));
       break;
     default:
@@ -422,13 +422,13 @@ Mesh_MSTK::getNumEntities(const Entity_kind kind, const Parallel_type ptype) con
 
   case Entity_kind::CELL:
     switch (ptype) {
-    case Parallel_type::OWNED:
+    case Parallel_kind::OWNED:
       return MSet_Num_Entries(owned_cells_);
       break;
-    case Parallel_type::GHOST:
+    case Parallel_kind::GHOST:
       return !serial_run ? MSet_Num_Entries(ghost_cells_) : 0;
       break;
-    case Parallel_type::ALL:
+    case Parallel_kind::ALL:
       return ((getManifoldDimension() == 2) ? MESH_Num_Faces(mesh_) : MESH_Num_Regions(mesh_));
       break;
     default:
@@ -445,12 +445,12 @@ Mesh_MSTK::getNumEntities(const Entity_kind kind, const Parallel_type ptype) con
 //---------------------------------------------------------
 // Get cell type
 //---------------------------------------------------------
-Cell_type Mesh_MSTK::getCellType(const Entity_ID cellid) const
+Cell_kind Mesh_MSTK::getCellType(const Entity_ID cellid) const
 {
   MEntity_ptr cell = cell_id_to_handle_[cellid];
   int ival;
   MEnt_Get_AttVal(cell,celltype_att_,&ival,NULL,NULL);
-  return (Cell_type) ival;
+  return (Cell_kind) ival;
 }
 
 
@@ -472,15 +472,15 @@ Cell_type Mesh_MSTK::getCellType(const Entity_ID cellid) const
 // direction as the cell polygon, and -1 otherwise
 //---------------------------------------------------------
 void Mesh_MSTK::getCellFacesAndDirs_ordered_(const Entity_ID cellid,
-                                                Entity_ID_List& faceids,
-                                                Entity_Direction_List * const face_dirs) const
+                                                Entity_ID_View& faceids,
+                                                Entity_Direction_View * const face_dirs) const
 {
   if (getManifoldDimension() == 3) {
-    Cell_type celltype = getCellType(cellid);
-    if (celltype == Cell_type::TET ||
-        celltype == Cell_type::PRISM ||
-        celltype == Cell_type::PYRAMID ||
-        celltype == Cell_type::HEX) {
+    Cell_kind celltype = getCellType(cellid);
+    if (celltype == Cell_kind::TET ||
+        celltype == Cell_kind::PRISM ||
+        celltype == Cell_kind::PYRAMID ||
+        celltype == Cell_kind::HEX) {
       int lid, nf;
       MEntity_ptr cell = cell_id_to_handle_[cellid];
 
@@ -494,11 +494,11 @@ void Mesh_MSTK::getCellFacesAndDirs_ordered_(const Entity_ID cellid,
       MFace_ptr face0 = nullptr;
       int fdir0 = 0;
 
-      if (celltype == Cell_type::TET || celltype == Cell_type::HEX) {
+      if (celltype == Cell_kind::TET || celltype == Cell_kind::HEX) {
         face0 = List_Entry(rfaces,0);
         fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
 
-      } else if (celltype == Cell_type::PRISM) { /* Find the first triangular face */
+      } else if (celltype == Cell_kind::PRISM) { /* Find the first triangular face */
         for (int i = 0; i < 5; ++i) {
           MFace_ptr face = List_Entry(rfaces,i);
           if (MF_Num_Edges(face) == 3) {
@@ -508,7 +508,7 @@ void Mesh_MSTK::getCellFacesAndDirs_ordered_(const Entity_ID cellid,
           }
         }
 
-      } else if (celltype == Cell_type::PYRAMID) { /* Find the quad face */
+      } else if (celltype == Cell_kind::PYRAMID) { /* Find the quad face */
         for (int i = 0; i < 5; ++i) {
           MFace_ptr face = List_Entry(rfaces,i);
           if (MF_Num_Edges(face) == 4) {
@@ -600,8 +600,8 @@ void Mesh_MSTK::getCellFacesAndDirs_ordered_(const Entity_ID cellid,
 
 
 void Mesh_MSTK::getCellFacesAndDirs_unordered_(const Entity_ID cellid,
-        Entity_ID_List& faceids,
-        Entity_Direction_List * const face_dirs) const
+        Entity_ID_View& faceids,
+        Entity_Direction_View * const face_dirs) const
 {
   MEntity_ptr cell = cell_id_to_handle_[cellid];
 
@@ -684,8 +684,8 @@ void Mesh_MSTK::getCellFacesAndDirs_unordered_(const Entity_ID cellid,
 
 
 void Mesh_MSTK::getCellFacesAndDirs(const Entity_ID cellid,
-        Entity_ID_List& faceids,
-        Entity_Direction_List * const face_dirs) const
+        Entity_ID_View& faceids,
+        Entity_Direction_View * const face_dirs) const
 {
   AMANZI_ASSERT(faces_initialized_);
   if (cells_initialized_) {
@@ -697,7 +697,7 @@ void Mesh_MSTK::getCellFacesAndDirs(const Entity_ID cellid,
 
 
 void Mesh_MSTK::getCellEdges(const Entity_ID cellid,
-        Entity_ID_List& edgeids) const
+        Entity_ID_View& edgeids) const
 {
   AMANZI_ASSERT(edges_initialized_);
   MEntity_ptr cell;
@@ -776,7 +776,7 @@ void Mesh_MSTK::getCellEdges(const Entity_ID cellid,
 // consistent with the face normal
 //---------------------------------------------------------
 void Mesh_MSTK::getCellNodes(const Entity_ID cellid,
-                               Entity_ID_List& nodeids) const
+                               Entity_ID_View& nodeids) const
 {
   int nn, lid;
   MEntity_ptr cell = cell_id_to_handle_[cellid];
@@ -806,8 +806,8 @@ void Mesh_MSTK::getCellNodes(const Entity_ID cellid,
 
 
 void Mesh_MSTK::getFaceEdgesAndDirs(const Entity_ID faceid,
-                                                  Entity_ID_List& edgeids,
-                                                  Entity_Direction_List * const edge_dirs) const
+                                                  Entity_ID_View& edgeids,
+                                                  Entity_Direction_View * const edge_dirs) const
 {
   AMANZI_ASSERT(faces_initialized_);
   AMANZI_ASSERT(edges_initialized_);
@@ -877,7 +877,7 @@ void Mesh_MSTK::getFaceEdgesAndDirs(const Entity_ID faceid,
 // In 2D, nfnodes is 2
 //---------------------------------------------------------
 void Mesh_MSTK::getFaceNodes(const Entity_ID faceid,
-                           Entity_ID_List& nodeids) const
+                           Entity_ID_View& nodeids) const
 {
   AMANZI_ASSERT(faces_initialized_);
   int nn, lid;
@@ -916,7 +916,7 @@ void Mesh_MSTK::getFaceNodes(const Entity_ID faceid,
 // Get nodes of an edge
 //---------------------------------------------------------
 void Mesh_MSTK::getEdgeNodes(const Entity_ID edgeid,
-                           Entity_ID_List& nodes) const
+                           Entity_ID_View& nodes) const
 {
   AMANZI_ASSERT(edges_initialized_);
   MEdge_ptr edge = (MEdge_ptr) edge_id_to_handle_[edgeid];
@@ -937,8 +937,8 @@ void Mesh_MSTK::getEdgeNodes(const Entity_ID edgeid,
 // the outset how many entries will be put into the list
 //---------------------------------------------------------
 void Mesh_MSTK::getNodeCells(const Entity_ID nodeid,
-                           const Parallel_type ptype,
-                           Entity_ID_List& cellids) const
+                           const Parallel_kind ptype,
+                           Entity_ID_View& cellids) const
 {
   int idx, lid, nc;
   List_ptr cell_list;
@@ -992,13 +992,13 @@ void Mesh_MSTK::getNodeCells(const Entity_ID nodeid,
   idx = 0;
   while ((ment = List_Next_Entry(cell_list,&idx))) {
     if (MEnt_PType(ment) == PGHOST) {
-      if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
+      if (ptype == Parallel_kind::GHOST || ptype == Parallel_kind::ALL) {
         lid = MEnt_ID(ment);
         cellids[n++]  = lid-1; 
       }
     }
     else {
-      if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
+      if (ptype == Parallel_kind::OWNED || ptype == Parallel_kind::ALL) {
         lid = MEnt_ID(ment);
         cellids[n++]  = lid-1; 
       }
@@ -1015,8 +1015,8 @@ void Mesh_MSTK::getNodeCells(const Entity_ID nodeid,
 // the outset how many entries will be put into the list
 //---------------------------------------------------------
 void Mesh_MSTK::getNodeFaces(const Entity_ID nodeid,
-                           const Parallel_type ptype,
-                           Entity_ID_List& faceids) const
+                           const Parallel_kind ptype,
+                           Entity_ID_View& faceids) const
 {
   int idx, lid, n;
   List_ptr face_list;
@@ -1069,13 +1069,13 @@ void Mesh_MSTK::getNodeFaces(const Entity_ID nodeid,
   idx = 0; n = 0;
   while ((ment = List_Next_Entry(face_list,&idx))) {
     if (MEnt_PType(ment) == PGHOST) {
-      if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
+      if (ptype == Parallel_kind::GHOST || ptype == Parallel_kind::ALL) {
         lid = MEnt_ID(ment);
         faceids[n++] = lid-1; 
       }
     }
     else {
-      if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
+      if (ptype == Parallel_kind::OWNED || ptype == Parallel_kind::ALL) {
         lid = MEnt_ID(ment);
         faceids[n++] = lid-1; 
       }
@@ -1091,8 +1091,8 @@ void Mesh_MSTK::getNodeFaces(const Entity_ID nodeid,
 // Edges of type 'ptype' connected to a node.
 //---------------------------------------------------------
 void Mesh_MSTK::getNodeEdges(const Entity_ID nodeid,
-                           const Parallel_type ptype,
-                           Entity_ID_List& edgeids) const
+                           const Parallel_kind ptype,
+                           Entity_ID_View& edgeids) const
 {
   int idx, lid, nc;
   List_ptr edge_list;
@@ -1112,13 +1112,13 @@ void Mesh_MSTK::getNodeEdges(const Entity_ID nodeid,
   idx = 0;
   while ((ment = List_Next_Entry(edge_list, &idx))) {
     if (MEnt_PType(ment) == PGHOST) {
-      if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
+      if (ptype == Parallel_kind::GHOST || ptype == Parallel_kind::ALL) {
         lid = MEnt_ID(ment);
         edgeids[n++] = lid-1; 
       }
     }
     else {
-      if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
+      if (ptype == Parallel_kind::OWNED || ptype == Parallel_kind::ALL) {
         lid = MEnt_ID(ment);
         edgeids[n++] = lid-1; 
       }
@@ -1133,8 +1133,8 @@ void Mesh_MSTK::getNodeEdges(const Entity_ID nodeid,
 // Faces of type 'ptype' connected to an edge.
 //---------------------------------------------------------
 void Mesh_MSTK::getEdgeFaces(const Entity_ID edgeid,
-                           const Parallel_type ptype,
-                           Entity_ID_List& faceids) const
+                           const Parallel_kind ptype,
+                           Entity_ID_View& faceids) const
 {
   int idx, lid, nc;
   List_ptr face_list;
@@ -1152,13 +1152,13 @@ void Mesh_MSTK::getEdgeFaces(const Entity_ID edgeid,
   idx = 0;
   while ((ment = List_Next_Entry(face_list,&idx))) {
     if (MEnt_PType(ment) == PGHOST) {
-      if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
+      if (ptype == Parallel_kind::GHOST || ptype == Parallel_kind::ALL) {
         lid = MEnt_ID(ment);
         faceids[n++] = lid-1; 
       }
 
     } else {
-      if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
+      if (ptype == Parallel_kind::OWNED || ptype == Parallel_kind::ALL) {
         lid = MEnt_ID(ment);
         faceids[n++] = lid-1; 
       }
@@ -1175,8 +1175,8 @@ void Mesh_MSTK::getEdgeFaces(const Entity_ID edgeid,
 // the outset how many entries will be put into the list
 //---------------------------------------------------------
 void Mesh_MSTK::getEdgeCells(const Entity_ID edgeid,
-                           const Parallel_type ptype,
-                           Entity_ID_List& cellids) const
+                           const Parallel_kind ptype,
+                           Entity_ID_View& cellids) const
 {
   MEdge_ptr me = (MEdge_ptr) edge_id_to_handle_[edgeid];
 
@@ -1197,13 +1197,13 @@ void Mesh_MSTK::getEdgeCells(const Entity_ID edgeid,
   MEntity_ptr ment;
   while ((ment = List_Next_Entry(cell_list,&idx))) {
     if (MEnt_PType(ment) == PGHOST) {
-      if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
+      if (ptype == Parallel_kind::GHOST || ptype == Parallel_kind::ALL) {
         int lid = MEnt_ID(ment);
         cellids[n++] = lid-1;
       }
 
     } else {
-      if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
+      if (ptype == Parallel_kind::OWNED || ptype == Parallel_kind::ALL) {
         int lid = MEnt_ID(ment);
         cellids[n++] = lid-1;
       }
@@ -1218,18 +1218,18 @@ void Mesh_MSTK::getEdgeCells(const Entity_ID edgeid,
 // Cells connected to a face
 //---------------------------------------------------------
 void Mesh_MSTK::getFaceCells(const Entity_ID faceid,
-        const Parallel_type ptype,
-        Entity_ID_List& cellids) const
+        const Parallel_kind ptype,
+        Entity_ID_View& cellids) const
 {
   AMANZI_ASSERT(faces_initialized_);
-  std::vector<Entity_ID> vcellids; 
+  Entity_ID_List vcellids; 
 
   if (getManifoldDimension() == 3) {
     MFace_ptr mf = (MFace_ptr) face_id_to_handle_[faceid];
 
     List_ptr fregs = MF_Regions(mf);
     MRegion_ptr mr;
-    if (ptype == Parallel_type::ALL) {
+    if (ptype == Parallel_kind::ALL) {
       int idx = 0;
       while ((mr = List_Next_Entry(fregs,&idx)))
         vcellids.push_back(MR_ID(mr)-1);
@@ -1238,9 +1238,9 @@ void Mesh_MSTK::getFaceCells(const Entity_ID faceid,
       int idx = 0;
       while ((mr = List_Next_Entry(fregs,&idx))) {
         if (MEnt_PType(mr) == PGHOST) {
-          if (ptype == Parallel_type::GHOST)
+          if (ptype == Parallel_kind::GHOST)
             vcellids.push_back(MR_ID(mr)-1);
-        } else if (ptype == Parallel_type::OWNED) {
+        } else if (ptype == Parallel_kind::OWNED) {
             vcellids.push_back(MR_ID(mr)-1);
         }
       }
@@ -1252,7 +1252,7 @@ void Mesh_MSTK::getFaceCells(const Entity_ID faceid,
 
     List_ptr efaces = ME_Faces(me);
     MFace_ptr mf;
-    if (ptype == Parallel_type::ALL) {
+    if (ptype == Parallel_kind::ALL) {
       int idx = 0;
       while ((mf = List_Next_Entry(efaces,&idx)))
         vcellids.push_back(MF_ID(mf)-1);
@@ -1261,9 +1261,9 @@ void Mesh_MSTK::getFaceCells(const Entity_ID faceid,
       int idx = 0;
       while ((mf = List_Next_Entry(efaces,&idx))) {
         if (MEnt_PType(mf) == PGHOST) {
-          if (ptype == Parallel_type::GHOST)
+          if (ptype == Parallel_kind::GHOST)
             vcellids.push_back(MF_ID(mf)-1);
-        } else if (ptype == Parallel_type::OWNED) {
+        } else if (ptype == Parallel_kind::OWNED) {
           vcellids.push_back(MF_ID(mf)-1);
         }
       }
@@ -1909,37 +1909,37 @@ void Mesh_MSTK::init_pcell_lists_()
 void Mesh_MSTK::label_celltype_()
 {
   if (getManifoldDimension() == 2) {
-    celltype_att_ = MAttrib_New(mesh_,"Cell_type",INT,MFACE);
+    celltype_att_ = MAttrib_New(mesh_,"Cell_kind",INT,MFACE);
     int idx = 0;
     MFace_ptr face;
     while ((face = MESH_Next_Face(mesh_,&idx))) {
-      std::vector<Entity_ID> vedges;
+      Entity_ID_List vedges;
       List_ptr fedges = MF_Edges(face, 0, 0);
       int idx2 = 0;
       MEdge_ptr edge;
       while ((edge = List_Next_Entry(fedges,&idx2)))
         vedges.push_back(MEnt_ID(edge)-1);
-      Entity_ID_List edges; 
+      Entity_ID_View edges; 
       vectorToView(edges, vedges); 
-      Cell_type ctype = MeshFramework::getCellType_(MEnt_ID(face), edges);
+      Cell_kind ctype = MeshFramework::getCellType_(MEnt_ID(face), edges);
       MEnt_Set_AttVal(face, celltype_att_, (int) ctype, 0.0, NULL);
     }
 
   } else if (getManifoldDimension() == 3) {
-    celltype_att_ = MAttrib_New(mesh_,"Cell_type",INT,MREGION);
+    celltype_att_ = MAttrib_New(mesh_,"Cell_kind",INT,MREGION);
     int idx = 0;
     MRegion_ptr region;
     while ((region = MESH_Next_Region(mesh_,&idx))) {
       List_ptr rfaces = MR_Faces(region);
-      std::vector<Entity_ID> vfaces; 
+      Entity_ID_List vfaces; 
       int idx2 = 0;
       MFace_ptr face;
       while ((face = List_Next_Entry(rfaces,&idx2)))
         vfaces.push_back(MEnt_ID(face)-1);
-      Entity_ID_List faces;
+      Entity_ID_View faces;
       vectorToView(faces, vfaces); 
 
-      Cell_type ctype = MeshFramework::getCellType_(MEnt_ID(region), faces);
+      Cell_kind ctype = MeshFramework::getCellType_(MEnt_ID(region), faces);
       MEnt_Set_AttVal(region, celltype_att_, (int) ctype, 0.0, NULL);
     }
   }
@@ -1950,8 +1950,8 @@ void Mesh_MSTK::label_celltype_()
 void
 Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
                             const Entity_kind kind,
-                            const Parallel_type ptype,
-                            Entity_ID_List& entids) const
+                            const Parallel_kind ptype,
+                            Entity_ID_View& entids) const
 {
   if (kind != createEntityKind(region.entity_str())) {
     Errors::Message msg;
@@ -2019,7 +2019,7 @@ Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
       int idx = 0;
       MEntity_ptr ment;
       switch (ptype) {
-        case Parallel_type::OWNED:
+        case Parallel_kind::OWNED:
           idx = 0;
           while ((ment = MSet_Next_Entry(mset,&idx))) {
             if (MEnt_PType(ment) != PGHOST) {
@@ -2028,7 +2028,7 @@ Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
             }
           }
           break;
-        case Parallel_type::GHOST:
+        case Parallel_kind::GHOST:
           idx = 0;
           while ((ment = MSet_Next_Entry(mset,&idx))) {
             if (MEnt_PType(ment) == PGHOST) {
@@ -2037,7 +2037,7 @@ Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
             }
           }
           break;
-        case Parallel_type::ALL:
+        case Parallel_kind::ALL:
           idx = 0;
           while ((ment = MSet_Next_Entry(mset,&idx))) {
             entids[nent_loc] = MEnt_ID(ment)-1;

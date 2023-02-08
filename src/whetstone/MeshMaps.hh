@@ -79,8 +79,8 @@ class MeshMaps {
 
   // -- polynomial approximation of map x2 = F(x1)
   int LeastSquareFit(int order,
-                     const std::vector<AmanziGeometry::Point>& x1,
-                     const std::vector<AmanziGeometry::Point>& x2,
+                     const AmanziMesh::Point_List& x1,
+                     const AmanziMesh::Point_List& x2,
                      VectorPolynomial& u) const;
 
  protected:

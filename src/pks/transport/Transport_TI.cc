@@ -257,7 +257,7 @@ Transport_PK::FunctionalTimeDerivative_FCT_(double t,
   // transport routines need an RCP pointer
   int c1, c2;
   double u, tcc_flux;
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_View cells;
 
   Teuchos::RCP<const Epetra_MultiVector> component_rcp(&component_c, false);
 
@@ -276,7 +276,7 @@ Transport_PK::FunctionalTimeDerivative_FCT_(double t,
   auto& flux_numer_f = *flux_numer.ViewComponent("face");
 
   for (int f = 0; f < nfaces_owned; f++) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
@@ -344,7 +344,7 @@ Transport_PK::FunctionalTimeDerivative_FCT_(double t,
   for (int f = 0; f < nfaces_owned; ++f) {
     tcc_flux = flux_numer_f[0][f] / dt_;
 
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     if (ncells == 2) {

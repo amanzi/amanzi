@@ -92,7 +92,7 @@ PK_DomainFunctionSubgrid<FunctionBase>::Init(const Teuchos::ParameterList& plist
   }
   std::string region = regions[0];
   if (mesh_->isValidSetName(region, region_kind)) {
-    auto id_list = mesh_->getSetEntities(region, region_kind, AmanziMesh::Parallel_type::ALL);
+    auto id_list = mesh_->getSetEntities(region, region_kind, AmanziMesh::Parallel_kind::ALL);
 
     if (id_list.size() != 1) {
       Errors::Message m;

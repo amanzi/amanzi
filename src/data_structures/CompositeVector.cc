@@ -488,7 +488,7 @@ CompositeVector::Dot(const CompositeVector& other, double* result) const
   double tmp_result = 0.0;
   for (name_iterator lcv = begin(); lcv != end(); ++lcv) {
     if (other.HasComponent(*lcv)) {
-      std::vector<double> intermediate_result(ViewComponent(*lcv, false)->NumVectors(), 0.0);
+      AmanziMesh::Double_List intermediate_result(ViewComponent(*lcv, false)->NumVectors(), 0.0);
       int ierr =
         ViewComponent(*lcv, false)->Dot(*other.ViewComponent(*lcv, false), &intermediate_result[0]);
       if (ierr) return ierr;
@@ -659,8 +659,8 @@ DeriveFaceValuesFromCellValues(CompositeVector& cv)
 
     int f_owned = cv_f.MyLength();
     for (int f = 0; f != f_owned; ++f) {
-      AmanziMesh::Entity_ID_List cells;
-      cells = cv.Mesh()->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+      AmanziMesh::Entity_ID_View cells;
+      cells = cv.Mesh()->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       int ncells = cells.size();
 
       double face_value = 0.0;
@@ -676,12 +676,12 @@ DeriveFaceValuesFromCellValues(CompositeVector& cv)
 
     int fb_owned = cv_f.MyLength();
     for (int fb = 0; fb != fb_owned; ++fb) {
-      AmanziMesh::Entity_ID_List cells;
+      AmanziMesh::Entity_ID_View cells;
 
       int f_gid = fb_map.GID(fb);
       int f_lid = f_map.LID(f_gid);
 
-      cells = cv.Mesh()->getFaceCells(f_lid, AmanziMesh::Parallel_type::ALL);
+      cells = cv.Mesh()->getFaceCells(f_lid, AmanziMesh::Parallel_kind::ALL);
       int ncells = cells.size();
 
       AMANZI_ASSERT((ncells == 1));

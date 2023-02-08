@@ -124,7 +124,7 @@ template <typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>:
 int
 DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A)
 {
-  auto cells = mesh_->getFaceCells(f, Parallel_type::ALL);
+  auto cells = mesh_->getFaceCells(f, Parallel_kind::ALL);
   int ncells = cells.size();
 
   Polynomial poly(d_, order_);

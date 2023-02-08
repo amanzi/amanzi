@@ -149,15 +149,15 @@ class Region {
   // is defined when the object and Region have same dimensionality.
   //
   // -- counter clockwise ordered polygon does not require faces
-  double intersect(const Point_View& polytope) const
+  double intersect(const Point_List& polytope) const
   {
-    const std::vector<Entity_ID_View> faces;
+    const std::vector<Entity_ID_List> faces;
     return intersect(polytope, faces);
   }
 
   // Polyhedron with counter clockwise ordered faces (wrt normals)
   virtual double
-  intersect(const Point_View& polytope, const std::vector<Entity_ID_View>& faces) const
+  intersect(const Point_List& polytope, const std::vector<Entity_ID_List>& faces) const
   {
     return -1.0;
   }

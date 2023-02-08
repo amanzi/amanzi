@@ -127,7 +127,7 @@ TestLinearPressure(bool saturated)
   const auto& flux = *S->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face");
 
   double err_p = 0.0, err_u = 0.0;
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->getCellCentroid(c);
     double p_exact = v0 * xc;
@@ -136,7 +136,7 @@ TestLinearPressure(bool saturated)
   }
   err_p = sqrt(err_p);
 
-  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; f++) {
     const Point normal = mesh->getFaceNormal(f);
     double f_exact = u0 * normal / rho;

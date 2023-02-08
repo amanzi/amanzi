@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "lapack.hh"
+#include "MeshDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -34,7 +35,7 @@ class DenseVector {
   explicit DenseVector(int mrow);
   DenseVector(int mrow, double* data);
   DenseVector(const DenseVector& B);
-  DenseVector(const std::vector<double>& B);
+  DenseVector(const AmanziMesh::Double_List& B);
 
   ~DenseVector()
   {

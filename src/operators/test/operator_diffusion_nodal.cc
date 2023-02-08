@@ -69,7 +69,7 @@ TEST(OPERATOR_DIFFUSION_NODAL)
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   Analytic01 ana(mesh);
 
@@ -90,7 +90,7 @@ TEST(OPERATOR_DIFFUSION_NODAL)
 
   for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
     int f = fmap.LID(bmap.GID(bf));
-    AmanziMesh::Entity_ID_List nodes;
+    AmanziMesh::Entity_ID_View nodes;
     nodes = mesh->getFaceNodes(f);
     for (int n = 0; n < nodes.size(); ++n) {
       int v = nodes[n];
@@ -116,7 +116,7 @@ TEST(OPERATOR_DIFFUSION_NODAL)
     const Point& xc = mesh->getCellCentroid(c);
     double volume = mesh->getCellVolume(c);
 
-    AmanziMesh::Entity_ID_List nodes;
+    AmanziMesh::Entity_ID_View nodes;
     nodes = mesh->getCellNodes(c);
     int nnodes = nodes.size();
 
@@ -222,9 +222,9 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS)
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic02 ana(mesh);
 

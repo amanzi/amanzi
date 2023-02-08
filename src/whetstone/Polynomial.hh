@@ -50,7 +50,7 @@ class Polynomial : public PolynomialBase {
   Polynomial(const Monomial& mono);
   Polynomial(int d,
              int order,
-             const std::vector<AmanziGeometry::Point>& xyz,
+             const AmanziMesh::Point_List& xyz,
              const DenseVector& values);
 
   // reshape polynomial and erase (optionally) memory
@@ -128,10 +128,10 @@ class Polynomial : public PolynomialBase {
   // Change of coordinates:
   // --  x = xf + B * s
   void
-  ChangeCoordinates(const AmanziGeometry::Point& xf, const std::vector<AmanziGeometry::Point>& B);
+  ChangeCoordinates(const AmanziGeometry::Point& xf, const AmanziMesh::Point_List& B);
   // --  s = B^+ (x - xf)
   void InverseChangeCoordinates(const AmanziGeometry::Point& xf,
-                                const std::vector<AmanziGeometry::Point>& B);
+                                const AmanziMesh::Point_List& B);
 
   // -- one-index access
   double& operator()(int i) { return coefs_(i); }

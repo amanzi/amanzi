@@ -161,7 +161,7 @@ class HDF5_MPI {
 
   bool checkFieldData_(const std::string& varname);
 
-  int getCellTypeID_(AmanziMesh::Cell_type type);
+  int getCellTypeID_(AmanziMesh::Cell_kind type);
 
   std::set<std::string> extractFields_(const Teuchos::XMLObject& xml);
 

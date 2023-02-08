@@ -122,7 +122,7 @@ DiffusionFixture::Discretize(const std::string& name, AmanziMesh::Entity_kind sc
 
   // populate diffusion coefficient(s)
   auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells; c++) {
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
@@ -159,7 +159,7 @@ DiffusionFixture::DiscretizeWithGravity(const std::string& name,
 
   // populate diffusion coefficient
   auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells; c++) {
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
@@ -217,7 +217,7 @@ DiffusionFixture::SetScalarCoefficient(Operators::PDE_DiffusionFactory& opfactor
                                        AmanziMesh::Entity_kind kind)
 {
   if (kind == AmanziMesh::Entity_kind::UNKNOWN) return;
-  int nents = mesh->getNumEntities(kind, AmanziMesh::Parallel_type::ALL);
+  int nents = mesh->getNumEntities(kind, AmanziMesh::Parallel_kind::ALL);
 
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh)->SetGhosted();
@@ -346,7 +346,7 @@ DiffusionFixture::Go(double tol)
   global_op->Init();
   op->UpdateMatrices(Teuchos::null, solution.ptr());
 
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   CompositeVector& rhs = *global_op->rhs();
 
   auto& rhs_c = *rhs.ViewComponent("cell", false);

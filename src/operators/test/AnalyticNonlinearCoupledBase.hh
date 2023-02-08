@@ -121,7 +121,7 @@ class AnalyticNonlinearCoupledBase {
     inf_err = 0.0;
 
     int ncells =
-      mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+      mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
     for (int c = 0; c < ncells; c++) {
       const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
       double u_tmp = exact0(xc, t);
@@ -160,7 +160,7 @@ class AnalyticNonlinearCoupledBase {
     inf_err = 0.0;
 
     int nfaces =
-      mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+      mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
     for (int f = 0; f < nfaces; f++) {
       double area = mesh_->getFaceArea(f);
       const Amanzi::AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);

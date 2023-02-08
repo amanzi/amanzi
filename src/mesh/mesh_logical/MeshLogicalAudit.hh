@@ -62,16 +62,16 @@ private:
   std::ostream& os;
   unsigned int MAX_OUT;
 
-  bool distinct_values(const AmanziMesh::Entity_ID_List& list) const;
-  void write_list(const std::vector<Entity_ID>&, unsigned int) const;
+  bool distinct_values(const AmanziMesh::Entity_ID_View& list) const;
+  void write_list(const Entity_ID_List&, unsigned int) const;
   bool global_any(bool) const;
-  int same_face(const AmanziMesh::Entity_ID_List, const AmanziMesh::Entity_ID_List) const;
+  int same_face(const AmanziMesh::Entity_ID_View, const AmanziMesh::Entity_ID_View) const;
   
   bool check_maps(const Epetra_Map&, const Epetra_Map&) const;
   bool check_get_set_ids(AmanziMesh::Entity_kind) const;
   bool check_valid_set_id(AmanziMesh::Entity_kind) const;
   bool check_sets(AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
-  bool check_get_set(AmanziMesh::Set_ID, AmanziMesh::Entity_kind, AmanziMesh::Parallel_type, const Epetra_Map&) const;
+  bool check_get_set(AmanziMesh::Set_ID, AmanziMesh::Entity_kind, AmanziMesh::Parallel_kind, const Epetra_Map&) const;
   bool check_used_set(AmanziMesh::Set_ID, AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
   
   // This is the vertex type for the test dependency graph.

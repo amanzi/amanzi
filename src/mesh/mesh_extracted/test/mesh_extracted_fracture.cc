@@ -84,10 +84,10 @@ void RunTest(const std::string regname, int* cells, int* edges) {
       maps.initialize(*mesh);
 
       int ncells_tmp = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,
-            AmanziMesh::Parallel_type::OWNED);
+            AmanziMesh::Parallel_kind::OWNED);
       int nfaces_tmp = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE,
-            AmanziMesh::Parallel_type::OWNED);
-      int mfaces_tmp = maps.getNBoundaryFaces(AmanziMesh::Parallel_type::OWNED);
+            AmanziMesh::Parallel_kind::OWNED);
+      int mfaces_tmp = maps.getNBoundaryFaces(AmanziMesh::Parallel_kind::OWNED);
 
       int ncells(ncells_tmp), nfaces(nfaces_tmp), mfaces(mfaces_tmp);
       comm->SumAll(&ncells_tmp, &ncells, 1);

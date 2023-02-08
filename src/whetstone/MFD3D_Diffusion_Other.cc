@@ -116,7 +116,7 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   const auto& [faces,fdirs] = mesh_->getCellFacesAndDirections(c);
   int num_faces = faces.size();
 
-  AmanziMesh::Entity_ID_List corner_faces;
+  AmanziMesh::Entity_ID_View corner_faces;
   auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
@@ -125,13 +125,13 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
 
   // collect all corner matrices
   std::vector<Tensor> Mv;
-  std::vector<double> cwgt;
+  AmanziMesh::Double_List cwgt;
 
   Tensor N(d_, 2), NK(d_, 2);
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    node_get_cell_faces(*mesh_, v, c, Parallel_type::ALL, &corner_faces);
+    node_get_cell_faces(*mesh_, v, c, Parallel_kind::ALL, &corner_faces);
     int nfaces = corner_faces.size();
     if (nfaces < d_) {
       Errors::Message msg;
@@ -171,7 +171,7 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   W.PutScalar(0.0);
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    node_get_cell_faces(*mesh_, v, c, Parallel_type::ALL, &corner_faces);
+    node_get_cell_faces(*mesh_, v, c, Parallel_kind::ALL, &corner_faces);
 
     Tensor& Mv_tmp = Mv[n];
     for (int i = 0; i < d_; i++) {

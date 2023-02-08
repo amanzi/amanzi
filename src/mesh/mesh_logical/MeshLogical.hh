@@ -51,7 +51,7 @@ struct MeshLogicalAlgorithms : public MeshFrameworkAlgorithms {
   computeCellGeometry(const MeshFramework& mesh, const Entity_ID c) const override;
 
 
-  virtual std::tuple<double, AmanziGeometry::Point, Point_List>
+  virtual std::tuple<double, AmanziGeometry::Point, Point_View>
   computeFaceGeometry(const MeshFramework& mesh, const Entity_ID f) const override;
 
 
@@ -82,7 +82,7 @@ class MeshLogical : public MeshFramework {
   // Topology only constructor
   // -----------------------------------------------------------------------------
   MeshLogical(const Comm_ptr_type& comm,
-              const std::vector<std::vector<Entity_ID>>& face_cell_ids,
+              const std::vector<Entity_ID_List>& face_cell_ids,
               const std::vector<std::vector<int> >& face_cell_dirs,
               const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null);
 
@@ -90,24 +90,24 @@ class MeshLogical : public MeshFramework {
   // Topology and geometry constructor
   // -----------------------------------------------------------------------------
   MeshLogical(const Comm_ptr_type& comm,
-              const std::vector<std::vector<Entity_ID>>& face_cell_ids,
+              const std::vector<Entity_ID_List>& face_cell_ids,
               const std::vector<std::vector<int> >& face_cell_dirs,
-              const std::vector<double>& cell_volumes,
-              const std::vector<double>& face_areas,
-              const std::vector<std::vector<AmanziGeometry::Point> >& face_cell_bisectors,
-              const std::vector<AmanziGeometry::Point>* cell_centroids=nullptr,
+              const Double_List& cell_volumes,
+              const Double_List& face_areas,
+              const std::vector<Point_List>& face_cell_bisectors,
+              const Point_List* cell_centroids=nullptr,
               const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null);
 
 
-  void getLogicalGeometry(std::vector<double>* const cell_volumes,
-                            std::vector<double>* const face_areas,
-                            std::vector<std::vector<AmanziGeometry::Point> >* const face_cell_bisectors,
-                            std::vector<AmanziGeometry::Point>* const cell_centroids) const;
+  void getLogicalGeometry(Double_List* const cell_volumes,
+                            Double_List* const face_areas,
+                            std::vector<Point_List>* const face_cell_bisectors,
+                            Point_List* const cell_centroids) const;
 
-  void setLogicalGeometry(std::vector<double> const* const cell_volumes,
-                            std::vector<double> const* const face_areas,
-                            std::vector<std::vector<AmanziGeometry::Point> > const* const face_cell_bisectors,
-                            std::vector<AmanziGeometry::Point> const* const cell_centroids=nullptr);
+  void setLogicalGeometry(Double_List const* const cell_volumes,
+                            Double_List const* const face_areas,
+                            std::vector<Point_List> const* const face_cell_bisectors,
+                            Point_List const* const cell_centroids=nullptr);
 
 
   // for testing
@@ -121,15 +121,15 @@ class MeshLogical : public MeshFramework {
 
   // Get cell type - UNKNOWN, TRI, QUAD, ... See MeshDefs.hh
   virtual
-  Cell_type getCellType(const Entity_ID cellid) const override {
-    return Cell_type::UNKNOWN;
+  Cell_kind getCellType(const Entity_ID cellid) const override {
+    return Cell_kind::UNKNOWN;
   }
 
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)
   virtual
   std::size_t getNumEntities(const Entity_kind kind,
-          const Parallel_type ptype) const override;
+          const Parallel_kind ptype) const override;
 
 
   // All nodal methods throw -- there are no nodes in MeshLogical
@@ -137,26 +137,26 @@ class MeshLogical : public MeshFramework {
   getNodeCoordinate(const Entity_ID node) const override;
 
   virtual void
-  getFaceNodes(const Entity_ID f, Entity_ID_List& nodes) const override;
+  getFaceNodes(const Entity_ID f, Entity_ID_View& nodes) const override;
 
   virtual void
   getNodeFaces(const Entity_ID nodeid,
-               const Parallel_type ptype,
-               Entity_ID_List& faceids) const override;
+               const Parallel_kind ptype,
+               Entity_ID_View& faceids) const override;
 
   //
   // These are the important ones -- MeshLogical defines cell quantities
   //
   virtual void getCellFacesAndDirs(
     const Entity_ID c,
-    Entity_ID_List& faces,
-    Entity_Direction_List * const dirs) const override;
+    Entity_ID_View& faces,
+    Entity_Direction_View * const dirs) const override;
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   virtual void getCellFacesAndBisectors(
           const Entity_ID cellid,
-          Entity_ID_List& faceids,
-          Point_List * const bisectors) const override;
+          Entity_ID_View& faceids,
+          Point_View * const bisectors) const override;
 
   virtual double getCellVolume(const Entity_ID c) const override;
   virtual AmanziGeometry::Point getCellCentroid(const Entity_ID c) const override;
@@ -165,8 +165,8 @@ class MeshLogical : public MeshFramework {
   // MeshLogical defines face quantities
   //
   virtual void getFaceCells(const Entity_ID f,
-                            const Parallel_type ptype,
-                            Entity_ID_List& cells) const override;
+                            const Parallel_kind ptype,
+                            Entity_ID_View& cells) const override;
   virtual double getFaceArea(const Entity_ID f) const override;
   virtual AmanziGeometry::Point getFaceCentroid(const Entity_ID f) const override;
   virtual AmanziGeometry::Point getFaceNormal(const Entity_ID f,
@@ -175,9 +175,9 @@ class MeshLogical : public MeshFramework {
  protected:
   bool initialized_;
 
-  Double_List cell_volumes_;
-  Double_List face_areas_;
-  Point_List cell_centroids_;
+  Double_View cell_volumes_;
+  Double_View face_areas_;
+  Point_View cell_centroids_;
   RaggedArray_DualView<Entity_ID> face_cell_ids_;
 
   RaggedArray_DualView<Entity_ID> cell_face_ids_;

@@ -87,7 +87,7 @@ PDE_Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
-  AmanziMesh::Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_View nodes;
   int d = mesh_->getSpaceDimension();
 
   WhetStone::DenseMatrix Mcell;

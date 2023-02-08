@@ -29,7 +29,7 @@ class Op_Cell_Node : public Op {
     : Op(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_NODE, name, mesh)
   {
     WhetStone::DenseMatrix null_matrix;
-    matrices.resize(mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED),
+    matrices.resize(mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED),
                     null_matrix);
     matrices_shadow = matrices;
   }
@@ -63,7 +63,7 @@ class Op_Cell_Node : public Op {
   {
     if (scaling.HasComponent("node")) {
       const Epetra_MultiVector& s_n = *scaling.ViewComponent("node", true);
-      AmanziMesh::Entity_ID_List nodes;
+      AmanziMesh::Entity_ID_View nodes;
 
       for (int c = 0; c != matrices.size(); ++c) {
         WhetStone::DenseMatrix& Acell = matrices[c];

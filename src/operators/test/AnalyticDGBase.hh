@@ -150,7 +150,7 @@ AnalyticDGBase::InitialGuess(const Amanzi::WhetStone::DG_Modal& dg,
                              bool inside(const Amanzi::AmanziGeometry::Point&))
 {
   int ncells =
-    mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
+    mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::ALL);
 
   for (int c = 0; c < ncells; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
@@ -190,7 +190,7 @@ AnalyticDGBase::ComputeCellError(const Amanzi::WhetStone::DG_Modal& dg,
   Amanzi::WhetStone::NumericalIntegration numi(mesh_);
 
   int ncells =
-    mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells; c++) {
     const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     double volume = mesh_->getCellVolume(c);
@@ -263,14 +263,14 @@ AnalyticDGBase::ComputeFaceError(const Amanzi::WhetStone::DG_Modal& dg,
 
   int nk = p.NumVectors();
   Amanzi::WhetStone::DenseVector data(nk);
-  Amanzi::AmanziMesh::Entity_ID_List cells;
+  Amanzi::AmanziMesh::Entity_ID_View cells;
 
   int nfaces =
-    mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; ++f) {
     const Amanzi::AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
-    cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_type::ALL);
+    cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     double err(0.0);
@@ -339,7 +339,7 @@ AnalyticDGBase::ComputeCellErrorRemap(const Amanzi::WhetStone::DG_Modal& dg,
   l20_err = l10_err = inf0_err = 0.0;
 
   int ncells =
-    mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh0->getCellCentroid(c);
     const Amanzi::AmanziGeometry::Point& yc = mesh1->getCellCentroid(c);
@@ -367,7 +367,7 @@ AnalyticDGBase::ComputeCellErrorRemap(const Amanzi::WhetStone::DG_Modal& dg,
     l10_err += fabs(err) * volume;
 
     Amanzi::AmanziGeometry::Point v0(d_), v1(d_);
-    Amanzi::AmanziMesh::Entity_ID_List nodes;
+    Amanzi::AmanziMesh::Entity_ID_View nodes;
 
     nodes = mesh0->getCellNodes(c);
     int nnodes = nodes.size();
@@ -402,8 +402,8 @@ AnalyticDGBase::ComputeCellErrorRemap(const Amanzi::WhetStone::DG_Modal& dg,
 inline Amanzi::AmanziGeometry::Point
 AnalyticDGBase::face_normal_exterior(int f, bool* flag)
 {
-  Amanzi::AmanziMesh::Entity_ID_List cells;
-  cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_type::ALL);
+  Amanzi::AmanziMesh::Entity_ID_View cells;
+  cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
   *flag = (cells.size() == 1);
 
   int dir;

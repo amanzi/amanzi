@@ -634,18 +634,18 @@ void Mesh_MOAB::init_set_info()
 // Number of OWNED, GHOST or ALL entities of different types
 //--------------------------------------
 unsigned int Mesh_MOAB::num_entities(Entity_kind kind, 
-                                     Parallel_type ptype) const
+                                     Parallel_kind ptype) const
 {
   switch (kind) {
   case NODE:
     switch (ptype) {
-    case Parallel_type::OWNED:
+    case Parallel_kind::OWNED:
       return !serial_run ? OwnedVerts.size() : AllVerts.size();
       break;
-    case Parallel_type::GHOST:
+    case Parallel_kind::GHOST:
       return !serial_run ? NotOwnedVerts.size() : 0;
       break;
-    case Parallel_type::ALL:
+    case Parallel_kind::ALL:
       return AllVerts.size();
       break;
     default:
@@ -655,13 +655,13 @@ unsigned int Mesh_MOAB::num_entities(Entity_kind kind,
 
   case FACE:
     switch (ptype) {
-    case Parallel_type::OWNED:
+    case Parallel_kind::OWNED:
       return !serial_run ? OwnedFaces.size() : AllFaces.size();
       break;
-    case Parallel_type::GHOST:
+    case Parallel_kind::GHOST:
       return !serial_run ? NotOwnedFaces.size() : 0;
       break;
-    case Parallel_type::ALL:
+    case Parallel_kind::ALL:
       return AllFaces.size();
       break;
     default:
@@ -671,13 +671,13 @@ unsigned int Mesh_MOAB::num_entities(Entity_kind kind,
 
   case CELL:
     switch (ptype) {
-    case Parallel_type::OWNED:
+    case Parallel_kind::OWNED:
       return !serial_run ? OwnedCells.size() : AllCells.size();
       break;
-    case Parallel_type::GHOST:
+    case Parallel_kind::GHOST:
       return !serial_run ? GhostCells.size() : 0;
       break;
-    case Parallel_type::ALL:
+    case Parallel_kind::ALL:
       return AllCells.size();
       break;
     default:
@@ -708,7 +708,7 @@ unsigned int Mesh_MOAB::num_entities(Entity_kind kind,
 // direction as the cell polygon, and -1 otherwise
 //--------------------------------------------------------------------
 void Mesh_MOAB::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
-                                                  Entity_ID_List *faceids,
+                                                  Entity_ID_View *faceids,
                                                   std::vector<int> *face_dirs,
                                                   const bool ordered) const
 {
@@ -818,7 +818,7 @@ void Mesh_MOAB::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
     }
   }
 
-  Entity_ID_List::iterator itf = faceids->begin();
+  Entity_ID_View::iterator itf = faceids->begin();
   for (int i = 0; i < nf; i++) {
     *itf = cell_faceids[i];
     ++itf;
@@ -839,7 +839,7 @@ void Mesh_MOAB::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
 //--------------------------------------------------------------------
 // TBW
 //--------------------------------------------------------------------
-void Mesh_MOAB::cell_get_nodes(Entity_ID cellid, Entity_ID_List *cnodes) const
+void Mesh_MOAB::cell_get_nodes(Entity_ID cellid, Entity_ID_View *cnodes) const
 {
   moab::EntityHandle cell;
   std::vector<moab::EntityHandle> cell_nodes;
@@ -861,7 +861,7 @@ void Mesh_MOAB::cell_get_nodes(Entity_ID cellid, Entity_ID_List *cnodes) const
     ErrorCheck_(result, "Problem getting tag data");
   }
 
-  Entity_ID_List::iterator itn = cnodes->begin();
+  Entity_ID_View::iterator itn = cnodes->begin();
   for (int i = 0; i < nn; i++) {
     *itn = cell_nodeids[i];
     ++itn;
@@ -874,7 +874,7 @@ void Mesh_MOAB::cell_get_nodes(Entity_ID cellid, Entity_ID_List *cnodes) const
 //--------------------------------------------------------------------
 // TBW
 //--------------------------------------------------------------------
-void Mesh_MOAB::face_get_nodes(Entity_ID faceid, Entity_ID_List *fnodes) const 
+void Mesh_MOAB::face_get_nodes(Entity_ID faceid, Entity_ID_View *fnodes) const 
 {
   moab::EntityHandle face;
   std::vector<moab::EntityHandle> face_nodes;
@@ -903,7 +903,7 @@ void Mesh_MOAB::face_get_nodes(Entity_ID faceid, Entity_ID_List *fnodes) const
   }
 
   fnodes->resize(nn);
-  Entity_ID_List::iterator itn = fnodes->begin();
+  Entity_ID_View::iterator itn = fnodes->begin();
   for (int i = 0; i < nn; i++) {
     *itn = face_nodeids[i];
     ++itn;
@@ -965,7 +965,7 @@ void Mesh_MOAB::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
 // TBW
 //--------------------------------------------------------------------
 void Mesh_MOAB::cell_get_coordinates(
-    Entity_ID cellid, std::vector<AmanziGeometry::Point> *ccoords) const
+    Entity_ID cellid, Point_List *ccoords) const
 {
   moab::EntityHandle cell;
   std::vector<moab::EntityHandle> cell_nodes;
@@ -984,7 +984,7 @@ void Mesh_MOAB::cell_get_coordinates(
   coords = new double[3];
   
   ccoords->resize(nn);
-  std::vector<AmanziGeometry::Point>::iterator it = ccoords->begin();
+  Point_List::iterator it = ccoords->begin();
 
   for (int i = 0; i < nn; i++) {
     result = mbcore_->get_coords(&(cell_nodes[i]), 1, coords);
@@ -1002,7 +1002,7 @@ void Mesh_MOAB::cell_get_coordinates(
 // TBW
 //--------------------------------------------------------------------
 void Mesh_MOAB::face_get_coordinates(Entity_ID faceid,
-                                     std::vector<AmanziGeometry::Point> *fcoords) const
+                                     Point_List *fcoords) const
 {
   moab::EntityHandle face;
   std::vector<moab::EntityHandle> face_nodes;
@@ -1021,7 +1021,7 @@ void Mesh_MOAB::face_get_coordinates(Entity_ID faceid,
   coords = new double[3];
     
   fcoords->resize(nn);
-  std::vector<AmanziGeometry::Point>::iterator it = fcoords->begin();
+  Point_List::iterator it = fcoords->begin();
 
   if (faceflip[faceid]) {
     for (int i = nn-1; i >=0; i--) {
@@ -1071,7 +1071,7 @@ moab::Tag Mesh_MOAB::build_set(
       mbcore_->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag,
                              MB_TAG_CREAT|MB_TAG_SPARSE);
       
-      int ncell = num_entities(CELL, Parallel_type::ALL);              
+      int ncell = num_entities(CELL, Parallel_kind::ALL);              
 
       for (int icell = 0; icell < ncell; icell++) {
         if (region->inside(cell_centroid(icell))) {
@@ -1088,7 +1088,7 @@ moab::Tag Mesh_MOAB::build_set(
       
       rgnpnt = Teuchos::rcp_static_cast<const AmanziGeometry::RegionPoint>(region)->point();
         
-      int nnode = num_entities(NODE, Parallel_type::ALL);
+      int nnode = num_entities(NODE, Parallel_kind::ALL);
       double mindist2 = 1.e+16;
       int minnode = -1;
         
@@ -1106,9 +1106,9 @@ moab::Tag Mesh_MOAB::build_set(
         }
       }
 
-      Entity_ID_List cells, cells1;
+      Entity_ID_View cells, cells1;
 
-      node_get_cells(minnode, Parallel_type::ALL, &cells);
+      node_get_cells(minnode, Parallel_kind::ALL, &cells);
       int ncells = cells.size();
 
       for (int ic = 0; ic < ncells; ic++) {
@@ -1127,10 +1127,10 @@ moab::Tag Mesh_MOAB::build_set(
                              MB_TAG_CREAT|MB_TAG_SPARSE);
       
       if (celldim_ == 2) {
-        int ncells = num_entities(CELL, Parallel_type::ALL);              
+        int ncells = num_entities(CELL, Parallel_kind::ALL);              
 
         for (int ic = 0; ic < ncells; ic++) {
-          std::vector<AmanziGeometry::Point> ccoords(space_dim);
+          Point_List ccoords(space_dim);
 
           cell_get_coordinates(ic, &ccoords);
 
@@ -1169,7 +1169,7 @@ moab::Tag Mesh_MOAB::build_set(
       mbcore_->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag,
                              MB_TAG_CREAT|MB_TAG_SPARSE);
 
-      int nface = num_entities(FACE, Parallel_type::ALL);
+      int nface = num_entities(FACE, Parallel_kind::ALL);
         
       for (int iface = 0; iface < nface; iface++) {
         if (region->inside(face_centroid(iface)))
@@ -1183,10 +1183,10 @@ moab::Tag Mesh_MOAB::build_set(
       mbcore_->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag,
                              MB_TAG_CREAT | MB_TAG_SPARSE);
 
-      int nface = num_entities(FACE, Parallel_type::ALL);
+      int nface = num_entities(FACE, Parallel_kind::ALL);
               
       for (int iface = 0; iface < nface; iface++) {
-        std::vector<AmanziGeometry::Point> fcoords(space_dim);
+        Point_List fcoords(space_dim);
             
         face_get_coordinates(iface, &fcoords);
             
@@ -1225,7 +1225,7 @@ moab::Tag Mesh_MOAB::build_set(
       mbcore_->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag,
                              MB_TAG_CREAT|MB_TAG_SPARSE);
 
-      int nnode = num_entities(NODE, Parallel_type::ALL);
+      int nnode = num_entities(NODE, Parallel_kind::ALL);
 
       for (int inode = 0; inode < nnode; inode++) {
 
@@ -1455,9 +1455,9 @@ moab::Tag Mesh_MOAB::build_set(
 //--------------------------------------------------------------------
 void Mesh_MOAB::get_set_entities_and_vofs(const std::string& setname, 
                                           const Entity_kind kind, 
-                                          const Parallel_type ptype,
-                                          Entity_ID_List *setents,
-                                          std::vector<double> *vofs) const
+                                          const Parallel_kind ptype,
+                                          Entity_ID_View *setents,
+                                          Double_List *vofs) const
 {
   int lid, one=1;
   int space_dim = Mesh::space_dimension();
@@ -1563,7 +1563,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string& setname,
     nent_loc = 0; // reset and count to get the real number
 
     switch (ptype) {
-    case Parallel_type::OWNED:
+    case Parallel_kind::OWNED:
       for (auto it = mset1.begin(); it != mset1.end(); ++it) {
         moab::EntityHandle ent = *it;
 
@@ -1574,7 +1574,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string& setname,
         }
       }
       break;
-    case Parallel_type::GHOST:
+    case Parallel_kind::GHOST:
       for (auto it = mset1.begin(); it != mset1.end(); ++it) {
         moab::EntityHandle ent = *it;
 
@@ -1585,7 +1585,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string& setname,
         }
       }
       break;
-    case Parallel_type::ALL:
+    case Parallel_kind::ALL:
       for (auto it = mset1.begin(); it != mset1.end(); ++it) {
         moab::EntityHandle ent = *it;
 
@@ -1627,8 +1627,8 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string& setname,
 // Cells of type 'ptype' connected to a node
 //--------------------------------------------------------------------
 void Mesh_MOAB::node_get_cells(const Entity_ID nodeid, 
-                               const Parallel_type ptype,
-                               Entity_ID_List *cellids) const 
+                               const Parallel_kind ptype,
+                               Entity_ID_View *cellids) const 
 {
   unsigned char pstatus;
   std::vector<EntityHandle> ids;
@@ -1640,14 +1640,14 @@ void Mesh_MOAB::node_get_cells(const Entity_ID nodeid,
   for (int i = 0; i < nids; ++i) {
     mbcore_->tag_get_data(lid_tag, &(ids[i]), 1, &lid);
 
-    if (ptype == Parallel_type::ALL) {
+    if (ptype == Parallel_kind::ALL) {
       cellids->push_back(lid);
-    } if (ptype == Parallel_type::OWNED) {
+    } if (ptype == Parallel_kind::OWNED) {
       mbcomm_->get_pstatus(ids[i], pstatus);
       if ((pstatus & PSTATUS_NOT_OWNED) == 0) {
         cellids->push_back(lid);
       }
-    } else if (ptype == Parallel_type::GHOST) {
+    } else if (ptype == Parallel_kind::GHOST) {
       mbcomm_->get_pstatus(ids[i], pstatus);
       if ((pstatus & PSTATUS_NOT_OWNED) == 1) {
         cellids->push_back(lid);
@@ -1661,8 +1661,8 @@ void Mesh_MOAB::node_get_cells(const Entity_ID nodeid,
 // Faces of type 'ptype' connected to a node
 //--------------------------------------------------------------------
 void Mesh_MOAB::node_get_faces(const Entity_ID nodeid, 
-                               const Parallel_type ptype,
-                               Entity_ID_List *faceids) const
+                               const Parallel_kind ptype,
+                               Entity_ID_View *faceids) const
 {
   throw std::exception();
 }
@@ -1672,8 +1672,8 @@ void Mesh_MOAB::node_get_faces(const Entity_ID nodeid,
 // Cells connected to a face
 //--------------------------------------------------------------------
 void Mesh_MOAB::face_get_cells_internal_(const Entity_ID faceid, 
-                                         const Parallel_type ptype,
-                                         Entity_ID_List *cellids) const
+                                         const Parallel_kind ptype,
+                                         Entity_ID_View *cellids) const
 {
   int result;
   moab::EntityHandle face = face_id_to_handle[faceid];
@@ -1692,19 +1692,19 @@ void Mesh_MOAB::face_get_cells_internal_(const Entity_ID faceid,
   ErrorCheck_(result, "Problem getting id tag data");
 
   cellids->resize(2);
-  Entity_ID_List::iterator it = cellids->begin();
+  Entity_ID_View::iterator it = cellids->begin();
 
   unsigned char pstatus;
   int n = 0;
   switch (ptype) {
-  case Parallel_type::ALL:
+  case Parallel_kind::ALL:
     for (int i = 0; i < nc; i++) {
       *it = fcellids[i];
       ++it;
       ++n;
     }
     break;
-  case Parallel_type::OWNED:
+  case Parallel_kind::OWNED:
     for (int i = 0; i < nc; i++) {
       result = mbcomm_->get_pstatus(fcells[i], pstatus);
       if ((pstatus & PSTATUS_NOT_OWNED) == 0) {
@@ -1714,7 +1714,7 @@ void Mesh_MOAB::face_get_cells_internal_(const Entity_ID faceid,
       }
     }
     break;
-  case Parallel_type::GHOST:
+  case Parallel_kind::GHOST:
     for (int i = 0; i < nc; i++) {
       result = mbcomm_->get_pstatus(fcells[i], pstatus);
       if ((pstatus & PSTATUS_NOT_OWNED) == 1) {
@@ -1748,8 +1748,8 @@ void Mesh_MOAB::face_get_cells_internal_(const Entity_ID faceid,
 // faces given by cell_get_faces
 //--------------------------------------------------------------------
 void Mesh_MOAB::cell_get_face_adj_cells(const Entity_ID cellid,
-                                        const Parallel_type ptype,
-                                        Entity_ID_List *fadj_cellids) const
+                                        const Parallel_kind ptype,
+                                        Entity_ID_View *fadj_cellids) const
 {
   throw std::exception();
 }
@@ -1869,9 +1869,9 @@ void Mesh_MOAB::init_face_map()
     int n_extface = 0;
     extface_gids = new int[nface];
 
-    Entity_ID_List cellids;
+    Entity_ID_View cellids;
     for (int f = 0; f < nface; ++f) {
-      face_get_cells_internal_(f, Parallel_type::ALL, &cellids);
+      face_get_cells_internal_(f, Parallel_kind::ALL, &cellids);
       if (cellids.size() == 1)
         extface_gids[n_extface++] = face_gids[f];
     }
@@ -2030,7 +2030,7 @@ const Epetra_Map& Mesh_MOAB::exterior_node_map(bool include_ghost) const {
 //--------------------------------------------------------------------
 // Get parallel type of enetity
 //--------------------------------------------------------------------
-Parallel_type Mesh_MOAB::entity_get_ptype(const Entity_kind kind, 
+Parallel_kind Mesh_MOAB::entity_get_ptype(const Entity_kind kind, 
                                           const Entity_ID entid) const
 {
   moab::EntityHandle ent(0);
@@ -2054,14 +2054,14 @@ Parallel_type Mesh_MOAB::entity_get_ptype(const Entity_kind kind,
   }
 
   mbcomm_->get_pstatus(ent, pstatus);
-  return ((pstatus & PSTATUS_NOT_OWNED) == 1) ? Parallel_type::GHOST : Parallel_type::OWNED;
+  return ((pstatus & PSTATUS_NOT_OWNED) == 1) ? Parallel_kind::GHOST : Parallel_kind::OWNED;
 }
   
   
 //--------------------------------------------------------------------
 // Get cell type
 //--------------------------------------------------------------------
-Cell_type Mesh_MOAB::cell_get_type(const Entity_ID cellid) const
+Cell_kind Mesh_MOAB::cell_get_type(const Entity_ID cellid) const
 {
   if (space_dim_ == 2) return QUAD;
   return HEX;
@@ -2109,9 +2109,9 @@ Mesh_MOAB::internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>
 // move_vertical = true, nodes will be allowed to move only in the
 // vertical direction (right now arbitrary node movement is not allowed)
 //--------------------------------------------------------------------
-int Mesh_MOAB::deform(const std::vector<double>& target_cell_volumes_in, 
-                      const std::vector<double>& min_cell_volumes_in, 
-                      const Entity_ID_List& fixed_nodes,
+int Mesh_MOAB::deform(const Double_List& target_cell_volumes_in, 
+                      const Double_List& min_cell_volumes_in, 
+                      const Entity_ID_View& fixed_nodes,
                       const bool move_vertical) 
 {
   Errors::Message mesg("Deformation not implemented for Mesh_MOAB");

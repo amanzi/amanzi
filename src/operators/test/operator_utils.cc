@@ -122,8 +122,8 @@ TEST(SUPERMAP_COPY_INTS)
   CHECK(!ierr);
 
   // check values
-  int ncells = maps.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = maps.mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells = maps.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = maps.mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   // check sizes
   CHECK_EQUAL(2 * ncells + 2 * nfaces, vec.MyLength());

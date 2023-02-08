@@ -14,7 +14,7 @@
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 
-using Entity_Direction_List = std::vector<int>;
+using Entity_Direction_View = std::vector<int>;
 
 //
 // Helper functions for testing geometry
@@ -69,17 +69,17 @@ CHECK_MPI_ALL(std::vector<int>& contrib, const Amanzi::Comm_type& comm) {
 template<class Mesh_type>
 void
 testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
-                 const std::vector<AmanziGeometry::Point>& exp_cell_centroids,
-                 const std::vector<double>& exp_cell_volumes,
-                 const std::vector<AmanziGeometry::Point>& exp_face_centroids,
-                 const std::vector<double>& exp_face_areas,
-                 const std::vector<AmanziGeometry::Point>& exp_face_normals,
-                 const std::vector<AmanziGeometry::Point>& exp_node_coordinates)
+                 const Point_List& exp_cell_centroids,
+                 const Double_List& exp_cell_volumes,
+                 const Point_List& exp_face_centroids,
+                 const Double_List& exp_face_areas,
+                 const Point_List& exp_face_normals,
+                 const Point_List& exp_node_coordinates)
 {
   // test cell-based quantities
   {
     std::vector<int> found(exp_cell_centroids.size(), false);
-    int ncells = mesh->getNumEntities(Entity_kind::CELL,Parallel_type::OWNED);
+    int ncells = mesh->getNumEntities(Entity_kind::CELL,Parallel_kind::OWNED);
     for (int i = 0; i < ncells; i++) {
       auto centroid = mesh->getCellCentroid(i);
 
@@ -98,7 +98,7 @@ testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
       if (lfound) found[j] = 1;
 
       // check that the outward normals sum to 0
-      Entity_ID_List cfaces;
+      Entity_ID_View cfaces;
       mesh->getCellFaces(i, cfaces);
       AmanziGeometry::Point normal_sum(mesh->getSpaceDimension());
       for (int j = 0; j < cfaces.size(); j++) {
@@ -121,7 +121,7 @@ testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
   {
     std::vector<int> found(exp_face_normals.size(), false);
 
-    int nfaces = mesh->getNumEntities(Entity_kind::FACE,Parallel_type::OWNED);
+    int nfaces = mesh->getNumEntities(Entity_kind::FACE,Parallel_kind::OWNED);
     for (int i = 0; i < nfaces; i++) {
       AmanziGeometry::Point centroid = mesh->getFaceCentroid(i);
 
@@ -136,8 +136,8 @@ testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
 
           // Check the normal with respect to each connected cell is given as the
           // natural times the orientation.
-          Entity_ID_List cellids;
-          mesh->getFaceCells(i,Parallel_type::ALL,cellids);
+          Entity_ID_View cellids;
+          mesh->getFaceCells(i,Parallel_kind::ALL,cellids);
 
           for (int k = 0; k < cellids.size(); k++) {
             int orientation = 0;
@@ -172,7 +172,7 @@ testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
   // test the node-based quantities
   {
     std::vector<int> found(exp_node_coordinates.size(), false);
-    int nnodes = mesh->getNumEntities(Entity_kind::NODE,Parallel_type::OWNED);
+    int nnodes = mesh->getNumEntities(Entity_kind::NODE,Parallel_kind::OWNED);
     for (int i = 0; i < nnodes; i++) {
       AmanziGeometry::Point centroid;
       centroid = mesh->getNodeCoordinate(i);
@@ -199,21 +199,21 @@ testGeometryQuad(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny)
 {
   // test the basic dimensionality
   CHECK_EQUAL(2, mesh->getSpaceDimension());
-  int ncells = mesh->getNumEntities(Entity_kind::CELL,Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(Entity_kind::CELL,Parallel_kind::OWNED);
   int ncells_test = nx * ny;
   CHECK_CLOSE_SUMALL(ncells_test, ncells, *mesh->getComm());
 
-  int nfaces = mesh->getNumEntities(Entity_kind::FACE,Parallel_type::OWNED);
+  int nfaces = mesh->getNumEntities(Entity_kind::FACE,Parallel_kind::OWNED);
   int nfaces_test = ny * (nx+1) + nx * (ny+1);
   CHECK_CLOSE_SUMALL(nfaces_test, nfaces, *mesh->getComm());
 
-  int nnodes = mesh->getNumEntities(Entity_kind::NODE,Parallel_type::OWNED);
+  int nnodes = mesh->getNumEntities(Entity_kind::NODE,Parallel_kind::OWNED);
   int nnodes_test = (ny+1) * (nx+1);
   CHECK_CLOSE_SUMALL(nnodes_test, nnodes, *mesh->getComm());
 
   // construct expected cell volumes, centroids
-  std::vector<double> exp_cell_volumes(ncells_test, 1./nx * 1./ny);
-  std::vector<AmanziGeometry::Point> exp_cell_centroids;
+  Double_List exp_cell_volumes(ncells_test, 1./nx * 1./ny);
+  Point_List exp_cell_centroids;
   for (int i=0; i!=nx; ++i) {
     for (int j=0; j!=ny; ++j) {
       exp_cell_centroids.emplace_back(AmanziGeometry::Point((i+.5)/nx, (j+.5)/ny));
@@ -221,9 +221,9 @@ testGeometryQuad(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny)
   }
 
   // construct expected face centroids, areas, and normals
-  std::vector<AmanziGeometry::Point> exp_face_centroids;
-  std::vector<double> exp_face_areas;
-  std::vector<AmanziGeometry::Point> exp_face_normals;
+  Point_List exp_face_centroids;
+  Double_List exp_face_areas;
+  Point_List exp_face_normals;
   for (int i=0; i!=nx+1; ++i) {
     for (int j=0; j!=ny; ++j) {
       exp_face_centroids.emplace_back(AmanziGeometry::Point( ((double) i) / nx, (j+.5)/ny));
@@ -240,7 +240,7 @@ testGeometryQuad(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny)
   }
 
   // construct expected nodal locations
-  std::vector<AmanziGeometry::Point> exp_node_coordinates;
+  Point_List exp_node_coordinates;
   for (int i=0; i!=nx+1; ++i) {
     for (int j=0; j!=ny+1; ++j) {
       exp_node_coordinates.emplace_back(AmanziGeometry::Point(((double) i)/nx, ((double) j)/ny));
@@ -263,19 +263,19 @@ testGeometryCube(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz)
 {
   // test the basic dimensionality
   CHECK_EQUAL(3, mesh->getSpaceDimension());
-  int ncells = mesh->getNumEntities(Entity_kind::CELL,Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(Entity_kind::CELL,Parallel_kind::OWNED);
   int ncells_test = nx * ny * nz;
   CHECK_CLOSE_SUMALL(ncells_test, ncells, *mesh->getComm());
-  int nfaces = mesh->getNumEntities(Entity_kind::FACE,Parallel_type::OWNED);
+  int nfaces = mesh->getNumEntities(Entity_kind::FACE,Parallel_kind::OWNED);
   int nfaces_test = nx * ny * (nz+1) + nx * (ny+1) * nz + (nx+1) * ny * nz;
   CHECK_CLOSE_SUMALL(nfaces_test, nfaces, *mesh->getComm());
-  int nnodes = mesh->getNumEntities(Entity_kind::NODE,Parallel_type::OWNED);
+  int nnodes = mesh->getNumEntities(Entity_kind::NODE,Parallel_kind::OWNED);
   int nnodes_test = (nx+1) * (ny+1) * (nz+1);
   CHECK_CLOSE_SUMALL(nnodes_test, nnodes, *mesh->getComm());
 
   // construct expected cell volumes, centroids
-  std::vector<double> exp_cell_volumes(ncells_test, 1./nx * 1./ny * 1./nz);
-  std::vector<AmanziGeometry::Point> exp_cell_centroids;
+  Double_List exp_cell_volumes(ncells_test, 1./nx * 1./ny * 1./nz);
+  Point_List exp_cell_centroids;
   for (int i=0; i!=nx; ++i) {
     for (int j=0; j!=ny; ++j) {
       for (int k=0; k!=nz; ++k) {
@@ -285,9 +285,9 @@ testGeometryCube(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz)
   }
 
   // construct expected face centroids, areas, and normals
-  std::vector<AmanziGeometry::Point> exp_face_centroids;
-  std::vector<double> exp_face_areas;
-  std::vector<AmanziGeometry::Point> exp_face_normals;
+  Point_List exp_face_centroids;
+  Double_List exp_face_areas;
+  Point_List exp_face_normals;
   for (int i=0; i!=(nx+1); ++i) {
     for (int j=0; j!=ny; ++j) {
       for (int k=0; k!=nz; ++k) {
@@ -317,7 +317,7 @@ testGeometryCube(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz)
   }
 
   // construct expected nodal locations
-  std::vector<AmanziGeometry::Point> exp_node_coordinates;
+  Point_List exp_node_coordinates;
   for (int i=0; i!=nx+1; ++i) {
     for (int j=0; j!=ny+1; ++j) {
       for (int k=0; k!=nz+1; ++k) {
@@ -419,7 +419,7 @@ testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int
 //
 // Test a columnar system
 //
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 inline
 void
 testColumnsUniformDz(const MeshCache<MEM>& mesh, double dz)
@@ -428,7 +428,7 @@ testColumnsUniformDz(const MeshCache<MEM>& mesh, double dz)
   int n_columns = mesh.columns.num_columns_all;
 
   // also tests that cols with ghost entities are listed first
-  int ncells_owned = mesh.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   bool owned = true;
 
   for (int col=0; col!=n_columns; ++col) {
@@ -476,7 +476,7 @@ testColumnsUniformDz(const MeshCache<MEM>& mesh, double dz)
   }
 
   // // test the columnar structure of nodes
-  // int nnodes = mesh.getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+  // int nnodes = mesh.getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
   // for (int n=0; n!=nnodes; ++n) {
   //   AmanziGeometry::Point nc;
   //   nc = mesh.getNodeCoordinate(n);

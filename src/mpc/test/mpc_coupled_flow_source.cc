@@ -81,7 +81,7 @@ TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE)
 
   // verify solution symmetry
   int ncells =
-    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   const auto& pc = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
 
   Amanzi::AmanziGeometry::Point x0(5.0, 5.0, 5.0);

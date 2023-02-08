@@ -37,7 +37,7 @@ UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
   for (auto region = domain->first.begin(); region != domain->first.end(); ++region) {
     // Get all region IDs by the region name and entity kind.
     if (mesh_->isValidSetName(*region, kind)) {
-      auto id_list = mesh_->getSetEntities(*region, kind, AmanziMesh::Parallel_type::ALL);
+      auto id_list = mesh_->getSetEntities(*region, kind, AmanziMesh::Parallel_kind::ALL);
       this_spec_ids->insert(id_list.begin(), id_list.end());
     } else {
       std::stringstream m;
