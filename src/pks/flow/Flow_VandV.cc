@@ -61,7 +61,7 @@ Flow_PK::VV_FractureConservationLaw() const
 
     // sum into fluxes from matrix
     auto f = mesh_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
-    auto cells = mesh_matrix->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh_matrix->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int pos = Operators::UniqueIndexFaceToCells(*mesh_matrix, f, cells[0]);
 
     for (int j = 0; j != cells.size(); ++j) {

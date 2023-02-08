@@ -70,18 +70,18 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const MeshFramework>& parent
 
   // set the cell type
   if (nodes_.size() == 3) {
-    cell_type_ = Cell_type::TRI;
+    cell_type_ = Cell_kind::TRI;
   } else if (nodes_.size() == 4) {
-    cell_type_ = Cell_type::QUAD;
+    cell_type_ = Cell_kind::QUAD;
   } else {
-    cell_type_ = Cell_type::POLYGON;
+    cell_type_ = Cell_kind::POLYGON;
   }
 }
 
 // Number of entities of any kind (cell, face, node) and in a
 // particular category (OWNED, GHOST, ALL)
 std::size_t MeshSurfaceCell::getNumEntities(const Entity_kind kind,
-        const Parallel_type ptype) const
+        const Parallel_kind ptype) const
 {
   int count;
   switch (kind) {
@@ -101,7 +101,7 @@ std::size_t MeshSurfaceCell::getNumEntities(const Entity_kind kind,
 //---------------------
 // Get nodes of a cell
 void MeshSurfaceCell::getCellNodes(const Entity_ID cellid,
-        Entity_ID_List& nodeids) const
+        Entity_ID_View& nodeids) const
 {
   AMANZI_ASSERT(cellid == 0);
   Kokkos::resize(nodeids, nodes_.size());
@@ -116,7 +116,7 @@ void MeshSurfaceCell::getCellNodes(const Entity_ID cellid,
 // with the face normal
 // In 2D, nfnodes is 2
 void MeshSurfaceCell::getFaceNodes(const Entity_ID faceid,
-        Entity_ID_List& nodeids) const
+        Entity_ID_View& nodeids) const
 {
   AMANZI_ASSERT(faceid < nodes_.size());
   Kokkos::resize(nodeids, 2); 
@@ -129,8 +129,8 @@ void MeshSurfaceCell::getFaceNodes(const Entity_ID faceid,
 // not guaranteed to be the same for corresponding nodes on
 // different processors
 void MeshSurfaceCell::getNodeCells(const Entity_ID nodeid,
-        const Parallel_type ptype,
-        Entity_ID_List& cellids) const
+        const Parallel_kind ptype,
+        Entity_ID_View& cellids) const
 {
   AMANZI_ASSERT(nodeid < nodes_.size());
   Kokkos::resize(cellids, 1);
@@ -142,8 +142,8 @@ void MeshSurfaceCell::getNodeCells(const Entity_ID nodeid,
 // not guarnateed to be the same for corresponding nodes on
 // different processors
 void MeshSurfaceCell::getNodeFaces(const Entity_ID nodeid,
-        const Parallel_type ptype,
-        Entity_ID_List& faceids) const {
+        const Parallel_kind ptype,
+        Entity_ID_View& faceids) const {
   Kokkos::resize(faceids, 2); 
   faceids[0] = (nodeid - 1) % (int) nodes_.size(); 
   faceids[1] = nodeid;
@@ -155,8 +155,8 @@ void MeshSurfaceCell::getNodeFaces(const Entity_ID nodeid,
 // cached or it can be called directly by the
 // cell_get_faces_and_dirs method of this class
 void MeshSurfaceCell::getCellFacesAndDirs(const Entity_ID cellid,
-        Entity_ID_List& faceids,
-        Entity_Direction_List * const face_dirs) const
+        Entity_ID_View& faceids,
+        Entity_Direction_View * const face_dirs) const
 {
   AMANZI_ASSERT(cellid == 0);
   Kokkos::resize(faceids,nodes_.size());
@@ -168,8 +168,8 @@ void MeshSurfaceCell::getCellFacesAndDirs(const Entity_ID cellid,
 // Cells connected to a face - this function is implemented in each
 // mesh framework. The results are cached in the base class
 void MeshSurfaceCell::getFaceCells(const Entity_ID faceid,
-        const Parallel_type ptype,
-        Entity_ID_List& cellids) const {
+        const Parallel_kind ptype,
+        Entity_ID_View& cellids) const {
   Kokkos::resize(cellids,1);
   cellids[0] = 0; 
 }

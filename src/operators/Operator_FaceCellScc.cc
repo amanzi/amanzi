@@ -181,9 +181,9 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
         name = "Scc alt as FACE_CELL";
         schur_op = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
         schur_ops_.push_back(schur_op);
-        AmanziMesh::Entity_ID_List cells;
+        AmanziMesh::Entity_ID_View cells;
         for (int f = 0; f != nfaces_owned; ++f) {
-          cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+          cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
           int ncells = cells.size();
           schur_op->matrices[f] = WhetStone::DenseMatrix(ncells, ncells);
         }
@@ -212,7 +212,7 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
       CompositeVector T(cv_space, true);
       Epetra_MultiVector& Ttmp = *T.ViewComponent("face", true);
 
-      AmanziMesh::Entity_ID_List cells;
+      AmanziMesh::Entity_ID_View cells;
 
       Ttmp.PutScalar(0.0);
       for (int c = 0; c < ncells_owned; c++) {
@@ -223,7 +223,7 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
         WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
-          cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+          cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
           if (cells.size() == 1) {
             Ttmp[0][f] = Acell(n, nfaces);
@@ -246,7 +246,7 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
       for (int f = 0; f < nfaces_owned; f++) {
         WhetStone::DenseMatrix& mat = mats[f];
 
-        cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+        cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) { gid[n] = cmap_wghost.GID(cells[n]); }

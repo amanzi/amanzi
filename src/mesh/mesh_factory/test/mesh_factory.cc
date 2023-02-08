@@ -383,7 +383,7 @@ SUITE (MeshFramework)
               nx, ny, nz);
 
       CHECK(!mesh.is_null());
-      Amanzi::AmanziMesh::Entity_ID_List ids("ids", 1);
+      Amanzi::AmanziMesh::Entity_ID_View ids("ids", 1);
       auto mesh_cache = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh(mesh)); 
       CHECK_THROW(newmesh = meshfactory.create(mesh_cache,ids,
               Amanzi::AmanziMesh::Entity_kind::FACE,
@@ -403,7 +403,7 @@ SUITE (MeshFramework)
               nx, ny, nz);
       CHECK(!mesh.is_null());
 
-      Amanzi::AmanziMesh::Entity_ID_List ents("ents", 1);
+      Amanzi::AmanziMesh::Entity_ID_View ents("ents", 1);
       auto mesh_cache = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh(mesh)); 
       newmesh = meshfactory.create(mesh_cache,ents,Amanzi::AmanziMesh::Entity_kind::FACE,flatten);
       CHECK(!newmesh.is_null());

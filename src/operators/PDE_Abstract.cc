@@ -171,7 +171,7 @@ PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
       u->ScatterMasterToGhosted();
       const Epetra_MultiVector& u_c = *u->ViewComponent("node", true);
 
-      AmanziMesh::Entity_ID_List nodes;
+      AmanziMesh::Entity_ID_View nodes;
 
       for (int c = 0; c < ncells_owned; ++c) {
         nodes = mesh_->getCellNodes(c);

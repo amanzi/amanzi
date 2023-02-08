@@ -209,10 +209,10 @@ MFD3D_LagrangeSerendipity::ProjectorFace_(int f,
 {
   const auto& xf = mesh_->getFaceCentroid(f);
   const auto& normal = mesh_->getFaceNormal(f);
-  SurfaceCoordinateSystem coordsys(xf, normal);
+  AmanziGeometry::SurfaceCoordinateSystem coordsys(xf, normal);
 
-  Teuchos::RCP<SingleFaceMesh> surf_mesh =
-    Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
+  Teuchos::RCP<AmanziMesh::SingleFaceMesh> surf_mesh =
+    Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh_, f, coordsys));
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_cache =
     Teuchos::rcp(new AmanziMesh::Mesh(surf_mesh, Teuchos::null));
 
@@ -410,7 +410,7 @@ MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
       const AmanziGeometry::Point& normal = mymesh->getFaceNormal(f);
 
       // local coordinate system with origin at face centroid
-      SurfaceCoordinateSystem coordsys(xf, normal);
+      AmanziGeometry::SurfaceCoordinateSystem coordsys(xf, normal);
       const auto& tau = *coordsys.tau();
 
       polys[0] = &(vf[n]);
@@ -454,7 +454,7 @@ MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
       // edge moments
       const auto& xe = mymesh->getEdgeCentroid(e);
       double length = mymesh->getEdgeLength(e);
-      std::vector<AmanziGeometry::Point> tau(1, mymesh->getEdgeVector(e));
+      AmanziMesh::Point_List tau(1, mymesh->getEdgeVector(e));
 
       polys[0] = &(ve[n]);
 

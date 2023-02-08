@@ -149,7 +149,7 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD, public PDE_Diffusio
  protected:
   virtual void AddGravityToRHS_();
   inline AmanziGeometry::Point
-  GravitySpecialDirection_(int f, AmanziMesh::Entity_ID_List& workspace) const;
+  GravitySpecialDirection_(int f, AmanziMesh::Entity_ID_View& workspace) const;
   void Init_(Teuchos::ParameterList& plist);
 
  protected:

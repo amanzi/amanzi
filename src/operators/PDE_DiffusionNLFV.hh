@@ -109,7 +109,7 @@ class PDE_DiffusionNLFV : public virtual PDE_Diffusion {
   void InitStencils_();
   void OneSidedFluxCorrections_(int i0, const CompositeVector& u, CompositeVector& sideflux);
   void OneSidedWeightFluxes_(int i0, const CompositeVector& u, CompositeVector& sideflux);
-  int OrderCellsByGlobalId_(const AmanziMesh::Entity_ID_List& cells, int& c1, int& c2);
+  int OrderCellsByGlobalId_(const AmanziMesh::Entity_ID_View& cells, int& c1, int& c2);
 
  protected:
   int dim_;

@@ -77,7 +77,7 @@ UpwindSecondOrder::Compute(const CompositeVector& flux,
   int dim = mesh_->getSpaceDimension();
   AmanziGeometry::Point grad(dim);
 
-  int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
     const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
     int nfaces = faces.size();

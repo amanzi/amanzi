@@ -218,7 +218,7 @@ Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
                                           int my_block_col) const
 {
   std::vector<int> lid_r, lid_c;
-  AmanziMesh::Entity_ID_List entities;
+  AmanziMesh::Entity_ID_View entities;
 
   int num, ierr(0);
   AmanziMesh::Entity_kind kind;
@@ -278,7 +278,7 @@ Operator_Schema::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
                                           int my_block_col) const
 {
   std::vector<int> lid_r, lid_c;
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_View cells;
 
   int ierr(0);
   for (int f = 0; f != nfaces_owned; ++f) {
@@ -290,7 +290,7 @@ Operator_Schema::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
       std::tie(kind, std::ignore, num) = *it;
 
       if (kind == AmanziMesh::Entity_kind::CELL) {
-        cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+        cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) {
@@ -326,7 +326,7 @@ Operator_Schema::SymbolicAssembleMatrixOp(const Op_Node_Schema& op,
                                           int my_block_col) const
 {
   std::vector<int> lid_r, lid_c;
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_View cells;
 
   int ierr(0);
   for (int v = 0; v != nnodes_owned; ++v) {
@@ -338,7 +338,7 @@ Operator_Schema::SymbolicAssembleMatrixOp(const Op_Node_Schema& op,
       std::tie(kind, std::ignore, num) = *it;
 
       if (kind == AmanziMesh::Entity_kind::CELL) {
-        cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_type::ALL);
+        cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) {
@@ -441,7 +441,7 @@ Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   std::vector<int> lid_r, lid_c;
-  AmanziMesh::Entity_ID_List entities;
+  AmanziMesh::Entity_ID_View entities;
 
   int num, ierr(0);
   AmanziMesh::Entity_kind kind;
@@ -503,7 +503,7 @@ Operator_Schema::AssembleMatrixOp(const Op_Face_Schema& op,
   AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
 
   std::vector<int> lid_r, lid_c;
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_View cells;
 
   int ierr(0);
   for (int f = 0; f != nfaces_owned; ++f) {
@@ -515,7 +515,7 @@ Operator_Schema::AssembleMatrixOp(const Op_Face_Schema& op,
       std::tie(kind, std::ignore, num) = *it;
 
       if (kind == AmanziMesh::Entity_kind::CELL) {
-        cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+        cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) {
@@ -552,7 +552,7 @@ Operator_Schema::AssembleMatrixOp(const Op_Node_Schema& op,
   AMANZI_ASSERT(op.matrices.size() == nnodes_owned);
 
   std::vector<int> lid_r, lid_c;
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_View cells;
 
   int ierr(0);
   for (int v = 0; v != nnodes_owned; ++v) {
@@ -564,7 +564,7 @@ Operator_Schema::AssembleMatrixOp(const Op_Node_Schema& op,
       std::tie(kind, std::ignore, num) = *it;
 
       if (kind == AmanziMesh::Entity_kind::CELL) {
-        cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_type::ALL);
+        cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) {

@@ -32,8 +32,8 @@ HDF5::createMeshFile(AmanziMesh::Mesh& mesh_maps, std::string filename)
   group = H5Gcreate(file, "/Mesh", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   // get num_nodes, num_cells
-  int num_nodes = mesh_maps.getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
-  int num_elems = mesh_maps.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int num_nodes = mesh_maps.getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  int num_elems = mesh_maps.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // get coords
   double* nodes = new double[num_nodes * 3];
@@ -61,7 +61,7 @@ HDF5::createMeshFile(AmanziMesh::Mesh& mesh_maps, std::string filename)
   // get number of nodes per element and element type
   ctype_ = mesh_maps.getCellType(0);
   cname_ = to_string(ctype_);
-  AmanziMesh::Entity_ID_List nodeids;
+  AmanziMesh::Entity_ID_View nodeids;
   unsigned int cellid = 0;
   nodeids = mesh_maps.getCellNodes(cellid);
   conn_ = nodeids.size();

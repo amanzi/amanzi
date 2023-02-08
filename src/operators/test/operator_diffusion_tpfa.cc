@@ -75,10 +75,10 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF)
   Analytic04 ana(mesh);
 
   // vector spaces
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   Teuchos::RCP<CompositeVectorSpace> cell_space = Teuchos::rcp(new CompositeVectorSpace());
   cell_space->SetMesh(mesh)->SetComponent("cell", CELL, 1)->SetGhosted();
@@ -128,16 +128,16 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF)
   std::vector<double> bc_value(nfaces_wghost);
   std::vector<double> bc_mixed;
 
-  AmanziMesh::Entity_ID_List left;
-  mesh->getSetEntities("Left side", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL, &left);
+  AmanziMesh::Entity_ID_View left;
+  mesh->getSetEntities("Left side", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL, &left);
   for (int f = 0; f != left.size(); ++f) {
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     mesh->getFaceCentroid(f, &xv);
     bc_value[f] = ana.pressure_exact(xv, 0.0);
   }
 
-  AmanziMesh::Entity_ID_List right;
-  mesh->getSetEntities("Right side", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL, &right);
+  AmanziMesh::Entity_ID_View right;
+  mesh->getSetEntities("Right side", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL, &right);
   for (int f = 0; f != right.size(); ++f) {
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     mesh->getFaceCentroid(f, &xv);

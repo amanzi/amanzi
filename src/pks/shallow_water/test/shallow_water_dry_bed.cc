@@ -48,9 +48,9 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   double g = norm(S->Get<AmanziGeometry::Point>("gravity"));
 
   int ncells_wghost =
-    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::ALL);
   int nnodes_wghost =
-    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE, Amanzi::AmanziMesh::Parallel_kind::ALL);
   std::string passwd("");
 
   auto& B_c =
@@ -86,7 +86,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   for (int c = 0; c < ncells_wghost; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
 
-    Amanzi::AmanziMesh::Entity_ID_List cfaces;
+    Amanzi::AmanziMesh::Entity_ID_View cfaces;
     cfaces = mesh->getCellFaces(c);
     int nfaces_cell = cfaces.size();
 
@@ -97,7 +97,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       Amanzi::AmanziGeometry::Point x0, x1;
       int edge = cfaces[f];
 
-      Amanzi::AmanziMesh::Entity_ID_List face_nodes;
+      Amanzi::AmanziMesh::Entity_ID_View face_nodes;
       face_nodes = mesh->getFaceNodes(edge);
       int n0 = face_nodes[0], n1 = face_nodes[1];
 
@@ -202,7 +202,7 @@ RunTest(int icase)
   double t_old(0.0), t_new(0.0), dt, Tend(0.25);
 
   int ncells_owned =
-    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   while ((t_new < Tend) && (iter >= 0)) {
     double t_out = t_new;

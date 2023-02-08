@@ -106,7 +106,7 @@ SUITE(DIFFUSION)
     CompositeVector& rhs = *fix.global_op->rhs();
     {
       int ncells =
-        fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       auto& rhs_c = *rhs.ViewComponent("cell", false);
       for (int c = 0; c != ncells; ++c) {
         const auto& xc = fix.mesh->getCellCentroid(c);
@@ -118,7 +118,7 @@ SUITE(DIFFUSION)
 
     {
       int ncells =
-        fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       auto& soln_c = *fix.solution->ViewComponent("cell", false);
       for (int c = 0; c != ncells; ++c) {
         const auto& xc = fix.mesh->getCellCentroid(c);
@@ -165,7 +165,7 @@ SUITE(DIFFUSION)
     CompositeVector& rhs = *fix.global_op->rhs();
     {
       int ncells =
-        fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       auto& rhs_c = *rhs.ViewComponent("cell", false);
       for (int c = 0; c != ncells; ++c) {
         const auto& xc = fix.mesh->getCellCentroid(c);
@@ -177,7 +177,7 @@ SUITE(DIFFUSION)
 
     {
       int ncells =
-        fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       auto& soln_c = *fix.solution->ViewComponent("cell");
       for (int c = 0; c != ncells; ++c) {
         const auto& xc = fix.mesh->getCellCentroid(c);
@@ -187,7 +187,7 @@ SUITE(DIFFUSION)
 
     {
       int nfaces =
-        fix.mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+        fix.mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
       auto& soln_f = *fix.solution->ViewComponent("face", false);
       for (int f = 0; f != nfaces; ++f) {
         const auto& xf = fix.mesh->getFaceCentroid(f);

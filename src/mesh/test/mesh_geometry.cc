@@ -270,9 +270,9 @@ TEST(MESH_CONST_DANGER)
               << "Testing const correctness of mesh views" << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createStructuredUnitQuad(Preference{frm}, 2,2);
-    Entity_ID_List cfaces2;
+    Entity_ID_View cfaces2;
     {
-      auto cfaces = mesh->getCellFaces<AccessPattern::CACHE>(0);
+      auto cfaces = mesh->getCellFaces<AccessPattern_kind::CACHE>(0);
       Kokkos::resize(cfaces2, cfaces.size());
       Kokkos::deep_copy(cfaces2, cfaces);
       CHECK(cfaces2(0) != -1);

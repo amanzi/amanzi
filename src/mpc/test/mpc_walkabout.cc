@@ -73,9 +73,9 @@ TEST(MPC_WALKABOUT_2D)
   }
 
   // verify velocity at all points
-  int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   std::string passwd("");
   auto& flow = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
@@ -153,8 +153,8 @@ TEST(MPC_WALKABOUT_3D)
   // -- overwrite flow & pressure
   std::cout << "Start test of 3D Walkabout\n";
   AmanziGeometry::Point vel(1.0, 2.0, 3.0);
-  int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   std::string passwd("");
   auto& flow = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");

@@ -50,7 +50,7 @@ DenseVector::DenseVector(const DenseVector& B)
 }
 
 
-DenseVector::DenseVector(const std::vector<double>& B)
+DenseVector::DenseVector(const AmanziMesh::Double_List& B)
 {
   m_ = B.size();
   mem_ = m_;

@@ -40,7 +40,7 @@ Operator_Node::UpdateRHS(const CompositeVector& source, bool volume_included)
     Epetra_MultiVector& rhs_v = *rhs_->ViewComponent("node", true);
     const Epetra_MultiVector& source_v = *source.ViewComponent("node", true);
 
-    AmanziMesh::Entity_ID_List nodes;
+    AmanziMesh::Entity_ID_View nodes;
 
     for (int c = 0; c != ncells_owned; ++c) {
       nodes = mesh_->getCellNodes(c);
@@ -70,7 +70,7 @@ Operator_Node::ApplyMatrixFreeOp(const Op_Cell_Node& op,
   {
     Epetra_MultiVector& Yn = *Y.ViewComponent("node", true);
 
-    AmanziMesh::Entity_ID_List nodes;
+    AmanziMesh::Entity_ID_View nodes;
     for (int c = 0; c != ncells_owned; ++c) {
       nodes = mesh_->getCellNodes(c);
       int nnodes = nodes.size();
@@ -125,7 +125,7 @@ Operator_Node::SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
   const std::vector<int>& node_col_inds = map.GhostIndices(my_block_col, "node", 0);
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_View nodes;
   for (int c = 0; c != ncells_owned; ++c) {
     nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
@@ -186,7 +186,7 @@ Operator_Node::AssembleMatrixOp(const Op_Cell_Node& op,
   const std::vector<int>& node_col_inds = map.GhostIndices(my_block_col, "node", 0);
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_View nodes;
   for (int c = 0; c != ncells_owned; ++c) {
     nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();

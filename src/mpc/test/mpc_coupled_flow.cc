@@ -111,7 +111,7 @@ TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE)
 
   bool flag(true);
   int nfaces =
-    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   for (int f = 0; f < nfaces; ++f) {
     const auto& normal = mesh->getFaceNormal(f);

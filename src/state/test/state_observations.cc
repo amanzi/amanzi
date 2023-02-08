@@ -221,17 +221,17 @@ SUITE(STATE_OBSERVATIONS)
   {
     setup();
     int num_cells =
-      S->GetMesh("domain")->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      S->GetMesh("domain")->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     int num_cells_total = 0;
     S->GetMesh("domain")->getComm()->SumAll(&num_cells, &num_cells_total, 1);
     CHECK_EQUAL(27, num_cells_total);
 
     int faces_middle = S->GetMesh("domain")->getSetSize(
-      "middle", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      "middle", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_EQUAL(0, faces_middle);
 
     int cells_all =
-      S->GetMesh("domain")->getSetSize("all", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      S->GetMesh("domain")->getSetSize("all", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     int cells_all_total = 0;
     S->GetMesh("domain")->getComm()->SumAll(&cells_all, &cells_all_total, 1);
     CHECK_EQUAL(27, cells_all_total);

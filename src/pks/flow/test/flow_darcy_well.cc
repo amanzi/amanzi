@@ -369,7 +369,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL)
   double pw = 10.0;
   double depth = 2.5;
 
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   double err = 0.;
   double sol = 0.;
   for (int c = 0; c < ncells; c++) {

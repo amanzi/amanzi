@@ -220,7 +220,7 @@ RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   mesh0->BuildCache();
   mesh1->BuildCache();
 
-  int ncells_owned = mesh0->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh0->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // create and initialize cell-based fields
   auto cvs1 = Teuchos::rcp(new CompositeVectorSpace());

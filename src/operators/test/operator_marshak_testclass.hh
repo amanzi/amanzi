@@ -46,7 +46,7 @@ class HeatConduction {
     const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
     Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true);
 
-    int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     for (int c = 0; c < ncells; c++) { values_c[0][c] = std::pow(uc[0][c], 3.0); }
 
     // add boundary face component

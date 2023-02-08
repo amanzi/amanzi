@@ -46,7 +46,7 @@ class AnalyticBase {
     inf_err = 0.0;
 
     int ncells =
-      mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+      mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
     for (int c = 0; c < ncells; c++) {
       const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
       double tmp = temperature_exact(xc, t);

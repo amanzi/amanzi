@@ -18,7 +18,7 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 MeshCache<MEM>::MeshCache()
   : is_ordered_(false),
     has_edges_(false),
@@ -26,7 +26,7 @@ MeshCache<MEM>::MeshCache()
 {}
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::setParentMesh(const Teuchos::RCP<const MeshCache>& parent)
 {
   if (parent_ != Teuchos::null && parent_ != parent) {
@@ -36,7 +36,7 @@ void MeshCache<MEM>::setParentMesh(const Teuchos::RCP<const MeshCache>& parent)
   parent_ = parent;
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_mesh) {
   framework_mesh_ = framework_mesh;
   // always save the algorithms, so we can throw away the data
@@ -50,31 +50,31 @@ void MeshCache<MEM>::setMeshFramework(const Teuchos::RCP<MeshFramework>& framewo
   is_logical_ = framework_mesh_->isLogical();
   is_ordered_ = framework_mesh_->isOrdered();
   has_edges_ = framework_mesh_->hasEdges();
-  ncells_owned = framework_mesh_->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
-  ncells_all = framework_mesh_->getNumEntities(Entity_kind::CELL, Parallel_type::ALL);
-  nfaces_owned = framework_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-  nfaces_all = framework_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::ALL);
+  ncells_owned = framework_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+  ncells_all = framework_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::ALL);
+  nfaces_owned = framework_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+  nfaces_all = framework_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
   if (has_edges_) {
-    nedges_owned = framework_mesh_->getNumEntities(Entity_kind::EDGE, Parallel_type::OWNED);
-    nedges_all = framework_mesh_->getNumEntities(Entity_kind::EDGE, Parallel_type::ALL);
+    nedges_owned = framework_mesh_->getNumEntities(Entity_kind::EDGE, Parallel_kind::OWNED);
+    nedges_all = framework_mesh_->getNumEntities(Entity_kind::EDGE, Parallel_kind::ALL);
   }
   if (has_nodes_) {
-    nnodes_owned = framework_mesh_->getNumEntities(Entity_kind::NODE, Parallel_type::OWNED);
-    nnodes_all = framework_mesh_->getNumEntities(Entity_kind::NODE, Parallel_type::ALL);
+    nnodes_owned = framework_mesh_->getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
+    nnodes_all = framework_mesh_->getNumEntities(Entity_kind::NODE, Parallel_kind::ALL);
   }
   bool natural_ordered_maps = plist_->get<bool>("natural map ordering", false);
   maps_.initialize(*framework_mesh_, natural_ordered_maps);
 
-  nboundary_faces_owned = maps_.getNBoundaryFaces(Parallel_type::OWNED);
-  nboundary_faces_all = maps_.getNBoundaryFaces(Parallel_type::ALL);
+  nboundary_faces_owned = maps_.getNBoundaryFaces(Parallel_kind::OWNED);
+  nboundary_faces_all = maps_.getNBoundaryFaces(Parallel_kind::ALL);
   if(hasNodes()){
-    nboundary_nodes_owned = maps_.getNBoundaryNodes(Parallel_type::OWNED);
-    nboundary_nodes_all = maps_.getNBoundaryNodes(Parallel_type::ALL);
+    nboundary_nodes_owned = maps_.getNBoundaryNodes(Parallel_kind::OWNED);
+    nboundary_nodes_all = maps_.getNBoundaryNodes(Parallel_kind::ALL);
   }
 }
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 bool
 MeshCache<MEM>::isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const {
   if (rtype == AmanziGeometry::RegionType::LABELEDSET && framework_mesh_.get()) {
@@ -84,11 +84,11 @@ MeshCache<MEM>::isValidSetType(const AmanziGeometry::RegionType rtype, const Ent
 }
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 int
 MeshCache<MEM>::getSetSize(const std::string& region_name,
                       const Entity_kind kind,
-                      const Parallel_type ptype) const {
+                      const Parallel_kind ptype) const {
   return getSetEntities(region_name, kind, ptype).size();
 }
 
@@ -102,11 +102,11 @@ MeshCache<MEM>::getSetSize(const std::string& region_name,
 // Don't cache "ALL" or "BOUNDARY" labeled sets.  Are there others that are
 // just as fast to create as to cache?
 //
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 decltype(auto)
 MeshCache<MEM>::getSetEntities(const std::string& region_name,
         const Entity_kind kind,
-        const Parallel_type ptype) const
+        const Parallel_kind ptype) const
 {
   auto key = std::make_tuple(region_name, kind, ptype);
   if (!sets_.count(key)) {
@@ -116,7 +116,7 @@ MeshCache<MEM>::getSetEntities(const std::string& region_name,
       msg << "Cannot find region of name \"" << region_name << "\" in the geometric model.";
       Exceptions::amanzi_throw(msg);
     }
-    MeshCache<MemSpace_type::HOST> this_on_host(*this);
+    MeshCache<MemSpace_kind::HOST> this_on_host(*this);
     sets_[key] = asDualView(resolveMeshSet(*region, kind, ptype, this_on_host));
 
     // Error on zero -- some zeros already error internally (at the framework
@@ -134,11 +134,11 @@ MeshCache<MEM>::getSetEntities(const std::string& region_name,
   return view<MEM>(sets_.at(key)); 
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 decltype(auto)
 MeshCache<MEM>::getSetEntitiesAndVolumeFractions(const std::string& region_name,
         const Entity_kind kind,
-        const Parallel_type ptype) const
+        const Parallel_kind ptype) const
 {
   auto key = std::make_tuple(region_name, kind, ptype);
   if (!set_vol_fracs_.count(key)) {
@@ -149,20 +149,20 @@ MeshCache<MEM>::getSetEntitiesAndVolumeFractions(const std::string& region_name,
       Exceptions::amanzi_throw(msg);
     }
 
-    Double_List vol_fracs_list;
-    MeshCache<MemSpace_type::HOST> this_on_host(*this);
+    Double_View vol_fracs_list;
+    MeshCache<MemSpace_kind::HOST> this_on_host(*this);
     sets_[key] = asDualView(resolveMeshSetVolumeFractions(*region, kind, ptype, vol_fracs_list, this_on_host));
     set_vol_fracs_[key] = asDualView<double>(vol_fracs_list);
   }
-  Double_List vofs = view<MEM>(set_vol_fracs_.at(key)); 
-  Entity_ID_List ents = view<MEM>(sets_.at(key));
+  Double_View vofs = view<MEM>(set_vol_fracs_.at(key)); 
+  Entity_ID_View ents = view<MEM>(sets_.at(key));
   return std::make_pair(ents, vofs);
 }
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 Entity_ID
-MeshCache<MEM>::getNumEntities(const Entity_kind kind, const Parallel_type ptype) const
+MeshCache<MEM>::getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const
 {
   Entity_ID nowned, nall;
   switch(kind) {
@@ -189,13 +189,13 @@ MeshCache<MEM>::getNumEntities(const Entity_kind kind, const Parallel_type ptype
   }
 
   switch(ptype) {
-    case (Parallel_type::OWNED) :
+    case (Parallel_kind::OWNED) :
       return nowned;
       break;
-    case (Parallel_type::ALL) :
+    case (Parallel_kind::ALL) :
       return nall;
       break;
-    case Parallel_type::GHOST :
+    case Parallel_kind::GHOST :
       return nall - nowned;
       break;
     default :
@@ -203,8 +203,8 @@ MeshCache<MEM>::getNumEntities(const Entity_kind kind, const Parallel_type ptype
   }
 }
 
-template<MemSpace_type MEM> 
-template<AccessPattern AP>
+template<MemSpace_kind MEM> 
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) MeshCache<MEM>::getCentroid(const Entity_kind kind, const Entity_ID ent) const {
   switch(kind) {
@@ -227,7 +227,7 @@ decltype(auto) MeshCache<MEM>::getCentroid(const Entity_kind kind, const Entity_
 //===================
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) 
 MeshCache<MEM>::getFaceEdges(const Entity_ID f) const{
@@ -236,7 +236,7 @@ MeshCache<MEM>::getFaceEdges(const Entity_ID f) const{
     data_.face_edges,
     framework_mesh_,
     [&](const int i) { 
-      Entity_ID_List res; 
+      Entity_ID_View res; 
       framework_mesh_->getFaceEdges(f,res); 
       return res;
     }, 
@@ -245,7 +245,7 @@ MeshCache<MEM>::getFaceEdges(const Entity_ID f) const{
     f);
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 const Entity_ID& 
 MeshCache<MEM>::getFaceEdge(const Entity_ID f, const size_type i) const{
@@ -253,32 +253,32 @@ MeshCache<MEM>::getFaceEdge(const Entity_ID f, const size_type i) const{
   return data_.face_edges.get<MEM>(f,i);
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) // Kokkos::pair<cEntity_ID_View, cEntity_Direction_View>
 MeshCache<MEM>::getFaceEdgesAndDirections(const Entity_ID f) const{
-  Entity_ID_List edges; 
-  Entity_Direction_List dirs; 
+  Entity_ID_View edges; 
+  Entity_Direction_View dirs; 
   framework_mesh_->getFaceEdgesAndDirs(f,edges,&dirs);
   return Kokkos::pair(edges, dirs);
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 void 
 MeshCache<MEM>::getFaceEdges(const Entity_ID f, 
-                            Entity_ID_List& edges) const{
+                            Entity_ID_View& edges) const{
   auto [fedges, dirs] = getFaceEdgesAndDirections(f);
   return fedges;
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 void 
 MeshCache<MEM>::getFaceEdgesAndDirs(const Entity_ID f,
-                          Entity_ID_List& edges,
+                          Entity_ID_View& edges,
                           Entity_Direction_View * const dirs) const{
-  if constexpr(MEM == MemSpace_type::DEVICE) {
+  if constexpr(MEM == MemSpace_kind::DEVICE) {
 
     if (data_.face_edges_cached) {
       edges = data_.face_edges.getRow<MEM>(f);
@@ -302,18 +302,18 @@ MeshCache<MEM>::getFaceEdgesAndDirs(const Entity_ID f,
 }
 
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 size_type
-MeshCache<MEM>::getFaceNumCells(const Entity_ID f, const Parallel_type ptype) const
+MeshCache<MEM>::getFaceNumCells(const Entity_ID f, const Parallel_kind ptype) const
 {
-  static_assert(AP != AccessPattern::COMPUTE);
-  static_assert(AP != AccessPattern::FRAMEWORK);
+  static_assert(AP != AccessPattern_kind::COMPUTE);
+  static_assert(AP != AccessPattern_kind::FRAMEWORK);
   // this is where a generic function would probably help?
-  if constexpr(AP == AccessPattern::CACHE) {
+  if constexpr(AP == AccessPattern_kind::CACHE) {
     assert(data_.face_cells_cached);
-    if (ptype == Parallel_type::ALL) {
+    if (ptype == Parallel_kind::ALL) {
       return data_.face_cells.size<MEM>(f);
     } else {
       int count = 0;
@@ -325,24 +325,24 @@ MeshCache<MEM>::getFaceNumCells(const Entity_ID f, const Parallel_type ptype) co
       return count;
     }
   } else {
-    if (data_.face_cells_cached) return getFaceNumCells<AccessPattern::CACHE>(f);
+    if (data_.face_cells_cached) return getFaceNumCells<AccessPattern_kind::CACHE>(f);
     return getFaceCells(f).size();
   }
 }
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) // cEntity_ID_View
-MeshCache<MEM>::getFaceCells(const Entity_ID f, const Parallel_type ptype) const
+MeshCache<MEM>::getFaceCells(const Entity_ID f, const Parallel_kind ptype) const
 {
-  Entity_ID_List fcells; 
+  Entity_ID_View fcells; 
   getFaceCells(f, ptype, fcells);
   return fcells;
 }
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 const Entity_ID&
 MeshCache<MEM>::getFaceCell(const Entity_ID f, const size_type i) const
@@ -352,14 +352,14 @@ MeshCache<MEM>::getFaceCell(const Entity_ID f, const size_type i) const
 }
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 void
 MeshCache<MEM>::getFaceCells(const Entity_ID f,
-                             const Parallel_type ptype,
-                             Entity_ID_List & fcells) const
+                             const Parallel_kind ptype,
+                             Entity_ID_View & fcells) const
 {
-  if constexpr(MEM == MemSpace_type::DEVICE) {
+  if constexpr(MEM == MemSpace_kind::DEVICE) {
     if (data_.face_cells_cached) {
       fcells = data_.face_cells.getRow<MEM>(f);
       return;
@@ -380,22 +380,22 @@ MeshCache<MEM>::getFaceCells(const Entity_ID f,
 
 
 // Normal vector of a face
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 AmanziGeometry::Point MeshCache<MEM>::getFaceNormal(const Entity_ID f) const
 {
   return getFaceNormal<AP>(f, -1, nullptr);
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 AmanziGeometry::Point MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Entity_ID c,
         int* orientation) const
 {
   AmanziGeometry::Point normal;
-  if constexpr (MEM == MemSpace_type::DEVICE){
+  if constexpr (MEM == MemSpace_kind::DEVICE){
     assert(data_.face_geometry_cached); 
   }else {
     if(!data_.face_geometry_cached)
@@ -403,7 +403,7 @@ AmanziGeometry::Point MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Ent
         return framework_mesh_->getFaceNormal(f, c, orientation); 
   }
 
-  auto fcells = getFaceCells(f, Parallel_type::ALL);
+  auto fcells = getFaceCells(f, Parallel_kind::ALL);
   if (orientation) *orientation = 0;
 
   Entity_ID cc;
@@ -433,8 +433,8 @@ AmanziGeometry::Point MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Ent
 
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) MeshCache<MEM>::getFaceCentroid(const Entity_ID f) const
 {
@@ -447,18 +447,18 @@ decltype(auto) MeshCache<MEM>::getFaceCentroid(const Entity_ID f) const
 }
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) // cEntity_ID_View
 MeshCache<MEM>::getFaceNodes(const Entity_ID f) const
 {
-  Entity_ID_List fcells; 
+  Entity_ID_View fcells; 
   getFaceNodes(f, fcells);
   return fcells;
 }
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 const Entity_ID&
 MeshCache<MEM>::getFaceNode(const Entity_ID f, const size_type i) const
@@ -468,13 +468,13 @@ MeshCache<MEM>::getFaceNode(const Entity_ID f, const size_type i) const
 }
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 void
 MeshCache<MEM>::getFaceNodes(const Entity_ID f,
-                             Entity_ID_List & fcells) const
+                             Entity_ID_View & fcells) const
 {
-  if constexpr(MEM == MemSpace_type::DEVICE) {
+  if constexpr(MEM == MemSpace_kind::DEVICE) {
     if (data_.face_nodes_cached) {
       fcells = data_.face_nodes.getRow<MEM>(f);
       return;
@@ -493,8 +493,8 @@ MeshCache<MEM>::getFaceNodes(const Entity_ID f,
   assert(false); 
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 double MeshCache<MEM>::getFaceArea(const Entity_ID f) const
 {
@@ -506,8 +506,8 @@ double MeshCache<MEM>::getFaceArea(const Entity_ID f) const
     f);
 }
 
-template<MemSpace_type MEM> 
-template<AccessPattern AP>
+template<MemSpace_kind MEM> 
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) MeshCache<MEM>::getFaceCoordinates(const Entity_ID f) const {
   return RaggedGetter<MEM,AP>::get(data_.face_coordinates_cached,
@@ -521,13 +521,13 @@ decltype(auto) MeshCache<MEM>::getFaceCoordinates(const Entity_ID f) const {
   f);
 }
 
-template<MemSpace_type MEM> 
+template<MemSpace_kind MEM> 
 KOKKOS_INLINE_FUNCTION
 std::vector<int> MeshCache<MEM>::getFaceCellEdgeMap(const Entity_ID faceid,
                                  const Entity_ID cellid) const
 {
   std::vector<int> map; 
-  Entity_ID_List fedgeids;
+  Entity_ID_View fedgeids;
   Entity_Direction_View fedgedirs;
 
   getFaceEdgesAndDirs(faceid, fedgeids, &fedgedirs);
@@ -552,12 +552,12 @@ std::vector<int> MeshCache<MEM>::getFaceCellEdgeMap(const Entity_ID faceid,
 //    getCell* 
 //===================
 
-template<MemSpace_type MEM> 
+template<MemSpace_kind MEM> 
 KOKKOS_INLINE_FUNCTION
 std::size_t MeshCache<MEM>::getCellMaxFaces() const
 {
   std::size_t n(0);
-  int ncells = getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
+  int ncells = getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   for (int c = 0; c < ncells; ++c) { 
     auto v = getCellNumFaces(c); 
     if(n < v)
@@ -566,13 +566,13 @@ std::size_t MeshCache<MEM>::getCellMaxFaces() const
   return n;
 }
 
-template<MemSpace_type MEM> 
+template<MemSpace_kind MEM> 
 KOKKOS_INLINE_FUNCTION
 std::size_t MeshCache<MEM>::getCellMaxEdges() const
 {
   std::size_t n(0);
   if (hasEdges()) {
-    int ncells = getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
+    int ncells = getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
     for (int c = 0; c < ncells; ++c) {
       const auto& edges = getCellEdges(c);
       if(n < edges.size())
@@ -583,8 +583,8 @@ std::size_t MeshCache<MEM>::getCellMaxEdges() const
 }
 
 // extent
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) MeshCache<MEM>::getCellVolume(const Entity_ID c) const
 {
@@ -598,48 +598,48 @@ decltype(auto) MeshCache<MEM>::getCellVolume(const Entity_ID c) const
     c);
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 size_type
 MeshCache<MEM>::getCellNumFaces(const Entity_ID c) const
 {
-  static_assert(AP != AccessPattern::COMPUTE);
-  static_assert(AP != AccessPattern::FRAMEWORK);
+  static_assert(AP != AccessPattern_kind::COMPUTE);
+  static_assert(AP != AccessPattern_kind::FRAMEWORK);
   // this is where a generic function would probably help?
-  if constexpr(AP == AccessPattern::CACHE) {
+  if constexpr(AP == AccessPattern_kind::CACHE) {
     assert(data_.cell_faces_cached);
     return data_.cell_faces.size<MEM>(c);
   } else {
-    if (data_.cell_faces_cached) return getCellNumFaces<AccessPattern::CACHE>(c);
+    if (data_.cell_faces_cached) return getCellNumFaces<AccessPattern_kind::CACHE>(c);
     return getCellFaces(c).size();
   }
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 decltype(auto)
 MeshCache<MEM>::getCellFaces(const Entity_ID c) const
 {
-  Entity_ID_List cfaces; 
+  Entity_ID_View cfaces; 
   getCellFaces<AP>(c, cfaces);
   return cfaces; 
 }
 
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 void
 MeshCache<MEM>::getCellFaces(const Entity_ID c,
-  Entity_ID_List& cfaces) const
+  Entity_ID_View& cfaces) const
 {
   cfaces = RaggedGetter<MEM,AP>::get(data_.cell_faces_cached,
     data_.cell_faces,
     framework_mesh_, 
     [&](const int i) { 
-      Entity_ID_List cf; 
+      Entity_ID_View cf; 
       framework_mesh_->getCellFaces(i, cf);
       return cf; }, 
     nullptr, 
@@ -649,7 +649,7 @@ MeshCache<MEM>::getCellFaces(const Entity_ID c,
 
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 const Entity_ID& MeshCache<MEM>::getCellFace(const Entity_ID c, const size_type i) const
 {
@@ -658,26 +658,26 @@ const Entity_ID& MeshCache<MEM>::getCellFace(const Entity_ID c, const size_type 
 }
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) // Kokkos::pair<cEntity_ID_View, cEntity_Direction_View>
 MeshCache<MEM>::getCellFacesAndDirections(const Entity_ID c) const
 {
-  Entity_ID_List cfaces; 
+  Entity_ID_View cfaces; 
   Entity_Direction_View dirs; 
   getCellFacesAndDirs(c, cfaces, &dirs);
   return Kokkos::pair(cfaces, dirs);
 }
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 void
 MeshCache<MEM>::getCellFacesAndDirs(const Entity_ID c,
-                         Entity_ID_List& faces,
+                         Entity_ID_View& faces,
                          Entity_Direction_View * const dirs) const
 {
-  if constexpr(MEM == MemSpace_type::DEVICE) {
+  if constexpr(MEM == MemSpace_kind::DEVICE) {
 
     if (data_.cell_faces_cached) {
       faces = data_.cell_faces.getRow<MEM>(c);
@@ -701,27 +701,27 @@ MeshCache<MEM>::getCellFacesAndDirs(const Entity_ID c,
 }
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) // Kokkos::pair<cEntity_ID_View, cPoint_View>
 MeshCache<MEM>::getCellFacesAndBisectors(const Entity_ID c) const
 {
-  Entity_ID_List cfaces;
-  Point_List bisectors; 
+  Entity_ID_View cfaces;
+  Point_View bisectors; 
   getCellFacesAndBisectors(c, cfaces, &bisectors);
   return Kokkos::pair(cfaces, bisectors);
 }
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 void
 MeshCache<MEM>::getCellFacesAndBisectors(
   const Entity_ID c,
-  Entity_ID_List& faces,
-  Point_List * const bisectors) const
+  Entity_ID_View& faces,
+  Point_View * const bisectors) const
 {
-  if constexpr(MEM == MemSpace_type::DEVICE) {
+  if constexpr(MEM == MemSpace_kind::DEVICE) {
 
     if (data_.cell_faces_cached) {
       faces = data_.cell_faces.getRow<MEM>(c);
@@ -744,8 +744,8 @@ MeshCache<MEM>::getCellFacesAndBisectors(
   assert(false); 
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) MeshCache<MEM>::getCellCentroid(const Entity_ID c) const
 {
@@ -754,7 +754,7 @@ decltype(auto) MeshCache<MEM>::getCellCentroid(const Entity_ID c) const
     framework_mesh_,
     [&](const int i) { return framework_mesh_->getCellCentroid(i); }, 
     [&](const int i) {
-      if constexpr(MEM == MemSpace_type::DEVICE){
+      if constexpr(MEM == MemSpace_kind::DEVICE){
         constexpr auto nnodes = MeshCacheData::static_max_nnodes_; 
         Entity_ID v[nnodes];
         Kokkos::MeshView<Entity_ID*, Kokkos::DefaultExecutionSpace, 
@@ -768,7 +768,7 @@ decltype(auto) MeshCache<MEM>::getCellCentroid(const Entity_ID c) const
         return res/nodes.size(); 
       } else {
         constexpr auto nnodes = MeshCacheData::static_max_nnodes_; 
-        Entity_ID_List nodes("nodes",nnodes);
+        Entity_ID_View nodes("nodes",nnodes);
         getCellNodes(c,nodes);
         AmanziGeometry::Point res;
         for(const auto& n: nodes){
@@ -781,36 +781,36 @@ decltype(auto) MeshCache<MEM>::getCellCentroid(const Entity_ID c) const
     c);
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 decltype(auto)
 MeshCache<MEM>::getCellNodes(const Entity_ID c) const{
-  Entity_ID_List nodes;
+  Entity_ID_View nodes;
   getCellNodes(c,nodes);
   return nodes;
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 Entity_ID 
 MeshCache<MEM>::getCellNode(const Entity_ID c, const size_type i) const{
   // Compute list and use only one? 
-  Entity_ID_List nodes;
+  Entity_ID_View nodes;
   getCellNodes(c,nodes);  
   return nodes[i];
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 template<typename ViewType> // Can be normal, unmanaged or vector 
 KOKKOS_INLINE_FUNCTION
 void
 MeshCache<MEM>::getCellNodes(const Entity_ID c, ViewType& nodes) const{
   
-  nodes = RaggedGetter<MEM,AccessPattern::DEFAULT>::get(data_.cell_nodes_cached,
+  nodes = RaggedGetter<MEM,AccessPattern_kind::DEFAULT>::get(data_.cell_nodes_cached,
     data_.cell_nodes,
     framework_mesh_, 
     [&](const int i) { 
-      Entity_ID_List cf; 
+      Entity_ID_View cf; 
       framework_mesh_->getCellNodes(i, cf);
       return cf; }, 
     nullptr, 
@@ -818,7 +818,7 @@ MeshCache<MEM>::getCellNodes(const Entity_ID c, ViewType& nodes) const{
     c);
 
   #if 0 
-  if constexpr (MEM == MemSpace_type::DEVICE){
+  if constexpr (MEM == MemSpace_kind::DEVICE){
     assert(data_.cell_faces_cached); 
     assert(data_.face_nodes_cached); 
     for(int i = 0 ; i < nodes.size(); ++i)
@@ -850,8 +850,8 @@ MeshCache<MEM>::getCellNodes(const Entity_ID c, ViewType& nodes) const{
   #endif 
 }
 
-template<MemSpace_type MEM> 
-template<AccessPattern AP>
+template<MemSpace_kind MEM> 
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) MeshCache<MEM>::getCellCoordinates(const Entity_ID c) const {
   return RaggedGetter<MEM,AP>::get(data_.cell_coordinates_cached,
@@ -866,30 +866,30 @@ decltype(auto) MeshCache<MEM>::getCellCoordinates(const Entity_ID c) const {
 }
 
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 decltype(auto)
 MeshCache<MEM>::getCellEdges(const Entity_ID c) const
 {
-  Entity_ID_List cedges; 
+  Entity_ID_View cedges; 
   getCellEdges<AP>(c, cedges);
   return cedges; 
 }
 
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 void
 MeshCache<MEM>::getCellEdges(const Entity_ID c,
-  Entity_ID_List& cedges) const
+  Entity_ID_View& cedges) const
 {
   cedges = RaggedGetter<MEM,AP>::get(data_.cell_edges_cached,
     data_.cell_edges,
     framework_mesh_, 
     [&](const int i) { 
-      Entity_ID_List ce; 
+      Entity_ID_View ce; 
       framework_mesh_->getCellEdges(i, ce);
       return ce; }, 
     nullptr, 
@@ -899,7 +899,7 @@ MeshCache<MEM>::getCellEdges(const Entity_ID c,
 
 
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
 const Entity_ID& MeshCache<MEM>::getCellEdge(const Entity_ID c, const size_type i) const
 {
@@ -907,11 +907,11 @@ const Entity_ID& MeshCache<MEM>::getCellEdge(const Entity_ID c, const size_type 
   return data_.cell_edges.get<MEM>(c,i);
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 std::size_t MeshCache<MEM>::getCellMaxNodes() const
 {
   std::size_t n(0);
-  int ncells = getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
+  int ncells = getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   for (int c = 0; c < ncells; ++c) {
     auto nodes = getCellNodes(c);
     if(n < nodes.size())
@@ -924,8 +924,8 @@ std::size_t MeshCache<MEM>::getCellMaxNodes() const
 //    getNode* 
 //===================
 
-template<MemSpace_type MEM> 
-template<AccessPattern AP>
+template<MemSpace_kind MEM> 
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION 
 decltype(auto) 
 MeshCache<MEM>::getNodeCoordinate(const Entity_ID n) const{
@@ -939,27 +939,27 @@ MeshCache<MEM>::getNodeCoordinate(const Entity_ID n) const{
     n);
 }
 
-template<MemSpace_type MEM> 
-template<AccessPattern AP>
+template<MemSpace_kind MEM> 
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) MeshCache<MEM>::getNodeCells(const Entity_ID n,
-        const Parallel_type ptype) const{
-  Entity_ID_List cells; 
+        const Parallel_kind ptype) const{
+  Entity_ID_View cells; 
   getNodeCells<AP>(n,ptype,cells); 
   return cells; 
 }
 
-template<MemSpace_type MEM> 
-template<AccessPattern AP>
+template<MemSpace_kind MEM> 
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 void MeshCache<MEM>::getNodeCells(const Entity_ID n,
-                  const Parallel_type ptype,
-                  Entity_ID_List& cells) const{
+                  const Parallel_kind ptype,
+                  Entity_ID_View& cells) const{
   cells = RaggedGetter<MEM,AP>::get(data_.node_cells_cached,
     data_.node_cells,
     framework_mesh_, 
     [&](const int i) { 
-      Entity_ID_List cells; 
+      Entity_ID_View cells; 
       framework_mesh_->getNodeCells(i,ptype,cells);
       return cells; 
     }, 
@@ -968,28 +968,28 @@ void MeshCache<MEM>::getNodeCells(const Entity_ID n,
     n);
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
-decltype(auto) MeshCache<MEM>::getNodeFaces(const Entity_ID n, const Parallel_type ptype) const
+decltype(auto) MeshCache<MEM>::getNodeFaces(const Entity_ID n, const Parallel_kind ptype) const
 {
-  Entity_ID_List faces; 
+  Entity_ID_View faces; 
   getNodeFaces<AP>(n,ptype,faces); 
   return faces; 
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 void MeshCache<MEM>::getNodeFaces(const Entity_ID n,
-                  const Parallel_type ptype,
-                  Entity_ID_List& faces) const
+                  const Parallel_kind ptype,
+                  Entity_ID_View& faces) const
 {
   faces = RaggedGetter<MEM,AP>::get(data_.node_faces_cached,
     data_.node_faces,
     framework_mesh_, 
     [&](const int i) { 
-      Entity_ID_List faces; 
+      Entity_ID_View faces; 
       framework_mesh_->getNodeFaces(i,ptype,faces);
       return faces; 
     }, 
@@ -998,38 +998,38 @@ void MeshCache<MEM>::getNodeFaces(const Entity_ID n,
     n);
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION
-Cell_type MeshCache<MEM>::getCellType(const Entity_ID c) const
+Cell_kind MeshCache<MEM>::getCellType(const Entity_ID c) const
 {
   return MeshAlgorithms::getCellType(*this, c);
 }
 
-template<MemSpace_type MEM>
-Parallel_type
+template<MemSpace_kind MEM>
+Parallel_kind
 MeshCache<MEM>::getParallelType(const Entity_kind& kind, const Entity_ID id) const
 {
-  if (id < getNumEntities(kind, Parallel_type::OWNED)) {
-    return Parallel_type::OWNED;
-  } else if (id < getNumEntities(kind, Parallel_type::ALL)) {
-    return Parallel_type::GHOST;
+  if (id < getNumEntities(kind, Parallel_kind::OWNED)) {
+    return Parallel_kind::OWNED;
+  } else if (id < getNumEntities(kind, Parallel_kind::ALL)) {
+    return Parallel_kind::GHOST;
   }
-  return Parallel_type::UNKNOWN;
+  return Parallel_kind::UNKNOWN;
 }
 
 //==================
 //    getEdge*
 //==================
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) MeshCache<MEM>::getEdgeNodes(const Entity_ID e) const {
   return RaggedGetter<MEM,AP>::get(data_.edge_nodes_cached,
     data_.edge_nodes,
     framework_mesh_, 
     [&](const int i) { 
-      Entity_ID_List nodes; 
+      Entity_ID_View nodes; 
       framework_mesh_->getEdgeNodes(i,nodes);
       return nodes; 
     }, 
@@ -1038,27 +1038,27 @@ decltype(auto) MeshCache<MEM>::getEdgeNodes(const Entity_ID e) const {
     e);
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) MeshCache<MEM>::getEdgeNode(const Entity_ID e, const size_type i) const{
   // Compute list and use only one? 
-  Entity_ID_List nodes;
+  Entity_ID_View nodes;
   getEdgeNodes(e,nodes);  
   return nodes[i];
 }
 
 
   //[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 void MeshCache<MEM>::getEdgeNodes(const Entity_ID e, cEntity_ID_View& nodes) const{
   nodes = RaggedGetter<MEM,AP>::get(data_.edge_nodes_cached,
     data_.edge_nodes,
     framework_mesh_, 
     [&](const int i) { 
-      Entity_ID_List nodes; 
+      Entity_ID_View nodes; 
       framework_mesh_->getEdgeNodes(i,nodes);
       return nodes; 
     }, 
@@ -1067,8 +1067,8 @@ void MeshCache<MEM>::getEdgeNodes(const Entity_ID e, cEntity_ID_View& nodes) con
     e);
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) MeshCache<MEM>::getEdgeCoordinates(const Entity_ID c) const {
   return RaggedGetter<MEM,AP>::get(data_.edge_coordinates_cached,
@@ -1082,8 +1082,8 @@ decltype(auto) MeshCache<MEM>::getEdgeCoordinates(const Entity_ID c) const {
   c);
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) MeshCache<MEM>::getEdgeCentroid(const Entity_ID c) const {
   return Getter<MEM,AP>::get(data_.edge_geometry_cached,
@@ -1096,8 +1096,8 @@ decltype(auto) MeshCache<MEM>::getEdgeCentroid(const Entity_ID c) const {
   c);
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 decltype(auto) MeshCache<MEM>::getEdgeVector(const Entity_ID e) const {
   return Getter<MEM,AP>::get(data_.edge_geometry_cached,
@@ -1111,8 +1111,8 @@ decltype(auto) MeshCache<MEM>::getEdgeVector(const Entity_ID e) const {
 }
 
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 double MeshCache<MEM>::getEdgeLength(const Entity_ID e) const {
   return Getter<MEM,AP>::get(data_.edge_lengths_cached,
@@ -1125,26 +1125,26 @@ double MeshCache<MEM>::getEdgeLength(const Entity_ID e) const {
     e);
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
-decltype(auto) MeshCache<MEM>::getEdgeCells(const Entity_ID e, const Parallel_type ptype) const {
-  Entity_ID_List cells; 
+decltype(auto) MeshCache<MEM>::getEdgeCells(const Entity_ID e, const Parallel_kind ptype) const {
+  Entity_ID_View cells; 
   getEdgeCells<AP>(e,ptype,cells); 
   return cells; 
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 void MeshCache<MEM>::getEdgeCells(const Entity_ID e,
-                  const Parallel_type ptype,
-                  Entity_ID_List& cells) const {
+                  const Parallel_kind ptype,
+                  Entity_ID_View& cells) const {
   cells = RaggedGetter<MEM,AP>::get(data_.edge_cells_cached,
   data_.edge_cells,
   framework_mesh_, 
   [&](const int i) { 
-    Entity_ID_List cells; 
+    Entity_ID_View cells; 
     framework_mesh_->getEdgeCells(i,ptype,cells);
     return cells; 
   }, 
@@ -1153,28 +1153,28 @@ void MeshCache<MEM>::getEdgeCells(const Entity_ID e,
   e);
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
-decltype(auto) MeshCache<MEM>::getEdgeFaces(const Entity_ID e, const Parallel_type ptype) const
+decltype(auto) MeshCache<MEM>::getEdgeFaces(const Entity_ID e, const Parallel_kind ptype) const
 {
-  Entity_ID_List faces; 
+  Entity_ID_View faces; 
   getEdgeFaces<AP>(e,ptype,faces); 
   return faces; 
 }
 
-template<MemSpace_type MEM>
-template<AccessPattern AP>
+template<MemSpace_kind MEM>
+template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
 void MeshCache<MEM>::getEdgeFaces(const Entity_ID e,
-                  const Parallel_type ptype,
-                  Entity_ID_List& faces) const
+                  const Parallel_kind ptype,
+                  Entity_ID_View& faces) const
 {
   faces = RaggedGetter<MEM,AP>::get(data_.edge_faces_cached,
   data_.edge_faces,
   framework_mesh_, 
   [&](const int i) { 
-    Entity_ID_List faces; 
+    Entity_ID_View faces; 
     framework_mesh_->getEdgeFaces(i,ptype,faces);
     return faces; 
   }, 
@@ -1186,7 +1186,7 @@ void MeshCache<MEM>::getEdgeFaces(const Entity_ID e,
 //
 // Build the cache, fine grained control
 // =============================================
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheCellGeometry()
 {
   assert(framework_mesh_.get());
@@ -1195,8 +1195,8 @@ void MeshCache<MEM>::cacheCellGeometry()
   data_.cell_centroids.resize(ncells_all);
   for (Entity_ID i=0; i!=ncells_all; ++i) {
     // note this must be on host
-    std::tie(view<MemSpace_type::HOST>(data_.cell_volumes)[i],
-             view<MemSpace_type::HOST>(data_.cell_centroids)[i]) =
+    std::tie(view<MemSpace_kind::HOST>(data_.cell_volumes)[i],
+             view<MemSpace_kind::HOST>(data_.cell_centroids)[i]) =
       framework_mesh_->computeCellGeometry(i);
   }
   Kokkos::deep_copy(data_.cell_volumes.view_device(), data_.cell_volumes.view_host()); 
@@ -1205,63 +1205,63 @@ void MeshCache<MEM>::cacheCellGeometry()
 }
 
 // cell-face adjacencies
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheCellFaces()
 {
   assert(framework_mesh_.get());
   if (data_.cell_faces_cached) return;
-  int num_cells = framework_mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);  
-  auto lambda1 = [this](Entity_ID c, Entity_ID_List& cfaces) {this->framework_mesh_->getCellFaces(c, cfaces);};
+  int num_cells = framework_mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);  
+  auto lambda1 = [this](Entity_ID c, Entity_ID_View& cfaces) {this->framework_mesh_->getCellFaces(c, cfaces);};
   data_.cell_faces = asRaggedArray_DualView<Entity_ID>(lambda1, num_cells);
-  auto lambda2 = [this](Entity_ID c, Entity_Direction_List& dirs) { this->framework_mesh_->getCellFaceDirs(c, dirs); };
+  auto lambda2 = [this](Entity_ID c, Entity_Direction_View& dirs) { this->framework_mesh_->getCellFaceDirs(c, dirs); };
   data_.cell_face_directions = asRaggedArray_DualView<int>(lambda2, num_cells);
   data_.cell_faces_cached = true;
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheCellCoordinates()
 {
   assert(framework_mesh_.get());
   if (data_.cell_coordinates_cached) return;
   int num_cells = framework_mesh_->getNumEntities(
-    AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL); 
-  auto lambda = [this](Entity_ID c, Point_List& ccoords) 
+    AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL); 
+  auto lambda = [this](Entity_ID c, Point_View& ccoords) 
     { ccoords = this->framework_mesh_->getCellCoordinates(c); };
   data_.cell_coordinates = 
     asRaggedArray_DualView<Amanzi::AmanziGeometry::Point>(lambda, num_cells);
   data_.cell_coordinates_cached = true;
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheCellEdges()
 {
   assert(framework_mesh_.get());
   if (data_.cell_edges_cached) return;
   framework_mesh_->hasEdgesOrThrow();
   int num_cells = framework_mesh_->getNumEntities(
-    AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL); 
-  auto lambda = [this](Entity_ID c, Entity_ID_List& cedges) 
+    AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL); 
+  auto lambda = [this](Entity_ID c, Entity_ID_View& cedges) 
     { this->framework_mesh_->getCellEdges(c,cedges); };
   data_.cell_edges = 
     asRaggedArray_DualView<Entity_ID>(lambda, num_cells);
   data_.cell_edges_cached = true;
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheCellNodes()
 {
   assert(framework_mesh_.get());
   if (data_.cell_nodes_cached) return;
   int num_cells = framework_mesh_->getNumEntities(
-    AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL); 
-  auto lambda = [this](Entity_ID c, Entity_ID_List& cnodes) 
+    AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL); 
+  auto lambda = [this](Entity_ID c, Entity_ID_View& cnodes) 
     { this->framework_mesh_->getCellNodes(c,cnodes); };
   data_.cell_nodes = 
     asRaggedArray_DualView<Entity_ID>(lambda, num_cells);
   data_.cell_nodes_cached = true;
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheFaceGeometry()
 {
   assert(framework_mesh_.get());
@@ -1271,9 +1271,9 @@ void MeshCache<MEM>::cacheFaceGeometry()
 
   // slurp down the RaggedArray for normals using a lambda that, as a side
   // effect, captures area and centroid too.
-  auto area_view = view<MemSpace_type::HOST>(data_.face_areas);
-  auto centroid_view = view<MemSpace_type::HOST>(data_.face_centroids);
-  auto lambda = [&,this](const Entity_ID& f, Point_List& normals) {
+  auto area_view = view<MemSpace_kind::HOST>(data_.face_areas);
+  auto centroid_view = view<MemSpace_kind::HOST>(data_.face_centroids);
+  auto lambda = [&,this](const Entity_ID& f, Point_View& normals) {
     auto area_cent_normal = this->framework_mesh_->computeFaceGeometry(f);
     area_view[f] = std::get<0>(area_cent_normal);
     centroid_view[f] = std::get<1>(area_cent_normal);
@@ -1282,16 +1282,16 @@ void MeshCache<MEM>::cacheFaceGeometry()
   data_.face_normals = asRaggedArray_DualView<AmanziGeometry::Point>(lambda, nfaces_all);
 
   // still must sync areas/centroids
-  Kokkos::deep_copy(view<MemSpace_type::DEVICE>(data_.face_areas),view<MemSpace_type::HOST>(data_.face_areas)); 
-  Kokkos::deep_copy(view<MemSpace_type::DEVICE>(data_.face_centroids),view<MemSpace_type::HOST>(data_.face_centroids)); 
+  Kokkos::deep_copy(view<MemSpace_kind::DEVICE>(data_.face_areas),view<MemSpace_kind::HOST>(data_.face_areas)); 
+  Kokkos::deep_copy(view<MemSpace_kind::DEVICE>(data_.face_centroids),view<MemSpace_kind::HOST>(data_.face_centroids)); 
   data_.face_geometry_cached = true;
 
   // cache normal directions -- make this a separate call?  Think about
   // granularity here.
-  auto lambda2 = [&,this](const Entity_ID& f, Entity_Direction_List& dirs) {
+  auto lambda2 = [&,this](const Entity_ID& f, Entity_Direction_View& dirs) {
     // This NEEDS to call the framework or be passed an host mesh to call the function on the host. 
-    Entity_ID_List fcells; 
-    framework_mesh_->getFaceCells(f, Parallel_type::ALL, fcells);
+    Entity_ID_View fcells; 
+    framework_mesh_->getFaceCells(f, Parallel_kind::ALL, fcells);
     Kokkos::resize(dirs,fcells.size());
     for (int i=0; i!=fcells.size(); ++i) {
       this->framework_mesh_->getFaceNormal(f, fcells[i], &dirs[i]);
@@ -1301,8 +1301,8 @@ void MeshCache<MEM>::cacheFaceGeometry()
   
   // cache cell-face-bisectors -- make this a separate call?  Think about
   // granularity here.
-  auto lambda3 = [&,this](const Entity_ID& c, Point_List& bisectors) {
-    Entity_ID_List cfaces;
+  auto lambda3 = [&,this](const Entity_ID& c, Point_View& bisectors) {
+    Entity_ID_View cfaces;
     this->framework_mesh_->getCellFacesAndBisectors(c, cfaces, &bisectors);
   };
   data_.cell_face_bisectors = asRaggedArray_DualView<AmanziGeometry::Point>(lambda3, ncells_all);
@@ -1311,46 +1311,46 @@ void MeshCache<MEM>::cacheFaceGeometry()
 
 
 // face-cell adjacencies
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheFaceCells()
 {
   if (data_.face_cells_cached) return;
-  auto lambda = [this](Entity_ID f, Entity_ID_List& fcells) { this->framework_mesh_->getFaceCells(f, Parallel_type::ALL, fcells); };
+  auto lambda = [this](Entity_ID f, Entity_ID_View& fcells) { this->framework_mesh_->getFaceCells(f, Parallel_kind::ALL, fcells); };
   data_.face_cells = asRaggedArray_DualView<Entity_ID>( lambda, nfaces_all);
   data_.face_cells_cached = true;
 }
 
 // face-cell adjacencies
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheFaceEdges()
 {
   if (data_.face_edges_cached) return;
   framework_mesh_->hasEdgesOrThrow();
-  auto lambda = [this](Entity_ID f, Entity_ID_List& fedges) 
+  auto lambda = [this](Entity_ID f, Entity_ID_View& fedges) 
     { this->framework_mesh_->getFaceEdges(f, fedges);};
-  auto lambda_dir = [this](Entity_ID f, Entity_Direction_List& dirs)
-    { Entity_ID_List l;  this->framework_mesh_->getFaceEdgesAndDirs(f,l,&dirs);};
+  auto lambda_dir = [this](Entity_ID f, Entity_Direction_View& dirs)
+    { Entity_ID_View l;  this->framework_mesh_->getFaceEdgesAndDirs(f,l,&dirs);};
   data_.face_edges = asRaggedArray_DualView<Entity_ID>( lambda, nfaces_all);
   data_.face_edge_directions = asRaggedArray_DualView<int>( lambda_dir, nfaces_all);
   data_.face_edges_cached = true;
 }
 
 // face-node adjacencies
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheFaceNodes()
 {
   if (data_.face_nodes_cached) return;
-  auto lambda = [this](Entity_ID f, Entity_ID_List& fnodes) { this->framework_mesh_->getFaceNodes(f, fnodes); };
+  auto lambda = [this](Entity_ID f, Entity_ID_View& fnodes) { this->framework_mesh_->getFaceNodes(f, fnodes); };
   data_.face_nodes = asRaggedArray_DualView<Entity_ID>(lambda, nfaces_all);
   data_.face_nodes_cached = true;
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheFaceCoordinates()
 {
   assert(framework_mesh_.get());
   if (data_.face_coordinates_cached) return;
-  auto lambda = [this](Entity_ID f, Point_List& fcoords) 
+  auto lambda = [this](Entity_ID f, Point_View& fcoords) 
     { fcoords = this->framework_mesh_->getFaceCoordinates(f); };
   data_.face_coordinates = asRaggedArray_DualView<Amanzi::AmanziGeometry::Point>(lambda, nfaces_all);
 
@@ -1358,7 +1358,7 @@ void MeshCache<MEM>::cacheFaceCoordinates()
 }
 
 // edge centroid, length, vector
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheEdgeGeometry()
 {
   assert(framework_mesh_.get());
@@ -1367,105 +1367,105 @@ void MeshCache<MEM>::cacheEdgeGeometry()
   data_.edge_vectors.resize(nedges_all);
   data_.edge_centroids.resize(nedges_all);
 
-  auto evector = view<MemSpace_type::HOST>(data_.edge_vectors);
-  auto ecentroids = view<MemSpace_type::HOST>(data_.edge_centroids);
+  auto evector = view<MemSpace_kind::HOST>(data_.edge_vectors);
+  auto ecentroids = view<MemSpace_kind::HOST>(data_.edge_centroids);
   for(int i = 0 ; i < nedges_all; ++i){
     auto egeometry = this->framework_mesh_->computeEdgeGeometry(i);
     evector[i] = std::get<0>(egeometry);
     ecentroids[i] = std::get<1>(egeometry);
   }
-  Kokkos::deep_copy(view<MemSpace_type::DEVICE>(data_.edge_centroids),view<MemSpace_type::HOST>(data_.edge_centroids)); 
-  Kokkos::deep_copy(view<MemSpace_type::DEVICE>(data_.edge_vectors),view<MemSpace_type::HOST>(data_.edge_vectors)); 
+  Kokkos::deep_copy(view<MemSpace_kind::DEVICE>(data_.edge_centroids),view<MemSpace_kind::HOST>(data_.edge_centroids)); 
+  Kokkos::deep_copy(view<MemSpace_kind::DEVICE>(data_.edge_vectors),view<MemSpace_kind::HOST>(data_.edge_vectors)); 
   data_.edge_geometry_cached = true;
 }
 
 // edge-cell adjacencies
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheEdgeCells()
 {
   assert(framework_mesh_.get());
   if (data_.edge_cells_cached) return;
   framework_mesh_->hasEdgesOrThrow();
-  auto lambda = [this](Entity_ID f, Entity_ID_List& ecells) 
-    { this->framework_mesh_->getEdgeCells(f, Parallel_type::ALL, ecells); };
+  auto lambda = [this](Entity_ID f, Entity_ID_View& ecells) 
+    { this->framework_mesh_->getEdgeCells(f, Parallel_kind::ALL, ecells); };
   data_.edge_cells = asRaggedArray_DualView<Entity_ID>(lambda, nedges_all);
   data_.edge_cells_cached = true;
 }
 
 // edge-face adjacencies
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheEdgeFaces()
 {
   assert(framework_mesh_.get());
   if (data_.edge_faces_cached) return;
   framework_mesh_->hasEdgesOrThrow();
-  auto lambda = [this](Entity_ID f, Entity_ID_List& efaces) 
-    { this->framework_mesh_->getEdgeFaces(f, Parallel_type::ALL, efaces); };
+  auto lambda = [this](Entity_ID f, Entity_ID_View& efaces) 
+    { this->framework_mesh_->getEdgeFaces(f, Parallel_kind::ALL, efaces); };
   data_.edge_faces = asRaggedArray_DualView<Entity_ID>(lambda, nedges_all);
   data_.edge_faces_cached = true;
 }
 
 // edge-node adjacencies
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheEdgeNodes()
 {
   assert(framework_mesh_.get());
   if (data_.edge_nodes_cached) return;
   framework_mesh_->hasEdgesOrThrow();
-  auto lambda = [this](Entity_ID f, Entity_ID_List& efaces) 
+  auto lambda = [this](Entity_ID f, Entity_ID_View& efaces) 
     { this->framework_mesh_->getEdgeNodes(f, efaces); };
   data_.edge_nodes = asRaggedArray_DualView<Entity_ID>(lambda, nedges_all);
   data_.edge_nodes_cached = true;
 }
 
 // edge coordinates
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheEdgeCoordinates()
 {
   assert(framework_mesh_.get());
   if (data_.edge_coordinates_cached) return;
   framework_mesh_->hasEdgesOrThrow();
-  auto lambda = [this](Entity_ID f, Point_List& enodes) 
+  auto lambda = [this](Entity_ID f, Point_View& enodes) 
     { enodes = this->framework_mesh_->getEdgeCoordinates(f); };
   data_.edge_coordinates = asRaggedArray_DualView<Amanzi::AmanziGeometry::Point>(lambda, nedges_all);
   data_.edge_coordinates_cached = true;
 }
 
 // // node-cell adjacencies
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheNodeCells()
 {
   assert(framework_mesh_.get());
   if (data_.node_cells_cached) return;
-  auto lambda = [this](Entity_ID f, Entity_ID_List& ncells) 
-    { this->framework_mesh_->getNodeCells(f,Parallel_type::ALL, ncells); };
+  auto lambda = [this](Entity_ID f, Entity_ID_View& ncells) 
+    { this->framework_mesh_->getNodeCells(f,Parallel_kind::ALL, ncells); };
   data_.node_cells = 
     asRaggedArray_DualView<Entity_ID>(lambda, nnodes_all);
   data_.node_cells_cached = true;
 }
 
 // // node-face adjacencies
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheNodeFaces()
 {
   assert(framework_mesh_.get());
   if (data_.node_faces_cached) return;
-  auto lambda = [this](Entity_ID f, Entity_ID_List& nfaces) 
-    { this->framework_mesh_->getNodeFaces(f,Parallel_type::ALL, nfaces); };
+  auto lambda = [this](Entity_ID f, Entity_ID_View& nfaces) 
+    { this->framework_mesh_->getNodeFaces(f,Parallel_kind::ALL, nfaces); };
   data_.node_faces = 
     asRaggedArray_DualView<Entity_ID>(lambda, nnodes_all);
   data_.node_faces_cached = true;
 }
 
 // // node-edge adjacencies
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheNodeEdges()
 {
   assert(framework_mesh_.get());
   if (data_.node_edges_cached) return;
   framework_mesh_->hasEdgesOrThrow();
-  auto lambda = [this](Entity_ID f, Entity_ID_List& nedges) 
-    { this->framework_mesh_->getNodeEdges(f,Parallel_type::ALL, nedges); };
+  auto lambda = [this](Entity_ID f, Entity_ID_View& nedges) 
+    { this->framework_mesh_->getNodeEdges(f,Parallel_kind::ALL, nedges); };
   data_.node_edges = 
     asRaggedArray_DualView<Entity_ID>(lambda, nnodes_all);
   data_.node_edges_cached = true;
@@ -1473,13 +1473,13 @@ void MeshCache<MEM>::cacheNodeEdges()
 
 
 // node coordinates
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void MeshCache<MEM>::cacheNodeCoordinates()
 {
   if (data_.node_coordinates_cached) return;
   data_.node_coordinates.resize(nnodes_all);
   for (Entity_ID i=0; i!=nnodes_all; ++i) {
-    view<MemSpace_type::HOST>(data_.node_coordinates)[i] = framework_mesh_->getNodeCoordinate(i);
+    view<MemSpace_kind::HOST>(data_.node_coordinates)[i] = framework_mesh_->getNodeCoordinate(i);
   }
 
   Kokkos::deep_copy(data_.node_coordinates.d_view, data_.node_coordinates.h_view);
@@ -1500,9 +1500,9 @@ void MeshCache<MEM>::cacheNodeCoordinates()
 //         AMANZI_ASSERT(false); // not yet implemented lifted sets
 //       } else {
 //         auto entity_kind = createEntityKind(rgn_lbl->entity_str());
-//         Entity_ID_List set_ents;
-//         framework_mesh_->getSetEntities(*rgn_lbl, entity_kind, Parallel_type::ALL, set_ents);
-//         auto key = std::make_tuple(rgn->get_name(), entity_kind, Parallel_type::ALL);
+//         Entity_ID_View set_ents;
+//         framework_mesh_->getSetEntities(*rgn_lbl, entity_kind, Parallel_kind::ALL, set_ents);
+//         auto key = std::make_tuple(rgn->get_name(), entity_kind, Parallel_kind::ALL);
 //         sets_[key] = asDualView(set_ents);
 //       }
 //     }
@@ -1514,13 +1514,13 @@ void MeshCache<MEM>::cacheNodeCoordinates()
 // {
 // }
 
-template<MemSpace_type MEM> 
+template<MemSpace_kind MEM> 
 void MeshCache<MEM>::setNodeCoordinate(const Entity_ID n, const AmanziGeometry::Point& coord)
 {
   if (framework_mesh_.get())
     framework_mesh_->setNodeCoordinate(n, coord);
   if (data_.node_coordinates_cached)
-    view<MemSpace_type::HOST>(data_.node_coordinates)[n] = coord;
+    view<MemSpace_kind::HOST>(data_.node_coordinates)[n] = coord;
 }
 
 // // common error messaging
@@ -1531,7 +1531,7 @@ void MeshCache<MEM>::setNodeCoordinate(const Entity_ID n, const AmanziGeometry::
 //   Exceptions::amanzi_throw(msg);
 // }
 
-template<MemSpace_type MEM> 
+template<MemSpace_kind MEM> 
 Entity_ID
 MeshCache<MEM>::getEntityParent(const Entity_kind kind, const Entity_ID entid) const
 {
@@ -1556,18 +1556,18 @@ MeshCache<MEM>::getEntityParent(const Entity_kind kind, const Entity_ID entid) c
   return -1;
 }
 
-template<MemSpace_type MEM> 
+template<MemSpace_kind MEM> 
 void
 MeshCache<MEM>::PrintMeshStatistics() const
 {
   assert(false && "Need verbose object"); 
   #if 0 
   if (vo_.get() && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
-    int ncells = getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    int nfaces = getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    int nnodes = getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+    int ncells = getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+    int nfaces = getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+    int nnodes = getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::OWNED);
     int nedges(0);
-    if (has_edges_) nedges = getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
+    if (has_edges_) nedges = getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::OWNED);
 
     int min_out[4], max_out[4], sum_out[4], tmp_in[4] = { ncells, nfaces, nedges, nnodes };
     getComm()->MinAll(tmp_in, min_out, 4);
@@ -1591,7 +1591,7 @@ MeshCache<MEM>::PrintMeshStatistics() const
 
 namespace MeshAlgorithms {
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void cacheAll(MeshCache<MEM>& mesh)
 {
   std::cout<<"############# CacheAll"<<std::endl;
@@ -1621,7 +1621,7 @@ void cacheAll(MeshCache<MEM>& mesh)
    }
 }
 
-template<MemSpace_type MEM>
+template<MemSpace_kind MEM>
 void cacheDefault(MeshCache<MEM>& mesh)
 {
   std::cout<<"############# CacheDefault"<<std::endl;

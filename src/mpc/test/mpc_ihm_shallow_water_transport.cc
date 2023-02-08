@@ -69,7 +69,7 @@ TEST(MPC_DRIVER_IHM_SHALLOW_WATER_TRANSPORT)
 
   // verify the maximum principle for solute transport
   const auto& tcc = *S->Get<CompositeVector>("total_component_concentration").ViewComponent("cell");
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells; ++c) { CHECK(tcc[0][c] >= 0.0 && tcc[0][c] <= 1.0); }
 }

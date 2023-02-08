@@ -21,7 +21,7 @@ namespace AmanziMesh {
 
 Teuchos::RCP<Mesh>
 MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
-                    const Entity_ID_List& setids,
+                    const Entity_ID_View& setids,
                     const Entity_kind setkind,
                     const bool flatten)
 {
@@ -67,7 +67,7 @@ MeshFactory::createColumn(const Teuchos::RCP<Mesh>& parent, int col_id)
   parent->buildColumns();
   Teuchos::RCP<MeshFramework> column_extracted_3D =
     MeshFrameworkFactory::create(parent,
-            parent->columns.getCells<MemSpace_type::HOST>(col_id),
+            parent->columns.getCells<MemSpace_kind::HOST>(col_id),
             Entity_kind::CELL, false);
 
   // create the MeshFrameworkColumn

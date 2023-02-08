@@ -56,8 +56,8 @@ class MFD3D_GeneralizedDiffusion : public MFD3D {
  private:
   void CurvedFaceGeometry_(int f,
                            int dirs,
-                           std::vector<AmanziGeometry::Point>& vv,
-                           std::vector<AmanziGeometry::Point>& xm);
+                           AmanziMesh::Point_List& vv,
+                           AmanziMesh::Point_List& xm);
 
  private:
   static RegisteredFactory<MFD3D_GeneralizedDiffusion> factory_;

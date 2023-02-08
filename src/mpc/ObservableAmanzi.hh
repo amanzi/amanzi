@@ -72,7 +72,7 @@ class Observable : public IOEvent {
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  AmanziMesh::Entity_ID_List entity_ids_;
+  AmanziMesh::Entity_ID_View entity_ids_;
   int region_size_;
 
   std::string region_;

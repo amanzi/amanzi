@@ -97,7 +97,7 @@ MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs)
   if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
     std::size_t i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
 
-    for (int c = 0; c < mesh.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    for (int c = 0; c < mesh.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
          ++c) {
       i = std::max(i, mesh.getCellNumFaces(c));
     }

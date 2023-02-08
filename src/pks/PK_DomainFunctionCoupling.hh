@@ -193,7 +193,7 @@ PK_DomainFunctionCoupling<FunctionBase>::Init(const Teuchos::ParameterList& plis
 
   for (auto region = domain->first.begin(); region != domain->first.end(); ++region) {
     if (mesh_->isValidSetName(*region, kind)) {
-      auto id_list = mesh_->getSetEntities(*region, kind, AmanziMesh::Parallel_type::OWNED);
+      auto id_list = mesh_->getSetEntities(*region, kind, AmanziMesh::Parallel_kind::OWNED);
       entity_ids_->insert(id_list.begin(), id_list.end());
     } else {
       msg << "Unknown region in processing coupling source: name=" << *region << ", kind=" << kind
@@ -239,13 +239,13 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
     int num_vec = field_out.NumVectors();
 
-    AmanziMesh::Entity_ID_List cells;
+    AmanziMesh::Entity_ID_View cells;
 
     // loop over cells on the manifold
     for (auto c : *entity_ids_) {
       AmanziMesh::Entity_ID f = mesh_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
 
-      cells = mesh_out_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+      cells = mesh_out_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
       if (cells.size() != flux_map->ElementSize(f)) {
         msg << "Number of flux DOFs doesn't equal to the number of cells sharing a face: "
@@ -288,13 +288,13 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     const auto& flux_map =
       S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).Map().Map("face", true);
 
-    AmanziMesh::Entity_ID_List cells;
+    AmanziMesh::Entity_ID_View cells;
 
     // loop over cells on the manifold
     for (auto c : *entity_ids_) {
       AmanziMesh::Entity_ID f = mesh_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
 
-      cells = mesh_out_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+      cells = mesh_out_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
       if (cells.size() != flux_map->ElementSize(f)) {
         msg << "Number of flux DOFs doesn't equal to the number of cells sharing a face: "
@@ -356,8 +356,8 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
       int sc = it->second;
 
       // accept it all
-      AmanziMesh::Entity_ID_List cells;
-      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::OWNED);
+      AmanziMesh::Entity_ID_View cells;
+      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::OWNED);
       AMANZI_ASSERT(cells.size() == 1);
 
       auto [faces, dirs] = mesh_->getCellFacesAndDirections(cells[0]);

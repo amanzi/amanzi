@@ -21,13 +21,13 @@ DataDebug::write_region_data(std::string& region_name,
 {
   if (!mesh_->isValidSetName(region_name, AmanziMesh::Entity_kind::CELL)) { throw std::exception(); }
   unsigned int mesh_block_size =
-    mesh_->getSetSize(region_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  AmanziMesh::Entity_ID_List cell_ids("cell_ids", mesh_block_size);
+    mesh_->getSetSize(region_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  AmanziMesh::Entity_ID_View cell_ids("cell_ids", mesh_block_size);
   cell_ids = mesh_->getSetEntities(
-    region_name, AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    region_name, AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   std::cerr << "Printing " << description << " on region " << region_name << std::endl;
-  for (AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end(); ++c) {
+  for (AmanziMesh::Entity_ID_View::iterator c = cell_ids.begin(); c != cell_ids.end(); ++c) {
     std::cerr << std::fixed << description << "(" << data.Map().GID(*c) << ") = " << data[*c]
               << std::endl;
   }
@@ -41,15 +41,15 @@ DataDebug::write_region_statistics(std::string& region_name,
 {
   if (!mesh_->isValidSetName(region_name, AmanziMesh::Entity_kind::CELL)) { throw std::exception(); }
   unsigned int mesh_block_size =
-    mesh_->getSetSize(region_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  AmanziMesh::Entity_ID_List cell_ids("cell_ids", mesh_block_size);
+    mesh_->getSetSize(region_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  AmanziMesh::Entity_ID_View cell_ids("cell_ids", mesh_block_size);
   cell_ids = mesh_->getSetEntities(
-    region_name, AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    region_name, AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   // find min and max and their indices
   int max_index(0), min_index(0);
   double max_value(-1e-99), min_value(1e99);
-  for (AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end(); ++c) {
+  for (AmanziMesh::Entity_ID_View::iterator c = cell_ids.begin(); c != cell_ids.end(); ++c) {
     if (data[*c] > max_value) {
       max_value = data[*c];
       max_index = data.Map().GID(*c);

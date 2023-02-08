@@ -57,13 +57,13 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
       AmanziMesh::Entity_ID lf = face_map.LID(f);
       if (lf >= 0) {
         // debug the neighboring cells
-        AmanziMesh::Entity_ID_List fcells;
-        fcells = mesh->getFaceCells(lf, AmanziMesh::Parallel_type::OWNED);
+        AmanziMesh::Entity_ID_View fcells;
+        fcells = mesh->getFaceCells(lf, AmanziMesh::Parallel_kind::OWNED);
         for (const auto& c : fcells) vcells.emplace_back(cell_map.GID(c));
       }
     }
   }
-  AmanziMesh::Entity_ID_List cells; 
+  AmanziMesh::Entity_ID_View cells; 
   vectorToView(cells, vcells); 
   set_cells(cells);
 
@@ -76,7 +76,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 }
 
 
-const AmanziMesh::Entity_ID_List&
+const AmanziMesh::Entity_ID_View&
 Debugger::get_cells() const
 {
   return dc_gid_;
@@ -84,7 +84,7 @@ Debugger::get_cells() const
 
 
 void
-Debugger::set_cells(const AmanziMesh::Entity_ID_List& dc)
+Debugger::set_cells(const AmanziMesh::Entity_ID_View& dc)
 {
   dc_.clear();
   dcvo_.clear();
@@ -117,9 +117,9 @@ Debugger::set_cells(const AmanziMesh::Entity_ID_List& dc)
 
 
 void
-Debugger::add_cells(const AmanziMesh::Entity_ID_List& dc)
+Debugger::add_cells(const AmanziMesh::Entity_ID_View& dc)
 {
-  AmanziMesh::Entity_ID_List dc_new = get_cells();
+  AmanziMesh::Entity_ID_View dc_new = get_cells();
   dc_new.insert(dc_new.end(), dc.begin(), dc.end()); 
   set_cells(dc_new);
 }

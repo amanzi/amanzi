@@ -60,11 +60,11 @@ class Basis_Regularized : public Basis {
                                          DenseVector& coefs) const;
 
   // access
-  const std::vector<double>& monomial_scales() const { return monomial_scales_; }
+  const AmanziMesh::Double_List& monomial_scales() const { return monomial_scales_; }
 
  private:
   using Basis::id_;
-  std::vector<double> monomial_scales_;
+  AmanziMesh::Double_List monomial_scales_;
 
   int d_, order_;
 };

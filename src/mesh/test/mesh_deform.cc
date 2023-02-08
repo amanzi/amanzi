@@ -28,9 +28,9 @@ void test2D(const Teuchos::RCP<Mesh_type>& mesh)
 {
   // Deform the mesh
   int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE,
-          AmanziMesh::Parallel_type::OWNED);
-  AmanziMesh::Entity_ID_List nodeids("nodeids", nnodes);
-  AmanziMesh::Point_List newpos("newpos", nnodes);
+          AmanziMesh::Parallel_kind::OWNED);
+  AmanziMesh::Entity_ID_View nodeids("nodeids", nnodes);
+  AmanziMesh::Point_View newpos("newpos", nnodes);
 
   for (int j = 0; j < nnodes; j++) {
     nodeids[j] = j;
@@ -46,7 +46,7 @@ void test2D(const Teuchos::RCP<Mesh_type>& mesh)
   // If the deformation was successful, the cell volumes should be half
   // of what they were
   int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,
-          AmanziMesh::Parallel_type::ALL);
+          AmanziMesh::Parallel_kind::ALL);
 
   for (int j = 0; j < ncells; j++) {
     double volume = mesh->getCellVolume(j);
@@ -61,9 +61,9 @@ void test3D(const Teuchos::RCP<Mesh_type>& mesh)
 {
   // Deform the mesh
   int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE,
-          AmanziMesh::Parallel_type::OWNED);
-  AmanziMesh::Entity_ID_List nodeids("nodesids", nnodes);
-  AmanziMesh::Point_List newpos("newpos", nnodes);
+          AmanziMesh::Parallel_kind::OWNED);
+  AmanziMesh::Entity_ID_View nodeids("nodesids", nnodes);
+  AmanziMesh::Point_View newpos("newpos", nnodes);
 
   for (int j = 0; j < nnodes; j++) {
     nodeids[j] = j;

@@ -52,7 +52,7 @@ ReconstructionCellLinear::Init(Teuchos::ParameterList& plist)
 * least-square fit.
 ****************************************************************** */
 void
-ReconstructionCellLinear::Compute(const AmanziMesh::Entity_ID_List& ids,
+ReconstructionCellLinear::Compute(const AmanziMesh::Entity_ID_View& ids,
                                   const Teuchos::RCP<const Epetra_MultiVector>& field,
                                   int component,
                                   const Teuchos::RCP<const BCs>& bc)
@@ -67,13 +67,13 @@ ReconstructionCellLinear::Compute(const AmanziMesh::Entity_ID_List& ids,
   WhetStone::DenseMatrix matrix(dim, dim);
   WhetStone::DenseVector rhs(dim);
 
-  int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
-    // mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
-    CellFaceAdjCellsManifold_(c, AmanziMesh::Parallel_type::ALL, cells);
+    // mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_kind::ALL, &cells);
+    CellFaceAdjCellsManifold_(c, AmanziMesh::Parallel_kind::ALL, cells);
     int ncells = cells.size();
 
     matrix.PutScalar(0.0);
@@ -140,10 +140,10 @@ ReconstructionCellLinear::PopulateLeastSquareSystem_(AmanziGeometry::Point& cent
 ****************************************************************** */
 void
 ReconstructionCellLinear::CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
-                                                    AmanziMesh::Parallel_type ptype,
+                                                    AmanziMesh::Parallel_kind ptype,
                                                     std::vector<AmanziMesh::Entity_ID>& cells) const
 {
-  AmanziMesh::Entity_ID_List fcells;
+  AmanziMesh::Entity_ID_View fcells;
 
   const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();

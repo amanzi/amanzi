@@ -123,18 +123,18 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
     Exceptions::amanzi_throw(msg);
   }
 
-  AmanziMesh::Entity_ID_List nodes1, nodes2; 
+  AmanziMesh::Entity_ID_View nodes1, nodes2; 
   std::vector<AmanziMesh::Entity_ID> common_nodes;
 
   AmanziGeometry::Point p1(dim), p2(dim), p3(dim);
   std::vector<AmanziGeometry::Point> edges;
 
-  auto ss_faces = mesh->getSetEntities(region, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  auto ss_faces = mesh->getSetEntities(region, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   int n = ss_faces.size();
 
   for (int i = 0; i < n; i++) {
     int f1 = ss_faces[i];
-    auto cells = mesh->getFaceCells(f1, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh->getFaceCells(f1, AmanziMesh::Parallel_kind::ALL);
 
     nodes1 = mesh->getFaceNodes(f1);
     std::sort(nodes1.begin(), nodes1.end());
@@ -147,7 +147,7 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
     for (int j = 0; j < nfaces; j++) {
       int f2 = faces[j];
       if (f2 != f1) {
-        cells = mesh->getFaceCells(f2, AmanziMesh::Parallel_type::ALL);
+        cells = mesh->getFaceCells(f2, AmanziMesh::Parallel_kind::ALL);
         int ncells = cells.size();
         if (ncells == 1) {
           nodes2 = mesh->getFaceNodes(f2);
@@ -282,8 +282,8 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
 * New implementation of the STL function.
 **************************************************************** */
 void
-FlowBoundaryFunction::set_intersection_(const AmanziMesh::Entity_ID_List& v1,
-                                        const AmanziMesh::Entity_ID_List& v2,
+FlowBoundaryFunction::set_intersection_(const AmanziMesh::Entity_ID_View& v1,
+                                        const AmanziMesh::Entity_ID_View& v2,
                                         std::vector<AmanziMesh::Entity_ID>& vv)
 {
   int i(0), j(0), n1, n2;

@@ -44,9 +44,9 @@ Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
   Epetra_MultiVector& Yc = *Y.ViewComponent("cell", true);
   Epetra_MultiVector& Ybnd = *Y.ViewComponent("boundary_face", true);
 
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_View cells;
   for (int f = 0; f != nfaces_owned; ++f) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     if (ncells == 2) {
@@ -94,9 +94,9 @@ Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op,
   const std::vector<int>& bndface_col_inds = map.GhostIndices(my_block_col, "boundary_face", 0);
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_View cells;
   for (int f = 0; f != nfaces_owned; ++f) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
     int ncells = cells.size();
     if (ncells == 2) {
@@ -137,9 +137,9 @@ Operator_CellBndFace::AssembleMatrixOp(const Op_Face_CellBndFace& op,
   const std::vector<int>& bndface_col_inds = map.GhostIndices(my_block_col, "boundary_face", 0);
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_View cells;
   for (int f = 0; f != nfaces_owned; ++f) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
     int ncells = cells.size();
     if (ncells == 2) {
@@ -166,7 +166,7 @@ Operator_CellBndFace::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
                                         const CompositeVector& X,
                                         CompositeVector& Y) const
 {
-  int nsurf_cells = op.surf_mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nsurf_cells = op.surf_mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   AMANZI_ASSERT(op.diag->MyLength() == nsurf_cells);
 
   const Epetra_MultiVector& Xf = *X.ViewComponent("boundary_face", false);
@@ -187,15 +187,15 @@ Operator_CellBndFace::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
                                         const CompositeVector& X,
                                         CompositeVector& Y) const
 {
-  int nsurf_faces = op.surf_mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nsurf_faces = op.surf_mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   AMANZI_ASSERT(op.matrices.size() == nsurf_faces);
 
   const Epetra_MultiVector& Xf = *X.ViewComponent("boundary_face", true);
   Epetra_MultiVector& Yf = *Y.ViewComponent("boundary_face", true);
 
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_View cells;
   for (int sf = 0; sf != nsurf_faces; ++sf) {
-    cells = op.surf_mesh->getFaceCells(sf, AmanziMesh::Parallel_type::ALL);
+    cells = op.surf_mesh->getFaceCells(sf, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     WhetStone::DenseVector v(ncells), av(ncells);
@@ -225,7 +225,7 @@ Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell&
                                                int my_block_row,
                                                int my_block_col) const
 {
-  int nsurf_cells = op.surf_mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nsurf_cells = op.surf_mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // ELEMENT: cell, DOFS: cell and face
   const std::vector<int>& face_row_inds = map.GhostIndices(my_block_row, "boundary_face", 0);
@@ -250,7 +250,7 @@ Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell&
                                                int my_block_row,
                                                int my_block_col) const
 {
-  int nsurf_faces = op.surf_mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nsurf_faces = op.surf_mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   int lid_r[2];
   int lid_c[2];
 
@@ -259,9 +259,9 @@ Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell&
   const std::vector<int>& face_col_inds = map.GhostIndices(my_block_col, "boundary_face", 0);
 
   int ierr = 0;
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_View cells;
   for (int sf = 0; sf != nsurf_faces; ++sf) {
-    cells = op.surf_mesh->getFaceCells(sf, AmanziMesh::Parallel_type::ALL);
+    cells = op.surf_mesh->getFaceCells(sf, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
     for (int n = 0; n != ncells; ++n) {
       int f = op.surf_mesh->getEntityParent(AmanziMesh::Entity_kind::CELL, cells[n]);
@@ -284,7 +284,7 @@ Operator_CellBndFace::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
                                        int my_block_row,
                                        int my_block_col) const
 {
-  int nsurf_cells = op.surf_mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nsurf_cells = op.surf_mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // ELEMENT: cell, DOFS: cell and face
   const std::vector<int>& face_row_inds = map.GhostIndices(my_block_row, "boundary_face", 0);
@@ -310,7 +310,7 @@ Operator_CellBndFace::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
                                        int my_block_row,
                                        int my_block_col) const
 {
-  int nsurf_faces = op.surf_mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nsurf_faces = op.surf_mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   int lid_r[2];
   int lid_c[2];
 
@@ -319,9 +319,9 @@ Operator_CellBndFace::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
   const std::vector<int>& face_col_inds = map.GhostIndices(my_block_col, "boundary_face", 0);
 
   int ierr = 0;
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_View cells;
   for (int sf = 0; sf != nsurf_faces; ++sf) {
-    cells = op.surf_mesh->getFaceCells(sf, AmanziMesh::Parallel_type::ALL);
+    cells = op.surf_mesh->getFaceCells(sf, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
     for (int n = 0; n != ncells; ++n) {
       int f = op.surf_mesh->getEntityParent(AmanziMesh::Entity_kind::CELL, cells[n]);
