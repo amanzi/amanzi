@@ -64,9 +64,9 @@ TEST(MPC_DRIVER_IHM_FLOW_SHALLOW_WATER_DAM_BREAK)
 
   // deform mesh (if needed)
   int nnodes =
-    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
-  AmanziMesh::Entity_ID_List nodeids("nodeids", nnodes);
-  AmanziMesh::Point_List new_positions("new_positions", nnodes);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
+  AmanziMesh::Entity_ID_View nodeids("nodeids", nnodes);
+  AmanziMesh::Point_View new_positions("new_positions", nnodes);
   for (int n = 0; n < nnodes; ++n) {
     nodeids[n] = n;
 
@@ -96,7 +96,7 @@ TEST(MPC_DRIVER_IHM_FLOW_SHALLOW_WATER_DAM_BREAK)
 
   // calculate the fluid pressure at the top of the subsurface at final time
   const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("face");
-  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   double p_top_avg = 0.0, top_surface_area = 0.0;
 
   for (int f = 0; f < nfaces; ++f) {

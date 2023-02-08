@@ -134,9 +134,9 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
   cvfunc.Compute(0.0, cv.ptr());
 
   // Check
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c != ncells; ++c) { CHECK_CLOSE(1.0, (*cv)("cell", 0, c), 0.0000001); }
 
-  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f != nfaces; ++f) { CHECK_CLOSE(1.0, (*cv)("face", 0, f), 0.0000001); }
 }

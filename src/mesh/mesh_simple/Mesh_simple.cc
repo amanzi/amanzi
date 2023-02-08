@@ -347,20 +347,20 @@ void Mesh_simple::CreateCache_()
 // TBW
 //---------------------------------------------------------
 std::size_t Mesh_simple::getNumEntities(AmanziMesh::Entity_kind kind,
-                                       AmanziMesh::Parallel_type ptype) const
+                                       AmanziMesh::Parallel_kind ptype) const
 {
   switch (kind) {
     case Entity_kind::FACE:
-      return (ptype != AmanziMesh::Parallel_type::GHOST) ? num_faces_ : 0;
+      return (ptype != AmanziMesh::Parallel_kind::GHOST) ? num_faces_ : 0;
       break;
     case Entity_kind::NODE:
-      return (ptype != AmanziMesh::Parallel_type::GHOST) ? num_nodes_ : 0;
+      return (ptype != AmanziMesh::Parallel_kind::GHOST) ? num_nodes_ : 0;
       break;
     case Entity_kind::CELL:
-      return (ptype != AmanziMesh::Parallel_type::GHOST) ? num_cells_ : 0;
+      return (ptype != AmanziMesh::Parallel_kind::GHOST) ? num_cells_ : 0;
       break;
     case Entity_kind::EDGE: 
-      return (ptype != AmanziMesh::Parallel_type::GHOST) ? num_edges_ : 0;
+      return (ptype != AmanziMesh::Parallel_kind::GHOST) ? num_edges_ : 0;
       break;
     default:
       throw std::exception();
@@ -373,8 +373,8 @@ std::size_t Mesh_simple::getNumEntities(AmanziMesh::Entity_kind kind,
 // Connectivity: cell -> faces
 //---------------------------------------------------------
 void Mesh_simple::getCellFacesAndDirs(const AmanziMesh::Entity_ID cellid,
-        Entity_ID_List& faceids,
-        Entity_Direction_List *cfacedirs) const
+        Entity_ID_View& faceids,
+        Entity_Direction_View *cfacedirs) const
 {
   unsigned int offset = (unsigned int) 6*cellid;
 
@@ -392,7 +392,7 @@ void Mesh_simple::getCellFacesAndDirs(const AmanziMesh::Entity_ID cellid,
 // Connectivity: face -> nodes
 //---------------------------------------------------------
 void Mesh_simple::getFaceNodes(AmanziMesh::Entity_ID face,
-        AmanziMesh::Entity_ID_List& nodeids) const
+        AmanziMesh::Entity_ID_View& nodeids) const
 {
   unsigned int offset = (unsigned int) 4*face;
   Kokkos::resize(nodeids, 4); 
@@ -406,8 +406,8 @@ void Mesh_simple::getFaceNodes(AmanziMesh::Entity_ID face,
 // Connectivity: face -> edges
 //---------------------------------------------------------
 void Mesh_simple::getFaceEdgesAndDirs(const Entity_ID faceid,
-        Entity_ID_List& edgeids,
-        Entity_Direction_List *fedgedirs) const
+        Entity_ID_View& edgeids,
+        Entity_Direction_View *fedgedirs) const
 {
   unsigned int offset = (unsigned int) 4*faceid;
 
@@ -425,7 +425,7 @@ void Mesh_simple::getFaceEdgesAndDirs(const Entity_ID faceid,
 // Connectivity: edge -> nodes
 //---------------------------------------------------------
 void Mesh_simple::getEdgeNodes(
-  const Entity_ID edgeid, Entity_ID_List& nodes) const
+  const Entity_ID edgeid, Entity_ID_View& nodes) const
 {
   unsigned int offset = (unsigned int) 2*edgeid;
   Kokkos::resize(nodes, 2);
@@ -466,8 +466,8 @@ void Mesh_simple::setNodeCoordinate(const AmanziMesh::Entity_ID local_node_id,
 // Faces of type 'ptype' connected to a node
 //---------------------------------------------------------
 void Mesh_simple::getNodeFaces(const AmanziMesh::Entity_ID nodeid,
-        const AmanziMesh::Parallel_type ptype,
-        AmanziMesh::Entity_ID_List& faceids) const
+        const AmanziMesh::Parallel_kind ptype,
+        AmanziMesh::Entity_ID_View& faceids) const
 {
   unsigned int offset = (unsigned int) 13*nodeid;
   unsigned int nfaces = node_to_face_[offset];
@@ -483,8 +483,8 @@ void Mesh_simple::getNodeFaces(const AmanziMesh::Entity_ID nodeid,
 // Cells connected to a face
 //---------------------------------------------------------
 void Mesh_simple::getFaceCells(const AmanziMesh::Entity_ID faceid,
-        const AmanziMesh::Parallel_type ptype,
-        AmanziMesh::Entity_ID_List& cellids) const
+        const AmanziMesh::Parallel_kind ptype,
+        AmanziMesh::Entity_ID_View& cellids) const
 {
   unsigned int offset = (unsigned int) 2*faceid;
 

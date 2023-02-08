@@ -50,7 +50,7 @@ class HeatConduction {
                     const std::vector<double>& bc_value)
   {
     Epetra_MultiVector& vcell = *values_->ViewComponent("cell", true);
-    int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
@@ -96,17 +96,17 @@ class HeatConduction {
       values_ = tmp;
     }
 
-    AmanziMesh::Entity_ID_List cells;
+    AmanziMesh::Entity_ID_View cells;
     Epetra_MultiVector& vcell = *values_->ViewComponent("cell", true);
     Epetra_MultiVector& vface = *values_->ViewComponent("face", true);
     Epetra_MultiVector& vtwin = *values_->ViewComponent("twin", true);
     Epetra_MultiVector& vgrad = *values_->ViewComponent("grad", true);
 
     vtwin = vface;
-    int nfaces = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    int nfaces = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
     for (int f = 0; f < nfaces; f++) {
-      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       int ncells = cells.size();
 
       if (ncells == 2) {
@@ -146,19 +146,19 @@ class HeatConduction {
       values_ = tmp;
     }
 
-    AmanziMesh::Entity_ID_List cells;
+    AmanziMesh::Entity_ID_View cells;
     Epetra_MultiVector& vcell = *values_->ViewComponent("cell", true);
     Epetra_MultiVector& vface = *values_->ViewComponent("face", true);
     Epetra_MultiVector& vgrad = *values_->ViewComponent("grad", true);
     Epetra_MultiVector& vtwin = *values_->ViewComponent("twin", true);
 
-    int nfaces = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    int nfaces = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     AmanziGeometry::Point grad(dim), xc(dim);
 
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
-      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       int ncells = cells.size();
 
       int c = cells[0];

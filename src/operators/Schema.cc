@@ -102,7 +102,7 @@ Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     std::tie(kind, std::ignore, num) = *it;
 
     offset_.push_back(m);
-    int nent = mesh->getNumEntities(kind, AmanziMesh::Parallel_type::OWNED);
+    int nent = mesh->getNumEntities(kind, AmanziMesh::Parallel_kind::OWNED);
     m += nent * num;
   }
 }
@@ -126,7 +126,7 @@ Schema::ComputeOffset(int c,
     std::tie(kind, std::ignore, num) = *it;
 
     if (kind == AmanziMesh::Entity_kind::NODE) {
-      AmanziMesh::Entity_ID_List nodes;
+      AmanziMesh::Entity_ID_View nodes;
       nodes = mesh->getCellNodes(c);
       ndofs = nodes.size();
     } else if (kind == AmanziMesh::Entity_kind::EDGE) {

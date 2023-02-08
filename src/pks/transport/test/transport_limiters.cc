@@ -86,7 +86,7 @@ TEST(LIMITER_BARTH_JESPERSEN)
   auto flux = S->GetFieldData("volumetric_flow_rate", passwd)->ViewComponent("face", false);
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
-  int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     (*flux)[0][f] = velocity * normal;
@@ -109,7 +109,7 @@ TEST(LIMITER_BARTH_JESPERSEN)
     Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
   RCP<Epetra_MultiVector> grad = gradient->ViewComponent("cell", false);
 
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells; c++) {
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     (*scalar_field)[c] = 5.0 - xc[0] - 0.5 * xc[1] - 0.2 * xc[2];

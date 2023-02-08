@@ -19,7 +19,7 @@
 #include "SurfaceCoordinateSystem.hh"
 
 namespace Amanzi {
-namespace WhetStone {
+namespace AmanziGeometry {
 
 /* ******************************************************************
 * Initialization of local coordinate system
@@ -62,5 +62,5 @@ SurfaceCoordinateSystem::Project(const AmanziGeometry::Point& x, bool flag) cons
   return xloc;
 }
 
-} // namespace WhetStone
+} // namespace AmanziGeometry
 } // namespace Amanzi

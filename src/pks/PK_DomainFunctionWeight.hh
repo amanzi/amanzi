@@ -106,7 +106,7 @@ PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
   int dim = mesh_->getSpaceDimension();
   std::vector<double> args(1 + dim);
 
-  int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   for (UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::Entity_kind::CELL]->begin();
        uspec != unique_specs_[AmanziMesh::Entity_kind::CELL]->end();

@@ -39,9 +39,9 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED)
   // add a region to extract from that is 3D
   Teuchos::ParameterList spec;
   auto& surf_reg_spec = spec.sublist("region: plane");
-  std::vector<double> point{0.0, 0.0, 1.0};
+  Double_List point{0.0, 0.0, 1.0};
   surf_reg_spec.set<Teuchos::Array<double>>("point", point);
-  std::vector<double> normal{0.0, 0.0, 1.0};
+  Double_List normal{0.0, 0.0, 1.0};
   surf_reg_spec.set<Teuchos::Array<double>>("normal", normal);
   gm->AddRegion(AmanziGeometry::createRegion("Top Face Plane", gm->size(), spec, *comm));
 
@@ -67,7 +67,7 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED)
     MeshFrameworkFactory fac(comm, gm);
     fac.set_preference({frm});
     auto top_faces = parent_mesh->getSetEntities("Top Face Plane",
-            AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+            AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
     auto surface_framework_mesh = fac.create(parent_mesh,
             top_faces, AmanziMesh::Entity_kind::FACE, true);
@@ -101,9 +101,9 @@ TEST(MESH_SURFACE_EXTRACTION_EXO)
   // add a region to extract from that is 3D
   Teuchos::ParameterList spec;
   auto& surf_reg_spec = spec.sublist("region: plane");
-  std::vector<double> point{0.0, 0.0, 1.0};
+  Double_List point{0.0, 0.0, 1.0};
   surf_reg_spec.set<Teuchos::Array<double>>("point", point);
-  std::vector<double> normal{0.0, 0.0, 1.0};
+  Double_List normal{0.0, 0.0, 1.0};
   surf_reg_spec.set<Teuchos::Array<double>>("normal", normal);
   gm->AddRegion(AmanziGeometry::createRegion("Top Face Plane", gm->size(), spec, *comm));
 
@@ -128,7 +128,7 @@ TEST(MESH_SURFACE_EXTRACTION_EXO)
     MeshFrameworkFactory fac(comm, gm);
     fac.set_preference({frm});
     auto top_faces = parent_mesh->getSetEntities("Top Face Plane",
-            AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+            AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     auto surface_framework_mesh = fac.create(parent_mesh,
             top_faces, AmanziMesh::Entity_kind::FACE, true);
 
@@ -163,9 +163,9 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
   // add a region to extract from that is 3D
   Teuchos::ParameterList spec;
   auto& surf_reg_spec = spec.sublist("region: plane");
-  std::vector<double> point{0.0, 0.0, 1.0};
+  Double_List point{0.0, 0.0, 1.0};
   surf_reg_spec.set<Teuchos::Array<double>>("point", point);
-  std::vector<double> normal{0.0, 0.0, 1.0};
+  Double_List normal{0.0, 0.0, 1.0};
   surf_reg_spec.set<Teuchos::Array<double>>("normal", normal);
   gm->AddRegion(AmanziGeometry::createRegion("Top Face Plane", gm->size(), spec, *comm));
 
@@ -224,9 +224,9 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
   // add a region to extract from that is 3D
   Teuchos::ParameterList spec;
   auto& surf_reg_spec = spec.sublist("region: plane");
-  std::vector<double> point{0.0, 0.0, 1.0};
+  Double_List point{0.0, 0.0, 1.0};
   surf_reg_spec.set<Teuchos::Array<double>>("point", point);
-  std::vector<double> normal{0.0, 0.0, 1.0};
+  Double_List normal{0.0, 0.0, 1.0};
   surf_reg_spec.set<Teuchos::Array<double>>("normal", normal);
   gm->AddRegion(AmanziGeometry::createRegion("Top Face Plane", gm->size(), spec, *comm));
 

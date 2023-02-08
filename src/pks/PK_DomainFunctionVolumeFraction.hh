@@ -107,7 +107,7 @@ PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1)
   int dim = (*mesh_).getSpaceDimension();
   std::vector<double> args(1 + dim);
 
-  int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   for (MaterialSpecList::const_iterator mspec = material_specs_.at(kind_)->begin();
        mspec != material_specs_.at(kind_)->end();

@@ -273,9 +273,9 @@ Alquimia_PK::Initialize()
 
       // Get the cells that belong to this region.
       int num_cells =
-        mesh_->getSetSize(region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        mesh_->getSetSize(region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       auto cell_indices = mesh_->getSetEntities(
-        region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
       // Loop over the cells.
       for (int i = 0; i < num_cells; ++i) {
@@ -875,7 +875,7 @@ Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // Get the number of owned (non-ghost) cells for the mesh.
-  int num_cells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int num_cells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   int max_itrs(0), avg_itrs(0), min_itrs(1000), imax(-1);
 

@@ -141,10 +141,10 @@ class BCsIndependent : public EvaluatorIndependent<Operators::BCs, Operators::BC
     for (auto& val : value) val = 0.;
 
     // set all exterior faces to dirichlet 0
-    int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
-    AmanziMesh::Entity_ID_List cells;
+    int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+    AmanziMesh::Entity_ID_View cells;
     for (int f = 0; f != nfaces_owned; ++f) {
-      cells = mesh->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+      cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       if (cells.size() == 1) {
         model[f] = Operators::OPERATOR_BC_DIRICHLET;
         auto fc = mesh->getFaceCentroid(f);

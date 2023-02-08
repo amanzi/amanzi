@@ -102,7 +102,7 @@ TEST(FLOW_3D_RICHARDS)
   GMV::close_data_file();
 
   /* check the pressure profile */
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   //for (int c = 0; c < ncells; c++) std::cout << (mesh->getCellCentroid(c))[2] << " " << pressure[c] << std::endl;
   for (int c = 0; c < ncells; c++) CHECK(p[0][c] > 4500.0 && p[0][c] < 101325.0);
 

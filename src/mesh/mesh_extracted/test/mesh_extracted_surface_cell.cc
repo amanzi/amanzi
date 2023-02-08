@@ -50,7 +50,7 @@ TEST(SURFACE_COLUMN_MESH_3D)
 
   // Perturb the nodes above the base layer just a bit
   int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE,
-          AmanziMesh::Parallel_type::OWNED);
+          AmanziMesh::Parallel_kind::OWNED);
 
   for (int n = 0; n < nnodes; n++) {
     AmanziGeometry::Point xyz(3);
@@ -62,7 +62,7 @@ TEST(SURFACE_COLUMN_MESH_3D)
   // Create a column mesh from one of the columns
   Teuchos::RCP<AmanziMesh::MeshFramework> colmesh_ext =
     Teuchos::rcp(new AmanziMesh::Mesh_MSTK(mesh_fw,
-          mesh->columns.cells_.getRow<MemSpace_type::HOST>(10), AmanziMesh::Entity_kind::CELL,
+          mesh->columns.cells_.getRow<MemSpace_kind::HOST>(10), AmanziMesh::Entity_kind::CELL,
           false, getCommSelf(), gm, Teuchos::null));
 
   // Create the MeshColumn object
@@ -73,9 +73,9 @@ TEST(SURFACE_COLUMN_MESH_3D)
   AmanziMesh::MeshSurfaceCell col_surf(colmesh);
 
   // -- check basic mesh structure
-  CHECK_EQUAL(1, col_surf.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED));
-  CHECK_EQUAL(4, col_surf.getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED));
-  CHECK_EQUAL(4, col_surf.getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED));
+  CHECK_EQUAL(1, col_surf.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED));
+  CHECK_EQUAL(4, col_surf.getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED));
+  CHECK_EQUAL(4, col_surf.getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED));
 
   // -- check flattened
   AmanziGeometry::Point node;

@@ -80,8 +80,8 @@ TestDiffusionEdges(int dim, double tol, std::string filename)
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nedges_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nedges_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic ana(mesh);
 
@@ -121,7 +121,7 @@ TestDiffusionEdges(int dim, double tol, std::string filename)
     const Point& xc = mesh->getCellCentroid(c);
     double volume = mesh->getCellVolume(c);
 
-    AmanziMesh::Entity_ID_List edges;
+    AmanziMesh::Entity_ID_View edges;
     edges = mesh->getCellEdges(c);
     int nedges = edges.size();
 

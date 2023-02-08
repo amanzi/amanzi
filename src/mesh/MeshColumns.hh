@@ -17,7 +17,7 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-template<MemSpace_type>
+template<MemSpace_kind>
 class MeshCache;
 
 struct MeshColumns {
@@ -35,21 +35,21 @@ struct MeshColumns {
   //
   // Note these MUST be constructed on HOST caches.
   //
-  void initialize(const MeshCache<MemSpace_type::HOST>& mesh);
+  void initialize(const MeshCache<MemSpace_kind::HOST>& mesh);
 
   //
   // Constructor that infers columnar structure from a mesh set.
   //
   // Note these MUST be constructed on HOST caches.
   //
-  void initialize(const MeshCache<MemSpace_type::HOST>& mesh, const std::vector<std::string>& regions);
+  void initialize(const MeshCache<MemSpace_kind::HOST>& mesh, const std::vector<std::string>& regions);
 
   //
   // Constructor that sets top faces directly
   //
   // Note these MUST be constructed on HOST caches.
   //
-  void initialize(const MeshCache<MemSpace_type::HOST>& mesh, const Entity_ID_List& surface_faces);
+  void initialize(const MeshCache<MemSpace_kind::HOST>& mesh, const Entity_ID_View& surface_faces);
 
   int num_columns_owned;
   int num_columns_all;
@@ -57,14 +57,14 @@ struct MeshColumns {
   //
   // View all cells or faces
   //
-  template<MemSpace_type MEM = MemSpace_type::HOST>
+  template<MemSpace_kind MEM = MemSpace_kind::HOST>
   KOKKOS_INLINE_FUNCTION
   decltype(auto) // cEntity_ID_View
   getCells(int col) const {
     return cells_.getRow<MEM>(col);
   }
 
-  template<MemSpace_type MEM = MemSpace_type::HOST>
+  template<MemSpace_kind MEM = MemSpace_kind::HOST>
   KOKKOS_INLINE_FUNCTION
   decltype(auto) // cEntity_ID_View
   getFaces(int col) const {
@@ -74,20 +74,20 @@ struct MeshColumns {
   //
   // Get one cell or face
   //
-  template<MemSpace_type MEM>
+  template<MemSpace_kind MEM>
   KOKKOS_INLINE_FUNCTION
   Entity_ID getCell(int col, int i) {
     return cells_.get<MEM>(col, i);
   }
 
-  template<MemSpace_type MEM>
+  template<MemSpace_kind MEM>
   KOKKOS_INLINE_FUNCTION
   Entity_ID getFace(int col, int i) {
     return faces_.get<MEM>(col, i);
   }
 
  private:
-  void buildColumn_(const MeshCache<MemSpace_type::HOST>& mesh, const Entity_ID f, int col);
+  void buildColumn_(const MeshCache<MemSpace_kind::HOST>& mesh, const Entity_ID f, int col);
 
   public: 
   // a vector of columns, each a list of cells in the column, ordered from top
@@ -108,24 +108,24 @@ namespace Impl {
 // Returns 1 if the up face, -1 if the down face, 0 if the side face.
 //
 int
-orientFace(const MeshCache<MemSpace_type::HOST>& mesh, const Entity_ID f, const Entity_ID c);
+orientFace(const MeshCache<MemSpace_kind::HOST>& mesh, const Entity_ID f, const Entity_ID c);
 
 //
 // Helper function to find the face of c pointing downward.
 //
 // Assumes this is well posed... e.g. that there is only one face of c that
 // points down.   Returns -1 if none are found.
-Entity_ID findDownFace(const MeshCache<MemSpace_type::HOST>& mesh, const Entity_ID c);
+Entity_ID findDownFace(const MeshCache<MemSpace_kind::HOST>& mesh, const Entity_ID c);
 
 //
 // Finds the cell in face cells that is not c, returning -1 if not possible.
 //
-Entity_ID findOpposingCell(const MeshCache<MemSpace_type::HOST>& mesh, const Entity_ID c, const Entity_ID f);
+Entity_ID findOpposingCell(const MeshCache<MemSpace_kind::HOST>& mesh, const Entity_ID c, const Entity_ID f);
 
 //
 // Helper function for counting column size
 //
-std::size_t countCellsInColumn(const MeshCache<MemSpace_type::HOST>& mesh, Entity_ID f);
+std::size_t countCellsInColumn(const MeshCache<MemSpace_kind::HOST>& mesh, Entity_ID f);
 
 } // namespace Impl
 

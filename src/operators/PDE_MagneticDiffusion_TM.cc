@@ -37,7 +37,7 @@ PDE_MagneticDiffusion_TM::ModifyMatrices(CompositeVector& E, CompositeVector& B,
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
   Epetra_MultiVector& rhs_v = *global_op_->rhs()->ViewComponent("node", true);
 
-  AmanziMesh::Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_View nodes;
 
   for (int c = 0; c < ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
@@ -84,7 +84,7 @@ PDE_MagneticDiffusion_TM::ModifyFields(CompositeVector& E, CompositeVector& B, d
   Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
 
   std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List faces, nodes;
+  AmanziMesh::Entity_ID_View faces, nodes;
 
   std::vector<bool> fflag(nedges_wghost, false);
 
@@ -150,7 +150,7 @@ PDE_MagneticDiffusion_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
                                          bool eliminate,
                                          bool essential_eqn)
 {
-  AmanziMesh::Entity_ID_List nodes, faces, cells;
+  AmanziMesh::Entity_ID_View nodes, faces, cells;
   std::vector<int> fdirs;
 
   global_op_->rhs()->PutScalarGhosted(0.0);
@@ -229,7 +229,7 @@ PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
   E.ScatterMasterToGhosted("node");
   const Epetra_MultiVector& Ev = *E.ViewComponent("node", true);
 
-  AmanziMesh::Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_View nodes;
 
   double energy(0.0);
   for (int c = 0; c < ncells_owned; ++c) {

@@ -31,7 +31,7 @@ class ObservableLineSegmentSolute : public ObservableSolute, public ObservableLi
   void InterpolatedValues(State& S,
                           std::string var,
                           std::string interpolation,
-                          AmanziMesh::Entity_ID_List& ids,
+                          AmanziMesh::Entity_ID_View& ids,
                           std::vector<AmanziGeometry::Point>& line_pnts,
                           std::vector<double>& values);
 };
@@ -100,7 +100,7 @@ void
 ObservableLineSegmentSolute::InterpolatedValues(State& S,
                                                 std::string var,
                                                 std::string interpolation,
-                                                AmanziMesh::Entity_ID_List& ids,
+                                                AmanziMesh::Entity_ID_View& ids,
                                                 std::vector<AmanziGeometry::Point>& line_pnts,
                                                 std::vector<double>& values)
 {

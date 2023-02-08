@@ -28,8 +28,8 @@ test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-  CHECK_EQUAL(4, m->getNumEntities(CELL, Parallel_type::ALL));
-  CHECK_EQUAL(5, m->getNumEntities(FACE, Parallel_type::ALL));
+  CHECK_EQUAL(4, m->getNumEntities(CELL, Parallel_kind::ALL));
+  CHECK_EQUAL(5, m->getNumEntities(FACE, Parallel_kind::ALL));
   CHECK_EQUAL(0.25, m->getCellVolume(0));
   CHECK_EQUAL(1.0, m->getFaceArea(0));
 
@@ -37,9 +37,9 @@ test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_EQUAL(0.0, m->getFaceNormal(3)[1]);
   CHECK_EQUAL(0.0, m->getFaceNormal(3)[2]);
 
-  Entity_ID_List faces;
+  Entity_ID_View faces;
   std::vector<int> dirs;
-  std::vector<Point> bisectors;
+  Point_List bisectors;
   m->getCellFacesAndDirs(2, faces, &dirs);
   CHECK_EQUAL(2, faces.size());
   CHECK_EQUAL(2, faces[0]);
@@ -61,28 +61,28 @@ test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_EQUAL(0., bisectors[1][1]);
   CHECK_EQUAL(0., bisectors[1][2]);
 
-  Entity_ID_List cells;
-  m->getFaceCells(0, Parallel_type::ALL, cells);
+  Entity_ID_View cells;
+  m->getFaceCells(0, Parallel_kind::ALL, cells);
   CHECK_EQUAL(1, cells.size());
   CHECK_EQUAL(0, cells[0]);
 
-  m->getFaceCells(1, Parallel_type::ALL, cells);
+  m->getFaceCells(1, Parallel_kind::ALL, cells);
   CHECK_EQUAL(2, cells.size());
   CHECK_EQUAL(0, cells[0]);
   CHECK_EQUAL(1, cells[1]);
 
-  m->getFaceCells(4, Parallel_type::ALL, cells);
+  m->getFaceCells(4, Parallel_kind::ALL, cells);
   CHECK_EQUAL(1, cells.size());
   CHECK_EQUAL(3, cells[0]);
 
   
   if (test_region) {
     // check regions
-    CHECK_EQUAL(4, m->getSetSize("myregion", CELL, Parallel_type::ALL));
-    CHECK_EQUAL(0, m->getSetSize("myregion", FACE, Parallel_type::ALL));
+    CHECK_EQUAL(4, m->getSetSize("myregion", CELL, Parallel_kind::ALL));
+    CHECK_EQUAL(0, m->getSetSize("myregion", FACE, Parallel_kind::ALL));
 
-    Entity_ID_List set_ents;
-    set_ents = m->getSetEntities("myregion", CELL, Parallel_type::ALL);
+    Entity_ID_View set_ents;
+    set_ents = m->getSetEntities("myregion", CELL, Parallel_kind::ALL);
     CHECK_EQUAL(0, set_ents[0]);
     CHECK_EQUAL(2, set_ents[2]);
   }
@@ -98,7 +98,7 @@ test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   Teuchos::RCP<const GeometricModel> gm_c = m->geometric_model();
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp_const_cast<GeometricModel>(gm_c);
   
-  Entity_ID_List ents;
+  Entity_ID_View ents;
   ents.push_back(0);
   ents.push_back(3);
 
@@ -107,12 +107,12 @@ test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   gm->AddRegion(enum_rgn);
 
 
-  CHECK_EQUAL(2, m->getSetSize("myregion", CELL, Parallel_type::ALL));
-  CHECK_EQUAL(0, m->getSetSize("myregion", FACE, Parallel_type::ALL));
+  CHECK_EQUAL(2, m->getSetSize("myregion", CELL, Parallel_kind::ALL));
+  CHECK_EQUAL(0, m->getSetSize("myregion", FACE, Parallel_kind::ALL));
 
   if (test_region) {
-    Entity_ID_List set_ents;
-    set_ents = m->getSetEntities("myregion", CELL, Parallel_type::ALL);
+    Entity_ID_View set_ents;
+    set_ents = m->getSetEntities("myregion", CELL, Parallel_kind::ALL);
     CHECK_EQUAL(0, set_ents[0]);
     CHECK_EQUAL(3, set_ents[1]);
   }
@@ -133,7 +133,7 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   Point branch(0.,0.,-1.25);
   CHECK_CLOSE(0., norm(branch - m->getCellCentroid(2)), 1.e-6);
 
-  Entity_ID_List branch_faces;
+  Entity_ID_View branch_faces;
   std::vector<int> dirs;
   m->getCellFacesAndDirs(2, branch_faces, &dirs);
   CHECK_EQUAL(5, branch_faces.size());
@@ -145,8 +145,8 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_CLOSE(0., norm(tip-m->getFaceCentroid(4)), 1.e-6);
 
   if (test_region) {
-    CHECK_EQUAL(3, m->getSetSize("coarse_root", CELL, Parallel_type::ALL));
-    CHECK_EQUAL(8, m->getSetSize("fine_root", CELL, Parallel_type::ALL));
+    CHECK_EQUAL(3, m->getSetSize("coarse_root", CELL, Parallel_kind::ALL));
+    CHECK_EQUAL(8, m->getSetSize("fine_root", CELL, Parallel_kind::ALL));
   }
 }
 

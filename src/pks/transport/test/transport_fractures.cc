@@ -71,9 +71,9 @@ TEST(ADVANCE_TWO_FRACTURES)
   // RCP<const Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::Entity_kind::FACE);
   RCP<const Mesh> mesh = meshfactory.create("test/fractures.exo");
 
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   std::cout << "pid=" << comm->MyPID() << " cells: " << ncells_owned << " faces: " << nfaces_owned
             << std::endl;
 
@@ -147,7 +147,7 @@ TEST(ADVANCE_TWO_FRACTURES)
   }
 
   // test the maximum principle
-  auto block = mesh->getSetEntities("fracture 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  auto block = mesh->getSetEntities("fracture 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // test that solute enter the second fracture
   double tcc_max(0.0);

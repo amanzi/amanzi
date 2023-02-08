@@ -139,7 +139,7 @@ HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name);
 
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -216,7 +216,7 @@ HighOrderLagrange2D(std::string file_name)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name);
 
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -400,7 +400,7 @@ HighOrderLagrangeSerendipity(const std::string& filename)
   Teuchos::RCP<Mesh> mesh = meshfactory.create(filename);
 
   int d = mesh->getSpaceDimension();
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);

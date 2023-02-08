@@ -93,7 +93,7 @@ CurlCurl(double c_t,
 
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
@@ -102,15 +102,15 @@ CurlCurl(double c_t,
   }
 
   // create boundary data
-  int nedges_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int nedges_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::EDGE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   std::vector<int> edirs;
-  AmanziMesh::Entity_ID_List cells, edges;
+  AmanziMesh::Entity_ID_View cells, edges;
 
   for (int f = 0; f < nfaces_wghost; ++f) {
     const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);

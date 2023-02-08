@@ -48,7 +48,7 @@ class MFD3D_BernardiRaugel : public MFD3D {
   // -- other matrices
   virtual int DivergenceMatrix(int c, DenseMatrix& A) override;
   virtual int
-  AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A) override;
+  AdvectionMatrix(int c, const AmanziMesh::Point_List& u, DenseMatrix& A) override;
 
  private:
   static RegisteredFactory<MFD3D_BernardiRaugel> reg_;

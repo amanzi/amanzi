@@ -69,7 +69,7 @@ CalculateDarcyFluxError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVector&
   double cr = 1.02160895462971866; // analytical data
   velocity_exact[dim - 1] = -cr;
 
-  int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   double error_l2 = 0.0;
   for (int f = 0; f < nfaces_owned; f++) {
@@ -89,7 +89,7 @@ double
 CalculateDarcyDivergenceError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVector& flux)
 {
   double error_L2 = 0.0;
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     

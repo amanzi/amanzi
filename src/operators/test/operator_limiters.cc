@@ -63,10 +63,10 @@ TEST(LIMITER_LINEAR_FUNCTION_2D)
     Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL,true), 1));
   Epetra_MultiVector grad_exact(mesh->getMap(AmanziMesh::Entity_kind::CELL,false), 2);
 
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
@@ -199,8 +199,8 @@ TEST(LIMITER_LINEAR_FUNCTION_3D)
     Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL,true), 1));
   Epetra_MultiVector grad_exact(mesh->getMap(AmanziMesh::Entity_kind::CELL,false), 3);
 
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
@@ -218,8 +218,8 @@ TEST(LIMITER_LINEAR_FUNCTION_3D)
   const Epetra_Map& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE,true);
   Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
 
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
   AmanziGeometry::Point velocity(3), center(0.5, 0.5, 0.5);
 
   for (int f = 0; f < nfaces_wghost; f++) {
@@ -323,8 +323,8 @@ TEST(LIMITER_SMOOTH_FIELD_2D)
       Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL,true), 1));
     Epetra_MultiVector grad_exact(mesh->getMap(AmanziMesh::Entity_kind::CELL,false), 2);
 
-    int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-    int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
     for (int c = 0; c < ncells_wghost; c++) {
       const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
@@ -342,8 +342,8 @@ TEST(LIMITER_SMOOTH_FIELD_2D)
     const Epetra_Map& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE,true);
     Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
 
-    int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
-    int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+    int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+    int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
     AmanziGeometry::Point velocity(1.0, 2.0), center(0.5, 0.5);
 
     for (int f = 0; f < nfaces_wghost; f++) {
@@ -463,8 +463,8 @@ TEST(LIMITER_SMOOTH_FIELD_3D)
       Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL,true), 1));
     Epetra_MultiVector grad_exact(mesh->getMap(AmanziMesh::Entity_kind::CELL,false), 3);
 
-    int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-    int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
     for (int c = 0; c < ncells_wghost; c++) {
       const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
@@ -483,8 +483,8 @@ TEST(LIMITER_SMOOTH_FIELD_3D)
     const Epetra_Map& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE,true);
     Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
 
-    int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
-    int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+    int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+    int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
     AmanziGeometry::Point velocity(3), center(0.5, 0.5, 0.5);
 
     for (int f = 0; f < nfaces_wghost; f++) {
@@ -604,8 +604,8 @@ SmoothField2DPoly(double extension)
     Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL,true), 1));
   Epetra_MultiVector grad_exact(mesh->getMap(AmanziMesh::Entity_kind::CELL,false), 2);
 
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
@@ -623,8 +623,8 @@ SmoothField2DPoly(double extension)
   const Epetra_Map& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE,true);
   Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
 
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
   AmanziGeometry::Point velocity(1.0, 2.0), center(0.5, 0.5);
 
   for (int f = 0; f < nfaces_wghost; f++) {
@@ -743,8 +743,8 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES)
     Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL,true), 1));
   Epetra_MultiVector grad_exact(mesh->getMap(AmanziMesh::Entity_kind::CELL,false), 3);
 
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
@@ -771,7 +771,7 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES)
   const Epetra_Map& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE,true);
   Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
 
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
   AmanziGeometry::Point velocity(3), center(0.5, 0.5, 0.5);
 
   for (int f = 0; f < nfaces_wghost; f++) {

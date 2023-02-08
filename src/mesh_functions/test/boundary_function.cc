@@ -137,15 +137,15 @@ TEST_FIXTURE(reference_mesh, values1)
   CHECK_EQUAL(12, bf.size());
   bf.Compute(0.0);
 
-  auto face_list = mesh->getSetEntities(RIGHT, FACE, Parallel_type::ALL);
+  auto face_list = mesh->getSetEntities(RIGHT, FACE, Parallel_kind::ALL);
   for (auto f = face_list.begin(); f != face_list.end(); ++f)
     CHECK_EQUAL(1.0, bf.find(*f)->second);
 
-  face_list = mesh->getSetEntities(FRONT, FACE, Parallel_type::ALL);
+  face_list = mesh->getSetEntities(FRONT, FACE, Parallel_kind::ALL);
   for (auto f = face_list.begin(); f != face_list.end(); ++f)
     CHECK_EQUAL(2.0, bf.find(*f)->second);
 
-  face_list = mesh->getSetEntities(BACK, FACE, Parallel_type::ALL);
+  face_list = mesh->getSetEntities(BACK, FACE, Parallel_kind::ALL);
   for (auto f = face_list.begin(); f != face_list.end(); ++f)
     CHECK_EQUAL(3.0, bf.find(*f)->second);
 }
@@ -154,11 +154,11 @@ TEST_FIXTURE(reference_mesh, values1)
 TEST_FIXTURE(reference_mesh, values2)
 {
   // Create the function f(t,x,y,z) = t * (x + 2y + 3z)
-  std::vector<double> c(1, 1.0);
+  AmanziMesh::Double_List c(1, 1.0);
   std::vector<int> ip(1, 1);
   std::unique_ptr<Function> f1(new FunctionPolynomial(c, ip));
   double g[3] = { 1.0, 2.0, 3.0 };
-  std::vector<double> grad(g, g + 3);
+  AmanziMesh::Double_List grad(g, g + 3);
   std::unique_ptr<Function> f2(new FunctionLinear(0.0, grad));
 
   // Create the boundary function

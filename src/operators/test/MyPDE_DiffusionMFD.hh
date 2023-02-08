@@ -67,7 +67,7 @@ MyPDE_DiffusionMFD::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& fl
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   WhetStone::DenseMatrix Wff;
 
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_View cells;
 
   WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
   Kc(0, 0) = 1.0;
@@ -87,7 +87,7 @@ MyPDE_DiffusionMFD::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& fl
     } else {
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+        cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
         kf[n] = (c == cells[0]) ? (*k_face)[0][f] : (*k_twin)[0][f];
       }
     }

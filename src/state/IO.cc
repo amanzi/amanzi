@@ -258,9 +258,9 @@ DeformCheckpointMesh(State& S, Key domain)
     int nV = vc_n.MyLength();
 
     int dim = write_access_mesh->getSpaceDimension();
-    Amanzi::AmanziMesh::Entity_ID_List nodeids("nodeids", nV);
+    Amanzi::AmanziMesh::Entity_ID_View nodeids("nodeids", nV);
     Amanzi::AmanziGeometry::Point new_coords(dim);
-    Amanzi::AmanziMesh::Point_List new_pos("new_pos", nV), final_pos;
+    Amanzi::AmanziMesh::Point_View new_pos("new_pos", nV), final_pos;
 
 
     for (int n = 0; n != nV; ++n) {

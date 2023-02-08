@@ -35,7 +35,7 @@ TEST(NANOFLANN) {
   double query_pt[2] = {0.5, 0.5};
   Amanzi::AmanziGeometry::Point p(0.5, 0.5);
 
-  std::vector<Amanzi::AmanziGeometry::Point> points;
+  Amanzi::AmanziMesh::Point_List points;
 
   for (int i = 0; i < n; ++i) {
     double x = range * (rand() % 1000) / 1000.0;
@@ -59,7 +59,7 @@ TEST(NANOFLANN) {
   // SEARCH 1: closest points
   int nresults = 2;
   std::vector<unsigned int> idx(nresults);
-  std::vector<double> dist_sqr(nresults);
+  Amanzi::AmanziMesh::Double_List dist_sqr(nresults);
 
   nresults = tree.knnSearch(&query_pt[0], nresults, &idx[0], &dist_sqr[0]);
 		

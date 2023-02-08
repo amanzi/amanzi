@@ -104,7 +104,7 @@ PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
                                      bool eliminate,
                                      bool essential_eqn)
 {
-  AmanziMesh::Entity_ID_List edges, cells;
+  AmanziMesh::Entity_ID_View edges, cells;
   std::vector<int> edirs;
 
   global_op_->rhs()->PutScalarGhosted(0.0);

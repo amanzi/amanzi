@@ -54,8 +54,8 @@ TEST(MESH_MAPS)
                                        {1.0,0.25},{0.75,0.5},
                                        {1.0,0.75},{0.75,1.0}};
 
-    int ncells = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
-    int nfaces = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
+    int ncells = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_kind::OWNED);
+    int nfaces = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,Amanzi::AmanziMesh::Parallel_kind::ALL);
 
     int space_dim_ = 2;
 
@@ -81,7 +81,7 @@ TEST(MESH_MAPS)
 
       CHECK_EQUAL(found,true);
 
-      Amanzi::AmanziMesh::Entity_ID_List cfaces;
+      Amanzi::AmanziMesh::Entity_ID_View cfaces;
       Amanzi::AmanziGeometry::Point normal_sum(2), normal(2);      
 
       mesh->getCellFaces(i,cfaces);
@@ -116,15 +116,15 @@ TEST(MESH_MAPS)
       
           // Check the normal with respect to each connected cell
           
-          Amanzi::AmanziMesh::Entity_ID_List cellids;
-          mesh->getFaceCells(i,Amanzi::AmanziMesh::Parallel_type::ALL,cellids);
+          Amanzi::AmanziMesh::Entity_ID_View cellids;
+          mesh->getFaceCells(i,Amanzi::AmanziMesh::Parallel_kind::ALL,cellids);
           
           for (int k = 0; k < cellids.size(); k++) {
             int dir;
             Amanzi::AmanziGeometry::Point normal_wrt_cell =
               mesh->getFaceNormal(i,cellids[k],&dir);
 
-            //            Amanzi::AmanziMesh::Entity_ID_List cellfaces;
+            //            Amanzi::AmanziMesh::Entity_ID_View cellfaces;
             //            std::vector<int> cellfacedirs;
             //            mesh->getCellFacesAndDirs(cellids[k],cellfaces,&cellfacedirs);
             //
@@ -235,8 +235,8 @@ TEST(MESH_GEOMETRY_SURFACE)
                                        {0.5,0.25,0.5},{0.5,0.5,0.25},
                                        {0.5,0.75,0.5},{0.5,1.0,0.25}};
 
-    int ncells = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
-    int nfaces = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
+    int ncells = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_kind::OWNED);
+    int nfaces = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,Amanzi::AmanziMesh::Parallel_kind::ALL);
 
     for (int i = 0; i < ncells; i++) {
 
@@ -279,8 +279,8 @@ TEST(MESH_GEOMETRY_SURFACE)
       
           // Check the normal with respect to each connected cell
           
-          Amanzi::AmanziMesh::Entity_ID_List cellids;
-          mesh->getFaceCells(i,Amanzi::AmanziMesh::Parallel_type::ALL,cellids);
+          Amanzi::AmanziMesh::Entity_ID_View cellids;
+          mesh->getFaceCells(i,Amanzi::AmanziMesh::Parallel_kind::ALL,cellids);
 
 
           Amanzi::AmanziGeometry::Point facecentroid = mesh->getFaceCentroid(i);
@@ -290,7 +290,7 @@ TEST(MESH_GEOMETRY_SURFACE)
             Amanzi::AmanziGeometry::Point normal_wrt_cell = 
               mesh->getFaceNormal(i,cellids[k],&dir);
 
-            //            Amanzi::AmanziMesh::Entity_ID_List cellfaces;
+            //            Amanzi::AmanziMesh::Entity_ID_View cellfaces;
             //            std::vector<int> cellfacedirs;
             //            mesh->getCellFacesAndDirs(cellids[k],&cellfaces,&cellfacedirs);
 
@@ -459,8 +459,8 @@ TEST(MESH_GEOMETRY_SOLID)
     };
 
 
-    int ncells = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
-    int nfaces = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
+    int ncells = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_kind::OWNED);
+    int nfaces = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,Amanzi::AmanziMesh::Parallel_kind::ALL);
 
     int space_dim_ = 3;
 
@@ -487,7 +487,7 @@ TEST(MESH_GEOMETRY_SOLID)
 
       CHECK_EQUAL(found,true);
 
-      Amanzi::AmanziMesh::Entity_ID_List cfaces;
+      Amanzi::AmanziMesh::Entity_ID_View cfaces;
       Amanzi::AmanziGeometry::Point normal_sum(3), normal(3);      
 
       mesh->getCellFaces(i,cfaces);
@@ -523,15 +523,15 @@ TEST(MESH_GEOMETRY_SOLID)
       
           // Check the normal with respect to each connected cell
           
-          Amanzi::AmanziMesh::Entity_ID_List cellids;
-          mesh->getFaceCells(i,Amanzi::AmanziMesh::Parallel_type::ALL,cellids);
+          Amanzi::AmanziMesh::Entity_ID_View cellids;
+          mesh->getFaceCells(i,Amanzi::AmanziMesh::Parallel_kind::ALL,cellids);
           
           for (int k = 0; k < cellids.size(); k++) {
             int dir;
             Amanzi::AmanziGeometry::Point normal_wrt_cell = 
               mesh->getFaceNormal(i,cellids[k],&dir);
 
-            // Amanzi::AmanziMesh::Entity_ID_List cellfaces;
+            // Amanzi::AmanziMesh::Entity_ID_View cellfaces;
             // std::vector<int> cellfacedirs;
             // mesh->getCellFacesAndDirs(cellids[k],&cellfaces,cellfacedirs);
 
@@ -591,7 +591,7 @@ TEST(MESH_GEOMETRY_SOLID)
 
     for (int i = 0; i < ncells; i++) {
 
-      Amanzi::AmanziMesh::Entity_ID_List cfaces;
+      Amanzi::AmanziMesh::Entity_ID_View cfaces;
       Amanzi::AmanziGeometry::Point normal_sum(3), normal(3);      
 
       mesh->getCellFaces(i,cfaces);

@@ -193,10 +193,10 @@ PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
     }
 
     // updating matrix blocks
-    AmanziMesh::Entity_ID_List cells, faces;
+    AmanziMesh::Entity_ID_View cells, faces;
 
     for (int f = 0; f != nfaces_owned; ++f) {
-      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       int ncells = cells.size();
 
       WhetStone::DenseMatrix Aface(ncells, ncells);
@@ -263,11 +263,11 @@ PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
   if (!exclude_primary_terms_) {
     Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
 
-    AmanziMesh::Entity_ID_List cells;
+    AmanziMesh::Entity_ID_View cells;
 
     for (int f = 0; f < nfaces_owned; f++) {
       if (bc_model[f] != OPERATOR_BC_NONE) {
-        cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+        cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
         int c = cells[0];
 
         if (bc_model[f] == OPERATOR_BC_DIRICHLET && primary) {
@@ -317,7 +317,7 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
   const Epetra_MultiVector& p = *solution->ViewComponent("cell", true);
   Epetra_MultiVector& flux = *darcy_mass_flux->ViewComponent("face", false);
 
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_View cells;
 
   std::vector<int> flag(nfaces_wghost, 0);
 
@@ -340,7 +340,7 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
 
       } else {
         if (f < nfaces_owned && !flag[f]) {
-          cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+          cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
           if (cells.size() <= 1) {
             Errors::Message msg("Flow PK: These boundary conditions are not supported by FV.");
             Exceptions::amanzi_throw(msg);
@@ -399,7 +399,7 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
   u.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
 
-  AmanziMesh::Entity_ID_List cells, faces;
+  AmanziMesh::Entity_ID_View cells, faces;
   double dkdp[2], pres[2];
 
   dkdp_->ScatterMasterToGhosted("cell");
@@ -410,7 +410,7 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
   if (dkdp_->HasComponent("face")) { dKdP_face = dkdp_->ViewComponent("face", true); }
 
   for (int f = 0; f != nfaces_owned; ++f) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int mcells = cells.size();
 
     WhetStone::DenseMatrix Aface(mcells, mcells);
@@ -509,7 +509,7 @@ PDE_DiffusionFV::ComputeTransmissibility_()
   Epetra_MultiVector& beta_face = *beta.ViewComponent("face", true);
   beta.PutScalar(0.0);
 
-  AmanziMesh::Entity_ID_List faces;
+  AmanziMesh::Entity_ID_View faces;
   AmanziGeometry::Point a_dist;
   WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
   Kc(0, 0) = 1.0;

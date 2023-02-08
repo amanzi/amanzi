@@ -71,7 +71,7 @@ class GenerationSpec {
   AmanziGeometry::RegionVector::const_iterator block_end(void) const
   { return blocks_.end(); }
 
-  Partitioner_type partitioner() const { return partitioner_; }
+  Partitioner_kind partitioner() const { return partitioner_; }
 
  protected:
 
@@ -85,7 +85,7 @@ class GenerationSpec {
 
   AmanziGeometry::RegionVector blocks_; /**< list of mesh subdomains */
 
-  Partitioner_type partitioner_;
+  Partitioner_kind partitioner_;
 
   /// fill attributes from specified list
   void parse_(const Teuchos::ParameterList &parameter_list);
