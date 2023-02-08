@@ -91,7 +91,7 @@ Transport_PK::CalculateDiffusionTensor_(double md,
 
     for (int r = 0; r < (spec->regions).size(); r++) {
       std::string region = (spec->regions)[r];
-      auto block = mesh_->getSetEntities(region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      auto block = mesh_->getSetEntities(region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
       if (phase == TRANSPORT_PHASE_LIQUID) {
         for (auto c = block.begin(); c != block.end(); c++) {

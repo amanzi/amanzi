@@ -536,7 +536,7 @@ TEST(DARCY_STIFFNESS_2D_NODE)
     for (int i = 0; i < nnodes; i++) CHECK(A(i, i) > 0.0);
 
     // verify exact integration property
-    AmanziMesh::Entity_ID_List nodes;
+    AmanziMesh::Entity_ID_View nodes;
     nodes = mesh->getCellNodes(cell);
 
     int d = mesh->getSpaceDimension();
@@ -669,7 +669,7 @@ TEST(DARCY_STIFFNESS_3D)
   for (int i = 0; i < nnodes; i++) CHECK(A(i, i) > 0.0);
 
   // verify exact integration property
-  AmanziMesh::Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_View nodes;
   nodes = mesh->getCellNodes(cell);
 
   int d = mesh->getSpaceDimension();
@@ -768,7 +768,7 @@ TEST(RECOVER_GRADIENT_NODAL)
   MFD3D_Lagrange mfd(plist, mesh);
 
   // create pressure solution
-  AmanziMesh::Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_View nodes;
   int nnodes = 8, cell = 0;
   nodes = mesh->getCellNodes(cell);
 

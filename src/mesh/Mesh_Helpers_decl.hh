@@ -43,21 +43,21 @@ namespace MeshAlgorithms {
 //
 template<class Mesh_type>
 KOKKOS_INLINE_FUNCTION
-Cell_type getCellType(const Mesh_type& mesh, const Entity_ID c);
+Cell_kind getCellType(const Mesh_type& mesh, const Entity_ID c);
 
 template<class Mesh_type>
 int getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entity_ID c);
 
 template<class Mesh_type>
-Entity_ID_List
+Entity_ID_View
 computeCellEdges(const Mesh_type& mesh, const Entity_ID c);
 
 template<class Mesh_type>
-Entity_ID_List
+Entity_ID_View
 computeCellNodes(const Mesh_type& mesh, const Entity_ID c);
 
 template<class Mesh_type>
-Entity_ID_List
+Entity_ID_View
 computeNodeCells(const Mesh_type& mesh, const Entity_ID n);
 
 
@@ -69,7 +69,7 @@ std::pair<double,AmanziGeometry::Point>
 computeCellGeometry(const Mesh_type& mesh, const Entity_ID c);
 
 template<class Mesh_type>
-std::tuple<double,AmanziGeometry::Point,Point_List>
+std::tuple<double,AmanziGeometry::Point,Point_View>
 computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f);
 
 template<class Mesh_type>
@@ -77,21 +77,21 @@ std::pair<AmanziGeometry::Point,AmanziGeometry::Point>
 computeEdgeGeometry(const Mesh_type& mesh, const Entity_ID e);
 
 template<class Mesh_type>
-Point_List
+Point_View
 computeBisectors(const Mesh_type& mesh, const Entity_ID c,
-                 const Entity_ID_List& faces);
+                 const Entity_ID_View& faces);
 
 template<class Mesh_type>
 void debugCell(const Mesh_type& mesh, const Entity_ID c);
 
 template<class Mesh_type>
-Point_List getEdgeCoordinates(const Mesh_type& mesh, const Entity_ID e);
+Point_View getEdgeCoordinates(const Mesh_type& mesh, const Entity_ID e);
 
 template<class Mesh_type>
-Point_List getFaceCoordinates(const Mesh_type& mesh, const Entity_ID f);
+Point_View getFaceCoordinates(const Mesh_type& mesh, const Entity_ID f);
 
 template<class Mesh_type>
-Point_List getCellCoordinates(const Mesh_type& mesh, const Entity_ID c);
+Point_View getCellCoordinates(const Mesh_type& mesh, const Entity_ID c);
 
 template<class Mesh_type>
 std::size_t getMaxCellNumNodes(const Mesh_type& mesh);
@@ -103,8 +103,8 @@ template<class Mesh_type>
 std::size_t getMaxCellNumEdges(const Mesh_type& mesh);
 
 template<class Mesh_type>
-Entity_ID_List getCellFaceAdjacentCells(const Mesh_type& mesh,
-        Entity_ID c, Parallel_type ptype);
+Entity_ID_View getCellFaceAdjacentCells(const Mesh_type& mesh,
+        Entity_ID c, Parallel_kind ptype);
 
 template<class Mesh_type> 
 KOKKOS_INLINE_FUNCTION
@@ -132,15 +132,15 @@ namespace Impl {
 template<class Mesh_type>
 int
 setNodeCoordinates(Mesh_type& mesh,
-                   const Entity_ID_List& nodeids,
-                   const Point_List& newpos);
+                   const Entity_ID_View& nodeids,
+                   const Point_View& newpos);
 }
 
 template<class Mesh_type>
 int
 deform(Mesh_type& mesh,
-       const Entity_ID_List& nodeids,
-       const Point_List& newpos);
+       const Entity_ID_View& nodeids,
+       const Point_View& newpos);
 
 } // namespace MeshAlgorithms
 } // namespace AmanziMesh

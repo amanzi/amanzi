@@ -74,7 +74,7 @@ PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
     bool fv_flag =
       (gravity_method_ == OPERATOR_GRAVITY_FV) || !(little_k_ & OPERATOR_LITTLE_K_DIVK_BASE);
 
-    AmanziMesh::Entity_ID_List grav_workspace;
+    AmanziMesh::Entity_ID_View grav_workspace;
     for (int c = 0; c < ncells_owned; c++) {
       const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
       int nfaces = faces.size();
@@ -206,7 +206,7 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
   bool fv_flag =
     (gravity_method_ == OPERATOR_GRAVITY_FV) || !(little_k_ & OPERATOR_LITTLE_K_DIVK_BASE);
 
-  AmanziMesh::Entity_ID_List grav_workspace;
+  AmanziMesh::Entity_ID_View grav_workspace;
   for (int c = 0; c < ncells_owned; c++) {
     const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
@@ -316,7 +316,7 @@ PDE_DiffusionMFDwithGravity::UpdateFluxManifold_(const Teuchos::Ptr<const Compos
   Kc(0, 0) = 1.0;
   if (const_K_.rank() > 0) Kc = const_K_;
 
-  AmanziMesh::Entity_ID_List grav_workspace;
+  AmanziMesh::Entity_ID_View grav_workspace;
   for (int c = 0; c < ncells_owned; c++) {
     const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
@@ -391,9 +391,9 @@ PDE_DiffusionMFDwithGravity::Init_(Teuchos::ParameterList& plist)
 ****************************************************************** */
 AmanziGeometry::Point
 PDE_DiffusionMFDwithGravity::GravitySpecialDirection_(int f,
-                                                      AmanziMesh::Entity_ID_List& cells) const
+                                                      AmanziMesh::Entity_ID_View& cells) const
 {
-  cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+  cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
   int ncells = cells.size();
 
   if (ncells == 2) {
@@ -410,8 +410,8 @@ PDE_DiffusionMFDwithGravity::GravitySpecialDirection_(int f,
 double
 PDE_DiffusionMFDwithGravity::ComputeGravityFlux(int f) const
 {
-  AmanziMesh::Entity_ID_List cells;
-  cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+  AmanziMesh::Entity_ID_View cells;
+  cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
   int c = cells[0];
 
   double gflux;

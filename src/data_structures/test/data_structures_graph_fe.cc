@@ -66,7 +66,7 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA)
   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   Teuchos::RCP<Epetra_Map> cell_map = Teuchos::rcp(new Epetra_Map(mesh->getMap(AmanziMesh::Entity_kind::CELL,false)));
   Teuchos::RCP<Epetra_Map> cell_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->getMap(AmanziMesh::Entity_kind::CELL,true)));
 
@@ -75,8 +75,8 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA)
   GraphFE graph_local(cell_map, cell_map_ghosted, cell_map_ghosted, 5);
   GraphFE graph_global(cell_map, cell_map_ghosted, cell_map_ghosted, 5);
 
-  Entity_ID_List faces;
-  Entity_ID_List face_cells;
+  Entity_ID_View faces;
+  Entity_ID_View face_cells;
   std::vector<int> neighbor_cells;
   for (int c = 0; c != ncells; ++c) {
     neighbor_cells.resize(0);
@@ -84,7 +84,7 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA)
 
     faces = mesh->getCellFaces(c);
     for (int n = 0; n != faces.size(); ++n) {
-      face_cells = mesh->getFaceCells(faces[n], AmanziMesh::Parallel_type::ALL);
+      face_cells = mesh->getFaceCells(faces[n], AmanziMesh::Parallel_kind::ALL);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
       }
@@ -144,7 +144,7 @@ TEST(FE_GRAPH_FACE_FACE)
   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   Teuchos::RCP<Epetra_Map> face_map = Teuchos::rcp(new Epetra_Map(mesh->getMap(AmanziMesh::Entity_kind::FACE,false)));
   Teuchos::RCP<Epetra_Map> face_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->getMap(AmanziMesh::Entity_kind::FACE,true)));
 
@@ -153,8 +153,8 @@ TEST(FE_GRAPH_FACE_FACE)
   GraphFE graph_local(face_map, face_map_ghosted, face_map_ghosted, 5);
   GraphFE graph_global(face_map, face_map_ghosted, face_map_ghosted, 5);
 
-  Entity_ID_List faces;
-  Entity_ID_List face_cells;
+  Entity_ID_View faces;
+  Entity_ID_View face_cells;
   for (int c = 0; c != ncells; ++c) {
     faces = mesh->getCellFaces(c);
 

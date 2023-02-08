@@ -59,7 +59,7 @@ TEST(COLUMN_MESH_3D)
 
   // Perturb the nodes above the base layer just a bit
   int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE,
-          AmanziMesh::Parallel_type::OWNED);
+          AmanziMesh::Parallel_kind::OWNED);
 
   for (int n = 0; n < nnodes; n++) {
     AmanziGeometry::Point xyz(3);
@@ -70,12 +70,12 @@ TEST(COLUMN_MESH_3D)
 
   // verify in-going topology
   CHECK_EQUAL(16,mesh->columns.num_columns_owned);
-  CHECK_EQUAL(4, mesh->columns.cells_.size<MemSpace_type::HOST>(10));
-  CHECK_EQUAL(5, mesh->columns.faces_.size<MemSpace_type::HOST>(10));
+  CHECK_EQUAL(4, mesh->columns.cells_.size<MemSpace_kind::HOST>(10));
+  CHECK_EQUAL(5, mesh->columns.faces_.size<MemSpace_kind::HOST>(10));
 
   // Create a column mesh from one of the columns
   auto colmesh_ext = Teuchos::rcp(new AmanziMesh::Mesh_MSTK(mesh->getMeshFramework(),
-          mesh->columns.cells_.getRow<MemSpace_type::HOST>(10), AmanziMesh::Entity_kind::CELL,
+          mesh->columns.cells_.getRow<MemSpace_kind::HOST>(10), AmanziMesh::Entity_kind::CELL,
           false, getCommSelf(), gm, Teuchos::null));
 
   // Create the MeshColumn object
@@ -85,27 +85,27 @@ TEST(COLUMN_MESH_3D)
 
   // Verify column mesh topology
   int ncells = colmesh.getNumEntities(AmanziMesh::Entity_kind::CELL,
-          AmanziMesh::Parallel_type::OWNED);
+          AmanziMesh::Parallel_kind::OWNED);
   CHECK_EQUAL(4,ncells);
 
   int nfaces = colmesh.getNumEntities(AmanziMesh::Entity_kind::FACE,
-          AmanziMesh::Parallel_type::OWNED);
+          AmanziMesh::Parallel_kind::OWNED);
   CHECK_EQUAL(5,nfaces);
 
   nnodes = colmesh.getNumEntities(AmanziMesh::Entity_kind::NODE,
-          AmanziMesh::Parallel_type::OWNED);
+          AmanziMesh::Parallel_kind::OWNED);
   CHECK_EQUAL(20,nnodes);
 
   for (int j = 0; j < ncells; j++) {
-    AmanziMesh::Entity_ID_List cfaces;
+    AmanziMesh::Entity_ID_View cfaces;
     AmanziMesh::Entity_Direction_View cfdirs;
     colmesh.getCellFacesAndDirs(j,cfaces,&cfdirs);
     CHECK_EQUAL(2,cfaces.size());
   }
 
   for (int j = 0; j < nfaces; j++) {
-    AmanziMesh::Entity_ID_List fcells;
-    colmesh.getFaceCells(j,AmanziMesh::Parallel_type::OWNED,fcells);
+    AmanziMesh::Entity_ID_View fcells;
+    colmesh.getFaceCells(j,AmanziMesh::Parallel_kind::OWNED,fcells);
 
     if (j == 0) {
       CHECK_EQUAL(1,fcells.size());
@@ -176,8 +176,8 @@ TEST(COLUMN_MESH_3D)
 
 
   // verify that the regions have made it through
-  AmanziMesh::Entity_ID_List myregion;
-  myregion = colmesh.getSetEntities("myregion", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  AmanziMesh::Entity_ID_View myregion;
+  myregion = colmesh.getSetEntities("myregion", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   CHECK_EQUAL(2, myregion.size());
   CHECK(colmesh.getCellCentroid(myregion[0])[2] >= 2.5);
   CHECK(colmesh.getCellCentroid(myregion[1])[2] >= 2.5);
@@ -214,17 +214,17 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   mesh->buildColumns({"surface"});
 
   int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE,
-          AmanziMesh::Parallel_type::OWNED);
+          AmanziMesh::Parallel_kind::OWNED);
 
   // verify in-going topology
   CHECK_EQUAL(16,mesh->columns.num_columns_owned);
-  CHECK_EQUAL(4, mesh->columns.cells_.size<MemSpace_type::HOST>(10));
-  CHECK_EQUAL(5, mesh->columns.faces_.size<MemSpace_type::HOST>(10));
+  CHECK_EQUAL(4, mesh->columns.cells_.size<MemSpace_kind::HOST>(10));
+  CHECK_EQUAL(5, mesh->columns.faces_.size<MemSpace_kind::HOST>(10));
 
   // Create a column mesh from one of the columns
   // Create a column mesh from one of the columns
   auto colmesh_ext = Teuchos::rcp(new AmanziMesh::Mesh_MSTK(mesh->getMeshFramework(),
-          mesh->columns.cells_.getRow<MemSpace_type::HOST>(10), AmanziMesh::Entity_kind::CELL,
+          mesh->columns.cells_.getRow<MemSpace_kind::HOST>(10), AmanziMesh::Entity_kind::CELL,
           false, getCommSelf(), gm, Teuchos::null));
   // Create the MeshColumn object
   Teuchos::RCP<AmanziMesh::MeshFramework> colmesh_fw =
@@ -233,19 +233,19 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
 
   // Verify column mesh topology
   int ncells = colmesh.getNumEntities(AmanziMesh::Entity_kind::CELL,
-          AmanziMesh::Parallel_type::OWNED);
+          AmanziMesh::Parallel_kind::OWNED);
   CHECK_EQUAL(4,ncells);
 
   int nfaces = colmesh.getNumEntities(AmanziMesh::Entity_kind::FACE,
-          AmanziMesh::Parallel_type::OWNED);
+          AmanziMesh::Parallel_kind::OWNED);
   CHECK_EQUAL(5,nfaces);
 
   nnodes = colmesh.getNumEntities(AmanziMesh::Entity_kind::NODE,
-          AmanziMesh::Parallel_type::OWNED);
+          AmanziMesh::Parallel_kind::OWNED);
   CHECK_EQUAL(20,nnodes);
 
   for (int j = 0; j < ncells; j++) {
-    AmanziMesh::Entity_ID_List cfaces;
+    AmanziMesh::Entity_ID_View cfaces;
     AmanziMesh::Entity_Direction_View cfdirs;
     colmesh.getCellFacesAndDirs(j,cfaces,&cfdirs);
 
@@ -253,8 +253,8 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   }
 
   for (int j = 0; j < nfaces; j++) {
-    AmanziMesh::Entity_ID_List fcells;
-    colmesh.getFaceCells(j,AmanziMesh::Parallel_type::OWNED,fcells);
+    AmanziMesh::Entity_ID_View fcells;
+    colmesh.getFaceCells(j,AmanziMesh::Parallel_kind::OWNED,fcells);
 
     if (j == 0) {
       CHECK_EQUAL(1,fcells.size());
@@ -317,7 +317,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   // base face times the distance between the centroids of the lower
   // face of the cell and the upper face of the cell
   for (int j = 0; j < ncells; j++) {
-    AmanziMesh::Entity_ID_List cfaces;
+    AmanziMesh::Entity_ID_View cfaces;
     colmesh.getCellFaces(j,cfaces);
 
     AmanziGeometry::Point locen(3), hicen(3);
@@ -334,8 +334,8 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   }
 
   // verify that the regions have made it through
-  AmanziMesh::Entity_ID_List myregion;
-  myregion = colmesh.getSetEntities("myregion", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  AmanziMesh::Entity_ID_View myregion;
+  myregion = colmesh.getSetEntities("myregion", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   CHECK_EQUAL(2, myregion.size());
   CHECK(colmesh.getCellCentroid(myregion[0])[2] >= 2.5);
   CHECK(colmesh.getCellCentroid(myregion[1])[2] >= 2.5);

@@ -60,7 +60,6 @@ add_amanzi_library(whetstone
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
                           SplinePolynomial.cc
-                          SurfaceCoordinateSystem.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            Basis.hh BasisFactory.hh
@@ -90,8 +89,6 @@ add_amanzi_library(whetstone
                            Monomial.hh Polynomial.hh PolynomialIterator.hh PolynomialBase.hh
                            SpaceTimePolynomial.hh
                            SplinePolynomial.hh
-                           SurfaceCoordinateSystem.hh
-                           SingleFaceMesh.hh
                            VectorObjects.hh MatrixObjects.hh PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh

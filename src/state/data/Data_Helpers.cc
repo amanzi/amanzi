@@ -365,7 +365,7 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist,
 
       // CV's map may differ from the regular mesh map due to presense of fractures
       const auto& fmap = *t.Map().Map("face", true);
-      int nfaces_owned = t.Mesh()->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      int nfaces_owned = t.Mesh()->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
       Epetra_MultiVector& dat_f = *t.ViewComponent("face");
       const Epetra_MultiVector& vel_f = *vel_vec->ViewComponent("face");
@@ -383,8 +383,8 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist,
           const AmanziGeometry::Point& normal = t.Mesh()->getFaceNormal(f);
           dat_f[0][g] = vel * normal;
         } else {
-          AmanziMesh::Entity_ID_List cells;
-          cells = t.Mesh()->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+          AmanziMesh::Entity_ID_View cells;
+          cells = t.Mesh()->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
           for (int i = 0; i < ndofs; ++i) {
             const AmanziGeometry::Point& normal = t.Mesh()->getFaceNormal(f, cells[i], &dir);

@@ -69,7 +69,7 @@ PDE_MagneticDiffusion::ModifyMatrices(CompositeVector& E, CompositeVector& B, do
   Teuchos::ParameterList plist;
   WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
 
-  AmanziMesh::Entity_ID_List edges;
+  AmanziMesh::Entity_ID_View edges;
 
   for (int c = 0; c < ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
@@ -119,7 +119,7 @@ PDE_MagneticDiffusion::ModifyFields(CompositeVector& E, CompositeVector& B, doub
   Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
   Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
 
-  AmanziMesh::Entity_ID_List edges;
+  AmanziMesh::Entity_ID_View edges;
 
   std::vector<bool> fflag(nedges_wghost, false);
 
@@ -161,7 +161,7 @@ PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
   const Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
   E.ScatterMasterToGhosted("edge");
 
-  AmanziMesh::Entity_ID_List edges;
+  AmanziMesh::Entity_ID_View edges;
   Teuchos::ParameterList plist;
   WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
 

@@ -122,7 +122,7 @@ PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
 
   for (auto region = domain->first.begin(); region != domain->first.end(); ++region) {
     if (mesh_->isValidSetName(*region, kind)) {
-      auto id_list = mesh_->getSetEntities(*region, kind, AmanziMesh::Parallel_type::OWNED);
+      auto id_list = mesh_->getSetEntities(*region, kind, AmanziMesh::Parallel_kind::OWNED);
       entity_ids_->insert(id_list.begin(), id_list.end());
     } else {
       msg << "Unknown region in processing coupling source: name=" << *region << ", kind=" << kind

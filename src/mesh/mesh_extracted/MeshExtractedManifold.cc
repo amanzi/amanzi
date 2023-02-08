@@ -66,11 +66,11 @@ MeshExtractedManifold::MeshExtractedManifold(
 * particular category (OWNED, GHOST, ALL)
 ****************************************************************** */
 std::size_t MeshExtractedManifold::getNumEntities(const Entity_kind kind, 
-                                                 const Parallel_type ptype) const
+                                                 const Parallel_kind ptype) const
 {
-  if (ptype == Parallel_type::OWNED)
+  if (ptype == Parallel_kind::OWNED)
     return nents_owned_[kind];
-  else if (ptype == Parallel_type::ALL)
+  else if (ptype == Parallel_kind::ALL)
     return nents_owned_[kind] + nents_ghost_[kind];
 
   return nents_ghost_[kind]; 
@@ -81,7 +81,7 @@ std::size_t MeshExtractedManifold::getNumEntities(const Entity_kind kind,
 ****************************************************************** */
 void MeshExtractedManifold::getCellFacesAndDirs(
     const Entity_ID c,
-    Entity_ID_List& faces, Entity_Direction_View *fdirs) const
+    Entity_ID_View& faces, Entity_Direction_View *fdirs) const
 {
   int fp = entid_to_parent_[Entity_kind::CELL][c];
   parent_mesh_->getFaceEdgesAndDirs(fp, faces, fdirs);
@@ -109,7 +109,7 @@ void MeshExtractedManifold::getCellFacesAndDirs(
 * Connectivity list: cell -> edges = cell -> faces
 ****************************************************************** */
 void MeshExtractedManifold::getCellEdges(
-    const Entity_ID c, Entity_ID_List& edges) const
+    const Entity_ID c, Entity_ID_View& edges) const
 {
   Entity_Direction_View edirs;
 
@@ -126,8 +126,8 @@ void MeshExtractedManifold::getCellEdges(
 /* ******************************************************************
 * Connectivity list: face -> nodes
 ****************************************************************** */
-void MeshExtractedManifold::getFaceNodes(const Entity_ID f, Entity_ID_List& nodes) const {
-  Entity_ID_List v0;
+void MeshExtractedManifold::getFaceNodes(const Entity_ID f, Entity_ID_View& nodes) const {
+  Entity_ID_View v0;
 
   int ep = entid_to_parent_[Entity_kind::FACE][f];
   v0 = parent_mesh_->getEdgeNodes(ep);
@@ -143,9 +143,9 @@ void MeshExtractedManifold::getFaceNodes(const Entity_ID f, Entity_ID_List& node
 ****************************************************************** */
 void MeshExtractedManifold::getFaceEdgesAndDirs(
     const Entity_ID f,
-    Entity_ID_List& edges, Entity_Direction_View *edirs) const
+    Entity_ID_View& edges, Entity_Direction_View *edirs) const
 {
-  Entity_ID_List v0;
+  Entity_ID_View v0;
 
   int ep = entid_to_parent_[Entity_kind::FACE][f];
   v0 = parent_mesh_->getEdgeNodes(ep);
@@ -162,9 +162,9 @@ void MeshExtractedManifold::getFaceEdgesAndDirs(
 * Connectivity list: edge -> cells
 ****************************************************************** */
 void MeshExtractedManifold::getEdgeCells(
-   const Entity_ID e, const Parallel_type ptype, Entity_ID_List& cells) const 
+   const Entity_ID e, const Parallel_kind ptype, Entity_ID_View& cells) const 
 {
-  Entity_ID_List faces;
+  Entity_ID_View faces;
 
   int ep = entid_to_parent_[Entity_kind::FACE][e];
   parent_mesh_->getEdgeFaces(ep, ptype, faces);
@@ -186,9 +186,9 @@ void MeshExtractedManifold::getEdgeCells(
 ****************************************************************** */
 void MeshExtractedManifold::getFaceCells(
     const Entity_ID f,
-    const Parallel_type ptype, Entity_ID_List& cells) const
+    const Parallel_kind ptype, Entity_ID_View& cells) const
 {
-  Entity_ID_List faces;
+  Entity_ID_View faces;
 
   int ep = entid_to_parent_[Entity_kind::FACE][f];
   parent_mesh_->getEdgeFaces(ep, ptype, faces);
@@ -235,12 +235,12 @@ void MeshExtractedManifold::InitParentMaps(const std::string& setname)
     auto kind_p = kinds_parent[i];
 
     // build edge set from Exodus labeled face set
-    Entity_ID_List setents;
+    Entity_ID_View setents;
     Double_View vofs;
 
     TryExtension_(setname, kind_p, kind_d, &setents);
     if (setents.size() == 0)
-      std::tie(setents,vofs) = parent_mesh_->getSetEntitiesAndVolumeFractions(setname, kind_p, Parallel_type::ALL);
+      std::tie(setents,vofs) = parent_mesh_->getSetEntitiesAndVolumeFractions(setname, kind_p, Parallel_kind::ALL);
 
     auto marked_ents = EnforceOneLayerOfGhosts_(setname, kind_p, &setents);
 
@@ -276,7 +276,7 @@ void MeshExtractedManifold::InitParentMaps(const std::string& setname)
 ****************************************************************** */
 void MeshExtractedManifold::TryExtension_(
     const std::string& setname,
-    Entity_kind kind_p, Entity_kind kind_d, Entity_ID_List* setents) const
+    Entity_kind kind_p, Entity_kind kind_d, Entity_ID_View* setents) const
 {
   // labeled set: extract edges
 
@@ -287,10 +287,10 @@ void MeshExtractedManifold::TryExtension_(
   if (rgn->get_type() != AmanziGeometry::RegionType::LABELEDSET) return;
 
   // populate list of edges
-  auto [faceents,vofs] = parent_mesh_->getSetEntitiesAndVolumeFractions(setname, Entity_kind::FACE, Parallel_type::ALL);
+  auto [faceents,vofs] = parent_mesh_->getSetEntitiesAndVolumeFractions(setname, Entity_kind::FACE, Parallel_kind::ALL);
   auto marked_ents = EnforceOneLayerOfGhosts_(setname, Entity_kind::FACE, &faceents);
 
-  Entity_ID_List edges, nodes;
+  Entity_ID_View edges, nodes;
   Entity_Direction_View dirs;
   std::set<Entity_ID> setents_tmp;
 
@@ -322,22 +322,22 @@ void MeshExtractedManifold::TryExtension_(
 * Limits the set of parent objects to only one layer of ghosts.
 ****************************************************************** */
 std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
-    const std::string& setname, Entity_kind kind, Entity_ID_List* setents) const
+    const std::string& setname, Entity_kind kind, Entity_ID_View* setents) const
 {
   // base set is the set of master cells
-  Entity_ID_List fullset;
+  Entity_ID_View fullset;
   if (kind != Entity_kind::FACE) {
     Double_View vofs;
-    std::tie(fullset,vofs) = parent_mesh_->getSetEntitiesAndVolumeFractions(setname, Entity_kind::FACE, Parallel_type::ALL);
+    std::tie(fullset,vofs) = parent_mesh_->getSetEntitiesAndVolumeFractions(setname, Entity_kind::FACE, Parallel_kind::ALL);
   } else { 
     fullset = *setents;
   }
 
   // initial set of entities is defined by master parent faces and is marked as 
   // potential master entities
-  Entity_ID_List nodes, edges, faces;
+  Entity_ID_View nodes, edges, faces;
   Entity_Direction_View dirs;
-  int nfaces_owned = parent_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
+  int nfaces_owned = parent_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   std::map<Entity_ID, int> nodeset0, nodeset, edgeset, faceset;
 
   for (int n = 0; n < fullset.size(); ++n) {
@@ -403,12 +403,12 @@ std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
   } else if (kind == Entity_kind::EDGE) {
     const auto& fmap = parent_mesh_->getMap(Entity_kind::FACE, true);
 
-    int nowned = parent_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
+    int nowned = parent_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
     int gidmax = fmap.MaxAllGID();
 
     for (auto it = edgeset.begin(); it != edgeset.end(); ++it) {
       if (it->second == MASTER + GHOST) {
-        parent_mesh_->getEdgeFaces(it->first, Parallel_type::ALL, faces);
+        parent_mesh_->getEdgeFaces(it->first, Parallel_kind::ALL, faces);
         int nfaces = faces.size();
 
         // compare maximum global ids for owned and all faces living on manifold
@@ -428,12 +428,12 @@ std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
   } else if (kind == Entity_kind::NODE) {
     const auto& fmap = parent_mesh_->getMap(Entity_kind::FACE, true);
 
-    int nowned = parent_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
+    int nowned = parent_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
     int gidmax = fmap.MaxAllGID();
 
     for (auto it = nodeset.begin(); it != nodeset.end(); ++it) {
       if (it->second == MASTER + GHOST) {
-        parent_mesh_->getNodeFaces(it->first, Parallel_type::ALL, faces);
+        parent_mesh_->getNodeFaces(it->first, Parallel_kind::ALL, faces);
         int nfaces = faces.size();
 
         // compare maximum global ids for owned and all faces living on manifold

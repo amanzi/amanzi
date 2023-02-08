@@ -121,7 +121,7 @@ PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
   int dim = mesh_->getSpaceDimension();
   std::vector<double> args(1 + dim);
 
-  int nowned = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_type::OWNED);
+  int nowned = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_kind::OWNED);
 
   if (submodel_ == "rate") {
     for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end();

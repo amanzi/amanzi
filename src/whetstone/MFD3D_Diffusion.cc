@@ -398,7 +398,7 @@ MFD3D_Diffusion::L2consistencyInverseDivKScaled(int c,
   Wc.Reshape(nfaces, nfaces);
 
   // calculate areas of possibly curved faces
-  std::vector<double> areas(nfaces, 0.0);
+  AmanziMesh::Double_List areas(nfaces, 0.0);
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     areas[i] = norm(mesh_->getFaceNormal(f));
@@ -563,7 +563,7 @@ MFD3D_Diffusion::RescaleMassMatrixInverse_(int c, DenseMatrix& W)
   int nfaces = faces.size();
 
   // calculate areas of possibly curved faces
-  std::vector<double> areas(nfaces, 0.0);
+  AmanziMesh::Double_List areas(nfaces, 0.0);
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     areas[i] = norm(mesh_->getFaceNormal(f));

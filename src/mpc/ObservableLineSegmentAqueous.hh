@@ -35,7 +35,7 @@ class ObservableLineSegmentAqueous : public ObservableAqueous, public Observable
   void InterpolatedValues(State& S,
                           std::string& var,
                           std::string& interpolation,
-                          AmanziMesh::Entity_ID_List& ids,
+                          AmanziMesh::Entity_ID_View& ids,
                           std::vector<AmanziGeometry::Point>& line_pnts,
                           std::vector<double>& values);
 };
@@ -106,7 +106,7 @@ void
 ObservableLineSegmentAqueous::InterpolatedValues(State& S,
                                                  std::string& var,
                                                  std::string& interpolation,
-                                                 AmanziMesh::Entity_ID_List& ids,
+                                                 AmanziMesh::Entity_ID_View& ids,
                                                  std::vector<AmanziGeometry::Point>& line_pnts,
                                                  std::vector<double>& values)
 {

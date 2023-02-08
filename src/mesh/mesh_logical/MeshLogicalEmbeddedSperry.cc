@@ -75,7 +75,7 @@ MeshLogicalEmbeddedSperry::CreateLogical_(const std::string& pftname, int column
   first[2] += 3.1;
   last[2] += 3.;
 
-  AmanziMesh::Entity_ID_List leaf_cell, leaf_face;
+  AmanziMesh::Entity_ID_View leaf_cell, leaf_face;
   AddSegment(1, first, last, 1.0,
              MeshLogicalFactory::LogicalTip_t::BOUNDARY,
              MeshLogicalFactory::LogicalTip_t::JUNCTION,
@@ -87,7 +87,7 @@ MeshLogicalEmbeddedSperry::CreateLogical_(const std::string& pftname, int column
 
   // add the leaf-ground segment
   first = last; last = ground_surface;
-  AmanziMesh::Entity_ID_List stem_cells, stem_faces;
+  AmanziMesh::Entity_ID_View stem_cells, stem_faces;
   AddSegment(n_stem, first, last, 1.0,
              MeshLogicalFactory::LogicalTip_t::BRANCH,
              MeshLogicalFactory::LogicalTip_t::JUNCTION,
@@ -95,8 +95,8 @@ MeshLogicalEmbeddedSperry::CreateLogical_(const std::string& pftname, int column
              &stem_cells, &stem_faces);
 
   // add the leaf-stem face
-  AddFace(leaf_stem_face, Entity_ID_List{leaf_cell[0], stem_cells[0]},
-               std::vector<double>{0.5, 3.0/n_stem_/2.0}, 1.0);
+  AddFace(leaf_stem_face, Entity_ID_View{leaf_cell[0], stem_cells[0]},
+               Double_List{0.5, 3.0/n_stem_/2.0}, 1.0);
 
   // reserve the stem-root face
   Entity_ID stem_root_face = ReserveFace();
@@ -104,7 +104,7 @@ MeshLogicalEmbeddedSperry::CreateLogical_(const std::string& pftname, int column
   // the transporting root needs to coincide with the soil spacing
   first = ground_surface;
   last[2] -= max_rooting_depth_;
-  std::vector<double> cell_dzs;
+  Double_List cell_dzs;
   for (int cc=0; cc!=n_cells_root_zone; ++cc) {
     cells_dzs.push_back(bg_mesh_->face_centroid(faces_of_col[cc])[2]
                         - bg_mesh_->face_centroid(faces_of_col[cc+1])[2]);
@@ -114,13 +114,13 @@ MeshLogicalEmbeddedSperry::CreateLogical_(const std::string& pftname, int column
   AMANZI_ASSERT(cells_dzs.back() > 0.);
 
   // centroids are cell centroids, the bottom one is close enough
-  std::vector<AmanziGemoetry::Point> centroids;
+  Point_List centroids;
   for (int cc=0; cc!=n_cells_root_zone; ++cc) {
     centroids.push_back(bg_mesh_-cell_centroid(cells_of_col[cc]));
   }
 
-  std::vector<double> face_areas(n_cells_root_zone-1, 1.);
-  AmanziMesh::Entity_ID_List troot_cells, troot_faces;
+  Double_List face_areas(n_cells_root_zone-1, 1.);
+  AmanziMesh::Entity_ID_View troot_cells, troot_faces;
   AddSegment(centroids, nullptr, cells_dzs, face_areas, bottom-top,
              MeshLogicalFactory::LogicalTip_t::BRANCH,
              MeshLogicalFactory::LogicalTip_t::JUNCTION,
@@ -128,8 +128,8 @@ MeshLogicalEmbeddedSperry::CreateLogical_(const std::string& pftname, int column
              &troot_cells, &troot_faces);
 
   // add the stem-to-troot face
-  AddFace(stem_root_face, Entity_ID_List{stem_cells.back(), troot_cells.front()},
-               std::vector<double>{3.0/n_stem_/2.0, cells_dzs[0]/2.}, 1.0);
+  AddFace(stem_root_face, Entity_ID_View{stem_cells.back(), troot_cells.front()},
+               Double_List{3.0/n_stem_/2.0, cells_dzs[0]/2.}, 1.0);
 
   // add absorbing roots and faces
   for (int cc=0; cc!=n_cells_root_zone; ++cc) {
@@ -137,7 +137,7 @@ MeshLogicalEmbeddedSperry::CreateLogical_(const std::string& pftname, int column
     Entity_ID aroot_troot = ReserveFace();
 
     // add the aroot cell
-    AmanziMesh::Entity_ID_List aroot_cell, aroot_faces;
+    AmanziMesh::Entity_ID_View aroot_cell, aroot_faces;
 
     // aroot centroid
     begin = centroids[cc];
@@ -149,8 +149,8 @@ MeshLogicalEmbeddedSperry::CreateLogical_(const std::string& pftname, int column
                &aroot_cell, &aroot_face);
 
     // add the aroot-troot face
-    AddFace(aroot_troot, Entity_ID_List{troot_cells[cc], aroot_cell[0]},
-                 std::vector<double>{1., 1.}, 1.0);
+    AddFace(aroot_troot, Entity_ID_View{troot_cells[cc], aroot_cell[0]},
+                 Double_List{1., 1.}, 1.0);
 
     // reserve the soil-aroot face
     Entity_ID soil_aroot = ReserveFace();
@@ -158,7 +158,7 @@ MeshLogicalEmbeddedSperry::CreateLogical_(const std::string& pftname, int column
     // add the rheizosphere shells
     begin = end;
     end[0] += 0.1;
-    AmanziMesh::Entity_ID_List shell_cells, shell_faces;
+    AmanziMesh::Entity_ID_View shell_cells, shell_faces;
     AddSegment(n_rheizosphere_shells, begin, end, 1.0,
                MeshLogicalFactory::LogicalTip_t::BRANCH,
                MeshLogicalFactory::LogicalTip_t::JUNCTION,
@@ -166,11 +166,11 @@ MeshLogicalEmbeddedSperry::CreateLogical_(const std::string& pftname, int column
                &shell_cells, &shell_faces);
 
     // add the shell-to-aroot faces
-    AddFace(soil_aroot, Entity_ID_List{aroot_cell[0], shell_cells.front()},
-                 std::vector<double>{1.,1.}, 1.);
+    AddFace(soil_aroot, Entity_ID_View{aroot_cell[0], shell_cells.front()},
+                 Double_List{1.,1.}, 1.);
 
     // store info to connect rheizosphere_cell to background cell
-    rheizosphere_to_bg_.emplace_back(Entity_ID_List{shell_cells.back(), cells_in_col[cc]});
+    rheizosphere_to_bg_.emplace_back(Entity_ID_View{shell_cells.back(), cells_in_col[cc]});
   }
   
 };

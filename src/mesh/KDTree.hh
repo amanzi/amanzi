@@ -18,7 +18,7 @@
 #include <memory>
 #include <vector>
 
-#include "Point.hh"
+#include "MeshDefs.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -44,10 +44,10 @@ class PointCloud {
   template <class BoundingBox>
   bool kdtree_get_bbox(BoundingBox& bb) const { return false; }
 
-  void Init(const std::vector<AmanziGeometry::Point>* points) { points_ = points; }
+  void Init(const Point_List* points) { points_ = points; }
 
  private:
-  const std::vector<AmanziGeometry::Point>* points_;
+  const Point_List* points_;
 };
 
 
@@ -61,7 +61,7 @@ class KDTree {
   ~KDTree() {};
 
   // main member function
-  void Init(const std::vector<AmanziGeometry::Point>* points) {
+  void Init(const Point_List* points) {
     int d = (*points)[0].dim();
     cloud_.Init(points);
     tree_ = std::make_shared<KDTree_L2Adaptor>(d, cloud_, nanoflann::KDTreeSingleIndexAdaptorParams(10));
@@ -70,7 +70,7 @@ class KDTree {
 
   // find the first n points closest to the given point p 
   std::vector<unsigned int> SearchNearest(const AmanziGeometry::Point& p,
-                                    std::vector<double>& dist_sqr, int n = 1) {
+                                    Double_List& dist_sqr, int n = 1) {
     AMANZI_ASSERT(tree_ != NULL);
 
     double query[3];
@@ -90,7 +90,7 @@ class KDTree {
 
   // find all points in the sphere of centered to the given point p 
   std::vector<size_t> SearchInSphere(const AmanziGeometry::Point& p,
-                                     std::vector<double>& dist_sqr, double radius_sqr) {
+                                     Double_List& dist_sqr, double radius_sqr) {
     AMANZI_ASSERT(tree_ != NULL);
 
     double query[3];

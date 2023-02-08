@@ -78,14 +78,14 @@ Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
       if (mesh_->isValidSetName(runtime_regions_[k], AmanziMesh::Entity_kind::FACE)) {
         flag = true;
         auto block = mesh_->getSetEntities(
-          runtime_regions_[k], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+          runtime_regions_[k], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
         int nblock = block.size();
 
         for (int m = 0; m < nblock; m++) {
           int f = block[m];
 
-          Amanzi::AmanziMesh::Entity_ID_List cells;
-          cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_type::ALL);
+          Amanzi::AmanziMesh::Entity_ID_View cells;
+          cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
           int dir, c = cells[0];
 
           mesh_->getFaceNormal(f, c, &dir);
@@ -312,7 +312,7 @@ Transport_PK::CalculateLpErrors(AnalyticFunction f,
                                 double* L1,
                                 double* L2)
 {
-  int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   *L1 = *L2 = 0.0;
   for (int c = 0; c < ncells; c++) {

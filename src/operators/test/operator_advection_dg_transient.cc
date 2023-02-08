@@ -267,8 +267,8 @@ AdvectionFn<Analytic>::AdvectionFn(Teuchos::ParameterList& plist,
   order_ = dg_->get_order();
 
   // mesh dimensions
-  nfaces_wghost_ = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
-  ncells_wghost_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  nfaces_wghost_ = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  ncells_wghost_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   // cotrol variables
   setup_ = true;
@@ -285,9 +285,9 @@ AdvectionFn<Analytic>::FunctionalTimeDerivative(double t,
                                                 CompositeVector& func)
 {
   int d = mesh_->getSpaceDimension();
-  int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // update velocity coefficient
   WhetStone::VectorPolynomial v;
@@ -464,8 +464,8 @@ AdvectionFn_Projection<Analytic>::ComputeVelocities(
   auto maps = maps_factory.Create(map_list, mesh_, mesh_);
 
   // calculate approximate velocities
-  AmanziMesh::Entity_ID_List edges;
-  int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  AmanziMesh::Entity_ID_View edges;
+  int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   double dtfac = 1.0 / dt;
   for (int c = 0; c < ncells_wghost; ++c) {
@@ -532,13 +532,13 @@ AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
 
   AMANZI_ASSERT(dim == 2);
 
-  int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
-  int nfaces_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   // cell-based velocity is constant for dGP1
   // we approximate it with a linear function for dGP2
-  AmanziMesh::Entity_ID_List faces, cells;
+  AmanziMesh::Entity_ID_View faces, cells;
   AmanziGeometry::Point zero(dim);
 
   // -- normalized cell-centered velocity
@@ -568,7 +568,7 @@ AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
   for (int f = 0; f < nfaces_owned; ++f) {
     const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     WhetStone::Polynomial poly(dim, order_);
@@ -626,8 +626,8 @@ AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
   Epetra_MultiVector& u_c = *u.ViewComponent("cell", true);
   int dim = mesh_->getSpaceDimension();
 
-  int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value(nfaces_wghost, 0.0);
@@ -729,15 +729,15 @@ InterpolateCellToNode(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   int order = dg.get_order();
   int nk = uc.NumVectors();
   Amanzi::AmanziGeometry::Point xv(mesh->getSpaceDimension());
-  Amanzi::AmanziMesh::Entity_ID_List cells;
+  Amanzi::AmanziMesh::Entity_ID_View cells;
 
   int nnodes_owned =
-    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   auto un = Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::NODE,false), 1));
 
   for (int v = 0; v < nnodes_owned; ++v) {
     xv = mesh->getNodeCoordinate(v);
-    cells = mesh->getNodeCells(v, Amanzi::AmanziMesh::Parallel_type::ALL);
+    cells = mesh->getNodeCells(v, Amanzi::AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     double value(0.0);
@@ -803,7 +803,7 @@ Transient(std::string filename,
 
   // create a mesh framework
   MeshFactory meshfactory(comm, Teuchos::null);
-  // meshfactory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
+  // meshfactory.set_partitioner(AmanziMesh::Partitioner_kind::ZOLTAN_RCB);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh;
   if (nx == 0 || ny == 0)

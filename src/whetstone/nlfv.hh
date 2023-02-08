@@ -43,7 +43,7 @@ class NLFV {
                               double& weight);
 
   int PositiveDecomposition(int id1,
-                            const std::vector<AmanziGeometry::Point>& tau,
+                            const AmanziMesh::Point_List& tau,
                             const AmanziGeometry::Point& conormal,
                             double* ws,
                             int* ids);

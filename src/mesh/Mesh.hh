@@ -15,7 +15,7 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-using Mesh = MeshCache<MemSpace_type::HOST>;
+using Mesh = MeshCache<MemSpace_kind::HOST>;
 
 } // namespace AmanziMesh
 } // namespace Amanzi

@@ -41,7 +41,7 @@ Operator_ConsistentFace::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
   {
     Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
 
-    AmanziMesh::Entity_ID_List faces;
+    AmanziMesh::Entity_ID_View faces;
     for (int c = 0; c != ncells_owned; ++c) {
       faces = mesh_->getCellFaces(c);
       int nfaces = faces.size();
@@ -84,7 +84,7 @@ Operator_ConsistentFace::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   const std::vector<int>& face_col_inds = map.GhostIndices(my_block_col, "face", 0);
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List faces;
+  AmanziMesh::Entity_ID_View faces;
   for (int c = 0; c != ncells_owned; ++c) {
     faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
@@ -121,7 +121,7 @@ Operator_ConsistentFace::AssembleMatrixOp(const Op_Cell_FaceCell& op,
   const std::vector<int>& face_col_inds = map.GhostIndices(my_block_col, "face", 0);
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List faces;
+  AmanziMesh::Entity_ID_View faces;
   for (int c = 0; c != ncells_owned; ++c) {
     faces = mesh_->getCellFaces(c);
 

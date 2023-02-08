@@ -72,15 +72,15 @@ class MeshExtractedManifold : public MeshFramework {
   // -- number of entities of any kind (cell, face, node) and in a
   //    particular category (OWNED, GHOST, ALL)
   virtual std::size_t getNumEntities(const Entity_kind kind,
-                                    const Parallel_type ptype) const override;
+                                    const Parallel_kind ptype) const override;
 
   // -- faces
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face are returned
   // In 3D, the nodes are returned in ccw order consistent with the face normal
-  virtual void getFaceNodes(const Entity_ID f, Entity_ID_List& nodes) const override;
+  virtual void getFaceNodes(const Entity_ID f, Entity_ID_View& nodes) const override;
 
   // -- edges
-  virtual void getEdgeNodes(const Entity_ID e, Entity_ID_List& nodes) const override {
+  virtual void getEdgeNodes(const Entity_ID e, Entity_ID_View& nodes) const override {
     Kokkos::resize(nodes,2); 
     nodes[0] = e;
     nodes[1] = e; 
@@ -88,16 +88,16 @@ class MeshExtractedManifold : public MeshFramework {
 
   // -- faces of type 'ptype' connected to a node - The order of faces is not guaranteed 
   //    to be the same for corresponding nodes on different processors
-  virtual void getNodeFaces(const Entity_ID n, const Parallel_type ptype,
-                              Entity_ID_List& faces) const override {
+  virtual void getNodeFaces(const Entity_ID n, const Parallel_kind ptype,
+                              Entity_ID_View& faces) const override {
     // parent_mesh_->node_get_edges() is not implemented, another algorithm is needed
     AMANZI_ASSERT(false);
   }
 
   // -- cells of type 'ptype' connected to an edge - The order of cells is not guaranteed
   //    to be the same for corresponding edges on different processors
-  virtual void getEdgeCells(const Entity_ID e, const Parallel_type ptype,
-                              Entity_ID_List& cells) const override;
+  virtual void getEdgeCells(const Entity_ID e, const Parallel_kind ptype,
+                              Entity_ID_View& cells) const override;
 
   // same level adjacencies
   // -- face connected neighboring cells of given cell of a particular ptype
@@ -106,8 +106,8 @@ class MeshExtractedManifold : public MeshFramework {
   // The order in which the cellids are returned cannot be guaranteed in general
   // except when ptype = ALL, in which case the cell ids will correspond to cells
   // across the respective faces given by cell_get_faces().
-  virtual void getFaceCells(const Entity_ID c, const Parallel_type ptype,
-                                       Entity_ID_List& cells) const override;
+  virtual void getFaceCells(const Entity_ID c, const Parallel_kind ptype,
+                                       Entity_ID_View& cells) const override;
 
   // Mesh entity geometry
   // -- nodes
@@ -125,31 +125,31 @@ class MeshExtractedManifold : public MeshFramework {
   // -- get faces of a cell and directions in which it is used - this function is
   //    implemented in each mesh framework. The results are cached in the base class
   virtual void getCellFacesAndDirs(const Entity_ID c,
-                                                 Entity_ID_List& faces,
+                                                 Entity_ID_View& faces,
                                                  Entity_Direction_View *fdirs) const override;
 
   // -- edges of a face - this function is implemented in each mesh
   //    framework. The results are cached in the base class
   virtual void getFaceEdgesAndDirs(const Entity_ID f,
-                                                 Entity_ID_List& edges,
+                                                 Entity_ID_View& edges,
                                                  Entity_Direction_View *edirs) const override;
 
   // -- edges of a cell - this function is implemented in each mesh
   //    framework. The results are cached in the base class.
-  virtual void getCellEdges(const Entity_ID c, Entity_ID_List& edges) const override;
+  virtual void getCellEdges(const Entity_ID c, Entity_ID_View& edges) const override;
 
  private:
   void TryExtension_(const std::string& setname,
-                     Entity_kind kind_p, Entity_kind kind_d, Entity_ID_List* setents) const;
+                     Entity_kind kind_p, Entity_kind kind_d, Entity_ID_View* setents) const;
   std::map<Entity_ID, int> EnforceOneLayerOfGhosts_(const std::string& setname, Entity_kind kind,
-                                                    Entity_ID_List* setents) const;
+                                                    Entity_ID_View* setents) const;
 
  private: 
   Teuchos::RCP<const Mesh> parent_mesh_;
 
   // owned ids are enforced to be first in the child -> parent map
   mutable std::map<Entity_kind, Entity_ID> nents_owned_, nents_ghost_;
-  mutable std::map<Entity_kind, Entity_ID_List> entid_to_parent_;
+  mutable std::map<Entity_kind, Entity_ID_View> entid_to_parent_;
   mutable std::map<Entity_kind, std::map<Entity_ID, Entity_ID> > parent_to_entid_;  // reverse to previous map
 
   mutable bool flattened_;

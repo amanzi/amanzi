@@ -42,9 +42,9 @@ Note that entities are ordered in the following way:
 MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
         Teuchos::RCP<MeshFramework> bg_mesh,
         Teuchos::RCP<MeshFramework> log_mesh,
-        const std::vector<std::vector<Entity_ID>>& face_cell_ids,
-        const std::vector<std::vector<double> >& face_cell_lengths,
-        const std::vector<AmanziGeometry::Point>& face_area_normals,
+        const std::vector<Entity_ID_List>& face_cell_ids,
+        const std::vector<Double_List >& face_cell_lengths,
+        const Point_List& face_area_normals,
         const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : MeshFramework(comm, Teuchos::null, plist),
       bg_mesh_(bg_mesh),
@@ -58,15 +58,15 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   setAlgorithms(Teuchos::rcp(new MeshLogicalAlgorithms()));
 
   // merge and remap to get new global IDs
-  int ncells_bg_owned = bg_mesh->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
-  int ncells_bg_all = bg_mesh->getNumEntities(Entity_kind::CELL, Parallel_type::ALL);
-  int ncells_log = log_mesh->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
+  int ncells_bg_owned = bg_mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+  int ncells_bg_all = bg_mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::ALL);
+  int ncells_log = log_mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   int ncells_my_all = ncells_bg_all + ncells_log;
 
-  int nfaces_bg_owned = bg_mesh->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-  int nfaces_bg_all = bg_mesh->getNumEntities(Entity_kind::FACE, Parallel_type::ALL);
-  int nfaces_log = log_mesh->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-  int nfaces_extra = extra_face_cell_ids_.size<MemSpace_type::HOST>();
+  int nfaces_bg_owned = bg_mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+  int nfaces_bg_all = bg_mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
+  int nfaces_log = log_mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+  int nfaces_extra = extra_face_cell_ids_.size<MemSpace_kind::HOST>();
 
   // compute "extra" bisectors
   extra_face_cell_bisectors_.resize(nfaces_extra, 2);
@@ -74,22 +74,22 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   // now loop over new faces, adding the updates to the cell-ordered versions
   for (int fi=0; fi!=nfaces_extra; ++fi) {
     auto normal0 = extra_face_area_normals_[fi];
-    extra_face_cell_bisectors_.getRow<MemSpace_type::HOST>(fi)[0] = face_cell_lengths[fi][0] / AmanziGeometry::norm(normal0) * normal0;
+    extra_face_cell_bisectors_.getRow<MemSpace_kind::HOST>(fi)[0] = face_cell_lengths[fi][0] / AmanziGeometry::norm(normal0) * normal0;
 
     auto normal1 = extra_face_area_normals_[fi];
-    extra_face_cell_bisectors_.getRow<MemSpace_type::HOST>(fi)[1] = face_cell_lengths[fi][1] / AmanziGeometry::norm(normal1) * normal1;
+    extra_face_cell_bisectors_.getRow<MemSpace_kind::HOST>(fi)[1] = face_cell_lengths[fi][1] / AmanziGeometry::norm(normal1) * normal1;
   }
-  extra_face_cell_bisectors_.update<MemSpace_type::DEVICE>(); 
+  extra_face_cell_bisectors_.update<MemSpace_kind::DEVICE>(); 
 
   // Need to renumber the global IDs.  Use the corresponding mesh to communicate.
   // First cells
   // -- create a map of owned CELLs
-  int ncells_total_owned = getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
-  int ncells_total_all = getNumEntities(Entity_kind::CELL, Parallel_type::ALL);
+  int ncells_total_owned = getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+  int ncells_total_all = getNumEntities(Entity_kind::CELL, Parallel_kind::ALL);
   Epetra_Map cell_owned_map(-1, ncells_total_owned, 0, *getComm());
 
   // -- create a map on the background mesh of all CELLs
-  Entity_GID_List bg_cell_gids = bg_mesh_->getEntityGIDs(Entity_kind::CELL, Parallel_type::ALL);
+  Entity_GID_View bg_cell_gids = bg_mesh_->getEntityGIDs(Entity_kind::CELL, Parallel_kind::ALL);
   Epetra_Map bg_cell_all_map(-1, ncells_bg_all, bg_cell_gids.data(), 0, *bg_mesh_->getComm());
   Epetra_Map bg_cell_owned_map(-1, ncells_bg_owned, bg_cell_gids.data(), 0, *bg_mesh_->getComm());
 
@@ -101,7 +101,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   bg_cell_all_vec.Import(bg_cell_owned_vec, cell_import, Insert);
 
   // -- copy ghost GIDs into the renumbered vector
-  Entity_GID_List cell_gids("cell_gids", ncells_bg_all + ncells_log);
+  Entity_GID_View cell_gids("cell_gids", ncells_bg_all + ncells_log);
   for (int c=0; c!=ncells_total_owned; ++c) cell_gids[c] = cell_owned_map.GID(c);
   for (int c=ncells_total_owned; c!=ncells_total_all; ++c) cell_gids[c] = bg_cell_all_vec[c-ncells_log+ncells_bg_owned];
 
@@ -110,12 +110,12 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
 
   // Next faces
   // -- create a map of owned FACES
-  int nfaces_total_owned = getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-  int nfaces_total_all = getNumEntities(Entity_kind::FACE, Parallel_type::ALL);
+  int nfaces_total_owned = getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+  int nfaces_total_all = getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
   Epetra_Map face_owned_map(-1, nfaces_total_owned, 0, *getComm());
 
   // -- create a map on the background mesh of all FACEs
-  Entity_GID_List bg_face_gids = bg_mesh_->getEntityGIDs(Entity_kind::FACE, Parallel_type::ALL);
+  Entity_GID_View bg_face_gids = bg_mesh_->getEntityGIDs(Entity_kind::FACE, Parallel_kind::ALL);
   Epetra_Map bg_face_all_map(-1, nfaces_bg_all, bg_face_gids.data(), 0, *bg_mesh_->getComm());
   Epetra_Map bg_face_owned_map(-1, nfaces_bg_owned, bg_face_gids.data(), 0, *bg_mesh_->getComm());
 
@@ -127,7 +127,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   bg_face_all_vec.Import(bg_face_owned_vec, face_import, Insert);
 
   // -- copy ghost GIDs into the renumbered vector
-  Entity_GID_List face_gids("face_gids", nfaces_total_owned + nfaces_total_all);
+  Entity_GID_View face_gids("face_gids", nfaces_total_owned + nfaces_total_all);
   for (int f=0; f!=nfaces_total_owned; ++f) face_gids[f] = face_owned_map.GID(f);
   for (int f=nfaces_total_owned; f!=nfaces_total_all; ++f)
     face_gids[f] = bg_face_all_vec[f-nfaces_log-nfaces_extra+nfaces_bg_owned];
@@ -142,12 +142,12 @@ Entity_ID
 MeshEmbeddedLogical::getEntityParent(const Entity_kind kind, const Entity_ID entid) const
 {
   if (kind == Entity_kind::CELL) {
-    auto ncells_log = log_mesh_->getNumEntities(kind, Parallel_type::OWNED);
+    auto ncells_log = log_mesh_->getNumEntities(kind, Parallel_kind::OWNED);
     if (entid < ncells_log) return entid;
     else return entid - ncells_log;
   } else if (kind == Entity_kind::FACE) {
-    auto nfaces_log = log_mesh_->getNumEntities(kind, Parallel_type::OWNED);
-    int nfaces_extra = extra_face_cell_ids_.size<MemSpace_type::HOST>();
+    auto nfaces_log = log_mesh_->getNumEntities(kind, Parallel_kind::OWNED);
+    int nfaces_extra = extra_face_cell_ids_.size<MemSpace_kind::HOST>();
     if (entid < nfaces_log) return entid;
     else if (entid >= (nfaces_log + nfaces_extra)) return entid - nfaces_log - nfaces_extra;
     else return -1;
@@ -156,21 +156,21 @@ MeshEmbeddedLogical::getEntityParent(const Entity_kind kind, const Entity_ID ent
   }
 }
 
-Cell_type
+Cell_kind
 MeshEmbeddedLogical::getCellType(const Entity_ID cellid) const
 {
-  auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
+  auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   if (cellid < ncells_log) return log_mesh_->getCellType(getEntityParent(Entity_kind::CELL, cellid));
   else return bg_mesh_->getCellType(getEntityParent(Entity_kind::CELL, cellid));
 }
 
 std::size_t
 MeshEmbeddedLogical::getNumEntities(const Entity_kind kind,
-        const Parallel_type ptype) const
+        const Parallel_kind ptype) const
 {
   auto count = log_mesh_->getNumEntities(kind, ptype)
     + bg_mesh_->getNumEntities(kind, ptype);
-  if (kind == Entity_kind::FACE) count += extra_face_cell_ids_.size<MemSpace_type::HOST>();
+  if (kind == Entity_kind::FACE) count += extra_face_cell_ids_.size<MemSpace_kind::HOST>();
   return count;
 }
 
@@ -204,7 +204,7 @@ MeshEmbeddedLogical::getNodeCoordinate(const Entity_ID node) const
 }
 
 void
-MeshEmbeddedLogical::getFaceNodes(const Entity_ID f, Entity_ID_List& nodes) const
+MeshEmbeddedLogical::getFaceNodes(const Entity_ID f, Entity_ID_View& nodes) const
 {
   Errors::Message mesg("There are no nodes in a MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
@@ -212,8 +212,8 @@ MeshEmbeddedLogical::getFaceNodes(const Entity_ID f, Entity_ID_List& nodes) cons
 
 void
 MeshEmbeddedLogical::getNodeFaces(const Entity_ID nodeid,
-                  const Parallel_type ptype,
-                  Entity_ID_List& faceids) const
+                  const Parallel_kind ptype,
+                  Entity_ID_View& faceids) const
 {
   Errors::Message mesg("There are no nodes in a MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
@@ -226,19 +226,19 @@ MeshEmbeddedLogical::getNodeFaces(const Entity_ID nodeid,
 void
 MeshEmbeddedLogical::getCellFacesAndDirs(
   const Entity_ID c,
-  Entity_ID_List& faces,
-  Entity_Direction_List * const dirs) const
+  Entity_ID_View& faces,
+  Entity_Direction_View * const dirs) const
 {
-  std::vector<Entity_ID> vfaces; 
+  Entity_ID_List vfaces; 
   std::vector<int> vdirs; 
-  auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
+  auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   if (c < ncells_log) {
     log_mesh_->getCellFacesAndDirs(c, faces, dirs);
 
     // check for extras
-    auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-    for (int f=0; f!=extra_face_cell_ids_.size<MemSpace_type::HOST>(); ++f) {
-      if (c == extra_face_cell_ids_.get<MemSpace_type::HOST>(f,0)) {
+    auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+    for (int f=0; f!=extra_face_cell_ids_.size<MemSpace_kind::HOST>(); ++f) {
+      if (c == extra_face_cell_ids_.get<MemSpace_kind::HOST>(f,0)) {
         vfaces.push_back(f + nfaces_log);
         if (dirs) vdirs.push_back(1); // direction always from log to bg
       }
@@ -255,15 +255,15 @@ MeshEmbeddedLogical::getCellFacesAndDirs(
     }
 
   } else {
-    auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-    auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_type::HOST>();
+    auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+    auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_kind::HOST>();
     bg_mesh_->getCellFacesAndDirs(c-ncells_log, faces, dirs);
     for (int i=0; i!=faces.size(); ++i) faces[i] += (nfaces_log + nfaces_extra);
 
     // check for extras
-    auto nfaces_bg = bg_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-    for (int f=0; f!=extra_face_cell_ids_.size<MemSpace_type::HOST>(); ++f) {
-      if (c == (extra_face_cell_ids_.get<MemSpace_type::HOST>(f,1)+ncells_log)) {
+    auto nfaces_bg = bg_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+    for (int f=0; f!=extra_face_cell_ids_.size<MemSpace_kind::HOST>(); ++f) {
+      if (c == (extra_face_cell_ids_.get<MemSpace_kind::HOST>(f,1)+ncells_log)) {
         vfaces.push_back(f + nfaces_log);
         if (dirs) vdirs.push_back(-1); // direction always from log to bg
       }
@@ -285,21 +285,21 @@ MeshEmbeddedLogical::getCellFacesAndDirs(
 void
 MeshEmbeddedLogical::getCellFacesAndBisectors(
   const Entity_ID c,
-  Entity_ID_List& faces,
-  Point_List * const bisectors) const
+  Entity_ID_View& faces,
+  Point_View * const bisectors) const
 {
-  std::vector<Entity_ID> vfaces; 
-  std::vector<AmanziGeometry::Point> vbisectors; 
-  auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
+  Entity_ID_List vfaces; 
+  Point_List vbisectors; 
+  auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   if (c < ncells_log) {
     log_mesh_->getCellFacesAndBisectors(c, faces, bisectors);
 
     // check for extras
-    auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-    for (int f=0; f!=extra_face_cell_ids_.size<MemSpace_type::HOST>(); ++f) {
-      if (c == extra_face_cell_ids_.get<MemSpace_type::HOST>(f,0)) {
+    auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+    for (int f=0; f!=extra_face_cell_ids_.size<MemSpace_kind::HOST>(); ++f) {
+      if (c == extra_face_cell_ids_.get<MemSpace_kind::HOST>(f,0)) {
         vfaces.push_back(f + nfaces_log);
-        if (bisectors) vbisectors.push_back(extra_face_cell_bisectors_.get<MemSpace_type::HOST>(f,0));
+        if (bisectors) vbisectors.push_back(extra_face_cell_bisectors_.get<MemSpace_kind::HOST>(f,0));
       }
     }
     int size = faces.size(); 
@@ -313,17 +313,17 @@ MeshEmbeddedLogical::getCellFacesAndBisectors(
         (*bisectors)[i] = vbisectors[j]; 
     }
   } else {
-    auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-    auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_type::HOST>();
+    auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+    auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_kind::HOST>();
     bg_mesh_->getCellFacesAndBisectors(c-ncells_log, faces, bisectors);
     for (int i=0; i!=faces.size(); ++i) faces[i] += (nfaces_log + nfaces_extra);
 
     // check for extras
-    auto nfaces_bg = bg_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-    for (int f=0; f!=extra_face_cell_ids_.size<MemSpace_type::HOST>(); ++f) {
-      if (c == (extra_face_cell_ids_.get<MemSpace_type::HOST>(f,1)+ncells_log)) {
+    auto nfaces_bg = bg_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+    for (int f=0; f!=extra_face_cell_ids_.size<MemSpace_kind::HOST>(); ++f) {
+      if (c == (extra_face_cell_ids_.get<MemSpace_kind::HOST>(f,1)+ncells_log)) {
         vfaces.push_back(f + nfaces_log);
-        if (bisectors) vbisectors.push_back(extra_face_cell_bisectors_.get<MemSpace_type::HOST>(f,1));
+        if (bisectors) vbisectors.push_back(extra_face_cell_bisectors_.get<MemSpace_kind::HOST>(f,1));
       }
     }
     int size = faces.size(); 
@@ -342,7 +342,7 @@ MeshEmbeddedLogical::getCellFacesAndBisectors(
 double
 MeshEmbeddedLogical::getCellVolume(const Entity_ID c) const
 {
-  auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
+  auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   if (c < ncells_log) return log_mesh_->getCellVolume(c);
   else return bg_mesh_->getCellVolume(c - ncells_log);
 }
@@ -350,7 +350,7 @@ MeshEmbeddedLogical::getCellVolume(const Entity_ID c) const
 AmanziGeometry::Point
 MeshEmbeddedLogical::getCellCentroid(const Entity_ID c) const
 {
-  auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
+  auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   if (c < ncells_log) return log_mesh_->getCellCentroid(c);
   else return bg_mesh_->getCellCentroid(c - ncells_log);
 }
@@ -358,19 +358,19 @@ MeshEmbeddedLogical::getCellCentroid(const Entity_ID c) const
 
 void
 MeshEmbeddedLogical::getFaceCells(const Entity_ID f,
-        const Parallel_type ptype,
-        Entity_ID_List& cells) const
+        const Parallel_kind ptype,
+        Entity_ID_View& cells) const
 {
-  auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
-  auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-  auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_type::HOST>();
+  auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+  auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+  auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_kind::HOST>();
   if (f < nfaces_log) {
     log_mesh_->getFaceCells(f, ptype, cells);
   } else if (f >= nfaces_log + nfaces_extra) {
     bg_mesh_->getFaceCells(f - nfaces_log - nfaces_extra, ptype, cells);
     for (auto& c : cells) c += ncells_log;
   } else {
-    cells = extra_face_cell_ids_.getRow<MemSpace_type::HOST>(f - nfaces_log);
+    cells = extra_face_cell_ids_.getRow<MemSpace_kind::HOST>(f - nfaces_log);
     cells[1] += ncells_log;
   }
 }
@@ -378,8 +378,8 @@ MeshEmbeddedLogical::getFaceCells(const Entity_ID f,
 double
 MeshEmbeddedLogical::getFaceArea(const Entity_ID f) const
 {
-  auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-  auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_type::HOST>();
+  auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+  auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_kind::HOST>();
   if (f < nfaces_log) {
     return log_mesh_->getFaceArea(f);
   } else if (f >= nfaces_log + nfaces_extra) {
@@ -392,15 +392,15 @@ MeshEmbeddedLogical::getFaceArea(const Entity_ID f) const
 AmanziGeometry::Point
 MeshEmbeddedLogical::getFaceCentroid(const Entity_ID f) const
 {
-  auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-  auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_type::HOST>();
+  auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+  auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_kind::HOST>();
   if (f < nfaces_log) {
     return log_mesh_->getFaceCentroid(f);
   } else if (f >= nfaces_log + nfaces_extra) {
     return bg_mesh_->getFaceCentroid(f - nfaces_log - nfaces_extra);
   } else {
-    auto log_cc = log_mesh_->getCellCentroid(extra_face_cell_ids_.get<MemSpace_type::HOST>(f - nfaces_log,0));
-    auto bg_cc = bg_mesh_->getCellCentroid(extra_face_cell_ids_.get<MemSpace_type::HOST>(f - nfaces_log,1));
+    auto log_cc = log_mesh_->getCellCentroid(extra_face_cell_ids_.get<MemSpace_kind::HOST>(f - nfaces_log,0));
+    auto bg_cc = bg_mesh_->getCellCentroid(extra_face_cell_ids_.get<MemSpace_kind::HOST>(f - nfaces_log,1));
     return (log_cc + bg_cc) / 2.;
   }
 }
@@ -409,9 +409,9 @@ AmanziGeometry::Point
 MeshEmbeddedLogical::getFaceNormal(const Entity_ID f,
         const Entity_ID c, int * const orientation) const
 {
-  auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
-  auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-  auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_type::HOST>();
+  auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+  auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+  auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_kind::HOST>();
 
   if (f < nfaces_log) {
     return log_mesh_->getFaceNormal(f, c, orientation);

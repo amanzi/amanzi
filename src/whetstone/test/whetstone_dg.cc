@@ -652,7 +652,7 @@ TEST(DG_LEAST_SQUARE_MAP_CELL)
 
   // extract polygon from the mesh
   AmanziGeometry::Point xv;
-  std::vector<AmanziGeometry::Point> x1;
+  AmanziMesh::Point_List x1;
 
   auto nodes = mesh->getCellNodes(0);
 
@@ -678,7 +678,7 @@ TEST(DG_LEAST_SQUARE_MAP_CELL)
   }
 
   // test linear map
-  std::vector<AmanziGeometry::Point> x2(x1);
+  AmanziMesh::Point_List x2(x1);
   AmanziGeometry::Point shift(0.1, 0.2);
   for (int i = 0; i < nodes.size(); ++i) { x2[i] += shift; }
 

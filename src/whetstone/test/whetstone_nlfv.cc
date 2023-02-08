@@ -40,7 +40,7 @@ TEST(NLFV_POSITIVE_DECOMPOSITION_2D)
   std::cout << "Test: positive decomposition of a 2D vector" << std::endl;
 
   // create basis vectors
-  std::vector<AmanziGeometry::Point> tau;
+  AmanziMesh::Point_List tau;
   for (int i = 0; i < 6; i++) {
     double theta = (i + 0.2) * M_PI / 3;
     double a = double(i) / (i + 1.0);
@@ -83,7 +83,7 @@ TEST(NLFV_POSITIVE_DECOMPOSITION_3D)
   // create basis vectors
   int n(0);
   double h[3] = { 0.9, 1.0, 1.2 };
-  std::vector<AmanziGeometry::Point> tau;
+  AmanziMesh::Point_List tau;
   for (int i = -1; i < 2; i += 2) {
     for (int j = -1; j < 2; j += 2) {
       for (int k = -1; k < 2; k += 2) {

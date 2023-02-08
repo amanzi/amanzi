@@ -22,7 +22,7 @@
 #include "Point.hh"
 
 namespace Amanzi {
-namespace WhetStone {
+namespace AmanziGeometry {
 
 // -- comparison operators
 class SurfaceCoordinateSystem {
@@ -53,7 +53,7 @@ class SurfaceCoordinateSystem {
   std::shared_ptr<std::vector<AmanziGeometry::Point>> tau_;
 };
 
-} // namespace WhetStone
+} // namespace AmanziGeometry
 } // namespace Amanzi
 
 #endif
