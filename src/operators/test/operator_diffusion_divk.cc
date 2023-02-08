@@ -75,7 +75,7 @@ RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
 
   // create an SIMPLE mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   // Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
   std::string file = op_list.get<std::string>("file name", "test/random20.exo");
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(file);
@@ -85,9 +85,9 @@ RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic03 ana(mesh);
 
@@ -236,7 +236,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D)
 
   // create an SIMPLE mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
   // Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/mesh.exo");
 
@@ -245,9 +245,9 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D)
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic03 ana(mesh);
 

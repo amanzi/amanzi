@@ -20,18 +20,18 @@ namespace AmanziMesh {
 // Constructor that guesses how to infer columnar structure.
 //
 void
-MeshColumns::initialize(const MeshCache<MemSpace_type::HOST>& mesh)
+MeshColumns::initialize(const MeshCache<MemSpace_kind::HOST>& mesh)
 {
   AMANZI_ASSERT(mesh.getSpaceDimension() == 3);
   AMANZI_ASSERT(mesh.getManifoldDimension() == 3);
 
   // loop over all boundary faces and look for those whose normal z component
   // is not zero and whose opposing face is below them.
-  Entity_ID_List surface_faces("surface_faces", mesh.getBoundaryFaces().size());
+  Entity_ID_View surface_faces("surface_faces", mesh.getBoundaryFaces().size());
   int sf = 0;
   for (const Entity_ID f : mesh.getBoundaryFaces()) {
     auto f_normal = mesh.getFaceNormal(f);
-    Entity_ID c = mesh.getFaceCells(f, Parallel_type::ALL)[0];
+    Entity_ID c = mesh.getFaceCells(f, Parallel_kind::ALL)[0];
     if (Impl::orientFace(mesh, f, c) == 1) surface_faces[sf++] = f;
   }
   Kokkos::resize(surface_faces, sf);
@@ -43,7 +43,7 @@ MeshColumns::initialize(const MeshCache<MemSpace_type::HOST>& mesh)
 // Constructor that infers columnar structure from a mesh set.
 //
 void
-MeshColumns::initialize(const MeshCache<MemSpace_type::HOST>& mesh,
+MeshColumns::initialize(const MeshCache<MemSpace_kind::HOST>& mesh,
                         const std::vector<std::string>& regions)
 {
   AMANZI_ASSERT(mesh.getSpaceDimension() == 3);
@@ -55,13 +55,13 @@ MeshColumns::initialize(const MeshCache<MemSpace_type::HOST>& mesh,
   }
 
   // collect faces in all regions, keeping the collection sorted
-  std::vector<Entity_ID> vsurface_faces;
+  Entity_ID_List vsurface_faces;
   for (const auto& r : regions) {
-    auto r_faces = mesh.getSetEntities(r, Entity_kind::FACE, Parallel_type::ALL);
+    auto r_faces = mesh.getSetEntities(r, Entity_kind::FACE, Parallel_kind::ALL);
     for (Entity_ID f : r_faces)
       vsurface_faces.insert(std::upper_bound(vsurface_faces.begin(), vsurface_faces.end(), f), f);
   }
-  Entity_ID_List surface_faces;
+  Entity_ID_View surface_faces;
   vectorToView(surface_faces, vsurface_faces);
 
   // build columns for each face
@@ -70,8 +70,8 @@ MeshColumns::initialize(const MeshCache<MemSpace_type::HOST>& mesh,
 
 
 void
-MeshColumns::initialize(const MeshCache<MemSpace_type::HOST>& mesh,
-                        const Entity_ID_List& surface_faces)
+MeshColumns::initialize(const MeshCache<MemSpace_kind::HOST>& mesh,
+                        const Entity_ID_View& surface_faces)
 {
   // figure out the correct size
   // Note, this is done to make life easier for Kokkos
@@ -82,15 +82,15 @@ MeshColumns::initialize(const MeshCache<MemSpace_type::HOST>& mesh,
   int ncells = 0;
   int nfaces = 0;
   for (Entity_ID f : surface_faces) {
-    view<MemSpace_type::HOST>(cells_.rows)[i] = ncells;
-    view<MemSpace_type::HOST>(faces_.rows)[i] = nfaces;
+    view<MemSpace_kind::HOST>(cells_.rows)[i] = ncells;
+    view<MemSpace_kind::HOST>(faces_.rows)[i] = nfaces;
     auto size = Impl::countCellsInColumn(mesh, f);
     ncells += size;
     nfaces += size + 1;
     ++i;
   }
-  view<MemSpace_type::HOST>(cells_.rows)[i] = ncells;
-  view<MemSpace_type::HOST>(faces_.rows)[i] = nfaces;
+  view<MemSpace_kind::HOST>(cells_.rows)[i] = ncells;
+  view<MemSpace_kind::HOST>(faces_.rows)[i] = nfaces;
 
   cells_.entries.resize(ncells);
   faces_.entries.resize(nfaces);
@@ -103,8 +103,8 @@ MeshColumns::initialize(const MeshCache<MemSpace_type::HOST>& mesh,
   }
   num_columns_all = i;
 
-  cells_.update<MemSpace_type::DEVICE>();
-  faces_.update<MemSpace_type::DEVICE>();
+  cells_.update<MemSpace_kind::DEVICE>();
+  faces_.update<MemSpace_kind::DEVICE>();
 }
 
 
@@ -112,11 +112,11 @@ MeshColumns::initialize(const MeshCache<MemSpace_type::HOST>& mesh,
 // Actually does the work of building the column, starting at f.
 //
 void
-MeshColumns::buildColumn_(const MeshCache<MemSpace_type::HOST>& mesh, Entity_ID f, int col)
+MeshColumns::buildColumn_(const MeshCache<MemSpace_kind::HOST>& mesh, Entity_ID f, int col)
 {
-  Parallel_type ptype = mesh.getParallelType(Entity_kind::FACE, f);
+  Parallel_kind ptype = mesh.getParallelType(Entity_kind::FACE, f);
 
-  Entity_ID c = mesh.getFaceCells(f, Parallel_type::ALL)[0]; // guaranteed size 1
+  Entity_ID c = mesh.getFaceCells(f, Parallel_kind::ALL)[0]; // guaranteed size 1
   if (mesh.getParallelType(Entity_kind::CELL, c) != ptype) {
     Errors::Message msg(
       "MeshColumns::buildColumn() mesh was not partitioned vertically using zoltan_rcb");
@@ -125,8 +125,8 @@ MeshColumns::buildColumn_(const MeshCache<MemSpace_type::HOST>& mesh, Entity_ID 
   bool done = false;
   int i = 0;
   while (!done) {
-    cells_.get<MemSpace_type::HOST>(col, i) = c;
-    faces_.get<MemSpace_type::HOST>(col, i) = f;
+    cells_.get<MemSpace_kind::HOST>(col, i) = c;
+    faces_.get<MemSpace_kind::HOST>(col, i) = f;
 
     Entity_ID f_opp = Impl::findDownFace(mesh, c);
     if (mesh.getParallelType(Entity_kind::FACE, f_opp) != ptype) {
@@ -138,7 +138,7 @@ MeshColumns::buildColumn_(const MeshCache<MemSpace_type::HOST>& mesh, Entity_ID 
 
     Entity_ID c_opp = Impl::findOpposingCell(mesh, c, f_opp);
     if (c_opp < 0) {
-      faces_.get<MemSpace_type::HOST>(col, i + 1) = f_opp;
+      faces_.get<MemSpace_kind::HOST>(col, i + 1) = f_opp;
       done = true;
     } else {
       if (mesh.getParallelType(Entity_kind::CELL, c_opp) != ptype) {
@@ -156,7 +156,7 @@ MeshColumns::buildColumn_(const MeshCache<MemSpace_type::HOST>& mesh, Entity_ID 
 namespace Impl {
 
 int
-orientFace(const MeshCache<MemSpace_type::HOST>& mesh, const Entity_ID f, const Entity_ID c)
+orientFace(const MeshCache<MemSpace_kind::HOST>& mesh, const Entity_ID f, const Entity_ID c)
 {
   auto normal = mesh.getFaceNormal(f, c);
   normal /= AmanziGeometry::norm(normal);
@@ -174,7 +174,7 @@ orientFace(const MeshCache<MemSpace_type::HOST>& mesh, const Entity_ID f, const 
 // Assumes this is well posed... e.g. that there is only one face of c that
 // shares no nodes with f.   Returns -1 if this is not possible.
 Entity_ID
-findDownFace(const MeshCache<MemSpace_type::HOST>& mesh, const Entity_ID c)
+findDownFace(const MeshCache<MemSpace_kind::HOST>& mesh, const Entity_ID c)
 {
   auto cfaces = mesh.getCellFaces(c);
   // find the one that is down
@@ -188,9 +188,9 @@ findDownFace(const MeshCache<MemSpace_type::HOST>& mesh, const Entity_ID c)
 // Finds the cell in face cells that is not c, returning -1 if not possible.
 //
 Entity_ID
-findOpposingCell(const MeshCache<MemSpace_type::HOST>& mesh, const Entity_ID c, const Entity_ID f)
+findOpposingCell(const MeshCache<MemSpace_kind::HOST>& mesh, const Entity_ID c, const Entity_ID f)
 {
-  auto fcells = mesh.getFaceCells(f, Parallel_type::ALL);
+  auto fcells = mesh.getFaceCells(f, Parallel_kind::ALL);
   if (fcells.size() == 1)
     return -1;
   else if (fcells[0] == c)
@@ -203,10 +203,10 @@ findOpposingCell(const MeshCache<MemSpace_type::HOST>& mesh, const Entity_ID c, 
 // Helper function for counting column size
 //
 std::size_t
-countCellsInColumn(const MeshCache<MemSpace_type::HOST>& mesh, Entity_ID f)
+countCellsInColumn(const MeshCache<MemSpace_kind::HOST>& mesh, Entity_ID f)
 {
   std::size_t count = 0;
-  Entity_ID c = mesh.getFaceCells(f, Parallel_type::ALL)[0]; // guaranteed size 1
+  Entity_ID c = mesh.getFaceCells(f, Parallel_kind::ALL)[0]; // guaranteed size 1
   bool done = false;
   int i = 0;
   while (!done) {

@@ -65,7 +65,7 @@ class LimiterCell {
                     const std::vector<int>& bc_model,
                     const std::vector<double>& bc_value);
 
-  void ApplyLimiter(const AmanziMesh::Entity_ID_List& ids,
+  void ApplyLimiter(const AmanziMesh::Entity_ID_View& ids,
                     Teuchos::RCP<const Epetra_MultiVector> field,
                     int component,
                     const Teuchos::RCP<Reconstruction>& lifting,
@@ -115,17 +115,17 @@ class LimiterCell {
 
  private:
   // scalar limiters
-  void LimiterScalar_(const AmanziMesh::Entity_ID_List& ids,
+  void LimiterScalar_(const AmanziMesh::Entity_ID_View& ids,
                       const std::vector<int>& bc_model,
                       const std::vector<double>& bc_value,
                       Teuchos::RCP<Epetra_Vector> limiter,
                       double (*)(double));
 
-  void LimiterTensorial_(const AmanziMesh::Entity_ID_List& ids,
+  void LimiterTensorial_(const AmanziMesh::Entity_ID_View& ids,
                          const std::vector<int>& bc_model,
                          const std::vector<double>& bc_value);
 
-  void LimiterKuzmin_(const AmanziMesh::Entity_ID_List& ids,
+  void LimiterKuzmin_(const AmanziMesh::Entity_ID_View& ids,
                       const std::vector<int>& bc_model,
                       const std::vector<double>& bc_value);
 

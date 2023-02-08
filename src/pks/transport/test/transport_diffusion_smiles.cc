@@ -116,7 +116,7 @@ TEST(DIFFUSION_GAS_SMILES)
 
   // check for bounds
   int ncells_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells_owned; ++c) {
     CHECK(tcc[0][c] >= 0.0 && tcc[0][c] <= 1.0);
     CHECK(tcc[1][c] >= 0.0 && tcc[1][c] <= 1.0);

@@ -77,9 +77,8 @@ Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
   Epetra_MultiVector& Yc = *Y.ViewComponent("cell", true);
 
-  AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f != nfaces_owned; ++f) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     WhetStone::DenseVector v(ncells), av(ncells);
@@ -138,9 +137,8 @@ Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
   const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f != nfaces_owned; ++f) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
     int ncells = cells.size();
     lid_r.resize(ncells);
@@ -201,9 +199,8 @@ Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f != nfaces_owned; ++f) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
     int ncells = cells.size();
     lid_r.resize(ncells);

@@ -111,7 +111,7 @@ TEST(ENERGY_2D_MATRIX)
 
   // create boundary data
   int nfaces_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
   Teuchos::RCP<BCs> bc =
     Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
@@ -164,14 +164,12 @@ TEST(ENERGY_2D_MATRIX)
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(op->DomainMap()));
   Epetra_MultiVector& q_l = *flux->ViewComponent("face");
 
-  AmanziMesh::Entity_ID_List cells;
-
   AmanziGeometry::Point velocity(1e-4, 1e-4);
   for (int f = 0; f < nfaces_wghost; f++) {
     const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     q_l[0][f] = velocity * normal;
 
-    cells = mesh->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
     double tmp(0.0);
     for (int i = 0; i < ncells; i++) {

@@ -160,7 +160,7 @@ MFD3D_LagrangeAnyOrder::H1consistency2D_(const Teuchos::RCP<const AmanziMesh::Me
       AmanziGeometry::Point normal = mymesh->getFaceNormal(f);
 
       // local coordinate system with origin at face centroid
-      auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+      auto coordsys = std::make_shared<AmanziGeometry::SurfaceCoordinateSystem>(xf, normal);
 
       normal *= dirs[i];
       AmanziGeometry::Point conormal = K * normal;
@@ -297,7 +297,7 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
                                          DenseMatrix& Ac,
                                          bool doAc)
 {
-  Entity_ID_List fedges, fnodes;
+  AmanziMesh::Entity_ID_View fedges, fnodes;
   std::vector<int> fdirs;
 
   auto nodes = mesh_->getCellNodes(c);
@@ -336,7 +336,7 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
   // pre-calculate data for each face
   std::vector<DenseMatrix> vRf;
   std::vector<std::vector<int>> vmapf;
-  std::vector<std::shared_ptr<SurfaceCoordinateSystem>> vsysf;
+  std::vector<std::shared_ptr<AmanziGeometry::SurfaceCoordinateSystem>> vsysf;
   std::vector<Basis_Regularized> vbasisf;
   std::vector<NumericalIntegration> vnumif;
   std::vector<PolynomialOnMesh> vintegralsf;
@@ -347,11 +347,11 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
     const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
     AmanziGeometry::Point normal = mesh_->getFaceNormal(f);
 
-    auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+    auto coordsys = std::make_shared<AmanziGeometry::SurfaceCoordinateSystem>(xf, normal);
     vsysf.push_back(coordsys);
 
-    Teuchos::RCP<SingleFaceMesh> surf_mesh_fr =
-      Teuchos::rcp(new SingleFaceMesh(mesh_, f, *coordsys));
+    Teuchos::RCP<AmanziMesh::SingleFaceMesh> surf_mesh_fr =
+      Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh_, f, *coordsys));
     Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh =
       Teuchos::rcp(new AmanziMesh::Mesh(surf_mesh_fr, Teuchos::null));
 
@@ -387,7 +387,7 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
     int n = RGM.NumCols();
 
     if (order_ == 1) {
-      std::vector<double> weights;
+      AmanziMesh::Double_List weights;
       PolygonCentroidWeights(*mesh_, ids, area, weights);
 
       for (int i = 0; i < m; ++i)
@@ -530,7 +530,7 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
     for (int i = 0; i < nedges; i++) {
       int e = edges[i];
       const auto& xe = mesh_->getEdgeCentroid(e);
-      std::vector<AmanziGeometry::Point> tau_edge(1, mesh_->getEdgeVector(e));
+      AmanziMesh::Point_List tau_edge(1, mesh_->getEdgeVector(e));
       double length = mesh_->getEdgeLength(e);
 
       for (auto jt = pe.begin(); jt < pe.end(); ++jt) {
@@ -628,8 +628,9 @@ MFD3D_LagrangeAnyOrder::StiffnessMatrixSurface(int f, const Tensor& K, DenseMatr
   const auto& origin = mesh_->getFaceCentroid(f);
   const auto& normal = mesh_->getFaceNormal(f);
 
-  SurfaceCoordinateSystem coordsys(origin, normal);
-  Teuchos::RCP<SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
+  AmanziGeometry::SurfaceCoordinateSystem coordsys(origin, normal);
+  Teuchos::RCP<AmanziMesh::SingleFaceMesh> surf_mesh =
+    Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh_, f, coordsys));
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_cache =
     Teuchos::rcp(new AmanziMesh::Mesh(surf_mesh, Teuchos::null));
 
@@ -715,7 +716,7 @@ MFD3D_LagrangeAnyOrder::ProjectorCell_(int c,
       const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
       // local coordinate system with origin at face centroid
-      SurfaceCoordinateSystem coordsys(xf, normal);
+      AmanziGeometry::SurfaceCoordinateSystem coordsys(xf, normal);
 
       polys[0] = &(vf[n]);
 

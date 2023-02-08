@@ -62,13 +62,13 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED)
 
     // check we found the right number of things
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(10 * 10 * 2, ncells, *comm);
     int nnodes =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(11 * 11 * 2 - 11, nnodes, *comm);
     int nfaces =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(10 * 11 * 4 - 10, nfaces, *comm);
   }
 }
@@ -126,13 +126,13 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 
     // check we found the right number of things
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(10 * 10 * 2, ncells, *comm);
     int nnodes =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(11 * 11 * 2 - 11, nnodes, *comm);
     int nfaces =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(10 * 11 * 4 - 10, nfaces, *comm);
   }
 }
@@ -173,13 +173,13 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO)
 
     // check we found the right number of things
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(108, ncells, *comm);
     int nnodes =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(91, nnodes, *comm);
     int nfaces =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(198, nfaces, *comm);
   }
 }
@@ -236,13 +236,13 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO_MANIFOLD)
 
     // check we found the right number of things
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(108, ncells, *comm);
     int nnodes =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(91, nnodes, *comm);
     int nfaces =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(198, nfaces, *comm);
   }
 }

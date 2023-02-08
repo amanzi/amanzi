@@ -71,11 +71,11 @@ LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   RCP<Mesh> surfmesh = meshfactory.create(mesh, surfaces, AmanziMesh::Entity_kind::FACE);
 
   int ncells_owned =
-    surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int ncells_wghost =
-    surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   int nfaces_wghost =
-    surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   std::cout << "pid=" << MyPID << " cells: " << ncells_owned << " " << ncells_wghost << std::endl;
 
@@ -97,14 +97,13 @@ LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   }
 
   // create boundary data (no mixed bc)
-  Entity_ID_List cells;
   Teuchos::RCP<BCs> bc =
     Teuchos::rcp(new BCs(surfmesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    cells = surfmesh->getFaceCells(f, Parallel_type::ALL);
+    auto cells = surfmesh->getFaceCells(f, Parallel_kind::ALL);
     if (cells.size() == 2) continue;
 
     const Point& xf = surfmesh->getFaceCentroid(f);

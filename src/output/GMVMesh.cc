@@ -21,7 +21,7 @@ write_mesh_to_file_(const AmanziMesh::Mesh& mesh, std::string filename)
 
   // Write node info
   unsigned int num_nodes =
-    mesh.getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+    mesh.getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
   double* x = new double[num_nodes];
   double* y = new double[num_nodes];
   double* z = new double[num_nodes];
@@ -44,7 +44,7 @@ write_mesh_to_file_(const AmanziMesh::Mesh& mesh, std::string filename)
 
   // Write cell info
   unsigned int num_cells =
-    mesh.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   gmvwrite_cell_header(&num_cells);
 
@@ -56,8 +56,7 @@ write_mesh_to_file_(const AmanziMesh::Mesh& mesh, std::string filename)
   unsigned int* yh = new unsigned int[72];
 
   for (int i = 0; i < num_cells; i++) {
-    AmanziMesh::Entity_ID_List cnodes;
-    cnodes = mesh.getCellNodes(i);
+    auto cnodes = mesh.getCellNodes(i);
 
     int nnodes = cnodes.size();
     for (int j = 0; j < nnodes; j++) xh[j] = cnodes[j] + 1;

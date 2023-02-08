@@ -97,7 +97,7 @@ TEST(FLOW_BOUNDARY_SOLVER)
 
   {
     auto block =
-      mesh1->getSetEntities("All", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh1->getSetEntities("All", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     for (int i = 0; i != block.size(); ++i) {
       int c = block[i];
       K1[0][c] = 1e-9;
@@ -110,7 +110,7 @@ TEST(FLOW_BOUNDARY_SOLVER)
   auto& K2 = *S2->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   {
     auto block = mesh2->getSetEntities(
-      "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     for (int i = 0; i != block.size(); ++i) {
       int c = block[i];
       K2[0][c] = 1e-9;
@@ -152,10 +152,9 @@ TEST(FLOW_BOUNDARY_SOLVER)
   std::cout << "MESH1\n";
 
   int nfaces =
-    mesh1->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+    mesh1->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    AmanziMesh::Entity_ID_List cells;
-    cells = mesh1->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh1->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int dir;
     const Point& norm = mesh1->getFaceNormal(f, cells[0], &dir);
     if ((cells.size() == 1) && (norm[2] * dir > 0)) {
@@ -166,10 +165,9 @@ TEST(FLOW_BOUNDARY_SOLVER)
 
   std::cout << "MESH2\n";
 
-  nfaces = mesh2->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces = mesh2->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    AmanziMesh::Entity_ID_List cells;
-    cells = mesh2->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh2->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int dir;
     const Point& norm = mesh2->getFaceNormal(f, cells[0], &dir);
     if ((cells.size() == 1) && (norm[2] * dir > 0)) {

@@ -63,8 +63,7 @@ TEST(DERHAM_COMPLEX_NODE)
   for (int i = 0; i < nnodes; ++i) CHECK(M(i, i) > 0.0);
 
   // verify exact integration property
-  AmanziMesh::Entity_ID_List nodes;
-  nodes = mesh->getCellNodes(cell);
+  auto nodes = mesh->getCellNodes(cell);
 
   double xi, yi, xj;
   double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);

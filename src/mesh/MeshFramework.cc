@@ -29,11 +29,11 @@ MeshFramework::MeshFramework(const Comm_ptr_type& comm,
 }
 
 
-Parallel_type
+Parallel_kind
 MeshFramework::getEntityPtype(const Entity_kind kind, const Entity_ID entid) const
 {
-  return entid >= getNumEntities(kind, Parallel_type::OWNED) ? Parallel_type::OWNED :
-                                                               Parallel_type::GHOST;
+  return entid >= getNumEntities(kind, Parallel_kind::OWNED) ? Parallel_kind::OWNED :
+                                                               Parallel_kind::GHOST;
 }
 
 Entity_GID
@@ -43,10 +43,10 @@ MeshFramework::getEntityGID(const Entity_kind kind, const Entity_ID lid) const
   return lid;
 }
 
-Entity_GID_List
-MeshFramework::getEntityGIDs(const Entity_kind kind, const Parallel_type ptype) const
+cEntity_GID_View
+MeshFramework::getEntityGIDs(const Entity_kind kind, const Parallel_kind ptype) const
 {
-  Entity_GID_List gids("gids", getNumEntities(kind, ptype));
+  Entity_GID_View gids("gids", getNumEntities(kind, ptype));
   for (int lid = 0; lid != gids.size(); ++lid) gids[lid] = getEntityGID(kind, lid);
   return gids;
 }
@@ -59,32 +59,32 @@ MeshFramework::getEntityParent(const Entity_kind kind, const Entity_ID entid) co
   return -1;
 }
 
-Cell_type
+Cell_kind
 MeshFramework::getCellType(const Entity_ID c) const
 {
-  Entity_ID_List faces;
+  cEntity_ID_View faces;
   getCellFaces(c, faces);
   return getCellType_(c, faces);
 }
 
-Cell_type
-MeshFramework::getCellType_(const Entity_ID c, const Entity_ID_List& faces) const
+Cell_kind
+MeshFramework::getCellType_(const Entity_ID c, const cEntity_ID_View& faces) const
 {
   if (getManifoldDimension() == 2) {
     switch (faces.size()) {
     case 3:
-      return Cell_type::TRI;
+      return Cell_kind::TRI;
       break;
     case 4:
-      return Cell_type::QUAD;
+      return Cell_kind::QUAD;
       break;
     default:
-      return Cell_type::POLYGON;
+      return Cell_kind::POLYGON;
     }
   } else if (getManifoldDimension() == 3) {
     int nquads = 0;
     for (const auto& f : faces) {
-      Entity_ID_List fnodes;
+      cEntity_ID_View fnodes;
       getFaceNodes(f, fnodes);
       if (fnodes.size() == 4) nquads++;
     }
@@ -92,33 +92,33 @@ MeshFramework::getCellType_(const Entity_ID c, const Entity_ID_List& faces) cons
     switch (faces.size()) {
     case 4:
       if (nquads == 0)
-        return Cell_type::TET;
+        return Cell_kind::TET;
       else
-        return Cell_type::POLYHED;
+        return Cell_kind::POLYHED;
       break;
     case 5:
       if (nquads == 1)
-        return Cell_type::PYRAMID;
+        return Cell_kind::PYRAMID;
       else if (nquads == 3)
-        return Cell_type::PRISM;
+        return Cell_kind::PRISM;
       else
-        return Cell_type::POLYHED;
+        return Cell_kind::POLYHED;
       break;
     case 6:
       if (nquads == 6)
-        return Cell_type::HEX;
+        return Cell_kind::HEX;
       else
-        return Cell_type::POLYHED;
+        return Cell_kind::POLYHED;
       break;
     default:
-      return Cell_type::POLYHED;
+      return Cell_kind::POLYHED;
     }
   } else {
     Errors::Message msg;
     msg << "Mesh of manifold_dimension = " << getManifoldDimension() << " not supported";
     Exceptions::amanzi_throw(msg);
   }
-  return Cell_type::UNKNOWN;
+  return Cell_kind::UNKNOWN;
 }
 
 
@@ -130,19 +130,19 @@ MeshFramework::setNodeCoordinate(const Entity_ID nodeid, const AmanziGeometry::P
 }
 
 
-Point_List
+cPoint_View
 MeshFramework::getCellCoordinates(const Entity_ID c) const
 {
   return MeshAlgorithms::getCellCoordinates(*this, c);
 }
 
-Point_List
+cPoint_View
 MeshFramework::getFaceCoordinates(const Entity_ID f) const
 {
   return MeshAlgorithms::getFaceCoordinates(*this, f);
 }
 
-Point_List
+cPoint_View
 MeshFramework::getEdgeCoordinates(const Entity_ID e) const
 {
   return MeshAlgorithms::getEdgeCoordinates(*this, e);
@@ -184,8 +184,8 @@ MeshFramework::getFaceNormal(const Entity_ID f, const Entity_ID c, int* const or
 {
   auto geom = computeFaceGeometry(f);
 
-  Entity_ID_List fcells;
-  getFaceCells(f, Parallel_type::ALL, fcells);
+  cEntity_ID_View fcells;
+  getFaceCells(f, Parallel_kind::ALL, fcells);
   if (orientation) *orientation = 0;
   Entity_ID cc = (c < 0) ? fcells[0] : c;
 
@@ -221,7 +221,7 @@ MeshFramework::getEdgeVector(const Entity_ID e, const Entity_ID n, int* const or
 {
   auto geom = computeEdgeGeometry(e);
   if (n >= 0) {
-    Entity_ID_List nodes;
+    cEntity_ID_View nodes;
     getEdgeNodes(e, nodes);
     if (n == nodes[0]) {
       if (orientation) *orientation = 1;
@@ -248,8 +248,8 @@ MeshFramework::getEdgeCentroid(const Entity_ID e) const
 //
 void
 MeshFramework::getCellFacesAndBisectors(const Entity_ID cellid,
-                                        Entity_ID_List& faceids,
-                                        Point_List* const bisectors) const
+                                        cEntity_ID_View& faceids,
+                                        cPoint_View* const bisectors) const
 {
   getCellFaces(cellid, faceids);
   if (bisectors) *bisectors = MeshAlgorithms::computeBisectors(*this, cellid, faceids);
@@ -260,22 +260,22 @@ MeshFramework::getCellFacesAndBisectors(const Entity_ID cellid,
 // topology
 //
 void
-MeshFramework::getCellEdges(const Entity_ID c, Entity_ID_List& edges) const
+MeshFramework::getCellEdges(const Entity_ID c, cEntity_ID_View& edges) const
 {
   hasEdgesOrThrow();
   edges = MeshAlgorithms::computeCellEdges(*this, c);
 }
 
 void
-MeshFramework::getCellNodes(const Entity_ID c, Entity_ID_List& nodes) const
+MeshFramework::getCellNodes(const Entity_ID c, cEntity_ID_View& nodes) const
 {
   nodes = MeshAlgorithms::computeCellNodes(*this, c);
 }
 
 void
 MeshFramework::getFaceEdgesAndDirs(const Entity_ID f,
-                                   Entity_ID_List& edges,
-                                   Entity_Direction_List* const dirs) const
+                                   cEntity_ID_View& edges,
+                                   cEntity_Direction_View* const dirs) const
 {
   hasEdgesOrThrow();
   throwNotImplemented_("getFaceEdgesAndDirs");
@@ -283,7 +283,7 @@ MeshFramework::getFaceEdgesAndDirs(const Entity_ID f,
 
 
 void
-MeshFramework::getEdgeNodes(const Entity_ID e, Entity_ID_List& nodes) const
+MeshFramework::getEdgeNodes(const Entity_ID e, cEntity_ID_View& nodes) const
 {
   hasEdgesOrThrow();
   throwNotImplemented_("getEdgeNodes");
@@ -292,8 +292,8 @@ MeshFramework::getEdgeNodes(const Entity_ID e, Entity_ID_List& nodes) const
 
 void
 MeshFramework::getEdgeCells(const Entity_ID e,
-                            const Parallel_type ptype,
-                            Entity_ID_List& cells) const
+                            const Parallel_kind ptype,
+                            cEntity_ID_View& cells) const
 {
   hasEdgesOrThrow();
   throwNotImplemented_("getEdgeCells");
@@ -301,8 +301,8 @@ MeshFramework::getEdgeCells(const Entity_ID e,
 
 void
 MeshFramework::getEdgeFaces(const Entity_ID e,
-                            const Parallel_type ptype,
-                            Entity_ID_List& faces) const
+                            const Parallel_kind ptype,
+                            cEntity_ID_View& faces) const
 {
   hasEdgesOrThrow();
   throwNotImplemented_("getEdgeFaces");
@@ -310,25 +310,25 @@ MeshFramework::getEdgeFaces(const Entity_ID e,
 
 void
 MeshFramework::getNodeCells(const Entity_ID n,
-                            const Parallel_type ptype,
-                            Entity_ID_List& cells) const
+                            const Parallel_kind ptype,
+                            cEntity_ID_View& cells) const
 {
-  Entity_ID_List faces, fcells;
-  std::vector<Entity_ID> vcells;
-  getNodeFaces(n, Parallel_type::ALL, faces);
+  cEntity_ID_View faces, fcells;
+  Entity_ID_List vcells;
+  getNodeFaces(n, Parallel_kind::ALL, faces);
   for (const auto& f : faces) {
     getFaceCells(f, ptype, fcells);
     for (const auto& c : fcells) {
       if (std::find(vcells.begin(), vcells.end(), c) == vcells.end()) { vcells.emplace_back(c); }
     }
   }
-  vectorToView(cells, vcells);
+  vectorToConstView(cells, vcells);
 }
 
 void
 MeshFramework::getNodeEdges(const Entity_ID nodeid,
-                            const Parallel_type ptype,
-                            Entity_ID_List& edgeids) const
+                            const Parallel_kind ptype,
+                            cEntity_ID_View& edgeids) const
 {
   hasEdgesOrThrow();
   throwNotImplemented_("getNodeEdges");
@@ -337,8 +337,8 @@ MeshFramework::getNodeEdges(const Entity_ID nodeid,
 void
 MeshFramework::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
                               const Entity_kind kind,
-                              const Parallel_type ptype,
-                              Entity_ID_List& entids) const
+                              const Parallel_kind ptype,
+                              cEntity_ID_View& entids) const
 {
   throwNotImplemented_("getSetEntities");
 }
@@ -373,12 +373,12 @@ MeshFrameworkAlgorithms::computeCellGeometry(const MeshFramework& mesh, const En
 //   return MeshAlgorithms::computeCellGeometry(mesh, c);
 // }
 
-std::tuple<double, AmanziGeometry::Point, Point_List>
+std::tuple<double, AmanziGeometry::Point, cPoint_View>
 MeshFrameworkAlgorithms::computeFaceGeometry(const MeshFramework& mesh, const Entity_ID f) const
 {
   return MeshAlgorithms::computeFaceGeometry(mesh, f);
 }
-// std::tuple<double, AmanziGeometry::Point, Point_List>
+// std::tuple<double, AmanziGeometry::Point, Point_View>
 // MeshFrameworkAlgorithms::computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const
 // {
 //   return MeshAlgorithms::computeFaceGeometry(mesh, f);
@@ -395,8 +395,8 @@ MeshFrameworkAlgorithms::computeEdgeGeometry(const MeshFramework& mesh, const En
 //   return MeshAlgorithms::computeEdgeGeometry(mesh, c);
 // }
 
-// Point_List
-// MeshFrameworkAlgorithms::computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_List& faces) const
+// Point_View
+// MeshFrameworkAlgorithms::computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_View& faces) const
 // {
 //   return MeshAlgorithms::computeBisectors(mesh, c, faces);
 // }

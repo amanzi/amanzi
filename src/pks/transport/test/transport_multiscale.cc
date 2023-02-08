@@ -79,7 +79,7 @@ TEST(ADVANCE_WITH_MULTISCALE)
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
   int nfaces_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     flux[0][f] = velocity * normal;

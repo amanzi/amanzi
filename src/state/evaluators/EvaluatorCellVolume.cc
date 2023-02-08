@@ -39,12 +39,12 @@ EvaluatorCellVolume::Update_(State& S)
   for (const auto& comp : vec) {
     if (comp == "cell") {
       int ncells =
-        vec.Mesh()->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        vec.Mesh()->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       auto& vec_c = *vec.ViewComponent("cell", false);
       for (int c = 0; c != ncells; ++c) { vec_c[0][c] = vec.Mesh()->getCellVolume(c); }
     } else if (comp == "face") {
       int nfaces =
-        vec.Mesh()->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+        vec.Mesh()->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
       auto& vec_f = *vec.ViewComponent("face", false);
       for (int f = 0; f != nfaces; ++f) { vec_f[0][f] = vec.Mesh()->getFaceArea(f); }
     } else {

@@ -65,22 +65,25 @@ TestDiffusionEdges(int dim, double tol, std::string filename)
 
   // create an SIMPLE mesh framework
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  fac_list->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh;
-  if (dim == 2) mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 6, 7, true, true);
+  if (dim == 2) mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 6, 7);
   // mesh = meshfactory.create("test/median32x33.exo", true, true);
   else
-    mesh = meshfactory.create(filename, true, true);
+    mesh = meshfactory.create(filename);
   // mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 1, 1, true, true);
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int nedges_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic ana(mesh);
 
@@ -121,8 +124,7 @@ TestDiffusionEdges(int dim, double tol, std::string filename)
     const Point& xc = mesh->getCellCentroid(c);
     double volume = mesh->getCellVolume(c);
 
-    AmanziMesh::Entity_ID_List edges;
-    edges = mesh->getCellEdges(c);
+    auto edges = mesh->getCellEdges(c);
     int nedges = edges.size();
 
     for (int k = 0; k < nedges; k++) {

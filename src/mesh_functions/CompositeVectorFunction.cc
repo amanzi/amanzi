@@ -50,7 +50,7 @@ CompositeVectorFunction::Compute(double time,
 
   // create the input tuple
   int dim = mesh->getSpaceDimension();
-  std::vector<double> args(1 + dim, 0.);
+  AmanziMesh::Double_List args(1 + dim, 0.);
   args[0] = time;
 
   // loop over the name/spec pair
@@ -81,16 +81,15 @@ CompositeVectorFunction::Compute(double time,
         if (mesh->isValidSetName(*region, AmanziMesh::Entity_kind::FACE)) {
           // get the indices of the domain.
           auto id_list = mesh->getSetEntities(
-            *region, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+            *region, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
           const Epetra_Map& face_map = mesh->getMap(AmanziMesh::Entity_kind::FACE, false);
           const Epetra_Map& vandelay_map =
             mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
 
           // loop over indices
-          AmanziMesh::Entity_ID_List cells;
           for (auto id = id_list.begin(); id != id_list.end(); ++id) {
-            cells = mesh->getFaceCells(*id, AmanziMesh::Parallel_type::ALL);
+            auto cells = mesh->getFaceCells(*id, AmanziMesh::Parallel_kind::ALL);
             if (cells.size() == 1) {
               AmanziMesh::Entity_ID bf = vandelay_map.LID(face_map.GID(*id));
               AMANZI_ASSERT(bf >= 0);
@@ -116,7 +115,7 @@ CompositeVectorFunction::Compute(double time,
         }
         if (valid) {
           // get the indices of the domain.
-          auto id_list = mesh->getSetEntities(*region, kind, AmanziMesh::Parallel_type::OWNED);
+          auto id_list = mesh->getSetEntities(*region, kind, AmanziMesh::Parallel_kind::OWNED);
           auto map = cv->Map().Map(compname, false);
 
           if (vo && vo->os_OK(Teuchos::VERB_EXTREME)) {

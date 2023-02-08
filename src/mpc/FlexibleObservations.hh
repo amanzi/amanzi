@@ -214,7 +214,7 @@ class FlexibleObservations {
   void FlushObservations();
 
  private:
-  double CalculateWaterTable_(State& S, AmanziMesh::Entity_ID_List& ids);
+  double CalculateWaterTable_(State& S, AmanziMesh::Entity_ID_View& ids);
 
  protected:
   VerboseObject* vo_;

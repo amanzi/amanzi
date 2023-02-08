@@ -244,9 +244,7 @@ MFD3D_BernardiRaugel::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 * Advection matrix depends on velocity u.
 ****************************************************************** */
 int
-MFD3D_BernardiRaugel::AdvectionMatrix(int c,
-                                      const std::vector<AmanziGeometry::Point>& u,
-                                      DenseMatrix& A)
+MFD3D_BernardiRaugel::AdvectionMatrix(int c, const AmanziMesh::Point_List& u, DenseMatrix& A)
 {
   AMANZI_ASSERT(d_ == 2);
 
@@ -257,9 +255,9 @@ MFD3D_BernardiRaugel::AdvectionMatrix(int c,
   int nnodes = nodes.size();
 
   // calculate corner normals and weigths
-  std::vector<double> w(nnodes, 0.0);
+  AmanziMesh::Double_List w(nnodes, 0.0);
   AmanziGeometry::Point xv(d_);
-  std::vector<AmanziGeometry::Point> N(nnodes, xv);
+  AmanziMesh::Point_List N(nnodes, xv);
 
   const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 

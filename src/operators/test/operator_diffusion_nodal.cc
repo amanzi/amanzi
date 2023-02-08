@@ -62,7 +62,7 @@ TEST(OPERATOR_DIFFUSION_NODAL)
 
   // create an SIMPLE mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 30, 30);
   RCP<const Mesh> mesh = meshfactory.create("test/median15x16.exo");
 
@@ -70,7 +70,7 @@ TEST(OPERATOR_DIFFUSION_NODAL)
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   Analytic01 ana(mesh);
 
@@ -92,8 +92,7 @@ TEST(OPERATOR_DIFFUSION_NODAL)
 
   for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
     int f = fmap.LID(bmap.GID(bf));
-    AmanziMesh::Entity_ID_List nodes;
-    nodes = mesh->getFaceNodes(f);
+    auto nodes = mesh->getFaceNodes(f);
     for (int n = 0; n < nodes.size(); ++n) {
       int v = nodes[n];
       xv = mesh->getNodeCoordinate(v);
@@ -118,8 +117,7 @@ TEST(OPERATOR_DIFFUSION_NODAL)
     const Point& xc = mesh->getCellCentroid(c);
     double volume = mesh->getCellVolume(c);
 
-    AmanziMesh::Entity_ID_List nodes;
-    nodes = mesh->getCellNodes(c);
+    auto nodes = mesh->getCellNodes(c);
     int nnodes = nodes.size();
 
     for (int k = 0; k < nnodes; k++) {
@@ -216,7 +214,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS)
 
   // create an SIMPLE mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4);
   RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
@@ -225,11 +223,11 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS)
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   int nfaces_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
   int nnodes_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic02 ana(mesh);
 

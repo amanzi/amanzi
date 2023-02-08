@@ -326,10 +326,10 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
   // create a SuperMapLumped from this space
   Teuchos::RCP<Operators::SuperMap> map = createSuperMap(cv);
 
-  int ncells_owned = mesh->getNumEntities(CELL, Parallel_type::OWNED);
-  int nfaces_owned = mesh->getNumEntities(FACE, Parallel_type::OWNED);
-  int ncells_used = mesh->getNumEntities(CELL, Parallel_type::ALL);
-  int nfaces_used = mesh->getNumEntities(FACE, Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(CELL, Parallel_kind::OWNED);
+  int nfaces_owned = mesh->getNumEntities(FACE, Parallel_kind::OWNED);
+  int ncells_used = mesh->getNumEntities(CELL, Parallel_kind::ALL);
+  int nfaces_used = mesh->getNumEntities(FACE, Parallel_kind::ALL);
 
   // check basic sizes
   CHECK_EQUAL(2 * ncells_owned + 2 * nfaces_owned, map->Map()->NumMyElements());
@@ -426,8 +426,8 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS)
   // create a SuperMapLumped from this space
   Teuchos::RCP<Operators::SuperMap> map = createSuperMap(cv);
 
-  int ncells_owned = mesh->getNumEntities(CELL, Parallel_type::OWNED);
-  int ncells_used = mesh->getNumEntities(CELL, Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(CELL, Parallel_kind::OWNED);
+  int ncells_used = mesh->getNumEntities(CELL, Parallel_kind::ALL);
 
   // check basic sizes
   CHECK_EQUAL(2 * ncells_owned, map->Map()->NumMyElements());
@@ -634,7 +634,7 @@ TEST(SUPERMAP_FROM_SAME_NAME_SAME_MAP_DIFFERENT_ELEMENTSIZE)
               << std::endl;
 
   auto mesh = getMesh(comm);
-  int ncells = mesh->getNumEntities(CELL, Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(CELL, Parallel_kind::OWNED);
 
   // create a CVSpace
   const auto& cell_map = mesh->getMap(AmanziMesh::Entity_kind::CELL, false);

@@ -105,7 +105,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING)
 
     AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
     int nfaces =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
       flux[0][f] = velocity * normal;
@@ -115,7 +115,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING)
       S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell", true);
 
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
       (*tcc)[0][c] = f_cubic(xc, 0.0);
@@ -232,7 +232,7 @@ ConvergenceBoxMeshes(int order, double tol, std::string limiter)
 
     AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
     int nfaces =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
       flux[0][f] = velocity * normal;
@@ -242,7 +242,7 @@ ConvergenceBoxMeshes(int order, double tol, std::string limiter)
       S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell", true);
 
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
       (*tcc)[0][c] = f_cubic(xc, 0.0);
@@ -380,7 +380,7 @@ ConvergencePolyMeshes(int order, double tol, std::string limiter)
 
     AmanziGeometry::Point velocity(1.0, 0.0);
     int nfaces =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
       flux[0][f] = velocity * normal;
@@ -390,7 +390,7 @@ ConvergencePolyMeshes(int order, double tol, std::string limiter)
       S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell", true);
 
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
       (*tcc)[0][c] = f_cubic_unit(xc, 0.0);

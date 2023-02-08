@@ -54,10 +54,7 @@ class MFD3D_GeneralizedDiffusion : public MFD3D {
   virtual int DivergenceMatrix(int c, DenseMatrix& A) override;
 
  private:
-  void CurvedFaceGeometry_(int f,
-                           int dirs,
-                           std::vector<AmanziGeometry::Point>& vv,
-                           std::vector<AmanziGeometry::Point>& xm);
+  void CurvedFaceGeometry_(int f, int dirs, AmanziMesh::Point_List& vv, AmanziMesh::Point_List& xm);
 
  private:
   static RegisteredFactory<MFD3D_GeneralizedDiffusion> reg_;

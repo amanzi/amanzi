@@ -57,7 +57,7 @@ MFD3D_GeneralizedDiffusion::L2consistency(int c,
   double volume = mesh_->getCellVolume(c);
 
   AmanziGeometry::Point v1(d_), v2(d_);
-  std::vector<AmanziGeometry::Point> vv(3), xm(3);
+  AmanziMesh::Point_List vv(3), xm(3);
 
   // populate matrices R and N
   DenseMatrix R(N);
@@ -157,7 +157,7 @@ MFD3D_GeneralizedDiffusion::L2consistencyInverse(int c,
   double volume = mesh_->getCellVolume(c);
 
   AmanziGeometry::Point v1(d_), v2(d_);
-  std::vector<AmanziGeometry::Point> vv(3), xm(3);
+  AmanziMesh::Point_List vv(3), xm(3);
 
   // populate matrices R and N
   DenseMatrix N(R);
@@ -285,8 +285,8 @@ MFD3D_GeneralizedDiffusion::DivergenceMatrix(int c, DenseMatrix& A)
 void
 MFD3D_GeneralizedDiffusion::CurvedFaceGeometry_(int f,
                                                 int dirs,
-                                                std::vector<AmanziGeometry::Point>& vv,
-                                                std::vector<AmanziGeometry::Point>& xm)
+                                                AmanziMesh::Point_List& vv,
+                                                AmanziMesh::Point_List& xm)
 {
   // local coordinate system uses external normal
   AmanziGeometry::Point normal(d_), xf(d_), v1(d_), v2(d_), v3(d_), p1(d_), p2(d_);

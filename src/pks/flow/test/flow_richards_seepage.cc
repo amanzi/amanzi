@@ -63,9 +63,9 @@ Flow2D_SeepageTest(std::string filename, bool deform)
     AmanziGeometry::Point xv(2);
 
     int nnodes =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
-    AmanziMesh::Entity_ID_List nodeids("nodeids", nnodes);
-    AmanziMesh::Point_List new_positions("new_positions", nnodes);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
+    AmanziMesh::Entity_ID_View nodeids("nodeids", nnodes);
+    AmanziMesh::Point_View new_positions("new_positions", nnodes);
 
     for (int v = 0; v < nnodes; ++v) {
       xv = mesh->getNodeCoordinate(v);

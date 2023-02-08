@@ -65,10 +65,10 @@ SUITE(MeshFramework)
       auto parent_mesh = meshfactory.create(x0, y0, z0, x1, y1, z1, nx, ny, nz);
       CHECK(!parent_mesh.is_null());
 
-      Amanzi::AmanziMesh::Entity_ID_List setents =
+      Amanzi::AmanziMesh::Entity_ID_View setents =
         parent_mesh->getSetEntities("Top Surface",
                                     Amanzi::AmanziMesh::Entity_kind::FACE,
-                                    Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                    Amanzi::AmanziMesh::Parallel_kind::OWNED);
       int local_count = setents.size();
       int global_min_count;
       std::cout << "Count on rank " << comm->MyPID() << " is " << local_count << std::endl;
@@ -76,7 +76,7 @@ SUITE(MeshFramework)
       AMANZI_ASSERT(global_min_count == 0); // this test only useful for min = 0
 
       int local_cells = parent_mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
-                                                    Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                                    Amanzi::AmanziMesh::Parallel_kind::OWNED);
       int global_cells;
       comm->SumAll(&local_cells, &global_cells, 1);
       CHECK(global_cells == 1000);

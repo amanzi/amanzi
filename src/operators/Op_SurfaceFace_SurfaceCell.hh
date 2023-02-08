@@ -58,14 +58,14 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
     if (scaling.HasComponent("cell") &&
         scaling.ViewComponent("cell", false)->MyLength() ==
           surf_mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,
-                                    AmanziMesh::Parallel_type::OWNED)) {
+                                    AmanziMesh::Parallel_kind::OWNED)) {
       // scaling's cell entry is defined on the surface mesh
       Op_Face_Cell::Rescale(scaling);
     }
 
     if (scaling.HasComponent("face") &&
         scaling.ViewComponent("face", false)->MyLength() ==
-          mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED)) {
+          mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED)) {
       AMANZI_ASSERT(mesh_ != surf_mesh);
       Exceptions::amanzi_throw(
         "Scaling surface cell entities with subsurface face vector not yet implemented");

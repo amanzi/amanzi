@@ -105,9 +105,6 @@ PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
                                      bool eliminate,
                                      bool essential_eqn)
 {
-  AmanziMesh::Entity_ID_List edges, cells;
-  std::vector<int> edirs;
-
   global_op_->rhs()->PutScalarGhosted(0.0);
   Epetra_MultiVector& rhs_edge = *global_op_->rhs()->ViewComponent("edge", true);
 
@@ -120,7 +117,7 @@ PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
   // move to properties of BCs (lipnikov@lanl.gov)
   std::vector<int> edge_ncells(nedges_wghost, 0);
   for (int c = 0; c != ncells_wghost; ++c) {
-    edges = mesh_->getCellEdges(c);
+    auto edges = mesh_->getCellEdges(c);
     int nedges = edges.size();
 
     for (int n = 0; n < nedges; ++n) { edge_ncells[edges[n]]++; }
@@ -180,7 +177,7 @@ PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
       const std::vector<int>& bc_model = bc_e->bc_model();
       const std::vector<double>& bc_value = bc_e->bc_value();
 
-      edges = mesh_->getCellEdges(c);
+      auto edges = mesh_->getCellEdges(c);
       int nedges = edges.size();
 
       // essential conditions for test functions

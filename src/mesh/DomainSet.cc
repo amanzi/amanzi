@@ -93,7 +93,7 @@ createMapSurfaceToSurface(const AmanziMesh::Mesh& subdomain_mesh,
   const Epetra_Map& src_map = subdomain_mesh.getMap(AmanziMesh::Entity_kind::CELL, false);
 
   int parent_ncells =
-    parent_mesh.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    parent_mesh.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // create the target map
   auto map = Teuchos::rcp(new std::vector<int>(src_map.NumMyElements(), -1));

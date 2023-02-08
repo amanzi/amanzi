@@ -45,7 +45,7 @@ DG_Modal::DG_Modal(const Teuchos::ParameterList& plist,
   if (plist.isParameter("quadrature order")) numi_order_ = plist.get<int>("quadrature order");
 
   int ncells_wghost =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   basis_.resize(ncells_wghost);
   monomial_integrals_.resize(ncells_wghost);
 
@@ -457,7 +457,7 @@ DG_Modal::FluxMatrix(int f,
                      bool jump_on_test,
                      double* flux)
 {
-  auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+  auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
   int ncells = cells.size();
 
   int size = PolynomialSpaceDimension(d_, order_);
@@ -501,9 +501,10 @@ DG_Modal::FluxMatrix(int f,
 
   // create integrator on a surface (used for 3D only)
   const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
-  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+  auto coordsys = std::make_shared<AmanziGeometry::SurfaceCoordinateSystem>(xf, normal);
 
-  Teuchos::RCP<SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, *coordsys));
+  Teuchos::RCP<AmanziMesh::SingleFaceMesh> surf_mesh =
+    Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh_, f, *coordsys));
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_cache =
     Teuchos::rcp(new AmanziMesh::Mesh(surf_mesh, Teuchos::null));
   NumericalIntegration numi_f(surf_mesh_cache);
@@ -619,7 +620,7 @@ DG_Modal::FluxMatrixGaussPoints(int f,
                                 bool upwind,
                                 bool jump_on_test)
 {
-  auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+  auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
   int ncells = cells.size();
 
   Polynomial poly(d_, order_);
@@ -740,8 +741,8 @@ DG_Modal::FluxMatrixRusanov(int f,
                             const Polynomial& uf,
                             DenseMatrix& A)
 {
-  AmanziMesh::Entity_ID_List nodes;
-  auto cells = mesh_->getFaceCells(f, Parallel_type::ALL);
+  AmanziMesh::Entity_ID_View nodes;
+  auto cells = mesh_->getFaceCells(f, Parallel_kind::ALL);
   int ncells = cells.size();
 
   Polynomial poly(d_, order_);
@@ -840,7 +841,7 @@ DG_Modal::FaceMatrixJump(int f,
                          const WhetStoneFunction* K2,
                          DenseMatrix& A)
 {
-  auto cells = mesh_->getFaceCells(f, Parallel_type::ALL);
+  auto cells = mesh_->getFaceCells(f, Parallel_kind::ALL);
   int ncells = cells.size();
 
   Polynomial poly(d_, order_);
@@ -934,7 +935,7 @@ DG_Modal::FaceMatrixJump(int f,
 int
 DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
 {
-  auto cells = mesh_->getFaceCells(f, Parallel_type::ALL);
+  auto cells = mesh_->getFaceCells(f, Parallel_kind::ALL);
   int ncells = cells.size();
 
   Polynomial poly(d_, order_);

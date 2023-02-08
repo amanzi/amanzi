@@ -82,11 +82,11 @@ ReadColumnMeshFunction_ByDepth(const Function& func,
   Epetra_MultiVector& vec = *v.ViewComponent("cell");
 
   double z0;
-  std::vector<double> z(1);
+  AmanziMesh::Double_List z(1);
 
   for (auto setname : sidesets) {
     auto surf_faces = v.Mesh()->getSetEntities(
-      setname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      setname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
     for (auto f : surf_faces) {
       // Collect the reference coordinate z0
@@ -94,8 +94,7 @@ ReadColumnMeshFunction_ByDepth(const Function& func,
       z0 = x0[x0.dim() - 1];
 
       // Iterate down the column
-      AmanziMesh::Entity_ID_List cells;
-      cells = v.Mesh()->getFaceCells(f, AmanziMesh::Parallel_type::OWNED);
+      auto cells = v.Mesh()->getFaceCells(f, AmanziMesh::Parallel_kind::OWNED);
       AMANZI_ASSERT(cells.size() == 1);
       AmanziMesh::Entity_ID c = cells[0];
 

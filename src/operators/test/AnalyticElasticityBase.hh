@@ -25,14 +25,14 @@ class AnalyticElasticityBase {
   AnalyticElasticityBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh)
   {
     nnodes_owned = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
-                                         Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                         Amanzi::AmanziMesh::Parallel_kind::OWNED);
     ncells_owned = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
-                                         Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                         Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
     nnodes_wghost = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
-                                          Amanzi::AmanziMesh::Parallel_type::ALL);
+                                          Amanzi::AmanziMesh::Parallel_kind::ALL);
     ncells_wghost = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
-                                          Amanzi::AmanziMesh::Parallel_type::ALL);
+                                          Amanzi::AmanziMesh::Parallel_kind::ALL);
   };
   ~AnalyticElasticityBase(){};
 
@@ -145,7 +145,7 @@ AnalyticElasticityBase::ScalarFaceSolution(Amanzi::CompositeVector& un, double t
   Epetra_MultiVector& un_face = *un.ViewComponent("face");
 
   int nfaces_owned = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,
-                                           Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const Amanzi::AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
     const Amanzi::AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
@@ -170,8 +170,6 @@ AnalyticElasticityBase::VectorNodeError(Amanzi::CompositeVector& u,
   inf_err = 0.0;
 
   // calculate nodal volumes
-  Amanzi::AmanziMesh::Entity_ID_List nodes;
-
   Teuchos::RCP<Amanzi::CompositeVectorSpace> cvs = Teuchos::rcp(new Amanzi::CompositeVectorSpace());
   cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent(
     "node", Amanzi::AmanziMesh::Entity_kind::NODE, 1);
@@ -181,7 +179,7 @@ AnalyticElasticityBase::VectorNodeError(Amanzi::CompositeVector& u,
   vol.PutScalar(0.0);
 
   for (int c = 0; c != ncells_owned; ++c) {
-    nodes = mesh_->getCellNodes(c);
+    auto nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
 
     for (int i = 0; i < nnodes; i++) { vol_node[0][nodes[i]] += mesh_->getCellVolume(c) / nnodes; }

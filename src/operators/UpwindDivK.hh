@@ -90,11 +90,11 @@ UpwindDivK::Compute(const CompositeVector& flux,
   double tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
   int ncells_wghost =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
     auto [faces, dirs] = mesh_->getCellFacesAndDirections(c);
     auto adjcells = AmanziMesh::MeshAlgorithms::getCellFaceAdjacentCells(
-      *mesh_, c, AmanziMesh::Parallel_type::OWNED);
+      *mesh_, c, AmanziMesh::Parallel_kind::OWNED);
     int nfaces = faces.size();
     double kc(fld_cell[0][c]);
 

@@ -58,11 +58,11 @@ class Mesh_MOAB : public Mesh {
   void update();
 
   // Get parallel type of entity
-  Parallel_type entity_get_ptype(const Entity_kind kind, const Entity_ID entid) const;
+  Parallel_kind entity_get_ptype(const Entity_kind kind, const Entity_ID entid) const;
 
 
   // Get cell type
-  Cell_type cell_get_type(const Entity_ID cellid) const;
+  Cell_kind cell_get_type(const Entity_ID cellid) const;
 
 
   //
@@ -72,7 +72,7 @@ class Mesh_MOAB : public Mesh {
 
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)
-  unsigned int num_entities(const Entity_kind kind, const Parallel_type ptype) const;
+  unsigned int num_entities(const Entity_kind kind, const Parallel_kind ptype) const;
 
 
   // Global ID of any entity
@@ -95,12 +95,12 @@ class Mesh_MOAB : public Mesh {
   // arbitrary order
   // In 2D, the nodes of the polygon will be returned in ccw order
   // consistent with the face normal
-  void cell_get_nodes(const Entity_ID cellid, Entity_ID_List* nodeids) const;
+  void cell_get_nodes(const Entity_ID cellid, Entity_ID_View* nodeids) const;
 
 
   // Edges and edge directions of a face
   void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
-                                         Entity_ID_List* edgeids,
+                                         Entity_ID_View* edgeids,
                                          std::vector<int>* edgedirs,
                                          bool ordered = true) const
   {
@@ -114,7 +114,7 @@ class Mesh_MOAB : public Mesh {
   // In 3D, the nodes of the face are returned in ccw order consistent
   // with the face normal
   // In 2D, nfnodes is 2
-  void face_get_nodes(const Entity_ID faceid, Entity_ID_List* nodeids) const;
+  void face_get_nodes(const Entity_ID faceid, Entity_ID_View* nodeids) const;
 
 
   // Get nodes of edge
@@ -130,15 +130,15 @@ class Mesh_MOAB : public Mesh {
 
   // Cells of type 'ptype' connected to a node
   void
-  node_get_cells(const Entity_ID nodeid, const Parallel_type ptype, Entity_ID_List* cellids) const;
+  node_get_cells(const Entity_ID nodeid, const Parallel_kind ptype, Entity_ID_View* cellids) const;
 
   // Faces of type 'ptype' connected to a node
   void
-  node_get_faces(const Entity_ID nodeid, const Parallel_type ptype, Entity_ID_List* faceids) const;
+  node_get_faces(const Entity_ID nodeid, const Parallel_kind ptype, Entity_ID_View* faceids) const;
 
   // Cells of type 'ptype' connected to an edge
   void
-  edge_get_cells(const Entity_ID edgeid, const Parallel_type ptype, Entity_ID_List* cellids) const
+  edge_get_cells(const Entity_ID edgeid, const Parallel_kind ptype, Entity_ID_View* cellids) const
   {
     Errors::Message msg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(msg);
@@ -156,8 +156,8 @@ class Mesh_MOAB : public Mesh {
   // the cellids will correcpond to cells across the respective
   // faces given by cell_get_faces
   void cell_get_face_adj_cells(const Entity_ID cellid,
-                               const Parallel_type ptype,
-                               Entity_ID_List* fadj_cellids) const;
+                               const Parallel_kind ptype,
+                               Entity_ID_View* fadj_cellids) const;
 
   //---------------------
   // Mesh entity geometry
@@ -169,16 +169,14 @@ class Mesh_MOAB : public Mesh {
 
   // Face coordinates - conventions same as face_to_nodes call
   // Number of nodes is the vector size divided by number of spatial dimensions
-  void
-  face_get_coordinates(const Entity_ID faceid, std::vector<AmanziGeometry::Point>* fcoords) const;
+  void face_get_coordinates(const Entity_ID faceid, Point_List* fcoords) const;
 
   // Coordinates of cells in standard order (Exodus II convention)
   // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
   // For a general polyhedron this will return the node coordinates in
   // arbitrary order
   // Number of nodes is vector size divided by number of spatial dimensions
-  void
-  cell_get_coordinates(const Entity_ID cellid, std::vector<AmanziGeometry::Point>* ccoords) const;
+  void cell_get_coordinates(const Entity_ID cellid, Point_List* ccoords) const;
 
   // Modify the coordinates of a node
   void node_set_coordinates(const Entity_ID nodeid, const AmanziGeometry::Point coords);
@@ -227,17 +225,17 @@ class Mesh_MOAB : public Mesh {
   // Get list of entities of type 'category' in set
   void get_set_entities_and_vofs(const std::string& setname,
                                  const Entity_kind kind,
-                                 const Parallel_type ptype,
-                                 std::vector<Entity_ID>* entids,
-                                 std::vector<double>* vofs) const;
+                                 const Parallel_kind ptype,
+                                 Entity_ID_List* entids,
+                                 Double_List* vofs) const;
 
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
   // move_vertical = true, nodes will be allowed to move only in the
   // vertical direction (right now arbitrary node movement is not allowed)
-  int deform(const std::vector<double>& target_cell_volumes__in,
-             const std::vector<double>& min_cell_volumes__in,
-             const Entity_ID_List& fixed_nodes,
+  int deform(const Double_List& target_cell_volumes__in,
+             const Double_List& min_cell_volumes__in,
+             const Entity_ID_View& fixed_nodes,
              const bool move_vertical);
 
 
@@ -371,17 +369,17 @@ class Mesh_MOAB : public Mesh {
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
-                                         Entity_ID_List* faceids,
+                                         Entity_ID_View* faceids,
                                          std::vector<int>* face_dirs,
                                          const bool ordered = false) const;
 
   // Cells connected to a face
   void face_get_cells_internal_(const Entity_ID faceid,
-                                const Parallel_type ptype,
-                                Entity_ID_List* cellids) const;
+                                const Parallel_kind ptype,
+                                Entity_ID_View* cellids) const;
 
   // Edges of a cell
-  void cell_get_edges_internal_(const Entity_ID cellid, Entity_ID_List* edgeids) const
+  void cell_get_edges_internal_(const Entity_ID cellid, Entity_ID_View* edgeids) const
   {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     Exceptions::amanzi_throw(mesg);
@@ -390,7 +388,7 @@ class Mesh_MOAB : public Mesh {
   // Edges and edge directions of a face
   /*
   void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
-                                         Entity_ID_List *edgeids,
+                                         Entity_ID_View *edgeids,
                                          std::vector<int> *edgedirs,
                                          bool ordered=true) const
   {

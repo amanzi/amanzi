@@ -48,6 +48,7 @@ set(mesh_inc_files
   Mesh.hh
   Mesh_Algorithms.hh
   DomainSet.hh
+  SingleFaceMesh.hh
 )
 
 set(mesh_src_files

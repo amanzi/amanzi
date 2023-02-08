@@ -29,9 +29,9 @@ test2D(const Teuchos::RCP<Mesh_type>& mesh)
 {
   // Deform the mesh
   int nnodes =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
-  AmanziMesh::Entity_ID_List nodeids("nodeids", nnodes);
-  AmanziMesh::Point_List newpos("newpos", nnodes);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  AmanziMesh::Entity_ID_View nodeids("nodeids", nnodes);
+  AmanziMesh::Point_View newpos("newpos", nnodes);
 
   for (int j = 0; j < nnodes; j++) {
     nodeids[j] = j;
@@ -41,12 +41,13 @@ test2D(const Teuchos::RCP<Mesh_type>& mesh)
     newpos[j] = newcoord;
   }
 
+  int ncells_1 = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
   int ierr = MeshAlgorithms::deform(*mesh, nodeids, newpos);
   CHECK_EQUAL(ierr, 0);
 
   // If the deformation was successful, the cell volumes should be half
   // of what they were
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   for (int j = 0; j < ncells; j++) {
     double volume = mesh->getCellVolume(j);
@@ -55,16 +56,15 @@ test2D(const Teuchos::RCP<Mesh_type>& mesh)
   testMeshAudit<MeshAudit_type, Mesh_type>(mesh);
 }
 
-
 template <class MeshAudit_type, class Mesh_type>
 void
 test3D(const Teuchos::RCP<Mesh_type>& mesh)
 {
   // Deform the mesh
   int nnodes =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
-  AmanziMesh::Entity_ID_List nodeids("nodesids", nnodes);
-  AmanziMesh::Point_List newpos("newpos", nnodes);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  AmanziMesh::Entity_ID_View nodeids("nodesids", nnodes);
+  AmanziMesh::Point_View newpos("newpos", nnodes);
 
   for (int j = 0; j < nnodes; j++) {
     nodeids[j] = j;
@@ -80,7 +80,6 @@ test3D(const Teuchos::RCP<Mesh_type>& mesh)
   testMeshAudit<MeshAudit_type, Mesh_type>(mesh);
   testGeometryCube<Mesh_type>(mesh, 3, 3, 3);
 }
-
 
 TEST(MESH_FRAMEWORK_DEFORM2D)
 {
@@ -140,7 +139,6 @@ TEST(MESH_FRAMEWORK_GENERATED_DEFORM3D)
   }
 }
 
-
 TEST(MESH_CACHED_DEFORM2D)
 {
   auto comm = getDefaultComm();
@@ -166,7 +164,6 @@ TEST(MESH_CACHED_DEFORM2D)
     test2D<MeshAudit>(mesh);
   }
 }
-
 
 TEST(MESH_CACHED_GENERATED_DEFORM3D)
 {

@@ -189,7 +189,7 @@ MeshLogicalAudit::check_entity_counts() const
   bool error = false;
 
   // Check the number of owned faces.
-  n = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  n = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   nref = mesh->getMap(AmanziMesh::Entity_kind::FACE, false).NumMyElements();
   if (n != nref) {
     os << "ERROR: num_entities(FACE,OWNED)=" << n << "; should be " << nref << std::endl;
@@ -197,7 +197,7 @@ MeshLogicalAudit::check_entity_counts() const
   }
 
   // Check the number of used faces.
-  n = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  n = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
   nref = mesh->getMap(AmanziMesh::Entity_kind::FACE, true).NumMyElements();
   if (n != nref) {
     os << "ERROR: num_entities(FACE,ALL)=" << n << "; should be " << nref << std::endl;
@@ -205,7 +205,7 @@ MeshLogicalAudit::check_entity_counts() const
   }
 
   // Check the number of owned cells.
-  n = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  n = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   nref = mesh->getMap(AmanziMesh::Entity_kind::CELL, false).NumMyElements();
   if (n != nref) {
     os << "ERROR: num_entities(CELL,OWNED)=" << n << "; should be " << nref << std::endl;
@@ -213,7 +213,7 @@ MeshLogicalAudit::check_entity_counts() const
   }
 
   // Check the number of used cells.
-  n = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  n = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   nref = mesh->getMap(AmanziMesh::Entity_kind::CELL, true).NumMyElements();
   if (n != nref) {
     os << "ERROR: num_entities(CELL,ALL)=" << n << "; should be " << nref << std::endl;
@@ -225,9 +225,10 @@ MeshLogicalAudit::check_entity_counts() const
 // Returns true if the values in the list are distinct -- no repeats.
 
 bool
-MeshLogicalAudit::distinct_values(const AmanziMesh::Entity_ID_List& list) const
+MeshLogicalAudit::distinct_values(const AmanziMesh::cEntity_ID_View& list) const
 {
-  AmanziMesh::Entity_ID_List copy(list);
+  AmanziMesh::Entity_ID_View copy;
+  copy.fromConst(list);
   sort(copy.begin(), copy.end());
   return (adjacent_find(copy.begin(), copy.end()) == copy.end());
 }
@@ -241,8 +242,8 @@ MeshLogicalAudit::distinct_values(const AmanziMesh::Entity_ID_List& list) const
 bool
 MeshLogicalAudit::check_cell_to_faces() const
 {
-  std::vector<Entity_ID> bad_cells, bad_cells1;
-  AmanziMesh::Entity_ID_List cface;
+  Entity_ID_List bad_cells, bad_cells1;
+  AmanziMesh::cEntity_ID_View cface;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     try {
@@ -283,7 +284,7 @@ MeshLogicalAudit::check_cell_to_faces() const
 bool
 MeshLogicalAudit::check_face_refs_by_cells() const
 {
-  AmanziMesh::Entity_ID_List cface;
+  AmanziMesh::cEntity_ID_View cface;
   vector<unsigned int> refs(nface, 0);
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
@@ -291,8 +292,8 @@ MeshLogicalAudit::check_face_refs_by_cells() const
     for (int k = 0; k < cface.size(); ++k) (refs[cface[k]])++;
   }
 
-  std::vector<Entity_ID> free_faces;
-  std::vector<Entity_ID> bad_faces;
+  Entity_ID_List free_faces;
+  Entity_ID_List bad_faces;
 
   for (int j = 0; j < nface; ++j) {
     if (refs[j] == 0)
@@ -323,21 +324,21 @@ MeshLogicalAudit::check_face_refs_by_cells() const
 bool
 MeshLogicalAudit::check_faces_cell_consistency() const
 {
-  AmanziMesh::Entity_ID_List cface;
-  AmanziMesh::Entity_ID_List fcell;
+  AmanziMesh::cEntity_ID_View cface;
+  AmanziMesh::cEntity_ID_View fcell;
 
-  std::vector<Entity_ID> bad_cells;
+  Entity_ID_List bad_cells;
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     mesh->getCellFaces(j, cface);
     for (int k = 0; k < cface.size(); ++k) {
-      mesh->getFaceCells(cface[k], Parallel_type::ALL, fcell);
+      mesh->getFaceCells(cface[k], Parallel_kind::ALL, fcell);
       if (std::find(fcell.begin(), fcell.end(), j) == fcell.end()) { bad_cells.push_back(j); }
     }
   }
 
-  std::vector<Entity_ID> bad_faces;
+  Entity_ID_List bad_faces;
   for (AmanziMesh::Entity_ID j = 0; j < nface; ++j) {
-    mesh->getFaceCells(j, Parallel_type::ALL, fcell);
+    mesh->getFaceCells(j, Parallel_kind::ALL, fcell);
     for (int k = 0; k < fcell.size(); ++k) {
       mesh->getCellFaces(fcell[k], cface);
       if (std::find(cface.begin(), cface.end(), j) == cface.end()) { bad_faces.push_back(j); }
@@ -368,13 +369,11 @@ MeshLogicalAudit::check_faces_cell_consistency() const
 bool
 MeshLogicalAudit::check_cell_to_face_dirs() const
 {
-  AmanziMesh::Entity_ID_List faces;
-  AmanziMesh::Entity_Direction_List fdirs;
-  std::vector<Entity_ID> bad_cells, bad_cells_exc;
+  AmanziMesh::cEntity_ID_View faces;
+  AmanziMesh::cEntity_Direction_View fdirs;
+  Entity_ID_List bad_cells, bad_cells_exc;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    Kokkos::resize(fdirs, 6);
-    Kokkos::deep_copy(fdirs, INT_MAX);
     try {
       mesh->getCellFacesAndDirs(j, faces, &fdirs); // this may fail
       bool bad_data = false;
@@ -412,8 +411,8 @@ MeshLogicalAudit::check_cell_degeneracy() const
 {
   os << "Checking cells for topological degeneracy ..." << std::endl;
 
-  AmanziMesh::Entity_ID_List cface;
-  std::vector<Entity_ID> bad_cells;
+  AmanziMesh::cEntity_ID_View cface;
+  Entity_ID_List bad_cells;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     mesh->getCellFaces(j, cface); // should not fail
@@ -438,7 +437,7 @@ MeshLogicalAudit::check_cell_geometry() const
   os << "Checking cell geometry ..." << std::endl;
   AmanziGeometry::Point centroid;
   double hvol;
-  std::vector<Entity_ID> bad_cells;
+  Entity_ID_List bad_cells;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     hvol = mesh->getCellVolume(j);
@@ -463,7 +462,7 @@ MeshLogicalAudit::check_face_geometry() const
 {
   os << "Checking face geometry ..." << std::endl;
   double hvol;
-  std::vector<Entity_ID> bad_faces;
+  Entity_ID_List bad_faces;
 
   for (AmanziMesh::Entity_ID j = 0; j < nface; ++j) {
     hvol = mesh->getFaceArea(j);
@@ -487,10 +486,10 @@ bool
 MeshLogicalAudit::check_cell_face_bisector_geometry() const
 {
   os << "Checking cell-to-face bisector geometry ..." << std::endl;
-  std::vector<Entity_ID> bad_cells;
+  Entity_ID_List bad_cells;
 
-  AmanziMesh::Entity_ID_List cface;
-  AmanziMesh::Point_List bisectors;
+  AmanziMesh::cEntity_ID_View cface;
+  AmanziMesh::cPoint_View bisectors;
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     mesh->getCellFacesAndBisectors(j, cface, &bisectors);
     if (cface.size() != bisectors.size()) {
@@ -650,8 +649,8 @@ MeshLogicalAudit::check_cell_to_faces_ghost_data() const
   int ncell_own = cell_map_own.NumMyElements();
   int ncell_use = cell_map_use.NumMyElements();
 
-  AmanziMesh::Entity_ID_List cface;
-  std::vector<Entity_ID> bad_cells;
+  AmanziMesh::cEntity_ID_View cface;
+  Entity_ID_List bad_cells;
 
   // Create a matrix of the GIDs for all owned cells.
   int maxfaces = 0;
@@ -713,7 +712,7 @@ MeshLogicalAudit::check_face_partition() const
   // Mark all the faces contained by owned cells.
   bool owned[nface];
   for (int j = 0; j < nface; ++j) owned[j] = false;
-  AmanziMesh::Entity_ID_List cface;
+  AmanziMesh::cEntity_ID_View cface;
   for (AmanziMesh::Entity_ID j = 0;
        j < mesh->getMap(AmanziMesh::Entity_kind::CELL, false).NumMyElements();
        ++j) {
@@ -722,7 +721,7 @@ MeshLogicalAudit::check_face_partition() const
   }
 
   // Verify that every owned face has been marked as belonging to an owned cell.
-  std::vector<Entity_ID> bad_faces;
+  Entity_ID_List bad_faces;
   for (AmanziMesh::Entity_ID j = 0;
        j < mesh->getMap(AmanziMesh::Entity_kind::FACE, false).NumMyElements();
        ++j)
@@ -745,8 +744,8 @@ MeshLogicalAudit::check_face_partition() const
 // reliable otherwise.
 
 int
-MeshLogicalAudit::same_face(const AmanziMesh::Entity_ID_List fnode1,
-                            const AmanziMesh::Entity_ID_List fnode2) const
+MeshLogicalAudit::same_face(const AmanziMesh::Entity_ID_View fnode1,
+                            const AmanziMesh::Entity_ID_View fnode2) const
 {
   int nn = fnode1.size();
 
@@ -787,7 +786,7 @@ MeshLogicalAudit::same_face(const AmanziMesh::Entity_ID_List fnode1,
 
 
 void
-MeshLogicalAudit::write_list(const std::vector<Entity_ID>& list, unsigned int max_out) const
+MeshLogicalAudit::write_list(const Entity_ID_List& list, unsigned int max_out) const
 {
   int num_out = min((unsigned int)list.size(), max_out);
   for (int i = 0; i < num_out; ++i) os << " " << list[i];

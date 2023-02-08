@@ -89,7 +89,7 @@ createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind);
 //
 template <class Mesh_type>
 std::pair<Map_ptr_type, Map_ptr_type>
-createMapsFromNaturalGIDs(const Mesh_type& mesh, const Entity_kind kind);
+createMapsFromContiguousGIDs(const Mesh_type& mesh, const Entity_kind kind);
 
 
 class MeshMaps {
@@ -101,31 +101,31 @@ class MeshMaps {
   template <class Mesh_type>
   void initialize(const Mesh_type& mesh, bool renumber = false);
 
-  template <MemSpace_type MEM>
+  template <MemSpace_kind MEM>
   decltype(auto) // cEntity_ID_View
   getBoundaryFaces() const
   {
     return view<MEM>(boundary_faces_);
   }
 
-  template <MemSpace_type MEM>
+  template <MemSpace_kind MEM>
   decltype(auto) // cEntity_ID_View
   getBoundaryNodes() const
   {
     return view<MEM>(boundary_nodes_);
   }
 
-  std::size_t getNBoundaryFaces(Parallel_type ptype)
+  std::size_t getNBoundaryFaces(Parallel_kind ptype)
   {
-    if (Parallel_type::OWNED == ptype)
+    if (Parallel_kind::OWNED == ptype)
       return owned_[Entity_kind::BOUNDARY_FACE]->NumMyElements();
     else
       return all_[Entity_kind::BOUNDARY_FACE]->NumMyElements();
   }
 
-  std::size_t getNBoundaryNodes(Parallel_type ptype)
+  std::size_t getNBoundaryNodes(Parallel_kind ptype)
   {
-    if (Parallel_type::OWNED == ptype)
+    if (Parallel_kind::OWNED == ptype)
       return owned_[Entity_kind::BOUNDARY_NODE]->NumMyElements();
     else
       return all_[Entity_kind::BOUNDARY_NODE]->NumMyElements();

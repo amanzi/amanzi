@@ -82,7 +82,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL)
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
   int nfaces_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     flux[0][f] = velocity * normal;
@@ -92,7 +92,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL)
     *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   int ncells_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     tcc[0][c] = f_step(xc, 0.0);

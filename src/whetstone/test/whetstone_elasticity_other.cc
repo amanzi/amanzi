@@ -49,11 +49,9 @@ TEST(DIFFUSION_STOKES_2D)
   Teuchos::ParameterList plist;
   MFD3D_BernardiRaugel mfd(plist, mesh);
 
-  AmanziMesh::Entity_ID_List nodes;
-
   // extract single cell
   int cell(0);
-  nodes = mesh->getCellNodes(cell);
+  auto nodes = mesh->getCellNodes(cell);
   int nnodes = nodes.size();
 
   auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
@@ -138,15 +136,14 @@ TEST(ADVECTION_NAVIER_STOKES_2D)
 
   // extract single cell
   int cell(0);
-  AmanziMesh::Entity_ID_List nodes;
 
-  nodes = mesh->getCellNodes(cell);
+  auto nodes = mesh->getCellNodes(cell);
   int nnodes = nodes.size();
 
   auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
 
   // setup velocity
-  std::vector<AmanziGeometry::Point> u(nnodes);
+  AmanziMesh::Point_List u(nnodes);
   for (int i = 0; i < nnodes; ++i) { u[i] = AmanziGeometry::Point(1.0, 2.0); }
 
   // calculate advection matrix

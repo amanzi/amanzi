@@ -145,9 +145,9 @@ HeatConduction::Init(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::Paramet
 
   // create BCs
   int ncells_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   bc_ = Teuchos::rcp(
     new Operators::BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
@@ -231,7 +231,7 @@ void
 HeatConduction::InitialGuess()
 {
   int ncells_wghost =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   Epetra_MultiVector& sol_c = *solution_->ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_wghost; ++c) {
@@ -241,7 +241,7 @@ HeatConduction::InitialGuess()
   }
 
   int nfaces_wghost =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
   Epetra_MultiVector& sol_f = *solution_->ViewComponent("face", true);
 
   for (int f = 0; f < nfaces_wghost; ++f) {
@@ -330,7 +330,7 @@ HeatConduction::UpdateValues(const CompositeVector& u)
   Epetra_MultiVector& dkdT_c = *dkdT->ViewComponent("cell", true);
 
   int ncells_wghost =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
     double temp = uc[0][c];
     kc[0][c] = Conduction(c, temp);

@@ -49,7 +49,9 @@ TEST(NUMI_CELL_2D_EULER_FORMULA)
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
@@ -89,7 +91,9 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON)
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
@@ -217,7 +221,9 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON)
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/dodecahedron.exo");
 

@@ -232,33 +232,32 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
   // -- pass 1: count total connections, total entities
   int local_conn(0);     // length of MixedElements
   int local_entities(0); // length of ElementMap (num_cells if non-POLYHEDRON mesh)
-  AmanziMesh::Entity_ID_List faces, nodes;
 
   for (int c = 0; c != ncells_local; ++c) {
-    AmanziMesh::Cell_type ctype = vis_mesh.getCellType(c);
-    if (getCellTypeID_(ctype) == getCellTypeID_(AmanziMesh::Cell_type::POLYHED)) {
-      faces = vis_mesh.getCellFaces(c);
+    AmanziMesh::Cell_kind ctype = vis_mesh.getCellType(c);
+    if (getCellTypeID_(ctype) == getCellTypeID_(AmanziMesh::Cell_kind::POLYHED)) {
+      auto faces = vis_mesh.getCellFaces(c);
       for (int i = 0; i != faces.size(); ++i) {
-        nodes = vis_mesh.getFaceNodes(faces[i]);
+        auto nodes = vis_mesh.getFaceNodes(faces[i]);
         local_conn += nodes.size() + 1;
       }
       local_conn += 2;
       local_entities++;
 
-    } else if (getCellTypeID_(ctype) != getCellTypeID_(AmanziMesh::Cell_type::POLYGON)) {
-      nodes = vis_mesh.getCellNodes(c);
+    } else if (getCellTypeID_(ctype) != getCellTypeID_(AmanziMesh::Cell_kind::POLYGON)) {
+      auto nodes = vis_mesh.getCellNodes(c);
       local_conn += nodes.size() + 1;
       local_entities++;
 
     } else if (topo_dim == 2) {
-      nodes = vis_mesh.getCellNodes(c);
+      auto nodes = vis_mesh.getCellNodes(c);
       local_conn += nodes.size() + 2;
       local_entities++;
 
     } else {
-      faces = vis_mesh.getCellFaces(c);
+      auto faces = vis_mesh.getCellFaces(c);
       for (int i = 0; i != faces.size(); ++i) {
-        nodes = vis_mesh.getFaceNodes(faces[i]);
+        auto nodes = vis_mesh.getFaceNodes(faces[i]);
         local_conn += nodes.size() + 2;
       }
       local_entities += faces.size();
@@ -286,9 +285,9 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
   int lcv = 0;
   int lcv_entity = 0;
   for (int c = 0; c != ncells_local; ++c) {
-    AmanziMesh::Cell_type ctype = vis_mesh.getCellType(c);
-    if (getCellTypeID_(ctype) == getCellTypeID_(AmanziMesh::Cell_type::POLYHED)) {
-      faces = vis_mesh.getCellFaces(c);
+    AmanziMesh::Cell_kind ctype = vis_mesh.getCellType(c);
+    if (getCellTypeID_(ctype) == getCellTypeID_(AmanziMesh::Cell_kind::POLYHED)) {
+      auto faces = vis_mesh.getCellFaces(c);
 
       // store cell type id and number of faces
       conn[lcv++] = getCellTypeID_(ctype);
@@ -296,7 +295,7 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
 
       for (int j = 0; j != faces.size(); ++j) {
         // store node count, then nodes in the correct order
-        nodes = vis_mesh.getFaceNodes(faces[j]);
+        auto nodes = vis_mesh.getFaceNodes(faces[j]);
         conn[lcv++] = nodes.size();
 
         for (int i = 0; i != nodes.size(); ++i) {
@@ -311,12 +310,12 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
       // store entity
       entities[lcv_entity++] = cmap.GID(c);
 
-    } else if (getCellTypeID_(ctype) != getCellTypeID_(AmanziMesh::Cell_type::POLYGON)) {
+    } else if (getCellTypeID_(ctype) != getCellTypeID_(AmanziMesh::Cell_kind::POLYGON)) {
       // store cell type id
       conn[lcv++] = getCellTypeID_(ctype);
 
       // store nodes in the correct order
-      nodes = vis_mesh.getCellNodes(c);
+      auto nodes = vis_mesh.getCellNodes(c);
 
       for (int i = 0; i != nodes.size(); ++i) {
         if (nmap.MyLID(nodes[i])) {
@@ -334,7 +333,7 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
       conn[lcv++] = getCellTypeID_(ctype);
 
       // store node count, then nodes in the correct order
-      nodes = vis_mesh.getCellNodes(c);
+      auto nodes = vis_mesh.getCellNodes(c);
       conn[lcv++] = nodes.size();
 
       for (int i = 0; i != nodes.size(); ++i) {
@@ -349,14 +348,14 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
       entities[lcv_entity++] = cmap.GID(c);
 
     } else {
-      faces = vis_mesh.getCellFaces(c);
+      auto faces = vis_mesh.getCellFaces(c);
 
       for (int j = 0; j != faces.size(); ++j) {
         // store cell type id
         conn[lcv++] = getCellTypeID_(ctype);
 
         // store node count, then nodes in the correct order
-        nodes = vis_mesh.getFaceNodes(faces[j]);
+        auto nodes = vis_mesh.getFaceNodes(faces[j]);
         conn[lcv++] = nodes.size();
 
         for (int i = 0; i != nodes.size(); ++i) {
@@ -545,13 +544,12 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
   // For the dual, connections are all faces with > 1 cells.
   int local_conn(0);     // length of MixedElements
   int local_entities(0); // length of ElementMap (num_cells if non-POLYHEDRON mesh)
-  AmanziMesh::Entity_ID_List cells;
 
   const Epetra_Map& fmap = vis_mesh.getMap(AmanziMesh::Entity_kind::FACE, false);
   int nfaces_local = fmap.NumMyElements();
 
   for (int f = 0; f != nfaces_local; ++f) {
-    cells = vis_mesh.getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = vis_mesh.getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     if (cells.size() > 1) {
       local_conn += cells.size();
       local_entities++;
@@ -580,7 +578,7 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int lcv_entity = 0;
   int internal_f = 0;
   for (int f = 0; f != nfaces_local; ++f) {
-    cells = vis_mesh.getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = vis_mesh.getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     if (cells.size() > 1) {
       // store cell type id
       // conn[lcv++] = 2;
@@ -603,7 +601,7 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
       //   conn[lcv++] = getCellTypeID_(ctype);
 
       //   // store node count, then nodes in the correct order
-      //   AmanziMesh::Entity_ID_List nodes;
+      //   AmanziMesh::Entity_ID_View nodes;
       // nodes = vis_mesh.getCellNodes(c);
       //   conn[lcv++] = nodes.size();
 
@@ -1393,27 +1391,27 @@ HDF5_MPI::readDatasetReal(double** data, int nloc, const std::string& varname)
 
 
 int
-HDF5_MPI::getCellTypeID_(AmanziMesh::Cell_type type)
+HDF5_MPI::getCellTypeID_(AmanziMesh::Cell_kind type)
 {
   //TODO(barker): how to return polyhedra?
   // cell type id's defined in Xdmf/include/XdmfTopology.h
 
   switch (type) {
-  case AmanziMesh::Cell_type::POLYGON:
+  case AmanziMesh::Cell_kind::POLYGON:
     return 3;
-  case AmanziMesh::Cell_type::TRI:
+  case AmanziMesh::Cell_kind::TRI:
     return 4;
-  case AmanziMesh::Cell_type::QUAD:
+  case AmanziMesh::Cell_kind::QUAD:
     return 5;
-  case AmanziMesh::Cell_type::TET:
+  case AmanziMesh::Cell_kind::TET:
     return 6;
-  case AmanziMesh::Cell_type::PYRAMID:
+  case AmanziMesh::Cell_kind::PYRAMID:
     return 7;
-  case AmanziMesh::Cell_type::PRISM:
+  case AmanziMesh::Cell_kind::PRISM:
     return 8; //wedge
-  case AmanziMesh::Cell_type::HEX:
+  case AmanziMesh::Cell_kind::HEX:
     return 9;
-  case AmanziMesh::Cell_type::POLYHED:
+  case AmanziMesh::Cell_kind::POLYHED:
     return 16; // see http://www.xdmf.org/index.php/XDMF_Model_and_Format
   default:
     return 3; // unknown, for now same as polygon

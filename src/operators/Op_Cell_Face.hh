@@ -30,7 +30,7 @@ class Op_Cell_Face : public Op {
   {
     WhetStone::DenseMatrix null_matrix;
     matrices.resize(
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED),
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED),
       null_matrix);
     matrices_shadow = matrices;
   }

@@ -112,7 +112,7 @@ MeshMaps_VEM::LeastSquareProjector_Cell_(int order,
   vc.Reshape(d_, d_, order);
 
   AmanziGeometry::Point px1, px2;
-  std::vector<AmanziGeometry::Point> x1, x2;
+  AmanziMesh::Point_List x1, x2;
 
   auto nodes = mesh0_->getCellNodes(c);
   int nnodes = nodes.size();

@@ -61,7 +61,7 @@ class MeshSurfaceCell : public MeshFramework {
   virtual Teuchos::RCP<const MeshFramework> getParentMesh() const override { return parent_; }
 
   // Get cell type - UNKNOWN, TRI, QUAD, ... See MeshDefs.hh
-  virtual Cell_type getCellType(const Entity_ID lid) const override { return cell_type_; }
+  virtual Cell_kind getCellType(const Entity_ID lid) const override { return cell_type_; }
 
   //
   // General mesh information
@@ -70,13 +70,13 @@ class MeshSurfaceCell : public MeshFramework {
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)
   virtual std::size_t
-  getNumEntities(const Entity_kind kind, const Parallel_type ptype) const override;
+  getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const override;
 
 
   // Get nodes of a cell
-  virtual void getCellNodes(const Entity_ID cellid, Entity_ID_List& nodeids) const override;
+  virtual void getCellNodes(const Entity_ID cellid, cEntity_ID_View& nodeids) const override;
 
-  virtual void getFaceNodes(const Entity_ID faceid, Entity_ID_List& nodeids) const override;
+  virtual void getFaceNodes(const Entity_ID faceid, cEntity_ID_View& nodeids) const override;
 
 
   // Upward adjacencies
@@ -86,15 +86,15 @@ class MeshSurfaceCell : public MeshFramework {
   // not guaranteed to be the same for corresponding nodes on
   // different processors
   virtual void getNodeCells(const Entity_ID nodeid,
-                            const Parallel_type ptype,
-                            Entity_ID_List& cellids) const override;
+                            const Parallel_kind ptype,
+                            cEntity_ID_View& cellids) const override;
 
   // Faces of type 'ptype' connected to a node - The order of faces is
   // not guarnateed to be the same for corresponding nodes on
   // different processors
   virtual void getNodeFaces(const Entity_ID nodeid,
-                            const Parallel_type ptype,
-                            Entity_ID_List& faceids) const override;
+                            const Parallel_kind ptype,
+                            cEntity_ID_View& faceids) const override;
 
   // Node coordinates - 3 in 3D and 2 in 2D
   virtual AmanziGeometry::Point getNodeCoordinate(const Entity_ID nodeid) const override
@@ -119,23 +119,23 @@ class MeshSurfaceCell : public MeshFramework {
   // cached or it can be called directly by the
   // cell_get_faces_and_dirs method of this class
   virtual void getCellFacesAndDirs(const Entity_ID cellid,
-                                   Entity_ID_List& faceids,
-                                   Entity_Direction_List* const dirs) const override;
+                                   cEntity_ID_View& faceids,
+                                   cEntity_Direction_View* const dirs) const override;
 
   // Cells connected to a face - this function is implemented in each
   // mesh framework. The results are cached in the base class
   virtual void getFaceCells(const Entity_ID faceid,
-                            const Parallel_type ptype,
-                            Entity_ID_List& cellids) const override;
+                            const Parallel_kind ptype,
+                            cEntity_ID_View& cellids) const override;
 
  protected:
   Teuchos::RCP<const MeshFramework> parent_;
 
-  Point_List nodes_;
-  Entity_ID_List node_parents_;
+  Point_View nodes_;
+  cEntity_ID_View node_parents_;
   std::map<Set_ID, bool> sets_;
   Entity_ID parent_face_;
-  Cell_type cell_type_;
+  Cell_kind cell_type_;
 };
 
 

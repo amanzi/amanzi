@@ -35,7 +35,7 @@ class Op_Node_Schema : public Op {
   {
     WhetStone::DenseMatrix null_matrix;
     matrices.resize(
-      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED),
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED),
       null_matrix);
     matrices_shadow = matrices;
   }

@@ -84,8 +84,11 @@ AdvectionSteady(int dim,
 
   // create a mesh framework
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  fac_list->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   double weak_sign = 1.0;
   std::string pk_name;
@@ -93,7 +96,7 @@ AdvectionSteady(int dim,
 
   if (dim == 2) {
     // mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx);
-    mesh = meshfactory.create(filename, true, true);
+    mesh = meshfactory.create(filename);
     pk_name = "PK operator 2D";
 
     if (weak_form == "primal") {
@@ -111,11 +114,11 @@ AdvectionSteady(int dim,
   }
 
   int ncells =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int ncells_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   int nfaces_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // create global operator
   // -- flux term

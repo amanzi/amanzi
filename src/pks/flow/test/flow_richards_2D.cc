@@ -79,7 +79,7 @@ TEST(FLOW_2D_RICHARDS)
 
     {
       auto block = mesh->getSetEntities(
-        "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       for (int i = 0; i != block.size(); ++i) {
         int c = block[i];
         K[0][c] = 0.1;
@@ -89,7 +89,7 @@ TEST(FLOW_2D_RICHARDS)
 
     {
       auto block = mesh->getSetEntities(
-        "Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        "Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       for (int i = 0; i != block.size(); ++i) {
         int c = block[i];
         K[0][c] = 0.5;
@@ -134,7 +134,7 @@ TEST(FLOW_2D_RICHARDS)
 
     // check the pressure
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     for (int c = 0; c < ncells; c++) CHECK(p[0][c] > -4.0 && p[0][c] < 0.01);
 
     // modify the preconditioner

@@ -56,11 +56,11 @@ using cDouble_View = View_type<const double>;
 //
 // View for host only
 //
-using Entity_ID_List = Entity_ID_View;
-using Entity_GID_List = Entity_GID_View;
-using Entity_Direction_List = Entity_Direction_View;
-using Point_List = Point_View;
-using Double_List = Double_View;
+using Entity_ID_List = std::vector<Entity_ID>;
+using Entity_GID_List = std::vector<Entity_ID>;
+using Entity_Direction_List = std::vector<int>;
+using Point_List = std::vector<AmanziGeometry::Point>;
+using Double_List = std::vector<double>;
 template <typename T>
 using RaggedArray_List = std::vector<std::vector<T>>;
 
@@ -160,7 +160,7 @@ to_string(const Entity_kind kind)
 }
 
 // Parallel status of entity
-enum class Parallel_type {
+enum class Parallel_kind {
   UNKNOWN = 0,
   OWNED = 1, // Owned by this processor
   GHOST = 2, // Owned by another processor
@@ -168,16 +168,16 @@ enum class Parallel_type {
 };
 
 inline std::string
-to_string(const Parallel_type ptype)
+to_string(const Parallel_kind ptype)
 {
   switch (ptype) {
-  case (Parallel_type::UNKNOWN):
+  case (Parallel_kind::UNKNOWN):
     return "UNKNOWN";
-  case (Parallel_type::OWNED):
+  case (Parallel_kind::OWNED):
     return "OWNED";
-  case (Parallel_type::GHOST):
+  case (Parallel_kind::GHOST):
     return "GHOST";
-  case (Parallel_type::ALL):
+  case (Parallel_kind::ALL):
     return "ALL";
   default:
     return "unknown";
@@ -185,7 +185,7 @@ to_string(const Parallel_type ptype)
 }
 
 // Standard element types and catchall (POLYGON/POLYHED)
-enum class Cell_type {
+enum class Cell_kind {
   UNKNOWN = 0,
   TRI = 1,
   QUAD,
@@ -199,24 +199,24 @@ enum class Cell_type {
 
 // string from entity kind
 inline std::string
-to_string(const Cell_type ctype)
+to_string(const Cell_kind ctype)
 {
   switch (ctype) {
-  case (Cell_type::TRI):
+  case (Cell_kind::TRI):
     return "cell type: triangle";
-  case (Cell_type::QUAD):
+  case (Cell_kind::QUAD):
     return "cell type: quadrilateral";
-  case (Cell_type::POLYGON):
+  case (Cell_kind::POLYGON):
     return "cell type: polygon";
-  case (Cell_type::TET):
+  case (Cell_kind::TET):
     return "cell type: tetrahedron";
-  case (Cell_type::PRISM):
+  case (Cell_kind::PRISM):
     return "cell type: prism";
-  case (Cell_type::PYRAMID):
+  case (Cell_kind::PYRAMID):
     return "cell type: pyramid";
-  case (Cell_type::HEX):
+  case (Cell_kind::HEX):
     return "cell type: hexahedron";
-  case (Cell_type::POLYHED):
+  case (Cell_kind::POLYHED):
     return "cell type: polyhedron";
   default:
     return "cell type: unknown";
@@ -225,7 +225,7 @@ to_string(const Cell_type ctype)
 
 
 // Types of partitioners (partitioning scheme bundled into the name)
-enum class Partitioner_type {
+enum class Partitioner_kind {
   METIS = 0, // default
   ZOLTAN_GRAPH,
   ZOLTAN_RCB
@@ -233,45 +233,46 @@ enum class Partitioner_type {
 
 // Return an string description for each partitioner type
 inline std::string
-to_string(const Partitioner_type partitioner_type)
+to_string(const Partitioner_kind partitioner_type)
 {
   switch (partitioner_type) {
-  case (Partitioner_type::METIS):
-    return "Partitioner_type::METIS";
-  case (Partitioner_type::ZOLTAN_GRAPH):
-    return "Partitioner_type::ZOLTAN_GRAPH";
-  case (Partitioner_type::ZOLTAN_RCB):
-    return "Partitioner_type::ZOLTAN_RCB";
+  case (Partitioner_kind::METIS):
+    return "Partitioner_kind::METIS";
+  case (Partitioner_kind::ZOLTAN_GRAPH):
+    return "Partitioner_kind::ZOLTAN_GRAPH";
+  case (Partitioner_kind::ZOLTAN_RCB):
+    return "Partitioner_kind::ZOLTAN_RCB";
   default:
     return "unknown";
   }
 }
 
-inline Partitioner_type
+inline Partitioner_kind
 createPartitionerType(const std::string& pstring)
 {
   if (pstring == "metis" || pstring == "METIS") {
-    return Partitioner_type::METIS;
+    return Partitioner_kind::METIS;
   } else if (pstring == "ZOLTAN_GRAPH" || pstring == "zoltan_graph") {
-    return Partitioner_type::ZOLTAN_GRAPH;
+    return Partitioner_kind::ZOLTAN_GRAPH;
   } else if (pstring == "ZOLTAN_RCB" || pstring == "zoltan_rcb") {
-    return Partitioner_type::ZOLTAN_RCB;
+    return Partitioner_kind::ZOLTAN_RCB;
   } else {
     Errors::Message msg;
-    msg << "Unknown Partitioner_type string: \"" << pstring
+    msg << "Unknown Partitioner_kind string: \"" << pstring
         << "\", valid are \"metis\", \"zoltan_graph\", \"zoltan_rcb\"";
     Exceptions::amanzi_throw(msg);
   }
-  return Partitioner_type::METIS;
+  return Partitioner_kind::METIS;
 }
 
-enum class AccessPattern { DEFAULT, ANY, CACHE, COMPUTE, FRAMEWORK };
+enum class AccessPattern_kind { DEFAULT, ANY, CACHE, COMPUTE, FRAMEWORK };
 
 
-template <MemSpace_type MEM>
+template <MemSpace_kind MEM>
 struct MeshCache;
 
-template <MemSpace_type MEM = MemSpace_type::HOST, AccessPattern AP = AccessPattern::DEFAULT>
+template <MemSpace_kind MEM = MemSpace_kind::HOST,
+          AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
 struct Getter {
   template <typename DATA, typename MF, typename FF, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
@@ -280,7 +281,7 @@ struct Getter {
     using type_t = typename DATA::t_dev::traits::value_type;
     // To avoid the cast to non-reference
     if (cached) return static_cast<type_t>(view<MEM>(d)(i));
-    if constexpr (MEM == MemSpace_type::HOST) {
+    if constexpr (MEM == MemSpace_kind::HOST) {
       if constexpr (!std::is_same_v<FF, decltype(nullptr)>)
         if (mf.get()) return f(i);
     }
@@ -290,8 +291,8 @@ struct Getter {
   }
 }; // Getter
 
-template <MemSpace_type MEM>
-struct Getter<MEM, AccessPattern::CACHE> {
+template <MemSpace_kind MEM>
+struct Getter<MEM, AccessPattern_kind::CACHE> {
   template <typename DATA, typename MF, typename FF, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
   get(bool cached, DATA& d, MF&, FF&&, CF&&, const Entity_ID i)
@@ -301,22 +302,22 @@ struct Getter<MEM, AccessPattern::CACHE> {
   }
 }; // Getter
 
-template <MemSpace_type MEM>
-struct Getter<MEM, AccessPattern::FRAMEWORK> {
+template <MemSpace_kind MEM>
+struct Getter<MEM, AccessPattern_kind::FRAMEWORK> {
   template <typename DATA, typename MF, typename FF, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
   get(bool, DATA&, MF& mf, FF&& f, CF&&, const Entity_ID i)
   {
     static_assert(!std::is_same<FF, decltype(nullptr)>::value);
-    static_assert(MEM == MemSpace_type::HOST);
+    static_assert(MEM == MemSpace_kind::HOST);
     assert(mf.get());
     return f(i);
   }
 }; // Getter
 
 
-template <MemSpace_type MEM>
-struct Getter<MEM, AccessPattern::COMPUTE> {
+template <MemSpace_kind MEM>
+struct Getter<MEM, AccessPattern_kind::COMPUTE> {
   template <typename DATA, typename MF, typename FF, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
   get(bool, DATA&, MF&, FF&&, CF&& c, const Entity_ID i)
@@ -328,15 +329,16 @@ struct Getter<MEM, AccessPattern::COMPUTE> {
 
 
 // Getters for raggedViews
-template <MemSpace_type MEM = MemSpace_type::HOST, AccessPattern AP = AccessPattern::DEFAULT>
+template <MemSpace_kind MEM = MemSpace_kind::HOST,
+          AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
 struct RaggedGetter {
   template <typename DATA, typename MF, typename FF, typename CFD, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
   get(bool cached, DATA& d, MF& mf, FF&& f, CFD&& cd, CF&& c, const Entity_ID n)
   {
-    using view_t = decltype(d.template getRow<MEM>(n));
-    if (cached) { return d.template getRow<MEM>(n); }
-    if constexpr (MEM == MemSpace_type::HOST) {
+    using view_t = typename decltype(d.template getRow<MEM>(n))::const_type;
+    if (cached) { return view_t(d.template getRow<MEM>(n)); }
+    if constexpr (MEM == MemSpace_kind::HOST) {
       if constexpr (!std::is_same<FF, decltype(nullptr)>::value) {
         if (mf.get()) {
           view_t v = f(n);
@@ -347,15 +349,19 @@ struct RaggedGetter {
         view_t v = c(c);
         return v;
       }
-      assert(false);
     } else {
-      if constexpr (!std::is_same<CF, decltype(nullptr)>::value) return cd(c);
+      if constexpr (!std::is_same<CF, decltype(nullptr)>::value) {
+        view_t v = cd(c);
+        return v;
+      }
     }
+    assert(false && "No access to cache/framework/compute available");
+    return view_t{};
   }
 };
 
-template <MemSpace_type MEM>
-struct RaggedGetter<MEM, AccessPattern::CACHE> {
+template <MemSpace_kind MEM>
+struct RaggedGetter<MEM, AccessPattern_kind::CACHE> {
   template <typename DATA, typename MF, typename FF, typename CFD, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
   get(bool cached, DATA& d, MF&, FF&&, CFD&&, CF&&, const Entity_ID n)
@@ -365,39 +371,39 @@ struct RaggedGetter<MEM, AccessPattern::CACHE> {
   }
 };
 
-template <MemSpace_type MEM>
-struct RaggedGetter<MEM, AccessPattern::FRAMEWORK> {
+template <MemSpace_kind MEM>
+struct RaggedGetter<MEM, AccessPattern_kind::FRAMEWORK> {
   template <typename DATA, typename MF, typename FF, typename CFD, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
   get(bool, DATA&, MF& mf, FF&& f, CFD&&, CF&&, const Entity_ID n)
   {
     static_assert(!std::is_same<FF, decltype(nullptr)>::value);
-    static_assert(MEM == MemSpace_type::HOST);
+    static_assert(MEM == MemSpace_kind::HOST);
     assert(mf.get());
     return f(n);
   }
 };
 
-template <MemSpace_type MEM>
-struct RaggedGetter<MEM, AccessPattern::COMPUTE> {
+template <MemSpace_kind MEM>
+struct RaggedGetter<MEM, AccessPattern_kind::COMPUTE> {
   template <typename DATA, typename MF, typename FF, typename CFD, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
   get(bool, DATA&, MF&, FF&&, CFD&& cd, CF&& c, const Entity_ID n)
   {
-    if constexpr (MEM == MemSpace_type::HOST) {
+    if constexpr (MEM == MemSpace_kind::HOST) {
       static_assert(!std::is_same<CF, decltype(nullptr)>::value);
       return c(n);
     } else {
-      static_assert(MEM == MemSpace_type::DEVICE);
+      static_assert(MEM == MemSpace_kind::DEVICE);
       static_assert(!std::is_same<CFD, decltype(nullptr)>::value);
       return cd(n);
     }
   }
 };
 
-using MeshSets = std::map<std::tuple<std::string, Entity_kind, Parallel_type>, Entity_ID_DualView>;
+using MeshSets = std::map<std::tuple<std::string, Entity_kind, Parallel_kind>, Entity_ID_DualView>;
 using MeshSetVolumeFractions =
-  std::map<std::tuple<std::string, Entity_kind, Parallel_type>, Double_DualView>;
+  std::map<std::tuple<std::string, Entity_kind, Parallel_kind>, Double_DualView>;
 
 
 } // namespace AmanziMesh

@@ -67,7 +67,7 @@ RunTestMarshakLogical(std::string op_list_name)
   MeshLogicalFactory fac(comm, gm);
 
   AmanziGeometry::Point begin(0., 0.5, 0.5), end(1., 0.5, 0.5);
-  AmanziMesh::Entity_ID_List cells, faces;
+  std::vector<AmanziMesh::Entity_ID> cells, faces;
   fac.AddSegment(100,
                  begin,
                  end,
@@ -88,9 +88,9 @@ RunTestMarshakLogical(std::string op_list_name)
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);

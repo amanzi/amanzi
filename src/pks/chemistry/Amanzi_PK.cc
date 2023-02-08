@@ -169,7 +169,7 @@ void
 Amanzi_PK::Initialize()
 {
   ncells_owned_ =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // initialization using base class
   Chemistry_PK::Initialize();
@@ -257,7 +257,7 @@ Amanzi_PK::Initialize()
 
   // compute the equilibrium state
   int num_cells =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   ierr = 0;
   if (fabs(initial_conditions_time_ - S_->get_time()) <= 1e-8 * fabs(S_->get_time())) {
     for (int c = 0; c < num_cells; ++c) {

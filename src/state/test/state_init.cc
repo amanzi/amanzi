@@ -75,7 +75,7 @@ TEST(FIELD_INITIALIZATION)
   // check state's fields
   // -- porosity (simple field)
   int ncells =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   const auto& phi = *S.Get<CompositeVector>("porosity").ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) { CHECK_EQUAL(0.25, phi[0][c]); }
 

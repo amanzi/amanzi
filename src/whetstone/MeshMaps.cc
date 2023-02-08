@@ -40,7 +40,7 @@ MeshMaps::VelocityEdge(int e, VectorPolynomial& v) const
   AMANZI_ASSERT(points0.size() == points1.size());
 
   // local coordinate system (-0.5, 0.5)
-  std::vector<AmanziGeometry::Point> tau(1, mesh0_->getEdgeVector(e));
+  AmanziMesh::Point_List tau(1, mesh0_->getEdgeVector(e));
 
   // polynomial is converted from local to global coordinate system
   int n0, n1;
@@ -101,16 +101,15 @@ MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
   const AmanziGeometry::Point& xf = mesh0_->getFaceCentroid(f);
   const AmanziGeometry::Point& normal = mesh0_->getFaceNormal(f);
 
-  SurfaceCoordinateSystem coordsys(xf, normal);
+  AmanziGeometry::SurfaceCoordinateSystem coordsys(xf, normal);
   const auto& tau = *coordsys.tau();
 
   // polynomial is converted from local to global coordinate system
-  AmanziMesh::Entity_ID_List nodes;
   AmanziGeometry::Point x0, x1, y0, y1;
 
   AmanziGeometry::Point yf = mesh1_->getFaceCentroid(f);
 
-  nodes = mesh0_->getFaceNodes(f);
+  auto nodes = mesh0_->getFaceNodes(f);
   x0 = mesh0_->getNodeCoordinate(nodes[0]);
   x1 = mesh0_->getNodeCoordinate(nodes[1]);
 
@@ -197,8 +196,8 @@ MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
 ****************************************************************** */
 int
 MeshMaps::LeastSquareFit(int order,
-                         const std::vector<AmanziGeometry::Point>& x1,
-                         const std::vector<AmanziGeometry::Point>& x2,
+                         const AmanziMesh::Point_List& x1,
+                         const AmanziMesh::Point_List& x2,
                          VectorPolynomial& v) const
 {
   Polynomial poly(d_, order);
@@ -289,7 +288,7 @@ MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
     v0 = mesh1_->getNodeCoordinate(nodes[0]);
     v1 = mesh1_->getNodeCoordinate(nodes[1]);
 
-    std::vector<AmanziGeometry::Point> tau;
+    AmanziMesh::Point_List tau;
     tau.push_back(v1 - v0);
     vf.InverseChangeCoordinates(xf, tau);
     vvf.push_back(vf);

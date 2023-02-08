@@ -66,8 +66,8 @@ struct TensorVector {
     int count = 0;
     for (auto& name : map) {
       count += map.Mesh()->getNumEntities(AmanziMesh::createEntityKind(name),
-                                          ghosted ? AmanziMesh::Parallel_type::ALL :
-                                                    AmanziMesh::Parallel_type::OWNED);
+                                          ghosted ? AmanziMesh::Parallel_kind::ALL :
+                                                    AmanziMesh::Parallel_kind::OWNED);
     }
     return count;
   }

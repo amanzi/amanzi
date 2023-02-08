@@ -79,11 +79,11 @@ runTest(int order, const std::string& linsolver)
   RCP<const Mesh> mesh = meshfactory.create("test/fractures.exo");
 
   int ncells_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int ncells_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   int nfaces_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   std::cout << "pid=" << comm->MyPID() << " cells: " << ncells_owned << " faces: " << nfaces_owned
             << std::endl;
 
@@ -174,7 +174,7 @@ runTest(int order, const std::string& linsolver)
 
   // test the maximum principle
   auto block = mesh->getSetEntities(
-    "fracture 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    "fracture 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // test that solute enter the second fracture
   double tcc_max(0.0);

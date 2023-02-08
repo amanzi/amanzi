@@ -35,19 +35,19 @@ RemapDG_Helper::RemapDG_Helper(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
 {
   // mesh data
   ncells_owned_ =
-    mesh0_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh0_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   ncells_wghost_ =
-    mesh0_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    mesh0_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   nfaces_owned_ =
-    mesh0_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+    mesh0_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   nfaces_wghost_ =
-    mesh0_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh0_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   if (mesh0_->hasEdges()) {
     nedges_owned_ =
-      mesh0_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_type::OWNED);
+      mesh0_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::OWNED);
     nedges_wghost_ =
-      mesh0_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_type::ALL);
+      mesh0_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::ALL);
   }
 
   auto& pklist = plist_.sublist("PK operator");
@@ -245,7 +245,7 @@ RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
   // create list of cells where to apply limiter
   double L(-1.0);
   double threshold = -4.0 * std::log10((double)order_) - L;
-  AmanziMesh::Entity_ID_List ids("ids", ncells_owned_);
+  AmanziMesh::Entity_ID_View ids("ids", ncells_owned_);
   int ids_ct = 0;
 
   for (int c = 0; c < ncells_owned_; ++c) {

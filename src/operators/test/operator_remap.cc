@@ -252,7 +252,7 @@ RemapTestsDualRK(std::string map_name,
   }
 
   int ncells_owned =
-    mesh0->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh0->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // create and initialize cell-based field
   CompositeVectorSpace cvs1, cvs2;

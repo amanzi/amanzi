@@ -60,7 +60,7 @@ analytical_exact_field(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   double x, y, h, u, v;
 
   int ncells_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
@@ -80,7 +80,7 @@ void
 analytical_setIC(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<State>& S)
 {
   int ncells_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   std::string passwd("");
 
@@ -124,7 +124,7 @@ error(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
       double& err_L1_v)
 {
   int ncells_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   err_max = 0.;
   err_L1 = 0.;

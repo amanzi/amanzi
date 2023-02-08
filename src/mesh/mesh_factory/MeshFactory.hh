@@ -37,7 +37,7 @@ struct MeshFactory : public MeshFrameworkFactory {
   // Need a special one for extracted meshes, since they differ not just in
   // return type but also in parent mesh type (MeshCache vs MeshFramework.
   Teuchos::RCP<Mesh> create(const Teuchos::RCP<const Mesh>& parent_mesh,
-                            const Entity_ID_List& setids,
+                            const Entity_ID_View& setids,
                             const Entity_kind setkind,
                             const bool flatten = false);
 

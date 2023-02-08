@@ -30,7 +30,7 @@ class Op_Cell_Node : public Op {
   {
     WhetStone::DenseMatrix null_matrix;
     matrices.resize(
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED),
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED),
       null_matrix);
     matrices_shadow = matrices;
   }
@@ -64,11 +64,10 @@ class Op_Cell_Node : public Op {
   {
     if (scaling.HasComponent("node")) {
       const Epetra_MultiVector& s_n = *scaling.ViewComponent("node", true);
-      AmanziMesh::Entity_ID_List nodes;
 
       for (int c = 0; c != matrices.size(); ++c) {
         WhetStone::DenseMatrix& Acell = matrices[c];
-        nodes = mesh_->getCellNodes(c);
+        auto nodes = mesh_->getCellNodes(c);
 
         for (int n = 0; n != nodes.size(); ++n) {
           for (int m = 0; m != nodes.size(); ++m) { Acell(n, m) *= s_n[0][nodes[n]]; }

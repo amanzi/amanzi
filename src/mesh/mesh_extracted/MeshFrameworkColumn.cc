@@ -70,19 +70,19 @@ MeshFrameworkColumn::computeSpecialNodeCoordinates_()
   // error will be zero.
 
   // Create a cached object, so that we can use columns.
-  MeshCache<MemSpace_type::HOST> col3D_mesh(col3D_mesh_);
+  MeshCache<MemSpace_kind::HOST> col3D_mesh(col3D_mesh_);
   col3D_mesh.buildColumns();
 
   // Get the ordered face indexes of the column
-  auto colfaces = col3D_mesh.columns.getFaces<MemSpace_type::HOST>(0);
+  auto colfaces = col3D_mesh.columns.getFaces<MemSpace_kind::HOST>(0);
   column_faces_ = colfaces;
 
   // mask for face index in the column of faces
-  Kokkos::resize(
-    face_in_column_, col3D_mesh.getNumEntities(Entity_kind::FACE, Parallel_type::ALL), -1);
+  Kokkos::resize(face_in_column_, col3D_mesh.getNumEntities(Entity_kind::FACE, Parallel_kind::ALL));
+  Kokkos::deep_copy(face_in_column_, -1);
 
   // How many nodes each "horizontal" face has in the column
-  Entity_ID_List face_nodes;
+  cEntity_ID_View face_nodes;
   col3D_mesh_->getFaceNodes(column_faces_[0], face_nodes);
   nfnodes_ = face_nodes.size();
 
@@ -93,7 +93,7 @@ MeshFrameworkColumn::computeSpecialNodeCoordinates_()
   int nfaces = column_faces_.size();
   int nnodes = nfaces * nfnodes_;
   AmanziGeometry::Point p(space_dim);
-  Point_List node_coordinates("node_coordinates", nnodes);
+  Point_View node_coordinates("node_coordinates", nnodes);
   Kokkos::deep_copy(node_coordinates, p);
 
   for (int j = 0; j != nfaces; ++j) {

@@ -52,7 +52,7 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
   Epetra_MultiVector D_c(h_->Mesh()->getMap(AmanziMesh::Entity_kind::CELL, false), 1);
   int ncells_owned = D_c.MyLength();
   int nfaces_owned =
-    h_->Mesh()->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+    h_->Mesh()->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   int nschema_coupling = 0;
   for (const auto& op : *h_) {

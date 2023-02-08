@@ -45,7 +45,7 @@ createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
 
   // create the extracted mesh of the column of cells
   MeshFrameworkFactory fac(getCommSelf(), parent_mesh->getGeometricModel(), plist);
-  Entity_ID_List col_list = parent_mesh->columns.getCells<MemSpace_type::HOST>(col_id);
+  Entity_ID_View col_list = parent_mesh->columns.getCells<MemSpace_kind::HOST>(col_id);
   auto extracted_mesh = fac.create(parent_mesh, col_list, CELL, false);
 
   // create the MeshColumn object
@@ -331,7 +331,7 @@ MeshFrameworkFactory::create(const Teuchos::ParameterList& parameter_list)
 // -------------------------------------------------------------
 Teuchos::RCP<MeshFramework>
 MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
-                             const Entity_ID_List& setids,
+                             const Entity_ID_View& setids,
                              const Entity_kind setkind,
                              const bool flatten)
 {
@@ -422,9 +422,9 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
     return mesh;
   }
 
-  Entity_ID_List ids;
+  Entity_ID_View ids;
   for (auto name : setnames) {
-    Entity_ID_List ids_l = inmesh->getSetEntities(name, setkind, Parallel_type::OWNED);
+    Entity_ID_View ids_l = inmesh->getSetEntities(name, setkind, Parallel_kind::OWNED);
     ids.insert(ids.end(), ids_l.begin(), ids_l.end());
   }
   return create(inmesh, ids, setkind, flatten);

@@ -53,12 +53,12 @@ InputAnalysis::RegionAnalysis()
     for (int i = 0; i < regions.size(); i++) {
       int nblock(0), nblock_tmp, nvofs;
       double volume(0.0), frac;
-      AmanziMesh::Entity_ID_List block;
-      std::vector<double> vofs;
+      AmanziMesh::Entity_ID_View block;
+      AmanziMesh::Double_View vofs;
 
       try {
-        auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
-          regions[i], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        std::tie(block, vofs) = mesh_->getSetEntitiesAndVolumeFractions(
+          regions[i], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
         nblock = block.size();
         nvofs = vofs.size();
 
@@ -73,8 +73,8 @@ InputAnalysis::RegionAnalysis()
       // identify if we failed on some cores
       mesh_->getComm()->MinAll(&nblock, &nblock_tmp, 1);
       if (nblock_tmp < 0) {
-        auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
-          regions[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+        std::tie(block, vofs) = mesh_->getSetEntitiesAndVolumeFractions(
+          regions[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
         nblock = block.size();
         nvofs = vofs.size();
 
@@ -122,10 +122,12 @@ InputAnalysis::RegionAnalysis()
     std::vector<std::string> regions =
       alist.get<Teuchos::Array<std::string>>("used boundary condition regions").toVector();
     regions.erase(SelectUniqueEntries(regions.begin(), regions.end()), regions.end());
+    AmanziMesh::Entity_ID_View block;
+    AmanziMesh::Double_View vofs;
 
     for (int i = 0; i < regions.size(); i++) {
-      auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
-        regions[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      std::tie(block, vofs) = mesh_->getSetEntitiesAndVolumeFractions(
+        regions[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
       int nblock = block.size();
       int nvofs = vofs.size();
 
@@ -143,10 +145,9 @@ InputAnalysis::RegionAnalysis()
 
       // verify that all faces are boundary faces
       int bc_flag(1);
-      AmanziMesh::Entity_ID_List cells;
 
       for (int n = 0; n < nblock; ++n) {
-        cells = mesh_->getFaceCells(block[n], AmanziMesh::Parallel_type::ALL);
+        auto cells = mesh_->getFaceCells(block[n], AmanziMesh::Parallel_kind::ALL);
         if (cells.size() != 1) bc_flag = 0;
       }
 
@@ -189,8 +190,8 @@ InputAnalysis::RegionAnalysis()
     for (int i = 0; i < regions.size(); i++) {
       double volume(0.0), volume_tmp;
       std::string type;
-      AmanziMesh::Entity_ID_List block;
-      std::vector<double> vofs;
+      AmanziMesh::Entity_ID_View block;
+      AmanziMesh::Double_View vofs;
 
       // observation region may use either cells of faces
       if (!mesh_->isValidSetName(regions[i], AmanziMesh::Entity_kind::CELL) &&
@@ -201,8 +202,8 @@ InputAnalysis::RegionAnalysis()
       }
 
       try {
-        auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
-          regions[i], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        std::tie(block, vofs) = mesh_->getSetEntitiesAndVolumeFractions(
+          regions[i], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
         nblock_tmp = nblock = block.size();
         type = "cells";
         for (int n = 0; n < nblock; n++) volume += mesh_->getCellVolume(block[n]);
@@ -219,8 +220,8 @@ InputAnalysis::RegionAnalysis()
       mesh_->getComm()->MaxAll(&nblock, &nblock_max, 1);
 
       if (nblock_tmp < 0 || nblock_max == 0) {
-        auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
-          regions[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+        std::tie(block, vofs) = mesh_->getSetEntitiesAndVolumeFractions(
+          regions[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
         nblock_tmp = nblock = block.size();
         type = "faces";
         for (int n = 0; n < nblock; n++) volume += mesh_->getFaceArea(block[n]);

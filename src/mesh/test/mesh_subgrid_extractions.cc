@@ -57,19 +57,19 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED_SETS)
     CHECK_EQUAL(9,
                 mesh->getSetSize("Top Face Plane",
                                  AmanziMesh::Entity_kind::FACE,
-                                 AmanziMesh::Parallel_type::OWNED));
+                                 AmanziMesh::Parallel_kind::OWNED));
     CHECK_EQUAL(
       9,
-      mesh->getSetSize("Top Box", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED));
+      mesh->getSetSize("Top Box", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED));
     CHECK_EQUAL(9,
                 mesh->getSetSize(
-                  "Face 106", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED));
+                  "Face 106", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED));
     CHECK_EQUAL(9,
                 mesh->getSetSize(
-                  "Face 103", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED));
+                  "Face 103", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED));
     CHECK_EQUAL(
       9,
-      mesh->getSetSize("Top LS", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED));
+      mesh->getSetSize("Top LS", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED));
 
     // Create a column mesh from one of the columns
     auto mesh_col = fac.createColumn(mesh, 0);
@@ -79,77 +79,77 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED_SETS)
 
     // check geometry of the column
     CHECK_EQUAL(
-      3, mesh_col->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED));
+      3, mesh_col->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED));
     CHECK_EQUAL(
-      4, mesh_col->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED));
+      4, mesh_col->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED));
     CHECK_EQUAL(
       16,
-      mesh_col->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED));
+      mesh_col->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED));
 
     // check regions of the column -- geometric regions
     CHECK_EQUAL(1,
                 mesh_col->getSetSize(
-                  "Top Face Plane", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL));
+                  "Top Face Plane", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL));
     CHECK_EQUAL(1,
                 mesh_col->getSetSize(
-                  "Top Box", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL));
+                  "Top Box", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL));
     // -- this region is the side, and columns have no side faces!
     CHECK_THROW(mesh_col->getSetSize(
-                  "West Face Plane", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL),
+                  "West Face Plane", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL),
                 Errors::Message);
 
     // check regions of the column -- labeled sets
     CHECK_EQUAL(1,
                 mesh_col->getSetSize(
-                  "Face 106", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL));
+                  "Face 106", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL));
     CHECK_EQUAL(1,
                 mesh_col->getSetSize(
-                  "Top LS", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL));
+                  "Top LS", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL));
     // -- this region is the side, and columns have no side faces!
     CHECK_THROW(mesh_col->getSetSize(
-                  "Face 103", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL),
+                  "Face 103", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL),
                 Errors::Message);
 
     // check geometry of the surface cell
     CHECK_EQUAL(
-      1, mesh_sc->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED));
+      1, mesh_sc->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED));
     CHECK_EQUAL(
-      4, mesh_sc->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED));
+      4, mesh_sc->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED));
     CHECK_EQUAL(
-      4, mesh_sc->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED));
+      4, mesh_sc->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED));
 
     // geometric regions
     CHECK_EQUAL(1,
                 mesh_sc->getSetSize(
-                  "Top Face Plane", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL));
+                  "Top Face Plane", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL));
     CHECK_EQUAL(1,
                 mesh_sc->getSetSize(
-                  "Top Box", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL));
+                  "Top Box", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL));
     // -- this region is the side, and columns have no side faces!
     CHECK_THROW(mesh_sc->getSetSize(
-                  "West Face Plane", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL),
+                  "West Face Plane", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL),
                 Errors::Message);
 
     // labeled set regions
     CHECK_EQUAL(1,
                 mesh_sc->getSetSize(
-                  "Face 106", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL));
+                  "Face 106", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL));
     CHECK_EQUAL(
       1,
-      mesh_sc->getSetSize("Top LS", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL));
+      mesh_sc->getSetSize("Top LS", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL));
     // -- this region is the side, and columns have no side faces!
     CHECK_THROW(mesh_sc->getSetSize(
-                  "Face 103", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL),
+                  "Face 103", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL),
                 Errors::Message);
 
     // check entities
-    AmanziMesh::Entity_ID_List cells_in_surf = mesh_sc->getSetEntities(
-      "Top Face Plane", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    AmanziMesh::Entity_ID_View cells_in_surf = mesh_sc->getSetEntities(
+      "Top Face Plane", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     CHECK_EQUAL(1, cells_in_surf.size());
     CHECK_EQUAL(0, cells_in_surf[0]);
 
-    AmanziMesh::Entity_ID_List cells_in_surf2 = mesh_sc->getSetEntities(
-      "Face 106", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    AmanziMesh::Entity_ID_View cells_in_surf2 = mesh_sc->getSetEntities(
+      "Face 106", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     CHECK_EQUAL(1, cells_in_surf2.size());
     CHECK_EQUAL(0, cells_in_surf2[0]);
   }

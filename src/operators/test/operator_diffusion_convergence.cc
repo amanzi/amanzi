@@ -60,11 +60,11 @@ RunForwardProblem(const std::string& discretization, int nx, int ny)
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int nfaces =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic06 ana(mesh);
 
@@ -146,7 +146,7 @@ RunForwardProblem(const std::string& discretization, int nx, int ny)
 
   if (u.HasComponent("boundary_face")) {
     int nboundary_faces = mesh->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE,
-                                               AmanziMesh::Parallel_type::OWNED);
+                                               AmanziMesh::Parallel_kind::OWNED);
     Epetra_MultiVector& u_f = *u.ViewComponent("boundary_face", false);
 
     for (int bf = 0; bf != nboundary_faces; ++bf) {
@@ -194,11 +194,11 @@ RunInverseProblem(const std::string& discretization, int nx, int ny, bool write_
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int nfaces =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic06 ana(mesh);
 
@@ -280,7 +280,7 @@ RunInverseProblem(const std::string& discretization, int nx, int ny, bool write_
 
   if (u.HasComponent("boundary_face")) {
     int nboundary_faces = mesh->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE,
-                                               AmanziMesh::Parallel_type::OWNED);
+                                               AmanziMesh::Parallel_kind::OWNED);
     Epetra_MultiVector& u_f = *u.ViewComponent("boundary_face", false);
 
     for (int bf = 0; bf != nboundary_faces; ++bf) {

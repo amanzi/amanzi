@@ -37,7 +37,7 @@ namespace AmanziMesh {
 *  subset maps
 ****************************************************************** */
 std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map>>
-createContinuousMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+createContiguousMaps(Teuchos::RCP<const AmanziMesh::MeshFramework> mesh,
                      const std::pair<Teuchos::RCP<const Epetra_BlockMap>,
                                      Teuchos::RCP<const Epetra_BlockMap>>& parent_maps,
                      const std::pair<Teuchos::RCP<const Epetra_BlockMap>,

@@ -45,11 +45,12 @@ TEST(SURFACE_COLUMN_MESH_3D)
   Teuchos::RCP<AmanziMesh::MeshFramework> mesh_fw =
     Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, lx, ly, lz, nx, ny, nz, comm, gm));
   Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp(new AmanziMesh::Mesh(mesh_fw));
+  AmanziMesh::MeshAlgorithms::cacheDefault(*mesh);
   mesh->buildColumns();
 
   // Perturb the nodes above the base layer just a bit
   int nnodes =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
 
   for (int n = 0; n < nnodes; n++) {
     AmanziGeometry::Point xyz(3);
@@ -61,7 +62,7 @@ TEST(SURFACE_COLUMN_MESH_3D)
   // Create a column mesh from one of the columns
   Teuchos::RCP<AmanziMesh::MeshFramework> colmesh_ext =
     Teuchos::rcp(new AmanziMesh::Mesh_MSTK(mesh_fw,
-                                           mesh->columns.cells_.getRow<MemSpace_type::HOST>(10),
+                                           mesh->columns.cells_.getRow<MemSpace_kind::HOST>(10),
                                            AmanziMesh::Entity_kind::CELL,
                                            false,
                                            getCommSelf(),
@@ -77,11 +78,11 @@ TEST(SURFACE_COLUMN_MESH_3D)
 
   // -- check basic mesh structure
   CHECK_EQUAL(
-    1, col_surf.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED));
+    1, col_surf.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED));
   CHECK_EQUAL(
-    4, col_surf.getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED));
+    4, col_surf.getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED));
   CHECK_EQUAL(
-    4, col_surf.getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED));
+    4, col_surf.getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED));
 
   // -- check flattened
   AmanziGeometry::Point node;

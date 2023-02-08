@@ -47,9 +47,10 @@ TEST(DARCY_SURFACE_MESH)
   T(0, 0) = 1;
 
   for (int f = 0;
-       f < mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+       f < mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
        ++f) {
-    RCP<SingleFaceMesh> surfmesh = Teuchos::rcp(new SingleFaceMesh(mesh, f));
+    RCP<AmanziMesh::SingleFaceMesh> surfmesh =
+      Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh, f));
     RCP<AmanziMesh::Mesh> surfmesh_cache =
       Teuchos::rcp(new AmanziMesh::Mesh(surfmesh, Teuchos::null));
 

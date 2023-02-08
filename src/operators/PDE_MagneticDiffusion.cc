@@ -69,8 +69,6 @@ PDE_MagneticDiffusion::ModifyMatrices(CompositeVector& E, CompositeVector& B, do
   Teuchos::ParameterList plist;
   WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
 
-  AmanziMesh::Entity_ID_List edges;
-
   for (int c = 0; c < ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
     Acell.Scale(dt / 2);
@@ -79,7 +77,7 @@ PDE_MagneticDiffusion::ModifyMatrices(CompositeVector& E, CompositeVector& B, do
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
     const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
-    edges = mesh_->getCellEdges(c);
+    auto edges = mesh_->getCellEdges(c);
 
     int nfaces = faces.size();
     int nedges = edges.size();
@@ -119,15 +117,13 @@ PDE_MagneticDiffusion::ModifyFields(CompositeVector& E, CompositeVector& B, doub
   Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
   Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
 
-  AmanziMesh::Entity_ID_List edges;
-
   std::vector<bool> fflag(nedges_wghost, false);
 
   for (int c = 0; c < ncells_owned; ++c) {
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
     const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
-    edges = mesh_->getCellEdges(c);
+    auto edges = mesh_->getCellEdges(c);
 
     int nfaces = faces.size();
     int nedges = edges.size();
@@ -161,13 +157,12 @@ PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
   const Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
   E.ScatterMasterToGhosted("edge");
 
-  AmanziMesh::Entity_ID_List edges;
   Teuchos::ParameterList plist;
   WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
 
   double energy(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    edges = mesh_->getCellEdges(c);
+    auto edges = mesh_->getCellEdges(c);
     int nedges = edges.size();
 
     WhetStone::DenseMatrix Mcell;

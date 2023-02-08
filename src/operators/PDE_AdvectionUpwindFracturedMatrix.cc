@@ -46,7 +46,6 @@ PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Comp
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
-  AmanziMesh::Entity_ID_List cells;
   const Epetra_MultiVector& uf = *u->ViewComponent("face");
   const auto& gmap = uf.Map();
 
@@ -54,7 +53,7 @@ PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Comp
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
@@ -77,7 +76,7 @@ PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Comp
   // removed matrices on faces where fracture is located
   for (int i = 0; i < fractures_.size(); ++i) {
     auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
-      fractures_[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      fractures_[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
     for (int n = 0; n < block.size(); ++n) { matrix[block[n]] *= 0.0; }
   }
@@ -97,7 +96,6 @@ PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Comp
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
-  AmanziMesh::Entity_ID_List cells;
   const Epetra_MultiVector& uf = *u->ViewComponent("face");
   const auto& gmap = uf.Map();
 
@@ -108,7 +106,7 @@ PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Comp
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
@@ -131,7 +129,7 @@ PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Comp
   // removed matrices fof faces where fracture is located
   for (int i = 0; i < fractures_.size(); ++i) {
     auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
-      fractures_[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      fractures_[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
     for (int n = 0; n < block.size(); ++n) { matrix[block[n]] *= 0.0; }
   }

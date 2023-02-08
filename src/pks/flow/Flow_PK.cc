@@ -259,14 +259,14 @@ Flow_PK::Initialize()
   dt_ = 0.0;
 
   ncells_owned =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   ncells_wghost =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   nfaces_owned =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   nfaces_wghost =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   nseepage_prev = 0;
   ti_phase_counter = 0;
@@ -550,7 +550,7 @@ Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
 
   for (auto it = regions.begin(); it != regions.end(); ++it) {
     auto cells =
-      mesh_->getSetEntities(*it, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh_->getSetEntities(*it, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
     for (int k = 0; k < cells.size(); k++) {
       int c = cells[k];
@@ -695,11 +695,10 @@ Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
   area_seepage += area_add;
 
   // mark missing boundary conditions as zero flux conditions
-  AmanziMesh::Entity_ID_List cells;
   missed_bc_faces_ = 0;
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] == Operators::OPERATOR_BC_NONE) {
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       int ncells = cells.size();
 
       if (ncells == 1) {
@@ -842,14 +841,13 @@ void
 Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells,
                                         Epetra_MultiVector& ufaces)
 {
-  AmanziMesh::Entity_ID_List cells;
   auto& fmap = ufaces.Map();
 
   int nfaces =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   for (int f = 0; f < nfaces; f++) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::OWNED);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::OWNED);
     int ncells = cells.size();
 
     double face_value = 0.0;

@@ -68,13 +68,12 @@ DarcyVelocityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVec
 
   auto mesh = S.GetMesh(domain);
   int ncells_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int dim = mesh->getSpaceDimension();
 
   WhetStone::MFD3D_Diffusion mfd(mesh);
 
   WhetStone::Polynomial gradient(dim, 1);
-  AmanziMesh::Entity_ID_List cells;
 
   for (int c = 0; c < ncells_owned; c++) {
     const auto& faces = mesh->getCellFaces(c);
@@ -87,7 +86,7 @@ DarcyVelocityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVec
 
       // the case of two DOFs on the face:
       if (fmap.ElementSize(f) == 2) {
-        cells = mesh->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+        auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
         if (cells.size() == 2) { g += Operators::UniqueIndexFaceToCells(*mesh, f, c); }
       }
       solution[n].Reshape(dim, 0);

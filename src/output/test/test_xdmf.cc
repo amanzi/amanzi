@@ -24,7 +24,7 @@ TEST(XDMF)
   auto Mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh(Mesh_mstk, Teuchos::null));
 
   // unsigned int num_cells = Mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
-  //         Amanzi::AmanziMesh::Parallel_type::OWNED);
+  //         Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   Teuchos::RCP<Epetra_Vector> node_quantity;
   Teuchos::RCP<Epetra_Vector> cell_quantity;

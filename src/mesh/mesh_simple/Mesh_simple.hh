@@ -62,7 +62,7 @@ class Mesh_simple : public MeshFramework {
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)
   virtual std::size_t
-  getNumEntities(const Entity_kind kind, const Parallel_type ptype) const override;
+  getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const override;
 
 
   // Node coordinates - 3 in 3D and 2 in 2D
@@ -71,31 +71,31 @@ class Mesh_simple : public MeshFramework {
   setNodeCoordinate(const Entity_ID nodeid, const AmanziGeometry::Point& coord) override;
 
   virtual void getCellFacesAndDirs(const Entity_ID c,
-                                   Entity_ID_List& faces,
-                                   Entity_Direction_List* const dirs) const override;
+                                   cEntity_ID_View& faces,
+                                   cEntity_Direction_View* const dirs) const override;
 
   virtual void getFaceEdgesAndDirs(const Entity_ID f,
-                                   Entity_ID_List& edges,
-                                   Entity_Direction_List* const dirs = nullptr) const override;
+                                   cEntity_ID_View& edges,
+                                   cEntity_Direction_View* const dirs = nullptr) const override;
 
-  virtual void getFaceNodes(const Entity_ID f, Entity_ID_List& nodes) const override;
+  virtual void getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) const override;
 
-  virtual void getEdgeNodes(const Entity_ID e, Entity_ID_List& nodes) const override;
+  virtual void getEdgeNodes(const Entity_ID e, cEntity_ID_View& nodes) const override;
 
 
   virtual void
-  getFaceCells(const Entity_ID f, const Parallel_type ptype, Entity_ID_List& cells) const override;
+  getFaceCells(const Entity_ID f, const Parallel_kind ptype, cEntity_ID_View& cells) const override;
 
   virtual void getNodeFaces(const Entity_ID nodeid,
-                            const Parallel_type ptype,
-                            Entity_ID_List& faceids) const override;
+                            const Parallel_kind ptype,
+                            cEntity_ID_View& faceids) const override;
 
  private:
   void CreateCache_();
 
  private:
   bool edges_requested_;
-  Double_List coordinates_;
+  Double_View coordinates_;
 
   unsigned int node_index_(int i, int j, int k) const;
   unsigned int cell_index_(int i, int j, int k) const;
@@ -115,15 +115,15 @@ class Mesh_simple : public MeshFramework {
   int num_cells_, num_faces_, num_edges_, num_nodes_;
 
   // mesh connectivity arrays
-  Entity_ID_List cell_to_face_;
-  Entity_ID_List face_to_edge_;
-  Entity_ID_List face_to_node_;
-  Entity_ID_List edge_to_node_;
+  Entity_ID_View cell_to_face_;
+  Entity_ID_View face_to_edge_;
+  Entity_ID_View face_to_node_;
+  Entity_ID_View edge_to_node_;
 
-  Entity_ID_List node_to_face_;
-  Entity_ID_List node_to_edge_;
-  Entity_ID_List edge_to_face_;
-  Entity_ID_List face_to_cell_;
+  Entity_ID_View node_to_face_;
+  Entity_ID_View node_to_edge_;
+  Entity_ID_View edge_to_face_;
+  Entity_ID_View face_to_cell_;
 
   // orientation arrays
   Entity_Direction_View cell_to_face_dirs_;

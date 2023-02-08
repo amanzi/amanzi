@@ -46,8 +46,9 @@ HighOrderCrouzeixRaviart(int dim, std::string file_name)
   std::cout << "Test: High-order Crouzeix Raviart in " << dim << "D"
             << " file=" << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
-
-  MeshFactory meshfactory(comm);
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  if (dim == 3) fac_list->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, Teuchos::null, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name);
 
@@ -135,11 +136,13 @@ HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name)
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  if (dim == 3) fac_list->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name);
 
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -212,11 +215,13 @@ HighOrderLagrange2D(std::string file_name)
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name);
 
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -301,7 +306,9 @@ HighOrderLagrange3D(const std::string& filename1, const std::string& filename2)
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh1 = meshfactory.create(filename1);
   Teuchos::RCP<Mesh> mesh2 = meshfactory.create(filename2);
@@ -395,12 +402,14 @@ HighOrderLagrangeSerendipity(const std::string& filename)
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(filename);
 
   int d = mesh->getSpaceDimension();
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -489,7 +498,9 @@ TEST(HIGH_ORDER_LAGRANGE_SURFACE)
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh2d = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
   Teuchos::RCP<Mesh> mesh3d = meshfactory.create("test/cube_unit.exo");

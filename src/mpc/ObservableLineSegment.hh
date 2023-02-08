@@ -71,10 +71,10 @@ ObservableLineSegment::ComputeRegionSize()
 
   // all others need cells
   region_size_ =
-    mesh_->getSetSize(region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh_->getSetSize(region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   Kokkos::resize(entity_ids_, region_size_);
   std::tie(entity_ids_, lofs_) = mesh_->getSetEntitiesAndVolumeFractions(
-    region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   ComputeInterpolationPoints(reg_ptr);
 
@@ -104,9 +104,6 @@ void
 ObservableLineSegment::ComputeInterpolationPoints(
   Teuchos::RCP<const AmanziGeometry::Region> reg_ptr)
 {
-  AmanziMesh::Entity_ID_List faces, cnodes, fnodes;
-  std::vector<int> dirs;
-  AmanziMesh::Point_List polytope_nodes;
   std::vector<std::vector<int>> polytope_faces;
 
   line_points_.resize(entity_ids_.size());
@@ -118,17 +115,17 @@ ObservableLineSegment::ComputeInterpolationPoints(
 
   for (int k = 0; k < entity_ids_.size(); k++) {
     int c = entity_ids_[k];
-    polytope_nodes = mesh_->getCellCoordinates(c);
+    auto polytope_nodes = mesh_->getCellCoordinates(c);
 
     if (mesh_->getSpaceDimension() == 3) {
-      cnodes = mesh_->getCellNodes(c);
+      auto cnodes = mesh_->getCellNodes(c);
       auto [faces, dirs] = mesh_->getCellFacesAndDirections(c);
       int nfaces = faces.size();
 
       polytope_faces.clear();
       polytope_faces.resize(nfaces);
       for (int n = 0; n < nfaces; ++n) {
-        fnodes = mesh_->getFaceNodes(faces[n]);
+        auto fnodes = mesh_->getFaceNodes(faces[n]);
         int nnodes = fnodes.size();
 
         for (int i = 0; i < nnodes; ++i) {

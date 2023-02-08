@@ -37,9 +37,9 @@ TEST(GMV)
     meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1);
 
   unsigned int num_nodes = Mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
-                                                Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                                Amanzi::AmanziMesh::Parallel_kind::OWNED);
   unsigned int num_cells = Mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
-                                                Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                                Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   Teuchos::RCP<Epetra_Vector> node_quantity;
   Teuchos::RCP<Epetra_Vector> cell_quantity;

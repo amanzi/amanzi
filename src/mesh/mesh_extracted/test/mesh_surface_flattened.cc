@@ -55,10 +55,10 @@ TEST(MESH_SURFACE_FLATTENED)
 
   RCP<Mesh> mesh_cached = Teuchos::rcp(new Mesh(mesh));
 
-  int ncells = mesh_cached->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
-  int nfaces = mesh_cached->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-  int nnodes = mesh_cached->getNumEntities(Entity_kind::NODE, Parallel_type::OWNED);
-  int mfaces = mesh_cached->getNumEntities(Entity_kind::BOUNDARY_FACE, Parallel_type::OWNED);
+  int ncells = mesh_cached->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+  int nfaces = mesh_cached->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+  int nnodes = mesh_cached->getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
+  int mfaces = mesh_cached->getNumEntities(Entity_kind::BOUNDARY_FACE, Parallel_kind::OWNED);
   std::cout << " pid=" << comm->MyPID() << " cells: " << ncells << " faces: " << nfaces
             << " bnd faces: " << mfaces << std::endl;
 

@@ -50,7 +50,7 @@ LimiterCellDG::LimiterCellDG(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
 * Apply internal limiter for DG schemes
 ****************************************************************** */
 void
-LimiterCellDG::ApplyLimiterDG(const AmanziMesh::Entity_ID_List& ids,
+LimiterCellDG::ApplyLimiterDG(const AmanziMesh::Entity_ID_View& ids,
                               Teuchos::RCP<const Epetra_MultiVector> field,
                               const WhetStone::DG_Modal& dg,
                               const std::vector<int>& bc_model,
@@ -86,7 +86,7 @@ LimiterCellDG::ApplyLimiterDG(const AmanziMesh::Entity_ID_List& ids,
 ******************************************************************* */
 void
 LimiterCellDG::LimiterScalarDG_(const WhetStone::DG_Modal& dg,
-                                const AmanziMesh::Entity_ID_List& ids,
+                                const AmanziMesh::Entity_ID_View& ids,
                                 const std::vector<int>& bc_model,
                                 const std::vector<double>& bc_value,
                                 double (*func)(double))
@@ -94,7 +94,6 @@ LimiterCellDG::LimiterScalarDG_(const WhetStone::DG_Modal& dg,
   AMANZI_ASSERT(dg.cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
   double u1, u1f, umin, umax;
-  AmanziMesh::Entity_ID_List nodes;
 
   int nk = field_->NumVectors();
   WhetStone::DenseVector data(nk);
@@ -121,7 +120,7 @@ LimiterCellDG::LimiterScalarDG_(const WhetStone::DG_Modal& dg,
 
     for (int m = 0; m < nfaces; ++m) {
       int f = faces[m];
-      nodes = mesh_->getFaceNodes(f);
+      auto nodes = mesh_->getFaceNodes(f);
       int nnodes = nodes.size();
 
       getBounds(c, f, stencil_id_, &umin, &umax);
@@ -155,7 +154,7 @@ LimiterCellDG::LimiterScalarDG_(const WhetStone::DG_Modal& dg,
 ******************************************************************* */
 void
 LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
-                                      const AmanziMesh::Entity_ID_List& ids,
+                                      const AmanziMesh::Entity_ID_View& ids,
                                       const std::vector<int>& bc_model,
                                       const std::vector<double>& bc_value,
                                       double (*func)(double))
@@ -164,7 +163,6 @@ LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
   AMANZI_ASSERT(dg.cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
   double u1, u1f, umin, umax;
-  AmanziMesh::Entity_ID_List nodes;
 
   int nk = field_->NumVectors();
   WhetStone::DenseVector data(nk);
@@ -212,7 +210,7 @@ LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      nodes = mesh_->getFaceNodes(f);
+      auto nodes = mesh_->getFaceNodes(f);
 
       x1 = mesh_->getNodeCoordinate(nodes[0]);
       x2 = mesh_->getNodeCoordinate(nodes[1]);

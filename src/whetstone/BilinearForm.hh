@@ -120,7 +120,7 @@ class BilinearForm {
     return 1;
   }
 
-  virtual int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A)
+  virtual int AdvectionMatrix(int c, const AmanziMesh::Point_List& u, DenseMatrix& A)
   {
     Errors::Message msg("Advection operator with virtual nodal function is not supported.");
     Exceptions::amanzi_throw(msg);

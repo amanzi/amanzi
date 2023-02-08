@@ -62,7 +62,7 @@ ReconstructionCellPolynomial::Init(Teuchos::ParameterList& plist)
 * least-square fit.
 ****************************************************************** */
 void
-ReconstructionCellPolynomial::Compute(const AmanziMesh::Entity_ID_List& ids,
+ReconstructionCellPolynomial::Compute(const AmanziMesh::Entity_ID_View& ids,
                                       const Teuchos::RCP<const Epetra_MultiVector>& field,
                                       int component,
                                       const Teuchos::RCP<const BCs>& bc)
@@ -88,7 +88,7 @@ ReconstructionCellPolynomial::Compute(const AmanziMesh::Entity_ID_List& ids,
     const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     quad.set_origin(xc);
 
-    CellAllAdjCells_(c, AmanziMesh::Parallel_type::ALL, cells);
+    CellAllAdjCells_(c, AmanziMesh::Parallel_kind::ALL, cells);
 
     // compute othogonality coefficients
     int n(0);
@@ -205,17 +205,15 @@ ReconstructionCellPolynomial::PopulateLeastSquareSystem_(WhetStone::DenseVector&
 ****************************************************************** */
 void
 ReconstructionCellPolynomial::CellAllAdjCells_(AmanziMesh::Entity_ID c,
-                                               AmanziMesh::Parallel_type ptype,
+                                               AmanziMesh::Parallel_kind ptype,
                                                std::set<AmanziMesh::Entity_ID>& cells) const
 {
-  AmanziMesh::Entity_ID_List nodes, vcells;
-
   cells.clear();
 
-  nodes = mesh_->getCellNodes(c);
+  auto nodes = mesh_->getCellNodes(c);
   for (int i = 0; i < nodes.size(); i++) {
     int v = nodes[i];
-    vcells = mesh_->getNodeCells(v, AmanziMesh::Parallel_type::ALL);
+    auto vcells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
 
     for (int k = 0; k < vcells.size(); ++k) {
       int c1 = vcells[k];
@@ -261,13 +259,11 @@ ReconstructionCellPolynomial::CellAllAdjFaces_(AmanziMesh::Entity_ID c,
                                                const std::set<AmanziMesh::Entity_ID>& cells,
                                                std::set<AmanziMesh::Entity_ID>& faces) const
 {
-  AmanziMesh::Entity_ID_List cfaces, fcells;
-
   faces.clear();
   for (int c1 : cells) {
-    cfaces = mesh_->getCellFaces(c1);
+    auto cfaces = mesh_->getCellFaces(c1);
     for (int f : cfaces) {
-      fcells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+      auto fcells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       if (fcells.size() == 1 && faces.find(f) == faces.end()) faces.insert(f);
     }
   }

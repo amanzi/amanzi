@@ -93,7 +93,7 @@ TEST(OBSERVABLE_LINE_SEGMENT)
     *S->GetW<CompositeVector>("test_field", Tags::DEFAULT, "test_field").ViewComponent("cell");
 
   int ncells_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   double A = 3., B = 1., C = 5., D = 0.2;
 

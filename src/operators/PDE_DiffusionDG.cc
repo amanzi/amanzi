@@ -109,8 +109,6 @@ PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
   WhetStone::DenseMatrix Acell, Aface;
 
   double Kf(1.0);
-  AmanziMesh::Entity_ID_List cells;
-
   // volumetric term
   for (int c = 0; c != ncells_owned; ++c) {
     interface_->StiffnessMatrix(c, Acell);
@@ -126,7 +124,7 @@ PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
 
   // stability terms
   for (int f = 0; f != nfaces_owned; ++f) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int c1 = cells[0];
     int c2 = (cells.size() > 1) ? cells[1] : c1;
 
@@ -155,8 +153,6 @@ PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
   Epetra_MultiVector& rhs_c = *global_op_->rhs()->ViewComponent("cell", true);
 
-  AmanziMesh::Entity_ID_List cells;
-
   int d = mesh_->getSpaceDimension();
   std::vector<AmanziGeometry::Point> tau(d - 1);
 
@@ -165,7 +161,7 @@ PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET || bc_model[f] == OPERATOR_BC_NEUMANN) {
-      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       int c = cells[0];
 
       const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);

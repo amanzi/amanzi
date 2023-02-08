@@ -65,13 +65,13 @@ class HeatConduction {
     Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true);
 
     int ncells =
-      mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+      mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     for (int c = 0; c < ncells; c++) { values_c[0][c] = 0.3 + uc[0][c]; }
 
     const Epetra_MultiVector& uf = *u.ViewComponent("face", true);
     Epetra_MultiVector& values_f = *values_->ViewComponent("face", true);
     int nfaces =
-      mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+      mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     for (int f = 0; f < nfaces; f++) { values_f[0][f] = 0.3 + uf[0][f]; }
 
     derivatives_->PutScalar(1.0);
@@ -133,7 +133,7 @@ RunTest(std::string op_list_name)
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned =
-    surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);

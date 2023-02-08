@@ -78,7 +78,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
 
   // grab the maps
   int ncells =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   Teuchos::RCP<Epetra_Map> cell_map =
     Teuchos::rcp(new Epetra_Map(mesh->getMap(AmanziMesh::Entity_kind::CELL, false)));
   Teuchos::RCP<Epetra_Map> cell_map_ghosted =
@@ -89,16 +89,14 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
   Teuchos::RCP<GraphFE> graph =
     Teuchos::rcp(new GraphFE(cell_map, cell_map_ghosted, cell_map_ghosted, 5));
 
-  Entity_ID_List faces;
-  Entity_ID_List face_cells;
   std::vector<int> neighbor_cells;
   for (int c = 0; c != ncells; ++c) {
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
 
-    faces = mesh->getCellFaces(c);
+    auto faces = mesh->getCellFaces(c);
     for (int n = 0; n != faces.size(); ++n) {
-      face_cells = mesh->getFaceCells(faces[n], AmanziMesh::Parallel_type::ALL);
+      auto face_cells = mesh->getFaceCells(faces[n], AmanziMesh::Parallel_kind::ALL);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
       }
@@ -121,9 +119,9 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
 
-    faces = mesh->getCellFaces(c);
+    auto faces = mesh->getCellFaces(c);
     for (int n = 0; n != faces.size(); ++n) {
-      face_cells = mesh->getFaceCells(faces[n], AmanziMesh::Parallel_type::ALL);
+      auto face_cells = mesh->getFaceCells(faces[n], AmanziMesh::Parallel_kind::ALL);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
       }
@@ -157,8 +155,8 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
   // check matrix equality
   for (int c = 0; c != ncells; ++c) {
     int nentries(0);
-    std::vector<double> mat_vals(5);
-    std::vector<double> ctrl_vals(5);
+    AmanziMesh::Double_List mat_vals(5);
+    AmanziMesh::Double_List ctrl_vals(5);
     std::vector<int> mat_inds(5);
     std::vector<int> ctrl_inds(5);
 
@@ -215,7 +213,7 @@ TEST(FE_MATRIX_FACE_FACE)
 
   // grab the maps
   int ncells =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   Teuchos::RCP<Epetra_Map> face_map =
     Teuchos::rcp(new Epetra_Map(mesh->getMap(AmanziMesh::Entity_kind::FACE, false)));
   Teuchos::RCP<Epetra_Map> face_map_ghosted =
@@ -226,10 +224,10 @@ TEST(FE_MATRIX_FACE_FACE)
   Teuchos::RCP<GraphFE> graph =
     Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
 
-  Entity_ID_List faces;
-  Entity_ID_List face_cells;
   for (int c = 0; c != ncells; ++c) {
-    faces = mesh->getCellFaces(c);
+    auto cfaces = mesh->getCellFaces(c);
+    AmanziMesh::Entity_ID_View faces;
+    faces.fromConst(cfaces);
 
     for (int n = 0; n != faces.size(); ++n) {
       ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
@@ -247,7 +245,7 @@ TEST(FE_MATRIX_FACE_FACE)
   Epetra_FECrsMatrix control(Copy, graph->Graph());
 
   for (int c = 0; c != ncells; ++c) {
-    faces = mesh->getCellFaces(c);
+    auto faces = mesh->getCellFaces(c);
 
     Epetra_IntSerialDenseVector face_gids(faces.size());
     for (int n = 0; n != faces.size(); ++n) {
@@ -273,11 +271,11 @@ TEST(FE_MATRIX_FACE_FACE)
 
   // check matrix equality
   int nfaces =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f != nfaces; ++f) {
     int nentries(0);
-    std::vector<double> mat_vals(7);
-    std::vector<double> ctrl_vals(7);
+    AmanziMesh::Double_List mat_vals(7);
+    AmanziMesh::Double_List ctrl_vals(7);
     std::vector<int> mat_inds(7);
     std::vector<int> ctrl_inds(7);
 
@@ -295,10 +293,12 @@ TEST(FE_MATRIX_FACE_FACE)
     CHECK(mat_vals == ctrl_vals);
     if (!(mat_vals == ctrl_vals)) {
       std::cout << "Bad mat: ";
-      for (std::vector<double>::const_iterator it = mat_vals.begin(); it != mat_vals.end(); ++it)
+      for (AmanziMesh::Double_List::const_iterator it = mat_vals.begin(); it != mat_vals.end();
+           ++it)
         std::cout << " " << *it;
       std::cout << std::endl << "   ctrl: ";
-      for (std::vector<double>::const_iterator it = ctrl_vals.begin(); it != ctrl_vals.end(); ++it)
+      for (AmanziMesh::Double_List::const_iterator it = ctrl_vals.begin(); it != ctrl_vals.end();
+           ++it)
         std::cout << " " << *it;
       std::cout << std::endl;
     }

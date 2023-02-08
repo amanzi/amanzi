@@ -61,8 +61,8 @@ getBoundaryFaceInternalCell(const Mesh& mesh, Entity_ID bf)
 Entity_ID
 getFaceOnBoundaryInternalCell(const Mesh& mesh, Entity_ID f)
 {
-  Entity_ID_List cells;
-  mesh.getFaceCells(f, Parallel_type::ALL, cells);
+  cEntity_ID_View cells;
+  mesh.getFaceCells(f, Parallel_kind::ALL, cells);
   if (cells.size() != 1) {
     AmanziGeometry::Point fc = mesh.getFaceCentroid(f);
     std::stringstream msgs;
@@ -119,7 +119,7 @@ copyCellsToBoundaryFaces(const Mesh& mesh,
 AmanziGeometry::Point
 getFaceNormalExterior(const Mesh& mesh, int f, int* dir)
 {
-  auto cells = mesh.getFaceCells(f, Parallel_type::ALL);
+  auto cells = mesh.getFaceCells(f, Parallel_kind::ALL);
 
   auto normal = mesh.getFaceNormal(f, cells[0], dir);
   if (cells.size() > 1) *dir = 0;

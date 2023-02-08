@@ -74,11 +74,11 @@ RunTest(double gravity)
   RCP<const Mesh> mesh = meshfactory.create("test/fractures.exo");
 
   int ncells_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // create Darcy flux
   auto cvsf = Operators::CreateManifoldCVS(mesh);
@@ -87,18 +87,17 @@ RunTest(double gravity)
   const auto& map = flux->Map().Map("face", true);
 
   int dir;
-  AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point v(1.0, 0.0, 1.0);
   for (int f = 0; f < nfaces_owned; ++f) {
     int g = map->FirstPointInElement(f);
     int ndofs = map->ElementSize(f);
 
-    cells = mesh->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     if (ndofs > 1) CHECK(ndofs == cells.size());
 
     for (int i = 0; i < ndofs; ++i) {
       int c = cells[i];
-      auto normal = mesh->getFaceNormal(f, &dir);
+      auto normal = mesh->getFaceNormal(f, c, &dir);
       normal *= dir; // natural normal
 
       int g2 = g + Operators::UniqueIndexFaceToCells(*mesh, f, c);

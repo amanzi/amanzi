@@ -21,9 +21,9 @@ TEST(SILO_STRUCTURED)
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MSTK> Mesh =
     Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm));
   int ncells =
-    Mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    Mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   int nnodes =
-    Mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    Mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   Teuchos::RCP<Epetra_Vector> node_quantity;
   Teuchos::RCP<Epetra_Vector> cell_quantity;

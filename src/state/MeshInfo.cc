@@ -34,7 +34,7 @@ MeshInfo::WriteMeshCentroids(std::string domain, const AmanziMesh::Mesh& mesh)
   output->open_h5file();
 
   int ncells_owned =
-    mesh.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int n_glob;
   mesh.getComm()->SumAll(&ncells_owned, &n_glob, 1);
 

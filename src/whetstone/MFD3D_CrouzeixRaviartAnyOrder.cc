@@ -131,7 +131,7 @@ MFD3D_CrouzeixRaviartAnyOrder::H1consistency(int c,
       AmanziGeometry::Point normal = mesh_->getFaceNormal(f);
 
       // local coordinate system with origin at face centroid
-      SurfaceCoordinateSystem coordsys(xf, normal);
+      AmanziGeometry::SurfaceCoordinateSystem coordsys(xf, normal);
       const auto& tau = *coordsys.tau();
       normal *= dirs[i];
 
@@ -334,7 +334,7 @@ MFD3D_CrouzeixRaviartAnyOrder::CalculateFaceDOFs_(int f,
   const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
   // local coordinate system with origin at face centroid
-  SurfaceCoordinateSystem coordsys(xf, normal);
+  AmanziGeometry::SurfaceCoordinateSystem coordsys(xf, normal);
 
   polys[0] = &vf;
 

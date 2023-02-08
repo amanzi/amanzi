@@ -64,8 +64,8 @@ class ReconstructionCellLinear : public Reconstruction {
                        const Teuchos::RCP<const BCs>& bc = Teuchos::null) override
   {
     int ncells_wghost =
-      mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
-    AmanziMesh::Entity_ID_List ids("ids", ncells_wghost);
+      mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+    AmanziMesh::Entity_ID_View ids("ids", ncells_wghost);
     for (int c = 0; c < ncells_wghost; ++c) ids[c] = c;
     Compute(ids, field, component, bc);
   }
@@ -80,7 +80,7 @@ class ReconstructionCellLinear : public Reconstruction {
 
   // compute gradient only in specified cells
   // -- NOTE: algorithm uses data in the neighbooring cells
-  void Compute(const AmanziMesh::Entity_ID_List& ids,
+  void Compute(const AmanziMesh::Entity_ID_View& ids,
                const Teuchos::RCP<const Epetra_MultiVector>& field,
                int component,
                const Teuchos::RCP<const BCs>& bc = Teuchos::null);
@@ -94,7 +94,7 @@ class ReconstructionCellLinear : public Reconstruction {
   // On intersecting manifolds, we extract neighboors living in the same manifold
   // using a smoothness criterion.
   void CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
-                                 AmanziMesh::Parallel_type ptype,
+                                 AmanziMesh::Parallel_kind ptype,
                                  std::vector<AmanziMesh::Entity_ID>& cells) const;
 
  private:

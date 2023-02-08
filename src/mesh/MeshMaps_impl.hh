@@ -23,8 +23,8 @@ template <class Mesh_type>
 std::pair<Map_ptr_type, Map_ptr_type>
 createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind)
 {
-  Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_type::OWNED);
-  Entity_GID_List gids = mesh.getEntityGIDs(kind, Parallel_type::ALL);
+  Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
+  cEntity_GID_View gids = mesh.getEntityGIDs(kind, Parallel_kind::ALL);
   return std::make_pair(
     Teuchos::rcp(new Epetra_Map(-1, gids.size(), gids.data(), 0, *mesh.getComm())),
     Teuchos::rcp(new Epetra_Map(-1, num_owned, gids.data(), 0, *mesh.getComm())));
@@ -35,7 +35,7 @@ template <class Mesh_type>
 std::pair<Map_ptr_type, Map_ptr_type>
 createMapsFromContiguousGIDs(const Mesh_type& mesh, const Entity_kind kind)
 {
-  Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_type::OWNED);
+  Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
   auto owned_map = Teuchos::rcp(new Epetra_Map(-1, num_owned, 0, *mesh.getComm()));
   ;
 
@@ -76,9 +76,9 @@ MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
 
   // boundary faces
   // -- get a list of all owned face LIDs with 1 cell
-  std::size_t nfaces_owned = mesh.getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
-  std::size_t nfaces_all = mesh.getNumEntities(Entity_kind::FACE, Parallel_type::ALL);
-  Entity_ID_List boundary_faces("boundary_faces", nfaces_owned);
+  std::size_t nfaces_owned = mesh.getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+  std::size_t nfaces_all = mesh.getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
+  Entity_ID_View boundary_faces("boundary_faces", nfaces_owned);
   initView(boundary_faces, -1);
 
   std::size_t nbf_owned = 0;
@@ -87,8 +87,8 @@ MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
   // that have one cell on this rank but that more than one cell on the other rank.
   // As a result nbf_owned = nbf_all
   for (Entity_ID f = 0; f != nfaces_owned; ++f) {
-    Entity_ID_List fcells;
-    mesh.getFaceCells(f, Parallel_type::ALL, fcells);
+    cEntity_ID_View fcells;
+    mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
     if (fcells.size() == 1) {
       boundary_faces[nbf_all++] = f;
       if (f < nfaces_owned) nbf_owned = nbf_all;
@@ -96,7 +96,7 @@ MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
   }
 
   // -- convert to GID
-  Entity_GID_List boundary_face_GIDs("boundary_face_GIDs", boundary_faces.size());
+  Entity_GID_View boundary_face_GIDs("boundary_face_GIDs", boundary_faces.size());
   const auto& fmap_all = getMap(Entity_kind::FACE, true);
   for (std::size_t i = 0; i != nbf_all; ++i) {
     boundary_face_GIDs[i] = fmap_all.GID(boundary_faces[i]);
@@ -145,16 +145,16 @@ MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
   if (mesh.hasNodes()) {
     std::set<Entity_ID> bnodes_lid;
     for (std::size_t i = 0; i != nbf_all; ++i) {
-      Entity_ID_List fnodes;
+      cEntity_ID_View fnodes;
       mesh.getFaceNodes(boundary_faces[i], fnodes);
       for (const auto& n : fnodes) bnodes_lid.insert(n);
     }
 
     // -- convert to GID
-    Entity_ID_List boundary_nodes("boundary_nodes", bnodes_lid.size());
+    Entity_ID_View boundary_nodes("boundary_nodes", bnodes_lid.size());
     initView(boundary_nodes, -1);
-    Entity_GID_List boundary_node_GIDs("boundary_node_GIDs", bnodes_lid.size());
-    std::size_t nnodes_owned = mesh.getNumEntities(Entity_kind::NODE, Parallel_type::OWNED);
+    Entity_GID_View boundary_node_GIDs("boundary_node_GIDs", bnodes_lid.size());
+    std::size_t nnodes_owned = mesh.getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
     std::size_t nbn_owned = 0;
     std::size_t nbn_all = 0;
     const auto& nmap_all = getMap(Entity_kind::NODE, true);

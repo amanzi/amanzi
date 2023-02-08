@@ -35,7 +35,7 @@ NumericalIntegration::NumericalIntegration(Teuchos::RCP<const AmanziMesh::Mesh> 
 * Integrate a product of functions over a 2D or 3D triangle.
 ****************************************************************** */
 double
-IntegrateFunctionsTriangle(const std::vector<AmanziGeometry::Point>& xy,
+IntegrateFunctionsTriangle(const AmanziMesh::Point_List& xy,
                            const std::vector<const WhetStoneFunction*>& funcs,
                            int order)
 {
@@ -68,7 +68,7 @@ IntegrateFunctionsTriangle(const std::vector<AmanziGeometry::Point>& xy,
 * Integrate a product of functions over a tetrahedron
 ****************************************************************** */
 double
-IntegrateFunctionsTetrahedron(const std::vector<AmanziGeometry::Point>& xy,
+IntegrateFunctionsTetrahedron(const AmanziMesh::Point_List& xy,
                               const std::vector<const WhetStoneFunction*>& funcs,
                               int order)
 {
@@ -141,8 +141,7 @@ NumericalIntegration::IntegrateFunctionsTriangulatedCell(
 {
   double integral(0.0);
 
-  AmanziMesh::Entity_ID_List nodes;
-  std::vector<AmanziGeometry::Point> xy(d_ + 1);
+  AmanziMesh::Point_List xy(d_ + 1);
 
   const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
@@ -151,7 +150,7 @@ NumericalIntegration::IntegrateFunctionsTriangulatedCell(
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    nodes = mesh_->getFaceNodes(f);
+    auto nodes = mesh_->getFaceNodes(f);
     int nnodes = nodes.size();
 
     if (d_ == 3) {
@@ -187,12 +186,11 @@ NumericalIntegration::IntegrateFunctionsTriangulatedFace(
 {
   double integral(0.0);
   AmanziGeometry::Point x1(d_), x2(d_);
-  AmanziMesh::Entity_ID_List faces, nodes;
 
   if (d_ == 3) {
-    std::vector<AmanziGeometry::Point> xy(d_ + 1);
+    AmanziMesh::Point_List xy(d_ + 1);
 
-    nodes = mesh_->getFaceNodes(f);
+    auto nodes = mesh_->getFaceNodes(f);
     int nnodes = nodes.size();
 
     xy[0] = mesh_->getFaceCentroid(f);
@@ -205,7 +203,7 @@ NumericalIntegration::IntegrateFunctionsTriangulatedFace(
       integral += IntegrateFunctionsTriangle(xy, funcs, order);
     }
   } else if (d_ == 2) {
-    nodes = mesh_->getFaceNodes(f);
+    auto nodes = mesh_->getFaceNodes(f);
 
     x1 = mesh_->getNodeCoordinate(nodes[0]);
     x2 = mesh_->getNodeCoordinate(nodes[1]);
@@ -571,7 +569,7 @@ NumericalIntegration::IntegrateMonomialsFace_(int c,
 
       // integrate along edge (based on change of variables)
       /*
-      std::vector<AmanziGeometry::Point> tau_edge(1, tau);
+      AmanziMesh::Point_List tau_edge(1, tau);
       q.ChangeCoordinates(xe, tau_edge);
 
       int m(1);
@@ -660,9 +658,10 @@ NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
 * Create surface integration object
 ****************************************************************** */
 Polynomial
-ConvertPolynomialsToSurfacePolynomial(const AmanziGeometry::Point& xf,
-                                      const std::shared_ptr<SurfaceCoordinateSystem>& coordsys,
-                                      const std::vector<const PolynomialBase*>& polys)
+ConvertPolynomialsToSurfacePolynomial(
+  const AmanziGeometry::Point& xf,
+  const std::shared_ptr<AmanziGeometry::SurfaceCoordinateSystem>& coordsys,
+  const std::vector<const PolynomialBase*>& polys)
 {
   int d = xf.dim();
   Polynomial product(d - 1, 0);
@@ -697,8 +696,9 @@ NumericalIntegration::IntegrateMonomialsFaceReduction_(int c,
   const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
   // create a surface mesh
-  SurfaceCoordinateSystem coordsys(xf, normal);
-  Teuchos::RCP<SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
+  AmanziGeometry::SurfaceCoordinateSystem coordsys(xf, normal);
+  Teuchos::RCP<AmanziMesh::SingleFaceMesh> surf_mesh =
+    Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh_, f, coordsys));
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_cache =
     Teuchos::rcp(new AmanziMesh::Mesh(surf_mesh, Teuchos::null));
   NumericalIntegration numi_f(surf_mesh_cache);

@@ -53,7 +53,7 @@ WalkaboutCheckpoint::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh();
 
   int nnodes_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
 
   double rho = S->Get<double>("const_fluid_density");
   S->Get<CompositeVector>("volumetric_flow_rate").ScatterMasterToGhosted();
@@ -69,13 +69,13 @@ WalkaboutCheckpoint::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
     projection = true;
 
   // least-square recovery at mesh nodes
-  AmanziMesh::Entity_ID_List faces;
+  AmanziMesh::Entity_ID_View faces;
   AmanziGeometry::Point xv(d);
   WhetStone::DenseVector rhs(d), sol(d);
   WhetStone::DenseMatrix matrix(d, d);
 
   for (int v = 0; v < nnodes_owned; ++v) {
-    auto faces = mesh->getNodeFaces(v, AmanziMesh::Parallel_type::ALL);
+    auto faces = mesh->getNodeFaces(v, AmanziMesh::Parallel_kind::ALL);
     int nfaces = faces.size();
 
     rhs.PutScalar(0.0);
@@ -192,7 +192,7 @@ WalkaboutCheckpoint::CalculateData(Teuchos::RCP<State>& S,
   auto p = S->Get<CompositeVector>("pressure").ViewComponent("cell", true);
 
   int nnodes_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
 
   // process non-flow state variables
   bool flag(false);
@@ -217,7 +217,7 @@ WalkaboutCheckpoint::CalculateData(Teuchos::RCP<State>& S,
 
     for (int n = 0; n < regs.size(); ++n) {
       auto cells = mesh->getSetEntities(
-        regs[n], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        regs[n], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
       for (auto it = cells.begin(); it != cells.end(); ++it) { cell_ids[*it] = ids[n]; }
     }
@@ -254,7 +254,7 @@ WalkaboutCheckpoint::CalculateData(Teuchos::RCP<State>& S,
   int local_id;
   for (int v = 0; v < nnodes_owned; v++) {
     xv = mesh->getNodeCoordinate(v);
-    auto cells = mesh->getNodeCells(v, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     local_id = -1;

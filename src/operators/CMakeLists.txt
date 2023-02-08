@@ -228,7 +228,6 @@ if (ENABLE_TESTS)
         file(COPY ${DataFiles} DESTINATION ${OPERATORS_BINARY_DIR}/test/)
     endif()
 
-    if(0)
     # Tests require MSTK to run
     if (ENABLE_MESH_MSTK)
         # Tests: diffusion
@@ -251,7 +250,12 @@ if (ENABLE_TESTS)
                         KIND unit
                         NPROCS 2
                         SOURCE test/Main.cc test/operator_marshak.cc
-                                            test/operator_marshak_logical.cc
+                        LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+        add_amanzi_test(operators_marshak_logical operators_marshak_logical
+                        KIND unit
+                        NPROCS 1
+                        SOURCE test/Main.cc test/operator_marshak_logical.cc
                         LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
         add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
@@ -292,6 +296,7 @@ if (ENABLE_TESTS)
                         SOURCE test/Main.cc test/operator_advdiff_surface.cc
                         LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+        if(0)
         # Test: electromagnetics 
         add_amanzi_test(operators_electromagnetics operators_electromagnetics
                         KIND unit
@@ -300,6 +305,7 @@ if (ENABLE_TESTS)
                                             test/operator_magnetic_diffusion.cc
                         LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+ 
         # remap tests
         add_amanzi_test(operators_remap operators_remap
                         KIND unit
@@ -314,7 +320,7 @@ if (ENABLE_TESTS)
                         SOURCE test/Main.cc test/operator_remap_gcl.cc
                                             test/operator_remap_gcl_reinit.cc
                                             LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-    
+
         # DG advection test
         add_amanzi_test(operators_advection_dg operators_advection_dg
                         KIND unit
@@ -322,7 +328,7 @@ if (ENABLE_TESTS)
                         SOURCE test/Main.cc test/operator_advection_dg.cc
                                             test/operator_advection_dg_transient.cc
                         LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
+        endif()
     endif()
 
     add_amanzi_test(operators_diffusion_curved_face operators_diffusion_curved_face
@@ -482,6 +488,5 @@ if (ENABLE_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/operators_state_container.cc
                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-    endif() 
 endif()
                 

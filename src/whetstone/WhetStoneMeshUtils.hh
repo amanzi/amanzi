@@ -36,9 +36,9 @@ namespace WhetStone {
 ****************************************************************** */
 inline void
 PolygonCentroidWeights(const AmanziMesh::Mesh& mesh,
-                       const AmanziMesh::Entity_ID_List& nodes,
+                       const AmanziMesh::cEntity_ID_View& nodes,
                        double area,
-                       std::vector<double>& weights)
+                       AmanziMesh::Double_List& weights)
 {
   int d = mesh.getSpaceDimension();
   int nnodes = nodes.size();
@@ -75,19 +75,19 @@ inline void
 node_get_cell_faces(const AmanziMesh::Mesh& mesh,
                     const AmanziMesh::Entity_ID v,
                     const AmanziMesh::Entity_ID c,
-                    const AmanziMesh::Parallel_type ptype,
-                    AmanziMesh::Entity_ID_List* faces)
+                    const AmanziMesh::Parallel_kind ptype,
+                    AmanziMesh::Entity_ID_View* faces)
 {
-  std::vector<AmanziMesh::Entity_ID> vfaces;
+  AmanziMesh::Entity_ID_List vfaces;
   int nfaces_owned =
-    mesh.getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+    mesh.getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   const auto& faces_tmp = mesh.getCellFaces(c);
   int nfaces = faces_tmp.size();
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces_tmp[i];
-    if (ptype == AmanziMesh::Parallel_type::OWNED && f >= nfaces_owned) continue;
+    if (ptype == AmanziMesh::Parallel_kind::OWNED && f >= nfaces_owned) continue;
 
     auto nodes = mesh.getFaceNodes(f);
     int nnodes = nodes.size();
@@ -109,7 +109,7 @@ inline void
 cell_get_entities(const AmanziMesh::Mesh& mesh,
                   int c,
                   const AmanziMesh::Entity_kind kind,
-                  AmanziMesh::Entity_ID_List* entities)
+                  AmanziMesh::cEntity_ID_View* entities)
 {
   if (kind == AmanziMesh::Entity_kind::FACE) {
     *entities = mesh.getCellFaces(c);
@@ -118,10 +118,13 @@ cell_get_entities(const AmanziMesh::Mesh& mesh,
   } else if (kind == AmanziMesh::Entity_kind::NODE) {
     *entities = mesh.getCellNodes(c);
   } else if (kind == AmanziMesh::Entity_kind::CELL) {
-    Kokkos::resize(*entities, 1);
-    (*entities)[0] = c;
+    AmanziMesh::Entity_ID_View lentities;
+    Kokkos::resize(lentities, 1);
+    lentities[0] = c;
+    *entities = lentities;
   } else {
-    Kokkos::resize(*entities, 0);
+    AmanziMesh::Entity_ID_View lentities;
+    *entities = lentities;
   }
 }
 

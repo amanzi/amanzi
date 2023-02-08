@@ -69,9 +69,8 @@ Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
   {
     Epetra_MultiVector& Ye = *Y.ViewComponent("edge", true);
 
-    AmanziMesh::Entity_ID_List edges;
     for (int c = 0; c != ncells_owned; ++c) {
-      edges = mesh_->getCellEdges(c);
+      auto edges = mesh_->getCellEdges(c);
       int nedges = edges.size();
 
       WhetStone::DenseVector v(nedges), av(nedges);
@@ -126,9 +125,8 @@ Operator_Edge::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
   const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List edges;
   for (int c = 0; c != ncells_owned; ++c) {
-    edges = mesh_->getCellEdges(c);
+    auto edges = mesh_->getCellEdges(c);
     int nedges = edges.size();
 
     for (int n = 0; n != nedges; ++n) {
@@ -187,9 +185,8 @@ Operator_Edge::AssembleMatrixOp(const Op_Cell_Edge& op,
   const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List edges;
   for (int c = 0; c != ncells_owned; ++c) {
-    edges = mesh_->getCellEdges(c);
+    auto edges = mesh_->getCellEdges(c);
     int nedges = edges.size();
 
     for (int n = 0; n != nedges; ++n) {

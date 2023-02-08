@@ -89,7 +89,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
 
   {
     auto block = mesh->getSetEntities(
-      "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     for (int i = 0; i != block.size(); ++i) {
       int c = block[i];
       K[0][c] = 0.1;
@@ -99,7 +99,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
 
   {
     auto block = mesh->getSetEntities(
-      "Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      "Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     for (int i = 0; i != block.size(); ++i) {
       int c = block[i];
       K[0][c] = 0.5;
@@ -199,7 +199,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY)
 
   {
     auto block = mesh->getSetEntities(
-      "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     for (int i = 0; i != block.size(); ++i) {
       int c = block[i];
       K[0][c] = 0.1;
@@ -210,7 +210,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY)
 
   {
     auto block = mesh->getSetEntities(
-      "Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      "Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     for (int i = 0; i != block.size(); ++i) {
       int c = block[i];
       K[0][c] = 0.5;

@@ -64,17 +64,17 @@ SUITE(OPERATOR_STOKES)
 
     // create a simple rectangular mesh
     MeshFactory meshfactory(comm);
-    meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+    meshfactory.set_preference(Preference({ Framework::MSTK }));
     Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 12, 14);
 
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     int nnodes =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
     int nfaces_wghost =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     int nnodes_wghost =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
     // populate diffusion coefficient using an analytic solution
     AnalyticElasticity02 ana(mesh);
@@ -252,17 +252,17 @@ SUITE(OPERATOR_STOKES)
 
     // create a simple rectangular mesh
     MeshFactory meshfactory(comm);
-    meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+    meshfactory.set_preference(Preference({ Framework::MSTK }));
     Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 16, 20);
 
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     int nnodes =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
     int nfaces_wghost =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     int nnodes_wghost =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
     // populate diffusion coefficient using an analytic solution
     AnalyticElasticity02 ana(mesh);

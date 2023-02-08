@@ -39,7 +39,7 @@ dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                    Teuchos::RCP<Amanzi::State>& S)
 {
   int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
-                                          Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                          Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   std::string passwd("");
 
@@ -100,7 +100,7 @@ dam_break_1D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   x0 = 1000.;
 
   int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
-                                          Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                          Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     Amanzi::AmanziGeometry::Point xc = mesh->getCellCentroid(c);
@@ -125,7 +125,7 @@ error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       double& hmax)
 {
   int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
-                                          Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                          Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   err_max = 0.;
   err_L1 = 0.;
@@ -161,7 +161,7 @@ ConservationCheck(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                   double& TE)
 {
   int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
-                                          Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                          Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   double g = 9.81;
   double KE = 0., IE = 0.;
@@ -300,7 +300,7 @@ TEST(SHALLOW_WATER_1D)
   /*
   std::ofstream myfile;
   myfile.open("solution_" + std::to_string(MyPID) + ".txt");
-  int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
       AmanziGeometry::Point xc = mesh->getCellCentroid(c);
       myfile << xc[0] << " " << hh[0][c] << "\n";

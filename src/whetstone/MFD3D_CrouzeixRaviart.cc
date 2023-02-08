@@ -123,9 +123,10 @@ MFD3D_CrouzeixRaviart::H1Face(int f,
 {
   const auto& origin = mesh_->getFaceCentroid(f);
   const auto& normal = mesh_->getFaceNormal(f);
-  SurfaceCoordinateSystem coordsys(origin, normal);
+  AmanziGeometry::SurfaceCoordinateSystem coordsys(origin, normal);
 
-  Teuchos::RCP<SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
+  Teuchos::RCP<AmanziMesh::SingleFaceMesh> surf_mesh =
+    Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh_, f, coordsys));
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_cache =
     Teuchos::rcp(new AmanziMesh::Mesh(surf_mesh, Teuchos::null));
   ProjectorCell_(surf_mesh_cache, f, ve, ve, vf);

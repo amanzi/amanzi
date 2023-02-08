@@ -329,7 +329,7 @@ class CompositeVector {
   int PutScalar(const std::string& name, double scalar);
 
   // v(name,i,:) = scalar[i]
-  int PutScalar(const std::string& name, std::vector<double> scalar);
+  int PutScalar(std::string name, AmanziMesh::Double_List scalar);
 
   // this <- scalar*this
   int Scale(double scalar);
@@ -484,7 +484,7 @@ CompositeVector::PutScalar(const std::string& name, double scalar)
 }
 
 inline int
-CompositeVector::PutScalar(const std::string& name, std::vector<double> scalar)
+CompositeVector::PutScalar(std::string name, AmanziMesh::Double_List scalar)
 {
   ChangedValue(name);
   return mastervec_->PutScalar(name, scalar);

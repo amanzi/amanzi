@@ -169,7 +169,7 @@ PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
 
       // DO THE INTEGRAL: currently omega_i = 1/cv_sg?
       int ncells_sg = vec_out.Mesh()->getNumEntities(AmanziMesh::Entity_kind::CELL,
-                                                     AmanziMesh::Parallel_type::ALL);
+                                                     AmanziMesh::Parallel_kind::ALL);
       for (int c_sg = 0; c_sg != ncells_sg; ++c_sg) {
         for (int k = 0; k != nfun; ++k) { val[k] += vec_c[k][c_sg] * alpha[k]; }
       }

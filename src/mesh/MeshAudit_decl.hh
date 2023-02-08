@@ -26,10 +26,10 @@ class MeshAudit_Base {
 
  protected:
   // helpers for doing the testing
-  bool areDistinctValues_(const AmanziMesh::Entity_ID_List& list) const;
-  void writeList_(const std::vector<Entity_ID>&) const;
+  bool areDistinctValues_(const AmanziMesh::cEntity_ID_View& list) const;
+  void writeList_(const Entity_ID_List&) const;
   bool globalAny_(bool) const;
-  int isSameFace_(const AmanziMesh::Entity_ID_List, const AmanziMesh::Entity_ID_List) const;
+  int isSameFace_(const AmanziMesh::cEntity_ID_View, const AmanziMesh::cEntity_ID_View) const;
 
  protected:
   Teuchos::RCP<const Mesh_type> mesh_;
@@ -141,7 +141,7 @@ class MeshAudit_Sets : public MeshAudit_Maps<Mesh_type> {
   bool check_sets(AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
   bool check_get_set(AmanziMesh::Set_ID,
                      AmanziMesh::Entity_kind,
-                     AmanziMesh::Parallel_type,
+                     AmanziMesh::Parallel_kind,
                      const Epetra_Map&) const;
   bool check_used_set(AmanziMesh::Set_ID,
                       AmanziMesh::Entity_kind,

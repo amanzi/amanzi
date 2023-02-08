@@ -80,9 +80,9 @@ RunTest(std::string filename, std::string basis, double& l2norm)
   field->ScatterMasterToGhosted("cell");
 
   int ncells_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // memory for gradient
   CompositeVectorSpace cvs2;
@@ -133,7 +133,8 @@ RunTest(std::string filename, std::string basis, double& l2norm)
     // create list of cells where to apply limiter
     double L(0.0);
     double threshold = -4 * std::log10((double)order) - L;
-    AmanziMesh::Entity_ID_List ids;
+    AmanziMesh::Entity_ID_View ids("ids", ncells_owned);
+    std::size_t ids_count = 0;
 
     for (int c = 0; c < ncells_owned; ++c) {
       double honorm(0.0);
@@ -142,8 +143,9 @@ RunTest(std::string filename, std::string basis, double& l2norm)
       double unorm = honorm;
       for (int i = 0; i <= dim; ++i) unorm += (*field_c)[i][c] * (*field_c)[i][c];
 
-      if (unorm > 0.0 && std::log10(honorm / unorm) > threshold) { ids.push_back(c); }
+      if (unorm > 0.0 && std::log10(honorm / unorm) > threshold) { ids[ids_count++] = c; }
     }
+    Kokkos::resize(ids, ids_count);
 
     // Apply limiter
     auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh, grad));
@@ -258,9 +260,9 @@ RunTestGaussPoints(const std::string& limiter_name)
   field->ScatterMasterToGhosted("cell");
 
   int ncells_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // memory for gradient
   CompositeVectorSpace cvs2;

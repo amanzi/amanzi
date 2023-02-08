@@ -81,22 +81,26 @@ OperatorDiffusionDG(std::string solver_name,
 
   // create a mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh;
   if (dim == 2) {
     // mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 2);
     mesh = meshfactory.create("test/median7x8_filtered.exo");
     // mesh = meshfactory.create("test/triangular8_clockwise.exo");
   } else {
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 2, 3, 3, true, true);
+    auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+    fac_list->set<bool>("request edges", true);
+    fac_list->set<bool>("request faces", true);
+    MeshFactory meshfactory(comm, Teuchos::null, fac_list);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 2, 3, 3);
   }
 
   int ncells =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int ncells_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   int nfaces_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // modify diffusion coefficient
   int d = mesh->getSpaceDimension();

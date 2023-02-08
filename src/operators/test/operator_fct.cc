@@ -76,17 +76,17 @@ RunTest(int n, int d)
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh = (d == 2) ?
                                     meshfactory.create(0.0, 0.0, 1.0, 1.0, n, n) :
                                     meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
 
   int nfaces_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   int ncells_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   int nfaces_wghost =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // initialize data
   // -- field
@@ -100,7 +100,6 @@ RunTest(int n, int d)
 
   // -- flux
   int dir;
-  AmanziMesh::Entity_ID_List cells;
 
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
@@ -120,11 +119,11 @@ RunTest(int n, int d)
 
   double dt(0.03 / n);
   for (int f = 0; f < nfaces_owned; f++) {
-    cells = mesh->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
     if (cells.size() == 2) {
       const auto& xf = mesh->getFaceCentroid(f);
-      const auto& normal = mesh->getFaceNormal(f, &dir);
+      const auto& normal = mesh->getFaceNormal(f, cells[0], &dir);
       const auto& xc =
         (dir == 1) ? mesh->getCellCentroid(cells[0]) : mesh->getCellCentroid(cells[1]);
 

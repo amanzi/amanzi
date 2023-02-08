@@ -642,7 +642,7 @@ TEST(PROJECTORS_POLYGON_PK)
   // test piecewise linear deformation
   std::cout << "\nTest: HO Lagrange projectors for pentagon (piece-wice linear deformation)"
             << std::endl;
-  std::vector<AmanziGeometry::Point> vv;
+  AmanziMesh::Point_List vv;
   vv.push_back(AmanziGeometry::Point(0.0, 0.0));
   vv.push_back(AmanziGeometry::Point(0.0, -0.1));
   vv.push_back(AmanziGeometry::Point(0.1, 0.0));
@@ -790,7 +790,7 @@ SerendipityProjectorPolygon()
   // test piecewise linear deformation (part I)
   std::cout << "\nTest: HO Sependipity Lagrange projectors for pentagon (piece-wice linear)"
             << std::endl;
-  std::vector<AmanziGeometry::Point> vv;
+  AmanziMesh::Point_List vv;
   vv.push_back(AmanziGeometry::Point(0.0, 0.0));
   vv.push_back(AmanziGeometry::Point(0.05, -0.1));
   vv.push_back(AmanziGeometry::Point(0.1, 0.0));

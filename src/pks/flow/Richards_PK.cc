@@ -1190,8 +1190,7 @@ Richards_PK::DeriveBoundaryFaceValue(int f,
   } else {
     const auto& mu_cell = *S_->Get<CV_t>(viscosity_liquid_key_).ViewComponent("cell");
     const auto& u_cell = *u.ViewComponent("cell");
-    AmanziMesh::Entity_ID_List cells;
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int c = cells[0];
 
     double pc_shift(atm_pressure_);

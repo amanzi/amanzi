@@ -56,7 +56,7 @@ lake_at_rest_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   double x, y, ht, u, v;
 
   int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
-                                          Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                          Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells_owned; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
@@ -87,9 +87,9 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   double g = norm(S->Get<AmanziGeometry::Point>("gravity"));
 
   int ncells_wghost = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
-                                           Amanzi::AmanziMesh::Parallel_type::ALL);
+                                           Amanzi::AmanziMesh::Parallel_kind::ALL);
   int nnodes_wghost = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
-                                           Amanzi::AmanziMesh::Parallel_type::ALL);
+                                           Amanzi::AmanziMesh::Parallel_kind::ALL);
   std::string passwd("");
 
   auto& B_c =
@@ -129,10 +129,9 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   for (int c = 0; c < ncells_wghost; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
 
-    Amanzi::AmanziMesh::Entity_ID_List cfaces, cnodes, cedges;
-    cfaces = mesh->getCellFaces(c);
-    cnodes = mesh->getCellNodes(c);
-    cedges = mesh->getCellEdges(c);
+    auto cfaces = mesh->getCellFaces(c);
+    auto cnodes = mesh->getCellNodes(c);
+    auto cedges = mesh->getCellEdges(c);
 
     int nfaces_cell = cfaces.size();
 
@@ -143,8 +142,7 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       Amanzi::AmanziGeometry::Point x0, x1;
       int edge = cfaces[f];
 
-      Amanzi::AmanziMesh::Entity_ID_List face_nodes;
-      face_nodes = mesh->getFaceNodes(edge);
+      auto face_nodes = mesh->getFaceNodes(edge);
       int n0 = face_nodes[0], n1 = face_nodes[1];
 
       x0 = mesh->getNodeCoordinate(n0);
@@ -193,7 +191,7 @@ error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       double& hmax)
 {
   int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
-                                          Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                          Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   err_max = 0.0;
   err_L1 = 0.0;

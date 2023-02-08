@@ -59,12 +59,12 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
     if (scaling.HasComponent("cell") &&
         scaling.ViewComponent("cell", false)->MyLength() ==
           surf_mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,
-                                    AmanziMesh::Parallel_type::OWNED)) {
+                                    AmanziMesh::Parallel_kind::OWNED)) {
       Op_Cell_Cell::Rescale(scaling);
     }
     if (scaling.HasComponent("face") &&
         scaling.ViewComponent("face", false)->MyLength() ==
-          mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED)) {
+          mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED)) {
       const Epetra_MultiVector& s_f = *scaling.ViewComponent("face", false);
       for (int k = 0; k != s_f.NumVectors(); ++k) {
         for (int sc = 0; sc != diag->MyLength(); ++sc) {

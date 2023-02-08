@@ -38,12 +38,12 @@ namespace WhetStone {
 
 // non-member functions
 double
-IntegrateFunctionsTriangle(const std::vector<AmanziGeometry::Point>& xy,
+IntegrateFunctionsTriangle(const AmanziMesh::Point_List& xy,
                            const std::vector<const WhetStoneFunction*>& funcs,
                            int order);
 
 double
-IntegrateFunctionsTetrahedron(const std::vector<AmanziGeometry::Point>& xy,
+IntegrateFunctionsTetrahedron(const AmanziMesh::Point_List& xy,
                               const std::vector<const WhetStoneFunction*>& funcs,
                               int order);
 
@@ -112,7 +112,7 @@ class NumericalIntegration {
   }
 
   // integral over a simplex
-  double IntegrateFunctionsSimplex(const std::vector<AmanziGeometry::Point>& xy,
+  double IntegrateFunctionsSimplex(const AmanziMesh::Point_List& xy,
                                    const std::vector<const WhetStoneFunction*>& funcs,
                                    int order) const
   {
@@ -183,9 +183,10 @@ class NumericalIntegration {
 
 //  -- trace of polynomials on manifold
 Polynomial
-ConvertPolynomialsToSurfacePolynomial(const AmanziGeometry::Point& xf,
-                                      const std::shared_ptr<SurfaceCoordinateSystem>& coordsys,
-                                      const std::vector<const PolynomialBase*>& polys);
+ConvertPolynomialsToSurfacePolynomial(
+  const AmanziGeometry::Point& xf,
+  const std::shared_ptr<AmanziGeometry::SurfaceCoordinateSystem>& coordsys,
+  const std::vector<const PolynomialBase*>& polys);
 
 } // namespace WhetStone
 } // namespace Amanzi

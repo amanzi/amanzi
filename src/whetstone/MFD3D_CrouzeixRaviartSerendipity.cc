@@ -299,7 +299,7 @@ MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(int c,
     const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
     // local coordinate system with origin at face centroid
-    SurfaceCoordinateSystem coordsys(xf, normal);
+    AmanziGeometry::SurfaceCoordinateSystem coordsys(xf, normal);
 
     polys[0] = &(vf[n]);
 

@@ -79,9 +79,9 @@ struct Problem {
   void FillCoefs(const CompositeVector& u, const CompositeVector& v)
   {
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     int nfaces =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
     // kr0,1 on faces, always upwinded
     Epetra_MultiVector& kr0_f = *kr0->ViewComponent("face", true);
@@ -91,8 +91,7 @@ struct Problem {
     const Epetra_MultiVector& v_c = *v.ViewComponent("cell", true);
 
     for (int f = 0; f != nfaces; ++f) {
-      AmanziMesh::Entity_ID_List cells;
-      cells = mesh->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+      auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
       if (cells.size() == 2) {
         if (u_c[0][cells[0]] > u_c[0][cells[1]]) {
@@ -148,8 +147,7 @@ struct Problem {
       Epetra_MultiVector& kr1_v_f = *kr1_v->ViewComponent("face", false);
 
       for (int f = 0; f != nfaces; ++f) {
-        AmanziMesh::Entity_ID_List cells;
-        cells = mesh->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+        auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
         if (cells.size() == 2) {
           if (u_c[0][cells[0]] > u_c[0][cells[1]]) {
@@ -211,7 +209,7 @@ struct Problem {
     std::vector<double>& bc_value1 = bc1->bc_value();
 
     int nfaces_wghost =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     for (int f = 0; f < nfaces_wghost; f++) {
       const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
 
@@ -219,7 +217,7 @@ struct Problem {
         double area = mesh->getFaceArea(f);
         int dir = 0;
         int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
-        const AmanziGeometry::Point& normal = mesh->getFaceNormal(f, &dir);
+        const AmanziGeometry::Point& normal = mesh->getFaceNormal(f, c, &dir);
 
         bc_model0[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value0[f] = ana->velocity_exact0(xf, 0.0) * normal / area;
@@ -230,7 +228,7 @@ struct Problem {
         double area = mesh->getFaceArea(f);
         int dir = 0;
         int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
-        const AmanziGeometry::Point& normal = mesh->getFaceNormal(f, &dir);
+        const AmanziGeometry::Point& normal = mesh->getFaceNormal(f, c, &dir);
 
         // y = 0 boundary
         bc_model0[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -242,7 +240,7 @@ struct Problem {
         double area = mesh->getFaceArea(f);
         int dir = 0;
         int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
-        const AmanziGeometry::Point& normal = mesh->getFaceNormal(f, &dir);
+        const AmanziGeometry::Point& normal = mesh->getFaceNormal(f, c, &dir);
 
         // x = 1 boundary
         bc_model0[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -263,7 +261,7 @@ struct Problem {
   void MakeTensorCoefs()
   {
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
     // tensor list
     K00 = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -284,7 +282,7 @@ struct Problem {
   void MakeScalarTensorCoefs()
   {
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
     // tensor list
     K00 = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -334,7 +332,7 @@ struct Problem {
   void FillSolution(CompositeVector& u, CompositeVector& v)
   {
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     Epetra_MultiVector& u_c = *u.ViewComponent("cell", false);
     Epetra_MultiVector& v_c = *v.ViewComponent("cell", false);
 
@@ -346,7 +344,7 @@ struct Problem {
 
     if (u.HasComponent("face")) {
       int nfaces =
-        mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+        mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
       Epetra_MultiVector& u_f = *u.ViewComponent("face", false);
       Epetra_MultiVector& v_f = *v.ViewComponent("face", false);
 
@@ -359,7 +357,7 @@ struct Problem {
 
     if (u.HasComponent("boundary_face")) {
       int nboundary_faces = mesh->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE,
-                                                 AmanziMesh::Parallel_type::OWNED);
+                                                 AmanziMesh::Parallel_kind::OWNED);
       Epetra_MultiVector& u_f = *u.ViewComponent("boundary_face", false);
       Epetra_MultiVector& v_f = *v.ViewComponent("boundary_face", false);
 
@@ -521,7 +519,7 @@ struct Problem {
     f1 = Teuchos::rcp(new CompositeVector(src_space));
 
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     Epetra_MultiVector& f0_c = *f0->ViewComponent("cell", false);
     Epetra_MultiVector& f1_c = *f1->ViewComponent("cell", false);
 
@@ -544,7 +542,7 @@ struct Problem {
   void Report(CompositeVector& u, CompositeVector& v)
   {
     std::cout << "Problem with "
-              << mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL)
+              << mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL)
               << " on " << mesh->getComm()->NumProc() << " cores with discretization \""
               << discretization << "\"" << std::endl;
     std::cout << "Solution:" << std::endl;
@@ -569,7 +567,7 @@ struct Problem {
     fid.open(filename.c_str());
 
     int ncells =
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     Epetra_MultiVector& e0_c = *err0.ViewComponent("cell", false);
     Epetra_MultiVector& e1_c = *err1.ViewComponent("cell", false);
 
@@ -583,7 +581,7 @@ struct Problem {
 
     if (faces && err0.HasComponent("face")) {
       int nfaces =
-        mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+        mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
       Epetra_MultiVector& e0_f = *err0.ViewComponent("face", false);
       Epetra_MultiVector& e1_f = *err1.ViewComponent("face", false);
 

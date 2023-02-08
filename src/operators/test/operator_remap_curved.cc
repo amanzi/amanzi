@@ -389,9 +389,9 @@ RemapTestsCurved(std::string file_name,
   mesh1->BuildCache();
 
   int ncells_owned =
-    mesh0->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh0->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost =
-    mesh0->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    mesh0->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // create and initialize cell-based field
   CompositeVectorSpace cvs1, cvs2;
@@ -481,7 +481,7 @@ RemapTestsCurved(std::string file_name,
   }
 
   // calculate error in the new basis
-  Entity_ID_List nodes;
+  Entity_ID_View nodes;
   AmanziGeometry::Point v0(dim), v1(dim), tau(dim);
 
   double pnorm, l2_err, inf_err, l20_err, l10_err, inf0_err;
