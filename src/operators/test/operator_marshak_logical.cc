@@ -67,7 +67,7 @@ RunTestMarshakLogical(std::string op_list_name)
   MeshLogicalFactory fac(comm, gm);
 
   AmanziGeometry::Point begin(0., 0.5, 0.5), end(1., 0.5, 0.5);
-  AmanziMesh::Entity_ID_List cells, faces;
+  std::vector<AmanziMesh::Entity_ID> cells, faces;
   fac.AddSegment(100,
                  begin,
                  end,

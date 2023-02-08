@@ -64,7 +64,7 @@ SUITE(OPERATOR_STOKES)
 
     // create a simple rectangular mesh
     MeshFactory meshfactory(comm);
-    meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+    meshfactory.set_preference(Preference({ Framework::MSTK }));
     Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 12, 14);
 
     int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -248,7 +248,7 @@ SUITE(OPERATOR_STOKES)
 
     // create a simple rectangular mesh
     MeshFactory meshfactory(comm);
-    meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+    meshfactory.set_preference(Preference({ Framework::MSTK }));
     Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 16, 20);
 
     int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
