@@ -72,7 +72,7 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<DenseVector> {
       for (int i = 0; i < ncells; ++i) {
         double s0 = 1.0 + std::pow((*u0_)(i), 2);
         double s1 = 1.0 + std::pow((*u)(i), 2);
-        (*f)(i) += (s1 - s0) * op_->mesh_getCellVolume(i) / dt_;
+        (*f)(i) += (s1 - s0) * op_->mesh_cell_volume(i) / dt_;
       }
     }
   }
@@ -170,8 +170,8 @@ MiniDiffusion1D_Nonlinear(double bcl, int type_l, double bcr, int type_r)
 
     // create right-hand side
     for (int i = 0; i < ncells; ++i) {
-      double xc = op->mesh_getCellCentroid(i);
-      double hc = op->mesh_getCellVolume(i);
+      double xc = op->mesh_cell_centroid(i);
+      double hc = op->mesh_cell_volume(i);
       (*rhs)(i) = -(10 * std::pow(xc, 4) + 2) * hc;
     }
 
@@ -196,8 +196,8 @@ MiniDiffusion1D_Nonlinear(double bcl, int type_l, double bcr, int type_r)
     ph1_err[loop] = 0.0;
 
     for (int i = 0; i < ncells; ++i) {
-      hc = op->mesh_getCellVolume(i);
-      xc = op->mesh_getCellCentroid(i);
+      hc = op->mesh_cell_volume(i);
+      xc = op->mesh_cell_centroid(i);
       err = xc * xc - (*sol)(i);
 
       pl2_err[loop] += err * err * hc;
@@ -272,8 +272,8 @@ MiniDiffusion1D_Transient(int type_l, int type_r)
 
     // update right-hand side and boundary conditions
     for (int i = 0; i < ncells; ++i) {
-      double xc = op->mesh_getCellCentroid(i);
-      double hc = op->mesh_getCellVolume(i);
+      double xc = op->mesh_cell_centroid(i);
+      double hc = op->mesh_cell_volume(i);
       (*rhs)(i) = 2 * t * (std::pow(xc, 4) * (1.0 - 5 * t * t) - 1.0) * hc;
     }
     bcr = t;
@@ -288,8 +288,8 @@ MiniDiffusion1D_Transient(int type_l, int type_r)
   double hc, xc, err, pnorm(1.0), hnorm(1.0);
 
   for (int i = 0; i < ncells; ++i) {
-    hc = op->mesh_getCellVolume(i);
-    xc = op->mesh_getCellCentroid(i);
+    hc = op->mesh_cell_volume(i);
+    xc = op->mesh_cell_centroid(i);
     err = xc * xc - (*u1)(i);
 
     pl2_err += err * err * hc;

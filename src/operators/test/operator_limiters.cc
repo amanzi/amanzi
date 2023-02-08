@@ -54,7 +54,7 @@ TEST(LIMITER_LINEAR_FUNCTION_2D)
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::MOAB }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 7, 7);
 
@@ -190,7 +190,7 @@ TEST(LIMITER_LINEAR_FUNCTION_3D)
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 6, 5);
 
@@ -313,7 +313,7 @@ TEST(LIMITER_SMOOTH_FIELD_2D)
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   for (int n = 14; n < 100; n *= 2) {
     Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, n, n - 1);
@@ -452,7 +452,7 @@ TEST(LIMITER_SMOOTH_FIELD_3D)
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   for (int n = 14; n < 50; n *= 2) {
     Teuchos::RCP<const Mesh> mesh =
@@ -595,7 +595,7 @@ SmoothField2DPoly(double extension)
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
@@ -735,7 +735,7 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES)
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/fractures.exo");
 
   // create and initialize cell-based field

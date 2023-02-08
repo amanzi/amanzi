@@ -51,7 +51,7 @@ SUITE(SURFACE_SUBSURFACE)
     int ncells_subsurf =
       mesh_subsurf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
     auto mesh_surf =
-      meshfactory.create(mesh_subsurf, { "surface" }, AmanziMesh::Entity_kind::FACE, true, true, false);
+      meshfactory.create(mesh_subsurf, { "surface" }, AmanziMesh::Entity_kind::FACE, true);
     int ncells_surf =
       mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
@@ -114,7 +114,7 @@ SUITE(SURFACE_SUBSURFACE)
     AmanziMesh::MeshFactory meshfactory(comm, gm);
     auto mesh_subsurf = meshfactory.create(-10, -10, -10, 10, 10, 0, 3, 3, 3);
     auto mesh_surf =
-      meshfactory.create(mesh_subsurf, { "surface" }, Amanzi::AmanziMesh::Entity_kind::FACE, true, true, false);
+      meshfactory.create(mesh_subsurf, { "surface" }, Amanzi::AmanziMesh::Entity_kind::FACE, true);
     int ncells_surf =
       mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
@@ -247,7 +247,7 @@ SUITE(SURFACE_SUBSURFACE)
     AmanziMesh::MeshFactory meshfactory(comm, gm);
     auto mesh_subsurf = meshfactory.create(-10, -10, -10, 10, 10, 0, 1, 1, 2);
     auto mesh_surf =
-      meshfactory.create(mesh_subsurf, { "surface" }, Amanzi::AmanziMesh::Entity_kind::FACE, true, true, false);
+      meshfactory.create(mesh_subsurf, { "surface" }, Amanzi::AmanziMesh::Entity_kind::FACE, true);
     int ncells_surf =
       mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 

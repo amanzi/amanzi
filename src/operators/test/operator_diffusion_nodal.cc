@@ -62,7 +62,7 @@ TEST(OPERATOR_DIFFUSION_NODAL)
 
   // create an SIMPLE mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 30, 30);
   RCP<const Mesh> mesh = meshfactory.create("test/median15x16.exo");
 
@@ -214,7 +214,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS)
 
   // create an SIMPLE mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4);
   RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 

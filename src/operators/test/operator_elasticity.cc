@@ -61,7 +61,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS)
   // -- geometric model is not created. Instead, we specify boundary conditions
   // -- using centroids of mesh faces.
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 5);
 
   // -- general information about mesh
