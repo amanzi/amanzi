@@ -813,7 +813,6 @@ Transport_PK::AddMultiscalePorosity_(double t_old, double t_new, double t_int1, 
 
   double flux_liquid, wcm0, wcm1, wcf0, wcf1;
   double dtg, dts, t1, t2, tmp0, tmp1, tfp0, tfp1, a, b;
-  std::vector<AmanziMesh::Entity_ID> block;
 
   dtg = t_new - t_old;
   dts = t_int2 - t_int1;
@@ -934,9 +933,8 @@ Transport_PK::ComputeBCs_(std::vector<int>& bc_model, std::vector<double>& bc_va
     bc_value[i] = 0.0;
   }
 
-  AmanziMesh::Entity_ID_View cells;
   for (int f = 0; f < nfaces_wghost; f++) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     if (cells.size() == 1) bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
   }
 
@@ -991,8 +989,6 @@ Transport_PK::IdentifyUpwindCells()
   upwind_flux_.resize(nfaces_wghost);
   downwind_flux_.resize(nfaces_wghost);
 
-  AmanziMesh::Entity_ID_View cells;
-
   // the case of fluxes that use unique face normal even if there
   // exists more than one flux on a face
   if (mesh_->getSpaceDimension() == mesh_->getManifoldDimension()) {
@@ -1009,7 +1005,7 @@ Transport_PK::IdentifyUpwindCells()
 
       for (int i = 0; i < faces.size(); i++) {
         int f = faces[i];
-        cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
         int g = map->FirstPointInElement(f);
         int ndofs = map->ElementSize(f);

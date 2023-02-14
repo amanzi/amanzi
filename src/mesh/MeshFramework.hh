@@ -69,7 +69,7 @@ struct MeshFrameworkAlgorithms {
   // virtual std::pair<double, AmanziGeometry::Point>
   // computeCellGeometry(const Mesh& mesh, const Entity_ID c) const;
 
-  virtual std::tuple<double, AmanziGeometry::Point, Point_View>
+  virtual std::tuple<double, AmanziGeometry::Point, cPoint_View>
   computeFaceGeometry(const MeshFramework& mesh, const Entity_ID f) const;
 
   // virtual std::tuple<double, AmanziGeometry::Point, Point_View>
@@ -181,7 +181,7 @@ class MeshFramework  {
 
   // DEVELOPER NOTE: serial meshes need not provide this method -- the default
   // returns a list of LIDs.
-  virtual Entity_GID_View getEntityGIDs(const Entity_kind kind, const Parallel_kind ptype) const;
+  virtual cEntity_GID_View getEntityGIDs(const Entity_kind kind, const Parallel_kind ptype) const;
 
   // corresponding entity in the parent mesh
   virtual Entity_ID getEntityParent(const Entity_kind kind, const Entity_ID entid) const;
@@ -202,9 +202,9 @@ class MeshFramework  {
   virtual AmanziGeometry::Point getFaceCentroid(const Entity_ID f) const;
   virtual AmanziGeometry::Point getEdgeCentroid(const Entity_ID e) const;
 
-  virtual Point_View getCellCoordinates(const Entity_ID c) const;
-  virtual Point_View getFaceCoordinates(const Entity_ID f) const;
-  virtual Point_View getEdgeCoordinates(const Entity_ID e) const;
+  virtual cPoint_View getCellCoordinates(const Entity_ID c) const;
+  virtual cPoint_View getFaceCoordinates(const Entity_ID f) const;
+  virtual cPoint_View getEdgeCoordinates(const Entity_ID e) const;
 
   // extent
   virtual double getCellVolume(const Entity_ID c) const;
@@ -217,7 +217,7 @@ class MeshFramework  {
     return algorithms_->computeCellGeometry(*this, c);
   }
 
-  std::tuple<double, AmanziGeometry::Point, Point_View>
+  std::tuple<double, AmanziGeometry::Point, cPoint_View>
   computeFaceGeometry(const Entity_ID f) const {
     return algorithms_->computeFaceGeometry(*this, f);
   }
@@ -281,13 +281,13 @@ class MeshFramework  {
   // effect of this is that master and ghost entities will have the same
   // hierarchical topology.
   void getCellFaces(const Entity_ID c,
-                    Entity_ID_View& faces) const {
+                    cEntity_ID_View& faces) const {
     getCellFacesAndDirs(c, faces, nullptr);
   }
 
   void getCellFaceDirs(const Entity_ID c,
-                       Entity_Direction_View& dirs) const {
-    Entity_ID_View faces;
+                       cEntity_Direction_View& dirs) const {
+    cEntity_ID_View faces;
     getCellFacesAndDirs(c, faces, &dirs);
   }
 
@@ -304,20 +304,20 @@ class MeshFramework  {
   // direction as the cell polygon, and -1 otherwise
   virtual void getCellFacesAndDirs(
     const Entity_ID c,
-    Entity_ID_View& faces,
-    Entity_Direction_View * const dirs) const = 0;
+    cEntity_ID_View& faces,
+    cEntity_Direction_View * const dirs) const = 0;
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   virtual void getCellFacesAndBisectors(
           const Entity_ID cellid,
-          Entity_ID_View& faceids,
-          Point_View * const bisectors) const;
+          cEntity_ID_View& faceids,
+          cPoint_View * const bisectors) const;
 
-  virtual void getCellEdges(const Entity_ID c, Entity_ID_View& edges) const;
-  virtual void getCellNodes(const Entity_ID c, Entity_ID_View& nodes) const;
+  virtual void getCellEdges(const Entity_ID c, cEntity_ID_View& edges) const;
+  virtual void getCellNodes(const Entity_ID c, cEntity_ID_View& nodes) const;
 
   void getFaceEdges(const Entity_ID f,
-                  Entity_ID_View& edges) const {
+                  cEntity_ID_View& edges) const {
     getFaceEdgesAndDirs(f, edges);
   }
 
@@ -336,16 +336,16 @@ class MeshFramework  {
   // this direction cannot be relied upon to compute, say, a contour
   // integral around the 2D cell.
   virtual void getFaceEdgesAndDirs(const Entity_ID f,
-          Entity_ID_View& edges,
-          Entity_Direction_View * const dirs=nullptr) const;
+          cEntity_ID_View& edges,
+          cEntity_Direction_View * const dirs=nullptr) const;
 
   // Get nodes of face
   //
   // In 3D, the nodes of the face are returned in ccw order consistent
   // with the face normal.
-  virtual void getFaceNodes(const Entity_ID f, Entity_ID_View& nodes) const = 0;
+  virtual void getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) const = 0;
 
-  virtual void getEdgeNodes(const Entity_ID e, Entity_ID_View& nodes) const;
+  virtual void getEdgeNodes(const Entity_ID e, cEntity_ID_View& nodes) const;
 
   //-------------------
   // Upward adjacencies
@@ -355,7 +355,7 @@ class MeshFramework  {
   // processors
   virtual void getFaceCells(const Entity_ID f,
                             const Parallel_kind ptype,
-                            Entity_ID_View& cells) const = 0;
+                            cEntity_ID_View& cells) const = 0;
 
   // Cells of a given Parallel_kind connected to an edge
   //
@@ -363,28 +363,28 @@ class MeshFramework  {
   // edges on different processors
   virtual void getEdgeCells(const Entity_ID edgeid,
                             const Parallel_kind ptype,
-                            Entity_ID_View& cellids) const;
+                            cEntity_ID_View& cellids) const;
 
   // Faces of type 'ptype' connected to an edge
   // NOTE: The order of faces is not guaranteed to be the same for
   // corresponding edges on different processors
   virtual void getEdgeFaces(const Entity_ID edgeid,
                             const Parallel_kind ptype,
-                            Entity_ID_View& faceids) const;
+                            cEntity_ID_View& faceids) const;
 
   // Cells of type 'ptype' connected to a node
   // NOTE: The order of cells is not guaranteed to be the same for
   // corresponding nodes on different processors
   virtual void getNodeCells(const Entity_ID nodeid,
                             const Parallel_kind ptype,
-                            Entity_ID_View& cellids) const;
+                            cEntity_ID_View& cellids) const;
 
   // Faces of type parallel 'ptype' connected to a node
   // NOTE: The order of faces is not guarnateed to be the same for
   // corresponding nodes on different processors
   virtual void getNodeFaces(const Entity_ID nodeid,
                             const Parallel_kind ptype,
-                            Entity_ID_View& faceids) const = 0;
+                            cEntity_ID_View& faceids) const = 0;
 
   // Edges of type 'ptype' connected to a node
   //
@@ -392,7 +392,7 @@ class MeshFramework  {
   // node on different processors
   virtual void getNodeEdges(const Entity_ID nodeid,
                           const Parallel_kind ptype,
-                          Entity_ID_View& edgeids) const;
+                          cEntity_ID_View& edgeids) const;
 
   //--------------------------------------------------------------
   // Mesh Sets for ICs, BCs, Material Properties and whatever else
@@ -407,13 +407,13 @@ class MeshFramework  {
   virtual void getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
           const Entity_kind kind,
           const Parallel_kind ptype,
-          Entity_ID_View& entids) const;
+          cEntity_ID_View& entids) const;
 
   void hasEdgesOrThrow() const;
 
 protected:
   void throwNotImplemented_(const std::string& fname) const;
-  Cell_kind getCellType_(const Entity_ID c, const Entity_ID_View& faces) const;
+  Cell_kind getCellType_(const Entity_ID c, const cEntity_ID_View& faces) const;
 
  protected:
   Comm_ptr_type comm_;

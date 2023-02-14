@@ -170,8 +170,6 @@ AnalyticElasticityBase::VectorNodeError(Amanzi::CompositeVector& u,
   inf_err = 0.0;
 
   // calculate nodal volumes
-  Amanzi::AmanziMesh::Entity_ID_View nodes;
-
   Teuchos::RCP<Amanzi::CompositeVectorSpace> cvs = Teuchos::rcp(new Amanzi::CompositeVectorSpace());
   cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent("node", Amanzi::AmanziMesh::Entity_kind::NODE, 1);
 
@@ -180,7 +178,7 @@ AnalyticElasticityBase::VectorNodeError(Amanzi::CompositeVector& u,
   vol.PutScalar(0.0);
 
   for (int c = 0; c != ncells_owned; ++c) {
-    nodes = mesh_->getCellNodes(c);
+    auto nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
 
     for (int i = 0; i < nnodes; i++) { vol_node[0][nodes[i]] += mesh_->getCellVolume(c) / nnodes; }

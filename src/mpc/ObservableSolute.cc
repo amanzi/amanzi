@@ -70,8 +70,7 @@ ObservableSolute::ComputeRegionSize()
     obs_boundary_ = true;
     for (int i = 0; i != region_size_; ++i) {
       int f = entity_ids_[i];
-      Amanzi::AmanziMesh::Entity_ID_View cells;
-      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       if (cells.size() == 2) {
         obs_boundary_ = false;
         break;
@@ -185,12 +184,11 @@ ObservableSolute::ComputeObservation(State& S,
              variable_ == comp_names_[tcc_index_] + " breakthrough curve") {
     const auto& flowrate = *S.Get<CompositeVector>(darcy_key).ViewComponent("face");
     const auto& fmap = *S.Get<CompositeVector>(darcy_key).Map().Map("face", true);
-    Amanzi::AmanziMesh::Entity_ID_View cells;
 
     if (obs_boundary_) { // observation is on a boundary set
       for (int i = 0; i != region_size_; ++i) {
         int f = entity_ids_[i];
-        cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
 
         int sign, c = cells[0];
         mesh_->getFaceNormal(f, c, &sign);
@@ -205,7 +203,7 @@ ObservableSolute::ComputeObservation(State& S,
     } else if (obs_planar_) { // observation is on an interior planar set
       for (int i = 0; i != region_size_; ++i) {
         int f = entity_ids_[i];
-        cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
 
         int csign, c = cells[0];
         const AmanziGeometry::Point& face_normal = mesh_->getFaceNormal(f, c, &csign);

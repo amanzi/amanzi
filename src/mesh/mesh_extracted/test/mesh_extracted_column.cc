@@ -97,14 +97,14 @@ TEST(COLUMN_MESH_3D)
   CHECK_EQUAL(20,nnodes);
 
   for (int j = 0; j < ncells; j++) {
-    AmanziMesh::Entity_ID_View cfaces;
-    AmanziMesh::Entity_Direction_View cfdirs;
+    AmanziMesh::cEntity_ID_View cfaces;
+    AmanziMesh::cEntity_Direction_View cfdirs;
     colmesh.getCellFacesAndDirs(j,cfaces,&cfdirs);
     CHECK_EQUAL(2,cfaces.size());
   }
 
   for (int j = 0; j < nfaces; j++) {
-    AmanziMesh::Entity_ID_View fcells;
+    AmanziMesh::cEntity_ID_View fcells;
     colmesh.getFaceCells(j,AmanziMesh::Parallel_kind::OWNED,fcells);
 
     if (j == 0) {
@@ -245,15 +245,15 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   CHECK_EQUAL(20,nnodes);
 
   for (int j = 0; j < ncells; j++) {
-    AmanziMesh::Entity_ID_View cfaces;
-    AmanziMesh::Entity_Direction_View cfdirs;
+    AmanziMesh::cEntity_ID_View cfaces;
+    AmanziMesh::cEntity_Direction_View cfdirs;
     colmesh.getCellFacesAndDirs(j,cfaces,&cfdirs);
 
     CHECK_EQUAL(2,cfaces.size());
   }
 
   for (int j = 0; j < nfaces; j++) {
-    AmanziMesh::Entity_ID_View fcells;
+    AmanziMesh::cEntity_ID_View fcells;
     colmesh.getFaceCells(j,AmanziMesh::Parallel_kind::OWNED,fcells);
 
     if (j == 0) {
@@ -317,7 +317,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   // base face times the distance between the centroids of the lower
   // face of the cell and the upper face of the cell
   for (int j = 0; j < ncells; j++) {
-    AmanziMesh::Entity_ID_View cfaces;
+    AmanziMesh::cEntity_ID_View cfaces;
     colmesh.getCellFaces(j,cfaces);
 
     AmanziGeometry::Point locen(3), hicen(3);

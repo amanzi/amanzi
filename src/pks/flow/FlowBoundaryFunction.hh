@@ -63,8 +63,8 @@ class FlowBoundaryFunction : public PK_DomainFunction {
   void CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                  const std::string& region);
 
-  void set_intersection_(const AmanziMesh::Entity_ID_View& v1,
-                         const AmanziMesh::Entity_ID_View& v2,
+  void set_intersection_(const AmanziMesh::cEntity_ID_View& v1,
+                         const AmanziMesh::cEntity_ID_View& v2,
                          std::vector<AmanziMesh::Entity_ID>& vv);
 
  private:

@@ -85,8 +85,7 @@ TEST(ELASTICITY_STIFFNESS_2D)
     for (int i = 0; i < nrows; i++) CHECK(A(i, i) > 0.0);
 
     // verify exact integration property
-    AmanziMesh::Entity_ID_View nodes;
-    nodes = mesh->getCellNodes(cell);
+    auto nodes = mesh->getCellNodes(cell);
 
     int d = mesh->getSpaceDimension();
     Point p(d);
@@ -150,8 +149,7 @@ TEST(ELASTICITY_STIFFNESS_3D)
   for (int i = 0; i < nrows; i++) CHECK(A(i, i) > 0.0);
 
   // verify exact integration property
-  AmanziMesh::Entity_ID_View nodes;
-  nodes = mesh->getCellNodes(cell);
+  auto nodes = mesh->getCellNodes(cell);
 
   int d = mesh->getSpaceDimension();
   Point p(d);

@@ -101,11 +101,12 @@ std::size_t MeshSurfaceCell::getNumEntities(const Entity_kind kind,
 //---------------------
 // Get nodes of a cell
 void MeshSurfaceCell::getCellNodes(const Entity_ID cellid,
-        Entity_ID_View& nodeids) const
+        cEntity_ID_View& nodeids) const
 {
   AMANZI_ASSERT(cellid == 0);
-  Kokkos::resize(nodeids, nodes_.size());
-  for (int i=0; i!=nodes_.size(); ++i) nodeids[i] = i;
+  Entity_ID_View lnodeids("lnodesids", nodes_.size()); 
+  for (int i=0; i!=nodes_.size(); ++i) lnodeids[i] = i;
+  nodeids = lnodeids; 
 }
 
 
@@ -116,12 +117,13 @@ void MeshSurfaceCell::getCellNodes(const Entity_ID cellid,
 // with the face normal
 // In 2D, nfnodes is 2
 void MeshSurfaceCell::getFaceNodes(const Entity_ID faceid,
-        Entity_ID_View& nodeids) const
+        cEntity_ID_View& nodeids) const
 {
   AMANZI_ASSERT(faceid < nodes_.size());
-  Kokkos::resize(nodeids, 2); 
-  nodeids[0] = faceid; 
-  nodeids[1] = (faceid + 1) % (int) nodes_.size();
+  Entity_ID_View lnodeids("lnodesids",2); 
+  lnodeids[0] = faceid; 
+  lnodeids[1] = (faceid + 1) % (int) nodes_.size();
+  nodeids = lnodeids; 
 }
 
 
@@ -130,11 +132,12 @@ void MeshSurfaceCell::getFaceNodes(const Entity_ID faceid,
 // different processors
 void MeshSurfaceCell::getNodeCells(const Entity_ID nodeid,
         const Parallel_kind ptype,
-        Entity_ID_View& cellids) const
+        cEntity_ID_View& cellids) const
 {
   AMANZI_ASSERT(nodeid < nodes_.size());
-  Kokkos::resize(cellids, 1);
-  cellids[0] = 0;
+  Entity_ID_View lcellids("lcellids",1); 
+  lcellids[0] = 0;
+  cellids = lcellids; 
 }
 
 
@@ -143,10 +146,11 @@ void MeshSurfaceCell::getNodeCells(const Entity_ID nodeid,
 // different processors
 void MeshSurfaceCell::getNodeFaces(const Entity_ID nodeid,
         const Parallel_kind ptype,
-        Entity_ID_View& faceids) const {
-  Kokkos::resize(faceids, 2); 
-  faceids[0] = (nodeid - 1) % (int) nodes_.size(); 
-  faceids[1] = nodeid;
+        cEntity_ID_View& faceids) const {
+  Entity_ID_View lfaceids("lfaceids",2); 
+  lfaceids[0] = (nodeid - 1) % (int) nodes_.size(); 
+  lfaceids[1] = nodeid;
+  faceids = lfaceids; 
 }
 
 
@@ -155,13 +159,16 @@ void MeshSurfaceCell::getNodeFaces(const Entity_ID nodeid,
 // cached or it can be called directly by the
 // cell_get_faces_and_dirs method of this class
 void MeshSurfaceCell::getCellFacesAndDirs(const Entity_ID cellid,
-        Entity_ID_View& faceids,
-        Entity_Direction_View * const face_dirs) const
+        cEntity_ID_View& faceids,
+        cEntity_Direction_View * const face_dirs) const
 {
   AMANZI_ASSERT(cellid == 0);
-  Kokkos::resize(faceids,nodes_.size());
-  for (int i=0; i!=nodes_.size(); ++i) faceids[i] = i;
-  if (face_dirs) Kokkos::resize(*face_dirs,nodes_.size(),1);
+  Entity_ID_View lfaceids("lfaceids", nodes_.size()); 
+  Entity_Direction_View lface_dirs; 
+  for (int i=0; i!=nodes_.size(); ++i) lfaceids[i] = i;
+  if (face_dirs) Kokkos::resize(lface_dirs,nodes_.size(),1);
+  *face_dirs = lface_dirs; 
+  faceids = lfaceids; 
 }
 
 
@@ -169,9 +176,10 @@ void MeshSurfaceCell::getCellFacesAndDirs(const Entity_ID cellid,
 // mesh framework. The results are cached in the base class
 void MeshSurfaceCell::getFaceCells(const Entity_ID faceid,
         const Parallel_kind ptype,
-        Entity_ID_View& cellids) const {
-  Kokkos::resize(cellids,1);
-  cellids[0] = 0; 
+        cEntity_ID_View& cellids) const {
+  Entity_ID_View lcellids("lcellids", 1); 
+  lcellids[0] = 0; 
+  cellids = lcellids; 
 }
 
 

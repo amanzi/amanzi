@@ -300,9 +300,9 @@ struct RaggedGetter{
   template<typename DATA, typename MF, typename FF, typename CFD, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
   get (bool cached, DATA& d, MF& mf, FF&& f, CFD&& cd, CF&& c, const Entity_ID n) {
-    using view_t = decltype(d.template getRow<MEM>(n));
+    using view_t = typename decltype(d.template getRow<MEM>(n))::const_type;
     if (cached) {
-      return d.template getRow<MEM>(n);  
+      return view_t(d.template getRow<MEM>(n));  
     }
     if constexpr(MEM == MemSpace_kind::HOST){
 
@@ -317,8 +317,10 @@ struct RaggedGetter{
         return v; 
       }
     } else {
-      if constexpr (!std::is_same<CF,decltype(nullptr)>::value) 
-        return cd(c);
+      if constexpr (!std::is_same<CF,decltype(nullptr)>::value) {
+        view_t v = cd(c); 
+        return v;
+      }
     }
     assert(false && "No access to cache/framework/compute available"); 
     return view_t{}; 

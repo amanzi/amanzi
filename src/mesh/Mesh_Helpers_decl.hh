@@ -49,15 +49,15 @@ template<class Mesh_type>
 int getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entity_ID c);
 
 template<class Mesh_type>
-Entity_ID_View
+cEntity_ID_View
 computeCellEdges(const Mesh_type& mesh, const Entity_ID c);
 
 template<class Mesh_type>
-Entity_ID_View
+cEntity_ID_View
 computeCellNodes(const Mesh_type& mesh, const Entity_ID c);
 
 template<class Mesh_type>
-Entity_ID_View
+cEntity_ID_View
 computeNodeCells(const Mesh_type& mesh, const Entity_ID n);
 
 
@@ -69,7 +69,7 @@ std::pair<double,AmanziGeometry::Point>
 computeCellGeometry(const Mesh_type& mesh, const Entity_ID c);
 
 template<class Mesh_type>
-std::tuple<double,AmanziGeometry::Point,Point_View>
+std::tuple<double,AmanziGeometry::Point,cPoint_View>
 computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f);
 
 template<class Mesh_type>
@@ -85,13 +85,13 @@ template<class Mesh_type>
 void debugCell(const Mesh_type& mesh, const Entity_ID c);
 
 template<class Mesh_type>
-Point_View getEdgeCoordinates(const Mesh_type& mesh, const Entity_ID e);
+cPoint_View getEdgeCoordinates(const Mesh_type& mesh, const Entity_ID e);
 
 template<class Mesh_type>
-Point_View getFaceCoordinates(const Mesh_type& mesh, const Entity_ID f);
+cPoint_View getFaceCoordinates(const Mesh_type& mesh, const Entity_ID f);
 
 template<class Mesh_type>
-Point_View getCellCoordinates(const Mesh_type& mesh, const Entity_ID c);
+cPoint_View getCellCoordinates(const Mesh_type& mesh, const Entity_ID c);
 
 template<class Mesh_type>
 std::size_t getMaxCellNumNodes(const Mesh_type& mesh);

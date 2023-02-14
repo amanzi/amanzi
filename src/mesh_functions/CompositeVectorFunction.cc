@@ -87,10 +87,9 @@ CompositeVectorFunction::Compute(double time,
           const Epetra_Map& vandelay_map = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE,false);
 
           // loop over indices
-          AmanziMesh::Entity_ID_View cells;
           for (auto id = id_list.begin(); id != id_list.end();
                ++id) {
-            cells = mesh->getFaceCells(*id, AmanziMesh::Parallel_kind::ALL);
+            auto cells = mesh->getFaceCells(*id, AmanziMesh::Parallel_kind::ALL);
             if (cells.size() == 1) {
               AmanziMesh::Entity_ID bf = vandelay_map.LID(face_map.GID(*id));
               AMANZI_ASSERT(bf >= 0);

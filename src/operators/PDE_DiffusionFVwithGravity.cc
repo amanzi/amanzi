@@ -221,7 +221,6 @@ PDE_DiffusionFVwithGravity::ComputeTransmissibility_(Teuchos::RCP<CompositeVecto
   Epetra_MultiVector& h_face = *h.ViewComponent("face", true);
   h.PutScalar(0.0);
 
-  AmanziMesh::Entity_ID_View cells;
   AmanziGeometry::Point a_dist, a;
   WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
   Kc(0, 0) = 1.0;
@@ -261,7 +260,7 @@ PDE_DiffusionFVwithGravity::ComputeTransmissibility_(Teuchos::RCP<CompositeVecto
   }
 
   for (int f = 0; f < nfaces_owned; f++) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     if (ncells == 2) {

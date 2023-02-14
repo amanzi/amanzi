@@ -207,14 +207,12 @@ ReconstructionCellPolynomial::CellAllAdjCells_(AmanziMesh::Entity_ID c,
                                                AmanziMesh::Parallel_kind ptype,
                                                std::set<AmanziMesh::Entity_ID>& cells) const
 {
-  AmanziMesh::Entity_ID_View nodes, vcells;
-
   cells.clear();
 
-  nodes = mesh_->getCellNodes(c);
+  auto nodes = mesh_->getCellNodes(c);
   for (int i = 0; i < nodes.size(); i++) {
     int v = nodes[i];
-    vcells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
+    auto vcells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
 
     for (int k = 0; k < vcells.size(); ++k) {
       int c1 = vcells[k];
@@ -260,13 +258,11 @@ ReconstructionCellPolynomial::CellAllAdjFaces_(AmanziMesh::Entity_ID c,
                                                const std::set<AmanziMesh::Entity_ID>& cells,
                                                std::set<AmanziMesh::Entity_ID>& faces) const
 {
-  AmanziMesh::Entity_ID_View cfaces, fcells;
-
   faces.clear();
   for (int c1 : cells) {
-    cfaces = mesh_->getCellFaces(c1);
+    auto cfaces = mesh_->getCellFaces(c1);
     for (int f : cfaces) {
-      fcells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto fcells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       if (fcells.size() == 1 && faces.find(f) == faces.end()) faces.insert(f);
     }
   }
