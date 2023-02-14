@@ -66,25 +66,25 @@ class Mesh_simple : public MeshFramework {
 
   virtual void getCellFacesAndDirs(
     const Entity_ID c,
-    Entity_ID_View& faces,
-    Entity_Direction_View * const dirs) const override;
+    cEntity_ID_View& faces,
+    cEntity_Direction_View * const dirs) const override;
 
   virtual void getFaceEdgesAndDirs(const Entity_ID f,
-          Entity_ID_View& edges,
-          Entity_Direction_View * const dirs=nullptr) const override;
+          cEntity_ID_View& edges,
+          cEntity_Direction_View * const dirs=nullptr) const override;
 
-  virtual void getFaceNodes(const Entity_ID f, Entity_ID_View& nodes) const override;
+  virtual void getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) const override;
 
-  virtual void getEdgeNodes(const Entity_ID e, Entity_ID_View& nodes) const override;
+  virtual void getEdgeNodes(const Entity_ID e, cEntity_ID_View& nodes) const override;
 
 
   virtual void getFaceCells(const Entity_ID f,
                           const Parallel_kind ptype,
-                          Entity_ID_View& cells) const override;
+                          cEntity_ID_View& cells) const override;
 
   virtual void getNodeFaces(const Entity_ID nodeid,
                             const Parallel_kind ptype,
-                            Entity_ID_View& faceids) const override;
+                            cEntity_ID_View& faceids) const override;
 
  private:
   void CreateCache_();

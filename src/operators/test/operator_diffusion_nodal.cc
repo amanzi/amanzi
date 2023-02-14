@@ -90,8 +90,7 @@ TEST(OPERATOR_DIFFUSION_NODAL)
 
   for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
     int f = fmap.LID(bmap.GID(bf));
-    AmanziMesh::Entity_ID_View nodes;
-    nodes = mesh->getFaceNodes(f);
+    auto nodes = mesh->getFaceNodes(f);
     for (int n = 0; n < nodes.size(); ++n) {
       int v = nodes[n];
       xv = mesh->getNodeCoordinate(v);
@@ -116,8 +115,7 @@ TEST(OPERATOR_DIFFUSION_NODAL)
     const Point& xc = mesh->getCellCentroid(c);
     double volume = mesh->getCellVolume(c);
 
-    AmanziMesh::Entity_ID_View nodes;
-    nodes = mesh->getCellNodes(c);
+    auto nodes = mesh->getCellNodes(c);
     int nnodes = nodes.size();
 
     for (int k = 0; k < nnodes; k++) {

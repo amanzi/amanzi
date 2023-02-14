@@ -143,8 +143,6 @@ ReconstructionCellLinear::CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
                                                     AmanziMesh::Parallel_kind ptype,
                                                     std::vector<AmanziMesh::Entity_ID>& cells) const
 {
-  AmanziMesh::Entity_ID_View fcells;
-
   const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
@@ -152,7 +150,7 @@ ReconstructionCellLinear::CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
 
   for (int n = 0; n < nfaces; ++n) {
     AmanziMesh::Entity_ID f = faces[n];
-    fcells = mesh_->getFaceCells(f, ptype);
+    auto fcells = mesh_->getFaceCells(f, ptype);
     int ncells = fcells.size();
 
     if (ncells == 2) {

@@ -388,7 +388,8 @@ AmanziGeometry::Point
 PDE_DiffusionMFDwithGravity::GravitySpecialDirection_(int f,
                                                       AmanziMesh::Entity_ID_View& cells) const
 {
-  cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+  auto ccells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+  cells.fromConst(ccells); 
   int ncells = cells.size();
 
   if (ncells == 2) {
@@ -405,8 +406,7 @@ PDE_DiffusionMFDwithGravity::GravitySpecialDirection_(int f,
 double
 PDE_DiffusionMFDwithGravity::ComputeGravityFlux(int f) const
 {
-  AmanziMesh::Entity_ID_View cells;
-  cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+  auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
   int c = cells[0];
 
   double gflux;

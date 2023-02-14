@@ -37,12 +37,11 @@ ComputePolyError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   std::vector<int> flag(ncells_owned, 0);
 
-  Amanzi::AmanziMesh::Entity_ID_View cells;
   double err_bnd(0.0);
 
   err_bnd = 0.0;
   for (int f = 0; f < nfaces_owned; ++f) {
-    cells = mesh->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
     int c = cells[0];
     if (cells.size() == 1 && flag[c] == 0) {
       for (int i = 0; i < npoly; ++i) {

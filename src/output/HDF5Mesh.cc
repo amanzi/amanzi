@@ -61,9 +61,8 @@ HDF5::createMeshFile(AmanziMesh::Mesh& mesh_maps, std::string filename)
   // get number of nodes per element and element type
   ctype_ = mesh_maps.getCellType(0);
   cname_ = to_string(ctype_);
-  AmanziMesh::Entity_ID_View nodeids;
   unsigned int cellid = 0;
-  nodeids = mesh_maps.getCellNodes(cellid);
+  auto nodeids = mesh_maps.getCellNodes(cellid);
   conn_ = nodeids.size();
 
   // get connectivity
@@ -72,7 +71,7 @@ HDF5::createMeshFile(AmanziMesh::Mesh& mesh_maps, std::string filename)
 
   for (unsigned int i = 0; i < num_elems; i++) {
     //mesh_maps.cell_to_nodes(i, xh.begin(), xh.end());
-    nodeids = mesh_maps.getCellNodes(i);
+    auto nodeids = mesh_maps.getCellNodes(i);
     for (int j = 0; j < conn_; j++) { ielem[i * conn_ + j] = nodeids[j]; }
   }
 

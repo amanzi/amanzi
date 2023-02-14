@@ -276,7 +276,7 @@ TEST(MESH_CONST_DANGER)
       Kokkos::resize(cfaces2, cfaces.size());
       Kokkos::deep_copy(cfaces2, cfaces);
       CHECK(cfaces2(0) != -1);
-      cfaces(0) = -1; // ideally this should fail to compile?
+      //cfaces(0) = -1; // ideally this should fail to compile?
       CHECK(cfaces2(0) != -1);
     }
     {

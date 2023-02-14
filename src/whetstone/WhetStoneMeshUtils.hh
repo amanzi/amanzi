@@ -36,7 +36,7 @@ namespace WhetStone {
 ****************************************************************** */
 inline void
 PolygonCentroidWeights(const AmanziMesh::Mesh& mesh,
-                       const AmanziMesh::Entity_ID_View& nodes,
+                       const AmanziMesh::cEntity_ID_View& nodes,
                        double area,
                        AmanziMesh::Double_List& weights)
 {
@@ -108,7 +108,7 @@ inline void
 cell_get_entities(const AmanziMesh::Mesh& mesh,
                   int c,
                   const AmanziMesh::Entity_kind kind,
-                  AmanziMesh::Entity_ID_View* entities)
+                  AmanziMesh::cEntity_ID_View* entities)
 {
   if (kind == AmanziMesh::Entity_kind::FACE) {
     *entities = mesh.getCellFaces(c);
@@ -117,10 +117,13 @@ cell_get_entities(const AmanziMesh::Mesh& mesh,
   } else if (kind == AmanziMesh::Entity_kind::NODE) {
     *entities = mesh.getCellNodes(c);
   } else if (kind == AmanziMesh::Entity_kind::CELL) {
-    Kokkos::resize(*entities, 1); 
-    (*entities)[0] = c; 
+    AmanziMesh::Entity_ID_View lentities; 
+    Kokkos::resize(lentities, 1); 
+    lentities[0] = c;
+    *entities = lentities;  
   } else {
-    Kokkos::resize(*entities,0); 
+    AmanziMesh::Entity_ID_View lentities;
+    *entities = lentities;  
   }
 }
 

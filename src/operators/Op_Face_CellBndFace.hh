@@ -76,9 +76,8 @@ class Op_Face_CellBndFace : public Op {
     if ((scaling.HasComponent("cell")) && (scaling.HasComponent("boundary_face"))) {
       const Epetra_MultiVector& s_c = *scaling.ViewComponent("cell", true);
       const Epetra_MultiVector& s_bnd = *scaling.ViewComponent("boundary_face", true);
-      AmanziMesh::Entity_ID_View cells;
       for (int f = 0; f != matrices.size(); ++f) {
-        cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
         if (cells.size() > 1) {
           matrices[f](0, 0) *= s_c[0][cells[0]];
           matrices[f](0, 1) *= s_c[0][cells[1]];

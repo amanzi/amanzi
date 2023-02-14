@@ -56,7 +56,7 @@ getBoundaryFaceInternalCell(const Mesh& mesh, Entity_ID bf)
 Entity_ID
 getFaceOnBoundaryInternalCell(const Mesh& mesh, Entity_ID f)
 {
-  Entity_ID_View cells;
+  cEntity_ID_View cells;
   mesh.getFaceCells(f, Parallel_kind::ALL, cells);
   if (cells.size() != 1) {
     AmanziGeometry::Point fc = mesh.getFaceCentroid(f);

@@ -36,13 +36,13 @@ MeshLogicalAlgorithms::computeCellGeometry(const MeshFramework& mesh, const Enti
   return std::make_pair(volume, centroid);
 }
 
-std::tuple<double, AmanziGeometry::Point, Point_View>
+std::tuple<double, AmanziGeometry::Point, cPoint_View>
 MeshLogicalAlgorithms::computeFaceGeometry(const MeshFramework& mesh, const Entity_ID f) const
 {
   double area = mesh.getFaceArea(f);
   AmanziGeometry::Point centroid = mesh.getFaceCentroid(f);
 
-  Entity_ID_View fcells;
+  cEntity_ID_View fcells;
   mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
   Point_View normals("normals", fcells.size());
   for (int i=0; i!=fcells.size(); ++i) {
@@ -200,7 +200,7 @@ void MeshLogical::setLogicalGeometry(Double_List const* const cell_volumes,
     std::vector<Point_List> cell_face_bisectors_v(n_cells); 
 
     for (Entity_ID f=0; f!=n_faces; ++f) {
-      Entity_ID_View f_cells;
+      cEntity_ID_View f_cells;
       getFaceCells(f, Parallel_kind::ALL, f_cells);
       AMANZI_ASSERT((*face_cell_bisectors)[f].size() == f_cells.size());
 
@@ -269,7 +269,7 @@ MeshLogical::getNodeCoordinate(const Entity_ID node) const
 }
 
 void
-MeshLogical::getFaceNodes(const Entity_ID f, Entity_ID_View& nodes) const
+MeshLogical::getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) const
 {
   Errors::Message mesg("There are no nodes in a MeshLogical.");
   Exceptions::amanzi_throw(mesg);
@@ -278,7 +278,7 @@ MeshLogical::getFaceNodes(const Entity_ID f, Entity_ID_View& nodes) const
 void
 MeshLogical::getNodeFaces(const Entity_ID nodeid,
                   const Parallel_kind ptype,
-                  Entity_ID_View& faceids) const
+                  cEntity_ID_View& faceids) const
 {
   Errors::Message mesg("There are no nodes in a MeshLogical.");
   Exceptions::amanzi_throw(mesg);
@@ -290,8 +290,8 @@ MeshLogical::getNodeFaces(const Entity_ID nodeid,
 //
 void
 MeshLogical::getCellFacesAndBisectors(const Entity_ID cellid,
-        Entity_ID_View& faceids,
-        Point_View * const bisectors) const
+        cEntity_ID_View& faceids,
+        cPoint_View * const bisectors) const
 {
   faceids = cell_face_ids_.getRow<MemSpace_kind::HOST>(cellid);
   if (bisectors) *bisectors = cell_face_bisectors_.getRow<MemSpace_kind::HOST>(cellid);
@@ -299,8 +299,8 @@ MeshLogical::getCellFacesAndBisectors(const Entity_ID cellid,
 
 void
 MeshLogical::getCellFacesAndDirs(const Entity_ID c,
-        Entity_ID_View& faces,
-        Entity_Direction_View * const dirs) const
+        cEntity_ID_View& faces,
+        cEntity_Direction_View * const dirs) const
 {
   faces = cell_face_ids_.getRow<MemSpace_kind::HOST>(c);
   if (dirs) (*dirs) = cell_face_dirs_.getRow<MemSpace_kind::HOST>(c);
@@ -328,7 +328,7 @@ MeshLogical::getCellCentroid(const Entity_ID c) const
 void
 MeshLogical::getFaceCells(const Entity_ID f,
                           const Parallel_kind ptype,
-                          Entity_ID_View& cells) const
+                          cEntity_ID_View& cells) const
 {
   cells = face_cell_ids_.getRow<MemSpace_kind::HOST>(f);
 }
@@ -343,12 +343,12 @@ AmanziGeometry::Point
 MeshLogical::getFaceCentroid(const Entity_ID f) const
 {
   if (cell_centroids_.size() > 0) {
-    Entity_ID_View fcells;
+    cEntity_ID_View fcells;
     getFaceCells(f, Parallel_kind::ALL, fcells);
     auto c0 = fcells[0];
 
-    Entity_ID_View cfaces;
-    Point_View bisectors;
+    cEntity_ID_View cfaces;
+    cPoint_View bisectors;
     getCellFacesAndBisectors(c0, cfaces, &bisectors);
 
     int i = 0;
@@ -380,13 +380,13 @@ MeshLogical::getFaceNormal(const Entity_ID f,
 {
   Entity_ID cc = c;
   if (c == -1) {
-    Entity_ID_View fcells;
+    cEntity_ID_View fcells;
     getFaceCells(f, Parallel_kind::ALL, fcells);
     cc = fcells[0];
   }
 
-  Entity_ID_View cfaces;
-  Point_View bisectors;
+  cEntity_ID_View cfaces;
+  cPoint_View bisectors;
   getCellFacesAndBisectors(cc, cfaces, &bisectors);
   int i = 0;
   for (; i!=cfaces.size(); ++i) if (cfaces[i] == f) break;

@@ -80,7 +80,7 @@ void MeshFrameworkColumn::computeSpecialNodeCoordinates_()
           Parallel_kind::ALL), -1);
 
   // How many nodes each "horizontal" face has in the column
-  Entity_ID_View face_nodes;
+  cEntity_ID_View face_nodes;
   col3D_mesh_->getFaceNodes(column_faces_[0], face_nodes);
   nfnodes_ = face_nodes.size();
 

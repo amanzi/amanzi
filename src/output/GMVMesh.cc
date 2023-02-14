@@ -54,8 +54,7 @@ write_mesh_to_file_(const AmanziMesh::Mesh& mesh, std::string filename)
   unsigned int* yh = new unsigned int[72];
 
   for (int i = 0; i < num_cells; i++) {
-    AmanziMesh::Entity_ID_View cnodes;
-    cnodes = mesh.getCellNodes(i);
+    auto cnodes = mesh.getCellNodes(i);
 
     int nnodes = cnodes.size();
     for (int j = 0; j < nnodes; j++) xh[j] = cnodes[j] + 1;
