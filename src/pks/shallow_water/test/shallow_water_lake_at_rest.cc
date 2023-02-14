@@ -129,10 +129,9 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   for (int c = 0; c < ncells_wghost; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
 
-    Amanzi::AmanziMesh::Entity_ID_View cfaces, cnodes, cedges;
-    cfaces = mesh->getCellFaces(c);
-    cnodes = mesh->getCellNodes(c);
-    cedges = mesh->getCellEdges(c);
+    auto cfaces = mesh->getCellFaces(c);
+    auto cnodes = mesh->getCellNodes(c);
+    auto cedges = mesh->getCellEdges(c);
 
     int nfaces_cell = cfaces.size();
 
@@ -143,8 +142,7 @@ lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       Amanzi::AmanziGeometry::Point x0, x1;
       int edge = cfaces[f];
 
-      Amanzi::AmanziMesh::Entity_ID_View face_nodes;
-      face_nodes = mesh->getFaceNodes(edge);
+      auto face_nodes = mesh->getFaceNodes(edge);
       int n0 = face_nodes[0], n1 = face_nodes[1];
 
       x0 = mesh->getNodeCoordinate(n0);

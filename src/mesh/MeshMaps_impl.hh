@@ -24,7 +24,7 @@ std::pair<Map_ptr_type, Map_ptr_type>
 createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind)
 {
   Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
-  Entity_GID_View gids = mesh.getEntityGIDs(kind, Parallel_kind::ALL);
+  cEntity_GID_View gids = mesh.getEntityGIDs(kind, Parallel_kind::ALL);
   return std::make_pair(
     Teuchos::rcp(new Epetra_Map(-1, gids.size(), gids.data(), 0, *mesh.getComm())),
     Teuchos::rcp(new Epetra_Map(-1, num_owned, gids.data(), 0, *mesh.getComm())));
@@ -85,7 +85,7 @@ void MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
   // that have one cell on this rank but that more than one cell on the other rank. 
   // As a result nbf_owned = nbf_all
   for (Entity_ID f=0; f!=nfaces_owned; ++f) {
-    Entity_ID_View fcells;
+    cEntity_ID_View fcells;
     mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
     if (fcells.size() == 1) {
       boundary_faces[nbf_all++] = f;
@@ -143,7 +143,7 @@ void MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
   if (mesh.hasNodes()) {
     std::set<Entity_ID> bnodes_lid;
     for (std::size_t i=0; i!=nbf_all; ++i) {
-      Entity_ID_View fnodes;
+      cEntity_ID_View fnodes;
       mesh.getFaceNodes(boundary_faces[i], fnodes);
       for (const auto& n : fnodes) bnodes_lid.insert(n);
     }

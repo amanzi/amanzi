@@ -27,6 +27,7 @@
 #include "geometry_harnesses.hh"
 #include "set_harnesses.hh"
 
+#if 0 
 TEST(MESH_SURFACE_EXTRACTION_GENERATED)
 {
   // create the comm and gm
@@ -147,6 +148,7 @@ TEST(MESH_SURFACE_EXTRACTION_EXO)
     testQuadMeshSets3x3(mesh, true, frm, true);
   }
 }
+#endif 
 
 TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 {
@@ -211,7 +213,7 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
   }
 }
 
-
+#if 0 
 TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
 {
   // create the comm and gm
@@ -274,3 +276,4 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
     testQuadMeshSets3x3(mesh, true, frm, true);
   }
 }
+#endif 

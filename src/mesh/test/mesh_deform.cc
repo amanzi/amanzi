@@ -40,6 +40,7 @@ void test2D(const Teuchos::RCP<Mesh_type>& mesh)
     newpos[j] = newcoord;
   }
 
+  int ncells_1 = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
   int ierr = MeshAlgorithms::deform(*mesh, nodeids, newpos);
   CHECK_EQUAL(ierr, 0);
 
@@ -54,7 +55,6 @@ void test2D(const Teuchos::RCP<Mesh_type>& mesh)
   }
   testMeshAudit<MeshAudit_type, Mesh_type>(mesh);
 }
-
 
 template<class MeshAudit_type, class Mesh_type>
 void test3D(const Teuchos::RCP<Mesh_type>& mesh)
@@ -79,7 +79,6 @@ void test3D(const Teuchos::RCP<Mesh_type>& mesh)
   testMeshAudit<MeshAudit_type, Mesh_type>(mesh);
   testGeometryCube<Mesh_type>(mesh, 3,3,3);
 }
-
 
 TEST(MESH_FRAMEWORK_DEFORM2D)
 {
@@ -139,7 +138,6 @@ TEST(MESH_FRAMEWORK_GENERATED_DEFORM3D)
   }
 }
 
-
 TEST(MESH_CACHED_DEFORM2D)
 {
   auto comm = getDefaultComm();
@@ -165,7 +163,6 @@ TEST(MESH_CACHED_DEFORM2D)
     test2D<MeshAudit>(mesh);
   }
 }
-
 
 TEST(MESH_CACHED_GENERATED_DEFORM3D)
 {
@@ -197,5 +194,3 @@ TEST(MESH_CACHED_GENERATED_DEFORM3D)
     test3D<MeshAudit>(mesh);
   }
 }
-
-

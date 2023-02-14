@@ -112,6 +112,9 @@ struct MeshView: public Kokkos::View<DataType, Properties...>{
   using const_iterator = Impl::View_iter<const std::remove_pointer_t<DataType>, Properties...>; 
   using traits = ViewTraits<DataType, Properties...>;
 
+  using const_type = MeshView<typename traits::const_data_type, typename traits::array_layout,
+            typename traits::device_type, typename traits::memory_traits>;
+
   MeshView(const baseView& bv): baseView(bv) {}
   MeshView(const MeshView& bv): baseView(bv) {}
   
@@ -152,6 +155,12 @@ struct MeshView: public Kokkos::View<DataType, Properties...>{
     std::size_t csize = this->size(); 
     Kokkos::resize(*this, size+csize); 
     for(int i = csize; i < this->size(); ++i, ++v1_b) this->operator[](i) = *(v1_b); 
+  }
+
+  template<typename MV>
+  KOKKOS_INLINE_FUNCTION void fromConst(const MV& cmv) {
+    Kokkos::resize(*this, cmv.size());
+    Kokkos::deep_copy(*this, cmv);     
   }
 
 }; 
@@ -288,6 +297,15 @@ asView(const std::vector<T>& vec)
   using View_type = Kokkos::MeshView<const T*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   View_type my_view(vec.data(), vec.size());
   return my_view;
+}
+
+template<typename V, typename T>
+void vectorToConstView(V& view, const std::vector<T> vec){
+  Kokkos::MeshView<T*> lview; 
+  Kokkos::resize(lview,vec.size());
+  for(int i = 0; i < lview.size(); ++i)
+    lview[i] = vec[i]; 
+  view = lview; 
 }
 
 template<typename V, typename T>
@@ -453,7 +471,7 @@ asRaggedArray_DualView(Func mesh_func, int count) {
   adj.rows.resize(count+1);
 
   // do a count first, setting rows
-  Kokkos::MeshView<T*, Kokkos::DefaultHostExecutionSpace> ents;
+  Kokkos::MeshView<const T*, Kokkos::DefaultHostExecutionSpace> ents;
   int total = 0;
   for (int i=0; i!=count; ++i) {
     view<MemSpace_kind::HOST>(adj.rows)[i] = total;

@@ -38,9 +38,7 @@ int
 UniqueIndexFaceToCells(const AmanziMesh::Mesh& mesh, int f, int c)
 {
   int pos = 0;
-  AmanziMesh::Entity_ID_View cells;
-
-  cells = mesh.getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+  auto cells = mesh.getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
   int ncells = cells.size();
   if (ncells > 1) {
     std::set<int> gids;

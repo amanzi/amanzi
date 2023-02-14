@@ -161,14 +161,12 @@ TEST(ENERGY_2D_MATRIX)
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(op->DomainMap()));
   Epetra_MultiVector& q_l = *flux->ViewComponent("face");
 
-  AmanziMesh::Entity_ID_View cells;
-
   AmanziGeometry::Point velocity(1e-4, 1e-4);
   for (int f = 0; f < nfaces_wghost; f++) {
     const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     q_l[0][f] = velocity * normal;
 
-    cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
     double tmp(0.0);
     for (int i = 0; i < ncells; i++) {
