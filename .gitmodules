@@ -1,0 +1,3 @@
+[submodule "src/physics/ats"]
+	path = src/physics/ats
+	url = https://github.com/AndrewGraus/ats.git
