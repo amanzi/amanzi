@@ -82,11 +82,11 @@ class MeshSurfaceCell : public MeshFramework {
   // Get nodes of a cell
   virtual
   void getCellNodes(const Entity_ID cellid,
-                    Entity_ID_View& nodeids) const override;
+                    cEntity_ID_View& nodeids) const override;
 
   virtual
   void getFaceNodes(const Entity_ID faceid,
-                    Entity_ID_View& nodeids) const override;
+                    cEntity_ID_View& nodeids) const override;
 
 
   // Upward adjacencies
@@ -98,7 +98,7 @@ class MeshSurfaceCell : public MeshFramework {
   virtual
   void getNodeCells(const Entity_ID nodeid,
                     const Parallel_kind ptype,
-                    Entity_ID_View& cellids) const override;
+                    cEntity_ID_View& cellids) const override;
 
   // Faces of type 'ptype' connected to a node - The order of faces is
   // not guarnateed to be the same for corresponding nodes on
@@ -106,7 +106,7 @@ class MeshSurfaceCell : public MeshFramework {
   virtual
   void getNodeFaces(const Entity_ID nodeid,
                     const Parallel_kind ptype,
-                    Entity_ID_View& faceids) const override;
+                    cEntity_ID_View& faceids) const override;
 
   // Node coordinates - 3 in 3D and 2 in 2D
   virtual
@@ -132,21 +132,21 @@ class MeshSurfaceCell : public MeshFramework {
   // cell_get_faces_and_dirs method of this class
   virtual
   void getCellFacesAndDirs(const Entity_ID cellid,
-                           Entity_ID_View& faceids,
-                           Entity_Direction_View * const dirs) const override;
+                           cEntity_ID_View& faceids,
+                           cEntity_Direction_View * const dirs) const override;
 
   // Cells connected to a face - this function is implemented in each
   // mesh framework. The results are cached in the base class
   virtual
   void getFaceCells(const Entity_ID faceid,
                     const Parallel_kind ptype,
-                    Entity_ID_View& cellids) const override;
+                    cEntity_ID_View& cellids) const override;
 
  protected:
   Teuchos::RCP<const MeshFramework> parent_;
 
   Point_View nodes_;
-  Entity_ID_View node_parents_;
+  cEntity_ID_View node_parents_;
   std::map<Set_ID,bool> sets_;
   Entity_ID parent_face_;
   Cell_kind cell_type_;

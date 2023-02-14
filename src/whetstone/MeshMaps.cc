@@ -105,12 +105,11 @@ MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
   const auto& tau = *coordsys.tau();
 
   // polynomial is converted from local to global coordinate system
-  AmanziMesh::Entity_ID_View nodes;
   AmanziGeometry::Point x0, x1, y0, y1;
 
   AmanziGeometry::Point yf = mesh1_->getFaceCentroid(f);
 
-  nodes = mesh0_->getFaceNodes(f);
+  auto nodes = mesh0_->getFaceNodes(f);
   x0 = mesh0_->getNodeCoordinate(nodes[0]);
   x1 = mesh0_->getNodeCoordinate(nodes[1]);
 

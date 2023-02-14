@@ -96,7 +96,6 @@ RunTest(int n, int d)
 
   // -- flux
   int dir;
-  AmanziMesh::Entity_ID_View cells;
 
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
@@ -116,7 +115,7 @@ RunTest(int n, int d)
 
   double dt(0.03 / n);
   for (int f = 0; f < nfaces_owned; f++) {
-    cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
     if (cells.size() == 2) {
       const auto& xf = mesh->getFaceCentroid(f);

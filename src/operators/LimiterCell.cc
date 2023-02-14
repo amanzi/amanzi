@@ -421,7 +421,7 @@ LimiterCell::LimiterScalar_(const AmanziMesh::Entity_ID_View& ids,
 
   double u1, u1x, u1_add, umin, umax;
   AmanziGeometry::Point gradient_c(dim), xv(dim);
-  AmanziMesh::Entity_ID_View ents;
+  AmanziMesh::cEntity_ID_View ents;
 
   // limiting gradient inside domain
   if (!external_bounds_) {
@@ -568,11 +568,10 @@ LimiterCell::LimiterKuzmin_(const AmanziMesh::Entity_ID_View& ids,
 
   AmanziGeometry::Point gradient_c(dim), p(dim), normal_new(dim), direction(dim);
   std::vector<AmanziGeometry::Point> normals;
-  AmanziMesh::Entity_ID_View nodes;
 
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
-    nodes = mesh_->getCellNodes(c);
+    auto nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
     std::vector<double> field_min_cell(nnodes), field_max_cell(nnodes);
 
@@ -597,7 +596,7 @@ LimiterCell::LimiterKuzmin_(const AmanziMesh::Entity_ID_View& ids,
     std::vector<double> field_local_max(ncells_wghost_);
 
     for (int c = 0; c < ncells_owned_; c++) {
-      nodes = mesh_->getCellNodes(c);
+     auto nodes = mesh_->getCellNodes(c);
       field_local_min[c] = field_local_max[c] = (*field_)[component_][c];
 
       for (int i = 0; i < nodes.size(); i++) {
@@ -637,8 +636,7 @@ LimiterCell::LimiterKuzminCell_(int c,
   double tol_base = sqrt(OPERATOR_LIMITER_TOLERANCE);
   AmanziGeometry::Point xp(dim);
 
-  AmanziMesh::Entity_ID_View nodes;
-  nodes = mesh_->getCellNodes(c);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   u1 = (*field_)[component_][c];
@@ -690,7 +688,6 @@ LimiterCell::LimiterExtensionTransportKuzmin_(const std::vector<double>& field_l
 
   double u1, up;
   AmanziGeometry::Point xp(dim);
-  AmanziMesh::Entity_ID_View nodes;
 
   auto& grad = *lifting_->data()->ViewComponent("cell");
 
@@ -705,7 +702,7 @@ LimiterCell::LimiterExtensionTransportKuzmin_(const std::vector<double>& field_l
       int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
 
       if (c == c1) {
-        nodes = mesh_->getFaceNodes(f);
+        auto nodes = mesh_->getFaceNodes(f);
         int nnodes = nodes.size();
 
         // define dimensionless quadrature weigths
@@ -819,8 +816,6 @@ LimiterCell::BoundsForCells(const Epetra_MultiVector& field,
     bounds_c[1][c] = -OPERATOR_LIMITER_INFINITY;
   }
 
-  AmanziMesh::Entity_ID_View nodes;
-
   if (stencil == OPERATOR_LIMITER_STENCIL_C2C_CLOSEST) {
     for (int c = 0; c < ncells_owned_; c++) {
       double value = field[component_][c];
@@ -840,7 +835,7 @@ LimiterCell::BoundsForCells(const Epetra_MultiVector& field,
       bounds_c[0][c] = std::min(bounds_c[0][c], value);
       bounds_c[1][c] = std::max(bounds_c[1][c], value);
 
-      nodes = mesh_->getCellNodes(c);
+      auto nodes = mesh_->getCellNodes(c);
       for (int i = 0; i < nodes.size(); i++) {
         int v = nodes[i];
         auto cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
@@ -893,10 +888,8 @@ LimiterCell::BoundsForFaces(const Epetra_MultiVector& field,
     bounds_f[1][f] = -OPERATOR_LIMITER_INFINITY;
   }
 
-  AmanziMesh::Entity_ID_View cells;
-
   for (int f = 0; f < nfaces_wghost_; ++f) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
     for (int i = 0; i < cells.size(); ++i) {
       int c = cells[i];
@@ -940,10 +933,8 @@ LimiterCell::BoundsForEdges(const Epetra_MultiVector& field,
     bounds_e[1][e] = -OPERATOR_LIMITER_INFINITY;
   }
 
-  AmanziMesh::Entity_ID_View cells;
-
   for (int e = 0; e < nedges_wghost_; ++e) {
-    cells = mesh_->getEdgeCells(e, AmanziMesh::Parallel_kind::ALL);
+   auto cells = mesh_->getEdgeCells(e, AmanziMesh::Parallel_kind::ALL);
 
     for (int i = 0; i < cells.size(); ++i) {
       int c = cells[i];
@@ -987,10 +978,8 @@ LimiterCell::BoundsForNodes(const Epetra_MultiVector& field,
     bounds_v[1][v] = -OPERATOR_LIMITER_INFINITY;
   }
 
-  AmanziMesh::Entity_ID_View cells;
-
   for (int v = 0; v < nnodes_wghost_; ++v) {
-    cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
 
     for (int i = 0; i < cells.size(); ++i) {
       int c = cells[i];

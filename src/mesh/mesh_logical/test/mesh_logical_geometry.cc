@@ -42,9 +42,9 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m,
   for (int i=0; i!=4; ++i) {
     CHECK_EQUAL(0.25, m->getCellVolume(i));
 
-    Entity_ID_View faces;
-    Entity_Direction_View dirs;
-    Amanzi::AmanziMesh::Point_View bisectors;
+    cEntity_ID_View faces;
+    cEntity_Direction_View dirs;
+    Amanzi::AmanziMesh::cPoint_View bisectors;
     m->getCellFacesAndDirs(i, faces, &dirs);
     CHECK_EQUAL(2, faces.size());
     CHECK_EQUAL(i, faces[0]);
@@ -72,7 +72,7 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m,
       CHECK_POINT_CLOSE(Point(-1.,0.,0.), normal);
     }
 
-    Entity_ID_View cells;
+    cEntity_ID_View cells;
     m->getFaceCells(i, Parallel_kind::ALL, cells);
     if (i == 0) {
       CHECK_EQUAL(1, cells.size());
@@ -93,7 +93,7 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m,
     CHECK_EQUAL(4, m->getSetSize("myregion", Entity_kind::CELL, Parallel_kind::ALL));
     CHECK_EQUAL(0, m->getSetSize("myregion", Entity_kind::FACE, Parallel_kind::ALL));
 
-    Entity_ID_View set_ents;
+    cEntity_ID_View set_ents;
     set_ents = m->getSetEntities("myregion", Entity_kind::CELL, Parallel_kind::ALL);
     CHECK_EQUAL(0, set_ents[0]);
     CHECK_EQUAL(2, set_ents[2]);
@@ -156,8 +156,8 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_CLOSE(0., norm(branch - m->getCellCentroid(2)), 1.e-6);
   branch[2] = -3.0;
 
-  Entity_ID_View branch_faces;
-  Entity_Direction_View dirs;
+  cEntity_ID_View branch_faces;
+  cEntity_Direction_View dirs;
   m->getCellFacesAndDirs(2, branch_faces, &dirs);
   CHECK_EQUAL(5, branch_faces.size());
 
@@ -190,9 +190,9 @@ test_2Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_EQUAL(3, m->getNumEntities(Entity_kind::CELL, Parallel_kind::ALL));
   CHECK_EQUAL(5, m->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL));
 
-  Entity_ID_View branch_faces;
-  Entity_Direction_View dirs;
-  Amanzi::AmanziMesh::Point_View bisectors;
+  cEntity_ID_View branch_faces;
+  cEntity_Direction_View dirs;
+  Amanzi::AmanziMesh::cPoint_View bisectors;
   double r22 = sqrt(2.0) / 2.0;
 
   // check topology/geometry

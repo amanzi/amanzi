@@ -109,7 +109,7 @@ CurlCurl(double c_t,
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
-  std::vector<int> edirs;
+  AmanziMesh::Entity_Direction_View edirs;
   AmanziMesh::Entity_ID_View cells, edges;
 
   for (int f = 0; f < nfaces_wghost; ++f) {
@@ -117,7 +117,7 @@ CurlCurl(double c_t,
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
         fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
-      auto [edges, edirs] = mesh->getFaceEdgesAndDirections(f);
+      std::tie(edges, edirs) = mesh->getFaceEdgesAndDirections(f);
       int nedges = edges.size();
       for (int i = 0; i < nedges; ++i) {
         int e = edges[i];

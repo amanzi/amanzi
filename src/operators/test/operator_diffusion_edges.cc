@@ -121,8 +121,7 @@ TestDiffusionEdges(int dim, double tol, std::string filename)
     const Point& xc = mesh->getCellCentroid(c);
     double volume = mesh->getCellVolume(c);
 
-    AmanziMesh::Entity_ID_View edges;
-    edges = mesh->getCellEdges(c);
+    auto edges = mesh->getCellEdges(c);
     int nedges = edges.size();
 
     for (int k = 0; k < nedges; k++) {

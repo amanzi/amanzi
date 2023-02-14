@@ -98,7 +98,7 @@ testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
       if (lfound) found[j] = 1;
 
       // check that the outward normals sum to 0
-      Entity_ID_View cfaces;
+      cEntity_ID_View cfaces;
       mesh->getCellFaces(i, cfaces);
       AmanziGeometry::Point normal_sum(mesh->getSpaceDimension());
       for (int j = 0; j < cfaces.size(); j++) {
@@ -136,7 +136,7 @@ testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
 
           // Check the normal with respect to each connected cell is given as the
           // natural times the orientation.
-          Entity_ID_View cellids;
+          cEntity_ID_View cellids;
           mesh->getFaceCells(i,Parallel_kind::ALL,cellids);
 
           for (int k = 0; k < cellids.size(); k++) {

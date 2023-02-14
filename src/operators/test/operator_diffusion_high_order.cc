@@ -82,7 +82,6 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART)
   Analytic00 ana(mesh, order);
 
   Point xv(2), x0(2), x1(2);
-  AmanziMesh::Entity_ID_View nodes;
 
   Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, DOF_Type::VECTOR));
   std::vector<int>& bc_model_f = bc_f->bc_model();
@@ -93,7 +92,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART)
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
         fabs(xf[1] - 1.0) < 1e-6) {
-      nodes = mesh->getFaceNodes(f);
+      auto nodes = mesh->getFaceNodes(f);
 
       x0 = mesh->getNodeCoordinate(nodes[0]);
       x1 = mesh->getNodeCoordinate(nodes[1]);
@@ -199,7 +198,6 @@ RunHighOrderLagrange2D(std::string vem_name, bool polygonal_mesh)
   Analytic00 ana(mesh, order);
 
   Point xv(2), x0(2), x1(2);
-  AmanziMesh::Entity_ID_View nodes;
 
   Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, DOF_Type::SCALAR));
   std::vector<int>& bc_model_v = bc_v->bc_model();
@@ -223,7 +221,7 @@ RunHighOrderLagrange2D(std::string vem_name, bool polygonal_mesh)
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
         fabs(xf[1] - 1.0) < 1e-6) {
-      nodes = mesh->getFaceNodes(f);
+      auto nodes = mesh->getFaceNodes(f);
 
       x0 = mesh->getNodeCoordinate(nodes[0]);
       x1 = mesh->getNodeCoordinate(nodes[1]);
@@ -352,7 +350,6 @@ RunHighOrderLagrange3D(const std::string& vem_name)
   Analytic00b ana(mesh, 1.0, 2.0, 3.0, order);
 
   Point xv(3), x0(3), x1(3);
-  AmanziMesh::Entity_ID_View nodes;
 
   // -- nodes
   Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, DOF_Type::SCALAR));

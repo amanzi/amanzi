@@ -94,7 +94,6 @@ LimiterCellDG::LimiterScalarDG_(const WhetStone::DG_Modal& dg,
   AMANZI_ASSERT(dg.cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
   double u1, u1f, umin, umax;
-  AmanziMesh::Entity_ID_View nodes;
 
   int nk = field_->NumVectors();
   WhetStone::DenseVector data(nk);
@@ -121,7 +120,7 @@ LimiterCellDG::LimiterScalarDG_(const WhetStone::DG_Modal& dg,
 
     for (int m = 0; m < nfaces; ++m) {
       int f = faces[m];
-      nodes = mesh_->getFaceNodes(f);
+      auto nodes = mesh_->getFaceNodes(f);
       int nnodes = nodes.size();
 
       getBounds(c, f, stencil_id_, &umin, &umax);
@@ -164,7 +163,6 @@ LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
   AMANZI_ASSERT(dg.cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
   double u1, u1f, umin, umax;
-  AmanziMesh::Entity_ID_View nodes;
 
   int nk = field_->NumVectors();
   WhetStone::DenseVector data(nk);
@@ -212,7 +210,7 @@ LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      nodes = mesh_->getFaceNodes(f);
+      auto nodes = mesh_->getFaceNodes(f);
 
       x1 = mesh_->getNodeCoordinate(nodes[0]);
       x2 = mesh_->getNodeCoordinate(nodes[1]);

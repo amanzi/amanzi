@@ -77,19 +77,20 @@ class MeshExtractedManifold : public MeshFramework {
   // -- faces
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face are returned
   // In 3D, the nodes are returned in ccw order consistent with the face normal
-  virtual void getFaceNodes(const Entity_ID f, Entity_ID_View& nodes) const override;
+  virtual void getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) const override;
 
   // -- edges
-  virtual void getEdgeNodes(const Entity_ID e, Entity_ID_View& nodes) const override {
-    Kokkos::resize(nodes,2); 
-    nodes[0] = e;
-    nodes[1] = e; 
+  virtual void getEdgeNodes(const Entity_ID e, cEntity_ID_View& nodes) const override {
+    Entity_ID_View lnodes("lnodes",2); 
+    lnodes[0] = e;
+    lnodes[1] = e; 
+    nodes = lnodes; 
   }
 
   // -- faces of type 'ptype' connected to a node - The order of faces is not guaranteed 
   //    to be the same for corresponding nodes on different processors
   virtual void getNodeFaces(const Entity_ID n, const Parallel_kind ptype,
-                              Entity_ID_View& faces) const override {
+                              cEntity_ID_View& faces) const override {
     // parent_mesh_->node_get_edges() is not implemented, another algorithm is needed
     AMANZI_ASSERT(false);
   }
@@ -97,7 +98,7 @@ class MeshExtractedManifold : public MeshFramework {
   // -- cells of type 'ptype' connected to an edge - The order of cells is not guaranteed
   //    to be the same for corresponding edges on different processors
   virtual void getEdgeCells(const Entity_ID e, const Parallel_kind ptype,
-                              Entity_ID_View& cells) const override;
+                              cEntity_ID_View& cells) const override;
 
   // same level adjacencies
   // -- face connected neighboring cells of given cell of a particular ptype
@@ -107,7 +108,7 @@ class MeshExtractedManifold : public MeshFramework {
   // except when ptype = ALL, in which case the cell ids will correspond to cells
   // across the respective faces given by cell_get_faces().
   virtual void getFaceCells(const Entity_ID c, const Parallel_kind ptype,
-                                       Entity_ID_View& cells) const override;
+                                       cEntity_ID_View& cells) const override;
 
   // Mesh entity geometry
   // -- nodes
@@ -125,24 +126,25 @@ class MeshExtractedManifold : public MeshFramework {
   // -- get faces of a cell and directions in which it is used - this function is
   //    implemented in each mesh framework. The results are cached in the base class
   virtual void getCellFacesAndDirs(const Entity_ID c,
-                                                 Entity_ID_View& faces,
-                                                 Entity_Direction_View *fdirs) const override;
+                                                 cEntity_ID_View& faces,
+                                                 cEntity_Direction_View *fdirs) const override;
 
   // -- edges of a face - this function is implemented in each mesh
   //    framework. The results are cached in the base class
   virtual void getFaceEdgesAndDirs(const Entity_ID f,
-                                                 Entity_ID_View& edges,
-                                                 Entity_Direction_View *edirs) const override;
+                                                 cEntity_ID_View& edges,
+                                                 cEntity_Direction_View *edirs) const override;
 
   // -- edges of a cell - this function is implemented in each mesh
   //    framework. The results are cached in the base class.
-  virtual void getCellEdges(const Entity_ID c, Entity_ID_View& edges) const override;
+  virtual void getCellEdges(const Entity_ID c, cEntity_ID_View& edges) const override;
 
  private:
   void TryExtension_(const std::string& setname,
                      Entity_kind kind_p, Entity_kind kind_d, Entity_ID_View* setents) const;
+  template<class Entity_ID_View_Type>
   std::map<Entity_ID, int> EnforceOneLayerOfGhosts_(const std::string& setname, Entity_kind kind,
-                                                    Entity_ID_View* setents) const;
+                                                    Entity_ID_View_Type* setents) const;
 
  private: 
   Teuchos::RCP<const Mesh> parent_mesh_;

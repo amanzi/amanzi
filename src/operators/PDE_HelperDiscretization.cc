@@ -153,7 +153,7 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(const BCs& bc,
   const std::vector<int>& bc_model = bc.bc_model();
   const std::vector<double>& bc_value = bc.bc_value();
 
-  AmanziMesh::Entity_ID_View entities, cells;
+  AmanziMesh::cEntity_ID_View entities, cells;
   std::vector<int> offset;
 
   CompositeVector& rhs = *global_op_->rhs();
@@ -282,8 +282,6 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Point_(const BCs& bc,
 {
   const std::vector<int>& bc_model = bc.bc_model();
   const std::vector<AmanziGeometry::Point>& bc_value = bc.bc_value_point();
-
-  AmanziMesh::Entity_ID_View nodes, cells;
   std::vector<int> offset;
 
   CompositeVector& rhs = *global_op_->rhs();
@@ -302,7 +300,7 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Point_(const BCs& bc,
     int ncols = Acell.NumCols();
     int nrows = Acell.NumRows();
 
-    nodes = mesh_->getCellNodes(c);
+    auto nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
 
     // check for a boundary face
@@ -370,7 +368,7 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Point_(const BCs& bc,
               }
 
               if (essential_eqn) {
-                cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
+                auto cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
                 rhs_loc(noff) = 0.0;
                 if (v < nnodes_owned) (*rhs_node)[k][v] = value[k];
                 Acell(noff, noff) = 1.0 / cells.size();
@@ -402,7 +400,7 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(const BCs& bc,
   const std::vector<std::vector<double>>& bc_value = bc.bc_value_vector();
   int d = bc_value[0].size();
 
-  AmanziMesh::Entity_ID_View entities;
+  AmanziMesh::cEntity_ID_View entities;
   std::vector<int> offset;
 
   CompositeVector& rhs = *global_op_->rhs();
@@ -556,7 +554,6 @@ Teuchos::RCP<CompositeVectorSpace>
 CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                          const Teuchos::RCP<const AmanziMesh::Mesh>& fracture)
 {
-  AmanziMesh::Entity_ID_View cells;
   int ncells_f = fracture->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   auto points = Teuchos::rcp(new Epetra_IntVector(mesh->getMap(AmanziMesh::Entity_kind::FACE,true)));
@@ -564,7 +561,7 @@ CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 
   for (int c = 0; c < ncells_f; ++c) {
     int f = fracture->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
-    cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     (*points)[f] = cells.size();
   }
 
@@ -605,14 +602,13 @@ CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 Teuchos::RCP<CompositeVectorSpace>
 CreateManifoldCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
-  AmanziMesh::Entity_ID_View cells;
   int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   auto points = Teuchos::rcp(new Epetra_IntVector(mesh->getMap(AmanziMesh::Entity_kind::FACE,true)));
   points->PutValue(1);
 
   for (int f = 0; f < nfaces; ++f) {
-    cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+   auto  cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     (*points)[f] = cells.size();
   }
 

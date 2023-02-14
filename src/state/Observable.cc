@@ -355,8 +355,7 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
                                          AmanziMesh::Parallel_kind::ALL);
 
             // which cell of the face is "inside" the volume
-            AmanziMesh::Entity_ID_View cells;
-            cells = vec.Mesh()->getFaceCells(id, AmanziMesh::Parallel_kind::ALL);
+            auto cells = vec.Mesh()->getFaceCells(id, AmanziMesh::Parallel_kind::ALL);
             AmanziMesh::Entity_ID c = -1;
             for (const auto& cc : cells) {
               if (std::find(vol_cells.begin(), vol_cells.end(), cc) != vol_cells.end()) {
