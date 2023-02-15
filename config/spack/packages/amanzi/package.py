@@ -22,11 +22,11 @@ class Amanzi(CMakePackage):
     advances from their areas of expertise to develop Amanzi."""
 
     homepage = "http://www.amanzi.github.io"
-    git      = "https://github.com/amanzi/amanzi"
+    git      = "https://github.com/AndrewGraus/amanzi"
 
     maintainers = ['julienloiseau','jd-moulton','gcapodag']
 
-    # Submodule is ON for ATS 
+    # Submodule is ON for ATS
     version('master', branch='master', preferred=True, submodules=True)
     version('1.4.0', tag='amanzi-1.4.0', submodules=True)
     version('1.4', branch='amanzi-1.4', submodules=True)
@@ -36,7 +36,7 @@ class Amanzi(CMakePackage):
     variant('data_model', default='epetra', values=('epetra','tpetra'), description='Trilinos data model', multi=False)
 
     # Mesh Type: unstructured|structured
-    #            (could be both, but currently not support for structured) 
+    #            (could be both, but currently not support for structured)
     variant('mesh_type', default='unstructured', values=('unstructured', 'structured'), description='Select mesh type: unstructured or structured')
 
     # Shared Libraries
@@ -45,16 +45,16 @@ class Amanzi(CMakePackage):
     # Mesh Framework
     variant('mesh_framework', default='mstk', values=('mstk','moab'), description='Unstructured mesh framework', multi=True)
 
-    # Solvers 
+    # Solvers
     variant('hypre', default=True, description='Enable Hypre solver support')
 
-    # Physics 
+    # Physics
     variant('physics', default='amanzi', values=('amanzi','ats'), description='Physics implementation')
 
     # I/O
     variant('silo', default=False, description='Enable Silo reader for binary files')
 
-    # Geochemistry 
+    # Geochemistry
     variant('geochemistry', default=False, description='Enable geochemistry support')
 
     # Testing Suite
@@ -65,7 +65,7 @@ class Amanzi(CMakePackage):
     depends_on('git', type='build')
     depends_on('cmake@3.17:',  type='build')
 
-    ##### CORE DEPENDENCIES ##### 
+    ##### CORE DEPENDENCIES #####
 
     depends_on('mpi')
     depends_on('python@3.4:')
@@ -73,12 +73,12 @@ class Amanzi(CMakePackage):
     core_dependencies = {
         'zlib','metis', 'parmetis', 'seacas -x11',
         'boost@1.79.0 cxxstd=14 +program_options +system +filesystem +regex',
-        'netcdf-c +parallel-netcdf', 'hdf5 +mpi+fortran+hl api=default', 
+        'netcdf-c +parallel-netcdf', 'hdf5 +mpi+fortran+hl api=default',
         'ascemio'
     }
 
-    for dep in core_dependencies: 
-        depends_on(dep); 
+    for dep in core_dependencies:
+        depends_on(dep);
 
     # The following core dependencies do not support +shared/~shared
     depends_on('xerces-c')
@@ -88,8 +88,8 @@ class Amanzi(CMakePackage):
     geochemistry = {
             'alquimia@1.0.9','petsc@3.16.0', 'pflotran@3.0.2', 'crunchtope'
     }
-    for dep in geochemistry: 
-        depends_on(dep, when='+geochemistry'); 
+    for dep in geochemistry:
+        depends_on(dep, when='+geochemistry');
 
     ##### Hypre #####
     depends_on('superlu@5.2.2', when='+hypre')
@@ -123,7 +123,7 @@ class Amanzi(CMakePackage):
     ##### Other #####
     depends_on('trilinos@13.0.0.afc4 +boost +hdf5 +hypre +mpi +amesos'
                '+anasazi +amesos2 +epetra +ml +epetraext +belos +aztec'
-               '+zoltan +nox +ifpack +muelu +basker -ifpack2' 
+               '+zoltan +nox +ifpack +muelu +basker -ifpack2'
                '+superlu-dist cxxstd=14')
     depends_on('exprtk')
 
@@ -141,7 +141,7 @@ class Amanzi(CMakePackage):
         options.append('-DMPI_EXEC:PATH='+mpiexec_bin)
         options.append('-DMPI_EXEC_NUMPROCS_FLAG:STRING=-n')
         #options.append('-DTESTS_REQUIRE_MPIEXEC:BOOL=ON')
-        
+
         # Provide information normally in the cache?
         options.append('-DZLIB_DIR=' + self.spec['zlib'].prefix)
         options.append('-DMETIS_DIR=' + self.spec['metis'].prefix)
@@ -165,23 +165,23 @@ class Amanzi(CMakePackage):
         options.append('-DENABLE_DBC=ON')
         options.append('-DENABLE_Regression_Tests=OFF')
 
-        if '+shared' in self.spec: 
+        if '+shared' in self.spec:
             options.append('-DBUILD_SHARED_LIBS=ON')
-        else: 
+        else:
             options.append('-DBUILD_SHARED_LIBS=OFF')
 
-        if 'data_model=epetra' in self.spec: 
+        if 'data_model=epetra' in self.spec:
             options.append('-DENABLE_Epetra=ON')
-        else: 
+        else:
             options.append('-DENABLE_Epetra=OFF')
             options.append('-DENABLE_ALQUIMIA=OFF')
             options.append('-DENABLE_PETSC=OFF')
             options.append('-DENABLE_PFLOTRAN=OFF')
             options.append('-DENABLE_CRUNCHTOPE=OFF')
 
-        if 'data_model=tpetra' in self.spec: 
+        if 'data_model=tpetra' in self.spec:
             options.append('-DENABLE_Tpetra=ON')
-        else: 
+        else:
             options.append('-DENABLE_Tpetra=OFF')
 
         if '+geochemistry' in self.spec:
@@ -190,7 +190,7 @@ class Amanzi(CMakePackage):
             options.append('-DPETSc_DIR=' + self.spec['petsc'].prefix)
             options.append('-DENABLE_PFLOTRAN=ON')
             options.append('-DPFLOTRAN_LIBRARY_DIR=' + self.spec['pflotran'].prefix + '/lib')
-            options.append('-DAlquimia_DIR=' + self.spec['alquimia'].prefix) 
+            options.append('-DAlquimia_DIR=' + self.spec['alquimia'].prefix)
             options.append('-DAlquimia_INCLUDE_DIR=' + self.spec['alquimia'].prefix + 'include/alquimia')
             options.append('-DENABLE_CRUNCHTOPE=ON')
             options.append('-DCrunchTope_DIR=' + self.spec['crunchtope'].prefix)
@@ -200,14 +200,14 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_PFLOTRAN=OFF')
             options.append('-DENABLE_CRUNCHTOPE=OFF')
 
-        if 'physics=amanzi' in self.spec: 
+        if 'physics=amanzi' in self.spec:
             options.append('-DENABLE_AmanziPhysicsModule=ON')
-        else: 
+        else:
             options.append('-DENABLE_AmanziPhysicsModule=OFF')
 
-        if 'physics=ats' in self.spec: 
+        if 'physics=ats' in self.spec:
             options.append('-DENABLE_ATSPhysicsModule=ON')
-        else: 
+        else:
             options.append('-DENABLE_ATSPhysicsModule=OFF')
 
         if '+tests' in self.spec:
@@ -237,7 +237,7 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_MESH_MOAB=ON')
             options.append('-DMOAB_LIBRARY_DIR=' + self.spec['moab'].prefix + '/lib')
             options.append('-DMOAB_INCLUDE_DIR=' + self.spec['moab'].prefix + '/include/moab')
-       
+
         if 'mesh_type=unstructured' in self.spec:
             options.append('-DENABLE_Unstructured=ON')
         else:
@@ -245,7 +245,7 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_MESH_MSTK=OFF')
             options.append('-DENABLE_MESH_MOAB=OFF')
 
-        if 'mesh_type=structured'in self.spec: 
+        if 'mesh_type=structured'in self.spec:
             options.append('-DENABLE_Structured=ON')
             options.append('-DENABLE_PETSC=ON')
             options.append('-DPETSc_DIR=' + self.spec['petsc'].prefix)
@@ -262,12 +262,12 @@ class Amanzi(CMakePackage):
         else:
             options.append('-DENABLE_Structured=OFF')
             options.append('-DENABLE_CCSE_TOOLS:BOOL=OFF')
-        
-        if '+hypre' in self.spec: 
+
+        if '+hypre' in self.spec:
             options.append('-DHYPRE_DIR=' + self.spec['hypre'].prefix)
             options.append('-DENABLE_SUPERLU=ON')
             options.append('-DENABLE_HYPRE=ON')
-        else: 
+        else:
             options.append('-DENABLE_SUPERLU=OFF')
             options.append('-DENABLE_HYPRE=OFF')
 
@@ -275,19 +275,19 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_Silo=ON')
         else:
             options.append('-DENABLE_Silo=OFF')
-        
+
         # Change to the type of kokkos backend
         # Need trilinos to support CUDA
         #if '+gpu' in self.spec:
         #    options.append('-DAMANZI_ARCH="Summit"')
-        #else: 
+        #else:
         #    options.append('-DAMANZI_ARCH=\'\'')
 
-        # unused 
+        # unused
         return options
 
-    def build(self,spec,prefix): 
+    def build(self,spec,prefix):
         with working_dir(self.build_directory):
             make(*self.build_targets)
-            if '+tests' in self.spec: 
+            if '+tests' in self.spec:
                 make("test")
