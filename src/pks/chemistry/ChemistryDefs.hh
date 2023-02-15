@@ -18,7 +18,7 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-const double TCC_MIN_VALUE = 1e-100;  // [mol]
+const double TCC_MIN_VALUE = 1e-50;  // [mol]
 
 } // namespace AmanziChemistry
 } // namespace Amanzi

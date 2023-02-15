@@ -41,6 +41,8 @@ ReactiveTransportMatrixFracture_PK::ReactiveTransportMatrixFracture_PK(
   subcycling_ = my_list_->get<bool>("subcycle chemistry", true);
 
   AMANZI_ASSERT(master_ == 1);
+
+  vo_ = Teuchos::rcp(new VerboseObject("CoupledRT_PK", *global_list));
 }
 
 
@@ -241,6 +243,11 @@ ReactiveTransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool
     fail = true;
   } catch (...) {
     fail = true;
+  }
+
+  if (fail) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "\nStep failed. Last chemistry step was " << dt_next << "\n";
   }
 
   return fail;

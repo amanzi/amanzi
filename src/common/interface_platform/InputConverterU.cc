@@ -201,6 +201,9 @@ InputConverterU::Translate(int rank, int num_proc)
     out_list.sublist("thermodynamic database") = TranslateThermodynamicDatabase_();
   }
 
+  // global verbosity if local is missing
+  out_list.sublist("verbose object") = verb_list_;
+
   // -- final I/O
   PrintStatistics_();
 
