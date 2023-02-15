@@ -117,7 +117,6 @@ ObservableAqueous::ComputeObservation(State& S,
   int dim = mesh_->space_dimension();
 
   // separate cases for density
-  double rho = S.Get<double>("const_fluid_density");
   Key mol_density_key = Keys::getKey(domain_, "molar_density_liquid");
 
   Teuchos::RCP<const Epetra_MultiVector> rho_c;
@@ -131,13 +130,12 @@ ObservableAqueous::ComputeObservation(State& S,
   Key pressure_key = Keys::getKey(domain_, "pressure");
   Key perm_key = Keys::getKey(domain_, "permeability");
 
-  S.GetEvaluator(wc_key).Update(S, "cycle driver");
-  const auto& wc = *S.Get<CompositeVector>(wc_key).ViewComponent("cell");
-  const auto& porosity = *S.Get<CompositeVector>(poro_key).ViewComponent("cell");
-
   unit = "";
 
   if (variable_ == "volumetric water content") {
+    S.GetEvaluator(wc_key).Update(S, "cycle driver");
+    const auto& wc = *S.Get<CompositeVector>(wc_key).ViewComponent("cell");
+
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
       double vol = mesh_->cell_volume(c);
@@ -151,7 +149,12 @@ ObservableAqueous::ComputeObservation(State& S,
       Exceptions::amanzi_throw(msg);
     }
 
+    S.GetEvaluator(wc_key).Update(S, "cycle driver");
+
+    double rho = S.Get<double>("const_fluid_density");
+    const auto& wc = *S.Get<CompositeVector>(wc_key).ViewComponent("cell");
     const auto& pd = *S.Get<CompositeVector>(pd_key).ViewComponent("cell");
+    const auto& porosity = *S.Get<CompositeVector>(poro_key).ViewComponent("cell");
 
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
@@ -262,6 +265,8 @@ ObservableAqueous::ComputeObservation(State& S,
     Key vol_flowrate_key = Keys::getKey(domain_, "volumetric_flow_rate");
     Teuchos::RCP<const Epetra_MultiVector> aperture_rcp;
     const auto& flowrate = *S.Get<CompositeVector>(vol_flowrate_key).ViewComponent("face");
+    double rho = S.Get<double>("const_fluid_density");
+
     if (domain_ == "fracture")
       aperture_rcp = S.Get<CompositeVector>("fracture-aperture").ViewComponent("cell");
     const auto& fmap = *S.Get<CompositeVector>(vol_flowrate_key).Map().Map("face", true);
@@ -314,6 +319,7 @@ ObservableAqueous::ComputeObservation(State& S,
     }
     unit = "kg/s";
 
+  // miscalleneous observations
   } else if (variable_ == "pH") {
     Key ph_key = Keys::getKey(domain_, "pH");
     const auto& pH = *S.Get<CompositeVector>(ph_key).ViewComponent("cell");
@@ -323,6 +329,15 @@ ObservableAqueous::ComputeObservation(State& S,
       double vol = mesh_->cell_volume(c);
       *volume += vol;
       *value += pH[0][c] * vol;
+    }
+
+  } else if (variable_ == "centroid x") {
+    for (int i = 0; i < region_size_; ++i) {
+      int c = entity_ids_[i];
+      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+      double vol = mesh_->cell_volume(c);
+      *volume += vol;
+      *value += xc[0] * vol;
     }
   } else {
     msg << "Cannot make an observation for aqueous variable \"" << variable_ << "\"";
