@@ -1,5 +1,5 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -9,6 +9,7 @@
 */
 
 //! Operator represents a linear map, and typically encapsulates a discretization.
+
 /*!
 ``Operator`` represents a map from linear space X to linear space Y.  Typically,
 this map is a linear map, and encapsulates much of the discretization involved
@@ -286,6 +287,7 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   void OpPushBack(const Teuchos::RCP<Op>& op) { ops_.push_back(op); }
   void OpExtend(op_iterator begin, op_iterator end);
   void OpReplace(const Teuchos::RCP<Op>& op, int index) { ops_[index] = op; }
+  void OpErase(op_iterator begin, op_iterator end) { ops_.erase(begin, end); }
 
   // quality control
   void Verify() const;
