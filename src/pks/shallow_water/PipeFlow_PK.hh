@@ -27,14 +27,14 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   ~PipeFlow_PK() {};
 
-  virtual double NumericalSourceFriction(double htc, double Bc, double qx) override;
+  virtual double NumericalSourceFriction(double h, double qx, double WettedAngle) override;
 
   virtual void Initialize() override;
 
+  virtual void UpdateWettedAngle() override;
+
  private:
   static RegisteredPKFactory<PipeFlow_PK> reg_;
-
-  std::string hydrostatic_pressure_force_type_;
 
   double pipe_diameter_;
 

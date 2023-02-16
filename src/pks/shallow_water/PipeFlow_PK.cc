@@ -15,21 +15,14 @@
 namespace Amanzi {
 namespace ShallowWater {
 
-//PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
-//                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
-//                  const Teuchos::RCP<State>& S,
-//                  const Teuchos::RCP<TreeVector>& soln)
-//                  : PK(pk_tree, glist, S, soln),
-//                  ShallowWater_PK(pk_tree, glist, S, soln){
+using CV_t = CompositeVector;
+
 PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
                   const Teuchos::RCP<Teuchos::ParameterList>& glist,
                   const Teuchos::RCP<State>& S,
                   const Teuchos::RCP<TreeVector>& soln)
                   : ShallowWater_PK(pk_tree, glist, S, soln), 
                   PK(pk_tree, glist, S, soln){
-    
-
-  hydrostatic_pressure_force_type_ = sw_list_->get<std::string>("hydrostatic pressure force type", "pipe flow");
 
   pipe_diameter_ = sw_list_->get<double>("pipe diameter", 1.0);
 
@@ -42,22 +35,49 @@ PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
 //--------------------------------------------------------------------
 // Discretization of the friction source term
 //--------------------------------------------------------------------
-double PipeFlow_PK::NumericalSourceFriction(double htc, double Bc, double qx)
+double PipeFlow_PK::NumericalSourceFriction(double h, double qx, double WettedAngle)
 {
 
-  double WettedAngle = 2.0 * acos(1.0 - 2.0 * (htc - Bc) / pipe_diameter_);
-  double WettedPerimeter = 0.5 * pipe_diameter_ * WettedAngle;
-  double num = - g_ * Manning_coeff_ * Manning_coeff_ * pow(WettedPerimeter, 4.0/3.0) * fabs(qx) * qx;
-  double denom = pow( (htc - Bc), 7.0/3.0);
-  double S1 = num / denom;
+  double S1 = 0.0;
+  if (fabs(h) > 1.e-10) { //we have to raise this to the power of 7/3 below so the tolerance needs to be stricter
+     double WettedPerimeter = 0.5 * pipe_diameter_ * WettedAngle;
+     double num = - g_ * Manning_coeff_ * Manning_coeff_ * pow(WettedPerimeter, 4.0/3.0) * fabs(qx) * qx;
+     double denom = pow( h, 7.0/3.0);
+     S1 = num / denom;
+  }
 
   return S1;
 }
 
-void PipeFlow_PK::Initialize(){
+void PipeFlow_PK::UpdateWettedAngle(){
 
-  //// gravity
-  //g_ = norm(S_->Get<AmanziGeometry::Point>("gravity"));
+   auto& h_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+   auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+   double tol = 1.e-12;
+   unsigned max_iter = 1000;
+
+   for (int c = 0; c < ncells_owned; ++c) {
+
+      if (fabs(h_c[0][c]) < 1.e-12) {
+         WettedAngle_c[0][c] = 0.0;
+      } 
+      else {
+         unsigned iter = 0; 
+         if (fabs(WettedAngle_c[0][c]) < 1.e-12) WettedAngle_c[0][c] = 3.14159265359; // change initial guess to pi if was zero
+         double err = WettedAngle_c[0][c] - sin(WettedAngle_c[0][c]) - 8.0 * h_c[0][c] / (pipe_diameter_ * pipe_diameter_);
+         while(iter < max_iter && fabs(err) > tol){
+            WettedAngle_c[0][c] =  WettedAngle_c[0][c] - err / (1.0 - cos(WettedAngle_c[0][c]));
+            err = WettedAngle_c[0][c] - sin(WettedAngle_c[0][c]) - 8.0 * h_c[0][c] / (pipe_diameter_ * pipe_diameter_);
+            iter++;
+         }
+      }
+   }
+
+}
+
+void PipeFlow_PK::Initialize(){
 
   ShallowWater_PK::Initialize();
 
@@ -68,11 +88,11 @@ void PipeFlow_PK::Initialize(){
   model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
     .set<double>("pipe diameter", pipe_diameter_);
   model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
-    .set<std::string>("hydrostatic pressure force type", hydrostatic_pressure_force_type_);
-  model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
     .set<double>("celerity", celerity_);
   NumericalFluxFactory nf_factory;
   numerical_flux_ = nf_factory.Create(model_list);
+
+  UpdateWettedAngle();
 
 }
 

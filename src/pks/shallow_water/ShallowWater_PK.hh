@@ -99,7 +99,9 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   std::vector<double> NumericalSourceBedSlope(int c, double htc,
                                       double Bc, double Bmax, const Epetra_MultiVector& B_n);
 
-  virtual double NumericalSourceFriction(double htc, double Bc, double qx){return 0.0;};
+  virtual double NumericalSourceFriction(double h, double qx, double WettedAngle){return 0.0;};
+
+  virtual void UpdateWettedAngle(){};
 
   // access
   double get_total_source() const { return total_source_; }
@@ -129,6 +131,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   Key total_depth_key_, bathymetry_key_;
   Key hydrostatic_pressure_key_;
   Key riemann_flux_key_;
+  Key wetted_angle_key_;
 
   std::string passwd_;
 
@@ -147,7 +150,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction>> bcs_;
   std::vector<Teuchos::RCP<Operators::BCs>> op_bcs_;
 
-  std::string hydrostatic_pressure_force_type_;
+  int hydrostatic_pressure_force_type_; //0 is shallow water, 1 is pipe flow
 
   // limited reconstruction
   bool use_limiter_;

@@ -20,6 +20,7 @@ void
 ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
                                           TreeVector& fun)
 {
+
   const auto& h_temp = *A.SubVector(0)->Data()->ViewComponent("cell", true);
   const auto& q_temp = *A.SubVector(1)->Data()->ViewComponent("cell", true);
 
@@ -43,6 +44,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_).ViewComponent("cell", true);
   auto& vel_c = *S_->GetW<CompositeVector>(velocity_key_, passwd_).ViewComponent("cell", true);
   auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_).ViewComponent("face", true);
+
+  auto& WettedAngle_c = *S_->GetW<CompositeVector>(wetted_angle_key_, passwd_).ViewComponent("cell", true);
  
   for (int c = 0; c < ncells_wghost; ++c) {
     double factor = inverse_with_tolerance(h_temp[0][c], cell_area2_max_);
@@ -173,7 +176,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   std::vector<double> FNum_rot;        // fluxes
   std::vector<double> BedSlopeSource;  // bed slope source
   double FrictionSource = 0.0;         // friction source
-  std::vector<double> UL(3), UR(3), U; // local state vectors
+  std::vector<double> UL(4), UR(4), U; // local state vectors and wetted angle
 
   // Simplest flux form
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
@@ -215,6 +218,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     UL[0] = h_rec;
     UL[1] = h_rec * vn;
     UL[2] = h_rec * vt;
+    UL[3] = 0.5 * (WettedAngle_c[0][c1] + WettedAngle_c[0][c2]); //TODO: check this
 
     if (c2 == -1) {
       if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
@@ -247,6 +251,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       UR[0] = h_rec;
       UR[1] = h_rec * vn;
       UR[2] = h_rec * vt;
+      UR[3] = 0.5 * (WettedAngle_c[0][c1] + WettedAngle_c[0][c2]);;
     }
 
     FNum_rot = numerical_flux_->Compute(UL, UR);
@@ -294,7 +299,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     U[2] = q_temp[1][c];
 
     BedSlopeSource = NumericalSourceBedSlope(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n);
-    FrictionSource = NumericalSourceFriction(U[0] + B_c[0][c], B_c[0][c], U[1]);
+    FrictionSource = NumericalSourceFriction(U[0], U[1], WettedAngle_c[0][c]);
 
     h = h_c_tmp[0][c] + (BedSlopeSource[0] + ext_S_cell[c]);
     qx = q_c_tmp[0][c] + BedSlopeSource[1] + FrictionSource;
@@ -304,6 +309,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     f_temp1[0][c] = qx;
     f_temp1[1][c] = qy;
   }
+
 }
 
 

@@ -58,7 +58,7 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
   cfl_ = sw_list_->get<double>("cfl", 0.1);
   max_iters_ = sw_list_->get<int>("number of reduced cfl cycles", 10);
   cfl_positivity_ = sw_list_->get<double>("depth positivity cfl", 0.95);
-  hydrostatic_pressure_force_type_ = sw_list_->get<std::string>("hydrostatic pressure force type", "shallow water");
+  hydrostatic_pressure_force_type_ = sw_list_->get<int>("hydrostatic pressure force type", 0);
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = sw_list_->sublist("verbose object");
@@ -86,6 +86,7 @@ ShallowWater_PK::Setup()
   hydrostatic_pressure_key_ = Keys::getKey(domain_, "ponded_pressure");
 
   riemann_flux_key_ = Keys::getKey(domain_, "riemann_flux");
+  wetted_angle_key_ = Keys::getKey(domain_, "wetted angle");
 
   //-------------------------------
   // constant fields
@@ -177,6 +178,14 @@ ShallowWater_PK::Setup()
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
 
+  // -- wetted angle
+  if (!S_->HasRecord(wetted_angle_key_)) {
+    S_->Require<CV_t, CVS_t>(wetted_angle_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
   // -- previous state of ponded depth (for coupling)
   if (!S_->HasRecord(prev_ponded_depth_key_)) {
     S_->Require<CV_t, CVS_t>(prev_ponded_depth_key_, Tags::DEFAULT, passwd_)
@@ -261,7 +270,7 @@ ShallowWater_PK::Initialize()
   model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
     .set<double>("gravity", g_);
   model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
-    .set<std::string>("hydrostatic pressure force type", hydrostatic_pressure_force_type_);
+    .set<int>("hydrostatic pressure force type", hydrostatic_pressure_force_type_);
   NumericalFluxFactory nf_factory;
   numerical_flux_ = nf_factory.Create(model_list);
 
@@ -336,24 +345,26 @@ ShallowWater_PK::Initialize()
   // calculate cell area square (used as a tolerance)  
   cell_area2_max_ = cell_area_max * cell_area_max;
 
-  // initialize h from ht or ht from h
-  if (!S_->GetRecord(ponded_depth_key_, Tags::DEFAULT).initialized()) {
-    auto& h_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-    auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  //if (!hydrostatic_pressure_force_type_){ //TODO this has to be put back when we redo the bed slope source
+     // initialize h from ht or ht from h
+     if (!S_->GetRecord(ponded_depth_key_, Tags::DEFAULT).initialized()) {
+        auto& h_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+        auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
-    for (int c = 0; c < ncells_owned; c++) { h_c[0][c] = ht_c[0][c] - B_c[0][c]; }
+        for (int c = 0; c < ncells_owned; c++) { h_c[0][c] = ht_c[0][c] - B_c[0][c]; }
 
-    S_->GetRecordW(ponded_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
-  }
+        S_->GetRecordW(ponded_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
+     }
 
-  if (!S_->GetRecord(total_depth_key_).initialized()) {
-    const auto& h_c = *S_->Get<CV_t>(ponded_depth_key_).ViewComponent("cell");
-    auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+     if (!S_->GetRecord(total_depth_key_).initialized()) {
+        const auto& h_c = *S_->Get<CV_t>(ponded_depth_key_).ViewComponent("cell");
+        auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
-    for (int c = 0; c < ncells_owned; c++) { ht_c[0][c] = h_c[0][c] + B_c[0][c]; }
+        for (int c = 0; c < ncells_owned; c++) { ht_c[0][c] = h_c[0][c] + B_c[0][c]; }
 
-    S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
-  }
+        S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
+     }
+  //}//TODO see above TODO
 
   InitializeCVField(S_, *vo_, velocity_key_, Tags::DEFAULT, passwd_, 0.0);
   InitializeCVField(S_, *vo_, discharge_key_, Tags::DEFAULT, discharge_key_, 0.0);
@@ -362,6 +373,7 @@ ShallowWater_PK::Initialize()
   S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
 
   InitializeCVField(S_, *vo_, riemann_flux_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, passwd_, 3.14159265359); //initialiezed at pi 
   InitializeFieldFromField_(prev_ponded_depth_key_, ponded_depth_key_, false);
 
   // soln_ is the TreeVector of conservative variables [h hu hv]
@@ -529,6 +541,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     vel_c[1][c] = factor * q_temp[1][c];
     ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
+  UpdateWettedAngle();
 
   // For consistency with other flow models, we need to track previous h
   // which was placed earlier in the archive.

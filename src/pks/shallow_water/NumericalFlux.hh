@@ -33,7 +33,7 @@ class NumericalFlux {
  protected:
   double g_;
   double lambda_max_, lambda_min_;
-  std::string hydrostatic_pressure_force_type_;
+  int hydrostatic_pressure_force_type_;
   double pipe_diameter_;
   double celerity_;
 
@@ -45,7 +45,7 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
 {
   std::vector<double> F(3);
 
-  double h, h2, u, v;
+  double h, h2, u, v, WettedAngle;
   double eps2 = 1e-12;
 
   // transform from conservative (h, hu, hv) to primary (h, u, v) variables
@@ -53,22 +53,25 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
   h2 = h * h;
   u = 2.0 * h * U[1] / (h2 + std::fmax(h2, eps2));
   v = 2.0 * h * U[2] / (h2 + std::fmax(h2, eps2));
+  // get reconstructed wetted angle
+  WettedAngle = U[3];
 
   double HydrostaticPressureForce = 0.0;
 
-  if (hydrostatic_pressure_force_type_.compare("shallow water") == 0){
+  if (!hydrostatic_pressure_force_type_){
 
      HydrostaticPressureForce = 0.5 * g_ * h2;
 
   }
 
-  else if (hydrostatic_pressure_force_type_.compare("pipe flow") == 0){
+  else if (hydrostatic_pressure_force_type_){
 
-     if (h < pipe_diameter_){ //flow is ventilated (free-surface)
+         std::cout << " ALWAYS HERE " << std::endl;
+     double pi = 3.14159265359;
+     double PipeCrossSection = pi * 0.25 * pipe_diameter_ * pipe_diameter_;
 
-        double WettedAngle = 2.0 * acos(1.0 - 2.0 * h / pipe_diameter_);
+     if (h < PipeCrossSection){ //flow is ventilated (free-surface)
 
-        // Eq. (3) in "A novel 1D-2D coupled model for hydrodynamic simulation of flows in drainage networks"
         HydrostaticPressureForce = 3.0 * sin(WettedAngle * 0.5) - pow(sin(WettedAngle * 0.5),3) - 3 * (WettedAngle * 0.5) * cos(WettedAngle * 0.5);
         HydrostaticPressureForce = HydrostaticPressureForce * g_ * pow(pipe_diameter_,3) / 24.0;
 
@@ -76,12 +79,8 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
 
       else { //flow is pressurized
 
-         double pi = 3.14159265359; 
-         double PipeCrossSection = pi * 0.25 * pipe_diameter_ * pipe_diameter_;
-
-         //Eq. (8) in "A novel 1D-2D coupled model for hydrodynamic simulation of flows in drainage networks"
-         double PipeArea = pi * pipe_diameter_ * pipe_diameter_ * 0.25;
-         double PressurizedHead = (celerity_ * celerity_ * (h - PipeArea)) / (g_ * PipeArea);
+         std::cout << " NEVER HERE " << std::endl;
+         double PressurizedHead = (celerity_ * celerity_ * (h - PipeCrossSection)) / (g_ * PipeCrossSection);
          HydrostaticPressureForce = g_ * h * (PressurizedHead + sqrt(h/pi)); 
 
       }
