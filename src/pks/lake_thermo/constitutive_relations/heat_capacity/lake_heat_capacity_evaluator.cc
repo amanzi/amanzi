@@ -44,7 +44,7 @@ LakeHeatCapacityEvaluator::LakeHeatCapacityEvaluator(
   double roi  = 917.;  // density of ice
 
   // cw    = 3990.; ///row;    // specific heat of water
-  cw    = 4182.; // /row; // [J/kg K]
+  cw    = 4182.; ///row; // [J/kg K]
   ci    = 2150.; ///roi;    // specific heat of ice
   // ci = cw;
 }

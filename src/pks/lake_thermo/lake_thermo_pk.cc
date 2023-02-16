@@ -1135,7 +1135,7 @@ void Lake_Thermo_PK::UpdateBoundaryConditions_(
   const Epetra_MultiVector& surf_qE_cond_v = *S->GetFieldData("surface-qE_conducted")->ViewComponent("cell",false);
   std::cout << "surf_qE_cond_v = " << surf_qE_cond_v[0][0] << std::endl; 
 
-  if (snow_depth_v[0][0] > 2.e-2) { // snow exists 
+  if (snow_depth_v[0][0] > 2.e-2 && h_ice_ > 0.) { // snow exists 
   // if (false) { 
 
     // // get snow temperature
@@ -1188,7 +1188,7 @@ void Lake_Thermo_PK::UpdateBoundaryConditions_(
       // if (fcells[0] == 0) { //bottom
       //   values[f] = 0.;
       // } else {
-        values[f] = -surf_qE_cond_v[0][0]/h_; 
+        values[f] = -surf_qE_cond_v[0][0]/h_; ///cv[0][ncomp-1]; 
       // }
       adv_markers[f] = Operators::OPERATOR_BC_NEUMANN;
       adv_values[f] = 0.;

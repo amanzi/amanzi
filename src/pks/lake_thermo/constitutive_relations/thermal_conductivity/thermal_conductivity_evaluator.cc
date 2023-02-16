@@ -114,6 +114,8 @@ void ThermalConductivityEvaluator::EvaluateField_(
     Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
     const Epetra_MultiVector& h = *depth->ViewComponent(*comp,false);
 
+    const Epetra_MultiVector& cv =
+      *S->GetFieldData("cell_volume")->ViewComponent("cell",false);
 
     int ncomp = result->size(*comp, false);
 
@@ -279,7 +281,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
       // double hh = (h[0][0] == 0.) ? 3.0 : h[0][0]; // Atqasuk
       // double hh = (h[0][0] == 0.) ? 24.0 : h[0][0]; // Toolik
       // std::cout << "hh = " << hh << std::endl;
-      result_v[0][i] = lambda[i]/(hh*hh);
+      result_v[0][i] = lambda[i]/(hh*hh); ///cv[0][0];
       // std::cout << "result = " << result_v[0][i] << std::endl;
     }
 

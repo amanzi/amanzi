@@ -183,6 +183,13 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   }
 #endif
 
+// const Epetra_MultiVector& g_c = *res->ViewComponent("cell", false);
+
+// unsigned int ncells = g_c.MyLength();
+// for (unsigned int c=0; c!=ncomp; ++c) {
+//   g_c[0][c] = g_c[0][c]/cv[0][0];
+// }
+
 };
 
 

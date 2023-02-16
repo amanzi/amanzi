@@ -205,7 +205,7 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
     B_w_c = (temp1[0][ncells-1] < 273.15) ? 0. : B_w;
 
     flux_f[0][f] = -1.*cp*rho*(dhdt_c*(1.-xcf[2]) - B_w_c)/(h_+1.e-12); // / cv[0][f_cells[0]]; //* normal[2]; // / cv[0][f_cells[0]]; // * normal[2] ; // / cv[0][f_cells[0]]; //*normal[2]; // *normal or not?
-    // flux_f[0][f] = -1.*(dhdt_c*(1.-xcf[2]) - B_w_c)/(h_+1.e-12); // / cv[0][f_cells[0]];
+    // flux_f[0][f] = -1.*(dhdt_c*(1.-xcf[2]) - B_w_c)/(h_+1.e-12) / cv[0][f_cells[0]];
   //  std::cout << "f = " << f << ", normal = " << normal << ", dir = " << dir << std::endl;
   //  for (int j = 0; j < f_cells.size(); j++) std::cout << "f_cells[" << j <<"] = " << f_cells[j] << std::endl;
   }
@@ -408,7 +408,7 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
 
       // -1.* because I switched to vertical xi coordinate
       g_c[0][c] += -1.*( (S0_*exp(-alpha*h_*(1.-xc[2]))*(alpha*h_)/(h_+1.e-12) - cp[0][c]*rho[0][c]*temp[0][c]*dhdt_c/(h_+1.e-12)) ) * cv[0][c] ; // * cv[0][c] ;
-      // g_c[0][c] += -1.*( (S0_*exp(-alpha*h_*(1.-xc[2]))*(alpha*h_)/(h_+1.e-12) - enrg[0][c]*dhdt_c/(h_+1.e-12)) ) * cv[0][c] ;
+      // g_c[0][c] += -1.*( (S0_*exp(-alpha*h_*(1.-xc[2]))*(alpha*h_)/(h_+1.e-12) - enrg[0][c]*dhdt_c/(h_+1.e-12)) ); // * cv[0][c] ;
       // g_c[0][c] += -1.*( (S0_*exp(-alpha*h_*(1.-xc[2]))*(alpha*h_)/(h_+1.e-12)) ) * cv[0][c] ;
 
 
