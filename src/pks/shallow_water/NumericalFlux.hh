@@ -66,7 +66,6 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
 
   else if (hydrostatic_pressure_force_type_){
 
-         std::cout << " ALWAYS HERE " << std::endl;
      double pi = 3.14159265359;
      double PipeCrossSection = pi * 0.25 * pipe_diameter_ * pipe_diameter_;
 

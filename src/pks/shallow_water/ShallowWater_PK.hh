@@ -145,12 +145,12 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   // gravity magnitude
   double g_;
 
+  int hydrostatic_pressure_force_type_; //0 is shallow water, 1 is pipe flow
+
  private:
   // boundary conditions
   std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction>> bcs_;
   std::vector<Teuchos::RCP<Operators::BCs>> op_bcs_;
-
-  int hydrostatic_pressure_force_type_; //0 is shallow water, 1 is pipe flow
 
   // limited reconstruction
   bool use_limiter_;
