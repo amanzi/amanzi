@@ -27,6 +27,7 @@ namespace AmanziInput {
 Teuchos::ParameterList
 InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::ParameterList& state_list)
 {
+  Errors::Message msg;
   Teuchos::ParameterList out_list;
   multiphase_ = true;
 
@@ -37,6 +38,12 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
 
   bool flag;
   DOMNode* node;
+
+  // checks
+  if (eos_model_ == "") {
+    msg << "EOS model is required.\n";
+    Exceptions::amanzi_throw(msg);
+  }
 
   // header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
@@ -89,13 +96,22 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
   out_list.sublist("operators") =
     TranslateDiffusionOperator_(disc_method, "", "", "upwind: face", "vapor matrix", true);
 
-  out_list.sublist("operators").sublist("molecular diffusion operator") =
-    out_list.sublist("operators").sublist("diffusion operator");
+  auto& tmp1 = out_list.sublist("operators").sublist("diffusion operator");
+  auto& tmp2 = out_list.sublist("operators").sublist("molecular diffusion operator");
+  tmp2.sublist("matrix") = tmp1.sublist("matrix");
+  tmp2.sublist("preconditioner") = tmp1.sublist("preconditioner");
+
+  tmp2.sublist("matrix").set<bool>("gravity", false);
+  tmp2.sublist("preconditioner").set<bool>("gravity", false);
 
   out_list.sublist("operators")
     .sublist("advection operator")
     .set<std::string>("discretization primary", "upwind")
     .set<int>("reconstruction order", 0);
+
+  // -- upwind 
+  tmp1.sublist("upwind").set<std::string>("upwind method", "upwind: darcy velocity");
+  tmp1.sublist("upwind").sublist("upwind standard parameters").set<double>("tolerance", 1e-12);
 
   // additional state list
   auto& fic = state_list.sublist("initial conditions");
@@ -113,6 +129,8 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
 
   Key mol_density_liquid_key = Keys::getKey(domain, "molar_density_liquid");
   Key mol_density_gas_key = Keys::getKey(domain, "molar_density_gas");
+
+  Key mass_density_liquid_key = Keys::getKey(domain, "mass_density_liquid");
 
   Key mole_xl_key = Keys::getKey(domain, "mole_fraction_liquid");
   Key mole_xg_key = Keys::getKey(domain, "mole_fraction_gas");
@@ -160,15 +178,19 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
   AddIndependentFieldEvaluator_(fev, viscosity_liquid_key, "All", "cell", viscosity);
 
   // -- diffusion
-  auto diff = out_list.sublist("molecular diffusion")
-                .get<Teuchos::Array<double>>("aqueous values")
-                .toVector();
-  AddIndependentFieldEvaluator_(fev, mol_diff_liquid_key, "All", "cell", diff[0]);
+  auto diff_l = out_list.sublist("molecular diffusion")
+      .get<Teuchos::Array<double>>("aqueous values").toVector();
+  auto diff_g = out_list.sublist("molecular diffusion")
+      .get<Teuchos::Array<double>>("gaseous values").toVector();
 
-  diff = out_list.sublist("molecular diffusion")
-           .get<Teuchos::Array<double>>("gaseous values")
-           .toVector();
-  AddIndependentFieldEvaluator_(fev, mol_diff_gas_key, "All", "cell", diff[0]);
+  if (diff_l.size() == 0 || diff_l.size() != diff_g.size()) {
+    msg << "Incomplete definition of species: #aqueous=" << diff_l.size() 
+        << ", #gaseous=" << diff_g.size() << ".\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  AddIndependentFieldEvaluator_(fev, mol_diff_liquid_key, "All", "cell", diff_l[0]);
+  AddIndependentFieldEvaluator_(fev, mol_diff_gas_key, "All", "cell", diff_g[0]);
 
   // -- pressure (why do we use IC? FIXME)
   fic.sublist(pressure_liquid_key) = fic.sublist(Keys::getKey(domain, "pressure"));
@@ -290,8 +312,8 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
     .set<std::string>("evaluator type", "product")
     .set<Teuchos::Array<std::string>>(
       "dependencies",
-      std::vector<std::string>({ mol_diff_liquid_key, mol_density_liquid_key, sat_liquid_key }))
-    .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1 }))
+      std::vector<std::string>({ mol_diff_liquid_key, mol_density_liquid_key, porosity_key, sat_liquid_key }))
+    .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1, 1 }))
     .set<std::string>("tag", "");
 
   fev.sublist(diff_gas_key)

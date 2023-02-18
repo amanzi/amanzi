@@ -262,6 +262,12 @@
         <Parameter name="reconstruction order" type="int" value="0"/>
       </ParameterList>
       <ParameterList name="diffusion operator">
+        <ParameterList name="upwind">
+          <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
+          <ParameterList name="upwind standard parameters">
+            <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
+          </ParameterList>
+        </ParameterList>
         <ParameterList name="matrix">
           <Parameter name="discretization primary" type="string" value="fv: default"/>
           <Parameter name="discretization secondary" type="string" value="fv: default"/>
@@ -306,17 +312,6 @@
           <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
           <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
           <Parameter name="gravity" type="bool" value="true"/>
-        </ParameterList>
-        <ParameterList name="vapor matrix">
-          <Parameter name="discretization primary" type="string" value="fv: default"/>
-          <Parameter name="discretization secondary" type="string" value="fv: default"/>
-          <Parameter name="schema" type="Array(string)" value="{cell}"/>
-          <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
-          <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
-          <Parameter name="gravity" type="bool" value="true"/>
-          <Parameter name="exclude primary terms" type="bool" value="false"/>
-          <Parameter name="scaled constraint equation" type="bool" value="false"/>
-          <Parameter name="Newton correction" type="string" value="none"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -464,8 +459,8 @@
 
       <ParameterList name="diffusion_liquid">
         <Parameter name="evaluator type" type="string" value="product"/>
-        <Parameter name="dependencies" type="Array(string)" value="{molecular_diff_liquid, molar_density_liquid, saturation_liquid}"/>
-        <Parameter name="powers" type="Array(int)" value="{1, 1, 1}"/>
+        <Parameter name="dependencies" type="Array(string)" value="{molecular_diff_liquid, molar_density_liquid, porosity, saturation_liquid}"/>
+        <Parameter name="powers" type="Array(int)" value="{1, 1, 1, 1}"/>
         <Parameter name="tag" type="string" value=""/>
       </ParameterList>
       <ParameterList name="diffusion_gas">
@@ -544,37 +539,6 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="molar_density_liquid">
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-        <Parameter name="pressure key" type="string" value="pressure_liquid"/>
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="*"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="5.54083558451234276e+04"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="mass_density_liquid">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-      </ParameterList>
-
       <ParameterList name="molar_density_gas">
         <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="eos basis" type="string" value="molar"/>
@@ -584,6 +548,17 @@
           <Parameter name="eos type" type="string" value="ideal gas"/>
           <Parameter name="molar mass of gas" type="double" value="2.89646999999999995e-02"/>
         </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="molar_density_liquid">
+        <Parameter name="evaluator type" type="string" value="eos"/>
+        <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water FEHM"/>
+        </ParameterList>
+        <Parameter name="eos basis" type="string" value="both"/>
+        <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
+        <Parameter name="pressure key" type="string" value="pressure_liquid"/>
       </ParameterList>
 
       <ParameterList name="molecular_diff_liquid">
