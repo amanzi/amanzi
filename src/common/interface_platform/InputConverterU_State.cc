@@ -259,6 +259,13 @@ InputConverterU::TranslateState_()
                                 "molar density key",
                                 "eos",
                                 "density");
+    if (phases_["air"].size() > 0) {
+      AddSecondaryFieldEvaluator_(out_ev,
+                                  Keys::getKey("domain", "molar_density_gas"),
+                                  "molar density key",
+                                  "eos",
+                                  "density");
+    }
   }
 
   // optional secondary continuum
@@ -1225,6 +1232,12 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
     out_ev.sublist(field)
       .set<std::string>("eos basis", "both")
       .set<std::string>("mass density key", Keys::getKey(prefix, "mass_density_liquid"));
+  }
+ 
+  if (basename == "molar_density_gas") {
+    out_ev.sublist(field)
+      .set<std::string>("eos basis", "molar")
+      .set<std::string>("mass density key", Keys::getKey(prefix, "mass_density_gas"));
   }
 }
 

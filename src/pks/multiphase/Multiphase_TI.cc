@@ -214,12 +214,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
   // miscalleneous fields
   // -- molar densities
   S_->GetEvaluator(mol_density_gas_key_).Update(*S_, passwd_);
-  const auto& eta_g = S_->Get<CompositeVector>(mol_density_gas_key_);
-
   S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
-
-  // -- mass density of gas phase
-  auto rho_g = Teuchos::rcp(new CompositeVector(eta_g));
 
   // -- gas pressure
   S_->GetEvaluator(pressure_gas_key_).Update(*S_, passwd_);

@@ -13,6 +13,7 @@
   Miscalleneous general purpose evaluators for various flow models.
 */
 
+#include "MassDensityGas.hh"
 #include "MoleFractionLiquid.hh"
 #include "NCP_HenryLaw.hh"
 #include "NCP_MolarDensities.hh"
@@ -29,6 +30,7 @@
 namespace Amanzi {
 namespace Multiphase {
 
+Utils::RegisteredFactory<Evaluator, MassDensityGas> MassDensityGas::fac_("mass density gas");
 Utils::RegisteredFactory<Evaluator, MoleFractionLiquid>
   MoleFractionLiquid::fac_("mole fraction liquid");
 Utils::RegisteredFactory<Evaluator, NCP_HenryLaw> NCP_HenryLaw::fac_("ncp henry law");

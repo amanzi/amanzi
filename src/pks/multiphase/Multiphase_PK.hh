@@ -41,7 +41,7 @@
 
 // Multiphase
 #include "EquationStructure.hh"
-#include "MultiphaseBaseEvaluator.hh"
+#include "MultiphaseEvaluator.hh"
 #include "MultiphaseBoundaryFunction.hh"
 #include "MultiphaseTypeDefs.hh"
 
@@ -163,7 +163,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   std::string ncp_;
 
   // keys
-  Key pressure_liquid_key_, x_liquid_key_, x_gas_key_;
+  Key pressure_liquid_key_, x_liquid_key_, x_vapor_key_, x_gas_key_;
   Key saturation_liquid_key_, saturation_gas_key_, temperature_key_;
   Key energy_key_, prev_energy_key_;
   Key porosity_key_, pressure_gas_key_, pressure_vapor_key_;

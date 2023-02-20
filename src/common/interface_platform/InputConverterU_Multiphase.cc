@@ -85,8 +85,8 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
                                                                  modify_correction,
                                                                  unstr_controls,
                                                                  TI_SOLVER,
-                                                                 TI_TS_REDUCTION_FACTOR,
-                                                                 TI_TS_INCREASE_FACTOR);
+                                                                 dt_cut_["transient"],
+                                                                 dt_inc_["transient"]);
 
   // boundary and initial conditions
   out_list.sublist("boundary conditions") = TranslateMultiphaseBCs_();
@@ -429,7 +429,7 @@ InputConverterU::TranslateMultiphaseBCs_()
 
       // create names, modify data
       std::string bcname;
-      if (bctype_in == "uniform_pressure") {
+      if (bctype_in == "uniform_pressure" || bctype_in == "linear_pressure") {
         bctype = "pressure liquid";
         bcname = "boundary pressure";
       } else if (bctype_in == "inward_volumetric_flux") {
@@ -452,7 +452,22 @@ InputConverterU::TranslateMultiphaseBCs_()
       if (solute_name != "") bc.set<std::string>("name", solute_name);
 
       Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-      if (times.size() == 1) {
+      if (bctype_in == "linear_pressure") {
+        double refv;
+        std::vector<double> grad, refc;
+        auto element = static_cast<DOMElement*>(same_list[0]);
+
+        refv = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "Pa");
+        grad = GetAttributeVectorD_(element, "gradient", dim_, "Pa/m");
+        refc = GetAttributeVectorD_(element, "reference_coord", dim_, "m");
+        grad.insert(grad.begin(), 0.0);
+        refc.insert(refc.begin(), 0.0);
+
+        bcfn.sublist("function-linear")
+          .set<double>("y0", refv)
+          .set<Teuchos::Array<double>>("x0", refc)
+          .set<Teuchos::Array<double>>("gradient", grad);
+      } else if (times.size() == 1) {
         bcfn.sublist("function-constant").set<double>("value", values[0]);
       } else {
         bcfn.sublist("function-tabular")

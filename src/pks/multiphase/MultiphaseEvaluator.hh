@@ -10,11 +10,11 @@
 /*
   Multiphase PK
 
-  Adds one function to the second variable evaluator.
+  Adds one function to the secondary evaluator.
 */
 
-#ifndef AMANZI_MULTIPHASE_BASE_EVALUATOR_HH_
-#define AMANZI_MULTIPHASE_BASE_EVALUATOR_HH_
+#ifndef AMANZI_MULTIPHASE_EVALUATOR_HH_
+#define AMANZI_MULTIPHASE_EVALUATOR_HH_
 
 // Amanzi
 #include "EvaluatorSecondaryMonotype.hh"
@@ -22,14 +22,14 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class MultiphaseBaseEvaluator
+class MultiphaseEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  MultiphaseBaseEvaluator(Teuchos::ParameterList& plist)
+  MultiphaseEvaluator(Teuchos::ParameterList& plist)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), n_(0), kH_(1.0){};
 
   // inteface functions to FieldEvaluator
-  MultiphaseBaseEvaluator(const MultiphaseBaseEvaluator& other)
+  MultiphaseEvaluator(const MultiphaseEvaluator& other)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other)
   {
     n_ = other.n_;

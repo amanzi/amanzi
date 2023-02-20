@@ -22,7 +22,7 @@ namespace Multiphase {
 * Constructor.
 ****************************************************************** */
 NCP_MolarDensities::NCP_MolarDensities(Teuchos::ParameterList& plist)
-  : MultiphaseBaseEvaluator(plist)
+  : MultiphaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -41,7 +41,7 @@ NCP_MolarDensities::NCP_MolarDensities(Teuchos::ParameterList& plist)
 * Copy constructors.
 ****************************************************************** */
 NCP_MolarDensities::NCP_MolarDensities(const NCP_MolarDensities& other)
-  : MultiphaseBaseEvaluator(other){};
+  : MultiphaseEvaluator(other){};
 
 
 Teuchos::RCP<Evaluator>

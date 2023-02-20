@@ -24,7 +24,7 @@ namespace Multiphase {
 * Simple constructor
 ****************************************************************** */
 MoleFractionLiquid::MoleFractionLiquid(Teuchos::ParameterList& plist)
-  : MultiphaseBaseEvaluator(plist)
+  : MultiphaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));

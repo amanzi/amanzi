@@ -549,8 +549,9 @@
 
       <ParameterList name="molar_density_gas">
         <Parameter name="evaluator type" type="string" value="eos"/>
-        <Parameter name="eos basis" type="string" value="molar"/>
+        <Parameter name="eos basis" type="string" value="both"/>
         <Parameter name="molar density key" type="string" value="molar_density_gas"/>
+        <Parameter name="mass density key" type="string" value="mass_density_gas"/>
         <Parameter name="pressure key" type="string" value="pressure_gas"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="ideal gas"/>

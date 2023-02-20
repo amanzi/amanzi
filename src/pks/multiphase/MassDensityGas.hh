@@ -10,11 +10,11 @@
 /*
   MultiPhase PK
 
-  Calculates liquid component concentration from gas concentration.
+  Calculates mass density of gas phase.
 */
 
-#ifndef AMANZI_MULTIPHASE_TCC_LIQUID_HH_
-#define AMANZI_MULTIPHASE_TCC_LIQUID_HH_
+#ifndef AMANZI_MULTIPHASE_MASS_DENSITY_GAS_HH_
+#define AMANZI_MULTIPHASE_MASS_DENSITY_GAS_HH_
 
 #include <string>
 #include <vector>
@@ -32,9 +32,9 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class TccLiquid : public MultiphaseEvaluator {
+class MassDensityGas : public MultiphaseEvaluator {
  public:
-  TccLiquid(Teuchos::ParameterList& plist);
+  MassDensityGas(Teuchos::ParameterList& plist);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -47,9 +47,11 @@ class TccLiquid : public MultiphaseEvaluator {
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
-  std::string tcc_gas_key_;
+  Key x_vapor_key_, x_gas_key_, mol_density_gas_key_;
+  double mol_mass_H2O_;
+  std::vector<double> mol_mass_;
 
-  static Utils::RegisteredFactory<Evaluator, TccLiquid> fac_;
+  static Utils::RegisteredFactory<Evaluator, MassDensityGas> fac_;
 };
 
 } // namespace Multiphase

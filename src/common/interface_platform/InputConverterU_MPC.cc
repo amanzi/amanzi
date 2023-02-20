@@ -106,11 +106,11 @@ InputConverterU::TranslateCycleDriverNew_()
 
   // Logic behind attribute "mode" in the new PK structure is not clear yet,
   // so that we set up some defaults.
-  dt_cut_["steady"] = 0.8;
-  dt_inc_["steady"] = 1.2;
+  dt_cut_["steady"] = std::stod(dt_cut_d);
+  dt_inc_["steady"] = std::stod(dt_inc_d);
 
-  dt_cut_["transient"] = 0.8;
-  dt_inc_["transient"] = 1.2;
+  dt_cut_["transient"] = std::stod(dt_cut_d);
+  dt_inc_["transient"] = std::stod(dt_inc_d);
 
   // global transport properties (should it be here?)
   node = GetUniqueElementByTagsString_(

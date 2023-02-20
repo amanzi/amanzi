@@ -26,13 +26,13 @@
 #include "Factory.hh"
 
 // Multiphase
-#include "MultiphaseBaseEvaluator.hh"
+#include "MultiphaseEvaluator.hh"
 #include "MultiphaseTypeDefs.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class MoleFractionLiquid : public MultiphaseBaseEvaluator {
+class MoleFractionLiquid : public MultiphaseEvaluator {
  public:
   MoleFractionLiquid(Teuchos::ParameterList& plist);
 
