@@ -1060,7 +1060,7 @@ Fully saturated flow
 The conceptual PDE model for the fully saturated flow is
 
 .. math::
-  \phi \left(\frac{S_s}{g} + \frac{S_y}{Lg}\right)\frac{\partial p_l}{\partial t} 
+  \left(\frac{S_s}{g} + \frac{S_y}{Lg}\right)\frac{\partial p_l}{\partial t} 
   =
   -\boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_l) + Q,
   \quad
@@ -1069,7 +1069,6 @@ The conceptual PDE model for the fully saturated flow is
   (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g}),
 
 where 
-:math:`\phi` is porosity [-],
 :math:`s_s` and :math:`s_y` are specific storage [1/m] and specific yield [-], respectively,
 :math:`L` is characteristic length [m],
 :math:`\rho_l` is fluid density [:math:`kg / m^3`],
