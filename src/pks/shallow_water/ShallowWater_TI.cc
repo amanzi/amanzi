@@ -107,36 +107,38 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
   total_depth_grad_->data()->ScatterMasterToGhosted("cell");
   
-  // additional depth-positivity correction limiting for fully flooded cells
-  auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
+  if (!hydrostatic_pressure_force_type_){ //we don't use ht_grad for the pipe flow
+     // additional depth-positivity correction limiting for fully flooded cells
+     auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
   
-  for (int c = 0; c < ncells_wghost; ++c ) {
-    Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
-    mesh_->cell_get_nodes(c, &cnodes);
+     for (int c = 0; c < ncells_wghost; ++c ) {
+        Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
+        mesh_->cell_get_nodes(c, &cnodes);
     
-    // calculate maximum bathymetry value on cell nodes
-    double Bmax = 0.0;
-    for (int i = 0; i < cnodes.size(); ++i) {
-      Bmax = std::max(B_n[0][cnodes[i]], Bmax);
-    }
+       // calculate maximum bathymetry value on cell nodes
+       double Bmax = 0.0;
+       for (int i = 0; i < cnodes.size(); ++i) {
+         Bmax = std::max(B_n[0][cnodes[i]], Bmax);
+       }
     
-    // check if cell is fully flooded and proceed with limiting
-    if ((ht_c[0][c] > Bmax) && (ht_c[0][c] - B_c[0][c] > 0.0)) {
-      Amanzi::AmanziMesh::Entity_ID_List cfaces;
-      mesh_->cell_get_faces(c, &cfaces);
+       // check if cell is fully flooded and proceed with limiting
+       if ((ht_c[0][c] > Bmax) && (ht_c[0][c] - B_c[0][c] > 0.0)) {
+         Amanzi::AmanziMesh::Entity_ID_List cfaces;
+         mesh_->cell_get_faces(c, &cfaces);
 
-      double alpha = 1.0; // limiter value
-      for (int f = 0; f < cfaces.size(); ++f) {
-        const auto& xf = mesh_->face_centroid(cfaces[f]);
-        double ht_rec = total_depth_grad_->getValue(c, xf);
-        if (ht_rec - BathymetryEdgeValue(cfaces[f], B_n) < 0.0) {
-          alpha = std::min(alpha, cfl_positivity_ * (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (ht_rec - ht_c[0][c]));
-        }
-      }
+         double alpha = 1.0; // limiter value
+         for (int f = 0; f < cfaces.size(); ++f) {
+           const auto& xf = mesh_->face_centroid(cfaces[f]);
+           double ht_rec = total_depth_grad_->getValue(c, xf);
+           if (ht_rec - BathymetryEdgeValue(cfaces[f], B_n) < 0.0) {
+             alpha = std::min(alpha, cfl_positivity_ * (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (ht_rec - ht_c[0][c]));
+           }
+         }
       
-      ht_grad[0][c] *= alpha;
-      ht_grad[1][c] *= alpha;
-    }
+         ht_grad[0][c] *= alpha;
+         ht_grad[1][c] *= alpha;
+       }
+     }
   }
   
   // flux
@@ -162,7 +164,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   for (int i = 0; i < srcs_.size(); ++i) {
     for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
       int c = it->first;
-      ext_S_cell[c] = it->second[0]; // data unit is [m]
+      ext_S_cell[c] = it->second[0]; // data unit is [m] 
     }
   }
 
@@ -197,10 +199,18 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double ht_rec = TotalDepthEdgeValue(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
 
     double B_rec = BathymetryEdgeValue(f, B_n);
-    
-    double h_rec = ht_rec - B_rec;
-    ierr = ErrorDiagnostics_(t, c1, h_rec, B_rec, ht_rec);
-    if (ierr < 0) break;
+   
+    double h_rec;
+    if (!hydrostatic_pressure_force_type_)  {
+        h_rec = ht_rec - B_rec;
+        ierr = ErrorDiagnostics_(t, c1, h_rec, B_rec, ht_rec);
+        if (ierr < 0) break;
+    }
+    else{
+       h_rec = (c2 == -1) ? h_temp[0][c1] : 0.5 * (h_temp[0][c1] + h_temp[0][c2]); 
+    }
+
+    double wa_rec = (c2 == -1) ? WettedAngle_c[0][c1] : 0.5 * (WettedAngle_c[0][c1] + WettedAngle_c[0][c2]);
 
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
@@ -218,7 +228,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     UL[0] = h_rec;
     UL[1] = h_rec * vn;
     UL[2] = h_rec * vt;
-    UL[3] = 0.5 * (WettedAngle_c[0][c1] + WettedAngle_c[0][c2]); //TODO: check this
+    UL[3] = wa_rec; 
 
     if (c2 == -1) {
       if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
@@ -233,9 +243,11 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     } else {
       ht_rec = TotalDepthEdgeValue(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
 
-      h_rec = ht_rec - B_rec;
-      ierr = ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
-      if (ierr < 0) break;
+      if (!hydrostatic_pressure_force_type_)  {
+         h_rec = ht_rec - B_rec;
+         ierr = ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
+         if (ierr < 0) break;
+      }
 
       qx_rec = discharge_x_grad_->getValue(c2, xf);
       qy_rec = discharge_y_grad_->getValue(c2, xf);
@@ -251,7 +263,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       UR[0] = h_rec;
       UR[1] = h_rec * vn;
       UR[2] = h_rec * vt;
-      UR[3] = 0.5 * (WettedAngle_c[0][c1] + WettedAngle_c[0][c2]);;
+      UR[3] = wa_rec;
     }
 
     FNum_rot = numerical_flux_->Compute(UL, UR);
@@ -292,16 +304,26 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // sources (bathymetry, flux exchange, etc)
   // the code should not fail after that
   U.resize(3);
+  double ExtraSource;
 
   for (int c = 0; c < ncells_owned; ++c) {
     U[0] = h_temp[0][c];
     U[1] = q_temp[0][c];
     U[2] = q_temp[1][c];
+    U[3] = WettedAngle_c[0][c];
 
-    BedSlopeSource = NumericalSourceBedSlope(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n);
-    FrictionSource = NumericalSourceFriction(U[0], U[1], WettedAngle_c[0][c]);
+    if (!hydrostatic_pressure_force_type_){
+       BedSlopeSource = NumericalSourceBedSlope(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n);
+       ExtraSource = 1.0;
+    }
+    else{
+       BedSlopeSource = NumericalSourceBedSlope(c, U[0], B_n);
+       BedSlopeSource[1] = 0.0;
+       ExtraSource = 0.0;
+    }
+    FrictionSource = NumericalSourceFriction(U[0], U[1], U[3]); 
 
-    h = h_c_tmp[0][c] + (BedSlopeSource[0] + ext_S_cell[c]);
+    h = h_c_tmp[0][c] + (BedSlopeSource[0] + ext_S_cell[c] * ExtraSource); 
     qx = q_c_tmp[0][c] + BedSlopeSource[1] + FrictionSource;
     qy = q_c_tmp[1][c] + BedSlopeSource[2];
     

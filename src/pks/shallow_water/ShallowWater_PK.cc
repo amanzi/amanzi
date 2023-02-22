@@ -345,7 +345,7 @@ ShallowWater_PK::Initialize()
   // calculate cell area square (used as a tolerance)  
   cell_area2_max_ = cell_area_max * cell_area_max;
 
-  //if (!hydrostatic_pressure_force_type_){ //TODO this has to be put back when we redo the bed slope source
+  if (!hydrostatic_pressure_force_type_){ 
      // initialize h from ht or ht from h
      if (!S_->GetRecord(ponded_depth_key_, Tags::DEFAULT).initialized()) {
         auto& h_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
@@ -364,7 +364,10 @@ ShallowWater_PK::Initialize()
 
         S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
      }
-  //}//TODO see above TODO
+  }
+  else{ //we do not use the total depth for the pipe flow model
+     InitializeCVField(S_, *vo_, total_depth_key_, Tags::DEFAULT, passwd_, 0.0);
+  }
 
   InitializeCVField(S_, *vo_, velocity_key_, Tags::DEFAULT, passwd_, 0.0);
   InitializeCVField(S_, *vo_, discharge_key_, Tags::DEFAULT, discharge_key_, 0.0);
@@ -477,7 +480,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     q_c[1][c] = q_old[1][c];
     vel_c[0][c] = factor * q_old[0][c];
     vel_c[1][c] = factor * q_old[1][c];
-    ht_c[0][c] = h_c[0][c] + B_c[0][c];
+    ht_c[0][c] = h_c[0][c] + B_c[0][c]; 
   }
 
   // update source (external) terms
@@ -539,6 +542,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     q_c[1][c] = q_temp[1][c];
     vel_c[0][c] = factor * q_temp[0][c];
     vel_c[1][c] = factor * q_temp[1][c];
+    //note that this update does not make sense for the pipe flow since h_c[0][c] would be an area, not a length
     ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
   UpdateWettedAngle();
@@ -681,7 +685,8 @@ ShallowWater_PK::TotalDepthEdgeValue(
 
 
 //--------------------------------------------------------------------
-// Discretization of the bed slope source term (well-balanced for lake at rest)
+// Discretization of the bed slope source term (well-balanced for lake at rest) 
+// To be used for a shallow water model
 //--------------------------------------------------------------------
 std::vector<double>
 ShallowWater_PK::NumericalSourceBedSlope(
@@ -725,6 +730,61 @@ ShallowWater_PK::NumericalSourceBedSlope(
   return S;
 }
 
+//--------------------------------------------------------------------
+// Discretization of the bed slope source term 
+// To be used for a pipe flow model
+//--------------------------------------------------------------------
+std::vector<double>
+ShallowWater_PK::NumericalSourceBedSlope( int c, double hc, const Epetra_MultiVector& B_n)
+{
+
+//  AmanziMesh::Entity_ID_List adjCells;
+//  mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &adjCells);
+
+  Amanzi::AmanziMesh::Entity_ID_List cfaces;
+  mesh_->cell_get_faces(c, &cfaces);
+  std::vector < std::vector <double> > matrix(cfaces.size());
+  std::vector < double > rhs(cfaces.size());
+
+  const auto& xc = mesh_->cell_centroid(c);
+  int dim = xc.dim();
+  std::vector < std::vector <double> > leastSquaresMatrix(dim);
+  std::vector < double > leastSquaresRhs(dim);
+
+  for (int f = 0; f < cfaces.size(); ++f) {
+      const auto& xf = mesh_->face_centroid(cfaces[f]);
+      matrix[f].resize(dim);
+      for (int idim = 0; idim < dim; idim++){
+         matrix[f][idim]= (xf[idim] - xc[idim]);
+      }
+      rhs[f] = BathymetryEdgeValue(f, B_n);
+  }
+
+  
+  for(int irow =0; irow < dim; irow++){
+     leastSquaresMatrix[irow].assign(dim,0.0);
+     leastSquaresRhs[irow] = 0.0;
+     for (int f = 0; f < cfaces.size(); ++f) {
+        for(int icol =0; icol < dim; icol++){
+           leastSquaresMatrix[irow][icol] += matrix[f][irow] * matrix[f][icol];
+        }
+        leastSquaresRhs[irow] += matrix[f][irow] * rhs[f];
+     }
+  }
+
+  //we assume dim is 2 for the pipe model
+  double det = leastSquaresMatrix[0][0] * leastSquaresMatrix[1][1] - leastSquaresMatrix[0][1] * leastSquaresMatrix[1][0];
+  if (fabs(det) < 1.e-12) std::cout <<"DET IS ZERO OOOOOOOOOOOO" << std::endl;
+  double gradBc = (leastSquaresMatrix[1][1] * leastSquaresRhs[0] - leastSquaresMatrix[0][1] * leastSquaresRhs[1]) / det;
+
+  std::vector<double> S(3);
+
+  S[0] = 0.0;
+  S[1] = - g_ * hc * gradBc; // / mesh_->cell_volume(c);
+  S[2] = 0.0;
+
+  return S;
+}
 
 //--------------------------------------------------------------
 // Calculation of time step limited by the CFL condition

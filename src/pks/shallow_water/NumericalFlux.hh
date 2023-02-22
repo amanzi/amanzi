@@ -64,7 +64,7 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
 
   }
 
-  else if (hydrostatic_pressure_force_type_){
+  else {
 
      double pi = 3.14159265359;
      double PipeCrossSection = pi * 0.25 * pipe_diameter_ * pipe_diameter_;
@@ -78,7 +78,6 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
 
       else { //flow is pressurized
 
-         std::cout << " NEVER HERE " << std::endl;
          double PressurizedHead = (celerity_ * celerity_ * (h - PipeCrossSection)) / (g_ * PipeCrossSection);
          HydrostaticPressureForce = g_ * h * (PressurizedHead + sqrt(h/pi)); 
 
