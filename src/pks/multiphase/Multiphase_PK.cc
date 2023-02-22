@@ -579,6 +579,10 @@ Multiphase_PK::Setup()
   if (mp_list_->isParameter("evaluators")) {
     auto evals = mp_list_->get<Teuchos::Array<std::string>>("evaluators").toVector();
     for (auto& e : evals) {
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "require eval: " << e << std::endl;
+      }
       S_->Require<CV_t, CVS_t>(e, Tags::DEFAULT, e)
         .SetMesh(mesh_)
         ->SetGhosted(true)
@@ -952,7 +956,7 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 
 /* ******************************************************************
-* Push data to the state
+* Compute fluxes, push data to the state, etc.
 ****************************************************************** */
 void
 Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
@@ -969,19 +973,18 @@ Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(K_);
   PopulateBCs(0, true);
 
-  std::vector<std::string> relperm_name{ advection_liquid_key_, advection_gas_key_ };
-  std::vector<std::string> viscosity_name{ viscosity_liquid_key_, viscosity_gas_key_ };
+  // Using form div [K k grad(p)] to compute u = -K k grad(p)
+  // NOTE: k is upwinded using flux from last iteration
+  std::vector<std::string> adv_name{ advection_liquid_key_, advection_gas_key_ };
   std::vector<std::string> varp_name{ pressure_liquid_key_, pressure_gas_key_ };
   std::vector<std::string> flux_name{ vol_flowrate_liquid_key_, vol_flowrate_gas_key_ };
 
   for (int phase = 0; phase < 2; ++phase) {
-    S_->GetEvaluator(relperm_name[phase]).Update(*S_, passwd_);
+    S_->GetEvaluator(adv_name[phase]).Update(*S_, passwd_);
 
-    const auto& relperm_c = *S_->Get<CV_t>(relperm_name[phase]).ViewComponent("cell");
-    const auto& viscosity_c = *S_->Get<CV_t>(viscosity_name[phase]).ViewComponent("cell");
+    const auto& kr_c = *S_->Get<CV_t>(adv_name[phase]).ViewComponent("cell");
     auto flux = S_->GetPtrW<CV_t>(flux_name[phase], Tags::DEFAULT, passwd_);
 
-    for (int c = 0; c < ncells_owned_; ++c) { kr_c[0][c] = relperm_c[0][c] / viscosity_c[0][c]; }
     upwind_->Compute(*flux, bcnone, *kr);
 
     auto pdeK = pde_diff_K_[phase];

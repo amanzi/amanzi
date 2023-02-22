@@ -245,7 +245,8 @@ InputConverterU::TranslateCycleDriverNew_()
       } else if (strcmp(tagname, "multiphase") == 0) {
         GetAttributeValueS_(jnode, "state", "on");
         model = GetAttributeValueS_(jnode, "model");
-        pk_model_["multiphase"] = model;
+        isothermal_ = (model == "isothermal");
+        pk_model_["multiphase"] = "multiphase";
         pk_master_["multiphase"] = true;
         transient_model += 32;
       }

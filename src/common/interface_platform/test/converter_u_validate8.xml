@@ -92,10 +92,9 @@
     <Parameter name="preconditioner" type="string" value="Euclid"/>
 
     <Parameter name="evaluators" type="Array(string)" value="{
-        ncp_g, total_water_storage, total_component_storage,
-        advection_water, advection_liquid, advection_gas,
-        diffusion_liquid, diffusion_gas, diffusion_vapor,
-        saturation_gas, mole_fraction_liquid, mole_fraction_vapor}"/>
+       ncp_g, total_water_storage, total_component_storage, advection_water, advection_liquid, 
+       advection_gas, diffusion_liquid, diffusion_gas, diffusion_vapor, saturation_gas, 
+       mole_fraction_liquid, mole_fraction_vapor, adv_energy_liquid}"/>
     <ParameterList name="system">
       <ParameterList name="pressure eqn">
         <Parameter name="primary unknown" type="string" value="pressure_liquid"/>
@@ -119,6 +118,14 @@
         <Parameter name="primary unknown" type="string" value="saturation_liquid"/>
         <Parameter name="ncp evaluators" type="Array(string)" value="{ncp_f, ncp_g}"/>
       </ParameterList>
+      <ParameterList name="energy eqn">
+        <Parameter name="primary unknown" type="string" value="temperature"/>
+        <Parameter name="advection liquid" type="Array(string)" value="{adv_energy_liquid, pressure_liquid}"/>
+        <Parameter name="advection factors" type="Array(double)" value="{1.0, 1.0}"/>
+        <Parameter name="diffusion liquid" type="Array(string)" value="{thermal_conductivity, temperature}"/>
+        <Parameter name="diffusion factors" type="Array(double)" value="{1.0, 1.0}"/>
+        <Parameter name="accumulation" type="string" value="energy"/>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="molecular diffusion">
@@ -134,6 +141,18 @@
     <Parameter name="number of aqueous components" type="int" value="1"/>
     <Parameter name="number of gaseous components" type="int" value="1"/>
     <Parameter name="molar mass of water" type="double" value="18.0e-3"/>
+
+    <ParameterList name="thermal conductivity evaluator">
+      <ParameterList name="thermal conductivity parameters">
+        <Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/>
+        <Parameter name="thermal conductivity of gas" type="double" value="2.0e-02"/>
+        <Parameter name="unsaturated alpha" type="double" value="1.0"/>
+        <Parameter name="epsilon" type="double" value="1.0e-10"/>
+        <Parameter name="thermal conductivity of liquid" type="double" value="6.06e-01"/>
+        <Parameter name="thermal conductivity of rock" type="double" value="2.0e-01"/>
+        <Parameter name="reference temperature" type="double" value="2.9815e+02"/>
+      </ParameterList>
+    </ParameterList>
 
     <Parameter name="NCP function" type="string" value="min"/>
     <Parameter name="CPR enhancement" type="bool" value="false"/>
@@ -386,6 +405,20 @@
         </ParameterList>
       </ParameterList>
 
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="components" type="Array(string)" value="{cell, face}"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="303.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="permeability">
         <Parameter name="write checkpoint" type="bool" value="false"/>
         <ParameterList name="function">
@@ -494,6 +527,29 @@
         <Parameter name="tag" type="string" value=""/>
       </ParameterList>
 
+      <ParameterList name="adv_energy_liquid">
+        <Parameter name="evaluator type" type="string" value="product"/>
+        <Parameter name="dependencies" type="Array(string)" value="{molar_density_liquid, rel_permeability_liquid, enthalpy_liquid, viscosity_liquid}"/>
+        <Parameter name="powers" type="Array(int)" value="{1, 1, 1, -1}"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+      <ParameterList name="adv_energy_gas">
+        <Parameter name="evaluator type" type="string" value="product"/>
+        <Parameter name="dependencies" type="Array(string)" value="{molar_density_gas, rel_permeability_gas, enthalpy_gas, viscosity_gas}"/>
+        <Parameter name="powers" type="Array(int)" value="{1, 1, 1, -1}"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+
+      <ParameterList name="internal_energy_liquid">
+        <Parameter name="pressure key" type="string" value="pressure_liquid"/>
+      </ParameterList>
+      <ParameterList name="internal_energy_gas">
+        <Parameter name="pressure key" type="string" value="pressure_gas"/>
+      </ParameterList>
+      <ParameterList name="internal_energy_rock">
+        <Parameter name="pressure key" type="string" value="pressure_liquid"/>
+      </ParameterList>
+
       <ParameterList name="porosity">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -586,21 +642,6 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="3.0e-5"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="temperature">
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="components" type="Array(string)" value="{cell, face}"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="303.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

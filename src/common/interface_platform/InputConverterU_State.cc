@@ -863,6 +863,24 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
       out_ev, Keys::getKey(domain, "viscosity_gas"), "All", "cell", viscosity);
   }
 
+  // -- molar heat capacity 
+  node = GetUniqueElementByTagsString_("phases, gas_phase, molar_heat_capacity", flag);
+  if (flag) {
+    double cv = GetTextContentD_(node, "J/mol/K");
+
+    auto key = Keys::getKey(domain, "internal_energy_gas");
+    Teuchos::ParameterList& field_ev = out_ev.sublist(key);
+    field_ev.set<std::string>("evaluator type", "iem")
+      .set<std::string>("internal energy key", key);
+
+    field_ev.sublist("IEM parameters")
+      .sublist("All")
+      .set<Teuchos::Array<std::string>>("regions", std::vector<std::string>({ "Entire Domain" }))
+      .sublist("IEM parameters")
+      .set<std::string>("iem type", "linear")
+      .set<double>("heat capacity", cv);
+  }
+
   if (domain == "domain") {
     DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
     children = node_list->item(0)->getChildNodes();

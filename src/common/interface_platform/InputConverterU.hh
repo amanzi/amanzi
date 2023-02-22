@@ -38,6 +38,7 @@ class InputConverterU : public InputConverter {
   explicit InputConverterU(const std::string& input_filename)
     : InputConverter(input_filename),
       multiphase_(false),
+      isothermal_(true),
       gravity_on_(true),
       const_gravity_(GRAVITY_MAGNITUDE),
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
@@ -61,6 +62,7 @@ class InputConverterU : public InputConverter {
                            const std::string& output_prefix)
     : InputConverter(input_filename, input_doc),
       multiphase_(false),
+      isothermal_(true),
       gravity_on_(true),
       const_gravity_(GRAVITY_MAGNITUDE),
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
@@ -216,7 +218,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateEnergyBCs_(const std::string& domain);
 
   // -- multiphase
-  bool multiphase_;
+  bool multiphase_, isothermal_;
   Teuchos::ParameterList
   TranslateMultiphase_(const std::string& domain, Teuchos::ParameterList& state_list);
   Teuchos::ParameterList TranslateMultiphaseBCs_();
