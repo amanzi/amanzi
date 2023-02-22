@@ -289,12 +289,12 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   // -- density evaluator
   S->RequireField(density_key_)->SetMesh(mesh_)
         ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList den_plist =
-      plist_->sublist("density evaluator");
-  den_plist.set("evaluator name", density_key_);
-  Teuchos::RCP<LakeThermo::DensityEvaluator> den =
-      Teuchos::rcp(new LakeThermo::DensityEvaluator(den_plist));
-  S->SetFieldEvaluator(density_key_, den);
+  // Teuchos::ParameterList den_plist =
+  //     plist_->sublist("density evaluator");
+  // den_plist.set("evaluator name", density_key_);
+  // Teuchos::RCP<LakeThermo::DensityEvaluator> den =
+  //     Teuchos::rcp(new LakeThermo::DensityEvaluator(den_plist));
+  // S->SetFieldEvaluator(density_key_, den);
 
   // -- energy evaluator
   S->RequireField(energy_key_)->SetMesh(mesh_)

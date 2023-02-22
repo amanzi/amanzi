@@ -156,7 +156,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
       else { // this cell is in water layer
         double lambda_tmp = result_v[0][i];
         if (ice_cover_) {
-          lambda_tmp = 3.*lambda_w; //1.5; 
+          lambda_tmp = lambda_w; //1.5; 
         } else {
           lambda_tmp = lambda_w; //10.*K_0_ + V_wind_/V_wind_0_*(K_max_ - K_0_);
         }

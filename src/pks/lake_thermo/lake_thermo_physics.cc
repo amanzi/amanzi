@@ -389,7 +389,7 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     //  SS *= sqrt(1.-sinh0*sinh0);
 
       // S0_ = SS;
-      S0_ = 0.9*SS; // FoxDen
+      S0_ = 0.95*SS; // FoxDen
       // S0_ = 0.9*SS; // Atqasuk
 
       double albedo = (temp[0][ncells-1] < 273.15) ? albedo_i : albedo_w;
@@ -403,6 +403,11 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
       S0_ = (temp[0][ncells-1] < 273.15) ? S0_w_ice : S0_;
       dhdt_c = (temp[0][ncells-1] < 273.15) ? 0. : dhdt;
       B_w_c = (temp[0][ncells-1] < 273.15) ? 0. : B_w;
+
+      const Epetra_MultiVector& snow_depth_v = *S->GetFieldData("snow-depth")->ViewComponent("cell",false);
+      if (snow_depth_v[0][0] > 2.e-2) {
+        S0_ = 0.;
+      }
 
       // S0_ = (temp[0][ncells-1] < 273.15) ? 0. : S0_;
 

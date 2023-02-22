@@ -56,6 +56,9 @@ void DensityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   double const_ampl = 1.9549e-5;
   double const_power = 1.68;
 
+  std::string EOS_type = plist_.get<std::string>("EOS type",
+      "none");   
+
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
     const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
@@ -66,13 +69,20 @@ void DensityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     for (int i=0; i!=ncomp; ++i) {
       double T = temp_v[0][i]-273.15;
       if (T > 0.) { //water
-        rho[i] = rho0*(1+a0+a1*T-a2*T*T+a3*T*T*T); // UNESCO
-        // result_v[0][i] = rho0*(1.-const_ampl*std::pow(std::fabs(T-temp0),const_power)); // Hostetler
+        if (EOS_type == "UNESCO") {
+          rho[i] = rho0*(1+a0+a1*T-a2*T*T+a3*T*T*T); // UNESCO
+        } else if (EOS_type == "Hostetler") {
+          rho[i] = rho0*(1.-const_ampl*std::pow(std::fabs(T-temp0),const_power)); // Hostetler
+        } else {
+          std::stringstream messagestream;
+          messagestream << "Lake_Thermo PK has no density EOS: " << EOS_type;
+          Errors::Message message(messagestream.str());
+          Exceptions::amanzi_throw(message);
+         }
       }
       else { // ice 
         rho[i] = 917.;
       }
-      // rho[i] = rho0*(1+a0+a1*T-a2*T*T+a3*T*T*T); 
     }
 
     for (int i=0; i!=ncomp; ++i) {
@@ -92,6 +102,9 @@ void DensityEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
   
   result->PutScalar(0.);
+
+  std::string EOS_type = plist_.get<std::string>("EOS type",
+      "none");   
 
   if (wrt_key == temperature_key_) {
     Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
@@ -116,15 +129,22 @@ void DensityEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
       for (int i=0; i!=ncomp; ++i) {
         double T = temp_v[0][i]-273.15;
         if (T > 0.) { //water
-          drho[i] = rho0*(a1 - 2.*a2*T + 3.*a3*T*T);
-          // double x = T-temp0;
-          // double sign = (x > 0) ? 1 : ((x < 0) ? -1 : 0);
-          // result_v[0][i] = rho0*(-const_power*const_ampl*std::pow(std::fabs(T-temp0),const_power-1)*sign);
+          if (EOS_type == "UNESCO") {
+            drho[i] = rho0*(a1 - 2.*a2*T + 3.*a3*T*T); // UNESCO
+          } else if (EOS_type == "Hostetler") {
+            double x = T-temp0;
+            double sign = (x > 0) ? 1 : ((x < 0) ? -1 : 0);
+            drho[i] = rho0*(-const_power*const_ampl*std::pow(std::fabs(T-temp0),const_power-1)*sign); // Hostetler
+          } else {
+            std::stringstream messagestream;
+            messagestream << "Lake_Thermo PK has no density EOS: " << EOS_type;
+            Errors::Message message(messagestream.str());
+            Exceptions::amanzi_throw(message);
+          }          
         }
         else { // ice 
           drho[i] = 0.;
         }
-        // drho[i] = rho0*(a1 - 2.*a2*T + 3.*a3*T*T);
       }
 
       for (int i=0; i!=ncomp; ++i) {

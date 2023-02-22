@@ -191,7 +191,7 @@ void HeatFluxBCEvaluator::EvaluateField_(
     //  SS *= sqrt(1.-sinh0*sinh0);
 
     //  SS = SS/(hour_sec*interval);
-      SS = 0.9*SS; // FoxDen
+      SS = 0.92*SS; // FoxDen
       // SS = 0.9*SS; // Atqasuk
       // SS = 0.9*SS; // Toolik
 
