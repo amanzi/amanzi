@@ -156,7 +156,7 @@ Darcy_PK::Setup()
       ->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
 
-    AddDefaultPrimaryEvaluator_(pressure_key_);
+    AddDefaultPrimaryEvaluator(S_, pressure_key_);
   }
 
   // require additional fields for this PK

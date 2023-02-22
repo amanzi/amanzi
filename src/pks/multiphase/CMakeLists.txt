@@ -60,6 +60,7 @@ set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc WRMmp_Corey.cc
                          MoleFractionLiquid.cc TccLiquid.cc TccGas.cc PressureGasEvaluator.cc
                          RelPermEvaluator.cc ProductEvaluator.cc
+                         MassDensityGas.cc
                          FlattenedTreeOperator.cc)
 
 add_amanzi_library(multiphase 
@@ -72,9 +73,11 @@ add_amanzi_library(multiphase
 # Install Targets
 #
 set(multiphase_inc_files 
+  MassDensityGas.hh
   Multiphase_PK.hh
   Multiphase_Utils.hh
   MultiphaseBoundaryFunction.hh
+  MultiphaseEvaluator.hh
   ModelMeshPartition.hh
   MoleFractionLiquid.hh TccLiquid.hh TccGas.hh
   NCP_F.hh NCP_HenryLaw.hh NCP_MoleFractions.hh NCP_MolarDensities.hh

@@ -23,7 +23,7 @@ namespace Multiphase {
 /* ******************************************************************
 * Simple constructor
 ****************************************************************** */
-TccLiquid::TccLiquid(Teuchos::ParameterList& plist) : MultiphaseBaseEvaluator(plist)
+TccLiquid::TccLiquid(Teuchos::ParameterList& plist) : MultiphaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));

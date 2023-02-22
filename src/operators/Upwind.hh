@@ -67,7 +67,6 @@ class Upwind {
   // -- upwind of a given cell-centered field on mesh faces
   // -- not all input parameters are use by some algorithms
   virtual void Compute(const CompositeVector& flux,
-                       const CompositeVector& solution,
                        const std::vector<int>& bc_model,
                        CompositeVector& field) = 0;
 

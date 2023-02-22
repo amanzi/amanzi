@@ -21,6 +21,7 @@
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_DiffusionFV.hh"
 #include "PDE_DiffusionFVwithGravity.hh"
+#include "PDE_DiffusionFVonManifolds.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "PDE_DiffusionMFD.hh"
 #include "PDE_DiffusionMFDwithGravity.hh"
@@ -36,12 +37,12 @@ namespace Operators {
 * Constructors
 ****************************************************************** */
 PDE_DiffusionFactory::PDE_DiffusionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : mesh_(mesh), const_k_(1.0), gravity_(false), const_b_(0.0){};
+  : mesh_(mesh), const_k_(1.0), gravity_(false), manifolds_(false), const_b_(0.0){};
 
 
 PDE_DiffusionFactory::PDE_DiffusionFactory(Teuchos::ParameterList& oplist,
                                            const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : oplist_(oplist), mesh_(mesh), const_k_(1.0), gravity_(false), const_b_(0.0)
+  : oplist_(oplist), mesh_(mesh), const_k_(1.0), gravity_(false), manifolds_(false), const_b_(0.0)
 {
   if (oplist.isParameter("diffusion coefficient")) {
     const_k_ = oplist.get<double>("diffusion coefficient");
@@ -84,12 +85,15 @@ PDE_DiffusionFactory::SetConstantGravitationalTerm(const AmanziGeometry::Point& 
 * Setup the problem
 ****************************************************************** */
 Teuchos::RCP<PDE_Diffusion>
-PDE_DiffusionFactory::Create()
+PDE_DiffusionFactory::Create(const Teuchos::RCP<Operator>& global_op)
 {
   std::string name = oplist_.get<std::string>("discretization primary");
   bool fractured_matrix = oplist_.isParameter("fracture");
 
-  if (oplist_.isSublist("gravity")) gravity_ = oplist_.get<bool>("gravity");
+  gravity_ = false;
+  manifolds_ = false;
+  if (oplist_.isParameter("gravity")) gravity_ = oplist_.get<bool>("gravity");
+  if (oplist_.isParameter("manifolds")) manifolds_ = oplist_.get<bool>("manifolds");
 
   if (gravity_ && norm(g_) == 0.0) {
     double tmp = oplist_.get<double>("gravity magnitude");
@@ -98,38 +102,51 @@ PDE_DiffusionFactory::Create()
 
   Teuchos::RCP<PDE_Diffusion> op;
 
-  // FV methods
-  if (name == "fv: default" && !gravity_) {
-    op = Teuchos::rcp(new PDE_DiffusionFV(oplist_, mesh_));
-  } else if (name == "fv: default" && gravity_) {
-    op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist_, mesh_, g_));
+  if (global_op == Teuchos::null) {
+    // FV methods
+    if (name == "fv: default" && manifolds_) {
+      op = Teuchos::rcp(new PDE_DiffusionFVonManifolds(oplist_, mesh_));
+    } else if (name == "fv: default" && !gravity_) {
+      op = Teuchos::rcp(new PDE_DiffusionFV(oplist_, mesh_));
+    } else if (name == "fv: default" && gravity_) {
+      op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist_, mesh_, g_));
 
-    // NLFV methods
-  } else if (name == "nlfv: default" && !gravity_) {
-    op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist_, mesh_));
-  } else if (name == "nlfv: default" && gravity_) {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist_, mesh_));
-  } else if (name == "nlfv: bnd_faces" && !gravity_) {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist_, mesh_));
-  } else if (name == "nlfv: bnd_faces" && gravity_) {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist_, mesh_));
+      // NLFV methods
+    } else if (name == "nlfv: default" && !gravity_) {
+      op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist_, mesh_));
+    } else if (name == "nlfv: default" && gravity_) {
+      op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist_, mesh_));
+    } else if (name == "nlfv: bnd_faces" && !gravity_) {
+      op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist_, mesh_));
+    } else if (name == "nlfv: bnd_faces" && gravity_) {
+      op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist_, mesh_));
 
-    // MFD methods with non-uniform DOFs
-  } else if (fractured_matrix) {
-    auto op_tmp = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist_, mesh_, const_b_, g_));
-    op_tmp->Init(oplist_);
-    op = op_tmp;
+      // MFD methods with non-uniform DOFs
+    } else if (fractured_matrix) {
+      auto op_tmp = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist_, mesh_, const_b_, g_));
+      op_tmp->Init(oplist_);
+      op = op_tmp;
 
-    // MFD methods
-  } else if (!gravity_) {
-    auto op_tmp = Teuchos::rcp(new PDE_DiffusionMFD(oplist_, mesh_));
-    op_tmp->Init(oplist_);
-    op = op_tmp;
+      // MFD methods
+    } else if (!gravity_) {
+      auto op_tmp = Teuchos::rcp(new PDE_DiffusionMFD(oplist_, mesh_));
+      op_tmp->Init(oplist_);
+      op = op_tmp;
+    } else {
+      auto op_tmp = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist_, mesh_));
+      op_tmp->Init(oplist_);
+      op = op_tmp;
+    }
 
   } else {
-    auto op_tmp = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist_, mesh_));
-    op_tmp->Init(oplist_);
-    op = op_tmp;
+    // FV methods
+    if (name == "fv: default" && manifolds_) {
+      op = Teuchos::rcp(new PDE_DiffusionFVonManifolds(oplist_, global_op));
+    } else if (name == "fv: default" && !gravity_) {
+      op = Teuchos::rcp(new PDE_DiffusionFV(oplist_, global_op));
+    } else if (name == "fv: default" && gravity_) {
+      op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist_, global_op, g_));
+    }
   }
 
   // setup problem coefficients

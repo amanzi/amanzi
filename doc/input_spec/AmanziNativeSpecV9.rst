@@ -6680,7 +6680,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
     * `"domain name`" [string] name of the domain. Typically, it is either `"domain`" for
       the matrix/subsurface or `"fracture`" for the fracture network.
 
-    * `"variables`" [Array(string)] a list of field quantities taken from the list of 
+    * `"variable`" [string] a list of field quantities taken from the list of 
       available field quantities:
 
       * volumetric water content [-] (volume water / bulk volume)
@@ -6705,6 +6705,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * SOLUTE volumetric flow rate [mol/s] (when functional="integral")
       * SOLUTE breakthrough curve [mol] (when functional="integral")
       * pH [-] 
+      * centroid x [m]
 
     Observations *drawdown* and *permeability-weighted* are calculated with respect to the value 
     registered at the first time it was requested.

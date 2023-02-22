@@ -39,6 +39,7 @@
 
 // Chemistry
 #include "Amanzi_PK.hh"
+#include "ChemistryDefs.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -490,13 +491,11 @@ Amanzi_PK::CopyBeakerStructuresToCellState(int c,
                                            Teuchos::RCP<Epetra_MultiVector> aqueous_components)
 {
   for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
-    (*aqueous_components)[i][c] = beaker_state_.total.at(i);
-    // (*aqueous_components)[i][c] = std::max(beaker_state_.total.at(i), 1e-200);
+    (*aqueous_components)[i][c] = std::max(beaker_state_.total.at(i), TCC_MIN_VALUE);
   }
 
   for (int i = 0; i < number_aqueous_components_; ++i) {
-    (*bf_.free_ion)[i][c] = beaker_state_.free_ion.at(i);
-    // (*bf_.free_ion)[i][c] = std::max(beaker_state_.free_ion.at(i), 1e-200);
+    (*bf_.free_ion)[i][c] = std::max(beaker_state_.free_ion.at(i), TCC_MIN_VALUE);
   }
 
   // activity coefficients
@@ -574,8 +573,8 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   bool failed(false);
   std::string internal_msg;
 
-  double dt = t_new - t_old;
-  current_time_ = saved_time_ + dt;
+  dt_ = t_new - t_old;
+  current_time_ = saved_time_ + dt_;
 
   int num_itrs, max_itrs(0), min_itrs(10000000), avg_itrs(0);
   int cmax(-1), ierr(0);
@@ -595,7 +594,7 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         chem_->CopyState(beaker_state_, &beaker_state_copy_);
 
         // chemistry computations for this cell
-        num_itrs = chem_->ReactionStep(&beaker_state_, beaker_parameters_, dt);
+        num_itrs = chem_->ReactionStep(&beaker_state_, beaker_parameters_, dt_);
 
         if (max_itrs < num_itrs) {
           max_itrs = num_itrs;
@@ -608,6 +607,10 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         internal_msg = geochem_err.what();
         // chem_->DisplayComponents(beaker_state_);
         break;
+      } catch (...) {
+        ierr = 1;
+        internal_msg = "unknown error";
+        break;
       }
 
       if (ierr == 0) CopyBeakerStructuresToCellState(c, aqueous_components_);
@@ -617,20 +620,23 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   ErrorAnalysis(ierr, internal_msg);
 
-  int tmp(max_itrs);
-  mesh_->get_comm()->MaxAll(&tmp, &max_itrs, 1);
+  int tmp0(min_itrs), tmp1(max_itrs), tmp2(avg_itrs), tmp3(ncells_owned_), ncells_total;
+  mesh_->get_comm()->MinAll(&tmp0, &min_itrs, 1);
+  mesh_->get_comm()->MaxAll(&tmp1, &max_itrs, 1);
+  mesh_->get_comm()->SumAll(&tmp2, &avg_itrs, 1);
+  mesh_->get_comm()->SumAll(&tmp3, &ncells_total, 1);
 
-  if (ncells_owned_ > 0) {
-    std::stringstream ss;
-    ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/" << avg_itrs / ncells_owned_
-       << ", maximum in gid=" << mesh_->GID(cmax, AmanziMesh::CELL) << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, ss.str());
-  }
+  std::stringstream ss;
+  ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/" 
+     << avg_itrs / ncells_total
+     << ", maximum in gid=" << mesh_->GID(cmax, AmanziMesh::CELL) << std::endl;
+  vo_->Write(Teuchos::VERB_HIGH, ss.str());
 
   // update time control parameters
   num_successful_steps_++;
   num_iterations_ = max_itrs;
 
+  if (!failed) EstimateNextTimeStep_(t_old, t_new);
   return failed;
 }
 
@@ -644,23 +650,7 @@ void
 Amanzi_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   saved_time_ = t_new;
-
-  // we keep own estimate of stable time step and report it to CD via get_dt()
-  if (dt_control_method_ == "simple") {
-    if ((num_successful_steps_ == 0) || (num_iterations_ >= dt_cut_threshold_)) {
-      dt_next_ /= dt_cut_factor_;
-    } else if (num_successful_steps_ >= dt_increase_threshold_) {
-      dt_next_ *= dt_increase_factor_;
-      num_successful_steps_ = 0;
-    }
-
-    dt_next_ = std::min(dt_next_, dt_max_);
-
-    // synchronize processors since update of control parameters was
-    // made in many places.
-    double tmp(dt_next_);
-    mesh_->get_comm()->MinAll(&tmp, &dt_next_, 1);
-  }
+  EstimateNextTimeStep_(t_old, t_new);
 }
 
 
@@ -724,6 +714,42 @@ Amanzi_PK::InitializeBeakerFields_()
   if (beaker_state_.surface_complex_free_site_conc.size() > 0) {
     bf_.surface_complex =
       S_->GetW<CompositeVector>(surf_cfsc_key_, tag, passwd_).ViewComponent("cell");
+  }
+}
+
+
+/* ******************************************************************
+* Estimate next time step, including for subcycling
+******************************************************************* */
+void
+Amanzi_PK::EstimateNextTimeStep_(double t_old, double t_new)
+{
+  // we keep own estimate of stable time step and report it to CD via get_dt()
+  if (dt_control_method_ == "simple") {
+    double dt_next_tmp(dt_next_);
+
+    if ((num_successful_steps_ == 0) || (num_iterations_ >= dt_cut_threshold_)) {
+      dt_next_ /= dt_cut_factor_;
+    } else if (num_successful_steps_ >= dt_increase_threshold_) {
+      dt_next_ *= dt_increase_factor_;
+      num_successful_steps_ = 0;
+    }
+
+    dt_next_ = std::min(dt_next_, dt_max_);
+
+    // synchronize processors since update of control parameters was
+    // made in many places.
+    double tmp(dt_next_);
+    mesh_->get_comm()->MinAll(&tmp, &dt_next_, 1);
+
+    if (dt_next_tmp != dt_next_ && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "controller changed dt_next from " << dt_next_tmp << " to " << dt_next_ << std::endl;
+    }
+  } else if (dt_control_method_ == "fixed") {
+    // dt_next could be reduced by the base PK. To avoid small time step, we reset it here.
+    dt_next_ = std::max(dt_, t_new - t_old); // due to subcycling
+    dt_next_ = std::min(dt_next_, dt_max_);
   }
 }
 

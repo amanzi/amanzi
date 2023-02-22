@@ -87,6 +87,11 @@ run_test(const std::string& domain, const std::string& filename)
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   auto MPK = Teuchos::rcp(new Multiphase_PK(pk_tree, plist, S, soln));
 
+  // work-around
+  Key key("mass_density_gas");
+  S->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
+    .SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+
   MPK->Setup();
   S->Setup();
   S->InitializeFields();
@@ -153,7 +158,7 @@ run_test(const std::string& domain, const std::string& filename)
 }
 
 
-TEST(MULTIPHASE_2P2C)
+TEST(MULTIPHASE_JAFFRE_2P2C)
 {
   run_test("2D", "test/multiphase_jaffre.xml");
   run_test("fractures", "test/multiphase_jaffre_fractures.xml");

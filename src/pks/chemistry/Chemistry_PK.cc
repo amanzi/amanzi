@@ -35,6 +35,7 @@ Chemistry_PK::Chemistry_PK()
     using_sorption_(false),
     using_sorption_isotherms_(false),
     number_ion_exchange_sites_(0),
+    dt_(9.9e+9),
     dt_max_(9.9e9){};
 
 
@@ -52,6 +53,7 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
     using_sorption_(false),
     using_sorption_isotherms_(false),
     number_ion_exchange_sites_(0),
+    dt_(9.9e+9),
     dt_max_(9.9e9){};
 
 

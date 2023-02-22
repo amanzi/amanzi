@@ -109,7 +109,7 @@ ShallowWater_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    AddDefaultPrimaryEvaluator_(ponded_depth_key_);
+    AddDefaultPrimaryEvaluator(S_, ponded_depth_key_);
   }
 
   // -- total depth
@@ -126,7 +126,7 @@ ShallowWater_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 2);
-    AddDefaultPrimaryEvaluator_(velocity_key_);
+    AddDefaultPrimaryEvaluator(S_, velocity_key_);
   }
 
   // -- discharge

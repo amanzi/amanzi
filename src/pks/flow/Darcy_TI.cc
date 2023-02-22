@@ -51,7 +51,17 @@ Darcy_PK::FunctionalResidual(double t_old,
     sy_g.Multiply(1.0, sy_g, aperture, 0.0);
   }
 
+  // optimization for stationary matrices
   op_->RestoreCheckPoint();
+  if (flow_on_manifold_) {
+    bool updated = S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");
+    if (updated) { // new matrices require new checkpoint
+      op_->Init();
+      op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+      op_->CreateCheckPoint();
+    }
+  }
+
   op_acc_->AddAccumulationDelta(*u_old->Data(), ss_g, ss_g, dt_, "cell");
   op_acc_->AddAccumulationDeltaNoVolume(*u_old->Data(), sy_g, "cell");
 
@@ -68,10 +78,8 @@ Darcy_PK::FunctionalResidual(double t_old,
 
     ss_g.Update(rho_, compliance, 0.0);
     op_acc_->AddAccumulationDelta(*u_old->Data(), ss_g, ss_g, dt_, "cell");
-
-    bool updated = S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");
-    if (updated) op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  } else if (use_bulk_modulus_) {
+  }
+  else if (use_bulk_modulus_) {
     S_->GetEvaluator(bulk_modulus_key_).Update(*S_, "flow");
     const auto& bulk_c =
       *S_->Get<CompositeVector>(bulk_modulus_key_, Tags::DEFAULT).ViewComponent("cell");

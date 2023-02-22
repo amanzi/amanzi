@@ -23,12 +23,12 @@
 
 #include "Factory.hh"
 
-#include "MultiphaseBaseEvaluator.hh"
+#include "MultiphaseEvaluator.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class TotalWaterStorage : public MultiphaseBaseEvaluator {
+class TotalWaterStorage : public MultiphaseEvaluator {
  public:
   TotalWaterStorage(Teuchos::ParameterList& plist);
   TotalWaterStorage(const TotalWaterStorage& other);

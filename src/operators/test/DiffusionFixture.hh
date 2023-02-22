@@ -148,7 +148,9 @@ DiffusionFixture::DiscretizeWithGravity(const std::string& name,
                                         double gravity,
                                         AmanziMesh::Entity_kind scalar_coef)
 {
-  Operators::PDE_DiffusionFactory opfactory(plist->sublist("PK operator").sublist(name), mesh);
+  Teuchos::ParameterList oplist = plist->sublist("PK operator").sublist(name);
+  oplist.set<bool>("gravity", true);
+  Operators::PDE_DiffusionFactory opfactory(oplist, mesh);
 
   // set gravity
   AmanziGeometry::Point g(mesh->space_dimension());

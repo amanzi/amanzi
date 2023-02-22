@@ -68,17 +68,17 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
 void
 FlowMatrixFracture_PK::Setup()
 {
-  mesh_domain_ = S_->GetMesh();
+  mesh_matrix_ = S_->GetMesh();
   mesh_fracture_ = S_->GetMesh("fracture");
 
   // primary and secondary fields for matrix affected by non-uniform
   // distribution of DOFs
   // -- pressure
-  auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
+  auto cvs = Operators::CreateFracturedMatrixCVS(mesh_matrix_, mesh_fracture_);
   if (!S_->HasRecord("pressure")) {
-    *S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT).SetMesh(mesh_domain_)->SetGhosted(true) =
+    *S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT).SetMesh(mesh_matrix_)->SetGhosted(true) =
       *cvs;
-    AddDefaultPrimaryEvaluator_("pressure", Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, "pressure", Tags::DEFAULT);
   }
 
   // -- darcy flux
@@ -87,10 +87,10 @@ FlowMatrixFracture_PK::Setup()
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
     S_->Require<CV_t, CVS_t>("volumetric_flow_rate", Tags::DEFAULT)
-      .SetMesh(mesh_domain_)
+      .SetMesh(mesh_matrix_)
       ->SetGhosted(true)
       ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
-    AddDefaultPrimaryEvaluator_("volumetric_flow_rate", Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, "volumetric_flow_rate", Tags::DEFAULT);
   }
 
   // -- darcy flux for fracture
@@ -99,10 +99,10 @@ FlowMatrixFracture_PK::Setup()
     *S_->Require<CV_t, CVS_t>("fracture-volumetric_flow_rate", Tags::DEFAULT)
        .SetMesh(mesh_fracture_)
        ->SetGhosted(true) = *cvs2;
-    AddDefaultPrimaryEvaluator_("fracture-volumetric_flow_rate", Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, "fracture-volumetric_flow_rate", Tags::DEFAULT);
   }
 
-  // Require additional fields and evaluators
+  // additional fields and evaluators related to coupling
   Key normal_permeability_key_("fracture-normal_permeability");
   if (!S_->HasRecord(normal_permeability_key_)) {
     S_->Require<CV_t, CVS_t>(normal_permeability_key_, Tags::DEFAULT)
@@ -117,7 +117,7 @@ FlowMatrixFracture_PK::Setup()
   Teuchos::ParameterList& mflow =
     glist_->sublist("PKs").sublist(pks[0]).sublist("physical models and assumptions");
   mflow.set<std::string>("coupled matrix fracture flow", "matrix")
-    .set<bool>("use bulk modulus", true);
+    .set<bool>("use bulk modulus", false);
 
   // -- flow (fracture)
   Teuchos::ParameterList& fflow =
@@ -156,9 +156,6 @@ FlowMatrixFracture_PK::Initialize()
   auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX)->Clone();
 
   // off-diagonal blocks are coupled PDEs
-  auto mesh_matrix = S_->GetMesh("domain");
-  auto mesh_fracture = S_->GetMesh("fracture");
-
   // -- minimum composite vector spaces containing the coupling term
   auto& mmap = solution_->SubVector(0)->Data()->ViewComponent("face", false)->Map();
   auto& gmap = solution_->SubVector(0)->Data()->ViewComponent("face", true)->Map();
@@ -167,7 +164,7 @@ FlowMatrixFracture_PK::Initialize()
   const auto& kn = *S_->Get<CV_t>("fracture-normal_permeability").ViewComponent("cell");
   double gravity = norm(S_->Get<AmanziGeometry::Point>("gravity"));
 
-  FractureInsertion fi(mesh_matrix, mesh_fracture);
+  FractureInsertion fi(mesh_matrix_, mesh_fracture_);
   fi.InitMatrixFaceToFractureCell(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
   double scale = (sub_pks_[0]->name() == "darcy") ? 1.0 : 1.0 / CommonDefs::MOLAR_MASS_H2O;
   fi.SetValues(kn, scale / gravity);
@@ -279,15 +276,15 @@ bool
 FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // create copies of conservative fields
-  std::vector<std::string> fields = { "prev_saturation_liquid", "fracture-prev_saturation_liquid" };
+  std::vector<std::string> fields = { "saturation_liquid", "fracture-saturation_liquid" };
   if (sub_pks_[0]->name() == "richards") {
-    fields.push_back("prev_water_storage");
-    fields.push_back("fracture-prev_water_storage");
+    fields.push_back("water_storage");
+    fields.push_back("fracture-water_storage");
   }
 
   StateArchive archive(S_, vo_);
   archive.Add(fields, {}, {}, Tags::DEFAULT, name());
-  archive.Swap("");
+  archive.CopyFieldsToPrevFields("");
 
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
 
@@ -344,19 +341,6 @@ FlowMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
   Y->PutScalar(0.0);
   int ok = op_tree_pc_->ApplyInverse(*X, *Y);
   return ok;
-}
-
-
-/* *******************************************************************
-* This should be refactored, see for simialr function in PK_Physical
-******************************************************************* */
-void
-FlowMatrixFracture_PK::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
-{
-  Teuchos::ParameterList elist(key);
-  elist.set<std::string>("tag", tag.get());
-  auto eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(elist));
-  S_->SetEvaluator(key, tag, eval);
 }
 
 } // namespace Amanzi

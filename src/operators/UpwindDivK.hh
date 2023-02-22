@@ -40,10 +40,8 @@ class UpwindDivK : public Upwind {
   // main methods
   void Init(Teuchos::ParameterList& plist);
 
-  void Compute(const CompositeVector& flux,
-               const CompositeVector& solution,
-               const std::vector<int>& bc_model,
-               CompositeVector& field);
+  void
+  Compute(const CompositeVector& flux, const std::vector<int>& bc_model, CompositeVector& field);
 
  private:
   int method_, order_;
@@ -68,7 +66,6 @@ UpwindDivK::Init(Teuchos::ParameterList& plist)
 ****************************************************************** */
 inline void
 UpwindDivK::Compute(const CompositeVector& flux,
-                    const CompositeVector& solution,
                     const std::vector<int>& bc_model,
                     CompositeVector& field)
 {
@@ -79,7 +76,6 @@ UpwindDivK::Compute(const CompositeVector& flux,
   flux.ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& flx_face = *flux.ViewComponent("face", true);
-  // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
   const Epetra_MultiVector& fld_boundary = *field.ViewComponent("boundary_face", true);

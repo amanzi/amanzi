@@ -29,17 +29,19 @@
 #include "FlattenedTreeOperator.hh"
 #include "Key.hh"
 #include "PDE_Accumulation.hh"
-#include "PDE_AdvectionUpwind.hh"
+#include "PDE_AdvectionUpwindFactory.hh"
+#include "PDE_DiffusionFactory.hh"
 #include "PDE_DiffusionFVwithGravity.hh"
+#include "PDE_DiffusionFVonManifolds.hh"
 #include "PK_Factory.hh"
 #include "PK_PhysicalBDF.hh"
 #include "State.hh"
 #include "TreeVector.hh"
-#include "UpwindFlux.hh"
+#include "Upwind.hh"
 
 // Multiphase
 #include "EquationStructure.hh"
-#include "MultiphaseBaseEvaluator.hh"
+#include "MultiphaseEvaluator.hh"
 #include "MultiphaseBoundaryFunction.hh"
 #include "MultiphaseTypeDefs.hh"
 
@@ -120,6 +122,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   virtual void ModifyEvaluators(int neqn);
 
   Teuchos::RCP<TreeVector> soln() { return soln_; }
+  Teuchos::RCP<Operators::TreeOperator> op_tree_pc() { return op_preconditioner_; }
 
  protected:
   void InitializeFieldFromField_(const std::string& field0,
@@ -132,6 +135,8 @@ class Multiphase_PK : public PK_PhysicalBDF {
   void InitializeFields_();
 
   void PopulateSecondaryBCs_();
+
+  Teuchos::RCP<CompositeVector> CreateCVforUpwind_();
 
  protected:
   int ncells_owned_, ncells_wghost_;
@@ -158,7 +163,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   std::string ncp_;
 
   // keys
-  Key pressure_liquid_key_, x_liquid_key_, x_gas_key_;
+  Key pressure_liquid_key_, x_liquid_key_, x_vapor_key_, x_gas_key_;
   Key saturation_liquid_key_, saturation_gas_key_, temperature_key_;
   Key energy_key_, prev_energy_key_;
   Key porosity_key_, pressure_gas_key_, pressure_vapor_key_;
@@ -181,8 +186,10 @@ class Multiphase_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Matrix<TreeVector, TreeVectorSpace>> op_pc_solver_;
   bool op_pc_assembled_;
 
-  Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> pde_diff_K_;
-  Teuchos::RCP<Operators::PDE_DiffusionFV> pde_diff_D_;
+  Teuchos::RCP<Operators::PDE_DiffusionFactory> fac_diffK_, fac_diffD_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwindFactory> fac_adv_;
+  std::vector<Teuchos::RCP<Operators::PDE_Diffusion>> pde_diff_K_;
+  Teuchos::RCP<Operators::PDE_Diffusion> pde_diff_D_;
 
   std::map<std::string, bool> system_;
   std::vector<EquationStructure> eqns_;
@@ -202,7 +209,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   Teuchos::RCP<WRMmpPartition> wrm_;
 
   // upwind
-  Teuchos::RCP<Operators::UpwindFlux> upwind_;
+  Teuchos::RCP<Operators::Upwind> upwind_, upwind_new_;
 
   // time integration
   std::vector<std::string> flux_names_;
@@ -214,6 +221,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
  private:
   int missed_bc_faces_;
   double smooth_mu_; // smoothing parameter
+  bool flow_on_manifold_;
 
   // solvers and preconditioners
   bool cpr_enhanced_;
@@ -234,21 +242,6 @@ class Multiphase_PK : public PK_PhysicalBDF {
  private:
   static RegisteredPKFactory<Multiphase_PK> reg_;
 };
-
-
-// non-member function
-inline Teuchos::RCP<CompositeVector>
-CreateCVforUpwind(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-{
-  CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh)
-    ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1)
-    ->AddComponent("face", AmanziMesh::FACE, 1);
-  cvs.SetOwned(false);
-
-  return Teuchos::rcp(new CompositeVector(cvs));
-}
 
 } // namespace Multiphase
 } // namespace Amanzi

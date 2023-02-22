@@ -267,13 +267,6 @@ InputConverterU::TranslateTransport_(const std::string& domain)
 
         std::string mat_name = GetAttributeValueS_(inode, "name");
         mat_list.sublist(mat_name) = tmp_list;
-
-        if (domain == "fracture") {
-          for (int n = 0; n < regions.size(); ++n) fracture_regions_.push_back(regions[n]);
-          fracture_regions_.erase(
-            SelectUniqueEntries(fracture_regions_.begin(), fracture_regions_.end()),
-            fracture_regions_.end());
-        }
       }
     }
   }
@@ -320,7 +313,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
   out_list.sublist("physical models and assumptions")
     .set<bool>("permeability field is required", transport_permeability_);
 
-  if (fractures_ && domain == "fracture") {
+  if (fracture_regions_.size() > 0 && domain == "fracture") {
     out_list.sublist("physical models and assumptions")
       .set<bool>("flow and transport in fractures", true);
   }

@@ -27,13 +27,16 @@
 #include "InverseFactory.hh"
 #include "IO.hh"
 #include "PDE_Accumulation.hh"
-#include "PDE_AdvectionUpwind.hh"
-#include "PDE_DiffusionFVwithGravity.hh"
+#include "PDE_AdvectionUpwindFactory.hh"
+#include "PDE_DiffusionFactory.hh"
+#include "PDE_DiffusionFVonManifolds.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "RelPermEvaluator.hh"
 #include "TCMEvaluator_TwoPhase.hh"
+#include "UpwindFactory.hh"
 
 // Multiphase
+#include "MassDensityGas.hh"
 #include "ModelMeshPartition.hh"
 #include "MoleFractionLiquid.hh"
 #include "Multiphase_PK.hh"
@@ -60,12 +63,7 @@ Multiphase_PK::Multiphase_PK(Teuchos::ParameterList& pk_tree,
                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
                              const Teuchos::RCP<State>& S,
                              const Teuchos::RCP<TreeVector>& soln)
-  : passwd_("multiphase"),
-    soln_(soln),
-    num_phases_(2),
-    op_pc_assembled_(false),
-    glist_(glist),
-    num_itrs_(0)
+  : passwd_(""), soln_(soln), num_phases_(2), op_pc_assembled_(false), glist_(glist), num_itrs_(0)
 {
   S_ = S;
 
@@ -84,6 +82,11 @@ Multiphase_PK::Multiphase_PK(Teuchos::ParameterList& pk_tree,
 
   // computational domain
   domain_ = mp_list_->template get<std::string>("domain name", "domain");
+
+  Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object") = mp_list_->sublist("verbose object");
+  std::string ioname = "MultiphasePK" + ((domain_ != "domain") ? "-" + domain_ : "");
+  vo_ = Teuchos::rcp(new VerboseObject(ioname, vlist));
 }
 
 
@@ -110,6 +113,7 @@ Multiphase_PK::Setup()
   prev_energy_key_ = Keys::getKey(domain_, "prev_energy");
 
   x_liquid_key_ = Keys::getKey(domain_, "mole_fraction_liquid");
+  x_vapor_key_ = Keys::getKey(domain_, "mole_fraction_vapor");
   x_gas_key_ = Keys::getKey(domain_, "mole_fraction_gas");
 
   tcc_liquid_key_ = Keys::getKey(domain_, "total_component_concentration_liquid");
@@ -153,11 +157,19 @@ Multiphase_PK::Setup()
   advection_enthalpy_liquid_key_ = Keys::getKey(domain_, "advection_enthalpy_liquid");
   advection_enthalpy_gas_key_ = Keys::getKey(domain_, "advection_enthalpy_gas");
 
+  // model assumptions
+  auto physical_models = Teuchos::sublist(mp_list_, "physical models and assumptions");
+  flow_on_manifold_ = physical_models->get<bool>("flow and transport in fractures", false);
+
   // extract information about nonlinear system
   component_names_ = mp_list_->sublist("molecular diffusion")
                        .get<Teuchos::Array<std::string>>("aqueous names")
                        .toVector();
   num_primary_ = component_names_.size();
+
+  mol_mass_H2O_ = mp_list_->get<double>("molar mass of water");
+  mol_mass_ = mp_list_->sublist("molecular diffusion")
+                       .get<Teuchos::Array<double>>("molar masses").toVector();
 
   int id0(0), id1, id2, id3, id4;
   id1 = InitMPSystem_("pressure eqn", id0, 1);
@@ -270,17 +282,57 @@ Multiphase_PK::Setup()
 
   // Darcy volume fluxes
   if (!S_->HasRecord(vol_flowrate_liquid_key_)) {
-    S_->Require<CV_t, CVS_t>(vol_flowrate_liquid_key_, Tags::DEFAULT, passwd_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
-  }
+    if (!flow_on_manifold_) {
+      S_->Require<CV_t, CVS_t>(vol_flowrate_liquid_key_, Tags::DEFAULT, passwd_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("face", AmanziMesh::FACE, 1);
+    } else {
+      auto cvs = Operators::CreateManifoldCVS(mesh_);
+      *S_->Require<CV_t, CVS_t>(vol_flowrate_liquid_key_, Tags::DEFAULT, passwd_)
+         .SetMesh(mesh_)
+         ->SetGhosted(true) = *cvs;
+    }
+ }
 
   if (!S_->HasRecord(vol_flowrate_gas_key_)) {
-    S_->Require<CV_t, CVS_t>(vol_flowrate_gas_key_, Tags::DEFAULT, passwd_)
+    if (!flow_on_manifold_) {
+      S_->Require<CV_t, CVS_t>(vol_flowrate_gas_key_, Tags::DEFAULT, passwd_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("face", AmanziMesh::FACE, 1);
+    } else {
+      auto cvs = Operators::CreateManifoldCVS(mesh_);
+      *S_->Require<CV_t, CVS_t>(vol_flowrate_gas_key_, Tags::DEFAULT, passwd_)
+         .SetMesh(mesh_)
+         ->SetGhosted(true) = *cvs;
+    }
+  }
+
+  // densities
+  if (!S_->HasRecord(mass_density_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT, mass_density_liquid_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasRecord(mass_density_gas_key_)) {
+    S_->Require<CV_t, CVS_t>(mass_density_gas_key_, Tags::DEFAULT, mass_density_gas_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("tag", "")
+      .set<std::string>("mole fraction vapor key", x_vapor_key_)
+      .set<std::string>("mole fraction gas key", x_gas_key_)
+      .set<std::string>("molar density gas key", mol_density_gas_key_)
+      .set<double>("molar mass of water", mol_mass_H2O_)
+      .set<Teuchos::Array<double>>("molar masses", mol_mass_);
+    elist.setName(mass_density_gas_key_);
+
+    auto ee = Teuchos::rcp(new MassDensityGas(elist));
+    S_->SetEvaluator(mass_density_gas_key_, Tags::DEFAULT, ee);
   }
 
   // viscosities
@@ -527,6 +579,10 @@ Multiphase_PK::Setup()
   if (mp_list_->isParameter("evaluators")) {
     auto evals = mp_list_->get<Teuchos::Array<std::string>>("evaluators").toVector();
     for (auto& e : evals) {
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "require eval: " << e << std::endl;
+      }
       S_->Require<CV_t, CVS_t>(e, Tags::DEFAULT, e)
         .SetMesh(mesh_)
         ->SetGhosted(true)
@@ -575,11 +631,6 @@ Multiphase_PK::Initialize()
   kH_ = aux_list.get<Teuchos::Array<double>>("Henry dimensionless constants").toVector();
 
   mol_mass_H2O_ = mp_list_->get<double>("molar mass of water");
-
-  // verbose object must go first to support initialization reports
-  Teuchos::ParameterList vlist;
-  vlist.sublist("verbose object") = mp_list_->sublist("verbose object");
-  vo_ = Teuchos::rcp(new VerboseObject("Multiphase_PK", vlist));
 
   // fundamental physical quantities
   gravity_ = S_->Get<AmanziGeometry::Point>("gravity");
@@ -708,21 +759,37 @@ Multiphase_PK::Initialize()
   // -- absolute permeability
   ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   K_.resize(ncells_wghost_);
-  ConvertFieldToTensor(S_, dim_, "permeability", K_);
+  ConvertFieldToTensor(S_, dim_, permeability_key_, K_);
 
   // -- pre-process full tensor once to re-use it later for flux calculation
   auto& ddf_list = mp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
   Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(K_);
 
-  pde_diff_K_ =
-    Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(ddf_list, mesh_, 1.0, gravity_));
-  pde_diff_K_->Setup(Kptr, Teuchos::null, Teuchos::null, rho_l_, gravity_);
-  pde_diff_K_->SetBCs(op_bcs_[pressure_liquid_key_], op_bcs_[pressure_liquid_key_]);
-  pde_diff_K_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  fac_diffK_ = Teuchos::rcp(new Operators::PDE_DiffusionFactory(ddf_list, mesh_));
+  fac_diffK_->SetVariableTensorCoefficient(Kptr);
+
+  auto mass_l = S_->GetPtr<CV_t>(mass_density_liquid_key_, Tags::DEFAULT);
+  fac_diffK_->SetVariableGravitationalTerm(gravity_, mass_l);
+
+  pde_diff_K_.resize(2);
+  pde_diff_K_[0] = fac_diffK_->Create();
+  pde_diff_K_[0]->SetBCs(op_bcs_[pressure_liquid_key_], op_bcs_[pressure_liquid_key_]);
+  pde_diff_K_[0]->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  auto mass_g = S_->GetPtr<CV_t>(mass_density_gas_key_, Tags::DEFAULT);
+  fac_diffK_->SetVariableGravitationalTerm(gravity_, mass_g);
+
+  pde_diff_K_[1] = fac_diffK_->Create();
+  pde_diff_K_[1]->SetBCs(op_bcs_[pressure_gas_key_], op_bcs_[pressure_gas_key_]);
+  pde_diff_K_[1]->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   auto& mdf_list =
     mp_list_->sublist("operators").sublist("molecular diffusion operator").sublist("matrix");
-  pde_diff_D_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(mdf_list, mesh_));
+  fac_diffD_ = Teuchos::rcp(new Operators::PDE_DiffusionFactory(mdf_list, mesh_));
+  pde_diff_D_ = fac_diffD_->Create();
+
+  auto& adv_list = mp_list_->sublist("operators").sublist("advection operator");
+  fac_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwindFactory(adv_list, mesh_));
 
   // preconditioner is model-specific. It is created in the scope of global assembly to
   // reduce memory footprint for large number of components.
@@ -748,22 +815,26 @@ Multiphase_PK::Initialize()
   bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
 
   // upwind operator with a face model (FIXME)
+  Operators::UpwindFactory upwfact;
   auto upw_list = mp_list_->sublist("operators").sublist("diffusion operator").sublist("upwind");
+  upwind_ = upwfact.Create(mesh_, upw_list);
+  // upwind_ = Teuchos::rcp(new Operators::UpwindFlux(mesh_));
 
-  upwind_ = Teuchos::rcp(new Operators::UpwindFlux(mesh_));
-  upwind_->Init(upw_list);
+  // initialize other fields and evaluators
+  S_->GetEvaluator(relperm_liquid_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(relperm_gas_key_).Update(*S_, passwd_);
 
-  // initialize other fields
   InitializeFields_();
 
   // io
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    for (const auto& name : soln_names_) { *vo_->os() << "unknown: \"" << name << "\"\n\n"; }
+    for (const auto& name : soln_names_) { *vo_->os() << "unknown: \"" << name << "\"\n"; }
     for (int i = 0; i < bcs_.size(); i++) {
       *vo_->os() << "bc \"" << bcs_[i]->keyword() << "\" has " << bcs_[i]->size() << " entities"
                  << std::endl;
     }
+    // WriteStateStatistics(*S_);
     UpdatePreconditioner(0.0, soln_, 1.0);
     *vo_->os() << "preconditioner:" << std::endl
                << op_preconditioner_->PrintDiagnostics() << std::endl;
@@ -885,7 +956,7 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 
 /* ******************************************************************
-* Push data to the state
+* Compute fluxes, push data to the state, etc.
 ****************************************************************** */
 void
 Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
@@ -896,30 +967,29 @@ Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   S_->GetEvaluator(advection_gas_key_).Update(*S_, passwd_);
 
   // work memory
-  auto kr = CreateCVforUpwind(mesh_);
+  auto kr = CreateCVforUpwind_();
   auto& kr_c = *kr->ViewComponent("cell");
 
   Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(K_);
   PopulateBCs(0, true);
 
-  std::vector<std::string> relperm_name{ advection_liquid_key_, advection_gas_key_ };
-  std::vector<std::string> viscosity_name{ viscosity_liquid_key_, viscosity_gas_key_ };
+  // Using form div [K k grad(p)] to compute u = -K k grad(p)
+  // NOTE: k is upwinded using flux from last iteration
+  std::vector<std::string> adv_name{ advection_liquid_key_, advection_gas_key_ };
   std::vector<std::string> varp_name{ pressure_liquid_key_, pressure_gas_key_ };
   std::vector<std::string> flux_name{ vol_flowrate_liquid_key_, vol_flowrate_gas_key_ };
 
   for (int phase = 0; phase < 2; ++phase) {
-    S_->GetEvaluator(relperm_name[phase]).Update(*S_, passwd_);
+    S_->GetEvaluator(adv_name[phase]).Update(*S_, passwd_);
 
-    const auto& relperm_c = *S_->Get<CV_t>(relperm_name[phase]).ViewComponent("cell");
-    const auto& viscosity_c = *S_->Get<CV_t>(viscosity_name[phase]).ViewComponent("cell");
+    const auto& kr_c = *S_->Get<CV_t>(adv_name[phase]).ViewComponent("cell");
     auto flux = S_->GetPtrW<CV_t>(flux_name[phase], Tags::DEFAULT, passwd_);
 
-    for (int c = 0; c < ncells_owned_; ++c) { kr_c[0][c] = relperm_c[0][c] / viscosity_c[0][c]; }
-    upwind_->Compute(*flux, *kr, bcnone, *kr);
+    upwind_->Compute(*flux, bcnone, *kr);
 
-    auto& pdeK = pde_diff_K_;
-    pdeK->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
-    pdeK->SetBCs(op_bcs_[pressure_liquid_key_], op_bcs_[pressure_liquid_key_]);
+    auto pdeK = pde_diff_K_[phase];
+    pdeK->Setup(Kptr, kr, Teuchos::null);
+    pdeK->SetBCs(op_bcs_[varp_name[phase]], op_bcs_[varp_name[phase]]);
     pdeK->global_operator()->Init();
     pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -985,8 +1055,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
   std::string name, primary_name;
   std::vector<std::string> names;
 
-  name = slist.get<std::string>("primary unknown");
-  primary_name = Keys::getKey(domain_, name);
+  primary_name = slist.get<std::string>("primary unknown");
   soln_names_.push_back(primary_name);
 
   for (int i = 0; i < eqn_num; ++i) {
@@ -1005,8 +1074,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
 
     if (slist.isParameter("advection liquid")) {
       names = slist.get<Teuchos::Array<std::string>>("advection liquid").toVector();
-      eqns_[n].advection.push_back(
-        std::make_pair(Keys::getKey(domain_, names[0]), Keys::getKey(domain_, names[1])));
+      eqns_[n].advection.push_back(std::make_pair(names[0], names[1]));
       eval_flattened_.push_back(names[0]);
       secondary_names_.insert(names[1]);
     } else {
@@ -1015,8 +1083,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
 
     if (slist.isParameter("advection gas")) {
       names = slist.get<Teuchos::Array<std::string>>("advection gas").toVector();
-      eqns_[n].advection.push_back(
-        std::make_pair(Keys::getKey(domain_, names[0]), Keys::getKey(domain_, names[1])));
+      eqns_[n].advection.push_back(std::make_pair(names[0], names[1]));
       eval_flattened_.push_back(names[0]);
       secondary_names_.insert(names[1]);
     } else {
@@ -1029,8 +1096,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
 
     if (slist.isParameter("diffusion liquid")) {
       names = slist.get<Teuchos::Array<std::string>>("diffusion liquid").toVector();
-      eqns_[n].diffusion.push_back(
-        std::make_pair(Keys::getKey(domain_, names[0]), Keys::getKey(domain_, names[1])));
+      eqns_[n].diffusion.push_back(std::make_pair(names[0], names[1]));
       eval_flattened_.push_back(names[0]);
       secondary_names_.insert(names[1]);
     } else {
@@ -1039,8 +1105,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
 
     if (slist.isParameter("diffusion gas")) {
       names = slist.get<Teuchos::Array<std::string>>("diffusion gas").toVector();
-      eqns_[n].diffusion.push_back(
-        std::make_pair(Keys::getKey(domain_, names[0]), Keys::getKey(domain_, names[1])));
+      eqns_[n].diffusion.push_back(std::make_pair(names[0], names[1]));
       eval_flattened_.push_back(names[0]);
       secondary_names_.insert(names[1]);
     } else {
@@ -1050,15 +1115,14 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
     // storage
     if (slist.isParameter("accumulation")) {
       name = slist.get<std::string>("accumulation");
-      eqns_[n].storage = Keys::getKey(domain_, name);
+      eqns_[n].storage = name;
       eval_flattened_.push_back(name);
     }
 
     // constraint
     if (slist.isParameter("ncp evaluators")) {
       names = slist.get<Teuchos::Array<std::string>>("ncp evaluators").toVector();
-      eqns_[n].constraint =
-        std::make_pair(Keys::getKey(domain_, names[0]), Keys::getKey(domain_, names[1]));
+      eqns_[n].constraint = std::make_pair(names[0], names[1]);
       eval_flattened_.push_back(names[0]);
       eval_flattened_.push_back(names[1]);
     }
@@ -1102,14 +1166,14 @@ Multiphase_PK::ModifyEvaluators(int neqn)
     // ifield is dummy here
     if (S_->HasEvaluator(tcs_key_, Tags::DEFAULT)) {
       auto eval = S_->GetEvaluatorPtr(tcs_key_, Tags::DEFAULT);
-      Teuchos::rcp_dynamic_cast<MultiphaseBaseEvaluator>(eval)->set_subvector(ifield, n, kH_[n]);
-      Teuchos::rcp_dynamic_cast<MultiphaseBaseEvaluator>(eval)->Update(*S_, passwd_, true);
+      Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, kH_[n]);
+      Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, passwd_, true);
     }
 
     if (S_->HasEvaluator(ncp_g_key_, Tags::DEFAULT)) {
       auto eval = S_->GetEvaluatorPtr(ncp_g_key_, Tags::DEFAULT);
-      Teuchos::rcp_dynamic_cast<MultiphaseBaseEvaluator>(eval)->set_subvector(ifield, n, kH_[n]);
-      Teuchos::rcp_dynamic_cast<MultiphaseBaseEvaluator>(eval)->Update(*S_, passwd_, true);
+      Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, kH_[n]);
+      Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, passwd_, true);
     }
 
     if (S_->HasEvaluator(x_liquid_key_, Tags::DEFAULT)) {
@@ -1121,19 +1185,31 @@ Multiphase_PK::ModifyEvaluators(int neqn)
     if (S_->HasEvaluator(tcc_liquid_key_, Tags::DEFAULT)) {
       auto eval = S_->GetEvaluatorPtr(tcc_liquid_key_, Tags::DEFAULT);
       if (eval->get_type() != EvaluatorType::PRIMARY) {
-        Teuchos::rcp_dynamic_cast<MultiphaseBaseEvaluator>(eval)->set_subvector(ifield, n, kH_[n]);
-        Teuchos::rcp_dynamic_cast<MultiphaseBaseEvaluator>(eval)->Update(*S_, passwd_, true);
+        Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, kH_[n]);
+        Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, passwd_, true);
       }
     }
 
     if (S_->HasEvaluator(tcc_gas_key_, Tags::DEFAULT)) {
       auto eval = S_->GetEvaluatorPtr(tcc_gas_key_, Tags::DEFAULT);
       if (eval->get_type() != EvaluatorType::PRIMARY) {
-        Teuchos::rcp_dynamic_cast<MultiphaseBaseEvaluator>(eval)->set_subvector(ifield, n, kH_[n]);
-        Teuchos::rcp_dynamic_cast<MultiphaseBaseEvaluator>(eval)->Update(*S_, passwd_, true);
+        Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, kH_[n]);
+        Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, passwd_, true);
       }
     }
   }
+}
+
+
+/* ******************************************************************* 
+* Special cell-face structure for upwind field.
+******************************************************************* */
+Teuchos::RCP<CompositeVector> Multiphase_PK::CreateCVforUpwind_()
+{
+  auto cvs = S_->Get<CV_t>(vol_flowrate_liquid_key_, Tags::DEFAULT).Map();
+  cvs.SetOwned(false);
+  cvs.AddComponent("cell", AmanziMesh::CELL, 1);
+  return Teuchos::rcp(new CompositeVector(cvs));
 }
 
 } // namespace Multiphase

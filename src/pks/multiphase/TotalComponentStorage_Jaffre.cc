@@ -25,7 +25,7 @@ namespace Multiphase {
 * Constructor.
 ****************************************************************** */
 TotalComponentStorage_Jaffre::TotalComponentStorage_Jaffre(Teuchos::ParameterList& plist)
-  : MultiphaseBaseEvaluator(plist)
+  : MultiphaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -48,7 +48,7 @@ TotalComponentStorage_Jaffre::TotalComponentStorage_Jaffre(Teuchos::ParameterLis
 ****************************************************************** */
 TotalComponentStorage_Jaffre::TotalComponentStorage_Jaffre(
   const TotalComponentStorage_Jaffre& other)
-  : MultiphaseBaseEvaluator(other){};
+  : MultiphaseEvaluator(other){};
 
 
 Teuchos::RCP<Evaluator>

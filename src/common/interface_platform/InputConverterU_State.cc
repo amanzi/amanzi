@@ -77,13 +77,6 @@ InputConverterU::TranslateState_()
   double viscosity = GetTextContentD_(node, "Pa*s");
   out_ic.sublist("const_fluid_viscosity").set<double>("value", viscosity);
 
-  node = GetUniqueElementByTagsString_("phases, gas_phase, viscosity", flag);
-  if (flag) {
-    viscosity = GetTextContentD_(node, "Pa*s");
-    out_ic.sublist("const_gas_viscosity").set<double>("value", viscosity);
-    AddIndependentFieldEvaluator_(out_ev, "viscosity_gas", "All", "cell", viscosity);
-  }
-
   // --- constant density
   node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag, true);
   rho_ = GetTextContentD_(node, "kg/m^3");
@@ -100,6 +93,8 @@ InputConverterU::TranslateState_()
   int mat(0);
 
   // primary continuum
+  TranslateCommonContinuumFields_("domain", out_ic, out_ev);
+
   int nmat(0);
   DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
   DOMNodeList* children = node_list->item(0)->getChildNodes();
@@ -230,54 +225,10 @@ InputConverterU::TranslateState_()
           "materials", "permeability/hydraulic_conductivity", "file/filename/x/y/z");
       }
 
-      // -- specific_yield
-      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_yield", flag);
-      if (flag) { TranslateFieldIC_(node, "specific_yield", "-", reg_str, regions, out_ic); }
-
-      // -- specific storage
-      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_storage", flag);
-      if (flag) { TranslateFieldIC_(node, "specific_storage", "m^-1", reg_str, regions, out_ic); }
-
       // -- bulk modulus
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, bulk_modulus", flag);
       if (flag) {
         TranslateFieldEvaluator_(node, "bulk_modulus", "Pa", reg_str, regions, out_ic, out_ev);
-      }
-
-      // -- particle density
-      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);
-      if (flag) {
-        TranslateFieldEvaluator_(
-          node, "particle_density", "kg*m^-3", reg_str, regions, out_ic, out_ev);
-      }
-
-      // -- liquid heat capacity
-      node = GetUniqueElementByTagsString_(inode, "thermal_properties, liquid_heat_capacity", flag);
-      if (flag) {
-        double cv =
-          GetAttributeValueD_(node, "cv", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "kg*m^2/s^2/mol/K");
-        std::string model = GetAttributeValueS_(node, "model", "linear");
-
-        Teuchos::ParameterList& field_ev = out_ev.sublist("internal_energy_liquid");
-        field_ev.set<std::string>("evaluator type", "iem")
-          .set<std::string>("internal energy key", "internal_energy_liquid");
-
-        field_ev.sublist("IEM parameters")
-          .sublist(reg_str)
-          .set<Teuchos::Array<std::string>>("regions", regions)
-          .sublist("IEM parameters")
-          .set<std::string>("iem type", model)
-          .set<double>("heat capacity", cv);
-
-        if (eos_lookup_table_.size() > 0) {
-          field_ev.sublist("IEM parameters")
-            .sublist(reg_str)
-            .set<Teuchos::Array<std::string>>("regions", regions)
-            .sublist("IEM parameters")
-            .set<std::string>("iem type", "tabular")
-            .set<std::string>("table name", eos_lookup_table_)
-            .set<std::string>("field name", "internal_energy");
-        }
       }
 
       // -- rock heat capacity
@@ -308,6 +259,13 @@ InputConverterU::TranslateState_()
                                 "molar density key",
                                 "eos",
                                 "density");
+    if (phases_["air"].size() > 0) {
+      AddSecondaryFieldEvaluator_(out_ev,
+                                  Keys::getKey("domain", "molar_density_gas"),
+                                  "molar density key",
+                                  "eos",
+                                  "density");
+    }
   }
 
   // optional secondary continuum
@@ -330,9 +288,9 @@ InputConverterU::TranslateState_()
   }
 
   // optional fracture network
-  node = GetUniqueElementByTagsString_("fracture_network", flag);
-  fractures_ = flag;
-  if (flag && eos_model_ == "") {
+  if (fracture_regions_.size() > 0) { TranslateCommonContinuumFields_("fracture", out_ic, out_ev); }
+
+  if (fracture_regions_.size() > 0 && eos_model_ == "") {
     AddIndependentFieldEvaluator_(
       out_ev, "fracture-mass_density_liquid", "FRACTURE_NETWORK_INTERNAL", "cell", rho_);
     AddIndependentFieldEvaluator_(out_ev,
@@ -386,26 +344,6 @@ InputConverterU::TranslateState_()
           node, "fracture-normal_diffusion", "m/s", reg_str, regions, out_ic, "normal");
       }
 
-      // -- particle density
-      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);
-      if (flag) {
-        TranslateFieldEvaluator_(node,
-                                 "fracture-particle_density",
-                                 "kg*m^-3",
-                                 reg_str,
-                                 regions,
-                                 out_ic,
-                                 out_ev,
-                                 "value",
-                                 "fracture");
-      }
-
-      // -- specific storage
-      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_storage", flag);
-      if (flag) {
-        TranslateFieldIC_(node, "fracture-specific_storage", "m^-1", reg_str, regions, out_ic);
-      }
-
       // -- fracture compliance
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, compliance", flag);
       if (flag) {
@@ -425,35 +363,6 @@ InputConverterU::TranslateState_()
       if (flag) {
         TranslateFieldIC_(
           node, "fracture-normal_conductivity", "", reg_str, regions, out_ic, "normal");
-      }
-
-      // -- liquid heat capacity
-      node = GetUniqueElementByTagsString_(inode, "thermal_properties, liquid_heat_capacity", flag);
-      if (flag) {
-        double cv =
-          GetAttributeValueD_(node, "cv", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "kg*m^2/s^2/mol/K");
-        std::string model = GetAttributeValueS_(node, "model", "linear");
-
-        Teuchos::ParameterList& field_ev = out_ev.sublist("fracture-internal_energy_liquid");
-        field_ev.set<std::string>("evaluator type", "iem")
-          .set<std::string>("internal energy key", "fracture-internal_energy_liquid");
-
-        field_ev.sublist("IEM parameters")
-          .sublist(reg_str)
-          .set<Teuchos::Array<std::string>>("regions", regions)
-          .sublist("IEM parameters")
-          .set<std::string>("iem type", model)
-          .set<double>("heat capacity", cv);
-
-        if (eos_lookup_table_.size() > 0) {
-          field_ev.sublist("IEM parameters")
-            .sublist(reg_str)
-            .set<Teuchos::Array<std::string>>("regions", regions)
-            .sublist("IEM parameters")
-            .set<std::string>("iem type", "tabular")
-            .set<std::string>("table name", eos_lookup_table_)
-            .set<std::string>("field name", "internal_energy");
-        }
       }
     }
 
@@ -484,8 +393,6 @@ InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       text_content = mm.transcode(node->getTextContent());
       std::vector<std::string> regions = CharToStrings_(text_content);
-
-      // create regions string
       std::string reg_str = CreateNameFromVector_(regions);
 
       // -- uniform pressure
@@ -935,6 +842,123 @@ InputConverterU::TranslateState_()
 * Select proper evaluator based on the list of input parameters.
 ****************************************************************** */
 void
+InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
+                                                 Teuchos::ParameterList& out_ic,
+                                                 Teuchos::ParameterList& out_ev)
+{
+  MemoryManager mm;
+  bool flag;
+  std::string type("value");
+
+  DOMNode* node;
+  DOMNodeList* children;
+
+  // material independent fields
+  // -- viscosity
+  node = GetUniqueElementByTagsString_("phases, gas_phase, viscosity", flag);
+  if (flag) {
+    double viscosity = GetTextContentD_(node, "Pa*s");
+    out_ic.sublist("const_gas_viscosity").set<double>("value", viscosity);
+    AddIndependentFieldEvaluator_(
+      out_ev, Keys::getKey(domain, "viscosity_gas"), "All", "cell", viscosity);
+  }
+
+  // -- molar heat capacity 
+  node = GetUniqueElementByTagsString_("phases, gas_phase, molar_heat_capacity", flag);
+  if (flag) {
+    double cv = GetTextContentD_(node, "J/mol/K");
+
+    auto key = Keys::getKey(domain, "internal_energy_gas");
+    Teuchos::ParameterList& field_ev = out_ev.sublist(key);
+    field_ev.set<std::string>("evaluator type", "iem")
+      .set<std::string>("internal energy key", key);
+
+    field_ev.sublist("IEM parameters")
+      .sublist("All")
+      .set<Teuchos::Array<std::string>>("regions", std::vector<std::string>({ "Entire Domain" }))
+      .sublist("IEM parameters")
+      .set<std::string>("iem type", "linear")
+      .set<double>("heat capacity", cv);
+  }
+
+  if (domain == "domain") {
+    DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
+    children = node_list->item(0)->getChildNodes();
+  } else {
+    node = GetUniqueElementByTagsString_("fracture_network, materials", flag);
+    children = node->getChildNodes();
+  }
+
+  for (int i = 0; i < children->getLength(); i++) {
+    DOMNode* inode = children->item(i);
+    if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
+      node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+      std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+      std::string reg_str = CreateNameFromVector_(regions);
+
+      // specific storage
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_storage", flag);
+      if (flag)
+        TranslateFieldIC_(
+          node, Keys::getKey(domain, "specific_storage"), "m^-1", reg_str, regions, out_ic);
+
+      // specific_yield
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_yield", flag);
+      if (flag)
+        TranslateFieldIC_(
+          node, Keys::getKey(domain, "specific_yield"), "-", reg_str, regions, out_ic);
+
+      // particle density
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);
+      if (flag)
+        TranslateFieldEvaluator_(node,
+                                 Keys::getKey(domain, "particle_density"),
+                                 "kg*m^-3",
+                                 reg_str,
+                                 regions,
+                                 out_ic,
+                                 out_ev,
+                                 type,
+                                 domain);
+
+      // internal energy for liquid
+      node = GetUniqueElementByTagsString_(inode, "thermal_properties, liquid_heat_capacity", flag);
+      if (flag) {
+        double cv =
+          GetAttributeValueD_(node, "cv", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "kg*m^2/s^2/mol/K");
+        std::string model = GetAttributeValueS_(node, "model", "linear");
+
+        auto key = Keys::getKey(domain, "internal_energy_liquid");
+        Teuchos::ParameterList& field_ev = out_ev.sublist(key);
+        field_ev.set<std::string>("evaluator type", "iem")
+          .set<std::string>("internal energy key", key);
+
+        field_ev.sublist("IEM parameters")
+          .sublist(reg_str)
+          .set<Teuchos::Array<std::string>>("regions", regions)
+          .sublist("IEM parameters")
+          .set<std::string>("iem type", model)
+          .set<double>("heat capacity", cv);
+
+        if (eos_lookup_table_.size() > 0) {
+          field_ev.sublist("IEM parameters")
+            .sublist(reg_str)
+            .set<Teuchos::Array<std::string>>("regions", regions)
+            .sublist("IEM parameters")
+            .set<std::string>("iem type", "tabular")
+            .set<std::string>("table name", eos_lookup_table_)
+            .set<std::string>("field name", "internal_energy");
+        }
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Select proper evaluator based on the list of input parameters.
+****************************************************************** */
+void
 InputConverterU::TranslateFieldEvaluator_(DOMNode* node,
                                           const std::string& field,
                                           const std::string& unit,
@@ -1226,6 +1250,12 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
     out_ev.sublist(field)
       .set<std::string>("eos basis", "both")
       .set<std::string>("mass density key", Keys::getKey(prefix, "mass_density_liquid"));
+  }
+ 
+  if (basename == "molar_density_gas") {
+    out_ev.sublist(field)
+      .set<std::string>("eos basis", "molar")
+      .set<std::string>("mass density key", Keys::getKey(prefix, "mass_density_gas"));
   }
 }
 

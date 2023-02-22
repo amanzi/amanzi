@@ -26,38 +26,25 @@
 namespace Amanzi {
 namespace Operators {
 
-struct PDE_AdvectionUpwindFactory {
+class PDE_AdvectionUpwindFactory {
+ public:
+  PDE_AdvectionUpwindFactory(){}
+  PDE_AdvectionUpwindFactory(Teuchos::ParameterList& oplist,
+                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : oplist_(oplist), mesh_(mesh){}
+
+  Teuchos::RCP<PDE_AdvectionUpwind> Create(const Teuchos::RCP<Operator>& global_op = Teuchos::null);
+
+  // backward compatibility
   Teuchos::RCP<PDE_AdvectionUpwind>
-  Create(Teuchos::ParameterList& oplist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  {
-    if (oplist.isParameter("fracture")) {
-      oplist.set<std::string>("name", "AdvectionFracturedMatrix: FACE_CELL");
-      auto op = Teuchos::rcp(new PDE_AdvectionUpwindFracturedMatrix(oplist, mesh));
-      return op;
-    } else if (oplist.isParameter("single domain")) {
-      auto op = Teuchos::rcp(new PDE_AdvectionUpwind(oplist, mesh));
-      return op;
-    } else {
-      auto op = Teuchos::rcp(new PDE_AdvectionUpwindDFN(oplist, mesh));
-      return op;
-    }
-  }
+  Create(Teuchos::ParameterList& oplist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   Teuchos::RCP<PDE_AdvectionUpwind>
-  Create(Teuchos::ParameterList& oplist, const Teuchos::RCP<Operator>& global_op)
-  {
-    if (oplist.isParameter("fracture")) {
-      oplist.set<std::string>("name", "AdvectionFracturedMatrix: FACE_CELL");
-      auto op = Teuchos::rcp(new PDE_AdvectionUpwindFracturedMatrix(oplist, global_op));
-      return op;
-    } else if (oplist.isParameter("single domain")) {
-      auto op = Teuchos::rcp(new PDE_AdvectionUpwind(oplist, global_op));
-      return op;
-    } else {
-      auto op = Teuchos::rcp(new PDE_AdvectionUpwindDFN(oplist, global_op));
-      return op;
-    }
-  }
+  Create(Teuchos::ParameterList& oplist, const Teuchos::RCP<Operator>& global_op);
+
+ private:
+  Teuchos::ParameterList oplist_;
+  const Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
 } // namespace Operators

@@ -114,7 +114,7 @@ if (BUILD_TESTS)
       file(COPY ${DataFiles} DESTINATION ${MPC_BINARY_DIR}/test/)
     endif()
 
-    set(amanzi_libs mpc pks mpc_tree flow transport chemistry_pk energy shallow_water 
+    set(amanzi_libs mpc pks mpc_tree flow transport chemistry_pk energy shallow_water multiphase
                     dummy pks eos state operators mesh_extracted mesh_factory mesh_audit 
                     geometry whetstone mesh_functions functions)
 
@@ -137,6 +137,13 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_shallow_water.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
+
+    # Test: mpc driver for multiphase
+    # add_amanzi_test(mpc_multiphase_fracture mpc_multiphase_fractures
+    #                 KIND      int
+    #                 SOURCE    test/Main.cc test/mpc_multiphase_fractures.cc
+    #	              LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+    #                                          ${HYPRE_LIBRARY})
 
     # Test: mpc driver for reactive transport
     add_amanzi_test(mpc_reactive_transport mpc_reactive_transport

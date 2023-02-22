@@ -106,11 +106,11 @@ InputConverterU::TranslateCycleDriverNew_()
 
   // Logic behind attribute "mode" in the new PK structure is not clear yet,
   // so that we set up some defaults.
-  dt_cut_["steady"] = 0.8;
-  dt_inc_["steady"] = 1.2;
+  dt_cut_["steady"] = std::stod(dt_cut_d);
+  dt_inc_["steady"] = std::stod(dt_inc_d);
 
-  dt_cut_["transient"] = 0.8;
-  dt_inc_["transient"] = 1.2;
+  dt_cut_["transient"] = std::stod(dt_cut_d);
+  dt_inc_["transient"] = std::stod(dt_inc_d);
 
   // global transport properties (should it be here?)
   node = GetUniqueElementByTagsString_(
@@ -171,6 +171,7 @@ InputConverterU::TranslateCycleDriverNew_()
   GetUniqueElementByTagsString_("fracture_network", coupled_flow_);
   coupled_transport_ = coupled_flow_;
   coupled_energy_ = coupled_flow_;
+  coupled_multiphase_ = coupled_flow_;
 
   // new version of process_kernels
   // -- parse available PKs
@@ -244,7 +245,8 @@ InputConverterU::TranslateCycleDriverNew_()
       } else if (strcmp(tagname, "multiphase") == 0) {
         GetAttributeValueS_(jnode, "state", "on");
         model = GetAttributeValueS_(jnode, "model");
-        pk_model_["multiphase"] = model;
+        isothermal_ = (model == "isothermal");
+        pk_model_["multiphase"] = "multiphase";
         pk_master_["multiphase"] = true;
         transient_model += 32;
       }
@@ -346,7 +348,10 @@ InputConverterU::TranslateCycleDriverNew_()
       break;
     case 32:
       pk_master_["multiphase"] = true;
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, "multiphase", delimiter));
+      if (!coupled_multiphase_)
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, "multiphase", delimiter));
+      else
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, "coupled multiphase", delimiter));
       break;
     default:
       msg << "The model with id=" << transient_model << " is not supported by the MPC.\n";
@@ -411,6 +416,7 @@ InputConverterU::PopulatePKTree_(Teuchos::ParameterList& pk_tree, const std::str
     tmp.set<std::string>("PK type", "shallow water");
   } else if (basename == "multiphase") {
     tmp.set<std::string>("PK type", pk_model_["multiphase"]);
+    // coupled model
   } else if (basename == "coupled flow") {
     tmp.set<std::string>("PK type", "darcy matrix fracture");
     tmp.sublist(Keys::merge(prefix, "flow matrix", delimiter))
@@ -437,6 +443,12 @@ InputConverterU::PopulatePKTree_(Teuchos::ParameterList& pk_tree, const std::str
     tmp.sublist(Keys::merge(prefix, "transport", delimiter))
       .set<std::string>("PK type", "transport");
     tmp.sublist(Keys::merge(prefix, "chemistry", delimiter)).set<std::string>("PK type", submodel);
+  } else if (basename == "coupled multiphase") {
+    tmp.set<std::string>("PK type", "multiphase matrix fracture");
+    tmp.sublist(Keys::merge(prefix, "multiphase matrix", delimiter))
+      .set<std::string>("PK type", pk_model_["multiphase"]);
+    tmp.sublist(Keys::merge(prefix, "multiphase fracture", delimiter))
+      .set<std::string>("PK type", pk_model_["multiphase"]);
   } else if (basename == "coupled reactive transport") {
     tmp.set<std::string>("PK type", "reactive transport matrix fracture");
     PopulatePKTree_(tmp, Keys::merge(prefix, "coupled chemistry", delimiter));
@@ -751,9 +763,12 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
         out_list.sublist(pk) = TranslateShallowWater_(pk_domain_["shallow_water"]);
       }
       // -- multiphase PKs
-      else if (basename == "multiphase") {
+      else if (basename == "multiphase" || basename == "multiphase matrix") {
         auto& tmp = glist.sublist("state");
-        out_list.sublist(pk) = TranslateMultiphase_("matrix", tmp);
+        out_list.sublist(pk) = TranslateMultiphase_("domain", tmp);
+      } else if (basename == "multiphase fracture") {
+        auto& tmp = glist.sublist("state");
+        out_list.sublist(pk) = TranslateMultiphase_("fracture", tmp);
       }
       // -- coupled PKs (matrix and fracture)
       else if (basename == "coupled flow") {
@@ -800,6 +815,12 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "chemistry matrix", delimiter));
         pk_names.push_back(Keys::merge(prefix, "chemistry fracture", delimiter));
+        out_list.sublist(pk).set<Teuchos::Array<std::string>>("PKs order", pk_names);
+        out_list.sublist(pk).set<int>("master PK index", 0);
+      } else if (basename == "coupled multiphase") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back(Keys::merge(prefix, "multiphase matrix", delimiter));
+        pk_names.push_back(Keys::merge(prefix, "multiphase fracture", delimiter));
         out_list.sublist(pk).set<Teuchos::Array<std::string>>("PKs order", pk_names);
         out_list.sublist(pk).set<int>("master PK index", 0);
       }
@@ -1046,6 +1067,8 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
         .sublist("advection operator")
         .sublist("matrix")
         .set<Teuchos::Array<std::string>>("fracture", fracture_regions_);
+
+      pk_list.sublist(name).sublist("verbose object") = verb_list_.sublist("verbose object");
     }
 
     if (basename == "coupled transport") {
@@ -1060,6 +1083,16 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
           .set<Teuchos::Array<std::string>>("fracture", fracture_regions_);
       }
 
+      Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
+      mesh_list.sublist("submesh")
+        .set<Teuchos::Array<std::string>>("regions", aux)
+        .set<std::string>("extraction method", "manifold mesh")
+        .set<std::string>("domain name", "fracture");
+
+      if (dim_ == 3) mesh_list.sublist("expert").set<bool>("request edges", true);
+    }
+
+    if (basename == "coupled multiphase") {
       Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
       mesh_list.sublist("submesh")
         .set<Teuchos::Array<std::string>>("regions", aux)

@@ -22,12 +22,12 @@
 #include "Factory.hh"
 
 // Multiphase
-#include "MultiphaseBaseEvaluator.hh"
+#include "MultiphaseEvaluator.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class ProductEvaluator : public MultiphaseBaseEvaluator {
+class ProductEvaluator : public MultiphaseEvaluator {
  public:
   ProductEvaluator(Teuchos::ParameterList& plist);
   ProductEvaluator(const ProductEvaluator& other);

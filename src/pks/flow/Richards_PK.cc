@@ -182,7 +182,7 @@ Richards_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
-    AddDefaultPrimaryEvaluator_(pressure_key_);
+    AddDefaultPrimaryEvaluator(S_, pressure_key_);
   }
 
   // Require conserved quantity.
@@ -492,7 +492,7 @@ Richards_PK::Setup()
   }
 
   if (!S_->HasEvaluator(temperature_key_, Tags::DEFAULT)) {
-    AddDefaultIndependentEvaluator_(temperature_key_, Tags::DEFAULT, 298.15);
+    AddDefaultIndependentEvaluator(S_, temperature_key_, Tags::DEFAULT, 298.15);
   }
 
   // Require additional components for the existing fields
@@ -990,11 +990,11 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // save a copy of primary and conservative fields
   std::vector<std::string> fields;
-  if (flow_on_manifold_) { fields.push_back(prev_aperture_key_); }
+  if (flow_on_manifold_) { fields.push_back(aperture_key_); }
 
   StateArchive archive(S_, vo_);
   archive.Add(fields, {}, {}, Tags::DEFAULT, name());
-  archive.Swap("");
+  archive.CopyFieldsToPrevFields("");
 
   std::map<std::string, CompositeVector> copies;
   copies.emplace(pressure_key_, S_->Get<CV_t>(pressure_key_, Tags::DEFAULT));

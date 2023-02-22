@@ -726,4 +726,9 @@
     <Parameter name="file name base" type="string" value="plot_surface"/>
     <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 2.0, 40.0}"/>
   </ParameterList>
+  <ParameterList name="verbose object">
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
 </ParameterList>

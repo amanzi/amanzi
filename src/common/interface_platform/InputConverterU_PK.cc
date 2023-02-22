@@ -392,7 +392,7 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
     stensil[1] = "cell";
     tmp_list.set<Teuchos::Array<std::string>>("schema", stensil);
 
-    if (pc_method != "linearized_operator" && !fractures_) stensil.remove(1);
+    if (pc_method != "linearized_operator" && fracture_regions_.size() == 0) stensil.remove(1);
     tmp_list.set<Teuchos::Array<std::string>>("preconditioner schema", stensil);
     if (gravity && nonlinear_coef == "upwind-amanzi_new")
       tmp_list.set<std::string>("gravity term discretization", "finite volume");

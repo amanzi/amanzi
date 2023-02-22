@@ -70,18 +70,17 @@ Flow_PK::Setup()
   // Work flow can be affected by the list of models
   auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
 
-  // -- type of the flow (in matrix or on manifold)
+  // type of the flow (in matrix or on manifold)
   flow_on_manifold_ = physical_models->get<bool>("flow and transport in fractures", false);
   flow_on_manifold_ &= (mesh_->manifold_dimension() != mesh_->space_dimension());
 
-  // -- coupling with other PKs
+  // coupling with other PKs
   coupled_to_matrix_ =
     physical_models->get<std::string>("coupled matrix fracture flow", "") == "fracture";
   coupled_to_fracture_ =
     physical_models->get<std::string>("coupled matrix fracture flow", "") == "matrix";
 
-  // register fields and evaluators
-  // -- keys
+  // keys for fields and evaluators
   vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate");
   permeability_key_ = Keys::getKey(domain_, "permeability");
   permeability_eff_key_ = Keys::getKey(domain_, "permeability_effective");
@@ -94,11 +93,21 @@ Flow_PK::Setup()
   prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid");
   wc_key_ = Keys::getKey(domain_, "water_content");
 
-  // -- constant fields
+  // constant fields
   S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
   S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
   S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
 
+  // identify correct CVS for face DOFs
+  Teuchos::RCP<CVS_t> cvs;
+  if (S_->HasRecord(vol_flowrate_key_)) {
+    cvs =
+      Teuchos::rcp(new CVS_t(S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)));
+  } else if (flow_on_manifold_) {
+    cvs = Operators::CreateManifoldCVS(mesh_);
+  }
+
+  // fields and evaluators
   // -- effective fracture permeability
   if (flow_on_manifold_) {
     if (!S_->HasRecord(permeability_key_)) {
@@ -160,7 +169,6 @@ Flow_PK::Setup()
   // -- volumetric flow rate
   if (!S_->HasRecord(vol_flowrate_key_)) {
     if (flow_on_manifold_) {
-      auto cvs = Operators::CreateManifoldCVS(mesh_);
       *S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
          .SetMesh(mesh_)
          ->SetGhosted(true) = *cvs;
@@ -173,7 +181,7 @@ Flow_PK::Setup()
   }
 
   if (!S_->HasEvaluator(vol_flowrate_key_, Tags::DEFAULT)) {
-    AddDefaultPrimaryEvaluator_(vol_flowrate_key_);
+    AddDefaultPrimaryEvaluator(S_, vol_flowrate_key_);
   }
 
   // -- water content

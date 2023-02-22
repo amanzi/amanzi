@@ -26,13 +26,13 @@
 #include "Factory.hh"
 
 // Multiphase
-#include "MultiphaseBaseEvaluator.hh"
+#include "MultiphaseEvaluator.hh"
 #include "MultiphaseTypeDefs.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class TccGas : public MultiphaseBaseEvaluator {
+class TccGas : public MultiphaseEvaluator {
  public:
   TccGas(Teuchos::ParameterList& plist);
 

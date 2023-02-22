@@ -119,7 +119,8 @@ class PDE_DiffusionFactory {
     dbdu_ = dbdu;
   }
 
-  Teuchos::RCP<PDE_Diffusion> Create();
+  // This does all work as a single call
+  Teuchos::RCP<PDE_Diffusion> Create(const Teuchos::RCP<Operator>& global_op = Teuchos::null);
 
   // Backward compatibility
   // -- Diffusion-type PDEs with optional gravity.
@@ -176,7 +177,7 @@ class PDE_DiffusionFactory {
   Teuchos::RCP<const CompositeVector> k_, dkdu_;
 
   // gravity
-  bool gravity_;
+  bool gravity_, manifolds_;
   AmanziGeometry::Point g_;
   double const_b_;
   Teuchos::RCP<const CompositeVector> b_, dbdu_;

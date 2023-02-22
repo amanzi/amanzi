@@ -35,6 +35,7 @@
 
   <phases>
     <liquid_phase name="water">
+      <eos>FEHM</eos>
       <viscosity>1.0e-03</viscosity>
       <density>998.2</density>
       <dissolved_components>

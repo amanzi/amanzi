@@ -20,12 +20,12 @@
 
 #include "Factory.hh"
 
-#include "MultiphaseBaseEvaluator.hh"
+#include "MultiphaseEvaluator.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class NCP_HenryLaw : public MultiphaseBaseEvaluator {
+class NCP_HenryLaw : public MultiphaseEvaluator {
  public:
   NCP_HenryLaw(Teuchos::ParameterList& plist);
   NCP_HenryLaw(const NCP_HenryLaw& other);

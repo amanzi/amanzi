@@ -866,7 +866,6 @@ CycleDriver::Go()
 #if !DEBUG_MODE
     try {
 #endif
-
       while (time_period_id_ < num_time_periods_) {
         int start_cycle_num = S_->get_cycle();
         //  do
@@ -905,8 +904,8 @@ CycleDriver::Go()
           dt = get_dt(false);
         }
       }
-    }
 #if !DEBUG_MODE
+    }
     catch (Exceptions::Amanzi_exception& e) {
       // write one more vis for help debugging
       S_->advance_cycle();
@@ -922,92 +921,93 @@ CycleDriver::Go()
       throw e;
     }
 #endif
-
-    // finalizing simulation
-    WriteStateStatistics(*S_, *vo_);
-    ReportMemory();
-    // Finalize();
-
-    return S_;
   }
 
+  // finalizing simulation
+  WriteStateStatistics(*S_, *vo_);
+  ReportMemory();
+  // Finalize();
 
-  /* ******************************************************************
+  return S_;
+}
+
+
+/* ******************************************************************
 * TBW.
 ****************************************************************** */
-  void CycleDriver::ResetDriver(int time_pr_id)
-  {
-    if (vo_->os_OK(Teuchos::VERB_LOW)) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Reseting CD: TP " << time_pr_id - 1 << " -> TP " << time_pr_id << "."
-                 << std::endl;
-    }
-
-    Teuchos::RCP<AmanziMesh::Mesh> mesh =
-      Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
-
-    S_old_ = S_;
-
-    Teuchos::ParameterList state_plist = glist_->sublist("state");
-    S_ = Teuchos::rcp(new Amanzi::State(state_plist));
-
-    for (auto it = S_old_->mesh_begin(); it != S_old_->mesh_end(); ++it) {
-      S_->RegisterMesh(it->first, it->second.first);
-    }
-
-    // delete the old global solution vector
-    pk_ = Teuchos::null;
-    soln_ = Teuchos::null;
-
-    // create the global solution vector
-    soln_ = Teuchos::rcp(new TreeVector());
-
-    // create new pk
-    Init_PK(time_pr_id);
-
-    // register observation times with the time step manager
-    //if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_);
-
-    // Setup
-    pk_->Setup();
-    pk_->set_tags(Tags::CURRENT, Tags::NEXT);
-
-    S_->Require<double>("dt", Tags::NEXT, "dt");
-    S_->Setup();
-
-    S_->set_cycle(S_old_->get_cycle());
-    S_->set_time(tp_start_[time_pr_id]);
-    S_->set_position(TIME_PERIOD_START);
-
-    S_->GetW<double>("dt", Tags::NEXT, "dt") = tp_dt_[time_pr_id];
-    S_->GetRecordW("dt", Tags::NEXT, "dt").set_initialized();
-
-    // Initialize
-    S_->InitializeFields();
-    S_->InitializeEvaluators();
-
-    // Initialize the state from the old state.
-    S_->Initialize(*S_old_);
-
-    // Initialize the process kernels and verify
-    pk_->Initialize();
-    S_->CheckAllFieldsInitialized();
-
-    S_->GetMeshPartition("materials");
-
-    pk_->CalculateDiagnostics(Tags::DEFAULT);
-    Observations();
-
-    pk_->set_dt(tp_dt_[time_pr_id]);
-    max_dt_ = tp_max_dt_[time_pr_id];
-
-    // conditional i/o after initialization is performed only when
-    // new fields are added/removed to/from the state
-    auto fields_old = StateVisFields(*S_old_);
-    auto fields = StateVisFields(*S_);
-    if (fields_old != fields) Visualize(true, make_tag("ic"));
-
-    S_old_ = Teuchos::null;
+void CycleDriver::ResetDriver(int time_pr_id)
+{
+  if (vo_->os_OK(Teuchos::VERB_LOW)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Reseting CD: TP " << time_pr_id - 1 << " -> TP " << time_pr_id << "."
+               << std::endl;
   }
+
+  Teuchos::RCP<AmanziMesh::Mesh> mesh =
+    Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
+
+  S_old_ = S_;
+
+  Teuchos::ParameterList state_plist = glist_->sublist("state");
+  S_ = Teuchos::rcp(new Amanzi::State(state_plist));
+
+  for (auto it = S_old_->mesh_begin(); it != S_old_->mesh_end(); ++it) {
+    S_->RegisterMesh(it->first, it->second.first);
+  }
+
+  // delete the old global solution vector
+  pk_ = Teuchos::null;
+  soln_ = Teuchos::null;
+
+  // create the global solution vector
+  soln_ = Teuchos::rcp(new TreeVector());
+
+  // create new pk
+  Init_PK(time_pr_id);
+
+  // register observation times with the time step manager
+  //if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_);
+
+  // Setup
+  pk_->Setup();
+  pk_->set_tags(Tags::CURRENT, Tags::NEXT);
+
+  S_->Require<double>("dt", Tags::NEXT, "dt");
+  S_->Setup();
+
+  S_->set_cycle(S_old_->get_cycle());
+  S_->set_time(tp_start_[time_pr_id]);
+  S_->set_position(TIME_PERIOD_START);
+
+  S_->GetW<double>("dt", Tags::NEXT, "dt") = tp_dt_[time_pr_id];
+  S_->GetRecordW("dt", Tags::NEXT, "dt").set_initialized();
+
+  // Initialize
+  S_->InitializeFields();
+  S_->InitializeEvaluators();
+
+  // Initialize the state from the old state.
+  S_->Initialize(*S_old_);
+
+  // Initialize the process kernels and verify
+  pk_->Initialize();
+  S_->CheckAllFieldsInitialized();
+
+  S_->GetMeshPartition("materials");
+
+  pk_->CalculateDiagnostics(Tags::DEFAULT);
+  Observations();
+
+  pk_->set_dt(tp_dt_[time_pr_id]);
+  max_dt_ = tp_max_dt_[time_pr_id];
+
+  // conditional i/o after initialization is performed only when
+  // new fields are added/removed to/from the state
+  auto fields_old = StateVisFields(*S_old_);
+  auto fields = StateVisFields(*S_);
+  if (fields_old != fields) Visualize(true, make_tag("ic"));
+
+  S_old_ = Teuchos::null;
+}
 
 } // namespace Amanzi

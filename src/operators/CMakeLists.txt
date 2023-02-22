@@ -98,6 +98,7 @@ set(operators_inc_files
     PDE_Advection.hh
     PDE_AdvectionUpwind.hh
     PDE_AdvectionUpwindDFN.hh    
+    PDE_AdvectionUpwindFactory.hh
     PDE_AdvectionUpwindFracturedMatrix.hh
     PDE_AdvectionRiemann.hh
     PDE_CouplingFlux.hh
@@ -107,6 +108,7 @@ set(operators_inc_files
     PDE_DiffusionMFD.hh
     PDE_DiffusionMFDwithGravity.hh
     PDE_DiffusionFV.hh
+    PDE_DiffusionFVonManifolds.hh
     PDE_DiffusionFVwithGravity.hh
     PDE_DiffusionNLFV.hh
     PDE_DiffusionNLFVwithBndFaces.hh
@@ -137,6 +139,7 @@ set(operators_inc_files
     UpwindDivK.hh
     UpwindFactory.hh
     UpwindFlux.hh
+    UpwindFluxManifolds.hh
     UpwindGravity.hh
     UpwindSecondOrder.hh
     #Operator_DataHelpers.hh
@@ -163,11 +166,13 @@ set(operators_src_files
   Operator_Schema.cc
   PDE_Accumulation.cc
   PDE_Abstract.cc
+  PDE_AdvectionUpwindFactory.cc
   PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
   PDE_AdvectionUpwindFracturedMatrix.cc PDE_AdvectionUpwindDFN.cc                              
   PDE_CouplingFlux.cc
   PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
   PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
+  PDE_DiffusionFVonManifolds.cc
   PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
   PDE_DiffusionNLFVwithBndFaces.cc PDE_DiffusionNLFVwithBndFacesGravity.cc
   PDE_DiffusionDG.cc
@@ -186,7 +191,7 @@ set(operators_src_files
   RemapDG.cc RemapUtils.cc
   UniqueLocalIndex.cc
   RemapDG_Helper.cc RemapUtils.cc
-  UpwindFlux.cc
+  UpwindFlux.cc UpwindFluxManifolds.cc
   UpwindGravity.cc
   UpwindSecondOrder.cc
   Evaluator_OperatorApply.cc
@@ -259,6 +264,12 @@ if (ENABLE_TESTS)
 
         add_amanzi_test(operators_dfn_4pe operators_dfn NPROCS 4 KIND unit)
                     
+        add_amanzi_test(operators_diffusion_dfn_fv operators_diffusion_dfn_fv
+                        KIND unit
+                        NPROCS 2
+                        SOURCE test/Main.cc test/operator_diffusion_dfn_fv.cc
+                        LINK_LIBS mesh_extracted ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
         add_amanzi_test(operators_coupled_diffusion operators_coupled_diffusion
                         KIND unit
                         SOURCE test/Main.cc test/operator_coupled_diffusion.cc
@@ -379,6 +390,11 @@ if (ENABLE_TESTS)
                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_upwind_2pe operators_upwind NPROCS 2 KIND unit)
+
+    add_amanzi_test(operators_upwind_manifolds operators_upwind_manifolds
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_upwind_manifolds.cc
+                    LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # stability analysis
     add_amanzi_test(operators_stability operators_stability

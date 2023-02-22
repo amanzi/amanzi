@@ -21,7 +21,7 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-NCP_MoleFractions::NCP_MoleFractions(Teuchos::ParameterList& plist) : MultiphaseBaseEvaluator(plist)
+NCP_MoleFractions::NCP_MoleFractions(Teuchos::ParameterList& plist) : MultiphaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -38,7 +38,7 @@ NCP_MoleFractions::NCP_MoleFractions(Teuchos::ParameterList& plist) : Multiphase
 * Copy constructors.
 ****************************************************************** */
 NCP_MoleFractions::NCP_MoleFractions(const NCP_MoleFractions& other)
-  : MultiphaseBaseEvaluator(other){};
+  : MultiphaseEvaluator(other){};
 
 
 Teuchos::RCP<Evaluator>

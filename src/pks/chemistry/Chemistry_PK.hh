@@ -120,7 +120,7 @@ class Chemistry_PK : public PK_Physical {
 
   // time controls
   int dt_cut_threshold_, dt_increase_threshold_;
-  double dt_min_, dt_max_, dt_prev_, dt_next_, dt_cut_factor_, dt_increase_factor_;
+  double dt_, dt_min_, dt_max_, dt_prev_, dt_next_, dt_cut_factor_, dt_increase_factor_;
 
   int num_iterations_, num_successful_steps_;
   double initial_conditions_time_;

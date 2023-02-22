@@ -67,11 +67,8 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
  private:
-  void AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag);
-
- private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_matrix_, mesh_fracture_;
 
   Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_;
 
