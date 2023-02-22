@@ -70,6 +70,13 @@ InputConverterU::TranslateFlow_(const std::string& mode, const std::string& doma
   if (flag) update_upwind = mm.transcode(node->getTextContent());
   replace(update_upwind.begin(), update_upwind.end(), '_', ' ');
 
+  node = GetUniqueElementByTagsString_(
+    "unstructured_controls, unstr_flow_controls, optional_fields", flag);
+  if (flag) { 
+    auto fields = CharToStrings_(mm.transcode(node->getTextContent()));
+    out_list.set<Teuchos::Array<std::string>>("optional fields", fields);
+  }
+
   // create flow header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 
@@ -793,7 +800,7 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
       Teuchos::ParameterList& bc_tmp = bc.sublist("static head").sublist("function-static-head");
       bc_tmp.set<int>("space dimension", dim_)
         .set<double>("density", rho_)
-        .set<double>("gravity", const_gravity_)
+        .set<double>("gravity", (gravity_on_) ? const_gravity_ : 0.0)
         .set<double>("p0", const_atm_pressure_);
       bc_tmp.sublist(bcname) = bcfn;
       bc.remove(bcname);

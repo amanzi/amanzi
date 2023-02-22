@@ -10,7 +10,6 @@
 
 /*
   Input Converter
-
 */
 
 #include <string>
@@ -18,10 +17,13 @@
 
 // TPLs
 #include "Teuchos_ParameterList.hpp"
-
-#include "amanzi_version.hh"
-#include "InputConverterU.hh"
 #include "XMLParameterListWriter.hh"
+
+// Amanzi
+#include "amanzi_version.hh"
+#include "errors.hh"
+
+#include "InputConverterU.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
@@ -334,6 +336,13 @@ InputConverterU::ModifyDefaultPhysicalConstants_()
   const_gravity_ = GRAVITY_MAGNITUDE;
   auto it = constants_.find("gravity");
   if (it != constants_.end()) const_gravity_ = std::strtod(it->second.c_str(), NULL);
+
+  if (const_gravity_ <= 0.0) {
+    Errors::Message msg;
+    msg << "Modified gravity value must be positive.\n"
+        << "Use unstructured_controls->gravity to turn it off.\n";
+    Exceptions::amanzi_throw(msg);
+  }
 
   // reference atmospheric pressure
   const_atm_pressure_ = ATMOSPHERIC_PRESSURE;
