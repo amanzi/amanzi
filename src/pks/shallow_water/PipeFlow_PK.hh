@@ -33,6 +33,14 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void UpdateWettedAngle() override;
 
+  virtual double ComputePondedDepth(double WettedAngle) override;
+
+  virtual double ComputeWettedAngle(double PondedDepth) override;
+
+  virtual double ComputeWettedArea(double WettedAngle) override;
+
+  virtual double ComputeWettedAngleNewton(double WettedArea) override;
+
  private:
   static RegisteredPKFactory<PipeFlow_PK> reg_;
 

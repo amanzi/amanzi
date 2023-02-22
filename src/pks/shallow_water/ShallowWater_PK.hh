@@ -103,6 +103,14 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual double NumericalSourceFriction(double h, double qx, double WettedAngle){return 0.0;};
 
+  virtual double ComputePondedDepth(double WettedAngle){return 0.0;};
+
+  virtual double ComputeWettedAngle(double PondedDepth){return 0.0;};
+
+  virtual double ComputeWettedAngleNewton(double WettedArea){return 0.0;};
+
+  virtual double ComputeWettedArea(double WettedAngle){return 0.0;};
+
   virtual void UpdateWettedAngle(){};
 
   // access

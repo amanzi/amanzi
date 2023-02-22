@@ -196,21 +196,26 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
     normal /= farea;
 
-    double ht_rec = TotalDepthEdgeValue(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
-
-    double B_rec = BathymetryEdgeValue(f, B_n);
-   
+    double ht_rec;
+    double B_rec = BathymetryEdgeValue(f, B_n);;
     double h_rec;
+    double wa_rec;
+
     if (!hydrostatic_pressure_force_type_)  {
+        ht_rec = TotalDepthEdgeValue(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
         h_rec = ht_rec - B_rec;
         ierr = ErrorDiagnostics_(t, c1, h_rec, B_rec, ht_rec);
         if (ierr < 0) break;
     }
     else{
-       h_rec = (c2 == -1) ? h_temp[0][c1] : 0.5 * (h_temp[0][c1] + h_temp[0][c2]); 
-    }
+       //h_rec = (c2 == -1) ? h_temp[0][c1] : 0.5 * (h_temp[0][c1] + h_temp[0][c2]); 
+       //wa_rec = (c2 == -1) ? WettedAngle_c[0][c1] : 0.5 * (WettedAngle_c[0][c1] + WettedAngle_c[0][c2]);
+       double ht_c = ComputePondedDepth(WettedAngle_c[0][c1]) + B_c[0][c1]; //locally reconstruct the total depth on cell
+       ht_rec = TotalDepthEdgeValue(c1, f, ht_c, B_c[0][c1], B_max[0][c1], B_n);
+       wa_rec = ComputeWettedAngle(ht_rec - B_rec);
+       h_rec = ComputeWettedArea(wa_rec);
 
-    double wa_rec = (c2 == -1) ? WettedAngle_c[0][c1] : 0.5 * (WettedAngle_c[0][c1] + WettedAngle_c[0][c2]);
+    }
 
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
@@ -235,18 +240,26 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         UR[0] = bc_value_h[f];
         UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
         UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
-
+        UR[3] = ComputeWettedAngleNewton(bc_value_h[f]);
       } else {
         // default outflow BC
         UR = UL;
       }
     } else {
-      ht_rec = TotalDepthEdgeValue(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
 
       if (!hydrostatic_pressure_force_type_)  {
+         ht_rec = TotalDepthEdgeValue(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
          h_rec = ht_rec - B_rec;
          ierr = ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
          if (ierr < 0) break;
+      }
+      else{
+       //h_rec =  0.5 * (h_temp[0][c1] + h_temp[0][c2]);
+       //wa_rec = 0.5 * (WettedAngle_c[0][c1] + WettedAngle_c[0][c2]);
+       double ht_c = ComputePondedDepth(WettedAngle_c[0][c2]) + B_c[0][c2]; 
+       ht_rec = TotalDepthEdgeValue(c2, f, ht_c, B_c[0][c2], B_max[0][c2], B_n);
+       wa_rec = ComputeWettedAngle(ht_rec - B_rec);
+       h_rec = ComputeWettedArea(wa_rec);
       }
 
       qx_rec = discharge_x_grad_->getValue(c2, xf);
@@ -321,7 +334,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        BedSlopeSource[1] = 0.0;
        ExtraSource = 0.0;
     }
-    FrictionSource = NumericalSourceFriction(U[0], U[1], U[3]); 
+    //FrictionSource = NumericalSourceFriction(U[0], U[1], U[3]); //TODO put back
 
     h = h_c_tmp[0][c] + (BedSlopeSource[0] + ext_S_cell[c] * ExtraSource); 
     qx = q_c_tmp[0][c] + BedSlopeSource[1] + FrictionSource;
