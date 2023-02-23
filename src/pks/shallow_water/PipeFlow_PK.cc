@@ -6,7 +6,9 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Pipe flow model inherited from shallow water model. 
+  Pipe flow model inherited from shallow water model.
+
+  Author: Giacomo Capodaglio (gcapodaglio@lanl.gov)
 */
 
 #include "PipeFlow_PK.hh"
@@ -27,6 +29,8 @@ PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
                   PK(pk_tree, glist, S, soln){
 
   pipe_diameter_ = sw_list_->get<double>("pipe diameter", 1.0);
+
+  pipe_cross_section_ = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
 
   Manning_coeff_ = sw_list_->get<double>("Manning coefficient", 0.005);
 
@@ -67,6 +71,90 @@ void PipeFlow_PK::UpdateWettedAngle(){
    }
 
 }
+
+//--------------------------------------------------------------------
+// Compute wetted area and wetted angle at edge location
+//--------------------------------------------------------------------
+std::vector<double> PipeFlow_PK::ComputeWettedQuantitiesEdge(int c, int e, double WettedAreaCell, double WettedAngleCell,
+                                                          double Bc, double Bmax, const Epetra_MultiVector& B_n)
+{
+
+  std::vector <double> W(2,0.0); //vector to return 
+
+  const auto& xc = mesh_->cell_centroid(c);
+  const auto& xf = mesh_->face_centroid(e);
+  Amanzi::AmanziMesh::Entity_ID_List cfaces;
+
+  bool cell_is_dry, cell_is_fully_flooded, cell_is_partially_wet;
+  cell_is_partially_wet = false;
+  cell_is_dry = false;
+  cell_is_fully_flooded = false;
+
+  if (WettedAreaCell >= pipe_cross_section_) cell_is_fully_flooded = true;
+  else if (std::fabs(WettedAreaCell) < 1.e-12)  cell_is_dry = true;
+  else  cell_is_partially_wet = true;
+  
+  if (cell_is_fully_flooded) {
+    W[0] = WettedAreaCell; //TODO: think about this decision
+    W[1] = TwoPi;
+  } else if (cell_is_dry) {
+    W[0] = 0.0;
+    W[1] = 0.0;
+  } else if (cell_is_partially_wet) {
+    Amanzi::AmanziMesh::Entity_ID_List cfaces;
+    mesh_->cell_get_faces(c, &cfaces);
+
+    double mu_eps_sum = 0.0;
+
+    double htc = ComputePondedDepth(WettedAngleCell) + Bc;
+
+    for (int f = 0; f < cfaces.size(); ++f) {
+      Amanzi::AmanziGeometry::Point x0, x1;
+      int edge = cfaces[f];
+
+      Amanzi::AmanziMesh::Entity_ID_List face_nodes;
+      mesh_->face_get_nodes(edge, &face_nodes);
+      int n0 = face_nodes[0], n1 = face_nodes[1];
+
+      mesh_->node_get_coordinates(n0, &x0);
+      mesh_->node_get_coordinates(n1, &x1);
+
+      double area = norm((xc - x0) ^ (xc - x1)) / 2.0;
+
+      double epsilon;
+
+      if ((htc < B_n[0][n0]) && (htc < B_n[0][n1])) {
+        epsilon = 0.0;
+      } else if ((htc >= B_n[0][n0]) && (htc >= B_n[0][n1])) {
+        epsilon = 1.0;
+      } else {
+        epsilon = 0.5;
+      }
+
+      mu_eps_sum += (area / mesh_->cell_volume(c)) * (epsilon);
+    }
+
+    Amanzi::AmanziMesh::Entity_ID_List face_nodes;
+    mesh_->face_get_nodes(e, &face_nodes);
+
+    double ht_edge = 0.0;
+    for (int i = 0; i < face_nodes.size(); ++i) {
+      if (htc < B_n[0][face_nodes[i]]) {
+        ht_edge += B_n[0][face_nodes[i]];
+      } else {
+        ht_edge += B_n[0][face_nodes[i]] + ((htc - Bc) / mu_eps_sum);
+      }
+    }
+    ht_edge /= 2.0;
+    double B_edge = BathymetryEdgeValue(e, B_n);
+    W[1] = ComputeWettedAngle(ht_edge - B_edge);
+    W[0] = ComputeWettedArea(W[1]);
+  }
+
+  return W;
+
+}
+
 
 //--------------------------------------------------------------------
 // Compute wetted angle given ponded depth

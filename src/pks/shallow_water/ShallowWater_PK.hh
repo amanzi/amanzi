@@ -87,6 +87,9 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   double TotalDepthEdgeValue(int c, int e, double htc,
                              double Bc, double Bmax, const Epetra_MultiVector& B_n);
 
+  virtual std::vector<double> ComputeWettedQuantitiesEdge(int c, int e, double WettedAreaCell, double WettedAngleCell,
+                             double Bc, double Bmax, const Epetra_MultiVector& B_n) {std::vector<double> W(2,0.0); return W;};
+
   // due to rotational invariance of SW equations, we need flux in the
   // x-direction only.
   std::vector<double> PhysicalFlux_x(const std::vector<double>&);

@@ -6,7 +6,9 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Pipe flow model inherited from shallow water model. 
+  Pipe flow model inherited from shallow water model.
+
+  Author: Giacomo Capodaglio (gcapodaglio@lanl.gov)
 */
 
 #ifndef AMANZI_PIPE_FLOW_PK_HH_
@@ -41,10 +43,15 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual double ComputeWettedAngleNewton(double WettedArea) override;
 
+  virtual std::vector<double> ComputeWettedQuantitiesEdge(int c, int e, double WettedAreaCell, double WettedAngleCell,
+                                                          double Bc, double Bmax, const Epetra_MultiVector& B_n) override;
+
  private:
   static RegisteredPKFactory<PipeFlow_PK> reg_;
 
   double pipe_diameter_;
+
+  double pipe_cross_section_;
 
   double Manning_coeff_;
 

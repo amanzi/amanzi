@@ -620,7 +620,7 @@ ShallowWater_PK::TotalDepthEdgeValue(
   cell_is_fully_flooded = false;
 
   // characterize cell based on [Beljadid et al.' 16]
-  if ((htc >= Bmax) && (htc - Bc > 0.0)) { //TODO: changed the first condition to htc >= Bmax, also is this condition correct for us?
+  if ((htc > Bmax) && (htc - Bc > 0.0)) { 
     cell_is_fully_flooded = true;
   } else if (std::abs(htc - Bc) < 1.e-15) {
     cell_is_dry = true;

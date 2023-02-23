@@ -35,6 +35,7 @@ class NumericalFlux {
   double lambda_max_, lambda_min_;
   int hydrostatic_pressure_force_type_;
   double pipe_diameter_;
+  double pipe_cross_section_;
   double celerity_;
 
 };
@@ -66,10 +67,7 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
 
   else {
 
-     double pi = 3.14159265359;
-     double PipeCrossSection = pi * 0.25 * pipe_diameter_ * pipe_diameter_;
-
-     if (h < PipeCrossSection){ //flow is ventilated (free-surface)
+     if (h < pipe_cross_section_){ //flow is ventilated (free-surface)
 
         HydrostaticPressureForce = 3.0 * sin(WettedAngle * 0.5) - pow(sin(WettedAngle * 0.5),3) - 3 * (WettedAngle * 0.5) * cos(WettedAngle * 0.5);
         HydrostaticPressureForce = HydrostaticPressureForce * g_ * pow(pipe_diameter_,3) / 24.0;
@@ -78,8 +76,8 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
 
       else { //flow is pressurized
 
-         double PressurizedHead = (celerity_ * celerity_ * (h - PipeCrossSection)) / (g_ * PipeCrossSection);
-         HydrostaticPressureForce = g_ * h * (PressurizedHead + sqrt(h/pi)); 
+         double PressurizedHead = (celerity_ * celerity_ * (h - pipe_cross_section_)) / (g_ * pipe_cross_section_);
+         HydrostaticPressureForce = g_ * h * (PressurizedHead + sqrt(h/3.14159265359)); 
 
       }
 

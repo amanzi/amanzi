@@ -22,6 +22,7 @@ NumericalFlux_CentralUpwind::NumericalFlux_CentralUpwind(Teuchos::ParameterList&
 {
   g_ = plist.get<double>("gravity");
   pipe_diameter_ = plist.get<double>("pipe diameter", 1.0);
+  pipe_cross_section_ = 3.14159265359 * 0.25 * pipe_diameter_ * pipe_diameter_;
   celerity_ = plist.get<double>("celerity", 100);
   hydrostatic_pressure_force_type_ = plist.get<int>("hydrostatic pressure force type", 0);
 }

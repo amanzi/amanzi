@@ -196,10 +196,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
     normal /= farea;
 
+    std::vector<double> W_rec(2,0.0);
     double ht_rec;
     double B_rec = BathymetryEdgeValue(f, B_n);;
     double h_rec;
-    double wa_rec;
 
     if (!hydrostatic_pressure_force_type_)  {
         ht_rec = TotalDepthEdgeValue(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
@@ -209,11 +209,17 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     }
     else{
        //h_rec = (c2 == -1) ? h_temp[0][c1] : 0.5 * (h_temp[0][c1] + h_temp[0][c2]); 
-       //wa_rec = (c2 == -1) ? WettedAngle_c[0][c1] : 0.5 * (WettedAngle_c[0][c1] + WettedAngle_c[0][c2]);
-       double ht_c = ComputePondedDepth(WettedAngle_c[0][c1]) + B_c[0][c1]; //locally reconstruct the total depth on cell
-       ht_rec = TotalDepthEdgeValue(c1, f, ht_c, B_c[0][c1], B_max[0][c1], B_n);
-       wa_rec = ComputeWettedAngle(ht_rec - B_rec);
-       h_rec = ComputeWettedArea(wa_rec);
+       //W_rec[1] = (c2 == -1) ? WettedAngle_c[0][c1] : 0.5 * (WettedAngle_c[0][c1] + WettedAngle_c[0][c2]);
+
+       //double ht_c = ComputePondedDepth(WettedAngle_c[0][c1]) + B_c[0][c1]; //locally reconstruct the total depth on cell
+       //ht_rec = TotalDepthEdgeValue(c1, f, ht_c, B_c[0][c1], B_max[0][c1], B_n);
+       //W_rec[1] = ComputeWettedAngle(ht_rec - B_rec);
+       //h_rec = ComputeWettedArea(W_rec[1]);
+
+       W_rec = ComputeWettedQuantitiesEdge(c1, f, h_temp[0][c1], WettedAngle_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
+       h_rec = W_rec[0];
+
+      
 
     }
 
@@ -233,7 +239,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     UL[0] = h_rec;
     UL[1] = h_rec * vn;
     UL[2] = h_rec * vt;
-    UL[3] = wa_rec; 
+    UL[3] = W_rec[1]; 
 
     if (c2 == -1) {
       if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
@@ -255,11 +261,16 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       }
       else{
        //h_rec =  0.5 * (h_temp[0][c1] + h_temp[0][c2]);
-       //wa_rec = 0.5 * (WettedAngle_c[0][c1] + WettedAngle_c[0][c2]);
-       double ht_c = ComputePondedDepth(WettedAngle_c[0][c2]) + B_c[0][c2]; 
-       ht_rec = TotalDepthEdgeValue(c2, f, ht_c, B_c[0][c2], B_max[0][c2], B_n);
-       wa_rec = ComputeWettedAngle(ht_rec - B_rec);
-       h_rec = ComputeWettedArea(wa_rec);
+       //W_rec[1] = 0.5 * (WettedAngle_c[0][c1] + WettedAngle_c[0][c2]);
+
+       //double ht_c = ComputePondedDepth(WettedAngle_c[0][c2]) + B_c[0][c2]; 
+       //ht_rec = TotalDepthEdgeValue(c2, f, ht_c, B_c[0][c2], B_max[0][c2], B_n);
+       //W_rec[1] = ComputeWettedAngle(ht_rec - B_rec);
+       //h_rec = ComputeWettedArea(W_rec[1]);
+
+       W_rec = ComputeWettedQuantitiesEdge(c2, f, h_temp[0][c2], WettedAngle_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
+       h_rec = W_rec[0];
+
       }
 
       qx_rec = discharge_x_grad_->getValue(c2, xf);
@@ -276,7 +287,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       UR[0] = h_rec;
       UR[1] = h_rec * vn;
       UR[2] = h_rec * vt;
-      UR[3] = wa_rec;
+      UR[3] = W_rec[1];
     }
 
     FNum_rot = numerical_flux_->Compute(UL, UR);
