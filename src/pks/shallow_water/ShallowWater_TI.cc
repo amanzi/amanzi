@@ -45,7 +45,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   auto& vel_c = *S_->GetW<CompositeVector>(velocity_key_, passwd_).ViewComponent("cell", true);
   auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_).ViewComponent("face", true);
 
-  auto& WettedAngle_c = *S_->GetW<CompositeVector>(wetted_angle_key_, passwd_).ViewComponent("cell", true);
+  auto& WettedAngle_c = *S_->GetW<CompositeVector>(wetted_angle_key_, passwd_).ViewComponent("cell", true); 
  
   for (int c = 0; c < ncells_wghost; ++c) {
     double factor = inverse_with_tolerance(h_temp[0][c], cell_area2_max_);
@@ -240,7 +240,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         UR[0] = bc_value_h[f];
         UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
         UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
-        UR[3] = ComputeWettedAngleNewton(bc_value_h[f]);
+        UR[3] = ComputeWettedAngleNewton(bc_value_h[f]);//TODO check that bc_value_h[f] < total cross section before calling this
       } else {
         // default outflow BC
         UR = UL;
@@ -288,7 +288,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     // save riemann mass flux
     riemann_f[0][f] = FNum_rot[0] * farea * dir;
 
-    // add fluxes to temporary fields
+    // add fluxes to temporary fields 
     double vol = mesh_->cell_volume(c1);
     factor = farea / vol;
     h_c_tmp[0][c1] -= h * factor;

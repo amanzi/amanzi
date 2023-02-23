@@ -86,7 +86,7 @@ ShallowWater_PK::Setup()
   hydrostatic_pressure_key_ = Keys::getKey(domain_, "ponded_pressure");
 
   riemann_flux_key_ = Keys::getKey(domain_, "riemann_flux");
-  wetted_angle_key_ = Keys::getKey(domain_, "wetted angle");
+  wetted_angle_key_ = Keys::getKey(domain_, "wetted angle"); 
 
   //-------------------------------
   // constant fields
@@ -108,6 +108,7 @@ ShallowWater_PK::Setup()
   // primary fields
   //-------------------------------
   // -- ponded depth
+  // note: this is intended as the wetted area if running pipe flow
   if (!S_->HasRecord(ponded_depth_key_)) {
     S_->Require<CV_t, CVS_t>(ponded_depth_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
@@ -178,7 +179,7 @@ ShallowWater_PK::Setup()
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
 
-  // -- wetted angle
+  // -- wetted angle 
   if (!S_->HasRecord(wetted_angle_key_)) {
     S_->Require<CV_t, CVS_t>(wetted_angle_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
@@ -210,8 +211,7 @@ ShallowWater_PK::Initialize()
 
   bcs_.clear();
 
-  // velocity BC is required on the faces while ponded depth is required on
-  // nodes
+  // velocity BC is required on the faces while ponded depth is required on nodes
   // -- velocity BC
   if (bc_list->isSublist("velocity")) {
     PK_DomainFunctionFactory<ShallowWaterBoundaryFunction> bc_factory(mesh_, S_);
@@ -240,7 +240,7 @@ ShallowWater_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        bc = bc_factory.Create(spec, "ponded depth", AmanziMesh::NODE, Teuchos::null);
+        bc = bc_factory.Create(spec, "ponded depth", AmanziMesh::NODE, Teuchos::null); //TODO: why on nodes and not on cells?
         bc->set_bc_name("ponded depth");
         bc->set_type(WhetStone::DOF_Type::SCALAR);
         bcs_.push_back(bc);
@@ -376,7 +376,7 @@ ShallowWater_PK::Initialize()
   S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
 
   InitializeCVField(S_, *vo_, riemann_flux_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, passwd_, 3.14159265359); //initialiezed at pi 
+  InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, passwd_, 3.14159265359); //initialiezed at pi  
   InitializeFieldFromField_(prev_ponded_depth_key_, ponded_depth_key_, false);
 
   // soln_ is the TreeVector of conservative variables [h hu hv]
@@ -542,10 +542,11 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     q_c[1][c] = q_temp[1][c];
     vel_c[0][c] = factor * q_temp[0][c];
     vel_c[1][c] = factor * q_temp[1][c];
-    //note that this update does not make sense for the pipe flow since h_c[0][c] would be an area, not a length
+    //note: this update is physically incorrect for the pipe flow since h_c[0][c] is the wetted area [m^2], not a length [m]
+    // but the pipe flow does not use ht as a variable so it does not affect the computation
     ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
-  UpdateWettedAngle();
+  UpdateWettedAngle(); 
 
   // For consistency with other flow models, we need to track previous h
   // which was placed earlier in the archive.
@@ -619,7 +620,7 @@ ShallowWater_PK::TotalDepthEdgeValue(
   cell_is_fully_flooded = false;
 
   // characterize cell based on [Beljadid et al.' 16]
-  if ((htc > Bmax) && (htc - Bc > 0.0)) {
+  if ((htc >= Bmax) && (htc - Bc > 0.0)) { //TODO: changed the first condition to htc >= Bmax, also is this condition correct for us?
     cell_is_fully_flooded = true;
   } else if (std::abs(htc - Bc) < 1.e-15) {
     cell_is_dry = true;
@@ -686,7 +687,8 @@ ShallowWater_PK::TotalDepthEdgeValue(
 
 //--------------------------------------------------------------------
 // Discretization of the bed slope source term (well-balanced for lake at rest) 
-// To be used for a shallow water model
+// To be used for the shallow water model only 
+// The pipe flow cannot operate with ht_grad 
 //--------------------------------------------------------------------
 std::vector<double>
 ShallowWater_PK::NumericalSourceBedSlope(
@@ -732,7 +734,7 @@ ShallowWater_PK::NumericalSourceBedSlope(
 
 //--------------------------------------------------------------------
 // Discretization of the bed slope source term 
-// To be used for a pipe flow model
+// To be used for a pipe flow model NEEDS TESTING (TODO)
 //--------------------------------------------------------------------
 std::vector<double>
 ShallowWater_PK::NumericalSourceBedSlope( int c, double hc, const Epetra_MultiVector& B_n)
@@ -774,7 +776,7 @@ ShallowWater_PK::NumericalSourceBedSlope( int c, double hc, const Epetra_MultiVe
 
   //we assume dim is 2 for the pipe model
   double det = leastSquaresMatrix[0][0] * leastSquaresMatrix[1][1] - leastSquaresMatrix[0][1] * leastSquaresMatrix[1][0];
-  if (fabs(det) < 1.e-12) std::cout <<"DET IS ZERO OOOOOOOOOOOO" << std::endl;
+  if (std::fabs(det) < 1.e-12) std::cout <<"DET IS ZERO OOOOOOOOOOOO" << std::endl;
   double gradBc = (leastSquaresMatrix[1][1] * leastSquaresRhs[0] - leastSquaresMatrix[0][1] * leastSquaresRhs[1]) / det;
 
   std::vector<double> S(3);
