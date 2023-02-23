@@ -344,7 +344,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        BedSlopeSource = NumericalSourceBedSlope(c, U[0], B_n);
        ExtraSource = 0.0;
     }
-    //FrictionSource = NumericalSourceFriction(U[0], U[1], U[3]); //TODO put back
+    FrictionSource = NumericalSourceFriction(U[0], U[1], U[3]); 
 
     h = h_c_tmp[0][c] + (BedSlopeSource[0] + ext_S_cell[c] * ExtraSource); 
     qx = q_c_tmp[0][c] + BedSlopeSource[1] + FrictionSource;
