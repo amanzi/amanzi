@@ -60,13 +60,13 @@ double PipeFlow_PK::NumericalSourceFriction(double h, double qx, double WettedAn
 //--------------------------------------------------------------------
 void PipeFlow_PK::UpdateWettedAngle(){ 
 
-   auto& h_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+   auto& WettedArea_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);//TODO should this be all instead of owned?
+   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
    for (int c = 0; c < ncells_owned; ++c) {
 
-       WettedAngle_c[0][c] = ComputeWettedAngleNewton(h_c[0][c]);;
+       WettedAngle_c[0][c] = ComputeWettedAngleNewton(WettedArea_c[0][c]);;
 
    }
 

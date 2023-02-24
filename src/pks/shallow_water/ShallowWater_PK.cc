@@ -240,7 +240,7 @@ ShallowWater_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        bc = bc_factory.Create(spec, "ponded depth", AmanziMesh::NODE, Teuchos::null); //TODO: why on nodes and not on cells?
+        bc = bc_factory.Create(spec, "ponded depth", AmanziMesh::NODE, Teuchos::null); 
         bc->set_bc_name("ponded depth");
         bc->set_type(WhetStone::DOF_Type::SCALAR);
         bcs_.push_back(bc);
