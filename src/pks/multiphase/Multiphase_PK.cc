@@ -982,7 +982,7 @@ Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   for (int phase = 0; phase < 2; ++phase) {
     S_->GetEvaluator(adv_name[phase]).Update(*S_, passwd_);
 
-    const auto& kr_c = *S_->Get<CV_t>(adv_name[phase]).ViewComponent("cell");
+    kr_c = *S_->Get<CV_t>(adv_name[phase]).ViewComponent("cell");
     auto flux = S_->GetPtrW<CV_t>(flux_name[phase], Tags::DEFAULT, passwd_);
 
     upwind_->Compute(*flux, bcnone, *kr);
