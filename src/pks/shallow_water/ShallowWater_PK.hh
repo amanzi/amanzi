@@ -160,6 +160,10 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   int hydrostatic_pressure_force_type_; //0 is shallow water, 1 is pipe flow
 
+  double pipe_diameter_;
+
+  double celerity_;
+
  private:
   // boundary conditions
   std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction>> bcs_;

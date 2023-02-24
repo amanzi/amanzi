@@ -49,13 +49,9 @@ class PipeFlow_PK : public ShallowWater_PK {
  private:
   static RegisteredPKFactory<PipeFlow_PK> reg_;
 
-  double pipe_diameter_;
-
   double pipe_cross_section_;
 
   double Manning_coeff_;
-
-  double celerity_;
 
 };
 

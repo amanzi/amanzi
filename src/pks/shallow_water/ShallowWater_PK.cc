@@ -59,6 +59,8 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
   max_iters_ = sw_list_->get<int>("number of reduced cfl cycles", 10);
   cfl_positivity_ = sw_list_->get<double>("depth positivity cfl", 0.95);
   hydrostatic_pressure_force_type_ = sw_list_->get<int>("hydrostatic pressure force type", 0);
+  pipe_diameter_ = sw_list_->get<double>("pipe diameter", 1.0);
+  celerity_ = sw_list_->get<double>("celerity", 100); // m/s
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = sw_list_->sublist("verbose object");
@@ -271,6 +273,10 @@ ShallowWater_PK::Initialize()
     .set<double>("gravity", g_);
   model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
     .set<int>("hydrostatic pressure force type", hydrostatic_pressure_force_type_);
+  model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
+    .set<double>("pipe diameter", pipe_diameter_);
+  model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
+    .set<double>("celerity", celerity_);
   NumericalFluxFactory nf_factory;
   numerical_flux_ = nf_factory.Create(model_list);
 

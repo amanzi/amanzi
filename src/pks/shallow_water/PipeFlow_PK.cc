@@ -28,13 +28,9 @@ PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
                   : ShallowWater_PK(pk_tree, glist, S, soln), 
                   PK(pk_tree, glist, S, soln){
 
-  pipe_diameter_ = sw_list_->get<double>("pipe diameter", 1.0);
-
   pipe_cross_section_ = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
 
   Manning_coeff_ = sw_list_->get<double>("Manning coefficient", 0.005);
-
-  celerity_ = sw_list_->get<double>("celerity", 100); // m/s
 
 }
 
