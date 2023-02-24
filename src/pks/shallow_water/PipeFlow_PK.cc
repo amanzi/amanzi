@@ -202,7 +202,7 @@ double PipeFlow_PK::ComputeWettedAngleNewton(double WettedArea){
    if (std::fabs(WettedArea) < 1.e-12) { //cell is dry
       WettedAngle = 0.0;
    }
-   else if (std::fabs(WettedArea - PipeCrossSection) < 1.e-12){ //cell is fully flooded
+   else if (WettedArea >=  PipeCrossSection){ //cell is fully flooded
       WettedAngle = TwoPi;   
    }
    else { //cell is partially flooded
