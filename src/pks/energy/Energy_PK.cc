@@ -103,6 +103,8 @@ Energy_PK::Setup()
   x_gas_key_ = Keys::getKey(domain_, "molar_fraction_gas");
 
   vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate");
+  sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
+
   // require first-requested state variables
   if (!S_->HasRecord("atmospheric_pressure")) {
     S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
@@ -225,6 +227,12 @@ Energy_PK::Setup()
       .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(conductivity_eff_key_, Tags::DEFAULT, eval);
+  }
+
+  // saturation
+  if (!S_->HasRecord(sat_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(sat_liquid_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 }
 

@@ -49,6 +49,7 @@
       <viscosity>9.0e-06</viscosity>
       <dissolved_components>
         <primaries>
+          <primary coefficient_of_diffusion="3.0e-5" model="Raoult">H2O</primary>
           <primary coefficient_of_diffusion="3.0e-5" model="Henry" kh="1.39e-10">H2</primary>
         </primaries>
       </dissolved_components>

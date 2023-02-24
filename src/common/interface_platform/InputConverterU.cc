@@ -101,7 +101,9 @@ InputConverterU::Translate(int rank, int num_proc)
 
   // -- additional saturated flow fields
   //    various data flow scenarios require both ic and ev to be defined FIXME
-  if (pk_model_["flow"] == "darcy") {
+  bool flag1 = (pk_model_["flow"] == "darcy");
+  bool flag2 = !phases_[LIQUID].active && !phases_[GAS].active && phases_[SOLID].active;
+  if (flag1 || flag2) {
     Teuchos::Array<std::string> regions(1, "All");
     auto& ic_m =
       out_list.sublist("state").sublist("initial conditions").sublist("saturation_liquid");
@@ -134,6 +136,19 @@ InputConverterU::Translate(int rank, int num_proc)
       ev_f = ic_f;
       ev_f.set<std::string>("evaluator type", "independent variable");
     }
+  }
+
+  if (flag2) {
+    Teuchos::Array<std::string> regions(1, "All");
+    auto& ev_p = out_list.sublist("state").sublist("evaluators").sublist("pressure");
+    ev_p.set<std::string>("evaluator type", "independent variable");
+    ev_p.sublist("function")
+      .sublist("All")
+      .set<Teuchos::Array<std::string>>("regions", regions)
+      .set<std::string>("component", "cell")
+      .sublist("function")
+      .sublist("function-constant")
+      .set<double>("value", 0.0);
   }
 
   if (pk_model_["flow"] == "richards") {
@@ -260,69 +275,89 @@ InputConverterU::ParseSolutes_()
 
   MemoryManager mm;
 
-  DOMNode* node;
-  DOMNode* knode = doc_->getElementsByTagName(mm.transcode("phases"))->item(0);
+  DOMNode *node, *knode;
+  DOMNodeList* children;
 
-  // liquid phase (try solutes, then primaries)
-  std::string species("solute");
-  node = GetUniqueElementByTagsString_(knode, "liquid_phase, dissolved_components, solutes", flag);
-  if (!flag) {
-    node =
-      GetUniqueElementByTagsString_(knode, "liquid_phase, dissolved_components, primaries", flag);
-    species = "primary";
-  }
-
-  DOMNodeList* children = node->getChildNodes();
-  int nchildren = children->getLength();
-
-  for (int i = 0; i < nchildren; ++i) {
-    DOMNode* inode = children->item(i);
-    tagname = mm.transcode(inode->getNodeName());
-    std::string name = TrimString_(mm.transcode(inode->getTextContent()));
-
-    if (species == tagname) {
-      phases_["water"].push_back(name);
-
-      DOMElement* element = static_cast<DOMElement*>(inode);
-      // Polyethylene glycol has a molar mass of 1,000,000 g/mol
-      double mol_mass = GetAttributeValueD_(
-        element, "molar_mass", TYPE_NUMERICAL, 0.0, 1000.0, "kg/mol", false, 1.0);
-      solute_molar_mass_[name] = mol_mass;
-    }
-  }
-
-  comp_names_all_ = phases_["water"];
-
-  // gas phase
-  species = "solute";
-  node = GetUniqueElementByTagsString_(knode, "gas_phase, dissolved_components, solutes", flag);
-  if (!flag) {
-    node = GetUniqueElementByTagsString_(knode, "gas_phase, dissolved_components, primaries", flag);
-    species = "primary";
-  }
+  // liquid phase
+  knode = GetUniqueElementByTagsString_("phases, liquid_phase", flag);
   if (flag) {
+    phases_[LIQUID].active = true;
+
+    node = GetUniqueElementByTagsString_(knode, "primary", flag);
+    if (flag) phases_[LIQUID].primary = TrimString_(mm.transcode(node->getTextContent()));
+
+    // -- try solutes, then primaries (DEPRECATE FIXME)
+    std::string species("solute");
+    node = GetUniqueElementByTagsString_(knode, "dissolved_components, solutes", flag);
+    if (!flag) {
+      node = GetUniqueElementByTagsString_(knode, "dissolved_components, primaries", flag);
+      species = "primary";
+    }
+
     children = node->getChildNodes();
-    nchildren = children->getLength();
+    int nchildren = children->getLength();
 
     for (int i = 0; i < nchildren; ++i) {
       DOMNode* inode = children->item(i);
       tagname = mm.transcode(inode->getNodeName());
-      text_content = mm.transcode(inode->getTextContent());
+      std::string name = TrimString_(mm.transcode(inode->getTextContent()));
 
-      if (species == tagname) { phases_["air"].push_back(TrimString_(text_content)); }
+      if (species == tagname) {
+        phases_[LIQUID].dissolved.push_back(name);
+
+        DOMElement* element = static_cast<DOMElement*>(inode);
+        // Polyethylene glycol has a molar mass of 1,000,000 g/mol
+        double mol_mass = GetAttributeValueD_(
+          element, "molar_mass", TYPE_NUMERICAL, 0.0, 1000.0, "kg/mol", false, 1.0);
+        solute_molar_mass_[name] = mol_mass;
+      }
     }
 
-    comp_names_all_.insert(comp_names_all_.end(), phases_["air"].begin(), phases_["air"].end());
-  }
+    comp_names_all_ = phases_[LIQUID].dissolved;
 
-  // output
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    int nsolutes = phases_["water"].size();
-    *vo_->os() << "Phase 'water' has " << nsolutes << " solutes\n";
-    for (int i = 0; i < nsolutes; ++i) {
-      *vo_->os() << " solute: " << phases_["water"][i] << std::endl;
+    // output
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      int nsolutes = phases_[LIQUID].dissolved.size();
+      *vo_->os() << "Liquid phase has " << nsolutes << " solutes\n";
+      for (int i = 0; i < nsolutes; ++i) {
+        *vo_->os() << " solute: " << phases_[LIQUID].dissolved[i] << std::endl;
+      }
     }
   }
+
+  // gas phase
+  knode = GetUniqueElementByTagsString_("phases, gas_phase", flag);
+  if (flag) {
+    phases_[GAS].active = true;
+
+    std::string species("solute");
+    node = GetUniqueElementByTagsString_(knode, "dissolved_components, solutes", flag);
+    if (!flag) {
+      node = GetUniqueElementByTagsString_(knode, "dissolved_components, primaries", flag);
+      species = "primary";
+    }
+    if (flag) {
+      children = node->getChildNodes();
+      int nchildren = children->getLength();
+
+      for (int i = 0; i < nchildren; ++i) {
+        DOMNode* inode = children->item(i);
+        tagname = mm.transcode(inode->getNodeName());
+        text_content = mm.transcode(inode->getTextContent());
+
+        if (species == tagname) {
+          if (strcmp(text_content, phases_[LIQUID].primary.c_str()) == 0) continue;
+          phases_[GAS].dissolved.push_back(TrimString_(text_content));
+        }
+      }
+
+      comp_names_all_.insert(comp_names_all_.end(), phases_[GAS].dissolved.begin(), phases_[GAS].dissolved.end());
+    }
+  }
+
+  // solid phase
+  knode = GetUniqueElementByTagsString_("phases, solid_phase", flag);
+  if (flag) phases_[SOLID].active = true;
 }
 
 

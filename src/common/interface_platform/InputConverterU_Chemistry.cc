@@ -298,7 +298,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
     }
 
     // sorption
-    int nsolutes = phases_["water"].size();
+    int nsolutes = phases_[LIQUID].dissolved.size();
     node = GetUniqueElementByTagsString_(inode, "sorption_isotherms", flag);
     if (flag && nsolutes > 0) {
       Teuchos::ParameterList& kd = ic_list.sublist("isotherm_kd");
@@ -329,7 +329,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
         aux3_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
 
         for (int j = 0; j < nsolutes; ++j) {
-          std::string solute_name = phases_["water"][j];
+          std::string solute_name = phases_[LIQUID].dissolved[j];
           element = GetUniqueChildByAttribute_(node, "name", solute_name, flag, false);
           if (flag) {
             DOMNode* jnode = GetUniqueElementByTagsString_(element, "kd_model", flag);
@@ -463,7 +463,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   // free ion has optional initialization. Default initialization is tight
   // to the valus of the initial value of the total component concentration.
   if (ion_guess) {
-    int nsolutes = phases_["water"].size();
+    int nsolutes = phases_[LIQUID].dissolved.size();
     Teuchos::ParameterList& free_ion = ic_list.sublist("free_ion_species");
 
     Teuchos::ParameterList& aux1_list = free_ion.sublist("function")
@@ -474,7 +474,7 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
     aux1_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
 
     for (int j = 0; j < nsolutes; ++j) {
-      std::string solute_name = phases_["water"][j];
+      std::string solute_name = phases_[LIQUID].dissolved[j];
 
       std::stringstream ss;
       ss << "dof " << j + 1 << " function";

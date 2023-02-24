@@ -302,8 +302,8 @@ InputConverterU::TranslateTransport_(const std::string& domain)
   out_list.sublist("source terms") = TranslateTransportSources_();
 
   // remaining global parameters
-  out_list.set<int>("number of aqueous components", phases_["water"].size());
-  out_list.set<int>("number of gaseous components", phases_["air"].size());
+  out_list.set<int>("number of aqueous components", phases_[LIQUID].dissolved.size());
+  out_list.set<int>("number of gaseous components", phases_[GAS].dissolved.size());
 
   out_list.sublist("physical models and assumptions")
     .set<bool>("effective transport porosity", use_transport_porosity_)
@@ -347,10 +347,13 @@ InputConverterU::TranslateMolecularDiffusion_()
   DOMNodeList* children;
   DOMNode* node;
 
-  std::vector<std::string> aqueous_names, gaseous_names;
+  std::vector<std::string> aqueous_names, gaseous_names, gaseous_models;
   std::vector<double> aqueous_values, gaseous_values, molar_masses, henry_coef;
 
   // liquid phase
+  node = GetUniqueElementByTagsString_("phases, liquid_phase, primary", flag);
+  if (flag) phases_[LIQUID].primary = TrimString_(mm.transcode(node->getTextContent()));
+
   std::string species("solute");
   node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, solutes", flag);
   if (!flag) {
@@ -401,9 +404,17 @@ InputConverterU::TranslateMolecularDiffusion_()
       text = mm.transcode(inode->getTextContent());
       double val = GetAttributeValueD_(
         inode, "coefficient_of_diffusion", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false);
-      double kh = GetAttributeValueD_(inode, "kh", TYPE_NUMERICAL, 0.0, DVAL_MAX);
+      std::string model = GetAttributeValueS_(inode, "model", TYPE_NONE, false, "");
+      double kh = (model == "Henry") ? GetAttributeValueD_(
+        inode, "kh", TYPE_NUMERICAL, 0.0, DVAL_MAX) : 0.0;
+
+      if (strcmp(text, phases_[LIQUID].primary.c_str()) == 0) {
+        phases_[GAS].model = model;
+        continue;
+      }
 
       gaseous_names.push_back(TrimString_(text));
+      gaseous_models.push_back(model);
       gaseous_values.push_back(val);
       henry_coef.push_back(kh);
     }
@@ -414,6 +425,7 @@ InputConverterU::TranslateMolecularDiffusion_()
   out_list.set<Teuchos::Array<double>>("molar masses", molar_masses);
   if (gaseous_names.size() > 0) {
     out_list.set<Teuchos::Array<std::string>>("gaseous names", gaseous_names);
+    out_list.set<Teuchos::Array<std::string>>("gaseous models", gaseous_models);
     out_list.set<Teuchos::Array<double>>("gaseous values", gaseous_values);
     out_list.set<Teuchos::Array<double>>("air-water partitioning coefficient", henry_coef);
     out_list.set<Teuchos::Array<double>>("Henry dimensionless constants", henry_coef);
@@ -740,7 +752,9 @@ InputConverterU::TranslateTransportGeochemistry_(DOMNode* node,
   // save in the XML files
   Teuchos::ParameterList& tbc_list = out_list.sublist("geochemical");
   Teuchos::Array<std::string> solute_names;
-  for (int i = 0; i < phases_["water"].size(); ++i) { solute_names.push_back(phases_["water"][i]); }
+  for (int i = 0; i < phases_[LIQUID].dissolved.size(); ++i) {
+    solute_names.push_back(phases_[LIQUID].dissolved[i]);
+  }
   Teuchos::ParameterList& bc = tbc_list.sublist(bcname);
   bc.set<Teuchos::Array<std::string>>("regions", regions)
     .set<Teuchos::Array<std::string>>("solutes", solute_names)

@@ -33,6 +33,17 @@ namespace AmanziInput {
 typedef std::map<std::string, Teuchos::RCP<Teuchos::ParameterList>> PK;
 typedef std::map<std::string, std::vector<std::string>> Tree;
 
+struct Phase {
+ public:
+  Phase() : active(false) {};
+
+  bool active;
+  std::string primary;
+  std::string model;
+  std::vector<std::string> dissolved;
+};
+typedef std::map<std::string, Phase> PhaseTree;
+
 class InputConverterU : public InputConverter {
  public:
   explicit InputConverterU(const std::string& input_filename)
@@ -274,7 +285,7 @@ class InputConverterU : public InputConverter {
   std::vector<std::string> coords_;
 
   Tree tree_;
-  Tree phases_;
+  PhaseTree phases_;
 
   // global list
   Teuchos::RCP<Teuchos::ParameterList> glist_;

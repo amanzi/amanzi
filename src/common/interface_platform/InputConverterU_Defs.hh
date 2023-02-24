@@ -110,4 +110,10 @@
 
 #  define MOLAR_MASS_WATER 0.0180153333333
 
+// phases
+#  define LIQUID "liquid"
+#  define GAS "gas"
+#  define NAPL "napl"
+#  define SOLID "solid"
+
 #endif

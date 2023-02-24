@@ -323,7 +323,7 @@ InputConverterU::TranslateCycleDriver_()
   if (transient_model & 2 || transient_model & 1) {
     // names
     out_list.set<Teuchos::Array<std::string>>("component names", comp_names_all_);
-    out_list.set<int>("number of liquid components", phases_["water"].size());
+    out_list.set<int>("number of liquid components", phases_[LIQUID].dissolved.size());
 
     // available molar masses
     std::string name;

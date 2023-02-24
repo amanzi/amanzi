@@ -100,7 +100,7 @@
         <Parameter name="primary unknown" type="string" value="pressure_liquid"/>
         <Parameter name="advection liquid" type="Array(string)" value="{advection_water, pressure_liquid}"/>
         <Parameter name="advection factors" type="Array(double)" value="{1.00000000000000000e+00, 1.00000000000000000e+00}"/>
-        <Parameter name="diffusion liquid" type="Array(string)" value="{diffusion_vapor, mole_fraction_vapor}"/>
+        <Parameter name="diffusion gas" type="Array(string)" value="{diffusion_vapor, mole_fraction_vapor}"/>
         <Parameter name="diffusion factors" type="Array(double)" value="{1.00000000000000000e+00, 1.00000000000000000e+00}"/>
         <Parameter name="accumulation" type="string" value="total_water_storage"/>
       </ParameterList>
@@ -129,11 +129,13 @@
     </ParameterList>
 
     <ParameterList name="molecular diffusion">
-      <Parameter name="aqueous names" type="Array(string)" value="{H2}"/>
-      <Parameter name="gaseous names" type="Array(string)" value="{H2}"/>
-      <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
-      <Parameter name="gaseous values" type="Array(double)" value="{3.0e-5}"/>
       <Parameter name="molar masses" type="Array(double)" value="{2.0e-3}"/>
+      <Parameter name="aqueous names" type="Array(string)" value="{H2}"/>
+      <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
+
+      <Parameter name="gaseous names" type="Array(string)" value="{H2}"/>
+      <Parameter name="gaseous values" type="Array(double)" value="{3.0e-5}"/>
+      <Parameter name="gaseous models" type="Array(string)" value="{Henry}"/>
       <Parameter name="air-water partitioning coefficient" type="Array(double)" value="{1.39e-10}"/>
       <Parameter name="Henry dimensionless constants" type="Array(double)" value="{1.39e-10}"/>
     </ParameterList>

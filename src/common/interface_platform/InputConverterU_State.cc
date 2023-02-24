@@ -72,15 +72,19 @@ InputConverterU::TranslateState_()
   gravity[dim_ - 1] = -const_gravity_;
   out_ic.sublist("gravity").set<Teuchos::Array<double>>("value", gravity);
 
-  // --- constant viscosities
-  node = GetUniqueElementByTagsString_("phases, liquid_phase, viscosity", flag, true);
-  double viscosity = GetTextContentD_(node, "Pa*s");
-  out_ic.sublist("const_fluid_viscosity").set<double>("value", viscosity);
+  double viscosity(0.0);
+  rho_ = 1000.0;
+  if (phases_[LIQUID].active) {
+    // --- constant viscosities
+    node = GetUniqueElementByTagsString_("phases, liquid_phase, viscosity", flag, true);
+    viscosity = GetTextContentD_(node, "Pa*s");
+    out_ic.sublist("const_fluid_viscosity").set<double>("value", viscosity);
 
-  // --- constant density
-  node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag, true);
-  rho_ = GetTextContentD_(node, "kg/m^3");
-  out_ic.sublist("const_fluid_density").set<double>("value", rho_);
+    // --- constant density
+    node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag, true);
+    rho_ = GetTextContentD_(node, "kg/m^3");
+    out_ic.sublist("const_fluid_density").set<double>("value", rho_);
+  }
 
   if (eos_model_ == "") {
     AddIndependentFieldEvaluator_(out_ev, "mass_density_liquid", "All", "cell", rho_);
@@ -254,12 +258,14 @@ InputConverterU::TranslateState_()
 
   // optional eos fields
   if (eos_model_ != "") {
-    AddSecondaryFieldEvaluator_(out_ev,
-                                Keys::getKey("domain", "molar_density_liquid"),
-                                "molar density key",
-                                "eos",
-                                "density");
-    if (phases_["air"].size() > 0) {
+    if (phases_[LIQUID].active) {
+      AddSecondaryFieldEvaluator_(out_ev,
+                                  Keys::getKey("domain", "molar_density_liquid"),
+                                  "molar density key",
+                                  "eos",
+                                  "density");
+    }
+    if (phases_[GAS].active && phases_[GAS].dissolved.size() > 0) {
       AddSecondaryFieldEvaluator_(out_ev,
                                   Keys::getKey("domain", "molar_density_gas"),
                                   "molar density key",
@@ -502,8 +508,8 @@ InputConverterU::TranslateState_()
       }
 
       // -- solute concentration or fraction (liquid phase)
-      int ncomp_l = phases_["water"].size();
-      int ncomp_g = phases_["air"].size();
+      int ncomp_l = phases_[LIQUID].dissolved.size();
+      int ncomp_g = phases_[GAS].dissolved.size();
       int ncomp_all = ncomp_l + ncomp_g;
 
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, solute_component", flag);
@@ -518,7 +524,7 @@ InputConverterU::TranslateState_()
           if (strcmp(tagname, "uniform_conc") == 0) {
             std::string unit, text;
             text = GetAttributeValueS_(jnode, "name");
-            int m = GetPosition_(phases_["water"], text);
+            int m = GetPosition_(phases_[LIQUID].dissolved, text);
             GetAttributeValueD_(
               jnode, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "molar"); // just a check
             vals[m] =
@@ -537,7 +543,7 @@ InputConverterU::TranslateState_()
             .set<std::string>("function type", "composite function");
 
         for (int k = 0; k < ncomp_l; k++) {
-          std::string name = phases_["water"][k];
+          std::string name = phases_[LIQUID].dissolved[k];
           std::stringstream dof_str;
           dof_str << "dof " << k + 1 << " function";
           dof_list.sublist(dof_str.str())
@@ -569,7 +575,7 @@ InputConverterU::TranslateState_()
           }
 
           std::string text = GetAttributeValueS_(jnode, "name");
-          int m = GetPosition_(phases_["air"], text);
+          int m = GetPosition_(phases_[GAS].dissolved, text);
           vals[m] = GetAttributeValueD_(jnode, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX);
         }
 
@@ -584,7 +590,7 @@ InputConverterU::TranslateState_()
             .set<std::string>("function type", "composite function");
 
         for (int k = 0; k < ncomp_g; k++) {
-          std::string name = phases_["air"][k];
+          std::string name = phases_[GAS].dissolved[k];
           std::stringstream dof_str;
           dof_str << "dof " << noffset + k + 1 << " function";
           dof_list.sublist(dof_str.str())
@@ -734,7 +740,7 @@ InputConverterU::TranslateState_()
       }
 
       // -- total_component_concentration (liquid phase)
-      int ncomp_l = phases_["water"].size();
+      int ncomp_l = phases_[LIQUID].dissolved.size();
 
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, solute_component", flag);
       if (flag && ncomp_l > 0) {
@@ -748,7 +754,7 @@ InputConverterU::TranslateState_()
           if (strcmp(tagname, "uniform_conc") == 0) {
             std::string unit, text;
             text = GetAttributeValueS_(jnode, "name");
-            int m = GetPosition_(phases_["water"], text);
+            int m = GetPosition_(phases_[LIQUID].dissolved, text);
             GetAttributeValueD_(
               jnode, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "molar"); // just a check
             vals[m] =
@@ -767,7 +773,7 @@ InputConverterU::TranslateState_()
             .set<std::string>("function type", "composite function");
 
         for (int k = 0; k < ncomp_l; k++) {
-          std::string name = phases_["water"][k];
+          std::string name = phases_[LIQUID].dissolved[k];
           std::stringstream dof_str;
           dof_str << "dof " << k + 1 << " function";
           dof_list.sublist(dof_str.str())
@@ -1150,7 +1156,7 @@ InputConverterU::TranslateStateICsAmanziGeochemistry_(Teuchos::ParameterList& ou
     std::string name;
     element = GetUniqueChildByAttribute_(node, "name", constraint, flag, true);
     std::vector<DOMNode*> children = GetSameChildNodes_(element, name, flag);
-    if (children.size() != phases_["water"].size()) {
+    if (children.size() != phases_[LIQUID].dissolved.size()) {
       Errors::Message msg;
       msg << "Constraint \"" << constraint << "\" is not backward compatible: "
           << " check the number of components.";
