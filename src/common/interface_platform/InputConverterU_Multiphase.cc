@@ -331,7 +331,6 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
                                              diff_liquid_key,
                                              diff_gas_key,
                                              diff_vapor_key,
-                                             sat_gas_key,
                                              mole_xl_key,
                                              mole_xv_key });
   if (isothermal_ == false) {
@@ -387,16 +386,16 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
     .set<std::string>("evaluator type", "product")
     .set<Teuchos::Array<std::string>>(
       "dependencies",
-      std::vector<std::string>({ mol_diff_liquid_key, mol_density_liquid_key, porosity_key, sat_liquid_key }))
-    .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1, 1 }))
+      std::vector<std::string>({ mol_diff_liquid_key, mol_density_liquid_key }))
+    .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1 }))
     .set<std::string>("tag", "");
 
   fev.sublist(diff_gas_key)
     .set<std::string>("evaluator type", "product")
     .set<Teuchos::Array<std::string>>(
       "dependencies",
-      std::vector<std::string>({ mol_diff_gas_key, mol_density_gas_key, sat_gas_key }))
-    .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1 }))
+      std::vector<std::string>({ mol_diff_gas_key, mol_density_gas_key }))
+    .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1 }))
     .set<std::string>("tag", "");
 
   fev.sublist(diff_vapor_key)
@@ -404,13 +403,9 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
     .set<Teuchos::Array<std::string>>(
       "dependencies",
       std::vector<std::string>(
-        { mol_diff_gas_key, mol_density_gas_key, porosity_key, sat_gas_key }))
-    .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1, 1 }))
+        { mol_diff_gas_key, mol_density_gas_key }))
+    .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1 }))
     .set<std::string>("tag", "");
-
-  fev.sublist(sat_gas_key)
-    .set<std::string>("evaluator type", "saturation gas")
-    .set<std::string>("saturation liquid key", sat_liquid_key);
 
   fev.sublist(mole_xl_key)
     .set<std::string>("evaluator type", "mole fraction liquid")

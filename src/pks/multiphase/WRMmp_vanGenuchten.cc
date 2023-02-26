@@ -8,8 +8,11 @@
 */
 
 /*
-  This is the multiphase component of the Amanzi code.
+  Multiphase PK
 
+  Regularization of water retention curves.
+  Capillary pressure is not differentiable at s=0 and s=1. We use smooth linear
+  extrapolation around s=0 and quadratic fitting aroud s=1.
 */
 
 #include <cmath>
@@ -72,8 +75,9 @@ WRMmp_vanGenuchten::Init_(double srl, double srg, double n, double Pr, double re
   // "Results of the MoMaS benchmark for gas phase appearance and disappearance using generalized MHFE")
   if (reg_pc_ > 0.0) {
     double se0(reg_pc_), se1(1.0 - reg_pc_);
-    spline_pc_.Setup(
-      se0, capillaryPressure_(se0), dPc_dSe_(se0), se1, capillaryPressure_(se1), dPc_dSe_(se1));
+    double cp0(capillaryPressure_(se0)), cp1(capillaryPressure_(se1));
+    spline_pc_left_.Setup(se0, cp0, dPc_dSe_(se0), se1, cp1, dPc_dSe_(se1));
+    spline_pc_right_.Setup(se1, cp1, dPc_dSe_(se1), 1.0, 0.0);
   }
 }
 
@@ -189,9 +193,9 @@ WRMmp_vanGenuchten::capillaryPressure(double sl)
 {
   double sle = (sl - srl_) / (1.0 - srl_ - srg_);
   if (sle <= reg_pc_) {
-    return spline_pc_.Value(sle);
+    return spline_pc_left_.Value(sle);
   } else if (sle >= 1.0 - reg_pc_) {
-    return spline_pc_.Value(sle);
+    return spline_pc_right_.Value(sle);
   } else {
     return capillaryPressure_(sle);
   }
@@ -207,9 +211,9 @@ WRMmp_vanGenuchten::dPc_dS(double sl)
   double factor = 1.0 / (1.0 - srl_ - srg_);
   double sle = factor * (sl - srl_);
   if (sle <= reg_pc_) {
-    return factor * spline_pc_.GradientValue(sle);
+    return factor * spline_pc_left_.GradientValue(sle);
   } else if (sle >= 1.0 - reg_pc_) {
-    return factor * spline_pc_.GradientValue(sle);
+    return factor * spline_pc_right_.GradientValue(sle);
   } else {
     return factor * dPc_dSe_(sle);
   }

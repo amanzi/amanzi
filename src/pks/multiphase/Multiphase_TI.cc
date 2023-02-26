@@ -104,9 +104,9 @@ Multiphase_PK::FunctionalResidual(double t_old,
         kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
         upwind_->Compute(flux, bcnone, *kr);
 
-        // -- form diffusion operator
-        //    BCs are defined by the equation and must be imposed only once
-        //    using either the total flux or Dirichlet
+        // -- form diffusion operator for variable g
+        //    Neuman BCs: separate fluxes for each phase OR the total flux but only once
+        //    Dirichlet BC: ellimination could be done independently over phases
         auto pde = pde_diff_K_[phase];
         pde->Setup(Kptr, kr, Teuchos::null); // FIXME (gravity for gas phase)
         pde->SetBCs(op_bcs_[gname], op_bcs_[gname]);
@@ -347,7 +347,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
 
             auto pde = pde_diff_K_[phase];
             pde->Setup(Kptr, kr, Teuchos::null);
-            pde->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
+            pde->SetBCs(op_bcs_[gname], op_bcs_[gname]);
             pde->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde->UpdateFlux(var.ptr(), flux_tmp.ptr());
 
@@ -386,7 +386,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             upwind_->Compute(flux, bcnone, *kr);
 
             pde->Setup(Teuchos::null, kr, Teuchos::null);
-            pde->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
+            pde->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
             pde->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde->ApplyBCs(false, false, false);
 
@@ -435,7 +435,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             S_->GetEvaluator(gname).Update(*S_, passwd_);
             auto var = S_->GetPtr<CompositeVector>(gname, Tags::DEFAULT);
             pde_diff_D_->Setup(Teuchos::null, kr, Teuchos::null);
-            pde_diff_D_->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
+            pde_diff_D_->SetBCs(op_bcs_[gname], op_bcs_[gname]);
             pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde_diff_D_->UpdateFlux(var.ptr(), flux_tmp.ptr());
 

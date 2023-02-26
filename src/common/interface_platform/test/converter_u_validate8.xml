@@ -93,7 +93,7 @@
 
     <Parameter name="evaluators" type="Array(string)" value="{
        ncp_g, total_water_storage, total_component_storage, advection_water, advection_liquid, 
-       advection_gas, diffusion_liquid, diffusion_gas, diffusion_vapor, saturation_gas, 
+       advection_gas, diffusion_liquid, diffusion_gas, diffusion_vapor,
        mole_fraction_liquid, mole_fraction_vapor, adv_energy_liquid}"/>
     <ParameterList name="system">
       <ParameterList name="pressure eqn">
@@ -494,26 +494,21 @@
 
       <ParameterList name="diffusion_liquid">
         <Parameter name="evaluator type" type="string" value="product"/>
-        <Parameter name="dependencies" type="Array(string)" value="{molecular_diff_liquid, molar_density_liquid, porosity, saturation_liquid}"/>
-        <Parameter name="powers" type="Array(int)" value="{1, 1, 1, 1}"/>
+        <Parameter name="dependencies" type="Array(string)" value="{molecular_diff_liquid, molar_density_liquid}"/>
+        <Parameter name="powers" type="Array(int)" value="{1, 1}"/>
         <Parameter name="tag" type="string" value=""/>
       </ParameterList>
       <ParameterList name="diffusion_gas">
         <Parameter name="evaluator type" type="string" value="product"/>
-        <Parameter name="dependencies" type="Array(string)" value="{molecular_diff_gas, molar_density_gas, saturation_gas}"/>
-        <Parameter name="powers" type="Array(int)" value="{1, 1, 1}"/>
+        <Parameter name="dependencies" type="Array(string)" value="{molecular_diff_gas, molar_density_gas}"/>
+        <Parameter name="powers" type="Array(int)" value="{1, 1}"/>
         <Parameter name="tag" type="string" value=""/>
       </ParameterList>
       <ParameterList name="diffusion_vapor">
         <Parameter name="evaluator type" type="string" value="product"/>
-        <Parameter name="dependencies" type="Array(string)" value="{molecular_diff_gas, molar_density_gas, porosity, saturation_gas}"/>
-        <Parameter name="powers" type="Array(int)" value="{1, 1, 1, 1}"/>
+        <Parameter name="dependencies" type="Array(string)" value="{molecular_diff_gas, molar_density_gas}"/>
+        <Parameter name="powers" type="Array(int)" value="{1, 1}"/>
         <Parameter name="tag" type="string" value=""/>
-      </ParameterList>
-
-      <ParameterList name="saturation_gas">
-        <Parameter name="evaluator type" type="string" value="saturation gas"/>
-        <Parameter name="saturation liquid key" type="string" value="saturation_liquid"/>
       </ParameterList>
 
       <ParameterList name="mole_fraction_liquid">
