@@ -67,6 +67,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value_hn(nnodes_wghost, 0.0);
   std::vector<double> bc_value_h(nfaces_wghost, 0.0);
+  std::vector<double> bc_value_b(nfaces_wghost, 0.0);
   std::vector<double> bc_value_ht(nfaces_wghost, 0.0);
   std::vector<double> bc_value_qx(nfaces_wghost, 0.0);
   std::vector<double> bc_value_qy(nfaces_wghost, 0.0);
@@ -94,7 +95,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
         bc_value_qx[f] = bc_value_h[f] * it->second[0];
         bc_value_qy[f] = bc_value_h[f] * it->second[1];
-        bc_value_ht[f] = bc_value_h[f] + (B_n[0][n0] + B_n[0][n1]) / 2.0;
+        bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
+        bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
       }
     }
   }
@@ -139,6 +141,15 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
          ht_grad[1][c] *= alpha;
        }
      }
+  }
+  else {
+     // limited reconstructions using boundary data
+     // bathymetry
+     auto tmp1 = S_->GetW<CompositeVector>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+     bathymetry_grad_->Compute(tmp1);
+     if (use_limiter_)
+       limiter_->ApplyLimiter(tmp1, 0, bathymetry_grad_, bc_model, bc_value_b);
+     bathymetry_grad_->data()->ScatterMasterToGhosted("cell");
   }
 
   // flux
