@@ -286,6 +286,9 @@ ShallowWater_PK::Initialize()
   total_depth_grad_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
   total_depth_grad_->Init(plist);
 
+  bathymetry_grad_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
+  bathymetry_grad_->Init(plist);
+
   discharge_x_grad_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
   discharge_x_grad_->Init(plist);
 
@@ -743,52 +746,13 @@ ShallowWater_PK::NumericalSourceBedSlope(
 // To be used for a pipe flow model NEEDS TESTING (TODO)
 //--------------------------------------------------------------------
 std::vector<double>
-ShallowWater_PK::NumericalSourceBedSlope( int c, double hc, const Epetra_MultiVector& B_n)
+ShallowWater_PK::NumericalSourceBedSlope( int c, double hc)
 {
 
-//  AmanziMesh::Entity_ID_List adjCells;
-//  mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &adjCells);
-
-  Amanzi::AmanziMesh::Entity_ID_List cfaces;
-  mesh_->cell_get_faces(c, &cfaces);
-  std::vector < std::vector <double> > matrix(cfaces.size());
-  std::vector < double > rhs(cfaces.size());
-
-  const auto& xc = mesh_->cell_centroid(c);
-  int dim = xc.dim();
-  std::vector < std::vector <double> > leastSquaresMatrix(dim);
-  std::vector < double > leastSquaresRhs(dim);
-
-  for (int f = 0; f < cfaces.size(); ++f) {
-      const auto& xf = mesh_->face_centroid(cfaces[f]);
-      matrix[f].resize(dim);
-      for (int idim = 0; idim < dim; idim++){
-         matrix[f][idim]= (xf[idim] - xc[idim]);
-      }
-      rhs[f] = BathymetryEdgeValue(f, B_n);
-  }
-
-  
-  for(int irow =0; irow < dim; irow++){
-     leastSquaresMatrix[irow].assign(dim,0.0);
-     leastSquaresRhs[irow] = 0.0;
-     for (int f = 0; f < cfaces.size(); ++f) {
-        for(int icol =0; icol < dim; icol++){
-           leastSquaresMatrix[irow][icol] += matrix[f][irow] * matrix[f][icol];
-        }
-        leastSquaresRhs[irow] += matrix[f][irow] * rhs[f];
-     }
-  }
-
-  //we assume dim is 2 for the pipe model
-  double det = leastSquaresMatrix[0][0] * leastSquaresMatrix[1][1] - leastSquaresMatrix[0][1] * leastSquaresMatrix[1][0];
-  if (std::fabs(det) < 1.e-12) std::cout <<"DET IS ZERO OOOOOOOOOOOO" << std::endl;
-  double gradBc = (leastSquaresMatrix[1][1] * leastSquaresRhs[0] - leastSquaresMatrix[0][1] * leastSquaresRhs[1]) / det;
-
+  auto& b_grad = *bathymetry_grad_->data()->ViewComponent("cell", true);
   std::vector<double> S(3);
-
   S[0] = 0.0;
-  S[1] = - g_ * hc * gradBc; // / mesh_->cell_volume(c);
+  S[1] = - g_ * hc * b_grad[0][c]; 
   S[2] = 0.0;
 
   return S;

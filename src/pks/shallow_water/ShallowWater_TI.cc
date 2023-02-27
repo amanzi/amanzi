@@ -99,15 +99,15 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     }
   }
 
-  // limited reconstructions using boundary data
-  // total depth
-  auto tmp1 = S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  total_depth_grad_->Compute(tmp1);
-  if (use_limiter_)
-    limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
-  total_depth_grad_->data()->ScatterMasterToGhosted("cell");
-  
   if (!hydrostatic_pressure_force_type_){ //we don't use ht_grad for the pipe flow
+     // limited reconstructions using boundary data
+     // total depth
+     auto tmp1 = S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+     total_depth_grad_->Compute(tmp1);
+     if (use_limiter_)
+       limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
+     total_depth_grad_->data()->ScatterMasterToGhosted("cell");
+  
      // additional depth-positivity correction limiting for fully flooded cells
      auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
   
@@ -140,7 +140,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        }
      }
   }
-  
+
   // flux
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
@@ -246,7 +246,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         UR[0] = bc_value_h[f];
         UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
         UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
-        UR[3] = ComputeWettedAngleNewton(bc_value_h[f]);//TODO check that bc_value_h[f] < total cross section before calling this
+        UR[3] = ComputeWettedAngleNewton(bc_value_h[f]);
       } else {
         // default outflow BC
         UR = UL;
@@ -341,7 +341,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        ExtraSource = 1.0;
     }
     else{
-       BedSlopeSource = NumericalSourceBedSlope(c, U[0], B_n);
+       BedSlopeSource = NumericalSourceBedSlope(c, U[0]);
        ExtraSource = 0.0;
     }
     FrictionSource = NumericalSourceFriction(U[0], U[1], U[3]); 
