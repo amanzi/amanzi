@@ -34,7 +34,7 @@ namespace WhetStone {
 int
 MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W)
 {
-  const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
+  const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
   W.Reshape(nfaces, nfaces);
@@ -46,10 +46,10 @@ MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W)
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
     const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
-    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f, c);
 
     a = xf - xc;
-    double s = mesh_->getFaceArea(f) * dirs[n] / norm(a);
+    double s = mesh_->getFaceArea(f) / norm(a);
     double Knn = ((K * a) * normal) * s;
     double dxn = a * normal;
     W(n, n) = Knn / fabs(dxn);
