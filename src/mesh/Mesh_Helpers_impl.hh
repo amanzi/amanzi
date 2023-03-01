@@ -176,8 +176,7 @@ computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
     auto ccoords = mesh.getCellCoordinates(c);
     auto vol_cent = std::make_pair((double)0, AmanziGeometry::Point(mesh.getSpaceDimension()));
     AmanziGeometry::Point normal(mesh.getSpaceDimension());
-    auto vccoords = asVector(ccoords); 
-    AmanziGeometry::polygon_get_area_centroid_normal(vccoords,
+    AmanziGeometry::polygon_get_area_centroid_normal(ccoords,
             &vol_cent.first, &vol_cent.second, &normal);
     return vol_cent;
   } else {
@@ -206,8 +205,7 @@ computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
     auto ccoords = mesh.getCellCoordinates(c);
     auto vol_cent = std::make_pair((double)0,
             AmanziGeometry::Point(mesh.getSpaceDimension()));
-    auto vccoords = asVector(ccoords); 
-    AmanziGeometry::polyhed_get_vol_centroid(vccoords, faces.size(), nfnodes,
+    AmanziGeometry::polyhed_get_vol_centroid(ccoords, faces.size(), nfnodes,
             cfcoords, &vol_cent.first, &vol_cent.second);
     return vol_cent;
   }
@@ -225,8 +223,7 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
     double area;
     AmanziGeometry::Point centroid(3);
     AmanziGeometry::Point normal(3);
-    auto vfcoords = asVector(fcoords); 
-    AmanziGeometry::polygon_get_area_centroid_normal(vfcoords, &area, &centroid, &normal);
+    AmanziGeometry::polygon_get_area_centroid_normal(fcoords, &area, &centroid, &normal);
 
     cEntity_ID_View fcells;
     mesh.getFaceCells(f, Parallel_kind::ALL, fcells);

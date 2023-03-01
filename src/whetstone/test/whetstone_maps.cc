@@ -289,9 +289,9 @@ TEST(DG_MAP_VELOCITY_CELL)
 
   std::cout << "\nTest: Velocity reconstruction in 3D." << std::endl;
   auto comm = Amanzi::getDefaultComm();
-
-  // create two meshes
-  MeshFactory meshfactory(comm);
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList()); 
+  fac_list->set<bool>("request edges", true); 
+  MeshFactory meshfactory(comm, Teuchos::null, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh0 = meshfactory.create("test/cube_unit.exo");
   Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/cube_unit.exo");

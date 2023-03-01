@@ -166,7 +166,10 @@ void MeshSurfaceCell::getCellFacesAndDirs(const Entity_ID cellid,
   Entity_ID_View lfaceids("lfaceids", nodes_.size()); 
   Entity_Direction_View lface_dirs; 
   for (int i=0; i!=nodes_.size(); ++i) lfaceids[i] = i;
-  if (face_dirs) Kokkos::resize(lface_dirs,nodes_.size(),1);
+  if (face_dirs) {
+    Kokkos::resize(lface_dirs,nodes_.size());
+    Kokkos::deep_copy(lface_dirs, 1); 
+  }
   *face_dirs = lface_dirs; 
   faceids = lfaceids; 
 }

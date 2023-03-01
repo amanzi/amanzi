@@ -362,7 +362,7 @@ MeshCache<MEM>::getFaceCells(const Entity_ID f,
     framework_mesh_,
     [&](const int i) { 
       cEntity_ID_View cells; 
-      framework_mesh_->getFaceCells(f, ptype, fcells); 
+      framework_mesh_->getFaceCells(f, ptype, cells); 
       return cells; 
     }, 
     nullptr, 
@@ -1291,7 +1291,7 @@ void MeshCache<MEM>::cacheFaceGeometry()
     dirs = ldirs; 
   };
   data_.face_normal_directions = asRaggedArray_DualView<int>(lambda2, nfaces_all);
-  
+
   // cache cell-face-bisectors -- make this a separate call?  Think about
   // granularity here.
   auto lambda3 = [&,this](const Entity_ID& c, cPoint_View& bisectors) {
@@ -1630,9 +1630,8 @@ void cacheAll(MeshCache<MEM>& mesh)
   mesh.cacheFaceCoordinates();
   mesh.cacheNodeCells();
   mesh.cacheNodeFaces();
-  mesh.cacheFaceGeometry();
   mesh.cacheCellGeometry();
-
+  mesh.cacheFaceGeometry();
   if (mesh.hasEdges()) {
     mesh.cacheCellEdges();
     mesh.cacheEdgeCells();
@@ -1653,9 +1652,11 @@ void cacheDefault(MeshCache<MEM>& mesh)
   mesh.cacheNodeCoordinates();
   mesh.cacheCellFaces();
   mesh.cacheFaceCells();
-  mesh.cacheFaceNodes();
-  mesh.cacheFaceGeometry();
+  if (mesh.hasNodes()) {
+    mesh.cacheFaceNodes();
+  }
   mesh.cacheCellGeometry();
+  mesh.cacheFaceGeometry();
   if (mesh.hasEdges()) {
     mesh.cacheFaceEdges();
     mesh.cacheEdgeFaces();
