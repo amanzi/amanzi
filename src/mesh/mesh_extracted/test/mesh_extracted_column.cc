@@ -55,6 +55,7 @@ TEST(COLUMN_MESH_3D)
     Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,
               lx,ly,lz, nx,ny,nz, comm,gm));
   auto mesh = Teuchos::rcp(new AmanziMesh::Mesh(mesh_fw));
+  AmanziMesh::MeshAlgorithms::cacheDefault(*mesh); 
   mesh->buildColumns();
 
   // Perturb the nodes above the base layer just a bit
@@ -137,8 +138,7 @@ TEST(COLUMN_MESH_3D)
 
   // Make sure the normals of the faces are have only a Z component
   for (int j = 0; j < nfaces; j++) {
-    AmanziGeometry::Point normal(3);
-    normal = colmesh.getFaceNormal(j);
+    auto normal = colmesh.getFaceNormal(j);
     CHECK_CLOSE(0.0,normal[0],1.e-10);
     CHECK_CLOSE(0.0,normal[1],1.e-10);
     CHECK_CLOSE(1.0,fabs(normal[2]),1.e-10);

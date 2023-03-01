@@ -77,7 +77,8 @@ void MeshFrameworkColumn::computeSpecialNodeCoordinates_()
 
   // mask for face index in the column of faces
   Kokkos::resize(face_in_column_,col3D_mesh.getNumEntities(Entity_kind::FACE,
-          Parallel_kind::ALL), -1);
+          Parallel_kind::ALL));
+  Kokkos::deep_copy(face_in_column_, -1); 
 
   // How many nodes each "horizontal" face has in the column
   cEntity_ID_View face_nodes;

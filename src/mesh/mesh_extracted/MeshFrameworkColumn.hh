@@ -201,7 +201,7 @@ class MeshFrameworkColumn : public MeshFramework {
     cEntity_Direction_View face_dirs_extracted;
     col3D_mesh_->getCellFacesAndDirs(cellid, faceids_extracted,
             &face_dirs_extracted);
-
+            
     int count = 0;
     for (int i=0; i!=faceids_extracted.size(); ++i) {
       if (face_in_column_[faceids_extracted[i]] >= 0) {
@@ -211,7 +211,7 @@ class MeshFrameworkColumn : public MeshFramework {
       }
     }
     faceids = lfaceids; 
-    *face_dirs = lface_dirs; 
+    if(face_dirs) *face_dirs = lface_dirs; 
   }
 
   // Cells connected to a face - this function is implemented in each

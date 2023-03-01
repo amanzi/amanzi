@@ -248,7 +248,12 @@ if (ENABLE_TESTS)
                         KIND unit
                         NPROCS 2
                         SOURCE test/Main.cc test/operator_marshak.cc
-                                            test/operator_marshak_logical.cc
+                        LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+        add_amanzi_test(operators_marshak_logical operators_marshak_logical
+                        KIND unit
+                        NPROCS 1
+                        SOURCE test/Main.cc test/operator_marshak_logical.cc
                         LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
         add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface

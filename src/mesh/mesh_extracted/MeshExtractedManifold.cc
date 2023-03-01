@@ -57,6 +57,59 @@ MeshExtractedManifold::MeshExtractedManifold(
   if (flattened_) setSpaceDimension(d - 1);
 
   InitParentMaps(setname); 
+  InitEpetraMaps();
+}
+
+
+/* ******************************************************************
+* Epetra maps are structures specifying the global IDs of entities
+* owned or used by this processor. This helps Epetra understand
+* inter-partition dependencies of the data.
+****************************************************************** */
+void
+MeshExtractedManifold::InitEpetraMaps()
+{
+  std::vector<Entity_kind> kinds_extracted({ CELL, FACE, NODE });
+  std::vector<Entity_kind> kinds_parent({ FACE, EDGE, NODE });
+
+  for (int i = 0; i < 3; ++i) {
+    auto kind_d = kinds_extracted[i];
+    auto kind_p = kinds_parent[i];
+
+    // compute (discontinuous) owned global ids using the parent map
+    Teuchos::RCP<const Epetra_BlockMap> parent_map =
+      Teuchos::rcpFromRef(parent_mesh_->getMap(kind_p, false));
+    Teuchos::RCP<const Epetra_BlockMap> parent_map_wghost =
+      Teuchos::rcpFromRef(parent_mesh_->getMap(kind_p, true));
+
+    int nents = nents_owned_[kind_d];
+    int nents_wghost = nents_owned_[kind_d] + nents_ghost_[kind_d];
+    auto gids = new int[nents_wghost];
+
+    for (int n = 0; n < nents; ++n) {
+      int id = entid_to_parent_[kind_d][n];
+      gids[n] = parent_map_wghost->GID(id);
+    }
+
+    auto subset_map = Teuchos::rcp(new Epetra_Map(-1, nents, gids, 0, *comm_));
+
+    // compute owned + ghost ids using the parent map and the minimum global id
+    for (int n = 0; n < nents_wghost; ++n) {
+      int id = entid_to_parent_[kind_d][n];
+      gids[n] = parent_map_wghost->GID(id);
+    }
+
+    auto subset_map_wghost = Teuchos::rcp(new Epetra_Map(-1, nents_wghost, gids, 0, *comm_));
+    delete[] gids;
+
+    // create continuous maps
+    auto mymesh = Teuchos::rcpFromRef(*this);
+    auto tmp = createContiguousMaps(mymesh,
+                                    std::make_pair(parent_map, parent_map_wghost),
+                                    std::make_pair(subset_map, subset_map_wghost));
+
+    ent_map_wghost_[kind_d] = tmp.second;
+  }
 }
 
 /* ******************************************************************
@@ -467,37 +520,6 @@ std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
   }
   return std::map<Entity_ID, int>();
 }
-
-
-/* ******************************************************************
-* Global ID of any entity
-****************************************************************** */
-Entity_GID MeshExtractedManifold::getEntityGID(
-    const Entity_kind kind, const Entity_ID lid) const
-{
-  Entity_kind kind_p;
-
-  switch (kind) {
-  case NODE:
-    kind_p = Entity_kind::NODE;
-    break;
-  case EDGE:
-    kind_p = Entity_kind::EDGE;
-    break;
-  case FACE:
-    kind_p = Entity_kind::EDGE;
-    break;
-  case CELL:
-    kind_p = Entity_kind::FACE;
-    break;
-  default:
-    std::cerr << "Global ID requested for unknown entity type" << std::endl;
-  }
-
-  int id = entid_to_parent_[kind][lid];
-  return parent_mesh_->getMap(kind_p, true).GID(id);
-}
-
 
 }  // namespace AmanziMesh
 }  // namespace Amanzi
