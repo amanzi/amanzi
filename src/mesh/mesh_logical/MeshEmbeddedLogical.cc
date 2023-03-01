@@ -237,7 +237,7 @@ MeshEmbeddedLogical::getCellFacesAndDirs(
   if (c < ncells_log) {
     log_mesh_->getCellFacesAndDirs(c, faces, dirs);
     lfaces.fromConst(faces); 
-    ldirs.fromConst(*dirs); 
+    if(dirs) ldirs.fromConst(*dirs); 
     // check for extras
     auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
     for (int f=0; f!=extra_face_cell_ids_.size<MemSpace_kind::HOST>(); ++f) {
@@ -262,7 +262,7 @@ MeshEmbeddedLogical::getCellFacesAndDirs(
     auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
     auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_kind::HOST>();
     bg_mesh_->getCellFacesAndDirs(c-ncells_log, faces, dirs);
-    ldirs.fromConst(*dirs); 
+    if(dirs) ldirs.fromConst(*dirs); 
     lfaces.fromConst(faces); 
     for (int i=0; i!=faces.size(); ++i) lfaces[i] += (nfaces_log + nfaces_extra);
 

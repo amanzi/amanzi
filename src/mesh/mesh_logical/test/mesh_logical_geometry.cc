@@ -396,6 +396,7 @@ TEST(MESH_EMBEDDED_Y)
             << "-----------------------------------------------------" << std::endl;
   Teuchos::RCP<MeshFramework> mesh_fw = Amanzi::Testing::demoMeshLogicalYEmbedded();
   auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshCache<MemSpace_kind::HOST>(mesh_fw));
+  Amanzi::AmanziMesh::MeshAlgorithms::cacheDefault(*mesh); 
   Amanzi::AmanziMesh::MeshLogicalAudit audit(mesh, std::cout);
   CHECK(!audit.Verify());
 }
@@ -409,6 +410,7 @@ TEST(MESH_SUBGRID_VARIABLE_TAU)
             << "-----------------------------------------------------" << std::endl;
   Teuchos::RCP<MeshFramework> mesh_fw = Amanzi::Testing::demoMeshLogicalFromXML("subgrid mesh");
   auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshCache<MemSpace_kind::HOST>(mesh_fw));
+  Amanzi::AmanziMesh::MeshAlgorithms::cacheDefault(*mesh); 
   Amanzi::AmanziMesh::MeshLogicalAudit audit(mesh, std::cout);
   CHECK(!audit.Verify());
 }

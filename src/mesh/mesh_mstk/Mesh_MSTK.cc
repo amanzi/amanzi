@@ -1289,13 +1289,7 @@ void Mesh_MSTK::post_create_steps_()
   // requested
   init_nodes_();
   edgeflip_ = nullptr;
-  if (edges_requested_) {
-    // if (getManifoldDimension() == 3) {
-      init_edges_();
-    // } else { // edges are not valid
-    //   edges_requested_ = false;
-    // }
-  }
+  if (edges_requested_) init_edges_();
   if (faces_requested_) init_faces_();
   init_cells_();
 }

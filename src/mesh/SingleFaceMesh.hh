@@ -160,8 +160,15 @@ SingleFaceMesh::BuildCache_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   fnodes = mesh->getFaceNodes(f);
   nnodes_ = fnodes.size();
 
-  AmanziMesh::cEntity_Direction_View fdirs;
-  if (mesh->hasEdges()) { mesh->getFaceEdgesAndDirs(f, fedges, &fdirs); }
+  AmanziMesh::Entity_Direction_View fdirs;
+  if (mesh->hasEdges()) { 
+    AmanziMesh::cEntity_Direction_View cfdirs;
+    mesh->getFaceEdgesAndDirs(f, fedges, &cfdirs); 
+    fdirs.fromConst(cfdirs); 
+  } 
+  else 
+    Kokkos::resize(fdirs, 1); 
+
   // cell nodes
   Kokkos::resize(cell_node_ids_, nnodes_);
   cell_coords_.resize(nnodes_);

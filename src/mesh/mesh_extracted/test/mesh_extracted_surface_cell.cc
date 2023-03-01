@@ -46,6 +46,7 @@ TEST(SURFACE_COLUMN_MESH_3D)
       Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,
               lx,ly,lz,nx,ny,nz, comm, gm));
   Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp(new AmanziMesh::Mesh(mesh_fw));
+  AmanziMesh::MeshAlgorithms::cacheDefault(*mesh); 
   mesh->buildColumns();
 
   // Perturb the nodes above the base layer just a bit
@@ -64,7 +65,7 @@ TEST(SURFACE_COLUMN_MESH_3D)
     Teuchos::rcp(new AmanziMesh::Mesh_MSTK(mesh_fw,
           mesh->columns.cells_.getRow<MemSpace_kind::HOST>(10), AmanziMesh::Entity_kind::CELL,
           false, getCommSelf(), gm, Teuchos::null));
-
+          
   // Create the MeshColumn object
   Teuchos::RCP<AmanziMesh::MeshFramework> colmesh =
     Teuchos::rcp(new AmanziMesh::MeshFrameworkColumn(colmesh_ext, Teuchos::null));

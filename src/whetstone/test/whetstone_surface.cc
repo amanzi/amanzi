@@ -55,7 +55,7 @@ TEST(DARCY_SURFACE_MESH)
     DenseMatrix M;
     mfd.MassMatrix(0, T, M);
     int nrows = M.NumRows();
-
+    
     for (int i = 0; i < nrows; ++i) {
       for (int j = 0; j < nrows; ++j) {
         double val = (i != j) ? 0.0 : surfmesh_cache->getCellVolume(0) / 2;
