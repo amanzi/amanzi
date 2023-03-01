@@ -37,7 +37,6 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
   CHECK_EQUAL(3, mesh->getManifoldDimension());
   for (const auto& r : *gm) {
     std::string r_name = r->get_name();
-
     if (r_name == "Entire Mesh") {
       if (!mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
@@ -57,6 +56,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
       // the bottom layer of cells
       if (labeled) {
         int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+
         CHECK_CLOSE_SUMALL(3*3, n_ents, *mesh->getComm());
 
         AmanziMesh::Entity_ID_View ents;
@@ -66,7 +66,6 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
           CHECK_CLOSE(0.5/3, cc[2], 1.e-10);
         }
       }
-
     } else if (r_name == "Middle LS" || r_name == "Cell Set 2" || r_name == "Middle ColFunc"
                || r_name == "Bottom+Middle Box - Bottom LS") {
       if (!mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;

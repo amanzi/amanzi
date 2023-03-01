@@ -89,7 +89,7 @@ createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind);
 //
 template<class Mesh_type>
 std::pair<Map_ptr_type, Map_ptr_type>
-createMapsFromNaturalGIDs(const Mesh_type& mesh, const Entity_kind kind);
+createMapsFromContiguousGIDs(const Mesh_type& mesh, const Entity_kind kind);
 
 
 class MeshMaps {

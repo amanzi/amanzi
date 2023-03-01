@@ -50,10 +50,8 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
-  AmanziMesh::Entity_ID_View cells;
-
   for (int f = 0; f < nfaces_owned; ++f) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     WhetStone::DenseMatrix Aface(ncells, ncells);
@@ -119,10 +117,8 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
   dHdT->ScatterMasterToGhosted("cell");
   const auto& dHdT_c = *dHdT->ViewComponent("cell", true);
 
-  AmanziMesh::Entity_ID_View cells;
-
   for (int f = 0; f < nfaces_owned; ++f) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     WhetStone::DenseMatrix Aface(ncells, ncells);

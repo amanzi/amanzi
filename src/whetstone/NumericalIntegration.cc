@@ -141,7 +141,6 @@ NumericalIntegration::IntegrateFunctionsTriangulatedCell(
 {
   double integral(0.0);
 
-  AmanziMesh::Entity_ID_View nodes;
   AmanziMesh::Point_List xy(d_ + 1);
 
   const auto& faces = mesh_->getCellFaces(c);
@@ -151,7 +150,7 @@ NumericalIntegration::IntegrateFunctionsTriangulatedCell(
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    nodes = mesh_->getFaceNodes(f);
+    auto nodes = mesh_->getFaceNodes(f);
     int nnodes = nodes.size();
 
     if (d_ == 3) {
@@ -187,12 +186,11 @@ NumericalIntegration::IntegrateFunctionsTriangulatedFace(
 {
   double integral(0.0);
   AmanziGeometry::Point x1(d_), x2(d_);
-  AmanziMesh::Entity_ID_View faces, nodes;
 
   if (d_ == 3) {
     AmanziMesh::Point_List xy(d_ + 1);
 
-    nodes = mesh_->getFaceNodes(f);
+    auto nodes = mesh_->getFaceNodes(f);
     int nnodes = nodes.size();
 
     xy[0] = mesh_->getFaceCentroid(f);
@@ -205,7 +203,7 @@ NumericalIntegration::IntegrateFunctionsTriangulatedFace(
       integral += IntegrateFunctionsTriangle(xy, funcs, order);
     }
   } else if (d_ == 2) {
-    nodes = mesh_->getFaceNodes(f);
+    auto nodes = mesh_->getFaceNodes(f);
 
     x1 = mesh_->getNodeCoordinate(nodes[0]);
     x2 = mesh_->getNodeCoordinate(nodes[1]);

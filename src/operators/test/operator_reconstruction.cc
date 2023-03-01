@@ -201,14 +201,13 @@ TEST(RECONSTRUCTION_QUADRATIC_2D)
   }
 
   // -- boundary values
-  AmanziMesh::Entity_ID_View cells;
 
   auto bcs = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bcs->bc_model();
   std::vector<double>& bc_value = bcs->bc_value();
 
   for (int f = 0; f < nfaces_wghost; ++f) {
-    cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     if (cells.size() == 1) {
       const auto& xf = mesh->getFaceCentroid(f);
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;

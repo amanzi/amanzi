@@ -84,13 +84,12 @@ RunTest(double gravity)
   const auto& map = flux->Map().Map("face", true);
 
   int dir;
-  AmanziMesh::Entity_ID_View cells;
   AmanziGeometry::Point v(1.0, 0.0, 1.0);
   for (int f = 0; f < nfaces_owned; ++f) {
     int g = map->FirstPointInElement(f);
     int ndofs = map->ElementSize(f);
 
-    cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     if (ndofs > 1) CHECK(ndofs == cells.size());
 
     for (int i = 0; i < ndofs; ++i) {

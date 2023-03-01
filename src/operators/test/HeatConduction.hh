@@ -96,7 +96,6 @@ class HeatConduction {
       values_ = tmp;
     }
 
-    AmanziMesh::Entity_ID_View cells;
     Epetra_MultiVector& vcell = *values_->ViewComponent("cell", true);
     Epetra_MultiVector& vface = *values_->ViewComponent("face", true);
     Epetra_MultiVector& vtwin = *values_->ViewComponent("twin", true);
@@ -106,7 +105,7 @@ class HeatConduction {
     int nfaces = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
     for (int f = 0; f < nfaces; f++) {
-      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto  cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       int ncells = cells.size();
 
       if (ncells == 2) {
@@ -146,7 +145,6 @@ class HeatConduction {
       values_ = tmp;
     }
 
-    AmanziMesh::Entity_ID_View cells;
     Epetra_MultiVector& vcell = *values_->ViewComponent("cell", true);
     Epetra_MultiVector& vface = *values_->ViewComponent("face", true);
     Epetra_MultiVector& vgrad = *values_->ViewComponent("grad", true);
@@ -158,7 +156,7 @@ class HeatConduction {
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
-      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       int ncells = cells.size();
 
       int c = cells[0];

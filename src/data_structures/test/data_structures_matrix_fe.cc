@@ -86,16 +86,14 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
   Teuchos::RCP<GraphFE> graph =
     Teuchos::rcp(new GraphFE(cell_map, cell_map_ghosted, cell_map_ghosted, 5));
 
-  Entity_ID_View faces;
-  Entity_ID_View face_cells;
   std::vector<int> neighbor_cells;
   for (int c = 0; c != ncells; ++c) {
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
 
-    faces = mesh->getCellFaces(c);
+    auto faces = mesh->getCellFaces(c);
     for (int n = 0; n != faces.size(); ++n) {
-      face_cells = mesh->getFaceCells(faces[n], AmanziMesh::Parallel_kind::ALL);
+      auto face_cells = mesh->getFaceCells(faces[n], AmanziMesh::Parallel_kind::ALL);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
       }
@@ -118,9 +116,9 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
 
-    faces = mesh->getCellFaces(c);
+    auto faces = mesh->getCellFaces(c);
     for (int n = 0; n != faces.size(); ++n) {
-      face_cells = mesh->getFaceCells(faces[n], AmanziMesh::Parallel_kind::ALL);
+      auto face_cells = mesh->getFaceCells(faces[n], AmanziMesh::Parallel_kind::ALL);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
       }
@@ -220,10 +218,10 @@ TEST(FE_MATRIX_FACE_FACE)
   Teuchos::RCP<GraphFE> graph =
     Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
 
-  Entity_ID_View faces;
-  Entity_ID_View face_cells;
   for (int c = 0; c != ncells; ++c) {
-    faces = mesh->getCellFaces(c);
+    auto cfaces = mesh->getCellFaces(c);
+    AmanziMesh::Entity_ID_View faces; 
+    faces.fromConst(cfaces); 
 
     for (int n = 0; n != faces.size(); ++n) {
       ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
@@ -241,7 +239,7 @@ TEST(FE_MATRIX_FACE_FACE)
   Epetra_FECrsMatrix control(Copy, graph->Graph());
 
   for (int c = 0; c != ncells; ++c) {
-    faces = mesh->getCellFaces(c);
+    auto faces = mesh->getCellFaces(c);
 
     Epetra_IntSerialDenseVector face_gids(faces.size());
     for (int n = 0; n != faces.size(); ++n) {

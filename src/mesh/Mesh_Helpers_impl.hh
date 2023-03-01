@@ -16,6 +16,7 @@
 
 namespace Amanzi {
 namespace AmanziMesh {
+class MeshFramework;
 namespace MeshAlgorithms {
 
 
@@ -38,7 +39,7 @@ Cell_kind getCellType(const Mesh_type& mesh, const Entity_ID c)
   } else if (mesh.getManifoldDimension() == 3) {
     int nquads = 0;
     for (const auto& f : faces) {
-      Entity_ID_View fnodes;
+      cEntity_ID_View fnodes;
       mesh.getFaceNodes(f, fnodes);
       if (fnodes.size() == 4) nquads++;
     }
@@ -74,8 +75,8 @@ template<class Mesh_type>
 int getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entity_ID c)
 {
   int dir = 0;
-  Entity_ID_View cfaces;
-  Entity_Direction_View dirs;
+  cEntity_ID_View cfaces;
+  cEntity_Direction_View dirs;
   mesh.getCellFacesAndDirs(c, cfaces, &dirs);
   for (int j=0; j!=cfaces.size(); ++j) {
     if (cfaces[j] == f) {
@@ -101,11 +102,11 @@ mapFaceToCellEdges(const Mesh_type& mesh, const Entity_ID f, const Entity_ID c)
 
 
 template<class Mesh_type>
-Entity_ID_View
+cEntity_ID_View
 computeCellEdges(const Mesh_type& mesh, const Entity_ID c)
 {
   Entity_ID_View edges;
-  Entity_ID_View faces, fedges;
+  cEntity_ID_View faces, fedges;
   Entity_ID_List vedges; 
   mesh.getCellFaces(c, faces);
   for (const auto& f : faces) {
@@ -121,11 +122,11 @@ computeCellEdges(const Mesh_type& mesh, const Entity_ID c)
 }
 
 template<class Mesh_type>
-Entity_ID_View
+cEntity_ID_View
 computeCellNodes(const Mesh_type& mesh, const Entity_ID c)
 {
   Entity_ID_View nodes;
-  Entity_ID_View faces, fnodes;
+  cEntity_ID_View faces, fnodes;
   Entity_ID_List vnodes; 
   mesh.getCellFaces(c, faces);
 
@@ -139,24 +140,28 @@ computeCellNodes(const Mesh_type& mesh, const Entity_ID c)
       }
     }
   } else {
-    Entity_ID_View fnodes_prev; 
+    cEntity_ID_View fnodes_prev_c; 
     Entity_ID_List result(2);
     int nfaces = faces.size();
 
-    mesh.getFaceNodes(faces[nfaces - 1], fnodes_prev);
+    mesh.getFaceNodes(faces[nfaces - 1], fnodes_prev_c);
+    Entity_ID_View fnodes_prev; 
+    fnodes_prev.fromConst(fnodes_prev_c); 
     std::sort(fnodes_prev.begin(), fnodes_prev.end());
 
     result.resize(2);
     for (int i1 = 0; i1 < nfaces; ++i1) {
       mesh.getFaceNodes(faces[i1], fnodes);
-      std::sort(fnodes.begin(), fnodes.end());
+      Entity_ID_View fnodes_l; 
+      fnodes_l.fromConst(fnodes); 
+      std::sort(fnodes_l.begin(), fnodes_l.end());
 
-      std::set_intersection(fnodes.begin(), fnodes.end(),
+      std::set_intersection(fnodes_l.begin(), fnodes_l.end(),
                             fnodes_prev.begin(), fnodes_prev.end(),
                             result.begin());
       vnodes.emplace_back(result.front());
 
-      fnodes_prev = fnodes;
+      fnodes_prev = fnodes_l;
     }
   }
   vectorToView(nodes,vnodes); 
@@ -171,15 +176,14 @@ computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
     auto ccoords = mesh.getCellCoordinates(c);
     auto vol_cent = std::make_pair((double)0, AmanziGeometry::Point(mesh.getSpaceDimension()));
     AmanziGeometry::Point normal(mesh.getSpaceDimension());
-    auto vccoords = asVector(ccoords); 
-    AmanziGeometry::polygon_get_area_centroid_normal(vccoords,
+    AmanziGeometry::polygon_get_area_centroid_normal(ccoords,
             &vol_cent.first, &vol_cent.second, &normal);
     return vol_cent;
   } else {
 
-    Entity_ID_View faces;
+    cEntity_ID_View faces;
     std::vector<std::size_t> nfnodes;
-    Entity_Direction_View fdirs;
+    cEntity_Direction_View fdirs;
     Point_List cfcoords;
 
     mesh.getCellFacesAndDirs(c, faces, &fdirs);
@@ -201,8 +205,7 @@ computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
     auto ccoords = mesh.getCellCoordinates(c);
     auto vol_cent = std::make_pair((double)0,
             AmanziGeometry::Point(mesh.getSpaceDimension()));
-    auto vccoords = asVector(ccoords); 
-    AmanziGeometry::polyhed_get_vol_centroid(vccoords, faces.size(), nfnodes,
+    AmanziGeometry::polyhed_get_vol_centroid(ccoords, faces.size(), nfnodes,
             cfcoords, &vol_cent.first, &vol_cent.second);
     return vol_cent;
   }
@@ -210,20 +213,19 @@ computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 
 
 template<class Mesh_type>
-std::tuple<double,AmanziGeometry::Point,Point_View>
+std::tuple<double,AmanziGeometry::Point,cPoint_View>
 computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
 {
   if (mesh.getManifoldDimension() == 3) {
     // 3D Elements with possibly curved faces
-    Point_View fcoords = mesh.getFaceCoordinates(f);
+    cPoint_View fcoords = mesh.getFaceCoordinates(f);
 
     double area;
     AmanziGeometry::Point centroid(3);
     AmanziGeometry::Point normal(3);
-    auto vfcoords = asVector(fcoords); 
-    AmanziGeometry::polygon_get_area_centroid_normal(vfcoords, &area, &centroid, &normal);
+    AmanziGeometry::polygon_get_area_centroid_normal(fcoords, &area, &centroid, &normal);
 
-    Entity_ID_View fcells;
+    cEntity_ID_View fcells;
     mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
     Point_View normals("normals", fcells.size());
     initView(normals, normal); 
@@ -247,7 +249,7 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
       AmanziGeometry::Point normal(evec[1], -evec[0]);
 
       // only one normal needed
-      Entity_ID_View fcells;
+      cEntity_ID_View fcells;
       mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
       Point_View normals("normals", fcells.size());
       initView(normals, normal); 
@@ -270,7 +272,7 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
       double area = AmanziGeometry::norm(evec);
       AmanziGeometry::Point centroid = 0.5 * (fcoords[0] + fcoords[1]);
 
-      Entity_ID_View cellids;
+      cEntity_ID_View cellids;
       mesh.getFaceCells(f, Parallel_kind::ALL, cellids);
       Point_View normals("normals",cellids.size());
       for (int i = 0; i < cellids.size(); i++) {
@@ -299,7 +301,7 @@ template<class Mesh_type>
 std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
 computeEdgeGeometry(const Mesh_type& mesh, const Entity_ID e)
 {
-  Entity_ID_View nodes;
+  cEntity_ID_View nodes;
   mesh.getEdgeNodes(e, nodes);
   AMANZI_ASSERT(nodes.size() == 2);
   auto x0 = mesh.getNodeCoordinate(nodes[0]);
@@ -310,7 +312,7 @@ computeEdgeGeometry(const Mesh_type& mesh, const Entity_ID e)
 template<class Mesh_type>
 Point_View
 computeBisectors(const Mesh_type& mesh, const Entity_ID c,
-        const Entity_ID_View& faces)
+        const cEntity_ID_View& faces)
 {
   Point_View bisectors("bisectors", faces.size());
   for (int i = 0; i != faces.size(); ++i)
@@ -342,9 +344,9 @@ void debugCell(const Mesh_type& mesh, const Entity_ID c)
 
 
 template<class Mesh_type>
-Point_View getEdgeCoordinates(const Mesh_type& mesh, const Entity_ID e)
+cPoint_View getEdgeCoordinates(const Mesh_type& mesh, const Entity_ID e)
 {
-  Entity_ID_View nodes;
+  cEntity_ID_View nodes;
   mesh.getEdgeNodes(e, nodes);
 
   Point_View coords("coords", nodes.size());
@@ -357,9 +359,9 @@ Point_View getEdgeCoordinates(const Mesh_type& mesh, const Entity_ID e)
 }
 
 template<class Mesh_type>
-Point_View getFaceCoordinates(const Mesh_type& mesh, const Entity_ID f)
+cPoint_View getFaceCoordinates(const Mesh_type& mesh, const Entity_ID f)
 {
-  Entity_ID_View nodes;
+  cEntity_ID_View nodes;
   mesh.getFaceNodes(f, nodes);
 
   Point_View coords("coords", nodes.size());
@@ -372,9 +374,9 @@ Point_View getFaceCoordinates(const Mesh_type& mesh, const Entity_ID f)
 }
 
 template<class Mesh_type>
-Point_View getCellCoordinates(const Mesh_type& mesh, const Entity_ID c)
+cPoint_View getCellCoordinates(const Mesh_type& mesh, const Entity_ID c)
 {
-  Entity_ID_View nodes;
+  cEntity_ID_View nodes;
   mesh.getCellNodes(c, nodes);
 
   Point_View coords("coords", nodes.size());
@@ -471,6 +473,8 @@ int setNodeCoordinates(Mesh_type& mesh,
   for (int i=0; i!=nodeids.size(); ++i) {
     mesh.setNodeCoordinate(nodeids[i], newpos[i]);
   }
+  if constexpr (!std::is_base_of_v<MeshFramework, Mesh_type>)
+    mesh.recacheGeometry(); 
   return 0;
 }
 

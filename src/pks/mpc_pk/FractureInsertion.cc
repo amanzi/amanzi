@@ -101,11 +101,10 @@ FractureInsertion::InitMatrixCellToFractureCell()
   values_ = std::make_shared<std::vector<double>>(2 * ncells_owned_f, 0.0);
 
   int np(0);
-  AmanziMesh::Entity_ID_View cells;
 
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_fracture_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
-    cells = mesh_matrix_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_matrix_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
     AMANZI_ASSERT(ncells == 2);
 
@@ -157,7 +156,6 @@ FractureInsertion::SetValues(const CompositeVector& flux)
     values2_ = std::make_shared<std::vector<double>>(2 * ncells_owned_f, 0.0);
   }
 
-  AmanziMesh::Entity_ID_View cells;
   const auto& flux_f = *flux.ViewComponent("face");
   const auto& mmap = flux.Map().Map("face", false);
 
@@ -165,7 +163,7 @@ FractureInsertion::SetValues(const CompositeVector& flux)
     int f = mesh_fracture_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
     int first = mmap->FirstPointInElement(f);
 
-    cells = mesh_matrix_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_matrix_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
     mesh_matrix_->getFaceNormal(f, cells[0], &dir);
     int shift = Operators::UniqueIndexFaceToCells(*mesh_matrix_, f, cells[0]);

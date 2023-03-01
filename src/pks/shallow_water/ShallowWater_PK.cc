@@ -304,19 +304,16 @@ ShallowWater_PK::Initialize()
     const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
     cell_area_max = std::max(cell_area_max, mesh_->getCellVolume(c));
-    Amanzi::AmanziMesh::Entity_ID_View cfaces;
-    cfaces = mesh_->getCellFaces(c);
+    auto cfaces = mesh_->getCellFaces(c);
     int nfaces_cell = cfaces.size();
 
     // compute cell averaged bathymery (Bc)
     Amanzi::AmanziGeometry::Point x0, x1;
-    AmanziMesh::Entity_ID_View face_nodes;
-
     double tmp(0.0);
     for (int f = 0; f < nfaces_cell; ++f) {
       int edge = cfaces[f];
 
-      face_nodes = mesh_->getFaceNodes(edge);
+      auto face_nodes = mesh_->getFaceNodes(edge);
       int n0 = face_nodes[0];
       int n1 = face_nodes[1];
 
@@ -607,7 +604,6 @@ ShallowWater_PK::TotalDepthEdgeValue(int c,
 
   const auto& xc = mesh_->getCellCentroid(c);
   const auto& xf = mesh_->getFaceCentroid(e);
-  Amanzi::AmanziMesh::Entity_ID_View cfaces;
 
   bool cell_is_dry, cell_is_fully_flooded, cell_is_partially_wet;
   cell_is_partially_wet = false;
@@ -629,8 +625,7 @@ ShallowWater_PK::TotalDepthEdgeValue(int c,
   } else if (cell_is_dry) {
     ht_edge = BathymetryEdgeValue(e, B_n);
   } else if (cell_is_partially_wet) {
-    Amanzi::AmanziMesh::Entity_ID_View cfaces;
-    cfaces = mesh_->getCellFaces(c);
+    auto cfaces = mesh_->getCellFaces(c);
 
     double mu_eps_sum = 0.0;
 
@@ -638,8 +633,7 @@ ShallowWater_PK::TotalDepthEdgeValue(int c,
       Amanzi::AmanziGeometry::Point x0, x1;
       int edge = cfaces[f];
 
-      Amanzi::AmanziMesh::Entity_ID_View face_nodes;
-      face_nodes = mesh_->getFaceNodes(edge);
+      auto face_nodes = mesh_->getFaceNodes(edge);
       int n0 = face_nodes[0], n1 = face_nodes[1];
 
       x0 = mesh_->getNodeCoordinate(n0);
@@ -660,8 +654,7 @@ ShallowWater_PK::TotalDepthEdgeValue(int c,
       mu_eps_sum += (area / mesh_->getCellVolume(c)) * (epsilon);
     }
 
-    Amanzi::AmanziMesh::Entity_ID_View face_nodes;
-    face_nodes = mesh_->getFaceNodes(e);
+    auto face_nodes = mesh_->getFaceNodes(e);
 
     ht_edge = 0.0;
     for (int i = 0; i < face_nodes.size(); ++i) {
@@ -690,9 +683,8 @@ ShallowWater_PK::NumericalSource(int c,
                                  double Bmax,
                                  const Epetra_MultiVector& B_n)
 {
-  AmanziMesh::Entity_ID_View cfaces, cnodes;
-  cfaces = mesh_->getCellFaces(c);
-  cnodes = mesh_->getCellNodes(c);
+  auto cfaces = mesh_->getCellFaces(c);
+  auto cnodes = mesh_->getCellNodes(c);
 
   int orientation;
   double S1(0.0), S2(0.0);
@@ -741,12 +733,11 @@ ShallowWater_PK::get_dt()
   const auto& vel_c = *S_->Get<CV_t>(velocity_key_).ViewComponent("cell", true);
 
   int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-  AmanziMesh::Entity_ID_View cfaces;
 
   for (int c = 0; c < ncells_owned; c++) {
     const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
-    cfaces = mesh_->getCellFaces(c);
+    auto cfaces = mesh_->getCellFaces(c);
 
     for (int n = 0; n < cfaces.size(); ++n) {
       int f = cfaces[n];
@@ -824,8 +815,7 @@ ShallowWater_PK::VerifySolution_(TreeVector& u)
 double
 ShallowWater_PK::BathymetryEdgeValue(int e, const Epetra_MultiVector& B_n)
 {
-  AmanziMesh::Entity_ID_View nodes;
-  nodes = mesh_->getFaceNodes(e);
+  auto nodes = mesh_->getFaceNodes(e);
 
   return (B_n[0][nodes[0]] + B_n[0][nodes[1]]) / 2.0;
 }

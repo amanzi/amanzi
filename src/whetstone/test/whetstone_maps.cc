@@ -289,9 +289,9 @@ TEST(DG_MAP_VELOCITY_CELL)
 
   std::cout << "\nTest: Velocity reconstruction in 3D." << std::endl;
   auto comm = Amanzi::getDefaultComm();
-
-  // create two meshes
-  MeshFactory meshfactory(comm);
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList()); 
+  fac_list->set<bool>("request edges", true); 
+  MeshFactory meshfactory(comm, Teuchos::null, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh0 = meshfactory.create("test/cube_unit.exo");
   Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/cube_unit.exo");
@@ -299,7 +299,7 @@ TEST(DG_MAP_VELOCITY_CELL)
   // deform the second mesh
   int d(3), nnodes(8), nfaces(6), nedges(12);
   AmanziGeometry::Point xv(d), yv(d);
-  AmanziMesh::Entity_ID_View nodeids("nodeids", nnodes), edges, faces;
+  AmanziMesh::Entity_ID_View nodeids("nodeids", nnodes);
   AmanziMesh::Point_View new_positions("new_positions", nnodes), final_positions;
 
   // -- deformation function
@@ -334,12 +334,12 @@ TEST(DG_MAP_VELOCITY_CELL)
   auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
 
   std::vector<VectorPolynomial> ve(nedges);
-  edges = mesh0->getCellEdges(0);
+  auto edges = mesh0->getCellEdges(0);
   for (int n = 0; n < nedges; ++n) { maps->VelocityEdge(edges[n], ve[n]); }
 
   // -- on faces
   std::vector<VectorPolynomial> vf(nfaces);
-  faces = mesh0->getCellFaces(0);
+  auto faces = mesh0->getCellFaces(0);
   for (int n = 0; n < nfaces; ++n) { maps->VelocityFace(faces[n], vf[n]); }
 
   // -- in cell

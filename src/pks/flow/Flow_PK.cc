@@ -664,7 +664,6 @@ Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
   area_seepage += area_add;
 
   // mark missing boundary conditions as zero flux conditions
-  AmanziMesh::Entity_ID_View cells;
   missed_bc_faces_ = 0;
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] == Operators::OPERATOR_BC_NONE) {
@@ -811,13 +810,12 @@ void
 Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells,
                                         Epetra_MultiVector& ufaces)
 {
-  AmanziMesh::Entity_ID_View cells;
   auto& fmap = ufaces.Map();
 
   int nfaces = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   for (int f = 0; f < nfaces; f++) {
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::OWNED);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::OWNED);
     int ncells = cells.size();
 
     double face_value = 0.0;

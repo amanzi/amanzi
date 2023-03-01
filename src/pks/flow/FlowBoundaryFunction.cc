@@ -123,7 +123,6 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
     Exceptions::amanzi_throw(msg);
   }
 
-  AmanziMesh::Entity_ID_View nodes1, nodes2; 
   std::vector<AmanziMesh::Entity_ID> common_nodes;
 
   AmanziGeometry::Point p1(dim), p2(dim), p3(dim);
@@ -136,8 +135,11 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
     int f1 = ss_faces[i];
     auto cells = mesh->getFaceCells(f1, AmanziMesh::Parallel_kind::ALL);
 
-    nodes1 = mesh->getFaceNodes(f1);
-    std::sort(nodes1.begin(), nodes1.end());
+    auto nodes1 = mesh->getFaceNodes(f1);
+    AmanziMesh::Entity_ID_View lnodes1; 
+    lnodes1.fromConst(nodes1); 
+    std::sort(lnodes1.begin(), lnodes1.end());
+    nodes1 = lnodes1; 
 
     int c = cells[0];
     const auto& faces = mesh->getCellFaces(c);
@@ -150,8 +152,11 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
         cells = mesh->getFaceCells(f2, AmanziMesh::Parallel_kind::ALL);
         int ncells = cells.size();
         if (ncells == 1) {
-          nodes2 = mesh->getFaceNodes(f2);
-          std::sort(nodes2.begin(), nodes2.end());
+          auto nodes2 = mesh->getFaceNodes(f2);
+          AmanziMesh::Entity_ID_View lnodes2; 
+          lnodes2.fromConst(nodes2); 
+          std::sort(lnodes2.begin(), lnodes2.end());
+          nodes2 = lnodes2; 
           set_intersection_(nodes1, nodes2, common_nodes);
 
           int m = common_nodes.size();
@@ -282,8 +287,8 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
 * New implementation of the STL function.
 **************************************************************** */
 void
-FlowBoundaryFunction::set_intersection_(const AmanziMesh::Entity_ID_View& v1,
-                                        const AmanziMesh::Entity_ID_View& v2,
+FlowBoundaryFunction::set_intersection_(const AmanziMesh::cEntity_ID_View& v1,
+                                        const AmanziMesh::cEntity_ID_View& v2,
                                         std::vector<AmanziMesh::Entity_ID>& vv)
 {
   int i(0), j(0), n1, n2;

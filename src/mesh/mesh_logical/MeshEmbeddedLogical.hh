@@ -63,7 +63,7 @@ class MeshEmbeddedLogical : public MeshFramework {
   virtual bool hasNodes() const override { return false; }
 
   // Some meshes are logical meshes and do not have coordinate info.
-  virtual bool isLogical() const override { return false; }
+  virtual bool isLogical() const override { return true; }
 
   // Parent entity in the source mesh if mesh was derived from another mesh
   virtual
@@ -95,12 +95,12 @@ class MeshEmbeddedLogical : public MeshFramework {
   getNodeCoordinate(const Entity_ID node) const override;
 
   virtual void
-  getFaceNodes(const Entity_ID f, Entity_ID_View& nodes) const override;
+  getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) const override;
 
   virtual void
   getNodeFaces(const Entity_ID nodeid,
                const Parallel_kind ptype,
-               Entity_ID_View& faceids) const override;
+               cEntity_ID_View& faceids) const override;
 
 
   //
@@ -108,14 +108,14 @@ class MeshEmbeddedLogical : public MeshFramework {
   //
   virtual void getCellFacesAndDirs(
     const Entity_ID c,
-    Entity_ID_View& faces,
-    Entity_Direction_View * const dirs) const override;
+    cEntity_ID_View& faces,
+    cEntity_Direction_View * const dirs) const override;
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   virtual void getCellFacesAndBisectors(
           const Entity_ID cellid,
-          Entity_ID_View& faceids,
-          Point_View * const bisectors) const override;
+          cEntity_ID_View& faceids,
+          cPoint_View * const bisectors) const override;
 
   virtual double getCellVolume(const Entity_ID c) const override;
   virtual AmanziGeometry::Point getCellCentroid(const Entity_ID c) const override;
@@ -125,7 +125,7 @@ class MeshEmbeddedLogical : public MeshFramework {
   //
   virtual void getFaceCells(const Entity_ID f,
                             const Parallel_kind ptype,
-                            Entity_ID_View& cells) const override;
+                            cEntity_ID_View& cells) const override;
   virtual double getFaceArea(const Entity_ID f) const override;
   virtual AmanziGeometry::Point getFaceCentroid(const Entity_ID f) const override;
   virtual AmanziGeometry::Point getFaceNormal(const Entity_ID f,

@@ -27,10 +27,10 @@ public:
 
  protected:
   // helpers for doing the testing
-  bool areDistinctValues_(const AmanziMesh::Entity_ID_View& list) const;
+  bool areDistinctValues_(const AmanziMesh::cEntity_ID_View& list) const;
   void writeList_(const Entity_ID_List&) const;
   bool globalAny_(bool) const;
-  int isSameFace_(const AmanziMesh::Entity_ID_View, const AmanziMesh::Entity_ID_View) const;
+  int isSameFace_(const AmanziMesh::cEntity_ID_View, const AmanziMesh::cEntity_ID_View) const;
 
  protected:
   Teuchos::RCP<const Mesh_type> mesh_;

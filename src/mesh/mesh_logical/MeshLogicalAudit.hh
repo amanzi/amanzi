@@ -62,7 +62,7 @@ private:
   std::ostream& os;
   unsigned int MAX_OUT;
 
-  bool distinct_values(const AmanziMesh::Entity_ID_View& list) const;
+  bool distinct_values(const AmanziMesh::cEntity_ID_View& list) const;
   void write_list(const Entity_ID_List&, unsigned int) const;
   bool global_any(bool) const;
   int same_face(const AmanziMesh::Entity_ID_View, const AmanziMesh::Entity_ID_View) const;

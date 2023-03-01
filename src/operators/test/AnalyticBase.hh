@@ -227,14 +227,13 @@ AnalyticBase::ComputeNodeError(Epetra_MultiVector& p,
   Amanzi::WhetStone::MFD3D_Lagrange mfd(plist, mesh_);
 
   Amanzi::WhetStone::Polynomial poly(d_, 1);
-  Amanzi::AmanziMesh::Entity_ID_View nodes;
   int ncells =
     mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells; c++) {
     double volume = mesh_->getCellVolume(c);
 
-    nodes = mesh_->getCellNodes(c);
+    auto nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
     std::vector<Amanzi::WhetStone::Polynomial> cell_solution(nnodes);
 
@@ -299,7 +298,6 @@ AnalyticBase::ComputeEdgeError(Epetra_MultiVector& p,
 
   Amanzi::AmanziGeometry::Point grad(d_);
 
-  Amanzi::AmanziMesh::Entity_ID_View edges;
   Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
   int ncells =
     mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
@@ -307,7 +305,7 @@ AnalyticBase::ComputeEdgeError(Epetra_MultiVector& p,
   for (int c = 0; c < ncells; c++) {
     double volume = mesh_->getCellVolume(c);
 
-    edges = mesh_->getCellEdges(c);
+    auto edges = mesh_->getCellEdges(c);
     int nedges = edges.size();
     std::vector<double> cell_solution(nedges);
 
@@ -351,7 +349,6 @@ AnalyticBase::ComputeEdgeMomentsError(Epetra_MultiVector& p,
   Amanzi::AmanziMesh::Entity_ID n0, n1;
   Amanzi::AmanziGeometry::Point x0(d_), x1(d_), xv(d_);
 
-  Amanzi::AmanziMesh::Entity_ID_View edges;
   Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
   int ncells =
     mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
@@ -359,7 +356,7 @@ AnalyticBase::ComputeEdgeMomentsError(Epetra_MultiVector& p,
   for (int c = 0; c < ncells; c++) {
     double volume = mesh_->getCellVolume(c);
 
-    edges = mesh_->getCellEdges(c);
+    auto edges = mesh_->getCellEdges(c);
     int nedges = edges.size();
 
     for (int k = 0; k < nedges; k++) {
@@ -403,8 +400,7 @@ AnalyticBase::ComputeEdgeMomentsError(Epetra_MultiVector& p,
 inline Amanzi::AmanziGeometry::Point
 AnalyticBase::face_normal_exterior(int f, bool* flag)
 {
-  Amanzi::AmanziMesh::Entity_ID_View cells;
-  cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+  auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
   *flag = (cells.size() == 1);
 
   int dir;

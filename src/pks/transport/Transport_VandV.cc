@@ -84,8 +84,7 @@ Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
         for (int m = 0; m < nblock; m++) {
           int f = block[m];
 
-          Amanzi::AmanziMesh::Entity_ID_View cells;
-          cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+          auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
           int dir, c = cells[0];
 
           mesh_->getFaceNormal(f, c, &dir);

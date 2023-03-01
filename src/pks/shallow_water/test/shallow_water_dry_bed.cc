@@ -86,8 +86,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   for (int c = 0; c < ncells_wghost; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
 
-    Amanzi::AmanziMesh::Entity_ID_View cfaces;
-    cfaces = mesh->getCellFaces(c);
+    auto cfaces = mesh->getCellFaces(c);
     int nfaces_cell = cfaces.size();
 
     B_c[0][c] = 0.0;
@@ -97,8 +96,7 @@ dry_bed_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       Amanzi::AmanziGeometry::Point x0, x1;
       int edge = cfaces[f];
 
-      Amanzi::AmanziMesh::Entity_ID_View face_nodes;
-      face_nodes = mesh->getFaceNodes(edge);
+      auto face_nodes = mesh->getFaceNodes(edge);
       int n0 = face_nodes[0], n1 = face_nodes[1];
 
       x0 = mesh->getNodeCoordinate(n0);

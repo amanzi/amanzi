@@ -241,8 +241,6 @@ PDE_Accumulation::AddAccumulationDeltaNoVolume(const CompositeVector& u0,
 void
 PDE_Accumulation::CalculateEntityVolume_(CompositeVector& volume, const std::string& name)
 {
-  AmanziMesh::Entity_ID_View nodes, edges;
-
   if (name == "cell" && volume.HasComponent("cell")) {
     Epetra_MultiVector& vol = *volume.ViewComponent(name);
 
@@ -257,7 +255,7 @@ PDE_Accumulation::CalculateEntityVolume_(CompositeVector& volume, const std::str
     vol.PutScalar(0.0);
 
     for (int c = 0; c != ncells_owned; ++c) {
-      edges = mesh_->getCellEdges(c);
+      auto edges = mesh_->getCellEdges(c);
       int nedges = edges.size();
 
       for (int i = 0; i < nedges; i++) { vol[0][edges[i]] += mesh_->getCellVolume(c) / nedges; }
@@ -269,7 +267,7 @@ PDE_Accumulation::CalculateEntityVolume_(CompositeVector& volume, const std::str
     vol.PutScalar(0.0);
 
     for (int c = 0; c != ncells_owned; ++c) {
-      nodes = mesh_->getCellNodes(c);
+      auto nodes = mesh_->getCellNodes(c);
       int nnodes = nodes.size();
 
       double cellvolume = mesh_->getCellVolume(c);

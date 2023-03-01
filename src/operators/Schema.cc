@@ -126,8 +126,7 @@ Schema::ComputeOffset(int c,
     std::tie(kind, std::ignore, num) = *it;
 
     if (kind == AmanziMesh::Entity_kind::NODE) {
-      AmanziMesh::Entity_ID_View nodes;
-      nodes = mesh->getCellNodes(c);
+      auto nodes = mesh->getCellNodes(c);
       ndofs = nodes.size();
     } else if (kind == AmanziMesh::Entity_kind::EDGE) {
       const auto& edges = mesh->getCellEdges(c);

@@ -89,8 +89,7 @@ struct Problem {
     const Epetra_MultiVector& v_c = *v.ViewComponent("cell", true);
 
     for (int f = 0; f != nfaces; ++f) {
-      AmanziMesh::Entity_ID_View cells;
-      cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
       if (cells.size() == 2) {
         if (u_c[0][cells[0]] > u_c[0][cells[1]]) {
@@ -146,8 +145,7 @@ struct Problem {
       Epetra_MultiVector& kr1_v_f = *kr1_v->ViewComponent("face", false);
 
       for (int f = 0; f != nfaces; ++f) {
-        AmanziMesh::Entity_ID_View cells;
-        cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
         if (cells.size() == 2) {
           if (u_c[0][cells[0]] > u_c[0][cells[1]]) {

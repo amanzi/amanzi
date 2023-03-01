@@ -143,7 +143,7 @@ class MeshFrameworkColumn : public MeshFramework {
   // In 2D, nfnodes is 2
   virtual
   void getFaceNodes(const Entity_ID faceid,
-                    Entity_ID_View& nodeids) const override {
+                    cEntity_ID_View& nodeids) const override {
     col3D_mesh_->getFaceNodes(column_faces_(faceid), nodeids);
   }
 
@@ -156,7 +156,7 @@ class MeshFrameworkColumn : public MeshFramework {
   virtual
   void getNodeCells(const Entity_ID nodeid,
                     const Parallel_kind ptype,
-                    Entity_ID_View& cellids) const override {
+                    cEntity_ID_View& cellids) const override {
     col3D_mesh_->getNodeCells(nodeid, ptype, cellids);
   }
 
@@ -167,7 +167,7 @@ class MeshFrameworkColumn : public MeshFramework {
   virtual
   void getNodeFaces(const Entity_ID nodeid,
                     const Parallel_kind ptype,
-                    Entity_ID_View& faceids) const override {
+                    cEntity_ID_View& faceids) const override {
     Errors::Message mesg("Not implemented");
     Exceptions::amanzi_throw(mesg);
   }
@@ -187,28 +187,31 @@ class MeshFrameworkColumn : public MeshFramework {
   // cell_get_faces_and_dirs method of this class
   virtual
   void getCellFacesAndDirs(const Entity_ID cellid,
-                           Entity_ID_View& faceids,
-                           Entity_Direction_View * const face_dirs) const override
+                           cEntity_ID_View& faceids,
+                           cEntity_Direction_View * const face_dirs) const override
   {
-    Kokkos::resize(faceids,2); 
-    if (face_dirs) Kokkos::resize(*face_dirs,2);
+    Entity_ID_View lfaceids("lfaceids",2); 
+    Entity_Direction_View lface_dirs; 
+    if (face_dirs) Kokkos::resize(lface_dirs,2);
 
     // NOTE: the face directions with respect to the cell may be at
     // odds with how it is in the parent mesh but within this mesh its
     // consistent - so we think everything will work as it should
-    Entity_ID_View faceids_extracted;
-    Entity_Direction_View face_dirs_extracted;
+    cEntity_ID_View faceids_extracted;
+    cEntity_Direction_View face_dirs_extracted;
     col3D_mesh_->getCellFacesAndDirs(cellid, faceids_extracted,
             &face_dirs_extracted);
-
+            
     int count = 0;
     for (int i=0; i!=faceids_extracted.size(); ++i) {
       if (face_in_column_[faceids_extracted[i]] >= 0) {
-        faceids[count] = face_in_column_[faceids_extracted[i]];
-        if (face_dirs) (*face_dirs)[count] = face_dirs_extracted[i];
+        lfaceids[count] = face_in_column_[faceids_extracted[i]];
+        if (face_dirs) lface_dirs[count] = face_dirs_extracted[i];
         count++;
       }
     }
+    faceids = lfaceids; 
+    if(face_dirs) *face_dirs = lface_dirs; 
   }
 
   // Cells connected to a face - this function is implemented in each
@@ -216,7 +219,7 @@ class MeshFrameworkColumn : public MeshFramework {
   virtual
   void getFaceCells(const Entity_ID faceid,
                     const Parallel_kind ptype,
-                    Entity_ID_View& cellids) const override {
+                    cEntity_ID_View& cellids) const override {
     col3D_mesh_->getFaceCells(column_faces_(faceid), ptype, cellids);
   }
 
@@ -241,7 +244,7 @@ computeMeshColumnCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 {
   /* compute volume on the assumption that the top and bottom faces form
      a vertical columnar cell or in other words a polygonal prism */
-  Entity_ID_View cfaces;
+  cEntity_ID_View cfaces;
   mesh.getCellFaces(c, cfaces);
   AMANZI_ASSERT(cfaces.size() == 2);
   double farea = mesh.getFaceArea(cfaces[0]);

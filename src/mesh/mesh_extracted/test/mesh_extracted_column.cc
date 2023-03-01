@@ -55,6 +55,7 @@ TEST(COLUMN_MESH_3D)
     Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,
               lx,ly,lz, nx,ny,nz, comm,gm));
   auto mesh = Teuchos::rcp(new AmanziMesh::Mesh(mesh_fw));
+  AmanziMesh::MeshAlgorithms::cacheDefault(*mesh); 
   mesh->buildColumns();
 
   // Perturb the nodes above the base layer just a bit
@@ -97,14 +98,14 @@ TEST(COLUMN_MESH_3D)
   CHECK_EQUAL(20,nnodes);
 
   for (int j = 0; j < ncells; j++) {
-    AmanziMesh::Entity_ID_View cfaces;
-    AmanziMesh::Entity_Direction_View cfdirs;
+    AmanziMesh::cEntity_ID_View cfaces;
+    AmanziMesh::cEntity_Direction_View cfdirs;
     colmesh.getCellFacesAndDirs(j,cfaces,&cfdirs);
     CHECK_EQUAL(2,cfaces.size());
   }
 
   for (int j = 0; j < nfaces; j++) {
-    AmanziMesh::Entity_ID_View fcells;
+    AmanziMesh::cEntity_ID_View fcells;
     colmesh.getFaceCells(j,AmanziMesh::Parallel_kind::OWNED,fcells);
 
     if (j == 0) {
@@ -137,8 +138,7 @@ TEST(COLUMN_MESH_3D)
 
   // Make sure the normals of the faces are have only a Z component
   for (int j = 0; j < nfaces; j++) {
-    AmanziGeometry::Point normal(3);
-    normal = colmesh.getFaceNormal(j);
+    auto normal = colmesh.getFaceNormal(j);
     CHECK_CLOSE(0.0,normal[0],1.e-10);
     CHECK_CLOSE(0.0,normal[1],1.e-10);
     CHECK_CLOSE(1.0,fabs(normal[2]),1.e-10);
@@ -245,15 +245,15 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   CHECK_EQUAL(20,nnodes);
 
   for (int j = 0; j < ncells; j++) {
-    AmanziMesh::Entity_ID_View cfaces;
-    AmanziMesh::Entity_Direction_View cfdirs;
+    AmanziMesh::cEntity_ID_View cfaces;
+    AmanziMesh::cEntity_Direction_View cfdirs;
     colmesh.getCellFacesAndDirs(j,cfaces,&cfdirs);
 
     CHECK_EQUAL(2,cfaces.size());
   }
 
   for (int j = 0; j < nfaces; j++) {
-    AmanziMesh::Entity_ID_View fcells;
+    AmanziMesh::cEntity_ID_View fcells;
     colmesh.getFaceCells(j,AmanziMesh::Parallel_kind::OWNED,fcells);
 
     if (j == 0) {
@@ -317,7 +317,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   // base face times the distance between the centroids of the lower
   // face of the cell and the upper face of the cell
   for (int j = 0; j < ncells; j++) {
-    AmanziMesh::Entity_ID_View cfaces;
+    AmanziMesh::cEntity_ID_View cfaces;
     colmesh.getCellFaces(j,cfaces);
 
     AmanziGeometry::Point locen(3), hicen(3);

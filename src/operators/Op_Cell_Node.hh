@@ -63,11 +63,10 @@ class Op_Cell_Node : public Op {
   {
     if (scaling.HasComponent("node")) {
       const Epetra_MultiVector& s_n = *scaling.ViewComponent("node", true);
-      AmanziMesh::Entity_ID_View nodes;
 
       for (int c = 0; c != matrices.size(); ++c) {
         WhetStone::DenseMatrix& Acell = matrices[c];
-        nodes = mesh_->getCellNodes(c);
+        auto nodes = mesh_->getCellNodes(c);
 
         for (int n = 0; n != nodes.size(); ++n) {
           for (int m = 0; m != nodes.size(); ++m) { Acell(n, m) *= s_n[0][nodes[n]]; }
