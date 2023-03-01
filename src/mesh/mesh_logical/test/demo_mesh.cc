@@ -364,6 +364,7 @@ demoMeshLogicalYEmbedded() {
 
   Teuchos::RCP<MeshFramework> m_log_fw = demoMeshLogicalYManual();
   Teuchos::RCP<Mesh> m_log = Teuchos::rcp(new Mesh(m_log_fw));
+  AmanziMesh::MeshAlgorithms::cacheDefault(*m_log); 
 
   Point X0(-1.75, -1.75, -3.);
   Point X1(1.75, 1.75, 0.);

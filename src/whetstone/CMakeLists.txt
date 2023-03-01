@@ -156,7 +156,6 @@ if (BUILD_TESTS)
                                         test/whetstone_polynomials.cc
                                         test/whetstone_dg.cc
                                         test/whetstone_numi.cc
-                                        test/whetstone_high_order.cc
                                         test/whetstone_maps.cc
                                         test/whetstone_projectors.cc
                                         test/whetstone_high_order.cc

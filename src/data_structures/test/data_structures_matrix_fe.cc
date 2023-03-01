@@ -157,8 +157,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
     std::vector<int> mat_inds(5);
     std::vector<int> ctrl_inds(5);
 
-    auto indice = mat_inds[0]; 
-    ierr |= matrix.Matrix()->ExtractMyRowCopy(c, 5, nentries, &mat_vals[0], &indice);
+    ierr |= matrix.Matrix()->ExtractMyRowCopy(c, 5, nentries, &mat_vals[0], &mat_inds[0]);
     CHECK(!ierr);
     mat_vals.resize(nentries);
     mat_inds.resize(nentries);
@@ -220,11 +219,12 @@ TEST(FE_MATRIX_FACE_FACE)
     Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
 
   for (int c = 0; c != ncells; ++c) {
-    auto faces = mesh->getCellFaces(c);
+    auto cfaces = mesh->getCellFaces(c);
+    AmanziMesh::Entity_ID_View faces; 
+    faces.fromConst(cfaces); 
 
     for (int n = 0; n != faces.size(); ++n) {
-      auto indice = faces[0]; 
-      ierr |= graph->InsertMyIndices(faces[n], faces.size(), &indice);
+      ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
       CHECK(!ierr);
     }
   }
