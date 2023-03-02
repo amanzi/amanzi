@@ -628,7 +628,7 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   std::stringstream ss;
   ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/" 
-     << avg_itrs / ncells_total
+     << avg_itrs / std::max(ncells_owned_, 1)
      << ", maximum in gid=" << mesh_->GID(cmax, AmanziMesh::CELL) << std::endl;
   vo_->Write(Teuchos::VERB_HIGH, ss.str());
 
