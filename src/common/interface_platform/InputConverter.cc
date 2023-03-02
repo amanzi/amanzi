@@ -1149,7 +1149,7 @@ InputConverter::TimeCharToValue_(const char* time_value)
   char* tmp2 = strtok(tmp1, ";, ");
 
   time = std::strtod(tmp2, NULL);
-  tmp2 = strtok(NULL, ";,");
+  tmp2 = strtok(NULL, ";, ");
 
   // if units were found
   if (tmp2 != NULL) {

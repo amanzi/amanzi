@@ -155,7 +155,7 @@ Mini_Operator1D::Print(int n, const char* format)
     if (i > 0) printf(format, down_(i));
     printf(format, diag_(i));
     if (i < diag_.NumRows() - 1) printf(format, up_(i));
-    for (int j = i + 1; j < m; ++j) printf(format, zero);
+    for (int j = i + 2; j < m; ++j) printf(format, zero);
     printf("\n");
   }
 }
