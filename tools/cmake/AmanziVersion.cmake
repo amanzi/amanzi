@@ -106,7 +106,7 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
                   ERROR_STRIP_TRAILING_WHITESPACE)
 
   # Put the tags in a list
-  STRING(REPLACE "\n" ";" AMANZI_GIT_LATEST_TAG_LIST ${AMANZI_GIT_LATEST_TAG})
+  #STRING(REPLACE "\n" ";" AMANZI_GIT_LATEST_TAG_LIST ${AMANZI_GIT_LATEST_TAG})
   # Extract the lastest tag of the form amanzi-*
   IF ( ${AMANZI_GIT_BRANCH} MATCHES "master" )
     FOREACH(atag ${AMANZI_GIT_LATEST_TAG_LIST})
