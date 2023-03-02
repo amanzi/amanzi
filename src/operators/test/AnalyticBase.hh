@@ -179,12 +179,18 @@ AnalyticBase::ComputeFaceError(Epetra_MultiVector& u,
 
   int nfaces =
     mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
+
   for (int f = 0; f < nfaces; f++) {
+    // we need the cell-based normal for this utility to work on manifolds
+    const auto& cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+
+    int dir;
     double area = mesh_->getFaceArea(f);
-    const Amanzi::AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
-    const Amanzi::AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
-    const Amanzi::AmanziGeometry::Point& velocity = velocity_exact(xf, t);
-    double tmp = velocity * normal;
+    const auto& xf = mesh_->getFaceCentroid(f);
+    const auto& normal = mesh_->getFaceNormal(f, cells[0], &dir);
+
+    const auto& velocity = velocity_exact(xf, t);
+    double tmp = (velocity * normal) * dir;
 
     l2_err += std::pow((tmp - u[0][f]) / area, 2.0);
     inf_err = std::max(inf_err, fabs(tmp - u[0][f]) / area);
