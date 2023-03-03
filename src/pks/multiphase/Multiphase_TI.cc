@@ -54,7 +54,8 @@ Multiphase_PK::FunctionalResidual(double t_old,
   S_->GetEvaluator(pressure_gas_key_).Update(*S_, passwd_);
   auto pg = S_->GetPtrW<CompositeVector>(pressure_gas_key_, Tags::DEFAULT, pressure_gas_key_);
 
-  // -- molar densities
+  // -- mass and molar densities
+  S_->GetEvaluator(mass_density_gas_key_).Update(*S_, passwd_);
   S_->GetEvaluator(mol_density_gas_key_).Update(*S_, passwd_);
   S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
 
@@ -273,7 +274,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
         fname = eqns_[row].advection[phase].first;
         gname = eqns_[row].advection[phase].second;
 
-        // -- diffusion operator div[ (K f dg/dv) grad dv ]
+        // -- diffusion operator div[ K f grad((dg/dv) dv) ]
         //    BCs are defined by the equation and must be imposed only once
         //    using either the total flux or Dirichlet
         if (fname != "") {
@@ -281,55 +282,29 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             auto pde = fac_diffK_->Create(global_op);
 
             S_->GetEvaluator(fname).Update(*S_, passwd_);
-            const auto& coef_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
+            kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
 
-            if (gname == keyc) {
-              der_c = &*fone_c;
-            } else {
-              S_->GetEvaluator(gname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
-              der_c =
-                &*S_->GetDerivative<CompositeVector>(gname, Tags::DEFAULT, keyc, Tags::DEFAULT)
-                    .ViewComponent("cell");
-            }
-
-            for (int c = 0; c < ncells_owned_; ++c) { kr_c[0][c] = (*der_c)[0][c] * coef_c[0][c]; }
             auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
             upwind_->Compute(flux, bcnone, *kr);
 
             pde->Setup(Kptr, kr, Teuchos::null);
             pde->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
             pde->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+            if (gname != keyc) {
+              S_->GetEvaluator(gname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
+              const auto& der_c = S_->GetDerivative<CompositeVector>(
+                gname, Tags::DEFAULT, keyc, Tags::DEFAULT);
+
+              pde->ScaleMatricesColumns(der_c);
+            }
+
             pde->ApplyBCs(false, false, false);
 
             double factor = eqns_[row].adv_factors[phase];
             if (factor != 1.0) pde->local_op()->Rescale(factor);
           }
         }
-
-        // -- advection operator div[ (K f grad dg/dv) dv ]
-        /*
-        if (fname != "") {
-          if (gname != keyc && S_->HasDerivative(gname, keyc)) {
-            // --- upwind gas molar mobility times molar fraction
-            S_->GetEvaluator(fname).Update(*S_, passwd_);
-            kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
-            auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
-            upwind_->Compute(flux, bcnone, *kr);
-
-            // --- calculate advective flux
-            S_->GetEvaluator(gname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
-            auto tmp = S_->GetDerivativePtr<CompositeVector>(gname, Tags::DEFAULT, keyc, Tags::DEFAULT);
-
-            pde_diff_K_->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);  // FIXME
-            pde_diff_K_->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
-            pde_diff_K_->UpdateMatrices(Teuchos::null, Teuchos::null);
-            pde_diff_K_->UpdateFlux(tmp.ptr(), flux_tmp.ptr());
-
-            double factor = eqns_[row].adv_factors[phase];
-            flux_acc->Update(factor, *flux_tmp, 1.0);
-          }
-        }
-        */
 
         // -- advection operator div [ (K df/dv grad g) dv ]
         if (fname != "") {
@@ -364,61 +339,35 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
         fname = eqns_[row].diffusion[phase].first;
         gname = eqns_[row].diffusion[phase].second;
 
-        // -- diffusion operator div [ (f dg/dv) grad dv ]
+        // -- diffusion operator div [ f grad((dg/dv) dv) ]
         if (fname != "") {
           if (S_->HasDerivative(gname, keyc) || gname == keyc) {
             auto pde = fac_diffD_->Create(global_op);
 
-            if (gname == keyc) {
-              der_c = &*fone_c;
-            } else {
-              S_->GetEvaluator(gname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
-              der_c =
-                &*S_->GetDerivative<CompositeVector>(gname, Tags::DEFAULT, keyc, Tags::DEFAULT)
-                    .ViewComponent("cell");
-            }
-
             S_->GetEvaluator(fname).Update(*S_, passwd_);
-            const auto& coef_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
+            kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
 
-            for (int c = 0; c < ncells_owned_; ++c) { kr_c[0][c] = (*der_c)[0][c] * coef_c[0][c]; }
             auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
             upwind_->Compute(flux, bcnone, *kr);
 
             pde->Setup(Teuchos::null, kr, Teuchos::null);
             pde->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
             pde->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+            if (gname != keyc) {
+              S_->GetEvaluator(gname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
+              const auto& der_c = S_->GetDerivative<CompositeVector>(
+                gname, Tags::DEFAULT, keyc, Tags::DEFAULT);
+
+              pde->ScaleMatricesColumns(der_c);
+            }
+
             pde->ApplyBCs(false, false, false);
 
             double factor = eqns_[row].diff_factors[phase];
             if (factor != 1.0) pde->local_op()->Rescale(factor);
           }
         }
-
-        // -- advection operator div[ (f grad dg/dv) dv ]
-        /*
-        if (fname != "") {
-          if (gname != keyc && S_->HasDerivative(gname, keyc)) {
-            // --- calculate diffusion coefficient
-            S_->GetEvaluator(fname).Update(*S_, passwd_);
-            kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
-            auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
-            upwind_->Compute(flux, bcnone, *kr);
-
-            S_->GetEvaluator(gname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
-            auto tmp = S_->GetDerivativePtr<CompositeVector>(gname, Tags::DEFAULT, keyc, Tags::DEFAULT);
-
-            // --- calculate advective flux
-            pde_diff_D_->Setup(Teuchos::null, kr, Teuchos::null);
-            pde_diff_D_->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
-            pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);
-            pde_diff_D_->UpdateFlux(tmp.ptr(), flux_tmp.ptr());
-
-            double factor = eqns_[row].diff_factors[phase];
-            flux_acc->Update(factor, *flux_tmp, 1.0);
-          }
-        }
-        */
 
         // -- advection operator div [ (df/dv grad g) dv ]
         if (fname != "" && keyc == saturation_liquid_key_) {

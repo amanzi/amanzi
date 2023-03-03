@@ -107,6 +107,7 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
   virtual void ModifyMatrices(const CompositeVector& u) override{};
   virtual void ScaleMassMatrices(double s) override{};
+  virtual void ScaleMatricesColumns(const CompositeVector& s) override;
 
   // Developments
   // -- interface to solvers for treating nonlinear BCs.

@@ -114,6 +114,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   // -- matrix modifications
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
   virtual void ScaleMassMatrices(double s) = 0;
+  virtual void ScaleMatricesColumns(const CompositeVector& s) = 0;
 
   // default implementation
   virtual void Setup(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K,

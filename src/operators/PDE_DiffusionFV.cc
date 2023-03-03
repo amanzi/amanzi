@@ -363,6 +363,32 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
 
 
 /* ******************************************************************
+* Scale face-based matrices.
+****************************************************************** */
+void
+PDE_DiffusionFV::ScaleMatricesColumns(const CompositeVector& s)
+{
+  AmanziMesh::Entity_ID_List cells;
+
+  const auto& s_c = *s.ViewComponent("cell");
+
+  for (int f = 0; f < nfaces_owned; ++f) {
+    WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
+
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+
+    for (int n = 0; n < ncells; ++n) {
+      double factor = s_c[0][cells[n]];
+      for (int m = 0; m < ncells; ++m) {
+        Aface(m, n) *= factor;
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Computation the part of the Jacobian which depends on derivatives
 * of the relative permeability wrt to capillary pressure. They must
 * be added to the existing matrix structure.

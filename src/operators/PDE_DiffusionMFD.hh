@@ -136,8 +136,9 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   // -- by breaking p-lambda coupling.
   virtual void ModifyMatrices(const CompositeVector& u) override;
 
-  // -- by rescaling mass matrices.
+  // -- by rescaling mass and stiffness matrices.
   virtual void ScaleMassMatrices(double s) override;
+  virtual void ScaleMatricesColumns(const CompositeVector& s) override{};
 
   // main virtual members after solving the problem
   // -- calculate the flux variable.

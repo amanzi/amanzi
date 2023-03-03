@@ -889,9 +889,7 @@ Multiphase_PK::InitializeFieldFromField_(const std::string& field0,
 
 
 /* *******************************************************************
-* Performs one time step from time t_old to time t_new either for
-* steady-state or transient simulation. If reinit=true, enforce
-* p-lambda constraints.
+* Performs one time step from time t_old to time t_new.
 ******************************************************************* */
 bool
 Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
