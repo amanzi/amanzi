@@ -265,6 +265,7 @@ Multiphase_PK::Setup()
     auto elist = MyRequire_(pressure_gas_key_, pressure_gas_key_);
     elist.set<std::string>("pressure liquid key", pressure_liquid_key_)
       .set<std::string>("saturation liquid key", saturation_liquid_key_);
+    // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
     auto eval = Teuchos::rcp(new PressureGasEvaluator(elist, wrm_));
     S_->SetEvaluator(pressure_gas_key_, Tags::DEFAULT, eval);
@@ -1011,27 +1012,30 @@ Multiphase_PK::ModifyCorrection(double h,
                                 Teuchos::RCP<const TreeVector> u,
                                 Teuchos::RCP<TreeVector> du)
 {
-  // clip molar density to range [0; +\infty]
-  const auto& u1c = *u->SubVector(1)->Data()->ViewComponent("cell");
-  auto& du1c = *du->SubVector(1)->Data()->ViewComponent("cell");
+  int nnames = soln_names_.size();
 
-  for (int i = 0; i < u1c.NumVectors(); ++i) {
-    for (int c = 0; c < ncells_owned_; ++c) {
-      du1c[i][c] = std::min(du1c[i][c], u1c[i][c]);
-      // du1c[i][c] = std::max(du1c[i][c], u1c[i][c] - 1.0);
+  for (int i = 0; i < nnames; ++i) {
+    auto name = soln_names_[i];
+
+    const auto& uc = *u->SubVector(i)->Data()->ViewComponent("cell");
+    auto& duc = *du->SubVector(i)->Data()->ViewComponent("cell");
+
+    // clip molar density to range [0; +\infty]
+    if (name == mol_density_liquid_key_) {
+      for (int i = 0; i < uc.NumVectors(); ++i) {
+        for (int c = 0; c < ncells_owned_; ++c) {
+          duc[i][c] = std::min(duc[i][c], uc[i][c]);
+        }
+      }
+
+    // clip saturation (residual saturation is missing, FIXME)
+    } else if (name == saturation_liquid_key_) {
+      for (int c = 0; c < ncells_owned_; ++c) {
+        duc[0][c] = std::min(duc[0][c], uc[0][c]);
+        duc[0][c] = std::max(duc[0][c], uc[0][c] - 1.0);
+      }
     }
   }
-
-  // clip saturation (residual saturation is missing, FIXME)
-  /*
-  const auto& u2c = *u->SubVector(2)->Data()->ViewComponent("cell");
-  auto& du2c = *du->SubVector(2)->Data()->ViewComponent("cell");
-
-  for (int c = 0; c < ncells_owned_; ++c) {
-    du2c[0][c] = std::min(du2c[0][c], u2c[0][c]);
-    du2c[0][c] = std::max(du2c[0][c], u2c[0][c] - 1.0);
-  }
-  */
 
   return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
 }

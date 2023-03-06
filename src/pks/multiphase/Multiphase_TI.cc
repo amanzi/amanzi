@@ -470,6 +470,11 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
       pde->AddAccumulationTerm(*fone, "cell");
     }
   }
+// op_preconditioner_->SymbolicAssembleMatrix();
+// op_preconditioner_->AssembleMatrix();
+// auto J = FiniteDifferenceJacobian_(tp - dtp, tp, u, u, 1e-6);
+// std::cout << J << std::endl;
+// std::cout << *op_preconditioner_->A() << std::endl; exit(0); 
 
   // finalize preconditioner
   if (!op_pc_assembled_) {
@@ -487,7 +492,6 @@ int
 Multiphase_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
-  // *Y = *X; return 0;
   // return op_preconditioner_->ApplyInverse(*X, *Y);
   int ok = op_pc_solver_->ApplyInverse(*X, *Y);
   return ok;
@@ -535,7 +539,7 @@ Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const Tr
       auto& dxc = *du->SubVector(i)->Data()->ViewComponent("cell");
       int n = dxc.NumVectors();
 
-      double floor(1e-20);
+      double floor(1e-10);
       for (int c = 0; c < ncells_owned_; c++) {
         for (int k = 0; k < n; ++k) {
           error_tmp = std::max(error_tmp, fabs(dxc[k][c]) / (xc[k][c] + floor));
@@ -557,6 +561,57 @@ Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const Tr
 #endif
 
   return error;
+}
+
+
+/* ******************************************************************
+* Debug tools
+****************************************************************** */
+WhetStone::DenseMatrix
+Multiphase_PK::FiniteDifferenceJacobian_(double t_old,
+                                         double t_new,
+                                         Teuchos::RCP<const TreeVector> u_old,
+                                         Teuchos::RCP<const TreeVector> u_new,
+                                         double eps)
+{
+  auto f0 = Teuchos::rcp(new TreeVector(*u_old));
+  auto f1 = Teuchos::rcp(new TreeVector(*u_old));
+  auto u0 = Teuchos::rcp(new TreeVector(*u_old));
+  auto u1 = Teuchos::rcp_const_cast<TreeVector>(u_new);
+
+  int nJ = 3 * ncells_owned_;
+  WhetStone::DenseMatrix J(nJ, nJ);
+
+  J.PutScalar(0.0);
+  FunctionalResidual(t_old, t_new, u0, u1, f0);
+
+  for (int ncol = 0; ncol < nJ; ++ncol) {
+  // for (int ncol = 102; ncol < 103; ++ncol) {
+    int n = ncol / ncells_owned_;
+    int c = ncol % ncells_owned_;
+
+    ChangedSolution();
+
+    auto& u1_c = *u1->SubVector(n)->Data()->ViewComponent("cell");
+    double factor = eps * u1_c[0][c];
+    if (n == 2) factor = -eps;
+    if (factor == 0.0) continue;
+
+    u1_c[0][c] += factor;
+    FunctionalResidual(t_old, t_new, u0, u1, f1);
+    f1->Update(-1.0 / factor, *f0, 1.0 / factor);
+    u1_c[0][c] -= factor;
+
+    for (int nrow = 0; nrow < nJ; ++nrow) {
+      int m = nrow / ncells_owned_;
+      int i = nrow % ncells_owned_;
+
+      auto& f1_c = *f1->SubVector(m)->Data()->ViewComponent("cell");
+      J(nrow, ncol) = f1_c[0][i];
+    }
+  }
+
+  return J;
 }
 
 } // namespace Multiphase

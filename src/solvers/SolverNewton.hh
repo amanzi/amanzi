@@ -305,7 +305,8 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
       // If it does not recover quickly, abort.
       if (divergence_count == max_divergence_count_) {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-          *vo_->os() << "Solver is diverging repeatedly, FAIL." << std::endl;
+          *vo_->os() << "Solver is diverging repeatedly: ||du||=" << du_norm 
+                     << ", ||du_prev||=" << previous_du_norm << std::endl;
         return SOLVER_DIVERGING;
       }
     } else {
