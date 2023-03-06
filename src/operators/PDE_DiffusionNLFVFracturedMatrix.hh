@@ -11,12 +11,12 @@
 /*
   Operators
 
-  PDE_DiffusionNLFVwithBndFaces implements the PDE_Diffusion interface
-  using nonlinear finite volumes.
+  This implements the PDE_DiffusionNLFV interface for fracture matrix.
+  Two DOFS on each fracture face are used.
 */
 
-#ifndef AMANZI_OPERATOR_PDE_DIFFUSION_NLFVwithBndFaces_HH_
-#define AMANZI_OPERATOR_PDE_DIFFUSION_NLFVwithBndFaces_HH_
+#ifndef AMANZI_OPERATOR_PDE_DIFFUSION_NLFV_FRACTURED_MATRIX_HH_
+#define AMANZI_OPERATOR_PDE_DIFFUSION_NLFV_FRACTURED_MATRIX_HH_
 
 #include <string>
 #include <vector>
@@ -31,36 +31,42 @@
 #include "DenseMatrix.hh"
 #include "Preconditioner.hh"
 
-#include "PDE_Diffusion.hh"
+#include "PDE_DiffusionNLFV.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 class BCs;
 
-class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
+class PDE_DiffusionNLFVFracturedMatrix : public PDE_DiffusionNLFV {
  public:
-  PDE_DiffusionNLFVwithBndFaces(Teuchos::ParameterList& plist,
-                                const Teuchos::RCP<Operator>& global_op)
-    : PDE_Diffusion(global_op), stencil_initialized_(false)
+  PDE_DiffusionNLFVFracturedMatrix(Teuchos::ParameterList& plist,
+                                   const Teuchos::RCP<Operator>& global_op)
+    : PDE_DiffusionNLFV(plist, global_op),
+      PDE_Diffusion(global_op),
+      stencil_initialized_(false)
   {
-    pde_type_ = PDE_DIFFUSION_NLFV_BNDFACES;
+    pde_type_ = PDE_DIFFUSION_NLFV_FRACTURED_MATRIX;
     Init_(plist);
   }
 
-  PDE_DiffusionNLFVwithBndFaces(Teuchos::ParameterList& plist,
-                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : PDE_Diffusion(mesh), stencil_initialized_(false)
+  PDE_DiffusionNLFVFracturedMatrix(Teuchos::ParameterList& plist,
+                                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : PDE_DiffusionNLFV(plist, mesh),
+      PDE_Diffusion(mesh),
+      stencil_initialized_(false)
   {
-    pde_type_ = PDE_DIFFUSION_NLFV_BNDFACES;
+    pde_type_ = PDE_DIFFUSION_NLFV_FRACTURED_MATRIX;
     Init_(plist);
   }
 
-  PDE_DiffusionNLFVwithBndFaces(Teuchos::ParameterList& plist,
-                                const Teuchos::RCP<AmanziMesh::Mesh>& mesh)
-    : PDE_Diffusion(mesh), stencil_initialized_(false)
+  PDE_DiffusionNLFVFracturedMatrix(Teuchos::ParameterList& plist,
+                                   const Teuchos::RCP<AmanziMesh::Mesh>& mesh)
+    : PDE_DiffusionNLFV(plist, mesh),
+      PDE_Diffusion(mesh),
+      stencil_initialized_(false)
   {
-    pde_type_ = PDE_DIFFUSION_NLFV_BNDFACES;
+    pde_type_ = PDE_DIFFUSION_NLFV_FRACTURED_MATRIX;
     Init_(plist);
   }
 

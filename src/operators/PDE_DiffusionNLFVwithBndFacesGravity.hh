@@ -47,7 +47,7 @@ class PDE_DiffusionNLFVwithBndFacesGravity : public PDE_DiffusionNLFVwithBndFace
       PDE_DiffusionNLFVwithBndFaces(plist, global_op),
       PDE_DiffusionWithGravity(global_op)
   {
-    pde_type_ = PDE_DIFFUSION_NLFVFACES_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_NLFV_BNDFACES_GRAVITY;
     SetGravity(g);
     SetDensity(rho);
   }
@@ -58,7 +58,7 @@ class PDE_DiffusionNLFVwithBndFacesGravity : public PDE_DiffusionNLFVwithBndFace
       PDE_DiffusionNLFVwithBndFaces(plist, global_op),
       PDE_DiffusionWithGravity(global_op)
   {
-    pde_type_ = PDE_DIFFUSION_NLFVFACES_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_NLFV_BNDFACES_GRAVITY;
   }
 
   PDE_DiffusionNLFVwithBndFacesGravity(Teuchos::ParameterList& plist,
@@ -69,7 +69,7 @@ class PDE_DiffusionNLFVwithBndFacesGravity : public PDE_DiffusionNLFVwithBndFace
       PDE_DiffusionNLFVwithBndFaces(plist, mesh),
       PDE_DiffusionWithGravity(mesh)
   {
-    pde_type_ = PDE_DIFFUSION_NLFVFACES_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_NLFV_BNDFACES_GRAVITY;
     SetGravity(g);
     SetDensity(rho);
   }
@@ -80,7 +80,7 @@ class PDE_DiffusionNLFVwithBndFacesGravity : public PDE_DiffusionNLFVwithBndFace
       PDE_DiffusionNLFVwithBndFaces(plist, mesh),
       PDE_DiffusionWithGravity(mesh)
   {
-    pde_type_ = PDE_DIFFUSION_NLFVFACES_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_NLFV_BNDFACES_GRAVITY;
   }
 
   PDE_DiffusionNLFVwithBndFacesGravity(Teuchos::ParameterList& plist,
@@ -91,7 +91,7 @@ class PDE_DiffusionNLFVwithBndFacesGravity : public PDE_DiffusionNLFVwithBndFace
       PDE_DiffusionNLFVwithBndFaces(plist, mesh),
       PDE_DiffusionWithGravity(mesh)
   {
-    pde_type_ = PDE_DIFFUSION_NLFVFACES_GRAVITY;
+    pde_type_ = PDE_DIFFUSION_NLFV_BNDFACES_GRAVITY;
     SetGravity(g);
     SetDensity(rho);
   }

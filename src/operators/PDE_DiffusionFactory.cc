@@ -26,6 +26,7 @@
 #include "PDE_DiffusionMFD.hh"
 #include "PDE_DiffusionMFDwithGravity.hh"
 #include "PDE_DiffusionNLFV.hh"
+#include "PDE_DiffusionNLFVFracturedMatrix.hh"
 #include "PDE_DiffusionNLFVwithBndFaces.hh"
 #include "PDE_DiffusionNLFVwithBndFacesGravity.hh"
 #include "PDE_DiffusionNLFVwithGravity.hh"
@@ -111,7 +112,7 @@ PDE_DiffusionFactory::Create(const Teuchos::RCP<Operator>& global_op)
     } else if (name == "fv: default" && gravity_) {
       op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist_, mesh_, g_));
 
-      // NLFV methods
+    // NLFV methods
     } else if (name == "nlfv: default" && !gravity_) {
       op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist_, mesh_));
     } else if (name == "nlfv: default" && gravity_) {
@@ -121,13 +122,17 @@ PDE_DiffusionFactory::Create(const Teuchos::RCP<Operator>& global_op)
     } else if (name == "nlfv: bnd_faces" && gravity_) {
       op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist_, mesh_));
 
-      // MFD methods with non-uniform DOFs
+    // NLFV methods with non-uniform DOFs
+    } else if (name == "nlfv: default" && fractured_matrix && !gravity_) {
+      op = Teuchos::rcp(new PDE_DiffusionNLFVFracturedMatrix(oplist_, mesh_));
+
+    // MFD methods with non-uniform DOFs
     } else if (fractured_matrix) {
       auto op_tmp = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist_, mesh_, const_b_, g_));
       op_tmp->Init(oplist_);
       op = op_tmp;
 
-      // MFD methods
+    // MFD methods
     } else if (!gravity_) {
       auto op_tmp = Teuchos::rcp(new PDE_DiffusionMFD(oplist_, mesh_));
       op_tmp->Init(oplist_);

@@ -159,16 +159,16 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
 
   // instantiate variables to access supporting tools
   WhetStone::NLFV nlfv(mesh_);
-  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
   // distribute diffusion tensor
   WhetStone::DenseVector data(dim_ * dim_);
+  WhetStone::Tensor Kc(dim_, 1);
+  Kc(0, 0) = 1.0;
+
   for (int c = 0; c < ncells_owned; ++c) {
     if (K_ != Teuchos::null) {
       WhetStone::TensorToVector((*K_)[c], data);
     } else {
-      WhetStone::Tensor Kc(dim_, 1);
-      Kc(0, 0) = 1.0;
       WhetStone::TensorToVector(Kc, data);
     }
 
@@ -323,7 +323,6 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
     pp.CopyMasterFace2GhostFace(*stencil_cells_[i]);
   }
 
-
   stencil_initialized_ = true;
 }
 
@@ -430,8 +429,6 @@ PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(const Teuchos::Ptr<const Composite
         matrix[1][f] += kf * ntpfa2;
         flux_data[0][f] = kf * ntpfa1;
         flux_data[dim_][f] = kf * ntpfa2;
-
-        //}
       }
 
       // remaining terms of one-sided flux in cell c. Now we need
