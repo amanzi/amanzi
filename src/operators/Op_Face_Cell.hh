@@ -75,11 +75,11 @@ class Op_Face_Cell : public Op {
       AmanziMesh::Entity_ID_List cells;
       for (int f = 0; f != matrices.size(); ++f) {
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-        matrices[f](0, 0) *= s_c[0][cells[0]];
-        if (cells.size() > 1) {
-          matrices[f](0, 1) *= s_c[0][cells[1]];
-          matrices[f](1, 0) *= s_c[0][cells[0]];
-          matrices[f](1, 1) *= s_c[0][cells[1]];
+        int ncells = cells.size();
+        for (int i = 0; i < ncells; ++i) {
+          for (int j = 0; j < ncells; ++j) {
+            matrices[f](i, j) *= s_c[0][cells[j]];
+          }
         }
       }
     }

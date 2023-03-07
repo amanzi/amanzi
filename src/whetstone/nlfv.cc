@@ -67,6 +67,48 @@ NLFV::HarmonicAveragingPoint(int f,
 
 
 /* ******************************************************************
+* A harmonic averaging point (HAP) is a unique point on a line in 3D
+* seprating two cells where (a) continuity conditions are satisfied
+* for continuous piecewise linear pressure functions and (b) pressure
+* value is a convex combination of cell-based pressures:
+*
+*   p = Sum_i w_i p_i   where   Sum_i w_i = 1.
+*
+* Input: face f, cells sharing this face, and permeabilities Tf.
+* Output: The HAP p and weights w_i.
+****************************************************************** */
+void
+NLFV::HarmonicAveragingPoint(int f,
+                             std::vector<int>& cells,
+                             std::vector<double>& Tf,
+                             AmanziGeometry::Point& p,
+                             std::vector<double>& weights)
+{
+  int dir;
+  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+  double area = mesh_->face_area(f);
+
+  p.set(0.0);
+
+  int ncells = cells.size();
+  for (int i = 0; i < ncells; ++i) {
+    int c = cells[i];
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+    double d = ((xf - xc) * normal) / area;
+
+    weights[i] = Tf[i] / d;
+    p += (xc + normal * (d / area)) * weights[i];
+  }
+
+  double sum(0.0);
+  for (int i = 0; i < ncells; ++i) sum += weights[i];
+  for (int i = 0; i < ncells; ++i) weights[i] /= sum;
+  p /= sum;
+}
+
+
+/* ******************************************************************
 * Decomposion: conormal = w1 * tau[i1] + w2 * tau[i2] + w3 * tau[i3],
 * where the weights ws = (w1, w2, w3) are non-negative.
 ****************************************************************** */
@@ -165,6 +207,73 @@ NLFV::PositiveDecomposition(int id1,
     }
   }
 
+  return ierr;
+}
+
+
+/* ******************************************************************
+* Decomposion conormal = w1 * tau[i1] + w2 * tau[i2] with 
+* non-negative weights ws = (w1, w2).
+****************************************************************** */
+int
+NLFV::PositiveDecompositionManifold(int id1,
+                                    const std::vector<AmanziGeometry::Point>& tau,
+                                    const AmanziGeometry::Point& conormal,
+                                    double* ws,
+                                    int* ids)
+{
+  int ierr(1);
+  int d = conormal.dim();
+  int ntau = tau.size();
+
+  // default is the TPFA stencil
+  double c1 = norm(tau[id1]);
+  double c2 = norm(conormal);
+
+  ids[0] = id1;
+  ws[0] = c2 / c1;
+  for (int k = 1; k < d; k++) {
+    ids[k] = (id1 + k) % ntau;
+    ws[k] = 0.0;
+  }
+
+  // Check that the first direction is sufficient.
+  double cs = (conormal * tau[id1]) / (c1 * c2);
+  if (fabs(cs - 1.0) < WHETSTONE_TOLERANCE_DECOMPOSITION) return 0;
+
+  // Find the other directions
+  Tensor T(d, 2);
+  double det(0.0);
+
+  // addition column is normal to the manifold and gives zero weight which we ignore
+  T.SetColumn(2, tau[0]^tau[1]);
+
+  for (int i = 0; i < ntau; i++) {
+    if (i == id1) continue;
+
+    T.SetColumn(0, tau[id1]);
+    T.SetColumn(1, tau[i]);
+
+    // We skip almost colinear pairs.
+    c2 = norm(tau[i]);
+    double tmp = fabs(T.Det()) / (c1 * c2);
+    if (tmp < WHETSTONE_TOLERANCE_DECOMPOSITION) continue;
+
+    T.Inverse();
+    AmanziGeometry::Point p = T * conormal;
+
+    // We look for the strongest pair of vectors and try to
+    // avoid degenerate cases to improve robustness.
+    if (p[0] >= 0.0 && p[1] >= -WHETSTONE_TOLERANCE_DECOMPOSITION) {
+      if (tmp > det) {
+        det = tmp;
+        ws[0] = p[0];
+        ws[1] = fabs(p[1]);
+        ids[1] = i;
+        ierr = 0;
+      }
+    }
+  }
   return ierr;
 }
 

@@ -111,7 +111,7 @@ set(operators_inc_files
     PDE_DiffusionFVonManifolds.hh
     PDE_DiffusionFVwithGravity.hh
     PDE_DiffusionNLFV.hh
-    PDE_DiffusionNLFVFracturedMatrix.hh
+    PDE_DiffusionNLFVonManifolds.hh
     PDE_DiffusionNLFVwithBndFaces.hh
     PDE_DiffusionNLFVwithGravity.hh
     PDE_DiffusionDG.hh
@@ -175,6 +175,7 @@ set(operators_src_files
   PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
   PDE_DiffusionFVonManifolds.cc
   PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
+  PDE_DiffusionNLFVonManifolds.cc
   PDE_DiffusionNLFVwithBndFaces.cc PDE_DiffusionNLFVwithBndFacesGravity.cc
   PDE_DiffusionDG.cc
   PDE_DiffusionFracturedMatrix.cc

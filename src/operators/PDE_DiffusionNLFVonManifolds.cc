@@ -17,115 +17,18 @@
 
 // Amanzi
 #include "Mesh_Algorithms.hh"
+#include "MeshFactory.hh"
 #include "nlfv.hh"
 #include "ParallelCommunication.hh"
 
 #include "Op_Face_Cell.hh"
 #include "OperatorDefs.hh"
 #include "Operator_Cell.hh"
-#include "PDE_DiffusionNLFV.hh"
+#include "PDE_DiffusionNLFVonManifolds.hh"
 #include "UniqueLocalIndex.hh"
 
 namespace Amanzi {
 namespace Operators {
-
-/* ******************************************************************
-* Initialization
-****************************************************************** */
-void
-PDE_DiffusionNLFV::Init_(Teuchos::ParameterList& plist)
-{
-  // Define stencil for the FV diffusion method.
-  local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
-
-  // create or check the existing Operator
-  if (global_op_ == Teuchos::null) {
-    // constructor was given a mesh
-    global_op_schema_ = OPERATOR_SCHEMA_DOFS_CELL;
-
-    // build the CVS from the global schema
-    Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh_)->SetGhosted(true);
-    cvs->AddComponent("cell", AmanziMesh::CELL, 1);
-
-    global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, global_op_schema_));
-
-  } else {
-    // constructor was given an Operator
-    global_op_schema_ = global_op_->schema();
-    mesh_ = global_op_->DomainMap().Mesh();
-  }
-
-  // create the local Op and register it with the global Operator
-  std::string name = "Diffusion: FACE_CELL";
-  local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
-  global_op_->OpPushBack(local_op_);
-
-  // upwind options (not used yet)
-  std::string uwname = plist.get<std::string>("nonlinear coefficient", "upwind: face");
-  little_k_ = OPERATOR_LITTLE_K_UPWIND;
-  if (uwname == "none") {
-    little_k_ = OPERATOR_LITTLE_K_NONE;
-    // } else {
-    //   msg << "PDE_DiffusionNLFV: unknown or not supported upwind scheme specified.";
-    //   Exceptions::amanzi_throw(msg);
-  }
-
-  // DEPRECATED INPUT -- remove this error eventually --etc
-  if (plist.isParameter("newton correction")) {
-    Errors::Message msg;
-    msg << "PDE_DiffusionNLFV: DEPRECATED: \"newton correction\" has been removed in favor of "
-           "\"Newton correction\"";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  // Newton correction terms
-  std::string jacobian = plist.get<std::string>("Newton correction", "none");
-  if (jacobian == "none") {
-    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
-  } else if (jacobian == "approximate Jacobian") {
-    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
-
-    name = "Diffusion: FACE_CELL Jacobian terms";
-    jac_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
-
-    global_op_->OpPushBack(jac_op_);
-  } else if (jacobian == "true Jacobian") {
-    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
-    Errors::Message msg("PDE_DiffusionNLFV: \"true Jacobian\" not supported -- maybe you mean "
-                        "\"approximate Jacobian\"?");
-    Exceptions::amanzi_throw(msg);
-  } else {
-    Errors::Message msg;
-    msg << "PDE_DiffusionNLFV: invalid parameter \"" << jacobian
-        << "\" for option \"Newton correction\" -- valid are: \"none\", \"approximate Jacobian\"";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  // other data
-  dim_ = mesh_->space_dimension();
-}
-
-
-/* ******************************************************************
-* Setup methods: krel and dkdp must be called after calling a
-* setup with K absolute
-****************************************************************** */
-void
-PDE_DiffusionNLFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-                                        const Teuchos::RCP<const CompositeVector>& dkdp)
-{
-  stencil_initialized_ = false;
-
-  k_ = k;
-  dkdp_ = dkdp;
-
-  if (k_ != Teuchos::null) {
-    if (little_k_ == OPERATOR_LITTLE_K_UPWIND) { AMANZI_ASSERT(k_->HasComponent("face")); }
-  }
-  if (dkdp_ != Teuchos::null) AMANZI_ASSERT(dkdp_->HasComponent("cell"));
-}
-
 
 /* ******************************************************************
 * Compute harmonic averaging points (function of geometry and tensor)
@@ -133,18 +36,22 @@ PDE_DiffusionNLFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector
 * data from left and right cells are ordered by the global cells ids.
 ****************************************************************** */
 void
-PDE_DiffusionNLFV::InitStencils_()
+PDE_DiffusionNLFVonManifolds::InitStencils_()
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
 
   // allocate persistent memory
+  auto cvs_aux = CreateManifoldCVS(mesh_);
+  auto mmap = cvs_aux->Map("face", false);
+  auto gmap = cvs_aux->Map("face", true);
+
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_)
     ->SetGhosted(true)
     ->AddComponent("hap", AmanziMesh::FACE, dim_)
-    ->AddComponent("gamma", AmanziMesh::FACE, 1)
-    ->AddComponent("weight", AmanziMesh::FACE, 2 * dim_)
-    ->AddComponent("flux_data", AmanziMesh::FACE, 2 * dim_);
+    ->AddComponent("gamma", AmanziMesh::FACE, mmap, gmap, 1)
+    ->AddComponent("weight", AmanziMesh::FACE, mmap, gmap, dim_ - 1)
+    ->AddComponent("flux_data", AmanziMesh::FACE, mmap, gmap, dim_ - 1);
   stencil_data_ = Teuchos::rcp(new CompositeVector(cvs));
 
   Epetra_MultiVector& hap = *stencil_data_->ViewComponent("hap", true);
@@ -153,19 +60,20 @@ PDE_DiffusionNLFV::InitStencils_()
 
   stencil_data_->PutScalarMasterAndGhosted(0.0);
 
-  stencil_faces_.resize(2 * dim_);
-  stencil_cells_.resize(2 * dim_);
-  for (int i = 0; i < 2 * dim_; ++i) {
-    stencil_faces_[i] = Teuchos::rcp(new Epetra_IntVector(mesh_->face_map(true)));
-    stencil_cells_[i] = Teuchos::rcp(new Epetra_IntVector(mesh_->face_map(true)));
+  stencil_faces_.resize(dim_ - 1);
+  stencil_cells_.resize(dim_ - 1);
+  for (int i = 0; i < dim_ - 1; ++i) {
+    stencil_faces_[i] = Teuchos::rcp(new Epetra_IntVector(*gmap));
+    stencil_cells_[i] = Teuchos::rcp(new Epetra_IntVector(*gmap));
 
     stencil_faces_[i]->PutValue(0);
     stencil_cells_[i]->PutValue(0);
   }
 
   // allocate temporary memory for distributed tensor
+  int dim2 = dim_ * dim_;
   CompositeVectorSpace cvs_tmp;
-  cvs_tmp.SetMesh(mesh_)->SetGhosted(true)->AddComponent("tensor", AmanziMesh::CELL, dim_ * dim_);
+  cvs_tmp.SetMesh(mesh_)->SetGhosted(true)->AddComponent("tensor", AmanziMesh::CELL, dim2);
   Teuchos::RCP<CompositeVector> cv_tmp = Teuchos::rcp(new CompositeVector(cvs_tmp));
   Epetra_MultiVector& Ktmp = *cv_tmp->ViewComponent("tensor", true);
 
@@ -173,53 +81,55 @@ PDE_DiffusionNLFV::InitStencils_()
   WhetStone::NLFV nlfv(mesh_);
 
   // distribute diffusion tensor
-  WhetStone::DenseVector data(dim_ * dim_);
+  WhetStone::DenseVector data(dim2);
   for (int c = 0; c < ncells_owned; ++c) {
     WhetStone::TensorToVector((*K_)[c], data);
-    for (int i = 0; i < dim_ * dim_; ++i) { Ktmp[i][c] = data(i); }
+    for (int i = 0; i < dim2; ++i) { Ktmp[i][c] = data(i); }
   }
   cv_tmp->ScatterMasterToGhosted();
 
   // calculate harmonic averaging points (HAPs)
-  int c1, c2;
-  double hap_weight;
+  int dir;
+  std::vector<double> hap_weight;
   WhetStone::Tensor T(dim_, 2);
   AmanziMesh::Entity_ID_List cells;
-  AmanziGeometry::Point Kn1(dim_), Kn2(dim_), p(dim_);
+  AmanziGeometry::Point p(dim_);
+  std::vector<double> Tf;
 
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
+    Tf.resize(ncells);
 
-    if (ncells == 2) {
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      OrderCellsByGlobalId(*mesh_, cells, c1, c2);
+    OrderCellsByGlobalId(*mesh_, cells);
+    if (ncells > 1) {
+      for (int n = 0; n < ncells; ++n) {
+        int c = cells[n];
+        const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
 
-      // create to conormals
-      for (int i = 0; i < dim_ * dim_; ++i) data(i) = Ktmp[i][c1];
-      VectorToTensor(data, T);
-      Kn1 = T * normal;
-
-      for (int i = 0; i < dim_ * dim_; ++i) data(i) = Ktmp[i][c2];
-      VectorToTensor(data, T);
-      Kn2 = T * normal;
-
-      nlfv.HarmonicAveragingPoint(f, c1, c2, Kn1, Kn2, p, hap_weight);
+        // create data for computing HAP
+        for (int i = 0; i < dim2; ++i) data(i) = Ktmp[i][c];
+        VectorToTensor(data, T);
+        Tf[n] = T(0, 0);
+      }
+      nlfv.HarmonicAveragingPoint(f, cells, Tf, p, hap_weight);
     } else {
       p = mesh_->face_centroid(f);
-      hap_weight = 0.0;
+      hap_weight[0] = 0.0;
     }
 
     // factor going to stencil should be (1 - weight)
+    int g = gmap->FirstPointInElement(f);
+    int ndofs = gmap->ElementSize(f);
+    for (int i = 0; i < ndofs; ++i) gamma[0][g + i] = 1.0 - hap_weight[i];
+
     for (int i = 0; i < dim_; ++i) hap[i][f] = p[i];
-    gamma[0][f] = 1.0 - hap_weight;
   }
 
   stencil_data_->ScatterMasterToGhosted("hap");
   stencil_data_->ScatterMasterToGhosted("gamma");
 
   // calculate coefficients in positive decompositions of conormals
-  int dir;
   AmanziGeometry::Point conormal(dim_), v(dim_);
   std::vector<AmanziGeometry::Point> tau;
 
@@ -228,7 +138,6 @@ PDE_DiffusionNLFV::InitStencils_()
 
     // calculate list of candidate vectors
     const auto& faces = mesh_->cell_get_faces(c);
-    const auto& dirs = mesh_->cell_get_face_dirs(c);
     int nfaces = faces.size();
 
     tau.clear();
@@ -243,25 +152,34 @@ PDE_DiffusionNLFV::InitStencils_()
       tau.push_back(v);
     }
 
-    // decompose co-normals
+    // decompose co-normals (we need memory allocation like in 3D)
     int ierr, ids[dim_];
     double ws[dim_];
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      conormal = ((*K_)[c] * normal) * dirs[n];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+      conormal = (*K_)[c] * normal;
 
-      ierr = nlfv.PositiveDecomposition(n, tau, conormal, ws, ids);
+      ierr = nlfv.PositiveDecompositionManifold(n, tau, conormal, ws, ids);
       AMANZI_ASSERT(ierr == 0);
 
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      OrderCellsByGlobalId(*mesh_, cells, c1, c2);
-      int k = (c == c1) ? 0 : dim_;
+      OrderCellsByGlobalId(*mesh_, cells);
 
-      for (int i = 0; i < dim_; i++) {
-        weight[k + i][f] = ws[i];
-        (*stencil_faces_[k + i])[f] = faces[ids[i]];
-        (*stencil_cells_[k + i])[f] = cell_get_face_adj_cell(*mesh_, c, faces[ids[i]]);
+      int g = gmap->FirstPointInElement(f);
+      int ndofs = gmap->ElementSize(f);
+      int pos(0);
+      for (int n = 0; n < ndofs; ++n) {
+        if (cells[n] == c) {
+          pos = n; 
+          break;
+        }
+      }
+
+      for (int i = 0; i < dim_ - 1; i++) {
+        weight[i][g + pos] = ws[i];
+        (*stencil_faces_[i])[g + pos] = faces[ids[i]];
+        (*stencil_cells_[i])[g + pos] = cell_get_face_adj_cell(*mesh_, c, faces[ids[i]]);
       }
     }
   }
@@ -271,7 +189,7 @@ PDE_DiffusionNLFV::InitStencils_()
   stencil_data_->ScatterMasterToGhosted("weight");
 
   ParallelCommunication pp(mesh_);
-  for (int i = 0; i < 2 * dim_; ++i) {
+  for (int i = 0; i < dim_ - 1; ++i) {
     pp.CombineGhostFace2MasterFace(*stencil_faces_[i], (Epetra_CombineMode)Add);
     pp.CombineGhostFace2MasterFace(*stencil_cells_[i], (Epetra_CombineMode)Add);
 
@@ -289,8 +207,8 @@ PDE_DiffusionNLFV::InitStencils_()
 * already incorporate them.
 ****************************************************************** */
 void
-PDE_DiffusionNLFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                                  const Teuchos::Ptr<const CompositeVector>& u)
+PDE_DiffusionNLFVonManifolds::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+                                             const Teuchos::Ptr<const CompositeVector>& u)
 {
   if (!stencil_initialized_) InitStencils_();
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
@@ -424,9 +342,10 @@ PDE_DiffusionNLFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flu
 * correction term.
 ****************************************************************** */
 void
-PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                                  const Teuchos::Ptr<const CompositeVector>& u,
-                                                  double scalar_factor)
+PDE_DiffusionNLFVonManifolds::UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    double scalar_factor)
 {
   // ignore correction if no flux provided.
   if (flux == Teuchos::null) return;
@@ -487,9 +406,10 @@ PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Compo
 * correction term.
 ****************************************************************** */
 void
-PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                                  const Teuchos::Ptr<const CompositeVector>& u,
-                                                  const Teuchos::Ptr<const CompositeVector>& factor)
+PDE_DiffusionNLFVonManifolds::UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& factor)
 {
   // ignore correction if no flux provided.
   if (flux == Teuchos::null) return;
@@ -554,9 +474,9 @@ PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Compo
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
 ****************************************************************** */
 void
-PDE_DiffusionNLFV::OneSidedFluxCorrections_(int i0,
-                                            const CompositeVector& u,
-                                            CompositeVector& flux_cv)
+PDE_DiffusionNLFVonManifolds::OneSidedFluxCorrections_(int i0,
+                                                       const CompositeVector& u,
+                                                       CompositeVector& flux_cv)
 {
   // un-rolling composite vectors
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
@@ -629,7 +549,8 @@ PDE_DiffusionNLFV::OneSidedFluxCorrections_(int i0,
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
 ****************************************************************** */
 void
-PDE_DiffusionNLFV::OneSidedWeightFluxes_(int i0, const CompositeVector& u, CompositeVector& flux_cv)
+PDE_DiffusionNLFVonManifolds::OneSidedWeightFluxes_(
+    int i0, const CompositeVector& u, CompositeVector& flux_cv)
 {
   // un-rolling composite vectors
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
@@ -681,7 +602,7 @@ PDE_DiffusionNLFV::OneSidedWeightFluxes_(int i0, const CompositeVector& u, Compo
 * Matrix-based implementation of boundary conditions.
 ****************************************************************** */
 void
-PDE_DiffusionNLFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
+PDE_DiffusionNLFVonManifolds::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
@@ -723,8 +644,8 @@ PDE_DiffusionNLFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 * Calculate flux using cell-centered data.
 * **************************************************************** */
 void
-PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<CompositeVector>& flux)
+PDE_DiffusionNLFVonManifolds::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
+                                         const Teuchos::Ptr<CompositeVector>& flux)
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   // const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();

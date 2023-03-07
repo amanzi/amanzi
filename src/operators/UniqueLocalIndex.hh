@@ -31,6 +31,14 @@ namespace Operators {
 int
 UniqueIndexFaceToCells(const AmanziMesh::Mesh& mesh, int f, int c);
 
+// unique ordering of cells
+int
+OrderCellsByGlobalId(const AmanziMesh::Mesh& mesh,
+                     const AmanziMesh::Entity_ID_List& cells, int& c1, int& c2);
+
+void
+OrderCellsByGlobalId(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID_List& cells);
+
 } // namespace Operators
 } // namespace Amanzi
 

@@ -56,6 +56,53 @@ UniqueIndexFaceToCells(const AmanziMesh::Mesh& mesh, int f, int c)
 }
 
 
+/* ******************************************************************
+* Order cells by their global ids. Returns 1 if cells were swapped.
+****************************************************************** */
+int
+OrderCellsByGlobalId(const AmanziMesh::Mesh& mesh,
+                     const AmanziMesh::Entity_ID_List& cells, int& c1, int& c2)
+{
+  c1 = cells[0];
+  c2 = -1;
+
+  int ncells = cells.size();
+  if (ncells == 1) return 0;
+
+  c2 = cells[1];
+  if (mesh.cell_map(true).GID(c1) > mesh.cell_map(true).GID(c2)) {
+    int c(c1);
+    c1 = c2;
+    c2 = c;
+    return 1;
+  }
+
+  return 0;
+}
+
+
+/* ******************************************************************
+* Order cells by their global ids.
+****************************************************************** */
+void
+OrderCellsByGlobalId(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID_List& cells)
+{
+  int ncells = cells.size();
+
+  for (int i = 0; i < ncells; ++i) {
+    int i0 = i;
+    int gid0 = mesh.cell_map(true).GID(cells[i]);
+    for (int j = i + 1; j < ncells; ++j) {
+      int gid1 = mesh.cell_map(true).GID(cells[j]);
+      if (gid1 < gid0) {
+        i0 = j; 
+        gid0 = gid1;
+      }
+    }
+    if (i != i0) std::swap(cells[i], cells[i0]);
+  }
+}
+
 } // namespace Operators
 } // namespace Amanzi
 

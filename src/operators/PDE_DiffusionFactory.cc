@@ -26,7 +26,6 @@
 #include "PDE_DiffusionMFD.hh"
 #include "PDE_DiffusionMFDwithGravity.hh"
 #include "PDE_DiffusionNLFV.hh"
-#include "PDE_DiffusionNLFVFracturedMatrix.hh"
 #include "PDE_DiffusionNLFVwithBndFaces.hh"
 #include "PDE_DiffusionNLFVwithBndFacesGravity.hh"
 #include "PDE_DiffusionNLFVwithGravity.hh"
@@ -121,10 +120,6 @@ PDE_DiffusionFactory::Create(const Teuchos::RCP<Operator>& global_op)
       op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist_, mesh_));
     } else if (name == "nlfv: bnd_faces" && gravity_) {
       op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist_, mesh_));
-
-    // NLFV methods with non-uniform DOFs
-    } else if (name == "nlfv: default" && fractured_matrix && !gravity_) {
-      op = Teuchos::rcp(new PDE_DiffusionNLFVFracturedMatrix(oplist_, mesh_));
 
     // MFD methods with non-uniform DOFs
     } else if (fractured_matrix) {

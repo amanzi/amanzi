@@ -11,12 +11,12 @@
 /*
   Operators
 
-  This implements the PDE_DiffusionNLFV interface for fracture matrix.
-  Two DOFS on each fracture face are used.
+  PDE_DiffusionNLFV implements the PDE_Diffusion interface
+  using nonlinear finite volumes.
 */
 
-#ifndef AMANZI_OPERATOR_PDE_DIFFUSION_NLFV_FRACTURED_MATRIX_HH_
-#define AMANZI_OPERATOR_PDE_DIFFUSION_NLFV_FRACTURED_MATRIX_HH_
+#ifndef AMANZI_OPERATOR_PDE_DIFFUSION_NLFV_MANIFOLDS_HH_
+#define AMANZI_OPERATOR_PDE_DIFFUSION_NLFV_MANIFOLDS_HH_
 
 #include <string>
 #include <vector>
@@ -31,6 +31,7 @@
 #include "DenseMatrix.hh"
 #include "Preconditioner.hh"
 
+#include "PDE_Diffusion.hh"
 #include "PDE_DiffusionNLFV.hh"
 
 namespace Amanzi {
@@ -38,56 +39,48 @@ namespace Operators {
 
 class BCs;
 
-class PDE_DiffusionNLFVFracturedMatrix : public PDE_DiffusionNLFV {
+class PDE_DiffusionNLFVonManifolds : public PDE_DiffusionNLFV {
  public:
-  PDE_DiffusionNLFVFracturedMatrix(Teuchos::ParameterList& plist,
-                                   const Teuchos::RCP<Operator>& global_op)
+  PDE_DiffusionNLFVonManifolds(Teuchos::ParameterList& plist,
+                               const Teuchos::RCP<Operator>& global_op)
     : PDE_DiffusionNLFV(plist, global_op),
       PDE_Diffusion(global_op),
       stencil_initialized_(false)
   {
-    pde_type_ = PDE_DIFFUSION_NLFV_FRACTURED_MATRIX;
+    pde_type_ = PDE_DIFFUSION_NLFV_MANIFOLDS;
     Init_(plist);
   }
 
-  PDE_DiffusionNLFVFracturedMatrix(Teuchos::ParameterList& plist,
-                                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  PDE_DiffusionNLFVonManifolds(Teuchos::ParameterList& plist,
+                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_DiffusionNLFV(plist, mesh),
       PDE_Diffusion(mesh),
       stencil_initialized_(false)
   {
-    pde_type_ = PDE_DIFFUSION_NLFV_FRACTURED_MATRIX;
+    pde_type_ = PDE_DIFFUSION_NLFV_MANIFOLDS;
     Init_(plist);
   }
 
-  PDE_DiffusionNLFVFracturedMatrix(Teuchos::ParameterList& plist,
-                                   const Teuchos::RCP<AmanziMesh::Mesh>& mesh)
+  PDE_DiffusionNLFVonManifolds(Teuchos::ParameterList& plist,
+                               const Teuchos::RCP<AmanziMesh::Mesh>& mesh)
     : PDE_DiffusionNLFV(plist, mesh),
       PDE_Diffusion(mesh),
       stencil_initialized_(false)
   {
-    pde_type_ = PDE_DIFFUSION_NLFV_FRACTURED_MATRIX;
+    pde_type_ = PDE_DIFFUSION_NLFV_MANIFOLDS;
     Init_(plist);
   }
 
   // main virtual members
   // -- setup
   using PDE_Diffusion::Setup;
-  virtual void
-  SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override
-  {
-    K_ = K;
-  }
-  virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-                                    const Teuchos::RCP<const CompositeVector>& dkdp) override;
 
   // -- create an operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                               const Teuchos::Ptr<const CompositeVector>& u) override;
-
   virtual void UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
                                               const Teuchos::Ptr<const CompositeVector>& u,
-                                              double scalar_limiter) override;
+                                              double scalar_factor) override;
 
   virtual void
   UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
@@ -110,19 +103,14 @@ class PDE_DiffusionNLFVFracturedMatrix : public PDE_DiffusionNLFV {
 
  protected:
   // virtual functions for derived clases
-  // -- processing of control parameters
-  void Init_(Teuchos::ParameterList& plist);
   // -- solution can be modified on boundary faces. This reflects specifics
   //    of nonlinear FV schemes, see implementation in the derived classes.
-  // virtual double MapBoundaryValue_(int f, double u) { return u; }
+  virtual double MapBoundaryValue_(int f, double u) override { return u; }
 
  protected:
   void InitStencils_();
   void OneSidedFluxCorrections_(int i0, const CompositeVector& u, CompositeVector& sideflux);
   void OneSidedWeightFluxes_(int i0, const CompositeVector& u, CompositeVector& sideflux);
-  void OneSidedNeumannCorrections_(const CompositeVector& u, CompositeVector& sideflux);
-  int OrderCellsByGlobalId_(const AmanziMesh::Entity_ID_List& cells, int& c1, int& c2);
-  int NLTPFAContributions_(int f, double& tc1, double& tc2);
 
  protected:
   int dim_;
