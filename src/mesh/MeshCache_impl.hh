@@ -1649,7 +1649,9 @@ void cacheDefault(MeshCache<MEM>& mesh)
 {
   std::cout<<"############# CacheDefault"<<std::endl;
   // caches what the developers currently think is best
-  mesh.cacheNodeCoordinates();
+  if (mesh.hasNodes()) {
+    mesh.cacheNodeCoordinates();
+  }
   mesh.cacheCellFaces();
   mesh.cacheFaceCells();
   if (mesh.hasNodes()) {
