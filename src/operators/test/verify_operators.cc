@@ -61,8 +61,10 @@ main(int argc, char* argv[])
   strcpy(argv[0], "--teuchos-suppress-startup-banner");
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   MyPID = mpiSession.getRank();
-
-  return UnitTest::RunAllTests();
+  Kokkos::initialize(); 
+  auto result = UnitTest::RunAllTests();
+  Kokkos::finalize(); 
+  return result; 
 }
 
 
