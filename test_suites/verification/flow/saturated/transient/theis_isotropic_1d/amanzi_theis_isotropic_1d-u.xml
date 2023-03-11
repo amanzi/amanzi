@@ -118,7 +118,7 @@
         <assigned_regions>Entire Domain</assigned_regions>
         <mechanical_properties>
           <porosity value="0.2" />
-          <specific_storage value="7.5e-5" />
+          <specific_storage model="constant" value="7.5e-5" />
         </mechanical_properties>
         <permeability x="2.35E-11" y="2.35E-11" z="2.35E-11" />
       </material>
