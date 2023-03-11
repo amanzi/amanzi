@@ -7,13 +7,14 @@
   Authors:
 */
 
-#include <UnitTest++.h>
-
 #include "Teuchos_GlobalMPISession.hpp"
+#include "UnitTest++.h"
 
-#include "VerboseObject_objs.hh"
 #include "state_evaluators_registration.hh"
-#include "wrm_flow_registration.hh"
+#include "VerboseObject_objs.hh"
+
+#include "evaluators_flow_reg.hh"
+#include "models_flow_reg.hh"
 
 // a fake model for testing
 #include "WRM_fake.hh"

@@ -93,6 +93,16 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
     <ParameterList name="evaluators">
+      <ParameterList name="specific_storage">
+        <Parameter name="evaluator type" type="string" value="specific storage"/>
+	<ParameterList name="specific storage parameters">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="model" type="string" value="constant"/>
+            <Parameter name="value" type="double" value="0.0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="aperture">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -223,19 +233,6 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="300.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="specific_storage">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

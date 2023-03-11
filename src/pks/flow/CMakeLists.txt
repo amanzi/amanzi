@@ -79,6 +79,7 @@ set(flow_inc_files
   FracturePermModel_Linear.hh
   FracturePermModelPartition.hh
   FracturePermModelEvaluator.hh
+  models_flow_reg.hh
   MultiscaleFlowPorosity.hh
   MultiscaleFlowPorosity_DPM.hh
   MultiscaleFlowPorosity_GDPM.hh
@@ -95,7 +96,7 @@ set(flow_inc_files
   WRMFactory.hh
   WRMPartition.hh)
 
-add_install_include_file(${flow_inc_files} wrm_flow_registration.hh)
+add_install_include_file(${flow_inc_files})
 
 
 if (BUILD_TESTS) 

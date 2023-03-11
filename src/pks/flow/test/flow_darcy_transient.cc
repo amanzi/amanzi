@@ -112,10 +112,6 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
   S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
   S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
 
-  // -- storativity
-  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(2.0);
-  S->GetRecordW("specific_storage", passwd).set_initialized();
-
   // create the initial pressure function
   auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
@@ -218,7 +214,6 @@ TEST(FLOW_3D_TRANSIENT_DARCY)
   S->GetW<double>("const_fluid_density", "state") = 1.0;
   S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
 
-  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(1.0);
   S->GetW<CompositeVector>("specific_yield", passwd).PutScalar(0.0);
 
   // create the initial pressure function

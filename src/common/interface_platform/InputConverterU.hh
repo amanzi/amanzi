@@ -55,6 +55,7 @@ class InputConverterU : public InputConverter {
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
       flow_single_phase_(false),
       compressibility_(false),
+      beta_(0.0),
       mesh_rectangular_(false),
       use_transport_porosity_(false),
       use_transport_dispersion_(true),
@@ -79,6 +80,7 @@ class InputConverterU : public InputConverter {
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
       flow_single_phase_(false),
       compressibility_(false),
+      beta_(0.0),
       mesh_rectangular_(false),
       use_transport_porosity_(false),
       use_transport_dispersion_(true),
@@ -306,7 +308,7 @@ class InputConverterU : public InputConverter {
   std::string flow_model_; // global value
   bool flow_single_phase_; // runtime value
   bool compressibility_;
-  double rho_;
+  double rho_, beta_;
 
   // global mesh data
   bool mesh_rectangular_;

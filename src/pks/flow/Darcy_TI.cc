@@ -71,7 +71,7 @@ Darcy_PK::FunctionalResidual(double t_old,
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
-  // compliance and optinal update of diffusion operator
+  // compliance and optional update of diffusion operator
   if (flow_on_manifold_) {
     S_->GetEvaluator(compliance_key_).Update(*S_, "flow");
     const auto& compliance = S_->Get<CompositeVector>(compliance_key_, Tags::DEFAULT);

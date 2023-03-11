@@ -30,10 +30,10 @@
 #include "PK_Factory.hh"
 #include "PK.hh"
 #include "pks_energy_registration.hh"
-#include "pks_flow_registration.hh"
+#include "pks_flow_reg.hh"
 #include "pks_transport_registration.hh"
 #include "State.hh"
-#include "wrm_flow_registration.hh"
+#include "models_flow_reg.hh"
 
 
 void

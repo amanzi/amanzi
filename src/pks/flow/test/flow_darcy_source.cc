@@ -93,10 +93,6 @@ RunTestDarcySource(const std::string& xmlFileName)
   S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
   S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
 
-  // -- storativity
-  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.1);
-  S->GetRecordW("specific_storage", passwd).set_initialized();
-
   // initialize the Darcy process kernel
   DPK->Initialize();
   WriteStateStatistics(*S);

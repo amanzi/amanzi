@@ -19,13 +19,14 @@
 
 #include "CycleDriver.hh"
 #include "eos_registration.hh"
+#include "evaluators_flow_reg.hh"
 #include "MeshFactory.hh"
 #include "Mesh.hh"
+#include "models_flow_reg.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_flow_registration.hh"
+#include "pks_flow_reg.hh"
 #include "State.hh"
-#include "wrm_flow_registration.hh"
 
 
 TEST(MPC_WALKABOUT_2D)

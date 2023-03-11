@@ -73,6 +73,16 @@
 
   <ParameterList name="state">
     <ParameterList name="evaluators">
+      <ParameterList name="specific_storage">
+        <Parameter name="evaluator type" type="string" value="specific storage"/>
+        <ParameterList name="specific storage parameters">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="model" type="string" value="constant"/>
+            <Parameter name="value" type="double" value="0.0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="viscosity_liquid">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">

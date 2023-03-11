@@ -34,6 +34,9 @@
 #include "Darcy_PK.hh"
 #include "DarcyVelocityEvaluator.hh"
 #include "FlowDefs.hh"
+#include "ModelEvaluator.hh"
+#include "SpecificStorage.hh"
+#include "WRM.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -161,10 +164,11 @@ Darcy_PK::Setup()
 
   // require additional fields for this PK
   if (!S_->HasRecord(specific_storage_key_)) {
-    S_->Require<CV_t, CVS_t>(specific_storage_key_, Tags::DEFAULT, passwd_)
+    S_->Require<CV_t, CVS_t>(specific_storage_key_, Tags::DEFAULT, specific_storage_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireEvaluator(specific_storage_key_, Tags::DEFAULT);
   }
 
   if (!S_->HasRecord(specific_yield_key_)) {

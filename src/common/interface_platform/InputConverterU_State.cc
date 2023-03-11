@@ -84,6 +84,13 @@ InputConverterU::TranslateState_()
     node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag, true);
     rho_ = GetTextContentD_(node, "kg/m^3");
     out_ic.sublist("const_fluid_density").set<double>("value", rho_);
+
+    // --- constant compressibility
+    node = GetUniqueElementByTagsString_("phases, liquid_phase, compressibility", flag, false);
+    if (flag) {
+      beta_ = GetTextContentD_(node, "Pa^-1");
+      out_ic.sublist("const_fluid_compressibility").set<double>("value", beta_);
+    }
   }
 
   if (eos_model_ == "") {
@@ -133,17 +140,6 @@ InputConverterU::TranslateState_()
 
       // create regions string
       std::string reg_str = CreateNameFromVector_(regions);
-
-      // -- porosity: skip if compressibility model was already provided.
-      if (!compressibility_) {
-        node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
-        if (flag) {
-          TranslateFieldEvaluator_(node, "porosity", "-", reg_str, regions, out_ic, out_ev);
-        } else {
-          msg << "Porosity element must be specified under mechanical_properties";
-          Exceptions::amanzi_throw(msg);
-        }
-      }
 
       // -- transport porosity
       node =
@@ -319,12 +315,6 @@ InputConverterU::TranslateState_()
       std::string reg_str = CreateNameFromVector_(regions);
 
       // material properties
-      // -- porosity
-      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
-      if (flag) {
-        TranslateFieldEvaluator_(node, "fracture-porosity", "-", reg_str, regions, out_ic, out_ev);
-      }
-
       // -- aperture
       node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
       if (flag) {
@@ -853,6 +843,8 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
                                                  Teuchos::ParameterList& out_ev)
 {
   MemoryManager mm;
+  Errors::Message msg;
+
   bool flag;
   std::string type("value");
 
@@ -902,17 +894,50 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
       std::string reg_str = CreateNameFromVector_(regions);
 
-      // specific storage
-      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_storage", flag);
-      if (flag)
-        TranslateFieldIC_(
-          node, Keys::getKey(domain, "specific_storage"), "m^-1", reg_str, regions, out_ic);
+      // porosity
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
+      if (flag) {
+        TranslateFieldEvaluator_(node, Keys::getKey(domain, "porosity"), "-", reg_str, regions, out_ic, out_ev);
+      } else {
+        msg << "Porosity element must be specified under mechanical_properties";
+        Exceptions::amanzi_throw(msg);
+      }
 
       // specific_yield
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_yield", flag);
       if (flag)
         TranslateFieldIC_(
           node, Keys::getKey(domain, "specific_yield"), "-", reg_str, regions, out_ic);
+
+      // specific storage
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_storage", flag);
+      if (flag) {
+        auto key = Keys::getKey(domain, "specific_storage");
+        Teuchos::ParameterList& field_ev = out_ev.sublist(key);
+
+        std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
+        field_ev.set<std::string>("evaluator type", "specific storage");
+
+        Teuchos::ParameterList& params = field_ev.sublist("specific storage parameters").sublist(reg_str);
+        params.set<Teuchos::Array<std::string>>("regions", regions);
+
+        double val1, val2;
+        if (model == "constant") {
+          val1 = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m^-1");
+          params.set<std::string>("model", "constant").set<double>("value", val1);
+        } if (model == "standard") {
+          std::vector<std::string> deps({ Keys::getKey(domain, "porosity") });
+          field_ev.set<Teuchos::Array<std::string>>("dependencies", deps);
+
+          val1 = GetAttributeValueD_(node, "fluid_compressibility", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa^-1");
+          val2 = GetAttributeValueD_(node, "matrix_compressibility", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa^-1");
+          params.set<std::string>("model", "standard")
+                .set<double>("fluid compressibility", val1)
+                .set<double>("matrix compressibility", val2)
+                .set<double>("gravity", const_gravity_)
+                .set<double>("density", rho_);
+        }
+      }
 
       // particle density
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);

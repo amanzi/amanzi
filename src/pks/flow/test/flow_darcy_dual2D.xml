@@ -124,6 +124,17 @@
   <!--  STATE  -->
   <ParameterList name="state">
     <ParameterList name="evaluators">
+      <ParameterList name="specific_storage">
+        <Parameter name="evaluator type" type="string" value="specific storage"/>
+	<ParameterList name="specific storage parameters">
+          <ParameterList name="Material 1">
+            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+            <Parameter name="model" type="string" value="constant"/>
+            <Parameter name="value" type="double" value="0.0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="porosity">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">

@@ -1069,13 +1069,18 @@ The conceptual PDE model for the fully saturated flow is
   (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g}),
 
 where 
-:math:`s_s` and :math:`s_y` are specific storage [1/m] and specific yield [-], respectively,
+:math:`S_s` and :math:`S_y` are specific storage [1/m] and specific yield [-], respectively,
 :math:`L` is characteristic length [m],
 :math:`\rho_l` is fluid density [:math:`kg / m^3`],
 :math:`Q` is source or sink term [:math:`kg / m^3 / s`],
 :math:`\boldsymbol{q}_l` is the Darcy velocity [:math:`m/s`],
 and :math:`\boldsymbol{g}` is gravity [:math:`m/s^2`].
+The specific storgae can be defined using 
 
+.. math::
+  S_s = \left(\phi\, \beta_f + \beta_m\right)\rho_l\,g
+
+where :math:`\beta_f` [1/Pa] and :math:`\beta_m` [1/Pa] are fluid and matrix compressibilities, respectively.
 
 Partially saturated flow
 ````````````````````````

@@ -10,8 +10,11 @@
 /*
   Flow PK
 
-  Self-registering factory for WRM implementations.
+  Self-registering factory for models implementations.
 */
+
+#include "SpecificStorage_Constant.hh"
+#include "SpecificStorage_Standard.hh"
 
 #include "WRMFactory.hh"
 #include "WRM_BrooksCorey.hh"
@@ -23,6 +26,9 @@ namespace Utils {
 
 // explicity instantitate the static data of factory
 template <>
+Factory<Flow::SpecificStorage>::map_type* Factory<Flow::SpecificStorage>::map_;
+
+template <>
 Factory<Flow::WRM>::map_type* Factory<Flow::WRM>::map_;
 
 } // namespace Utils
@@ -31,6 +37,9 @@ Factory<Flow::WRM>::map_type* Factory<Flow::WRM>::map_;
 
 namespace Amanzi {
 namespace Flow {
+
+Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Constant> SpecificStorage_Constant::factory_("constant");
+Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Standard> SpecificStorage_Standard::factory_("standard");
 
 Utils::RegisteredFactory<WRM, WRM_BrooksCorey> WRM_BrooksCorey::factory_("Brooks Corey");
 Utils::RegisteredFactory<WRM, WRM_vanGenuchten> WRM_vanGenuchten::factory_("van Genuchten");

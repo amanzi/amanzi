@@ -1101,8 +1101,15 @@ It has the following requirements.
       "constant_in_time="true | false".
       The dataset label should be the field name.
 
-    * ``specific_storage`` and ``specific_yeild`` are defined in-line using attributes.
-      Either it is specified as a value greater than 0 using ``value`` or it specified through a file using type="file" and filename="<filename>".
+    * ``specific_storage`` is defined in-line using attributes. The available options for attribute ``model``
+      are ``constant`` or ``standard``.
+      The first option requires attribute ``value`` which must be greater than 0.
+      The second option requires two attributes ``fluid_compressibility`` and ``matrix_compressibility`` that define
+      fluid and matrix compressibilities, respectively.
+      
+    * ``specific_yeild`` is defined in-line using attributes.
+      It is specified as a value greater than 0 using ``value`` or through a file using type="file" and filename="<filename>".
+      
 
     * ``dispersion_tensor`` is defined in-line using attributes.  The attribute ``type`` is used to specify either the model to utilize.
       The available options are: ``uniform_isotropic``, ``burnett_frind``, or ``lichtner_kelkar_robinson``.

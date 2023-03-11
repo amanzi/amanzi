@@ -88,11 +88,6 @@ TEST(DARCY_TWO_FRACTURES)
   S->InitializeFields();
   S->InitializeEvaluators();
 
-  // modify the default state
-  // -- storativity
-  S->GetW<CompositeVector>("specific_storage", Tags::DEFAULT, passwd).PutScalar(2.0);
-  S->GetRecordW("specific_storage", Tags::DEFAULT, passwd).set_initialized();
-
   // create the initial pressure function
   auto& p = *S->GetW<CompositeVector>("pressure", Tags::DEFAULT, passwd).ViewComponent("cell");
 

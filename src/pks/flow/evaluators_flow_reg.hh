@@ -10,19 +10,19 @@
 /*
   Flow PK
 
-  Self-registering factory for flow PKs.
+  Self-registering factory for flow evaluators.
 */
 
-#include "Darcy_PK.hh"
-#include "Richards_PK.hh"
+#include "ModelEvaluator.hh"
+#include "SpecificStorage.hh"
 #include "WaterStorage.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-RegisteredPKFactory<Darcy_PK> Darcy_PK::reg_("darcy");
-RegisteredPKFactory<Richards_PK> Richards_PK::reg_("richards");
 Utils::RegisteredFactory<Evaluator, WaterStorage> WaterStorage::reg_("water storage");
+template<>
+Utils::RegisteredFactory<Evaluator, ModelEvaluator<SpecificStorage>> ModelEvaluator<SpecificStorage>::reg_("specific storage");
 
 } // namespace Flow
 } // namespace Amanzi

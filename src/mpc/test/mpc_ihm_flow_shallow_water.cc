@@ -25,14 +25,14 @@
 #include "Mesh.hh"
 #include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
+#include "models_flow_reg.hh"
 #include "mpc_pks_registration.hh"
 #include "numerical_flux_registration.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_flow_registration.hh"
+#include "pks_flow_reg.hh"
 #include "pks_shallow_water_registration.hh"
 #include "State.hh"
-#include "wrm_flow_registration.hh"
 
 // General
 #define _USE_MATH_DEFINES

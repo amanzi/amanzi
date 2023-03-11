@@ -24,16 +24,17 @@
 #include "energy_tcm_registration.hh"
 #include "energy_iem_registration.hh"
 #include "eos_registration.hh"
+#include "evaluators_flow_reg.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "models_flow_reg.hh"
 #include "mpc_pks_registration.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
 #include "pks_energy_registration.hh"
-#include "pks_flow_registration.hh"
+#include "pks_flow_reg.hh"
 #include "pks_transport_registration.hh"
 #include "State.hh"
-#include "wrm_flow_registration.hh"
 
 
 TEST(MPC_DRIVER_THERMAL_DARCY_DFN)

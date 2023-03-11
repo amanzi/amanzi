@@ -85,6 +85,16 @@
 
   <ParameterList name="state">
     <ParameterList name="evaluators">
+      <ParameterList name="fracture-specific_storage">
+        <Parameter name="evaluator type" type="string" value="specific storage"/>
+	<ParameterList name="specific storage parameters">
+          <ParameterList name="Material 1">
+            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+            <Parameter name="model" type="string" value="constant"/>
+            <Parameter name="value" type="double" value="0.002"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="fracture-aperture">
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
@@ -161,20 +171,6 @@
 
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -10.0}"/>
-      </ParameterList>
-
-      <ParameterList name="fracture-specific_storage">
-        <ParameterList name="function">
-          <ParameterList name="EntireDomain">
-            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.002"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
       </ParameterList>
 
       <ParameterList name="fracture-pressure">

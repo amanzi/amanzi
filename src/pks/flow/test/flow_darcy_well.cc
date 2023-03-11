@@ -87,6 +87,7 @@ RunTestDarcyWell(std::string controller, bool fit)
   DPK->Setup();
   S->Setup();
   S->InitializeFields();
+  S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
   // -- permeability
@@ -118,10 +119,6 @@ RunTestDarcyWell(std::string controller, bool fit)
 
   S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
   S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
-
-  // -- storativity
-  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.1);
-  S->GetRecordW("specific_storage", passwd).set_initialized();
 
   // initialize the Darcy process kernel
   DPK->Initialize();
@@ -225,6 +222,7 @@ Run_3D_DarcyWell(std::string controller)
   DPK->Setup();
   S->Setup();
   S->InitializeFields();
+  S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
   // -- permeability
@@ -244,10 +242,6 @@ Run_3D_DarcyWell(std::string controller)
 
   S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
   S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
-
-  // -- storativity
-  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.1);
-  S->GetRecordW("specific_storage", passwd).set_initialized();
 
   // initialize the Darcy process kernel
   DPK->Initialize();
@@ -325,6 +319,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL)
   DPK->Setup();
   S->Setup();
   S->InitializeFields();
+  S->InitializeEvaluators();
 
   // modify the default state for the problem at hand
   // -- permeability
@@ -344,10 +339,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL)
   S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
   S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
 
-  // -- storativity
-  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.0);
-  S->GetRecordW("specific_storage", passwd).set_initialized();
-
+  // -- porosity
   S->GetW<CompositeVector>("porosity", "porosity").PutScalar(1.0);
   S->GetRecordW("porosity", "porosity").set_initialized();
 
