@@ -68,6 +68,30 @@ via the time discretization scheme:
 
 Note this also accepts an object that provides the `BDF1 Solver Interface`_.
 
+.. code-block:: xml
+
+  <ParameterList name="time integrator">
+    <Parameter name="time integration method" type="string" value="BDF1"/>
+    <ParameterList name="BDF1">
+      <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+      <Parameter name="freeze preconditioner" type="bool" value="false"/>
+      <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+      <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+      <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+      <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
+
+      <Parameter name="timestep controller type" type="string" value="standard"/>
+      <ParameterList name="timestep controller standard parameters">
+        ...
+      </ParameterList>
+
+      <Parameter name="solver type" type="string" value="nka"/>
+      <ParameterList name="nka parameters">
+        ... 
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
 */
 
 

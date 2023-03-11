@@ -26,10 +26,10 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "mpc_pks_registration.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_transport_registration.hh"
+#include "pks_mpc_reg.hh"
+#include "pks_transport_reg.hh"
 #include "State.hh"
 
 std::pair<Epetra_MultiVector, Epetra_MultiVector>

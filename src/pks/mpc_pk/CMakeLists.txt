@@ -123,7 +123,7 @@ add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
                    LINK_LIBS ${mpc_tree_link_libs} ${mpc_tree_tpl_libs})
 
 
-add_install_include_file(${mpc_tree_inc_files} mpc_pks_registration.hh)
+add_install_include_file(${mpc_tree_inc_files} pks_mpc_reg.hh)
 
 
 if (BUILD_TESTS) 

@@ -7,14 +7,18 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Flow PK
+/*!
 
-  A two-scale porosity model (fracture + matrix) aka dual porosity
-  model. Current naming convention is that the fields used in the
-  single-porosity model correspond now to the fracture continuum.
-  Example: pressure = pressure in the fracture continuum;
-           pressure_msp = pressure in the matrix continuum.
+A two-scale porosity model (fracture + matrix) aka dual porosity
+model. Current naming convention is that the fields used in the
+single-porosity model correspond now to the fracture continuum.
+Example: pressure = pressure in the fracture continuum;
+pressure_msp = pressure in the matrix continuum.
+
+* `"mass transfer coefficient`" [double] is the mass transfer coefficient.
+
+* `"tolerance`" [double] defines tolerance for iterative methods used to solve
+  secondary equations. Default is 1e-8.
 
 */
 

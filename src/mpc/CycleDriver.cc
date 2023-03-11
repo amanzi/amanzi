@@ -8,16 +8,6 @@
            Daniil Svyatskiy
 */
 
-/*
-  Multi-Process Coordinator
-
-  Implementation for the CycleDriver.  CycleDriver is basically just a class to hold
-  the cycle driver, which runs the overall, top level timestep loop.  It
-  instantiates states, ensures they are initialized, and runs the timestep loop
-  including Vis and restart/checkpoint dumps.  It contains one and only one PK
-  -- most likely this PK is an MPC of some type -- to do the actual work.
-*/
-
 #include <ios>
 #include <iostream>
 #include <unistd.h>

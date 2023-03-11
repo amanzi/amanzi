@@ -1,0 +1,2496 @@
+==========================================
+Amanzi-U Native XML Input Specification V9
+==========================================
+
+.. contents:: **Table of Contents**
+
+
+Overview
+========
+
+This is a continuously evolving specification format used by the code developers. 
+Its main purpose is to develop and test new capabilities without disruption of end-users.
+
+  
+ParameterList XML
+=================
+
+The Amanzi input file is an ASCII text XML-formatted file that must be framed 
+at the beginning and end by the following statements:
+
+.. code-block:: xml
+
+  <ParameterList name="transport">
+    various parameters and sublists
+  </ParameterList>
+
+The value of *name* can be anything (*transport* in this example).  
+A ParameterList consists of just two types of entries: Parameter and ParameterList.  
+ParameterLists are labeled with *name* [string], while Parameters have a separate 
+fields called *name* [string], *type* [string] and *value* [TYPE], where TYPE can 
+be any of the following: double, int, bool, string, Array(double), Array(int), 
+and Array(string).  
+The value of the parameter is given in quotes (e.g. value="2.7e3").  
+Array data is specified as a single comma-delimited string bounded by brackets (e.g. value="{{linear, constant, linear}}").
+
+.. code-block:: xml
+
+  <ParameterList name="transport">
+    <Parameter name="cfl" type="double" value="0.9"/>
+    <Parameter name="ratio" type="Array(int)" value="{{2, 1, 4}}"/>
+  </ParameterList>
+
+In this example, the list *transport* has parameter *cfl* that is the double with 
+value 0.9, and parameter *ratio* that is the integer array such that ratio[0] = 2, 
+ratio[1]=1, and ratio[2]=4.
+
+
+Syntax of the specification
+---------------------------
+
+Input specification for each ParameterList entry consists of two parts.  
+First, a bulleted list defines the usage syntax and available options.  
+This is followed by example snippets of XML code to demonstrate usage.
+
+In many cases, the input specifies data for a particular parameterized model, and Amanzi 
+supports a number of parameterizations.  
+For example, initial data might be uniform (the value is required), or linear in y (the value 
+and its gradient are required).  
+Where Amanzi supports a number of parameterized models for parameter *model*, the available 
+models will be listed by name, and then will be described in the subsequent section.  
+In the manufactured example below, the specification looks as follows:
+
+* SOIL [list] accepts parameters that describes properties of this soil.
+
+  * `"region`" [string] defines a subdomain of the computational domain.
+
+  * `"model`" [list] specifies a model for the soil. Available options are `"van Genuchten`" 
+    and `"Brooks-Corey`".
+
+Here SOIL is defined by a *region* and a *model*.  
+The *region* is a string parameter but the *model* is given by a sublist with its own set of parameters.
+The parameter for *model* can be described in the same section or in a separate section
+of this document. For instance, the local description may look like:
+
+* `"model`" [list] specifies a model for the soil. Available options are `"van Genuchten`"
+  and `"Brooks-Corey`".
+  The option `"van Genuchten`" requires `"m`" [double].
+  The option `"Brooks-Corey`" requires `"lambda`" [double] and `"alpha`" [double].
+
+Each part of the spec is illustrated by an example followed by optional comments:
+
+.. code-block:: xml
+
+   <ParameterList name="water retention models">
+     <ParameterList name="SOIL">
+       <Parameter name="region" type="string" value="TOP_DOMAIN"/>
+       <ParameterList name="Brooks-Corey">
+         <Parameter name="lambda" type="double" value="0.7"/>
+         <Parameter name="alpha" type="double" value="1e-3"/>
+       </ParameterList>   
+     </ParameterList>   
+   </ParameterList>   
+ 
+This defines soil properties in region TOP_DOMAIN using the
+Brocks-Corey model with parameters *lambda=0.7* and *alpha=1e-3*.
+
+Additional conventions:
+
+* Reserved keywords and labels are *italicized* in discussions and `"quoted and italicized`" in the spec.
+  These are usually labels or values of parameters 
+  in the input file and must match (using XML matching rules) the specified or allowable values.
+
+* User-defined labels are marked with ALL_CAPS in this document.
+  In practice, no rules are imposed on these names.
+
+* Lists with too many parameters are described using multiple sections and multiple examples.
+  For most examples we show name of the parent sublist.
+
+
+Naming convention rule
+----------------------
+
+It is hard to overestimate importance of a reasonable naming convention rule for efficient
+code development and its daily usage in reasearch.
+
+* Camel-case names should *not* be used as names for fixed keywords (parameters and parameter lists).  
+  The following is a short list of allowed exceptions. 
+ 
+  * The names created by the user are not fixed/reserved keywords and are exempt from the above
+    rule. In this documents, we always prefix user-defined names with 
+    the underscore symbol.
+
+  * Proper names such as an individual person, place, or organization, including their derivatives
+    *should* be spelled using capital letters. Examples: *van Genuchten m*, *Brocks-Corey lambda*, 
+    *Jacobian matrix*, and *Newton correction*.
+
+  * Names of chemical species (inside fixed keywords) should be capitalized. Examples: *CO2*, *H+*.
+
+  * A few well-established abbreviations. Their complete list is here: *PK*, *MPC*, *BDF1*, *EOS*,
+    *IEM*, *PFloTran*, *pH*, *TP*. Note that names of linear and nonlinear solvers and preconditioners are 
+    not included in this list. Thus, we have to use *pcg*, *gmres*, *nka*, *amg*, *ml*, and *ilu*.
+
+  * Units such as energy [J] and temperature [K].
+
+  * The Hilbert spaces *L2* and *H1*. Note that *L2* and *l2* are different spaces and should be used
+    appropriately.
+
+  * Trilinos parameters. There are a few camel-case parameters that
+    go directly to Trilinos functions and therefore outside of our control, e.g. *ML output*.
+
+
+Verbose output
+--------------
+
+Output of all components of Amanzi is controlled by a standard verbose 
+object list. This list can be inserted in almost any significant
+component of this spec to produce a verbose output, see the embedded examples.
+If this list is not specified, the default verbosity value is used.
+
+* `"verbosity level`" [string] Available options are *none*, *low*, *medium*, *high*, and *extreme*.
+  Option *extreme is used by the developers only. For communication between users and developers, 
+  the recommended option is *high*. 
+
+* `"hide line prefix`" [bool] defines prefix for output messages. Default value is *true*.
+
+* `"name`" [string] is the name of the prefix.
+
+* `"write on rank`" [int] is processor rank on which the output is performed. Default is 0.
+
+.. code-block:: xml
+
+   <ParameterList name="verbose object">
+     <Parameter name="verbosity level" type="string" value="medium"/>
+     <Parameter name="name" type="string" value="my header"/>
+     <Parameter name="hide line prefix" type="bool" value="false"/>
+     <Parameter name="write on rank" type="int" value="0"/>
+   </ParameterList>
+
+
+Residual debugger
+-----------------
+
+Some components (currently just nonlinear solver, this may change)
+leverage a *residual debugger* object for writing, to file, residuals,
+corrections, and internal iterates of a solve process for solver
+debugging/work.  Control of when these iterates are written is
+controlled by a few parameters.  This should be written sparingly --
+each attempt at a timestep and each cycle is its own file, and writes
+its own mesh file, so this should be considered i/o and runtime
+expensive.
+
+  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, 
+    the second is the cycle period, and the third is the stop cycle or -1 in which case 
+    there is no stop cycle. All iterations shall be written at such cycles that 
+    satisfy formula cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
+
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start-period-stop parameters 
+    are needed, then use these parameters with n=0,1,2,..., and not the single 
+    `"cycles start period stop`" parameter.
+
+  * `"cycles`" [Array(int)] an array of single cycles at which all iterations shall be written. 
+
+Note: *cycle* here means the current time integration step and *not* the global cycle.
+
+.. code-block:: xml
+
+  <ParameterList name="BDF1">  <!-- parent list -->
+  <ParameterList name="residual debugger">
+    <Parameter name="cycles start period stop" type="Array(int)" value="{{0,100,-1}}"/>
+    <Parameter name="cycles" type="Array(int)" value="{{999, 1001}}"/>
+  </ParameterList>
+  </ParameterList>
+   
+
+Units
+-----
+
+Amanzi's internal default units are SI units except for the concentration.
+
+* `"concentration`" [string] defines units for concentration. Available options
+  are `"molar`" (default) which is `"mol/L`" and `"SI`" which is `"mol/m^3`". 
+
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="units">
+    <Parameter name="length" type="string" value="m"/>
+    <Parameter name="time" type="string" value="s"/>
+    <Parameter name="mass" type="string" value="kg"/>
+    <Parameter name="temperature" type="string" value="K"/>
+    <Parameter name="concentration" type="string" value="molar"/>
+  </ParameterList>
+  </ParameterList>
+
+
+Symbol index
+============
+
+.. include:: symbol_table.rst
+  
+
+Cycle Driver
+============
+{ CycleDriver }
+
+
+Time period control
+-------------------
+
+A set of times that simulation hits exactly can be used to avoid problems with
+sudden change of boundary conditions or source/sink terms.
+This list must *NOT* include start times for time periods *TP #*.
+
+* `"start times`" [Array(double)] is the list of particular times that we want to hit exactly.
+
+* `"initial time step`" [Array(double)] is the size of the first time step after we hit a special
+  time specified above.
+
+* `"maximum time step`" [Array(double)] allows the user to limit the time step between
+  two particular times.
+
+.. code-block:: xml
+
+  <ParameterList name="cycle driver">  <!-- parent list -->
+  <ParameterList name="time period control">
+    <Parameter name="start times" type="Array(double)" value="{{3.16e+10, 6.32e+10}}"/>
+    <Parameter name="initial time step" type="Array(double)" value="{{100.0, 100.0}}"/>
+    <Parameter name="maximum time step" type="Array(double)" value="{{3.2e+8, 4e+17}}"/>
+   </ParameterList>
+   </ParameterList>
+
+Between approximately 1000 and 2000 years, we limit the maximum time step to 10 years. 
+
+
+Restart from checkpoint data file
+---------------------------------
+
+A user may request to restart a simulation from a checkpoint data file by creating list 
+*restart*. In this scenario, the code will overwrite data initialized using the input XML file.
+The purpose of restart is to continue the simulation that has been terminated before for some reasons,
+e.g. because its allocation of time ran out.
+The value for the current time and current cycle is read from the checkpoint file.
+
+* `"restart`" [list]
+
+  * `"file name`" [string] provides name of the existing checkpoint data file to restart from.
+
+.. code-block:: xml
+  
+  <ParameterList name="cycle driver">  <!-- parent list -->
+  <ParameterList name="restart">
+    <Parameter name="file name" type="string" value="_CHECK00123.h5"/>
+  </ParameterList>
+  </ParameterList>
+
+In this example, Amanzi is restarted with all state data initialized from file
+CHECK00123.h5. 
+
+
+State
+=====
+{ State }
+
+
+* `"initialization filename`" [string] (optional) provides name of the existing checkpoint data 
+  file. The initialization sequence is as follows. First, we try to initialize a
+  field using the provided checkpoint file. Second, regardless of the outcome of the
+  previous step, we try to initialize the field using the sublist `"initial conditions`".
+  By design, the second step allows us to overwrite only part for the
+  field. 
+
+* `"initial conditions`" [sublist] There are several options available to initialize 
+  fields using this sublist: `"restart file`" - read field
+  from existing HDF55 file, `"exodus file initialization`" - read field
+  from existing Exodus file, `"cells from file`" - read cell
+  components from HDF5 file, `"constant`" - set field values to constant, `"initialize
+  from 1D column`" - initialize 1D column from file and `"function`" -
+  field is initialized by function. Initialization time is specified with `"time`"
+  that defaults to 0.
+
+
+Primary and derived fields
+--------------------------
+
+* Primary fields [default units]
+
+  * pressure [Pa]
+  * total component concentration [mol/L] or [mol/m^3]
+  * temperature [K]
+
+* Secondary fields
+
+  * saturation [-]
+  * hydraulic_head [m]
+  * volumetric_flow_rate [m^3/s] 
+  * permeability [m^2]
+  * porosity [-]
+  * specific_storage [m^-1]
+  * specific_yield [-]
+  * transport_porosity [-] 
+
+
+Field evaluators
+----------------
+
+There are three different types of field evaluators.
+
+Independent variable field evaluator
+....................................
+
+An independent ivariable field evaluator has no dependencies and is specified by a function.
+Typically, it is evaluated once per simulation.
+The evaluator has the following control parameters.
+
+* `"field evaluator type`" [string] The value of this parameter is used by the factory
+  of evaluators. The available option are `"independent variable`", `"primary variable`",
+  and `"secondary variable`".
+
+* `"constant in time`" [bool] specifies time-dependence nature of the field.
+
+* `"function`" [list] defines a piecewise continuous function for calculating the independent variable.
+  In may contain multiple sublists `"_DOMAIN`" with identical structure.
+  
+  * `"_DOMAIN`" [list]
+
+    * `"region`" [string] specifies domain of the function, a single region.
+
+    * `"regions`" [Array(string)] is the alternative to option `"region`", domain on 
+      the function consists of many regions.
+
+    * `"component`" [string] specifies geometric object associated with the mesh function.
+      Available options are `"cell`", `"face`", and `"node`".
+
+    * `"function`" [list] defines an analytic function for calculation. Its structure
+      is described in the Functions_ section below.
+
+    * `"initialize faces from cells`" [bool] instructs state to initialize face-component
+      and boundary face-component (if any) of a composite vector from a cell-component 
+      using simple averaging. Default is false.
+
+.. code-block:: xml
+
+  <ParameterList name="field_evaluators">  <!-- parent list -->
+  <ParameterList name="saturation_liquid">
+    <Parameter name="field evaluator type" type="string" value="independent variable"/>
+    <Parameter name="constant in time" type="bool" value="true"/>
+    <ParameterList name="function">
+      <ParameterList name="_DOMAIN">
+        <Parameter name="region" type="string" value="_ALL DOMAIN"/>
+        <Parameter name="component" type="string" value="cell"/>
+        <ParameterList name="function">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="0.8"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="extreme"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+In this example field *saturation_liquid* is defined as a cell-based variable with constant value 0.8. 
+Note that the user-defined name for this field cannot have spaces.
+
+
+Independent variable field evaluator from file
+..............................................
+
+An independent variable field evaluator from file has no dependencies and is specified by 
+data at specific time moments.
+
+* `"filename`" [string] defines name of a data file.
+  
+* `"domain name`" [string] specifies mesh. Default is `"domain`".
+
+* `"variable name`" [string] defines variable name in the data file.
+
+* `"component name`" [string] defines component name in a composite vector.
+
+* `"mesh entity`" [string] specifies geometric object associated with the mesh function.
+  Available options are `"cell`", `"face`", and `"node`".
+
+* `"number of dofs`" [string] defines the number of degrees of freedom. Default is 1.
+
+* `"time function`" [list] defines a time function to interpolate data. This is the 
+  optional parameter.
+
+.. code-block:: xml
+
+  <ParameterList name="field_evaluators">  <!-- parent list -->
+  <ParameterList name="porosity">
+    <Parameter name="field evaluator type" type="string" value="independent variable from file"/>
+    <Parameter name="filename" type="string" value="_DATA_FILE.h5"/>
+    <Parameter name="domain name" type="string" value="domain"/>
+    <Parameter name="variable name" type="string" value="porosity"/>
+    <Parameter name="component name" type="string" value="cell"/>
+    <Parameter name="mesh entity" type="string" value="cell"/>
+    <Parameter name="number of dofs" type="int" value="1"/>
+
+    <ParameterList name="time function">  
+      <Parameter name="times" type="Array(double)" value="{{1.0, 2.0, 3.0}}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+The field *porosity* is defined as a cell-based variable and
+interpolated between three time intervals.
+
+
+Constant variable field evaluator
+.................................
+
+Constant variable field evaluator as a simplified version of independent field evaluator from
+file which allows one to define constant in time field. Initialization of the field 
+has to be done in the initial conditions sublist of state.
+
+.. code-block:: xml
+
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="porosity"> 
+    <ParameterList name="function">
+      <ParameterList name="_ANY NAME">
+        <Parameter name="regions" type="Array(string)" value="{{_ALL DOMAIN}}"/>
+        <Parameter name="component" type="string" value="cell"/>
+        <ParameterList name="function">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="90000.0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="field_evaluators">  <!-- parent list -->
+  <ParameterList name="porosity">
+    <Parameter name="field evaluator type" type="string" value="constant variable"/>
+  </ParameterList>
+  </ParameterList>
+
+
+Primary variable field evaluator
+................................
+
+The primary variable field evaluator has no dependencies solved for by a PK.
+Examples of independent field evaluators are primary variable of PDEs, such as
+pressure and temperature.
+Typically this evaluator is used internally to inform the dependency tree about 
+a new state of the primary variable.
+
+
+Secondary variable field evaluators
+...................................
+
+Secondary fields are derived either from primary fields or other secondary fields.
+There are two types of secondary fields evaluators.
+The first type is used to evaluate a single field.
+The second type is used to evaluate efficiently (in one call of an evaluator) multiple fields.
+
+Typically, secondary fields are created by high-level PKs during the setup phase and
+inserted automatically in the list of evaluators.
+The related XML syntax can provide various parameters needed for evaluation as explained in two
+examples below.
+The developer can create a secondary field evaluator using common parameters as well
+as custom parameters (see the examples).
+
+* `"evaluator dependencies`" [Array(string)] provides a list of fields on which this evaluator
+  depends.
+
+* `"check derivatives`" [bool] allows the develop to check derivatives with finite differences.
+  This is the expensive option involving finite difference approximations and is recommended for
+  code debugging only. Default is *false*.
+
+* `"finite difference epsilon`" [double] defines the finite difference epsilon.
+  Default is 1e-10.
+
+.. code-block:: xml
+
+  <ParameterList name="field_evaluators">  <!-- parent list -->
+  <ParameterList name="molar_density_liquid">
+    <Parameter name="field evaluator type" type="string" value="eos"/>
+    <Parameter name="eos basis" type="string" value="both"/>
+    <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+    <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
+    <ParameterList name="EOS parameters">
+      <Parameter name="eos type" type="string" value="liquid water"/>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="extreme"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+In this example, the secondary field *internal_energy_rock* is evaluated using one of the 
+internal *iem* evaluators. 
+A particular evaluator is selected dynamically using parameter *iem type*.
+
+
+Initial conditions
+------------------
+
+Constant scalar field
+.....................
+
+A constant field is the global (with respect to the mesh) constant. 
+At the moment, the set of such fields includes *fluid_density*
+and *fluid_viscosity*.
+The initialization requires to provide a named sublist with a single
+parameter *value*.
+
+.. code-block:: xml
+
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="fluid_density">
+    <Parameter name="value" type="double" value="998.0"/>
+  </ParameterList>
+  </ParameterList>
+
+
+Constant vector field
+.....................
+
+A constant vector field is the global (with respect to the mesh) vector constant. 
+At the moment, the set of such vector constants includes *gravity*.
+The initialization requires to provide a named sublist with a single
+parameter *value*. In three dimensions, it looks like
+
+.. code-block:: xml
+
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="gravity">
+    <Parameter name="value" type="Array(double)" value="{{0.0, 0.0, -9.81}}"/>
+  </ParameterList>
+  </ParameterList>
+
+
+A scalar field
+..............
+
+A variable scalar field is defined by a few functions (labeled with _MESH BLOCK #
+in our example) with non-overlapping domains. 
+The required parameters for each function are *region*, *component*,
+and *function*.
+
+* `"regions`" [Array(string)] is list of mesh regions where the function
+  should be applied, the domain of the function.
+
+* `"component`" [string] specifies a mesh object on which the discrete field 
+  is defined.
+
+Optional parameters are *write checkpoint* and *write vis*.
+These parameters define whether the field has to be written into
+checkpoints of visualization files. Default values are *true*.
+
+.. code-block:: xml
+
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="pressure"> 
+    <Parameter name="write checkpoint" type="bool" value ="false">   
+    <Parameter name="write vis" type="bool" value ="true">
+    <ParameterList name="function">
+      <ParameterList name="_MESH BLOCK 1">
+        <Parameter name="regions" type="Array(string)" value="_DOMAIN 1"/>
+        <Parameter name="component" type="string" value="cell"/>
+        <ParameterList name="function">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="90000.0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="_MESH BLOCK 2">
+        <Parameter name="regions" type="Array(string)" value="{{_DOMAIN 2, _DOMAIN 3}}"/>
+        ... 
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+In this example, the field *pressure* has constant value 90000 [Pa] in 
+each mesh cell of the first region. The second mesh block will define
+the pressure in the second mesh region and so on.
+Note that the names of functions may coinsider with the names of regions.
+
+
+A vector or tensor field
+........................
+
+A variable tensor (or vector) field is defined similarly to a variable scalar field. 
+The difference lies in the definition of the function which is now a multi-valued function.
+
+* `"number of dofs`" [int] is the number of components in the vector or tensor.
+
+* `"Function type`" [string] defines the function type. The only available option 
+  is `"composite function`".
+
+* `"dot with normal`" [bool] triggers the special initialization of a
+  vector field such as the `"volumetric_flow_rate`". This field is defined by
+  projection of the velocity (a vector field) on face normals.
+  Changing value to *false* will produce the vector field.
+
+Optional parameters are *write checkpoint*,  and *write vis*.
+These parameters define whether the field has to be written into
+checkpoints of vis files. Default values are *true*.
+
+.. code-block:: xml
+
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="volumetric_flow_rate">
+    <Parameter name="write checkpoint" type="bool" value="true"/>
+    <Parameter name="write vis" type="bool" value="false"/>
+    <Parameter name="dot with normal" type="bool" value="true"/>
+
+    <ParameterList name="function">
+      <ParameterList name="_MESH BLOCK 1">
+        <Parameter name="regions" type="Array(string)" value="{{_ALL DOMAIN}}"/>
+        <Parameter name="component" type="string" value="face"/>
+        <ParameterList name="function">
+          <Parameter name="number of dofs" type="int" value="2"/>
+          <Parameter name="function type" type="string" value="composite function"/>
+          <ParameterList name="dof 1 function">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.002"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="dof 2 function">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.001"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+In this example the constant Darcy velocity (0.002, 0.001) [m/s] is dotted with the face 
+normal producing one number per mesh face.
+
+
+Geochemical constraint
+......................
+
+We can define geochemical contraint as follows: 
+
+.. code-block:: xml
+
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="geochemical conditions">
+    <ParameterList name="initial">
+      <Parameter name="regions" type="Array(string)" value="{{_ENTIRE DOMAIN}}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+
+Initialization from Exodus II file
+-------------------------------------
+
+Some fields can be initialized from Exodus II files. 
+For each field, an additional sublist has to be added to the
+named sublist of *State* list with the file name and the name of attributes. 
+For a serial run, the file extension must be *.exo*. 
+For a parallel run, it must be *.par*.
+
+* `"attributes`" [Array(string)] defines names of attributes. The number of names
+  must be equal to the number of components in the field. The names can be repeated.
+  Scalar fields (e.g. porosity) require one name, tensorial fields (e.g. permeability)
+  require two or three names.
+
+.. code-block:: xml
+
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="permeability">
+    <ParameterList name="exodus file initialization">
+      <Parameter name="file" type="string" value="_MESH_AND_DATA.exo"/>
+      <Parameter name="attributes" type="Array(string)" value="{{permx, permx, permz}}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+
+Initialization from HDF5 file
+-------------------------------
+
+Some field can be initialized from HDF5 file. The field has to written
+to HDF5 file as 2D array (number_elements, number_of_components) and
+has to name as field_name.entity.component, e.g
+transport_porosity.cell.0. Parameter `"cell from file`" initializes
+only cell part of the field.
+
+.. code-block:: xml
+
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="transport_porosity">
+    <Parameter name="restart file" type="string" value="_TEST1.h5"/>
+    </ParameterList>
+  <ParameterList name="porosity">
+    <Parameter name="cells from file" type="string" value="_TEST3.h5"/>
+  </ParameterList>
+  </ParameterList>
+
+
+Initialization of 1D column
+-----------------------------
+
+It is possible to initialize only 1D column portion of a particular field.
+
+.. code-block:: xml
+
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="temperature">
+    <ParameterList name="initialize from 1D column">
+      <Parameter name="file" type="string" value="_COLUMN_DATA.h5"/>
+      <Parameter name="z header" type="string" value="/z"/>
+      <Parameter name="f header" type="string" value="/temperature"/>
+      <Parameter name="coordinate orientation" type="string" value="depth"/>
+      <Parameter name="surface sideset" type="string" value="surface"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+
+Mesh partitioning
+-----------------
+
+Amanzi's state has a number of tools to verify completeness of initial data.
+This is done using list *mesh partitions*. 
+Each sublist must have parameter *region list* specifying
+regions that define unique partition of the mesh.
+
+.. code-block:: xml
+
+  <ParameterList name="state">  <!-- parent list -->
+  <ParameterList name="mesh partitions">
+    <ParameterList name="_MATERIALS">
+      <Parameter name="region list" type="Array(string)" value="{{_SAND1,_CLAY,_SAND2}}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+In this example, we verify that three mesh regions representing sand and clay cover completely
+the mesh without overlaps.
+If so, all material fields, such as *porosity* and *permeability*, will be initialized properly.
+
+
+Data IO control
+---------------
+
+Two parameters below allow us to control fields that will go into a visuzalization file.
+First, we remove all fields matching the patterns specified by *blacklist*.
+Second, we add all fields matching the patterns specified by *whitelist*.
+Both parameters are optional.
+
+* `"blacklist`" [Array(string)] list of fields that should *not* be written to the visualization file.
+  Standard regular expressuion rules can be used, e.g. `"(secondary_)(.*)`" skips all fields 
+  those names start with `"secondary_`".
+
+* `"whitelist`" [Array(string)] list of fields that should *be* written to the visualization file.
+  Standard regular expressuion rules can be used, e.g. `"(primary_)(.*)`" adds all fields 
+  those names start with `"primary_`".
+
+
+Example
+-------
+
+The complete example of a state initialization is below. Note that
+_MATERIAL1 and _MATERIAL2 must be labels of the existing regions that cover
+the computational domain.
+The fields *porosity* and *pressure* are constant over the whole domain. 
+The field *permeability* is the piecewise constant diagonal tensor.
+
+.. code-block:: xml
+
+  <ParameterList name="state">
+  <ParameterList name="field evaluators">
+    <ParameterList name="porosity">
+      <ParameterList name="function">
+        <ParameterList name="_ANY NAME ">
+          <Parameter name="regions" type="Array(string)" value="{{_ALL DOMAIN}}"/>
+          <Parameter name="component" type="string" value="cell"/>
+          <ParameterList name="function">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.408"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="initial conditions">
+    <ParameterList name="fluid_density">
+      <Parameter name="value" type="double" value="998.0"/>
+    </ParameterList>
+
+    <ParameterList name="gravity">
+      <Parameter name="value" type="Array(double)" value="{{0.0, -9.81}}"/>
+    </ParameterList>
+
+    <ParameterList name="pressure">
+      <ParameterList name="function">
+        <ParameterList name="_ANY NAME">
+          <Parameter name="regions" type="Array(string)" value="{{_ALL DOMAIN}}"/>
+          <Parameter name="component" type="string" value="cell"/>
+          <ParameterList name="function">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="90000.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="permeability">
+      <ParameterList name="function">
+        <ParameterList name="_ANY NAME">
+          <Parameter name="regions" type="Array(string)" value="_MATERIAL1"/>
+          <Parameter name="component" type="string" value="cell"/>
+          <ParameterList name="function">
+            <Parameter name="function type" type="string" value="composite function"/>
+            <Parameter name="number of dofs" type="int" value="2"/>
+            <ParameterList name="dof 1 function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1e-12"/>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="dof 2 function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1e-13"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="_ANY_NAME">
+          <Parameter name="regions" type="Array(string)" value="_MATERIAL2"/>
+          <Parameter name="component" type="string" value="cell"/>
+          <ParameterList name="function">
+            <Parameter name="function type" type="string" value="composite function"/>
+            <Parameter name="number of dofs" type="int" value="2"/>
+            <ParameterList name="dof 1 function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2e-13"/>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="dof 2 function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2e-14"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+
+Pprocess Kernels (PKs)
+======================
+{ PK }
+
+.. contents:: **List of PKs**
+   :local:
+
+
+Base PKs
+========
+There are several types of PKs, and each PK has its own valid input spec.  
+However, there are three main types of PKs, from which nearly all PKs derive.  
+Note that none of these are true PKs and cannot stand alone.
+
+
+PK_Physical
+-----------
+
+
+PK_BDF
+------
+
+
+PK_PhysicalBDF
+--------------
+
+
+Physical PKs
+============
+Physical PKs are the physical capability implemented within ATS.
+
+
+Flow PK
+-------
+{ Flow_PK }
+
+
+Water retention models
+......................
+{ WRM }
+
+
+Porosity models
+...............
+{ PorosityModel }
+
+
+Multiscale continuum models
+...........................
+{ MultiscaleFlowPorosity }
+
+
+Dual porosity model
+```````````````````
+{ MultiscaleFlowPorosity_DPM }
+
+
+Generalized dual porosity model
+```````````````````````````````
+{ MultiscaleFlowPorosity_GDPM }
+
+
+Absolute permeability
+.....................
+
+* `"coordinate system`" [string] defines coordinate system
+  for calculating absolute permeability. The available options are `"cartesian`"
+  and `"layer`".
+
+* `"off-diagonal components`" [int] defines additional (typically off-diagonal) 
+  components of the absolute permeability. Deafult is 0.
+
+.. code-block:: xml
+
+  <ParameterList name="flow">  <!-- parent list -->
+  <ParameterList name="absolute permeability">
+    <Parameter name="coordinate system" type="string" value="cartesian"/>
+    <Parameter name="off-diagonal components" type="int" value="0"/>
+  </ParameterList>
+  </ParameterList>
+
+
+Relative permeability
+.....................
+
+This section discusses interface treatment of cell-centered fields such as 
+relative permeability, density and viscosity.
+
+* `"relative permeability`" [list] collects information required for treatment of
+  relative permeability, density and viscosity on mesh faces.
+
+  * `"upwind method`" [string] defines a method for calculating the *upwinded* 
+    relative permeability. The available options are: `"upwind: gravity`", 
+    `"upwind: darcy velocity`" (default), `"upwind: second-order`", `"upwind: amanzi`" (experimental), 
+    `"upwind: amanzi new`" (experiemental), `"other: harmonic average`", and `"other: arithmetic average`".
+
+  * `"upwind frequency`" [string] defines frequency of recalculating Darcy flux inside
+    nonlinear solver. The available options are `"every timestep`" and `"every nonlinear iteration`".
+    The first option freezes the Darcy flux for the whole time step. The second option
+    updates it on each iteration of a nonlinear solver. The second option is recommended
+    for the Newton solver. It may impact significantly upwinding of the relative permeability 
+    and convergence rate of this solver.
+
+  * `"upwind parameters`" [list] defines parameters for upwind method specified by `"relative permeability`".
+
+    * `"tolerance`" [double] specifies relative tolerance for almost zero local flux. In such
+      a case the flow is assumed to be parallel to a mesh face. Default value is 1e-12.
+
+    * `"method`" [string] specifies a reconstruction method. Available option is
+      `"cell-based`" (default).
+
+    * `"polynomial order`" [int] defines the polynomial order of a reconstructed function. Default is 1.
+
+    * `"limiter`" [string] specifies limiting method for a high-order reconstruction. 
+      Available options are `"Barth-Jespersen`" (default), `"Michalak-Gooch`", `"tensorial`",
+      and `"Kuzmin`". 
+
+.. code-block:: xml
+
+  <ParameterList name="flow">  <!-- parent list -->
+  <ParameterList name="relative permeability">
+    <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
+    <Parameter name="upwind frequency" type="string" value="every timestep"/>
+    <ParameterList name="upwind parameters">
+       <Parameter name="tolerance" type="double" value="1e-12"/>
+       <Parameter name="method" type="string" value="cell-based"/>
+       <Parameter name="polynomial order" type="int" value="1"/>
+       <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+    </ParameterList>
+  </ParameterList>  
+  </ParameterList>  
+
+
+Fracture permeability models
+............................
+{ FracturePermModel }
+
+
+Diffusion operators
+...................
+
+List *operators* describes the PDE structure of the flow, specifies a discretization
+scheme, and selects assembling schemas for matrices and preconditioners.
+
+* `"operators`" [list] 
+
+  * `"diffusion operator`" [list] defines parameters for generating and assembling diffusion matrix.
+
+    * `"matrix`" [list] defines parameters for generating and assembling diffusion matrix. See section
+      describing operators. 
+      When the Richards problem is set up, Flow PK sets up proper value for parameter `"upwind method`" of 
+      this sublist.
+
+    * `"preconditioner`" [list] defines parameters for generating and assembling diffusion 
+      matrix that is used to create preconditioner. 
+      This sublist is ignored for the saturated problem.
+      Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
+      When the Richards problem is set up, Flow PK sets up proper value for parameter `"upwind method`" of 
+      this sublist.
+
+.. code-block:: xml
+
+  <ParameterList name="flow">  <!-- parent list -->
+  <ParameterList name="operators">
+    <ParameterList name="diffusion operator">
+      <ParameterList name="matrix">
+        <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+        <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+        <Parameter name="schema" type="Array(string)" value="{{face, cell}}"/>
+        <Parameter name="preconditioner schema" type="Array(string)" value="{{face}}"/>
+        <Parameter name="gravity" type="bool" value="true"/>
+        <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
+      </ParameterList>
+      <ParameterList name="preconditioner">
+        <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+        <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+        <Parameter name="schema" type="Array(string)" value="{{face, cell}}"/>
+        <Parameter name="preconditioner schema" type="Array(string)" value="{{face, cell}}"/>
+        <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+This example creates a p-lambda system, i.e. the pressure is
+discretized in mesh cells and on mesh faces. 
+The preconditioner is defined on faces only, i.e. cell-based unknowns
+are eliminated explicitly and the preconditioner is applied to the
+Schur complement.
+
+
+Boundary conditions
+...................
+
+Boundary conditions are defined in sublist *boundary conditions*. 
+Four types of boundary conditions are supported.
+Each type has a similar structure: a list of identical elements that contain
+information about a part of the boundary where it is prescribed, a function
+to calculate it, and optional parameters to modify it slightly.
+This modification is referred to as a submodel and requires additional parameters as described below. 
+
+* `"pressure`" [list] is the Dirichlet boundary condition where the pressure is prescribed on a part of the 
+  boundary surface. No submodels is available.
+
+* `"mass flux`" [list] is the Neumann boundary condition where an outward mass flux is prescribed on a 
+  part of the boundary surface.
+  This is the default boundary condition. If no condition is specified on a mesh face, the zero flux 
+  boundary condition is used. 
+
+  * `"rainfall`" [bool] indicates the submodel where the mass flux is defined with respect to the gravity 
+    vector and the actual flux depends on the boundary slope. Default is `"false`".
+
+* `"static head`" [list] is the Dirichlet boundary condition where the hydrostatic pressure is prescribed 
+  on a part of the boundary.
+
+  * `"relative to top`" [bool] indicates the submodel where the static head is defined with respect
+    to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
+    Default value is `"false`". 
+
+  * `"relative to bottom`" [bool] indicates the submodel where the static head is defined with respect
+    to the bottom boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
+    Default value is `"false`". 
+
+  * `"no flow above water table`" [bool] indicates the submodel where the no-flow boundary condition 
+    has to be used above the water table. This switch uses the pressure value at a face
+    centroid. Default is `"false`".
+
+* `"seepage face`" [list] is the seepage face boundary condition, a dynamic combination of the `"pressure`" and 
+  `"mass flux`" boundary conditions over the specified region. 
+  The atmospheric pressure is prescribed if internal pressure is higher it. 
+  Otherwise, the outward mass flux is prescribed. 
+
+  * `"reference pressure`" [double] defaults to the atmospheric pressure. 
+
+  * `"rainfall`" [bool] indicates the submodel where the mass flux is defined with respect to the gravity 
+    vector and the actual influx depends on the boundary slope. Default is `"false`".
+
+  * `"submodel`" [string] indicates different models for the seepage face boundary condition.
+    It can take values `"PFloTran`" and `"FACT`". The first option leads to a 
+    discontinuous change of the boundary condition type from the infiltration to pressure. 
+    The second option is described in the document on mathematical models. 
+    It employs a smooth transition from the infiltration 
+    to mixed boundary condition. The recommended value is `"PFloTran`".
+
+  * `"seepage flux threshold`" [double] sets up the threshold for switching from the pressure 
+    to influx boundary condition in submodel `"PFloTran`". The pressure condition remains 
+    for a small influx value until it exceeds the certain fraction of the `"mass flux`" specified 
+    by this parameter. The admissible range is from 0 to 0.1. Default value is 0. 
+
+Each boundary condition accepts three parameters: `"regions`", 
+`"use area fractions`", and `"spatial distribution method`". Parameter `"regions`"
+specifies the list of regions where the boundary condition is defined. 
+The boolen parameter `"use area fractions`" instructs the code to use all available volume fractions. 
+Default value is *false*, it corresponds to :math:`f=1` in the formulas below.
+Parameter `"spatial distribution method`" defines the method for distributing
+data (e.g. the total mass flux) over the specified regions. The available options 
+are `"volume`", `"permeability`", `"domain coupling`", `"subgrid`", `"simple well`", or `"none`". 
+For instance, for a given boundary function :math:`g(x)`, these options correspond to 
+different boundary conditions for the Darcy velocity in the original PDE:
+
+.. math::
+  {{\boldsymbol q}} \cdot {{\boldsymbol n}} = g(x)\, f\, \frac{{1}}{{|B|}},\quad\mbox{{and}}\quad
+  {{\boldsymbol q}} \cdot {{\boldsymbol n}} = g(x)\, f,
+
+where :math:`f` is the folume fraction function, and :math:`|B|` is the area of the
+specified regions calculated using the folume fraction function.
+
+.. code-block:: xml
+
+  <ParameterList name="flow">  <!-- parent list -->
+  <ParameterList name="boundary conditions">
+    <ParameterList name="pressure">
+      <ParameterList name="_BC 0">
+        <Parameter name="regions" type="Array(string)" value="{{_WEST_SIDE}}"/>
+        <Parameter name="spatial distribution method" type="string" value="none"/>
+        <ParameterList name="boundary pressure">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="101325.0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="mass flux">
+      <ParameterList name="_BC 1">
+        <Parameter name="regions" type="Array(string)" value="{{_NORTH_SIDE, _SOUTH_SIDE}}"/>
+        <Parameter name="spatial distribution method" type="string" value="volume"/>
+        <Parameter name="rainfall" type="bool" value="false"/>
+        <ParameterList name="outward mass flux">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="0.0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="static head">
+      <ParameterList name="_BC 2">
+        <Parameter name="regions" type="Array(string)" value="{{_EAST_SIDE_TOP}}"/>
+        <Parameter name="spatial distribution method" type="string" value="none"/>
+        <Parameter name="relative to top" type="bool" value="true"/>
+        <Parameter name="relative to bottom" type="bool" value="true"/>
+        <ParameterList name="static head">
+          <ParameterList name="function-static-head">
+            <Parameter name="p0" type="double" value="101325.0"/>
+            <Parameter name="density" type="double" value="1000.0"/>
+            <Parameter name="gravity" type="double" value="9.8"/>
+            <Parameter name="space dimension" type="int" value="3"/>
+            <ParameterList name="water table elevation">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="10.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="seepage face">
+      <ParameterList name="_BC 3">
+        <Parameter name="regions" type="Array(string)" value="{{_EAST_SIDE_BOTTOM}}"/>
+        <Parameter name="spatial distribution method" type="string" value="none"/>
+        <Parameter name="rainfall" type="bool" value="true"/>
+        <Parameter name="submodel" type="string" value="PFloTran"/>
+        <Parameter name="reference pressure" type="double" value="101325.0"/>
+        <ParameterList name="outward mass flux">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="1.0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+This example includes all four types of boundary conditions. The boundary of a square domain 
+is split into six pieces. Constant function is used for simplicity and can be replaced by any
+of the other available functions.
+
+
+Sources and sinks
+.................
+
+The sources and sinks are typically associated with wells. 
+Negative source means a producing well. 
+Positive source means an injecting well. 
+The structure of list *source terms* mimics that of list *boundary conditions*. 
+Again, constant functions can be replaced by any of the available functions.
+
+* `"regions`" [Array(string)] is the list of regions where the source is defined.
+
+* `"spatial distribution method`" [string] is the method for distributing
+  source Q over the specified regions. The available options are `"volume`",
+  `"none`", `"permeability`" and `"simple well`".
+  For option `"none`", the source term function Q is measured in [kg/m^3/s]. 
+  For the other options, it is measured in [kg/s]. 
+  When the source function is defined over a few regions, Q is distributed over their union.
+  Option `"volume fraction`" can be used when the region geometric
+  model support volume fractions. Option `"simple well`" implements the Peaceman model. 
+  The well flux is defined as `q_w = WI (p - p_w)` [kg/s], where `WI` is the well index 
+  and `p_w` is the well pressure. The pressure in a well is assumed to be hydrostatic.
+
+* `"use volume fractions`" instructs the code to use all available volume fractions. 
+  Note that the region geometric model supports volume fractions only for a few regions.
+
+* `"submodel`" [string] refines definition of the source. Available options are `"rate`",
+  `"integrated source`" and `"bhp"` (bottom hole pressure). The first option defines the source 
+  in a natural way as the rate of change `q`. The second option defines the indefinite
+  integral `Q` of the rate of change, i.e. the source term is calculated as `q = dQ/dt`. 
+  For most distributions methods, two submodles are available: `"rate`" and `"integrated source`".
+  For distribution method `"simple well`", two submodels are available: `"rate`" and
+  `"bhp`". Submodel `"bhp`" requires `"depth"`, `"well radius`" and 
+  `"bhp`" function. Submodel `"rate`" requires only rate function.
+  Default is `"rate`". 
+
+.. code-block:: xml
+
+  <ParameterList name="flow">  <!-- parent list -->
+  <ParameterList name="source terms">
+    <ParameterList name="_SRC 0">
+      <Parameter name="regions" type="Array(string)" value="{{_WELL_EAST}}"/>
+      <Parameter name="spatial distribution method" type="string" value="volume"/>
+      <Parameter name="submodel" type="string" value="rate"/>
+      <ParameterList name="well">
+        <ParameterList name="function-constant">
+          <Parameter name="value" type="double" value="-0.1"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="_SRC 1">
+      <Parameter name="regions" type="Array(string)" value="{{_WELL_WEST}}"/>
+      <Parameter name="spatial distribution method" type="string" value="permeability"/>
+      <ParameterList name="well">
+        <ParameterList name="function-constant">
+          <Parameter name="value" type="double" value="-0.2"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="_SRC 2">
+      <Parameter name="regions" type="Array(string)" value="{{_WELL_NORTH}}"/>
+        <Parameter name="spatial distribution method" type="string" value="simple well"/>    
+        <ParameterList name="well">
+          <Parameter name="submodel" type="string" value="bhp"/>
+          <Parameter name="depth" type="double" value="-2.5"/>
+          <Parameter name="well radius" type="double" value="0.1"/>
+          <ParameterList name="bhp">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="10.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="_SRC 3">
+      <Parameter name="regions" type="Array(string)" value="{{_WELL_SOUTH}}"/>
+        <Parameter name="spatial distribution method" type="string" value="simple well"/>
+        <ParameterList name="well">
+          <Parameter name="submodel" type="string" value="rate"/>
+          <ParameterList name="rate">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="100.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+   </ParameterList>
+   </ParameterList>
+
+
+Time integrator
+...............
+
+The list *time integrator* defines a generic time integrator used
+by the cycle driver. 
+This driver assumes that each PK has only one time integrator.
+The list *time integrator* defines parameters controlling linear and 
+nonlinear solvers during a time integration period.
+We break this long sublist into smaller parts. 
+
+
+Initialization and constraints
+``````````````````````````````
+
+* `"error control options`" [Array(string)] lists various error control options. 
+  A nonlinear solver is terminated when all listed options are passed. 
+  The available options are `"pressure`", `"saturation`", and `"residual`". 
+  All errors are relative, i.e. dimensionless. 
+  The error in pressure is compared with capillary pressure plus atmospheric pressure. 
+  The other two errors are compared with 1. 
+  The option `"pressure`" is always active during steady-state time integration.
+  The option  `"saturation`" is always active during transient time integration.
+
+* `"linear solver`" [string] refers to a generic linear solver from list `"solvers`".
+  It is used in all cases except for `"initialization`" and `"enforce pressure-lambda constraints`".
+  Currently, it is used by the Darcy PK only.
+
+* `"preconditioner`" [string] specifies preconditioner for linear and nonlinear solvers.
+
+* `"preconditioner enhancement`" [string] specifies a linear solver that binds 
+  the above preconditioner to improve spectral properties. Default is `"none`".
+
+* `"initialization`" [list] defines parameters for calculating initial pressure guess.
+  It can be used to obtain pressure field which is consistent with the boundary conditions.
+  Default is empty list.
+
+  * `"method`" [string] specifies an optional initialization methods. The available 
+    options are `"picard`" and `"saturated solver`". The latter option leads to solving 
+    a Darcy problem. The former option uses sublist `"picard parameters`".
+    *Picard works better if a bounded initial pressure guess is provided.* 
+
+  * `"active wells`" [bool] specifies if wells are active or turned off. Default is *false*.
+
+  * `"picard parameters`" [list] defines control parameters for the Picard solver.
+
+    * `"convergence tolerance`" [double] specifies nonlinear convergence tolerance. 
+      Default is 1e-8.
+    * `"maximum number of iterations`" [int] limits the number of iterations. Default is 400. 
+
+  * `"linear solver`" [string] refers to a solver sublist of the list `"solvers`". 
+
+  * `"clipping saturation value`" [double] is an experimental option. It is used 
+    after pressure initialization to cut-off small values of pressure.
+    The new pressure is calculated based of the provided saturation value. Default is 0.6.
+
+  * `"clipping pressure value`" [double] is an experimental option. It is used 
+    after pressure initialization to cut-off small values of pressure below the provided
+    value.
+
+* `"enforce pressure-lambda constraints`" [list] each time the time integrator is 
+  restarted, we need to re-enforce the pressure-lambda relationship for new boundary conditions. 
+  Default is empty list.
+
+  * `"method`" [string] is a placeholder for different algorithms. Now, the only 
+    available option is `"projection`" which is default.
+
+  * `"linear solver`" [string] refers to a solver sublist of the list `"solvers`".
+
+  * `"inflow krel correction`" [bool] estimates relative permeability on inflow 
+    mesh faces. This estimate is more reliable than the upwinded relative permeability
+    value, especially in steady-state calculations.
+
+.. code-block:: xml
+
+  <ParameterList name="flow">  <!-- parent list -->
+  <ParameterList name="time integrator">
+    <Parameter name="error control options" type="Array(string)" value="{{pressure, saturation}}"/>
+    <Parameter name="linear solver" type="string" value="_GMRES_WITH_AMG"/>
+     <Parameter name="preconditioner" type="string" value="_HYPRE_AMG"/>
+     <Parameter name="preconditioner enhancement" type="string" value="none"/>
+
+     <ParameterList name="initialization">  <!-- first method -->
+       <Parameter name="method" type="string" value="saturated solver"/>
+       <Parameter name="linear solver" type="string" value="_PCG_WITH_AMG"/>
+       <Parameter name="clipping pressure value" type="double" value="50000.0"/>
+     </ParameterList>
+
+     <ParameterList name="initialization">  <!-- alternative method -->
+       <Parameter name="method" type="string" value="picard"/>
+       <Parameter name="linear solver" type="string" value="_PCG_WITH_AMG"/>
+       <ParameterList name="picard parameters">
+         <Parameter name="convergence tolerance" type="double" value="1e-8"/> 
+         <Parameter name="maximum number of iterations" type="int" value="20"/> 
+       </ParameterList>
+     </ParameterList>
+
+     <ParameterList name="pressure-lambda constraints">
+       <Parameter name="method" type="string" value="projection"/>
+       <Parameter name="inflow krel correction" type="bool" value="false"/>
+       <Parameter name="linear solver" type="string" value="_PCG_WITH_AMG"/>
+     </ParameterList>
+   </ParameterList>
+   </ParameterList>
+
+
+Time step controller and nonlinear solver
+`````````````````````````````````````````
+
+The time step is controlled by parameter *time step controller type*
+and the related list of options, see section TimeStepController_ for the list
+of supported parameter.
+Nonlinear solver is controlled by parameter *solver type*  and related list of options.
+Amanzi supports a few nonlinear solvers described in details in a separate section.
+
+.. code-block:: xml
+
+  <ParameterList name="flow">  <!-- parent list -->
+  <ParameterList name="time integrator">
+    <Parameter name="time integration method" type="string" value="BDF1"/>
+    <ParameterList name="BDF1">
+      <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+      <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+      <Parameter name="restart tolerance relaxation factor" type="double" value="1000.0"/>
+      <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
+
+      <Parameter name="timestep controller type" type="string" value="standard"/>
+      <ParameterList name="timestep controller standard parameters">
+        <Parameter name="min iterations" type="int" value="10"/>
+        <Parameter name="max iterations" type="int" value="15"/>
+        <Parameter name="time step increase factor" type="double" value="1.2"/>
+        <Parameter name="time step reduction factor" type="double" value="0.5"/>
+        <Parameter name="max time step" type="double" value="1e+9"/>
+        <Parameter name="min time step" type="double" value="0.0"/>
+      </ParameterList>
+
+      <Parameter name="solver type" type="string" value="nka"/>
+      <ParameterList name="nka parameters">
+        <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
+        <Parameter name="limit iterations" type="int" value="30"/>
+        <Parameter name="diverged tolerance" type="double" value="1e+10"/>
+        <Parameter name="diverged l2 tolerance" type="double" value="1e+10"/>
+        <Parameter name="diverged pc tolerance" type="double" value="1e+10"/>
+        <Parameter name="max du growth factor" type="double" value="1e+5"/>
+        <Parameter name="max divergent iterations" type="int" value="3"/>
+        <Parameter name="max nka vectors" type="int" value="10"/>
+        <Parameter name="modify correction" type="bool" value="false"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+
+      <!-- alternative solver 
+      <Parameter name="solver type" type="string" value="aa"/>
+      <ParameterList name="aa parameters">
+        <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
+        <Parameter name="limit iterations" type="int" value="30"/>
+        <Parameter name="diverged tolerance" type="double" value="1e+10"/>
+        <Parameter name="diverged l2 tolerance" type="double" value="1e+10"/>
+        <Parameter name="diverged pc tolerance" type="double" value="1e+10"/>
+        <Parameter name="max du growth factor" type="double" value="1e+5"/>
+        <Parameter name="max divergent iterations" type="int" value="3"/>
+        <Parameter name="max aa vectors" type="int" value="10"/>
+        <Parameter name="modify correction" type="bool" value="false"/>
+        <Parameter name="relaxation parameter" type="double" value="0.75"/>
+      </ParameterList-->
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+In this example, the time step is increased by factor 1.2 when the nonlinear
+solver converges in 10 or less iterations. 
+The time step is not changed when the number of nonlinear iterations is
+between 11 and 15.
+The time step will be cut twice if the number of nonlinear iterations exceeds 15.
+
+
+Other parameters
+................
+
+The remaining *flow* parameters are
+
+* `"clipping parameters`" [list] defines how solution increment calculated by a nonlinear 
+  solver is modified e.g., clipped.
+
+  * `"maximum saturation change`" [double] Default is 0.25.
+
+  * `"pressure damping factor`" [double] Default is 0.5.
+
+* `"plot time history`" [bool] produces an ASCII file with the time history. Default is `"false`".
+
+* `"algebraic water storage balance`" [bool] uses algebraic correction to enforce consistency of 
+  water storage and Darcy fluxes. It leads to a monotone transport. Default is *false*.
+
+.. code-block:: xml
+
+  <ParameterList name="flow">  <!-- parent list -->
+  <ParameterList name="clipping parameters">
+     <Parameter name="maximum saturation change" type="double" value="0.25"/>
+     <Parameter name="pressure damping factor" type="double" value="0.5"/>
+  </ParameterList>	
+
+  <Parameter name="plot time history" type="bool" value="false"/>
+  <Parameter name="algebraic water storage balance" type="bool" value="false"/>
+  </ParameterList>	
+
+
+Explanation of verbose output
+.............................
+
+When verbosity is set to *high*, this PK reports information about 
+current status of the simulation.
+Here after keyword *global* refers to the whole simulation including
+all time periods, keyword *local* refers to the current time period.
+The incomplete list is
+
+ * [global] cycle number, time before the step, and time step dt (in years)
+ * [local] step number, time T, and dT inside the time integrator (in seconds)
+ * [local] frequency of preconditioner updates
+ * [local] number of performed nonlinear steps and value of the nonlinear residual
+ * [local] total number of successful time steps (TS), failed time steps (FS),
+   preconditioner updates (PC/1) and preconditioner applies (PC/2),
+   linear solves insides preconditioner (LS)
+ * [local] amount of liquid (water) in the reservoir and amount of water entering
+   and living domain through its boundary (based on darcy flux).
+ * [global] current simulation time (in years)
+
+.. code-block:: xml
+
+  CycleDriver      |   Cycle 40: time(y) = 0.953452, dt(y) = 0.238395
+  TI::BDF1         |    step 40 T = 3.00887e+07 [sec]  dT = 7.52316e+06
+  TI::BDF1         |    preconditioner lag is 20 out of 20
+  TI::BDF1         |    success: 4 nonlinear itrs error=7.87642e-08
+  TI::BDF1         |    TS:40 FS:0 NS:64 PC:42 64 LS:0 dt:1.0000e+03 7.5232e+06
+  FlowPK::Richards |    reservoir water mass=1.36211e+06 [kg], total influx=897.175 [kg]
+  CycleDriver      |   New time(y) = 1.19185
+
+
+Transport PK
+------------
+{ Transport_PK }
+
+
+Material properties
+...................
+{ MDM }
+
+* `"molecular diffusion`" [list] defines names of solutes in aqueous and gaseous phases and related
+  diffusivity values.
+
+.. code-block:: xml
+
+  <ParameterList name="_TRANSPORT">  <!-- parent list -->
+  <ParameterList name="molecular diffusion">
+    <Parameter name="aqueous names" type=Array(string)" value="{{CO2(l),Tc-99}}"/>
+    <Parameter name="aqueous values" type=Array(double)" value="{{1e-8,1e-9}}"/>
+
+    <Parameter name="gaseous names" type=Array(string)" value="{{CO2(g)}}"/>
+    <Parameter name="gaseous values" type=Array(double)" value="{{1e-8}}"/>
+    <Parameter name="air-water partitioning coefficient" type=Array(double)" value="{{0.03}}"/> 
+  </ParameterList>  
+  </ParameterList>  
+
+
+Dispersion operator
+...................
+
+List *operators* describes the PDE structure of the flow, specifies a discretization
+scheme, and selects assembling schemas for matrices and preconditioners.
+
+* `"operators`" [list] 
+
+  * `"diffusion operator`" [list] 
+
+    * `"matrix`" [list] defines parameters for generating and assembling dispersion matrix.
+      See section describing operators. 
+
+.. code-block:: xml
+
+  <ParameterList name="_TRANSPORT">  <!-- parent list -->
+  <ParameterList name="operators">
+    <ParameterList name="diffusion operator">
+      <ParameterList name="matrix">
+        <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+        <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+        <Parameter name="schema" type="Array(string)" value="{{face, cell}}"/>
+        <Parameter name="preconditioner schema" type="Array(string)" value="{{face}}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+This example creates a p-lambda system, i.e. the concentation is
+discretized in mesh cells and on mesh faces. The later unknowns are auxiliary unknowns.
+
+
+Multiscale continuum models
+...........................
+{ MultiscaleTransportPorosity }
+
+
+Dual porosity model
+```````````````````
+{ MultiscaleTransportPorosity_DPM }
+
+
+Generalized dual porosity model
+```````````````````````````````
+{ MultiscaleTransportPorosity_GDPM }
+
+
+Boundary conditions
+...................
+
+For the advective transport, the boundary conditions must be specified on inflow parts of the
+boundary. If no value is prescribed through the XML input, the zero influx boundary condition
+is used. Note that the boundary condition is set up separately for each component.
+The structure of boundary conditions is aligned with that used for flow and
+allows us to define spatially variable boundary conditions. 
+
+* `"boundary conditions`" [list]
+
+  * `"concentration`" [list] This is a reserved keyword.
+   
+    * "_SOLUTE" [list] contains a few sublists (e.g. _EAST_CRIB) for boundary conditions.
+      The name _SOLUTE must be the name in the list of solutes.
+ 
+      * "_BC1" [list] defines boundary conditions using arrays of boundary regions and attached
+        functions.
+   
+      * `"regions`" [Array(string)] defines a list of boundary regions where a boundary condition
+        must be applied.
+      * `"spatial distribution method`" [string] defines the method for distributing
+        data  over the specified regions. The available options are `"area`" or `"none`". 
+      * `"boundary concentration`" [list] defines a function for calculating boundary conditions.
+        The function specification is described in subsection Functions.
+
+The example below sets constant boundary condition 1e-5 for the duration of transient simulation.
+
+.. code-block:: xml
+
+  <ParameterList name="_TRANSPORT">  <!-- parent list -->
+  <ParameterList name="boundary conditions">
+    <ParameterList name="concentration">
+      <ParameterList name="NO3-"> 
+        <ParameterList name="_EAST_CRIB">   <!-- user defined name -->
+          <Parameter name="regions" type="Array(string)" value="{{_TOP, _LEFT}}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <ParameterList name="boundary concentration">
+            <ParameterList name="function-constant">  <!-- any time function -->
+              <Parameter name="value" type="double" value="1e-5"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="_WEST CRIB">   <!-- user defined name -->
+          ...
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="CO2"> <!-- Next component --> 
+        ...
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+Geochemical boundary condition is the Dirichlet boundary condition
+which requires calculation of a geochemical balance.
+Note that the number of *time functions* below is one less than the number of times
+and geochemical conditions.
+
+.. code-block:: xml
+
+  <ParameterList name="boundary conditions">  <!-- parent list -->
+  <ParameterList name="geochemical">
+    <ParameterList name="_EAST_CRIB">
+      <Parameter name="solutes" type="Array(string)" value={{H+,HCO3-,Ca++}}"/>
+      <Parameter name="times" type="Array(double)" value="{{0.0, 100.0}}"/>
+      <Parameter name="geochemical conditions" type="Array(string)" value="{{cond1, cond2}}"/>
+      <Parameter name="time functions" type="Array(string)" value="{{constant}}"/>
+      <Parameter name="regions" type="Array(string)" value="{{EAST_CRIB}}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+
+Sources and sinks
+.................
+
+The sources and sinks are typically located at wells. 
+Stability condition requires to distinguish between injecting and producing wells.
+A source function used for an injecting well specifies concentration of solute.
+A source function used for a producing well specifies volumetric flow rate [m^3/s] of water. 
+
+The structure of list *source terms* includes only sublists named after components. 
+Again, constant functions can be replaced by any available time-function.
+Note that the source values are set up separately for each component.
+
+* `"concentration`" [list] This is a reserved keyword.
+
+ * "_SOLUTE" [list] contains a few sublists (e.g. _SRC1 and _SRC2) for various sources and sinks.
+   The name _SOLUTE must exist in the list of solutes.
+
+  * "_SRC1" [list] defines a source using arrays of domain regions, a function, and 
+    a distribution method.
+   
+   * `"regions`" [Array(string)] defines a list of domain regions where a source term
+     must be applied.
+
+   * `"spatial distribution method`" [string] identifies a method for distributing
+     source Q over the specified regions. The available options are `"volume`",
+     `"none`", and `"permeability`". For option `"none`" the source term Q is measured
+     in [mol/L/s] (if units for concetration is mol/L) or [mol/m^3/s] (otherwise). 
+     For the other options, it is measured in [mol/s]. When the source function
+     is defined over a few regions, Q will be distributed over their union.
+
+   * `"submodel`" [string] refines definition of source. Available options are `"rate`"
+     and `"integrand`". The first option defines rate of change `q`, the second one 
+     defines integrand `Q` of a rate `Q = dq/dt`. Default is `"rate`".
+
+   * `"sink`" [list] is a function for calculating a source term.
+     The function specification is described in subsection Functions.
+
+
+This example defines one well and one sink.
+
+.. code-block:: xml
+
+  <ParameterList name="source terms"> <!-- parent list -->
+  <ParameterList name="concentration">
+    <ParameterList name="H+"> 
+      <ParameterList name="_SOURCE: EAST WELL">   <!-- user defined name -->
+        <Parameter name="regions" type="Array(string)" value="{{_EAST_WELL}}"/>
+        <Parameter name="spatial distribution method" type="string" value="volume"/>
+        <Parameter name="submodel" type="string" value="rate"/>
+        <ParameterList name="injector">   <!-- reserved keyword -->
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="0.01"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="_SOURCE: WEST_WELL">
+         ...
+      </ParameterList>
+    </ParameterList>
+     
+    <ParameterList name="CO2(g)">   <!-- next component, a gas -->
+      <ParameterList name="_SOURCE: WEST WELL">   <!-- user defined name -->
+        <Parameter name="regions" type="Array(string)" value="{{_WEST_WELL}}"/>
+        <Parameter name="spatial distribution method" type="string" value="permeability"/>
+        <ParameterList name="injector">  
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="0.02"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+    
+
+Developer parameters
+....................
+
+The remaining parameters that can be used by a developer include
+
+* `"enable internal tests`" [bool] turns on various internal tests during
+  run time. Default value is `"false`".
+   
+* `"internal tests tolerance`" [double] tolerance for internal tests such as the 
+  divergence-free condition. The default value is 1e-6.
+
+* `"runtime diagnostics: solute names`" [Array(string)] defines solutes that will be 
+  tracked closely each time step if verbosity `"high`". Default value is the first 
+  solute in the global list of `"aqueous names`" and the first gas in the global list 
+  of `"gaseous names`".
+
+* `"runtime diagnostics: regions`" [Array(string)] defines a boundary region for 
+  tracking solutes. Default value is a seepage face boundary, see Flow PK.
+
+
+Explanation of verbose output
+.............................
+
+When verbosity is set to *high*, this PK reports information about 
+current status of the simulation.
+Here after keyword *global* refers to the whole simulation including
+all time periods, keyword *local* refers to the current time period.
+The incomplete list is
+
+ * [global] cycle number, time before step, and time step dt (in years)
+ * [local] cell id and position with the smallest time step
+ * [local] convergence of a linear solver for dispersion, PCG here
+ * [local] number of subcycles, stable time step, and global time step (in seconds)
+ * [local] species's name, concentration extrema, and total amount of it in the reservoir
+ * [global] current simulation time (in years)
+
+.. code-block:: xml
+
+  CycleDriver      |   Cycle 10: time(y) = 0.803511, dt(y) = 0.089279
+  TransportPK      |    cell 0 has smallest dt, (-270, -270)
+  TransportPK      |    dispersion solver (pcg) ||r||=8.33085e-39 itrs=2
+  TransportPK      |    1 sub-cycles, dt_stable=2.81743e+06 [sec]  dt_MPC=2.81743e+06 [sec]
+  TransportPK      |    Tc-99: min=8.08339e-06 mol/L max=0.0952948 mol/L, total=9.07795 mol
+  CycleDriver      |   New time(y) = 0.89279
+
+
+Chemistry PK
+------------
+{ Chemistry_PK }
+
+
+Alquimia
+````````
+{ Alquimia_PK }
+
+
+Amanzi
+``````
+{ Amanzi_PK }
+
+
+Energy PK
+---------
+{ Energy_PK }
+
+
+Internal energy
+...............
+{ IEM }
+
+
+Molar enthalpy
+..............
+{ EnthalpyEvaluator }
+
+
+Thermal conductivity
+....................
+{ TCMFactory_TwoPhase }
+
+
+Operators
+.........
+
+This section contains sublist for diffusion and advection operators.
+It also has one global parameter.
+
+* `"operators`" [list] 
+
+  * `"include enthalpy in preconditioner`" [bool] allows us to study impact (usually positive) 
+    of including enthalpy term in the preconditioner. Default value is *true*.
+  
+  * `"diagonal shift`" [double] allows for a constant shift to be applied to
+    the diagonal of the assembled operator, which can b useful for dealing
+    with singular or near-singular matrices.  Default is *0.0*.
+
+
+Diffusion operator
+``````````````````
+
+Operators sublist describes the PDE structure of the flow, specifies a discretization
+scheme, and selects assembling schemas for matrices and preconditioners.
+
+* `"diffusion operator`" [list] defines parameters for generating and assembling diffusion matrix.
+
+  * `"matrix`" [list] defines parameters for generating and assembling diffusion matrix. See section
+    describing operators. 
+
+  * `"preconditioner`" [list] defines parameters for generating and assembling diffusion 
+    matrix that is used to create preconditioner. 
+    Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
+
+.. code-block:: xml
+
+  <ParameterList name="operators">
+    <Parameter name="include enthalpy in preconditioner" type="boll" value="true"/>
+    <ParameterList name="diffusion operator">
+      <ParameterList name="matrix">
+        <Parameter name="discretization primary" type="string" value="mdf: optimized for monotonicity"/>
+        <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+        <Parameter name="schema" type="Array(string)" value="{{face, cell}}"/>
+        <Parameter name="preconditioner schema" type="Array(string)" value="{{face}}"/>
+        <Parameter name="gravity" type="bool" value="false"/>
+        <Parameter name="upwind method" type="string" value="standard: cell"/> 
+      </ParameterList>
+      <ParameterList name="preconditioner">
+        <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+        <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+        <Parameter name="schema" type="Array(string)" value="{{face, cell}}"/>
+        <Parameter name="preconditioner schema" type="Array(string)" value="{{face}}"/>
+        <Parameter name="gravity" type="bool" value="true"/>
+        <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+        <Parameter name="upwind method" type="string" value="standard: cell"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+This example uses cell-centered discretization for 
+
+
+Advection operator
+``````````````````
+
+This section to be written.
+
+.. code-block:: xml
+
+  <ParameterList name="operators">  <!-- parent list -->
+  <ParameterList name="advection operator">
+    <Parameter name="method" type="string" value="upwind"/>
+  </ParameterList>
+  </ParameterList>
+
+
+Sources and sinks
+.................
+
+The sources and sinks for injecting and removing energy from the system. 
+Negative source removes energy. 
+Positive source inject energy.
+The structure of list *source terms* mimics that of list *boundary conditions*. 
+Again, constant functions can be replaced by any of the available functions.
+
+* `"regions`" [Array(string)] is the list of regions where the source is defined.
+
+* `"spatial distribution method`" [string] is the method for distributing
+  source Q over the specified regions. The available options are `"volume`" and
+  `"none`".
+  For option `"none`", the source term function Q is measured in [J/m^3/s]. 
+  For option `"volume`", it is measured in [J/s]. 
+  When the source function is defined over a few regions, Q is distributed over their union.
+  Option `"volume fraction`" can be used when the region geometric
+  model support volume fractions. 
+
+* `"use volume fractions`" instructs the code to use all available volume fractions. 
+  Note that the region geometric model supports volume fractions only for a few regions.
+
+* `"submodel`" [string] refines definition of the source. Available options are `"rate`",
+  `"integrated source`". The first option defines the source 
+  in a natural way as the rate of change `q`. The second option defines the indefinite
+  integral `Q` of the rate of change, i.e. the source term is calculated as `q = dQ/dt`. 
+  Default is `"rate`". 
+
+.. code-block:: xml
+
+  <ParameterList name="energy">  <!-- parent list -->
+
+    <ParameterList name="source terms">
+      <ParameterList name="_SRC 0">
+        <Parameter name="regions" type="Array(string)" value="{{_WELL_EAST}}"/>
+        <Parameter name="spatial distribution method" type="string" value="volume"/>
+        <Parameter name="submodel" type="string" value="rate"/>
+        <ParameterList name="source">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="-0.1"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    
+   </ParameterList>
+
+
+Navier Stokes PK
+----------------
+{ NavierStokes_PK }
+  
+
+Operators
+.........
+
+This section contains sublist for diffusion and advection operators.
+It also has one global parameter.
+
+* `"operators`" [list] 
+
+
+Elasticity operator
+```````````````````
+
+.. code-block:: xml
+
+  <ParameterList name="operators">  <!-- parent list -->
+  <ParameterList name="elasticity operator">
+    <Parameter name="method" type="string" value="BernardiRaugel"/>
+    <ParameterList name="schema">
+      <Parameter name="base" type="string" value="cell"/>
+      <Parameter name="location" type="Array(string)" value="{{node, face}}"/>
+      <Parameter name="type" type="Array(string)" value="{{vector, normal component}}"/>
+      <Parameter name="number" type="Array(int)" value="{{2, 1}}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+
+Convection operator
+```````````````````
+
+This section to be written.
+
+.. code-block:: xml
+
+  <ParameterList name="operators">  <!-- parent list -->
+  <ParameterList name="convection operator">
+    <Parameter name="flux formula" type="string" value="Rusanov"/>
+  </ParameterList>
+  </ParameterList>
+
+
+Divergence operator
+```````````````````
+
+This section to be written.
+
+.. code-block:: xml
+
+  <ParameterList name="operators">  <!-- parent list -->
+  <ParameterList name="divergence operator">
+    <Parameter name="method" type="string" value="BernardiRaugel"/>
+    <ParameterList name="schema domain">
+      <Parameter name="base" type="string" value="cell"/>
+      <Parameter name="location" type="Array(string)" value="{{node, face}}"/>
+      <Parameter name="type" type="Array(string)" value="{{scalar, normal component}}"/>
+      <Parameter name="number" type="Array(int)" value="{{2, 1}}"/>
+    </ParameterList>
+    <ParameterList name="schema range">
+      <Parameter name="base" type="string" value="cell"/>
+      <Parameter name="location" type="Array(string)" value="{{cell}}"/>
+      <Parameter name="type" type="Array(string)" value="{{scalar}}"/>
+      <Parameter name="number" type="Array(int)" value="{{1}}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+
+Multiphase PK
+-------------
+
+Mathematical models
+...................
+{ Multiphase_PK }
+
+
+Shallow water PK
+----------------
+{ ShallowWater_PK }
+
+
+Reconstruction and limiters
+...........................
+
+The control of the second-order numerical scheme is done via `"reconstruction`"
+sublist, described in Reconstruction_. Here is the example:
+
+.. code-block:: xml
+
+  <ParameterList name="shallow water">  <!-- parent list -->
+  <ParameterList name="reconstruction">
+    <Parameter name="method" type="string" value="cell-based"/>
+    <Parameter name="polynomial order" type="int" value="1"/>
+    <Parameter name="weight" type="string" value="constant"/>
+    <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+    <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
+    <Parameter name="limiter location" type="string" value="node"/>
+    <Parameter name="limiter points" type="int" value="0"/>
+    <Parameter name="limiter cfl" type="double" value="0.1"/>
+  </ParameterList>
+  </ParameterList>
+
+
+Coupled process kernels
+=======================
+
+Coupling of process kernels requires additional parameters for PK 
+described above.
+
+
+Reactive transport PK
+---------------------
+{ ReactiveTransport_PK }
+
+
+Flow and reactive transport PK
+------------------------------
+{ FlowReactiveTransport_PK }
+
+
+Thermal flow PK
+---------------
+{ FlowEnergy_PK }
+
+
+Diffusion operator
+..................
+
+.. code-block:: xml
+
+  <ParameterList name="_NAVIER_STOKES">  <!-- parent lists -->
+  <ParameterList name="operator"> 
+    <ParameterList name="diffusion operator">
+     <ParameterList name="vapor matrix">
+       <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+       <Parameter name="schema" type="Array(string)" value="{{face, cell}}"/>
+       <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+       <Parameter name="exclude primary terms" type="bool" value="false"/>
+       <Parameter name="scaled constraint equation" type="bool" value="false"/>
+       <Parameter name="gravity" type="bool" value="false"/>
+       <Parameter name="Newton correction" type="string" value="none"/>
+     </ParameterList>
+   </ParameterList>
+   </ParameterList>
+
+
+Coupled matrix-fracture Darcy flow PK
+-------------------------------------
+{ FlowMatrixFracture_PK }
+
+
+Generic capabilities
+====================
+
+Collection of generic tools used by PKs.
+
+
+Operators
+---------
+{ Operator }
+
+
+Diffusion operator
+..................
+{ PDE_Diffusion }
+
+
+Advection operator
+..................
+{ PDE_Advection }
+
+
+Reaction operator
+.................
+{ PDE_Reaction }
+
+
+Elasticity operator
+...................
+{ PDE_Elasticity }
+
+
+Abstract operator
+.................
+{ PDE_Abstract }
+
+
+Reconstruction and limiters
+...........................
+{ Reconstruction }
+
+
+Time integrator
+---------------
+{ BDF1_TI }
+
+
+.. _TimeStepController:
+
+Time step controller
+--------------------
+{ TimestepController }
+
+
+Standard controller
+...................
+{ TimestepControllerStandard }
+
+
+Smarter controller
+..................
+{ TimestepControllerSmarter }
+
+
+Adaptive controller
+...................
+{ TimestepControllerAdaptive }
+
+
+Fixed controller
+................
+{ TimestepControllerFixed }
+
+
+File-based controller
+.....................
+{ TimestepControllerFromFile }
+
+
+.. _Functions:
+
+Functions
+---------
+
+To set up non-trivial boundary conditions and/or initial fields, Amanzi
+supports a few mathematical functions. 
+New function types can added easily.
+Each function is defined by a list:
+
+.. code-block:: xml
+
+  <ParameterList name="function name">
+    function-specification
+  </ParameterList>
+
+The parameter list name string NAME is arbitrary and meaningful only to the
+parent parameter list.
+This list is given as input to the Amanzi::FunctionFactory::Create
+method which instantiates a new Amanzi::Function object.
+The function-specification is one of the following parameter lists.
+
+{ Function}
+
+
+Constant function
+.................
+{ FunctionConstant }
+
+
+.. _tabular function:
+
+Tabular function
+................
+{ FunctionTabular }
+
+
+Bilinear function
+.................
+{ FunctionBilinear }
+
+
+Bilinear is space-time function 
+...............................
+{ FunctionBilinearAndTime }
+
+
+Smooth step function
+....................
+{ FunctionSmoothStep }
+
+
+Distance function
+..................
+{ FunctionDistance }
+
+
+Multi-variable linear function
+..............................
+{ FunctionLinear }
+
+
+Polynomial function
+...................
+{ FunctionPolynomial }
+
+
+Multi-variable monomial function
+................................
+{ FunctionMonomial }
+
+
+Separable function
+..................
+{ FunctionSeparable }
+
+
+
+Standard math functions
+.......................
+{ FunctionStandardMath }
+
+
+Additive function
+.................
+{ FunctionAdditive }
+
+
+Composition function
+....................
+{ FunctionComposition }
+
+
+Multiplicative function
+.......................
+{ FunctionMultiplicative }
+
+
+Static head function
+....................
+{ FunctionStaticHead }
+
+
+Expression function
+...................
+{ FunctionExprTK }
+
+
+Time functions
+--------------
+
+Boundary condition functions utilize a parameterized model for time variations that is either piecewise constant or piecewise linear.  For example:
+
+.. code-block:: xml
+
+  <Parameter name="times" type="Array(double)" value="{{1, 2, 3}}"/>
+  <Parameter name="time values" type="Array(double)" value="{{10, 20, 30}}"/>
+  <Parameter name="time functions" type="Array(string)" value="{{constant, linear}}"/>    
+
+This defines four time intervals: (-inf,1), (1,2), (2,3), (3,+inf).  
+By assumption the function is constant over the first and last intervals.
+The remaining two intervals are specified by the parameter *time functions*. 
+Thus, the value here is 10 anytime prior to `t=2`. The value increases linearly from 10 to 
+20 over the interval `t=2` to `t=3`, and then is constant at 30 for `t>3`.
+
+
+.. _Solver:
+
+Solvers
+=======
+{ SolverFactory }
+
+
+.. _LinearSolvers:
+
+Iterative solvers
+-----------------
+{ InverseIterativeMethod }
+
+
+Generalized minimal residuals (GMRES)
+.....................................
+{ IterativeMethodGMRES }
+
+
+Preconditioner conjugate gradient (PCG)
+.......................................
+{ IterativeMethodPCG }
+
+
+Newton-Krylov acceleration (NKA)
+................................
+{ IterativeMethodNKA }
+
+
+Direct solvers from Amesos library 
+----------------------------------
+{ DirectMethodAmesos }
+
+
+Nonlinear solvers
+-----------------
+{ Solver }
+
+
+Newton-Krylov acceleration (NKA)
+................................
+{ SolverNKA }
+
+
+Anderson acceleration (AA)
+..........................
+{ SolverAA }
+
+
+Newton
+......
+{ SolverNewton }
+
+
+Inexact Newton
+..............
+The inexact Newton methods work for cases where the discrete Jacobian is either 
+*not* available, or not stable, or computationally expensive. The discrete
+Jacobian is replaced by a stable approximation of the continuum Jacobian.
+This solver has the same list of parameters as the Newton solver. 
+
+The difference between these solvers is in the preconditioner parameters.
+Here is the list of selected parameters for the Newton-Picard solver.
+
+.. code-block:: xml
+
+  <ParameterList name="operators">
+    <ParameterList name="diffusion operator">
+      <ParameterList name="preconditioner">
+        <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+        <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+        <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+        <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+        <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+       
+  <Parameter name="solver type" type="string" value="Newton"/>
+  <ParameterList name="Newton parameters">
+    <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+    <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+    <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+    <Parameter name="max divergent iterations" type="int" value="3"/>
+    <Parameter name="limit iterations" type="int" value="20"/>
+    <Parameter name="modify correction" type="bool" value="false"/>
+  </ParameterList>
+
+
+Jacobian-free Newton-Krylov (JFNK)
+..................................
+{ SolverJFNK }
+
+
+Nonlinear Object-Oriented Solution (NOX)
+........................................
+{ SolverNox }
+
+
+NKA with line search
+....................
+{ SolverNKA_LS }
+
+
+Nonlinear continuation 
+......................
+{ SolverContinuation }
+
+
+Preconditioners
+---------------
+
+
+
+Region
+======
+{ Region }
+
+.. contents:: **Region Types**
+   :local:
+
+
+All
+===
+{ RegionAll }
+
+Box
+===
+{ RegionBox }
+
+Plane
+=====
+{ RegionPlane }
+
+Labeled Set
+===========
+{ RegionLabeledSet }
+
+Function Color
+==============
+{ RegionFunctionColor }
+
+Point
+=====
+{ RegionPoint }
+
+Logical
+=======
+{ RegionLogical }
+

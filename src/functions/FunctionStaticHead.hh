@@ -19,8 +19,8 @@ Note that dimension 0 is usually time.
 * `"space dimension`" ``[int]`` Dimensionality, usually 3
 * `"water table elevation`" ``[function-spec]`` Water table elevation function.
 
-
 Example:
+
 .. code-block:: xml
 
   <ParameterList name="function-static-head">

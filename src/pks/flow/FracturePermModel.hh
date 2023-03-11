@@ -7,10 +7,27 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Flow PK
+/*!
 
-  Model for effective permeability in fracutres.
+A list of permeability models in a fracture network contains similar sublists
+that must cover all network. 
+Each sublist has two paremeters.
+
+* `"region`" [string] defines region where model applies.
+
+* `"model`" [string] specifies the model name. Currently only one parameter
+  is available, `"cubic law`".
+
+.. code-block:: xml
+
+  <ParameterList name="flow">  <!-- parent list -->
+  <ParameterList name="fracture permeability models">
+    <ParameterList name="_ONE FRACTURE LEAVE">
+      <Parameter name="region" type="string" value="fracture"/>
+      <Parameter name="model" type="string" value="cubic law"/>
+    </ParameterList>
+  </ParameterList>
+
 */
 
 #ifndef AMANZI_FLOW_FRACTURE_PERM_MODEL_HH_

@@ -17,6 +17,8 @@
 
 #include <string>
 
+#include "Factory.hh"
+
 #include "SpecificStorage.hh"
 
 namespace Amanzi {

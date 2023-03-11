@@ -31,6 +31,33 @@ inverse, the estimate of the inverse.
 
     * `"JF matrix parameters`" ``[jf-matrix-spec]`` See jf-matrix-spec_
 
+.. code-block:: xml
+
+  <Parameter name="solver type" type="string" value="JFNK"/>
+  <ParameterList name="JFNK parameters">
+    <Parameter name="typical solution value" type="double" value="1.0"/>
+
+    <ParameterList name="JF matrix parameters">
+      <Parameter name="finite difference epsilon" type="double" value="1.0e-8"/>
+      <Parameter name="method for epsilon" type="string" value="Knoll-Keyes L2"/>
+    </ParameterList>
+
+    <ParameterList name="nonlinear solver">
+      <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="limit iterations" type="int" value="20"/>
+      <Parameter name="max divergent iterations" type="int" value="3"/>
+    </ParameterList>
+
+    <ParameterList name="linear operator">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        ...
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
 */
 
 

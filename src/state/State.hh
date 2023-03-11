@@ -50,6 +50,7 @@ Example:
 .. code-block:: xml
 
     <ParameterList name="state">
+      <Parameter name="initialization filename" type="string" value="_CHECK00123.h5"/>
       <ParameterList name="evaluators">
         <ParameterList name="pressure">
           <Parameter name="evaluator type" type="string" value="primary variable" />

@@ -1573,9 +1573,6 @@ Each sublist has two paremeters.
 Diffusion operators
 ...................
 
-Diffusion operators
-...................
-
 List *operators* describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
 
@@ -3947,6 +3944,7 @@ and Navier-Stokes).
 
 Abstract operator
 .................
+
 An abstract operator is designed for testing new discretization methods. 
 It uses the factory of discretization methods and a few control parameters
 required by this factory and/or particular method in it.
@@ -3977,7 +3975,6 @@ required by this factory and/or particular method in it.
       ...
     </ParameterList>
   </ParameterList>
-
 
 Diffusion is the most frequently used operator.
 

@@ -7,18 +7,50 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Operators
+/*!
 
-  An abstract operator uses factory of mimetic schemes and standard
-  interface for creating stiffness, mass and divergence matrices.
+An abstract operator is designed for testing new discretization methods. 
+It uses the factory of discretization methods and a few control parameters
+required by this factory and/or particular method in it.
 
-  Examples of usage this operator are in test/operators_stokes.cc
-  and test/operators_diffusion_curved.cc
-  In the first example, we set up a discrete divergence operator
-  that corersponds to a rectangular matrix. In the second example,
-  we set up an elliptic operator when Hermite-type degrees of
-  freedom are used on curved faces.
+* `"method`" [string] defines a discretization method. The available
+  options are `"diffusion`", `"diffusion generalized`", `"BernardiRaugel`",
+  `"CrouzeixRaviart`", `"CrouzeixRaviart serendipity`", `"Lagrange`", 
+  `"Lagrange serendipity`", and `"dg modal`".
+
+* `"method order`" [int] defines disretization order. It is used by 
+  high-order discretization methods such as the discontinuous Galerkin.
+
+* `"matrix type`" [string] defines type of local matrix. Available options are
+  `"mass`", `"mass inverse`", `"stiffness`", `"divergence`", and `"advection`".
+
+.. code-block:: xml
+
+  <ParameterList name="_ABSTRACT OPERATOR">
+    <Parameter name="method" type="string" value="dg modal"/>
+    <Parameter name="method order" type="int" value="2"/>
+    <Parameter name="dg basis" type="string" value="regularized"/>
+    <Parameter name="matrix type" type="string" value="flux"/>
+
+    <ParameterList name="schema domain">
+      ...
+    </ParameterList>
+    <ParameterList name="schema range">
+      ...
+    </ParameterList>
+  </ParameterList>
+
+
+Diffusion is the most frequently used operator.
+Examples of usage this operator are in test/operators_stokes.cc
+and test/operators_diffusion_curved.cc
+In the first example, we set up a discrete divergence operator
+that corersponds to a rectangular matrix. In the second example,
+we set up an elliptic operator when Hermite-type degrees of
+freedom are used on curved faces.
+
+.. _Reconstruction:
+
 */
 
 #ifndef AMANZI_OPERATOR_PDE_ABSTRACT_HH_

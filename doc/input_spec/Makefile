@@ -8,9 +8,12 @@ PY_CSS = --stylesheet=$(CBpath)/pygments-default.css
 PY_STY = --stylesheet=$(CBpath)/pygments-default.sty
 
 SRC = \
-	AmanziNativeSpecV9.rst \
 	AmanziInputSpec-v2.3.2-u.rst \
-	AmanziInputSpec-v2.3.2-s.rst
+	AmanziInputSpec-v2.3.2-s.rst \
+        AmanziNativeSpec_dev.rst.pre \
+        AmanziNativeSpec_dev.rst
+
+RST = $(SRC:%.rst.pre=%.rst)
 
 HTML = $(SRC:%.rst=%.html)
 
@@ -29,11 +32,19 @@ PDF = $(SRC:%.rst=%.pdf)
 	pdflatex $<
 	pdflatex $<
 
+%.rst:
+	@./AmanziNativeSpec.py $< $@
+
+rst : $(RST)
+
 html : $(HTML)
 
-all : html pdf
+all : rst html pdf
 
 pdf : $(PDF)
+
+clean-rst : 
+	-/bin/rm -f AmanziNativeSpec_dev.rst
 
 clean-html : 
 	-/bin/rm -f *.html
@@ -42,7 +53,8 @@ clean-pdf :
 	-/bin/rm -f *.tex *.pdf
 	-/bin/rm -f *.aux *.toc *.log *.out
 
-clean : clean-html clean-pdf
+clean : clean-html clean-pdf clean-rst
 	-/bin/rm -f *~
 
 distclean : clean
+

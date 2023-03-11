@@ -10,7 +10,7 @@
 /*
   Energy
 
-  Self-registering factory for IEM implementations.
+  Self-registering factory for IEM and TCM models.
 */
 
 #include "IEMFactory.hh"
@@ -19,10 +19,24 @@
 #include "IEM_Tabular.hh"
 #include "IEM_WaterVaporEvaluator.hh"
 
-// explicity instantitate the static data of Factory<IEM>
+#include "TCMFactory_TwoPhase.hh"
+#include "TCM_PetersLidard_TwoPhase.hh"
+#include "TCM_WetDry_TwoPhase.hh"
+
+namespace Amanzi {
+namespace Utils {
+
+// explicity instantitate the static factory data
 template <>
 Amanzi::Utils::Factory<Amanzi::Energy::IEM>::map_type*
   Amanzi::Utils::Factory<Amanzi::Energy::IEM>::map_;
+
+template <>
+Factory<Energy::TCM_TwoPhase>::map_type* Factory<Energy::TCM_TwoPhase>::map_;
+
+} // namespace Utils
+} // namespace Amanzi
+
 
 namespace Amanzi {
 namespace Energy {
@@ -34,5 +48,17 @@ Utils::RegisteredFactory<Evaluator, IEM_WaterVaporEvaluator>
 Utils::RegisteredFactory<IEM, IEM_Linear> IEM_Linear::factory_("linear");
 Utils::RegisteredFactory<IEM, IEM_Tabular> IEM_Tabular::factory_("tabular");
 
+
+// linear interpolant of thermal conductivity.
+Utils::RegisteredFactory<TCM_TwoPhase, TCM_PetersLidard_TwoPhase>
+  TCM_PetersLidard_TwoPhase::factory_("two-phase Peters-Lidard");
+
+// simple model of two-phase thermal conductivity, based upon:
+// - Interpolation between saturated and dry conductivities via a Kersten number.
+// - Power-law Kersten number.
+Utils::RegisteredFactory<TCM_TwoPhase, TCM_WetDry_TwoPhase>
+  TCM_WetDry_TwoPhase::factory_("two-phase wet/dry");
+
 } // namespace Energy
 } // namespace Amanzi
+

@@ -7,11 +7,34 @@
   Authors: Ethan Coon
 */
 
-/*
-  Energy
+/*!
 
-  Internal energy model is function of temperature only.
-  UNITS: J/{mol/kg}
+Internal energy model is function of temperature only. Units are J/{mol/kg}.
+Internal energy list has a few parameters that allows us to run this PK
+in a variety of regimes, e.g. with or without gas phase.
+
+* `"energy key`" [string] specifies name for the internal energy field.
+  The default value is `"energy`".
+
+* `"evaluator type`" [string] changes the evaluator for internal energy.
+  Available options are `"generic`" and `"constant liquid density`" (default).
+
+* `"vapor diffusion`" [bool] specifies presence of a gas phase.
+  The default value is `"true`".
+
+.. code-block:: xml
+
+  <ParameterList name="_ENERGY">  <!-- parent list -->
+  <ParameterList name="energy evaluator">
+    <Parameter name="energy key" type="string" value="energy"/>
+    <Parameter name="evaluator type" type="string" value="constant liquid density"/>
+    <Parameter name="vapor diffusion" type="bool" value="true"/>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
 */
 
 #ifndef AMANZI_ENERGY_IEM_HH_

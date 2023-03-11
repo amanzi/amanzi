@@ -7,10 +7,20 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Transport PK
+/*!
 
-  Base class for continuum multiscale porosity models.
+The list of multiscale models is the place for various subscale models that coul 
+be mixed and matched.
+Its ordered by materials and includes parameters for the assigned multiscale model
+This list is optional.
+
+* `"multiscale model`" [string] is the model name. Available option is `"dual porosity`"
+  and `"generalized dual porosity`".
+
+* `"regions`" [Array(string)] is the list of regions where this model should be applied.
+
+* `"xxx parameters`" [sublist] provides parameters for the model specified by variable `"multiscale model`".
+
 */
 
 #ifndef MULTISCALE_TRANSPORT_POROSITY_HH_

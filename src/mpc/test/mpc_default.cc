@@ -21,11 +21,11 @@
 #include "IO.hh"
 #include "MeshFactory.hh"
 #include "Mesh.hh"
-#include "mpc_pks_registration.hh"
 #include "lapack.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
 #include "PK_PhysicalBDF.hh"
+#include "pks_mpc_reg.hh"
 #include "State.hh"
 
 static int NEQN = 12;

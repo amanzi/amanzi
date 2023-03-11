@@ -33,6 +33,26 @@ nonlinear iterations required to solve step :math:`k`:.
     * `"max time step`" ``[double]`` The max timestep size allowed.
     * `"min time step`" ``[double]`` The min timestep size allowed.  If the step has failed and the new step is below this cutoff, the simulation fails.
 
+.. code-block:: xml
+
+  <ParameterList name="BDF1"> <!-- parent list -->
+    <Parameter name="timestep controller type" type="string" value="standard"/>
+    <ParameterList name="timestep controller standard parameters">
+      <Parameter name="min iterations" type="int" value="10"/>
+      <Parameter name="max iterations" type="int" value="15"/>
+      <Parameter name="time step increase factor" type="double" value="1.2"/>
+      <Parameter name="time step reduction factor" type="double" value="0.5"/>
+      <Parameter name="max time step" type="double" value="1e+9"/>
+      <Parameter name="min time step" type="double" value="0.0"/>
+    </ParameterList>
+  </ParameterList>
+
+In this example, the time step is increased by factor 1.2 when the nonlinear
+solver converges in 10 or less iterations. 
+The time step is not changed when the number of nonlinear iterations is
+between 11 and 15.
+The time step will be cut twice if the number of nonlinear iterations exceeds 15.
+
 */
 
 #ifndef AMANZI_STANDARD_TIMESTEP_CONTROLLER_HH_

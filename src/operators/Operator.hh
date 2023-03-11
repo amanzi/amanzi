@@ -11,15 +11,26 @@
 //! Operator represents a linear map, and typically encapsulates a discretization.
 
 /*!
-``Operator`` represents a map from linear space X to linear space Y.  Typically,
+
+Operators are discrete forms of linearized PDEs operators.
+They form a layer between physical process kernels and solvers
+and include accumulation, diffusion, advection, elasticity, reaction, 
+and source operators.
+The residual associated with an operator :math:`L_h` helps to 
+understand the employed sign convention:
+
+.. math::
+  r = f - L_h u.
+
+Operator represents a map from linear space X to linear space Y.  Typically,
 this map is a linear map, and encapsulates much of the discretization involved
 in moving from continuous to discrete equations. The spaces X and Y are described
 by CompositeVectors (CV). A few maps X->Y are supported.
 
-An ``Operator`` provides an interface for applying both the forward and inverse
+An operator provides an interface for applying both the forward and inverse
 linear map (assuming the map is invertible).
 
-Typically the ``Operator`` is never seen by the user; instead the user provides
+Typically the Operator is never seen by the user; instead the user provides
 input information for helper classes based on the continuous mathematical
 operator and the desired discretization.  These helpers build the needed
 ``Operator``, which may include information from multiple helpers (i.e. in the
@@ -31,6 +42,52 @@ with nearly singular operators:
 * `"diagonal shift`" ``[double]`` **0.0** Adds a scalar shift to the diagonal
   of the ``Operator``, which can be useful if the ``Operator`` is singular or
   near-singular.
+
+A PK decides how to bundle operators in a collection of operators.
+For example, an advection-diffusion problem may benefit from using
+a single operator that combines two operators representing diffusion and advection process.
+Collection of operators must be used for implicit solvers and for building preconditioners.
+In such a case, the collections acts as a single operator.
+
+Operators use a few tools that are generic in nature and can be used independently by PKs. 
+The list includes reconstruction and limiting algorithms. 
+
+
+Schema
+......
+The operators use notion of schema to describe operator's abstract structure.
+Old operators use a simple schema which is simply the list of geometric objects where
+scalar degrees of freedom are defined.
+New operators use a list to define location, type, and number of degrees of freedom.
+In addition, the base of local stencil is either *face* or *cell*.
+A rectangular operator needs two schemas do describe its domain (called `"schema domain`") 
+and its range (called `"schema range`").
+A square operator may use either two identical schema lists or a single list called `"schema`".
+
+.. code-block:: xml
+
+  <ParameterList name="pks operator name">  <!-- parent list-->
+  <ParameterList name="schema domain">
+    <Parameter name="base" type="string" value="cell"/>
+    <Parameter name="location" type="Array(string)" value="{node, face}"/>
+    <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+    <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+  </ParameterList>
+  <ParameterList name="schema domain">
+    <Parameter name="base" type="string" value="cell"/>
+    <Parameter name="location" type="Array(string)" value="{node, face}"/>
+    <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+    <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+  </ParameterList>
+  </ParameterList>
+
+This example describes a square operator with two degrees of freedom per mesh node and one
+degree of freedom per mesh face. 
+The face-based degree of freedom is the normal component of a vector field. 
+Such set of degrees of freedom is used in the Bernardi-Raugel element for discretizing 
+Stokes equations.
+Parameter `"base`" indicates that local matrices are associated with mesh cells. 
+
 */
 
 

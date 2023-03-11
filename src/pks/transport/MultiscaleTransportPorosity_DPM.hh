@@ -7,14 +7,18 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Transport PK
+/*!
 
-  A two-scale porosity model (fracture + matrix) aka dual porosity
-  model. Current naming convention is that the fields used in the
-  single-porosity model correspond now to the fracture continuum.
-  Example: tcc = total component concentration in the fracture continuum;
-           tcc_matrix = total component concentration in the matrix continuum.
+A two-scale porosity model (fracture + matrix) aka dual porosity
+model. Current naming convention is that the fields used in the
+single-porosity model correspond now to the fracture continuum.
+Example: tcc = total component concentration in the fracture continuum;
+tcc_matrix = total component concentration in the matrix continuum.
+
+* `"Warren Root parameter`" [list] scales diffusive solute transport due to
+  concentration gradient.
+* `"tortousity`" [double] defines tortuosity to correct diffusivity of a liquid solute.
+
 */
 
 #ifndef MULTISCALE_TRANSPORT_POROSITY_DPM_HH_

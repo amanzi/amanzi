@@ -26,11 +26,11 @@
 #include "Mesh.hh"
 #include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
-#include "mpc_pks_registration.hh"
-#include "numerical_flux_registration.hh"
+#include "models_shallow_water_reg.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_shallow_water_registration.hh"
+#include "pks_mpc_reg.hh"
+#include "pks_shallow_water_reg.hh"
 #include "State.hh"
 
 

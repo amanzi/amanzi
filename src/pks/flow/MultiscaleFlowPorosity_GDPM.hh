@@ -7,14 +7,39 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Flow PK
+/*!
 
-  A two-scale porosity model (fracture + matrix) aka dual porosity
-  model. Current naming convention is that the fields used in the
-  single-porosity model correspond now to the fracture continuum.
-  Example: pressure = pressure in the fracture continuum;
-           pressure_msp = pressure in the matrix continuum.
+A two-scale porosity model (fracture + matrix) aka dual porosity
+model. Current naming convention is that the fields used in the
+single-porosity model correspond now to the fracture continuum.
+Example: pressure = pressure in the fracture continuum;
+pressure_msp = pressure in the matrix continuum.
+
+* `"number of matrix nodes`" [int] defines number of matrix layers.
+* `"matrix depth`" [double] is the characteristic length for matrix continuum.
+* `"matrix volume fraction`" [double] defines relative volume of matrix continuum.
+
+.. code-block:: xml
+
+  <ParameterList name="flow">  <!-- parent list -->
+  <ParameterList name="multiscale models"> 
+    <ParameterList name="_SOIL1">
+      <Parameter name="regions" type="Array(string)" value="{_TOP HALF}"/>
+      <Parameter name="multiscale model" type="string" value="dual porosity"/> 
+      <ParameterList name="dual porosity parameters">
+        <Paramater name="mass transfer coefficient" type="double" value="4.0e-5"/>
+        <Paramater name="tolerance" type="double" value="1e-8"/>
+      </ParameterList>
+
+      <Parameter name="water retention model" type="string" value="van Genuchten"/>
+      <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
+      <Parameter name="van Genuchten m" type="double" value="0.28571"/>
+      <Parameter name="van Genuchten l" type="double" value="0.5"/>
+      <Parameter name="residual saturation" type="double" value="0.103"/>
+      <Parameter name="relative permeability model" type="string" value="Mualem"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 */
 

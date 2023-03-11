@@ -7,10 +7,39 @@
   Authors:
 */
 
-/*
-  Chemistry PK
+/*!
 
-  Trilinos based chemistry process kernel for the unstructured mesh.
+The Alquimia chemistry process kernel only requires the *Engine* and *Engine Input File*
+entries, but will also accept and respect the value given for *max time step (s)*. 
+Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
+
+* `"minerals`" [Array(string)] is the list of mineral names.
+
+* `"sorption sites`" [Array(string)] is the list of sorption sites.
+
+* `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user 
+  can request be saved to vis files. 
+
+* `"min time step (s)`" [double] is the minimum time step that chemistry will allow the MPC to take.
+
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="_CHEMISTRY">
+    <Parameter name="engine" type="string" value="PFloTran"/>
+    <Parameter name="engine input file" type="string" value="_TRITIUM.in"/>
+    <Parameter name="minerals" type="Array(string)" value="{{quartz, kaolinite, goethite, opal}}"/>
+    <Parameter name="min time step (s)" type="double" value="1.5778463e-07"/>
+    <Parameter name="max time step (s)" type="double" value="1.5778463e+07"/>
+    <Parameter name="initial time step (s)" type="double" value="1.0e-02"/>
+    <Parameter name="time step control method" type="string" value="simple"/>
+    <Parameter name="time step cut threshold" type="int" value="8"/>
+    <Parameter name="time step cut factor" type="double" value="2.0"/>
+    <Parameter name="time step increase threshold" type="int" value="4"/>
+    <Parameter name="time step increase factor" type="double" value="1.2"/>
+  </ParameterList>
+  </ParameterList>
+
 */
 
 #ifndef AMANZI_CHEMISTRY_ALQUIMIA_PK_HH_

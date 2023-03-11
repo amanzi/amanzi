@@ -23,17 +23,17 @@
 #include "IO.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "mpc_pks_registration.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
+#include "pks_mpc_reg.hh"
 #include "State.hh"
 #include "Tag.hh"
 
 #include "ats_flow_pks_registration.hh"
 #include "ats_flow_relations_registration.hh"
 #include "ats_relations_registration.hh"
-#include "pks_transport_registration.hh"
-#include "pks_chemistry_registration.hh"
+#include "pks_transport_reg.hh"
+#include "pks_chemistry_reg.hh"
 
 // Temporarily
 namespace Amanzi {

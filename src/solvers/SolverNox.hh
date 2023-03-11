@@ -8,6 +8,40 @@
 */
 
 //! Calls Nox nonlinear solvers/JFNK.
+
+/*!
+
+The interface to Trilinos NOX solver is as follows:
+
+.. code-block:: xml
+
+  <Parameter name="solver type" type="string" value="nox"/>
+    <ParameterList name="nox parameters">
+      <Parameter name="typical solution value" type="double" value="1.0"/>
+
+      <ParameterList name="JF matrix parameters">
+        <Parameter name="finite difference epsilon" type="double" value="1.0e-8"/>
+        <Parameter name="method for epsilon" type="string" value="Knoll-Keyes L2"/>
+      </ParameterList>
+
+      <ParameterList name="nonlinear solver">
+        <Parameter name="solver type" type="string" value="Newton"/>
+        <ParameterList name="Newton parameters">
+          ...
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="linear operator">
+        <Parameter name="iterative method" type="string" value="gmres"/>
+        <ParameterList name="gmres parameters">
+          ...
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+*/
+
 #ifndef AMANZI_SOLVER_NOX_
 #define AMANZI_SOLVER_NOX_
 

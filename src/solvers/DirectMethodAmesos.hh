@@ -11,7 +11,27 @@
 //! Direct solvers via Trilinos.
 /*!
 
-.. warning:: undocumented
+Amesos library of Trilinos package provides interfaces to a few direct solvers.
+List `"amesos parameters`" contains parameters that understood by this library.
+These parameters may violate the camel-case convention employed by this spec.
+Additional parameters are:
+
+* `"solver name`" [string] declares name of one of the supported direct solvers. 
+  Available options are `"klu`", `"superludist`", `"basker`", etc, see Amesos and 
+  Amesos2 manuals for details. The default value is serial solver `"klu`".
+
+* `"amesos version`" [int] specifies version of Amesos. Available options are 1 and 2.
+  The default value is 1.
+
+.. code-block:: xml
+
+  <ParameterList name="_AMESOS KLU">  <!-- parent list -->
+  <Parameter name="direct method" type="string" value="amesos"/>
+  <ParameterList name="amesos parameters">
+    <Parameter name="solver name" type="string" value="klu"/>
+    <Parameter name="amesos version" type="int" value="1"/>
+  </ParameterList>
+  </ParameterList>
 
 */
 

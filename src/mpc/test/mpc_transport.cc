@@ -25,7 +25,7 @@
 #include "MeshFactory.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_transport_registration.hh"
+#include "pks_transport_reg.hh"
 #include "State.hh"
 
 

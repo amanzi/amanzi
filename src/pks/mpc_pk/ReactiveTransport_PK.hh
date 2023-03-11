@@ -7,10 +7,27 @@
   Authors: Daniil Svyatskiy
 */
 
-/*
-  This is the mpc_pk component of the Amanzi code.
+/*!
 
-  Process kernel for coupling of Transport_PK and Chemistry_PK.
+Process kernel for coupling of Transport_PK and Chemistry_PK.
+Reactive transport can be setup using a steady-state flow.
+The two PKs are executed consequitively. 
+The input spec requires new keyword *reactive transport*.
+
+.. code-block:: xml
+
+  <ParameterList name="PK tree">  <!-- parent list -->
+  <ParameterList name="_REACTIVE TRANSPORT">
+    <Parameter name="PK type" type="string" value="reactive transport"/>
+    <ParameterList name="_TRANSPORT">
+      <Parameter name="PK type" type="string" value="transport"/>
+    </ParameterList>
+    <ParameterList name="_CHEMISTRY">
+      <Parameter name="PK type" type="string" value="chemistry amanzi"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
 */
 
 

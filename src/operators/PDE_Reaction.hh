@@ -7,10 +7,33 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Operators
+/*!
 
-  Reaction operator.
+A reaction operator may represent either reaction of identity operator.
+It is symmetric so far and requires one schema.
+The structure of the schema is described in the previous section.
+
+* `"pks operator name`" [list] a PK specific name for the advection operator.
+
+  * `"method`" [string] defines a discretization method. The only supported
+    option is `"dg nodal`".
+
+  * `"schema`" [list] defines a discretization schema for the operator domain.
+
+.. code-block:: xml
+
+  <ParameterList name="pks operator name">
+    <Parameter name="method" type="string" value="dg modal"/>
+    <Parameter name="method order" type="int" value="1"/>
+    <Parameter name="matrix type" type="string" value="mass"/>
+    <ParameterList name="schema">
+      <Parameter name="base" type="string" value="cell"/>
+      <Parameter name="location" type="Array(string)" value="{cell}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar}"/>
+      <Parameter name="number" type="Array(int)" value="{3}"/>
+    </ParameterList>
+  </ParameterList>
+
 */
 
 #ifndef AMANZI_OPERATOR_PDE_REACTION_HH_

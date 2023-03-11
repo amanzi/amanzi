@@ -22,20 +22,17 @@
 // Amanzi
 #include "CycleDriver.hh"
 #include "MeshAudit.hh"
-#include "energy_tcm_registration.hh"
-#include "energy_iem_registration.hh"
 #include "eos_registration.hh"
 #include "evaluators_flow_reg.hh"
 #include "Mesh.hh"
 #include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
 #include "models_flow_reg.hh"
-#include "mpc_pks_registration.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_energy_registration.hh"
 #include "pks_flow_reg.hh"
-#include "pks_transport_registration.hh"
+#include "pks_mpc_reg.hh"
+#include "pks_transport_reg.hh"
 #include "State.hh"
 
 

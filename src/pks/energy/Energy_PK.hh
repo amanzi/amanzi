@@ -7,9 +7,63 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  This is the energy component of the Amanzi code.
-  This is a base class for energy equations.
+/*!
+
+The conceptual PDE model for the energy equation is 
+
+.. math::
+  \frac{\partial \varepsilon}{\partial t} 
+  =
+  \boldsymbol{\nabla} \cdot (\kappa \nabla T) -
+  \boldsymbol{\nabla} \cdot (\eta_l H_l \boldsymbol{q}_l) + Q
+
+where 
+:math:`\varepsilon` is the energy density [:math:`J/m^3`],
+:math:`\eta_l` is molar density of liquid [:math:`mol/m^3`],
+:math:`Q` is heat source term,
+:math:`\boldsymbol{q}_l` is the Darcy velocity [m/s],
+:math:`\kappa` is thermal conductivity,
+and :math:`H_l` is molar enthalpy of liquid [J/mol].
+We define 
+
+.. math::
+   \varepsilon = \phi (\eta_l s_l U_l + \eta_g s_g U_g) + 
+   (1 - \phi) \rho_r c_r T
+
+where
+:math:`s_l` is liquid saturation [-],
+:math:`s_g` is gas saturation (water vapor),
+:math:`\eta_l` is molar density of liquid [:math:`mol/m^3`],
+:math:`\eta_g` is molar density of gas,
+:math:`U_l` is molar internal energy of liquid [J/mol],
+:math:`U_g` is molar internal energy of gas (water vapor) [J/mol],
+:math:`\phi` is porosity [-],
+:math:`\rho_r` is rock density [:math:`kg/m^3`],
+:math:`c_r` is specific heat of rock [J/kg/K],
+and :math:`T` is temperature [K].
+
+
+Physical models and assumptions
+...............................
+This list is used to summarize physical models and assumptions, such as
+coupling with other PKs.
+This list is often generated on a fly by a high-level MPC PK.
+
+* `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
+  e.g. by EnergyFlow PK. The default value is `"false`".
+
+* `"eos lookup table`" [string] provides the name for optional EOS lookup table.
+
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="_ENERGY"> 
+    <ParameterList name="physical models and assumptions">
+      <Parameter name="vapor diffusion" type="bool" value="false"/>
+      <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 */
 

@@ -35,6 +35,22 @@ fall off the end of the space.
 
     * `"nka vector tolerance`" ``[double]`` **0.05** Vectors whose dot product are within this tolerance are considered parallel, and therefore the old vector is thrown out.
 
+.. code-block:: xml
+
+  <ParameterList name="_NKA">  <!-- parent list -->
+  <ParameterList name="nka parameters">
+    <Parameter name="error tolerance" type="double" value="1e-12"/>
+    <Parameter name="maximum number of iterations" type="int" value="400"/>
+    <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
+    <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+    <Parameter name="max nka vectors" type="int" value="10"/>
+    <Parameter name="nka vector tolerance" type="double" value="0.05"/>
+
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 */
 

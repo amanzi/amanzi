@@ -11,7 +11,38 @@
 //! Base class for iterative methods, including Krylov methods.
 /*!
 
-Document me...
+This list contains sublists for various linear algebra solvers such as PCG, GMRES, and NKA.
+Note that only PK can provide a preconditioner for a linear solver; hence, we cannot
+specify it here.
+
+* `"iterative method`" [string] defines a Krylov-based method. The available options
+  include `"pcg`" and `"gmres`".
+
+* `"direct method`" [string] defines a direct method. The available option is `"amesos`".
+
+* `"xxx parameters`" [list] provides parameters for the iterative method specified 
+  by variable `"iterative method`".
+ 
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="solvers">
+    <ParameterList name="_GMRES WITH HYPRE AMG">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+
+      <ParameterList name="gmres parameters">
+        ...
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="_PCG with HYPRE AMG">
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        ...
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 */
 #pragma once

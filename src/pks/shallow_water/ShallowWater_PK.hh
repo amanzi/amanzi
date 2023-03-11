@@ -7,10 +7,41 @@
   Authors: Svetlana Tokareva (tokareva@lanl.gov)
 */
 
-/*
- Shallow Water PK
+/*!
 
- */
+The mathematical model describing two-dimensional shallow water flow is
+
+.. math::
+  \begin{align*}
+  & h_t + (hu)_x + (hv)_y = 0, \\
+  & (hu)_t + (hu^2 + \frac{1}{2} gh^2)_x + (huv)_y = -ghB_x \\
+  & (hv)_t + (huv)_x + (hv^2 + \frac{1}{2} gh^2)_y = -ghB_y
+  \end{align*}  
+
+Here
+:math:`h` [m] is water depth, 
+:math:`g` [m/s^2] is gravity acceleration,
+:math:`u` [m/s] is depth averaged velocity in x direction,
+:math:`v` [m/s] is depth averaged velocity in y direction,
+:math:`B` [m] is bottom elevation (bathymetry),
+:math:`H = h + B` [m] is water surface elevation.
+
+
+Global parameters
+.................
+Global parameters are placed in the sublist `"shallow water`". 
+The list of global parameters include:
+
+* `"domain name`" [string] specifies mesh name that defined domain of this PK.
+  Default is `"domain`".
+
+* `"cfl`" [double] is a safety factor (less than 1) applied to a stable 
+  time step estimate. Default value is 1.
+
+* `"use limiter`" [bool] turns on/off limiters on all linear constructions.
+  Default value is *false*.
+
+*/
 
 #ifndef AMANZI_SHALLOW_WATER_PK_HH_
 #define AMANZI_SHALLOW_WATER_PK_HH_

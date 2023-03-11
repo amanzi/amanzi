@@ -7,10 +7,23 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-/*
-  Energy
+/*!
 
-  Field evaluator for specific molar enthalpy, h = u + p / rho.
+Field evaluator for specific molar enthalpy, h = u + p / rho.
+
+.. code-block:: xml
+
+  <ParameterList name="_ENERGY">  <!-- parent list -->
+  <ParameterList name="enthalpy evaluator">
+    <Parameter name="enthalpy key" type="string" value="enthalpy_liquid"/>
+    <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
+
+    <Parameter name="include work term" type="bool" value="true"/>
+    <Parameter name="pressure key" type="string" value="pressure"/>
+    <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+  </ParameterList>
+  </ParameterList>
+
 */
 
 #ifndef AMANZI_ENTHALPY_EVALUATOR_HH_

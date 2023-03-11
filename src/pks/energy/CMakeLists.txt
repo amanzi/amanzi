@@ -74,7 +74,7 @@ set(flow_inc_files
   EnergyDefs.hh
   EnergyOnePhase_PK.hh
   EnergyTwoPhase_PK.hh
-  pks_energy_registration.hh
+  pks_energy_reg.hh
   IEM.hh
   IEM_Linear.hh
   IEM_Tabular.hh
@@ -82,8 +82,7 @@ set(flow_inc_files
   IEM_WaterVaporEvaluator.hh
   IEMFactory.hh
   IEMEvaluator.hh
-  energy_iem_registration.hh
-  energy_tcm_registration.hh
+  models_energy_reg.hh
   TotalEnergyEvaluator.hh
   TCM_PetersLidard_TwoPhase.hh
   TCM_TwoPhase.hh

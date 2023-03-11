@@ -7,11 +7,35 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Operators
+/*!
 
-  Examples of usage this operator are in test/operators_elasticity.cc
-  and test/operators_stokes.cc
+Elasticity operator is used for describing soil deformation or fluid flow (Stokes 
+and Navier-Stokes).
+
+* `"method`" [string] defines a discretization method. The available
+  options are `"BernardiRaugel`".
+
+* `"schema`" [list] defines a discretization schema.
+
+  * `"location`" [Array(string)] defines geometric location of degrees of freedom.
+
+  * `"type`" [Array(string)] defines type of degrees of freedom. The available options 
+    are `"scalar`" and `"normal component`".
+
+  * `"number`" [Array(int)] indicates how many time this degree of freedom is repeated.
+
+.. code-block:: xml
+
+  <ParameterList name="elasticity operator">
+    <Parameter name="method" type="string" value="BernardiRaugel"/>
+    <ParameterList name="schema">
+      <Parameter name="base" type="string" value="cell"/>
+      <Parameter name="location" type="Array(string)" value="{node, face}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+      <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+    </ParameterList>
+  </ParameterList>
+
 */
 
 #ifndef AMANZI_OPERATOR_PDE_ELASTICITY_HH_
