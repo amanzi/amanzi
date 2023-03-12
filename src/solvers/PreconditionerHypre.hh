@@ -78,6 +78,12 @@ Example:
 
 Euclid is a Parallel Incomplete LU, provided as part of the HYPRE project
 through the Ifpack interface.
+The algorithm was presented at SC99 and published in expanded 
+form in the SIAM Journal on Scientific Computing. 
+Scalability means that the factorization (setup) and application (triangular solve) timings remain
+nearly constant when the global problem size is scaled in proportion to the number of processors.
+As with all ILU preconditioning methods, the number of iterations is expected to increase with
+global problem size.
 
 This is provided when using the `"preconditioning method`"=`"euclid`" or
 =`"hypre: euclid`" in the `Preconditioner`_ spec.

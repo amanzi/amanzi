@@ -7,8 +7,53 @@
   Authors:
 */
 
-/*
-  Chemistry
+/*!
+
+The `"isotherms`" section is the list of sorption processes that relate the sorbed concentration at 
+the solid surface to the aqueous concentration in contact with the solid at constant temperature. 
+It is a function of the free ion primary species concentrations, not total conentrations. 
+A sorption isotherm may represent equilibrium or kinetic processes depending on the data used to 
+fit the isotherm.
+Each sublist has two parameters:
+
+* `"model`" [string] specifies the model name. The available options are `"linear", `"langmuir`", and `"freundlich`".
+
+* `"parameters`" [Array(double)] is the list of model parameters. The distribution coefficient 
+  *K* is in the first position.
+
+.. code-block:: xml
+
+  <ParameterList name="isotherms">
+    <ParameterList name="A">
+      <Parameter name="model" type="string" value="linear"/>
+      <Parameter name="parameters" type="Array(double)" value="{10.0}"/>
+    </ParameterList>
+    <ParameterList name="B">
+      <Parameter name="model" type="string" value="langmuir"/>
+      <Parameter name="parameters" type="Array(double)" value="{30.0, 0.1}"/>
+    </ParameterList>
+    <ParameterList name="C">
+      <Parameter name="model" type="string" value="freundlich"/>
+      <Parameter name="parameters" type="Array(double)" value="{1.5, 1.25}"/>
+    </ParameterList>
+  </ParameterList>
+
+A few examples are given below.
+Each line has three fields: primary species name, adsorption isotherm model, and parameters. 
+The number of  parameters and their meaning depends on the model; although the first one 
+is always the distribution coefficient.
+
+.. code-block:: txt
+
+   Pu_238   linear    461168.4
+   U_234    linear    329406.0
+   Th_230   linear   1482327.0
+   Ra_226   linear     41175.75
+   Pb_210   linear   3294060.0
+   Tc_99    linear       988.218
+
+NOTE: The parameters provided here are *global*.
+The state field isotherm_kd overwrites any global data given here.
 
 */
 

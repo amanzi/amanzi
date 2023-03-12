@@ -7,15 +7,22 @@
   Authors:
 */
 
-/*
-  Chemistry
+/*!
 
-  Class for surface complexation reaction
+The `"surface complex sites`" section is the list of surface sites and related data.
+Each site has one parameter `"density`".
 
-  Notes:
-  - Each instance of this class should contain a single unique
-    surface site (e.g. >FeOH) and ALL surface complexes associated
-    with that site!
+.. code-block:: xml
+
+  <ParameterList name="surface complex sites">
+    <ParameterList name=">davis_OH">
+      <Parameter name="density" type="double" value="0.156199"/>
+    </ParameterList>
+  </ParameterList>
+
+NOTE: Each instance of this class should contain a single unique
+surface site (e.g. >FeOH) and ALL surface complexes associated with that site!
+
 */
 
 #ifndef AMANZI_CHEMISTRY_SURFACE_COMPLEXATION_RXN_HH_

@@ -7,10 +7,26 @@
   Authors:
 */
 
-/*
-  Multi-Process Coordinator
+/*!
 
-  Checkpointing mesh info.
+A user may request to dump mesh information. Mesh information includes coordinates of cell centroids
+written is the order consistent with all output fields.
+
+
+* `"filename`"[string] - name of the HDF5 file where coordinates of the centroids are dumped.
+
+.. code-block:: xml
+                  
+  <ParameterList>  <!-- parent list -->                
+  <ParameterList name="mesh info">
+    <Parameter name="filename" type="string" value="centroids"/>
+  </ParameterList>
+
+  <ParameterList name="mesh info fracture">
+    <Parameter name="filename" type="string" value="centroids_fracture"/>
+  </ParameterList>
+  </ParameterList>
+
 */
 
 #ifndef AMANZI_MESHINFO_CHECKPOINT_HH_

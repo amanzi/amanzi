@@ -139,6 +139,8 @@ code development and its daily usage in reasearch.
     go directly to Trilinos functions and therefore outside of our control, e.g. *ML output*.
 
 
+.. _Verbose Object:
+
 Verbose output
 --------------
 
@@ -2187,11 +2189,14 @@ Time integrator
 
 
 .. _TimeStepController:
+.. _`Timestep Controller`:
 
 Time step controller
 --------------------
 { TimestepController }
 
+
+.. _`Timestep Controller Standard`:
 
 Standard controller
 ...................
@@ -2345,6 +2350,7 @@ Thus, the value here is 10 anytime prior to `t=2`. The value increases linearly 
 
 
 .. _Solver:
+.. _BDF1 Solver Interface:
 
 Solvers
 =======
@@ -2352,6 +2358,8 @@ Solvers
 
 
 .. _LinearSolvers:
+.. _LinearOperator:
+.. _Inverse:
 
 Iterative solvers
 -----------------
@@ -2378,20 +2386,30 @@ Direct solvers from Amesos library
 { DirectMethodAmesos }
 
 
+.. _`Solver: NKA with Line Search, ATS`:
+.. _`Solver: NKA with backtracking, ATS`:
+
 Nonlinear solvers
 -----------------
 { Solver }
 
+
+.. _`Solver: Nonlinear Krylov Acceleration`:
 
 Newton-Krylov acceleration (NKA)
 ................................
 { SolverNKA }
 
 
+.. _`Solver: Anderson Acceleration`:
+
 Anderson acceleration (AA)
 ..........................
 { SolverAA }
 
+
+.. _`Solver: Newton and Inexact Newton`:
+.. _`Solver: Newton with Line Search`:
 
 Newton
 ......
@@ -2415,8 +2433,8 @@ Here is the list of selected parameters for the Newton-Picard solver.
       <ParameterList name="preconditioner">
         <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
         <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-        <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-        <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+        <Parameter name="schema" type="Array(string)" value="{{face, cell}}"/>
+        <Parameter name="preconditioner schema" type="Array(string)" value="{{face, cell}}"/>
         <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
       </ParameterList>
     </ParameterList>
@@ -2433,10 +2451,15 @@ Here is the list of selected parameters for the Newton-Picard solver.
   </ParameterList>
 
 
+.. _`Solver: Jacobian-Free Newton Krylov`:
+.. _jf-matrix-spec:
+
 Jacobian-free Newton-Krylov (JFNK)
 ..................................
 { SolverJFNK }
 
+
+.. _`Solver: NOX`:
 
 Nonlinear Object-Oriented Solution (NOX)
 ........................................
@@ -2448,49 +2471,646 @@ NKA with line search
 { SolverNKA_LS }
 
 
+.. _`Solver: Nonlinear Continuation`:
+
 Nonlinear continuation 
 ......................
 { SolverContinuation }
 
 
+.. _Preconditioner:
+
 Preconditioners
 ---------------
+{ Preconditioner }
 
 
+Hypre's algebraic multigrid (AMG) and Euclid (ILU)
+..................................................
+{ PreconditionerHypre }
 
-Region
-======
+
+Hypre's Block ILU
+..................
+
+The internal parameters for block ILU are as follows (see 
+https://docs.trilinos.org/dev/packages/ifpack/doc/html/index.html for more detail):
+
+* `"fact: level-of-fill`" [int] sets the level of fill used by the level-based ilu(k) strategy.
+  This is based on powers of the graph, so the value 0 means no-fill. Default is 0.
+
+* `"fact: absolute threshold`" [double] defines the value to add to each diagonal element 
+  (times the sign of the actual diagonal element). Default is 0.
+
+* `"fact: relative threshold`" [double] multiplies the diagonal by this value before checking 
+  the threshold. Default is 1.
+
+* `"fact: relax value`" [double] if nonzero, dropped values are added to the diagonal (times 
+  this factor). Default is 0.
+
+* `"overlap`" [int] defines overlap of the additive Schwarz. Default is 0.
+
+* `"schwarz: combine mode`" [string] defines how values corresponding to overlapping nodes are 
+  handled. Users should set this value to `"Add`" if interested in a symmetric preconditioner. 
+  Otherwise, the default value of `"Zero`" usually results in better convergence.
+  If the level of overlap is set to zero, the rows of the user matrix that are stored on a 
+  given processor are treated as a self-contained local matrix and all column entries that 
+  reach to off-processor entries are ignored. Setting the level of overlap to one tells Ifpack 
+  to increase the size of the local matrix by adding rows that are reached to by rows owned by 
+  this processor. Increasing levels of overlap are defined recursively in the same way. 
+  For sufficiently large levels of overlap, the entire matrix would be part of each processor's 
+  local ILU factorization process. 
+  Default is `"Add`".
+
+.. code-block:: xml
+
+  <ParameterList name="_MY ILU">  <!-- parent list -->
+  <ParameterList name="block ilu parameters">
+    <Parameter name="fact: relax value" type="double" value="1.0"/>
+    <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
+    <Parameter name="fact: relative threshold" type="double" value="1.0"/>
+    <Parameter name="fact: level-of-fill" type="int" value="10"/>
+    <Parameter name="overlap" type="int" value="0"/>
+    <Parameter name="schwarz: combine mode" type="string" value="Add"/>
+  </ParameterList>
+  </ParameterList>
+
+
+Trilinos ML
+...........
+{ PreconditionerML }
+
+
+Identity
+........
+{ PreconditionerIdentity }
+
+
+Diagonal
+........
+{ PreconditionerDiagonal }
+
+
+Mesh
+====
+{ Mesh }
+
+
+Geometric model
+===============
+
+Domain
+------
+
+It is not always possible to extract space dimension from provided data.
+Therefore, we require the user to provide simple list *domain* with only 
+one parameter *spatial dimension*.
+
+* `"spatial dimension`" [int] defined space dimenstion. The available values are 2 or 3.
+
+.. code-block:: xml
+
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="2"/>
+  </ParameterList>
+
+
+Regions
+-------
 { Region }
-
-.. contents:: **Region Types**
-   :local:
 
 
 All
-===
+...
 { RegionAll }
 
+
 Box
-===
+...
 { RegionBox }
 
+
 Plane
-=====
+.....
 { RegionPlane }
 
+
+Halfspace
+.........
+{ RegionHalfSpace }
+
+
 Labeled Set
-===========
+...........
 { RegionLabeledSet }
 
+
 Function Color
-==============
+..............
 { RegionFunctionColor }
 
+
+Polygon
+.......
+{ RegionPolygon }
+
+
+Cylinder
+........
+{ RegionCylinder }
+
+
 Point
-=====
+.....
 { RegionPoint }
 
+
 Logical
-=======
+.......
 { RegionLogical }
+
+
+Boundary
+........
+{ RegionBoundary }
+
+
+Enumerated set
+..............
+{ RegionEnumerated }
+
+
+Box volume fractions
+....................
+{ RegionBoxVolumeFractions }
+
+
+Line Segment
+............
+{ RegionLineSegment }
+
+
+Notes and example
+-----------------
+
+* Surface files contain labeled triangulated face sets.  The user is
+  responsible for ensuring that the intersections with other surfaces
+  in the problem, including the boundaries, are *exact* (*i.e.* that
+  surface intersections are *watertight* where applicable), and that
+  the surfaces are contained within the computational domain.  If
+  nodes in the surface fall outside the domain, the elements they
+  define are ignored.
+
+  Examples of surface files are given in the *Exodus II* file 
+  format here.
+
+* Region names must NOT be repeated.
+
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="regions">
+    <ParameterList name="_TOP SECTION">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{{2, 3, 5}}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{{4, 5, 8}}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="_MIDDLE SECTION">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{{2, 3, 3}}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{{4, 5, 5}}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="_BOTTOM SECTION">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{{2, 3, 0}}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{{4, 5, 3}}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="_INFLOW SURFACE">
+      <ParameterList name="region: labeled set">
+        <Parameter name="label"  type="string" value="_SIDESET2"/>
+        <Parameter name="file"   type="string" value="_MESH.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
+        <Parameter name="entity" type="string" value="face"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="_OUTFLOW PLANE">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{{0.5, 0.5, 0.5}}"/>
+        <Parameter name="normal" type="Array(double)" value="{{0, 0, 1}}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="_BLOODY SAND">
+      <ParameterList name="region: color function">
+        <Parameter name="file" type="string" value="_FAREA_COLOR.txt"/>
+        <Parameter name="value" type="int" value="25"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="_FLUX PLANE">
+      <ParameterList name="region: polygon">
+        <Parameter name="number of points" type="int" value="5"/>
+        <Parameter name="points" type="Array(double)" value="{{-0.5, -0.5, -0.5, 
+                                                               0.5, -0.5, -0.5,
+                                                               0.8, 0.0, 0.0,
+                                                               0.5,  0.5, 0.5,
+                                                              -0.5, 0.5, 0.5}}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="_ENTIRE MESH">
+      <ParameterList name="region: all"\>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+In this example, _TOP SECTION, _MIDDLE SECTION and _BOTTOM SECTION
+are three box-shaped volumetric regions. _INFLOW SURFACE is a
+surface region defined in an Exodus II-formatted labeled set
+file and _OUTFLOW PLANE is a planar region. _BLOODY SAND is a volumetric
+region defined by the value 25 in color function file.
+
+
+Databases
+=========
+
+
+Thermodynamic database
+----------------------
+{ SimpleThermoDatabase }
+
+
+Primary species
+...............
+{ Species }
+
+
+Aqueous equilibrium complexes
+.............................
+{ AqueousEquilibriumComplex }
+
+
+Isotherms
+.........
+{ SorptionIsothermFactory }
+
+
+General kinetics
+................
+{ GeneralRxn }
+
+
+Mineral thermodynamics and kinetics
+...................................
+{ Mineral }
+
+
+Ion exchange sites
+..................
+{ IonExchangeRxn }
+
+
+Ion exchange complexes
+......................
+{ IonExchangeComplex }
+
+
+Surface complex sites
+.....................
+{ SurfaceComplexationRxn }
+
+
+Surface complexes
+.................
+{ SurfaceComplex }
+
+
+Radioactive decay
+.................
+{ RadioactiveDecay }
+
+
+Output data
+===========
+
+Amanzi uses a few ways to communicate simulation data to the user that includes
+a short file with observations and full-scale visualization files.
+
+
+Observation file
+----------------
+{ FlexibleObservations }
+
+
+Checkpoint file
+---------------
+
+A user may request periodic dumps of Amanzi checkpoint data.  
+The user has no explicit control over the content of these files, but has the guarantee that 
+the Amanzi run will be reproducible (with accuracy determined
+by machine round errors and randomness due to execution in a parallel computing environment).
+Therefore, output controls for *checkpoint data* are limited to file name generation and writing 
+frequency, by numerical cycle number.
+
+* `"checkpoint data`" [list] can accept a file name base [string] and cycle data [list] 
+  used to generate the file base name or directory base name that is used in writing checkpoint data. 
+
+  * `"file name base`" [string] ("checkpoint")
+  
+  * `"file name digits`" [int] Default value is 5.
+
+  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second 
+    is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle.
+    A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, 
+    for n=0,1,2,... and cycle < stop if stop != -1.0.
+
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop parameters 
+    are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
+
+  * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
+
+  * `"times start period stop`" [Array(double)] the first entry is the start time, 
+    the second is the time period, and the third is the stop time or -1 in which 
+    case there is no stop time. A visualization dump shall be written at such times 
+    that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+
+  * `"times start period stop n`" [Array(double) if multiple start period stop parameters 
+    are needed, then use this these parameters with n=0,1,2,..., and not the 
+    single  `"times start period stop`" parameter.
+
+  * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
+
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="checkpoint data">
+    <Parameter name="file name base" type="string" value="_CHKPOINT"/>
+    <Parameter name="file name digits" type="int" value="5"/>
+
+    <Parameter name="cycles start period stop" type="Array(int)" value="{{0, 100, -1}}"/>
+    <Parameter name="cycles" type="Array(int)" value="{{999, 1001}}"/>
+
+    <Parameter name="times start period stop 0" type="Array(double)" value="{{0.0, 10.0, 100.0}}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{{100.0, 25.0, -1.0}}"/>
+    <Parameter name="times" type="Array(double)" value="{{101.0, 303.0, 422.0}}"/>
+  </ParameterList>
+  </ParameterList>
+
+In this example, checkpoint data files are written when the cycle number is 
+a multiple of 100.
+
+
+Visualization file
+------------------
+
+A user may request periodic writes of field data for the purposes of visualization.  
+The user will specify explicitly what is to be included in the file at each snapshot.
+Visualization files can only be written at intervals corresponding to the numerical 
+time step values or intervals corresponding to the cycle number; writes are controlled by time step cycle number.
+
+* `"visualization data`" [list] can accept a file name base [string] and cycle data [list] 
+  that is used to generate the file base name or directory base name that is used in writing visualization data.
+  It can also accept a set of lists to specify which field quantities to write.
+  The file name can contain relative or absolute path to an *existing* directory only. 
+
+  * `"file name base`" [string] ("amanzi_vis")
+
+  * `"file format`" [string] ("XDMF") Amanzi supports two types of
+    visualization files.  XDMF is the default and preferred method, but does
+    not correctly handle general polyhedra.  Serial, 3D general polyhedral
+    support is supported by the "SILO" option.  This will eventually be
+    extended to parallel, 2/3D support, but this is not yet implemented.
+
+  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, 
+    the second is the cycle period, and the third is the stop cycle or -1 in which case 
+    there is no stop cycle. A visualization dump shall be written at such cycles that 
+    satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
+
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start-period-stop parameters 
+    are needed, then use these parameters with n=0,1,2,..., and not the single 
+    `"cycles start period stop`" parameter.
+
+  * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
+
+  * `"times start period stop`" [Array(double)] the first entry is the start time, 
+    the second is the time period, and the third is the stop time or -1 in which case 
+    there is no stop time. A visualization dump shall be written at such times that 
+    satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+
+  * `"times start period stop n`" [Array(double) if multiple start-period-stop parameters 
+    are needed, then use this these parameters with n=0,1,2,..., and not the single
+    `"times start period stop`" parameter.
+
+  * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
+
+  * `"dynamic mesh`" [bool] (false) write mesh data for every visualization dump, 
+    this facilitates visualizing deforming meshes.
+
+  * `"write regions`" [list] contains auxiliary fields with region ids to write into the visualization file.
+
+    * `"REGION_NAME`" [Array(string)] the user-defined field name and the list of assigned regions. 
+      The first entry in the regions array is marked with the value 1.0 in the array, 
+      the second with the value 2.0, and so forth. 
+      The code ignores entries in the regions array that are not valid regions that contain cells.
+
+  * `"write partitions`" [bool] (false) if this parameter is true, then write an array into 
+    the visualization file that contains the rank number of the processor that owns a mesh cell. 
+
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="visualization data">
+    <Parameter name="file name base" type="string" value="_PLOT"/>
+  
+    <Parameter name="cycles start period stop" type="Array(int)" value="{{0, 100, -1}}"/>
+    <Parameter name="cycles" type="Array(int)" value="{{999, 1001}}"/>
+
+    <Parameter name="times start period stop 0" type="Array(double)" value="{{0.0, 10.0, 100.0}}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{{100.0, 25.0, -1.0}}"/>
+    <Parameter name="times" type="Array(double)" value="{{101.0, 303.0, 422.0}}"/>
+
+    <Parameter name="dynamic mesh" type="bool" value="false"/>
+
+    <ParameterList name="write regions">
+      <Parameter name="regions" type="Array(string)" value="{{_OBS1, _OBS2, _OBS3}}"/>
+      <Parameter name="wells" type="Array(string)" value="{{_OBS4}}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+
+Walkabout file
+--------------
+{ WalkaboutCheckpoint }
+
+
+Mesh info
+---------
+{ MeshInfo }
+
+
+Input data
+==========
+
+This section describes format and purpose of various input files.
+In addition it explain how to verify the input information (e.g. regions) using special sublists.
+
+
+Input analysis
+--------------
+{ InputAnalysis }
+
+
+Tabulated EOS format
+--------------------
+
+The tabulated equation of state uses a free format for integres, doubles and text string; 
+however, the order of block is fixed and string cannot have spaces. 
+The first two line have the following format:
+
+.. code-block:: text
+
+  N scale shift field_name
+
+where *N* is the number of data points in either T or p directions,
+*scale* and *shift* are the scale factor and shift required to convert data
+to SI units, and *field_name* is either `"temperature`" or `"pressure`"
+
+The second block has seven lines and the above format, except for *N* which
+is now the total number of data points in the T-p table.
+
+The third block provides data for physical fields using the following order:
+
+.. code-block:: text
+
+ T p rho internal_energy enthalpy Cv Cp viscosity thermal_conductivity phase
+
+where *phase* is the first letter of phase, `"l`" or `"g`".
+
+
+Example for liquid water
+........................
+
+In this example the following units are used for *3x3* tabulated data: 
+temperature [K], pressure [bar], density [kg/m3], internal energy [kJ/mol], 
+enthalpy [kJ/mol], Cv [J/mol*K], Cp [J/mol*K], viscosity [Pa*s], and thermal conductivity [W/m*K].
+Thus, to convert these data to SI units, we specify non-unity factors for pressure, internal energy,
+and enthalpy.
+
+.. code-block:: text
+
+  3 1.0000  0.0 temperature
+  3 1.0e+5 0.0 pressure
+
+  9 1.0000 0.0 density
+  9 1.0e+3 0.0 internal_energy
+  9 1000.0 0.0 enthalpy 
+  9 1.0 0.0 cv
+  9 1.0 0.0 cp
+  9 1.0 0.0 viscosity
+  9 1.0 0.0 thermal_conductivity
+
+  280.15 0.5  999.879 0.530097 0.530997 75.6574 75.6793 0.00142708 0.574347  l
+  290.15 0.5  998.754  1.28544  1.28634  75.0821  75.4233 0.00107982 0.593025  l
+  300.15  0.5  996.493  2.03905  2.03995  74.3983 75.3170  0.000851  0.610549  l
+
+  280.15  1.0  999.904  0.530085 0.531887 75.6536  75.6756  0.00142701 0.574372  l
+  290.15 1.0  998.777  1.28540  1.28720  75.0787  75.4203  0.00107979  0.593048  l
+  300.15 1.0  996.515  2.03898  2.04078  74.3954  75.3145  0.000850991  0.610572  l
+
+  280.15  1.2 999.913  0.53008 0.532242 75.6521  75.6741  0.00142699  0.574382  l
+  290.15  1.2 998.787  1.28538 1.28754 75.0774  75.4191  0.00107978 0.593058  l
+  300.15 1.2 996.524  2.03895 2.04112 74.3942  75.3135  0.000850987  0.610581 l
+
+
+Tabulated function file format
+------------------------------
+
+The following ASCII input file format supports the definition of a tabulated function defined over a grid.
+Several XML input Parameters refer to files in this format.
+The file consists of the following records (lines).
+Each record is on a single line, except for the DATAVAL record which may be split across multiple lines.
+
+1. **DATATYPE**:  An integer value: 0 for integer data, 1 for real data.
+
+  * An integer-valued file is used to define a 'color' function used in the definition of a region.
+
+2. **GRIDTYPE**:  A string that specifies the type of grid used to define the function.
+The format of the rest of the file is contingent upon this value.
+The currently supported options are uniform rectilinear grids in 1, 2 and 3-D, 
+which are indicated by the values `1DCoRectMesh`, `2DCoRectMesh` and `3DCoRectMesh`, 
+respectively (names adopted from XDMF).
+
+For the uniform rectilinear grids, the remaining records are as follows.  
+Several records take 1, 2 or 3 values depending on the space dimension of the grid.
+
+3. **NXNYNZ**: 3 (or 2, 1) integer values (NX, NY, NZ) giving the number of zones in 
+the x, y and z coordinate directions, respectively.
+
+4. **CORNER1**: 3 (or 2, 1) floating point values (X1, Y1, Z1) giving the coordinate 
+of the first corner of the domain.
+
+5. **CORNER2**: 3 (or 2, 1) floating point values (X2, Y2, Z2) giving the coordinate 
+of the second corner of the domain.  The grid points r_{{i,j,k}} = (x_i, y_j, z_j) are defined as:
+
+      x_i = X1 + i*(X2-X1)/NX, 0 <= i <= NX
+
+      y_j = Y1 + j*(Y2-Y1)/NY, 0 <= j <= NY
+
+      z_k = Z1 + k*(Z2-Z1)/NZ, 0 <= k <= NZ
+
+The (i,j,k) grid cell is defined by the corner grid points r_{{i-1,j-1,k-1}} and 
+r_{{i,j,k}}, for 1 <= i <= NX, 1 <= j <= NY, 1 <= k <= NZ. 
+Note that the corner points are any pair of opposite corner points; the ordering of grid 
+points and cells starts at CORNER1 and ends at CORNER2.
+
+6. **DATALOC**:  An integer value: 0 for cell-based data, 1 for point-based data.
+
+
+7. **DATACOL**:  An integer (N) giving the number of "columns" in the data.  
+This is the number of values per grid cell/point.  
+N=1 for a scalar valued function; N>1 for a N-vector valued function.
+
+  * only a single column is currently supported.
+
+8. **DATAVAL**: The values of the function on the cells/points of the grid.  
+The values should appear in Fortran array order were the values stored in 
+the Fortran array A(N,NX,NY,NZ) (A(N,0:NX,0:NY,0:NZ) for point-based data).  
+That is, the column index varies fastest, x grid index next fastest, etc.
+    
+
+Example
+.......
+
+As an example, consider the following integer-valued function in 2-D:
+
+::
+ 
+                  +-----+-----+-----+ (2.0,3.0)
+                  |     |     |     |
+                  |  2  |  1  |  1  |
+                  |     |     |     |
+                  +-----+-----+-----+
+                  |     |     |     |
+                  |  5  |  1  |  2  |
+                  |     |     |     |
+        (0.0,0.0) +-----+-----+-----+
+
+
+The corresponding input file would be:
+
+.. code-block:: text
+
+  0
+  2DCoRectMesh
+  3 2
+  0.0 0.0
+  2.0 3.0
+  0
+  1
+  5 1 2 2 1 1
+
+
+
+
 

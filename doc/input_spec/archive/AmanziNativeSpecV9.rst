@@ -5929,6 +5929,7 @@ they are equivalent to rectangles on a plane or segments on a line.
 
 This example defines a degenerate box, a square on a surface *z=1*.
 
+
 Line Segment
 ............
 

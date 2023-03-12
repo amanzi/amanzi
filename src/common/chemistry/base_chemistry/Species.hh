@@ -7,10 +7,70 @@
   Authors: Ben Andre
 */
 
-/*
-  Chemistry
+/*!
 
-  Base class for species
+The `"primary species`" section is a list of primary species, one sublist for a species.
+Each sublist is named after the species and contains the following parameters:
+
+* `"ion size parameter`" [double] is an empirical parameter that provides agreement 
+  between measured activity coefficients and ionic strength. In theory, it is the diameter
+  of the hydrated ion.
+
+* `"charge`" [int] is the ion charge. The net charge of an ion is non-zero since the
+  total number of electrons is unequal to the total number of protons.
+
+* `"gram molecular weight`" [double] is amount of a molecular substance whose weight, 
+  in grams, is numerically equal to the molecular weight of that substance. 
+
+.. code-block:: xml
+
+  <ParameterList name="thermodynamic database">
+    <ParameterList name="primary species">
+      <ParameterList name="H+">
+        <Parameter name="ion size parameter" type="double" value="9.0"/>
+        <Parameter name="charge" type="int" value="1"/>
+        <Parameter name="gram molecular weight" type="double" value="1.0079"/>
+      </ParameterList>
+      <ParameterList name="Ca++">
+        <Parameter name="ion size parameter" type="double" value="6.0"/>
+        <Parameter name="charge" type="int" value="2"/>
+        <Parameter name="gram molecular weight" type="double" value="40.078"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+Here is the short list of species that could be used for models.
+Each line has four data fields: name of a species, ion size parameter, charge, and atomic mass [u].
+
+.. code-block:: txt
+
+   Al+++      9.0     3.0    26.9815
+   HCO3-      4.0    -1.0    61.0171
+   HPO4--     4.0    -2.0    95.9793
+   Cl-        3.0    -1.0    35.4527
+   CO2(aq)    3.0     0.0    44.01
+   Cs137      2.5     1.0   132.9054
+   F-         3.5    -1.0    18.9984
+   Fe++       6.0     2.0    55.847
+   K+         3.0     1.0    39.0983
+   Mg++       8.0     2.0    24.30
+   Na+        4.0     1.0    22.9898
+   N2(aq)     3.0     0.0    28.0135
+   NO3-       3.0    -1.0    62.0049
+   O2(aq)     3.0     0.0    31.9988
+   Pb_210     1.0     0.0   210.00
+   Pu_238     1.0     0.0   238.00
+   Ra_226     1.0     0.0   226.00
+   SiO2(aq)   3.0     0.0    60.0843
+   SO4--      4.0    -2.0    96.0636
+   Sr90       5.0     2.0    87.6200
+   Tc_99      1.0     0.0    99.00
+   Th_230     1.0     0.0   230.00
+   Tritium    9.0     0.0     1.01
+   U_234      1.0     0.0   234.00
+   UO2++      4.5     2.0   270.028
+   Zn++       6.0     2.0    65.39
+
 */
 
 #ifndef AMANZI_CHEMISTRY_SPECIES_HH_

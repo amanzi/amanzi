@@ -47,6 +47,107 @@ rest were assumed based on those results) to be an issue have been cached.
 
 NOTE: Lazy definition of the cache itself is necessarily "mutable".
 
+This specification format uses and describes the unstructured mesh only.
+
+* `"mesh`" [list] accepts `"unstructured`" to indicate the meshing option that Amanzi will use.
+  This instructs Amanzi to use data structures provided in the Trilinos or MSTK software frameworks.
+  To the extent possible, the discretization algorithms implemented under this option 
+  are largely independent of the shape and connectivity of the underlying cells.
+  As a result, this option supports an arbitrarily complex computational mesh structure
+  that enables users to work with numerical meshes that can be aligned with geometrically
+  complex man-made or geostatigraphical features.
+  Under this option, the user typically provides a mesh file that was generated with 
+  an external software package.
+  The following mesh file formats are currently supported: `"Exodus II`" (see example),
+  `"MSTK`" (see example), and `"MOAB`" (obsolete).
+  Amanzi also provides a rudimentary capability to generate unstructured meshes automatically.
+
+  * `"unstructured`" [list] accepts instructions to either (1) read or, (2) generate an unstructured mesh.
+
+    * `"read mesh file`" [list] accepts name, format of pre-generated mesh file
+
+      * `"file`" [string] name of pre-generated mesh file. Note that in the case of an
+        Exodus II mesh file, the suffix of the serial mesh file must be .exo and 
+        the suffix of the parallel mesh file must be .par.
+        When running in serial the code will read this the indicated file directly.
+        When running in parallel and the suffix is .par, the code will instead read
+        the partitioned files, that have been generated with a Nemesis tool and
+        named as filename.par.N.r where N is the number of processors and r is the rank.
+        When running in parallel and the suffix is .exo, the code will partition automatically
+        the serial file.
+     
+      * `"format`" [string] format of pre-generated mesh file (`"MSTK`", `"MOAB`", or `"Exodus II`")
+
+    * `"generate mesh`" [list] accepts parameters of generated mesh
+
+      * `"domain low coordinate`" [Array(double)] Location of low corner of domain
+      * `"domain high coordinate`" [Array(double)] Location of high corner of domain
+      * `"number of cells`" [Array(int)] the number of uniform cells in each coordinate direction
+
+    * `"expert`" [list] accepts parameters that control which particular mesh framework is to be used.
+
+      * `"framework`" [string] one of `"stk::mesh`", `"MSTK`", `"MOAB`" or `"Simple`". 
+      * `"verify mesh`" [bool] true or false. 
+
+      * `"partitioner`" [string] defines the partitioning algorithm for parallel unstructured meshes.
+        The available options are `"metis"` (default), `"zoltan_graph"` and `"zoltan_rcb"`. `"metis"`
+        and `"zoltan_graph"` perform a graph partitioning of the mesh with no regard to the geometry 
+        of the mesh. `"zoltan_rcb"` partitions meshes using Recursive Coordinate Bisection which 
+        can lead to better partitioning in meshes that are thin in a particular direction. 
+        Additionally, the use of `"zoltan_rcb"` with the MSTK framework triggers an option to 
+        detect columns of elements in a mesh and adjust the partitioning such that no column is 
+        split over multiple partitions. If no partitioner is specified, the default one is used.
+
+      * `"request edges`" [bool] builds support for mesh edges. Only in 3D.
+
+      * `"contiguous global ids`" [bool] enforces contigoud global ids. Default is *true*.
+
+    * `"submesh`" [list] parameters for extracted meshes
+
+      * `"domain name`" [string] specifies name of the domain. Available options are
+        `"fracture`" for the fracture network or `"surface`" for surface models.
+
+      * `"extraction method`" [string] specifies the extraction method. The only available option
+        is `"manifold mesh`". If this parameter is missing, the parent mesh framework is used 
+        for submesh extraction..
+
+      * `"regions`" [Array(string)] defines a list of regions for submesh. Parameter 
+        `"extraction method`" requires a single name in this list.
+
+Example of *Unstructured* mesh generated internally:
+
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured"/>
+      <ParameterList name="generate mesh">
+        <Parameter name="number of cells" type="Array(int)" value="{100, 1, 100}"/>
+        <Parameter name="domain low cooordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{103.2, 1.0, 103.2}"/>
+      </ParameterList>   
+
+      <ParameterList name="expert">
+        <Parameter name="framework" type="string" value="MSTK"/>
+        <Parameter name="partitioner" type="string" value="metis"/>
+      </ParameterList>
+    </ParameterList>   
+  </ParameterList>
+  </ParameterList>
+
+Example of *Unstructured* mesh read from an external file:
+
+.. code-block:: xml
+
+  <ParameterList name="mesh">  <!-- parent list -->
+  <ParameterList name="unstructured">
+    <ParameterList name="read mesh file">
+      <Parameter name="file" type="string" value="mesh_filename"/>
+      <Parameter name="format" type="string" value="Exodus II"/>
+    </ParameterList>   
+  </ParameterList>   
+  </ParameterList>
+
 */
 
 

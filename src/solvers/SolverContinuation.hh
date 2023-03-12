@@ -29,9 +29,9 @@ interface about how to update the continuation parameter.
     * `"number of continuation steps`" ``[int]`` **5** How many steps to take
       from initial parameter to final parameter.
 
-    * `"inner solver`" ``[solver-typed-spec]``A Solver_, used at each step.
+    * `"inner solver`" ``[solver-typed-spec]`` A Solver_, used at each step.
 
- */
+*/
 
 
 #ifndef AMANZI_CONTINUATION_SOLVER_
