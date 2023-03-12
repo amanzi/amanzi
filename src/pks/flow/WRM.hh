@@ -53,7 +53,7 @@ if the list *output* is provided. This list has two mandatory parameters:
   <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="water retention models">
     <ParameterList name="_SOIL_1">
-      <Parameter name="regions" type="Array(string)" value="{{_TOP HALF}}"/>
+      <Parameter name="regions" type="Array(string)" value="{_TOP HALF}"/>
       <Parameter name="water retention model" type="string" value="van Genuchten"/>
       <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
       <Parameter name="van Genuchten m" type="double" value="0.28571"/>
@@ -68,7 +68,7 @@ if the list *output* is provided. This list has two mandatory parameters:
     </ParameterList>
 
     <ParameterList name="_SOIL_2">
-      <Parameter name="regions" type="Array(string)" value="{{_BOTTOM HALF}}"/>
+      <Parameter name="regions" type="Array(string)" value="{_BOTTOM HALF}"/>
       <Parameter name="water retention model" type="string" value="Brooks Corey"/>
       <Parameter name="Brooks Corey lambda" type="double" value="0.0014"/>
       <Parameter name="Brooks Corey alpha" type="double" value="0.000194"/>

@@ -51,6 +51,27 @@ This evaluator is used by providing the option:
      for things like cyclic data, which can use a modulo time function to
      repeat the same data.
 
+.. code-block:: xml
+
+  <ParameterList name="field_evaluators">  <!-- parent list -->
+  <ParameterList name="porosity">
+    <Parameter name="field evaluator type" type="string" value="independent variable from file"/>
+    <Parameter name="filename" type="string" value="_DATA_FILE.h5"/>
+    <Parameter name="domain name" type="string" value="domain"/>
+    <Parameter name="variable name" type="string" value="porosity"/>
+    <Parameter name="component name" type="string" value="cell"/>
+    <Parameter name="mesh entity" type="string" value="cell"/>
+    <Parameter name="number of dofs" type="int" value="1"/>
+
+    <ParameterList name="time function">  
+      <Parameter name="times" type="Array(double)" value="{1.0, 2.0, 3.0}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+The field *porosity* is defined as a cell-based variable and
+interpolated between three time intervals.
+
 */
 
 //   TODO: This needs a test! --etc

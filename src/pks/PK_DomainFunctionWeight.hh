@@ -7,14 +7,14 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Process Kernels
+/*!
 
-  The total source Q is given for each domain. A weighted source
-  distribution model is employed. The cell-based source density is
-  calculated as (Q / W_D) * weight, where W_D is the weighted
-  domain volume. The weight is defined globally, for the whole
-  computational domain.
+The total source Q is given for each domain. A weighted source
+distribution model is employed. The cell-based source density is
+calculated as (Q / W_D) * weight, where W_D is the weighted
+domain volume. The weight is defined globally, for the whole
+computational domain.
+
 */
 
 #ifndef AMANZI_PK_DOMAIN_FUNCTION_WEIGHT_HH_

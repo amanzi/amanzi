@@ -48,13 +48,13 @@ Note that *reactive transport* is MPC-PK and hence its description is short.
   <ParameterList name="PKs">
   <ParameterList name="_FLOW and REACTIVE TRANSPORT">
     <Parameter name="PK type" type="string" value="flow reactive transport"/>
-    <Parameter name="PKs order" type="Array(string)" value="{{_FLOW, _REACTIVE TRANSPORT}}"/>
+    <Parameter name="PKs order" type="Array(string)" value="{_FLOW, _REACTIVE TRANSPORT}"/>
     <Parameter name="master PK index" type="int" value="0"/>
   </ParameterList>
 
   <ParameterList name="_REACTIVE TRANSPORT">
     <Parameter name="PK type" type="string" value="reactive transport"/>
-    <Parameter name="PKs order" type="Array(string)" value="{{_CHEMISTRY, _TRANSPORT}}"/>
+    <Parameter name="PKs order" type="Array(string)" value="{_CHEMISTRY, _TRANSPORT}"/>
   </ParameterList>
 
   <ParameterList name="_FLOW">

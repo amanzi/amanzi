@@ -10,7 +10,7 @@
 
 /*!
 
-rocess kernel that couples Darcy flow in matrix and fracture network.
+The process kernel that couples Darcy flow in matrix and fracture network.
 
 Mathematical models
 ...................

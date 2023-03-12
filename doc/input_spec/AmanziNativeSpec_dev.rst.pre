@@ -7,14 +7,12 @@ Amanzi-U Native XML Input Specification V9
 
 Overview
 ========
-
 This is a continuously evolving specification format used by the code developers. 
 Its main purpose is to develop and test new capabilities without disruption of end-users.
 
   
 ParameterList XML
 =================
-
 The Amanzi input file is an ASCII text XML-formatted file that must be framed 
 at the beginning and end by the following statements:
 
@@ -47,7 +45,6 @@ ratio[1]=1, and ratio[2]=4.
 
 Syntax of the specification
 ---------------------------
-
 Input specification for each ParameterList entry consists of two parts.  
 First, a bulleted list defines the usage syntax and available options.  
 This is followed by example snippets of XML code to demonstrate usage.
@@ -109,7 +106,6 @@ Additional conventions:
 
 Naming convention rule
 ----------------------
-
 It is hard to overestimate importance of a reasonable naming convention rule for efficient
 code development and its daily usage in reasearch.
 
@@ -143,7 +139,6 @@ code development and its daily usage in reasearch.
 
 Verbose output
 --------------
-
 Output of all components of Amanzi is controlled by a standard verbose 
 object list. This list can be inserted in almost any significant
 component of this spec to produce a verbose output, see the embedded examples.
@@ -171,7 +166,6 @@ If this list is not specified, the default verbosity value is used.
 
 Residual debugger
 -----------------
-
 Some components (currently just nonlinear solver, this may change)
 leverage a *residual debugger* object for writing, to file, residuals,
 corrections, and internal iterates of a solve process for solver
@@ -206,27 +200,11 @@ Note: *cycle* here means the current time integration step and *not* the global 
 
 Units
 -----
-
-Amanzi's internal default units are SI units except for the concentration.
-
-* `"concentration`" [string] defines units for concentration. Available options
-  are `"molar`" (default) which is `"mol/L`" and `"SI`" which is `"mol/m^3`". 
-
-.. code-block:: xml
-
-  <ParameterList>  <!-- parent list -->
-  <ParameterList name="units">
-    <Parameter name="length" type="string" value="m"/>
-    <Parameter name="time" type="string" value="s"/>
-    <Parameter name="mass" type="string" value="kg"/>
-    <Parameter name="temperature" type="string" value="K"/>
-    <Parameter name="concentration" type="string" value="molar"/>
-  </ParameterList>
-  </ParameterList>
+{ Units }
 
 
 Symbol index
-============
+------------
 
 .. include:: symbol_table.rst
   
@@ -238,7 +216,6 @@ Cycle Driver
 
 Time period control
 -------------------
-
 A set of times that simulation hits exactly can be used to avoid problems with
 sudden change of boundary conditions or source/sink terms.
 This list must *NOT* include start times for time periods *TP #*.
@@ -266,7 +243,6 @@ Between approximately 1000 and 2000 years, we limit the maximum time step to 10 
 
 Restart from checkpoint data file
 ---------------------------------
-
 A user may request to restart a simulation from a checkpoint data file by creating list 
 *restart*. In this scenario, the code will overwrite data initialized using the input XML file.
 The purpose of restart is to continue the simulation that has been terminated before for some reasons,
@@ -293,6 +269,7 @@ State
 =====
 { State }
 
+Additional comments:
 
 * `"initialization filename`" [string] (optional) provides name of the existing checkpoint data 
   file. The initialization sequence is as follows. First, we try to initialize a
@@ -311,35 +288,12 @@ State
   that defaults to 0.
 
 
-Primary and derived fields
---------------------------
-
-* Primary fields [default units]
-
-  * pressure [Pa]
-  * total component concentration [mol/L] or [mol/m^3]
-  * temperature [K]
-
-* Secondary fields
-
-  * saturation [-]
-  * hydraulic_head [m]
-  * volumetric_flow_rate [m^3/s] 
-  * permeability [m^2]
-  * porosity [-]
-  * specific_storage [m^-1]
-  * specific_yield [-]
-  * transport_porosity [-] 
-
-
 Field evaluators
 ----------------
-
-There are three different types of field evaluators.
+There are five different types of field evaluators.
 
 Independent variable field evaluator
 ....................................
-
 An independent ivariable field evaluator has no dependencies and is specified by a function.
 Typically, it is evaluated once per simulation.
 The evaluator has the following control parameters.
@@ -399,51 +353,11 @@ Note that the user-defined name for this field cannot have spaces.
 
 Independent variable field evaluator from file
 ..............................................
-
-An independent variable field evaluator from file has no dependencies and is specified by 
-data at specific time moments.
-
-* `"filename`" [string] defines name of a data file.
-  
-* `"domain name`" [string] specifies mesh. Default is `"domain`".
-
-* `"variable name`" [string] defines variable name in the data file.
-
-* `"component name`" [string] defines component name in a composite vector.
-
-* `"mesh entity`" [string] specifies geometric object associated with the mesh function.
-  Available options are `"cell`", `"face`", and `"node`".
-
-* `"number of dofs`" [string] defines the number of degrees of freedom. Default is 1.
-
-* `"time function`" [list] defines a time function to interpolate data. This is the 
-  optional parameter.
-
-.. code-block:: xml
-
-  <ParameterList name="field_evaluators">  <!-- parent list -->
-  <ParameterList name="porosity">
-    <Parameter name="field evaluator type" type="string" value="independent variable from file"/>
-    <Parameter name="filename" type="string" value="_DATA_FILE.h5"/>
-    <Parameter name="domain name" type="string" value="domain"/>
-    <Parameter name="variable name" type="string" value="porosity"/>
-    <Parameter name="component name" type="string" value="cell"/>
-    <Parameter name="mesh entity" type="string" value="cell"/>
-    <Parameter name="number of dofs" type="int" value="1"/>
-
-    <ParameterList name="time function">  
-      <Parameter name="times" type="Array(double)" value="{{1.0, 2.0, 3.0}}"/>
-    </ParameterList>
-  </ParameterList>
-  </ParameterList>
-
-The field *porosity* is defined as a cell-based variable and
-interpolated between three time intervals.
-
+{ EvaluatorIndependentFromFile }
+ 
 
 Constant variable field evaluator
 .................................
-
 Constant variable field evaluator as a simplified version of independent field evaluator from
 file which allows one to define constant in time field. Initialization of the field 
 has to be done in the initial conditions sublist of state.
@@ -475,17 +389,11 @@ has to be done in the initial conditions sublist of state.
 
 Primary variable field evaluator
 ................................
-
-The primary variable field evaluator has no dependencies solved for by a PK.
-Examples of independent field evaluators are primary variable of PDEs, such as
-pressure and temperature.
-Typically this evaluator is used internally to inform the dependency tree about 
-a new state of the primary variable.
+{ EvaluatorPrimary }
 
 
 Secondary variable field evaluators
 ...................................
-
 Secondary fields are derived either from primary fields or other secondary fields.
 There are two types of secondary fields evaluators.
 The first type is used to evaluate a single field.
@@ -535,7 +443,6 @@ Initial conditions
 
 Constant scalar field
 .....................
-
 A constant field is the global (with respect to the mesh) constant. 
 At the moment, the set of such fields includes *fluid_density*
 and *fluid_viscosity*.
@@ -553,7 +460,6 @@ parameter *value*.
 
 Constant vector field
 .....................
-
 A constant vector field is the global (with respect to the mesh) vector constant. 
 At the moment, the set of such vector constants includes *gravity*.
 The initialization requires to provide a named sublist with a single
@@ -570,7 +476,6 @@ parameter *value*. In three dimensions, it looks like
 
 A scalar field
 ..............
-
 A variable scalar field is defined by a few functions (labeled with _MESH BLOCK #
 in our example) with non-overlapping domains. 
 The required parameters for each function are *region*, *component*,
@@ -618,7 +523,6 @@ Note that the names of functions may coinsider with the names of regions.
 
 A vector or tensor field
 ........................
-
 A variable tensor (or vector) field is defined similarly to a variable scalar field. 
 The difference lies in the definition of the function which is now a multi-valued function.
 
@@ -673,7 +577,6 @@ normal producing one number per mesh face.
 
 Geochemical constraint
 ......................
-
 We can define geochemical contraint as follows: 
 
 .. code-block:: xml
@@ -688,8 +591,7 @@ We can define geochemical contraint as follows:
 
 
 Initialization from Exodus II file
--------------------------------------
-
+----------------------------------
 Some fields can be initialized from Exodus II files. 
 For each field, an additional sublist has to be added to the
 named sublist of *State* list with the file name and the name of attributes. 
@@ -714,8 +616,7 @@ For a parallel run, it must be *.par*.
 
 
 Initialization from HDF5 file
--------------------------------
-
+-----------------------------
 Some field can be initialized from HDF5 file. The field has to written
 to HDF5 file as 2D array (number_elements, number_of_components) and
 has to name as field_name.entity.component, e.g
@@ -735,8 +636,7 @@ only cell part of the field.
 
 
 Initialization of 1D column
------------------------------
-
+---------------------------
 It is possible to initialize only 1D column portion of a particular field.
 
 .. code-block:: xml
@@ -756,7 +656,6 @@ It is possible to initialize only 1D column portion of a particular field.
 
 Mesh partitioning
 -----------------
-
 Amanzi's state has a number of tools to verify completeness of initial data.
 This is done using list *mesh partitions*. 
 Each sublist must have parameter *region list* specifying
@@ -779,7 +678,6 @@ If so, all material fields, such as *porosity* and *permeability*, will be initi
 
 Data IO control
 ---------------
-
 Two parameters below allow us to control fields that will go into a visuzalization file.
 First, we remove all fields matching the patterns specified by *blacklist*.
 Second, we add all fields matching the patterns specified by *whitelist*.
@@ -796,7 +694,6 @@ Both parameters are optional.
 
 Example
 -------
-
 The complete example of a state initialization is below. Note that
 _MATERIAL1 and _MATERIAL2 must be labels of the existing regions that cover
 the computational domain.
@@ -893,9 +790,6 @@ Pprocess Kernels (PKs)
 ======================
 { PK }
 
-.. contents:: **List of PKs**
-   :local:
-
 
 Base PKs
 ========
@@ -906,14 +800,50 @@ Note that none of these are true PKs and cannot stand alone.
 
 PK_Physical
 -----------
+Physical PKs are the physical capability implemented within Amanzi.
 
 
 PK_BDF
 ------
+This is a base class from which PKs that want to use the `BDF` series 
+of implicit time integrators must derive.  It specifies both the
+`BDFFnBase` interface and implements some basic functionality for `BDF` PKs.
 
 
 PK_PhysicalBDF
 --------------
+A base class for all PKs that are both physical, in the sense that they
+implement an equation and are not couplers, and BDF, in the sense that they
+support the implicit integration interface.  This largely just supplies a
+default error norm based on error in conservation relative to the extent of the
+conserved quantity.
+
+By default, the error norm used by solvers is given by:
+
+:math:`ENORM(u, du) = |du| / ( a_tol + r_tol * |u| )`
+
+The defaults here are typically good, or else good defaults are set in the
+code, so usually are not supplied by the user.
+  
+
+PK_DomainFunction
+-----------------
+{ PK_DomainFunction }
+
+
+Simple function
+...............
+{ PK_DomainFunctionSimple }
+
+
+Coupling function
+.................
+{ PK_DomainFunctionCoupling }
+
+
+Weight function
+...............
+{ PK_DomainFunctionWeight }
 
 
 Physical PKs
@@ -953,6 +883,7 @@ Generalized dual porosity model
 
 Absolute permeability
 .....................
+The available options are
 
 * `"coordinate system`" [string] defines coordinate system
   for calculating absolute permeability. The available options are `"cartesian`"
@@ -973,7 +904,6 @@ Absolute permeability
 
 Relative permeability
 .....................
-
 This section discusses interface treatment of cell-centered fields such as 
 relative permeability, density and viscosity.
 
@@ -1029,7 +959,6 @@ Fracture permeability models
 
 Diffusion operators
 ...................
-
 List *operators* describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
 
@@ -1082,7 +1011,6 @@ Schur complement.
 
 Boundary conditions
 ...................
-
 Boundary conditions are defined in sublist *boundary conditions*. 
 Four types of boundary conditions are supported.
 Each type has a similar structure: a list of identical elements that contain
@@ -1231,7 +1159,6 @@ of the other available functions.
 
 Sources and sinks
 .................
-
 The sources and sinks are typically associated with wells. 
 Negative source means a producing well. 
 Positive source means an injecting well. 
@@ -1324,7 +1251,6 @@ Again, constant functions can be replaced by any of the available functions.
 
 Time integrator
 ...............
-
 The list *time integrator* defines a generic time integrator used
 by the cycle driver. 
 This driver assumes that each PK has only one time integrator.
@@ -1429,7 +1355,6 @@ Initialization and constraints
 
 Time step controller and nonlinear solver
 `````````````````````````````````````````
-
 The time step is controlled by parameter *time step controller type*
 and the related list of options, see section TimeStepController_ for the list
 of supported parameter.
@@ -1500,7 +1425,6 @@ The time step will be cut twice if the number of nonlinear iterations exceeds 15
 
 Other parameters
 ................
-
 The remaining *flow* parameters are
 
 * `"clipping parameters`" [list] defines how solution increment calculated by a nonlinear 
@@ -1530,7 +1454,6 @@ The remaining *flow* parameters are
 
 Explanation of verbose output
 .............................
-
 When verbosity is set to *high*, this PK reports information about 
 current status of the simulation.
 Here after keyword *global* refers to the whole simulation including
@@ -1587,7 +1510,6 @@ Material properties
 
 Dispersion operator
 ...................
-
 List *operators* describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
 
@@ -1709,7 +1631,6 @@ and geochemical conditions.
 
 Sources and sinks
 .................
-
 The sources and sinks are typically located at wells. 
 Stability condition requires to distinguish between injecting and producing wells.
 A source function used for an injecting well specifies concentration of solute.
@@ -1743,7 +1664,6 @@ Note that the source values are set up separately for each component.
 
    * `"sink`" [list] is a function for calculating a source term.
      The function specification is described in subsection Functions.
-
 
 This example defines one well and one sink.
 
@@ -1784,7 +1704,6 @@ This example defines one well and one sink.
 
 Developer parameters
 ....................
-
 The remaining parameters that can be used by a developer include
 
 * `"enable internal tests`" [bool] turns on various internal tests during
@@ -1804,7 +1723,6 @@ The remaining parameters that can be used by a developer include
 
 Explanation of verbose output
 .............................
-
 When verbosity is set to *high*, this PK reports information about 
 current status of the simulation.
 Here after keyword *global* refers to the whole simulation including
@@ -1865,7 +1783,6 @@ Thermal conductivity
 
 Operators
 .........
-
 This section contains sublist for diffusion and advection operators.
 It also has one global parameter.
 
@@ -1881,7 +1798,6 @@ It also has one global parameter.
 
 Diffusion operator
 ``````````````````
-
 Operators sublist describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
 
@@ -1925,7 +1841,6 @@ This example uses cell-centered discretization for
 
 Advection operator
 ``````````````````
-
 This section to be written.
 
 .. code-block:: xml
@@ -1939,7 +1854,6 @@ This section to be written.
 
 Sources and sinks
 .................
-
 The sources and sinks for injecting and removing energy from the system. 
 Negative source removes energy. 
 Positive source inject energy.
@@ -1969,7 +1883,6 @@ Again, constant functions can be replaced by any of the available functions.
 .. code-block:: xml
 
   <ParameterList name="energy">  <!-- parent list -->
-
     <ParameterList name="source terms">
       <ParameterList name="_SRC 0">
         <Parameter name="regions" type="Array(string)" value="{{_WELL_EAST}}"/>
@@ -1982,8 +1895,7 @@ Again, constant functions can be replaced by any of the available functions.
         </ParameterList>
       </ParameterList>
     </ParameterList>
-    
-   </ParameterList>
+  </ParameterList>
 
 
 Navier Stokes PK
@@ -1993,7 +1905,6 @@ Navier Stokes PK
 
 Operators
 .........
-
 This section contains sublist for diffusion and advection operators.
 It also has one global parameter.
 
@@ -2020,7 +1931,6 @@ Elasticity operator
 
 Convection operator
 ```````````````````
-
 This section to be written.
 
 .. code-block:: xml
@@ -2034,7 +1944,6 @@ This section to be written.
 
 Divergence operator
 ```````````````````
-
 This section to be written.
 
 .. code-block:: xml
@@ -2073,7 +1982,6 @@ Shallow water PK
 
 Reconstruction and limiters
 ...........................
-
 The control of the second-order numerical scheme is done via `"reconstruction`"
 sublist, described in Reconstruction_. Here is the example:
 
@@ -2095,7 +2003,6 @@ sublist, described in Reconstruction_. Here is the example:
 
 Coupled process kernels
 =======================
-
 Coupling of process kernels requires additional parameters for PK 
 described above.
 
@@ -2144,7 +2051,6 @@ Coupled matrix-fracture Darcy flow PK
 
 Generic capabilities
 ====================
-
 Collection of generic tools used by PKs.
 
 
@@ -2227,7 +2133,6 @@ File-based controller
 
 Functions
 ---------
-
 To set up non-trivial boundary conditions and/or initial fields, Amanzi
 supports a few mathematical functions. 
 New function types can added easily.
@@ -2333,8 +2238,8 @@ Expression function
 
 Time functions
 --------------
-
-Boundary condition functions utilize a parameterized model for time variations that is either piecewise constant or piecewise linear.  For example:
+Boundary condition functions utilize a parameterized model for time variations that 
+is either piecewise constant or piecewise linear.  For example:
 
 .. code-block:: xml
 
@@ -2492,7 +2397,6 @@ Hypre's algebraic multigrid (AMG) and Euclid (ILU)
 
 Hypre's Block ILU
 ..................
-
 The internal parameters for block ILU are as follows (see 
 https://docs.trilinos.org/dev/packages/ifpack/doc/html/index.html for more detail):
 
@@ -2561,7 +2465,6 @@ Geometric model
 
 Domain
 ------
-
 It is not always possible to extract space dimension from provided data.
 Therefore, we require the user to provide simple list *domain* with only 
 one parameter *spatial dimension*.
@@ -2804,7 +2707,6 @@ Observation file
 
 Checkpoint file
 ---------------
-
 A user may request periodic dumps of Amanzi checkpoint data.  
 The user has no explicit control over the content of these files, but has the guarantee that 
 the Amanzi run will be reproducible (with accuracy determined
@@ -2862,7 +2764,6 @@ a multiple of 100.
 
 Visualization file
 ------------------
-
 A user may request periodic writes of field data for the purposes of visualization.  
 The user will specify explicitly what is to be included in the file at each snapshot.
 Visualization files can only be written at intervals corresponding to the numerical 
@@ -2951,7 +2852,6 @@ Mesh info
 
 Input data
 ==========
-
 This section describes format and purpose of various input files.
 In addition it explain how to verify the input information (e.g. regions) using special sublists.
 
@@ -2963,7 +2863,6 @@ Input analysis
 
 Tabulated EOS format
 --------------------
-
 The tabulated equation of state uses a free format for integres, doubles and text string; 
 however, the order of block is fixed and string cannot have spaces. 
 The first two line have the following format:
@@ -2990,7 +2889,6 @@ where *phase* is the first letter of phase, `"l`" or `"g`".
 
 Example for liquid water
 ........................
-
 In this example the following units are used for *3x3* tabulated data: 
 temperature [K], pressure [bar], density [kg/m3], internal energy [kJ/mol], 
 enthalpy [kJ/mol], Cv [J/mol*K], Cp [J/mol*K], viscosity [Pa*s], and thermal conductivity [W/m*K].
@@ -3025,7 +2923,6 @@ and enthalpy.
 
 Tabulated function file format
 ------------------------------
-
 The following ASCII input file format supports the definition of a tabulated function defined over a grid.
 Several XML input Parameters refer to files in this format.
 The file consists of the following records (lines).
@@ -3081,7 +2978,6 @@ That is, the column index varies fastest, x grid index next fastest, etc.
 
 Example
 .......
-
 As an example, consider the following integer-valued function in 2-D:
 
 ::
@@ -3109,8 +3005,5 @@ The corresponding input file would be:
   0
   1
   5 1 2 2 1 1
-
-
-
 
 

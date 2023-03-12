@@ -28,7 +28,7 @@ Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
   <ParameterList name="_CHEMISTRY">
     <Parameter name="engine" type="string" value="PFloTran"/>
     <Parameter name="engine input file" type="string" value="_TRITIUM.in"/>
-    <Parameter name="minerals" type="Array(string)" value="{{quartz, kaolinite, goethite, opal}}"/>
+    <Parameter name="minerals" type="Array(string)" value="{quartz, kaolinite, goethite, opal}"/>
     <Parameter name="min time step (s)" type="double" value="1.5778463e-07"/>
     <Parameter name="max time step (s)" type="double" value="1.5778463e+07"/>
     <Parameter name="initial time step (s)" type="double" value="1.0e-02"/>

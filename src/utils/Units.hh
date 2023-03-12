@@ -7,8 +7,24 @@
   Authors: Konstantin Lipnikov
 */
 
-/*
-  Utils
+/*!
+
+Amanzi's internal default units are SI units except for the concentration.
+
+* `"concentration`" [string] defines units for concentration. Available options
+  are `"molar`" (default) which is `"mol/L`" and `"SI`" which is `"mol/m^3`". 
+
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="units">
+    <Parameter name="length" type="string" value="m"/>
+    <Parameter name="time" type="string" value="s"/>
+    <Parameter name="mass" type="string" value="kg"/>
+    <Parameter name="temperature" type="string" value="K"/>
+    <Parameter name="concentration" type="string" value="molar"/>
+  </ParameterList>
+  </ParameterList>
 
 */
 

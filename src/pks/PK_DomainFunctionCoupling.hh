@@ -7,17 +7,16 @@
   Authors: Daniil Svyatsky (dasvyat@lanl.gov)
 */
 
-/*
-  Process Kernels
+/*!
 
-  This provide coupling of fields located on matching manifold and
-  space meshes. For the space, the coupling creates a list of boundary
-  conditions. For the manifold, the coupling creates a list of sources.
+This provide coupling of fields located on matching manifold and
+space meshes. For the space, the coupling creates a list of boundary
+conditions. For the manifold, the coupling creates a list of sources.
 
-  Typically, the manifold mesh provides map manifold (cell) -> space (face).
-  In space, we need the reverse map.
+Typically, the manifold mesh provides map manifold (cell) -> space (face).
+In space, we need the reverse map.
 
-  The following parameter names were changed:
+The following parameter names were changed:
     "flux_key" -> "flux key"
     "copy_flux_tag" -> "flux copy key"
 
@@ -30,15 +29,16 @@
     "conserved_quantity_key" -> "conserved quantity key"
     "copy_conserved_quantity_key" -> "conserved quantity copy key"
 
-  There are three submodels.
-  (A) submodel="rate". The computed data are given by formulas:
+There are three submodels.
+(A) submodel="rate". The computed data are given by formulas:
 
-      value[i][c] += flux[f] * external_field[i][cc] / |c|
+      value[i][c] += flux[f] * external_field[i][cc] / V_c
+
       value[N][c] -= dt * flux[f]
 
-  where cc is the space cell attached to face f, and N is the auxiliary
-  value added to the result. Note that internal face f (resp., boundary
-  face f) is shared by two (resp. one) space cells.
+where cc is the space cell attached to face f, and N is the auxiliary
+value added to the result. Note that internal face f (resp., boundary
+face f) is shared by two (resp. one) space cells.
 
   (B) submodel="field". The computed data are given by the formula:
 
@@ -47,6 +47,7 @@
   (C) submodel="conserved quantity". Not used in Amanzi.
 
   (D) submodel="".
+
 */
 
 #ifndef AMANZI_PK_DOMAIN_FUNCTION_COUPLING_HH_

@@ -59,7 +59,7 @@ Three examples are below:
   <ParameterList name="_TRANSPORT">  <!-- parent list -->
   <ParameterList name="material properties">
     <ParameterList name="_WHITE SOIL">
-      <Parameter name="regions" type="Array(string)" value="{{_TOP_REGION, _BOTTOM_REGION}}"/>
+      <Parameter name="regions" type="Array(string)" value="{_TOP_REGION, _BOTTOM_REGION}"/>
       <Parameter name="model" type="string" value="Bear"/>
       <ParameterList name="parameters for Bear">
         <Parameter name="alpha_l" type="double" value="1e-2"/>
@@ -70,7 +70,7 @@ Three examples are below:
     </ParameterList>  
      
     <ParameterList name="_GREY SOIL">
-      <Parameter name="regions" type="Array(string)" value="{{_MIDDLE_REGION}}"/>
+      <Parameter name="regions" type="Array(string)" value="{_MIDDLE_REGION}"/>
       <Parameter name="model" type="string" value="Burnett-Frind"/>
       <ParameterList name="parameters for Burnett-Frind">
         <Parameter name="alpha_l" type="double" value="1e-2"/>

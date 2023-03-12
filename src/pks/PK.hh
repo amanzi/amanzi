@@ -48,8 +48,7 @@ Example:
   </ParameterList>
 
 
-
-      .. _pk-spec:
+.. _pk-spec:
 .. admonition:: pk-spec
 
     * `"PK type`" ``[string]`` One of the registered PK types.  Note this must
@@ -66,7 +65,6 @@ Example:
        ...
     </ParameterList>
   </ParameterList>
-
 
 */
 
