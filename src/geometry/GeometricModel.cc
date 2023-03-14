@@ -38,7 +38,21 @@ GeometricModel::GeometricModel(unsigned int dim,
       Teuchos::ParameterList& reg_spec = gm_params.sublist(region_name);
 
       // Create the region
-      Teuchos::RCP<Region> reg = createRegion(region_name, -1, reg_spec, comm);
+      // Two types of specs -- legacy format is a sublist, new format is a typeed list
+      Teuchos::RCP<Region> reg;
+      if (reg_spec.isParameter("region type")) {
+        std::string region_type = reg_spec.get<std::string>("region type");
+        reg = createRegion(region_name, std::string("region: "+region_type, -1, reg_spec), comm);
+      } else {
+
+        if (reg_spec.numParams() != 1) {
+          Errors::Message msg;
+          msg << "Region spec \"" << reg_name << "\" should have exactly one shape sublist.";
+          Exceptions::amanzi_throw(msg);
+        }
+        std::string region_type = reg_spec.name(reg_spec.begin());
+        reg = createRegion(region_name, region_type, -1, reg_spec.sublist(region_type), comm);
+      }
 
       // Add it to the geometric model
       AddRegion(reg);
@@ -55,17 +69,6 @@ GeometricModel::GeometricModel(unsigned int dim,
 void
 GeometricModel::AddRegion(const Teuchos::RCP<Region>& reg)
 {
-  // NOTE: extracted regions may break this -- for instance a 3D region on a 2D
-  // surface mesh is the restriction of the parent entities of the 3D region on
-  // the parent mesh.
-  //
-  // if (dim_ < reg->get_space_dimension()) {
-  //   Errors::Message mesg;
-  //   mesg << "Dimension of geometric model less than that of region \""
-  //        << reg->get_name() << "\" space dimension";
-  //   Exceptions::amanzi_throw(mesg);
-  // }
-
   if (dim_ < reg->get_manifold_dimension()) {
     Errors::Message mesg;
     mesg << "Dimension of geometric model less than that of region \"" << reg->get_name()

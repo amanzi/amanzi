@@ -34,75 +34,93 @@
 
 namespace Amanzi {
 
-std::unique_ptr<Function>
-FunctionFactory::Create(Teuchos::ParameterList& list) const
+std::unique_ptr<Function> Create(const std::string& function_type,
+        Teuchos::ParameterList& function_params) const
 {
-  // Iterate through the parameters in the list.  There should be exactly
-  // one, a sublist, whose name matches one of the known function types.
-  // Anything else is a syntax error and we throw an exception.
   std::unique_ptr<Function> f;
-  for (auto it = list.begin(); it != list.end(); ++it) {
-    std::string function_type = list.name(it);
-    if (list.isSublist(function_type)) { // process the function sublist
-      if (f.get()) {                     // error: already processed a function sublist
-        Errors::Message m;
-        m << "FunctionFactory: extraneous function sublist: " << function_type.c_str();
-        Exceptions::amanzi_throw(m);
-      }
-      Teuchos::ParameterList& function_params = list.sublist(function_type);
-      if (function_type == "function-constant")
-        f = create_constant(function_params);
-      else if (function_type == "function-tabular")
-        f = create_tabular(function_params);
-      else if (function_type == "function-polynomial")
-        f = create_polynomial(function_params);
-      else if (function_type == "function-monomial")
-        f = create_monomial(function_params);
-      else if (function_type == "function-smooth-step")
-        f = create_smooth_step(function_params);
-      else if (function_type == "function-linear")
-        f = create_linear(function_params);
-      else if (function_type == "function-separable")
-        f = create_separable(function_params);
-      else if (function_type == "function-additive")
-        f = create_additive(function_params);
-      else if (function_type == "function-multiplicative")
-        f = create_multiplicative(function_params);
-      else if (function_type == "function-composition")
-        f = create_composition(function_params);
-      else if (function_type == "function-static-head")
-        f = create_static_head(function_params);
-      else if (function_type == "function-standard-math")
-        f = create_standard_math(function_params);
-      else if (function_type == "function-bilinear")
-        f = create_bilinear(function_params);
-      else if (function_type == "function-bilinear-and-time")
-        f = create_bilinear_and_time(function_params);
-      else if (function_type == "function-distance")
-        f = create_distance(function_params);
-      else if (function_type == "function-squaredistance")
-        f = create_squaredistance(function_params);
-      else if (function_type == "function-exprtk")
-        f = create_exprtk(function_params);
-      else { // I don't recognize this function type
-        Errors::Message m;
-        m << "FunctionFactory: unknown function type: " << function_type.c_str();
-        Exceptions::amanzi_throw(m);
-      }
-    } else { // not the expected function sublist
-      Errors::Message m;
-      m << "FunctionFactory: unknown parameter: " << function_type.c_str();
-      Exceptions::amanzi_throw(m);
-    }
-  }
-
-  if (!f) { // no function sublist was found above
+  if (function_type == "function-constant")
+    f = create_constant(function_params);
+  else if (function_type == "function-tabular")
+    f = create_tabular(function_params);
+  else if (function_type == "function-polynomial")
+    f = create_polynomial(function_params);
+  else if (function_type == "function-monomial")
+    f = create_monomial(function_params);
+  else if (function_type == "function-smooth-step")
+    f = create_smooth_step(function_params);
+  else if (function_type == "function-linear")
+    f = create_linear(function_params);
+  else if (function_type == "function-separable")
+    f = create_separable(function_params);
+  else if (function_type == "function-additive")
+    f = create_additive(function_params);
+  else if (function_type == "function-multiplicative")
+    f = create_multiplicative(function_params);
+  else if (function_type == "function-composition")
+    f = create_composition(function_params);
+  else if (function_type == "function-static-head")
+    f = create_static_head(function_params);
+  else if (function_type == "function-standard-math")
+    f = create_standard_math(function_params);
+  else if (function_type == "function-bilinear")
+    f = create_bilinear(function_params);
+  else if (function_type == "function-bilinear-and-time")
+    f = create_bilinear_and_time(function_params);
+  else if (function_type == "function-distance")
+    f = create_distance(function_params);
+  else if (function_type == "function-squaredistance")
+    f = create_squaredistance(function_params);
+  else if (function_type == "function-exprtk")
+    f = create_exprtk(function_params);
+  else { // I don't recognize this function type
     Errors::Message m;
-    m << "FunctionFactory: missing function sublist.";
+    m << "FunctionFactory: unknown function type: " << function_type.c_str();
     Exceptions::amanzi_throw(m);
   }
   return f;
 }
+
+
+std::unique_ptr<Function>
+FunctionFactory::Create(Teuchos::ParameterList& list) const
+{
+  std::unique_ptr<Function> f;
+
+  if (list.isParameter("function type")) {
+    // new standardization of accessing typed things
+    function_type = list.get<std::string>("function type");
+    f = Create(function_type, list);
+
+  } else {
+    // Iterate through the parameters in the list.  There should be exactly
+    // one, a sublist, whose name matches one of the known function types.
+    // Anything else is a syntax error and we throw an exception.
+    for (auto it = list.begin(); it != list.end(); ++it) {
+      function_type = list.name(it);
+      if (list.isSublist(function_type)) { // process the function sublist
+        if (f.get()) {                     // error: already processed a function sublist
+          Errors::Message m;
+          m << "FunctionFactory: extraneous function sublist: " << function_type.c_str();
+          Exceptions::amanzi_throw(m);
+        }
+        Teuchos::ParameterList& function_params = list.sublist(function_type);
+      } else { // not the expected function sublist
+        Errors::Message m;
+        m << "FunctionFactory: unknown parameter: " << function_type.c_str();
+        Exceptions::amanzi_throw(m);
+      }
+      f = Create(function_type, list.sublist(function_type));
+    }
+
+    if (!f) { // no function sublist was found above
+      Errors::Message m;
+      m << "FunctionFactory: missing function sublist.";
+      Exceptions::amanzi_throw(m);
+    }
+  }
+  return f;
+}
+
 
 std::unique_ptr<Function>
 FunctionFactory::create_constant(Teuchos::ParameterList& params) const

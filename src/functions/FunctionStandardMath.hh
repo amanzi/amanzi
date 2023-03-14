@@ -29,9 +29,15 @@ better yet a dimension could/should be added upon request).
 .. admonition:: function-standard-math-spec
 
    * `"operator`" ``[string]`` specifies the name of a standard mathematical
-     function.  Available options are `"cos`", `"sin`", `"tan`", `"acos`",
-     `"asin`", `"atan`", `"cosh`", `"sinh`", `"tanh`", `"exp`", `"log`",
-     `"log10`", `"sqrt`", `"ceil`", `"fabs`", `"floor`", `"mod`", and `"pow`".
+     function.  Available options are:
+
+     - trigonometric operators: `"cos`", `"sin`", `"tan`", `"acos`", `"asin`",
+       `"atan`"
+     - hyperbolic trig operators: `"cosh`", `"sinh`", `"tanh`"
+     - power/log operators: `"pow`", `"exp`", `"log`", `"log10`", `"sqrt`",
+     - integral operators: `"ceil`", `"floor`", `"mod`", 
+     - `"abs`", `"fabs`", `"positive`" (0 for negative values), `"negative`" (0
+       for positive values), `"heaviside`", `"sign`"
 
    * `"amplitude`" ``[double]`` specifies a multiplication factor `a` in
      formula `a f(x)`.  The multiplication factor is ignored by function

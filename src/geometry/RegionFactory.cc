@@ -14,7 +14,6 @@
 */
 
 #include <iostream>
-#include <sstream>
 
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
@@ -50,46 +49,14 @@ namespace AmanziGeometry {
 
 // Create region from XML specification
 Teuchos::RCP<Region>
-createRegion(const std::string reg_name,
+createRegion(const std::string& reg_name,
+             const std::string& shape,
              int reg_id,
-             Teuchos::ParameterList& reg_spec,
+             Teuchos::ParameterList& plist,
              const Comm_type& comm)
 {
-  std::stringstream sstream;
-
-  // There should be only one item below the region name which
-  // indicates the shape of the region. Unfortunately, there is
-  // nothing to prevent there from being multiple sublists.
-
-  // There should be a "shape" or "region type" parameter instead of
-  // this.  This should be fixed but would require a ton of change to
-  // existing input files and the translator.  --etc
-
-  if (reg_spec.numParams() != 1) {
-    Errors::Message msg;
-    msg << "Region spec \"" << reg_name << "\" should have exactly one shape sublist.";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  Teuchos::ParameterList::ConstIterator k = reg_spec.begin();
-  std::string shape = reg_spec.name(k);
-  std::string lifecycle_str = reg_spec.get<std::string>("Lifecycle", "Permanent");
-
-  LifeCycleType lifecycle;
-  if (lifecycle_str == "Permanent") {
-    lifecycle = LifeCycleType::PERMANENT;
-  } else if (lifecycle_str == "Temporary") {
-    lifecycle = LifeCycleType::TEMPORARY;
-  } else {
-    Errors::Message msg;
-    msg << "Region spec \"" << reg_name
-        << "\" lifecycle must be either \"Permanent\" or \"Temporary\"";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  Teuchos::ParameterList& plist = reg_spec.sublist(shape);
-
   Teuchos::RCP<Region> region;
+
   if (shape == "region: box") {
     auto p0_vec = plist.get<Teuchos::Array<double>>("low coordinate");
     auto p1_vec = plist.get<Teuchos::Array<double>>("high coordinate");
