@@ -41,17 +41,17 @@ GeometricModel::GeometricModel(unsigned int dim,
       // Two types of specs -- legacy format is a sublist, new format is a typeed list
       Teuchos::RCP<Region> reg;
       if (reg_spec.isParameter("region type")) {
+        // new style, with type parameter
         std::string region_type = reg_spec.get<std::string>("region type");
-        reg = createRegion(reg_name, std::string("region: ")+region_type, -1, reg_spec, comm);
+        reg = createRegion(reg_name, region_type, -1, reg_spec, comm);
       } else {
-
+        // deprecate this -- old style e.g. "region: box" sublist, see #181
         if (reg_spec.numParams() != 1) {
           Errors::Message msg;
           msg << "Region spec \"" << reg_name << "\" should have exactly one shape sublist.";
           Exceptions::amanzi_throw(msg);
         }
-        std::string region_type = reg_spec.name(reg_spec.begin());
-        reg = createRegion(reg_name, region_type, -1, reg_spec.sublist(region_type), comm);
+        reg = createRegion(reg_name, -1, reg_spec, comm);
       }
 
       // Add it to the geometric model

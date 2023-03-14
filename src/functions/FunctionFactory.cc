@@ -12,6 +12,7 @@
 
 #include "errors.hh"
 #include "HDF5Reader.hh"
+#include "Key.hh"
 
 #include "FunctionAdditive.hh"
 #include "FunctionBilinear.hh"
@@ -39,39 +40,39 @@ FunctionFactory::Create(const std::string& function_type,
         Teuchos::ParameterList& function_params) const
 {
   std::unique_ptr<Function> f;
-  if (function_type == "function-constant")
+  if (function_type == "constant")
     f = create_constant(function_params);
-  else if (function_type == "function-tabular")
+  else if (function_type == "tabular")
     f = create_tabular(function_params);
-  else if (function_type == "function-polynomial")
+  else if (function_type == "polynomial")
     f = create_polynomial(function_params);
-  else if (function_type == "function-monomial")
+  else if (function_type == "monomial")
     f = create_monomial(function_params);
-  else if (function_type == "function-smooth-step")
+  else if (function_type == "smooth step")
     f = create_smooth_step(function_params);
-  else if (function_type == "function-linear")
+  else if (function_type == "linear")
     f = create_linear(function_params);
-  else if (function_type == "function-separable")
+  else if (function_type == "separable")
     f = create_separable(function_params);
-  else if (function_type == "function-additive")
+  else if (function_type == "additive")
     f = create_additive(function_params);
-  else if (function_type == "function-multiplicative")
+  else if (function_type == "multiplicative")
     f = create_multiplicative(function_params);
-  else if (function_type == "function-composition")
+  else if (function_type == "composition")
     f = create_composition(function_params);
-  else if (function_type == "function-static-head")
+  else if (function_type == "static head")
     f = create_static_head(function_params);
-  else if (function_type == "function-standard-math")
+  else if (function_type == "standard math")
     f = create_standard_math(function_params);
-  else if (function_type == "function-bilinear")
+  else if (function_type == "bilinear")
     f = create_bilinear(function_params);
-  else if (function_type == "function-bilinear-and-time")
+  else if (function_type == "bilinear and time")
     f = create_bilinear_and_time(function_params);
-  else if (function_type == "function-distance")
+  else if (function_type == "distance")
     f = create_distance(function_params);
-  else if (function_type == "function-squaredistance")
+  else if (function_type == "squaredistance")
     f = create_squaredistance(function_params);
-  else if (function_type == "function-exprtk")
+  else if (function_type == "exprtk")
     f = create_exprtk(function_params);
   else { // I don't recognize this function type
     Errors::Message m;
@@ -90,9 +91,11 @@ FunctionFactory::Create(Teuchos::ParameterList& list) const
   if (list.isParameter("function type")) {
     // new standardization of accessing typed things
     auto function_type = list.get<std::string>("function type");
-    f = Create(std::string("function-")+function_type, list);
+    f = Create(function_type, list);
 
   } else {
+    // Old style, deprecate this see #181
+    //
     // Iterate through the parameters in the list.  There should be exactly
     // one, a sublist, whose name matches one of the known function types.
     // Anything else is a syntax error and we throw an exception.
@@ -104,13 +107,16 @@ FunctionFactory::Create(Teuchos::ParameterList& list) const
           m << "FunctionFactory: extraneous function sublist: " << function_type.c_str();
           Exceptions::amanzi_throw(m);
         }
-        Teuchos::ParameterList& function_params = list.sublist(function_type);
       } else { // not the expected function sublist
         Errors::Message m;
         m << "FunctionFactory: unknown parameter: " << function_type.c_str();
         Exceptions::amanzi_throw(m);
       }
-      f = Create(function_type, list.sublist(function_type));
+      // strip the function-
+      Teuchos::ParameterList& function_params = list.sublist(function_type);
+      function_type = function_type.substr(9, std::string::npos);
+      function_type = Keys::replace_all(function_type, "-", " ");
+      f = Create(function_type, function_params);
     }
 
     if (!f) { // no function sublist was found above

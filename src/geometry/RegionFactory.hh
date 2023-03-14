@@ -33,7 +33,7 @@ createRegion(const std::string& reg_name,
              Teuchos::ParameterList& reg_spec,
              const Comm_type& comm);
 
-// deprecate this!
+// deprecate this, this old style
 inline
 Teuchos::RCP<Region>
 createRegion(const std::string& reg_name,
@@ -41,7 +41,10 @@ createRegion(const std::string& reg_name,
              Teuchos::ParameterList& plist,
              const Comm_type& comm) {
   std::string reg_type = plist.begin()->first;
-  return createRegion(reg_name, reg_type, reg_id, plist.sublist(reg_type), comm);
+  Teuchos::ParameterList& reg_list = plist.sublist(reg_type);
+  // strip the "region: "
+  reg_type = reg_type.substr(8, std::string::npos);
+  return createRegion(reg_name, reg_type, reg_id, reg_list, comm);
 }
 
 
