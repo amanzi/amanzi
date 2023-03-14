@@ -34,7 +34,8 @@
 
 namespace Amanzi {
 
-std::unique_ptr<Function> Create(const std::string& function_type,
+std::unique_ptr<Function>
+FunctionFactory::Create(const std::string& function_type,
         Teuchos::ParameterList& function_params) const
 {
   std::unique_ptr<Function> f;
@@ -88,7 +89,7 @@ FunctionFactory::Create(Teuchos::ParameterList& list) const
 
   if (list.isParameter("function type")) {
     // new standardization of accessing typed things
-    function_type = list.get<std::string>("function type");
+    auto function_type = list.get<std::string>("function type");
     f = Create(function_type, list);
 
   } else {
@@ -96,7 +97,7 @@ FunctionFactory::Create(Teuchos::ParameterList& list) const
     // one, a sublist, whose name matches one of the known function types.
     // Anything else is a syntax error and we throw an exception.
     for (auto it = list.begin(); it != list.end(); ++it) {
-      function_type = list.name(it);
+      std::string function_type = list.name(it);
       if (list.isSublist(function_type)) { // process the function sublist
         if (f.get()) {                     // error: already processed a function sublist
           Errors::Message m;

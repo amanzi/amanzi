@@ -56,6 +56,7 @@ createRegion(const std::string& reg_name,
              const Comm_type& comm)
 {
   Teuchos::RCP<Region> region;
+  LifeCycleType lifecycle(LifeCycleType::PERMANENT);
 
   if (shape == "region: box") {
     auto p0_vec = plist.get<Teuchos::Array<double>>("low coordinate");
@@ -180,11 +181,9 @@ createRegion(const std::string& reg_name,
     region = Teuchos::rcp(new RegionEnumerated(reg_name, reg_id, entity_str, gids, lifecycle));
 
   } else if (shape == "region: enumerated set from file") {
-    Teuchos::ParameterList enum_params = reg_spec.sublist(shape);
-
-    std::string filename = enum_params.get<std::string>("read from file");
+    std::string filename = plist.get<std::string>("read from file");
     Teuchos::ParameterList enum_list_from_file = *Teuchos::getParametersFromXmlFile(filename);
-    std::string enum_reg_name = enum_params.get<std::string>("region name");
+    std::string enum_reg_name = plist.get<std::string>("region name");
     Teuchos::ParameterList enum_sub_list = enum_list_from_file.sublist(enum_reg_name);
 
     std::string entity_str = enum_sub_list.get<std::string>("entity");

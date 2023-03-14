@@ -33,6 +33,18 @@ createRegion(const std::string& reg_name,
              Teuchos::ParameterList& reg_spec,
              const Comm_type& comm);
 
+// deprecate this!
+inline
+Teuchos::RCP<Region>
+createRegion(const std::string& reg_name,
+             int reg_id,
+             Teuchos::ParameterList& plist,
+             const Comm_type& comm) {
+  std::string reg_type = plist.begin()->first;
+  return createRegion(reg_name, reg_type, reg_id, plist.sublist(reg_type), comm);
+}
+
+
 } // namespace AmanziGeometry
 } // namespace Amanzi
 
