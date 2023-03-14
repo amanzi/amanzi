@@ -90,7 +90,7 @@ FunctionFactory::Create(Teuchos::ParameterList& list) const
   if (list.isParameter("function type")) {
     // new standardization of accessing typed things
     auto function_type = list.get<std::string>("function type");
-    f = Create(function_type, list);
+    f = Create(std::string("function-")+function_type, list);
 
   } else {
     // Iterate through the parameters in the list.  There should be exactly
