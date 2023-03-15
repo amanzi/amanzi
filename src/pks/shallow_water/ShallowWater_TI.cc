@@ -101,7 +101,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         bc_value_qx[f] = bc_value_h[f] * it->second[0];
         bc_value_qy[f] = bc_value_h[f] * it->second[1];
         bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-        if(!hydrostatic_pressure_force_){
+        if(!hydrostatic_pressure_force_type_){
            bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
         }
         else{
