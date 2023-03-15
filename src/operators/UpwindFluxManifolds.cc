@@ -79,9 +79,7 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
       }
       mean /= ncells;
 
-      for (int i = 0; i < ncells; ++i) {
-        field_f[0][g + i] = mean;
-      }
+      for (int i = 0; i < ncells; ++i) { field_f[0][g + i] = mean; }
 
       // upwind only on inflow Dirichlet faces
     } else {

@@ -319,7 +319,7 @@ ObservableAqueous::ComputeObservation(State& S,
     }
     unit = "kg/s";
 
-  // miscalleneous observations
+    // miscalleneous observations
   } else if (variable_ == "pH") {
     Key ph_key = Keys::getKey(domain_, "pH");
     const auto& pH = *S.Get<CompositeVector>(ph_key).ViewComponent("cell");

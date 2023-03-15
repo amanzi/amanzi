@@ -351,7 +351,8 @@ InputConverterU::ParseSolutes_()
         }
       }
 
-      comp_names_all_.insert(comp_names_all_.end(), phases_[GAS].dissolved.begin(), phases_[GAS].dissolved.end());
+      comp_names_all_.insert(
+        comp_names_all_.end(), phases_[GAS].dissolved.begin(), phases_[GAS].dissolved.end());
     }
   }
 

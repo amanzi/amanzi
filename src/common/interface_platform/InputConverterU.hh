@@ -35,7 +35,7 @@ typedef std::map<std::string, std::vector<std::string>> Tree;
 
 struct Phase {
  public:
-  Phase() : active(false) {};
+  Phase() : active(false){};
 
   bool active;
   std::string primary;

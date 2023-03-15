@@ -72,7 +72,7 @@ InputConverterU::TranslateFlow_(const std::string& mode, const std::string& doma
 
   node = GetUniqueElementByTagsString_(
     "unstructured_controls, unstr_flow_controls, optional_fields", flag);
-  if (flag) { 
+  if (flag) {
     auto fields = CharToStrings_(mm.transcode(node->getTextContent()));
     out_list.set<Teuchos::Array<std::string>>("optional fields", fields);
   }

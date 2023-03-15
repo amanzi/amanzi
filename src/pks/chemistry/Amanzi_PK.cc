@@ -627,7 +627,7 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   mesh_->get_comm()->SumAll(&tmp3, &ncells_total, 1);
 
   std::stringstream ss;
-  ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/" 
+  ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/"
      << avg_itrs / std::max(ncells_owned_, 1)
      << ", maximum in gid=" << mesh_->GID(cmax, AmanziMesh::CELL) << std::endl;
   vo_->Write(Teuchos::VERB_HIGH, ss.str());
@@ -744,7 +744,8 @@ Amanzi_PK::EstimateNextTimeStep_(double t_old, double t_new)
 
     if (dt_next_tmp != dt_next_ && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "controller changed dt_next from " << dt_next_tmp << " to " << dt_next_ << std::endl;
+      *vo_->os() << "controller changed dt_next from " << dt_next_tmp << " to " << dt_next_
+                 << std::endl;
     }
   } else if (dt_control_method_ == "fixed") {
     // dt_next could be reduced by the base PK. To avoid small time step, we reset it here.

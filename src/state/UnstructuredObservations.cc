@@ -198,11 +198,9 @@ UnstructuredObservations::InitFile_(const Teuchos::Ptr<const State>& S)
             << "# Region: " << obs->get_region() << std::endl
             << "# Reduction: " << obs->get_reduction() << std::endl;
       if (!obs->get_modifier().empty()) {
-        *fid_ << "# Modifier:" << std::endl
-              << "#   " << obs->get_modifier() << std::endl;
+        *fid_ << "# Modifier:" << std::endl << "#   " << obs->get_modifier() << std::endl;
       }
-      *fid_
-            << "# Variable: " << obs->get_variable() << std::endl
+      *fid_ << "# Variable: " << obs->get_variable() << std::endl
             << "# Number of Vectors: " << obs->get_num_vectors() << std::endl;
 
       if (obs->get_degree_of_freedom() >= 0)

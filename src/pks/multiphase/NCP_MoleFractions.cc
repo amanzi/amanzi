@@ -37,8 +37,7 @@ NCP_MoleFractions::NCP_MoleFractions(Teuchos::ParameterList& plist) : Multiphase
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-NCP_MoleFractions::NCP_MoleFractions(const NCP_MoleFractions& other)
-  : MultiphaseEvaluator(other){};
+NCP_MoleFractions::NCP_MoleFractions(const NCP_MoleFractions& other) : MultiphaseEvaluator(other){};
 
 
 Teuchos::RCP<Evaluator>

@@ -33,8 +33,7 @@ using ModelPartition = std::pair<Teuchos::RCP<Functions::MeshPartition>, ModelLi
 // Non-member factory
 template <typename Model>
 Teuchos::RCP<ModelPartition<Model>>
-CreateModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                     Teuchos::ParameterList& plist)
+CreateModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, Teuchos::ParameterList& plist)
 {
   ModelFactory<Model> factory;
   ModelList<Model> model_list;

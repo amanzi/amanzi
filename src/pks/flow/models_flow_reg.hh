@@ -45,8 +45,10 @@ Factory<Flow::MultiscaleFlowPorosity>::map_type* Factory<Flow::MultiscaleFlowPor
 namespace Amanzi {
 namespace Flow {
 
-Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Constant> SpecificStorage_Constant::factory_("constant");
-Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Standard> SpecificStorage_Standard::factory_("standard");
+Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Constant>
+  SpecificStorage_Constant::factory_("constant");
+Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Standard>
+  SpecificStorage_Standard::factory_("standard");
 
 Utils::RegisteredFactory<WRM, WRM_BrooksCorey> WRM_BrooksCorey::factory_("Brooks Corey");
 Utils::RegisteredFactory<WRM, WRM_vanGenuchten> WRM_vanGenuchten::factory_("van Genuchten");

@@ -23,8 +23,8 @@ class FunctionFactory {
   std::unique_ptr<Function> Create(Teuchos::ParameterList& plist) const;
 
   // create a function of a given type
-  std::unique_ptr<Function> Create(const std::string& func_type,
-          Teuchos::ParameterList& func_params) const;
+  std::unique_ptr<Function>
+  Create(const std::string& func_type, Teuchos::ParameterList& func_params) const;
 
  private:
   std::unique_ptr<Function> create_constant(Teuchos::ParameterList&) const;

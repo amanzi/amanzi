@@ -90,7 +90,9 @@ run_test(const std::string& domain, const std::string& filename)
   // work-around
   Key key("mass_density_gas");
   S->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
-    .SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+    .SetMesh(mesh)
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   MPK->Setup();
   S->Setup();

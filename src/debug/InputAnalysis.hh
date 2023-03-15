@@ -37,7 +37,7 @@ This list contains data collected by the input parser of a higher-level spec.
   </ParameterList>
 
 */
-  
+
 #ifndef AMANZI_INPUT_ANALYSIS_HH_
 #define AMANZI_INPUT_ANALYSIS_HH_
 

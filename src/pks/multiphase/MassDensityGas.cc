@@ -66,11 +66,9 @@ MassDensityGas::Evaluate_(const State& S, const std::vector<CompositeVector*>& r
 
     int ncells = result_c.MyLength();
     for (int c = 0; c < ncells; ++c) result_c[0][c] = xv[0][c] * mol_mass_H2O_;
-  
+
     for (int i = 0; i < xg.NumVectors(); ++i) {
-      for (int c = 0; c < ncells; ++c) {
-        result_c[0][c] += xg[i][c] * mol_mass_[i];
-      }
+      for (int c = 0; c < ncells; ++c) { result_c[0][c] += xg[i][c] * mol_mass_[i]; }
     }
 
     for (int c = 0; c < ncells; ++c) result_c[0][c] *= eta_g[0][c];

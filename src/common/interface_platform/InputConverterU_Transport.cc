@@ -405,8 +405,8 @@ InputConverterU::TranslateMolecularDiffusion_()
       double val = GetAttributeValueD_(
         inode, "coefficient_of_diffusion", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false);
       std::string model = GetAttributeValueS_(inode, "model", TYPE_NONE, false, "");
-      double kh = (model == "Henry") ? GetAttributeValueD_(
-        inode, "kh", TYPE_NUMERICAL, 0.0, DVAL_MAX) : 0.0;
+      double kh =
+        (model == "Henry") ? GetAttributeValueD_(inode, "kh", TYPE_NUMERICAL, 0.0, DVAL_MAX) : 0.0;
 
       if (strcmp(text, phases_[LIQUID].primary.c_str()) == 0) {
         phases_[GAS].model = model;

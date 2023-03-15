@@ -46,7 +46,7 @@ PDE_AdvectionUpwindFactory::Create(const Teuchos::RCP<Operator>& global_op)
     } else {
       op = Teuchos::rcp(new PDE_AdvectionUpwind(oplist_, mesh_));
     }
-    
+
   } else {
     if (manifolds) {
       op = Teuchos::rcp(new PDE_AdvectionUpwindDFN(oplist_, global_op));
@@ -65,8 +65,9 @@ PDE_AdvectionUpwindFactory::Create(const Teuchos::RCP<Operator>& global_op)
 /* ******************************************************************
 * Create operator
 ****************************************************************** */
-Teuchos::RCP<PDE_AdvectionUpwind> PDE_AdvectionUpwindFactory::Create(
-    Teuchos::ParameterList& oplist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+Teuchos::RCP<PDE_AdvectionUpwind>
+PDE_AdvectionUpwindFactory::Create(Teuchos::ParameterList& oplist,
+                                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
   Teuchos::RCP<PDE_AdvectionUpwind> op;
 
@@ -85,8 +86,9 @@ Teuchos::RCP<PDE_AdvectionUpwind> PDE_AdvectionUpwindFactory::Create(
 /* ******************************************************************
 * Create operator
 ****************************************************************** */
-Teuchos::RCP<PDE_AdvectionUpwind> PDE_AdvectionUpwindFactory::Create(
-    Teuchos::ParameterList& oplist, const Teuchos::RCP<Operator>& global_op)
+Teuchos::RCP<PDE_AdvectionUpwind>
+PDE_AdvectionUpwindFactory::Create(Teuchos::ParameterList& oplist,
+                                   const Teuchos::RCP<Operator>& global_op)
 {
   Teuchos::RCP<PDE_AdvectionUpwind> op;
 

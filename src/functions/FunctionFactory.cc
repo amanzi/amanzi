@@ -37,7 +37,7 @@ namespace Amanzi {
 
 std::unique_ptr<Function>
 FunctionFactory::Create(const std::string& function_type,
-        Teuchos::ParameterList& function_params) const
+                        Teuchos::ParameterList& function_params) const
 {
   std::unique_ptr<Function> f;
   if (function_type == "constant")
