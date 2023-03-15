@@ -88,7 +88,7 @@ ShallowWater_PK::Setup()
   hydrostatic_pressure_key_ = Keys::getKey(domain_, "ponded_pressure");
 
   riemann_flux_key_ = Keys::getKey(domain_, "riemann_flux");
-  wetted_angle_key_ = Keys::getKey(domain_, "wetted angle"); 
+  wetted_angle_key_ = Keys::getKey(domain_, "wetted_angle"); 
 
   //-------------------------------
   // constant fields
