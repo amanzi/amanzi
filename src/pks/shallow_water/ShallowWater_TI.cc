@@ -152,12 +152,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     }
   }
 
-  if(hydrostatic_pressure_force_type_) {
-     // compute bathymetry gradient for bed slope source
-     auto tmp1 = S_->GetW<CompositeVector>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-     bathymetry_grad_->Compute(tmp1);
-     bathymetry_grad_->data()->ScatterMasterToGhosted("cell");
-  }
+  // compute bathymetry gradient for bed slope source
+  auto tmp7 = S_->GetW<CompositeVector>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  bathymetry_grad_->Compute(tmp7);
+  bathymetry_grad_->data()->ScatterMasterToGhosted("cell");
 
   // flux
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
