@@ -51,7 +51,12 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double factor = inverse_with_tolerance(h_temp[0][c], cell_area2_max_);
     vel_c[0][c] = factor * q_temp[0][c];
     vel_c[1][c] = factor * q_temp[1][c];
-    ht_c[0][c] = h_temp[0][c] + B_c[0][c];
+    if(!hydrostatic_pressure_force_type_){
+       ht_c[0][c] = h_temp[0][c] + B_c[0][c];
+    }
+    else{
+       ht_c[0][c] = ComputeTotalDepth(h_temp[0][c], WettedAngle_c[0][c], B_c[0][c]);
+    }
   }
 
   // allocate memory for temporary fields
@@ -96,59 +101,61 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         bc_value_qx[f] = bc_value_h[f] * it->second[0];
         bc_value_qy[f] = bc_value_h[f] * it->second[1];
         bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-        bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
+        if(!hydrostatic_pressure_force_){
+           bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
+        }
+        else{
+           double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
+           bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], WettedAngle_f, bc_value_b[f]);
+        }
       }
     }
   }
 
-  if (!hydrostatic_pressure_force_type_){ //we don't use ht_grad for the pipe flow
-     // limited reconstructions using boundary data
-     // total depth
-     auto tmp1 = S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-     total_depth_grad_->Compute(tmp1);
-     if (use_limiter_)
-       limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
-     total_depth_grad_->data()->ScatterMasterToGhosted("cell");
+  // limited reconstructions using boundary data
+  // total depth
+  auto tmp1 = S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  total_depth_grad_->Compute(tmp1);
+  if (use_limiter_)
+    limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
+  total_depth_grad_->data()->ScatterMasterToGhosted("cell");
   
-     // additional depth-positivity correction limiting for fully flooded cells
-     auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
+  // additional depth-positivity correction limiting for fully flooded cells
+  auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
   
-     for (int c = 0; c < ncells_wghost; ++c ) {
-        Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
-        mesh_->cell_get_nodes(c, &cnodes);
+  for (int c = 0; c < ncells_wghost; ++c ) {
+     Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
+     mesh_->cell_get_nodes(c, &cnodes);
     
-       // calculate maximum bathymetry value on cell nodes
-       double Bmax = 0.0;
-       for (int i = 0; i < cnodes.size(); ++i) {
-         Bmax = std::max(B_n[0][cnodes[i]], Bmax);
-       }
+    // calculate maximum bathymetry value on cell nodes
+    double Bmax = 0.0;
+    for (int i = 0; i < cnodes.size(); ++i) {
+      Bmax = std::max(B_n[0][cnodes[i]], Bmax);
+    }
     
-       // check if cell is fully flooded and proceed with limiting
-       if ((ht_c[0][c] > Bmax) && (ht_c[0][c] - B_c[0][c] > 0.0)) {
-         Amanzi::AmanziMesh::Entity_ID_List cfaces;
-         mesh_->cell_get_faces(c, &cfaces);
+    // check if cell is fully flooded and proceed with limiting
+    if ((ht_c[0][c] > Bmax) && (ht_c[0][c] - B_c[0][c] > 0.0)) {
+      Amanzi::AmanziMesh::Entity_ID_List cfaces;
+      mesh_->cell_get_faces(c, &cfaces);
 
-         double alpha = 1.0; // limiter value
-         for (int f = 0; f < cfaces.size(); ++f) {
-           const auto& xf = mesh_->face_centroid(cfaces[f]);
-           double ht_rec = total_depth_grad_->getValue(c, xf);
-           if (ht_rec - BathymetryEdgeValue(cfaces[f], B_n) < 0.0) {
-             alpha = std::min(alpha, cfl_positivity_ * (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (ht_rec - ht_c[0][c]));
-           }
-         }
+      double alpha = 1.0; // limiter value
+      for (int f = 0; f < cfaces.size(); ++f) {
+        const auto& xf = mesh_->face_centroid(cfaces[f]);
+        double ht_rec = total_depth_grad_->getValue(c, xf);
+        if (ht_rec - BathymetryEdgeValue(cfaces[f], B_n) < 0.0) {
+          alpha = std::min(alpha, cfl_positivity_ * (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (ht_rec - ht_c[0][c]));
+        }
+      }
       
-         ht_grad[0][c] *= alpha;
-         ht_grad[1][c] *= alpha;
-       }
-     }
+      ht_grad[0][c] *= alpha;
+      ht_grad[1][c] *= alpha;
+    }
   }
-  else {
-     // limited reconstructions using boundary data
-     // bathymetry
+
+  if(hydrostatic_pressure_force_type_) {
+     // compute bathymetry gradient for bed slope source
      auto tmp1 = S_->GetW<CompositeVector>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
      bathymetry_grad_->Compute(tmp1);
-     if (use_limiter_)
-       limiter_->ApplyLimiter(tmp1, 0, bathymetry_grad_, bc_model, bc_value_b);
      bathymetry_grad_->data()->ScatterMasterToGhosted("cell");
   }
 
@@ -219,18 +226,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         if (ierr < 0) break;
     }
     else{
-       //h_rec = (c2 == -1) ? h_temp[0][c1] : 0.5 * (h_temp[0][c1] + h_temp[0][c2]); 
-       //W_rec[1] = (c2 == -1) ? WettedAngle_c[0][c1] : 0.5 * (WettedAngle_c[0][c1] + WettedAngle_c[0][c2]);
 
-       //double ht_c = ComputePondedDepth(WettedAngle_c[0][c1]) + B_c[0][c1]; //locally reconstruct the total depth on cell
-       //ht_rec = TotalDepthEdgeValue(c1, f, ht_c, B_c[0][c1], B_max[0][c1], B_n);
-       //W_rec[1] = ComputeWettedAngle(ht_rec - B_rec);
-       //h_rec = ComputeWettedArea(W_rec[1]);
-
-       W_rec = ComputeWettedQuantitiesEdge(c1, f, h_temp[0][c1], WettedAngle_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
+       W_rec = ComputeWettedQuantitiesEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
        h_rec = W_rec[0];
-
-      
 
     }
 
@@ -271,15 +269,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
          if (ierr < 0) break;
       }
       else{
-       //h_rec =  0.5 * (h_temp[0][c1] + h_temp[0][c2]);
-       //W_rec[1] = 0.5 * (WettedAngle_c[0][c1] + WettedAngle_c[0][c2]);
 
-       //double ht_c = ComputePondedDepth(WettedAngle_c[0][c2]) + B_c[0][c2]; 
-       //ht_rec = TotalDepthEdgeValue(c2, f, ht_c, B_c[0][c2], B_max[0][c2], B_n);
-       //W_rec[1] = ComputeWettedAngle(ht_rec - B_rec);
-       //h_rec = ComputeWettedArea(W_rec[1]);
-
-       W_rec = ComputeWettedQuantitiesEdge(c2, f, h_temp[0][c2], WettedAngle_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
+       W_rec = ComputeWettedQuantitiesEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
        h_rec = W_rec[0];
 
       }

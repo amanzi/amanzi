@@ -67,18 +67,23 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
 
   else {
 
-     if (h < pipe_cross_section_){ //flow is ventilated (free-surface)
+     if ((0.0 < h && h < pipe_cross_section_)){ //flow is ventilated (free-surface)
 
-        HydrostaticPressureForce = 3.0 * sin(WettedAngle * 0.5) - pow(sin(WettedAngle * 0.5),3) - 3 * (WettedAngle * 0.5) * cos(WettedAngle * 0.5);
+        HydrostaticPressureForce = 3.0 * sin(WettedAngle * 0.5) - pow(sin(WettedAngle * 0.5),3) - 3.0 * (WettedAngle * 0.5) * cos(WettedAngle * 0.5);
         HydrostaticPressureForce = HydrostaticPressureForce * g_ * pow(pipe_diameter_,3) / 24.0;
 
-      }
+     }
 
-      else { //flow is pressurized
+     else if (h >= pipe_cross_section_) { //flow is pressurized
 
          double PressurizedHead = (celerity_ * celerity_ * (h - pipe_cross_section_)) / (g_ * pipe_cross_section_);
          HydrostaticPressureForce = g_ * h * (PressurizedHead + sqrt(h/3.14159265359)); 
 
+      }
+
+      else if (h < 0.0) {
+          std::cout  << "negative wetted area in NumericalFlux.h " << std::endl;
+          abort();
       }
 
   }

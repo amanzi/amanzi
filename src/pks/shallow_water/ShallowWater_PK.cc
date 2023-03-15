@@ -374,8 +374,42 @@ ShallowWater_PK::Initialize()
         S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
      }
   }
-  else{ //we do not use the total depth for the pipe flow model
-     InitializeCVField(S_, *vo_, total_depth_key_, Tags::DEFAULT, passwd_, 0.0);
+
+  else{
+
+     auto& WettedArea_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+     auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+     auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+     auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+
+     for (int c = 0; c < ncells_owned; c++) {
+
+        double maxDepth = B_c[0][c] + pipe_diameter_;
+        if (ht_c[0][c] >= maxDepth){ // cell is pressurized
+
+            WettedArea_c[0][c] = Pi * pipe_diameter_ * pipe_diameter_ * 0.25;
+            WettedAngle_c[0][c] = TwoPi;
+        }
+        else if ((std::abs(ht_c[0][c] - B_c[0][c]) < 1.e-15) || (ht_c[0][c] < B_c[0][c])){ //cell is dry
+
+            WettedArea_c[0][c] = 0.0;
+            WettedAngle_c[0][c] = 0.0;
+
+        }
+
+        else if (ht_c[0][c] < maxDepth && B_c[0][c] < ht_c[0][c]) { //cell is ventilated
+
+           double h_c = ht_c[0][c] - B_c[0][c];
+           WettedAngle_c[0][c] = ComputeWettedAngle(h_c);
+           WettedArea_c[0][c] = ComputeWettedArea(WettedAngle_c[0][c]);
+
+        }
+
+     } 
+
+     S_->GetRecordW(ponded_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
+     S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
+
   }
 
   InitializeCVField(S_, *vo_, velocity_key_, Tags::DEFAULT, passwd_, 0.0);
@@ -385,7 +419,7 @@ ShallowWater_PK::Initialize()
   S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
 
   InitializeCVField(S_, *vo_, riemann_flux_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, passwd_, 3.14159265359); //initialiezed at pi  
+  InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, passwd_, Pi); //initialiezed to Pi  
   InitializeFieldFromField_(prev_ponded_depth_key_, ponded_depth_key_, false);
 
   // soln_ is the TreeVector of conservative variables [h hu hv]
@@ -551,11 +585,9 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     q_c[1][c] = q_temp[1][c];
     vel_c[0][c] = factor * q_temp[0][c];
     vel_c[1][c] = factor * q_temp[1][c];
-    //note: this update is physically incorrect for the pipe flow since h_c[0][c] is the wetted area [m^2], not a length [m]
-    // but the pipe flow does not use ht as a variable so it does not affect the computation
-    ht_c[0][c] = h_c[0][c] + B_c[0][c];
+    if (!hydrostatic_pressure_force_type_) ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
-  UpdateWettedAngle(); 
+  UpdateWettedQuantities(); 
 
   // For consistency with other flow models, we need to track previous h
   // which was placed earlier in the archive.
@@ -743,16 +775,20 @@ ShallowWater_PK::NumericalSourceBedSlope(
 
 //--------------------------------------------------------------------
 // Discretization of the bed slope source term 
-// To be used for a pipe flow model NEEDS TESTING (TODO)
+// To be used for a pipe flow model 
 //--------------------------------------------------------------------
 std::vector<double>
-ShallowWater_PK::NumericalSourceBedSlope( int c, double hc)
+ShallowWater_PK::NumericalSourceBedSlope( int c, double h_c) 
 {
 
   auto& b_grad = *bathymetry_grad_->data()->ViewComponent("cell", true);
   std::vector<double> S(3);
+  double bGrad = b_grad[0][c];
+  if (c==11) bGrad = -0.1; 
+  if (c==12) bGrad = 0.1; 
+
   S[0] = 0.0;
-  S[1] = - g_ * hc * b_grad[0][c]; 
+  S[1] = -g_ * h_c * bGrad; 
   S[2] = 0.0;
 
   return S;

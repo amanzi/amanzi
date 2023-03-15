@@ -18,8 +18,6 @@ namespace Amanzi {
 namespace ShallowWater {
 
 using CV_t = CompositeVector;
-double Pi = 3.14159265359;
-double TwoPi = 6.28318530718;
 
 PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
                   const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -54,98 +52,69 @@ double PipeFlow_PK::NumericalSourceFriction(double h, double qx, double WettedAn
 //--------------------------------------------------------------------
 // Newton solve to compute wetted angle given wetted area
 //--------------------------------------------------------------------
-void PipeFlow_PK::UpdateWettedAngle(){ 
+void PipeFlow_PK::UpdateWettedQuantities(){ 
 
    auto& WettedArea_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+   auto& TotalDepth_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+   auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
    for (int c = 0; c < ncells_owned; ++c) {
 
-       WettedAngle_c[0][c] = ComputeWettedAngleNewton(WettedArea_c[0][c]);;
+       WettedAngle_c[0][c] = ComputeWettedAngleNewton(WettedArea_c[0][c]);
+       TotalDepth_c[0][c] = ComputeTotalDepth(WettedArea_c[0][c], WettedAngle_c[0][c], B_c[0][c]);
 
    }
+
+}
+
+
+//--------------------------------------------------------------------
+// Update total depth
+//--------------------------------------------------------------------
+double PipeFlow_PK::ComputeTotalDepth(double WettedArea, double WettedAngle, double Bathymetry){
+
+   double TotalDepth = 0.0;
+
+   if( WettedArea >= 0.0 && WettedArea < pipe_cross_section_){
+
+      TotalDepth = ComputePondedDepth(WettedAngle) + Bathymetry;
+
+   }
+
+   else if ( WettedArea >= pipe_cross_section_) {
+
+      double PressurizedHead = (celerity_ * celerity_ * (WettedArea - pipe_cross_section_)) / (g_ * pipe_cross_section_);
+      TotalDepth = pipe_diameter_ + Bathymetry + PressurizedHead;
+
+   }
+
+   else {
+
+      std::cout << " wetter area is negative in UpdateTotalDepth " << std::endl;
+      abort();
+
+   }
+
+   return TotalDepth;
 
 }
 
 //--------------------------------------------------------------------
 // Compute wetted area and wetted angle at edge location
 //--------------------------------------------------------------------
-std::vector<double> PipeFlow_PK::ComputeWettedQuantitiesEdge(int c, int e, double WettedAreaCell, double WettedAngleCell,
-                                                          double Bc, double Bmax, const Epetra_MultiVector& B_n)
+std::vector<double> PipeFlow_PK::ComputeWettedQuantitiesEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
 {
 
   std::vector <double> W(2,0.0); //vector to return 
 
-  const auto& xc = mesh_->cell_centroid(c);
-  const auto& xf = mesh_->face_centroid(e);
-  Amanzi::AmanziMesh::Entity_ID_List cfaces;
+  double ht_edge = TotalDepthEdgeValue(c, e, htc, Bc, Bmax, B_n);
 
-  bool cell_is_dry, cell_is_fully_flooded, cell_is_partially_wet;
-  cell_is_partially_wet = false;
-  cell_is_dry = false;
-  cell_is_fully_flooded = false;
-
-  if (WettedAreaCell >= pipe_cross_section_) cell_is_fully_flooded = true;
-  else if (std::fabs(WettedAreaCell) < 1.e-12)  cell_is_dry = true;
-  else  cell_is_partially_wet = true;
-  
-  if (cell_is_fully_flooded) {
-    W[0] = WettedAreaCell; //TODO: think about this decision
-    W[1] = TwoPi;
-  } else if (cell_is_dry) {
-    W[0] = 0.0;
-    W[1] = 0.0;
-  } else if (cell_is_partially_wet) {
-    Amanzi::AmanziMesh::Entity_ID_List cfaces;
-    mesh_->cell_get_faces(c, &cfaces);
-
-    double mu_eps_sum = 0.0;
-
-    double htc = ComputePondedDepth(WettedAngleCell) + Bc;
-
-    for (int f = 0; f < cfaces.size(); ++f) {
-      Amanzi::AmanziGeometry::Point x0, x1;
-      int edge = cfaces[f];
-
-      Amanzi::AmanziMesh::Entity_ID_List face_nodes;
-      mesh_->face_get_nodes(edge, &face_nodes);
-      int n0 = face_nodes[0], n1 = face_nodes[1];
-
-      mesh_->node_get_coordinates(n0, &x0);
-      mesh_->node_get_coordinates(n1, &x1);
-
-      double area = norm((xc - x0) ^ (xc - x1)) / 2.0;
-
-      double epsilon;
-
-      if ((htc < B_n[0][n0]) && (htc < B_n[0][n1])) {
-        epsilon = 0.0;
-      } else if ((htc >= B_n[0][n0]) && (htc >= B_n[0][n1])) {
-        epsilon = 1.0;
-      } else {
-        epsilon = 0.5;
-      }
-
-      mu_eps_sum += (area / mesh_->cell_volume(c)) * (epsilon);
-    }
-
-    Amanzi::AmanziMesh::Entity_ID_List face_nodes;
-    mesh_->face_get_nodes(e, &face_nodes);
-
-    double ht_edge = 0.0;
-    for (int i = 0; i < face_nodes.size(); ++i) {
-      if (htc < B_n[0][face_nodes[i]]) {
-        ht_edge += B_n[0][face_nodes[i]];
-      } else {
-        ht_edge += B_n[0][face_nodes[i]] + ((htc - Bc) / mu_eps_sum);
-      }
-    }
-    ht_edge /= 2.0;
-    double B_edge = BathymetryEdgeValue(e, B_n);
-    W[1] = ComputeWettedAngle(ht_edge - B_edge);
-    W[0] = ComputeWettedArea(W[1]);
-  }
+  double B_edge = BathymetryEdgeValue(e, B_n);
+  double h_edge = std::max( (ht_edge - B_edge), 0.0);
+  W[1] = ComputeWettedAngle(h_edge);
+  W[0] = ComputeWettedArea(W[1]);
 
   return W;
 
@@ -157,7 +126,7 @@ std::vector<double> PipeFlow_PK::ComputeWettedQuantitiesEdge(int c, int e, doubl
 //--------------------------------------------------------------------
 double PipeFlow_PK::ComputeWettedAngle(double PondedDepth){
 
-   if (PondedDepth >= pipe_diameter_) return TwoPi; //if pipe is filled wetted anlge is 2pi
+   if (PondedDepth >= pipe_diameter_) return TwoPi; //if pipe is filled wetted angle is TwoPi
 
    else return 2.0 * acos(1.0 - 2.0 * PondedDepth / pipe_diameter_);
 
@@ -190,12 +159,12 @@ double PipeFlow_PK::ComputePondedDepth(double WettedAngle){
 //--------------------------------------------------------------------
 double PipeFlow_PK::ComputeWettedAngleNewton(double WettedArea){
 
-   double tol = 1.e-12;
+   double tol = 1.e-15;
    unsigned max_iter = 1000;
    double WettedAngle;
    double PipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
 
-   if (std::fabs(WettedArea) < 1.e-12) { //cell is dry
+   if (std::fabs(WettedArea) < 1.e-15) { //cell is dry
       WettedAngle = 0.0;
    }
    else if (WettedArea >=  PipeCrossSection){ //cell is fully flooded
@@ -203,7 +172,7 @@ double PipeFlow_PK::ComputeWettedAngleNewton(double WettedArea){
    }
    else { //cell is partially flooded
       unsigned iter = 0;
-      if (std::fabs(WettedAngle) < 1.e-12) WettedAngle = Pi; // change initial guess to pi if was zero
+      if (std::fabs(WettedAngle) < 1.e-15) WettedAngle = Pi; // change initial guess to pi if was zero
        double err = WettedAngle - sin(WettedAngle) - 8.0 * WettedArea / (pipe_diameter_ * pipe_diameter_);
        while(iter < max_iter && std::fabs(err) > tol){
           WettedAngle =  WettedAngle - err / (1.0 - cos(WettedAngle));
@@ -213,18 +182,6 @@ double PipeFlow_PK::ComputeWettedAngleNewton(double WettedArea){
    }
 
    return WettedAngle;
-}
-
-
-//--------------------------------------------------------------------
-// Initialize PK 
-//--------------------------------------------------------------------
-void PipeFlow_PK::Initialize(){
-
-  ShallowWater_PK::Initialize();
-
-  UpdateWettedAngle(); 
-
 }
 
 
