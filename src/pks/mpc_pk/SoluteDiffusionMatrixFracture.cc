@@ -24,8 +24,7 @@ namespace Amanzi {
 * Constructor
 ******************************************************************* */
 SoluteDiffusionMatrixFracture::SoluteDiffusionMatrixFracture(Teuchos::ParameterList& plist)
-  : EvaluatorSecondary(plist),
-    mol_diff_(0.0)
+  : EvaluatorSecondary(plist), mol_diff_(0.0)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -46,14 +45,16 @@ SoluteDiffusionMatrixFracture::SoluteDiffusionMatrixFracture(Teuchos::ParameterL
 /* *******************************************************************
 * Actual work is done here
 ******************************************************************* */
-void SoluteDiffusionMatrixFracture::Update_(State& S)
+void
+SoluteDiffusionMatrixFracture::Update_(State& S)
 {
   Key key = my_keys_[0].first;
   auto mesh = S.GetMesh(domain_);
   auto mesh_parent = mesh->parent();
 
   const auto& poro_c = *S.Get<CompositeVector>(porosity_key_, Tags::DEFAULT).ViewComponent("cell");
-  const auto& aperture_c = *S.Get<CompositeVector>(aperture_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& aperture_c =
+    *S.Get<CompositeVector>(aperture_key_, Tags::DEFAULT).ViewComponent("cell");
 
   auto& result_c = *S.GetW<CompositeVector>(key, Tags::DEFAULT, key).ViewComponent("cell");
   int ncells = result_c.MyLength();
@@ -61,7 +62,7 @@ void SoluteDiffusionMatrixFracture::Update_(State& S)
   AmanziMesh::Entity_ID_List cells;
 
   for (int c = 0; c < ncells; ++c) {
-    int f = mesh->entity_get_parent(AmanziMesh::CELL, c); 
+    int f = mesh->entity_get_parent(AmanziMesh::CELL, c);
 
     mesh_parent->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ndofs = cells.size();
@@ -83,16 +84,13 @@ SoluteDiffusionMatrixFracture::EnsureCompatibility(State& S)
   Key key = my_keys_[0].first;
   auto tag = my_keys_[0].second;
 
-  S.Require<CompositeVector,CompositeVectorSpace>(key, tag, key)
+  S.Require<CompositeVector, CompositeVectorSpace>(key, tag, key)
     .SetMesh(S.GetMesh(domain_))
     ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 2);
-  
+
   // For dependencies, all we really care is whether there is an evaluator or
   // not.  We do not use the data at all.
-  for (const auto& dep : dependencies_) {
-    S.RequireEvaluator(dep.first, dep.second);
-  }
+  for (const auto& dep : dependencies_) { S.RequireEvaluator(dep.first, dep.second); }
 }
 
 } // namespace Amanzi
-

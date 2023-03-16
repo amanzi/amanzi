@@ -17,6 +17,7 @@
 
 namespace Amanzi {
 
-Utils::RegisteredFactory<Evaluator, SoluteDiffusionMatrixFracture> SoluteDiffusionMatrixFracture::fac_("normal diffusion");
+Utils::RegisteredFactory<Evaluator, SoluteDiffusionMatrixFracture>
+  SoluteDiffusionMatrixFracture::fac_("normal diffusion");
 
 } // namespace Amanzi

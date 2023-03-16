@@ -34,21 +34,26 @@ class SoluteDiffusionMatrixFracture : public EvaluatorSecondary {
   SoluteDiffusionMatrixFracture(Teuchos::ParameterList& plist);
   SoluteDiffusionMatrixFracture(const SoluteDiffusionMatrixFracture& other) = default;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new SoluteDiffusionMatrixFracture(*this));
   }
 
   virtual void EnsureCompatibility(State& S) override;
 
   // WIP for subvectors
-  void set_subvector(double mol_diff) {
+  void set_subvector(double mol_diff)
+  {
     mol_diff_ = mol_diff;
     requests_.clear();
   }
 
  protected:
   virtual void Update_(State& S) override;
-  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override { AMANZI_ASSERT(false); }
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override
+  {
+    AMANZI_ASSERT(false);
+  }
 
  private:
   Key domain_;
