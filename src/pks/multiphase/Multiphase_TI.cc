@@ -293,8 +293,8 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
 
             if (gname != keyc) {
               S_->GetEvaluator(gname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
-              const auto& der_c = S_->GetDerivative<CompositeVector>(
-                gname, Tags::DEFAULT, keyc, Tags::DEFAULT);
+              const auto& der_c =
+                S_->GetDerivative<CompositeVector>(gname, Tags::DEFAULT, keyc, Tags::DEFAULT);
 
               pde->ScaleMatricesColumns(der_c);
             }
@@ -356,8 +356,8 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
 
             if (gname != keyc) {
               S_->GetEvaluator(gname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
-              const auto& der_c = S_->GetDerivative<CompositeVector>(
-                gname, Tags::DEFAULT, keyc, Tags::DEFAULT);
+              const auto& der_c =
+                S_->GetDerivative<CompositeVector>(gname, Tags::DEFAULT, keyc, Tags::DEFAULT);
 
               pde->ScaleMatricesColumns(der_c);
             }
@@ -470,11 +470,11 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
       pde->AddAccumulationTerm(*fone, "cell");
     }
   }
-// op_preconditioner_->SymbolicAssembleMatrix();
-// op_preconditioner_->AssembleMatrix();
-// auto J = FiniteDifferenceJacobian_(tp - dtp, tp, u, u, 1e-6);
-// std::cout << J << std::endl;
-// std::cout << *op_preconditioner_->A() << std::endl; exit(0); 
+  // op_preconditioner_->SymbolicAssembleMatrix();
+  // op_preconditioner_->AssembleMatrix();
+  // auto J = FiniteDifferenceJacobian_(tp - dtp, tp, u, u, 1e-6);
+  // std::cout << J << std::endl;
+  // std::cout << *op_preconditioner_->A() << std::endl; exit(0);
 
   // finalize preconditioner
   if (!op_pc_assembled_) {
@@ -586,7 +586,7 @@ Multiphase_PK::FiniteDifferenceJacobian_(double t_old,
   FunctionalResidual(t_old, t_new, u0, u1, f0);
 
   for (int ncol = 0; ncol < nJ; ++ncol) {
-  // for (int ncol = 102; ncol < 103; ++ncol) {
+    // for (int ncol = 102; ncol < 103; ++ncol) {
     int n = ncol / ncells_owned_;
     int c = ncol % ncells_owned_;
 

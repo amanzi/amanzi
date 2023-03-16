@@ -21,8 +21,9 @@ namespace Amanzi {
 namespace Flow {
 
 Utils::RegisteredFactory<Evaluator, WaterStorage> WaterStorage::reg_("water storage");
-template<>
-Utils::RegisteredFactory<Evaluator, ModelEvaluator<SpecificStorage>> ModelEvaluator<SpecificStorage>::reg_("specific storage");
+template <>
+Utils::RegisteredFactory<Evaluator, ModelEvaluator<SpecificStorage>>
+  ModelEvaluator<SpecificStorage>::reg_("specific storage");
 
 } // namespace Flow
 } // namespace Amanzi

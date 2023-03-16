@@ -24,7 +24,8 @@ FunctionStandardMath::FunctionStandardMath(std::string op,
         (op_ == "atan") || (op_ == "cosh") || (op_ == "sinh") || (op_ == "tanh") ||
         (op_ == "exp") || (op_ == "log") || (op_ == "log10") || (op_ == "sqrt") ||
         (op_ == "ceil") || (op_ == "fabs") || (op_ == "floor") || (op_ == "mod") ||
-        (op_ == "pow"))) {
+        (op_ == "pow") || (op_ == "abs") || (op_ == "positive") || (op_ == "negative") ||
+        (op_ == "heaviside") || (op_ == "sign"))) {
     std::stringstream m;
     m << "Invalid or unknown standard math function " << op_;
     Errors::Message message(m.str());
@@ -69,12 +70,22 @@ FunctionStandardMath::operator()(const std::vector<double>& x) const
     return amplitude_ * ceil(x0);
   } else if (op_ == "fabs") {
     return amplitude_ * fabs(x0);
+  } else if (op_ == "abs") {
+    return amplitude_ * fabs(x0);
   } else if (op_ == "floor") {
     return amplitude_ * floor(x0);
   } else if (op_ == "pow") {
     return amplitude_ * pow(x0, parameter_);
   } else if (op_ == "mod") {
     return fmod(x0, parameter_);
+  } else if (op_ == "positive") {
+    return amplitude_ * (x0 > 0 ? x0 : 0);
+  } else if (op_ == "negative") {
+    return amplitude_ * (x0 < 0 ? x0 : 0);
+  } else if (op_ == "heaviside") {
+    return amplitude_ * (x0 > 0 ? 1 : 0);
+  } else if (op_ == "sign") {
+    return amplitude_ * (x0 > 0 ? 1 : (x0 < 0 ? -1 : 0));
   } else {
     std::stringstream m;
     m << "Invalid or unknown standard math function " << op_;

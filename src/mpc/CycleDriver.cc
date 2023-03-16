@@ -895,8 +895,7 @@ CycleDriver::Go()
         }
       }
 #if !DEBUG_MODE
-    }
-    catch (Exceptions::Amanzi_exception& e) {
+    } catch (Exceptions::Amanzi_exception& e) {
       // write one more vis for help debugging
       S_->advance_cycle();
       Visualize(true); // force vis
@@ -925,7 +924,8 @@ CycleDriver::Go()
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-void CycleDriver::ResetDriver(int time_pr_id)
+void
+CycleDriver::ResetDriver(int time_pr_id)
 {
   if (vo_->os_OK(Teuchos::VERB_LOW)) {
     Teuchos::OSTab tab = vo_->getOSTab();

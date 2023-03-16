@@ -185,12 +185,11 @@ class Multiphase_PK : public PK_PhysicalBDF {
   Teuchos::RCP<CompositeVector> CreateCVforUpwind_();
 
   // debug tool
-  WhetStone::DenseMatrix
-  FiniteDifferenceJacobian_(double t_old,
-                            double t_new,
-                            Teuchos::RCP<const TreeVector> u_old,
-                            Teuchos::RCP<const TreeVector> u_new,
-                            double eps);
+  WhetStone::DenseMatrix FiniteDifferenceJacobian_(double t_old,
+                                                   double t_new,
+                                                   Teuchos::RCP<const TreeVector> u_old,
+                                                   Teuchos::RCP<const TreeVector> u_new,
+                                                   double eps);
 
  protected:
   int ncells_owned_, ncells_wghost_;

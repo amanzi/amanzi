@@ -37,7 +37,7 @@ The IOEvent is used for multiple objects that need to indicate simulation times 
      n=0,1,2,... and time < stop if stop != -1.0.
 
    * `"times start period stop units`" ``[string]`` **s** Units corresponding
-     to this spec.  One of `"s`", `"d`", `"yr`", or `"yr 365`"
+     to this spec.  One of `"s`", `"min`", `"h`", `"d`", `"yr`", or `"noleap`"
 
    * `"times start period stop 0`" ``[Array(double)]`` **optional** If multiple
      start period stop parameters are needed, then use this these parameters
@@ -45,8 +45,8 @@ The IOEvent is used for multiple objects that need to indicate simulation times 
      until the Nth one is not found.
 
    * `"times start period stop 0 units`" ``[string]`` **s** Units corresponding
-     to this spec.  One of `"s`", `"d`", `"yr`", or `"yr 365`" See above for
-     continued integer listings.
+     to this spec.  One of `"s`", `"min`", `"h`", `"d`", `"yr`", or `"noleap`"
+     See above for continued integer listings.
 
    * `"times`" ``[Array(double)]`` **optional** An array of discrete times that
      at which a visualization dump shall be written.

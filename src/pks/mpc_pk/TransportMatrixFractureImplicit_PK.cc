@@ -374,7 +374,7 @@ TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, i
     *rhs_one.SubVector(1)->Data() = *pk_fracture_->op()->rhs();
 
     // solver for component i
-    int ierr = op_tree_matrix_->ApplyInverse(rhs_one, sol_one); 
+    int ierr = op_tree_matrix_->ApplyInverse(rhs_one, sol_one);
     *tot_itrs += op_tree_matrix_->num_itrs();
 
     *(*tcc_m.ViewComponent("cell"))(i) = *(*sol_one.SubVector(0)->Data()->ViewComponent("cell"))(0);

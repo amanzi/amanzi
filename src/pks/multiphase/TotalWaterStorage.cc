@@ -55,8 +55,7 @@ TotalWaterStorage::Init_()
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-TotalWaterStorage::TotalWaterStorage(const TotalWaterStorage& other)
-  : MultiphaseEvaluator(other){};
+TotalWaterStorage::TotalWaterStorage(const TotalWaterStorage& other) : MultiphaseEvaluator(other){};
 
 
 Teuchos::RCP<Evaluator>

@@ -262,11 +262,8 @@ InputConverterU::TranslateState_()
                                   "density");
     }
     if (phases_[GAS].active && phases_[GAS].dissolved.size() > 0) {
-      AddSecondaryFieldEvaluator_(out_ev,
-                                  Keys::getKey("domain", "molar_density_gas"),
-                                  "molar density key",
-                                  "eos",
-                                  "density");
+      AddSecondaryFieldEvaluator_(
+        out_ev, Keys::getKey("domain", "molar_density_gas"), "molar density key", "eos", "density");
     }
   }
 
@@ -861,15 +858,14 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
       out_ev, Keys::getKey(domain, "viscosity_gas"), "All", "cell", viscosity);
   }
 
-  // -- molar heat capacity 
+  // -- molar heat capacity
   node = GetUniqueElementByTagsString_("phases, gas_phase, molar_heat_capacity", flag);
   if (flag) {
     double cv = GetTextContentD_(node, "J/mol/K");
 
     auto key = Keys::getKey(domain, "internal_energy_gas");
     Teuchos::ParameterList& field_ev = out_ev.sublist(key);
-    field_ev.set<std::string>("evaluator type", "iem")
-      .set<std::string>("internal energy key", key);
+    field_ev.set<std::string>("evaluator type", "iem").set<std::string>("internal energy key", key);
 
     field_ev.sublist("IEM parameters")
       .sublist("All")
@@ -897,7 +893,8 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
       // porosity
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
       if (flag) {
-        TranslateFieldEvaluator_(node, Keys::getKey(domain, "porosity"), "-", reg_str, regions, out_ic, out_ev);
+        TranslateFieldEvaluator_(
+          node, Keys::getKey(domain, "porosity"), "-", reg_str, regions, out_ic, out_ev);
       } else {
         msg << "Porosity element must be specified under mechanical_properties";
         Exceptions::amanzi_throw(msg);
@@ -918,24 +915,28 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
         std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
         field_ev.set<std::string>("evaluator type", "specific storage");
 
-        Teuchos::ParameterList& params = field_ev.sublist("specific storage parameters").sublist(reg_str);
+        Teuchos::ParameterList& params =
+          field_ev.sublist("specific storage parameters").sublist(reg_str);
         params.set<Teuchos::Array<std::string>>("regions", regions);
 
         double val1, val2;
         if (model == "constant") {
           val1 = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m^-1");
           params.set<std::string>("model", "constant").set<double>("value", val1);
-        } if (model == "standard") {
+        }
+        if (model == "standard") {
           std::vector<std::string> deps({ Keys::getKey(domain, "porosity") });
           field_ev.set<Teuchos::Array<std::string>>("dependencies", deps);
 
-          val1 = GetAttributeValueD_(node, "fluid_compressibility", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa^-1");
-          val2 = GetAttributeValueD_(node, "matrix_compressibility", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa^-1");
+          val1 = GetAttributeValueD_(
+            node, "fluid_compressibility", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa^-1");
+          val2 = GetAttributeValueD_(
+            node, "matrix_compressibility", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa^-1");
           params.set<std::string>("model", "standard")
-                .set<double>("fluid compressibility", val1)
-                .set<double>("matrix compressibility", val2)
-                .set<double>("gravity", const_gravity_)
-                .set<double>("density", rho_);
+            .set<double>("fluid compressibility", val1)
+            .set<double>("matrix compressibility", val2)
+            .set<double>("gravity", const_gravity_)
+            .set<double>("density", rho_);
         }
       }
 
@@ -1282,7 +1283,7 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
       .set<std::string>("eos basis", "both")
       .set<std::string>("mass density key", Keys::getKey(prefix, "mass_density_liquid"));
   }
- 
+
   if (basename == "molar_density_gas") {
     out_ev.sublist(field)
       .set<std::string>("eos basis", "molar")

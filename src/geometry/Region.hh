@@ -19,11 +19,6 @@ domain will be a three-dimensional region bounded by a set of two-dimensional
 regions.  If the simulation domain is N-dimensional, the boundary conditions
 must be specified over a set of regions are (N-1)-dimensional.
 
-Region specs are **not** denoted by a "type" parameter for legacy reasons.
-Instead, they take a single sublist whose name defines the type.
-
-``[region-typedsublist-spec]``
-
 
 .. warning:: Surface files contain labeled triangulated face sets.  The user is
     responsible for ensuring that the intersections with other surfaces in the
