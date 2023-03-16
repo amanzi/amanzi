@@ -285,13 +285,12 @@ class Transport_PK : public PK_Physical {
     *spatial = spatial_disc_order;
     *temporal = temporal_disc_order;
   }
+  double getDiffusion(int n) { return (diffusion_phase_[0]->values())[n]; }
 
   // -- modifiers
   void set_current_component(int i) { current_component_ = i; }
 
   // -- control members
-  void Policy(Teuchos::Ptr<State> S);
-
   void VV_CheckGEDproperty(Epetra_MultiVector& tracer) const;
   void VV_CheckTracerBounds(Epetra_MultiVector& tracer,
                             int component,

@@ -26,6 +26,7 @@
 #include "InverseFactory.hh"
 #include "Transport_PK.hh"
 
+#include "SoluteDiffusionMatrixFracture.hh"
 #include "TransportMatrixFracture_PK.hh"
 
 namespace Amanzi {
@@ -87,10 +88,11 @@ TransportMatrixFracture_PK::Setup()
 
   // Require additional fields and evaluators
   if (!S_->HasRecord(normal_diffusion_key_)) {
-    S_->Require<CV_t, CVS_t>(normal_diffusion_key_, Tags::DEFAULT, "state")
+    S_->Require<CV_t, CVS_t>(normal_diffusion_key_, Tags::DEFAULT, normal_diffusion_key_)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::CELL, 2);
+    S_->RequireEvaluator(normal_diffusion_key_, Tags::DEFAULT);
   }
 
   // add boundary condition to transport in matrix list
@@ -201,6 +203,13 @@ TransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   for (int i = 0; i < num_aqueous; ++i) {
     auto op0 = pk0->DispersionSolver(tcc_prev_m, tcc_next_m, t_old, t_new, i)->Clone();
     auto op1 = pk1->DispersionSolver(tcc_prev_f, tcc_next_f, t_old, t_new, i)->Clone();
+
+    auto eval = S_->GetEvaluatorPtr("fracture-normal_diffusion", Tags::DEFAULT);
+    auto eval_tmp = Teuchos::rcp_dynamic_cast<SoluteDiffusionMatrixFracture>(eval);
+    if (eval_tmp.get()) {
+      eval_tmp->set_subvector(pk0->getDiffusion(i));
+      eval_tmp->Update(*S_, "coupled transport");
+    }
 
     // since solution's map could be anything, to create a global operator,
     // we have to rely on pk's operator structure.

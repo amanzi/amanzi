@@ -30,23 +30,6 @@ namespace Transport {
 using CV_t = CompositeVector;
 
 /* *******************************************************************
-* Routine verifies that the velocity field is divergence free
-******************************************************************* */
-void
-Transport_PK::Policy(Teuchos::Ptr<State> S)
-{
-  if (mesh_->get_comm()->NumProc() > 1) {
-    if (!S->Get<CV_t>(tcc_key_).Ghosted()) {
-      Errors::Message msg;
-      msg << "Field \"total component concentration\" has no ghost values."
-          << " Transport PK is giving up.\n";
-      Exceptions::amanzi_throw(msg);
-    }
-  }
-}
-
-
-/* *******************************************************************
 * Calculates extrema of specified solutes and print them.
 ******************************************************************* */
 void

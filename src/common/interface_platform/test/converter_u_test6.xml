@@ -162,7 +162,7 @@
           <aperture type="h5file" filename="aperture.h5"/>
           <normal value="20.0"/>
         </fracture_permeability>
-        <fracture_diffusivity normal="1.0e-9"/>
+        <diffusion_to_matrix model="standard"/>
         <assigned_regions>fracture</assigned_regions>
       </material>
     </materials>

@@ -34,8 +34,10 @@ Darcy_PK::FunctionalResidual(double t_old,
   pressure_eval_->SetChanged();
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 
-  // calculate and assemble elemental stiffness matrices
+  // compute accumulation terms
   double factor = 1.0 / g_;
+
+  S_->GetEvaluator(specific_storage_key_).Update(*S_, "flow");
   const auto& ss = S_->Get<CompositeVector>(specific_storage_key_);
   CompositeVector ss_g(ss);
   ss_g.Update(0.0, ss, factor);

@@ -42,6 +42,7 @@
 #include "eos_registration.hh"
 #include "errors.hh"
 #include "evaluators_flow_reg.hh"
+#include "evaluators_mpc_reg.hh"
 #include "evaluators_multiphase_reg.hh"
 #include "exceptions.hh"
 #include "models_energy_reg.hh"

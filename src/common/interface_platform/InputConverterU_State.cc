@@ -334,10 +334,31 @@ InputConverterU::TranslateState_()
         Exceptions::amanzi_throw(msg);
       }
 
-      node = GetUniqueElementByTagsString_(inode, "fracture_diffusivity", flag);
+      node = GetUniqueElementByTagsString_(inode, "diffusion_to_matrix", flag);
       if (flag) {
-        TranslateFieldIC_(
-          node, "fracture-normal_diffusion", "m/s", reg_str, regions, out_ic, "normal");
+        Teuchos::ParameterList& field_ev = out_ev.sublist("fracture-normal_diffusion");
+
+        std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
+
+        if (model == "constant") {
+          double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m/s");
+
+          auto& tmp = field_ev.set<std::string>("evaluator type", "independent variable")
+            .sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string>>("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function");
+
+          tmp.set<int>("number of dofs", 2).set<std::string>("function type", "composite function");
+          tmp.sublist("dof 1 function").sublist("function-constant").set<double>("value", val);
+          tmp.sublist("dof 2 function").sublist("function-constant").set<double>("value", val);
+        } if (model == "standard") {
+          field_ev.set<std::string>("evaluator type", "normal diffusion");
+
+          field_ev.set<std::string>("porosity key", "porosity")
+                  .set<std::string>("aperture key", "fracture-aperture")
+                  .set<double>("molecular diffusion", 0.0);
+        }
       }
 
       // -- fracture compliance

@@ -130,13 +130,16 @@ FractureInsertion::SetValues(const Epetra_MultiVector& kn, double scale)
   int ncells_owned_f =
     mesh_fracture_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
+  int kmax = kn.NumVectors();
+
   for (int c = 0; c < ncells_owned_f; ++c) {
     double area = mesh_fracture_->cell_volume(c);
     int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
     int ndofs = mmap_->ElementSize(f);
 
     for (int k = 0; k < ndofs; ++k) {
-      (*values_)[np] = kn[0][c] * area * scale;
+      int k1 = std::min(k, kmax - 1);
+      (*values_)[np] = kn[k1][c] * area * scale;
       np++;
     }
   }

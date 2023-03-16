@@ -23,6 +23,7 @@
 #include "CycleDriver.hh"
 #include "MeshAudit.hh"
 #include "eos_registration.hh"
+#include "evaluators_mpc_reg.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
@@ -84,13 +85,9 @@ RunTest(int icase,
     .set<Teuchos::Array<double>>("aqueous values", tmp_m);
 
   plist->sublist("state")
-    .sublist("initial conditions")
+    .sublist("evaluators")
     .sublist("fracture-normal_diffusion")
-    .sublist("function")
-    .sublist("All")
-    .sublist("function")
-    .sublist("function-constant")
-    .set<double>("value", normal_diff);
+    .set<double>("molecular diffusion", mol_diff_m);
 
   if (icase == 3) {
     plist->sublist("PKs")

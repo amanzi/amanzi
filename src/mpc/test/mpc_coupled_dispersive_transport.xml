@@ -174,6 +174,13 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="fracture-normal_diffusion">
+        <Parameter name="evaluator type" type="string" value="normal diffusion"/>
+        <Parameter name="porosity key" type="string" value="porosity"/>
+        <Parameter name="aperture key" type="string" value="fracture-aperture"/>
+        <Parameter name="molecular diffusion" type="double" value="2.5e-9"/>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -238,20 +245,6 @@
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="fracture-normal_diffusion">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0e-6"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

@@ -91,6 +91,7 @@ if (ENABLE_AmanziPhysicsModule)
       ReactiveTransport_PK.cc
       ReactiveTransportMatrixFracture_PK.cc
       ShallowWaterTransport_PK.cc
+      SoluteDiffusionMatrixFracture.cc
       SurfaceSubsurface_PK.cc)
 
   set(mpc_tree_link_libs pks flow transport multiphase shallow_water time_integration data_structures state)
