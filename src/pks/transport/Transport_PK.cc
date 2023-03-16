@@ -194,6 +194,8 @@ Transport_PK::Setup()
   tmp = physical_models->get<std::string>("saturation key", "saturation_liquid");
   saturation_liquid_key_ = Keys::getKey(domain_, tmp);
 
+  tortuosity_key_ = Keys::getKey(domain_, "tortuosity");
+
   wc_key_ = Keys::getKey(domain_, "water_content");
   prev_wc_key_ = Keys::getKey(domain_, "prev_water_content");
 
@@ -234,12 +236,18 @@ Transport_PK::Setup()
     S_->RequireEvaluator(saturation_liquid_key_, Tags::DEFAULT);
   }
 
+  // require domain specific fields
   if (transport_on_manifold_) {
     S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+  } else {
+    S_->Require<CV_t, CVS_t>(tortuosity_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // require state fields when Transport PK is on
@@ -620,6 +628,9 @@ Transport_PK::InitializeFields_()
   // set popular default values when flow PK is off
   InitializeCVField(S_, *vo_, saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
   InitializeCVField(S_, *vo_, aperture_key_, Tags::DEFAULT, passwd_, 1.0);
+
+  // if tortousity requested but material models are absent, we populate it here 
+  InitializeCVField(S_, *vo_, tortuosity_key_, Tags::DEFAULT, passwd_, 1.0);
 
   // we assume that liquid saturation is 1 if wwater content was uninitialized
   InitializeFieldFromField_(prev_wc_key_, wc_key_, false);

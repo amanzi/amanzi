@@ -285,6 +285,7 @@ class Transport_PK : public PK_Physical {
     *spatial = spatial_disc_order;
     *temporal = temporal_disc_order;
   }
+  // -- molecualr diffusion coefficient for n-th solute 
   double getDiffusion(int n) { return (diffusion_phase_[0]->values())[n]; }
 
   // -- modifiers
@@ -404,7 +405,7 @@ class Transport_PK : public PK_Physical {
   Key tcc_key_;
   Key vol_flowrate_key_, aperture_key_;
   Key porosity_key_, transport_porosity_key_, permeability_key_;
-  Key saturation_liquid_key_;
+  Key saturation_liquid_key_, tortuosity_key_;
   Key wc_key_, prev_wc_key_;
 
   Key porosity_msp_key_;

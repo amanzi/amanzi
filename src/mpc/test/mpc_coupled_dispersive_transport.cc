@@ -48,7 +48,6 @@ RunTest(int icase,
         double u_f,
         double mol_diff_f,
         double mol_diff_m,
-        double normal_diff,
         double L,
         double tend = 1e+5)
 {
@@ -84,6 +83,7 @@ RunTest(int icase,
     .sublist("molecular diffusion")
     .set<Teuchos::Array<double>>("aqueous values", tmp_m);
 
+  // normal diffusion coeffcient, kn = phi * Dm / (a/2)
   plist->sublist("state")
     .sublist("evaluators")
     .sublist("fracture-normal_diffusion")
@@ -271,7 +271,7 @@ TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_1)
 {
   // (3) diffusion/dispersion in fracture Df
   // (6) Matrix depth, L = 2
-  double err = RunTest(1, 0.0, 1e-6, 0.0, 0.0, 2.0);
+  double err = RunTest(1, 0.0, 1e-6, 0.0, 2.0);
   CHECK(err < 1.0e-3);
 }
 
@@ -283,9 +283,7 @@ TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_2)
   double u = 1e-4 * a;
   // (4) molecular diffusion coefficient in matrix
   double Dm = 5e-9;
-  // (5) normal diffusion coeffcient, kn = phi * Dm / (a/2)
-  double kn = 0.2 * Dm / (a / 2);
-  double err = RunTest(2, u, 0.0, Dm, kn, 1.0);
+  double err = RunTest(2, u, 0.0, Dm, 1.0);
   CHECK(err < 1.0e-1);
 }
 
@@ -296,9 +294,7 @@ TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_3)
   double u = 1e-4 * a;
   // (4) molecular diffusion coefficient in matrix
   double Dm = 5e-9;
-  // (5) normal diffusion coeffcient, kn = phi * Dm / (a/2)
-  double kn = 0.2 * Dm / (a / 2);
-  double err = RunTest(3, u, 0.0, Dm, kn, 0.05, 0.5e+5);
+  double err = RunTest(3, u, 0.0, Dm, 0.05, 0.5e+5);
   CHECK(err < 0.01);
 }
 
@@ -308,9 +304,7 @@ TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_4) {
   // (2) velocity * aperture = 1e-4 * a
   double u = 1e-4 * a;
   // (4) molecular diffusion coefficient in matrix, Dm = 2e-6
-  // (5) normal diffusion coeffcient, kn = phi * Dm / (a/2) = 0.2 * 2e-6 / (a/2)
-  double kn = 0.2 * 2e-6 / (a / 2);
-  double err = RunTest(4, u, 0.0, 2.0e-6, kn, 2.4e+5, 2.0);
+  double err = RunTest(4, u, 0.0, 2.0e-6, 2.4e+5, 2.0);
   // CHECK(err < 2.0e-2);
 }
 */
@@ -318,7 +312,7 @@ TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_4) {
 /*
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_5) {
   // d(a C)/dt + d(u C)/dx - a Df d^2(C)/dx^2 - (Dm/2) (Cm - C) = 0
-  double err = RunTest(3, 1.0e-5, 1.0e-5, 1.0e-6, 1.0e-6/2);
+  double err = RunTest(3, 1.0e-5, 1.0e-5, 1.0e-6, );
   CHECK(err < 100);
 }
 */

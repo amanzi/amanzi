@@ -11,9 +11,10 @@
   
 Molecular diffusion coefficeint between fracture and matrix.
 
-  D_fm = phi_m * D_m / (a_f / 2)
+  D_fm = s_m tau_m phi_m * D_m / (a_f / 2)
 
-where D_m is matrix diffusion coefficeint and a_f is aperture.
+where D_m is matrix diffusion coefficient, s_m is saturation,
+tau_m is tortuosity, and a_f is aperture.
 */
 
 
@@ -41,7 +42,8 @@ class SoluteDiffusionMatrixFracture : public EvaluatorSecondary {
 
   virtual void EnsureCompatibility(State& S) override;
 
-  // WIP for subvectors
+  // modifiers
+  // -- WIP for subvectors
   void set_subvector(double mol_diff)
   {
     mol_diff_ = mol_diff;
@@ -57,7 +59,7 @@ class SoluteDiffusionMatrixFracture : public EvaluatorSecondary {
 
  private:
   Key domain_;
-  Key porosity_key_, aperture_key_;
+  Key saturation_key_, tortuosity_key_, porosity_key_, aperture_key_;
   double mol_diff_;
 
   static Utils::RegisteredFactory<Evaluator, SoluteDiffusionMatrixFracture> fac_;

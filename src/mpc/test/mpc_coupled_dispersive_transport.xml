@@ -178,6 +178,8 @@
       <ParameterList name="fracture-normal_diffusion">
         <Parameter name="evaluator type" type="string" value="normal diffusion"/>
         <Parameter name="porosity key" type="string" value="porosity"/>
+        <Parameter name="saturation key" type="string" value="saturation_liquid"/>
+        <Parameter name="tortuosity key" type="string" value="tortuosity"/>
         <Parameter name="aperture key" type="string" value="fracture-aperture"/>
         <Parameter name="molecular diffusion" type="double" value="2.5e-9"/>
       </ParameterList>

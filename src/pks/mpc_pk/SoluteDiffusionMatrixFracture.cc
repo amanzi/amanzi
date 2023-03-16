@@ -31,12 +31,15 @@ SoluteDiffusionMatrixFracture::SoluteDiffusionMatrixFracture(Teuchos::ParameterL
   }
   domain_ = Keys::getDomain(my_keys_[0].first);
 
+  saturation_key_ = plist_.get<std::string>("saturation key");
+  tortuosity_key_ = plist_.get<std::string>("tortuosity key");
   porosity_key_ = plist_.get<std::string>("porosity key");
   aperture_key_ = plist_.get<std::string>("aperture key");
   if (plist_.isParameter("molecular diffusion")) {
     mol_diff_ = plist_.get<double>("molecular diffusion");
   }
 
+  dependencies_.insert(std::make_pair(saturation_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(aperture_key_, Tags::DEFAULT));
 }
@@ -52,7 +55,10 @@ SoluteDiffusionMatrixFracture::Update_(State& S)
   auto mesh = S.GetMesh(domain_);
   auto mesh_parent = mesh->parent();
 
+  const auto& sat_c = *S.Get<CompositeVector>(saturation_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& poro_c = *S.Get<CompositeVector>(porosity_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& tortuosity_c =
+    *S.Get<CompositeVector>(tortuosity_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& aperture_c =
     *S.Get<CompositeVector>(aperture_key_, Tags::DEFAULT).ViewComponent("cell");
 
@@ -67,9 +73,11 @@ SoluteDiffusionMatrixFracture::Update_(State& S)
     mesh_parent->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ndofs = cells.size();
 
+    double factor = mol_diff_ / (aperture_c[0][c] / 2);
     for (int k = 0; k < ndofs; ++k) {
       int pos = Operators::UniqueIndexFaceToCells(*mesh_parent, f, cells[k]);
-      result_c[k][c] = mol_diff_ * poro_c[0][cells[pos]] / (aperture_c[0][c] / 2);
+      int c1 = cells[pos];
+      result_c[k][c] = tortuosity_c[0][c1] * poro_c[0][c1] * factor;
     }
   }
 }
