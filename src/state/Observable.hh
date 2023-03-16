@@ -22,7 +22,7 @@ Observables describe what is observed -- the variable, region,
 integration/averaging scheme, etc.
 
 A user may request any number of specific observables.  Each observable spec
-involves a field quantity, a functional reduction operator, a region from which
+involves a field quantity, a reduction reduction operator, a region from which
 it will extract its source data, and a list of discrete times for its
 evaluation.  The observations are evaluated during the simulation and written
 to disk by the UnstructuredObservation_ object.
@@ -43,7 +43,7 @@ to disk by the UnstructuredObservation_ object.
     * `"degree of freedom`" ``[int]`` **-1** Degree of freedom to write.  Default
       of -1 implies writing all degrees of freedom.
 
-    * `"functional`" ``[string]`` the type of function to apply to the variable
+    * `"reduction`" ``[string]`` the type of function to apply to the variable
       on the region.  One of:
 
       - `"point`" returns the value of the field quantity at a
@@ -69,6 +69,10 @@ to disk by the UnstructuredObservation_ object.
 
       - `"maximum`" returns the max value over the region
 
+    * `"modifier`" ``[function-typedinline-spec]`` **optional** If provided, defines a
+      function used to modify the `"variable`" prior to applying the
+      `"reduction`".
+        
     * `"direction normalized flux`" ``[bool]`` **false** For flux observations,
       dots the face-normal flux with a vector to ensure fluxes are integrated
       pointing the same direction.
@@ -112,6 +116,7 @@ variable and/or mesh do not exist on this process.
 #include "AmanziTypes.hh"
 #include "Key.hh"
 #include "Point.hh"
+#include "Function.hh"
 #include "MeshDefs.hh"
 #include "IOEvent.hh"
 
@@ -133,7 +138,8 @@ class Observable {
   const std::string& get_variable() const { return variable_; }
   const std::string& get_region() const { return region_; }
   const std::string& get_location() const { return location_; }
-  const std::string& get_functional() const { return functional_; }
+  const std::string& get_reduction() const { return reduction_; }
+  const std::string& get_modifier() const { return modifier_str_; }
 
   const Comm_ptr_type& get_comm() const { return comm_; }
   void set_comm(const Comm_ptr_type& comm) { comm_ = comm; }
@@ -156,7 +162,7 @@ class Observable {
   std::string name_;
   Key variable_;
   std::string region_;
-  std::string functional_;
+  std::string reduction_;
   std::string location_;
   Tag tag_;
   int num_vectors_;
@@ -167,7 +173,10 @@ class Observable {
   bool has_eval_; // is there an evaluator for this variable_
   bool has_data_; // is there data on this rank for this variable_
 
-  double (*function_)(double a, double b, double vol);
+  double (*reducer_)(double a, double b, double vol);
+
+  std::unique_ptr<Function> modifier_;
+  std::string modifier_str_;
 };
 
 

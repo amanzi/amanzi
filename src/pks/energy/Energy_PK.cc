@@ -232,7 +232,9 @@ Energy_PK::Setup()
   // saturation
   if (!S_->HasRecord(sat_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(sat_liquid_key_, Tags::DEFAULT, passwd_)
-      .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 }
 

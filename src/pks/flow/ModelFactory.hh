@@ -33,9 +33,7 @@ class ModelFactory : public Utils::Factory<Model> {
   {
     std::string name;
 
-    if (plist.isParameter("model")) {
-      name = plist.get<std::string>("model");
-    }
+    if (plist.isParameter("model")) { name = plist.get<std::string>("model"); }
 
     return Teuchos::rcp(CreateInstance(name, plist));
   }

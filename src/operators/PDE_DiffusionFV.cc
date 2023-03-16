@@ -380,9 +380,7 @@ PDE_DiffusionFV::ScaleMatricesColumns(const CompositeVector& s)
 
     for (int n = 0; n < ncells; ++n) {
       double factor = s_c[0][cells[n]];
-      for (int m = 0; m < ncells; ++m) {
-        Aface(m, n) *= factor;
-      }
+      for (int m = 0; m < ncells; ++m) { Aface(m, n) *= factor; }
     }
   }
 }

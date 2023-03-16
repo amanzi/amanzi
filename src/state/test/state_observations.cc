@@ -600,6 +600,36 @@ SUITE(STATE_OBSERVATIONS)
     CHECK(compareFiles("obs4.dat", "test/obs4.dat.gold"));
   }
 
+  TEST_FIXTURE(obs_test, FileWithModifier)
+  {
+    setup();
+    //  one observation in a file
+    Teuchos::ParameterList obs_list("my obs");
+    obs_list.set<std::string>("observation output filename", "obs5.dat");
+    obs_list.set<Teuchos::Array<int>>("cycles", std::vector<int>{ 0, 1 });
+    obs_list.set<std::string>("variable", "linear");
+    obs_list.set<std::string>("region", "all");
+    obs_list.set<std::string>("location name", "cell");
+    obs_list.set<std::string>("reduction", "average");
+
+    Teuchos::ParameterList& func_list = obs_list.sublist("modifier").sublist("function-linear");
+    Teuchos::Array<double> grad(1);
+    grad[0] = 2.0;
+    func_list.set("gradient", grad);
+    func_list.set("y0", (double)0);
+
+    {
+      UnstructuredObservations obs(obs_list);
+      obs.Setup(S.ptr());
+      obs.MakeObservations(S.ptr());
+      advance(1.0);
+      obs.MakeObservations(S.ptr());
+    }
+
+    // times: 0, 1
+    // values: 0, .1
+    CHECK(compareFiles("obs5.dat", "test/obs5.dat.gold"));
+  }
 
   TEST_FIXTURE(obs_domain_set_test, ObsDomainSet)
   {

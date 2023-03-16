@@ -168,8 +168,8 @@ Multiphase_PK::Setup()
   num_primary_ = component_names_.size();
 
   mol_mass_H2O_ = mp_list_->get<double>("molar mass of water");
-  mol_mass_ = mp_list_->sublist("molecular diffusion")
-                       .get<Teuchos::Array<double>>("molar masses").toVector();
+  mol_mass_ =
+    mp_list_->sublist("molecular diffusion").get<Teuchos::Array<double>>("molar masses").toVector();
 
   int id0(0), id1, id2, id3, id4;
   id1 = InitMPSystem_("pressure eqn", id0, 1);
@@ -294,7 +294,7 @@ Multiphase_PK::Setup()
          .SetMesh(mesh_)
          ->SetGhosted(true) = *cvs;
     }
- }
+  }
 
   if (!S_->HasRecord(vol_flowrate_gas_key_)) {
     if (!flow_on_manifold_) {
@@ -1023,12 +1023,10 @@ Multiphase_PK::ModifyCorrection(double h,
     // clip molar density to range [0; +\infty]
     if (name == mol_density_liquid_key_) {
       for (int i = 0; i < uc.NumVectors(); ++i) {
-        for (int c = 0; c < ncells_owned_; ++c) {
-          duc[i][c] = std::min(duc[i][c], uc[i][c]);
-        }
+        for (int c = 0; c < ncells_owned_; ++c) { duc[i][c] = std::min(duc[i][c], uc[i][c]); }
       }
 
-    // clip saturation (residual saturation is missing, FIXME)
+      // clip saturation (residual saturation is missing, FIXME)
     } else if (name == saturation_liquid_key_) {
       for (int c = 0; c < ncells_owned_; ++c) {
         duc[0][c] = std::min(duc[0][c], uc[0][c]);
@@ -1206,7 +1204,8 @@ Multiphase_PK::ModifyEvaluators(int neqn)
 /* ******************************************************************* 
 * Special cell-face structure for upwind field.
 ******************************************************************* */
-Teuchos::RCP<CompositeVector> Multiphase_PK::CreateCVforUpwind_()
+Teuchos::RCP<CompositeVector>
+Multiphase_PK::CreateCVforUpwind_()
 {
   auto cvs = S_->Get<CV_t>(vol_flowrate_liquid_key_, Tags::DEFAULT).Map();
   cvs.SetOwned(false);

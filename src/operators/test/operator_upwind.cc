@@ -41,7 +41,10 @@
 namespace Amanzi {
 
 double
-Value(const AmanziGeometry::Point& xyz) { return 1e-5 + xyz[0]; }
+Value(const AmanziGeometry::Point& xyz)
+{
+  return 1e-5 + xyz[0];
+}
 
 } // namespace Amanzi
 

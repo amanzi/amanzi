@@ -54,7 +54,8 @@ class PDE_DiffusionFVonManifolds : public virtual PDE_Diffusion, public PDE_Diff
   // main virtual members
   // -- setup
   using PDE_Diffusion::Setup;
-  virtual void SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override;
+  virtual void
+  SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override;
   // -- only one component is used:
   //    face component if present - use it, ignore other components
   //    only cell component is present - use it.
@@ -68,9 +69,10 @@ class PDE_DiffusionFVonManifolds : public virtual PDE_Diffusion, public PDE_Diff
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               double scalar_factor = 1.0) override{};
 
-  virtual void UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
-                                              const Teuchos::Ptr<const CompositeVector>& u,
-                                              const Teuchos::Ptr<const CompositeVector>& factor) override{};
+  virtual void
+  UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
+                                 const Teuchos::Ptr<const CompositeVector>& u,
+                                 const Teuchos::Ptr<const CompositeVector>& factor) override{};
 
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;

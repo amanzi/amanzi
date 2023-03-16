@@ -109,7 +109,7 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
     .set<std::string>("discretization primary", "upwind")
     .set<int>("reconstruction order", 0);
 
-  // -- upwind 
+  // -- upwind
   tmp1.sublist("upwind").set<std::string>("upwind method", "upwind: darcy velocity");
   tmp1.sublist("upwind").sublist("upwind standard parameters").set<double>("tolerance", 1e-12);
 
@@ -188,12 +188,14 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
 
   // -- diffusion
   auto diff_l = out_list.sublist("molecular diffusion")
-      .get<Teuchos::Array<double>>("aqueous values").toVector();
+                  .get<Teuchos::Array<double>>("aqueous values")
+                  .toVector();
   auto diff_g = out_list.sublist("molecular diffusion")
-      .get<Teuchos::Array<double>>("gaseous values").toVector();
+                  .get<Teuchos::Array<double>>("gaseous values")
+                  .toVector();
 
   if (diff_l.size() == 0 || diff_l.size() != diff_g.size()) {
-    msg << "Incomplete definition of species: #aqueous=" << diff_l.size() 
+    msg << "Incomplete definition of species: #aqueous=" << diff_l.size()
         << ", #gaseous=" << diff_g.size() << ".\n";
     Exceptions::amanzi_throw(msg);
   }
@@ -248,7 +250,8 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
     fev.sublist(storage_water_key)
       .set<std::string>("evaluator type", "product")
       .set<Teuchos::Array<std::string>>(
-        "dependencies", std::vector<std::string>( { mol_density_liquid_key, sat_liquid_key, porosity_key }))
+        "dependencies",
+        std::vector<std::string>({ mol_density_liquid_key, sat_liquid_key, porosity_key }))
       .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1 }))
       .set<std::string>("tag", "");
 
@@ -289,8 +292,8 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
       //                                   std::vector<std::string>({ adv_energy_gas_key, pg }))
       .set<Teuchos::Array<double>>("advection factors", ones)
 
-      .set<Teuchos::Array<std::string>>("diffusion liquid",
-                                        std::vector<std::string>({ conductivity_key, temperature_key }))
+      .set<Teuchos::Array<std::string>>(
+        "diffusion liquid", std::vector<std::string>({ conductivity_key, temperature_key }))
       .set<Teuchos::Array<double>>("diffusion factors", ones)
       .set<std::string>("accumulation", energy_key);
 
@@ -305,10 +308,12 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
     node = GetUniqueElementByTagsString_("materials", flag);
     std::vector<DOMNode*> materials = GetChildren_(node, "material", flag);
 
-    node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, rock_conductivity", flag);
+    node =
+      GetUniqueElementByTagsString_(materials[0], "thermal_properties, rock_conductivity", flag);
     if (flag) cv_f = GetTextContentD_(node, "W/m/K", true);
 
-    node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, rock_conductivity", flag);
+    node =
+      GetUniqueElementByTagsString_(materials[0], "thermal_properties, rock_conductivity", flag);
     if (flag) cv_r = GetTextContentD_(node, "W/m/K", true);
 
     thermal.set<double>("thermal conductivity of liquid", cv_f);
@@ -385,25 +390,21 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
   fev.sublist(diff_liquid_key)
     .set<std::string>("evaluator type", "product")
     .set<Teuchos::Array<std::string>>(
-      "dependencies",
-      std::vector<std::string>({ mol_diff_liquid_key, mol_density_liquid_key }))
+      "dependencies", std::vector<std::string>({ mol_diff_liquid_key, mol_density_liquid_key }))
     .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1 }))
     .set<std::string>("tag", "");
 
   fev.sublist(diff_gas_key)
     .set<std::string>("evaluator type", "product")
     .set<Teuchos::Array<std::string>>(
-      "dependencies",
-      std::vector<std::string>({ mol_diff_gas_key, mol_density_gas_key }))
+      "dependencies", std::vector<std::string>({ mol_diff_gas_key, mol_density_gas_key }))
     .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1 }))
     .set<std::string>("tag", "");
 
   fev.sublist(diff_vapor_key)
     .set<std::string>("evaluator type", "product")
     .set<Teuchos::Array<std::string>>(
-      "dependencies",
-      std::vector<std::string>(
-        { mol_diff_gas_key, mol_density_gas_key }))
+      "dependencies", std::vector<std::string>({ mol_diff_gas_key, mol_density_gas_key }))
     .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1 }))
     .set<std::string>("tag", "");
 
@@ -417,16 +418,19 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
     fev.sublist(adv_energy_liquid_key)
       .set<std::string>("evaluator type", "product")
       .set<Teuchos::Array<std::string>>("dependencies",
-        std::vector<std::string>( { mol_density_liquid_key, relperm_liquid_key, 
-                                    enthalpy_liquid_key, viscosity_liquid_key }))
+                                        std::vector<std::string>({ mol_density_liquid_key,
+                                                                   relperm_liquid_key,
+                                                                   enthalpy_liquid_key,
+                                                                   viscosity_liquid_key }))
       .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1, -1 }))
       .set<std::string>("tag", "");
 
     fev.sublist(adv_energy_gas_key)
       .set<std::string>("evaluator type", "product")
-      .set<Teuchos::Array<std::string>>("dependencies",
-        std::vector<std::string>( { mol_density_gas_key, relperm_gas_key, 
-                                    enthalpy_gas_key, viscosity_gas_key }))
+      .set<Teuchos::Array<std::string>>(
+        "dependencies",
+        std::vector<std::string>(
+          { mol_density_gas_key, relperm_gas_key, enthalpy_gas_key, viscosity_gas_key }))
       .set<Teuchos::Array<int>>("powers", std::vector<int>({ 1, 1, 1, -1 }))
       .set<std::string>("tag", "");
 

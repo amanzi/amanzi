@@ -28,10 +28,14 @@ template <typename Model>
 class ModelEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   explicit ModelEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist) { Init_(); }
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  {
+    Init_();
+  }
   ModelEvaluator(const ModelEvaluator<Model>& other) = default;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new ModelEvaluator(*this));
   }
 
@@ -57,7 +61,8 @@ class ModelEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Compos
 * Required member function
 ****************************************************************** */
 template <typename Model>
-void ModelEvaluator<Model>::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
+void
+ModelEvaluator<Model>::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   if (!model_.get()) {
     auto mesh = results[0]->Map().Mesh();
@@ -85,7 +90,8 @@ void ModelEvaluator<Model>::Evaluate_(const State& S, const std::vector<Composit
 * Initialization.
 ****************************************************************** */
 template <typename Model>
-void ModelEvaluator<Model>::Init_()
+void
+ModelEvaluator<Model>::Init_()
 {
   if (my_keys_.size() == 0) AMANZI_ASSERT(false);
 
@@ -93,9 +99,7 @@ void ModelEvaluator<Model>::Init_()
     deps_ = plist_.get<Teuchos::Array<std::string>>("dependencies").toVector();
   }
 
-  for (auto key : deps_) {
-    dependencies_.insert(std::make_pair(key, Tags::DEFAULT));
-  }
+  for (auto key : deps_) { dependencies_.insert(std::make_pair(key, Tags::DEFAULT)); }
 }
 
 } // namespace Flow

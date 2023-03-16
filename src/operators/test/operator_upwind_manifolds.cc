@@ -34,7 +34,10 @@
 #include "UpwindFluxManifolds.hh"
 
 double
-Value(const Amanzi::AmanziGeometry::Point& xyz) { return 1e-5 + xyz[0] + 0 * xyz[1] + 0 * xyz[2]; }
+Value(const Amanzi::AmanziGeometry::Point& xyz)
+{
+  return 1e-5 + xyz[0] + 0 * xyz[1] + 0 * xyz[2];
+}
 
 
 /* *****************************************************************

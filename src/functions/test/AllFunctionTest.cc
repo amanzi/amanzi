@@ -26,6 +26,7 @@
 #include "FunctionStaticHead.hh"
 #include "FunctionBilinear.hh"
 #include "FunctionBilinearAndTime.hh"
+#include "FunctionStandardMath.hh"
 
 using namespace Amanzi;
 
@@ -42,8 +43,32 @@ TEST(constant_test)
   CHECK_EQUAL((*f)(x), 1.0);
   auto g = f->Clone();
   delete f;
-  CHECK_EQUAL((*g)(x), 1.0);
+  CHECK_EQUAL(1.0, (*g)(x));
 }
+
+
+TEST(standar_math)
+{
+  FunctionStandardMath f1("abs", 1.0, 0.0, 0.);
+  CHECK_EQUAL(1.0, f1(std::vector<double>{ 1.0 }));
+  CHECK_EQUAL(1.0, f1(std::vector<double>{ -1.0 }));
+
+  FunctionStandardMath f2("positive", 1.0, 0.0, 0.);
+  CHECK_EQUAL(2.0, f2(std::vector<double>{ 2.0 }));
+  CHECK_EQUAL(1.0, f2(std::vector<double>{ 1.0 }));
+  CHECK_EQUAL(0.0, f2(std::vector<double>{ -1.0 }));
+
+  FunctionStandardMath f3("negative", 1.0, 0.0, 0.);
+  CHECK_EQUAL(0.0, f3(std::vector<double>{ 2.0 }));
+  CHECK_EQUAL(0.0, f3(std::vector<double>{ 1.0 }));
+  CHECK_EQUAL(-1.0, f3(std::vector<double>{ -1.0 }));
+
+  constexpr double PI = 3.14159265358979323846;
+  FunctionStandardMath f4("sin", 2.0, PI / 180.0, 90.);
+  CHECK_CLOSE(0.0, f4(std::vector<double>{ 270.0 }), 1.e-12);
+  CHECK_CLOSE(0.0, f4(std::vector<double>{ -90.0 }), 1.e-12);
+}
+
 
 TEST(smooth_step_test)
 {

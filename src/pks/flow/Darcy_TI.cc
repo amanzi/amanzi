@@ -80,8 +80,7 @@ Darcy_PK::FunctionalResidual(double t_old,
 
     ss_g.Update(rho_, compliance, 0.0);
     op_acc_->AddAccumulationDelta(*u_old->Data(), ss_g, ss_g, dt_, "cell");
-  }
-  else if (use_bulk_modulus_) {
+  } else if (use_bulk_modulus_) {
     S_->GetEvaluator(bulk_modulus_key_).Update(*S_, "flow");
     const auto& bulk_c =
       *S_->Get<CompositeVector>(bulk_modulus_key_, Tags::DEFAULT).ViewComponent("cell");

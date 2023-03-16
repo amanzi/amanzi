@@ -4,13 +4,13 @@
 # -----------------------------------------------------------------------------
 # Observation Name: obsA
 # Region: all
-# Functional: average
+# Reduction: average
 # Variable: linear
 # Number of Vectors: 1
 # -----------------------------------------------------------------------------
 # Observation Name: obsB
 # Region: all
-# Functional: average
+# Reduction: average
 # Variable: constant
 # Number of Vectors: 1
 # =============================================================================

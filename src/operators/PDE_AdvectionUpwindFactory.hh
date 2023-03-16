@@ -28,10 +28,11 @@ namespace Operators {
 
 class PDE_AdvectionUpwindFactory {
  public:
-  PDE_AdvectionUpwindFactory(){}
+  PDE_AdvectionUpwindFactory() {}
   PDE_AdvectionUpwindFactory(Teuchos::ParameterList& oplist,
                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : oplist_(oplist), mesh_(mesh){}
+    : oplist_(oplist), mesh_(mesh)
+  {}
 
   Teuchos::RCP<PDE_AdvectionUpwind> Create(const Teuchos::RCP<Operator>& global_op = Teuchos::null);
 

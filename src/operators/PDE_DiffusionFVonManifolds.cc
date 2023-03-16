@@ -333,7 +333,8 @@ PDE_DiffusionFVonManifolds::ComputeBeta_()
   AmanziGeometry::Point a(d);
   AmanziMesh::Entity_ID_List cells;
 
-  auto k_f = (k_.get()) ? k_->ViewComponent("face") : Teuchos::null;;
+  auto k_f = (k_.get()) ? k_->ViewComponent("face") : Teuchos::null;
+  ;
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
 
