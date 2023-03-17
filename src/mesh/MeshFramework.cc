@@ -30,7 +30,6 @@ MeshFramework::MeshFramework(const Comm_ptr_type& comm,
 {
   if (!plist_.get()) plist_ = Teuchos::rcp(new Teuchos::ParameterList("mesh"));
   vo_ = Teuchos::rcp(new VerboseObject(comm, "MeshFramework", *plist_));
-  algorithms_ = Teuchos::rcp(new MeshFrameworkAlgorithms());
 }
 
 
@@ -147,113 +146,6 @@ MeshFramework::getEdgeCoordinates(const Entity_ID e) const
 }
 
 //
-// Cell geometry
-//
-double
-MeshFramework::getCellVolume(const Entity_ID c) const
-{
-  return computeCellGeometry(c).first;
-}
-
-AmanziGeometry::Point
-MeshFramework::getCellCentroid(const Entity_ID c) const
-{
-  return computeCellGeometry(c).second;
-}
-
-
-//
-// face geometry
-//
-double
-MeshFramework::getFaceArea(const Entity_ID f) const
-{
-  return std::get<0>(computeFaceGeometry(f));
-}
-
-AmanziGeometry::Point
-MeshFramework::getFaceCentroid(const Entity_ID f) const
-{
-  return std::get<1>(computeFaceGeometry(f));
-}
-
-AmanziGeometry::Point
-MeshFramework::getFaceNormal(const Entity_ID f, const Entity_ID c, int * const orientation) const
-{
-  auto geom = computeFaceGeometry(f);
-
-  cEntity_ID_View fcells;
-  getFaceCells(f, Parallel_kind::ALL, fcells);
-  if (orientation) *orientation = 0;
-  Entity_ID cc = (c < 0) ? fcells[0] : c;
-
-  int i = std::find(fcells.begin(), fcells.end(), cc) - fcells.begin();
-  AmanziGeometry::Point normal = std::get<2>(geom)[i];
-
-  if (getSpaceDimension() == getManifoldDimension()) {
-    if (c < 0) {
-      normal *= MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
-    } else if (orientation) {
-      *orientation = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
-    }
-  } else if (c < 0) {
-    Errors::Message msg("MeshFramework: asking for the natural normal of a submanifold mesh is not valid.");
-    Exceptions::amanzi_throw(msg);
-  }
-  return normal;
-}
-
-
-//
-// Edge geometry
-//
-double
-MeshFramework::getEdgeLength(const Entity_ID e) const
-{
-  return AmanziGeometry::norm(computeEdgeGeometry(e).first);
-}
-
-AmanziGeometry::Point
-MeshFramework::getEdgeVector(const Entity_ID e, const Entity_ID n, int * const orientation) const
-{
-  auto geom = computeEdgeGeometry(e);
-  if (n >= 0) {
-    cEntity_ID_View nodes;
-    getEdgeNodes(e, nodes);
-    if (n == nodes[0]) {
-      if (orientation) *orientation = 1;
-      return geom.first;
-    } else if (n == nodes[1]) {
-      if (orientation) *orientation = -1;
-      return -geom.first;
-    } else {
-      AMANZI_ASSERT(0);
-    }
-  }
-  return geom.first;
-}
-
-AmanziGeometry::Point
-MeshFramework::getEdgeCentroid(const Entity_ID e) const
-{
-  return computeEdgeGeometry(e).second;
-}
-
-
-//
-// bisectors
-//
-void
-MeshFramework::getCellFacesAndBisectors(const Entity_ID cellid,
-        cEntity_ID_View& faceids, cPoint_View * const bisectors) const
-{
-  getCellFaces(cellid, faceids);
-  if (bisectors)
-    *bisectors = MeshAlgorithms::computeBisectors(*this, cellid, faceids);
-}
-
-
-//
 // topology
 //
 void
@@ -348,48 +240,6 @@ MeshFramework::throwNotImplemented_(const std::string& methodname) const
   msg << "MeshFramework does not yet implement " << methodname;
   Exceptions::amanzi_throw(msg);
 }
-
-
-std::pair<double, AmanziGeometry::Point>
-MeshFrameworkAlgorithms::computeCellGeometry(const MeshFramework& mesh, const Entity_ID c) const
-{
-  return MeshAlgorithms::computeCellGeometry(mesh, c);
-}
-// std::pair<double, AmanziGeometry::Point>
-// MeshFrameworkAlgorithms::computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
-// {
-//   return MeshAlgorithms::computeCellGeometry(mesh, c);
-// }
-
-std::tuple<double, AmanziGeometry::Point, cPoint_View>
-MeshFrameworkAlgorithms::computeFaceGeometry(const MeshFramework& mesh, const Entity_ID f) const
-{
-  return MeshAlgorithms::computeFaceGeometry(mesh, f);
-}
-// std::tuple<double, AmanziGeometry::Point, Point_View>
-// MeshFrameworkAlgorithms::computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const
-// {
-//   return MeshAlgorithms::computeFaceGeometry(mesh, f);
-// }
-
-std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-MeshFrameworkAlgorithms::computeEdgeGeometry(const MeshFramework& mesh, const Entity_ID c) const
-{
-  return MeshAlgorithms::computeEdgeGeometry(mesh, c);
-}
-// std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-// MeshFrameworkAlgorithms::computeEdgeGeometry(const Mesh& mesh, const Entity_ID c) const
-// {
-//   return MeshAlgorithms::computeEdgeGeometry(mesh, c);
-// }
-
-// Point_View
-// MeshFrameworkAlgorithms::computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_View& faces) const
-// {
-//   return MeshAlgorithms::computeBisectors(mesh, c, faces);
-// }
-
-
 
 
 } // namespace AmanziMesh

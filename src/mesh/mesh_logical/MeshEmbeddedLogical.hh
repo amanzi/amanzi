@@ -29,6 +29,23 @@ namespace Amanzi {
 
 namespace AmanziMesh {
 
+struct MeshEmbeddedLogicalAlgorithms: public MeshLogicalAlgorithms { 
+  // Get the bisectors, i.e. vectors from cell centroid to face centroids.
+  virtual void getCellFacesAndBisectors(
+          const Mesh& mesh, 
+          const Entity_ID cellid,
+          cEntity_ID_View& faceids,
+          cPoint_View * const bisectors) const override;
+
+  virtual double getCellVolume(const Mesh& mesh, const Entity_ID c) const override;
+  virtual AmanziGeometry::Point getCellCentroid(const Mesh& mesh, const Entity_ID c) const override;
+  virtual double getFaceArea(const Mesh& mesh, const Entity_ID f) const override;
+  virtual AmanziGeometry::Point getFaceCentroid(const Mesh& mesh, const Entity_ID f) const override;
+  virtual AmanziGeometry::Point getFaceNormal(const Mesh& mesh, const Entity_ID f,
+          const Entity_ID c, int * const orientation=nullptr) const override;
+
+}; 
+
 // An embedded logical mesh is the union of a standard volumetric mesh and a
 // logical mesh.
 //
@@ -53,8 +70,8 @@ class MeshEmbeddedLogical : public MeshFramework {
   //                              face_cell_list topology, magnitude
   //                              is area
   MeshEmbeddedLogical(const Comm_ptr_type& comm,
-                      Teuchos::RCP<MeshFramework> bg_mesh,
-                      Teuchos::RCP<MeshFramework> log_mesh,
+                      Teuchos::RCP<Mesh> bg_mesh,
+                      Teuchos::RCP<Mesh> log_mesh,
                       const std::vector<std::vector<int> >& face_cell_list,
                       const std::vector<Double_List >& face_cell_lengths,
                       const Point_List& face_area_normals,
@@ -112,13 +129,13 @@ class MeshEmbeddedLogical : public MeshFramework {
     cEntity_Direction_View * const dirs) const override;
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
-  virtual void getCellFacesAndBisectors(
+  void getCellFacesAndBisectors(
           const Entity_ID cellid,
           cEntity_ID_View& faceids,
-          cPoint_View * const bisectors) const override;
+          cPoint_View * const bisectors) const;
 
-  virtual double getCellVolume(const Entity_ID c) const override;
-  virtual AmanziGeometry::Point getCellCentroid(const Entity_ID c) const override;
+  double getCellVolume(const Entity_ID c) const;
+  AmanziGeometry::Point getCellCentroid(const Entity_ID c) const;
 
   //
   // MeshLogical defines face quantities
@@ -126,10 +143,10 @@ class MeshEmbeddedLogical : public MeshFramework {
   virtual void getFaceCells(const Entity_ID f,
                             const Parallel_kind ptype,
                             cEntity_ID_View& cells) const override;
-  virtual double getFaceArea(const Entity_ID f) const override;
-  virtual AmanziGeometry::Point getFaceCentroid(const Entity_ID f) const override;
-  virtual AmanziGeometry::Point getFaceNormal(const Entity_ID f,
-          const Entity_ID c, int * const orientation=nullptr) const override;
+  double getFaceArea(const Entity_ID f) const;
+  AmanziGeometry::Point getFaceCentroid(const Entity_ID f) const;
+  AmanziGeometry::Point getFaceNormal(const Entity_ID f,
+          const Entity_ID c, int * const orientation=nullptr) const;
 
  protected:
 
@@ -138,8 +155,8 @@ class MeshEmbeddedLogical : public MeshFramework {
   RaggedArray_DualView<double> extra_face_cell_lengths_;
   RaggedArray_DualView<AmanziGeometry::Point> extra_face_cell_bisectors_;
 
-  Teuchos::RCP<MeshFramework> bg_mesh_;  // background mesh, typically a Mesh_MSTK
-  Teuchos::RCP<MeshFramework> log_mesh_;  // embedded mesh, typically a MeshLogical
+  Teuchos::RCP<Mesh> bg_mesh_;  // background mesh, typically a Mesh_MSTK
+  Teuchos::RCP<Mesh> log_mesh_;  // embedded mesh, typically a MeshLogical
 
   Teuchos::RCP<Epetra_Map> cell_map_;
   Teuchos::RCP<Epetra_Map> face_map_;

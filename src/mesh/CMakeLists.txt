@@ -134,14 +134,6 @@ if (BUILD_TESTS)
       list(APPEND mesh_test_link_libs mesh_mstk)
     endif()    
 
-    # Test: tests framework geometry on a variety of meshes
-    add_amanzi_test(mesh_framework_geometry mesh_framework_geometry
-                    KIND unit
-                    SOURCE test/Main.cc test/mesh_framework_geometry.cc
-                    LINK_LIBS ${mesh_test_link_libs})
-    add_amanzi_test(mesh_framework_geometry_np2 mesh_framework_geometry NPROCS 2 KIND unit)
-    add_amanzi_test(mesh_framework_geometry_np4 mesh_framework_geometry NPROCS 4 KIND unit)
-
     # Test: tests MeshCache geometry without a cache on a variety of meshes
     add_amanzi_test(mesh_geometry mesh_geometry
                     KIND unit
