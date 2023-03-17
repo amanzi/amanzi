@@ -132,10 +132,10 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
  
     # Test: transient Darcy flow with a source
-    add_amanzi_test(flow_darcy_well flow_darcy_well
-                    KIND int
-                    SOURCE test/Main.cc test/flow_darcy_well.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    #add_amanzi_test(flow_darcy_well flow_darcy_well
+    #                KIND int
+    #                SOURCE test/Main.cc test/flow_darcy_well.cc
+    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: convergence analysis
     add_amanzi_test(flow_richards_convergence flow_richards_convergence

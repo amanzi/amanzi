@@ -29,8 +29,7 @@ struct MeshFactory : public MeshFrameworkFactory {
   Teuchos::RCP<Mesh>
   create(Args... args) {
     Teuchos::RCP<MeshFramework> mesh_fw = MeshFrameworkFactory::create(args...);
-    auto mesh = Teuchos::rcp(new Mesh(mesh_fw));
-    MeshAlgorithms::cacheDefault(*mesh);
+    auto mesh = Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms())));
     return mesh;
   }
 

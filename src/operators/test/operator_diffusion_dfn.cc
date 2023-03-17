@@ -90,7 +90,7 @@ RunTest(int icase, double gravity)
     std::string setname("fractures");
     auto sm = Teuchos::rcp(
       new MeshExtractedManifold(mesh, setname, AmanziMesh::Entity_kind::FACE, comm, gm, plist));
-    surfmesh = Teuchos::rcp(new Mesh(sm,Teuchos::null)); 
+    surfmesh = Teuchos::rcp(new Mesh(sm,Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()),Teuchos::null)); 
   }
 
   // modify diffusion coefficient

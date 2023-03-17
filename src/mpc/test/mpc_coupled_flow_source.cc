@@ -74,7 +74,7 @@ TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE)
   names.push_back("fracture");
   auto mesh_fracture_framework = Teuchos::rcp(new MeshExtractedManifold(
     mesh, "fracture", AmanziMesh::Entity_kind::FACE, comm, gm, mesh_list));
-  auto mesh_fracture = Teuchos::rcp(new Mesh(mesh_fracture_framework, mesh_list)); 
+  auto mesh_fracture = Teuchos::rcp(new Mesh(mesh_fracture_framework, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()), mesh_list)); 
 
   S->RegisterMesh("fracture", mesh_fracture);
 

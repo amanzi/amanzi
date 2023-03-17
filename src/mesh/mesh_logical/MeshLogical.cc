@@ -29,7 +29,7 @@ namespace AmanziMesh {
 
 // lumped things for more efficient calculation
 std::pair<double, AmanziGeometry::Point>
-MeshLogicalAlgorithms::computeCellGeometry(const MeshFramework& mesh, const Entity_ID c) const
+MeshLogicalAlgorithms::computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
 {
   double volume = mesh.getCellVolume(c);
   AmanziGeometry::Point centroid = mesh.getCellCentroid(c);
@@ -37,7 +37,7 @@ MeshLogicalAlgorithms::computeCellGeometry(const MeshFramework& mesh, const Enti
 }
 
 std::tuple<double, AmanziGeometry::Point, cPoint_View>
-MeshLogicalAlgorithms::computeFaceGeometry(const MeshFramework& mesh, const Entity_ID f) const
+MeshLogicalAlgorithms::computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const
 {
   double area = mesh.getFaceArea(f);
   AmanziGeometry::Point centroid = mesh.getFaceCentroid(f);
@@ -52,11 +52,46 @@ MeshLogicalAlgorithms::computeFaceGeometry(const MeshFramework& mesh, const Enti
 }
 
 std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-MeshLogicalAlgorithms::computeEdgeGeometry(const MeshFramework& mesh, const Entity_ID e) const
+MeshLogicalAlgorithms::computeEdgeGeometry(const Mesh& mesh, const Entity_ID e) const
 {
   Errors::Message msg("There are no edges in a MeshLogical.");
   Exceptions::amanzi_throw(msg);
   return std::make_pair(AmanziGeometry::Point(), AmanziGeometry::Point());
+}
+
+void MeshLogicalAlgorithms::getCellFacesAndBisectors(
+          const Mesh& mesh, 
+          const Entity_ID cellid,
+          cEntity_ID_View& faceids,
+          cPoint_View * const bisectors) const 
+{
+  static_cast<const MeshLogical*>(mesh.getMeshFramework().get())->getCellFacesAndBisectors(cellid, faceids, bisectors);
+}
+
+double MeshLogicalAlgorithms::getCellVolume(const Mesh& mesh, const Entity_ID c) const 
+{
+  return static_cast<const MeshLogical*>(mesh.getMeshFramework().get())->getCellVolume(c); 
+}
+
+AmanziGeometry::Point MeshLogicalAlgorithms::getCellCentroid(const Mesh& mesh, const Entity_ID c) const
+{
+  return static_cast<const MeshLogical*>(mesh.getMeshFramework().get())->getCellCentroid(c); 
+}
+
+double MeshLogicalAlgorithms::getFaceArea(const Mesh& mesh, const Entity_ID f) const
+{
+  return static_cast<const MeshLogical*>(mesh.getMeshFramework().get())->getFaceArea(f); 
+}
+
+AmanziGeometry::Point MeshLogicalAlgorithms::getFaceCentroid(const Mesh& mesh, const Entity_ID f) const
+{
+  return static_cast<const MeshLogical*>(mesh.getMeshFramework().get())->getFaceCentroid(f); 
+}
+
+AmanziGeometry::Point MeshLogicalAlgorithms::getFaceNormal(const Mesh& mesh, const Entity_ID f,
+          const Entity_ID c, int * const orientation) const
+{
+  return static_cast<const MeshLogical*>(mesh.getMeshFramework().get())->getFaceNormal(f,c,orientation); 
 }
 
 //
@@ -72,7 +107,6 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
 
   setSpaceDimension(3);
   setManifoldDimension(1);
-  setAlgorithms(Teuchos::rcp(new MeshLogicalAlgorithms()));
 
   // Count number of cells referenced, and check that the number of cells
   // referenced is equal to the largest id referenced (+1 for 0)
