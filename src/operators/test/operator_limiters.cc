@@ -787,22 +787,8 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES)
     }
   }
 
-  // create and initialize flux
-  // Since limiters do not allow maximum on the outflow bounadry,
-  // we use this trick: re-entering flow everywhere.
-  const Epetra_Map& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
-  Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
-
   int nfaces_wghost =
     mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
-  AmanziGeometry::Point velocity(3), center(0.5, 0.5, 0.5);
-
-  for (int f = 0; f < nfaces_wghost; f++) {
-    const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
-    velocity = center - xf;
-    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
-    (*flux)[0][f] = (velocity * normal) / mesh->getFaceArea(f);
-  }
 
   for (int i = 1; i < 2; i++) {
     std::vector<int> bc_model;

@@ -53,8 +53,8 @@ SmoothnessIndicatorShu::Compute(const Teuchos::RCP<Reconstruction>& lifting)
     const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     auto poly = lifting->getPolynomial(c);
 
-    assert(false);
-    //mesh_->AmanziMesh::MeshAlgorithms::getCellFaceAdjacentCells(c, AmanziMesh::Parallel_kind::ALL, &cells);
+    cells = AmanziMesh::MeshAlgorithms::getCellFaceAdjacentCells(
+      *mesh_, c, AmanziMesh::Parallel_kind::ALL);
     for (int c1 : cells) {
       auto poly1 = lifting->getPolynomial(c1);
       poly1.ChangeOrigin(xc);
