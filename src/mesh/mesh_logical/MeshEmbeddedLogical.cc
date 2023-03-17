@@ -16,6 +16,43 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
+
+void MeshEmbeddedLogicalAlgorithms::getCellFacesAndBisectors(
+          const Mesh& mesh, 
+          const Entity_ID cellid,
+          cEntity_ID_View& faceids,
+          cPoint_View * const bisectors) const 
+{
+  static_cast<const MeshEmbeddedLogical*>(mesh.getMeshFramework().get())->getCellFacesAndBisectors(cellid, faceids, bisectors);
+}
+
+double MeshEmbeddedLogicalAlgorithms::getCellVolume(const Mesh& mesh, const Entity_ID c) const 
+{
+  return static_cast<const MeshEmbeddedLogical*>(mesh.getMeshFramework().get())->getCellVolume(c); 
+}
+
+AmanziGeometry::Point MeshEmbeddedLogicalAlgorithms::getCellCentroid(const Mesh& mesh, const Entity_ID c) const
+{
+  return static_cast<const MeshEmbeddedLogical*>(mesh.getMeshFramework().get())->getCellCentroid(c); 
+}
+
+double MeshEmbeddedLogicalAlgorithms::getFaceArea(const Mesh& mesh, const Entity_ID f) const
+{
+  return static_cast<const MeshEmbeddedLogical*>(mesh.getMeshFramework().get())->getFaceArea(f); 
+}
+
+AmanziGeometry::Point MeshEmbeddedLogicalAlgorithms::getFaceCentroid(const Mesh& mesh, const Entity_ID f) const
+{
+  return static_cast<const MeshEmbeddedLogical*>(mesh.getMeshFramework().get())->getFaceCentroid(f); 
+}
+
+AmanziGeometry::Point MeshEmbeddedLogicalAlgorithms::getFaceNormal(const Mesh& mesh, const Entity_ID f,
+          const Entity_ID c, int * const orientation) const
+{
+  return static_cast<const MeshEmbeddedLogical*>(mesh.getMeshFramework().get())->getFaceNormal(f,c,orientation); 
+}
+
+
 /*
 MeshEmbeddedLogical Constructor
 
@@ -40,8 +77,8 @@ Note that entities are ordered in the following way:
 
 */
 MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
-        Teuchos::RCP<MeshFramework> bg_mesh,
-        Teuchos::RCP<MeshFramework> log_mesh,
+        Teuchos::RCP<Mesh> bg_mesh,
+        Teuchos::RCP<Mesh> log_mesh,
         const std::vector<Entity_ID_List>& face_cell_ids,
         const std::vector<Double_List >& face_cell_lengths,
         const Point_List& face_area_normals,
@@ -55,7 +92,6 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   vectorToView(extra_face_area_normals_, face_area_normals); 
   setSpaceDimension(3);
   setManifoldDimension(3);
-  setAlgorithms(Teuchos::rcp(new MeshLogicalAlgorithms()));
 
   // merge and remap to get new global IDs
   int ncells_bg_owned = bg_mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
@@ -89,7 +125,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   Epetra_Map cell_owned_map(-1, ncells_total_owned, 0, *getComm());
 
   // -- create a map on the background mesh of all CELLs
-  auto bg_cell_gids = bg_mesh_->getEntityGIDs(Entity_kind::CELL, Parallel_kind::ALL);
+  auto bg_cell_gids = bg_mesh_->getMeshFramework()->getEntityGIDs(Entity_kind::CELL, Parallel_kind::ALL);
   Epetra_Map bg_cell_all_map(-1, ncells_bg_all, bg_cell_gids.data(), 0, *bg_mesh_->getComm());
   Epetra_Map bg_cell_owned_map(-1, ncells_bg_owned, bg_cell_gids.data(), 0, *bg_mesh_->getComm());
 
@@ -115,7 +151,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   Epetra_Map face_owned_map(-1, nfaces_total_owned, 0, *getComm());
 
   // -- create a map on the background mesh of all FACEs
-  auto bg_face_gids = bg_mesh_->getEntityGIDs(Entity_kind::FACE, Parallel_kind::ALL);
+  auto bg_face_gids = bg_mesh_->getMeshFramework()->getEntityGIDs(Entity_kind::FACE, Parallel_kind::ALL);
   Epetra_Map bg_face_all_map(-1, nfaces_bg_all, bg_face_gids.data(), 0, *bg_mesh_->getComm());
   Epetra_Map bg_face_owned_map(-1, nfaces_bg_owned, bg_face_gids.data(), 0, *bg_mesh_->getComm());
 

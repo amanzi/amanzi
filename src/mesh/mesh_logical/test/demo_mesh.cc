@@ -363,16 +363,16 @@ demoMeshLogicalYEmbedded() {
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<MeshFramework> m_log_fw = demoMeshLogicalYManual();
-  Teuchos::RCP<Mesh> m_log = Teuchos::rcp(new Mesh(m_log_fw));
-  AmanziMesh::MeshAlgorithms::cacheDefault(*m_log); 
+  Teuchos::RCP<Mesh> m_log = Teuchos::rcp(new Mesh(m_log_fw, Teuchos::rcp(new Amanzi::AmanziMesh::MeshLogicalAlgorithms())));
 
   Point X0(-1.75, -1.75, -3.);
   Point X1(1.75, 1.75, 0.);
   int nx = 7, ny = 7, nz = 6;
 
-  Teuchos::RCP<Mesh_MSTK> m_bg =
+  Teuchos::RCP<Mesh_MSTK> m_bg_fw =
     Teuchos::rcp(new Mesh_MSTK(X0[0], X0[1],X0[2], X1[0], X1[1], X1[2],
 			       nx, ny, nz, comm, m_log->getGeometricModel(), Teuchos::null));
+  auto m_bg = Teuchos::rcp(new Mesh(m_bg_fw, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()))); 
 
   // make the new connections, 1 per logical cell
   int ncells_log = m_log->getNumEntities(Entity_kind::CELL, Parallel_kind::ALL);
@@ -408,7 +408,7 @@ demoMeshLogicalYEmbedded() {
   }
 
   Teuchos::RCP<MeshEmbeddedLogical> m =
-    Teuchos::rcp(new MeshEmbeddedLogical(comm, m_bg, m_log->getMeshFramework(),
+    Teuchos::rcp(new MeshEmbeddedLogical(comm, m_bg, m_log,
   					 face_cell_ids_, face_cell_lengths,
   					 face_area_normals));
   return m;
