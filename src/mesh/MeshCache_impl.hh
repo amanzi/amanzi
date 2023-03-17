@@ -389,8 +389,8 @@ AmanziGeometry::Point MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Ent
   AmanziGeometry::Point normal;
   if constexpr (MEM == MemSpace_kind::DEVICE){
     assert(data_.face_geometry_cached); 
-  }else {
-    if(!data_.face_geometry_cached)
+  } else {
+    if (!data_.face_geometry_cached)
       if (framework_mesh_.get())
         return framework_mesh_->getFaceNormal(f, c, orientation); 
   }
@@ -418,9 +418,19 @@ AmanziGeometry::Point MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Ent
       *orientation = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
     }
   } else if (c < 0) {
-    Errors::Message msg("MeshFramework: asking for the natural normal of a submanifold mesh is not valid.");
-    Exceptions::amanzi_throw(msg);
+    if (fcells.size() == 2) {
+      // average normals oriented from lower to higher GIDs
+      auto map = getMap(Entity_kind::CELL, true); 
+      int pos = map.GID(fcells[0]) > map.GID(fcells[1]) ? 0 : 1;
+      return (getFaceNormal(f, fcells[1 - pos]) - getFaceNormal(f, fcells[pos])) / 2;
+    } else if (fcells.size() == 1) {
+      return framework_mesh_->getFaceNormal(f, cc, orientation); 
+    } else {
+      Errors::Message msg("MeshFramework: asking for the natural normal of a submanifold mesh is not valid.");
+      Exceptions::amanzi_throw(msg);
+    }
   }
+
   return normal;
 
 }
