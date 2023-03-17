@@ -90,15 +90,29 @@ void
 SoluteDiffusionMatrixFracture::EnsureCompatibility(State& S)
 {
   Key key = my_keys_[0].first;
-  auto tag = my_keys_[0].second;
+  Tag tag = my_keys_[0].second;
+  Key domain = Keys::getDomain(key);
 
   S.Require<CompositeVector, CompositeVectorSpace>(key, tag, key)
     .SetMesh(S.GetMesh(domain_))
     ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 2);
 
-  // For dependencies, all we really care is whether there is an evaluator or
-  // not.  We do not use the data at all.
-  for (const auto& dep : dependencies_) { S.RequireEvaluator(dep.first, dep.second); }
+  // For dependencies, all we really care is whether there is an evaluator 
+  // or not.
+  for (const auto& dep : dependencies_) {
+    S.RequireEvaluator(dep.first, dep.second);
+   }
+
+  // It would be nice to verify mesh parenting
+  for (const auto& dep : dependencies_) {
+    auto& dep_fac = S.Require<CompositeVector, CompositeVectorSpace>(dep.first, dep.second);
+
+    Key dep_domain = Keys::getDomain(dep.first);
+    if (domain == dep_domain)
+      dep_fac.SetMesh(S.GetMesh(domain));
+    else 
+      dep_fac.SetMesh(S.GetMesh(domain)->parent());
+  }
 }
 
 } // namespace Amanzi
