@@ -7,6 +7,11 @@ CBpath =./code-block
 PY_CSS = --stylesheet=$(CBpath)/pygments-default.css
 PY_STY = --stylesheet=$(CBpath)/pygments-default.sty
 
+SPHINXOPTS  =
+SPHINXBUILD = sphinx-build
+SOURCEDIR   = ./
+BUILDDIR    = build
+
 SRC = \
 	AmanziInputSpec-v2.3.2-u.rst \
 	AmanziInputSpec-v2.3.2-s.rst \
@@ -35,11 +40,14 @@ PDF = $(SRC:%.rst=%.pdf)
 %.rst:
 	@./AmanziNativeSpec.py $< $@
 
+sphinx:
+	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
 rst : $(RST)
 
 html : $(HTML)
 
-all : rst html pdf
+all : rst sphinx
 
 pdf : $(PDF)
 
@@ -53,7 +61,10 @@ clean-pdf :
 	-/bin/rm -f *.tex *.pdf
 	-/bin/rm -f *.aux *.toc *.log *.out
 
-clean : clean-html clean-pdf clean-rst
+clean-sphinx : 
+	-/bin/rm -rf build
+
+clean : clean-html clean-pdf clean-rst clean-sphinx
 	-/bin/rm -f *~
 
 distclean : clean
