@@ -327,7 +327,7 @@ IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
     const Point& p = xyz2[n].first;
     const Point& normal = xyz2[n].second;
 #ifdef VERBOSE
-    std::cout << "plane=" << p << " normal=" << normal << std::endl;
+    std::cout << "\nplane=" << p << " normal=" << normal << std::endl;
 #endif
 
     // location of nodes relative to the n-th plane
@@ -348,6 +348,12 @@ IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
     }
 
     for (itf = result.begin(); itf != result.end(); ++itf) {
+#ifdef VERBOSE
+      std::cout << " next face of result: #nodes=" << itf->nodes.size() << std::endl;
+      for (itv = itf->nodes.begin(); itv != itf->nodes.end(); ++itv) 
+        std::cout << "  " << *itv << "  xyz=" << result_xyz[*itv].second 
+                  << "  d=" << result_xyz[*itv].first << std::endl;
+#endif
       for (itv = itf->nodes.begin(); itv != itf->nodes.end(); ++itv) {
         itv_next = itv;
         if (++itv_next == itf->nodes.end()) itv_next = itf->nodes.begin();
@@ -376,7 +382,7 @@ IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
             result_xyz.push_back(std::make_pair(0.0, v1));
             itf->nodes.insert(itv_next, nxyz);
 #ifdef VERBOSE
-            std::cout << "  add " << v1 << std::endl;
+            std::cout << "  add vertex: " << v1 << std::endl;
 #endif
             nxyz++;
           }
@@ -395,10 +401,10 @@ IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
           itv = itf->nodes.erase(itv);
 #ifdef VERBOSE
           if (itf->nodes.size() == 2) {
-            std::cout << "  removing face: ";
+            std::cout << "  removing two-point face: ";
             for (std::list<int>::iterator itt = itf->nodes.begin(); itt != itf->nodes.end(); ++itt)
               std::cout << *itt << " ";
-            std::cout << std::endl;
+            std::cout << "  (#faces=" << result.size() - 1 << ")" << std::endl;
           }
 #endif
           if (itf->nodes.size() == 2) {
@@ -411,18 +417,15 @@ IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
           if (itv_next == itf->nodes.end()) itv_next = itf->nodes.begin();
 
           itv_prev = itv;
-          if (itv_prev == itf->nodes.begin())
-            itv_prev = itf->nodes.end();
-          else
-            itv_prev--;
+          if (itv_prev == itf->nodes.begin()) itv_prev = itf->nodes.end();
+          itv_prev--;
 
           itf->new_edge = std::make_pair(*itv_prev, *itv_next);
           itf->edge_flag = 1;
 #ifdef VERBOSE
           std::cout << "  new edge:" << *itv_prev << " " << *itv_next
-                    << "   p1=" << result_xyz[*itv_prev].second
-                    << "  p2=" << result_xyz[*itv_next].second
-                    << " d=" << result_xyz[*itv_prev].first << " " << result_xyz[*itv_next].first
+                    << "\n     p1=" << result_xyz[*itv_prev].second << "  d=" << result_xyz[*itv_prev].first
+                    << "\n     p2=" << result_xyz[*itv_next].second << "  d=" << result_xyz[*itv_next].first
                     << std::endl;
 #endif
         } else {
@@ -442,9 +445,6 @@ IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
 
     // -- starting point for the new face
     if (nedges > 2 && edge_flag == 1) {
-#ifdef VERBOSE
-      std::cout << "  enough edges to build new face: " << nedges << std::endl;
-#endif
       int n1, n2, n3, n4(-1);
       ClippedFace new_face;
 
@@ -456,6 +456,10 @@ IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
           break;
         }
       }
+#ifdef VERBOSE
+      std::cout << "  enough edges to build new face: " << nedges << std::endl;
+      std::cout << "  start with point: " << n1 << std::endl;
+#endif
 
       // -- the remaining points of the new face
       while (n4 != n1) {
@@ -471,13 +475,13 @@ IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
       }
 
       if (new_face.nodes.size() > 2) {
+        result.push_back(new_face);
 #ifdef VERBOSE
-        std::cout << "  adding new face nodes: ";
+        std::cout << "  adding new face, nodes: ";
         for (itv = new_face.nodes.begin(); itv != new_face.nodes.end(); ++itv)
           std::cout << *itv << " ";
-        std::cout << std::endl;
+        std::cout << "  (#faces=" << result.size() << ")" << std::endl;
 #endif
-        result.push_back(new_face);
       }
     }
   }

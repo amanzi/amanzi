@@ -375,3 +375,60 @@ TEST(BOXREGION_VOFS_3D_VOLUME)
     std::cout << "volume=" << volume << std::endl;
   }
 }
+
+
+TEST(BOXREGION_VOFS_3D_INTERSECTION_SKEWED)
+{
+  using namespace Amanzi::AmanziGeometry;
+
+  std::cout << "\nIntersection of a skewed hex with the unit box\n\n";
+
+  std::vector<Point> xyz1, xyz3;
+  std::vector<std::vector<int>> faces1(6), faces3;
+  std::vector<std::pair<Point, Point>> xyz2;
+
+  xyz2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(-1.0, 0.0, 0.0)));
+  xyz2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(0.0, -1.0, 0.0)));
+  xyz2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(0.0, 0.0, -1.0)));
+
+  xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(1.0, 0.0, 0.0)));
+  xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 0.0)));
+  xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 0.0, 1.0)));
+
+  xyz1.push_back(Point(-0.00254842875592, -0.5,  1.81336633663360));
+  xyz1.push_back(Point( 0.01122686181662, -0.5, -7.98861386138615));
+  xyz1.push_back(Point( 0.01122686181662,  0.5, -7.98861386138615));
+  xyz1.push_back(Point(-0.00254842875592,  0.5,  1.81336633663360));
+  xyz1.push_back(Point( 0.03188635385278, -0.5,  5.81336633663362));
+  xyz1.push_back(Point( 0.04566164442531, -0.5, -3.98861386138613));
+  xyz1.push_back(Point( 0.04566164442531,  0.5, -3.98861386138613));
+  xyz1.push_back(Point( 0.03188635385278,  0.5,  5.81336633663362));
+
+
+  faces1[0] = std::vector<int>({ 0, 1, 5, 4 });
+  faces1[1] = std::vector<int>({ 1, 2, 6, 5 });
+  faces1[2] = std::vector<int>({ 7, 6, 2, 3 });
+  faces1[3] = std::vector<int>({ 4, 7, 3, 0 });
+  faces1[4] = std::vector<int>({ 3, 2, 1, 0 });
+  faces1[5] = std::vector<int>({ 4, 5, 6, 7 });
+
+  Amanzi::AmanziGeometry::IntersectConvexPolyhedra(xyz1, faces1, xyz2, xyz3, faces3);
+
+  int nfaces3(faces3.size());
+  std::cout << "Total number of faces: " << nfaces3 << std::endl;
+  for (int i = 0; i < nfaces3; ++i) {
+    int nnodes(faces3[i].size());
+    for (int m = 0; m < nnodes; ++m) std::cout << faces3[i][m] << " ";
+    std::cout << std::endl;
+  }
+  std::cout << "Total number of vertices: " << xyz3.size() << std::endl;
+
+  double tol(1e-11);
+  for (auto p : xyz3) {
+    std::cout << "p: " << p << std::endl;
+    for (int i = 0; i < 3; ++i)
+      CHECK(p[i] <= 1.0 + tol && p[i] >= -tol);
+  }
+}
+
+
