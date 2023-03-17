@@ -21,7 +21,7 @@ TEST(XDMF)
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MSTK> Mesh_mstk =
     Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm));
-  auto Mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh(Mesh_mstk, Teuchos::null)); 
+  auto Mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh(Mesh_mstk, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null)); 
 
   // unsigned int num_cells = Mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
   //         Amanzi::AmanziMesh::Parallel_kind::OWNED);

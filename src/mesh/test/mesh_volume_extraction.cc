@@ -72,7 +72,7 @@ TEST(MESH_VOLUME_EXTRACTION_GENERATED)
             unit_hex_cells, AmanziMesh::Entity_kind::CELL);
 
     // make a MeshCache
-    auto mesh = Teuchos::rcp(new Mesh(vol_framework_mesh));
+    auto mesh = Teuchos::rcp(new Mesh(vol_framework_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms())));
     mesh->setParentMesh(parent_mesh);
 
     // test the surface mesh as a 3x3 quad mesh
@@ -170,7 +170,7 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
     MeshFrameworkFactory fac(comm, gm);
     fac.set_preference({frm});
     auto column_mesh_fw = fac.create(parent_mesh, cell_list, AmanziMesh::Entity_kind::CELL);
-    auto column_mesh = Teuchos::rcp(new Mesh(column_mesh_fw));
+    auto column_mesh = Teuchos::rcp(new Mesh(column_mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms())));
 
     // Number of cells in column mesh
     int ncells_col = column_mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,

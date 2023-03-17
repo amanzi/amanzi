@@ -14,6 +14,7 @@
 
 #include "MeshUtils.hh"
 #include "MeshFramework.hh"
+#include "Mesh_Algorithms.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -40,7 +41,6 @@ template<MemSpace_kind MEM>
 void MeshCache<MEM>::setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_mesh) {
   framework_mesh_ = framework_mesh;
   // always save the algorithms, so we can throw away the data
-  algorithms_ = framework_mesh->getAlgorithms();
   has_edges_ = framework_mesh->hasEdges();
   has_nodes_ = framework_mesh->hasNodes();
   comm_ = framework_mesh_->getComm();
@@ -71,6 +71,7 @@ void MeshCache<MEM>::setMeshFramework(const Teuchos::RCP<MeshFramework>& framewo
     nboundary_nodes_owned = maps_.getNBoundaryNodes(Parallel_kind::OWNED);
     nboundary_nodes_all = maps_.getNBoundaryNodes(Parallel_kind::ALL);
   }
+  MeshAlgorithms::cacheDefault(*this); 
 }
 
 
@@ -266,7 +267,7 @@ void
 MeshCache<MEM>::getFaceEdges(const Entity_ID f, 
                             cEntity_ID_View& edges) const{
   auto [fedges, dirs] = getFaceEdgesAndDirections(f);
-  return fedges;
+  edges = fedges;
 }
 
 template<MemSpace_kind MEM>
@@ -389,10 +390,10 @@ AmanziGeometry::Point MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Ent
   AmanziGeometry::Point normal;
   if constexpr (MEM == MemSpace_kind::DEVICE){
     assert(data_.face_geometry_cached); 
-  } else {
-    if (!data_.face_geometry_cached)
-      if (framework_mesh_.get())
-        return framework_mesh_->getFaceNormal(f, c, orientation); 
+  }else {
+    if(!data_.face_geometry_cached)
+      if (algorithms_.get())
+        return algorithms_->getFaceNormal(*this, f, c, orientation); 
   }
 
   auto fcells = getFaceCells(f, Parallel_kind::ALL);
@@ -443,8 +444,8 @@ decltype(auto) MeshCache<MEM>::getFaceCentroid(const Entity_ID f) const
   return Getter<MEM,AP>::get(data_.face_geometry_cached,
     data_.face_centroids,
     framework_mesh_,
-    [&](const int i) { return framework_mesh_->getFaceCentroid(i); }, 
-    [&](const int i) { return MeshAlgorithms::getFaceCentroid(*this,i);}, 
+    nullptr, 
+    [&](const int i) { return algorithms_->getFaceCentroid(*this,i);}, 
     f);
 }
 
@@ -503,8 +504,8 @@ double MeshCache<MEM>::getFaceArea(const Entity_ID f) const
   return Getter<MEM,AP>::get(data_.face_geometry_cached,
     data_.face_areas,
     framework_mesh_,
-    [&](const int i) { return framework_mesh_->getFaceArea(i); }, 
     nullptr, 
+    [&](const int i) { return algorithms_->getFaceArea(*this, i); }, 
     f);
 }
 
@@ -593,10 +594,10 @@ decltype(auto) MeshCache<MEM>::getCellVolume(const Entity_ID c) const
   return Getter<MEM,AP>::get(data_.cell_geometry_cached,
     data_.cell_volumes,
     framework_mesh_,
-    [&](const int i) { 
-      auto v = framework_mesh_->getCellVolume(i); 
-      return v; }, 
     nullptr, 
+    [&](const int i) { 
+      auto v = algorithms_->getCellVolume(*this, i); 
+      return v; }, 
     c);
 }
 
@@ -738,8 +739,8 @@ MeshCache<MEM>::getCellFacesAndBisectors(
       return;
     }
 
-    if (framework_mesh_.get()) {
-      framework_mesh_->getCellFacesAndBisectors(c, faces, bisectors);
+    if (algorithms_.get()) {
+      algorithms_->getCellFacesAndBisectors(*this, c, faces, bisectors);
       return;
     }
   }
@@ -754,31 +755,9 @@ decltype(auto) MeshCache<MEM>::getCellCentroid(const Entity_ID c) const
   return Getter<MEM,AP>::get(data_.cell_geometry_cached,
     data_.cell_centroids,
     framework_mesh_,
-    [&](const int i) { return framework_mesh_->getCellCentroid(i); }, 
+    nullptr, 
     [&](const int i) {
-      if constexpr(MEM == MemSpace_kind::DEVICE){
-        constexpr auto nnodes = MeshCacheData::static_max_nnodes_; 
-        Entity_ID v[nnodes];
-        Kokkos::MeshView<Entity_ID*, Kokkos::DefaultExecutionSpace, 
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged>> nodes (v, nnodes); 
-        getCellNodes(c,nodes);
-        AmanziGeometry::Point res;
-        for(const auto& n: nodes){
-          // !!! res += getnode  doesnt work, it should! 
-          res = res + getNodeCoordinate(n); 
-        }
-        return res/nodes.size(); 
-      } else {
-        constexpr auto nnodes = MeshCacheData::static_max_nnodes_; 
-        cEntity_ID_View nodes;
-        getCellNodes(c,nodes);
-        AmanziGeometry::Point res;
-        for(const auto& n: nodes){
-          // !!! res += getnode  doesnt work, it should! 
-          res = res + getNodeCoordinate(n); 
-        }
-        return res/nodes.size(); 
-      }
+      return algorithms_->getCellCentroid(*this, i); 
     },
     c);
 }
@@ -1090,10 +1069,10 @@ decltype(auto) MeshCache<MEM>::getEdgeCentroid(const Entity_ID c) const {
   return Getter<MEM,AP>::get(data_.edge_geometry_cached,
   data_.edge_centroids,
   framework_mesh_, 
-  [&](const int i) { 
-    return framework_mesh_->getEdgeCentroid(i);
-  }, 
   nullptr,
+  [&](const int i) { 
+    return algorithms_->getEdgeCentroid(*this, i);
+  }, 
   c);
 }
 
@@ -1104,10 +1083,10 @@ decltype(auto) MeshCache<MEM>::getEdgeVector(const Entity_ID e) const {
   return Getter<MEM,AP>::get(data_.edge_geometry_cached,
     data_.edge_vectors,
     framework_mesh_, 
-    [&](const int i) { 
-      return framework_mesh_->getEdgeVector(i);
-    }, 
     nullptr,
+    [&](const int i) { 
+      return algorithms_->getEdgeVector(*this, i, -1, nullptr);
+    }, 
     e);
 }
 
@@ -1119,10 +1098,10 @@ double MeshCache<MEM>::getEdgeLength(const Entity_ID e) const {
   return Getter<MEM,AP>::get(data_.edge_lengths_cached,
     data_.edge_lengths,
     framework_mesh_, 
-    [&](const int i) { 
-      return framework_mesh_->getEdgeLength(i);
-    }, 
     nullptr,
+    [&](const int i) { 
+      return algorithms_->getEdgeLength(*this, i);
+    }, 
     e);
 }
 
@@ -1198,7 +1177,7 @@ void MeshCache<MEM>::cacheCellGeometry()
     // note this must be on host
     std::tie(view<MemSpace_kind::HOST>(data_.cell_volumes)[i],
              view<MemSpace_kind::HOST>(data_.cell_centroids)[i]) =
-      framework_mesh_->computeCellGeometry(i);
+      algorithms_->computeCellGeometry(*this, i);
   }
   Kokkos::deep_copy(data_.cell_volumes.view_device(), data_.cell_volumes.view_host()); 
   Kokkos::deep_copy(data_.cell_centroids.view_device(), data_.cell_centroids.view_host()); 
@@ -1275,7 +1254,7 @@ void MeshCache<MEM>::cacheFaceGeometry()
   auto area_view = view<MemSpace_kind::HOST>(data_.face_areas);
   auto centroid_view = view<MemSpace_kind::HOST>(data_.face_centroids);
   auto lambda = [&,this](const Entity_ID& f, cPoint_View& normals) {
-    auto area_cent_normal = this->framework_mesh_->computeFaceGeometry(f);
+    auto area_cent_normal = algorithms_->computeFaceGeometry(*this, f);
     area_view[f] = std::get<0>(area_cent_normal);
     centroid_view[f] = std::get<1>(area_cent_normal);
     normals = std::get<2>(area_cent_normal);
@@ -1296,7 +1275,7 @@ void MeshCache<MEM>::cacheFaceGeometry()
     framework_mesh_->getFaceCells(f, Parallel_kind::ALL, fcells);
     Kokkos::resize(ldirs,fcells.size());
     for (int i=0; i!=fcells.size(); ++i) {
-      this->framework_mesh_->getFaceNormal(f, fcells[i], &ldirs[i]);
+      algorithms_->getFaceNormal(*this, f, fcells[i], &ldirs[i]);
     }
     dirs = ldirs; 
   };
@@ -1306,7 +1285,7 @@ void MeshCache<MEM>::cacheFaceGeometry()
   // granularity here.
   auto lambda3 = [&,this](const Entity_ID& c, cPoint_View& bisectors) {
     cEntity_ID_View cfaces;
-    this->framework_mesh_->getCellFacesAndBisectors(c, cfaces, &bisectors);
+    algorithms_->getCellFacesAndBisectors(*this, c, cfaces, &bisectors);
   };
   data_.cell_face_bisectors = asRaggedArray_DualView<AmanziGeometry::Point>(lambda3, ncells_all);
 
@@ -1332,7 +1311,7 @@ void MeshCache<MEM>::cacheFaceEdges()
   auto lambda = [this](Entity_ID f, cEntity_ID_View& fedges) 
     { this->framework_mesh_->getFaceEdges(f, fedges);};
   auto lambda_dir = [this](Entity_ID f, cEntity_Direction_View& dirs)
-    { cEntity_ID_View l;  this->framework_mesh_->getFaceEdgesAndDirs(f,l,&dirs);};
+    { cEntity_ID_View l;  framework_mesh_->getFaceEdgesAndDirs(f,l,&dirs);};
   data_.face_edges = asRaggedArray_DualView<Entity_ID>( lambda, nfaces_all);
   data_.face_edge_directions = asRaggedArray_DualView<int>( lambda_dir, nfaces_all);
   data_.face_edges_cached = true;
@@ -1373,7 +1352,7 @@ void MeshCache<MEM>::cacheEdgeGeometry()
   auto evector = view<MemSpace_kind::HOST>(data_.edge_vectors);
   auto ecentroids = view<MemSpace_kind::HOST>(data_.edge_centroids);
   for(int i = 0 ; i < nedges_all; ++i){
-    auto egeometry = this->framework_mesh_->computeEdgeGeometry(i);
+    auto egeometry = algorithms_->computeEdgeGeometry(*this, i);
     evector[i] = std::get<0>(egeometry);
     ecentroids[i] = std::get<1>(egeometry);
   }
@@ -1657,7 +1636,8 @@ void cacheAll(MeshCache<MEM>& mesh)
 template<MemSpace_kind MEM>
 void cacheDefault(MeshCache<MEM>& mesh)
 {
-  std::cout<<"############# CacheDefault"<<std::endl;
+  std::cout<<"############# CacheDefault ";
+  std::cout<<" hasNodes: "<<mesh.hasNodes()<<" hasEdges: "<<mesh.hasEdges()<<std::endl;
   // caches what the developers currently think is best
   if (mesh.hasNodes()) {
     mesh.cacheNodeCoordinates();
