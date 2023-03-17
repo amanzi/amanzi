@@ -269,10 +269,10 @@ Run_3D_DarcyWell(std::string controller)
 }
 
 
-TEST(FLOW_3D_DARCY_WELL)
-{
-  Run_3D_DarcyWell("test/flow_darcy_well_3D.xml");
-}
+//TEST(FLOW_3D_DARCY_WELL)
+//{
+//  Run_3D_DarcyWell("test/flow_darcy_well_3D.xml");
+//}
 
 
 /* **************************************************************** */

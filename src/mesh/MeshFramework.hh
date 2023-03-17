@@ -54,39 +54,6 @@ namespace AmanziMesh {
 class MeshFramework;
 
 //
-// This class provides default, virtual algorithms for computing geometric
-// quantities given nodal coordinates and topological information.
-//
-// Split into two classes to aid in deletion of the MeshFramework class, while
-// keeping the MeshFrameworkAlgorithms class around for use by the Cache.
-//
-struct MeshFrameworkAlgorithms {
-  // lumped things for more efficient calculation
-  virtual std::pair<double, AmanziGeometry::Point>
-  computeCellGeometry(const MeshFramework& mesh, const Entity_ID c) const;
-
-  // // replicated because of a lack of templated virtual functions
-  // virtual std::pair<double, AmanziGeometry::Point>
-  // computeCellGeometry(const Mesh& mesh, const Entity_ID c) const;
-
-  virtual std::tuple<double, AmanziGeometry::Point, cPoint_View>
-  computeFaceGeometry(const MeshFramework& mesh, const Entity_ID f) const;
-
-  // virtual std::tuple<double, AmanziGeometry::Point, Point_View>
-  // computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const;
-
-  virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-  computeEdgeGeometry(const MeshFramework& mesh, const Entity_ID e) const;
-
-  // virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-  // computeEdgeGeometry(const Mesh& mesh, const Entity_ID e) const;
-
-  // virtual Point_View
-  // computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_View& faces) const;
-};
-
-
-//
 // The framework class itself provides setters/getters/attributes, all
 // topology, and coordinates.
 //
@@ -134,14 +101,6 @@ class MeshFramework {
     return *this;
   }
   void setVisMesh(const Teuchos::RCP<const MeshFramework>& vis_mesh) { vis_mesh_ = vis_mesh; }
-
-  // Helper class that provides geometric algorithms.  Sometimes it is useful
-  // to keep the algorithms object even if this class is deleted.
-  Teuchos::RCP<const MeshFrameworkAlgorithms> getAlgorithms() const { return algorithms_; }
-  void setAlgorithms(const Teuchos::RCP<const MeshFrameworkAlgorithms>& algorithms)
-  {
-    algorithms_ = algorithms;
-  }
 
   virtual void writeToExodusFile(const std::string& filename) const {}
 
@@ -201,73 +160,10 @@ class MeshFramework {
   // locations
   virtual AmanziGeometry::Point getNodeCoordinate(const Entity_ID node) const = 0;
   virtual void setNodeCoordinate(const Entity_ID nodeid, const AmanziGeometry::Point& ncoord);
-  virtual AmanziGeometry::Point getCellCentroid(const Entity_ID c) const;
-  virtual AmanziGeometry::Point getFaceCentroid(const Entity_ID f) const;
-  virtual AmanziGeometry::Point getEdgeCentroid(const Entity_ID e) const;
 
   virtual cPoint_View getCellCoordinates(const Entity_ID c) const;
   virtual cPoint_View getFaceCoordinates(const Entity_ID f) const;
   virtual cPoint_View getEdgeCoordinates(const Entity_ID e) const;
-
-  // extent
-  virtual double getCellVolume(const Entity_ID c) const;
-  virtual double getFaceArea(const Entity_ID f) const;
-  virtual double getEdgeLength(const Entity_ID e) const;
-
-  // lumped things for more efficient calculation
-  std::pair<double, AmanziGeometry::Point> computeCellGeometry(const Entity_ID c) const
-  {
-    return algorithms_->computeCellGeometry(*this, c);
-  }
-
-  std::tuple<double, AmanziGeometry::Point, cPoint_View>
-  computeFaceGeometry(const Entity_ID f) const
-  {
-    return algorithms_->computeFaceGeometry(*this, f);
-  }
-
-  std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-  computeEdgeGeometry(const Entity_ID e) const
-  {
-    return algorithms_->computeEdgeGeometry(*this, e);
-  }
-
-
-  // Normal vector of a face
-  //
-  // The vector is normalized and then weighted by the area of the face.
-  //
-  // Orientation is the natural orientation, e.g. that it points from cell 0 to
-  // cell 1 with respect to face_cell adjacency information.
-  inline AmanziGeometry::Point getFaceNormal(const Entity_ID f) const
-  {
-    return getFaceNormal(f, -1, nullptr);
-  }
-
-  // Normal vector of a face, outward with respect to a cell.
-  //
-  // The vector is normalized and then weighted by the area of the face.
-  //
-  // Orientation, if provided, returns the direction of
-  // the natural normal (1 if outward, -1 if inward).
-  virtual AmanziGeometry::Point
-  getFaceNormal(const Entity_ID f, const Entity_ID c, int* const orientation = nullptr) const;
-
-  // Vector describing the edge, where the length is the edge length.
-  //
-  // Orientation is the natural orientation, e.g. that it points from node 0 to
-  // node 1 with respect to edge_node adjacency information.
-  inline AmanziGeometry::Point getEdgeVector(const Entity_ID e) const
-  {
-    return getEdgeVector(e, -1, nullptr);
-  }
-
-  // Vector describing the edge, where the length is the edge length, with respect to node.
-  //
-  // Orientation, if provided, returns the direction of the natural orientation
-  // (1 if this direction, -1 if the opposite).
-  virtual AmanziGeometry::Point
-  getEdgeVector(const Entity_ID e, const Entity_ID n, int* const orientation = nullptr) const;
 
 
   //---------------------
@@ -310,11 +206,6 @@ class MeshFramework {
   virtual void getCellFacesAndDirs(const Entity_ID c,
                                    cEntity_ID_View& faces,
                                    cEntity_Direction_View* const dirs) const = 0;
-
-  // Get the bisectors, i.e. vectors from cell centroid to face centroids.
-  virtual void getCellFacesAndBisectors(const Entity_ID cellid,
-                                        cEntity_ID_View& faceids,
-                                        cPoint_View* const bisectors) const;
 
   virtual void getCellEdges(const Entity_ID c, cEntity_ID_View& edges) const;
   virtual void getCellNodes(const Entity_ID c, cEntity_ID_View& nodes) const;
@@ -420,7 +311,6 @@ class MeshFramework {
   Teuchos::RCP<const VerboseObject> vo_;
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_;
   Teuchos::RCP<const MeshFramework> vis_mesh_;
-  Teuchos::RCP<const MeshFrameworkAlgorithms> algorithms_;
 
   std::size_t space_dim_;
   std::size_t manifold_dim_;

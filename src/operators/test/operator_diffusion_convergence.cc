@@ -54,7 +54,8 @@ RunForwardProblem(const std::string& discretization, int nx, int ny)
 
   // create a mesh
   auto mesh_mstk = Teuchos::rcp(new Mesh_MSTK(0., 0., 1., 1., nx, ny, comm));
-  auto mesh = Teuchos::rcp(new Mesh(mesh_mstk, Teuchos::null));
+  auto mesh = Teuchos::rcp(new Mesh(
+    mesh_mstk, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
@@ -188,7 +189,8 @@ RunInverseProblem(const std::string& discretization, int nx, int ny, bool write_
 
   // create a mesh
   auto mesh_mstk = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 1.0, 1.0, nx, ny, comm));
-  auto mesh = Teuchos::rcp(new Mesh(mesh_mstk, Teuchos::null));
+  auto mesh = Teuchos::rcp(new Mesh(
+    mesh_mstk, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =

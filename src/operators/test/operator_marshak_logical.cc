@@ -78,7 +78,8 @@ RunTestMarshakLogical(std::string op_list_name)
                  &cells,
                  &faces);
   auto mesh_logical = fac.Create();
-  auto mesh = Teuchos::rcp(new Mesh(mesh_logical, Teuchos::null));
+  auto mesh = Teuchos::rcp(new Mesh(
+    mesh_logical, Teuchos::rcp(new Amanzi::AmanziMesh::MeshLogicalAlgorithms()), Teuchos::null));
 
   // Create nonlinear coefficient.
   Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh, 0.0));

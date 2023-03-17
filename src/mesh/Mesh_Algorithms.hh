@@ -17,11 +17,58 @@
 
 #pragma once
 
+
 #include "Epetra_MultiVector.h"
-#include "Mesh.hh"
+//#include "Mesh.hh"
+#include "MeshCache_decl.hh"
+#include "Mesh_Helpers.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
+
+using Mesh = MeshCache<MemSpace_kind::HOST>;
+
+//
+// This class provides default, virtual algorithms for computing geometric
+// quantities given nodal coordinates and topological information.
+//
+// Split into two classes to aid in deletion of the MeshFramework class, while
+// keeping the MeshFrameworkAlgorithms class around for use by the Cache.
+//
+struct MeshFrameworkAlgorithms {
+  // lumped things for more efficient calculation
+  virtual std::pair<double, AmanziGeometry::Point>
+  computeCellGeometry(const Mesh& mesh, const Entity_ID c) const;
+
+  virtual std::tuple<double, AmanziGeometry::Point, cPoint_View>
+  computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const;
+
+  virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
+  computeEdgeGeometry(const Mesh& mesh, const Entity_ID e) const;
+
+  virtual double getCellVolume(const Mesh& mesh, const Entity_ID c) const;
+  virtual AmanziGeometry::Point getCellCentroid(const Mesh& mesh, const Entity_ID c) const;
+
+  virtual double getFaceArea(const Mesh& mesh, const Entity_ID f) const;
+  virtual AmanziGeometry::Point getFaceCentroid(const Mesh& mesh, const Entity_ID f) const;
+  virtual AmanziGeometry::Point getFaceNormal(const Mesh& mesh,
+                                              const Entity_ID f,
+                                              const Entity_ID c,
+                                              int* const orientation) const;
+  virtual double getEdgeLength(const Mesh& mesh, const Entity_ID e) const;
+  virtual AmanziGeometry::Point getEdgeVector(const Mesh& mesh,
+                                              const Entity_ID e,
+                                              const Entity_ID n,
+                                              int* const orientation) const;
+
+  virtual AmanziGeometry::Point getEdgeCentroid(const Mesh& mesh, const Entity_ID e) const;
+
+  virtual void getCellFacesAndBisectors(const Mesh& mesh,
+                                        const Entity_ID cellid,
+                                        cEntity_ID_View& faceids,
+                                        cPoint_View* const bisectors) const;
+};
+
 
 // -----------------------------------------------------------------------------
 // Given a boundary face ID, get the corresponding face ID

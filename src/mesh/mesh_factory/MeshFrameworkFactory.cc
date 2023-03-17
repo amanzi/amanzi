@@ -49,7 +49,7 @@ createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
   auto extracted_mesh = fac.create(parent_mesh, col_list, CELL, false);
 
   // create the MeshColumn object
-  return Teuchos::rcp(new Mesh(extracted_mesh, plist));
+  return Teuchos::rcp(new Mesh(extracted_mesh, Teuchos::rcp(new MeshFrameworkAlgorithms()), plist));
 }
 
 
@@ -219,8 +219,6 @@ MeshFrameworkFactory::create(const double x0,
                                              comm_,
                                              gm_,
                                              Teuchos::rcp(new Teuchos::ParameterList(*plist_))));
-
-      //      mesh->BuildCache();
       return mesh;
     }
 #endif
@@ -261,8 +259,6 @@ MeshFrameworkFactory::create(const double x0,
       }
       auto mesh = Teuchos::rcp(new Mesh_MSTK(
         x0, y0, x1, y1, nx, ny, comm_, gm_, Teuchos::rcp(new Teuchos::ParameterList(*plist_))));
-
-      //      mesh->BuildCache();
       return mesh;
     }
 #endif

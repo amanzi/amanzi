@@ -58,7 +58,7 @@ is "terrain following."
 #include "dbc.hh"
 #include "errors.hh"
 
-#include "MeshFramework.hh"
+#include "Mesh.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -66,11 +66,7 @@ namespace AmanziMesh {
 struct MeshFrameworkColumnAlgorithms : public MeshFrameworkAlgorithms {
   // lumped things for more efficient calculation
   virtual std::pair<double, AmanziGeometry::Point>
-  computeCellGeometry(const MeshFramework& mesh, const Entity_ID c) const override;
-
-  // // replicated because of a lack of templated virtual functions
-  // virtual std::pair<double, AmanziGeometry::Point>
-  // computeCellGeometry(const Mesh& mesh, const Entity_ID c) const override;
+  computeCellGeometry(const Mesh& mesh, const Entity_ID c) const override;
 };
 
 

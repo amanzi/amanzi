@@ -44,8 +44,8 @@ TEST(SURFACE_COLUMN_MESH_3D)
   // Create the mesh
   Teuchos::RCP<AmanziMesh::MeshFramework> mesh_fw =
     Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, lx, ly, lz, nx, ny, nz, comm, gm));
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp(new AmanziMesh::Mesh(mesh_fw));
-  AmanziMesh::MeshAlgorithms::cacheDefault(*mesh);
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp(
+    new AmanziMesh::Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms())));
   mesh->buildColumns();
 
   // Perturb the nodes above the base layer just a bit
@@ -70,11 +70,15 @@ TEST(SURFACE_COLUMN_MESH_3D)
                                            Teuchos::null));
 
   // Create the MeshColumn object
-  Teuchos::RCP<AmanziMesh::MeshFramework> colmesh =
+  Teuchos::RCP<AmanziMesh::MeshFramework> colmesh_fw =
     Teuchos::rcp(new AmanziMesh::MeshFrameworkColumn(colmesh_ext, Teuchos::null));
+  AmanziMesh::Mesh colmesh(colmesh_fw,
+                           Teuchos::rcp(new AmanziMesh::MeshFrameworkColumnAlgorithms()));
 
   // Extract the surface from this column
-  AmanziMesh::MeshSurfaceCell col_surf(colmesh);
+  Teuchos::RCP<AmanziMesh::MeshSurfaceCell> col_surf_fw =
+    Teuchos::rcp(new AmanziMesh::MeshSurfaceCell(colmesh_fw));
+  AmanziMesh::Mesh col_surf(col_surf_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()));
 
   // -- check basic mesh structure
   CHECK_EQUAL(
@@ -94,6 +98,6 @@ TEST(SURFACE_COLUMN_MESH_3D)
   CHECK_CLOSE(1.0, col_surf.getFaceArea(3), 1.e-9);
 
   // -- check parent entity is the right face
-  CHECK(colmesh->getFaceCentroid(col_surf.getEntityParent(AmanziMesh::Entity_kind::CELL, 0))[2] >
+  CHECK(colmesh.getFaceCentroid(col_surf.getEntityParent(AmanziMesh::Entity_kind::CELL, 0))[2] >
         4.);
 }

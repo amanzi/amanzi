@@ -646,7 +646,8 @@ getProblem(const std::string& discretization, bool upwind, int nx, int ny)
 
   // create a mesh
   auto mesh_mstk = Teuchos::rcp(new Mesh_MSTK(0., 0., 1., 1., nx, ny, comm));
-  auto mesh = Teuchos::rcp(new Mesh(mesh_mstk, Teuchos::null));
+  auto mesh = Teuchos::rcp(new Mesh(
+    mesh_mstk, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
 
   // create the analytic solution
   Teuchos::RCP<AnalyticNonlinearCoupledBase> ana =

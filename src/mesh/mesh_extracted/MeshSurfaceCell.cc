@@ -173,7 +173,7 @@ MeshSurfaceCell::getCellFacesAndDirs(const Entity_ID cellid,
     Kokkos::resize(lface_dirs, nodes_.size());
     Kokkos::deep_copy(lface_dirs, 1);
   }
-  *face_dirs = lface_dirs;
+  if (face_dirs) *face_dirs = lface_dirs;
   faceids = lfaceids;
 }
 

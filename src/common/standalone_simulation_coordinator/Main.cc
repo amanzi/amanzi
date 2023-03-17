@@ -59,6 +59,7 @@ main(int argc, char* argv[])
 #endif
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, 0);
+  Kokkos::initialize();
   int rank = mpiSession.getRank();
 
   try {
@@ -281,6 +282,7 @@ main(int argc, char* argv[])
     if (rank == 0) {
       if (s == "Amanzi not run") { std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n"; }
     }
+    Kokkos::finalize();
     return 1;
   } catch (std::exception& e) {
     if (rank == 0) {
@@ -291,6 +293,7 @@ main(int argc, char* argv[])
         std::cout << "Amanzi::SIMULATION_FAILED\n";
       }
     }
+    Kokkos::finalize();
     return 1;
   } catch (int& ierr) {
     if (rank == 0) {
@@ -298,6 +301,7 @@ main(int argc, char* argv[])
                 << ". Known sources: Epetra_MultiVector::AllocateForCopy" << std::endl;
       std::cout << "Amanzi::SIMULATION_FAILED\n";
     }
+    Kokkos::finalize();
     return 1;
   }
 
@@ -307,8 +311,9 @@ main(int argc, char* argv[])
       std::cout << "Unknown exception" << std::endl;
       std::cout << "Amanzi::SIMULATION_FAILED\n";
     }
+    Kokkos::finalize();
     return 1;
   }
-
+  Kokkos::finalize();
   return 0;
 }

@@ -50,7 +50,8 @@ struct Maps {
 
     // create a mesh
     auto mesh_mstk = Teuchos::rcp(new Mesh_MSTK(0., 0., 1., 1., 10, 10, comm));
-    mesh = Teuchos::rcp(new Mesh(mesh_mstk, Teuchos::null));
+    mesh = Teuchos::rcp(new Mesh(
+      mesh_mstk, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
 
     // create a vector
     cvs = Teuchos::rcp(new CompositeVectorSpace());

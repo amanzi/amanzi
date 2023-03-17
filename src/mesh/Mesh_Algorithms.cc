@@ -19,9 +19,129 @@
 //
 
 #include "Mesh_Algorithms.hh"
+#include "MeshCache_impl.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
+
+std::pair<double, AmanziGeometry::Point>
+MeshFrameworkAlgorithms::computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
+{
+  return MeshAlgorithms::computeCellGeometry(mesh, c);
+}
+
+std::tuple<double, AmanziGeometry::Point, cPoint_View>
+MeshFrameworkAlgorithms::computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const
+{
+  return MeshAlgorithms::computeFaceGeometry(mesh, f);
+}
+
+std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
+MeshFrameworkAlgorithms::computeEdgeGeometry(const Mesh& mesh, const Entity_ID c) const
+{
+  return MeshAlgorithms::computeEdgeGeometry(mesh, c);
+}
+
+
+double
+MeshFrameworkAlgorithms::getCellVolume(const Mesh& mesh, const Entity_ID c) const
+{
+  return MeshAlgorithms::computeCellGeometry(mesh, c).first;
+}
+
+AmanziGeometry::Point
+MeshFrameworkAlgorithms::getCellCentroid(const Mesh& mesh, const Entity_ID c) const
+{
+  return MeshAlgorithms::computeCellGeometry(mesh, c).second;
+}
+
+double
+MeshFrameworkAlgorithms::getFaceArea(const Mesh& mesh, const Entity_ID f) const
+{
+  return std::get<0>(MeshAlgorithms::computeFaceGeometry(mesh, f));
+}
+
+AmanziGeometry::Point
+MeshFrameworkAlgorithms::getFaceCentroid(const Mesh& mesh, const Entity_ID f) const
+{
+  return std::get<1>(MeshAlgorithms::computeFaceGeometry(mesh, f));
+}
+
+AmanziGeometry::Point
+MeshFrameworkAlgorithms::getFaceNormal(const Mesh& mesh,
+                                       const Entity_ID f,
+                                       const Entity_ID c,
+                                       int* const orientation) const
+{
+  auto geom = MeshAlgorithms::computeFaceGeometry(mesh, f);
+
+  cEntity_ID_View fcells;
+  mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
+  if (orientation) *orientation = 0;
+  Entity_ID cc = (c < 0) ? fcells[0] : c;
+
+  int i = std::find(fcells.begin(), fcells.end(), cc) - fcells.begin();
+  AmanziGeometry::Point normal = std::get<2>(geom)[i];
+
+  if (mesh.getSpaceDimension() == mesh.getManifoldDimension()) {
+    if (c < 0) {
+      normal *= MeshAlgorithms::getFaceDirectionInCell(mesh, f, cc);
+    } else if (orientation) {
+      *orientation = MeshAlgorithms::getFaceDirectionInCell(mesh, f, cc);
+    }
+  } else if (c < 0) {
+    Errors::Message msg(
+      "MeshFramework: asking for the natural normal of a submanifold mesh is not valid.");
+    Exceptions::amanzi_throw(msg);
+  }
+  return normal;
+}
+
+double
+MeshFrameworkAlgorithms::getEdgeLength(const Mesh& mesh, const Entity_ID e) const
+{
+  return AmanziGeometry::norm(MeshAlgorithms::computeEdgeGeometry(mesh, e).first);
+}
+
+AmanziGeometry::Point
+MeshFrameworkAlgorithms::getEdgeVector(const Mesh& mesh,
+                                       const Entity_ID e,
+                                       const Entity_ID n,
+                                       int* const orientation) const
+{
+  auto geom = MeshAlgorithms::computeEdgeGeometry(mesh, e);
+  if (n >= 0) {
+    cEntity_ID_View nodes;
+    mesh.getEdgeNodes(e, nodes);
+    if (n == nodes[0]) {
+      if (orientation) *orientation = 1;
+      return geom.first;
+    } else if (n == nodes[1]) {
+      if (orientation) *orientation = -1;
+      return -geom.first;
+    } else {
+      AMANZI_ASSERT(0);
+    }
+  }
+  return geom.first;
+}
+
+AmanziGeometry::Point
+MeshFrameworkAlgorithms::getEdgeCentroid(const Mesh& mesh, const Entity_ID e) const
+{
+  return MeshAlgorithms::computeEdgeGeometry(mesh, e).second;
+}
+
+void
+MeshFrameworkAlgorithms::getCellFacesAndBisectors(const Mesh& mesh,
+                                                  const Entity_ID cellid,
+                                                  cEntity_ID_View& faceids,
+                                                  cPoint_View* const bisectors) const
+{
+  mesh.getCellFaces(cellid, faceids);
+  if (bisectors) *bisectors = MeshAlgorithms::computeBisectors(mesh, cellid, faceids);
+}
+
 
 // -----------------------------------------------------------------------------
 // Given a boundary face ID, get the corresponding face ID

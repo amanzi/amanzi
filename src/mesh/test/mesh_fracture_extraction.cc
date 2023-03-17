@@ -53,7 +53,8 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED)
     MeshFactory fac(comm, gm);
     fac.set_preference({ frm });
     // Make cache of current mesh
-    auto parent_mesh_cache = Teuchos::rcp(new Mesh(parent_mesh));
+    auto parent_mesh_cache =
+      Teuchos::rcp(new Mesh(parent_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms())));
     auto mesh = fac.create(parent_mesh_cache, setnames, AmanziMesh::Entity_kind::FACE, false);
 
     // test the surface mesh as a fracture mesh
@@ -117,7 +118,8 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
     MeshFactory fac(comm, gm, fac_plist);
     fac.set_preference({ frm });
     // Make cache of current mesh
-    auto parent_mesh_cache = Teuchos::rcp(new Mesh(parent_mesh));
+    auto parent_mesh_cache =
+      Teuchos::rcp(new Mesh(parent_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms())));
     auto mesh = fac.create(parent_mesh_cache, setnames, AmanziMesh::Entity_kind::FACE, false);
 
     // test the surface mesh as a fracture mesh
@@ -163,7 +165,8 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO)
     // extract the fractures
     MeshFactory fac(comm, gm);
     fac.set_preference({ frm });
-    auto parent_mesh_cache = Teuchos::rcp(new Mesh(parent_mesh));
+    auto parent_mesh_cache =
+      Teuchos::rcp(new Mesh(parent_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms())));
     auto mesh =
       fac.create(parent_mesh_cache, { "fractures-two" }, AmanziMesh::Entity_kind::FACE, false);
 
@@ -227,7 +230,8 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO_MANIFOLD)
       .set<std::string>("extraction method", "manifold mesh");
     MeshFactory fac(comm, gm, fac_plist);
     fac.set_preference({ frm });
-    auto parent_mesh_cache = Teuchos::rcp(new Mesh(parent_mesh));
+    auto parent_mesh_cache =
+      Teuchos::rcp(new Mesh(parent_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms())));
     auto mesh = fac.create(parent_mesh_cache, setnames, AmanziMesh::Entity_kind::FACE, false);
 
     // test the surface mesh as a fracture mesh

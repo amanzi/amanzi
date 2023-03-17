@@ -179,7 +179,7 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 class MeshFramework;
-class MeshFrameworkAlgorithms;
+struct MeshFrameworkAlgorithms;
 
 struct MeshCacheData {
   // flags
@@ -275,6 +275,7 @@ struct MeshCache {
   // Standard constructor, used by the factory
   //
   MeshCache(const Teuchos::RCP<MeshFramework>& framework_mesh,
+            const Teuchos::RCP<MeshFrameworkAlgorithms>& framework_algorithms,
             const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
     : MeshCache()
   {
@@ -283,6 +284,11 @@ struct MeshCache {
     } else {
       plist_ = plist;
     }
+    if (framework_algorithms == Teuchos::null) {
+      Errors::Message msg("MeshFrameworkAlgorithms is Teuchos::null.");
+      Exceptions::amanzi_throw(msg);
+    }
+    algorithms_ = framework_algorithms;
     setMeshFramework(framework_mesh);
   }
 
@@ -386,6 +392,14 @@ struct MeshCache {
   bool isLogical() const { return is_logical_; }
   bool hasNodes() const { return has_nodes_; }
   bool hasEdges() const { return has_edges_; }
+
+  void hasEdgesOrThrow() const
+  {
+    if (!hasEdges()) {
+      Errors::Message msg("MeshFramework does not include edges.");
+      Exceptions::amanzi_throw(msg);
+    }
+  }
 
   // -------------------
   // Access map objects

@@ -55,8 +55,8 @@ TEST(COLUMN_MESH_3D)
   // Create the mesh
   Teuchos::RCP<AmanziMesh::MeshFramework> mesh_fw =
     Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, lx, ly, lz, nx, ny, nz, comm, gm));
-  auto mesh = Teuchos::rcp(new AmanziMesh::Mesh(mesh_fw));
-  AmanziMesh::MeshAlgorithms::cacheDefault(*mesh);
+  auto mesh = Teuchos::rcp(
+    new AmanziMesh::Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms())));
   mesh->buildColumns();
 
   // Perturb the nodes above the base layer just a bit
@@ -88,7 +88,8 @@ TEST(COLUMN_MESH_3D)
   // Create the MeshColumn object
   Teuchos::RCP<AmanziMesh::MeshFramework> colmesh_fw =
     Teuchos::rcp(new AmanziMesh::MeshFrameworkColumn(colmesh_ext, Teuchos::null));
-  AmanziMesh::Mesh colmesh(colmesh_fw);
+  AmanziMesh::Mesh colmesh(colmesh_fw,
+                           Teuchos::rcp(new AmanziMesh::MeshFrameworkColumnAlgorithms()));
 
   // Verify column mesh topology
   int ncells =
@@ -216,7 +217,8 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   // Create the mesh
   Teuchos::RCP<AmanziMesh::MeshFramework> mesh_fw =
     Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, lx, ly, lz, nx, ny, nz, comm, gm));
-  auto mesh = Teuchos::rcp(new AmanziMesh::Mesh(mesh_fw));
+  auto mesh = Teuchos::rcp(
+    new AmanziMesh::Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms())));
   mesh->buildColumns({ "surface" });
 
   int nnodes =
@@ -240,7 +242,8 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   // Create the MeshColumn object
   Teuchos::RCP<AmanziMesh::MeshFramework> colmesh_fw =
     Teuchos::rcp(new AmanziMesh::MeshFrameworkColumn(colmesh_ext, Teuchos::null));
-  AmanziMesh::Mesh colmesh(colmesh_fw);
+  AmanziMesh::Mesh colmesh(colmesh_fw,
+                           Teuchos::rcp(new AmanziMesh::MeshFrameworkColumnAlgorithms()));
 
   // Verify column mesh topology
   int ncells =
