@@ -425,7 +425,7 @@ AmanziGeometry::Point MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Ent
       int pos = map.GID(fcells[0]) > map.GID(fcells[1]) ? 0 : 1;
       return (getFaceNormal(f, fcells[1 - pos]) - getFaceNormal(f, fcells[pos])) / 2;
     } else if (fcells.size() == 1) {
-      return framework_mesh_->getFaceNormal(f, cc, orientation); 
+      return algorithms_->getFaceNormal(*this, f, cc, orientation); 
     } else {
       Errors::Message msg("MeshCache: asking for the natural normal of a submanifold mesh is not valid.");
       Exceptions::amanzi_throw(msg);
