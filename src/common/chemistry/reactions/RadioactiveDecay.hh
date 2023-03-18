@@ -41,7 +41,7 @@ Currently, it does not deal with decay of solid phase.
 
 A few additionale examples:
 
-.. code-block:: txt
+.. code-block:: bc
 
    Cs137  -->  1.0 Cs137    half_life 30.2 years
    Pb_210 -->               half_life 22.2 years

@@ -616,6 +616,9 @@ Richards_PK::Initialize()
     oplist_matrix.set<std::string>("nonlinear coefficient", nonlinear_coef);
     oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
   }
+  if (coupled_to_matrix_ || flow_on_manifold_) {
+    if (!oplist_matrix.isParameter("use manifold flux")) oplist_matrix.set<bool>("use manifold flux", true);
+  }
 
   // auto rho_cv = S_->GetPtr<CV_t>(mass_density_liquid, Tags::DEFAULT);
 
@@ -1093,12 +1096,8 @@ Richards_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   // calculate Darcy mass flux
   auto vol_flowrate = S_->GetPtrW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
 
-  if (coupled_to_matrix_ || flow_on_manifold_) {
-    op_matrix_diff_->UpdateFluxManifold(solution.ptr(), vol_flowrate.ptr());
-    VV_FractureConservationLaw();
-  } else {
-    op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate.ptr());
-  }
+  op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate.ptr());
+  if (coupled_to_matrix_ || flow_on_manifold_) VV_FractureConservationLaw();
 
   Epetra_MultiVector& flowrate = *vol_flowrate->ViewComponent("face", true);
   flowrate.Scale(1.0 / molar_rho_);

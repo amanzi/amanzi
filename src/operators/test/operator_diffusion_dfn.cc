@@ -162,7 +162,7 @@ RunTest(int icase, double gravity)
   auto cvs2 = Operators::CreateManifoldCVS(surfmesh);
   auto flux = Teuchos::rcp(new CompositeVector(*cvs2));
 
-  op->UpdateFluxManifold(solution.ptr(), flux.ptr());
+  op->UpdateFlux(solution.ptr(), flux.ptr());
 
   // statistics
   int ndofs = global_op->A()->NumGlobalRows();

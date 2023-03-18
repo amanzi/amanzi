@@ -171,6 +171,11 @@ void
 PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                                         const Teuchos::Ptr<CompositeVector>& flux)
 {
+  if (use_manifold_flux_) {
+    UpdateFluxManifold_(u, flux);
+    return;
+  }
+
   // Calculate diffusive part of the flux.
   PDE_DiffusionMFD::UpdateFlux(u, flux);
 
@@ -282,11 +287,11 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
 * Add "gravity flux" to the Darcy flux.
 * **************************************************************** */
 void
-PDE_DiffusionMFDwithGravity::UpdateFluxManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                                const Teuchos::Ptr<CompositeVector>& flux)
+PDE_DiffusionMFDwithGravity::UpdateFluxManifold_(const Teuchos::Ptr<const CompositeVector>& u,
+                                                 const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Calculate diffusive part of the flux.
-  PDE_DiffusionMFD::UpdateFluxManifold(u, flux);
+  PDE_DiffusionMFD::UpdateFluxManifold_(u, flux);
 
   // preparing little-k data
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;

@@ -366,6 +366,9 @@ Darcy_PK::Initialize()
   Teuchos::ParameterList& oplist =
     fp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
   if (flow_on_manifold_) oplist.set<std::string>("nonlinear coefficient", "standard: cell");
+  if (coupled_to_matrix_ || flow_on_manifold_) {
+    if (!oplist.isParameter("use manifold flux")) oplist.set<bool>("use manifold flux", true);
+  }
 
   Operators::PDE_DiffusionFactory opfactory(oplist, mesh_);
   opfactory.SetConstantGravitationalTerm(gravity_, rho_);
@@ -604,14 +607,9 @@ Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   // calculate mass flow rate first, then scale it by density
   auto flowrate = S_->GetPtrW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
 
-  if (coupled_to_matrix_ || flow_on_manifold_) {
-    op_diff_->UpdateFluxManifold(solution.ptr(), flowrate.ptr());
-    flowrate->Scale(1.0 / rho_);
-    VV_FractureConservationLaw();
-  } else {
-    op_diff_->UpdateFlux(solution.ptr(), flowrate.ptr());
-    flowrate->Scale(1.0 / rho_);
-  }
+  op_diff_->UpdateFlux(solution.ptr(), flowrate.ptr());
+  flowrate->Scale(1.0 / rho_);
+  if (coupled_to_matrix_ || flow_on_manifold_) VV_FractureConservationLaw();
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;

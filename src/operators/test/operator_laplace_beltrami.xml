@@ -55,6 +55,7 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+      <Parameter name="use surface flux" type="bool" value="false"/>
     </ParameterList>
 
     <ParameterList name="diffusion operator Scc">
@@ -63,6 +64,7 @@
       <Parameter name="schema" type="Array(string)" value="{cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
       <Parameter name="nonstandard symbolic assembling" type="int" value="1"/>
+      <Parameter name="use surface flux" type="bool" value="false"/>
     </ParameterList>
 
     <ParameterList name="diffusion operator">
@@ -70,6 +72,7 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{cell,face}"/>
+      <Parameter name="use surface flux" type="bool" value="false"/>
     </ParameterList>
   </ParameterList>
 

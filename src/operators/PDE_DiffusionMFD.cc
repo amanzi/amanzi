@@ -978,6 +978,11 @@ void
 PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                              const Teuchos::Ptr<CompositeVector>& flux)
 {
+  if (use_manifold_flux_) {
+    UpdateFluxManifold_(u, flux);
+    return;
+  }
+
   // Initialize intensity in ghost faces.
   flux->PutScalar(0.0);
   u->ScatterMasterToGhosted("face");
@@ -1027,8 +1032,8 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
 * non-manifold faces.
 * **************************************************************** */
 void
-PDE_DiffusionMFD::UpdateFluxManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                     const Teuchos::Ptr<CompositeVector>& flux)
+PDE_DiffusionMFD::UpdateFluxManifold_(const Teuchos::Ptr<const CompositeVector>& u,
+                                      const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Initialize intensity in ghost faces.
   u->ScatterMasterToGhosted("face");
@@ -1380,6 +1385,7 @@ PDE_DiffusionMFD::Init(Teuchos::ParameterList& plist)
   }
 
   // miscalleneous variables
+  use_manifold_flux_ = plist.get<bool>("use manifold flux", false);
   mass_matrices_initialized_ = false;
   K_ = Teuchos::null;
   k_ = Teuchos::null;

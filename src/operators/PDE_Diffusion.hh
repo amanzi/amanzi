@@ -187,15 +187,6 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
                                  const Teuchos::Ptr<const CompositeVector>& u,
                                  const Teuchos::Ptr<const CompositeVector>& factor) = 0;
 
-  // -- additional interface on non-manifolds
-  virtual void UpdateFluxManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                  const Teuchos::Ptr<CompositeVector>& flux)
-  {
-    Errors::Message msg;
-    msg << "Missing support for diffusion discretization of manifolds.";
-    Exceptions::amanzi_throw(msg);
-  }
-
   // -- matrix modifications
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
   virtual void ScaleMassMatrices(double s) = 0;
@@ -243,6 +234,16 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
     if (little_k_ != OPERATOR_LITTLE_K_STANDARD) { out.AddComponent("face", AmanziMesh::FACE, 1); }
     if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) { out.AddComponent("twin", AmanziMesh::FACE, 1); }
     return out;
+  }
+
+ protected:
+  // -- additional interface on non-manifolds
+  virtual void UpdateFluxManifold_(const Teuchos::Ptr<const CompositeVector>& u,
+                                   const Teuchos::Ptr<CompositeVector>& flux)
+  {
+    Errors::Message msg;
+    msg << "Missing support for diffusion discretization of manifolds.";
+    Exceptions::amanzi_throw(msg);
   }
 
  protected:

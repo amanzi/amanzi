@@ -55,6 +55,7 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+      <Parameter name="use manifold flux" type="bool" value="true"/>
     </ParameterList>
 
     <ParameterList name="advection operator">

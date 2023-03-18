@@ -113,8 +113,6 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD, public PDE_Diffusio
 
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
-  virtual void UpdateFluxManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                  const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // -- problem initialiation
   using PDE_DiffusionMFD::Setup;
@@ -147,6 +145,9 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD, public PDE_Diffusio
   virtual double ComputeGravityFlux(int f) const override;
 
  protected:
+  virtual void UpdateFluxManifold_(const Teuchos::Ptr<const CompositeVector>& u,
+                                   const Teuchos::Ptr<CompositeVector>& flux) override;
+
   virtual void AddGravityToRHS_();
   inline AmanziGeometry::Point
   GravitySpecialDirection_(int f, AmanziMesh::Entity_ID_List& workspace) const;

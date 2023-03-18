@@ -29,6 +29,7 @@
 #include "PDE_Diffusion.hh"
 
 /*!
+
 Additional options available only for the MFD family of discretizations include:
 
 * `"nonlinear coefficient`" ``[string]`` specifies a method for treating nonlinear
@@ -67,6 +68,10 @@ Additional options available only for the MFD family of discretizations include:
 * `"diffusion tensor`" ``[string]`` allows us to solve problems with symmetric and
   non-symmetric (but positive definite) tensors. Available options are *symmetric*
   (default) and *nonsymmetric*.
+
+* `"use manifold flux`"  ``[bool]`` **false** Computes the flux using algorithms
+  and data structures for manifolds or fracture networks. 
+
 */
 
 namespace Amanzi {
@@ -75,21 +80,21 @@ namespace Operators {
 class PDE_DiffusionMFD : public virtual PDE_Diffusion {
  public:
   PDE_DiffusionMFD(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
-    : PDE_Diffusion(global_op), plist_(plist), factor_(1.0)
+    : PDE_Diffusion(global_op), plist_(plist), factor_(1.0), use_manifold_flux_(false)
   {
     pde_type_ = PDE_DIFFUSION_MFD;
     ParsePList_(plist);
   }
 
   PDE_DiffusionMFD(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : PDE_Diffusion(mesh), plist_(plist), factor_(1.0)
+    : PDE_Diffusion(mesh), plist_(plist), factor_(1.0), use_manifold_flux_(false)
   {
     pde_type_ = PDE_DIFFUSION_MFD;
     ParsePList_(plist);
   }
 
   PDE_DiffusionMFD(Teuchos::ParameterList& plist, const Teuchos::RCP<AmanziMesh::Mesh>& mesh)
-    : PDE_Diffusion(mesh), plist_(plist), factor_(1.0)
+    : PDE_Diffusion(mesh), plist_(plist), factor_(1.0), use_manifold_flux_(false)
   {
     pde_type_ = PDE_DIFFUSION_MFD;
     ParsePList_(plist);
@@ -144,8 +149,6 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   // -- calculate the flux variable.
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
-  virtual void UpdateFluxManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                  const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // Developments
   // -- working with consistent faces
@@ -162,6 +165,9 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   void set_factor(double factor) { factor_ = factor; }
 
  protected:
+  virtual void UpdateFluxManifold_(const Teuchos::Ptr<const CompositeVector>& u,
+                                   const Teuchos::Ptr<CompositeVector>& flux) override;
+
   void ParsePList_(Teuchos::ParameterList& plist);
   void CreateMassMatrices_();
 
@@ -201,7 +207,7 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
 
   int newton_correction_;
   double factor_;
-  bool exclude_primary_terms_;
+  bool exclude_primary_terms_, use_manifold_flux_;
 
   // modifiers for flux continuity equations
   bool scaled_constraint_;

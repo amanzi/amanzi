@@ -3,6 +3,7 @@ Amanzi-U Native XML Input Specification V9
 ==========================================
 
 .. contents:: **Table of Contents**
+   :depth: 3
 
 
 Overview
@@ -2062,6 +2063,7 @@ Operators
 Diffusion operator
 ..................
 { PDE_Diffusion }
+{ PDE_DiffusionMFD }
 
 
 Advection operator
@@ -2481,6 +2483,9 @@ one parameter *spatial dimension*.
 Regions
 -------
 { Region }
+
+.. contents:: **Region Types**
+   :local:
 
 
 All
