@@ -77,12 +77,11 @@ TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& region
     int nblock = block.size();
 
     // Now get the cells that are attached to these faces.
-    AmanziMesh::Entity_ID_View cells;
     for (int n = 0; n < nblock; ++n) {
       int f = block[n];
       value_[f].resize(chem_engine_->NumPrimarySpecies());
 
-      cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::OWNED);
+      const auto& cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::OWNED);
 
       cell_for_face_[f] = cells[0];
     }
