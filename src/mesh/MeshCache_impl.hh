@@ -433,7 +433,7 @@ MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Entity_ID c, int* orienta
       return framework_mesh_->getFaceNormal(f, cc, orientation);
     } else {
       Errors::Message msg(
-        "MeshFramework: asking for the natural normal of a submanifold mesh is not valid.");
+        "MeshCache: asking for the natural normal of a submanifold mesh is not valid.");
       Exceptions::amanzi_throw(msg);
     }
   }
