@@ -84,7 +84,7 @@ MiniDiffusion1D_Constant(double bcl, int type_l, double bcr, int type_r)
     ph1_err[loop] = 0.0;
 
     for (int i = 0; i < ncells; ++i) {
-      hc = op.mesh_cell_centroid(i);
+      hc = op.mesh_cell_volume(i);
       xc = op.mesh_cell_centroid(i);
       err = xc * xc * xc - sol(i);
 
