@@ -16,9 +16,9 @@
 
 namespace Amanzi {
 namespace AmanziMesh {
+
 class MeshFramework;
 namespace MeshAlgorithms {
-
 
 template <class Mesh_type>
 KOKKOS_INLINE_FUNCTION Cell_kind
@@ -169,6 +169,7 @@ computeCellNodes(const Mesh_type& mesh, const Entity_ID c)
   vectorToView(nodes, vnodes);
   return nodes;
 }
+
 
 template <class Mesh_type>
 std::pair<double, AmanziGeometry::Point>
@@ -441,6 +442,18 @@ getCellFaceAdjacentCells(const Mesh_type& mesh, Entity_ID c, Parallel_kind ptype
   }
   vectorToView(adj_cells, vadj_cells);
   return adj_cells;
+}
+
+
+template <class Mesh_type>
+int
+getFaceAdjacentCell(const Mesh_type& mesh, int c, int f)
+{
+  auto cells = mesh.getFaceCells(f, Parallel_kind::ALL);
+
+  if (cells.size() == 2) return cells[0] + cells[1] - c;
+
+  return -1;
 }
 
 

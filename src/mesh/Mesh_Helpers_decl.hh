@@ -114,6 +114,10 @@ Entity_ID_View
 getCellFaceAdjacentCells(const Mesh_type& mesh, Entity_ID c, Parallel_kind ptype);
 
 template <class Mesh_type>
+int
+getFaceAdjacentCell(const Mesh_type& mesh, Entity_ID c, Entity_ID f);
+
+template <class Mesh_type>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 getFaceCentroid(const Mesh_type& mesh, const Entity_ID f);
 
