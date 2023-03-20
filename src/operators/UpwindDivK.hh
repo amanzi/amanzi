@@ -92,7 +92,6 @@ UpwindDivK::Compute(const CompositeVector& flux,
   int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
     auto [faces, dirs] = mesh_->getCellFacesAndDirections(c);
-    auto adjcells = AmanziMesh::MeshAlgorithms::getCellFaceAdjacentCells(*mesh_,c,AmanziMesh::Parallel_kind::OWNED);
     int nfaces = faces.size();
     double kc(fld_cell[0][c]);
 
@@ -103,7 +102,7 @@ UpwindDivK::Compute(const CompositeVector& flux,
       // Internal faces. We average field on almost vertical faces.
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(flx_face[0][f]) <= tol) {
         double tmp(0.5);
-        int c2 = adjcells(f);
+        int c2 = AmanziMesh::MeshAlgorithms::getFaceAdjacentCell(*mesh_, c, f);
         if (c2 >= 0) {
           double v1 = mesh_->getCellVolume(c);
           double v2 = mesh_->getCellVolume(c2);
@@ -119,7 +118,7 @@ UpwindDivK::Compute(const CompositeVector& flux,
         upw_face[0][f] = kc;
         // Internal and boundary faces.
       } else if (!flag) {
-        int c2 = adjcells(f);
+        int c2 = AmanziMesh::MeshAlgorithms::getFaceAdjacentCell(*mesh_, c, f);
         if (c2 >= 0) {
           double kc2(fld_cell[0][c2]);
           upw_face[0][f] = std::pow(kc * (kc + kc2) / 2, 0.5);
