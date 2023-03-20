@@ -261,8 +261,8 @@ PDE_DiffusionNLFV::InitStencils_()
       for (int i = 0; i < dim_; i++) {
         weight[k + i][f] = ws[i];
         (*stencil_faces_[k + i])[f] = faces[ids[i]];
-        assert(false);
-        //(*stencil_cells_[k + i])[f] = cell_get_face_adj_cell(*mesh_, c, faces[ids[i]]);
+        (*stencil_cells_[k + i])[f] =
+          AmanziMesh::MeshAlgorithms::getFaceAdjacentCell(*mesh_, c, faces[ids[i]]);
       }
     }
   }
