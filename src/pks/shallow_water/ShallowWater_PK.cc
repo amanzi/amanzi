@@ -373,6 +373,10 @@ ShallowWater_PK::Initialize()
 
         S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
      }
+
+      InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, wetted_angle_key_, Pi);
+      S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
+
   }
 
   else{
@@ -419,7 +423,6 @@ ShallowWater_PK::Initialize()
   S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
 
   InitializeCVField(S_, *vo_, riemann_flux_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, passwd_, Pi); //initialiezed to Pi  
   InitializeFieldFromField_(prev_ponded_depth_key_, ponded_depth_key_, false);
 
   // soln_ is the TreeVector of conservative variables [h hu hv]
@@ -497,10 +500,12 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->Get<CV_t>(ponded_depth_key_).ScatterMasterToGhosted("cell");
   S_->Get<CV_t>(velocity_key_).ScatterMasterToGhosted("cell");
   S_->Get<CV_t>(discharge_key_).ScatterMasterToGhosted("cell");
+  S_->Get<CV_t>(wetted_angle_key_).ScatterMasterToGhosted("cell");
 
   // save a copy of primary and conservative fields
   auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   auto& h_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   auto& vel_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
 
@@ -523,7 +528,14 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     q_c[1][c] = q_old[1][c];
     vel_c[0][c] = factor * q_old[0][c];
     vel_c[1][c] = factor * q_old[1][c];
-    ht_c[0][c] = h_c[0][c] + B_c[0][c]; 
+    if(!hydrostatic_pressure_force_type_){
+       ht_c[0][c] = h_c[0][c] + B_c[0][c]; 
+    } else {
+
+       WettedAngle_c[0][c] = ComputeWettedAngleNewton(h_c[0][c]);
+       ht_c[0][c] = ComputeTotalDepth(h_c[0][c], WettedAngle_c[0][c], B_c[0][c]);
+
+    }
   }
 
   // update source (external) terms
@@ -778,7 +790,7 @@ ShallowWater_PK::NumericalSourceBedSlope(
 // To be used for a pipe flow model 
 //--------------------------------------------------------------------
 std::vector<double>
-ShallowWater_PK::NumericalSourceBedSlope( int c, double h_c) 
+ShallowWater_PK::NumericalSourceBedSlope( int c, double hc)
 {
 
   auto& b_grad = *bathymetry_grad_->data()->ViewComponent("cell", true);
@@ -788,7 +800,7 @@ ShallowWater_PK::NumericalSourceBedSlope( int c, double h_c)
 //  if (c==12) bGrad = 0.1;
 
   S[0] = 0.0;
-  S[1] = -g_ * h_c * bGrad; 
+  S[1] = -g_ * hc * bGrad; 
   S[2] = 0.0;
 
   return S;

@@ -71,7 +71,7 @@ void PipeFlow_PK::UpdateWettedQuantities(){
 
 
 //--------------------------------------------------------------------
-// Update total depth
+// Compute total depth
 //--------------------------------------------------------------------
 double PipeFlow_PK::ComputeTotalDepth(double WettedArea, double WettedAngle, double Bathymetry){
 

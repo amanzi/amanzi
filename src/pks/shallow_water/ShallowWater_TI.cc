@@ -338,6 +338,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     if (!hydrostatic_pressure_force_type_){
        BedSlopeSource = NumericalSourceBedSlope(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n);
+       //BedSlopeSource = NumericalSourceBedSlope(c, U[0]);
        ExtraSource = 1.0;
     }
     else{
