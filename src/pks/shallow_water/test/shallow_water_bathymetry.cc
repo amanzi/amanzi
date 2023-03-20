@@ -47,9 +47,14 @@ RunTest(int ntest)
   std::string xmlFileName = "test/shallow_water_bathymetry.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  // create a mesh
+  // create a gepmetric model and mesh
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
+  if (ntest == 2) {
+    regions_list.sublist("All").sublist("region: box")
+      .set<Teuchos::Array<double>>("low coordinate", std::vector({ 0.0, 0.0, 0.0 }))
+      .set<Teuchos::Array<double>>("high coordinate", std::vector({ 100.0, 100.0, 10.0 }));
+  }
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(ntest + 1, regions_list, *comm));
 
   auto plist_edges = Teuchos::rcp(new Teuchos::ParameterList()); 
   plist_edges->set<bool>("request faces", true);
