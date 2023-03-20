@@ -119,7 +119,7 @@
             <Parameter name="fluid compressibility" type="double" value="1.00000000000000006e-09"/>
             <Parameter name="matrix compressibility" type="double" value="9.99999999999999955e-08"/>
             <Parameter name="gravity" type="double" value="9.80664999999999942e+00"/>
-            <Parameter name="density" type="double" value="9.98200000000000045e+02"/>
+            <Parameter name="fluid density" type="double" value="9.98200000000000045e+02"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

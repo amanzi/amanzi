@@ -959,7 +959,7 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
             .set<double>("fluid compressibility", val1)
             .set<double>("matrix compressibility", val2)
             .set<double>("gravity", const_gravity_)
-            .set<double>("density", rho_);
+            .set<double>("fluid density", rho_);
         }
       }
 
