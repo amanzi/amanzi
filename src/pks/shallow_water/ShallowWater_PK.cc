@@ -741,7 +741,6 @@ ShallowWater_PK::TotalDepthEdgeValue(
 //--------------------------------------------------------------------
 // Discretization of the bed slope source term (well-balanced for lake at rest) 
 // To be used for the shallow water model only 
-// The pipe flow cannot operate with ht_grad 
 //--------------------------------------------------------------------
 std::vector<double>
 ShallowWater_PK::NumericalSourceBedSlope(
@@ -786,24 +785,24 @@ ShallowWater_PK::NumericalSourceBedSlope(
 }
 
 //--------------------------------------------------------------------
-// Discretization of the bed slope source term 
-// To be used for a pipe flow model 
+// Vanilla discretization of the bed slope source term 
 //--------------------------------------------------------------------
 std::vector<double>
-ShallowWater_PK::NumericalSourceBedSlope( int c, double hc)
+ShallowWater_PK::NumericalSourceBedSlope(int c, double hc)
 {
+  std::vector<double> S(3, 0.0);
 
   auto& b_grad = *bathymetry_grad_->data()->ViewComponent("cell", true);
-  std::vector<double> S(3);
-  double bGrad = b_grad[0][c];
-//  if (c==11) bGrad = -0.1;
-//  if (c==12) bGrad = 0.1;
+  double BGrad = b_grad[0][c];
+ // if (c==11) BGrad = -0.1;
+ // if (c==12) BGrad = 0.1;
 
   S[0] = 0.0;
-  S[1] = -g_ * hc * bGrad; 
+  S[1] = -g_ * hc * BGrad;
   S[2] = 0.0;
 
   return S;
+
 }
 
 //--------------------------------------------------------------

@@ -90,6 +90,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   virtual std::vector<double> ComputeWettedQuantitiesEdge(int c, int e, double htc, 
                                                           double Bc, double Bmax, const Epetra_MultiVector& B_n) {std::vector<double> W(2,0.0); return W;};
 
+
   // due to rotational invariance of SW equations, we need flux in the
   // x-direction only.
   std::vector<double> PhysicalFlux_x(const std::vector<double>&);
@@ -102,7 +103,11 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   std::vector<double> NumericalSourceBedSlope(int c, double htc,
                                       double Bc, double Bmax, const Epetra_MultiVector& B_n);
 
-  std::vector<double> NumericalSourceBedSlope( int c, double hc);
+  virtual std::vector<double> NumericalSourceBedSlope(int c, double hc);
+
+  virtual std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
+                                                      double Bmax, const Epetra_MultiVector& B_n,
+                                                      std::vector<int> bc_model, std::vector<double> bc_value_h) {std::vector<double> S(3,0.0); return S;};                                                          
 
   virtual double NumericalSourceFriction(double h, double qx, double WettedAngle){return 0.0;};
 

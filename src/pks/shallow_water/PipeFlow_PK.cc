@@ -50,6 +50,160 @@ double PipeFlow_PK::NumericalSourceFriction(double h, double qx, double WettedAn
 }
 
 //--------------------------------------------------------------------
+// Discretization of the bed slope source term
+//--------------------------------------------------------------------
+std::vector<double>
+PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n, std::vector<int> bc_model, std::vector<double> bc_value_h)
+{
+
+  std::vector<double> S(3, 0.0);
+  std::vector<double> W(2, 0.0);
+  std::vector<double> UL(2), UR(2);
+
+  bool cell_is_dry, cell_is_fully_flooded, cell_is_partially_wet;
+  cell_is_partially_wet = false;
+  cell_is_dry = false;
+  cell_is_fully_flooded = false;
+
+  if ((htc > Bmax) && (htc - Bc > 0.0)) {
+    cell_is_fully_flooded = true;
+  } else if (std::abs(htc - Bc) < 1.e-15) {
+    cell_is_dry = true;
+  } else {
+    cell_is_partially_wet = true;
+  }
+
+  if (!cell_is_dry) { 
+  
+     AmanziMesh::Entity_ID_List cfaces;
+     mesh_->cell_get_faces(c, &cfaces);
+     double vol = mesh_->cell_volume(c);
+     int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+     int orientation;
+
+     double BGrad = 0.0;
+     double OtherTermLeft = 0.0;
+     double OtherTermRight = 0.0;
+     double BPlus = 0.0;
+     double BMinus = 0.0;
+     double HtR = 0.0;
+     double HtL = 0.0;
+
+     for (int n = 0; n < cfaces.size(); ++n) {
+        int f = cfaces[n];
+        const auto& normal = mesh_->face_normal(f, false, c, &orientation);
+        if (normal[0] > 0.0){ //this identifies the j+1/2 face
+
+           AmanziMesh::Entity_ID_List cells;
+           mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+           int c1 = cells[0];
+           int c2 = (cells.size() == 2) ? cells[1] : -1;
+           if (c1 > ncells_owned && c2 == -1) continue;
+           if (c2 > ncells_owned) std::swap(c1, c2);
+
+           BPlus = BathymetryEdgeValue(f, B_n);
+           if(cell_is_fully_flooded) {
+              BGrad = BPlus; //B_(j+1/2)
+           } else if(cell_is_partially_wet){
+              HtL = TotalDepthEdgeValue(c1, f, htc, Bc, Bmax, B_n);
+           }
+
+           W = ComputeWettedQuantitiesEdge(c1, f, htc, Bc, Bmax, B_n);
+
+           UL[0] = W[0]; //wetted area
+           UL[1] = W[1]; //wetted angle
+
+        }
+
+        else if (normal[0] < 0.0) { //this identifies the j-1/2 face
+
+           BMinus = BathymetryEdgeValue(f, B_n);
+           if(cell_is_fully_flooded) {
+              BGrad -= BMinus; //B_(j+1/2) - //B_(j-1/2)
+           }
+
+           AmanziMesh::Entity_ID_List cells;
+           mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+           int c1 = cells[0];
+           int c2 = (cells.size() == 2) ? cells[1] : -1;
+           if (c1 > ncells_owned && c2 == -1) continue;
+           if (c2 > ncells_owned) std::swap(c1, c2);
+
+           if (c2 == -1) {
+               if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+               UR[0] = bc_value_h[f];
+               UR[1] = ComputeWettedAngleNewton(bc_value_h[f]);
+           } else {
+
+              if(cell_is_partially_wet){
+                 HtR = TotalDepthEdgeValue(c1, f, htc, Bc, Bmax, B_n);
+              }
+
+             // default outflow BC
+             W = ComputeWettedQuantitiesEdge(c1, f, htc, Bc, Bmax, B_n);
+
+             UR[0] = W[0]; //wetted area
+             UR[1] = W[1]; //wetted angle
+
+           }
+           } else {
+
+              if(cell_is_partially_wet){
+                 HtR = TotalDepthEdgeValue(c2, f, htc, Bc, Bmax, B_n);
+              }
+
+              W = ComputeWettedQuantitiesEdge(c2, f, htc, Bc, Bmax, B_n);
+
+              UR[0] = W[0];
+              UR[1] = W[1];
+           }
+
+        }
+
+      }
+
+      if ((0.0 < UL[0] && UL[0] < pipe_cross_section_)){ //flow is ventilated (free-surface)
+
+         OtherTermLeft = 3.0 * sin(UL[1] * 0.5) - pow(sin(UL[1] * 0.5),3) - 3.0 * (UL[1] * 0.5) * cos(UL[1] * 0.5);
+         OtherTermLeft = OtherTermLeft * g_ * pow(pipe_diameter_,3) / 24.0;
+
+      }
+
+      else if (UL[0] >= pipe_cross_section_) { //flow is pressurized
+
+         double PressurizedHead = (celerity_ * celerity_ * (UL[0] - pipe_cross_section_)) / (g_ * pipe_cross_section_);
+         OtherTermLeft = g_ * UL[0] * (PressurizedHead + sqrt(UL[0]/Pi));
+
+      }
+
+      if ((0.0 < UR[0] && UR[0] < pipe_cross_section_)){ //flow is ventilated (free-surface)
+
+         OtherTermRight = 3.0 * sin(UR[1] * 0.5) - pow(sin(UR[1] * 0.5),3) - 3.0 * (UR[1] * 0.5) * cos(UR[1] * 0.5);
+         OtherTermRight = OtherTermRight * g_ * pow(pipe_diameter_,3) / 24.0;
+
+      }
+
+      else if (UR[0] >= pipe_cross_section_) { //flow is pressurized
+
+         double PressurizedHead = (celerity_ * celerity_ * (UR[0] - pipe_cross_section_)) / (g_ * pipe_cross_section_);
+         OtherTermRight = g_ * UR[0] * (PressurizedHead + sqrt(UR[0]/Pi));
+
+      }
+
+      if(cell_is_partially_wet){
+        BGrad = std::min(BPlus,HtL) - std::min(BMinus,HtR);
+      }
+      BGrad /= vol; //(B_(j+1/2) - //B_(j-1/2)) / dx
+
+      double denom = ComputePondedDepth(UL[1]) - ComputePondedDepth(UR[1]);
+      S[1] = - g_ * (OtherTermLeft - OtherTermRight) * BGrad / denom;
+
+ } // closes (!cell_is_dry)
+
+  return S;
+}
+
+//--------------------------------------------------------------------
 // Newton solve to compute wetted angle given wetted area
 //--------------------------------------------------------------------
 void PipeFlow_PK::UpdateWettedQuantities(){ 

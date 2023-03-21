@@ -338,16 +338,15 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     if (!hydrostatic_pressure_force_type_){
        BedSlopeSource = NumericalSourceBedSlope(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n);
-       //BedSlopeSource = NumericalSourceBedSlope(c, U[0]);
        ExtraSource = 1.0;
     }
     else{
-       BedSlopeSource = NumericalSourceBedSlope(c, U[0]);
+       BedSlopeSource = NumericalSourceBedSlope(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n, bc_model, bc_value_h);
        ExtraSource = 0.0;
     }
     FrictionSource = NumericalSourceFriction(U[0], U[1], U[3]); 
 
-    h = h_c_tmp[0][c] + (BedSlopeSource[0] + ext_S_cell[c] * ExtraSource); 
+    h = h_c_tmp[0][c] + (BedSlopeSource[0] + ext_S_cell[c] * ExtraSource);
     qx = q_c_tmp[0][c] + BedSlopeSource[1] + FrictionSource;
     qy = q_c_tmp[1][c] + BedSlopeSource[2];
     
