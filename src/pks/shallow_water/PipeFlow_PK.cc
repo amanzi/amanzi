@@ -88,9 +88,12 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
      double BMinus = 0.0;
      double HtR = 0.0;
      double HtL = 0.0;
+     double FaceAreaL = 0.0;
+     double FaceAreaR = 0.0;
 
      for (int n = 0; n < cfaces.size(); ++n) {
         int f = cfaces[n];
+        double farea = mesh_->face_area(f);
         const auto& normal = mesh_->face_normal(f, false, c, &orientation);
         if (normal[0] > 0.0){ //this identifies the j+1/2 face
 
@@ -112,6 +115,8 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
            UL[0] = W[0]; //wetted area
            UL[1] = W[1]; //wetted angle
+
+           FaceAreaL = mesh_->face_area(f);
 
         }
 
@@ -158,6 +163,8 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
               UR[1] = W[1];
            }
 
+           FaceAreaR = mesh_->face_area(f);
+
         }
 
       }
@@ -193,10 +200,11 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
       if(cell_is_partially_wet){
         BGrad = std::min(BPlus,HtL) - std::min(BMinus,HtR);
       }
+
       BGrad /= vol; //(B_(j+1/2) - //B_(j-1/2)) / dx
 
       double denom = ComputePondedDepth(UL[1]) - ComputePondedDepth(UR[1]);
-      S[1] = - g_ * (OtherTermLeft - OtherTermRight) * BGrad / denom;
+      S[1] = - (FaceAreaL * OtherTermLeft - FaceAreaR * OtherTermRight) * BGrad / denom;
 
  } // closes (!cell_is_dry)
 
