@@ -186,6 +186,9 @@ EnergyOnePhase_PK::Initialize()
   }
 
   // initialize preconditioner
+  op_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+
   AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
   std::string name = ti_list_->get<std::string>("preconditioner");
   Teuchos::ParameterList slist = preconditioner_list_->sublist(name);
@@ -253,6 +256,8 @@ EnergyOnePhase_PK::InitializeFields_()
         *vo_->os() << "initialized prev_energy to previous energy" << std::endl;
     }
   }
+
+  InitializeFieldFromField_(prev_aperture_key_, aperture_key_, true);
 }
 
 

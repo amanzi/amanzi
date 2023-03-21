@@ -9,9 +9,9 @@
 */
 
 /*
-  This is the mpc_pk component of the Amanzi code.
+  MPC
 
-  Process kernel that couples flow in matrix and fracture network.
+  Process kernel that couples heat conduction in matrix and fracture network.
 */
 
 #include "CommonDefs.hh"
@@ -21,8 +21,8 @@
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "TreeOperator.hh"
 
+#include "EnergyMatrixFracture_PK.hh"
 #include "FractureInsertion.hh"
-#include "FlowMatrixFracture_PK.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Utils.hh"
 
@@ -34,10 +34,10 @@ using CVS_t = CompositeVectorSpace;
 /* *******************************************************************
 * Constructor
 ******************************************************************* */
-FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
-                                             const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                                             const Teuchos::RCP<State>& S,
-                                             const Teuchos::RCP<TreeVector>& soln)
+EnergyMatrixFracture_PK::EnergyMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
+                                                 const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                                                 const Teuchos::RCP<State>& S,
+                                                 const Teuchos::RCP<TreeVector>& soln)
   : Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln),
     glist_(glist)
@@ -48,8 +48,8 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
   } else {
     std::stringstream messagestream;
     messagestream << "There is no sublist for PK " << name_ << "in PKs list\n";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
+    Errors::Message msg(messagestream.str());
+    Exceptions::amanzi_throw(msg);
   }
 
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
@@ -58,7 +58,7 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = plist_->sublist("verbose object");
-  vo_ = Teuchos::rcp(new VerboseObject("CoupledFlow_PK", vlist));
+  vo_ = Teuchos::rcp(new VerboseObject("CoupledEnergy_PK", vlist));
 }
 
 
@@ -66,19 +66,20 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
 * Physics-based setup of PK.
 ******************************************************************* */
 void
-FlowMatrixFracture_PK::Setup()
+EnergyMatrixFracture_PK::Setup()
 {
   mesh_matrix_ = S_->GetMesh();
   mesh_fracture_ = S_->GetMesh("fracture");
+
+  normal_conductivity_key_ = "fracture-normal_conductivity";
 
   // primary and secondary fields for matrix affected by non-uniform
   // distribution of DOFs
   // -- pressure
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_matrix_, mesh_fracture_);
-  if (!S_->HasRecord("pressure")) {
-    *S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT).SetMesh(mesh_matrix_)->SetGhosted(true) =
-      *cvs;
-    AddDefaultPrimaryEvaluator(S_, "pressure", Tags::DEFAULT);
+  if (!S_->HasRecord("temperature")) {
+    *S_->Require<CV_t, CVS_t>("temperature", Tags::DEFAULT).SetMesh(mesh_matrix_)->SetGhosted(true) = *cvs;
+    AddDefaultPrimaryEvaluator(S_, "temperature", Tags::DEFAULT);
   }
 
   // -- darcy flux
@@ -101,30 +102,22 @@ FlowMatrixFracture_PK::Setup()
     AddDefaultPrimaryEvaluator(S_, "fracture-volumetric_flow_rate", Tags::DEFAULT);
   }
 
-  // additional fields and evaluators related to coupling
-  Key normal_permeability_key_("fracture-normal_permeability");
-  if (!S_->HasRecord(normal_permeability_key_)) {
-    S_->Require<CV_t, CVS_t>(normal_permeability_key_, Tags::DEFAULT)
+  // additional fields and evaluators related to matrix-frcature coupling
+  if (!S_->HasRecord(normal_conductivity_key_)) {
+    S_->Require<CV_t, CVS_t>(normal_conductivity_key_, Tags::DEFAULT)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // inform dependent PKs about coupling
-  // -- flow (matrix)
   std::vector<std::string> pks = plist_->get<Teuchos::Array<std::string>>("PKs order").toVector();
-  Teuchos::ParameterList& mflow =
-    glist_->sublist("PKs").sublist(pks[0]).sublist("physical models and assumptions");
-  mflow.set<std::string>("coupled matrix fracture flow", "matrix")
-    .set<bool>("use bulk modulus", false);
 
-  // -- flow (fracture)
-  Teuchos::ParameterList& fflow =
-    glist_->sublist("PKs").sublist(pks[1]).sublist("physical models and assumptions");
-  fflow.set<std::string>("coupled matrix fracture flow", "fracture");
+  glist_->sublist("PKs").sublist(pks[0]).sublist("physical models and assumptions")
+    .set<std::string>("coupled matrix fracture energy", "matrix");
 
-  // modify time integrator (only for Darcy)
-  // ti_list_->sublist("BDF1").set<bool>("freeze preconditioner", true);
+  glist_->sublist("PKs").sublist(pks[1]).sublist("physical models and assumptions")
+    .set<std::string>("coupled matrix fracture energy", "fracture");
 
   // process other PKs.
   PK_MPCStrong<PK_BDF>::Setup();
@@ -135,7 +128,7 @@ FlowMatrixFracture_PK::Setup()
 * Initialization create a tree operator to assemble global matrix
 ******************************************************************* */
 void
-FlowMatrixFracture_PK::Initialize()
+EnergyMatrixFracture_PK::Initialize()
 {
   PK_MPCStrong<PK_BDF>::Initialize();
 
@@ -160,13 +153,11 @@ FlowMatrixFracture_PK::Initialize()
   auto& gmap = solution_->SubVector(0)->Data()->ViewComponent("face", true)->Map();
 
   // -- indices transmissibimility coefficients for matrix-fracture flux
-  const auto& kn = *S_->Get<CV_t>("fracture-normal_permeability").ViewComponent("cell");
-  double gravity = norm(S_->Get<AmanziGeometry::Point>("gravity"));
+  const auto& kn = *S_->Get<CV_t>(normal_conductivity_key_).ViewComponent("cell");
 
   FractureInsertion fi(mesh_matrix_, mesh_fracture_);
   fi.InitMatrixFaceToFractureCell(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
-  double scale = (sub_pks_[0]->name() == "darcy") ? 1.0 : 1.0 / CommonDefs::MOLAR_MASS_H2O;
-  fi.SetValues(kn, scale / gravity);
+  fi.SetValues(kn, 1.0);
 
   // -- operators
   Teuchos::ParameterList oplist;
@@ -245,16 +236,6 @@ FlowMatrixFracture_PK::Initialize()
   op_matrix_->set_operator_block(0, 1, op_coupling01->global_operator());
   op_matrix_->set_operator_block(1, 0, op_coupling10->global_operator());
 
-  // stationary solve is modelled with large dt. To pick the correct
-  // boundary conditions, dt is negative. This assumes that we are at
-  // the beginning of simulation.
-  if (ti_list_->isSublist("initialization")) {
-    // bool wells_on = ti_list_->sublist("initialization").get<bool>("active wells", false);
-    double dt(-1e+98), dt_solver;
-    bool fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
-    if (fail) Exceptions::amanzi_throw("Solver for coupled flow did not converge.");
-  }
-
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "coupling matrix:" << std::endl << op_matrix_->PrintDiagnostics() << std::endl;
@@ -271,14 +252,10 @@ FlowMatrixFracture_PK::Initialize()
 * Performs one time step.
 ******************************************************************* */
 bool
-FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+EnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // create copies of conservative fields
-  std::vector<std::string> fields = { "saturation_liquid", "fracture-saturation_liquid" };
-  if (sub_pks_[0]->name() == "richards") {
-    fields.push_back("water_storage");
-    fields.push_back("fracture-water_storage");
-  }
+  std::vector<std::string> fields = { "energy", "fracture-energy" };
 
   StateArchive archive(S_, vo_);
   archive.Add(fields, {}, {}, Tags::DEFAULT, name());
@@ -305,11 +282,11 @@ FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 * Residual evaluation
 ******************************************************************* */
 void
-FlowMatrixFracture_PK::FunctionalResidual(double t_old,
-                                          double t_new,
-                                          Teuchos::RCP<TreeVector> u_old,
-                                          Teuchos::RCP<TreeVector> u_new,
-                                          Teuchos::RCP<TreeVector> f)
+EnergyMatrixFracture_PK::FunctionalResidual(double t_old,
+                                            double t_new,
+                                            Teuchos::RCP<TreeVector> u_old,
+                                            Teuchos::RCP<TreeVector> u_new,
+                                            Teuchos::RCP<TreeVector> f)
 {
   PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
 
@@ -322,7 +299,7 @@ FlowMatrixFracture_PK::FunctionalResidual(double t_old,
 * Preconditioner update
 ******************************************************************* */
 void
-FlowMatrixFracture_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt)
+EnergyMatrixFracture_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt)
 {
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, u, dt);
   op_tree_pc_->ComputeInverse();
@@ -333,8 +310,8 @@ FlowMatrixFracture_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
 * Application of preconditioner
 ******************************************************************* */
 int
-FlowMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
-                                           Teuchos::RCP<TreeVector> Y)
+EnergyMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
+                                             Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
   int ok = op_tree_pc_->ApplyInverse(*X, *Y);
@@ -342,3 +319,4 @@ FlowMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
 }
 
 } // namespace Amanzi
+

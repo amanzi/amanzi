@@ -110,6 +110,20 @@
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
+      <ParameterList name="viscosity_liquid">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.00000000000000000e+00"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+      </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -194,6 +208,20 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+      </ParameterList>
+      <ParameterList name="fracture-viscosity_liquid">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="FRACTURE_NETWORK_INTERNAL"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.00000000000000000e+00"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

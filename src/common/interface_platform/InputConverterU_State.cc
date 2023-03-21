@@ -97,6 +97,7 @@ InputConverterU::TranslateState_()
     AddIndependentFieldEvaluator_(out_ev, "mass_density_liquid", "All", "cell", rho_);
     AddIndependentFieldEvaluator_(
       out_ev, "molar_density_liquid", "All", "*", rho_ / 0.0180153333333);
+    AddIndependentFieldEvaluator_(out_ev, "viscosity_liquid", "All", "*", viscosity);
   }
 
   // --- region specific initial conditions from material properties
@@ -286,7 +287,9 @@ InputConverterU::TranslateState_()
     }
   }
 
+  // ----------------------------------------------------------------
   // optional fracture network
+  // ----------------------------------------------------------------
   if (fracture_regions_.size() > 0) { TranslateCommonContinuumFields_("fracture", out_ic, out_ev); }
 
   if (fracture_regions_.size() > 0 && eos_model_ == "") {
@@ -297,6 +300,11 @@ InputConverterU::TranslateState_()
                                   "FRACTURE_NETWORK_INTERNAL",
                                   "*",
                                   rho_ / 0.0180153333333);
+    AddIndependentFieldEvaluator_(out_ev,
+                                  "fracture-viscosity_liquid",
+                                  "FRACTURE_NETWORK_INTERNAL",
+                                  "*",
+                                  viscosity);
   }
 
   node = GetUniqueElementByTagsString_("fracture_network, materials", flag);
@@ -379,6 +387,25 @@ InputConverterU::TranslateState_()
       if (flag) {
         TranslateFieldIC_(
           node, "fracture-normal_conductivity", "", reg_str, regions, out_ic, "normal");
+      }
+
+      // -- rock heat capacity
+      node = GetUniqueElementByTagsString_(inode, "thermal_properties, rock_heat_capacity", flag);
+      if (flag) {
+        double cv =
+          GetAttributeValueD_(node, "cv", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "m^2/s^2/K");
+        std::string model = GetAttributeValueS_(node, "model", "linear");
+
+        Teuchos::ParameterList& field_ev = out_ev.sublist("fracture-internal_energy_rock");
+        field_ev.set<std::string>("evaluator type", "iem")
+          .set<std::string>("internal energy key", "internal_energy_rock");
+
+        field_ev.sublist("IEM parameters")
+          .sublist(reg_str)
+          .set<Teuchos::Array<std::string>>("regions", regions)
+          .sublist("IEM parameters")
+          .set<std::string>("iem type", model)
+          .set<double>("heat capacity", cv);
       }
     }
 

@@ -126,6 +126,12 @@ InputConverterU::TranslateEnergy_(const std::string& domain)
   out_list.sublist("enthalpy evaluator").sublist("verbose object") =
     verb_list_.sublist("verbose object");
 
+  // cross coupling of PKs
+  if (fracture_regions_.size() > 0 && domain == "fracture") {
+    out_list.sublist("physical models and assumptions")
+      .set<bool>("flow and transport in fractures", true);
+  }
+
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
 }

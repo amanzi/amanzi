@@ -89,5 +89,5 @@ def parseTemplate(filename):
         
 
 if __name__ == "__main__":
-    parseTemplate(sys.argv[-1].strip(".in"))
+    parseTemplate(sys.argv[-1].strip(".pre"))
 

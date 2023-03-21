@@ -89,6 +89,7 @@ Energy_PK::Setup()
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
 
   aperture_key_ = Keys::getKey(domain_, "aperture");
+  prev_aperture_key_ = Keys::getKey(domain_, "prev_aperture");
   conductivity_eff_key_ = Keys::getKey(domain_, "thermal_conductivity_effective");
   conductivity_gen_key_ = (!flow_on_manifold_) ? conductivity_key_ : conductivity_eff_key_;
 
@@ -104,6 +105,7 @@ Energy_PK::Setup()
 
   vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
+  Key pressure_key = Keys::getKey(domain_, "pressure");
 
   // require first-requested state variables
   if (!S_->HasRecord("atmospheric_pressure")) {
@@ -229,12 +231,37 @@ Energy_PK::Setup()
     S_->SetEvaluator(conductivity_eff_key_, Tags::DEFAULT, eval);
   }
 
-  // saturation
+  // if flow is missing, we need more fields
+  // -- saturation
   if (!S_->HasRecord(sat_liquid_key_)) {
-    S_->Require<CV_t, CVS_t>(sat_liquid_key_, Tags::DEFAULT, passwd_)
+    S_->Require<CV_t, CVS_t>(sat_liquid_key_, Tags::DEFAULT, sat_liquid_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
+    AddDefaultIndependentEvaluator(S_, sat_liquid_key_, Tags::DEFAULT, 1.0);
+  }
+
+  // -- pressure
+  if (!S_->HasRecord(pressure_key)) {
+    S_->Require<CV_t, CVS_t>(pressure_key, Tags::DEFAULT, pressure_key)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+    AddDefaultIndependentEvaluator(S_, pressure_key, Tags::DEFAULT, 101325.0);
+  }
+
+  // -- fracture aperture
+  if (flow_on_manifold_) {
+    S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+
+    S_->Require<CV_t, CVS_t>(prev_aperture_key_, Tags::DEFAULT)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 }
 
@@ -497,6 +524,31 @@ Energy_PK::ModifyCorrection(double dt,
 
   return (ntemp_clipped) > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
                                AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+}
+
+
+/* ****************************************************************
+* Auxiliary initialization technique.
+**************************************************************** */
+void
+Energy_PK::InitializeFieldFromField_(const std::string& field0,
+                                     const std::string& field1,
+                                     bool call_evaluator)
+{
+  if (S_->HasRecord(field0)) {
+    if (!S_->GetRecord(field0).initialized()) {
+      if (call_evaluator) S_->GetEvaluator(field1).Update(*S_, passwd_);
+
+      const auto& f1 = S_->Get<CV_t>(field1);
+      auto& f0 = S_->GetW<CV_t>(field0, passwd_);
+      f0 = f1;
+
+      S_->GetRecordW(field0, passwd_).set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
+    }
+  }
 }
 
 
