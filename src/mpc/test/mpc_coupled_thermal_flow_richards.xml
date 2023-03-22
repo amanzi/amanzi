@@ -292,6 +292,21 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="fracture-heat_diffusion_to_matrix">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -342,19 +357,6 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="3.9311e-05"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="fracture-heat_diffusion_to_matrix">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.2"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

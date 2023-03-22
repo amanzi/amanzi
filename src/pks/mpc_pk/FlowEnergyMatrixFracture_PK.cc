@@ -24,6 +24,7 @@
 
 #include "FlowEnergyMatrixFracture_PK.hh"
 #include "FractureInsertion.hh"
+#include "HeatDiffusionMatrixFracture.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Physical.hh"
 
@@ -124,10 +125,11 @@ FlowEnergyMatrixFracture_PK::Setup()
   }
 
   if (!S_->HasRecord(heat_diffusion_to_matrix_key_)) {
-    S_->Require<CV_t, CVS_t>(heat_diffusion_to_matrix_key_, Tags::DEFAULT, "state")
+    S_->Require<CV_t, CVS_t>(heat_diffusion_to_matrix_key_, Tags::DEFAULT, heat_diffusion_to_matrix_key_)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::CELL, 2);
+    S_->RequireEvaluator(heat_diffusion_to_matrix_key_, Tags::DEFAULT);
   }
 
   // inform dependent PKs about coupling
@@ -216,7 +218,11 @@ FlowEnergyMatrixFracture_PK::Initialize()
   auto& mmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", false)->Map();
   auto& gmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", true)->Map();
 
-  // -- indices transmissibimility coefficients for matrix-fracture flux
+  // -- transmissibimility coefficients for matrix-fracture fluxes
+  auto eval = S_->GetEvaluatorPtr(heat_diffusion_to_matrix_key_, Tags::DEFAULT);
+  auto eval_tmp = Teuchos::rcp_dynamic_cast<HeatDiffusionMatrixFracture>(eval);
+  if (eval_tmp.get()) eval_tmp->Update(*S_, "coupled flow energy");
+
   const auto& kn = *S_->Get<CV_t>(diffusion_to_matrix_key_).ViewComponent("cell");
   const auto& tn = *S_->Get<CV_t>(heat_diffusion_to_matrix_key_).ViewComponent("cell");
   double gravity = norm(S_->Get<AmanziGeometry::Point>("gravity"));

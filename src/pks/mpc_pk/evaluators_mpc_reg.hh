@@ -14,10 +14,14 @@
 */
 
 #include "SoluteDiffusionMatrixFracture.hh"
+#include "HeatDiffusionMatrixFracture.hh"
 
 namespace Amanzi {
 
 Utils::RegisteredFactory<Evaluator, SoluteDiffusionMatrixFracture>
-  SoluteDiffusionMatrixFracture::fac_("normal diffusion");
+  SoluteDiffusionMatrixFracture::reg_("solute diffusion to matrix");
+
+Utils::RegisteredFactory<Evaluator, HeatDiffusionMatrixFracture>
+  HeatDiffusionMatrixFracture::reg_("heat diffusion to matrix");
 
 } // namespace Amanzi

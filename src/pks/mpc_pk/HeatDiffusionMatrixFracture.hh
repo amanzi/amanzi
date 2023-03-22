@@ -11,15 +11,14 @@
   
 Molecular diffusion coefficeint between fracture and matrix.
 
-  D_fm = s_m tau_m phi_m * D_m / (a_f / 2)
+  D_fm = D_m / (a_f / 2)
 
-where D_m is matrix diffusion coefficient, s_m is saturation,
-tau_m is tortuosity, and a_f is aperture.
+where D_m is matrix heat thermal conductivity, and a_f is aperture.
 */
 
 
-#ifndef AMANZI_SOLUTE_DIFFUSION_MATRIX_FRACTURE_HH_
-#define AMANZI_SOLUTE_DIFFUSION_MATRIX_FRACTURE_HH_
+#ifndef AMANZI_HEAT_DIFFUSION_MATRIX_FRACTURE_HH_
+#define AMANZI_HEAT_DIFFUSION_MATRIX_FRACTURE_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -30,25 +29,17 @@ tau_m is tortuosity, and a_f is aperture.
 
 namespace Amanzi {
 
-class SoluteDiffusionMatrixFracture : public EvaluatorSecondary {
+class HeatDiffusionMatrixFracture : public EvaluatorSecondary {
  public:
-  SoluteDiffusionMatrixFracture(Teuchos::ParameterList& plist);
-  SoluteDiffusionMatrixFracture(const SoluteDiffusionMatrixFracture& other) = default;
+  HeatDiffusionMatrixFracture(Teuchos::ParameterList& plist);
+  HeatDiffusionMatrixFracture(const HeatDiffusionMatrixFracture& other) = default;
 
   virtual Teuchos::RCP<Evaluator> Clone() const override
   {
-    return Teuchos::rcp(new SoluteDiffusionMatrixFracture(*this));
+    return Teuchos::rcp(new HeatDiffusionMatrixFracture(*this));
   }
 
   virtual void EnsureCompatibility(State& S) override;
-
-  // modifiers
-  // -- WIP for subvectors
-  void set_subvector(double mol_diff)
-  {
-    mol_diff_ = mol_diff;
-    requests_.clear();
-  }
 
  protected:
   virtual void Update_(State& S) override;
@@ -59,10 +50,9 @@ class SoluteDiffusionMatrixFracture : public EvaluatorSecondary {
 
  private:
   Key domain_;
-  Key saturation_key_, tortuosity_key_, porosity_key_, aperture_key_;
-  double mol_diff_;
+  Key conductivity_key_, aperture_key_;
 
-  static Utils::RegisteredFactory<Evaluator, SoluteDiffusionMatrixFracture> reg_;
+  static Utils::RegisteredFactory<Evaluator, HeatDiffusionMatrixFracture> reg_;
 };
 
 } // namespace Amanzi

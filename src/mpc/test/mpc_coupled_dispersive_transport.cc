@@ -83,7 +83,7 @@ RunTest(int icase,
     .sublist("molecular diffusion")
     .set<Teuchos::Array<double>>("aqueous values", tmp_m);
 
-  // normal diffusion coeffcient, kn = phi * Dm / (a/2)
+  // solute diffusion to matrix coefficient, kn = phi * Dm / (a/2)
   plist->sublist("state")
     .sublist("evaluators")
     .sublist("fracture-solute_diffusion_to_matrix")

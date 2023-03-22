@@ -320,7 +320,7 @@ InputConverterU::TranslateState_()
       std::string reg_str = CreateNameFromVector_(regions);
 
       // material properties
-      // -- aperture
+      // -- diffusion to matrix (Darcy law)
       node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
       if (flag) {
         auto tmp1 = GetUniqueElementByTagsString_(node, "aperture", flag1);
@@ -339,7 +339,8 @@ InputConverterU::TranslateState_()
         Exceptions::amanzi_throw(msg);
       }
 
-      node = GetUniqueElementByTagsString_(inode, "diffusion_to_matrix", flag);
+      // -- solute diffusion to matrix (Fick law)
+      node = GetUniqueElementByTagsString_(inode, "solute_diffusion_to_matrix", flag);
       if (flag) {
         Teuchos::ParameterList& field_ev = out_ev.sublist("fracture-solute_diffusion_to_matrix");
 
@@ -360,11 +361,39 @@ InputConverterU::TranslateState_()
           tmp.sublist("dof 2 function").sublist("function-constant").set<double>("value", val);
         }
         if (model == "standard") {
-          field_ev.set<std::string>("evaluator type", "normal diffusion");
+          field_ev.set<std::string>("evaluator type", "solute diffusion to matrix");
 
           field_ev.set<std::string>("porosity key", "porosity")
             .set<std::string>("aperture key", "fracture-aperture")
             .set<double>("molecular diffusion", 0.0);
+        }
+      }
+
+      // -- heat diffusion to matrix (Fourier law)
+      node = GetUniqueElementByTagsString_(inode, "heat_diffusion_to_matrix", flag);
+      if (flag) {
+        Teuchos::ParameterList& field_ev = out_ev.sublist("fracture-heat_diffusion_to_matrix");
+
+        std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
+
+        if (model == "constant") {
+          double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m/s");
+
+          auto& tmp = field_ev.set<std::string>("evaluator type", "independent variable")
+                        .sublist("function")
+                        .sublist(reg_str)
+                        .set<Teuchos::Array<std::string>>("regions", regions)
+                        .set<std::string>("component", "cell")
+                        .sublist("function");
+
+          tmp.set<int>("number of dofs", 2).set<std::string>("function type", "composite function");
+          tmp.sublist("dof 1 function").sublist("function-constant").set<double>("value", val);
+          tmp.sublist("dof 2 function").sublist("function-constant").set<double>("value", val);
+        }
+        if (model == "standard") {
+          field_ev.set<std::string>("evaluator type", "heat diffusion to matrix")
+            .set<std::string>("aperture key", "fracture-aperture")
+            .set<std::string>("thermal conductivity key", "thermal_conductivity");
         }
       }
 
@@ -383,7 +412,7 @@ InputConverterU::TranslateState_()
       }
 
       // -- thermal conductivity
-      node = GetUniqueElementByTagsString_(inode, "fracture_conductivity", flag);
+      node = GetUniqueElementByTagsString_(inode, "heat_flux_to_matrix", flag);
       if (flag) {
         TranslateFieldIC_(
           node, "fracture-heat_diffusion_to_matrix", "", reg_str, regions, out_ic, "normal");
@@ -661,7 +690,7 @@ InputConverterU::TranslateState_()
       // -- temperature
       node = GetUniqueElementByTagsString_(inode, "temperature", flag);
       if (flag) {
-        TranslateFieldIC_(node, "temperature", "K", reg_str, regions, out_ic);
+        TranslateFieldIC_(node, "temperature", "K", reg_str, regions, out_ic, "velue", { "*" });
       }
 
       // -- geochemical condition
@@ -862,9 +891,8 @@ InputConverterU::TranslateState_()
 
       // -- temperature
       node = GetUniqueElementByTagsString_(inode, "temperature", flag);
-      if (flag) {
-        TranslateFieldIC_(node, "fracture-temperature", "K", reg_str, regions, out_ic);
-      }
+      if (flag) TranslateFieldIC_(
+        node, "fracture-temperature", "K", reg_str, regions, out_ic, "value", { "*" });
     }
   }
 
