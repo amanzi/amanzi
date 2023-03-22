@@ -129,7 +129,7 @@ class SingleFaceMesh : public AmanziMesh::MeshFramework {
                             const AmanziMesh::Parallel_kind ptype,
                             AmanziMesh::cEntity_ID_View& cells) const override {}
 
-  bool hasEdges() const { return true; }
+  bool hasEdges() const override { return true; }
 
  private:
   void BuildCache_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
