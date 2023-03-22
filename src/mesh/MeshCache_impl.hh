@@ -19,6 +19,8 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
+struct SingleFaceMesh; 
+
 template<MemSpace_kind MEM>
 MeshCache<MEM>::MeshCache()
   : is_ordered_(false),
@@ -1642,8 +1644,10 @@ void cacheDefault(MeshCache<MEM>& mesh)
   mesh.cacheCellGeometry();
   mesh.cacheFaceGeometry();
   if (mesh.hasEdges()) {
-    mesh.cacheFaceEdges();
-    mesh.cacheEdgeFaces();
+    if(!mesh.getMeshFramework()->isSFM()){
+      mesh.cacheFaceEdges();
+      mesh.cacheEdgeFaces();
+    }
     mesh.cacheEdgeGeometry();
   }
 }
