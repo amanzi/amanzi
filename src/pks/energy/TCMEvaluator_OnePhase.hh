@@ -42,7 +42,7 @@ class TCMEvaluator_OnePhase
 
  protected:
   // We have one model so far; hence, no factory is needed.
-  Teuchos::RCP<AmanziEOS::H2O_ThermalConductivity> tc_;
+  Teuchos::RCP<AmanziEOS::EOS_ThermalConductivity> tc_;
   double k_rock_;
 
   // Keys for fields dependencies

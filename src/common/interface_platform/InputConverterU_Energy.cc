@@ -97,8 +97,7 @@ InputConverterU::TranslateEnergy_(const std::string& domain)
   std::string model;
   node = GetUniqueElementByTagsString_(materials[0], "thermal_properties", flag);
   if (flag) {
-    element = static_cast<DOMElement*>(node);
-    model = GetAttributeValueS_(element, "model", TYPE_NONE, false, "");
+    model = GetAttributeValueS_(node, "model", "constant, liquid water");
   }
 
   node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, liquid_conductivity", flag);
@@ -110,11 +109,10 @@ InputConverterU::TranslateEnergy_(const std::string& domain)
   thermal.set<double>("thermal conductivity of liquid", cv_f);
   thermal.set<double>("thermal conductivity of rock", cv_r);
   thermal.set<double>("reference temperature", 298.15);
+  thermal.set<std::string>("eos type", model);
 
   if (model == "constant") {
-    std::vector<double> poly({ cv_r + cv_f, 0.0, 0.0 });
-    thermal.set<Teuchos::Array<double>>("polynomial expansion", poly);
-    thermal.set<double>("thermal conductivity of liquid", 1.0);  // reference conductivity
+    thermal.set<double>("thermal conductivity", cv_f + cv_r);
   }
 
   // insert time integrator

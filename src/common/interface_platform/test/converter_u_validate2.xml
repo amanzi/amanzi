@@ -864,6 +864,7 @@
           <Parameter name="reference temperature" type="double" value="2.98149999999999977e+02"/>
 	  <Parameter name="unsaturated alpha" type="double" value="1.0e+00"/>
 	  <Parameter name="epsilon" type="double" value="1.0e-10"/>
+          <Parameter name="eos type" type="string" value=""/>
 	</ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">

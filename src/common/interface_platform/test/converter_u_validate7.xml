@@ -917,6 +917,8 @@
           <Parameter name="thermal conductivity of liquid" type="double" value="0.0"/>
           <Parameter name="thermal conductivity of rock" type="double" value="0.0"/>
           <Parameter name="reference temperature" type="double" value="2.98149999999999977e+02"/>
+          <Parameter name="eos type" type="string" value="constant"/>
+          <Parameter name="thermal conductivity" type="double" value="0.0"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">
@@ -1075,6 +1077,7 @@
           <Parameter name="thermal conductivity of liquid" type="double" value="0.0"/>
           <Parameter name="thermal conductivity of rock" type="double" value="0.0"/>
           <Parameter name="reference temperature" type="double" value="2.98149999999999977e+02"/>
+          <Parameter name="eos type" type="string" value=""/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">
