@@ -316,8 +316,8 @@ class MeshLogicalFactory {
   Comm_ptr_type comm_;
   Teuchos::RCP<AmanziGeometry::GeometricModel> gm_;
 
-  std::map<std::string, Entity_ID_View> seg_cells_;
-  std::map<std::string, Entity_ID_View> seg_faces_;
+  std::map<std::string, Entity_ID_List> seg_cells_;
+  std::map<std::string, Entity_ID_List> seg_faces_;
   std::map<std::string, AmanziGeometry::Point> seg_orientations_;
 
   bool calculated_volume_;
