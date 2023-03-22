@@ -89,11 +89,19 @@ InputConverterU::TranslateEnergy_(const std::string& domain)
     thermal.set<std::string>("thermal conductivity type", "one-phase polynomial");
   }
 
-  double cv_f(0.606), cv_r(0.2);
-  node = GetUniqueElementByTagsString_("materials", flag);
+  double cv_f(0.0), cv_r(0.0);
+  std::string prefix = (domain == "fracture") ? "fracture_network," : "";
+  node = GetUniqueElementByTagsString_(prefix + "materials", flag);
   std::vector<DOMNode*> materials = GetChildren_(node, "material", flag);
 
-  node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, rock_conductivity", flag);
+  std::string model;
+  node = GetUniqueElementByTagsString_(materials[0], "thermal_properties", flag);
+  if (flag) {
+    element = static_cast<DOMElement*>(node);
+    model = GetAttributeValueS_(element, "model", TYPE_NONE, false, "");
+  }
+
+  node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, liquid_conductivity", flag);
   if (flag) cv_f = GetTextContentD_(node, "W/m/K", true);
 
   node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, rock_conductivity", flag);
@@ -102,6 +110,12 @@ InputConverterU::TranslateEnergy_(const std::string& domain)
   thermal.set<double>("thermal conductivity of liquid", cv_f);
   thermal.set<double>("thermal conductivity of rock", cv_r);
   thermal.set<double>("reference temperature", 298.15);
+
+  if (model == "constant") {
+    std::vector<double> poly({ cv_r + cv_f, 0.0, 0.0 });
+    thermal.set<Teuchos::Array<double>>("polynomial expansion", poly);
+    thermal.set<double>("thermal conductivity of liquid", 1.0);  // reference conductivity
+  }
 
   // insert time integrator
   std::string err_options("energy"), unstr_controls("unstructured_controls, unstr_energy_controls");

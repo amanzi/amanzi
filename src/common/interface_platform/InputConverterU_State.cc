@@ -658,6 +658,12 @@ InputConverterU::TranslateState_()
           .set<double>("value", val);
       }
 
+      // -- temperature
+      node = GetUniqueElementByTagsString_(inode, "temperature", flag);
+      if (flag) {
+        TranslateFieldIC_(node, "temperature", "K", reg_str, regions, out_ic);
+      }
+
       // -- geochemical condition
       node = GetUniqueElementByTagsString_(
         inode, "liquid_phase, geochemistry_component, constraint", flag);
@@ -852,6 +858,12 @@ InputConverterU::TranslateState_()
           .sublist("function")
           .sublist("function-constant")
           .set<double>("value", val);
+      }
+
+      // -- temperature
+      node = GetUniqueElementByTagsString_(inode, "temperature", flag);
+      if (flag) {
+        TranslateFieldIC_(node, "fracture-temperature", "K", reg_str, regions, out_ic);
       }
     }
   }

@@ -914,8 +914,8 @@
       <ParameterList name="thermal conductivity evaluator">
         <ParameterList name="thermal conductivity parameters">
           <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-          <Parameter name="thermal conductivity of liquid" type="double" value="6.05999999999999983e-01"/>
-          <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
+          <Parameter name="thermal conductivity of liquid" type="double" value="0.0"/>
+          <Parameter name="thermal conductivity of rock" type="double" value="0.0"/>
           <Parameter name="reference temperature" type="double" value="2.98149999999999977e+02"/>
         </ParameterList>
       </ParameterList>
@@ -1072,8 +1072,8 @@
       <ParameterList name="thermal conductivity evaluator">
         <ParameterList name="thermal conductivity parameters">
           <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-          <Parameter name="thermal conductivity of liquid" type="double" value="6.05999999999999983e-01"/>
-          <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
+          <Parameter name="thermal conductivity of liquid" type="double" value="0.0"/>
+          <Parameter name="thermal conductivity of rock" type="double" value="0.0"/>
           <Parameter name="reference temperature" type="double" value="2.98149999999999977e+02"/>
         </ParameterList>
       </ParameterList>
