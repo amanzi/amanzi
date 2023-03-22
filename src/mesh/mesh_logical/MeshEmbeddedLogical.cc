@@ -97,12 +97,15 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   int ncells_bg_owned = bg_mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   int ncells_bg_all = bg_mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::ALL);
   int ncells_log = log_mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
-  int ncells_my_all = ncells_bg_all + ncells_log;
+  int ncells_total_owned = ncells_bg_owned + ncells_log;
+  int ncells_total_all = ncells_bg_all + ncells_log;
 
   int nfaces_bg_owned = bg_mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   int nfaces_bg_all = bg_mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
   int nfaces_log = log_mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   int nfaces_extra = extra_face_cell_ids_.size<MemSpace_kind::HOST>();
+  int nfaces_total_owned = nfaces_bg_owned + nfaces_log + nfaces_extra;
+  int nfaces_total_all = nfaces_bg_all + nfaces_log + nfaces_extra;
 
   // compute "extra" bisectors
   extra_face_cell_bisectors_.resize(nfaces_extra, 2);
@@ -120,8 +123,6 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   // Need to renumber the global IDs.  Use the corresponding mesh to communicate.
   // First cells
   // -- create a map of owned CELLs
-  int ncells_total_owned = getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
-  int ncells_total_all = getNumEntities(Entity_kind::CELL, Parallel_kind::ALL);
   Epetra_Map cell_owned_map(-1, ncells_total_owned, 0, *getComm());
 
   // -- create a map on the background mesh of all CELLs
@@ -137,17 +138,20 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   bg_cell_all_vec.Import(bg_cell_owned_vec, cell_import, Insert);
 
   // -- copy ghost GIDs into the renumbered vector
-  Entity_GID_View cell_gids("cell_gids", ncells_bg_all + ncells_log);
+  Entity_GID_List cell_gids(ncells_total_all);
   for (int c=0; c!=ncells_total_owned; ++c) cell_gids[c] = cell_owned_map.GID(c);
-  for (int c=ncells_total_owned; c!=ncells_total_all; ++c) cell_gids[c] = bg_cell_all_vec[c-ncells_log+ncells_bg_owned];
+  for (int c=ncells_total_owned; c!=ncells_total_all; ++c) {
+    int c2 = c - ncells_log;
+    AMANZI_ASSERT(c2 >= ncells_bg_owned);
+    AMANZI_ASSERT(c2 < ncells_bg_all);
+    cell_gids[c] = bg_cell_all_vec[c2];
+  }
 
   // -- create the map
   cell_map_ = Teuchos::rcp(new Epetra_Map(-1, cell_gids.size(), cell_gids.data(), 0, *getComm()));
 
   // Next faces
   // -- create a map of owned FACES
-  int nfaces_total_owned = getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
-  int nfaces_total_all = getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
   Epetra_Map face_owned_map(-1, nfaces_total_owned, 0, *getComm());
 
   // -- create a map on the background mesh of all FACEs
@@ -163,10 +167,14 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   bg_face_all_vec.Import(bg_face_owned_vec, face_import, Insert);
 
   // -- copy ghost GIDs into the renumbered vector
-  Entity_GID_View face_gids("face_gids", nfaces_total_owned + nfaces_total_all);
+  Entity_GID_List face_gids(nfaces_total_all);
   for (int f=0; f!=nfaces_total_owned; ++f) face_gids[f] = face_owned_map.GID(f);
-  for (int f=nfaces_total_owned; f!=nfaces_total_all; ++f)
-    face_gids[f] = bg_face_all_vec[f-nfaces_log-nfaces_extra+nfaces_bg_owned];
+  for (int f=nfaces_total_owned; f!=nfaces_total_all; ++f) {
+    int f2 = f - nfaces_log - nfaces_extra;
+    AMANZI_ASSERT(f2 >= nfaces_bg_owned);
+    AMANZI_ASSERT(f2 < nfaces_bg_all);
+    face_gids[f] = bg_face_all_vec[f2];
+  }
 
   // -- create the map
   face_map_ = Teuchos::rcp(new Epetra_Map(-1, face_gids.size(), face_gids.data(), 0, *getComm()));
@@ -421,13 +429,13 @@ MeshEmbeddedLogical::getFaceCells(const Entity_ID f,
   auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_kind::HOST>();
   if (f < nfaces_log) {
     log_mesh_->getFaceCells(f, ptype, cells);
-  } else if (f >= nfaces_log + nfaces_extra) {
+  } else if (f >= (nfaces_log + nfaces_extra)) {
     bg_mesh_->getFaceCells(f - nfaces_log - nfaces_extra, ptype, cells);
     lcells.fromConst(cells); 
     for (auto& c : lcells) c += ncells_log;
     cells = lcells; 
   } else {
-    lcells = extra_face_cell_ids_.getRow<MemSpace_kind::HOST>(f - nfaces_log);
+    lcells.fromConst(extra_face_cell_ids_.getRow<MemSpace_kind::HOST>(f - nfaces_log));
     lcells[1] += ncells_log;
     cells = lcells; 
   }

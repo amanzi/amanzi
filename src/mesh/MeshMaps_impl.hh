@@ -56,9 +56,9 @@ createMapsFromContiguousGIDs(const Mesh_type& mesh, const Entity_kind kind)
 template<class Mesh_type>
 void MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
 {
-  std::vector<Entity_kind> to_construct{Entity_kind::CELL,
-    Entity_kind::FACE, Entity_kind::NODE};
-  if (mesh.hasEdges()) to_construct.push_back(Entity_kind::EDGE);
+  std::vector<Entity_kind> to_construct{Entity_kind::CELL, Entity_kind::FACE};
+  if (mesh.hasEdges()) to_construct.emplace_back(Entity_kind::EDGE);
+  if (mesh.hasNodes()) to_construct.emplace_back(Entity_kind::NODE);
 
   for (const auto& kind : to_construct) {
     std::pair<Teuchos::RCP<Epetra_Map>, Teuchos::RCP<Epetra_Map>> maps;
