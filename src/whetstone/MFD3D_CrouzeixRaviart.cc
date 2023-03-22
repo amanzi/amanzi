@@ -127,7 +127,7 @@ MFD3D_CrouzeixRaviart::H1Face(int f,
 
   Teuchos::RCP<AmanziMesh::SingleFaceMesh> surf_mesh =
     Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh_, f, coordsys));
-  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_cache = Teuchos::rcp(new AmanziMesh::Mesh(surf_mesh, Teuchos::null)); 
+  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_cache = Teuchos::rcp(new AmanziMesh::Mesh(surf_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null)); 
   ProjectorCell_(surf_mesh_cache, f, ve, ve, vf);
 }
 
