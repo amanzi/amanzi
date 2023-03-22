@@ -664,11 +664,11 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
     std::vector<int> dirs = { 0, 1 };
 
     if (branch_from_tip == "first") {
-      cells[0] = seg_cells_[branch_from][0];
+      cells[0] = seg_cells_[branch_from].front();
       bisectors[0] = seg_orientations_[branch_from] * cell_lengths_[cells[0]] / 2.;
       dirs[0] = 1;
     } else if (branch_from_tip == "last") {
-      cells[0] = seg_cells_[branch_from][seg_cells_.size() - 1];
+      cells[0] = seg_cells_[branch_from].back();
       bisectors[0] = -seg_orientations_[branch_from] * cell_lengths_[cells[0]] / 2.;
       dirs[0] = -1;
     } else {
@@ -716,8 +716,8 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
                &new_faces);
   }
 
-  vectorToView(seg_cells_[seg_name], new_cells);
-  vectorToView(seg_faces_[seg_name], new_faces);
+  seg_cells_[seg_name] = new_cells;
+  seg_faces_[seg_name] = new_faces;
   seg_orientations_[seg_name] = orientation;
 }
 
