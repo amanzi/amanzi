@@ -62,7 +62,7 @@ void MeshFrameworkColumn::computeSpecialNodeCoordinates_()
   // error will be zero.
 
   // Create a cached object, so that we can use columns.
-  MeshCache<MemSpace_kind::HOST> col3D_mesh(col3D_mesh_, Teuchos::rcp(new MeshFrameworkAlgorithms()));
+  MeshCache<MemSpace_kind::HOST> col3D_mesh(col3D_mesh_, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null);
   col3D_mesh.buildColumns();
 
   // Get the ordered face indexes of the column

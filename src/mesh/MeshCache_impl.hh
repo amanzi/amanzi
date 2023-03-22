@@ -1609,26 +1609,18 @@ void cacheAll(MeshCache<MEM>& mesh)
 {
   std::cout<<"############# CacheAll"<<std::endl;
   // caches everything, likely just for testing
-  mesh.cacheNodeCoordinates();
+  cacheDefault(mesh); 
 
-  mesh.cacheCellFaces();
   mesh.cacheCellNodes();
-  mesh.cacheCellCoordinates();
-  mesh.cacheFaceCells();
-  mesh.cacheFaceNodes();
-  mesh.cacheFaceCoordinates();
+  mesh.cacheCellCoordinates(); 
+  mesh.cacheFaceCoordinates(); 
   mesh.cacheNodeCells();
-  mesh.cacheNodeFaces();
-  mesh.cacheCellGeometry();
-  mesh.cacheFaceGeometry();
+  mesh.cacheNodeFaces(); 
   if (mesh.hasEdges()) {
     mesh.cacheCellEdges();
-    mesh.cacheEdgeCells();
-    mesh.cacheFaceEdges();
-    mesh.cacheEdgeFaces();
-    mesh.cacheNodeEdges();
-    mesh.cacheEdgeNodes();
-    mesh.cacheEdgeGeometry();
+    mesh.cacheEdgeCells(); 
+    mesh.cacheNodeEdges(); 
+    mesh.cacheEdgeNodes(); 
     mesh.cacheEdgeCoordinates();
    }
 }
