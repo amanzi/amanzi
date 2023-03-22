@@ -335,8 +335,8 @@ ObservableAqueous::ComputeObservation(State& S,
   } else if (variable_ == "centroid x") {
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
-      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-      double vol = mesh_->cell_volume(c);
+      const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+      double vol = mesh_->getCellVolume(c);
       *volume += vol;
       *value += xc[0] * vol;
     }

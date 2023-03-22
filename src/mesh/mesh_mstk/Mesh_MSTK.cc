@@ -472,9 +472,9 @@ Mesh_MSTK::getCellType(const Entity_ID cellid) const
 // violated here to allow for a default input argument
 
 // On a distributed mesh, this will return all the faces of the
-// cell, OWNED or GHOST. If ordered = true, the faces will be
+// cell, OWNED or GHOST. If cells_initialized_ = true, the faces will be
 // returned in a standard order according to Exodus II convention
-// for standard cells; in all other situations (ordered = false or
+// for standard cells; in all other situations (cells_initialized_ = false or
 // non-standard cells), the list of faces will be in arbitrary order
 
 // In 3D, direction is 1 if face normal points out of cell
@@ -981,9 +981,7 @@ Mesh_MSTK::getNodeCells(const Entity_ID nodeid,
   List_ptr cell_list;
   MEntity_ptr ment;
 
-  AMANZI_ASSERT(cellids != nullptr);
-
-  MVertex_ptr mv = (MVertex_ptr)vtx_id_to_handle[nodeid];
+  MVertex_ptr mv = (MVertex_ptr)vtx_id_to_handle_[nodeid];
 
   /* Reserved for next major release of MSTK
   if (MV_PType(mv) == PINTERIOR && ptype != Parallel_type::GHOST) {
@@ -1064,8 +1062,6 @@ Mesh_MSTK::getNodeFaces(const Entity_ID nodeid,
   AMANZI_ASSERT(faces_initialized_);
   MVertex_ptr mv = (MVertex_ptr)vtx_id_to_handle_[nodeid];
 
-  MVertex_ptr mv = (MVertex_ptr)vtx_id_to_handle[nodeid];
-
   /* Reserved for next major release of MSTK
   if (MV_PType(mv) == PINTERIOR && ptype != Parallel_type::GHOST) {
     if (manifold_dimension() == 3) {
@@ -1098,7 +1094,7 @@ Mesh_MSTK::getNodeFaces(const Entity_ID nodeid,
   else {
   */
 
-  if (manifold_dimension() == 3)
+  if (getManifoldDimension() == 3)
     face_list = MV_Faces(mv);
   else
     face_list = MV_Edges(mv);

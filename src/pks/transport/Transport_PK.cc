@@ -407,8 +407,6 @@ Transport_PK::Initialize()
   InitializeFields_();
 
   // Check input parameters. Due to limited amount of checks, we can do it earlier.
-  Policy(S_.ptr());
-
   ncells_owned =
     mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   ncells_wghost =

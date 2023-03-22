@@ -67,7 +67,11 @@ TEST(MPC_DRIVER_COUPLED_REACTIVE_TRANSPORT)
   //create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
-  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::Entity_kind::FACE);
+  auto mesh_list2 = Teuchos::sublist(plist, "mesh", true);
+  mesh_list2->set<bool>("request edges", false);
+  mesh_list2->set<bool>("request faces", true);
+  MeshFactory factory2(comm, gm, mesh_list2);
+  auto mesh_fracture = factory2.create(mesh, names, AmanziMesh::Entity_kind::FACE);
 
   S->RegisterMesh("fracture", mesh_fracture);
 

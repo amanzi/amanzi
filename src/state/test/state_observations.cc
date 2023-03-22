@@ -604,6 +604,7 @@ SUITE(STATE_OBSERVATIONS)
     // valuesA: NaN NaN
     CHECK(compareFiles("obs4.dat", "test/obs4.dat.gold"));
   }
+*/
 
   TEST_FIXTURE(obs_test, FileWithModifier)
   {

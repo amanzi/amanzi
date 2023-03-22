@@ -276,7 +276,7 @@ struct MeshCache {
   //
   MeshCache(const Teuchos::RCP<MeshFramework>& framework_mesh,
             const Teuchos::RCP<MeshFrameworkAlgorithms>& framework_algorithms,
-            const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
+            const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : MeshCache()
   {
     if (plist == Teuchos::null) {
@@ -306,12 +306,12 @@ struct MeshCache {
   Teuchos::RCP<Teuchos::ParameterList> getParameterList() const { return plist_; }
   Entity_GID getEntityGID(const Entity_kind kind, const Entity_ID lid) const
   {
-    auto map = getMap(Entity_kind::CELL, false);
+    auto map = getMap(kind, false);
     int* elements;
     map.MyGlobalElements(elements);
     return elements[lid];
   }
-
+  Teuchos::RCP<const MeshFrameworkAlgorithms> getAlgorithms() const { return algorithms_; }
 
   //
   // Build the cache, fine grained control
@@ -355,6 +355,8 @@ struct MeshCache {
   //
   // Baseline mesh functionality
   // =============================================
+
+  virtual bool isSFM() const { return false; }
 
   // ----------------------
   // Accessors and Mutators
@@ -857,7 +859,7 @@ struct MeshCache {
 
   void recacheGeometry();
 
- private:
+ protected:
   // common error messaging
   void throwAccessError_(const std::string& func_name) const;
 

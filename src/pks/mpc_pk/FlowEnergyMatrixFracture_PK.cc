@@ -108,7 +108,7 @@ FlowEnergyMatrixFracture_PK::Setup()
       .SetMesh(mesh_domain_)
       ->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::Entity_kind::FACE, mmap, gmap, 1);
-    AddDefaultPrimaryEvaluator_(matrix_vol_flowrate_key_, Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, matrix_vol_flowrate_key_, Tags::DEFAULT);
   }
 
   if (!S_->HasRecord(matrix_vol_flowrate_key_)) {

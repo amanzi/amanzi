@@ -350,10 +350,8 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
     auto coordsys = std::make_shared<AmanziGeometry::SurfaceCoordinateSystem>(xf, normal);
     vsysf.push_back(coordsys);
 
-    Teuchos::RCP<AmanziMesh::SingleFaceMesh> surf_mesh_fr =
+    Teuchos::RCP<AmanziMesh::SingleFaceMesh> surf_mesh =
       Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh_, f, *coordsys));
-    Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh =
-      Teuchos::rcp(new AmanziMesh::Mesh(surf_mesh_fr, Teuchos::null));
 
     // -- matrices
     DenseMatrix Nf, Af, Mf;
@@ -631,11 +629,9 @@ MFD3D_LagrangeAnyOrder::StiffnessMatrixSurface(int f, const Tensor& K, DenseMatr
   AmanziGeometry::SurfaceCoordinateSystem coordsys(origin, normal);
   Teuchos::RCP<AmanziMesh::SingleFaceMesh> surf_mesh =
     Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh_, f, coordsys));
-  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_cache =
-    Teuchos::rcp(new AmanziMesh::Mesh(surf_mesh, Teuchos::null));
 
   DenseMatrix N;
-  int ok = H1consistency2D_(surf_mesh_cache, f, K, N, A);
+  int ok = H1consistency2D_(surf_mesh, f, K, N, A);
   if (ok) return ok;
 
   StabilityScalar_(N, A);

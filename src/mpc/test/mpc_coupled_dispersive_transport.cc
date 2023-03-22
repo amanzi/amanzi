@@ -139,10 +139,10 @@ RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, d
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   // create mesh
-  auto mesh_list = Teuchos::sublist(plist, "mesh", true);
-  mesh_list->set<bool>("request edges", true);
-  mesh_list->set<bool>("request faces", true);
-  MeshFactory factory(comm, gm, mesh_list);
+  auto mesh_list1 = Teuchos::sublist(plist, "mesh", true);
+  mesh_list1->set<bool>("request edges", true);
+  mesh_list1->set<bool>("request faces", true);
+  MeshFactory factory(comm, gm, mesh_list1);
   factory.set_preference(Preference({ Framework::MSTK }));
   auto mesh = factory.create(0.0, 0.0, 3.0 - L, 7.0, 1.0, 3.0 + L, 56, 1, 32);
 
@@ -156,7 +156,12 @@ RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, d
   //create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
-  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::Entity_kind::FACE);
+  auto mesh_list2 = Teuchos::sublist(plist, "mesh", true);
+  mesh_list2->set<bool>("request edges", false);
+  mesh_list2->set<bool>("request faces", true);
+  MeshFactory factory2(comm, gm, mesh_list2);
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_fracture =
+    factory2.create(mesh, names, AmanziMesh::Entity_kind::FACE);
 
   S->RegisterMesh("fracture", mesh_fracture);
 
@@ -233,8 +238,8 @@ RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, d
 
   double err_tmp(err), norm_tmp(norm);
   if (icase != 4) {
-    mesh->get_comm()->SumAll(&err_tmp, &err, 1);
-    mesh->get_comm()->SumAll(&norm_tmp, &norm, 1);
+    mesh->getComm()->SumAll(&err_tmp, &err, 1);
+    mesh->getComm()->SumAll(&norm_tmp, &norm, 1);
     err /= tcc_f.GlobalLength();
     norm /= tcc_f.GlobalLength();
     std::cout << "Mean error in fracture: " << err << " solution norm=" << norm << std::endl;

@@ -40,11 +40,19 @@
 
 namespace Amanzi {
 
-double
-Value(const AmanziGeometry::Point& xyz)
-{
-  return 1e-5 + xyz[0];
-}
+class Model {
+ public:
+  Model(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh){};
+  ~Model(){};
+
+  // main members
+  double Value(int c, double pc) const { return analytic(pc); }
+
+  double analytic(double pc) const { return 1e-5 + pc; }
+
+ private:
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+};
 
 } // namespace Amanzi
 
@@ -87,6 +95,8 @@ RunTestUpwind(const std::string& method)
     int nfaces_wghost =
       mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
+    Teuchos::RCP<Model> model = Teuchos::rcp(new Model(mesh));
+
     // create boundary data
     std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
     std::vector<double> bc_value(nfaces_wghost);
@@ -96,7 +106,7 @@ RunTestUpwind(const std::string& method)
           fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6)
 
         bc_model[f] = OPERATOR_BC_DIRICHLET;
-      bc_value[f] = Value(xf);
+      bc_value[f] = model->analytic(xf[0]);
     }
 
     // create and initialize cell-based field

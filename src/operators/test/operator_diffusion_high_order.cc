@@ -338,8 +338,7 @@ RunHighOrderLagrange3D(const std::string& vem_name)
   fac_list->set<bool>("request faces", true);
   MeshFactory meshfactory(comm, gm, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  RCP<const Mesh> mesh;
-  mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 3, 4);
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 3, 4);
   // mesh = meshfactory.create("test/hexes.exo", true, true);
 
   int nfaces_wghost =

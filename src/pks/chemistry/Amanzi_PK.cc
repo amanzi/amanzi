@@ -646,16 +646,18 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   ErrorAnalysis(ierr, internal_msg);
 
   int tmp0(min_itrs), tmp1(max_itrs), tmp2(avg_itrs), tmp3(ncells_owned_), ncells_total;
-  mesh_->get_comm()->MinAll(&tmp0, &min_itrs, 1);
-  mesh_->get_comm()->MaxAll(&tmp1, &max_itrs, 1);
-  mesh_->get_comm()->SumAll(&tmp2, &avg_itrs, 1);
-  mesh_->get_comm()->SumAll(&tmp3, &ncells_total, 1);
+  mesh_->getComm()->MinAll(&tmp0, &min_itrs, 1);
+  mesh_->getComm()->MaxAll(&tmp1, &max_itrs, 1);
+  mesh_->getComm()->SumAll(&tmp2, &avg_itrs, 1);
+  mesh_->getComm()->SumAll(&tmp3, &ncells_total, 1);
 
-  std::stringstream ss;
-  ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/"
-     << avg_itrs / std::max(ncells_owned_, 1)
-     << ", maximum in gid=" << mesh_->GID(cmax, AmanziMesh::CELL) << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, ss.str());
+  std::cout << "cmax: " << cmax << std::endl;
+
+  //std::stringstream ss;
+  //ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/"
+  //   << avg_itrs / std::max(ncells_owned_, 1)
+  //   << ", maximum in gid=" << mesh_->getEntityGID(AmanziMesh::CELL, cmax) << std::endl;
+  //vo_->Write(Teuchos::VERB_HIGH, ss.str());
 
   // update time control parameters
   num_successful_steps_++;
@@ -758,7 +760,7 @@ Amanzi_PK::EstimateNextTimeStep_(double t_old, double t_new)
     // synchronize processors since update of control parameters was
     // made in many places.
     double tmp(dt_next_);
-    mesh_->get_comm()->MinAll(&tmp, &dt_next_, 1);
+    mesh_->getComm()->MinAll(&tmp, &dt_next_, 1);
 
     if (dt_next_tmp != dt_next_ && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo_->getOSTab();

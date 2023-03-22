@@ -505,9 +505,7 @@ DG_Modal::FluxMatrix(int f,
 
   Teuchos::RCP<AmanziMesh::SingleFaceMesh> surf_mesh =
     Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh_, f, *coordsys));
-  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_cache =
-    Teuchos::rcp(new AmanziMesh::Mesh(surf_mesh, Teuchos::null));
-  NumericalIntegration numi_f(surf_mesh_cache);
+  NumericalIntegration numi_f(surf_mesh);
 
   // integrate traces of polynomials on face f
   std::vector<const PolynomialBase*> polys(3), polys0(2), polys1(2), polys_tmp(1);

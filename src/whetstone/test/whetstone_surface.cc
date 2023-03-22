@@ -51,10 +51,8 @@ TEST(DARCY_SURFACE_MESH)
        ++f) {
     RCP<AmanziMesh::SingleFaceMesh> surfmesh =
       Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh, f));
-    RCP<AmanziMesh::Mesh> surfmesh_cache = Teuchos::rcp(new AmanziMesh::Mesh(
-      surfmesh, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
 
-    MFD3D_Diffusion mfd(surfmesh_cache);
+    MFD3D_Diffusion mfd(surfmesh);
 
     DenseMatrix M;
     mfd.MassMatrix(0, T, M);
@@ -62,7 +60,7 @@ TEST(DARCY_SURFACE_MESH)
 
     for (int i = 0; i < nrows; ++i) {
       for (int j = 0; j < nrows; ++j) {
-        double val = (i != j) ? 0.0 : surfmesh_cache->getCellVolume(0) / 2;
+        double val = (i != j) ? 0.0 : surfmesh->getCellVolume(0) / 2;
         CHECK_CLOSE(M(i, j), val, 1e-10);
       }
     }

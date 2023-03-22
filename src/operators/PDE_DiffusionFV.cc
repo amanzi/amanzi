@@ -361,14 +361,12 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
 void
 PDE_DiffusionFV::ScaleMatricesColumns(const CompositeVector& s)
 {
-  AmanziMesh::Entity_ID_List cells;
-
   const auto& s_c = *s.ViewComponent("cell");
 
   for (int f = 0; f < nfaces_owned; ++f) {
     WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
 
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     for (int n = 0; n < ncells; ++n) {

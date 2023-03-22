@@ -479,10 +479,10 @@ struct RaggedArray_DualView {
 
   void resize(int s1, int s2)
   {
-    rows.resize(s1);
+    rows.resize(s1 + 1);
     entries.resize(s1 * s2);
     rows.h_view[0] = 0;
-    for (int i = 1; i < s1; ++i) { rows.h_view[i] = rows.h_view[i - 1] + s2; }
+    for (int i = 1; i < s1 + 1; ++i) { rows.h_view[i] = rows.h_view[i - 1] + s2; }
     update<MemSpace_kind::DEVICE>();
   }
 };

@@ -30,23 +30,6 @@ namespace Transport {
 using CV_t = CompositeVector;
 
 /* *******************************************************************
-* Routine verifies that the velocity field is divergence free
-******************************************************************* */
-void
-Transport_PK::Policy(Teuchos::Ptr<State> S)
-{
-  if (mesh_->getComm()->NumProc() > 1) {
-    if (!S->Get<CV_t>(tcc_key_).Ghosted()) {
-      Errors::Message msg;
-      msg << "Field \"total component concentration\" has no ghost values."
-          << " Transport PK is giving up.\n";
-      Exceptions::amanzi_throw(msg);
-    }
-  }
-}
-
-
-/* *******************************************************************
 * Calculates extrema of specified solutes and print them.
 ******************************************************************* */
 void
@@ -75,10 +58,10 @@ Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
     bool flag(false);
 
     for (int k = 0; k < nregions; k++) {
-      if (mesh_->isValidSetName(runtime_regions_[k], AmanziMesh::Entity_kind::FACE)) {
+      if (mesh_->isValidSetName(runtime_regions_[k], AmanziMesh::FACE)) {
         flag = true;
         auto block = mesh_->getSetEntities(
-          runtime_regions_[k], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+          runtime_regions_[k], AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
         int nblock = block.size();
 
         for (int m = 0; m < nblock; m++) {
@@ -311,8 +294,7 @@ Transport_PK::CalculateLpErrors(AnalyticFunction f,
                                 double* L1,
                                 double* L2)
 {
-  int ncells =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells = mesh_->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   *L1 = *L2 = 0.0;
   for (int c = 0; c < ncells; c++) {

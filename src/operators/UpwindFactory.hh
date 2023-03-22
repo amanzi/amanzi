@@ -55,8 +55,8 @@ UpwindFactory::Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::Parame
   std::string name = plist.get<std::string>("upwind method");
   Teuchos::ParameterList sublist = plist.sublist("upwind parameters");
 
-  bool manifolds =
-    (mesh->space_dimension() != mesh->manifold_dimension()) && sublist.get<bool>("manifolds", true);
+  bool manifolds = (mesh->getSpaceDimension() != mesh->getManifoldDimension()) &&
+                   sublist.get<bool>("manifolds", true);
 
   if (name == "upwind: darcy velocity" && !manifolds) {
     Teuchos::RCP<UpwindFlux> upwind = Teuchos::rcp(new UpwindFlux(mesh));

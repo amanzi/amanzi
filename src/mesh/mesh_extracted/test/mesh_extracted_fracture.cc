@@ -80,8 +80,8 @@ RunTest(const std::string regname, int* cells, int* edges)
 
     // extract fractures mesh
     try {
-      auto mesh3D_cache =
-        Teuchos::rcp(new Mesh(mesh3D, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms())));
+      auto mesh3D_cache = Teuchos::rcp(
+        new Mesh(mesh3D, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
       RCP<MeshFramework> mesh = Teuchos::rcp(new MeshExtractedManifold(
         mesh3D_cache, setname, AmanziMesh::Entity_kind::FACE, comm, gm, plist));
 
