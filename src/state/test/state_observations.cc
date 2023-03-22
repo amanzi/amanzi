@@ -226,9 +226,10 @@ SUITE(STATE_OBSERVATIONS)
     S->GetMesh("domain")->getComm()->SumAll(&num_cells, &num_cells_total, 1);
     CHECK_EQUAL(27, num_cells_total);
 
-    int faces_middle = S->GetMesh("domain")->getSetSize(
-      "middle", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-    CHECK_EQUAL(0, faces_middle);
+    // globally empty regions now error
+    // int faces_middle = S->GetMesh("domain")->getSetSize(
+    //   "middle", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+    // CHECK_EQUAL(0, faces_middle);
 
     int cells_all =
       S->GetMesh("domain")->getSetSize("all", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
@@ -569,6 +570,7 @@ SUITE(STATE_OBSERVATIONS)
     CHECK(compareFiles("obs3.dat", "test/obs3.dat.gold"));
   }
 
+/* This test is no longer valid because globally empty regions now error...
 
   TEST_FIXTURE(obs_test, WritesNaN)
   {
