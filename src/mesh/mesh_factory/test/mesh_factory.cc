@@ -384,7 +384,7 @@ SUITE (MeshFramework)
 
       CHECK(!mesh.is_null());
       Amanzi::AmanziMesh::Entity_ID_View ids("ids", 1);
-      auto mesh_cache = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh(mesh, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()))); 
+      auto mesh_cache = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh(mesh, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null)); 
       CHECK_THROW(newmesh = meshfactory.create(mesh_cache,ids,
               Amanzi::AmanziMesh::Entity_kind::FACE,
               flatten),
@@ -404,7 +404,7 @@ SUITE (MeshFramework)
       CHECK(!mesh.is_null());
 
       Amanzi::AmanziMesh::Entity_ID_View ents("ents", 1);
-      auto mesh_cache = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh(mesh, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()))); 
+      auto mesh_cache = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh(mesh, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null)); 
       newmesh = meshfactory.create(mesh_cache,ents,Amanzi::AmanziMesh::Entity_kind::FACE,flatten);
       CHECK(!newmesh.is_null());
     }

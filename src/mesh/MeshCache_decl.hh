@@ -282,7 +282,7 @@ struct MeshCache {
   //
   MeshCache(const Teuchos::RCP<MeshFramework>& framework_mesh,
             const Teuchos::RCP<MeshFrameworkAlgorithms>& framework_algorithms,
-            const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null)
+            const Teuchos::RCP<Teuchos::ParameterList>& plist)
     :  MeshCache()
   {
     if (plist == Teuchos::null) {
