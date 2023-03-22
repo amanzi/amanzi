@@ -69,7 +69,7 @@ class EnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
 
   Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_;
 
-  Key normal_conductivity_key_;
+  Key heat_diffusion_to_matrix_key_;
 
   // factory registration
   static RegisteredPKFactory<EnergyMatrixFracture_PK> reg_;

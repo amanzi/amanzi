@@ -180,7 +180,7 @@
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
-      <ParameterList name="fracture-normal_diffusion">
+      <ParameterList name="fracture-solute_diffusion_to_matrix">
         <Parameter name="evaluator type" type="string" value="normal diffusion"/>
         <Parameter name="porosity key" type="string" value="porosity"/>
         <Parameter name="aperture key" type="string" value="fracture-aperture"/>
@@ -306,7 +306,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="fracture-normal_permeability">
+      <ParameterList name="fracture-diffusion_to_matrix">
         <ParameterList name="function">
           <ParameterList name="fracture">
             <Parameter name="regions" type="Array(string)" value="{fracture}"/>

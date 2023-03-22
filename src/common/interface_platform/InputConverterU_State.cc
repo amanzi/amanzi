@@ -332,7 +332,7 @@ InputConverterU::TranslateState_()
         TranslateFieldEvaluator_(
           tmp1, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "value", "fracture");
         TranslateFieldIC_(
-          tmp2, "fracture-normal_permeability", "s^-1", reg_str, regions, out_ic, "value");
+          tmp2, "fracture-diffusion_to_matrix", "s^-1", reg_str, regions, out_ic, "value");
       } else {
         msg << "fracture_permeability element must be specified for all materials in fracture "
                "network.";
@@ -341,7 +341,7 @@ InputConverterU::TranslateState_()
 
       node = GetUniqueElementByTagsString_(inode, "diffusion_to_matrix", flag);
       if (flag) {
-        Teuchos::ParameterList& field_ev = out_ev.sublist("fracture-normal_diffusion");
+        Teuchos::ParameterList& field_ev = out_ev.sublist("fracture-solute_diffusion_to_matrix");
 
         std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
 
@@ -386,7 +386,7 @@ InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "fracture_conductivity", flag);
       if (flag) {
         TranslateFieldIC_(
-          node, "fracture-normal_conductivity", "", reg_str, regions, out_ic, "normal");
+          node, "fracture-heat_diffusion_to_matrix", "", reg_str, regions, out_ic, "normal");
       }
 
       // -- rock heat capacity

@@ -288,7 +288,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="fracture-normal_permeability">
+      <ParameterList name="fracture-diffusion_to_matrix">
         <ParameterList name="function">
           <ParameterList name="fracture">
             <Parameter name="regions" type="Array(string)" value="{fracture}"/>

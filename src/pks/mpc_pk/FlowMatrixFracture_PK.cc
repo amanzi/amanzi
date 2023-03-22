@@ -102,9 +102,9 @@ FlowMatrixFracture_PK::Setup()
   }
 
   // additional fields and evaluators related to coupling
-  Key normal_permeability_key_("fracture-normal_permeability");
-  if (!S_->HasRecord(normal_permeability_key_)) {
-    S_->Require<CV_t, CVS_t>(normal_permeability_key_, Tags::DEFAULT)
+  Key diffusion_to_matrix_key_("fracture-diffusion_to_matrix");
+  if (!S_->HasRecord(diffusion_to_matrix_key_)) {
+    S_->Require<CV_t, CVS_t>(diffusion_to_matrix_key_, Tags::DEFAULT)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -160,7 +160,7 @@ FlowMatrixFracture_PK::Initialize()
   auto& gmap = solution_->SubVector(0)->Data()->ViewComponent("face", true)->Map();
 
   // -- indices transmissibimility coefficients for matrix-fracture flux
-  const auto& kn = *S_->Get<CV_t>("fracture-normal_permeability").ViewComponent("cell");
+  const auto& kn = *S_->Get<CV_t>("fracture-diffusion_to_matrix").ViewComponent("cell");
   double gravity = norm(S_->Get<AmanziGeometry::Point>("gravity"));
 
   FractureInsertion fi(mesh_matrix_, mesh_fracture_);

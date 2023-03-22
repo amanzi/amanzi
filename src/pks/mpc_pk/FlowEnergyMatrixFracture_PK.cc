@@ -72,8 +72,8 @@ FlowEnergyMatrixFracture_PK::Setup()
   mesh_fracture_ = S_->GetMesh("fracture");
 
   // keys
-  normal_permeability_key_ = "fracture-normal_permeability";
-  normal_conductivity_key_ = "fracture-normal_conductivity";
+  diffusion_to_matrix_key_ = "fracture-diffusion_to_matrix";
+  heat_diffusion_to_matrix_key_ = "fracture-heat_diffusion_to_matrix";
 
   matrix_vol_flowrate_key_ = "volumetric_flow_rate";
   fracture_vol_flowrate_key_ = "fracture-volumetric_flow_rate";
@@ -116,15 +116,15 @@ FlowEnergyMatrixFracture_PK::Setup()
   }
 
   // Require additional fields and evaluators
-  if (!S_->HasRecord(normal_permeability_key_)) {
-    S_->Require<CV_t, CVS_t>(normal_permeability_key_, Tags::DEFAULT)
+  if (!S_->HasRecord(diffusion_to_matrix_key_)) {
+    S_->Require<CV_t, CVS_t>(diffusion_to_matrix_key_, Tags::DEFAULT)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S_->HasRecord(normal_conductivity_key_)) {
-    S_->Require<CV_t, CVS_t>(normal_conductivity_key_, Tags::DEFAULT, "state")
+  if (!S_->HasRecord(heat_diffusion_to_matrix_key_)) {
+    S_->Require<CV_t, CVS_t>(heat_diffusion_to_matrix_key_, Tags::DEFAULT, "state")
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -217,8 +217,8 @@ FlowEnergyMatrixFracture_PK::Initialize()
   auto& gmap = solution_->SubVector(0)->SubVector(0)->Data()->ViewComponent("face", true)->Map();
 
   // -- indices transmissibimility coefficients for matrix-fracture flux
-  const auto& kn = *S_->Get<CV_t>(normal_permeability_key_).ViewComponent("cell");
-  const auto& tn = *S_->Get<CV_t>(normal_conductivity_key_).ViewComponent("cell");
+  const auto& kn = *S_->Get<CV_t>(diffusion_to_matrix_key_).ViewComponent("cell");
+  const auto& tn = *S_->Get<CV_t>(heat_diffusion_to_matrix_key_).ViewComponent("cell");
   double gravity = norm(S_->Get<AmanziGeometry::Point>("gravity"));
 
   FractureInsertion fi(mesh_matrix, mesh_fracture);

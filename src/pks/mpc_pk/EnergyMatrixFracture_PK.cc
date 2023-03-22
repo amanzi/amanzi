@@ -71,7 +71,7 @@ EnergyMatrixFracture_PK::Setup()
   mesh_matrix_ = S_->GetMesh();
   mesh_fracture_ = S_->GetMesh("fracture");
 
-  normal_conductivity_key_ = "fracture-normal_conductivity";
+  heat_diffusion_to_matrix_key_ = "fracture-heat_diffusion_to_matrix";
 
   // primary and secondary fields for matrix affected by non-uniform
   // distribution of DOFs
@@ -103,8 +103,8 @@ EnergyMatrixFracture_PK::Setup()
   }
 
   // additional fields and evaluators related to matrix-frcature coupling
-  if (!S_->HasRecord(normal_conductivity_key_)) {
-    S_->Require<CV_t, CVS_t>(normal_conductivity_key_, Tags::DEFAULT)
+  if (!S_->HasRecord(heat_diffusion_to_matrix_key_)) {
+    S_->Require<CV_t, CVS_t>(heat_diffusion_to_matrix_key_, Tags::DEFAULT)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -153,7 +153,7 @@ EnergyMatrixFracture_PK::Initialize()
   auto& gmap = solution_->SubVector(0)->Data()->ViewComponent("face", true)->Map();
 
   // -- indices transmissibimility coefficients for matrix-fracture flux
-  const auto& kn = *S_->Get<CV_t>(normal_conductivity_key_).ViewComponent("cell");
+  const auto& kn = *S_->Get<CV_t>(heat_diffusion_to_matrix_key_).ViewComponent("cell");
 
   FractureInsertion fi(mesh_matrix_, mesh_fracture_);
   fi.InitMatrixFaceToFractureCell(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
