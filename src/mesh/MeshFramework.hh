@@ -123,6 +123,9 @@ class MeshFramework  {
   // Some meshes are logical meshes and do not have coordinate info.
   virtual bool isLogical() const { return false; }
 
+  // Check for single face mesh. 
+  virtual bool isSFM() const { return false; }
+
   // ----------------
   // Entity meta-data
   // ----------------

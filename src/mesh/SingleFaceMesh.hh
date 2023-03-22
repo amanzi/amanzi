@@ -48,6 +48,9 @@ class SingleFaceMesh : public AmanziMesh::MeshFramework {
 
   ~SingleFaceMesh(){};
 
+  // Check for single face mesh. 
+  bool isSFM() const override { return true; } 
+
   // ---------------------
   // Downward connectivity
   // ---------------------
