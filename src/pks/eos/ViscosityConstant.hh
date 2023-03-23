@@ -13,8 +13,8 @@
   Constant prescribed viscosity.
 */
 
-#ifndef AMANZI_EOS_H2O_VISCOSITY_CONSTANT_HH_
-#define AMANZI_EOS_H2O_VISCOSITY_CONSTANT_HH_
+#ifndef AMANZI_EOS_VISCOSITY_CONSTANT_HH_
+#define AMANZI_EOS_VISCOSITY_CONSTANT_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -26,9 +26,9 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-class H2O_ViscosityConstant : public EOS_Viscosity {
+class ViscosityConstant : public EOS_Viscosity {
  public:
-  explicit H2O_ViscosityConstant(Teuchos::ParameterList& visc_plist);
+  explicit ViscosityConstant(Teuchos::ParameterList& visc_plist);
 
   virtual double Viscosity(double T, double p) override { return visc_; }
   virtual double DViscosityDT(double T, double p) override { return 0.0; }
@@ -40,7 +40,7 @@ class H2O_ViscosityConstant : public EOS_Viscosity {
   double visc_;
 
  private:
-  static Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityConstant> factory_;
+  static Utils::RegisteredFactory<EOS_Viscosity, ViscosityConstant> factory_;
 };
 
 } // namespace AmanziEOS

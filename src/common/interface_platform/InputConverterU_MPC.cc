@@ -314,7 +314,10 @@ InputConverterU::TranslateCycleDriverNew_()
                         Keys::merge(mode, "coupled flow and reactive transport", delimiter));
       break;
     case 8:
-      PopulatePKTree_(pk_tree_list, Keys::merge(mode, "energy", delimiter));
+      if (!coupled_energy_)
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, "energy", delimiter));
+      else
+        PopulatePKTree_(pk_tree_list, Keys::merge(mode, "coupled energy", delimiter));
       break;
     case 12:
       pk_master_["thermal flow"] = true;
@@ -437,6 +440,12 @@ InputConverterU::PopulatePKTree_(Teuchos::ParameterList& pk_tree, const std::str
       .set<std::string>("PK type", submodel);
     tmp.sublist(Keys::merge(prefix, "chemistry fracture", delimiter))
       .set<std::string>("PK type", submodel);
+  } else if (basename == "coupled energy") {
+    tmp.set<std::string>("PK type", "energy matrix fracture");
+    tmp.sublist(Keys::merge(prefix, "energy matrix", delimiter))
+      .set<std::string>("PK type", pk_model_["energy"]);
+    tmp.sublist(Keys::merge(prefix, "energy fracture", delimiter))
+      .set<std::string>("PK type", pk_model_["energy"]);
   } else if (basename == "reactive transport") {
     submodel = (pk_model_["chemistry"] == "amanzi") ? "chemistry amanzi" : "chemistry alquimia";
     tmp.set<std::string>("PK type", "reactive transport");
@@ -738,7 +747,7 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
         out_list.sublist(pk) = TranslateFlow_("transient", "fracture");
       }
       // -- energy PKs
-      else if (basename == "energy") {
+      else if (basename == "energy" || basename == "energy matrix") {
         out_list.sublist(pk) = TranslateEnergy_("matrix");
       } else if (basename == "energy fracture") {
         out_list.sublist(pk) = TranslateEnergy_("fracture");
@@ -817,6 +826,12 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
         pk_names.push_back(Keys::merge(prefix, "chemistry fracture", delimiter));
         out_list.sublist(pk).set<Teuchos::Array<std::string>>("PKs order", pk_names);
         out_list.sublist(pk).set<int>("master PK index", 0);
+      } else if (basename == "coupled energy") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back(Keys::merge(prefix, "energy matrix", delimiter));
+        pk_names.push_back(Keys::merge(prefix, "energy fracture", delimiter));
+        out_list.sublist(pk).set<Teuchos::Array<std::string>>("PKs order", pk_names);
+        out_list.sublist(pk).set<int>("master PK index", 0);
       } else if (basename == "coupled multiphase") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "multiphase matrix", delimiter));
@@ -857,17 +872,19 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
           .set<int>("master PK index", 0)
           .set<std::string>("domain name", "domain");
 
-        auto& tmp = glist.sublist("state").sublist("evaluators");
-        AddSecondaryFieldEvaluator_(tmp,
-                                    Keys::getKey("domain", "molar_density_liquid"),
-                                    "molar density key",
-                                    "eos",
-                                    "density");
-        AddSecondaryFieldEvaluator_(tmp,
-                                    Keys::getKey("domain", "viscosity_liquid"),
-                                    "viscosity key",
-                                    "viscosity",
-                                    "viscosity");
+        if (eos_model_ != "") {
+          auto& tmp = glist.sublist("state").sublist("evaluators");
+          AddSecondaryFieldEvaluator_(tmp,
+                                      Keys::getKey("domain", "molar_density_liquid"),
+                                      "molar density key",
+                                      "eos",
+                                      "density");
+          AddSecondaryFieldEvaluator_(tmp,
+                                      Keys::getKey("domain", "viscosity_liquid"),
+                                      "viscosity key",
+                                      "viscosity",
+                                      "viscosity");
+        }
 
         std::vector<std::string> controls({ "pressure" });
         out_list.sublist(pk_names[0])
@@ -895,17 +912,19 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
           .set<int>("master PK index", 0)
           .set<std::string>("domain name", "fracture");
 
-        auto& tmp = glist.sublist("state").sublist("evaluators");
-        AddSecondaryFieldEvaluator_(tmp,
-                                    Keys::getKey("fracture", "molar_density_liquid"),
-                                    "molar density key",
-                                    "eos",
-                                    "density");
-        AddSecondaryFieldEvaluator_(tmp,
-                                    Keys::getKey("fracture", "viscosity_liquid"),
-                                    "viscosity key",
-                                    "viscosity",
-                                    "viscosity");
+        if (eos_model_ != "") {
+          auto& tmp = glist.sublist("state").sublist("evaluators");
+          AddSecondaryFieldEvaluator_(tmp,
+                                      Keys::getKey("fracture", "molar_density_liquid"),
+                                      "molar density key",
+                                      "eos",
+                                      "density");
+          AddSecondaryFieldEvaluator_(tmp,
+                                      Keys::getKey("fracture", "viscosity_liquid"),
+                                      "viscosity key",
+                                      "viscosity",
+                                      "viscosity");
+        }
 
         std::vector<std::string> controls({ "pressure" });
         out_list.sublist(pk_names[0])
@@ -1011,11 +1030,12 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
     std::string prefix = Keys::split(name, delimiter).first;
     std::string basename = Keys::split(name, delimiter).second;
 
-    if (basename == "coupled flow") {
-      std::string flow_m = Keys::merge(prefix, "flow matrix", delimiter);
-      std::string flow_f = Keys::merge(prefix, "flow fracture", delimiter);
+    if (basename == "coupled flow" || basename == "coupled energy") {
+      std::string pk = basename.erase(0, 8);
+      std::string pk_m = Keys::merge(prefix, pk + " matrix", delimiter);
+      std::string pk_f = Keys::merge(prefix, pk + " fracture", delimiter);
       pk_list.sublist(name).sublist("time integrator") =
-        pk_list.sublist(flow_m).sublist("time integrator");
+        pk_list.sublist(pk_m).sublist("time integrator");
 
       pk_list.sublist(name)
         .sublist("time integrator")
@@ -1023,11 +1043,11 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
         .sublist("nka parameters")
         .set<std::string>("monitor", "monitor l2 residual");
 
-      auto& tmp_m = pk_list.sublist(flow_m).sublist("time integrator");
+      auto& tmp_m = pk_list.sublist(pk_m).sublist("time integrator");
       tmp_m.set<std::string>("time integration method", "none");
       tmp_m.remove("BDF1", false);
       tmp_m.remove("initialization", false);
-      auto& tmp = pk_list.sublist(flow_m).sublist("operators").sublist("diffusion operator");
+      auto& tmp = pk_list.sublist(pk_m).sublist("operators").sublist("diffusion operator");
       tmp.sublist("matrix")
         .set<Teuchos::Array<std::string>>("fracture", fracture_regions_)
         .set<std::string>("nonlinear coefficient", "standard: cell");
@@ -1035,7 +1055,7 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
         .set<Teuchos::Array<std::string>>("fracture", fracture_regions_)
         .set<std::string>("nonlinear coefficient", "standard: cell");
 
-      auto& tmp_f = pk_list.sublist(flow_f).sublist("time integrator");
+      auto& tmp_f = pk_list.sublist(pk_f).sublist("time integrator");
       tmp_f.set<std::string>("time integration method", "none");
       tmp_f.remove("BDF1", false);
       tmp_f.remove("initialization", false);

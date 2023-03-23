@@ -16,6 +16,7 @@
 #include "PK_MPCStrong.hh"
 #include "PK_MPCSubcycled.hh"
 
+#include "EnergyMatrixFracture_PK.hh"
 #include "FlowEnergy_PK.hh"
 #include "FlowEnergyMatrixFracture_PK.hh"
 #include "FlowMatrixFracture_PK.hh"
@@ -53,6 +54,8 @@ RegisteredPKFactory<TransportMatrixFracture_PK>
   TransportMatrixFracture_PK::reg_("transport matrix fracture");
 RegisteredPKFactory<ChemistryMatrixFracture_PK>
   ChemistryMatrixFracture_PK::reg_("chemistry matrix fracture");
+RegisteredPKFactory<EnergyMatrixFracture_PK>
+  EnergyMatrixFracture_PK::reg_("energy matrix fracture");
 
 RegisteredPKFactory<TransportMatrixFractureImplicit_PK>
   TransportMatrixFractureImplicit_PK::reg_("transport matrix fracture implicit");

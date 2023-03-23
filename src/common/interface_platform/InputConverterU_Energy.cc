@@ -89,11 +89,17 @@ InputConverterU::TranslateEnergy_(const std::string& domain)
     thermal.set<std::string>("thermal conductivity type", "one-phase polynomial");
   }
 
-  double cv_f(0.606), cv_r(0.2);
-  node = GetUniqueElementByTagsString_("materials", flag);
+  double cv_f(0.0), cv_r(0.0);
+  std::string prefix = (domain == "fracture") ? "fracture_network," : "";
+  node = GetUniqueElementByTagsString_(prefix + "materials", flag);
   std::vector<DOMNode*> materials = GetChildren_(node, "material", flag);
 
-  node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, rock_conductivity", flag);
+  std::string model;
+  node = GetUniqueElementByTagsString_(materials[0], "thermal_properties", flag);
+  if (flag) { model = GetAttributeValueS_(node, "model", "constant, liquid water"); }
+
+  node =
+    GetUniqueElementByTagsString_(materials[0], "thermal_properties, liquid_conductivity", flag);
   if (flag) cv_f = GetTextContentD_(node, "W/m/K", true);
 
   node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, rock_conductivity", flag);
@@ -102,6 +108,9 @@ InputConverterU::TranslateEnergy_(const std::string& domain)
   thermal.set<double>("thermal conductivity of liquid", cv_f);
   thermal.set<double>("thermal conductivity of rock", cv_r);
   thermal.set<double>("reference temperature", 298.15);
+  thermal.set<std::string>("eos type", model);
+
+  if (model == "constant") { thermal.set<double>("thermal conductivity", cv_f + cv_r); }
 
   // insert time integrator
   std::string err_options("energy"), unstr_controls("unstructured_controls, unstr_energy_controls");
@@ -125,6 +134,12 @@ InputConverterU::TranslateEnergy_(const std::string& domain)
     verb_list_.sublist("verbose object");
   out_list.sublist("enthalpy evaluator").sublist("verbose object") =
     verb_list_.sublist("verbose object");
+
+  // cross coupling of PKs
+  if (fracture_regions_.size() > 0 && domain == "fracture") {
+    out_list.sublist("physical models and assumptions")
+      .set<bool>("flow and transport in fractures", true);
+  }
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;

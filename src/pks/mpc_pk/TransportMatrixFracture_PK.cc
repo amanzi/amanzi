@@ -64,7 +64,7 @@ TransportMatrixFracture_PK::Setup()
 
   tcc_matrix_key_ = "total_component_concentration";
   tcc_fracture_key_ = "fracture-total_component_concentration";
-  normal_diffusion_key_ = "fracture-normal_diffusion";
+  solute_diffusion_to_matrix_key_ = "fracture-solute_diffusion_to_matrix";
 
   // darcy fluxes use non-uniform distribution of DOFs
   // -- darcy flux for matrix
@@ -87,12 +87,13 @@ TransportMatrixFracture_PK::Setup()
   }
 
   // Require additional fields and evaluators
-  if (!S_->HasRecord(normal_diffusion_key_)) {
-    S_->Require<CV_t, CVS_t>(normal_diffusion_key_, Tags::DEFAULT, normal_diffusion_key_)
+  if (!S_->HasRecord(solute_diffusion_to_matrix_key_)) {
+    S_->Require<CV_t, CVS_t>(
+        solute_diffusion_to_matrix_key_, Tags::DEFAULT, solute_diffusion_to_matrix_key_)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 2);
-    S_->RequireEvaluator(normal_diffusion_key_, Tags::DEFAULT);
+    S_->RequireEvaluator(solute_diffusion_to_matrix_key_, Tags::DEFAULT);
   }
 
   // add boundary condition to transport in matrix list
@@ -163,7 +164,7 @@ TransportMatrixFracture_PK::Initialize()
 
   // decision to create this field could be possibly made during setup
   if (!flag_dispersion_)
-    InitializeCVField(S_, *vo_, normal_diffusion_key_, Tags::DEFAULT, "state", 0.0);
+    InitializeCVField(S_, *vo_, solute_diffusion_to_matrix_key_, Tags::DEFAULT, "state", 0.0);
 }
 
 
@@ -204,7 +205,7 @@ TransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     auto op0 = pk0->DispersionSolver(tcc_prev_m, tcc_next_m, t_old, t_new, i)->Clone();
     auto op1 = pk1->DispersionSolver(tcc_prev_f, tcc_next_f, t_old, t_new, i)->Clone();
 
-    auto eval = S_->GetEvaluatorPtr("fracture-normal_diffusion", Tags::DEFAULT);
+    auto eval = S_->GetEvaluatorPtr("fracture-solute_diffusion_to_matrix", Tags::DEFAULT);
     auto eval_tmp = Teuchos::rcp_dynamic_cast<SoluteDiffusionMatrixFracture>(eval);
     if (eval_tmp.get()) {
       eval_tmp->set_subvector(pk0->getDiffusion(i));
@@ -229,7 +230,7 @@ TransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     // -- indices transmissibimility coefficients for matrix-fracture flux
     auto mesh_matrix = S_->GetMesh("domain");
     auto mesh_fracture = S_->GetMesh("fracture");
-    const auto& kn = *S_->Get<CV_t>("fracture-normal_diffusion").ViewComponent("cell");
+    const auto& kn = *S_->Get<CV_t>("fracture-solute_diffusion_to_matrix").ViewComponent("cell");
 
     auto& mmap = *cvs0->Map("face", false);
     auto& gmap = *cvs0->Map("face", true);

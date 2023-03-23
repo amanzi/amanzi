@@ -22,15 +22,17 @@
 #include "H2O_Density.hh"
 #include "H2O_DensityFEHM.hh"
 #include "H2O_SaturatedVaporPressure.hh"
+#include "H2O_ThermalConductivity.hh"
 #include "H2O_Viscosity.hh"
-#include "H2O_ViscosityConstant.hh"
 #include "H2O_ViscosityFEHM.hh"
 #include "H2O_ViscosityTabular.hh"
 #include "IdealGas_Density.hh"
 #include "IsobaricEOSEvaluator.hh"
 #include "MolarFractionGasEvaluator.hh"
+#include "ThermalConductivityConstant.hh"
 #include "VaporInGas_Density.hh"
 #include "VaporInGas_Diffusion.hh"
+#include "ViscosityConstant.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
@@ -58,8 +60,7 @@ Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure>
 
 Utils::RegisteredFactory<EOS_Viscosity, H2O_Viscosity>
   H2O_Viscosity::factory_("liquid water 0-30C");
-Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityConstant>
-  H2O_ViscosityConstant::factory_("constant");
+Utils::RegisteredFactory<EOS_Viscosity, ViscosityConstant> ViscosityConstant::factory_("constant");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM>
   H2O_ViscosityFEHM::factory_("liquid water FEHM");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityTabular>
@@ -70,6 +71,11 @@ Utils::RegisteredFactory<EOS_Diffusion, VaporInGas_Diffusion>
 
 Utils::RegisteredFactory<COM_Tortuosity, COM_MillingtonQuirk>
   COM_MillingtonQuirk::factory_("Millington Quirk");
+
+Utils::RegisteredFactory<EOS_ThermalConductivity, H2O_ThermalConductivity>
+  H2O_ThermalConductivity::reg_("liquid water");
+Utils::RegisteredFactory<EOS_ThermalConductivity, ThermalConductivityConstant>
+  ThermalConductivityConstant::reg_("constant");
 
 } // namespace AmanziEOS
 } // namespace Amanzi

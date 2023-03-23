@@ -25,8 +25,8 @@ namespace AmanziEOS {
 * Constructor takes a parameter list to override defaulr values. This
 * may be useful for unit tests.
 ******************************************************************* */
-H2O_ThermalConductivity::H2O_ThermalConductivity(Teuchos::ParameterList& eos_plist)
-  : eos_plist_(eos_plist),
+H2O_ThermalConductivity::H2O_ThermalConductivity(Teuchos::ParameterList& plist)
+  : EOS_ThermalConductivity(plist),
     ka0_(-1.48445),
     ka1_(4.12292),
     ka2_(-1.63866),
@@ -45,7 +45,7 @@ H2O_ThermalConductivity::H2O_ThermalConductivity(Teuchos::ParameterList& eos_pli
 * Main routine uses pre-computed coefficients.
 ******************************************************************* */
 double
-H2O_ThermalConductivity::ThermalConductivity(double T)
+H2O_ThermalConductivity::ThermalConductivity(double T, double p)
 {
   double Ts = T / Tref_;
   double k = ka0_ + (ka1_ + ka2_ * Ts) * Ts;
@@ -65,7 +65,7 @@ H2O_ThermalConductivity::ThermalConductivity(double T)
 * Main routine uses pre-computed coefficients.
 ******************************************************************* */
 double
-H2O_ThermalConductivity::DThermalConductivityDT(double T)
+H2O_ThermalConductivity::DThermalConductivityDT(double T, double p)
 {
   double Ts = T / Tref_;
   double dkdT = (ka1_ + 2 * ka2_ * Ts) / Tref_;
@@ -80,11 +80,11 @@ H2O_ThermalConductivity::DThermalConductivityDT(double T)
 void
 H2O_ThermalConductivity::InitializeFromPlist_()
 {
-  kref_ = eos_plist_.get<double>("thermal conductivity of liquid", kref_);
-  Tref_ = eos_plist_.get<double>("reference temperature", Tref_);
+  kref_ = plist_.get<double>("thermal conductivity of liquid", kref_);
+  Tref_ = plist_.get<double>("reference temperature", Tref_);
 
-  if (eos_plist_.isParameter("polynomial expansion")) {
-    Teuchos::Array<double> kai = eos_plist_.get<Teuchos::Array<double>>("polynomial expansion");
+  if (plist_.isParameter("polynomial expansion")) {
+    Teuchos::Array<double> kai = plist_.get<Teuchos::Array<double>>("polynomial expansion");
     AMANZI_ASSERT(kai.size() == 3);
 
     ka0_ = kai[0];

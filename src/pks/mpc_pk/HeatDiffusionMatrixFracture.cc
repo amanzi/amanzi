@@ -8,7 +8,7 @@
 */
 
 /*
-  Molecular diffusion coefficeint between fracture and matrix.
+  Heat diffusion coefficeint between fracture and matrix.
 */
 
 
@@ -16,31 +16,25 @@
 
 #include "UniqueLocalIndex.hh"
 
-#include "SoluteDiffusionMatrixFracture.hh"
+#include "HeatDiffusionMatrixFracture.hh"
 
 namespace Amanzi {
 
 /* *******************************************************************
 * Constructor
 ******************************************************************* */
-SoluteDiffusionMatrixFracture::SoluteDiffusionMatrixFracture(Teuchos::ParameterList& plist)
-  : EvaluatorSecondary(plist), mol_diff_(0.0)
+HeatDiffusionMatrixFracture::HeatDiffusionMatrixFracture(Teuchos::ParameterList& plist)
+  : EvaluatorSecondary(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
   }
   domain_ = Keys::getDomain(my_keys_[0].first);
 
-  saturation_key_ = plist_.get<std::string>("saturation key");
-  tortuosity_key_ = plist_.get<std::string>("tortuosity key");
-  porosity_key_ = plist_.get<std::string>("porosity key");
+  conductivity_key_ = plist_.get<std::string>("thermal conductivity key");
   aperture_key_ = plist_.get<std::string>("aperture key");
-  if (plist_.isParameter("molecular diffusion")) {
-    mol_diff_ = plist_.get<double>("molecular diffusion");
-  }
 
-  dependencies_.insert(std::make_pair(saturation_key_, Tags::DEFAULT));
-  dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(conductivity_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(aperture_key_, Tags::DEFAULT));
 }
 
@@ -49,16 +43,14 @@ SoluteDiffusionMatrixFracture::SoluteDiffusionMatrixFracture(Teuchos::ParameterL
 * Actual work is done here
 ******************************************************************* */
 void
-SoluteDiffusionMatrixFracture::Update_(State& S)
+HeatDiffusionMatrixFracture::Update_(State& S)
 {
   Key key = my_keys_[0].first;
   auto mesh = S.GetMesh(domain_);
   auto mesh_parent = mesh->parent();
 
-  const auto& sat_c = *S.Get<CompositeVector>(saturation_key_, Tags::DEFAULT).ViewComponent("cell");
-  const auto& poro_c = *S.Get<CompositeVector>(porosity_key_, Tags::DEFAULT).ViewComponent("cell");
-  const auto& tortuosity_c =
-    *S.Get<CompositeVector>(tortuosity_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& conductivity_c =
+    *S.Get<CompositeVector>(conductivity_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& aperture_c =
     *S.Get<CompositeVector>(aperture_key_, Tags::DEFAULT).ViewComponent("cell");
 
@@ -73,11 +65,11 @@ SoluteDiffusionMatrixFracture::Update_(State& S)
     mesh_parent->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ndofs = cells.size();
 
-    double factor = mol_diff_ / (aperture_c[0][c] / 2);
+    double factor = 0.5 / aperture_c[0][c];
     for (int k = 0; k < ndofs; ++k) {
       int pos = Operators::UniqueIndexFaceToCells(*mesh_parent, f, cells[k]);
       int c1 = cells[pos];
-      result_c[k][c] = tortuosity_c[0][c1] * poro_c[0][c1] * factor;
+      result_c[k][c] = conductivity_c[0][c1] * factor;
     }
   }
 }
@@ -87,7 +79,7 @@ SoluteDiffusionMatrixFracture::Update_(State& S)
 * Actual work is done here
 ******************************************************************* */
 void
-SoluteDiffusionMatrixFracture::EnsureCompatibility(State& S)
+HeatDiffusionMatrixFracture::EnsureCompatibility(State& S)
 {
   Key key = my_keys_[0].first;
   Tag tag = my_keys_[0].second;

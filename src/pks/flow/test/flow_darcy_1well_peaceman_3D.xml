@@ -288,7 +288,7 @@
     </ParameterList>
     <ParameterList name="Bottom side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{-0.,-0.,-5.0}"/>
+        <Parameter name="point" type="Array(double)" value="{-0.,-0.,-2.0}"/>
         <Parameter name="normal" type="Array(double)" value="{ 0.0, 0.0,-1.0}"/>
       </ParameterList>
     </ParameterList>

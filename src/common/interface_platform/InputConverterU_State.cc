@@ -97,6 +97,7 @@ InputConverterU::TranslateState_()
     AddIndependentFieldEvaluator_(out_ev, "mass_density_liquid", "All", "cell", rho_);
     AddIndependentFieldEvaluator_(
       out_ev, "molar_density_liquid", "All", "*", rho_ / 0.0180153333333);
+    AddIndependentFieldEvaluator_(out_ev, "viscosity_liquid", "All", "*", viscosity);
   }
 
   // --- region specific initial conditions from material properties
@@ -286,7 +287,9 @@ InputConverterU::TranslateState_()
     }
   }
 
+  // ----------------------------------------------------------------
   // optional fracture network
+  // ----------------------------------------------------------------
   if (fracture_regions_.size() > 0) { TranslateCommonContinuumFields_("fracture", out_ic, out_ev); }
 
   if (fracture_regions_.size() > 0 && eos_model_ == "") {
@@ -297,6 +300,8 @@ InputConverterU::TranslateState_()
                                   "FRACTURE_NETWORK_INTERNAL",
                                   "*",
                                   rho_ / 0.0180153333333);
+    AddIndependentFieldEvaluator_(
+      out_ev, "fracture-viscosity_liquid", "FRACTURE_NETWORK_INTERNAL", "*", viscosity);
   }
 
   node = GetUniqueElementByTagsString_("fracture_network, materials", flag);
@@ -312,7 +317,7 @@ InputConverterU::TranslateState_()
       std::string reg_str = CreateNameFromVector_(regions);
 
       // material properties
-      // -- aperture
+      // -- diffusion to matrix (Darcy law)
       node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
       if (flag) {
         auto tmp1 = GetUniqueElementByTagsString_(node, "aperture", flag1);
@@ -324,16 +329,17 @@ InputConverterU::TranslateState_()
         TranslateFieldEvaluator_(
           tmp1, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "value", "fracture");
         TranslateFieldIC_(
-          tmp2, "fracture-normal_permeability", "s^-1", reg_str, regions, out_ic, "value");
+          tmp2, "fracture-diffusion_to_matrix", "s^-1", reg_str, regions, out_ic, "value");
       } else {
         msg << "fracture_permeability element must be specified for all materials in fracture "
                "network.";
         Exceptions::amanzi_throw(msg);
       }
 
-      node = GetUniqueElementByTagsString_(inode, "diffusion_to_matrix", flag);
+      // -- solute diffusion to matrix (Fick law)
+      node = GetUniqueElementByTagsString_(inode, "solute_diffusion_to_matrix", flag);
       if (flag) {
-        Teuchos::ParameterList& field_ev = out_ev.sublist("fracture-normal_diffusion");
+        Teuchos::ParameterList& field_ev = out_ev.sublist("fracture-solute_diffusion_to_matrix");
 
         std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
 
@@ -352,11 +358,39 @@ InputConverterU::TranslateState_()
           tmp.sublist("dof 2 function").sublist("function-constant").set<double>("value", val);
         }
         if (model == "standard") {
-          field_ev.set<std::string>("evaluator type", "normal diffusion");
+          field_ev.set<std::string>("evaluator type", "solute diffusion to matrix");
 
           field_ev.set<std::string>("porosity key", "porosity")
             .set<std::string>("aperture key", "fracture-aperture")
             .set<double>("molecular diffusion", 0.0);
+        }
+      }
+
+      // -- heat diffusion to matrix (Fourier law)
+      node = GetUniqueElementByTagsString_(inode, "heat_diffusion_to_matrix", flag);
+      if (flag) {
+        Teuchos::ParameterList& field_ev = out_ev.sublist("fracture-heat_diffusion_to_matrix");
+
+        std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
+
+        if (model == "constant") {
+          double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "W/m^2/K");
+
+          auto& tmp = field_ev.set<std::string>("evaluator type", "independent variable")
+                        .sublist("function")
+                        .sublist(reg_str)
+                        .set<Teuchos::Array<std::string>>("regions", regions)
+                        .set<std::string>("component", "cell")
+                        .sublist("function");
+
+          tmp.set<int>("number of dofs", 2).set<std::string>("function type", "composite function");
+          tmp.sublist("dof 1 function").sublist("function-constant").set<double>("value", val);
+          tmp.sublist("dof 2 function").sublist("function-constant").set<double>("value", val);
+        }
+        if (model == "standard") {
+          field_ev.set<std::string>("evaluator type", "heat diffusion to matrix")
+            .set<std::string>("aperture key", "fracture-aperture")
+            .set<std::string>("thermal conductivity key", "thermal_conductivity");
         }
       }
 
@@ -375,10 +409,29 @@ InputConverterU::TranslateState_()
       }
 
       // -- thermal conductivity
-      node = GetUniqueElementByTagsString_(inode, "fracture_conductivity", flag);
+      node = GetUniqueElementByTagsString_(inode, "heat_flux_to_matrix", flag);
       if (flag) {
         TranslateFieldIC_(
-          node, "fracture-normal_conductivity", "", reg_str, regions, out_ic, "normal");
+          node, "fracture-heat_diffusion_to_matrix", "", reg_str, regions, out_ic, "normal");
+      }
+
+      // -- rock heat capacity
+      node = GetUniqueElementByTagsString_(inode, "thermal_properties, rock_heat_capacity", flag);
+      if (flag) {
+        double cv =
+          GetAttributeValueD_(node, "cv", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "m^2/s^2/K");
+        std::string model = GetAttributeValueS_(node, "model", "linear");
+
+        Teuchos::ParameterList& field_ev = out_ev.sublist("fracture-internal_energy_rock");
+        field_ev.set<std::string>("evaluator type", "iem")
+          .set<std::string>("internal energy key", "internal_energy_rock");
+
+        field_ev.sublist("IEM parameters")
+          .sublist(reg_str)
+          .set<Teuchos::Array<std::string>>("regions", regions)
+          .sublist("IEM parameters")
+          .set<std::string>("iem type", model)
+          .set<double>("heat capacity", cv);
       }
     }
 
@@ -631,6 +684,12 @@ InputConverterU::TranslateState_()
           .set<double>("value", val);
       }
 
+      // -- temperature
+      node = GetUniqueElementByTagsString_(inode, "temperature", flag);
+      if (flag) {
+        TranslateFieldIC_(node, "temperature", "K", reg_str, regions, out_ic, "velue", { "*" });
+      }
+
       // -- geochemical condition
       node = GetUniqueElementByTagsString_(
         inode, "liquid_phase, geochemistry_component, constraint", flag);
@@ -826,6 +885,12 @@ InputConverterU::TranslateState_()
           .sublist("function-constant")
           .set<double>("value", val);
       }
+
+      // -- temperature
+      node = GetUniqueElementByTagsString_(inode, "temperature", flag);
+      if (flag)
+        TranslateFieldIC_(
+          node, "fracture-temperature", "K", reg_str, regions, out_ic, "value", { "*" });
     }
   }
 
@@ -959,7 +1024,7 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
             .set<double>("fluid compressibility", val1)
             .set<double>("matrix compressibility", val2)
             .set<double>("gravity", const_gravity_)
-            .set<double>("density", rho_);
+            .set<double>("fluid density", rho_);
         }
       }
 

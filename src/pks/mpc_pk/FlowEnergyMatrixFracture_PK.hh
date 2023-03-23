@@ -96,7 +96,7 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
-  Key normal_permeability_key_, normal_conductivity_key_;
+  Key diffusion_to_matrix_key_, heat_diffusion_to_matrix_key_;
   Key matrix_vol_flowrate_key_, fracture_vol_flowrate_key_;
 
   std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>> adv_coupling_matrix_, adv_coupling_pc_;

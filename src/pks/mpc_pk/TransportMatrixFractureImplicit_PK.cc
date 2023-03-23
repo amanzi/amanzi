@@ -88,7 +88,7 @@ TransportMatrixFractureImplicit_PK::Setup()
        ->SetGhosted(true) = *cvs;
   }
 
-  S_->Require<CV_t, CVS_t>("fracture-normal_diffusion", Tags::DEFAULT, "state")
+  S_->Require<CV_t, CVS_t>("fracture-solute_diffusion_to_matrix", Tags::DEFAULT, "state")
     .SetMesh(mesh_fracture_)
     ->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -247,7 +247,7 @@ TransportMatrixFractureImplicit_PK::Initialize()
   op_tree_matrix_->InitializeInverse();
 
   if (!flag_dispersion_)
-    InitializeCVField(S_, *vo_, "fracture-normal_diffusion", Tags::DEFAULT, "state", 0.0);
+    InitializeCVField(S_, *vo_, "fracture-solute_diffusion_to_matrix", Tags::DEFAULT, "state", 0.0);
 
   // time integrators
   if (nspace_m_ == 2 && nspace_f_ == 2) {
@@ -348,7 +348,7 @@ TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, i
 
     // assemble dispersion/diffusion operators
     if (flag_dispersion_) {
-      const auto& kn = *S_->Get<CV_t>("fracture-normal_diffusion").ViewComponent("cell");
+      const auto& kn = *S_->Get<CV_t>("fracture-solute_diffusion_to_matrix").ViewComponent("cell");
       fid_->SetValues(kn, 1.0);
 
       op_coupling00d_->Setup(fid_->get_values(), 1.0);
@@ -473,7 +473,7 @@ TransportMatrixFractureImplicit_PK::FunctionalResidual(double t_old,
   op_coupling11_->global_operator()->Apply(*u1, *f1, 1.0);
 
   if (flag_dispersion_) {
-    const auto& kn = *S_->Get<CV_t>("fracture-normal_diffusion").ViewComponent("cell");
+    const auto& kn = *S_->Get<CV_t>("fracture-solute_diffusion_to_matrix").ViewComponent("cell");
     fid_->SetValues(kn, 1.0);
 
     op_coupling00d_->Setup(fid_->get_values(), 1.0);

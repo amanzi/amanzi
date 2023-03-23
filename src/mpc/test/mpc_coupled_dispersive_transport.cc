@@ -44,12 +44,7 @@ Case3(double a, double b, double c, double t)
 
 
 double
-RunTest(int icase,
-        double u_f,
-        double mol_diff_f,
-        double mol_diff_m,
-        double L,
-        double tend = 1e+5)
+RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, double tend = 1e+5)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -83,10 +78,10 @@ RunTest(int icase,
     .sublist("molecular diffusion")
     .set<Teuchos::Array<double>>("aqueous values", tmp_m);
 
-  // normal diffusion coeffcient, kn = phi * Dm / (a/2)
+  // solute diffusion to matrix coefficient, kn = phi * Dm / (a/2)
   plist->sublist("state")
     .sublist("evaluators")
-    .sublist("fracture-normal_diffusion")
+    .sublist("fracture-solute_diffusion_to_matrix")
     .set<double>("molecular diffusion", mol_diff_m);
 
   if (icase == 3) {
@@ -167,7 +162,8 @@ RunTest(int icase,
   double fmin(1e+99), fmax(-1e+99), err(0.0), norm(0.0);
 
   double b = (*S->Get<CompositeVector>("fracture-aperture").ViewComponent("cell"))[0][0];
-  double kn = (*S->Get<CompositeVector>("fracture-normal_diffusion").ViewComponent("cell"))[0][0];
+  double kn =
+    (*S->Get<CompositeVector>("fracture-solute_diffusion_to_matrix").ViewComponent("cell"))[0][0];
   double phi = (*S->Get<CompositeVector>("porosity").ViewComponent("cell"))[0][0];
 
   double t(tend), Df(mol_diff_f), Dm(mol_diff_m);

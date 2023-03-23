@@ -30,7 +30,6 @@ set(eos_src_files
     H2O_ThermalConductivity.cc
     H2O_SaturatedVaporPressure.cc
     H2O_Viscosity.cc
-    H2O_ViscosityConstant.cc
     H2O_ViscosityFEHM.cc
     H2O_ViscosityTabular.cc
     Henry_Solubility.cc
@@ -40,6 +39,7 @@ set(eos_src_files
     MolarFractionGasEvaluator.cc
     VaporInGas_Density.cc
     VaporInGas_Diffusion.cc
+    ViscosityConstant.cc
    )
 
 add_amanzi_library(eos
@@ -69,7 +69,6 @@ set(eos_inc_files
     H2O_DensityTabular.hh
     H2O_SaturatedVaporPressure.hh
     H2O_Viscosity.hh
-    H2O_ViscosityConstant.hh
     H2O_ViscosityFEHM.hh
     H2O_ViscosityTabular.hh
     Henry_Solubility.hh
@@ -79,6 +78,7 @@ set(eos_inc_files
     MolarFractionGasEvaluator.hh
     VaporInGas_Density.hh
     VaporInGas_Diffusion.hh
+    ViscosityConstant.hh
    )
 
 # install headers into a subdirectory

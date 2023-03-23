@@ -36,7 +36,7 @@ class SpecificStorage_Constant : public SpecificStorage {
  private:
   double value_;
 
-  static Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Constant> factory_;
+  static Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Constant> reg_;
 };
 
 } // namespace Flow

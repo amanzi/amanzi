@@ -123,7 +123,7 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
   double bcl_;
   std::shared_ptr<Operators::Mini_Diffusion1D> op_;
 
-  static Utils::RegisteredFactory<MultiscaleFlowPorosity, MultiscaleFlowPorosity_GDPM> factory_;
+  static Utils::RegisteredFactory<MultiscaleFlowPorosity, MultiscaleFlowPorosity_GDPM> reg_;
 };
 
 } // namespace Flow

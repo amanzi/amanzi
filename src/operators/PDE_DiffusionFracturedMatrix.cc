@@ -71,7 +71,7 @@ PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
   }
 
   // other parameters
-  gravity_ = plist.get<bool>("gravity");
+  gravity_ = plist.get<bool>("gravity", false);
   scaled_constraint_ = false;
   newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
   exclude_primary_terms_ = false;

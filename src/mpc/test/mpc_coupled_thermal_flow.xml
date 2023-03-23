@@ -316,6 +316,21 @@
         </ParameterList>
       </ParameterList>
 
+      <ParameterList name="fracture-heat_diffusion_to_matrix">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="saturation_liquid">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -398,7 +413,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="fracture-normal_permeability">
+      <ParameterList name="fracture-diffusion_to_matrix">
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
@@ -406,19 +421,6 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="3.9240e-05"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="fracture-normal_conductivity">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.2"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -812,6 +814,7 @@
 	  <Parameter name="thermal conductivity of liquid" type="double" value="0.5"/>
 	  <Parameter name="reference temperature" type="double" value="275.0"/>
 	  <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
+	  <Parameter name="eos type" type="string" value="liquid water"/>
 	</ParameterList>
 	<ParameterList name="verbose object">
 	  <Parameter name="verbosity level" type="string" value="high"/>
@@ -888,6 +891,7 @@
 	  <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
 	  <Parameter name="reference temperature" type="double" value="275.0"/>
 	  <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
+	  <Parameter name="eos type" type="string" value="liquid water"/>
 	</ParameterList>
       </ParameterList>
 

@@ -395,14 +395,14 @@ TEST(BOXREGION_VOFS_3D_INTERSECTION_SKEWED)
   xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 0.0)));
   xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 0.0, 1.0)));
 
-  xyz1.push_back(Point(-0.00254842875592, -0.5,  1.81336633663360));
-  xyz1.push_back(Point( 0.01122686181662, -0.5, -7.98861386138615));
-  xyz1.push_back(Point( 0.01122686181662,  0.5, -7.98861386138615));
-  xyz1.push_back(Point(-0.00254842875592,  0.5,  1.81336633663360));
-  xyz1.push_back(Point( 0.03188635385278, -0.5,  5.81336633663362));
-  xyz1.push_back(Point( 0.04566164442531, -0.5, -3.98861386138613));
-  xyz1.push_back(Point( 0.04566164442531,  0.5, -3.98861386138613));
-  xyz1.push_back(Point( 0.03188635385278,  0.5,  5.81336633663362));
+  xyz1.push_back(Point(-0.00254842875592, -0.5, 1.81336633663360));
+  xyz1.push_back(Point(0.01122686181662, -0.5, -7.98861386138615));
+  xyz1.push_back(Point(0.01122686181662, 0.5, -7.98861386138615));
+  xyz1.push_back(Point(-0.00254842875592, 0.5, 1.81336633663360));
+  xyz1.push_back(Point(0.03188635385278, -0.5, 5.81336633663362));
+  xyz1.push_back(Point(0.04566164442531, -0.5, -3.98861386138613));
+  xyz1.push_back(Point(0.04566164442531, 0.5, -3.98861386138613));
+  xyz1.push_back(Point(0.03188635385278, 0.5, 5.81336633663362));
 
 
   faces1[0] = std::vector<int>({ 0, 1, 5, 4 });
@@ -426,9 +426,6 @@ TEST(BOXREGION_VOFS_3D_INTERSECTION_SKEWED)
   double tol(1e-11);
   for (auto p : xyz3) {
     std::cout << "p: " << p << std::endl;
-    for (int i = 0; i < 3; ++i)
-      CHECK(p[i] <= 1.0 + tol && p[i] >= -tol);
+    for (int i = 0; i < 3; ++i) CHECK(p[i] <= 1.0 + tol && p[i] >= -tol);
   }
 }
-
-

@@ -142,7 +142,7 @@
         <porosity value="0.2206"/>
       </mechanical_properties>
       <permeability x="6.9365E-11 m^2" z="6.9365E-12 m^2" />
-      <thermal_properties>
+      <thermal_properties model="constant">
         <liquid_heat_capacity cv="76.1" model="linear"/>
         <rock_heat_capacity cv="620.1 J/K/kg" model="linear"/>
       </thermal_properties>
@@ -153,7 +153,7 @@
         <porosity value="0.3"/>
       </mechanical_properties>
       <permeability x="6.9E-13 m^2" z="6.9E-32 m^2" />
-      <thermal_properties>
+      <thermal_properties model="constant">
         <liquid_heat_capacity cv="76.2" model="linear"/>
         <rock_heat_capacity cv="620.2 J/K/kg" model="linear"/>
       </thermal_properties>

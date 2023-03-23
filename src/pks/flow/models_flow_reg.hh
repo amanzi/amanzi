@@ -46,18 +46,18 @@ namespace Amanzi {
 namespace Flow {
 
 Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Constant>
-  SpecificStorage_Constant::factory_("constant");
+  SpecificStorage_Constant::reg_("constant");
 Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Standard>
-  SpecificStorage_Standard::factory_("standard");
+  SpecificStorage_Standard::reg_("standard");
 
-Utils::RegisteredFactory<WRM, WRM_BrooksCorey> WRM_BrooksCorey::factory_("Brooks Corey");
-Utils::RegisteredFactory<WRM, WRM_vanGenuchten> WRM_vanGenuchten::factory_("van Genuchten");
-Utils::RegisteredFactory<WRM, WRM_saturated> WRM_saturated::factory_("saturated");
+Utils::RegisteredFactory<WRM, WRM_BrooksCorey> WRM_BrooksCorey::reg_("Brooks Corey");
+Utils::RegisteredFactory<WRM, WRM_vanGenuchten> WRM_vanGenuchten::reg_("van Genuchten");
+Utils::RegisteredFactory<WRM, WRM_saturated> WRM_saturated::reg_("saturated");
 
 Utils::RegisteredFactory<MultiscaleFlowPorosity, MultiscaleFlowPorosity_DPM>
-  MultiscaleFlowPorosity_DPM::factory_("dual porosity");
+  MultiscaleFlowPorosity_DPM::reg_("dual porosity");
 Utils::RegisteredFactory<MultiscaleFlowPorosity, MultiscaleFlowPorosity_GDPM>
-  MultiscaleFlowPorosity_GDPM::factory_("generalized dual porosity");
+  MultiscaleFlowPorosity_GDPM::reg_("generalized dual porosity");
 
 } // namespace Flow
 } // namespace Amanzi

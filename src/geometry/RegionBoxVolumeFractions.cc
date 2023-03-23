@@ -350,8 +350,8 @@ IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
     for (itf = result.begin(); itf != result.end(); ++itf) {
 #ifdef VERBOSE
       std::cout << " next face of result: #nodes=" << itf->nodes.size() << std::endl;
-      for (itv = itf->nodes.begin(); itv != itf->nodes.end(); ++itv) 
-        std::cout << "  " << *itv << "  xyz=" << result_xyz[*itv].second 
+      for (itv = itf->nodes.begin(); itv != itf->nodes.end(); ++itv)
+        std::cout << "  " << *itv << "  xyz=" << result_xyz[*itv].second
                   << "  d=" << result_xyz[*itv].first << std::endl;
 #endif
       for (itv = itf->nodes.begin(); itv != itf->nodes.end(); ++itv) {
@@ -424,9 +424,10 @@ IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
           itf->edge_flag = 1;
 #ifdef VERBOSE
           std::cout << "  new edge:" << *itv_prev << " " << *itv_next
-                    << "\n     p1=" << result_xyz[*itv_prev].second << "  d=" << result_xyz[*itv_prev].first
-                    << "\n     p2=" << result_xyz[*itv_next].second << "  d=" << result_xyz[*itv_next].first
-                    << std::endl;
+                    << "\n     p1=" << result_xyz[*itv_prev].second
+                    << "  d=" << result_xyz[*itv_prev].first
+                    << "\n     p2=" << result_xyz[*itv_next].second
+                    << "  d=" << result_xyz[*itv_next].first << std::endl;
 #endif
         } else {
           itv++;

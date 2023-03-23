@@ -288,7 +288,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="fracture-normal_permeability">
+      <ParameterList name="fracture-diffusion_to_matrix">
         <ParameterList name="function">
           <ParameterList name="fracture">
             <Parameter name="regions" type="Array(string)" value="{fracture}"/>
@@ -914,9 +914,11 @@
       <ParameterList name="thermal conductivity evaluator">
         <ParameterList name="thermal conductivity parameters">
           <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-          <Parameter name="thermal conductivity of liquid" type="double" value="6.05999999999999983e-01"/>
-          <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
+          <Parameter name="thermal conductivity of liquid" type="double" value="0.0"/>
+          <Parameter name="thermal conductivity of rock" type="double" value="0.0"/>
           <Parameter name="reference temperature" type="double" value="2.98149999999999977e+02"/>
+          <Parameter name="eos type" type="string" value="constant"/>
+          <Parameter name="thermal conductivity" type="double" value="0.0"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">
@@ -1048,6 +1050,7 @@
     <ParameterList name="transient:energy fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="physical models and assumptions">
+        <Parameter name="flow and transport in fractures" type="bool" value="true"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="operators">
@@ -1071,9 +1074,10 @@
       <ParameterList name="thermal conductivity evaluator">
         <ParameterList name="thermal conductivity parameters">
           <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-          <Parameter name="thermal conductivity of liquid" type="double" value="6.05999999999999983e-01"/>
-          <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
+          <Parameter name="thermal conductivity of liquid" type="double" value="0.0"/>
+          <Parameter name="thermal conductivity of rock" type="double" value="0.0"/>
           <Parameter name="reference temperature" type="double" value="2.98149999999999977e+02"/>
+          <Parameter name="eos type" type="string" value=""/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">

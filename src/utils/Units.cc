@@ -69,6 +69,7 @@ Units::Init()
   // supported derived units (simple map is suffient)
   derived_["Pa"] = AtomicUnitForm("kg", 1, "m", -1, "s", -2);
   derived_["J"] = AtomicUnitForm("m", 2, "kg", 1, "s", -2);
+  derived_["W"] = AtomicUnitForm("kg", 1, "m", 2, "s", -3);
 
   // static convertion factor
   concentration_factor_ = concentration_[system_.concentration] / concentration_["SI"];

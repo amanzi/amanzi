@@ -61,7 +61,7 @@ class MultiscaleFlowPorosity_DPM : public MultiscaleFlowPorosity {
   double alpha_;
   double tol_;
 
-  static Utils::RegisteredFactory<MultiscaleFlowPorosity, MultiscaleFlowPorosity_DPM> factory_;
+  static Utils::RegisteredFactory<MultiscaleFlowPorosity, MultiscaleFlowPorosity_DPM> reg_;
 };
 
 } // namespace Flow
