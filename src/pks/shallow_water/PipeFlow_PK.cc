@@ -73,6 +73,8 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
      double OtherTermRight = 0.0;
      double FaceAreaL = 0.0;
      double FaceAreaR = 0.0;
+     double denomL = 0.0;
+     double denomR = 0.0;
 
      for (int n = 0; n < cfaces.size(); ++n) {
         int f = cfaces[n];
@@ -95,6 +97,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
            UL[1] = W[1]; //wetted angle
 
            FaceAreaL = mesh_->face_area(f);
+           denomL = TotalDepthEdgeValue(c1, f, htc, Bc, Bmax, B_n) - BathymetryEdgeValue(f, B_n);
 
         }
 
@@ -121,6 +124,8 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
              UR[0] = W[0]; //wetted area
              UR[1] = W[1]; //wetted angle
 
+             denomR = TotalDepthEdgeValue(c1, f, htc, Bc, Bmax, B_n) - BathymetryEdgeValue(f, B_n);
+
            }
            } else {
 
@@ -128,6 +133,9 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
               UR[0] = W[0];
               UR[1] = W[1];
+
+              denomR = TotalDepthEdgeValue(c2, f, htc, Bc, Bmax, B_n) - BathymetryEdgeValue(f, B_n);
+
            }
 
            FaceAreaR = mesh_->face_area(f);
@@ -166,7 +174,8 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
       BGrad /= vol; //(B_(j+1/2) - //B_(j-1/2)) / dx
 
-      double denom = ComputePondedDepth(UL[1]) - ComputePondedDepth(UR[1]);
+      //double denom = ComputePondedDepth(UL[1]) - ComputePondedDepth(UR[1]);
+      double denom = denomL - denomR;
       S[1] = - (FaceAreaL * OtherTermLeft - FaceAreaR * OtherTermRight) * BGrad / denom;
 
  } // closes cell is not dry 
@@ -217,7 +226,7 @@ double PipeFlow_PK::ComputeTotalDepth(double WettedArea, double WettedAngle, dou
 
    else {
 
-      std::cout << " wetter area is negative in UpdateTotalDepth " << std::endl;
+      std::cout << " wetted area is negative in UpdateTotalDepth " << std::endl;
       abort();
 
    }
@@ -274,7 +283,7 @@ double PipeFlow_PK::ComputeWettedArea(double WettedAngle){
 double PipeFlow_PK::ComputePondedDepth(double WettedAngle){
 
    if(WettedAngle >= TwoPi) return pipe_diameter_;
-
+   
    else return pipe_diameter_ * 0.5 * (1.0 - cos(WettedAngle * 0.5)); 
 
 }
