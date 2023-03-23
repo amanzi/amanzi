@@ -79,7 +79,9 @@ EnergyMatrixFracture_PK::Setup()
   // -- pressure
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_matrix_, mesh_fracture_);
   if (!S_->HasRecord("temperature")) {
-    *S_->Require<CV_t, CVS_t>("temperature", Tags::DEFAULT).SetMesh(mesh_matrix_)->SetGhosted(true) = *cvs;
+    *S_->Require<CV_t, CVS_t>("temperature", Tags::DEFAULT)
+       .SetMesh(mesh_matrix_)
+       ->SetGhosted(true) = *cvs;
     AddDefaultPrimaryEvaluator(S_, "temperature", Tags::DEFAULT);
   }
 
@@ -105,7 +107,8 @@ EnergyMatrixFracture_PK::Setup()
 
   // additional fields and evaluators related to matrix-frcature coupling
   if (!S_->HasRecord(heat_diffusion_to_matrix_key_)) {
-    S_->Require<CV_t, CVS_t>(heat_diffusion_to_matrix_key_, Tags::DEFAULT, heat_diffusion_to_matrix_key_)
+    S_->Require<CV_t, CVS_t>(
+        heat_diffusion_to_matrix_key_, Tags::DEFAULT, heat_diffusion_to_matrix_key_)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 2);
@@ -115,10 +118,14 @@ EnergyMatrixFracture_PK::Setup()
   // inform dependent PKs about coupling
   std::vector<std::string> pks = plist_->get<Teuchos::Array<std::string>>("PKs order").toVector();
 
-  glist_->sublist("PKs").sublist(pks[0]).sublist("physical models and assumptions")
+  glist_->sublist("PKs")
+    .sublist(pks[0])
+    .sublist("physical models and assumptions")
     .set<std::string>("coupled matrix fracture energy", "matrix");
 
-  glist_->sublist("PKs").sublist(pks[1]).sublist("physical models and assumptions")
+  glist_->sublist("PKs")
+    .sublist(pks[1])
+    .sublist("physical models and assumptions")
     .set<std::string>("coupled matrix fracture energy", "fracture");
 
   // process other PKs.
@@ -325,4 +332,3 @@ EnergyMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
 }
 
 } // namespace Amanzi
-

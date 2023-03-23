@@ -82,7 +82,7 @@ TCMEvaluator_OnePhase::Evaluate_(const State& S, const std::vector<CompositeVect
   int ierr(0);
   int ncomp = results[0]->size("cell", false);
   for (int i = 0; i != ncomp; ++i) {
-    double k_liq = tc_->ThermalConductivity(temp_c[0][i], 0.0);  // no models with pressure yet
+    double k_liq = tc_->ThermalConductivity(temp_c[0][i], 0.0); // no models with pressure yet
     ierr = std::max(ierr, tc_->error_code());
 
     double phi = poro_c[0][i];
@@ -101,7 +101,6 @@ TCMEvaluator_OnePhase::EvaluatePartialDerivative_(const State& S,
                                                   const Tag& wrt_tag,
                                                   const std::vector<CompositeVector*>& results)
 {
-
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
     const auto& temp_v = *S.Get<CompositeVector>(temperature_key_).ViewComponent(*comp);
     const auto& poro_v = *S.Get<CompositeVector>(porosity_key_).ViewComponent(*comp);

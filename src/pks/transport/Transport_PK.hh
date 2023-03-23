@@ -285,7 +285,7 @@ class Transport_PK : public PK_Physical {
     *spatial = spatial_disc_order;
     *temporal = temporal_disc_order;
   }
-  // -- molecualr diffusion coefficient for n-th solute 
+  // -- molecualr diffusion coefficient for n-th solute
   double getDiffusion(int n) { return (diffusion_phase_[0]->values())[n]; }
 
   // -- modifiers

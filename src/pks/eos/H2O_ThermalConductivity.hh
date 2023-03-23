@@ -33,7 +33,11 @@ class H2O_ThermalConductivity : public EOS_ThermalConductivity {
 
   virtual double ThermalConductivity(double T, double p);
   virtual double DThermalConductivityDT(double T, double p);
-  virtual double DThermalConductivityDP(double T, double p) { AMANZI_ASSERT(false); return 0.0; }
+  virtual double DThermalConductivityDP(double T, double p)
+  {
+    AMANZI_ASSERT(false);
+    return 0.0;
+  }
 
   // error messages  FIXME (move to factory that includes LookupTable)
   int error_code() { return ierr_; }

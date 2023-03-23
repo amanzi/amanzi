@@ -97,11 +97,9 @@ SoluteDiffusionMatrixFracture::EnsureCompatibility(State& S)
     .SetMesh(S.GetMesh(domain_))
     ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 2);
 
-  // For dependencies, all we really care is whether there is an evaluator 
+  // For dependencies, all we really care is whether there is an evaluator
   // or not.
-  for (const auto& dep : dependencies_) {
-    S.RequireEvaluator(dep.first, dep.second);
-   }
+  for (const auto& dep : dependencies_) { S.RequireEvaluator(dep.first, dep.second); }
 
   // It would be nice to verify mesh parenting
   for (const auto& dep : dependencies_) {
@@ -110,7 +108,7 @@ SoluteDiffusionMatrixFracture::EnsureCompatibility(State& S)
     Key dep_domain = Keys::getDomain(dep.first);
     if (domain == dep_domain)
       dep_fac.SetMesh(S.GetMesh(domain));
-    else 
+    else
       dep_fac.SetMesh(S.GetMesh(domain)->parent());
   }
 }

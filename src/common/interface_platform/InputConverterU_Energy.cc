@@ -96,11 +96,10 @@ InputConverterU::TranslateEnergy_(const std::string& domain)
 
   std::string model;
   node = GetUniqueElementByTagsString_(materials[0], "thermal_properties", flag);
-  if (flag) {
-    model = GetAttributeValueS_(node, "model", "constant, liquid water");
-  }
+  if (flag) { model = GetAttributeValueS_(node, "model", "constant, liquid water"); }
 
-  node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, liquid_conductivity", flag);
+  node =
+    GetUniqueElementByTagsString_(materials[0], "thermal_properties, liquid_conductivity", flag);
   if (flag) cv_f = GetTextContentD_(node, "W/m/K", true);
 
   node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, rock_conductivity", flag);
@@ -111,9 +110,7 @@ InputConverterU::TranslateEnergy_(const std::string& domain)
   thermal.set<double>("reference temperature", 298.15);
   thermal.set<std::string>("eos type", model);
 
-  if (model == "constant") {
-    thermal.set<double>("thermal conductivity", cv_f + cv_r);
-  }
+  if (model == "constant") { thermal.set<double>("thermal conductivity", cv_f + cv_r); }
 
   // insert time integrator
   std::string err_options("energy"), unstr_controls("unstructured_controls, unstr_energy_controls");

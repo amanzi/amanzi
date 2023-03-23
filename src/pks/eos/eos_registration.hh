@@ -60,8 +60,7 @@ Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure>
 
 Utils::RegisteredFactory<EOS_Viscosity, H2O_Viscosity>
   H2O_Viscosity::factory_("liquid water 0-30C");
-Utils::RegisteredFactory<EOS_Viscosity, ViscosityConstant>
-  ViscosityConstant::factory_("constant");
+Utils::RegisteredFactory<EOS_Viscosity, ViscosityConstant> ViscosityConstant::factory_("constant");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM>
   H2O_ViscosityFEHM::factory_("liquid water FEHM");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityTabular>

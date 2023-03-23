@@ -316,7 +316,7 @@ InputConverterU::TranslateCycleDriverNew_()
     case 8:
       if (!coupled_energy_)
         PopulatePKTree_(pk_tree_list, Keys::merge(mode, "energy", delimiter));
-      else 
+      else
         PopulatePKTree_(pk_tree_list, Keys::merge(mode, "coupled energy", delimiter));
       break;
     case 12:

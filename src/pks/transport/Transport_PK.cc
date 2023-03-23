@@ -629,7 +629,7 @@ Transport_PK::InitializeFields_()
   InitializeCVField(S_, *vo_, saturation_liquid_key_, Tags::DEFAULT, passwd_, 1.0);
   InitializeCVField(S_, *vo_, aperture_key_, Tags::DEFAULT, passwd_, 1.0);
 
-  // if tortousity requested but material models are absent, we populate it here 
+  // if tortousity requested but material models are absent, we populate it here
   InitializeCVField(S_, *vo_, tortuosity_key_, Tags::DEFAULT, passwd_, 1.0);
 
   // we assume that liquid saturation is 1 if wwater content was uninitialized

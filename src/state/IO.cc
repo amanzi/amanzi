@@ -431,8 +431,9 @@ WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVe
     for (auto name : sorted) {
       std::string display_name(name);
       if (name.size() > 33) replace_all(display_name, "temperature", "temp");
-      if (name.size() > 33) replace_all(display_name, "internal_energy", "ie");
       if (name.size() > 33) replace_all(display_name, "molar", "mol");
+      replace_all(display_name, "internal_energy", "ie");
+      replace_all(display_name, "effective", "eff");
       replace_all(display_name, "surface_star", "star");
 
       for (const auto& r : S.GetRecordSet(name)) {
@@ -444,6 +445,7 @@ WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVe
 
           for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
             std::string namedot(Keys::getKey(display_name, r.first)), name_comp(c_it->first);
+            replace_all(name_comp, "boundary_face", "bnd_face");
             if (vmin.size() != 1) namedot.append("." + name_comp);
             namedot.resize(40, '.');
             *vo.os() << std::defaultfloat << namedot << " " << c_it->second << " / "

@@ -88,7 +88,8 @@ TransportMatrixFracture_PK::Setup()
 
   // Require additional fields and evaluators
   if (!S_->HasRecord(solute_diffusion_to_matrix_key_)) {
-    S_->Require<CV_t, CVS_t>(solute_diffusion_to_matrix_key_, Tags::DEFAULT, solute_diffusion_to_matrix_key_)
+    S_->Require<CV_t, CVS_t>(
+        solute_diffusion_to_matrix_key_, Tags::DEFAULT, solute_diffusion_to_matrix_key_)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 2);

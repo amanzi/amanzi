@@ -57,7 +57,7 @@ class WRM_vanGenuchten : public WRM {
   double pc0_;                  // regularization threshold (usually 0 to 500 Pa)
   double a_, b_, factor_dSdPc_; // frequently used constant
 
-  static Utils::RegisteredFactory<WRM, WRM_vanGenuchten> factory_;
+  static Utils::RegisteredFactory<WRM, WRM_vanGenuchten> reg_;
 };
 
 } // namespace Flow

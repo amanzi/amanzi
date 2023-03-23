@@ -29,7 +29,8 @@ namespace AmanziEOS {
 class ThermalConductivityConstant : public EOS_ThermalConductivity {
  public:
   explicit ThermalConductivityConstant(Teuchos::ParameterList& plist)
-    : EOS_ThermalConductivity(plist) {
+    : EOS_ThermalConductivity(plist)
+  {
     tc_ = plist.get<double>("thermal conductivity");
   }
 

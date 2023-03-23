@@ -300,11 +300,8 @@ InputConverterU::TranslateState_()
                                   "FRACTURE_NETWORK_INTERNAL",
                                   "*",
                                   rho_ / 0.0180153333333);
-    AddIndependentFieldEvaluator_(out_ev,
-                                  "fracture-viscosity_liquid",
-                                  "FRACTURE_NETWORK_INTERNAL",
-                                  "*",
-                                  viscosity);
+    AddIndependentFieldEvaluator_(
+      out_ev, "fracture-viscosity_liquid", "FRACTURE_NETWORK_INTERNAL", "*", viscosity);
   }
 
   node = GetUniqueElementByTagsString_("fracture_network, materials", flag);
@@ -377,7 +374,7 @@ InputConverterU::TranslateState_()
         std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
 
         if (model == "constant") {
-          double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m/s");
+          double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "W/m^2/K");
 
           auto& tmp = field_ev.set<std::string>("evaluator type", "independent variable")
                         .sublist("function")
@@ -891,8 +888,9 @@ InputConverterU::TranslateState_()
 
       // -- temperature
       node = GetUniqueElementByTagsString_(inode, "temperature", flag);
-      if (flag) TranslateFieldIC_(
-        node, "fracture-temperature", "K", reg_str, regions, out_ic, "value", { "*" });
+      if (flag)
+        TranslateFieldIC_(
+          node, "fracture-temperature", "K", reg_str, regions, out_ic, "value", { "*" });
     }
   }
 

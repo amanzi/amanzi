@@ -39,7 +39,7 @@ class SpecificStorage_Standard : public SpecificStorage {
  private:
   double beta_f_, beta_m_, g_, rho_;
 
-  static Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Standard> factory_;
+  static Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Standard> reg_;
 };
 
 } // namespace Flow

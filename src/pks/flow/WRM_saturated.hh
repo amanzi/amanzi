@@ -37,7 +37,7 @@ class WRM_saturated : public WRM {
   double dKdPc(double pc) const { return 0.0; }
 
  private:
-  static Utils::RegisteredFactory<WRM, WRM_saturated> factory_;
+  static Utils::RegisteredFactory<WRM, WRM_saturated> reg_;
 };
 
 } // namespace Flow

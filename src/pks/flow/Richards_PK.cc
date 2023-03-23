@@ -617,7 +617,8 @@ Richards_PK::Initialize()
     oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
   }
   if (coupled_to_matrix_ || flow_on_manifold_) {
-    if (!oplist_matrix.isParameter("use manifold flux")) oplist_matrix.set<bool>("use manifold flux", true);
+    if (!oplist_matrix.isParameter("use manifold flux"))
+      oplist_matrix.set<bool>("use manifold flux", true);
   }
 
   // auto rho_cv = S_->GetPtr<CV_t>(mass_density_liquid, Tags::DEFAULT);
