@@ -176,6 +176,8 @@
 #                - update PFLOTRAN to 3.0.2 (compatible with PETSc and Alqumia)
 #                - update PETSc to 3.16.0
 #   0.98.6       - update Alquimia to version 1.0.9
+#   0.98.7a      - update ExprTk to 0.0.2
+#                - 
 
 include(CMakeParseArguments)
 
@@ -228,7 +230,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 6)
+set(AMANZI_TPLS_VERSION_PATCH 7a)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -594,10 +596,10 @@ set(CLM_MD5_SUM       1412ff30fc5db0d3c1dc71ef30c86995)
 #
 set(EXPRTK_VERSION_MAJOR 0)
 set(EXPRTK_VERSION_MINOR 0)
-set(EXPRTK_VERSION_PATCH 1)
+set(EXPRTK_VERSION_PATCH 2)
 set(EXPRTK_VERSION  ${EXPRTK_VERSION_MAJOR}.${EXPRTK_VERSION_MINOR}.${EXPRTK_VERSION_PATCH})
 set(EXPRTK_URL_STRING    "https://github.com/ArashPartow/exprtk/archive")
 set(EXPRTK_ARCHIVE_FILE  ${EXPRTK_VERSION}.tar.gz)
 set(EXPRTK_SAVEAS_FILE   exprtk-${EXPRTK_ARCHIVE_FILE})
-set(EXPRTK_MD5_SUM       030041608dc2542d2aca3b28f4e587f8)
+set(EXPRTK_MD5_SUM       897d4d3faedf9ebaa96d66fd14c2f967)
 
