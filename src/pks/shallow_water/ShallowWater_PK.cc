@@ -391,7 +391,9 @@ ShallowWater_PK::Initialize()
         double maxDepth = B_c[0][c] + pipe_diameter_;
         if (ht_c[0][c] >= maxDepth){ // cell is pressurized
 
-            WettedArea_c[0][c] = Pi * pipe_diameter_ * pipe_diameter_ * 0.25;
+            double PipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_; 
+            double PressurizedHead = ht_c[0][c] - pipe_diameter_ - B_c[0][c];
+            WettedArea_c[0][c] = (g_ * PipeCrossSection * PressurizedHead) / (celerity_ * celerity_) + PipeCrossSection;
             WettedAngle_c[0][c] = TwoPi;
         }
         else if ((std::abs(ht_c[0][c] - B_c[0][c]) < 1.e-15) || (ht_c[0][c] < B_c[0][c])){ //cell is dry
@@ -599,7 +601,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     vel_c[1][c] = factor * q_temp[1][c];
     if (!hydrostatic_pressure_force_type_) ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
-  UpdateWettedQuantities(); 
+  UpdateWettedQuantities();
 
   // For consistency with other flow models, we need to track previous h
   // which was placed earlier in the archive.

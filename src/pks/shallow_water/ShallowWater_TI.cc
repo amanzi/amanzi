@@ -46,7 +46,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_).ViewComponent("face", true);
 
   auto& WettedAngle_c = *S_->GetW<CompositeVector>(wetted_angle_key_, passwd_).ViewComponent("cell", true); 
- 
+
   for (int c = 0; c < ncells_wghost; ++c) {
     double factor = inverse_with_tolerance(h_temp[0][c], cell_area2_max_);
     vel_c[0][c] = factor * q_temp[0][c];
@@ -119,7 +119,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   if (use_limiter_)
     limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
   total_depth_grad_->data()->ScatterMasterToGhosted("cell");
-  
+
   // additional depth-positivity correction limiting for fully flooded cells
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
   
@@ -349,7 +349,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     h = h_c_tmp[0][c] + (BedSlopeSource[0] + ext_S_cell[c] * ExtraSource);
     qx = q_c_tmp[0][c] + BedSlopeSource[1] + FrictionSource;
     qy = q_c_tmp[1][c] + BedSlopeSource[2];
-    
+
     f_temp0[0][c] = h;
     f_temp1[0][c] = qx;
     f_temp1[1][c] = qy;

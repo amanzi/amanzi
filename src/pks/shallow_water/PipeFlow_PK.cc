@@ -114,6 +114,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
            if (c2 == -1) {
                if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+               //TODO: we are never here so this if could be removed... DO IT SOON    
                UR[0] = bc_value_h[f];
                UR[1] = ComputeWettedAngleNewton(bc_value_h[f]);
            } else {
@@ -235,6 +236,7 @@ double PipeFlow_PK::ComputeTotalDepth(double WettedArea, double WettedAngle, dou
 
 }
 
+
 //--------------------------------------------------------------------
 // Compute wetted area and wetted angle at edge location
 //--------------------------------------------------------------------
@@ -244,7 +246,6 @@ std::vector<double> PipeFlow_PK::ComputeWettedQuantitiesEdge(int c, int e, doubl
   std::vector <double> W(2,0.0); //vector to return 
 
   double ht_edge = TotalDepthEdgeValue(c, e, htc, Bc, Bmax, B_n);
-
   double B_edge = BathymetryEdgeValue(e, B_n);
   double h_edge = std::max( (ht_edge - B_edge), 0.0);
   W[1] = ComputeWettedAngle(h_edge);
