@@ -114,7 +114,6 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
            if (c2 == -1) {
                if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-               //TODO: we are never here so this if could be removed... DO IT SOON    
                UR[0] = bc_value_h[f];
                UR[1] = ComputeWettedAngleNewton(bc_value_h[f]);
            } else {
