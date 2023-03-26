@@ -361,7 +361,8 @@ InputConverterU::TranslateState_()
           field_ev.set<std::string>("evaluator type", "solute diffusion to matrix");
 
           field_ev.set<std::string>("porosity key", "porosity")
-            .set<std::string>("aperture key", "fracture-aperture")
+            .set<std::string>("tortuosity key", "tortuosity")
+            .set<std::string>("saturation key", "saturation_liquid")
             .set<double>("molecular diffusion", 0.0);
         }
       }
@@ -389,7 +390,6 @@ InputConverterU::TranslateState_()
         }
         if (model == "standard") {
           field_ev.set<std::string>("evaluator type", "heat diffusion to matrix")
-            .set<std::string>("aperture key", "fracture-aperture")
             .set<std::string>("thermal conductivity key", "thermal_conductivity");
         }
       }

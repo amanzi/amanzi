@@ -32,10 +32,7 @@ HeatDiffusionMatrixFracture::HeatDiffusionMatrixFracture(Teuchos::ParameterList&
   domain_ = Keys::getDomain(my_keys_[0].first);
 
   conductivity_key_ = plist_.get<std::string>("thermal conductivity key");
-  aperture_key_ = plist_.get<std::string>("aperture key");
-
   dependencies_.insert(std::make_pair(conductivity_key_, Tags::DEFAULT));
-  dependencies_.insert(std::make_pair(aperture_key_, Tags::DEFAULT));
 }
 
 
@@ -51,8 +48,6 @@ HeatDiffusionMatrixFracture::Update_(State& S)
 
   const auto& conductivity_c =
     *S.Get<CompositeVector>(conductivity_key_, Tags::DEFAULT).ViewComponent("cell");
-  const auto& aperture_c =
-    *S.Get<CompositeVector>(aperture_key_, Tags::DEFAULT).ViewComponent("cell");
 
   auto& result_c = *S.GetW<CompositeVector>(key, Tags::DEFAULT, key).ViewComponent("cell");
   int ncells = result_c.MyLength();
@@ -60,16 +55,20 @@ HeatDiffusionMatrixFracture::Update_(State& S)
   AmanziMesh::Entity_ID_List cells;
 
   for (int c = 0; c < ncells; ++c) {
+    const AmanziGeometry::Point& xf = mesh->cell_centroid(c);
     int f = mesh->entity_get_parent(AmanziMesh::CELL, c);
 
     mesh_parent->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ndofs = cells.size();
 
-    double factor = 0.5 / aperture_c[0][c];
     for (int k = 0; k < ndofs; ++k) {
       int pos = Operators::UniqueIndexFaceToCells(*mesh_parent, f, cells[k]);
       int c1 = cells[pos];
-      result_c[k][c] = conductivity_c[0][c1] * factor;
+
+      const AmanziGeometry::Point& xc = mesh_parent->cell_centroid(c1);
+      double dist = norm(xc - xf);
+
+      result_c[k][c] = conductivity_c[0][c1] / dist;
     }
   }
 }

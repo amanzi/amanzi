@@ -34,14 +34,13 @@ SoluteDiffusionMatrixFracture::SoluteDiffusionMatrixFracture(Teuchos::ParameterL
   saturation_key_ = plist_.get<std::string>("saturation key");
   tortuosity_key_ = plist_.get<std::string>("tortuosity key");
   porosity_key_ = plist_.get<std::string>("porosity key");
-  aperture_key_ = plist_.get<std::string>("aperture key");
   if (plist_.isParameter("molecular diffusion")) {
     mol_diff_ = plist_.get<double>("molecular diffusion");
   }
 
   dependencies_.insert(std::make_pair(saturation_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
-  dependencies_.insert(std::make_pair(aperture_key_, Tags::DEFAULT));
+  // dependencies_.insert(std::make_pair(tortuosity_key_, Tags::DEFAULT));  // static field
 }
 
 
@@ -57,10 +56,7 @@ SoluteDiffusionMatrixFracture::Update_(State& S)
 
   const auto& sat_c = *S.Get<CompositeVector>(saturation_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& poro_c = *S.Get<CompositeVector>(porosity_key_, Tags::DEFAULT).ViewComponent("cell");
-  const auto& tortuosity_c =
-    *S.Get<CompositeVector>(tortuosity_key_, Tags::DEFAULT).ViewComponent("cell");
-  const auto& aperture_c =
-    *S.Get<CompositeVector>(aperture_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& tau_c = *S.Get<CompositeVector>(tortuosity_key_, Tags::DEFAULT).ViewComponent("cell");
 
   auto& result_c = *S.GetW<CompositeVector>(key, Tags::DEFAULT, key).ViewComponent("cell");
   int ncells = result_c.MyLength();
@@ -68,16 +64,20 @@ SoluteDiffusionMatrixFracture::Update_(State& S)
   AmanziMesh::Entity_ID_List cells;
 
   for (int c = 0; c < ncells; ++c) {
+    const AmanziGeometry::Point& xf = mesh->cell_centroid(c);
     int f = mesh->entity_get_parent(AmanziMesh::CELL, c);
 
     mesh_parent->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ndofs = cells.size();
 
-    double factor = mol_diff_ / (aperture_c[0][c] / 2);
     for (int k = 0; k < ndofs; ++k) {
       int pos = Operators::UniqueIndexFaceToCells(*mesh_parent, f, cells[k]);
       int c1 = cells[pos];
-      result_c[k][c] = tortuosity_c[0][c1] * poro_c[0][c1] * factor;
+
+      const AmanziGeometry::Point& xc = mesh_parent->cell_centroid(c1);
+      double dist = norm(xc - xf);
+
+      result_c[k][c] = sat_c[0][c1] * tau_c[0][c1] * poro_c[0][c1] * mol_diff_ / dist;
     }
   }
 }

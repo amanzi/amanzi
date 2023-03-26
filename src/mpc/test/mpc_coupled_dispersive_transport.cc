@@ -5,7 +5,21 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
+
+  Solution of PDE:
+
+    d(a C)/dt + d(u C)/dx - Df d^2(C)/dx^2 \sum_i (phi * Dm_i) d(Cm_i)/dy = 0
+ 
+  where a is aperture, u is velocity [m2/s], phi is matrix porosity,
+  Dm is molecular diffusion, Df is dispersion/diffusion in fracture and Cm_i is 
+  matrix concentration on the i-th side of the fracture. 
+
+  Case 1: Dm=0 and u=0
+  Case 2: Df=0 and constant BC on the fracture inlet
+  Case 3: Df=0 and exponential decaying BC on the fracture inlet
+  // Case 4: Df=0 and pulse BC on the fracture inlet
 */
+
 
 #include <iostream>
 #include "stdlib.h"
@@ -78,7 +92,7 @@ RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, d
     .sublist("molecular diffusion")
     .set<Teuchos::Array<double>>("aqueous values", tmp_m);
 
-  // solute diffusion to matrix coefficient, kn = phi * Dm / (a/2)
+  // solute diffusion to matrix coefficient, kn = phi * Dm / d_fm
   plist->sublist("state")
     .sublist("evaluators")
     .sublist("fracture-solute_diffusion_to_matrix")
@@ -162,8 +176,6 @@ RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, d
   double fmin(1e+99), fmax(-1e+99), err(0.0), norm(0.0);
 
   double b = (*S->Get<CompositeVector>("fracture-aperture").ViewComponent("cell"))[0][0];
-  double kn =
-    (*S->Get<CompositeVector>("fracture-solute_diffusion_to_matrix").ViewComponent("cell"))[0][0];
   double phi = (*S->Get<CompositeVector>("porosity").ViewComponent("cell"))[0][0];
 
   double t(tend), Df(mol_diff_f), Dm(mol_diff_m);
@@ -184,7 +196,7 @@ RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, d
     } else if (icase == 2) {
       double Tm = u_f * t / b - xc[0];
       if (Tm > 0.0) {
-        double tmp2 = std::erfc(xc[0] * kn * std::sqrt(b / (u_f * Dm * Tm)) / 2);
+        double tmp2 = std::erfc(xc[0] * phi * std::sqrt(Dm / (u_f * b * Tm)));
         err += fabs(tcc_f[0][c] - tmp2);
         // std::cout << xc[0] << " " << tcc_f[0][c] << " " << tmp2 <<std::endl;
       }
@@ -262,33 +274,29 @@ RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, d
   return err;
 }
 
-
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_1)
 {
-  // (3) diffusion/dispersion in fracture Df
-  // (6) Matrix depth, L = 2
-  double err = RunTest(1, 0.0, 1e-6, 0.0, 2.0);
+  // matrix depth, L = 2
+  double L = 2.0;
+  double Df = 1e-6;
+  double Dm = 0.0;
+  double err = RunTest(1, 0.0, Df, Dm, L);
   CHECK(err < 1.0e-3);
 }
 
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_2)
 {
-  // d(a C)/dt + d(u C)/dx - (phi * Dm / (a/2)) (Cm - C) = 0
   double a = 0.001;
-  // (2) velocity * aperture = 1e-4 * a
   double u = 1e-4 * a;
-  // (4) molecular diffusion coefficient in matrix
   double Dm = 5e-9;
-  double err = RunTest(2, u, 0.0, Dm, 1.0);
+  double err = RunTest(2, u, 0.0, Dm, 0.25);
   CHECK(err < 1.0e-1);
 }
 
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_3)
 {
   double a = 0.001;
-  // (2) velocity * aperture = 1e-4 * a
   double u = 1e-4 * a;
-  // (4) molecular diffusion coefficient in matrix
   double Dm = 5e-9;
   double err = RunTest(3, u, 0.0, Dm, 0.05, 0.5e+5);
   CHECK(err < 0.01);
@@ -297,18 +305,10 @@ TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_3)
 /*
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_4) {
   double a = 0.02;
-  // (2) velocity * aperture = 1e-4 * a
   double u = 1e-4 * a;
-  // (4) molecular diffusion coefficient in matrix, Dm = 2e-6
-  double err = RunTest(4, u, 0.0, 2.0e-6, 2.4e+5, 2.0);
-  // CHECK(err < 2.0e-2);
+  double Dm = 2e-6;
+  double err = RunTest(4, u, 0.0, Dm, 2.0, 2.4e+5);
+  CHECK(err < 2.0e-2);
 }
 */
 
-/*
-TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_5) {
-  // d(a C)/dt + d(u C)/dx - a Df d^2(C)/dx^2 - (Dm/2) (Cm - C) = 0
-  double err = RunTest(3, 1.0e-5, 1.0e-5, 1.0e-6, );
-  CHECK(err < 100);
-}
-*/

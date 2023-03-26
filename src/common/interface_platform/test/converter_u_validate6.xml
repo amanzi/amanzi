@@ -183,7 +183,8 @@
       <ParameterList name="fracture-solute_diffusion_to_matrix">
         <Parameter name="evaluator type" type="string" value="solute diffusion to matrix"/>
         <Parameter name="porosity key" type="string" value="porosity"/>
-        <Parameter name="aperture key" type="string" value="fracture-aperture"/>
+        <Parameter name="tortuosity key" type="string" value="tortuosity"/>
+        <Parameter name="saturation key" type="string" value="saturation_liquid"/>
         <Parameter name="molecular diffusion" type="double" value="0.0"/>
       </ParameterList>
       <ParameterList name="saturation_liquid">

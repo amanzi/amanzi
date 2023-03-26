@@ -9,11 +9,13 @@
 
 /*!
   
-Molecular diffusion coefficeint between fracture and matrix.
+Heat conduction coefficient between fracture and matrix:
 
-  D_fm = D_m / (a_f / 2)
+  D_fm = D_m / d_mf
 
-where D_m is matrix heat thermal conductivity, and a_f is aperture.
+where D_m is matrix heat thermal conductivity, and d_mf is distance 
+between fracture and matrix cell centroids. This is a FV approximation 
+of the heat flux.
 */
 
 
@@ -25,7 +27,6 @@ where D_m is matrix heat thermal conductivity, and a_f is aperture.
 #include "Factory.hh"
 
 #include "EvaluatorSecondary.hh"
-
 
 namespace Amanzi {
 
@@ -50,7 +51,7 @@ class HeatDiffusionMatrixFracture : public EvaluatorSecondary {
 
  private:
   Key domain_;
-  Key conductivity_key_, aperture_key_;
+  Key conductivity_key_;
 
   static Utils::RegisteredFactory<Evaluator, HeatDiffusionMatrixFracture> reg_;
 };

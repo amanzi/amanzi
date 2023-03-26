@@ -93,6 +93,9 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   // domain name
   domain_ = tp_list_->template get<std::string>("domain name", "domain");
 
+  // other variables
+  dt_prev_ = 1e+91;
+
   // initialize io
   Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
   units_.Init(*units_list);
@@ -122,6 +125,9 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 
   // domain name
   domain_ = tp_list_->template get<std::string>("domain name", "domain");
+
+  // other variables
+  dt_prev_ = 1e+91;
 
   // initialize io
   Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
@@ -777,6 +783,7 @@ Transport_PK::StableTimeStep(int n)
       *vo_->os() << ") has smallest dt=" << dt_ << std::endl;
     }
   }
+  
   return dt_;
 }
 
@@ -791,6 +798,7 @@ Transport_PK::get_dt()
     return 1e+99;
   } else {
     StableTimeStep(-1);
+    if (dt_prev_ > 0) dt_ = std::min(dt_, dt_prev_ * 1.2);
     return dt_;
   }
 }
@@ -879,6 +887,7 @@ Transport_PK::AddMultiscalePorosity_(double t_old, double t_new, double t_int1, 
 void
 Transport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
+  dt_prev_ = std::min(dt_, t_new - t_old);
   S_->GetW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_) = *tcc_tmp;
 }
 

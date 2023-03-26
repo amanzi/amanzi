@@ -11,10 +11,12 @@
   
 Molecular diffusion coefficeint between fracture and matrix.
 
-  D_fm = s_m tau_m phi_m * D_m / (a_f / 2)
+  D_fm = s_m tau_m phi_m * D_m / d_mf
 
 where D_m is matrix diffusion coefficient, s_m is saturation,
-tau_m is tortuosity, and a_f is aperture.
+tau_m is tortuosity, and d_mf is distance between fracture and
+matrix cell centroids. This is a FV approximation of the solute
+flux.
 */
 
 

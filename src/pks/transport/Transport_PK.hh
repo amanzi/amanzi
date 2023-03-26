@@ -426,7 +426,7 @@ class Transport_PK : public PK_Physical {
   std::vector<Teuchos::RCP<TransportDomainFunction>> bcs_;
   Teuchos::RCP<Epetra_Vector> Kxy; // absolute permeability in plane xy
 
-  double cfl_, dt_, dt_debug_, t_physics_;
+  double cfl_, dt_, dt_debug_, t_physics_, dt_prev_;
 
   std::string passwd_;
   Method_t method_;
