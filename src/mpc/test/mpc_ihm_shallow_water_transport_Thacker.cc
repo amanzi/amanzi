@@ -22,7 +22,6 @@
 
 // Amanzi
 #include "CycleDriver.hh"
-#include "eos_registration.hh"
 #include "IO.hh"
 #include "LeastSquare.hh"
 #include "Mesh.hh"

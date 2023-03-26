@@ -18,7 +18,7 @@
 #include "UnitTest++.h"
 
 #include "CycleDriver.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
 #include "evaluators_flow_reg.hh"
 #include "MeshFactory.hh"
 #include "Mesh.hh"

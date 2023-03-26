@@ -46,14 +46,12 @@ Utils::RegisteredFactory<Evaluator, MolarFractionGasEvaluator>
 Utils::RegisteredFactory<Evaluator, EOSViscosityEvaluator>
   EOSViscosityEvaluator::factory_("viscosity");
 
-Utils::RegisteredFactory<EOS_Density, IdealGas_Density> IdealGas_Density::factory_("ideal gas");
-Utils::RegisteredFactory<EOS_Density, VaporInGas_Density>
-  VaporInGas_Density::factory_("vapor in gas");
-Utils::RegisteredFactory<EOS_Density, H2O_Density> H2O_Density::factory_("liquid water 0-30C");
-Utils::RegisteredFactory<EOS_Density, H2O_DensityFEHM>
-  H2O_DensityFEHM::factory_("liquid water FEHM");
+Utils::RegisteredFactory<EOS_Density, IdealGas_Density> IdealGas_Density::reg_("ideal gas");
+Utils::RegisteredFactory<EOS_Density, VaporInGas_Density> VaporInGas_Density::reg_("vapor in gas");
+Utils::RegisteredFactory<EOS_Density, H2O_Density> H2O_Density::reg_("liquid water 0-30C");
+Utils::RegisteredFactory<EOS_Density, H2O_DensityFEHM> H2O_DensityFEHM::reg_("liquid water FEHM");
 Utils::RegisteredFactory<EOS_Density, H2O_DensityTabular>
-  H2O_DensityTabular::factory_("liquid water tabular");
+  H2O_DensityTabular::reg_("liquid water tabular");
 
 Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure>
   H2O_SaturatedVaporPressure::factory_("water vapor over water/ice");

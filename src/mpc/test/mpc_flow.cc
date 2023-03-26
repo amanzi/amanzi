@@ -20,7 +20,7 @@
 
 #include "IO.hh"
 #include "CycleDriver.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
 #include "MeshFactory.hh"
 #include "Mesh.hh"
 #include "models_flow_reg.hh"

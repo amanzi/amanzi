@@ -43,7 +43,7 @@ class IdealGas_Density : public EOS_Density {
   double R_;
 
  private:
-  static Utils::RegisteredFactory<EOS_Density, IdealGas_Density> factory_;
+  static Utils::RegisteredFactory<EOS_Density, IdealGas_Density> reg_;
 };
 
 } // namespace AmanziEOS

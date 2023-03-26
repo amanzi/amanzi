@@ -20,7 +20,7 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "CycleDriver.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
 #include "evaluators_flow_reg.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"

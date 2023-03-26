@@ -21,7 +21,7 @@
 
 // Amanzi
 #include "CycleDriver.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "PK_Factory.hh"

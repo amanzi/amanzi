@@ -11,7 +11,7 @@
 
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "eos_registration.hh"
+#include "eos_reg.hh"
 #include "evaluators_multiphase_reg.hh"
 #include "models_energy_reg.hh"
 #include "models_multiphase_reg.hh"

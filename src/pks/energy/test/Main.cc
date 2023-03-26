@@ -10,7 +10,7 @@
 #include <UnitTest++.h>
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "eos_registration.hh"
+#include "eos_reg.hh"
 #include "state_evaluators_registration.hh"
 #include "VerboseObject_objs.hh"
 

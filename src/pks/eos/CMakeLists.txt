@@ -62,7 +62,7 @@ set(eos_inc_files
     H2O_ThermalConductivity.hh
     EOS_Utils.hh
     EOS_Viscosity.hh
-    eos_registration.hh
+    eos_reg.hh
     EOSFactory.hh
     H2O_Density.hh
     H2O_DensityFEHM.hh

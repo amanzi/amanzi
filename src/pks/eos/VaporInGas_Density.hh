@@ -61,7 +61,7 @@ class VaporInGas_Density : public EOS_Density {
   Teuchos::RCP<EOS_Density> gas_eos_;
 
  private:
-  static Utils::RegisteredFactory<EOS_Density, VaporInGas_Density> factory_;
+  static Utils::RegisteredFactory<EOS_Density, VaporInGas_Density> reg_;
 };
 
 } // namespace AmanziEOS

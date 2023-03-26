@@ -57,7 +57,7 @@ class H2O_DensityTabular : public EOS_Density {
   virtual double DMolarDensityDT(double T, double p) override { return DDensityDT(T, p) / M_; }
   virtual double DMolarDensityDp(double T, double p) override { return DDensityDp(T, p) / M_; }
 
-  static Utils::RegisteredFactory<EOS_Density, H2O_DensityTabular> factory_;
+  static Utils::RegisteredFactory<EOS_Density, H2O_DensityTabular> reg_;
 
  private:
   Teuchos::RCP<LookupTable> table_;

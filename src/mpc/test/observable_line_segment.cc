@@ -20,7 +20,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "eos_registration.hh"
+#include "eos_reg.hh"
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"

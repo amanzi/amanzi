@@ -11,7 +11,7 @@
 
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "eos_registration.hh"
+#include "eos_reg.hh"
 #include "VerboseObject_objs.hh"
 
 int

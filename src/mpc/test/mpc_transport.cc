@@ -19,7 +19,7 @@
 #include "UnitTest++.h"
 
 #include "CycleDriver.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
 #include "GeometricModel.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"

@@ -39,7 +39,7 @@
 
 #include "bilinear_form_registration.hh"
 #include "dbc.hh"
-#include "eos_registration.hh"
+#include "eos_reg.hh"
 #include "errors.hh"
 #include "evaluators_flow_reg.hh"
 #include "evaluators_mpc_reg.hh"
