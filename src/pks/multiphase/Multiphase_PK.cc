@@ -855,37 +855,13 @@ Multiphase_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  InitializeFieldFromField_(prev_tws_key_, tws_key_, true);
-  InitializeFieldFromField_(prev_tcs_key_, tcs_key_, true);
-  if (system_["energy eqn"]) InitializeFieldFromField_(prev_energy_key_, energy_key_, true);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_tws_key_, tws_key_, passwd_);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_tcs_key_, tcs_key_, passwd_);
+  if (system_["energy eqn"])
+    InitializeCVFieldFromCVField(S_, *vo_, prev_energy_key_, energy_key_, passwd_);
 
   InitializeCVField(S_, *vo_, vol_flowrate_liquid_key_, Tags::DEFAULT, passwd_, 0.0);
   InitializeCVField(S_, *vo_, vol_flowrate_gas_key_, Tags::DEFAULT, passwd_, 0.0);
-}
-
-
-/* ****************************************************************
-* Auxiliary initialization technique.
-**************************************************************** */
-void
-Multiphase_PK::InitializeFieldFromField_(const std::string& field0,
-                                         const std::string& field1,
-                                         bool call_evaluator)
-{
-  if (S_->HasRecord(field0)) {
-    if (!S_->GetRecord(field0).initialized()) {
-      if (call_evaluator) S_->GetEvaluator(field1).Update(*S_, passwd_);
-
-      const auto& f1 = S_->Get<CV_t>(field1);
-      auto& f0 = S_->GetW<CV_t>(field0, Tags::DEFAULT, passwd_);
-      f0 = f1;
-
-      S_->GetRecordW(field0, Tags::DEFAULT, passwd_).set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-        *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
-    }
-  }
 }
 
 

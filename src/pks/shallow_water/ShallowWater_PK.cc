@@ -364,7 +364,7 @@ ShallowWater_PK::Initialize()
   S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
 
   InitializeCVField(S_, *vo_, riemann_flux_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeFieldFromField_(prev_ponded_depth_key_, ponded_depth_key_, false);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_ponded_depth_key_, ponded_depth_key_, passwd_);
 
   // soln_ is the TreeVector of conservative variables [h hu hv]
   Teuchos::RCP<TreeVector> tmp_h = Teuchos::rcp(new TreeVector());
@@ -390,34 +390,6 @@ ShallowWater_PK::Initialize()
     B_c.MinValue(&bmax);
     *vo_->os() << "bathymetry min=" << bmin << ", max=" << bmax
                << "\nShallow water PK was initialized." << std::endl;
-  }
-}
-
-
-//--------------------------------------------------------------
-// Auxiliary initialization technique.
-//--------------------------------------------------------------
-void
-ShallowWater_PK::InitializeFieldFromField_(const std::string& field0,
-                                           const std::string& field1,
-                                           bool call_evaluator)
-{
-  if (S_->HasRecord(field0)) {
-    if (S_->GetRecord(field0).owner() == passwd_) {
-      if (!S_->GetRecord(field0).initialized()) {
-        if (call_evaluator) S_->GetEvaluator(field1).Update(*S_, passwd_);
-
-        const auto& f1 = S_->Get<CV_t>(field1);
-        auto& f0 = S_->GetW<CV_t>(field0, Tags::DEFAULT, passwd_);
-        f0 = f1;
-
-        S_->GetRecordW(field0, passwd_).set_initialized();
-
-        Teuchos::OSTab tab = vo_->getOSTab();
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
-      }
-    }
   }
 }
 

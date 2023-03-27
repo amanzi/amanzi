@@ -171,9 +171,6 @@ class Multiphase_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::TreeOperator> op_tree_pc() { return op_preconditioner_; }
 
  protected:
-  void InitializeFieldFromField_(const std::string& field0,
-                                 const std::string& field1,
-                                 bool call_evaluator);
   Teuchos::ParameterList MyRequire_(const Key& key, const std::string& owner);
 
  private:

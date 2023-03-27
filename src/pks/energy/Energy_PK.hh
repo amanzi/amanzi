@@ -165,11 +165,6 @@ class Energy_PK : public PK_PhysicalBDF {
   // -- for unit tests
   std::vector<WhetStone::Tensor>& get_K() { return K; }
 
- protected:
-  void InitializeFieldFromField_(const std::string& field0,
-                                 const std::string& field1,
-                                 bool call_evaluator);
-
  private:
   void InitializeFields_();
 

@@ -639,40 +639,13 @@ Transport_PK::InitializeFields_()
   InitializeCVField(S_, *vo_, tortuosity_key_, Tags::DEFAULT, passwd_, 1.0);
 
   // we assume that liquid saturation is 1 if wwater content was uninitialized
-  InitializeFieldFromField_(prev_wc_key_, wc_key_, false);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_wc_key_, wc_key_, passwd_);
 
-  InitializeFieldFromField_(water_content_msp_key_, porosity_msp_key_, false);
-  InitializeFieldFromField_(prev_water_content_msp_key_, water_content_msp_key_, false);
+  InitializeCVFieldFromCVField(S_, *vo_, water_content_msp_key_, porosity_msp_key_, passwd_);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_water_content_msp_key_, water_content_msp_key_, passwd_);
 
-  InitializeFieldFromField_("total_component_concentration_msp", tcc_key_, false);
+  InitializeCVFieldFromCVField(S_, *vo_, "total_component_concentration_msp", tcc_key_, passwd_);
   InitializeCVField(S_, *vo_, "total_component_concentration_msp_aux", Tags::DEFAULT, passwd_, 0.0);
-}
-
-
-/* ****************************************************************
-* Auxiliary initialization technique.
-**************************************************************** */
-void
-Transport_PK::InitializeFieldFromField_(const std::string& field0,
-                                        const std::string& field1,
-                                        bool call_evaluator)
-{
-  if (S_->HasRecord(field0)) {
-    if (S_->GetRecord(field0).owner() == passwd_) {
-      if (!S_->GetRecord(field0).initialized()) {
-        if (call_evaluator) S_->GetEvaluator(field1).Update(*S_, passwd_);
-
-        const auto& f1 = S_->Get<CV_t>(field1);
-        auto& f0 = S_->GetW<CV_t>(field0, passwd_);
-        f0 = f1;
-
-        S_->GetRecordW(field0, passwd_).set_initialized();
-
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
-      }
-    }
-  }
 }
 
 

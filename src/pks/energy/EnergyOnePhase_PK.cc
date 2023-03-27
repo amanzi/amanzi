@@ -257,7 +257,7 @@ EnergyOnePhase_PK::InitializeFields_()
     }
   }
 
-  InitializeFieldFromField_(prev_aperture_key_, aperture_key_, true);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_aperture_key_, aperture_key_, passwd_);
 }
 
 

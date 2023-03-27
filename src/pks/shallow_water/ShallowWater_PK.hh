@@ -141,10 +141,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   double get_total_source() const { return total_source_; }
 
  private:
-  void InitializeFieldFromField_(const std::string& field0,
-                                 const std::string& field1,
-                                 bool call_evaluator);
-
   void VerifySolution_(TreeVector& A);
   int ErrorDiagnostics_(double t, int c, double h, double B, double ht);
 

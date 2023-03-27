@@ -76,6 +76,14 @@ InitializeCVField(const Teuchos::RCP<State>& S,
                   const Key& passwd,
                   double default_val);
 
+void
+InitializeCVFieldFromCVField(const Teuchos::RCP<State>& S,
+                             const VerboseObject& vo,
+                             const Key& field0,
+                             const Key& field1,
+                             const Key& passwd,
+                             const Tag& tag = Tags::DEFAULT);
+
 // add default evaluators
 void
 AddDefaultPrimaryEvaluator(const Teuchos::RCP<State>& S,

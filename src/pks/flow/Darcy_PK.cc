@@ -438,7 +438,7 @@ Darcy_PK::InitializeFields_()
   if (flow_on_manifold_)
     InitializeCVField(S_, *vo_, compliance_key_, Tags::DEFAULT, compliance_key_, 0.0);
 
-  InitializeFieldFromField_(prev_aperture_key_, aperture_key_, true);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_aperture_key_, aperture_key_, passwd_);
 }
 
 

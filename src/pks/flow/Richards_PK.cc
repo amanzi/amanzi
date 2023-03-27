@@ -892,9 +892,9 @@ Richards_PK::InitializeFields_()
     }
   }
 
-  InitializeFieldFromField_(prev_saturation_liquid_key_, saturation_liquid_key_, true);
-  InitializeFieldFromField_(prev_water_storage_key_, water_storage_key_, true);
-  InitializeFieldFromField_(prev_aperture_key_, aperture_key_, true);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_saturation_liquid_key_, saturation_liquid_key_, passwd_);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_aperture_key_, aperture_key_, passwd_);
 
   // set matrix fields assuming pressure equilibrium
   // -- pressure
@@ -923,7 +923,7 @@ Richards_PK::InitializeFields_()
     }
   }
 
-  InitializeFieldFromField_(prev_water_storage_msp_key_, water_storage_msp_key_, false);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_msp_key_, water_storage_msp_key_, passwd_);
 }
 
 

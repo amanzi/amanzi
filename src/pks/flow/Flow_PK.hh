@@ -323,9 +323,6 @@ class Flow_PK : public PK_PhysicalBDF {
 
  protected:
   void InitializeBCsSources_(Teuchos::ParameterList& list);
-  void InitializeFieldFromField_(const std::string& field0,
-                                 const std::string& field1,
-                                 bool call_evaluator);
 
  public:
   int ncells_owned, ncells_wghost;

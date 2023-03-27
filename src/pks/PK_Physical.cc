@@ -7,7 +7,7 @@
   Authors: Daniil Svyatsky
 */
 
-/* -------------------------------------------------------------------------
+/*
   Process Kernels
 
 */
@@ -87,16 +87,45 @@ InitializeCVField(const Teuchos::RCP<State>& S,
                   const Key& passwd,
                   double default_val)
 {
-  Teuchos::OSTab tab = vo.getOSTab();
-
   if (S->HasRecord(key, tag)) {
     if (S->GetRecord(key, tag).owner() == passwd) {
       if (!S->GetRecord(key, tag).initialized()) {
         S->GetW<CompositeVector>(key, tag, passwd).PutScalar(default_val);
         S->GetRecordW(key, tag, passwd).set_initialized();
 
-        if (vo.os_OK(Teuchos::VERB_MEDIUM))
+        if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
+          Teuchos::OSTab tab = vo.getOSTab();
           *vo.os() << "initialized \"" << key << "\" to value " << default_val << std::endl;
+        }
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Helper method to initialize a CV field from a CV field
+// -----------------------------------------------------------------------------
+void
+InitializeCVFieldFromCVField(const Teuchos::RCP<State>& S,
+                             const VerboseObject& vo,
+                             const Key& field0,
+                             const Key& field1,
+                             const Key& passwd,
+                             const Tag& tag)
+{
+  if (S->HasRecord(field0, tag)) {
+    if (!S->GetRecord(field0, tag).initialized()) {
+      if (S->HasEvaluator(field1, tag)) S->GetEvaluator(field1, tag).Update(*S, passwd);
+
+      const auto& f1 = S->Get<CompositeVector>(field1);
+      auto& f0 = S->GetW<CompositeVector>(field0, tag, passwd);
+      f0 = f1;
+
+      S->GetRecordW(field0, tag, passwd).set_initialized();
+
+      if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
+        Teuchos::OSTab tab = vo.getOSTab();
+        *vo.os() << "initialized " << field0 << " to " << field1 << std::endl;
       }
     }
   }

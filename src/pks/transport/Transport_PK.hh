@@ -378,9 +378,6 @@ class Transport_PK : public PK_Physical {
 
   // initialization methods
   void InitializeAll_();
-  void InitializeFieldFromField_(const std::string& field0,
-                                 const std::string& field1,
-                                 bool call_evaluator);
 
   // miscaleneous methods
   int FindComponentNumber(const std::string component_name);

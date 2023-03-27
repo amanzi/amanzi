@@ -517,31 +517,6 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 }
 
 
-/* ****************************************************************
-* Auxiliary initialization technique.
-**************************************************************** */
-void
-Flow_PK::InitializeFieldFromField_(const std::string& field0,
-                                   const std::string& field1,
-                                   bool call_evaluator)
-{
-  if (S_->HasRecord(field0)) {
-    if (!S_->GetRecord(field0).initialized()) {
-      if (call_evaluator) S_->GetEvaluator(field1).Update(*S_, passwd_);
-
-      const auto& f1 = S_->Get<CV_t>(field1);
-      auto& f0 = S_->GetW<CV_t>(field0, passwd_);
-      f0 = f1;
-
-      S_->GetRecordW(field0, passwd_).set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-        *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
-    }
-  }
-}
-
-
 /* ******************************************************************
 * Compute well index
 ****************************************************************** */
