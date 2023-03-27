@@ -49,11 +49,39 @@
 #include "pks_transport_reg.hh"
 #include "State.hh"
 
-
 double
 Case3(double a, double b, double c, double t)
 {
   return a * pow(t, -1.5) * std::exp(-b / t + c * t);
+}
+
+
+std::vector<std::pair<double, double>>
+getObservations(const std::string& filename)
+{
+  std::vector<std::pair<double, double>> data;
+
+  std::ifstream ifs(filename.c_str(), std::ios::in);
+
+  // skip two lines
+  char line[80];
+  ifs.getline(line, 80);
+  ifs.getline(line, 80);
+
+  do {
+    std::string word;
+    ifs >> word;
+    if (ifs.eof()) break;
+
+    for (int i = 0; i < 9; ++i) ifs >> word;
+    double val1 = std::atof(word.c_str());
+    ifs >> word;
+    double val2 = std::atof(word.c_str());
+    data.push_back(std::make_pair(val1, val2));
+    if (ifs.eof()) break;
+  } while (true);
+
+  return data;
 }
 
 
@@ -92,7 +120,7 @@ RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, d
     .sublist("molecular diffusion")
     .set<Teuchos::Array<double>>("aqueous values", tmp_m);
 
-  // solute diffusion to matrix coefficient, kn = phi * Dm / d_fm
+  // coefficient for solute diffusion to matrix
   plist->sublist("state")
     .sublist("evaluators")
     .sublist("fracture-solute_diffusion_to_matrix")
@@ -124,7 +152,7 @@ RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, d
       .sublist("BC 0")
       .sublist("boundary concentration")
       .sublist("function-exprtk")
-      .set<std::string>("formula", "if(t > 1.0, 0.0, 1.0)");
+      .set<std::string>("formula", "if(t > 0.5, 0.0, 1.0)");
 
     plist->sublist("cycle driver")
       .sublist("time periods")
@@ -226,13 +254,37 @@ RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, d
       // do nothing
     }
   }
-  double err_tmp(err), norm_tmp(norm);
-  mesh->get_comm()->SumAll(&err_tmp, &err, 1);
-  mesh->get_comm()->SumAll(&norm_tmp, &norm, 1);
-  err /= tcc_f.GlobalLength();
-  norm /= tcc_f.GlobalLength();
-  std::cout << "Mean error in fracture: " << err << " solution norm=" << norm << std::endl;
 
+  double err_tmp(err), norm_tmp(norm);
+  if (icase != 4) {
+    mesh->get_comm()->SumAll(&err_tmp, &err, 1);
+    mesh->get_comm()->SumAll(&norm_tmp, &norm, 1);
+    err /= tcc_f.GlobalLength();
+    norm /= tcc_f.GlobalLength();
+    std::cout << "Mean error in fracture: " << err << " solution norm=" << norm << std::endl;
+
+  } else {
+    auto data = getObservations("observation.out");
+
+    double t0, t, a, tmp0, tmp1, tmp2, norm(0.0);
+    t0 = 3 * b / u_f;
+    a = phi * sqrt(Dm) / b;
+    tmp0 = a * sqrt(1.0 / t0 / M_PI);
+
+    for (auto d : data) {
+      t = d.first;
+      if (t > t0) {
+        tmp1 = t / t0 - 1.0;
+        tmp2 = tmp0 * std::pow(tmp1, -1.5) * std::exp(-a * a * t0 / tmp1);
+        err += std::pow(d.second - tmp2, 2.0);
+        norm += std::pow(tmp2, 2.0);
+      }
+    }
+    err = std::sqrt(err) / data.size();
+    norm = std::sqrt(err) / data.size();
+    std::cout << "Mean error in observations: " << err << " norm=" << norm << std::endl;
+  }
+  
   if (fmin < 1.0e+98) CHECK_CLOSE(fmin, fmax, 1e-12);
 
 
@@ -276,8 +328,7 @@ RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, d
 
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_1)
 {
-  // matrix depth, L = 2
-  double L = 2.0;
+  double L = 2.0;  // matrix depth
   double Df = 1e-6;
   double Dm = 0.0;
   double err = RunTest(1, 0.0, Df, Dm, L);
@@ -302,13 +353,12 @@ TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_3)
   CHECK(err < 0.01);
 }
 
-/*
-TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_4) {
-  double a = 0.02;
+TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_4)
+{
+  double a = 0.001;
   double u = 1e-4 * a;
-  double Dm = 2e-6;
-  double err = RunTest(4, u, 0.0, Dm, 2.0, 2.4e+5);
+  double Dm = 5e-10;
+  double err = RunTest(4, u, 0.0, Dm, 0.05, 1e+5);
   CHECK(err < 2.0e-2);
 }
-*/
 

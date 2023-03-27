@@ -76,7 +76,7 @@
             </ParameterList>
           </ParameterList>
 	</ParameterList>
-	<Parameter name="initial time step" type="double" value="1.0"/>
+	<Parameter name="initial time step" type="double" value="0.05"/>
 	<Parameter name="start period time" type="double" value="0.0"/>
 	<Parameter name="end period time" type="double" value="1.0e+5"/>
         <Parameter name="maximum time step" type="double" value="3.0e+3"/>
