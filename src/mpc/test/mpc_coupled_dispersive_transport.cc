@@ -49,39 +49,13 @@
 #include "pks_transport_reg.hh"
 #include "State.hh"
 
+// MPC
+#include "mpc_utils.hh"
+
 double
 Case3(double a, double b, double c, double t)
 {
   return a * pow(t, -1.5) * std::exp(-b / t + c * t);
-}
-
-
-std::vector<std::pair<double, double>>
-getObservations(const std::string& filename)
-{
-  std::vector<std::pair<double, double>> data;
-
-  std::ifstream ifs(filename.c_str(), std::ios::in);
-
-  // skip two lines
-  char line[80];
-  ifs.getline(line, 80);
-  ifs.getline(line, 80);
-
-  do {
-    std::string word;
-    ifs >> word;
-    if (ifs.eof()) break;
-
-    for (int i = 0; i < 9; ++i) ifs >> word;
-    double val1 = std::atof(word.c_str());
-    ifs >> word;
-    double val2 = std::atof(word.c_str());
-    data.push_back(std::make_pair(val1, val2));
-    if (ifs.eof()) break;
-  } while (true);
-
-  return data;
 }
 
 
@@ -264,7 +238,7 @@ RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, d
     std::cout << "Mean error in fracture: " << err << " solution norm=" << norm << std::endl;
 
   } else {
-    auto data = getObservations("observation.out");
+    auto data = getObservations("observation.out", 9);
 
     double t0, t, a, tmp0, tmp1, tmp2, norm(0.0);
     t0 = 3 * b / u_f;

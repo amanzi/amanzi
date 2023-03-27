@@ -3,11 +3,11 @@
 
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot_matrix"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 10, -1}"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 50, -1}"/>
   </ParameterList>
   <ParameterList name="visualization data fracture">
     <Parameter name="file name base" type="string" value="plot_fracture"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 10, -1}"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 50, -1}"/>
   </ParameterList>
 
   <ParameterList name="regions">
