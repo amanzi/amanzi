@@ -124,9 +124,9 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
              UR[0] = W[0]; //wetted area
              UR[1] = W[1]; //wetted angle
 
-             denomR = TotalDepthEdgeValue(c1, f, htc, Bc, Bmax, B_n) - BathymetryEdgeValue(f, B_n);
-
            }
+              denomR = TotalDepthEdgeValue(c1, f, htc, Bc, Bmax, B_n) - BathymetryEdgeValue(f, B_n);
+
            } else {
 
               W = ComputeWettedQuantitiesEdge(c2, f, htc, Bc, Bmax, B_n);

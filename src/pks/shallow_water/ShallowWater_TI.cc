@@ -110,6 +110,22 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         }
       }
     }
+    if (bcs_[i]->get_bc_name() == "discharge") {
+       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+          int f = it->first;
+          mesh_->face_get_nodes(f, &nodes);
+          int n0 = nodes[0], n1 = nodes[1];
+
+          bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+          bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
+          bc_value_qx[f] = it->second[0];
+          bc_value_qy[f] = it->second[1];
+          bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
+          double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
+          bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], WettedAngle_f, bc_value_b[f]);
+
+       }
+    }
   }
 
   // limited reconstructions using boundary data
@@ -122,7 +138,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   // additional depth-positivity correction limiting for fully flooded cells
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
-  
+
   for (int c = 0; c < ncells_wghost; ++c ) {
      Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
      mesh_->cell_get_nodes(c, &cnodes);
@@ -157,6 +173,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   bathymetry_grad_->Compute(tmp7);
   bathymetry_grad_->data()->ScatterMasterToGhosted("cell");
 
+  
   // flux
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
@@ -341,7 +358,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        ExtraSource = 1.0;
     }
     else{
-       BedSlopeSource = NumericalSourceBedSlope(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n, bc_model, bc_value_h);
+       BedSlopeSource = NumericalSourceBedSlope(c, ht_c[0][c], B_c[0][c], B_max[0][c], B_n, bc_model, bc_value_h);
        ExtraSource = 0.0;
     }
     FrictionSource = NumericalSourceFriction(U[0], U[1], U[3]); 

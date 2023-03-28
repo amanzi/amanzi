@@ -232,6 +232,24 @@ ShallowWater_PK::Initialize()
     }
   }
 
+  // -- discharge BC
+  if (bc_list->isSublist("discharge")) {
+    PK_DomainFunctionFactory<ShallowWaterBoundaryFunction> bc_factory(mesh_, S_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("discharge");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+
+        bc = bc_factory.Create(spec, "discharge", AmanziMesh::FACE, Teuchos::null);
+        bc->set_bc_name("discharge");
+        bc->set_type(WhetStone::DOF_Type::VECTOR);
+        bcs_.push_back(bc);
+      }
+    }
+  }
+
   // -- ponded depth BC
   if (bc_list->isSublist("ponded depth")) {
     PK_DomainFunctionFactory<ShallowWaterBoundaryFunction> bc_factory(mesh_, S_);
@@ -412,6 +430,26 @@ ShallowWater_PK::Initialize()
         }
 
      } 
+
+     if (S_->GetRecord(discharge_key_).initialized()) {
+
+        auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
+        auto& u_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell"); 
+
+        for (int c = 0; c < ncells_owned; c++) {
+            for (int i = 0; i < 2; ++i) {
+             if(std::abs(WettedArea_c[0][c]) < 1.0e-12){
+                u_c[i][c] = 0.0;
+             }
+             else{
+                u_c[i][c] = q_c[i][c] / WettedArea_c[0][c];
+             }
+            }
+        }
+
+        S_->GetRecordW(velocity_key_, Tags::DEFAULT, passwd_).set_initialized();
+
+     }
 
      S_->GetRecordW(ponded_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
      S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
