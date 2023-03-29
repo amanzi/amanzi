@@ -13,8 +13,8 @@ class Exprtk(Package):
     git      = "https://github.com/ArashPartow/exprtk"
 
     maintainers = ['julienloiseau','jd-moulton','gcapodag']
-    version('master', commit='806c519c91fd08ba4fa19380dbf3f6e42de9e2d1', default=True)
+    version('release', commit='f46bffcd6966d38a09023fb37ba9335214c9b959', default=True)
 
-    def install(self, prec, prefix): 
+    def install(self, prec, prefix):
         mkdirp(prefix.include)
         install("exprtk.hpp", prefix.include)
