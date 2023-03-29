@@ -414,7 +414,7 @@ ShallowWater_PK::Initialize()
             WettedArea_c[0][c] = (g_ * PipeCrossSection * PressurizedHead) / (celerity_ * celerity_) + PipeCrossSection;
             WettedAngle_c[0][c] = TwoPi;
         }
-        else if ((std::abs(ht_c[0][c] - B_c[0][c]) < 1.e-15) || (ht_c[0][c] < B_c[0][c])){ //cell is dry
+        else if ((std::fabs(ht_c[0][c] - B_c[0][c]) < 1.e-15) || (ht_c[0][c] < B_c[0][c])){ //cell is dry
 
             WettedArea_c[0][c] = 0.0;
             WettedAngle_c[0][c] = 0.0;
@@ -438,7 +438,7 @@ ShallowWater_PK::Initialize()
 
         for (int c = 0; c < ncells_owned; c++) {
             for (int i = 0; i < 2; ++i) {
-             if(std::abs(WettedArea_c[0][c]) < 1.0e-12){
+             if(std::fabs(WettedArea_c[0][c]) < 1.0e-12){
                 u_c[i][c] = 0.0;
              }
              else{

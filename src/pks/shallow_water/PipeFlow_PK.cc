@@ -60,7 +60,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
   std::vector<double> W(2, 0.0);
   std::vector<double> UL(2), UR(2);
 
-  if (std::abs(htc - Bc) >= 1.e-15) { //cell is not dry
+  if (std::fabs(htc - Bc) >= 1.e-15) { //cell is not dry
   
      AmanziMesh::Entity_ID_List cfaces;
      mesh_->cell_get_faces(c, &cfaces);
@@ -176,7 +176,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
       //double denom = ComputePondedDepth(UL[1]) - ComputePondedDepth(UR[1]);
       double denom = denomL - denomR;
-      S[1] = - (FaceAreaL * OtherTermLeft - FaceAreaR * OtherTermRight) * BGrad / denom;
+      S[1] = std::fabs(BGrad)<1.e-14 ? 0.0 : - (FaceAreaL * OtherTermLeft - FaceAreaR * OtherTermRight) * BGrad / denom;
 
  } // closes cell is not dry 
 
