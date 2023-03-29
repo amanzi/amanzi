@@ -461,9 +461,9 @@ Cell_kind Mesh_MSTK::getCellType(const Entity_ID cellid) const
 // violated here to allow for a default input argument
 
 // On a distributed mesh, this will return all the faces of the
-// cell, OWNED or GHOST. If ordered = true, the faces will be
+// cell, OWNED or GHOST. If cells_initialized_ = true, the faces will be
 // returned in a standard order according to Exodus II convention
-// for standard cells; in all other situations (ordered = false or
+// for standard cells; in all other situations (cells_initialized_ = false or
 // non-standard cells), the list of faces will be in arbitrary order
 
 // In 3D, direction is 1 if face normal points out of cell
@@ -609,7 +609,7 @@ void Mesh_MSTK::getCellFacesAndDirs_unordered_(const Entity_ID cellid,
         cEntity_ID_View& faceids,
         cEntity_Direction_View * face_dirs) const
 {
-
+  
   Entity_ID_View lfaceids; 
   Entity_Direction_View lface_dirs;
   MEntity_ptr cell = cell_id_to_handle_[cellid];

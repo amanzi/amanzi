@@ -197,7 +197,7 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART_SERENDIPITY)
 {
   HighOrderCrouzeixRaviartSerendipity(2, "test/two_cell2_dist.exo");
   HighOrderCrouzeixRaviartSerendipity(2, "test/one_pentagon.exo");
-  // HighOrderCrouzeixRaviartSerendipity(3, "test/cube_unit.exo");
+  HighOrderCrouzeixRaviartSerendipity(3, "test/cube_unit.exo");
 }
 
 
@@ -497,10 +497,12 @@ TEST(HIGH_ORDER_LAGRANGE_SURFACE)
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
   auto fac_list = Teuchos::rcp(new Teuchos::ParameterList()); 
+  MeshFactory meshfactory1(comm, gm, fac_list);  meshfactory1.set_preference(Preference({ Framework::MSTK }));
   fac_list->set<bool>("request edges", true); 
-  MeshFactory meshfactory(comm, gm, fac_list);  meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh2d = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
-  Teuchos::RCP<Mesh> mesh3d = meshfactory.create("test/cube_unit.exo");
+  fac_list->set<bool>("request faces", true); 
+  MeshFactory meshfactory2(comm, gm, fac_list);  meshfactory2.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh2d = meshfactory1.create(0.0, 0.0, 1.0, 1.0, 1, 1);
+  Teuchos::RCP<Mesh> mesh3d = meshfactory2.create("test/cube_unit.exo");
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 2);
@@ -514,7 +516,7 @@ TEST(HIGH_ORDER_LAGRANGE_SURFACE)
   // 1st-order scheme
   DenseMatrix A2d, A3d;
   mfd_ho.StiffnessMatrixSurface(0, T, A3d);
-
+ 
   printf("Stiffness (sub)matrix for order=2, size=%d\n", A3d.NumRows());
   PrintMatrix(A3d, "%9.3f ", 12);
 
