@@ -213,9 +213,6 @@ MFD3D_LagrangeSerendipity::ProjectorFace_(int f,
 
   Teuchos::RCP<AmanziMesh::SingleFaceMesh> surf_mesh =
     Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh_, f, coordsys));
-  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_cache =
-    Teuchos::rcp(new AmanziMesh::Mesh(surf_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
-
 
   std::vector<Polynomial> vve;
   for (int i = 0; i < ve.size(); ++i) {
@@ -224,7 +221,7 @@ MFD3D_LagrangeSerendipity::ProjectorFace_(int f,
     vve.push_back(tmp);
   }
 
-  ProjectorCell_(surf_mesh_cache, 0, vve, vve, type, moments, uf);
+  ProjectorCell_(surf_mesh, 0, vve, vve, type, moments, uf);
   uf.ChangeOrigin(AmanziGeometry::Point(d_ - 1));
   uf.InverseChangeCoordinates(xf, *coordsys.tau());
 }
@@ -432,16 +429,16 @@ MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   if (d == 3) {
     const auto& edges = mymesh->getCellEdges(c);
     int nedges = edges.size();
-
+    
     Polynomial pe(d - 2, order_ - 2);
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
 
       // nodal DOFs
-      auto nodes = mymesh->getEdgeNodes(e);
-      i0 = nodes[0]; 
-      i1 = nodes[1]; 
+      auto enodes = mymesh->getEdgeNodes(e);
+      i0 = enodes[0]; 
+      i1 = enodes[1]; 
 
       xv = mymesh->getNodeCoordinate(i0);
       pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), i0));
