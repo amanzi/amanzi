@@ -390,6 +390,11 @@ AmanziGeometry::Point MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Ent
         int* orientation) const
 {
   AmanziGeometry::Point normal;
+  if(this->isSFM()){
+    AmanziGeometry::Point normal = data_.face_normals.getRow<MemSpace_kind::HOST>(f)[0]; 
+    return normal;
+  }
+
   if constexpr (MEM == MemSpace_kind::DEVICE){
     assert(data_.face_geometry_cached); 
   }else {

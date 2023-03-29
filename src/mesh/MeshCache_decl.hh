@@ -316,7 +316,9 @@ struct MeshCache {
     map.MyGlobalElements(elements);
     return elements[lid]; 
   }
-
+  Teuchos::RCP<const MeshFrameworkAlgorithms> getAlgorithms() const { 
+    return algorithms_; 
+  }
 
   //
   // Build the cache, fine grained control
@@ -360,6 +362,8 @@ struct MeshCache {
   //
   // Baseline mesh functionality
   // =============================================
+
+  virtual bool isSFM() const { return false;}
 
   // ----------------------
   // Accessors and Mutators
@@ -910,7 +914,7 @@ struct MeshCache {
 
   void recacheGeometry(); 
 
- private:
+ protected:
   // common error messaging
   void throwAccessError_(const std::string& func_name) const;
 
