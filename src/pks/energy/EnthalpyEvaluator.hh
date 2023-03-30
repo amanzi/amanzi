@@ -61,7 +61,7 @@ class EnthalpyEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Com
   bool include_work_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EnthalpyEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, EnthalpyEvaluator> reg_;
 };
 
 } // namespace Energy

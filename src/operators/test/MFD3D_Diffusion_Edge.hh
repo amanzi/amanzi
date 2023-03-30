@@ -25,7 +25,7 @@
   2. Add variable for the static registry. In this example MyMethod
   is Diffusion_Edge:
 
-  static RegisteredFactory<MFD3D_My_Method> factory_;
+  static RegisteredFactory<MFD3D_My_Method> reg_;
 
   3. Explicitly instantiate the static registry (in .cc file) with
      the unique name "my unique method". The factory takes this name
@@ -71,7 +71,7 @@ class MFD3D_Diffusion_Edge : public MFD3D {
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
  private:
-  static RegisteredFactory<MFD3D_Diffusion_Edge> factory_;
+  static RegisteredFactory<MFD3D_Diffusion_Edge> reg_;
 };
 
 } // namespace WhetStone

@@ -22,7 +22,7 @@
 #include "VerboseObject_objs.hh"
 
 // Amanzi
-#include "bilinear_form_registration.hh"
+#include "bilinear_form_reg.hh"
 
 #include "DiffusionFixture.hh"
 #include "DiffusionFixtureTests.hh"

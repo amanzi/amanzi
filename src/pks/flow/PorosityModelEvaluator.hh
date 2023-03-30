@@ -55,7 +55,7 @@ class PorosityModelEvaluator
   Key pressure_key_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, PorosityModelEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, PorosityModelEvaluator> reg_;
 };
 
 } // namespace Flow

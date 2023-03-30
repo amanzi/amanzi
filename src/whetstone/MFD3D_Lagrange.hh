@@ -76,7 +76,7 @@ class MFD3D_Lagrange : public MFD3D {
                       Polynomial& uc);
 
  private:
-  static RegisteredFactory<MFD3D_Lagrange> factory_;
+  static RegisteredFactory<MFD3D_Lagrange> reg_;
 };
 
 } // namespace WhetStone

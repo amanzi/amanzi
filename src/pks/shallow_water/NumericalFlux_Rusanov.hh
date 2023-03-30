@@ -31,7 +31,7 @@ class NumericalFlux_Rusanov : public NumericalFlux {
   virtual std::vector<double> Compute(const std::vector<double>& UL, const std::vector<double>& UR);
 
  private:
-  static Utils::RegisteredFactory<NumericalFlux, NumericalFlux_Rusanov> factory_;
+  static Utils::RegisteredFactory<NumericalFlux, NumericalFlux_Rusanov> reg_;
 };
 
 } // namespace ShallowWater

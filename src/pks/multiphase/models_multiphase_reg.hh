@@ -32,10 +32,10 @@ Factory<Multiphase::WRMmp>::map_type* Factory<Multiphase::WRMmp>::map_;
 namespace Amanzi {
 namespace Multiphase {
 
-Utils::RegisteredFactory<WRMmp, WRMmp_BrooksCorey> WRMmp_BrooksCorey::factory_("Brooks Corey");
-Utils::RegisteredFactory<WRMmp, WRMmp_Corey> WRMmp_Corey::factory_("Corey");
-Utils::RegisteredFactory<WRMmp, WRMmp_vanGenuchten> WRMmp_vanGenuchten::factory_("van Genuchten");
-Utils::RegisteredFactory<WRMmp, WRMmp_Simple> WRMmp_Simple::factory_("Simple");
+Utils::RegisteredFactory<WRMmp, WRMmp_BrooksCorey> WRMmp_BrooksCorey::reg_("Brooks Corey");
+Utils::RegisteredFactory<WRMmp, WRMmp_Corey> WRMmp_Corey::reg_("Corey");
+Utils::RegisteredFactory<WRMmp, WRMmp_vanGenuchten> WRMmp_vanGenuchten::reg_("van Genuchten");
+Utils::RegisteredFactory<WRMmp, WRMmp_Simple> WRMmp_Simple::reg_("Simple");
 
 } // namespace Multiphase
 } // namespace Amanzi

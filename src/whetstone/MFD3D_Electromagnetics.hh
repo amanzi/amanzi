@@ -85,7 +85,7 @@ class MFD3D_Electromagnetics : public DeRham_Edge {
   int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 
  private:
-  static RegisteredFactory<MFD3D_Electromagnetics> factory_;
+  static RegisteredFactory<MFD3D_Electromagnetics> reg_;
 };
 
 } // namespace WhetStone

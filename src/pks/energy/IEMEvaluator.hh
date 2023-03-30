@@ -69,7 +69,7 @@ class IEMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Composit
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  static Utils::RegisteredFactory<Evaluator, IEMEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, IEMEvaluator> reg_;
 };
 
 } // namespace Energy

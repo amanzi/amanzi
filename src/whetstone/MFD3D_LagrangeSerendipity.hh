@@ -113,7 +113,7 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
                                 DenseVector& vdof);
 
  private:
-  static RegisteredFactory<MFD3D_LagrangeSerendipity> factory_;
+  static RegisteredFactory<MFD3D_LagrangeSerendipity> reg_;
 };
 
 } // namespace WhetStone

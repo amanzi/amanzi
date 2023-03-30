@@ -85,7 +85,7 @@ class MFD3D_CrouzeixRaviartSerendipity : public MFD3D_CrouzeixRaviartAnyOrder {
   void CalculateDOFsOnBoundary_(int c, const std::vector<Polynomial>& vf, DenseVector& vdof);
 
  private:
-  static RegisteredFactory<MFD3D_CrouzeixRaviartSerendipity> factory_;
+  static RegisteredFactory<MFD3D_CrouzeixRaviartSerendipity> reg_;
 };
 
 } // namespace WhetStone

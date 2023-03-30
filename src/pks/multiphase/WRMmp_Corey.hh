@@ -39,7 +39,7 @@ class WRMmp_Corey : public WRMmp {
  private:
   double srl_, srg_, pcap_;
 
-  static Utils::RegisteredFactory<WRMmp, WRMmp_Corey> factory_;
+  static Utils::RegisteredFactory<WRMmp, WRMmp_Corey> reg_;
 };
 
 } // namespace Multiphase

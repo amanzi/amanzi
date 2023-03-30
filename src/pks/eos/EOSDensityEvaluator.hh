@@ -55,7 +55,7 @@ class EOSDensityEvaluator
   Tag tag_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EOSDensityEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, EOSDensityEvaluator> reg_;
 };
 
 } // namespace AmanziEOS

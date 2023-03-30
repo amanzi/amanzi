@@ -112,7 +112,7 @@ class MFD3D_CrouzeixRaviartAnyOrder : public MFD3D {
   DenseMatrix R_, G_;
 
  private:
-  static RegisteredFactory<MFD3D_CrouzeixRaviartAnyOrder> factory_;
+  static RegisteredFactory<MFD3D_CrouzeixRaviartAnyOrder> reg_;
 };
 
 } // namespace WhetStone

@@ -43,7 +43,7 @@ class WRMmp_BrooksCorey : public WRMmp {
  private:
   double S_rw_, S_rn_, pd_, lambda_;
 
-  static Utils::RegisteredFactory<WRMmp, WRMmp_BrooksCorey> factory_;
+  static Utils::RegisteredFactory<WRMmp, WRMmp_BrooksCorey> reg_;
 };
 
 } // namespace Multiphase

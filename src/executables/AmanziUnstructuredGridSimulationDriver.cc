@@ -37,7 +37,7 @@
 #include "PK.hh"
 #include "State.hh"
 
-#include "bilinear_form_registration.hh"
+#include "bilinear_form_reg.hh"
 #include "dbc.hh"
 #include "eos_reg.hh"
 #include "errors.hh"

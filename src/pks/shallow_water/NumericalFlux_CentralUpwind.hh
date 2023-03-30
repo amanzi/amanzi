@@ -31,7 +31,7 @@ class NumericalFlux_CentralUpwind : public NumericalFlux {
   virtual std::vector<double> Compute(const std::vector<double>& UL, const std::vector<double>& UR);
 
  private:
-  static Utils::RegisteredFactory<NumericalFlux, NumericalFlux_CentralUpwind> factory_;
+  static Utils::RegisteredFactory<NumericalFlux, NumericalFlux_CentralUpwind> reg_;
 };
 
 } // namespace ShallowWater

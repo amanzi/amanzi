@@ -112,7 +112,7 @@ class DG_Modal : public BilinearForm {
   std::vector<Polynomial> monomial_integrals_; // integrals of non-normalized monomials
   std::vector<std::shared_ptr<Basis>> basis_;
 
-  static RegisteredFactory<DG_Modal> factory_;
+  static RegisteredFactory<DG_Modal> reg_;
 };
 
 

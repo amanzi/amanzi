@@ -41,17 +41,17 @@ Factory<Transport::MultiscaleTransportPorosity>::map_type*
 namespace Amanzi {
 namespace Transport {
 
-Utils::RegisteredFactory<MDM, MDM_Bear> MDM_Bear::factory_("Bear");
-Utils::RegisteredFactory<MDM, MDM_BurnettFrind> MDM_BurnettFrind::factory_("Burnett-Frind");
-Utils::RegisteredFactory<MDM, MDM_Isotropic> MDM_Isotropic::factory_("scalar");
+Utils::RegisteredFactory<MDM, MDM_Bear> MDM_Bear::reg_("Bear");
+Utils::RegisteredFactory<MDM, MDM_BurnettFrind> MDM_BurnettFrind::reg_("Burnett-Frind");
+Utils::RegisteredFactory<MDM, MDM_Isotropic> MDM_Isotropic::reg_("scalar");
 Utils::RegisteredFactory<MDM, MDM_LichtnerKelkarRobinson>
-  MDM_LichtnerKelkarRobinson::factory_("Lichtner-Kelkar-Robinson");
+  MDM_LichtnerKelkarRobinson::reg_("Lichtner-Kelkar-Robinson");
 
 Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_DPM>
-  MultiscaleTransportPorosity_DPM::factory_("dual porosity");
+  MultiscaleTransportPorosity_DPM::reg_("dual porosity");
 
 Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_GDPM>
-  MultiscaleTransportPorosity_GDPM::factory_("generalized dual porosity");
+  MultiscaleTransportPorosity_GDPM::reg_("generalized dual porosity");
 
 } // namespace Transport
 } // namespace Amanzi

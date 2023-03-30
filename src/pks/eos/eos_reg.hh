@@ -38,13 +38,12 @@ namespace Amanzi {
 namespace AmanziEOS {
 
 // registry of method
-Utils::RegisteredFactory<Evaluator, EOSDensityEvaluator> EOSDensityEvaluator::factory_("eos");
+Utils::RegisteredFactory<Evaluator, EOSDensityEvaluator> EOSDensityEvaluator::reg_("eos");
 Utils::RegisteredFactory<Evaluator, IsobaricEOSEvaluator>
-  IsobaricEOSEvaluator::factory_("isobaric eos");
+  IsobaricEOSEvaluator::reg_("isobaric eos");
 Utils::RegisteredFactory<Evaluator, MolarFractionGasEvaluator>
-  MolarFractionGasEvaluator::factory_("molar fraction gas");
-Utils::RegisteredFactory<Evaluator, EOSViscosityEvaluator>
-  EOSViscosityEvaluator::factory_("viscosity");
+  MolarFractionGasEvaluator::reg_("molar fraction gas");
+Utils::RegisteredFactory<Evaluator, EOSViscosityEvaluator> EOSViscosityEvaluator::reg_("viscosity");
 
 Utils::RegisteredFactory<EOS_Density, IdealGas_Density> IdealGas_Density::reg_("ideal gas");
 Utils::RegisteredFactory<EOS_Density, VaporInGas_Density> VaporInGas_Density::reg_("vapor in gas");
@@ -54,21 +53,20 @@ Utils::RegisteredFactory<EOS_Density, H2O_DensityTabular>
   H2O_DensityTabular::reg_("liquid water tabular");
 
 Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure>
-  H2O_SaturatedVaporPressure::factory_("water vapor over water/ice");
+  H2O_SaturatedVaporPressure::reg_("water vapor over water/ice");
 
-Utils::RegisteredFactory<EOS_Viscosity, H2O_Viscosity>
-  H2O_Viscosity::factory_("liquid water 0-30C");
-Utils::RegisteredFactory<EOS_Viscosity, ViscosityConstant> ViscosityConstant::factory_("constant");
+Utils::RegisteredFactory<EOS_Viscosity, H2O_Viscosity> H2O_Viscosity::reg_("liquid water 0-30C");
+Utils::RegisteredFactory<EOS_Viscosity, ViscosityConstant> ViscosityConstant::reg_("constant");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM>
-  H2O_ViscosityFEHM::factory_("liquid water FEHM");
+  H2O_ViscosityFEHM::reg_("liquid water FEHM");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityTabular>
-  H2O_ViscosityTabular::factory_("liquid water tabular");
+  H2O_ViscosityTabular::reg_("liquid water tabular");
 
 Utils::RegisteredFactory<EOS_Diffusion, VaporInGas_Diffusion>
-  VaporInGas_Diffusion::factory_("vapor in gas");
+  VaporInGas_Diffusion::reg_("vapor in gas");
 
 Utils::RegisteredFactory<COM_Tortuosity, COM_MillingtonQuirk>
-  COM_MillingtonQuirk::factory_("Millington Quirk");
+  COM_MillingtonQuirk::reg_("Millington Quirk");
 
 Utils::RegisteredFactory<EOS_ThermalConductivity, H2O_ThermalConductivity>
   H2O_ThermalConductivity::reg_("liquid water");

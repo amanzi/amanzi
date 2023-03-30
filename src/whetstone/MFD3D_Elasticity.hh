@@ -64,7 +64,7 @@ class MFD3D_Elasticity : public MFD3D {
                             DenseMatrix& AB);
 
  private:
-  static RegisteredFactory<MFD3D_Elasticity> factory_;
+  static RegisteredFactory<MFD3D_Elasticity> reg_;
 };
 
 } // namespace WhetStone

@@ -31,9 +31,9 @@ namespace Amanzi {
 namespace ShallowWater {
 
 Utils::RegisteredFactory<NumericalFlux, NumericalFlux_Rusanov>
-  NumericalFlux_Rusanov::factory_("Rusanov");
+  NumericalFlux_Rusanov::reg_("Rusanov");
 Utils::RegisteredFactory<NumericalFlux, NumericalFlux_CentralUpwind>
-  NumericalFlux_CentralUpwind::factory_("central upwind");
+  NumericalFlux_CentralUpwind::reg_("central upwind");
 
 } // namespace ShallowWater
 } // namespace Amanzi

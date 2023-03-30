@@ -42,8 +42,7 @@ class IEM_Linear : public IEM {
   double Tref_; // units: K
 
  private:
-  // iem factor registration
-  static Utils::RegisteredFactory<IEM, IEM_Linear> factory_;
+  static Utils::RegisteredFactory<IEM, IEM_Linear> reg_;
 };
 
 } // namespace Energy

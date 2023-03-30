@@ -52,7 +52,7 @@ class H2O_ViscosityTabular : public EOS_Viscosity {
     return val;
   }
 
-  static Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityTabular> factory_;
+  static Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityTabular> reg_;
 
  private:
   Teuchos::RCP<LookupTable> table_;

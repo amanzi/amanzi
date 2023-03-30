@@ -27,7 +27,7 @@
   class DerivedPK : public Amanzi::PK {
     ...
    private:
-    static Amanzi::RegisteredPKFactory<DerivedPK> factory_;
+    static Amanzi::RegisteredPKFactory<DerivedPK> reg_;
     ...
   };
 

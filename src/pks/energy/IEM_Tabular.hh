@@ -56,7 +56,7 @@ class IEM_Tabular : public IEM {
     return val;
   }
 
-  static Utils::RegisteredFactory<IEM, IEM_Tabular> factory_;
+  static Utils::RegisteredFactory<IEM, IEM_Tabular> reg_;
 
  private:
   Teuchos::RCP<AmanziEOS::LookupTable> table_;

@@ -49,7 +49,7 @@ class MolarFractionGasEvaluator
   Teuchos::RCP<EOS_SaturatedVaporPressure> svp_model_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, MolarFractionGasEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, MolarFractionGasEvaluator> reg_;
 };
 
 } // namespace AmanziEOS

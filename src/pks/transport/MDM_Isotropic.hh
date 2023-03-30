@@ -47,7 +47,7 @@ class MDM_Isotropic : public MDM {
   double alpha_;
   bool dispersivity_;
 
-  static Utils::RegisteredFactory<MDM, MDM_Isotropic> factory_;
+  static Utils::RegisteredFactory<MDM, MDM_Isotropic> reg_;
 };
 
 } // namespace Transport

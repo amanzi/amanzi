@@ -46,7 +46,7 @@ class MDM_Bear : public MDM {
  private:
   double alphaL_, alphaT_;
 
-  static Utils::RegisteredFactory<MDM, MDM_Bear> factory_;
+  static Utils::RegisteredFactory<MDM, MDM_Bear> reg_;
 };
 
 } // namespace Transport

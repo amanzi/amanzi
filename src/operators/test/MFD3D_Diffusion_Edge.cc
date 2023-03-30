@@ -30,7 +30,7 @@
 namespace Amanzi {
 namespace WhetStone {
 
-RegisteredFactory<MFD3D_Diffusion_Edge> MFD3D_Diffusion_Edge::factory_("diffusion edge");
+RegisteredFactory<MFD3D_Diffusion_Edge> MFD3D_Diffusion_Edge::reg_("diffusion edge");
 
 /* ******************************************************************
 * Consistency condition for stiffness matrix in heat conduction.

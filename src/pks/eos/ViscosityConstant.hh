@@ -40,7 +40,7 @@ class ViscosityConstant : public EOS_Viscosity {
   double visc_;
 
  private:
-  static Utils::RegisteredFactory<EOS_Viscosity, ViscosityConstant> factory_;
+  static Utils::RegisteredFactory<EOS_Viscosity, ViscosityConstant> reg_;
 };
 
 } // namespace AmanziEOS

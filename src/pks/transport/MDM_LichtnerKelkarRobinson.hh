@@ -53,7 +53,7 @@ class MDM_LichtnerKelkarRobinson : public MDM {
  private:
   double alphaLH_, alphaLV_, alphaTH_, alphaTV_;
 
-  static Utils::RegisteredFactory<MDM, MDM_LichtnerKelkarRobinson> factory_;
+  static Utils::RegisteredFactory<MDM, MDM_LichtnerKelkarRobinson> reg_;
 };
 
 } // namespace Transport

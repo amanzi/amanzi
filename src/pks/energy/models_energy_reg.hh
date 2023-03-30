@@ -41,23 +41,23 @@ Factory<Energy::TCM_TwoPhase>::map_type* Factory<Energy::TCM_TwoPhase>::map_;
 namespace Amanzi {
 namespace Energy {
 
-Utils::RegisteredFactory<Evaluator, IEMEvaluator> IEMEvaluator::factory_("iem");
+Utils::RegisteredFactory<Evaluator, IEMEvaluator> IEMEvaluator::reg_("iem");
 Utils::RegisteredFactory<Evaluator, IEM_WaterVaporEvaluator>
-  IEM_WaterVaporEvaluator::factory_("iem water vapor");
+  IEM_WaterVaporEvaluator::reg_("iem water vapor");
 
-Utils::RegisteredFactory<IEM, IEM_Linear> IEM_Linear::factory_("linear");
-Utils::RegisteredFactory<IEM, IEM_Tabular> IEM_Tabular::factory_("tabular");
+Utils::RegisteredFactory<IEM, IEM_Linear> IEM_Linear::reg_("linear");
+Utils::RegisteredFactory<IEM, IEM_Tabular> IEM_Tabular::reg_("tabular");
 
 
 // linear interpolant of thermal conductivity.
 Utils::RegisteredFactory<TCM_TwoPhase, TCM_PetersLidard_TwoPhase>
-  TCM_PetersLidard_TwoPhase::factory_("two-phase Peters-Lidard");
+  TCM_PetersLidard_TwoPhase::reg_("two-phase Peters-Lidard");
 
 // simple model of two-phase thermal conductivity, based upon:
 // - Interpolation between saturated and dry conductivities via a Kersten number.
 // - Power-law Kersten number.
 Utils::RegisteredFactory<TCM_TwoPhase, TCM_WetDry_TwoPhase>
-  TCM_WetDry_TwoPhase::factory_("two-phase wet/dry");
+  TCM_WetDry_TwoPhase::reg_("two-phase wet/dry");
 
 } // namespace Energy
 } // namespace Amanzi

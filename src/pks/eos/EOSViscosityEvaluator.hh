@@ -42,13 +42,12 @@ class EOSViscosityEvaluator
   // the actual model
   Teuchos::RCP<EOS_Viscosity> visc_;
 
-  // Keys for fields
   // dependencies
   Key temp_key_, pres_key_;
   Tag tag_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EOSViscosityEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, EOSViscosityEvaluator> reg_;
 };
 
 } // namespace AmanziEOS

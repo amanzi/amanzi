@@ -140,7 +140,7 @@ class MFD3D_Diffusion : public DeRham_Face {
   using MFD3D::d_;
 
  private:
-  static RegisteredFactory<MFD3D_Diffusion> factory_;
+  static RegisteredFactory<MFD3D_Diffusion> reg_;
 };
 
 } // namespace WhetStone

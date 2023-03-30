@@ -38,7 +38,7 @@ class VaporInGas_Diffusion : public EOS_Diffusion {
   double Tref_; // [K]
   double dref_; // [m^2/s]
 
-  static Utils::RegisteredFactory<EOS_Diffusion, VaporInGas_Diffusion> factory_;
+  static Utils::RegisteredFactory<EOS_Diffusion, VaporInGas_Diffusion> reg_;
 };
 
 } // namespace AmanziEOS

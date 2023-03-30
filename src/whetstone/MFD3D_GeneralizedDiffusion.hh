@@ -60,7 +60,7 @@ class MFD3D_GeneralizedDiffusion : public MFD3D {
                            std::vector<AmanziGeometry::Point>& xm);
 
  private:
-  static RegisteredFactory<MFD3D_GeneralizedDiffusion> factory_;
+  static RegisteredFactory<MFD3D_GeneralizedDiffusion> reg_;
 };
 
 } // namespace WhetStone

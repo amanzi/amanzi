@@ -53,7 +53,7 @@ class MDM_BurnettFrind : public MDM {
  private:
   double alphaL_, alphaTH_, alphaTV_;
 
-  static Utils::RegisteredFactory<MDM, MDM_BurnettFrind> factory_;
+  static Utils::RegisteredFactory<MDM, MDM_BurnettFrind> reg_;
 };
 
 } // namespace Transport

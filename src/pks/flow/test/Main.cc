@@ -22,7 +22,7 @@
 namespace Amanzi {
 namespace Flow {
 
-Utils::RegisteredFactory<WRM, WRM_fake> WRM_fake::factory_("fake");
+Utils::RegisteredFactory<WRM, WRM_fake> WRM_fake::reg_("fake");
 
 } // namespace Flow
 } // namespace Amanzi

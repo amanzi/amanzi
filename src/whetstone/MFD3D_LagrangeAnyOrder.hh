@@ -124,7 +124,7 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
   DenseMatrix R_, G_;
 
  private:
-  static RegisteredFactory<MFD3D_LagrangeAnyOrder> factory_;
+  static RegisteredFactory<MFD3D_LagrangeAnyOrder> reg_;
 };
 
 } // namespace WhetStone
