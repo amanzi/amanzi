@@ -1,12 +1,14 @@
 diff -Naru petsc-3.16-old/config/BuildSystem/config/framework.py petsc-3.16-new/config/BuildSystem/config/framework.py
 --- petsc-3.16-old/config/BuildSystem/config/framework.py	2021-09-29 17:30:02.000000000 -0600
 +++ petsc-3.16-new/config/BuildSystem/config/framework.py	2022-08-17 12:11:34.050270732 -0600
-@@ -550,6 +550,8 @@
+@@ -550,6 +550,10 @@
        lines = [s for s in lines if s.find('skipping incompatible') < 0]
        # Multiple gfortran libraries present
        lines = [s for s in lines if s.find('may conflict with libgfortran') < 0]
 +      # Multiple mpi libraries present
 +      lines = [s for s in lines if s.find('may conflict with libmpi') < 0]
++      # OSX issue
++      lines = [s for s in lines if s.find('could not create compact unwind for') < 0]
        # MacOS libraries built for different MacOS versions
        lines = [s for s in lines if s.find(' was built for newer macOS version') < 0]
        lines = [s for s in lines if s.find(' was built for newer OSX version') < 0]
