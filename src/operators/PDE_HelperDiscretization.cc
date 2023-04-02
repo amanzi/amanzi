@@ -657,12 +657,14 @@ CellToBoundaryFaces(const std::vector<int>& bc_model, CompositeVector& field)
   auto& field_c = *field.ViewComponent("cell", true);
 
   if (field.HasComponent("face")) {
+    const auto& fmap = *field.ComponentMap("face", true);
     auto& field_f = *field.ViewComponent("face", true);
 
     for (int f = 0; f != nfaces; ++f) {
       if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        int g = fmap.FirstPointInElement(f);
         int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
-        field_f[0][f] = field_c[0][c];
+        field_f[0][g] = field_c[0][c];
       }
     }
   } else {
@@ -690,13 +692,15 @@ BoundaryFacesToFaces(const std::vector<int>& bc_model,
   int nfaces = bc_model.size();
   const auto& mesh = output.Mesh();
 
+  const auto& fmap = *output.ComponentMap("face", true);
   const auto& input_bf = *input.ViewComponent("boundary_face", true);
   auto& output_f = *output.ViewComponent("face", true);
 
   for (int f = 0; f != nfaces; ++f) {
     if (bc_model[f] != Operators::OPERATOR_BC_NONE) {
+      int g = fmap.FirstPointInElement(f);
       int bf = AmanziMesh::getFaceOnBoundaryBoundaryFace(*mesh, f);
-      output_f[0][f] = input_bf[0][bf];
+      output_f[0][g] = input_bf[0][bf];
     }
   }
 }
@@ -715,10 +719,14 @@ BoundaryDataToFaces(const Teuchos::RCP<Operators::BCs>& op_bc, CompositeVector& 
   const auto& mesh = field.Mesh();
 
   if (field.HasComponent("face")) {
+    const auto& fmap = *field.ComponentMap("face", true);
     auto& field_f = *field.ViewComponent("face", true);
 
     for (int f = 0; f != nfaces; ++f) {
-      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) { field_f[0][f] = bc_value[f]; }
+      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) { 
+        int g = fmap.FirstPointInElement(f);
+        field_f[0][g] = bc_value[f];
+      }
     }
   } else {
     auto& field_bf = *field.ViewComponent("boundary_face", true);

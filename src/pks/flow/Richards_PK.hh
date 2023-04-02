@@ -167,6 +167,8 @@ class Richards_PK : public Flow_PK {
 
   void Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f);
 
+  void MolarFlowRateToVolumetricFlowRate_();
+
   // The water storage change in a cell equals exactly to the balance of Darcy fluxes.
   // This balance leads to a monotone translport.
   void CalculateCNLSLimiter_(const CompositeVector& wc, const CompositeVector& dwc_dp, double tol);

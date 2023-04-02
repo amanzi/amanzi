@@ -269,10 +269,7 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
         int dir, f = faces[n];
         if (f < nfaces_owned) {
           mesh_->face_normal(f, false, c, &dir);
-
-          double tmp = av(n) * kf[n] * dir;
-          grav_flux[0][f] += tmp;
-
+          grav_flux[0][f] += av(n) * kf[n] * dir;
           hits[f]++;
         }
       }

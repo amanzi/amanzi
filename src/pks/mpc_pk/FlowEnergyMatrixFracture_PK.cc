@@ -79,6 +79,9 @@ FlowEnergyMatrixFracture_PK::Setup()
   matrix_vol_flowrate_key_ = "volumetric_flow_rate";
   fracture_vol_flowrate_key_ = "fracture-volumetric_flow_rate";
 
+  matrix_mol_flowrate_key_ = "molar_flow_rate";
+  fracture_mol_flowrate_key_ = "fracture-molar_flow_rate";
+
   // primary and secondary fields for matrix affected by non-uniform
   // distribution of DOFs, so we need to define them here
   // -- pressure
@@ -86,32 +89,45 @@ FlowEnergyMatrixFracture_PK::Setup()
   if (!S_->HasRecord("pressure")) {
     *S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT).SetMesh(mesh_domain_)->SetGhosted(true) =
       *cvs;
-    AddDefaultPrimaryEvaluator_("pressure", Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, "pressure", Tags::DEFAULT);
   }
 
   if (!S_->HasRecord("temperature")) {
     *S_->Require<CV_t, CVS_t>("temperature", Tags::DEFAULT)
        .SetMesh(mesh_domain_)
        ->SetGhosted(true) = *cvs;
-    AddDefaultPrimaryEvaluator_("temperature", Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, "temperature", Tags::DEFAULT);
   }
 
-  // -- darcy flux
+  // -- molar and volumetric fluxes
   if (!S_->HasRecord(matrix_vol_flowrate_key_)) {
-    std::string name("face");
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
     S_->Require<CV_t, CVS_t>(matrix_vol_flowrate_key_, Tags::DEFAULT)
       .SetMesh(mesh_domain_)
       ->SetGhosted(true)
-      ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
-    AddDefaultPrimaryEvaluator_(matrix_vol_flowrate_key_, Tags::DEFAULT);
+      ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
   }
 
-  // -- darcy flux for fracture
+  if (!S_->HasRecord(matrix_vol_flowrate_key_)) {
+    auto mmap = cvs->Map("face", false);
+    auto gmap = cvs->Map("face", true);
+    S_->Require<CV_t, CVS_t>(matrix_mol_flowrate_key_, Tags::DEFAULT)
+      .SetMesh(mesh_domain_)
+      ->SetGhosted(true)
+      ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
+  }
+
+  // -- molar and volumetric fluxes for fracture
+  auto cvs2 = Operators::CreateManifoldCVS(mesh_fracture_);
   if (!S_->HasRecord(fracture_vol_flowrate_key_)) {
-    auto cvs2 = Operators::CreateManifoldCVS(mesh_fracture_);
     *S_->Require<CV_t, CVS_t>(fracture_vol_flowrate_key_, Tags::DEFAULT)
+       .SetMesh(mesh_fracture_)
+       ->SetGhosted(true) = *cvs2;
+  }
+
+  if (!S_->HasRecord(fracture_vol_flowrate_key_)) {
+    *S_->Require<CV_t, CVS_t>(fracture_mol_flowrate_key_, Tags::DEFAULT)
        .SetMesh(mesh_fracture_)
        ->SetGhosted(true) = *cvs2;
   }
@@ -675,19 +691,6 @@ FlowEnergyMatrixFracture_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 #endif
 
   return error;
-}
-
-
-/* *******************************************************************
-* This should be refactored, see for simialr function in PK_Physical
-******************************************************************* */
-void
-FlowEnergyMatrixFracture_PK::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
-{
-  Teuchos::ParameterList elist(key);
-  elist.set<std::string>("tag", tag.get()).set<std::string>("evaluator name", key);
-  auto eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(elist));
-  S_->SetEvaluator(key, tag, eval);
 }
 
 } // namespace Amanzi

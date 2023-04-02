@@ -82,6 +82,7 @@ Flow_PK::Setup()
 
   // keys for fields and evaluators
   vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate");
+  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   permeability_key_ = Keys::getKey(domain_, "permeability");
   permeability_eff_key_ = Keys::getKey(domain_, "permeability_effective");
   aperture_key_ = Keys::getKey(domain_, "aperture");

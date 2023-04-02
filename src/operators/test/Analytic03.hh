@@ -14,9 +14,9 @@
   has discontinuous tangential flux:
 
   Solution:  p = x^2 / k1 + y^2       if x < 0.5,
-             p = x^x / k2 + y^2 + b2  otherwise
-  Diffusion: K = k1 (1 + x sin(y))      if x < 0.5,
-             K = k2 (1 + 2 x^2 sin(y))  otherwise
+             p = x^2 / k2 + y^2 + b2  otherwise
+  Diffusion: K = k1 (2 + x sin(y))      if x < 0.5,
+             K = k2 (2 + 2 x^2 sin(y))  otherwise
   Velocity: v = [0, 0]
   Source: f = -div(K grad(p))
 */
@@ -46,9 +46,9 @@ class Analytic03 : public AnalyticBase {
     double y = p[1];
     Amanzi::WhetStone::Tensor K(dim, 1);
     if (x < 0.5) {
-      K(0, 0) = k1 * (1.0 + x * sin(y));
+      K(0, 0) = k1 * (2.0 + x * sin(y));
     } else {
-      K(0, 0) = k2 * (1.0 + 2 * x * x * sin(y));
+      K(0, 0) = k2 * (2.0 + 2 * x * x * sin(y));
     }
     return K;
   }

@@ -1088,26 +1088,56 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 
 /* ******************************************************************
-* Save internal data needed by time integration. Calculate temporarily
-* the Darcy flux.
+* Save internal data needed by time integration. Calculate fluxes.
 ****************************************************************** */
 void
 Richards_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
-  // calculate Darcy mass flux
   auto vol_flowrate = S_->GetPtrW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
-
   op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate.ptr());
-  if (coupled_to_matrix_ || flow_on_manifold_) VV_FractureConservationLaw();
 
-  Epetra_MultiVector& flowrate = *vol_flowrate->ViewComponent("face", true);
-  flowrate.Scale(1.0 / molar_rho_);
-  *vol_flowrate_copy->ViewComponent("face", true) = flowrate;
+  if (S_->HasRecord(mol_flowrate_key_, Tags::DEFAULT)) {
+    S_->GetW<CV_t>(mol_flowrate_key_, Tags::DEFAULT, passwd_) = *vol_flowrate;
+  }
+
+  // compute volumetric flow rate from molar flow rate
+  MolarFlowRateToVolumetricFlowRate_();
+  *vol_flowrate_copy = *vol_flowrate;
+
+  if (coupled_to_matrix_ || flow_on_manifold_) VV_FractureConservationLaw();
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
 
   dt_ = dt_next_;
+}
+
+
+/* ******************************************************************
+* Conversion between fluxes.
+****************************************************************** */
+void
+Richards_PK::MolarFlowRateToVolumetricFlowRate_()
+{
+  CV_t beta(alpha_upwind_->Map());
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  auto& mol_density = S_->Get<CV_t>(mol_density_liquid_key_);
+
+  // populate auxiliary field for upwind purpose
+  *beta.ViewComponent("cell") = *mol_density.ViewComponent("cell");
+  if (mol_density.HasComponent("boundary_face")) {
+    Operators::BoundaryFacesToFaces(bc_model, mol_density, beta);
+  } else {
+    Operators::CellToBoundaryFaces(bc_model, beta);
+  }
+
+  upwind_->Compute(*vol_flowrate_copy, bc_model, beta);
+
+  auto& vol_flowrate_f = *S_->GetW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_).ViewComponent("face");
+  auto& beta_f = *beta.ViewComponent("face");
+
+  int nfaces = vol_flowrate_f.MyLength();
+  for (int f = 0; f < nfaces; ++f) vol_flowrate_f[0][f] /= beta_f[0][f];
 }
 
 

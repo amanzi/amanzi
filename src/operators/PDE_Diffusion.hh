@@ -192,7 +192,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   virtual void ScaleMassMatrices(double s) = 0;
   virtual void ScaleMatricesColumns(const CompositeVector& s) = 0;
 
-  // default implementation
+  // -- default implementation
   virtual void Setup(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K,
                      const Teuchos::RCP<const CompositeVector>& k,
                      const Teuchos::RCP<const CompositeVector>& dkdp)
@@ -204,13 +204,13 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   // -- working with consistent faces -- may not be implemented
   virtual int UpdateConsistentFaces(CompositeVector& u)
   {
-    Errors::Message msg(
-      "Diffusion: This diffusion implementation does not support working with consistent faces.");
+    Errors::Message msg("Diffusion implementation does not support working with consistent faces.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
 
-  // interface to solvers for treating nonlinear BCs.
+  // additional interface
+  // -- interface to solvers for treating nonlinear BCs.
   virtual double ComputeTransmissibility(int f) const = 0;
   virtual double ComputeGravityFlux(int f) const = 0;
 
@@ -239,12 +239,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
  protected:
   // -- additional interface on non-manifolds
   virtual void UpdateFluxManifold_(const Teuchos::Ptr<const CompositeVector>& u,
-                                   const Teuchos::Ptr<CompositeVector>& flux)
-  {
-    Errors::Message msg;
-    msg << "Missing support for diffusion discretization of manifolds.";
-    Exceptions::amanzi_throw(msg);
-  }
+                                   const Teuchos::Ptr<CompositeVector>& flux);
 
  protected:
   Teuchos::RCP<const std::vector<WhetStone::Tensor>> K_;
@@ -260,6 +255,18 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   Teuchos::RCP<Op> jac_op_;
   int global_op_schema_, local_op_schema_, jac_op_schema_;
 };
+
+
+/* ******************************************************************
+* Default implementations
+****************************************************************** */
+inline void 
+PDE_Diffusion::UpdateFluxManifold_(const Teuchos::Ptr<const CompositeVector>& u,
+                                   const Teuchos::Ptr<CompositeVector>& flux)
+{
+  Errors::Message msg("Diffusion does not know how to compute flux on manifolds.");
+  Exceptions::amanzi_throw(msg);
+}
 
 
 /* ******************************************************************

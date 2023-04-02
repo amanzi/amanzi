@@ -403,7 +403,7 @@ Flow_PK::OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_t
     *vo_->os() << "saving time history in file flow_dt_history.txt..." << std::endl;
 
     char file_name[30];
-    sprintf(file_name, "flow_dt_history_%d.txt", ti_phase_counter++);
+    snprintf(file_name, 30, "flow_dt_history_%d.txt", ti_phase_counter++);
 
     std::ofstream ofile;
     ofile.open(file_name);

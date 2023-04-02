@@ -66,8 +66,9 @@ DenseVector::DenseVector(const std::vector<double>& B)
 * Smart memory management preserving data
 ****************************************************************** */
 void
-DenseVector::Reshape(int mrow)
+DenseVector::Reshape(int mrow, double val)
 {
+  int m0 = m_;
   m_ = mrow;
 
   if (mem_ < m_) {
@@ -78,6 +79,10 @@ DenseVector::Reshape(int mrow)
     }
     mem_ = m_;
     data_ = data_tmp;
+  }
+
+  if (val != 0.0) {
+    for (int i = m0; i < m_; ++i) data_[i] = val; 
   }
 }
 

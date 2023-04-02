@@ -39,7 +39,7 @@ EnergyOnePhase_PK::FunctionalResidual(double t_old,
   temperature_eval_->SetChanged();
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 
-  auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
+  auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
 
   S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd_);
   if (upwind_.get()) {
@@ -78,18 +78,14 @@ EnergyOnePhase_PK::FunctionalResidual(double t_old,
   // advect tmp = molar_density_liquid * enthalpy
   S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
   const auto& enthalpy = S_->Get<CompositeVector>(enthalpy_key_);
-  const auto& n_l = S_->Get<CompositeVector>(mol_density_liquid_key_);
 
   op_advection_->Init();
   op_matrix_advection_->Setup(*flux);
   op_matrix_advection_->UpdateMatrices(flux.ptr());
   op_matrix_advection_->ApplyBCs(false, true, false);
 
-  CompositeVector tmp(enthalpy);
-  tmp.Multiply(1.0, tmp, n_l, 0.0);
-
   CompositeVector g_adv(g->Data()->Map());
-  op_advection_->ComputeNegativeResidual(tmp, g_adv);
+  op_advection_->ComputeNegativeResidual(enthalpy, g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
 }
 
@@ -114,7 +110,7 @@ EnergyOnePhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
     const auto& conductivity = S_->Get<CompositeVector>(conductivity_gen_key_);
     *upw_conductivity_->ViewComponent("cell") = *conductivity.ViewComponent("cell");
 
-    auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
+    auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
     const auto& bc_model = op_bc_->bc_model();
     Operators::CellToBoundaryFaces(bc_model, *upw_conductivity_);
     upwind_->Compute(*flux, bc_model, *upw_conductivity_);

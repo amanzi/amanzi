@@ -67,8 +67,6 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   std::string name() override { return "thermal flow matrix fracture"; }
 
  private:
-  void AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag);
-
   // use flag to avoid double counting of coupling terms for Darcy PK
   std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>>
   AddCouplingFluxes_(const Teuchos::RCP<CompositeVectorSpace>& cvs_matrix,
@@ -98,6 +96,7 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
 
   Key diffusion_to_matrix_key_, heat_diffusion_to_matrix_key_;
   Key matrix_vol_flowrate_key_, fracture_vol_flowrate_key_;
+  Key matrix_mol_flowrate_key_, fracture_mol_flowrate_key_;
 
   std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>> adv_coupling_matrix_, adv_coupling_pc_;
 

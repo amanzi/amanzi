@@ -37,7 +37,7 @@ EnergyTwoPhase_PK::FunctionalResidual(double t_old,
   temperature_eval_->SetChanged();
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 
-  auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
+  auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
 
   S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd_);
   if (upwind_.get()) {
@@ -78,18 +78,13 @@ EnergyTwoPhase_PK::FunctionalResidual(double t_old,
   // advect tmp = molar_density_liquid * enthalpy
   S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
   const auto& enthalpy = S_->Get<CompositeVector>(enthalpy_key_);
-  const auto& n_l = S_->Get<CompositeVector>(mol_density_liquid_key_);
 
   op_matrix_advection_->Setup(*flux);
   op_matrix_advection_->UpdateMatrices(flux.ptr());
   op_matrix_advection_->ApplyBCs(false, true, false);
 
-  CompositeVector tmp(enthalpy);
-  tmp.Multiply(1.0, tmp, n_l, 0.0);
-
   CompositeVector g_adv(g->Data()->Map());
-  // op_advection_->Apply(tmp, g_adv);
-  op_advection_->ComputeNegativeResidual(tmp, g_adv);
+  op_advection_->ComputeNegativeResidual(enthalpy, g_adv);
   g->Data()->Update(1.0, g_adv, 1.0);
 }
 
@@ -113,7 +108,7 @@ EnergyTwoPhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
     const auto& conductivity = S_->Get<CompositeVector>(conductivity_gen_key_);
     *upw_conductivity_->ViewComponent("cell") = *conductivity.ViewComponent("cell");
 
-    auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
+    auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
     const auto& bc_model = op_bc_->bc_model();
     Operators::CellToBoundaryFaces(bc_model, *upw_conductivity_);
     upwind_->Compute(*flux, bc_model, *upw_conductivity_);
@@ -134,14 +129,11 @@ EnergyTwoPhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
 
   // add advection term dHdT
   if (prec_include_enthalpy_) {
-    auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
+    auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
 
     S_->GetEvaluator(enthalpy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
     auto dHdT = S_->GetDerivativePtrW<CompositeVector>(
       enthalpy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, enthalpy_key_);
-
-    const auto& n_l = S_->Get<CompositeVector>("molar_density_liquid");
-    dHdT->Multiply(1.0, *dHdT, n_l, 0.0);
 
     op_preconditioner_advection_->Setup(*flux);
     op_preconditioner_advection_->UpdateMatrices(flux.ptr(), dHdT.ptr());

@@ -104,6 +104,7 @@ Energy_PK::Setup()
   x_gas_key_ = Keys::getKey(domain_, "molar_fraction_gas");
 
   vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate");
+  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   Key pressure_key = Keys::getKey(domain_, "pressure");
 
@@ -200,12 +201,18 @@ Energy_PK::Setup()
       .SetGhosted();
   }
 
-  // -- volumetric flow rate
+  // -- volumetric and molar flow rates
   if (!S_->HasRecord(vol_flowrate_key_)) {
     S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+  if (!S_->HasRecord(mol_flowrate_key_)) {
+    auto cvs = S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
+    *S_->Require<CV_t, CVS_t>(mol_flowrate_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true) = cvs;
   }
 
   // -- effective fracture conductivity
@@ -340,25 +347,9 @@ Energy_PK::Initialize()
 void
 Energy_PK::InitializeFields_()
 {
-  Teuchos::OSTab tab = vo_->getOSTab();
-
-  if (!S_->GetRecord(temperature_key_).initialized()) {
-    S_->GetW<CV_t>(temperature_key_, passwd_).PutScalar(298.0);
-    S_->GetRecordW(temperature_key_, passwd_).set_initialized();
-
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-      *vo_->os() << "initialized temperature to default value 298 K." << std::endl;
-  }
-
-  if (S_->GetRecord(vol_flowrate_key_).owner() == passwd_) {
-    if (!S_->GetRecord(vol_flowrate_key_).initialized()) {
-      S_->GetW<CV_t>(vol_flowrate_key_, passwd_).PutScalar(0.0);
-      S_->GetRecordW(vol_flowrate_key_, passwd_).set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-        *vo_->os() << "initialized volumetric_flow_rate to default value 0.0" << std::endl;
-    }
-  }
+  InitializeCVField(S_, *vo_, temperature_key_, Tags::DEFAULT, passwd_, 298.0);
+  InitializeCVField(S_, *vo_, vol_flowrate_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeCVField(S_, *vo_, mol_flowrate_key_, Tags::DEFAULT, passwd_, 0.0);
 }
 
 
@@ -467,9 +458,6 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
   S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
   const auto& enth = *S_->Get<CV_t>(enthalpy_key_).ViewComponent("boundary_face", true);
 
-  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
-  const auto& n_l = *S_->Get<CV_t>(mol_density_liquid_key_).ViewComponent("boundary_face", true);
-
   std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
   std::vector<double>& bc_value_enth_ = op_bc_enth_->bc_value();
 
@@ -478,12 +466,12 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
     bc_value_enth_[n] = 0.0;
   }
 
-  int nbfaces = n_l.MyLength();
+  int nbfaces = enth.MyLength();
   for (int bf = 0; bf < nbfaces; ++bf) {
     int f = getBoundaryFaceFace(*mesh_, bf);
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       bc_model_enth_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_enth_[f] = enth[0][bf] * n_l[0][bf];
+      bc_value_enth_[f] = enth[0][bf];
     }
   }
 }

@@ -445,8 +445,9 @@ WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVe
 
           for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
             std::string namedot(Keys::getKey(display_name, r.first)), name_comp(c_it->first);
-            replace_all(name_comp, "boundary_face", "bnd_face");
-            if (vmin.size() != 1) namedot.append("." + name_comp);
+            std::string name_abbr(name_comp);
+            replace_all(name_abbr, "boundary_face", "bnd_face");
+            if (vmin.size() != 1) namedot.append("." + name_abbr);
             namedot.resize(40, '.');
             *vo.os() << std::defaultfloat << namedot << " " << c_it->second << " / "
                      << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;

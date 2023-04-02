@@ -20,6 +20,7 @@
 #include "Epetra_Vector.h"
 
 // Amanzi
+#include "CommonDefs.hh"
 #include "EvaluatorPrimary.hh"
 #include "errors.hh"
 #include "exceptions.hh"
@@ -604,10 +605,16 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
-  // calculate mass flow rate first, then scale it by density
+  // calculate molar (optional) and volumetric flow rates
   auto flowrate = S_->GetPtrW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
-
   op_diff_->UpdateFlux(solution.ptr(), flowrate.ptr());
+
+  if (S_->HasRecord(mol_flowrate_key_, Tags::DEFAULT)) {
+    auto mol_flowrate = S_->GetPtrW<CV_t>(mol_flowrate_key_, Tags::DEFAULT, passwd_);
+    *mol_flowrate = *flowrate;
+    mol_flowrate->Scale(1.0 / CommonDefs::MOLAR_MASS_H2O);
+  }
+
   flowrate->Scale(1.0 / rho_);
   if (coupled_to_matrix_ || flow_on_manifold_) VV_FractureConservationLaw();
 
