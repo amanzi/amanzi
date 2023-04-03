@@ -1649,10 +1649,8 @@ void cacheDefault(MeshCache<MEM>& mesh)
   mesh.cacheCellGeometry();
   mesh.cacheFaceGeometry();
   if (mesh.hasEdges()) {
-    if(!mesh.getMeshFramework()->isSFM()){
       mesh.cacheFaceEdges();
       mesh.cacheEdgeFaces();
-    }
     mesh.cacheEdgeGeometry();
   }
 }
