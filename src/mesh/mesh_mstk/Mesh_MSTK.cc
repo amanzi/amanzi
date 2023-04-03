@@ -970,9 +970,7 @@ void Mesh_MSTK::getNodeCells(const Entity_ID nodeid,
   List_ptr cell_list;
   MEntity_ptr ment;
 
-  AMANZI_ASSERT(cellids != nullptr);
-
-  MVertex_ptr mv = (MVertex_ptr)vtx_id_to_handle[nodeid];
+  MVertex_ptr mv = (MVertex_ptr)vtx_id_to_handle_[nodeid];
 
   /* Reserved for next major release of MSTK
   if (MV_PType(mv) == PINTERIOR && ptype != Parallel_type::GHOST) {
@@ -1053,8 +1051,6 @@ void Mesh_MSTK::getNodeFaces(const Entity_ID nodeid,
   AMANZI_ASSERT(faces_initialized_);
   MVertex_ptr mv = (MVertex_ptr) vtx_id_to_handle_[nodeid];
 
-  MVertex_ptr mv = (MVertex_ptr)vtx_id_to_handle[nodeid];
-
   /* Reserved for next major release of MSTK
   if (MV_PType(mv) == PINTERIOR && ptype != Parallel_type::GHOST) {
     if (manifold_dimension() == 3) {
@@ -1087,7 +1083,7 @@ void Mesh_MSTK::getNodeFaces(const Entity_ID nodeid,
   else {
   */
 
-  if (manifold_dimension() == 3)
+  if (getManifoldDimension() == 3)
     face_list = MV_Faces(mv);
   else
     face_list = MV_Edges(mv);

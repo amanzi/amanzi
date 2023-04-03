@@ -123,7 +123,7 @@ PDE_DiffusionFVonManifolds::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
 
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
 
-  int d = mesh_->space_dimension();
+  int d = mesh_->getSpaceDimension();
   auto& rhs_c = *global_op_->rhs()->ViewComponent("cell");
   global_op_->rhs()->PutScalarGhosted(0.0);
 
@@ -135,7 +135,6 @@ PDE_DiffusionFVonManifolds::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
   }
 
   // updating matrix blocks
-  AmanziMesh::Entity_ID_List cells;
   WhetStone::DenseVector v(2), av(2);
 
   for (int f = 0; f != nfaces_owned; ++f) {
@@ -174,20 +173,20 @@ PDE_DiffusionFVonManifolds::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
         // skip
       } else if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         double factor = rho_ * norm(g_);
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
         int c = cells[0];
 
-        double zc = (mesh_->cell_centroid(c))[d - 1];
-        double zf = (mesh_->face_centroid(f))[d - 1];
+        double zc = (mesh_->getCellCentroid(c))[d - 1];
+        double zf = (mesh_->getFaceCentroid(f))[d - 1];
         rhs_c[0][cells[0]] += factor * Aface(0, 0) * (zc - zf);
       } else {
         double factor = rho_ * norm(g_);
         v.Reshape(ndofs);
         av.Reshape(ndofs);
 
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
         for (int n = 0; n < ndofs; ++n) {
-          double zc = (mesh_->cell_centroid(cells[n]))[d - 1];
+          double zc = (mesh_->getCellCentroid(cells[n]))[d - 1];
           v(n) = zc * factor;
         }
 
@@ -217,11 +216,9 @@ PDE_DiffusionFVonManifolds::ApplyBCs(bool primary, bool eliminate, bool essentia
 
   auto& rhs_c = *global_op_->rhs()->ViewComponent("cell", true);
 
-  AmanziMesh::Entity_ID_List cells;
-
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] != OPERATOR_BC_NONE) {
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       int c = cells[0];
 
       if (bc_model[f] == OPERATOR_BC_DIRICHLET && primary) {
@@ -230,7 +227,7 @@ PDE_DiffusionFVonManifolds::ApplyBCs(bool primary, bool eliminate, bool essentia
         local_op_->matrices_shadow[f] = local_op_->matrices[f];
         local_op_->matrices[f](0, 0) = 0.0;
 
-        if (primary) rhs_c[0][c] -= bc_value[f] * mesh_->face_area(f);
+        if (primary) rhs_c[0][c] -= bc_value[f] * mesh_->getFaceArea(f);
       }
     }
   }
@@ -262,8 +259,7 @@ PDE_DiffusionFVonManifolds::UpdateFlux(const Teuchos::Ptr<const CompositeVector>
   const auto& p = *solution->ViewComponent("cell", true);
   auto& flux = *mass_flux->ViewComponent("face", false);
 
-  int dir, d(mesh_->space_dimension());
-  AmanziMesh::Entity_ID_List cells;
+  int dir, d(mesh_->getSpaceDimension());
   WhetStone::DenseVector ti(2), pi(2);
 
   for (int f = 0; f < nfaces_owned; ++f) {
@@ -278,8 +274,8 @@ PDE_DiffusionFVonManifolds::UpdateFlux(const Teuchos::Ptr<const CompositeVector>
       double tmp = p[0][c] - value;
       if (gravity_) {
         double factor = rho_ * norm(g_);
-        double zc = (mesh_->cell_centroid(c))[d - 1];
-        double zf = (mesh_->face_centroid(f))[d - 1];
+        double zc = (mesh_->getCellCentroid(c))[d - 1];
+        double zf = (mesh_->getFaceCentroid(f))[d - 1];
         tmp += factor * (zf - zc);
       }
 
@@ -288,7 +284,7 @@ PDE_DiffusionFVonManifolds::UpdateFlux(const Teuchos::Ptr<const CompositeVector>
 
     } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
       double value = bc_value[f];
-      double area = mesh_->face_area(f);
+      double area = mesh_->getFaceArea(f);
       getFaceNormalExterior(*mesh_, f, &dir);
       flux[0][g] = dir * value * area;
 
@@ -297,14 +293,14 @@ PDE_DiffusionFVonManifolds::UpdateFlux(const Teuchos::Ptr<const CompositeVector>
       ti.Reshape(ndofs);
       pi.Reshape(ndofs);
 
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
       double sum(0.0), pf(0.0);
       for (int i = 0; i != ndofs; ++i) {
         ti(i) = beta_f[0][g + i] * (k_f.get() ? (*k_f)[0][g + i] : 1.0);
         sum += ti(i);
 
-        double zc = (mesh_->cell_centroid(cells[i]))[d - 1];
+        double zc = (mesh_->getCellCentroid(cells[i]))[d - 1];
         pi(i) = p[0][cells[i]] - factor * zc;
         pf += ti(i) * pi(i);
       }
@@ -325,27 +321,26 @@ PDE_DiffusionFVonManifolds::ComputeBeta_()
   auto& beta_f = *beta_->ViewComponent("face", true);
   const auto& fmap = *beta_->Map().Map("face", true);
 
-  int d = mesh_->space_dimension();
+  int d = mesh_->getSpaceDimension();
   AmanziGeometry::Point a(d);
-  AmanziMesh::Entity_ID_List cells;
 
   auto k_f = (k_.get()) ? k_->ViewComponent("face") : Teuchos::null;
   ;
-  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
   Kc(0, 0) = 1.0;
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     int g = fmap.FirstPointInElement(f);
     for (int i = 0; i < ncells; i++) {
       int c = cells[i];
-      a = mesh_->face_centroid(f) - mesh_->cell_centroid(c);
-      beta_f[0][g + i] = mesh_->face_area(f) / norm(a);
+      a = mesh_->getFaceCentroid(f) - mesh_->getCellCentroid(c);
+      beta_f[0][g + i] = mesh_->getFaceArea(f) / norm(a);
 
       if (K_.get()) {
-        const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c);
+        const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f, c);
         double perm = (((*K_)[c] * a) * normal);
         double dxn = a * normal;
         beta_f[0][g + i] *= perm / dxn;
