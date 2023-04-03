@@ -121,11 +121,6 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
                     SOURCE test/Main.cc test/transport_advance.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # add_amanzi_test(transport_limiters transport_limiters
-    #                KIND unit
-    #                SOURCE test/Main.cc test/transport_limiters.cc
-    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
     add_amanzi_test(transport_convergence transport_convergence
                     KIND unit
 		    NPROCS 3
