@@ -52,7 +52,7 @@ SoluteDiffusionMatrixFracture::Update_(State& S)
 {
   Key key = my_keys_[0].first;
   auto mesh = S.GetMesh(domain_);
-  auto mesh_parent = mesh->parent();
+  auto mesh_parent = mesh->getParentMesh();
 
   const auto& sat_c = *S.Get<CompositeVector>(saturation_key_, Tags::DEFAULT).ViewComponent("cell");
   const auto& poro_c = *S.Get<CompositeVector>(porosity_key_, Tags::DEFAULT).ViewComponent("cell");
@@ -61,20 +61,18 @@ SoluteDiffusionMatrixFracture::Update_(State& S)
   auto& result_c = *S.GetW<CompositeVector>(key, Tags::DEFAULT, key).ViewComponent("cell");
   int ncells = result_c.MyLength();
 
-  AmanziMesh::Entity_ID_List cells;
-
   for (int c = 0; c < ncells; ++c) {
-    const AmanziGeometry::Point& xf = mesh->cell_centroid(c);
-    int f = mesh->entity_get_parent(AmanziMesh::CELL, c);
+    const AmanziGeometry::Point& xf = mesh->getCellCentroid(c);
+    int f = mesh->getEntityParent(AmanziMesh::CELL, c);
 
-    mesh_parent->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh_parent->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ndofs = cells.size();
 
     for (int k = 0; k < ndofs; ++k) {
       int pos = Operators::UniqueIndexFaceToCells(*mesh_parent, f, cells[k]);
       int c1 = cells[pos];
 
-      const AmanziGeometry::Point& xc = mesh_parent->cell_centroid(c1);
+      const AmanziGeometry::Point& xc = mesh_parent->getCellCentroid(c1);
       double dist = norm(xc - xf);
 
       result_c[k][c] = sat_c[0][c1] * tau_c[0][c1] * poro_c[0][c1] * mol_diff_ / dist;
@@ -109,7 +107,7 @@ SoluteDiffusionMatrixFracture::EnsureCompatibility(State& S)
     if (domain == dep_domain)
       dep_fac.SetMesh(S.GetMesh(domain));
     else
-      dep_fac.SetMesh(S.GetMesh(domain)->parent());
+      dep_fac.SetMesh(S.GetMesh(domain)->getParentMesh());
   }
 }
 

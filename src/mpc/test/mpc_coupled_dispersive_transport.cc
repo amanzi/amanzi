@@ -233,8 +233,8 @@ RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, d
 
   double err_tmp(err), norm_tmp(norm);
   if (icase != 4) {
-    mesh->get_comm()->SumAll(&err_tmp, &err, 1);
-    mesh->get_comm()->SumAll(&norm_tmp, &norm, 1);
+    mesh->getComm()->SumAll(&err_tmp, &err, 1);
+    mesh->getComm()->SumAll(&norm_tmp, &norm, 1);
     err /= tcc_f.GlobalLength();
     norm /= tcc_f.GlobalLength();
     std::cout << "Mean error in fracture: " << err << " solution norm=" << norm << std::endl;

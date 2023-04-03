@@ -7,10 +7,13 @@
   Authors: Ethan Coon (coonet@ornl.gov)
 */
 
-#include <boost/format.hpp>
+#include "exceptions.hh"
+#include "errors.hh"
 
-#include "RegionLogical.hh"
-#include "MeshException.hh"
+#include "MeshFramework.hh"
+#include "Mesh.hh"
+#include "MeshFrameworkColumn.hh"
+#include "MeshSurfaceCell.hh"
 #include "MeshFactory.hh"
 
 namespace Amanzi {

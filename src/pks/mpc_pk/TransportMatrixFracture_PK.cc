@@ -228,8 +228,8 @@ TransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     // coupling operators
     // -- indices transmissibimility coefficients for matrix-fracture flux
-    auto mesh_matrix = S_->GetMesh("domain");
-    auto mesh_fracture = S_->GetMesh("fracture");
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_matrix = S_->GetMesh("domain");
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_fracture = S_->GetMesh("fracture");
     const auto& kn = *S_->Get<CV_t>("fracture-solute_diffusion_to_matrix").ViewComponent("cell");
 
     auto& mmap = *cvs0->Map("face", false);

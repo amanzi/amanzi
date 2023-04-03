@@ -18,7 +18,9 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-TEST(ADVANCE_WITH_STK_PARALLEL_READ)
-{
-  //runTest(Amanzi::AmanziMesh::Framework::STK);
-}
+const double TCC_MIN_VALUE = 1e-50; // [mol]
+
+} // namespace AmanziChemistry
+} // namespace Amanzi
+
+#endif 
