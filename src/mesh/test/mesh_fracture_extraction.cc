@@ -72,6 +72,8 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED)
     int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE,
             AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(10*11*4-10, nfaces, *comm);
+    auto ents = mesh->getSetEntities("fracture 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED); 
+    CHECK_EQUAL(100, ents.size()); 
   }
 }
 
@@ -135,6 +137,8 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
     int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE,
             AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(10*11*4-10, nfaces, *comm);
+    auto ents = mesh->getSetEntities("fractures", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED); 
+    CHECK_EQUAL(200, ents.size()); 
   }
 }
 
@@ -182,6 +186,8 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO)
     int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE,
             AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(198, nfaces, *comm);
+    auto ents = mesh->getSetEntities("fractures-two", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED); 
+    CHECK_EQUAL(108, ents.size()); 
   }
 }
 
@@ -244,5 +250,7 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO_MANIFOLD)
     int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE,
             AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(198, nfaces, *comm);
+    auto ents = mesh->getSetEntities("fractures", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED); 
+    CHECK_EQUAL(108, ents.size()); 
   }
 }
