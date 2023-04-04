@@ -648,11 +648,13 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   mesh_->getComm()->SumAll(&tmp2, &avg_itrs, 1);
   mesh_->getComm()->SumAll(&tmp3, &ncells_total, 1);
 
-  std::stringstream ss;
-  ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/"
-     << avg_itrs / std::max(ncells_owned_, 1)
-     << ", maximum in gid=" << mesh_->getEntityGID(AmanziMesh::CELL, cmax) << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, ss.str());
+  std::cout<<"cmax: "<<cmax<<std::endl;
+
+  //std::stringstream ss;
+  //ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/"
+  //   << avg_itrs / std::max(ncells_owned_, 1)
+  //   << ", maximum in gid=" << mesh_->getEntityGID(AmanziMesh::CELL, cmax) << std::endl;
+  //vo_->Write(Teuchos::VERB_HIGH, ss.str());
 
   // update time control parameters
   num_successful_steps_++;
