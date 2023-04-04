@@ -311,7 +311,7 @@ struct MeshCache {
   void destroyFramework() { framework_mesh_ = Teuchos::null; }
   Teuchos::RCP<Teuchos::ParameterList> getParameterList() const { return plist_; }
   Entity_GID getEntityGID(const Entity_kind kind, const Entity_ID lid) const {
-    auto map = getMap(Entity_kind::CELL, false); 
+    auto map = getMap(kind, false); 
     int* elements; 
     map.MyGlobalElements(elements);
     return elements[lid]; 

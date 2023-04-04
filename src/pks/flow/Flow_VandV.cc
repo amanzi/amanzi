@@ -55,7 +55,7 @@ Flow_PK::VV_FractureConservationLaw() const
       int ndofs = fracture_map->ElementSize(f);
       if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
-      flux_sum += fracture_flux[0][g] * dirs[i];
+      flux_sum += fracture_flux[0][g] * fdirs[i];
       flux_max = std::max<double>(flux_max, std::fabs(fracture_flux[0][g]));
     }
 
@@ -65,12 +65,12 @@ Flow_PK::VV_FractureConservationLaw() const
     int pos = Operators::UniqueIndexFaceToCells(*mesh_matrix, f, cells[0]);
 
     for (int j = 0; j != cells.size(); ++j) {
-      auto [faces, dirs] = mesh_matrix->getCellFacesAndDirections(cells[j]);
+      auto [faces, fdirs] = mesh_matrix->getCellFacesAndDirections(cells[j]);
 
       for (int i = 0; i < faces.size(); i++) {
         if (f == faces[i]) {
           int g = matrix_map->FirstPointInElement(f);
-          double fln = matrix_flux[0][g + (pos + j) % 2] * dirs[i];
+          double fln = matrix_flux[0][g + (pos + j) % 2] * fdirs[i];
           flux_sum -= fln;
           flux_max = std::max<double>(flux_max, std::fabs(fln));
           break;
