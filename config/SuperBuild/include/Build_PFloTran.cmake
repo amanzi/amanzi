@@ -84,9 +84,13 @@ ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
                     TMP_DIR   ${PFLOTRAN_tmp_dir}                # Temporary files directory
                     STAMP_DIR ${PFLOTRAN_stamp_dir}              # Timestamp and log directory
                     # -- Download and URL definitions
+                    DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}
+                    URL           ${PFLOTRAN_URL}                # URL may be a web site OR a local file
+                    URL_MD5       ${PFLOTRAN_MD5_SUM}            # md5sum of the archive file
+                    DOWNLOAD_NAME ${PFLOTRAN_SAVEAS_FILE}        # file name to store (if not end of URL)
                     # -- Note: The repo is cloned into the ${PFLOTRAN_source_dir} directory
-                    GIT_REPOSITORY ${PFLOTRAN_GIT_REPOSITORY_TEMP}              
-                    GIT_TAG        ${PFLOTRAN_GIT_TAG}      
+                    # GIT_REPOSITORY ${PFLOTRAN_GIT_REPOSITORY_TEMP}
+                    # GIT_TAG        ${PFLOTRAN_GIT_TAG}
                     # -- Update (one way to skip this step is use null command)
                     UPDATE_COMMAND ""
                     # -- Patch 

@@ -20,6 +20,12 @@ Check if a Fortran function exists.
   ``<result>``
     variable to store the result; will be created as an internal cache variable.
 
+.. note::
+
+  This command does not detect functions in Fortran modules. In general it is
+  recommended to use :module:`CheckSourceCompiles` instead to determine if a
+  Fortran function or subroutine is available.
+
 The following variables may be set before calling this macro to modify
 the way the check is run:
 
@@ -39,9 +45,7 @@ include_guard(GLOBAL)
 
 macro(CHECK_FORTRAN_FUNCTION_EXISTS FUNCTION VARIABLE)
   if(NOT DEFINED ${VARIABLE})
-    if (TPL_DEBUG_FIND_BLAS)
-      message(CHECK_START "Looking for Fortran ${FUNCTION}")
-    endif()
+    message(CHECK_START "Looking for Fortran ${FUNCTION}")
     if(CMAKE_REQUIRED_LINK_OPTIONS)
       set(CHECK_FUNCTION_EXISTS_ADD_LINK_OPTIONS
         LINK_OPTIONS ${CMAKE_REQUIRED_LINK_OPTIONS})
@@ -72,16 +76,12 @@ macro(CHECK_FORTRAN_FUNCTION_EXISTS FUNCTION VARIABLE)
     )
     if(${VARIABLE})
       set(${VARIABLE} 1 CACHE INTERNAL "Have Fortran function ${FUNCTION}")
-      if (TPL_DEBUG_FIND_BLAS )
-        message(CHECK_PASS "found")
-      endif()
+      message(CHECK_PASS "found")
       file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
         "Determining if the Fortran ${FUNCTION} exists passed with the following output:\n"
         "${OUTPUT}\n\n")
     else()
-      if (TPL_DEBUG_FIND_BLAS)
-        message(CHECK_FAIL "not found")
-      endif()
+      message(CHECK_FAIL "not found")
       set(${VARIABLE} "" CACHE INTERNAL "Have Fortran function ${FUNCTION}")
       file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
         "Determining if the Fortran ${FUNCTION} exists failed with the following output:\n"
