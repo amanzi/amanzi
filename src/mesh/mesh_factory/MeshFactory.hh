@@ -20,15 +20,52 @@ struct MeshFactory : public MeshFrameworkFactory {
   // The same create methods as supported in MeshFrameworkFactory are supported
   // here -- see MeshFrameworkFactory.hh for documentation.
   //
-  // This is not virtual -- it hides the framework factory's create on purpose.
+  // This is not virtual -- it hides the framework factory's creates on purpose.
   // It calls the hidden create, which creates a MeshFramework, then creates a
   // MeshCache, returning a different pointer type.  It cannot overload because
   // the return type is different!
   //
-  template <typename... Args>
-  Teuchos::RCP<Mesh> create(Args... args)
+  Teuchos::RCP<Mesh> create(const std::string& filename)
   {
-    Teuchos::RCP<MeshFramework> mesh_fw = MeshFrameworkFactory::create(args...);
+    Teuchos::RCP<MeshFramework> mesh_fw = MeshFrameworkFactory::create(filename);
+    auto mesh = Teuchos::rcp(
+      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    return mesh;
+  }
+
+  Teuchos::RCP<Mesh> create(const double x0,
+                            const double y0,
+                            const double z0,
+                            const double x1,
+                            const double y1,
+                            const double z1,
+                            const int nx,
+                            const int ny,
+                            const int nz)
+  {
+    Teuchos::RCP<MeshFramework> mesh_fw =
+      MeshFrameworkFactory::create(x0, y0, z0, x1, y1, z1, nx, ny, nz);
+    auto mesh = Teuchos::rcp(
+      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    return mesh;
+  }
+
+  Teuchos::RCP<Mesh> create(const double x0,
+                            const double y0,
+                            const double x1,
+                            const double y1,
+                            const int nx,
+                            const int ny)
+  {
+    Teuchos::RCP<MeshFramework> mesh_fw = MeshFrameworkFactory::create(x0, y0, x1, y1, nx, ny);
+    auto mesh = Teuchos::rcp(
+      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    return mesh;
+  }
+
+  Teuchos::RCP<Mesh> create(const Teuchos::ParameterList& gen_plist)
+  {
+    Teuchos::RCP<MeshFramework> mesh_fw = MeshFrameworkFactory::create(gen_plist);
     auto mesh = Teuchos::rcp(
       new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
     return mesh;
