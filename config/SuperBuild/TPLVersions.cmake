@@ -182,7 +182,7 @@
 #                - update Alquimia 1.0.10
 #                - update PFLOTRAN 4.0.1
 #                - update superlu_dist v6.4.0 (minimum required by PETSc is 6.3.0, but maybe we should go newer).
-
+#   0.98.7c      - fix option to build only CrunchFlow or only PFLOTRAN with Alquimia
 #                - consider update boost to 1.81.0 for Intel compilers
 #                - consider updates to Hypre, SuperLU_dist, and maybe Trilinos to sync with xSDK 0.8.0 release.
 
@@ -237,7 +237,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 7b)
+set(AMANZI_TPLS_VERSION_PATCH 7c)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 

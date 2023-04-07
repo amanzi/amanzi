@@ -828,33 +828,37 @@ if (NOT ENABLE_XSDK)
   option(ENABLE_PFLOTRAN "Build the PFlotran chemistry package" FALSE)
   option(ENABLE_CRUNCHTOPE "Build the CrunchTope chemistry package" FALSE)
 
-  # Alqumia depends on PFloTran
+ 
+  # Alqumia depends on (at least) one geochemistry engine:  PFloTran or CrunchFlow
   if (ENABLE_ALQUIMIA)
-    if (NOT ENABLE_PFLOTRAN)
-      set(ENABLE_PFLOTRAN TRUE)
-    endif()
-  endif()
+   
+    set (ALQUIMIA_ENGINES "")
 
-  if (ENABLE_PFLOTRAN)
-    if (NOT ENABLE_PETSC)
-      set(ENABLE_PETSC TRUE)
-      include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
+    if (ENABLE_PFLOTRAN)
+      if (NOT ENABLE_PETSC)
+        set(ENABLE_PETSC TRUE)
+        include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
+      endif()
+      list (APPEND ALQUIMIA_ENGINES PFLOTRAN)
+      include(${SuperBuild_BUILD_FILES_DIR}/Build_PFloTran.cmake)
     endif()
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_PFloTran.cmake)
-  endif()
 
-  if (ENABLE_CRUNCHTOPE)
-    if (NOT ENABLE_PETSC)
-      set(ENABLE_PETSC TRUE)
-      include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
+    if (ENABLE_CRUNCHTOPE)
+      if (NOT ENABLE_PETSC)
+        set(ENABLE_PETSC TRUE)
+        include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
+      endif()
+      list (APPEND ALQUIMIA_ENGINES CrunchTope)
+      message(STATUS "Including Build_CrunchTope.cmake")
+      include(${SuperBuild_BUILD_FILES_DIR}/Build_CrunchTope.cmake)
     endif()
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_CrunchTope.cmake)
-  endif()
 
-  if (ENABLE_ALQUIMIA)
+    message(STATUS "ALQUIMIA_ENGINES = ${ALQUIMIA_ENGINES}")
+    message(STATUS "Including Build_Alquimia.cmake")
     include(${SuperBuild_BUILD_FILES_DIR}/Build_Alquimia.cmake)
-  endif()
 
+  endif()
+  
 else()
   
   # pflotran
