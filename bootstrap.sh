@@ -137,7 +137,7 @@ no_color=$FALSE
 # -- components
 structured=$TRUE
 unstructured=$TRUE
-geochemistry=$TRUE
+geochemistry=${FALSE}
 amanzi_physics=${TRUE}
 ats_physics=${FALSE}
 clm=${FALSE}
@@ -924,25 +924,26 @@ List of INPUT parameters
   # check compatibility of geochemistry options
   # -- for the moment, either all of geochemistry is on or none of it is on...
   # -- this should get fixed to allow either PFLOTRAN or CRUNCHTOPE and not BOTH!
-  if [ "${alquimia}" -eq "${TRUE}" ]; then
-    geochemistry=${TRUE}
-  fi
-  if [ "${pflotran}" -eq "${TRUE}" ]; then
-    geochemistry=${TRUE}
-  fi
-  if [ "${crunchtope}" -eq "${TRUE}" ]; then
-    geochemistry=${TRUE}
-  fi
+  #if [ "${alquimia}" -eq "${TRUE}" ]; then
+  #  geochemistry=${TRUE}
+  #fi
+  #if [ "${pflotran}" -eq "${TRUE}" ]; then
+  #  geochemistry=${TRUE}
+  #fi
+  #if [ "${crunchtope}" -eq "${TRUE}" ]; then
+  #  geochemistry=${TRUE}
+  #fi
   # -- once this is fixed, the above can get removed
 
   if [ "${geochemistry}" -eq "${TRUE}" ]; then
+      
     petsc=${geochemistry}
     alquimia=${geochemistry}
     pflotran=${geochemistry}
     crunchtope=${geochemistry}
-  fi
+    
+  else
 
-  if [ "${geochemistry}" -eq "${FALSE}" ]; then
     if [ "${pflotran}" -eq "${TRUE}" ]; then
       if [ "${petsc}" -eq "${FALSE}" ]; then
         petsc=${TRUE}
@@ -954,6 +955,10 @@ List of INPUT parameters
       fi
     fi
     if [ "${crunchtope}" -eq "${TRUE}" ]; then
+      if [ "${petsc}" -eq "${FALSE}" ]; then
+        petsc=${TRUE}
+        warning_message "Enabling 'petsc' as required by 'crunchtope'"
+      fi
       if [ "${alquimia}" -eq "${FALSE}" ]; then
         alquimia=${TRUE}
         warning_message "Enabling 'alquimia' as required by 'crunchtope'"

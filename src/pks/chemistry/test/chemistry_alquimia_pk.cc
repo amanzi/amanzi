@@ -32,6 +32,7 @@
 #include "Alquimia_PK.hh"
 
 
+#ifdef PFLOTRAN_ENABLED
 TEST(INTERFACE_LIBRARY_INIT)
 {
   using namespace Amanzi;
@@ -85,8 +86,9 @@ TEST(INTERFACE_LIBRARY_INIT)
   engine->GetAqueousKineticNames(names);
   CHECK(names.size() == 1);
 }
+#endif
 
-
+#ifdef PFLOTRAN_ENABLED
 TEST(INTERFACE_LIBRARY_ADVANCE)
 {
   using namespace Amanzi;
@@ -163,7 +165,7 @@ TEST(INTERFACE_LIBRARY_ADVANCE)
     printf("%10s  %14.6g  -> %12.6g   diff:%5.2f\n", species[i].c_str(), v0, v1, diff);
   }
 }
-
+#endif
 
 TEST(INITIALIZE_CRUNCH)
 {
