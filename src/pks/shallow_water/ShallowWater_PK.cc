@@ -20,6 +20,7 @@
 
 // Amanzi::ShallowWater
 #include "DischargeEvaluator.hh"
+#include "WaterDepthEvaluator.hh"
 #include "HydrostaticPressureEvaluator.hh"
 #include "NumericalFluxFactory.hh"
 #include "ShallowWater_PK.hh"
@@ -89,6 +90,7 @@ ShallowWater_PK::Setup()
 
   riemann_flux_key_ = Keys::getKey(domain_, "riemann_flux");
   wetted_angle_key_ = Keys::getKey(domain_, "wetted_angle"); 
+  water_depth_key_ = Keys::getKey(domain_, "water_depth"); 
 
   //-------------------------------
   // constant fields
@@ -147,6 +149,18 @@ ShallowWater_PK::Setup()
     S_->SetEvaluator(discharge_key_, Tags::DEFAULT, eval);
   }
 
+  // -- water depth
+  if (!S_->HasRecord(water_depth_key_)) {
+    S_->Require<CV_t, CVS_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_)
+      .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList elist(water_depth_key_);
+    elist.set<std::string>("my key", water_depth_key_).set<std::string>("tag", Tags::DEFAULT.get())
+         .set<double>("pipe diameter", pipe_diameter_);
+    auto eval = Teuchos::rcp(new WaterDepthEvaluator(elist));
+    S_->SetEvaluator(water_depth_key_, Tags::DEFAULT, eval);
+  }
+
   // -- bathymetry
   if (!S_->HasRecord(bathymetry_key_)) {
     std::vector<std::string> names({ "cell", "node", "cmax" });
@@ -187,6 +201,7 @@ ShallowWater_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
+      AddDefaultPrimaryEvaluator_(wetted_angle_key_);
   }
 
   // -- previous state of ponded depth (for coupling)
@@ -401,6 +416,7 @@ ShallowWater_PK::Initialize()
 
      auto& WettedArea_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+     auto& WaterDepth_c = *S_->GetW<CV_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_).ViewComponent("cell");
      auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
@@ -413,18 +429,20 @@ ShallowWater_PK::Initialize()
             double PressurizedHead = ht_c[0][c] - pipe_diameter_ - B_c[0][c];
             WettedArea_c[0][c] = (g_ * PipeCrossSection * PressurizedHead) / (celerity_ * celerity_) + PipeCrossSection;
             WettedAngle_c[0][c] = TwoPi;
+            WaterDepth_c[0][c] = pipe_diameter_;
         }
         else if ((std::fabs(ht_c[0][c] - B_c[0][c]) < 1.e-15) || (ht_c[0][c] < B_c[0][c])){ //cell is dry
 
             WettedArea_c[0][c] = 0.0;
             WettedAngle_c[0][c] = 0.0;
+            WaterDepth_c[0][c] = 0.0;
 
         }
 
         else if (ht_c[0][c] < maxDepth && B_c[0][c] < ht_c[0][c]) { //cell is ventilated
 
-           double h_c = ht_c[0][c] - B_c[0][c];
-           WettedAngle_c[0][c] = ComputeWettedAngle(h_c);
+           WaterDepth_c[0][c] = ht_c[0][c] - B_c[0][c];
+           WettedAngle_c[0][c] = ComputeWettedAngle(WaterDepth_c[0][c]);
            WettedArea_c[0][c] = ComputeWettedArea(WettedAngle_c[0][c]);
 
         }
@@ -453,6 +471,7 @@ ShallowWater_PK::Initialize()
 
      S_->GetRecordW(ponded_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
      S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
+     S_->GetRecordW(water_depth_key_, Tags::DEFAULT, water_depth_key_).set_initialized();
 
   }
 
@@ -541,6 +560,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->Get<CV_t>(velocity_key_).ScatterMasterToGhosted("cell");
   S_->Get<CV_t>(discharge_key_).ScatterMasterToGhosted("cell");
   S_->Get<CV_t>(wetted_angle_key_).ScatterMasterToGhosted("cell");
+  S_->Get<CV_t>(water_depth_key_).ScatterMasterToGhosted("cell");
 
   // save a copy of primary and conservative fields
   auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
@@ -640,6 +660,13 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     if (!hydrostatic_pressure_force_type_) ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
   UpdateWettedQuantities();
+
+  if(hydrostatic_pressure_force_type_){
+     Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+       S_->GetEvaluatorPtr(wetted_angle_key_, Tags::DEFAULT))->SetChanged();
+
+     S_->GetEvaluator(water_depth_key_).Update(*S_, passwd_);
+  }
 
   // For consistency with other flow models, we need to track previous h
   // which was placed earlier in the archive.

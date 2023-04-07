@@ -123,7 +123,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
           bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
           double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
           bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], WettedAngle_f, bc_value_b[f]);
-
        }
     }
   }

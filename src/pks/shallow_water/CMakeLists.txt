@@ -44,6 +44,7 @@ set(sw_src_files ShallowWater_PK.cc
                  ShallowWater_TI.cc
                  ShallowWaterBoundaryFunction.cc
                  DischargeEvaluator.cc
+                 WaterDepthEvaluator.cc
                  HydrostaticPressureEvaluator.cc
                  NumericalFlux_Rusanov.cc
                  NumericalFlux_CentralUpwind.cc

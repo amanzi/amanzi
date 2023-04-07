@@ -174,7 +174,6 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
       BGrad /= vol; //(B_(j+1/2) - //B_(j-1/2)) / dx
 
-      //double denom = ComputePondedDepth(UL[1]) - ComputePondedDepth(UR[1]);
       double denom = denomL - denomR;
       S[1] = std::fabs(BGrad)<1.e-14 ? 0.0 : - (FaceAreaL * OtherTermLeft - FaceAreaR * OtherTermRight) * BGrad / denom;
 
@@ -226,7 +225,7 @@ double PipeFlow_PK::ComputeTotalDepth(double WettedArea, double WettedAngle, dou
 
    else {
 
-      std::cout << " wetted area is negative in UpdateTotalDepth " << std::endl;
+      std::cout << " wetted area is negative in ComputeTotalDepth " << std::endl;
       abort();
 
    }
