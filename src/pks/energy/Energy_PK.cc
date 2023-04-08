@@ -108,10 +108,9 @@ Energy_PK::Setup()
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   Key pressure_key = Keys::getKey(domain_, "pressure");
 
-  // require first-requested state variables
-  if (!S_->HasRecord("atmospheric_pressure")) {
-    S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
-  }
+  // require constant fields
+  S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
+  S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
 
   // require primary state variables
   std::vector<std::string> names({ "cell", "face" });
@@ -349,7 +348,12 @@ Energy_PK::InitializeFields_()
 {
   InitializeCVField(S_, *vo_, temperature_key_, Tags::DEFAULT, passwd_, 298.0);
   InitializeCVField(S_, *vo_, vol_flowrate_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeCVField(S_, *vo_, mol_flowrate_key_, Tags::DEFAULT, passwd_, 0.0);
+
+  if (!S_->GetRecord(mol_flowrate_key_, Tags::DEFAULT).initialized()) {
+    InitializeCVFieldFromCVField(S_, *vo_, mol_flowrate_key_, vol_flowrate_key_, passwd_);
+    double factor = S_->Get<double>("const_fluid_density") / CommonDefs::MOLAR_MASS_H2O;
+    S_->GetW<CV_t>(mol_flowrate_key_, passwd_).Scale(factor);
+  }
 }
 
 

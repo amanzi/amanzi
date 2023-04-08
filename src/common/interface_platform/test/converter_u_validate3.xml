@@ -116,10 +116,10 @@
           <ParameterList name="RegionMiddle">
             <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
             <Parameter name="model" type="string" value="standard"/>
-            <Parameter name="fluid compressibility" type="double" value="1.00000000000000006e-09"/>
+            <Parameter name="fluid compressibility" type="double" value="1.0e-09"/>
             <Parameter name="matrix compressibility" type="double" value="9.99999999999999955e-08"/>
             <Parameter name="gravity" type="double" value="9.80664999999999942e+00"/>
-            <Parameter name="fluid density" type="double" value="9.98200000000000045e+02"/>
+            <Parameter name="fluid density" type="double" value="998.2"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -131,7 +131,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00000000000000000e+00"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -147,7 +147,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
+                <Parameter name="value" type="double" value="1.002e-03"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -161,7 +161,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="4.082e-01"/>
+                <Parameter name="value" type="double" value="0.4082"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -170,7 +170,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.20599999999999991e-01"/>
+                <Parameter name="value" type="double" value="0.2206"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -190,7 +190,7 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="9.982e+02"/>
@@ -738,9 +738,9 @@
           <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
           <ParameterList name="dual porosity parameters">
             <Parameter name="Warren Root parameter" type="double" value="4.0"/>
-            <Parameter name="matrix depth" type="double" value="8.00000000000000044e-01"/>
+            <Parameter name="matrix depth" type="double" value="0.8"/>
             <Parameter name="matrix tortuosity" type="double" value="0.9"/>
-            <Parameter name="matrix volume fraction" type="double" value="9.99900000000000011e-01"/>
+            <Parameter name="matrix volume fraction" type="double" value="9.999e-01"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="MSM 1">
@@ -750,7 +750,7 @@
             <Parameter name="number of matrix nodes" type="int" value="2"/>
             <Parameter name="matrix depth" type="double" value="1.0"/>
             <Parameter name="matrix tortuosity" type="double" value="1.0"/>
-            <Parameter name="matrix volume fraction" type="double" value="9.99900000000000011e-01"/>
+            <Parameter name="matrix volume fraction" type="double" value="9.999e-01"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="MSM 2">
@@ -760,7 +760,7 @@
             <Parameter name="number of matrix nodes" type="int" value="3"/>
             <Parameter name="matrix depth" type="double" value="2.0"/>
             <Parameter name="matrix tortuosity" type="double" value="0.8"/>
-            <Parameter name="matrix volume fraction" type="double" value="9.99900000000000011e-01"/>
+            <Parameter name="matrix volume fraction" type="double" value="9.999e-01"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

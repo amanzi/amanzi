@@ -66,7 +66,7 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="998.2"/>
@@ -97,7 +97,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
+                <Parameter name="value" type="double" value="1.002e-03"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -562,7 +562,7 @@
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="ponded depth">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00000000000000000e+01"/>
+                <Parameter name="value" type="double" value="10.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -576,12 +576,12 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -609,7 +609,7 @@
             <Parameter name="time step increase factor" type="double" value="1.25"/>
             <Parameter name="time step reduction factor" type="double" value="0.8"/>
             <Parameter name="max time step" type="double" value="4.3234e+17"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
+            <Parameter name="min time step" type="double" value="1.0e-6"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">

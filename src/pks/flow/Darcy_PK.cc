@@ -26,7 +26,6 @@
 #include "exceptions.hh"
 #include "Mesh_Algorithms.hh"
 #include "PDE_DiffusionFactory.hh"
-#include "PDE_DiffusionFracturedMatrix.hh"
 #include "PK_Utils.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"

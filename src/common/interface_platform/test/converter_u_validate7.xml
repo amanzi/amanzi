@@ -144,7 +144,7 @@
             <Parameter name="regions" type="Array(string)" value="{BottomRegion}"/>
             <ParameterList name="IEM parameters">
               <Parameter name="iem type" type="string" value="tabular"/>
-              <Parameter name="heat capacity" type="double" value="7.62000000000000028e+01"/>
+              <Parameter name="heat capacity" type="double" value="7.62e+01"/>
               <Parameter name="table name" type="string" value="h2o.eos"/>
               <Parameter name="field name" type="string" value="internal_energy"/>
             </ParameterList>
@@ -159,14 +159,14 @@
             <Parameter name="regions" type="Array(string)" value="{TopRegion}"/>
             <ParameterList name="IEM parameters">
               <Parameter name="iem type" type="string" value="linear"/>
-              <Parameter name="heat capacity" type="double" value="6.20100000000000023e+02"/>
+              <Parameter name="heat capacity" type="double" value="620.1"/>
             </ParameterList>
           </ParameterList>
           <ParameterList name="BottomRegion">
             <Parameter name="regions" type="Array(string)" value="{BottomRegion}"/>
             <ParameterList name="IEM parameters">
               <Parameter name="iem type" type="string" value="linear"/>
-              <Parameter name="heat capacity" type="double" value="6.20200000000000045e+02"/>
+              <Parameter name="heat capacity" type="double" value="620.2"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -281,7 +281,7 @@
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="6.90000000000000018e-32"/>
+                  <Parameter name="value" type="double" value="6.9e-32"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -295,7 +295,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.0e+01"/>
+                <Parameter name="value" type="double" value="20.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -353,7 +353,7 @@
             <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.98000000000000000e+02"/>
+                <Parameter name="value" type="double" value="298.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -506,14 +506,14 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.19999999999999996"/>
-            <Parameter name="time step reduction factor" type="double" value="8.00000000000000044e-01"/>
+            <Parameter name="time step increase factor" type="double" value="1.2"/>
+            <Parameter name="time step reduction factor" type="double" value="0.8"/>
             <Parameter name="max time step" type="double" value="4.3234e+17"/>
             <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
             <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
@@ -608,7 +608,7 @@
             <ParameterList name="static head">
               <ParameterList name="function-static-head">
                 <Parameter name="space dimension" type="int" value="2"/>
-                <Parameter name="density" type="double" value="9.98200000000000045e+02"/>
+                <Parameter name="density" type="double" value="998.2"/>
                 <Parameter name="gravity" type="double" value="9.80664999999999942"/>
                 <Parameter name="p0" type="double" value="1.01325e+05"/>
                 <ParameterList name="water table elevation">
@@ -726,13 +726,13 @@
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
             <Parameter name="time step increase factor" type="double" value="1.19999999999999996"/>
-            <Parameter name="time step reduction factor" type="double" value="8.00000000000000044e-01"/>
+            <Parameter name="time step reduction factor" type="double" value="0.8"/>
             <Parameter name="max time step" type="double" value="4.3234e+17"/>
             <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
             <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
@@ -846,7 +846,7 @@
             <ParameterList name="static head">
               <ParameterList name="function-static-head">
                 <Parameter name="space dimension" type="int" value="2"/>
-                <Parameter name="density" type="double" value="9.98200000000000045e+02"/>
+                <Parameter name="density" type="double" value="998.2"/>
                 <Parameter name="gravity" type="double" value="9.80664999999999942"/>
                 <Parameter name="p0" type="double" value="1.01325e+05"/>
                 <ParameterList name="water table elevation">

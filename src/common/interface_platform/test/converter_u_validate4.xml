@@ -109,7 +109,7 @@
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="model" type="string" value="constant"/>
-            <Parameter name="value" type="double" value="1.00000000000000002e-03"/>
+            <Parameter name="value" type="double" value="1.0e-03"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -117,7 +117,7 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="9.982e+02"/>
@@ -148,7 +148,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
+                <Parameter name="value" type="double" value="1.002e-03"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

@@ -141,7 +141,7 @@
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="6.172666560e+10"/>
-        <Parameter name="initial time step" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="initial time step" type="double" value="1.0"/>
         <Parameter name="maximum time step" type="double" value="9.99999999999999967e+98"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
       </ParameterList>
@@ -157,10 +157,10 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="start period time" type="double" value="6.17266656000000000e+10"/>
-        <Parameter name="end period time" type="double" value="9.46728000000000000e+10"/>
+        <Parameter name="start period time" type="double" value="6.17266656e+10"/>
+        <Parameter name="end period time" type="double" value="9.46728e+10"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="initial time step" type="double" value="1.0"/>
         <Parameter name="maximum time step" type="double" value="9.99999999999999967e+98"/>
       </ParameterList>
     </ParameterList>
@@ -188,7 +188,7 @@
           <ParameterList name="RegionMiddle">
             <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
             <Parameter name="model" type="string" value="constant"/>
-            <Parameter name="value" type="double" value="2.00000000000000010e-04"/>
+            <Parameter name="value" type="double" value="2.0e-04"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -216,7 +216,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
+                <Parameter name="value" type="double" value="1.002e-03"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -259,7 +259,7 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="9.982e+02"/>
@@ -430,7 +430,7 @@
     <ParameterList name="Dispersion Solver">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="error tolerance" type="double" value="2.00000000000000010e-22"/>
+        <Parameter name="error tolerance" type="double" value="2.0e-22"/>
         <Parameter name="maximum number of iterations" type="int" value="222"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
@@ -537,9 +537,9 @@
             <Parameter name="use area fractions" type="bool" value="false"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-linear">
-                <Parameter name="y0" type="double" value="1.01325000000000000e+05"/>
-                <Parameter name="x0" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, 0.00000000000000000e+00}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, -9.79351920000000064e+03}"/>
+                <Parameter name="y0" type="double" value="101325.0"/>
+                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, -9793.5192}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -565,20 +565,20 @@
                 <ParameterList name="function1">
                   <ParameterList name="function-standard-math">
                     <Parameter name="operator" type="string" value="exp"/>
-                    <Parameter name="amplitude" type="double" value="-3.10000000000000014e-05"/>
+                    <Parameter name="amplitude" type="double" value="-3.1e-05"/>
                   </ParameterList>
                 </ParameterList>
                 <ParameterList name="function2">
                   <ParameterList name="function-multiplicative">
                     <ParameterList name="function1">
                       <ParameterList name="function-squaredistance">
-                        <Parameter name="x0" type="Array(double)" value="{0.00000000000000000e+00, 1.08000000000000000e+02, 3.38632799999999934e+00}"/>
-                        <Parameter name="metric" type="Array(double)" value="{0.00000000000000000e+00, 1.00000000000000000e+00, 1.00000000000000000e+00}"/>
+                        <Parameter name="x0" type="Array(double)" value="{0.0, 108.0, 3.38632799999999934e+00}"/>
+                        <Parameter name="metric" type="Array(double)" value="{0.0, 1.0, 1.0}"/>
                       </ParameterList>
                     </ParameterList>
                     <ParameterList name="function2">
                       <ParameterList name="function-constant">
-                        <Parameter name="value" type="double" value="-5.00000000000000010e-03"/>
+                        <Parameter name="value" type="double" value="-5.0e-03"/>
                       </ParameterList>
                     </ParameterList>
                   </ParameterList>
@@ -596,8 +596,8 @@
             <Parameter name="use area fractions" type="bool" value="false"/>
             <ParameterList name="outward mass flux">
               <ParameterList name="function-tabular">
-                <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10}"/>
-                <Parameter name="y values" type="Array(double)" value="{-1.10510722000000000e-07, -1.48398401199999992e-06}"/>
+                <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10}"/>
+                <Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -1.48398401199999992e-06}"/>
                 <Parameter name="forms" type="Array(string)" value="{constant}"/>
               </ParameterList>
             </ParameterList>
@@ -615,7 +615,7 @@
             <Parameter name="use area fractions" type="bool" value="false"/>
             <Parameter name="rainfall" type="bool" value="false"/>
             <Parameter name="submodel" type="string" value="PFloTran"/>
-            <Parameter name="seepage flux threshold" type="double" value="1.00000000000000002e-02"/>
+            <Parameter name="seepage flux threshold" type="double" value="1.0e-02"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -702,8 +702,8 @@
           <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
           <Parameter name="model" type="string" value="Bear"/>
           <ParameterList name="parameters for Bear">
-            <Parameter name="alpha_l" type="double" value="1.00000000000000002e-02"/>
-            <Parameter name="alpha_t" type="double" value="1.00000000000000002e-03"/>
+            <Parameter name="alpha_l" type="double" value="1.0e-02"/>
+            <Parameter name="alpha_t" type="double" value="1.0e-03"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="Facies_2">
@@ -780,7 +780,7 @@
               <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs}"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
               <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -827,11 +827,11 @@
         <ParameterList name="WRM_1">
           <Parameter name="water retention model" type="string" value="Brooks Corey"/>
           <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
-          <Parameter name="Brooks Corey lambda" type="double" value="2.13600000000000012e-01"/>
-          <Parameter name="Brooks Corey alpha" type="double" value="2.02600000000000002e-03"/>
-          <Parameter name="Brooks Corey l" type="double" value="5.00000000000000000e-01"/>
-          <Parameter name="residual saturation liquid" type="double" value="0.00000000000000000e+00"/>
-          <Parameter name="regularization interval" type="double" value="0.00000000000000000e+00"/>
+          <Parameter name="Brooks Corey lambda" type="double" value="2.136e-01"/>
+          <Parameter name="Brooks Corey alpha" type="double" value="2.026e-03"/>
+          <Parameter name="Brooks Corey l" type="double" value="0.5"/>
+          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
+          <Parameter name="regularization interval" type="double" value="0.0"/>
           <Parameter name="relative permeability model" type="string" value="Mualem"/>
           <ParameterList name="output">
             <Parameter name="file" type="string" value="WRM_1.txt"/>
@@ -881,9 +881,9 @@
             <Parameter name="use area fractions" type="bool" value="false"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-linear">
-                <Parameter name="y0" type="double" value="1.01325000000000000e+05"/>
-                <Parameter name="x0" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, 0.00000000000000000e+00}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, -9.79351920000000064e+03}"/>
+                <Parameter name="y0" type="double" value="101325.0"/>
+                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, -9.7935192e+03}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -909,20 +909,20 @@
                 <ParameterList name="function1">
                   <ParameterList name="function-standard-math">
                     <Parameter name="operator" type="string" value="exp"/>
-                    <Parameter name="amplitude" type="double" value="-3.10000000000000014e-05"/>
+                    <Parameter name="amplitude" type="double" value="-3.1e-05"/>
                   </ParameterList>
                 </ParameterList>
                 <ParameterList name="function2">
                   <ParameterList name="function-multiplicative">
                     <ParameterList name="function1">
                       <ParameterList name="function-squaredistance">
-                        <Parameter name="x0" type="Array(double)" value="{0.00000000000000000e+00, 1.08000000000000000e+02, 3.38632799999999934e+00}"/>
-                        <Parameter name="metric" type="Array(double)" value="{0.00000000000000000e+00, 1.00000000000000000e+00, 1.00000000000000000e+00}"/>
+                        <Parameter name="x0" type="Array(double)" value="{0.0, 108.0, 3.386328}"/>
+                        <Parameter name="metric" type="Array(double)" value="{0.0, 1.0, 1.0}"/>
                       </ParameterList>
                     </ParameterList>
                     <ParameterList name="function2">
                       <ParameterList name="function-constant">
-                        <Parameter name="value" type="double" value="-5.00000000000000010e-03"/>
+                        <Parameter name="value" type="double" value="-5.0e-03"/>
                       </ParameterList>
                     </ParameterList>
                   </ParameterList>
@@ -940,8 +940,8 @@
             <Parameter name="use area fractions" type="bool" value="false"/>
             <ParameterList name="outward mass flux">
               <ParameterList name="function-tabular">
-                <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10}"/>
-                <Parameter name="y values" type="Array(double)" value="{-1.10510722000000000e-07, -1.48398401199999992e-06}"/>
+                <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10}"/>
+                <Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -1.48398401199999992e-06}"/>
                 <Parameter name="forms" type="Array(string)" value="{constant}"/>
               </ParameterList>
             </ParameterList>
@@ -959,7 +959,7 @@
             <Parameter name="use area fractions" type="bool" value="false"/>
             <Parameter name="rainfall" type="bool" value="false"/>
             <Parameter name="submodel" type="string" value="PFloTran"/>
-            <Parameter name="seepage flux threshold" type="double" value="1.00000000000000002e-02"/>
+            <Parameter name="seepage flux threshold" type="double" value="1.0e-02"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

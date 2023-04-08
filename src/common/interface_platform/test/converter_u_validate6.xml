@@ -86,7 +86,7 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.0"/>
@@ -117,7 +117,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00000000000000000e+00"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -131,7 +131,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.5000000000000e-01"/>
+                <Parameter name="value" type="double" value="0.25"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -142,10 +142,10 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="FRACTURE_NETWORK_INTERNAL"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00000000000000000e+00"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -173,7 +173,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="4.00000000000000008e-03"/>
+                <Parameter name="value" type="double" value="4.0e-03"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -222,7 +222,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00000000000000000e+00"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -479,16 +479,16 @@
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
             <Parameter name="time step increase factor" type="double" value="1.0"/>
-            <Parameter name="time step reduction factor" type="double" value="8.00000000000000044e-01"/>
-            <Parameter name="max time step" type="double" value="4.32340000000000000e+17"/>
+            <Parameter name="time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="max time step" type="double" value="4.3234e+17"/>
             <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
-            <Parameter name="diverged tolerance" type="double" value="1.00000000000000000e+10"/>
-            <Parameter name="diverged l2 tolerance" type="double" value="1.00000000000000000e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.00000000000000000e+03"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
             <Parameter name="max nka vectors" type="int" value="10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
@@ -769,7 +769,7 @@
               <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.00000000000000002e-03"/>
+                  <Parameter name="value" type="double" value="1.0e-03"/>
                 </ParameterList>
               </ParameterList>
               <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -947,19 +947,19 @@
   <ParameterList name="thermodynamic database">
     <ParameterList name="primary species">
       <ParameterList name="A">
-        <Parameter name="ion size parameter" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="ion size parameter" type="double" value="0.0"/>
         <Parameter name="charge" type="int" value="0"/>
-        <Parameter name="gram molecular weight" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="gram molecular weight" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="B">
-        <Parameter name="ion size parameter" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="ion size parameter" type="double" value="0.0"/>
         <Parameter name="charge" type="int" value="0"/>
-        <Parameter name="gram molecular weight" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="gram molecular weight" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="C">
-        <Parameter name="ion size parameter" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="ion size parameter" type="double" value="0.0"/>
         <Parameter name="charge" type="int" value="0"/>
-        <Parameter name="gram molecular weight" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="gram molecular weight" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="isotherms">
@@ -980,17 +980,17 @@
       <ParameterList name="complex_0">
         <Parameter name="reactant" type="string" value="A"/>
         <Parameter name="product" type="string" value="1.0 B"/>
-        <Parameter name="half life" type="double" value="3.94470000000000000e+08"/>
+        <Parameter name="half life" type="double" value="3.9447e+08"/>
       </ParameterList>
       <ParameterList name="complex_1">
         <Parameter name="reactant" type="string" value="B"/>
         <Parameter name="product" type="string" value="1.0 C"/>
-        <Parameter name="half life" type="double" value="7.88940000000000000e+08"/>
+        <Parameter name="half life" type="double" value="7.8894e+08"/>
       </ParameterList>
       <ParameterList name="complex_2">
         <Parameter name="reactant" type="string" value="C"/>
         <Parameter name="product" type="string" value=""/>
-        <Parameter name="half life" type="double" value="1.57788000000000000e+08"/>
+        <Parameter name="half life" type="double" value="1.57788e+08"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

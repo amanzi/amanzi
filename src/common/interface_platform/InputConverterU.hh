@@ -141,7 +141,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateTimeIntegrator_(const std::string& err_options,
                                                   const std::string& nonlinear_solver,
                                                   bool modify_correction,
-                                                  const std::string& nonsolver_controls,
+                                                  const std::string& controls,
                                                   const std::string& linsolver,
                                                   double dt_cut_default,
                                                   double dt_inc_default);

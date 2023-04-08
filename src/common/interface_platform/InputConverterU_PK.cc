@@ -40,7 +40,7 @@ Teuchos::ParameterList
 InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
                                           const std::string& nonlinear_solver,
                                           bool modify_correction,
-                                          const std::string& nonsolver_controls,
+                                          const std::string& controls,
                                           const std::string& linsolver,
                                           double dt_cut_default,
                                           double dt_inc_default)
@@ -61,7 +61,7 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   // linear solver
   bool flag;
   std::string prec(TI_PRECONDITIONER);
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", preconditioner", flag);
+  node = GetUniqueElementByTagsString_(controls + ", preconditioner", flag);
   if (flag) prec = mm.transcode(node->getTextContent());
 
   out_list.set<std::string>("linear solver", linsolver);
@@ -80,7 +80,7 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
 
   // use standard timestep controller type
   std::string name(TI_TIMESTEP_CONTROLLER);
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", timestep_controller", flag);
+  node = GetUniqueElementByTagsString_(controls + ", timestep_controller", flag);
   if (flag) name = mm.transcode(node->getTextContent());
 
   bdf1.set<std::string>("timestep controller type", name);
@@ -163,81 +163,101 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   bdf1.set<double>("restart tolerance relaxation factor damping", TI_TOL_RELAX_FACTOR_DAMPING);
   bdf1.set<int>("nonlinear iteration initial guess extrapolation order", 1);
 
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", max_iterations", flag);
-  if (flag)
-    controller.set<int>("max iterations", strtol(mm.transcode(node->getTextContent()), NULL, 10));
-
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", min_iterations", flag);
-  if (flag)
-    controller.set<int>("min iterations", strtol(mm.transcode(node->getTextContent()), NULL, 10));
-
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", limit_iterations", flag);
-  if (flag)
-    solver->set<int>("limit iterations", strtol(mm.transcode(node->getTextContent()), NULL, 10));
-
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", nonlinear_tolerance", flag);
-  double nonlinear_tol(NONLINEAR_TOLERANCE);
-  if (flag) {
-    nonlinear_tol = strtod(mm.transcode(node->getTextContent()), NULL);
-    solver->set<double>("nonlinear tolerance", nonlinear_tol);
+  // controller options
+  {
+    std::vector<std::string> options({"max_iterations", "min_iterations"});
+    for (auto opt : options) {
+      node = GetUniqueElementByTagsString_(controls + ", " + opt, flag);
+      if (flag) {
+        auto tmp(opt);
+        std::replace(tmp.begin(), tmp.end(), '_', ' ');
+        controller.set<int>(tmp, strtol(mm.transcode(node->getTextContent()), NULL, 10));
+      }
+    }
   }
 
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", time_step_reduction_factor", flag);
-  if (flag)
-    controller.set<double>("time step reduction factor",
-                           strtod(mm.transcode(node->getTextContent()), NULL));
+  {
+    std::vector<std::string> options({"time_step_reduction_factor", "time_step_increase_factor"});
+    for (auto opt : options) {
+      node = GetUniqueElementByTagsString_(controls + ", " + opt, flag);
+      if (flag) {
+        auto tmp(opt);
+        std::replace(tmp.begin(), tmp.end(), '_', ' ');
+        controller.set<double>(tmp, strtod(mm.transcode(node->getTextContent()), NULL));
+      }
+    }
+  }
 
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", time_step_increase_factor", flag);
-  if (flag)
-    controller.set<double>("time step increase factor",
-                           strtod(mm.transcode(node->getTextContent()), NULL));
+  // solver options
+  {
+    std::vector<std::string> options({"limit_iterations", "max_divergent_iterations"});
+    for (auto opt : options) {
+      node = GetUniqueElementByTagsString_(controls + ", " + opt, flag);
+      if (flag) {
+        auto tmp(opt);
+        std::replace(tmp.begin(), tmp.end(), '_', ' ');
+        solver->set<int>(tmp, strtol(mm.transcode(node->getTextContent()), NULL, 10));
+      }
+    }
+  }
 
-  node =
-    GetUniqueElementByTagsString_(nonsolver_controls + ", max_preconditioner_lag_iterations", flag);
-  if (flag)
-    bdf1.set<int>("max preconditioner lag iterations",
-                  strtol(mm.transcode(node->getTextContent()), NULL, 10));
+  {
+    std::vector<std::string> options({"nonlinear_tolerance",
+                                      "diverged_tolerance", 
+                                      "max_error_growth_factor"});
+    for (auto opt : options) {
+      node = GetUniqueElementByTagsString_(controls + ", " + opt, flag);
+      if (flag) {
+        auto tmp(opt);
+        std::replace(tmp.begin(), tmp.end(), '_', ' ');
+        solver->set<double>(tmp, strtod(mm.transcode(node->getTextContent()), NULL));
+      }
+    }
+  }
 
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", max_divergent_iterations", flag);
-  if (flag)
-    solver->set<int>("max divergent iterations",
-                     strtol(mm.transcode(node->getTextContent()), NULL, 10));
-
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", nonlinear_iteration_damping_factor",
-                                       flag);
-  if (flag)
-    bdf1.set<double>("nonlinear iteration damping factor",
-                     strtod(mm.transcode(node->getTextContent()), NULL));
-
-  node = GetUniqueElementByTagsString_(
-    nonsolver_controls + ", nonlinear_iteration_initial_guess_extrapolation_order", flag);
-  if (flag)
-    bdf1.set<int>("nonlinear iteration initial guess extrapolation order",
-                  strtol(mm.transcode(node->getTextContent()), NULL, 10));
-
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", restart_tolerance_relaxation_factor",
-                                       flag);
-  if (flag)
-    bdf1.set<double>("restart tolerance relaxation factor",
-                     strtod(mm.transcode(node->getTextContent()), NULL));
-
-  node = GetUniqueElementByTagsString_(
-    nonsolver_controls + ", restart_tolerance_relaxation_factor_damping", flag);
-  if (flag)
-    bdf1.set<double>("restart tolerance relaxation factor damping",
-                     strtod(mm.transcode(node->getTextContent()), NULL));
-
-  node = GetUniqueElementByTagsString_(
-    nonsolver_controls + ", nonlinear_iteration_divergence_factor", flag);
+  node = GetUniqueElementByTagsString_(controls + ", nonlinear_iteration_divergence_factor", flag);
   if (flag)
     solver->set<double>("max du growth factor", strtod(mm.transcode(node->getTextContent()), NULL));
 
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", error_control_options", flag);
+  node = GetUniqueElementByTagsString_(controls + ", monitor", flag);
+  if (flag) solver->set<std::string>("monitor", mm.transcode(node->getTextContent()));
+
+
+  // bdf1 options
+  {
+    std::vector<std::string> options({"max_preconditioner_lag_iterations", 
+                                      "nonlinear_iteration_initial_guess_extrapolation_order"});
+    for (auto opt : options) {
+      node = GetUniqueElementByTagsString_(controls + ", " + opt, flag);
+      if (flag) {
+        auto tmp(opt);
+        std::replace(tmp.begin(), tmp.end(), '_', ' ');
+        bdf1.set<int>(tmp, strtol(mm.transcode(node->getTextContent()), NULL, 10));
+      }
+    }
+  }
+
+  {
+    std::vector<std::string> options({"nonlinear_iteration_damping_factor",
+                                      "restart_tolerance_relaxation_factor",
+                                      "restart_tolerance_relaxation_factor_damping"});
+    for (auto opt : options) {
+      node = GetUniqueElementByTagsString_(controls + ", " + opt, flag);
+      if (flag) {
+        auto tmp(opt);
+        std::replace(tmp.begin(), tmp.end(), '_', ' ');
+        bdf1.set<double>(tmp, strtod(mm.transcode(node->getTextContent()), NULL));
+      }
+    }
+  }
+
+  // other options
+  node = GetUniqueElementByTagsString_(controls + ", error_control_options", flag);
   if (flag)
     out_list.set<Teuchos::Array<std::string>>("error control options",
                                               CharToStrings_(mm.transcode(node->getTextContent())));
 
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", preconditioner", flag);
+  node = GetUniqueElementByTagsString_(controls + ", preconditioner", flag);
   if (flag) {
     std::string text = GetTextContentS_(node, "hypre_amg, trilinos_ml, block_ilu");
     if (text == "hypre_amg") text = "Hypre AMG";
@@ -246,19 +266,11 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
     out_list.set<std::string>("preconditioner", text);
   }
 
-  // special cases
-  if (flow_single_phase_) {
-    node = GetUniqueElementByTagsString_(nonsolver_controls + ", time_step_increase_factor", flag);
-    if (flag)
-      controller.set<double>("time step increase factor",
-                             strtol(mm.transcode(node->getTextContent()), NULL, 10));
-  }
-
   // initialization
-  node = GetUniqueElementByTagsString_(nonsolver_controls + ", unstr_initialization", flag);
+  node = GetUniqueElementByTagsString_(controls + ", unstr_initialization", flag);
   if (flag) {
     Teuchos::ParameterList& init = out_list.sublist("initialization");
-    init = TranslateInitialization_(nonsolver_controls);
+    init = TranslateInitialization_(controls);
   }
 
   // overwrite parameters for special solvers
@@ -271,6 +283,7 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
     out_list.set<std::string>("linear solver", ss.str());
     out_list.set<std::string>("preconditioner enhancement", ss.str());
 
+    double nonlinear_tol = solver->get<double>("nonlinear tolerance");
     gmres_solvers_.push_back(std::make_pair(ss.str(), nonlinear_tol));
   }
 

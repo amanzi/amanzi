@@ -1037,7 +1037,7 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       pk_list.sublist(name).sublist("time integrator") =
         pk_list.sublist(pk_m).sublist("time integrator");
 
-      pk_list.sublist(name)
+      if (pk == "flow") pk_list.sublist(name)
         .sublist("time integrator")
         .sublist("BDF1")
         .sublist("nka parameters")

@@ -10,15 +10,15 @@
 #include "IO.hh"
 #include "CycleDriver.hh"
 #include "eos_reg.hh"
+#include "evaluators_multiphase_reg.hh"
 #include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
 #include "Mesh.hh"
-#include "multiphase_evaluators_registration.hh"
+#include "models_multiphase_reg.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_multiphase_registration.hh"
+#include "pks_multiphase_reg.hh"
 #include "State.hh"
-#include "wrmmp_registration.hh"
 
 
 TEST(MPC_DRIVER_MULTIPHASE_FRACTURES)
