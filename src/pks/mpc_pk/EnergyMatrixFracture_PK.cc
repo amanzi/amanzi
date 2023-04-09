@@ -268,11 +268,11 @@ bool
 EnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // create copies of conservative fields
-  std::vector<std::string> evals = { "energy", "fracture-energy" };
+  std::vector<std::string> fields = { "energy", "fracture-energy" };
 
   StateArchive archive(S_, vo_);
-  archive.Add({}, evals, {}, Tags::DEFAULT, name());
-  archive.CopyFieldsToPrevFields("");
+  archive.Add(fields, Tags::DEFAULT);
+  archive.CopyFieldsToPrevFields(fields, "");
 
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
 

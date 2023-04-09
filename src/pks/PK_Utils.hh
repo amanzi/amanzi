@@ -27,20 +27,25 @@
 
 namespace Amanzi {
 
+/* 
+  Keeps copies of fields which could be restored. e.g. when a time integration step 
+  fails. The list is populated by
+
+    - input fields which are primary evaluators
+    - input fields which have no evaluators
+    - fields with previous prev_ when they are overwritten
+*/
+
 class StateArchive {
  public:
   StateArchive() = delete;
   StateArchive(Teuchos::RCP<State>& S, Teuchos::RCP<VerboseObject>& vo) : S_(S), vo_(vo){};
 
-  void Add(std::vector<std::string> fields,
-           std::vector<std::string> evals,
-           std::vector<std::string> primary,
-           const Tag& tag,
-           const std::string& requestor);
+  void Add(std::vector<std::string>& fields, const Tag& tag);
 
   void Restore(const std::string& passwd);
 
-  void CopyFieldsToPrevFields(const std::string& passwd);
+  void CopyFieldsToPrevFields(std::vector<std::string>& fields, const std::string& passwd);
 
   // access
   const CompositeVector& get(const std::string& name);
@@ -50,8 +55,7 @@ class StateArchive {
   Teuchos::RCP<VerboseObject> vo_;
 
   Tag tag_;
-  std::vector<std::string> primary_;
-  std::map<std::string, CompositeVector> fields_, evals_;
+  std::map<std::string, CompositeVector> fields_;
 };
 
 

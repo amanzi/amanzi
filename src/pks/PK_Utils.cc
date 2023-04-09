@@ -23,20 +23,18 @@ namespace Amanzi {
 * Deep copy of state fields.
 ****************************************************************** */
 void
-StateArchive::Add(std::vector<std::string> fields,
-                  std::vector<std::string> evals,
-                  std::vector<std::string> primary,
-                  const Tag& tag,
-                  const std::string& requestor)
+StateArchive::Add(std::vector<std::string>& fields, const Tag& tag)
 {
   tag_ = tag;
-  primary_ = primary;
 
-  for (const auto& name : fields) fields_.emplace(name, S_->Get<CompositeVector>(name, tag));
-
-  for (const auto& name : evals) {
-    S_->GetEvaluator(name).Update(*S_, requestor);
-    evals_.emplace(name, S_->Get<CompositeVector>(name, tag));
+  for (const auto& name : fields) {
+    if (S_->HasEvaluator(name, tag_)) {
+      if (S_->GetEvaluatorPtr(name, tag_)->get_type() == EvaluatorType::PRIMARY) {
+        fields_.emplace(name, S_->Get<CompositeVector>(name, tag));
+      }
+    } else {
+      fields_.emplace(name, S_->Get<CompositeVector>(name, tag));
+    }
   }
 }
 
@@ -48,31 +46,24 @@ void
 StateArchive::Restore(const std::string& passwd)
 {
   for (auto it = fields_.begin(); it != fields_.end(); ++it) {
-    S_->GetW<CompositeVector>(it->first, passwd) = it->second;
+    S_->GetW<CompositeVector>(it->first, tag_, passwd) = it->second;
 
     if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "reverted field \"" << it->first << "\"" << std::endl;
     }
-  }
 
-  for (auto it = evals_.begin(); it != evals_.end(); ++it) {
-    S_->GetW<CompositeVector>(it->first, tag_, it->first) = it->second;
+    if (S_->HasEvaluator(it->first, tag_)) {
+      if (S_->GetEvaluatorPtr(it->first, tag_)->get_type() == EvaluatorType::PRIMARY) {
+        Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
+          S_->GetEvaluatorPtr(it->first, tag_))
+          ->SetChanged();
 
-    if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "reverted evaluator \"" << it->first << "\"" << std::endl;
-    }
-  }
-
-  for (auto it = primary_.begin(); it != primary_.end(); ++it) {
-    Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
-      S_->GetEvaluatorPtr(*it, tag_))
-      ->SetChanged();
-
-    if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "set primary solution \"" << *it << "\" to changed status" << std::endl;
+        if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+          Teuchos::OSTab tab = vo_->getOSTab();
+          *vo_->os() << "changed status of primary field \"" << it->first << "\"" << std::endl;
+        }
+      }
     }
   }
 }
@@ -82,13 +73,14 @@ StateArchive::Restore(const std::string& passwd)
 * Copy: Field (BASE) -> Field (prev_BASE)
 ******************************************************************* */
 void
-StateArchive::CopyFieldsToPrevFields(const std::string& passwd)
+StateArchive::CopyFieldsToPrevFields(std::vector<std::string>& fields, const std::string& passwd)
 {
-  for (auto it = fields_.begin(); it != fields_.end(); ++it) {
-    auto name = Keys::splitKey(it->first);
+  for (auto it = fields.begin(); it != fields.end(); ++it) {
+    auto name = Keys::splitKey(*it);
     std::string prev = Keys::getKey(name.first, "prev_" + name.second);
     if (S_->HasRecord(prev, tag_)) {
-      S_->GetW<CompositeVector>(prev, tag_, passwd) = S_->Get<CompositeVector>(it->first);
+      fields_.emplace(prev, S_->Get<CompositeVector>(prev));
+      S_->GetW<CompositeVector>(prev, tag_, passwd) = S_->Get<CompositeVector>(*it);
     }
   }
 }
@@ -100,15 +92,8 @@ StateArchive::CopyFieldsToPrevFields(const std::string& passwd)
 const CompositeVector&
 StateArchive::get(const std::string& name)
 {
-  {
-    auto it = fields_.find(name);
-    if (it != fields_.end()) return it->second;
-  }
-
-  {
-    auto it = evals_.find(name);
-    if (it != evals_.end()) return it->second;
-  }
+  auto it = fields_.find(name);
+  if (it != fields_.end()) return it->second;
 
   AMANZI_ASSERT(false);
 }

@@ -72,12 +72,10 @@ ShallowWaterTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Key ponded_depth_key = Keys::getKey(domain, "ponded_depth");
   Key prev_ponded_depth_key = Keys::getKey(domain, "prev_ponded_depth");
 
+  std::vector<std::string> fields = { ponded_depth_key, discharge_key, velocity_key };
   StateArchive archive(S_, vo_);
-  archive.Add({ ponded_depth_key, prev_ponded_depth_key },
-              { discharge_key },
-              { ponded_depth_key, velocity_key },
-              Tags::DEFAULT,
-              name());
+  archive.Add(fields, Tags::DEFAULT);
+  archive.CopyFieldsToPrevFields(fields, "");
 
   double dt0 = t_new - t_old;
   fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);

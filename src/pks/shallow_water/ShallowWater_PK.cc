@@ -415,24 +415,17 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->Get<CV_t>(discharge_key_).ScatterMasterToGhosted("cell");
 
   // save a copy of primary and conservative fields
-  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  auto& h_c =
-    *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  auto& ht_c =
-    *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  auto& vel_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-
-  S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
-  auto& q_c =
-    *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
+  auto tag = Tags::DEFAULT;
+  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, tag, passwd_).ViewComponent("cell", true);
+  auto& h_c = *S_->GetW<CV_t>(ponded_depth_key_, tag, passwd_).ViewComponent("cell", true);
+  auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, tag, passwd_).ViewComponent("cell", true);
+  auto& vel_c = *S_->GetW<CV_t>(velocity_key_, tag, passwd_).ViewComponent("cell", true);
+  auto& q_c = *S_->GetW<CV_t>(discharge_key_, tag, discharge_key_).ViewComponent("cell", true);
 
   // create copies of primary fields
+  std::vector<std::string> fields({ ponded_depth_key_, velocity_key_ });
   StateArchive archive(S_, vo_);
-  archive.Add({ ponded_depth_key_ },
-              { discharge_key_ },
-              { ponded_depth_key_, velocity_key_ },
-              Tags::DEFAULT,
-              "shallow_water");
+  archive.Add(fields, Tags::DEFAULT);
 
   Epetra_MultiVector& h_old = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_old = *soln_->SubVector(1)->Data()->ViewComponent("cell");
