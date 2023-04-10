@@ -187,7 +187,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 //--------------------------------------------------------------------
 void PipeFlow_PK::UpdateWettedQuantities(){ 
 
-   auto& WettedArea_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+   auto& WettedArea_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    auto& TotalDepth_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
@@ -212,7 +212,7 @@ double PipeFlow_PK::ComputeTotalDepth(double WettedArea, double WettedAngle, dou
 
    if( WettedArea >= 0.0 && WettedArea < pipe_cross_section_){
 
-      TotalDepth = ComputePondedDepth(WettedAngle) + Bathymetry;
+      TotalDepth = ComputeWaterDepth(WettedAngle) + Bathymetry;
 
    }
 
@@ -255,13 +255,13 @@ std::vector<double> PipeFlow_PK::ComputeWettedQuantitiesEdge(int c, int e, doubl
 
 
 //--------------------------------------------------------------------
-// Compute wetted angle given ponded depth
+// Compute wetted angle given water depth
 //--------------------------------------------------------------------
-double PipeFlow_PK::ComputeWettedAngle(double PondedDepth){
+double PipeFlow_PK::ComputeWettedAngle(double WaterDepth){
 
-   if (PondedDepth >= pipe_diameter_) return TwoPi; //if pipe is filled wetted angle is TwoPi
+   if (WaterDepth >= pipe_diameter_) return TwoPi; //if pipe is filled wetted angle is TwoPi
 
-   else return 2.0 * acos(1.0 - 2.0 * PondedDepth / pipe_diameter_);
+   else return 2.0 * acos(1.0 - 2.0 * WaterDepth / pipe_diameter_);
 
 }
 
@@ -277,9 +277,9 @@ double PipeFlow_PK::ComputeWettedArea(double WettedAngle){
 }
 
 //--------------------------------------------------------------------
-// Compute ponded depth given wetted angle
+// Compute water depth given wetted angle
 //--------------------------------------------------------------------
-double PipeFlow_PK::ComputePondedDepth(double WettedAngle){
+double PipeFlow_PK::ComputeWaterDepth(double WettedAngle){
 
    if(WettedAngle >= TwoPi) return pipe_diameter_;
    

@@ -34,8 +34,11 @@ class HydrostaticPressureEvaluator : public EvaluatorSecondaryMonotype<Composite
   virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
+ protected:
+  int hydrostatic_pressure_force_type_;
+
  private:
-  std::string ponded_depth_key_;
+  std::string primary_variable_key_;
 };
 
 }  // namespace ShallowWater

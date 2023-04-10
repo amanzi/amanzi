@@ -1,16 +1,16 @@
 /*
-  Shallow Water PK
+  Pipe Flow PK
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Giacomo Capodaglio (gcapodaglio@lanl.gov)
 */
 
-#ifndef AMANZI_DISCHARGE_EVALUATOR_HH_
-#define AMANZI_DISCHARGE_EVALUATOR_HH_
+#ifndef AMANZI_WATER_DEPTH_EVALUATOR_HH_
+#define AMANZI_WATER_DEPTH_EVALUATOR_HH_
 
 #include <string>
 #include <vector>
@@ -24,9 +24,9 @@
 namespace Amanzi {
 namespace ShallowWater {
 
-class DischargeEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class WaterDepthEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  DischargeEvaluator(Teuchos::ParameterList& plist);
+  WaterDepthEvaluator(Teuchos::ParameterList& plist);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -36,15 +36,17 @@ class DischargeEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Co
   virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
- protected:
-  int hydrostatic_pressure_force_type_;
+protected: 
+  double pipe_diameter_; 
+  double TwoPi = 6.28318530718;
 
  private:
-  std::string velocity_key_, primary_variable_key_;
+  std::string wetted_angle_key_;
+
+
 };
 
 }  // namespace ShallowWater
 }  // namespace Amanzi
 
 #endif
-

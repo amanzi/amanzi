@@ -79,7 +79,13 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   // extract velocity and compute qx, qy, h BC at faces
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->get_bc_name() == "ponded depth") {
+    if (bcs_[i]->get_bc_name() == "ponded depth" && hydrostatic_pressure_force_type_ == 0) { // shallow water
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int n = it->first;
+        bc_value_hn[n] = it->second[0];
+      }
+    }
+    if (bcs_[i]->get_bc_name() == "wetted area" && hydrostatic_pressure_force_type_ == 1) { // pipe flow
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
         bc_value_hn[n] = it->second[0];
@@ -88,7 +94,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   }
 
   AmanziMesh::Entity_ID_List nodes;
-  // extract ponded depth BC at nodes to ensure well-balancedness
+  // extract primary variable BC at nodes to ensure well-balancedness
   for (int i = 0; i < bcs_.size(); ++i) {
     if (bcs_[i]->get_bc_name() == "velocity") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
@@ -337,7 +343,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   mesh_->get_comm()->MinAll(&ierr_tmp, &ierr, 1);
   if (ierr < 0) {
     Errors::Message msg;
-    msg << "Negative ponded depth.\n";
+    msg << "Negative primary variable.\n";
     Exceptions::amanzi_throw(msg);
   }
 

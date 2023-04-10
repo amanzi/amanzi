@@ -111,9 +111,9 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual double NumericalSourceFriction(double h, double qx, double WettedAngle){return 0.0;};
 
-  virtual double ComputePondedDepth(double WettedAngle){return 0.0;};
+  virtual double ComputeWaterDepth(double WettedAngle){return 0.0;};
 
-  virtual double ComputeWettedAngle(double PondedDepth){return 0.0;};
+  virtual double ComputeWettedAngle(double WaterDepth){return 0.0;};
 
   virtual double ComputeWettedAngleNewton(double WettedArea){return 0.0;};
 
@@ -147,7 +147,10 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   // names of state fields
   Key velocity_key_, discharge_key_;
-  Key ponded_depth_key_, prev_ponded_depth_key_;
+  // the primary variable is:
+  // ponded depth for shallow water
+  // wetted area for pipe flow
+  Key primary_variable_key_, prev_primary_variable_key_; 
   Key total_depth_key_, bathymetry_key_;
   Key hydrostatic_pressure_key_;
   Key riemann_flux_key_;

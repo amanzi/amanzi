@@ -39,9 +39,9 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual double ComputeTotalDepth(double WettedArea, double WettedAngle, double Bathymetry) override;
 
-  virtual double ComputePondedDepth(double WettedAngle) override;
+  virtual double ComputeWaterDepth(double WettedAngle) override;
 
-  virtual double ComputeWettedAngle(double PondedDepth) override;
+  virtual double ComputeWettedAngle(double WaterDepth) override;
 
   virtual double ComputeWettedArea(double WettedAngle) override;
 
