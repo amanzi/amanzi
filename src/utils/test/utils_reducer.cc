@@ -9,7 +9,10 @@
 
 #include "UnitTest++.h"
 #include "StringReducer.hh"
+#include "Reductions.hh"
 #include "AmanziComm.hh"
+#include "AmanziMap.hh"
+#include "AmanziVector.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::Utils;
@@ -32,8 +35,8 @@ SUITE(STRING_REDUCER)
     auto comm = getDefaultComm();
     StringReducer<20> red(comm);
 
-    int size = comm->NumProc();
-    int rank = comm->MyPID();
+    int size = comm->getSize();
+    int rank = comm->getRank();
 
     if (size > 1 && size < 7) {
       std::vector<std::string> all{ "apples", "bananas",      "canteloupes",
@@ -49,8 +52,8 @@ SUITE(STRING_REDUCER)
     auto comm = getDefaultComm();
     StringReducer<20> red(comm);
 
-    int size = comm->NumProc();
-    int rank = comm->MyPID();
+    int size = comm->getSize();
+    int rank = comm->getRank();
 
     if (size > 1) {
       // first and last are diff
@@ -72,8 +75,8 @@ SUITE(STRING_REDUCER)
     auto comm = getDefaultComm();
     StringReducer<20> red(comm);
 
-    int size = comm->NumProc();
-    int rank = comm->MyPID();
+    int size = comm->getSize();
+    int rank = comm->getRank();
 
     if (size > 1) {
       // first and last are diff
@@ -96,8 +99,8 @@ SUITE(STRING_REDUCER)
     auto comm = getDefaultComm();
     StringReducer<20> red(comm);
 
-    // int size = comm->NumProc();
-    int rank = comm->MyPID();
+    // int size = comm->getSize();
+    int rank = comm->getRank();
 
     // first and last are diff
     std::vector<std::string> in;
@@ -108,3 +111,41 @@ SUITE(STRING_REDUCER)
   }
 
 } // SUITE
+
+
+TEST(VECTOR_REDUCTIONS) {
+  auto comm = getDefaultComm();
+  auto map = Teuchos::rcp(new Map_type(3*comm->getSize(), 3, 0, comm));
+  Vector_type vec(map);
+
+  int my_rank = comm->getRank();
+  {
+    auto vv = vec.getLocalViewHost(Tpetra::Access::ReadWrite);
+    vv(0,0) = my_rank + 1;
+    vv(1,0) = my_rank + 2;
+    vv(2,0) = my_rank;
+  }
+
+  auto min_loc = Amanzi::Reductions::reduceAllMinLoc(vec);
+  auto max_loc = Amanzi::Reductions::reduceAllMaxLoc(vec);
+  CHECK_EQUAL(0.0, min_loc.val);
+  CHECK_EQUAL(comm->getSize()-1+2, max_loc.val);
+  if (comm->getSize() == 1) {
+    // rank 0, lid 2
+    CHECK_EQUAL(2, min_loc.loc);
+    // rank 0, lid 1
+    CHECK_EQUAL(1, max_loc.loc);
+  } else if (comm->getSize() == 2) {
+    // rank 0, lid 2
+    CHECK_EQUAL(2, min_loc.loc);
+    // rank 1, lid 1
+    CHECK_EQUAL(4, max_loc.loc);
+  } else if (comm->getSize() == 5) {
+    // rank 0, lid 2
+    CHECK_EQUAL(2, min_loc.loc);
+    // rank 4, lid 1
+    CHECK_EQUAL(13, max_loc.loc);
+  } else {
+    AMANZI_ASSERT(false);
+  }
+}

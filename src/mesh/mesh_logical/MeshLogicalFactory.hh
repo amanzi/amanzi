@@ -197,15 +197,10 @@ modeled by three segments:
 #define AMANZI_LOGICAL_MESH_FACTORY2_HH_
 
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Map.h"
 #include "AmanziComm.hh"
 
-#include "MeshLogical.hh"
 #include "GeometricModel.hh"
-
-#include "VerboseObject.hh"
-#include "dbc.hh"
-#include "errors.hh"
+#include "MeshLogical.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {

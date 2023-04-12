@@ -146,8 +146,8 @@ class MeshEmbeddedLogical : public MeshFramework {
   Teuchos::RCP<Mesh> bg_mesh_;  // background mesh, typically a Mesh_MSTK
   Teuchos::RCP<Mesh> log_mesh_; // embedded mesh, typically a MeshLogical
 
-  Teuchos::RCP<Epetra_Map> cell_map_;
-  Teuchos::RCP<Epetra_Map> face_map_;
+  Teuchos::RCP<Map_type> cell_map_;
+  Teuchos::RCP<Map_type> face_map_;
 };
 
 } // namespace AmanziMesh

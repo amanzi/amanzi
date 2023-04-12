@@ -52,14 +52,14 @@ MFD3D_CrouzeixRaviart::MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
 int
-MFD3D_CrouzeixRaviart::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+MFD3D_CrouzeixRaviart::H1consistency(int c, const Tensor<>& K, DenseMatrix<>& N, DenseMatrix<>& Ac)
 {
-  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
+  const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
-  N.Reshape(nfaces, d_ + 1);
-  R_.Reshape(nfaces, d_ + 1);
-  Ac.Reshape(nfaces, nfaces);
+  N.reshape(nfaces, d_ + 1);
+  R_.reshape(nfaces, d_ + 1);
+  Ac.reshape(nfaces, nfaces);
 
   // calculate matrix R
   for (int n = 0; n < nfaces; ++n) {
@@ -100,14 +100,14 @@ MFD3D_CrouzeixRaviart::H1consistency(int c, const Tensor& K, DenseMatrix& N, Den
 * Stiffness matrix: the standard algorithm.
 ****************************************************************** */
 int
-MFD3D_CrouzeixRaviart::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
+MFD3D_CrouzeixRaviart::StiffnessMatrix(int c, const Tensor<>& K, DenseMatrix<>& A)
 {
-  DenseMatrix N;
+  DenseMatrix<> N;
 
   int ok = H1consistency(c, K, N, A);
   if (ok) return ok;
 
-  StabilityScalar_(N, A);
+  MFD3D::StabilityScalar_(N, A);
   return 0;
 }
 
@@ -117,9 +117,9 @@ MFD3D_CrouzeixRaviart::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 ****************************************************************** */
 void
 MFD3D_CrouzeixRaviart::H1Face(int f,
-                              const std::vector<Polynomial>& ve,
-                              const Polynomial* moments,
-                              Polynomial& vf)
+        const std::vector<Polynomial<>>& ve,
+        const Polynomial<>* moments,
+        Polynomial<>& vf)
 {
   const auto& origin = mesh_->getFaceCentroid(f);
   const auto& normal = mesh_->getFaceNormal(f);
@@ -136,19 +136,19 @@ MFD3D_CrouzeixRaviart::H1Face(int f,
 ****************************************************************** */
 void
 MFD3D_CrouzeixRaviart::ProjectorCell_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
-                                      int c,
-                                      const std::vector<Polynomial>& ve,
-                                      const std::vector<Polynomial>& vf,
-                                      Polynomial& uc)
+        int c,
+        const std::vector<Polynomial<>>& ve,
+        const std::vector<Polynomial<>>& vf,
+        Polynomial<>& uc)
 {
-  const auto& [faces, dirs] = mymesh->getCellFacesAndDirections(c);
+  const auto& [faces,dirs] = mymesh->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mymesh->getCellCentroid(c);
   double vol = mymesh->getCellVolume(c);
 
   // create zero vector polynomial
-  uc.Reshape(d_, 1, true);
+  uc.reshape(d_, 1, true);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];

@@ -23,11 +23,8 @@
 #include "errors.hh"
 #include "exceptions.hh"
 
-#include "OutputXDMF.hh"
-#if ENABLE_Silo
-#  include "OutputSilo.hh"
-#endif
-
+#include "OutputFactory.hh"
+#include "State.hh"
 #include "Visualization.hh"
 
 namespace Amanzi {
@@ -35,10 +32,15 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Constructor
 // -----------------------------------------------------------------------------
-Visualization::Visualization(Teuchos::ParameterList& plist)
-  : IOEvent(plist), time_unit_written_(false)
+Visualization::Visualization(Teuchos::ParameterList& plist,
+                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                             bool include_io_set)
+  : IOEvent(plist),
+    time_unit_written_(false),
+    count_(0),
+    mesh_(mesh)
 {
-  ReadParameters_();
+  readParameters_();
 
   // set the line prefix for output
   this->setLinePrefix("Amanzi::Visualization  ");
@@ -50,32 +52,33 @@ Visualization::Visualization(Teuchos::ParameterList& plist)
 
   my_units_ = plist_.get<std::string>("time units", "y");
   ValidUnitOrThrow_(my_units_);
+
+  // if we are not including io set, there is only one set of files -- create
+  // them now and this is RAII
+  if (!include_io_set && mesh_ != Teuchos::null) createFiles(include_io_set);
 }
 
 
 // -----------------------------------------------------------------------------
 // Constructor for a disabled Vis.
 // -----------------------------------------------------------------------------
-Visualization::Visualization() : IOEvent(), my_units_("y"), time_unit_written_(false) {}
+Visualization::Visualization()
+  : IOEvent(),
+    my_units_("y"),
+    time_unit_written_(false),
+    count_(0) {}
 
-
-void
-Visualization::set_name(const std::string& name)
-{
-  name_ = name;
-  domains_.push_back(name);
-}
 
 bool
-Visualization::WritesDomain(const std::string& name) const
+Visualization::writesDomain(const std::string& name) const
 {
   if (std::find(domains_.begin(), domains_.end(), name) != domains_.end()) return true;
-  if (Keys::isDomainSet(name) && WritesDomain(Keys::getDomainSetName(name))) return true;
+  if (Keys::isDomainSet(name) && writesDomain(Keys::getDomainSetName(name))) return true;
   return false;
 }
 
 void
-Visualization::AddDomain(const std::string& name)
+Visualization::addDomain(const std::string& name)
 {
   domains_.push_back(name);
 }
@@ -85,8 +88,10 @@ Visualization::AddDomain(const std::string& name)
 // Set up control from parameter list.
 // -----------------------------------------------------------------------------
 void
-Visualization::ReadParameters_()
+Visualization::readParameters_()
 {
+  addDomain(Keys::cleanPListName(plist_));
+
   Teuchos::Array<std::string> no_regions(0);
   Teuchos::ParameterList& tmp = plist_.sublist("write regions");
 
@@ -114,59 +119,39 @@ Visualization::ReadParameters_()
 
 
 // -----------------------------------------------------------------------------
-// Write a multivector
-// -----------------------------------------------------------------------------
-void
-Visualization::WriteVector(const Epetra_MultiVector& vec,
-                           const std::vector<std::string>& names,
-                           AmanziMesh::Entity_kind kind) const
-{
-  visualization_output_->WriteMultiVector(vec, names, kind);
-}
-
-
-// -----------------------------------------------------------------------------
-// Write a vector
-// -----------------------------------------------------------------------------
-void
-Visualization::WriteVector(const Epetra_Vector& vec,
-                           const std::string& name,
-                           AmanziMesh::Entity_kind kind) const
-{
-  visualization_output_->WriteVector(vec, name, kind);
-}
-
-
-// -----------------------------------------------------------------------------
 // Write a field with region information
 // -----------------------------------------------------------------------------
 void
-Visualization::WriteRegions()
+Visualization::writeRegions() const
 {
   if (regions_.size() > 0) {
     for (std::map<std::string, Teuchos::Array<std::string>>::const_iterator it = regions_.begin();
          it != regions_.end();
          ++it) {
       // first make an Epetra_Vector to hold the region information
-      Epetra_MultiVector reg(mesh_->getMap(AmanziMesh::Entity_kind::CELL, false), 1, true);
+      IntVector_type reg(mesh_->getMap(AmanziMesh::Entity_kind::CELL,false), 1);
 
       // loop over the regions and initialize the reg array
-      double reg_index = 1.0;
-      for (Teuchos::Array<std::string>::const_iterator reg_it = (it->second).begin();
-           reg_it != (it->second).end();
-           ++reg_it, reg_index += 1.0) {
-        // only do something if the user provided a valid region name
-        // for a region that consists of cells
-        if (mesh_->isValidSetName(*reg_it, AmanziMesh::Entity_kind::CELL)) {
-          auto ids = mesh_->getSetEntities(
-            *reg_it, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+      {
+        auto reg_v = reg.getLocalViewHost(Tpetra::Access::ReadWrite);
+        double reg_index = 1.0;
+        for (Teuchos::Array<std::string>::const_iterator reg_it = (it->second).begin();
+             reg_it != (it->second).end();
+             ++reg_it, reg_index += 1.0) {
+          // only do something if the user provided a valid region name
+          // for a region that consists of cells
+          if (mesh_->isValidSetName(*reg_it, AmanziMesh::Entity_kind::CELL)) {
+            auto ids = mesh_->getSetEntities(
+              *reg_it, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-          for (auto jt = ids.begin(); jt != ids.end(); ++jt) { reg[0][*jt] = reg_index; }
+            for (auto jt : ids) reg_v(jt, 0) = reg_index;
+          }
         }
       }
-      std::vector<std::string> name;
-      name.push_back(it->first);
-      WriteVector(reg, name, AmanziMesh::Entity_kind::CELL);
+
+      Teuchos::ParameterList attrs(it->first);
+      attrs.set<AmanziMesh::Entity_kind>("location", AmanziMesh::Entity_kind::CELL);
+      write(attrs, reg);
     }
   }
 }
@@ -176,18 +161,18 @@ Visualization::WriteRegions()
 // Write a field with region information
 // -----------------------------------------------------------------------------
 void
-Visualization::WritePartition()
+Visualization::writePartition() const
 {
   if (write_partition_) {
     // first make an Epetra_Vector to hold the partitions information
-    Epetra_MultiVector reg(mesh_->getMap(AmanziMesh::Entity_kind::CELL, false), 1, false);
+    IntVector_type reg(mesh_->getMap(AmanziMesh::Entity_kind::CELL,false), 1);
     // loop over the regions and initialize the reg array
-    double part_index = static_cast<double>(mesh_->getComm()->MyPID());
-    reg.PutScalar(part_index);
+    int part_index = mesh_->getComm()->getRank();
+    reg.putScalar(part_index);
 
-    std::vector<std::string> name;
-    name.push_back("partition");
-    WriteVector(reg, name, AmanziMesh::Entity_kind::CELL);
+    Teuchos::ParameterList attrs("partition");
+    attrs.set<AmanziMesh::Entity_kind>("location", AmanziMesh::Entity_kind::CELL);
+    write(attrs, reg);
   }
 }
 
@@ -196,42 +181,32 @@ Visualization::WritePartition()
 // Writing to files
 // -----------------------------------------------------------------------------
 void
-Visualization::CreateFiles(bool include_io_set)
+Visualization::createFiles(bool include_io_set)
 {
   AMANZI_ASSERT(mesh_ != Teuchos::null);
 
-  std::string file_format = plist_.get<std::string>("file format", "XDMF");
+  Teuchos::ParameterList output_plist(plist_);
+  if (include_io_set)
+    output_plist.set("file name base", Keys::cleanPListName(plist_) + "-io-counter" + std::to_string(count_++));
+  output_ = OutputFactory::createForVis(output_plist, AmanziMesh::onMemSpace<MemSpace_kind::HOST>(mesh_));
 
-  if (file_format == "XDMF" || file_format == "xdmf") {
-    visualization_output_ =
-      Teuchos::rcp(new OutputXDMF(plist_, mesh_, true, dynamic_mesh_, include_io_set));
-#if ENABLE_Silo
-  } else if (file_format == "Silo" || file_format == "SILO" || file_format == "silo") {
-    visualization_output_ = Teuchos::rcp(new OutputSilo(plist_, mesh_, true, dynamic_mesh_));
-#endif
-  } else {
-    Errors::Message msg("Visualization: Unknown file format: \"" + file_format + "\"");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (write_mesh_exo_ && !dynamic_mesh_) {
-    std::stringstream mesh_fname;
-    mesh_fname << plist_.get<std::string>("file name base") << "_mesh.exo";
-    mesh_->getMeshFramework()->writeToExodusFile(mesh_fname.str());
+  if (write_mesh_exo_ && !dynamic_mesh_ && mesh_->getMeshFramework()) {
+    std::string mesh_fname = output_plist.get<std::string>("file name base") + "_mesh.exo";
+    mesh_->getMeshFramework()->writeToExodusFile(mesh_fname);
   }
 }
 
 
 void
-Visualization::CreateTimestep(double time, int cycle, const std::string& tag)
+Visualization::createTimestep(double time, int cycle)
 {
   bool success = false;
   time = units_.ConvertTime(time, "s", my_units_, success);
   AMANZI_ASSERT(success);
 
-  visualization_output_->InitializeCycle(time, cycle, tag);
+  output_->createTimestep(time, cycle);
   if (!time_unit_written_) {
-    visualization_output_->WriteAttribute(my_units_, "time unit");
+    output_->write(Teuchos::ParameterList("time unit"), my_units_);
     time_unit_written_ = true;
   }
 
@@ -244,9 +219,53 @@ Visualization::CreateTimestep(double time, int cycle, const std::string& tag)
 
 
 void
-Visualization::FinalizeTimestep() const
+Visualization::finalizeTimestep()
 {
-  visualization_output_->FinalizeCycle();
+  output_->finalizeTimestep();
+}
+
+
+void
+Visualization::write(const State& S)
+{
+  if (!is_disabled()) {
+    // Create the new time step
+    createTimestep(S.get_time(), S.get_cycle());
+
+    for (auto r = S.data_begin(); r != S.data_end(); ++r) {
+      if (writesDomain(Keys::getDomain(r->first)) ||
+          r->first == "time" ||
+          r->first == "cycle") {
+        // Should we vis all tags or just the default tag?
+        // -- write all tags
+        // r->WriteVis(vis, nullptr);
+
+        // -- write default tag
+        // Tag tag;
+        // r->second->WriteVis(vis, &tag);
+
+        // -- write default tag if it exists, else write another tag with the
+        // -- same time
+        Tag tag;
+        if (r->second->HasRecord(tag)) {
+          r->second->WriteVis(*this, &tag);
+        } else {
+          // try to find a record at the same time
+          double time = S.get_time();
+          for (const auto& time_record : S.GetRecordSet("time")) {
+            if (r->second->HasRecord(time_record.first) &&
+                S.get_time(time_record.first) == time) {
+              r->second->WriteVis(*this, &time_record.first);
+              break;
+            }
+          }
+        }
+      }
+    }
+    writeRegions();
+    writePartition();
+    finalizeTimestep();
+  }
 }
 
 } // namespace Amanzi

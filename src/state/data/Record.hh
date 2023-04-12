@@ -55,18 +55,10 @@ class Record {
   void set_io_vis(bool io_vis = true) { io_vis_ = io_vis; }
 
   // pass-throughs for other functionality
-  void
-  WriteVis(const Visualization& vis, const std::vector<std::string>* subfieldnames = nullptr) const;
-  void WriteCheckpoint(const Checkpoint& chkp,
-                       const Tag& tag,
-                       bool post_mortem = false,
-                       const std::vector<std::string>* subfieldnames = nullptr) const;
-  bool ReadCheckpoint(const Checkpoint& chkp,
-                      const Tag& tag,
-                      const std::vector<std::string>* subfieldnames = nullptr);
-  bool Initialize(Teuchos::ParameterList& plist,
-                  const std::vector<std::string>* subfieldnames = nullptr,
-                  bool force = false);
+  void WriteVis(const Visualization& vis, Teuchos::ParameterList& attrs) const;
+  void WriteCheckpoint(const Checkpoint& chkp, Teuchos::ParameterList& attrs, bool post_mortem = false) const;
+  void ReadCheckpoint(const Checkpoint& chkp, Teuchos::ParameterList& attrs);
+  bool Initialize(Teuchos::ParameterList& plist, bool force = false);
 
   // Data setters/getters
   template <typename T>

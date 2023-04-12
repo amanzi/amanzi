@@ -36,9 +36,9 @@ namespace WhetStone {
 ****************************************************************** */
 inline void
 PolygonCentroidWeights(const AmanziMesh::Mesh& mesh,
-                       const AmanziMesh::cEntity_ID_View& nodes,
+                       const typename AmanziMesh::Mesh::cEntity_ID_View& nodes,
                        double area,
-                       std::vector<double>& weights)
+                       AmanziMesh::Double_List& weights)
 {
   int d = mesh.getSpaceDimension();
   int nnodes = nodes.size();
@@ -76,11 +76,10 @@ node_get_cell_faces(const AmanziMesh::Mesh& mesh,
                     const AmanziMesh::Entity_ID v,
                     const AmanziMesh::Entity_ID c,
                     const AmanziMesh::Parallel_kind ptype,
-                    AmanziMesh::Entity_ID_View* faces)
+                    typename AmanziMesh::Mesh::Entity_ID_View* faces)
 {
-  AmanziMesh::Entity_ID_List vfaces;
-  int nfaces_owned =
-    mesh.getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  AmanziMesh::Entity_ID_List vfaces; 
+  int nfaces_owned = mesh.getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   const auto& faces_tmp = mesh.getCellFaces(c);
   int nfaces = faces_tmp.size();
@@ -98,7 +97,7 @@ node_get_cell_faces(const AmanziMesh::Mesh& mesh,
       }
     }
   }
-  vectorToView(*faces, vfaces);
+  vectorToView(*faces,vfaces); 
 }
 
 
@@ -109,7 +108,7 @@ inline void
 cell_get_entities(const AmanziMesh::Mesh& mesh,
                   int c,
                   const AmanziMesh::Entity_kind kind,
-                  AmanziMesh::cEntity_ID_View* entities)
+                  typename AmanziMesh::Mesh::cEntity_ID_View* entities)
 {
   if (kind == AmanziMesh::Entity_kind::FACE) {
     *entities = mesh.getCellFaces(c);
@@ -118,13 +117,13 @@ cell_get_entities(const AmanziMesh::Mesh& mesh,
   } else if (kind == AmanziMesh::Entity_kind::NODE) {
     *entities = mesh.getCellNodes(c);
   } else if (kind == AmanziMesh::Entity_kind::CELL) {
-    AmanziMesh::Entity_ID_View lentities;
-    Kokkos::resize(lentities, 1);
+    AmanziMesh::Mesh::Entity_ID_View lentities; 
+    Kokkos::resize(lentities, 1); 
     lentities[0] = c;
-    *entities = lentities;
+    *entities = lentities;  
   } else {
-    AmanziMesh::Entity_ID_View lentities;
-    *entities = lentities;
+    typename AmanziMesh::Mesh::Entity_ID_View lentities;
+    *entities = lentities;  
   }
 }
 

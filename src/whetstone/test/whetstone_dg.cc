@@ -48,8 +48,8 @@ TEST(DG2D_MASS_MATRIX)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 0.5, 1, 1);
 
-  DenseMatrix M;
-  Tensor T(2, 1);
+  DenseMatrix<> M;
+ Tensor<> T(2, 1);
   T(0, 0) = 1.0;
 
   for (int k = 0; k < 3; k++) {
@@ -86,15 +86,15 @@ TEST(DG3D_MASS_MATRIX)
   std::cout << "\nTest: DG3D mass matrices (tensors and polynomials)" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
-  factory_plist->set<bool>("request edges", true);
-  factory_plist->set<bool>("request faces", true);
-  MeshFactory meshfactory(comm, Teuchos::null, factory_plist);
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList()); 
+  factory_plist->set<bool>("request edges", true); 
+  factory_plist->set<bool>("request faces", true); 
+  MeshFactory meshfactory(comm,Teuchos::null,factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
 
-  DenseMatrix M0, M1;
-  Tensor T(3, 1);
+  DenseMatrix<> M0, M1;
+ Tensor<> T(3, 1);
   T(0, 0) = 2.0;
 
   for (int k = 0; k < 3; k++) {
@@ -117,23 +117,23 @@ TEST(DG3D_MASS_MATRIX)
     }
 
     // polynomial, constant velocity u=2
-    Polynomial u(3, 0);
+    Polynomial<> u(3, 0);
     u(0, 0) = 2.0;
 
     dg1.MassMatrix(0, u, M1);
     M1 -= M0;
-    CHECK_CLOSE(M1.NormInf(), 0.0, 1e-12);
+    CHECK_CLOSE(M1.normInf(), 0.0, 1e-12);
 
     // accuracy test
     if (k > 0) {
-      DenseVector v1(nk), v2(nk), v3(nk);
+      DenseVector<> v1(nk), v2(nk), v3(nk);
       const AmanziGeometry::Point& xc = mesh->getCellCentroid(0);
-      v1.PutScalar(0.0);
+      v1.putScalar(0.0);
       v1(0) = xc[0] + 2 * xc[1] + 3 * xc[2];
       v1(1) = 0.5;
       v1(2) = 1.0;
       v1(3) = 1.5;
-      v2 = v1;
+      v2.assign(v1);
 
       M0.Multiply(v1, v3, false);
       double integral(v2 * v3);
@@ -175,7 +175,7 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL)
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
   double tmp, integral[3];
-  DenseMatrix M1, M2;
+  DenseMatrix<> M1, M2;
 
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
@@ -184,7 +184,7 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL)
       .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
-    Polynomial u(2, k);
+    Polynomial<> u(2, k);
     u(0, 0) = 1.0;
     u(k, 0) = 1.0;
 
@@ -198,16 +198,16 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL)
     }
 
     // TEST1: accuracy (gradient should be rescaled)
-    DenseVector v(nk), av(nk);
+    DenseVector<> v(nk), av(nk);
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(0);
 
-    v.PutScalar(0.0);
+    v.putScalar(0.0);
     v(0) = xc[0] + 2 * xc[1];
     v(1) = 1.0 / 1.6501110800;
     v(2) = 2.0 / 2.6871118178;
 
     M1.Multiply(v, av, false);
-    v.Dot(av, &tmp);
+    v.dot(av, &tmp);
     integral[k] = tmp;
   }
 
@@ -236,8 +236,8 @@ TEST(DG2D_STIFFNESS_MATRIX)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 0.5, 1, 1);
 
-  DenseMatrix M1, M2;
-  Tensor T(2, 1);
+  DenseMatrix<> M1, M2;
+ Tensor<> T(2, 1);
   T(0, 0) = 1.0;
 
   MyFunction func;
@@ -265,7 +265,7 @@ TEST(DG2D_STIFFNESS_MATRIX)
     }
 
     M1 -= M2;
-    CHECK_CLOSE(0.0, M1.NormInf(), 1e-12);
+    CHECK_CLOSE(0.0, M1.normInf(), 1e-12);
   }
 }
 
@@ -294,12 +294,12 @@ Run2DFluxMatrix(bool upwind, bool jump_on_test)
       .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
-    Polynomial un(2, 0);
+    Polynomial<> un(2, 0);
     un(0) = 1.0;
 
     // TEST1: constant u
     double flux;
-    DenseMatrix A0, A1;
+    DenseMatrix<> A0, A1;
     dg.FluxMatrix(1, un, A0, upwind, jump_on_test, &flux);
 
     printf("Flux matrix (face-based) for order=%d u.n=1, flux=%8.2f\n", k, flux);
@@ -310,11 +310,11 @@ Run2DFluxMatrix(bool upwind, bool jump_on_test)
     }
 
     // TEST2: add zero gradient to velocity un
-    un.Reshape(2, 1);
+    un.reshape(2, 1);
     dg.FluxMatrix(1, un, A1, upwind, jump_on_test, &flux);
 
     A1 -= A0;
-    CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
+    CHECK_CLOSE(0.0, A1.normInf(), 1e-12);
 
     // TEST3: nonzero linear component of velocity un
     un(1) = 1.0;
@@ -330,7 +330,7 @@ Run2DFluxMatrix(bool upwind, bool jump_on_test)
     // TEST4: compare with the algorihtm based on Gauss points
     dg.FluxMatrixGaussPoints(1, un, A0, upwind, jump_on_test);
     A0 -= A1;
-    CHECK_CLOSE(0.0, A0.NormInf(), 1e-12);
+    CHECK_CLOSE(0.0, A0.normInf(), 1e-12);
   }
 }
 
@@ -364,15 +364,17 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION)
       .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
-    Polynomial un(2, 1);
+    Polynomial<> un(2, 1);
     un(0) = 1.0;
     un(1) = 1.0;
     un(2) = -6.0;
 
     double flux;
-    DenseMatrix A0, A1;
+    DenseMatrix<> A0, A1;
     dg.FluxMatrix(1, un, A0, true, true, &flux);
     dg.FluxMatrixGaussPoints(1, un, A1, true, true);
+    PrintMatrix(A0);
+    PrintMatrix(A1);
 
     printf("Flux matrix (face-based) for order=%d u.n=1+x\n", k);
     int nk = A1.NumRows();
@@ -382,8 +384,8 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION)
     }
 
     // check conservation law
-    DenseVector one(nk), b(nk);
-    one.PutScalar(1.0);
+    DenseVector<> one(nk), b(nk);
+    one.putScalar(1.0);
 
     A0.Multiply(one, b, false);
     CHECK_CLOSE(0.0, b(0) + b(nk / 2), 1e-12);
@@ -406,10 +408,10 @@ TEST(DG3D_FLUX_MATRIX)
   std::cout << "\nTest: DG3D flux matrices" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
-  factory_plist->set<bool>("request edges", true);
-  factory_plist->set<bool>("request faces", true);
-  MeshFactory meshfactory(comm, Teuchos::null, factory_plist);
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList()); 
+  factory_plist->set<bool>("request edges", true); 
+  factory_plist->set<bool>("request faces", true); 
+  MeshFactory meshfactory(comm,Teuchos::null,factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
 
@@ -421,12 +423,12 @@ TEST(DG3D_FLUX_MATRIX)
     DG_Modal dg(plist, mesh);
 
     int d(3), f(4);
-    Polynomial un(d, 0);
+    Polynomial<> un(d, 0);
     un(0, 0) = 1.0;
 
     // TEST1: constant u
     double flux;
-    DenseMatrix A0, A1;
+    DenseMatrix<> A0, A1;
     dg.FluxMatrix(f, un, A0, true, false, &flux);
 
     printf("Advection matrix (face-based) for order=%d  u.n=1\n", k);
@@ -437,11 +439,11 @@ TEST(DG3D_FLUX_MATRIX)
     }
 
     // TEST2: add zero gradient to polynomial un
-    un.Reshape(d, 1);
+    un.reshape(d, 1);
     dg.FluxMatrix(f, un, A1, true, false, &flux);
 
     A1 -= A0;
-    CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
+    CHECK_CLOSE(0.0, A1.normInf(), 1e-12);
 
     // TEST3: nonzero linear component polynomial un
     un(1, 0) = 1.0;
@@ -457,7 +459,7 @@ TEST(DG3D_FLUX_MATRIX)
     // TEST4: compare with the algorihtm based on Gauss points
     dg.FluxMatrixGaussPoints(f, un, A0, true, false);
     A0 -= A1;
-    CHECK_CLOSE(0.0, A0.NormInf(), 1e-12);
+    CHECK_CLOSE(0.0, A0.normInf(), 1e-12);
   }
 }
 
@@ -485,9 +487,9 @@ TEST(DG2D_ADVECTION_MATRIX_CELL)
       .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
-    DenseMatrix A0, A1;
+    DenseMatrix<> A0, A1;
     VectorPolynomial u(2, 2);
-    for (int i = 0; i < 2; ++i) u[i].Reshape(2, 2);
+    for (int i = 0; i < 2; ++i) u[i].reshape(2, 2);
 
     // TEST1: constant u, method 1
     u[0](0, 0) = 1.0;
@@ -514,16 +516,16 @@ TEST(DG2D_ADVECTION_MATRIX_CELL)
     }
 
     // accuracy test for functions 1+x and 1+x
-    DenseVector v1(nk), v2(nk), v3(nk);
+    DenseVector<> v1(nk), v2(nk), v3(nk);
     if (k > 0) {
       const AmanziGeometry::Point& xc = mesh->getCellCentroid(0);
       double scale = std::pow(mesh->getCellVolume(0), 0.5);
 
-      v1.PutScalar(0.0);
+      v1.putScalar(0.0);
       v1(0) = 2 + xc[0] + 3 * xc[1];
       v1(1) = 1.0 * scale;
       v1(2) = 3.0 * scale;
-      v2 = v1;
+      v2.assign(v1);
 
       A0.Multiply(v1, v3, false);
       double integral(v2 * v3);
@@ -565,10 +567,10 @@ TEST(DG3D_ADVECTION_MATRIX_CELL)
   std::cout << "\nTest: DG3D advection matrices in cells" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
-  factory_plist->set<bool>("request edges", true);
-  factory_plist->set<bool>("request faces", true);
-  MeshFactory meshfactory(comm, Teuchos::null, factory_plist);
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList()); 
+  factory_plist->set<bool>("request edges", true); 
+  factory_plist->set<bool>("request faces", true); 
+  MeshFactory meshfactory(comm,Teuchos::null,factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
 
@@ -581,9 +583,9 @@ TEST(DG3D_ADVECTION_MATRIX_CELL)
 
     DG_Modal dg(plist, mesh);
 
-    DenseMatrix A0;
+    DenseMatrix<> A0;
     VectorPolynomial u(d, 3);
-    for (int i = 0; i < d; ++i) u[i].Reshape(d, 1, true);
+    for (int i = 0; i < d; ++i) u[i].reshape(d, 1, true);
 
     // TEST1: constant u
     u[0](0, 0) = 1.0;
@@ -612,16 +614,16 @@ TEST(DG3D_ADVECTION_MATRIX_CELL)
     }
 
     // accuracy test for functions 1+x and 1+x
-    DenseVector v1(nk), v2(nk), v3(nk);
+    DenseVector<> v1(nk), v2(nk), v3(nk);
     if (k > 0) {
       const AmanziGeometry::Point& xc = mesh->getCellCentroid(0);
       double scale = std::pow(mesh->getCellVolume(0), 1.0 / 3);
 
-      v1.PutScalar(0.0);
+      v1.putScalar(0.0);
       v1(0) = 2 + xc[0] + 3 * xc[1];
       v1(1) = 1.0 * scale;
       v1(2) = 3.0 * scale;
-      v2 = v1;
+      v2.assign(v1);
 
       A0.Multiply(v1, v3, false);
       double integral(v2 * v3);
@@ -754,7 +756,7 @@ TEST(UPWIND_FUNCTION)
   using namespace Amanzi;
   using namespace Amanzi::WhetStone;
 
-  Polynomial un(2, 1);
+  Polynomial<> un(2, 1);
   un(0) = 0.0;
   un(1) = 1.0;
 

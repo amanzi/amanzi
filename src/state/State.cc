@@ -23,20 +23,17 @@
 #include <regex>
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Epetra_Vector.h"
 
 // Amanzi
 #include "CompositeVector.hh"
 #include "DomainSet.hh"
 #include "errors.hh"
 #include "Mesh.hh"
-#include "MeshPartition.hh"
 #include "StringExt.hh"
 
 // Amanzi::State
-#include "Evaluator_Factory.hh"
-#include "EvaluatorCellVolume.hh"
 #include "EvaluatorPrimary.hh"
+#include "Evaluator_Factory.hh"
 #include "StateDefs.hh"
 #include "State.hh"
 #include "Checkpoint.hh"
@@ -377,11 +374,27 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
     return *evaluator;
   }
 
-  // is it cell volume?
+  // is it a meshed quantity?
+  // recursive calls will result in the above, HasEvaluatorList() branch being taken.
   if (Keys::getVarName(key) == "cell_volume") {
     Teuchos::ParameterList& cv_list = GetEvaluatorList(key);
     cv_list.set("evaluator type", "cell volume");
-    // recursive call will result in the above, HasEvaluatorList() branch being taken.
+    return RequireEvaluator(key, tag);
+  } else if (Keys::getVarName(key) == "face_area") {
+    Teuchos::ParameterList& cv_list = GetEvaluatorList(key);
+    cv_list.set("evaluator type", "face area");
+    return RequireEvaluator(key, tag);
+  } else if (Keys::getVarName(key) == "elevation") {
+    Teuchos::ParameterList& cv_list = GetEvaluatorList(key);
+    cv_list.set("evaluator type", "meshed elevation");
+    return RequireEvaluator(key, tag);
+  } else if (Keys::getVarName(key) == "slope_magnitude") {
+    Teuchos::ParameterList& cv_list = GetEvaluatorList(key);
+    cv_list.set("evaluator type", "meshed slope magnitude");
+    return RequireEvaluator(key, tag);
+  } else if (Keys::getVarName(key) == "mesh") {
+    Teuchos::ParameterList& eval_list = GetEvaluatorList(key);
+    eval_list.set("evaluator type", "static mesh");
     return RequireEvaluator(key, tag);
   }
 
@@ -405,87 +418,69 @@ State::HasEvaluator(const Key& key, const Tag& tag) const
 }
 
 
-Teuchos::RCP<const Functions::MeshPartition>
-State::GetMeshPartition(Key key)
+void
+State::WriteDependencyGraph() const
 {
-  Teuchos::RCP<const Functions::MeshPartition> mp = GetMeshPartition_(key);
-  if (mp == Teuchos::null) {
-    std::stringstream messagestream;
-    messagestream << "Mesh partition " << key << " does not exist in the state.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
-  return mp;
-}
+  // // FIXME -- this is not what it used to be.  This simply writes data
+  // // struture, and is not the dependency graph information at all.  Rename
+  // // this, then recover the old WriteDependencyGraph method, which wrote a list
+  // // of all evaluators and their dependnecies that could be read in networkx
+  // // for plotting the dag. --ETC
 
+  // if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+  //   *vo_->os() << "------------------------------------------" << std::endl
+  //              << "Dependency & Structure list for evaluators" << std::endl
+  //              << "------------------------------------------" << std::endl;
+  //   for (auto& e : evaluators_) {
+  //     for (auto& r : e.second) *vo_->os() << *r.second;
+  //     if (GetRecord(e.first, e.second.begin()->first).ValidType<CompositeVector>()) {
+  //       Teuchos::OSTab tab1 = vo_->getOSTab();
+  //       Teuchos::OSTab tab2 = vo_->getOSTab();
+  //       data_.at(e.first)->GetFactory<CompositeVector, CompositeVectorSpace>().print(*vo_->os());
+  //       *vo_->os() << std::endl;
+  //     }
+  //   }
 
-Teuchos::RCP<const Functions::MeshPartition>
-State::GetMeshPartition_(Key key)
-{
-  MeshPartitionMap::iterator lb = mesh_partitions_.lower_bound(key);
-  if (lb != mesh_partitions_.end() && !(mesh_partitions_.key_comp()(key, lb->first))) {
-    return lb->second;
-  } else {
-    if (state_plist_.isParameter("mesh partitions")) {
-      Teuchos::ParameterList& part_superlist = state_plist_.sublist("mesh partitions");
-      if (part_superlist.isParameter(key)) {
-        Teuchos::ParameterList& part_list = part_superlist.sublist(key);
-        std::string mesh_name = part_list.get<std::string>("mesh name", "domain");
-        Teuchos::Array<std::string> region_list =
-          part_list.get<Teuchos::Array<std::string>>("region list");
-        Teuchos::RCP<Functions::MeshPartition> mp =
-          Teuchos::rcp(new Functions::MeshPartition(AmanziMesh::CELL, region_list.toVector()));
-        mp->Initialize(GetMesh(mesh_name), -1);
-        mp->Verify();
-        mesh_partitions_[key] = mp;
-        return mp;
-      }
-    }
-    return Teuchos::null;
-  }
+  //   *vo_->os() << "------------------------------" << std::endl
+  //              << "Structure list for derivatives" << std::endl
+  //              << "------------------------------" << std::endl;
+  //   for (auto& e : derivs_) {
+  //     *vo_->os() << "D" << e.first << "/D{ ";
+  //     for (const auto& wrt : *e.second) *vo_->os() << wrt.first.get() << " ";
+  //     *vo_->os() << "}" << std::endl;
+  //     auto wrt_tag = e.second->begin();
+  //     if (e.second->GetRecord(wrt_tag->first).ValidType<CompositeVector>()) {
+  //       Teuchos::OSTab tab1 = vo_->getOSTab();
+  //       Teuchos::OSTab tab2 = vo_->getOSTab();
+  //       e.second->GetFactory<CompositeVector, CompositeVectorSpace>().print(*vo_->os());
+  //       *vo_->os() << std::endl;
+  //     }
+  //   }
+  // }
 }
 
 
 void
-State::WriteDependencyGraph() const
+State::WriteStatistics(Teuchos::Ptr<const VerboseObject> vo,
+                       const Teuchos::EVerbosityLevel vl) const
 {
-  // FIXME -- this is not what it used to be.  This simply writes data
-  // struture, and is not the dependency graph information at all.  Rename
-  // this, then recover the old WriteDependencyGraph method, which wrote a list
-  // of all evaluators and their dependnecies that could be read in networkx
-  // for plotting the dag. --ETC
+  if (vo == Teuchos::null) vo = vo_.ptr();
+  Teuchos::OSTab tab = vo->getOSTab();
 
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    *vo_->os() << "------------------------------------------" << std::endl
-               << "Dependency & Structure list for evaluators" << std::endl
-               << "------------------------------------------" << std::endl;
-    for (auto& e : evaluators_) {
-      for (auto& r : e.second) *vo_->os() << *r.second;
-      if (GetRecord(e.first, e.second.begin()->first).ValidType<CompositeVector>()) {
-        Teuchos::OSTab tab1 = vo_->getOSTab();
-        Teuchos::OSTab tab2 = vo_->getOSTab();
-        data_.at(e.first)->GetFactory<CompositeVector, CompositeVectorSpace>().Print(*vo_->os());
-        *vo_->os() << std::endl;
-      }
-    }
+  // sort data in alphabetic order
+  std::set<std::string> sorted;
+  for (auto it = data_begin(); it != data_end(); ++it) { sorted.insert(it->first); }
 
-    *vo_->os() << "------------------------------" << std::endl
-               << "Structure list for derivatives" << std::endl
-               << "------------------------------" << std::endl;
-    for (auto& e : derivs_) {
-      *vo_->os() << "D" << e.first << "/D{ ";
-      for (const auto& wrt : *e.second) *vo_->os() << wrt.first.get() << " ";
-      *vo_->os() << "}" << std::endl;
-      auto wrt_tag = e.second->begin();
-      if (e.second->GetRecord(wrt_tag->first).ValidType<CompositeVector>()) {
-        Teuchos::OSTab tab1 = vo_->getOSTab();
-        Teuchos::OSTab tab2 = vo_->getOSTab();
-        e.second->GetFactory<CompositeVector, CompositeVectorSpace>().Print(*vo_->os());
-        *vo_->os() << std::endl;
-      }
+  if (vo->os_OK(vl)) {
+    *vo->os() << std::endl
+              << "Field                                    Min/Max/Avg" << std::endl;
+
+    for (auto name : sorted) {
+      GetRecordSet(name).WriteStatistics(*vo);
     }
   }
 }
+
 
 
 // -----------------------------------------------------------------------------
@@ -533,6 +528,10 @@ State::Setup()
   // Note that the first pass may modify the graph, but since it is a DAG, and
   // this is called recursively, we can just call it on the nodes that appear
   // initially.
+  //
+  // NOTE: Need to add a check for loops as this DAG is created, otherwise the
+  // user can create a loop in the input file that will seg-fault the
+  // code. --ETC
   { // scope for copy
     EvaluatorMap evaluators_copy(evaluators_);
     for (auto& e : evaluators_copy) {
@@ -578,7 +577,7 @@ State::Setup()
       if (r.second->ValidType<CompositeVector, CompositeVectorSpace>()) {
         const auto& cvs = r.second->GetFactory<CompositeVector, CompositeVectorSpace>();
         *vo_->os() << "comps: ";
-        for (const auto& comp : cvs) *vo_->os() << comp << " ";
+        for (const auto& comp : *cvs) *vo_->os() << comp << " ";
       } else {
         *vo_->os() << "not CV";
       }
@@ -633,7 +632,7 @@ State::Initialize(const State& other)
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab1 = vo_->getOSTab();
-    *vo_->os() << "copying fields to new state..." << std::endl;
+    *vo_->os() << "copying fields to new state.." << std::endl;
   }
 
   for (auto& e : data_) {
@@ -722,9 +721,9 @@ State::InitializeFields(const Tag& tag)
 
     for (auto it = data_.begin(); it != data_.end(); ++it) {
       auto owner = GetRecord(it->first, tag).owner();
-      auto& r = GetRecordW(it->first, tag, owner);
-      if (r.ValidType<CompositeVector>()) {
-        r.ReadCheckpoint(file_input, tag, it->second->subfieldnames());
+      auto& rs = GetRecordSetW(it->first);
+      if (rs.ValidType<CompositeVector>()) {
+        rs.ReadCheckpoint(file_input, &tag);
 
         // this is pretty hacky -- why are these ICs not in the PK's list?  And
         // if they aren't owned by a PK, they should be independent variables

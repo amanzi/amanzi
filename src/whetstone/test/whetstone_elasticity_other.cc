@@ -54,15 +54,15 @@ TEST(DIFFUSION_STOKES_2D)
   auto nodes = mesh->getCellNodes(cell);
   int nnodes = nodes.size();
 
-  auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
+  auto [faces,dirs] = mesh->getCellFacesAndDirections(cell);
   int nfaces = faces.size();
 
   // calcualte stiffness matrix
-  Tensor T(2, 1);
+ Tensor<> T(2, 1);
   T(0, 0) = 1.0;
 
   int nrows = 2 * nnodes + nfaces;
-  DenseMatrix A(nrows, nrows);
+  DenseMatrix<> A(nrows, nrows);
 
   mfd.StiffnessMatrix(cell, T, A);
 
@@ -79,9 +79,9 @@ TEST(DIFFUSION_STOKES_2D)
   int d = mesh->getSpaceDimension();
   Point p(d);
 
-  DenseVector ax(nrows), ay(nrows);
-  ax.PutScalar(0.0);
-  ay.PutScalar(0.0);
+  DenseVector<> ax(nrows), ay(nrows);
+  ax.putScalar(0.0);
+  ay.putScalar(0.0);
   for (int i = 0; i < nnodes; i++) {
     int v = nodes[i];
     p = mesh->getNodeCoordinate(v);
@@ -140,14 +140,14 @@ TEST(ADVECTION_NAVIER_STOKES_2D)
   auto nodes = mesh->getCellNodes(cell);
   int nnodes = nodes.size();
 
-  auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
+  auto [faces,dirs] = mesh->getCellFacesAndDirections(cell);
 
   // setup velocity
   AmanziMesh::Point_List u(nnodes);
   for (int i = 0; i < nnodes; ++i) { u[i] = AmanziGeometry::Point(1.0, 2.0); }
 
   // calculate advection matrix
-  DenseMatrix A;
+  DenseMatrix<> A;
   mfd.AdvectionMatrix(cell, u, A);
 
   printf("Advection matrix for cell %3d\n", cell);

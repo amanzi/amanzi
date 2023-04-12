@@ -40,21 +40,24 @@ class MFD3D_GeneralizedDiffusion : public MFD3D {
   virtual std::vector<SchemaItem> schema() const override;
 
   // -- mass matrices
-  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override;
-  int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& M);
+  int L2consistency(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Mc, bool symmetry);
+  virtual int MassMatrix(int c, const Tensor<>& T, DenseMatrix<>& M) override;
+  int MassMatrixOptimized(int c, const Tensor<>& T, DenseMatrix<>& M);
 
-  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) override;
+  int L2consistencyInverse(int c, const Tensor<>& T, DenseMatrix<>& R, DenseMatrix<>& Wc, bool symmetry);
+  virtual int MassMatrixInverse(int c, const Tensor<>& T, DenseMatrix<>& W) override;
 
   // -- stiffness matrices
-  virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
+  virtual int StiffnessMatrix(int c, const Tensor<>& K, DenseMatrix<>& A) override;
 
   // -- advection matrices
-  virtual int DivergenceMatrix(int c, DenseMatrix& A) override;
+  virtual int DivergenceMatrix(int c, DenseMatrix<>& A) override;
 
  private:
-  void CurvedFaceGeometry_(int f, int dirs, AmanziMesh::Point_List& vv, AmanziMesh::Point_List& xm);
+  void CurvedFaceGeometry_(int f,
+                           int dirs,
+                           AmanziMesh::Point_List& vv,
+                           AmanziMesh::Point_List& xm);
 
  private:
   static RegisteredFactory<MFD3D_GeneralizedDiffusion> reg_;

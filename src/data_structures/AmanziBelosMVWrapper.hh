@@ -4,9 +4,10 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Alicia Klinvex (amklinv@sandia.gov)
+  Authors:
 */
 
+//!
 /*
   Amanzi Belos multivector wrapper
   Usage:
@@ -42,7 +43,7 @@ class CompositeMultiVector : public Belos::MultiVec<double> {
   const CompositeMultiVector* CloneView(const std::vector<int>& index) const;
 
   // Dimension information methods
-  ptrdiff_t GetGlobalLength() const { return cmv_[0]->GlobalLength(); } // TODO: Fix this
+  ptrdiff_t GetGlobalLength() const { return cmv_[0]->getGlobalLength(); } // TODO: Fix this
   int GetNumberVecs() const { return cmv_.size(); }
 
   // Update methods
@@ -151,7 +152,7 @@ CompositeMultiVector<Vector>::MvTimesMatAddMv(double alpha,
   for (int r = 0; r < B.numRows(); r++) {
     for (int c = 0; c < B.numCols(); c++) {
       // mv[c] += alpha b(r,c) A[r]
-      cmv_[c]->Update(alpha * B(r, c), *cmvA->cmv_[r], 1);
+      cmv_[c]->update(alpha * B(r, c), *cmvA->cmv_[r], 1);
     }
   }
 }
@@ -173,21 +174,21 @@ CompositeMultiVector<Vector>::MvAddMv(double alpha,
                              "CompositeMultiVector::MvAddMv: B must be a CompositeMultiVector");
 
   for (int i = 0; i < cmv_.size(); i++)
-    cmv_[i]->Update(alpha, *cmvA->cmv_[i], beta, *cmvB->cmv_[i], 0);
+    cmv_[i]->update(alpha, *cmvA->cmv_[i], beta, *cmvB->cmv_[i], 0);
 }
 
 template <class Vector>
 void
 CompositeMultiVector<Vector>::MvScale(ScalarType alpha)
 {
-  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->Scale(alpha);
+  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->scale(alpha);
 }
 
 template <class Vector>
 void
 CompositeMultiVector<Vector>::MvScale(const std::vector<ScalarType>& alpha)
 {
-  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->Scale(alpha[i]);
+  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->scale(alpha[i]);
 }
 
 template <class Vector>
@@ -202,7 +203,7 @@ CompositeMultiVector<Vector>::MvTransMv(ScalarType alpha,
                              "CompositeMultiVector::MvTransMv: A must be a CompositeMultiVector");
 
   for (int r = 0; r < cmvA->GetNumberVecs(); r++) {
-    for (int c = 0; c < GetNumberVecs(); c++) cmv_[c]->Dot(*cmvA->cmv_[r], &B(r, c));
+    for (int c = 0; c < GetNumberVecs(); c++) B(r, c) = cmv_[c]->dot(*cmvA->cmv_[r]);
   }
 }
 
@@ -216,7 +217,7 @@ CompositeMultiVector<Vector>::MvDot(const Belos::MultiVec<double>& A,
                              std::invalid_argument,
                              "CompositeMultiVector::MvAddMv: A must be a CompositeMultiVector");
 
-  for (int i = 0; i < cmv_.size(); i++) { cmv_[i]->Dot(*cmvA->cmv_[i], &b[i]); }
+  for (int i = 0; i < cmv_.size(); i++) { b[i] = cmv_[i]->dot(*cmvA->cmv_[i]); }
 }
 
 template <class Vector>
@@ -225,12 +226,12 @@ CompositeMultiVector<Vector>::MvNorm(std::vector<MagnitudeType>& normvec,
                                      Belos::NormType type) const
 {
   if (type == Belos::TwoNorm) {
-    for (int i = 0; i < cmv_.size(); i++) cmv_[i]->Norm2(&normvec[i]);
+    for (int i = 0; i < cmv_.size(); i++) normvec[i] = cmv_[i]->norm2();
   } else if (type == Belos::OneNorm) {
-    for (int i = 0; i < cmv_.size(); i++) cmv_[i]->Norm1(&normvec[i]);
-  } else // if (type == Belos::InfNorm)
+    for (int i = 0; i < cmv_.size(); i++) normvec[i] = cmv_[i]->norm1();
+  } else // if(type == Belos::InfNorm)
   {
-    for (int i = 0; i < cmv_.size(); i++) cmv_[i]->NormInf(&normvec[i]);
+    for (int i = 0; i < cmv_.size(); i++) normvec[i] = cmv_[i]->normInf();
   }
 }
 
@@ -251,21 +252,21 @@ template <class Vector>
 void
 CompositeMultiVector<Vector>::MvRandom()
 {
-  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->Random();
+  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->randomize();
 }
 
 template <class Vector>
 void
 CompositeMultiVector<Vector>::MvInit(ScalarType alpha)
 {
-  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->PutScalar(alpha);
+  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->putScalar(alpha);
 }
 
 template <class Vector>
 void
 CompositeMultiVector<Vector>::MvPrint(std::ostream& os) const
 {
-  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->Print(os);
+  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->print(os);
 }
 
 } // namespace Amanzi

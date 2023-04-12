@@ -59,29 +59,36 @@ class DomainSet;
 
 class VisualizationDomainSet : public Visualization {
  public:
-  VisualizationDomainSet(Teuchos::ParameterList& plist) : Visualization(plist)
+  VisualizationDomainSet(Teuchos::ParameterList& plist,
+                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                         bool include_io_set,
+                         const Teuchos::RCP<const AmanziMesh::DomainSet>& ds)
+    : Visualization(plist, mesh, include_io_set)
   {
     write_partition_ = false; // doesn't work yet
+    setDomainSet(ds);
   }
 
-  void set_domain_set(const Teuchos::RCP<const AmanziMesh::DomainSet>& ds) { ds_ = ds; }
+  void setDomainSet(const Teuchos::RCP<const AmanziMesh::DomainSet>& ds) { ds_ = ds; }
 
+  virtual void finalizeTimestep() override;
+
+ protected:
   // public interface for data clients
-  virtual void WriteVector(const Epetra_MultiVector& vec,
-                           const std::vector<std::string>& names,
-                           AmanziMesh::Entity_kind kind) const override;
-  virtual void WriteVector(const Epetra_Vector& vec,
-                           const std::string& name,
-                           AmanziMesh::Entity_kind kind) const override;
-
-  virtual void FinalizeTimestep() const override;
+  virtual void
+  writeVector_(const Teuchos::ParameterList& attrs, const MultiVector_type& vec) const override;
+  virtual void
+  writeVector_(const Teuchos::ParameterList& attrs, const Vector_type& vec) const override;
 
  protected:
   // note this is lazily constructed, so must be mutable
   // Note that this relies on map being ORDERED!
   mutable std::map<std::string,
-                   std::tuple<Teuchos::RCP<Epetra_MultiVector>, std::vector<std::string>, AmanziMesh::Entity_kind>>
+                   std::pair<Teuchos::RCP<MultiVector_type>, Teuchos::ParameterList>>
     lifted_vectors_;
+
+  // this is constructed after all are set, and provides a common set of shared
+  // names that exist on any rank for collective writes.
   mutable std::vector<std::string> lifted_vector_names_;
   Teuchos::RCP<const AmanziMesh::DomainSet> ds_;
   std::string dset_name_;

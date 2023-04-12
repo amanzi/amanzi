@@ -35,34 +35,36 @@ class Basis_Normalized : public Basis {
   ~Basis_Normalized(){};
 
   // initialization
-  virtual void
-  Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order, Polynomial& integrals);
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                    int c,
+                    int order,
+                    Polynomial<>& integrals) override;
 
   // transformation of bilinear form
-  virtual void BilinearFormNaturalToMy(DenseMatrix& A) const;
+  virtual void BilinearFormNaturalToMy(DenseMatrix<>& A) const override;
   virtual void BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
                                        std::shared_ptr<Basis> br,
-                                       DenseMatrix& A) const;
+                                       DenseMatrix<>& A) const override;
 
   // transformation of linear form
-  virtual void LinearFormNaturalToMy(DenseVector& v) const;
+  virtual void LinearFormNaturalToMy(DenseVector<>& v) const override;
 
   // transformation of vector
-  virtual void ChangeBasisMyToNatural(DenseVector& v) const;
-  virtual void ChangeBasisNaturalToMy(DenseVector& v) const;
+  virtual void ChangeBasisMyToNatural(DenseVector<>& v) const override;
+  virtual void ChangeBasisNaturalToMy(DenseVector<>& v) const override;
 
   // recover polynomial in the natural basis
-  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  virtual Polynomial<> CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                          int c,
                                          int order,
-                                         DenseVector& coefs) const;
+                                         const DenseVector<>& coefs) const override;
 
   // access
-  const Polynomial& monomial_scales() const { return monomial_scales_; }
+  const Polynomial<>& monomial_scales() const { return monomial_scales_; }
 
  private:
   using Basis::id_;
-  Polynomial monomial_scales_;
+  Polynomial<> monomial_scales_;
 };
 
 } // namespace WhetStone

@@ -26,13 +26,13 @@ namespace WhetStone {
 * Only upper triangular part of Mc = R (R^T N)^{-1} R^T is calculated.
 ****************************************************************** */
 int
-DeRham_Face::L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
+DeRham_Face::L2consistency(int c, const Tensor<>& K, DenseMatrix<>& N, DenseMatrix<>& Mc, bool symmetry)
 {
-  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
+  const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
-  N.Reshape(nfaces, d_);
-  Mc.Reshape(nfaces, nfaces);
+  N.reshape(nfaces, d_);
+  Mc.reshape(nfaces, nfaces);
 
   AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
@@ -72,7 +72,7 @@ DeRham_Face::L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& 
 * Mass matrix: adding stability matrix to the consistency matrix.
 ****************************************************************** */
 int
-DeRham_Face::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
+DeRham_Face::MassMatrix(int c, const Tensor<>& K, DenseMatrix<>& M)
 {
   DenseMatrix N;
 
@@ -93,19 +93,19 @@ DeRham_Face::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 ****************************************************************** */
 int
 DeRham_Face::L2consistencyInverse(int c,
-                                  const Tensor& K,
-                                  DenseMatrix& R,
-                                  DenseMatrix& Wc,
+                                  const Tensor<>& K,
+                                  DenseMatrix<>& R,
+                                  DenseMatrix<>& Wc,
                                   bool symmetry)
 {
-  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
+  const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
-  R.Reshape(nfaces, d_);
-  Wc.Reshape(nfaces, nfaces);
+  R.reshape(nfaces, d_);
+  Wc.reshape(nfaces, nfaces);
 
   // calculate areas of possibly curved faces
-  std::vector<double> areas(nfaces, 0.0);
+  AmanziMesh::Double_List areas(nfaces, 0.0);
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     areas[i] = norm(mesh_->getFaceNormal(f));
@@ -157,7 +157,7 @@ DeRham_Face::L2consistencyInverse(int c,
 * Inverse mass matrix: adding stability to the consistency
 ****************************************************************** */
 int
-DeRham_Face::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
+DeRham_Face::MassMatrixInverse(int c, const Tensor<>& K, DenseMatrix<>& W)
 {
   DenseMatrix R;
 

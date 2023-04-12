@@ -13,15 +13,12 @@
 
 */
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_MultiVector.h"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "UnitTest++.h"
 
-#include "IO.hh"
 #include "Checkpoint.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
@@ -42,20 +39,14 @@ SUITE(RESTART2)
 
     std::string hdf5_datafile1 = "new_data_mpi_serial_parallel";
 
-    int size = comm->NumProc();
-    int rank = comm->MyPID();
+    int size = comm->getSize();
+    int rank = comm->getRank();
     auto domain_mesh_mstk =
       Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4 * size, 1, 1, comm));
     auto serial_mesh_mstk =
       Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0, 0, 0, 1, 1, 1, 4, 1, 1, comm_serial));
-    auto domain_mesh = Teuchos::rcp(
-      new AmanziMesh::Mesh(domain_mesh_mstk,
-                           Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()),
-                           Teuchos::null));
-    auto serial_mesh = Teuchos::rcp(
-      new AmanziMesh::Mesh(serial_mesh_mstk,
-                           Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()),
-                           Teuchos::null));
+    auto domain_mesh = Teuchos::rcp(new AmanziMesh::Mesh(domain_mesh_mstk, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), Teuchos::null)); 
+    auto serial_mesh = Teuchos::rcp(new AmanziMesh::Mesh(serial_mesh_mstk, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), Teuchos::null)); 
 
 
     auto S = Teuchos::rcp(new State());
@@ -83,20 +74,27 @@ SUITE(RESTART2)
     // Set values
     int cell_index_list[] = { 0, 1, 2, 3 };
     double cell_values[] = { 10.0, 20.0, 30.0, 40.0 };
-    for (int i = 0; i != 4; ++i) { cell_values[i] += rank * 40; }
-    auto& mf =
-      *S->GetW<CompositeVector>("my_field", Tags::DEFAULT, "my_field").ViewComponent("cell");
-    mf(0)->ReplaceMyValues(4, cell_values, cell_index_list);
 
-    auto& sf =
-      *S->GetW<CompositeVector>(serial_fname, Tags::DEFAULT, serial_fname).ViewComponent("cell");
-    sf(0)->ReplaceMyValues(4, cell_values, cell_index_list);
+    MultiVector_type& mf = *S->GetW<CompositeVector>("my_field", Tags::DEFAULT, "my_field")
+      .getComponent("cell");
+    AMANZI_ASSERT(mf.getLocalLength() == 4);
+
+    MultiVector_type& sf = *S->GetW<CompositeVector>(serial_fname, Tags::DEFAULT, serial_fname)
+      .getComponent("cell");
+    AMANZI_ASSERT(sf.getLocalLength() == 4);
+
+
+    for (int i = 0; i != 4; ++i) {
+      cell_values[i] += rank * 40;
+      mf.replaceLocalValue(cell_index_list[i], 0, cell_values[i]);
+      sf.replaceLocalValue(cell_index_list[i], 0, cell_values[i]);
+    }
 
     // make sure we can write them all... for real!
     Teuchos::ParameterList chkplist("checkpoint");
-    chkplist.set("single file checkpoint", false);
+    chkplist.set("single file", false);
     Checkpoint chkp(chkplist, *S);
-    chkp.Write(*S);
+    chkp.write(*S);
 
     // make sure we can read them all
     State S2;
@@ -113,18 +111,17 @@ SUITE(RESTART2)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S2.Setup();
 
-    ReadCheckpoint(comm, S2, "checkpoint00000");
+    Checkpoint chkp2("checkpoint00000", comm);
+    chkp2.read(S2);
 
     S2.GetW<CompositeVector>("my_field", Tags::DEFAULT, "my_field")
-      .Update(-1.0, S->Get<CompositeVector>("my_field"), 1.0);
-    double diff;
-    S2.Get<CompositeVector>("my_field").Norm2(&diff);
+      .update(-1.0, S->Get<CompositeVector>("my_field"), 1.0);
+    double diff = S2.Get<CompositeVector>("my_field").norm2();
     CHECK_CLOSE(0.0, diff, 1.0e-10);
 
     S2.GetW<CompositeVector>(serial_fname, Tags::DEFAULT, serial_fname)
-      .Update(-1.0, S->Get<CompositeVector>(serial_fname), 1.0);
-    diff = 0.0;
-    S2.Get<CompositeVector>(serial_fname).Norm2(&diff);
+      .update(-1.0, S->Get<CompositeVector>(serial_fname), 1.0);
+    diff = S2.Get<CompositeVector>(serial_fname).norm2();
     CHECK_CLOSE(0.0, diff, 1.0e-10);
   }
 }

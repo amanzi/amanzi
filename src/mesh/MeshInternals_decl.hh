@@ -109,5 +109,3 @@ getFaceCentroid(const Mesh_type& mesh, const Entity_ID f);
 } // namespace Impl
 } // namespace AmanziMesh
 } // namespace Amanzi
-
-

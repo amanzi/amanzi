@@ -8,7 +8,7 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-//! Base class for providing ApplyInverse() methods on operators.
+//! Base class for providing applyInverse() methods on operators.
 /*!
 
 Matrix provides existing Operators with an inverse.  Note this may be
@@ -35,14 +35,14 @@ packages (init(), update(), compute(), apply()):
 
 - set_inverse_parameters() processes the ParameterList, parsing options.
 
-- InitializeInverse() implies that the symbolic structure is now known.  Changes to
-  symbolic structure require calling InitializeInverse() again.  All work that can
-  leverage this, e.g. allocation of work space, etc, can now be done.
+- InitializeInverse() implies that the symbolic structure is now known.  Changes
+to symbolic structure require calling InitializeInverse() again.  All work that
+can leverage this, e.g. allocation of work space, etc, can now be done.
 
 - ComputeInverse() requires that values in the operator have now been set.
   Work such as calculating L and U, etc, can now be done.
 
-- ApplyInverse() accepts vectors and applies the inverse.  It returns 0 on
+- applyInverse() accepts vectors and applies the inverse.  It returns 0 on
   success and 1 on failure.
 
 Note that any stage may be called without invalidating any stage before it, but
@@ -86,40 +86,43 @@ class Inverse : public Matrix<Vector, VectorSpace> {
     set_matrices(m, m);
   }
 
-  virtual const VectorSpace& DomainMap() const override { return m_->DomainMap(); }
-  virtual const VectorSpace& RangeMap() const override { return m_->RangeMap(); }
+  virtual const Teuchos::RCP<const VectorSpace> getDomainMap() const { return m_->getDomainMap(); }
+  virtual const Teuchos::RCP<const VectorSpace> getRangeMap() const { return m_->getRangeMap(); }
 
-  virtual int Apply(const Vector& x, Vector& y) const override { return m_->Apply(x, y); }
-  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override = 0;
-  virtual void InitializeInverse() override = 0;
-  virtual void ComputeInverse() override = 0;
-  virtual int ApplyInverse(const Vector& X, Vector& Y) const override = 0;
+  int apply(const Vector& x, Vector& y) const
+  {
+    m_->apply(x, y);
+    return 0;
+  }
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) = 0;
+  virtual void initializeInverse() = 0;
+  virtual void computeInverse() = 0;
+
+  virtual int applyInverse(const Vector& X, Vector& Y) const = 0;
 
   // This ensures that anything that is an Inverse can be used as a
   // preconditioner.
-  int ApplyInverseUserSupplied(const Vector& X, Vector& Y) const { return ApplyInverse(X, Y); }
+  int ApplyInverseUserSupplied(const Vector& X, Vector& Y) const { return applyInverse(X, Y); }
 
   double TrueResidual(const Vector& x, const Vector& y) const
   {
     Vector r(y);
-    m_->Apply(x, r); // r = y - M * x
-    r.Update(1.0, y, -1.0);
+    m_->apply(x, r); // r = y - M * x
+    r.update(1.0, y, -1.0);
 
-    double true_residual;
-    r.Norm2(&true_residual);
-    return true_residual;
+    return r.norm2();
   }
 
   // control and statistics -- must be valid for both iterative and
   // non-iterative methods, approximate and exact methods.
-  virtual double residual() const override { return 0.; }
-  virtual int num_itrs() const override { return 0; }
+  virtual double residual() const { return 0.; }
+  virtual int num_itrs() const { return 0; }
   virtual void add_criteria(int criteria) {}
 
-  virtual int returned_code() const override = 0;
-  virtual std::string returned_code_string() const override = 0;
+  virtual int returned_code() const = 0;
+  virtual std::string returned_code_string() const = 0;
 
-  virtual std::string name() const override { return name_; }
+  std::string name() const { return name_; }
   void set_name(const std::string& name) { name_ = name; }
 
  protected:

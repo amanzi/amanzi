@@ -8,12 +8,12 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-//! Provides ApplyInverse() using assembled methods.
+//! Provides applyInverse() using assembled methods.
 #pragma once
 
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Map.h"
+// #include "Epetra_CrsMatrix.h"
+// #include "Epetra_Vector.h"
+// #include "Epetra_Map.h"
 
 #include "SuperMap.hh"
 #include "InverseHelpers.hh"
@@ -33,17 +33,17 @@ template <class Operator,
 class InverseAssembled : public Inverse<Operator, Assembler, Vector, VectorSpace> {
  public:
   InverseAssembled(const std::string& method_name)
-    : Inverse<Operator, Assembler, Vector, VectorSpace>(),
+    : method_name_(method_name),
       updated_(false),
       computed_once_(false),
-      method_name_(method_name)
+      Inverse<Operator, Assembler, Vector, VectorSpace>()
   {}
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
 
-  virtual void InitializeInverse() override final;
-  virtual void ComputeInverse() override final;
-  virtual int ApplyInverse(const Vector& X, Vector& Y) const override final;
+  virtual void initializeInverse() override final;
+  virtual void computeInverse() override final;
+  virtual int applyInverse(const Vector& X, Vector& Y) const override final;
 
   virtual double residual() const override final { return solver_->residual(); }
 
@@ -65,9 +65,9 @@ class InverseAssembled : public Inverse<Operator, Assembler, Vector, VectorSpace
   using Inverse<Operator, Assembler, Vector, VectorSpace>::m_;
   using Inverse<Operator, Assembler, Vector, VectorSpace>::h_;
 
-  Teuchos::RCP<Inverse<Epetra_CrsMatrix, Epetra_CrsMatrix, Epetra_Vector, Epetra_Map>> solver_;
-  Teuchos::RCP<const Operators::SuperMap> smap_;
-  mutable Teuchos::RCP<Epetra_Vector> X_, Y_;
+  Teuchos::RCP<Inverse<Matrix_type, Matrix_type, Vector_type, Map_type>> solver_;
+  Teuchos::RCP<const SuperMap> smap_;
+  mutable Teuchos::RCP<Vector_type> X_, Y_;
 };
 
 

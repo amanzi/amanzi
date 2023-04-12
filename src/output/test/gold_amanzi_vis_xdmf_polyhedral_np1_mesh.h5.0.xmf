@@ -1,0 +1,17 @@
+<Xdmf>
+  <Domain>
+    <Grid Name="Mesh 0">
+      <Topology Name="mixedtopo" NumberOfElements="524" TopologyType="Mixed">
+        <DataItem DataType="Int" Dimensions="5502" Format="HDF">
+          amanzi_vis_xdmf_polyhedral_np1_mesh.h5:/0/Mesh/MixedElements
+        </DataItem>
+      </Topology>
+      <Geometry Name="geo" Type="XYZ">
+        <DataItem DataType="Float" Dimensions="1584  3" Format="HDF">
+          amanzi_vis_xdmf_polyhedral_np1_mesh.h5:/0/Mesh/Nodes
+        </DataItem>
+      </Geometry>
+      <Time Value="0.00000000000000000e+00"/>
+    </Grid>
+  </Domain>
+</Xdmf>

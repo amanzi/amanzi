@@ -133,7 +133,7 @@ SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec)
   nvec_ = Teuchos::rcp(new int(0));
   times_ = Teuchos::rcp(new Teuchos::Array<double>(mvec));
   d_.resize(mvec);
-  for (int j = 0; j < mvec; ++j) { d_[j] = Teuchos::rcp(new Vector(initvec)); }
+  for (int j = 0; j < mvec; ++j) { d_[j] = Teuchos::rcp(new Vector(initvec.getMap())); }
 
   // move into state
   if (S_ != Teuchos::null) {
@@ -162,7 +162,7 @@ SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec)
     S_->GetRecordW(nvecs_name, Tags::DEFAULT, name_).set_io_vis(false);
 
     std::string td_name = name_ + "_time_deltas";
-    S_->Require<Teuchos::Array<double>>(mvec, td_name, Tags::DEFAULT, name_);
+    S_->Require<Teuchos::Array<double>>(td_name, Tags::DEFAULT, name_);
     S_->SetPtr<Teuchos::Array<double>>(td_name, Tags::DEFAULT, name_, times_);
     S_->GetRecordW(td_name, Tags::DEFAULT, name_).set_initialized();
     S_->GetRecordW(td_name, Tags::DEFAULT, name_).set_io_checkpoint();
@@ -170,7 +170,7 @@ SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec)
 
     // require time deltas
     for (int j = 0; j < mvec; j++) {
-      S_->Require<Vector>(initvec.Map(), name_, Tag(std::to_string(j)), name_);
+      S_->Require<Vector>(initvec.getMap(), name_, Tag(std::to_string(j)), name_);
       S_->SetPtr<Vector>(name_, Tag(std::to_string(j)), name_, d_[j]);
       S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_initialized();
       S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_io_checkpoint();
@@ -214,7 +214,7 @@ SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, Vector const*
   // insert the new vector
   (*times_)[0] = t;
   d_[0] = tmp;
-  *d_[0] = x;
+  d_[0]->assign(x);
 
   // update the divided differences
   for (unsigned int j = 1; j <= (*nvec_) - 1; j++) {
@@ -223,7 +223,7 @@ SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, Vector const*
       Exceptions::amanzi_throw(message);
     }
     double div = 1.0 / ((*times_)[0] - (*times_)[j]);
-    d_[j]->Update(div, *d_[j - 1], -div);
+    d_[j]->update(div, *d_[j - 1], -div);
   }
 
   if (xdot) {
@@ -234,7 +234,7 @@ SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, Vector const*
     if (d_.size() > 1) {
       // shift the divided differences, except the first; the new vector and
       // time index are the same as the most recent.
-      Teuchos::RCP<Vector> tmp2 = d_[(*nvec_) - 1];
+      Teuchos::RCP<Vector> tmp = d_[(*nvec_) - 1];
       for (unsigned int j = (*nvec_) - 1; j >= 2; j--) {
         (*times_)[j] = (*times_)[j - 1];
         d_[j] = d_[j - 1];
@@ -242,13 +242,13 @@ SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, Vector const*
 
       // the first divided difference (same time index) is the specified derivative.
       (*times_)[1] = (*times_)[0];
-      d_[1] = tmp2;
-      *d_[1] = *xdot;
+      d_[1] = tmp;
+      d_[1]->assign(*xdot);
 
       // update the rest of the divided differences
       for (unsigned int j = 2; j <= (*nvec_) - 1; j++) {
         double div = 1.0 / ((*times_)[0] - (*times_)[j]);
-        d_[j]->Update(div, *d_[j - 1], -div);
+        d_[j]->update(div, *d_[j - 1], -div);
       }
     }
   }
@@ -277,7 +277,7 @@ SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x, unsigned int o
   AMANZI_ASSERT(order >= 0);
 
   x = *d_[order];
-  for (int k = order - 1; k >= 0; k--) { x.Update(1.0, *d_[k], t - (*times_)[k]); }
+  for (int k = order - 1; k >= 0; k--) { x.update(1.0, *d_[k], t - (*times_)[k]); }
 }
 
 
@@ -288,7 +288,7 @@ template <class Vector>
 void
 SolutionHistory<Vector>::MostRecentSolution(Vector& x)
 {
-  x = *d_[0];
+  x.assign(*d_[0]);
 }
 
 

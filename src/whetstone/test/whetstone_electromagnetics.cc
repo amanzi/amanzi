@@ -40,14 +40,14 @@ TEST(MASS_MATRIX_2D)
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Mass matrix for edge elements in 2D" << std::endl;
-#  ifdef HAVE_MPI
+#ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
-#  else
+#else
   auto comm = Amanzi::getCommSelf();
-#  endif
-  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
-  factory_plist->set<bool>("request edges", true);
-  factory_plist->set<bool>("request faces", true);
+#endif
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList()); 
+  factory_plist->set<bool>("request edges", true); 
+  factory_plist->set<bool>("request faces", true); 
   MeshFactory meshfactory(comm,Teuchos::null,factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
@@ -62,14 +62,14 @@ TEST(MASS_MATRIX_2D)
   int nedges = edges.size();
   int nrows = nedges;
 
-  Tensor T(2, 2);
+ Tensor<> T(2, 2);
   T(0, 0) = 2.0;
   T(1, 1) = 1.0;
   T(0, 1) = 1.0;
   T(1, 0) = 1.0;
 
   for (int method = 0; method < 4; method++) {
-    DenseMatrix M(nrows, nrows);
+    DenseMatrix<> M(nrows, nrows);
 
     if (method == 0) {
       mfd.MassMatrix(cell, T, M);
@@ -116,7 +116,7 @@ TEST(MASS_MATRIX_2D)
   }
 }
 
-#endif
+#endif 
 
 /* ******************************************************************
 * Mass matrix in 3D
@@ -137,10 +137,10 @@ MassMatrix3D(std::string mesh_file, int max_row)
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
-  factory_plist->set<bool>("request edges", true);
-  factory_plist->set<bool>("request faces", true);
-  MeshFactory meshfactory(comm, Teuchos::null, factory_plist);
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList()); 
+  factory_plist->set<bool>("request edges", true); 
+  factory_plist->set<bool>("request faces", true); 
+  MeshFactory meshfactory(comm,Teuchos::null,factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   RCP<Mesh> mesh;
@@ -158,7 +158,7 @@ MassMatrix3D(std::string mesh_file, int max_row)
   int nedges = edges.size();
   int nrows = nedges;
 
-  Tensor T(3, 2);
+ Tensor<> T(3, 2);
   T(0, 0) = 2.0;
   T(1, 1) = 1.0;
   T(0, 1) = 1.0;
@@ -166,7 +166,7 @@ MassMatrix3D(std::string mesh_file, int max_row)
   T(2, 2) = 1.0;
 
   for (int method = 0; method < 4; method++) {
-    DenseMatrix M(nrows, nrows);
+    DenseMatrix<> M(nrows, nrows);
 
     if (method == 0) {
       mfd.MassMatrix(cell, T, M);
@@ -220,7 +220,7 @@ TEST(MASS_MATRIX_3D_CUBE)
   MassMatrix3D("", 12);
 }
 
-#if 0
+#if 0 
 
 TEST(MASS_MATRIX_3D_HEX)
 {
@@ -250,15 +250,15 @@ TEST(STIFFNESS_MATRIX_2D)
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Stiffness matrix for edge elements in 2D" << std::endl;
-#  ifdef HAVE_MPI
+#ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
-#  else
+#else
   auto comm = Amanzi::getCommSelf();
-#  endif
+#endif
 
-  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
-  factory_plist->set<bool>("request edges", true);
-  factory_plist->set<bool>("request faces", true);
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList()); 
+  factory_plist->set<bool>("request edges", true); 
+  factory_plist->set<bool>("request faces", true); 
   MeshFactory meshfactory(comm,Teuchos::null,factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
@@ -273,11 +273,11 @@ TEST(STIFFNESS_MATRIX_2D)
   int nfaces = faces.size();
   int nrows = nfaces;
 
-  Tensor T(2, 1);
+ Tensor<> T(2, 1);
   T(0, 0) = 1.0;
 
   for (int method = 1; method < 2; method++) {
-    DenseMatrix A(nrows, nrows);
+    DenseMatrix<> A(nrows, nrows);
 
     if (method == 0) {
       mfd.StiffnessMatrix(cell, T, A);
@@ -337,15 +337,15 @@ StiffnessMatrix3D(std::string mesh_file, int max_row)
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Stiffness matrix for edge elements in 3D: " << mesh_file << std::endl;
-#  ifdef HAVE_MPI
+#ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
-#  else
+#else
   auto comm = Amanzi::getCommSelf();
-#  endif
+#endif
 
-  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
-  factory_plist->set<bool>("request edges", true);
-  factory_plist->set<bool>("request faces", true);
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList()); 
+  factory_plist->set<bool>("request edges", true); 
+  factory_plist->set<bool>("request faces", true); 
   MeshFactory meshfactory(comm,Teuchos::null,factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
@@ -364,7 +364,7 @@ StiffnessMatrix3D(std::string mesh_file, int max_row)
   int nedges = edges.size();
   int nrows = nedges;
 
-  Tensor T(3, 2);
+ Tensor<> T(3, 2);
   T(0, 0) = 2.0;
   T(1, 1) = 1.0;
   T(2, 2) = 3.0;
@@ -372,7 +372,7 @@ StiffnessMatrix3D(std::string mesh_file, int max_row)
   T(1, 0) = 1.0;
 
   for (int method = 0; method < 2; method++) {
-    DenseMatrix A(nrows, nrows);
+    DenseMatrix<> A(nrows, nrows);
 
     if (method == 0) {
       mfd.StiffnessMatrix(cell, T, A);
@@ -444,4 +444,4 @@ TEST(STIFFNESS_MATRIX_3D_24SIDES)
 {
   StiffnessMatrix3D("test/cube_triangulated.exo", 10);
 }
-#endif
+#endif 

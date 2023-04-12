@@ -18,11 +18,8 @@ Function composition simply applies one function to the result of another.
 where :math:`f_1` is defined by the `"function1`" sublist, and
 :math:`f_2` by the `"function2`" sublist.
 
-.. _function-composition-spec:
-.. admonition:: function-composition-spec
-
-   * `"function1`" ``[function-spec]`` :math:`f_1` in :math:`f(x) = f_1(f_2(x))`
-   * `"function2`" ``[function-spec]`` :math:`f_2` in :math:`f(x) = f_1(f_2(x))`
+* `"function1`" ``[function-spec]`` f_1 in f(x) = f_1(f_2(x))
+* `"function2`" ``[function-spec]`` f_2 in f(x) = f_1(f_2(x))
 
 
 .. code-block:: xml
@@ -56,11 +53,28 @@ class FunctionComposition : public Function {
   {}
   ~FunctionComposition() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionComposition>(*this); }
-  double operator()(const std::vector<double>& x) const
+
+  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
   {
-    std::vector<double> y(x);
-    y[0] = (*f2_)(x);
+    Kokkos::View<double*, Kokkos::HostSpace> y("y", x.extent(0));
+    Kokkos::deep_copy(y, x);
+    y(0) = (*f2_)(x);
     return (*f1_)(y);
+  }
+
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out, const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+  {
+    Kokkos::View<double*> out_1("out", in.extent(1));
+    Kokkos::View<double**> tmpin("tmpin", in.extent(0), in.extent(1));
+    Kokkos::deep_copy(tmpin, in);
+    f2_->apply(tmpin, out_1);
+
+    // Change all first value
+    Kokkos::parallel_for(
+      "FunctionComposition::apply", in.extent(1), KOKKOS_LAMBDA(const int& j) {
+        for (int i = 0; i < in.extent(0); ++i) tmpin(i, j) = out_1(i);
+      });
+    f1_->apply(tmpin, out, ids);
   }
 
  private:

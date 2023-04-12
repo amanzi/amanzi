@@ -23,17 +23,26 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Transfer operators -- copies ONLY pointers
 // -----------------------------------------------------------------------------
+Teuchos::RCP<TreeVectorSpace>
+PK_Physical::getSolutionSpace() const
+{
+  CompositeVectorSpace& cvs = S_->Require<CompositeVector,CompositeVectorSpace>(key_, tag_next_);
+  auto soln_space = Teuchos::rcp(new TreeVectorSpace(cvs.getComm()));
+  soln_space->setData(cvs.CreateSpace());
+  return soln_space;
+}
+
 void
 PK_Physical::State_to_Solution(const Tag& tag, TreeVector& solution)
 {
-  solution.SetData(S_->GetPtrW<CompositeVector>(key_, tag, name()));
+  solution.setData(S_->GetPtrW<CompositeVector>(key_, tag, getName()));
 }
 
 
 void
 PK_Physical::Solution_to_State(const TreeVector& solution, const Tag& tag)
 {
-  AMANZI_ASSERT(solution.Data() == S_->GetPtr<CompositeVector>(key_, tag));
+  AMANZI_ASSERT(solution.getData() == S_->GetPtr<CompositeVector>(key_, tag));
 }
 
 
@@ -91,7 +100,7 @@ InitializeCVField(const Teuchos::RCP<State>& S,
   if (S->HasRecord(key, tag)) {
     if (S->GetRecord(key, tag).owner() == passwd) {
       if (!S->GetRecord(key, tag).initialized()) {
-        S->GetW<CompositeVector>(key, tag, passwd).PutScalar(default_val);
+        S->GetW<CompositeVector>(key, tag, passwd).putScalar(default_val);
         S->GetRecordW(key, tag, passwd).set_initialized();
 
         if (vo.os_OK(Teuchos::VERB_MEDIUM)) {

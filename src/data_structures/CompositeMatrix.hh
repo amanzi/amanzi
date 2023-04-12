@@ -4,16 +4,10 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
-/* -------------------------------------------------------------------------
-
-ATS
-
-Interface for a Matrix that acts on CompositeVector.
-------------------------------------------------------------------------- */
-
+//!
 #ifndef AMANZI_COMPOSITEMATRIX_HH_
 #define AMANZI_COMPOSITEMATRIX_HH_
 
@@ -38,7 +32,7 @@ class CompositeMatrix {
   virtual int Apply(const CompositeVector& x, CompositeVector& b) const = 0;
 
   // Apply the inverse, x <-- A^-1 b, returns ierr
-  virtual int ApplyInverse(const CompositeVector& b, CompositeVector& x) const = 0;
+  virtual int applyInverse(const CompositeVector& b, CompositeVector& x) const = 0;
 };
 
 } // namespace Amanzi

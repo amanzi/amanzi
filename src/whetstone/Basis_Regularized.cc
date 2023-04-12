@@ -33,7 +33,7 @@ void
 Basis_Regularized::Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                         int c,
                         int order,
-                        Polynomial& integrals)
+                        Polynomial<>& integrals)
 {
   int k0 = monomial_scales_.size();
   double volume;
@@ -55,10 +55,10 @@ Basis_Regularized::Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 * Transformation from natural basis to my basis: A_new = R^T A_old R.
 ****************************************************************** */
 void
-Basis_Regularized::BilinearFormNaturalToMy(DenseMatrix& A) const
+Basis_Regularized::BilinearFormNaturalToMy(DenseMatrix<>& A) const
 {
   int nrows = A.NumRows();
-  std::vector<double> a(nrows);
+  AmanziMesh::Double_List a(nrows);
 
   PolynomialIterator it(d_);
   for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
@@ -78,7 +78,7 @@ Basis_Regularized::BilinearFormNaturalToMy(DenseMatrix& A) const
 * Transformation from natural basis to my basis: f_new = R^T f_old.
 ****************************************************************** */
 void
-Basis_Regularized::LinearFormNaturalToMy(DenseVector& f) const
+Basis_Regularized::LinearFormNaturalToMy(DenseVector<>& f) const
 {
   PolynomialIterator it(d_);
   for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
@@ -95,11 +95,11 @@ Basis_Regularized::LinearFormNaturalToMy(DenseVector& f) const
 void
 Basis_Regularized::BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
                                            std::shared_ptr<Basis> br,
-                                           DenseMatrix& A) const
+                                           DenseMatrix<>& A) const
 {
   int nrows = A.NumRows();
   int m(nrows / 2);
-  std::vector<double> a1(m), a2(m);
+  AmanziMesh::Double_List a1(m), a2(m);
 
   auto bll = std::dynamic_pointer_cast<Basis_Regularized>(bl);
   auto brr = std::dynamic_pointer_cast<Basis_Regularized>(br);
@@ -130,7 +130,7 @@ Basis_Regularized::BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
 * Transformation from my to natural bases: v_old = R * v_new.
 ****************************************************************** */
 void
-Basis_Regularized::ChangeBasisMyToNatural(DenseVector& v) const
+Basis_Regularized::ChangeBasisMyToNatural(DenseVector<>& v) const
 {
   PolynomialIterator it(d_);
   for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
@@ -145,7 +145,7 @@ Basis_Regularized::ChangeBasisMyToNatural(DenseVector& v) const
 * Transformation from natural to my bases: v_new = inv(R) * v_old.
 ****************************************************************** */
 void
-Basis_Regularized::ChangeBasisNaturalToMy(DenseVector& v) const
+Basis_Regularized::ChangeBasisNaturalToMy(DenseVector<>& v) const
 {
   PolynomialIterator it(d_);
   for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
@@ -160,14 +160,14 @@ Basis_Regularized::ChangeBasisNaturalToMy(DenseVector& v) const
 * Recover polynomial in the natural basis from vector coefs of
 * coefficients in the regularized basis.
 ****************************************************************** */
-Polynomial
+Polynomial<>
 Basis_Regularized::CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                        int c,
                                        int order,
-                                       DenseVector& coefs) const
+                                       const DenseVector<>& coefs) const
 {
   int d = mesh->getSpaceDimension();
-  Polynomial poly(d, order, coefs);
+  Polynomial<> poly(d, order, coefs);
   poly.set_origin(mesh->getCellCentroid(c));
 
   int n(0);

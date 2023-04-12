@@ -26,11 +26,14 @@ No parameters are required.
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_MultiVector.h"
-#include "Epetra_RowMatrix.h"
+// #include "Epetra_MultiVector.h"
+// #include "Epetra_RowMatrix.h"
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
+
+
+#include "cuda_decl.h"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -38,19 +41,25 @@ namespace AmanziSolvers {
 class PreconditionerDiagonal : public Preconditioner {
  public:
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final{};
-  virtual void InitializeInverse() override final {}
-  virtual void ComputeInverse() override final
+  virtual void initializeInverse() override final {}
+  virtual void computeInverse() override final
   {
-    AMANZI_ASSERT(h_.get());
-    diagonal_ = Teuchos::rcp(new Epetra_Vector(h_->DomainMap()));
-    h_->ExtractDiagonalCopy(*diagonal_);
+    nvtxRangePush("PreconditionerDiagonal::computeInverse");
+    diagonal_ = Teuchos::rcp(new Vector_type(h_->getRowMap()));
+    diagonal_->putScalar(0.);
+    h_->getLocalDiagCopy(*diagonal_);
+    diagonal_->reciprocal(*diagonal_);
+    nvtxRangePop();
   };
 
-  virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final
+  virtual int applyInverse(const Vector_type& v, Vector_type& hv) const override final
   {
+    nvtxRangePush("PreconditionerDiagonal::applyInverse");
+
     AMANZI_ASSERT(diagonal_.get()); // Compute called
-    returned_code_ = hv.ReciprocalMultiply(1.0, *diagonal_, v, 0.0);
-    return returned_code_;
+    hv.elementWiseMultiply(1., v, *diagonal_, 0.);
+    nvtxRangePop();
+    return 0;
   }
 
   virtual int returned_code() const override final { return returned_code_; }
@@ -61,7 +70,7 @@ class PreconditionerDiagonal : public Preconditioner {
   }
 
  private:
-  Teuchos::RCP<Epetra_Vector> diagonal_;
+  Teuchos::RCP<Vector_type> diagonal_;
   mutable int returned_code_;
 };
 

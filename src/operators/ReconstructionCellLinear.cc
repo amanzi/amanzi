@@ -20,7 +20,7 @@
 
 #include "DenseMatrix.hh"
 #include "lapack.hh"
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 #include "OperatorDefs.hh"
 #include "Point.hh"
 #include "ReconstructionCellLinear.hh"
@@ -41,7 +41,7 @@ ReconstructionCellLinear::Init(Teuchos::ParameterList& plist)
   cvs.SetComponent("cell", AmanziMesh::Entity_kind::CELL, dim);
 
   gradient_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
-  gradient_c_ = gradient_->ViewComponent("cell", true);
+  gradient_c_ = gradient_->viewComponent("cell", true);
   if (plist.get<std::string>("weight", "constant") == "inverse distance")
     weight_ = WeightType::WT_INVERSE_DISTANCE;
 }
@@ -60,12 +60,12 @@ ReconstructionCellLinear::Compute(const AmanziMesh::cEntity_ID_View& ids,
   field_ = field;
   component_ = component;
 
-  Epetra_MultiVector& grad = *gradient_->ViewComponent("cell");
-  std::vector<AmanziMesh::Entity_ID> cells;
+  Epetra_MultiVector& grad = *gradient_->viewComponent("cell");
+  AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point xcc(dim);
 
-  WhetStone::DenseMatrix matrix(dim, dim);
-  WhetStone::DenseVector rhs(dim);
+  WhetStone::DenseMatrix<> matrix(dim, dim);
+  WhetStone::DenseVector<> rhs(dim);
 
   for (int c : ids) {
     const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
@@ -74,8 +74,8 @@ ReconstructionCellLinear::Compute(const AmanziMesh::cEntity_ID_View& ids,
     CellFaceAdjCellsManifold_(c, cells);
     int ncells = cells.size();
 
-    matrix.PutScalar(0.0);
-    rhs.PutScalar(0.0);
+    matrix.putScalar(0.0);
+    rhs.putScalar(0.0);
 
     for (int n = 0; n < ncells; n++) {
       const AmanziGeometry::Point& xc2 = mesh_->getCellCentroid(cells[n]);
@@ -87,7 +87,7 @@ ReconstructionCellLinear::Compute(const AmanziMesh::cEntity_ID_View& ids,
 
     // improve robustness w.r.t degenerate matrices
     double det = matrix.Det();
-    double norm = matrix.NormInf();
+    double norm = matrix.normInf();
 
     if (det < pow(norm, 1.0 / dim)) {
       norm *= OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION; // relative
@@ -105,7 +105,7 @@ ReconstructionCellLinear::Compute(const AmanziMesh::cEntity_ID_View& ids,
     for (int i = 0; i < dim; i++) grad[i][c] = rhs(i);
   }
 
-  gradient_->ScatterMasterToGhosted("cell");
+  gradient_->scatterMasterToGhosted("cell");
 }
 
 
@@ -115,8 +115,8 @@ ReconstructionCellLinear::Compute(const AmanziMesh::cEntity_ID_View& ids,
 void
 ReconstructionCellLinear::PopulateLeastSquareSystem_(AmanziGeometry::Point& centroid,
                                                      double field_value,
-                                                     WhetStone::DenseMatrix& matrix,
-                                                     WhetStone::DenseVector& rhs)
+                                                     WhetStone::DenseMatrix<>& matrix,
+                                                     WhetStone::DenseVector<>& rhs)
 {
   double w = (weight_ == WeightType::WT_INVERSE_DISTANCE) ? 1.0 / norm(centroid) : 1.0;
 
@@ -210,7 +210,7 @@ ReconstructionCellLinear::getValueSlope(int c, const AmanziGeometry::Point& p)
 WhetStone::Polynomial
 ReconstructionCellLinear::getPolynomial(int c) const
 {
-  WhetStone::Polynomial tmp(dim, 2);
+  WhetStone::Polynomial<> tmp(dim, 2);
   tmp(0) = (*field_)[0][c];
   for (int i = 0; i < dim; i++) tmp(i + 1) = (*gradient_c_)[i][c];
 

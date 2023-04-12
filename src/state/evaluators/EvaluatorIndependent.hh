@@ -73,8 +73,7 @@ class EvaluatorIndependent_ : public Evaluator {
   IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override final;
 
   virtual void EnsureCompatibility(State& S) override;
-
-  virtual std::string WriteToString() const override;
+  virtual std::ostream& writeInfo(std::ostream& os) const override final;
 
  protected:
   // ---------------------------------------------------------------------------
@@ -111,7 +110,6 @@ class EvaluatorIndependent : public EvaluatorIndependent_ {
   }
 };
 
-using EvaluatorIndependentCV = EvaluatorIndependent<CompositeVector, CompositeVectorSpace>;
 
 } // namespace Amanzi
 

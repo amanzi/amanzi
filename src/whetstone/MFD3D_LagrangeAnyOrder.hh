@@ -53,40 +53,40 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
   virtual std::vector<SchemaItem> schema() const override;
 
   // -- stiffness matrix
-  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
+  int H1consistency(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Ac)
   {
     if (d_ == 2) return H1consistency2D_(mesh_, c, T, N, Ac);
     return H1consistency3D_(c, T, N, Ac, true);
   }
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
+  virtual int StiffnessMatrix(int c, const Tensor<>& T, DenseMatrix<>& A) override;
 
   // -- l2 projectors
   virtual void L2Cell(int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
-                      const Polynomial* moments,
-                      Polynomial& uc) override
+                      const std::vector<Polynomial<>>& ve,
+                      const std::vector<Polynomial<>>& vf,
+                      const Polynomial<>* moments,
+                      Polynomial<>& uc) override
   {
     ProjectorCell_(c, ve, vf, ProjectorType::L2, moments, uc);
   }
 
   // -- h1 projectors
   virtual void H1Cell(int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
-                      const Polynomial* moments,
-                      Polynomial& uc) override
+                      const std::vector<Polynomial<>>& ve,
+                      const std::vector<Polynomial<>>& vf,
+                      const Polynomial<>* moments,
+                      Polynomial<>& uc) override
   {
     ProjectorCell_(c, ve, vf, ProjectorType::H1, moments, uc);
   }
 
-  virtual void H1Cell(int c, const DenseVector& dofs, Polynomial& uc) override
+  virtual void H1Cell(int c, const DenseVector<>& dofs, Polynomial<>& uc) override
   {
     ProjectorCellFromDOFs_(c, dofs, ProjectorType::H1, uc);
   }
 
   // surface methods
-  int StiffnessMatrixSurface(int c, const Tensor& T, DenseMatrix& A);
+  int StiffnessMatrixSurface(int c, const Tensor<>& T, DenseMatrix<>& A);
 
   // access
   // -- integrals of monomials in high-order schemes could be reused
@@ -94,34 +94,34 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
   PolynomialOnMesh& integrals() { return integrals_; }
 
   // -- matrices that could be resused in other code
-  const DenseMatrix& G() const { return G_; }
-  const DenseMatrix& R() const { return R_; }
+  const DenseMatrix<>& G() const { return G_; }
+  const DenseMatrix<>& R() const { return R_; }
 
  protected:
   int H1consistency2D_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
                        int c,
-                       const Tensor& T,
-                       DenseMatrix& N,
-                       DenseMatrix& Ac);
+                       const Tensor<>& T,
+                       DenseMatrix<>& N,
+                       DenseMatrix<>& Ac);
 
-  int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac, bool doAc);
+  int H1consistency3D_(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Ac, bool doAc);
 
  private:
   void ProjectorCell_(int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
+                      const std::vector<Polynomial<>>& ve,
+                      const std::vector<Polynomial<>>& vf,
                       const ProjectorType type,
-                      const Polynomial* moments,
-                      Polynomial& uc);
+                      const Polynomial<>* moments,
+                      Polynomial<>& uc);
 
   void
-  ProjectorCellFromDOFs_(int c, const DenseVector& dofs, const ProjectorType type, Polynomial& uc);
+  ProjectorCellFromDOFs_(int c, const DenseVector<>& dofs, const ProjectorType type, Polynomial<>& uc);
 
-  std::vector<Polynomial> ConvertMomentsToPolynomials_(int order);
+  std::vector<Polynomial<>> ConvertMomentsToPolynomials_(int order);
 
  protected:
   PolynomialOnMesh integrals_;
-  DenseMatrix R_, G_;
+  DenseMatrix<> R_, G_;
 
  private:
   static RegisteredFactory<MFD3D_LagrangeAnyOrder> reg_;

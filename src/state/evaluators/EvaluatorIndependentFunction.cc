@@ -16,9 +16,10 @@
 #include <memory>
 
 #include "EvaluatorIndependentFunction.hh"
-#include "CompositeVectorFunctionFactory.hh"
 
 namespace Amanzi {
+
+const std::string EvaluatorIndependentFunction::name = "independent variable";
 
 // ---------------------------------------------------------------------------
 // Constructor
@@ -70,20 +71,17 @@ EvaluatorIndependentFunction::operator=(const EvaluatorIndependentFunction& othe
 void
 EvaluatorIndependentFunction::Update_(State& S)
 {
+  auto cv = S.GetPtrW<CompositeVector>(my_key_, my_tag_, my_key_);
+
   if (!computed_once_) {
     // Create the function.
-    auto& cv = S.Get<CompositeVector>(my_key_, my_tag_);
     AMANZI_ASSERT(plist_.isSublist("function"));
-
-    std::vector<std::string> complist;
-    func_ =
-      Functions::CreateCompositeVectorFunction(plist_.sublist("function"), cv.Map(), complist);
+    func_ = Teuchos::rcp(new Functions::CompositeVectorFunction(plist_.sublist("function"), cv->getMesh()));
   }
 
   // NOTE: EvaluatorIndependentFunctions own their own data.
-  auto cv = S.GetPtrW<CompositeVector>(my_key_, my_tag_, my_key_);
   time_ = S.get_time(my_tag_);
-  func_->Compute(time_, cv.ptr());
+  func_->Compute(time_, *cv);
 }
 
 } // namespace Amanzi

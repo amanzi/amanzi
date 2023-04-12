@@ -29,37 +29,34 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class Polynomial;
-class PolynomialOnMesh;
-
 // Gramm matrix for polynomials
 void
-GrammMatrix(const Polynomial& poly,
+GrammMatrix(const Polynomial<>& poly,
             const PolynomialOnMesh& integrals,
             const Basis_Regularized& basis,
-            DenseMatrix& G);
+            DenseMatrix<>& G);
 
 // Gramm matrix for gradient of polynomials with tensorial weight
 inline void
-GrammMatrixGradients(const Tensor& K,
-                     const Polynomial& poly,
+GrammMatrixGradients(const Tensor<>& K,
+                     const Polynomial<>& poly,
                      const PolynomialOnMesh& integrals,
                      const Basis_Regularized& basis,
-                     DenseMatrix& G);
+                     DenseMatrix<>& G);
 
 
 /* ******************************************************************
 * Gramm matrix G for polynomials.
 ****************************************************************** */
 inline void
-GrammMatrix(const Polynomial& poly,
+GrammMatrix(const Polynomial<>& poly,
             const PolynomialOnMesh& integrals,
             const Basis_Regularized& basis,
-            DenseMatrix& G)
+            DenseMatrix<>& G)
 {
   int nd = poly.size();
   int d = poly.dimension();
-  G.Reshape(nd, nd);
+  G.reshape(nd, nd);
 
   int multi_index[3];
   for (auto it = poly.begin(); it < poly.end(); ++it) {
@@ -85,19 +82,19 @@ GrammMatrix(const Polynomial& poly,
 * Gramm matrix for gradient of polynomials with tensorial weight.
 ****************************************************************** */
 void
-GrammMatrixGradients(const Tensor& K,
-                     const Polynomial& poly,
+GrammMatrixGradients(const Tensor<>& K,
+                     const Polynomial<>& poly,
                      const PolynomialOnMesh& integrals,
                      const Basis_Regularized& basis,
-                     DenseMatrix& G)
+                     DenseMatrix<>& G)
 {
   int nd = poly.size();
   int d = poly.dimension();
-  G.Reshape(nd, nd);
+  G.reshape(nd, nd);
 
   Tensor Ktmp(d, 2);
   if (K.rank() == 2)
-    Ktmp = K;
+    Ktmp.assign(K);
   else
     Ktmp.MakeDiagonal(K(0, 0));
 

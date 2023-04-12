@@ -7,6 +7,7 @@
   Authors:
 */
 
+//!
 #include <math.h>
 
 #include "FunctionStandardMath.hh"
@@ -18,75 +19,114 @@ FunctionStandardMath::FunctionStandardMath(std::string op,
                                            double amplitude,
                                            double parameter,
                                            double shift)
-  : parameter_(parameter), amplitude_(amplitude), shift_(shift), op_(op)
+  : amplitude_(amplitude), parameter_(parameter), shift_(shift)
 {
-  if (!((op_ == "cos") || (op_ == "sin") || (op_ == "tan") || (op_ == "acos") || (op_ == "asin") ||
-        (op_ == "atan") || (op_ == "cosh") || (op_ == "sinh") || (op_ == "tanh") ||
-        (op_ == "exp") || (op_ == "log") || (op_ == "log10") || (op_ == "sqrt") ||
-        (op_ == "ceil") || (op_ == "fabs") || (op_ == "floor") || (op_ == "mod") ||
-        (op_ == "pow") || (op_ == "abs") || (op_ == "positive") || (op_ == "negative") ||
-        (op_ == "heaviside") || (op_ == "sign"))) {
+  if (op =="cos") op_ = COS;
+  else if (op =="sin") op_ = SIN;
+  else if (op =="tan") op_ = TAN;
+  else if (op =="acos") op_ = ACOS;
+  else if (op =="asin") op_ = ASIN;
+  else if (op =="atan") op_ = ATAN;
+  else if (op =="cosh") op_ = COSH;
+  else if (op =="sinh") op_ = SINH;
+  else if (op =="tanh") op_ = TANH;
+  else if (op =="exp") op_ = EXP;
+  else if (op =="log") op_ = LOG;
+  else if (op =="log10") op_ = LOG10;
+  else if (op =="sqrt") op_ = SQRT;
+  else if (op =="ceil") op_ = CEIL;
+  else if (op =="fabs") op_ = FABS;
+  else if (op =="abs") op_ = FABS;
+  else if (op =="floor") op_ = FLOOR;
+  else if (op =="mod") op_ = MOD;
+  else if (op =="pow") op_ = POW;
+  else if (op =="positive") op_ = POSITIVE;
+  else if (op =="negative") op_ = NEGATIVE;
+  else if (op =="heaviside") op_ = HEAVISIDE;
+  else if (op =="sign") op_ = SIGN;
+  else {
     std::stringstream m;
-    m << "Invalid or unknown standard math function " << op_;
+    m << "Invalid or unknown standard math function " << op;
     Errors::Message message(m.str());
     Exceptions::amanzi_throw(message);
   }
 }
 
+
 double
-FunctionStandardMath::operator()(const std::vector<double>& x) const
+FunctionStandardMath::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
 {
   double x0 = x[0] - shift_;
-  if (op_ == "cos") {
+  switch (op_) {
+  case COS:
     return amplitude_ * cos(parameter_ * x0);
-  } else if (op_ == "sin") {
+    break;
+  case SIN:
     return amplitude_ * sin(parameter_ * x0);
-  } else if (op_ == "tan") {
+    break;
+  case TAN:
     return amplitude_ * tan(parameter_ * x0);
-  } else if (op_ == "acos") {
+    break;
+  case ACOS:
     return amplitude_ * acos(parameter_ * x0);
-  } else if (op_ == "asin") {
+    break;
+  case ASIN:
     return amplitude_ * asin(parameter_ * x0);
-  } else if (op_ == "atan") {
+    break;
+  case ATAN:
     return amplitude_ * atan(parameter_ * x0);
-  } else if (op_ == "cosh") {
+    break;
+  case COSH:
     return amplitude_ * cosh(parameter_ * x0);
-  } else if (op_ == "sinh") {
+    break;
+  case SINH:
     return amplitude_ * sinh(parameter_ * x0);
-  } else if (op_ == "tanh") {
+    break;
+  case TANH:
     return amplitude_ * tanh(parameter_ * x0);
-  } else if (op_ == "exp") {
+    break;
+  case EXP:
     return amplitude_ * exp(parameter_ * x0);
-  } else if (op_ == "log") {
+    break;
+  case LOG:
     if (x0 <= 0) InvalidDomainError_(x[0]);
     return amplitude_ * log(parameter_ * x0);
-  } else if (op_ == "log10") {
+    break;
+  case LOG10:
     if (x0 <= 0) InvalidDomainError_(x[0]);
     return amplitude_ * log10(parameter_ * x0);
-  } else if (op_ == "sqrt") {
+    break;
+  case SQRT:
     if (x0 < 0) InvalidDomainError_(x[0]);
     return amplitude_ * sqrt(parameter_ * x0);
-  } else if (op_ == "ceil") {
+    break;
+  case CEIL:
     return amplitude_ * ceil(x0);
-  } else if (op_ == "fabs") {
+    break;
+  case FABS:
     return amplitude_ * fabs(x0);
-  } else if (op_ == "abs") {
-    return amplitude_ * fabs(x0);
-  } else if (op_ == "floor") {
+  case FLOOR:
     return amplitude_ * floor(x0);
-  } else if (op_ == "pow") {
+    break;
+  case POW:
     return amplitude_ * pow(x0, parameter_);
-  } else if (op_ == "mod") {
+    break;
+  case MOD:
     return fmod(x0, parameter_);
-  } else if (op_ == "positive") {
+    break;
+  case POSITIVE:
     return amplitude_ * (x0 > 0 ? x0 : 0);
-  } else if (op_ == "negative") {
+    break;
+  case NEGATIVE:
     return amplitude_ * (x0 < 0 ? x0 : 0);
-  } else if (op_ == "heaviside") {
+    break;
+  case HEAVISIDE:
     return amplitude_ * (x0 > 0 ? 1 : 0);
-  } else if (op_ == "sign") {
+    break;
+  case SIGN:
     return amplitude_ * (x0 > 0 ? 1 : (x0 < 0 ? -1 : 0));
-  } else {
+    break;
+  default:
     std::stringstream m;
     m << "Invalid or unknown standard math function " << op_;
     Errors::Message message(m.str());
@@ -94,6 +134,7 @@ FunctionStandardMath::operator()(const std::vector<double>& x) const
   }
   return 0.0;
 }
+
 
 void
 FunctionStandardMath::InvalidDomainError_(double x) const

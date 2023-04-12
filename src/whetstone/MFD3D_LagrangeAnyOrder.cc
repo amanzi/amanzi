@@ -44,8 +44,9 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructor parses the parameter list
 ****************************************************************** */
-MFD3D_LagrangeAnyOrder::MFD3D_LagrangeAnyOrder(const Teuchos::ParameterList& plist,
-                                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+MFD3D_LagrangeAnyOrder::MFD3D_LagrangeAnyOrder(
+  const Teuchos::ParameterList& plist,
+  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   : MFD3D(mesh)
 {
   order_ = plist.get<int>("method order");
@@ -84,9 +85,9 @@ MFD3D_LagrangeAnyOrder::schema() const
 int
 MFD3D_LagrangeAnyOrder::H1consistency2D_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
                                          int c,
-                                         const Tensor& K,
-                                         DenseMatrix& N,
-                                         DenseMatrix& Ac)
+                                         const Tensor<>& K,
+                                         DenseMatrix<>& N,
+                                         DenseMatrix<>& Ac)
 {
   // input mesh may have a different dimension than base mesh
   int d = mymesh->getSpaceDimension();
@@ -94,28 +95,28 @@ MFD3D_LagrangeAnyOrder::H1consistency2D_(const Teuchos::RCP<const AmanziMesh::Me
   auto nodes = mymesh->getCellNodes(c);
   int nnodes = nodes.size();
 
-  const auto& [faces, dirs] = mymesh->getCellFacesAndDirections(c);
+  const auto& [faces,dirs] = mymesh->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mymesh->getCellCentroid(c);
   double volume = mymesh->getCellVolume(c);
 
   // calculate degrees of freedom
-  Polynomial poly(d, order_), pf, pc;
+  Polynomial<> poly(d, order_), pf, pc;
   if (order_ > 1) {
-    pf.Reshape(d - 1, order_ - 2);
-    pc.Reshape(d, order_ - 2);
+    pf.reshape(d - 1, order_ - 2);
+    pc.reshape(d, order_ - 2);
   }
   int nd = poly.size();
   int ndf = pf.size();
   int ndc = pc.size();
 
   int ndof = nnodes + nfaces * ndf + ndc;
-  N.Reshape(ndof, nd);
-  Ac.Reshape(ndof, ndof);
+  N.reshape(ndof, nd);
+  Ac.reshape(ndof, ndof);
 
-  R_.Reshape(ndof, nd);
-  G_.Reshape(nd, nd);
+  R_.reshape(ndof, nd);
+  G_.reshape(nd, nd);
 
   // pre-calculate integrals of monomials
   NumericalIntegration numi(mymesh);
@@ -126,15 +127,15 @@ MFD3D_LagrangeAnyOrder::H1consistency2D_(const Teuchos::RCP<const AmanziMesh::Me
   basis.Init(mymesh, c, order_, integrals_.poly());
 
   // populate matrices N and R
-  R_.PutScalar(0.0);
-  N.PutScalar(0.0);
+  R_.putScalar(0.0);
+  N.putScalar(0.0);
 
-  std::vector<const PolynomialBase*> polys(2);
+  std::vector<const PolynomialBase<>*> polys(2);
 
   for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* index = it.multi_index();
     double factor = basis.monomial_scales()[it.MonomialSetOrder()];
-    Polynomial cmono(d, index, factor);
+    Polynomial<> cmono(d, index, factor);
     cmono.set_origin(xc);
 
     // N: degrees of freedom at vertices
@@ -178,7 +179,7 @@ MFD3D_LagrangeAnyOrder::H1consistency2D_(const Teuchos::RCP<const AmanziMesh::Me
         int v, pos0, pos1;
         AmanziGeometry::Point x0(d), x1(d), xm(d), sm(d);
 
-        Polynomial tmp = grad * conormal;
+        Polynomial<> tmp = grad * conormal;
 
         v = face_nodes[0];
         pos0 = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
@@ -223,7 +224,7 @@ MFD3D_LagrangeAnyOrder::H1consistency2D_(const Teuchos::RCP<const AmanziMesh::Me
       if (order_ > 1) {
         for (auto jt = pf.begin(); jt < pf.end(); ++jt) {
           const int* jndex = jt.multi_index();
-          Polynomial fmono(d - 1, jndex, 1.0);
+          Polynomial<> fmono(d - 1, jndex, 1.0);
           fmono.InverseChangeCoordinates(xf, *coordsys->tau());
 
           polys[1] = &fmono;
@@ -238,7 +239,7 @@ MFD3D_LagrangeAnyOrder::H1consistency2D_(const Teuchos::RCP<const AmanziMesh::Me
     // N and R: degrees of freedom in cells
     if (cmono.order() > 1) {
       VectorPolynomial Kgrad = K * grad;
-      Polynomial tmp = Divergence(Kgrad);
+      Polynomial<> tmp = Divergence(Kgrad);
 
       for (auto jt = tmp.begin(); jt < tmp.end(); ++jt) {
         int m = jt.MonomialSetOrder();
@@ -272,9 +273,13 @@ MFD3D_LagrangeAnyOrder::H1consistency2D_(const Teuchos::RCP<const AmanziMesh::Me
   G_.Multiply(N, R_, true);
 
   // calculate R inv(G) R^T
-  DenseMatrix RG(ndof, nd), Rtmp(nd, ndof);
+  DenseMatrix<> RG(ndof, nd), Rtmp(nd, ndof);
 
   // to invert generate matrix, we add and subtruct positive number
+  //
+  // NOTE, this doesn't guarantee invertibility... at least in one test
+  // (whetstone_dg), G_.Inverse() returns a non-zero return code and is
+  // ignored. --ETC
   G_(0, 0) = 1.0;
   G_.Inverse();
   G_(0, 0) = 0.0;
@@ -292,12 +297,11 @@ MFD3D_LagrangeAnyOrder::H1consistency2D_(const Teuchos::RCP<const AmanziMesh::Me
 ****************************************************************** */
 int
 MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
-                                         const Tensor& K,
-                                         DenseMatrix& N,
-                                         DenseMatrix& Ac,
+                                         const Tensor<>& K,
+                                         DenseMatrix<>& N,
+                                         DenseMatrix<>& Ac,
                                          bool doAc)
 {
-  AmanziMesh::Entity_ID_View fedges, fnodes;
   std::vector<int> fdirs;
 
   auto nodes = mesh_->getCellNodes(c);
@@ -306,7 +310,7 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
   const auto& edges = mesh_->getCellEdges(c);
   int nedges = edges.size();
 
-  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
+  const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
@@ -317,11 +321,11 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
   mfd_surf.set_order(order_);
 
   // count degrees of freedom
-  Polynomial poly(d_, order_), pf, pe, pc;
+  Polynomial<> poly(d_, order_), pf, pe, pc;
   if (order_ > 1) {
-    pe.Reshape(d_ - 2, order_ - 2);
-    pf.Reshape(d_ - 1, order_ - 2);
-    pc.Reshape(d_, order_ - 2);
+    pe.reshape(d_ - 2, order_ - 2);
+    pf.reshape(d_ - 1, order_ - 2);
+    pc.reshape(d_, order_ - 2);
   }
   int nd = poly.size();
   int nde = pe.size();
@@ -334,7 +338,7 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
   // int rowc = rowe + nedges * nde;
 
   // pre-calculate data for each face
-  std::vector<DenseMatrix> vRf;
+  std::vector<DenseMatrix<>> vRf;
   std::vector<std::vector<int>> vmapf;
   std::vector<std::shared_ptr<AmanziGeometry::SurfaceCoordinateSystem>> vsysf;
   std::vector<Basis_Regularized> vbasisf;
@@ -354,11 +358,11 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
       Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh_, f, *coordsys));
 
     // -- matrices
-    DenseMatrix Nf, Af, Mf;
+    DenseMatrix<> Nf, Af, Mf;
     mfd_surf.integrals().set_id(-1);
     mfd_surf.H1consistency2D_(surf_mesh, 0, K, Nf, Af);
-    const DenseMatrix& Rf = mfd_surf.R();
-    const DenseMatrix& Gf = mfd_surf.G();
+    const DenseMatrix<>& Rf = mfd_surf.R();
+    const DenseMatrix<>& Gf = mfd_surf.G();
     auto& integrals_f = mfd_surf.integrals();
 
     NumericalIntegration numi_f(surf_mesh);
@@ -370,11 +374,11 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
     basis_f.Init(surf_mesh, 0, order_, integrals_f.poly());
     vbasisf.push_back(basis_f);
 
-    Polynomial tmp(d_ - 1, order_);
+    Polynomial<> tmp(d_ - 1, order_);
     tmp.set_origin(surf_mesh->getCellCentroid(0));
     GrammMatrix(tmp, integrals_f, basis_f, Mf);
 
-    DenseMatrix RG(Rf), RGM(Rf);
+    DenseMatrix<> RG(Rf), RGM(Rf);
     RG.Multiply(Rf, Gf, false);
     RGM.Multiply(RG, Mf, false);
 
@@ -391,8 +395,8 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
       for (int i = 0; i < m; ++i)
         for (int j = 0; j < n; ++j) RGM(i, j) += Mf(0, j) * weights[i];
     } else {
-      DenseVector w(n), rw(m);
-      w.PutScalar(0.0);
+      DenseVector<> w(n), rw(m);
+      w.putScalar(0.0);
       w(0) = -1.0 / area;
 
       RGM.Multiply(w, rw, false);
@@ -417,13 +421,13 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
 
     // -- map : edge moments
     {
-      const auto [lids, dirs_aux] = mesh_->getFaceEdgesAndDirections(f);
-      for (int i = 0; i < lids.size(); ++i) {
-        int e = lids[i];
-        pos = std::distance(edges.begin(), std::find(edges.begin(), edges.end(), e));
-        pos = rowe + pos * nde;
+    const auto [ids, dirs_aux] = mesh_->getFaceEdgesAndDirections(f);
+    for (int i = 0; i < ids.size(); ++i) {
+      int e = ids[i];
+      pos = std::distance(edges.begin(), std::find(edges.begin(), edges.end(), e));
+      pos = rowe + pos * nde;
 
-        for (int k = 0; k < pe.size(); ++k) map.push_back(pos + k);
+      for (int k = 0; k < pe.size(); ++k) map.push_back(pos + k);
       }
     }
 
@@ -436,10 +440,10 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
   }
 
   // populate columns of matrices R and N
-  N.Reshape(ndof, nd);
+  N.reshape(ndof, nd);
 
-  R_.Reshape(ndof, nd);
-  G_.Reshape(nd, nd);
+  R_.reshape(ndof, nd);
+  G_.reshape(nd, nd);
 
   // pre-calculate integrals of monomials
   NumericalIntegration numi(mesh_);
@@ -450,15 +454,15 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
   basis.Init(mesh_, c, order_, integrals_.poly());
 
   // populate matrices N and R
-  R_.PutScalar(0.0);
-  N.PutScalar(0.0);
+  R_.putScalar(0.0);
+  N.putScalar(0.0);
 
-  std::vector<const PolynomialBase*> polys(2);
+  std::vector<const PolynomialBase<>*> polys(2);
 
   for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* index = it.multi_index();
     double factor = basis.monomial_scales()[it.MonomialSetOrder()];
-    Polynomial cmono(d_, index, factor);
+    Polynomial<> cmono(d_, index, factor);
     cmono.set_origin(xc);
 
     // N: degrees of freedom at vertices
@@ -484,13 +488,13 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
       // local coordinate system with origin at face centroid
       normal *= dirs[i] / area;
       AmanziGeometry::Point conormal = K * normal;
-      Polynomial tmp = grad * conormal;
+      Polynomial<> tmp = grad * conormal;
 
       const auto& tau = *vsysf[i]->tau();
       tmp.ChangeCoordinates(xf, tau);
 
       // transform to surface coordinates
-      Polynomial cmono2D(cmono);
+      Polynomial<> cmono2D(cmono);
       cmono2D.ChangeCoordinates(xf, tau);
       polys[0] = &cmono2D;
 
@@ -499,7 +503,7 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
       for (auto jt = pf.begin(); jt < pf.end(); ++jt) {
         const int* jndex = jt.multi_index();
         factor = vbasisf[i].monomial_scales()[jt.MonomialSetOrder()];
-        Polynomial fmono(d_ - 1, jndex, factor);
+        Polynomial<> fmono(d_ - 1, jndex, factor);
 
         polys[0] = &cmono2D;
         polys[1] = &fmono;
@@ -515,9 +519,9 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
 
       int ncolsf = Rf.NumCols();
       int nrowsf = Rf.NumRows();
-      DenseVector v(ncolsf), rv(nrowsf);
+      DenseVector<> v(ncolsf), rv(nrowsf);
 
-      v.PutVector(tmp.ExpandCoefficients(), 0.0);
+      v.putVector(tmp.ExpandCoefficients(), 0.0);
       vbasisf[i].ChangeBasisNaturalToMy(v);
       Rf.Multiply(v, rv, false);
 
@@ -528,12 +532,12 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
     for (int i = 0; i < nedges; i++) {
       int e = edges[i];
       const auto& xe = mesh_->getEdgeCentroid(e);
-      AmanziMesh::Point_List tau_edge(1, mesh_->getEdgeVector(e));
+      std::vector<AmanziGeometry::Point> tau_edge(1, mesh_->getEdgeVector(e));
       double length = mesh_->getEdgeLength(e);
 
       for (auto jt = pe.begin(); jt < pe.end(); ++jt) {
         const int* jndex = jt.multi_index();
-        Polynomial fmono(d_ - 2, jndex, 1.0);
+        Polynomial<> fmono(d_ - 2, jndex, 1.0);
         fmono.InverseChangeCoordinates(xe, tau_edge);
 
         polys[0] = &cmono;
@@ -548,7 +552,7 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
     // R: degrees of freedom in cells
     if (cmono.order() > 1) {
       VectorPolynomial Kgrad = K * grad;
-      Polynomial tmp = Divergence(Kgrad);
+      Polynomial<> tmp = Divergence(Kgrad);
 
       for (auto jt = tmp.begin(); jt < tmp.end(); ++jt) {
         int m = jt.MonomialSetOrder();
@@ -589,8 +593,8 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
 
   // calculate R inv(G) R^T
   if (doAc) {
-    DenseMatrix RG(ndof, nd), Rtmp(nd, ndof);
-    Ac.Reshape(ndof, ndof);
+    DenseMatrix<> RG(ndof, nd), Rtmp(nd, ndof);
+    Ac.reshape(ndof, ndof);
 
     RG.Multiply(R_, G_, false);
     Rtmp.Transpose(R_);
@@ -605,9 +609,9 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
 * Stiffness matrix for a high-order scheme.
 ****************************************************************** */
 int
-MFD3D_LagrangeAnyOrder::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
+MFD3D_LagrangeAnyOrder::StiffnessMatrix(int c, const Tensor<>& K, DenseMatrix<>& A)
 {
-  DenseMatrix N;
+  DenseMatrix<> N;
 
   int ok = H1consistency(c, K, N, A);
   if (ok) return ok;
@@ -621,7 +625,7 @@ MFD3D_LagrangeAnyOrder::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 * Stiffness matrix on a manifold for a high-order scheme.
 ****************************************************************** */
 int
-MFD3D_LagrangeAnyOrder::StiffnessMatrixSurface(int f, const Tensor& K, DenseMatrix& A)
+MFD3D_LagrangeAnyOrder::StiffnessMatrixSurface(int f, const Tensor<>& K, DenseMatrix<>& A)
 {
   const auto& origin = mesh_->getFaceCentroid(f);
   const auto& normal = mesh_->getFaceNormal(f);
@@ -630,7 +634,7 @@ MFD3D_LagrangeAnyOrder::StiffnessMatrixSurface(int f, const Tensor& K, DenseMatr
   Teuchos::RCP<AmanziMesh::SingleFaceMesh> surf_mesh =
     Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh_, f, coordsys));
 
-  DenseMatrix N;
+  DenseMatrix<> N;
   int ok = H1consistency2D_(surf_mesh, f, K, N, A);
   if (ok) return ok;
 
@@ -644,11 +648,11 @@ MFD3D_LagrangeAnyOrder::StiffnessMatrixSurface(int f, const Tensor& K, DenseMatr
 ****************************************************************** */
 void
 MFD3D_LagrangeAnyOrder::ProjectorCell_(int c,
-                                       const std::vector<Polynomial>& ve,
-                                       const std::vector<Polynomial>& vf,
+                                       const std::vector<Polynomial<>>& ve,
+                                       const std::vector<Polynomial<>>& vf,
                                        const ProjectorType type,
-                                       const Polynomial* moments,
-                                       Polynomial& uc)
+                                       const Polynomial<>* moments,
+                                       Polynomial<>& uc)
 {
   AMANZI_ASSERT(d_ == 2);
 
@@ -663,14 +667,14 @@ MFD3D_LagrangeAnyOrder::ProjectorCell_(int c,
 
   // calculate stiffness matrix.
   Tensor T(d_, 1);
-  DenseMatrix A;
+  DenseMatrix<> A;
 
   T(0, 0) = 1.0;
   StiffnessMatrix(c, T, A);
 
   // number of degrees of freedom
-  Polynomial pf;
-  if (order_ > 1) pf.Reshape(d_ - 1, order_ - 2);
+  Polynomial<> pf;
+  if (order_ > 1) pf.reshape(d_ - 1, order_ - 2);
 
   int nd = PolynomialSpaceDimension(d_, order_);
   int ndf = pf.size();
@@ -679,12 +683,12 @@ MFD3D_LagrangeAnyOrder::ProjectorCell_(int c,
   int ndof_f(nnodes + nfaces * ndf);
   int ndof_c(ndof - ndof_f);
 
-  DenseVector vdof(ndof);
-  std::vector<const PolynomialBase*> polys(2);
+  DenseVector<> vdof(ndof);
+  std::vector<const PolynomialBase<>*> polys(2);
   NumericalIntegration numi(mesh_);
 
   // selecting regularized basis
-  Polynomial ptmp;
+  Polynomial<> ptmp;
   Basis_Regularized basis;
   basis.Init(mesh_, c, order_, ptmp);
 
@@ -718,7 +722,7 @@ MFD3D_LagrangeAnyOrder::ProjectorCell_(int c,
 
       for (auto it = pf.begin(); it < pf.end(); ++it) {
         const int* index = it.multi_index();
-        Polynomial fmono(d_ - 1, index, 1.0);
+        Polynomial<> fmono(d_ - 1, index, 1.0);
         fmono.InverseChangeCoordinates(xf, *coordsys.tau());
 
         polys[1] = &fmono;
@@ -732,14 +736,14 @@ MFD3D_LagrangeAnyOrder::ProjectorCell_(int c,
   // DOFs inside cell: copy moments from input data
   if (ndof_c > 0) {
     AMANZI_ASSERT(moments != NULL);
-    const DenseVector& v3 = moments->coefs();
+    const DenseVector<>& v3 = moments->coefs();
     AMANZI_ASSERT(ndof_c == v3.NumRows());
 
     for (int n = 0; n < ndof_c; ++n) { vdof(row + n) = v3(n); }
   }
 
   // calculate polynomial coefficients (in vector v5)
-  DenseVector v4(nd), v5(nd);
+  DenseVector<> v4(nd), v5(nd);
   R_.Multiply(vdof, v4, true);
   G_.Multiply(v4, v5, false);
 
@@ -763,9 +767,9 @@ MFD3D_LagrangeAnyOrder::ProjectorCell_(int c,
 
     uc(0) = a1 / a2;
   } else if (order_ >= 2) {
-    v4 = integrals_.poly().coefs();
+    v4.assign(integrals_.poly().coefs());
     basis.ChangeBasisMyToNatural(v4);
-    v4.Reshape(nd);
+    v4.reshape(nd);
     uc(0) = vdof(row) - (v4 * v5) / volume;
   }
 
@@ -773,17 +777,17 @@ MFD3D_LagrangeAnyOrder::ProjectorCell_(int c,
   if (type == ProjectorType::L2 && ndof_c > 0) {
     v5(0) = uc(0);
 
-    DenseMatrix M, M2;
-    DenseVector v6(nd - ndof_c);
-    Polynomial poly(d_, order_);
+    DenseMatrix<> M, M2;
+    DenseVector<> v6(nd - ndof_c);
+    Polynomial<> poly(d_, order_);
 
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
     GrammMatrix(poly, integrals_, basis, M);
 
-    M2 = M.SubMatrix(ndof_c, nd, 0, nd);
+    M2.assign(M.SubMatrix(ndof_c, nd, 0, nd));
     M2.Multiply(v5, v6, false);
 
-    const DenseVector& v3 = moments->coefs();
+    const DenseVector<>& v3 = moments->coefs();
     for (int n = 0; n < ndof_c; ++n) { v4(n) = v3(n) * mesh_->getCellVolume(c); }
 
     for (int n = 0; n < nd - ndof_c; ++n) { v4(ndof_c + n) = v6(n); }
@@ -791,7 +795,8 @@ MFD3D_LagrangeAnyOrder::ProjectorCell_(int c,
     M.Inverse();
     M.Multiply(v4, v5, false);
 
-    uc = basis.CalculatePolynomial(mesh_, c, order_, v5);
+    auto uc2 = basis.CalculatePolynomial(mesh_, c, order_, v5);
+    uc = uc2;
   }
 
   // set correct origin
@@ -805,9 +810,9 @@ MFD3D_LagrangeAnyOrder::ProjectorCell_(int c,
 ****************************************************************** */
 void
 MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(int c,
-                                               const DenseVector& dofs,
+                                               const DenseVector<>& dofs,
                                                const ProjectorType type,
-                                               Polynomial& uc)
+                                               Polynomial<>& uc)
 {
   AMANZI_ASSERT(d_ == 2);
 
@@ -824,12 +829,12 @@ MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(int c,
   int ndof_c(ndof - nnodes);
 
   // selecting regularized basis
-  Polynomial ptmp;
+  Polynomial<> ptmp;
   Basis_Regularized basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   // calculate polynomial coefficients (in vector v5)
-  DenseVector v4(nd), v5(nd);
+  DenseVector<> v4(nd), v5(nd);
   R_.Multiply(dofs, v4, true);
   G_.Multiply(v4, v5, false);
 
@@ -854,9 +859,9 @@ MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(int c,
 
     uc(0) = a1 / a2;
   } else if (order_ >= 2) {
-    v4 = integrals_.poly().coefs();
+    v4.assign(integrals_.poly().coefs());
     basis.ChangeBasisMyToNatural(v4);
-    v4.Reshape(nd);
+    v4.reshape(nd);
     uc(0) = dofs(nnodes) - (v4 * v5) / volume;
   }
 
@@ -864,15 +869,15 @@ MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(int c,
   if (type == ProjectorType::L2 && ndof_c > 0) {
     v5(0) = uc(0);
 
-    DenseMatrix M, M2;
-    DenseVector v6(nd - ndof_c);
-    Polynomial poly(d_, order_);
+    DenseMatrix<> M, M2;
+    DenseVector<> v6(nd - ndof_c);
+    Polynomial<> poly(d_, order_);
     NumericalIntegration numi(mesh_);
 
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
     GrammMatrix(poly, integrals_, basis, M);
 
-    M2 = M.SubMatrix(ndof_c, nd, 0, nd);
+    M2.assign(M.SubMatrix(ndof_c, nd, 0, nd));
     M2.Multiply(v5, v6, false);
 
     for (int n = 0; n < ndof_c; ++n) { v4(n) = dofs(nnodes + n) * volume; }
@@ -894,12 +899,12 @@ MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(int c,
 * Convert basis (DOFs at end-points and moments) to basis of regular
 * polynomials on interval (-1/2, 1/2).
 ***************************************************************** */
-std::vector<Polynomial>
+std::vector<Polynomial<>>
 MFD3D_LagrangeAnyOrder::ConvertMomentsToPolynomials_(int order)
 {
   int n = order + 1;
-  WhetStone::DenseMatrix T(n, n);
-  T.PutScalar(0.0);
+  DenseMatrix<> T(n, n);
+  T.putScalar(0.0);
 
   // values at end points
   double b0, a0(1.0), a1(1.0);
@@ -935,9 +940,9 @@ MFD3D_LagrangeAnyOrder::ConvertMomentsToPolynomials_(int order)
   T.Inverse();
 
   // convert columns of T to polynomials
-  std::vector<Polynomial> polys(n);
+  std::vector<Polynomial<>> polys(n);
   for (int k = 0; k < n; ++k) {
-    polys[k].Reshape(1, order);
+    polys[k].reshape(1, order);
     for (int i = 0; i < n; ++i) polys[k](i) = T(i, k);
   }
 

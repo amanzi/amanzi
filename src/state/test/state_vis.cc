@@ -14,8 +14,6 @@
 */
 
 // TPLs
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RCP.hpp"
@@ -26,7 +24,6 @@
 #include "MeshFactory.hh"
 
 // Amanzi::State
-#include "IO.hh"
 #include "State.hh"
 #include "Visualization.hh"
 
@@ -56,8 +53,7 @@ SUITE(VISUALIZATION)
     times[1] = 3.0;
     plist.set<Teuchos::Array<double>>("times", times);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Visualization V(plist);
+    Amanzi::Visualization V(plist, Teuchos::null, false);
 
     // test the cycle stuff, the expected result is in cycles_ and
     // we store the computed result in cycles
@@ -119,10 +115,8 @@ SUITE(VISUALIZATION)
     S0.set_time(1.02);
 
     Teuchos::ParameterList visualization_list = plist.get<Teuchos::ParameterList>("visualization");
-    Amanzi::Visualization V(visualization_list);
-    V.set_mesh(Mesh);
-    V.CreateFiles();
-
-    WriteVis(V, S0);
+    Amanzi::Visualization V(visualization_list, Mesh, false);
+    V.createFiles(0);
+    V.write(S0);
   }
 }

@@ -45,56 +45,45 @@ Record::Record(const Record& other, const Tag* tag)
 
 // pass-throughs for other functionality
 void
-Record::WriteVis(const Visualization& vis, const std::vector<std::string>* subfieldnames) const
+Record::WriteVis(const Visualization& vis, Teuchos::ParameterList& attrs) const
 {
-  if (io_vis()) { data_.WriteVis(vis, vis_fieldname(), subfieldnames); }
+  if (io_vis()) { data_.WriteVis(vis, attrs); }
 }
 
 void
 Record::WriteCheckpoint(const Checkpoint& chkp,
-                        const Tag& tag,
-                        bool post_mortem,
-                        const std::vector<std::string>* subfieldnames) const
+                        Teuchos::ParameterList& attrs,
+                        bool post_mortem) const
 {
-  if (post_mortem || io_checkpoint()) {
-    auto name = Keys::getKey(vis_fieldname(), tag);
-    data_.WriteCheckpoint(chkp, name, subfieldnames);
-  }
+  if (post_mortem || io_checkpoint()) data_.WriteCheckpoint(chkp, attrs);
 }
 
-bool
+void
 Record::ReadCheckpoint(const Checkpoint& chkp,
-                       const Tag& tag,
-                       const std::vector<std::string>* subfieldnames)
+                       Teuchos::ParameterList& attrs)
 {
   if (io_checkpoint()) {
-    auto name = Keys::getKey(vis_fieldname(), tag);
-    bool flag = data_.ReadCheckpoint(chkp, name, subfieldnames);
-    if (flag) set_initialized();
-    return flag;
+    data_.ReadCheckpoint(chkp, attrs);
+    set_initialized();
   }
-  return false;
 }
 
 bool
 Record::Initialize(Teuchos::ParameterList& plist,
-                   const std::vector<std::string>* subfieldnames,
                    bool force)
 {
   // check meta-data
   if (plist.isParameter("write checkpoint")) {
-    bool checkpoint_io = plist.get<bool>("write checkpoint", false);
-    set_io_checkpoint(checkpoint_io);
+    set_io_checkpoint(plist.get<bool>("write checkpoint"));
   }
 
   if (plist.isParameter("write vis")) {
-    bool vis_io = plist.get<bool>("write vis", false);
-    set_io_vis(vis_io);
+    set_io_vis(plist.get<bool>("write vis"));
   }
 
   bool initialized_here = false;
   if (!initialized() || force) {
-    initialized_here = data_.Initialize(plist, vis_fieldname(), subfieldnames);
+    initialized_here = data_.Initialize(plist);
     if (initialized_here) set_initialized();
   }
   return initialized_here;

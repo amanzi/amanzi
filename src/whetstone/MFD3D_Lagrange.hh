@@ -43,38 +43,37 @@ class MFD3D_Lagrange : public MFD3D {
   // -- schema
   virtual std::vector<SchemaItem> schema() const override
   {
-    return std::vector<SchemaItem>(
-      1, std::make_tuple(AmanziMesh::Entity_kind::NODE, DOF_Type::SCALAR, 1));
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::Entity_kind::NODE, DOF_Type::SCALAR, 1));
   }
 
   // -- stiffness matrix
-  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
+  int H1consistency(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Ac);
+  virtual int StiffnessMatrix(int c, const Tensor<>& T, DenseMatrix<>& A) override;
 
   // -- projectors
   virtual void L2Cell(int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
-                      const Polynomial* moments,
-                      Polynomial& uc) override
+                      const std::vector<Polynomial<>>& ve,
+                      const std::vector<Polynomial<>>& vf,
+                      const Polynomial<>* moments,
+                      Polynomial<>& uc) override
   {
     ProjectorCell_(c, ve, vf, uc);
   }
 
   virtual void H1Cell(int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
-                      const Polynomial* moments,
-                      Polynomial& uc) override
+                      const std::vector<Polynomial<>>& ve,
+                      const std::vector<Polynomial<>>& vf,
+                      const Polynomial<>* moments,
+                      Polynomial<>& uc) override
   {
     ProjectorCell_(c, ve, vf, uc);
   }
 
  private:
   void ProjectorCell_(int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
-                      Polynomial& uc);
+                      const std::vector<Polynomial<>>& ve,
+                      const std::vector<Polynomial<>>& vf,
+                      Polynomial<>& uc);
 
  private:
   static RegisteredFactory<MFD3D_Lagrange> reg_;

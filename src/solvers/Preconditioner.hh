@@ -56,14 +56,10 @@ preconditioner, and identity preconditioner.
 
 #include "Inverse.hh"
 
-class Epetra_CrsMatrix;
-class Epetra_MultiVector;
-class Epetra_Map;
-
 namespace Amanzi {
 namespace AmanziSolvers {
 
-using Preconditioner = Inverse<Epetra_CrsMatrix, Epetra_CrsMatrix, Epetra_Vector, Epetra_Map>;
+using Preconditioner = Inverse<Matrix_type, Matrix_type, Vector_type, Map_type>;
 
 } // namespace AmanziSolvers
 } // namespace Amanzi

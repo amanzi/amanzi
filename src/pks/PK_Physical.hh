@@ -32,27 +32,33 @@ class PK_Physical : virtual public PK {
  public:
   PK_Physical() : PK(){};
 
-  PK_Physical(Teuchos::ParameterList& pk_tree,
+  PK_Physical(const Comm_ptr_type& comm,
+              Teuchos::ParameterList& pk_tree,
               const Teuchos::RCP<Teuchos::ParameterList>& glist,
-              const Teuchos::RCP<State>& S,
-              const Teuchos::RCP<TreeVector>& soln)
-    : PK(pk_tree, glist, S, soln)
-  {
-    domain_ = plist_->get<std::string>("domain name", "domain");
-    mesh_ = S_->GetMesh(domain_);
-  };
+              const Teuchos::RCP<State>& S)
+    : PK(comm, pk_tree, glist, S)
+  {};
 
   // Virtual destructor
   virtual ~PK_Physical() = default;
 
   // Default implementations of PK methods.
   // -- transfer operators -- pointer copies only
+  virtual Teuchos::RCP<TreeVectorSpace>
+  getSolutionSpace() const override;
+
   virtual void State_to_Solution(const Tag& tag, TreeVector& soln) override;
   virtual void Solution_to_State(const TreeVector& soln, const Tag& tag) override;
 
   // access
   Key domain() { return domain_; }
   Teuchos::RCP<Debugger> debugger() { return db_; }
+
+ protected:
+  virtual void ParseParameterList_() override {
+    domain_ = plist_->get<std::string>("domain name", "domain");
+    mesh_ = S_->GetMesh(domain_);
+  }
 
  protected:
   // name of domain, associated mesh

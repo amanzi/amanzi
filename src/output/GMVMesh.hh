@@ -12,13 +12,12 @@
 
 */
 
+//! <MISSING_ONELINE_DOCSTRING>
 #ifndef AMANZI_GMV_MESH_HH_
 #define AMANZI_GMV_MESH_HH_
 
 #include <string>
 
-#include "Epetra_Vector.h"
-#include "Epetra_MultiVector.h"
 extern "C"
 {
 #include "gmvwrite.h"
@@ -67,21 +66,24 @@ open_data_file(const AmanziMesh::Mesh& mesh,
 void
 start_data();
 
-// Writes node data to files which has previously been opened with open_data_file.
+// Writes node data to files which has previously been opened with
+// open_data_file.
 void
-write_node_data(const Epetra_Vector& x, std::string varname);
+write_node_data(const Vector_type& x, std::string varname);
 void
-write_node_data(const Epetra_MultiVector& x, const unsigned int component, std::string varname);
+write_node_data(const MultiVector_type& x, const unsigned int component, std::string varname);
 
-// Writes cell data to files which has previously been opened with open_data_file.
+// Writes cell data to files which has previously been opened with
+// open_data_file.
 void
-write_cell_data(const Epetra_Vector& x, std::string varname);
+write_cell_data(const Vector_type& x, std::string varname);
 void
-write_cell_data(const Epetra_MultiVector& x, const unsigned int component, std::string varname);
+write_cell_data(const MultiVector_type& x, const unsigned int component, std::string varname);
 
-// Writes cell data to files which has previously been opened with open_data_file.
+// Writes cell data to files which has previously been opened with
+// open_data_file.
 void
-write_face_data(const Epetra_Vector& x, std::string varname);
+write_face_data(const Vector_type& x, std::string varname);
 
 // Writes the cycle number and time
 void
@@ -93,7 +95,8 @@ write_time(const double time);
 void
 close_data_file();
 
-// modify suffix string such that it is of form ".0203", where, in this example, cycleno=203
+// modify suffix string such that it is of form ".0203", where, in this example,
+// cycleno=203
 void
 suffix_no(std::string& suffix, unsigned int cycleno);
 

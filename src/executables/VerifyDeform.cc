@@ -150,8 +150,7 @@ main(int argc, char* argv[])
     int spdim = mesh->getSpaceDimension();
 
     int nnodes, nnodes_in;
-    nnodes = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
-                                  Amanzi::AmanziMesh::Parallel_type::OWNED);
+    nnodes = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
     Amanzi::AmanziMesh::Entity_ID nodeid;
 

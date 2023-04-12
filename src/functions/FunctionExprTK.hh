@@ -44,9 +44,36 @@ class FunctionExprTK : public Function {
  public:
   FunctionExprTK(int n, const std::string& formula);
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionExprTK>(*this); }
-  double operator()(const std::vector<double>& x) const;
+  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const;
 
- private:
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out, const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+  {
+    // NOTE ExprTK cannot be used on device!
+    // NOTE: if this throws, ETC screwed up, fixthe subview below!
+    assert(in.extent(1) == out.extent(0));
+
+    Kokkos::View<double**, Kokkos::HostSpace> in_host("ExpTK work space in", in.extent(0), in.extent(1));
+    Kokkos::deep_copy(in_host, in);
+    Kokkos::View<double*, Kokkos::HostSpace> out_host("ExpTK work space out", in.extent(1));
+    for (int i=0; i!=out.extent(0); ++i) {
+      out_host(i) = operator()(Kokkos::subview(in_host, Kokkos::ALL, i));
+    }
+
+    if (ids) {
+      Kokkos::View<double*> out_dev("ExpTK work space dev", in.extent(1));
+      Kokkos::deep_copy(out_dev, out_host);
+
+      auto ids_loc = *ids;
+      Kokkos::parallel_for("ExpTK copy to out", in.extent(1),
+                           KOKKOS_LAMBDA(const int& i) {
+                             out(ids_loc(i)) = out_dev(i);
+                           });
+    } else {
+      Kokkos::deep_copy(out, out_host);
+    }
+  }
+
+private:
   std::shared_ptr<Utils::ExprTK> exprtk_;
 };
 

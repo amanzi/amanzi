@@ -18,7 +18,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 
 #include "Reconstruction.hh"
 #include "SmoothnessIndicatorShu.hh"
@@ -44,7 +44,7 @@ SmoothnessIndicatorShu::Compute(const Teuchos::RCP<Reconstruction>& lifting)
     mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   measure_.resize(ncells_owned);
 
-  lifting->data()->ScatterMasterToGhosted();
+  lifting->data()->scatterMasterToGhosted();
 
   AmanziMesh::Entity_ID_View cells;
 
@@ -60,7 +60,7 @@ SmoothnessIndicatorShu::Compute(const Teuchos::RCP<Reconstruction>& lifting)
       poly1.ChangeOrigin(xc);
 
       auto dpoly = poly1 - poly;
-      double tmp = dpoly.NormInf() / poly.NormInf();
+      double tmp = dpoly.normInf() / poly.normInf();
       value = std::min(value, 1.0 - tmp);
     }
 

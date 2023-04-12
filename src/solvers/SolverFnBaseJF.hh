@@ -25,7 +25,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "MatrixJF.hh"
-#include "Matrix.hh"
+// #include "Matrix.hh"
 #include "InverseFactory.hh"
 
 #include "FnBaseDefs.hh"
@@ -39,7 +39,7 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
  public:
   SolverFnBaseJF(Teuchos::ParameterList& plist,
                  const Teuchos::RCP<SolverFnBase<Vector>> fn,
-                 const VectorSpace& map);
+                 const Teuchos::RCP<const VectorSpace>& map);
 
   // -- Standard SolverFnBase interface.
   // computes the non-linear functional r = F(u)
@@ -91,7 +91,7 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
 template <class Vector, class VectorSpace>
 SolverFnBaseJF<Vector, VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plist,
                                                     const Teuchos::RCP<SolverFnBase<Vector>> fn,
-                                                    const VectorSpace& map)
+                                                    const Teuchos::RCP<const VectorSpace>& map)
   : plist_(plist), fn_(fn)
 {
   typical_u_ = plist.get<double>("typical solution value", 1.0);
@@ -106,7 +106,8 @@ SolverFnBaseJF<Vector, VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plis
   // iterative method.
   Teuchos::ParameterList lin_plist = plist_.sublist("linear operator");
   if (!lin_plist.isParameter("iterative method")) {
-    Errors::Message msg("JFNK \"linear operator\" sublist requires parameter \"iterative method\"");
+    Errors::Message msg("JFNK \"linear operator\" sublist requires parameter "
+                        "\"iterative method\"");
     Exceptions::amanzi_throw(msg);
   }
   lin_op_ = AmanziSolvers::createIterativeMethod(lin_plist, jf_mat_);
@@ -119,7 +120,7 @@ int
 SolverFnBaseJF<Vector, VectorSpace>::ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
                                                          const Teuchos::RCP<Vector>& Pr)
 {
-  return lin_op_->ApplyInverse(*r, *Pr);
+  return lin_op_->applyInverse(*r, *Pr);
 }
 
 

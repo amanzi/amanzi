@@ -26,12 +26,10 @@
 #include <vector>
 
 #include "Point.hh"
+#include "Polynomial.hh"
 
 namespace Amanzi {
 namespace WhetStone {
-
-// formard declarations
-class Polynomial;
 
 class SpaceTimePolynomial {
  public:
@@ -41,7 +39,7 @@ class SpaceTimePolynomial {
   ~SpaceTimePolynomial(){};
 
   // reshape polynomial and erase (optionally) memory
-  void Reshape(int d, int order, bool reset = false);
+  void reshape(int d, int order, bool reset = false);
 
   // modifiers
   // -- polynomial is recalculated
@@ -57,7 +55,7 @@ class SpaceTimePolynomial {
   // typical operations with polynomials
   // -- polynomial values
   double Value(const AmanziGeometry::Point& xp, double t) const;
-  Polynomial Value(double t) const;
+  Polynomial<> Value(double t) const;
 
   // -- operators (extended ring algebra)
   SpaceTimePolynomial& operator+=(const SpaceTimePolynomial& poly);
@@ -99,12 +97,14 @@ class SpaceTimePolynomial {
 
   // Change of coordinates:
   // --  x = xf + B * s
-  void ChangeCoordinates(const AmanziGeometry::Point& xf, const AmanziMesh::Point_List& B)
+  void
+  ChangeCoordinates(const AmanziGeometry::Point& xf, const AmanziMesh::Point_List& B)
   {
     for (int i = 1; i < size_; ++i) coefs_[i].ChangeCoordinates(xf, B);
   }
   // --  s = B^+ (x - xf)
-  void InverseChangeCoordinates(const AmanziGeometry::Point& xf, const AmanziMesh::Point_List& B)
+  void InverseChangeCoordinates(const AmanziGeometry::Point& xf,
+                                const AmanziMesh::Point_List& B)
   {
     for (int i = 1; i < size_; ++i) coefs_[i].InverseChangeCoordinates(xf, B);
   }
@@ -115,14 +115,14 @@ class SpaceTimePolynomial {
   int size() const { return size_; }
 
   // -- one-index access
-  Polynomial& operator[](int i) { return coefs_[i]; }
-  const Polynomial& operator[](int i) const { return coefs_[i]; }
+  Polynomial<>& operator[](int i) { return coefs_[i]; }
+  const Polynomial<>& operator[](int i) const { return coefs_[i]; }
 
   // norms
-  double NormInf() const
+  double normInf() const
   {
     double val(0.0);
-    for (int i = 0; i < size_; ++i) std::max(val, coefs_[i].NormInf());
+    for (int i = 0; i < size_; ++i) std::max(val, coefs_[i].normInf());
     return val;
   }
 
@@ -131,7 +131,7 @@ class SpaceTimePolynomial {
 
  protected:
   int d_, order_, size_;
-  std::vector<Polynomial> coefs_;
+  std::vector<Polynomial<>> coefs_;
 };
 
 } // namespace WhetStone

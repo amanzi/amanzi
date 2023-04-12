@@ -79,7 +79,6 @@ Example:
 // TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_MultiVector.h"
 
 // Amanzi
 #include "CompositeVector.hh"
@@ -87,7 +86,6 @@ Example:
 #include "DomainSet.hh"
 #include "Key.hh"
 #include "Mesh.hh"
-#include "MeshPartition.hh"
 
 // Amanzi::State
 #include "ObservationData.hh"
@@ -107,7 +105,6 @@ class State {
  private:
   typedef std::map<Key, std::pair<Teuchos::RCP<AmanziMesh::Mesh>, bool>> MeshMap;
   typedef std::map<Key, Teuchos::RCP<AmanziMesh::DomainSet>> DomainSetMap;
-  typedef std::map<Key, Teuchos::RCP<Functions::MeshPartition>> MeshPartitionMap;
 
   using RecordSetMap = std::map<Key, std::unique_ptr<RecordSet>>;
   using EvaluatorMap = std::map<Key, std::unordered_map<Tag, Teuchos::RCP<Evaluator>>>;
@@ -195,12 +192,12 @@ class State {
   // Requiring data from State takes up to two template arguments:
   //  T is the data type required
   //  F is a factory, which must provide a method Create() that makes a T, or
-  //    can be used in a constructor, e.g. T(F), or is optional if T needs no
-  //    metadata to be created, e.g. T == double.
+  //    can be used in a constructor, e.g. T(Teuchos::RCP<F>), or is optional
+  //    if T needs no metadata to be created, e.g. T() such as plain old data.
   //
-  //
-  // This Require call will not compile for factories F that do not have a
-  // default constructor (e.g. Epetra_Map).
+
+  // This is for data that require a factory, and that factory (but not the
+  // data!) is default constructible (e.g CompositeVector + CompositeVectorSpace)
   template <typename T, typename F>
   F& Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true)
   {
@@ -209,13 +206,13 @@ class State {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
     GetRecordSetW(fieldname).RequireRecord(tag, owner, alias_ok);
-    return GetRecordSetW(fieldname).SetType<T, F>();
+    return *GetRecordSetW(fieldname).SetType<T, F>();
   }
 
-  // This Require call is for factories that do not have a default constructor.
-  // (e.g. Epetra_Map).
+  // This is for data that requires a factory, and the factory IS NOT default
+  // constrictible.  (e.g. Tpetra::Vector + Tpetra::Map).
   template <typename T, typename F>
-  F& Require(const F& f,
+  F& Require(const Teuchos::RCP<F>& f,
              const Key& fieldname,
              const Tag& tag,
              const Key& owner = "",
@@ -226,7 +223,7 @@ class State {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
     GetRecordSetW(fieldname).RequireRecord(tag, owner, alias_ok);
-    return GetRecordSetW(fieldname).SetType<T, F>(f);
+    return *GetRecordSetW(fieldname).SetType<T, F>(f);
   }
 
   // This Require call is for default-constructible data that does not need a
@@ -243,8 +240,8 @@ class State {
     rs.SetType<T>();
   }
 
-  // This Require call will not compile for factories F that do not have a
-  // default constructor (e.g. Epetra_Map).
+  // A wrapper for additionally providing subfield names for multi-component
+  // vectors.
   template <typename T, typename F>
   F& Require(const Key& fieldname,
              const Tag& tag,
@@ -252,34 +249,29 @@ class State {
              const std::vector<std::string>& subfield_names,
              bool alias_ok = true)
   {
-    CheckIsDebugData_(fieldname, tag);
-    if (!Keys::hasKey(data_, fieldname)) {
-      data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
-    }
-    auto& rs = GetRecordSetW(fieldname);
-    rs.set_subfieldnames(subfield_names);
-    rs.RequireRecord(tag, owner, alias_ok);
-    return rs.SetType<T, F>();
+    auto res = Require<T,F>(fieldname, tag, owner, alias_ok);
+    GetRecordSetW(fieldname).set_subfieldnames(subfield_names);
+    return res;
   }
 
-  // This Require call is for factories that do not have a default constructor.
-  // (e.g. Epetra_Map).
+  // A wrapper for additionally providing subfield names for multi-component
+  // vectors.
   template <typename T, typename F>
-  F& Require(const F& f,
+  F& Require(const Teuchos::RCP<F>& f,
              const Key& fieldname,
              const Tag& tag,
              const Key& owner,
              const std::vector<std::string>& subfield_names,
              bool alias_ok = true)
   {
-    CheckIsDebugData_(fieldname, tag);
-    if (!Keys::hasKey(data_, fieldname)) {
-      data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
-    }
-    auto& rs = GetRecordSetW(fieldname);
-    rs.set_subfieldnames(subfield_names);
-    rs.RequireRecord(tag, owner, alias_ok);
-    return rs.SetType<T, F>(f);
+    auto res = Require<T,F>(f, fieldname, tag, owner, alias_ok);
+    GetRecordSetW(fieldname).set_subfieldnames(subfield_names);
+    return res;
+  }
+
+  template<typename T, typename F>
+  Teuchos::RCP<F> GetFactoryW(const Key& fieldname) {
+    return GetRecordSetW(fieldname).GetFactory<T,F>();
   }
 
   //
@@ -326,7 +318,7 @@ class State {
     Tag dertag(Keys::getKey(wrt_key, wrt_tag));
     auto& deriv_set = GetDerivativeSetW(key, tag);
     deriv_set.RequireRecord(dertag, owner);
-    return deriv_set.SetType<T, F>();
+    return *deriv_set.SetType<T, F>();
   }
 
   template <typename T>
@@ -343,7 +335,7 @@ class State {
     Tag dertag = make_tag(Keys::getKey(wrt_key, wrt_tag));
     auto& deriv_set = GetDerivativeSetW(key, tag);
     deriv_set.RequireRecord(dertag, owner);
-    return deriv_set.SetType<T>();
+    deriv_set.SetType<T>();
   }
 
   // set operations
@@ -514,6 +506,9 @@ class State {
 
   // Write evaluators to file for drawing dependency graph.
   void WriteDependencyGraph() const;
+  void WriteStatistics(Teuchos::Ptr<const VerboseObject> vo = Teuchos::null,
+                       const Teuchos::EVerbosityLevel vl = Teuchos::VERB_HIGH) const;
+
 
   // -----------------------------------------------------------------------------
   // State handles model parameters.
@@ -525,15 +520,6 @@ class State {
   //
   // Get a parameter list.
   Teuchos::ParameterList GetModelParameters(std::string modelname);
-
-  // -----------------------------------------------------------------------------
-  // State handles MeshPartitions
-  // -----------------------------------------------------------------------------
-  // Some models, typically only defined on cells, are defined by the region.
-  // MeshPartitions are a non-overlapping set of cell regions whose union
-  // covers the mesh.
-  //
-  Teuchos::RCP<const Functions::MeshPartition> GetMeshPartition(Key);
 
   // -----------------------------------------------------------------------------
   // Time tags and vector copies
@@ -581,7 +567,6 @@ class State {
  private:
   // Accessors that return null if the Key does not exist.
   Teuchos::RCP<AmanziMesh::Mesh> GetMesh_(const Key& key) const;
-  Teuchos::RCP<const Functions::MeshPartition> GetMeshPartition_(Key);
 
   // a hook to allow debuggers to connect
   void CheckIsDebugEval_(const Key& key, const Tag& tag);
@@ -597,7 +582,6 @@ class State {
   RecordSetMap derivs_;
   EvaluatorMap evaluators_;
 
-  MeshPartitionMap mesh_partitions_;
   DomainSetMap domain_sets_;
 
   // meta-data

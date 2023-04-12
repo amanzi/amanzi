@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
 //! Solves globally implicit systems using backward Euler
@@ -87,7 +87,7 @@ Note this also accepts an object that provides the `BDF1 Solver Interface`_.
 
       <Parameter name="solver type" type="string" value="nka"/>
       <ParameterList name="nka parameters">
-        ...
+        ... 
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -119,7 +119,7 @@ class BDF1_TI {
   // Create the BDF Dae solver object, the nonlinear problem must be
   // defined in a class that derives from the virtual base class FnBase.
   BDF1_TI(BDFFnBase<Vector>& fn,
-          Teuchos::ParameterList& plist,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist,
           const Teuchos::RCP<const Vector>& initvector,
           const Teuchos::RCP<State>& S = Teuchos::null);
 
@@ -138,7 +138,9 @@ class BDF1_TI {
                 double& dt_next);
   bool TimeStep(double dt, double& dt_next, const Teuchos::RCP<Vector>& x)
   {
-    return TimeStep(dt, Teuchos::rcp(new Vector(*x)), x, dt_next);
+    auto x_copy = Teuchos::rcp(new Vector(x->getMap()));
+    x_copy->assign(*x);
+    return TimeStep(dt, x_copy, x, dt_next);
   }
 
   // Reset the memory of the time integrator
@@ -156,7 +158,6 @@ class BDF1_TI {
   // Report statistics
   int number_nonlinear_steps() { return state_->solve_itrs; }
   void ReportStatistics_();
-  int number_solver_iterations() { return solver_->num_itrs(); }
 
  protected:
   Teuchos::RCP<TimestepController> ts_control_; // timestep controller
@@ -166,7 +167,7 @@ class BDF1_TI {
   Teuchos::RCP<BDF1_SolverFnBase<Vector>> solver_fn_;
   Teuchos::RCP<BDFFnBase<Vector>> fn_;
 
-  Teuchos::ParameterList plist_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
   Teuchos::RCP<VerboseObject> vo_;
   Teuchos::RCP<AmanziSolvers::ResidualDebugger> db_;
 
@@ -182,37 +183,37 @@ class BDF1_TI {
 ****************************************************************** */
 template <class Vector, class VectorSpace>
 BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
-                                      Teuchos::ParameterList& plist,
-                                      const Teuchos::RCP<const Vector>& initvector,
-                                      const Teuchos::RCP<State>& S)
+        const Teuchos::RCP<Teuchos::ParameterList>& plist,
+        const Teuchos::RCP<const Vector>& initvector,
+        const Teuchos::RCP<State>& S)
   : plist_(plist)
 {
   fn_ = Teuchos::rcpFromRef(fn);
 
   // update the verbose options
-  vo_ = Teuchos::rcp(new VerboseObject(initvector->Comm(), "TI::BDF1", plist_));
-  db_ = Teuchos::rcp(new AmanziSolvers::ResidualDebugger(plist_.sublist("residual debugger"), S));
+  vo_ = Teuchos::rcp(new VerboseObject(initvector->getMap()->getComm(), "TI::BDF1", *plist_));
+  db_ = Teuchos::rcp(new AmanziSolvers::ResidualDebugger(Teuchos::sublist(plist_, "residual debugger")));
 
   // Create the state.
   state_ = Teuchos::rcp(new BDF1_State<Vector>());
-  state_->InitializeFromPlist(plist_, initvector, S);
+  state_->InitializeFromPlist(*plist_, initvector, S);
 
   // Set up the nonlinear solver
   // -- initialized the SolverFnBase interface
   solver_fn_ = Teuchos::rcp(new BDF1_SolverFnBase<Vector>(plist_, fn_));
 
   AmanziSolvers::SolverFactory<Vector, VectorSpace> factory;
-  solver_ = factory.Create(plist_);
+  solver_ = factory.Create(*plist_);
   solver_->set_db(db_);
-  solver_->Init(solver_fn_, initvector->Map());
+  solver_->Init(solver_fn_, initvector->getMap());
 
   // Allocate memory for adaptive timestep controll
-  udot_ = Teuchos::rcp(new Vector(*initvector));
-  udot_prev_ = Teuchos::rcp(new Vector(*initvector));
+  udot_ = Teuchos::rcp(new Vector(initvector->getMap()));
+  udot_prev_ = Teuchos::rcp(new Vector(initvector->getMap()));
 
   // timestep controller
   TimestepControllerFactory<Vector> fac;
-  ts_control_ = fac.Create(plist, udot_, udot_prev_, S);
+  ts_control_ = fac.Create(*plist, udot_, udot_prev_, S);
 
   // misc internal parameters
   tol_solver_ = solver_->tolerance();
@@ -307,7 +308,7 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
         bool changed = fn_->ModifyPredictor(dt, u_prev, u);
         if (changed) fn_->ChangedSolution();
       } else {
-        *u = *u_prev;
+        u->assign(*u_prev);
         fn_->ChangedSolution();
       }
     }
@@ -329,7 +330,7 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
   }
 
   // Update the debugger
-  db_->StartIteration<VectorSpace>(state_->failed_current, u->Map());
+  db_->StartIteration<VectorSpace>(tlast, state_->seq, state_->failed_current, *u->getMap());
 
   // Overwrite preconditioner control
   if (state_->freeze_pc) solver_->set_pc_lag(1000000000);
@@ -350,14 +351,14 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
   if (ierr == 0) {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "success: " << itr << " nonlinear itrs"
-                 << " error=" << solver_->residual() << std::endl;
+                 << " residual=" << solver_->residual() << std::endl;
     }
   } else {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << vo_->color("red") << "step failed with error code " << code << vo_->reset()
                  << std::endl;
     }
-    *u = *u_prev;
+    u->assign(*u_prev);
   }
 
   // update the next timestep size
@@ -391,10 +392,10 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
     state_->hmin = std::min(state_->hmin, dt);
 
     if (state_->uhist->history_size() > 1) {
-      *udot_prev_ = *udot_;
+      udot_prev_->assign(*udot_);
       double tmp = 1.0 / dt;
-      *udot_ = *u;
-      udot_->Update(-tmp, *u_prev, tmp);
+      udot_->assign(*u);
+      udot_->update(-tmp, *u_prev, tmp);
     }
 
     ReportStatistics_();

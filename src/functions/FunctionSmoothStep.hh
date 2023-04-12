@@ -15,13 +15,10 @@ defined such that `f(x) = y_0` for `x < x0`, `f(x) = y_1` for `x > x_1`, and
 monotonically increasing for :math:`x \in [x_0, x_1]` through cubic
 interpolation.
 
-.. _function-smooth-step-spec:
-.. admonition:: function-smooth-step-spec
-
-   * `"x0`" ``[double]`` First fitting point
-   * `"y0`" ``[double]`` First fitting value
-   * `"x1`" ``[double]`` Second fitting point
-   * `"y1`" ``[double]`` Second fitting value
+* `"x0`" ``[double]`` First fitting point
+* `"y0`" ``[double]`` First fitting value
+* `"x1`" ``[double]`` Second fitting point
+* `"y1`" ``[double]`` Second fitting value
 
 Example:
 
@@ -48,7 +45,38 @@ class FunctionSmoothStep : public Function {
   FunctionSmoothStep(double x0, double y0, double x1, double y1);
   ~FunctionSmoothStep(){};
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionSmoothStep>(*this); }
-  double operator()(const std::vector<double>& x) const;
+  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>&) const;
+
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
+  {
+    double y;
+    if (x(0, i) <= x0_) {
+      y = y0_;
+    } else if (x(0, i) >= x1_) {
+      y = y1_;
+    } else {
+      double s = (x(0, i) - x0_) / (x1_ - x0_);
+      y = y0_ + (y1_ - y0_) * s * s * (3 - 2 * s);
+    }
+    return y;
+  }
+
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out, const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+  {
+    if (ids) {
+      auto ids_loc = *ids;
+      Kokkos::parallel_for(
+        "FunctionSmoothStep::apply1", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(ids_loc(i)) = apply_gpu(in, i);
+        });
+    } else {
+      assert(in.extent(1) == out.extent(0));
+      Kokkos::parallel_for(
+        "FunctionSmoothStep::apply2", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(i) = apply_gpu(in, i);
+        });
+    }
+  }
 
  private:
   double x0_, y0_, x1_, y1_;

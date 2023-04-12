@@ -102,7 +102,7 @@ class Evaluator_OperatorApply : public EvaluatorSecondary {
   Teuchos::Array<Key> rhs_keys_; // rhs_k
 
   std::string primary_entity_;
-  AmanziMesh::Entity_kind primary_entity_kind_;
+  AmanziMesh::Entity_kind primary_createEntityKind_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, Evaluator_OperatorApply> fac_;

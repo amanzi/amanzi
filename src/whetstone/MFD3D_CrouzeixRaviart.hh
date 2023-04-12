@@ -41,54 +41,53 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   // -- schema
   virtual std::vector<SchemaItem> schema() const override
   {
-    return std::vector<SchemaItem>(
-      1, std::make_tuple(AmanziMesh::Entity_kind::FACE, DOF_Type::SCALAR, 1));
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::Entity_kind::FACE, DOF_Type::SCALAR, 1));
   }
 
   // -- stiffness matrix
-  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
+  int H1consistency(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Ac);
+  virtual int StiffnessMatrix(int c, const Tensor<>& T, DenseMatrix<>& A) override;
 
   // -- l2 projectors
   virtual void L2Cell(int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
-                      const Polynomial* moments,
-                      Polynomial& uc) override
+                      const std::vector<Polynomial<>>& ve,
+                      const std::vector<Polynomial<>>& vf,
+                      const Polynomial<>* moments,
+                      Polynomial<>& uc) override
   {
     ProjectorCell_(mesh_, c, ve, vf, uc);
   }
 
   // -- h1 projectors
   virtual void H1Cell(int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
-                      const Polynomial* moments,
-                      Polynomial& uc) override
+                      const std::vector<Polynomial<>>& ve,
+                      const std::vector<Polynomial<>>& vf,
+                      const Polynomial<>* moments,
+                      Polynomial<>& uc) override
   {
     ProjectorCell_(mesh_, c, ve, vf, uc);
   }
 
   virtual void H1Face(int f,
-                      const std::vector<Polynomial>& ve,
-                      const Polynomial* moments,
-                      Polynomial& vf) override;
+                      const std::vector<Polynomial<>>& ve,
+                      const Polynomial<>* moments,
+                      Polynomial<>& vf) override;
 
   // access / setup
   // -- integrals of monomials in high-order schemes could be reused
-  const DenseMatrix& G() const { return G_; }
-  const DenseMatrix& R() const { return R_; }
+  const DenseMatrix<>& G() const { return G_; }
+  const DenseMatrix<>& R() const { return R_; }
 
  private:
   // efficient implementation of low-order elliptic projectors
   void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
                       int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
-                      Polynomial& uc);
+                      const std::vector<Polynomial<>>& ve,
+                      const std::vector<Polynomial<>>& vf,
+                      Polynomial<>& uc);
 
  protected:
-  DenseMatrix R_, G_;
+  DenseMatrix<> R_, G_;
 
  private:
   static RegisteredFactory<MFD3D_CrouzeixRaviart> reg_;

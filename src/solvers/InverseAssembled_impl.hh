@@ -8,12 +8,8 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-//! Base class for providing ApplyInverse() using assembled methods.
+//! Base class for providing applyInverse() using assembled methods.
 #pragma once
-
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Map.h"
 
 #include "SuperMap.hh"
 #include "InverseHelpers.hh"
@@ -38,21 +34,21 @@ namespace Impl {
 //
 template <class Vector>
 void
-copyToSuperVector(const Teuchos::RCP<const Operators::SuperMap>& smap,
+copyToSuperVector(const Teuchos::RCP<const SuperMap>& smap,
                   const Vector& v,
-                  Teuchos::RCP<Epetra_Vector>& sv)
+                  Teuchos::RCP<Vector_type>& sv)
 {
   AMANZI_ASSERT(smap.get());
   AMANZI_ASSERT(sv.get());
-  Operators::copyToSuperVector(*smap, v, *sv);
+  copyToSuperVector(*smap, v, *sv);
 }
 template <>
-void inline copyToSuperVector<Epetra_Vector>(const Teuchos::RCP<const Operators::SuperMap>& smap,
-                                             const Epetra_Vector& v,
-                                             Teuchos::RCP<Epetra_Vector>& sv)
+void inline copyToSuperVector<Vector_type>(const Teuchos::RCP<const SuperMap>& smap,
+                                           const Vector_type& v,
+                                           Teuchos::RCP<Vector_type>& sv)
 {
-  sv = Teuchos::rcp(new Epetra_Vector(v));
-  *sv = v;
+  // note this is a shared copy -- they have the same underlying view!
+  sv = Teuchos::rcp(new Vector_type(v));
 }
 
 //
@@ -60,17 +56,17 @@ void inline copyToSuperVector<Epetra_Vector>(const Teuchos::RCP<const Operators:
 //
 template <class Vector>
 void
-copyFromSuperVector(const Teuchos::RCP<const Operators::SuperMap>& smap,
-                    const Epetra_Vector& sv,
+copyFromSuperVector(const Teuchos::RCP<const SuperMap>& smap,
+                    const Vector_type& sv,
                     Vector& v)
 {
   AMANZI_ASSERT(smap.get());
   copyFromSuperVector(*smap, sv, v);
 }
 template <>
-void inline copyFromSuperVector<Epetra_Vector>(const Teuchos::RCP<const Operators::SuperMap>& smap,
-                                               const Epetra_Vector& sv,
-                                               Epetra_Vector& v)
+void inline copyFromSuperVector<Vector_type>(const Teuchos::RCP<const SuperMap>& smap,
+                                             const Vector_type& sv,
+                                             Vector_type& v)
 {
   AMANZI_ASSERT(&sv == &v);
 }
@@ -80,27 +76,27 @@ void inline copyFromSuperVector<Epetra_Vector>(const Teuchos::RCP<const Operator
 //
 template <class Operator>
 typename std::enable_if<is_assembling<Operator>::value,
-                        std::tuple<Teuchos::RCP<const Operators::SuperMap>,
-                                   Teuchos::RCP<Epetra_Vector>,
-                                   Teuchos::RCP<Epetra_Vector>>>::type
+                        std::tuple<Teuchos::RCP<const SuperMap>,
+                                   Teuchos::RCP<Vector_type>,
+                                   Teuchos::RCP<Vector_type>>>::type
 getSuperMap(Operator& m)
 {
-  auto smap = m.get_supermap();
-  auto x = Teuchos::rcp(new Epetra_Vector(*smap->Map()));
-  auto y = Teuchos::rcp(new Epetra_Vector(*smap->Map()));
+  auto smap = m.getSuperMap();
+  auto x = Teuchos::rcp(new Vector_type(smap->getMap()));
+  auto y = Teuchos::rcp(new Vector_type(smap->getMap()));
   return std::make_tuple(smap, x, y);
 }
 
 
 template <class Operator>
 typename std::enable_if<is_assembled<Operator>::value,
-                        std::tuple<Teuchos::RCP<Operators::SuperMap>,
-                                   Teuchos::RCP<Epetra_Vector>,
-                                   Teuchos::RCP<Epetra_Vector>>>::type
+                        std::tuple<Teuchos::RCP<SuperMap>,
+                                   Teuchos::RCP<Vector_type>,
+                                   Teuchos::RCP<Vector_type>>>::type
 getSuperMap(Operator& m)
 {
-  auto x = Teuchos::rcp(new Epetra_Vector(m.DomainMap()));
-  auto y = Teuchos::rcp(new Epetra_Vector(m.RangeMap()));
+  auto x = Teuchos::rcp(new Vector_type(m.getDomainMap()));
+  auto y = Teuchos::rcp(new Vector_type(m.getRangeMap()));
   return std::make_tuple(Teuchos::null, x, y);
 }
 
@@ -108,7 +104,7 @@ getSuperMap(Operator& m)
 // Assemble the matrix and get it.
 //
 template <class Operator>
-typename std::enable_if<is_assembling<Operator>::value, Teuchos::RCP<Epetra_CrsMatrix>>::type
+typename std::enable_if<is_assembling<Operator>::value, Teuchos::RCP<Matrix_type>>::type
 assembleMatrix(const Teuchos::RCP<Operator>& m)
 {
   m->AssembleMatrix();
@@ -116,7 +112,7 @@ assembleMatrix(const Teuchos::RCP<Operator>& m)
 }
 
 template <class Operator>
-typename std::enable_if<is_assembled<Operator>::value, Teuchos::RCP<Epetra_CrsMatrix>>::type
+typename std::enable_if<is_assembled<Operator>::value, Teuchos::RCP<Matrix_type>>::type
 assembleMatrix(const Teuchos::RCP<Operator>& m)
 {
   // already assembled matrix
@@ -128,7 +124,7 @@ assembleMatrix(const Teuchos::RCP<Operator>& m)
 // Just get a matrix (may be unassembled)
 //
 template <class Operator>
-typename std::enable_if<is_assembling<Operator>::value, Teuchos::RCP<Epetra_CrsMatrix>>::type
+typename std::enable_if<is_assembling<Operator>::value, Teuchos::RCP<Matrix_type>>::type
 getMatrix(const Teuchos::RCP<Operator>& h)
 {
   h->SymbolicAssembleMatrix();
@@ -136,7 +132,7 @@ getMatrix(const Teuchos::RCP<Operator>& h)
 }
 
 template <class Operator>
-typename std::enable_if<is_assembled<Operator>::value, Teuchos::RCP<Epetra_CrsMatrix>>::type
+typename std::enable_if<is_assembled<Operator>::value, Teuchos::RCP<Matrix_type>>::type
 getMatrix(const Teuchos::RCP<Operator>& h)
 {
   return h;
@@ -154,14 +150,13 @@ void
 InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::set_inverse_parameters(
   Teuchos::ParameterList& plist)
 {
-  this->set_name(method_name_);
   solver_ = createAssembledMethod<>(method_name_, plist);
 }
 
 
 template <class Operator, class Preconditioner, class Vector, class VectorSpace>
 void
-InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::InitializeInverse()
+InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::initializeInverse()
 {
   AMANZI_ASSERT(h_.get());      // set_matrices was called
   AMANZI_ASSERT(solver_.get()); // set_inverse_parameters was called
@@ -170,9 +165,9 @@ InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::InitializeInver
   // using the old matrix.
   solver_->set_matrix(Teuchos::null);
 
-  Teuchos::RCP<Epetra_CrsMatrix> hA = Impl::getMatrix(h_);
+  Teuchos::RCP<Matrix_type> hA = Impl::getMatrix(h_);
   solver_->set_matrix(hA);
-  solver_->InitializeInverse();
+  solver_->initializeInverse();
 
   if (!updated_) {
     std::tie(smap_, Y_, X_) = Impl::getSuperMap(*m_);
@@ -184,19 +179,19 @@ InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::InitializeInver
 
 template <class Operator, class Preconditioner, class Vector, class VectorSpace>
 void
-InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::ComputeInverse()
+InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::computeInverse()
 {
   AMANZI_ASSERT(updated_); // note, we could call Update here, but would prefer
                            // that developers to the right thing.
   Impl::assembleMatrix(h_);
-  solver_->ComputeInverse();
+  solver_->computeInverse();
   computed_once_ = true;
 }
 
 
 template <class Operator, class Preconditioner, class Vector, class VectorSpace>
 int
-InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::ApplyInverse(const Vector& X,
+InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::applyInverse(const Vector& X,
                                                                               Vector& Y) const
 {
   AMANZI_ASSERT(updated_);
@@ -205,7 +200,7 @@ InverseAssembled<Operator, Preconditioner, Vector, VectorSpace>::ApplyInverse(co
                                  // especially since they might change values
                                  // between calls and forget to call compute.
   Impl::copyToSuperVector(smap_, X, X_);
-  int returned_code = solver_->ApplyInverse(*X_, *Y_);
+  int returned_code = solver_->applyInverse(*X_, *Y_);
   Impl::copyFromSuperVector(smap_, *Y_, Y);
   return returned_code;
 }

@@ -4,23 +4,18 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (coonet@ornl.gov)
+  Authors:
 */
 
 #ifndef AMANZI_PRECONDITIONER_MUELU_HH_
 #define AMANZI_PRECONDITIONER_MUELU_HH_
 
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#if defined(HAVE_MUELU_EPETRA)
-#  include "MueLu.hpp"
-#  include "MueLu_EpetraOperator.hpp"
-#  include "MueLu_CreateEpetraPreconditioner.hpp"
-#endif
+#include "MueLu.hpp"
+#include "MueLu_TpetraOperator.hpp"
+#include "MueLu_CreateTpetraPreconditioner.hpp"
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
@@ -28,22 +23,41 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
+using TpetraOperator_type = Tpetra::Operator<Matrix_type::scalar_type,
+                                             Matrix_type::global_ordinal_type,
+                                             Matrix_type::local_ordinal_type>;
+using MueLuOperator_type = MueLu::TpetraOperator<Matrix_type::scalar_type,
+                                                 Matrix_type::global_ordinal_type,
+                                                 Matrix_type::local_ordinal_type>;
+
 class PreconditionerMueLu : public Preconditioner {
  public:
-  PreconditionerMueLu() : Preconditioner(){};
-
-  virtual void set_matrices(const Teuchos::RCP<Epetra_CrsMatrix>& m,
-                            const Teuchos::RCP<Epetra_CrsMatrix>& h) override final;
+  PreconditionerMueLu() : Preconditioner() {}
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final
   {
     plist_ = plist;
-    // std::string vo_name = this->name()+" ("+plist_.get<std::string>("method")+")";
+    std::string vo_name = this->name() + " (" + plist_.get<std::string>("method") + ")";
   }
 
-  virtual void InitializeInverse() override final;
-  virtual void ComputeInverse() override final;
-  virtual int ApplyInverse(const Vector_t& v, Vector_t& hv) const override final;
+  virtual void initializeInverse() override final
+  {
+    plist_.remove("verbose object");
+    plist_.remove("method");
+  }
+
+  virtual void computeInverse() override final
+  {
+    Teuchos::RCP<TpetraOperator_type> t_op = h_;
+    pc_ = MueLu::CreateTpetraPreconditioner(t_op, plist_);
+  }
+
+  virtual int applyInverse(const Vector_type& v, Vector_type& hv) const override final
+  {
+    pc_->apply(v, hv);
+    returned_code_ = 0;
+    return returned_code_;
+  }
 
   virtual int returned_code() const override final { return returned_code_; }
 
@@ -55,14 +69,15 @@ class PreconditionerMueLu : public Preconditioner {
 
  private:
   Teuchos::ParameterList plist_;
-#if defined(HAVE_MUELU_EPETRA)
-  Teuchos::RCP<MueLu::EpetraOperator> MueLu_;
-#endif
+  //  Teuchos::RCP<MueLuOperator_type> pc_;
+  Teuchos::RCP<TpetraOperator_type> pc_;
+
 
   mutable int returned_code_;
 };
 
 } // namespace AmanziSolvers
 } // namespace Amanzi
+
 
 #endif

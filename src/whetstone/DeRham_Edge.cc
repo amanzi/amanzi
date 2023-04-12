@@ -27,7 +27,7 @@ namespace WhetStone {
 * Non-symmetric tensor is not yet used.
 ****************************************************************** */
 int
-DeRham_Edge::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc)
+DeRham_Edge::L2consistency(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Mc, bool symmetry)
 {
   int ok;
   if (d_ == 2) {
@@ -45,13 +45,13 @@ DeRham_Edge::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& 
 * triangular part of Mc = R (R^T N)^{-1} R^T is calculated.
 ****************************************************************** */
 int
-DeRham_Edge::L2consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc)
+DeRham_Edge::L2consistency2D_(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Mc)
 {
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
-  N.Reshape(nfaces, d_);
-  Mc.Reshape(nfaces, nfaces);
+  N.reshape(nfaces, d_);
+  Mc.reshape(nfaces, nfaces);
 
   AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
@@ -109,22 +109,22 @@ DeRham_Edge::L2consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatri
 * triangular part of Mc = R (R^T N)^{-1} R^T is calculated.
 ****************************************************************** */
 int
-DeRham_Edge::L2consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc)
+DeRham_Edge::L2consistency3D_(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Mc)
 {
   const auto& [faces, fdirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
-
+  
   const auto& edges = mesh_->getCellEdges(c);
   int nedges = edges.size();
 
-  N.Reshape(nedges, d_);
-  Mc.Reshape(nedges, nedges);
+  N.reshape(nedges, d_);
+  Mc.reshape(nedges, nedges);
 
   AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
   AmanziGeometry::Point vv[3];
 
   // To calculate matrix R, we re-use matrix N
-  N.PutScalar(0.0);
+  N.putScalar(0.0);
 
   const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
   double volume = mesh_->getCellVolume(c);
@@ -193,11 +193,11 @@ DeRham_Edge::L2consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatri
 * Mass matrix for edge-based discretization.
 ****************************************************************** */
 int
-DeRham_Edge::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
+DeRham_Edge::MassMatrix(int c, const Tensor<>& T, DenseMatrix<>& M)
 {
   DenseMatrix N;
 
-  int ok = L2consistency(c, T, N, M);
+  int ok = L2consistency(c, T, N, M, true);
   if (ok) return ok;
 
   StabilityScalar_(N, M);
@@ -209,7 +209,11 @@ DeRham_Edge::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 * Efficient implementation is possible in 2D. Hence, we fork the code.
 ****************************************************************** */
 int
-DeRham_Edge::L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
+DeRham_Edge::L2consistencyInverse(int c,
+                                  const Tensor<>& T,
+                                  DenseMatrix<>& R,
+                                  DenseMatrix<>& Wc,
+                                  bool symmetry)
 {
   int ok;
   if (d_ == 2) {
@@ -227,13 +231,13 @@ DeRham_Edge::L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseM
 * triangular part of matrix Wc = N (N^T R)^{-1} N^T is calculated.
 ****************************************************************** */
 int
-DeRham_Edge::L2consistencyInverse2D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
+DeRham_Edge::L2consistencyInverse2D_(int c, const Tensor<>& T, DenseMatrix<>& R, DenseMatrix<>& Wc)
 {
-  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
+  const auto& [faces,dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
-  R.Reshape(nfaces, d_);
-  Wc.Reshape(nfaces, nfaces);
+  R.reshape(nfaces, d_);
+  Wc.reshape(nfaces, nfaces);
 
   AmanziGeometry::Point v1(d_);
   const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
@@ -289,16 +293,16 @@ DeRham_Edge::L2consistencyInverse2D_(int c, const Tensor& T, DenseMatrix& R, Den
 * Recall that N^T R = |c| T.
 ****************************************************************** */
 int
-DeRham_Edge::L2consistencyInverse3D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
+DeRham_Edge::L2consistencyInverse3D_(int c, const Tensor<>& T, DenseMatrix<>& R, DenseMatrix<>& Wc)
 {
-  const auto& [faces, fdirs] = mesh_->getCellFacesAndDirections(c);
+  const auto& [faces,fdirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   const auto& edges = mesh_->getCellEdges(c);
   int nedges = edges.size();
 
-  R.Reshape(nedges, d_);
-  Wc.Reshape(nedges, nedges);
+  R.reshape(nedges, d_);
+  Wc.reshape(nedges, nedges);
 
   AmanziGeometry::Point v3(d_), v4(d_), tau(d_), p1(d_), p2(d_);
   AmanziGeometry::Point vv[3];
@@ -323,7 +327,7 @@ DeRham_Edge::L2consistencyInverse3D_(int c, const Tensor& T, DenseMatrix& R, Den
   }
 
   // Calculate matrix R
-  R.PutScalar(0.0);
+  R.putScalar(0.0);
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
@@ -365,11 +369,11 @@ DeRham_Edge::L2consistencyInverse3D_(int c, const Tensor& T, DenseMatrix& R, Den
 * Inverse of the mass matrix for edge-based discretization.
 ****************************************************************** */
 int
-DeRham_Edge::MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W)
+DeRham_Edge::MassMatrixInverse(int c, const Tensor<>& T, DenseMatrix<>& W)
 {
   DenseMatrix R;
 
-  int ok = L2consistencyInverse(c, T, R, W);
+  int ok = L2consistencyInverse(c, T, R, W, true);
   if (ok) return ok;
 
   StabilityScalar_(R, W);

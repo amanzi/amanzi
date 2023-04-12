@@ -39,8 +39,8 @@ class BilinearFormFactory {
     map_type;
 
  public:
-  static Teuchos::RCP<BilinearForm>
-  Create(const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  static Teuchos::RCP<BilinearForm> Create(const Teuchos::ParameterList& plist,
+                                           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
  protected:
   static map_type* GetMap()

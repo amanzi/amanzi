@@ -19,7 +19,6 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "RegionLogical.hh"
-#include "ViewUtils.hh"
 
 #include "Mesh_simple.hh"
 

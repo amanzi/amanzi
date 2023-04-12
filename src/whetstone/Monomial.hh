@@ -28,11 +28,18 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class Monomial : public PolynomialBase {
+template <class MEMSPACE = DefaultHostMemorySpace>
+class Monomial : public PolynomialBase<MEMSPACE> {
+  using PolynomialBase<MEMSPACE>::d_;
+  using PolynomialBase<MEMSPACE>::order_;
+  using PolynomialBase<MEMSPACE>::size_;
+  using PolynomialBase<MEMSPACE>::origin_;
+  using PolynomialBase<MEMSPACE>::coefs_;
+
  public:
   Monomial()
   {
-    coefs_.Reshape(1);
+    coefs_.reshape(1);
     coefs_(0) = 0.0;
   }
   Monomial(int d, const int* multi_index, double coef)
@@ -43,7 +50,7 @@ class Monomial : public PolynomialBase {
       multi_index_[i] = multi_index[i];
       order_ += multi_index_[i];
     }
-    coefs_.Reshape(1);
+    coefs_.reshape(1);
     coefs_(0) = coef;
   }
   ~Monomial(){};
@@ -52,7 +59,7 @@ class Monomial : public PolynomialBase {
   // -- polynomial values
   virtual double Value(const AmanziGeometry::Point& xp) const override;
   // -- get all polynomial coefficients
-  virtual DenseVector ExpandCoefficients() const override;
+  virtual DenseVector<MEMSPACE> ExpandCoefficients() const override;
 
   // access
   const int* multi_index() const { return multi_index_; }
@@ -63,14 +70,15 @@ class Monomial : public PolynomialBase {
 
 
 /* ******************************************************************
-* Return ordered list of all polynomial coefficients of monomial.
-****************************************************************** */
-inline DenseVector
-Monomial::ExpandCoefficients() const
+ * Return ordered list of all polynomial coefficients of monomial.
+ ****************************************************************** */
+template <typename MEMSPACE>
+inline DenseVector<MEMSPACE>
+Monomial<MEMSPACE>::ExpandCoefficients() const
 {
   int size = PolynomialSpaceDimension(d_, order_);
-  DenseVector coefs(size);
-  coefs.PutScalar(0.0);
+  DenseVector<> coefs(size);
+  coefs.putScalar(0.0);
 
   int l = PolynomialPosition(d_, multi_index_);
   coefs(l) = coefs_(0);
@@ -80,10 +88,11 @@ Monomial::ExpandCoefficients() const
 
 
 /* ******************************************************************
-* Calculate monomial value
-****************************************************************** */
+ * Calculate monomial value
+ ****************************************************************** */
+template <typename MEMSPACE>
 inline double
-Monomial::Value(const AmanziGeometry::Point& xp) const
+Monomial<MEMSPACE>::Value(const AmanziGeometry::Point& xp) const
 {
   double tmp = coefs_(0);
   if (tmp != 0.0) {

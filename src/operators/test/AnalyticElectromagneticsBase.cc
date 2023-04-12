@@ -1,41 +1,33 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
-  Operators
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Base class for verifying numerical schemes for Maxwell's equations.
 */
 
-#include "Epetra_MultiVector.h"
 
 #include "AnalyticElectromagneticsBase.hh"
 
 /* ******************************************************************
 * Error calculation of faces.
 ****************************************************************** */
-void
-AnalyticElectromagneticsBase::ComputeFaceError(Epetra_MultiVector& u,
-                                               double t,
-                                               double& unorm,
-                                               double& l2_err,
-                                               double& inf_err)
+void AnalyticElectromagneticsBase::ComputeFaceError(
+    Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err)
 {
   unorm = 0.0;
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int nfaces = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,
-                                     Amanzi::AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = mesh_->getNumEntities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; f++) {
     double area = mesh_->getFaceArea(f);
-    const Amanzi::AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    const Amanzi::AmanziGeometry::Point& normal = mesh_->face_normal(f);
     const Amanzi::AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
     const Amanzi::AmanziGeometry::Point& B = magnetic_exact(xf, t);
     double tmp = (normal * B) / area;
@@ -47,11 +39,11 @@ AnalyticElectromagneticsBase::ComputeFaceError(Epetra_MultiVector& u,
   }
 #ifdef HAVE_MPI
   double tmp = unorm;
-  mesh_->getComm()->SumAll(&tmp, &unorm, 1);
+  mesh_->get_comm()->SumAll(&tmp, &unorm, 1);
   tmp = l2_err;
-  mesh_->getComm()->SumAll(&tmp, &l2_err, 1);
+  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
   tmp = inf_err;
-  mesh_->getComm()->MaxAll(&tmp, &inf_err, 1);
+  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
 #endif
   unorm = sqrt(unorm);
   l2_err = sqrt(l2_err);
@@ -61,23 +53,18 @@ AnalyticElectromagneticsBase::ComputeFaceError(Epetra_MultiVector& u,
 /* ******************************************************************
 * Error calculation of edges.
 ****************************************************************** */
-void
-AnalyticElectromagneticsBase::ComputeEdgeError(Epetra_MultiVector& u,
-                                               double t,
-                                               double& unorm,
-                                               double& l2_err,
-                                               double& inf_err)
+void AnalyticElectromagneticsBase::ComputeEdgeError(
+    Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err)
 {
   unorm = 0.0;
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int nedges = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::EDGE,
-                                     Amanzi::AmanziMesh::Parallel_kind::OWNED);
+  int nedges = mesh_->getNumEntities(Amanzi::AmanziMesh::EDGE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   for (int e = 0; e < nedges; e++) {
-    double len = mesh_->getEdgeLength(e);
-    const Amanzi::AmanziGeometry::Point& tau = mesh_->getEdgeVector(e);
-    const Amanzi::AmanziGeometry::Point& xe = mesh_->getEdgeCentroid(e);
+    double len = mesh_->edge_length(e);
+    const Amanzi::AmanziGeometry::Point& tau = mesh_->edge_vector(e);
+    const Amanzi::AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
 
     const Amanzi::AmanziGeometry::Point& E = electric_exact(xe, t);
     double tmp = (E * tau) / len;
@@ -100,33 +87,28 @@ AnalyticElectromagneticsBase::ComputeEdgeError(Epetra_MultiVector& u,
 /* ******************************************************************
 * Error calculation of nodes.
 ****************************************************************** */
-void
-AnalyticElectromagneticsBase::ComputeNodeError(Epetra_MultiVector& u,
-                                               double t,
-                                               double& unorm,
-                                               double& l2_err,
-                                               double& inf_err)
+void AnalyticElectromagneticsBase::ComputeNodeError(
+    Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err)
 {
   unorm = 0.0;
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int d = mesh_->getSpaceDimension();
+  int d = mesh_->space_dimension();
   Amanzi::AmanziGeometry::Point xv(d);
 
-  Amanzi::AmanziMesh::Entity_ID_View nodes;
-  int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
-                                     Amanzi::AmanziMesh::Parallel_kind::OWNED);
+  Amanzi::AmanziMesh::Entity_ID_List nodes;
+  int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells; c++) {
     double volume = mesh_->getCellVolume(c);
 
-    nodes = mesh_->getCellNodes(c);
+    mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
 
     for (int k = 0; k < nnodes; k++) {
       int v = nodes[k];
-      xv = mesh_->getNodeCoordinate(v);
+      mesh_->node_get_coordinates(v, &xv);
       double tmp = (electric_exact(xv, t))[2];
 
       // std::cout << v << " at " << xv << " error: " << tmp << " " << u[0][v] << std::endl;
@@ -148,16 +130,15 @@ AnalyticElectromagneticsBase::ComputeNodeError(Epetra_MultiVector& u,
 /* ******************************************************************
 * Collective communications.
 ****************************************************************** */
-void
-AnalyticElectromagneticsBase::GlobalOp(std::string op, double* val, int n)
+void AnalyticElectromagneticsBase::GlobalOp(std::string op, double* val, int n)
 {
   double* val_tmp = new double[n];
   for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
-  if (op == "sum")
-    mesh_->getComm()->SumAll(val_tmp, val, n);
-  else if (op == "max")
-    mesh_->getComm()->MaxAll(val_tmp, val, n);
+  if (op == "sum") 
+    mesh_->get_comm()->SumAll(val_tmp, val, n);
+  else if (op == "max") 
+    mesh_->get_comm()->MaxAll(val_tmp, val, n);
 
   delete[] val_tmp;
 }

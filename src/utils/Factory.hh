@@ -110,7 +110,6 @@ class Factory {
  protected:
   static map_type* GetMap()
   {
-    static map_type* map_;
     if (!map_) { map_ = new map_type; }
     return map_;
   }

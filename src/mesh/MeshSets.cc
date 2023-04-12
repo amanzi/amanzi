@@ -528,9 +528,9 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
     bool ghosted = (ptype != Parallel_kind::OWNED);
     auto& mesh_map = mesh.getMap(kind, ghosted);
     View_type<Entity_ID, MemSpace_kind::HOST> mesh_ents("mesh_ents",
-                                                        mesh_map.NumMyElements());
-    for (int i = 0; i != mesh_map.NumMyElements(); ++i)
-      mesh_ents(i) = mesh_map.GID(i);
+                                                        mesh_map->getLocalNumElements());
+    for (int i = 0; i != mesh_map->getLocalNumElements(); ++i)
+      mesh_ents(i) = mesh_map->getGlobalElement(i);
 
     Entity_ID_List vresult;
     vresult.reserve(mesh_ents.size());

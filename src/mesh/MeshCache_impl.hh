@@ -12,6 +12,8 @@
 //! Caches mesh information for fast repeated access.
 #pragma once
 
+#include "Teuchos_CommHelpers.hpp"
+
 #include "Geometry.hh"
 #include "Iterators.hh"
 #include "MeshUtils.hh"
@@ -1880,7 +1882,6 @@ MeshCache<MEM>::PrintMeshStatistics() const
   }
 }
 
-
 template <MemSpace_kind MEM>
 void
 MeshCache<MEM>::recacheGeometry()
@@ -1982,6 +1983,7 @@ onMemSpace(const Teuchos::RCP<MeshCache<IN>>& mc_in)
   if constexpr (IN == OUT) return mc_in;
   return Teuchos::rcp(new MeshCache<OUT>(*mc_in));
 }
+
 
 
 } // namespace AmanziMesh

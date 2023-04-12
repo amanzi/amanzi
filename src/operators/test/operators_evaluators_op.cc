@@ -23,7 +23,7 @@
 
 // Amanzi
 #include "BCs_Factory.hh"
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 #include "MeshFactory.hh"
 #include "Op_Cell_Cell.hh"
 #include "Op_Face_Cell.hh"
@@ -57,7 +57,7 @@ class BIndependent : public EvaluatorIndependent<CompositeVector, CompositeVecto
   virtual void Update_(State& s) override
   {
     double cv = s.GetMesh()->getCellVolume(0);
-    s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).PutScalar(-4. * cv);
+    s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).putScalar(-4. * cv);
   }
 };
 
@@ -74,9 +74,9 @@ class XIndependent : public EvaluatorIndependent<CompositeVector, CompositeVecto
   virtual void Update_(State& s) override
   {
     auto& x = s.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
-    auto& x_c = *x.ViewComponent("cell", false);
-    for (int c = 0; c != x_c.MyLength(); ++c) {
-      AmanziGeometry::Point cc = x.Mesh()->getCellCentroid(c);
+    auto& x_c = *x.viewComponent("cell", false);
+    for (int c = 0; c != x_c.getLocalLength(); ++c) {
+      AmanziGeometry::Point cc = x.getMesh()->getCellCentroid(c);
       x_c[0][c] = cc[0] * cc[0] + cc[1] * cc[1]; // x^2 + y^2
     }
   }
@@ -94,7 +94,7 @@ class DiagIndependent : public EvaluatorIndependent<CompositeVector, CompositeVe
  protected:
   virtual void Update_(State& s) override
   {
-    s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).PutScalar(1.);
+    s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).putScalar(1.);
   }
 };
 
@@ -113,7 +113,7 @@ class KIndependent : public EvaluatorIndependent<TensorVector, TensorVector_Fact
     auto& K = s.GetW<TensorVector>(my_key_, my_tag_, my_key_);
     for (auto& k : K) {
       k.Init(2, 0);
-      k.PutScalar(1.0);
+      k.putScalar(1.0);
     }
   }
 };
@@ -169,7 +169,7 @@ class Evaluator_PDE_Diagonal : public EvaluatorSecondary {
     AMANZI_ASSERT(my_keys_.size() == 1);
     auto& op = S.GetW<Operators::Op>(my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
     *op.diag = *S.Get<CompositeVector>(dependencies_.begin()->first, dependencies_.begin()->second)
-                  .ViewComponent("cell", false);
+                  .viewComponent("cell", false);
   }
 
   virtual void EnsureCompatibility(State& S) override
@@ -235,8 +235,8 @@ class Evaluator_PDE_DiffusionFV : public EvaluatorSecondary {
 
     // create the global operator
     Operators::Operator_Factory global_op_fac;
-    global_op_fac.set_mesh(A_rhs->Mesh());
-    global_op_fac.set_cvs(A_rhs->Map(), A_rhs->Map());
+    global_op_fac.set_mesh(A_rhs->getMesh());
+    global_op_fac.set_cvs(A_rhs->getMap(), A_rhs->getMap());
 
     auto global_op_unique = global_op_fac.Create();
     // need to figure out a way to move unique_ptr into rcp
@@ -253,7 +253,7 @@ class Evaluator_PDE_DiffusionFV : public EvaluatorSecondary {
     pde.SetBCs(bcs, bcs);
 
     const auto& K = S.Get<TensorVector>(tensor_coef_key_, tag_);
-    Teuchos::RCP<const std::vector<WhetStone::Tensor>> Kdata = Teuchos::rcpFromRef(K.data);
+    Teuchos::RCP<const std::vector<WhetStone:Tensor<>>> Kdata = Teuchos::rcpFromRef(K.data);
     pde.SetTensorCoefficient(Kdata);
 
     // at least this is const!
@@ -310,7 +310,7 @@ SUITE(EVALUATOR_ON_OP)
     // Setup fields and marked as initialized.
     // Note: USER CODE SHOULD NOT DO IT THIS WAY!
     S.Setup();
-    S.GetW<Operators::Op>("my_op", Tags::DEFAULT, "my_op").diag->PutScalar(3.14);
+    S.GetW<Operators::Op>("my_op", Tags::DEFAULT, "my_op").diag->putScalar(3.14);
     S.GetRecordW("my_op", "my_op").set_initialized();
     S.Initialize();
   }
@@ -394,7 +394,7 @@ SUITE(EVALUATOR_ON_OP)
     // Setup fields and marked as initialized.  Note: USER CODE SHOULD NOT DO IT
     // THIS WAY!
     S.Setup();
-    S.GetW<CompositeVector>("x", Tags::DEFAULT, "x").PutScalar(1.);
+    S.GetW<CompositeVector>("x", Tags::DEFAULT, "x").putScalar(1.);
     S.GetRecordW("x", Tags::DEFAULT, "x").set_initialized();
     S.Initialize();
 
@@ -404,7 +404,7 @@ SUITE(EVALUATOR_ON_OP)
     // Ax - b
     CHECK_CLOSE(
       33.0,
-      (*S.Get<CompositeVector>("residual", Tags::DEFAULT).ViewComponent("cell", false))[0][0],
+      (*S.Get<CompositeVector>("residual", Tags::DEFAULT).viewComponent("cell", false))[0][0],
       1.e-10);
   }
 
@@ -527,8 +527,8 @@ SUITE(EVALUATOR_ON_OP)
 
     // Ax - b
     double error(0.);
-    auto& r = *S.Get<CompositeVector>("residual", Tags::DEFAULT).ViewComponent("cell");
-    r.NormInf(&error);
+    auto& r = *S.Get<CompositeVector>("residual", Tags::DEFAULT).viewComponent("cell");
+    r.normInf(&error);
     CHECK_CLOSE(0.0, error, 1.e-3);
   }
 }

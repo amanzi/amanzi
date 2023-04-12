@@ -33,15 +33,15 @@ namespace WhetStone {
 ****************************************************************** */
 int
 MFD3D_Diffusion::L2consistencyInverseSurface(int c,
-                                             const Tensor& T,
-                                             DenseMatrix& R,
-                                             DenseMatrix& Wc)
+                                             const Tensor<>& T,
+                                             DenseMatrix<>& R,
+                                             DenseMatrix<>& Wc)
 {
   const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
-  R.Reshape(nfaces, d_ - 1);
-  Wc.Reshape(nfaces, nfaces);
+  R.reshape(nfaces, d_ - 1);
+  Wc.reshape(nfaces, nfaces);
 
   double volume = mesh_->getCellVolume(c);
 
@@ -55,7 +55,7 @@ MFD3D_Diffusion::L2consistencyInverseSurface(int c,
   v1 /= norm(v1);
 
   // calculate projector
-  Tensor P(d_, 2);
+  Tensor<> P(d_, 2);
   for (int i = 0; i < d_; i++) {
     P(i, i) = 1.0;
     for (int j = 0; j < d_; j++) { P(i, j) -= v1[i] * v1[j]; }
@@ -67,8 +67,8 @@ MFD3D_Diffusion::L2consistencyInverseSurface(int c,
   v3 = v1 ^ v2;
 
   // define new tensor
-  Tensor PTP(d_, 2);
-  PTP = P * T * P;
+  Tensor<> PTP(d_, 2);
+  PTP.assign(P * T * P);
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
@@ -102,7 +102,7 @@ MFD3D_Diffusion::L2consistencyInverseSurface(int c,
 * Darcy inverse mass matrix for surface: the standard algorithm
 ****************************************************************** */
 int
-MFD3D_Diffusion::MassMatrixInverseSurface(int c, const Tensor& K, DenseMatrix& W)
+MFD3D_Diffusion::MassMatrixInverseSurface(int c, const Tensor<>& K, DenseMatrix<>& W)
 {
   DenseMatrix R;
 
@@ -118,7 +118,7 @@ MFD3D_Diffusion::MassMatrixInverseSurface(int c, const Tensor& K, DenseMatrix& W
 * Mass matrix for a polyhedral element via simplex method.
 ****************************************************************** */
 int
-MFD3D_Diffusion::MassMatrixInverseSurfaceMMatrix(int c, const Tensor& K, DenseMatrix& W)
+MFD3D_Diffusion::MassMatrixInverseSurfaceMMatrix(int c, const Tensor<>& K, DenseMatrix<>& W)
 {
   DenseMatrix R;
 
@@ -168,13 +168,13 @@ MFD3D_Diffusion::mesh_getFaceNormal(int f, int c)
 * The conventional FV scheme for a general mesh.
 ****************************************************************** */
 int
-MFD3D_Diffusion::MassMatrixInverseSurfaceTPFA(int c, const Tensor& K, DenseMatrix& W)
+MFD3D_Diffusion::MassMatrixInverseSurfaceTPFA(int c, const Tensor<>& K, DenseMatrix<>& W)
 {
   const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
-  W.Reshape(nfaces, nfaces);
-  W.PutScalar(0.0);
+  W.reshape(nfaces, nfaces);
+  W.putScalar(0.0);
 
   const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
   AmanziGeometry::Point a(d_);

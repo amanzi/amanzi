@@ -23,12 +23,15 @@ This is a variation of the GMRES solver for nonlinear problems.
 
     * `"diverged tolerance`" ``[double]`` **1.e10** Defines the error level
       indicating divergence of the solver. The error is calculated by a PK.
-      Set to a negative value to ignore this check.
 
     * `"diverged l2 tolerance`" ``[double]`` **1.e10** Defines another way to
       identify divergence of the solver. If the relative L2 norm of the
       solution increment is above this value, the solver is terminated.
-      Set to a negative value to ignore this check.
+
+    * `"diverged pc tolerance`" ``[double]`` **1e10** Defines another way to
+      identify divergence of the solver. If the relative maximum norm of the
+      solution increment (with respect to the initial increment) is above this
+      value, the solver is terminated.
 
     * `"max du growth factor`" ``[double]`` **1e5** Allows the solver to
       identify divergence pattern on earlier iterations. If the maximum norm of
@@ -75,13 +78,14 @@ class SolverAA : public Solver<Vector, VectorSpace> {
 
   SolverAA(Teuchos::ParameterList& plist,
            const Teuchos::RCP<SolverFnBase<Vector>>& fn,
-           const VectorSpace& map)
+           const Teuchos::RCP<const VectorSpace>& map)
     : plist_(plist)
   {
     Init(fn, map);
   }
 
-  void Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map);
+  void
+  Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const Teuchos::RCP<const VectorSpace>& map);
 
   int Solve(const Teuchos::RCP<Vector>& u)
   {
@@ -91,7 +95,7 @@ class SolverAA : public Solver<Vector, VectorSpace> {
 
   // mutators
   void set_tolerance(double tol) { tol_ = tol; }
-  void set_pc_lag(int pc_lag) { pc_lag_ = pc_lag; }
+  void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
 
   // access
   double tolerance() { return tol_; }
@@ -100,9 +104,6 @@ class SolverAA : public Solver<Vector, VectorSpace> {
   int pc_calls() { return pc_calls_; }
   int pc_updates() { return pc_updates_; }
   int returned_code() { return returned_code_; }
-
-  // statistics
-  std::vector<std::pair<double, double>>& history() { return history_; }
 
  private:
   void Init_();
@@ -133,19 +134,16 @@ class SolverAA : public Solver<Vector, VectorSpace> {
   bool modify_correction_;
   double residual_; // defined by convergence criterion
   ConvergenceMonitor monitor_;
-  int norm_type_;
-
-  std::vector<std::pair<double, double>> history_;
 };
 
 
 /* ******************************************************************
-* Public Init method.
-****************************************************************** */
+ * Public Init method.
+ ****************************************************************** */
 template <class Vector, class VectorSpace>
 void
 SolverAA<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
-                                    const VectorSpace& map)
+                                    const Teuchos::RCP<const VectorSpace>& map)
 {
   fn_ = fn;
   Init_();
@@ -157,15 +155,15 @@ SolverAA<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn
 
 
 /* ******************************************************************
-* Initialization of the AA solver.
-****************************************************************** */
+ * Initialization of the AA solver.
+ ****************************************************************** */
 template <class Vector, class VectorSpace>
 void
 SolverAA<Vector, VectorSpace>::Init_()
 {
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
-  overflow_tol_ = plist_.get<double>("diverged tolerance", 1.e10);
-  overflow_l2_tol_ = plist_.get<double>("diverged l2 tolerance", -1.0);
+  overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
+  overflow_l2_tol_ = plist_.get<double>("diverged l2 tolerance", 1.0e10);
   max_itrs_ = plist_.get<int>("limit iterations", 20);
   max_du_growth_factor_ = plist_.get<double>("max du growth factor", 1.0e5);
   max_error_growth_factor_ = plist_.get<double>("max error growth factor", 1.0e5);
@@ -175,7 +173,13 @@ SolverAA<Vector, VectorSpace>::Init_()
   aa_beta_ = plist_.get<double>("relaxation parameter", 0.7);
 
   std::string monitor_name = plist_.get<std::string>("monitor", "monitor update");
-  ParseConvergenceCriteria(monitor_name, &monitor_, &norm_type_);
+  if (monitor_name == "monitor residual") {
+    monitor_ = SOLVER_MONITOR_RESIDUAL;
+  } else if (monitor_name == "monitor preconditioned residual") {
+    monitor_ = SOLVER_MONITOR_PCED_RESIDUAL;
+  } else {
+    monitor_ = SOLVER_MONITOR_UPDATE; // default value
+  }
 
   aa_dim_ = plist_.get<int>("max aa vectors", 10);
   aa_dim_ = std::min<int>(aa_dim_, max_itrs_ - 1);
@@ -189,14 +193,14 @@ SolverAA<Vector, VectorSpace>::Init_()
 
   residual_ = -1.0;
 
-  //update the verbose options
+  // update the verbose options
   vo_ = Teuchos::rcp(new VerboseObject("Solver::AA", plist_));
 }
 
 
 /* ******************************************************************
-* The body of AA solver
-****************************************************************** */
+ * The body of AA solver
+ ****************************************************************** */
 template <class Vector, class VectorSpace>
 int
 SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u)
@@ -212,9 +216,9 @@ SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u)
   pc_updates_ = 0;
 
   // create storage
-  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du_tmp = Teuchos::rcp(new Vector(*u));
+  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du_tmp = Teuchos::rcp(new Vector(u->getMap()));
 
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0), l2_error(0.0);
@@ -240,7 +244,7 @@ SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u)
       previous_error = error;
       error = fn_->ErrorNorm(u, r);
       residual_ = error;
-      r->Norm2(&l2_error);
+      l2_error = r->norm2();
 
       // We attempt to catch non-convergence early.
       if (num_itrs_ == 0) {
@@ -268,17 +272,17 @@ SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u)
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
     fn_->ApplyPreconditioner(r, du_tmp);
-    // *du_tmp = *r;
+    // du_tmp->assign(*r);
 
     // Calculate the accelerated correction.
     if (num_itrs_ <= aa_lag_space_) {
       // Lag the AA space, just use the PC'd update.
-      *du = *du_tmp;
+      du->assign(*du_tmp);
     } else {
       if (num_itrs_ <= aa_lag_iterations_) {
         // Lag AA's iteration, but update the space with this Jacobian info.
         aa_->Correction(*du_tmp, *du, u.ptr());
-        *du = *du_tmp;
+        du->assign(*du_tmp);
       } else {
         // Take the standard AA correction.
         aa_->Correction(*du_tmp, *du, u.ptr());
@@ -298,13 +302,12 @@ SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u)
 
     // Make sure that we do not diverge and cause numerical overflow.
     previous_du_norm = du_norm;
-    du->NormInf(&du_norm);
+    du_norm = du->normInf();
 
     if (num_itrs_ == 0) {
-      double u_norm2, du_norm2;
-      u->Norm2(&u_norm2);
-      du->Norm2(&du_norm2);
-      if (overflow_l2_tol_ > 0 && u_norm2 > 0 && du_norm2 > overflow_l2_tol_ * u_norm2) {
+      double u_norm2 = u->norm2();
+      double du_norm2 = du->norm2();
+      if (u_norm2 > 0 && du_norm2 > overflow_l2_tol_ * u_norm2) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "terminating due to L2-norm overflow ||du||=" << du_norm2
                      << ", ||u||=" << u_norm2 << std::endl;
@@ -323,12 +326,12 @@ SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u)
 
       // This is the first invocation of aa_correction with an empty
       // aa space, so we call it withoug du_last, since there isn't one
-      //du_tmp->Print(std::cout);
+      // du_tmp->Print(std::cout);
       aa_->Correction(*du_tmp, *du, u.ptr());
-      //std::cout<<"du\n";du->Print(std::cout);
+      // std::cout<<"du\n";du->Print(std::cout);
 
       // Re-check du. If it fails again, give up.
-      du->NormInf(&du_norm);
+      du_norm = du->normInf();
 
       if (du_norm > max_du_growth_factor_ * previous_du_norm) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
@@ -353,7 +356,7 @@ SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u)
     }
 
     // Next solution iterate and error estimate: u  = u - du
-    u->Update(-1.0, *du, 1.0);
+    u->update(-1.0, *du, 1.0);
     fn_->ChangedSolution();
 
     // Increment iteration counter.
@@ -364,7 +367,7 @@ SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u)
       previous_error = error;
       error = fn_->ErrorNorm(u, du_tmp);
       residual_ = error;
-      du_tmp->Norm2(&l2_error);
+      l2_error = du_tmp->norm2();
 
       int ierr = AA_ErrorControl_(error, previous_error, l2_error);
       if (ierr == SOLVER_CONVERGED) return num_itrs_;
@@ -376,7 +379,7 @@ SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u)
       previous_error = error;
       error = fn_->ErrorNorm(u, du);
       residual_ = error;
-      du->Norm2(&l2_error);
+      l2_error = du->norm2();
 
       int ierr = AA_ErrorControl_(error, previous_error, l2_error);
       if (ierr == SOLVER_CONVERGED) return num_itrs_;
@@ -387,16 +390,14 @@ SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u)
 
 
 /* ******************************************************************
-* Internal convergence control.
-****************************************************************** */
+ * Internal convergence control.
+ ****************************************************************** */
 template <class Vector, class VectorSpace>
 int
 SolverAA<Vector, VectorSpace>::AA_ErrorControl_(double error,
                                                 double previous_error,
                                                 double l2_error)
 {
-  history_.push_back(std::make_pair(error, l2_error));
-
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error << std::endl;
 
@@ -404,7 +405,7 @@ SolverAA<Vector, VectorSpace>::AA_ErrorControl_(double error,
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
       *vo_->os() << "Solver converged: " << num_itrs_ << " itrs, error=" << error << std::endl;
     return SOLVER_CONVERGED;
-  } else if (overflow_tol_ > 0 && error > overflow_tol_) {
+  } else if (error > overflow_tol_) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
       *vo_->os() << "Solve failed, error " << error << " > " << overflow_tol_ << " (overflow)"
                  << std::endl;

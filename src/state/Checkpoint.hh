@@ -53,6 +53,18 @@ every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be 
 
 */
 
+/*
+
+Developer notes:
+
+As per the above description, Checkpoint must handle ALL domains, which may
+exist or not exist on any given rank of MPI_COMM_WORLD.  If all domains are
+defined on MPI_COMM_WORLD, everything is typically fine, and we can use a
+"single file" checkpoint.  If domains are on a subset of MPI_COMM_WORLD, then
+writes happen on that COMM, and so we use separate files for each domain.
+
+*/
+
 
 #ifndef AMANZI_STATE_CHECKPOINT_HH_
 #define AMANZI_STATE_CHECKPOINT_HH_
@@ -62,9 +74,9 @@ every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
-
-#include "HDF5_MPI.hh"
 #include "IOEvent.hh"
+#include "Input.hh"
+#include "Output.hh"
 #include "ObservationData.hh"
 #include "Key.hh"
 
@@ -90,109 +102,47 @@ class Checkpoint : public IOEvent {
              const Comm_ptr_type& comm,
              const std::string& domain = "domain");
 
-  // public interface for coordinator clients
-  template <typename T>
-  void Write(const std::string& name, const T& t) const;
-
-  template <typename T>
-  bool Read(const std::string& name, T& t) const
-  {
-    return true;
-  }
-
-  void Write(const State& S,
+  void write(const State& S,
              WriteType write_type = WriteType::STANDARD,
              Amanzi::ObservationData* obs_data = nullptr);
 
-  void CreateFile(int cycle);
-  void CreateFinalFile(int cycle);
-  void Finalize();
+  void read(State& S);
 
-  // i/o
-  void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
-  void WriteObservations(ObservationData* obs_data);
+  // NOTE: everything below is part of the public API, but should probably be
+  // made protected.
+  //
+  // write each data type -- typically not called by the user, but by the Data object
+  template <typename T>
+  void write(const Teuchos::ParameterList& attrs, const T& t) const {
+    auto domain = single_file_ ? std::string("domain") : Keys::getDomain(attrs.name());
+    if (!output_.count(domain)) domain = "domain";
+    return output_.at(domain)->write(attrs, t);
+  }
 
-  void ReadAttributes(State& S);
-
-  // access
-  void set_filebasename(std::string base) { filebasename_ = base; }
+  // write each data type -- typically not called by the user, but by the Data object
+  template <typename T>
+  bool read(const Teuchos::ParameterList& attrs, T& t) const
+  {
+    auto domain = single_file_ ? std::string("domain") : Keys::getDomain(attrs.name());
+    if (!input_.count(domain)) domain = "domain";
+    input_.at(domain)->read(attrs, t);
+    return true; // legacy return value ierr, now will simply fail
+  }
 
  protected:
-  void ReadParameters_();
+  void readParameters_();
+  void createFile_(const int cycle);
+  void createFinalFile_(const int cycle);
+  void finalizeFile_();
+  void writeObservations_(Amanzi::ObservationData* obs_data);
 
-  std::string filebasename_;
-  int filenamedigits_;
-  int restart_cycle_;
   bool single_file_;
+  std::string filenamebase_;
 
-  std::map<std::string, Teuchos::RCP<Amanzi::HDF5_MPI>> output_;
+  std::map<std::string, std::unique_ptr<Output>> output_;
+  std::map<std::string, std::unique_ptr<Input>> input_;
 };
 
-
-template <>
-void
-Checkpoint::Write<Epetra_Vector>(const std::string& name, const Epetra_Vector& t) const;
-
-template <>
-inline void
-Checkpoint::Write<double>(const std::string& name, const double& t) const
-{
-  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
-  if (!output_.count(domain)) domain = "domain";
-  output_.at(domain)->writeAttrReal(t, name);
-}
-
-template <>
-inline void
-Checkpoint::Write<int>(const std::string& name, const int& t) const
-{
-  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
-  if (!output_.count(domain)) domain = "domain";
-  output_.at(domain)->writeAttrInt(t, name);
-}
-
-template <>
-inline bool
-Checkpoint::Read<Epetra_Vector>(const std::string& name, Epetra_Vector& t) const
-{
-  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
-  if (!output_.count(domain)) domain = "domain";
-  return output_.at(domain)->readData(t, name);
-}
-
-template <>
-inline bool
-Checkpoint::Read<double>(const std::string& name, double& t) const
-{
-  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
-  if (!output_.count(domain)) domain = "domain";
-  std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
-  std::fstream str(fname);
-  str << "rank (" << output_.at("domain")->Comm()->MyPID() << "/"
-      << output_.at("domain")->Comm()->NumProc() << ") on comm ("
-      << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
-      << ") reading \"" << name << "\" from domain \"" << domain << "\" in file \""
-      << output_.at(domain)->H5DataFilename() << std::endl;
-  output_.at(domain)->readAttrReal(t, name);
-  return true; // FIXME
-}
-
-template <>
-inline bool
-Checkpoint::Read<int>(const std::string& name, int& t) const
-{
-  auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
-  if (!output_.count(domain)) domain = "domain";
-  std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
-  std::fstream str(fname);
-  str << "rank (" << output_.at("domain")->Comm()->MyPID() << "/"
-      << output_.at("domain")->Comm()->NumProc() << ") on comm ("
-      << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
-      << ") reading \"" << name << "\" from domain \"" << domain << "\" in file \""
-      << output_.at(domain)->H5DataFilename() << std::endl;
-  output_.at(domain)->readAttrInt(t, name);
-  return true; // FIXME
-}
 
 } // namespace Amanzi
 #endif

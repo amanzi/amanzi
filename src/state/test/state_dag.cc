@@ -19,7 +19,6 @@
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
-#include "IO.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
@@ -73,6 +72,8 @@ class AEvaluator : public EvaluatorSecondaryMonotype<double> {
     return Teuchos::rcp(new AEvaluator(*this));
   }
 
+  virtual std::string getType() const override { return "AEvaluator"; }
+
   virtual void Evaluate_(const State& S, const std::vector<double*>& results) override
   {
     auto& fb = S.Get<double>("fb");
@@ -118,6 +119,7 @@ class CEvaluator : public EvaluatorSecondaryMonotype<double> {
   {
     return Teuchos::rcp(new CEvaluator(*this));
   }
+  virtual std::string getType() const override { return "AEvaluator"; }
 
   virtual void Evaluate_(const State& S, const std::vector<double*>& results) override
   {
@@ -153,6 +155,7 @@ class DEvaluator : public EvaluatorSecondaryMonotype<double> {
   {
     return Teuchos::rcp(new DEvaluator(*this));
   }
+  virtual std::string getType() const override { return "AEvaluator"; }
 
   virtual void Evaluate_(const State& S, const std::vector<double*>& results) override
   {
@@ -184,6 +187,7 @@ class EEvaluator : public EvaluatorSecondaryMonotype<double> {
   {
     return Teuchos::rcp(new EEvaluator(*this));
   }
+  virtual std::string getType() const override { return "AEvaluator"; }
 
   virtual void Evaluate_(const State& S, const std::vector<double*>& results) override
   {
@@ -222,6 +226,7 @@ class FEvaluator : public EvaluatorSecondaryMonotype<double> {
   {
     return Teuchos::rcp(new FEvaluator(*this));
   }
+  virtual std::string getType() const override { return "AEvaluator"; }
 
   virtual void Evaluate_(const State& S, const std::vector<double*>& results) override
   {
@@ -252,6 +257,7 @@ class HEvaluator : public EvaluatorSecondaryMonotype<double> {
   {
     return Teuchos::rcp(new HEvaluator(*this));
   }
+  virtual std::string getType() const override { return "AEvaluator"; }
 
   virtual void Evaluate_(const State& S, const std::vector<double*>& results) override
   {
@@ -341,8 +347,7 @@ class make_state {
     Teuchos::ParameterList plist;
     plist.sublist("verbose object").set("verbosity level", "extreme");
 
-    VerboseObject vo("State", plist);
-    WriteStateStatistics(S, vo);
+    S.WriteStatistics();
   }
 
  public:

@@ -88,10 +88,11 @@ macro(generate_evaluators_registration_header)
   list(APPEND MY_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR})
   foreach(FILE  ${VAR_LIST})
     get_filename_component(INCLUDE_PATH ${FILE} PATH)
-    list(APPEND  MY_INCLUDES ${INCLUDE_PATH})
+    list(APPEND  MY_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/${INCLUDE_PATH})
   endforeach()
   
   set_property(GLOBAL PROPERTY ${LOCAL_LISTNAME}_INCLUDES ${MY_INCLUDES})
+  message("REG INCLUDES = ${LOCAL_LISTNAME}_INCLUDES = ${MY_INCLUDES}")
 
 endmacro(generate_evaluators_registration_header)
 

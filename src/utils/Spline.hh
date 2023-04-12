@@ -35,20 +35,20 @@ class Spline {
 
   void Setup(double x1, double y1, double dy1, double x2, double y2, double dy2);
 
-  double operator()(double x) { return Value(x); }
+  double operator()(double x) const { return Value(x); }
 
-  double Value(double x);
-  double Derivative(double x);
+  double Value(double x) const;
+  double Derivative(double x) const;
 
  private:
-  double T(double x);
+  double T(double x) const;
 
   double x1_, x2_, y1_, y2_, dy1_, dy2_;
 };
 
 
 inline double
-Spline::T(double x)
+Spline::T(double x) const
 {
   return (x - x1_) / (x2_ - x1_);
 }

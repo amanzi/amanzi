@@ -119,8 +119,8 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm,
   getOStream()->setShowProcRank(show_rank);
 
   // -- set the comm info
-  int size = comm_->NumProc();
-  int pid = comm_->MyPID();
+  int size = comm_->getSize();
+  int pid = comm_->getRank();
   getOStream()->setProcRankAndSize(pid, size);
 
   // -- write from a different rank than 0
@@ -160,6 +160,8 @@ VerboseObject::color(const std::string& name) const
     output = color("green");
   } else if (name == "bad") {
     output = color("red");
+  } else if (name.empty()) {
+    return reset();
   }
   return output;
 }

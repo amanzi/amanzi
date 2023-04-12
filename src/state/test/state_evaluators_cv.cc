@@ -47,13 +47,17 @@ class AEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeV
     return Teuchos::rcp(new AEvaluator(*this));
   };
 
+  virtual std::string getType() const override { return "AEvaluator"; }
+
  protected:
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override
   {
-    auto& result_c = *results[0]->ViewComponent(comp_);
-    const auto& fb_c = *S.Get<CompositeVector>("fb").ViewComponent(comp_);
-
-    for (int c = 0; c != result_c.MyLength(); ++c) { result_c[0][c] = 2 * fb_c[0][c]; }
+    auto result_c = results[0]->viewComponent(comp_);
+    const auto fb_c = S.Get<CompositeVector>("fb").viewComponent(comp_);
+    Kokkos::parallel_for("AEvaluator::Evaluate_", result_c.extent(0),
+                         KOKKOS_LAMBDA(const int& c) {
+                           result_c(c,0) = 2 * fb_c(c,0);
+                         });
   }
 
   virtual void EvaluatePartialDerivative_(const State& S,
@@ -61,11 +65,8 @@ class AEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeV
                                           const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override
   {
-    auto& result_c = *results[0]->ViewComponent(comp_);
-
-    if (wrt_key == "fb") {
-      for (int c = 0; c != result_c.MyLength(); ++c) { result_c[0][c] = 2.0; }
-    }
+    auto result_c = results[0]->viewComponent(comp_);
+    Kokkos::deep_copy(result_c, 2);
   }
 
   std::string comp_;
@@ -101,7 +102,7 @@ SUITE(EVALUATORS_CV)
 
     // Setup fields and marked as initialized
     S.Setup();
-    S.GetW<CompositeVector>("fa", "fa").PutScalar(1.0);
+    S.GetW<CompositeVector>("fa", "fa").putScalar(1.0);
     S.GetRecordW("fa", "fa").set_initialized();
     S.Initialize();
 
@@ -140,8 +141,8 @@ SUITE(EVALUATORS_CV)
     CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", Tags::DEFAULT));
 
     CHECK_CLOSE(1.0,
-                (*S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fa", Tags::DEFAULT)
-                    .ViewComponent("cell"))[0][0],
+                S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fa", Tags::DEFAULT)
+                 .viewComponent<DefaultHostMemorySpace>("cell")(0,0),
                 1.0e-10);
   }
 
@@ -193,11 +194,11 @@ SUITE(EVALUATORS_CV)
     S.Setup();
 
     // Check that info from fa made it into fb under the default data policy
-    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).HasComponent("cell"));
-    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).Mesh() == S.GetMesh("domain"));
+    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).hasComponent("cell"));
+    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).getMesh() == S.GetMesh("domain"));
 
     // initialize
-    S.GetW<CompositeVector>("fb", Tags::DEFAULT, "fb").PutScalar(3.0);
+    S.GetW<CompositeVector>("fb", Tags::DEFAULT, "fb").putScalar(3.0);
     S.GetRecordW("fb", "fb").set_initialized();
     S.Initialize();
 
@@ -218,11 +219,12 @@ SUITE(EVALUATORS_CV)
     CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fb", Tags::DEFAULT));
 
     // check the value and derivative
-    CHECK_CLOSE(
-      6.0, (*S.Get<CompositeVector>("fa", Tags::DEFAULT).ViewComponent("cell"))[0][0], 1.0e-10);
+    CHECK_CLOSE(6.0,
+                S.Get<CompositeVector>("fa", Tags::DEFAULT).viewComponent<DefaultHostMemorySpace>("cell")(0,0),
+                1.0e-10);
     CHECK_CLOSE(2.0,
-                (*S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT)
-                    .ViewComponent("cell"))[0][0],
+                S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT)
+                    .viewComponent<DefaultHostMemorySpace>("cell")(0,0),
                 1.0e-10);
 
     // second call should not be changed
@@ -235,14 +237,14 @@ SUITE(EVALUATORS_CV)
 
     // check the value and derivative are still the same
     CHECK_CLOSE(
-      6.0, (*S.Get<CompositeVector>("fa", Tags::DEFAULT).ViewComponent("cell"))[0][0], 1.0e-10);
+      6.0, S.Get<CompositeVector>("fa", Tags::DEFAULT).viewComponent<DefaultHostMemorySpace>("cell")(0,0), 1.0e-10);
     CHECK_CLOSE(2.0,
-                (*S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT)
-                    .ViewComponent("cell"))[0][0],
+                S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT)
+                    .viewComponent<DefaultHostMemorySpace>("cell")(0,0),
                 1.0e-10);
 
     // change the primary and mark as changed
-    S.GetW<CompositeVector>("fb", Tags::DEFAULT, "fb").PutScalar(14.0);
+    S.GetW<CompositeVector>("fb", Tags::DEFAULT, "fb").putScalar(14.0);
     auto eval = S.GetEvaluatorPtr("fb", Tags::DEFAULT);
     auto eval_p =
       Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(eval);
@@ -255,10 +257,10 @@ SUITE(EVALUATORS_CV)
 
     // check the values
     CHECK_CLOSE(
-      28.0, (*S.Get<CompositeVector>("fa", Tags::DEFAULT).ViewComponent("cell"))[0][0], 1.0e-10);
+      28.0, S.Get<CompositeVector>("fa", Tags::DEFAULT).viewComponent<DefaultHostMemorySpace>("cell")(0,0), 1.0e-10);
     CHECK_CLOSE(2.0,
-                (*S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT)
-                    .ViewComponent("cell"))[0][0],
+                S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT)
+                .viewComponent<DefaultHostMemorySpace>("cell")(0,0),
                 1.0e-10);
 
     // check self-derivative is not working
@@ -319,27 +321,27 @@ SUITE(EVALUATORS_CV)
     // setup
     S.Setup();
 
-    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).Mesh() == S.GetMesh("domain"));
+    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).getMesh() == S.GetMesh("domain"));
 
     // b gets both
-    CHECK(S.Get<CompositeVector>("fb", Tags::DEFAULT).HasComponent("cell"));
-    CHECK(S.Get<CompositeVector>("fb", Tags::DEFAULT).HasComponent("face"));
+    CHECK(S.Get<CompositeVector>("fb", Tags::DEFAULT).hasComponent("cell"));
+    CHECK(S.Get<CompositeVector>("fb", Tags::DEFAULT).hasComponent("face"));
 
     // a still has just cell
-    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).HasComponent("cell"));
-    CHECK(!S.Get<CompositeVector>("fa", Tags::DEFAULT).HasComponent("face"));
+    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).hasComponent("cell"));
+    CHECK(!S.Get<CompositeVector>("fa", Tags::DEFAULT).hasComponent("face"));
     CHECK(S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT)
-            .HasComponent("cell"));
+            .hasComponent("cell"));
     CHECK(!S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT)
-             .HasComponent("face"));
+             .hasComponent("face"));
 
     // c still has just face
-    CHECK(!S.Get<CompositeVector>("fc", Tags::DEFAULT).HasComponent("cell"));
-    CHECK(S.Get<CompositeVector>("fc", Tags::DEFAULT).HasComponent("face"));
+    CHECK(!S.Get<CompositeVector>("fc", Tags::DEFAULT).hasComponent("cell"));
+    CHECK(S.Get<CompositeVector>("fc", Tags::DEFAULT).hasComponent("face"));
     CHECK(!S.GetDerivative<CompositeVector>("fc", Tags::DEFAULT, "fb", Tags::DEFAULT)
-             .HasComponent("cell"));
+             .hasComponent("cell"));
     CHECK(S.GetDerivative<CompositeVector>("fc", Tags::DEFAULT, "fb", Tags::DEFAULT)
-            .HasComponent("face"));
+            .hasComponent("face"));
   }
 
 
@@ -579,11 +581,11 @@ SUITE(EVALUATORS_CV)
     // setup
     S.Setup();
 
-    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).Mesh() == S.GetMesh("domain"));
-    CHECK(S.Get<CompositeVector>("fb", Tags::DEFAULT).HasComponent("cell"));
-    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).HasComponent("cell"));
+    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).getMesh() == S.GetMesh("domain"));
+    CHECK(S.Get<CompositeVector>("fb", Tags::DEFAULT).hasComponent("cell"));
+    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).hasComponent("cell"));
     CHECK(S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT)
-            .HasComponent("cell"));
+            .hasComponent("cell"));
   }
 
 

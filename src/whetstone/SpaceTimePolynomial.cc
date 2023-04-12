@@ -16,7 +16,6 @@
 
 #include <cmath>
 
-#include "Polynomial.hh"
 #include "SpaceTimePolynomial.hh"
 
 namespace Amanzi {
@@ -31,7 +30,7 @@ SpaceTimePolynomial::SpaceTimePolynomial(int d, int order)
   order_ = order;
   size_ = order + 1;
 
-  Polynomial tmp(d, 0);
+  Polynomial<> tmp(d, 0);
   coefs_.resize(size_, tmp);
 }
 
@@ -55,14 +54,14 @@ SpaceTimePolynomial::SpaceTimePolynomial(const SpaceTimePolynomial& poly)
 * NOTE: case d > d_ can be treated more intelligently.
 ****************************************************************** */
 void
-SpaceTimePolynomial::Reshape(int d, int order, bool reset)
+SpaceTimePolynomial::reshape(int d, int order, bool reset)
 {
   if (d_ != d) {
     d_ = d;
     order_ = order;
     size_ = order + 1;
 
-    Polynomial tmp(d, 0);
+    Polynomial<> tmp(d, 0);
     coefs_.resize(size_, tmp);
   } else if (order_ != order) {
     int size = size_;
@@ -72,14 +71,14 @@ SpaceTimePolynomial::Reshape(int d, int order, bool reset)
     coefs_.resize(size_);
 
     if (reset) {
-      Polynomial tmp(d, 0);
+      Polynomial<> tmp(d, 0);
       for (int i = 0; i < size_; ++i) coefs_[i] = tmp;
     } else {
-      Polynomial tmp(d, 0);
+      Polynomial<> tmp(d, 0);
       for (int i = size; i < size_; ++i) coefs_[i] = tmp;
     }
   } else if (reset) {
-    Polynomial tmp(d, 0);
+    Polynomial<> tmp(d, 0);
     for (int i = 0; i < size_; ++i) coefs_[i] = tmp;
   }
 }
@@ -94,7 +93,7 @@ SpaceTimePolynomial::operator+=(const SpaceTimePolynomial& poly)
   AMANZI_ASSERT(d_ == poly.dimension());
 
   int order = poly.order();
-  if (order_ < order) Reshape(d_, order);
+  if (order_ < order) reshape(d_, order);
   for (int i = 0; i < poly.size(); ++i) coefs_[i] += poly[i];
 
   return *this;
@@ -107,7 +106,7 @@ SpaceTimePolynomial::operator-=(const SpaceTimePolynomial& poly)
   AMANZI_ASSERT(d_ == poly.dimension());
 
   int order = poly.order();
-  if (order_ < order) Reshape(d_, order);
+  if (order_ < order) reshape(d_, order);
   for (int i = 0; i < poly.size(); ++i) coefs_[i] -= poly[i];
 
   return *this;
@@ -160,7 +159,7 @@ SpaceTimePolynomial::Value(const AmanziGeometry::Point& xp, double t) const
 /* ******************************************************************
 * Calculate polynomial value at a given time point.
 ****************************************************************** */
-Polynomial
+Polynomial<>
 SpaceTimePolynomial::Value(double t) const
 {
   double tmp(t);

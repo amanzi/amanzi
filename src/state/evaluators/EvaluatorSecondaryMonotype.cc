@@ -97,7 +97,7 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
   for (const auto& keytag : my_keys_) {
     results[j] = &S.GetDerivativeW<CompositeVector>(
       keytag.first, keytag.second, wrt_key, wrt_tag, keytag.first);
-    results[j]->PutScalarMasterAndGhosted(0.0);
+    results[j]->putScalarMasterAndGhosted(0.0);
     ++j;
   }
 
@@ -106,7 +106,7 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
     auto keytag = std::make_pair(wrt_key, wrt_tag);
     int i = std::find(my_keys_.begin(), my_keys_.end(), keytag) - my_keys_.begin();
     AMANZI_ASSERT(i < my_keys_.size()); // ensured by IsDifferentiableWRT() check previously
-    results[i]->PutScalar(1.);
+    results[i]->putScalar(1.);
     return;
   }
 
@@ -118,7 +118,7 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
       std::vector<CompositeVector*> tmp(my_keys_.size());
       for (int i = 0; i != my_keys_.size(); ++i) { tmp[i] = &tmp_data[i]; }
       EvaluatePartialDerivative_(S, wrt_key, wrt_tag, tmp);
-      for (int i = 0; i != my_keys_.size(); ++i) results[i]->Update(1., tmp_data[i], 1.);
+      for (int i = 0; i != my_keys_.size(); ++i) results[i]->update(1., tmp_data[i], 1.);
 
     } else if (S.GetEvaluator(dep.first, dep.second).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
       // partial F / partial dep * ddep/dx
@@ -135,7 +135,7 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
       EvaluatePartialDerivative_(S, dep.first, dep.second, tmp);
 
       // sum
-      for (int i = 0; i != my_keys_.size(); ++i) results[i]->Multiply(1., ddep, tmp_data[i], 1.);
+      for (int i = 0; i != my_keys_.size(); ++i) results[i]->elementWiseMultiply(1., ddep, tmp_data[i], 1.);
     }
   }
 }
@@ -206,11 +206,11 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompati
     if (combined_dep_fac.size() == 0) {
       combined_dep_fac = dep_fac;
     } else {
-      if (!combined_dep_fac.SameAs(dep_fac)) {
+      if (!combined_dep_fac.isSameAs(dep_fac)) {
         if ((consistency_policy == "take from child: intersection" &&
-             dep_fac.SubsetOf(combined_dep_fac)) ||
+             dep_fac.isSubsetOf(combined_dep_fac)) ||
             (consistency_policy == "take from child: union" &&
-             combined_dep_fac.SubsetOf(dep_fac))) {
+             combined_dep_fac.isSubsetOf(dep_fac))) {
           combined_dep_fac = dep_fac;
         }
       }
@@ -284,7 +284,7 @@ template <>
 Teuchos::Ptr<const Comm_type>
 EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::get_comm_(const State& S) const
 {
-  return S.Get<CompositeVector>(my_keys_.front().first, my_keys_.front().second).Comm().ptr();
+  return S.Get<CompositeVector>(my_keys_.front().first, my_keys_.front().second).getComm().ptr();
 }
 
 

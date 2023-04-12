@@ -43,21 +43,18 @@ TEST(DARCY_SURFACE_MESH)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 3, 4);
 
-  Tensor T(2, 1);
+ Tensor<> T(2, 1);
   T(0, 0) = 1;
 
-  for (int f = 0;
-       f < mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
-       ++f) {
-    RCP<AmanziMesh::SingleFaceMesh> surfmesh =
-      Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh, f));
+  for (int f = 0; f < mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL); ++f) {
+    RCP<AmanziMesh::SingleFaceMesh> surfmesh = Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh, f));
 
     MFD3D_Diffusion mfd(surfmesh);
 
-    DenseMatrix M;
+    DenseMatrix<> M;
     mfd.MassMatrix(0, T, M);
     int nrows = M.NumRows();
-
+    
     for (int i = 0; i < nrows; ++i) {
       for (int j = 0; j < nrows; ++j) {
         double val = (i != j) ? 0.0 : surfmesh->getCellVolume(0) / 2;
@@ -89,14 +86,14 @@ TEST(DARCY_SURFACE)
 
   MFD3D_Diffusion mfd(mesh);
 
-  Tensor T(2, 1);
+ Tensor<> T(2, 1);
   T(0, 0) = 1;
 
   for (int c = 0; c < 3; c++) {
     auto faces = mesh->getCellFaces(c);
     int nfaces = faces.size();
 
-    DenseMatrix W(nfaces, nfaces);
+    DenseMatrix<> W(nfaces, nfaces);
     for (int method = 0; method < 2; method++) {
       int ok(0);
       if (method == 0) {
@@ -125,7 +122,7 @@ TEST(DARCY_SURFACE)
       double vyy = 0.0, vxy = 0.0, volume = mesh->getCellVolume(c);
       for (int i = 0; i < nfaces; i++) {
         int f = faces[i];
-        yi = mesh->getFaceNormal(f, c)[1];
+        yi = mesh->getFaceNormal(f, c)[1]; 
         for (int j = 0; j < nfaces; j++) {
           f = faces[j];
           xj = mesh->getFaceNormal(f, c)[0];

@@ -48,9 +48,9 @@ class AmanziBelosOp : public Belos::Operator<double> {
       Teuchos::RCP<Vector> singleX = cmx->getVector(i);
       Teuchos::RCP<Vector> singleY = cmy->getVector(i);
       if (applyInverse_)
-        op_->ApplyInverse(*singleX, *singleY);
+        op_->applyInverse(*singleX, *singleY);
       else
-        op_->Apply(*singleX, *singleY);
+        op_->apply(*singleX, *singleY);
     }
   }
 

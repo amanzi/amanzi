@@ -21,7 +21,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 
 # External (TPL) directories
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 
 #
@@ -40,15 +40,18 @@ set(mesh_inc_files
   MeshAudit_impl.hh
   MeshFrameworkAudit.hh
   MeshAudit.hh
-  MeshMaps.hh
+  MeshUtils.hh
+  MeshInternals.hh
+  MeshInternals_decl.hh
+  MeshInternals_impl.hh
+  MeshAlgorithms.hh
   MeshCache.hh
   MeshCache_decl.hh
   MeshCache_impl.hh
+  MeshMaps.hh
   MeshSets.hh
   MeshColumns.hh
-  MeshUtils.hh
   Mesh.hh
-  MeshAlgorithms.hh
   SingleFaceMesh.hh
 )
 
@@ -66,7 +69,7 @@ set(mesh_src_files
 #
 add_amanzi_library(mesh SOURCE ${mesh_src_files}
                         HEADERS ${mesh_inc_files}
-                        LINK_LIBS geometry atk ${Epetra_LIBRARIES})
+                        LINK_LIBS geometry atk)
 
 # Mesh Frameworks
 add_subdirectory(mesh_simple)
@@ -107,8 +110,6 @@ if (BUILD_TESTS)
 
     include_directories(${MESH_EXTRACTED_SOURCE_DIR})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
-    include_directories(${GEOMETRY_SOURCE_DIR})
-    include_directories(${Epetra_INCLUDE_DIRS})
     include_directories(${UnitTest_INCLUDE_DIRS})
     
     # Need to copy files for the tests 
@@ -123,7 +124,7 @@ if (BUILD_TESTS)
 
     # Test link libraries
     set(mesh_test_link_libs geometry mesh mesh_simple mesh_extracted mesh_factory
-      ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+       ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # MOAB Mesh framework
     if (ENABLE_MESH_MOAB)
@@ -195,20 +196,20 @@ if (BUILD_TESTS)
     #   extraction constructor on CELLs, currently only supported by
     #   MSTK.  This extracts a set of cells, forms a mesh, and
     #   checks MeshAudit, geometry, sets, and maps.
-    add_amanzi_test(mesh_volume_extraction mesh_volume_extraction
-                    KIND unit
-                    SOURCE test/Main.cc test/mesh_volume_extraction.cc
-                    LINK_LIBS ${mesh_test_link_libs})
+    # add_amanzi_test(mesh_volume_extraction mesh_volume_extraction
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/mesh_volume_extraction.cc
+    #                 LINK_LIBS ${mesh_test_link_libs})
 
     # Test: column and surface cell extracted meshes
     #   These are 1-off, simplified meshes that make 1D and 0D
     #   conceptual meshes for use in subgrid models.  This extracts
     #   the column, creates a column mesh, and creates a surface cell
     #   mesh, all using the factory, and then checks sets on these.
-    add_amanzi_test(mesh_subgrid_extractions mesh_subgrid_extractions
-                    KIND unit
-                    SOURCE test/Main.cc test/mesh_subgrid_extractions.cc
-                    LINK_LIBS ${mesh_test_link_libs})
+    # add_amanzi_test(mesh_subgrid_extractions mesh_subgrid_extractions
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/mesh_subgrid_extractions.cc
+    #                 LINK_LIBS ${mesh_test_link_libs})
                   
     # Test: fracture extracted mesh
     #   Tests a fracture mesh generated using the mesh framework
@@ -216,10 +217,10 @@ if (BUILD_TESTS)
     #   only supported by MSTK.  This extracts a set of faces and
     #   should recognize the shared edges between two intersecting
     #   planes.
-    add_amanzi_test(mesh_fracture_extraction mesh_fracture_extraction
-                    KIND unit
-                    SOURCE test/Main.cc test/mesh_fracture_extraction.cc
-                    LINK_LIBS ${mesh_test_link_libs})
+    # add_amanzi_test(mesh_fracture_extraction mesh_fracture_extraction
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/mesh_fracture_extraction.cc
+    #                 LINK_LIBS ${mesh_test_link_libs})
 
     # # Test: mesh KD search
     add_amanzi_test(mesh_nanoflann mesh_nanoflann

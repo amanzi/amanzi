@@ -71,6 +71,7 @@
 #pragma once
 
 #include "AmanziTypes.hh"
+#include "AmanziVector.hh"
 #include "MeshDefs.hh"
 #include "MeshFramework.hh"
 #include "MeshUtils.hh"
@@ -98,6 +99,7 @@ template <class Mesh_type>
 std::pair<Map_ptr_type, Map_ptr_type>
 createMapsFromContiguousGIDs(const Mesh_type& mesh, const Entity_kind kind);
 
+
 //
 // Creates contiguous maps, using the provided maps to communicate new ghost
 // global IDs.
@@ -116,13 +118,13 @@ class MeshMaps {
   void initialize(const MeshFramework& mesh, bool renumber=false);
 
   template<MemSpace_kind MEM>
-  decltype(auto) // Entity_ID_View - nonconst!
+  decltype(auto) // cEntity_ID_View
   getBoundaryFaces() const {
     return view<MEM>(boundary_faces_);
   }
 
   template<MemSpace_kind MEM>
-  decltype(auto) // Entity_ID_View - nonconst!
+  decltype(auto) // cEntity_ID_View
   getBoundaryNodes() const {
     return view<MEM>(boundary_nodes_);
   }
@@ -130,7 +132,7 @@ class MeshMaps {
   std::size_t getNBoundaryFaces(Parallel_kind ptype);
   std::size_t getNBoundaryNodes(Parallel_kind ptype);
 
-  const Map_type& getMap(Entity_kind kind, bool include_ghost) const;
+  const Map_ptr_type& getMap(Entity_kind kind, bool include_ghost) const;
   const Import_type& getImporter(Entity_kind kind) const;
   const Import_type& getBoundaryFaceImporter() const {
     return *boundary_face_importer_;
@@ -160,10 +162,13 @@ std::pair<Map_ptr_type, Map_ptr_type>
 createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind)
 {
   Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
-  typename Mesh_type::cEntity_GID_View gids = mesh.getEntityGIDs(kind, true);
+  auto gids = mesh.getEntityGIDs(kind, true);
+  auto gids_owned =
+    Kokkos::subview(gids, Kokkos::make_pair((std::size_t)0, (std::size_t)num_owned));
+
   return std::make_pair(
-    Teuchos::rcp(new Epetra_Map(-1, gids.size(), gids.data(), 0, *mesh.getComm())),
-    Teuchos::rcp(new Epetra_Map(-1, num_owned, gids.data(), 0, *mesh.getComm())));
+    Teuchos::rcp(new Map_type(-1, gids, 0, mesh.getComm())),
+    Teuchos::rcp(new Map_type(-1, gids_owned, 0, mesh.getComm())));
 }
 
 

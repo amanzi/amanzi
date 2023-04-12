@@ -4,17 +4,20 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: amklinv
+  Authors:
 */
 
+//!
 /*
  * NoxVector.cc
  *
  *  Created on: May 3, 2016
+ *      Author: amklinv
  */
 
-#include <NoxVector.hh>
-#include <TreeVector.hh>
+#include "NoxVector.hh"
+#include "TreeVector.hh"
+#include "DataStructuresHelpers.hh"
 
 namespace Amanzi {
 template <class VectorClass>
@@ -22,13 +25,13 @@ NoxVector<VectorClass>::NoxVector(const NoxVector& other, NOX::CopyType type)
 {
   switch (type) {
   case NOX::DeepCopy:
-    vec_ = Teuchos::rcp(new VectorClass(*other.vec_, INIT_MODE_COPY));
+    vec_ = Teuchos::rcp(new VectorClass(*other.vec_, InitMode::COPY));
     break;
   case NOX::ShapeCopy:
-    vec_ = Teuchos::rcp(new VectorClass(*other.vec_, INIT_MODE_NONE));
+    vec_ = Teuchos::rcp(new VectorClass(*other.vec_, InitMode::NONE));
     break;
   default:
-    vec_ = Teuchos::rcp(new VectorClass(*other.vec_, INIT_MODE_NONE));
+    vec_ = Teuchos::rcp(new VectorClass(*other.vec_, InitMode::NONE));
     break;
   }
 }
@@ -38,13 +41,13 @@ NoxVector<CompositeVector>::NoxVector(const NoxVector& other, NOX::CopyType type
 {
   switch (type) {
   case NOX::DeepCopy:
-    vec_ = Teuchos::rcp(new CompositeVector(*other.vec_, INIT_MODE_COPY));
+    vec_ = Teuchos::rcp(new CompositeVector(*other.vec_, InitMode::COPY));
     break;
   case NOX::ShapeCopy:
-    vec_ = Teuchos::rcp(new CompositeVector(*other.vec_, INIT_MODE_NONE));
+    vec_ = Teuchos::rcp(new CompositeVector(*other.vec_, InitMode::NONE));
     break;
   default:
-    vec_ = Teuchos::rcp(new CompositeVector(*other.vec_, INIT_MODE_NONE));
+    vec_ = Teuchos::rcp(new CompositeVector(*other.vec_, InitMode::NONE));
     break;
   }
 }
@@ -54,13 +57,13 @@ NoxVector<TreeVector>::NoxVector(const NoxVector& other, NOX::CopyType type)
 {
   switch (type) {
   case NOX::DeepCopy:
-    vec_ = Teuchos::rcp(new TreeVector(*other.vec_, INIT_MODE_COPY));
+    vec_ = Teuchos::rcp(new TreeVector(*other.vec_, InitMode::COPY));
     break;
   case NOX::ShapeCopy:
-    vec_ = Teuchos::rcp(new TreeVector(*other.vec_, INIT_MODE_NONE));
+    vec_ = Teuchos::rcp(new TreeVector(*other.vec_, InitMode::NONE));
     break;
   default:
-    vec_ = Teuchos::rcp(new TreeVector(*other.vec_, INIT_MODE_NONE));
+    vec_ = Teuchos::rcp(new TreeVector(*other.vec_, InitMode::NONE));
     break;
   }
 }

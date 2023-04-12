@@ -1,15 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
-  Operators
-
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <memory>
@@ -28,20 +25,16 @@ namespace Operators {
 /* ******************************************************************
 * Initialize operator from parameter list.
 ****************************************************************** */
-void
-PDE_CouplingFlux::Init_(Teuchos::ParameterList& plist,
-                        const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
-                        const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
-                        std::shared_ptr<const std::vector<std::vector<int>>>& row_inds,
-                        std::shared_ptr<const std::vector<std::vector<int>>>& col_inds)
+void PDE_CouplingFlux::Init_(
+    Teuchos::ParameterList& plist,
+    const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
+    const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
+    std::shared_ptr<const std::vector<std::vector<int> > >& row_inds,
+    std::shared_ptr<const std::vector<std::vector<int> > >& col_inds)
 {
-  // diagonal operator may work incorrectly if CVS has more than one component
-  AMANZI_ASSERT(cvs_row->size() == 1);
-  AMANZI_ASSERT(cvs_col->size() == 1);
-
   if (global_op_ == Teuchos::null) {
-    global_op_ =
-      Teuchos::rcp(new Operator_Diagonal(cvs_row, cvs_col, plist, OPERATOR_SCHEMA_INDICES));
+    global_op_ = Teuchos::rcp(new Operator_Diagonal(cvs_row, cvs_col, plist, OPERATOR_SCHEMA_INDICES));
+    std::string name("Coupling_DIAGONAL");
   }
 
   // register the advection Op
@@ -58,9 +51,8 @@ PDE_CouplingFlux::Init_(Teuchos::ParameterList& plist,
 * Populate containers of elemental matrices using MFD factory.
 * NOTE: input parameters are not yet used.
 ****************************************************************** */
-void
-PDE_CouplingFlux::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                                 const Teuchos::Ptr<const CompositeVector>& p)
+void PDE_CouplingFlux::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                                      const Teuchos::Ptr<const CompositeVector>& p)
 {
   auto& matrices = local_op_->matrices;
   AMANZI_ASSERT(matrices.size() == K_->size());
@@ -74,5 +66,6 @@ PDE_CouplingFlux::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
   }
 }
 
-} // namespace Operators
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi
+

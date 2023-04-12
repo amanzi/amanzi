@@ -12,10 +12,12 @@
    Debugging object for writing debug cells using VerboseObject.
 
    ------------------------------------------------------------------------- */
-#include <boost/format.hpp>
+#include <set>
+#include "boost/format.hpp"
 
 #include "errors.hh"
 #include "dbc.hh"
+#include "MeshHelpers.hh"
 #include "CompositeVector.hh"
 
 #include "Debugger.hh"
@@ -39,33 +41,31 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 {
   vo_ = Teuchos::rcp(new VerboseObject(name, plist));
 
-  std::vector<AmanziMesh::Entity_ID> vcells;
+  AmanziMesh::Entity_ID_List vcells;
 
   // cells to debug
   if (plist_.isParameter("debug cells")) {
     auto dcs = plist_.get<Teuchos::Array<int>>("debug cells");
-    vcells.insert(vcells.end(), dcs.begin(), dcs.end());
+    vcells.insert(vcells.end(), dcs.begin(), dcs.end()); 
   }
 
   // faces to debug
   if (plist_.isParameter("debug faces")) {
     auto dfs = plist_.get<Teuchos::Array<int>>("debug faces");
-    const auto& face_map = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
-    const auto& cell_map = mesh->getMap(AmanziMesh::Entity_kind::CELL, false);
+    const auto& face_map = *mesh->getMap(AmanziMesh::Entity_kind::FACE,true);
+    const auto& cell_map = *mesh->getMap(AmanziMesh::Entity_kind::CELL,false);
 
     for (const auto& f : dfs) {
-      AmanziMesh::Entity_ID lf = face_map.LID(f);
+      AmanziMesh::Entity_ID lf = face_map.getLocalElement(f);
       if (lf >= 0) {
         // debug the neighboring cells
         auto fcells = mesh->getFaceCells(lf);
         for (const auto& c : fcells)
-          if (c < cell_map.NumMyElements()) vcells.emplace_back(cell_map.GID(c));
+          if (c < cell_map.getLocalNumElements()) vcells.emplace_back(cell_map.getGlobalElement(c));
       }
     }
   }
-  AmanziMesh::Entity_ID_View cells;
-  vectorToView(cells, vcells);
-  set_cells(cells);
+  set_cells(vcells);
 
   // formatting
   cellnum_width_ = plist_.get<int>("cell number width", cellnum_width_);
@@ -76,7 +76,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 }
 
 
-const AmanziMesh::Entity_ID_View&
+const AmanziMesh::Entity_GID_List&
 Debugger::get_cells() const
 {
   return dc_gid_;
@@ -84,25 +84,24 @@ Debugger::get_cells() const
 
 
 void
-Debugger::set_cells(const AmanziMesh::Entity_ID_View& dc)
+Debugger::set_cells(const AmanziMesh::Entity_GID_List& dc)
 {
   dc_.clear();
+  dc_gid_.clear();
   dcvo_.clear();
 
   // make sure they are unique (they may not be because of add_cells()
   // implementation decisions!
   std::set<AmanziMesh::Entity_ID> dc_set(dc.begin(), dc.end());
-  Kokkos::resize(dc_gid_, dc_set.size());
 
-  const auto& cell_map = mesh_->getMap(AmanziMesh::Entity_kind::CELL, false);
-  int my_pid = mesh_->getComm()->MyPID();
-  int size = 0;
+  const auto& cell_map = *mesh_->getMap(AmanziMesh::Entity_kind::CELL,false);
+  int my_pid = mesh_->getComm()->getRank();
   for (const auto& c : dc_set) {
-    AmanziMesh::Entity_ID lc = cell_map.LID(c);
+    AmanziMesh::Entity_ID lc = cell_map.getLocalElement(c);
     if (lc >= 0) {
       // include the LID
       dc_.emplace_back(lc);
-      dc_gid_[size++] = c;
+      dc_gid_.emplace_back(c);
 
       // make a verbose object for each case
       Teuchos::ParameterList vo_plist;
@@ -117,10 +116,10 @@ Debugger::set_cells(const AmanziMesh::Entity_ID_View& dc)
 
 
 void
-Debugger::add_cells(const AmanziMesh::Entity_ID_View& dc)
+Debugger::add_cells(const AmanziMesh::Entity_GID_List& dc)
 {
-  AmanziMesh::Entity_ID_View dc_new = get_cells();
-  dc_new.insert(dc_new.end(), dc.begin(), dc.end());
+  AmanziMesh::Entity_GID_List dc_new = get_cells();
+  dc_new.insert(dc_new.end(), dc.begin(), dc.end()); 
   set_cells(dc_new);
 }
 
@@ -194,6 +193,7 @@ Debugger::WriteCellInfo(bool include_faces)
   Teuchos::OSTab tab1 = vo_->getOSTab();
   if (vo_->os_OK(verb_level_)) { *vo_->os() << "Debug Cells Information:" << std::endl; }
 
+  const auto& face_map = *mesh_->getMap(AmanziMesh::Entity_kind::FACE, true);
   for (int i = 0; i != dc_.size(); ++i) {
     AmanziMesh::Entity_ID c0 = dc_[i];
     AmanziMesh::Entity_ID c0_gid = dc_gid_[i];
@@ -208,8 +208,7 @@ Debugger::WriteCellInfo(bool include_faces)
 
         if (dcvo_[i]->os_OK(verb_level_)) {
           for (unsigned int n = 0; n != fnums0.size(); ++n) {
-            AmanziMesh::Entity_ID f_gid =
-              mesh_->getMap(AmanziMesh::Entity_kind::FACE, true).GID(fnums0[n]);
+            AmanziMesh::Entity_ID f_gid = face_map.getGlobalElement(fnums0[n]);
             AmanziGeometry::Point f_centroid = mesh_->getFaceCentroid(fnums0[n]);
             *dcvo_[i]->os() << "  neighbor face(" << f_gid << ") [dir=" << dirs[n]
                             << "] centroid = " << f_centroid << std::endl;
@@ -224,30 +223,30 @@ Debugger::WriteCellInfo(bool include_faces)
 // Write a vector individually.
 void
 Debugger::WriteVector(const std::string& vname,
-                      const Teuchos::Ptr<const CompositeVector>& vec,
+                      const CompositeVector& vec,
                       bool include_faces)
 {
   int n_vecs = 0;
-  Teuchos::RCP<const Epetra_MultiVector> vec_c;
-  if (vec->HasComponent("cell")) {
-    vec_c = vec->ViewComponent("cell", false);
-    n_vecs = vec_c->NumVectors();
+  cMultiVectorView_type_<Kokkos::HostSpace,double> vec_c;
+  if (vec.hasComponent("cell")) {
+    vec_c = vec.viewComponent<Kokkos::HostSpace>("cell", false);
+    n_vecs = vec_c.extent(1);
   }
 
-  Teuchos::RCP<const Epetra_MultiVector> vec_f;
+  cMultiVectorView_type_<Kokkos::HostSpace,double> vec_f;
   int nfaces_valid = 0;
-  if (vec->HasComponent("face")) {
-    vec_f = vec->ViewComponent("face", true);
-    nfaces_valid = vec_f->MyLength();
-    n_vecs = vec_f->NumVectors();
+  if (vec.hasComponent("face")) {
+    vec_f = vec.viewComponent<Kokkos::HostSpace>("face", true);
+    nfaces_valid = vec_f.extent(0);
+    n_vecs = vec_f.extent(1);
   }
 
-  Teuchos::RCP<const Epetra_MultiVector> vec_bf;
+  cMultiVectorView_type_<Kokkos::HostSpace,double> vec_bf;
   int nbfaces_valid = 0;
-  if (vec->HasComponent("boundary_face")) {
-    vec_bf = vec->ViewComponent("boundary_face", true);
-    nbfaces_valid = vec_bf->MyLength();
-    n_vecs = vec_bf->NumVectors();
+  if (vec.hasComponent("boundary_face")) {
+    vec_bf = vec.viewComponent<Kokkos::HostSpace>("boundary_face", true);
+    nbfaces_valid = vec_bf.extent(0);
+    n_vecs = vec_bf.extent(1);
   }
 
   for (int i = 0; i != dc_.size(); ++i) {
@@ -259,24 +258,22 @@ Debugger::WriteVector(const std::string& vname,
       if (dcvo_[i]->os_OK(verb_level_)) {
         *dcvo_[i]->os() << FormatHeader_(vname, c0_gid);
 
-        if (vec_c != Teuchos::null) *dcvo_[i]->os() << Format_((*vec_c)[j][c0]);
+        if (vec_c.extent(0) != 0) *dcvo_[i]->os() << Format_(vec_c(c0,j));
 
-        if (include_faces && vec_f != Teuchos::null) {
+        if (include_faces && vec_f.extent(0) != 0) {
           auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
           for (unsigned int n = 0; n != fnums0.size(); ++n)
-            if (fnums0[n] < nfaces_valid) *dcvo_[i]->os() << " " << Format_((*vec_f)[j][fnums0[n]]);
+            if (fnums0[n] < nfaces_valid) *dcvo_[i]->os() << " " << Format_(vec_f(fnums0[n],j));
         }
 
-        if (include_faces && vec_bf != Teuchos::null) {
+        if (include_faces && vec_bf.extent(0) != 0) {
           auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
           for (unsigned int n = 0; n != fnums0.size(); ++n) {
             AmanziMesh::Entity_ID f = fnums0[n];
-            AmanziMesh::Entity_ID bf =
-              mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true)
-                .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, true).GID(f));
-            if (bf >= 0 && bf < nbfaces_valid) *dcvo_[i]->os() << " " << Format_((*vec_bf)[j][bf]);
+            AmanziMesh::Entity_ID bf = AmanziMesh::getFaceOnBoundaryBoundaryFace(*mesh_, f);
+            if (bf >= 0 && bf < nbfaces_valid) *dcvo_[i]->os() << " " << Format_(vec_bf(bf,j));
           }
         }
         *dcvo_[i]->os() << std::endl;
@@ -288,9 +285,10 @@ Debugger::WriteVector(const std::string& vname,
 
 // Write a vector individually.
 void
-Debugger::WriteCellVector(const std::string& name, const Epetra_MultiVector& vec)
+Debugger::WriteCellVector(const std::string& name, const MultiVector_type& vec)
 {
-  int n_vecs = vec.NumVectors();
+  auto vec_v = vec.getLocalViewHost(Tpetra::Access::ReadOnly);
+  int n_vecs = vec.getNumVectors();
   for (int i = 0; i != dc_.size(); ++i) {
     for (int j = 0; j != n_vecs; ++j) {
       AmanziMesh::Entity_ID c0 = dc_[i];
@@ -298,7 +296,7 @@ Debugger::WriteCellVector(const std::string& name, const Epetra_MultiVector& vec
       Teuchos::OSTab tab = dcvo_[i]->getOSTab();
 
       if (dcvo_[i]->os_OK(verb_level_)) {
-        *dcvo_[i]->os() << FormatHeader_(name, c0_gid) << Format_(vec[j][c0]) << std::endl;
+        *dcvo_[i]->os() << FormatHeader_(name, c0_gid) << Format_(vec_v(c0, j)) << std::endl;
       }
     }
   }
@@ -328,44 +326,42 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
         Teuchos::Ptr<const CompositeVector> vec = vecs[lcv];
 
         int n_vec = 1;
-        Teuchos::RCP<const Epetra_MultiVector> vec_c;
-        if (vec->HasComponent("cell")) {
-          vec_c = vec->ViewComponent("cell", false);
-          n_vec = vec_c->NumVectors();
+        cMultiVectorView_type_<Kokkos::HostSpace,double> vec_c;
+        if (vec->hasComponent("cell")) {
+          vec_c = vec->viewComponent<Kokkos::HostSpace>("cell", false);
+          n_vec = vec_c.extent(1);
         }
 
-        Teuchos::RCP<const Epetra_MultiVector> vec_f;
-        if (vec->HasComponent("face")) {
-          vec_f = vec->ViewComponent("face", false);
-          n_vec = vec_f->NumVectors();
+        cMultiVectorView_type_<Kokkos::HostSpace,double> vec_f;
+        if (vec->hasComponent("face")) {
+          vec_f = vec->viewComponent<Kokkos::HostSpace>("face", false);
+          n_vec = vec_f.extent(1);
         }
 
-        Teuchos::RCP<const Epetra_MultiVector> vec_bf;
-        if (vec->HasComponent("boundary_face")) {
-          vec_bf = vec->ViewComponent("boundary_face", false);
-          n_vec = vec_bf->NumVectors();
+        cMultiVectorView_type_<Kokkos::HostSpace,double> vec_bf;
+        if (vec->hasComponent("boundary_face")) {
+          vec_bf = vec->viewComponent<Kokkos::HostSpace>("boundary_face", false);
+          n_vec = vec_bf.extent(1);
         }
 
         for (int j = 0; j != n_vec; ++j) {
           *dcvo_[i]->os() << FormatHeader_(name, c0_gid);
-          if (vec_c != Teuchos::null) *dcvo_[i]->os() << Format_((*vec_c)[j][c0]);
+          if (vec_c.extent(0) != 0) *dcvo_[i]->os() << Format_(vec_c(c0,j));
 
-          if (include_faces && vec_f != Teuchos::null) {
+          if (include_faces && vec_f.extent(0) != 0) {
             auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
             for (unsigned int n = 0; n != fnums0.size(); ++n)
-              *dcvo_[i]->os() << " " << Format_((*vec_f)[j][fnums0[n]]);
+              *dcvo_[i]->os() << " " << Format_(vec_f(fnums0[n],j));
           }
 
-          if (include_faces && vec_bf != Teuchos::null) {
+          if (include_faces && vec_bf.extent(0) != 0) {
             auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
             for (unsigned int n = 0; n != fnums0.size(); ++n) {
               AmanziMesh::Entity_ID f = fnums0[n];
-              AmanziMesh::Entity_ID bf =
-                mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true)
-                  .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, true).GID(f));
-              if (bf >= 0) *dcvo_[i]->os() << " " << Format_((*vec_bf)[j][bf]);
+              AmanziMesh::Entity_ID bf = AmanziMesh::getFaceOnBoundaryBoundaryFace(*mesh_, f);
+              if (bf >= 0) *dcvo_[i]->os() << " " << Format_(vec_bf(bf,j));
             }
           }
 
@@ -406,7 +402,7 @@ Debugger::WriteBoundaryConditions(const std::vector<int>& flag, const std::vecto
 void
 Debugger::Barrier()
 {
-  mesh_->getComm()->Barrier();
+  mesh_->getComm()->barrier();
 }
 
 

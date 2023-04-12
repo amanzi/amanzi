@@ -29,7 +29,7 @@ EvaluatorIndependent_::EvaluatorIndependent_(Teuchos::ParameterList& plist)
     plist_(plist),
     vo_(Keys::cleanPListName(plist.name()), plist)
 {
-  type_ = EvaluatorType::INDEPENDENT;
+  type_ = Evaluator_kind::INDEPENDENT;
 }
 
 
@@ -177,23 +177,11 @@ EvaluatorIndependent_::IsDifferentiableWRT(const State& S,
 }
 
 
-// void EvaluatorIndependent_::EnsureCompatibleDerivative(
-//     State& S, const Key& wrt_key, const Tag& wrt_tag) {
-//   Errors::Message msg("Independent Variables are not differentiable");
-//   throw(msg);
-// }
-
-
-// ---------------------------------------------------------------------------
-// String representation of this evaluator
-// ---------------------------------------------------------------------------
-std::string
-EvaluatorIndependent_::WriteToString() const
+std::ostream&
+EvaluatorIndependent_::writeInfo(std::ostream& os) const
 {
-  std::stringstream result;
-  result << my_key_ << std::endl << "  Type: independent" << std::endl;
-  return result.str();
+  os << Keys::getKey(my_key_, my_tag_) << std::endl
+     << "(" << getType() << ") [" << to_string(getKind()) << "]" << std::endl;
+  return os;
 }
-
-
 } // namespace Amanzi

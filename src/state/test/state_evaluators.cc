@@ -46,6 +46,9 @@ class AEvaluator : public EvaluatorSecondaryMonotype<double> {
     return Teuchos::rcp(new AEvaluator(*this));
   };
 
+  virtual std::string getType() const override { return "AEvaluator"; }
+
+
   virtual void Evaluate_(const State& S, const std::vector<double*>& results) override
   {
     auto& fb = S.Get<double>("fb");
@@ -74,6 +77,7 @@ class AIndependent : public EvaluatorIndependent<double> {
   {
     return Teuchos::rcp(new AIndependent(*this));
   };
+  virtual std::string getType() const override { return "AIndependent"; }
 
  protected:
   virtual void Update_(State& s) override { s.GetW<double>(my_key_, my_tag_, my_key_) = 3.0; }
@@ -88,6 +92,7 @@ class BIndependent : public EvaluatorIndependent<double> {
   {
     return Teuchos::rcp(new BIndependent(*this));
   };
+  virtual std::string getType() const override { return "BIndependent"; }
 
  protected:
   virtual void Update_(State& S) override

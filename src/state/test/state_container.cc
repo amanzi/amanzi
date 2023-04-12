@@ -16,16 +16,17 @@
 // TPLs
 #include "UnitTest++.h"
 
-#include "IO.hh"
-#include "MeshFactory.hh"
-#include "TreeVector.hh"
-#include "State.hh"
 #include "errors.hh"
+#include "MeshFactory.hh"
+#include "Patch.hh"
+#include "CompositeVector.hh"
+#include "TreeVector.hh"
 
+#include "State.hh"
 #include "Data_Helpers.hh"
-#include "Vec.hh"
 
-TEST(STATE_CREATION)
+
+TEST(STATE_CONTAINS_PRIMITIVES)
 {
   using namespace Amanzi;
 
@@ -38,22 +39,12 @@ TEST(STATE_CREATION)
 
   CHECK(s.GetRecordSet("my_double").ValidType<double>());
   CHECK(!s.GetRecordSet("my_double").ValidType<int>());
-}
 
-
-TEST(STATE_ASSIGNMENT)
-{
-  using namespace Amanzi;
-
-  State s;
-  s.Require<double>("my_double", Tags::DEFAULT, "my_double");
-  s.Setup();
   s.GetW<double>("my_double", "my_double") = 1.1;
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
 }
 
-
-TEST(STATE_FACTORIES_WITH_CREATE)
+TEST(STATE_CONTAINS_FACTORIES_WITH_CREATE)
 {
   using namespace Amanzi;
 
@@ -74,29 +65,28 @@ TEST(STATE_FACTORIES_WITH_CREATE)
   s.Require<CompositeVector, CompositeVectorSpace>("my_vec", Tags::DEFAULT)
     .SetComponent("cell", AmanziMesh::CELL, 1);
 
-  s.Setup();
-  Teuchos::RCP<CompositeVector> cv =
-    s.GetPtrW<CompositeVector>("my_vec", Tags::DEFAULT, "my_vec_owner");
   // putting TreeVectors into state is a little tricky because they are
   // typically created from existing CompositeVectors.  We setup first, then
   // Require and stuff the pointer in.
-  s.Require<TreeVector, TreeVectorSpace>("my_tree_vec", Tags::DEFAULT, "my_tree_vec");
-  Teuchos::RCP<TreeVector> tv = Teuchos::rcp(new TreeVector());
-  tv->SetData(cv);
-  s.SetPtr<TreeVector>("my_tree_vec", Tags::DEFAULT, "my_tree_vec", tv);
+  s.Require<TreeVector, TreeVectorSpace>("my_tree_vec", Tags::DEFAULT, "my_tree_vec")
+    .setData(s.GetFactoryW<CompositeVector,CompositeVectorSpace>("my_vec")->CreateSpace());
+
+  s.Setup();
+  auto cv = s.GetPtrW<CompositeVector>("my_vec", Tags::DEFAULT, "my_vec_owner");
+  s.GetW<TreeVector>("my_tree_vec", Tags::DEFAULT, "my_tree_vec").setData(cv);
 }
 
 
-TEST(STATE_FACTORIES_WITH_CONSTRUCTOR)
+TEST(STATE_CONTAINS_FACTORIES_WITH_CONSTRUCTOR)
 {
   using namespace Amanzi;
   auto comm = Amanzi::getDefaultComm();
   State s;
-  Epetra_Map my_map(-1, 3, 0, *comm);
-  s.Require<Epetra_Vector, Epetra_Map>(my_map, "e_vec", Tags::DEFAULT, "e_vec");
+  auto my_map = Teuchos::rcp(new Map_type(-1, 3, 0, comm));
+  s.Require<Vector_type, Map_type>(my_map, "e_vec", Tags::DEFAULT, "e_vec");
   s.Setup();
 
-  CHECK_EQUAL(comm->NumProc() * 3, s.Get<Epetra_Vector>("e_vec", Tags::DEFAULT).MyLength());
+  CHECK_EQUAL(comm->getSize() * 3, s.Get<Vector_type>("e_vec", Tags::DEFAULT).getGlobalLength());
 }
 
 
@@ -121,7 +111,22 @@ TEST(STATE_HETEROGENEOUS_DATA)
 
   // create a mesh
   Comm_ptr_type comm = Amanzi::getDefaultComm();
-  AmanziMesh::MeshFactory fac(comm);
+
+  Teuchos::ParameterList regions;
+  regions.sublist("left")
+    .sublist("region: box")
+    .set<Teuchos::Array<double>>("low coordinate", std::vector<double>{0.,0.,0.})
+    .set<Teuchos::Array<double>>("high coordinate", std::vector<double>{2., 4., 4.});
+  regions.sublist("right")
+    .sublist("region: box")
+    .set<Teuchos::Array<double>>("low coordinate", std::vector<double>{2.,0.,0.} )
+    .set<Teuchos::Array<double>>("high coordinate", std::vector<double>{4.,4.,4.});
+  regions.sublist("point")
+    .sublist("region: point")
+    .set<Teuchos::Array<double>>("coordinate", std::vector<double>{ 1., 1., 1. });
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regions, *comm));
+
+  AmanziMesh::MeshFactory fac(comm, gm);
   auto mesh = fac.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
   // create a state
@@ -141,11 +146,17 @@ TEST(STATE_HETEROGENEOUS_DATA)
     ->SetComponent("cell", AmanziMesh::CELL, 1)
     ->SetGhosted();
 
+  // require patch data
+  auto& ps = s.Require<MultiPatch<double>, MultiPatchSpace>("my_patch", Tags::DEFAULT, "my_patch");
+  ps.set_mesh(mesh);
+  ps.addPatch("left", AmanziMesh::Entity_kind::CELL, 1);
+
   s.Setup();
 
   // existence
   CHECK(s.HasRecord("my_double"));
   CHECK(s.HasRecord("my_vec"));
+  CHECK(s.HasRecord("my_patch"));
   CHECK(!s.HasRecord("my_nonexistent_data"));
 
   // defaults
@@ -154,7 +165,8 @@ TEST(STATE_HETEROGENEOUS_DATA)
   CHECK(s.GetRecord("my_double").io_vis());
 
   // data access, construction
-  CHECK(s.Get<CompositeVector>("my_vec").HasComponent("cell"));
+  CHECK(s.Get<CompositeVector>("my_vec").hasComponent("cell"));
+  CHECK_EQUAL(4, s.Get<MultiPatch<double>>("my_patch")[0].size());
 
   // incorrect type in Get
   CHECK_THROW(s.Get<double>("my_vec"), Errors::Message);

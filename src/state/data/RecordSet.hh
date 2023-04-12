@@ -18,8 +18,6 @@
 #ifndef AMANZI_STATE_DATA_RECORD_SET_HH_
 #define AMANZI_STATE_DATA_RECORD_SET_HH_
 
-#include <unordered_map>
-
 #include "Teuchos_RCP.hpp"
 
 #include "DataFactory.hh"
@@ -30,6 +28,7 @@
 namespace Amanzi {
 
 class Visualization;
+class Checkpoint;
 
 class RecordSet {
  private:
@@ -40,7 +39,11 @@ class RecordSet {
  public:
   // constructors
   RecordSet() {}
-  RecordSet(Key fieldname) : fieldname_(fieldname), vis_fieldname_(fieldname) {}
+  RecordSet(Key fieldname)
+    : fieldname_(fieldname),
+      vis_fieldname_(fieldname),
+      location_(AmanziMesh::Entity_kind::UNKNOWN)
+    {}
 
   // delete things that suggest this could be duplicated, etc
   RecordSet(const RecordSet& other) = delete;
@@ -52,24 +55,25 @@ class RecordSet {
   const Key& fieldname() const { return fieldname_; }
   const Key& vis_fieldname() const { return vis_fieldname_; }
   std::string units() const { return units_; }
-  std::vector<std::string> const* subfieldnames() const { return subfieldnames_.get(); }
+  Teuchos::Array<std::string> const* subfieldnames() const { return subfieldnames_.get(); }
+  AmanziMesh::Entity_kind location() const { return location_; }
+  Teuchos::ParameterList attributes(Tag const* const) const;
 
   // mutate
   void set_fieldname(const Key& fieldname) { fieldname_ = fieldname; }
   void set_vis_fieldname(const Key& vis_fieldname) { vis_fieldname_ = vis_fieldname; }
   void set_units(const std::string& units) { units_ = units; }
-  void set_subfieldnames(const std::vector<std::string>& subfieldnames)
+  void set_location(AmanziMesh::Entity_kind location) { location_ = location; }
+  void set_subfieldnames(const Teuchos::Array<std::string>& subfieldnames)
   {
-    if (!subfieldnames_)
-      subfieldnames_ = std::make_unique<std::vector<std::string>>(subfieldnames);
-    else
-      *subfieldnames_ = subfieldnames;
+    subfieldnames_ = std::make_unique<Teuchos::Array<std::string>>(subfieldnames);
   }
 
   // pass-throughs for other functionality
   void WriteVis(const Visualization& vis, Tag const* const = nullptr) const;
   void WriteCheckpoint(const Checkpoint& chkp, bool post_mortem = false) const;
-  void ReadCheckpoint(const Checkpoint& chkp);
+  void ReadCheckpoint(const Checkpoint& chkp, Tag const* const = nullptr);
+  void WriteStatistics(const VerboseObject& vo) const {}
   bool Initialize(Teuchos::ParameterList& plist, bool force = false);
   void Assign(const Tag& dest, const Tag& source);
   void AssignPtr(const Tag& dest, const Tag& source);
@@ -162,7 +166,7 @@ class RecordSet {
   }
 
   template <typename T, typename F>
-  F& GetFactory()
+  Teuchos::RCP<F> GetFactory()
   {
     return factory_.GetW<T, F>();
   }
@@ -170,12 +174,12 @@ class RecordSet {
   bool HasType() { return factory_.HasType(); }
 
   template <typename T, typename F>
-  F& SetType(const F& f)
+  Teuchos::RCP<F> SetType(const Teuchos::RCP<F>& f)
   {
     if (!factory_.HasType()) {
       factory_ = Impl::dataFactory<T, F>(f);
     } else {
-      if (!Helpers::Equivalent(f, GetFactory<T, F>())) {
+      if (!Helpers::Equivalent(*f, *GetFactory<T, F>())) {
         Errors::Message msg;
         msg << "Factory required for field \"" << fieldname_
             << "\" differs from previous requirement call.";
@@ -186,7 +190,7 @@ class RecordSet {
   }
 
   template <typename T, typename F>
-  F& SetType()
+  Teuchos::RCP<F> SetType()
   {
     if (!factory_.HasType()) { factory_ = Impl::dataFactory<T, F>(); }
     return GetFactory<T, F>();
@@ -222,7 +226,8 @@ class RecordSet {
   Key fieldname_;
   Key vis_fieldname_;
   std::string units_;
-  std::unique_ptr<std::vector<std::string>> subfieldnames_;
+  std::unique_ptr<Teuchos::Array<std::string>> subfieldnames_;
+  AmanziMesh::Entity_kind location_;
 
   std::map<Tag, Tag> aliases_;
   Impl::DataFactory factory_;

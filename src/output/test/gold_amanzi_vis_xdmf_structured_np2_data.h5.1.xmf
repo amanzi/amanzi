@@ -1,0 +1,42 @@
+<Xdmf>
+  <Domain>
+    <Grid Name="Mesh">
+      <Topology Name="mixedtopo" NumberOfElements="4" TopologyType="Mixed">
+        <DataItem DataType="Int" Dimensions="36" Format="HDF">
+          amanzi_vis_xdmf_structured_np2_mesh.h5:/0/Mesh/MixedElements
+        </DataItem>
+      </Topology>
+      <Geometry Name="geo" Type="XYZ">
+        <DataItem DataType="Float" Dimensions="20  3" Format="HDF">
+          amanzi_vis_xdmf_structured_np2_mesh.h5:/0/Mesh/Nodes
+        </DataItem>
+      </Geometry>
+      <Time Value="2.00000000000000000e+00"/>
+      <Attribute Center="Node" Name="node_quantity" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="20" Format="HDF">
+          amanzi_vis_xdmf_structured_np2_data.h5:node_quantity/1
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="cell_quantity" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="4" Format="HDF">
+          amanzi_vis_xdmf_structured_np2_data.h5:cell_quantity/1
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="multivector.one" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="4" Format="HDF">
+          amanzi_vis_xdmf_structured_np2_data.h5:multivector.one/1
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="multivector.two" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="4" Format="HDF">
+          amanzi_vis_xdmf_structured_np2_data.h5:multivector.two/1
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="int_quantity" Type="Scalar">
+        <DataItem DataType="Int" Dimensions="4" Format="HDF">
+          amanzi_vis_xdmf_structured_np2_data.h5:int_quantity/1
+        </DataItem>
+      </Attribute>
+    </Grid>
+  </Domain>
+</Xdmf>

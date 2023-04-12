@@ -48,16 +48,54 @@ namespace Amanzi {
 
 class FunctionPolynomial : public Function {
  public:
-  FunctionPolynomial(const std::vector<double>& c, const std::vector<int>& p, double x0 = 0.0);
+  FunctionPolynomial(const Kokkos::View<double*, Kokkos::HostSpace>& c,
+                     const Kokkos::View<int*, Kokkos::HostSpace>& p,
+                     double x0 = 0.0);
   ~FunctionPolynomial() {}
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionPolynomial>(*this); }
-  double operator()(const std::vector<double>& x) const;
+  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>&) const;
+
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
+  {
+    auto vc = c_.view_device();
+    // Polynomial terms with non-negative exponents
+    double y = vc[pmax_ - pmin_];
+    if (pmax_ > 0) {
+      double z = x(0, i) - x0_;
+      for (int j = pmax_; j > 0; --j) y = vc[j - 1 - pmin_] + z * y;
+    }
+    // Polynomial terms with negative exponents.
+    if (pmin_ < 0) {
+      double w = vc[0];
+      double z = 1.0 / (x(0, i) - x0_);
+      for (int j = pmin_; j < -1; ++j) w = vc[j + 1 - pmin_] + z * w;
+      y += z * w;
+    }
+    return y;
+  }
+
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out, const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+  {
+    if (ids) {
+      auto ids_loc = *ids;
+      Kokkos::parallel_for(
+        "FunctionPolynomial::apply1", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(ids_loc(i)) = apply_gpu(in, i);
+        });
+    } else {
+      assert(in.extent(1) == out.extent(0));
+      Kokkos::parallel_for(
+        "FunctionPolynomial::apply2", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(i) = apply_gpu(in, i);
+        });
+    }
+  }
 
  private:
   int pmin_;
   int pmax_;
   double x0_;
-  std::vector<double> c_;
+  Kokkos::DualView<double*> c_;
 };
 
 } // namespace Amanzi

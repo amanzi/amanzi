@@ -56,8 +56,8 @@ class BackTracking {
 
 
 /* ******************************************************************
-* Bisection algorithm: u1 = u0 - s * du
-****************************************************************** */
+ * Bisection algorithm: u1 = u0 - s * du
+ ****************************************************************** */
 template <class Vector>
 int
 BackTracking<Vector>::Bisection(double f0, const Teuchos::RCP<Vector> u0, Teuchos::RCP<Vector> du)
@@ -66,13 +66,13 @@ BackTracking<Vector>::Bisection(double f0, const Teuchos::RCP<Vector> u0, Teucho
   initial_residual_ = f0;
   final_residual_ = f0;
 
-  Teuchos::RCP<Vector> u1 = Teuchos::rcp(new Vector(*u0));
-  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u0));
+  Teuchos::RCP<Vector> u1 = Teuchos::rcp(new Vector(u0->getMap()));
+  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(u0->getMap()));
 
-  u1->Update(1.0, *u0, -1.0, *du, 0.0);
+  u1->update(1.0, *u0, -1.0, *du, 0.0);
 
   fn_->Residual(u1, r);
-  r->Norm2(&f1);
+  f1 = r->norm2();
 
   num_steps_ = 0;
   if (f1 < f0 * BACKTRACKING_GOOD_REDUCTION) {
@@ -84,13 +84,13 @@ BackTracking<Vector>::Bisection(double f0, const Teuchos::RCP<Vector> u0, Teucho
   for (int n = 0; n < BACKTRACKING_MAX_ITERATIONS; n++) {
     num_steps_++;
     s2 = (s0 + s1) / 2;
-    u1->Update(1.0, *u0, -s2, *du, 0.0);
+    u1->update(1.0, *u0, -s2, *du, 0.0);
 
     fn_->Residual(u1, r);
-    r->Norm2(&f1);
+    f1 = r->norm2();
 
     if (f1 < f0 * BACKTRACKING_GOOD_REDUCTION) {
-      du->Scale(s2);
+      du->scale(s2);
       final_residual_ = f1;
       return BACKTRACKING_USED; // backtraking was activated
     } else {
@@ -103,25 +103,25 @@ BackTracking<Vector>::Bisection(double f0, const Teuchos::RCP<Vector> u0, Teucho
 
 
 /* ******************************************************************
-* Bisection algorithm
-****************************************************************** */
+ * Bisection algorithm
+ ****************************************************************** */
 template <class Vector>
 int
 BackTracking<Vector>::Bisection(const Teuchos::RCP<Vector> u0, Teuchos::RCP<Vector> du)
 {
   double f0;
-  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u0));
+  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(u0->getMap()));
 
   fn_->Residual(u0, r);
-  r->Norm2(&f0);
+  f0 = r->norm2();
 
   return Bisection(f0, u0, du);
 }
 
 
 /* ******************************************************************
-* Line search
-****************************************************************** */
+ * Line search
+ ****************************************************************** */
 template <class Vector>
 int
 BackTracking<Vector>::LineSearch(Vector& xold,
@@ -132,7 +132,7 @@ BackTracking<Vector>::LineSearch(Vector& xold,
                                  double& f,
                                  double step_max)
 {
-  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(x));
+  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(x.getMap()));
 
   // alpha ensures sufficient decrease in function value
   // tolx is the convergence criterion on x.
@@ -140,13 +140,13 @@ BackTracking<Vector>::LineSearch(Vector& xold,
   double tmplam, disc, alam, alam2 = 0.0, alamin, f2 = 0.0;
 
   double sum;
-  p.Norm2(&sum);
+  sum = p.norm2();
 
   // Scale if attempted step is too big.
-  if (sum > step_max) { p.Scale(step_max / sum); }
+  if (sum > step_max) { p.scale(step_max / sum); }
 
   double slope;
-  g.Dot(p, &slope);
+  slope = g.dot(p);
   if (slope >= 0.0) return BACKTRACKING_ROUNDOFF_PROBLEM;
 
   // Compute lambda_min
@@ -163,9 +163,9 @@ BackTracking<Vector>::LineSearch(Vector& xold,
   alamin = tolx;
   alam = 1.0;
   for (int n = 0; n < BACKTRACKING_MAX_ITERATIONS; n++) {
-    x.Update(1.0, xold, alam, p, 0.0);
+    x.update(1.0, xold, alam, p, 0.0);
     fn_->Residual(x, r);
-    r->Norm2(&f);
+    f = r->norm2();
 
     // Convergence on Delta x.
     if (alam < alamin) {

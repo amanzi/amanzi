@@ -49,9 +49,7 @@ TEST(NUMI_CELL_2D_EULER_FORMULA)
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
-  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
-  fac_list->set<bool>("request edges", true);
-  MeshFactory meshfactory(comm, gm, fac_list);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
@@ -61,7 +59,7 @@ TEST(NUMI_CELL_2D_EULER_FORMULA)
   double val;
 
   // 0th-order polynomial
-  Polynomial poly(2, 0);
+  Polynomial<> poly(2, 0);
   poly(0, 0) = 1.0;
   val = numi.IntegratePolynomialCell(cell, poly);
 
@@ -69,7 +67,7 @@ TEST(NUMI_CELL_2D_EULER_FORMULA)
   CHECK_CLOSE(val, mesh->getCellVolume(cell), 1e-10);
 
   // 1st-order polynomial
-  poly.Reshape(2, 1);
+  poly.reshape(2, 1);
   poly(1, 0) = 2.0;
   poly(1, 1) = 3.0;
   poly.set_origin(mesh->getCellCentroid(cell));
@@ -91,9 +89,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON)
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
-  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
-  fac_list->set<bool>("request edges", true);
-  MeshFactory meshfactory(comm, gm, fac_list);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
@@ -103,7 +99,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON)
   double val1, val2;
 
   // linear polynomial centered at the origin
-  Polynomial poly(2, 1);
+  Polynomial<> poly(2, 1);
   poly(1, 0) = 2.0;
   poly(1, 1) = 3.0;
   poly.set_origin(mesh->getCellCentroid(cell));
@@ -120,7 +116,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON)
 
   // cross-comparison of integrators
   for (int order = 1; order < 14; ++order) {
-    poly.Reshape(2, order, true);
+    poly.reshape(2, order, true);
     poly(order, 0) = 1.0;
 
     val1 = numi.IntegrateFunctionsTriangulatedCell(cell, polys, order);
@@ -159,7 +155,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE)
   double val, exact;
 
   for (int order = 1; order < 14; ++order) {
-    Polynomial poly(2, order);
+    Polynomial<> poly(2, order);
     poly(order, 0) = 1.0;
 
     std::vector<const WhetStoneFunction*> polys(1);
@@ -220,10 +216,11 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON)
   std::cout << "Test: Numerical integration: quadrature rules in 3D" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  factory_plist->set<bool>("request edges", true);
+  factory_plist->set<bool>("request faces", true);
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
-  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
-  fac_list->set<bool>("request edges", true);
-  MeshFactory meshfactory(comm, gm, fac_list);
+  MeshFactory meshfactory(comm, gm, factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/dodecahedron.exo");
 
@@ -233,7 +230,7 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON)
   double val1, val2;
 
   // linear polynomial centered at the origin
-  Polynomial poly(3, 1);
+  Polynomial<> poly(3, 1);
   poly(1, 0) = 2.0;
   poly(1, 1) = 3.0;
   poly(1, 2) = 4.0;
@@ -251,7 +248,7 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON)
 
   // cross-comparison of integrators
   for (int order = 1; order < 7; ++order) {
-    poly.Reshape(3, order, true);
+    poly.reshape(3, order, true);
     poly(order, 0) = 1.0;
 
     val1 = numi.IntegrateFunctionsTriangulatedCell(cell, polys, order);
@@ -292,7 +289,7 @@ TEST(NUMI_CELL_3D_QUADRATURE_CUBE)
   double val, exact;
 
   for (int order = 1; order < 7; ++order) {
-    Polynomial poly(3, order);
+    Polynomial<> poly(3, order);
     poly(order, 0) = 1.0;
 
     std::vector<const WhetStoneFunction*> polys(1);

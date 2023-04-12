@@ -49,13 +49,13 @@ MeshMaps_FEM::VelocityCell(int c,
 
   // By our assumption, the Jacobian is constant and diagonal
   AmanziGeometry::Point xref(0.0, 0.0);
-  Tensor J0 = JacobianValueInternal_(mesh0_, c, xref);
+ Tensor<> J0 = JacobianValueInternal_(mesh0_, c, xref);
   J0.Inverse();
 
   // calculate map in coordinate system centered at point 1
   vc.resize(d_);
   for (int i = 0; i < d_; ++i) {
-    vc[i].Reshape(d_, 2);
+    vc[i].reshape(d_, 2);
     vc[i](0, 0) = p1[i];
     vc[i](1, 0) = p21[i] * J0(0, 0);
     vc[i](1, 1) = p41[i] * J0(1, 1);
@@ -78,7 +78,7 @@ MeshMaps_FEM::VelocityCell(int c,
 /* ******************************************************************
 * Supporting routine for calculating Jacobian.
 ****************************************************************** */
-Tensor
+Tensor<>
 MeshMaps_FEM::JacobianValueInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                                      int c,
                                      const AmanziGeometry::Point& xref) const
@@ -96,7 +96,7 @@ MeshMaps_FEM::JacobianValueInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   j0 = (1.0 - xref[1]) * (p2 - p1) + xref[1] * (p3 - p4);
   j1 = (1.0 - xref[0]) * (p4 - p1) + xref[0] * (p3 - p2);
 
-  Tensor jac(d_, 2);
+ Tensor<> jac(d_, 2);
   jac.SetColumn(0, j0);
   jac.SetColumn(1, j1);
 

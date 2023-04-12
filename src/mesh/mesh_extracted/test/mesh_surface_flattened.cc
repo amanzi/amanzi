@@ -64,7 +64,7 @@ TEST(MESH_SURFACE_FLATTENED)
   int nfaces = mesh_cached->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   int nnodes = mesh_cached->getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
   int mfaces = mesh_cached->getNumEntities(Entity_kind::BOUNDARY_FACE, Parallel_kind::OWNED);
-  std::cout << " pid=" << comm->MyPID() << " cells: " << ncells << " faces: " << nfaces
+  std::cout << " pid=" << comm->getRank() << " cells: " << ncells << " faces: " << nfaces
             << " bnd faces: " << mfaces << std::endl;
 
   CHECK(ncells == 100);

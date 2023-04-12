@@ -54,7 +54,7 @@ PDE_DiffusionFactory::PDE_DiffusionFactory(Teuchos::ParameterList& oplist,
 * Setup the problem
 ****************************************************************** */
 void
-PDE_DiffusionFactory::SetConstantTensorCoefficient(const WhetStone::Tensor& K)
+PDE_DiffusionFactory::SetConstantTensorCoefficient(const WhetStone:Tensor<>& K)
 {
   const_K_ = K;
   K_ = Teuchos::null;

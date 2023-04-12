@@ -17,23 +17,31 @@ fall off the end of the space.
 .. _iterative-method-nka-spec:
 .. admonition:: iterative-method-nka-spec
 
-    * `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
+    * `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare
+success.
 
-    * `"maximum number of iterations`" ``[int]`` **100** Maximum iterations before declaring failure.
+    * `"maximum number of iterations`" ``[int]`` **100** Maximum iterations
+before declaring failure.
 
-    * `"overflow tolerance`" ``[double]`` **3.e50** Error above this value results in failure.
+    * `"overflow tolerance`" ``[double]`` **3.e50** Error above this value
+results in failure.
 
     * `"convergence criterial`" ``[Array(string)]`` **{relative rhs}** A list of
       criteria, any of which can be applied.  Valid include:
 
       - `"relative rhs`" : measure error relative to the norm of the RHS vector
-      - `"relative residual`" : measure error relative to the norm of the residual
+      - `"relative residual`" : measure error relative to the norm of the
+residual
       - `"absolute residual`" : measure error directly, norm of error
-      - `"make one iteration`" : require at least one iteration to be performed before declaring success
+      - `"make one iteration`" : require at least one iteration to be performed
+before declaring success
 
-    * `"max nka vectors`" ``[int]`` **10** Size of the NKA space used to span the residual, conceptually equivalent to the size of the Krylov space.
+    * `"max nka vectors`" ``[int]`` **10** Size of the NKA space used to span
+the residual, conceptually equivalent to the size of the Krylov space.
 
-    * `"nka vector tolerance`" ``[double]`` **0.05** Vectors whose dot product are within this tolerance are considered parallel, and therefore the old vector is thrown out.
+    * `"nka vector tolerance`" ``[double]`` **0.05** Vectors whose dot product
+are within this tolerance are considered parallel, and therefore the old vector
+is thrown out.
 
 .. code-block:: xml
 
@@ -84,11 +92,11 @@ class IterativeMethodNKA
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
 
-  virtual int ApplyInverse(const Vector& v, Vector& hv) const override final
+  virtual int applyInverse(const Vector& v, Vector& hv) const override final
   {
     returned_code_ = NKA_(v, hv, tol_, max_itrs_, criteria_);
-    if (returned_code_ <= 0) return 1;
-    return 0;
+    // if (returned_code_ <= 0) return 1;
+    return returned_code_;
   }
 
  protected:
@@ -113,6 +121,7 @@ class IterativeMethodNKA
   using InvIt::inited_;
   using InvIt::criteria_;
   using InvIt::rnorm0_;
+  using InvIt::overflow_tol_;
 
   Teuchos::RCP<NKA_Base<Vector, VectorSpace>> nka_;
   int nka_dim_;
@@ -139,19 +148,18 @@ IterativeMethodNKA<Matrix, Preconditioner, Vector, VectorSpace>::NKA_(const Vect
   residual_ = 0.0;
   num_itrs_ = 0;
 
-  Teuchos::RCP<Vector> dx = Teuchos::rcp(new Vector(x));
-  Teuchos::RCP<Vector> dxp = Teuchos::rcp(new Vector(x)); // preconditioned correction
-  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(x));
+  Vector dx(x.getMap());
+  Vector dxp(x.getMap());
+  Vector r(x.getMap());
 
-  double fnorm, xnorm;
-  f.Norm2(&fnorm);
-  x.Norm2(&xnorm);
+  double fnorm = f.norm2();
+  double xnorm = x.norm2();
 
-  int ierr = m_->Apply(x, *r); // r = f - A * x
+  int ierr = m_->apply(x, r); // r = f - A * x
   AMANZI_ASSERT(!ierr);
-  r->Update(1.0, f, -1.0);
+  r.update(1.0, f, -1.0);
 
-  r->Norm2(&rnorm0_);
+  rnorm0_ = r.norm2();
   residual_ = rnorm0_;
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -165,17 +173,17 @@ IterativeMethodNKA<Matrix, Preconditioner, Vector, VectorSpace>::NKA_(const Vect
 
   bool done = false;
   while (!done) {
-    ierr = h_->ApplyInverse(*r, *dxp);
+    ierr = h_->applyInverse(r, dxp);
     AMANZI_ASSERT(!ierr);
 
-    nka_->Correction(*dxp, *dx);
-    x.Update(1.0, *dx, 1.0);
+    nka_->Correction(dxp, dx);
+    x.update(1.0, dx, 1.0);
 
-    ierr = m_->Apply(x, *r); // r = f - A * x
+    ierr = m_->apply(x, r); // r = f - A * x
     AMANZI_ASSERT(!ierr);
-    r->Update(1.0, f, -1.0);
+    r.update(1.0, f, -1.0);
 
-    r->Norm2(&residual_);
+    residual_ = r.norm2();
 
     num_itrs_++;
 
@@ -213,7 +221,7 @@ IterativeMethodNKA<Matrix, Preconditioner, Vector, VectorSpace>::set_inverse_par
   nka_tol_ = plist.get<double>("nka vector tolerance", 0.05);
 
   // NKA
-  nka_ = Teuchos::rcp(new NKA_Base<Vector, VectorSpace>(nka_dim_, nka_tol_, m_->DomainMap()));
+  nka_ = Teuchos::rcp(new NKA_Base<Vector, VectorSpace>(nka_dim_, nka_tol_, m_->getDomainMap()));
   nka_->Init(plist);
 
   inited_ = true;

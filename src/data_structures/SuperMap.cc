@@ -4,72 +4,84 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
 //! SuperMap class provides a convenient way of creating and using SuperMapLumped
 /*
-  Amanzi uses SuperMapLumped in a few different ways that make its natural interface
-  not that convenient.  SuperMapLumped also has a few limitations that simplify its
-  design and implementaiton a great deal.
+  Amanzi uses SuperMapLumped in a few different ways that make its natural
+  interface not that convenient.  SuperMapLumped also has a few limitations that
+  simplify its design and implementaiton a great deal.
 
   This class is a Helper class in that it wraps a SuperMapLumped, providing a
   related interface that is better designed for users.
 
-  It also enforces and mitigates the design limitations of SuperMapLumped itself.
+  It also enforces and mitigates the design limitations of SuperMapLumped
+  itself.
 */
 
-#include "Epetra_Vector.h"
+#include "AmanziVector.hh"
 
-#include <memory>
 #include "MeshDefs.hh"
 #include "Mesh.hh"
-#include "CompositeVectorSpace.hh"
-#include "CompositeVector.hh"
+#include "BlockSpace.hh"
+#include "BlockVector.hh"
 #include "TreeVectorSpace.hh"
 #include "TreeVector.hh"
-#include "TreeVector_Utils.hh"
 #include "SuperMap.hh"
 
 namespace Amanzi {
-namespace Operators {
 
 // Nonmember contructors/factories
 Teuchos::RCP<SuperMap>
+createSuperMap(const Teuchos::Ptr<const BlockSpace>& cv)
+{
+  return Teuchos::rcp(new SuperMap(cv->getComm(), { cv }));
+}
+
+
+Teuchos::RCP<SuperMap>
 createSuperMap(const CompositeVectorSpace& cv)
 {
-  return Teuchos::rcp(new SuperMap({ cv }));
+  return createSuperMap(cv.CreateSpace().ptr());
 }
 
 
 Teuchos::RCP<SuperMap>
 createSuperMap(const TreeVectorSpace& tvs)
 {
-  if (tvs.Data() != Teuchos::null) {
+  if (tvs.getData() != Teuchos::null) {
     // TVS with only a CVS inside
-    return createSuperMap(*tvs.Data());
+    return createSuperMap(tvs.getData().ptr());
   } else {
     // multiple children
     // grab the leaf nodes
     auto tvss = collectTreeVectorLeaves_const<TreeVectorSpace>(tvs);
 
-    std::vector<CompositeVectorSpace> cvss;
-    for (auto tvs_tmp : tvss) { cvss.push_back(*tvs_tmp->Data()); }
-    return Teuchos::rcp(new SuperMap(cvss));
+    std::vector<Teuchos::Ptr<const BlockSpace>> cvss;
+    for (auto a_tvs : tvss) { cvss.push_back(a_tvs->getData().ptr()); }
+    return Teuchos::rcp(new SuperMap(tvs.getComm(), cvss));
   }
 }
 
 
 // Copy in/out
 int
-copyToSuperVector(const SuperMap& map, const CompositeVector& bv, Epetra_Vector& sv, int block_num)
+copyToSuperVector(const SuperMap& map,
+                  const BlockVector<Vector_type::scalar_type>& bv,
+                  Vector_type& sv,
+                  int block_num)
 {
+  auto svv = sv.getLocalViewDevice(Tpetra::Access::ReadWrite);
   for (const auto& compname : bv) {
-    if (map.HasComponent(block_num, compname)) {
-      auto& data = *bv.ViewComponent(compname, false);
-      for (int dofnum = 0; dofnum != bv.NumVectors(compname); ++dofnum) {
-        auto inds = map.Indices(block_num, compname, dofnum);
-        for (int i = 0; i != data.MyLength(); ++i) { sv[inds[i]] = data[dofnum][i]; }
+    if (map.hasComponent(block_num, compname)) {
+      auto data = bv.viewComponent(compname, false);
+      for (int dofnum = 0; dofnum != bv.getNumVectors(compname); ++dofnum) {
+        auto inds = map.viewIndices(block_num, compname, dofnum);
+        Kokkos::parallel_for(
+          "SuperMap::copyToSuperVector", data.extent(0), KOKKOS_LAMBDA(const int i) {
+            svv(inds(i), 0) = data(i, dofnum);
+          });
       }
     }
   }
@@ -78,16 +90,20 @@ copyToSuperVector(const SuperMap& map, const CompositeVector& bv, Epetra_Vector&
 
 int
 copyFromSuperVector(const SuperMap& map,
-                    const Epetra_Vector& sv,
-                    CompositeVector& bv,
+                    const Vector_type& sv,
+                    BlockVector<Vector_type::scalar_type>& bv,
                     int block_num)
 {
+  auto svv = sv.getLocalViewDevice(Tpetra::Access::ReadOnly);
   for (const auto& compname : bv) {
-    if (map.HasComponent(block_num, compname)) {
-      auto& data = *bv.ViewComponent(compname, false);
-      for (int dofnum = 0; dofnum != bv.NumVectors(compname); ++dofnum) {
-        auto inds = map.Indices(block_num, compname, dofnum);
-        for (int i = 0; i != data.MyLength(); ++i) { data[dofnum][i] = sv[inds[i]]; }
+    if (map.hasComponent(block_num, compname)) {
+      auto data = bv.viewComponent(compname, false);
+      for (int dofnum = 0; dofnum != bv.getNumVectors(compname); ++dofnum) {
+        auto inds = map.viewIndices(block_num, compname, dofnum);
+        Kokkos::parallel_for(
+          "SuperMap::copyFromSuperVector", data.extent(0), KOKKOS_LAMBDA(const int i) {
+            data(i, dofnum) = svv(inds(i), 0);
+          });
       }
     }
   }
@@ -95,14 +111,21 @@ copyFromSuperVector(const SuperMap& map,
 }
 
 int
-addFromSuperVector(const SuperMap& map, const Epetra_Vector& sv, CompositeVector& bv, int block_num)
+addFromSuperVector(const SuperMap& map,
+                   const Vector_type& sv,
+                   BlockVector<Vector_type::scalar_type>& bv,
+                   int block_num)
 {
+  auto svv = sv.getLocalViewDevice(Tpetra::Access::ReadOnly);
   for (const auto& compname : bv) {
-    if (map.HasComponent(block_num, compname)) {
-      auto& data = *bv.ViewComponent(compname, false);
-      for (int dofnum = 0; dofnum != bv.NumVectors(compname); ++dofnum) {
-        auto inds = map.Indices(block_num, compname, dofnum);
-        for (int i = 0; i != data.MyLength(); ++i) { data[dofnum][i] += sv[inds[i]]; }
+    if (map.hasComponent(block_num, compname)) {
+      auto data = bv.viewComponent(compname, false);
+      for (int dofnum = 0; dofnum != bv.getNumVectors(compname); ++dofnum) {
+        auto inds = map.viewIndices(block_num, compname, dofnum);
+        Kokkos::parallel_for(
+          "SuperMap::addFromSuperVector", data.extent(0), KOKKOS_LAMBDA(const int i) {
+            data(i, dofnum) += svv(inds(i), 0);
+          });
       }
     }
   }
@@ -112,17 +135,17 @@ addFromSuperVector(const SuperMap& map, const Epetra_Vector& sv, CompositeVector
 // Nonmember TreeVector to/from Super-vector
 // -- simple schema version
 int
-copyToSuperVector(const SuperMap& map, const TreeVector& tv, Epetra_Vector& sv)
+copyToSuperVector(const SuperMap& map, const TreeVector& tv, Vector_type& sv)
 {
   int ierr(0);
 
-  if (tv.Data().get()) {
-    return copyToSuperVector(map, *tv.Data(), sv, 0);
+  if (tv.getData().get()) {
+    return copyToSuperVector(map, *tv.getData(), sv, 0);
   } else {
     auto sub_tvs = collectTreeVectorLeaves_const(tv);
     int block_num = 0;
     for (const auto& sub_tv : sub_tvs) {
-      ierr |= copyToSuperVector(map, *sub_tv->Data(), sv, block_num);
+      ierr |= copyToSuperVector(map, *sub_tv->getData(), sv, block_num);
       block_num++;
     }
     return ierr;
@@ -130,17 +153,17 @@ copyToSuperVector(const SuperMap& map, const TreeVector& tv, Epetra_Vector& sv)
 }
 
 int
-copyFromSuperVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& tv)
+copyFromSuperVector(const SuperMap& map, const Vector_type& sv, TreeVector& tv)
 {
   int ierr(0);
 
-  if (tv.Data().get()) {
-    return copyFromSuperVector(map, sv, *tv.Data(), 0);
+  if (tv.getData().get()) {
+    return copyFromSuperVector(map, sv, *tv.getData(), 0);
   } else {
     auto sub_tvs = collectTreeVectorLeaves(tv);
     int block_num = 0;
     for (auto& sub_tv : sub_tvs) {
-      ierr |= copyFromSuperVector(map, sv, *sub_tv->Data(), block_num);
+      ierr |= copyFromSuperVector(map, sv, *sub_tv->getData(), block_num);
       block_num++;
     }
     return ierr;
@@ -148,17 +171,17 @@ copyFromSuperVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& tv
 }
 
 int
-addFromSuperVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& tv)
+addFromSuperVector(const SuperMap& map, const Vector_type& sv, TreeVector& tv)
 {
   int ierr(0);
 
-  if (tv.Data().get()) {
-    return addFromSuperVector(map, sv, *tv.Data(), 0);
+  if (tv.getData().get()) {
+    return addFromSuperVector(map, sv, *tv.getData(), 0);
   } else {
     auto sub_tvs = collectTreeVectorLeaves(tv);
     int block_num = 0;
     for (auto& sub_tv : sub_tvs) {
-      ierr |= addFromSuperVector(map, sv, *sub_tv->Data(), block_num);
+      ierr |= addFromSuperVector(map, sv, *sub_tv->getData(), block_num);
       block_num++;
     }
     return ierr;
@@ -166,43 +189,42 @@ addFromSuperVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& tv)
 }
 
 
-SuperMap::SuperMap(const std::vector<CompositeVectorSpace>& cvss)
+SuperMap::SuperMap(const Comm_ptr_type& comm,
+                   const std::vector<Teuchos::Ptr<const BlockSpace>>& cvss)
 {
   std::vector<std::string> names;
-  std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_BlockMap>> maps;
-  std::vector<Teuchos::RCP<const Epetra_BlockMap>> ghost_maps;
+  std::map<std::string, std::size_t> dofnums;
+  std::map<std::string, BlockMap_ptr_type> master_maps;
+  std::map<std::string, BlockMap_ptr_type> ghost_maps;
 
   // this groups maps by map equivalence, not component names.
 
   // loop over nodes, finding unique component names on unique meshes
-  int block_num = 0;
-  for (auto& cvs : cvss) {
-    for (auto compname : cvs) {
+  std::size_t block_num = 0;
+  for (auto cvs : cvss) {
+    for (const auto& compname : *cvs) {
       // check if this component's map matches any previously accepted map
-      auto this_map = cvs.Map(compname, false);
-      int index = std::find_if(maps.begin(),
-                               maps.end(),
-                               [=](const Teuchos::RCP<const Epetra_BlockMap>& m) {
-                                 return this_map->SameBlockMapDataAs(*m);
-                               }) -
-                  maps.begin();
-      if (index == names.size()) {
+      auto this_map = cvs->getComponentMap(compname, false);
+      auto index_iter =
+        std::find_if(master_maps.begin(),
+                     master_maps.end(),
+                     [=](const std::pair<const std::string, const BlockMap_ptr_type>& m) {
+                       return this_map->locallySameAs(*m.second);
+                     });
+      if (index_iter == master_maps.end()) {
         // new map with no previous matches, keep the map
-        maps.push_back(this_map);
-        ghost_maps.push_back(cvs.Map(compname, true));
-
-        // ensure this name is unique by appending the block_num
+        // -- ensure this name is unique by appending the block_num
         std::string compname_unique = compname + "-" + std::to_string(block_num);
         names.push_back(compname_unique);
+        master_maps[compname_unique] = this_map;
+        ghost_maps[compname_unique] = cvs->getComponentMap(compname, true);
 
-        // grab dof count as well
-        int this_dofnum = cvs.NumVectors(compname);
-        dofnums.push_back(this_dofnum);
+        std::size_t this_dofnum = cvs->getNumVectors(compname);
+        dofnums[compname_unique] = this_dofnum;
 
         // map the block_num, compname, dof_num tuple to their corresponding
         // values in the SuperMapLumped
-        for (int dnum = 0; dnum != this_dofnum; ++dnum) {
+        for (std::size_t dnum = 0; dnum != this_dofnum; ++dnum) {
           block_info_[std::make_tuple(block_num, compname, dnum)] =
             std::make_pair(compname_unique, dnum);
         }
@@ -214,27 +236,26 @@ SuperMap::SuperMap(const std::vector<CompositeVectorSpace>& cvss)
         // too?  If this assert ever throws, it can be added to the above
         // lambda, to ensure that both the owned map and the ghosted map are
         // the same.
-        AMANZI_ASSERT(cvs.Map(compname, true)->SameBlockMapDataAs(*ghost_maps[index]));
+        AMANZI_ASSERT(
+          cvs->getComponentMap(compname, true)->locallySameAs(*ghost_maps[index_iter->first]));
 
         // map the block_num, compname, dof_num tuple to their corresponding
         // values in the SuperMapLumped
-        std::string compname_unique = names[index];
-        int this_dofnum = cvs.NumVectors(compname);
-        for (int dnum = 0; dnum != this_dofnum; ++dnum) {
+        std::size_t this_dofnum = cvs->getNumVectors(compname);
+        for (std::size_t dnum = 0; dnum != this_dofnum; ++dnum) {
           block_info_[std::make_tuple(block_num, compname, dnum)] =
-            std::make_pair(compname_unique, dnum + dofnums[index]);
+            std::make_pair(index_iter->first, dnum + dofnums[index_iter->first]);
         }
-
-        dofnums[index] += this_dofnum;
+        dofnums[index_iter->first] += this_dofnum;
       }
     }
     block_num++;
   }
 
   if (cvss.size() > 0) {
-    smap_ = std::make_unique<SuperMapLumped>(cvss[0].Comm(), names, dofnums, maps, ghost_maps);
+    auto block_map = Teuchos::rcp(new BlockSpace(comm, names, master_maps, ghost_maps, dofnums));
+    smap_ = std::make_unique<SuperMapLumped>(block_map);
   }
 }
 
-} // namespace Operators
 } // namespace Amanzi

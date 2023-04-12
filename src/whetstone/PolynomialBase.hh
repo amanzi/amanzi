@@ -27,14 +27,15 @@
 namespace Amanzi {
 namespace WhetStone {
 
+template <class MEMSPACE = DefaultHostMemorySpace>
 class PolynomialBase : public WhetStoneFunction {
  public:
-  PolynomialBase() : d_(0), order_(-1), size_(0){};
+  PolynomialBase() : d_(0), order_(-1), size_(0) {};
   PolynomialBase(int d, int order) : d_(d), order_(order), origin_(d){};
   virtual ~PolynomialBase(){};
 
   // convert to regular vector
-  virtual DenseVector ExpandCoefficients() const = 0;
+  virtual DenseVector<MEMSPACE> ExpandCoefficients() const = 0;
 
   // setter and getters
   void set_origin(const AmanziGeometry::Point& origin) { origin_ = origin; }
@@ -44,12 +45,12 @@ class PolynomialBase : public WhetStoneFunction {
   int dimension() const { return d_; }
   int order() const { return order_; }
   int size() const { return size_; }
-  const DenseVector& coefs() const { return coefs_; }
+  const DenseVector<MEMSPACE>& coefs() const { return coefs_; }
 
  protected:
   int d_, order_, size_;
   AmanziGeometry::Point origin_;
-  DenseVector coefs_;
+  DenseVector<MEMSPACE> coefs_;
 };
 
 

@@ -22,7 +22,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 
 #include "Reconstruction.hh"
 #include "SmoothnessIndicator.hh"

@@ -41,13 +41,14 @@ class SolverNKA_LS_ATS : public Solver<Vector, VectorSpace> {
 
   SolverNKA_LS_ATS(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<SolverFnBase<Vector>>& fn,
-                   const VectorSpace& map)
+                   const Teuchos::RCP<const VectorSpace>& map)
     : plist_(plist)
   {
     Init(fn, map);
   }
 
-  void Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map);
+  void
+  Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const Teuchos::RCP<const VectorSpace>& map);
 
   virtual int Solve(const Teuchos::RCP<Vector>& u)
   {
@@ -57,7 +58,7 @@ class SolverNKA_LS_ATS : public Solver<Vector, VectorSpace> {
 
   // mutators
   void set_tolerance(double tol) { tol_ = tol; }
-  void set_pc_lag(int pc_lag) { pc_lag_ = pc_lag; }
+  void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
   virtual void set_db(const Teuchos::RCP<ResidualDebugger>& db) { db_ = db; }
 
   // access
@@ -118,14 +119,14 @@ class SolverNKA_LS_ATS : public Solver<Vector, VectorSpace> {
       u = u_;
       du = du_;
       u0 = u0_;
-      if (r == Teuchos::null) { r = Teuchos::rcp(new Vector(*u)); }
-      *u0 = *u;
+      if (r == Teuchos::null) { r = Teuchos::rcp(new Vector(u->getMap())); }
+      u0->assign(*u);
     }
 
     double operator()(double x)
     {
-      *u = *u0;
-      u->Update(-x, *du, 1.);
+      u->assign(*u0);
+      u->update(-x, *du, 1.);
       fn->ChangedSolution();
       fn->Residual(u, r);
       return fn->ErrorNorm(u, r);
@@ -143,7 +144,7 @@ class SolverNKA_LS_ATS : public Solver<Vector, VectorSpace> {
 template <class Vector, class VectorSpace>
 void
 SolverNKA_LS_ATS<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
-                                            const VectorSpace& map)
+                                            const Teuchos::RCP<const VectorSpace>& map)
 {
   fn_ = fn;
   Init_();
@@ -233,10 +234,10 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
   pc_updates_ = 0;
 
   // create storage
-  Teuchos::RCP<Vector> res = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du_nka = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du_pic = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> u_precorr = Teuchos::rcp(new Vector(*u));
+  Teuchos::RCP<Vector> res = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du_nka = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du_pic = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> u_precorr = Teuchos::rcp(new Vector(u->getMap()));
 
   // variables to monitor the progress of the nonlinear solver
   double error(0.), previous_error(0.);
@@ -254,7 +255,7 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
   db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
 
   residual_ = error;
-  res->Norm2(&l2_error);
+  l2_error = res->norm2();
 
   if (vo_->os_OK(Teuchos::VERB_LOW)) {
     *vo_->os() << num_itrs_ << ": error(res) = " << error << std::endl
@@ -262,7 +263,7 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
   }
 
   // Check divergence
-  if (overflow_tol_ > 0 && error > overflow_tol_) {
+  if (error > overflow_tol_) {
     if (vo_->os_OK(Teuchos::VERB_LOW)) {
       *vo_->os() << "Solve failed, error " << error << " > " << overflow_tol_ << " (dtol)"
                  << std::endl;
@@ -295,7 +296,7 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
 
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
-    du_pic->PutScalar(0.);
+    du_pic->putScalar(0.);
     fn_->ApplyPreconditioner(res, du_pic);
 
     if (nka_restarted) {
@@ -336,13 +337,13 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
     if (num_itrs_ > backtrack_lag_ && num_itrs_ < last_backtrack_iter_ &&
         hacked != FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING) {
       bool good_step = false;
-      *u_precorr = *u;
+      u_precorr->assign(*u);
       previous_error = error;
       previous_l2_error = l2_error;
 
       if (nka_applied) {
         // check the NKA updated norm
-        u->Update(-1, *du_nka, 1.);
+        u->update(-1, *du_nka, 1.);
         fn_->ChangedSolution();
 
         // Check admissibility of the iterate
@@ -359,7 +360,7 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
           db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
 
           residual_ = error;
-          res->Norm2(&l2_error);
+          l2_error = res->norm2();
           if (vo_->os_OK(Teuchos::VERB_LOW)) {
             *vo_->os() << num_itrs_ << ": NKA "
                        << ": error(res) = " << error << std::endl
@@ -379,8 +380,8 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
         // if NKA did not improve the error, toss Jacobian info
         if (!good_step) {
           if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-            *vo_->os() << "Restarting NKA, NKA step does not improve error or resulted in "
-                          "inadmissible solution, on NKA itr = "
+            *vo_->os() << "Restarting NKA, NKA step does not improve error or "
+                          "resulted in inadmissible solution, on NKA itr = "
                        << nka_itr << std::endl;
           }
           nka_->Restart();
@@ -391,13 +392,14 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
           // unless this is NKA itr 1, in which case the NKA update IS the
           // Picard update, so we can just copy over the NKA hacked version.
           if (nka_itr == 1) {
-            *du_pic = *du_nka;
+            du_pic->assign(*du_nka);
           } else {
             hacked = fn_->ModifyCorrection(res, u, du_pic);
 
             if (hacked == FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING) {
-              // no backtracking, just use this correction, checking admissibility
-              u->Update(-1., *du_pic, 1.);
+              // no backtracking, just use this correction, checking
+              // admissibility
+              u->update(-1., *du_pic, 1.);
               fn_->ChangedSolution();
               admitted_iterate = false;
               if (fn_->IsAdmissible(u)) {
@@ -412,7 +414,7 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
                 db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
 
                 residual_ = error;
-                res->Norm2(&l2_error);
+                l2_error = res->norm2();
                 if (vo_->os_OK(Teuchos::VERB_LOW)) {
                   *vo_->os() << num_itrs_ << ": PIC "
                              << ": error(res) = " << error << std::endl
@@ -429,21 +431,22 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
       if (!good_step) {
         // Perform the line search
 
-        // find an admissible endpoint, starting from ten times the full correction
+        // find an admissible endpoint, starting from ten times the full
+        // correction
         double endpoint = max_alpha_;
-        *u = *u_precorr;
-        u->Update(-endpoint, *du_pic, 1.0);
+        u->assign(*u_precorr);
+        u->update(-endpoint, *du_pic, 1.0);
         fn_->ChangedSolution();
         while (!fn_->IsAdmissible(u)) {
           endpoint *= 0.3;
-          *u = *u_precorr;
-          u->Update(-endpoint, *du_pic, 1.);
+          u->assign(*u_precorr);
+          u->update(-endpoint, *du_pic, 1.);
           fn_->ChangedSolution();
         }
 
         // minimize along the search path from min_alpha to endpoint
         double left = min_alpha_;
-        std::uintmax_t ls_itrs(max_ls_itrs_);
+        boost::uintmax_t ls_itrs(max_ls_itrs_);
         std::pair<double, double> result =
           boost::math::tools::brent_find_minima(linesearch_func, left, endpoint, bits_, ls_itrs);
         fun_calls_ += ls_itrs;
@@ -457,8 +460,8 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
         }
 
         // update the correction
-        *u = *u_precorr;
-        u->Update(-result.first, *du_pic, 1.);
+        u->assign(*u_precorr);
+        u->update(-result.first, *du_pic, 1.);
         fn_->ChangedSolution();
         fn_->Residual(u, res);
         fun_calls_++;
@@ -468,7 +471,7 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
         db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
 
         residual_ = error;
-        res->Norm2(&l2_error);
+        l2_error = res->norm2();
         if (vo_->os_OK(Teuchos::VERB_LOW)) {
           *vo_->os() << num_itrs_ << "(ls) : error(res) = " << error << std::endl
                      << num_itrs_ << "(ls) : L2 error(res) = " << l2_error << std::endl;
@@ -496,10 +499,10 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
       // not backtracking, either due to BT Lag or past the last BT iteration
       // apply the correction
       if (nka_applied) {
-        u->Update(-1., *du_nka, 1.);
+        u->update(-1., *du_nka, 1.);
         fn_->ChangedSolution();
       } else {
-        u->Update(-1., *du_pic, 1.);
+        u->update(-1., *du_pic, 1.);
         fn_->ChangedSolution();
       }
 
@@ -522,7 +525,7 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
         }
 
         residual_ = error;
-        res->Norm2(&l2_error);
+        l2_error = res->norm2();
         if (vo_->os_OK(Teuchos::VERB_LOW)) {
           *vo_->os() << num_itrs_ << (nka_applied ? ": NKA " : ": PIC ")
                      << ": error(res) = " << error << std::endl
@@ -542,7 +545,7 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
     }
 
     // Check divergence
-    if (overflow_tol_ > 0 && error > overflow_tol_) {
+    if (error > overflow_tol_) {
       if (vo_->os_OK(Teuchos::VERB_LOW)) {
         *vo_->os() << "Solve failed, error " << error << " > " << overflow_tol_ << " (dtol)"
                    << std::endl;

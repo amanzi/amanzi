@@ -24,7 +24,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "CompositeMatrix.hh"
+// #include "CompositeMatrix.hh"
 #include "errors.hh"
 #include "VerboseObject.hh"
 
@@ -38,21 +38,20 @@ class VerboseObject;
 namespace AmanziSolvers {
 
 /* ******************************************************************
-* Auxiliary base class.
-****************************************************************** */
-class DirectMethodAmesos2
-  : public Inverse<Epetra_CrsMatrix, Epetra_CrsMatrix, Epetra_Vector, Epetra_Map> {
+ * Auxiliary base class.
+ ****************************************************************** */
+class DirectMethodAmesos2 : public Inverse<Matrix_type, Matrix_type, Vector_type, Map_type> {
  private:
-  using Inv = Inverse<Epetra_CrsMatrix, Epetra_CrsMatrix, Epetra_Vector, Epetra_Map>;
+  using Inv = Inverse<Matrix_type, Matrix_type, Vector_type, Map_type>;
 
  public:
   DirectMethodAmesos2() : Inv(), inited_(false), updated_(false), computed_(false){};
 
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override;
-  virtual void InitializeInverse() override;
-  virtual void ComputeInverse() override;
-  virtual int ApplyInverse(const Epetra_Vector&, Epetra_Vector&) const override;
+  virtual void initializeInverse() override;
+  virtual void computeInverse() override;
+  virtual int applyInverse(const Vector_type&, Vector_type&) const override;
 
   virtual int returned_code() const override { return returned_code_; }
   virtual std::string returned_code_string() const override { return "success"; }
@@ -64,7 +63,7 @@ class DirectMethodAmesos2
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
 
-  Teuchos::RCP<Amesos2::Solver<Epetra_CrsMatrix, Epetra_MultiVector>> solver_;
+  Teuchos::RCP<Amesos2::Solver<Matrix_type, MultiVector_type>> solver_;
 
   std::string solver_name_;
   mutable int returned_code_;

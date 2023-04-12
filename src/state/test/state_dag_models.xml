@@ -1,0 +1,18 @@
+<ParameterList name="main">
+  <ParameterList name="regions">
+    <ParameterList name="left">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.,0.}" />
+        <Parameter name="high coordinate" type="Array(double)" value="{2.,1.}" />
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="right">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{2.,0.}" />
+        <Parameter name="high coordinate" type="Array(double)" value="{4.,1.}" />
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+
+  

@@ -1,15 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
-*/
-
-/*
-  Operators
-
+  Author: Ethan Coon (ecoon@lanl.gov)
 */
 
 #include <vector>
@@ -29,7 +26,7 @@
 #include "Operator.hh"
 #include "OperatorUtils.hh"
 #include "TreeOperator.hh"
-#include "TreeVector_Utils.hh"
+#include "DataStructuresHelpers.hh"
 #include "InverseFactory.hh"
 
 #define TEST_MAPS 0
@@ -41,26 +38,22 @@ namespace Operators {
 * Constructors
 ****************************************************************** */
 TreeOperator::TreeOperator()
-  : block_diagonal_(false),
-    shift_(0.0),
-    shift_min_(0.0),
+  : inited_(false),
+    updated_(false),
+    computed_(false),
+    block_diagonal_(false),
     num_colors_(0),
-    coloring_(Teuchos::null),
-    inverse_pars_set_(false),
-    initialize_complete_(false),
-    compute_complete_(false),
-    assembly_complete_(false)
+    coloring_(Teuchos::null)
 {
   vo_ = Teuchos::rcp(new VerboseObject("TreeOperator", Teuchos::ParameterList()));
 }
 
 
-TreeOperator::TreeOperator(Teuchos::ParameterList& plist) : TreeOperator()
+TreeOperator::TreeOperator(Teuchos::ParameterList& plist)
+  : TreeOperator()
 {
   vo_ = Teuchos::rcp(new VerboseObject("TreeOperator", plist));
   if (plist.isSublist("inverse")) set_inverse_parameters(plist.sublist("inverse"));
-  shift_ = plist.get<double>("diagonal shift", 0.0);
-  shift_min_ = plist.get<double>("diagonal shift minimum", 0.0);
 }
 
 
@@ -71,10 +64,11 @@ TreeOperator::TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& row_map,
 {
   col_map_ = col_map;
   row_map_ = row_map;
-  col_size_ = col_map_->size() + (col_map_->Data() == Teuchos::null ? 0 : 1);
-  row_size_ = row_map_->size() + (row_map_->Data() == Teuchos::null ? 0 : 1);
+  col_size_ = col_map_->size() + (col_map_->getData() == Teuchos::null ? 0 : 1);
+  row_size_ = row_map_->size() + (row_map_->getData() == Teuchos::null ? 0 : 1);
 
-  blocks_.resize(row_size_, Teuchos::Array<Teuchos::RCP<TreeOperator>>(col_size_, Teuchos::null));
+  // resize the blocks
+  blocks_.resize(row_size_, Teuchos::Array<Teuchos::RCP<TreeOperator> >(col_size_, Teuchos::null));
 }
 
 
@@ -84,161 +78,130 @@ TreeOperator::TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& row_map,
 {
   col_map_ = col_map;
   row_map_ = row_map;
-  col_size_ = col_map_->size() + (col_map_->Data() == Teuchos::null ? 0 : 1);
-  row_size_ = row_map_->size() + (row_map_->Data() == Teuchos::null ? 0 : 1);
+  col_size_ = col_map_->size() + (col_map_->getData() == Teuchos::null ? 0 : 1);
+  row_size_ = row_map_->size() + (row_map_->getData() == Teuchos::null ? 0 : 1);
 
-  blocks_.resize(row_size_, Teuchos::Array<Teuchos::RCP<TreeOperator>>(col_size_, Teuchos::null));
+  // resize the blocks
+  blocks_.resize(row_size_, Teuchos::Array<Teuchos::RCP<TreeOperator> >(col_size_, Teuchos::null));
 }
 
 TreeOperator::TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& tvs,
                            Teuchos::ParameterList& plist)
-  : TreeOperator(tvs, tvs, plist)
-{}
+  : TreeOperator(tvs, tvs, plist) {}
 
-TreeOperator::TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& tvs) : TreeOperator(tvs, tvs)
-{}
+TreeOperator::TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& tvs)
+  : TreeOperator(tvs, tvs) {}
 
 
 /* ******************************************************************
 * Copy constructor does a deep copy.
 ****************************************************************** */
-TreeOperator::TreeOperator(const TreeOperator& other) : TreeOperator(other.row_map_, other.col_map_)
+TreeOperator::TreeOperator(const TreeOperator& other)
+  : TreeOperator(other.row_map_, other.col_map_)
 {
-  shift_ = other.shift_;
-  shift_min_ = other.shift_min_;
   vo_ = other.vo_;
   inv_plist_ = other.inv_plist_;
 
-  for (int i = 0; i != row_size_; ++i) {
-    for (int j = 0; j != col_size_; ++j) {
-      if (other.blocks_[i][j] != Teuchos::null) { blocks_[i][j] = other.blocks_[i][j]->Clone(); }
+  for (int i=0; i!=row_size_; ++i) {
+    for (int j=0; j!=col_size_; ++j) {
+      if (other.blocks_[i][j] != Teuchos::null) {
+        blocks_[i][j] = other.blocks_[i][j]->clone();
+      }
     }
   }
 
-  if (other.data_ != Teuchos::null) { data_ = other.data_->Clone(); }
+  if (other.data_ != Teuchos::null) {
+    data_ = other.data_->clone();
+  }
 }
 
 
 /* ******************************************************************
 * block setters
 ****************************************************************** */
-void
-TreeOperator::set_block(std::size_t i, std::size_t j, const Teuchos::RCP<TreeOperator>& op)
+void TreeOperator::set_block(std::size_t i, std::size_t j, const Teuchos::RCP<TreeOperator>& op)
 {
   blocks_[i][j] = op;
-  initialize_complete_ = false;
+  updated_ = false;
 }
 
 
-void
-TreeOperator::set_operator(const Teuchos::RCP<Operator>& op)
+void TreeOperator::set_operator(const Teuchos::RCP<Operator>& op)
 {
   data_ = op;
-  initialize_complete_ = false;
+  updated_ = false;
 }
 
 
-void
-TreeOperator::set_operator_block(std::size_t i, std::size_t j, const Teuchos::RCP<Operator>& op)
-{
-  if (op == Teuchos::null) return;
-
-  auto block_row_map = get_row_map()->SubVector(i);
-  auto block_col_map = get_col_map()->SubVector(j);
+void TreeOperator::set_operator_block(std::size_t i, std::size_t j, const Teuchos::RCP<Operator>& op) {
+  auto block_row_map = get_row_map()->getSubVector(i);
+  auto block_col_map = get_col_map()->getSubVector(j);
 
   // can only call this on a leaf block
-  AMANZI_ASSERT(block_row_map->Data() != Teuchos::null);
-  AMANZI_ASSERT(block_col_map->Data() != Teuchos::null); // can only call this on a leaf block
+  AMANZI_ASSERT(block_row_map->getData() != Teuchos::null);
+  AMANZI_ASSERT(block_col_map->getData() != Teuchos::null); // can only call this on a leaf block
 #if TEST_MAPS
-  AMANZI_ASSERT(block_col_map->Data()->SameAs(op->get_domain_map()));
-  AMANZI_ASSERT(block_row_map->Data()->SameAs(op->get_range_map()));
+  AMANZI_ASSERT(block_col_map->getData()->SameAs(op->getDomainMap()));
+  AMANZI_ASSERT(block_row_map->getData()->SameAs(op->getRangeMap()));
 #endif
 
   Teuchos::ParameterList plist;
   auto top = Teuchos::rcp(new TreeOperator(block_row_map, block_col_map, plist));
   top->set_operator(op);
-  set_block(i, j, top);
+  set_block(i,j,top);
 }
 
 
 /* ******************************************************************
 * Calculate Y = A * X using matrix-free matvec on blocks of operators.
 ****************************************************************** */
-int
-TreeOperator::Apply(const TreeVector& X, TreeVector& Y, double scalar) const
+int TreeOperator::apply(const TreeVector& X, TreeVector& Y, double scalar) const
 {
 #if TEST_MAPS
-  AMANZI_ASSERT(get_domain_map().SubsetOf(X.Map()));
-  AMANZI_ASSERT(get_range_map().SubsetOf(Y.Map()));
+  AMANZI_ASSERT(getDomainMap().SubsetOf(X.getMap()));
+  AMANZI_ASSERT(getRangeMap().SubsetOf(Y.getMap()));
 #endif
-  if (assembly_complete_) {
-    if (shift_ != 0.0) {
-      // shift_ != 0 implies a diagonal shift is being applied.  That diagonal
-      // shift applies to all diagonal "blocks" in the TreeOperator, and is
-      // done at assemble-time.  This is used to ensure that the matrix is
-      // non-singular, which often happens with zero rows.  When it is used to
-      // make the operator non-singular, the intent is to allow it to be
-      // invertible, but not to change the meaning of the forward operator.
-      // Therefore we have to unshift the assembled matrix prior to doing the
-      // forward apply.
-      Amat_->DiagonalShift(-shift_);
-      int ierr = ApplyAssembled(X, Y, scalar);
-      Amat_->DiagonalShift(shift_);
-      return ierr;
-    } else if (shift_min_ != 0.0) {
-      // A shift_min_ is lossy -- we cannot "unshift" it because we cannot know
-      // what the original diagonal value was.  Therefore must use the
-      // unassembled forward apply (or re-assemble without the shift_min).
-      return ApplyUnassembled(X, Y, scalar);
-    } else {
-      return ApplyAssembled(X, Y, scalar);
-    }
-  } else {
-    return ApplyUnassembled(X, Y, scalar);
-  }
-}
 
-
-int
-TreeOperator::ApplyUnassembled(const TreeVector& X, TreeVector& Y, double scalar) const
-{
   int ierr(0);
-  if (scalar == 0.0) {
-    Y.PutScalarMasterAndGhosted(0.0);
-  } else if (scalar != 1.0) {
-    Y.Scale(scalar);
-  }
+  //if (scalar == 0.0) {
+  //  Y.PutScalarMasterAndGhosted(0.0);
+  //} else if (scalar != 1.0) {
+  //  Y.Scale(scalar);
+  //}
+  Y.putScalar(0.0);
 
-  if (Y.Data() != Teuchos::null) {
-    if (X.Data() != Teuchos::null) {
-      ierr = get_operator()->Apply(*X.Data(), *Y.Data(), 1.0);
+
+  if (Y.getData() != Teuchos::null) {
+    if (X.getData() != Teuchos::null) {
+      ierr = get_operator()->apply(*X.getData(), *Y.getData(), 1.0);
       if (ierr) return ierr;
     } else {
-      for (std::size_t j = 0; j != X.size(); ++j) {
-        const TreeVector& Xj = *X.SubVector(j);
-        ierr = get_block(0, j)->Apply(Xj, Y, 1.0);
+      for (std::size_t j=0; j!=X.size(); ++j) {
+        const TreeVector& Xj = *X.getSubVector(j);
+        ierr = get_block(0,j)->apply(Xj, Y, 1.0);
         if (ierr) return ierr;
       }
     }
   } else {
-    for (std::size_t i = 0; i != Y.size(); ++i) {
-      TreeVector& yi = *Y.SubVector(i);
+    for (std::size_t i=0; i!=Y.size(); ++i) {
+      TreeVector& yi = *Y.getSubVector(i);
 
-      if (X.Data() != Teuchos::null) {
-        ierr = get_block(i, 0)->Apply(X, yi, 1.0);
+      if (X.getData() != Teuchos::null) {
+        ierr = get_block(i,0)->apply(X, yi, 1.0);
         if (ierr) return ierr;
       } else {
-        for (std::size_t j = 0; j != X.size(); ++j) {
-          const TreeVector& xj = *X.SubVector(j);
-          auto block = get_block(i, j);
+        for (std::size_t j=0; j!=X.size(); ++j) {
+          const TreeVector& xj = *X.getSubVector(j);
+          auto block = get_block(i,j);
           if (block != Teuchos::null) {
-            ierr = block->Apply(xj, yi, 1.0);
+            ierr = block->apply(xj, yi, 1.0);
             if (ierr) return ierr;
           }
         }
       }
     }
   }
+
   return ierr;
 }
 
@@ -246,31 +209,16 @@ TreeOperator::ApplyUnassembled(const TreeVector& X, TreeVector& Y, double scalar
 /* ******************************************************************
 * Calculate Y = A * X using matrix-free matvec on blocks of operators.
 ****************************************************************** */
-int
-TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y, double scalar) const
+int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
 {
-  // initialize ghost elements
-  if (scalar == 0.0) {
-    Y.PutScalarMasterAndGhosted(0.0);
-  } else if (scalar == 1.0) {
-    Y.PutScalarGhosted(0.0);
-  } else {
-    Y.Scale(scalar);
-    Y.PutScalarGhosted(0.0);
-  }
-
-  Epetra_Vector Xcopy(A_->DomainMap());
-  Epetra_Vector Ycopy(A_->RangeMap());
+  Y.putScalar(0.0);
+  Vector_type Xcopy(A_->getRangeMap());
+  Vector_type Ycopy(A_->getDomainMap());
 
   int ierr = copyToSuperVector(*get_col_supermap(), X, Xcopy);
-  ierr |= A_->Apply(Xcopy, Ycopy);
-  ierr |= addFromSuperVector(*get_row_supermap(), Ycopy, Y);
-
-  if (ierr) {
-    Errors::Message msg;
-    msg << "TreeOperator: ApplyAssemble failed.\n";
-    Exceptions::amanzi_throw(msg);
-  }
+  A_->apply(Xcopy, Ycopy);
+  ierr |= copyFromSuperVector(*get_row_supermap(), Ycopy, Y);
+  AMANZI_ASSERT(!ierr);
   return ierr;
 }
 
@@ -278,26 +226,27 @@ TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y, double scalar) 
 /* ******************************************************************
 * Calculate Y = inv(A) * X using global matrix.
 ****************************************************************** */
-int
-TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
+int TreeOperator::applyInverse(const TreeVector& X, TreeVector& Y) const
 {
-  // AMANZI_ASSERT(get_domain_map()->SubsetOf(Y.Map()));
-  // AMANZI_ASSERT(get_range_map()->SubsetOf(X.Map()));
+#if TEST_MAPS
+  AMANZI_ASSERT(getDomainMap().SubsetOf(Y.getMap()));
+  AMANZI_ASSERT(getRangeMap().SubsetOf(X.getMap()));
+#endif
 
   int ierr = 0;
   if (get_operator() != Teuchos::null) {
     // this is a leaf
-    ierr = get_operator()->ApplyInverse(*X.Data(), *Y.Data());
+    ierr = get_operator()->applyInverse(*X.getData(), *Y.getData());
   } else {
-    if (!compute_complete_) const_cast<TreeOperator*>(this)->ComputeInverse();
+    if (!computed_) const_cast<TreeOperator*>(this)->computeInverse();
     if (preconditioner_.get()) {
-      ierr = preconditioner_->ApplyInverse(X, Y);
+      ierr = preconditioner_->applyInverse(X,Y);
     } else {
-      AMANZI_ASSERT(block_diagonal_); // this assertion shouldn't be possible --
-                                      // in all cases where block_diagonal_
-                                      // isn't true, a preconditioner_ should
-                                      // have been created.
-      ierr = ApplyInverseBlockDiagonal_(X, Y);
+      AMANZI_ASSERT(block_diagonal_);  // this assertion shouldn't be possible --
+                                     // in all cases where block_diagonal_
+                                     // isn't true, a preconditioner_ should
+                                     // have been created.
+      ierr = ApplyInverseBlockDiagonal_(X,Y);
     }
   }
   return ierr;
@@ -307,25 +256,24 @@ TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
 /* ******************************************************************
 * Calculate Y = inv(A) * X using the block diagonal
 ****************************************************************** */
-int
-TreeOperator::ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) const
+int TreeOperator::ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) const
 {
   AMANZI_ASSERT(IsSquare());
 #if TEST_MAPS
-  AMANZI_ASSERT(get_domain_map().SameAs(get_range_map()));
-  AMANZI_ASSERT(get_domain_map().SubsetOf(Y.Map()));
-  AMANZI_ASSERT(get_range_map().SubsetOf(X.Map()));
+  AMANZI_ASSERT(getDomainMap().SameAs(getRangeMap()));
+  AMANZI_ASSERT(getDomainMap().SubsetOf(Y.getMap()));
+  AMANZI_ASSERT(getRangeMap().SubsetOf(X.getMap()));
 #endif
   int ierr = 0;
   if (get_col_size() == 1) {
     AMANZI_ASSERT(get_operator() != Teuchos::null);
-    AMANZI_ASSERT(X.Data() != Teuchos::null);
-    AMANZI_ASSERT(Y.Data() != Teuchos::null);
-    return get_operator()->ApplyInverse(*X.Data(), *Y.Data());
+    AMANZI_ASSERT(X.getData() != Teuchos::null);
+    AMANZI_ASSERT(Y.getData() != Teuchos::null);
+    return get_operator()->applyInverse(*X.getData(), *Y.getData());
 
   } else {
-    for (std::size_t i = 0; i != get_col_size(); ++i) {
-      ierr = get_block(i, i)->ApplyInverse(*X.SubVector(i), *Y.SubVector(i));
+    for (std::size_t i=0; i!=get_col_size(); ++i) {
+      ierr = get_block(i,i)->applyInverse(*X.getSubVector(i), *Y.getSubVector(i));
       if (ierr) return ierr;
     }
   }
@@ -333,12 +281,12 @@ TreeOperator::ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) con
 }
 
 
+
 /* ******************************************************************
 * Symbolic assemble global matrix from elemental matrices of block
 * operators.
 ****************************************************************** */
-void
-TreeOperator::SymbolicAssembleMatrix()
+void TreeOperator::SymbolicAssembleMatrix()
 {
   // create the supermaps
   if (!row_supermap_.get()) row_supermap_ = createSuperMap(*get_row_map());
@@ -354,9 +302,9 @@ TreeOperator::SymbolicAssembleMatrix()
 
   // allocate space, graph
   leaves_.resize(n_row_leaves, std::vector<Teuchos::RCP<Operator>>(n_col_leaves, Teuchos::null));
-  int cols_per_row = n_col_leaves * OPERATOR_MAX_NUM_FACES;
-  auto graph = Teuchos::rcp(new GraphFE(
-    row_supermap_->Map(), row_supermap_->GhostedMap(), col_supermap_->GhostedMap(), cols_per_row));
+  int cols_per_row = n_col_leaves * OPERATOR_MAX_FACES;
+  auto graph = Teuchos::rcp(new GraphFE(row_supermap_->getMap(),
+      row_supermap_->getGhostedMap(), col_supermap_->getGhostedMap(), cols_per_row));
 
   // get a flattened array of blocks that are leaves
   auto shape = Impl::collectTreeOperatorLeaves(*this, leaves_, 0, 0);
@@ -367,7 +315,7 @@ TreeOperator::SymbolicAssembleMatrix()
   std::vector<bool> cols_ok(n_col_leaves, false);
   for (std::size_t lcv_row = 0; lcv_row != n_row_leaves; ++lcv_row) {
     bool row_ok = false;
-    for (std::size_t lcv_col = 0; lcv_col != n_col_leaves; ++lcv_col) {
+    for (std::size_t lcv_col = 0 ; lcv_col != n_col_leaves; ++lcv_col) {
       if (leaves_[lcv_row][lcv_col] != Teuchos::null) {
         row_ok = true;
         cols_ok[lcv_col] = true;
@@ -389,34 +337,34 @@ TreeOperator::SymbolicAssembleMatrix()
 
   // assemble the graph structure
   for (std::size_t lcv_row = 0; lcv_row != n_row_leaves; ++lcv_row) {
-    for (std::size_t lcv_col = 0; lcv_col != n_col_leaves; ++lcv_col) {
+    for (std::size_t lcv_col = 0 ; lcv_col != n_col_leaves; ++lcv_col) {
       Teuchos::RCP<const Operator> leaf = leaves_[lcv_row][lcv_col];
       if (leaf != Teuchos::null) {
         // NOTE: currently the operator interface keeps this from working
         // on non-square matrices... need to pass both row and col supermaps.
-        leaf->SymbolicAssembleMatrix(*get_row_supermap(), *graph, lcv_row, lcv_col);
+        leaf->SymbolicAssembleMatrix(*get_row_supermap(),
+                                      *graph, lcv_row, lcv_col);
       }
     }
   }
 
   // assemble the graph
-  int ierr = graph->FillComplete(get_row_supermap()->Map(), get_col_supermap()->Map());
-  AMANZI_ASSERT(!ierr);
+  graph->fillComplete(get_row_supermap()->getMap(),
+                                 get_col_supermap()->getMap());
 
   // create the matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
-  A_ = Amat_->Matrix();
+  A_ = Amat_->getMatrix();
 }
 
 
 /* ******************************************************************
 * Assemble global matrix from elemental matrices of block operators.
 ****************************************************************** */
-void
-TreeOperator::AssembleMatrix()
-{
+void TreeOperator::AssembleMatrix() {
   AMANZI_ASSERT(leaves_.size() != 0);
-  Amat_->Zero();
+  computed_ = false;
+  Amat_->zero();
 
   // check that each row has at least one non-null operator block
   std::size_t n_row_leaves = leaves_.size();
@@ -427,86 +375,41 @@ TreeOperator::AssembleMatrix()
       if (leaf != Teuchos::null) {
         // NOTE: currently the operator interface keeps this from working
         // on non-square matrices... need to pass both row and col supermaps.
-        leaf->AssembleMatrix(*get_row_supermap(), *Amat_, lcv_row, lcv_col);
+        leaf->AssembleMatrix(*get_row_supermap(),
+                              *Amat_, lcv_row, lcv_col);
       }
     }
   }
 
-  int ierr = Amat_->FillComplete();
-  AMANZI_ASSERT(!ierr);
-
-  if (shift_ != 0.0) {
-    Amat_->DiagonalShift(shift_);
-  } else if (shift_min_ != 0.0) {
-    Amat_->DiagonalShiftMin(shift_min_);
-  }
-
-  assembly_complete_ = true;
-  compute_complete_ = false;
+  Amat_->fillComplete();
+  
   // std::stringstream filename_s2;
   // filename_s2 << "assembled_matrix" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *A_);
-}
-
-
-/* ******************************************************************
-* Zero all operators
-****************************************************************** */
-void
-TreeOperator::Init()
-{
-  assembly_complete_ = false;
-  compute_complete_ = false;
-  for (int i = 0; i != row_size_; ++i) {
-    for (int j = 0; j != col_size_; ++j) {
-      if (get_block(i, j) != Teuchos::null) get_block(i, j)->Init();
-    }
-  }
-  if (data_ != Teuchos::null) data_->Init();
-}
-
-/* ******************************************************************
-* Zero off-diagonal operators
-****************************************************************** */
-void
-TreeOperator::InitOffdiagonals()
-{
-  assembly_complete_ = false;
-  compute_complete_ = false;
-  for (int i = 0; i != row_size_; ++i) {
-    for (int j = 0; j != col_size_; ++j) {
-      if (i != j && get_block(i, j) != Teuchos::null) get_block(i, j)->Init();
-    }
-  }
+  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_->Matrix());
 }
 
 
 /* ******************************************************************
 * Methods require to enable an Inverse
 ****************************************************************** */
-void
-TreeOperator::set_inverse_parameters(const std::string& prec_name,
-                                     const Teuchos::ParameterList& plist)
-{
+void TreeOperator:: set_inverse_parameters(const std::string& prec_name,
+        const Teuchos::ParameterList& plist) {
   Teuchos::ParameterList inner_plist(plist.sublist(prec_name));
   set_inverse_parameters(inner_plist);
 }
 
 
-void
-TreeOperator::set_inverse_parameters(Teuchos::ParameterList& inv_plist)
-{
+void TreeOperator:: set_inverse_parameters(Teuchos::ParameterList& inv_plist) {
   inv_plist_ = inv_plist;
-  inverse_pars_set_ = true;
+  inited_ = true;
 }
 
 
-void
-TreeOperator::InitializeInverse()
+void TreeOperator::initializeInverse()
 {
   // if this is a leaf, just initialize the Operator
   if (get_operator() != Teuchos::null) {
-    get_operator()->InitializeInverse();
+    get_operator()->initializeInverse();
     return;
   }
 
@@ -516,8 +419,8 @@ TreeOperator::InitializeInverse()
   AMANZI_ASSERT(get_row_map()->SameAs(*get_col_map()));
 #endif
 
-  // and inverse_pars_set
-  if (!inverse_pars_set_) {
+  // and inited
+  if (!inited_) {
     Errors::Message msg("Developer error: set_inverse_parameters() has not been called.");
     msg << " ref: " << typeid(*this).name() << "\n";
     Exceptions::amanzi_throw(msg);
@@ -534,10 +437,11 @@ TreeOperator::InitializeInverse()
     // provide block ids for block strategies.
     if (!row_supermap_.get()) row_supermap_ = createSuperMap(*get_row_map());
 
-    if (coloring_ == Teuchos::null || num_colors_ == 0) {
-      auto block_ids = get_row_supermap()->BlockIndices();
-      set_coloring(block_ids.first, block_ids.second);
-    }
+    assert(false); 
+    //if (coloring_ == Teuchos::null || num_colors_ == 0) {
+    //  auto block_ids = get_row_supermap()->BlockIndices();
+    //  set_coloring(block_ids.first, block_ids.second);
+    //}
     inv_plist_.sublist("boomer amg parameters").set("number of unique block indices", num_colors_);
     inv_plist_.sublist("boomer amg parameters").set("block indices", coloring_);
   }
@@ -557,8 +461,7 @@ TreeOperator::InitializeInverse()
       // which is used by the iterative method, is the wrapped one which just
       // calls this's ApplyInverseBlockDiagional_ method.
       auto pc = Teuchos::rcp(new Impl::TreeOperator_BlockDiagonalPreconditioner(*this));
-      preconditioner_ =
-        AmanziSolvers::createIterativeMethod(inv_plist_, Teuchos::rcpFromRef(*this), pc);
+      preconditioner_ = AmanziSolvers::createIterativeMethod(inv_plist_, Teuchos::rcpFromRef(*this), pc);
     } else {
       block_diagonal_ = true;
       preconditioner_ = Teuchos::null;
@@ -572,52 +475,52 @@ TreeOperator::InitializeInverse()
 
   // call the Initialize method
   if (preconditioner_.get()) {
-    preconditioner_->InitializeInverse(); // calls SymbolicAssemble if needed
+    preconditioner_->initializeInverse(); // calls SymbolicAssemble if needed
   } else if (block_diagonal_) {
     // initialize the diagonal
-    for (std::size_t n = 0; n != get_row_map()->size(); ++n) {
-      Teuchos::RCP<TreeOperator> block = get_block(n, n);
+    for (std::size_t n=0; n!=get_row_map()->size(); ++n) {
+      Teuchos::RCP<TreeOperator> block = get_block(n,n);
       if (block == Teuchos::null) {
         Errors::Message msg("TreeOperator: block diagonal preconditioner requested, but block (");
         msg << n << "," << n << ") has not been provided.";
         Exceptions::amanzi_throw(msg);
       }
-      block->InitializeInverse();
+      block->initializeInverse();
     }
   }
-
-  initialize_complete_ = true;
-  compute_complete_ = false;
+  updated_ = true;
+  computed_ = false;
 }
 
 
-void
-TreeOperator::ComputeInverse()
+void TreeOperator::computeInverse()
 {
-  if (!initialize_complete_) InitializeInverse();
+  if (!updated_) initializeInverse();
   if (get_operator() != Teuchos::null) {
     // leaf operator
-    get_operator()->ComputeInverse();
+    get_operator()->computeInverse();
   } else {
     if (preconditioner_.get()) {
-      preconditioner_->ComputeInverse(); // calls SymbolicAssemble if needed
+      preconditioner_->computeInverse(); // calls SymbolicAssemble if needed
     } else if (block_diagonal_) {
-      for (std::size_t n = 0; n != get_row_map()->size(); ++n) { blocks_[n][n]->ComputeInverse(); }
+      for (std::size_t n=0; n!=get_row_map()->size(); ++n) {
+        blocks_[n][n]->computeInverse();
+      }
     }
   }
-  compute_complete_ = true;
+  computed_ = true;
 }
 
 
-std::pair<int, int>
-Impl::collectTreeOperatorLeaves(TreeOperator& tm,
-                                std::vector<std::vector<Teuchos::RCP<Operator>>>& leaves,
-                                std::size_t i,
-                                std::size_t j)
+
+
+std::pair<int,int>
+Impl::collectTreeOperatorLeaves(TreeOperator& tm, std::vector<std::vector<Teuchos::RCP<Operator>>>& leaves,
+                                std::size_t i, std::size_t j)
 {
   if (tm.get_operator() != Teuchos::null) {
     leaves[i][j] = tm.get_operator();
-    return std::make_pair<int, int>(1, 1);
+    return std::make_pair<int,int>(1,1);
   } else {
     std::size_t i0 = i;
     std::size_t j0 = j;
@@ -626,13 +529,12 @@ Impl::collectTreeOperatorLeaves(TreeOperator& tm,
     for (std::size_t lcv_i = 0; lcv_i != tm.get_row_size(); ++lcv_i) {
       std::size_t ni = -1;
       for (std::size_t lcv_j = 0; lcv_j != tm.get_col_size(); ++lcv_j) {
-        std::pair<int, int> delta;
+        std::pair<int,int> delta;
         if (tm.get_block(lcv_i, lcv_j) != Teuchos::null) {
-          delta = collectTreeOperatorLeaves(*tm.get_block(lcv_i, lcv_j), leaves, i, j);
+          delta = collectTreeOperatorLeaves(*tm.get_block(lcv_i,lcv_j), leaves, i, j);
         } else {
-          delta =
-            std::make_pair<int, int>(getNumTreeVectorLeaves(*tm.get_row_map()->SubVector(lcv_i)),
-                                     getNumTreeVectorLeaves(*tm.get_col_map()->SubVector(lcv_j)));
+          delta = std::make_pair<int,int>(getNumTreeVectorLeaves(*tm.get_row_map()->getSubVector(lcv_i)),
+                                          getNumTreeVectorLeaves(*tm.get_col_map()->getSubVector(lcv_j)));
         }
         if (ni == -1) {
           ni = delta.first;
@@ -650,7 +552,7 @@ Impl::collectTreeOperatorLeaves(TreeOperator& tm,
       j = j0;
       i += ni;
     }
-    return std::make_pair<int, int>(i - i0, nj - j0);
+    return std::make_pair<int,int>(i - i0, nj - j0);
   }
 }
 
@@ -658,20 +560,18 @@ Impl::collectTreeOperatorLeaves(TreeOperator& tm,
 /* ******************************************************************
 * Populates matrix entries.
 ****************************************************************** */
-std::string
-TreeOperator::PrintDiagnostics(int prefix) const
+std::string TreeOperator::PrintDiagnostics() const
 {
   std::stringstream msg;
-  for (int i = 0; i < row_size_; ++i) {
-    for (int j = 0; j < col_size_; ++j) {
+  int n_blocks = blocks_.size();
+  for (int i = 0; i < n_blocks; ++i) {
+    for (int j = 0; j < n_blocks; ++j) {
       auto block = blocks_[i][j];
       if (block != Teuchos::null) {
-        for (int k = 0; k < prefix + 1; ++k) msg << "  ";
-        msg << "block " << i << " " << j << ": ";
+        msg << " block " << i << " " << j << ": ";
         auto op = block->get_operator();
         if (op == Teuchos::null) {
-          msg << "TreeOperator:\n";
-          msg << block->PrintDiagnostics(prefix + 1);
+           msg << "TreeOperator ";
         } else {
           for (auto it = op->begin(); it != op->end(); ++it) {
             msg << "<" << (*it)->schema_string << "> ";
@@ -681,24 +581,8 @@ TreeOperator::PrintDiagnostics(int prefix) const
       }
     }
   }
-
   return msg.str();
 }
 
-
-/* ******************************************************************
-* Verify quality of underling containers
-****************************************************************** */
-void
-TreeOperator::Verify() const
-{
-  for (int i = 0; i < row_size_; ++i) {
-    for (int j = 0; j < col_size_; ++j) {
-      auto block = blocks_[i][j];
-      if (block != Teuchos::null) block->Verify();
-    }
-  }
-}
-
-} // namespace Operators
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi

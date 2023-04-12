@@ -81,7 +81,7 @@ SUITE(COMPOSITE_VECTOR)
     }
     std::cout << val;
 
-    Teuchos::RCP<Epetra_MultiVector> mv = x->ViewComponent("cell", false);
+    Teuchos::RCP<Epetra_MultiVector> mv = x->viewComponent("cell", false);
     if (true) {
       Teuchos::TimeMonitor timer(*mvtime);
       for (int i = 0; i != 10000000; ++i) {

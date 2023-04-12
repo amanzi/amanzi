@@ -29,7 +29,7 @@
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 #include "Point.hh"
 
 #include "Reconstruction.hh"
@@ -50,7 +50,7 @@ class ReconstructionCellLinear : public Reconstruction {
     : Reconstruction(mesh),
       dim(mesh->getSpaceDimension()),
       gradient_(gradient),
-      gradient_c_(gradient->ViewComponent("cell")){};
+      gradient_c_(gradient->viewComponent("cell")){};
 
   ~ReconstructionCellLinear(){};
 
@@ -73,7 +73,7 @@ class ReconstructionCellLinear : public Reconstruction {
   // -- calculate value, deviation from mean, and full polynomial
   virtual double getValue(int c, const AmanziGeometry::Point& p) override;
   virtual double getValueSlope(int c, const AmanziGeometry::Point& p) override;
-  virtual WhetStone::Polynomial getPolynomial(int c) const override;
+  virtual WhetStone::Polynomial<> getPolynomial(int c) const override;
 
   // -- access returns gradient, i.e. no mean value
   virtual Teuchos::RCP<CompositeVector> data() override { return gradient_; }
@@ -88,8 +88,8 @@ class ReconstructionCellLinear : public Reconstruction {
  private:
   void PopulateLeastSquareSystem_(AmanziGeometry::Point& centroid,
                                   double field_value,
-                                  WhetStone::DenseMatrix& matrix,
-                                  WhetStone::DenseVector& rhs);
+                                  WhetStone::DenseMatrix<>& matrix,
+                                  WhetStone::DenseVector<>& rhs);
 
   // On intersecting manifolds, we extract neighboors living in the same manifold
   // using a smoothness criterion.

@@ -37,12 +37,12 @@ class VectorObjects {
   VectorObjects(int d, int size) : d_(d)
   {
     polys_.resize(size);
-    for (int i = 0; i < size; ++i) polys_[i].Reshape(d_, 0, true);
+    for (int i = 0; i < size; ++i) polys_[i].reshape(d_, 0, true);
   }
   VectorObjects(int d, int size, int order) : d_(d)
   {
     polys_.resize(size);
-    for (int i = 0; i < size; ++i) polys_[i].Reshape(d_, order, true);
+    for (int i = 0; i < size; ++i) polys_[i].reshape(d_, order, true);
   }
   VectorObjects(const T& p) : d_(p.dimension())
   {
@@ -52,11 +52,11 @@ class VectorObjects {
   ~VectorObjects(){};
 
   // reshape polynomial with erase (optionally) memory
-  void Reshape(int d, int m, int order, bool reset = false)
+  void reshape(int d, int m, int order, bool reset = false)
   {
     d_ = d;
     polys_.resize(m);
-    for (int i = 0; i < m; ++i) polys_[i].Reshape(d, order, reset);
+    for (int i = 0; i < m; ++i) polys_[i].reshape(d, order, reset);
   }
 
   // minimal set of vector operations
@@ -67,14 +67,14 @@ class VectorObjects {
   const T& operator[](int i) const { return polys_[i]; }
 
   // typical operations with polynomials
-  void PutScalar(double val)
+  void putScalar(double val)
   {
-    for (int i = 0; i < size(); ++i) polys_[i].PutScalar(val);
+    for (int i = 0; i < size(); ++i) polys_[i].putScalar(val);
   }
-  double NormInf() const
+  double normInf() const
   {
     double tmp(0.0);
-    for (int i = 0; i < size(); ++i) tmp = std::max(tmp, polys_[i].NormInf());
+    for (int i = 0; i < size(); ++i) tmp = std::max(tmp, polys_[i].normInf());
     return tmp;
   }
 
@@ -132,10 +132,10 @@ class VectorObjects {
 
   // typical operations with vector polynomials
   // -- value
-  DenseVector Value(const AmanziGeometry::Point& xp) const
+  DenseVector<> Value(const AmanziGeometry::Point& xp) const
   {
     int n = polys_.size();
-    DenseVector val(n);
+    DenseVector<> val(n);
     for (int i = 0; i < n; ++i) val(i) = polys_[i].Value(xp);
     return val;
   }
@@ -152,7 +152,8 @@ class VectorObjects {
   }
 
   // dot product T * v1
-  friend VectorObjects<T> operator*(const Tensor& K, const VectorObjects<T>& poly)
+  template <class MEMSPACE>
+  friend VectorObjects<T> operator*(const Tensor<MEMSPACE>& K, const VectorObjects<T>& poly)
   {
     int d(K.dimension());
     VectorObjects<T> tmp(d, d, 0);
@@ -196,25 +197,25 @@ class VectorObjects {
 
 
 // used types
-typedef VectorObjects<Polynomial> VectorPolynomial;
+typedef VectorObjects<Polynomial<>> VectorPolynomial;
 typedef VectorObjects<SpaceTimePolynomial> VectorSpaceTimePolynomial;
 
 
 // non-member functions
 VectorPolynomial
-Gradient(const Polynomial& p);
+Gradient(const Polynomial<>& p);
 VectorSpaceTimePolynomial
 Gradient(const SpaceTimePolynomial& p);
 
-Polynomial
-Divergence(const VectorObjects<Polynomial>& vp);
+Polynomial<>
+Divergence(const VectorObjects<Polynomial<>>& vp);
 VectorPolynomial
-GradientOnUnitSphere(const Polynomial& poly, int k);
+GradientOnUnitSphere(const Polynomial<>& poly, int k);
 
 // project gradient of the given polynomial on unit sphere using
 // the Taylor expansion with k terms
 VectorPolynomial
-GradientOnUnitSphere(const Polynomial& poly, int k);
+GradientOnUnitSphere(const Polynomial<>& poly, int k);
 
 } // namespace WhetStone
 } // namespace Amanzi

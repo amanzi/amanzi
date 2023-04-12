@@ -7,6 +7,7 @@
   Authors:
 */
 
+#include "AmanziVector.hh"
 #include "GMVMesh.hh"
 
 namespace Amanzi {
@@ -194,51 +195,42 @@ start_data()
 
 
 void
-write_node_data(const Epetra_Vector& x, std::string varname)
+write_node_data(const Vector_type& x, std::string varname)
 {
-  double* node_data;
-  x.ExtractView(&node_data);
-  gmvwrite_variable_name_data(1, (char*)varname.c_str(), node_data);
+  auto node_data = x.getData();
+  gmvwrite_variable_name_data(1, (char*)varname.c_str(), (void*)node_data.get());
 }
 
 
 void
-write_node_data(const Epetra_MultiVector& x, const unsigned int component, std::string varname)
+write_node_data(const MultiVector_type& x, const unsigned int component, std::string varname)
 {
-  double** node_data;
-  x.ExtractView(&node_data);
-
-  double* component_data = node_data[component];
-  gmvwrite_variable_name_data(1, (char*)varname.c_str(), component_data);
+  auto node_data = x.getData(component);
+  gmvwrite_variable_name_data(1, (char*)varname.c_str(), (void*)node_data.get());
 }
 
 
 void
-write_cell_data(const Epetra_Vector& x, std::string varname)
+write_cell_data(const Vector_type& x, std::string varname)
 {
-  double* cell_data;
-  x.ExtractView(&cell_data);
-  gmvwrite_variable_name_data(0, (char*)varname.c_str(), cell_data);
+  auto cell_data = x.getData();
+  gmvwrite_variable_name_data(0, (char*)varname.c_str(), (void*)cell_data.get());
 }
 
 
 void
-write_cell_data(const Epetra_MultiVector& x, const unsigned int component, std::string varname)
+write_cell_data(const MultiVector_type& x, const unsigned int component, std::string varname)
 {
-  double** cell_data;
-  x.ExtractView(&cell_data);
-
-  double* component_data = cell_data[component];
-  gmvwrite_variable_name_data(0, (char*)varname.c_str(), component_data);
+  auto cell_data = x.getData(component);
+  gmvwrite_variable_name_data(0, (char*)varname.c_str(), (void*)cell_data.get());
 }
 
 
 void
-write_face_data(const Epetra_Vector& x, std::string varname)
+write_face_data(const Vector_type& x, std::string varname)
 {
-  double* face_data;
-  x.ExtractView(&face_data);
-  gmvwrite_variable_name_data(2, (char*)varname.c_str(), face_data);
+  auto face_data = x.getData();
+  gmvwrite_variable_name_data(2, (char*)varname.c_str(), (void*)face_data.get());
 }
 
 

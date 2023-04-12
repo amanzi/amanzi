@@ -26,6 +26,9 @@ static std::vector<std::pair<std::string, std::string>> abbreviations = {
   { "surface_star", "ss" },
   { "surface_column", "surf_col" },
   { "column", "col" },
+  { "temperature", "temp" },
+  { "internal_energy", "ie" },
+  { "molar", "mol"},
 };
 
 } // namespace Keys

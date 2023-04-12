@@ -86,14 +86,16 @@ MFD3D_LagrangeSerendipity::schema() const
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
 int
-MFD3D_LagrangeSerendipity::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+MFD3D_LagrangeSerendipity::H1consistency(int c, const Tensor<>& K, DenseMatrix<>& N, DenseMatrix<>& Ac)
 {
   auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   int nfaces = mesh_->getCellNumFaces(c);
   int nedges(0);
-  if (d_ == 3) { nedges = mesh_->getCellEdges(c).size(); }
+  if (d_ == 3) {
+    nedges =  mesh_->getCellEdges(c).size();
+  }
 
   // select number of non-aligned edges: we assume cell convexity
   int eta(3);
@@ -101,7 +103,7 @@ MFD3D_LagrangeSerendipity::H1consistency(int c, const Tensor& K, DenseMatrix& N,
 
   // calculate degrees of freedom: serendipity space S contains all boundary
   // dofs plus a few internal dofs that depedend on the value of eta.
-  Polynomial poly(d_, order_);
+  Polynomial<> poly(d_, order_);
 
   int nd, nde(0), ndf, ndc;
   nd = poly.size();
@@ -111,7 +113,7 @@ MFD3D_LagrangeSerendipity::H1consistency(int c, const Tensor& K, DenseMatrix& N,
   int ndof_S = nnodes + nedges * nde + nfaces * ndf + ndc;
 
   // calculate full matrices
-  DenseMatrix Nf, Af;
+  DenseMatrix<> Nf, Af;
   MFD3D_LagrangeAnyOrder::H1consistency(c, K, Nf, Af);
 
   // pre-calculate integrals of monomials
@@ -123,22 +125,22 @@ MFD3D_LagrangeSerendipity::H1consistency(int c, const Tensor& K, DenseMatrix& N,
   basis.Init(mesh_, c, order_, integrals_.poly());
 
   // Dot-product matrix for polynomials and Laplacian of polynomials
-  DenseMatrix M(nd, nd);
+  DenseMatrix<> M(nd, nd);
   GrammMatrix(poly, integrals_, basis, M);
 
   // setup matrix representing Laplacian of polynomials
-  DenseMatrix L(nd, nd);
-  L.PutScalar(0.0);
+  DenseMatrix<> L(nd, nd);
+  L.putScalar(0.0);
 
   for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
 
     double factor = basis.monomial_scales()[it.MonomialSetOrder()];
-    Polynomial cmono(d_, index, factor);
+    Polynomial<> cmono(d_, index, factor);
 
     auto Kgrad = K * Gradient(cmono);
-    Polynomial lap = Divergence(Kgrad);
+    Polynomial<> lap = Divergence(Kgrad);
 
     for (auto jt = lap.begin(); jt < lap.end(); ++jt) {
       int l = jt.PolynomialPosition();
@@ -149,12 +151,12 @@ MFD3D_LagrangeSerendipity::H1consistency(int c, const Tensor& K, DenseMatrix& N,
 
   // calculate matrices N and R
   // -- extract sub-matrices. More work is required in 3D
-  DenseMatrix Rf(R_);
-  N = Nf.SubMatrix(0, ndof_S, 0, nd);
-  R_ = Rf.SubMatrix(0, ndof_S, 0, nd);
+  DenseMatrix<> Rf(R_);
+  N.assign(Nf.SubMatrix(0, ndof_S, 0, nd));
+  R_.assign(Rf.SubMatrix(0, ndof_S, 0, nd));
 
   // -- add correcton Ns (Ns^T Ns)^{-1} M L to matrix R_
-  DenseMatrix NN(nd, nd), NM(nd, nd);
+  DenseMatrix<> NN(nd, nd), NM(nd, nd);
 
   NN.Multiply(N, N, true);
   NN.InverseSPD();
@@ -162,14 +164,14 @@ MFD3D_LagrangeSerendipity::H1consistency(int c, const Tensor& K, DenseMatrix& N,
   NM.Multiply(NN, M, false);
   NN.Multiply(NM, L, false);
 
-  Nf.Reshape(ndof_S, nd);
+  Nf.reshape(ndof_S, nd);
   Nf.Multiply(N, NN, false);
 
   R_ -= Nf;
 
   // calculate Ac = R inv(G) R^T
-  Ac.Reshape(ndof_S, ndof_S);
-  DenseMatrix Rtmp(nd, ndof_S);
+  Ac.reshape(ndof_S, ndof_S);
+  DenseMatrix<> Rtmp(nd, ndof_S);
 
   Nf.Multiply(R_, G_, false);
   Rtmp.Transpose(R_);
@@ -183,9 +185,9 @@ MFD3D_LagrangeSerendipity::H1consistency(int c, const Tensor& K, DenseMatrix& N,
 * Stiffness matrix for a high-order scheme.
 ****************************************************************** */
 int
-MFD3D_LagrangeSerendipity::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
+MFD3D_LagrangeSerendipity::StiffnessMatrix(int c, const Tensor<>& K, DenseMatrix<>& A)
 {
-  DenseMatrix N;
+  DenseMatrix<> N;
 
   int ok = H1consistency(c, K, N, A);
   if (ok) return ok;
@@ -200,10 +202,10 @@ MFD3D_LagrangeSerendipity::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& 
 ****************************************************************** */
 void
 MFD3D_LagrangeSerendipity::ProjectorFace_(int f,
-                                          const std::vector<Polynomial>& ve,
+                                          const std::vector<Polynomial<>>& ve,
                                           const ProjectorType type,
-                                          const Polynomial* moments,
-                                          Polynomial& uf)
+                                          const Polynomial<>* moments,
+                                          Polynomial<>& uf)
 {
   const auto& xf = mesh_->getFaceCentroid(f);
   const auto& normal = mesh_->getFaceNormal(f);
@@ -212,9 +214,9 @@ MFD3D_LagrangeSerendipity::ProjectorFace_(int f,
   Teuchos::RCP<AmanziMesh::SingleFaceMesh> surf_mesh =
     Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh_, f, coordsys));
 
-  std::vector<Polynomial> vve;
+  std::vector<Polynomial<>> vve;
   for (int i = 0; i < ve.size(); ++i) {
-    Polynomial tmp(ve[i]);
+    Polynomial<> tmp(ve[i]);
     tmp.ChangeCoordinates(xf, *coordsys.tau());
     vve.push_back(tmp);
   }
@@ -231,25 +233,25 @@ MFD3D_LagrangeSerendipity::ProjectorFace_(int f,
 void
 MFD3D_LagrangeSerendipity::ProjectorCell_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
                                           int c,
-                                          const std::vector<Polynomial>& ve,
-                                          const std::vector<Polynomial>& vf,
+                                          const std::vector<Polynomial<>>& ve,
+                                          const std::vector<Polynomial<>>& vf,
                                           const ProjectorType type,
-                                          const Polynomial* moments,
-                                          Polynomial& uc)
+                                          const Polynomial<>* moments,
+                                          Polynomial<>& uc)
 {
   // input mesh may have a different dimension than base mesh
   int d = mymesh->getSpaceDimension();
 
   // selecting regularized basis
-  Polynomial ptmp;
+  Polynomial<> ptmp;
   Basis_Regularized basis;
   basis.Init(mymesh, c, order_, ptmp);
 
   // calculate stiffness matrix
-  Tensor T(d, 1);
+ Tensor<> T(d, 1);
   T(0, 0) = 1.0;
 
-  DenseMatrix N, A;
+  DenseMatrix<> N, A;
   if (d == 2)
     H1consistency2D_(mymesh, c, T, N, A);
   else
@@ -273,8 +275,8 @@ MFD3D_LagrangeSerendipity::ProjectorCell_(const Teuchos::RCP<const AmanziMesh::M
   int ndof_f(ndof - ndof_c);
 
   // extract submatrix
-  DenseMatrix Ns, NN(nd, nd);
-  Ns = N.SubMatrix(0, ndof_f, 0, nd);
+  DenseMatrix<> Ns, NN(nd, nd);
+  Ns.assign(N.SubMatrix(0, ndof_f, 0, nd));
 
   NN.Multiply(Ns, Ns, true);
   NN.InverseSPD();
@@ -282,15 +284,15 @@ MFD3D_LagrangeSerendipity::ProjectorCell_(const Teuchos::RCP<const AmanziMesh::M
   // calculate degrees of freedom (Ns^T Ns)^{-1} Ns^T v
   // for consistency with other code, we use v5 for polynomial coefficients
   const AmanziGeometry::Point& xc = mymesh->getCellCentroid(c);
-  DenseVector v1(nd), v3(std::max(1, ndof_cs)), v5(nd);
+  DenseVector<> v1(nd), v3(std::max(1, ndof_cs)), v5(nd);
 
-  DenseVector vdof(ndof_f + ndof_cs);
+  DenseVector<> vdof(ndof_f + ndof_cs);
   CalculateDOFsOnBoundary_(mymesh, c, ve, vf, vdof);
 
   // DOFs inside cell: copy moments from input data
   if (ndof_cs > 0) {
     AMANZI_ASSERT(moments != NULL);
-    const DenseVector& v4 = moments->coefs();
+    const DenseVector<>& v4 = moments->coefs();
     AMANZI_ASSERT(ndof_cs == v4.NumRows());
 
     for (int n = 0; n < ndof_cs; ++n) { vdof(ndof_f + n) = v4(n); }
@@ -304,9 +306,9 @@ MFD3D_LagrangeSerendipity::ProjectorCell_(const Teuchos::RCP<const AmanziMesh::M
 
   // H1 projector needs to populate moments from ndof_cs + 1 till ndof_c
   if (type == ProjectorType::H1) {
-    DenseVector v4(nd);
-    DenseMatrix M;
-    Polynomial poly(d, order_);
+    DenseVector<> v4(nd);
+    DenseMatrix<> M;
+    Polynomial<> poly(d, order_);
 
     NumericalIntegration numi(mymesh);
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
@@ -314,7 +316,7 @@ MFD3D_LagrangeSerendipity::ProjectorCell_(const Teuchos::RCP<const AmanziMesh::M
     GrammMatrix(poly, integrals_, basis, M);
     M.Multiply(v5, v4, false);
 
-    vdof.Reshape(ndof_f + ndof_c);
+    vdof.reshape(ndof_f + ndof_c);
     for (int n = ndof_cs; n < ndof_c; ++n) { vdof(ndof_f + n) = v4(n) / mymesh->getCellVolume(c); }
 
     R_.Multiply(vdof, v4, true);
@@ -326,15 +328,15 @@ MFD3D_LagrangeSerendipity::ProjectorCell_(const Teuchos::RCP<const AmanziMesh::M
 
   // L2 projector is different if the set S contains some internal dofs
   if (type == ProjectorType::L2 && ndof_cs > 0) {
-    DenseVector v4(nd), v6(nd - ndof_cs);
-    DenseMatrix M, M2;
-    Polynomial poly(d, order_);
+    DenseVector<> v4(nd), v6(nd - ndof_cs);
+    DenseMatrix<> M, M2;
+    Polynomial<> poly(d, order_);
 
     NumericalIntegration numi(mymesh);
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
     GrammMatrix(poly, integrals_, basis, M);
-    M2 = M.SubMatrix(ndof_cs, nd, 0, nd);
+    M2.assign(M.SubMatrix(ndof_cs, nd, 0, nd));
     M2.Multiply(v5, v6, false);
 
     for (int n = 0; n < ndof_cs; ++n) { v4(n) = v3(n) * mymesh->getCellVolume(c); }
@@ -359,9 +361,9 @@ void
 MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
   int c,
-  const std::vector<Polynomial>& ve,
-  const std::vector<Polynomial>& vf,
-  DenseVector& vdof)
+  const std::vector<Polynomial<>>& ve,
+  const std::vector<Polynomial<>>& vf,
+  DenseVector<>& vdof)
 {
   // input mesh may have a different dimension than base mesh
   int d = mymesh->getSpaceDimension();
@@ -372,15 +374,15 @@ MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   const auto& faces = mymesh->getCellFaces(c);
   int nfaces = faces.size();
 
-  std::vector<const PolynomialBase*> polys(2);
+  std::vector<const PolynomialBase<>*> polys(2);
   NumericalIntegration numi(mymesh);
 
   int i0, i1, pos;
   AmanziGeometry::Point xv(d);
 
   // number of moments of faces
-  Polynomial pf;
-  if (order_ > 1) { pf.Reshape(d - 1, order_ - 2); }
+  Polynomial<> pf;
+  if (order_ > 1) { pf.reshape(d - 1, order_ - 2); }
 
   int row(nnodes);
   for (int n = 0; n < nfaces; ++n) {
@@ -413,7 +415,7 @@ MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
       for (auto it = pf.begin(); it < pf.end(); ++it) {
         const int* index = it.multi_index();
         double factor = (d == 2) ? 1.0 : std::pow(area, -(double)it.MonomialSetOrder() / 2);
-        Polynomial fmono(d - 1, index, factor);
+        Polynomial<> fmono(d - 1, index, factor);
         fmono.InverseChangeCoordinates(xf, tau);
 
         polys[1] = &fmono;
@@ -428,15 +430,15 @@ MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
     const auto& edges = mymesh->getCellEdges(c);
     int nedges = edges.size();
 
-    Polynomial pe(d - 2, order_ - 2);
+    Polynomial<> pe(d - 2, order_ - 2);
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
 
       // nodal DOFs
-      auto enodes = mymesh->getEdgeNodes(e);
-      i0 = enodes[0];
-      i1 = enodes[1];
+      auto nodes = mymesh->getEdgeNodes(e);
+      i0 = nodes[0]; 
+      i1 = nodes[1]; 
 
       xv = mymesh->getNodeCoordinate(i0);
       pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), i0));
@@ -449,13 +451,13 @@ MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
       // edge moments
       const auto& xe = mymesh->getEdgeCentroid(e);
       double length = mymesh->getEdgeLength(e);
-      AmanziMesh::Point_List tau(1, mymesh->getEdgeVector(e));
+      std::vector<AmanziGeometry::Point> tau(1, mymesh->getEdgeVector(e));
 
       polys[0] = &(ve[n]);
 
       for (auto it = pe.begin(); it < pe.end(); ++it) {
         const int* index = it.multi_index();
-        Polynomial fmono(d - 2, index, 1.0);
+        Polynomial<> fmono(d - 2, index, 1.0);
         fmono.InverseChangeCoordinates(xe, tau);
 
         polys[1] = &fmono;

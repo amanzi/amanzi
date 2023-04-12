@@ -47,16 +47,16 @@ TEST(DARCY_MASS_2D)
   DeRham_Face drc(mfd);
 
   int nfaces = 4, cell = 0;
-  DenseMatrix M;
+  DenseMatrix<> M;
 
   for (int method = 0; method < 3; method++) {
-    Tensor T(2, 2);
+   Tensor<> T(2, 2);
     T(0, 0) = 1.0;
     T(1, 1) = 1.0;
     T(0, 1) = 0.1;
     T(1, 0) = 0.1;
 
-    M.Reshape(nfaces, nfaces);
+    M.reshape(nfaces, nfaces);
     if (method == 0) {
       mfd.MassMatrix(cell, T, M);
     } else if (method == 1) {
@@ -73,7 +73,7 @@ TEST(DARCY_MASS_2D)
     for (int i = 0; i < nfaces; i++) CHECK(M(i, i) > 0.0);
 
     // verify exact integration property
-    auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
+    auto [faces,dirs] = mesh->getCellFacesAndDirections(cell);
 
     double xi, yi, xj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
@@ -129,10 +129,10 @@ TEST(DARCY_MASS_3D)
   DeRham_Face drc(mfd);
 
   int nfaces = 6, cell = 0;
-  DenseMatrix M;
+  DenseMatrix<> M;
 
   for (int method = 0; method < 2; method++) {
-    Tensor T(3, 1);
+   Tensor<> T(3, 1);
     T(0, 0) = 1.0;
 
     if (method == 0) {
@@ -148,7 +148,7 @@ TEST(DARCY_MASS_3D)
     for (int i = 0; i < nfaces; ++i) CHECK(M(i, i) > 0.0);
 
     // verify exact integration property
-    auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
+    auto [faces,dirs] = mesh->getCellFacesAndDirections(cell);
 
     double xi, xj, yj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
@@ -197,18 +197,18 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON)
 
   int nfaces = 6, cell = 0;
   double volume = mesh->getCellVolume(cell);
-  DenseMatrix N, R, M;
-  DenseMatrix B(3, 3);
+  DenseMatrix<> N, R, M;
+  DenseMatrix<> B(3, 3);
 
-  Tensor T(3, 2);
+ Tensor<> T(3, 2);
   T(0, 0) = 0.5;
   T(1, 1) = 0.344827586206897;
   T(2, 2) = 0.103448275862069;
   T(1, 2) = T(2, 1) = -0.03448275862069;
 
   // consistency condition
-  mfd.L2consistency(cell, T, N, M);
-  mfd.L2consistencyInverse(cell, T, R, M);
+  mfd.L2consistency(cell, T, N, M, true);
+  mfd.L2consistencyInverse(cell, T, R, M, true);
 
   B.Multiply(N, R, true);
   for (int i = 0; i < 3; ++i) {
@@ -255,10 +255,10 @@ TEST(DARCY_INVERSE_MASS_3D)
   DeRham_Face drc(mfd);
 
   int nfaces = 6, cell = 0;
-  Tensor T(3, 1); // tensor of rank 1
+ Tensor<> T(3, 1); // tensor of rank 1
   T(0, 0) = 1.0;
 
-  DenseMatrix W;
+  DenseMatrix<> W;
   for (int method = 0; method < 5; method++) {
     if (method == 0) {
       mfd.MassMatrixInverse(cell, T, W);
@@ -281,7 +281,7 @@ TEST(DARCY_INVERSE_MASS_3D)
     // verify exact integration property
     W.Inverse();
 
-    auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
+    auto [faces,dirs] = mesh->getCellFacesAndDirections(cell);
 
     double xi, yi, xj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
@@ -328,12 +328,12 @@ TEST(DARCY_FULL_TENSOR_2D)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/two_cell2.exo");
 
-  DenseMatrix W;
+  DenseMatrix<> W;
   MFD3D_Diffusion mfd(mesh);
 
   for (int cell = 0; cell < 2; cell++) {
     for (int method = 0; method < 7; method++) {
-      Tensor T(2, 2); // tensor of rank 2
+     Tensor<> T(2, 2); // tensor of rank 2
       T(0, 0) = 1.0;
       T(1, 1) = 2.0;
       T(0, 1) = T(1, 0) = 1.0;
@@ -372,7 +372,7 @@ TEST(DARCY_FULL_TENSOR_2D)
       // verify exact integration property
       W.Inverse();
 
-      auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
+      auto [faces,dirs] = mesh->getCellFacesAndDirections(cell);
 
       AmanziGeometry::Point v(1.0, 2.0);
       double xi, xj;
@@ -431,14 +431,14 @@ TEST(DARCY_FULL_TENSOR_3D)
   DeRham_Face drc(mfd);
 
   int nfaces = 6, cell = 0;
-  Tensor T(3, 2); // tensor of rank 2
+ Tensor<> T(3, 2); // tensor of rank 2
   T(0, 0) = 1.0;
   T(1, 1) = 2.0;
   T(2, 2) = 3.0;
   T(0, 1) = T(1, 0) = 1.0;
   T(1, 2) = T(2, 1) = 1.0;
 
-  DenseMatrix W;
+  DenseMatrix<> W;
   for (int method = 0; method < 6; method++) {
     if (method == 0) {
       mfd.MassMatrixInverse(cell, T, W);
@@ -465,7 +465,7 @@ TEST(DARCY_FULL_TENSOR_3D)
     // verify exact integration property
     W.Inverse();
 
-    auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
+    auto [faces,dirs] = mesh->getCellFacesAndDirections(cell);
 
     AmanziGeometry::Point v(1.0, 2.0, 3.0);
     double xi, xj;
@@ -514,10 +514,10 @@ TEST(DARCY_STIFFNESS_2D_NODE)
   MFD3D_Diffusion mfd(mesh);
 
   int nnodes = 5, cell = 0;
-  Tensor T(2, 1);
+ Tensor<> T(2, 1);
   T(0, 0) = 1;
 
-  DenseMatrix A;
+  DenseMatrix<> A;
   for (int method = 0; method < 3; method++) {
     if (method == 0) {
       mfd.StiffnessMatrix(cell, T, A);
@@ -578,10 +578,10 @@ TEST(DARCY_STIFFNESS_2D_EDGE)
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
-  factory_plist->set<bool>("request edges", true);
-  factory_plist->set<bool>("request faces", true);
-  MeshFactory meshfactory(comm, Teuchos::null, factory_plist);
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList()); 
+  factory_plist->set<bool>("request edges", true); 
+  factory_plist->set<bool>("request faces", true); 
+  MeshFactory meshfactory(comm,Teuchos::null,factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
@@ -590,10 +590,10 @@ TEST(DARCY_STIFFNESS_2D_EDGE)
   MFD3D_CrouzeixRaviart mfd(plist, mesh);
 
   int nedges = 5, cell = 0;
-  Tensor T(2, 1);
+ Tensor<> T(2, 1);
   T(0, 0) = 1;
 
-  DenseMatrix A;
+  DenseMatrix<> A;
   for (int method = 0; method < 1; method++) {
     if (method == 0) { mfd.StiffnessMatrix(cell, T, A); }
 
@@ -653,10 +653,10 @@ TEST(DARCY_STIFFNESS_3D)
   MFD3D_Diffusion mfd(mesh);
 
   int nnodes = 20, cell = 0;
-  Tensor T(3, 1);
+ Tensor<> T(3, 1);
   T(0, 0) = 1.0;
 
-  DenseMatrix A;
+  DenseMatrix<> A;
   mfd.StiffnessMatrixMMatrix(cell, T, A);
 
   printf("Stiffness matrix for cell %3d\n", cell);
@@ -720,17 +720,17 @@ TEST(RECOVER_GRADIENT_MIXED)
   auto faces = mesh->getCellFaces(cell);
 
   Point flux(1.0, 2.0, 3.0);
-  std::vector<Polynomial> solution(nfaces);
+  std::vector<Polynomial<>> solution(nfaces);
 
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
     const Point& normal = mesh->getFaceNormal(f);
-    solution[n].Reshape(3, 0);
+    solution[n].reshape(3, 0);
     solution[n](0) = -normal * flux;
   }
 
   // gradient recovery
-  Polynomial gradient(3, 1);
+  Polynomial<> gradient(3, 1);
   mfd.L2Cell(cell, solution, solution, NULL, gradient);
 
   printf("Gradient %f %f %f\n", gradient(1), gradient(2), gradient(3));
@@ -770,13 +770,13 @@ TEST(RECOVER_GRADIENT_NODAL)
   auto nodes = mesh->getCellNodes(cell);
 
   Point slope(1.0, 2.0, 3.0);
-  std::vector<Polynomial> solution(nnodes);
+  std::vector<Polynomial<>> solution(nnodes);
   Point xv(3);
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
     xv = mesh->getNodeCoordinate(v);
-    solution[n].Reshape(3, 0);
+    solution[n].reshape(3, 0);
     solution[n](0) = slope * xv;
   }
 
@@ -814,13 +814,13 @@ TEST(DARCY_INVERSE_MASS_2D)
   MFD3D_Diffusion mfd(mesh);
 
   int ok, nfaces = 12, cell = 0, dim = mesh->getSpaceDimension();
-  Tensor T(dim, 2); // tensor of rank 1
+ Tensor<> T(dim, 2); // tensor of rank 1
   T(0, 0) = 1.0;
   T(1, 1) = 1.0;
   T(2, 2) = 1.0;
   T(0, 1) = T(1, 0) = 0.0;
 
-  DenseMatrix W(nfaces, nfaces);
+  DenseMatrix<> W(nfaces, nfaces);
   for (int method = 0; method < 1; method++) {
     if (method == 0) {
       ok = mfd.MassMatrixInverseMMatrix(cell, T, W);
@@ -841,7 +841,7 @@ TEST(DARCY_INVERSE_MASS_2D)
     W.Inverse();
     T.Inverse();
 
-    auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
+    auto [faces,dirs] = mesh->getCellFacesAndDirections(cell);
 
     double xi, yi, xj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);

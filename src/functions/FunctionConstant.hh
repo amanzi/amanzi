@@ -35,7 +35,19 @@ class FunctionConstant : public Function {
  public:
   FunctionConstant(double c) : c_(c) {}
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionConstant>(*this); }
-  double operator()(const std::vector<double>& x) const { return c_; }
+  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const { return c_; }
+
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out, const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+  {
+    if (ids) {
+      auto ids_loc = *ids;
+      Kokkos::parallel_for(
+        "FunctionConstant::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(ids_loc(i)) = c_; });
+    } else {
+      Kokkos::deep_copy(out, c_);
+    }
+  }
 
  private:
   double c_;

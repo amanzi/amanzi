@@ -1,0 +1,20 @@
+<ParameterList name="CV Function">
+  <ParameterList name="celldataL">
+    <Parameter name="region" type="string" value="LEFT"/>
+    <Parameter name="component" type="string" value="face"/>
+    <ParameterList name="outward normal flux">
+      <ParameterList name="function-constant"> <!-- time component -->
+	<Parameter name="value" type="double" value="0.5"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="celldataR">
+    <Parameter name="region" type="string" value="RIGHT"/>
+    <Parameter name="component" type="string" value="face"/>
+    <ParameterList name="outward normal flux">
+      <ParameterList name="function-constant"> <!-- time component -->
+	<Parameter name="value" type="double" value="2.0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

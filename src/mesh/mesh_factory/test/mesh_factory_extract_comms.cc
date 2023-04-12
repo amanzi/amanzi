@@ -67,24 +67,24 @@ SUITE(MeshFramework)
               Amanzi::AmanziMesh::Parallel_kind::OWNED);
       int local_count = setents.size();
       int global_min_count;
-      std::cout << "Count on rank " << comm->MyPID() << " is " << local_count << std::endl;
-      comm->MinAll(&local_count, &global_min_count, 1);
+      std::cout << "Count on rank " << comm->getRank() << " is " << local_count << std::endl;
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &local_count, &global_min_count);
       AMANZI_ASSERT(global_min_count == 0); // this test only useful for min = 0
 
       int local_cells = parent_mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                                     Amanzi::AmanziMesh::Parallel_kind::OWNED);
       int global_cells;
-      comm->SumAll(&local_cells, &global_cells, 1);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &local_cells, &global_cells);
       CHECK(global_cells == 1000);
 
       // BELOW SEGMENT DEMONSTRATES MSTK ISSUE #112
       int max_cell = -1;
       for (int c = 0; c != local_cells; ++c) {
         max_cell = std::max(
-          max_cell, parent_mesh->getMap(Amanzi::AmanziMesh::Entity_kind::CELL, false).GID(c));
+          max_cell, parent_mesh->getMap(Amanzi::AmanziMesh::Entity_kind::CELL, false)->getGlobalElement(c));
       }
       int global_max_cell;
-      comm->MaxAll(&max_cell, &global_max_cell, 1);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &max_cell, &global_max_cell);
       std::cout << "cell counts: total = " << global_cells << ", max = " << global_max_cell
                 << std::endl;
       // REMOVE COMMENT ONCE MSTK IS UPDATED

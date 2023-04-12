@@ -36,8 +36,6 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class Polynomial;
-
 class MeshMaps {
  public:
   MeshMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
@@ -75,7 +73,7 @@ class MeshMaps {
 
   // Miscalleneous
   // -- projection ffrom reference coordinates (mesh0) to mesh1
-  void ProjectPolynomial(int c, Polynomial& poly) const;
+  void ProjectPolynomial(int c, Polynomial<>& poly) const;
 
   // -- polynomial approximation of map x2 = F(x1)
   int LeastSquareFit(int order,
@@ -98,7 +96,7 @@ void
 MeshMaps::Cofactors(const Matrix& J, Matrix& C) const
 {
   // allocate memory for matrix of cofactors
-  C.Reshape(d_, d_, d_, 0, false);
+  C.reshape(d_, d_, d_, 0, false);
 
   // calculate cofactors
   if (d_ == 2) {

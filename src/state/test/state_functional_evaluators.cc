@@ -89,15 +89,15 @@ SUITE(EVALS)
 
     // calculate field A
     fa_eval->Update(*S, "main");
-    const Epetra_MultiVector& fa =
-      *S->GetW<CompositeVector>("fa", Tags::DEFAULT, "fa").ViewComponent("cell");
+    const auto fa =
+      S->GetW<CompositeVector>("fa", Tags::DEFAULT, "fa").viewComponent<DefaultHostMemorySpace>("cell");
 
     // eval point of 0th cell is:
     // {  1.1, 1, 1, 1 }
     // making the value
     // (  { 1.1, 1, 1, 1 } - {1.0, 2.0, 3.0, 4.0} ) *  {0.5, 1.0, 2.0, 2.0}  + 1
     // = (.05 -1 -4  -6 + 1) = -9.95
-    CHECK_CLOSE(-9.95, fa[0][0], 1e-12);
+    CHECK_CLOSE(-9.95, fa(0,0), 1e-12);
   }
 
 
@@ -182,7 +182,7 @@ SUITE(EVALS)
 
     // calculate field B
     fb_eval->Update(*S, "main");
-    const auto& fb = *S->Get<CompositeVector>("fb", Tags::DEFAULT).ViewComponent("cell");
+    const auto fb = S->Get<CompositeVector>("fb", Tags::DEFAULT).viewComponent<DefaultHostMemorySpace>("cell");
 
     // eval point of 0th cell is:
     // {  1.1, 1, 1, 1 }
@@ -190,6 +190,6 @@ SUITE(EVALS)
     // (  { 1.1, 1, 1, 1 } - {1.0, 2.0, 3.0, 4.0} ) *  {0.5, 1.0, 2.0, 2.0}  + 1
     // = (.05 -1 -4  -6 + 1) = -9.95 and then the value for B = (-9.95 - -1)
     // * 2.0 + 1.0 = -16.9
-    CHECK_CLOSE(-16.9, fb[0][0], 1e-12);
+    CHECK_CLOSE(-16.9, fb(0,0), 1e-12);
   }
 }

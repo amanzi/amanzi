@@ -10,7 +10,7 @@
 /*
 
 Factory functions for creating Inverse objects which implement the
-ApplyInverse() method.
+applyInverse() method.
 
 
 Note that we split these into three approaches --
@@ -51,7 +51,7 @@ of methods.
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Vector.h"
+// #include "Epetra_Vector.h"
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -62,16 +62,17 @@ of methods.
 #include "IterativeMethodPCG.hh"
 #include "IterativeMethodGMRES.hh"
 #include "IterativeMethodBelos.hh"
-#include "DirectMethodAmesos.hh"
+// #include "DirectMethodAmesos.hh"
 #include "DirectMethodAmesos2.hh"
 #include "IterativeMethodNKA.hh"
 
 #include "PreconditionerIdentity.hh"
 #include "PreconditionerDiagonal.hh"
-#include "PreconditionerIfpack.hh"
+#include "PreconditionerIfpack2.hh"
 #include "PreconditionerHypre.hh"
-#include "PreconditionerML.hh"
+// #include "PreconditionerML.hh"
 #include "PreconditionerMueLu.hh"
+#include "PreconditionerGinkgo.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -154,8 +155,6 @@ mergePreconditionerSolverLists(const std::string& pc_name,
                                bool make_one_iteration = false)
 {
   Teuchos::ParameterList inv_list;
-  std::string list_name;
-
   if (!ls_name.empty() && ls_name != "none") {
     if (!ls_list.isSublist(ls_name)) {
       Errors::Message msg;
@@ -165,7 +164,6 @@ mergePreconditionerSolverLists(const std::string& pc_name,
     } else {
       inv_list.setParameters(ls_list.sublist(ls_name));
     }
-    list_name = ls_name + " with ";
   }
   if (!pc_name.empty() && pc_name != "none") {
     if (!pc_list.isSublist(pc_name)) {
@@ -176,11 +174,8 @@ mergePreconditionerSolverLists(const std::string& pc_name,
     } else {
       inv_list.setParameters(pc_list.sublist(pc_name));
     }
-    list_name += pc_name;
   }
   if (make_one_iteration) setMakeOneIterationCriteria(inv_list);
-
-  inv_list.setName(list_name);
   return inv_list;
 }
 
@@ -199,6 +194,8 @@ template <class Operator,
 Teuchos::RCP<Inverse<Operator, Preconditioner, Vector, VectorSpace>>
 createIterativeMethod(const std::string& method_name, Teuchos::ParameterList& inv_list)
 {
+  auto& method_list = Impl::getMethodSublist(inv_list, method_name);
+
   Teuchos::RCP<Inverse<Operator, Preconditioner, Vector, VectorSpace>> inv;
   if (method_name == "gmres") {
     inv = Teuchos::rcp(new IterativeMethodGMRES<Operator, Preconditioner, Vector, VectorSpace>());
@@ -214,6 +211,10 @@ createIterativeMethod(const std::string& method_name, Teuchos::ParameterList& in
     Exceptions::amanzi_throw(msg);
   }
 
+  if (inv.get()) {
+    inv->set_name(Keys::cleanPListName(inv_list.name()));
+    inv->set_inverse_parameters(method_list);
+  }
   return inv;
 }
 
@@ -234,11 +235,6 @@ createIterativeMethod(Teuchos::ParameterList& inv_list,
   auto inv =
     createIterativeMethod<Operator, Preconditioner, Vector, VectorSpace>(method_name, inv_list);
   inv->set_matrices(m, h);
-
-  auto& method_list = Impl::getMethodSublist(inv_list, method_name);
-  inv->set_name(Keys::cleanPListName(inv_list.name()));
-  inv->set_inverse_parameters(method_list);
-
   return inv;
 }
 
@@ -251,11 +247,6 @@ createIterativeMethod(Teuchos::ParameterList& inv_list, const Teuchos::RCP<Opera
   auto method_name = inv_list.get<std::string>("iterative method");
   auto inv = createIterativeMethod<Operator, Operator, Vector, VectorSpace>(method_name, inv_list);
   inv->set_matrices(m, m);
-
-  auto& method_list = Impl::getMethodSublist(inv_list, method_name);
-  inv->set_name(Keys::cleanPListName(inv_list.name()));
-  inv->set_inverse_parameters(method_list);
-
   return inv;
 }
 
@@ -263,9 +254,7 @@ createIterativeMethod(Teuchos::ParameterList& inv_list, const Teuchos::RCP<Opera
 //
 // Assembled methods work on matrices.
 //
-template <class Matrix = Epetra_CrsMatrix,
-          class Vector = Epetra_Vector,
-          class VectorSpace = Epetra_Map>
+template <class Matrix = Matrix_type, class Vector = Vector_type, class VectorSpace = Map_type>
 Teuchos::RCP<Inverse<Matrix, Matrix, Vector, VectorSpace>>
 createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& inv_list)
 {
@@ -273,53 +262,50 @@ createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& in
 
   Teuchos::RCP<Inverse<Matrix, Matrix, Vector, VectorSpace>> inv = Teuchos::null;
   if (Keys::starts_with(method_name, "amesos")) {
-    int amesos_version = 0;
-    // figure out the version
-    // -- old style -- from a parameter
-    if (method_list.isParameter("amesos version")) {
-      amesos_version = method_list.get<int>("amesos version");
-    } else if (Keys::starts_with(method_name, "amesos2")) {
-      amesos_version = 2;
-    } else {
-      amesos_version = 1;
-    }
-    if (amesos_version == 1) {
-      inv = Teuchos::rcp(new DirectMethodAmesos());
-    } else {
-      inv = Teuchos::rcp(new DirectMethodAmesos2());
-    }
+    // int amesos_version = 0;
+    //  figure out the version
+    //  -- old style -- from a parameter
+    // if (method_list.isParameter("amesos version")) {
+    //   amesos_version = method_list.get<int>("amesos version");
+    // } else if (Keys::starts_with(method_name, "amesos2")) {
+    //   amesos_version = 2;
+    // } else {
+    //   assert(false && "Amesos is not supported");
+    //   amesos_version = 1;
+    // }
+    inv = Teuchos::rcp(new DirectMethodAmesos2());
   } else if (method_name == "diagonal") {
     inv = Teuchos::rcp(new PreconditionerDiagonal());
-  } else if (method_name == "block ilu") {
-    method_list.set<std::string>("method", "ILU");
-    inv = Teuchos::rcp(new PreconditionerIfpack());
-  } else if (Keys::starts_with(method_name, "ifpack: ")) {
-    method_list.set<std::string>(
-      "method", method_name.substr(std::string("ifpack: ").length(), method_name.length()));
-    inv = Teuchos::rcp(new PreconditionerIfpack());
+    //} else if (method_name == "block ilu") {
+    //  method_list.set<std::string>("method", "ifpack2: ");
+    //  inv = Teuchos::rcp(new PreconditionerIfpack2());
   } else if (Keys::starts_with(method_name, "ifpack2: ")) {
     method_list.set<std::string>(
       "method", method_name.substr(std::string("ifpack2: ").length(), method_name.length()));
-    inv = Teuchos::rcp(new PreconditionerIfpack());
-  } else if (method_name == "boomer amg" || method_name == "ILU" || method_name == "ams") {
-    method_list.set<std::string>("method", method_name);
-    inv = Teuchos::rcp(new PreconditionerHypre());
+    inv = Teuchos::rcp(new PreconditionerIfpack2());
   } else if (Keys::starts_with(method_name, "hypre: ")) {
     method_list.set<std::string>(
       "method", method_name.substr(std::string("hypre: ").length(), method_name.length()));
     inv = Teuchos::rcp(new PreconditionerHypre());
-  } else if (method_name == "ml") {
-    inv = Teuchos::rcp(new PreconditionerML());
+#ifdef HAVE_IFPACK2_GINKGO
+  } else if (Keys::startsWith(method_name, "Ginkgo: ")) {
+    method_list.set<std::string>(
+      "method", method_name.substr(std::string("Ginkgo: ").length(), method_name.length()));
+    inv = Teuchos::rcp(new PreconditionerGinkgo());
+#endif
+    // } else if (method_name == "ml") {
+    //   inv = Teuchos::rcp(new PreconditionerML());
   } else if (method_name == "muelu") {
     inv = Teuchos::rcp(new PreconditionerMueLu());
+
   } else if (method_name == "identity") {
     inv = Teuchos::rcp(new PreconditionerIdentity<Matrix, Matrix, Vector, VectorSpace>());
 
   } else {
     Errors::Message msg;
     msg << "Direct method \"" << method_name
-        << "\" is not a valid name. Currently only \"amesos: *\" or \"amesos2: *\" are valid "
-           "options.";
+        << "\" is not a valid name. Currently only \"amesos: *\" or \"amesos2: "
+           "*\" are valid options.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -329,7 +315,6 @@ createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& in
   }
   return inv;
 }
-
 
 //
 // Higher level method that parses all of iterative, direct, and precondioners,
@@ -352,9 +337,9 @@ createInverse(Teuchos::ParameterList& inv_list,
 {
   // deal with deprecated option
   if (inv_list.isParameter("preconditioner type")) {
-    Impl::warn(
-      "InverseFactory: DEPRECATION -- please rename \"preconditioner type\" to \"preconditioning "
-      "method\".  \"preconditioner type\" may silently be ignored in the future.");
+    Impl::warn("InverseFactory: DEPRECATION -- please rename \"preconditioner "
+               "type\" to \"preconditioning method\".  \"preconditioner type\" "
+               "may silently be ignored in the future.");
     if (!inv_list.isParameter("preconditioning method"))
       inv_list.set<std::string>("preconditioning method",
                                 inv_list.get<std::string>("preconditioner type"));
@@ -374,8 +359,8 @@ createInverse(Teuchos::ParameterList& inv_list,
     method_name = "identity";
     Impl::warn(std::string("InverseFactory: WARNING -- iterative method \"") +
                inv_list.get<std::string>("iterative method") +
-               "\" requires a preconditioner, but no parameter \"preconditioning method\" was "
-               "supplied: using \"identity\"");
+               "\" requires a preconditioner, but no parameter "
+               "\"preconditioning method\" was supplied: using \"identity\"");
   } else {
     Errors::Message msg("InverseFactory (Assembler): at least one of \"direct method\", "
                         "\"iterative method\", or \"preconditioning method\" must be supplied.");
@@ -396,8 +381,8 @@ createInverse(Teuchos::ParameterList& inv_list,
 
   if (inv_list.isParameter("iterative method")) {
     if (inv_list.isParameter("direct method")) {
-      Impl::warn("InverseFactory: WARNING -- both \"direct method\" and \"iterative method\" were "
-                 "supplied -- using the direct method.");
+      Impl::warn("InverseFactory: WARNING -- both \"direct method\" and \"iterative "
+                 "method\" were supplied -- using the direct method.");
     } else {
       auto iter_inv =
         createIterativeMethod<Operator, Inverse_t, Vector, VectorSpace>(inv_list, m, dir_inv);
@@ -407,7 +392,6 @@ createInverse(Teuchos::ParameterList& inv_list,
   return inv;
 }
 
-
 template <class Operator,
           class Vector = typename Operator::Vector_t,
           class VectorSpace = typename Operator::VectorSpace_t>
@@ -416,7 +400,6 @@ createInverse(Teuchos::ParameterList& inv_list, const Teuchos::RCP<Operator>& m)
 {
   return createInverse<Operator, Operator, Vector, VectorSpace>(inv_list, m, m);
 }
-
 
 //
 // Factory style preferred in Amanzi -- a global, const plist of options,
