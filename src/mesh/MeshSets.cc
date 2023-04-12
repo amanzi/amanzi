@@ -181,10 +181,11 @@ resolveMeshSet_(const AmanziGeometry::Region& region,
 
   } else if (AmanziGeometry::RegionType::ALL == region.get_type()) {
     result = resolveMeshSetAll(region, kind, ptype, mesh);
-
   } else if (AmanziGeometry::RegionType::BOUNDARY == region.get_type()) {
     result = resolveMeshSetBoundary(region, kind, ptype, mesh);
-
+  } else if (AmanziGeometry::RegionType::LINE_SEGMENT == region.get_type()){
+    Double_View vofs; 
+    result = resolveMeshSetVolumeFractions(region, kind, ptype, vofs, mesh);
   } else {
     // geometric
     result = resolveMeshSetGeometric(region, kind, ptype, mesh);
