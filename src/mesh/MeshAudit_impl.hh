@@ -360,7 +360,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_cell_to_nodes() const
 {
   Entity_ID_List bad_cells, bad_cells1;
   Entity_ID_View free_nodes;
-  cEntity_ID_View cnode;
+  View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
     try {
@@ -397,7 +397,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_cell_to_nodes() const
 template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_node_refs_by_cells() const
 {
-  cEntity_ID_View cnode;
+  View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
   std::vector<bool> ref(nnodes_all_, false);
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
@@ -429,7 +429,7 @@ template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_cell_to_faces() const
 {
   Entity_ID_List bad_cells, bad_cells1;
-  cEntity_ID_View cface;
+  View_type<const Entity_ID, MemSpace_kind::HOST> cface;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
     try {
@@ -468,7 +468,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_cell_to_faces() const
 template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_face_refs_by_cells() const
 {
-  cEntity_ID_View cface;
+  View_type<const Entity_ID, MemSpace_kind::HOST> cface;
   std::vector<unsigned int> refs(nfaces_all_, 0);
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
@@ -512,7 +512,7 @@ template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_face_to_nodes() const
 {
   Entity_ID_List bad_faces, bad_faces1;
-  cEntity_ID_View fnode;
+  View_type<const Entity_ID, MemSpace_kind::HOST> fnode;
 
   for (Entity_ID j = 0; j < nfaces_all_; ++j) {
     try {
@@ -549,7 +549,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_face_to_nodes() const
 template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_node_refs_by_faces() const
 {
-  cEntity_ID_View fnode;
+  View_type<const Entity_ID, MemSpace_kind::HOST> fnode;
   std::vector<bool> ref(nnodes_all_, false);
 
   for (Entity_ID j = 0; j < nfaces_all_; ++j) {
@@ -580,8 +580,8 @@ bool MeshAudit_Geometry<Mesh_type>::check_node_refs_by_faces() const
 template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_cell_to_face_dirs() const
 {
-  cEntity_ID_View faces;
-  cEntity_Direction_View fdirs;
+  View_type<const Entity_ID, MemSpace_kind::HOST> faces;
+  View_type<const Direction_type, MemSpace_kind::HOST> fdirs;
   Entity_ID_List bad_cells, bad_cells_exc;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
@@ -625,7 +625,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_cell_degeneracy() const
 {
   os_ << "Checking cells for topological degeneracy ..." << std::endl;
 
-  cEntity_ID_View cnode;
+  View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
   Entity_ID_List bad_cells;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
@@ -655,6 +655,11 @@ bool MeshAudit_Geometry<Mesh_type>::check_cell_degeneracy() const
 template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_cell_to_faces_to_nodes() const
 {
+  View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
+  View_type<const Entity_ID, MemSpace_kind::HOST> cface;
+  Entity_ID_View fnode_ref;
+  View_type<const Entity_ID, MemSpace_kind::HOST> fnode;
+  View_type<const Direction_type, MemSpace_kind::HOST> fdirs;
   Entity_ID_List bad_cells0;
   Entity_ID_List bad_cells1;
 
@@ -788,7 +793,7 @@ template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_cell_to_coordinates() const
 {
   int spdim = mesh_->getSpaceDimension();
-  cEntity_ID_View cnode;
+  View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
   Entity_ID_List bad_cells, bad_cells_exc;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
@@ -841,7 +846,7 @@ template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_face_to_coordinates() const
 {
   int spdim = mesh_->getSpaceDimension();
-  cEntity_ID_View fnode;
+  View_type<const Entity_ID, MemSpace_kind::HOST> fnode;
   Entity_ID_List bad_faces, bad_faces_exc;
 
   for (Entity_ID j = 0; j < nfaces_all_; ++j) {
@@ -896,11 +901,11 @@ bool MeshAudit_Geometry<Mesh_type>::check_face_cell_adjacency_consistency() cons
     try {
       bool bad_data = false;
 
-      cEntity_ID_View fcells;
+      View_type<const Entity_ID, MemSpace_kind::HOST> fcells;
       mesh_->getFaceCells(f, Parallel_kind::ALL, fcells);
       for (const auto& c : fcells) {
-        cEntity_ID_View cfaces;
-        cEntity_Direction_View cfdirs;
+        View_type<const Entity_ID, MemSpace_kind::HOST> cfaces;
+        View_type<const Direction_type, MemSpace_kind::HOST> cfdirs;
         mesh_->getCellFacesAndDirs(c, cfaces, &cfdirs);
 
         // find the match
@@ -971,7 +976,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_face_normal_relto_cell() const
     try {
       auto fc = mesh_->getFaceCentroid(j);
 
-      cEntity_ID_View fcells;
+      View_type<const Entity_ID, MemSpace_kind::HOST> fcells;
       mesh_->getFaceCells(j, Parallel_kind::ALL, fcells);
       for (int k = 0; k < fcells.size(); ++k) {
         AmanziGeometry::Point cc = mesh_->getCellCentroid(fcells[k]);
@@ -1015,7 +1020,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_face_normal_orientation() const
     try {
       AmanziGeometry::Point fnormal = mesh_->getFaceNormal(j);
 
-      cEntity_ID_View fcells;
+      View_type<const Entity_ID, MemSpace_kind::HOST> fcells;
       mesh_->getFaceCells(j, Parallel_kind::ALL, fcells);
       for (int k = 0; k < fcells.size(); ++k) {
         int orientation = 0;
@@ -1269,7 +1274,7 @@ bool MeshAudit_Maps<Mesh_type>::check_face_to_nodes_ghost_data() const
   int nface_own = face_map_own.NumMyElements();
   int nface_use = face_map_use.NumMyElements();
 
-  cEntity_ID_View fnode;
+  View_type<const Entity_ID, MemSpace_kind::HOST> fnode;
   Entity_ID_List bad_faces, bad_faces1, bad_faces2;
 
   // Create a matrix of the GIDs for all owned faces.
@@ -1392,7 +1397,7 @@ bool MeshAudit_Maps<Mesh_type>::check_cell_to_nodes_ghost_data() const
   int ncell_own = cell_map_own.NumMyElements();
   int ncell_use = cell_map_use.NumMyElements();
 
-  cEntity_ID_View cnode;
+  View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
   Entity_ID_List bad_cells;
 
   int maxnodes = 0;
@@ -1477,7 +1482,7 @@ bool MeshAudit_Maps<Mesh_type>::check_cell_to_faces_ghost_data() const
   int ncell_own = cell_map_own.NumMyElements();
   int ncell_use = cell_map_use.NumMyElements();
 
-  cEntity_ID_View cface;
+  View_type<const Entity_ID, MemSpace_kind::HOST> cface;
   Entity_ID_List bad_cells;
 
   // Create a matrix of the GIDs for all owned cells.
@@ -1936,7 +1941,7 @@ bool MeshAudit_Maps<Mesh_type>::check_face_partition() const
   // Mark all the faces contained by owned cells.
   bool owned[nfaces_all_];
   for (int j = 0; j < nfaces_all_; ++j) owned[j] = false;
-  cEntity_ID_View cface;
+  View_type<const Entity_ID, MemSpace_kind::HOST> cface;
   for (Entity_ID j = 0; j < mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).NumMyElements(); ++j) {
     mesh_->getCellFaces(j, cface);
     for (int k = 0; k < cface.size(); ++k) owned[cface[k]] = true;
@@ -1964,7 +1969,7 @@ bool MeshAudit_Maps<Mesh_type>::check_node_partition() const
   // Mark all the nodes contained by owned cells.
   bool owned[nnodes_all_];
   for (int j = 0; j < nnodes_all_; ++j) owned[j] = false;
-  cEntity_ID_View cnode;
+  View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
   for (Entity_ID j = 0; j < mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).NumMyElements(); ++j) {
     mesh_->getCellNodes(j, cnode);
     for (int k = 0; k < cnode.size(); ++k) owned[cnode[k]] = true;
@@ -1988,7 +1993,7 @@ bool MeshAudit_Maps<Mesh_type>::check_node_partition() const
 
 // Returns true if the values in the list are distinct -- no repeats.
 template<class Mesh_type>
-bool MeshAudit_Base<Mesh_type>::areDistinctValues_(const cEntity_ID_View &list) const
+bool MeshAudit_Base<Mesh_type>::areDistinctValues_(const View_type<const Entity_ID, MemSpace_kind::HOST> &list) const
 {
   Entity_ID_List copy(list.data(), list.data()+list.size());
   sort(copy.begin(), copy.end());
@@ -2002,7 +2007,7 @@ bool MeshAudit_Base<Mesh_type>::areDistinctValues_(const cEntity_ID_View &list) 
 // faces.  Implicitly assumes non-degenerate faces; the results are not
 // reliable otherwise.
 template<class Mesh_type>
-int MeshAudit_Base<Mesh_type>::isSameFace_(const cEntity_ID_View fnode1, const cEntity_ID_View fnode2) const
+int MeshAudit_Base<Mesh_type>::isSameFace_(const View_type<const Entity_ID, MemSpace_kind::HOST> fnode1, const View_type<const Entity_ID, MemSpace_kind::HOST> fnode2) const
 {
   int nn = fnode1.size();
 

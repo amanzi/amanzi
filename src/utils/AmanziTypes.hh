@@ -30,6 +30,8 @@
 
 #  include "Epetra_MpiComm.h"
 #  include "Epetra_SerialComm.h"
+#  include "Epetra_Map.h"
+#  include "Epetra_Import.h"
 #endif
 
 namespace Teuchos {
@@ -42,6 +44,17 @@ rcp(std::unique_ptr<T>&& in)
 } // namespace Teuchos
 
 namespace Amanzi {
+
+using DefaultExecutionSpace = Kokkos::DefaultExecutionSpace;
+using DefaultHostExecutionSpace = Kokkos::DefaultHostExecutionSpace;
+
+using DefaultMemorySpace = DefaultExecutionSpace::memory_space;
+using DefaultHostMemorySpace = DefaultHostExecutionSpace::memory_space;
+
+using HostSpace = Kokkos::HostSpace;
+using DefaultDevice = Kokkos::Device<DefaultExecutionSpace, DefaultMemorySpace>;
+using DefaultHost = Kokkos::Device<DefaultHostExecutionSpace, DefaultHostMemorySpace>;
+
 
 #ifdef TRILINOS_TPETRA_STACK
 typedef Teuchos::Comm<int> Comm_type;
@@ -58,6 +71,10 @@ typedef Epetra_SerialComm SerialComm_type;
 #endif
 
 typedef Teuchos::RCP<const Comm_type> Comm_ptr_type;
+using Map_type = Epetra_Map;
+using Map_ptr_type = Teuchos::RCP<Map_type>;
+using Import_type = Epetra_Import;
+using Import_ptr_type = Teuchos::RCP<Import_type>;
 
 
 enum class MemSpace_kind {

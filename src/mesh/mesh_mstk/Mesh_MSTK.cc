@@ -472,8 +472,8 @@ Cell_kind Mesh_MSTK::getCellType(const Entity_ID cellid) const
 // direction as the cell polygon, and -1 otherwise
 //---------------------------------------------------------
 void Mesh_MSTK::getCellFacesAndDirs_ordered_(const Entity_ID cellid,
-                                                cEntity_ID_View& faceids,
-                                                cEntity_Direction_View * face_dirs) const
+                                                View_type<const Entity_ID,MemSpace_kind::HOST>& faceids,
+                                                View_type<const Direction_type,MemSpace_kind::HOST> * face_dirs) const
 {
   if (getManifoldDimension() == 3) {
     Cell_kind celltype = getCellType(cellid);
@@ -606,8 +606,8 @@ void Mesh_MSTK::getCellFacesAndDirs_ordered_(const Entity_ID cellid,
 
 
 void Mesh_MSTK::getCellFacesAndDirs_unordered_(const Entity_ID cellid,
-        cEntity_ID_View& faceids,
-        cEntity_Direction_View * face_dirs) const
+        View_type<const Entity_ID,MemSpace_kind::HOST>& faceids,
+        View_type<const Direction_type,MemSpace_kind::HOST> * face_dirs) const
 {
   
   Entity_ID_View lfaceids; 
@@ -695,8 +695,8 @@ void Mesh_MSTK::getCellFacesAndDirs_unordered_(const Entity_ID cellid,
 
 
 void Mesh_MSTK::getCellFacesAndDirs(const Entity_ID cellid,
-        cEntity_ID_View& faceids,
-        cEntity_Direction_View * const face_dirs) const
+        View_type<const Entity_ID,MemSpace_kind::HOST>& faceids,
+        View_type<const Direction_type,MemSpace_kind::HOST> * const face_dirs) const
 {
   AMANZI_ASSERT(faces_initialized_);
   if (cells_initialized_) {
@@ -708,7 +708,7 @@ void Mesh_MSTK::getCellFacesAndDirs(const Entity_ID cellid,
 
 
 void Mesh_MSTK::getCellEdges(const Entity_ID cellid,
-        cEntity_ID_View& edgeids) const
+        View_type<const Entity_ID,MemSpace_kind::HOST>& edgeids) const
 {
   Entity_ID_View ledgeids; 
   AMANZI_ASSERT(edges_initialized_);
@@ -789,7 +789,7 @@ void Mesh_MSTK::getCellEdges(const Entity_ID cellid,
 // consistent with the face normal
 //---------------------------------------------------------
 void Mesh_MSTK::getCellNodes(const Entity_ID cellid,
-                               cEntity_ID_View& nodeids) const
+                               View_type<const Entity_ID,MemSpace_kind::HOST>& nodeids) const
 {
   Entity_ID_View lnodeids; 
   int nn, lid;
@@ -821,8 +821,8 @@ void Mesh_MSTK::getCellNodes(const Entity_ID cellid,
 
 
 void Mesh_MSTK::getFaceEdgesAndDirs(const Entity_ID faceid,
-                                                  cEntity_ID_View& edgeids,
-                                                  cEntity_Direction_View * edge_dirs) const
+                                                  View_type<const Entity_ID,MemSpace_kind::HOST>& edgeids,
+                                                  View_type<const Direction_type,MemSpace_kind::HOST> * edge_dirs) const
 {  
   AMANZI_ASSERT(faces_initialized_);
   AMANZI_ASSERT(edges_initialized_);
@@ -898,7 +898,7 @@ void Mesh_MSTK::getFaceEdgesAndDirs(const Entity_ID faceid,
 // In 2D, nfnodes is 2
 //---------------------------------------------------------
 void Mesh_MSTK::getFaceNodes(const Entity_ID faceid,
-                           cEntity_ID_View& nodeids) const
+                           View_type<const Entity_ID,MemSpace_kind::HOST>& nodeids) const
 {
   AMANZI_ASSERT(faces_initialized_);
   Entity_ID_View lnodeids; 
@@ -939,7 +939,7 @@ void Mesh_MSTK::getFaceNodes(const Entity_ID faceid,
 // Get nodes of an edge
 //---------------------------------------------------------
 void Mesh_MSTK::getEdgeNodes(const Entity_ID edgeid,
-                           cEntity_ID_View& nodes) const
+                           View_type<const Entity_ID,MemSpace_kind::HOST>& nodes) const
 {
   Entity_ID_View lnodes; 
   AMANZI_ASSERT(edges_initialized_);
@@ -963,7 +963,7 @@ void Mesh_MSTK::getEdgeNodes(const Entity_ID edgeid,
 //---------------------------------------------------------
 void Mesh_MSTK::getNodeCells(const Entity_ID nodeid,
                            const Parallel_kind ptype,
-                           cEntity_ID_View& cellids) const
+                           View_type<const Entity_ID,MemSpace_kind::HOST>& cellids) const
 {
   Entity_ID_View lcellids; 
   int idx, lid, nc;
@@ -1041,7 +1041,7 @@ void Mesh_MSTK::getNodeCells(const Entity_ID nodeid,
 //---------------------------------------------------------
 void Mesh_MSTK::getNodeFaces(const Entity_ID nodeid,
                            const Parallel_kind ptype,
-                           cEntity_ID_View& faceids) const
+                           View_type<const Entity_ID,MemSpace_kind::HOST>& faceids) const
 {
   Entity_ID_View lfaceids; 
   int idx, lid, n;
@@ -1116,7 +1116,7 @@ void Mesh_MSTK::getNodeFaces(const Entity_ID nodeid,
 //---------------------------------------------------------
 void Mesh_MSTK::getNodeEdges(const Entity_ID nodeid,
                            const Parallel_kind ptype,
-                           cEntity_ID_View& edgeids) const
+                           View_type<const Entity_ID,MemSpace_kind::HOST>& edgeids) const
 {
   Entity_ID_View ledgeids; 
   int idx, lid, nc;
@@ -1160,7 +1160,7 @@ void Mesh_MSTK::getNodeEdges(const Entity_ID nodeid,
 //---------------------------------------------------------
 void Mesh_MSTK::getEdgeFaces(const Entity_ID edgeid,
                            const Parallel_kind ptype,
-                           cEntity_ID_View& faceids) const
+                           View_type<const Entity_ID,MemSpace_kind::HOST>& faceids) const
 {
   Entity_ID_View lfaceids; 
   int idx, lid, nc;
@@ -1204,7 +1204,7 @@ void Mesh_MSTK::getEdgeFaces(const Entity_ID edgeid,
 //---------------------------------------------------------
 void Mesh_MSTK::getEdgeCells(const Entity_ID edgeid,
                            const Parallel_kind ptype,
-                           cEntity_ID_View& cellids) const
+                           View_type<const Entity_ID,MemSpace_kind::HOST>& cellids) const
 {
   Entity_ID_View lcellids; 
   MEdge_ptr me = (MEdge_ptr) edge_id_to_handle_[edgeid];
@@ -1249,7 +1249,7 @@ void Mesh_MSTK::getEdgeCells(const Entity_ID edgeid,
 //---------------------------------------------------------
 void Mesh_MSTK::getFaceCells(const Entity_ID faceid,
         const Parallel_kind ptype,
-        cEntity_ID_View& cellids) const
+        View_type<const Entity_ID,MemSpace_kind::HOST>& cellids) const
 {
   AMANZI_ASSERT(faces_initialized_);
   Entity_ID_List vcellids; 
@@ -1975,7 +1975,7 @@ void
 Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
                             const Entity_kind kind,
                             const Parallel_kind ptype,
-                            cEntity_ID_View& entids) const
+                            View_type<const Entity_ID,MemSpace_kind::HOST>& entids) const
 {
   Entity_ID_View lentids; 
   if (kind != createEntityKind(region.entity_str())) {
