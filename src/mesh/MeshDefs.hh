@@ -22,6 +22,7 @@
 #include "Epetra_Import.h"
 
 #include "errors.hh"
+#include "AmanziTypes.hh"
 #include "Point.hh"
 
 #include "MeshView.hh"
@@ -32,16 +33,31 @@ namespace AmanziMesh {
 //
 // Typedefs
 //
+using size_type = Kokkos::MeshView<int*, Kokkos::DefaultHostExecutionSpace>::size_type;
 using Entity_ID = int;
 using Entity_GID = int;
 using Set_ID = int;
-using size_type = Kokkos::MeshView<int*, Kokkos::DefaultHostExecutionSpace>::size_type;
+using Direction_type = int;
+
+namespace Impl {
+template <MemSpace_kind MEM>
+struct MemorySpace {
+  using space = Amanzi::DefaultMemorySpace;
+};
+
+template <>
+struct MemorySpace<MemSpace_kind::HOST> {
+  using space = Amanzi::DefaultHostMemorySpace;
+};
+
+} // namespace Impl
 
 //
 // Views are on host or device
 //
-template <typename T>
-using View_type = Kokkos::MeshView<T*, Kokkos::DefaultHostExecutionSpace>;
+template <typename T, MemSpace_kind MEM = MemSpace_kind::HOST>
+using View_type = Kokkos::MeshView<T*, typename Impl::MemorySpace<MEM>::space>;
+
 using Entity_ID_View = View_type<Entity_ID>;
 using cEntity_ID_View = View_type<const Entity_ID>;
 using Entity_GID_View = View_type<Entity_GID>;
@@ -82,12 +98,6 @@ struct RaggedArray_View {
 };
 
 
-using Map_type = Epetra_Map;
-using Map_ptr_type = Teuchos::RCP<Map_type>;
-using Import_type = Epetra_Import;
-using Import_ptr_type = Teuchos::RCP<Import_type>;
-
-
 // Cells (aka zones/elements) are the highest dimension entities in a mesh
 // Nodes (aka vertices) are lowest dimension entities in a mesh
 // Faces in a 3D mesh are 2D entities, in a 2D mesh are 1D entities
@@ -104,11 +114,6 @@ enum Entity_kind : int {
   BOUNDARY_FACE = 13
 };
 
-// Check if Entity_kind is valid
-// inline
-// bool validEntityKind (const int kind) {
-//   return (kind >= Entity_kind::NODE && kind <= Entity_kind::CELL);
-// }
 
 // entity kind from string
 inline Entity_kind
@@ -266,7 +271,6 @@ createPartitionerType(const std::string& pstring)
 }
 
 enum class AccessPattern_kind { DEFAULT, ANY, CACHE, COMPUTE, FRAMEWORK };
-
 
 using MeshSets = std::map<std::tuple<std::string, Entity_kind, Parallel_kind>, Entity_ID_DualView>;
 using MeshSetVolumeFractions =

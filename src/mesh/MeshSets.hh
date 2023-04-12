@@ -38,13 +38,13 @@ class MeshCache;
 // This casts as needed to find the right implementation.  Note that some
 // require casting, some do not, so we avoid if possible.
 //
-cEntity_ID_View
+View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSet(const AmanziGeometry::Region& region,
                const Entity_kind kind,
                const Parallel_kind ptype,
                const MeshCache<MemSpace_kind::HOST>& mesh);
 
-cEntity_ID_View
+View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
                               const Entity_kind kind,
                               const Parallel_kind ptype,
@@ -54,63 +54,63 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
 
 namespace Impl {
 
-cEntity_ID_View
+View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSet_(const AmanziGeometry::Region& region,
                 const Entity_kind kind,
                 const Parallel_kind ptype,
                 const MeshCache<MemSpace_kind::HOST>& mesh);
 
-cEntity_ID_View
+View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveBoundaryEntityMeshSet(const AmanziGeometry::Region& region,
                              const Entity_kind kind,
                              const Parallel_kind ptype,
                              const MeshCache<MemSpace_kind::HOST>& parent_mesh);
 
-cEntity_ID_View
+View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveIDMeshSetFromParent(const AmanziGeometry::Region& region,
                            const Entity_kind kind,
                            const Parallel_kind ptype,
                            const MeshCache<MemSpace_kind::HOST>& mesh,
                            const MeshCache<MemSpace_kind::HOST>& parent_mesh);
 
-cEntity_ID_View
+View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveGeometricMeshSetFromParent(const AmanziGeometry::Region& region,
                                   const Entity_kind kind,
                                   const Parallel_kind ptype,
                                   const MeshCache<MemSpace_kind::HOST>& mesh,
                                   const MeshCache<MemSpace_kind::HOST>& parent_mesh);
 
-cEntity_ID_View
+View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetAll(const AmanziGeometry::Region& region,
                   const Entity_kind kind,
                   const Parallel_kind ptype,
                   const MeshCache<MemSpace_kind::HOST>& mesh);
 
-cEntity_ID_View
+View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetBoundary(const AmanziGeometry::Region& region,
                        const Entity_kind kind,
                        const Parallel_kind ptype,
                        const MeshCache<MemSpace_kind::HOST>& mesh);
 
-cEntity_ID_View
+View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
                          const Entity_kind kind,
                          const Parallel_kind ptype,
                          const MeshCache<MemSpace_kind::HOST>& mesh);
 
-cEntity_ID_View
+View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetGeometric(const AmanziGeometry::Region& region,
                         const Entity_kind kind,
                         const Parallel_kind ptype,
                         const MeshCache<MemSpace_kind::HOST>& mesh);
 
-cEntity_ID_View
+View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetLabeledSet(const AmanziGeometry::RegionLabeledSet& region,
                          const Entity_kind kind,
                          const Parallel_kind ptype,
                          const MeshCache<MemSpace_kind::HOST>& mesh);
 
-cEntity_ID_View
+View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
                       const Entity_kind kind,
                       const Parallel_kind ptype,
@@ -122,22 +122,23 @@ resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
                     const Parallel_kind ptype,
                     const MeshCache<MemSpace_kind::HOST>& mesh);
 
-
-cEntity_ID_View
+View_type<const Entity_ID, MemSpace_kind::HOST>
 filterParentEntities(const MeshCache<MemSpace_kind::HOST>& mesh,
                      Entity_kind kind,
                      Parallel_kind ptype,
-                     const cEntity_ID_View& parent_entities);
+                     const View_type<const Entity_ID, MemSpace_kind::HOST>& parent_entities);
 
-cEntity_ID_View
-filterParentEntities_SurfaceCellToCell(const MeshCache<MemSpace_kind::HOST>& mesh,
-                                       Parallel_kind ptype,
-                                       const cEntity_ID_View& parent_entities);
+View_type<const Entity_ID, MemSpace_kind::HOST>
+filterParentEntities_SurfaceCellToCell(
+  const MeshCache<MemSpace_kind::HOST>& mesh,
+  Parallel_kind ptype,
+  const View_type<const Entity_ID, MemSpace_kind::HOST>& parent_entities);
 
-cEntity_ID_View
-filterParentEntities_SurfaceFaceToFace(const MeshCache<MemSpace_kind::HOST>& mesh,
-                                       Parallel_kind ptype,
-                                       const cEntity_ID_View& parent_entities);
+View_type<const Entity_ID, MemSpace_kind::HOST>
+filterParentEntities_SurfaceFaceToFace(
+  const MeshCache<MemSpace_kind::HOST>& mesh,
+  Parallel_kind ptype,
+  const View_type<const Entity_ID, MemSpace_kind::HOST>& parent_entities);
 
 } // namespace Impl
 } // namespace AmanziMesh

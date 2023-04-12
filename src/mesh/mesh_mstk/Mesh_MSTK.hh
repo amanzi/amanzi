@@ -160,12 +160,15 @@ class Mesh_MSTK : public MeshFramework {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-  virtual void getCellFacesAndDirs(const Entity_ID cellid,
-                                   cEntity_ID_View& faceids,
-                                   cEntity_Direction_View* const face_dirs) const override;
+  virtual void getCellFacesAndDirs(
+    const Entity_ID cellid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& faceids,
+    View_type<const Direction_type, MemSpace_kind::HOST>* const face_dirs) const override;
 
   // Get edges of a cell
-  virtual void getCellEdges(const Entity_ID cellid, cEntity_ID_View& edgeids) const override;
+  virtual void
+  getCellEdges(const Entity_ID cellid,
+               View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const override;
 
   // Get nodes of cell
   // On a distributed mesh, all nodes (OWNED or GHOST) of the cell
@@ -176,13 +179,16 @@ class Mesh_MSTK : public MeshFramework {
   // arbitrary order
   // In 2D, the nodes of the polygon will be returned in ccw order
   // consistent with the face normal
-  virtual void getCellNodes(const Entity_ID cellid, cEntity_ID_View& nodeids) const override;
+  virtual void
+  getCellNodes(const Entity_ID cellid,
+               View_type<const Entity_ID, MemSpace_kind::HOST>& nodeids) const override;
 
 
   // Edges and edge directions of a face
-  virtual void getFaceEdgesAndDirs(const Entity_ID cellid,
-                                   cEntity_ID_View& edgeids,
-                                   cEntity_Direction_View* edgedirs) const override;
+  virtual void getFaceEdgesAndDirs(
+    const Entity_ID cellid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids,
+    View_type<const Direction_type, MemSpace_kind::HOST>* edgedirs) const override;
 
   // Get nodes of face
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face
@@ -190,44 +196,53 @@ class Mesh_MSTK : public MeshFramework {
   // In 3D, the nodes of the face are returned in ccw order consistent
   // with the face normal
   // In 2D, nfnodes is 2
-  virtual void getFaceNodes(const Entity_ID faceid, cEntity_ID_View& nodeids) const override;
+  virtual void
+  getFaceNodes(const Entity_ID faceid,
+               View_type<const Entity_ID, MemSpace_kind::HOST>& nodeids) const override;
 
   // Get nodes of edge On a distributed mesh all nodes (OWNED or
   // GHOST) of the face are returned
-  virtual void getEdgeNodes(const Entity_ID edgeid, cEntity_ID_View& nodes) const override;
+  virtual void getEdgeNodes(const Entity_ID edgeid,
+                            View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const override;
 
   //
   // Upward adjacencies
   //-------------------
   // Cells connected to a face
-  virtual void getFaceCells(const Entity_ID faceid,
-                            const Parallel_kind ptype,
-                            cEntity_ID_View& cellids) const override;
+  virtual void
+  getFaceCells(const Entity_ID faceid,
+               const Parallel_kind ptype,
+               View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override;
 
   // Cells of type 'ptype' connected to an edge
-  virtual void getEdgeCells(const Entity_ID edgeid,
-                            const Parallel_kind ptype,
-                            cEntity_ID_View& cellids) const override;
+  virtual void
+  getEdgeCells(const Entity_ID edgeid,
+               const Parallel_kind ptype,
+               View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override;
 
   // Faces of type 'ptype' connected to an edge
-  virtual void getEdgeFaces(const Entity_ID edgeid,
-                            const Parallel_kind ptype,
-                            cEntity_ID_View& faceids) const override;
+  virtual void
+  getEdgeFaces(const Entity_ID edgeid,
+               const Parallel_kind ptype,
+               View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
 
   // Cells of type 'ptype' connected to a node
-  virtual void getNodeCells(const Entity_ID nodeid,
-                            const Parallel_kind ptype,
-                            cEntity_ID_View& cellids) const override;
+  virtual void
+  getNodeCells(const Entity_ID nodeid,
+               const Parallel_kind ptype,
+               View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override;
 
   // Faces of type 'ptype' connected to a node
-  virtual void getNodeFaces(const Entity_ID nodeid,
-                            const Parallel_kind ptype,
-                            cEntity_ID_View& faceids) const override;
+  virtual void
+  getNodeFaces(const Entity_ID nodeid,
+               const Parallel_kind ptype,
+               View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
 
   // Edges of type 'ptype' connected to a node
-  virtual void getNodeEdges(const Entity_ID nodeid,
-                            const Parallel_kind ptype,
-                            cEntity_ID_View& edgeids) const override;
+  virtual void
+  getNodeEdges(const Entity_ID nodeid,
+               const Parallel_kind ptype,
+               View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const override;
 
   //
   // Get list of entities of type kind from a framework set.
@@ -240,10 +255,11 @@ class Mesh_MSTK : public MeshFramework {
 
 
   // MSTK supports labeled sets
-  virtual void getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
-                              const Entity_kind kind,
-                              const Parallel_kind ptype,
-                              cEntity_ID_View& entids) const override;
+  virtual void
+  getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
+                 const Entity_kind kind,
+                 const Parallel_kind ptype,
+                 View_type<const Entity_ID, MemSpace_kind::HOST>& entids) const override;
 
   // Run MSTK's internal checks - meant for debugging only
   // Returns true if everything is ok, false otherwise
@@ -329,13 +345,15 @@ class Mesh_MSTK : public MeshFramework {
     return kind2mtype[getManifoldDimension()][(int)kind - 1];
   }
 
-  void getCellFacesAndDirs_ordered_(const Entity_ID cellid,
-                                    cEntity_ID_View& faceids,
-                                    cEntity_Direction_View* face_dirs) const;
+  void getCellFacesAndDirs_ordered_(
+    const Entity_ID cellid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& faceids,
+    View_type<const Direction_type, MemSpace_kind::HOST>* face_dirs) const;
 
-  void getCellFacesAndDirs_unordered_(const Entity_ID cellid,
-                                      cEntity_ID_View& faceids,
-                                      cEntity_Direction_View* face_dirs) const;
+  void getCellFacesAndDirs_unordered_(
+    const Entity_ID cellid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& faceids,
+    View_type<const Direction_type, MemSpace_kind::HOST>* face_dirs) const;
 
  private:
   MPI_Comm mpicomm_;
