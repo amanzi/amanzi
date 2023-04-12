@@ -373,8 +373,8 @@ std::size_t Mesh_simple::getNumEntities(AmanziMesh::Entity_kind kind,
 // Connectivity: cell -> faces
 //---------------------------------------------------------
 void Mesh_simple::getCellFacesAndDirs(const Entity_ID cellid,
-        cEntity_ID_View& faceids,
-        cEntity_Direction_View *cfacedirs) const
+        View_type<const Entity_ID,MemSpace_kind::HOST>& faceids,
+        View_type<const Direction_type,MemSpace_kind::HOST> *cfacedirs) const
 {
   unsigned int offset = (unsigned int) 6*cellid;
   Entity_ID_View lfaceids("lfaceids",6); 
@@ -393,7 +393,7 @@ void Mesh_simple::getCellFacesAndDirs(const Entity_ID cellid,
 // Connectivity: face -> nodes
 //---------------------------------------------------------
 void Mesh_simple::getFaceNodes(Entity_ID face,
-        cEntity_ID_View& nodeids) const
+        View_type<const Entity_ID,MemSpace_kind::HOST>& nodeids) const
 {
   Entity_ID_View lnodeids("nodeids", 4); 
   unsigned int offset = (unsigned int) 4*face;
@@ -408,8 +408,8 @@ void Mesh_simple::getFaceNodes(Entity_ID face,
 // Connectivity: face -> edges
 //---------------------------------------------------------
 void Mesh_simple::getFaceEdgesAndDirs(const Entity_ID faceid,
-        cEntity_ID_View& edgeids,
-        cEntity_Direction_View *fedgedirs) const
+        View_type<const Entity_ID,MemSpace_kind::HOST>& edgeids,
+        View_type<const Direction_type,MemSpace_kind::HOST> *fedgedirs) const
 {
   unsigned int offset = (unsigned int) 4*faceid;
   Entity_ID_View ledgeids("ledgeids", 3); 
@@ -428,7 +428,7 @@ void Mesh_simple::getFaceEdgesAndDirs(const Entity_ID faceid,
 // Connectivity: edge -> nodes
 //---------------------------------------------------------
 void Mesh_simple::getEdgeNodes(
-  const Entity_ID edgeid, cEntity_ID_View& nodes) const
+  const Entity_ID edgeid, View_type<const Entity_ID,MemSpace_kind::HOST>& nodes) const
 {
   Entity_ID_View lnodes("lnodes", 2); 
   unsigned int offset = (unsigned int) 2*edgeid;
@@ -471,7 +471,7 @@ void Mesh_simple::setNodeCoordinate(const AmanziMesh::Entity_ID local_node_id,
 //---------------------------------------------------------
 void Mesh_simple::getNodeFaces(const AmanziMesh::Entity_ID nodeid,
         const AmanziMesh::Parallel_kind ptype,
-        AmanziMesh::cEntity_ID_View& faceids) const
+        AmanziMesh::View_type<const Entity_ID,MemSpace_kind::HOST>& faceids) const
 {
   unsigned int offset = (unsigned int) 13*nodeid;
   unsigned int nfaces = node_to_face_[offset];
@@ -488,7 +488,7 @@ void Mesh_simple::getNodeFaces(const AmanziMesh::Entity_ID nodeid,
 //---------------------------------------------------------
 void Mesh_simple::getFaceCells(const AmanziMesh::Entity_ID faceid,
         const AmanziMesh::Parallel_kind ptype,
-        AmanziMesh::cEntity_ID_View& cellids) const
+        AmanziMesh::View_type<const Entity_ID,MemSpace_kind::HOST>& cellids) const
 {
   unsigned int offset = (unsigned int) 2*faceid;
   Entity_ID_View lcellids("lcellids", 2); 

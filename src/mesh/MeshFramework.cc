@@ -46,12 +46,12 @@ MeshFramework::getEntityGID(const Entity_kind kind, const Entity_ID lid) const
   return lid;
 }
 
-cEntity_GID_View
-MeshFramework::getEntityGIDs(const Entity_kind kind, const Parallel_kind ptype) const
+View_type<const Entity_GID,MemSpace_kind::HOST>
+MeshFramework::getEntityGIDs(const Entity_kind kind, bool ghosted) const
 {
-  Entity_GID_View gids("gids",getNumEntities(kind, ptype));
-  for (int lid=0; lid!=gids.size(); ++lid)
-    gids[lid] = getEntityGID(kind, lid);
+  auto count = getNumEntities(kind, ghosted ? Parallel_kind::ALL : Parallel_kind::OWNED);
+  View_type<Entity_GID,MemSpace_kind::HOST> gids("gids", count);
+  for (int lid=0; lid!=gids.size(); ++lid) gids(lid) = getEntityGID(kind, lid);
   return gids;
 }
 
@@ -65,14 +65,14 @@ Entity_ID MeshFramework::getEntityParent(const Entity_kind kind, const Entity_ID
 Cell_kind
 MeshFramework::getCellType(const Entity_ID c) const
 {
-  cEntity_ID_View faces;
+  View_type<const Entity_ID,MemSpace_kind::HOST> faces;
   getCellFaces(c, faces);
   return getCellType_(c, faces);
 }
 
 Cell_kind
 MeshFramework::getCellType_(const Entity_ID c,
-                           const cEntity_ID_View& faces) const
+                           const View_type<const Entity_ID,MemSpace_kind::HOST>& faces) const
 {
   if (getManifoldDimension() == 2) {
     switch (faces.size()) {
@@ -88,7 +88,7 @@ MeshFramework::getCellType_(const Entity_ID c,
   } else if (getManifoldDimension() == 3) {
     int nquads = 0;
     for (const auto& f : faces) {
-      cEntity_ID_View fnodes;
+      View_type<const Entity_ID,MemSpace_kind::HOST> fnodes;
       getFaceNodes(f, fnodes);
       if (fnodes.size() == 4) nquads++;
     }
@@ -127,19 +127,19 @@ MeshFramework::setNodeCoordinate(const Entity_ID nodeid, const AmanziGeometry::P
 }
 
 
-cPoint_View
+View_type<const AmanziGeometry::Point,MemSpace_kind::HOST>
 MeshFramework::getCellCoordinates(const Entity_ID c) const
 {
   return MeshAlgorithms::getCellCoordinates(*this, c);
 }
 
-cPoint_View
+View_type<const AmanziGeometry::Point,MemSpace_kind::HOST>
 MeshFramework::getFaceCoordinates(const Entity_ID f) const
 {
   return MeshAlgorithms::getFaceCoordinates(*this, f);
 }
 
-cPoint_View
+View_type<const AmanziGeometry::Point,MemSpace_kind::HOST>
 MeshFramework::getEdgeCoordinates(const Entity_ID e) const
 {
   return MeshAlgorithms::getEdgeCoordinates(*this, e);
@@ -149,29 +149,29 @@ MeshFramework::getEdgeCoordinates(const Entity_ID e) const
 // topology
 //
 void
-MeshFramework::getCellEdges(const Entity_ID c, cEntity_ID_View& edges) const
+MeshFramework::getCellEdges(const Entity_ID c, View_type<const Entity_ID,MemSpace_kind::HOST>& edges) const
 {
   hasEdgesOrThrow();
   edges = MeshAlgorithms::computeCellEdges(*this, c);
 }
 
 void
-MeshFramework::getCellNodes(const Entity_ID c, cEntity_ID_View& nodes) const
+MeshFramework::getCellNodes(const Entity_ID c, View_type<const Entity_ID,MemSpace_kind::HOST>& nodes) const
 {
   nodes = MeshAlgorithms::computeCellNodes(*this, c);
 }
 
 void
 MeshFramework::getFaceEdgesAndDirs(const Entity_ID f,
-        cEntity_ID_View& edges,
-        cEntity_Direction_View * const dirs) const {
+        View_type<const Entity_ID,MemSpace_kind::HOST>& edges,
+        View_type<const Direction_type,MemSpace_kind::HOST> * const dirs) const {
   hasEdgesOrThrow();
   throwNotImplemented_("getFaceEdgesAndDirs");
 }
 
 
 void
-MeshFramework::getEdgeNodes(const Entity_ID e, cEntity_ID_View& nodes) const
+MeshFramework::getEdgeNodes(const Entity_ID e, View_type<const Entity_ID,MemSpace_kind::HOST>& nodes) const
 {
   hasEdgesOrThrow();
   throwNotImplemented_("getEdgeNodes");
@@ -179,27 +179,27 @@ MeshFramework::getEdgeNodes(const Entity_ID e, cEntity_ID_View& nodes) const
 
 
 void
-MeshFramework::getEdgeCells(const Entity_ID e, const Parallel_kind ptype, cEntity_ID_View& cells) const
+MeshFramework::getEdgeCells(const Entity_ID e, const Parallel_kind ptype, View_type<const Entity_ID,MemSpace_kind::HOST>& cells) const
 {
   hasEdgesOrThrow();
   throwNotImplemented_("getEdgeCells");
 }
 
 void
-MeshFramework::getEdgeFaces(const Entity_ID e, const Parallel_kind ptype, cEntity_ID_View& faces) const
+MeshFramework::getEdgeFaces(const Entity_ID e, const Parallel_kind ptype, View_type<const Entity_ID,MemSpace_kind::HOST>& faces) const
 {
   hasEdgesOrThrow();
   throwNotImplemented_("getEdgeFaces");
 }
 
 void
-MeshFramework::getNodeCells(const Entity_ID n, const Parallel_kind ptype, cEntity_ID_View& cells) const
+MeshFramework::getNodeCells(const Entity_ID n, const Parallel_kind ptype, View_type<const Entity_ID,MemSpace_kind::HOST>& cells) const
 {
   cells = MeshAlgorithms::computeNodeCells(*this, n, ptype);
 }
 
 void
-MeshFramework::getNodeEdges(const Entity_ID nodeid, const Parallel_kind ptype, cEntity_ID_View& edgeids) const
+MeshFramework::getNodeEdges(const Entity_ID nodeid, const Parallel_kind ptype, View_type<const Entity_ID,MemSpace_kind::HOST>& edgeids) const
 {
   hasEdgesOrThrow();
   throwNotImplemented_("getNodeEdges");
@@ -207,7 +207,7 @@ MeshFramework::getNodeEdges(const Entity_ID nodeid, const Parallel_kind ptype, c
 
 void
 MeshFramework::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
-        const Entity_kind kind, const Parallel_kind ptype, cEntity_ID_View& entids) const
+        const Entity_kind kind, const Parallel_kind ptype, View_type<const Entity_ID,MemSpace_kind::HOST>& entids) const
 {
   throwNotImplemented_("getSetEntities");
 }

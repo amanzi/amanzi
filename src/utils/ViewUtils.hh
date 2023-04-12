@@ -292,7 +292,7 @@ auto asRaggedArray_DualView(Func mesh_func, int count) {
   adj.rows.resize(count+1);
 
   // do a count first, setting rows
-  std::vector<Kokkos::MeshView<const T*, Kokkos::DefaultHostExecutionSpace>> ents(count);
+  std::vector<Kokkos::MeshView<const T*, Kokkos::HostSpace>> ents(count);
   int total = 0;
   for (int i=0; i!=count; ++i) {
     view<MemSpace_kind::HOST>(adj.rows)[i] = total;
