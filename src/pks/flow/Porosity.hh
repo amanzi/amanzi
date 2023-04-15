@@ -47,18 +47,18 @@ In this example, we define two different porosity models in two soils.
 
 */
 
-#ifndef AMANZI_POROSITY_MODEL_HH_
-#define AMANZI_POROSITY_MODEL_HH_
+#ifndef AMANZI_FLOW_POROSITY_HH_
+#define AMANZI_FLOW_POROSITY_HH_
 
 #include <string>
 
 namespace Amanzi {
 namespace Flow {
 
-class PorosityModel {
+class Porosity {
  public:
-  virtual ~PorosityModel(){};
-  virtual double Porosity(double p) = 0;
+  virtual ~Porosity(){};
+  virtual double PorosityValue(double p) = 0;
   virtual double dPorositydPressure(double p) = 0; // derivative wrt to pressure
 };
 

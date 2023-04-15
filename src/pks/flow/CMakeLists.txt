@@ -43,7 +43,8 @@ set(flow_src_files Flow_PK.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
                    Richards_Picard.cc Richards_LinearOperator.cc Richards_CNLS.cc
-                   PorosityModelPartition.cc PorosityModelEvaluator.cc
+                   PorosityModelPartition.cc PorosityEvaluator.cc
+                   PermeabilityModelPartition.cc PermeabilityEvaluator.cc
                    RelPermEvaluator.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc 
                    WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
@@ -85,7 +86,7 @@ set(flow_inc_files
   MultiscaleFlowPorosity_GDPM.hh
   MultiscaleFlowPorosityFactory.hh
   MultiscaleFlowPorosityPartition.hh
-  PorosityModel.hh
+  Porosity.hh
   PorosityModelPartition.hh
   Richards_PK.hh
   WRM.hh

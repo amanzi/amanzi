@@ -18,12 +18,12 @@
 
 #include "Mesh.hh"
 #include "MeshPartition.hh"
-#include "PorosityModel.hh"
+#include "Porosity.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-typedef std::vector<Teuchos::RCP<PorosityModel>> PorosityModelList;
+typedef std::vector<Teuchos::RCP<Porosity>> PorosityModelList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, PorosityModelList> PorosityModelPartition;
 
 // Non-member factory

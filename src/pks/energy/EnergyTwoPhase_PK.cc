@@ -260,7 +260,7 @@ EnergyTwoPhase_PK::Initialize()
 
   // initialize boundary conditions
   double t_ini = S_->get_time();
-  auto temperature = S_->GetW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_);
+  auto& temperature = S_->GetW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_);
   UpdateSourceBoundaryData(t_ini, t_ini, temperature);
 
   // output of initialization summary

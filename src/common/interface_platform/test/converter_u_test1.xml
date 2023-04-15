@@ -190,10 +190,10 @@
       <mechanical_properties>
         <porosity value="0.4082"/>
         <specific_storage model="constant" value="0.0002"/>
-        <particle_density type="file" filename="particle_density.h5"/>
+        <particle_density model="file" filename="particle_density.h5"/>
         <dispersion_tensor type="uniform_isotropic" alpha_l="0.01 m" alpha_t="0.001 m"/>
       </mechanical_properties>
-      <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
+      <permeability model="file" filename="mesh_data.exo" attribute="permx,permy"/>
       <cap_pressure model="van_genuchten">
         <parameters alpha="1.9467E-04 Pa^-1" m="0.2294" sr="0.0"/>
       </cap_pressure>
@@ -206,8 +206,7 @@
         <porosity value="0.2206"/>
         <dispersion_tensor type="burnett_frind" alpha_l="0.01 m" alpha_th="0.001 m" alpha_tv="0.002 m"/>
       </mechanical_properties>
-      <!--permeability x="6.9365E-11" z="6.9365E-12" /-->
-      <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
+      <permeability model="file" filename="mesh_data.exo" attribute="permx,permy"/>
       <cap_pressure model="brooks_corey">
         <parameters alpha="2.0260E-03 Pa^-1" lambda="0.2136" sr="0.0"/>
       </cap_pressure>
@@ -223,8 +222,7 @@
         <dispersion_tensor type="lichtner_kelkar_robinson" alpha_lh="0.01 m" alpha_lv="0.02 m"
                                                            alpha_th="0.001 m" alpha_tv="0.002 m"/>
       </mechanical_properties>
-      <!--permeability x="2.0706E-09" z="2.0706E-10" /-->
-      <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
+      <permeability model="file" filename="mesh_data.exo" attribute="permx,permy"/>
       <cap_pressure model="saturated"/>
       <assigned_regions>RegionTop</assigned_regions>
     </material>

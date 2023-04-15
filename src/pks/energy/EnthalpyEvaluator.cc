@@ -78,8 +78,7 @@ EnthalpyEvaluator::Clone() const
 void
 EnthalpyEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
-  auto u_l = S.GetPtr<CompositeVector>(ie_key_, tag_);
-  *results[0] = *u_l;
+  *results[0] = S.Get<CompositeVector>(ie_key_, tag_);
 
   if (include_work_) {
     auto pres = S.GetPtr<CompositeVector>(pressure_key_, tag_);

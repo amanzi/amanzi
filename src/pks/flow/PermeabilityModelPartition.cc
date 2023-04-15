@@ -11,14 +11,14 @@
 /*
   Flow PK
 
-  A collection of porosity models along with a mesh partition.
+  A collection of permeability models along with a mesh partition.
 */
 
 #include "dbc.hh"
 
-#include "Porosity_Constant.hh"
-#include "Porosity_Compressible.hh"
-#include "PorosityModelPartition.hh"
+#include "Permeability_PowerLaw.hh"
+#include "Permeability_KozenyCarman.hh"
+#include "PermeabilityModelPartition.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -26,11 +26,11 @@ namespace Flow {
 /* ******************************************************************
 * Non-member factory.
 ****************************************************************** */
-Teuchos::RCP<PorosityModelPartition>
-CreatePorosityModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                             Teuchos::RCP<Teuchos::ParameterList> plist)
+Teuchos::RCP<PermeabilityModelPartition>
+CreatePermeabilityModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                 Teuchos::RCP<Teuchos::ParameterList> plist)
 {
-  std::vector<Teuchos::RCP<Porosity>> pom_list;
+  std::vector<Teuchos::RCP<Permeability>> pem_list;
   std::vector<std::vector<std::string>> region_list;
 
   for (auto lcv = plist->begin(); lcv != plist->end(); ++lcv) {
@@ -39,11 +39,11 @@ CreatePorosityModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
       Teuchos::ParameterList sublist = plist->sublist(name);
       region_list.push_back(sublist.get<Teuchos::Array<std::string>>("regions").toVector());
 
-      std::string model = sublist.get<std::string>("porosity model");
-      if (model == "constant") {
-        pom_list.push_back(Teuchos::rcp(new Porosity_Constant(sublist)));
-      } else if (model == "compressible") {
-        pom_list.push_back(Teuchos::rcp(new Porosity_Compressible(sublist)));
+      std::string model = sublist.get<std::string>("permeability porosity model");
+      if (model == "power law") {
+        pem_list.push_back(Teuchos::rcp(new Permeability_PowerLaw(sublist)));
+      } else if (model == "Kozeny-Carman") {
+        pem_list.push_back(Teuchos::rcp(new Permeability_KozenyCarman(sublist)));
       } else {
         AMANZI_ASSERT(0);
       }
@@ -56,7 +56,7 @@ CreatePorosityModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   partition->Initialize(mesh, AmanziMesh::CELL, region_list, -1);
   partition->Verify();
 
-  return Teuchos::rcp(new PorosityModelPartition(partition, pom_list));
+  return Teuchos::rcp(new PermeabilityModelPartition(partition, pem_list));
 }
 
 } // namespace Flow

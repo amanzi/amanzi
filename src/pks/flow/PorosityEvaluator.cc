@@ -15,10 +15,14 @@
   the correct arguments.
 */
 
+// Amanzi
+#include "PDE_HelperDiscretization.hh"
+
+// Amanzi::Flow
 #include "FlowDefs.hh"
-#include "PorosityModel_Compressible.hh"
-#include "PorosityModel_Constant.hh"
-#include "PorosityModelEvaluator.hh"
+#include "Porosity_Compressible.hh"
+#include "Porosity_Constant.hh"
+#include "PorosityEvaluator.hh"
 #include "PorosityModelPartition.hh"
 
 namespace Amanzi {
@@ -27,15 +31,15 @@ namespace Flow {
 /* ******************************************************************
 * Two constructors.
 ****************************************************************** */
-PorosityModelEvaluator::PorosityModelEvaluator(Teuchos::ParameterList& plist,
-                                               Teuchos::RCP<PorosityModelPartition> pom)
+PorosityEvaluator::PorosityEvaluator(Teuchos::ParameterList& plist,
+                                     Teuchos::RCP<PorosityModelPartition> pom)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), pom_(pom)
 {
   InitializeFromPlist_();
 }
 
 
-PorosityModelEvaluator::PorosityModelEvaluator(const PorosityModelEvaluator& other)
+PorosityEvaluator::PorosityEvaluator(const PorosityEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     pom_(other.pom_),
     pressure_key_(other.pressure_key_){};
@@ -45,9 +49,9 @@ PorosityModelEvaluator::PorosityModelEvaluator(const PorosityModelEvaluator& oth
 * Copy constructor.
 ****************************************************************** */
 Teuchos::RCP<Evaluator>
-PorosityModelEvaluator::Clone() const
+PorosityEvaluator::Clone() const
 {
-  return Teuchos::rcp(new PorosityModelEvaluator(*this));
+  return Teuchos::rcp(new PorosityEvaluator(*this));
 }
 
 
@@ -55,7 +59,7 @@ PorosityModelEvaluator::Clone() const
 * Initialization.
 ****************************************************************** */
 void
-PorosityModelEvaluator::InitializeFromPlist_()
+PorosityEvaluator::InitializeFromPlist_()
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("porosity key"), Tags::DEFAULT));
@@ -71,15 +75,18 @@ PorosityModelEvaluator::InitializeFromPlist_()
 * Required member function.
 ****************************************************************** */
 void
-PorosityModelEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
+PorosityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   auto& phi_c = *results[0]->ViewComponent("cell", false);
   const auto& pres_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
 
   int ncells = phi_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
-    phi_c[0][c] = pom_->second[(*pom_->first)[c]]->Porosity(pres_c[0][c]);
+    phi_c[0][c] = pom_->second[(*pom_->first)[c]]->PorosityValue(pres_c[0][c]);
   }
+
+  // optional copy of cell data to boundary
+  Operators::CellToBoundaryFaces(*results[0]);
 }
 
 
@@ -87,10 +94,10 @@ PorosityModelEvaluator::Evaluate_(const State& S, const std::vector<CompositeVec
 * Required member function.
 ****************************************************************** */
 void
-PorosityModelEvaluator::EvaluatePartialDerivative_(const State& S,
-                                                   const Key& wrt_key,
-                                                   const Tag& wrt_tag,
-                                                   const std::vector<CompositeVector*>& results)
+PorosityEvaluator::EvaluatePartialDerivative_(const State& S,
+                                              const Key& wrt_key,
+                                              const Tag& wrt_tag,
+                                              const std::vector<CompositeVector*>& results)
 {
   auto& phi_c = *results[0]->ViewComponent("cell");
   const auto& pres_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
@@ -99,6 +106,8 @@ PorosityModelEvaluator::EvaluatePartialDerivative_(const State& S,
   for (int c = 0; c != ncells; ++c) {
     phi_c[0][c] = pom_->second[(*pom_->first)[c]]->dPorositydPressure(pres_c[0][c]);
   }
+
+  Operators::CellToBoundaryFaces(*results[0]);
 }
 
 } // namespace Flow

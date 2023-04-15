@@ -12,19 +12,19 @@
 
 */
 
-#ifndef AMANZI_POROSITY_MODEL_COMPRESSIBLE_HH_
-#define AMANZI_POROSITY_MODEL_COMPRESSIBLE_HH_
+#ifndef AMANZI_FLOW_POROSITY_COMPRESSIBLE_HH_
+#define AMANZI_FLOW_POROSITY_COMPRESSIBLE_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "PorosityModel.hh"
+#include "Porosity.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class PorosityModel_Compressible : public PorosityModel {
+class Porosity_Compressible : public Porosity {
  public:
-  explicit PorosityModel_Compressible(Teuchos::ParameterList& plist)
+  explicit Porosity_Compressible(Teuchos::ParameterList& plist)
   {
     porosity_ = plist.get<double>("undeformed soil porosity");
     p_ref_ = plist.get<double>("reference pressure");
@@ -32,10 +32,10 @@ class PorosityModel_Compressible : public PorosityModel {
 
     factor_ = porosity_ * c_;
   }
-  ~PorosityModel_Compressible(){};
+  ~Porosity_Compressible(){};
 
   // required methods from the base class
-  inline double Porosity(double p)
+  inline double PorosityValue(double p)
   {
     double dp = p - p_ref_;
     return (dp <= 0.0) ? porosity_ : porosity_ * std::exp(c_ * dp);

@@ -864,7 +864,7 @@ Water retention models
 
 Porosity models
 ...............
-{ PorosityModel }
+{ Porosity }
 
 
 Multiscale continuum models
@@ -882,8 +882,8 @@ Generalized dual porosity model
 { MultiscaleFlowPorosity_GDPM }
 
 
-Absolute permeability
-.....................
+Permeability
+............
 The available options are
 
 * `"coordinate system`" [string] defines coordinate system
@@ -901,6 +901,8 @@ The available options are
     <Parameter name="off-diagonal components" type="int" value="0"/>
   </ParameterList>
   </ParameterList>
+
+{ Permeability }
 
 
 Relative permeability

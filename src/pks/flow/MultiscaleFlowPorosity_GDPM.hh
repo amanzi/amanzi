@@ -118,7 +118,7 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
   Teuchos::RCP<WRM> wrm_;
 
   int matrix_nodes_;
-  double depth_, tau_, tol_, Ka_;
+  double depth_, tol_, Ka_;
 
   double bcl_;
   std::shared_ptr<Operators::Mini_Diffusion1D> op_;

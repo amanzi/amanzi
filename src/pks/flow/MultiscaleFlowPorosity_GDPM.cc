@@ -38,7 +38,6 @@ MultiscaleFlowPorosity_GDPM::MultiscaleFlowPorosity_GDPM(Teuchos::ParameterList&
   // depth is defined for each matrix block as A_m / V_m, so in general,
   // it depends on geometry
   depth_ = sublist.get<double>("matrix depth");
-  tau_ = sublist.get<double>("matrix tortuosity");
   Ka_ = sublist.get<double>("absolute permeability");
   tol_ = plist.get<double>("tolerance", FLOW_DPM_NEWTON_TOLERANCE);
 }
@@ -95,7 +94,9 @@ MultiscaleFlowPorosity_GDPM::WaterContentMatrix(double pcf0,
   newton.Init(fn, 1);
 
   // solve the problem
+std::cout << "Start:" << sol->NumRows() << std::endl;
   newton.Solve(sol);
+std::cout << "End:" << std::endl;
 
   return wrm_->saturation(pcm(0)) * phi * n_l;
 }

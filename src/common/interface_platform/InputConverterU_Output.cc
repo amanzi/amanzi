@@ -391,6 +391,8 @@ InputConverterU::TranslateOutput_()
             obPL.set<std::string>("variable", name.str());
           } else if (strcmp(obs_type, "fractures_aqueous_volumetric_flow_rate") == 0) {
             obPL.set<std::string>("variable", "fractures aqueous volumetric flow rate");
+          } else if (strcmp(obs_type, "temperature") == 0) {
+            obPL.set<std::string>("variable", "temperature");
           }
 
           std::vector<std::string> regions;

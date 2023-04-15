@@ -11,30 +11,30 @@
 /*
   Flow PK
 
-  The porosity evaluator simply calls the porosity model with
-  the correct arguments.
+  The scaling factor for permeability based on porosity dynamics.
 */
 
-#ifndef AMANZI_FLOW_POROSITY_EVALUATOR_HH_
-#define AMANZI_FLOW_POROSITY_EVALUATOR_HH_
+#ifndef AMANZI_FLOW_PERMEABILITY_EVALUATOR_HH_
+#define AMANZI_FLOW_PERMEABILITY_EVALUATOR_HH_
 
 #include "Factory.hh"
 #include "EvaluatorSecondaryMonotype.hh"
+#include "Key.hh"
 #include "Tag.hh"
 
-#include "PorosityModel.hh"
-#include "PorosityModelPartition.hh"
+#include "Permeability.hh"
+#include "PermeabilityModelPartition.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class PorosityModelEvaluator
+class PermeabilityEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
-  explicit PorosityModelEvaluator(Teuchos::ParameterList& plist,
-                                  Teuchos::RCP<PorosityModelPartition> pom);
-  PorosityModelEvaluator(const PorosityModelEvaluator& other);
+  explicit PermeabilityEvaluator(Teuchos::ParameterList& plist,
+                                 Teuchos::RCP<PermeabilityModelPartition> ppm);
+  PermeabilityEvaluator(const PermeabilityEvaluator& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -47,15 +47,12 @@ class PorosityModelEvaluator
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
-  void InitializeFromPlist_();
-
- protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<PorosityModelPartition> pom_;
-  Key pressure_key_;
+  Teuchos::RCP<PermeabilityModelPartition> ppm_;
+  Key porosity_key_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, PorosityModelEvaluator> reg_;
+  static Utils::RegisteredFactory<Evaluator, PermeabilityEvaluator> reg_;
 };
 
 } // namespace Flow

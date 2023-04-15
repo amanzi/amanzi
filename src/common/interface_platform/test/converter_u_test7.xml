@@ -209,10 +209,11 @@
         <mechanical_properties>
           <porosity value="0.004"/>
         </mechanical_properties>
-        <fracture_permeability model="cubic law">
-          <aperture type="h5file" filename="aperture.h5"/>
-          <normal value="20.0"/>
-        </fracture_permeability>
+
+        <permeability model="cubic law"/>
+        <aperture model="h5file" filename="aperture.h5"/>
+        <flow_diffusion_to_matrix model="constant" value="20.0"/>
+
         <assigned_regions>fracture</assigned_regions>
       </material>
     </materials>

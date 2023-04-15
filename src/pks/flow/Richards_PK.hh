@@ -199,6 +199,9 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Operators::PDE_Diffusion> op_vapor_diff_;
   bool vapor_diffusion_;
 
+  // permebility-porosity scaling factor
+  Key ppfactor_key_;
+
   // multiscale models
   Key pressure_msp_key_, porosity_msp_key_;
   Key water_storage_msp_key_, prev_water_storage_msp_key_;

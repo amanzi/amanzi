@@ -166,7 +166,7 @@ InputConverterU::TranslateState_()
 
       // First we get either permeability value or the file name
       int file(0);
-      std::string file_name, type, format;
+      std::string file_name, model, format;
       std::vector<std::string> attr_names;
       double kx, ky, kz;
 
@@ -174,8 +174,8 @@ InputConverterU::TranslateState_()
       ky = GetAttributeValueD_(node, "y", TYPE_NUMERICAL, 0.0, DVAL_MAX, unit, false, -1.0);
       kz = GetAttributeValueD_(node, "z", TYPE_NUMERICAL, 0.0, DVAL_MAX, unit, false, -1.0);
 
-      type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
-      if (type == "file") file++;
+      model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
+      if (model == "file") file++;
       // format = GetAttributeValueS_(node, "format", TYPE_NONE, false, "");
       // if (format !="") file++;
       file_name = GetAttributeValueS_(node, "filename", TYPE_NONE, false, "");
@@ -317,22 +317,27 @@ InputConverterU::TranslateState_()
       std::string reg_str = CreateNameFromVector_(regions);
 
       // material properties
-      // -- diffusion to matrix (Darcy law)
-      node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
+      // -- aperture
+      node = GetUniqueElementByTagsString_(inode, "aperture", flag);
       if (flag) {
-        auto tmp1 = GetUniqueElementByTagsString_(node, "aperture", flag1);
-        auto tmp2 = GetUniqueElementByTagsString_(node, "normal", flag2);
-        if (!flag1 || !flag2) {
-          msg << "fracture_permeability must have two elements: aperture and normal.";
-          Exceptions::amanzi_throw(msg);
-        }
         TranslateFieldEvaluator_(
-          tmp1, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "value", "fracture");
-        TranslateFieldIC_(
-          tmp2, "fracture-diffusion_to_matrix", "s^-1", reg_str, regions, out_ic, "value");
+          node, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "value", "fracture");
       } else {
-        msg << "fracture_permeability element must be specified for all materials in fracture "
-               "network.";
+        msg << "Element \"aperture\" must be specified for all materials.";
+        Exceptions::amanzi_throw(msg);
+      }
+
+      // -- diffusion to matrix (Darcy law)
+      node = GetUniqueElementByTagsString_(inode, "flow_diffusion_to_matrix", flag);
+      if (flag) {
+        std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
+
+        if (model == "constant") {
+          TranslateFieldIC_(
+            node, "fracture-diffusion_to_matrix", "s^-1", reg_str, regions, out_ic, "value");
+        }
+      } else {
+        msg << "Element \"flow_diffusion_to_matrix\" must be specified for all materials.";
         Exceptions::amanzi_throw(msg);
       }
 
@@ -931,8 +936,6 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
   Errors::Message msg;
 
   bool flag;
-  std::string type("value");
-
   DOMNode* node;
   DOMNodeList* children;
 
@@ -1038,7 +1041,7 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
                                  regions,
                                  out_ic,
                                  out_ev,
-                                 type,
+                                 "value",
                                  domain);
 
       // internal energy for liquid
@@ -1091,15 +1094,15 @@ InputConverterU::TranslateFieldEvaluator_(DOMNode* node,
 {
   MemoryManager mm;
 
-  std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
-  if (type == "file") { // Amanzi restart file
+  std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
+  if (model == "file") { // Amanzi restart file
     std::string filename = GetAttributeValueS_(node, "filename");
     Teuchos::ParameterList& field_ic = out_ic.sublist(field);
     field_ic.set<std::string>("restart file", filename);
 
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
     field_ev.set<std::string>("evaluator type", "constant variable");
-  } else if (type == "h5file") { // regular h5 file
+  } else if (model == "h5file") { // regular h5 file
     std::string filename = GetAttributeValueS_(node, "filename");
     bool temporal =
       GetAttributeValueS_(node, "constant_in_time", TYPE_NUMERICAL, false, "true") == "true";

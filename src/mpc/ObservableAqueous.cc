@@ -44,8 +44,6 @@ ObservableAqueous::ObservableAqueous(std::string variable,
 int
 ObservableAqueous::ComputeRegionSize()
 {
-  //int mesh_block_size;
-
   // check if observation is planar
   obs_planar_ = false;
 
@@ -129,6 +127,7 @@ ObservableAqueous::ComputeObservation(State& S,
   Key wc_key = Keys::getKey(domain_, "water_content");
   Key pressure_key = Keys::getKey(domain_, "pressure");
   Key perm_key = Keys::getKey(domain_, "permeability");
+  Key temperature_key = Keys::getKey(domain_, "temperature");
 
   unit = "";
 
@@ -330,6 +329,16 @@ ObservableAqueous::ComputeObservation(State& S,
       *volume += vol;
       *value += pH[0][c] * vol;
     }
+  } else if (variable_ == "temperature") {
+    const auto& temperature = *S.Get<CompositeVector>(temperature_key).ViewComponent("cell");
+
+    for (int i = 0; i < region_size_; ++i) {
+      int c = entity_ids_[i];
+      double vol = mesh_->cell_volume(c);
+      *volume += vol;
+      *value += temperature[0][c] * vol;
+    }
+    unit = "K";
 
   } else if (variable_ == "centroid x") {
     for (int i = 0; i < region_size_; ++i) {

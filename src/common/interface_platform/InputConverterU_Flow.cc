@@ -120,6 +120,11 @@ InputConverterU::TranslateFlow_(const std::string& mode, const std::string& doma
       flow_list->sublist("physical models and assumptions")
         .set<std::string>("multiscale model", msm);
     }
+    out_list.sublist("permeability porosity models") = TranslatePPM_();
+    if (out_list.sublist("permeability porosity models").numParams() > 0) {
+      flow_list->sublist("physical models and assumptions")
+        .set<bool>("permeability porosity model", true);
+    }
 
   } else {
     Errors::Message msg;
@@ -504,10 +509,12 @@ InputConverterU::TranslateFlowMSM_()
       int nnodes =
         GetAttributeValueL_(node, "number_of_nodes", TYPE_NUMERICAL, 0, INT_MAX, false, 1);
       double depth = GetAttributeValueD_(node, "depth", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+      double perm = GetAttributeValueD_(node, "permeability", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m^2");
 
       msm_slist.set<int>("number of matrix nodes", nnodes)
         .set<double>("matrix depth", depth)
-        .set<double>("matrix volume fraction", vof);
+        .set<double>("matrix volume fraction", vof)
+        .set<double>("absolute permeability", perm);
     }
 
     // porosity models
@@ -562,6 +569,72 @@ InputConverterU::TranslateFlowMSM_()
     }
   }
 
+  return out_list;
+}
+
+
+/* ******************************************************************
+* Create list of permeability porosity models.
+****************************************************************** */
+Teuchos::ParameterList
+InputConverterU::TranslatePPM_()
+{
+  Teuchos::ParameterList out_list;
+
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "Translating permeability-porosity models" << std::endl;
+
+  MemoryManager mm;
+  DOMNodeList *node_list, *children;
+  DOMNode* node;
+  DOMElement* element;
+
+  bool found(false);
+
+  node_list = doc_->getElementsByTagName(mm.transcode("materials"));
+  element = static_cast<DOMElement*>(node_list->item(0));
+  children = element->getElementsByTagName(mm.transcode("material"));
+
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i);
+
+    // get assigned regions
+    bool flag;
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+
+    // get optional complessibility
+    node = GetUniqueElementByTagsString_(inode, "permeability", flag);
+    std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
+
+    std::stringstream ss;
+    ss << "PPM " << i;
+
+    Teuchos::ParameterList& ppm_list = out_list.sublist(ss.str());
+    ppm_list.set<Teuchos::Array<std::string>>("regions", regions);
+
+    if (model == "power law") {
+      found = true; 
+      double exp = GetAttributeValueD_(node, "exponent", TYPE_NUMERICAL, 0.0, 10.0, "-");
+      double phi = GetAttributeValueD_(node, "reference_porosity", TYPE_NUMERICAL, 0.0, 1.0, "-");
+
+      ppm_list.set<std::string>("permeability porosity model", model)
+              .set<double>("undeformed soil porosity", phi)
+              .set<double>("power law exponent", exp);
+    } else if (model == "Kozeny-Carman") {
+      found = true; 
+      double phi = GetAttributeValueD_(node, "reference_porosity", TYPE_NUMERICAL, 0.0, 1.0, "-");
+
+      ppm_list.set<std::string>("permeability porosity model", model)
+              .set<double>("undeformed soil porosity", phi);
+    }
+  }
+
+  if (!found) {
+    Teuchos::ParameterList empty;
+    out_list = empty;
+  }
   return out_list;
 }
 
@@ -989,7 +1062,7 @@ InputConverterU::TranslateFlowFractures_(const std::string& domain)
 
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "Translating optional fracture models" << std::endl;
+    *vo_->os() << "Translating optional fracture models, domain=" << domain << std::endl;
 
   MemoryManager mm;
   DOMNodeList *node_list, *children;
@@ -998,10 +1071,7 @@ InputConverterU::TranslateFlowFractures_(const std::string& domain)
 
   bool flag;
   if (domain == "matrix") {
-    node_list = doc_->getElementsByTagName(mm.transcode("fracture_permeability"));
-    if (node_list->getLength() == 0) return out_list;
-    node_list = doc_->getElementsByTagName(mm.transcode("materials"));
-    element = static_cast<DOMElement*>(node_list->item(0));
+    return out_list;
   } else {
     node = GetUniqueElementByTagsString_("fracture_network, materials", flag);
     if (!flag) return out_list;
@@ -1019,13 +1089,13 @@ InputConverterU::TranslateFlowFractures_(const std::string& domain)
 
     // get permeability
     std::string type, model;
-    node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
+    node = GetUniqueElementByTagsString_(inode, "permeability", flag);
     if (flag) model = GetAttributeValueS_(node, "model", "cubic law, linear, constant");
 
-    node = GetUniqueElementByTagsString_(inode, "fracture_permeability, aperture", flag);
+    node = GetUniqueElementByTagsString_(inode, "aperture", flag);
     if (flag) {
       double aperture(0.0);
-      type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
+      type = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
       if (type == "")
         aperture =
           GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m^2", false, 0.0);
@@ -1042,8 +1112,7 @@ InputConverterU::TranslateFlowFractures_(const std::string& domain)
     }
 
     if (model == "constant") {
-      node = GetUniqueElementByTagsString_(inode, "fracture_permeability, parallel", flag);
-      double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", true);
+      double val = GetAttributeValueD_(inode, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", true);
 
       for (auto it = regions.begin(); it != regions.end(); ++it) {
         std::stringstream ss;

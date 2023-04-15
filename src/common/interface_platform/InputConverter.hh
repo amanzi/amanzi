@@ -143,6 +143,11 @@ class InputConverter {
   xercesc::DOMNode*
   GetUniqueElementByTagsString_(const xercesc::DOMNode* node, const std::string& tags, bool& flag);
 
+  xercesc::DOMNode* GetUniqueElementByTagsString_(const xercesc::DOMNode* node,
+                                                  const std::string& tags,
+                                                  bool& flag,
+                                                  std::string& model);
+
   // -- extract child with the given attribute
   xercesc::DOMElement* GetUniqueChildByAttribute_(xercesc::DOMNode* node,
                                                   const char* attr_name,

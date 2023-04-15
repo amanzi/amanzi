@@ -666,7 +666,7 @@ CycleDriver::Observations(bool force, bool integrate)
       // continuous observations are not updated here
       int n = observations_->MakeObservations(*S_);
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Cycle " << S_->get_cycle() << ": writing observations... " << n << std::endl;
+      *vo_->os() << "writing observations... " << n << std::endl;
     }
   }
 }

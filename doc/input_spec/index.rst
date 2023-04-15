@@ -27,7 +27,6 @@ contaminant migration under partially saturated, nonisothermal conditions in fra
    :maxdepth: 2
    :caption: User Guide:
 
-   demos
    input_specs
 
 ..   

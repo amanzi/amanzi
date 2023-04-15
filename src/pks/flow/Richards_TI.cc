@@ -251,7 +251,7 @@ Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapo
 
 /* ******************************************************************
 * Calculate additional conribution to Richards functional:
-*  f += alpha (p_f - p_m)y, where
+*  f += alpha (p_f - p_m), where
 *    p_f   - pressure in the fracture
 *    p_m   - pressure in the matrix
 *    alpha - piecewise constant mass fransfer coeffiecient

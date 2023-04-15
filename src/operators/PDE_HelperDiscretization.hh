@@ -139,6 +139,9 @@ void
 CellToBoundaryFaces(const std::vector<int>& bc_model, CompositeVector& field);
 
 void
+CellToBoundaryFaces(CompositeVector& field);
+
+void
 BoundaryFacesToFaces(const std::vector<int>& bc_model,
                      const CompositeVector& input,
                      CompositeVector& output);

@@ -682,6 +682,26 @@ CellToBoundaryFaces(const std::vector<int>& bc_model, CompositeVector& field)
 
 
 /* ******************************************************************
+* Support function: copy data from cells to boundary faces if any
+****************************************************************** */
+void
+CellToBoundaryFaces(CompositeVector& field)
+{
+  if (field.HasComponent("boundary_face")) {
+    const auto& mesh = field.Mesh();
+    auto& field_c = *field.ViewComponent("cell", true);
+    auto& field_bf = *field.ViewComponent("boundary_face", true);
+
+    int nbfaces = field_bf.MyLength();
+    for (int bf = 0; bf != nbfaces; ++bf) {
+      int c = AmanziMesh::getBoundaryFaceInternalCell(*mesh, bf);
+      field_bf[0][bf] = field_c[0][c];
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Support function: copy data from boundary faces to faces (if any)
 ****************************************************************** */
 void

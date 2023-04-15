@@ -39,7 +39,8 @@
 
 // Amanzi::Flow
 #include "DarcyVelocityEvaluator.hh"
-#include "PorosityModelEvaluator.hh"
+#include "PermeabilityEvaluator.hh"
+#include "PorosityEvaluator.hh"
 #include "Richards_PK.hh"
 #include "WaterStorage.hh"
 #include "WRMEvaluator.hh"
@@ -143,6 +144,7 @@ Richards_PK::Setup()
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
   relperm_key_ = Keys::getKey(domain_, "relative_permeability");
+  ppfactor_key_ = Keys::getKey(domain_, "permeability_porosity_factor");
   alpha_key_ = Keys::getKey(domain_, "alpha_coef");
 
   temperature_key_ = Keys::getKey(domain_, "temperature");
@@ -154,8 +156,9 @@ Richards_PK::Setup()
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
   vapor_diffusion_ = physical_models->get<bool>("vapor diffusion", false);
-  std::string multiscale_model =
-    physical_models->get<std::string>("multiscale model", "single continuum");
+  std::string msm_name = physical_models->get<std::string>("multiscale model", "single continuum");
+  std::string pom_name = physical_models->get<std::string>("porosity model", "constant porosity");
+  bool use_ppm = physical_models->get<bool>("permeability porosity model", false);
 
   // Require primary field for this PK, which is pressure
   std::vector<std::string> names({ "cell" });
@@ -220,7 +223,7 @@ Richards_PK::Setup()
   }
 
   // -- multiscale extension: secondary (immobile water storage)
-  if (multiscale_model == "dual continuum discontinuous matrix") {
+  if (msm_name == "dual continuum discontinuous matrix") {
     if (!S_->HasRecord(pressure_msp_key_)) {
       S_->Require<CV_t, CVS_t>(pressure_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
@@ -262,7 +265,7 @@ Richards_PK::Setup()
       .set<std::string>("tag", "");
 
     Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, msp_list);
-    auto eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
+    auto eval = Teuchos::rcp(new PorosityEvaluator(elist, pom));
     S_->SetEvaluator(porosity_msp_key_, Tags::DEFAULT, eval);
 
     // Secondary matrix nodes are collected here.
@@ -286,7 +289,7 @@ Richards_PK::Setup()
         ->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
       S_->SetEvaluator("porosity_msp_aux", Tags::DEFAULT, eval);
-      S_->GetRecordW("porosity_msp_aux", passwd_).set_io_vis(false);
+      S_->GetRecordW("porosity_msp_aux", Tags::DEFAULT, "porosity_msp_aux").set_io_vis(false);
     }
   }
 
@@ -296,9 +299,7 @@ Richards_PK::Setup()
     S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-
-    std::string pom_name = physical_models->get<std::string>("porosity model", "constant porosity");
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
     if (pom_name == "compressible: pressure function") {
       Teuchos::RCP<Teuchos::ParameterList> pom_list =
@@ -315,7 +316,7 @@ Richards_PK::Setup()
           porosity_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, porosity_key_)
         .SetGhosted();
 
-      auto eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
+      auto eval = Teuchos::rcp(new PorosityEvaluator(elist, pom));
       S_->SetEvaluator(porosity_key_, Tags::DEFAULT, eval);
     } else {
       S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
@@ -420,7 +421,33 @@ Richards_PK::Setup()
     S_->SetEvaluator(relperm_key_, Tags::DEFAULT, eval);
   }
 
-  // -- inverse of kinematic viscosity
+  // optional porosity correction to permeability
+  if (use_ppm) {
+    S_->Require<CV_t, CVS_t>(ppfactor_key_, Tags::DEFAULT, ppfactor_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+
+    S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
+      .AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+
+    auto ppm_list = Teuchos::sublist(fp_list_, "permeability porosity models", true);
+    auto ppm = CreatePermeabilityModelPartition(mesh_, ppm_list);
+
+    Teuchos::ParameterList elist(ppfactor_key_);
+    elist.set<std::string>("permeability porosity factor key", ppfactor_key_)
+         .set<std::string>("porosity key", porosity_key_)
+         .set<std::string>("tag", "");
+
+    S_->RequireDerivative<CV_t, CVS_t>(
+      ppfactor_key_, Tags::DEFAULT, porosity_key_, Tags::DEFAULT, ppfactor_key_).SetGhosted();
+
+    auto eval = Teuchos::rcp(new PermeabilityEvaluator(elist, ppm));
+    S_->SetEvaluator(ppfactor_key_, Tags::DEFAULT, eval);
+  }
+
+  // -- effective relative diffusion coefficient
   if (!S_->HasRecord(alpha_key_)) {
     Key kkey;
     if (flow_on_manifold_) {
@@ -442,6 +469,7 @@ Richards_PK::Setup()
       { Keys::getVarName(kkey), Keys::getVarName(mol_density_liquid_key_) });
     std::vector<std::string> listr({ Keys::getVarName(viscosity_liquid_key_) });
     if (flow_on_manifold_) listm.push_back(Keys::getVarName(aperture_key_));
+    if (use_ppm) listm.push_back(ppfactor_key_);
 
     Teuchos::ParameterList elist(alpha_key_);
     elist.set<std::string>("my key", alpha_key_)

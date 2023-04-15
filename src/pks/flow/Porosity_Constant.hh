@@ -12,26 +12,26 @@
 
 */
 
-#ifndef AMANZI_POROSITY_MODEL_CONSTANT_HH_
-#define AMANZI_POROSITY_MODEL_CONSTANT_HH_
+#ifndef AMANZI_FLOW_POROSITY_CONSTANT_HH_
+#define AMANZI_FLOW_POROSITY_CONSTANT_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "PorosityModel.hh"
+#include "Porosity.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class PorosityModel_Constant : public PorosityModel {
+class Porosity_Constant : public Porosity {
  public:
-  explicit PorosityModel_Constant(Teuchos::ParameterList& plist)
+  explicit Porosity_Constant(Teuchos::ParameterList& plist)
   {
     porosity_ = plist.get<double>("value");
   }
-  ~PorosityModel_Constant(){};
+  ~Porosity_Constant(){};
 
   // required methods from the base class
-  inline double Porosity(double p) { return porosity_; }
+  inline double PorosityValue(double p) { return porosity_; }
   inline double dPorositydPressure(double p) { return 0.0; }
 
  private:
