@@ -389,58 +389,64 @@ KOKKOS_INLINE_FUNCTION
 AmanziGeometry::Point MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Entity_ID c,
         int* orientation) const
 {
-  AmanziGeometry::Point normal;
-  if(this->isSFM()){
-    AmanziGeometry::Point normal = data_.face_normals.getRow<MemSpace_kind::HOST>(f)[0]; 
+  if (this->isSFM()) {
+    AmanziGeometry::Point normal = data_.face_normals.getRow<MemSpace_kind::HOST>(f)[0];
     return normal;
   }
 
-  if constexpr (MEM == MemSpace_kind::DEVICE){
-    assert(data_.face_geometry_cached); 
-  }else {
-    if(!data_.face_geometry_cached)
-      if (algorithms_.get())
-        return algorithms_->getFaceNormal(*this, f, c, orientation); 
+  if constexpr (MEM == MemSpace_kind::DEVICE) {
+    assert(data_.face_geometry_cached);
   }
 
-  auto fcells = getFaceCells(f, Parallel_kind::ALL);
-  if (orientation) *orientation = 0;
+  if (data_.face_geometry_cached) {
+    auto fcells = getFaceCells(f, Parallel_kind::ALL);
+    if (orientation) *orientation = 0;
 
-  Entity_ID cc;
-  std::size_t i;
-  if (c < 0) {
-    cc = fcells[0];
-    i = 0;
-  } else {
-    cc = c;
-    auto ncells = fcells.size();
-    for (i=0; i!=ncells; ++i)
-      if (fcells[i] == cc) break;
-  }
-  normal = data_.face_normals.get<MEM>(f,i);
-
-  if (getSpaceDimension() == getManifoldDimension()) {
+    Entity_ID cc;
+    std::size_t i;
     if (c < 0) {
-      normal *= MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
-    } else if (orientation) {
-      *orientation = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
-    }
-  } else if (c < 0) {
-    if (fcells.size() == 2) {
-      // average normals oriented from lower to higher GIDs
-      auto map = getMap(Entity_kind::CELL, true); 
-      int pos = map.GID(fcells[0]) > map.GID(fcells[1]) ? 0 : 1;
-      return (getFaceNormal(f, fcells[1 - pos]) - getFaceNormal(f, fcells[pos])) / 2;
-    } else if (fcells.size() == 1) {
-      return algorithms_->getFaceNormal(*this, f, cc, orientation); 
+      cc = fcells[0];
+      i = 0;
     } else {
-      Errors::Message msg("MeshCache: asking for the natural normal of a submanifold mesh is not valid.");
-      Exceptions::amanzi_throw(msg);
+      cc = c;
+      auto ncells = fcells.size();
+      for (i=0; i!=ncells; ++i)
+        if (fcells[i] == cc) break;
     }
+    AmanziGeometry::Point normal = data_.face_normals.get<MEM>(f,i);
+
+    if (getSpaceDimension() == getManifoldDimension()) {
+      // 2D flattened or 3D
+      if (c < 0) {
+        // no orientation
+        assert(orientation == nullptr);
+        normal *= MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
+      } else if (orientation) {
+        *orientation = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
+      }
+    } else {
+      // manifold case
+      if (c < 0) {
+        assert(orientation == nullptr);
+
+        if (fcells.size() != 2) {
+          normal *= MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
+        } else {
+          // average normals oriented from lower to higher GIDs
+          int pos_i = getEntityGID(Entity_kind::CELL, fcells[0]) > getEntityGID(Entity_kind::CELL, fcells[1]) ? 0 : 1;
+          normal = (data_.face_normals.get<MEM>(f,1 - pos_i) - data_.face_normals.get<MEM>(f,pos_i)) / 2;
+        }
+      } else if (orientation) {
+        *orientation = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
+      }
+    }
+
+    if (orientation) assert(*orientation != 0);
+    return normal;
+
+  } else {
+    return algorithms_->getFaceNormal(*this, f, c, orientation);
   }
-
-  return normal;
-
 }
 
 template<MemSpace_kind MEM>
