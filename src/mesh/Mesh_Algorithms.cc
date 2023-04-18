@@ -71,21 +71,46 @@ namespace AmanziMesh {
     cEntity_ID_View fcells;
     mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
     if (orientation) *orientation = 0;
-    Entity_ID cc = (c < 0) ? fcells[0] : c;
 
-    int i = std::find(fcells.begin(), fcells.end(), cc) - fcells.begin();
+    Entity_ID cc;
+    std::size_t i;
+    if (c < 0) {
+      cc = fcells[0];
+      i = 0;
+    } else {
+      cc = c;
+      auto ncells = fcells.size();
+      for (i=0; i!=ncells; ++i)
+        if (fcells[i] == cc) break;
+    }
+
     AmanziGeometry::Point normal = std::get<2>(geom)[i];
 
     if (mesh.getSpaceDimension() == mesh.getManifoldDimension()) {
       if (c < 0) {
+        assert(orientation == nullptr);
         normal *= MeshAlgorithms::getFaceDirectionInCell(mesh, f, cc);
       } else if (orientation) {
         *orientation = MeshAlgorithms::getFaceDirectionInCell(mesh, f, cc);
       }
-    } else if (c < 0) {
-      Errors::Message msg("MeshFramework: asking for the natural normal of a submanifold mesh is not valid.");
-      Exceptions::amanzi_throw(msg);
+    } else {
+      // manifold case
+      if (c < 0) {
+        assert(orientation == nullptr);
+
+        if (fcells.size() != 2) {
+          normal *= MeshAlgorithms::getFaceDirectionInCell(mesh, f, cc);
+        } else {
+          // average normals oriented from lower to higher GIDs
+          int pos_i = mesh.getEntityGID(Entity_kind::CELL, fcells[0]) > mesh.getEntityGID(Entity_kind::CELL, fcells[1]) ? 0 : 1;
+          normal = (std::get<2>(geom)[1-pos_i] - std::get<2>(geom)[pos_i]) / 2;
+        }
+      } else if (orientation) {
+        *orientation = MeshAlgorithms::getFaceDirectionInCell(mesh, f, cc);
+      }
     }
+
+    if (orientation) assert(*orientation != 0);
     return normal;
   }
 
