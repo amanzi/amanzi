@@ -208,7 +208,7 @@ class Richards_PK : public Flow_PK {
   Key mass_density_liquid_key_, temperature_key_;
 
   bool multiscale_porosity_;
-  int ms_itrs_, ms_calls_;
+  int ms_itrs_;
   Teuchos::RCP<MultiscaleFlowPorosityPartition> msp_;
 
   // time integrators

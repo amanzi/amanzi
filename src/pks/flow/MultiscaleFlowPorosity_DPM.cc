@@ -39,9 +39,10 @@ MultiscaleFlowPorosity_DPM::MultiscaleFlowPorosity_DPM(Teuchos::ParameterList& p
 * It should be called only once; otherwise, create an evaluator.
 ****************************************************************** */
 double
-MultiscaleFlowPorosity_DPM::ComputeField(double phi, double n_l, double pcm)
+MultiscaleFlowPorosity_DPM::ComputeField(double phi, double n_l, double prm)
 {
-  return wrm_->saturation(pcm) * phi * n_l;
+  double pc = atm_pressure_ - prm;
+  return wrm_->saturation(pc) * phi * n_l;
 }
 
 
@@ -49,27 +50,34 @@ MultiscaleFlowPorosity_DPM::ComputeField(double phi, double n_l, double pcm)
 * Main capability: cell-based Newton solver. It returns water storage,
 * pressure in the matrix. max_itrs is input/output parameter.
 ****************************************************************** */
-double
-MultiscaleFlowPorosity_DPM::WaterContentMatrix(double pcf0,
-                                               WhetStone::DenseVector& pcm,
-                                               double wcm0,
+WhetStone::DenseVector
+MultiscaleFlowPorosity_DPM::WaterContentMatrix(double prf0,
+                                               WhetStone::DenseVector& prm,
+                                               WhetStone::DenseVector& wcm0,
                                                double dt,
                                                double phi,
                                                double n_l,
+                                               double mu_l,
+                                               double atm_pressure,
                                                int& max_itrs)
 {
-  double patm(1e+5), zoom, pmin, pmax;
-  zoom = std::fabs(pcm(0)) + patm;
-  pmin = pcm(0) - zoom;
-  pmax = pcm(0) + zoom;
+  atm_pressure_ = atm_pressure;
+
+  double zoom, pmin, pmax, pcm, pcf0;
+  pcf0 = atm_pressure_ - prf0;
+  pcm = atm_pressure_ - prm(0);
+
+  zoom = std::fabs(pcm) + atm_pressure_;
+  pmin = pcm - zoom;
+  pmax = pcm + zoom;
 
   // setup local parameters
   double sat0, alpha_mod;
-  sat0 = wcm0 / (phi * n_l);
+  sat0 = wcm0(0) / (phi * n_l);
   alpha_mod = alpha_ * dt / (phi * n_l);
 
   // setup iterative parameters
-  double f0, f1, ds, dp, dsdp, guess, result(pcm(0));
+  double f0, f1, ds, dp, dsdp, guess, result(pcm);
   double delta(1.0e+10), delta1(1.0e+10), delta2(1.0e+10);
   int count(max_itrs);
 
@@ -113,8 +121,11 @@ MultiscaleFlowPorosity_DPM::WaterContentMatrix(double pcf0,
   }
   max_itrs -= count - 1;
 
-  pcm(0) = result;
-  return wrm_->saturation(pcm(0)) * phi * n_l;
+  WhetStone::DenseVector wcm1(1);
+  prm(0) = atm_pressure_ - result;
+  wcm1(0) = wrm_->saturation(result) * phi * n_l;
+
+  return wcm1;
 }
 
 } // namespace Flow

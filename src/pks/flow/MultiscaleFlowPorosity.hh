@@ -43,17 +43,19 @@ class MultiscaleFlowPorosity {
 
   // Field here is the water storage.
   // There is no need to use evaluators for this task.
-  virtual double ComputeField(double phi, double n_l, double pcm) = 0;
+  virtual double ComputeField(double phi, double n_l, double prm) = 0;
 
-  // local (cell-based) solver returns water storage and capilalry
-  // pressure in the matrix.
-  virtual double WaterContentMatrix(double pcf0,
-                                    WhetStone::DenseVector& pcm,
-                                    double wcm0,
-                                    double dt,
-                                    double phi,
-                                    double n_l,
-                                    int& max_itrs) = 0;
+  // local (cell-based) solver returns water storage and pressure in matrix
+  virtual 
+  WhetStone::DenseVector WaterContentMatrix(double prf0,
+                                            WhetStone::DenseVector& prm,
+                                            WhetStone::DenseVector& wcm0,
+                                            double dt,
+                                            double phi,
+                                            double n_l,
+                                            double mu_l,
+                                            double atm_pressure_,
+                                            int& max_itrs) = 0;
 
   // Number of matrix nodes
   virtual int NumberMatrixNodes() = 0;

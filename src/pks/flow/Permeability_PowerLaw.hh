@@ -7,10 +7,29 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Flow PK
+/*!
 
-  A power law for permeability factor depending on porosity.
+The power law permeability porosity relations is given by
+
+.. math::
+  K = K_0 \left(\frac{\phi}{\phi_0}\right)^n
+
+* `"permeability porosity model`" [string] is the name of this model
+
+* `"undeformed soil porosity`" [double] defines the reference porosity :math:`\phi_0`
+
+* `"power law exponent`" [double] defines exponent :math:`n`
+
+.. code-block:: xml
+
+  <ParameterList name="permeability porosity models"> <!-- parent list -->
+    <ParameterList name="PPM 0">
+       <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
+       <Parameter name="permeability porosity model" type="string" value="power law"/>
+       <Parameter name="undeformed soil porosity" type="double" value="0.22"/>
+       <Parameter name="power law exponent" type="double" value="3.0"/>
+    </ParameterList>
+
 */
 
 #ifndef AMANZI_FLOW_PERMEABILITY_POWER_LAW_HH_

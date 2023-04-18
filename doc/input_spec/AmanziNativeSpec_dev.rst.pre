@@ -905,6 +905,16 @@ The available options are
 { Permeability }
 
 
+Kozeny-Carman
+`````````````
+{ Permeability_KozenyCarman }
+
+
+Power law
+``````````
+{ Permeability_PowerLaw }
+
+
 Relative permeability
 .....................
 This section discusses interface treatment of cell-centered fields such as 

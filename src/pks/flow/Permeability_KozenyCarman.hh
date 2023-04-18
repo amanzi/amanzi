@@ -7,10 +7,13 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Flow PK
+/*!
 
-  The Kozeny-Carman permeability factor depending on porosity.
+The Kozeny-Carman permeability porosity relations is given by
+
+.. math::
+  K = K_0 \frac{\phi^3(1- \phi_0)^2}{\phi_0^3(1-\phi)^2}
+
 */
 
 #ifndef AMANZI_FLOW_PERMEABILITY_KOZENY_CARMAN_HH_

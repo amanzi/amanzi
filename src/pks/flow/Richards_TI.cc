@@ -31,6 +31,8 @@
 namespace Amanzi {
 namespace Flow {
 
+using CV_t = CompositeVector;
+
 /* ******************************************************************
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
@@ -59,7 +61,7 @@ Richards_PK::FunctionalResidual(double t_old,
   vol_flowrate_copy->ScatterMasterToGhosted("face");
 
   pressure_eval_->SetChanged();
-  auto& alpha = S_->GetW<CompositeVector>(alpha_key_, Tags::DEFAULT, alpha_key_);
+  auto& alpha = S_->GetW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
 
   if (!flow_on_manifold_) {
@@ -71,7 +73,7 @@ Richards_PK::FunctionalResidual(double t_old,
     // UpwindInflowBoundary_New(u_new->Data());
 
     S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
-    auto& alpha_dP = S_->GetDerivativeW<CompositeVector>(
+    auto& alpha_dP = S_->GetDerivativeW<CV_t>(
       alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
@@ -94,11 +96,11 @@ Richards_PK::FunctionalResidual(double t_old,
 
   pressure_eval_->SetChanged();
   S_->GetEvaluator(porosity_key_).Update(*S_, "flow");
-  const auto& phi_c = *S_->Get<CompositeVector>(porosity_key_).ViewComponent("cell");
+  const auto& phi_c = *S_->Get<CV_t>(porosity_key_).ViewComponent("cell");
 
   S_->GetEvaluator(water_storage_key_).Update(*S_, "flow");
-  const auto& wc_c = *S_->Get<CompositeVector>(water_storage_key_).ViewComponent("cell");
-  const auto& wc_prev_c = *S_->Get<CompositeVector>(prev_water_storage_key_).ViewComponent("cell");
+  const auto& wc_c = *S_->Get<CV_t>(water_storage_key_).ViewComponent("cell");
+  const auto& wc_prev_c = *S_->Get<CV_t>(prev_water_storage_key_).ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
     double wc1 = wc_c[0][c];
@@ -122,7 +124,7 @@ Richards_PK::FunctionalResidual(double t_old,
   functional_max_cell = 0;
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const auto& dens_c = *S_->Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
+    const auto& dens_c = *S_->Get<CV_t>(mol_density_liquid_key_).ViewComponent("cell");
     double factor = mesh_->cell_volume(c) * dens_c[0][c] * phi_c[0][c] / dt_;
     double tmp = fabs(f_cell[0][c]) / factor;
     if (tmp > functional_max_norm) {
@@ -250,48 +252,63 @@ Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapo
 
 
 /* ******************************************************************
-* Calculate additional conribution to Richards functional:
+* Calculate additional contribution to Richards functional:
 *  f += alpha (p_f - p_m), where
 *    p_f   - pressure in the fracture
 *    p_m   - pressure in the matrix
-*    alpha - piecewise constant mass fransfer coeffiecient
+*    alpha - piecewise constant mass fransfer coefficient
 ****************************************************************** */
 void
 Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f)
 {
-  const auto& pcf = *S_->Get<CompositeVector>(pressure_key_).ViewComponent("cell");
-  auto& pcm =
-    *S_->GetW<CompositeVector>(pressure_msp_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  double mu = S_->Get<double>("const_fluid_viscosity");
+
+  const auto& prf = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
+  auto& prm = *S_->GetW<CV_t>(pressure_msp_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
   S_->GetEvaluator(porosity_msp_key_).Update(*S_, "flow");
   const auto& phi = *S_->Get<CompositeVector>(porosity_msp_key_).ViewComponent("cell");
 
-  const auto& wcm_prev =
-    *S_->Get<CompositeVector>(prev_water_storage_msp_key_).ViewComponent("cell");
-  auto& wcm = *S_->GetW<CompositeVector>(water_storage_msp_key_, Tags::DEFAULT, passwd_)
-                 .ViewComponent("cell");
+  const auto& wcm_prev = *S_->Get<CV_t>(prev_water_storage_msp_key_).ViewComponent("cell");
+  auto& wcm = *S_->GetW<CV_t>(water_storage_msp_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
   Epetra_MultiVector& fc = *f->ViewComponent("cell");
 
-  double phi0, wcm0, wcm1, pcf0;
-  WhetStone::DenseVector pcm0(1);
+  int nnodes = prm.NumVectors(); 
+  double phi0, prf0;
+  WhetStone::DenseVector prm0(nnodes), wcm0(nnodes), wcm1(nnodes);
+
+  int num_itrs, max_itrs(0);
+  ms_itrs_ = 0;
+
   for (int c = 0; c < ncells_owned; ++c) {
-    pcf0 = atm_pressure_ - pcf[0][c];
-    pcm0(0) = atm_pressure_ - pcm[0][c];
-    wcm0 = wcm_prev[0][c];
+    prf0 = prf[0][c];
+    for (int i = 0; i < nnodes; ++i) {
+      prm0(i) = prm[i][c];
+      wcm0(i) = wcm_prev[i][c];
+    }
     phi0 = phi[0][c];
 
-    int max_itrs(100);
+    int num_itrs(100);
     wcm1 = msp_->second[(*msp_->first)[c]]->WaterContentMatrix(
-      pcf0, pcm0, wcm0, dt, phi0, molar_rho_, max_itrs);
+      prf0, prm0, wcm0, dt, phi0, molar_rho_, mu, atm_pressure_, num_itrs);
 
-    fc[0][c] += (wcm1 - wcm0) / dt;
-    wcm[0][c] = wcm1;
-    pcm[0][c] = atm_pressure_ - pcm0(0);
+    fc[0][c] += (wcm1(0) - wcm0(0)) / dt;
 
-    ms_itrs_ += max_itrs;
+    for (int i = 0; i < nnodes; ++i) {
+      wcm[i][c] = wcm1(i);
+      prm[i][c] = prm0(i);
+    }
+
+    ms_itrs_ += num_itrs;
+    max_itrs = std::max(max_itrs, num_itrs);
   }
-  ms_calls_ += ncells_owned;
+
+  // identify convergence failure
+  if (max_itrs >= 100) {
+    Errors::CutTimeStep e("GDPM did not converge");
+    amanzi_throw(e);
+  }
 }
 
 
@@ -302,15 +319,15 @@ void
 Richards_PK::CalculateWaterStorageMultiscale_()
 {
   S_->GetEvaluator(porosity_msp_key_).Update(*S_, "flow");
-  const auto& pcm = *S_->Get<CompositeVector>(pressure_msp_key_).ViewComponent("cell");
+  const auto& prm = *S_->Get<CompositeVector>(pressure_msp_key_).ViewComponent("cell");
   const auto& phi = *S_->Get<CompositeVector>(porosity_msp_key_).ViewComponent("cell");
   auto& wcm = *S_->GetW<CompositeVector>(water_storage_msp_key_, passwd_).ViewComponent("cell");
 
-  double phi0, pcm0;
+  int nnodes = prm.NumVectors();
   for (int c = 0; c < ncells_owned; ++c) {
-    pcm0 = atm_pressure_ - pcm[0][c];
-    phi0 = phi[0][c];
-    wcm[0][c] = msp_->second[(*msp_->first)[c]]->ComputeField(phi0, molar_rho_, pcm0);
+    for (int i = 0; i < nnodes; ++i) {
+      wcm[i][c] = msp_->second[(*msp_->first)[c]]->ComputeField(phi[0][c], molar_rho_, prm[i][c]);
+    }
   }
 }
 

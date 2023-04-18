@@ -72,17 +72,20 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
 
   // interface for porosity models
   // -- calculate field water storage assuming pressure equilibrium
-  virtual double ComputeField(double phi, double n_l, double pcm) override;
+  virtual double ComputeField(double phi, double n_l, double prm) override;
 
-  // -- local (cell-based) solver returns water storage and capilalry
-  //   pressure in the matrix. max_itrs is input/output parameter
-  virtual double WaterContentMatrix(double pcf0,
-                                    WhetStone::DenseVector& pcm,
-                                    double wcm0,
-                                    double dt,
-                                    double phi,
-                                    double n_l,
-                                    int& max_itrs) override;
+  // -- local (cell-based) solver returns water storage and pressure in matrix.
+  //    NOTE: prm and max_itrs are input/output parameters
+  virtual 
+  WhetStone::DenseVector WaterContentMatrix(double prf0,
+                                            WhetStone::DenseVector& prm,
+                                            WhetStone::DenseVector& wcm0,
+                                            double dt,
+                                            double phi,
+                                            double n_l,
+                                            double mu_l,
+                                            double atm_pressure,
+                                            int& max_itrs) override;
 
   // -- number of matrix nodes
   virtual int NumberMatrixNodes() override { return matrix_nodes_; }
@@ -96,7 +99,7 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
   virtual int ApplyPreconditioner(const Teuchos::RCP<const WhetStone::DenseVector>& u,
                                   const Teuchos::RCP<WhetStone::DenseVector>& hu) override
   {
-    op_->ApplyInverse(*u, *hu);
+    op_diff_->ApplyInverse(*u, *hu);
     return 0;
   }
 
@@ -110,18 +113,27 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
   // -- other required functions
   virtual void ChangedSolution() override{};
 
+  // --  modifies the correction
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult 
+  ModifyCorrection(const Teuchos::RCP<const WhetStone::DenseVector>& r,
+                   const Teuchos::RCP<const WhetStone::DenseVector>& u,
+                   const Teuchos::RCP<WhetStone::DenseVector>& du) override;
+
   // modifiers
-  void set_op(std::shared_ptr<Operators::Mini_Diffusion1D> op) { op_ = op; }
+  void set_op(std::shared_ptr<Operators::Mini_Diffusion1D> op) { op_diff_ = op; }
   void set_bcl(double bcl) { bcl_ = bcl; }
 
  private:
   Teuchos::RCP<WRM> wrm_;
 
   int matrix_nodes_;
-  double depth_, tol_, Ka_;
+  double depth_, tol_, Ka_, atm_pressure_, nl_, mu_, phi_;
+  WhetStone::DenseVector wcm0_, wcm1_;
 
-  double bcl_;
-  std::shared_ptr<Operators::Mini_Diffusion1D> op_;
+  double dt_, bcl_;
+  std::shared_ptr<Operators::Mini_Diffusion1D> op_diff_;
+
+  double clip_;
 
   static Utils::RegisteredFactory<MultiscaleFlowPorosity, MultiscaleFlowPorosity_GDPM> reg_;
 };

@@ -107,8 +107,6 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   domain_ = fp_list_->template get<std::string>("domain name", "domain");
 
   ms_itrs_ = 0;
-  ms_calls_ = 0;
-
   vo_ = Teuchos::null;
 }
 
@@ -224,11 +222,17 @@ Richards_PK::Setup()
 
   // -- multiscale extension: secondary (immobile water storage)
   if (msm_name == "dual continuum discontinuous matrix") {
+    auto msp_list = Teuchos::sublist(fp_list_, "multiscale models", true);
+    msp_ = CreateMultiscaleFlowPorosityPartition(mesh_, msp_list);
+
+    int nnodes, nnodes_tmp = NumberMatrixNodes(msp_);
+    mesh_->get_comm()->MaxAll(&nnodes_tmp, &nnodes, 1);
+
     if (!S_->HasRecord(pressure_msp_key_)) {
       S_->Require<CV_t, CVS_t>(pressure_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::CELL, nnodes);
 
       Teuchos::ParameterList elist(pressure_msp_key_);
       elist.set<std::string>("evaluator name", pressure_msp_key_);
@@ -236,21 +240,17 @@ Richards_PK::Setup()
       S_->SetEvaluator(pressure_msp_key_, Tags::DEFAULT, pressure_msp_eval_);
     }
 
-    Teuchos::RCP<Teuchos::ParameterList> msp_list =
-      Teuchos::sublist(fp_list_, "multiscale models", true);
-    msp_ = CreateMultiscaleFlowPorosityPartition(mesh_, msp_list);
-
     if (!S_->HasRecord(water_storage_msp_key_)) {
       S_->Require<CV_t, CVS_t>(water_storage_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::CELL, nnodes);
     }
     if (!S_->HasRecord(prev_water_storage_msp_key_)) {
       S_->Require<CV_t, CVS_t>(prev_water_storage_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::CELL, nnodes);
       S_->GetRecordW(prev_water_storage_msp_key_, passwd_).set_io_vis(false);
     }
 
@@ -267,30 +267,6 @@ Richards_PK::Setup()
     Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, msp_list);
     auto eval = Teuchos::rcp(new PorosityEvaluator(elist, pom));
     S_->SetEvaluator(porosity_msp_key_, Tags::DEFAULT, eval);
-
-    // Secondary matrix nodes are collected here.
-    int nnodes, nnodes_tmp = NumberMatrixNodes(msp_);
-    mesh_->get_comm()->MaxAll(&nnodes_tmp, &nnodes, 1);
-    if (nnodes > 1) {
-      S_->Require<CV_t, CVS_t>("water_storage_ms_aux", Tags::DEFAULT, passwd_)
-        .SetMesh(mesh_)
-        ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
-      S_->GetRecordW("water_storage_ms_aux", passwd_).set_io_vis(false);
-
-      S_->Require<CV_t, CVS_t>("pressure_msp_aux", Tags::DEFAULT, passwd_)
-        .SetMesh(mesh_)
-        ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
-      S_->GetRecordW("pressure_msp_aux", passwd_).set_io_vis(false);
-
-      S_->Require<CV_t, CVS_t>("porosity_msp_aux", Tags::DEFAULT, "porosity_msp_aux")
-        .SetMesh(mesh_)
-        ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
-      S_->SetEvaluator("porosity_msp_aux", Tags::DEFAULT, eval);
-      S_->GetRecordW("porosity_msp_aux", Tags::DEFAULT, "porosity_msp_aux").set_io_vis(false);
-    }
   }
 
   // Require additional fields and evaluators for this PK.
@@ -829,8 +805,10 @@ Richards_PK::Initialize()
 
     // We start with pressure equilibrium
     if (multiscale_porosity_) {
-      *S_->GetW<CV_t>(pressure_msp_key_, passwd_).ViewComponent("cell") =
-        *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
+      const auto& p1 = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
+      auto& p0 = *S_->GetW<CV_t>(pressure_msp_key_, passwd_).ViewComponent("cell");
+
+      for (int i = 0; i < p0.NumVectors(); ++i) (*p0(i)) = (*p1(0));
       pressure_msp_eval_->SetChanged();
     }
   }
@@ -930,7 +908,7 @@ Richards_PK::InitializeFields_()
     // if (!S_->GetField(pressure_msp_key_, passwd_)->initialized()) {
     const auto& p1 = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
     auto& p0 = *S_->GetW<CV_t>(pressure_msp_key_, passwd_).ViewComponent("cell");
-    p0 = p1;
+    for (int i = 0; i < p0.NumVectors(); ++i) (*p0(i)) = (*p1(0));
 
     S_->GetRecordW(pressure_msp_key_, passwd_).set_initialized();
     pressure_msp_eval_->SetChanged();
@@ -1015,10 +993,6 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   AMANZI_ASSERT(bdf1_dae_ != Teuchos::null);
 
   dt_ = t_new - t_old;
-
-  // initialize statistics
-  ms_itrs_ = 0;
-  ms_calls_ = 0;
 
   // save a copy of primary and conservative fields
   std::vector<std::string> fields;
@@ -1252,9 +1226,13 @@ Richards_PK::DeriveBoundaryFaceValue(int f,
 void
 Richards_PK::VV_ReportMultiscale()
 {
-  if (multiscale_porosity_ && ms_calls_ && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+  if (multiscale_porosity_ && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    int total_itrs(ms_itrs_);
+    mesh_->get_comm()->SumAll(&ms_itrs_, &total_itrs, 1);
+    int ncells = mesh_->cell_map(false).NumGlobalElements();
+
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "multiscale: NS:" << double(ms_itrs_) / ms_calls_ << std::endl;
+    *vo_->os() << "multiscale: NS:" << double(total_itrs) / ncells << std::endl;
   }
 }
 

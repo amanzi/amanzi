@@ -52,6 +52,7 @@ const double FLOW_DT_ADAPTIVE_ERROR_TOLERANCE = 1e-10;
 
 // multiscale models
 const double FLOW_DPM_NEWTON_TOLERANCE = 1e-8;
+const double FLOW_DPM_NEWTON_CLIPPING_FACTOR = 0.05;
 
 const int FLOW_HEX_FACES = 6; // Hexahedron is the common element
 const int FLOW_HEX_NODES = 8;

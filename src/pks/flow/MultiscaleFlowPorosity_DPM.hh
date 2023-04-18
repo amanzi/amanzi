@@ -41,24 +41,27 @@ class MultiscaleFlowPorosity_DPM : public MultiscaleFlowPorosity {
   ~MultiscaleFlowPorosity_DPM(){};
 
   // Calculate field water storage assuming pressure equilibrium
-  virtual double ComputeField(double phi, double n_l, double pcm) override;
+  virtual double ComputeField(double phi, double n_l, double prm) override;
 
-  // local (cell-based) solver returns water storage and capilalry
-  // pressure in the matrix. max_itrs is input/output parameter
-  virtual double WaterContentMatrix(double pcf0,
-                                    WhetStone::DenseVector& pcm,
-                                    double wcm0,
-                                    double dt,
-                                    double phi,
-                                    double n_l,
-                                    int& max_itrs) override;
+  // local (cell-based) solver returns water storage and pressure in matrix.
+  // NOTE: max_itrs is the input/output parameter
+  virtual
+  WhetStone::DenseVector WaterContentMatrix(double prf0,
+                                            WhetStone::DenseVector& prm,
+                                            WhetStone::DenseVector& wcm0,
+                                            double dt,
+                                            double phi,
+                                            double n_l,
+                                            double mu_l,
+                                            double atm_pressure,
+                                            int& max_itrs) override;
 
   // Number of matrix nodes
   virtual int NumberMatrixNodes() override { return 1; }
 
  private:
   Teuchos::RCP<WRM> wrm_;
-  double alpha_;
+  double alpha_, atm_pressure_;
   double tol_;
 
   static Utils::RegisteredFactory<MultiscaleFlowPorosity, MultiscaleFlowPorosity_DPM> reg_;
