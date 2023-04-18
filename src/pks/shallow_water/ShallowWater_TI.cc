@@ -349,7 +349,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   // sources (bathymetry, flux exchange, etc)
   // the code should not fail after that
-  U.resize(3);
+  U.resize(4);
   double ExtraSource;
 
   for (int c = 0; c < ncells_owned; ++c) {
