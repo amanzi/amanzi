@@ -84,7 +84,6 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
                                             double phi,
                                             double n_l,
                                             double mu_l,
-                                            double atm_pressure,
                                             int& max_itrs) override;
 
   // -- number of matrix nodes

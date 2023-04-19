@@ -54,7 +54,6 @@ class MultiscaleFlowPorosity {
                                             double phi,
                                             double n_l,
                                             double mu_l,
-                                            double atm_pressure_,
                                             int& max_itrs) = 0;
 
   // Number of matrix nodes

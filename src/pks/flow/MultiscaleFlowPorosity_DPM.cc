@@ -32,6 +32,7 @@ MultiscaleFlowPorosity_DPM::MultiscaleFlowPorosity_DPM(Teuchos::ParameterList& p
   Teuchos::ParameterList& slist = plist.sublist("dual porosity parameters");
   alpha_ = slist.get<double>("mass transfer coefficient", 0.0);
   tol_ = slist.get<double>("tolerance", FLOW_DPM_NEWTON_TOLERANCE);
+  atm_pressure_ = plist.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
 }
 
 
@@ -58,11 +59,8 @@ MultiscaleFlowPorosity_DPM::WaterContentMatrix(double prf0,
                                                double phi,
                                                double n_l,
                                                double mu_l,
-                                               double atm_pressure,
                                                int& max_itrs)
 {
-  atm_pressure_ = atm_pressure;
-
   double zoom, pmin, pmax, pcm, pcf0;
   pcf0 = atm_pressure_ - prf0;
   pcm = atm_pressure_ - prm(0);

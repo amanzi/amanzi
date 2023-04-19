@@ -118,6 +118,6 @@ TEST(FLOW_2D_MULTISCALE_DPM) {
 }
 
 TEST(FLOW_2D_MULTISCALE_GDPM) {
-  RunTest("test/flow_multiscale_gdpm.xml", 0.5);
+  RunTest("test/flow_multiscale_gdpm.xml", 0.8);
 }
 

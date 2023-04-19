@@ -291,7 +291,7 @@ Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Composite
 
     int num_itrs(100);
     wcm1 = msp_->second[(*msp_->first)[c]]->WaterContentMatrix(
-      prf0, prm0, wcm0, dt, phi0, molar_rho_, mu, atm_pressure_, num_itrs);
+      prf0, prm0, wcm0, dt, phi0, molar_rho_, mu, num_itrs);
 
     fc[0][c] += (wcm1(0) - wcm0(0)) / dt;
 

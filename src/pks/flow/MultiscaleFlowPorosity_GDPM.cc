@@ -42,6 +42,7 @@ MultiscaleFlowPorosity_GDPM::MultiscaleFlowPorosity_GDPM(Teuchos::ParameterList&
   Ka_ = sublist.get<double>("absolute permeability");
   tol_ = plist.get<double>("tolerance", FLOW_DPM_NEWTON_TOLERANCE);
   clip_ = plist.get<double>("clipping factor", FLOW_DPM_NEWTON_CLIPPING_FACTOR);
+  atm_pressure_ = plist.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
 }
 
 
@@ -68,14 +69,12 @@ MultiscaleFlowPorosity_GDPM::WaterContentMatrix(double prf0,
                                                 double phi,
                                                 double n_l,
                                                 double mu_l,
-                                                double atm_pressure,
                                                 int& max_itrs)
 {
   dt_ = dt;
   phi_ = phi;
   nl_ = n_l;
   mu_ = mu_l;
-  atm_pressure_ = atm_pressure;
 
   bcl_ = prf0;
   wcm0_ = wcm0;

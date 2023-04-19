@@ -53,7 +53,6 @@ class MultiscaleFlowPorosity_DPM : public MultiscaleFlowPorosity {
                                             double phi,
                                             double n_l,
                                             double mu_l,
-                                            double atm_pressure,
                                             int& max_itrs) override;
 
   // Number of matrix nodes
