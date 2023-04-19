@@ -508,8 +508,8 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
     Teuchos::ParameterList& tmp_list = src_list.sublist("wells");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
-      if (src_list.isSublist(name)) {
-        Teuchos::ParameterList& spec = src_list.sublist(name);
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
         srcs.push_back(factory.Create(spec, "well", AmanziMesh::Entity_kind::CELL, Kxy));
       }
     }
