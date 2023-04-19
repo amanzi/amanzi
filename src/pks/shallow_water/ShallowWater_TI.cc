@@ -249,6 +249,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
        W_rec = ComputeWettedQuantitiesEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
        h_rec = W_rec[0];
+       ht_rec = ComputeTotalDepth(h_rec, W_rec[1], B_c[0][c1]); //this is for the call below
+       ierr = ErrorDiagnostics_(t, c1, h_rec, B_rec, ht_rec);
+       if (ierr < 0) break;
 
     }
 
@@ -290,8 +293,11 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       }
       else{
 
-       W_rec = ComputeWettedQuantitiesEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
-       h_rec = W_rec[0];
+        W_rec = ComputeWettedQuantitiesEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
+        h_rec = W_rec[0];
+        ht_rec = ComputeTotalDepth(h_rec, W_rec[1], B_c[0][c2]); //this is for the call below
+        ierr = ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
+        if (ierr < 0) break;
 
       }
 
@@ -391,8 +397,8 @@ ShallowWater_PK::ErrorDiagnostics_(double t, int c, double h, double B, double h
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "negative height in cell " << c << ", xc=(" << xc[0] << ", " << xc[1] << ")"
-                 << ", total=" << ht << ", bathymetry=" << B << ", height=" << h << std::endl;
+      *vo_->os() << "negative primary variable in cell " << c << ", xc=(" << xc[0] << ", " << xc[1] << ")"
+                 << ", total depth=" << ht << ", bathymetry=" << B << ", primary variable=" << h << std::endl;
     }
     return -1;
   }
