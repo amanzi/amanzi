@@ -62,6 +62,7 @@ set(pks_inc_files
   PK_PhysicalExplicit.hh
   PK_PhysicalBDF.hh
   PK_DomainFunction.hh
+  PK_DomainFunctionField.hh
   PK_DomainFunctionFactory.hh
   PK_DomainFunctionSimple.hh
   PK_DomainFunctionVolume.hh
