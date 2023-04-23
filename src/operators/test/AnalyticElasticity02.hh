@@ -45,6 +45,18 @@ class AnalyticElasticity02 : public AnalyticElasticityBase {
     return -3 * x * y + 0.75;
   }
 
+  virtual Amanzi::WhetStone::Tensor stress_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
+    double x = p[0];
+    double y = p[1];
+    Amanzi::WhetStone::Tensor T(2, 2);
+
+    T(0, 0) = 1.0;
+    T(0, 1) = T(1, 0) = 1.5 * (y * y + x * x);
+    T(1, 1) = -1.0;
+    return T;
+  }
+
   Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
   {
     return Amanzi::AmanziGeometry::Point(0.0, 0.0);

@@ -23,6 +23,7 @@
 #include "MatrixFE.hh"
 #include "MFD3D_Elasticity.hh"
 #include "WhetStoneDefs.hh"
+#include "WhetStoneMeshUtils.hh"
 
 // Amanzi::Operators
 #include "Op.hh"
@@ -123,6 +124,88 @@ PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
   global_op_->OpPushBack(local_op_);
 
   K_ = Teuchos::null;
+}
+
+
+/* ******************************************************************
+* Put here stuff that has to be done in constructor.
+****************************************************************** */
+void
+PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
+{
+  int v1, v2, d = mesh_->space_dimension();
+  AmanziMesh::Entity_ID_List nodes, faces, cells;
+  auto& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
+
+  for (auto bc : bcs_trial_) {
+    const auto& bc_model = bc->bc_model();
+    const auto& bc_value = bc->bc_value();
+    AmanziMesh::Entity_kind kind = bc->kind();
+
+    for (int c = 0; c != ncells_owned; ++c) {
+      WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
+      int ncols = Acell.NumCols();
+      int nrows = Acell.NumRows();
+
+      if (kind == AmanziMesh::FACE && d == 2) {
+        mesh_->cell_get_faces(c, &faces);
+        int nfaces = faces.size();
+
+        for (int n = 0; n != nfaces; ++n) {
+          int f = faces[n];
+          double value = bc_value[f];
+
+          if (bc_model[f] == OPERATOR_BC_SHEAR_STRESS) {
+            const auto& tau = mesh_->edge_vector(f);
+            mesh_->edge_get_nodes(f, &v1, &v2);
+
+            for (int k = 0; k < d; ++k) {
+              rhs_node[k][v1] += value * tau[k] / 2;
+              rhs_node[k][v2] += value * tau[k] / 2;
+            }
+          }
+        }
+      } else if (kind == AmanziMesh::NODE) {
+        mesh_->cell_get_nodes(c, &nodes);
+        int nnodes = nodes.size();
+
+        for (int n = 0; n != nnodes; ++n) {
+          int v = nodes[n];
+          double value = bc_value[v];
+
+          if (bc_model[v] == OPERATOR_BC_KINEMATIC) {
+            if (local_op_->matrices_shadow[c].NumRows() == 0) {
+              local_op_->matrices_shadow[c] = Acell;
+            }
+            mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
+            int ncells = cells.size();
+
+            const auto& normal = WhetStone::getNodeUnitNormal(*mesh_, v);
+            int k = (std::fabs(normal[0]) > std::fabs(normal[1])) ? 0 : 1;
+            if (d == 3) k = (std::fabs(normal[k]) > std::fabs(normal[2])) ? k : 2;
+
+            int noff(d * n);
+            for (int m = 0; m < ncols; m++) Acell(noff + k, m) = 0.0;
+            for (int i = 0; i < d; ++i) Acell(noff + k, noff + i) = normal[i] / ncells;
+            if (v < nnodes_owned) rhs_node[k][v] = value;
+
+            if (eliminate) {
+              // AMANZI_ASSERT(false);
+            }
+          }
+        }
+      }
+    }
+
+    // impose essential BCs via the default implementation
+    if (bc->type() == WhetStone::DOF_Type::POINT) {
+      ApplyBCs_Cell_Point_(*bc, local_op_, primary, eliminate, essential_eqn);
+    } else if (bc->type() == WhetStone::DOF_Type::SCALAR) {
+      ApplyBCs_Cell_Scalar_(*bc, local_op_, primary, eliminate, essential_eqn);
+    }
+  }
+
+  global_op_->rhs()->GatherGhostedToMaster(Add);
 }
 
 } // namespace Operators

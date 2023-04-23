@@ -39,10 +39,14 @@ class AnalyticElasticityBase {
   // analytic solution for elasticity-type problem
   // -- stiffness/elasticity tensor T
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+
   // -- analytic solution
   virtual Amanzi::AmanziGeometry::Point
   velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::WhetStone::Tensor
+  stress_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+
   // -- source term
   virtual Amanzi::AmanziGeometry::Point
   source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;

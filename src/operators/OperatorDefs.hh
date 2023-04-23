@@ -95,7 +95,10 @@ const int OPERATOR_BC_NEUMANN = 2;
 const int OPERATOR_BC_TOTAL_FLUX = 3;
 const int OPERATOR_BC_MIXED = 4;
 const int OPERATOR_BC_DIRICHLET_TYPE2 = 5;
-const int OPERATOR_BC_REMOVE = 6;
+const int OPERATOR_BC_KINEMATIC = 6;
+const int OPERATOR_BC_NORMAL_STRESS = 7;
+const int OPERATOR_BC_SHEAR_STRESS = 8;
+const int OPERATOR_BC_REMOVE = 9;
 
 // memory allocation
 const int OPERATOR_HEX_FACES = 6; // Hexahedron is the common element

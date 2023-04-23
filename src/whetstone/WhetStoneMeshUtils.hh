@@ -126,6 +126,27 @@ cell_get_entities(const AmanziMesh::Mesh& mesh,
 }
 
 
+/* ******************************************************************
+* Extension of Mesh API: entities in cell
+****************************************************************** */
+inline AmanziGeometry::Point
+getNodeUnitNormal(const AmanziMesh::Mesh& mesh, int v)
+{
+  Entity_ID_List faces, cells;
+  mesh.node_get_faces(v, AmanziMesh::Parallel_type::ALL, &faces);
+  int nfaces = faces.size();
+
+  int d = mesh.space_dimension();
+  AmanziGeometry::Point normal(d);
+
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
+    mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    if (cells.size() == 1) normal += mesh.face_normal(faces[n]);
+  }
+  return normal / norm(normal);
+}
+
 } // namespace WhetStone
 } // namespace Amanzi
 

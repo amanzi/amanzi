@@ -164,7 +164,11 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(const BCs& bc,
 
   AmanziMesh::Entity_kind kind = bc.kind();
   Teuchos::RCP<Epetra_MultiVector> rhs_kind;
-  if (primary) rhs_kind = rhs.ViewComponent(schema_row.KindToString(kind), true);
+  if (primary) {
+    std::string name = schema_row.KindToString(kind);
+    if (!rhs.HasComponent(name)) return;
+    rhs_kind = rhs.ViewComponent(name, true);
+  }
 
   for (int c = 0; c != ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = op->matrices[c];
@@ -195,7 +199,6 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(const BCs& bc,
     // essential conditions for test functions
     schema_row.ComputeOffset(c, mesh_, offset);
 
-    bool flag(true);
     int item(0);
     AmanziMesh::Entity_kind itkind;
 
@@ -206,10 +209,7 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(const BCs& bc,
         for (int n = 0; n != nents; ++n) {
           int x = entities[n];
           if (bc_model[x] == OPERATOR_BC_DIRICHLET) {
-            if (flag) { // make a copy of elemental matrix
-              op->matrices_shadow[c] = Acell;
-              flag = false;
-            }
+            if (op->matrices_shadow[c].NumRows() == 0) { op->matrices_shadow[c] = Acell; }
             int noff(n + offset[item]);
             for (int m = 0; m < ncols; m++) Acell(noff, m) = 0.0;
           }
@@ -230,9 +230,8 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(const BCs& bc,
           double value = bc_value[x];
 
           if (bc_model[x] == OPERATOR_BC_DIRICHLET) {
-            if (flag) { // make a copy of elemental matrix
+            if (op->matrices_shadow[c].NumRows() == 0) { // make a copy
               op->matrices_shadow[c] = Acell;
-              flag = false;
             }
 
             int noff(n + offset[item]);
@@ -316,7 +315,6 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Point_(const BCs& bc,
     // essential conditions for test functions
     op->schema_row().ComputeOffset(c, mesh_, offset);
 
-    bool flag(true);
     int item(0);
     AmanziMesh::Entity_kind itkind;
 
@@ -327,10 +325,7 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Point_(const BCs& bc,
         for (int n = 0; n != nnodes; ++n) {
           int v = nodes[n];
           if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
-            if (flag) { // make a copy of elemental matrix
-              op->matrices_shadow[c] = Acell;
-              flag = false;
-            }
+            if (op->matrices_shadow[c].NumRows() == 0) { op->matrices_shadow[c] = Acell; }
             for (int k = 0; k < d; ++k) {
               int noff(d * n + k + offset[item]);
               for (int m = 0; m < ncols; m++) Acell(noff, m) = 0.0;
@@ -353,10 +348,7 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Point_(const BCs& bc,
           AmanziGeometry::Point value = bc_value[v];
 
           if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
-            if (flag) { // make a copy of elemental matrix
-              op->matrices_shadow[c] = Acell;
-              flag = false;
-            }
+            if (op->matrices_shadow[c].NumRows() == 0) { op->matrices_shadow[c] = Acell; }
 
             for (int k = 0; k < d; ++k) {
               int noff(d * n + k + offset[item]);
@@ -435,7 +427,6 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(const BCs& bc,
     // essential conditions for test functions
     schema_row.ComputeOffset(c, mesh_, offset);
 
-    bool flag(true);
     int item(0);
     AmanziMesh::Entity_kind itkind;
 
@@ -446,10 +437,7 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(const BCs& bc,
         for (int n = 0; n != nents; ++n) {
           int f = entities[n];
           if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-            if (flag) { // make a copy of elemental matrix
-              op->matrices_shadow[c] = Acell;
-              flag = false;
-            }
+            if (op->matrices_shadow[c].NumRows() == 0) { op->matrices_shadow[c] = Acell; }
 
             for (int k = 0; k < d; ++k) {
               int noff(d * n + k + offset[item]);
@@ -473,10 +461,7 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(const BCs& bc,
           const std::vector<double>& value = bc_value[f];
 
           if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-            if (flag) { // make a copy of elemental matrix
-              op->matrices_shadow[c] = Acell;
-              flag = false;
-            }
+            if (op->matrices_shadow[c].NumRows() == 0) { op->matrices_shadow[c] = Acell; }
 
             for (int k = 0; k < d; ++k) {
               int noff(d * n + k + offset[item]);
@@ -743,7 +728,7 @@ BoundaryDataToFaces(const Teuchos::RCP<Operators::BCs>& op_bc, CompositeVector& 
     auto& field_f = *field.ViewComponent("face", true);
 
     for (int f = 0; f != nfaces; ++f) {
-      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) { 
+      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
         int g = fmap.FirstPointInElement(f);
         field_f[0][g] = bc_value[f];
       }
