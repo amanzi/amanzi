@@ -73,8 +73,8 @@ Richards_PK::FunctionalResidual(double t_old,
     // UpwindInflowBoundary_New(u_new->Data());
 
     S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
-    auto& alpha_dP = S_->GetDerivativeW<CV_t>(
-      alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
+    auto& alpha_dP =
+      S_->GetDerivativeW<CV_t>(alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
@@ -274,7 +274,7 @@ Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Composite
 
   Epetra_MultiVector& fc = *f->ViewComponent("cell");
 
-  int nnodes = prm.NumVectors(); 
+  int nnodes = prm.NumVectors();
   double phi0, prf0;
   WhetStone::DenseVector prm0(nnodes), wcm0(nnodes), wcm1(nnodes);
 

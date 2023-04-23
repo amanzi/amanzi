@@ -61,7 +61,8 @@ class MultiscaleTransportPorosity_DPM : public MultiscaleTransportPorosity {
   std::vector<double> mol_diff_;
   double warren_root_, tau_, depth_;
 
-  static Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_DPM> reg_;
+  static Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_DPM>
+    reg_;
 };
 
 } // namespace Transport

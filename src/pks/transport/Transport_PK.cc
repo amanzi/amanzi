@@ -642,7 +642,8 @@ Transport_PK::InitializeFields_()
   InitializeCVFieldFromCVField(S_, *vo_, prev_wc_key_, wc_key_, passwd_);
 
   InitializeCVFieldFromCVField(S_, *vo_, water_content_msp_key_, porosity_msp_key_, passwd_);
-  InitializeCVFieldFromCVField(S_, *vo_, prev_water_content_msp_key_, water_content_msp_key_, passwd_);
+  InitializeCVFieldFromCVField(
+    S_, *vo_, prev_water_content_msp_key_, water_content_msp_key_, passwd_);
 
   InitializeCVFieldFromCVField(S_, *vo_, "total_component_concentration_msp", tcc_key_, passwd_);
   InitializeCVField(S_, *vo_, "total_component_concentration_msp_aux", Tags::DEFAULT, passwd_, 0.0);
@@ -756,7 +757,7 @@ Transport_PK::StableTimeStep(int n)
       *vo_->os() << ") has smallest dt=" << dt_ << std::endl;
     }
   }
-  
+
   return dt_;
 }
 

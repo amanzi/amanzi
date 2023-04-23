@@ -28,8 +28,7 @@
 namespace Amanzi {
 namespace Flow {
 
-class PorosityEvaluator
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class PorosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
   explicit PorosityEvaluator(Teuchos::ParameterList& plist,

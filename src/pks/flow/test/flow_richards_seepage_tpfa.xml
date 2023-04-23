@@ -110,25 +110,25 @@
 	  <ParameterList name="timestep controller standard parameters">
 	    <Parameter name="max iterations" type="int" value="35"/>
 	    <Parameter name="min iterations" type="int" value="7"/>
-	    <Parameter name="time step increase factor" type="double" value="1.25000000000000000e+00"/>
-	    <Parameter name="time step reduction factor" type="double" value="5.00000000000000044e-01"/>
-	    <Parameter name="max time step" type="double" value="6.00000000000000000e+09"/>
+	    <Parameter name="time step increase factor" type="double" value="1.25"/>
+	    <Parameter name="time step reduction factor" type="double" value="0.5"/>
+	    <Parameter name="max time step" type="double" value="6.0e+09"/>
 	    <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
 	  </ParameterList>
 	  <Parameter name="solver type" type="string" value="Newton"/>
 	  <ParameterList name="Newton parameters">
 	    <Parameter name="nonlinear tolerance" type="double" value="9.99999999999999955e-05"/>
-	    <Parameter name="diverged tolerance" type="double" value="1.00000000000000000e+10"/>
-	    <Parameter name="max du growth factor" type="double" value="1.00000000000000000e+03"/>
+	    <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+	    <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
 	    <Parameter name="max divergent iterations" type="int" value="3"/>
 	    <Parameter name="max nka vectors" type="int" value="10"/>
 	    <Parameter name="limit iterations" type="int" value="20"/>
 	  </ParameterList>
 	  <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
-	  <Parameter name="nonlinear iteration damping factor" type="double" value="1.00000000000000000e+00"/>
+	  <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
 	  <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-	  <Parameter name="restart tolerance relaxation factor" type="double" value="1.00000000000000000e+00"/>
-	  <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.00000000000000000e+00"/>
+	  <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+	  <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
 	  <Parameter name="extrapolate initial guess" type="bool" value="false"/>
 	</ParameterList>
       </ParameterList>

@@ -82,7 +82,7 @@ DenseVector::Reshape(int mrow, double val)
   }
 
   if (val != 0.0) {
-    for (int i = m0; i < m_; ++i) data_[i] = val; 
+    for (int i = m0; i < m_; ++i) data_[i] = val;
   }
 }
 

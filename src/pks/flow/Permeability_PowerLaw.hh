@@ -52,15 +52,9 @@ class Permeability_PowerLaw : public Permeability {
   ~Permeability_PowerLaw(){};
 
   // required methods from the base class
-  double Factor(double phi)
-  {
-    return std::pow(phi / phi_ref_, exp_);
-  }
+  double Factor(double phi) { return std::pow(phi / phi_ref_, exp_); }
 
-  double dFactordPorosity(double phi)
-  {
-    return std::pow(phi / phi_ref_, exp_ - 1) / phi_ref_;
-  }
+  double dFactordPorosity(double phi) { return std::pow(phi / phi_ref_, exp_ - 1) / phi_ref_; }
 
  private:
   double phi_ref_, exp_;

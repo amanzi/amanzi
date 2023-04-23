@@ -633,8 +633,8 @@ InputConverter::GetAttributeValueD_(DOMElement* elem,
     }
 
     if (!(val >= valmin && val <= valmax)) {
-      msg << "Value of attribute \"" << attr_name << "\"=" << val
-          << " is out of range: " << valmin << " " << valmax << " [" << unit << "].\n";
+      msg << "Value of attribute \"" << attr_name << "\"=" << val << " is out of range: " << valmin
+          << " " << valmax << " [" << unit << "].\n";
       Exceptions::amanzi_throw(msg);
     }
 

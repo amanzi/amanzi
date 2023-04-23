@@ -210,8 +210,8 @@ Energy_PK::Setup()
   if (!S_->HasRecord(mol_flowrate_key_)) {
     auto cvs = S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
     *S_->Require<CV_t, CVS_t>(mol_flowrate_key_, Tags::DEFAULT, passwd_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true) = cvs;
+       .SetMesh(mesh_)
+       ->SetGhosted(true) = cvs;
   }
 
   // -- effective fracture conductivity

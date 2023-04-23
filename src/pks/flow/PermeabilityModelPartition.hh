@@ -24,7 +24,8 @@ namespace Amanzi {
 namespace Flow {
 
 typedef std::vector<Teuchos::RCP<Permeability>> PermeabilityModelList;
-typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, PermeabilityModelList> PermeabilityModelPartition;
+typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, PermeabilityModelList>
+  PermeabilityModelPartition;
 
 // Non-member factory
 Teuchos::RCP<PermeabilityModelPartition>

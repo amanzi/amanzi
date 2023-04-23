@@ -36,7 +36,8 @@
 #include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
-void RunTest(const std::string& filename, double tol)
+void
+RunTest(const std::string& filename, double tol)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -113,11 +114,12 @@ void RunTest(const std::string& filename, double tol)
 }
 
 
-TEST(FLOW_2D_MULTISCALE_DPM) {
+TEST(FLOW_2D_MULTISCALE_DPM)
+{
   RunTest("test/flow_multiscale.xml", 0.2);
 }
 
-TEST(FLOW_2D_MULTISCALE_GDPM) {
+TEST(FLOW_2D_MULTISCALE_GDPM)
+{
   RunTest("test/flow_multiscale_gdpm.xml", 0.8);
 }
-

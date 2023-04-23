@@ -260,7 +260,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
 /* ******************************************************************
 * Default implementations
 ****************************************************************** */
-inline void 
+inline void
 PDE_Diffusion::UpdateFluxManifold_(const Teuchos::Ptr<const CompositeVector>& u,
                                    const Teuchos::Ptr<CompositeVector>& flux)
 {

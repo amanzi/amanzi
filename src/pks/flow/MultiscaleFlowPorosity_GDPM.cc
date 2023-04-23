@@ -101,8 +101,9 @@ MultiscaleFlowPorosity_GDPM::WaterContentMatrix(double prf0,
   // create the solver
   Teuchos::ParameterList plist;
   plist.set<double>("nonlinear tolerance", 1.0e-7)
-       .set<int>("limit iterations", max_itrs)
-       .sublist("verbose object").set<std::string>("verbosity level", "low");
+    .set<int>("limit iterations", max_itrs)
+    .sublist("verbose object")
+    .set<std::string>("verbosity level", "low");
 
   Amanzi::AmanziSolvers::SolverNewton<WhetStone::DenseVector, int> newton(plist);
   newton.Init(fn, 1);
@@ -123,7 +124,7 @@ MultiscaleFlowPorosity_GDPM::Residual(const Teuchos::RCP<WhetStone::DenseVector>
                                       const Teuchos::RCP<WhetStone::DenseVector>& f)
 {
   double factor = nl_ / mu_;
-  for (int i = 0; i < u->NumRows(); ++i) { 
+  for (int i = 0; i < u->NumRows(); ++i) {
     double pc = atm_pressure_ - (*u)(i);
     op_diff_->k()(i) = factor * wrm_->k_relative(pc);
   }
@@ -135,7 +136,7 @@ MultiscaleFlowPorosity_GDPM::Residual(const Teuchos::RCP<WhetStone::DenseVector>
   op_diff_->Apply(*u, *f);
   f->Update(-1.0, op_diff_->rhs(), 1.0);
 
-  for (int i = 0; i < u->NumRows(); ++i) { 
+  for (int i = 0; i < u->NumRows(); ++i) {
     double h = op_diff_->mesh_cell_volume(i);
     double pc = atm_pressure_ - (*u)(i);
     wcm1_(i) = nl_ * phi_ * wrm_->saturation(pc);
@@ -164,7 +165,7 @@ MultiscaleFlowPorosity_GDPM::UpdatePreconditioner(
   // op_diff_->ApplyBCs(bcl_, Operators::OPERATOR_BC_DIRICHLET, 0.0, Operators::OPERATOR_BC_NEUMANN);
 
   WhetStone::DenseVector dwcm(wcm0_);
-  for (int i = 0; i < u->NumRows(); ++i) { 
+  for (int i = 0; i < u->NumRows(); ++i) {
     double h = op_diff_->mesh_cell_volume(i);
     double pc = atm_pressure_ - (*u)(i);
     dwcm(i) = -wrm_->dSdPc(pc) * nl_ * phi_ * h / dt_;
@@ -190,7 +191,7 @@ MultiscaleFlowPorosity_GDPM::ErrorNorm(const Teuchos::RCP<const WhetStone::Dense
 * Modifies nonlinear update du based on the maximum allowed change
 * of saturation.
 ****************************************************************** */
-AmanziSolvers::FnBaseDefs::ModifyCorrectionResult 
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 MultiscaleFlowPorosity_GDPM::ModifyCorrection(const Teuchos::RCP<const WhetStone::DenseVector>& r,
                                               const Teuchos::RCP<const WhetStone::DenseVector>& u,
                                               const Teuchos::RCP<WhetStone::DenseVector>& du)

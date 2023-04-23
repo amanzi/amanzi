@@ -46,15 +46,14 @@ class MultiscaleFlowPorosity {
   virtual double ComputeField(double phi, double n_l, double prm) = 0;
 
   // local (cell-based) solver returns water storage and pressure in matrix
-  virtual 
-  WhetStone::DenseVector WaterContentMatrix(double prf0,
-                                            WhetStone::DenseVector& prm,
-                                            WhetStone::DenseVector& wcm0,
-                                            double dt,
-                                            double phi,
-                                            double n_l,
-                                            double mu_l,
-                                            int& max_itrs) = 0;
+  virtual WhetStone::DenseVector WaterContentMatrix(double prf0,
+                                                    WhetStone::DenseVector& prm,
+                                                    WhetStone::DenseVector& wcm0,
+                                                    double dt,
+                                                    double phi,
+                                                    double n_l,
+                                                    double mu_l,
+                                                    int& max_itrs) = 0;
 
   // Number of matrix nodes
   virtual int NumberMatrixNodes() = 0;

@@ -88,7 +88,8 @@ class MultiscaleTransportPorosity_GDPM : public MultiscaleTransportPorosity {
   virtual int NumberMatrixNodes() override { return matrix_nodes_; }
 
  private:
-  static Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_GDPM> reg_;
+  static Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_GDPM>
+    reg_;
   std::vector<Operators::Mini_Diffusion1D> op_diff_;
 
   int matrix_nodes_;

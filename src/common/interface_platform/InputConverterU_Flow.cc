@@ -615,19 +615,19 @@ InputConverterU::TranslatePPM_()
     ppm_list.set<Teuchos::Array<std::string>>("regions", regions);
 
     if (model == "power law") {
-      found = true; 
+      found = true;
       double exp = GetAttributeValueD_(node, "exponent", TYPE_NUMERICAL, 0.0, 10.0, "-");
       double phi = GetAttributeValueD_(node, "reference_porosity", TYPE_NUMERICAL, 0.0, 1.0, "-");
 
       ppm_list.set<std::string>("permeability porosity model", model)
-              .set<double>("undeformed soil porosity", phi)
-              .set<double>("power law exponent", exp);
+        .set<double>("undeformed soil porosity", phi)
+        .set<double>("power law exponent", exp);
     } else if (model == "Kozeny-Carman") {
-      found = true; 
+      found = true;
       double phi = GetAttributeValueD_(node, "reference_porosity", TYPE_NUMERICAL, 0.0, 1.0, "-");
 
       ppm_list.set<std::string>("permeability porosity model", model)
-              .set<double>("undeformed soil porosity", phi);
+        .set<double>("undeformed soil porosity", phi);
     }
   }
 

@@ -33,8 +33,8 @@ PermeabilityEvaluator::PermeabilityEvaluator(Teuchos::ParameterList& plist,
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), ppm_(ppm)
 {
   if (my_keys_.size() == 0) {
-    my_keys_.push_back(std::make_pair(
-      plist_.get<std::string>("permeability porosity factor key"), Tags::DEFAULT));
+    my_keys_.push_back(
+      std::make_pair(plist_.get<std::string>("permeability porosity factor key"), Tags::DEFAULT));
   }
 
   // my dependency is pressure.

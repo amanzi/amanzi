@@ -258,7 +258,7 @@ RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, d
     norm = std::sqrt(err) / data.size();
     std::cout << "Mean error in observations: " << err << " norm=" << norm << std::endl;
   }
-  
+
   if (fmin < 1.0e+98) CHECK_CLOSE(fmin, fmax, 1e-12);
 
 
@@ -302,7 +302,7 @@ RunTest(int icase, double u_f, double mol_diff_f, double mol_diff_m, double L, d
 
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_1)
 {
-  double L = 2.0;  // matrix depth
+  double L = 2.0; // matrix depth
   double Df = 1e-6;
   double Dm = 0.0;
   double err = RunTest(1, 0.0, Df, Dm, L);
@@ -335,4 +335,3 @@ TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_4)
   double err = RunTest(4, u, 0.0, Dm, 0.05, 1e+5);
   CHECK(err < 2.0e-2);
 }
-

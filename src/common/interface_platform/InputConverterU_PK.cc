@@ -165,7 +165,7 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
 
   // controller options
   {
-    std::vector<std::string> options({"max_iterations", "min_iterations"});
+    std::vector<std::string> options({ "max_iterations", "min_iterations" });
     for (auto opt : options) {
       node = GetUniqueElementByTagsString_(controls + ", " + opt, flag);
       if (flag) {
@@ -177,7 +177,7 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   }
 
   {
-    std::vector<std::string> options({"time_step_reduction_factor", "time_step_increase_factor"});
+    std::vector<std::string> options({ "time_step_reduction_factor", "time_step_increase_factor" });
     for (auto opt : options) {
       node = GetUniqueElementByTagsString_(controls + ", " + opt, flag);
       if (flag) {
@@ -190,7 +190,7 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
 
   // solver options
   {
-    std::vector<std::string> options({"limit_iterations", "max_divergent_iterations"});
+    std::vector<std::string> options({ "limit_iterations", "max_divergent_iterations" });
     for (auto opt : options) {
       node = GetUniqueElementByTagsString_(controls + ", " + opt, flag);
       if (flag) {
@@ -202,9 +202,8 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   }
 
   {
-    std::vector<std::string> options({"nonlinear_tolerance",
-                                      "diverged_tolerance", 
-                                      "max_error_growth_factor"});
+    std::vector<std::string> options(
+      { "nonlinear_tolerance", "diverged_tolerance", "max_error_growth_factor" });
     for (auto opt : options) {
       node = GetUniqueElementByTagsString_(controls + ", " + opt, flag);
       if (flag) {
@@ -225,8 +224,8 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
 
   // bdf1 options
   {
-    std::vector<std::string> options({"max_preconditioner_lag_iterations", 
-                                      "nonlinear_iteration_initial_guess_extrapolation_order"});
+    std::vector<std::string> options({ "max_preconditioner_lag_iterations",
+                                       "nonlinear_iteration_initial_guess_extrapolation_order" });
     for (auto opt : options) {
       node = GetUniqueElementByTagsString_(controls + ", " + opt, flag);
       if (flag) {
@@ -238,9 +237,9 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   }
 
   {
-    std::vector<std::string> options({"nonlinear_iteration_damping_factor",
-                                      "restart_tolerance_relaxation_factor",
-                                      "restart_tolerance_relaxation_factor_damping"});
+    std::vector<std::string> options({ "nonlinear_iteration_damping_factor",
+                                       "restart_tolerance_relaxation_factor",
+                                       "restart_tolerance_relaxation_factor_damping" });
     for (auto opt : options) {
       node = GetUniqueElementByTagsString_(controls + ", " + opt, flag);
       if (flag) {

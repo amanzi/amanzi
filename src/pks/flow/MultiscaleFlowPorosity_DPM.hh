@@ -45,15 +45,14 @@ class MultiscaleFlowPorosity_DPM : public MultiscaleFlowPorosity {
 
   // local (cell-based) solver returns water storage and pressure in matrix.
   // NOTE: max_itrs is the input/output parameter
-  virtual
-  WhetStone::DenseVector WaterContentMatrix(double prf0,
-                                            WhetStone::DenseVector& prm,
-                                            WhetStone::DenseVector& wcm0,
-                                            double dt,
-                                            double phi,
-                                            double n_l,
-                                            double mu_l,
-                                            int& max_itrs) override;
+  virtual WhetStone::DenseVector WaterContentMatrix(double prf0,
+                                                    WhetStone::DenseVector& prm,
+                                                    WhetStone::DenseVector& wcm0,
+                                                    double dt,
+                                                    double phi,
+                                                    double n_l,
+                                                    double mu_l,
+                                                    int& max_itrs) override;
 
   // Number of matrix nodes
   virtual int NumberMatrixNodes() override { return 1; }

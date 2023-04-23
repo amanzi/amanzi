@@ -38,10 +38,7 @@ class Permeability_KozenyCarman : public Permeability {
   ~Permeability_KozenyCarman(){};
 
   // required methods from the base class
-  double Factor(double phi)
-  {
-    return factor_ * phi * phi * phi / (1.0 - phi) / (1.0 - phi);
-  }
+  double Factor(double phi) { return factor_ * phi * phi * phi / (1.0 - phi) / (1.0 - phi); }
 
   double dFactordPorosity(double phi)
   {

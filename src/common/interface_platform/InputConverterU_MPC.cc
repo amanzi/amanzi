@@ -1037,11 +1037,12 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       pk_list.sublist(name).sublist("time integrator") =
         pk_list.sublist(pk_m).sublist("time integrator");
 
-      if (pk == "flow") pk_list.sublist(name)
-        .sublist("time integrator")
-        .sublist("BDF1")
-        .sublist("nka parameters")
-        .set<std::string>("monitor", "monitor l2 residual");
+      if (pk == "flow")
+        pk_list.sublist(name)
+          .sublist("time integrator")
+          .sublist("BDF1")
+          .sublist("nka parameters")
+          .set<std::string>("monitor", "monitor l2 residual");
 
       auto& tmp_m = pk_list.sublist(pk_m).sublist("time integrator");
       tmp_m.set<std::string>("time integration method", "none");

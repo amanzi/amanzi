@@ -76,15 +76,14 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
 
   // -- local (cell-based) solver returns water storage and pressure in matrix.
   //    NOTE: prm and max_itrs are input/output parameters
-  virtual 
-  WhetStone::DenseVector WaterContentMatrix(double prf0,
-                                            WhetStone::DenseVector& prm,
-                                            WhetStone::DenseVector& wcm0,
-                                            double dt,
-                                            double phi,
-                                            double n_l,
-                                            double mu_l,
-                                            int& max_itrs) override;
+  virtual WhetStone::DenseVector WaterContentMatrix(double prf0,
+                                                    WhetStone::DenseVector& prm,
+                                                    WhetStone::DenseVector& wcm0,
+                                                    double dt,
+                                                    double phi,
+                                                    double n_l,
+                                                    double mu_l,
+                                                    int& max_itrs) override;
 
   // -- number of matrix nodes
   virtual int NumberMatrixNodes() override { return matrix_nodes_; }
@@ -113,7 +112,7 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
   virtual void ChangedSolution() override{};
 
   // --  modifies the correction
-  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult 
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   ModifyCorrection(const Teuchos::RCP<const WhetStone::DenseVector>& r,
                    const Teuchos::RCP<const WhetStone::DenseVector>& u,
                    const Teuchos::RCP<WhetStone::DenseVector>& du) override;

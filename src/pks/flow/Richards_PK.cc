@@ -413,11 +413,12 @@ Richards_PK::Setup()
 
     Teuchos::ParameterList elist(ppfactor_key_);
     elist.set<std::string>("permeability porosity factor key", ppfactor_key_)
-         .set<std::string>("porosity key", porosity_key_)
-         .set<std::string>("tag", "");
+      .set<std::string>("porosity key", porosity_key_)
+      .set<std::string>("tag", "");
 
     S_->RequireDerivative<CV_t, CVS_t>(
-      ppfactor_key_, Tags::DEFAULT, porosity_key_, Tags::DEFAULT, ppfactor_key_).SetGhosted();
+        ppfactor_key_, Tags::DEFAULT, porosity_key_, Tags::DEFAULT, ppfactor_key_)
+      .SetGhosted();
 
     auto eval = Teuchos::rcp(new PermeabilityEvaluator(elist, ppm));
     S_->SetEvaluator(ppfactor_key_, Tags::DEFAULT, eval);
@@ -898,7 +899,8 @@ Richards_PK::InitializeFields_()
     }
   }
 
-  InitializeCVFieldFromCVField(S_, *vo_, prev_saturation_liquid_key_, saturation_liquid_key_, passwd_);
+  InitializeCVFieldFromCVField(
+    S_, *vo_, prev_saturation_liquid_key_, saturation_liquid_key_, passwd_);
   InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
   InitializeCVFieldFromCVField(S_, *vo_, prev_aperture_key_, aperture_key_, passwd_);
 
@@ -929,7 +931,8 @@ Richards_PK::InitializeFields_()
     }
   }
 
-  InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_msp_key_, water_storage_msp_key_, passwd_);
+  InitializeCVFieldFromCVField(
+    S_, *vo_, prev_water_storage_msp_key_, water_storage_msp_key_, passwd_);
 }
 
 
@@ -1135,7 +1138,8 @@ Richards_PK::MolarFlowRateToVolumetricFlowRate_()
 
   upwind_->Compute(*vol_flowrate_copy, bc_model, beta);
 
-  auto& vol_flowrate_f = *S_->GetW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_).ViewComponent("face");
+  auto& vol_flowrate_f =
+    *S_->GetW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_).ViewComponent("face");
   auto& beta_f = *beta.ViewComponent("face");
 
   int nfaces = vol_flowrate_f.MyLength();
