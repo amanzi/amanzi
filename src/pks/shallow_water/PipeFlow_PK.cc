@@ -270,7 +270,7 @@ double PipeFlow_PK::ComputeWettedAngle(double WaterDepth){
 //--------------------------------------------------------------------
 double PipeFlow_PK::ComputeWettedArea(double WettedAngle){
 
-   if (WettedAngle >= TwoPi) return Pi * 0.25 * pipe_diameter_ * pipe_diameter_; //if pipe is filled wetter area is the full cross section
+   if (WettedAngle >= TwoPi) return Pi * 0.25 * pipe_diameter_ * pipe_diameter_; //if pipe is filled, wetted area is the full cross section
 
    else return pipe_diameter_ * pipe_diameter_ * 0.125 * (WettedAngle - sin(WettedAngle));
 
