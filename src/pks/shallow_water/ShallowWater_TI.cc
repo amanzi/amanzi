@@ -102,8 +102,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         mesh_->face_get_nodes(f, &nodes);
         int n0 = nodes[0], n1 = nodes[1];
 
-        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
+        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET; // TODO: FIX THIS, cannot set this if DIRICHLET
+        bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0; // BCs are imposed only on velocity
         bc_value_qx[f] = bc_value_h[f] * it->second[0];
         bc_value_qy[f] = bc_value_h[f] * it->second[1];
         bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
@@ -122,7 +122,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
           mesh_->face_get_nodes(f, &nodes);
           int n0 = nodes[0], n1 = nodes[1];
 
-          bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+          bc_model[f] = Operators::OPERATOR_BC_DIRICHLET; // TODO: need the same fix as mentioned above here
           bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
           bc_value_qx[f] = it->second[0];
           bc_value_qy[f] = it->second[1];
@@ -275,10 +275,15 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     if (c2 == -1) {
       if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-        UR[0] = bc_value_h[f];
+        UR[0] = bc_value_h[f]; // TODO: this line assume that when bc_model[f] == Operators::OPERATOR_BC_DIRICHLET
+                               // DIRICHLET conditions are imposed on both primary variable and velocity
+                               // but that is not actually the case, see line 105.
+
+        //UR[0] = UL[0];       // this is the condition to enforce if there are DIRICHLET BCs for velocity ONLY
         UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
         UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
         UR[3] = ComputeWettedAngleNewton(bc_value_h[f]);
+        //UR[3] = ComputeWettedAngleNewton(UL[0]);  // enforce this if there are DIRICHLET BCs for velocity ONLY
       } else {
         // default outflow BC
         UR = UL;
