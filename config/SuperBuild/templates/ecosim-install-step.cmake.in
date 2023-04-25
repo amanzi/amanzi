@@ -1,0 +1,16 @@
+# CMake ECOSIM configure file
+
+# Now run the patch script
+execute_process(
+  COMMAND sh @ECOSIM_sh_install@
+  RESULT_VARIABLE result
+  WORKING_DIRECTORY "@ECOSIM_source_dir@"
+)
+
+if (result)
+  set(msg "ECOSIM install command failed")
+  foreach(arg IN LISTS command )
+    set(msg "${msg} '${arg}'")
+  endforeach()
+  message(FATAL_ERROR ${msg})
+endif()

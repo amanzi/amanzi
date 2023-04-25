@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# CMake generates this file
+# Replaces each @VAR@ with value of ${VAR}
+
+cd @ECOSIM_source_dir@
+
+# Manual install required for 4.0.x versions
+ecosim_dir=@TPL_INSTALL_PREFIX@/ecosim
+tpl_lib_dir=@TPL_INSTALL_PREFIX@/lib
+if [ ! -e ${ecosim_dir} ]; then mkdir -p ${ecosim_dir} ; fi
+if [ ! -e ${tpl_lib_dir} ]; then mkdir -p ${tpl_lib_dir} ; fi
+
+rsync -aH * ${ecosim_dir}
+rc=$?
+if [ "$rc" -ne "0" ]; then
+  exit $rc
+fi
+cp src/ecosmim/libpflotranchem.a ${tpl_lib_dir}
+
+exit $?

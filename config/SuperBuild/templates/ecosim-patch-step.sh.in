@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# CMake generates this file 
+
+# Source and build locations
+pflotran_src_dir=@PFLOTRAN_source_dir@
+
+OIFS=$IFS
+IFS=";"
+patch_files="@PFLOTRAN_patch_file@"
+
+for i in ${patch_files}; do
+
+ patch_file=@SuperBuild_SOURCE_DIR@/templates/${i}
+ echo "Applying patch: ${patch_file}"
+
+ if [ ! -e "${patch_file}" ] ; then
+  echo "Patch file ${patch_file} does not exist"
+  exit 10
+ fi
+
+ (cd ${pflotran_src_dir}; patch -p1 < ${patch_file})
+
+done
+
+IFS=$OIFS
+
+exit $?

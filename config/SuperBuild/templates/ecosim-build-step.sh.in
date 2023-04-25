@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# CMake generates this file
+# Replaces each @VAR@ with value of ${VAR}
+
+# Ensure a uniform build with the correct compiler
+export CC=@CMAKE_C_COMPILER@
+#export CFLAGS='@hypre_cflags@'
+export CXX=@CMAKE_CXX_COMPILER@
+#export CXXFLAGS='@hypre_cxxflags@'
+export F77=@CMAKE_Fortran_COMPILER@
+export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
+export PETSC_DIR='@PETSc_DIR@'
+
+# pflotran in-source build under src
+# NOTE: PFlotran doesn't seem parallel-build safe, since it has F90
+# NOTE: modules that need to be built before other things, and dependencies
+# NOTE: aren't expressed properly. The -j1 flag ensures that the build is
+# NOTE: serial.
+cd @PFLOTRAN_source_dir@/src/ecosim
+make -j1 ecosim_rxn
+rc=$?
+echo "make ecosim_rxn returned $rc"
+
+exit $rc
