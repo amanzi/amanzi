@@ -530,14 +530,17 @@ set(PFLOTRAN_GIT_REPOSITORY "https://gitlab.com/pflotran/pflotran.git")
 set(PFLOTRAN_GIT_TAG        "9e07f41")
 
 #
-# TPL: ECOSIM
+# TPL: EcoSIM
 #
-#set(ECOSIM_URL_STRING     "https://github.com/jinyun1tang/EcoSIM")
-#set(ECOSIM_ARCHIVE_FILE   ECOSIM-main.tar.gz)
-#set(ECOSIM_SAVEAS_FILE    ECOSIM-main.tar.gz)
-#set(ECOSIM_MD5_SUM        6c99353cbb57be8852597b3dc41c5629c7844c7c)
-#set(ECOSIM_GIT_REPOSITORY "https://github.com/jinyun1tang/EcoSIM")
-#set(ECOSIM_GIT_TAG        "6c99353")
+set(ECOSIM_VERSION_MAJOR 0)
+set(ECOSIM_VERSION_MINOR 1)
+set(ECOSIM_VERSION_PATCH 0)
+set(ECOSIM_URL_STRING     "https://github.com/jinyun1tang/EcoSIM")
+set(ECOSIM_ARCHIVE_FILE   ECOSIM-main.tar.gz)
+set(ECOSIM_SAVEAS_FILE    ECOSIM-main.tar.gz)
+set(ECOSIM_MD5_SUM        6c99353cbb57be8852597b3dc41c5629c7844c7c)
+set(ECOSIM_GIT_REPOSITORY "https://github.com/jinyun1tang/EcoSIM")
+set(ECOSIM_GIT_TAG        "6c99353")
 
 #
 # TPL: Alquimia
