@@ -153,9 +153,9 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
         for (int n = 0; n != nfaces; ++n) {
           int f = faces[n];
-          double value = bc_value[f];
 
           if (bc_model[f] == OPERATOR_BC_SHEAR_STRESS) {
+            double value = bc_value[f];
             const auto& tau = mesh_->edge_vector(f);
             mesh_->edge_get_nodes(f, &v1, &v2);
 
@@ -171,9 +171,9 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
         for (int n = 0; n != nnodes; ++n) {
           int v = nodes[n];
-          double value = bc_value[v];
 
           if (bc_model[v] == OPERATOR_BC_KINEMATIC) {
+            double value = bc_value[v];
             if (local_op_->matrices_shadow[c].NumRows() == 0) {
               local_op_->matrices_shadow[c] = Acell;
             }

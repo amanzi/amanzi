@@ -41,7 +41,7 @@
 * Elasticity model: exactness test.
 ***************************************************************** */
 void
-RunTest(int icase, const std::string& solver)
+RunTest(int icase, const std::string& solver, double mu, double lambda, bool flag)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -50,7 +50,9 @@ RunTest(int icase, const std::string& solver)
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elasticity: exactness test #" << icase << std::endl;
+  if (MyPID == 0) std::cout << "\n======================================\n"
+                            << "TEST: 2D elasticity: exactness test #" << icase 
+                            << "\n======================================" << std::endl;
 
   // read parameter list
   // -- it specifies details of the mesh, elasticity operator, and solver
@@ -78,7 +80,7 @@ RunTest(int icase, const std::string& solver)
 
   // select an analytic solution for error calculations and setup of
   // boundary conditions
-  AnalyticElasticity01 ana(mesh);
+  AnalyticElasticity01 ana(mesh, mu, lambda, flag);
 
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -231,9 +233,10 @@ RunTest(int icase, const std::string& solver)
   CompositeVector& rhs = *global_op->rhs();
   global_op->ApplyInverse(rhs, solution);
 
-  if (icase == 1 || icase == 2) { ver.CheckResidual(solution, 1.0e-14); }
+  if (icase == 1 || icase == 2) { ver.CheckResidual(solution, 1.0e-13); }
 
   if (MyPID == 0) {
+    std::cout << ana.Tensor(mesh->cell_centroid(0), 0.0) << std::endl;
     std::cout << "elasticity solver (" << solver << "): ||r||=" << global_op->residual()
               << " itr=" << global_op->num_itrs() << " code=" << global_op->returned_code()
               << std::endl
@@ -257,15 +260,35 @@ RunTest(int icase, const std::string& solver)
 
 TEST(OPERATOR_ELASTICITY_EXACTNESS_BERNARDI_RAUGEL)
 {
-  RunTest(1, "PCG");
+  RunTest(1, "PCG", 1.0, 0.0, false);
 }
 
-TEST(OPERATOR_ELASTICITY_EXACTNESS_ELASTICITY)
+TEST(OPERATOR_ELASTICITY_EXACTNESS_ELASTICITY_SCALAR_COEFFICIENT)
 {
-  RunTest(2, "PCG");
+  RunTest(2, "PCG", 2.0, 0.0, false);
 }
 
-TEST(OPERATOR_ELASTICITY_EXACTNESS_KINEMATIC)
+TEST(OPERATOR_ELASTICITY_EXACTNESS_ELASTICITY_SCALAR_TENSOR)
 {
-  RunTest(3, "GMRES");
+  RunTest(2, "PCG", 2.0, 0.0, true);
+}
+
+TEST(OPERATOR_ELASTICITY_EXACTNESS_ELASTICITY_FULL_TENSOR)
+{
+  RunTest(2, "PCG", 2.0, 1.0, true);
+}
+
+TEST(OPERATOR_ELASTICITY_EXACTNESS_KINEMATIC_SCALAR_COEFFICIENT)
+{
+  RunTest(3, "GMRES", 2.0, 0.0, false);
+}
+
+TEST(OPERATOR_ELASTICITY_EXACTNESS_KINEMATIC_SCALAR_TENSOR)
+{
+  RunTest(3, "GMRES", 2.0, 0.0, true);
+}
+
+TEST(OPERATOR_ELASTICITY_EXACTNESS_KINEMATIC_FULL_TENSOR)
+{
+  RunTest(3, "GMRES", 2.0, 1.0, true);
 }
