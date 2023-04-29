@@ -41,16 +41,14 @@ static double kB6 = -6.74694450e+5;
 static double kq = -0.023767;
 static double kTc = 647.096;
 
-static std::map<std::string, std::vector<double>> TempRange = {
-  { "CO2", {274.19, 642.66} },
-  { "Xe",  {273.22, 543.36} },
-  { "CH4", {275.44, 473.46} }
-};
+static std::map<std::string, std::vector<double>> TempRange = { { "CO2", { 274.19, 642.66 } },
+                                                                { "Xe", { 273.22, 543.36 } },
+                                                                { "CH4", { 275.44, 473.46 } } };
 
 static std::map<std::string, std::vector<double>> EquilibriumCoef = {
-  { "CO2", {1672.9376, 28.1751, -112.4619, 85.3807} },
-  { "Xe",  { 2022,8375, 16.7913, -61.2401, 41.9236} },
-  { "CH4", { 2215,6977, -0.1089, -6.6240, 4.6789} }
+  { "CO2", { 1672.9376, 28.1751, -112.4619, 85.3807 } },
+  { "Xe", { 2022, 8375, 16.7913, -61.2401, 41.9236 } },
+  { "CH4", { 2215, 6977, -0.1089, -6.6240, 4.6789 } }
 };
 
 
@@ -60,7 +58,7 @@ class VaporLiquid_Tabular : public VaporLiquid {
 
   virtual double k(double T) const;
 
-  virtual double DkDT(double T) const { return 0.0; }  // FIXME
+  virtual double DkDT(double T) const { return 0.0; } // FIXME
 
  private:
   double E_, F_, G_, H_, Tmin_, Tmax_;

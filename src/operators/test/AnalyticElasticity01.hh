@@ -21,9 +21,10 @@
 class AnalyticElasticity01 : public AnalyticElasticityBase {
  public:
   AnalyticElasticity01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-                       double mu = 1.0, double lambda = 0.0, bool flag = false)
-    : AnalyticElasticityBase(mesh),
-      mu_(mu), lambda_(lambda), flag_(flag) {};
+                       double mu = 1.0,
+                       double lambda = 0.0,
+                       bool flag = false)
+    : AnalyticElasticityBase(mesh), mu_(mu), lambda_(lambda), flag_(flag){};
   ~AnalyticElasticity01(){};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t)

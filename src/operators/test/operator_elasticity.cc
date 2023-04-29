@@ -50,9 +50,10 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\n======================================\n"
-                            << "TEST: 2D elasticity: exactness test #" << icase 
-                            << "\n======================================" << std::endl;
+  if (MyPID == 0)
+    std::cout << "\n======================================\n"
+              << "TEST: 2D elasticity: exactness test #" << icase
+              << "\n======================================" << std::endl;
 
   // read parameter list
   // -- it specifies details of the mesh, elasticity operator, and solver
@@ -252,7 +253,7 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
     ul2_err /= unorm;
     printf("L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n", ul2_err, uinf_err, global_op->num_itrs());
 
-    CHECK(ul2_err < 0.1);
+    CHECK(ul2_err < 1e-10);
     CHECK(global_op->num_itrs() < 15);
   }
 }

@@ -51,8 +51,8 @@ class MultiphaseEvaluator
 
   // added interface (WIP)
   // -- modifier
-  virtual void set_subvector(int ifield, int n, const std::string& name,
-                             Teuchos::ParameterList& plist)
+  virtual void
+  set_subvector(int ifield, int n, const std::string& name, Teuchos::ParameterList& plist)
   {
     n_ = n;
     AmanziEOS::VaporLiquidFactory factory(plist);

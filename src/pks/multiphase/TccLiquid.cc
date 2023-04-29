@@ -80,7 +80,7 @@ TccLiquid::EvaluatePartialDerivative_(const State& S,
   int ncells = result_c.MyLength();
 
   if (wrt_key == tcc_gas_key_) {
-    for (int c = 0; c != ncells; ++c) { 
+    for (int c = 0; c != ncells; ++c) {
       double kH = vapor_liquid_->k(temp_c[0][c]);
       result_c[0][c] = 1.0 / kH;
     }

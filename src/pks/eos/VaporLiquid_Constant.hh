@@ -30,7 +30,7 @@ namespace AmanziEOS {
 
 class VaporLiquid_Constant : public VaporLiquid {
  public:
-  VaporLiquid_Constant(double kD) : kD_(kD) {};
+  VaporLiquid_Constant(double kD) : kD_(kD){};
 
   virtual double k(double T) const { return kD_; }
 

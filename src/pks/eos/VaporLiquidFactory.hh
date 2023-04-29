@@ -28,18 +28,19 @@ namespace AmanziEOS {
 
 class VaporLiquidFactory {
  public:
-  VaporLiquidFactory(const Teuchos::ParameterList& plist) : plist_(plist) {};
+  VaporLiquidFactory(const Teuchos::ParameterList& plist) : plist_(plist){};
 
-  std::shared_ptr<VaporLiquid> Create(const std::string& name) {
+  std::shared_ptr<VaporLiquid> Create(const std::string& name)
+  {
     if (EquilibriumCoef.find(name) != EquilibriumCoef.end()) {
       return std::make_shared<VaporLiquid_Tabular>(name);
     } else {
       const auto& names = plist_.get<Teuchos::Array<std::string>>("aqueous names").toVector();
-      const auto& values = plist_.get<Teuchos::Array<double>>("Henry dimensionless constants").toVector();
-     
+      const auto& values =
+        plist_.get<Teuchos::Array<double>>("Henry dimensionless constants").toVector();
+
       for (int i = 0; i < names.size(); ++i) {
-        if (names[i] == name)
-          return std::make_shared<VaporLiquid_Constant>(values[i]);
+        if (names[i] == name) return std::make_shared<VaporLiquid_Constant>(values[i]);
       }
     }
 

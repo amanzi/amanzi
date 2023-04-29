@@ -69,7 +69,7 @@ TEST(ELASTICITY_STIFFNESS_2D)
       T.Init(2, 4);
       T(0, 0) = T(1, 1) = lambda + 2 * mu;
       T(0, 1) = T(1, 0) = lambda;
-      T(2, 2) = T(3, 3) = mu;
+      T(2, 2) = T(3, 3) = 2 * mu;
     }
 
     // mfd.StiffnessMatrix(cell, T, A);
