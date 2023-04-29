@@ -139,11 +139,11 @@ if (BUILD_TESTS)
                                              ${HYPRE_LIBRARY})
 
     # Test: mpc driver for multiphase
-    # add_amanzi_test(mpc_multiphase_fracture mpc_multiphase_fractures
-    #                 KIND      int
-    #                 SOURCE    test/Main.cc test/mpc_multiphase_fractures.cc
-    #	              LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
-    #                                          ${HYPRE_LIBRARY})
+    add_amanzi_test(mpc_multiphase_fracture mpc_multiphase_fractures
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_multiphase_fractures.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
 
     # Test: mpc driver for reactive transport
     add_amanzi_test(mpc_reactive_transport mpc_reactive_transport

@@ -398,6 +398,7 @@
         <Parameter name="tag" type="string" value=""/>
         <Parameter name="pressure gas key" type="string" value="pressure_gas"/>
         <Parameter name="molar density liquid key" type="string" value="molar_density_liquid"/>
+        <Parameter name="temperature key" type="string" value="temperature"/>
       </ParameterList>
 
       <ParameterList name="total_water_storage">

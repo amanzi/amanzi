@@ -429,6 +429,7 @@
         <Parameter name="tag" type="string" value=""/>
         <Parameter name="pressure gas key" type="string" value="pressure_gas"/>
         <Parameter name="molar density liquid key" type="string" value="molar_density_liquid"/>
+        <Parameter name="temperature key" type="string" value="temperature"/>
       </ParameterList>
 
       <!-- STORAGE -->
@@ -503,6 +504,7 @@
         <Parameter name="evaluator type" type="string" value="mole fraction liquid"/>
         <Parameter name="pressure gas key" type="string" value="pressure_gas"/>
         <Parameter name="mole fraction gas key" type="string" value="mole_fraction_gas"/>
+        <Parameter name="temperature key" type="string" value="temperature"/>
         <Parameter name="tag" type="string" value=""/>
       </ParameterList>
       <ParameterList name="mole_fraction_vapor">

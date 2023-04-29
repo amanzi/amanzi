@@ -23,16 +23,21 @@ namespace Multiphase {
 /* ******************************************************************
 * Simple constructor
 ****************************************************************** */
-MoleFractionLiquid::MoleFractionLiquid(Teuchos::ParameterList& plist) : MultiphaseEvaluator(plist)
+MoleFractionLiquid::MoleFractionLiquid(Teuchos::ParameterList& plist)
+  : MultiphaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
   }
   pressure_gas_key_ = plist_.get<std::string>("pressure gas key");
   x_gas_key_ = plist_.get<std::string>("mole fraction gas key");
+  temperature_key_ = plist_.get<std::string>("temperature key");
 
   dependencies_.insert(std::make_pair(pressure_gas_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(x_gas_key_, Tags::DEFAULT));
+
+  // only non-zero pointer is needed to FIXME
+  vapor_liquid_ = std::make_shared<AmanziEOS::VaporLiquid_Constant>(1.0);
 }
 
 
@@ -54,10 +59,14 @@ MoleFractionLiquid::Evaluate_(const State& S, const std::vector<CompositeVector*
 {
   const auto& pg_c = *S.Get<CompositeVector>(pressure_gas_key_).ViewComponent("cell");
   const auto& xg_c = *S.Get<CompositeVector>(x_gas_key_).ViewComponent("cell");
+  const auto& temp_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
-  for (int c = 0; c != ncells; ++c) { result_c[0][c] = pg_c[0][c] * xg_c[n_][c] * kH_; }
+  for (int c = 0; c != ncells; ++c) {
+    double kH = vapor_liquid_->k(temp_c[0][c]);
+    result_c[0][c] = pg_c[0][c] * xg_c[n_][c] * kH;
+  }
 }
 
 
@@ -72,13 +81,20 @@ MoleFractionLiquid::EvaluatePartialDerivative_(const State& S,
 {
   const auto& pg_c = *S.Get<CompositeVector>(pressure_gas_key_).ViewComponent("cell");
   const auto& xg_c = *S.Get<CompositeVector>(x_gas_key_).ViewComponent("cell");
+  const auto& temp_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
   if (wrt_key == pressure_gas_key_) {
-    for (int c = 0; c != ncells; ++c) { result_c[0][c] = xg_c[n_][c] * kH_; }
+    for (int c = 0; c != ncells; ++c) {
+      double kH = vapor_liquid_->k(temp_c[0][c]);
+      result_c[0][c] = xg_c[n_][c] * kH;
+    }
   } else if (wrt_key == x_gas_key_) {
-    for (int c = 0; c != ncells; ++c) { result_c[0][c] = pg_c[0][c] * kH_; }
+    for (int c = 0; c != ncells; ++c) {
+      double kH = vapor_liquid_->k(temp_c[0][c]);
+      result_c[0][c] = pg_c[0][c] * kH;
+    }
   }
 }
 

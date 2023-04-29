@@ -47,7 +47,7 @@ class TccLiquid : public MultiphaseEvaluator {
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
-  std::string tcc_gas_key_;
+  std::string tcc_gas_key_, temperature_key_;
 
   static Utils::RegisteredFactory<Evaluator, TccLiquid> fac_;
 };

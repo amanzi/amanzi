@@ -469,6 +469,7 @@
       <ParameterList name="total_component_concentration_gas">
         <Parameter name="evaluator type" type="string" value="tcc gas"/>
         <Parameter name="tcc liquid key" type="string" value="total_component_concentration_liquid"/>
+        <Parameter name="temperature key" type="string" value="temperature"/>
       </ParameterList>
 
       <ParameterList name="saturation_gas">

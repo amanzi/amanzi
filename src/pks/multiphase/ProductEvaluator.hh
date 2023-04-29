@@ -43,10 +43,12 @@ class ProductEvaluator : public MultiphaseEvaluator {
                                           const std::vector<CompositeVector*>& results) override;
 
   // extended interface
-  virtual void set_subvector(int ifield, int n, double kH) override
+  virtual void set_subvector(int ifield, int n, const std::string& name,
+                             Teuchos::ParameterList& plist) override
   {
     field_n_[ifield] = n;
-    kH_ = kH;
+    AmanziEOS::VaporLiquidFactory factory(plist);
+    vapor_liquid_ = factory.Create(name);
   }
 
  private:

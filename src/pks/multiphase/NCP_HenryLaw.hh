@@ -18,6 +18,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+// Amanzi
 #include "Factory.hh"
 
 #include "MultiphaseEvaluator.hh"
@@ -41,7 +42,7 @@ class NCP_HenryLaw : public MultiphaseEvaluator {
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
-  Key pressure_gas_key_, mol_density_liquid_key_;
+  Key pressure_gas_key_, mol_density_liquid_key_, temperature_key_;
 
   static Utils::RegisteredFactory<Evaluator, NCP_HenryLaw> fac_;
 };

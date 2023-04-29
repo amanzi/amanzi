@@ -18,6 +18,7 @@
 
 // Amanzi
 #include "EvaluatorSecondaryMonotype.hh"
+#include "VaporLiquidFactory.hh"
 
 namespace Amanzi {
 namespace Multiphase {
@@ -26,14 +27,14 @@ class MultiphaseEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   MultiphaseEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), n_(0), kH_(1.0){};
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), n_(0){};
 
   // inteface functions to FieldEvaluator
   MultiphaseEvaluator(const MultiphaseEvaluator& other)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other)
   {
     n_ = other.n_;
-    kH_ = other.kH_;
+    vapor_liquid_ = other.vapor_liquid_;
   }
 
   using EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::Update;
@@ -50,15 +51,17 @@ class MultiphaseEvaluator
 
   // added interface (WIP)
   // -- modifier
-  virtual void set_subvector(int ifield, int n, double kH)
+  virtual void set_subvector(int ifield, int n, const std::string& name,
+                             Teuchos::ParameterList& plist)
   {
     n_ = n;
-    kH_ = kH;
+    AmanziEOS::VaporLiquidFactory factory(plist);
+    vapor_liquid_ = factory.Create(name);
   }
 
  protected:
   int n_;
-  double kH_;
+  std::shared_ptr<AmanziEOS::VaporLiquid> vapor_liquid_;
 };
 
 } // namespace Multiphase

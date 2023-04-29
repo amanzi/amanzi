@@ -412,6 +412,7 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
     .set<std::string>("evaluator type", "mole fraction liquid")
     .set<std::string>("pressure gas key", pressure_gas_key)
     .set<std::string>("mole fraction gas key", mole_xg_key)
+    .set<std::string>("temperature key", temperature_key)
     .set<std::string>("tag", "");
 
   if (isothermal_ == false) {

@@ -629,7 +629,6 @@ Multiphase_PK::Initialize()
   mol_diff_l_ = aux_list.get<Teuchos::Array<double>>("aqueous values").toVector();
   mol_diff_g_ = aux_list.get<Teuchos::Array<double>>("gaseous values").toVector();
   mol_mass_ = aux_list.get<Teuchos::Array<double>>("molar masses").toVector();
-  kH_ = aux_list.get<Teuchos::Array<double>>("Henry dimensionless constants").toVector();
 
   mol_mass_H2O_ = mp_list_->get<double>("molar mass of water");
 
@@ -1139,29 +1138,32 @@ Multiphase_PK::ModifyEvaluators(int neqn)
   if (neqn > n0) {
     int ifield(0), n(neqn - 1 - n0);
 
+    auto plist = mp_list_->sublist("molecular diffusion");
+    std::string name = component_names_[n];
+
     // ifield is dummy here
     if (S_->HasEvaluator(tcs_key_, Tags::DEFAULT)) {
       auto eval = S_->GetEvaluatorPtr(tcs_key_, Tags::DEFAULT);
-      Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, kH_[n]);
+      Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, name, plist);
       Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, passwd_, true);
     }
 
     if (S_->HasEvaluator(ncp_g_key_, Tags::DEFAULT)) {
       auto eval = S_->GetEvaluatorPtr(ncp_g_key_, Tags::DEFAULT);
-      Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, kH_[n]);
+      Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, name, plist);
       Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, passwd_, true);
     }
 
     if (S_->HasEvaluator(x_liquid_key_, Tags::DEFAULT)) {
       auto eval = S_->GetEvaluatorPtr(x_liquid_key_, Tags::DEFAULT);
-      Teuchos::rcp_dynamic_cast<MoleFractionLiquid>(eval)->set_subvector(ifield, n, kH_[n]);
+      Teuchos::rcp_dynamic_cast<MoleFractionLiquid>(eval)->set_subvector(ifield, n, name, plist);
       Teuchos::rcp_dynamic_cast<MoleFractionLiquid>(eval)->Update(*S_, passwd_, true);
     }
 
     if (S_->HasEvaluator(tcc_liquid_key_, Tags::DEFAULT)) {
       auto eval = S_->GetEvaluatorPtr(tcc_liquid_key_, Tags::DEFAULT);
       if (eval->get_type() != EvaluatorType::PRIMARY) {
-        Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, kH_[n]);
+        Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, name, plist);
         Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, passwd_, true);
       }
     }
@@ -1169,7 +1171,7 @@ Multiphase_PK::ModifyEvaluators(int neqn)
     if (S_->HasEvaluator(tcc_gas_key_, Tags::DEFAULT)) {
       auto eval = S_->GetEvaluatorPtr(tcc_gas_key_, Tags::DEFAULT);
       if (eval->get_type() != EvaluatorType::PRIMARY) {
-        Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, kH_[n]);
+        Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->set_subvector(ifield, n, name, plist);
         Teuchos::rcp_dynamic_cast<MultiphaseEvaluator>(eval)->Update(*S_, passwd_, true);
       }
     }

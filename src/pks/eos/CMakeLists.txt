@@ -39,6 +39,7 @@ set(eos_src_files
     MolarFractionGasEvaluator.cc
     VaporInGas_Density.cc
     VaporInGas_Diffusion.cc
+    VaporLiquid_Tabular.cc
     ViscosityConstant.cc
    )
 
