@@ -33,6 +33,35 @@ set(ECOSIM_PATCH_COMMAND ${CMAKE_COMMAND} -P ${ECOSIM_cmake_patch})
 # Note:
 #      CMAKE_CACHE_ARGS requires -DVAR:<TYPE>=VALUE syntax
 #      CMAKE_ARGS -DVAR=VALUE OK
+# Seems like optional flags would go here
+# pasting some options from the EcoSIM CMakeLists file:
+#
+# option(USE_XSDK_DEFAULTS "Set to use xSDK defaults for options [ON]." ON)
+# option(CMAKE_INSTALL_PREFIX "Sets installation prefix [/usr/local].")
+# option(XSDK_ENABLE_DEBUG "Enables Debug mode builds [OFF]." OFF)
+# option(BUILD_SHARED_LIBS "Builds shared libraries [ON]." ON)
+# option(XSDK_WITH_NETCDF "Enables support for netcdf [OFF]." ON)
+# option(TPL_NETCDF_LIBRARIES "List of absolute paths to netcdf link libraries [].")
+# option(TPL_NETCDF_INCLUDE_DIRS "List of absolute paths to netcdf include directories [].")
+# set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DECOSIM_BGC")
+# set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DECOSIM")
+# set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+# set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+#
+# There are also variables related to linking TPLs for EcoSIM including
+# BLAS, LAPACK, and NETCDF. They are added to environment variables
+# ECOSIM_LIBRARIES, ECOSIM_TPLS, ECOSIM_INCLUDE_DIRS
+#
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${LAPACK_LIBRARY_DIR}")
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${BLAS_LIBRARY_DIR}")
+# set(ECOSIM_LIBRARIES ${ECOSIM_LIBRARIES};${LAPACK_LIBRARIES};${BLAS_LIBRARIES})
+# list(APPEND ECOSIM_TPLS ${TPL_NETCDF_LIBRARIES})
+# list(APPEND ECOSIM_INCLUDE_DIRS ${TPL_NETCDF_INCLUDE_DIRS})
+#
+# at the end it autogenerates ecosim.cmake from ecosim.cmake.in, but this file
+# is currently just an alquimia file, so either this doesn't work, or is overwritten
+# during building
+
 set(ECOSIM_CMAKE_CACHE_ARGS
       "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
       "-DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}"
@@ -98,7 +127,11 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                                   ${ECOSIM_CMAKE_CACHE_ARGS}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                  -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}  # Ensure uniform build
+                                  -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+                                  -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+
                     # -- Build
                     # BINARY_DIR     ${ECOSIM_build_dir}       # Build directory
                     BUILD_COMMAND    ${ECOSIM_CMAKE_COMMAND}   # $(MAKE) enables parallel builds through make
@@ -110,6 +143,6 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                     ${ECOSIM_logging_args})
 
 include(BuildLibraryName)
-build_library_name(pflotranchem ECOSIM_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-set(PFLOTRAN_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/ecosim/src/ecosim)
-set(PFLOTRAN_DIR ${TPL_INSTALL_PREFIX})
+build_library_name(ecosim ECOSIM_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(ECOSIM_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/ecosim/src/ecosim)
+set(ECOSIM_DIR ${TPL_INSTALL_PREFIX})
