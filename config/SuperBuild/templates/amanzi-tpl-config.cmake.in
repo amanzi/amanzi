@@ -80,7 +80,7 @@ set(UnitTest_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "UnitTest installation prefix")
 # ZLIB
 set(ZLIB_DIR @ZLIB_DIR@ CACHE PATH "ZLIB installation prefix")
 
-# METIS  
+# METIS
 set(METIS_DIR @METIS_DIR@ CACHE PATH "METIS installation prefix")
 
 # CCSE
@@ -93,13 +93,13 @@ set(AMANZI_SPACEDIM @CCSE_BL_SPACEDIM@ CACHE STRING "BoxLib Space dimension")
 # Boost
 set(BOOST_ROOT @BOOST_ROOT@ CACHE PATH "Boost installation prefix")
 set(Boost_NO_SYSTEM_PATHS TRUE CACHE BOOL "Do not search for Boost libraries in system paths")
-set(Boost_NO_BOOST_CMAKE  TRUE CACHE BOOL "Prevent FindBoost from looking for a Boost CMake config file")  
+set(Boost_NO_BOOST_CMAKE  TRUE CACHE BOOL "Prevent FindBoost from looking for a Boost CMake config file")
 
-# HDF5  
+# HDF5
 set(HDF5_ROOT @HDF5_DIR@ CACHE PATH "HDF5 installation prefix")
 set(HDF5_NO_SYSTEM_PATHS TRUE CACHE BOOL "Do not search for HDF5 libraries in system paths")
 
-# ASCEM-IO  
+# ASCEM-IO
 set(ASCEMIO_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "ASCEM-IO installation prefix")
 
 # NetCDF
@@ -131,7 +131,7 @@ set(HYPRE_DIR @HYPRE_INSTALL_PREFIX@ CACHE PATH "HYPRE installation prefix")
 # Trilinos
 set(Trilinos_INSTALL_PREFIX @Trilinos_INSTALL_PREFIX@ CACHE PATH "Trilinos installation prefix")
 
-# SEACAS 
+# SEACAS
 set(SEACAS_DIR @SEACAS_DIR@ CACHE PATH "SEACAS installation prefix")
 
 # XERCES
@@ -152,3 +152,6 @@ set(SuperLUDist_DIR @SuperLUDist_DIR@ CACHE PATH "SuperLUDist installation prefi
 
 # CLM
 set(CLM_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CLM installation prefix")
+
+# EcoSIM
+set(ECOSIM_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "EcoSIM installation prefix")

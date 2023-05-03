@@ -164,6 +164,7 @@ class Amanzi(CMakePackage):
         options.append('-DENABLE_CLM=OFF')
         options.append('-DENABLE_DBC=ON')
         options.append('-DENABLE_Regression_Tests=OFF')
+        options.append('-DENABLE_ECOSIM=OFF')
 
         if '+shared' in self.spec:
             options.append('-DBUILD_SHARED_LIBS=ON')
