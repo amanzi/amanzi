@@ -581,6 +581,7 @@ Amanzi Components:
 Amanzi TPLs:
     alquimia     = '"${alquimia}"'
     crunchtope   = '"${crunchtope}"'
+    ecosim       = '"${ecosim}"'
     mesh_mstk    = '"${mesh_mstk}"'
     mesh_moab    = '"${mesh_moab}"'
     netcdf4      = '"${netcdf4}"'
