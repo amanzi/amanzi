@@ -62,6 +62,7 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
   hydrostatic_pressure_force_type_ = sw_list_->get<int>("hydrostatic pressure force type", 0);
   pipe_diameter_ = sw_list_->get<double>("pipe diameter", 1.0);
   celerity_ = sw_list_->get<double>("celerity", 100); // m/s
+  source_key_ = sw_list_->get<std::string>("source key", "");
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = sw_list_->sublist("verbose object");
@@ -95,7 +96,10 @@ ShallowWater_PK::Setup()
 
   riemann_flux_key_ = Keys::getKey(domain_, "riemann_flux");
   wetted_angle_key_ = Keys::getKey(domain_, "wetted_angle"); 
-  water_depth_key_ = Keys::getKey(domain_, "water_depth"); 
+  water_depth_key_ = Keys::getKey(domain_, "water_depth");
+  if(!source_key_.empty()){ 
+    pipe_drain_key_ = Keys::getKey(domain_, "pipe_drain"); 
+  }
 
   //-------------------------------
   // constant fields
@@ -164,6 +168,16 @@ ShallowWater_PK::Setup()
          .set<double>("pipe diameter", pipe_diameter_);
     auto eval = Teuchos::rcp(new WaterDepthEvaluator(elist));
     S_->SetEvaluator(water_depth_key_, Tags::DEFAULT, eval);
+  }
+
+  if(!source_key_.empty()){ 
+     // -- pipe drain 
+     if (!S_->HasRecord(pipe_drain_key_)) {
+        S_->Require<CV_t, CVS_t>(pipe_drain_key_, Tags::DEFAULT, pipe_drain_key_)
+          .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+
+        S_->RequireEvaluator(pipe_drain_key_, Tags::DEFAULT);
+     }
   }
 
   // -- bathymetry
@@ -698,6 +712,10 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
        S_->GetEvaluatorPtr(wetted_angle_key_, Tags::DEFAULT))->SetChanged();
 
      S_->GetEvaluator(water_depth_key_).Update(*S_, passwd_);
+  }
+
+  if(!source_key_.empty()){ 
+     S_->GetEvaluator(pipe_drain_key_).Update(*S_, passwd_); // in this evaluator when running pipe flow
   }
 
   // For consistency with other flow models, we need to track previous h

@@ -156,6 +156,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   Key riemann_flux_key_;
   Key wetted_angle_key_;
   Key water_depth_key_;
+  Key source_key_;
+  Key pipe_drain_key_;
 
   std::string passwd_;
 
