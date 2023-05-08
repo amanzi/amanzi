@@ -535,12 +535,20 @@ set(PFLOTRAN_GIT_TAG        "9e07f41")
 set(ECOSIM_VERSION_MAJOR 0)
 set(ECOSIM_VERSION_MINOR 1)
 set(ECOSIM_VERSION_PATCH 0)
-set(ECOSIM_URL_STRING     "https://github.com/jinyun1tang/EcoSIM")
-set(ECOSIM_ARCHIVE_FILE   ECOSIM-main.tar.gz)
-set(ECOSIM_SAVEAS_FILE    ECOSIM-main.tar.gz)
-set(ECOSIM_MD5_SUM        6c99353cbb57be8852597b3dc41c5629c7844c7c)
+set(ECOSIM_URL_STRING     "https://github.com/jinyun1tang/EcoSIM/tree/agraus/ats_integration")
+set(ECOSIM_ARCHIVE_FILE   ECOSIM-agraus-ats_integration.tar.gz)
+set(ECOSIM_SAVEAS_FILE    ECOSIM-agraus-ats_integration.tar.gz)
+set(ECOSIM_MD5_SUM        fe90fa575e447e7770029911beb6abef45a0847e)
 set(ECOSIM_GIT_REPOSITORY "https://github.com/jinyun1tang/EcoSIM")
-set(ECOSIM_GIT_TAG        "6c99353")
+set(ECOSIM_GIT_TAG        "fe90fa5")
+
+
+#set(ECOSIM_URL_STRING     "https://github.com/jinyun1tang/EcoSIM")
+#set(ECOSIM_ARCHIVE_FILE   ECOSIM-main.tar.gz)
+#set(ECOSIM_SAVEAS_FILE    ECOSIM-main.tar.gz)
+#set(ECOSIM_MD5_SUM        6c99353cbb57be8852597b3dc41c5629c7844c7c)
+#set(ECOSIM_GIT_REPOSITORY "https://github.com/jinyun1tang/EcoSIM")
+#set(ECOSIM_GIT_TAG        "6c99353")
 
 #
 # TPL: Alquimia
