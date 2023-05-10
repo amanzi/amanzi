@@ -16,6 +16,6 @@ rc=$?
 if [ "$rc" -ne "0" ]; then
   exit $rc
 fi
-cp src/ecosim/libpflotranchem.a ${tpl_lib_dir}
+#cp src/ecosim/libpflotranchem.a ${tpl_lib_dir}
 
 exit $?
