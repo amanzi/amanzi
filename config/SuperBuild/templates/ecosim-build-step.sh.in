@@ -19,6 +19,9 @@ export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
 # NOTE: aren't expressed properly. The -j1 flag ensures that the build is
 # NOTE: serial.
 cd @ECOSIM_source_dir@
+
+git checkout agraus/ats_integration
+
 make -j1 config ATS=1
 make -j1 install ATS=1
 rc=$?
