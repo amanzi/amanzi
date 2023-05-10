@@ -224,7 +224,7 @@ struct MeshCacheData {
   Double_DualView edge_lengths;
 
   RaggedArray_DualView<AmanziGeometry::Point> face_normals;
-  RaggedArray_DualView<int> face_normal_directions;
+  RaggedArray_DualView<int> face_normal_orientations;
   Point_DualView edge_vectors;
 
   // downward adjacencies
