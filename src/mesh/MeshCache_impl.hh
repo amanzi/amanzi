@@ -399,50 +399,30 @@ AmanziGeometry::Point MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Ent
   }
 
   if (data_.face_geometry_cached) {
-    auto fcells = getFaceCells(f, Parallel_kind::ALL);
-    if (orientation) *orientation = 0;
-
-    Entity_ID cc;
-    std::size_t i;
     if (c < 0) {
-      cc = fcells[0];
-      i = 0;
-    } else {
-      cc = c;
-      auto ncells = fcells.size();
-      for (i=0; i!=ncells; ++i)
-        if (fcells[i] == cc) break;
-    }
-    AmanziGeometry::Point normal = data_.face_normals.get<MEM>(f,i);
+      assert(orientation == nullptr);
+      auto normal = data_.face_normals.get<MEM>(f,0);
+      auto nat_dir = data_.face_normal_orientations.get<MEM>(f,0);
+      if (abs(nat_dir) == 1) {
+        return nat_dir * normal;
+      } else {
+        auto fcells = getFaceCells(f, Parallel_kind::ALL);
+        assert(fcells.size() == 2);
 
-    if (getSpaceDimension() == getManifoldDimension()) {
-      // 2D flattened or 3D
-      if (c < 0) {
-        // no orientation
-        assert(orientation == nullptr);
-        normal *= MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
-      } else if (orientation) {
-        *orientation = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
+        // average normals oriented from lower to higher GIDs
+        int pos_i = getEntityGID(Entity_kind::CELL, fcells[0]) > getEntityGID(Entity_kind::CELL, fcells[1]) ? 0 : 1;
+        return (data_.face_normals.get<MEM>(f,1 - pos_i) - data_.face_normals.get<MEM>(f,pos_i)) / 2;
       }
-    } else {
-      // manifold case
-      if (c < 0) {
-        assert(orientation == nullptr);
 
-        if (fcells.size() != 2) {
-          normal *= MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
-        } else {
-          // average normals oriented from lower to higher GIDs
-          int pos_i = getEntityGID(Entity_kind::CELL, fcells[0]) > getEntityGID(Entity_kind::CELL, fcells[1]) ? 0 : 1;
-          normal = (data_.face_normals.get<MEM>(f,1 - pos_i) - data_.face_normals.get<MEM>(f,pos_i)) / 2;
-        }
-      } else if (orientation) {
-        *orientation = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
-      }
     }
 
-    if (orientation) assert(*orientation != 0);
-    return normal;
+    auto fcells = getFaceCells(f, Parallel_kind::ALL);
+    std::size_t i;
+    for (i=0; i!=fcells.size(); ++i)
+      if (fcells[i] == c) break;
+
+    if (orientation) *orientation = data_.face_normal_orientations.get<MEM>(f,i) > 0 ? 1 : -1;
+    return data_.face_normals.get<MEM>(f,i);
 
   } else {
     return algorithms_->getFaceNormal(*this, f, c, orientation);
@@ -1279,20 +1259,30 @@ void MeshCache<MEM>::cacheFaceGeometry()
   Kokkos::deep_copy(view<MemSpace_kind::DEVICE>(data_.face_centroids),view<MemSpace_kind::HOST>(data_.face_centroids)); 
   data_.face_geometry_cached = true;
 
-  // cache normal directions -- make this a separate call?  Think about
-  // granularity here.
+  // cache normal orientations
+  //
+  // This is complicated... it encodes two pieces of info:
+  //   * a sign, which says whether the face's natural normal is inward or outward relative to the cell
+  //   * a magnitude, which is 1 if the natural normal is defined as
+  //     positive/negative of this or a 2 if the natural normal is defined as
+  //     an average of this and the other normal.  Note 2 is only used when
+  //     space_dim != manifold_dim and ncells == 2
   auto lambda2 = [&,this](const Entity_ID& f, cEntity_Direction_View& dirs) {
-    Entity_Direction_View ldirs; 
-    // This NEEDS to call the framework or be passed an host mesh to call the function on the host. 
-    cEntity_ID_View fcells; 
+    Entity_Direction_View ldirs;
+    // This NEEDS to call the framework or be passed an host mesh to call the function on the host.
+    cEntity_ID_View fcells;
     framework_mesh_->getFaceCells(f, Parallel_kind::ALL, fcells);
     Kokkos::resize(ldirs,fcells.size());
     for (int i=0; i!=fcells.size(); ++i) {
-      algorithms_->getFaceNormal(*this, f, fcells[i], &ldirs[i]);
+      if ((getSpaceDimension() == getManifoldDimension()) || (fcells.size() != 2)) {
+        ldirs(i) = MeshAlgorithms::getFaceDirectionInCell(*this, f, fcells(i));
+      } else {
+        ldirs(i) = 2 * MeshAlgorithms::getFaceDirectionInCell(*this, f, fcells(i));
+      }
     }
-    dirs = ldirs; 
+    dirs = ldirs;
   };
-  data_.face_normal_directions = asRaggedArray_DualView<int>(lambda2, nfaces_all);
+  data_.face_normal_orientations = asRaggedArray_DualView<int>(lambda2, nfaces_all);
 
   // cache cell-face-bisectors -- make this a separate call?  Think about
   // granularity here.
