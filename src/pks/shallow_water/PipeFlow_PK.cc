@@ -113,12 +113,12 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
            if (c2 > ncells_owned) std::swap(c1, c2);
 
            if (c2 == -1) {
-               if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) { // TODO: we need a flag that tells
-               UR[0] = bc_value_h[f];                                 // when DIRICHLET BCs are used
-               UR[1] = ComputeWettedAngleNewton(bc_value_h[f]);       // for just the primary variable
-           } else {                                                   // right now if DIRICHLET BCs are imposed
-                                                                      // on velocity then it is assumed they
-             // default outflow BC                                    // are imposed also on primary variable
+               if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+               UR[0] = bc_value_h[f];                               
+               UR[1] = ComputeWettedAngleNewton(bc_value_h[f]);    
+           } else {                                               
+                                                                 
+             // default outflow BC                              
              W = ComputeWettedQuantitiesEdge(c1, f, htc, Bc, Bmax, B_n);
 
              UR[0] = W[0]; //wetted area

@@ -69,66 +69,92 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // update boundary conditions given by [h u v]
   for (int i = 0; i < bcs_.size(); ++i) { bcs_[i]->Compute(t, t); }
 
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<int> bc_model_scalar(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<int> bc_model_vector(nfaces_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value_hn(nnodes_wghost, 0.0);
   std::vector<double> bc_value_h(nfaces_wghost, 0.0);
   std::vector<double> bc_value_b(nfaces_wghost, 0.0);
   std::vector<double> bc_value_ht(nfaces_wghost, 0.0);
   std::vector<double> bc_value_qx(nfaces_wghost, 0.0);
   std::vector<double> bc_value_qy(nfaces_wghost, 0.0);
+  unsigned primary_variable_Dirichlet = 0;
 
-  // extract velocity and compute qx, qy, h BC at faces
+  // ponded depth or wetted area BCs 
   for (int i = 0; i < bcs_.size(); ++i) {
     if (bcs_[i]->get_bc_name() == "ponded depth" && hydrostatic_pressure_force_type_ == 0) { // shallow water
+      // BC is at nodes  
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
         bc_value_hn[n] = it->second[0];
       }
+      primary_variable_Dirichlet = 1;
     }
     if (bcs_[i]->get_bc_name() == "wetted area" && hydrostatic_pressure_force_type_ == 1) { // pipe flow
+      // BC is at nodes  
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
         bc_value_hn[n] = it->second[0];
       }
+      primary_variable_Dirichlet = 1;
     }
   }
 
-  AmanziMesh::Entity_ID_List nodes;
+  // velocity or discharge BCs
   // extract primary variable BC at nodes to ensure well-balancedness
   for (int i = 0; i < bcs_.size(); ++i) {
     if (bcs_[i]->get_bc_name() == "velocity") {
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-        int f = it->first;
-        mesh_->face_get_nodes(f, &nodes);
-        int n0 = nodes[0], n1 = nodes[1];
-
-        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET; // TODO: FIX THIS, cannot set this if DIRICHLET
-        bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0; // BCs are imposed only on velocity
-        bc_value_qx[f] = bc_value_h[f] * it->second[0];
-        bc_value_qy[f] = bc_value_h[f] * it->second[1];
-        bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-        if(!hydrostatic_pressure_force_type_){
-           bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
-        }
-        else{
-           double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
-           bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], WettedAngle_f, bc_value_b[f]);
-        }
-      }
+       if (!primary_variable_Dirichlet){
+          if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+             Teuchos::OSTab tab = vo_->getOSTab();
+             *vo_->os() << "Dirichlet BCs not set for primary variable" << std::endl;
+             *vo_->os() << "Supply Dirichlet BCs for primary variable or" << std::endl;
+             *vo_->os() << "alternatively set Dirichlet BCs for discharge only" << std::endl; 
+          }
+          abort();
+       } 
+       else {
+          for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+             int f = it->first;
+             bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET; 
+             bc_value_qx[f] = bc_value_h[f] * it->second[0];
+             bc_value_qy[f] = bc_value_h[f] * it->second[1];
+             AmanziMesh::Entity_ID_List nodes;
+             mesh_->face_get_nodes(f, &nodes);
+             int n0 = nodes[0], n1 = nodes[1];
+             bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
+             bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
+             bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
+             if (!hydrostatic_pressure_force_type_){
+                bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
+             }
+             else {
+                double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
+                bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], WettedAngle_f, bc_value_b[f]);
+             }
+          }
+       } 
     }
     if (bcs_[i]->get_bc_name() == "discharge") {
        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
           int f = it->first;
-          mesh_->face_get_nodes(f, &nodes);
-          int n0 = nodes[0], n1 = nodes[1];
-
-          bc_model[f] = Operators::OPERATOR_BC_DIRICHLET; // TODO: need the same fix as mentioned above here
-          bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
+          bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET; 
           bc_value_qx[f] = it->second[0];
           bc_value_qy[f] = it->second[1];
-          bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-          double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
-          bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], WettedAngle_f, bc_value_b[f]);
+          if (primary_variable_Dirichlet){
+             AmanziMesh::Entity_ID_List nodes;
+             mesh_->face_get_nodes(f, &nodes);
+             int n0 = nodes[0], n1 = nodes[1];
+             bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
+             bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
+             bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
+             if (!hydrostatic_pressure_force_type_){
+                bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
+             }
+             else {
+                double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
+                bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], WettedAngle_f, bc_value_b[f]);
+             }
+          }
        }
     }
   }
@@ -138,7 +164,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   auto tmp1 = S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   total_depth_grad_->Compute(tmp1);
   if (use_limiter_)
-    limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
+    limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model_scalar, bc_value_ht);
   total_depth_grad_->data()->ScatterMasterToGhosted("cell");
 
   // additional depth-positivity correction limiting for fully flooded cells
@@ -183,13 +209,13 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
   if (use_limiter_)
-    limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_, bc_model, bc_value_qx);
+    limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_, bc_model_vector, bc_value_qx);
   discharge_x_grad_->data()->ScatterMasterToGhosted("cell");
 
   auto tmp6 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_y_grad_->Compute(tmp6, 1);
   if (use_limiter_)
-    limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_, bc_model, bc_value_qy);
+    limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_, bc_model_vector, bc_value_qy);
   discharge_y_grad_->data()->ScatterMasterToGhosted("cell");
 
   // update source (external) terms
@@ -202,7 +228,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   for (int i = 0; i < srcs_.size(); ++i) {
     for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
       int c = it->first;
-      ext_S_cell[c] = it->second[0]; // data unit is [m] 
+      ext_S_cell[c] = it->second[0]; // data unit is [m/s]
+                                     // or [m^2/s] for pipe flow
     }
   }
 
@@ -274,21 +301,24 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     UL[3] = W_rec[1]; 
 
     if (c2 == -1) {
-      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-        UR[0] = bc_value_h[f]; // TODO: this line assume that when bc_model[f] == Operators::OPERATOR_BC_DIRICHLET
-                               // DIRICHLET conditions are imposed on both primary variable and velocity
-                               // but that is not actually the case, see line 105.
-
-        //UR[0] = UL[0];       // this is the condition to enforce if there are DIRICHLET BCs for velocity ONLY
+      if (bc_model_scalar[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        UR[0] = bc_value_h[f];
+        UR[3] = ComputeWettedAngleNewton(bc_value_h[f]);
+      }
+      else {
+        UR[0] = UL[0];
+        UR[3] = ComputeWettedAngleNewton(UL[0]); 
+      }
+      if (bc_model_vector[f] == Operators::OPERATOR_BC_DIRICHLET) {
         UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
         UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
-        UR[3] = ComputeWettedAngleNewton(bc_value_h[f]);
-        //UR[3] = ComputeWettedAngleNewton(UL[0]);  // enforce this if there are DIRICHLET BCs for velocity ONLY
       } else {
         // default outflow BC
-        UR = UL;
+        UR[1] = UL[1];
+        UR[2] = UL[2];
       }
-    } else {
+    } 
+    else {
 
       if (!hydrostatic_pressure_force_type_)  {
          ht_rec = TotalDepthEdgeValue(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
@@ -372,7 +402,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        BedSlopeSource = NumericalSourceBedSlope(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n);
     }
     else{
-       BedSlopeSource = NumericalSourceBedSlope(c, ht_c[0][c], B_c[0][c], B_max[0][c], B_n, bc_model, bc_value_h);
+       BedSlopeSource = NumericalSourceBedSlope(c, ht_c[0][c], B_c[0][c], B_max[0][c], B_n, bc_model_scalar, bc_value_h);
     }
     FrictionSource = NumericalSourceFriction(U[0], U[1], U[3]); 
 
