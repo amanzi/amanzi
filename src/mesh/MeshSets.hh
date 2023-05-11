@@ -23,6 +23,7 @@
 #include "RegionEnumerated.hh"
 #include "RegionLabeledSet.hh"
 #include "RegionLogical.hh"
+#include "RegionPoint.hh"
 #include "MeshDefs.hh"
 //#include "Mesh_Algorithms.hh"
 #include "MeshMaps.hh"
@@ -114,6 +115,12 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
                       const Entity_kind kind,
                       const Parallel_kind ptype,
                       const MeshCache<MemSpace_kind::HOST>& mesh);
+
+cEntity_ID_View
+resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
+                    const Entity_kind kind,
+                    const Parallel_kind ptype,
+                    const MeshCache<MemSpace_kind::HOST>& mesh);
 
 
 cEntity_ID_View

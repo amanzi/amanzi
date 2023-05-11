@@ -312,6 +312,8 @@ asVector(const Kokkos::MeshView<T*, Args...> view)
 //
 // Conversion from vector to non-owning view on host.
 //
+
+//Change name
 template <typename T>
 Kokkos::MeshView<const T*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
 asView(const std::vector<T>& vec)
@@ -375,6 +377,8 @@ asDualView(const Kokkos::MeshView<T*, Args...>& in)
   Kokkos::deep_copy(dv.d_view, dv.h_view);
   return dv;
 }
+
+// Add asDualView (change caching)
 
 // note, this template is left here despite not being used in case of future
 // refactoring for a more general struct.
@@ -486,7 +490,6 @@ struct RaggedArray_DualView {
     update<MemSpace_kind::DEVICE>();
   }
 };
-
 
 //
 // Cache a RaggedArray from a callable, e.g. getCellFaces()

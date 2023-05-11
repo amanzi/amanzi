@@ -1588,6 +1588,47 @@ MeshCache<MEM>::getEntityParent(const Entity_kind kind, const Entity_ID entid) c
 }
 
 template <MemSpace_kind MEM>
+bool
+MeshCache<MEM>::isPointInCell(const AmanziGeometry::Point& p, const Entity_ID cellid) const
+{
+  if (manifold_dim_ == 3) {
+    // 3D Elements with possibly curved faces
+    // We have to build a description of the element topology
+    // and send it into the polyhedron volume and centroid
+    // calculation routine
+    int nf;
+    std::vector<std::size_t> nfnodes;
+    std::vector<AmanziGeometry::Point> cfcoords;
+
+    auto [faces, fdirs] = getCellFacesAndDirections(cellid);
+
+    nf = faces.size();
+    nfnodes.resize(nf);
+
+    for (int j = 0; j < nf; j++) {
+      auto fcoords = getFaceCoordinates(faces[j]);
+      nfnodes[j] = fcoords.size();
+
+      if (fdirs[j] == 1) {
+        for (int k = 0; k < nfnodes[j]; k++) cfcoords.push_back(fcoords[k]);
+      } else {
+        for (int k = nfnodes[j] - 1; k >= 0; k--) cfcoords.push_back(fcoords[k]);
+      }
+    }
+
+    auto ccoords = getCellCoordinates(cellid);
+    return AmanziGeometry::point_in_polyhed(p, ccoords, nf, nfnodes, cfcoords);
+
+  } else if (manifold_dim_ == 2) {
+    auto ccoords = getCellCoordinates(cellid);
+    return AmanziGeometry::point_in_polygon(p, ccoords);
+  }
+
+  return false;
+}
+
+
+template <MemSpace_kind MEM>
 void
 MeshCache<MEM>::PrintMeshStatistics() const
 {
