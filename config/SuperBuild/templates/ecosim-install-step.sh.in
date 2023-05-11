@@ -11,7 +11,7 @@ tpl_lib_dir=@TPL_INSTALL_PREFIX@/lib
 if [ ! -e ${ecosim_dir} ]; then mkdir -p ${ecosim_dir} ; fi
 if [ ! -e ${tpl_lib_dir} ]; then mkdir -p ${tpl_lib_dir} ; fi
 
-rsync -aH * ${ecosim_dir}
+cp -aH * ${ecosim_dir}
 rc=$?
 if [ "$rc" -ne "0" ]; then
   exit $rc
