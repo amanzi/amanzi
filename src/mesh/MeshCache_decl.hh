@@ -859,6 +859,7 @@ struct MeshCache {
 
   void PrintMeshStatistics() const; 
 
+  bool isPointInCell(const AmanziGeometry::Point& p, const Entity_ID cellid) const; 
 
   // // Edges of type 'ptype' connected to a node
   // //
