@@ -186,11 +186,64 @@ resolveMeshSet_(const AmanziGeometry::Region& region,
   } else if (AmanziGeometry::RegionType::LINE_SEGMENT == region.get_type()){
     Double_View vofs; 
     result = resolveMeshSetVolumeFractions(region, kind, ptype, vofs, mesh);
+  } else if (AmanziGeometry::RegionType::POINT == region.get_type() && kind == Entity_kind::CELL) {
+    auto region_point = dynamic_cast<const AmanziGeometry::RegionPoint*>(&region);
+    result = resolveMeshSetPoint(*region_point, kind, ptype, mesh);
   } else {
     // geometric
     result = resolveMeshSetGeometric(region, kind, ptype, mesh);
   }
   return result;
+}
+
+cEntity_ID_View
+resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
+                    const Entity_kind kind,
+                    const Parallel_kind ptype,
+		    const MeshCache<MemSpace_kind::HOST>& mesh){
+
+  std::vector<Entity_ID> result;
+  
+  auto space_dim = mesh.getSpaceDimension(); 
+  auto rgnpnt = region.point();
+
+  int nnode = mesh.getNumEntities(NODE, Parallel_kind::ALL);
+  double mindist2 = 1.e+16;
+  int minnode = -1;
+  int inode;
+  for (inode = 0; inode < nnode; inode++) {
+    auto vpnt = mesh.getNodeCoordinate(inode);
+    double dist2 = (vpnt - rgnpnt) * (vpnt - rgnpnt);
+
+    if (dist2 < mindist2) {
+      mindist2 = dist2;
+      minnode = inode;
+      if (mindist2 <= 1.0e-14) break;
+    }
+  }
+
+  auto cells = mesh.getNodeCells(minnode, Parallel_kind::ALL);
+
+  int ncells = cells.size();
+  for (int ic = 0; ic < ncells; ic++) {
+    Entity_ID icell = cells[ic];
+
+    // Check if point is contained in cell
+    if (mesh.isPointInCell(rgnpnt, icell))
+      result.push_back(icell);
+  }
+
+  // finally check all cells, typical for anisotropic meshes
+  if (result.empty()) {
+    int ncells_wghost = mesh.getNumEntities(CELL, Parallel_kind::ALL);
+    for (int c = 0; c < ncells_wghost; ++c)
+      if (mesh.isPointInCell(rgnpnt, c))
+	result.push_back(c);
+  }
+
+  Entity_ID_View rv; 
+  vectorToView(rv, result); 
+  return rv; 
 }
 
 
