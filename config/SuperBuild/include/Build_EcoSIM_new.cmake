@@ -22,6 +22,7 @@ set(ECOSIM_CMAKE_CACHE_ARGS
       "-DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3"
+      )
 
 # --- If downloads are disabled point to local repository
 if ( DISABLE_EXTERNAL_DOWNLOAD )
