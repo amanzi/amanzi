@@ -112,7 +112,9 @@ MeshCache<MEM>::getSetEntities(const std::string& region_name,
         const Parallel_kind ptype) const
 {
   auto key = std::make_tuple(region_name, kind, ptype);
-  if (!sets_.count(key)) {
+  auto key_all = std::make_tuple(region_name, kind, Parallel_kind::ALL);
+
+  if (!sets_.count(key_all)) {
     auto region = getGeometricModel()->FindRegion(region_name);
     if (region == Teuchos::null) {
       Errors::Message msg;
@@ -133,7 +135,18 @@ MeshCache<MEM>::getSetEntities(const std::string& region_name,
       Exceptions::amanzi_throw(msg);
     }
   }
-  return view<MEM>(sets_.at(key)); 
+
+  if (ptype == Parallel_kind::OWNED && !sets_.count(key)) {
+    auto v_all = view<MemSpace_kind::HOST>(sets_.at(key_all));
+    size_t n_ents = getNumEntities(kind, Parallel_kind::OWNED);
+    size_t i;
+    for (i=0; i!=v_all.size(); ++i)
+      if (v_all(i) >= n_ents) break;
+    auto v_owned = Kokkos::subview(v_all, Kokkos::make_pair((size_t)0, i));
+    sets_[key] = asDualView(v_owned);
+  }
+
+  return view<MEM>(sets_.at(key));
 }
 
 template<MemSpace_kind MEM>
