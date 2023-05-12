@@ -17,9 +17,11 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 
 # --- Define the arguments passed to CMake.
 # NOTE: hard-coded Debug here is necessary until CLM is safely working...
-set(ECOSIM_CMAKE_ARGS
-      "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
-      )
+#set(ECOSIM_CMAKE_CACHE_ARGS
+#      "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
+#      "-DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}"
+#      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
+#      "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3"
 
 # --- If downloads are disabled point to local repository
 if ( DISABLE_EXTERNAL_DOWNLOAD )
@@ -46,7 +48,7 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                     SOURCE_DIR    ${ECOSIM_source_dir}            # Source directory
                     CONFIGURE_COMMAND ""
                     CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
-                                  ${ECOSIM_CMAKE_ARGS}
+                                  ${ECOSIM_CMAKE_CACHE_ARGS}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                   -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}  # Ensure uniform build
