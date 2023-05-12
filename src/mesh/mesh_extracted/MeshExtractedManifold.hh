@@ -97,10 +97,20 @@ class MeshExtractedManifold : public MeshFramework {
   // -- faces of type 'ptype' connected to a node - The order of faces is not guaranteed
   //    to be the same for corresponding nodes on different processors
   virtual void
-  getNodeFaces(const Entity_ID n, const Parallel_kind ptype, cEntity_ID_View& faces) const override
+  getNodeFaces(const Entity_ID n, const Parallel_kind ptype, cEntity_ID_View& nfaces) const override
   {
-    // parent_mesh_->node_get_edges() is not implemented, another algorithm is needed
-    AMANZI_ASSERT(false);
+    auto parent_nodes = entid_to_parent_.at(Entity_kind::NODE);
+    auto parent_faces = entid_to_parent_.at(Entity_kind::FACE);
+    auto my_parent_node = parent_nodes(n);
+    auto my_parent_faces = parent_mesh_->getNodeFaces(my_parent_node, ptype);
+    Entity_ID_View faces("faces", my_parent_faces.size());
+    int i = 0;
+    for (auto f : my_parent_faces) {
+      for (auto pf : parent_faces)
+        if (f == pf) faces(i++) = f;
+    }
+    Kokkos::resize(faces, i);
+    nfaces = faces;
   }
 
   // -- cells of type 'ptype' connected to an edge - The order of cells is not guaranteed
