@@ -52,10 +52,10 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     # -- Build
                     BINARY_DIR       ${ECOSIM_build_dir}          # Build directory
-                    BUILD_COMMAND    $(MAKE) config ATS=1 CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} FC=${CMAKE_Fortran_COMPILER}
+                    BUILD_COMMAND    make config ATS=1 CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} FC=${CMAKE_Fortran_COMPILER}
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}     # Install directory
-                    INSTALL_COMMAND  $(MAKE) install ATS=1 CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} FC=${CMAKE_Fortran_COMPILER}
+                    INSTALL_COMMAND  make install ATS=1 CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} FC=${CMAKE_Fortran_COMPILER}
                     # -- Output control
                     ${ECOSIM_logging_args})
 
