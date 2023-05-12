@@ -30,6 +30,8 @@ else()
   set (ECOSIM_GIT_REPOSITORY_TEMP ${ECOSIM_GIT_REPOSITORY})
 endif()
 message(STATUS "ECOSIM git repository = ${ECOSIM_GIT_REPOSITORY_TEMP}")
+message(STATUS "${ECOSIM_source_dir}")
+message(STATUS "${TPL_INSTALL_PREFIX}")
 
 # --- Add external project build and tie to the CLM build target
 ExternalProject_Add(${ECOSIM_BUILD_TARGET}
@@ -42,6 +44,7 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                     GIT_TAG        ${ECOSIM_GIT_TAG}
                     # -- Configure
                     SOURCE_DIR    ${ECOSIM_source_dir}            # Source directory
+                    CONFIGURE_COMMAND ""
                     CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
                                   ${ECOSIM_CMAKE_ARGS}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
@@ -51,11 +54,11 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                                   -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     # -- Build
-                    BINARY_DIR       ${ECOSIM_build_dir}          # Build directory
-                    BUILD_COMMAND    make config ATS=1 CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} FC=${CMAKE_Fortran_COMPILER}
+                    BINARY_DIR       ${TPL_INSTALL_PREFIX}          # Build directory
+                    BUILD_COMMAND    ../ecosim--source/make config ATS=1 CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} FC=${CMAKE_Fortran_COMPILER}
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}     # Install directory
-                    INSTALL_COMMAND  make install ATS=1 CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} FC=${CMAKE_Fortran_COMPILER}
+                    INSTALL_COMMAND  ../ecosim--source/make install ATS=1 CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} FC=${CMAKE_Fortran_COMPILER}
                     # -- Output control
                     ${ECOSIM_logging_args})
 
