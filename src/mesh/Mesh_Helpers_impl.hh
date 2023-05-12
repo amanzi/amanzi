@@ -169,6 +169,27 @@ computeCellNodes(const Mesh_type& mesh, const Entity_ID c)
 
 
 template<class Mesh_type>
+cEntity_ID_View
+computeNodeCells(const Mesh_type& mesh, const Entity_ID n, const Parallel_kind ptype)
+{
+  cEntity_ID_View faces, fcells;
+  std::vector<Entity_ID> vcells;
+  mesh.getNodeFaces(n, Parallel_kind::ALL, faces);
+  for (const auto& f : faces) {
+    mesh.getFaceCells(f, ptype, fcells);
+    for (const auto& c : fcells) {
+      if (std::find(vcells.begin(), vcells.end(), c) == vcells.end()) {
+        vcells.emplace_back(c);
+      }
+    }
+  }
+  cEntity_ID_View cells;
+  vectorToConstView(cells,vcells);
+  return cells;
+}
+
+
+template<class Mesh_type>
 std::pair<double, AmanziGeometry::Point>
 computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 {
