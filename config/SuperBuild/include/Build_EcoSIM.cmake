@@ -64,12 +64,25 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # is currently just an alquimia file, so either this doesn't work, or is overwritten
 # during building
 
-#commented out for testing
 set(ECOSIM_CMAKE_CACHE_ARGS
       "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
       "-DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3")
+
+# --- Define the config command
+# Build the config script
+set(ECOSIM_sh_config ${ECOSIM_prefix_dir}/ecosim-config-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ecosim-config-step.sh.in
+               ${ECOSIM_sh_config}
+               @ONLY)
+
+# Configure the CMake command file
+set(ECOSIM_cmake_config ${ECOSIM_prefix_dir}/ecosim-config-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ecosim-config-step.cmake.in
+               ${ECOSIM_cmake_config}
+               @ONLY)
+set(ECOSIM_CONFIG_COMMAND ${CMAKE_COMMAND} -P ${ECOSIM_cmake_config})
 
 # --- Define the build command
 # Build the build script
@@ -117,8 +130,17 @@ message("ECOSIM_stamp_dir: ${ECOSIM_stamp_dir}")
 message("ECOSIM_PATCH_COMMAND: ${ECOSIM_PATCH_COMMAND}")
 message("ECOSIM_source_dir: ${ECOSIM_source_dir}")
 message("ECOSIM_build_dir: ${ECOSIM_build_dir}")
-message("ECOSIM_CMAKE_COMMAND: ${ECOSIM_CMAKE_COMMAND}")
 message("TPL_INSTALL_PREFIX: ${TPL_INSTALL_PREFIX}")
+message("AMANZI_CMAKE_CACHE: ${AMANZI_CMAKE_CACHE_ARGS}")
+message("ECOSIM_CMAKE_CACHE: ${ECOSIM_CMAKE_CACHE_ARGS}")
+message("AMANZI COMMON FLAGS ${Amanzi_COMMON_CXXFLAGS}")
+message("-DCMAKE_C_FLAGS:STRING: ${Amanzi_COMMON_CFLAGS}")
+message("-DCMAKE_C_COMPILER:FILEPATH: ${CMAKE_C_COMPILER}")
+message("-DCMAKE_CXX_FLAGS:STRING: ${Amanzi_COMMON_CXXFLAGS}")
+message("-DCMAKE_CXX_COMPILER:FILEPATH: ${CMAKE_CXX_COMPILER}")
+message("-DCMAKE_Fortran_FLAGS:STRING: ${Amanzi_COMMON_FCFLAGS}")
+message("-DCMAKE_Fortran_COMPILER:FILEPATH: ${CMAKE_Fortran_COMPILER}")
+message("ECOSIM_CMAKE_COMMAND: ${ECOSIM_CMAKE_COMMAND}")
 message("ECOSIM_INSTALL_COMMAND: ${ECOSIM_INSTALL_COMMAND}")
 
 # --- Add external project build and tie to the ECOSIM build target
@@ -137,7 +159,7 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                     PATCH_COMMAND ""
                     # -- Configure
                     SOURCE_DIR    ${ECOSIM_source_dir}         # Source directory
-                    CONFIGURE_COMMAND "${ECOSIM_CMAKE_COMMAND}"
+                    CONFIGURE_COMMAND ${ECOSIM_CONFIG_COMMAND}
                     CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}     # Ensure uniform build
                                   ${ECOSIM_CMAKE_CACHE_ARGS}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
@@ -147,8 +169,8 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                                   -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     #BINARY_DIR     ${ECOSIM_build_dir}       # Build directory
-                    BUILD_COMMAND    ""   # $(MAKE) enables parallel builds through make
-                    #BUILD_IN_SOURCE  1                           # Flag for in source builds
+                    BUILD_COMMAND    ${ECOSIM_CMAKE_COMMAND}   # $(MAKE) enables parallel builds through make
+                    BUILD_IN_SOURCE  1                           # Flag for in source builds
 #                    # -- Install
                     #INSTALL_DIR      ${TPL_INSTALL_PREFIX}       # Install directory
                     INSTALL_COMMAND  ${ECOSIM_INSTALL_COMMAND}

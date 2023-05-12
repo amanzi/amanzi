@@ -22,9 +22,11 @@ cd @ECOSIM_source_dir@
 
 git checkout agraus/ats_integration
 
-echo "running install"
+echo "running config"
 
-make -j1 install ATS=1
+make -j1 config ATS=1
+
+echo "config finished"
 
 rc=$?
 
@@ -34,7 +36,6 @@ echo "cxx: ${CXX}"
 echo "f77: ${F77}"
 echo "fflags: ${FFLAGS}"
 echo "finished install"
-
 echo "make ecosim returned $rc"
 
 exit $rc

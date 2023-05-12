@@ -1,0 +1,17 @@
+# CMake ecosim configure file
+
+# Now run the patch script
+set(command sh @ECOSIM_sh_config@)
+execute_process(
+  COMMAND ${command}
+  RESULT_VARIABLE result
+  WORKING_DIRECTORY "@ECOSIM_source_dir@/"
+)
+
+if (result)
+  set(msg "ecosim config command failed")
+  foreach(arg IN LISTS command )
+    set(msg "${msg} '${arg}'")
+  endforeach()
+  message(FATAL_ERROR ${msg})
+endif()
