@@ -195,18 +195,7 @@ MeshFramework::getEdgeFaces(const Entity_ID e, const Parallel_kind ptype, cEntit
 void
 MeshFramework::getNodeCells(const Entity_ID n, const Parallel_kind ptype, cEntity_ID_View& cells) const
 {
-  cEntity_ID_View faces, fcells;
-  Entity_ID_List vcells; 
-  getNodeFaces(n, Parallel_kind::ALL, faces);
-  for (const auto& f : faces) {
-    getFaceCells(f, ptype, fcells);
-    for (const auto& c : fcells) {
-      if (std::find(vcells.begin(), vcells.end(), c) == vcells.end()) {
-        vcells.emplace_back(c);
-      }
-    }
-  }
-  vectorToConstView(cells,vcells); 
+  cells = MeshAlgorithms::computeNodeCells(*this, n, ptype);
 }
 
 void
