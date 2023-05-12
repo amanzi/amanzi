@@ -17,11 +17,11 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 
 # --- Define the arguments passed to CMake.
 # NOTE: hard-coded Debug here is necessary until CLM is safely working...
-#set(ECOSIM_CMAKE_CACHE_ARGS
-#      "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
-#      "-DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}"
-#      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
-#      "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3"
+set(ECOSIM_CMAKE_CACHE_ARGS
+      "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
+      "-DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}"
+      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
+      "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3"
 
 # --- If downloads are disabled point to local repository
 if ( DISABLE_EXTERNAL_DOWNLOAD )
@@ -56,7 +56,7 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                                   -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     # -- Build
-                    # BINARY_DIR       ${TPL_INSTALL_PREFIX}          # Build directory
+                    BINARY_DIR       ${TPL_INSTALL_PREFIX}          # Build directory
                     BUILD_COMMAND    make -f /global/home/users/agraus/code/ats_dev_dir/amanzi_tpls-build-master-Debug/ecosim/ecosim--source/Makefile config ATS=1 CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} FC=${CMAKE_Fortran_COMPILER}
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}     # Install directory
