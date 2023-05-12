@@ -64,12 +64,12 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # is currently just an alquimia file, so either this doesn't work, or is overwritten
 # during building
 
-#commented out for testing
-#set(ECOSIM_CMAKE_CACHE_ARGS
-#      "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
-#      "-DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}"
-#      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
-#      "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3")
+commented out for testing
+set(ECOSIM_CMAKE_CACHE_ARGS
+      "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
+      "-DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}"
+      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
+      "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3")
 
 # --- Define the build command
 # Build the build script
@@ -122,6 +122,7 @@ message("TPL_INSTALL_PREFIX: ${TPL_INSTALL_PREFIX}")
 message("ECOSIM_INSTALL_COMMAND: ${ECOSIM_INSTALL_COMMAND}")
 
 # --- Add external project build and tie to the ECOSIM build target
+# OLD VERSION
 ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                     DEPENDS   ${ECOSIM_PACKAGE_DEPENDS}        # Package dependency target
                     TMP_DIR   ${ECOSIM_tmp_dir}                # Temporary files directory
@@ -133,54 +134,26 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                     # -- Update (one way to skip this step is use null command)
                     UPDATE_COMMAND ""
                     # -- Patch
-                    PATCH_COMMAND ${ECOSIM_PATCH_COMMAND}
+                    PATCH_COMMAND ""
                     # -- Configure
                     SOURCE_DIR    ${ECOSIM_source_dir}         # Source directory
-                    CONFIGURE_COMMAND ""
-                    CMAKE_ARGS    ""
-                    # -- Build
-                    # BINARY_DIR     ${ECOSIM_build_dir}       # Build directory
-                    BUILD_COMMAND    ${ECOSIM_CMAKE_COMMAND}   # $(MAKE) enables parallel builds through make
-                    BUILD_IN_SOURCE  1                           # Flag for in source builds
-                    # -- Install
-                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}       # Install directory
-                    INSTALL_COMMAND  ${ECOSIM_INSTALL_COMMAND}
-                    # -- Output control
-                    ${ECOSIM_logging_args})
-
-# --- Add external project build and tie to the ECOSIM build target
-# OLD VERSION
-#ExternalProject_Add(${ECOSIM_BUILD_TARGET}
-#                    DEPENDS   ${ECOSIM_PACKAGE_DEPENDS}        # Package dependency target
-#                    TMP_DIR   ${ECOSIM_tmp_dir}                # Temporary files directory
-#                    STAMP_DIR ${ECOSIM_stamp_dir}              # Timestamp and log directory
-#                    # -- Download and URL definitions
-#                    # -- Note: The repo is cloned into the ${ECOSIM_source_dir} directory
-#                    GIT_REPOSITORY ${ECOSIM_GIT_REPOSITORY_TEMP}
-#                    GIT_TAG        ${ECOSIM_GIT_TAG}
-#                    # -- Update (one way to skip this step is use null command)
-#                    UPDATE_COMMAND ""
-#                    # -- Patch
-#                    PATCH_COMMAND ${ECOSIM_PATCH_COMMAND}
-#                    # -- Configure
-#                    SOURCE_DIR    ${ECOSIM_source_dir}         # Source directory
-#                    CONFIGURE_COMMAND ""
-#                    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}     # Ensure uniform build
-#                                  ${ECOSIM_CMAKE_CACHE_ARGS}
-#                                  -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
-#                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-#                                  -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}  # Ensure uniform build
-#                                  -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-#                                  -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
-#                                  -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
-#                  # BINARY_DIR     ${ECOSIM_build_dir}       # Build directory
-#                    BUILD_COMMAND    ${ECOSIM_CMAKE_COMMAND}   # $(MAKE) enables parallel builds through make
-#                    BUILD_IN_SOURCE  1                           # Flag for in source builds
+                    CONFIGURE_COMMAND "${ECOSIM_CMAKE_COMMAND}"
+                    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}     # Ensure uniform build
+                                  ${ECOSIM_CMAKE_CACHE_ARGS}
+                                  -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
+                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                  -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}  # Ensure uniform build
+                                  -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+                                  -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
+                                  -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+                    #BINARY_DIR     ${ECOSIM_build_dir}       # Build directory
+                    BUILD_COMMAND    ""   # $(MAKE) enables parallel builds through make
+                    #BUILD_IN_SOURCE  1                           # Flag for in source builds
 #                    # -- Install
-#                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}       # Install directory
-#                    INSTALL_COMMAND  ${ECOSIM_INSTALL_COMMAND}
+                    #INSTALL_DIR      ${TPL_INSTALL_PREFIX}       # Install directory
+                    INSTALL_COMMAND  ${ECOSIM_INSTALL_COMMAND}
 #                    # -- Output control
-#                    ${ECOSIM_logging_args})
+                    ${ECOSIM_logging_args})
 
 include(BuildLibraryName)
 build_library_name(ecosim ECOSIM_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
