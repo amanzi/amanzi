@@ -114,15 +114,48 @@ MeshCache<MEM>::getSetEntities(const std::string& region_name,
                                const Parallel_kind ptype) const
 {
   auto key = std::make_tuple(region_name, kind, ptype);
-  if (!sets_.count(key)) {
+  auto key_all = std::make_tuple(region_name, kind, Parallel_kind::ALL);
+  bool check_new = false;
+
+  if (!sets_.count(key_all)) {
     auto region = getGeometricModel()->FindRegion(region_name);
     if (region == Teuchos::null) {
       Errors::Message msg;
       msg << "Cannot find region of name \"" << region_name << "\" in the geometric model.";
       Exceptions::amanzi_throw(msg);
     }
+
     MeshCache<MemSpace_kind::HOST> this_on_host(*this);
-    sets_[key] = asDualView(resolveMeshSet(*region, kind, ptype, this_on_host));
+    sets_[key_all] = asDualView(resolveMeshSet(*region, kind, Parallel_kind::ALL, this_on_host));
+    check_new = true;
+  }
+
+  if (!sets_.count(key)) {
+    if (ptype == Parallel_kind::OWNED) {
+      auto v_all = view<MemSpace_kind::HOST>(sets_.at(key_all));
+      size_t n_ents = getNumEntities(kind, Parallel_kind::OWNED);
+      size_t i;
+      for (i = 0; i != v_all.size(); ++i)
+        if (v_all(i) >= n_ents) break;
+      auto v_owned = Kokkos::subview(v_all, Kokkos::make_pair((size_t)0, i));
+      sets_[key] = asDualView(v_owned);
+
+    } else if (ptype == Parallel_kind::GHOST) {
+      auto v_all = view<MemSpace_kind::HOST>(sets_.at(key_all));
+      size_t n_ents = getNumEntities(kind, Parallel_kind::OWNED);
+      size_t i;
+      for (i = 0; i != v_all.size(); ++i)
+        if (v_all(i) >= n_ents) break;
+      auto v_ghosted = Kokkos::subview(v_all, Kokkos::make_pair(i, v_all.size()));
+      sets_[key] = asDualView(v_ghosted);
+    } else {
+      AMANZI_ASSERT(false);
+    }
+    check_new = true;
+  }
+
+  if (check_new) {
+    auto region = getGeometricModel()->FindRegion(region_name);
     // Error on zero -- some zeros already error internally (at the framework
     // level) but others don't.  This is the highest level we can catch these at.
     int lsize = view<MEM>(sets_.at(key)).size();
@@ -135,6 +168,7 @@ MeshCache<MEM>::getSetEntities(const std::string& region_name,
       Exceptions::amanzi_throw(msg);
     }
   }
+
   return view<MEM>(sets_.at(key));
 }
 
