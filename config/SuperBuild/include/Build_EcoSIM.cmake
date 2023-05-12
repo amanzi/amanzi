@@ -64,7 +64,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # is currently just an alquimia file, so either this doesn't work, or is overwritten
 # during building
 
-commented out for testing
+#commented out for testing
 set(ECOSIM_CMAKE_CACHE_ARGS
       "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
       "-DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}"
