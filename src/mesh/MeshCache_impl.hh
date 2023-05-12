@@ -121,8 +121,9 @@ MeshCache<MEM>::getSetEntities(const std::string& region_name,
       msg << "Cannot find region of name \"" << region_name << "\" in the geometric model.";
       Exceptions::amanzi_throw(msg);
     }
+
     MeshCache<MemSpace_kind::HOST> this_on_host(*this);
-    sets_[key] =  asDualView(resolveMeshSet(*region, kind, ptype, this_on_host));
+    sets_[key_all] =  asDualView(resolveMeshSet(*region, kind, Parallel_kind::ALL, this_on_host));
     // Error on zero -- some zeros already error internally (at the framework
     // level) but others don't.  This is the highest level we can catch these at.
     int lsize = view<MEM>(sets_.at(key)).size();
@@ -130,20 +131,31 @@ MeshCache<MEM>::getSetEntities(const std::string& region_name,
     getComm()->SumAll(&lsize, &gsize, 1);
     if (gsize == 0) {
       Errors::Message msg;
-      msg << "AmanziMesh::getSetEntities: Region \"" << region->get_name() << "\" of type \"" 
+      msg << "AmanziMesh::getSetEntities: Region \"" << region->get_name() << "\" of type \""
           << to_string(region->get_type()) << "\" is empty (globally).";
       Exceptions::amanzi_throw(msg);
     }
   }
 
-  if (ptype == Parallel_kind::OWNED && !sets_.count(key)) {
-    auto v_all = view<MemSpace_kind::HOST>(sets_.at(key_all));
-    size_t n_ents = getNumEntities(kind, Parallel_kind::OWNED);
-    size_t i;
-    for (i=0; i!=v_all.size(); ++i)
-      if (v_all(i) >= n_ents) break;
-    auto v_owned = Kokkos::subview(v_all, Kokkos::make_pair((size_t)0, i));
-    sets_[key] = asDualView(v_owned);
+  if (!sets_.count(key)) {
+    if (ptype == Parallel_kind::OWNED) {
+      auto v_all = view<MemSpace_kind::HOST>(sets_.at(key_all));
+      size_t n_ents = getNumEntities(kind, Parallel_kind::OWNED);
+      size_t i;
+      for (i=0; i!=v_all.size(); ++i)
+        if (v_all(i) >= n_ents) break;
+      auto v_owned = Kokkos::subview(v_all, Kokkos::make_pair((size_t)0, i));
+      sets_[key] = asDualView(v_owned);
+
+    } else if (ptype == Parallel_kind::GHOST) {
+      auto v_all = view<MemSpace_kind::HOST>(sets_.at(key_all));
+      size_t n_ents = getNumEntities(kind, Parallel_kind::OWNED);
+      size_t i;
+      for (i=0; i!=v_all.size(); ++i)
+        if (v_all(i) >= n_ents) break;
+      auto v_ghosted = Kokkos::subview(v_all, Kokkos::make_pair(i, v_all.size()));
+      sets_[key] = asDualView(v_ghosted);
+    }
   }
 
   return view<MEM>(sets_.at(key));
