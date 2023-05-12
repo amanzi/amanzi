@@ -113,6 +113,7 @@ MeshCache<MEM>::getSetEntities(const std::string& region_name,
 {
   auto key = std::make_tuple(region_name, kind, ptype);
   auto key_all = std::make_tuple(region_name, kind, Parallel_kind::ALL);
+  bool check_new = false;
 
   if (!sets_.count(key_all)) {
     auto region = getGeometricModel()->FindRegion(region_name);
@@ -123,18 +124,8 @@ MeshCache<MEM>::getSetEntities(const std::string& region_name,
     }
 
     MeshCache<MemSpace_kind::HOST> this_on_host(*this);
-    sets_[key_all] =  asDualView(resolveMeshSet(*region, kind, Parallel_kind::ALL, this_on_host));
-    // Error on zero -- some zeros already error internally (at the framework
-    // level) but others don't.  This is the highest level we can catch these at.
-    int lsize = view<MEM>(sets_.at(key)).size();
-    int gsize = 0;
-    getComm()->SumAll(&lsize, &gsize, 1);
-    if (gsize == 0) {
-      Errors::Message msg;
-      msg << "AmanziMesh::getSetEntities: Region \"" << region->get_name() << "\" of type \""
-          << to_string(region->get_type()) << "\" is empty (globally).";
-      Exceptions::amanzi_throw(msg);
-    }
+    sets_[key_all] = asDualView(resolveMeshSet(*region, kind, Parallel_kind::ALL, this_on_host));
+    check_new = true;
   }
 
   if (!sets_.count(key)) {
@@ -155,6 +146,24 @@ MeshCache<MEM>::getSetEntities(const std::string& region_name,
         if (v_all(i) >= n_ents) break;
       auto v_ghosted = Kokkos::subview(v_all, Kokkos::make_pair(i, v_all.size()));
       sets_[key] = asDualView(v_ghosted);
+    } else {
+      AMANZI_ASSERT(false);
+    }
+    check_new = true;
+  }
+
+  if (check_new) {
+    auto region = getGeometricModel()->FindRegion(region_name);
+    // Error on zero -- some zeros already error internally (at the framework
+    // level) but others don't.  This is the highest level we can catch these at.
+    int lsize = view<MEM>(sets_.at(key)).size();
+    int gsize = 0;
+    getComm()->SumAll(&lsize, &gsize, 1);
+    if (gsize == 0) {
+      Errors::Message msg;
+      msg << "AmanziMesh::getSetEntities: Region \"" << region->get_name() << "\" of type \""
+          << to_string(region->get_type()) << "\" is empty (globally).";
+      Exceptions::amanzi_throw(msg);
     }
   }
 
