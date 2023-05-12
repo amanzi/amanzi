@@ -74,10 +74,10 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
         Double_View& vol_fracs,
         const MeshCache<MemSpace_kind::HOST>& mesh)
 {
-  Kokkos::resize(vol_fracs,0); 
+  Kokkos::resize(vol_fracs,0);
   Entity_ID_View ents;
-  auto ents_cpt = 0; 
-  auto vol_fracs_cpt = 0; 
+  auto ents_cpt = 0;
+  auto vol_fracs_cpt = 0;
 
   if ((AmanziGeometry::RegionType::BOX_VOF == region.get_type() ||
        AmanziGeometry::RegionType::LINE_SEGMENT == region.get_type()) &&
@@ -85,8 +85,8 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
 
     if (kind == Entity_kind::CELL) {
       auto ncells = mesh.getNumEntities(Entity_kind::CELL, ptype);
-      Kokkos::resize(vol_fracs,ncells); 
-      Kokkos::resize(ents,ncells); 
+      Kokkos::resize(vol_fracs,ncells);
+      Kokkos::resize(ents,ncells);
 
       for (int c=0; c!=ncells; ++c) {
         auto polytope_nodes = mesh.getCellCoordinates(c);
@@ -96,7 +96,7 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
           auto cnodes = mesh.getCellNodes(c);
           auto cfd = mesh.getCellFacesAndDirections(c);
           auto cfaces = cfd.first;
-          auto cfdirs = cfd.second; 
+          auto cfdirs = cfd.second;
           polytope_faces.resize(cfaces.size());
 
           for (int n = 0; n < cfaces.size(); ++n) {
@@ -110,7 +110,7 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
           }
         }
 
-        auto vpolytope_nodes = asVector(polytope_nodes); 
+        auto vpolytope_nodes = asVector(polytope_nodes);
         double volume = region.intersect(vpolytope_nodes, polytope_faces);
         if (volume > 0.0) {
           ents[ents_cpt++] = c;
@@ -119,18 +119,18 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
         }
       }
       Kokkos::resize(ents, ents_cpt);
-      Kokkos::resize(vol_fracs, vol_fracs_cpt); 
+      Kokkos::resize(vol_fracs, vol_fracs_cpt);
     } else {
       // ind == FACE
       int nfaces = mesh.getNumEntities(Entity_kind::FACE, ptype);
-      Kokkos::resize(vol_fracs,nfaces); 
-      Kokkos::resize(ents,nfaces); 
+      Kokkos::resize(vol_fracs,nfaces);
+      Kokkos::resize(ents,nfaces);
 
       Point_List polygon;
 
       for (int f=0; f!=nfaces; ++f) {
         auto polygon = mesh.getFaceCoordinates(f);
-        auto vpolygon = asVector(polygon); 
+        auto vpolygon = asVector(polygon);
         double area = region.intersect(vpolygon);
         if (area > 0.0) {
           ents[ents_cpt++] = f;
@@ -138,7 +138,7 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
         }
       }
       Kokkos::resize(ents, ents_cpt);
-      Kokkos::resize(vol_fracs, vol_fracs_cpt); 
+      Kokkos::resize(vol_fracs, vol_fracs_cpt);
     }
 
   } else {
@@ -175,16 +175,16 @@ resolveMeshSet_(const AmanziGeometry::Region& region,
     Entity_ID_View lresult;
     result = resolveMeshSetLabeledSet(*region_ls, kind, ptype, mesh);
     // labeled sets may not be sorted, though all other types are.  Sort labeled sets.
-    lresult.fromConst(result); 
+    lresult.fromConst(result);
     std::sort(lresult.begin(), lresult.end());
-    result = lresult; 
+    result = lresult;
 
   } else if (AmanziGeometry::RegionType::ALL == region.get_type()) {
     result = resolveMeshSetAll(region, kind, ptype, mesh);
   } else if (AmanziGeometry::RegionType::BOUNDARY == region.get_type()) {
     result = resolveMeshSetBoundary(region, kind, ptype, mesh);
   } else if (AmanziGeometry::RegionType::LINE_SEGMENT == region.get_type()){
-    Double_View vofs; 
+    Double_View vofs;
     result = resolveMeshSetVolumeFractions(region, kind, ptype, vofs, mesh);
   } else if (AmanziGeometry::RegionType::POINT == region.get_type() && kind == Entity_kind::CELL) {
     auto region_point = dynamic_cast<const AmanziGeometry::RegionPoint*>(&region);
@@ -200,11 +200,11 @@ cEntity_ID_View
 resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
                     const Entity_kind kind,
                     const Parallel_kind ptype,
-		    const MeshCache<MemSpace_kind::HOST>& mesh){
-
+		    const MeshCache<MemSpace_kind::HOST>& mesh)
+{
   std::vector<Entity_ID> result;
-  
-  auto space_dim = mesh.getSpaceDimension(); 
+
+  auto space_dim = mesh.getSpaceDimension();
   auto rgnpnt = region.point();
 
   int nnode = mesh.getNumEntities(NODE, Parallel_kind::ALL);
@@ -222,7 +222,7 @@ resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
     }
   }
 
-  auto cells = mesh.getNodeCells(minnode, Parallel_kind::ALL);
+  auto cells = mesh.getNodeCells(minnode, ptype);
 
   int ncells = cells.size();
   for (int ic = 0; ic < ncells; ic++) {
@@ -235,15 +235,15 @@ resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
 
   // finally check all cells, typical for anisotropic meshes
   if (result.empty()) {
-    int ncells_wghost = mesh.getNumEntities(CELL, Parallel_kind::ALL);
-    for (int c = 0; c < ncells_wghost; ++c)
+    int ncells = mesh.getNumEntities(CELL, ptype);
+    for (int c = 0; c < ncells; ++c)
       if (mesh.isPointInCell(rgnpnt, c))
-	result.push_back(c);
+        result.push_back(c);
   }
 
-  Entity_ID_View rv; 
-  vectorToView(rv, result); 
-  return rv; 
+  Entity_ID_View rv;
+  vectorToView(rv, result);
+  return rv;
 }
 
 
@@ -479,11 +479,11 @@ resolveMeshSetBoundary(const AmanziGeometry::Region& region,
     Kokkos::resize(ents,mesh.getNumEntities(boundary_kind, ptype));
   } else if (ptype == Parallel_kind::GHOST) {
     // keep owned -- end
-    int ct = 0; 
+    int ct = 0;
     int numbk = mesh.getNumEntities(boundary_kind, Parallel_kind::OWNED);
     for(int i = numbk ; i < ents.size(); ++i)
-      ents[ct++] = ents[i]; 
-    Kokkos::resize(ents,ct); 
+      ents[ct++] = ents[i];
+    Kokkos::resize(ents,ct);
   }
 
   return ents;
@@ -497,8 +497,8 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
                          const MeshCache<MemSpace_kind::HOST>& mesh)
 {
   if (kind == createEntityKind(region.entity_str())) {
-    Entity_ID_View region_entities; 
-    auto vregion_entities = region.entities(); 
+    Entity_ID_View region_entities;
+    auto vregion_entities = region.entities();
     vectorToView(region_entities, vregion_entities);
     bool ghosted = (ptype != Parallel_kind::OWNED);
     auto mesh_map = mesh.getMap(kind, ghosted);
@@ -506,7 +506,7 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
     for (int i=0; i!=mesh_map.NumMyElements(); ++i)
       mesh_ents[i] = mesh_map.GID(i);
 
-    Entity_ID_List vresult; 
+    Entity_ID_List vresult;
     vresult.reserve(mesh_ents.size());
     std::set_intersection(mesh_ents.begin(), mesh_ents.end(),
                           region_entities.begin(), region_entities.end(),
@@ -538,7 +538,7 @@ resolveMeshSetGeometric(const AmanziGeometry::Region& region,
     begin = 0;
     end = mesh.getNumEntities(kind, ptype);
   }
-  
+
   // check whether centroid is inside region
   Entity_ID_View entities("entities",end - begin);
   int lcv = 0;
@@ -590,12 +590,12 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
       for (const auto& rname : region.get_component_regions()) {
         auto comp_ents = mesh.getSetEntities(rname, kind, ptype);
 
-        Entity_ID_List lresult; 
+        Entity_ID_List lresult;
         lresult.reserve(result.size());
         std::set_difference(result.begin(), result.end(),
                             comp_ents.begin(), comp_ents.end(),
                             std::back_inserter(lresult));
-        vectorToConstView(result,lresult); 
+        vectorToConstView(result,lresult);
       }
 
     } break;
@@ -609,7 +609,7 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
         std::set_union(result.begin(), result.end(),
                        comp_ents.begin(), comp_ents.end(),
                        std::back_inserter(lresult));
-        vectorToConstView(result, lresult); 
+        vectorToConstView(result, lresult);
       }
 
     } break;
@@ -626,7 +626,7 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
         std::set_intersection(result.begin(), result.end(),
                 comp_ents.begin(), comp_ents.end(),
                 std::back_inserter(lresult));
-        vectorToConstView(result, lresult); 
+        vectorToConstView(result, lresult);
       }
 
     } break;
@@ -643,7 +643,7 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
         std::set_difference(result.begin(), result.end(),
                             comp_ents.begin(), comp_ents.end(),
                             std::back_inserter(lresult));
-        vectorToConstView(result, lresult); 
+        vectorToConstView(result, lresult);
       }
     } break;
     default : {
@@ -664,7 +664,7 @@ filterParentEntities(const MeshCache<MemSpace_kind::HOST>& mesh,
                      const cEntity_ID_View& parent_entities)
 {
   Entity_ID_View result;
-  Entity_ID_List vresult; 
+  Entity_ID_List vresult;
 
   // This is possibly a poorly performing algorithm.  We do linear search for
   // each entry here, but parent_entities is gauranteed to be sorted, and I
@@ -682,7 +682,7 @@ filterParentEntities(const MeshCache<MemSpace_kind::HOST>& mesh,
         break;
     }
   }
-  vectorToView(result,vresult); 
+  vectorToView(result,vresult);
   return result;
 }
 
@@ -693,7 +693,7 @@ filterParentEntities_SurfaceCellToCell(const MeshCache<MemSpace_kind::HOST>& mes
         const cEntity_ID_View& parent_entities)
 {
   Entity_ID_View result;
-  Entity_ID_List vresult; 
+  Entity_ID_List vresult;
 
   // This is possibly a poorly performing algorithm.  We do linear search for
   // each entry here, but parent_entities is gauranteed to be sorted, and I
@@ -728,7 +728,7 @@ filterParentEntities_SurfaceFaceToFace(const MeshCache<MemSpace_kind::HOST>& mes
         const cEntity_ID_View& parent_entities)
 {
   Entity_ID_View result;
-  Entity_ID_List vresult; 
+  Entity_ID_List vresult;
 
   // We wish to capture the relationship from surface faces (whose parent
   // entities are edges in the subsurface mesh) to subsurface faces whose
@@ -799,7 +799,7 @@ filterParentEntities_SurfaceFaceToFace(const MeshCache<MemSpace_kind::HOST>& mes
       }
     }
   }
-  vectorToView(result,vresult); 
+  vectorToView(result,vresult);
   return result;
 }
 
