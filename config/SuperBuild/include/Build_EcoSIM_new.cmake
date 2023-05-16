@@ -45,6 +45,7 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                     # -- Note: The repo is cloned into the ${ECOSIM_source_dir} directory
                     GIT_REPOSITORY ${ECOSIM_GIT_REPOSITORY_TEMP}
                     GIT_TAG        ${ECOSIM_GIT_TAG}
+                    UPDATE_COMMAND ""
                     # -- Configure
                     SOURCE_DIR    ${ECOSIM_source_dir}            # Source directory
                     CONFIGURE_COMMAND ""
@@ -57,10 +58,11 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                                   -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     # -- Build
-                    BINARY_DIR       ${TPL_INSTALL_PREFIX}          # Build directory
+                    #BINARY_DIR       ${TPL_INSTALL_PREFIX}          # Build directory
                     BUILD_COMMAND    make -f /global/home/users/agraus/code/ats_dev_dir/amanzi_tpls-build-master-Debug/ecosim/ecosim--source/Makefile config ATS=1 CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} FC=${CMAKE_Fortran_COMPILER}
+                    BUILD_IN_SOURCE  1
                     # -- Install
-                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}     # Install directory
+                    #INSTALL_DIR      ${TPL_INSTALL_PREFIX}     # Install directory
                     INSTALL_COMMAND  make -f /global/home/users/agraus/code/ats_dev_dir/amanzi_tpls-build-master-Debug/ecosim/ecosim--source/Makefile install ATS=1 CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} FC=${CMAKE_Fortran_COMPILER}
                     # -- Output control
                     ${ECOSIM_logging_args})

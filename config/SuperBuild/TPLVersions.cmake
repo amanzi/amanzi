@@ -540,7 +540,7 @@ set(ECOSIM_ARCHIVE_FILE   ECOSIM-agraus-ats_integration.tar.gz)
 set(ECOSIM_SAVEAS_FILE    ECOSIM-agraus-ats_integration.tar.gz)
 set(ECOSIM_MD5_SUM        fe90fa575e447e7770029911beb6abef45a0847e)
 set(ECOSIM_GIT_REPOSITORY "https://github.com/jinyun1tang/EcoSIM")
-set(ECOSIM_GIT_TAG        "fe90fa5")
+set(ECOSIM_GIT_TAG        "agraus/ats_integration")
 
 
 #set(ECOSIM_URL_STRING     "https://github.com/jinyun1tang/EcoSIM")
