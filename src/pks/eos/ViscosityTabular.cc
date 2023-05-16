@@ -10,16 +10,16 @@
 /*
   EOS
 
-  EOS for liquid water for temperature between 0.5 and 800 C and
-  pressure between 634 Pa and 110 MPa
+  EOS for tabulated viscosity.
 */
 
-#include "H2O_DensityTabular.hh"
+#include "ViscosityTabular.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-H2O_DensityTabular::H2O_DensityTabular(Teuchos::ParameterList& eos_plist) : EOS_Density(eos_plist)
+ViscosityTabular::ViscosityTabular(Teuchos::ParameterList& eos_plist)
+  : EOS_Viscosity(eos_plist)
 {
   table_ = Teuchos::rcp(new LookupTable(eos_plist_));
 }

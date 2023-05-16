@@ -22,16 +22,15 @@ include_directories(${ATK_SOURCE_DIR})
 #
 set(eos_src_files 
     COM_MillingtonQuirk.cc
+    DensityTabular.cc
     EOSDensityEvaluator.cc
     EOSViscosityEvaluator.cc
     H2O_Density.cc
     H2O_DensityFEHM.cc
-    H2O_DensityTabular.cc
     H2O_ThermalConductivity.cc
     H2O_SaturatedVaporPressure.cc
     H2O_Viscosity.cc
     H2O_ViscosityFEHM.cc
-    H2O_ViscosityTabular.cc
     Henry_Solubility.cc
     IdealGas_Density.cc
     IsobaricEOSEvaluator.cc
@@ -41,6 +40,7 @@ set(eos_src_files
     VaporInGas_Diffusion.cc
     VaporLiquid_Tabular.cc
     ViscosityConstant.cc
+    ViscosityTabular.cc
    )
 
 add_amanzi_library(eos
@@ -55,6 +55,7 @@ endif()
 #
 set(eos_inc_files 
     COM_MillingtonQuirk.hh
+    DensityTabular.hh
     EOSDensityEvaluator.hh
     EOSViscosityEvaluator.hh
     EOS_Density.hh
@@ -67,11 +68,9 @@ set(eos_inc_files
     EOSFactory.hh
     H2O_Density.hh
     H2O_DensityFEHM.hh
-    H2O_DensityTabular.hh
     H2O_SaturatedVaporPressure.hh
     H2O_Viscosity.hh
     H2O_ViscosityFEHM.hh
-    H2O_ViscosityTabular.hh
     Henry_Solubility.hh
     IdealGas_Density.hh
     IsobaricEOSEvaluator.hh
@@ -80,6 +79,7 @@ set(eos_inc_files
     VaporInGas_Density.hh
     VaporInGas_Diffusion.hh
     ViscosityConstant.hh
+    ViscosityTabular.hh
    )
 
 # install headers into a subdirectory

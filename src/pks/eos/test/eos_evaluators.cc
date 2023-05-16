@@ -127,13 +127,13 @@ TEST(FactoryEOS)
 {
   using namespace Amanzi::AmanziEOS;
 
-  std::vector<std::string> names = { "0-30C", "FEHM", "tabular" };
+  std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM", "lookup table" };
 
   for (auto& name : names) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("table name", "test/h2o.eos")
       .set<std::string>("field name", "density")
-      .set<std::string>("eos type", "liquid water " + name);
+      .set<std::string>("eos type", name);
 
     EOSFactory<EOS_Density> factory;
     auto eos = factory.Create(plist);
@@ -148,7 +148,7 @@ TEST(FactoryEOS)
     Teuchos::ParameterList plist;
     plist.set<std::string>("table name", "test/h2o.eos")
       .set<std::string>("field name", "viscosity")
-      .set<std::string>("eos type", "liquid water " + name);
+      .set<std::string>("eos type", name);
 
     EOSFactory<EOS_Viscosity> factory;
     auto eos = factory.Create(plist);
@@ -163,14 +163,14 @@ TEST(Exceptions)
 {
   using namespace Amanzi::AmanziEOS;
 
-  std::vector<std::string> names = { "0-30C", "FEHM", "tabular" };
+  std::vector<std::string> names = { "liquid water 0-30C", "liquid water FEHM", "lookup table" };
 
   std::cout << std::endl;
   for (auto& name : names) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("table name", "test/h2o.eos")
       .set<std::string>("field name", "density")
-      .set<std::string>("eos type", "liquid water " + name);
+      .set<std::string>("eos type", name);
 
     // density
     {

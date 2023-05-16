@@ -90,7 +90,7 @@
     <Parameter name="number gaseous components" type="int" value="0"/>
 
     <ParameterList name="molecular diffusion">
-      <Parameter name="aqueous names" type="Array(string)" value="{H2}"/>
+      <Parameter name="aqueous names" type="Array(string)" value="{SH4}"/>
       <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
       <Parameter name="gaseous values" type="Array(double)" value="{0.0e-9}"/>
       <Parameter name="molar masses" type="Array(double)" value="{2.0e-3}"/>
@@ -196,7 +196,7 @@
         <ParameterList name="BC 3">
           <Parameter name="regions" type="Array(string)" value="{Inflow}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
-          <Parameter name="name" type="string" value="H2"/>
+          <Parameter name="name" type="string" value="SH4"/>
           <ParameterList name="outward mass flux">
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="-8.831177067478435e-11"/>

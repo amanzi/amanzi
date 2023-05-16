@@ -31,15 +31,16 @@ VaporLiquid_Tabular::VaporLiquid_Tabular(const std::string& name)
 double
 VaporLiquid_Tabular::k(double T) const
 {
-  double s, tau, f, kD;
+  double s, tau, f, kD, tmp;
   s = T / kTc;
   tau = 1 - s;
   f = kB1 * std::pow(tau, 1.0 / 3) + kB2 * std::pow(tau, 2.0 / 3) + kB3 * std::pow(tau, 5.0 / 3) +
       kB4 * std::pow(tau, 16.0 / 3) + kB5 * std::pow(tau, 43.0 / 3) +
       kB6 * std::pow(tau, 110.0 / 3);
 
-  kD = kq * F_ + E_ * f / T + F_ + G_ * std::pow(tau, 2.0 / 3) + H_ * tau;
-  return kD;
+  tmp = std::exp((273.15 - T) / 100);
+  kD = kq * F_ + E_ * f / T + (F_ + G_ * std::pow(tau, 2.0 / 3) + H_ * tau) * tmp;
+  return std::exp(kD);
 }
 
 } // namespace AmanziEOS

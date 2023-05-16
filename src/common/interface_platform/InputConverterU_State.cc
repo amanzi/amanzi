@@ -1360,7 +1360,7 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
   if (eos_lookup_table_ != "") {
     out_ev.sublist(field)
       .sublist("EOS parameters")
-      .set<std::string>("eos type", "liquid water tabular")
+      .set<std::string>("eos type", "lookup table")
       .set<std::string>("table name", eos_lookup_table_)
       .set<std::string>("field name", eos_table_name);
   }
