@@ -304,6 +304,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       if (bc_model_scalar[f] == Operators::OPERATOR_BC_DIRICHLET) {
         UR[0] = bc_value_h[f];
         UR[3] = ComputeWettedAngleNewton(bc_value_h[f]);
+        UL[0] = UR[0];
+        UL[3] = UR[3];
       }
       else {
         UR[0] = UL[0];
@@ -312,6 +314,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       if (bc_model_vector[f] == Operators::OPERATOR_BC_DIRICHLET) {
         UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
         UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
+        UL[1] = UR[1];
+        UL[2] = UR[2];
       } else {
         // default outflow BC
         UR[1] = UL[1];
