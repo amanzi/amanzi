@@ -818,8 +818,8 @@ endif()
 
 option(ENABLE_ECOSIM "Build EcoSIM package" FALSE)
 if (ENABLE_ECOSIM)
-  #include(${SuperBuild_BUILD_FILES_DIR}/Build_EcoSIM.cmake)
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_EcoSIM_new.cmake)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_EcoSIM.cmake)
+  #include(${SuperBuild_BUILD_FILES_DIR}/Build_EcoSIM_new.cmake)
 endif()
 
 # Alquimia and chemical engines (PFloTran and CrunchTope)
