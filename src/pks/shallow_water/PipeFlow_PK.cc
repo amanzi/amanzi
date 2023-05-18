@@ -30,6 +30,10 @@ PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
 
   Manning_coeff_ = sw_list_->get<double>("Manning coefficient", 0.005);
 
+  Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object") = sw_list_->sublist("verbose object");
+  vo_ = Teuchos::rcp(new VerboseObject("PipeFlow", vlist));
+  
 }
 
 //--------------------------------------------------------------------

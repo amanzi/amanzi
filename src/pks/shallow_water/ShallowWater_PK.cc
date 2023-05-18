@@ -97,9 +97,9 @@ ShallowWater_PK::Setup()
   riemann_flux_key_ = Keys::getKey(domain_, "riemann_flux");
   wetted_angle_key_ = Keys::getKey(domain_, "wetted_angle"); 
   water_depth_key_ = Keys::getKey(domain_, "water_depth");
-  if(!source_key_.empty()){ 
-    pipe_drain_key_ = Keys::getKey(domain_, "pipe_drain"); 
-  }
+  // if(!source_key_.empty()){ 
+  //   source_key_ = Keys::getKey(domain_, "pipe_drain"); 
+  // }
 
   //-------------------------------
   // constant fields
@@ -172,11 +172,11 @@ ShallowWater_PK::Setup()
 
   if(!source_key_.empty()){ 
      // -- pipe drain 
-     if (!S_->HasRecord(pipe_drain_key_)) {
-        S_->Require<CV_t, CVS_t>(pipe_drain_key_, Tags::DEFAULT, pipe_drain_key_)
+     if (!S_->HasRecord(source_key_)) {
+        S_->Require<CV_t, CVS_t>(source_key_, Tags::DEFAULT, source_key_)
           .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-        S_->RequireEvaluator(pipe_drain_key_, Tags::DEFAULT);
+        S_->RequireEvaluator(source_key_, Tags::DEFAULT);
      }
   }
 
@@ -715,7 +715,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   if(!source_key_.empty()){ 
-     S_->GetEvaluator(pipe_drain_key_).Update(*S_, passwd_); // in this evaluator when running pipe flow
+     S_->GetEvaluator(source_key_).Update(*S_, passwd_); // in this evaluator when running pipe flow
   }
 
   // For consistency with other flow models, we need to track previous h
