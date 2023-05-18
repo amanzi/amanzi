@@ -35,7 +35,7 @@ class HydrostaticPressureEvaluator : public EvaluatorSecondaryMonotype<Composite
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
-  int hydrostatic_pressure_force_type_;
+  int shallow_water_model_;
 
  private:
   std::string primary_variable_key_;

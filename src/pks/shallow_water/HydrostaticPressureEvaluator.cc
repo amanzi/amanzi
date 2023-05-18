@@ -25,9 +25,9 @@ HydrostaticPressureEvaluator::HydrostaticPressureEvaluator(Teuchos::ParameterLis
   }
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
-  hydrostatic_pressure_force_type_ = plist.get<int>("hydrostatic pressure force type", 0);
+  shallow_water_model_ = plist.get<int>("use shallow water model", 1);
 
-  if (!hydrostatic_pressure_force_type_){
+  if (shallow_water_model_){
      primary_variable_key_ = plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
   } else {
      primary_variable_key_ = plist_.get<std::string>("water depth key", Keys::getKey(domain, "water_depth"));

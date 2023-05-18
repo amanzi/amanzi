@@ -33,7 +33,7 @@ class NumericalFlux {
  protected:
   double g_;
   double lambda_max_, lambda_min_;
-  int hydrostatic_pressure_force_type_;
+  int shallow_water_model_;
   double pipe_diameter_;
   double pipe_cross_section_;
   double celerity_;
@@ -59,7 +59,7 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
 
   double HydrostaticPressureForce = 0.0;
 
-  if (!hydrostatic_pressure_force_type_){
+  if (shallow_water_model_){
 
      HydrostaticPressureForce = 0.5 * g_ * h2;
 

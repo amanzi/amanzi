@@ -51,7 +51,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double factor = inverse_with_tolerance(h_temp[0][c], cell_area2_max_);
     vel_c[0][c] = factor * q_temp[0][c];
     vel_c[1][c] = factor * q_temp[1][c];
-    if(!hydrostatic_pressure_force_type_){
+    if(shallow_water_model_){
        ht_c[0][c] = h_temp[0][c] + B_c[0][c];
     }
     else{
@@ -81,7 +81,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   // ponded depth or wetted area BCs 
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->get_bc_name() == "ponded depth" && hydrostatic_pressure_force_type_ == 0) { // shallow water
+    if (bcs_[i]->get_bc_name() == "ponded depth" && shallow_water_model_ == 1) { // shallow water
       // BC is at nodes  
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
@@ -89,7 +89,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       }
       primary_variable_Dirichlet = 1;
     }
-    if (bcs_[i]->get_bc_name() == "wetted area" && hydrostatic_pressure_force_type_ == 1) { // pipe flow
+    if (bcs_[i]->get_bc_name() == "wetted area" && shallow_water_model_ == 0) { // pipe flow
       // BC is at nodes  
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
@@ -124,7 +124,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
              bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
              bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
              bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-             if (!hydrostatic_pressure_force_type_){
+             if (shallow_water_model_){
                 bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
              }
              else {
@@ -147,7 +147,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
              bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
              bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
              bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-             if (!hydrostatic_pressure_force_type_){
+             if (shallow_water_model_){
                 bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
              }
              else {
@@ -266,7 +266,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double B_rec = BathymetryEdgeValue(f, B_n);;
     double h_rec;
 
-    if (!hydrostatic_pressure_force_type_)  {
+    if (shallow_water_model_)  {
         ht_rec = TotalDepthEdgeValue(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
         h_rec = ht_rec - B_rec;
         ierr = ErrorDiagnostics_(t, c1, h_rec, B_rec, ht_rec);
@@ -324,7 +324,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     } 
     else {
 
-      if (!hydrostatic_pressure_force_type_)  {
+      if (shallow_water_model_)  {
          ht_rec = TotalDepthEdgeValue(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
          h_rec = ht_rec - B_rec;
          ierr = ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
@@ -402,7 +402,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     U[2] = q_temp[1][c];
     U[3] = WettedAngle_c[0][c];
 
-    if (!hydrostatic_pressure_force_type_){
+    if (shallow_water_model_){
        BedSlopeSource = NumericalSourceBedSlope(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n);
     }
     else{

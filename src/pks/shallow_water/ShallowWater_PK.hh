@@ -171,7 +171,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   // gravity magnitude
   double g_;
 
-  int hydrostatic_pressure_force_type_; //0 is shallow water, 1 is pipe flow
+  int shallow_water_model_; 
 
   double pipe_diameter_;
 

@@ -37,7 +37,7 @@ class DischargeEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Co
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
-  int hydrostatic_pressure_force_type_;
+  int shallow_water_model_;
 
  private:
   std::string velocity_key_, primary_variable_key_;

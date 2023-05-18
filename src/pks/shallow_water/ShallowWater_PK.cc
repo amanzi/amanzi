@@ -59,7 +59,7 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
   cfl_ = sw_list_->get<double>("cfl", 0.1);
   max_iters_ = sw_list_->get<int>("number of reduced cfl cycles", 10);
   cfl_positivity_ = sw_list_->get<double>("depth positivity cfl", 0.95);
-  hydrostatic_pressure_force_type_ = sw_list_->get<int>("hydrostatic pressure force type", 0);
+  shallow_water_model_ = sw_list_->get<int>("use shallow water model", 1);
   pipe_diameter_ = sw_list_->get<double>("pipe diameter", 1.0);
   celerity_ = sw_list_->get<double>("celerity", 100); // m/s
   source_key_ = sw_list_->get<std::string>("source key", "");
@@ -84,7 +84,7 @@ ShallowWater_PK::Setup()
   velocity_key_ = Keys::getKey(domain_, "velocity");
   discharge_key_ = Keys::getKey(domain_, "discharge");
   total_depth_key_ = Keys::getKey(domain_, "total_depth");
-  if(!hydrostatic_pressure_force_type_){
+  if(shallow_water_model_){
      primary_variable_key_ = Keys::getKey(domain_, "ponded_depth");
      prev_primary_variable_key_ = Keys::getKey(domain_, "prev_ponded_depth");
   } else {
@@ -153,7 +153,7 @@ ShallowWater_PK::Setup()
 
     Teuchos::ParameterList elist(discharge_key_);
     elist.set<std::string>("my key", discharge_key_).set<std::string>("tag", Tags::DEFAULT.get())
-         .set<int>("hydrostatic pressure force type", hydrostatic_pressure_force_type_);
+         .set<int>("use shallow water model", shallow_water_model_);
     auto eval = Teuchos::rcp(new DischargeEvaluator(elist));
     S_->SetEvaluator(discharge_key_, Tags::DEFAULT, eval);
   }
@@ -202,7 +202,7 @@ ShallowWater_PK::Setup()
 
     Teuchos::ParameterList elist(hydrostatic_pressure_key_);
     elist.set<std::string>("my key", hydrostatic_pressure_key_).set<std::string>("tag", "")
-         .set<int>("hydrostatic pressure force type", hydrostatic_pressure_force_type_);
+         .set<int>("use shallow water model", shallow_water_model_);
     auto eval = Teuchos::rcp(new HydrostaticPressureEvaluator(elist));
     S_->SetEvaluator(hydrostatic_pressure_key_, Tags::DEFAULT, eval);
   }
@@ -345,7 +345,7 @@ ShallowWater_PK::Initialize()
   model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
     .set<double>("gravity", g_);
   model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
-    .set<int>("hydrostatic pressure force type", hydrostatic_pressure_force_type_);
+    .set<int>("use shallow water model", shallow_water_model_);
   model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
     .set<double>("pipe diameter", pipe_diameter_);
   model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
@@ -427,7 +427,7 @@ ShallowWater_PK::Initialize()
   // calculate cell area square (used as a tolerance)  
   cell_area2_max_ = cell_area_max * cell_area_max;
 
-  if (!hydrostatic_pressure_force_type_){ 
+  if (shallow_water_model_){ 
      // initialize h from ht or ht from h
      if (!S_->GetRecord(primary_variable_key_, Tags::DEFAULT).initialized()) {
         auto& h_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
@@ -614,7 +614,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // create copies of primary fields
   StateArchive archive(S_, vo_);
-  if(!hydrostatic_pressure_force_type_){
+  if(shallow_water_model_){
      archive.Add({ primary_variable_key_ }, { discharge_key_ },
                  { primary_variable_key_, velocity_key_ }, 
                  Tags::DEFAULT, "shallow_water");
@@ -634,7 +634,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     q_c[1][c] = q_old[1][c];
     vel_c[0][c] = factor * q_old[0][c];
     vel_c[1][c] = factor * q_old[1][c];
-    if(!hydrostatic_pressure_force_type_){
+    if(shallow_water_model_){
        ht_c[0][c] = h_c[0][c] + B_c[0][c]; 
     } else {
 
@@ -703,11 +703,11 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     q_c[1][c] = q_temp[1][c];
     vel_c[0][c] = factor * q_temp[0][c];
     vel_c[1][c] = factor * q_temp[1][c];
-    if (!hydrostatic_pressure_force_type_) ht_c[0][c] = h_c[0][c] + B_c[0][c];
+    if (shallow_water_model_) ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
   UpdateWettedQuantities();
 
-  if(hydrostatic_pressure_force_type_){
+  if(!shallow_water_model_){
      Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
        S_->GetEvaluatorPtr(wetted_angle_key_, Tags::DEFAULT))->SetChanged();
 
