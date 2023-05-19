@@ -102,7 +102,7 @@ class MeshExtractedManifold : public MeshFramework {
     Entity_ID_View faces("faces", my_parent_faces.size());
     int i = 0;
     for (auto f : my_parent_faces) {
-      for (auto pf : parent_faces) if (f == pf) faces(i++) = f;
+      for (auto pf : parent_faces) if (f == pf) faces(i++) = parent_to_entid_[Entity_kind::FACE].at(f);
     }
     Kokkos::resize(faces, i);
     nfaces = faces;
