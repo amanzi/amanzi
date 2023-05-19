@@ -107,7 +107,7 @@ class MeshExtractedManifold : public MeshFramework {
     int i = 0;
     for (auto f : my_parent_faces) {
       for (auto pf : parent_faces)
-        if (f == pf) faces(i++) = f;
+        if (f == pf) faces(i++) = parent_to_entid_[Entity_kind::FACE].at(f);
     }
     Kokkos::resize(faces, i);
     nfaces = faces;

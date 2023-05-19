@@ -186,8 +186,8 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/mesh_surface_extraction.cc
                     LINK_LIBS ${mesh_test_link_libs})
-    #add_amanzi_test(mesh_surface_extraction_np2 mesh_surface_extraction NPROCS 2 KIND unit)
-    #add_amanzi_test(mesh_surface_extraction_np4 mesh_surface_extraction NPROCS 4 KIND unit)
+    add_amanzi_test(mesh_surface_extraction_np2 mesh_surface_extraction NPROCS 2 KIND unit)
+    add_amanzi_test(mesh_surface_extraction_np4 mesh_surface_extraction NPROCS 4 KIND unit)
     
     # Test: volume extracted mesh
     #   Tests a volumetric mesh generated using the mesh framework
