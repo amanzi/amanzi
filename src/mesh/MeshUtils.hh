@@ -290,11 +290,9 @@ asVector(const Kokkos::MeshView<T*, Args...> view)
 //
 // Conversion from vector to non-owning view on host.
 //
-
-//Change name 
 template<typename T>
 Kokkos::MeshView<const T*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-asView(const std::vector<T>& vec)
+toNonOwningView(const std::vector<T>& vec)
 {
   using View_type = Kokkos::MeshView<const T*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   View_type my_view(vec.data(), vec.size());
@@ -336,7 +334,7 @@ asDualView(const std::vector<T>& in)
   using DV_type = Kokkos::MeshDualView<typename std::remove_const<T>::type*, MemSpace>;
   DV_type dv;
   dv.resize(in.size()); 
-  Kokkos::deep_copy(dv.h_view, asView(in));
+  Kokkos::deep_copy(dv.h_view, toNonOwningView(in));
   Kokkos::deep_copy(dv.d_view,dv.h_view); 
   return dv;
 }
@@ -351,9 +349,46 @@ asDualView(const Kokkos::MeshView<T*, Args...>& in)
   Kokkos::deep_copy(dv.d_view,dv.h_view); 
   return dv;
 }
+  
+template<class ...> struct types {};
+template<class T> struct function_traits : function_traits<decltype(&T::operator())> {};
+template<class T,class C> struct function_traits<T C::*> : function_traits<T> {
+  using class_type=C;
+};
+template<class R,class ...PP> struct function_traits<R(PP...)> {
+  using return_type=R;
+  using parameter_types=std::tuple<PP...>;
+};
+template<class R,class ...PP> struct function_traits<R(PP...) const> : function_traits<R(PP...)> {};
+// In C++23, these can be merged into the above:
+template<class R,class ...PP> struct function_traits<R(PP...) noexcept> : function_traits<R(PP...)> {};
+template<class R,class ...PP> struct function_traits<R(PP...) const noexcept> : function_traits<R(PP...)> {};
 
-// Add asDualView (change caching)
+template<class V>
+using dual_view_t=Kokkos::MeshDualView<typename V::data_type,Kokkos::DefaultHostExecutionSpace>;
 
+namespace detail {
+  template<typename Func,typename F,typename ...PP>
+  auto asDualViews(Func &mesh_func,int count,std::tuple<F,PP...>*) {
+    std::tuple<dual_view_t<PP>...> dvs;
+    std::apply([count](auto &... dv) {(dv.resize(count),...);},dvs); 
+    for(int i=0;i<count;++i)
+      std::apply([&](auto &...dv) {mesh_func(i,dv.h_view...);},dvs);
+    std::apply([](auto &...dv) {(Kokkos::deep_copy(dv.d_view,dv.h_view),...);},dvs);
+    return dvs;
+  }  
+}
+
+template<typename Func>
+auto
+asDualView(Func &&mesh_func, int count)
+{
+  return detail::asDualViews(
+			     mesh_func,
+			     count,
+			     static_cast<typename function_traits<std::remove_reference_t<Func>>::parameter_types*>(nullptr));
+}
+  
 // note, this template is left here despite not being used in case of future
 // refactoring for a more general struct.
 template<typename T>
@@ -463,33 +498,31 @@ struct RaggedArray_DualView {
   } 
 
 };
-  
+
 //
 // Cache a RaggedArray from a callable, e.g. getCellFaces()
 //
 template<typename T, typename Func>
-RaggedArray_DualView<T>
-asRaggedArray_DualView(Func mesh_func, int count) {
+auto asRaggedArray_DualView(Func mesh_func, int count) {
   RaggedArray_DualView<T> adj;
   adj.rows.resize(count+1);
 
   // do a count first, setting rows
-  Kokkos::MeshView<const T*, Kokkos::DefaultHostExecutionSpace> ents;
+  std::vector<Kokkos::MeshView<const T*, Kokkos::DefaultHostExecutionSpace>> ents(count);
   int total = 0;
   for (int i=0; i!=count; ++i) {
     view<MemSpace_kind::HOST>(adj.rows)[i] = total;
 
-    mesh_func(i, ents);
-    total += ents.size();
+    mesh_func(i, ents[i]);
+    total += ents[i].size();
   }
   view<MemSpace_kind::HOST>(adj.rows)[count] = total;
   adj.entries.resize(total);
 
   for (int i=0; i!=count; ++i) {
-    mesh_func(i, ents);
     Kokkos::MeshView<T*, Kokkos::DefaultHostExecutionSpace> row_view = adj.template getRow<MemSpace_kind::HOST>(i);
-    Kokkos::resize(row_view, ents.size()); 
-    Kokkos::deep_copy(row_view, ents); 
+    Kokkos::resize(row_view, ents[i].size()); 
+    Kokkos::deep_copy(row_view, ents[i]); 
   }
   Kokkos::deep_copy(adj.rows.view_device(), adj.rows.view_host()); 
   Kokkos::deep_copy(adj.entries.view_device(),adj.entries.view_host()); 

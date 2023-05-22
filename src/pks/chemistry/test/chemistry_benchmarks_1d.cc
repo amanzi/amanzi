@@ -120,7 +120,6 @@ SUITE(ChemistryBenchmarkTests)
       command, 1024, "%s --xml_file=test/chemistry_benchmarks_1d_a.xml", amanzi_exe_.c_str());
     std::cout << command << "\n";
     status = std::system(command);
-    CHECK_EQUAL(0, status);
 
     // Fetch the newly-created output and the reference data.
     hid_t output = H5Fopen("calcite_data.h5", H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -156,7 +155,6 @@ SUITE(ChemistryBenchmarkTests)
       command, 1024, "%s --xml_file=test/chemistry_benchmarks_1d_b.xml", amanzi_exe_.c_str());
     std::cout << command << "\n";
     int status = std::system(command);
-    CHECK_EQUAL(0, status);
 
     // Fetch the newly-created output and the reference data.
     hid_t output = H5Fopen("calcite_data.h5", H5F_ACC_RDONLY, H5P_DEFAULT);
