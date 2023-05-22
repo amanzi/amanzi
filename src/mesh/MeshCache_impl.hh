@@ -393,7 +393,6 @@ MeshCache<MEM>::getFaceCell(const Entity_ID f, const size_type i) const
   return data_.face_cells.get<MEM>(f, i);
 }
 
-
 template <MemSpace_kind MEM>
 template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION void
@@ -431,7 +430,7 @@ KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Entity_ID c, int* orientation) const
 {
   if (this->isSFM()) {
-    AmanziGeometry::Point normal = data_.face_normals.getRow<MemSpace_kind::HOST>(f)[0];
+    AmanziGeometry::Point normal = data_.face_normals.get<MemSpace_kind::HOST>(f, 0);
     return normal;
   }
 
@@ -1203,16 +1202,10 @@ MeshCache<MEM>::cacheCellGeometry()
 {
   assert(framework_mesh_.get());
   if (data_.cell_geometry_cached) return;
-  data_.cell_volumes.resize(ncells_all);
-  data_.cell_centroids.resize(ncells_all);
-  for (Entity_ID i = 0; i != ncells_all; ++i) {
-    // note this must be on host
-    std::tie(view<MemSpace_kind::HOST>(data_.cell_volumes)[i],
-             view<MemSpace_kind::HOST>(data_.cell_centroids)[i]) =
-      algorithms_->computeCellGeometry(*this, i);
-  }
-  Kokkos::deep_copy(data_.cell_volumes.view_device(), data_.cell_volumes.view_host());
-  Kokkos::deep_copy(data_.cell_centroids.view_device(), data_.cell_centroids.view_host());
+  auto lambda = [this](Entity_ID c, Double_View cvol, Point_View ccent) {
+    std::tie(cvol[c], ccent[c]) = algorithms_->computeCellGeometry(*this, c);
+  };
+  std::tie(data_.cell_volumes, data_.cell_centroids) = asDualView(lambda, ncells_all);
   data_.cell_geometry_cached = true;
 }
 
@@ -1413,20 +1406,10 @@ MeshCache<MEM>::cacheEdgeGeometry()
   assert(framework_mesh_.get());
   if (data_.edge_geometry_cached) return;
   framework_mesh_->hasEdgesOrThrow();
-  data_.edge_vectors.resize(nedges_all);
-  data_.edge_centroids.resize(nedges_all);
-
-  auto evector = view<MemSpace_kind::HOST>(data_.edge_vectors);
-  auto ecentroids = view<MemSpace_kind::HOST>(data_.edge_centroids);
-  for (int i = 0; i < nedges_all; ++i) {
-    auto egeometry = algorithms_->computeEdgeGeometry(*this, i);
-    evector[i] = std::get<0>(egeometry);
-    ecentroids[i] = std::get<1>(egeometry);
-  }
-  Kokkos::deep_copy(view<MemSpace_kind::DEVICE>(data_.edge_centroids),
-                    view<MemSpace_kind::HOST>(data_.edge_centroids));
-  Kokkos::deep_copy(view<MemSpace_kind::DEVICE>(data_.edge_vectors),
-                    view<MemSpace_kind::HOST>(data_.edge_vectors));
+  auto lambda = [this](Entity_ID e, Point_View ev, Point_View ec) {
+    std::tie(ev[e], ec[e]) = algorithms_->computeEdgeGeometry(*this, e);
+  };
+  std::tie(data_.edge_vectors, data_.edge_centroids) = asDualView(lambda, nedges_all);
   data_.edge_geometry_cached = true;
 }
 
@@ -1666,8 +1649,7 @@ template <MemSpace_kind MEM>
 void
 MeshCache<MEM>::PrintMeshStatistics() const
 {
-  assert(false && "Need verbose object");
-#if 0 
+  auto vo_ = Teuchos::rcp(new VerboseObject("Mesh Output", *plist_));
   if (vo_.get() && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     int ncells = getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
     int nfaces = getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
@@ -1691,7 +1673,6 @@ MeshCache<MEM>::PrintMeshStatistics() const
     *vo_->os() << "nodes, tot/min/max: " << sum_out[3] << "/" << min_out[3] << "/" << max_out[3]
                << "\n\n";
   }
-#endif
 }
 
 template <MemSpace_kind MEM>

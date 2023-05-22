@@ -69,7 +69,10 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
   // create the MSTK mesh framework
   // -- geometric model is not created. Instead, we specify boundary conditions
   // -- using centroids of mesh faces.
-  MeshFactory meshfactory(comm);
+  auto mesh_list = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_list->set<bool>("request edges", true);
+  mesh_list->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, Teuchos::null, mesh_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 5);
 
@@ -132,7 +135,7 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
     std::vector<Point>& bcv_value = bcv->bc_value_point();
 
     for (int v = 0; v < nnodes_wghost; ++v) {
-      auto xv = mesh->getNodeCoordinates(v);
+      auto xv = mesh->getNodeCoordinate(v);
 
       if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1]) < 1e-6 ||
           fabs(xv[1] - 1.0) < 1e-6) {
@@ -173,7 +176,7 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
     std::vector<double>& bcv_value = bcv->bc_value();
 
     for (int v = 0; v < nnodes_wghost; ++v) {
-      auto xv = mesh->getNodeCoordinates(v);
+      auto xv = mesh->getNodeCoordinate(v);
 
       if ((fabs(xv[1]) < 1e-6 && xv[0] > tol && xv[0] < 1.0 - tol) ||
           (fabs(xv[1] - 1.0) < 1e-6 && xv[0] > tol && xv[0] < 1.0 - tol)) {
@@ -211,7 +214,7 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
   Epetra_MultiVector& src = *source.ViewComponent("node");
 
   for (int v = 0; v < nnodes; v++) {
-    xv = mesh->getNodeCoordinate(v);
+    auto xv = mesh->getNodeCoordinate(v);
     Point tmp(ana.source_exact(xv, 0.0));
     for (int k = 0; k < 2; ++k) src[k][v] = tmp[k];
   }
@@ -244,7 +247,7 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
   if (icase == 1 || icase == 2) { ver.CheckResidual(solution, 1.0e-13); }
 
   if (MyPID == 0) {
-    std::cout << ana.Tensor(mesh->cell_centroid(0), 0.0) << std::endl;
+    std::cout << ana.Tensor(mesh->getCellCentroid(0), 0.0) << std::endl;
     std::cout << "elasticity solver (" << solver << "): ||r||=" << global_op->residual()
               << " itr=" << global_op->num_itrs() << " code=" << global_op->returned_code()
               << std::endl
