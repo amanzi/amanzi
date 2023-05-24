@@ -200,7 +200,8 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
     // impose essential BCs via the default implementation
     if (bc->type() == WhetStone::DOF_Type::POINT) {
       ApplyBCs_Cell_Point_(*bc, local_op_, primary, eliminate, essential_eqn);
-    } else if (bc->type() == WhetStone::DOF_Type::SCALAR) {
+    } else if (bc->type() == WhetStone::DOF_Type::SCALAR ||
+               bc->type() == WhetStone::DOF_Type::NORMAL_COMPONENT) {
       ApplyBCs_Cell_Scalar_(*bc, local_op_, primary, eliminate, essential_eqn);
     }
   }

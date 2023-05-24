@@ -19,6 +19,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "IO.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "OutputXDMF.hh"
@@ -127,4 +128,9 @@ TEST(NAVIER_STOKES_2D)
   io.WriteVector(*u(1), "velocity_y", AmanziMesh::NODE);
   io.WriteVector(*p(0), "pressure", AmanziMesh::CELL);
   io.FinalizeCycle();
+
+  // summary
+  WriteStateStatistics(*S);
+
+  AMANZI_ASSERT(itrs < 10);
 }
