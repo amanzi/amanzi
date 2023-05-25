@@ -151,7 +151,7 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                     BUILD_IN_SOURCE  1                           # Flag for in source builds
 #                    # -- Install
                     #INSTALL_DIR      ${TPL_INSTALL_PREFIX}       # Install directory
-                    INSTALL_COMMAND  ${ECOSIM_INSTALL_COMMAND}
+                    INSTALL_COMMAND  ""
 #                    # -- Output control
                     ${ECOSIM_logging_args})
 
@@ -159,3 +159,7 @@ include(BuildLibraryName)
 build_library_name(ecosim ECOSIM_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 set(ECOSIM_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
 set(ECOSIM_DIR ${TPL_INSTALL_PREFIX})
+
+message(Status "Ecosim include dirs: ${ECOSIM_INCLUDE_DIRS}")
+message(Status "Ecosim lib: ${ECOSIM_LIBRARIES}")
+message(Status "Ecosim dir: ${ECOSIM_DIR}")
