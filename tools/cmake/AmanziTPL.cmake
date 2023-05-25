@@ -576,19 +576,6 @@ if (ENABLE_CUDA)
 endif()
 
 ##############################################################################
-# ECOSIM
-##############################################################################
-option(ENABLE_ECOSIM "Build EcoSIM" FALSE)
-if (ENABLE_ECOSIM)
-  find_package(ECOSIM)
-  if (ECOSIM_FOUND)
-     message(STATUS "ECOSIM Package information")
-     message(STATUS "\tECOSIM_INCLUDE_DIR  = ${ECOSIM_INCLUDE_DIR}")
-     message(STATUS "\tECOSIM_INCLUDE_DIRS = ${ECOSIM_INCLUDE_DIRS}")
-     message(STATUS "\tECOSIM_LIBRARY_DIR  = ${ECOSIM_LIBRARY_DIR}")
-  endif()
-endif()
-##############################################################################
 # ALQUIMIA, PFLOTRAN, and CrunchTope
 ##############################################################################
 if (ENABLE_ALQUIMIA)
@@ -665,6 +652,24 @@ if (ENABLE_PETSC)
   endif()
 endif()
 
+##############################################################################
+# ECOSIM
+##############################################################################
+option(ENABLE_ECOSIM "Build EcoSIM" FALSE)
+if (ENABLE_ECOSIM)
+  find_package(ECOSIM)
+  if (NOT ECOSIM_FOUND)
+    message(WARNING "Failed to locate EcoSIM")
+  else()
+     message(STATUS "ECOSIM Package information")
+     message(STATUS "\tECOSIM_INCLUDE_DIR  = ${ECOSIM_INCLUDE_DIR}")
+     message(STATUS "\tECOSIM_INCLUDE_DIRS = ${ECOSIM_INCLUDE_DIRS}")
+     message(STATUS "\tECOSIM_LIBRARY_DIR  = ${ECOSIM_LIBRARY_DIR}")
+     message(STATUS "\tECOSIM_LIBRARY      = ${ECOSIM_LIBRARY}")
+     message(STATUS "\tECOSIM_LIBRARIES    = ${ECOSIM_LIBRARIES}")
+     print_link_libraries(${ECOSIM_LIBRARY})
+  endif()
+endif()
 
 ##############################################################################
 # CLM LSM
