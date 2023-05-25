@@ -24,12 +24,14 @@ include(FindPackageHandleStandardArgs)
 include(PrintVariable)
 include(AddPackageDependency)
 
-if (ECOSIM_LIBRARIES AND ECOSIM_INCLUDE_DIRS)
+message("Starting FindEcoSIM...")
 
+if (ECOSIM_LIBRARIES AND ECOSIM_INCLUDE_DIRS)
+  message("Found EcoSIM Libs and Inc")
   # Do nothing. Variables are set. No need to search again
 
 elseif (ECOSIM_DIR)
-
+  message("Found EcoSIM_DIR, setting libraries and include")
   set(ECOSIM_INCLUDE_DIR ${ECOSIM_DIR}/include)
   set(ECOSIM_LIBRARY_DIR ${ECOSIM_DIR}/lib)
   set(ECOSIM_TARGET ecosim)
