@@ -122,29 +122,7 @@ else()
 endif()
 message(STATUS "ECOSIM git repository = ${ECOSIM_GIT_REPOSITORY_TEMP}")
 
-#message("JUST DUMPING ALL THE VARIABLES I CAN THINK OF")
-#message("ECOSIM_BUILD_TARGET: ${ECOSIM_BUILD_TARGET}")
-#message("ECOSIM_PACKAGE_DEPENDS: ${ECOSIM_PACKAGE_DEPENDS}")
-#message("ECOSIM_tmp_dir: ${ECOSIM_tmp_dir}")
-#message("ECOSIM_stamp_dir: ${ECOSIM_stamp_dir}")
-#message("ECOSIM_PATCH_COMMAND: ${ECOSIM_PATCH_COMMAND}")
-#message("ECOSIM_source_dir: ${ECOSIM_source_dir}")
-#message("ECOSIM_build_dir: ${ECOSIM_build_dir}")
-#message("TPL_INSTALL_PREFIX: ${TPL_INSTALL_PREFIX}")
-#message("AMANZI_CMAKE_CACHE: ${AMANZI_CMAKE_CACHE_ARGS}")
-#message("ECOSIM_CMAKE_CACHE: ${ECOSIM_CMAKE_CACHE_ARGS}")
-#message("AMANZI COMMON FLAGS ${Amanzi_COMMON_CXXFLAGS}")
-#message("-DCMAKE_C_FLAGS:STRING: ${Amanzi_COMMON_CFLAGS}")
-#message("-DCMAKE_C_COMPILER:FILEPATH: ${CMAKE_C_COMPILER}")
-#message("-DCMAKE_CXX_FLAGS:STRING: ${Amanzi_COMMON_CXXFLAGS}")
-#message("-DCMAKE_CXX_COMPILER:FILEPATH: ${CMAKE_CXX_COMPILER}")
-#message("-DCMAKE_Fortran_FLAGS:STRING: ${Amanzi_COMMON_FCFLAGS}")
-#message("-DCMAKE_Fortran_COMPILER:FILEPATH: ${CMAKE_Fortran_COMPILER}")
-#message("ECOSIM_CMAKE_COMMAND: ${ECOSIM_CMAKE_COMMAND}")
-#message("ECOSIM_INSTALL_COMMAND: ${ECOSIM_INSTALL_COMMAND}")
-
 # --- Add external project build and tie to the ECOSIM build target
-# OLD VERSION
 ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                     DEPENDS   ${ECOSIM_PACKAGE_DEPENDS}        # Package dependency target
                     TMP_DIR   ${ECOSIM_tmp_dir}                # Temporary files directory
@@ -159,7 +137,7 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                     PATCH_COMMAND ""
                     # -- Configure
                     SOURCE_DIR    ${ECOSIM_source_dir}         # Source directory
-                    CONFIGURE_COMMAND ${ECOSIM_CONFIG_COMMAND}
+                    CONFIGURE_COMMAND ""
                     CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}     # Ensure uniform build
                                   ${ECOSIM_CMAKE_CACHE_ARGS}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
@@ -169,7 +147,7 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                                   -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     #BINARY_DIR     ${ECOSIM_build_dir}       # Build directory
-                    BUILD_COMMAND    ${ECOSIM_CMAKE_COMMAND}   # $(MAKE) enables parallel builds through make
+                    BUILD_COMMAND    ""   # $(MAKE) enables parallel builds through make
                     BUILD_IN_SOURCE  1                           # Flag for in source builds
 #                    # -- Install
                     #INSTALL_DIR      ${TPL_INSTALL_PREFIX}       # Install directory
