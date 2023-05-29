@@ -14,15 +14,20 @@
 */
 
 #include "LookupTable_Amanzi.hh"
+#include "LookupTable_FEHM.hh"
 #include "ViscosityTabular.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-ViscosityTabular::ViscosityTabular(Teuchos::ParameterList& eos_plist)
-  : EOS_Viscosity(eos_plist)
+ViscosityTabular::ViscosityTabular(Teuchos::ParameterList& plist)
+  : EOS_Viscosity(plist)
 {
-  table_ = Teuchos::rcp(new LookupTable_Amanzi(eos_plist_));
+  std::string format = plist.get<std::string>("format", "Amanzi");
+  if (format == "Amanzi")
+    table_ = Teuchos::rcp(new LookupTable_Amanzi(plist));
+  else 
+    table_ = Teuchos::rcp(new LookupTable_FEHM(plist));
 }
 
 } // namespace AmanziEOS

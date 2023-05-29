@@ -1361,6 +1361,7 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
     out_ev.sublist(field)
       .sublist("EOS parameters")
       .set<std::string>("eos type", "lookup table")
+      .set<std::string>("format", "Amanzi")
       .set<std::string>("table name", eos_lookup_table_)
       .set<std::string>("field name", eos_table_name);
   }
