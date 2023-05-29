@@ -13,6 +13,7 @@
   EOS for tabulated viscosity.
 */
 
+#include "LookupTable_Amanzi.hh"
 #include "ViscosityTabular.hh"
 
 namespace Amanzi {
@@ -21,7 +22,7 @@ namespace AmanziEOS {
 ViscosityTabular::ViscosityTabular(Teuchos::ParameterList& eos_plist)
   : EOS_Viscosity(eos_plist)
 {
-  table_ = Teuchos::rcp(new LookupTable(eos_plist_));
+  table_ = Teuchos::rcp(new LookupTable_Amanzi(eos_plist_));
 }
 
 } // namespace AmanziEOS

@@ -35,6 +35,8 @@ set(eos_src_files
     IdealGas_Density.cc
     IsobaricEOSEvaluator.cc
     LookupTable.cc
+    LookupTable_Amanzi.cc
+    LookupTable_FEHM.cc
     MolarFractionGasEvaluator.cc
     VaporInGas_Density.cc
     VaporInGas_Diffusion.cc
@@ -75,6 +77,8 @@ set(eos_inc_files
     IdealGas_Density.hh
     IsobaricEOSEvaluator.hh
     LookupTable.hh
+    LookupTable_Amanzi.hhh
+    LookupTable_FEHM.hhh
     MolarFractionGasEvaluator.hh
     VaporInGas_Density.hh
     VaporInGas_Diffusion.hh

@@ -26,7 +26,8 @@
 #include "H2O_Density.hh"
 #include "H2O_DensityFEHM.hh"
 #include "H2O_ViscosityFEHM.hh"
-#include "LookupTable.hh"
+#include "LookupTable_Amanzi.hh"
+#include "LookupTable_FEHM.hh"
 
 
 TEST(DensityEOS)
@@ -90,7 +91,7 @@ TEST(ViscosityEOS)
 }
 
 
-TEST(TabularEOS)
+TEST(TabularEOS_Amanzi)
 {
   using namespace Amanzi::AmanziEOS;
 
@@ -98,7 +99,7 @@ TEST(TabularEOS)
   Teuchos::ParameterList plist;
   plist.set<std::string>("table name", "test/h2o.eos").set<std::string>("field name", "density");
 
-  LookupTable eos(plist);
+  LookupTable_Amanzi eos(plist);
 
   for (double T = 283.15; T < 320; T += 10.0) {
     for (double p = 1e+5; p < 1.4e+5; p += 1.0e+4) {
@@ -120,6 +121,43 @@ TEST(TabularEOS)
   std::cout << "water density at 20C  and 1atm  = " << eos.Function(293.15, 101325.0, &ierr)
             << ", derivatives: " << eos.DFunctionDT(293.15, 101325.0, &ierr) << "  "
             << eos.DFunctionDp(293.15, 101325.0, &ierr) << std::endl;
+}
+
+TEST(TabularEOS_FEHM)
+{
+  using namespace Amanzi::AmanziEOS;
+
+  std::vector<std::string> fields({ "density", "viscosity", "internal_energy" });
+  for (int loop = 0; loop < 3; ++loop) {
+    int ierr;
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("table name", "test/air.eos")
+         .set<std::string>("field name", fields[loop])
+         .set<double>("molar weight", 0.02896);
+
+    LookupTable_FEHM eos(plist);
+
+    for (double T = 293.15; T < 320; T += 10.0) {
+      for (double p = 1e+5; p < 1.4e+5; p += 1.0e+4) {
+         double d = eos.Function(T, p, &ierr);
+      }
+    }
+
+    // verify derivatives
+    double T(273.15), p(101325), dT(20.0), dp(100.0);
+    double dFdT = eos.DFunctionDT(T + dT / 2, p, &ierr);
+    CHECK_CLOSE(
+      (eos.Function(T + dT, p, &ierr) - eos.Function(T, p, &ierr)) / dT, dFdT, fabs(dFdT) * 5e-2);
+
+    double dFdP = eos.DFunctionDp(T, p + dp / 2, &ierr);
+    CHECK_CLOSE(
+      (eos.Function(T, p + dp, &ierr) - eos.Function(T, p, &ierr)) / dp, dFdP, fabs(dFdP) * 5e-2);
+
+    std::cout << "air " << fields[loop] << " at 0C and 1atm  = " << eos.Function(T, p, &ierr)
+              << ", P/T derivatives: " << eos.DFunctionDT(T, p, &ierr) << "  "
+              << eos.DFunctionDp(T, p, &ierr) << std::endl;
+  }
+  std::cout << std::endl;
 }
 
 

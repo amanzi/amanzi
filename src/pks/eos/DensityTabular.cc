@@ -15,13 +15,19 @@
 */
 
 #include "DensityTabular.hh"
+#include "LookupTable_Amanzi.hh"
+#include "LookupTable_FEHM.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-DensityTabular::DensityTabular(Teuchos::ParameterList& eos_plist) : EOS_Density(eos_plist)
+DensityTabular::DensityTabular(Teuchos::ParameterList& plist) : EOS_Density(plist)
 {
-  table_ = Teuchos::rcp(new LookupTable(eos_plist_));
+  std::string format = plist.get<std::string>("format", "Amanzi");
+  if (format == "Amanzi")
+    table_ = Teuchos::rcp(new LookupTable_Amanzi(plist));
+  else 
+    table_ = Teuchos::rcp(new LookupTable_FEHM(plist));
 }
 
 } // namespace AmanziEOS
