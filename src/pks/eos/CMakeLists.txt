@@ -77,8 +77,8 @@ set(eos_inc_files
     IdealGas_Density.hh
     IsobaricEOSEvaluator.hh
     LookupTable.hh
-    LookupTable_Amanzi.hhh
-    LookupTable_FEHM.hhh
+    LookupTable_Amanzi.hh
+    LookupTable_FEHM.hh
     MolarFractionGasEvaluator.hh
     VaporInGas_Density.hh
     VaporInGas_Diffusion.hh
