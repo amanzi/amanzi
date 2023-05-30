@@ -225,11 +225,17 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // coupling submodel="rate" returns volumetric flux [m^3/s] integrated over
   // the time step in the last (the second) component of local data vector
   std::vector<double> ext_S_cell(ncells_owned, 0.0);
+  double sourceScaling = 1.0;
+  if (shallow_water_model_){
+     sourceScaling = Pi * manhole_radius_ * manhole_radius_;
+  }
+  else {
+     sourceScaling = 2.0 * Pi * manhole_radius_;
+  }
   for (int i = 0; i < srcs_.size(); ++i) {
     for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
       int c = it->first;
-      ext_S_cell[c] = it->second[0]; // data unit is [m/s]
-                                     // or [m^2/s] for pipe flow
+      ext_S_cell[c] = it->second[0] / sourceScaling; // [m/s] for SW, [m^2/s] for pipe flow
     }
   }
 
