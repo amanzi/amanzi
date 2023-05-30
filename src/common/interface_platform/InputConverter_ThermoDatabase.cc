@@ -120,27 +120,39 @@ InputConverter::TranslateThermodynamicDatabase_()
       inode = children->item(i);
       std::string name = GetAttributeValueS_(inode, "name");
 
-      knode = GetUniqueElementByTagsString_(inode, "species_data", flag);
+      // mineral complex
+      knode = GetUniqueElementByTagsString_(inode, "complex, species_data", flag);
       if (!flag) Exceptions::amanzi_throw(msg);
       double mol_weight = GetAttributeValueD_(knode, "weight", TYPE_NUMERICAL, 0.0, 1000.0);
 
-      knode = GetUniqueElementByTagsString_(inode, "reaction", flag);
+      knode = GetUniqueElementByTagsString_(inode, "complex, reaction", flag);
       if (!flag) Exceptions::amanzi_throw(msg);
       std::string reaction = TrimString_(mm.transcode(knode->getTextContent()));
 
-      knode = GetUniqueElementByTagsString_(inode, "equilibrium_constant", flag);
+      knode = GetUniqueElementByTagsString_(inode, "complex, equilibrium_constant", flag);
       if (!flag) Exceptions::amanzi_throw(msg);
       double lnKeq = strtod(mm.transcode(knode->getTextContent()), NULL);
 
-      knode = GetUniqueElementByTagsString_(inode, "kinetics_data", flag);
+      // mineral kinetics
+      knode = GetUniqueElementByTagsString_(inode, "kinetics, model", flag);
       if (!flag) Exceptions::amanzi_throw(msg);
+      std::string model = GetTextContentS_(knode, "TST");
 
-      std::string model = GetAttributeValueS_(knode, "model", "TST");
-      double rate = GetAttributeValueD_(knode, "rate", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX);
-      std::string modifiers = GetAttributeValueS_(knode, "modifiers");
-      double mol_volume = GetAttributeValueD_(knode, "molar_volume", TYPE_NUMERICAL, 0.0, DVAL_MAX);
-      double ssa =
-        GetAttributeValueD_(knode, "specific_surface_area", TYPE_NUMERICAL, 0.0, DVAL_MAX);
+      knode = GetUniqueElementByTagsString_(inode, "kinetics, rate", flag);
+      if (!flag) Exceptions::amanzi_throw(msg);
+      double rate = GetTextContentD_(knode, "", true);
+
+      knode = GetUniqueElementByTagsString_(inode, "kinetics, modifiers", flag);
+      if (!flag) Exceptions::amanzi_throw(msg);
+      std::string modifiers = TrimString_(mm.transcode(knode->getTextContent()));
+
+      knode = GetUniqueElementByTagsString_(inode, "kinetics, molar_volume", flag);
+      if (!flag) Exceptions::amanzi_throw(msg);
+      double mol_volume = GetTextContentD_(knode, "cm^3/mol", true);
+
+      knode = GetUniqueElementByTagsString_(inode, "kinetics, specific_surface_area", flag);
+      if (!flag) Exceptions::amanzi_throw(msg);
+      double ssa = GetTextContentD_(knode, "cm^-1", true);
 
       out_list.sublist("mineral kinetics")
         .sublist(name)

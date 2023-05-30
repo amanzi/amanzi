@@ -487,52 +487,116 @@
 
       <mineral_kinetics>
         <mineral name="Quartz">
-          <species_data weight="60.0843"/>
-          <kinetics_data model="TST" rate="-1.33450E+01" modifiers="" molar_volume=" 2.26880E+01" specific_surface_area="1.0"/>
-          <reaction>1.0 SiO2(aq)</reaction>
-          <equilibrium_constant>-3.75010E+00</equilibrium_constant>
+          <kinetics>
+            <model>TST</model>
+            <rate>-1.33450E+01</rate>
+            <modifiers></modifiers> 
+            <molar_volume>2.26880E+01</molar_volume> 
+            <specific_surface_area>1.0</specific_surface_area>
+          </kinetics>
+          <complex>
+            <species_data weight="60.0843"/>
+            <reaction>1.0 SiO2(aq)</reaction>
+            <equilibrium_constant>-3.75010E+00</equilibrium_constant>
+          </complex>
         </mineral>
         <mineral name="Kaolinite">
-          <species_data weight="258.160"/>
-          <kinetics_data model="TST" rate="-12.967" modifiers="H+  7.77000E-01" molar_volume="99.52" specific_surface_area="1.0"/>
-          <reaction>5.0 H2O  -6.0 H+  2.0 Al+++  2.0 SiO2(aq)</reaction>
-          <equilibrium_constant> 7.57000E+00</equilibrium_constant>
+          <kinetics>
+            <model>TST</model>
+            <rate>-12.967</rate> 
+            <modifiers>H+  7.77000E-01</modifiers> 
+            <molar_volume>99.52</molar_volume>
+            <specific_surface_area>1.0</specific_surface_area>
+          </kinetics>
+          <complex>
+            <species_data weight="258.160"/>
+            <reaction>5.0 H2O  -6.0 H+  2.0 Al+++  2.0 SiO2(aq)</reaction>
+            <equilibrium_constant> 7.57000E+00</equilibrium_constant>
+          </complex>
         </mineral>
         <mineral name="Goethite">
-          <species_data weight="8.88537E+01"/>
-          <kinetics_data model="TST" rate="-7.9400" modifiers="" molar_volume="2.08200E+01" specific_surface_area="1.0"/>
-          <reaction>2.0 H2O  -3.0 H+  1.0 Fe+++</reaction>
-          <equilibrium_constant>1.75800E-01</equilibrium_constant>
+          <kinetics>
+            <model>TST</model>
+            <rate>-7.9400</rate>
+            <modifiers></modifiers> 
+            <molar_volume>2.08200E+01</molar_volume>
+            <specific_surface_area>1.0</specific_surface_area>
+          </kinetics>
+          <complex>
+            <species_data weight="8.88537E+01"/>
+            <reaction>2.0 H2O  -3.0 H+  1.0 Fe+++</reaction>
+            <equilibrium_constant>1.75800E-01</equilibrium_constant>
+          </complex>
         </mineral>
         <mineral name="Schoepite">
-          <species_data weight="3.22058E+02"/>
-          <kinetics_data model="TST" rate="3.01030E-01" modifiers="" molar_volume="6.60800E+01" specific_surface_area="1.0"/>
-          <reaction>3.0 H2O  -2.0 H+  1.0 UO2++</reaction>
-          <equilibrium_constant>4.84430E+00</equilibrium_constant>
+          <kinetics>
+            <model>TST</model>
+            <rate>3.01030E-01</rate> 
+            <modifiers></modifiers> 
+            <molar_volume>6.60800E+01</molar_volume>
+            <specific_surface_area>1.0</specific_surface_area>
+          </kinetics>
+          <complex>
+            <species_data weight="3.22058E+02"/>
+            <reaction>3.0 H2O  -2.0 H+  1.0 UO2++</reaction>
+            <equilibrium_constant>4.84430E+00</equilibrium_constant>
+          </complex>
         </mineral>
         <mineral name="Gibbsite">
-          <species_data weight="7.80036E+01"/>
-          <kinetics_data model="TST" rate="-11.5000" modifiers="" molar_volume="3.19560E+01" specific_surface_area="1.0"/>
-          <reaction>3.0 H2O  -3.0 H+  1.0 Al+++</reaction>
-          <equilibrium_constant>7.73800E+00</equilibrium_constant>
+          <kinetics>
+            <model>TST</model>
+            <rate>-11.5000</rate> 
+            <modifiers></modifiers> 
+            <molar_volume>3.19560E+01</molar_volume>
+            <specific_surface_area>1.0</specific_surface_area>
+          </kinetics>
+          <complex>
+            <species_data weight="7.80036E+01"/>
+            <reaction>3.0 H2O  -3.0 H+  1.0 Al+++</reaction>
+            <equilibrium_constant>7.73800E+00</equilibrium_constant>
+          </complex>
         </mineral>
         <mineral name="Jurbanite">
-          <species_data weight="2.30064E+02"/>
-          <kinetics_data model="TST" rate="-8.00" modifiers="" molar_volume="1.26000E+02" specific_surface_area="1.0"/>
-          <reaction>6.0 H2O  -1.0 H+  1.0 Al+++  1.0 SO4--</reaction>
-          <equilibrium_constant>-3.80000E+00</equilibrium_constant>
+          <kinetics>
+            <model>TST</model>
+            <rate>-8.00</rate>
+            <modifiers></modifiers> 
+            <molar_volume>1.26000E+02</molar_volume>
+            <specific_surface_area>1.0</specific_surface_area>
+          </kinetics>
+          <complex>
+            <species_data weight="2.30064E+02"/>
+            <reaction>6.0 H2O  -1.0 H+  1.0 Al+++  1.0 SO4--</reaction>
+            <equilibrium_constant>-3.80000E+00</equilibrium_constant>
+          </complex>
         </mineral>
         <mineral name="Basaluminite">
-          <species_data weight="4.64140E+02"/>
-          <kinetics_data model="TST" rate="-8.00" modifiers="" molar_volume="2.18934E+02" specific_surface_area="1.0"/>
-          <reaction>15.0 H2O -10.0 H+  4.0 Al+++  1.0 SO4--</reaction>
-          <equilibrium_constant>2.22510E+01</equilibrium_constant>
+          <kinetics>
+            <model>TST</model>
+            <rate>-8.00</rate>
+            <modifiers></modifiers> 
+            <molar_volume>2.18934E+02</molar_volume>
+            <specific_surface_area>1.0</specific_surface_area>
+          </kinetics>
+          <complex>
+            <species_data weight="4.64140E+02"/>
+            <reaction>15.0 H2O -10.0 H+  4.0 Al+++  1.0 SO4--</reaction>
+            <equilibrium_constant>2.22510E+01</equilibrium_constant>
+          </complex>
         </mineral>
         <mineral name="Opal">
-          <species_data weight="6.00840E+01"/>
-          <kinetics_data model="TST" rate="-12.1350" modifiers="" molar_volume="2.90000E+01" specific_surface_area="1.0"/>
-          <reaction>1.0 SiO2(aq)</reaction>
-          <equilibrium_constant>-3.00500E+00</equilibrium_constant>
+          <kinetics>
+            <model>TST</model>
+            <rate>-12.1350</rate>
+            <modifiers></modifiers> 
+            <molar_volume>2.90000E+01</molar_volume>
+            <specific_surface_area>1.0</specific_surface_area>
+          </kinetics>
+          <complex>
+            <species_data weight="6.00840E+01"/>
+            <reaction>1.0 SiO2(aq)</reaction>
+            <equilibrium_constant>-3.00500E+00</equilibrium_constant>
+          </complex>
         </mineral>
       </mineral_kinetics>
 
