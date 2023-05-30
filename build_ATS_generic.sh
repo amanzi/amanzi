@@ -30,6 +30,7 @@ ${AMANZI_SRC_DIR}/bootstrap.sh \
    --with-mpi=${OPENMPI_DIR} \
    --enable-shared \
    --enable-clm \
+   --enable-ecosim \
    --disable-structured  --enable-unstructured \
    --enable-mesh_mstk --disable-mesh_moab \
    --enable-hypre \

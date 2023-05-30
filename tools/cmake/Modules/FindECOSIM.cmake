@@ -24,7 +24,10 @@ include(FindPackageHandleStandardArgs)
 include(PrintVariable)
 include(AddPackageDependency)
 
+set(ECOSIM_DIR /global/home/users/agraus/code/ats_dev_dir/amanzi_tpls-install-master-Debug/ecosim/local)
+
 message("Starting FindEcoSIM...")
+message("EcoSIM dir: ${ECOSIM_DIR}")
 
 if (ECOSIM_LIBRARIES AND ECOSIM_INCLUDE_DIRS)
   message("Found EcoSIM Libs and Inc")
@@ -34,12 +37,22 @@ elseif (ECOSIM_DIR)
   message("Found EcoSIM_DIR, setting libraries and include")
   set(ECOSIM_INCLUDE_DIR ${ECOSIM_DIR}/include)
   set(ECOSIM_LIBRARY_DIR ${ECOSIM_DIR}/lib)
+  set(ECOSIM_LIBRARIES ${ECOSIM_DIR}/lib)
   set(ECOSIM_TARGET ecosim)
+  set(ECOSIM_INCLUDE_DIRS ${ECOSIM_DIR}/include)  
 
+  #find_library(_ECOSIM_LIBRARY
+  #             NAMES eocsim
+  #            PATHS ${ECOSIM_DIR}/lib)
+
+  message("finding library")
   find_library(_ECOSIM_LIBRARY
-               NAMES eocsim
-               PATHS ${ECOSIM_DIR}/lib)
+	       NAMES ecosim
+               PATH_SUFFIXES "lib" "Lib"
+               NO_DEFAULT_PATH
+	       )
 
+  message("adding imported library")	
   if (_ECOSIM_LIBRARY)
     add_imported_library(${ECOSIM_TARGET}
                          LOCATION ${_ECOSIM_LIBRARY}
@@ -48,22 +61,26 @@ elseif (ECOSIM_DIR)
   endif()
 
   # Define the LIBRARIES and INCLUDE_DIRS
-  set(ECOSIM_INCLUDE_DIRS ${ECOSIM_INCLUDE_DIR})
-  set(ECOSIM_LIBRARIES ${ECOSIM_LIBRARY})
+  #set(ECOSIM_INCLUDE_DIRS ${ECOSIM_INCLUDE_DIR})
+  #set(ECOSIM_LIBRARIES ${ECOSIM_LIBRARY})
 
 endif (ECOSIM_LIBRARIES AND ECOSIM_INCLUDE_DIRS)
 
 # Send useful message if everything is found
+message("finding package handle standard args")
 find_package_handle_standard_args(ECOSIM DEFAULT_MSG
                                   ECOSIM_INCLUDE_DIRS
                                   ECOSIM_LIBRARIES)
 
+message("setting if statement")
 # find_package should set ECOSIM_FOUND but it does not!
 if (ECOSIM_LIBRARIES AND ECOSIM_INCLUDE_DIRS)
   set(ECOSIM_FOUND TRUE)
 else()
   set(ECOSIM_FOUND FALSE)
 endif()
+
+message("running mark as advanced")
 
 mark_as_advanced(
   ECOSIM_INCLUDE_DIR
