@@ -667,7 +667,7 @@ if (ENABLE_ECOSIM)
      message(STATUS "\tECOSIM_LIBRARY_DIR  = ${ECOSIM_LIBRARY_DIR}")
      message(STATUS "\tECOSIM_LIBRARY      = ${ECOSIM_LIBRARY}")
      message(STATUS "\tECOSIM_LIBRARIES    = ${ECOSIM_LIBRARIES}")
-     print_link_libraries(${ECOSIM_LIBRARY})
+     #print_link_libraries(${ECOSIM_LIBRARY})
   endif()
 endif()
 

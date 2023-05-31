@@ -156,7 +156,7 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                     ${ECOSIM_logging_args})
 
 include(BuildLibraryName)
-build_library_name(ecosim ECOSIM_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/ecosim/local/lib)
+build_library_name(ecosim ECOSIM_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib/)
 set(ECOSIM_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/ecosim/local/include)
 set(ECOSIM_DIR ${TPL_INSTALL_PREFIX}/ecosim)
 
