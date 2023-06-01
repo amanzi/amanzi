@@ -385,7 +385,6 @@ MeshCache<MEM>::getFaceCell(const Entity_ID f, const size_type i) const
   return data_.face_cells.get<MEM>(f,i);
 }
 
-
 template<MemSpace_kind MEM>
 template<AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION
@@ -424,7 +423,7 @@ AmanziGeometry::Point MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Ent
         int* orientation) const
 {
   if (this->isSFM()) {
-    AmanziGeometry::Point normal = data_.face_normals.getRow<MemSpace_kind::HOST>(f)[0];
+    AmanziGeometry::Point normal = data_.face_normals.get<MemSpace_kind::HOST>(f,0);
     return normal;
   }
 

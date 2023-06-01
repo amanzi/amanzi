@@ -332,7 +332,7 @@ ObservableAqueous::ComputeObservation(State& S,
 
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
-      double vol = mesh_->cell_volume(c);
+      double vol = mesh_->getCellVolume(c);
       *volume += vol;
       *value += temperature[0][c] * vol;
     }
