@@ -226,7 +226,7 @@ Richards_PK::Setup()
     msp_ = CreateMultiscaleFlowPorosityPartition(mesh_, msp_list);
 
     int nnodes, nnodes_tmp = NumberMatrixNodes(msp_);
-    mesh_->get_comm()->MaxAll(&nnodes_tmp, &nnodes, 1);
+    mesh_->getComm()->MaxAll(&nnodes_tmp, &nnodes, 1);
 
     if (!S_->HasRecord(pressure_msp_key_)) {
       S_->Require<CV_t, CVS_t>(pressure_msp_key_, Tags::DEFAULT, passwd_)
@@ -1229,8 +1229,8 @@ Richards_PK::VV_ReportMultiscale()
 {
   if (multiscale_porosity_ && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int total_itrs(ms_itrs_);
-    mesh_->get_comm()->SumAll(&ms_itrs_, &total_itrs, 1);
-    int ncells = mesh_->cell_map(false).NumGlobalElements();
+    mesh_->getComm()->SumAll(&ms_itrs_, &total_itrs, 1);
+    int ncells = mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).NumGlobalElements();
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "multiscale: NS:" << double(total_itrs) / ncells << std::endl;
