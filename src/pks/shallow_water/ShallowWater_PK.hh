@@ -133,6 +133,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   void VerifySolution_(TreeVector& A);
   int ErrorDiagnostics_(double t, int c, double h, double B, double ht);
+  void GetDx_(const int & cell, double & dx);
 
  protected:
   Teuchos::RCP<Teuchos::ParameterList> glist_;

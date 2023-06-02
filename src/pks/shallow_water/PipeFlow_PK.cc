@@ -82,7 +82,6 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
      for (int n = 0; n < cfaces.size(); ++n) {
         int f = cfaces[n];
-        double farea = mesh_->face_area(f);
         const auto& normal = mesh_->face_normal(f, false, c, &orientation);
         if (normal[0] > 0.0){ //this identifies the j+1/2 face
 
