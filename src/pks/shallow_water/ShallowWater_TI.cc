@@ -225,18 +225,24 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // coupling submodel="rate" returns volumetric flux [m^3/s] integrated over
   // the time step in the last (the second) component of local data vector
   std::vector<double> ext_S_cell(ncells_owned, 0.0);
-  double sourceScaling = 1.0;
   if (shallow_water_model_){
-     sourceScaling = Pi * manhole_radius_ * manhole_radius_;
+     for (int i = 0; i < srcs_.size(); ++i) {
+         for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
+             int c = it->first;
+             ext_S_cell[c] = it->second[0] / mesh_->cell_volume(c); // [m/s] for SW
+         }
+     }
   }
   else {
-     sourceScaling = 2.0 * Pi * manhole_radius_;
-  }
-  for (int i = 0; i < srcs_.size(); ++i) {
-    for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
-      int c = it->first;
-      ext_S_cell[c] = it->second[0] / sourceScaling; // [m/s] for SW, [m^2/s] for pipe flow
-    }
+     for (int i = 0; i < srcs_.size(); ++i) {
+         for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
+             int c = it->first;
+             double dx;
+             GetDx_(c, dx);
+             std::cout << "dx :" << dx << std::endl;
+             ext_S_cell[c] = it->second[0] / dx; // [m^2 / s] for pipe
+         }
+     }
   }
 
   // Shallow water equations have the form
@@ -446,6 +452,34 @@ ShallowWater_PK::ErrorDiagnostics_(double t, int c, double h, double B, double h
     return -1;
   }
   return 0;
+}
+
+//--------------------------------------------------------------
+// Compute dx
+//--------------------------------------------------------------
+void ShallowWater_PK::GetDx_(const int &cell, double &dx)
+{
+  dx = 0.0;  
+  AmanziMesh::Entity_ID_List cell_faces;
+  mesh_->cell_get_faces(cell, &cell_faces);
+  AmanziGeometry::Point x1;
+  AmanziGeometry::Point x2;
+  for (int n = 0; n < cell_faces.size(); ++n) {
+     int f = cell_faces[n];
+     int orient;
+     const auto& f_normal = mesh_->face_normal(f, false, cell, &orient);
+     if (f_normal[0] > 0.0){
+        x1 = mesh_->face_centroid(f);
+     }
+     else if (f_normal[0] < 0.0){
+        x2 = mesh_->face_centroid(f);
+     }
+  }
+  for (int iSize =0; iSize < x1.dim(); iSize++){
+     dx += (x1[iSize] - x2[iSize]) * (x1[iSize] - x2[iSize]);
+  }
+  dx = sqrt(dx);
+
 }
 
 } // namespace ShallowWater
