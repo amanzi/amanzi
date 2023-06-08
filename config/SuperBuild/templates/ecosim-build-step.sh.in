@@ -20,11 +20,11 @@ export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
 # NOTE: serial.
 cd @ECOSIM_source_dir@
 
-git checkout agraus/ats_integration
+git checkout agraus/ats_driver
 
 echo "running install"
 
-make -j1 install ATS=1
+make -j1 install ATS=1 SHARED=1
 
 rc=$?
 
