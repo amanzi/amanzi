@@ -147,35 +147,10 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
       }
 
-      if ((0.0 < UL[0] && UL[0] < pipe_cross_section_)){ //flow is ventilated (free-surface)
+      OtherTermLeft = ComputeHydrostaticPressureForce(UL);
+      OtherTermRight = ComputeHydrostaticPressureForce(UR);
 
-         OtherTermLeft = 3.0 * sin(UL[1] * 0.5) - pow(sin(UL[1] * 0.5),3) - 3.0 * (UL[1] * 0.5) * cos(UL[1] * 0.5);
-         OtherTermLeft = OtherTermLeft * g_ * pow(pipe_diameter_,3) / 24.0;
-
-      }
-
-      else if (UL[0] >= pipe_cross_section_) { //flow is pressurized
-
-         double PressurizedHead = (celerity_ * celerity_ * (UL[0] - pipe_cross_section_)) / (g_ * pipe_cross_section_);
-         OtherTermLeft = g_ * UL[0] * (PressurizedHead + sqrt(UL[0]/Pi));
-
-      }
-
-      if ((0.0 < UR[0] && UR[0] < pipe_cross_section_)){ //flow is ventilated (free-surface)
-
-         OtherTermRight = 3.0 * sin(UR[1] * 0.5) - pow(sin(UR[1] * 0.5),3) - 3.0 * (UR[1] * 0.5) * cos(UR[1] * 0.5);
-         OtherTermRight = OtherTermRight * g_ * pow(pipe_diameter_,3) / 24.0;
-
-      }
-
-      else if (UR[0] >= pipe_cross_section_) { //flow is pressurized
-
-         double PressurizedHead = (celerity_ * celerity_ * (UR[0] - pipe_cross_section_)) / (g_ * pipe_cross_section_);
-         OtherTermRight = g_ * UR[0] * (PressurizedHead + sqrt(UR[0]/Pi));
-
-      }
-
-      BGrad /= vol; //(B_(j+1/2) - //B_(j-1/2)) / dx
+      BGrad /= vol; //(B_(j+1/2) - B_(j-1/2)) / cellVol
 
       double denom = denomL - denomR;
       S[1] = std::fabs(BGrad)<1.e-14 ? 0.0 : - (FaceAreaL * OtherTermLeft - FaceAreaR * OtherTermRight) * BGrad / denom;
@@ -183,6 +158,31 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
  } // closes cell is not dry 
 
   return S;
+}
+
+//--------------------------------------------------------------------
+// Compute hydrostatic pressure force
+//--------------------------------------------------------------------
+double PipeFlow_PK::ComputeHydrostaticPressureForce (std::vector<double> SolArray){
+
+      double I = 0.0;
+
+      if ((0.0 < SolArray[0] && SolArray[0] < pipe_cross_section_)){ //flow is ventilated (free-surface)
+
+         I = 3.0 * sin(SolArray[1] * 0.5) - pow(sin(SolArray[1] * 0.5),3) - 3.0 * (SolArray[1] * 0.5) * cos(SolArray[1] * 0.5);
+         I = I * g_ * pow(pipe_diameter_,3) / 24.0;
+
+      }
+
+      else if (SolArray[0] >= pipe_cross_section_) { //flow is pressurized
+
+         double PressurizedHead = (celerity_ * celerity_ * (SolArray[0] - pipe_cross_section_)) / (g_ * pipe_cross_section_);
+         I = g_ * SolArray[0] * (PressurizedHead + sqrt(SolArray[0]/Pi));
+
+      }
+
+      return I;
+
 }
 
 //--------------------------------------------------------------------

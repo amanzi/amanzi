@@ -123,6 +123,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void UpdateWettedQuantities(){};
 
+  virtual double ComputeHydrostaticPressureForce (std::vector<double> SolArray){return g_ * 0.5 * SolArray[0] * SolArray[0];};
+
   // access
   double get_total_source() const { return total_source_; }
 

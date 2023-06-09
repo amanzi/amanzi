@@ -239,7 +239,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
              int c = it->first;
              double dx;
              GetDx_(c, dx);
-             std::cout << "dx :" << dx << std::endl;
              ext_S_cell[c] = it->second[0] / dx; // [m^2 / s] for pipe
          }
      }
@@ -275,7 +274,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     std::vector<double> W_rec(2,0.0);
     double ht_rec;
-    double B_rec = BathymetryEdgeValue(f, B_n);;
+    double B_rec = BathymetryEdgeValue(f, B_n);
     double h_rec;
 
     if (shallow_water_model_)  {
