@@ -124,7 +124,7 @@ void WritePlotfile(const std::string         &pfversion,
     const BoxArray& ba = data[0][iLevel]->boxArray();
     int nGrids = ba.size();
     char buf[64];
-    sprintf(buf, "Level_%d", iLevel);
+    snprintf(buf, 64, "Level_%d", iLevel);
 
     if(ParallelDescriptor::IOProcessor()) {
       os << iLevel << ' ' << nGrids << ' ' << time << '\n';

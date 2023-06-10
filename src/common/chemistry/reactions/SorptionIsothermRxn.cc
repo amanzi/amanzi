@@ -47,6 +47,9 @@ SorptionIsothermRxn::SetIsothermParameters(const std::vector<double>& params)
 }
 
 
+/* *******************************************************************
+* Compute/update sorbed concentation
+******************************************************************* */
 void
 SorptionIsothermRxn::Update(const std::vector<Species>& primary_species)
 {

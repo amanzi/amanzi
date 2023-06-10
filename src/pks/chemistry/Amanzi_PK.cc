@@ -44,6 +44,9 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
+
 /* ******************************************************************
 * Constructor
 ******************************************************************* */
@@ -139,15 +142,14 @@ Amanzi_PK::AllocateAdditionalChemistryStorage_()
 {
   int n_secondary_comps = chem_->secondary_species().size();
   if (n_secondary_comps > 0) {
-    S_->Require<CompositeVector, CompositeVectorSpace>(
-        secondary_activity_coeff_key_, Tags::DEFAULT, passwd_)
+    S_->Require<CV_t, CVS_t>(secondary_activity_coeff_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, n_secondary_comps);
 
     S_->GetRecordSetW(secondary_activity_coeff_key_).CreateData();
 
-    S_->GetW<CompositeVector>(secondary_activity_coeff_key_, passwd_).PutScalar(1.0);
+    S_->GetW<CV_t>(secondary_activity_coeff_key_, passwd_).PutScalar(1.0);
     S_->GetRecordW(secondary_activity_coeff_key_, Tags::DEFAULT, passwd_).set_initialized();
   }
 }
@@ -164,8 +166,7 @@ Amanzi_PK::Initialize()
   // initialization using base class
   Chemistry_PK::Initialize();
 
-  auto tcc =
-    S_->GetPtrW<CompositeVector>(tcc_key_, Tags::DEFAULT, passwd_)->ViewComponent("cell", true);
+  auto tcc = S_->GetPtrW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_)->ViewComponent("cell", true);
 
   XMLParameters();
 
@@ -584,7 +585,7 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->GetEvaluator(fluid_den_key_).Update(*S_, name_);
   S_->GetEvaluator(saturation_key_).Update(*S_, name_);
 
-  const auto& sat_vec = *S_->Get<CompositeVector>(saturation_key_).ViewComponent("cell");
+  const auto& sat_vec = *S_->Get<CV_t>(saturation_key_).ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned_; ++c) {
     if (sat_vec[0][c] > saturation_tolerance_) {
@@ -663,57 +664,50 @@ Amanzi_PK::InitializeBeakerFields_()
   Tag tag(Tags::DEFAULT);
 
   // constant (tmeporarily) fields
-  bf_.porosity = S_->Get<CompositeVector>(poro_key_).ViewComponent("cell");
-  bf_.density = S_->Get<CompositeVector>(fluid_den_key_).ViewComponent("cell");
-  bf_.saturation = S_->Get<CompositeVector>(saturation_key_).ViewComponent("cell");
+  bf_.porosity = S_->Get<CV_t>(poro_key_).ViewComponent("cell");
+  bf_.density = S_->Get<CV_t>(fluid_den_key_).ViewComponent("cell");
+  bf_.saturation = S_->Get<CV_t>(saturation_key_).ViewComponent("cell");
   if (S_->HasRecord(temperature_key_))
-    bf_.temperature = S_->Get<CompositeVector>(temperature_key_).ViewComponent("cell");
+    bf_.temperature = S_->Get<CV_t>(temperature_key_).ViewComponent("cell");
 
-  bf_.free_ion =
-    S_->GetW<CompositeVector>(free_ion_species_key_, tag, passwd_).ViewComponent("cell");
-  bf_.activity =
-    S_->GetW<CompositeVector>(primary_activity_coeff_key_, tag, passwd_).ViewComponent("cell");
+  bf_.free_ion = S_->GetW<CV_t>(free_ion_species_key_, tag, passwd_).ViewComponent("cell");
+  bf_.activity = S_->GetW<CV_t>(primary_activity_coeff_key_, tag, passwd_).ViewComponent("cell");
 
   if (chem_->secondary_species().size() > 0) {
     bf_.secondary_activity =
-      S_->GetW<CompositeVector>(secondary_activity_coeff_key_, tag, passwd_).ViewComponent("cell");
+      S_->GetW<CV_t>(secondary_activity_coeff_key_, tag, passwd_).ViewComponent("cell");
   }
 
   if (number_ion_exchange_sites_ > 0) {
     bf_.ion_exchange_sites =
-      S_->GetW<CompositeVector>(ion_exchange_sites_key_, tag, passwd_).ViewComponent("cell");
+      S_->GetW<CV_t>(ion_exchange_sites_key_, tag, passwd_).ViewComponent("cell");
     bf_.ion_exchange_ref_cation_conc =
-      S_->GetW<CompositeVector>(ion_exchange_ref_cation_conc_key_, Tags::DEFAULT, passwd_)
-        .ViewComponent("cell");
+      S_->GetW<CV_t>(ion_exchange_ref_cation_conc_key_, tag, passwd_).ViewComponent("cell");
   }
 
   if (number_minerals_ > 0) {
-    bf_.mineral_vf =
-      S_->GetW<CompositeVector>(min_vol_frac_key_, tag, passwd_).ViewComponent("cell");
-    bf_.mineral_ssa = S_->GetW<CompositeVector>(min_ssa_key_, tag, passwd_).ViewComponent("cell");
+    bf_.mineral_vf = S_->GetW<CV_t>(min_vol_frac_key_, tag, passwd_).ViewComponent("cell");
+    bf_.mineral_ssa = S_->GetW<CV_t>(min_ssa_key_, tag, passwd_).ViewComponent("cell");
   }
 
   if (using_sorption_) {
-    bf_.sorbed = S_->GetW<CompositeVector>(total_sorbed_key_, tag, passwd_).ViewComponent("cell");
+    bf_.sorbed = S_->GetW<CV_t>(total_sorbed_key_, tag, passwd_).ViewComponent("cell");
   }
 
   if (using_sorption_isotherms_) {
-    bf_.isotherm_kd =
-      S_->GetW<CompositeVector>(isotherm_kd_key_, tag, passwd_).ViewComponent("cell");
+    bf_.isotherm_kd = S_->GetW<CV_t>(isotherm_kd_key_, tag, passwd_).ViewComponent("cell");
     bf_.isotherm_freundlich_n =
-      S_->GetW<CompositeVector>(isotherm_freundlich_n_key_, tag, passwd_).ViewComponent("cell");
+      S_->GetW<CV_t>(isotherm_freundlich_n_key_, tag, passwd_).ViewComponent("cell");
     bf_.isotherm_langmuir_b =
-      S_->GetW<CompositeVector>(isotherm_langmuir_b_key_, tag, passwd_).ViewComponent("cell");
+      S_->GetW<CV_t>(isotherm_langmuir_b_key_, tag, passwd_).ViewComponent("cell");
   }
 
   if (number_sorption_sites_ > 0) {
-    bf_.sorption_sites =
-      S_->GetW<CompositeVector>(sorp_sites_key_, tag, passwd_).ViewComponent("cell");
+    bf_.sorption_sites = S_->GetW<CV_t>(sorp_sites_key_, tag, passwd_).ViewComponent("cell");
   }
 
   if (beaker_state_.surface_complex_free_site_conc.size() > 0) {
-    bf_.surface_complex =
-      S_->GetW<CompositeVector>(surf_cfsc_key_, tag, passwd_).ViewComponent("cell");
+    bf_.surface_complex = S_->GetW<CV_t>(surf_cfsc_key_, tag, passwd_).ViewComponent("cell");
   }
 }
 
@@ -762,9 +756,8 @@ Teuchos::RCP<Epetra_MultiVector>
 Amanzi_PK::extra_chemistry_output_data()
 {
   if (aux_data_ != Teuchos::null) {
-    const auto& free_ion = *S_->Get<CompositeVector>(free_ion_species_key_).ViewComponent("cell");
-    const auto& activity =
-      *S_->Get<CompositeVector>(primary_activity_coeff_key_).ViewComponent("cell");
+    const auto& free_ion = *S_->Get<CV_t>(free_ion_species_key_).ViewComponent("cell");
+    const auto& activity = *S_->Get<CV_t>(primary_activity_coeff_key_).ViewComponent("cell");
 
     for (int c = 0; c < ncells_owned_; ++c) {
       // populate aux_data_ by copying from the appropriate internal storage

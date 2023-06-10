@@ -56,13 +56,13 @@ SorptionIsothermLinear::SetParameters(const std::vector<double>& params)
 }
 
 
+/* *******************************************************************
+* Csorb = KD * activity
+* Csorb [mol/m^3 bulk] = KD [kg water/m^3 bulk] * activity [mol/kg water]
+******************************************************************* */
 double
 SorptionIsothermLinear::Evaluate(const Species& primary_species)
 {
-  // Csorb = KD * activity
-  // Units:
-  // sorbed_concentration [mol/m^3 bulk] = KD [kg water/m^3 bulk] *
-  //   activity [mol/kg water]
   return KD_ * primary_species.activity();
 }
 

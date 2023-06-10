@@ -73,13 +73,17 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
   out_list.sublist("water retention models") = TranslateWRM_("multiphase");
 
   // time integrator
-  std::string err_options("residual"), nonlinear_solver("newton");
-  std::string unstr_controls("unstructured_controls, unstr_multiphase_controls");
-
   bool modify_correction(false);
+  std::string err_options("residual"), nonlinear_solver("newton");
+
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);
+  if (flag) nonlinear_solver = GetAttributeValueS_(node, "name", TYPE_NONE, false, "newton");
+
   node = GetUniqueElementByTagsString_(
     "unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
+  if (flag) modify_correction = GetTextContentL_(node);
 
+  std::string unstr_controls("unstructured_controls, unstr_multiphase_controls");
   out_list.sublist("time integrator") = TranslateTimeIntegrator_(err_options,
                                                                  nonlinear_solver,
                                                                  modify_correction,
@@ -452,6 +456,7 @@ InputConverterU::TranslateMultiphaseBCs_()
 {
   Teuchos::ParameterList out_list;
 
+  Errors::Message msg;
   MemoryManager mm;
 
   char *text, *tagname;
@@ -529,6 +534,9 @@ InputConverterU::TranslateMultiphaseBCs_()
       } else if (bctype_in == "saturation") {
         bctype = "saturation";
         bcname = "boundary saturation";
+      } else {
+        msg << "Unsupported multiphase BC:\"" << bctype_in << "\"\n";
+        Exceptions::amanzi_throw(msg);
       }
 
       std::stringstream ss;

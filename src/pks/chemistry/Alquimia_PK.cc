@@ -60,6 +60,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
     *plist_, domain_, "total component concentration", "total_component_concentration");
 
   poro_key_ = Keys::readKey(*plist_, domain_, "porosity", "porosity");
+  temperature_key_ = Keys::readKey(*plist_, domain_, "temperature", "temperature");
   saturation_key_ = Keys::readKey(*plist_, domain_, "saturation liquid", "saturation_liquid");
   fluid_den_key_ = Keys::readKey(*plist_, domain_, "mass density liquid", "mass_density_liquid");
 
@@ -568,6 +569,12 @@ Alquimia_PK::CopyToAlquimia(int cell,
 
   state.water_density = fluid_density[0][cell];
   state.porosity = porosity[0][cell];
+
+  if (S_->HasRecord(temperature_key_)) {
+    const auto& temp = 
+      *S_->Get<CompositeVector>(temperature_key_, water_tag).ViewComponent("cell", true);
+    state.temperature = temp[0][cell];
+  }
 
   for (int i = 0; i < number_aqueous_components_; i++) {
     state.total_mobile.data[i] = (*aqueous_components)[i][cell];

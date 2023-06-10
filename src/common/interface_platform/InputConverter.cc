@@ -997,6 +997,34 @@ InputConverter::GetTextContentS_(DOMNode* node, const char* options, bool except
 
 
 /* ******************************************************************
+* Extract text content and verify its boolean meaning.
+****************************************************************** */
+bool
+InputConverter::GetTextContentL_(DOMNode* node, bool exception)
+{
+  std::string val;
+
+  MemoryManager mm;
+  std::string text = TrimString_(mm.transcode(node->getTextContent()));
+  GetConstantType_(text, val);
+
+  if (val == "false") return false;
+  if (val == "true") return true;
+
+  if (exception) {
+    char* tagname = mm.transcode(node->getNodeName());
+    Errors::Message msg;
+    msg << "Validation of content \"" << val << "\" for node \"" << tagname << "\" failed.\n";
+    msg << "Available options: \"false\" or \"true\".\n";
+    msg << "Please correct and try again.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return false;
+}
+
+
+/* ******************************************************************
 * Parse input string using lists of available constants.
 ****************************************************************** */
 std::string

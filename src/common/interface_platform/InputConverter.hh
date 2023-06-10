@@ -293,6 +293,8 @@ class InputConverter {
     double val = 0.0);
   std::string GetTextContentS_(xercesc::DOMNode* node, const char* options, bool exception = true);
 
+  bool GetTextContentL_(xercesc::DOMNode* node, bool exception = true);
+
   // data streaming/trimming/converting
   // -- units. Molar mass is required for converting ppm and ppb units.
   double ConvertUnits_(const std::string& val, std::string& unit, double mol_mass = -1.0);

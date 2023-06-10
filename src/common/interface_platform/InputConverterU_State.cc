@@ -960,7 +960,7 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
 
     field_ev.sublist("IEM parameters")
       .sublist("All")
-      .set<Teuchos::Array<std::string>>("regions", std::vector<std::string>({ "Entire Domain" }))
+      .set<Teuchos::Array<std::string>>("regions", std::vector<std::string>({ "All" }))
       .sublist("IEM parameters")
       .set<std::string>("iem type", "linear")
       .set<double>("heat capacity", cv);
