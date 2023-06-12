@@ -161,6 +161,15 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 }
 
 //--------------------------------------------------------------------
+// Compute pressure head
+//--------------------------------------------------------------------
+double PipeFlow_PK::ComputePressureHead (double WettedArea){
+
+   return (celerity_ * celerity_ * (WettedArea - pipe_cross_section_)) / (g_ * pipe_cross_section_);
+
+}
+
+//--------------------------------------------------------------------
 // Compute hydrostatic pressure force
 //--------------------------------------------------------------------
 double PipeFlow_PK::ComputeHydrostaticPressureForce (std::vector<double> SolArray){
@@ -176,8 +185,7 @@ double PipeFlow_PK::ComputeHydrostaticPressureForce (std::vector<double> SolArra
 
       else if (SolArray[0] >= pipe_cross_section_) { //flow is pressurized
 
-         double PressurizedHead = (celerity_ * celerity_ * (SolArray[0] - pipe_cross_section_)) / (g_ * pipe_cross_section_);
-         I = g_ * SolArray[0] * (PressurizedHead + sqrt(SolArray[0]/Pi));
+         I = g_ * SolArray[0] * (ComputePressureHead(SolArray[0]) + sqrt(SolArray[0]/Pi));
 
       }
 
@@ -221,8 +229,7 @@ double PipeFlow_PK::ComputeTotalDepth(double WettedArea, double WettedAngle, dou
 
    else if ( WettedArea >= pipe_cross_section_) {
 
-      double PressurizedHead = (celerity_ * celerity_ * (WettedArea - pipe_cross_section_)) / (g_ * pipe_cross_section_);
-      TotalDepth = pipe_diameter_ + Bathymetry + PressurizedHead;
+      TotalDepth = pipe_diameter_ + Bathymetry + ComputePressureHead(WettedArea);
 
    }
 

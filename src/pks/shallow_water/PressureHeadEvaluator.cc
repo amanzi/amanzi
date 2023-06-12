@@ -11,7 +11,7 @@
 
 #include "errors.hh"
 
-#include "WaterDepthEvaluator.hh"
+#include "PressureHeadEvaluator.hh"
 
 namespace Amanzi {
 namespace ShallowWater {
@@ -19,46 +19,53 @@ namespace ShallowWater {
 /* ******************************************************************
 * Simple constructor
 ****************************************************************** */
-WaterDepthEvaluator::WaterDepthEvaluator(Teuchos::ParameterList& plist)
+PressureHeadEvaluator::PressureHeadEvaluator(Teuchos::ParameterList& plist)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0) {
-    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key", "water_depth"), Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key", "pressure_head"), Tags::DEFAULT));
   }
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
   wetted_angle_key_ = plist_.get<std::string>("wetted angle key", Keys::getKey(domain, "wetted_angle"));
+  wetted_area_key_ = plist_.get<std::string>("wetted area key", Keys::getKey(domain, "wetted_area"));
 
+  celerity_ = plist_.get<double>("celerity", 100);
   pipe_diameter_ = plist_.get<double>("pipe diameter", 1.0);
 
-  dependencies_.insert(std::make_pair(wetted_angle_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(wetted_area_key_, Tags::DEFAULT));
 }
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> WaterDepthEvaluator::Clone() const {
-  return Teuchos::rcp(new WaterDepthEvaluator(*this));
+Teuchos::RCP<Evaluator> PressureHeadEvaluator::Clone() const {
+  return Teuchos::rcp(new PressureHeadEvaluator(*this));
 }
 
 
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void WaterDepthEvaluator::Evaluate_(
+void PressureHeadEvaluator::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& WettedAngle_c = *S.Get<CompositeVector>(wetted_angle_key_).ViewComponent("cell");
+  const auto& WettedArea_c = *S.Get<CompositeVector>(wetted_area_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
+
+  const auto& gravity = S.Get<AmanziGeometry::Point>("gravity", Tags::DEFAULT);
+  double g = -gravity[1];
+  double pipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
      if(WettedAngle_c[0][c] >= TwoPi) {
-         result_c[0][c] =  pipe_diameter_;
+         result_c[0][c] = (celerity_ * celerity_ * (WettedArea_c[0][c] - pipeCrossSection)) / (g * pipeCrossSection);
      }
      else{
-         result_c[0][c] = pipe_diameter_ * 0.5 * (1.0 - cos(WettedAngle_c[0][c] * 0.5));
+         result_c[0][c] = 0.0; 
      }
   }
 }
@@ -67,21 +74,25 @@ void WaterDepthEvaluator::Evaluate_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void WaterDepthEvaluator::EvaluatePartialDerivative_(
+void PressureHeadEvaluator::EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results) 
 {
   const auto& WettedAngle_c = *S.Get<CompositeVector>(wetted_angle_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
+  const auto& gravity = S.Get<AmanziGeometry::Point>("gravity", Tags::DEFAULT);
+  double g = -gravity[1];
+  double pipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
+
   int ncells = result_c.MyLength();
   if (wrt_key == wetted_angle_key_) {
     for (int c = 0; c != ncells; ++c) {
      if(WettedAngle_c[0][c] >= TwoPi) {
-         result_c[0][c] =  0.0;
+         result_c[0][c] =  (celerity_ * celerity_) / (g * pipeCrossSection);;
      }
      else{
-         result_c[0][c] = pipe_diameter_ * 0.25 * sin(WettedAngle_c[0][c] * 0.5);
+         result_c[0][c] = 0.0; 
      }
     }
   } else {

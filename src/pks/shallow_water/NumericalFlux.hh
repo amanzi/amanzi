@@ -57,11 +57,12 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
   // get reconstructed wetted angle
   WettedAngle = U[3];
 
-  double HydrostaticPressureForce = 0.0;
+  // hydrostatic pressure force
+  double HydroPressForce = 0.0;
 
   if (shallow_water_model_){
 
-     HydrostaticPressureForce = 0.5 * g_ * h2;
+     HydroPressForce = 0.5 * g_ * h2;
 
   }
 
@@ -69,15 +70,15 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
 
      if ((0.0 < h && h < pipe_cross_section_)){ //flow is ventilated (free-surface)
 
-        HydrostaticPressureForce = 3.0 * sin(WettedAngle * 0.5) - pow(sin(WettedAngle * 0.5),3) - 3.0 * (WettedAngle * 0.5) * cos(WettedAngle * 0.5);
-        HydrostaticPressureForce = HydrostaticPressureForce * g_ * pow(pipe_diameter_,3) / 24.0;
+        HydroPressForce = 3.0 * sin(WettedAngle * 0.5) - pow(sin(WettedAngle * 0.5),3) - 3.0 * (WettedAngle * 0.5) * cos(WettedAngle * 0.5);
+        HydroPressForce = HydroPressForce * g_ * pow(pipe_diameter_,3) / 24.0;
 
      }
 
      else if (h >= pipe_cross_section_) { //flow is pressurized
 
-         double PressurizedHead = (celerity_ * celerity_ * (h - pipe_cross_section_)) / (g_ * pipe_cross_section_);
-         HydrostaticPressureForce = g_ * h * (PressurizedHead + sqrt(h/3.14159265359)); 
+         double PressureHead = (celerity_ * celerity_ * (h - pipe_cross_section_)) / (g_ * pipe_cross_section_);
+         HydroPressForce = g_ * h * (PressureHead + sqrt(h/3.14159265359)); 
 
       }
 
@@ -89,7 +90,7 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
   }
 
   F[0] = U[1];
-  F[1] = U[1] * u + HydrostaticPressureForce;
+  F[1] = U[1] * u + HydroPressForce;
   F[2] = U[2] * u;
 
   return F;

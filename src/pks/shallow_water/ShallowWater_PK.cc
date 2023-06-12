@@ -21,6 +21,7 @@
 // Amanzi::ShallowWater
 #include "DischargeEvaluator.hh"
 #include "WaterDepthEvaluator.hh"
+#include "PressureHeadEvaluator.hh"
 #include "HydrostaticPressureEvaluator.hh"
 #include "NumericalFluxFactory.hh"
 #include "ShallowWater_PK.hh"
@@ -101,6 +102,7 @@ ShallowWater_PK::Setup()
   riemann_flux_key_ = Keys::getKey(domain_, "riemann_flux");
   wetted_angle_key_ = Keys::getKey(domain_, "wetted_angle"); 
   water_depth_key_ = Keys::getKey(domain_, "water_depth");
+  pressure_head_key_ = Keys::getKey(domain_, "pressure_head");
 
   //-------------------------------
   // constant fields
@@ -169,6 +171,19 @@ ShallowWater_PK::Setup()
          .set<double>("pipe diameter", pipe_diameter_);
     auto eval = Teuchos::rcp(new WaterDepthEvaluator(elist));
     S_->SetEvaluator(water_depth_key_, Tags::DEFAULT, eval);
+  }
+
+  // -- pressure head
+  if (!S_->HasRecord(pressure_head_key_)) {
+    S_->Require<CV_t, CVS_t>(pressure_head_key_, Tags::DEFAULT, pressure_head_key_)
+      .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList elist(pressure_head_key_);
+    elist.set<std::string>("my key", pressure_head_key_).set<std::string>("tag", Tags::DEFAULT.get())
+         .set<double>("pipe diameter", pipe_diameter_)
+         .set<double>("celerity", celerity_);
+    auto eval = Teuchos::rcp(new PressureHeadEvaluator(elist));
+    S_->SetEvaluator(pressure_head_key_, Tags::DEFAULT, eval);
   }
 
   if(!source_key_.empty()){ 
@@ -458,6 +473,7 @@ ShallowWater_PK::Initialize()
      auto& WettedArea_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& WaterDepth_c = *S_->GetW<CV_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_).ViewComponent("cell");
+     auto& PressureHead_c = *S_->GetW<CV_t>(pressure_head_key_, Tags::DEFAULT, pressure_head_key_).ViewComponent("cell");
      auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
@@ -467,8 +483,8 @@ ShallowWater_PK::Initialize()
         if (ht_c[0][c] >= maxDepth){ // cell is pressurized
 
             double PipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_; 
-            double PressurizedHead = ht_c[0][c] - pipe_diameter_ - B_c[0][c];
-            WettedArea_c[0][c] = (g_ * PipeCrossSection * PressurizedHead) / (celerity_ * celerity_) + PipeCrossSection;
+            PressureHead_c[0][c] = ht_c[0][c] - pipe_diameter_ - B_c[0][c];
+            WettedArea_c[0][c] = (g_ * PipeCrossSection * PressureHead_c[0][c]) / (celerity_ * celerity_) + PipeCrossSection;
             WettedAngle_c[0][c] = TwoPi;
             WaterDepth_c[0][c] = pipe_diameter_;
         }
@@ -513,6 +529,7 @@ ShallowWater_PK::Initialize()
      S_->GetRecordW(primary_variable_key_, Tags::DEFAULT, passwd_).set_initialized();
      S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
      S_->GetRecordW(water_depth_key_, Tags::DEFAULT, water_depth_key_).set_initialized();
+     S_->GetRecordW(pressure_head_key_, Tags::DEFAULT, pressure_head_key_).set_initialized();
 
   }
 
@@ -602,6 +619,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->Get<CV_t>(discharge_key_).ScatterMasterToGhosted("cell");
   S_->Get<CV_t>(wetted_angle_key_).ScatterMasterToGhosted("cell");
   S_->Get<CV_t>(water_depth_key_).ScatterMasterToGhosted("cell");
+  S_->Get<CV_t>(pressure_head_key_).ScatterMasterToGhosted("cell");
 
   // save a copy of primary and conservative fields
   auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
@@ -713,6 +731,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
        S_->GetEvaluatorPtr(wetted_angle_key_, Tags::DEFAULT))->SetChanged();
 
      S_->GetEvaluator(water_depth_key_).Update(*S_, passwd_);
+     S_->GetEvaluator(pressure_head_key_).Update(*S_, passwd_);
   }
 
   if(!source_key_.empty()){ 

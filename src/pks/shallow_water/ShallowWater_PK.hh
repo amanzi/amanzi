@@ -121,6 +121,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual double ComputeTotalDepth(double WettedArea, double WettedAngle, double Bathymetry){return 0.0;};
 
+  virtual double ComputePressureHead(double WettedArea){return 0.0;};
+
   virtual void UpdateWettedQuantities(){};
 
   virtual double ComputeHydrostaticPressureForce (std::vector<double> SolArray){return g_ * 0.5 * SolArray[0] * SolArray[0];};
@@ -159,6 +161,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   Key riemann_flux_key_;
   Key wetted_angle_key_;
   Key water_depth_key_;
+  Key pressure_head_key_;
   Key source_key_;
   Key pipe_drain_key_;
 
