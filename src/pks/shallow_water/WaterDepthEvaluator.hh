@@ -28,7 +28,7 @@ class WaterDepthEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, C
  public:
   WaterDepthEvaluator(Teuchos::ParameterList& plist);
 
-  // required inteface functions
+  // required interface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
