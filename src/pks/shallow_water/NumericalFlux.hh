@@ -88,9 +88,9 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
 
   }
 
-  F[0] = h * u;
-  F[1] = h * u * u + HydrostaticPressureForce;
-  F[2] = h * u * v;
+  F[0] = U[1];
+  F[1] = U[1] * u + HydrostaticPressureForce;
+  F[2] = U[2] * u;
 
   return F;
 }
