@@ -55,7 +55,6 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
   sw_list_ = Teuchos::sublist(pk_list, pk_name, true);
   Teuchos::RCP<Teuchos::ParameterList> eval_list = Teuchos::sublist(state_list, "evaluators", true);
-  Teuchos::ParameterList pipe_drain_list = eval_list->sublist("surface-pipe_drain");
 
   // domain name
   domain_ = sw_list_->template get<std::string>("domain name", "surface");
@@ -67,7 +66,6 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
   pipe_diameter_ = sw_list_->get<double>("pipe diameter", 1.0);
   celerity_ = sw_list_->get<double>("celerity", 100); // m/s
   source_key_ = sw_list_->get<std::string>("source key", "");
-  manhole_radius_ = pipe_drain_list.get<double>("manhole radius", 0.24);
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = sw_list_->sublist("verbose object");

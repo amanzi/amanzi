@@ -180,8 +180,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   double pipe_diameter_;
 
-  double manhole_radius_;
-
   double celerity_;
 
   double Pi = 3.14159265359;
