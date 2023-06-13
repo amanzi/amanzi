@@ -337,23 +337,16 @@ struct RaggedGetter {
   get(bool cached, DATA& d, MF& mf, FF&& f, CFD&& cd, CF&& c, const Entity_ID n)
   {
     using view_t = typename decltype(d.template getRow<MEM>(n))::const_type;
-    if (cached) { return view_t(d.template getRow<MEM>(n)); }
+    if (cached) { return static_cast<view_t>(d.template getRowUnmanaged<MEM>(n)); }
     if constexpr (MEM == MemSpace_kind::HOST) {
       if constexpr (!std::is_same<FF, decltype(nullptr)>::value) {
-        if (mf.get()) {
-          view_t v = f(n);
-          return v;
-        }
+        if (mf.get()) { return static_cast<view_t>(f(n)); }
       }
       if constexpr (!std::is_same<CF, decltype(nullptr)>::value) {
-        view_t v = c(c);
-        return v;
+        return static_cast<view_t>(c(c));
       }
     } else {
-      if constexpr (!std::is_same<CF, decltype(nullptr)>::value) {
-        view_t v = cd(c);
-        return v;
-      }
+      if constexpr (!std::is_same<CFD, decltype(nullptr)>::value) { static_cast<view_t>(cd(c)); }
     }
     assert(false && "No access to cache/framework/compute available");
     return view_t{};
@@ -367,7 +360,7 @@ struct RaggedGetter<MEM, AccessPattern_kind::CACHE> {
   get(bool cached, DATA& d, MF&, FF&&, CFD&&, CF&&, const Entity_ID n)
   {
     assert(cached);
-    return d.template getRow<MEM>(n);
+    return d.template getRowUnmanaged<MEM>(n);
   }
 };
 

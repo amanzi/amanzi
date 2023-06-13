@@ -279,10 +279,11 @@ MeshLogical::operator==(const MeshLogical& other)
       other.cell_face_bisectors_.size<MemSpace_kind::HOST>())
     return false;
   for (size_t i = 0; i != cell_face_bisectors_.size<MemSpace_kind::HOST>(); ++i) {
-    if (cell_face_bisectors_.getRow<MemSpace_kind::HOST>(i).size() !=
-        other.cell_face_bisectors_.getRow<MemSpace_kind::HOST>(i).size())
+    if (cell_face_bisectors_.getRowUnmanaged<MemSpace_kind::HOST>(i).size() !=
+        other.cell_face_bisectors_.getRowUnmanaged<MemSpace_kind::HOST>(i).size())
       return false;
-    for (size_t j = 0; j != cell_face_bisectors_.getRow<MemSpace_kind::HOST>(i).size(); ++j)
+    for (size_t j = 0; j != cell_face_bisectors_.getRowUnmanaged<MemSpace_kind::HOST>(i).size();
+         ++j)
       if (AmanziGeometry::norm(cell_face_bisectors_.get<MemSpace_kind::HOST>(i, j) -
                                other.cell_face_bisectors_.get<MemSpace_kind::HOST>(i, j)) > _eps)
         return false;
@@ -340,8 +341,8 @@ MeshLogical::getCellFacesAndBisectors(const Entity_ID cellid,
                                       cEntity_ID_View& faceids,
                                       cPoint_View* const bisectors) const
 {
-  faceids = cell_face_ids_.getRow<MemSpace_kind::HOST>(cellid);
-  if (bisectors) *bisectors = cell_face_bisectors_.getRow<MemSpace_kind::HOST>(cellid);
+  faceids = cell_face_ids_.getRowUnmanaged<MemSpace_kind::HOST>(cellid);
+  if (bisectors) *bisectors = cell_face_bisectors_.getRowUnmanaged<MemSpace_kind::HOST>(cellid);
 }
 
 void
@@ -349,8 +350,8 @@ MeshLogical::getCellFacesAndDirs(const Entity_ID c,
                                  cEntity_ID_View& faces,
                                  cEntity_Direction_View* const dirs) const
 {
-  faces = cell_face_ids_.getRow<MemSpace_kind::HOST>(c);
-  if (dirs) (*dirs) = cell_face_dirs_.getRow<MemSpace_kind::HOST>(c);
+  faces = cell_face_ids_.getRowUnmanaged<MemSpace_kind::HOST>(c);
+  if (dirs) (*dirs) = cell_face_dirs_.getRowUnmanaged<MemSpace_kind::HOST>(c);
 }
 
 double
@@ -377,7 +378,7 @@ MeshLogical::getFaceCells(const Entity_ID f,
                           const Parallel_kind ptype,
                           cEntity_ID_View& cells) const
 {
-  cells = face_cell_ids_.getRow<MemSpace_kind::HOST>(f);
+  cells = face_cell_ids_.getRowUnmanaged<MemSpace_kind::HOST>(f);
 }
 
 double

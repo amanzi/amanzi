@@ -19,6 +19,10 @@
 
 enum class MemSpace_kind { HOST, DEVICE };
 
+template <MemSpace_kind MEM>
+using MemoryLocation = std::
+  conditional_t<MEM == MemSpace_kind::DEVICE, Kokkos::DefaultExecutionSpace, Kokkos::HostSpace>;
+
 //
 // NOTE: begin/end must live in Kokkos namespace to work!
 //
@@ -434,10 +438,7 @@ struct RaggedArray_DualView {
   using type_t = T;
 
   template <MemSpace_kind MEM>
-  using constview = Kokkos::MeshView<const T*,
-                                     std::conditional<MEM == MemSpace_kind::DEVICE,
-                                                      Kokkos::DefaultExecutionSpace,
-                                                      Kokkos::HostSpace>>;
+  using constview = Kokkos::MeshView<const T*, MemoryLocation<MEM>>;
 
   Kokkos::MeshDualView<int*> rows;
   Kokkos::MeshDualView<T*> entries;
@@ -470,14 +471,30 @@ struct RaggedArray_DualView {
   }
 
   template <MemSpace_kind MEM>
-  KOKKOS_INLINE_FUNCTION decltype(auto) getRow(int row)
+  KOKKOS_INLINE_FUNCTION auto getRowUnmanaged(int row)
+  {
+    const std::size_t size = view<MEM>(rows)[row + 1] - view<MEM>(rows)[row];
+    const auto ptr = view<MEM>(entries).data() + view<MEM>(rows)[row];
+    return Kokkos::MeshView<T*, MemoryLocation<MEM>>(ptr, size);
+  }
+
+  template <MemSpace_kind MEM>
+  KOKKOS_INLINE_FUNCTION auto getRowUnmanaged(int row) const
+  {
+    const std::size_t size = view<MEM>(rows)[row + 1] - view<MEM>(rows)[row];
+    const auto ptr = view<MEM>(entries).data() + view<MEM>(rows)[row];
+    return Kokkos::MeshView<T*, MemoryLocation<MEM>>(ptr, size);
+  }
+
+  template <MemSpace_kind MEM>
+  KOKKOS_INLINE_FUNCTION auto getRow(int row)
   {
     return Kokkos::subview(view<MEM>(entries),
                            Kokkos::make_pair(view<MEM>(rows)[row], view<MEM>(rows)[row + 1]));
   }
 
   template <MemSpace_kind MEM>
-  KOKKOS_INLINE_FUNCTION decltype(auto) getRow(int row) const
+  KOKKOS_INLINE_FUNCTION auto getRow(int row) const
   {
     return Kokkos::subview(view<MEM>(entries),
                            Kokkos::make_pair(view<MEM>(rows)[row], view<MEM>(rows)[row + 1]));
@@ -558,9 +575,8 @@ asRaggedArray_DualView(Func mesh_func, int count)
   adj.entries.resize(total);
 
   for (int i = 0; i != count; ++i) {
-    Kokkos::MeshView<T*, Kokkos::DefaultHostExecutionSpace> row_view =
-      adj.template getRow<MemSpace_kind::HOST>(i);
-    Kokkos::resize(row_view, ents[i].size());
+    auto row_view = adj.template getRowUnmanaged<MemSpace_kind::HOST>(i);
+    assert(row_view.extent(0) == ents[i].size());
     Kokkos::deep_copy(row_view, ents[i]);
   }
   Kokkos::deep_copy(adj.rows.view_device(), adj.rows.view_host());
