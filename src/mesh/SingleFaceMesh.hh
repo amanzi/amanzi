@@ -88,10 +88,10 @@ class SingleFaceMesh : public AmanziMesh::Mesh {
     for (int i = 0; i < nnodes_owned; ++i) fedges[i] = i;
 
     data_.cell_faces.resize(1, nnodes_owned); 
-    Kokkos::deep_copy(data_.cell_faces.getRow<MemSpace_kind::HOST>(0), fedges); 
+    Kokkos::deep_copy(data_.cell_faces.getRowUnmanaged<MemSpace_kind::HOST>(0), fedges); 
 
     data_.cell_face_directions.resize(1, fdirs.size()); 
-    Kokkos::deep_copy(data_.cell_face_directions.getRow<MemSpace_kind::HOST>(0), fdirs); 
+    Kokkos::deep_copy(data_.cell_face_directions.getRowUnmanaged<MemSpace_kind::HOST>(0), fdirs); 
 
     const auto& xf = mc->getFaceCentroid(f);
     data_.cell_centroids.resize(1);
@@ -106,10 +106,10 @@ class SingleFaceMesh : public AmanziMesh::Mesh {
     data_.node_coordinates.resize(nnodes_owned); 
 
     for (int i = 0; i < nnodes_owned; ++i) {
-      data_.cell_nodes.getRow<MemSpace_kind::HOST>(0)[i] = i;
+      data_.cell_nodes.getRowUnmanaged<MemSpace_kind::HOST>(0)[i] = i;
       auto xyz = mc->getNodeCoordinate(cfnodes[i]);
       auto res = coordsys.Project(xyz, true);
-      data_.cell_coordinates.getRow<MemSpace_kind::HOST>(0)[i] = res;
+      data_.cell_coordinates.getRowUnmanaged<MemSpace_kind::HOST>(0)[i] = res;
       data_.node_coordinates.h_view[i] = res;
     }
 
@@ -120,11 +120,11 @@ class SingleFaceMesh : public AmanziMesh::Mesh {
     std::vector<std::vector<AmanziGeometry::Point>> normals_v(nnodes_owned);
     for (int i = 0; i < nnodes_owned; ++i) {
       int n0(i), n1((i + 1) % nnodes_owned);
-      auto cn1 = data_.cell_coordinates.getRow<MemSpace_kind::HOST>(0)[n1]; 
-      auto cn0 = data_.cell_coordinates.getRow<MemSpace_kind::HOST>(0)[n0]; 
+      auto cn1 = data_.cell_coordinates.getRowUnmanaged<MemSpace_kind::HOST>(0)[n1]; 
+      auto cn0 = data_.cell_coordinates.getRowUnmanaged<MemSpace_kind::HOST>(0)[n0]; 
 
-      data_.face_nodes.getRow<MemSpace_kind::HOST>(i)[0] = (fdirs[i] > 0) ? n0 : n1;
-      data_.face_nodes.getRow<MemSpace_kind::HOST>(i)[1] = (fdirs[i] > 0) ? n1 : n0;
+      data_.face_nodes.getRowUnmanaged<MemSpace_kind::HOST>(i)[0] = (fdirs[i] > 0) ? n0 : n1;
+      data_.face_nodes.getRowUnmanaged<MemSpace_kind::HOST>(i)[1] = (fdirs[i] > 0) ? n1 : n0;
 
       auto tau = (cn1-cn0) * fdirs[i];
 
@@ -142,8 +142,8 @@ class SingleFaceMesh : public AmanziMesh::Mesh {
 
     for (int i = 0; i < nnodes_owned; ++i) {
       int n0(i), n1((i + 1) % nnodes_owned);
-      auto cn1 = data_.cell_coordinates.getRow<MemSpace_kind::HOST>(0)[n1]; 
-      auto cn0 = data_.cell_coordinates.getRow<MemSpace_kind::HOST>(0)[n0]; 
+      auto cn1 = data_.cell_coordinates.getRowUnmanaged<MemSpace_kind::HOST>(0)[n1]; 
+      auto cn0 = data_.cell_coordinates.getRowUnmanaged<MemSpace_kind::HOST>(0)[n0]; 
 
       data_.edge_vectors.h_view[i] = (cn1 + cn0); 
     }
@@ -155,15 +155,15 @@ class SingleFaceMesh : public AmanziMesh::Mesh {
     data_.face_edge_directions.resize(nnodes_owned, 1);
 
     for (int i = 0; i < nnodes_owned; ++i) {
-      data_.face_cells.getRow<MemSpace_kind::HOST>(i)[0] = 0; 
-      data_.face_edge_directions.getRow<MemSpace_kind::HOST>(i)[0] = 1; 
-      data_.face_edges.getRow<MemSpace_kind::HOST>(i)[0] = i;
+      data_.face_cells.getRowUnmanaged<MemSpace_kind::HOST>(i)[0] = 0; 
+      data_.face_edge_directions.getRowUnmanaged<MemSpace_kind::HOST>(i)[0] = 1; 
+      data_.face_edges.getRowUnmanaged<MemSpace_kind::HOST>(i)[0] = i;
     }
 
     data_.edge_nodes.resize(nnodes_owned, 2); 
     for(int i = 0; i < nnodes_owned; ++i){
-      data_.edge_nodes.getRow<MemSpace_kind::HOST>(i)[0] = data_.face_nodes.getRow<MemSpace_kind::HOST>(i)[0];
-      data_.edge_nodes.getRow<MemSpace_kind::HOST>(i)[1] = data_.face_nodes.getRow<MemSpace_kind::HOST>(i)[1];
+      data_.edge_nodes.getRowUnmanaged<MemSpace_kind::HOST>(i)[0] = data_.face_nodes.getRowUnmanaged<MemSpace_kind::HOST>(i)[0];
+      data_.edge_nodes.getRowUnmanaged<MemSpace_kind::HOST>(i)[1] = data_.face_nodes.getRowUnmanaged<MemSpace_kind::HOST>(i)[1];
     }
 
 

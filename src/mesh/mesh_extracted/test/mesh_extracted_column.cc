@@ -75,7 +75,7 @@ TEST(COLUMN_MESH_3D)
 
   // Create a column mesh from one of the columns
   auto colmesh_ext = Teuchos::rcp(new AmanziMesh::Mesh_MSTK(mesh->getMeshFramework(),
-          mesh->columns.cells_.getRow<MemSpace_kind::HOST>(10), AmanziMesh::Entity_kind::CELL,
+          mesh->columns.cells_.getRowUnmanaged<MemSpace_kind::HOST>(10), AmanziMesh::Entity_kind::CELL,
           false, getCommSelf(), gm, Teuchos::null));
 
   // Create the MeshColumn object
@@ -223,7 +223,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   // Create a column mesh from one of the columns
   // Create a column mesh from one of the columns
   auto colmesh_ext = Teuchos::rcp(new AmanziMesh::Mesh_MSTK(mesh->getMeshFramework(),
-          mesh->columns.cells_.getRow<MemSpace_kind::HOST>(10), AmanziMesh::Entity_kind::CELL,
+          mesh->columns.cells_.getRowUnmanaged<MemSpace_kind::HOST>(10), AmanziMesh::Entity_kind::CELL,
           false, getCommSelf(), gm, Teuchos::null));
   // Create the MeshColumn object
   Teuchos::RCP<AmanziMesh::MeshFramework> colmesh_fw =

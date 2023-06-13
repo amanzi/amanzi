@@ -159,10 +159,10 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
     parent_mesh->buildColumns();
 
     int ncells = 3;
-    AmanziMesh::Entity_ID_View const& cell_list = parent_mesh->columns.cells_.getRow<MemSpace_kind::HOST>(0);
+    AmanziMesh::Entity_ID_View const& cell_list = parent_mesh->columns.cells_.getRowUnmanaged<MemSpace_kind::HOST>(0);
     CHECK_EQUAL(ncells,cell_list.size());
 
-    AmanziMesh::Entity_ID_View const& face_list = parent_mesh->columns.faces_.getRow<MemSpace_kind::HOST>(0);
+    AmanziMesh::Entity_ID_View const& face_list = parent_mesh->columns.faces_.getRowUnmanaged<MemSpace_kind::HOST>(0);
     CHECK_EQUAL(ncells+1,face_list.size());
 
     // construct a column mesh by extracting from mesh

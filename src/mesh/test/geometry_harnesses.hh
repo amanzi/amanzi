@@ -432,7 +432,7 @@ testColumnsUniformDz(const MeshCache<MEM>& mesh, double dz)
   bool owned = true;
 
   for (int col=0; col!=n_columns; ++col) {
-    const auto& cells = mesh.columns.cells_.template getRow<MEM>(col);
+    const auto& cells = mesh.columns.cells_.template getRowUnmanaged<MEM>(col);
 
     // check all owned cells first, then all ghosted
     if (owned) {
@@ -451,7 +451,7 @@ testColumnsUniformDz(const MeshCache<MEM>& mesh, double dz)
     }
 
     // check geometry
-    const auto& faces = mesh.columns.faces_.template getRow<MEM>(col);
+    const auto& faces = mesh.columns.faces_.template getRowUnmanaged<MEM>(col);
     CHECK(faces.size() == (cells.size() + 1));
     for (int i=0; i!=cells.size(); ++i) {
       Entity_ID c = cells[i];
