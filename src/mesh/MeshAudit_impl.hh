@@ -655,11 +655,6 @@ bool MeshAudit_Geometry<Mesh_type>::check_cell_degeneracy() const
 template<class Mesh_type>
 bool MeshAudit_Geometry<Mesh_type>::check_cell_to_faces_to_nodes() const
 {
-  cEntity_ID_View cnode;
-  cEntity_ID_View cface;
-  Entity_ID_View fnode_ref;
-  cEntity_ID_View fnode;
-  cEntity_Direction_View fdirs;
   Entity_ID_List bad_cells0;
   Entity_ID_List bad_cells1;
 
@@ -680,9 +675,8 @@ bool MeshAudit_Geometry<Mesh_type>::check_cell_to_faces_to_nodes() const
       continue;
 
     int ctype = (int) ctype_enum;
-    mesh_->getCellNodes(j, cnode); // this should not fail
-    mesh_->getCellFacesAndDirs(j, cface, &fdirs); // this should not fail
-
+    auto cnode = mesh_->getCellNodes(j); // this should not fail
+    auto [cface, fdirs] = mesh_->getCellFacesAndDirections(j); // this should not fail    
     bool bad_face = false;
     bool bad_dir  = false;
 
@@ -692,16 +686,16 @@ bool MeshAudit_Geometry<Mesh_type>::check_cell_to_faces_to_nodes() const
 
       for (int k = 0; k < cface.size(); ++k) {
 
-        mesh_->getFaceNodes(cface[k], fnode); // this should not fail
+	auto fnode = mesh_->getFaceNodes(cface[k]); // this should not fail
 
-        int nfn = Topology::nfnodes_std[ctype][k];
+	int nfn = Topology::nfnodes_std[ctype][k];
 
         if (fnode.size() != nfn) {
           bad_face = true;
           break;
         }
 
-        Kokkos::resize(fnode_ref, nfn); 
+	Entity_ID_View fnode_ref("fnode_red", nfn);
         for (int i = 0; i < nfn; ++i) {
           int nodenum = Topology::fnodes_std[ctype][k][i];
           fnode_ref[i] = cnode[nodenum];

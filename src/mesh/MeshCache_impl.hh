@@ -315,15 +315,15 @@ MeshCache<MEM>::getFaceEdgesAndDirs(const Entity_ID f,
   if constexpr(MEM == MemSpace_kind::DEVICE) {
 
     if (data_.face_edges_cached) {
-      edges = data_.face_edges.getRow<MEM>(f);
-      if (dirs) *dirs = data_.face_edge_directions.getRow<MEM>(f);
+      edges = data_.face_edges.getRowUnmanaged<MEM>(f);
+      if (dirs) *dirs = data_.face_edge_directions.getRowUnmanaged<MEM>(f);
       return;
     }
 
   } else {
     if (data_.face_edges_cached) {
-      edges = data_.face_edges.getRow<MEM>(f);
-      if (dirs) *dirs = data_.face_edge_directions.getRow<MEM>(f);
+      edges = data_.face_edges.getRowUnmanaged<MEM>(f);
+      if (dirs) *dirs = data_.face_edge_directions.getRowUnmanaged<MEM>(f);
       return;
     }
 
@@ -505,13 +505,13 @@ MeshCache<MEM>::getFaceNodes(const Entity_ID f,
 {
   if constexpr(MEM == MemSpace_kind::DEVICE) {
     if (data_.face_nodes_cached) {
-      fcells = data_.face_nodes.getRow<MEM>(f);
+      fcells = data_.face_nodes.getRowUnmanaged<MEM>(f);
       return;
     }
 
   } else {
     if (data_.face_nodes_cached) {
-      fcells = data_.face_nodes.getRow<MEM>(f);
+      fcells = data_.face_nodes.getRowUnmanaged<MEM>(f);
       return;
     }
     if (framework_mesh_.get()) {
@@ -709,15 +709,15 @@ MeshCache<MEM>::getCellFacesAndDirs(const Entity_ID c,
   if constexpr(MEM == MemSpace_kind::DEVICE) {
 
     if (data_.cell_faces_cached) {
-      faces = data_.cell_faces.getRow<MEM>(c);
-      if (dirs) *dirs = data_.cell_face_directions.getRow<MEM>(c);
+      faces = data_.cell_faces.getRowUnmanaged<MEM>(c);
+      if (dirs) *dirs = data_.cell_face_directions.getRowUnmanaged<MEM>(c);
       return;
     }
 
   } else {
     if (data_.cell_faces_cached) {
-      faces = data_.cell_faces.getRow<MEM>(c);
-      if (dirs) *dirs = data_.cell_face_directions.getRow<MEM>(c);
+      faces = data_.cell_faces.getRowUnmanaged<MEM>(c);
+      if (dirs) *dirs = data_.cell_face_directions.getRowUnmanaged<MEM>(c);
       return;
     }
 
@@ -753,15 +753,15 @@ MeshCache<MEM>::getCellFacesAndBisectors(
   if constexpr(MEM == MemSpace_kind::DEVICE) {
 
     if (data_.cell_faces_cached) {
-      faces = data_.cell_faces.getRow<MEM>(c);
-      if (bisectors) *bisectors = data_.cell_face_bisectors.getRow<MEM>(c);
+      faces = data_.cell_faces.getRowUnmanaged<MEM>(c);
+      if (bisectors) *bisectors = data_.cell_face_bisectors.getRowUnmanaged<MEM>(c);
       return;
     }
 
   } else {
     if (data_.cell_faces_cached) {
-      faces = data_.cell_faces.getRow<MEM>(c);
-      if (bisectors) *bisectors = data_.cell_face_bisectors.getRow<MEM>(c);
+      faces = data_.cell_faces.getRowUnmanaged<MEM>(c);
+      if (bisectors) *bisectors = data_.cell_face_bisectors.getRowUnmanaged<MEM>(c);
       return;
     }
 

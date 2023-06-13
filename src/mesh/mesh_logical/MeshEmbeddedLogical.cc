@@ -113,12 +113,12 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   // now loop over new faces, adding the updates to the cell-ordered versions
   for (int fi=0; fi!=nfaces_extra; ++fi) {
     auto normal0 = extra_face_area_normals_[fi];
-    extra_face_cell_bisectors_.getRow<MemSpace_kind::HOST>(fi)[0] = face_cell_lengths[fi][0] / AmanziGeometry::norm(normal0) * normal0;
+    extra_face_cell_bisectors_.getRowUnmanaged<MemSpace_kind::HOST>(fi)[0] = face_cell_lengths[fi][0] / AmanziGeometry::norm(normal0) * normal0;
 
     auto normal1 = extra_face_area_normals_[fi];
-    extra_face_cell_bisectors_.getRow<MemSpace_kind::HOST>(fi)[1] = face_cell_lengths[fi][1] / AmanziGeometry::norm(normal1) * normal1;
+    extra_face_cell_bisectors_.getRowUnmanaged<MemSpace_kind::HOST>(fi)[1] = face_cell_lengths[fi][1] / AmanziGeometry::norm(normal1) * normal1;
   }
-  extra_face_cell_bisectors_.update<MemSpace_kind::DEVICE>(); 
+  extra_face_cell_bisectors_.update<MemSpace_kind::DEVICE>();  
 
   // Need to renumber the global IDs.  Use the corresponding mesh to communicate.
   // First cells
