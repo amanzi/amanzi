@@ -715,17 +715,41 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     return true;
   }
 
-  Epetra_MultiVector& h_temp = *soln_->SubVector(0)->Data()->ViewComponent("cell");
-  Epetra_MultiVector& q_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");
+  // For consistency with other flow models, we need to track previous h
+  // which was placed earlier in the archive.
+  S_->GetW<CV_t>(prev_primary_variable_key_, Tags::DEFAULT, passwd_) = archive.get(primary_variable_key_);
+
+  return false;
+}
+
+
+//--------------------------------------------------------------
+// Advance conservative variables: (h, hu, hv)
+//--------------------------------------------------------------
+void
+ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
+{
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+
+  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& h_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
+  auto& vel_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+
+  Epetra_MultiVector& h_new = *soln_->SubVector(0)->Data()->ViewComponent("cell");
+  Epetra_MultiVector& q_new = *soln_->SubVector(1)->Data()->ViewComponent("cell");
 
   // update solution
   for (int c = 0; c < ncells_owned; ++c) {
-    double factor = inverse_with_tolerance(h_temp[0][c], cell_area2_max_);
-    h_c[0][c] = h_temp[0][c];
-    q_c[0][c] = q_temp[0][c];
-    q_c[1][c] = q_temp[1][c];
-    vel_c[0][c] = factor * q_temp[0][c];
-    vel_c[1][c] = factor * q_temp[1][c];
+    double factor = inverse_with_tolerance(h_new[0][c], cell_area2_max_);
+    h_c[0][c] = h_new[0][c];
+    q_c[0][c] = q_new[0][c];
+    q_c[1][c] = q_new[1][c];
+    vel_c[0][c] = factor * q_new[0][c];
+    vel_c[1][c] = factor * q_new[1][c];
     if (shallow_water_model_) ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
   UpdateWettedQuantities();
@@ -738,13 +762,9 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
      S_->GetEvaluator(pressure_head_key_).Update(*S_, passwd_);
   }
 
-  if(!source_key_.empty()){ 
+  if(!source_key_.empty()){
      S_->GetEvaluator(source_key_).Update(*S_, passwd_); // in this evaluator when running pipe flow
   }
-
-  // For consistency with other flow models, we need to track previous h
-  // which was placed earlier in the archive.
-  S_->GetW<CV_t>(prev_primary_variable_key_, Tags::DEFAULT, passwd_) = archive.get(primary_variable_key_);
 
   Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
     S_->GetEvaluatorPtr(primary_variable_key_, Tags::DEFAULT))->SetChanged();
@@ -752,7 +772,9 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
     S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))->SetChanged();
 
-  // min-max values
+  S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
+
+    // min-max values
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     double hmin(DBL_MAX), hmax(DBL_MIN);
     for (int c = 0; c < ncells_owned; ++c) {
@@ -774,21 +796,9 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     mesh_->get_comm()->MaxAll(inmax, outmax, 2);
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "min/max(h): " << outmin[0] << "/" << outmax[0] 
+    *vo_->os() << "min/max(h): " << outmin[0] << "/" << outmax[0]
                << ", min/max(flux): " << outmin[1] << "/" << outmax[1] << std::endl;
   }
-
-  return false;
-}
-
-
-//--------------------------------------------------------------
-// Advance conservative variables: (h, hu, hv)
-//--------------------------------------------------------------
-void
-ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
-{
-  S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
 }
 
 
