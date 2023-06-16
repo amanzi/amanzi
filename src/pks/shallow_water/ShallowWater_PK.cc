@@ -20,8 +20,6 @@
 
 // Amanzi::ShallowWater
 #include "DischargeEvaluator.hh"
-#include "WaterDepthEvaluator.hh"
-#include "PressureHeadEvaluator.hh"
 #include "HydrostaticPressureEvaluator.hh"
 #include "NumericalFluxFactory.hh"
 #include "ShallowWater_PK.hh"
@@ -87,22 +85,12 @@ ShallowWater_PK::Setup()
   velocity_key_ = Keys::getKey(domain_, "velocity");
   discharge_key_ = Keys::getKey(domain_, "discharge");
   total_depth_key_ = Keys::getKey(domain_, "total_depth");
-  if(shallow_water_model_){
-     primary_variable_key_ = Keys::getKey(domain_, "ponded_depth");
-     prev_primary_variable_key_ = Keys::getKey(domain_, "prev_ponded_depth");
-  } else {
-     primary_variable_key_ = Keys::getKey(domain_, "wetted_area");
-     prev_primary_variable_key_ = Keys::getKey(domain_, "prev_wetted_area");
-  }
   bathymetry_key_ = Keys::getKey(domain_, "bathymetry");
   hydrostatic_pressure_key_ = Keys::getKey(domain_, "ponded_pressure");
-
   riemann_flux_key_ = Keys::getKey(domain_, "riemann_flux");
   wetted_angle_key_ = Keys::getKey(domain_, "wetted_angle");
-  if(!shallow_water_model_){
-     water_depth_key_ = Keys::getKey(domain_, "water_depth");
-     pressure_head_key_ = Keys::getKey(domain_, "pressure_head");
-  }
+  SetupPrimaryVariableKeys();
+  SetupExtraEvaluatorsKeys();
 
   //-------------------------------
   // constant fields
@@ -132,14 +120,6 @@ ShallowWater_PK::Setup()
     AddDefaultPrimaryEvaluator_(primary_variable_key_);
   }
 
-  // -- total depth
-  if (!S_->HasRecord(total_depth_key_)) {
-    S_->Require<CV_t, CVS_t>(total_depth_key_, Tags::DEFAULT, passwd_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-
   // -- velocity
   if (!S_->HasRecord(velocity_key_)) {
     S_->Require<CV_t, CVS_t>(velocity_key_, Tags::DEFAULT, passwd_)
@@ -161,32 +141,9 @@ ShallowWater_PK::Setup()
     S_->SetEvaluator(discharge_key_, Tags::DEFAULT, eval);
   }
 
-  if(!shallow_water_model_){
-     // -- water depth
-     if (!S_->HasRecord(water_depth_key_)) {
-        S_->Require<CV_t, CVS_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_)
-           .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-
-        Teuchos::ParameterList elist(water_depth_key_);
-        elist.set<std::string>("my key", water_depth_key_).set<std::string>("tag", Tags::DEFAULT.get())
-           .set<double>("pipe diameter", pipe_diameter_);
-        auto eval = Teuchos::rcp(new WaterDepthEvaluator(elist));
-        S_->SetEvaluator(water_depth_key_, Tags::DEFAULT, eval);
-     }
-
-     // -- pressure head
-     if (!S_->HasRecord(pressure_head_key_)) {
-        S_->Require<CV_t, CVS_t>(pressure_head_key_, Tags::DEFAULT, pressure_head_key_)
-           .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-
-        Teuchos::ParameterList elist(pressure_head_key_);
-        elist.set<std::string>("my key", pressure_head_key_).set<std::string>("tag", Tags::DEFAULT.get())
-           .set<double>("pipe diameter", pipe_diameter_)
-           .set<double>("celerity", celerity_);
-        auto eval = Teuchos::rcp(new PressureHeadEvaluator(elist));
-        S_->SetEvaluator(pressure_head_key_, Tags::DEFAULT, eval);
-     }
-  }
+  //-------------------------------
+  // secondary fields
+  //-------------------------------
 
   if(!source_key_.empty()){ 
      // -- pipe drain 
@@ -208,9 +165,6 @@ ShallowWater_PK::Setup()
       .SetMesh(mesh_)->SetGhosted(true)->SetComponents(names, locations, ndofs);
   }
 
-  //-------------------------------
-  // secondary fields
-  //-------------------------------
   // -- hydrostatic pressure
   if (!S_->HasRecord(hydrostatic_pressure_key_)) {
     S_->Require<CV_t, CVS_t>(hydrostatic_pressure_key_, Tags::DEFAULT, hydrostatic_pressure_key_)
@@ -242,6 +196,14 @@ ShallowWater_PK::Setup()
       AddDefaultPrimaryEvaluator_(wetted_angle_key_);
   }
 
+    // -- total depth
+  if (!S_->HasRecord(total_depth_key_)) {
+    S_->Require<CV_t, CVS_t>(total_depth_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
   // -- previous state of primary variable (for coupling)
   if (!S_->HasRecord(prev_primary_variable_key_)) {
     S_->Require<CV_t, CVS_t>(prev_primary_variable_key_, Tags::DEFAULT, passwd_)
@@ -266,7 +228,11 @@ ShallowWater_PK::Initialize()
 
   bcs_.clear();
 
-  // velocity BC is required on the faces while primary variable is required on nodes
+  //primary variable BC is required on nodes
+  // primary variable BC
+  SetPrimaryVariableBC(bc_list);
+
+  // velocity BC is required on faces
   // -- velocity BC
   if (bc_list->isSublist("velocity")) {
     PK_DomainFunctionFactory<ShallowWaterBoundaryFunction> bc_factory(mesh_, S_);
@@ -302,44 +268,6 @@ ShallowWater_PK::Initialize()
       }
     }
   }
-
-  // -- ponded depth BC
-  if (bc_list->isSublist("ponded depth")) {
-    PK_DomainFunctionFactory<ShallowWaterBoundaryFunction> bc_factory(mesh_, S_);
-
-    Teuchos::ParameterList& tmp_list = bc_list->sublist("ponded depth");
-    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
-      std::string name = it->first;
-      if (tmp_list.isSublist(name)) {
-        Teuchos::ParameterList& spec = tmp_list.sublist(name);
-
-        bc = bc_factory.Create(spec, "ponded depth", AmanziMesh::NODE, Teuchos::null); 
-        bc->set_bc_name("ponded depth");
-        bc->set_type(WhetStone::DOF_Type::SCALAR);
-        bcs_.push_back(bc);
-      }
-    }
-  }
-
-  // -- wetted area BC
-  if (bc_list->isSublist("wetted area")) {
-    PK_DomainFunctionFactory<ShallowWaterBoundaryFunction> bc_factory(mesh_, S_);
-
-    Teuchos::ParameterList& tmp_list = bc_list->sublist("wetted area");
-    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
-      std::string name = it->first;
-      if (tmp_list.isSublist(name)) {
-        Teuchos::ParameterList& spec = tmp_list.sublist(name);
-
-        bc = bc_factory.Create(spec, "wetted area", AmanziMesh::NODE, Teuchos::null);
-        bc->set_bc_name("wetted area");
-        bc->set_type(WhetStone::DOF_Type::SCALAR);
-        bcs_.push_back(bc);
-      }
-    }
-  }
-
-
 
   // source term
   if (sw_list_->isSublist("source terms")) {
@@ -445,95 +373,7 @@ ShallowWater_PK::Initialize()
   // calculate cell area square (used as a tolerance)  
   cell_area2_max_ = cell_area_max * cell_area_max;
 
-  if (shallow_water_model_){ 
-     // initialize h from ht or ht from h
-     if (!S_->GetRecord(primary_variable_key_, Tags::DEFAULT).initialized()) {
-        auto& h_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-        auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-
-        for (int c = 0; c < ncells_owned; c++) { h_c[0][c] = ht_c[0][c] - B_c[0][c]; }
-
-        S_->GetRecordW(primary_variable_key_, Tags::DEFAULT, passwd_).set_initialized();
-     }
-
-     if (!S_->GetRecord(total_depth_key_).initialized()) {
-        const auto& h_c = *S_->Get<CV_t>(primary_variable_key_).ViewComponent("cell");
-        auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-
-        for (int c = 0; c < ncells_owned; c++) { ht_c[0][c] = h_c[0][c] + B_c[0][c]; }
-
-        S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
-     }
-
-      InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, wetted_angle_key_, Pi);
-      S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
-
-  }
-
-  else{
-
-     auto& WettedArea_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-     auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-     auto& WaterDepth_c = *S_->GetW<CV_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_).ViewComponent("cell");
-     auto& PressureHead_c = *S_->GetW<CV_t>(pressure_head_key_, Tags::DEFAULT, pressure_head_key_).ViewComponent("cell");
-     auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-     auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-
-     for (int c = 0; c < ncells_owned; c++) {
-
-        double maxDepth = B_c[0][c] + pipe_diameter_;
-        if (ht_c[0][c] >= maxDepth){ // cell is pressurized
-
-            double PipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_; 
-            PressureHead_c[0][c] = ht_c[0][c] - pipe_diameter_ - B_c[0][c];
-            WettedArea_c[0][c] = (g_ * PipeCrossSection * PressureHead_c[0][c]) / (celerity_ * celerity_) + PipeCrossSection;
-            WettedAngle_c[0][c] = TwoPi;
-            WaterDepth_c[0][c] = pipe_diameter_;
-        }
-        else if ((std::fabs(ht_c[0][c] - B_c[0][c]) < 1.e-15) || (ht_c[0][c] < B_c[0][c])){ //cell is dry
-
-            WettedArea_c[0][c] = 0.0;
-            WettedAngle_c[0][c] = 0.0;
-            WaterDepth_c[0][c] = 0.0;
-
-        }
-
-        else if (ht_c[0][c] < maxDepth && B_c[0][c] < ht_c[0][c]) { //cell is ventilated
-
-           WaterDepth_c[0][c] = ht_c[0][c] - B_c[0][c];
-           WettedAngle_c[0][c] = ComputeWettedAngle(WaterDepth_c[0][c]);
-           WettedArea_c[0][c] = ComputeWettedArea(WettedAngle_c[0][c]);
-
-        }
-
-     } 
-
-     if (S_->GetRecord(discharge_key_).initialized()) {
-
-        auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
-        auto& u_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell"); 
-
-        for (int c = 0; c < ncells_owned; c++) {
-            for (int i = 0; i < 2; ++i) {
-             if(std::fabs(WettedArea_c[0][c]) < 1.0e-12){
-                u_c[i][c] = 0.0;
-             }
-             else{
-                u_c[i][c] = q_c[i][c] / WettedArea_c[0][c];
-             }
-            }
-        }
-
-        S_->GetRecordW(velocity_key_, Tags::DEFAULT, passwd_).set_initialized();
-
-     }
-
-     S_->GetRecordW(primary_variable_key_, Tags::DEFAULT, passwd_).set_initialized();
-     S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
-     S_->GetRecordW(water_depth_key_, Tags::DEFAULT, water_depth_key_).set_initialized();
-     S_->GetRecordW(pressure_head_key_, Tags::DEFAULT, pressure_head_key_).set_initialized();
-
-  }
+  InitializeFields();
 
   InitializeCVField(S_, *vo_, velocity_key_, Tags::DEFAULT, passwd_, 0.0);
   InitializeCVField(S_, *vo_, discharge_key_, Tags::DEFAULT, discharge_key_, 0.0);
@@ -620,10 +460,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->Get<CV_t>(velocity_key_).ScatterMasterToGhosted("cell");
   S_->Get<CV_t>(discharge_key_).ScatterMasterToGhosted("cell");
   S_->Get<CV_t>(wetted_angle_key_).ScatterMasterToGhosted("cell");
-  if(!shallow_water_model_){
-     S_->Get<CV_t>(water_depth_key_).ScatterMasterToGhosted("cell");
-     S_->Get<CV_t>(pressure_head_key_).ScatterMasterToGhosted("cell");
-  }
+  ScatterMasterToGhostedExtraEvaluators();
 
   // save a copy of primary and conservative fields
   auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
@@ -657,15 +494,8 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     q_c[1][c] = q_old[1][c];
     vel_c[0][c] = factor * q_old[0][c];
     vel_c[1][c] = factor * q_old[1][c];
-    if(shallow_water_model_){
-       ht_c[0][c] = h_c[0][c] + B_c[0][c]; 
-    } else {
-
-       WettedAngle_c[0][c] = ComputeWettedAngleNewton(h_c[0][c]);
-       ht_c[0][c] = ComputeTotalDepth(h_c[0][c], WettedAngle_c[0][c], B_c[0][c]);
-
-    }
   }
+  UpdateSecondaryFields();
 
   // update source (external) terms
   for (int i = 0; i < srcs_.size(); ++i) { srcs_[i]->Compute(t_old, t_new); }
@@ -750,17 +580,10 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
     q_c[1][c] = q_new[1][c];
     vel_c[0][c] = factor * q_new[0][c];
     vel_c[1][c] = factor * q_new[1][c];
-    if (shallow_water_model_) ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
-  UpdateWettedQuantities();
+  UpdateSecondaryFields();
 
-  if(!shallow_water_model_){
-     Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-       S_->GetEvaluatorPtr(wetted_angle_key_, Tags::DEFAULT))->SetChanged();
-
-     S_->GetEvaluator(water_depth_key_).Update(*S_, passwd_);
-     S_->GetEvaluator(pressure_head_key_).Update(*S_, passwd_);
-  }
+  UpdateExtraEvaluators();
 
   if(!source_key_.empty()){
      S_->GetEvaluator(source_key_).Update(*S_, passwd_); // in this evaluator when running pipe flow
@@ -1045,7 +868,7 @@ void ShallowWater_PK::VerifySolution_(TreeVector& u)
 
 
 //--------------------------------------------------------------
-// Bathymetry (Evaluate value at edge midpoint for a polygonal cell)
+// Bathymetry (evaluate value at edge midpoint for a polygonal cell)
 //--------------------------------------------------------------
 double
 ShallowWater_PK::BathymetryEdgeValue(int e, const Epetra_MultiVector& B_n)
@@ -1056,6 +879,87 @@ ShallowWater_PK::BathymetryEdgeValue(int e, const Epetra_MultiVector& B_n)
   return (B_n[0][nodes[0]] + B_n[0][nodes[1]]) / 2.0;
 }
 
+//--------------------------------------------------------------
+// Setup primary variable keys
+//--------------------------------------------------------------
+void ShallowWater_PK::SetupPrimaryVariableKeys(){
+
+  primary_variable_key_ = Keys::getKey(domain_, "ponded_depth");
+  prev_primary_variable_key_ = Keys::getKey(domain_, "prev_ponded_depth");
+
+}
+
+//--------------------------------------------------------------
+// Set primary variable BC
+//--------------------------------------------------------------
+void ShallowWater_PK::SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList> &bc_list){
+
+  // -- ponded depth BC
+  if (bc_list->isSublist("ponded depth")) {
+    PK_DomainFunctionFactory<ShallowWaterBoundaryFunction> bc_factory(mesh_, S_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("ponded depth");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+
+        Teuchos::RCP<ShallowWaterBoundaryFunction> bc = bc_factory.Create(spec, "ponded depth", AmanziMesh::NODE, Teuchos::null);
+        bc->set_bc_name("ponded depth");
+        bc->set_type(WhetStone::DOF_Type::SCALAR);
+        bcs_.push_back(bc);
+      }
+    }
+  }
+
+}
+
+//--------------------------------------------------------------------
+// Update total depth for shallow water model
+//--------------------------------------------------------------------
+void ShallowWater_PK::UpdateSecondaryFields(){
+
+   auto& h_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+   auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+   auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+   for (int c = 0; c < ncells_owned; ++c) {
+       ht_c[0][c] = h_c[0][c] + B_c[0][c];
+   }
+
+}
+
+//--------------------------------------------------------------
+// Initialize fields
+//--------------------------------------------------------------
+void ShallowWater_PK::InitializeFields(){
+
+     int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+     auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+     
+     if (!S_->GetRecord(primary_variable_key_, Tags::DEFAULT).initialized()) {
+        auto& h_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+        auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+
+        for (int c = 0; c < ncells_owned; c++) { h_c[0][c] = ht_c[0][c] - B_c[0][c]; }
+
+        S_->GetRecordW(primary_variable_key_, Tags::DEFAULT, passwd_).set_initialized();
+     }
+
+     if (!S_->GetRecord(total_depth_key_).initialized()) {
+        const auto& h_c = *S_->Get<CV_t>(primary_variable_key_).ViewComponent("cell");
+        auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+
+        for (int c = 0; c < ncells_owned; c++) { ht_c[0][c] = h_c[0][c] + B_c[0][c]; }
+
+        S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
+     }
+
+      InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, wetted_angle_key_, Pi);
+      S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
+
+}
 
 //--------------------------------------------------------------
 // Inversion operation protected for small values

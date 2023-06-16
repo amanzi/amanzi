@@ -72,6 +72,18 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void ModifySolution(double t, TreeVector& A) override { VerifySolution_(A); }
 
+  virtual void SetupPrimaryVariableKeys();
+
+  virtual void SetupExtraEvaluatorsKeys(){};
+
+  virtual void ScatterMasterToGhostedExtraEvaluators(){};
+
+  virtual void UpdateExtraEvaluators(){};
+
+  virtual void SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList> &bc_list);
+
+  virtual void InitializeFields();
+
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
@@ -123,9 +135,11 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual double ComputePressureHead(double WettedArea){return 0.0;};
 
-  virtual void UpdateWettedQuantities(){};
+  virtual void UpdateSecondaryFields();
 
   virtual double ComputeHydrostaticPressureForce (std::vector<double> SolArray){return g_ * 0.5 * SolArray[0] * SolArray[0];};
+
+  void PushBackBC(Teuchos::RCP<ShallowWaterBoundaryFunction> bc){bcs_.push_back(bc);};
 
   // access
   double get_total_source() const { return total_source_; }
@@ -160,8 +174,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   Key hydrostatic_pressure_key_;
   Key riemann_flux_key_;
   Key wetted_angle_key_;
-  Key water_depth_key_;
-  Key pressure_head_key_;
   Key source_key_;
 
   std::string passwd_;

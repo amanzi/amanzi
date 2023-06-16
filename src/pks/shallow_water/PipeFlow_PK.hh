@@ -29,13 +29,15 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   ~PipeFlow_PK() {};
 
+  virtual void Setup() override;
+
   virtual double NumericalSourceFriction(double h, double qx, double WettedAngle) override;
 
   virtual std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc, 
                                                       double Bmax, const Epetra_MultiVector& B_n, 
                                                       std::vector<int> bc_model, std::vector<double> bc_value_h) override;
 
-  virtual void UpdateWettedQuantities() override;
+  virtual void UpdateSecondaryFields() override;
 
   virtual double ComputeTotalDepth(double WettedArea, double WettedAngle, double Bathymetry) override;
 
@@ -51,6 +53,18 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual double ComputePressureHead(double WettedAngle) override;
 
+  virtual void SetupPrimaryVariableKeys() override;
+
+  virtual void SetupExtraEvaluatorsKeys() override;
+
+  virtual void ScatterMasterToGhostedExtraEvaluators() override;
+
+  virtual void UpdateExtraEvaluators() override;
+
+  virtual void SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList> &bc_list) override;
+
+  virtual void InitializeFields() override;
+
   virtual std::vector<double> ComputeWettedQuantitiesEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n) override;
 
  private:
@@ -59,6 +73,9 @@ class PipeFlow_PK : public ShallowWater_PK {
   double pipe_cross_section_;
 
   double Manning_coeff_;
+
+ protected:
+ Key water_depth_key_, pressure_head_key_;
 
 };
 

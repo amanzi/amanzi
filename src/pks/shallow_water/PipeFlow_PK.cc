@@ -12,12 +12,16 @@
 */
 
 #include "PipeFlow_PK.hh"
+#include "WaterDepthEvaluator.hh"
+#include "PressureHeadEvaluator.hh"
 #include "NumericalFluxFactory.hh"
+#include "PK_DomainFunctionFactory.hh"
 
 namespace Amanzi {
 namespace ShallowWater {
 
 using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
 
 PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
                   const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -34,6 +38,42 @@ PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
   vlist.sublist("verbose object") = sw_list_->sublist("verbose object");
   vo_ = Teuchos::rcp(new VerboseObject("PipeFlow", vlist));
   
+}
+
+//--------------------------------------------------------------
+// Register fields and field evaluators with the state
+// Conservative variables: (A, Au)
+//--------------------------------------------------------------
+void PipeFlow_PK::Setup()
+{
+ 
+   ShallowWater_PK::Setup();
+
+   // -- water depth
+   if (!S_->HasRecord(water_depth_key_)) {
+      S_->Require<CV_t, CVS_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_)
+         .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+
+      Teuchos::ParameterList elist(water_depth_key_);
+      elist.set<std::string>("my key", water_depth_key_).set<std::string>("tag", Tags::DEFAULT.get())
+         .set<double>("pipe diameter", pipe_diameter_);
+      auto eval = Teuchos::rcp(new WaterDepthEvaluator(elist));
+      S_->SetEvaluator(water_depth_key_, Tags::DEFAULT, eval);
+   }
+
+   // -- pressure head
+   if (!S_->HasRecord(pressure_head_key_)) {
+      S_->Require<CV_t, CVS_t>(pressure_head_key_, Tags::DEFAULT, pressure_head_key_)
+         .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+
+      Teuchos::ParameterList elist(pressure_head_key_);
+      elist.set<std::string>("my key", pressure_head_key_).set<std::string>("tag", Tags::DEFAULT.get())
+         .set<double>("pipe diameter", pipe_diameter_)
+         .set<double>("celerity", celerity_);
+      auto eval = Teuchos::rcp(new PressureHeadEvaluator(elist));
+      S_->SetEvaluator(pressure_head_key_, Tags::DEFAULT, eval);
+   }
+   
 }
 
 //--------------------------------------------------------------------
@@ -194,9 +234,9 @@ double PipeFlow_PK::ComputeHydrostaticPressureForce (std::vector<double> SolArra
 }
 
 //--------------------------------------------------------------------
-// Newton solve to compute wetted angle given wetted area
+// Update wetted angle and total depth for pipe model
 //--------------------------------------------------------------------
-void PipeFlow_PK::UpdateWettedQuantities(){ 
+void PipeFlow_PK::UpdateSecondaryFields(){ 
 
    auto& WettedArea_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
@@ -327,6 +367,142 @@ double PipeFlow_PK::ComputeWettedAngleNewton(double WettedArea){
    return WettedAngle;
 }
 
+//--------------------------------------------------------------
+// Setup Primary Variable Keys
+//--------------------------------------------------------------
+void PipeFlow_PK::SetupPrimaryVariableKeys(){
+
+  primary_variable_key_ = Keys::getKey(domain_, "wetted_area");
+  prev_primary_variable_key_ = Keys::getKey(domain_, "prev_wetted_area");
+
+}
+
+//--------------------------------------------------------------
+// Setup Extra Evaluators Keys
+//--------------------------------------------------------------
+void PipeFlow_PK::SetupExtraEvaluatorsKeys(){
+
+  water_depth_key_ = Keys::getKey(domain_, "water_depth");
+  pressure_head_key_ = Keys::getKey(domain_, "pressure_head");
+
+}
+
+//--------------------------------------------------------------
+// Scatter Master To Ghosted Extra Evaluators 
+//--------------------------------------------------------------
+void PipeFlow_PK::ScatterMasterToGhostedExtraEvaluators(){
+
+     S_->Get<CV_t>(water_depth_key_).ScatterMasterToGhosted("cell");
+     S_->Get<CV_t>(pressure_head_key_).ScatterMasterToGhosted("cell");
+
+}
+
+//--------------------------------------------------------------
+// Update Extra Evaluators
+//--------------------------------------------------------------
+void PipeFlow_PK::UpdateExtraEvaluators(){
+
+     Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+       S_->GetEvaluatorPtr(wetted_angle_key_, Tags::DEFAULT))->SetChanged();
+
+     S_->GetEvaluator(water_depth_key_).Update(*S_, passwd_);
+     S_->GetEvaluator(pressure_head_key_).Update(*S_, passwd_);
+}
+
+//--------------------------------------------------------------
+// Set Primary Variable BC
+//--------------------------------------------------------------
+void PipeFlow_PK::SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList> &bc_list){
+
+  // -- wetted area BC
+  if (bc_list->isSublist("wetted area")) {
+    PK_DomainFunctionFactory<ShallowWaterBoundaryFunction> bc_factory(mesh_, S_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("wetted area");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+
+        Teuchos::RCP<ShallowWaterBoundaryFunction> bc = bc_factory.Create(spec, "wetted area", AmanziMesh::NODE, Teuchos::null);
+        bc->set_bc_name("wetted area");
+        bc->set_type(WhetStone::DOF_Type::SCALAR);
+        PushBackBC(bc);
+      }
+    }
+  }
+
+}
+
+//--------------------------------------------------------------
+// Initialize Variables
+//--------------------------------------------------------------
+void PipeFlow_PK::InitializeFields(){
+
+     int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+     auto& WettedArea_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+     auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+     auto& WaterDepth_c = *S_->GetW<CV_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_).ViewComponent("cell");
+     auto& PressureHead_c = *S_->GetW<CV_t>(pressure_head_key_, Tags::DEFAULT, pressure_head_key_).ViewComponent("cell");
+     auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+     auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+
+     for (int c = 0; c < ncells_owned; c++) {
+
+        double maxDepth = B_c[0][c] + pipe_diameter_;
+        if (ht_c[0][c] >= maxDepth){ // cell is pressurized
+
+            double PipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
+            PressureHead_c[0][c] = ht_c[0][c] - pipe_diameter_ - B_c[0][c];
+            WettedArea_c[0][c] = (g_ * PipeCrossSection * PressureHead_c[0][c]) / (celerity_ * celerity_) + PipeCrossSection;
+            WettedAngle_c[0][c] = TwoPi;
+            WaterDepth_c[0][c] = pipe_diameter_;
+        }
+        else if ((std::fabs(ht_c[0][c] - B_c[0][c]) < 1.e-15) || (ht_c[0][c] < B_c[0][c])){ //cell is dry
+
+            WettedArea_c[0][c] = 0.0;
+            WettedAngle_c[0][c] = 0.0;
+            WaterDepth_c[0][c] = 0.0;
+
+        }
+
+        else if (ht_c[0][c] < maxDepth && B_c[0][c] < ht_c[0][c]) { //cell is ventilated
+
+           WaterDepth_c[0][c] = ht_c[0][c] - B_c[0][c];
+           WettedAngle_c[0][c] = ComputeWettedAngle(WaterDepth_c[0][c]);
+           WettedArea_c[0][c] = ComputeWettedArea(WettedAngle_c[0][c]);
+
+        }
+
+     }
+
+     if (S_->GetRecord(discharge_key_).initialized()) {
+
+        auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
+        auto& u_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+
+        for (int c = 0; c < ncells_owned; c++) {
+            for (int i = 0; i < 2; ++i) {
+             if(std::fabs(WettedArea_c[0][c]) < 1.0e-12){
+                u_c[i][c] = 0.0;
+             }
+             else{
+                u_c[i][c] = q_c[i][c] / WettedArea_c[0][c];
+             }
+            }
+        }
+
+        S_->GetRecordW(velocity_key_, Tags::DEFAULT, passwd_).set_initialized();
+
+     }
+
+     S_->GetRecordW(primary_variable_key_, Tags::DEFAULT, passwd_).set_initialized();
+     S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
+     S_->GetRecordW(water_depth_key_, Tags::DEFAULT, water_depth_key_).set_initialized();
+     S_->GetRecordW(pressure_head_key_, Tags::DEFAULT, pressure_head_key_).set_initialized();
+
+}
 
 }  // namespace PipeFlow 
 }  // namespace Amanzi
