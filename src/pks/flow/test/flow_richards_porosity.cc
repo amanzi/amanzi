@@ -26,6 +26,7 @@
 
 // Amanzi
 #include "GMVMesh.hh"
+#include "IO.hh"
 #include "MeshAudit.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
@@ -136,6 +137,8 @@ TEST(FLOW_POROSITY_MODELS)
   std::cout << "      compressibility:" << tmp.get<double>("pore compressibility") << std::endl;
   std::cout << "Porosity min = " << pmin << std::endl;
   std::cout << "Porosity max = " << pmax << std::endl;
+
+  // WriteStateStatistics(*S);
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string) "flow.gmv");

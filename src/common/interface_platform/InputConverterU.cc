@@ -151,12 +151,23 @@ InputConverterU::Translate(int rank, int num_proc)
       .set<double>("value", 0.0);
   }
 
+  // temperature evaluators for systems with constant temperature
   if (pk_model_["flow"] == "richards") {
     auto& out_ev = out_list.sublist("state").sublist("evaluators");
+    auto& out_ic = out_list.sublist("state").sublist("initial conditions");
+
     if (!out_ev.isSublist("temperature")) {
       AddIndependentFieldEvaluator_(out_ev, "temperature", "All", "*", 298.15);
-      if (fracture_regions_.size() > 0)
+      if (out_ic.isSublist("temperature"))
+        out_ev.sublist("temperature").sublist("function") =
+          out_ic.sublist("temperature").sublist("function");
+
+      if (fracture_regions_.size() > 0) {
         AddIndependentFieldEvaluator_(out_ev, "fracture-temperature", "All", "*", 298.15);
+        if (out_ic.isSublist("temperature"))
+          out_ev.sublist("temperature").sublist("function") =
+            out_ic.sublist("temperature").sublist("function");
+      }
     }
   }
 

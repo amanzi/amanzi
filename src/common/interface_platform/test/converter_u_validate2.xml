@@ -181,11 +181,11 @@
       <ParameterList name="temperature">
         <ParameterList name="function">
           <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="*"/>
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.98149999999999977e+02"/>
+                <Parameter name="value" type="double" value="2.98000000000000000e+02"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

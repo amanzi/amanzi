@@ -494,10 +494,8 @@ Richards_PK::Setup()
     *S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT, passwd_)
        .SetMesh(mesh_)
        ->SetGhosted(true) = cvs;
-  }
 
-  if (!S_->HasEvaluator(temperature_key_, Tags::DEFAULT)) {
-    AddDefaultIndependentEvaluator(S_, temperature_key_, Tags::DEFAULT, 298.15);
+    S_->RequireEvaluator(temperature_key_, Tags::DEFAULT);
   }
 
   // Require additional components for the existing fields
