@@ -748,6 +748,9 @@
       <Parameter name="sorption sites" type="Array(string)" value="{>davis_OH}"/>
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="14"/>
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="physics module" type="string" value="Amanzi"/>
+      </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>

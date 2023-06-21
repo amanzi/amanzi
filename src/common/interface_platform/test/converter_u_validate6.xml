@@ -684,6 +684,9 @@
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
 
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="physics module" type="string" value="Amanzi"/>
+      </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
@@ -706,6 +709,9 @@
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
 
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="physics module" type="string" value="Amanzi"/>
+      </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>

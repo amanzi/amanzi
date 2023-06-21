@@ -64,6 +64,7 @@ void
 Chemistry_PK::Setup()
 {
   saturation_tolerance_ = plist_->get<double>("saturation tolerance", 1e-14);
+  bool amanzi_physics = plist_->isSublist("physical models and assumptions");
 
   // require flow fields
   S_->Require<CV_t, CVS_t>(poro_key_, Tags::DEFAULT, poro_key_)
@@ -80,7 +81,8 @@ Chemistry_PK::Setup()
     S_->RequireEvaluator(saturation_key_, Tags::DEFAULT);
   }
   // REMOVE after #646 is fixed
-  if (!S_->HasRecord(saturation_key_, Tags::CURRENT)) {
+  // meanwhile we check for the physics module via presence of a particular sublist
+  if (!S_->HasRecord(saturation_key_, Tags::CURRENT) && !amanzi_physics) {
     S_->Require<CV_t, CVS_t>(saturation_key_, Tags::CURRENT, saturation_key_)
       .SetMesh(mesh_)
       ->SetGhosted(false)

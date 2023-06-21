@@ -487,6 +487,9 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   out_list.set<double>("initial conditions time", ic_time_);
   out_list.set<int>("number of component concentrations", comp_names_all_.size());
 
+  // assumption
+  out_list.sublist("physical models and assumptions").set<std::string>("physics module", "Amanzi");
+
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
 }
