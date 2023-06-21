@@ -41,8 +41,18 @@ PDE_Accumulation::AddAccumulationTerm(const CompositeVector& du, const std::stri
 
   int n = duc.MyLength();
   int m = duc.NumVectors();
-  for (int k = 0; k < m; k++) {
-    for (int i = 0; i < n; i++) { diag[k][i] += duc[k][i]; }
+  int m0 = diag.NumVectors();
+
+  if (m == m0) {
+    for (int k = 0; k < m; k++) {
+      for (int i = 0; i < n; i++) { diag[k][i] += duc[k][i]; }
+    }
+  } else if (m == 1) {
+    for (int k = 0; k < m0; k++) {
+      for (int i = 0; i < n; i++) { diag[k][i] += duc[0][i]; }
+    }
+  } else {
+    AMANZI_ASSERT(false);
   }
 }
 
@@ -414,6 +424,12 @@ PDE_Accumulation::ApplyBCs()
         for (int i = 0; i < diag.MyLength(); i++) {
           if (bc_model[i] == OPERATOR_BC_DIRICHLET) {
             for (int k = 0; k < m; ++k) { diag[k][i] = 0.0; }
+          } else if (bc_model[i] == OPERATOR_BC_KINEMATIC) {
+            const auto& normal = WhetStone::getNodeUnitNormal(*mesh_, i);
+            int k = (std::fabs(normal[0]) > std::fabs(normal[1])) ? 0 : 1;
+            if (normal.dim() == 3) k = (std::fabs(normal[k]) > std::fabs(normal[2])) ? k : 2;
+
+            diag[k][i] = 0.0;
           }
         }
       }

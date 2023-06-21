@@ -48,6 +48,12 @@ struct BeakerState {
   std::vector<double> isotherm_freundlich_n;
   std::vector<double> isotherm_langmuir_b;
 
+  std::vector<double> total_sorbed_colloid_mobile; // primaries on colloids
+  std::vector<double> total_sorbed_colloid_immobile;
+
+  std::vector<double> colloid_mobile_conc; // colloids fraction
+  std::vector<double> colloid_immobile_conc;
+
   double temperature;   // [K]
   double porosity;      // [-]
   double saturation;    // [-]

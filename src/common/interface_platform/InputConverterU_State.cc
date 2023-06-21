@@ -469,6 +469,9 @@ InputConverterU::TranslateState_()
       std::vector<std::string> regions = CharToStrings_(text_content);
       std::string reg_str = CreateNameFromVector_(regions);
 
+      // ---------------------------------------------------------
+      // liquid phase
+      // ---------------------------------------------------------
       // -- uniform pressure
       node = GetUniqueElementByTagsString_(
         inode, "liquid_phase, liquid_component, uniform_pressure", flag);
@@ -620,6 +623,9 @@ InputConverterU::TranslateState_()
         }
       }
 
+      // ---------------------------------------------------------
+      // gas phase
+      // ---------------------------------------------------------
       // -- solute concentation or fraction (gas phase)
       node = GetUniqueElementByTagsString_(inode, "gas_phase, solute_component", flag);
       if (flag) {

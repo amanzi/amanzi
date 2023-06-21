@@ -24,7 +24,7 @@ namespace AmanziEOS {
 // Equation of State model
 class LookupTable {
  public:
-  LookupTable(Teuchos::ParameterList& plist) {};
+  LookupTable(Teuchos::ParameterList& plist){};
   ~LookupTable(){};
 
   // virtual methods

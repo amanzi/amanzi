@@ -539,7 +539,7 @@ Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const Tr
       auto& dxc = *du->SubVector(i)->Data()->ViewComponent("cell");
       int n = dxc.NumVectors();
 
-      double floor(1e-10);
+      double floor(1.0);
       for (int c = 0; c < ncells_owned_; c++) {
         for (int k = 0; k < n; ++k) {
           error_tmp = std::max(error_tmp, fabs(dxc[k][c]) / (xc[k][c] + floor));

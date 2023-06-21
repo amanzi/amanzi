@@ -230,11 +230,26 @@ SimpleThermoDatabase::Initialize(BeakerState& state, const BeakerParameters& par
     }
   }
 
-  // cleaning
+  // -- cleanig
   for (auto rxn = surface_complexation_reactions.begin();
        rxn != surface_complexation_reactions.end();
        rxn++) {
     this->AddSurfaceComplexationRxn(*rxn);
+  }
+
+  // colloids
+  const auto& cslist = plist_->sublist("colloids");
+
+  colloids_.clear();
+
+  id = 0;
+  for (auto it = cslist.begin(); it != cslist.end(); ++it, ++id) {
+    std::string name = it->first;
+    if (cslist.isSublist(name)) {
+      const auto& tmp = cslist.sublist(name);
+      Colloid colloid(id, name, tmp);
+      colloids_.push_back(colloid);
+    }
   }
 
   // this will allocate internal memory

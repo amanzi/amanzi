@@ -30,6 +30,7 @@ class SorptionIsotherm {
   SorptionIsotherm(const std::string& name, const SorptionIsothermType type);
   virtual ~SorptionIsotherm(){};
 
+  // returns sorbed concentration
   virtual double Evaluate(const Species& primary_species) = 0;
   virtual double EvaluateDerivative(const Species& primary_species) = 0;
 

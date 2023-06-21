@@ -32,6 +32,7 @@
 #include "BeakerState.hh"
 #include "BeakerParameters.hh"
 #include "ChemistryUtilities.hh"
+#include "Colloid.hh"
 #include "GeneralRxn.hh"
 #include "IonExchangeRxn.hh"
 #include "KineticRate.hh"
@@ -108,6 +109,8 @@ class Beaker {
     return sorption_isotherm_rxns_;
   }
 
+  const std::vector<Colloid>& colloids() const { return colloids_; }
+
  protected:
   void
   SetupActivityModel(std::string model, std::string pitzer_database, std::string pitzer_jfunction);
@@ -136,8 +139,8 @@ class Beaker {
 
   // equilibrium chemistry
   // update activities, equilibrium complex concentrations, etc.
-  void UpdateEquilibriumChemistry();
-  void CalculateTotal();
+  void UpdateEquilibriumChemistry(const BeakerState& state);
+  void CalculateTotal(const BeakerState& state);
 
   // calculate block of Jacobian corresponding to derivatives of total with
   // respect to free-ion
@@ -191,6 +194,7 @@ class Beaker {
   Species water_;
   std::vector<Species> primary_species_;
   std::vector<Mineral> minerals_;
+  std::vector<Colloid> colloids_;
 
  private:
   double tolerance_;
@@ -203,6 +207,10 @@ class Beaker {
   // Sorbed phase total component concentrations for basis species
   std::vector<double> total_sorbed_; // [mol/m^3 bulk]
   MatrixBlock dtotal_sorbed_;        // derivaties wrt free-ion [kg water/sec]
+
+  // Colloids
+  std::vector<double> total_sorbed_colloid_mobile_;   // [mol/m^3 bulk]
+  std::vector<double> total_sorbed_colloid_immobile_; // [mol/m^3 bulk]
 
   // common parameters among reactions
   double temperature_;         // constant for the Newton solver [K]

@@ -79,10 +79,9 @@ class GeneralRxn {
   int ncomp_backward_; // # components in backward reaction
 
   std::vector<std::string> species_names_;
-  std::vector<int> species_ids_;      // ids of primary species in rxn
-  std::vector<double> stoichiometry_; // stoich of primary species in rxn
-  std::vector<int> species_ids_f_,
-    species_ids_b_; // ids species used in forward and backward reactions
+  std::vector<int> species_ids_;                   // ids of primary species in rxn
+  std::vector<double> stoichiometry_;              // stoich of primary species in rxn
+  std::vector<int> species_ids_f_, species_ids_b_; // species ids in forward and backward reactions
   std::vector<double> stoichiometry_f_,
     stoichiometry_b_; // forward and backward stoichometries of primary species
 

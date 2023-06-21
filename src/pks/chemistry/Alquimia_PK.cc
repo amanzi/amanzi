@@ -571,7 +571,7 @@ Alquimia_PK::CopyToAlquimia(int cell,
   state.porosity = porosity[0][cell];
 
   if (S_->HasRecord(temperature_key_)) {
-    const auto& temp = 
+    const auto& temp =
       *S_->Get<CompositeVector>(temperature_key_, water_tag).ViewComponent("cell", true);
     state.temperature = temp[0][cell];
   }

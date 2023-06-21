@@ -56,7 +56,7 @@ method is Newton.  If it applies an appoximation, it is inexact Newton.
 
     * `"stagnation iteration check`" ``[int]`` **8** determines the number of
       iterations before the stagnation check is turned on. The stagnation
-      happens when the current L2-error exceeds the initial L2-error.
+      happens when the current l2-error exceeds the initial l2-error.
 
  */
 
@@ -242,8 +242,8 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
       } else if (num_itrs_ > stagnation_itr_check_) {
         if (l2_error > l2_error_initial) {
           if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-            *vo_->os() << "Solver stagnating, L2-error=" << l2_error << " > " << l2_error_initial
-                       << " (initial L2-error)" << std::endl;
+            *vo_->os() << "Solver stagnating, l2-error=" << l2_error << " > " << l2_error_initial
+                       << " (initial l2-error)" << std::endl;
           return SOLVER_STAGNATING;
         }
       }
@@ -348,7 +348,7 @@ SolverNewton<Vector, VectorSpace>::Newton_ErrorControl_(double error,
                                                         double du_norm)
 {
   if (vo_->os_OK(Teuchos::VERB_HIGH))
-    *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error
+    *vo_->os() << num_itrs_ << ": error=" << error << "  l2-error=" << l2_error
                << " contr. factor=" << du_norm / previous_du_norm << std::endl;
 
   if (error < tol_) {

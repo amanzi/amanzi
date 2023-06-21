@@ -25,8 +25,7 @@ namespace AmanziEOS {
 /* ******************************************************************
 * Populate internal structures
 ****************************************************************** */
-LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist)
-  : LookupTable(plist)
+LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist) : LookupTable(plist)
 {
   std::string filename = plist.get<std::string>("table name");
   std::string field = plist.get<std::string>("field name");
@@ -97,7 +96,7 @@ LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist)
     auto density = F_;
 
     ReadBlock_(ifs, nP, nT);
-    for (int i = 0; i < nP; ++i) 
+    for (int i = 0; i < nP; ++i)
       for (int j = 0; j < nT; ++j) F_[i][j] = F_[i][j] * 1000.0 - axisP_[i] / density[i][j];
   }
 }
@@ -114,7 +113,7 @@ LookupTable_FEHM::ReadBlock_(std::ifstream& ifs, int nP, int nT)
 
   ifs.getline(line, 100);
   label = line;
-  for (int i = 0; i < nP; ++i) 
+  for (int i = 0; i < nP; ++i)
     for (int j = 0; j < nT; ++j) ifs >> F_[i][j];
   ifs.getline(line, 100);
 

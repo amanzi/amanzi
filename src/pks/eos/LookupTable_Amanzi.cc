@@ -25,8 +25,7 @@ namespace AmanziEOS {
 /* ******************************************************************
 * Populate internal structures
 ****************************************************************** */
-LookupTable_Amanzi::LookupTable_Amanzi(Teuchos::ParameterList& plist)
-  : LookupTable(plist)
+LookupTable_Amanzi::LookupTable_Amanzi(Teuchos::ParameterList& plist) : LookupTable(plist)
 {
   int nT, nP, ndata;
   std::string filename = plist.get<std::string>("table name");

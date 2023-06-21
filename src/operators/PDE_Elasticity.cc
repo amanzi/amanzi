@@ -180,9 +180,15 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
             mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
             int ncells = cells.size();
 
-            const auto& normal = WhetStone::getNodeUnitNormal(*mesh_, v);
+            auto normal = WhetStone::getNodeUnitNormal(*mesh_, v);
             int k = (std::fabs(normal[0]) > std::fabs(normal[1])) ? 0 : 1;
             if (d == 3) k = (std::fabs(normal[k]) > std::fabs(normal[2])) ? k : 2;
+
+            // keeps positive number on the main diagonal
+            if (normal[k] < 0.0) {
+              normal *= -1.0;
+              value *= -1.0;
+            }
 
             int noff(d * n);
             for (int m = 0; m < ncols; m++) Acell(noff + k, m) = 0.0;

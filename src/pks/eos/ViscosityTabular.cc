@@ -20,13 +20,12 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-ViscosityTabular::ViscosityTabular(Teuchos::ParameterList& plist)
-  : EOS_Viscosity(plist)
+ViscosityTabular::ViscosityTabular(Teuchos::ParameterList& plist) : EOS_Viscosity(plist)
 {
   std::string format = plist.get<std::string>("format", "Amanzi");
   if (format == "Amanzi")
     table_ = Teuchos::rcp(new LookupTable_Amanzi(plist));
-  else 
+  else
     table_ = Teuchos::rcp(new LookupTable_FEHM(plist));
 }
 

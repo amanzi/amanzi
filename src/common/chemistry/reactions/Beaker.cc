@@ -31,6 +31,7 @@
 #include "ActivityModelFactory.hh"
 #include "AqueousEquilibriumComplex.hh"
 #include "ChemistryUtilities.hh"
+#include "Colloid.hh"
 #include "GeneralRxn.hh"
 #include "IonExchangeRxn.hh"
 #include "KineticRate.hh"
@@ -89,6 +90,8 @@ Beaker::Beaker(const Teuchos::Ptr<VerboseObject> vo)
   sorption_isotherm_rxns_.clear();
   total_.clear();
   total_sorbed_.clear();
+  total_sorbed_colloid_mobile_.clear();
+  total_sorbed_colloid_immobile_.clear();
 }
 
 
@@ -130,6 +133,11 @@ Beaker::Initialize(BeakerState& state, const BeakerParameters& parameters)
     dtotal_sorbed_.Zero();
 
     state.total_sorbed.resize(ncomp_, 0.0);
+
+    if (colloids_.size() > 0) {
+      total_sorbed_colloid_mobile_.resize(ncomp_, 0.0);
+      total_sorbed_colloid_immobile_.resize(ncomp_, 0.0);
+    }
   } else {
     total_sorbed_.clear();
   }
@@ -229,7 +237,7 @@ Beaker::Speciate(BeakerState* state)
 
   do {
     UpdateActivityCoefficients_();
-    UpdateEquilibriumChemistry();
+    UpdateEquilibriumChemistry(*state);
     CalculateDTotal();
 
     // calculate residual
@@ -277,7 +285,7 @@ Beaker::Speciate(BeakerState* state)
 
   // for now, initialize total sorbed concentrations based on the current free
   // ion concentrations
-  UpdateEquilibriumChemistry();
+  UpdateEquilibriumChemistry(*state);
   CopyBeakerToState(state);
   status_.num_newton_iterations = num_iterations;
   if (max_rel_change < tolerance_) { status_.converged = true; }
@@ -321,7 +329,7 @@ Beaker::ReactionStep(BeakerState* state, const BeakerParameters& parameters, dou
   do {
     // update equilibrium and kinetic chemistry (rates, ion activity, etc.)
     // if (parameters.update_activity_newton) UpdateActivityCoefficients_();
-    UpdateEquilibriumChemistry();
+    UpdateEquilibriumChemistry(*state);
     UpdateKineticChemistry();
 
     // units of residual: mol/sec
@@ -372,7 +380,7 @@ Beaker::ReactionStep(BeakerState* state, const BeakerParameters& parameters, dou
   if (max_rel_change < tolerance_) { status_.converged = true; }
 
   // update total concentrations
-  UpdateEquilibriumChemistry();
+  UpdateEquilibriumChemistry(*state);
   UpdateKineticMinerals();
 
   // TODO(bandre): not convinced this is the correct place to call
@@ -405,6 +413,11 @@ Beaker::CopyBeakerToState(BeakerState* state)
   // totals
   state->total = total_;
   state->total_sorbed = total_sorbed_;
+
+  if (colloids_.size() > 0) {
+    state->total_sorbed_colloid_mobile = total_sorbed_colloid_mobile_;
+    state->total_sorbed_colloid_immobile = total_sorbed_colloid_immobile_;
+  }
 
   // free ion
   state->free_ion.resize(ncomp_);
@@ -557,7 +570,11 @@ Beaker::DisplayComponents(const BeakerState& state) const
     message << std::setw(15) << "Name" << std::setw(15) << "Moles / m^3" << std::endl;
     for (int i = 0; i < ncomp_; i++) {
       message << std::setw(15) << primary_species().at(i).name() << std::scientific
-              << std::setprecision(5) << std::setw(15) << state.total_sorbed.at(i) << std::endl;
+              << std::setprecision(5) << std::setw(15) << state.total_sorbed.at(i);
+      if (colloids_.size() > 0)
+        message << "  (" << colloids_[0].name() << "): " << state.total_sorbed_colloid_mobile.at(i)
+                << " " << state.total_sorbed_colloid_immobile.at(i);
+      message << std::endl;
     }
   }
   message << "------------------------------------------------- Input Components ---" << std::endl;
@@ -577,6 +594,19 @@ Beaker::DisplayResults() const
     message << std::setw(15) << primary_species().at(i).name() << std::scientific
             << std::setprecision(5) << std::setw(15) << total_.at(i) / water_density_kg_L_
             << std::setw(15) << total_.at(i) << std::endl;
+  }
+
+  if (total_sorbed_.size() > 0 && colloids_.size() > 0) {
+    message << "---- Sorbed Components" << std::endl;
+    message << std::setw(15) << "Name" << std::setw(15) << "Moles / m^3" << std::endl;
+    for (int i = 0; i < ncomp_; i++) {
+      message << std::setw(15) << primary_species().at(i).name() << std::scientific
+              << std::setprecision(5) << std::setw(15) << total_sorbed_.at(i);
+      if (colloids_.size() > 0)
+        message << "  (" << colloids_[0].name() << "): " << total_sorbed_colloid_mobile_.at(i)
+                << " " << total_sorbed_colloid_immobile_.at(i);
+      message << std::endl;
+    }
   }
 
   message << "---- Charge Balance\n";
@@ -1054,7 +1084,7 @@ Beaker::InitializeMolalities_(const std::vector<double>& initial_molalities)
 
 
 void
-Beaker::UpdateEquilibriumChemistry()
+Beaker::UpdateEquilibriumChemistry(const BeakerState& state)
 {
   // update primary species activities
   for (auto it = primary_species_.begin(); it != primary_species_.end(); ++it) { it->update(); }
@@ -1085,12 +1115,12 @@ Beaker::UpdateEquilibriumChemistry()
   }
 
   // calculate total component concentrations
-  CalculateTotal();
+  CalculateTotal(state);
 }
 
 
 void
-Beaker::CalculateTotal()
+Beaker::CalculateTotal(const BeakerState& state)
 {
   // add in primaries
   for (unsigned int i = 0; i < total_.size(); i++) {
@@ -1115,7 +1145,11 @@ Beaker::CalculateTotal()
   }
 
   // add in isotherm contributions
+  double scale = 1.0;
+  if (colloids_.size() > 0) scale += state.colloid_mobile_conc[0] + state.colloid_immobile_conc[0];
+
   for (auto it = sorption_isotherm_rxns_.begin(); it != sorption_isotherm_rxns_.end(); ++it) {
+    it->ScaleTotal(scale);
     it->AddContributionToTotal(&total_sorbed_);
   }
 

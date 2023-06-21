@@ -74,9 +74,11 @@ RunBatchNative(const std::string& filexml,
                double porosity,
                double saturation,
                double volume,
+               double water_density = 997.16,
                double dt = 0.0,
                int max_dt_steps = 0,
-               int frequency = 1)
+               int frequency = 1,
+               bool ic_no_sorbed = false)
 {
 #ifdef ABORT_ON_FLOATING_POINT_EXCEPTIONS
 #  ifdef __APPLE__
@@ -112,7 +114,7 @@ RunBatchNative(const std::string& filexml,
 
   state.porosity = porosity;
   state.saturation = saturation;
-  state.water_density = 997.16;
+  state.water_density = water_density;
   state.volume = volume;
 
   chem->Initialize(state, parameters);
@@ -131,6 +133,7 @@ RunBatchNative(const std::string& filexml,
   int nsorbed = chem->total_sorbed().size();
   int nion_site = chem->ion_exchange_rxns().size();
   int nisotherm = chem->sorption_isotherm_rxns().size();
+  int ncolloids = chem->colloids().size();
 
   state.total = ic_total;
   if (ic_free_ion.size() > 0) {
@@ -145,6 +148,12 @@ RunBatchNative(const std::string& filexml,
     state.mineral_specific_surface_area.resize(nmineral, 0.0);
   }
   if (nsorbed > 0) state.total_sorbed.resize(nsorbed, 0.0);
+  if (ncolloids > 0) {
+    state.total_sorbed_colloid_mobile.resize(nsorbed, 0.0);
+    state.total_sorbed_colloid_immobile.resize(nsorbed, 0.0);
+    state.colloid_mobile_conc.resize(ncolloids, 0.01);
+    state.colloid_immobile_conc.resize(ncolloids, 0.01);
+  }
 
   if (nion_site > 0) state.ion_exchange_sites.resize(nion_site, 0.0);
 
@@ -163,7 +172,10 @@ RunBatchNative(const std::string& filexml,
   int itrs = chem->Speciate(&state);
   std::cout << "Speciation: " << filetest << " " << itrs << " itrs" << std::endl;
 
+  // re-initialize state
   chem->CopyBeakerToState(&state);
+  if (nsorbed > 0 && ic_no_sorbed) state.total_sorbed.assign(nsorbed, 0.0);
+
   chem->DisplayResults();
 
   // kinetics
@@ -264,9 +276,10 @@ TEST(NATIVE_CALCITE_KINETICS_VOLUME_FRACTIONS)
                  icfi, // initial conditions
                  0.5,
                  1.0,
-                 1.0, // porosity, saturation, cell volume, dt
-                 2592000.0,
-                 60); // dt, max time steps
+                 1.0,       // porosity, saturation, cell volume
+                 997.16,    // density
+                 2592000.0, // dt
+                 60);       // dt, max time steps
 }
 
 
@@ -325,9 +338,10 @@ TEST(NATIVE_FAREA17_UNIT)
                  icfi, // initial conditions
                  0.5,
                  1.0,
-                 1.0,
+                 1.0, // porosity, saturation, cell volume
+                 997.16,
                  2592000.0,
-                 12); // porosity, saturation, cell volume
+                 12);
 }
 
 TEST(NATIVE_FAREA17_DEBYE_HUCKEL)
@@ -347,9 +361,10 @@ TEST(NATIVE_FAREA17_DEBYE_HUCKEL)
                  icfi, // initial conditions
                  0.5,
                  1.0,
-                 1.0,
+                 1.0, // porosity, saturation, cell volume
+                 997.16,
                  2592000.0,
-                 12); // porosity, saturation, cell volume
+                 12);
 }
 
 TEST(NATIVE_FAREA17_DEBYE_HUCKEL_10PERCENT_FREE_ION)
@@ -374,9 +389,10 @@ TEST(NATIVE_FAREA17_DEBYE_HUCKEL_10PERCENT_FREE_ION)
                  icfi, // initial conditions
                  0.5,
                  1.0,
-                 1.0,
+                 1.0, // porosity, saturation, cell volume
+                 997.16,
                  2592000.0,
-                 12); // porosity, saturation, cell volume
+                 12);
 }
 
 TEST(NATIVE_FAREA17_DEBYE_HUCKEL_CONSTANT_FREE_ION)
@@ -399,9 +415,10 @@ TEST(NATIVE_FAREA17_DEBYE_HUCKEL_CONSTANT_FREE_ION)
                  icfi, // initial conditions
                  0.5,
                  1.0,
-                 1.0,
+                 1.0, // porosity, saturation, cell volume
+                 997.16,
                  2592000.0,
-                 12); // porosity, saturation, cell volume
+                 12);
 }
 
 TEST(NATIVE_FAREA17_PITZEL)
@@ -437,7 +454,8 @@ TEST(NATIVE_GENERAL_KINETICS)
                  icfi, // initial conditions
                  0.25,
                  1.0,
-                 1.0, // porosity, saturation, cell volume
+                 1.0,    // porosity, saturation, cell volume
+                 997.16, // density
                  8640.0,
                  500,
                  5);
@@ -475,7 +493,8 @@ TEST(NATIVE_VALOCCHI_INITIAL)
                  icfi, // initial conditions
                  0.25,
                  1.0,
-                 1.0, // porosity, saturation, cell volume
+                 1.0,    // porosity, saturation, cell volume
+                 997.16, // density
                  86400.0,
                  10);
 }
@@ -495,7 +514,8 @@ TEST(NATIVE_SURFACE_COMPLEXATION_1)
                  icfi, // initial conditions
                  0.9,
                  1.0,
-                 1.0, // porosity, saturation, cell volume
+                 1.0,    // porosity, saturation, cell volume
+                 997.16, // density
                  3600.0,
                  10);
 }
@@ -514,7 +534,8 @@ TEST(NATIVE_SURFACE_COMPLEXATION_2)
                  icfi, // initial conditions
                  0.9,
                  1.0,
-                 1.0, // porosity, saturation, cell volume
+                 1.0,    // porosity, saturation, cell volume
+                 997.16, // density
                  1.0,
                  10);
 }
@@ -533,7 +554,8 @@ TEST(NATIVE_RADIOACTIVE_DECAY_AQUEOUS)
                  icfi, // initial conditions
                  0.25,
                  1.0,
-                 1.0, // porosity, saturation, cell volume
+                 1.0,    // porosity, saturation, cell volume
+                 997.16, // density
                  864.0,
                  500,
                  10);
@@ -553,7 +575,8 @@ TEST(NATIVE_RADIOACTIVE_DECAY_SORBED_TINY)
                  icfi, // initial conditions
                  1.0,
                  1.0,
-                 1.0, // porosity, saturation, cell volume
+                 1.0,    // porosity, saturation, cell volume
+                 997.16, // density
                  86400.0,
                  2000,
                  50);
@@ -573,7 +596,8 @@ TEST(NATIVE_RADIOACTIVE_DECAY_SORBED)
                  icfi, // initial conditions
                  0.25,
                  1.0,
-                 1.0, // porosity, saturation, cell volume
+                 1.0,    // porosity, saturation, cell volume
+                 997.16, // density
                  864000.0,
                  2000,
                  50);
@@ -594,7 +618,8 @@ TEST(NATIVE_RADIOACTIVE_DECAY_BRANCHES)
                  icfi, // initial conditions
                  0.25,
                  1.0,
-                 1.0, // porosity, saturation, cell volume
+                 1.0,    // porosity, saturation, cell volume
+                 997.16, // density
                  1.0e-1,
                  1000,
                  10);
@@ -614,7 +639,8 @@ TEST(NATIVE_SORPTION_ISOTHERMS)
                  icfi, // initial conditions
                  0.25,
                  1.0,
-                 1.0, // porosity, saturation, cell volume
+                 1.0,    // porosity, saturation, cell volume
+                 997.16, // density
                  86400.0,
                  500,
                  10);
@@ -637,7 +663,8 @@ TEST(NATIVE_FAREA5_INITIAL)
                  icfi, // initial conditions
                  0.5,
                  1.0,
-                 1.0, // porosity, saturation, cell volume
+                 1.0,    // porosity, saturation, cell volume
+                 997.16, // density
                  2592000.0,
                  12);
 }
@@ -658,7 +685,8 @@ TEST(NATIVE_FAREA5_OUTLET)
                  icfi, // initial conditions
                  0.5,
                  1.0,
-                 1.0, // porosity, saturation, cell volume
+                 1.0,    // porosity, saturation, cell volume
+                 997.16, // density
                  2592000.0,
                  12);
 }
@@ -679,7 +707,30 @@ TEST(NATIVE_FAREA5_SOURCE)
                  icfi, // initial conditions
                  0.5,
                  1.0,
-                 1.0, // porosity, saturation, cell volume
+                 1.0,    // porosity, saturation, cell volume
+                 997.16, // density
                  2592000.0,
                  12);
+}
+
+TEST(NATIVE_COLLOID_SORPTION_ISOTHERMS)
+{
+  std::vector<double> ict = { 1.0e-4, 1.0e-4, 1.0e-4 };
+  std::vector<double> icm, icie, icfi;
+  std::vector<double> icts = { 1.0e-4, 1.0e-4, 1.0e-4 }; // total sorbed
+  RunBatchNative("test/native/colloid-isotherms.xml",
+                 "test/native/colloid-isotherms.test",
+                 "unit",
+                 ict,
+                 icm,
+                 icie,
+                 icfi, // initial conditions
+                 0.25,
+                 1.0,
+                 1.0,    // porosity, saturation, cell volume
+                 1000.0, // density
+                 86400.0,
+                 500,
+                 50,
+                 true);
 }

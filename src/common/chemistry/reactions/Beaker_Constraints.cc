@@ -120,7 +120,7 @@ Beaker::EnforceConstraint(BeakerState* state,
 
   do {
     UpdateActivityCoefficients_();
-    UpdateEquilibriumChemistry();
+    UpdateEquilibriumChemistry(*state);
     UpdateKineticChemistry();
     CalculateDTotal();
 
@@ -214,7 +214,7 @@ Beaker::EnforceConstraint(BeakerState* state,
 
   // for now, initialize total sorbed concentrations based on the current free
   // ion concentrations
-  UpdateEquilibriumChemistry();
+  UpdateEquilibriumChemistry(*state);
   CopyBeakerToState(state);
   status_.num_newton_iterations = num_iterations;
   if (max_rel_change < tolerance_) { status_.converged = true; }

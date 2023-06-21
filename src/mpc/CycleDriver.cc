@@ -987,6 +987,7 @@ CycleDriver::ResetDriver(int time_pr_id)
 
   pk_->CalculateDiagnostics(Tags::DEFAULT);
   Observations();
+  WriteStateStatistics(*S_, *vo_);
 
   pk_->set_dt(tp_dt_[time_pr_id]);
   max_dt_ = tp_max_dt_[time_pr_id];

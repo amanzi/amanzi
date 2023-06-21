@@ -995,10 +995,19 @@ Multiphase_PK::ModifyCorrection(double h,
     const auto& uc = *u->SubVector(i)->Data()->ViewComponent("cell");
     auto& duc = *du->SubVector(i)->Data()->ViewComponent("cell");
 
-    // clip molar density to range [0; +\infty]
     if (name == mol_density_liquid_key_) {
+      // clip molar density to range [0; +\infty]
       for (int i = 0; i < uc.NumVectors(); ++i) {
         for (int c = 0; c < ncells_owned_; ++c) { duc[i][c] = std::min(duc[i][c], uc[i][c]); }
+      }
+
+    } else if (name == x_gas_key_) {
+      // clip fraction to range [0; 1]
+      for (int i = 0; i < uc.NumVectors(); ++i) {
+        for (int c = 0; c < ncells_owned_; ++c) {
+          duc[i][c] = std::min(duc[i][c], uc[i][c]);
+          duc[0][c] = std::max(duc[0][c], uc[0][c] - 1.0);
+        }
       }
 
       // clip saturation (residual saturation is missing, FIXME)
