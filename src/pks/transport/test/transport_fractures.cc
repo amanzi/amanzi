@@ -126,12 +126,10 @@ TEST(ADVANCE_TWO_FRACTURES)
   TPK.Initialize();
 
   // advance the transport state
-  int iter;
   double t_old(0.0), t_new(0.0), dt;
   auto& tcc =
     *S->GetW<CompositeVector>("total_component_concentration", "state").ViewComponent("cell");
 
-  iter = 0;
   while (t_new < 0.2) {
     dt = TPK.StableTimeStep(-1);
     t_new = t_old + dt;
@@ -140,7 +138,6 @@ TEST(ADVANCE_TWO_FRACTURES)
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter++;
 
     // verify solution
     for (int c = 0; c < ncells_owned; ++c) CHECK(tcc[0][c] >= 0.0 && tcc[0][c] <= 1.0);

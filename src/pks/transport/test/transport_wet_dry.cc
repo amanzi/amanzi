@@ -102,6 +102,7 @@ runTest(std::string xmlfile)
 
     for (int c = 0; c < 10; ++c) { CHECK((*tcc)[0][c] <= 1.0 && (*tcc)[0][c] >= 0.0); }
   }
+  CHECK(iter < 45);
 
   WriteStateStatistics(*S);
 }

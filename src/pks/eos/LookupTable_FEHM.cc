@@ -42,7 +42,7 @@ LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist) : LookupTable(
   ifs.getline(line, 100);
   if (ifs.fail()) Exceptions::amanzi_throw(msg);
 
-  int nT, nP, nB, nK, ndata;
+  int nT, nP, nB, nK;
   ifs >> nT >> nP >> nB;
   ifs.getline(line, 100);
   if (ifs.fail()) Exceptions::amanzi_throw(msg);

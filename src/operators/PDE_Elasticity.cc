@@ -145,7 +145,6 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
     for (int c = 0; c != ncells_owned; ++c) {
       WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
       int ncols = Acell.NumCols();
-      int nrows = Acell.NumRows();
 
       if (kind == AmanziMesh::FACE && d == 2) {
         mesh_->cell_get_faces(c, &faces);

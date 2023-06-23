@@ -712,7 +712,6 @@ PDE_DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,
   global_op_->rhs()->PutScalarGhosted(0.0);
   Epetra_MultiVector& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
 
-  int nn(0), nm(0);
   for (int c = 0; c != ncells_owned; ++c) {
     bool flag(true);
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
@@ -730,7 +729,6 @@ PDE_DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,
         int f = faces[n];
 
         if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
-          nn++;
           double value = bc_value[f];
           double area = mesh_->face_area(f);
 
@@ -743,7 +741,6 @@ PDE_DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,
               rhs_node[0][v] -= value * area / nnodes;
           }
         } else if (bc_model[f] == OPERATOR_BC_MIXED && primary) {
-          nm++;
           if (flag) { // make a copy of cell-based matrix
             local_op_->matrices_shadow[c] = Acell;
             flag = false;

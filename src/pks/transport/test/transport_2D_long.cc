@@ -94,7 +94,6 @@ TEST(ADVANCE_WITH_2D_MESH)
   auto tcc =
     S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
-  int iter = 0;
   bool flag = true;
   while (t_new < 0.25) {
     dt = TPK.StableTimeStep(-1);
@@ -104,7 +103,6 @@ TEST(ADVANCE_WITH_2D_MESH)
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter++;
 
     if (t_new > 0.2 && flag) {
       flag = false;

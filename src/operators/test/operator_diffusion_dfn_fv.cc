@@ -72,7 +72,6 @@ RunTest(int icase, double gravity)
     new MeshExtractedManifold(mesh, setname, AmanziMesh::FACE, comm, gm, plist, true, false));
 
   // modify diffusion coefficient
-  int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_owned = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 

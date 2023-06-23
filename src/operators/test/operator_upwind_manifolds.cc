@@ -74,7 +74,6 @@ TEST(UPWIND_FLUX_MANIFOLDS)
     Teuchos::RCP<const Mesh> mesh = Teuchos::rcp(
       new MeshExtractedManifold(mesh3D, setname, AmanziMesh::FACE, comm, gm, plist, true, false));
 
-    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
@@ -109,7 +108,6 @@ TEST(UPWIND_FLUX_MANIFOLDS)
     for (int f = 0; f != nfaces_owned; ++f) {
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         int g = fmap.FirstPointInElement(f);
-        int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
         field_f[0][g] = bc_value[f];
         ndir++;
       }

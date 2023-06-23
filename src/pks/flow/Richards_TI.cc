@@ -278,7 +278,7 @@ Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Composite
   double phi0, prf0;
   WhetStone::DenseVector prm0(nnodes), wcm0(nnodes), wcm1(nnodes);
 
-  int num_itrs, max_itrs(0);
+  int max_itrs(0);
   ms_itrs_ = 0;
 
   for (int c = 0; c < ncells_owned; ++c) {

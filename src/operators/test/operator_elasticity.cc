@@ -152,8 +152,8 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
       const Point& tau = mesh->edge_vector(f);
       double area = mesh->face_area(f);
 
-      if (fabs(xf[1]) < 1e-6 && xf[0] > tol && xf[0] < 1.0 - tol ||
-          fabs(xf[1] - 1.0) < 1e-6 && xf[0] > tol && xf[0] < 1.0 - tol) {
+      if ((fabs(xf[1]) < 1e-6 && xf[0] > tol && xf[0] < 1.0 - tol) ||
+          (fabs(xf[1] - 1.0) < 1e-6 && xf[0] > tol && xf[0] < 1.0 - tol)) {
         bcf_model[f] = OPERATOR_BC_SHEAR_STRESS;
         bcf_value[f] = ((ana.stress_exact(xf, 0.0) * tau) * normal) / area / area;
         nshear++;
@@ -168,8 +168,8 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
     for (int v = 0; v < nnodes_wghost; ++v) {
       mesh->node_get_coordinates(v, &xv);
 
-      if (fabs(xv[1]) < 1e-6 && xv[0] > tol && xv[0] < 1.0 - tol ||
-          fabs(xv[1] - 1.0) < 1e-6 && xv[0] > tol && xv[0] < 1.0 - tol) {
+      if ((fabs(xv[1]) < 1e-6 && xv[0] > tol && xv[0] < 1.0 - tol) ||
+          (fabs(xv[1] - 1.0) < 1e-6 && xv[0] > tol && xv[0] < 1.0 - tol)) {
         auto normal = WhetStone::getNodeUnitNormal(*mesh, v);
         bcv_model[v] = OPERATOR_BC_KINEMATIC;
         bcv_value[v] = ana.velocity_exact(xv, 0.0) * normal;

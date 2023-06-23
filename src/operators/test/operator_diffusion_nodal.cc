@@ -257,16 +257,12 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS)
   std::vector<double>& bc_value_f = bc_f->bc_value();
   std::vector<double>& bc_mixed_f = bc_f->bc_mixed();
 
-  int nn = 0;
-  int nm = 0;
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6) {
-      nn++;
       bc_model_f[f] = OPERATOR_BC_NEUMANN;
       bc_value_f[f] = -(ana.velocity_exact(xf, 0.0))[0]; // We assume exterior normal.
     } else if (fabs(xf[1]) < 1e-6) {
-      nm++;
       bc_model_f[f] = OPERATOR_BC_MIXED;
       bc_value_f[f] = -(ana.velocity_exact(xf, 0.0))[1]; // We assume exterior normal.
 

@@ -107,7 +107,6 @@ SUITE(ODEIntegrationTests)
     TS->SetInitialState(t, u, u_dot);
 
     // iterate until the final time
-    int i = 0;
     double tlast = t;
 
     std::cout << "starting time integration" << std::endl;
@@ -127,7 +126,6 @@ SUITE(ODEIntegrationTests)
       TS->CommitSolution(h, u);
 
       h = hnext;
-      i++;
 
       tlast = TS->time();
     } while (tout > tlast);
@@ -190,7 +188,6 @@ SUITE(ODEIntegrationTests)
     TS->SetInitialState(t, u, u_dot);
 
     // iterate until the final time
-    int i = 0;
     double tlast = t;
 
     std::cout << "starting time integration" << std::endl;
@@ -210,7 +207,6 @@ SUITE(ODEIntegrationTests)
       TS->CommitSolution(h, u);
 
       h = hnext;
-      i++;
 
       tlast = TS->time();
     } while (tout > tlast);

@@ -54,7 +54,7 @@ InputConverterU::TranslateState_()
   char* text_content;
 
   // --- eos lookup table
-  bool flag, flag1, flag2;
+  bool flag;
   DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, eos", flag);
   if (flag) {
     eos_model_ = GetTextContentS_(node, "", false);
@@ -107,7 +107,6 @@ InputConverterU::TranslateState_()
   // primary continuum
   TranslateCommonContinuumFields_("domain", out_ic, out_ev);
 
-  int nmat(0);
   DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
   DOMNodeList* children = node_list->item(0)->getChildNodes();
 
@@ -116,7 +115,6 @@ InputConverterU::TranslateState_()
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       std::string mat_name = GetAttributeValueS_(inode, "name");
       int mat_id = GetAttributeValueL_(inode, "id", TYPE_NUMERICAL, 0, INT_MAX, false, -1);
-      nmat++;
 
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));

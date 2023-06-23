@@ -238,8 +238,6 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
   auto fone_c = fone->ViewComponent("cell");
   fone->PutScalar(1.0);
 
-  const Epetra_MultiVector* der_c;
-
   // for each operator we linearize (a) functions on which it acts and
   // (b) non-linear coefficients
   int neqns = eqns_.size();

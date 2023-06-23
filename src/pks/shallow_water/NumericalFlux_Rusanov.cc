@@ -37,7 +37,7 @@ NumericalFlux_Rusanov::Compute(const std::vector<double>& UL, const std::vector<
 {
   std::vector<double> FL, FR, F(3);
 
-  double hL, uL, vL, hR, uR, vR, factor;
+  double hL, uL, hR, uR, factor;
   double eps = 1.e-6;
 
   // SW conservative variables: (h, hu, hv)
@@ -45,12 +45,10 @@ NumericalFlux_Rusanov::Compute(const std::vector<double>& UL, const std::vector<
   hL = UL[0];
   factor = 2.0 * hL / (hL * hL + std::fmax(hL * hL, eps * eps));
   uL = factor * UL[1];
-  vL = factor * UL[2];
 
   hR = UR[0];
   factor = 2.0 * hR / (hR * hR + std::fmax(hR * hR, eps * eps));
   uR = factor * UR[1];
-  vR = factor * UR[2];
 
   FL = PhysicalFlux(UL);
   FR = PhysicalFlux(UR);

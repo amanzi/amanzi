@@ -25,7 +25,7 @@ namespace AmanziEOS {
 class LookupTable {
  public:
   LookupTable(Teuchos::ParameterList& plist){};
-  ~LookupTable(){};
+  virtual ~LookupTable(){};
 
   // virtual methods
   virtual double Function(double T, double p, int* ierr);

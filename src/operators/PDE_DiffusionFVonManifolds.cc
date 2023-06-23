@@ -208,9 +208,6 @@ PDE_DiffusionFVonManifolds::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
 void
 PDE_DiffusionFVonManifolds::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  const auto& beta_f = *beta_->ViewComponent("face", true);
-  const auto& fmap = *beta_->Map().Map("face", true);
-
   AMANZI_ASSERT(bcs_trial_.size() > 0);
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
@@ -228,7 +225,6 @@ PDE_DiffusionFVonManifolds::ApplyBCs(bool primary, bool eliminate, bool essentia
       int c = cells[0];
 
       if (bc_model[f] == OPERATOR_BC_DIRICHLET && primary) {
-        int g = fmap.FirstPointInElement(f);
         rhs_c[0][c] += bc_value[f] * local_op_->matrices[f](0, 0);
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         local_op_->matrices_shadow[f] = local_op_->matrices[f];

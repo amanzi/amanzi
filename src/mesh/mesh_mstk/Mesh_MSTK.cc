@@ -838,7 +838,7 @@ Mesh_MSTK::extract_mstk_mesh(List_ptr src_entities,
 
     int num_ghost_layers = 1;
     int input_type = 0; /* No parallel info is given */
-    int status = MSTK_Weave_DistributedMeshes(
+    MSTK_Weave_DistributedMeshes(
       mesh_, manifold_dimension(), num_ghost_layers, input_type, mpicomm_);
 
     // Now we have to build parent information for global entities
@@ -885,7 +885,7 @@ Mesh_MSTK::extract_mstk_mesh(List_ptr src_entities,
     // Update attributes on ghost entities - this will ensure that
     // ghost entities have their parent global ID information
 
-    status &= MESH_UpdateAttributes(mesh_, mpicomm_);
+    MESH_UpdateAttributes(mesh_, mpicomm_);
 
     // Now reverse engineer the parents of ghost entities from the global IDs
 

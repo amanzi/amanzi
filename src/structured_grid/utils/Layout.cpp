@@ -794,7 +794,6 @@ Layout::VecToMFTower(MFTower&   mft,
     BL_ASSERT(initialized);
     BL_ASSERT(IsCompatible(mft));
 
-    int myproc = ParallelDescriptor::MyProc();
     bool isio = ParallelDescriptor::IOProcessor();
     int numLevs = mft.NumLevels();
     BL_ASSERT(numLevs<=nLevs);

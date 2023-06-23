@@ -54,15 +54,12 @@ Operator_FaceCellSff::AssembleMatrix(const SuperMap& map,
   // Additionally, collect the diagonal for inversion.
   Epetra_MultiVector D_c(mesh_->cell_map(false), 1);
 
-  int num_with_cells = 0;
   for (const_op_iterator it = begin(); it != end(); ++it) {
     if ((*it)->schema_old() & OPERATOR_SCHEMA_DOFS_CELL) {
       if (((*it)->schema_old() == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL)) &&
           ((*it)->diag->MyLength() == ncells_owned)) {
         // diagonal schema
         for (int c = 0; c != ncells_owned; ++c) { D_c[0][c] += (*(*it)->diag)[0][c]; }
-      } else {
-        num_with_cells++;
       }
     }
   }

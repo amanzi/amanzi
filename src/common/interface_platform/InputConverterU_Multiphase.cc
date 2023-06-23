@@ -459,7 +459,7 @@ InputConverterU::TranslateMultiphaseBCs_()
   Errors::Message msg;
   MemoryManager mm;
 
-  char *text, *tagname;
+  char *text;
   DOMNodeList *node_list, *children;
   DOMNode* node;
 
@@ -473,7 +473,6 @@ InputConverterU::TranslateMultiphaseBCs_()
   for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-    tagname = mm.transcode(inode->getNodeName());
 
     // read the assigned regions
     bool flag;

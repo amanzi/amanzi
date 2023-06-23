@@ -101,13 +101,11 @@ TEST(ADVANCE_WITH_3D_MESH)
   TPK.Initialize();
 
   /* advance the transport state */
-  int iter;
   double t_old(0.0), t_new(0.0), dt;
 
   auto& tcc =
     *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
-  iter = 0;
   bool flag = true;
   while (t_new < 0.3) {
     dt = TPK.StableTimeStep(-1);
@@ -121,7 +119,6 @@ TEST(ADVANCE_WITH_3D_MESH)
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter++;
 
     if (t_new > 0.1 && flag) {
       flag = false;

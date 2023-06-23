@@ -25,10 +25,10 @@ namespace Amanzi {
 
 HDF5_MPI::HDF5_MPI(const Comm_ptr_type& comm, bool include_io_set)
   : viz_comm_(Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm)),
+    data_file_(-1),
     dynamic_mesh_(false),
     mesh_written_(false),
     static_mesh_cycle_(0),
-    data_file_(-1),
     include_io_set_(include_io_set)
 {
   AMANZI_ASSERT(viz_comm_.get());
@@ -46,11 +46,11 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type& comm, bool include_io_set)
 HDF5_MPI::HDF5_MPI(const Comm_ptr_type& comm, std::string dataFilename, bool include_io_set)
   : viz_comm_(Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm)),
     H5DataFilename_(dataFilename),
+    data_file_(-1),
     dynamic_mesh_(false),
     mesh_written_(false),
     static_mesh_cycle_(0),
-    include_io_set_(include_io_set),
-    data_file_(-1)
+    include_io_set_(include_io_set)
 {
   AMANZI_ASSERT(viz_comm_.get());
   H5DataFilename_ = dataFilename;

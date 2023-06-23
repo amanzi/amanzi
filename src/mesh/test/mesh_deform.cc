@@ -103,7 +103,6 @@ TEST(MESH_GENERATED_DEFORM3D)
     AmanziMesh::Entity_ID_List nodeids;
     AmanziGeometry::Point_List newpos, finpos;
 
-    int status = 0;
     int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
     for (int j = 0; j < nnodes; j++) {
       nodeids.push_back(j);
@@ -114,7 +113,8 @@ TEST(MESH_GENERATED_DEFORM3D)
       newcoord.set(oldcoord[0], oldcoord[1], oldcoord[2] / 2.0);
       newpos.push_back(newcoord);
     }
-    status = mesh->deform(nodeids, newpos, false, &finpos);
+    int status = mesh->deform(nodeids, newpos, false, &finpos);
+    CHECK_EQUAL(status, 1);
 
     // check geometry
     testMeshAudit<MeshAudit, Mesh>(mesh);

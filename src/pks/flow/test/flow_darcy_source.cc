@@ -79,7 +79,6 @@ RunTestDarcySource(const std::string& xmlFileName)
   // -- permeability
   std::string passwd("");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
-  double diff_in_perm = 0.0;
 
   if (!S->GetRecord("permeability").initialized()) {
     for (int c = 0; c < K.MyLength(); c++) K[0][c] = 1.0;
