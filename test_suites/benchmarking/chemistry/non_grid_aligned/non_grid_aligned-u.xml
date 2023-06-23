@@ -134,6 +134,7 @@
         <porosity value="0.38"/>
         <dispersion_tensor type="uniform_isotropic" alpha_l="0.0001" alpha_t="0.0001"/>
         <tortuosity value="0.0"/>  
+        <specific_storage value="0.0" model="constant"/>  
       </mechanical_properties>
       <hydraulic_conductivity x="0.38e-2" y="0.38e-2" />
       <assigned_regions>All domain</assigned_regions>
@@ -215,10 +216,18 @@
 
       <mineral_kinetics>
         <mineral name="Calcite">
-          <species_data weight="100.087"/>
-          <kinetics_data model="TST" rate="-7.0" modifiers="" molar_volume="3.69340e+01 cm^3/mol" specific_surface_area="1.0 cm^-1"/>
-          <reaction>1.0 CO3--  1.0 Ca++</reaction>
-          <equilibrium_constant>-8.4801</equilibrium_constant>
+          <kinetics>
+            <model>TST</model>
+            <rate>-7.0</rate>
+            <modifiers></modifiers>
+            <molar_volume>3.69340e+01 cm^3/mol</molar_volume>
+            <specific_surface_area>1.0 cm^-1</specific_surface_area>
+          </kinetics>
+          <complex>
+            <species_data weight="100.087"/>
+            <reaction>1.0 CO3--  1.0 Ca++</reaction>
+            <equilibrium_constant>-8.4801</equilibrium_constant>
+          </complex>
         </mineral>
       </mineral_kinetics>
     </thermodynamic_database>

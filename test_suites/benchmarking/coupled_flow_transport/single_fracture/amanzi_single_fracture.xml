@@ -76,7 +76,7 @@
   <numerical_controls>
     <unstructured_controls>
       <unstr_steady-state_controls>
-        <nonlinear_tolerance>1.0e-10</nonlinear_tolerance>
+        <nonlinear_tolerance>1.0e-6</nonlinear_tolerance>
         <unstr_initialization/>
       </unstr_steady-state_controls>
       <unstr_linear_solver>
@@ -132,6 +132,7 @@
       <mechanical_properties>
         <porosity value="0.25"/>
         <volumetric_strain formula="0.0"/>
+        <specific_storage value="0.0" model="constant"/>
       </mechanical_properties>
       <permeability x="KM1" y="KM1" z="KM1" />
       <assigned_regions>RegionBottom</assigned_regions>
@@ -139,6 +140,7 @@
     <material name="Top">
       <mechanical_properties>
         <porosity value="0.2" />
+        <specific_storage value="0.0" model="constant"/>
       </mechanical_properties>
       <permeability x="KM2" y="KM2" z="KM2" />
       <assigned_regions>RegionTop</assigned_regions>
@@ -189,12 +191,13 @@
         <mechanical_properties>
           <porosity value="0.4"/>
           <compliance formula="0.0"/>
+          <specific_storage value="0.0" model="constant"/>
         </mechanical_properties>
-        <fracture_permeability model="constant">
-          <aperture value="0.01"/>
-          <parallel value="KFT"/>
-          <normal value="KFN"/>
-        </fracture_permeability>
+        <permeability value="KFT" model="constant"/>
+        <aperture model="constant" value="0.01"/>
+        <!--permeability model="cubic law"/>
+        <aperture model="constant" value="KFT"/-->
+        <flow_diffusion_to_matrix model="constant" value="KFN"/>
         <assigned_regions>fracture</assigned_regions>
       </material>
     </materials>

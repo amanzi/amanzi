@@ -127,6 +127,7 @@
     <material name="soil">
       <mechanical_properties>
         <porosity value="0.25"/>
+        <specific_storage value="0.0" model="constant"/>
         <!--particle_density value="2720.0"/-->
       </mechanical_properties>
       <!-- Begin proposed isotherm section using Amanzi native chemistry -->

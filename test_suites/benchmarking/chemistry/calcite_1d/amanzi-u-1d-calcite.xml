@@ -136,6 +136,7 @@
     <material name="Soil">
       <mechanical_properties>
         <porosity value="0.25"/>
+        <specific_storage value="0.0" model="constant"/>
       </mechanical_properties>
       <permeability x="1.E-12" y="1.E-12" z="1.E-12" />
       <assigned_regions>All</assigned_regions>
@@ -245,11 +246,19 @@
 
       <mineral_kinetics>
         <mineral name="Calcite">
-          <species_data weight="100.08720"/>
-          <!--rate is on log10 scale and in SI units -->
-          <kinetics_data model="TST" rate="-9.0" modifiers="" molar_volume="3.69340e+01 cm^3/mol" specific_surface_area="1.0 cm^-1"/>
-          <reaction>-1.0 H+  1.0 HCO3-  1.0 Ca++</reaction>
-          <equilibrium_constant>1.84870e+00</equilibrium_constant>
+          <kinetics>
+            <model>TST</model>
+            <rate>-9.0</rate>
+            <modifiers></modifiers>
+            <molar_volume>3.69340e+01 cm^3/mol</molar_volume>
+            <specific_surface_area>1.0 cm^-1</specific_surface_area>
+          </kinetics>
+          <complex>
+            <species_data weight="100.08720"/>
+            <!--rate is on log10 scale and in SI units -->
+            <reaction>-1.0 H+  1.0 HCO3-  1.0 Ca++</reaction>
+            <equilibrium_constant>1.84870e+00</equilibrium_constant>
+          </complex>
         </mineral>
       </mineral_kinetics>
     </thermodynamic_database>
