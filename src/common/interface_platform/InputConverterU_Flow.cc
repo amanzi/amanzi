@@ -1112,7 +1112,7 @@ InputConverterU::TranslateFlowFractures_(const std::string& domain)
     }
 
     if (model == "constant") {
-      double val = GetAttributeValueD_(inode, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", true);
+      double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", true);
 
       for (auto it = regions.begin(); it != regions.end(); ++it) {
         std::stringstream ss;

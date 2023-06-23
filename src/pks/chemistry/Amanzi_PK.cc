@@ -743,7 +743,7 @@ Amanzi_PK::EstimateNextTimeStep_(double t_old, double t_new)
       dt_next_ /= dt_cut_factor_;
     } else if (num_successful_steps_ >= dt_increase_threshold_) {
       dt_next_ *= dt_increase_factor_;
-      num_successful_steps_ = 0;
+      num_successful_steps_ = 1;
     }
 
     dt_next_ = std::min(dt_next_, dt_max_);
