@@ -152,7 +152,7 @@ InputConverterU::Translate(int rank, int num_proc)
   }
 
   // temperature evaluators for systems with constant temperature
-  if (pk_model_["flow"] == "richards") {
+  if (pk_model_["flow"] == "richards" || pk_model_["chemistry"] != "") {
     auto& out_ev = out_list.sublist("state").sublist("evaluators");
     auto& out_ic = out_list.sublist("state").sublist("initial conditions");
 

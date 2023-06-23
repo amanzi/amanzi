@@ -70,6 +70,7 @@ The Amanzi chemistry process kernel uses the following parameters.
 #include "BeakerFields.hh"
 #include "BeakerState.hh"
 #include "Chemistry_PK.hh"
+#include "Key.hh"
 #include "PK_Factory.hh"
 #include "Mesh.hh"
 #include "TreeVector.hh"
@@ -129,8 +130,10 @@ class Amanzi_PK : public Chemistry_PK {
   BeakerState beaker_state_, beaker_state_copy_;
   BeakerFields bf_;
 
+  Key prev_saturation_key_;  // move to base class ???
+
   std::string dt_control_method_;
-  double current_time_, saved_time_;
+  double dt_int_, dt_global_;  // interpolation and global times 
 
   std::vector<std::string> aux_names_;
   std::vector<int> aux_index_;

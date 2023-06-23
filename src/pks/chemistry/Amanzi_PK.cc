@@ -57,8 +57,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   : PK(pk_tree, glist, S, soln),
     Chemistry_PK(pk_tree, glist, S, soln),
     chem_(NULL),
-    current_time_(0.0),
-    saved_time_(0.0)
+    dt_global_(0.0)
 {
   // obtain key of fields
   tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
@@ -86,6 +85,9 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   alquimia_aux_data_key_ = Keys::getKey(domain_, "alquimia_aux_data");
   mineral_rate_constant_key_ = Keys::getKey(domain_, "mineral_rate_constant");
   first_order_decay_constant_key_ = Keys::getKey(domain_, "first_order_decay_constant");
+
+  // -- Amanzi specific keys
+  prev_saturation_key_ = Keys::getKey(domain_, "prev_saturation_liquid");
 
   // collect high-level information about the problem
   InitializeMinerals(plist_);
@@ -131,6 +133,14 @@ void
 Amanzi_PK::Setup()
 {
   Chemistry_PK::Setup();
+
+  if (!S_->HasRecord(prev_saturation_key_)) {
+    S_->Require<CV_t, CVS_t>(prev_saturation_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->GetRecordW(prev_saturation_key_, passwd_).set_io_vis(false);
+  }
 }
 
 
@@ -165,6 +175,8 @@ Amanzi_PK::Initialize()
 
   // initialization using base class
   Chemistry_PK::Initialize();
+
+  InitializeCVFieldFromCVField(S_, *vo_, prev_saturation_key_, saturation_key_, passwd_);
 
   auto tcc = S_->GetPtrW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_)->ViewComponent("cell", true);
 
@@ -475,9 +487,10 @@ Amanzi_PK::CopyCellStateToBeakerState(int c, Teuchos::RCP<Epetra_MultiVector> aq
   }
 
   // copy data from state arrays into the beaker parameters
+  double a = (dt_global_ == 0.0) ? 1.0 : dt_int_ / dt_global_;
   beaker_state_.water_density = (*bf_.density)[0][c];
   beaker_state_.porosity = (*bf_.porosity)[0][c];
-  beaker_state_.saturation = (*bf_.saturation)[0][c];
+  beaker_state_.saturation = (1.0 - a) * (*bf_.prev_saturation)[0][c] + a * (*bf_.saturation)[0][c];
   beaker_state_.volume = mesh_->cell_volume(c);
 
   if (S_->HasRecord(temperature_key_)) { beaker_state_.temperature = (*bf_.temperature)[0][c]; }
@@ -575,7 +588,10 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   std::string internal_msg;
 
   dt_ = t_new - t_old;
-  current_time_ = saved_time_ + dt_;
+
+  // this assumes that initial and final are flow times FIXME
+  dt_global_ = S_->final_time() - S_->initial_time();
+  dt_int_ = t_new - S_->initial_time();
 
   int num_itrs, max_itrs(0), min_itrs(10000000), avg_itrs(0);
   int cmax(-1), ierr(0);
@@ -650,7 +666,6 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 Amanzi_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
-  saved_time_ = t_new;
   EstimateNextTimeStep_(t_old, t_new);
 }
 
@@ -669,6 +684,8 @@ Amanzi_PK::InitializeBeakerFields_()
   bf_.saturation = S_->Get<CV_t>(saturation_key_).ViewComponent("cell");
   if (S_->HasRecord(temperature_key_))
     bf_.temperature = S_->Get<CV_t>(temperature_key_).ViewComponent("cell");
+
+  bf_.prev_saturation = S_->Get<CV_t>(prev_saturation_key_).ViewComponent("cell");
 
   bf_.free_ion = S_->GetW<CV_t>(free_ion_species_key_, tag, passwd_).ViewComponent("cell");
   bf_.activity = S_->GetW<CV_t>(primary_activity_coeff_key_, tag, passwd_).ViewComponent("cell");
