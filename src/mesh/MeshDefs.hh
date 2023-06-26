@@ -315,7 +315,7 @@ struct RaggedGetter{
         return static_cast<view_t>(c(c));
       }
     } else {
-      if constexpr (!std::is_same<CF,decltype(nullptr)>::value) {
+      if constexpr (!std::is_same<CFD,decltype(nullptr)>::value) {
         static_cast<view_t>(cd(c)); 
       }
     }

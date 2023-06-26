@@ -878,9 +878,16 @@ KOKKOS_INLINE_FUNCTION
 decltype(auto)
 MeshCache<MEM>::getCellEdges(const Entity_ID c) const
 {
-  cEntity_ID_View cedges; 
-  getCellEdges<AP>(c, cedges);
-  return cedges; 
+  return RaggedGetter<MEM,AP>::get(data_.cell_edges_cached,
+    data_.cell_edges,
+    framework_mesh_,
+    [&](const int i) {
+      cEntity_ID_View ce;
+      framework_mesh_->getCellEdges(i, ce);
+      return ce; },
+    nullptr,
+    nullptr,
+    c);
 }
 
 
