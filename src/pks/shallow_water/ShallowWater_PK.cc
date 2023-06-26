@@ -291,8 +291,6 @@ ShallowWater_PK::Initialize()
   model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
     .set<double>("gravity", g_);
   model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
-    .set<int>("use shallow water model", shallow_water_model_);
-  model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
     .set<double>("pipe diameter", pipe_diameter_);
   model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
     .set<double>("celerity", celerity_);
@@ -954,7 +952,7 @@ void ShallowWater_PK::InitializeFields(){
         S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
      }
 
-      InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, wetted_angle_key_, Pi);
+      InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, passwd_, -1.0);
       S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
 
 }
@@ -979,14 +977,19 @@ void ShallowWater_PK::ComputeExternalForcingOnCells(std::vector<double> &forcing
 std::vector<double> ShallowWater_PK::ComputeFieldsOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
 {
 
-  std::vector <double> W(2,0.0); //vector to return
+  std::vector <double> V_rec(2,0.0); //vector to return
 
   double ht_rec = TotalDepthEdgeValue(c, e, htc, Bc, Bmax, B_n);
   double B_rec = BathymetryEdgeValue(e, B_n);
-  W[0] = ht_rec - B_rec;
-  W[1] = 0.0;
+  V_rec[0] = ht_rec - B_rec;
 
-  return W;
+  // NOTE: this value does note make sense physically
+  // and it is only used to trigger the formulation
+  // of the hydrostatic pressure force in numerical flux
+  // that is needed for shallow water
+  V_rec[1] = -1.0;
+
+  return V_rec;
 
 }
 

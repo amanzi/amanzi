@@ -124,9 +124,9 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual double ComputeWaterDepth(double WettedAngle){return 0.0;};
 
-  virtual double ComputeWettedAngle(double WaterDepth){return 0.0;};
+  virtual double ComputeWettedAngle(double WaterDepth){return -1.0;};
 
-  virtual double ComputeWettedAngleNewton(double WettedArea){return 0.0;};
+  virtual double ComputeWettedAngleNewton(double WettedArea){return -1.0;};
 
   virtual double ComputeWettedArea(double WettedAngle){return 0.0;};
 

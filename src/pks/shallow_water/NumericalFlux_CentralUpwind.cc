@@ -24,7 +24,6 @@ NumericalFlux_CentralUpwind::NumericalFlux_CentralUpwind(Teuchos::ParameterList&
   pipe_diameter_ = plist.get<double>("pipe diameter", 1.0);
   pipe_cross_section_ = 3.14159265359 * 0.25 * pipe_diameter_ * pipe_diameter_;
   celerity_ = plist.get<double>("celerity", 100);
-  shallow_water_model_ = plist.get<int>("use shallow water model", 1);
 }
 
 

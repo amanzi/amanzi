@@ -34,7 +34,6 @@ class NumericalFlux {
  protected:
   double g_;
   double lambda_max_, lambda_min_;
-  int shallow_water_model_;
   double pipe_diameter_;
   double pipe_cross_section_;
   double celerity_;
@@ -47,8 +46,7 @@ double NumericalFlux::HydrostaticPressureForce(const double & PrimaryVariable, c
 
   double HydroPressForce = 0.0;
 
-  // if (WettedAngle < 0.0){ // shallow water 
-  if (shallow_water_model_){ // shallow water 
+  if (WettedAngle < 0.0){ // shallow water 
 
      HydroPressForce = 0.5 * g_ * PrimaryVariable * PrimaryVariable;
 
