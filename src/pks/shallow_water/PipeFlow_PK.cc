@@ -73,6 +73,15 @@ void PipeFlow_PK::Setup()
       auto eval = Teuchos::rcp(new PressureHeadEvaluator(elist));
       S_->SetEvaluator(pressure_head_key_, Tags::DEFAULT, eval);
    }
+
+   // -- direction
+  if (!S_->HasRecord(direction_key_)) {
+    S_->Require<CV_t, CVS_t>(direction_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 2);
+    AddDefaultPrimaryEvaluator_(direction_key_);
+  }
    
 }
 
@@ -107,11 +116,12 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
   if (std::fabs(htc - Bc) >= 1.e-15) { //cell is not dry
   
+     int orientation;
      AmanziMesh::Entity_ID_List cfaces;
      mesh_->cell_get_faces(c, &cfaces);
      double vol = mesh_->cell_volume(c);
      int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-     int orientation;
+     auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
 
      double BGrad = 0.0;
      double OtherTermLeft = 0.0;
@@ -124,7 +134,9 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
      for (int n = 0; n < cfaces.size(); ++n) {
         int f = cfaces[n];
         const auto& normal = mesh_->face_normal(f, false, c, &orientation);
-        if (normal[0] > 0.0){ //this identifies the j+1/2 face
+        // projection of normal to face on pipe direction
+        double projection = normal[0] * dir_c[0][c] + normal[1] * dir_c[1][c];
+        if (projection > 0.0){ //this identifies the j+1/2 face
 
            AmanziMesh::Entity_ID_List cells;
            mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
@@ -145,7 +157,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
         }
 
-        else if (normal[0] < 0.0) { //this identifies the j-1/2 face
+        else if (projection < 0.0) { //this identifies the j-1/2 face
 
            BGrad -= BathymetryEdgeValue(f, B_n); //B_(j+1/2) - //B_(j-1/2)
 
@@ -375,6 +387,7 @@ void PipeFlow_PK::SetupPrimaryVariableKeys(){
 
   primary_variable_key_ = Keys::getKey(domain_, "wetted_area");
   prev_primary_variable_key_ = Keys::getKey(domain_, "prev_wetted_area");
+  direction_key_ = sw_list_->get<std::string>("direction key", "");
 
 }
 
@@ -449,6 +462,14 @@ void PipeFlow_PK::InitializeFields(){
      auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
+     if(direction_key_.empty()){
+        auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+        for (int c = 0; c < ncells_owned; c++) {
+           dir_c[0][c] = 1.0;
+           dir_c[1][c] = 0.0;
+        }
+     }
+
      for (int c = 0; c < ncells_owned; c++) {
 
         double maxDepth = B_c[0][c] + pipe_diameter_;
@@ -506,6 +527,36 @@ void PipeFlow_PK::InitializeFields(){
 }
 
 //--------------------------------------------------------------
+// Compute dx
+//--------------------------------------------------------------
+void PipeFlow_PK::GetDx(const int &cell, double &dx)
+{
+  dx = 0.0;
+  AmanziMesh::Entity_ID_List cell_faces;
+  mesh_->cell_get_faces(cell, &cell_faces);
+  AmanziGeometry::Point x1;
+  AmanziGeometry::Point x2;
+  auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  for (int n = 0; n < cell_faces.size(); ++n) {
+     int f = cell_faces[n];
+     int orient;
+     const auto& f_normal = mesh_->face_normal(f, false, cell, &orient);
+     double projection = f_normal[0] * dir_c[0][cell] + f_normal[1] * dir_c[1][cell];
+     if (projection > 0.0){
+        x1 = mesh_->face_centroid(f);
+     }
+     else if (projection < 0.0){
+        x2 = mesh_->face_centroid(f);
+     }
+  }
+  for (int iSize =0; iSize < x1.dim(); iSize++){
+     dx += (x1[iSize] - x2[iSize]) * (x1[iSize] - x2[iSize]);
+  }
+  dx = sqrt(dx);
+
+}
+
+//--------------------------------------------------------------
 // Compute external forcing on cells
 //--------------------------------------------------------------
 void PipeFlow_PK::ComputeExternalForcingOnCells(std::vector<double> &forcing){
@@ -514,7 +565,7 @@ void PipeFlow_PK::ComputeExternalForcingOnCells(std::vector<double> &forcing){
          for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
              int c = it->first;
              double dx;
-             GetDx_(c, dx);
+             GetDx(c, dx);
              forcing[c] = it->second[0] / dx; // [m^2 / s] for pipe
          }
      }

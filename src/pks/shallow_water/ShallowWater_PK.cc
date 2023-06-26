@@ -145,8 +145,8 @@ ShallowWater_PK::Setup()
   // secondary fields
   //-------------------------------
 
+  // -- pipe drain 
   if(!source_key_.empty()){ 
-     // -- pipe drain 
      if (!S_->HasRecord(source_key_)) {
         S_->Require<CV_t, CVS_t>(source_key_, Tags::DEFAULT, source_key_)
           .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -933,7 +933,7 @@ void ShallowWater_PK::InitializeFields(){
 
      int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
      auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-     
+
      if (!S_->GetRecord(primary_variable_key_, Tags::DEFAULT).initialized()) {
         auto& h_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
         auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");

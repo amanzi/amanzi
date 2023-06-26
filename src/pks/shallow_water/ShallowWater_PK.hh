@@ -143,7 +143,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   // access
   double get_total_source() const { return total_source_; }
 
-  void GetDx_(const int & cell, double & dx);
+  virtual void GetDx(const int & cell, double & dx){};
 
  private:
   void

@@ -392,33 +392,5 @@ ShallowWater_PK::ErrorDiagnostics_(double t, int c, double h)
   return 0;
 }
 
-//--------------------------------------------------------------
-// Compute dx
-//--------------------------------------------------------------
-void ShallowWater_PK::GetDx_(const int &cell, double &dx)
-{
-  dx = 0.0;  
-  AmanziMesh::Entity_ID_List cell_faces;
-  mesh_->cell_get_faces(cell, &cell_faces);
-  AmanziGeometry::Point x1;
-  AmanziGeometry::Point x2;
-  for (int n = 0; n < cell_faces.size(); ++n) {
-     int f = cell_faces[n];
-     int orient;
-     const auto& f_normal = mesh_->face_normal(f, false, cell, &orient);
-     if (f_normal[0] > 0.0){
-        x1 = mesh_->face_centroid(f);
-     }
-     else if (f_normal[0] < 0.0){
-        x2 = mesh_->face_centroid(f);
-     }
-  }
-  for (int iSize =0; iSize < x1.dim(); iSize++){
-     dx += (x1[iSize] - x2[iSize]) * (x1[iSize] - x2[iSize]);
-  }
-  dx = sqrt(dx);
-
-}
-
 } // namespace ShallowWater
 } // namespace Amanzi

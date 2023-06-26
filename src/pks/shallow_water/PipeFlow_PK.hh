@@ -67,6 +67,8 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void ComputeExternalForcingOnCells(std::vector<double> &forcing) override;
 
+  virtual void GetDx(const int & cell, double & dx) override;
+
   virtual std::vector<double> ComputeFieldsOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n) override;
 
  private:
@@ -78,6 +80,9 @@ class PipeFlow_PK : public ShallowWater_PK {
 
  protected:
  Key water_depth_key_, pressure_head_key_;
+ // unit vector that defines the pipe direction
+ // (both components are zero for junction cell)
+ Key direction_key_;
 
 };
 
