@@ -240,18 +240,19 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
     normal /= farea;
 
-    std::vector<double> W_rec(2,0.0);
-    double h_rec;
+    // primary fields at the edge
+    // V_rec[0]: primary variable
+    // V_rec[1]: wetted angle (for pipe)
+    std::vector<double> V_rec(2,0.0);
 
-    W_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
-    h_rec = W_rec[0];
-    ierr = ErrorDiagnostics_(t, c1, h_rec);
+    V_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
+    ierr = ErrorDiagnostics_(t, c1, V_rec[0]);
     if (ierr < 0) break;
 
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
 
-    factor = inverse_with_tolerance(h_rec, cell_area2_max_);
+    factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
   
     double vx_rec = factor * qx_rec;
     double vy_rec = factor * qy_rec;
@@ -261,10 +262,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     vn = vx_rec * normal[0] + vy_rec * normal[1];
     vt = -vx_rec * normal[1] + vy_rec * normal[0];
 
-    UL[0] = h_rec;
-    UL[1] = h_rec * vn;
-    UL[2] = h_rec * vt;
-    UL[3] = W_rec[1]; 
+    UL[0] = V_rec[0];
+    UL[1] = V_rec[0] * vn;
+    UL[2] = V_rec[0] * vt;
+    UL[3] = V_rec[1]; 
 
     if (c2 == -1) {
       if (bc_model_scalar[f] == Operators::OPERATOR_BC_DIRICHLET) {
@@ -290,15 +291,14 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     } 
     else {
 
-       W_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
-       h_rec = W_rec[0];
-       ierr = ErrorDiagnostics_(t, c2, h_rec);
-       if (ierr < 0) break;
+      V_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
+      ierr = ErrorDiagnostics_(t, c2, V_rec[0]);
+      if (ierr < 0) break;
 
       qx_rec = discharge_x_grad_->getValue(c2, xf);
       qy_rec = discharge_y_grad_->getValue(c2, xf);
       
-      factor = inverse_with_tolerance(h_rec, cell_area2_max_);
+      factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
 
       vx_rec = factor * qx_rec;
       vy_rec = factor * qy_rec;
@@ -306,10 +306,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       vn = vx_rec * normal[0] + vy_rec * normal[1];
       vt = -vx_rec * normal[1] + vy_rec * normal[0];
 
-      UR[0] = h_rec;
-      UR[1] = h_rec * vn;
-      UR[2] = h_rec * vt;
-      UR[3] = W_rec[1];
+      UR[0] = V_rec[0];
+      UR[1] = V_rec[0] * vn;
+      UR[2] = V_rec[0] * vt;
+      UR[3] = V_rec[1];
     }
 
     FNum_rot = numerical_flux_->Compute(UL, UR);

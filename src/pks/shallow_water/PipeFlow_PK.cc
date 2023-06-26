@@ -102,7 +102,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 {
 
   std::vector<double> S(3, 0.0);
-  std::vector<double> W(2, 0.0);
+  std::vector<double> V_rec(2, 0.0);
   std::vector<double> UL(2), UR(2);
 
   if (std::fabs(htc - Bc) >= 1.e-15) { //cell is not dry
@@ -135,10 +135,10 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
            BGrad = BathymetryEdgeValue(f, B_n); //B_(j+1/2)
 
-           W = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n);
+           V_rec = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n);
 
-           UL[0] = W[0]; //wetted area
-           UL[1] = W[1]; //wetted angle
+           UL[0] = V_rec[0]; //wetted area
+           UL[1] = V_rec[1]; //wetted angle
 
            FaceAreaL = mesh_->face_area(f);
            denomL = TotalDepthEdgeValue(c1, f, htc, Bc, Bmax, B_n) - BathymetryEdgeValue(f, B_n);
@@ -163,20 +163,20 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
            } else {                                               
                                                                  
              // default outflow BC                              
-             W = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n);
+             V_rec = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n);
 
-             UR[0] = W[0]; //wetted area
-             UR[1] = W[1]; //wetted angle
+             UR[0] = V_rec[0]; //wetted area
+             UR[1] = V_rec[1]; //wetted angle
 
            }
               denomR = TotalDepthEdgeValue(c1, f, htc, Bc, Bmax, B_n) - BathymetryEdgeValue(f, B_n);
 
            } else {
 
-              W = ComputeFieldsOnEdge(c2, f, htc, Bc, Bmax, B_n);
+              V_rec = ComputeFieldsOnEdge(c2, f, htc, Bc, Bmax, B_n);
 
-              UR[0] = W[0];
-              UR[1] = W[1];
+              UR[0] = V_rec[0];
+              UR[1] = V_rec[1];
 
               denomR = TotalDepthEdgeValue(c2, f, htc, Bc, Bmax, B_n) - BathymetryEdgeValue(f, B_n);
 
@@ -292,15 +292,15 @@ double PipeFlow_PK::ComputeTotalDepth(double PrimaryVar, double Bathymetry, doub
 std::vector<double> PipeFlow_PK::ComputeFieldsOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
 {
 
-  std::vector <double> W(2,0.0); //vector to return 
+  std::vector <double> V_rec(2,0.0); //vector to return 
 
   double ht_edge = TotalDepthEdgeValue(c, e, htc, Bc, Bmax, B_n);
   double B_edge = BathymetryEdgeValue(e, B_n);
   double h_edge = std::max( (ht_edge - B_edge), 0.0);
-  W[1] = ComputeWettedAngle(h_edge);
-  W[0] = ComputeWettedArea(W[1]);
+  V_rec[1] = ComputeWettedAngle(h_edge);
+  V_rec[0] = ComputeWettedArea(V_rec[1]);
 
-  return W;
+  return V_rec;
 
 }
 
